@@ -14,6 +14,7 @@ import 'package:plezy/services/multi_server_manager.dart';
 import 'package:plezy/services/settings_service.dart';
 import 'package:plezy/theme/mono_theme.dart';
 import 'package:plezy/utils/platform_detector.dart';
+import 'package:plezy/widgets/media_card.dart';
 import 'package:plezy/widgets/side_navigation_rail.dart';
 import 'package:plezy/widgets/tv_browse_rail.dart';
 import 'package:provider/provider.dart';
@@ -559,7 +560,7 @@ void main() {
     expect(find.text('Visible Movie'), findsOneWidget);
   });
 
-  testWidgets('detailed card focus ring wraps card content height', (tester) async {
+  testWidgets('detailed card focus border hugs the poster, captions outside', (tester) async {
     await SettingsService.instanceOrNull!.write(SettingsService.tvFullCardLayout, false);
     TvDetectionService.debugSetAppleTVOverride(true);
     tester.view.devicePixelRatio = 1.0;
@@ -599,11 +600,13 @@ void main() {
     );
     await tester.pump();
 
-    final focusDecoration = find.ancestor(
-      of: find.text('Visible Movie'),
+    // The border is drawn inside MediaCard around the poster only (#1278);
+    // the title/year captions render below it, outside the focus rect.
+    final focusDecoration = find.descendant(
+      of: find.ancestor(of: find.text('Visible Movie'), matching: find.byType(MediaCard)),
       matching: find.byWidgetPredicate((widget) {
-        if (widget is! AnimatedContainer || widget.decoration is! BoxDecoration) return false;
-        return (widget.decoration as BoxDecoration).border is Border && widget.foregroundDecoration == null;
+        if (widget is! AnimatedContainer || widget.foregroundDecoration is! BoxDecoration) return false;
+        return (widget.foregroundDecoration as BoxDecoration).border is Border;
       }),
     );
 
@@ -611,8 +614,12 @@ void main() {
     expect(find.text('2024'), findsOneWidget);
 
     final focusRect = tester.getRect(focusDecoration);
+    final titleRect = tester.getRect(find.text('Visible Movie'));
     final subtitleRect = tester.getRect(find.text('2024'));
-    expect(focusRect.bottom - subtitleRect.bottom, lessThan(8));
+    expect(focusRect.bottom, lessThanOrEqualTo(titleRect.top));
+    expect(focusRect.bottom, lessThanOrEqualTo(subtitleRect.top));
+    // Still a tight ring: the poster fills the card width above the captions.
+    expect(focusRect.top, lessThan(titleRect.top));
   });
 
   testWidgets('view all item uses compact pill focus style', (tester) async {

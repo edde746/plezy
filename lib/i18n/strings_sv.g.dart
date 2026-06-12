@@ -263,6 +263,8 @@ class _TranslationsSettingsSv extends TranslationsSettingsEn {
 	@override String get showSeasonPostersOnTabsDescription => 'Visa varje säsongs affisch ovanför fliken';
 	@override String get tvFullCardLayout => 'Heltäckande TV-kort';
 	@override String get tvFullCardLayoutDescription => 'Använd TV-kort med enbart bild och skådespelarnamn ovanpå';
+	@override String get focusGlow => 'Fokusglöd';
+	@override String get focusGlowDescription => 'Visa en mjuk glöd runt kortet i fokus';
 	@override String get hideSpoilers => 'Dölj spoilers för osedda avsnitt';
 	@override String get hideSpoilersDescription => 'Sudda miniatyrbilder och beskrivningar för osedda avsnitt';
 	@override String get playerBackend => 'Spelarmotor';
@@ -2039,6 +2041,8 @@ extension on TranslationsSv {
 			'settings.showSeasonPostersOnTabsDescription' => 'Visa varje säsongs affisch ovanför fliken',
 			'settings.tvFullCardLayout' => 'Heltäckande TV-kort',
 			'settings.tvFullCardLayoutDescription' => 'Använd TV-kort med enbart bild och skådespelarnamn ovanpå',
+			'settings.focusGlow' => 'Fokusglöd',
+			'settings.focusGlowDescription' => 'Visa en mjuk glöd runt kortet i fokus',
 			'settings.hideSpoilers' => 'Dölj spoilers för osedda avsnitt',
 			'settings.hideSpoilersDescription' => 'Sudda miniatyrbilder och beskrivningar för osedda avsnitt',
 			'settings.playerBackend' => 'Spelarmotor',
@@ -2425,10 +2429,10 @@ extension on TranslationsSv {
 			'subtitlingStyling.text' => 'Text',
 			'subtitlingStyling.border' => 'Kantlinje',
 			'subtitlingStyling.background' => 'Bakgrund',
-			'subtitlingStyling.fontSize' => 'Teckenstorlek',
-			'subtitlingStyling.textColor' => 'Textfärg',
 			_ => null,
 		} ?? switch (path) {
+			'subtitlingStyling.fontSize' => 'Teckenstorlek',
+			'subtitlingStyling.textColor' => 'Textfärg',
 			'subtitlingStyling.borderSize' => 'Kantstorlek',
 			'subtitlingStyling.borderColor' => 'Kantfärg',
 			'subtitlingStyling.backgroundOpacity' => 'Bakgrundsopacitet',
@@ -2939,10 +2943,10 @@ extension on TranslationsSv {
 			'companionRemote.remote.tabMore' => 'Mer',
 			'companionRemote.remote.menu' => 'Meny',
 			'companionRemote.remote.tabNavigation' => 'Fliknavigering',
-			'companionRemote.remote.tabDiscover' => 'Upptäck',
-			'companionRemote.remote.tabLibraries' => 'Bibliotek',
 			_ => null,
 		} ?? switch (path) {
+			'companionRemote.remote.tabDiscover' => 'Upptäck',
+			'companionRemote.remote.tabLibraries' => 'Bibliotek',
 			'companionRemote.remote.tabSearch' => 'Sök',
 			'companionRemote.remote.tabDownloads' => 'Nedladdningar',
 			'companionRemote.remote.tabSettings' => 'Inställningar',

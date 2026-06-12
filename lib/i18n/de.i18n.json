@@ -134,6 +134,8 @@
     "showSeasonPostersOnTabsDescription": "Poster jeder Staffel über ihrem Tab anzeigen",
     "tvFullCardLayout": "Vollflächige TV-Karten",
     "tvFullCardLayoutDescription": "TV-Karten nur mit Bild verwenden und Darstellernamen einblenden",
+    "focusGlow": "Fokus-Leuchten",
+    "focusGlowDescription": "Sanftes Leuchten um die fokussierte Karte anzeigen",
     "hideSpoilers": "Spoiler für nicht gesehene Episoden verbergen",
     "hideSpoilersDescription": "Vorschaubilder und Beschreibungen ungesehener Episoden verwischen",
     "playerBackend": "Player-Backend",

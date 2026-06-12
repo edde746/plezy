@@ -134,6 +134,8 @@
     "showSeasonPostersOnTabsDescription": "Pokazuj plakat każdego sezonu nad jego kartą",
     "tvFullCardLayout": "Pełne karty TV",
     "tvFullCardLayoutDescription": "Używaj kart TV tylko z obrazem i nałożonymi nazwiskami aktorów",
+    "focusGlow": "Poświata zaznaczenia",
+    "focusGlowDescription": "Wyświetlaj delikatną poświatę wokół zaznaczonej karty",
     "hideSpoilers": "Ukryj spoilery nieobejrzanych odcinków",
     "hideSpoilersDescription": "Rozmywaj miniatury i opisy nieobejrzanych odcinków",
     "playerBackend": "Backend odtwarzacza",

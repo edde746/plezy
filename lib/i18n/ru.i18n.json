@@ -134,6 +134,8 @@
     "showSeasonPostersOnTabsDescription": "Показывать постер каждого сезона над его вкладкой",
     "tvFullCardLayout": "Полные TV-карточки",
     "tvFullCardLayoutDescription": "Использовать TV-карточки только с изображением и именами актёров поверх него",
+    "focusGlow": "Свечение при фокусе",
+    "focusGlowDescription": "Показывать мягкое свечение вокруг карточки в фокусе",
     "hideSpoilers": "Скрыть спойлеры непросмотренных эпизодов",
     "hideSpoilersDescription": "Размывать миниатюры и описания непросмотренных серий",
     "playerBackend": "Бэкенд плеера",

@@ -134,6 +134,8 @@
     "showSeasonPostersOnTabsDescription": "Показвай постера на всеки сезон над неговия таб",
     "tvFullCardLayout": "Пълни TV карти",
     "tvFullCardLayoutDescription": "Използвай TV карти само с изображения, с насложени имена на актьорите",
+    "focusGlow": "Сияние при фокус",
+    "focusGlowDescription": "Показвай меко сияние около фокусираната карта",
     "hideSpoilers": "Скривай спойлери за негледани епизоди",
     "hideSpoilersDescription": "Замазвай миниатюри и описания за негледани епизоди",
     "playerBackend": "Енджин на плеъра",

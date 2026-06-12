@@ -263,6 +263,8 @@ class _TranslationsSettingsNb extends TranslationsSettingsEn {
 	@override String get showSeasonPostersOnTabsDescription => 'Vis hver sesongs plakat over fanen';
 	@override String get tvFullCardLayout => 'Fulle TV-kort';
 	@override String get tvFullCardLayoutDescription => 'Bruk bildebaserte TV-kort med skuespillernavn lagt over';
+	@override String get focusGlow => 'Fokusglød';
+	@override String get focusGlowDescription => 'Vis en myk glød rundt kortet i fokus';
 	@override String get hideSpoilers => 'Skjul spoilere for usette episoder';
 	@override String get hideSpoilersDescription => 'Slør miniatyrbilder og beskrivelser for usette episoder';
 	@override String get playerBackend => 'Spillermotor';
@@ -2039,6 +2041,8 @@ extension on TranslationsNb {
 			'settings.showSeasonPostersOnTabsDescription' => 'Vis hver sesongs plakat over fanen',
 			'settings.tvFullCardLayout' => 'Fulle TV-kort',
 			'settings.tvFullCardLayoutDescription' => 'Bruk bildebaserte TV-kort med skuespillernavn lagt over',
+			'settings.focusGlow' => 'Fokusglød',
+			'settings.focusGlowDescription' => 'Vis en myk glød rundt kortet i fokus',
 			'settings.hideSpoilers' => 'Skjul spoilere for usette episoder',
 			'settings.hideSpoilersDescription' => 'Slør miniatyrbilder og beskrivelser for usette episoder',
 			'settings.playerBackend' => 'Spillermotor',
@@ -2425,10 +2429,10 @@ extension on TranslationsNb {
 			'subtitlingStyling.text' => 'Tekst',
 			'subtitlingStyling.border' => 'Kantlinje',
 			'subtitlingStyling.background' => 'Bakgrunn',
-			'subtitlingStyling.fontSize' => 'Skriftstørrelse',
-			'subtitlingStyling.textColor' => 'Tekstfarge',
 			_ => null,
 		} ?? switch (path) {
+			'subtitlingStyling.fontSize' => 'Skriftstørrelse',
+			'subtitlingStyling.textColor' => 'Tekstfarge',
 			'subtitlingStyling.borderSize' => 'Kantstørrelse',
 			'subtitlingStyling.borderColor' => 'Kantfarge',
 			'subtitlingStyling.backgroundOpacity' => 'Bakgrunnsopasitet',
@@ -2939,10 +2943,10 @@ extension on TranslationsNb {
 			'companionRemote.remote.tabMore' => 'Mer',
 			'companionRemote.remote.menu' => 'Meny',
 			'companionRemote.remote.tabNavigation' => 'Fanenavigering',
-			'companionRemote.remote.tabDiscover' => 'Oppdag',
-			'companionRemote.remote.tabLibraries' => 'Biblioteker',
 			_ => null,
 		} ?? switch (path) {
+			'companionRemote.remote.tabDiscover' => 'Oppdag',
+			'companionRemote.remote.tabLibraries' => 'Biblioteker',
 			'companionRemote.remote.tabSearch' => 'Søk',
 			'companionRemote.remote.tabDownloads' => 'Nedlastinger',
 			'companionRemote.remote.tabSettings' => 'Innstillinger',

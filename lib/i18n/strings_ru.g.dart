@@ -263,6 +263,8 @@ class _TranslationsSettingsRu extends TranslationsSettingsEn {
 	@override String get showSeasonPostersOnTabsDescription => 'Показывать постер каждого сезона над его вкладкой';
 	@override String get tvFullCardLayout => 'Полные TV-карточки';
 	@override String get tvFullCardLayoutDescription => 'Использовать TV-карточки только с изображением и именами актёров поверх него';
+	@override String get focusGlow => 'Свечение при фокусе';
+	@override String get focusGlowDescription => 'Показывать мягкое свечение вокруг карточки в фокусе';
 	@override String get hideSpoilers => 'Скрыть спойлеры непросмотренных эпизодов';
 	@override String get hideSpoilersDescription => 'Размывать миниатюры и описания непросмотренных серий';
 	@override String get playerBackend => 'Бэкенд плеера';
@@ -2039,6 +2041,8 @@ extension on TranslationsRu {
 			'settings.showSeasonPostersOnTabsDescription' => 'Показывать постер каждого сезона над его вкладкой',
 			'settings.tvFullCardLayout' => 'Полные TV-карточки',
 			'settings.tvFullCardLayoutDescription' => 'Использовать TV-карточки только с изображением и именами актёров поверх него',
+			'settings.focusGlow' => 'Свечение при фокусе',
+			'settings.focusGlowDescription' => 'Показывать мягкое свечение вокруг карточки в фокусе',
 			'settings.hideSpoilers' => 'Скрыть спойлеры непросмотренных эпизодов',
 			'settings.hideSpoilersDescription' => 'Размывать миниатюры и описания непросмотренных серий',
 			'settings.playerBackend' => 'Бэкенд плеера',
@@ -2425,10 +2429,10 @@ extension on TranslationsRu {
 			'subtitlingStyling.text' => 'Текст',
 			'subtitlingStyling.border' => 'Обводка',
 			'subtitlingStyling.background' => 'Фон',
-			'subtitlingStyling.fontSize' => 'Размер шрифта',
-			'subtitlingStyling.textColor' => 'Цвет текста',
 			_ => null,
 		} ?? switch (path) {
+			'subtitlingStyling.fontSize' => 'Размер шрифта',
+			'subtitlingStyling.textColor' => 'Цвет текста',
 			'subtitlingStyling.borderSize' => 'Размер обводки',
 			'subtitlingStyling.borderColor' => 'Цвет обводки',
 			'subtitlingStyling.backgroundOpacity' => 'Прозрачность фона',
@@ -2939,10 +2943,10 @@ extension on TranslationsRu {
 			'companionRemote.remote.tabMore' => 'Ещё',
 			'companionRemote.remote.menu' => 'Меню',
 			'companionRemote.remote.tabNavigation' => 'Навигация',
-			'companionRemote.remote.tabDiscover' => 'Обзор',
-			'companionRemote.remote.tabLibraries' => 'Библиотеки',
 			_ => null,
 		} ?? switch (path) {
+			'companionRemote.remote.tabDiscover' => 'Обзор',
+			'companionRemote.remote.tabLibraries' => 'Библиотеки',
 			'companionRemote.remote.tabSearch' => 'Поиск',
 			'companionRemote.remote.tabDownloads' => 'Загрузки',
 			'companionRemote.remote.tabSettings' => 'Настройки',

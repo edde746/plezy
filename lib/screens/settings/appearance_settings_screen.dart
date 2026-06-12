@@ -43,6 +43,13 @@ class AppearanceSettingsScreen extends StatelessWidget {
             title: t.settings.tvFullCardLayout,
             subtitle: t.settings.tvFullCardLayoutDescription,
           ),
+        if (PlatformDetector.isTV())
+          SettingSwitchTile(
+            pref: SettingsService.focusGlow,
+            icon: Symbols.lightbulb_rounded,
+            title: t.settings.focusGlow,
+            subtitle: t.settings.focusGlowDescription,
+          ),
         if (Platform.isAndroid) _visualEffectsSelector(context),
         SettingSwitchTile(
           pref: SettingsService.showEpisodeNumberOnCards,

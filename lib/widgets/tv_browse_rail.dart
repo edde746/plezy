@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
+import '../focus/card_focus_scope.dart';
 import '../focus/dpad_navigator.dart';
 import '../focus/focus_theme.dart';
 import '../focus/key_event_utils.dart';
@@ -1275,11 +1276,10 @@ class TvBrowseRailState extends State<TvBrowseRail> {
                     isFocused: isFocused,
                     borderRadius: tokens(context).radiusSm,
                     focusScale: fullCardLayout ? TvBrowseRailLayout.fullCardFocusScale : FocusTheme.focusScale,
-                    focusBorderStrokeAlign: fullCardLayout
-                        ? BorderSide.strokeAlignOutside
-                        : BorderSide.strokeAlignInside,
                     useFocusGlow: fullCardLayout,
-                    useForegroundFocusDecoration: fullCardLayout,
+                    // The card draws the border itself (poster rect for
+                    // standard cards, whole card when full-bleed).
+                    delegateFocusBorder: true,
                     glowSize: fullCardLayout ? Size(metrics.cardWidth, metrics.posterHeight) : null,
                     onTap: () {
                       _selectHubItem(hub, hubIndex, itemIndex);
@@ -1352,62 +1352,65 @@ class TvBrowseRailState extends State<TvBrowseRail> {
       return SizedBox(
         width: cardWidth,
         height: imageSize,
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(tokens(context).radiusSm),
-          child: Stack(
-            fit: StackFit.expand,
-            children: [
-              OptimizedMediaImage(
-                client: context.tryGetMediaClientWithFallback(serverIdOrNull(item.serverId)),
-                imagePath: item.thumbPath,
-                width: cardWidth,
-                height: imageSize,
-                fit: BoxFit.cover,
-                imageType: ImageType.avatar,
-                fallbackIcon: Symbols.person_rounded,
-              ),
-              DecoratedBox(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [Colors.transparent, Colors.black.withValues(alpha: 0.78)],
-                    stops: const [0.45, 1.0],
+        child: CardFocusBorder(
+          borderRadius: tokens(context).radiusSm,
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(tokens(context).radiusSm),
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                OptimizedMediaImage(
+                  client: context.tryGetMediaClientWithFallback(serverIdOrNull(item.serverId)),
+                  imagePath: item.thumbPath,
+                  width: cardWidth,
+                  height: imageSize,
+                  fit: BoxFit.cover,
+                  imageType: ImageType.avatar,
+                  fallbackIcon: Symbols.person_rounded,
+                ),
+                DecoratedBox(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [Colors.transparent, Colors.black.withValues(alpha: 0.78)],
+                      stops: const [0.45, 1.0],
+                    ),
                   ),
                 ),
-              ),
-              Positioned(
-                left: 10 * scale,
-                right: 10 * scale,
-                bottom: 9 * scale,
-                child: Column(
-                  mainAxisSize: .min,
-                  crossAxisAlignment: .start,
-                  children: [
-                    Text(
-                      item.displayTitle,
-                      maxLines: 1,
-                      overflow: .ellipsis,
-                      style: TextStyle(color: Colors.white, fontSize: 13 * scale, height: 1.1, fontWeight: .w800),
-                    ),
-                    if (characterName != null && characterName.isNotEmpty) ...[
-                      SizedBox(height: 2 * scale),
+                Positioned(
+                  left: 10 * scale,
+                  right: 10 * scale,
+                  bottom: 9 * scale,
+                  child: Column(
+                    mainAxisSize: .min,
+                    crossAxisAlignment: .start,
+                    children: [
                       Text(
-                        characterName,
+                        item.displayTitle,
                         maxLines: 1,
                         overflow: .ellipsis,
-                        style: TextStyle(
-                          color: Colors.white.withValues(alpha: 0.82),
-                          fontSize: 11 * scale,
-                          height: 1.1,
-                          fontWeight: .w600,
-                        ),
+                        style: TextStyle(color: Colors.white, fontSize: 13 * scale, height: 1.1, fontWeight: .w800),
                       ),
+                      if (characterName != null && characterName.isNotEmpty) ...[
+                        SizedBox(height: 2 * scale),
+                        Text(
+                          characterName,
+                          maxLines: 1,
+                          overflow: .ellipsis,
+                          style: TextStyle(
+                            color: Colors.white.withValues(alpha: 0.82),
+                            fontSize: 11 * scale,
+                            height: 1.1,
+                            fontWeight: .w600,
+                          ),
+                        ),
+                      ],
                     ],
-                  ],
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       );
@@ -1421,16 +1424,19 @@ class TvBrowseRailState extends State<TvBrowseRail> {
           mainAxisSize: .min,
           crossAxisAlignment: .start,
           children: [
-            ClipRRect(
-              borderRadius: BorderRadius.circular(tokens(context).radiusSm),
-              child: OptimizedMediaImage(
-                client: context.tryGetMediaClientWithFallback(serverIdOrNull(item.serverId)),
-                imagePath: item.thumbPath,
-                width: imageSize,
-                height: imageSize,
-                fit: BoxFit.cover,
-                imageType: ImageType.avatar,
-                fallbackIcon: Symbols.person_rounded,
+            CardFocusBorder(
+              borderRadius: tokens(context).radiusSm,
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(tokens(context).radiusSm),
+                child: OptimizedMediaImage(
+                  client: context.tryGetMediaClientWithFallback(serverIdOrNull(item.serverId)),
+                  imagePath: item.thumbPath,
+                  width: imageSize,
+                  height: imageSize,
+                  fit: BoxFit.cover,
+                  imageType: ImageType.avatar,
+                  fallbackIcon: Symbols.person_rounded,
+                ),
               ),
             ),
             SizedBox(height: 6 * scale),

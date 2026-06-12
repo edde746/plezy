@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 
 import '../widgets/clickable_cursor.dart';
 import '../utils/text_input_diagnostics.dart';
+import 'card_focus_scope.dart';
 import 'dpad_navigator.dart';
 import 'focus_glow_overlay.dart';
 import 'focus_theme.dart';
@@ -110,14 +111,13 @@ class FocusableWrapper extends StatefulWidget {
   /// Scale used for the focus animation.
   final double focusScale;
 
-  /// Stroke alignment for the focus border.
-  final double focusBorderStrokeAlign;
-
   /// Whether to draw a glow around the focused widget.
   final bool useFocusGlow;
 
-  /// Whether to draw the focus border as a foreground decoration.
-  final bool useForegroundFocusDecoration;
+  /// Skip drawing the focus border here and expose the focus state through a
+  /// [CardFocusScope] instead, so the child places the border on the exact
+  /// rect it wants highlighted (e.g. MediaCard's poster image).
+  final bool delegateFocusBorder;
 
   /// Whether descendants can receive focus.
   /// Set to false when the child widget has its own Focus (e.g. buttons)
@@ -150,9 +150,8 @@ class FocusableWrapper extends StatefulWidget {
     this.focusColor,
     this.disableScale = false,
     this.focusScale = FocusTheme.focusScale,
-    this.focusBorderStrokeAlign = BorderSide.strokeAlignInside,
     this.useFocusGlow = false,
-    this.useForegroundFocusDecoration = false,
+    this.delegateFocusBorder = false,
     this.descendantsAreFocusable = true,
   });
 
@@ -471,16 +470,6 @@ class _FocusableWrapperState extends State<FocusableWrapper> with SingleTickerPr
       _animationController.duration = duration;
     }
 
-    // Choose decoration based on useBackgroundFocus
-    final focusDecoration = widget.useBackgroundFocus
-        ? FocusTheme.focusBackgroundDecoration(isFocused: showFocus, borderRadius: widget.borderRadius)
-        : FocusTheme.focusDecoration(
-            context,
-            isFocused: showFocus,
-            borderRadius: widget.borderRadius,
-            color: widget.focusColor,
-            borderStrokeAlign: widget.focusBorderStrokeAlign,
-          );
     Widget result = Focus(
       focusNode: _focusNode,
       autofocus: widget.autofocus,
@@ -493,13 +482,25 @@ class _FocusableWrapperState extends State<FocusableWrapper> with SingleTickerPr
           final shouldScale = showFocus && !widget.disableScale;
           // The glow (full-bleed cards) is drawn in an overlay above siblings so
           // it stays symmetric; the in-card decoration only carries the border.
-          Widget card = AnimatedContainer(
-            duration: duration,
-            curve: Curves.easeOutCubic,
-            decoration: widget.useForegroundFocusDecoration ? null : focusDecoration,
-            foregroundDecoration: widget.useForegroundFocusDecoration ? focusDecoration : null,
-            child: widget.child,
-          );
+          Widget card;
+          if (widget.delegateFocusBorder) {
+            card = CardFocusScope(showFocus: showFocus, child: widget.child);
+          } else {
+            final focusDecoration = widget.useBackgroundFocus
+                ? FocusTheme.focusBackgroundDecoration(isFocused: showFocus, borderRadius: widget.borderRadius)
+                : FocusTheme.focusDecoration(
+                    context,
+                    isFocused: showFocus,
+                    borderRadius: widget.borderRadius,
+                    color: widget.focusColor,
+                  );
+            card = AnimatedContainer(
+              duration: duration,
+              curve: Curves.easeOutCubic,
+              decoration: focusDecoration,
+              child: widget.child,
+            );
+          }
           if (widget.useFocusGlow) {
             card = FocusGlowOverlay(
               isFocused: showFocus,

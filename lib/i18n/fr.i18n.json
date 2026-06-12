@@ -134,6 +134,8 @@
     "showSeasonPostersOnTabsDescription": "Afficher l'affiche de chaque saison au-dessus de son onglet",
     "tvFullCardLayout": "Cartes TV pleines",
     "tvFullCardLayoutDescription": "Utiliser des cartes TV avec image seule et noms des acteurs superposés",
+    "focusGlow": "Halo de sélection",
+    "focusGlowDescription": "Afficher un léger halo autour de la carte sélectionnée",
     "hideSpoilers": "Masquer les spoilers des épisodes non vus",
     "hideSpoilersDescription": "Flouter les miniatures et descriptions des épisodes non vus",
     "playerBackend": "Moteur de lecture",

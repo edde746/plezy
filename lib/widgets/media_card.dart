@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:plezy/widgets/app_icon.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
+import '../focus/card_focus_scope.dart';
 import '../focus/input_mode_tracker.dart';
 import '../media/media_item.dart';
 import '../media/media_item_types.dart';
@@ -299,23 +300,26 @@ class MediaCardState extends State<MediaCard> with ContextMenuTapMixin<MediaCard
         onSecondaryTapDown: storeTapPosition,
         onSecondaryTap: showContextMenuFromTap,
         borderRadius: BorderRadius.circular(tokens(context).radiusSm),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(tokens(context).radiusSm),
-          child: Stack(
-            fit: StackFit.expand,
-            children: [
-              _buildPosterImage(
-                context,
-                item,
-                isOffline: widget.isOffline,
-                localPosterPath: localPosterPath,
-                mixedHubContext: widget.mixedHubContext,
-                episodePosterModeOverride: widget.episodePosterModeOverride,
-                knownWidth: width,
-                knownHeight: height,
-              ),
-              if (item is MediaItem) _MediaCardHelpers.buildWatchProgress(context, item),
-            ],
+        child: CardFocusBorder(
+          borderRadius: tokens(context).radiusSm,
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(tokens(context).radiusSm),
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                _buildPosterImage(
+                  context,
+                  item,
+                  isOffline: widget.isOffline,
+                  localPosterPath: localPosterPath,
+                  mixedHubContext: widget.mixedHubContext,
+                  episodePosterModeOverride: widget.episodePosterModeOverride,
+                  knownWidth: width,
+                  knownHeight: height,
+                ),
+                if (item is MediaItem) _MediaCardHelpers.buildWatchProgress(context, item),
+              ],
+            ),
           ),
         ),
       ),
@@ -326,6 +330,30 @@ class MediaCardState extends State<MediaCard> with ContextMenuTapMixin<MediaCard
     // Compute actual poster dimensions from card dimensions
     final posterWidth = widget.width != null ? widget.width! - 6 : null;
     final posterHeight = widget.height;
+
+    // The focus border hugs the poster (captions stay outside it), matching
+    // the full-bleed card treatment.
+    final poster = CardFocusBorder(
+      borderRadius: tokens(context).radiusSm,
+      child: Stack(
+        children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(tokens(context).radiusSm),
+            child: _buildPosterImage(
+              context,
+              item,
+              isOffline: widget.isOffline,
+              localPosterPath: localPosterPath,
+              mixedHubContext: widget.mixedHubContext,
+              episodePosterModeOverride: widget.episodePosterModeOverride,
+              knownWidth: posterHeight != null ? posterWidth : null,
+              knownHeight: posterHeight,
+            ),
+          ),
+          if (item is MediaItem) _MediaCardHelpers.buildWatchProgress(context, item),
+        ],
+      ),
+    );
 
     return SizedBox(
       width: widget.width,
@@ -346,47 +374,9 @@ class MediaCardState extends State<MediaCard> with ContextMenuTapMixin<MediaCard
             children: [
               // Poster with overlay
               if (posterHeight != null)
-                SizedBox(
-                  width: double.infinity,
-                  height: posterHeight,
-                  child: Stack(
-                    children: [
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(tokens(context).radiusSm),
-                        child: _buildPosterImage(
-                          context,
-                          item,
-                          isOffline: widget.isOffline,
-                          localPosterPath: localPosterPath,
-                          mixedHubContext: widget.mixedHubContext,
-                          episodePosterModeOverride: widget.episodePosterModeOverride,
-                          knownWidth: posterWidth,
-                          knownHeight: posterHeight,
-                        ),
-                      ),
-                      if (item is MediaItem) _MediaCardHelpers.buildWatchProgress(context, item),
-                    ],
-                  ),
-                )
+                SizedBox(width: double.infinity, height: posterHeight, child: poster)
               else
-                Expanded(
-                  child: Stack(
-                    children: [
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(tokens(context).radiusSm),
-                        child: _buildPosterImage(
-                          context,
-                          item,
-                          isOffline: widget.isOffline,
-                          localPosterPath: localPosterPath,
-                          mixedHubContext: widget.mixedHubContext,
-                          episodePosterModeOverride: widget.episodePosterModeOverride,
-                        ),
-                      ),
-                      if (item is MediaItem) _MediaCardHelpers.buildWatchProgress(context, item),
-                    ],
-                  ),
-                ),
+                Expanded(child: poster),
               const SizedBox(height: 2),
               // Title (flattened — no inner Column)
               if (item is MediaItem && _hasClickableTitle(item))
@@ -592,133 +582,139 @@ class _MediaCardList extends StatelessWidget {
     final metadataLine = _buildMetadataLine();
     final subtitle = _buildSubtitleText();
 
-    return InkWell(
-      mouseCursor: SystemMouseCursors.click,
-      canRequestFocus: false, // Keyboard handled by FocusableMediaCard
-      onTap: onTap,
-      onTapDown: onTapDown,
-      onLongPress: onLongPress,
-      onSecondaryTapDown: onSecondaryTapDown,
-      onSecondaryTap: onSecondaryTap,
-      borderRadius: BorderRadius.circular(tokens(context).radiusSm),
-      child: Padding(
-        padding: const EdgeInsets.all(8),
-        child: Row(
-          crossAxisAlignment: .start,
-          children: [
-            SizedBox(
-              width: _posterWidth(),
-              height: _posterHeight(),
-              child: Stack(
-                children: [
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(tokens(context).radiusSm),
-                    child: _buildPosterImage(
-                      context,
-                      item,
-                      isOffline: isOffline,
-                      localPosterPath: localPosterPath,
-                      episodePosterModeOverride: episodePosterModeOverride,
+    // List rows keep the whole-row border; inside stroke so adjacent rows
+    // don't overlap.
+    return CardFocusBorder(
+      borderRadius: tokens(context).radiusSm,
+      strokeAlign: BorderSide.strokeAlignInside,
+      child: InkWell(
+        mouseCursor: SystemMouseCursors.click,
+        canRequestFocus: false, // Keyboard handled by FocusableMediaCard
+        onTap: onTap,
+        onTapDown: onTapDown,
+        onLongPress: onLongPress,
+        onSecondaryTapDown: onSecondaryTapDown,
+        onSecondaryTap: onSecondaryTap,
+        borderRadius: BorderRadius.circular(tokens(context).radiusSm),
+        child: Padding(
+          padding: const EdgeInsets.all(8),
+          child: Row(
+            crossAxisAlignment: .start,
+            children: [
+              SizedBox(
+                width: _posterWidth(),
+                height: _posterHeight(),
+                child: Stack(
+                  children: [
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(tokens(context).radiusSm),
+                      child: _buildPosterImage(
+                        context,
+                        item,
+                        isOffline: isOffline,
+                        localPosterPath: localPosterPath,
+                        episodePosterModeOverride: episodePosterModeOverride,
+                      ),
                     ),
-                  ),
-                  if (item is MediaItem) _MediaCardHelpers.buildWatchProgress(context, item as MediaItem),
-                ],
+                    if (item is MediaItem) _MediaCardHelpers.buildWatchProgress(context, item as MediaItem),
+                  ],
+                ),
               ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: .start,
-                mainAxisAlignment: .start,
-                children: [
-                  if (item is MediaItem && _hasClickableTitle(item as MediaItem))
-                    _ClickableText(
-                      text: (item as MediaItem).displayTitle,
-                      style: TextStyle(fontWeight: .w600, fontSize: _titleFontSize, height: 1.2),
-                      onTap: () => _navigateToFocusedDetail(context, item as MediaItem, isOffline: isOffline),
-                    )
-                  else
-                    Text(
-                      _displayTitle(),
-                      maxLines: 2,
-                      overflow: .ellipsis,
-                      style: TextStyle(fontWeight: .w600, fontSize: _titleFontSize, height: 1.2),
-                    ),
-                  const SizedBox(height: 4),
-                  if (metadataLine.isNotEmpty) ...[
-                    Text(
-                      metadataLine,
-                      maxLines: 1,
-                      overflow: .ellipsis,
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: tokens(context).textMuted.withValues(alpha: 0.9),
-                        fontSize: _metadataFontSize,
-                        fontWeight: .w500,
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: .start,
+                  mainAxisAlignment: .start,
+                  children: [
+                    if (item is MediaItem && _hasClickableTitle(item as MediaItem))
+                      _ClickableText(
+                        text: (item as MediaItem).displayTitle,
+                        style: TextStyle(fontWeight: .w600, fontSize: _titleFontSize, height: 1.2),
+                        onTap: () => _navigateToFocusedDetail(context, item as MediaItem, isOffline: isOffline),
+                      )
+                    else
+                      Text(
+                        _displayTitle(),
+                        maxLines: 2,
+                        overflow: .ellipsis,
+                        style: TextStyle(fontWeight: .w600, fontSize: _titleFontSize, height: 1.2),
                       ),
-                    ),
-                    const SizedBox(height: 2),
-                  ],
-                  if (item is MediaItem &&
-                      (item as MediaItem).isEpisode &&
-                      (item as MediaItem).parentIndex != null &&
-                      (item as MediaItem).parentId != null) ...[
-                    _buildEpisodeSubtitle(context, item as MediaItem),
                     const SizedBox(height: 4),
-                  ] else if (subtitle != null) ...[
-                    Text(
-                      subtitle,
-                      maxLines: 1,
-                      overflow: .ellipsis,
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: tokens(context).textMuted.withValues(alpha: 0.85),
-                        fontSize: _subtitleFontSize,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                  ],
-                  if (!(item is MediaItem &&
-                          SettingsService.instance.read(SettingsService.hideSpoilers) &&
-                          (item as MediaItem).shouldHideSpoiler) &&
-                      _summary() != null) ...[
-                    Text(
-                      _summary()!,
-                      maxLines: _summaryMaxLines,
-                      overflow: .ellipsis,
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: tokens(context).textMuted.withValues(alpha: 0.7),
-                        fontSize: _summaryFontSize,
-                        height: 1.3,
-                      ),
-                    ),
-                  ],
-                  if (showServerName && item is MediaItem && (item as MediaItem).serverName != null) ...[
-                    const SizedBox(height: 4),
-                    Row(
-                      children: [
-                        BackendBadge(
-                          backend: (item as MediaItem).backend,
-                          size: _metadataFontSize + 2,
-                          color: tokens(context).textMuted.withValues(alpha: 0.6),
+                    if (metadataLine.isNotEmpty) ...[
+                      Text(
+                        metadataLine,
+                        maxLines: 1,
+                        overflow: .ellipsis,
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: tokens(context).textMuted.withValues(alpha: 0.9),
+                          fontSize: _metadataFontSize,
+                          fontWeight: .w500,
                         ),
-                        const SizedBox(width: 4),
-                        Flexible(
-                          child: Text(
-                            (item as MediaItem).serverName!,
-                            maxLines: 1,
-                            overflow: .ellipsis,
-                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: tokens(context).textMuted.withValues(alpha: 0.6),
-                              fontSize: _metadataFontSize,
+                      ),
+                      const SizedBox(height: 2),
+                    ],
+                    if (item is MediaItem &&
+                        (item as MediaItem).isEpisode &&
+                        (item as MediaItem).parentIndex != null &&
+                        (item as MediaItem).parentId != null) ...[
+                      _buildEpisodeSubtitle(context, item as MediaItem),
+                      const SizedBox(height: 4),
+                    ] else if (subtitle != null) ...[
+                      Text(
+                        subtitle,
+                        maxLines: 1,
+                        overflow: .ellipsis,
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: tokens(context).textMuted.withValues(alpha: 0.85),
+                          fontSize: _subtitleFontSize,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                    ],
+                    if (!(item is MediaItem &&
+                            SettingsService.instance.read(SettingsService.hideSpoilers) &&
+                            (item as MediaItem).shouldHideSpoiler) &&
+                        _summary() != null) ...[
+                      Text(
+                        _summary()!,
+                        maxLines: _summaryMaxLines,
+                        overflow: .ellipsis,
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: tokens(context).textMuted.withValues(alpha: 0.7),
+                          fontSize: _summaryFontSize,
+                          height: 1.3,
+                        ),
+                      ),
+                    ],
+                    if (showServerName && item is MediaItem && (item as MediaItem).serverName != null) ...[
+                      const SizedBox(height: 4),
+                      Row(
+                        children: [
+                          BackendBadge(
+                            backend: (item as MediaItem).backend,
+                            size: _metadataFontSize + 2,
+                            color: tokens(context).textMuted.withValues(alpha: 0.6),
+                          ),
+                          const SizedBox(width: 4),
+                          Flexible(
+                            child: Text(
+                              (item as MediaItem).serverName!,
+                              maxLines: 1,
+                              overflow: .ellipsis,
+                              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                color: tokens(context).textMuted.withValues(alpha: 0.6),
+                                fontSize: _metadataFontSize,
+                              ),
                             ),
                           ),
-                        ),
-                      ],
-                    ),
+                        ],
+                      ),
+                    ],
                   ],
-                ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

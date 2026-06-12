@@ -134,6 +134,8 @@
     "showSeasonPostersOnTabsDescription": "Toon de poster van elk seizoen boven het tabblad",
     "tvFullCardLayout": "Volledige tv-kaarten",
     "tvFullCardLayoutDescription": "Gebruik tv-kaarten met alleen afbeeldingen en namen van acteurs als overlay",
+    "focusGlow": "Focusgloed",
+    "focusGlowDescription": "Toon een zachte gloed rond de kaart met focus",
     "hideSpoilers": "Spoilers voor ongekeken afleveringen verbergen",
     "hideSpoilersDescription": "Vervaag miniaturen en beschrijvingen voor niet-bekeken afleveringen",
     "playerBackend": "Speler backend",

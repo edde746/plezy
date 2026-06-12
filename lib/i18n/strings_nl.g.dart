@@ -263,6 +263,8 @@ class _TranslationsSettingsNl extends TranslationsSettingsEn {
 	@override String get showSeasonPostersOnTabsDescription => 'Toon de poster van elk seizoen boven het tabblad';
 	@override String get tvFullCardLayout => 'Volledige tv-kaarten';
 	@override String get tvFullCardLayoutDescription => 'Gebruik tv-kaarten met alleen afbeeldingen en namen van acteurs als overlay';
+	@override String get focusGlow => 'Focusgloed';
+	@override String get focusGlowDescription => 'Toon een zachte gloed rond de kaart met focus';
 	@override String get hideSpoilers => 'Spoilers voor ongekeken afleveringen verbergen';
 	@override String get hideSpoilersDescription => 'Vervaag miniaturen en beschrijvingen voor niet-bekeken afleveringen';
 	@override String get playerBackend => 'Speler backend';
@@ -2039,6 +2041,8 @@ extension on TranslationsNl {
 			'settings.showSeasonPostersOnTabsDescription' => 'Toon de poster van elk seizoen boven het tabblad',
 			'settings.tvFullCardLayout' => 'Volledige tv-kaarten',
 			'settings.tvFullCardLayoutDescription' => 'Gebruik tv-kaarten met alleen afbeeldingen en namen van acteurs als overlay',
+			'settings.focusGlow' => 'Focusgloed',
+			'settings.focusGlowDescription' => 'Toon een zachte gloed rond de kaart met focus',
 			'settings.hideSpoilers' => 'Spoilers voor ongekeken afleveringen verbergen',
 			'settings.hideSpoilersDescription' => 'Vervaag miniaturen en beschrijvingen voor niet-bekeken afleveringen',
 			'settings.playerBackend' => 'Speler backend',
@@ -2425,10 +2429,10 @@ extension on TranslationsNl {
 			'subtitlingStyling.text' => 'Tekst',
 			'subtitlingStyling.border' => 'Rand',
 			'subtitlingStyling.background' => 'Achtergrond',
-			'subtitlingStyling.fontSize' => 'Lettergrootte',
-			'subtitlingStyling.textColor' => 'Tekstkleur',
 			_ => null,
 		} ?? switch (path) {
+			'subtitlingStyling.fontSize' => 'Lettergrootte',
+			'subtitlingStyling.textColor' => 'Tekstkleur',
 			'subtitlingStyling.borderSize' => 'Rand grootte',
 			'subtitlingStyling.borderColor' => 'Randkleur',
 			'subtitlingStyling.backgroundOpacity' => 'Achtergrond transparantie',
@@ -2939,10 +2943,10 @@ extension on TranslationsNl {
 			'companionRemote.remote.tabMore' => 'Meer',
 			'companionRemote.remote.menu' => 'Menu',
 			'companionRemote.remote.tabNavigation' => 'Tabnavigatie',
-			'companionRemote.remote.tabDiscover' => 'Ontdekken',
-			'companionRemote.remote.tabLibraries' => 'Bibliotheken',
 			_ => null,
 		} ?? switch (path) {
+			'companionRemote.remote.tabDiscover' => 'Ontdekken',
+			'companionRemote.remote.tabLibraries' => 'Bibliotheken',
 			'companionRemote.remote.tabSearch' => 'Zoeken',
 			'companionRemote.remote.tabDownloads' => 'Downloads',
 			'companionRemote.remote.tabSettings' => 'Instellingen',

@@ -263,6 +263,8 @@ class _TranslationsSettingsDa extends TranslationsSettingsEn {
 	@override String get showSeasonPostersOnTabsDescription => 'Vis hver sæsons plakat over dens fane';
 	@override String get tvFullCardLayout => 'Fuldflade TV-kort';
 	@override String get tvFullCardLayoutDescription => 'Brug TV-kort kun med billeder og skuespillernavne ovenpå';
+	@override String get focusGlow => 'Fokusglød';
+	@override String get focusGlowDescription => 'Vis en blød glød omkring det fokuserede kort';
 	@override String get hideSpoilers => 'Skjul spoilere for usete episoder';
 	@override String get hideSpoilersDescription => 'Slør miniaturebilleder og beskrivelser for usete episoder';
 	@override String get playerBackend => 'Afspillerbackend';
@@ -2039,6 +2041,8 @@ extension on TranslationsDa {
 			'settings.showSeasonPostersOnTabsDescription' => 'Vis hver sæsons plakat over dens fane',
 			'settings.tvFullCardLayout' => 'Fuldflade TV-kort',
 			'settings.tvFullCardLayoutDescription' => 'Brug TV-kort kun med billeder og skuespillernavne ovenpå',
+			'settings.focusGlow' => 'Fokusglød',
+			'settings.focusGlowDescription' => 'Vis en blød glød omkring det fokuserede kort',
 			'settings.hideSpoilers' => 'Skjul spoilere for usete episoder',
 			'settings.hideSpoilersDescription' => 'Slør miniaturebilleder og beskrivelser for usete episoder',
 			'settings.playerBackend' => 'Afspillerbackend',
@@ -2425,10 +2429,10 @@ extension on TranslationsDa {
 			'subtitlingStyling.text' => 'Tekst',
 			'subtitlingStyling.border' => 'Kant',
 			'subtitlingStyling.background' => 'Baggrund',
-			'subtitlingStyling.fontSize' => 'Skriftstørrelse',
-			'subtitlingStyling.textColor' => 'Tekstfarve',
 			_ => null,
 		} ?? switch (path) {
+			'subtitlingStyling.fontSize' => 'Skriftstørrelse',
+			'subtitlingStyling.textColor' => 'Tekstfarve',
 			'subtitlingStyling.borderSize' => 'Kantstørrelse',
 			'subtitlingStyling.borderColor' => 'Kantfarve',
 			'subtitlingStyling.backgroundOpacity' => 'Baggrundsgennemsigtighed',
@@ -2939,10 +2943,10 @@ extension on TranslationsDa {
 			'companionRemote.remote.tabMore' => 'Mere',
 			'companionRemote.remote.menu' => 'Menu',
 			'companionRemote.remote.tabNavigation' => 'Fanenavigation',
-			'companionRemote.remote.tabDiscover' => 'Opdag',
-			'companionRemote.remote.tabLibraries' => 'Biblioteker',
 			_ => null,
 		} ?? switch (path) {
+			'companionRemote.remote.tabDiscover' => 'Opdag',
+			'companionRemote.remote.tabLibraries' => 'Biblioteker',
 			'companionRemote.remote.tabSearch' => 'Søg',
 			'companionRemote.remote.tabDownloads' => 'Downloads',
 			'companionRemote.remote.tabSettings' => 'Indstillinger',

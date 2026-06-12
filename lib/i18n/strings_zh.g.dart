@@ -263,6 +263,8 @@ class _TranslationsSettingsZh extends TranslationsSettingsEn {
 	@override String get showSeasonPostersOnTabsDescription => '在每季标签上方显示该季海报';
 	@override String get tvFullCardLayout => '完整 TV 卡片';
 	@override String get tvFullCardLayoutDescription => '使用仅显示图片的 TV 卡片，并叠加演员姓名';
+	@override String get focusGlow => '焦点光晕';
+	@override String get focusGlowDescription => '在获得焦点的卡片周围显示柔和的光晕';
 	@override String get hideSpoilers => '隐藏未看剧集的剧透内容';
 	@override String get hideSpoilersDescription => '模糊未观看剧集的缩略图和描述';
 	@override String get playerBackend => '播放器引擎';
@@ -2039,6 +2041,8 @@ extension on TranslationsZh {
 			'settings.showSeasonPostersOnTabsDescription' => '在每季标签上方显示该季海报',
 			'settings.tvFullCardLayout' => '完整 TV 卡片',
 			'settings.tvFullCardLayoutDescription' => '使用仅显示图片的 TV 卡片，并叠加演员姓名',
+			'settings.focusGlow' => '焦点光晕',
+			'settings.focusGlowDescription' => '在获得焦点的卡片周围显示柔和的光晕',
 			'settings.hideSpoilers' => '隐藏未看剧集的剧透内容',
 			'settings.hideSpoilersDescription' => '模糊未观看剧集的缩略图和描述',
 			'settings.playerBackend' => '播放器引擎',
@@ -2425,10 +2429,10 @@ extension on TranslationsZh {
 			'subtitlingStyling.text' => '文本',
 			'subtitlingStyling.border' => '边框',
 			'subtitlingStyling.background' => '背景',
-			'subtitlingStyling.fontSize' => '字号',
-			'subtitlingStyling.textColor' => '文本颜色',
 			_ => null,
 		} ?? switch (path) {
+			'subtitlingStyling.fontSize' => '字号',
+			'subtitlingStyling.textColor' => '文本颜色',
 			'subtitlingStyling.borderSize' => '边框大小',
 			'subtitlingStyling.borderColor' => '边框颜色',
 			'subtitlingStyling.backgroundOpacity' => '背景不透明度',
@@ -2939,10 +2943,10 @@ extension on TranslationsZh {
 			'companionRemote.remote.tabMore' => '更多',
 			'companionRemote.remote.menu' => '菜单',
 			'companionRemote.remote.tabNavigation' => '标签导航',
-			'companionRemote.remote.tabDiscover' => '发现',
-			'companionRemote.remote.tabLibraries' => '媒体库',
 			_ => null,
 		} ?? switch (path) {
+			'companionRemote.remote.tabDiscover' => '发现',
+			'companionRemote.remote.tabLibraries' => '媒体库',
 			'companionRemote.remote.tabSearch' => '搜索',
 			'companionRemote.remote.tabDownloads' => '下载',
 			'companionRemote.remote.tabSettings' => '设置',

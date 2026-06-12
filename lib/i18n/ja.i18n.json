@@ -134,6 +134,8 @@
     "showSeasonPostersOnTabsDescription": "各シーズンのポスターをタブの上に表示します",
     "tvFullCardLayout": "フルTVカード",
     "tvFullCardLayoutDescription": "TVカードを画像のみで表示し、俳優名を重ねて表示します",
+    "focusGlow": "フォーカス時の光彩",
+    "focusGlowDescription": "フォーカス中のカードの周りに柔らかい光彩を表示します",
     "hideSpoilers": "未視聴エピソードのネタバレを非表示",
     "hideSpoilersDescription": "未視聴エピソードのサムネイルと説明をぼかします",
     "playerBackend": "プレーヤーバックエンド",

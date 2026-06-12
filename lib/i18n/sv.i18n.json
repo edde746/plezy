@@ -134,6 +134,8 @@
     "showSeasonPostersOnTabsDescription": "Visa varje säsongs affisch ovanför fliken",
     "tvFullCardLayout": "Heltäckande TV-kort",
     "tvFullCardLayoutDescription": "Använd TV-kort med enbart bild och skådespelarnamn ovanpå",
+    "focusGlow": "Fokusglöd",
+    "focusGlowDescription": "Visa en mjuk glöd runt kortet i fokus",
     "hideSpoilers": "Dölj spoilers för osedda avsnitt",
     "hideSpoilersDescription": "Sudda miniatyrbilder och beskrivningar för osedda avsnitt",
     "playerBackend": "Spelarmotor",

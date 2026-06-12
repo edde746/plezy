@@ -9,6 +9,7 @@ import 'package:uuid/uuid.dart';
 
 import '../../connection/connection.dart';
 import '../../exceptions/media_server_exceptions.dart';
+import '../../focus/card_focus_scope.dart';
 import '../../focus/focusable_button.dart';
 import '../../focus/focusable_text_field.dart';
 import '../../focus/focusable_wrapper.dart';
@@ -759,45 +760,49 @@ class _DiscoveredJellyfinServerTile extends StatelessWidget {
     return FocusableWrapper(
       focusNode: focusNode,
       disableScale: true,
-      borderRadius: 12,
-      useForegroundFocusDecoration: true,
+      // Border drawn by CardFocusBorder so it paints over the opaque Material.
+      delegateFocusBorder: true,
       descendantsAreFocusable: false,
       onSelect: onTap,
       onNavigateUp: onNavigateUp,
       onNavigateDown: onNavigateDown,
-      child: Material(
-        color: theme.colorScheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(12),
-        child: InkWell(
-          onTap: onTap,
+      child: CardFocusBorder(
+        borderRadius: 12,
+        strokeAlign: BorderSide.strokeAlignInside,
+        child: Material(
+          color: theme.colorScheme.surfaceContainerHighest,
           borderRadius: BorderRadius.circular(12),
-          child: Padding(
-            padding: const EdgeInsets.all(12),
-            child: Row(
-              children: [
-                const AppIcon(Symbols.dns_rounded, fill: 1),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: .start,
-                    mainAxisSize: .min,
-                    children: [
-                      Text(server.name, style: theme.textTheme.titleSmall),
-                      const SizedBox(height: 2),
-                      Text(
-                        server.address,
-                        maxLines: 1,
-                        overflow: .ellipsis,
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+          child: InkWell(
+            onTap: onTap,
+            borderRadius: BorderRadius.circular(12),
+            child: Padding(
+              padding: const EdgeInsets.all(12),
+              child: Row(
+                children: [
+                  const AppIcon(Symbols.dns_rounded, fill: 1),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: .start,
+                      mainAxisSize: .min,
+                      children: [
+                        Text(server.name, style: theme.textTheme.titleSmall),
+                        const SizedBox(height: 2),
+                        Text(
+                          server.address,
+                          maxLines: 1,
+                          overflow: .ellipsis,
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
-                ),
-                const SizedBox(width: 12),
-                const AppIcon(Symbols.chevron_right_rounded, fill: 1),
-              ],
+                  const SizedBox(width: 12),
+                  const AppIcon(Symbols.chevron_right_rounded, fill: 1),
+                ],
+              ),
             ),
           ),
         ),

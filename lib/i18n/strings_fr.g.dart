@@ -263,6 +263,8 @@ class _TranslationsSettingsFr extends TranslationsSettingsEn {
 	@override String get showSeasonPostersOnTabsDescription => 'Afficher l\'affiche de chaque saison au-dessus de son onglet';
 	@override String get tvFullCardLayout => 'Cartes TV pleines';
 	@override String get tvFullCardLayoutDescription => 'Utiliser des cartes TV avec image seule et noms des acteurs superposés';
+	@override String get focusGlow => 'Halo de sélection';
+	@override String get focusGlowDescription => 'Afficher un léger halo autour de la carte sélectionnée';
 	@override String get hideSpoilers => 'Masquer les spoilers des épisodes non vus';
 	@override String get hideSpoilersDescription => 'Flouter les miniatures et descriptions des épisodes non vus';
 	@override String get playerBackend => 'Moteur de lecture';
@@ -2039,6 +2041,8 @@ extension on TranslationsFr {
 			'settings.showSeasonPostersOnTabsDescription' => 'Afficher l\'affiche de chaque saison au-dessus de son onglet',
 			'settings.tvFullCardLayout' => 'Cartes TV pleines',
 			'settings.tvFullCardLayoutDescription' => 'Utiliser des cartes TV avec image seule et noms des acteurs superposés',
+			'settings.focusGlow' => 'Halo de sélection',
+			'settings.focusGlowDescription' => 'Afficher un léger halo autour de la carte sélectionnée',
 			'settings.hideSpoilers' => 'Masquer les spoilers des épisodes non vus',
 			'settings.hideSpoilersDescription' => 'Flouter les miniatures et descriptions des épisodes non vus',
 			'settings.playerBackend' => 'Moteur de lecture',
@@ -2425,10 +2429,10 @@ extension on TranslationsFr {
 			'subtitlingStyling.text' => 'Texte',
 			'subtitlingStyling.border' => 'Bordure',
 			'subtitlingStyling.background' => 'Arrière-plan',
-			'subtitlingStyling.fontSize' => 'Taille de la police',
-			'subtitlingStyling.textColor' => 'Couleur du texte',
 			_ => null,
 		} ?? switch (path) {
+			'subtitlingStyling.fontSize' => 'Taille de la police',
+			'subtitlingStyling.textColor' => 'Couleur du texte',
 			'subtitlingStyling.borderSize' => 'Taille de la bordure',
 			'subtitlingStyling.borderColor' => 'Couleur de la bordure',
 			'subtitlingStyling.backgroundOpacity' => 'Opacité d\'arrière-plan',
@@ -2939,10 +2943,10 @@ extension on TranslationsFr {
 			'companionRemote.remote.tabMore' => 'Plus',
 			'companionRemote.remote.menu' => 'Menu',
 			'companionRemote.remote.tabNavigation' => 'Navigation par onglets',
-			'companionRemote.remote.tabDiscover' => 'Découvrir',
-			'companionRemote.remote.tabLibraries' => 'Bibliothèques',
 			_ => null,
 		} ?? switch (path) {
+			'companionRemote.remote.tabDiscover' => 'Découvrir',
+			'companionRemote.remote.tabLibraries' => 'Bibliothèques',
 			'companionRemote.remote.tabSearch' => 'Rechercher',
 			'companionRemote.remote.tabDownloads' => 'Téléchargements',
 			'companionRemote.remote.tabSettings' => 'Paramètres',

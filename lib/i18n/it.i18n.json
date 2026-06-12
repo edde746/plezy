@@ -134,6 +134,8 @@
     "showSeasonPostersOnTabsDescription": "Mostra il poster di ogni stagione sopra la sua scheda",
     "tvFullCardLayout": "Schede TV piene",
     "tvFullCardLayoutDescription": "Usa schede TV solo immagine con i nomi degli attori sovrapposti",
+    "focusGlow": "Bagliore di selezione",
+    "focusGlowDescription": "Mostra un leggero bagliore attorno alla scheda selezionata",
     "hideSpoilers": "Nascondi spoiler per episodi non visti",
     "hideSpoilersDescription": "Sfoca miniature e descrizioni degli episodi non visti",
     "playerBackend": "Motore di riproduzione",

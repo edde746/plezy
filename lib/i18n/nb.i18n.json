@@ -134,6 +134,8 @@
     "showSeasonPostersOnTabsDescription": "Vis hver sesongs plakat over fanen",
     "tvFullCardLayout": "Fulle TV-kort",
     "tvFullCardLayoutDescription": "Bruk bildebaserte TV-kort med skuespillernavn lagt over",
+    "focusGlow": "Fokusglød",
+    "focusGlowDescription": "Vis en myk glød rundt kortet i fokus",
     "hideSpoilers": "Skjul spoilere for usette episoder",
     "hideSpoilersDescription": "Slør miniatyrbilder og beskrivelser for usette episoder",
     "playerBackend": "Spillermotor",

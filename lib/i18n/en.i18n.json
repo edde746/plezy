@@ -134,6 +134,8 @@
     "showSeasonPostersOnTabsDescription": "Show each season's poster above its tab",
     "tvFullCardLayout": "Full TV Cards",
     "tvFullCardLayoutDescription": "Use image-only TV cards with actor names overlaid",
+    "focusGlow": "Focus Glow",
+    "focusGlowDescription": "Draw a soft glow around the focused card",
     "visualEffects": "Visual Effects",
     "visualEffectsAuto": "Auto",
     "visualEffectsAutoDescription": "Reduce effects automatically on low-power devices",

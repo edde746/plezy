@@ -21,6 +21,7 @@ import '../focus/focusable_action_bar.dart';
 import '../focus/focusable_wrapper.dart';
 import '../focus/key_event_utils.dart';
 import '../focus/input_mode_tracker.dart';
+import '../focus/card_focus_scope.dart';
 import '../widgets/focus_builders.dart';
 import '../media/media_hub.dart';
 import '../utils/provider_extensions.dart';
@@ -4177,6 +4178,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
                       isFocused: isFocused,
                       borderRadius: tokens(context).radiusSm,
                       onTap: () => _navigateToActorMedia(actor),
+                      delegateFocusBorder: true,
                       child: Padding(
                         padding: const EdgeInsets.all(innerPadding),
                         child: SizedBox(
@@ -4184,16 +4186,19 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
                           child: Column(
                             crossAxisAlignment: .start,
                             children: [
-                              ClipRRect(
-                                borderRadius: BorderRadius.circular(tokens(context).radiusSm),
-                                child: OptimizedMediaImage(
-                                  client: getServerBoundMediaClient(context),
-                                  imagePath: actor.thumbPath,
-                                  width: imageSize,
-                                  height: imageSize,
-                                  fit: BoxFit.cover,
-                                  imageType: ImageType.avatar,
-                                  fallbackIcon: Symbols.person_rounded,
+                              CardFocusBorder(
+                                borderRadius: tokens(context).radiusSm,
+                                child: ClipRRect(
+                                  borderRadius: BorderRadius.circular(tokens(context).radiusSm),
+                                  child: OptimizedMediaImage(
+                                    client: getServerBoundMediaClient(context),
+                                    imagePath: actor.thumbPath,
+                                    width: imageSize,
+                                    height: imageSize,
+                                    fit: BoxFit.cover,
+                                    imageType: ImageType.avatar,
+                                    fallbackIcon: Symbols.person_rounded,
+                                  ),
                                 ),
                               ),
                               const SizedBox(height: 8),
@@ -4266,6 +4271,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
                       context: context,
                       isFocused: isFocused,
                       onTap: () => navigateToVideoPlayer(context, metadata: extra),
+                      delegateFocusBorder: true,
                       child: MediaCard(
                         key: cardKey,
                         item: extra,

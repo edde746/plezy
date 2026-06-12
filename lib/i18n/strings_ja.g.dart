@@ -263,6 +263,8 @@ class _TranslationsSettingsJa extends TranslationsSettingsEn {
 	@override String get showSeasonPostersOnTabsDescription => '各シーズンのポスターをタブの上に表示します';
 	@override String get tvFullCardLayout => 'フルTVカード';
 	@override String get tvFullCardLayoutDescription => 'TVカードを画像のみで表示し、俳優名を重ねて表示します';
+	@override String get focusGlow => 'フォーカス時の光彩';
+	@override String get focusGlowDescription => 'フォーカス中のカードの周りに柔らかい光彩を表示します';
 	@override String get hideSpoilers => '未視聴エピソードのネタバレを非表示';
 	@override String get hideSpoilersDescription => '未視聴エピソードのサムネイルと説明をぼかします';
 	@override String get playerBackend => 'プレーヤーバックエンド';
@@ -2039,6 +2041,8 @@ extension on TranslationsJa {
 			'settings.showSeasonPostersOnTabsDescription' => '各シーズンのポスターをタブの上に表示します',
 			'settings.tvFullCardLayout' => 'フルTVカード',
 			'settings.tvFullCardLayoutDescription' => 'TVカードを画像のみで表示し、俳優名を重ねて表示します',
+			'settings.focusGlow' => 'フォーカス時の光彩',
+			'settings.focusGlowDescription' => 'フォーカス中のカードの周りに柔らかい光彩を表示します',
 			'settings.hideSpoilers' => '未視聴エピソードのネタバレを非表示',
 			'settings.hideSpoilersDescription' => '未視聴エピソードのサムネイルと説明をぼかします',
 			'settings.playerBackend' => 'プレーヤーバックエンド',
@@ -2425,10 +2429,10 @@ extension on TranslationsJa {
 			'subtitlingStyling.text' => 'テキスト',
 			'subtitlingStyling.border' => '枠線',
 			'subtitlingStyling.background' => '背景',
-			'subtitlingStyling.fontSize' => 'フォントサイズ',
-			'subtitlingStyling.textColor' => 'テキストの色',
 			_ => null,
 		} ?? switch (path) {
+			'subtitlingStyling.fontSize' => 'フォントサイズ',
+			'subtitlingStyling.textColor' => 'テキストの色',
 			'subtitlingStyling.borderSize' => '枠線サイズ',
 			'subtitlingStyling.borderColor' => '枠線の色',
 			'subtitlingStyling.backgroundOpacity' => '背景の不透明度',
@@ -2939,10 +2943,10 @@ extension on TranslationsJa {
 			'companionRemote.remote.tabMore' => 'その他',
 			'companionRemote.remote.menu' => 'メニュー',
 			'companionRemote.remote.tabNavigation' => 'タブナビゲーション',
-			'companionRemote.remote.tabDiscover' => '探す',
-			'companionRemote.remote.tabLibraries' => 'ライブラリ',
 			_ => null,
 		} ?? switch (path) {
+			'companionRemote.remote.tabDiscover' => '探す',
+			'companionRemote.remote.tabLibraries' => 'ライブラリ',
 			'companionRemote.remote.tabSearch' => '検索',
 			'companionRemote.remote.tabDownloads' => 'ダウンロード',
 			'companionRemote.remote.tabSettings' => '設定',

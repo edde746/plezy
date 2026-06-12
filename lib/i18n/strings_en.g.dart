@@ -513,6 +513,12 @@ class TranslationsSettingsEn {
 	/// en: 'Use image-only TV cards with actor names overlaid'
 	String get tvFullCardLayoutDescription => 'Use image-only TV cards with actor names overlaid';
 
+	/// en: 'Focus Glow'
+	String get focusGlow => 'Focus Glow';
+
+	/// en: 'Draw a soft glow around the focused card'
+	String get focusGlowDescription => 'Draw a soft glow around the focused card';
+
 	/// en: 'Visual Effects'
 	String get visualEffects => 'Visual Effects';
 
@@ -4604,6 +4610,8 @@ extension on Translations {
 			'settings.showSeasonPostersOnTabsDescription' => 'Show each season\'s poster above its tab',
 			'settings.tvFullCardLayout' => 'Full TV Cards',
 			'settings.tvFullCardLayoutDescription' => 'Use image-only TV cards with actor names overlaid',
+			'settings.focusGlow' => 'Focus Glow',
+			'settings.focusGlowDescription' => 'Draw a soft glow around the focused card',
 			'settings.visualEffects' => 'Visual Effects',
 			'settings.visualEffectsAuto' => 'Auto',
 			'settings.visualEffectsAutoDescription' => 'Reduce effects automatically on low-power devices',
@@ -4990,10 +4998,10 @@ extension on Translations {
 			'messages.switchingToCompatiblePlayer' => 'Switching to compatible player...',
 			'messages.serverLimitTitle' => 'Playback failed',
 			'messages.serverLimitBody' => 'Server error (HTTP 500). A bandwidth/transcoding limit likely rejected this session. Ask the owner to adjust it.',
-			'messages.logsUploaded' => 'Logs uploaded',
-			'messages.logsUploadFailed' => 'Failed to upload logs',
 			_ => null,
 		} ?? switch (path) {
+			'messages.logsUploaded' => 'Logs uploaded',
+			'messages.logsUploadFailed' => 'Failed to upload logs',
 			'messages.logId' => 'Log ID',
 			'subtitlingStyling.text' => 'Text',
 			'subtitlingStyling.border' => 'Border',
@@ -5504,10 +5512,10 @@ extension on Translations {
 			'companionRemote.pairing.sessionNotFound' => 'Device not found. Make sure Plezy is running on the host.',
 			'companionRemote.pairing.authFailed' => 'Authentication failed. Both devices need the same Plex account.',
 			'companionRemote.pairing.failedToConnect' => ({required Object error}) => 'Failed to connect: ${error}',
-			'companionRemote.remote.disconnectConfirm' => 'Do you want to disconnect from the remote session?',
-			'companionRemote.remote.reconnecting' => 'Reconnecting...',
 			_ => null,
 		} ?? switch (path) {
+			'companionRemote.remote.disconnectConfirm' => 'Do you want to disconnect from the remote session?',
+			'companionRemote.remote.reconnecting' => 'Reconnecting...',
 			'companionRemote.remote.attemptOf' => ({required Object current}) => 'Attempt ${current} of 5',
 			'companionRemote.remote.retryNow' => 'Retry Now',
 			'companionRemote.remote.tabRemote' => 'Remote',

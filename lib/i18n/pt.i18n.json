@@ -134,6 +134,8 @@
     "showSeasonPostersOnTabsDescription": "Mostrar o pôster de cada temporada acima da aba",
     "tvFullCardLayout": "Cartões TV completos",
     "tvFullCardLayoutDescription": "Usar cartões de TV só com imagem e nomes dos atores sobrepostos",
+    "focusGlow": "Brilho de foco",
+    "focusGlowDescription": "Mostrar um brilho suave à volta do cartão em foco",
     "hideSpoilers": "Ocultar Spoilers de Episódios Não Assistidos",
     "hideSpoilersDescription": "Desfocar miniaturas e descrições de episódios não vistos",
     "playerBackend": "Backend do Player",

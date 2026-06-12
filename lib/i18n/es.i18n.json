@@ -134,6 +134,8 @@
     "showSeasonPostersOnTabsDescription": "Mostrar el póster de cada temporada sobre su pestaña",
     "tvFullCardLayout": "Tarjetas TV completas",
     "tvFullCardLayoutDescription": "Usar tarjetas TV solo con imagen y nombres de actores superpuestos",
+    "focusGlow": "Brillo de foco",
+    "focusGlowDescription": "Mostrar un brillo suave alrededor de la tarjeta con foco",
     "hideSpoilers": "Ocultar spoilers de episodios no vistos",
     "hideSpoilersDescription": "Desenfocar miniaturas y descripciones de episodios no vistos",
     "playerBackend": "Reproductor",

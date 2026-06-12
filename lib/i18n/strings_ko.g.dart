@@ -263,6 +263,8 @@ class _TranslationsSettingsKo extends TranslationsSettingsEn {
 	@override String get showSeasonPostersOnTabsDescription => '각 시즌 포스터를 탭 위에 표시';
 	@override String get tvFullCardLayout => '전체 TV 카드';
 	@override String get tvFullCardLayoutDescription => 'TV 카드에 이미지만 표시하고 배우 이름을 오버레이로 표시';
+	@override String get focusGlow => '포커스 글로우';
+	@override String get focusGlowDescription => '포커스된 카드 주위에 은은한 빛 효과를 표시';
 	@override String get hideSpoilers => '미시청 에피소드 스포일러 숨기기';
 	@override String get hideSpoilersDescription => '시청하지 않은 에피소드의 썸네일과 설명을 흐리게 처리';
 	@override String get playerBackend => '플레이어 백엔드';
@@ -2039,6 +2041,8 @@ extension on TranslationsKo {
 			'settings.showSeasonPostersOnTabsDescription' => '각 시즌 포스터를 탭 위에 표시',
 			'settings.tvFullCardLayout' => '전체 TV 카드',
 			'settings.tvFullCardLayoutDescription' => 'TV 카드에 이미지만 표시하고 배우 이름을 오버레이로 표시',
+			'settings.focusGlow' => '포커스 글로우',
+			'settings.focusGlowDescription' => '포커스된 카드 주위에 은은한 빛 효과를 표시',
 			'settings.hideSpoilers' => '미시청 에피소드 스포일러 숨기기',
 			'settings.hideSpoilersDescription' => '시청하지 않은 에피소드의 썸네일과 설명을 흐리게 처리',
 			'settings.playerBackend' => '플레이어 백엔드',
@@ -2425,10 +2429,10 @@ extension on TranslationsKo {
 			'subtitlingStyling.text' => '텍스트',
 			'subtitlingStyling.border' => '테두리',
 			'subtitlingStyling.background' => '배경',
-			'subtitlingStyling.fontSize' => '글자 크기',
-			'subtitlingStyling.textColor' => '텍스트 색상',
 			_ => null,
 		} ?? switch (path) {
+			'subtitlingStyling.fontSize' => '글자 크기',
+			'subtitlingStyling.textColor' => '텍스트 색상',
 			'subtitlingStyling.borderSize' => '테두리 크기',
 			'subtitlingStyling.borderColor' => '테두리 색상',
 			'subtitlingStyling.backgroundOpacity' => '배경 불투명도',
@@ -2939,10 +2943,10 @@ extension on TranslationsKo {
 			'companionRemote.remote.tabMore' => '더 보기',
 			'companionRemote.remote.menu' => '메뉴',
 			'companionRemote.remote.tabNavigation' => '탭 탐색',
-			'companionRemote.remote.tabDiscover' => '발견',
-			'companionRemote.remote.tabLibraries' => '미디어 라이브러리',
 			_ => null,
 		} ?? switch (path) {
+			'companionRemote.remote.tabDiscover' => '발견',
+			'companionRemote.remote.tabLibraries' => '미디어 라이브러리',
 			'companionRemote.remote.tabSearch' => '검색',
 			'companionRemote.remote.tabDownloads' => '다운로드',
 			'companionRemote.remote.tabSettings' => '설정',

@@ -263,6 +263,8 @@ class _TranslationsSettingsBg extends TranslationsSettingsEn {
 	@override String get showSeasonPostersOnTabsDescription => 'Показвай постера на всеки сезон над неговия таб';
 	@override String get tvFullCardLayout => 'Пълни TV карти';
 	@override String get tvFullCardLayoutDescription => 'Използвай TV карти само с изображения, с насложени имена на актьорите';
+	@override String get focusGlow => 'Сияние при фокус';
+	@override String get focusGlowDescription => 'Показвай меко сияние около фокусираната карта';
 	@override String get hideSpoilers => 'Скривай спойлери за негледани епизоди';
 	@override String get hideSpoilersDescription => 'Замазвай миниатюри и описания за негледани епизоди';
 	@override String get playerBackend => 'Енджин на плеъра';
@@ -2039,6 +2041,8 @@ extension on TranslationsBg {
 			'settings.showSeasonPostersOnTabsDescription' => 'Показвай постера на всеки сезон над неговия таб',
 			'settings.tvFullCardLayout' => 'Пълни TV карти',
 			'settings.tvFullCardLayoutDescription' => 'Използвай TV карти само с изображения, с насложени имена на актьорите',
+			'settings.focusGlow' => 'Сияние при фокус',
+			'settings.focusGlowDescription' => 'Показвай меко сияние около фокусираната карта',
 			'settings.hideSpoilers' => 'Скривай спойлери за негледани епизоди',
 			'settings.hideSpoilersDescription' => 'Замазвай миниатюри и описания за негледани епизоди',
 			'settings.playerBackend' => 'Енджин на плеъра',
@@ -2425,10 +2429,10 @@ extension on TranslationsBg {
 			'subtitlingStyling.text' => 'Текст',
 			'subtitlingStyling.border' => 'Рамка',
 			'subtitlingStyling.background' => 'Фон',
-			'subtitlingStyling.fontSize' => 'Размер на шрифта',
-			'subtitlingStyling.textColor' => 'Цвят на текста',
 			_ => null,
 		} ?? switch (path) {
+			'subtitlingStyling.fontSize' => 'Размер на шрифта',
+			'subtitlingStyling.textColor' => 'Цвят на текста',
 			'subtitlingStyling.borderSize' => 'Размер на рамката',
 			'subtitlingStyling.borderColor' => 'Цвят на рамката',
 			'subtitlingStyling.backgroundOpacity' => 'Прозрачност на фона',
@@ -2939,10 +2943,10 @@ extension on TranslationsBg {
 			'companionRemote.remote.tabMore' => 'Още',
 			'companionRemote.remote.menu' => 'Меню',
 			'companionRemote.remote.tabNavigation' => 'Навигация с Tab',
-			'companionRemote.remote.tabDiscover' => 'Открий',
-			'companionRemote.remote.tabLibraries' => 'Библиотеки',
 			_ => null,
 		} ?? switch (path) {
+			'companionRemote.remote.tabDiscover' => 'Открий',
+			'companionRemote.remote.tabLibraries' => 'Библиотеки',
 			'companionRemote.remote.tabSearch' => 'Търсене',
 			'companionRemote.remote.tabDownloads' => 'Изтегляния',
 			'companionRemote.remote.tabSettings' => 'Настройки',
