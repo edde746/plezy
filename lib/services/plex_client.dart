@@ -22,6 +22,7 @@ import '../media/server_capabilities.dart';
 import '../utils/external_ids.dart';
 import 'bif_thumbnail_service.dart';
 import 'download_artwork_helpers.dart';
+import 'settings_service.dart';
 import 'library_query_translator.dart';
 import 'scrub_preview_source.dart';
 import '../utils/media_server_http_client.dart';
@@ -1757,6 +1758,15 @@ class PlexClient
     try {
       final response = await _getWithFailover('/:/prefs');
       _serverPrefs = _parseSettingsMap(response);
+      // Mirror the watched threshold to settings: offline paths resolve it
+      // synchronously with no client bound — see
+      // OfflineWatchSyncService.getWatchedThreshold.
+      unawaited(
+        SettingsService.instanceOrNull?.write(
+          SettingsService.watchedThresholdPref(ServerId(serverId)),
+          watchedThresholdPercent,
+        ),
+      );
     } catch (e) {
       appLogger.d('Failed to fetch server prefs: $e');
     }

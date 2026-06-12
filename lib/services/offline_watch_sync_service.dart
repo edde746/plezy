@@ -52,18 +52,20 @@ class OfflineWatchSyncService extends ChangeNotifier {
   /// Get watched threshold for a server. Cascades:
   /// 1. Plex's fetched server prefs (`/:/prefs`)
   /// 2. Jellyfin's fixed [MediaServerClient.watchedThreshold] (0.9)
-  /// 3. Cached value in SettingsService
+  /// 3. Cached value in SettingsService (mirrored by PlexClient.fetchServerPrefs)
   /// 4. Default 90%
   double getWatchedThreshold(ServerId serverId) {
     final client = _serverManager.getClient(serverId);
     if (client is PlexClient && client.serverPrefs.isNotEmpty) {
-      return client.watchedThresholdPercent / 100.0;
+      return client.watchedThreshold;
     }
     if (client != null && client.backend != MediaBackend.plex) {
       // Jellyfin (and any future neutral backend) — the client exposes a
       // fixed threshold that mirrors the wire-protocol behaviour.
       return client.watchedThreshold;
     }
+    // No client bound (offline) or Plex prefs not loaded yet — use the
+    // mirror written on the last successful prefs fetch.
     final cached = SettingsService.instanceOrNull?.read(SettingsService.watchedThresholdPref(serverId)) ?? 90;
     return cached / 100.0;
   }
