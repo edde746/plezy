@@ -138,7 +138,7 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
         playbackContext = await playbackResolver.resolve(
           metadata: _currentMetadata,
           selectedMediaIndex: _effectiveSelectedMediaIndex,
-          selectedMediaSourceId: _selectedMediaSourceId,
+          selectedMediaSourceId: _requestedMediaSourceId,
           offlineLibraryMode: true,
           qualityPreset: _selectedQualityPreset,
           selectedAudioStreamId: _selectedAudioStreamId,
@@ -174,7 +174,7 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
         PlaybackSession.fromContext(
           playbackContext,
           requestedQualityPreset: _selectedQualityPreset,
-          requestedMediaSourceId: _selectedMediaSourceId,
+          requestedMediaSourceId: _requestedMediaSourceId,
         ),
       );
 

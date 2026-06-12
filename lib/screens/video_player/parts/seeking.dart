@@ -65,7 +65,7 @@ extension _VideoPlayerSeekingMethods on VideoPlayerScreenState {
       final playbackContext = await playbackResolver.resolve(
         metadata: replacementMetadata,
         selectedMediaIndex: _effectiveSelectedMediaIndex,
-        selectedMediaSourceId: _selectedMediaSourceId,
+        selectedMediaSourceId: _requestedMediaSourceId,
         offlineLibraryMode: false,
         qualityPreset: _selectedQualityPreset,
         selectedAudioStreamId: _selectedAudioStreamId,
@@ -84,7 +84,7 @@ extension _VideoPlayerSeekingMethods on VideoPlayerScreenState {
       final session = PlaybackSession.fromContext(
         playbackContext,
         requestedQualityPreset: _selectedQualityPreset,
-        requestedMediaSourceId: _selectedMediaSourceId,
+        requestedMediaSourceId: _requestedMediaSourceId,
       );
 
       final attachesSubsAtOpen = currentPlayer.attachesExternalSubtitlesAtOpen;

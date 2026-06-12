@@ -136,12 +136,12 @@ extension _VideoPlayerEpisodeNavigationMethods on VideoPlayerScreenState {
     final currentSubtitleStreamId = _selectedSourceSubtitleStreamIdForControls(_sourceSubtitleTracksForControls());
     final effectiveSubtitleStreamId = newSubtitleStreamId ?? currentSubtitleStreamId;
     final effectiveMediaSourceId = newMediaIndex != null
-        ? PlaybackSession.mediaSourceIdForIndex(_availableVersions, effectiveMediaIndex) ?? _selectedMediaSourceId
-        : _selectedMediaSourceId;
+        ? PlaybackSession.mediaSourceIdForIndex(_availableVersions, effectiveMediaIndex) ?? _requestedMediaSourceId
+        : _requestedMediaSourceId;
 
     final isVersionChange =
         effectiveMediaIndex != _effectiveSelectedMediaIndex ||
-        (_selectedMediaSourceId != null && effectiveMediaSourceId != _selectedMediaSourceId);
+        (_requestedMediaSourceId != null && effectiveMediaSourceId != _requestedMediaSourceId);
     final isPresetChange = effectivePreset != _selectedQualityPreset;
     final isAudioChange = effectiveAudioStreamId != _selectedAudioStreamId;
     final isSubtitleChange = newSubtitleStreamId != null && effectiveSubtitleStreamId != currentSubtitleStreamId;

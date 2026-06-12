@@ -270,7 +270,12 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   bool _showPlayNextDialog = false;
   bool _isPhone = false;
   late int _effectiveSelectedMediaIndex;
-  String? _selectedMediaSourceId;
+
+  /// Media source id to request on the next resolve: the caller's initial
+  /// selection, then re-synced to the session's post-fallback effective id
+  /// by [_commitPlaybackSession]. Post-resolve consumers must read
+  /// `_playbackSession.mediaSourceId`, never this field.
+  String? _requestedMediaSourceId;
   bool get _offlineLibraryMode => widget.isOffline;
 
   // Transcode / quality state
@@ -454,7 +459,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   void _commitPlaybackSession(PlaybackSession session) {
     _playbackSession = session;
     _effectiveSelectedMediaIndex = session.mediaIndex;
-    _selectedMediaSourceId = session.mediaSourceId;
+    _requestedMediaSourceId = session.mediaSourceId;
     _selectedQualityPreset = session.qualityPreset;
     _selectedAudioStreamId = session.audioStreamId;
   }
@@ -490,7 +495,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     _activeId = widget.metadata.id;
     _activeMediaIndex = widget.selectedMediaIndex;
     _effectiveSelectedMediaIndex = widget.selectedMediaIndex;
-    _selectedMediaSourceId = widget.selectedMediaSourceId;
+    _requestedMediaSourceId = widget.selectedMediaSourceId;
 
     // Reused across in-place quality/version/audio switches so the
     // server-side transcode session is preserved.
@@ -683,7 +688,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
         _playbackDataFuture = playbackResolver.resolve(
           metadata: _currentMetadata,
           selectedMediaIndex: _effectiveSelectedMediaIndex,
-          selectedMediaSourceId: _selectedMediaSourceId,
+          selectedMediaSourceId: _requestedMediaSourceId,
           offlineLibraryMode: false,
           qualityPreset: _selectedQualityPreset,
           selectedAudioStreamId: _selectedAudioStreamId,
