@@ -48,6 +48,7 @@ import 'providers/multi_server_provider.dart';
 import 'providers/theme_provider.dart';
 import 'providers/hidden_libraries_provider.dart';
 import 'providers/libraries_provider.dart';
+import 'providers/discover_provider.dart';
 import 'providers/playback_state_provider.dart';
 import 'providers/download_provider.dart';
 import 'providers/offline_mode_provider.dart';
@@ -917,6 +918,17 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
                     // missing from the sidebar until a re-switch or restart.
                     context.read<MultiServerProvider>().onOnlineServersChanged = provider.syncToOnlineServers;
                     return provider;
+                  },
+                ),
+                ChangeNotifierProvider(
+                  create: (context) {
+                    final activeProfile = context.read<ActiveProfileProvider>();
+                    return DiscoverProvider(
+                      context.read<MultiServerProvider>(),
+                      context.read<HiddenLibrariesProvider>(),
+                      context.read<LibrariesProvider>(),
+                      isProfileBinding: () => activeProfile.isBinding,
+                    );
                   },
                 ),
                 ChangeNotifierProvider(create: (context) => PlaybackStateProvider()),

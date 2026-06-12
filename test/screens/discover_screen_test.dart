@@ -23,6 +23,7 @@ import 'package:plezy/profiles/profile_connection.dart';
 import 'package:plezy/profiles/profile_connection_registry.dart';
 import 'package:plezy/profiles/profile_registry.dart';
 import 'package:plezy/providers/companion_remote_provider.dart';
+import 'package:plezy/providers/discover_provider.dart';
 import 'package:plezy/providers/hidden_libraries_provider.dart';
 import 'package:plezy/providers/libraries_provider.dart';
 import 'package:plezy/providers/multi_server_provider.dart';
@@ -101,12 +102,19 @@ void main() {
       connections: connectionRegistry,
       storage: storage,
     );
+    final discoverProvider = DiscoverProvider(
+      multiServerProvider,
+      hiddenLibrariesProvider,
+      librariesProvider,
+      isProfileBinding: () => activeProfileProvider.isBinding,
+    );
     final discoverKey = GlobalKey<State<DiscoverScreen>>();
     const targetSidebarOffset = SideNavigationRailState.expandedWidth;
     const currentForegroundLeft = 120.0;
     const foregroundWidth = 1280 - SideNavigationRailState.tvCollapsedWidth;
 
     addTearDown(() async {
+      discoverProvider.dispose();
       activeProfileProvider.dispose();
       companionRemoteProvider.dispose();
       watchTogetherProvider.dispose();
@@ -127,6 +135,7 @@ void main() {
             ChangeNotifierProvider<WatchTogetherProvider>.value(value: watchTogetherProvider),
             ChangeNotifierProvider<CompanionRemoteProvider>.value(value: companionRemoteProvider),
             ChangeNotifierProvider<ActiveProfileProvider>.value(value: activeProfileProvider),
+            ChangeNotifierProvider<DiscoverProvider>.value(value: discoverProvider),
           ],
           child: MaterialApp(
             theme: monoTheme(dark: true),
