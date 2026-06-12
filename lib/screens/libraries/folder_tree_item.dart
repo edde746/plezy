@@ -18,10 +18,9 @@ import '../../utils/formatters.dart';
 import '../../utils/provider_extensions.dart';
 import '../../widgets/app_menu.dart';
 import '../../widgets/media_context_menu.dart';
-import '../../widgets/media_progress_bar.dart';
 import '../../widgets/optimized_media_image.dart';
 import '../../widgets/overlay_sheet.dart';
-import '../../widgets/unwatched_count_badge.dart';
+import '../../widgets/watched_indicator.dart';
 import '../../theme/mono_tokens.dart';
 import '../../i18n/strings.g.dart';
 import '../../widgets/loading_indicator_box.dart';
@@ -379,63 +378,11 @@ class _FolderTreeItemState extends State<FolderTreeItem> with ContextMenuTapMixi
   }
 
   Widget _buildWatchOverlay(BuildContext context, bool showUnwatchedCount) {
-    // Shadows the field with the session-fresh view; everything below reads it.
-    final item = _effectiveItem(context);
-    final hasActiveProgress = item.hasActiveProgress;
-    final unwatchedCount = item.unwatchedCount;
-
-    return Stack(
-      children: [
-        // Watched checkmark
-        if (item.isWatched && !hasActiveProgress)
-          Positioned(
-            top: 3,
-            right: 3,
-            child: Container(
-              padding: const EdgeInsets.all(2),
-              decoration: BoxDecoration(
-                color: tokens(context).text,
-                shape: BoxShape.circle,
-                boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.3), blurRadius: 4)],
-              ),
-              child: AppIcon(Symbols.check_rounded, fill: 1, color: tokens(context).bg, size: 12),
-            ),
-          ),
-        // Unwatched count for shows/seasons
-        if (showUnwatchedCount &&
-            !item.isWatched &&
-            (item.kind == MediaKind.show || item.kind == MediaKind.season) &&
-            unwatchedCount != null &&
-            unwatchedCount > 0)
-          Positioned(top: 3, right: 3, child: UnwatchedCountBadge(count: unwatchedCount, size: 20, fontSize: 10)),
-        // Progress bar
-        if (hasActiveProgress)
-          Positioned(
-            bottom: 0,
-            left: 0,
-            right: 0,
-            child: ClipRRect(
-              borderRadius: const BorderRadius.only(bottomLeft: Radius.circular(6), bottomRight: Radius.circular(6)),
-              child: MediaProgressBar(viewOffset: item.viewOffsetMs!, duration: item.durationMs!),
-            ),
-          ),
-        // Season progress
-        if (item.isSeason && item.isPartiallyWatched)
-          Positioned(
-            bottom: 0,
-            left: 0,
-            right: 0,
-            child: ClipRRect(
-              borderRadius: const BorderRadius.only(bottomLeft: Radius.circular(6), bottomRight: Radius.circular(6)),
-              child: LinearProgressIndicator(
-                value: item.viewedLeafCount! / item.leafCount!,
-                backgroundColor: tokens(context).outline,
-                valueColor: AlwaysStoppedAnimation<Color>(Theme.of(context).colorScheme.primary),
-                minHeight: 3,
-              ),
-            ),
-          ),
-      ],
+    return WatchedIndicator(
+      // Session-fresh view of the item so the overlay reflects live patches.
+      item: _effectiveItem(context),
+      size: WatchedIndicatorSize.compact,
+      showUnwatchedCount: showUnwatchedCount,
     );
   }
 

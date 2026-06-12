@@ -17,6 +17,7 @@ import '../media/media_item.dart';
 import '../media/media_item_types.dart';
 import '../widgets/collapsible_text.dart';
 import '../widgets/download_status_icon.dart';
+import '../widgets/watched_indicator.dart';
 import '../widgets/optimized_media_image.dart';
 import '../utils/platform_detector.dart';
 import '../utils/formatters.dart';
@@ -126,13 +127,6 @@ class _EpisodeCardState extends State<EpisodeCard> with ContextMenuTapMixin<Epis
     final shouldBlur = hideSpoilers && episode.shouldHideSpoiler;
     final qualityLabels = buildMediaQualityLabels(episode);
 
-    // Hide progress when offline (not tracked)
-    final hasProgress =
-        !widget.isOffline && episode.viewOffsetMs != null && episode.durationMs != null && episode.viewOffsetMs! > 0;
-    final progress = hasProgress ? episode.viewOffsetMs! / episode.durationMs! : 0.0;
-
-    final hasActiveProgress = hasProgress && episode.viewOffsetMs! < episode.durationMs!;
-
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 2),
       // MergeSemantics: one node per card instead of one per text/progress —
@@ -220,38 +214,14 @@ class _EpisodeCardState extends State<EpisodeCard> with ContextMenuTapMixin<Epis
                             ),
                           ),
 
-                          if (hasActiveProgress)
-                            Positioned(
-                              bottom: 0,
-                              left: 0,
-                              right: 0,
-                              child: ClipRRect(
-                                borderRadius: const BorderRadius.only(
-                                  bottomLeft: Radius.circular(6),
-                                  bottomRight: Radius.circular(6),
-                                ),
-                                child: LinearProgressIndicator(
-                                  value: progress,
-                                  backgroundColor: tokens(context).outline,
-                                  minHeight: 3,
-                                ),
-                              ),
+                          Positioned.fill(
+                            child: WatchedIndicator(
+                              item: episode,
+                              size: WatchedIndicatorSize.compact,
+                              // Progress isn't tracked offline.
+                              progressAvailable: !widget.isOffline,
                             ),
-
-                          if (episode.isWatched && !hasActiveProgress)
-                            Positioned(
-                              top: 4,
-                              right: 4,
-                              child: Container(
-                                padding: const EdgeInsets.all(4),
-                                decoration: BoxDecoration(
-                                  color: tokens(context).text,
-                                  shape: BoxShape.circle,
-                                  boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.3), blurRadius: 4)],
-                                ),
-                                child: AppIcon(Symbols.check_rounded, fill: 1, color: tokens(context).bg, size: 12),
-                              ),
-                            ),
+                          ),
                         ],
                       ),
                     ),

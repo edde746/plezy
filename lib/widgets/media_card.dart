@@ -17,6 +17,7 @@ import '../providers/watch_state_store.dart';
 import '../services/download_storage_service.dart';
 import '../services/settings_service.dart';
 import 'settings_builder.dart';
+import 'watched_indicator.dart';
 import '../utils/content_utils.dart';
 import '../utils/provider_extensions.dart';
 import '../utils/formatters.dart';
@@ -25,10 +26,8 @@ import '../utils/snackbar_helper.dart';
 import '../theme/mono_tokens.dart';
 import '../i18n/strings.g.dart';
 import 'media_context_menu.dart';
-import 'media_progress_bar.dart';
 import 'media_card_list_layout.dart';
 import 'backend_badge.dart';
-import 'unwatched_count_badge.dart';
 import 'optimized_media_image.dart';
 
 const _failedPosterUrlCacheLimit = 512;
@@ -318,7 +317,7 @@ class MediaCardState extends State<MediaCard> with ContextMenuTapMixin<MediaCard
                   knownWidth: width,
                   knownHeight: height,
                 ),
-                if (item is MediaItem) _MediaCardHelpers.buildWatchProgress(context, item),
+                if (item is MediaItem) WatchedIndicator(item: item),
               ],
             ),
           ),
@@ -351,7 +350,7 @@ class MediaCardState extends State<MediaCard> with ContextMenuTapMixin<MediaCard
               knownHeight: posterHeight,
             ),
           ),
-          if (item is MediaItem) _MediaCardHelpers.buildWatchProgress(context, item),
+          if (item is MediaItem) WatchedIndicator(item: item),
         ],
       ),
     );
@@ -617,7 +616,7 @@ class _MediaCardList extends StatelessWidget {
                         episodePosterModeOverride: episodePosterModeOverride,
                       ),
                     ),
-                    if (item is MediaItem) _MediaCardHelpers.buildWatchProgress(context, item as MediaItem),
+                    if (item is MediaItem) WatchedIndicator(item: item as MediaItem),
                   ],
                 ),
               ),
@@ -902,67 +901,6 @@ class _MediaCardHelpers {
     return const SizedBox.shrink();
   }
 
-  /// Builds watch progress overlay (checkmark for watched, progress bar for in-progress)
-  static Widget buildWatchProgress(BuildContext context, MediaItem mi) {
-    final showUnwatchedCount = SettingsService.instance.read(SettingsService.showUnwatchedCount);
-    final unwatched = mi.unwatchedCount;
-
-    final hasActiveProgress =
-        mi.viewOffsetMs != null && mi.durationMs != null && mi.viewOffsetMs! > 0 && mi.viewOffsetMs! < mi.durationMs!;
-
-    return Stack(
-      children: [
-        // Watched indicator (checkmark)
-        if (mi.isWatched && !hasActiveProgress)
-          Positioned(
-            top: 4,
-            right: 4,
-            child: Container(
-              padding: const EdgeInsets.all(4),
-              decoration: BoxDecoration(
-                color: tokens(context).text,
-                shape: BoxShape.circle,
-                boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.3), blurRadius: 4)],
-              ),
-              child: AppIcon(Symbols.check_rounded, fill: 1, color: tokens(context).bg, size: 16),
-            ),
-          ),
-        if (showUnwatchedCount &&
-            !mi.isWatched &&
-            (mi.kind == MediaKind.show || mi.kind == MediaKind.season) &&
-            unwatched != null &&
-            unwatched > 0)
-          Positioned(top: 4, right: 4, child: UnwatchedCountBadge(count: unwatched)),
-        // Progress bar for partially watched content (episodes/movies)
-        if (hasActiveProgress)
-          Positioned(
-            bottom: 0,
-            left: 0,
-            right: 0,
-            child: ClipRRect(
-              borderRadius: const BorderRadius.only(bottomLeft: Radius.circular(8), bottomRight: Radius.circular(8)),
-              child: MediaProgressBar(viewOffset: mi.viewOffsetMs!, duration: mi.durationMs!),
-            ),
-          ),
-        // Progress bar for seasons (viewedLeafCount / leafCount)
-        if (mi.isSeason && mi.isPartiallyWatched)
-          Positioned(
-            bottom: 0,
-            left: 0,
-            right: 0,
-            child: ClipRRect(
-              borderRadius: const BorderRadius.only(bottomLeft: Radius.circular(8), bottomRight: Radius.circular(8)),
-              child: LinearProgressIndicator(
-                value: mi.viewedLeafCount! / mi.leafCount!,
-                backgroundColor: tokens(context).outline,
-                valueColor: AlwaysStoppedAnimation<Color>(Theme.of(context).colorScheme.primary),
-                minHeight: 4,
-              ),
-            ),
-          ),
-      ],
-    );
-  }
 }
 
 /// Whether this media item has a clickable title that navigates somewhere.
