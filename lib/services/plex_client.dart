@@ -3309,6 +3309,14 @@ class PlexClient
     await _initMediaProviders();
   }
 
+  /// Apply the app locale to future Plex API requests. PMS localizes standard
+  /// server-provided labels (hubs, generic seasons, etc.) from these headers.
+  void applyLanguageUpdate(String languageCode) {
+    if (config.languageCode == languageCode) return;
+    config = config.copyWith(languageCode: languageCode);
+    _http.defaultHeaders = Map.of(config.headers);
+  }
+
   // ────────────────────────────────────────────────────────────────────
   // MediaServerClient implementation
   //

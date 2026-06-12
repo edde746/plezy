@@ -15,6 +15,7 @@ import '../utils/media_server_timeouts.dart';
 import '../utils/future_extensions.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 import 'plex_auth_service.dart';
+import 'settings_service.dart';
 import 'storage_service.dart';
 
 /// Manages multiple media-server connections simultaneously.
@@ -119,6 +120,16 @@ class MultiServerManager {
     final client = _clients[serverId];
     return client is PlexClient ? client : null;
   }
+
+  void updatePlexLanguage(String languageCode) {
+    for (final client in _clients.values) {
+      if (client is PlexClient) {
+        client.applyLanguageUpdate(languageCode);
+      }
+    }
+  }
+
+  String? get _currentPlexLanguageCode => SettingsService.instanceOrNull?.read(SettingsService.appLocale).languageCode;
 
   @visibleForTesting
   void debugRegisterJellyfinClientForTesting(JellyfinClient client, {bool online = true}) {
@@ -256,6 +267,7 @@ class MultiServerManager {
       baseUrl: baseUrl,
       token: server.accessToken,
       clientIdentifier: clientIdentifier,
+      languageCode: _currentPlexLanguageCode,
     );
 
     final client = await PlexClient.create(

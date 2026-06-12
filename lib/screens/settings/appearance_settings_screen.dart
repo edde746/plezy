@@ -6,6 +6,7 @@ import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 
 import '../../i18n/strings.g.dart';
+import '../../providers/multi_server_provider.dart';
 import '../../providers/theme_provider.dart';
 import '../../profiles/active_profile_provider.dart';
 import '../../navigation/navigation_tabs.dart';
@@ -198,6 +199,9 @@ class AppearanceSettingsScreen extends StatelessWidget {
         if (value != null) {
           await SettingsService.instance.write(SettingsService.appLocale, value);
           unawaited(LocaleSettings.setLocale(value));
+          if (context.mounted) {
+            context.read<MultiServerProvider>().serverManager.updatePlexLanguage(value.languageCode);
+          }
           if (context.mounted) _restartApp(context);
         }
       },
