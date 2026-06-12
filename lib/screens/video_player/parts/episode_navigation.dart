@@ -387,6 +387,10 @@ extension _VideoPlayerEpisodeNavigationMethods on VideoPlayerScreenState {
         settingsService: settingsService,
         videoUrl: result.videoUrl!,
         isTranscoding: result.isTranscoding,
+        // Not _isOfflinePlayback: the replacement session commits later, in
+        // onOpened, so the getter still describes the previous item here.
+        isLocalMedia: _offlineLibraryMode || result.usesLocalMedia,
+        selectedVersion: result.selectedVersion,
         timing: openTiming,
         headers: result.usesLocalMedia ? null : streamHeaders,
         play: !frameRatePlan.holdPlaybackStart && !wtOwnsStart && (attachesSubsAtOpen || !hasExternalSubs),

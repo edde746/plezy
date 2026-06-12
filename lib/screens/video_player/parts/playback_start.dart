@@ -208,17 +208,6 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
         );
         if (!mounted || player != currentPlayer) return;
 
-        // Enable FFmpeg auto-reconnect for VOD streams (covers network drops
-        // up to 10 min). Forwarded to the Kotlin layer on Android so MPV
-        // inherits it on the ExoPlayer→MPV fallback path (see
-        // _onBackendSwitched), so keep it unconditional.
-        if (!_isOfflinePlayback && !widget.isLive) {
-          await currentPlayer.setProperty(
-            'stream-lavf-o',
-            'reconnect=1,reconnect_on_network_error=1,reconnect_streamed=1,reconnect_delay_max=600',
-          );
-        }
-
         await _primeDisplayCriteria(
           player: currentPlayer,
           settingsService: settingsService,
@@ -243,6 +232,8 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
           settingsService: settingsService,
           videoUrl: result.videoUrl!,
           isTranscoding: result.isTranscoding,
+          isLocalMedia: _isOfflinePlayback,
+          selectedVersion: result.selectedVersion,
           timing: openTiming,
           headers: streamHeaders,
           play: shouldAutoPlay,

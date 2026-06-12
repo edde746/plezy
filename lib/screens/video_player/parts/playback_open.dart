@@ -407,8 +407,59 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
     _queueScrubPreviewLoad(metadata: metadata, mediaInfo: mediaInfo, mediaClient: mediaClient);
   }
 
-  /// Open [videoUrl] on [player]: force-seekable hint → open → native
-  /// subtitle style.
+  /// Per-open network stream tunings: ffmpeg auto-reconnect plus an enlarged
+  /// mpv stream ring buffer for poorly interleaved MP4/MOV direct play (the
+  /// ring absorbs the demuxer's audio↔video byte ping-pong so HTTP reads stay
+  /// linear instead of dropping the connection on every byte seek — see
+  /// [networkStreamRingBytes]). Both properties are always written, set or
+  /// reset, so a reused player never carries one item's tuning into the next
+  /// open. On Android with ExoPlayer active they are stashed natively and
+  /// replayed on the exo→mpv fallback, so keep them unconditional.
+  Future<void> _applyNetworkStreamTuning({
+    required Player player,
+    required bool isNetworkVod,
+    required bool isTranscoding,
+    required MediaVersion? selectedVersion,
+  }) async {
+    if (isNetworkVod) {
+      // Covers network drops up to 10 min; applies to transcode streams too.
+      await player.setProperty(
+        'stream-lavf-o',
+        'reconnect=1,reconnect_on_network_error=1,reconnect_streamed=1,reconnect_delay_max=600',
+      );
+    } else {
+      await player.setProperty('stream-lavf-o', '');
+    }
+
+    int? ringBytes;
+    if (isNetworkVod && !isTranscoding) {
+      // Transcode (HLS) playback only uses the mpv stream layer for the
+      // playlist file; segment fetches happen inside ffmpeg's hls demuxer.
+      final maxBytes = Platform.isAndroid
+          ? androidStreamRingCapBytes(await PlayerAndroid.getHeapSize())
+          : maxStreamRingBytes;
+      ringBytes = networkStreamRingBytes(
+        container: selectedVersion?.container,
+        bitrateKbps: selectedVersion?.bitrate,
+        maxBytes: maxBytes,
+      );
+    }
+    if (ringBytes != null) {
+      appLogger.i(
+        'Stream ring buffer: ${ringBytes ~/ (1024 * 1024)}MiB '
+        '(container=${selectedVersion?.container}, bitrate=${selectedVersion?.bitrate}kbps)',
+      );
+    } else {
+      appLogger.d(
+        'Stream ring buffer: default '
+        '(networkVod=$isNetworkVod, transcoding=$isTranscoding, container=${selectedVersion?.container})',
+      );
+    }
+    await player.setProperty('stream-buffer-size', '${ringBytes ?? mpvDefaultStreamBufferBytes}');
+  }
+
+  /// Open [videoUrl] on [player]: stream tuning + force-seekable hint →
+  /// open → native subtitle style.
   ///
   /// [shouldContinue] is re-checked between the awaits so stale generations
   /// stop without touching the player further. [onOpened] fires immediately
@@ -422,6 +473,8 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
     required SettingsService settingsService,
     required String videoUrl,
     required bool isTranscoding,
+    required bool isLocalMedia,
+    required MediaVersion? selectedVersion,
     required _PlaybackOpenTiming timing,
     Map<String, String>? headers,
     required bool play,
@@ -429,6 +482,12 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
     bool Function()? shouldContinue,
     void Function()? onOpened,
   }) async {
+    await _applyNetworkStreamTuning(
+      player: player,
+      isNetworkVod: !isLocalMedia && !widget.isLive,
+      isTranscoding: isTranscoding,
+      selectedVersion: selectedVersion,
+    );
     // Transcode streams can be seekable even when MPV cannot prove it
     // from response headers. Reset non-transcodes so live/direct/offline
     // streams keep native seekability detection.

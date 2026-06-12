@@ -96,6 +96,8 @@ extension _VideoPlayerSeekingMethods on VideoPlayerScreenState {
         settingsService: SettingsService.instance,
         videoUrl: result.videoUrl!,
         isTranscoding: result.isTranscoding,
+        isLocalMedia: result.usesLocalMedia,
+        selectedVersion: result.selectedVersion,
         timing: _playbackOpenTiming(
           backend: replacementMetadata.backend,
           isTranscoding: result.isTranscoding,

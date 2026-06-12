@@ -84,6 +84,12 @@ class PlaybackInitializationResult {
   /// source detail, not a statement about whether server reporting is possible.
   bool get usesLocalMedia => isOffline;
 
+  /// The [MediaVersion] selected by [selectedMediaIndex], or null when no
+  /// version metadata is available (e.g. cached offline flows).
+  MediaVersion? get selectedVersion => selectedMediaIndex >= 0 && selectedMediaIndex < availableVersions.length
+      ? availableVersions[selectedMediaIndex]
+      : null;
+
   PlaybackInitializationResult({
     required this.availableVersions,
     this.videoUrl,
