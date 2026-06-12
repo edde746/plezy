@@ -50,6 +50,10 @@ class LiveProgramInfo {
 /// Sessions are immutable handles: every operation that changes the playable
 /// stream returns a URL or a fresh session for the caller to adopt, so the
 /// player's runtime state has a single adoption point.
+///
+/// Sessions are pinned to the client that created them. If that server is
+/// removed/signed out mid-playback, [recover] and heartbeats fail against the
+/// closed client by design — the player surfaces the error and backs out.
 abstract class LiveTvPlaybackSession {
   LiveProgramInfo get program;
 
