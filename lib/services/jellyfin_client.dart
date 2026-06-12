@@ -106,6 +106,7 @@ class JellyfinClient
   static Future<JellyfinClient> create(
     JellyfinConnection connection, {
     FavoriteChannelsRepository? favoritesRepository,
+    void Function()? onAllEndpointsExhausted,
   }) async {
     // Register before any HTTP traffic so the very first probe URL doesn't
     // leak the token verbatim. `LogRedactionManager.redact()` also has
@@ -142,6 +143,7 @@ class JellyfinClient
       logLabel: 'Jellyfin',
       prioritizedEndpoints: connection.baseUrls,
       onEndpointSwitch: (newBaseUrl, {required persist}) => client._handleEndpointSwitch(newBaseUrl, persist: persist),
+      onAllEndpointsExhausted: onAllEndpointsExhausted,
     );
     client = JellyfinClient._(connection: connection, http: http, favoritesRepository: favoritesRepository);
     return client;
@@ -154,6 +156,7 @@ class JellyfinClient
     required JellyfinConnection connection,
     required http.Client httpClient,
     FavoriteChannelsRepository? favoritesRepository,
+    void Function()? onAllEndpointsExhausted,
   }) {
     late JellyfinClient client;
     final mediaHttp = FailoverHttpClient(
@@ -162,6 +165,7 @@ class JellyfinClient
       logLabel: 'Jellyfin',
       prioritizedEndpoints: connection.baseUrls,
       onEndpointSwitch: (newBaseUrl, {required persist}) => client._handleEndpointSwitch(newBaseUrl, persist: persist),
+      onAllEndpointsExhausted: onAllEndpointsExhausted,
       client: httpClient,
     );
     client = JellyfinClient._(connection: connection, http: mediaHttp, favoritesRepository: favoritesRepository);

@@ -165,6 +165,23 @@ void main() {
       expect(client.connection.baseUrls, ['https://fallback.example.com', 'https://primary.example.com']);
     });
 
+    test('exhausting every endpoint fires onAllEndpointsExhausted', () async {
+      var exhausted = 0;
+      final client = JellyfinClient.forTesting(
+        connection: _conn(
+          baseUrl: 'https://primary.example.com',
+          baseUrls: const ['https://primary.example.com', 'https://fallback.example.com'],
+        ),
+        httpClient: MockClient((req) async => throw TimeoutException('endpoint down')),
+        onAllEndpointsExhausted: () => exhausted++,
+      );
+      addTearDown(client.close);
+
+      await client.getMachineIdentifier();
+
+      expect(exhausted, 1);
+    });
+
     test('resets live base URL after fallback endpoint is exhausted', () async {
       final requests = <Uri>[];
       final client = JellyfinClient.forTesting(

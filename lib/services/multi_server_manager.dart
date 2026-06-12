@@ -575,7 +575,12 @@ class MultiServerManager {
         }
       }
 
-      final client = await JellyfinClient.create(resolvedConnection);
+      final exhaustedMachineId = resolvedConnection.serverMachineId;
+      final exhaustedCompoundId = resolvedConnection.id;
+      final client = await JellyfinClient.create(
+        resolvedConnection,
+        onAllEndpointsExhausted: () => _onJellyfinEndpointsExhausted(exhaustedMachineId, exhaustedCompoundId),
+      );
       // Admin status can change server-side; re-broadcast and persist so
       // admin-gated UI survives app restarts without requiring re-auth.
       _wireJellyfinConnectionUpdates(client);
@@ -1022,8 +1027,10 @@ class MultiServerManager {
     _reconnectDebounce[serverId] = Timer(const Duration(seconds: 5), () {
       _reconnectDebounce.remove(serverId);
 
-      final server = _plexServers[serverId];
-      if (server == null) return;
+      final plexServer = _plexServers[serverId];
+      final jellyfinCompoundId = _activeJellyfinMachine[serverId];
+      final jellyfinClient = jellyfinCompoundId != null ? _jellyfinByCompoundId[jellyfinCompoundId] : null;
+      if (plexServer == null && jellyfinClient == null) return;
 
       appLogger.i('All endpoints exhausted for $serverId, triggering reconnection');
       updateServerStatus(serverId, false);
@@ -1031,10 +1038,24 @@ class MultiServerManager {
       // Guard with _activeOptimizations to prevent duplicate reconnections
       if (_activeOptimizations.containsKey(serverId)) return;
 
-      _activeOptimizations[serverId] = _reconnectServer(serverId, server).whenComplete(() {
+      final reconnect = plexServer != null
+          ? _reconnectServer(serverId, plexServer)
+          : _reconnectJellyfinServer(serverId, jellyfinClient!);
+      _activeOptimizations[serverId] = reconnect.whenComplete(() {
         _activeOptimizations.remove(serverId);
       });
     });
+  }
+
+  /// Jellyfin clients outlive their active binding (a previous profile's
+  /// client stays in [_jellyfinByCompoundId]); only the currently bound
+  /// client's exhaustion may flip the machine's status.
+  void _onJellyfinEndpointsExhausted(String machineId, String compoundId) {
+    if (_activeJellyfinMachine[machineId] != compoundId) {
+      appLogger.d('Ignoring endpoint exhaustion from inactive Jellyfin client', error: compoundId);
+      return;
+    }
+    _onServerEndpointsExhausted(ServerId(machineId));
   }
 
   /// Disconnect all servers
