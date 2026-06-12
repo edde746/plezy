@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../connection/connection.dart';
 import '../connection/connection_registry.dart';
 import '../mixins/controller_disposer_mixin.dart';
+import '../profiles/active_profile_binder.dart';
 import '../profiles/active_profile_provider.dart';
 import '../profiles/plex_home_service.dart';
 import '../profiles/profile.dart';
@@ -138,6 +139,14 @@ class _AuthScreenState extends State<AuthScreen> {
       await _selectInitialProfile(plexHome, activeProfiles, accountConnection);
 
       if (!mounted) return;
+
+      // Start the binder before the picker/MainScreen, mirroring the
+      // cold-start SetupScreen ordering. On a fresh install SetupScreen
+      // routes here without ever starting it, so without this the profile
+      // activated above is bound only by MainScreen's post-frame start() —
+      // Discover renders a "No servers available" flash in the gap, and the
+      // picker's awaitBindingSettle resolves before anything is bound.
+      context.read<ActiveProfileBinder>().start();
 
       final settings = await SettingsService.getInstance();
       if (!mounted) return;
@@ -278,7 +287,9 @@ class _AuthScreenState extends State<AuthScreen> {
           Text(
             t.auth.waitingForAuth,
             textAlign: TextAlign.center,
-            style: const TextStyle(color: Colors.grey),
+            style: Theme.of(
+              context,
+            ).textTheme.bodyMedium?.copyWith(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7)),
           ),
         ],
       );
@@ -363,26 +374,15 @@ class _AuthScreenState extends State<AuthScreen> {
           ],
         ),
         const SizedBox(height: 12),
-        if (isTV)
-          FocusableButton(
+        FocusableButton(
+          onPressed: _connectToJellyfin,
+          child: OutlinedButton.icon(
             onPressed: _connectToJellyfin,
-            child: OutlinedButton.icon(
-              onPressed: _connectToJellyfin,
-              style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 16)),
-              icon: const BackendBadge(backend: MediaBackend.jellyfin, size: 18),
-              label: Text(t.auth.connectToJellyfin),
-            ),
-          )
-        else
-          FocusableButton(
-            onPressed: _connectToJellyfin,
-            child: OutlinedButton.icon(
-              onPressed: _connectToJellyfin,
-              style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 16)),
-              icon: const BackendBadge(backend: MediaBackend.jellyfin, size: 18),
-              label: Text(t.auth.connectToJellyfin),
-            ),
+            style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 16)),
+            icon: const BackendBadge(backend: MediaBackend.jellyfin, size: 18),
+            label: Text(t.auth.connectToJellyfin),
           ),
+        ),
         if (kDebugMode) ...[
           const SizedBox(height: 12),
           FocusableButton(

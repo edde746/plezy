@@ -5,6 +5,7 @@ import 'package:flutter/scheduler.dart';
 
 import '../../../../mpv/mpv.dart';
 import '../../../../utils/app_logger.dart';
+import '../../../../utils/codec_utils.dart';
 import 'performance_stats.dart';
 
 /// Service that polls player properties and provides performance stats via a stream.
@@ -188,7 +189,7 @@ class PerformanceStatsService {
         // Audio metrics
         audioCodec: _formatCodecName(statsMap['audioCodec'] as String?),
         audioSamplerate: statsMap['audioSampleRate'] as int?,
-        audioChannels: _formatChannels(statsMap['audioChannels'] as int?),
+        audioChannels: CodecUtils.formatAudioChannels(statsMap['audioChannels'] as int?),
         audioBitrate: statsMap['audioBitrate'] as int?,
         audioDecoderName: statsMap['audioDecoderName'] as String?,
         // Tunneling
@@ -215,18 +216,6 @@ class PerformanceStatsService {
       );
       _statsController.add(stats);
     }
-  }
-
-  /// Format channel count to string (e.g., "2" -> "Stereo", "6" -> "5.1")
-  String? _formatChannels(int? channels) {
-    if (channels == null) return null;
-    return switch (channels) {
-      1 => 'Mono',
-      2 => 'Stereo',
-      6 => '5.1',
-      8 => '7.1',
-      _ => '$channels ch',
-    };
   }
 
   /// Fetch stats from MPV via property queries.

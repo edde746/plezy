@@ -115,7 +115,6 @@ class _TranslationsAuthKo extends TranslationsAuthEn {
 	@override String get or => '또는';
 	@override String get connectToJellyfin => 'Jellyfin에 연결';
 	@override String get useQuickConnect => 'Quick Connect 사용';
-	@override String get quickConnectCode => 'Quick Connect 코드';
 	@override String get quickConnectInstructions => 'Jellyfin에서 Quick Connect를 열고 이 코드를 입력하세요.';
 	@override String get quickConnectWaiting => '승인 대기 중…';
 	@override String get quickConnectCancel => '취소';
@@ -264,6 +263,8 @@ class _TranslationsSettingsKo extends TranslationsSettingsEn {
 	@override String get showSeasonPostersOnTabsDescription => '각 시즌 포스터를 탭 위에 표시';
 	@override String get tvFullCardLayout => '전체 TV 카드';
 	@override String get tvFullCardLayoutDescription => 'TV 카드에 이미지만 표시하고 배우 이름을 오버레이로 표시';
+	@override String get focusGlow => '포커스 글로우';
+	@override String get focusGlowDescription => '포커스된 카드 주위에 은은한 빛 효과를 표시';
 	@override String get hideSpoilers => '미시청 에피소드 스포일러 숨기기';
 	@override String get hideSpoilersDescription => '시청하지 않은 에피소드의 썸네일과 설명을 흐리게 처리';
 	@override String get playerBackend => '플레이어 백엔드';
@@ -1600,10 +1601,8 @@ class _TranslationsAddServerKo extends TranslationsAddServerEn {
 
 	// Translations
 	@override String get addJellyfinTitle => 'Jellyfin 서버 추가';
-	@override String get jellyfinUrlIntro => '서버 URL을 입력하세요. 예: `https://jellyfin.example.com`.';
-	@override String get jellyfinUrlsIntro => '서버 URL을 하나 이상 쉼표로 구분해 입력하세요. Plezy는 연결 가능한 URL 중 지연 시간이 가장 낮은 URL을 사용합니다.';
-	@override String get serverUrl => '서버 URL';
 	@override String get serverUrls => '서버 URL';
+	@override String get serverUrlsHelper => '쉼표로 구분하여 여러 URL을 입력할 수 있습니다.';
 	@override String get findServer => '서버 찾기';
 	@override String get searchingLocalServers => '로컬 Jellyfin 서버 검색 중...';
 	@override String get localServers => '로컬 Jellyfin 서버';
@@ -1616,17 +1615,12 @@ class _TranslationsAddServerKo extends TranslationsAddServerEn {
 	@override String signInFailed({required Object error}) => '로그인 실패: ${error}';
 	@override String quickConnectFailed({required Object error}) => 'Quick Connect 실패: ${error}';
 	@override String get addPlexTitle => 'Plex로 로그인';
-	@override String get plexAuthIntro => '브라우저 또는 QR 코드로 로그인하세요.';
-	@override String get plexQRPrompt => '이 QR 코드를 스캔하여 로그인하세요.';
-	@override String get waitingForPlexConfirmation => 'plex.tv에서 로그인을 확인하는 중…';
 	@override String get pinExpired => '로그인 전에 PIN이 만료되었습니다. 다시 시도하세요.';
 	@override String get duplicatePlexAccount => '이미 Plex에 로그인되어 있습니다. 계정을 전환하려면 로그아웃하세요.';
 	@override String failedToRegisterAccount({required Object error}) => '계정 등록 실패: ${error}';
 	@override String get enterJellyfinUrlError => 'Jellyfin 서버 URL을 입력하세요';
 	@override String get addConnectionTitle => '연결 추가';
 	@override String addConnectionTitleScoped({required Object name}) => '${name}에 추가';
-	@override String get addConnectionIntroGlobal => '다른 미디어 서버를 추가합니다. Plex와 Jellyfin이 홈에 함께 표시됩니다.';
-	@override String get addConnectionIntroScoped => '새 서버를 추가하거나 다른 프로필에서 빌리세요.';
 	@override String get signInWithPlexCard => 'Plex로 로그인';
 	@override String get signInWithPlexCardSubtitle => '이 기기를 승인합니다. 공유 서버가 추가됩니다.';
 	@override String get signInWithPlexCardSubtitleScoped => 'Plex 계정을 승인합니다. Home 사용자는 프로필이 됩니다.';
@@ -1935,7 +1929,6 @@ extension on TranslationsKo {
 			'auth.or' => '또는',
 			'auth.connectToJellyfin' => 'Jellyfin에 연결',
 			'auth.useQuickConnect' => 'Quick Connect 사용',
-			'auth.quickConnectCode' => 'Quick Connect 코드',
 			'auth.quickConnectInstructions' => 'Jellyfin에서 Quick Connect를 열고 이 코드를 입력하세요.',
 			'auth.quickConnectWaiting' => '승인 대기 중…',
 			'auth.quickConnectCancel' => '취소',
@@ -2048,6 +2041,8 @@ extension on TranslationsKo {
 			'settings.showSeasonPostersOnTabsDescription' => '각 시즌 포스터를 탭 위에 표시',
 			'settings.tvFullCardLayout' => '전체 TV 카드',
 			'settings.tvFullCardLayoutDescription' => 'TV 카드에 이미지만 표시하고 배우 이름을 오버레이로 표시',
+			'settings.focusGlow' => '포커스 글로우',
+			'settings.focusGlowDescription' => '포커스된 카드 주위에 은은한 빛 효과를 표시',
 			'settings.hideSpoilers' => '미시청 에피소드 스포일러 숨기기',
 			'settings.hideSpoilersDescription' => '시청하지 않은 에피소드의 썸네일과 설명을 흐리게 처리',
 			'settings.playerBackend' => '플레이어 백엔드',
@@ -2434,9 +2429,9 @@ extension on TranslationsKo {
 			'subtitlingStyling.text' => '텍스트',
 			'subtitlingStyling.border' => '테두리',
 			'subtitlingStyling.background' => '배경',
-			'subtitlingStyling.fontSize' => '글자 크기',
 			_ => null,
 		} ?? switch (path) {
+			'subtitlingStyling.fontSize' => '글자 크기',
 			'subtitlingStyling.textColor' => '텍스트 색상',
 			'subtitlingStyling.borderSize' => '테두리 크기',
 			'subtitlingStyling.borderColor' => '테두리 색상',
@@ -2948,9 +2943,9 @@ extension on TranslationsKo {
 			'companionRemote.remote.tabMore' => '더 보기',
 			'companionRemote.remote.menu' => '메뉴',
 			'companionRemote.remote.tabNavigation' => '탭 탐색',
-			'companionRemote.remote.tabDiscover' => '발견',
 			_ => null,
 		} ?? switch (path) {
+			'companionRemote.remote.tabDiscover' => '발견',
 			'companionRemote.remote.tabLibraries' => '미디어 라이브러리',
 			'companionRemote.remote.tabSearch' => '검색',
 			'companionRemote.remote.tabDownloads' => '다운로드',
@@ -3166,10 +3161,8 @@ extension on TranslationsKo {
 			'trackers.libraryFilter.libraries' => '라이브러리',
 			'trackers.libraryFilter.noLibraries' => '사용 가능한 라이브러리가 없습니다',
 			'addServer.addJellyfinTitle' => 'Jellyfin 서버 추가',
-			'addServer.jellyfinUrlIntro' => '서버 URL을 입력하세요. 예: `https://jellyfin.example.com`.',
-			'addServer.jellyfinUrlsIntro' => '서버 URL을 하나 이상 쉼표로 구분해 입력하세요. Plezy는 연결 가능한 URL 중 지연 시간이 가장 낮은 URL을 사용합니다.',
-			'addServer.serverUrl' => '서버 URL',
 			'addServer.serverUrls' => '서버 URL',
+			'addServer.serverUrlsHelper' => '쉼표로 구분하여 여러 URL을 입력할 수 있습니다.',
 			'addServer.findServer' => '서버 찾기',
 			'addServer.searchingLocalServers' => '로컬 Jellyfin 서버 검색 중...',
 			'addServer.localServers' => '로컬 Jellyfin 서버',
@@ -3182,17 +3175,12 @@ extension on TranslationsKo {
 			'addServer.signInFailed' => ({required Object error}) => '로그인 실패: ${error}',
 			'addServer.quickConnectFailed' => ({required Object error}) => 'Quick Connect 실패: ${error}',
 			'addServer.addPlexTitle' => 'Plex로 로그인',
-			'addServer.plexAuthIntro' => '브라우저 또는 QR 코드로 로그인하세요.',
-			'addServer.plexQRPrompt' => '이 QR 코드를 스캔하여 로그인하세요.',
-			'addServer.waitingForPlexConfirmation' => 'plex.tv에서 로그인을 확인하는 중…',
 			'addServer.pinExpired' => '로그인 전에 PIN이 만료되었습니다. 다시 시도하세요.',
 			'addServer.duplicatePlexAccount' => '이미 Plex에 로그인되어 있습니다. 계정을 전환하려면 로그아웃하세요.',
 			'addServer.failedToRegisterAccount' => ({required Object error}) => '계정 등록 실패: ${error}',
 			'addServer.enterJellyfinUrlError' => 'Jellyfin 서버 URL을 입력하세요',
 			'addServer.addConnectionTitle' => '연결 추가',
 			'addServer.addConnectionTitleScoped' => ({required Object name}) => '${name}에 추가',
-			'addServer.addConnectionIntroGlobal' => '다른 미디어 서버를 추가합니다. Plex와 Jellyfin이 홈에 함께 표시됩니다.',
-			'addServer.addConnectionIntroScoped' => '새 서버를 추가하거나 다른 프로필에서 빌리세요.',
 			'addServer.signInWithPlexCard' => 'Plex로 로그인',
 			'addServer.signInWithPlexCardSubtitle' => '이 기기를 승인합니다. 공유 서버가 추가됩니다.',
 			'addServer.signInWithPlexCardSubtitleScoped' => 'Plex 계정을 승인합니다. Home 사용자는 프로필이 됩니다.',

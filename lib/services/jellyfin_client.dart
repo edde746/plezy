@@ -9,6 +9,7 @@ import '../media/library_filter_result.dart';
 import '../media/library_first_character.dart';
 import '../media/library_query.dart';
 import 'favorite_channels_repository.dart';
+import 'live_session_tracker.dart';
 import 'file_info_parser.dart';
 import 'library_query_translator.dart';
 import '../media/media_filter.dart';
@@ -25,6 +26,7 @@ import '../media/media_server_client.dart';
 import '../media/playback_report_metadata.dart';
 import '../media/server_capabilities.dart';
 import '../models/jellyfin/jellyfin_user_profile.dart';
+import '../models/livetv_capture_buffer.dart';
 import '../models/livetv_channel.dart';
 import '../models/livetv_dvr.dart';
 import '../models/livetv_lineup.dart';
@@ -38,13 +40,14 @@ import '../models/media_subscription.dart';
 import '../media/media_source_info.dart';
 import '../media/media_sort.dart';
 import '../utils/app_logger.dart';
-import '../utils/endpoint_failover_interceptor.dart';
+import '../utils/failover_http_client.dart';
+import '../utils/media_server_retry.dart';
+import '../utils/media_server_timeouts.dart';
 import '../utils/log_redaction_manager.dart';
 import '../utils/external_ids.dart';
 import '../utils/media_server_http_client.dart';
 import '../utils/resolution_label.dart';
 import '../utils/track_label_builder.dart';
-import '../utils/watch_state_notifier.dart';
 import '../exceptions/media_server_exceptions.dart';
 import '../i18n/strings.g.dart';
 import '../utils/jellyfin_time.dart';
@@ -107,6 +110,7 @@ class JellyfinClient
   static Future<JellyfinClient> create(
     JellyfinConnection connection, {
     FavoriteChannelsRepository? favoritesRepository,
+    void Function()? onAllEndpointsExhausted,
   }) async {
     // Register before any HTTP traffic so the very first probe URL doesn't
     // leak the token verbatim. `LogRedactionManager.redact()` also has
@@ -137,11 +141,13 @@ class JellyfinClient
       'Content-Type': 'application/json',
     };
     late JellyfinClient client;
-    final http = _JellyfinFailoverHttpClient(
+    final http = FailoverHttpClient(
       baseUrl: connection.baseUrl,
       defaultHeaders: headers,
+      logLabel: 'Jellyfin',
       prioritizedEndpoints: connection.baseUrls,
       onEndpointSwitch: (newBaseUrl, {required persist}) => client._handleEndpointSwitch(newBaseUrl, persist: persist),
+      onAllEndpointsExhausted: onAllEndpointsExhausted,
     );
     client = JellyfinClient._(connection: connection, http: http, favoritesRepository: favoritesRepository);
     return client;
@@ -154,13 +160,16 @@ class JellyfinClient
     required JellyfinConnection connection,
     required http.Client httpClient,
     FavoriteChannelsRepository? favoritesRepository,
+    void Function()? onAllEndpointsExhausted,
   }) {
     late JellyfinClient client;
-    final mediaHttp = _JellyfinFailoverHttpClient(
+    final mediaHttp = FailoverHttpClient(
       baseUrl: connection.baseUrl,
       defaultHeaders: {'X-Emby-Token': connection.accessToken, 'Accept': 'application/json'},
+      logLabel: 'Jellyfin',
       prioritizedEndpoints: connection.baseUrls,
       onEndpointSwitch: (newBaseUrl, {required persist}) => client._handleEndpointSwitch(newBaseUrl, persist: persist),
+      onAllEndpointsExhausted: onAllEndpointsExhausted,
       client: httpClient,
     );
     client = JellyfinClient._(connection: connection, http: mediaHttp, favoritesRepository: favoritesRepository);
@@ -174,7 +183,7 @@ class JellyfinClient
   @override
   JellyfinConnection get connection => _connection;
   @override
-  final MediaServerHttpClient _http;
+  final FailoverHttpClient _http;
   final FavoriteChannelsRepository _favoritesRepository;
   bool _offlineMode = false;
 
@@ -356,140 +365,3 @@ class JellyfinClient
   ApiCache get cache => JellyfinApiCache.instance;
 }
 
-class _JellyfinFailoverHttpClient extends MediaServerHttpClient {
-  _JellyfinFailoverHttpClient({
-    super.client,
-    required super.baseUrl,
-    required super.defaultHeaders,
-    required List<String> prioritizedEndpoints,
-    required this.onEndpointSwitch,
-  }) : _endpointManager = prioritizedEndpoints.length > 1 ? EndpointFailoverManager(prioritizedEndpoints) : null;
-
-  final EndpointFailoverManager? _endpointManager;
-  final Future<void> Function(String newBaseUrl, {required bool persist}) onEndpointSwitch;
-  bool _failoverSwitching = false;
-
-  @override
-  Future<MediaServerResponse> get(
-    String path, {
-    Map<String, dynamic>? queryParameters,
-    Map<String, String>? headers,
-    Duration? timeout,
-    AbortController? abort,
-  }) async {
-    final gen = _endpointManager?.generation;
-    try {
-      final response = await super.get(
-        path,
-        queryParameters: queryParameters,
-        headers: headers,
-        timeout: timeout,
-        abort: abort,
-      );
-      if (!_shouldAttemptFailover(statusCode: response.statusCode) || !_canFailover(gen)) {
-        return response;
-      }
-      return _retryNextEndpoint(
-        path,
-        queryParameters: queryParameters,
-        headers: headers,
-        timeout: timeout,
-        abort: abort,
-      );
-    } on MediaServerHttpException catch (e) {
-      if (!_shouldAttemptFailover(exception: e) || !_canFailover(gen)) rethrow;
-      return _retryNextEndpoint(
-        path,
-        queryParameters: queryParameters,
-        headers: headers,
-        timeout: timeout,
-        abort: abort,
-      );
-    }
-  }
-
-  bool _canFailover(int? requestGeneration) {
-    final manager = _endpointManager;
-    return manager != null && !_failoverSwitching && requestGeneration == manager.generation;
-  }
-
-  bool _shouldAttemptFailover({MediaServerHttpException? exception, int? statusCode}) {
-    final e = exception;
-    if (e != null) {
-      if (e.isTransient) return true;
-      final sc = e.statusCode;
-      return sc != null && sc >= 500 && sc <= 599;
-    }
-    final sc = statusCode;
-    return sc != null && sc >= 500 && sc <= 599;
-  }
-
-  Future<MediaServerResponse> _retryNextEndpoint(
-    String path, {
-    Map<String, dynamic>? queryParameters,
-    Map<String, String>? headers,
-    Duration? timeout,
-    AbortController? abort,
-  }) async {
-    final manager = _endpointManager;
-    if (manager == null) {
-      throw StateError('No Jellyfin failover endpoints configured');
-    }
-
-    if (!manager.hasFallback) {
-      final resetBaseUrl = manager.resetToFirst();
-      if (resetBaseUrl != null) {
-        await onEndpointSwitch(resetBaseUrl, persist: false);
-      }
-      throw MediaServerHttpException(
-        type: MediaServerHttpErrorType.connectionError,
-        message: 'All Jellyfin endpoints exhausted',
-      );
-    }
-
-    final failedEndpoint = manager.current;
-    final nextBaseUrl = manager.moveToNext();
-    if (nextBaseUrl == null) {
-      throw MediaServerHttpException(
-        type: MediaServerHttpErrorType.connectionError,
-        message: 'All Jellyfin endpoints exhausted',
-      );
-    }
-
-    _failoverSwitching = true;
-    try {
-      appLogger.i('Switching Jellyfin endpoint after GET failure', error: {'from': failedEndpoint, 'to': nextBaseUrl});
-      await onEndpointSwitch(nextBaseUrl, persist: false);
-      final response = await super.get(
-        path,
-        queryParameters: queryParameters,
-        headers: headers,
-        timeout: timeout,
-        abort: abort,
-      );
-      if (response.statusCode < 400) {
-        appLogger.i('Jellyfin endpoint failover retry succeeded', error: {'newEndpoint': nextBaseUrl});
-        await onEndpointSwitch(nextBaseUrl, persist: true);
-      } else if (_shouldAttemptFailover(statusCode: response.statusCode) && !manager.hasFallback) {
-        final resetBaseUrl = manager.resetToFirst();
-        if (resetBaseUrl != null) {
-          await onEndpointSwitch(resetBaseUrl, persist: false);
-        }
-        throw MediaServerHttpException(
-          type: MediaServerHttpErrorType.unknown,
-          statusCode: response.statusCode,
-          message: 'All Jellyfin endpoints exhausted',
-        );
-      }
-      return response;
-    } catch (_) {
-      final resetBaseUrl = manager.resetToFirst();
-      if (resetBaseUrl != null) {
-        await onEndpointSwitch(resetBaseUrl, persist: false);
-      }
-      rethrow;
-    } finally {
-      _failoverSwitching = false;
-    }
-  }
-}

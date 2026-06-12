@@ -115,7 +115,6 @@ class _TranslationsAuthNb extends TranslationsAuthEn {
 	@override String get or => 'eller';
 	@override String get connectToJellyfin => 'Koble til Jellyfin';
 	@override String get useQuickConnect => 'Bruk Quick Connect';
-	@override String get quickConnectCode => 'Quick Connect-kode';
 	@override String get quickConnectInstructions => 'Åpne Quick Connect i Jellyfin og skriv inn denne koden.';
 	@override String get quickConnectWaiting => 'Venter på godkjenning…';
 	@override String get quickConnectCancel => 'Avbryt';
@@ -264,6 +263,8 @@ class _TranslationsSettingsNb extends TranslationsSettingsEn {
 	@override String get showSeasonPostersOnTabsDescription => 'Vis hver sesongs plakat over fanen';
 	@override String get tvFullCardLayout => 'Fulle TV-kort';
 	@override String get tvFullCardLayoutDescription => 'Bruk bildebaserte TV-kort med skuespillernavn lagt over';
+	@override String get focusGlow => 'Fokusglød';
+	@override String get focusGlowDescription => 'Vis en myk glød rundt kortet i fokus';
 	@override String get hideSpoilers => 'Skjul spoilere for usette episoder';
 	@override String get hideSpoilersDescription => 'Slør miniatyrbilder og beskrivelser for usette episoder';
 	@override String get playerBackend => 'Spillermotor';
@@ -1600,10 +1601,8 @@ class _TranslationsAddServerNb extends TranslationsAddServerEn {
 
 	// Translations
 	@override String get addJellyfinTitle => 'Legg til Jellyfin-server';
-	@override String get jellyfinUrlIntro => 'Skriv inn server-URL-en, f.eks. `https://jellyfin.example.com`.';
-	@override String get jellyfinUrlsIntro => 'Skriv inn én eller flere server-URL-er, adskilt med kommaer. Plezy bruker den tilgjengelige URL-en med lavest forsinkelse.';
-	@override String get serverUrl => 'Server-URL';
 	@override String get serverUrls => 'Server-URL-er';
+	@override String get serverUrlsHelper => 'Flere URL-er er tillatt, atskilt med komma.';
 	@override String get findServer => 'Finn server';
 	@override String get searchingLocalServers => 'Søker etter lokale Jellyfin-servere...';
 	@override String get localServers => 'Lokale Jellyfin-servere';
@@ -1616,17 +1615,12 @@ class _TranslationsAddServerNb extends TranslationsAddServerEn {
 	@override String signInFailed({required Object error}) => 'Pålogging mislyktes: ${error}';
 	@override String quickConnectFailed({required Object error}) => 'Quick Connect mislyktes: ${error}';
 	@override String get addPlexTitle => 'Logg på med Plex';
-	@override String get plexAuthIntro => 'Logg inn med en nettleser eller QR-kode.';
-	@override String get plexQRPrompt => 'Skann denne QR-koden for å logge på.';
-	@override String get waitingForPlexConfirmation => 'Venter på at plex.tv bekrefter påloggingen…';
 	@override String get pinExpired => 'PIN-koden gikk ut før pålogging. Prøv igjen.';
 	@override String get duplicatePlexAccount => 'Allerede logget inn på Plex. Logg ut for å bytte konto.';
 	@override String failedToRegisterAccount({required Object error}) => 'Kunne ikke registrere kontoen: ${error}';
 	@override String get enterJellyfinUrlError => 'Oppgi URL-en til Jellyfin-serveren din';
 	@override String get addConnectionTitle => 'Legg til tilkobling';
 	@override String addConnectionTitleScoped({required Object name}) => 'Legg til i ${name}';
-	@override String get addConnectionIntroGlobal => 'Legg til en annen medieserver. Plex og Jellyfin vises sammen på Hjem.';
-	@override String get addConnectionIntroScoped => 'Legg til en ny server, eller lån en fra en annen profil.';
 	@override String get signInWithPlexCard => 'Logg på med Plex';
 	@override String get signInWithPlexCardSubtitle => 'Autoriser denne enheten. Delte servere legges til.';
 	@override String get signInWithPlexCardSubtitleScoped => 'Autoriser en Plex-konto. Home-brukere blir profiler.';
@@ -1935,7 +1929,6 @@ extension on TranslationsNb {
 			'auth.or' => 'eller',
 			'auth.connectToJellyfin' => 'Koble til Jellyfin',
 			'auth.useQuickConnect' => 'Bruk Quick Connect',
-			'auth.quickConnectCode' => 'Quick Connect-kode',
 			'auth.quickConnectInstructions' => 'Åpne Quick Connect i Jellyfin og skriv inn denne koden.',
 			'auth.quickConnectWaiting' => 'Venter på godkjenning…',
 			'auth.quickConnectCancel' => 'Avbryt',
@@ -2048,6 +2041,8 @@ extension on TranslationsNb {
 			'settings.showSeasonPostersOnTabsDescription' => 'Vis hver sesongs plakat over fanen',
 			'settings.tvFullCardLayout' => 'Fulle TV-kort',
 			'settings.tvFullCardLayoutDescription' => 'Bruk bildebaserte TV-kort med skuespillernavn lagt over',
+			'settings.focusGlow' => 'Fokusglød',
+			'settings.focusGlowDescription' => 'Vis en myk glød rundt kortet i fokus',
 			'settings.hideSpoilers' => 'Skjul spoilere for usette episoder',
 			'settings.hideSpoilersDescription' => 'Slør miniatyrbilder og beskrivelser for usette episoder',
 			'settings.playerBackend' => 'Spillermotor',
@@ -2434,9 +2429,9 @@ extension on TranslationsNb {
 			'subtitlingStyling.text' => 'Tekst',
 			'subtitlingStyling.border' => 'Kantlinje',
 			'subtitlingStyling.background' => 'Bakgrunn',
-			'subtitlingStyling.fontSize' => 'Skriftstørrelse',
 			_ => null,
 		} ?? switch (path) {
+			'subtitlingStyling.fontSize' => 'Skriftstørrelse',
 			'subtitlingStyling.textColor' => 'Tekstfarge',
 			'subtitlingStyling.borderSize' => 'Kantstørrelse',
 			'subtitlingStyling.borderColor' => 'Kantfarge',
@@ -2948,9 +2943,9 @@ extension on TranslationsNb {
 			'companionRemote.remote.tabMore' => 'Mer',
 			'companionRemote.remote.menu' => 'Meny',
 			'companionRemote.remote.tabNavigation' => 'Fanenavigering',
-			'companionRemote.remote.tabDiscover' => 'Oppdag',
 			_ => null,
 		} ?? switch (path) {
+			'companionRemote.remote.tabDiscover' => 'Oppdag',
 			'companionRemote.remote.tabLibraries' => 'Biblioteker',
 			'companionRemote.remote.tabSearch' => 'Søk',
 			'companionRemote.remote.tabDownloads' => 'Nedlastinger',
@@ -3166,10 +3161,8 @@ extension on TranslationsNb {
 			'trackers.libraryFilter.libraries' => 'Biblioteker',
 			'trackers.libraryFilter.noLibraries' => 'Ingen biblioteker tilgjengelige',
 			'addServer.addJellyfinTitle' => 'Legg til Jellyfin-server',
-			'addServer.jellyfinUrlIntro' => 'Skriv inn server-URL-en, f.eks. `https://jellyfin.example.com`.',
-			'addServer.jellyfinUrlsIntro' => 'Skriv inn én eller flere server-URL-er, adskilt med kommaer. Plezy bruker den tilgjengelige URL-en med lavest forsinkelse.',
-			'addServer.serverUrl' => 'Server-URL',
 			'addServer.serverUrls' => 'Server-URL-er',
+			'addServer.serverUrlsHelper' => 'Flere URL-er er tillatt, atskilt med komma.',
 			'addServer.findServer' => 'Finn server',
 			'addServer.searchingLocalServers' => 'Søker etter lokale Jellyfin-servere...',
 			'addServer.localServers' => 'Lokale Jellyfin-servere',
@@ -3182,17 +3175,12 @@ extension on TranslationsNb {
 			'addServer.signInFailed' => ({required Object error}) => 'Pålogging mislyktes: ${error}',
 			'addServer.quickConnectFailed' => ({required Object error}) => 'Quick Connect mislyktes: ${error}',
 			'addServer.addPlexTitle' => 'Logg på med Plex',
-			'addServer.plexAuthIntro' => 'Logg inn med en nettleser eller QR-kode.',
-			'addServer.plexQRPrompt' => 'Skann denne QR-koden for å logge på.',
-			'addServer.waitingForPlexConfirmation' => 'Venter på at plex.tv bekrefter påloggingen…',
 			'addServer.pinExpired' => 'PIN-koden gikk ut før pålogging. Prøv igjen.',
 			'addServer.duplicatePlexAccount' => 'Allerede logget inn på Plex. Logg ut for å bytte konto.',
 			'addServer.failedToRegisterAccount' => ({required Object error}) => 'Kunne ikke registrere kontoen: ${error}',
 			'addServer.enterJellyfinUrlError' => 'Oppgi URL-en til Jellyfin-serveren din',
 			'addServer.addConnectionTitle' => 'Legg til tilkobling',
 			'addServer.addConnectionTitleScoped' => ({required Object name}) => 'Legg til i ${name}',
-			'addServer.addConnectionIntroGlobal' => 'Legg til en annen medieserver. Plex og Jellyfin vises sammen på Hjem.',
-			'addServer.addConnectionIntroScoped' => 'Legg til en ny server, eller lån en fra en annen profil.',
 			'addServer.signInWithPlexCard' => 'Logg på med Plex',
 			'addServer.signInWithPlexCardSubtitle' => 'Autoriser denne enheten. Delte servere legges til.',
 			'addServer.signInWithPlexCardSubtitleScoped' => 'Autoriser en Plex-konto. Home-brukere blir profiler.',

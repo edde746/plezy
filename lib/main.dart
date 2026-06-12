@@ -27,6 +27,7 @@ import 'screens/auth_screen.dart';
 import 'screens/profile/pin_entry_dialog.dart';
 import 'screens/profile/profile_switch_screen.dart';
 import 'services/storage_service.dart';
+import 'services/device_performance.dart';
 import 'services/macos_window_service.dart';
 import 'services/native_window_service.dart';
 import 'services/fullscreen_state_manager.dart';
@@ -47,6 +48,7 @@ import 'providers/multi_server_provider.dart';
 import 'providers/theme_provider.dart';
 import 'providers/hidden_libraries_provider.dart';
 import 'providers/libraries_provider.dart';
+import 'providers/discover_provider.dart';
 import 'providers/playback_state_provider.dart';
 import 'providers/download_provider.dart';
 import 'providers/offline_mode_provider.dart';
@@ -176,15 +178,6 @@ Future<void> _bootstrapApp() async {
     await settings.write(SettingsService.cleanedOldImageCache, true);
   }
 
-  // Configure image cache — keep budget modest to leave headroom for Skia decode buffers
-  if (PlatformDetector.isDesktopOS()) {
-    PaintingBinding.instance.imageCache.maximumSize = 1000;
-    PaintingBinding.instance.imageCache.maximumSizeBytes = 150 << 20; // 150MB
-  } else {
-    PaintingBinding.instance.imageCache.maximumSize = 800;
-    PaintingBinding.instance.imageCache.maximumSizeBytes = 100 << 20; // 100MB
-  }
-
   final futures = <Future<void>>[];
 
   if (PlatformDetector.isDesktopOS()) {
@@ -199,6 +192,8 @@ Future<void> _bootstrapApp() async {
   if (Platform.isAndroid || Platform.isIOS) {
     futures.add(TvDetectionService.getInstance(forceTv: settings.read(SettingsService.forceTvMode)));
   }
+  // Visual-effects tier (auto-detects low-end Android; full elsewhere).
+  futures.add(DevicePerformance.getInstance(override: settings.read(SettingsService.visualEffects)));
   if (Platform.isAndroid) {
     PipService();
   }
@@ -211,6 +206,10 @@ Future<void> _bootstrapApp() async {
 
   await Future.wait(futures);
   final storage = await storageFuture;
+
+  // Configure image cache — keep budget modest to leave headroom for Skia
+  // decode buffers. Runs after the futures so the effects tier is resolved.
+  DevicePerformance.applyImageCacheBudget();
 
   // The PLEX_TOKEN dart-define (screenshot automation) is consumed by
   // [ConnectionBootstrap.seedFromDevTokenDefine] later, when the registry
@@ -225,7 +224,10 @@ Future<void> _bootstrapApp() async {
   if (Platform.isAndroid) {
     renderer = ' [${await const MethodChannel('com.plezy/theme').invokeMethod<String>('getRenderer')}]';
   }
-  appLogger.i('Plezy v${packageInfo.version}+${packageInfo.buildNumber}$commitSuffix$renderer');
+  appLogger.i(
+    'Plezy v${packageInfo.version}+${packageInfo.buildNumber}$commitSuffix$renderer'
+    ' [effects: ${DevicePerformance.describeSync()}]',
+  );
 
   await DownloadStorageService.instance.initialize(settings);
 
@@ -443,7 +445,11 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
   late final OfflineWatchSyncService _offlineWatchSyncService;
   late final AppLifecycleListener _appLifecycleListener;
   StreamSubscription<WatchStateEvent>? _watchStateSubscription;
-  StreamSubscription<List<ConnectivityResult>>? _connectivitySubscription;
+
+  /// WiFi-reconnect sync trigger, listening on [OfflineModeProvider] — the
+  /// app's single connectivity subscription lives there.
+  VoidCallback? _connectivitySyncListener;
+  OfflineModeProvider? _connectivitySyncProvider;
   Timer? _syncDebounce;
   final Set<String> _pendingSyncKeys = <String>{};
   bool _isAutoDeleteRunning = false;
@@ -479,13 +485,11 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
     PlexApiCache.initialize(_appDatabase);
     JellyfinApiCache.initialize(_appDatabase);
 
-    _downloadManager = DownloadManagerService(database: _appDatabase, storageService: DownloadStorageService.instance);
-    _downloadManager.setClientResolver((serverId, {clientScopeId}) {
-      if (clientScopeId != null && clientScopeId.isNotEmpty) {
-        return _serverManager.getJellyfinClientByCompoundId(clientScopeId) ?? _serverManager.getClient(serverId);
-      }
-      return _serverManager.getClient(serverId);
-    });
+    _downloadManager = DownloadManagerService(
+      database: _appDatabase,
+      storageService: DownloadStorageService.instance,
+      clientResolver: _serverManager.resolveDownloadClient,
+    );
     _downloadManager.recoveryFuture = _downloadManager.recoverInterruptedDownloads();
 
     _offlineWatchSyncService = OfflineWatchSyncService(database: _appDatabase, serverManager: _serverManager);
@@ -493,6 +497,9 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
     // Trakt sync service (subscribes to WatchStateNotifier, requires serverManager
     // to resolve PlexClients for GUID lookups).
     TraktSyncService.instance.initialize(serverManager: _serverManager);
+    // Tracker singletons init once per app; per-profile hydration happens in
+    // the profile-scoped provider subtree's create callbacks.
+    unawaited(TrackerCoordinator.instance.initialize());
 
     _appLifecycleListener = AppLifecycleListener(
       onExitRequested: () async {
@@ -508,7 +515,7 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
 
     _syncDebounce?.cancel();
     await _watchStateSubscription?.cancel();
-    await _connectivitySubscription?.cancel();
+    _removeConnectivitySyncListener();
     _memoryCheckTimer?.cancel();
 
     _downloadManager.dispose();
@@ -529,7 +536,7 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
   void dispose() {
     _syncDebounce?.cancel();
     _watchStateSubscription?.cancel();
-    _connectivitySubscription?.cancel();
+    _removeConnectivitySyncListener();
     _memoryCheckTimer?.cancel();
     _appLifecycleListener.dispose();
     if (!_shutdownStarted) {
@@ -553,38 +560,32 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
   }
 
   /// Fires [_autoDeleteAndSync] on each WiFi/Ethernet reconnect so rules run
-  /// as soon as the device is back online. Rapid flapping is bounded by the
-  /// executor's cooldown.
-  void _startConnectivitySyncTrigger(DownloadProvider downloadProvider) {
-    Future<void> setup() async {
-      try {
-        final initial = await Connectivity().checkConnectivity();
-        _lastConnectivityWasWifi = _hasWifiOrEthernet(initial);
-      } catch (e) {
-        appLogger.w('Initial connectivity read failed, defaulting to false: $e');
-        _lastConnectivityWasWifi = false;
+  /// as soon as the device is back online. Listens on [OfflineModeProvider],
+  /// which owns the app's single connectivity subscription and notifies on
+  /// connection-type changes. Rapid flapping is bounded by the executor's
+  /// cooldown.
+  void _startConnectivitySyncTrigger(DownloadProvider downloadProvider, OfflineModeProvider offlineModeProvider) {
+    _removeConnectivitySyncListener();
+    _lastConnectivityWasWifi = offlineModeProvider.hasWifiOrEthernet;
+    _connectivitySyncProvider = offlineModeProvider;
+    _connectivitySyncListener = () {
+      final hasWifi = offlineModeProvider.hasWifiOrEthernet;
+      final transitioned = hasWifi && !_lastConnectivityWasWifi;
+      _lastConnectivityWasWifi = hasWifi;
+      if (transitioned) {
+        appLogger.d('Connectivity moved onto WiFi/Ethernet — triggering sync pass');
+        _autoDeleteAndSync(downloadProvider);
       }
-
-      try {
-        _connectivitySubscription = Connectivity().onConnectivityChanged.listen((results) {
-          final hasWifi = _hasWifiOrEthernet(results);
-          final transitioned = hasWifi && !_lastConnectivityWasWifi;
-          _lastConnectivityWasWifi = hasWifi;
-          if (transitioned) {
-            appLogger.d('Connectivity moved onto WiFi/Ethernet — triggering sync pass');
-            _autoDeleteAndSync(downloadProvider);
-          }
-        });
-      } catch (e) {
-        appLogger.w('Could not subscribe to connectivity changes: $e');
-      }
-    }
-
-    setup();
+    };
+    offlineModeProvider.addListener(_connectivitySyncListener!);
   }
 
-  static bool _hasWifiOrEthernet(List<ConnectivityResult> results) =>
-      results.contains(ConnectivityResult.wifi) || results.contains(ConnectivityResult.ethernet);
+  void _removeConnectivitySyncListener() {
+    final listener = _connectivitySyncListener;
+    if (listener != null) _connectivitySyncProvider?.removeListener(listener);
+    _connectivitySyncListener = null;
+    _connectivitySyncProvider = null;
+  }
 
   /// Run auto-delete (if enabled) and then a sync-rule pass.
   ///
@@ -775,18 +776,6 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
             return provider;
           },
         ),
-        ChangeNotifierProxyProvider2<ActiveProfileProvider, MultiServerProvider, WatchStateStore>(
-          create: (_) => WatchStateStore(),
-          update: (_, activeProfile, multiServer, previous) {
-            final provider = previous ?? WatchStateStore();
-            provider.setActiveProfileId(activeProfile.activeId);
-            provider.setActiveClientScopesByServer({
-              for (final serverId in multiServer.serverManager.serverIds)
-                serverId: multiServer.serverManager.getClient(ServerId(serverId))?.cacheServerId,
-            });
-            return provider;
-          },
-        ),
         ChangeNotifierProxyProvider<ActiveProfileProvider, OfflineWatchSyncService>(
           create: (context) {
             final offlineModeProvider = context.read<OfflineModeProvider>();
@@ -821,7 +810,7 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
               });
             });
 
-            _startConnectivitySyncTrigger(downloadProvider);
+            _startConnectivitySyncTrigger(downloadProvider, offlineModeProvider);
 
             // Thread the offline flag into services so queue/resume paths can
             // short-circuit instead of hitting the network and failing.
@@ -859,41 +848,110 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
           },
         ),
         ChangeNotifierProvider(create: (context) => ThemeProvider()),
-        // Tracker accounts — depend on UserProfileProvider for per-profile
-        // session scoping. Hydrated and rebound by `_TrackerProfileBootstrap`.
-        ChangeNotifierProvider(create: (context) => TraktAccountProvider()),
-        ChangeNotifierProvider(create: (context) => TrackersProvider()),
-        ChangeNotifierProvider(
-          create: (context) => HiddenLibrariesProvider(storageService: context.read<StorageService>()),
-          lazy: true,
-        ),
-        ChangeNotifierProvider(
-          create: (context) {
-            final provider = LibrariesProvider(storageService: context.read<StorageService>());
-            // Reload libraries when a new server comes online. Servers bind in
-            // waves on sign-in / profile switch and slow ones reconnect after
-            // the initial load; without this they stay missing from the sidebar
-            // until a profile re-switch or restart.
-            context.read<MultiServerProvider>().onOnlineServersChanged = provider.syncToOnlineServers;
-            return provider;
-          },
-        ),
-        ChangeNotifierProvider(create: (context) => PlaybackStateProvider()),
-        ChangeNotifierProvider(create: (context) => WatchTogetherProvider()),
-        ChangeNotifierProvider(create: (context) => CompanionRemoteProvider()),
+        // Shader presets are app-global — deliberately outside the
+        // profile-scoped subtree below.
         ChangeNotifierProvider(create: (context) => ShaderProvider()),
       ],
-      child: Consumer<ThemeProvider>(
-        builder: (context, themeProvider, child) {
-          return TranslationProvider(
-            child: Builder(
-              builder: (context) {
-                final trakt = context.read<TraktAccountProvider>();
-                final trackers = context.read<TrackersProvider>();
-                return _TrackerProfileBootstrap(
-                  onProfileChanged: [trakt.onActiveProfileChanged, trackers.onActiveProfileChanged],
-                  onFirstMount: TrackerCoordinator.instance.initialize,
-                  child: Listener(
+      // Profile boundary: everything below is profile-scoped BY TREE
+      // POSITION. Switching the active profile changes the KeyedSubtree key,
+      // which disposes and recreates the inner providers and the whole app
+      // shell — including navigation, so routes showing the previous
+      // profile's content cannot survive into the next. A provider belongs in
+      // the inner list when its state is per-profile; app-global state
+      // (theme, shader presets, downloads, server manager) stays above.
+      // Shared singletons that span profiles (DownloadProvider's sync rules,
+      // OfflineWatchSyncService) keep their explicit setActiveProfileId
+      // wiring instead.
+      child: Consumer<ActiveProfileProvider>(
+        builder: (context, activeProfile, _) {
+          final activeId = activeProfile.activeId;
+          return KeyedSubtree(
+            key: ValueKey<String?>(activeId),
+            child: MultiProvider(
+              providers: [
+                ChangeNotifierProxyProvider<MultiServerProvider, WatchStateStore>(
+                  create: (_) => WatchStateStore(),
+                  update: (_, multiServer, previous) {
+                    final provider = previous ?? WatchStateStore();
+                    provider.setActiveProfileId(activeId);
+                    provider.setActiveClientScopesByServer({
+                      for (final serverId in multiServer.serverManager.serverIds)
+                        serverId: multiServer.serverManager.getClient(ServerId(serverId))?.cacheServerId,
+                    });
+                    return provider;
+                  },
+                ),
+                // Tracker accounts hydrate for the active profile on create —
+                // the subtree remount on profile switch is the rebind.
+                ChangeNotifierProvider(
+                  create: (context) {
+                    final provider = TraktAccountProvider();
+                    unawaited(
+                      provider.onActiveProfileChanged(activeId).catchError((Object e, StackTrace s) {
+                        appLogger.w('Trakt profile hydrate failed', error: e, stackTrace: s);
+                      }),
+                    );
+                    return provider;
+                  },
+                ),
+                ChangeNotifierProvider(
+                  create: (context) {
+                    final provider = TrackersProvider();
+                    unawaited(
+                      provider.onActiveProfileChanged(activeId).catchError((Object e, StackTrace s) {
+                        appLogger.w('Trackers profile hydrate failed', error: e, stackTrace: s);
+                      }),
+                    );
+                    return provider;
+                  },
+                ),
+                ChangeNotifierProvider(
+                  create: (context) => HiddenLibrariesProvider(storageService: context.read<StorageService>()),
+                  lazy: true,
+                ),
+                ChangeNotifierProvider(
+                  create: (context) => LibrariesProvider(
+                    storageService: context.read<StorageService>(),
+                    multiServer: context.read<MultiServerProvider>(),
+                  ),
+                ),
+                ChangeNotifierProvider(
+                  create: (context) {
+                    final activeProfile = context.read<ActiveProfileProvider>();
+                    return DiscoverProvider(
+                      context.read<MultiServerProvider>(),
+                      context.read<HiddenLibrariesProvider>(),
+                      context.read<LibrariesProvider>(),
+                      isProfileBinding: () => activeProfile.isBinding,
+                    );
+                  },
+                ),
+                ChangeNotifierProvider(create: (context) => PlaybackStateProvider()),
+                ChangeNotifierProvider(create: (context) => WatchTogetherProvider()),
+                ChangeNotifierProvider(create: (context) => CompanionRemoteProvider()),
+              ],
+              child: const _AppShell(),
+            ),
+          );
+        },
+      ),
+    );
+  }
+}
+
+/// The app shell below the profile boundary: theme consumer, translations,
+/// global input handling, and the MaterialApp.
+class _AppShell extends StatelessWidget {
+  const _AppShell();
+
+  @override
+  Widget build(BuildContext context) {
+    return Consumer<ThemeProvider>(
+      builder: (context, themeProvider, child) {
+        return TranslationProvider(
+          child: Builder(
+            builder: (context) {
+              return Listener(
                     onPointerDown: (event) {
                       if ((event.buttons & kBackMouseButton) != 0) {
                         rootNavigatorKey.currentState?.maybePop();
@@ -933,14 +991,12 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
                         ),
                       ),
                     ),
-                  ),
-                );
-              },
-            ),
-          );
-        },
-      ),
-    );
+                  );
+                },
+              ),
+            );
+          },
+        );
   }
 }
 
@@ -991,69 +1047,6 @@ class _AppleTvScale extends StatelessWidget {
       },
     );
   }
-}
-
-/// Hydrates Trakt and MAL/AniList/Simkl providers with the active profile's
-/// sessions and rebinds their services whenever the user switches profiles.
-///
-/// Lives high in the widget tree (above MaterialApp) so the listener survives
-/// route changes. [onFirstMount] runs exactly once after the first
-/// `didChangeDependencies`.
-class _TrackerProfileBootstrap extends StatefulWidget {
-  final Widget child;
-  final List<Future<void> Function(String? profileId)> onProfileChanged;
-  final VoidCallback? onFirstMount;
-
-  const _TrackerProfileBootstrap({required this.child, required this.onProfileChanged, this.onFirstMount});
-
-  @override
-  State<_TrackerProfileBootstrap> createState() => _TrackerProfileBootstrapState();
-}
-
-class _TrackerProfileBootstrapState extends State<_TrackerProfileBootstrap> {
-  ActiveProfileProvider? _provider;
-  String? _lastId;
-  bool _initialized = false;
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    final provider = context.read<ActiveProfileProvider>();
-
-    if (!identical(_provider, provider)) {
-      _provider?.removeListener(_onProfileChanged);
-      _provider = provider;
-      _provider!.addListener(_onProfileChanged);
-    }
-
-    if (!_initialized) {
-      _initialized = true;
-      widget.onFirstMount?.call();
-      _onProfileChanged();
-    }
-  }
-
-  void _onProfileChanged() {
-    final id = _provider?.activeId;
-    if (id == _lastId) return;
-    _lastId = id;
-    for (final fn in widget.onProfileChanged) {
-      unawaited(
-        fn(id).catchError((Object e, StackTrace s) {
-          appLogger.w('Tracker profile bootstrap failed', error: e, stackTrace: s);
-        }),
-      );
-    }
-  }
-
-  @override
-  void dispose() {
-    _provider?.removeListener(_onProfileChanged);
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) => widget.child;
 }
 
 class OrientationAwareSetup extends StatefulWidget {
@@ -1308,13 +1301,26 @@ class _SetupScreenState extends State<SetupScreen> with MountedSetStateMixin {
 
   /// Wire per-server status updates from [MultiServerManager] into the
   /// splash list so the user sees check/cross marks land as the binder
-  /// brings each client online. Best-effort: stops listening when the
-  /// state goes away.
+  /// brings each client online. [MultiServerManager.connectProgressStream]
+  /// fires as each individual server settles; [MultiServerManager.statusStream]
+  /// emits once per connect pass and back-fills anything the progress stream
+  /// missed (e.g. servers torn down by the binder's visibility sweep).
+  /// Best-effort: stops listening when the state goes away.
   StreamSubscription<Map<String, bool>>? _statusSub;
+  StreamSubscription<({String serverId, bool online})>? _connectProgressSub;
 
   void _bindServerStatusListener(ActiveProfileProvider _, MultiServerManager Function() resolveManager) {
     _statusSub?.cancel();
+    _connectProgressSub?.cancel();
     final manager = resolveManager();
+    _connectProgressSub = manager.connectProgressStream.listen((progress) {
+      if (!mounted) return;
+      final existing = _serverStatus[progress.serverId];
+      if (existing == null) return;
+      setState(() {
+        _serverStatus[progress.serverId] = (existing.$1, progress.online);
+      });
+    });
     _statusSub = manager.statusStream.listen((status) {
       if (!mounted) return;
       setState(() {
@@ -1333,6 +1339,7 @@ class _SetupScreenState extends State<SetupScreen> with MountedSetStateMixin {
   @override
   void dispose() {
     _statusSub?.cancel();
+    _connectProgressSub?.cancel();
     super.dispose();
   }
 

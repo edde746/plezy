@@ -22,6 +22,7 @@ import '../media/server_capabilities.dart';
 import '../utils/external_ids.dart';
 import 'bif_thumbnail_service.dart';
 import 'download_artwork_helpers.dart';
+import 'settings_service.dart';
 import 'library_query_translator.dart';
 import 'scrub_preview_source.dart';
 import '../utils/media_server_http_client.dart';
@@ -51,7 +52,7 @@ import '../utils/content_utils.dart';
 import '../media/media_sort.dart';
 import '../models/plex/plex_video_playback_data.dart';
 import '../models/transcode_quality_preset.dart';
-import '../utils/endpoint_failover_interceptor.dart';
+import '../utils/failover_http_client.dart';
 import '../utils/app_logger.dart';
 import '../utils/media_server_retry.dart';
 import '../utils/media_server_timeouts.dart';
@@ -60,7 +61,6 @@ import '../utils/plex_cache_parser.dart';
 import '../utils/plex_library_section_utils.dart';
 import '../utils/plex_url_helper.dart';
 import '../utils/session_identifier.dart' as session_id;
-import '../utils/watch_state_notifier.dart';
 import '../i18n/strings.g.dart';
 import '../mpv/mpv.dart';
 import 'api_cache.dart';
@@ -208,8 +208,7 @@ class PlexClient
   PlexConfig config;
 
   @override
-  late final MediaServerHttpClient _http;
-  final EndpointFailoverManager? _endpointManager;
+  late final FailoverHttpClient _http;
   final Future<void> Function(String newBaseUrl)? _onEndpointChanged;
   final VoidCallback? _onAllEndpointsExhausted;
 
@@ -323,18 +322,20 @@ class PlexClient
     this._onEndpointChanged,
     this._onAllEndpointsExhausted,
     http.Client? httpClient,
-  }) : _endpointManager = (prioritizedEndpoints != null && prioritizedEndpoints.isNotEmpty)
-           ? EndpointFailoverManager(prioritizedEndpoints)
-           : null {
+  }) {
     LogRedactionManager.registerServer(config.baseUrl, config.token);
 
-    _http = MediaServerHttpClient(
+    _http = FailoverHttpClient(
       baseUrl: config.baseUrl,
       defaultHeaders: config.headers,
       connectTimeout: MediaServerTimeouts.connect,
       receiveTimeout: MediaServerTimeouts.receive,
       usePlexApiClient: true,
       client: httpClient,
+      logLabel: 'Plex',
+      prioritizedEndpoints: prioritizedEndpoints ?? const [],
+      onEndpointSwitch: (newBaseUrl, {required persist}) => _handleEndpointSwitch(newBaseUrl, persist: persist),
+      onAllEndpointsExhausted: _onAllEndpointsExhausted,
     );
   }
 
@@ -380,10 +381,9 @@ class PlexClient
     return _http.closeGracefully(drainTimeout: drainTimeout);
   }
 
-  bool _failoverSwitching = false;
-
-  /// Execute a GET request with endpoint failover retry. On timeout/connection
-  /// errors the next endpoint is tried (once). Non-GET methods are not retried.
+  /// Execute a GET request with endpoint failover (see [FailoverHttpClient]
+  /// for the shared semantics) and Plex's status-code policy: non-2xx
+  /// responses throw so callers don't blindly cast error bodies.
   /// Optional hub surfaces disable endpoint failover so a slow row does not
   /// move the whole client away from an otherwise working endpoint.
   @override
@@ -395,74 +395,16 @@ class PlexClient
     AbortController? abort,
     bool allowEndpointFailover = true,
   }) async {
-    final gen = _endpointManager?.generation;
-    try {
-      final response = await _http.get(
-        path,
-        queryParameters: queryParameters,
-        headers: headers,
-        timeout: timeout,
-        abort: abort,
-      );
-      throwIfHttpError(response);
-      return response;
-    } on MediaServerHttpException catch (e) {
-      if (!allowEndpointFailover ||
-          !_shouldAttemptFailover(e) ||
-          _failoverSwitching ||
-          _endpointManager == null ||
-          gen != _endpointManager.generation) {
-        rethrow;
-      }
-
-      if (!_endpointManager.hasFallback) {
-        final resetBaseUrl = _endpointManager.resetToFirst();
-        if (resetBaseUrl != null) {
-          await _handleEndpointSwitch(resetBaseUrl, persist: false);
-        }
-        _onAllEndpointsExhausted?.call();
-        rethrow;
-      }
-
-      final failedEndpoint = _endpointManager.current;
-      final nextBaseUrl = _endpointManager.moveToNext();
-      if (nextBaseUrl == null) rethrow;
-
-      _failoverSwitching = true;
-      try {
-        appLogger.i(
-          'Switching Plex endpoint after GET failure',
-          error: {'from': failedEndpoint, 'to': nextBaseUrl, 'path': path},
-        );
-        await _handleEndpointSwitch(nextBaseUrl, persist: false);
-        final response = await _http.get(
-          path,
-          queryParameters: queryParameters,
-          headers: headers,
-          timeout: timeout,
-          abort: abort,
-        );
-        throwIfHttpError(response);
-        appLogger.i('Endpoint failover retry succeeded', error: {'newEndpoint': nextBaseUrl});
-        await _onEndpointChanged?.call(nextBaseUrl);
-        return response;
-      } catch (_) {
-        final resetBaseUrl = _endpointManager.resetToFirst();
-        if (resetBaseUrl != null) {
-          await _handleEndpointSwitch(resetBaseUrl, persist: false);
-        }
-        _onAllEndpointsExhausted?.call();
-        rethrow;
-      } finally {
-        _failoverSwitching = false;
-      }
-    }
-  }
-
-  bool _shouldAttemptFailover(MediaServerHttpException e) {
-    if (e.isTransient) return true;
-    final sc = e.statusCode;
-    return sc != null && sc >= 500 && sc <= 599;
+    final response = await _http.get(
+      path,
+      queryParameters: queryParameters,
+      headers: headers,
+      timeout: timeout,
+      abort: abort,
+      allowEndpointFailover: allowEndpointFailover,
+    );
+    throwIfHttpError(response);
+    return response;
   }
 
   /// Fetch /media/providers and parse libraries + EPG providers from the response.
@@ -590,12 +532,12 @@ class PlexClient
 
   /// Update endpoint priority list and optionally hop to the new best endpoint.
   Future<void> updateEndpointPreferences(List<String> prioritizedEndpoints, {bool switchToFirst = false}) async {
-    if (_endpointManager == null || prioritizedEndpoints.isEmpty) {
+    if (_http.endpoints.isEmpty || prioritizedEndpoints.isEmpty) {
       return;
     }
 
     final targetBaseUrl = switchToFirst ? prioritizedEndpoints.first : config.baseUrl;
-    _endpointManager.reset(prioritizedEndpoints, currentBaseUrl: targetBaseUrl);
+    _http.resetEndpoints(prioritizedEndpoints, currentBaseUrl: targetBaseUrl);
 
     if (switchToFirst && targetBaseUrl != config.baseUrl) {
       await _handleEndpointSwitch(targetBaseUrl);
@@ -1674,30 +1616,20 @@ class PlexClient
     }
   }
 
-  /// Mark media as watched
-  ///
-  /// If [item] is provided, emits a [WatchStateEvent] for UI updates.
-  Future<void> markAsWatched(String ratingKey, {MediaItem? item}) async {
+  /// Mark media as watched (transport only — see [MediaServerClient.markWatched]).
+  Future<void> markAsWatched(String ratingKey) async {
     await _getWithFailover(
       '/:/scrobble',
       queryParameters: {'key': ratingKey, 'identifier': 'com.plexapp.plugins.library'},
     );
-    if (item != null) {
-      WatchStateNotifier().notifyWatched(item: item, isNowWatched: true);
-    }
   }
 
-  /// Mark media as unwatched
-  ///
-  /// If [item] is provided, emits a [WatchStateEvent] for UI updates.
-  Future<void> markAsUnwatched(String ratingKey, {MediaItem? item}) async {
+  /// Mark media as unwatched (transport only — see [MediaServerClient.markUnwatched]).
+  Future<void> markAsUnwatched(String ratingKey) async {
     await _getWithFailover(
       '/:/unscrobble',
       queryParameters: {'key': ratingKey, 'identifier': 'com.plexapp.plugins.library'},
     );
-    if (item != null) {
-      WatchStateNotifier().notifyWatched(item: item, isNowWatched: false);
-    }
   }
 
   /// Update playback progress
@@ -1757,6 +1689,17 @@ class PlexClient
     try {
       final response = await _getWithFailover('/:/prefs');
       _serverPrefs = _parseSettingsMap(response);
+      // Mirror the watched threshold to settings: offline paths resolve it
+      // synchronously with no client bound — see
+      // OfflineWatchSyncService.getWatchedThreshold. Skipped when unchanged
+      // (this runs on every connect).
+      final settings = SettingsService.instanceOrNull;
+      if (settings != null) {
+        final pref = SettingsService.watchedThresholdPref(ServerId(serverId));
+        if (settings.read(pref) != watchedThresholdPercent) {
+          unawaited(settings.write(pref, watchedThresholdPercent));
+        }
+      }
     } catch (e) {
       appLogger.d('Failed to fetch server prefs: $e');
     }
@@ -1980,10 +1923,16 @@ class PlexClient
   /// Get related hubs for a specific metadata item (collections, similar, "more from" director/actor)
   Future<List<PlexHubDto>> _getRelatedHubs(String ratingKey, {int count = 10}) async {
     try {
-      final response = await _getWithFailover(
-        '/hubs/metadata/$ratingKey/related',
-        queryParameters: {'count': count},
-        allowEndpointFailover: false,
+      final response = await retryTransientMediaServerCall(
+        operation: 'Plex related hubs',
+        attemptTimeouts: MediaServerTimeouts.libraryHubAttemptTimeouts,
+        call: (timeout, abort) => _getWithFailover(
+          '/hubs/metadata/$ratingKey/related',
+          queryParameters: {'count': count},
+          timeout: timeout,
+          abort: abort,
+          allowEndpointFailover: false,
+        ),
       );
       final sid = serverId;
       final sname = serverName;
@@ -3015,7 +2964,7 @@ class PlexClient
 
   /// Build a VOD transcode stream URL (decision + start path).
   ///
-  /// Mirrors [buildLiveStreamPath] but for on-demand video with a quality
+  /// Mirrors the live tune's _buildLiveStreamPath but for on-demand video with a quality
   /// preset, selected audio stream, and Plex Desktop-style HTTP/MKV output.
   /// Text subtitles selected on the Plex part are embedded in the MKV stream;
   /// real external sidecars are still attached separately by callers.
@@ -3277,15 +3226,17 @@ class PlexClient
     }
   }
 
+  /// The persist branch is deliberately outside the changed-guard: the
+  /// failover client's two-phase protocol applies the switch with
+  /// `persist: false` first, then re-calls with `persist: true` after the
+  /// retry succeeds — by which point the URL is already current.
   Future<void> _handleEndpointSwitch(String newBaseUrl, {bool persist = true}) async {
-    if (config.baseUrl == newBaseUrl) {
-      return;
+    if (config.baseUrl != newBaseUrl) {
+      appLogger.i('Applying Plex endpoint switch', error: newBaseUrl);
+      _http.baseUrl = newBaseUrl;
+      config = config.copyWith(baseUrl: newBaseUrl);
+      LogRedactionManager.registerServerUrl(newBaseUrl);
     }
-
-    appLogger.i('Applying Plex endpoint switch', error: newBaseUrl);
-    _http.baseUrl = newBaseUrl;
-    config = config.copyWith(baseUrl: newBaseUrl);
-    LogRedactionManager.registerServerUrl(newBaseUrl);
 
     if (persist && _onEndpointChanged != null) {
       await _onEndpointChanged(newBaseUrl);
@@ -3307,6 +3258,14 @@ class PlexClient
     _http.defaultHeaders = Map.of(config.headers);
     LogRedactionManager.registerToken(newToken);
     await _initMediaProviders();
+  }
+
+  /// Apply the app locale to future Plex API requests. PMS localizes standard
+  /// server-provided labels (hubs, generic seasons, etc.) from these headers.
+  void applyLanguageUpdate(String languageCode) {
+    if (config.languageCode == languageCode) return;
+    config = config.copyWith(languageCode: languageCode);
+    _http.defaultHeaders = Map.of(config.headers);
   }
 
   // ────────────────────────────────────────────────────────────────────
@@ -3771,15 +3730,14 @@ class PlexClient
   }
 
   @override
-  Future<void> markWatched(MediaItem item) => markAsWatched(item.id, item: item);
+  Future<void> markWatched(MediaItem item) => markAsWatched(item.id);
 
   @override
-  Future<void> markUnwatched(MediaItem item) => markAsUnwatched(item.id, item: item);
+  Future<void> markUnwatched(MediaItem item) => markAsUnwatched(item.id);
 
   @override
   Future<void> removeFromContinueWatching(MediaItem item) async {
     await removeFromOnDeck(item.id);
-    WatchStateNotifier().notifyRemovedFromContinueWatching(item: item);
   }
 
   /// Rate a media item (0.0-10.0 scale, where each integer = half a star).
@@ -3962,16 +3920,46 @@ class PlexClient
     );
   }
 
-  /// Plex-specific: top-level folders in a library.
-  Future<List<MediaItem>> fetchLibraryFolders(String sectionId) async {
-    final raw = await _getLibraryFolders(sectionId);
-    return raw.map((m) => PlexMappers.mediaItem(m)).toList();
+  /// Plex folder listings are Directory rows with no usable `type` (mapped to
+  /// [MediaKind.unknown]) or an explicit `folder` type, identified by their
+  /// relative `/folder` key. Classify them as [MediaKind.folder] and stamp
+  /// [MediaItem.backendFolderKey] so the tree and the children fetch stay
+  /// free of raw-map reads.
+  MediaItem _classifyFolderRow(MediaItem item) {
+    final key = item.raw?['key'] as String?;
+    final isFolder =
+        item.kind == MediaKind.folder || item.kind == MediaKind.unknown || (key?.contains('/folder') ?? false);
+    if (!isFolder) return item;
+    return item.copyWith(kind: MediaKind.folder, backendFolderKey: key);
   }
 
-  /// Plex-specific: contents of a folder (files and subfolders).
-  Future<List<MediaItem>> fetchFolderChildren(String folderKey, {String? libraryId, String? libraryTitle}) async {
-    final raw = await _getFolderChildren(folderKey, librarySectionID: libraryId, librarySectionTitle: libraryTitle);
-    return raw.map((m) => PlexMappers.mediaItem(m)).toList();
+  /// Top-level folders in a library. Single response — [onPage] never fires.
+  @override
+  Future<List<MediaItem>> fetchLibraryFolders(
+    String libraryId, {
+    void Function(List<MediaItem> itemsSoFar)? onPage,
+  }) async {
+    final raw = await _getLibraryFolders(libraryId);
+    return raw.map((m) => _classifyFolderRow(PlexMappers.mediaItem(m))).toList();
+  }
+
+  /// Contents of a folder (files and subfolders), via the folder row's
+  /// [MediaItem.backendFolderKey]. Single response — [onPage] never fires.
+  @override
+  Future<List<MediaItem>> fetchFolderChildren(
+    MediaItem folder, {
+    String? libraryId,
+    String? libraryTitle,
+    void Function(List<MediaItem> itemsSoFar)? onPage,
+  }) async {
+    final folderKey = folder.backendFolderKey;
+    if (folderKey == null) return const [];
+    final raw = await _getFolderChildren(
+      folderKey,
+      librarySectionID: libraryId ?? folder.libraryId,
+      librarySectionTitle: libraryTitle ?? folder.libraryTitle,
+    );
+    return raw.map((m) => _classifyFolderRow(PlexMappers.mediaItem(m))).toList();
   }
 
   /// Plex-specific: extras (trailers, behind-the-scenes) for a media item.

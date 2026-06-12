@@ -133,4 +133,27 @@ void main() {
       expect(CodecUtils.formatAudioCodec('weird'), 'WEIRD');
     });
   });
+
+  group('CodecUtils.formatAudioChannels', () {
+    test('maps counts to layout names', () {
+      expect(CodecUtils.formatAudioChannels(1), 'Mono');
+      expect(CodecUtils.formatAudioChannels(2), 'Stereo');
+      expect(CodecUtils.formatAudioChannels(3), '3.0');
+      expect(CodecUtils.formatAudioChannels(4), '4.0');
+      expect(CodecUtils.formatAudioChannels(5), '4.1');
+      expect(CodecUtils.formatAudioChannels(6), '5.1');
+      expect(CodecUtils.formatAudioChannels(7), '6.1');
+      expect(CodecUtils.formatAudioChannels(8), '7.1');
+    });
+
+    test('falls back to Nch above 8 channels', () {
+      expect(CodecUtils.formatAudioChannels(10), '10ch');
+    });
+
+    test('returns null for null and non-positive counts', () {
+      expect(CodecUtils.formatAudioChannels(null), null);
+      expect(CodecUtils.formatAudioChannels(0), null);
+      expect(CodecUtils.formatAudioChannels(-1), null);
+    });
+  });
 }

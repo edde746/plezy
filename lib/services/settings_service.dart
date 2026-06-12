@@ -11,6 +11,7 @@ import '../i18n/strings.g.dart';
 import '../models/mpv_config_models.dart';
 import '../models/external_player_models.dart';
 import 'base_shared_preferences_service.dart';
+import 'device_performance.dart';
 export 'base_shared_preferences_service.dart'
     show Pref, BoolPref, IntPref, DoublePref, StringPref, NullableStringPref, StringListPref, EnumPref, JsonPref;
 import '../models/transcode_quality_preset.dart';
@@ -289,6 +290,7 @@ class SettingsService extends BaseSharedPreferencesService {
   static const rewindOnResume = IntPref('rewind_on_resume');
   static const showHeroSection = BoolPref('show_hero_section', defaultValue: true);
   static const tvFullCardLayout = BoolPref('tv_full_card_layout', defaultValue: false);
+  static const focusGlow = BoolPref('focus_glow', defaultValue: true);
   static const useGlobalHubs = BoolPref('use_global_hubs', defaultValue: true);
   static const showServerNameOnHubs = BoolPref('show_server_name_on_hubs');
   static const groupLibrariesByServer = BoolPref('group_libraries_by_server', defaultValue: true);
@@ -362,6 +364,11 @@ class SettingsService extends BaseSharedPreferencesService {
   static const requireProfileSelectionOnOpen = BoolPref('require_profile_selection_on_open');
   static const useExternalPlayer = BoolPref('use_external_player');
   static const forceTvMode = BoolPref('force_tv_mode');
+  static const visualEffects = EnumPref<VisualEffectsSetting>(
+    'visual_effects',
+    values: VisualEffectsSetting.values,
+    defaultValue: VisualEffectsSetting.auto,
+  );
   static const ambientLighting = BoolPref('ambient_lighting');
   static const audioPassthrough = BoolPref('audio_passthrough');
   static const audioNormalization = BoolPref('audio_normalization');
@@ -388,18 +395,19 @@ class SettingsService extends BaseSharedPreferencesService {
   static final defaultBoxFitMode = IntPref('default_box_fit_mode', transform: (v) => v.clamp(0, 2));
   static final displaySwitchDelay = IntPref('display_switch_delay', transform: (v) => v.clamp(0, 10));
 
-  static final themeMode = EnumPref<ThemeMode>(
+  static ThemeMode _tvAwareThemeModeDefault() => TvDetectionService.isTVSync() ? ThemeMode.oled : ThemeMode.system;
+  static const themeMode = EnumPref<ThemeMode>(
     'theme_mode',
     values: ThemeMode.values,
-    defaultValue: TvDetectionService.isTVSync() ? ThemeMode.oled : ThemeMode.system,
+    defaultValueProvider: _tvAwareThemeModeDefault,
   );
-  static final videoPlayerNavigationEnabled = BoolPref(
+  static const videoPlayerNavigationEnabled = BoolPref(
     'video_player_navigation_enabled',
-    defaultValue: TvDetectionService.isTVSync(),
+    defaultValueProvider: TvDetectionService.isTVSync,
   );
-  static final enableCompanionRemoteServer = BoolPref(
+  static const enableCompanionRemoteServer = BoolPref(
     'enable_companion_remote_server',
-    defaultValue: PlatformDetector.isDesktopOS(),
+    defaultValueProvider: PlatformDetector.isDesktopOS,
   );
   static const startInFullscreen = BoolPref('start_in_fullscreen');
   static const exitFullscreenOnPlayerClose = BoolPref('exit_fullscreen_on_player_close');
@@ -754,6 +762,7 @@ class SettingsService extends BaseSharedPreferencesService {
     requireProfileSelectionOnOpen,
     useExternalPlayer,
     forceTvMode,
+    visualEffects,
     ambientLighting,
     audioPassthrough,
     audioNormalization,

@@ -34,8 +34,10 @@ import '../library_alpha_scroll_metrics.dart';
 import '../library_filter_sort_loader.dart';
 import '../../../widgets/focusable_media_card.dart';
 import '../../../widgets/focusable_filter_chip.dart';
+import '../../../widgets/listenable_selector.dart';
 import '../../../widgets/loading_indicator_box.dart';
 import '../../../widgets/media_grid_delegate.dart';
+import '../../../widgets/sliver_cross_axis_layout_builder.dart';
 import '../../../widgets/media_card_list_layout.dart';
 import '../../../widgets/bottom_sheet_page_scaffold.dart';
 import '../../../widgets/overlay_sheet.dart';
@@ -1311,26 +1313,31 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
             top: overlayTopPadding,
             right: 0,
             bottom: 0,
+            // Select the derived letter rather than listening to the raw
+            // index: the index changes every scrolled row, but the bar only
+            // needs a rebuild when the letter itself flips.
             child: _isPhone(context)
-                ? ValueListenableBuilder<int>(
-                    valueListenable: _currentFirstVisibleIndex,
-                    builder: (context, visibleIndex, _) => ValueListenableBuilder<bool>(
+                ? ListenableSelector<String>(
+                    listenable: _currentFirstVisibleIndex,
+                    selector: () => _alphaLetterFor(_currentFirstVisibleIndex.value),
+                    builder: (context, currentLetter, _) => ValueListenableBuilder<bool>(
                       valueListenable: _isScrollActive,
                       builder: (context, scrolling, _) => AlphaScrollHandle(
                         firstCharacters: _firstCharacters,
                         onJump: _jumpToIndex,
-                        currentLetter: _alphaLetterFor(visibleIndex),
+                        currentLetter: currentLetter,
                         descending: _isTitleSortDescending,
                         isScrolling: scrolling,
                       ),
                     ),
                   )
-                : ValueListenableBuilder<int>(
-                    valueListenable: _currentFirstVisibleIndex,
-                    builder: (context, visibleIndex, _) => AlphaJumpBar(
+                : ListenableSelector<String>(
+                    listenable: _currentFirstVisibleIndex,
+                    selector: () => _alphaLetterFor(_currentFirstVisibleIndex.value),
+                    builder: (context, currentLetter, _) => AlphaJumpBar(
                       firstCharacters: _firstCharacters,
                       onJump: _jumpToIndex,
-                      currentLetter: _alphaLetterFor(visibleIndex),
+                      currentLetter: currentLetter,
                       descending: _isTitleSortDescending,
                       focusNode: _alphaJumpBarFocusNode,
                       onNavigateLeft: _navigateToGridNearScroll,
@@ -1448,8 +1455,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
       final screenSize = MediaQuery.sizeOf(context);
       final density = context.settingsRead(SettingsService.libraryDensity);
       final maxExtent = GridSizeCalculator.getMaxCrossAxisExtent(context, density);
-      final crossAxisSpacing = GridLayoutConstants.crossAxisSpacing;
-      final columnCount = ((screenSize.width + crossAxisSpacing) / (maxExtent + crossAxisSpacing)).ceil().clamp(1, 100);
+      final columnCount = GridSizeCalculator.getColumnCount(screenSize.width, maxExtent);
       final itemWidth = screenSize.width / columnCount;
       final itemHeight = itemWidth / GridLayoutConstants.posterAspectRatio;
       final rowHeight = itemHeight + GridLayoutConstants.mainAxisSpacing;
@@ -1610,6 +1616,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
           onRefresh: updateItem,
           firstItemFocusNode: firstItemFocusNode,
           onNavigateUp: _navigateToChips,
+          onNavigateLeft: _navigateToSidebar,
         ),
       ];
     }
@@ -1701,72 +1708,54 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
 
     if (viewMode == ViewMode.list) {
       // In list view, all items are in a single column (first column)
+      _setListScrollMetrics(density: libraryDensity, usesWideAspectRatio: useWideRatio);
       return SliverPadding(
         padding: .fromLTRB(8, topPadding, rightPadding, 8),
-        sliver: SliverLayoutBuilder(
-          builder: (context, _) {
-            _setListScrollMetrics(density: libraryDensity, usesWideAspectRatio: useWideRatio);
-            return SliverList.builder(
+        sliver: SliverList.builder(
+          itemCount: itemCount,
+          itemBuilder: (context, index) {
+            final child = _buildMediaCardItem(
+              index,
+              isFirstRow: index == 0,
+              isFirstColumn: true, // List view = single column
+              isLastColumn: true,
+              disableScale: true,
+              columnCount: 1,
               itemCount: itemCount,
-              itemBuilder: (context, index) {
-                final child = _buildMediaCardItem(
-                  index,
-                  isFirstRow: index == 0,
-                  isFirstColumn: true, // List view = single column
-                  isLastColumn: true,
-                  disableScale: true,
-                  columnCount: 1,
-                  itemCount: itemCount,
-                );
-                return index == 0 ? _buildMeasuredFirstListItem(child) : child;
-              },
             );
+            return index == 0 ? _buildMeasuredFirstListItem(child) : child;
           },
         ),
       );
     } else {
       // In grid view, calculate columns and pass to item builder
       // Use 16:9 aspect ratio when browsing episodes with episode thumbnail mode
-      final baseMaxExtent = GridSizeCalculator.getMaxCrossAxisExtent(context, libraryDensity);
-      final effectiveMaxExtent = useWideRatio ? baseMaxExtent * 1.8 : baseMaxExtent;
       final hasAlphaBarReservation = rightPadding > 8.0;
       return SliverPadding(
         padding: .fromLTRB(8, topPadding, rightPadding, 8),
-        sliver: SliverLayoutBuilder(
-          builder: (context, constraints) {
-            final gridSpacing = MediaGridDelegate.spacingFor(context: context, fullBleedImage: fullCardLayout);
-            // Compute column count from the width the grid would have without the alpha
-            // bar's reservation, so toggling the bar doesn't repack the grid into one
-            // fewer column and blow up poster size.
-            final baselineWidth = constraints.crossAxisExtent + (rightPadding - 8.0);
-            final columnCount = GridSizeCalculator.getColumnCount(
-              baselineWidth,
-              effectiveMaxExtent,
-              crossAxisSpacing: gridSpacing,
+        sliver: SliverCrossAxisLayoutBuilder(
+          builder: (context, crossAxisExtent) {
+            final geometry = MediaGridGeometry.resolve(
+              context: context,
+              crossAxisExtent: crossAxisExtent,
+              // Compute column count from the width the grid would have without
+              // the alpha bar's reservation, so toggling the bar doesn't repack
+              // the grid into one fewer column and blow up poster size.
+              crossAxisExtentForColumnCount: hasAlphaBarReservation ? crossAxisExtent + (rightPadding - 8.0) : null,
+              density: libraryDensity,
+              useWideAspectRatio: useWideRatio,
+              fullBleedImage: fullCardLayout,
             );
+            final columnCount = geometry.columnCount;
             // Cache grid metrics for alpha jump bar scroll calculations
-            final itemWidth = GridSizeCalculator.getCellWidthForColumnCount(
-              constraints.crossAxisExtent,
-              columnCount,
-              crossAxisSpacing: gridSpacing,
-            );
-            final itemHeight =
-                itemWidth /
-                MediaGridDelegate.aspectRatioFor(useWideAspectRatio: useWideRatio, fullBleedImage: fullCardLayout);
             _scrollMetrics = LibraryAlphaScrollMetrics(
               columnCount: columnCount,
-              rowHeight: itemHeight + gridSpacing,
-              itemWidth: itemWidth,
-              itemHeight: itemHeight,
+              rowHeight: geometry.itemHeight + geometry.spacing,
+              itemWidth: geometry.itemWidth,
+              itemHeight: geometry.itemHeight,
             );
             return SliverGrid.builder(
-              gridDelegate: MediaGridDelegate.createDelegate(
-                context: context,
-                density: libraryDensity,
-                useWideAspectRatio: useWideRatio,
-                fullBleedImage: fullCardLayout,
-                maxCrossAxisExtentOverride: hasAlphaBarReservation ? itemWidth : null,
-              ),
+              gridDelegate: geometry.delegate,
               itemCount: itemCount,
               itemBuilder: (context, index) => _buildMediaCardItem(
                 index,

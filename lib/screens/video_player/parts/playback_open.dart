@@ -282,6 +282,38 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
     }
   }
 
+  /// Gate-release resume that yields to Watch Together when a session owns
+  /// the playback start: track selection is still armed, but instead of
+  /// playing, the sync readiness hold (if any) is released — the
+  /// coordinated group start unpauses later. Shared by the start and reload
+  /// flows.
+  Future<void> _resumeAfterStartupGateOrYieldToWatchTogether({
+    required Player currentPlayer,
+    required bool attachesSubsAtOpen,
+    required bool hasExternalSubs,
+    required String reason,
+    required bool wtOwnsStart,
+    Completer<void>? wtStartupHold,
+  }) async {
+    if (!wtOwnsStart) {
+      return _resumeAfterFrameRateStartupGate(
+        currentPlayer: currentPlayer,
+        attachesSubsAtOpen: attachesSubsAtOpen,
+        hasExternalSubs: hasExternalSubs,
+        reason: reason,
+      );
+    }
+    appLogger.d('Frame rate matching: yielding post-gate resume to Watch Together ($reason)');
+    final trackManager = _trackManager;
+    if (trackManager != null && !attachesSubsAtOpen && hasExternalSubs) {
+      trackManager.waitingForExternalSubsTrackSelection = false;
+      trackManager.applyTrackSelectionWhenReady();
+    }
+    if (wtStartupHold != null && !wtStartupHold.isCompleted) {
+      wtStartupHold.complete();
+    }
+  }
+
   /// Push the user's subtitle style to the native rendering layer (no-op on
   /// mpv backends, which style via `sub-*` properties). Must run after
   /// open() since that's when ExoPlayer initializes its subtitle views.

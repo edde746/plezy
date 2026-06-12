@@ -5,10 +5,10 @@ import 'package:flutter/material.dart';
 import 'package:plezy/widgets/app_icon.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
+import '../focus/card_focus_scope.dart';
 import '../focus/input_mode_tracker.dart';
 import '../media/media_item.dart';
 import '../media/media_item_types.dart';
-import '../media/season_title.dart';
 import '../media/media_kind.dart';
 import '../media/media_playlist.dart';
 import '../mixins/context_menu_tap_mixin.dart';
@@ -17,6 +17,7 @@ import '../providers/watch_state_store.dart';
 import '../services/download_storage_service.dart';
 import '../services/settings_service.dart';
 import 'settings_builder.dart';
+import 'watched_indicator.dart';
 import '../utils/content_utils.dart';
 import '../utils/provider_extensions.dart';
 import '../utils/formatters.dart';
@@ -25,7 +26,6 @@ import '../utils/snackbar_helper.dart';
 import '../theme/mono_tokens.dart';
 import '../i18n/strings.g.dart';
 import 'media_context_menu.dart';
-import 'media_progress_bar.dart';
 import 'media_card_list_layout.dart';
 import 'backend_badge.dart';
 import 'optimized_media_image.dart';
@@ -120,7 +120,11 @@ class MediaCardState extends State<MediaCard> with ContextMenuTapMixin<MediaCard
         final episodeInfo = item.parentIndex != null && item.index != null ? 'S${item.parentIndex} E${item.index}' : '';
         baseLabel = t.accessibility.mediaCardEpisode(title: item.displayTitle, episodeInfo: episodeInfo);
       case MediaKind.season:
-        final seasonInfo = localizedSeasonLabel(title: item.title, index: item.index);
+        final seasonInfo = item.title?.isNotEmpty == true
+            ? item.title!
+            : item.index != null
+            ? t.common.seasonNumber(number: item.index!)
+            : '';
         baseLabel = t.accessibility.mediaCardSeason(title: item.displayTitle, seasonInfo: seasonInfo);
       case MediaKind.movie:
         baseLabel = t.accessibility.mediaCardMovie(title: item.displayTitle);
@@ -253,19 +257,28 @@ class MediaCardState extends State<MediaCard> with ContextMenuTapMixin<MediaCard
 
   /// Grid layout — inlined from former _MediaCardGrid, _PosterOverlay, and
   /// flattened Column. Semantics removed (InkWell provides button semantics).
+  ///
+  /// MergeSemantics collapses the card (texts, progress, button) into ONE
+  /// semantics node. Browse rails/grids show dozens of cards and the
+  /// platform-driven semantics pass runs every frame on TV boxes with an
+  /// accessibility service active — node count is the cost driver. The card
+  /// has a single action (tap; long-press menu), so merging is safe and gives
+  /// screen readers one coherent announcement per card.
   Widget _buildGridCard(BuildContext context, Object item, String? localPosterPath) {
     if (widget.fullBleedImage) {
-      return LayoutBuilder(
-        builder: (context, constraints) {
-          final cardWidth = widget.width ?? (constraints.hasBoundedWidth ? constraints.maxWidth : null);
-          final cardHeight = widget.height ?? (constraints.hasBoundedHeight ? constraints.maxHeight : null);
-          if (cardHeight == null) return _buildStandardGridCard(context, item, localPosterPath);
-          return _buildFullBleedGridCard(context, item, localPosterPath, width: cardWidth, height: cardHeight);
-        },
+      return MergeSemantics(
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final cardWidth = widget.width ?? (constraints.hasBoundedWidth ? constraints.maxWidth : null);
+            final cardHeight = widget.height ?? (constraints.hasBoundedHeight ? constraints.maxHeight : null);
+            if (cardHeight == null) return _buildStandardGridCard(context, item, localPosterPath);
+            return _buildFullBleedGridCard(context, item, localPosterPath, width: cardWidth, height: cardHeight);
+          },
+        ),
       );
     }
 
-    return _buildStandardGridCard(context, item, localPosterPath);
+    return MergeSemantics(child: _buildStandardGridCard(context, item, localPosterPath));
   }
 
   Widget _buildFullBleedGridCard(
@@ -287,23 +300,26 @@ class MediaCardState extends State<MediaCard> with ContextMenuTapMixin<MediaCard
         onSecondaryTapDown: storeTapPosition,
         onSecondaryTap: showContextMenuFromTap,
         borderRadius: BorderRadius.circular(tokens(context).radiusSm),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(tokens(context).radiusSm),
-          child: Stack(
-            fit: StackFit.expand,
-            children: [
-              _buildPosterImage(
-                context,
-                item,
-                isOffline: widget.isOffline,
-                localPosterPath: localPosterPath,
-                mixedHubContext: widget.mixedHubContext,
-                episodePosterModeOverride: widget.episodePosterModeOverride,
-                knownWidth: width,
-                knownHeight: height,
-              ),
-              if (item is MediaItem) _MediaCardHelpers.buildWatchProgress(context, item),
-            ],
+        child: CardFocusBorder(
+          borderRadius: tokens(context).radiusSm,
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(tokens(context).radiusSm),
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                _buildPosterImage(
+                  context,
+                  item,
+                  isOffline: widget.isOffline,
+                  localPosterPath: localPosterPath,
+                  mixedHubContext: widget.mixedHubContext,
+                  episodePosterModeOverride: widget.episodePosterModeOverride,
+                  knownWidth: width,
+                  knownHeight: height,
+                ),
+                if (item is MediaItem) WatchedIndicator(item: item),
+              ],
+            ),
           ),
         ),
       ),
@@ -314,6 +330,30 @@ class MediaCardState extends State<MediaCard> with ContextMenuTapMixin<MediaCard
     // Compute actual poster dimensions from card dimensions
     final posterWidth = widget.width != null ? widget.width! - 6 : null;
     final posterHeight = widget.height;
+
+    // The focus border hugs the poster (captions stay outside it), matching
+    // the full-bleed card treatment.
+    final poster = CardFocusBorder(
+      borderRadius: tokens(context).radiusSm,
+      child: Stack(
+        children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(tokens(context).radiusSm),
+            child: _buildPosterImage(
+              context,
+              item,
+              isOffline: widget.isOffline,
+              localPosterPath: localPosterPath,
+              mixedHubContext: widget.mixedHubContext,
+              episodePosterModeOverride: widget.episodePosterModeOverride,
+              knownWidth: posterHeight != null ? posterWidth : null,
+              knownHeight: posterHeight,
+            ),
+          ),
+          if (item is MediaItem) WatchedIndicator(item: item),
+        ],
+      ),
+    );
 
     return SizedBox(
       width: widget.width,
@@ -334,47 +374,9 @@ class MediaCardState extends State<MediaCard> with ContextMenuTapMixin<MediaCard
             children: [
               // Poster with overlay
               if (posterHeight != null)
-                SizedBox(
-                  width: double.infinity,
-                  height: posterHeight,
-                  child: Stack(
-                    children: [
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(tokens(context).radiusSm),
-                        child: _buildPosterImage(
-                          context,
-                          item,
-                          isOffline: widget.isOffline,
-                          localPosterPath: localPosterPath,
-                          mixedHubContext: widget.mixedHubContext,
-                          episodePosterModeOverride: widget.episodePosterModeOverride,
-                          knownWidth: posterWidth,
-                          knownHeight: posterHeight,
-                        ),
-                      ),
-                      if (item is MediaItem) _MediaCardHelpers.buildWatchProgress(context, item),
-                    ],
-                  ),
-                )
+                SizedBox(width: double.infinity, height: posterHeight, child: poster)
               else
-                Expanded(
-                  child: Stack(
-                    children: [
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(tokens(context).radiusSm),
-                        child: _buildPosterImage(
-                          context,
-                          item,
-                          isOffline: widget.isOffline,
-                          localPosterPath: localPosterPath,
-                          mixedHubContext: widget.mixedHubContext,
-                          episodePosterModeOverride: widget.episodePosterModeOverride,
-                        ),
-                      ),
-                      if (item is MediaItem) _MediaCardHelpers.buildWatchProgress(context, item),
-                    ],
-                  ),
-                ),
+                Expanded(child: poster),
               const SizedBox(height: 2),
               // Title (flattened — no inner Column)
               if (item is MediaItem && _hasClickableTitle(item))
@@ -580,133 +582,139 @@ class _MediaCardList extends StatelessWidget {
     final metadataLine = _buildMetadataLine();
     final subtitle = _buildSubtitleText();
 
-    return InkWell(
-      mouseCursor: SystemMouseCursors.click,
-      canRequestFocus: false, // Keyboard handled by FocusableMediaCard
-      onTap: onTap,
-      onTapDown: onTapDown,
-      onLongPress: onLongPress,
-      onSecondaryTapDown: onSecondaryTapDown,
-      onSecondaryTap: onSecondaryTap,
-      borderRadius: BorderRadius.circular(tokens(context).radiusSm),
-      child: Padding(
-        padding: const EdgeInsets.all(8),
-        child: Row(
-          crossAxisAlignment: .start,
-          children: [
-            SizedBox(
-              width: _posterWidth(),
-              height: _posterHeight(),
-              child: Stack(
-                children: [
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(tokens(context).radiusSm),
-                    child: _buildPosterImage(
-                      context,
-                      item,
-                      isOffline: isOffline,
-                      localPosterPath: localPosterPath,
-                      episodePosterModeOverride: episodePosterModeOverride,
+    // List rows keep the whole-row border; inside stroke so adjacent rows
+    // don't overlap.
+    return CardFocusBorder(
+      borderRadius: tokens(context).radiusSm,
+      strokeAlign: BorderSide.strokeAlignInside,
+      child: InkWell(
+        mouseCursor: SystemMouseCursors.click,
+        canRequestFocus: false, // Keyboard handled by FocusableMediaCard
+        onTap: onTap,
+        onTapDown: onTapDown,
+        onLongPress: onLongPress,
+        onSecondaryTapDown: onSecondaryTapDown,
+        onSecondaryTap: onSecondaryTap,
+        borderRadius: BorderRadius.circular(tokens(context).radiusSm),
+        child: Padding(
+          padding: const EdgeInsets.all(8),
+          child: Row(
+            crossAxisAlignment: .start,
+            children: [
+              SizedBox(
+                width: _posterWidth(),
+                height: _posterHeight(),
+                child: Stack(
+                  children: [
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(tokens(context).radiusSm),
+                      child: _buildPosterImage(
+                        context,
+                        item,
+                        isOffline: isOffline,
+                        localPosterPath: localPosterPath,
+                        episodePosterModeOverride: episodePosterModeOverride,
+                      ),
                     ),
-                  ),
-                  if (item is MediaItem) _MediaCardHelpers.buildWatchProgress(context, item as MediaItem),
-                ],
+                    if (item is MediaItem) WatchedIndicator(item: item as MediaItem),
+                  ],
+                ),
               ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: .start,
-                mainAxisAlignment: .start,
-                children: [
-                  if (item is MediaItem && _hasClickableTitle(item as MediaItem))
-                    _ClickableText(
-                      text: (item as MediaItem).displayTitle,
-                      style: TextStyle(fontWeight: .w600, fontSize: _titleFontSize, height: 1.2),
-                      onTap: () => _navigateToFocusedDetail(context, item as MediaItem, isOffline: isOffline),
-                    )
-                  else
-                    Text(
-                      _displayTitle(),
-                      maxLines: 2,
-                      overflow: .ellipsis,
-                      style: TextStyle(fontWeight: .w600, fontSize: _titleFontSize, height: 1.2),
-                    ),
-                  const SizedBox(height: 4),
-                  if (metadataLine.isNotEmpty) ...[
-                    Text(
-                      metadataLine,
-                      maxLines: 1,
-                      overflow: .ellipsis,
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: tokens(context).textMuted.withValues(alpha: 0.9),
-                        fontSize: _metadataFontSize,
-                        fontWeight: .w500,
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: .start,
+                  mainAxisAlignment: .start,
+                  children: [
+                    if (item is MediaItem && _hasClickableTitle(item as MediaItem))
+                      _ClickableText(
+                        text: (item as MediaItem).displayTitle,
+                        style: TextStyle(fontWeight: .w600, fontSize: _titleFontSize, height: 1.2),
+                        onTap: () => _navigateToFocusedDetail(context, item as MediaItem, isOffline: isOffline),
+                      )
+                    else
+                      Text(
+                        _displayTitle(),
+                        maxLines: 2,
+                        overflow: .ellipsis,
+                        style: TextStyle(fontWeight: .w600, fontSize: _titleFontSize, height: 1.2),
                       ),
-                    ),
-                    const SizedBox(height: 2),
-                  ],
-                  if (item is MediaItem &&
-                      (item as MediaItem).isEpisode &&
-                      (item as MediaItem).parentIndex != null &&
-                      (item as MediaItem).parentId != null) ...[
-                    _buildEpisodeSubtitle(context, item as MediaItem),
                     const SizedBox(height: 4),
-                  ] else if (subtitle != null) ...[
-                    Text(
-                      subtitle,
-                      maxLines: 1,
-                      overflow: .ellipsis,
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: tokens(context).textMuted.withValues(alpha: 0.85),
-                        fontSize: _subtitleFontSize,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                  ],
-                  if (!(item is MediaItem &&
-                          SettingsService.instance.read(SettingsService.hideSpoilers) &&
-                          (item as MediaItem).shouldHideSpoiler) &&
-                      _summary() != null) ...[
-                    Text(
-                      _summary()!,
-                      maxLines: _summaryMaxLines,
-                      overflow: .ellipsis,
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: tokens(context).textMuted.withValues(alpha: 0.7),
-                        fontSize: _summaryFontSize,
-                        height: 1.3,
-                      ),
-                    ),
-                  ],
-                  if (showServerName && item is MediaItem && (item as MediaItem).serverName != null) ...[
-                    const SizedBox(height: 4),
-                    Row(
-                      children: [
-                        BackendBadge(
-                          backend: (item as MediaItem).backend,
-                          size: _metadataFontSize + 2,
-                          color: tokens(context).textMuted.withValues(alpha: 0.6),
+                    if (metadataLine.isNotEmpty) ...[
+                      Text(
+                        metadataLine,
+                        maxLines: 1,
+                        overflow: .ellipsis,
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: tokens(context).textMuted.withValues(alpha: 0.9),
+                          fontSize: _metadataFontSize,
+                          fontWeight: .w500,
                         ),
-                        const SizedBox(width: 4),
-                        Flexible(
-                          child: Text(
-                            (item as MediaItem).serverName!,
-                            maxLines: 1,
-                            overflow: .ellipsis,
-                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: tokens(context).textMuted.withValues(alpha: 0.6),
-                              fontSize: _metadataFontSize,
+                      ),
+                      const SizedBox(height: 2),
+                    ],
+                    if (item is MediaItem &&
+                        (item as MediaItem).isEpisode &&
+                        (item as MediaItem).parentIndex != null &&
+                        (item as MediaItem).parentId != null) ...[
+                      _buildEpisodeSubtitle(context, item as MediaItem),
+                      const SizedBox(height: 4),
+                    ] else if (subtitle != null) ...[
+                      Text(
+                        subtitle,
+                        maxLines: 1,
+                        overflow: .ellipsis,
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: tokens(context).textMuted.withValues(alpha: 0.85),
+                          fontSize: _subtitleFontSize,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                    ],
+                    if (!(item is MediaItem &&
+                            SettingsService.instance.read(SettingsService.hideSpoilers) &&
+                            (item as MediaItem).shouldHideSpoiler) &&
+                        _summary() != null) ...[
+                      Text(
+                        _summary()!,
+                        maxLines: _summaryMaxLines,
+                        overflow: .ellipsis,
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: tokens(context).textMuted.withValues(alpha: 0.7),
+                          fontSize: _summaryFontSize,
+                          height: 1.3,
+                        ),
+                      ),
+                    ],
+                    if (showServerName && item is MediaItem && (item as MediaItem).serverName != null) ...[
+                      const SizedBox(height: 4),
+                      Row(
+                        children: [
+                          BackendBadge(
+                            backend: (item as MediaItem).backend,
+                            size: _metadataFontSize + 2,
+                            color: tokens(context).textMuted.withValues(alpha: 0.6),
+                          ),
+                          const SizedBox(width: 4),
+                          Flexible(
+                            child: Text(
+                              (item as MediaItem).serverName!,
+                              maxLines: 1,
+                              overflow: .ellipsis,
+                              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                color: tokens(context).textMuted.withValues(alpha: 0.6),
+                                fontSize: _metadataFontSize,
+                              ),
                             ),
                           ),
-                        ),
-                      ],
-                    ),
+                        ],
+                      ),
+                    ],
                   ],
-                ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -893,82 +901,6 @@ class _MediaCardHelpers {
     return const SizedBox.shrink();
   }
 
-  /// Builds watch progress overlay (checkmark for watched, progress bar for in-progress)
-  static Widget buildWatchProgress(BuildContext context, MediaItem mi) {
-    final showUnwatchedCount = SettingsService.instance.read(SettingsService.showUnwatchedCount);
-
-    final hasActiveProgress =
-        mi.viewOffsetMs != null && mi.durationMs != null && mi.viewOffsetMs! > 0 && mi.viewOffsetMs! < mi.durationMs!;
-
-    return Stack(
-      children: [
-        // Watched indicator (checkmark)
-        if (mi.isWatched && !hasActiveProgress)
-          Positioned(
-            top: 4,
-            right: 4,
-            child: Container(
-              padding: const EdgeInsets.all(4),
-              decoration: BoxDecoration(
-                color: tokens(context).text,
-                shape: BoxShape.circle,
-                boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.3), blurRadius: 4)],
-              ),
-              child: AppIcon(Symbols.check_rounded, fill: 1, color: tokens(context).bg, size: 16),
-            ),
-          ),
-        if (showUnwatchedCount &&
-            !mi.isWatched &&
-            (mi.kind == MediaKind.show || mi.kind == MediaKind.season) &&
-            (mi.leafCount != null && mi.leafCount! > 0 && mi.viewedLeafCount != null))
-          Positioned(
-            top: 4,
-            right: 4,
-            child: Container(
-              width: 24,
-              height: 24,
-              decoration: BoxDecoration(
-                color: tokens(context).text,
-                shape: BoxShape.circle,
-                boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.3), blurRadius: 4)],
-              ),
-              alignment: .center,
-              child: Text(
-                '${mi.leafCount! - mi.viewedLeafCount!}',
-                style: TextStyle(color: tokens(context).bg, fontSize: 12, fontWeight: .bold),
-              ),
-            ),
-          ),
-        // Progress bar for partially watched content (episodes/movies)
-        if (hasActiveProgress)
-          Positioned(
-            bottom: 0,
-            left: 0,
-            right: 0,
-            child: ClipRRect(
-              borderRadius: const BorderRadius.only(bottomLeft: Radius.circular(8), bottomRight: Radius.circular(8)),
-              child: MediaProgressBar(viewOffset: mi.viewOffsetMs!, duration: mi.durationMs!),
-            ),
-          ),
-        // Progress bar for seasons (viewedLeafCount / leafCount)
-        if (mi.isSeason && mi.isPartiallyWatched)
-          Positioned(
-            bottom: 0,
-            left: 0,
-            right: 0,
-            child: ClipRRect(
-              borderRadius: const BorderRadius.only(bottomLeft: Radius.circular(8), bottomRight: Radius.circular(8)),
-              child: LinearProgressIndicator(
-                value: mi.viewedLeafCount! / mi.leafCount!,
-                backgroundColor: tokens(context).outline,
-                valueColor: AlwaysStoppedAnimation<Color>(Theme.of(context).colorScheme.primary),
-                minHeight: 4,
-              ),
-            ),
-          ),
-      ],
-    );
-  }
 }
 
 /// Whether this media item has a clickable title that navigates somewhere.

@@ -508,7 +508,7 @@ void main() {
       final hub = PlexMappers.mediaHubFromJson(json, serverId: ServerId(_serverId));
       expect(hub.items.length, 2);
       expect(hub.items[0].kind, MediaKind.show);
-      expect(hub.items[1].kind, MediaKind.unknown);
+      expect(hub.items[1].kind, MediaKind.folder);
     });
 
     test('parses Metadata + Directory together', () {

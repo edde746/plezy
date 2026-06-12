@@ -66,7 +66,7 @@ extension _VideoPlayerLifecycleMethods on VideoPlayerScreenState {
   void _resumeLiveTimelineAfterBackgroundIfNeeded() {
     final shouldResume = _live.resumeTimelineOnResume;
     _live.resumeTimelineOnResume = false;
-    if (shouldResume && _live.sessionIdentifier != null) {
+    if (shouldResume && _live.session != null) {
       _startLiveTimelineUpdates();
     }
   }

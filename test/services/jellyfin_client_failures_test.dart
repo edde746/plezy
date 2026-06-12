@@ -165,6 +165,46 @@ void main() {
       expect(client.connection.baseUrls, ['https://fallback.example.com', 'https://primary.example.com']);
     });
 
+    test('hub surfaces retry transient failures without hopping endpoints', () async {
+      final attemptsByPath = <String, int>{};
+      final client = JellyfinClient.forTesting(
+        connection: _conn(
+          baseUrl: 'https://primary.example.com',
+          baseUrls: const ['https://primary.example.com', 'https://fallback.example.com'],
+        ),
+        httpClient: MockClient((req) async {
+          expect(req.url.host, 'primary.example.com', reason: 'retry-wrapped hub fetches must not fail over');
+          final attempt = attemptsByPath.update(req.url.path, (n) => n + 1, ifAbsent: () => 1);
+          if (attempt == 1) throw TimeoutException('slow row');
+          return http.Response(jsonEncode({'Items': []}), 200, headers: {'content-type': 'application/json'});
+        }),
+      );
+      addTearDown(client.close);
+
+      final items = await client.fetchContinueWatching();
+
+      expect(items, isEmpty);
+      expect(attemptsByPath.values, everyElement(2));
+      expect(client.connection.baseUrl, 'https://primary.example.com');
+    });
+
+    test('exhausting every endpoint fires onAllEndpointsExhausted', () async {
+      var exhausted = 0;
+      final client = JellyfinClient.forTesting(
+        connection: _conn(
+          baseUrl: 'https://primary.example.com',
+          baseUrls: const ['https://primary.example.com', 'https://fallback.example.com'],
+        ),
+        httpClient: MockClient((req) async => throw TimeoutException('endpoint down')),
+        onAllEndpointsExhausted: () => exhausted++,
+      );
+      addTearDown(client.close);
+
+      await client.getMachineIdentifier();
+
+      expect(exhausted, 1);
+    });
+
     test('resets live base URL after fallback endpoint is exhausted', () async {
       final requests = <Uri>[];
       final client = JellyfinClient.forTesting(

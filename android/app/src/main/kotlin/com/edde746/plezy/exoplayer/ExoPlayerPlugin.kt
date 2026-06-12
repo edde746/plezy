@@ -164,6 +164,7 @@ class ExoPlayerPlugin :
       "setBoxFitMode" -> handleSetBoxFitMode(call, result)
       "setVideoZoom" -> handleSetVideoZoom(call, result)
       "setDvConversionMode" -> handleSetDvConversionMode(call, result)
+      "setAudioNormalization" -> handleSetAudioNormalization(call, result)
       "observeProperty" -> handleObserveProperty(call, result)
       "setMpvProperty" -> handleSetMpvProperty(call, result)
       "setLogLevel" -> {
@@ -608,6 +609,23 @@ class ExoPlayerPlugin :
     } ?: result.error("NO_ACTIVITY", "Activity not available", null)
   }
 
+  private fun handleSetAudioNormalization(call: MethodCall, result: MethodChannel.Result) {
+    val enabled = call.argument<Boolean>("enabled")
+    if (enabled == null) {
+      result.error("INVALID_ARGS", "Missing 'enabled'", null)
+      return
+    }
+    if (usingMpvFallback) {
+      // mpv applies loudnorm via the 'af' property the Dart layer also sends.
+      result.success(true)
+      return
+    }
+    activity?.runOnUiThread {
+      playerCore?.setAudioNormalization(enabled)
+      result.success(true)
+    } ?: result.error("NO_ACTIVITY", "Activity not available", null)
+  }
+
   private fun handleSetMpvProperty(call: MethodCall, result: MethodChannel.Result) {
     val name = call.argument<String>("name")
     val value = call.argument<String>("value")
@@ -622,6 +640,9 @@ class ExoPlayerPlugin :
       when (name) {
         "audio-delay" -> playerCore?.setAudioDelay(value.toDoubleOrNull() ?: 0.0)
         "sub-delay" -> playerCore?.setSubtitleDelay(value.toDoubleOrNull() ?: 0.0)
+        // mpv semantics mirrored on the libass overlay: anchor non-positioned ASS
+        // events to the visible screen (Dart sets 'yes' for cover mode / zoom > 1)
+        "sub-ass-force-margins" -> playerCore?.setAssForceMargins(value == "yes")
       }
     }
 

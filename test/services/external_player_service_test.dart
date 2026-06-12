@@ -7,6 +7,7 @@ import 'package:plezy/media/media_item.dart';
 import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/media/media_server_client.dart';
 import 'package:plezy/media/playback_report_metadata.dart';
+import 'package:plezy/models/external_player_models.dart';
 import 'package:plezy/services/external_player_service.dart';
 import 'package:plezy/services/jellyfin_api_cache.dart';
 import 'package:plezy/services/multi_server_manager.dart';
@@ -84,6 +85,16 @@ MediaItem _item({int? durationMs}) {
 }
 
 void main() {
+  test('MX Player Android package candidates include free and Pro variants', () {
+    final mxPlayer = KnownPlayers.findById('mx_player');
+
+    expect(mxPlayer, isNotNull);
+    expect(KnownPlayers.androidPackageCandidates(mxPlayer!), [
+      'com.mxtech.videoplayer.ad',
+      'com.mxtech.videoplayer.pro',
+    ]);
+  });
+
   test('Android external progress preserves null duration and still stops after start failure', () async {
     final client = _RecordingClient()..failStart = true;
 

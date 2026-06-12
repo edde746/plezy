@@ -21,12 +21,12 @@ import '../focus/focusable_action_bar.dart';
 import '../focus/focusable_wrapper.dart';
 import '../focus/key_event_utils.dart';
 import '../focus/input_mode_tracker.dart';
+import '../focus/card_focus_scope.dart';
 import '../widgets/focus_builders.dart';
 import '../media/media_hub.dart';
 import '../utils/provider_extensions.dart';
 import '../utils/plex_season_display.dart';
 import '../media/media_item.dart';
-import '../media/season_title.dart';
 import '../media/episode_collection.dart';
 import '../media/media_item_types.dart';
 import '../media/media_kind.dart';
@@ -47,7 +47,7 @@ import '../services/download_storage_service.dart';
 import '../utils/download_version_utils.dart';
 import '../utils/download_utils.dart';
 import '../services/settings_service.dart';
-import '../services/trackers/tracker_coordinator.dart';
+import '../services/watch_actions.dart';
 import '../widgets/settings_builder.dart';
 import '../utils/grid_size_calculator.dart';
 import '../utils/layout_constants.dart';
@@ -1493,7 +1493,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
         id: seasonId,
         backend: _metadata.backend,
         kind: MediaKind.season,
-        title: localizedSeasonLabel(title: firstEp.parentTitle, index: entry.key),
+        title: firstEp.parentTitle?.isNotEmpty == true ? firstEp.parentTitle : t.common.seasonNumber(number: entry.key),
         index: entry.key,
         leafCount: entry.value.length,
         thumbPath: firstEp.parentThumbPath,
@@ -2250,7 +2250,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
                   onSecondaryTapDown: (details) => tapPosition = details.globalPosition,
                   onSecondaryTap: () => _showSeasonTabContextMenu(index, position: tapPosition),
                   child: FocusableTabChip(
-                    label: season.localizedSeasonTitle,
+                    label: season.title!,
                     isSelected: index == _selectedSeasonIndex,
                     topImage: topImage,
                     focusNode: _seasonTabFocusNodes.length > index ? _seasonTabFocusNodes[index] : null,
@@ -2999,7 +2999,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
           body: const Center(child: CircularProgressIndicator()),
         ),
       );
-      final blockSystemBack = Platform.isAndroid && InputModeTracker.isKeyboardMode(context);
+      final blockSystemBack = InputModeTracker.shouldBlockSystemBack(context);
       if (!blockSystemBack) {
         return loading;
       }
@@ -3021,7 +3021,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
 
     _scheduleInitialMobileDetailFocus(metadata);
 
-    final blockSystemBack = Platform.isAndroid && InputModeTracker.isKeyboardMode(context);
+    final blockSystemBack = InputModeTracker.shouldBlockSystemBack(context);
     final content = PrimaryScrollController(
       controller: _scrollController,
       child: IosStatusBarTapScrollToTop(
@@ -3322,7 +3322,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
       ],
     );
 
-    final blockSystemBack = Platform.isAndroid && InputModeTracker.isKeyboardMode(context);
+    final blockSystemBack = InputModeTracker.shouldBlockSystemBack(context);
     final content = OverlaySheetHost(
       // blockSystemBack keeps the route from double-popping on Android keyboard/
       // TV (the key handler owns dpad back); the host also closes an open sheet.
@@ -3684,7 +3684,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
         hubs.add(
           MediaHub(
             id: '$_tvDetailSeasonHubIdPrefix$i',
-            title: season.localizedSeasonTitle,
+            title: season.title?.isNotEmpty == true ? season.title! : (season.displaySubtitle ?? season.displayTitle),
             type: 'episode',
             items: episodes,
             size: total,
@@ -4178,6 +4178,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
                       isFocused: isFocused,
                       borderRadius: tokens(context).radiusSm,
                       onTap: () => _navigateToActorMedia(actor),
+                      delegateFocusBorder: true,
                       child: Padding(
                         padding: const EdgeInsets.all(innerPadding),
                         child: SizedBox(
@@ -4185,16 +4186,19 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
                           child: Column(
                             crossAxisAlignment: .start,
                             children: [
-                              ClipRRect(
-                                borderRadius: BorderRadius.circular(tokens(context).radiusSm),
-                                child: OptimizedMediaImage(
-                                  client: getServerBoundMediaClient(context),
-                                  imagePath: actor.thumbPath,
-                                  width: imageSize,
-                                  height: imageSize,
-                                  fit: BoxFit.cover,
-                                  imageType: ImageType.avatar,
-                                  fallbackIcon: Symbols.person_rounded,
+                              CardFocusBorder(
+                                borderRadius: tokens(context).radiusSm,
+                                child: ClipRRect(
+                                  borderRadius: BorderRadius.circular(tokens(context).radiusSm),
+                                  child: OptimizedMediaImage(
+                                    client: getServerBoundMediaClient(context),
+                                    imagePath: actor.thumbPath,
+                                    width: imageSize,
+                                    height: imageSize,
+                                    fit: BoxFit.cover,
+                                    imageType: ImageType.avatar,
+                                    fallbackIcon: Symbols.person_rounded,
+                                  ),
                                 ),
                               ),
                               const SizedBox(height: 8),
@@ -4267,6 +4271,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
                       context: context,
                       isFocused: isFocused,
                       onTap: () => navigateToVideoPlayer(context, metadata: extra),
+                      delegateFocusBorder: true,
                       child: MediaCard(
                         key: cardKey,
                         item: extra,

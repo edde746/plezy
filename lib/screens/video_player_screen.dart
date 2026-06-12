@@ -22,9 +22,9 @@ import '../media/media_server_user_profile.dart';
 import '../media/media_item.dart';
 import '../media/media_item_types.dart';
 import '../media/media_server_client.dart';
-import '../services/jellyfin_client.dart';
+import '../media/live_tv_support.dart';
+import '../models/livetv_channel.dart';
 import '../services/live_seek_accumulator.dart';
-import '../services/live_session_tracker.dart';
 import '../services/plex_client.dart';
 import '../utils/session_identifier.dart';
 import '../database/app_database.dart';
@@ -270,7 +270,12 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   bool _showPlayNextDialog = false;
   bool _isPhone = false;
   late int _effectiveSelectedMediaIndex;
-  String? _selectedMediaSourceId;
+
+  /// Media source id to request on the next resolve: the caller's initial
+  /// selection, then re-synced to the session's post-fallback effective id
+  /// by [_commitPlaybackSession]. Post-resolve consumers must read
+  /// `_playbackSession.mediaSourceId`, never this field.
+  String? _requestedMediaSourceId;
   bool get _offlineLibraryMode => widget.isOffline;
 
   // Transcode / quality state
@@ -327,7 +332,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
 
   /// Live TV session state (tune identity, heartbeats, capture buffer,
   /// retry ladder) — inert for VOD screens. See [LiveTvSessionState].
-  late final LiveTvSessionState _live = LiveTvSessionState(widget.live, itemId: widget.metadata.id);
+  late final LiveTvSessionState _live = LiveTvSessionState(widget.live);
 
   /// Coalesces rapid relative live-TV skips into a single transcode re-open so
   /// mashing skip-forward can't compound into an overshoot to live (#1253).
@@ -454,7 +459,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   void _commitPlaybackSession(PlaybackSession session) {
     _playbackSession = session;
     _effectiveSelectedMediaIndex = session.mediaIndex;
-    _selectedMediaSourceId = session.mediaSourceId;
+    _requestedMediaSourceId = session.mediaSourceId;
     _selectedQualityPreset = session.qualityPreset;
     _selectedAudioStreamId = session.audioStreamId;
   }
@@ -490,7 +495,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     _activeId = widget.metadata.id;
     _activeMediaIndex = widget.selectedMediaIndex;
     _effectiveSelectedMediaIndex = widget.selectedMediaIndex;
-    _selectedMediaSourceId = widget.selectedMediaSourceId;
+    _requestedMediaSourceId = widget.selectedMediaSourceId;
 
     // Reused across in-place quality/version/audio switches so the
     // server-side transcode session is preserved.
@@ -683,7 +688,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
         _playbackDataFuture = playbackResolver.resolve(
           metadata: _currentMetadata,
           selectedMediaIndex: _effectiveSelectedMediaIndex,
-          selectedMediaSourceId: _selectedMediaSourceId,
+          selectedMediaSourceId: _requestedMediaSourceId,
           offlineLibraryMode: false,
           qualityPreset: _selectedQualityPreset,
           selectedAudioStreamId: _selectedAudioStreamId,
@@ -819,7 +824,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       }
 
       if (settingsService.read(SettingsService.audioNormalization)) {
-        await currentPlayer.setProperty('af', 'loudnorm=I=-14:TP=-3:LRA=4');
+        await currentPlayer.setAudioNormalization(true);
       }
 
       if (PlatformDetector.isDesktopOS()) {

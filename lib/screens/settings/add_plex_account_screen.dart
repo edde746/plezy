@@ -162,51 +162,56 @@ class _AddPlexAccountScreenState extends State<AddPlexAccountScreen> with AsyncF
     return FocusedScrollScaffold(
       title: Text(t.addServer.addPlexTitle),
       slivers: [
-        SliverPadding(
-          padding: const EdgeInsets.all(24),
-          sliver: SliverToBoxAdapter(
-            child: Column(
-              crossAxisAlignment: .stretch,
-              children: [
-                Text(t.addServer.plexAuthIntro, style: theme.textTheme.bodyMedium),
-                const SizedBox(height: 24),
-                PlexPinAuthFlow(
-                  onTokenReceived: _onTokenReceived,
-                  initialButtonsBuilder: (context, browser, qr, busy) => Column(
-                    mainAxisSize: .min,
-                    crossAxisAlignment: .stretch,
-                    children: [
-                      FocusableButton(
-                        useBackgroundFocus: true,
-                        onPressed: busy || this.busy ? null : browser,
-                        child: FilledButton.icon(
-                          onPressed: busy || this.busy ? null : browser,
-                          icon: const BackendBadge(backend: MediaBackend.plex, size: 18),
-                          label: Text(t.auth.signInWithPlex),
-                        ),
+        SliverFillRemaining(
+          hasScrollBody: false,
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 420),
+                child: Column(
+                  mainAxisSize: .min,
+                  crossAxisAlignment: .stretch,
+                  children: [
+                    PlexPinAuthFlow(
+                      onTokenReceived: _onTokenReceived,
+                      initialButtonsBuilder: (context, browser, qr, busy) => Column(
+                        mainAxisSize: .min,
+                        crossAxisAlignment: .stretch,
+                        children: [
+                          FocusableButton(
+                            useBackgroundFocus: true,
+                            onPressed: busy || this.busy ? null : browser,
+                            child: FilledButton.icon(
+                              onPressed: busy || this.busy ? null : browser,
+                              icon: const BackendBadge(backend: MediaBackend.plex, size: 18),
+                              label: Text(t.auth.signInWithPlex),
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          FocusableButton(
+                            useBackgroundFocus: true,
+                            onPressed: busy || this.busy ? null : qr,
+                            child: OutlinedButton.icon(
+                              onPressed: busy || this.busy ? null : qr,
+                              icon: const AppIcon(Symbols.qr_code_rounded, fill: 1),
+                              label: Text(t.auth.showQRCode),
+                            ),
+                          ),
+                        ],
                       ),
-                      const SizedBox(height: 12),
-                      FocusableButton(
-                        useBackgroundFocus: true,
-                        onPressed: busy || this.busy ? null : qr,
-                        child: OutlinedButton.icon(
-                          onPressed: busy || this.busy ? null : qr,
-                          icon: const AppIcon(Symbols.qr_code_rounded, fill: 1),
-                          label: Text(t.auth.showQRCode),
-                        ),
+                    ),
+                    if (errorText != null) ...[
+                      const SizedBox(height: 16),
+                      Text(
+                        errorText!,
+                        style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.error),
+                        textAlign: TextAlign.center,
                       ),
                     ],
-                  ),
+                  ],
                 ),
-                if (errorText != null) ...[
-                  const SizedBox(height: 16),
-                  Text(
-                    errorText!,
-                    style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.error),
-                    textAlign: TextAlign.center,
-                  ),
-                ],
-              ],
+              ),
             ),
           ),
         ),

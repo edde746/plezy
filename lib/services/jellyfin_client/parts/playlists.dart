@@ -2,7 +2,7 @@ part of '../../jellyfin_client.dart';
 
 mixin _JellyfinPlaylistMethods on MediaServerCacheMixin {
   JellyfinConnection get connection;
-  MediaServerHttpClient get _http;
+  FailoverHttpClient get _http;
   String? _absolutizeImagePath(String? path);
   List<MediaItem> _mapItems(Iterable<Map<String, dynamic>> items);
 

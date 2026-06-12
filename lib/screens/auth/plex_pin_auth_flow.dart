@@ -253,17 +253,23 @@ class _PlexPinAuthFlowState extends State<PlexPinAuthFlow> {
         Text(
           t.auth.scanQRToSignIn,
           textAlign: TextAlign.center,
-          style: const TextStyle(color: Colors.grey),
+          style: theme.textTheme.bodyLarge?.copyWith(color: theme.colorScheme.onSurface.withValues(alpha: 0.7)),
         ),
         const SizedBox(height: 24),
         Center(
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(tokens(context).radiusMd),
-            child: QrImageView(
-              data: _qrAuthUrl!,
-              size: qrSize,
-              version: QrVersions.auto,
-              backgroundColor: Colors.white,
+          // Tight SizedBox so ancestors that measure intrinsics (e.g.
+          // SliverFillRemaining with hasScrollBody: false) never recurse into
+          // QrImageView's internal LayoutBuilder, which doesn't support them.
+          child: SizedBox.square(
+            dimension: qrSize,
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(tokens(context).radiusMd),
+              child: QrImageView(
+                data: _qrAuthUrl!,
+                size: qrSize,
+                version: QrVersions.auto,
+                backgroundColor: Colors.white,
+              ),
             ),
           ),
         ),
@@ -297,7 +303,7 @@ class _PlexPinAuthFlowState extends State<PlexPinAuthFlow> {
         Text(
           t.auth.waitingForAuth,
           textAlign: TextAlign.center,
-          style: const TextStyle(color: Colors.grey),
+          style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurface.withValues(alpha: 0.7)),
         ),
         const SizedBox(height: 16),
         FocusableButton(

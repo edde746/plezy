@@ -19,6 +19,7 @@ import '../utils/provider_extensions.dart';
 import '../widgets/focusable_media_card.dart';
 import '../widgets/ios_status_bar_tap_scroll_to_top.dart';
 import '../widgets/media_grid_delegate.dart';
+import '../widgets/sliver_cross_axis_layout_builder.dart';
 import '../widgets/desktop_app_bar.dart';
 import '../widgets/loading_indicator_box.dart';
 import '../widgets/overlay_sheet.dart';
@@ -561,32 +562,21 @@ class _HubDetailScreenState extends State<HubDetailScreen>
 
                       return SliverPadding(
                         padding: const EdgeInsets.all(8),
-                        sliver: SliverLayoutBuilder(
-                          builder: (context, constraints) {
-                            final maxExtent = GridSizeCalculator.getMaxCrossAxisExtentWithPadding(
-                              context,
-                              libraryDensity,
-                              16,
-                            );
-                            final gridSpacing = MediaGridDelegate.spacingFor(
+                        sliver: SliverCrossAxisLayoutBuilder(
+                          builder: (context, crossAxisExtent) {
+                            final geometry = MediaGridGeometry.resolve(
                               context: context,
+                              crossAxisExtent: crossAxisExtent,
+                              density: libraryDensity,
+                              usePaddingAware: true,
+                              horizontalPadding: 16,
+                              useWideAspectRatio: useWideLayout,
                               fullBleedImage: fullCardLayout,
                             );
-                            final columnCount = GridSizeCalculator.getColumnCount(
-                              constraints.crossAxisExtent,
-                              useWideLayout ? maxExtent * 1.8 : maxExtent,
-                              crossAxisSpacing: gridSpacing,
-                            );
+                            final columnCount = geometry.columnCount;
 
                             return SliverGrid(
-                              gridDelegate: MediaGridDelegate.createDelegate(
-                                context: context,
-                                density: libraryDensity,
-                                usePaddingAware: true,
-                                horizontalPadding: 16,
-                                useWideAspectRatio: useWideLayout,
-                                fullBleedImage: fullCardLayout,
-                              ),
+                              gridDelegate: geometry.delegate,
                               delegate: SliverChildBuilderDelegate((context, index) {
                                 final item = _filteredItems[index];
                                 final focusNode = _focusNodeForIndex(index);

@@ -23,7 +23,10 @@ import '../utils/watch_state_notifier.dart';
 /// crosses the client's [watchedThreshold] (per-server pref on Plex, fixed
 /// 90% on Jellyfin).
 class PlaybackProgressTracker {
-  /// Server client for online progress updates (null when offline).
+  /// Server client for online progress updates (null when offline). Pinned
+  /// for the tracker's lifetime — one playback session against the server
+  /// that started it; if that server is removed mid-playback, reports fail
+  /// and are queued/dropped rather than re-routed.
   final MediaServerClient? client;
 
   /// Metadata of the media being played

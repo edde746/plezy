@@ -1639,22 +1639,22 @@ void main() {
       expect(captured[1].queryParameters['IncludeItemTypes'], 'Episode');
     });
 
-    test('fetchLibraryFolders uses direct non-recursive Items query and orders folders first', () async {
-      Uri? captured;
+    test('fetchLibraryFolders splits folder/media queries and orders folders first', () async {
+      const allChildren = [
+        {'Id': 'track-z', 'Type': 'Audio', 'Name': 'Z Track', 'IsFolder': false},
+        {'Id': 'series-a', 'Type': 'Series', 'Name': 'A Show', 'IsFolder': true},
+        {'Id': 'folder-z', 'Type': 'Folder', 'Name': 'Z Folder', 'IsFolder': true},
+        {'Id': 'movie-m', 'Type': 'Movie', 'Name': 'Movie', 'IsFolder': false},
+      ];
+      final captured = <Uri>[];
       final scoped = JellyfinClient.forTesting(
         connection: _conn(),
         httpClient: MockClient((req) async {
-          captured = req.url;
+          captured.add(req.url);
+          final foldersOnly = req.url.queryParameters['IncludeItemTypes'] == 'Folder,CollectionFolder';
+          final items = allChildren.where((c) => (c['Type'] == 'Folder') == foldersOnly).toList();
           return http.Response(
-            jsonEncode({
-              'Items': [
-                {'Id': 'track-z', 'Type': 'Audio', 'Name': 'Z Track', 'IsFolder': false},
-                {'Id': 'series-a', 'Type': 'Series', 'Name': 'A Show', 'IsFolder': true},
-                {'Id': 'folder-z', 'Type': 'Folder', 'Name': 'Z Folder', 'IsFolder': true},
-                {'Id': 'movie-m', 'Type': 'Movie', 'Name': 'Movie', 'IsFolder': false},
-              ],
-              'TotalRecordCount': 4,
-            }),
+            jsonEncode({'Items': items, 'TotalRecordCount': items.length}),
             200,
             headers: {'content-type': 'application/json'},
           );
@@ -1664,26 +1664,53 @@ void main() {
 
       final items = await scoped.fetchLibraryFolders('lib-1');
 
-      expect(captured, isNotNull);
-      expect(captured!.path, '/Items');
-      expect(captured!.queryParameters['ParentId'], 'lib-1');
-      expect(captured!.queryParameters['Recursive'], 'false');
-      expect(captured!.queryParameters['EnableTotalRecordCount'], 'true');
-      expect(captured!.queryParameters['SortBy'], 'IsFolder,SortName');
-      expect(captured!.queryParameters['SortOrder'], 'Ascending');
-      expect(captured!.queryParameters['Fields'], isNot(contains('MediaSources')));
+      expect(captured, hasLength(2));
+      final folderQuery = captured.firstWhere((u) => u.queryParameters.containsKey('IncludeItemTypes'));
+      final mediaQuery = captured.firstWhere((u) => u.queryParameters.containsKey('ExcludeItemTypes'));
+      for (final uri in [folderQuery, mediaQuery]) {
+        expect(uri.path, '/Items');
+        expect(uri.queryParameters['ParentId'], 'lib-1');
+        expect(uri.queryParameters['Recursive'], 'false');
+        expect(uri.queryParameters['EnableTotalRecordCount'], 'true');
+        expect(uri.queryParameters['SortBy'], 'SortName');
+        expect(uri.queryParameters['SortOrder'], 'Ascending');
+        // Slim field sets: per-item count fields are expensive server-side
+        // and Overview is never rendered in the tree.
+        expect(uri.queryParameters['Fields'], isNot(contains('MediaSources')));
+        expect(uri.queryParameters['Fields'], isNot(contains('RecursiveItemCount')));
+        expect(uri.queryParameters['Fields'], isNot(contains('ChildCount')));
+        expect(uri.queryParameters['Fields'], isNot(contains('Overview')));
+      }
+      // User data on folder dtos triggers a per-folder recursive unplayed
+      // count on the server; folder rows render no watch state, so skip it.
+      expect(folderQuery.queryParameters['IncludeItemTypes'], 'Folder,CollectionFolder');
+      expect(folderQuery.queryParameters['EnableUserData'], 'false');
+      expect(folderQuery.queryParameters['Fields'], isNot(contains('UserData')));
+      // Media rows keep user data (watched state, series unwatched badge).
+      expect(mediaQuery.queryParameters['ExcludeItemTypes'], 'Folder,CollectionFolder');
+      expect(mediaQuery.queryParameters['Fields'], contains('UserData'));
       expect(items.map((item) => item.id), ['folder-z', 'series-a', 'movie-m', 'track-z']);
-      expect(items.first.kind, MediaKind.unknown);
+      // Folder rows classify as MediaKind.folder so the tree never reads raw.
+      expect(items.first.kind, MediaKind.folder);
       expect(items.first.raw?['IsFolder'], isTrue);
       expect(items[1].kind, MediaKind.show);
     });
 
     test('fetchFolderChildren pages direct folder contents', () async {
-      final starts = <String?>[];
+      final mediaStarts = <String?>[];
+      final pages = <List<MediaItem>>[];
       final scoped = JellyfinClient.forTesting(
         connection: _conn(),
         httpClient: MockClient((req) async {
-          starts.add(req.url.queryParameters['StartIndex']);
+          if (req.url.queryParameters.containsKey('IncludeItemTypes')) {
+            // Folders query — this directory has none.
+            return http.Response(
+              jsonEncode({'Items': const [], 'TotalRecordCount': 0}),
+              200,
+              headers: {'content-type': 'application/json'},
+            );
+          }
+          mediaStarts.add(req.url.queryParameters['StartIndex']);
           final start = int.parse(req.url.queryParameters['StartIndex'] ?? '0');
           const total = 501;
           final end = start == 0 ? 500 : total;
@@ -1702,10 +1729,60 @@ void main() {
       );
       addTearDown(scoped.close);
 
-      final items = await scoped.fetchFolderChildren('folder-1');
+      final items = await scoped.fetchFolderChildren(
+        MediaItem(id: 'folder-1', backend: MediaBackend.jellyfin, kind: MediaKind.folder),
+        onPage: pages.add,
+      );
+
+      expect(mediaStarts, ['0', '500']);
+      expect(items, hasLength(501));
+      // onPage surfaces accumulated items after intermediate pages only; the
+      // final page is covered by the returned list.
+      expect(pages, hasLength(1));
+      expect(pages.single, hasLength(500));
+      expect(pages.single.first.id, 'child-0');
+    });
+
+    test('fetchFolderChildren pages show/season children through onPage', () async {
+      final starts = <String?>[];
+      final pages = <List<MediaItem>>[];
+      final scoped = JellyfinClient.forTesting(
+        connection: _conn(),
+        httpClient: MockClient((req) async {
+          if (req.url.path.contains('/Shows/')) {
+            // A season id is not a series — falls through to the ParentId query.
+            return http.Response('Not Found', 404);
+          }
+          starts.add(req.url.queryParameters['StartIndex']);
+          final start = int.parse(req.url.queryParameters['StartIndex'] ?? '0');
+          const total = 501;
+          final end = start == 0 ? 500 : total;
+          return http.Response(
+            jsonEncode({
+              'Items': [
+                for (var i = start; i < end; i++) {'Id': 'ep-$i', 'Type': 'Episode', 'Name': 'Episode $i'},
+              ],
+              'TotalRecordCount': total,
+            }),
+            200,
+            headers: {'content-type': 'application/json'},
+          );
+        }),
+      );
+      addTearDown(scoped.close);
+
+      final items = await scoped.fetchFolderChildren(
+        MediaItem(id: 'season-1', backend: MediaBackend.jellyfin, kind: MediaKind.season),
+        onPage: pages.add,
+      );
 
       expect(starts, ['0', '500']);
       expect(items, hasLength(501));
+      // Large seasons render incrementally in the folder tree too: the
+      // metadata-hierarchy path must not sever the onPage chain.
+      expect(pages, hasLength(1));
+      expect(pages.single, hasLength(500));
+      expect(pages.single.first.id, 'ep-0');
     });
 
     test('fetchClientSideEpisodeQueue pages past the first 200 episodes', () async {

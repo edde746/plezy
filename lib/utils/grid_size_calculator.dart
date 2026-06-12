@@ -54,9 +54,11 @@ class GridSizeCalculator {
   /// is added to the denominator only, not the numerator:
   /// `(crossAxisExtent / (maxCrossAxisExtent + crossAxisSpacing)).ceil()`
   ///
-  /// [crossAxisExtent] should come from layout constraints (e.g. `SliverLayoutBuilder`
-  /// or `LayoutBuilder`), not from `MediaQuery`, to account for sidebars or other
-  /// elements that reduce the grid's actual width.
+  /// [crossAxisExtent] should come from layout constraints (e.g.
+  /// `SliverCrossAxisLayoutBuilder` or `LayoutBuilder`), not from `MediaQuery`,
+  /// to account for sidebars or other elements that reduce the grid's actual
+  /// width. Never use a plain `SliverLayoutBuilder` for this: its constraints
+  /// include the scroll offset, so it rebuilds the whole grid every scroll tick.
   static int getColumnCount(
     double crossAxisExtent,
     double maxCrossAxisExtent, {

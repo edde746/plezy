@@ -91,7 +91,7 @@ String? _formatAudio(MediaStream? stream) {
   if (_isAtmos(stream)) {
     parts.add('Atmos');
   } else {
-    final channels = _formatAudioChannels(stream.channels);
+    final channels = CodecUtils.formatAudioChannels(stream.channels);
     if (channels != null) parts.add(channels);
   }
 
@@ -112,19 +112,4 @@ bool _isAtmos(MediaStream stream) {
     stream.title,
     stream.displayTitle,
   ].whereType<String>().any((value) => value.toLowerCase().contains('atmos'));
-}
-
-String? _formatAudioChannels(int? channels) {
-  if (channels == null || channels <= 0) return null;
-  return switch (channels) {
-    1 => 'Mono',
-    2 => 'Stereo',
-    3 => '3.0',
-    4 => '4.0',
-    5 => '4.1',
-    6 => '5.1',
-    7 => '6.1',
-    8 => '7.1',
-    _ => '${channels}ch',
-  };
 }

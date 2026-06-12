@@ -487,24 +487,32 @@ class PlexServer {
     )) {
       if (selection.phase == EndpointRacePhase.first) {
         final firstCandidate = selection.candidate;
+        // Emit the winner immediately — the HTTPS upgrade probe (up to a full
+        // race timeout when the HTTPS variant is dead) must not gate startup.
+        // The StreamIterator consumer pulls lazily, so the upgrade below runs
+        // off the critical path and lands via the same background-promotion
+        // drain that applies Phase 2 results.
+        firstConnection = _updateConnectionUrl(firstCandidate.connection, firstCandidate.url);
+        yield firstConnection;
+        appLogger.d(
+          'Emitted first working connection, continuing latency tests in background',
+          error: {'uri': firstConnection.uri},
+        );
+
         final upgradedFirstCandidate = await _upgradeCandidateToHttpsIfPossible(
           firstCandidate,
           clientIdentifier: clientIdentifier,
         );
-        final emitCandidate = upgradedFirstCandidate ?? firstCandidate;
-
-        firstConnection = _updateConnectionUrl(emitCandidate.connection, emitCandidate.url);
-        yield firstConnection;
         if (upgradedFirstCandidate != null && upgradedFirstCandidate.url != firstCandidate.url) {
           appLogger.i(
             'Phase 1 winner upgraded to HTTPS',
             error: {'from': firstCandidate.url, 'to': upgradedFirstCandidate.url},
           );
+          // Track the upgrade as the effective first connection so the Phase 2
+          // dedup below doesn't re-emit the same HTTPS endpoint as "better".
+          firstConnection = _updateConnectionUrl(upgradedFirstCandidate.connection, upgradedFirstCandidate.url);
+          yield firstConnection;
         }
-        appLogger.d(
-          'Emitted first working connection, continuing latency tests in background',
-          error: {'uri': firstConnection.uri},
-        );
         continue;
       }
 

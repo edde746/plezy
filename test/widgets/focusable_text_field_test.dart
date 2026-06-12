@@ -234,6 +234,38 @@ void main() {
     expect(find.byType(Dialog), findsOneWidget);
   });
 
+  testWidgets('TV virtual keyboard closes when its owning field unmounts', (tester) async {
+    TvDetectionService.debugSetAppleTVOverride(true);
+    await _setTvSurfaceSize(tester);
+    final controller = TextEditingController();
+    final fieldFocusNode = FocusNode(debugLabel: 'search_field');
+    addTearDown(controller.dispose);
+    addTearDown(fieldFocusNode.dispose);
+
+    Future<void> pumpField({required bool present}) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: present
+                ? FocusableTextField(controller: controller, focusNode: fieldFocusNode)
+                : const SizedBox.shrink(),
+          ),
+        ),
+      );
+    }
+
+    await pumpField(present: true);
+    fieldFocusNode.requestFocus();
+    await tester.pumpAndSettle();
+    expect(find.byType(Dialog), findsOneWidget);
+
+    // Swap the field out while the keyboard is up — the keyboard must follow.
+    await pumpField(present: false);
+    await tester.pumpAndSettle();
+
+    expect(find.byType(Dialog), findsNothing);
+  });
+
   testWidgets('TV virtual keyboard does not immediately reopen after dismissal', (tester) async {
     TvDetectionService.debugSetAppleTVOverride(true);
     await _setTvSurfaceSize(tester);
