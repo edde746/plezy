@@ -70,7 +70,7 @@ final class _GuideChannelRow extends _GuideRow {
   const _GuideChannelRow({required this.channel, required this.channelIndex});
 }
 
-class GuideTabState extends State<GuideTab> with MountedSetStateMixin {
+class GuideTabState extends State<GuideTab> with MountedSetStateMixin, WidgetsBindingObserver {
   static const _slotWidth = 180.0;
   static const _channelColumnWidth = 132.0;
   static const _rowHeight = 64.0;
@@ -78,6 +78,10 @@ class GuideTabState extends State<GuideTab> with MountedSetStateMixin {
   static const _timeHeaderHeight = 40.0;
   static const _minutesPerSlot = 30;
   static const _longPressDuration = Duration(milliseconds: 500);
+
+  /// Minimum time away (backgrounded or on another section) before the
+  /// viewport is realigned to the live line on return.
+  static const _realignAfterAway = Duration(minutes: 30);
 
   List<LiveTvProgram> _programs = [];
   Set<String> _scheduledRecordingKeys = const {};
@@ -95,6 +99,13 @@ class GuideTabState extends State<GuideTab> with MountedSetStateMixin {
   Timer? _timeIndicatorTimer;
   Timer? _programSelectLongPressTimer;
   final _dayPickerKey = GlobalKey();
+
+  // Stale-window catch-up state (#1297). The grid window is only auto
+  // re-anchored when it was live-anchored and has drifted fully into the
+  // past — deliberately picked day/time windows are never yanked.
+  bool _isGuideVisible = true;
+  DateTime? _hiddenSince;
+  bool _nowWasInWindow = true;
 
   // Focus state
   final FocusNode _guideFocusNode = FocusNode(debugLabel: 'guide_tab');
@@ -134,27 +145,63 @@ class GuideTabState extends State<GuideTab> with MountedSetStateMixin {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _initTimeRange();
     _loadPrograms();
 
     _gridHorizontalController.addListener(_syncGridToHeader);
     _headerHorizontalController.addListener(_syncHeaderToGrid);
 
+    _startTimeIndicatorTimer();
+  }
+
+  void _startTimeIndicatorTimer() {
+    _timeIndicatorTimer?.cancel();
     _timeIndicatorTimer = Timer.periodic(const Duration(minutes: 1), (_) {
+      _checkWindowDrift();
       // ignore: no-empty-block - setState triggers rebuild to update time indicator
       setStateIfMounted(() {});
     });
   }
 
-  void pauseRefresh() => _timeIndicatorTimer?.cancel();
+  void pauseRefresh() {
+    _hiddenSince ??= DateTime.now();
+    _timeIndicatorTimer?.cancel();
+  }
 
   void resumeRefresh() {
-    _timeIndicatorTimer?.cancel();
-    _timeIndicatorTimer = Timer.periodic(const Duration(minutes: 1), (_) {
-      // ignore: no-empty-block - setState triggers rebuild to update time indicator
-      setStateIfMounted(() {});
-    });
+    _startTimeIndicatorTimer();
     unawaited(_refreshScheduledRecordingKeys());
+    // Post-frame: resumeRefresh is invoked during tab transitions/build and
+    // the catch-up may setState (reload or scroll).
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _catchUpIfStale();
+    });
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Subscribes to TickerMode, so this fires whenever the guide is shown or
+    // hidden (main-screen IndexedStack section switch, opaque route push/pop).
+    final visible = TickerMode.valuesOf(context).enabled;
+    if (visible == _isGuideVisible) return;
+    _isGuideVisible = visible;
+    visible ? resumeRefresh() : pauseRefresh();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    switch (state) {
+      case AppLifecycleState.paused:
+      case AppLifecycleState.hidden:
+        _hiddenSince ??= DateTime.now();
+      case AppLifecycleState.resumed:
+        _catchUpIfStale();
+      case AppLifecycleState.inactive:
+      case AppLifecycleState.detached:
+        break;
+    }
   }
 
   @override
@@ -167,6 +214,7 @@ class GuideTabState extends State<GuideTab> with MountedSetStateMixin {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _programSelectLongPressTimer?.cancel();
     _guideFocusNode.dispose();
     _gridVerticalController.dispose();
@@ -218,12 +266,14 @@ class GuideTabState extends State<GuideTab> with MountedSetStateMixin {
     }
     _gridStart = _gridStart.subtract(const Duration(hours: 1));
     _gridEnd = _gridStart.add(const Duration(hours: 6));
+    _nowWasInWindow = true;
   }
 
   void _shiftTimeRange(int hours) {
     setState(() {
       _gridStart = _gridStart.add(Duration(hours: hours));
       _gridEnd = _gridStart.add(const Duration(hours: 6));
+      _nowWasInWindow = _nowInWindow(DateTime.now());
     });
     _loadPrograms();
   }
@@ -231,6 +281,29 @@ class GuideTabState extends State<GuideTab> with MountedSetStateMixin {
   void _jumpToNow() {
     _initTimeRange();
     _loadPrograms();
+  }
+
+  bool _nowInWindow(DateTime now) => !now.isBefore(_gridStart) && now.isBefore(_gridEnd);
+
+  /// Timer path: re-anchor only when a live-anchored window drifted fully past.
+  void _checkWindowDrift() {
+    if (!_isGuideVisible || _isLoading) return;
+    if (_nowWasInWindow && !_nowInWindow(DateTime.now())) _jumpToNow();
+  }
+
+  /// Active path (app resume / guide became visible): drift-jump, else
+  /// realign the viewport to the live line after a meaningful absence (#1297).
+  void _catchUpIfStale() {
+    if (!_isGuideVisible) return; // still hidden — keep _hiddenSince
+    final hiddenSince = _hiddenSince;
+    _hiddenSince = null; // evaluated while visible — consume it
+    if (_isLoading) return; // in-flight load already ends in _scrollToNow()
+    final now = DateTime.now();
+    if (_nowWasInWindow && !_nowInWindow(now)) {
+      _jumpToNow();
+    } else if (_nowInWindow(now) && hiddenSince != null && now.difference(hiddenSince) >= _realignAfterAway) {
+      _scrollToNow();
+    }
   }
 
   Future<void> _loadPrograms() async {
@@ -275,6 +348,14 @@ class GuideTabState extends State<GuideTab> with MountedSetStateMixin {
         _programs = allPrograms;
         _scheduledRecordingKeys = scheduledRecordingKeys;
         _isLoading = false;
+        // Focus tracking compares by identity, so a reload orphans the
+        // focused program — re-resolve it against the fresh list.
+        if (_focusZone == _GuideZone.grid && _gridColumn == 1 && _focusedProgram != null) {
+          final focused = _focusedProgram;
+          if (!_programs.any((p) => identical(p, focused))) {
+            _focusedProgram = _findCurrentProgram(_gridChannelIndex);
+          }
+        }
       });
 
       _scrollToNow();
@@ -1029,6 +1110,7 @@ class GuideTabState extends State<GuideTab> with MountedSetStateMixin {
     setState(() {
       _gridStart = DateTime(day.year, day.month, day.day, value);
       _gridEnd = _gridStart.add(const Duration(hours: 6));
+      _nowWasInWindow = _nowInWindow(DateTime.now());
     });
     _loadPrograms();
     _guideFocusNode.requestFocus();
