@@ -70,4 +70,4 @@ duplication-report/
 **/fastlane/report.xml
 maestro/**/*.png
 
-server/deploy.shscripts/framesync/
+server/deploy.sh

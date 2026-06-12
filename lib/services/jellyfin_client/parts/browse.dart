@@ -33,14 +33,21 @@ const _browseFields = 'RecursiveItemCount,ChildCount,UserData,PremiereDate,Origi
 /// queries because it is the heaviest item field Jellyfin returns.
 const _episodeRowFields = '$_browseFields,MediaSources';
 
-/// Folder-tree field set. The tree renders title/thumb/watch state plus
-/// default dto fields (year, runtime, ratings); it deliberately skips
-/// `RecursiveItemCount`/`ChildCount` — per-item COUNT queries the server
-/// runs for every folder/series row, which made large folder listings very
-/// slow — and `Overview`, which the tree never shows. Jellyfin web's folder
-/// view requests none of them either. The unwatched badge survives via
-/// `UserData.UnplayedItemCount` ([MediaItem.unwatchedCount] fallback).
+/// Folder-tree field set for MEDIA children. The tree renders
+/// title/thumb/watch state plus default dto fields (year, runtime, ratings);
+/// it deliberately skips `RecursiveItemCount`/`ChildCount` — per-item COUNT
+/// queries the server runs for every folder/series row, which made large
+/// folder listings very slow — and `Overview`, which the tree never shows.
+/// Jellyfin web's folder view requests none of them either. The unwatched
+/// badge survives via `UserData.UnplayedItemCount`
+/// ([MediaItem.unwatchedCount] fallback).
 const _folderBrowseFields = 'UserData,PremiereDate,OriginalTitle,SortName';
+
+/// Folder-tree field set for FILESYSTEM FOLDER children, which render only
+/// their name. Queried with `EnableUserData=false`: user data on a folder dto
+/// makes the server compute a recursive unplayed count per folder, by far the
+/// dominant cost of folder browsing (see [_fetchFolderChildren]).
+const _folderRowFields = 'SortName';
 
 /// Even slimmer set used by [fetchClientSideEpisodeQueue]. Queue rows
 /// only need title, thumbnail (`ImageTags['Primary']`), season/episode
@@ -631,18 +638,16 @@ mixin _JellyfinBrowseMethods on MediaServerCacheMixin {
   Future<List<MediaItem>> fetchFolderChildren(String folderId, {void Function(List<MediaItem> itemsSoFar)? onPage}) =>
       _fetchFolderChildren(folderId, onPage: onPage);
 
-  Future<List<MediaItem>> _fetchFolderChildren(
-    String parentId, {
-    void Function(List<MediaItem> itemsSoFar)? onPage,
+  /// Page through `/Items?ParentId=...&Recursive=false` with the given type
+  /// filter. [onRawPage] receives the accumulated rows after each intermediate
+  /// page (never for single-page listings or the final page).
+  Future<List<Map<String, dynamic>>> _pageFolderQuery(
+    String parentId,
+    Map<String, String> typeParams,
+    String fields, {
+    void Function(List<Map<String, dynamic>> rowsSoFar)? onRawPage,
   }) async {
-    final cacheKey = '/Items?ParentId=$parentId&Recursive=false&userId=${connection.userId}';
-    if (isOfflineMode) {
-      final cached = await cache.get(ServerId(cacheServerId), cacheKey);
-      return cached == null ? const [] : _mapItems(_itemsArray(cached));
-    }
-
-    final allRaw = <Map<String, dynamic>>[];
-    final mappedSoFar = onPage == null ? null : <MediaItem>[];
+    final out = <Map<String, dynamic>>[];
     var startIndex = 0;
     int? totalRecordCount;
     while (totalRecordCount == null || startIndex < totalRecordCount) {
@@ -655,27 +660,70 @@ mixin _JellyfinBrowseMethods on MediaServerCacheMixin {
           'StartIndex': '$startIndex',
           'Limit': '$_childrenPageSize',
           'EnableTotalRecordCount': 'true',
-          'SortBy': 'IsFolder,SortName',
+          'SortBy': 'SortName',
           'SortOrder': 'Ascending',
-          'Fields': _folderBrowseFields,
+          'Fields': fields,
+          ...typeParams,
           ...jellyfinImageQueryParameters,
         },
       );
       throwIfHttpError(response);
       final data = response.data;
       final page = _itemsArray(data);
-      allRaw.addAll(page);
-      mappedSoFar?.addAll(_mapItems(page));
+      out.addAll(page);
       if (data is Map<String, dynamic>) {
         final rawTotal = data['TotalRecordCount'];
         if (rawTotal is int) totalRecordCount = rawTotal;
       }
       if (page.isEmpty || page.length < _childrenPageSize) break;
       startIndex += page.length;
-      if (mappedSoFar != null && (totalRecordCount == null || startIndex < totalRecordCount)) {
-        onPage!(List<MediaItem>.unmodifiable(mappedSoFar));
+      if (onRawPage != null && (totalRecordCount == null || startIndex < totalRecordCount)) {
+        onRawPage(out);
       }
     }
+    return out;
+  }
+
+  Future<List<MediaItem>> _fetchFolderChildren(
+    String parentId, {
+    void Function(List<MediaItem> itemsSoFar)? onPage,
+  }) async {
+    final cacheKey = '/Items?ParentId=$parentId&Recursive=false&userId=${connection.userId}';
+    if (isOfflineMode) {
+      final cached = await cache.get(ServerId(cacheServerId), cacheKey);
+      return cached == null ? const [] : _mapItems(_itemsArray(cached));
+    }
+
+    // Two parallel queries split by type: attaching UserData to a folder dto
+    // makes Jellyfin compute a recursive unplayed count PER FOLDER (measured
+    // ~100-200ms each on a real 10.11 server — the dominant cost of folder
+    // browsing), and the tree renders no watch state on plain folder rows.
+    // Media children keep UserData: leaves resolve it with a cheap lookup and
+    // series need it for the unwatched badge. Folders-then-media matches the
+    // folders-first ordering the final sort below produces.
+    List<Map<String, dynamic>>? folderRows;
+    final foldersFuture = _pageFolderQuery(parentId, {
+      'IncludeItemTypes': 'Folder,CollectionFolder',
+      'EnableUserData': 'false',
+    }, _folderRowFields).then((rows) => folderRows = rows);
+
+    final mediaFuture = _pageFolderQuery(
+      parentId,
+      {'ExcludeItemTypes': 'Folder,CollectionFolder'},
+      _folderBrowseFields,
+      onRawPage: onPage == null
+          ? null
+          : (rowsSoFar) {
+              // Only emit once the (typically single, fast) folders query has
+              // landed so partial snapshots never reorder later.
+              final folders = folderRows;
+              if (folders == null) return;
+              onPage(List<MediaItem>.unmodifiable(_mapItems([...folders, ...rowsSoFar])));
+            },
+    );
+
+    final results = await Future.wait([foldersFuture, mediaFuture]);
+    final allRaw = <Map<String, dynamic>>[...results[0], ...results[1]];
 
     allRaw.sort((a, b) {
       final folderRank = (_isJellyfinFolderDto(a) ? 0 : 1).compareTo(_isJellyfinFolderDto(b) ? 0 : 1);
