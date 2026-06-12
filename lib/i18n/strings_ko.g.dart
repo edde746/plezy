@@ -730,6 +730,9 @@ class _TranslationsSubtitlingStylingKo extends TranslationsSubtitlingStylingEn {
 	@override String get assOverride => 'ASS 오버라이드';
 	@override String get bold => '굵게';
 	@override String get italic => '기울임꼴';
+	@override String get renderResolution => '렌더링 해상도';
+	@override String get renderResolutionScreen => '화면 해상도';
+	@override String get renderResolutionVideo => '영상 해상도';
 }
 
 // Path: mpvConfig
@@ -2441,6 +2444,9 @@ extension on TranslationsKo {
 			'subtitlingStyling.assOverride' => 'ASS 오버라이드',
 			'subtitlingStyling.bold' => '굵게',
 			'subtitlingStyling.italic' => '기울임꼴',
+			'subtitlingStyling.renderResolution' => '렌더링 해상도',
+			'subtitlingStyling.renderResolutionScreen' => '화면 해상도',
+			'subtitlingStyling.renderResolutionVideo' => '영상 해상도',
 			'mpvConfig.title' => 'mpv 설정',
 			'mpvConfig.description' => '고급 비디오 플레이어 설정',
 			'mpvConfig.presets' => '사전 설정',
@@ -2940,11 +2946,11 @@ extension on TranslationsKo {
 			'companionRemote.remote.retryNow' => '지금 재시도',
 			'companionRemote.remote.tabRemote' => '리모컨',
 			'companionRemote.remote.tabPlay' => '재생',
+			_ => null,
+		} ?? switch (path) {
 			'companionRemote.remote.tabMore' => '더 보기',
 			'companionRemote.remote.menu' => '메뉴',
 			'companionRemote.remote.tabNavigation' => '탭 탐색',
-			_ => null,
-		} ?? switch (path) {
 			'companionRemote.remote.tabDiscover' => '발견',
 			'companionRemote.remote.tabLibraries' => '미디어 라이브러리',
 			'companionRemote.remote.tabSearch' => '검색',

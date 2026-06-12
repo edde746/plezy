@@ -557,7 +557,10 @@
     "position": "Pozycja",
     "assOverride": "Nadpisywanie ASS",
     "bold": "Pogrubienie",
-    "italic": "Kursywa"
+    "italic": "Kursywa",
+    "renderResolution": "Rozdzielczość renderowania",
+    "renderResolutionScreen": "Rozdzielczość ekranu",
+    "renderResolutionVideo": "Rozdzielczość wideo"
   },
   "mpvConfig": {
     "title": "mpv.conf",

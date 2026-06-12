@@ -796,6 +796,15 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
 
       if (Platform.isIOS) {
         await currentPlayer.setProperty('audio-exclusive', 'yes');
+
+        // Rasterize subtitles at the video's resolution instead of the
+        // display's; the OSD layer upscales them with the video.
+        await currentPlayer.setProperty(
+          'avfoundation-osd-video-res',
+          settingsService.read(SettingsService.subtitleRenderResolution) == SubtitleRenderResolution.video
+              ? 'yes'
+              : 'no',
+        );
       }
 
       // Audio passthrough (desktop only - sends bitstream to receiver)

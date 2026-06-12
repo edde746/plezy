@@ -557,7 +557,10 @@
     "position": "위치",
     "assOverride": "ASS 오버라이드",
     "bold": "굵게",
-    "italic": "기울임꼴"
+    "italic": "기울임꼴",
+    "renderResolution": "렌더링 해상도",
+    "renderResolutionScreen": "화면 해상도",
+    "renderResolutionVideo": "영상 해상도"
   },
   "mpvConfig": {
     "title": "mpv 설정",

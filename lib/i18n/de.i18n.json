@@ -557,7 +557,10 @@
     "position": "Position",
     "assOverride": "ASS-Überschreibung",
     "bold": "Fett",
-    "italic": "Kursiv"
+    "italic": "Kursiv",
+    "renderResolution": "Render-Auflösung",
+    "renderResolutionScreen": "Bildschirmauflösung",
+    "renderResolutionVideo": "Videoauflösung"
   },
   "mpvConfig": {
     "title": "mpv-Konfiguration",

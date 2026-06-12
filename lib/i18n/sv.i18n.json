@@ -557,7 +557,10 @@
     "position": "Position",
     "assOverride": "ASS-åsidosättning",
     "bold": "Fet",
-    "italic": "Kursiv"
+    "italic": "Kursiv",
+    "renderResolution": "Renderingsupplösning",
+    "renderResolutionScreen": "Skärmupplösning",
+    "renderResolutionVideo": "Videoupplösning"
   },
   "mpvConfig": {
     "title": "mpv-konfiguration",

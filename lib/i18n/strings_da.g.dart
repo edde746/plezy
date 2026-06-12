@@ -730,6 +730,9 @@ class _TranslationsSubtitlingStylingDa extends TranslationsSubtitlingStylingEn {
 	@override String get assOverride => 'ASS-tilsidesættelse';
 	@override String get bold => 'Fed';
 	@override String get italic => 'Kursiv';
+	@override String get renderResolution => 'Gengivelsesopløsning';
+	@override String get renderResolutionScreen => 'Skærmopløsning';
+	@override String get renderResolutionVideo => 'Videoopløsning';
 }
 
 // Path: mpvConfig
@@ -2441,6 +2444,9 @@ extension on TranslationsDa {
 			'subtitlingStyling.assOverride' => 'ASS-tilsidesættelse',
 			'subtitlingStyling.bold' => 'Fed',
 			'subtitlingStyling.italic' => 'Kursiv',
+			'subtitlingStyling.renderResolution' => 'Gengivelsesopløsning',
+			'subtitlingStyling.renderResolutionScreen' => 'Skærmopløsning',
+			'subtitlingStyling.renderResolutionVideo' => 'Videoopløsning',
 			'mpvConfig.title' => 'mpv.conf',
 			'mpvConfig.description' => 'Avancerede videoafspillerindstillinger',
 			'mpvConfig.presets' => 'Forudindstillinger',
@@ -2940,11 +2946,11 @@ extension on TranslationsDa {
 			'companionRemote.remote.retryNow' => 'Prøv igen nu',
 			'companionRemote.remote.tabRemote' => 'Fjernbetjening',
 			'companionRemote.remote.tabPlay' => 'Afspil',
+			_ => null,
+		} ?? switch (path) {
 			'companionRemote.remote.tabMore' => 'Mere',
 			'companionRemote.remote.menu' => 'Menu',
 			'companionRemote.remote.tabNavigation' => 'Fanenavigation',
-			_ => null,
-		} ?? switch (path) {
 			'companionRemote.remote.tabDiscover' => 'Opdag',
 			'companionRemote.remote.tabLibraries' => 'Biblioteker',
 			'companionRemote.remote.tabSearch' => 'Søg',

@@ -40,6 +40,11 @@ enum ContinueWatchingAction { play, details }
 
 enum SubAssOverride { no, yes, scale, force, strip }
 
+/// Resolution ASS/image subtitles are rasterized at on the avfoundation VO
+/// (iOS/tvOS): the display's, or the video's (much cheaper on 4K displays;
+/// subs can't carry more detail than the video they're typeset against).
+enum SubtitleRenderResolution { screen, video }
+
 enum DvConversionModePreference { auto, disabled, dv81, hevcStrip }
 
 extension DvConversionModePreferenceNativeValue on DvConversionModePreference {
@@ -310,6 +315,11 @@ class SettingsService extends BaseSharedPreferencesService {
     'sub_ass_override',
     values: SubAssOverride.values,
     defaultValue: SubAssOverride.no,
+  );
+  static const subtitleRenderResolution = EnumPref<SubtitleRenderResolution>(
+    'subtitle_render_resolution',
+    values: SubtitleRenderResolution.values,
+    defaultValue: SubtitleRenderResolution.screen,
   );
   static const subtitleBold = BoolPref('subtitle_bold');
   static const subtitleItalic = BoolPref('subtitle_italic');

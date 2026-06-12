@@ -557,7 +557,10 @@
     "position": "Позиция",
     "assOverride": "Переопределение ASS",
     "bold": "Жирный",
-    "italic": "Курсив"
+    "italic": "Курсив",
+    "renderResolution": "Разрешение отрисовки",
+    "renderResolutionScreen": "Разрешение экрана",
+    "renderResolutionVideo": "Разрешение видео"
   },
   "mpvConfig": {
     "title": "mpv.conf",

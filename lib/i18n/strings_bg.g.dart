@@ -730,6 +730,9 @@ class _TranslationsSubtitlingStylingBg extends TranslationsSubtitlingStylingEn {
 	@override String get assOverride => 'ASS презаписване';
 	@override String get bold => 'Получер';
 	@override String get italic => 'Курсив';
+	@override String get renderResolution => 'Резолюция на изобразяване';
+	@override String get renderResolutionScreen => 'Резолюция на екрана';
+	@override String get renderResolutionVideo => 'Резолюция на видеото';
 }
 
 // Path: mpvConfig
@@ -2441,6 +2444,9 @@ extension on TranslationsBg {
 			'subtitlingStyling.assOverride' => 'ASS презаписване',
 			'subtitlingStyling.bold' => 'Получер',
 			'subtitlingStyling.italic' => 'Курсив',
+			'subtitlingStyling.renderResolution' => 'Резолюция на изобразяване',
+			'subtitlingStyling.renderResolutionScreen' => 'Резолюция на екрана',
+			'subtitlingStyling.renderResolutionVideo' => 'Резолюция на видеото',
 			'mpvConfig.title' => 'mpv.conf',
 			'mpvConfig.description' => 'Разширени настройки на видео плейъра',
 			'mpvConfig.presets' => 'Пресети',
@@ -2940,11 +2946,11 @@ extension on TranslationsBg {
 			'companionRemote.remote.retryNow' => 'Опитай сега',
 			'companionRemote.remote.tabRemote' => 'Дистанционно',
 			'companionRemote.remote.tabPlay' => 'Пускане',
+			_ => null,
+		} ?? switch (path) {
 			'companionRemote.remote.tabMore' => 'Още',
 			'companionRemote.remote.menu' => 'Меню',
 			'companionRemote.remote.tabNavigation' => 'Навигация с Tab',
-			_ => null,
-		} ?? switch (path) {
 			'companionRemote.remote.tabDiscover' => 'Открий',
 			'companionRemote.remote.tabLibraries' => 'Библиотеки',
 			'companionRemote.remote.tabSearch' => 'Търсене',

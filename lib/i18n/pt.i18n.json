@@ -557,7 +557,10 @@
     "position": "Posição",
     "assOverride": "Substituição ASS",
     "bold": "Negrito",
-    "italic": "Itálico"
+    "italic": "Itálico",
+    "renderResolution": "Resolução de renderização",
+    "renderResolutionScreen": "Resolução da tela",
+    "renderResolutionVideo": "Resolução do vídeo"
   },
   "mpvConfig": {
     "title": "mpv.conf",

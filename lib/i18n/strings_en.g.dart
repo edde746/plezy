@@ -1731,6 +1731,15 @@ class TranslationsSubtitlingStylingEn {
 
 	/// en: 'Italic'
 	String get italic => 'Italic';
+
+	/// en: 'Render Resolution'
+	String get renderResolution => 'Render Resolution';
+
+	/// en: 'Screen resolution'
+	String get renderResolutionScreen => 'Screen resolution';
+
+	/// en: 'Video resolution'
+	String get renderResolutionVideo => 'Video resolution';
 }
 
 // Path: mpvConfig
@@ -5016,6 +5025,9 @@ extension on Translations {
 			'subtitlingStyling.assOverride' => 'ASS Override',
 			'subtitlingStyling.bold' => 'Bold',
 			'subtitlingStyling.italic' => 'Italic',
+			'subtitlingStyling.renderResolution' => 'Render Resolution',
+			'subtitlingStyling.renderResolutionScreen' => 'Screen resolution',
+			'subtitlingStyling.renderResolutionVideo' => 'Video resolution',
 			'mpvConfig.title' => 'mpv.conf',
 			'mpvConfig.description' => 'Advanced video player settings',
 			'mpvConfig.presets' => 'Presets',
@@ -5509,11 +5521,11 @@ extension on Translations {
 			'companionRemote.pairing.validationHostRequired' => 'Please enter host address',
 			'companionRemote.pairing.validationHostFormat' => 'Format must be IP:port (e.g., 192.168.1.100:48632)',
 			'companionRemote.pairing.connectionTimedOut' => 'Connection timed out. Use the same network on both devices.',
+			_ => null,
+		} ?? switch (path) {
 			'companionRemote.pairing.sessionNotFound' => 'Device not found. Make sure Plezy is running on the host.',
 			'companionRemote.pairing.authFailed' => 'Authentication failed. Both devices need the same Plex account.',
 			'companionRemote.pairing.failedToConnect' => ({required Object error}) => 'Failed to connect: ${error}',
-			_ => null,
-		} ?? switch (path) {
 			'companionRemote.remote.disconnectConfirm' => 'Do you want to disconnect from the remote session?',
 			'companionRemote.remote.reconnecting' => 'Reconnecting...',
 			'companionRemote.remote.attemptOf' => ({required Object current}) => 'Attempt ${current} of 5',

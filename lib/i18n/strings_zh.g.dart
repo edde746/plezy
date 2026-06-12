@@ -730,6 +730,9 @@ class _TranslationsSubtitlingStylingZh extends TranslationsSubtitlingStylingEn {
 	@override String get assOverride => 'ASS 样式覆盖';
 	@override String get bold => '粗体';
 	@override String get italic => '斜体';
+	@override String get renderResolution => '渲染分辨率';
+	@override String get renderResolutionScreen => '屏幕分辨率';
+	@override String get renderResolutionVideo => '视频分辨率';
 }
 
 // Path: mpvConfig
@@ -2441,6 +2444,9 @@ extension on TranslationsZh {
 			'subtitlingStyling.assOverride' => 'ASS 样式覆盖',
 			'subtitlingStyling.bold' => '粗体',
 			'subtitlingStyling.italic' => '斜体',
+			'subtitlingStyling.renderResolution' => '渲染分辨率',
+			'subtitlingStyling.renderResolutionScreen' => '屏幕分辨率',
+			'subtitlingStyling.renderResolutionVideo' => '视频分辨率',
 			'mpvConfig.title' => 'mpv 配置',
 			'mpvConfig.description' => '高级视频播放器设置',
 			'mpvConfig.presets' => '预设',
@@ -2940,11 +2946,11 @@ extension on TranslationsZh {
 			'companionRemote.remote.retryNow' => '立即重试',
 			'companionRemote.remote.tabRemote' => '遥控',
 			'companionRemote.remote.tabPlay' => '播放',
+			_ => null,
+		} ?? switch (path) {
 			'companionRemote.remote.tabMore' => '更多',
 			'companionRemote.remote.menu' => '菜单',
 			'companionRemote.remote.tabNavigation' => '标签导航',
-			_ => null,
-		} ?? switch (path) {
 			'companionRemote.remote.tabDiscover' => '发现',
 			'companionRemote.remote.tabLibraries' => '媒体库',
 			'companionRemote.remote.tabSearch' => '搜索',

@@ -730,6 +730,9 @@ class _TranslationsSubtitlingStylingFr extends TranslationsSubtitlingStylingEn {
 	@override String get assOverride => 'Remplacement ASS';
 	@override String get bold => 'Gras';
 	@override String get italic => 'Italique';
+	@override String get renderResolution => 'Résolution de rendu';
+	@override String get renderResolutionScreen => 'Résolution de l\'écran';
+	@override String get renderResolutionVideo => 'Résolution de la vidéo';
 }
 
 // Path: mpvConfig
@@ -2441,6 +2444,9 @@ extension on TranslationsFr {
 			'subtitlingStyling.assOverride' => 'Remplacement ASS',
 			'subtitlingStyling.bold' => 'Gras',
 			'subtitlingStyling.italic' => 'Italique',
+			'subtitlingStyling.renderResolution' => 'Résolution de rendu',
+			'subtitlingStyling.renderResolutionScreen' => 'Résolution de l\'écran',
+			'subtitlingStyling.renderResolutionVideo' => 'Résolution de la vidéo',
 			'mpvConfig.title' => 'Configuration mpv',
 			'mpvConfig.description' => 'Paramètres avancés du lecteur vidéo',
 			'mpvConfig.presets' => 'Préréglages',
@@ -2940,11 +2946,11 @@ extension on TranslationsFr {
 			'companionRemote.remote.retryNow' => 'Réessayer maintenant',
 			'companionRemote.remote.tabRemote' => 'Télécommande',
 			'companionRemote.remote.tabPlay' => 'Lecture',
+			_ => null,
+		} ?? switch (path) {
 			'companionRemote.remote.tabMore' => 'Plus',
 			'companionRemote.remote.menu' => 'Menu',
 			'companionRemote.remote.tabNavigation' => 'Navigation par onglets',
-			_ => null,
-		} ?? switch (path) {
 			'companionRemote.remote.tabDiscover' => 'Découvrir',
 			'companionRemote.remote.tabLibraries' => 'Bibliothèques',
 			'companionRemote.remote.tabSearch' => 'Rechercher',
