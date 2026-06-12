@@ -1455,8 +1455,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
       final screenSize = MediaQuery.sizeOf(context);
       final density = context.settingsRead(SettingsService.libraryDensity);
       final maxExtent = GridSizeCalculator.getMaxCrossAxisExtent(context, density);
-      final crossAxisSpacing = GridLayoutConstants.crossAxisSpacing;
-      final columnCount = ((screenSize.width + crossAxisSpacing) / (maxExtent + crossAxisSpacing)).ceil().clamp(1, 100);
+      final columnCount = GridSizeCalculator.getColumnCount(screenSize.width, maxExtent);
       final itemWidth = screenSize.width / columnCount;
       final itemHeight = itemWidth / GridLayoutConstants.posterAspectRatio;
       final rowHeight = itemHeight + GridLayoutConstants.mainAxisSpacing;
