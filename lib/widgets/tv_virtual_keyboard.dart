@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:material_symbols_icons/symbols.dart';
@@ -41,7 +43,31 @@ void warmUpTvVirtualKeyboardText(BuildContext context) {
   }
 }
 
-Future<void> showTvVirtualKeyboard({
+/// Handle to a TV virtual keyboard pushed by [showTvVirtualKeyboard].
+class TvVirtualKeyboardHandle {
+  TvVirtualKeyboardHandle._(this._navigator, this._route);
+
+  final NavigatorState _navigator;
+  final DialogRoute<void> _route;
+
+  /// Completes when the keyboard leaves the navigator — submit, cancel,
+  /// barrier/back dismiss, or [close].
+  Future<void> get closed => _route.popped;
+
+  /// Dismiss the keyboard if it is still up. No-ops once the route is gone
+  /// or the navigator is being torn down.
+  void close() {
+    if (!_navigator.mounted) return;
+    if (_route.isCurrent) {
+      _navigator.pop();
+    } else if (_route.isActive) {
+      // removeRoute also completes route.popped, which backs [closed].
+      _navigator.removeRoute(_route);
+    }
+  }
+}
+
+TvVirtualKeyboardHandle? showTvVirtualKeyboard({
   required BuildContext context,
   required TextEditingController controller,
   String? hintText,
@@ -55,13 +81,19 @@ Future<void> showTvVirtualKeyboard({
   ValueChanged<String>? onSubmitted,
   VoidCallback? onAction,
 }) {
-  if (!PlatformDetector.isTV()) return Future.value();
+  if (!PlatformDetector.isTV()) return null;
 
-  return showDialog<void>(
+  // A hand-built DialogRoute instead of showDialog so the caller gets a
+  // handle it can close when the owning field unmounts. Mirrors showDialog's
+  // root-navigator, captured-themes and closed-loop traversal defaults.
+  final navigator = Navigator.of(context, rootNavigator: true);
+  final route = DialogRoute<void>(
     context: context,
     barrierDismissible: true,
     barrierColor: Colors.black.withValues(alpha: 0.1),
     useSafeArea: false,
+    themes: InheritedTheme.capture(from: context, to: navigator.context),
+    traversalEdgeBehavior: TraversalEdgeBehavior.closedLoop,
     builder: (context) => _TvVirtualKeyboardDialog(
       controller: controller,
       hintText: hintText,
@@ -76,6 +108,8 @@ Future<void> showTvVirtualKeyboard({
       onAction: onAction,
     ),
   );
+  unawaited(navigator.push(route));
+  return TvVirtualKeyboardHandle._(navigator, route);
 }
 
 enum _TvKeyType { spacer, character, shift, symbols, space, newline, backspace, clear, cancel, done }
