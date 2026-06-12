@@ -286,6 +286,26 @@ void main() {
     expect(provider.onDeck.single.id, 'ep-1');
   });
 
+  test('syncToOnlineServers reloads for mid-session connects only', () async {
+    aggregation.onDeckResult = () => [_item('a')];
+    await provider.load();
+    final onDeckCallsBefore = aggregation.onDeckCalls;
+
+    // Same server set → already covered, no fetch.
+    await provider.syncToOnlineServers({'server_1'});
+    expect(aggregation.onDeckCalls, onDeckCallsBefore);
+
+    // New server mid-session → full reload.
+    await provider.syncToOnlineServers({'server_1', 'server_2'});
+    expect(aggregation.onDeckCalls, onDeckCallsBefore + 1);
+
+    // During profile binding the startup priming owns loading — waves are
+    // ignored so the hub fan-out doesn't run once per wave.
+    isBinding = true;
+    await provider.syncToOnlineServers({'server_1', 'server_2', 'server_3'});
+    expect(aggregation.onDeckCalls, onDeckCallsBefore + 1);
+  });
+
   test('loadGeneration bumps on full loads only', () async {
     aggregation.onDeckResult = () => [_item('a')];
     final initial = provider.loadGeneration;

@@ -73,6 +73,9 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
   Set<String> _lastSeenHiddenKeys = {};
   List<String> _lastSeenLibraryOrderKeys = const [];
 
+  /// Online servers that contributed to the last successful [load] pass.
+  Set<String> _loadedOnlineServerIds = {};
+
   Future<void>? _inFlightLoad;
   bool _hasPendingLoad = false;
 
@@ -95,6 +98,19 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
   /// uses this to distinguish "full reload — reset the hero carousel" from
   /// a background Continue Watching refresh (clamp only).
   int get loadGeneration => _loadGeneration;
+
+  /// Reload when a server comes online *mid-session* (reconnect, late wave) —
+  /// its hubs and continue-watching rows are otherwise missing until a manual
+  /// refresh. During profile binding this is a no-op: servers bind in waves
+  /// and main_screen primes one [load] when binding settles, so reacting to
+  /// each wave would multiply the (expensive) hub fan-out at startup.
+  Future<void> syncToOnlineServers(Set<String> onlineServerIds) {
+    if (onlineServerIds.isEmpty || isProfileBinding()) return Future<void>.value();
+    if (_onDeckState == DiscoverLoadState.loaded && _loadedOnlineServerIds.containsAll(onlineServerIds)) {
+      return Future<void>.value();
+    }
+    return load();
+  }
 
   /// Full load of Continue Watching + hubs. Concurrent calls coalesce into
   /// the in-flight pass plus at most one trailing pass (so a request that
@@ -148,10 +164,13 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
         includePlaybackHubs: false,
       );
 
+      final fetchedFromServerIds = Set<String>.of(_multiServer.onlineServerIds);
+
       final fetchedOnDeck = await onDeckFuture;
       if (isDisposed) return;
       _applyOnDeck(fetchedOnDeck);
       _onDeckState = DiscoverLoadState.loaded;
+      _loadedOnlineServerIds = fetchedFromServerIds;
       _loadGeneration++;
       safeNotifyListeners();
       unawaited(_syncSystemShelf(_onDeck));

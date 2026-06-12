@@ -43,11 +43,19 @@ class MultiServerProvider extends ChangeNotifier with DisposableChangeNotifierMi
 
   /// Invoked with the current visibility-filtered online server ids whenever
   /// the manager's status stream fires (a server connects, reconnects, drops,
-  /// or its auth state changes). Lets `LibrariesProvider` reload when the
-  /// online set grows — servers bind in waves and slow ones reconnect after
-  /// the initial load — without coupling the two providers by type. Wired once
-  /// in `main.dart`.
-  void Function(Set<String> onlineServerIds)? onOnlineServersChanged;
+  /// or its auth state changes). Lets data providers (`LibrariesProvider`,
+  /// `DiscoverProvider`) reload when the online set grows — servers bind in
+  /// waves and slow ones reconnect after the initial load — without coupling
+  /// the providers by type. Wired once per consumer in `main.dart`.
+  final List<void Function(Set<String> onlineServerIds)> _onlineServersListeners = [];
+
+  void addOnlineServersListener(void Function(Set<String> onlineServerIds) listener) {
+    _onlineServersListeners.add(listener);
+  }
+
+  void removeOnlineServersListener(void Function(Set<String> onlineServerIds) listener) {
+    _onlineServersListeners.remove(listener);
+  }
 
   /// Visibility filter applied by the active app profile. `null` means
   /// "all servers visible" (no profile restriction); otherwise only server
@@ -148,11 +156,13 @@ class MultiServerProvider extends ChangeNotifier with DisposableChangeNotifierMi
 
       safeNotifyListeners();
 
-      // Reload libraries when the online set changes. LibrariesProvider owns
-      // the "is anything actually new to me?" decision (its loaded set can
+      // Reload data providers when the online set changes. Each listener owns
+      // the "is anything actually new to me?" decision (their loaded sets can
       // differ from _previousOnlineServerIds after a load error or a profile
-      // switch that cleared it), so notify unconditionally and let it decide.
-      onOnlineServersChanged?.call(currentOnline);
+      // switch that cleared them), so notify unconditionally and let them decide.
+      for (final listener in List.of(_onlineServersListeners)) {
+        listener(currentOnline);
+      }
 
       // Only re-check live TV when a new server came online
       if (hasNewServer) {

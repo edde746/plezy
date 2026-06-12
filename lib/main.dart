@@ -916,19 +916,24 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
                     // bind in waves on sign-in / profile switch and slow ones
                     // reconnect after the initial load; without this they stay
                     // missing from the sidebar until a re-switch or restart.
-                    context.read<MultiServerProvider>().onOnlineServersChanged = provider.syncToOnlineServers;
+                    context.read<MultiServerProvider>().addOnlineServersListener(provider.syncToOnlineServers);
                     return provider;
                   },
                 ),
                 ChangeNotifierProvider(
                   create: (context) {
                     final activeProfile = context.read<ActiveProfileProvider>();
-                    return DiscoverProvider(
-                      context.read<MultiServerProvider>(),
+                    final multiServer = context.read<MultiServerProvider>();
+                    final provider = DiscoverProvider(
+                      multiServer,
                       context.read<HiddenLibrariesProvider>(),
                       context.read<LibrariesProvider>(),
                       isProfileBinding: () => activeProfile.isBinding,
                     );
+                    // Late server connects (reconnect after outage, slow wave)
+                    // refresh discover the same way they refresh libraries.
+                    multiServer.addOnlineServersListener(provider.syncToOnlineServers);
+                    return provider;
                   },
                 ),
                 ChangeNotifierProvider(create: (context) => PlaybackStateProvider()),
