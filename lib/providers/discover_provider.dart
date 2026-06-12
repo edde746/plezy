@@ -38,6 +38,10 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
   static const int _continueWatchingProbeLimit = continueWatchingPreviewLimit + 1;
 
   DiscoverProvider(this._multiServer, this._hiddenLibraries, this._libraries, {required this.isProfileBinding}) {
+    // Late server connects (reconnect after outage, slow wave) refresh
+    // discover the same way they refresh libraries. Removed in [dispose] so a
+    // profile switch can't leave a stale listener on the app-global provider.
+    _multiServer.addOnlineServersListener(syncToOnlineServers);
     _hiddenLibraries.addListener(_onHiddenLibrariesChanged);
     _lastSeenLibraryOrderKeys = _libraryOrderKeys();
     _libraries.addListener(_onLibrariesChanged);
@@ -79,6 +83,10 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
   Future<void>? _inFlightLoad;
   bool _hasPendingLoad = false;
 
+  /// Newly-online servers queued for a delta pass — fetched and merged
+  /// without repeating the full multi-server fan-out.
+  final Set<String> _pendingDeltaServerIds = {};
+
   Future<void>? _systemShelfSyncFuture;
   List<MediaItem>? _pendingSystemShelfItems;
 
@@ -99,17 +107,23 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
   /// a background Continue Watching refresh (clamp only).
   int get loadGeneration => _loadGeneration;
 
-  /// Reload when a server comes online *mid-session* (reconnect, late wave) —
+  /// Refresh when a server comes online *mid-session* (reconnect, late wave) —
   /// its hubs and continue-watching rows are otherwise missing until a manual
   /// refresh. During profile binding this is a no-op: servers bind in waves
   /// and main_screen primes one [load] when binding settles, so reacting to
   /// each wave would multiply the (expensive) hub fan-out at startup.
+  ///
+  /// Once a full pass has loaded, only the genuinely new servers are fetched
+  /// and merged in; already-loaded servers are not refetched.
   Future<void> syncToOnlineServers(Set<String> onlineServerIds) {
     if (onlineServerIds.isEmpty || isProfileBinding()) return Future<void>.value();
     if (_onDeckState == DiscoverLoadState.loaded && _loadedOnlineServerIds.containsAll(onlineServerIds)) {
       return Future<void>.value();
     }
-    return load();
+    // Nothing (or a failed pass) to merge into yet — run the full load.
+    if (_onDeckState != DiscoverLoadState.loaded || _hubsState != DiscoverLoadState.loaded) return load();
+    _pendingDeltaServerIds.addAll(onlineServerIds.difference(_loadedOnlineServerIds));
+    return _ensureLoadLoop();
   }
 
   /// Full load of Continue Watching + hubs. Concurrent calls coalesce into
@@ -117,13 +131,22 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
   /// arrives mid-load still observes its own fresh fetch).
   Future<void> load() {
     _hasPendingLoad = true;
-    return _inFlightLoad ??= _runLoadLoop().whenComplete(() => _inFlightLoad = null);
+    return _ensureLoadLoop();
   }
 
+  Future<void> _ensureLoadLoop() => _inFlightLoad ??= _runLoadLoop().whenComplete(() => _inFlightLoad = null);
+
   Future<void> _runLoadLoop() async {
-    while (_hasPendingLoad && !isDisposed) {
-      _hasPendingLoad = false;
-      await _loadOnce();
+    while ((_hasPendingLoad || _pendingDeltaServerIds.isNotEmpty) && !isDisposed) {
+      if (_hasPendingLoad) {
+        _hasPendingLoad = false;
+        _pendingDeltaServerIds.clear(); // a full pass covers every server
+        await _loadOnce();
+      } else {
+        final ids = Set<String>.of(_pendingDeltaServerIds);
+        _pendingDeltaServerIds.clear();
+        await _loadDeltaOnce(ids);
+      }
     }
   }
 
@@ -178,17 +201,7 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
       final allHubs = await hubsFuture;
       if (isDisposed) return;
 
-      // Playback-progress hubs duplicate the top Continue Watching row.
-      final filteredHubs = allHubs.where((hub) {
-        final hubId = hub.identifier?.toLowerCase() ?? '';
-        final title = hub.title.toLowerCase();
-        return !hubId.contains('ondeck') &&
-            !hubId.contains('continue') &&
-            !hubId.contains('nextup') &&
-            !title.contains('continue watching') &&
-            !title.contains('on deck') &&
-            !title.contains('next up');
-      }).toList();
+      final filteredHubs = _filterDiscoverHubs(allHubs);
       sortMediaHubsByLibraryOrder(filteredHubs, _libraries.libraries);
 
       appLogger.d('DiscoverProvider: ${_onDeck.length} on-deck items, ${filteredHubs.length} hubs');
@@ -203,6 +216,85 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
       _hubsState = DiscoverLoadState.error;
       safeNotifyListeners();
     }
+  }
+
+  /// Fetch Continue Watching + hubs from [serverIds] only (servers that came
+  /// online after the last full pass) and merge them into the loaded state.
+  /// Failures keep the loaded state and leave the ids un-loaded, so the next
+  /// status emission retries them.
+  Future<void> _loadDeltaOnce(Set<String> serverIds) async {
+    // A full pass may have covered these ids while they sat in the queue.
+    final ids = serverIds.difference(_loadedOnlineServerIds);
+    if (ids.isEmpty) return;
+    appLogger.d('DiscoverProvider: merging content from newly-online servers $ids');
+
+    try {
+      await _hiddenLibraries.ensureInitialized();
+      if (isDisposed) return;
+
+      final settings = await SettingsService.getInstance();
+      final useGlobalHubs = settings.read(SettingsService.useGlobalHubs);
+      final aggregation = _multiServer.aggregationService;
+
+      final onDeckFuture = aggregation.getOnDeckFromAllServers(
+        limit: _continueWatchingProbeLimit,
+        hiddenLibraryKeys: _hiddenLibraries.hiddenLibraryKeys,
+        serverIds: ids,
+      );
+      final hubsFuture = aggregation.getHubsFromAllServers(
+        hiddenLibraryKeys: _hiddenLibraries.hiddenLibraryKeys,
+        useGlobalHubs: useGlobalHubs,
+        includePlaybackHubs: false,
+        serverIds: ids,
+      );
+
+      final freshOnDeck = await onDeckFuture;
+      final freshHubs = await hubsFuture;
+      if (isDisposed) return;
+
+      final hadMore = _hasMoreContinueWatching;
+      final mergedOnDeck = await aggregation.mergeContinueWatching(
+        _onDeck,
+        freshOnDeck,
+        limit: _continueWatchingProbeLimit,
+      );
+      if (isDisposed) return;
+      _applyOnDeck(mergedOnDeck);
+      // The stored list is already trimmed, so the merge can't see old items
+      // past the cap — a previously-true "more" affordance stays true.
+      if (hadMore) _hasMoreContinueWatching = true;
+      // No _loadGeneration bump: a delta behaves like the background Continue
+      // Watching refresh (the hero clamps instead of resetting).
+
+      final mergedHubs = [
+        ..._hubs.where((hub) => !ids.contains(hub.serverId)),
+        ..._filterDiscoverHubs(freshHubs),
+      ];
+      sortMediaHubsByLibraryOrder(mergedHubs, _libraries.libraries);
+      _hubs = mergedHubs;
+      _loadedOnlineServerIds = {..._loadedOnlineServerIds, ...ids};
+
+      appLogger.d('DiscoverProvider: ${_onDeck.length} on-deck items, ${_hubs.length} hubs after merging $ids');
+      safeNotifyListeners();
+      unawaited(_syncSystemShelf(_onDeck));
+    } catch (e) {
+      // Keep the loaded state — stale rows beat an error flash.
+      appLogger.w('DiscoverProvider: delta load failed for $ids', error: e);
+    }
+  }
+
+  /// Playback-progress hubs duplicate the top Continue Watching row.
+  List<MediaHub> _filterDiscoverHubs(List<MediaHub> hubs) {
+    return hubs.where((hub) {
+      final hubId = hub.identifier?.toLowerCase() ?? '';
+      final title = hub.title.toLowerCase();
+      return !hubId.contains('ondeck') &&
+          !hubId.contains('continue') &&
+          !hubId.contains('nextup') &&
+          !title.contains('continue watching') &&
+          !title.contains('on deck') &&
+          !title.contains('next up');
+    }).toList();
   }
 
   /// Background refresh of Continue Watching only — never flips load states
@@ -398,6 +490,7 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
 
   @override
   void dispose() {
+    _multiServer.removeOnlineServersListener(syncToOnlineServers);
     _hiddenLibraries.removeListener(_onHiddenLibrariesChanged);
     _libraries.removeListener(_onLibrariesChanged);
     _watchStateSubscription?.cancel();

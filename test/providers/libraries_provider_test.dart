@@ -7,6 +7,7 @@ import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/media/media_library.dart';
 import 'package:plezy/media/media_server_client.dart';
 import 'package:plezy/providers/libraries_provider.dart';
+import 'package:plezy/providers/multi_server_provider.dart';
 import 'package:plezy/services/data_aggregation_service.dart';
 import 'package:plezy/services/multi_server_manager.dart';
 import 'package:plezy/services/storage_service.dart';
@@ -194,10 +195,10 @@ void main() {
       manager.dispose();
     });
 
-    test('reloads and surfaces a server that connects after the first load', () async {
-      // The bug: a server binding in a later wave (borrowed connection, or a
-      // slow server reconnecting after timing out) was never picked up because
-      // the load was one-shot.
+    test('delta-loads only a server that connects after the first load', () async {
+      // A server binding in a later wave (borrowed connection, or a slow
+      // server reconnecting after timing out) must surface without a profile
+      // re-switch — and without refetching the servers already loaded.
       final manager = MultiServerManager();
       final clientA = _FakeClient(serverId: ServerId('A'), libraries: [_serverLib(ServerId('A'), '1', 'Movies A')]);
       manager.debugRegisterClientForTesting(clientA);
@@ -211,7 +212,7 @@ void main() {
       await p.syncToOnlineServers({'A', 'B'});
 
       expect(p.libraries.map((l) => l.title), containsAll(<String>['Movies A', 'Shows B']));
-      expect(clientA.fetchLibrariesCalls, 2);
+      expect(clientA.fetchLibrariesCalls, 1, reason: 'already-loaded server is not refetched');
       expect(clientB.fetchLibrariesCalls, 1);
 
       p.dispose();
@@ -360,6 +361,21 @@ void main() {
       expect(clientA.fetchLibrariesCalls, 2);
 
       p.dispose();
+      manager.dispose();
+    });
+
+    test('online-servers listener is removed on dispose', () {
+      final manager = MultiServerManager();
+      final multiServer = MultiServerProvider(manager, DataAggregationService(manager));
+
+      final before = multiServer.onlineServersListenerCount;
+      final scoped = LibrariesProvider(multiServer: multiServer);
+      expect(multiServer.onlineServersListenerCount, before + 1);
+
+      scoped.dispose();
+      expect(multiServer.onlineServersListenerCount, before);
+
+      multiServer.dispose();
       manager.dispose();
     });
 

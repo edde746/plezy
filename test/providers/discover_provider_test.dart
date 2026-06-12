@@ -18,26 +18,27 @@ import 'package:plezy/utils/watch_state_notifier.dart';
 
 import '../test_helpers/prefs.dart';
 
-MediaItem _item(String id, {String? parentId}) => MediaItem(
+MediaItem _item(String id, {String? parentId, String serverId = 'server_1'}) => MediaItem(
   id: id,
   backend: MediaBackend.plex,
   kind: MediaKind.episode,
   title: id,
-  serverId: 'server_1',
+  serverId: serverId,
   serverName: 'Server',
   parentId: parentId,
 );
 
-MediaHub _hub(String id, {String? identifier, String? libraryId, List<MediaItem>? items}) => MediaHub(
-  id: id,
-  title: id,
-  type: 'movie',
-  identifier: identifier,
-  items: items ?? [_item('$id-item')],
-  size: 1,
-  libraryId: libraryId,
-  serverId: 'server_1',
-);
+MediaHub _hub(String id, {String? identifier, String? libraryId, List<MediaItem>? items, String serverId = 'server_1'}) =>
+    MediaHub(
+      id: id,
+      title: id,
+      type: 'movie',
+      identifier: identifier,
+      items: items ?? [_item('$id-item', serverId: serverId)],
+      size: 1,
+      libraryId: libraryId,
+      serverId: serverId,
+    );
 
 /// Counting fake — the provider's fetch-cost policy is the contract under
 /// test: a watch event must cost exactly one on-deck call and zero hub
@@ -47,12 +48,19 @@ class _FakeAggregationService extends DataAggregationService {
 
   int onDeckCalls = 0;
   int hubCalls = 0;
+  Set<String>? lastOnDeckServerIds;
+  Set<String>? lastHubsServerIds;
   List<MediaItem> Function() onDeckResult = () => const [];
   List<MediaHub> Function() hubsResult = () => const [];
 
   @override
-  Future<List<MediaItem>> getOnDeckFromAllServers({int? limit, Set<String>? hiddenLibraryKeys}) async {
+  Future<List<MediaItem>> getOnDeckFromAllServers({
+    int? limit,
+    Set<String>? hiddenLibraryKeys,
+    Set<String>? serverIds,
+  }) async {
     onDeckCalls++;
+    lastOnDeckServerIds = serverIds;
     final items = onDeckResult();
     return limit != null && items.length > limit ? items.sublist(0, limit) : items;
   }
@@ -63,8 +71,10 @@ class _FakeAggregationService extends DataAggregationService {
     Set<String>? hiddenLibraryKeys,
     bool useGlobalHubs = true,
     bool includePlaybackHubs = true,
+    Set<String>? serverIds,
   }) async {
     hubCalls++;
+    lastHubsServerIds = serverIds;
     return hubsResult();
   }
 }
@@ -295,7 +305,7 @@ void main() {
     await provider.syncToOnlineServers({'server_1'});
     expect(aggregation.onDeckCalls, onDeckCallsBefore);
 
-    // New server mid-session → full reload.
+    // New server mid-session → one delta fetch scoped to it.
     await provider.syncToOnlineServers({'server_1', 'server_2'});
     expect(aggregation.onDeckCalls, onDeckCallsBefore + 1);
 
@@ -304,6 +314,59 @@ void main() {
     isBinding = true;
     await provider.syncToOnlineServers({'server_1', 'server_2', 'server_3'});
     expect(aggregation.onDeckCalls, onDeckCallsBefore + 1);
+  });
+
+  test('mid-session connect delta-fetches only the new server and merges', () async {
+    aggregation.onDeckResult = () => [_item('a')];
+    aggregation.hubsResult = () => [_hub('hub-1')];
+    await provider.load();
+    final generationBefore = provider.loadGeneration;
+
+    aggregation.onDeckResult = () => [_item('b', serverId: 'server_2')];
+    aggregation.hubsResult = () => [_hub('hub-2', serverId: 'server_2')];
+    await provider.syncToOnlineServers({'server_1', 'server_2'});
+
+    // The fetch fanned out to the new server only…
+    expect(aggregation.lastOnDeckServerIds, {'server_2'});
+    expect(aggregation.lastHubsServerIds, {'server_2'});
+    // …and merged into the loaded state instead of replacing it.
+    expect(provider.onDeck.map((i) => i.id), containsAll(['a', 'b']));
+    expect(provider.hubs.map((h) => h.id), containsAll(['hub-1', 'hub-2']));
+    // A delta behaves like a background refresh: no hero carousel reset.
+    expect(provider.loadGeneration, generationBefore);
+
+    // Already merged → the next emission with the same set is a no-op.
+    final callsAfterDelta = aggregation.onDeckCalls;
+    await provider.syncToOnlineServers({'server_1', 'server_2'});
+    expect(aggregation.onDeckCalls, callsAfterDelta);
+  });
+
+  test('delta failure keeps the loaded state and retries on the next emission', () async {
+    aggregation.onDeckResult = () => [_item('a')];
+    aggregation.hubsResult = () => [_hub('hub-1')];
+    await provider.load();
+    final callsBefore = aggregation.onDeckCalls;
+
+    aggregation.onDeckResult = () => throw Exception('flaky connect');
+    await provider.syncToOnlineServers({'server_1', 'server_2'});
+    expect(provider.onDeck.map((i) => i.id), ['a']);
+    expect(provider.errorMessage, isNull);
+    expect(provider.isLoading, isFalse);
+
+    // The failed id was not marked loaded, so the next emission retries it.
+    aggregation.onDeckResult = () => [_item('b', serverId: 'server_2')];
+    await provider.syncToOnlineServers({'server_1', 'server_2'});
+    expect(aggregation.onDeckCalls, callsBefore + 2);
+    expect(provider.onDeck.map((i) => i.id), containsAll(['a', 'b']));
+  });
+
+  test('dispose unregisters the online-servers listener', () {
+    final before = multiServer.onlineServersListenerCount;
+    final extra = DiscoverProvider(multiServer, hiddenLibraries, libraries, isProfileBinding: () => isBinding);
+    expect(multiServer.onlineServersListenerCount, before + 1);
+
+    extra.dispose();
+    expect(multiServer.onlineServersListenerCount, before);
   });
 
   test('loadGeneration bumps on full loads only', () async {

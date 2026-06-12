@@ -46,7 +46,9 @@ class MultiServerProvider extends ChangeNotifier with DisposableChangeNotifierMi
   /// or its auth state changes). Lets data providers (`LibrariesProvider`,
   /// `DiscoverProvider`) reload when the online set grows — servers bind in
   /// waves and slow ones reconnect after the initial load — without coupling
-  /// the providers by type. Wired once per consumer in `main.dart`.
+  /// the providers by type. Each consumer registers in its constructor and
+  /// removes itself in dispose (this provider outlives the profile-scoped
+  /// consumers).
   final List<void Function(Set<String> onlineServerIds)> _onlineServersListeners = [];
 
   void addOnlineServersListener(void Function(Set<String> onlineServerIds) listener) {
@@ -56,6 +58,9 @@ class MultiServerProvider extends ChangeNotifier with DisposableChangeNotifierMi
   void removeOnlineServersListener(void Function(Set<String> onlineServerIds) listener) {
     _onlineServersListeners.remove(listener);
   }
+
+  @visibleForTesting
+  int get onlineServersListenerCount => _onlineServersListeners.length;
 
   /// Visibility filter applied by the active app profile. `null` means
   /// "all servers visible" (no profile restriction); otherwise only server

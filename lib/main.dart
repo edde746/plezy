@@ -910,30 +910,20 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
                   lazy: true,
                 ),
                 ChangeNotifierProvider(
-                  create: (context) {
-                    final provider = LibrariesProvider(storageService: context.read<StorageService>());
-                    // Reload libraries when a new server comes online. Servers
-                    // bind in waves on sign-in / profile switch and slow ones
-                    // reconnect after the initial load; without this they stay
-                    // missing from the sidebar until a re-switch or restart.
-                    context.read<MultiServerProvider>().addOnlineServersListener(provider.syncToOnlineServers);
-                    return provider;
-                  },
+                  create: (context) => LibrariesProvider(
+                    storageService: context.read<StorageService>(),
+                    multiServer: context.read<MultiServerProvider>(),
+                  ),
                 ),
                 ChangeNotifierProvider(
                   create: (context) {
                     final activeProfile = context.read<ActiveProfileProvider>();
-                    final multiServer = context.read<MultiServerProvider>();
-                    final provider = DiscoverProvider(
-                      multiServer,
+                    return DiscoverProvider(
+                      context.read<MultiServerProvider>(),
                       context.read<HiddenLibrariesProvider>(),
                       context.read<LibrariesProvider>(),
                       isProfileBinding: () => activeProfile.isBinding,
                     );
-                    // Late server connects (reconnect after outage, slow wave)
-                    // refresh discover the same way they refresh libraries.
-                    multiServer.addOnlineServersListener(provider.syncToOnlineServers);
-                    return provider;
                   },
                 ),
                 ChangeNotifierProvider(create: (context) => PlaybackStateProvider()),
