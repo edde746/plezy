@@ -44,7 +44,6 @@ import '../utils/external_ids.dart';
 import '../utils/media_server_http_client.dart';
 import '../utils/resolution_label.dart';
 import '../utils/track_label_builder.dart';
-import '../utils/watch_state_notifier.dart';
 import '../exceptions/media_server_exceptions.dart';
 import '../i18n/strings.g.dart';
 import '../utils/jellyfin_time.dart';

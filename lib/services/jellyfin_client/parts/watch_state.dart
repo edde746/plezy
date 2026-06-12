@@ -11,7 +11,6 @@ mixin _JellyfinWatchStateMethods on MediaServerCacheMixin {
       queryParameters: {'userId': connection.userId},
     );
     throwIfHttpError(response);
-    WatchStateNotifier().notifyWatched(item: item, isNowWatched: true, cacheServerId: cacheServerId);
   }
 
   @override
@@ -21,7 +20,6 @@ mixin _JellyfinWatchStateMethods on MediaServerCacheMixin {
       queryParameters: {'userId': connection.userId},
     );
     throwIfHttpError(response);
-    WatchStateNotifier().notifyWatched(item: item, isNowWatched: false, cacheServerId: cacheServerId);
   }
 
   @override

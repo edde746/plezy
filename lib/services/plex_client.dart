@@ -61,7 +61,6 @@ import '../utils/plex_cache_parser.dart';
 import '../utils/plex_library_section_utils.dart';
 import '../utils/plex_url_helper.dart';
 import '../utils/session_identifier.dart' as session_id;
-import '../utils/watch_state_notifier.dart';
 import '../i18n/strings.g.dart';
 import '../mpv/mpv.dart';
 import 'api_cache.dart';
@@ -1675,30 +1674,20 @@ class PlexClient
     }
   }
 
-  /// Mark media as watched
-  ///
-  /// If [item] is provided, emits a [WatchStateEvent] for UI updates.
-  Future<void> markAsWatched(String ratingKey, {MediaItem? item}) async {
+  /// Mark media as watched (transport only — see [MediaServerClient.markWatched]).
+  Future<void> markAsWatched(String ratingKey) async {
     await _getWithFailover(
       '/:/scrobble',
       queryParameters: {'key': ratingKey, 'identifier': 'com.plexapp.plugins.library'},
     );
-    if (item != null) {
-      WatchStateNotifier().notifyWatched(item: item, isNowWatched: true);
-    }
   }
 
-  /// Mark media as unwatched
-  ///
-  /// If [item] is provided, emits a [WatchStateEvent] for UI updates.
-  Future<void> markAsUnwatched(String ratingKey, {MediaItem? item}) async {
+  /// Mark media as unwatched (transport only — see [MediaServerClient.markUnwatched]).
+  Future<void> markAsUnwatched(String ratingKey) async {
     await _getWithFailover(
       '/:/unscrobble',
       queryParameters: {'key': ratingKey, 'identifier': 'com.plexapp.plugins.library'},
     );
-    if (item != null) {
-      WatchStateNotifier().notifyWatched(item: item, isNowWatched: false);
-    }
   }
 
   /// Update playback progress
@@ -3789,15 +3778,14 @@ class PlexClient
   }
 
   @override
-  Future<void> markWatched(MediaItem item) => markAsWatched(item.id, item: item);
+  Future<void> markWatched(MediaItem item) => markAsWatched(item.id);
 
   @override
-  Future<void> markUnwatched(MediaItem item) => markAsUnwatched(item.id, item: item);
+  Future<void> markUnwatched(MediaItem item) => markAsUnwatched(item.id);
 
   @override
   Future<void> removeFromContinueWatching(MediaItem item) async {
     await removeFromOnDeck(item.id);
-    WatchStateNotifier().notifyRemovedFromContinueWatching(item: item);
   }
 
   /// Rate a media item (0.0-10.0 scale, where each integer = half a star).

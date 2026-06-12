@@ -283,36 +283,16 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
   Future<void> _handleWatchedTogglePressed(MediaItem metadata) async {
     try {
       final isWatched = metadata.isWatched;
-      if (widget.isOffline) {
-        // Offline mode: queue action for later sync
-        final offlineWatch = context.read<OfflineWatchProvider>();
-        if (isWatched) {
-          await offlineWatch.markAsUnwatched(serverId: ServerId(metadata.serverId!), itemId: metadata.id);
-        } else {
-          await offlineWatch.markAsWatched(serverId: ServerId(metadata.serverId!), itemId: metadata.id);
-        }
-        if (mounted) {
+      final outcome = await WatchActions.setWatched(context, metadata, watched: !isWatched, offline: widget.isOffline);
+      if (!mounted) return;
+      switch (outcome) {
+        case WatchMarkOutcome.queuedOffline:
           showAppSnackBar(context, isWatched ? t.messages.markedAsUnwatchedOffline : t.messages.markedAsWatchedOffline);
-        }
-      } else {
-        // Online mode: dispatch via the right backend's neutral method so
-        // Jellyfin items hit /UserPlayedItems and Plex items hit /:/scrobble.
-        final serverId = metadata.serverId;
-        if (serverId == null) return;
-        final client = context.tryGetMediaClientForServer(ServerId(serverId));
-        if (client == null) return;
-
-        if (isWatched) {
-          await client.markUnwatched(metadata);
-          unawaited(TrackerCoordinator.instance.markUnwatched(metadata, client));
-        } else {
-          await client.markWatched(metadata);
-          unawaited(TrackerCoordinator.instance.markWatched(metadata, client));
-        }
-        if (mounted) {
+        case WatchMarkOutcome.marked:
           _watchStateChanged = true;
           showSuccessSnackBar(context, isWatched ? t.messages.markedAsUnwatched : t.messages.markedAsWatched);
-        }
+        case WatchMarkOutcome.skipped:
+          break;
       }
     } catch (e) {
       if (mounted) {

@@ -521,17 +521,19 @@ class OfflineWatchSyncService extends ChangeNotifier {
   /// `/UserPlayedItems/{id}` and `/Sessions/Playing*` endpoints receive
   /// the same queued state Plex's `/:/scrobble` and `/:/timeline` do.
   Future<void> _syncAction(MediaServerClient client, OfflineWatchProgressItem action) async {
-    // Fetch metadata so the WatchStateNotifier emission inside
-    // markWatched/markUnwatched carries enough context for downstream
-    // listeners (UI invalidation, Trakt sync). Best-effort: a missed metadata
-    // fetch falls back to a minimal MediaItem — the network call still goes
-    // through, just without a rich event payload.
-    final emitsEvent =
+    // Fetch metadata so trackers (and the stop-path watch event) get enough
+    // context — external ids, parent chain, library section. The plain
+    // watched/unwatched replays deliberately emit no WatchStateEvent: the
+    // offline provider already emitted it when the action was queued, and
+    // client markWatched/markUnwatched are transport-only. Best-effort: a
+    // missed metadata fetch falls back to a minimal MediaItem — the network
+    // call still goes through.
+    final needsRichItem =
         action.actionType == OfflineActionType.watched.id ||
         action.actionType == OfflineActionType.unwatched.id ||
         (action.actionType == OfflineActionType.progress.id && action.shouldMarkWatched);
     MediaItem? item;
-    if (emitsEvent) {
+    if (needsRichItem) {
       try {
         item = await client.fetchItem(action.ratingKey);
       } catch (_) {

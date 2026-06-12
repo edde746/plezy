@@ -270,11 +270,14 @@ abstract class MediaServerClient {
   /// endpoint. Backends without true hub pagination may return a single page.
   Future<LibraryPage<MediaItem>> fetchMoreHubItemsPage(String hubId, {int? start, int? size, AbortController? abort});
 
-  /// Mark [item] as watched. The full item is passed (not just an id) so
-  /// implementations can fire a [WatchStateEvent] on [WatchStateNotifier]
-  /// for UI invalidation — episode/season/show parent chain, library
-  /// section etc. live on the item.
+  /// Mark [item] as watched. Transport only: no [WatchStateEvent] is emitted
+  /// here — UI surfaces go through `WatchActions`, which owns the single
+  /// emission (and tracker fan-out); the offline sync replay calls this
+  /// directly precisely because the event already fired when the action was
+  /// queued.
   Future<void> markWatched(MediaItem item);
+
+  /// Mark [item] as unwatched. Transport only — see [markWatched].
   Future<void> markUnwatched(MediaItem item);
 
   /// Hide an item from Continue Watching without changing watched status or
@@ -589,17 +592,16 @@ extension MediaServerClientScope on MediaServerClient {
   /// Mark [item] watched because it crossed [watchedThreshold] during playback,
   /// when a playback-stopped report is/was also sent for the same playback.
   /// Backends that mark played from the stop report
-  /// ([marksWatchedOnPlaybackStopped]) only emit the local watch event —
-  /// issuing [markWatched] too would double-scrobble via the Jellyfin Trakt
-  /// plugin (#1287). The local event still keeps the UI and Plezy's own Trakt
-  /// sync (which key on `watched` events, not progress) in sync; the stop
-  /// report syncs the server.
+  /// ([marksWatchedOnPlaybackStopped]) skip the server call — issuing
+  /// [markWatched] too would double-scrobble via the Jellyfin Trakt plugin
+  /// (#1287). The single local event emitted here keeps the UI and Plezy's
+  /// own Trakt sync (which key on `watched` events, not progress) in sync;
+  /// the stop report syncs the server.
   Future<void> markWatchedFromPlaybackStop(MediaItem item) async {
-    if (marksWatchedOnPlaybackStopped) {
-      WatchStateNotifier().notifyWatched(item: item, isNowWatched: true, cacheServerId: cacheServerId);
-    } else {
+    if (!marksWatchedOnPlaybackStopped) {
       await markWatched(item);
     }
+    WatchStateNotifier().notifyWatched(item: item, isNowWatched: true, cacheServerId: cacheServerId);
   }
 }
 

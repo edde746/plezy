@@ -20,7 +20,7 @@ import '../services/plex_client.dart';
 import '../services/media_list_playback_launcher.dart';
 import '../services/offline_watch_sync_service.dart';
 import '../services/playlist_items_loader.dart';
-import '../services/trackers/tracker_coordinator.dart';
+import '../services/watch_actions.dart';
 import '../models/transcode_quality_preset.dart';
 import '../utils/download_version_utils.dart';
 import '../utils/download_utils.dart';
@@ -30,7 +30,6 @@ import '../utils/global_key_utils.dart';
 import '../providers/download_provider.dart';
 import '../providers/multi_server_provider.dart';
 import '../providers/offline_mode_provider.dart';
-import '../providers/offline_watch_provider.dart';
 import '../profiles/active_profile_provider.dart';
 import '../profiles/profile.dart';
 import '../utils/provider_extensions.dart';
@@ -544,49 +543,22 @@ class MediaContextMenuState extends State<MediaContextMenu> {
           break;
 
         case 'watch':
-          final isOffline = context.read<OfflineModeProvider>().isOffline;
-          if (isOffline && mediaItem?.serverId != null) {
-            // Offline mode: queue action for later sync (emits WatchStateEvent)
-            final offlineWatch = context.read<OfflineWatchProvider>();
-            await offlineWatch.markAsWatched(serverId: ServerId(mediaItem!.serverId!), itemId: mediaItem.id);
-            if (context.mounted) {
-              showAppSnackBar(context, t.messages.markedAsWatchedOffline);
-              _notifyRefresh(mediaItem.id);
-            }
-          } else {
-            // Resolve the right backend client — Plex hits scrobble, Jellyfin
-            // hits /UserPlayedItems. WatchStateNotifier event is fired in both
-            // paths so cross-screen UI updates regardless of backend.
-            await _executeAction(context, () async {
-              final item = mediaItem;
-              final client = context.tryGetMediaClientForServer(ServerId(_itemServerId!));
-              if (client != null && item != null) {
-                await client.markWatched(item);
-                unawaited(TrackerCoordinator.instance.markWatched(item, client));
-              }
-            }, t.messages.markedAsWatched);
-          }
-          break;
-
         case 'unwatch':
+          final watched = selected == 'watch';
+          final item = mediaItem;
+          if (item == null) break;
           final isOffline = context.read<OfflineModeProvider>().isOffline;
-          if (isOffline && mediaItem?.serverId != null) {
-            // Offline mode: queue action for later sync (emits WatchStateEvent)
-            final offlineWatch = context.read<OfflineWatchProvider>();
-            await offlineWatch.markAsUnwatched(serverId: ServerId(mediaItem!.serverId!), itemId: mediaItem.id);
+          if (isOffline && item.serverId != null) {
+            // Queue for later sync — the offline provider emits the WatchStateEvent.
+            await WatchActions.setWatched(context, item, watched: watched, offline: true);
             if (context.mounted) {
-              showAppSnackBar(context, t.messages.markedAsUnwatchedOffline);
-              _notifyRefresh(mediaItem.id);
+              showAppSnackBar(context, watched ? t.messages.markedAsWatchedOffline : t.messages.markedAsUnwatchedOffline);
+              _notifyRefresh(item.id);
             }
           } else {
             await _executeAction(context, () async {
-              final item = mediaItem;
-              final client = context.tryGetMediaClientForServer(ServerId(_itemServerId!));
-              if (client != null && item != null) {
-                await client.markUnwatched(item);
-                unawaited(TrackerCoordinator.instance.markUnwatched(item, client));
-              }
-            }, t.messages.markedAsUnwatched);
+              await WatchActions.setWatched(context, item, watched: watched, offline: false);
+            }, watched ? t.messages.markedAsWatched : t.messages.markedAsUnwatched);
           }
           break;
 
@@ -595,8 +567,7 @@ class MediaContextMenuState extends State<MediaContextMenu> {
           // This preserves the progression for partially watched items
           // and doesn't mark unwatched next episodes as watched
           try {
-            final client = _getMediaClientForItem();
-            await client.removeFromContinueWatching(mediaItem!);
+            await WatchActions.removeFromContinueWatching(context, mediaItem!);
             if (context.mounted) {
               showSuccessSnackBar(context, t.messages.removedFromContinueWatching);
               if (widget.onRemoveFromContinueWatching != null) {

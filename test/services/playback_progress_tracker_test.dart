@@ -113,6 +113,11 @@ class _FakePlexClient implements PlexClient {
   @override
   int get watchedThresholdPercent => thresholdPercent;
 
+  /// markWatchedFromPlaybackStop resolves the event's cacheServerId from
+  /// [serverId] after the transport call.
+  @override
+  ServerId get serverId => ServerId('scrobbler');
+
   @override
   double get watchedThreshold => thresholdPercent / 100.0;
 
@@ -213,6 +218,8 @@ class _FakePlexClient implements PlexClient {
     return updateProgress(itemId, time: position.inMilliseconds, state: 'stopped', duration: duration?.inMilliseconds);
   }
 
+  // Transport-only, like production: the single watch event for the stop
+  // flow is emitted by markWatchedFromPlaybackStop after this returns.
   @override
   Future<void> markWatched(MediaItem item) async {
     if (throwOnNextCall != null) {
@@ -221,20 +228,16 @@ class _FakePlexClient implements PlexClient {
       throw err;
     }
     markWatchedCalls.add(item.id);
-    WatchStateNotifier().notifyWatched(item: item, isNowWatched: true);
   }
 
   @override
-  Future<void> markAsWatched(String ratingKey, {MediaItem? item}) async {
+  Future<void> markAsWatched(String ratingKey) async {
     if (throwOnNextCall != null) {
       final err = throwOnNextCall!;
       throwOnNextCall = null;
       throw err;
     }
     markWatchedCalls.add(ratingKey);
-    if (item != null) {
-      WatchStateNotifier().notifyWatched(item: item, isNowWatched: true);
-    }
   }
 
   @override
