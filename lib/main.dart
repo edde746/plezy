@@ -444,7 +444,11 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
   late final OfflineWatchSyncService _offlineWatchSyncService;
   late final AppLifecycleListener _appLifecycleListener;
   StreamSubscription<WatchStateEvent>? _watchStateSubscription;
-  StreamSubscription<List<ConnectivityResult>>? _connectivitySubscription;
+
+  /// WiFi-reconnect sync trigger, listening on [OfflineModeProvider] — the
+  /// app's single connectivity subscription lives there.
+  VoidCallback? _connectivitySyncListener;
+  OfflineModeProvider? _connectivitySyncProvider;
   Timer? _syncDebounce;
   final Set<String> _pendingSyncKeys = <String>{};
   bool _isAutoDeleteRunning = false;
@@ -507,7 +511,7 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
 
     _syncDebounce?.cancel();
     await _watchStateSubscription?.cancel();
-    await _connectivitySubscription?.cancel();
+    _removeConnectivitySyncListener();
     _memoryCheckTimer?.cancel();
 
     _downloadManager.dispose();
@@ -528,7 +532,7 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
   void dispose() {
     _syncDebounce?.cancel();
     _watchStateSubscription?.cancel();
-    _connectivitySubscription?.cancel();
+    _removeConnectivitySyncListener();
     _memoryCheckTimer?.cancel();
     _appLifecycleListener.dispose();
     if (!_shutdownStarted) {
@@ -552,38 +556,32 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
   }
 
   /// Fires [_autoDeleteAndSync] on each WiFi/Ethernet reconnect so rules run
-  /// as soon as the device is back online. Rapid flapping is bounded by the
-  /// executor's cooldown.
-  void _startConnectivitySyncTrigger(DownloadProvider downloadProvider) {
-    Future<void> setup() async {
-      try {
-        final initial = await Connectivity().checkConnectivity();
-        _lastConnectivityWasWifi = _hasWifiOrEthernet(initial);
-      } catch (e) {
-        appLogger.w('Initial connectivity read failed, defaulting to false: $e');
-        _lastConnectivityWasWifi = false;
+  /// as soon as the device is back online. Listens on [OfflineModeProvider],
+  /// which owns the app's single connectivity subscription and notifies on
+  /// connection-type changes. Rapid flapping is bounded by the executor's
+  /// cooldown.
+  void _startConnectivitySyncTrigger(DownloadProvider downloadProvider, OfflineModeProvider offlineModeProvider) {
+    _removeConnectivitySyncListener();
+    _lastConnectivityWasWifi = offlineModeProvider.hasWifiOrEthernet;
+    _connectivitySyncProvider = offlineModeProvider;
+    _connectivitySyncListener = () {
+      final hasWifi = offlineModeProvider.hasWifiOrEthernet;
+      final transitioned = hasWifi && !_lastConnectivityWasWifi;
+      _lastConnectivityWasWifi = hasWifi;
+      if (transitioned) {
+        appLogger.d('Connectivity moved onto WiFi/Ethernet — triggering sync pass');
+        _autoDeleteAndSync(downloadProvider);
       }
-
-      try {
-        _connectivitySubscription = Connectivity().onConnectivityChanged.listen((results) {
-          final hasWifi = _hasWifiOrEthernet(results);
-          final transitioned = hasWifi && !_lastConnectivityWasWifi;
-          _lastConnectivityWasWifi = hasWifi;
-          if (transitioned) {
-            appLogger.d('Connectivity moved onto WiFi/Ethernet — triggering sync pass');
-            _autoDeleteAndSync(downloadProvider);
-          }
-        });
-      } catch (e) {
-        appLogger.w('Could not subscribe to connectivity changes: $e');
-      }
-    }
-
-    setup();
+    };
+    offlineModeProvider.addListener(_connectivitySyncListener!);
   }
 
-  static bool _hasWifiOrEthernet(List<ConnectivityResult> results) =>
-      results.contains(ConnectivityResult.wifi) || results.contains(ConnectivityResult.ethernet);
+  void _removeConnectivitySyncListener() {
+    final listener = _connectivitySyncListener;
+    if (listener != null) _connectivitySyncProvider?.removeListener(listener);
+    _connectivitySyncListener = null;
+    _connectivitySyncProvider = null;
+  }
 
   /// Run auto-delete (if enabled) and then a sync-rule pass.
   ///
@@ -820,7 +818,7 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
               });
             });
 
-            _startConnectivitySyncTrigger(downloadProvider);
+            _startConnectivitySyncTrigger(downloadProvider, offlineModeProvider);
 
             // Thread the offline flag into services so queue/resume paths can
             // short-circuit instead of hitting the network and failing.
