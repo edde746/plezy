@@ -1,5 +1,7 @@
 import 'package:flutter/widgets.dart';
 
+import '../../utils/app_logger.dart';
+
 /// Mixin for stateful screens that wrap their async work in a busy + error
 /// scaffolding. Exposes [busy] and [errorText] state plus a [runAsync] helper
 /// that clears the prior error, sets busy, runs the body, captures any
@@ -13,7 +15,9 @@ import 'package:flutter/widgets.dart';
 /// [runAsync] calls must be sequenced, never overlapped: there is a single
 /// busy flag, so the first call to finish clears it while the other is still
 /// running. Don't start a second runAsync (or fire one with `unawaited`)
-/// while another that can still apply state is in flight — debug-asserted.
+/// while another that can still apply state is in flight — debug-asserted,
+/// and the overlapping call is refused (returns null) in release so it can't
+/// corrupt the busy flag.
 /// Overlapping a *stale* run whose [runAsync]'s `shouldApplyState` has gone
 /// false (e.g. a cancelled poll unwinding) is fine; it no longer touches busy.
 mixin AsyncFormStateMixin<T extends StatefulWidget> on State<T> {
@@ -47,16 +51,17 @@ mixin AsyncFormStateMixin<T extends StatefulWidget> on State<T> {
   }) async {
     bool canApplyState() => mounted && (shouldApplyState?.call() ?? true);
     if (!canApplyState()) return null;
-    assert(
-      !_activeRunAsyncGuards.any((stillApplies) => stillApplies()),
-      'runAsync overlapped with another runAsync that can still apply state: '
-      'the first to finish clears busy out from under the other. Sequence the '
-      'calls (await the first) instead of nesting or unawaiting them.',
-    );
-    assert(() {
-      _activeRunAsyncGuards.add(canApplyState);
-      return true;
-    }());
+    if (_activeRunAsyncGuards.any((stillApplies) => stillApplies())) {
+      assert(
+        false,
+        'runAsync overlapped with another runAsync that can still apply state: '
+        'the first to finish clears busy out from under the other. Sequence the '
+        'calls (await the first) instead of nesting or unawaiting them.',
+      );
+      appLogger.w('runAsync overlapped with an active run; ignoring this call');
+      return null;
+    }
+    _activeRunAsyncGuards.add(canApplyState);
     setState(() {
       _busy = true;
       _errorText = null;
@@ -69,10 +74,7 @@ mixin AsyncFormStateMixin<T extends StatefulWidget> on State<T> {
       }
       return null;
     } finally {
-      assert(() {
-        _activeRunAsyncGuards.remove(canApplyState);
-        return true;
-      }());
+      _activeRunAsyncGuards.remove(canApplyState);
       if (canApplyState()) setState(() => _busy = false);
     }
   }
