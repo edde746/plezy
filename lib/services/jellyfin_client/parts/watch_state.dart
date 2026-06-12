@@ -2,7 +2,7 @@ part of '../../jellyfin_client.dart';
 
 mixin _JellyfinWatchStateMethods on MediaServerCacheMixin {
   JellyfinConnection get connection;
-  MediaServerHttpClient get _http;
+  FailoverHttpClient get _http;
 
   @override
   Future<void> markWatched(MediaItem item) async {

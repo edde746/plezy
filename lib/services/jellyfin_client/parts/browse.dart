@@ -2,6 +2,25 @@ part of '../../jellyfin_client.dart';
 
 String _segment(String value) => Uri.encodeComponent(value);
 
+/// Transport policy for a hub surface: bounded transient retries, no
+/// endpoint failover. See `_getItemsResponse`.
+typedef _HubRetryPolicy = ({String operation, List<Duration> attemptTimeouts});
+
+const _HubRetryPolicy _homeHubRetry = (
+  operation: 'Jellyfin home hubs',
+  attemptTimeouts: MediaServerTimeouts.homeHubAttemptTimeouts,
+);
+
+const _HubRetryPolicy _libraryHubRetry = (
+  operation: 'Jellyfin library hubs',
+  attemptTimeouts: MediaServerTimeouts.libraryHubAttemptTimeouts,
+);
+
+const _HubRetryPolicy _continueWatchingRetry = (
+  operation: 'Jellyfin continue watching',
+  attemptTimeouts: MediaServerTimeouts.homeHubAttemptTimeouts,
+);
+
 List<Map<String, dynamic>> _itemsArray(Object? data) {
   if (data is Map<String, dynamic>) {
     final items = data['Items'];
@@ -111,7 +130,7 @@ const _detailFields =
 
 mixin _JellyfinBrowseMethods on MediaServerCacheMixin {
   JellyfinConnection get connection;
-  MediaServerHttpClient get _http;
+  FailoverHttpClient get _http;
   MediaItem? _mapItem(Map<String, dynamic> json);
   List<MediaItem> _mapItems(Iterable<Map<String, dynamic>> items);
 
@@ -963,7 +982,7 @@ mixin _JellyfinBrowseMethods on MediaServerCacheMixin {
         'Recursive': 'true',
         'EnableTotalRecordCount': 'false',
         ...jellyfinImageQueryParameters,
-      }),
+      }, retry: _continueWatchingRetry),
       _safeFetchItemsArray('/Shows/NextUp', {
         'userId': connection.userId,
         'Limit': ?count?.toString(),
@@ -971,7 +990,7 @@ mixin _JellyfinBrowseMethods on MediaServerCacheMixin {
         'EnableResumable': 'false',
         'EnableTotalRecordCount': 'false',
         ...jellyfinImageQueryParameters,
-      }),
+      }, retry: _continueWatchingRetry),
     ]);
 
     return _mergeContinueWatchingAndNextUp(
@@ -991,7 +1010,7 @@ mixin _JellyfinBrowseMethods on MediaServerCacheMixin {
       'Fields': _browseFields,
       'IncludeItemTypes': 'Movie,Series,Episode',
       ...jellyfinImageQueryParameters,
-    });
+    }, retry: _homeHubRetry);
 
     if (!includePlaybackHubs) {
       final latest = await latestFuture;
@@ -1019,7 +1038,7 @@ mixin _JellyfinBrowseMethods on MediaServerCacheMixin {
         'Recursive': 'true',
         'EnableTotalRecordCount': 'false',
         ...jellyfinImageQueryParameters,
-      }),
+      }, retry: _homeHubRetry),
       _safeFetchItemsArray('/Shows/NextUp', {
         'userId': connection.userId,
         'Limit': limit.toString(),
@@ -1027,7 +1046,7 @@ mixin _JellyfinBrowseMethods on MediaServerCacheMixin {
         'EnableResumable': 'false',
         'EnableTotalRecordCount': 'false',
         ...jellyfinImageQueryParameters,
-      }),
+      }, retry: _homeHubRetry),
     ]);
 
     return [
@@ -1083,7 +1102,7 @@ mixin _JellyfinBrowseMethods on MediaServerCacheMixin {
       'ParentId': libraryId,
       'Fields': _browseFields,
       ...jellyfinImageQueryParameters,
-    });
+    }, retry: _libraryHubRetry);
 
     if (!includePlaybackHubs) {
       final latest = await latestFuture;
@@ -1113,7 +1132,7 @@ mixin _JellyfinBrowseMethods on MediaServerCacheMixin {
         'Recursive': 'true',
         'EnableTotalRecordCount': 'false',
         ...jellyfinImageQueryParameters,
-      }),
+      }, retry: _libraryHubRetry),
       includeNextUp
           ? _safeFetchItemsArray('/Shows/NextUp', {
               'userId': connection.userId,
@@ -1123,7 +1142,7 @@ mixin _JellyfinBrowseMethods on MediaServerCacheMixin {
               'EnableResumable': 'false',
               'EnableTotalRecordCount': 'false',
               ...jellyfinImageQueryParameters,
-            })
+            }, retry: _libraryHubRetry)
           : Future.value(const <Map<String, dynamic>>[]),
     ]);
 
@@ -1443,15 +1462,47 @@ mixin _JellyfinBrowseMethods on MediaServerCacheMixin {
     return result;
   }
 
-  Future<List<Map<String, dynamic>>> _fetchItemsArray(String path, Map<String, dynamic> queryParameters) async {
-    final response = await _http.get(path, queryParameters: queryParameters);
+  /// GET [path], optionally under a hub-surface transport policy ([retry]):
+  /// bounded transient retries with per-attempt timeouts and **no endpoint
+  /// failover** — a slow hub row must not move the whole client off an
+  /// otherwise working endpoint (same policy as Plex's three hub fetches;
+  /// see [retryTransientMediaServerCall] / [FailoverHttpClient]).
+  Future<MediaServerResponse> _getItemsResponse(
+    String path,
+    Map<String, dynamic> queryParameters,
+    _HubRetryPolicy? retry,
+  ) {
+    if (retry == null) return _http.get(path, queryParameters: queryParameters);
+    return retryTransientMediaServerCall(
+      operation: retry.operation,
+      attemptTimeouts: retry.attemptTimeouts,
+      call: (timeout, abort) => _http.get(
+        path,
+        queryParameters: queryParameters,
+        timeout: timeout,
+        abort: abort,
+        allowEndpointFailover: false,
+      ),
+    );
+  }
+
+  Future<List<Map<String, dynamic>>> _fetchItemsArray(
+    String path,
+    Map<String, dynamic> queryParameters, {
+    _HubRetryPolicy? retry,
+  }) async {
+    final response = await _getItemsResponse(path, queryParameters, retry);
     throwIfHttpError(response);
     return _itemsArray(response.data);
   }
 
-  Future<List<Map<String, dynamic>>> _safeFetchItemsArray(String path, Map<String, dynamic> queryParameters) async {
+  Future<List<Map<String, dynamic>>> _safeFetchItemsArray(
+    String path,
+    Map<String, dynamic> queryParameters, {
+    _HubRetryPolicy? retry,
+  }) async {
     try {
-      final response = await _http.get(path, queryParameters: queryParameters);
+      final response = await _getItemsResponse(path, queryParameters, retry);
       throwIfHttpError(response);
       final data = response.data;
       if (data is List) {

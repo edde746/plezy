@@ -2,9 +2,14 @@ part of '../../jellyfin_client.dart';
 
 mixin _JellyfinLiveTvMethods on MediaServerCacheMixin {
   JellyfinConnection get connection;
-  MediaServerHttpClient get _http;
+  FailoverHttpClient get _http;
   String? _absolutizeImagePath(String? path);
-  Future<List<Map<String, dynamic>>> _safeFetchItemsArray(String path, Map<String, dynamic> queryParameters);
+  Future<List<Map<String, dynamic>>> _safeFetchItemsArray(
+    String path,
+    Map<String, dynamic> queryParameters, {
+    // ignore: unused_element_parameter
+    _HubRetryPolicy? retry,
+  });
 
   /// Returns `true` when this server has Live TV configured (channels
   /// available). Probes `/LiveTv/Channels?limit=1`. Used by [MultiServerProvider]
