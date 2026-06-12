@@ -11,6 +11,7 @@ import '../media/media_item.dart';
 import '../media/media_kind.dart';
 import '../media/media_server_client.dart';
 import '../media/playback_report_metadata.dart';
+import '../media/watch_progress.dart';
 import '../utils/app_logger.dart';
 import '../utils/global_key_utils.dart';
 import 'offline_mode_source.dart';
@@ -275,9 +276,8 @@ class OfflineWatchSyncService extends ChangeNotifier {
 
   /// Check if an item should be considered watched based on progress percentage.
   bool isWatchedByProgress(int viewOffset, int duration, {ServerId? serverId}) {
-    if (duration == 0) return false;
     final threshold = serverId != null ? getWatchedThreshold(serverId) : 0.9;
-    return (viewOffset / duration) >= threshold;
+    return isWatchedProgress(positionMs: viewOffset, durationMs: duration, threshold: threshold);
   }
 
   /// Get the local watch status for a media item.

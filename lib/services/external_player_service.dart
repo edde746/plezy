@@ -7,6 +7,7 @@ import 'package:flutter/services.dart';
 
 import '../media/media_item.dart';
 import '../media/media_server_client.dart';
+import '../media/watch_progress.dart';
 import '../models/external_player_models.dart';
 import '../utils/app_logger.dart';
 import '../utils/snackbar_helper.dart';
@@ -207,7 +208,11 @@ class ExternalPlayerService {
       watchedThreshold: client.watchedThreshold,
     );
 
-    if (position.inMilliseconds / duration.inMilliseconds >= client.watchedThreshold) {
+    if (isWatchedProgress(
+      positionMs: position.inMilliseconds,
+      durationMs: duration.inMilliseconds,
+      threshold: client.watchedThreshold,
+    )) {
       try {
         // reportPlaybackStopped above marks the item played on backends that
         // support it (Jellyfin); markWatchedFromPlaybackStop then only emits the
