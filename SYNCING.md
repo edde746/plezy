@@ -113,6 +113,10 @@ Beyond the bundle-id/display-name table above, these lowercase `plezy` tokens ar
 - **Persistence**: DB file `plezy_downloads.db`, prefs flag `plezy_legacy_prefs_migrated_v1`, settings-export filename prefix `plezy-settings-`, system-shelf content-id prefix `plezy_`.
 - **Plezy-operated service URLs**: `bugs.plezy.app` (Sentry), `ice.plezy.app` (relay/posters/logs/OAuth), the `github.repository == 'edde746/plezy'` CI gates, and the appcast `edde746/plezy` repo paths — see "Known caveats". (In `build.yml` the artifact-name token `plezy-` *does* rebrand to `vibe_stream-`, even inside appcast enclosure URLs; only the `edde746/plezy` repo path stays.)
 - **Internal class** `PlezyRenderersFactory` (kotlin) — intentionally not renamed.
+- **Vendored `:libass` Gradle module** (`android/libass/`, added upstream in 2.6.x — a fork of `edde746/libass-android` for the frame-accurate ASS pipeline). Its package `com.edde746.plezy.libass` is **kept as-is, NOT rebranded**: the native core `android/libass/src/main/cpp/AssKt.c` uses JNI symbol-name binding (`Java_com_edde746_plezy_libass_*`, no `RegisterNatives`) paired to `external fun` declarations, and `android/libass/build.gradle.kts` sets `namespace = "com.edde746.plezy.libass"`. Rebranding would break the native↔Kotlin contract for an internal, non-user-visible module (same rationale as `PlezyRenderersFactory`). **App code that imports it keeps the `com.edde746.plezy.libass.*` import** while its own package stays `com.amaze.vibestream.*` — when rebranding Kotlin app files, rebrand `com.edde746.plezy` *except* when followed by `.libass`:
+  ```bash
+  perl -i -pe 's/com\.edde746\.plezy(?!\.libass)/com.amaze.vibestream/g' "$f"
+  ```
 
 The app's own product/client identity is `'Vibe'` (`lib/services/plex_auth_service.dart` `_appName = 'Vibe'`).
 
