@@ -36,6 +36,7 @@ import androidx.media3.common.text.CueGroup
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.common.util.Util
 import androidx.media3.datasource.DefaultDataSource
+import androidx.media3.datasource.DefaultHttpDataSource
 import androidx.media3.datasource.HttpDataSource
 import androidx.media3.datasource.cronet.CronetDataSource
 import androidx.media3.exoplayer.DecoderReuseEvaluation
@@ -69,6 +70,7 @@ import com.edde746.plezy.shared.FrameRateManager
 import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicLong
 import org.chromium.net.CronetEngine
+import org.chromium.net.CronetProvider
 
 interface ExoPlayerDelegate : com.edde746.plezy.shared.PlayerDelegate {
 
@@ -111,12 +113,39 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
     private var assGlCrashHandlerInstalled = false
 
     private var cronetEngine: CronetEngine? = null
-    private fun getCronetEngine(context: Context): CronetEngine = cronetEngine ?: synchronized(this) {
-      cronetEngine ?: CronetEngine.Builder(context.applicationContext)
-        .enableHttp2(true)
-        .enableQuic(true)
-        .build()
-        .also { cronetEngine = it }
+    private var cronetUnavailable = false
+    private fun getCronetEngine(context: Context): CronetEngine? {
+      cronetEngine?.let { return it }
+      if (cronetUnavailable) return null
+      return synchronized(this) {
+        cronetEngine?.let { return@synchronized it }
+        if (cronetUnavailable) return@synchronized null
+
+        val providers = try {
+          CronetProvider.getAllProviders(context.applicationContext)
+            .filter { it.isEnabled && it.name != CronetProvider.PROVIDER_NAME_FALLBACK }
+            .sortedBy { if (it.name == CronetProvider.PROVIDER_NAME_APP_PACKAGED) 0 else 1 }
+        } catch (t: Throwable) {
+          Log.w(TAG, "Cronet provider discovery failed", t)
+          cronetUnavailable = true
+          return@synchronized null
+        }
+
+        for (provider in providers) {
+          try {
+            return@synchronized provider.createBuilder()
+              .enableHttp2(true)
+              .enableQuic(true)
+              .build()
+              .also { cronetEngine = it }
+          } catch (t: Throwable) {
+            Log.w(TAG, "Cronet provider ${provider.name} failed", t)
+          }
+        }
+
+        cronetUnavailable = true
+        null
+      }
     }
     private val cronetExecutor by lazy { Executors.newSingleThreadExecutor() }
   }
@@ -487,11 +516,23 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
       this.renderersFactory = renderersFactory
       updateAudioDecoderPolicy("initialize")
 
-      // Cronet DataSource for HTTP/2 multiplexing — all range requests share one connection
-      httpDataSourceFactory = CronetDataSource.Factory(getCronetEngine(activity), cronetExecutor)
-        .setConnectionTimeoutMs(15_000)
-        .setReadTimeoutMs(10_000)
-      dataSourceFactory = DefaultDataSource.Factory(activity, httpDataSourceFactory!!)
+      // Prefer Cronet for HTTP/2 multiplexing; fall back when a device's provider crashes during init.
+      val cronetEngine = getCronetEngine(activity)
+      val dataSourceLabel: String
+      val httpFactory: HttpDataSource.Factory
+      if (cronetEngine != null) {
+        dataSourceLabel = "Cronet"
+        httpFactory = CronetDataSource.Factory(cronetEngine, cronetExecutor)
+          .setConnectionTimeoutMs(15_000)
+          .setReadTimeoutMs(10_000)
+      } else {
+        dataSourceLabel = "DefaultHttp"
+        httpFactory = DefaultHttpDataSource.Factory()
+          .setConnectTimeoutMs(15_000)
+          .setReadTimeoutMs(10_000)
+      }
+      httpDataSourceFactory = httpFactory
+      dataSourceFactory = DefaultDataSource.Factory(activity, httpFactory)
       val extractorsFactory = DefaultExtractorsFactory()
         // High-bitrate Plex DVR MPEG-TS recordings can have sparse PCR packets; the default
         // 600-packet window may leave duration unknown and seeking disabled.
@@ -576,7 +617,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
           setBufferDurationsMs(30_000, 60_000, 1_000, 5_000)
         }
       }.build()
-      emitLog("info", "init", "Buffer: ${targetBufferBytes / 1024 / 1024}MB limit, available=${availableMB}MB, tunneling=$tunnelingUserEnabled, dataSource=Cronet")
+      emitLog("info", "init", "Buffer: ${targetBufferBytes / 1024 / 1024}MB limit, available=${availableMB}MB, tunneling=$tunnelingUserEnabled, dataSource=$dataSourceLabel")
 
       exoPlayer = ExoPlayer.Builder(activity)
         .setTrackSelector(trackSelector!!)

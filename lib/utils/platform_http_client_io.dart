@@ -11,6 +11,7 @@ import 'managed_http_client.dart';
 
 /// Shared Cronet engine so all clients reuse the same connection pool.
 CronetEngine? _sharedEngine;
+bool _cronetBroken = false;
 
 const bool _tvosBuild = bool.fromEnvironment('TVOS_BUILD');
 
@@ -35,14 +36,24 @@ http.Client _createTunedIoClient(String debugLabel) {
 
 http.Client createPlatformClient() {
   if (Platform.isAndroid) {
-    _sharedEngine ??= CronetEngine.build(
-      cacheMode: CacheMode.memory,
-      cacheMaxSize: 2 * 1024 * 1024,
-      enableBrotli: true,
-      enableHttp2: true,
-    );
-    _logPlatformClient('android', 'CronetClient');
-    return ManagedHttpClient(CronetClient.fromCronetEngine(_sharedEngine!), debugLabel: 'CronetClient');
+    if (!_cronetBroken) {
+      try {
+        _sharedEngine ??= CronetEngine.build(
+          cacheMode: CacheMode.memory,
+          cacheMaxSize: 2 * 1024 * 1024,
+          enableBrotli: true,
+          enableHttp2: true,
+        );
+        _logPlatformClient('android', 'CronetClient');
+        return ManagedHttpClient(CronetClient.fromCronetEngine(_sharedEngine!), debugLabel: 'CronetClient');
+      } catch (e, st) {
+        _cronetBroken = true;
+        _sharedEngine = null;
+        appLogger.w('CronetClient init failed, falling back to IOClient', error: e, stackTrace: st);
+      }
+    }
+    _logPlatformClient('android', 'IOClient (Android fallback)');
+    return _createTunedIoClient('IOClient (Android fallback)');
   }
   if (Platform.isIOS && _tvosBuild) {
     _logPlatformClient('tvos', 'IOClient (tvOS tuned)');
