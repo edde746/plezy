@@ -22,6 +22,7 @@ import '../focus/key_event_utils.dart';
 import '../focus/input_mode_tracker.dart';
 import '../focus/card_focus_scope.dart';
 import '../widgets/focus_builders.dart';
+import '../media/library_query.dart';
 import '../media/media_hub.dart';
 import '../utils/provider_extensions.dart';
 import '../utils/plex_season_display.dart';
@@ -2739,11 +2740,10 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
       _hasLoadedEpisodes = false;
     });
     try {
-      final firstPage = await client.fetchPlayableDescendantsPage(_metadata.id, start: 0, size: _episodesPageSize);
+      final firstPage = await _fetchFlattenedEpisodePage(client, ServerId(serverId), start: 0, size: _episodesPageSize);
       if (!mounted || generation != _episodesLoadGeneration) return;
-      final enriched = _enrichPlayableEpisodes(firstPage.items, ServerId(serverId));
       setStateIfMounted(() {
-        _allEpisodes = _allEpisodes.completeInitialLoad(enriched, firstPage.totalCount);
+        _allEpisodes = _allEpisodes.completeInitialLoad(firstPage.items, firstPage.totalCount);
         _episodes = _allEpisodes.items;
         _hasLoadedEpisodes = true;
       });
@@ -2754,6 +2754,68 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
         _hasLoadedEpisodes = true;
       });
     }
+  }
+
+  MediaItem? get _flattenedSeasonForDirectEpisodePaging {
+    if (_metadata.isSeason) {
+      if (_seasons.length == 1 && _seasons.first.isSeason) return _seasons.first;
+      final full = _fullMetadata;
+      if (full != null && full.isSeason) return full;
+      return _metadata;
+    }
+    if (_showEpisodesDirectly && _seasons.length == 1 && _seasons.first.isSeason) {
+      return _seasons.first;
+    }
+    return null;
+  }
+
+  Future<LibraryPage<MediaItem>> _fetchFlattenedEpisodePage(
+    MediaServerClient client,
+    ServerId serverId, {
+    required int start,
+    required int size,
+  }) async {
+    final season = _flattenedSeasonForDirectEpisodePaging;
+    if (season != null) {
+      final page = await client.fetchChildrenPage(season.id, start: start, size: size);
+      return LibraryPage<MediaItem>(
+        items: _enrichDirectSeasonEpisodes(page.items, season: season, serverId: serverId),
+        totalCount: page.totalCount,
+        offset: page.offset,
+      );
+    }
+
+    final page = await client.fetchPlayableDescendantsPage(_metadata.id, start: start, size: size);
+    return LibraryPage<MediaItem>(
+      items: _enrichPlayableEpisodes(page.items, serverId),
+      totalCount: page.totalCount,
+      offset: page.offset,
+    );
+  }
+
+  List<MediaItem> _enrichDirectSeasonEpisodes(
+    List<MediaItem> episodes, {
+    required MediaItem season,
+    required ServerId serverId,
+  }) {
+    if (_metadata.isShow) {
+      return normalizeSeasonEpisodes(episodes, show: _fullMetadata ?? _metadata, season: season);
+    }
+
+    return _enrichPlayableEpisodes(episodes, serverId)
+        .map(
+          (episode) => _withFallbackLibrary(
+            episode.copyWith(
+              parentId: episode.parentId ?? season.id,
+              parentTitle: episode.parentTitle ?? season.title,
+              parentIndex: episode.parentIndex ?? season.index,
+              grandparentId: episode.grandparentId ?? season.grandparentId ?? season.parentId,
+              grandparentTitle: episode.grandparentTitle ?? season.grandparentTitle ?? season.parentTitle,
+            ),
+            season,
+          ),
+        )
+        .toList();
   }
 
   List<MediaItem> _enrichPlayableEpisodes(List<MediaItem> episodes, ServerId serverId) {
@@ -2795,13 +2857,12 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
       _allEpisodes = _allEpisodes.startLoadMore();
     });
     try {
-      final page = await client.fetchPlayableDescendantsPage(_metadata.id, start: offset, size: _episodesPageSize);
+      final page = await _fetchFlattenedEpisodePage(client, ServerId(serverId), start: offset, size: _episodesPageSize);
       if (!mounted || generation != _episodesLoadGeneration) return;
-      final enriched = _enrichPlayableEpisodes(page.items, ServerId(serverId));
       setStateIfMounted(() {
         _allEpisodes = _allEpisodes.completeLoadMore(
           expectedOffset: offset,
-          pageItems: enriched,
+          pageItems: page.items,
           total: page.totalCount,
         );
         _episodes = _allEpisodes.items;

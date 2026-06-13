@@ -194,6 +194,8 @@ void main() {
 
       final directChildrenRequest = requests.firstWhere((uri) => uri.path == '/Items');
       expect(directChildrenRequest.queryParameters['Fields']!.split(','), contains('MediaSources'));
+      expect(directChildrenRequest.queryParameters['SortBy'], 'ParentIndexNumber,IndexNumber,SortName');
+      expect(directChildrenRequest.queryParameters['SortOrder'], 'Ascending,Ascending,Ascending');
     });
 
     test('fetchPlayableDescendantsPage requests media sources for episode-row quality labels', () async {
@@ -1787,10 +1789,14 @@ void main() {
 
     test('fetchClientSideEpisodeQueue pages past the first 200 episodes', () async {
       final starts = <String?>[];
+      final sortBy = <String?>[];
+      final sortOrder = <String?>[];
       final pagedClient = JellyfinClient.forTesting(
         connection: _conn(),
         httpClient: MockClient((req) async {
           starts.add(req.url.queryParameters['StartIndex']);
+          sortBy.add(req.url.queryParameters['SortBy']);
+          sortOrder.add(req.url.queryParameters['SortOrder']);
           final start = int.parse(req.url.queryParameters['StartIndex'] ?? '0');
           const total = 250;
           final end = (start + 200).clamp(0, total);
@@ -1817,6 +1823,8 @@ void main() {
 
       expect(result, hasLength(250));
       expect(starts, ['0', '200']);
+      expect(sortBy, everyElement('ParentIndexNumber,IndexNumber,SortName'));
+      expect(sortOrder, everyElement('Ascending,Ascending,Ascending'));
     });
 
     test('fetchPersonMedia queries items by person id', () async {
@@ -2896,6 +2904,43 @@ void main() {
       expect(requestUri!.queryParameters['IncludeItemTypes'], 'Movie,Episode');
       expect(requestUri!.queryParameters['StartIndex'], '20');
       expect(requestUri!.queryParameters['Limit'], '10');
+    });
+
+    test('fetchChildrenPage orders direct episode children by season and episode index', () async {
+      Uri? requestUri;
+      final mock = MockClient((req) async {
+        if (req.url.path == '/Shows/season-1/Seasons') {
+          return http.Response(jsonEncode({'Items': <Object>[]}), 200, headers: {'content-type': 'application/json'});
+        }
+        if (req.url.path == '/Items') {
+          requestUri = req.url;
+          return http.Response(
+            jsonEncode({
+              'Items': [
+                {'Id': 'episode-1', 'Name': 'Episode', 'Type': 'Episode'},
+              ],
+              'TotalRecordCount': 40,
+            }),
+            200,
+            headers: {'content-type': 'application/json'},
+          );
+        }
+        return http.Response('not found', 404);
+      });
+      final client = JellyfinClient.forTesting(connection: _conn(), httpClient: mock);
+      addTearDown(client.close);
+
+      final page = await client.fetchChildrenPage('season-1', start: 20, size: 10);
+
+      expect(page.items.single.id, 'episode-1');
+      expect(page.totalCount, 40);
+      expect(page.offset, 20);
+      expect(requestUri, isNotNull);
+      expect(requestUri!.queryParameters['ParentId'], 'season-1');
+      expect(requestUri!.queryParameters['StartIndex'], '20');
+      expect(requestUri!.queryParameters['Limit'], '10');
+      expect(requestUri!.queryParameters['SortBy'], 'ParentIndexNumber,IndexNumber,SortName');
+      expect(requestUri!.queryParameters['SortOrder'], 'Ascending,Ascending,Ascending');
     });
 
     test('fetchPlayableFolderDescendants includes generic video but excludes audio', () async {

@@ -90,6 +90,10 @@ const _childrenPageSize = 500;
 const _pagedListPageSize = 200;
 const _playableDescendantTypes = 'Movie,Episode';
 const _playableFolderDescendantTypes = 'Movie,Episode,Video,MusicVideo';
+const _episodeOrderQueryParameters = {
+  'SortBy': 'ParentIndexNumber,IndexNumber,SortName',
+  'SortOrder': 'Ascending,Ascending,Ascending',
+};
 
 bool _isJellyfinFolderDto(Map<String, dynamic> item) {
   final type = (item['Type'] as String?)?.toLowerCase();
@@ -551,6 +555,7 @@ mixin _JellyfinBrowseMethods on MediaServerCacheMixin {
           'Fields': _episodeRowFields,
           'StartIndex': '$startIndex',
           'Limit': '$_childrenPageSize',
+          ..._episodeOrderQueryParameters,
           ...jellyfinImageQueryParameters,
         },
       );
@@ -644,6 +649,7 @@ mixin _JellyfinBrowseMethods on MediaServerCacheMixin {
         'Limit': pageSize.toString(),
         'EnableTotalRecordCount': 'true',
         'Fields': _episodeRowFields,
+        ..._episodeOrderQueryParameters,
         ...jellyfinImageQueryParameters,
       },
       abort: abort,
@@ -884,6 +890,7 @@ mixin _JellyfinBrowseMethods on MediaServerCacheMixin {
           'Fields': _queueFields,
           'StartIndex': '$startIndex',
           'Limit': '$_episodeQueuePageSize',
+          ..._episodeOrderQueryParameters,
           ...jellyfinImageQueryParameters,
         },
       );
