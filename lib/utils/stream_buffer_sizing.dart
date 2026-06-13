@@ -10,9 +10,15 @@ const mpvDefaultStreamBufferBytes = 128 * 1024;
 /// in bytes, seconds × video byterate — which makes ffmpeg's DTS-ordered
 /// reads ping-pong across the file. Over HTTP every ping-pong that escapes
 /// mpv's stream ring buffer is a byte seek, and ffmpeg's http layer drops and
-/// redials the connection on every seek, collapsing throughput. MKV is
-/// interleaved by spec and excluded.
-const poorlyInterleavedContainers = {'mp4', 'mov', 'm4v', '3gp', '3g2'};
+/// redials the connection on every seek, collapsing throughput.
+const quickTimeFamilyContainers = {'mp4', 'mov', 'm4v', '3gp', '3g2'};
+
+/// Matroska/WebM is normally well-interleaved, but UHD direct-play remuxes can
+/// still overrun mpv's tiny 128 KiB default stream ring during normal demuxer
+/// read bursts. Only opt in when the server reports a high bitrate so common
+/// MKV playback keeps the default memory profile.
+const matroskaFamilyContainers = {'mkv', 'matroska', 'webm'};
+const _highBitrateMatroskaThresholdKbps = 40 * 1000;
 
 const minStreamRingBytes = 16 * 1024 * 1024;
 const maxStreamRingBytes = 128 * 1024 * 1024;
@@ -60,10 +66,15 @@ int? networkStreamRingBytes({
   if (container == null) return null;
   // Jellyfin may report ffmpeg demuxer alias lists ('mov,mp4,m4a,3gp,3g2,mj2').
   final tokens = container.toLowerCase().split(',').map((token) => token.trim());
-  if (!tokens.any(poorlyInterleavedContainers.contains)) return null;
+  final isQuickTimeFamily = tokens.any(quickTimeFamilyContainers.contains);
+  final isMatroskaFamily = tokens.any(matroskaFamilyContainers.contains);
+  if (!isQuickTimeFamily && !isMatroskaFamily) return null;
 
   final cap = max(minStreamRingBytes, min(maxBytes, maxStreamRingBytes));
-  if (bitrateKbps == null || bitrateKbps <= 0) return min(unknownBitrateStreamRingBytes, cap);
+  if (bitrateKbps == null || bitrateKbps <= 0) {
+    return isQuickTimeFamily ? min(unknownBitrateStreamRingBytes, cap) : null;
+  }
+  if (!isQuickTimeFamily && bitrateKbps < _highBitrateMatroskaThresholdKbps) return null;
 
   final bytesPerSecond = bitrateKbps * 1000 ~/ 8;
   final ring = nextPowerOfTwo(bytesPerSecond * _streamRingContentSeconds);

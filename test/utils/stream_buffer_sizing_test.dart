@@ -21,10 +21,20 @@ void main() {
     });
 
     test('returns null for well-interleaved or unknown containers', () {
-      expect(networkStreamRingBytes(container: 'mkv', bitrateKbps: 69140), isNull);
       expect(networkStreamRingBytes(container: 'avi', bitrateKbps: 69140), isNull);
       expect(networkStreamRingBytes(container: null, bitrateKbps: 69140), isNull);
       expect(networkStreamRingBytes(container: '', bitrateKbps: 69140), isNull);
+    });
+
+    test('sizes high-bitrate Matroska direct play to 64MiB', () {
+      expect(networkStreamRingBytes(container: 'mkv', bitrateKbps: 69140), 64 * 1024 * 1024);
+      expect(networkStreamRingBytes(container: 'matroska', bitrateKbps: 69140), 64 * 1024 * 1024);
+    });
+
+    test('keeps ordinary Matroska direct play on the default stream ring', () {
+      expect(networkStreamRingBytes(container: 'mkv', bitrateKbps: 39000), isNull);
+      expect(networkStreamRingBytes(container: 'mkv', bitrateKbps: null), isNull);
+      expect(networkStreamRingBytes(container: 'mkv', bitrateKbps: 0), isNull);
     });
 
     test('matches QuickTime-family containers case-insensitively', () {
@@ -34,7 +44,7 @@ void main() {
 
     test('matches ffmpeg demuxer alias lists from Jellyfin', () {
       expect(networkStreamRingBytes(container: 'mov,mp4,m4a,3gp,3g2,mj2', bitrateKbps: 69140), 64 * 1024 * 1024);
-      expect(networkStreamRingBytes(container: 'matroska,webm', bitrateKbps: 69140), isNull);
+      expect(networkStreamRingBytes(container: 'matroska,webm', bitrateKbps: 69140), 64 * 1024 * 1024);
     });
 
     test('falls back to 64MiB when bitrate is unknown', () {
