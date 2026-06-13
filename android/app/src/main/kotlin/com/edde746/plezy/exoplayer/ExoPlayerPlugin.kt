@@ -272,9 +272,12 @@ class ExoPlayerPlugin :
       return
     }
 
-    // Only clear pending MPV properties when MPV is the active backend.
-    // When ExoPlayer is active, keep them for potential ExoPlayer→MPV fallback.
+    // Only clear pending MPV state when MPV is the active backend. A same-core
+    // MPV reload must not inherit a fallback switch that was armed for the
+    // previous load. When ExoPlayer is active, keep queued properties for a
+    // potential ExoPlayer→MPV fallback.
     if (usingMpvFallback) {
+      clearPendingMpvFallbackSwitch()
       pendingMpvProperties.clear()
     }
 
