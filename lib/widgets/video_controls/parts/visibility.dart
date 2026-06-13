@@ -145,7 +145,7 @@ extension _PlexVideoControlsVisibilityMethods on _PlexVideoControlsState {
   }
 
   Future<void> _checkPipSupport() async {
-    if (!Platform.isAndroid && !Platform.isIOS && !Platform.isMacOS) {
+    if (!PlatformDetector.supportsPictureInPicture()) {
       return;
     }
 

@@ -156,6 +156,19 @@ class _AutoPipPref extends Pref<bool> {
   Future<void> writeTo(BaseSharedPreferencesService svc, bool value) => svc.writeBool(key, value);
 }
 
+class _UseExternalPlayerPref extends Pref<bool> {
+  const _UseExternalPlayerPref() : super('use_external_player');
+
+  @override
+  bool readFrom(BaseSharedPreferencesService svc) {
+    if (!PlatformDetector.supportsExternalPlayers()) return false;
+    return svc.prefs.getBool(key) ?? false;
+  }
+
+  @override
+  Future<void> writeTo(BaseSharedPreferencesService svc, bool value) => svc.writeBool(key, value);
+}
+
 String? _trimEmptyAsNull(String? v) {
   final t = v?.trim();
   return (t == null || t.isEmpty) ? null : t;
@@ -372,7 +385,7 @@ class SettingsService extends BaseSharedPreferencesService {
   static const showNavBarLabels = BoolPref('show_nav_bar_labels', defaultValue: true);
   static const globalShaderPreset = StringPref('global_shader_preset', defaultValue: 'none');
   static const requireProfileSelectionOnOpen = BoolPref('require_profile_selection_on_open');
-  static const useExternalPlayer = BoolPref('use_external_player');
+  static const useExternalPlayer = _UseExternalPlayerPref();
   static const forceTvMode = BoolPref('force_tv_mode');
   static const visualEffects = EnumPref<VisualEffectsSetting>(
     'visual_effects',

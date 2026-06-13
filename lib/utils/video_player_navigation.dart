@@ -16,6 +16,7 @@ import '../services/external_player_service.dart';
 import '../services/offline_watch_sync_service.dart';
 import '../services/settings_service.dart';
 import 'app_logger.dart';
+import 'platform_detector.dart';
 
 const String kVideoPlayerRouteName = '/video_player';
 
@@ -185,7 +186,7 @@ Future<bool?> navigateToVideoPlayer(
     // Check if external player is enabled
     try {
       final settingsService = await SettingsService.getInstance();
-      if (settingsService.read(SettingsService.useExternalPlayer)) {
+      if (PlatformDetector.supportsExternalPlayers() && settingsService.read(SettingsService.useExternalPlayer)) {
         bool launched = false;
 
         if (isOffline) {

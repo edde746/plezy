@@ -403,7 +403,8 @@ class MediaContextMenuState extends State<MediaContextMenu> {
         menuActions.add(_MenuAction(value: 'fileinfo', icon: Symbols.info_rounded, label: t.mediaMenu.fileInfo));
       }
 
-      if (mediaKind == MediaKind.episode || mediaKind == MediaKind.movie) {
+      if (PlatformDetector.supportsExternalPlayers() &&
+          (mediaKind == MediaKind.episode || mediaKind == MediaKind.movie)) {
         menuActions.add(
           _MenuAction(
             value: 'play_external',
@@ -1226,6 +1227,8 @@ class MediaContextMenuState extends State<MediaContextMenu> {
 
   /// Handle play in external player action
   Future<void> _handlePlayExternal(BuildContext context) async {
+    if (!PlatformDetector.supportsExternalPlayers()) return;
+
     final item = _mediaItem!;
 
     // Check if the item is downloaded and use local file path if available

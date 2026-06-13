@@ -205,6 +205,15 @@ class PlatformDetector {
     return Platform.isWindows || Platform.isMacOS || Platform.isLinux;
   }
 
+  static bool supportsExternalPlayers() {
+    if (TvDetectionService._tvosBuild || isAppleTV()) return false;
+    return Platform.isAndroid || Platform.isIOS || Platform.isMacOS || Platform.isLinux || Platform.isWindows;
+  }
+
+  static bool supportsPictureInPicture() {
+    return !TvDetectionService._tvosBuild && !isTV() && (Platform.isAndroid || Platform.isIOS || Platform.isMacOS);
+  }
+
   /// Detects if the device is likely a tablet based on screen size
   /// Uses diagonal screen size to determine if device is a tablet
   static bool isTablet(BuildContext context) {
