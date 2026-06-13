@@ -255,7 +255,20 @@ class _LibraryRecommendedTabState extends BaseLibraryTabState<MediaHub, LibraryR
   @override
   void focusFirstItem() {
     if (PlatformDetector.isTV()) {
-      _tvBrowseRailKey.currentState?.requestFocus();
+      final rail = _tvBrowseRailKey.currentState;
+      if (rail != null) {
+        rail.requestFocus();
+        return;
+      }
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        final rail = _tvBrowseRailKey.currentState;
+        if (rail != null) {
+          rail.requestFocus();
+        } else {
+          focusEmptyState();
+        }
+      });
       return;
     }
     if (_hubKeys.isNotEmpty && items.isNotEmpty) {

@@ -357,10 +357,10 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
     // On mobile (touch mode), skip auto-focus to prevent ensureVisible()
     // from interfering with TabBarView page animations
     if (!InputModeTracker.isKeyboardMode(context)) return;
-    if (widget.isActive && hasLoadedData && !hasFocused && loadedItems.isNotEmpty) {
+    if (widget.isActive && hasLoadedData && !hasFocused) {
       hasFocused = true;
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) focusFirstItem();
+        if (mounted) focusContentOrChrome();
       });
     }
   }
@@ -420,6 +420,18 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
 
       request();
       WidgetsBinding.instance.addPostFrameCallback((_) => request());
+    }
+  }
+
+  @override
+  bool get hasFocusableContent => _selectedGrouping == 'folders' || loadedItems.isNotEmpty;
+
+  @override
+  void focusContentOrChrome() {
+    if (hasFocusableContent) {
+      focusFirstItem();
+    } else {
+      focusChipsBar();
     }
   }
 

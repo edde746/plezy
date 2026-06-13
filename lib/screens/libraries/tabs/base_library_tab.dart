@@ -79,6 +79,7 @@ abstract class BaseLibraryTabState<T, W extends BaseLibraryTab<T>> extends State
   bool _hasLoadedData = false;
   @protected
   bool hasFocused = false;
+  bool _hasFocusedChromeFallback = false;
 
   // Getters for subclasses
   List<T> get items => _items;
@@ -125,6 +126,7 @@ abstract class BaseLibraryTabState<T, W extends BaseLibraryTab<T>> extends State
     if (oldWidget.library.globalKey != widget.library.globalKey) {
       // Reset focus state for new library
       hasFocused = false;
+      _hasFocusedChromeFallback = false;
       _hasLoadedData = false;
       // Immediately clear stale data before async load
       _items = [];
@@ -169,14 +171,47 @@ abstract class BaseLibraryTabState<T, W extends BaseLibraryTab<T>> extends State
     // from interfering with TabBarView page animations
     if (!InputModeTracker.isKeyboardMode(context)) return;
 
-    if (widget.isActive && _hasLoadedData && !hasFocused && _items.isNotEmpty) {
+    if (!widget.isActive || !_hasLoadedData) return;
+
+    if (hasFocusableContent) {
+      _hasFocusedChromeFallback = false;
+      if (hasFocused) return;
       hasFocused = true;
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
           focusFirstItem();
         }
       });
+      return;
     }
+
+    if (!_hasFocusedChromeFallback) {
+      _hasFocusedChromeFallback = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          focusEmptyState();
+        }
+      });
+    }
+  }
+
+  /// Whether [focusFirstItem] has a real content target to focus.
+  @protected
+  bool get hasFocusableContent => _items.isNotEmpty;
+
+  /// Focus content when available, otherwise return to the library chrome.
+  void focusContentOrChrome() {
+    if (hasFocusableContent) {
+      focusFirstItem();
+    } else {
+      focusEmptyState();
+    }
+  }
+
+  /// Fallback for empty/error states, where content has no focusable child.
+  @protected
+  void focusEmptyState() {
+    widget.onBack?.call();
   }
 
   /// Focus the first item in the tab. Subclasses should override this.
