@@ -150,10 +150,11 @@ extension _VideoPlayerEpisodeNavigationMethods on VideoPlayerScreenState {
     // Read the client before any await — context across an async gap. A
     // missing client leaves this null and the guard below reports it.
     final serverId = _currentMetadata.serverId;
-    PlexClient? subtitleClient;
-    if (isSubtitleChange && serverId != null) {
+    final isPlexBacked = _currentMetadata.backend == MediaBackend.plex;
+    PlexClient? streamSelectClient;
+    if ((isSubtitleChange || (isAudioChange && isPlexBacked)) && serverId != null) {
       try {
-        subtitleClient = context.getPlexClientForServer(ServerId(serverId));
+        streamSelectClient = context.getPlexClientForServer(ServerId(serverId));
       } catch (_) {}
     }
 
@@ -162,18 +163,19 @@ extension _VideoPlayerEpisodeNavigationMethods on VideoPlayerScreenState {
         await saveMediaVersionIndexFor(_currentMetadata, effectiveMediaIndex);
       }
 
-      if (isSubtitleChange) {
+      if (isSubtitleChange || (isAudioChange && isPlexBacked)) {
         final partId = _currentMediaInfo?.partId;
-        if (subtitleClient == null || partId == null || effectiveSubtitleStreamId == null) {
-          throw StateError('No Plex part available for subtitle stream selection');
+        if (streamSelectClient == null || partId == null) {
+          throw StateError('No Plex part available for stream selection');
         }
-        final saved = await subtitleClient.selectStreams(
+        final saved = await streamSelectClient.selectStreams(
           partId,
-          subtitleStreamID: effectiveSubtitleStreamId,
+          audioStreamID: isAudioChange ? effectiveAudioStreamId : null,
+          subtitleStreamID: isSubtitleChange ? effectiveSubtitleStreamId : null,
           allParts: true,
         );
         if (!saved) {
-          throw StateError('Failed to select subtitle stream');
+          throw StateError('Failed to select streams');
         }
       }
 

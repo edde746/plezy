@@ -1237,6 +1237,7 @@ class PlexClient
       if (queryParams.isEmpty) {
         return true;
       }
+      queryParams['allParts'] = 1;
 
       // Use PUT request on /library/parts/{partId}
       return _wrapBoolApiCall(
