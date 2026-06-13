@@ -30,6 +30,7 @@ Typical flow: `git fetch origin && git fetch upstream && git checkout -b sync-up
 | Kotlin package | `com.amaze.vibestream` | `android/app/src/main/kotlin/com/amaze/vibestream/**` |
 | JNI symbols | `Java_com_amaze_vibestream_*` | `android/app/src/main/cpp/dovi_bridge.cpp` |
 | iOS/macOS app-icon name | `vibe_stream` (folder `vibe_stream.icon`) | `ios/Runner.xcodeproj/project.pbxproj`, `macos/Runner.xcodeproj/project.pbxproj` |
+| iOS signing team | `DEVELOPMENT_TEAM = MRF7ZX8DD9` (NOT upstream's `G88U5B5783`) | `ios/Runner.xcodeproj/project.pbxproj` |
 
 ## Don't
 
