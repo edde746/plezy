@@ -698,6 +698,8 @@ class ExoPlayerPlugin :
       "audio-bitrate" to mpv.getProperty("audio-bitrate"),
       // Performance metrics
       "total-avsync-change" to mpv.getProperty("total-avsync-change"),
+      "cache-used" to mpv.getProperty("cache-used"),
+      "demuxer-max-bytes" to mpv.getProperty("demuxer-max-bytes"),
       "cache-speed" to mpv.getProperty("cache-speed"),
       "frame-drop-count" to mpv.getProperty("frame-drop-count"),
       "decoder-frame-drop-count" to mpv.getProperty("decoder-frame-drop-count"),

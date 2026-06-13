@@ -1187,6 +1187,7 @@
     "maxCll": "MaxCLL",
     "maxFall": "MaxFALL",
     "cacheUsed": "使用キャッシュ",
+    "cacheLimit": "キャッシュ上限",
     "speed": "速度",
     "player": "プレーヤー",
     "memory": "メモリ",

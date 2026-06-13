@@ -1409,6 +1409,7 @@ class _TranslationsPerformanceOverlayPt extends TranslationsPerformanceOverlayEn
 	@override String get maxCll => 'MaxCLL';
 	@override String get maxFall => 'MaxFALL';
 	@override String get cacheUsed => 'Cache usado';
+	@override String get cacheLimit => 'Limite do cache';
 	@override String get speed => 'Velocidade';
 	@override String get player => 'Player';
 	@override String get memory => 'Memória';
@@ -3015,6 +3016,7 @@ extension on TranslationsPt {
 			'performanceOverlay.maxCll' => 'MaxCLL',
 			'performanceOverlay.maxFall' => 'MaxFALL',
 			'performanceOverlay.cacheUsed' => 'Cache usado',
+			'performanceOverlay.cacheLimit' => 'Limite do cache',
 			'performanceOverlay.speed' => 'Velocidade',
 			'performanceOverlay.player' => 'Player',
 			'performanceOverlay.memory' => 'Memória',

@@ -1187,6 +1187,7 @@
     "maxCll": "MaxCLL",
     "maxFall": "MaxFALL",
     "cacheUsed": "사용 캐시",
+    "cacheLimit": "캐시 제한",
     "speed": "속도",
     "player": "플레이어",
     "memory": "메모리",

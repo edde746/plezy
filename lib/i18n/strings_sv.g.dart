@@ -1409,6 +1409,7 @@ class _TranslationsPerformanceOverlaySv extends TranslationsPerformanceOverlayEn
 	@override String get maxCll => 'MaxCLL';
 	@override String get maxFall => 'MaxFALL';
 	@override String get cacheUsed => 'Cache använd';
+	@override String get cacheLimit => 'Cachegräns';
 	@override String get speed => 'Hastighet';
 	@override String get player => 'Spelare';
 	@override String get memory => 'Minne';
@@ -3015,6 +3016,7 @@ extension on TranslationsSv {
 			'performanceOverlay.maxCll' => 'MaxCLL',
 			'performanceOverlay.maxFall' => 'MaxFALL',
 			'performanceOverlay.cacheUsed' => 'Cache använd',
+			'performanceOverlay.cacheLimit' => 'Cachegräns',
 			'performanceOverlay.speed' => 'Hastighet',
 			'performanceOverlay.player' => 'Spelare',
 			'performanceOverlay.memory' => 'Minne',

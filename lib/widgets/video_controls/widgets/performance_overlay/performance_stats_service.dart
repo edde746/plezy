@@ -152,6 +152,7 @@ class PerformanceStatsService {
         audioBitrate: _parseInt(statsMap['audio-bitrate'] as String?),
         avsyncChange: _parseDouble(statsMap['total-avsync-change'] as String?),
         cacheUsed: _parseInt(statsMap['cache-used'] as String?),
+        cacheLimit: _parseInt(statsMap['demuxer-max-bytes'] as String?),
         cacheSpeed: _parseDouble(statsMap['cache-speed'] as String?),
         displayFps: _parseDouble(statsMap['display-fps'] as String?),
         frameDropCount: _parseInt(statsMap['frame-drop-count'] as String?),
@@ -234,10 +235,12 @@ class PerformanceStatsService {
       player.getProperty('audio-params/hr-channels'), // 9
       player.getProperty('audio-bitrate'), // 10
       player.getProperty('total-avsync-change'), // 11
-      player.getProperty('cache-speed'), // 12
-      player.getProperty('frame-drop-count'), // 13
-      player.getProperty('decoder-frame-drop-count'), // 14
-      player.getProperty('demuxer-cache-duration'), // 15
+      player.getProperty('cache-used'), // 12
+      player.getProperty('demuxer-max-bytes'), // 13
+      player.getProperty('cache-speed'), // 14
+      player.getProperty('frame-drop-count'), // 15
+      player.getProperty('decoder-frame-drop-count'), // 16
+      player.getProperty('demuxer-cache-duration'), // 17
     ]);
 
     final hasVideo = results[1] != null;
@@ -287,10 +290,12 @@ class PerformanceStatsService {
       audioChannels: results[9],
       audioBitrate: _parseInt(results[10]),
       avsyncChange: _parseDouble(results[11]),
-      cacheSpeed: _parseDouble(results[12]),
-      frameDropCount: _parseInt(results[13]),
-      decoderFrameDropCount: _parseInt(results[14]),
-      cacheDuration: _parseDouble(results[15]),
+      cacheUsed: _parseInt(results[12]),
+      cacheLimit: _parseInt(results[13]),
+      cacheSpeed: _parseDouble(results[14]),
+      frameDropCount: _parseInt(results[15]),
+      decoderFrameDropCount: _parseInt(results[16]),
+      cacheDuration: _parseDouble(results[17]),
       // Video-dependent properties
       displayFps: _parseDouble(videoResults?.first),
       pixelformat: videoResults?[1],

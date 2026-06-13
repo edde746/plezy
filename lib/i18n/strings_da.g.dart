@@ -1409,6 +1409,7 @@ class _TranslationsPerformanceOverlayDa extends TranslationsPerformanceOverlayEn
 	@override String get maxCll => 'MaxCLL';
 	@override String get maxFall => 'MaxFALL';
 	@override String get cacheUsed => 'Brugt cache';
+	@override String get cacheLimit => 'Cachegrænse';
 	@override String get speed => 'Hastighed';
 	@override String get player => 'Afspiller';
 	@override String get memory => 'Hukommelse';
@@ -3015,6 +3016,7 @@ extension on TranslationsDa {
 			'performanceOverlay.maxCll' => 'MaxCLL',
 			'performanceOverlay.maxFall' => 'MaxFALL',
 			'performanceOverlay.cacheUsed' => 'Brugt cache',
+			'performanceOverlay.cacheLimit' => 'Cachegrænse',
 			'performanceOverlay.speed' => 'Hastighed',
 			'performanceOverlay.player' => 'Afspiller',
 			'performanceOverlay.memory' => 'Hukommelse',
