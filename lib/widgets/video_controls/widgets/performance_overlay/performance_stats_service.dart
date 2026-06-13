@@ -4,8 +4,8 @@ import 'dart:io' show Platform, ProcessInfo;
 import 'package:flutter/scheduler.dart';
 
 import '../../../../mpv/mpv.dart';
-import '../../../../mpv/player/platform/player_android.dart';
 import '../../../../utils/app_logger.dart';
+import '../../../../utils/codec_utils.dart';
 import 'performance_stats.dart';
 
 /// Service that polls player properties and provides performance stats via a stream.
@@ -50,13 +50,12 @@ class PerformanceStatsService {
   void startPolling() {
     _pollingTimer?.cancel();
 
-    // Listen for backend switches on Android (ExoPlayer -> MPV fallback)
-    if (player is PlayerAndroid) {
-      _backendSwitchedSubscription?.cancel();
-      _backendSwitchedSubscription = player.streams.backendSwitched.listen((_) {
-        _updateRuntimePlayerType();
-      });
-    }
+    // Listen for backend switches (only the Android ExoPlayer -> MPV
+    // fallback ever emits; the stream is silent elsewhere).
+    _backendSwitchedSubscription?.cancel();
+    _backendSwitchedSubscription = player.streams.backendSwitched.listen((_) {
+      _updateRuntimePlayerType();
+    });
 
     // Start FPS tracking
     _startFpsTracking();
@@ -67,12 +66,8 @@ class PerformanceStatsService {
 
   /// Update the runtime player type by querying the native layer.
   Future<void> _updateRuntimePlayerType() async {
-    if (player is PlayerAndroid) {
-      _runtimePlayerType = await (player as PlayerAndroid).getPlayerType();
-      appLogger.d('Performance stats: runtime player type updated to $_runtimePlayerType');
-    } else {
-      _runtimePlayerType = 'mpv'; // Non-Android always uses MPV
-    }
+    _runtimePlayerType = await player.runtimePlayerType();
+    appLogger.d('Performance stats: runtime player type updated to $_runtimePlayerType');
   }
 
   /// Start tracking UI frame rate.
@@ -115,12 +110,12 @@ class PerformanceStatsService {
         await _updateRuntimePlayerType();
       }
 
-      if (player is PlayerAndroid) {
-        // For Android (ExoPlayer or MPV fallback), always use getStats()
-        // The native side returns appropriate stats based on which backend is active
+      if (player.providesNativeStats) {
+        // Android (ExoPlayer or MPV fallback): the native side returns
+        // appropriate stats based on which backend is active.
         await _fetchAndroidStats();
       } else {
-        // For non-Android platforms, use MPV property queries
+        // For mpv-channel players, use MPV property queries
         await _fetchMpvStats();
       }
     } catch (e) {
@@ -131,8 +126,7 @@ class PerformanceStatsService {
   /// Fetch stats from Android player (ExoPlayer or MPV fallback).
   /// The native side returns appropriate stats based on the active backend.
   Future<void> _fetchAndroidStats() async {
-    final androidPlayer = player as PlayerAndroid;
-    final statsMap = await androidPlayer.getStats();
+    final statsMap = await player.getStats();
     final playerType = statsMap['playerType'] as String? ?? 'unknown';
 
     // Get app memory usage
@@ -195,7 +189,7 @@ class PerformanceStatsService {
         // Audio metrics
         audioCodec: _formatCodecName(statsMap['audioCodec'] as String?),
         audioSamplerate: statsMap['audioSampleRate'] as int?,
-        audioChannels: _formatChannels(statsMap['audioChannels'] as int?),
+        audioChannels: CodecUtils.formatAudioChannels(statsMap['audioChannels'] as int?),
         audioBitrate: statsMap['audioBitrate'] as int?,
         audioDecoderName: statsMap['audioDecoderName'] as String?,
         // Tunneling
@@ -222,18 +216,6 @@ class PerformanceStatsService {
       );
       _statsController.add(stats);
     }
-  }
-
-  /// Format channel count to string (e.g., "2" -> "Stereo", "6" -> "5.1")
-  String? _formatChannels(int? channels) {
-    if (channels == null) return null;
-    return switch (channels) {
-      1 => 'Mono',
-      2 => 'Stereo',
-      6 => '5.1',
-      8 => '7.1',
-      _ => '$channels ch',
-    };
   }
 
   /// Fetch stats from MPV via property queries.

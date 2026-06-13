@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:vibe_stream/models/hotkey_model.dart';
 import 'package:vibe_stream/services/settings_service.dart';
 import 'package:vibe_stream/services/trackers/tracker_constants.dart';
+import 'package:vibe_stream/utils/platform_detector.dart';
 
 import '../test_helpers/prefs.dart';
 
@@ -10,6 +11,10 @@ void main() {
   setUp(() {
     resetSharedPreferencesForTest();
     SettingsService.resetForTesting();
+  });
+
+  tearDown(() {
+    TvDetectionService.debugSetAppleTVOverride(null);
   });
 
   group('SettingsService.parseMpvConfigText', () {
@@ -79,6 +84,26 @@ void main() {
       final settings = await SettingsService.getInstance();
 
       expect(settings.read(SettingsService.tvFullCardLayout), isFalse);
+    });
+  });
+
+  group('SettingsService platform gates', () {
+    test('forces external player off on Apple TV even when stored enabled', () async {
+      final settings = await SettingsService.getInstance();
+      await settings.write(SettingsService.useExternalPlayer, true);
+
+      TvDetectionService.debugSetAppleTVOverride(true);
+
+      expect(settings.read(SettingsService.useExternalPlayer), isFalse);
+    });
+
+    test('forces auto PiP off on Apple TV even when stored enabled', () async {
+      final settings = await SettingsService.getInstance();
+      await settings.write(SettingsService.autoPip, true);
+
+      TvDetectionService.debugSetAppleTVOverride(true);
+
+      expect(settings.read(SettingsService.autoPip), isFalse);
     });
   });
 

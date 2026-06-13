@@ -14,6 +14,11 @@ class ThemeProvider extends ChangeNotifier with DisposableChangeNotifierMixin {
 
   ThemeProvider() {
     _systemBrightness = WidgetsBinding.instance.platformDispatcher.platformBrightness;
+    // Seed synchronously when settings are already loaded (main() initializes
+    // them before runApp) so the first frame paints the persisted theme; the
+    // async path below lands a microtask too late for the first build.
+    final loaded = settings.SettingsService.instanceOrNull;
+    if (loaded != null) _themeMode = loaded.read(settings.SettingsService.themeMode);
     _initializeSettings();
     WidgetsBinding.instance.platformDispatcher.onPlatformBrightnessChanged = _onBrightnessChanged;
   }

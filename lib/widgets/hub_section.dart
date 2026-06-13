@@ -558,6 +558,7 @@ class HubSectionState extends State<HubSection> with MountedSetStateMixin {
                                 isFocused: isItemFocused,
                                 onTap: () => _onItemTapped(index),
                                 onLongPress: () => _mediaCardKeys[index]?.currentState?.showContextMenu(),
+                                delegateFocusBorder: true,
                                 child: MediaCard(
                                   key: _getMediaCardKey(index),
                                   item: item,

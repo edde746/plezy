@@ -8,6 +8,8 @@ import '../i18n/strings.g.dart';
 import '../media/media_item.dart';
 import '../media/media_item_types.dart';
 import '../media/media_server_client.dart';
+import '../providers/watch_state_store.dart';
+import '../services/device_performance.dart';
 import '../services/image_cache_service.dart';
 import '../utils/content_utils.dart';
 import '../utils/formatters.dart';
@@ -15,6 +17,7 @@ import '../utils/layout_constants.dart';
 import '../utils/media_image_helper.dart';
 import 'app_icon.dart';
 import 'fitting_title_text.dart';
+import 'media_rating_badge.dart';
 import 'optimized_media_image.dart' show blurArtwork;
 
 class TvSpotlightBackground extends StatelessWidget {
@@ -55,7 +58,9 @@ class TvSpotlightBackground extends StatelessWidget {
     final bgColor = Theme.of(context).scaffoldBackgroundColor;
 
     return AnimatedSwitcher(
-      duration: const Duration(milliseconds: 280),
+      // Reduced tier swaps instantly: the cross-fade keeps two full-screen
+      // stacks (backdrop + two full-screen gradients each) blending per frame.
+      duration: DevicePerformance.reducedDuration(const Duration(milliseconds: 280)),
       switchInCurve: Curves.easeOutCubic,
       switchOutCurve: Curves.easeOutCubic,
       child: SizedBox.expand(
@@ -160,6 +165,10 @@ class TvSpotlightBackground extends StatelessWidget {
         cacheManager: PlexImageCacheManager.instance,
         fit: BoxFit.cover,
         memCacheHeight: memHeight,
+        // Explicit fades: the package defaults (500ms in / 1000ms out) double
+        // up with the AnimatedSwitcher cross-fade above on every swap.
+        fadeInDuration: DevicePerformance.reducedDuration(const Duration(milliseconds: 200)),
+        fadeOutDuration: DevicePerformance.reducedDuration(const Duration(milliseconds: 200)),
         placeholder: (context, url) => ColoredBox(color: Theme.of(context).colorScheme.surfaceContainerHighest),
         errorBuilder: (context, error, stackTrace) =>
             ColoredBox(color: Theme.of(context).colorScheme.surfaceContainerHighest),
@@ -275,6 +284,8 @@ class TvSpotlightBackground extends StatelessWidget {
           fit: BoxFit.contain,
           alignment: .centerLeft,
           memCacheWidth: (logoWidth * dpr).clamp(200, 1000).round(),
+          fadeInDuration: DevicePerformance.reducedDuration(const Duration(milliseconds: 200)),
+          fadeOutDuration: DevicePerformance.reducedDuration(const Duration(milliseconds: 200)),
           placeholder: (context, url) => const SizedBox.shrink(),
           errorBuilder: (context, error, stackTrace) => _buildTitle(context, title),
         ),
@@ -302,27 +313,58 @@ class TvSpotlightBackground extends StatelessWidget {
     final scale = _scale(context);
     final colorScheme = Theme.of(context).colorScheme;
     final episodeLabel = formatSeasonEpisodeLabel(media.parentIndex, media.index);
-    final parts = [
-      if (media.isEpisode && episodeLabel != null) episodeLabel,
-      if (media.isMovie) t.discover.movie else if (media.isShow) t.discover.tvShow,
-      if (media.rating != null) '★ ${formatRating(media.rating!)}',
-      if (media.contentRating != null) formatContentRating(media.contentRating!),
-      if (media.durationMs != null) formatDurationTextual(media.durationMs!),
-      if (media.isEpisode && media.originallyAvailableAt != null)
-        formatFullDate(media.originallyAvailableAt!)
-      else if (media.year != null)
-        media.year.toString(),
-    ];
-    return Text(
-      parts.join('  •  '),
-      maxLines: 1,
-      overflow: .ellipsis,
-      style: TextStyle(
-        color: colorScheme.onSurface,
-        fontSize: _metadataFontSize(scale),
-        fontWeight: .w700,
-        letterSpacing: 0.1,
-      ),
+    final textStyle = TextStyle(
+      color: colorScheme.onSurface,
+      fontSize: _metadataFontSize(scale),
+      fontWeight: .w700,
+      letterSpacing: 0.1,
+    );
+    final children = <Widget>[];
+
+    void addSeparator() {
+      if (children.isNotEmpty) children.add(Text('  •  ', maxLines: 1, style: textStyle));
+    }
+
+    void addTextPart(String text) {
+      addSeparator();
+      children.add(Text(text, maxLines: 1, style: textStyle));
+    }
+
+    void addWidgetPart(Widget widget) {
+      addSeparator();
+      children.add(widget);
+    }
+
+    if (media.isEpisode && episodeLabel != null) addTextPart(episodeLabel);
+    if (media.isMovie) {
+      addTextPart(t.discover.movie);
+    } else if (media.isShow) {
+      addTextPart(t.discover.tvShow);
+    }
+    final ratingBadge = MediaRatingBadge.inlineForMedia(
+      item: media,
+      foregroundColor: textStyle.color,
+      iconSize: textStyle.fontSize,
+      spacing: 4 * scale,
+      textStyle: textStyle,
+    );
+    if (ratingBadge != null) {
+      addWidgetPart(ratingBadge);
+    }
+    if (media.contentRating != null) addTextPart(formatContentRating(media.contentRating!));
+    if (media.durationMs != null) addTextPart(formatDurationTextual(media.durationMs!));
+    if (media.isEpisode && media.originallyAvailableAt != null) {
+      addTextPart(formatFullDate(media.originallyAvailableAt!));
+    } else if (media.year != null) {
+      addTextPart(media.year.toString());
+    }
+
+    if (children.isEmpty) return const SizedBox.shrink();
+
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      physics: const NeverScrollableScrollPhysics(),
+      child: Row(mainAxisSize: MainAxisSize.min, children: children),
     );
   }
 
@@ -342,6 +384,7 @@ class TvSpotlightBackground extends StatelessWidget {
 
   Widget _buildPrimaryAction(BuildContext context, MediaItem media) {
     final scale = _scale(context);
+    media = context.withFreshWatchState(media);
     final hasProgress = media.hasActiveProgress;
     final minutesLeft = hasProgress && media.durationMs != null && media.viewOffsetMs != null
         ? ((media.durationMs! - media.viewOffsetMs!) / 60_000).round()

@@ -28,6 +28,18 @@ class OfflineModeProvider extends ChangeNotifier with DisposableChangeNotifierMi
   bool _lastOfflineState = false;
   bool _isInitialized = false;
 
+  /// Latest raw connectivity results. This provider owns the app's single
+  /// `Connectivity()` subscription; consumers needing the connection *type*
+  /// (e.g. the WiFi-reconnect sync trigger in main.dart) read it from here
+  /// instead of subscribing themselves.
+  List<ConnectivityResult> _lastConnectivityResults = const [];
+  bool _lastWifiOrEthernetState = false;
+
+  /// Whether the current connection is WiFi or Ethernet (unmetered-ish).
+  bool get hasWifiOrEthernet =>
+      _lastConnectivityResults.contains(ConnectivityResult.wifi) ||
+      _lastConnectivityResults.contains(ConnectivityResult.ethernet);
+
   /// True once [MultiServerManager] has emitted its first server-status
   /// snapshot. Until then we don't actually know whether any server is
   /// online — the binder hasn't finished its first connect yet — so we
@@ -98,6 +110,8 @@ class OfflineModeProvider extends ChangeNotifier with DisposableChangeNotifierMi
         const Duration(seconds: 3),
         onTimeout: () => [ConnectivityResult.other],
       );
+      _lastConnectivityResults = connectivityResult;
+      _lastWifiOrEthernetState = hasWifiOrEthernet;
       _hasNetworkConnection = !connectivityResult.contains(ConnectivityResult.none);
     } catch (e) {
       // connectivity_plus can throw PlatformException on Windows (NetworkManager::StartListen)
@@ -139,8 +153,18 @@ class OfflineModeProvider extends ChangeNotifier with DisposableChangeNotifierMi
       () {
         _connectivitySubscription = Connectivity().onConnectivityChanged.listen(
           (results) {
+            _lastConnectivityResults = results;
             _hasNetworkConnection = !results.contains(ConnectivityResult.none);
-            _notifyIfOfflineChanged();
+            // Notify on connection-type changes too (WiFi <-> cellular), not
+            // just offline flips — type consumers listen through this provider.
+            final wifiNow = hasWifiOrEthernet;
+            if (wifiNow != _lastWifiOrEthernetState) {
+              _lastWifiOrEthernetState = wifiNow;
+              _lastOfflineState = isOffline;
+              safeNotifyListeners();
+            } else {
+              _notifyIfOfflineChanged();
+            }
           },
           onError: (e) {
             _hasNetworkConnection = true;

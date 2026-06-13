@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
@@ -167,7 +166,7 @@ void main() {
       ),
     );
 
-    unawaited(showTvVirtualKeyboard(context: context, controller: controller));
+    showTvVirtualKeyboard(context: context, controller: controller);
     await tester.pumpAndSettle();
     expect(find.byType(Dialog), findsOneWidget);
 
@@ -208,14 +207,12 @@ Future<void> _pumpKeyboard(
     ),
   );
 
-  unawaited(
-    showTvVirtualKeyboard(
-      context: context,
-      controller: controller,
-      keyboardType: keyboardType,
-      maxLines: maxLines,
-      onSubmitted: onSubmitted,
-    ),
+  showTvVirtualKeyboard(
+    context: context,
+    controller: controller,
+    keyboardType: keyboardType,
+    maxLines: maxLines,
+    onSubmitted: onSubmitted,
   );
   await tester.pumpAndSettle();
 }

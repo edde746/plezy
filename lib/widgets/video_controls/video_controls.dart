@@ -156,6 +156,14 @@ bool shouldShowSkipMarkerButton({
   return hasFirstFrame && hasMarker && !hasPlayNextPrompt && (!skipButtonDismissed || controlsVisible);
 }
 
+typedef PlaybackSourceChangeCallback =
+    Future<void> Function({
+      int? newMediaIndex,
+      TranscodeQualityPreset? newPreset,
+      int? newAudioStreamId,
+      int? newSubtitleStreamId,
+    });
+
 class PlexVideoControls extends StatefulWidget {
   final Player player;
   final MediaItem metadata;
@@ -163,7 +171,6 @@ class PlexVideoControls extends StatefulWidget {
   final VoidCallback? onPrevious;
   final List<MediaVersion> availableVersions;
   final int selectedMediaIndex;
-  final String? selectedMediaSourceId;
   final TranscodeQualityPreset selectedQualityPreset;
   final bool serverSupportsTranscoding;
   final bool isTranscoding;
@@ -173,6 +180,7 @@ class PlexVideoControls extends StatefulWidget {
   final List<MediaSubtitleTrack> sourceSubtitleTracks;
   final int? selectedSubtitleStreamId;
   final int? sourcePartId;
+  final PlaybackSourceChangeCallback? onPlaybackSourceChanged;
   final int boxFitMode;
   final double videoZoomScale;
   final VoidCallback? onTogglePIPMode;
@@ -270,7 +278,6 @@ class PlexVideoControls extends StatefulWidget {
     this.onPrevious,
     this.availableVersions = const [],
     this.selectedMediaIndex = 0,
-    this.selectedMediaSourceId,
     this.selectedQualityPreset = TranscodeQualityPreset.original,
     this.serverSupportsTranscoding = false,
     this.isTranscoding = false,
@@ -280,6 +287,7 @@ class PlexVideoControls extends StatefulWidget {
     this.sourceSubtitleTracks = const [],
     this.selectedSubtitleStreamId,
     this.sourcePartId,
+    this.onPlaybackSourceChanged,
     this.boxFitMode = 0,
     this.videoZoomScale = 1.0,
     this.onTogglePIPMode,
@@ -328,6 +336,10 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
 
   late bool _lastControlsVisible;
   bool _isLoadingExtras = false;
+  // Item key the in-flight extras load belongs to, so a load for a swapped
+  // item can start while a stale one is still in flight (and the stale
+  // response is discarded).
+  String? _extrasLoadKey;
   List<MediaChapter> _chapters = [];
   bool _chaptersLoaded = false;
   bool _isFullscreen = false;
@@ -362,7 +374,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
   // Custom tap detection state (more reliable than Flutter's onDoubleTap)
   DateTime? _lastSkipTapTime;
   bool _lastSkipTapWasForward = true;
-  DateTime? _lastSkipActionTime; // Debounce: prevents double-tap counting as 2 skips
+  Timer? _feedbackHideTimer; // Removes the skip pill after its fade-out completes
   Timer? _singleTapTimer; // Timer for delayed single-tap action (toggle controls)
   final TwoFingerDoubleTapTracker _twoFingerDoubleTapTracker = TwoFingerDoubleTapTracker();
   DateTime? _suppressTouchTapUntil;
@@ -502,6 +514,19 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
       _lastControlsVisible = widget.chromeController.controlsVisible;
       widget.chromeController.addListener(_onChromeChanged);
     }
+    // The same controls instance survives in-place episode swaps — re-key
+    // the per-item chapters/markers/skip state when the item changes.
+    // (Quality/version switches keep the same item, so no refetch churn.)
+    if (oldWidget.metadata.globalKey != widget.metadata.globalKey) {
+      _setControlsState(() {
+        _chapters = [];
+        _chaptersLoaded = false;
+        _markers = [];
+        _markersLoaded = false;
+      });
+      _clearCurrentMarker();
+      _loadPlaybackExtras();
+    }
     _configureChromeController();
   }
 
@@ -511,11 +536,14 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
     widget.chromeController.removeListener(_onChromeChanged);
     widget.hasFirstFrame?.removeListener(_onFirstFrameReady);
     _feedbackTimer?.cancel();
+    _feedbackHideTimer?.cancel();
     _lockIconTimer?.cancel();
     _autoSkipTimer?.cancel();
     _skipButtonDismissTimer?.cancel();
     _singleTapTimer?.cancel();
     _seekThrottle.cancel();
+    // A player exit mid-scrub must not leak the hold into the route teardown.
+    widget.chromeController.release(PlayerChromeHold.scrub, notify: false, restartAutoHide: false);
     _playingSubscription?.cancel();
     _completedSubscription?.cancel();
     _positionSubscription?.cancel();

@@ -31,6 +31,12 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
   @override
   PlayerState get state => _state;
 
+  @override
+  Duration get currentPosition => Duration(milliseconds: _positionMs);
+
+  @override
+  bool get audioPassthroughActive => false;
+
   late final PlayerStreams _streams;
 
   @override
@@ -96,6 +102,35 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
         errorController.add(PlayerError(error.toString()));
       },
     );
+  }
+
+  /// The (name, format) registrations every backend makes at init — the
+  /// properties [handlePropertyChange] needs for core [PlayerState].
+  /// `track-list` is registered separately because mpv uses node format on
+  /// Apple platforms; backend-specific extras (mpv: secondary-sid /
+  /// demuxer-cache-state / audio-device*; ExoPlayer: demuxer-cache-time)
+  /// are appended by the subclasses.
+  static const List<(String, String)> corePropertyObservations = [
+    ('time-pos', 'double'),
+    ('duration', 'double'),
+    ('seekable', 'flag'),
+    ('pause', 'flag'),
+    ('paused-for-cache', 'flag'),
+    ('eof-reached', 'flag'),
+    ('volume', 'double'),
+    ('speed', 'double'),
+    ('aid', 'string'),
+    ('sid', 'string'),
+  ];
+
+  /// Register [corePropertyObservations] plus `track-list` in the
+  /// backend's preferred format. Called from each subclass's initialize.
+  @protected
+  Future<void> observeCoreProperties({required String trackListFormat}) async {
+    for (final (name, format) in corePropertyObservations) {
+      await observeProperty(name, format);
+    }
+    await observeProperty('track-list', trackListFormat);
   }
 
   @protected
@@ -543,7 +578,7 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
   }
 
   @override
-  Future<void> setDisplayCriteria(MediaDisplayCriteria? criteria) async {}
+  Future<void> setDisplayCriteria(MediaDisplayCriteria? criteria, {int extraDelayMs = 0}) async {}
 
   @override
   Future<bool> setVisible(bool visible, {bool restoreOnWindowVisible = false}) async {
@@ -569,6 +604,34 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
   Future<void> clearVideoFrameRate() async {}
 
   @override
+  // ignore: no-empty-block - base no-op, ExoPlayer styles subtitles natively
+  Future<void> setSubtitleStyle({
+    required double fontSize,
+    required String textColor,
+    required double borderSize,
+    required String borderColor,
+    required String bgColor,
+    required int bgOpacity,
+    int subtitlePosition = 100,
+    bool bold = false,
+    bool italic = false,
+  }) async {}
+
+  @override
+  // ignore: no-empty-block - base no-op, mpv scales via panscan/aspect-override
+  Future<void> setBoxFitMode(int mode) async {}
+
+  @override
+  // ignore: no-empty-block - base no-op, mpv zooms via the video-zoom property
+  Future<void> setVideoZoom(double scale) async {}
+
+  @override
+  Future<Map<String, dynamic>> getStats() async => const {};
+
+  @override
+  Future<String> runtimePlayerType() async => playerType;
+
+  @override
   Future<bool> requestAudioFocus() async {
     // Default returns true, overridden by Android
     return true;
@@ -586,12 +649,33 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
   bool get supportsSecondarySubtitles => true;
 
   @override
+  bool get attachesExternalSubtitlesAtOpen => false;
+
+  @override
+  bool get detectsFpsAfterRender => false;
+
+  @override
+  bool get needsDecoderRefreshAfterDisplaySwitch => false;
+
+  @override
+  bool get providesNativeStats => false;
+
+  @override
   // ignore: no-empty-block - base no-op, overridden by platform subclasses
   Future<void> selectSecondarySubtitleTrack(SubtitleTrack track) async {}
 
   @override
   // ignore: no-empty-block - base no-op, overridden by platform subclasses
   Future<void> setAudioPassthrough(bool enabled) async {}
+
+  /// mpv loudnorm targeting streaming-style loudness; mirrored by the
+  /// Android ExoPlayer effect parameters in AudioNormalizationEffect.kt.
+  static const _loudnormFilter = 'loudnorm=I=-14:TP=-3:LRA=4';
+
+  @override
+  Future<void> setAudioNormalization(bool enabled) async {
+    await setProperty('af', enabled ? _loudnormFilter : '');
+  }
 
   @override
   // ignore: no-empty-block - base no-op, overridden by platform subclasses
@@ -669,13 +753,27 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
   }
 
   @override
-  Future<void> dispose() async {
+  Future<void> dispose({bool preserveDisplayMode = false}) async {
     if (_disposed) return;
     _disposed = true;
 
-    await _eventSubscription?.cancel();
+    try {
+      await _eventSubscription?.cancel();
+    } on PlatformException catch (e, st) {
+      appLogger.d('Player event stream already detached during dispose', error: e, stackTrace: st);
+    } on MissingPluginException catch (e, st) {
+      appLogger.d('Player event stream plugin missing during dispose', error: e, stackTrace: st);
+    }
     await _logSubscription?.cancel();
-    await methodChannel.invokeMethod('dispose'); // Direct call — already guarded by _disposed check above
+    try {
+      await methodChannel.invokeMethod('dispose', {
+        'preserveDisplayMode': preserveDisplayMode,
+      }); // Direct call — already guarded by _disposed check above
+    } on PlatformException catch (e, st) {
+      appLogger.w('Player native dispose failed during teardown', error: e, stackTrace: st);
+    } on MissingPluginException catch (e, st) {
+      appLogger.w('Player native dispose plugin missing during teardown', error: e, stackTrace: st);
+    }
     await closeStreamControllers();
   }
 }

@@ -5,12 +5,19 @@ import 'app_logger.dart';
 
 class UdpBroadcastSocketSet {
   final List<RawDatagramSocket> _sockets;
+  final List<StreamSubscription<RawSocketEvent>> _subscriptions = [];
 
-  const UdpBroadcastSocketSet._(this._sockets);
+  UdpBroadcastSocketSet._(this._sockets);
 
   bool get isEmpty => _sockets.isEmpty;
 
   Iterable<RawDatagramSocket> get sockets => _sockets;
+
+  void listen(void Function(Datagram datagram) onDatagram, {required String debugLabel}) {
+    for (final socket in _sockets) {
+      _subscriptions.add(socket.listenDatagrams(onDatagram, debugLabel: debugLabel));
+    }
+  }
 
   void send(List<int> data, InternetAddress address, int port) {
     for (final socket in _sockets) {
@@ -22,10 +29,39 @@ class UdpBroadcastSocketSet {
     }
   }
 
-  void close() {
+  Future<void> close() async {
+    final subscriptions = List<StreamSubscription<RawSocketEvent>>.of(_subscriptions);
+    _subscriptions.clear();
+    for (final subscription in subscriptions) {
+      try {
+        await subscription.cancel();
+      } catch (e, st) {
+        appLogger.w('UDP datagram subscription cancel failed', error: e, stackTrace: st);
+      }
+    }
     for (final socket in _sockets) {
       socket.close();
     }
+  }
+}
+
+extension DatagramSocketListen on RawDatagramSocket {
+  StreamSubscription<RawSocketEvent> listenDatagrams(
+    void Function(Datagram datagram) onDatagram, {
+    required String debugLabel,
+  }) {
+    return listen(
+      (event) {
+        if (event != RawSocketEvent.read) return;
+        Datagram? datagram;
+        while ((datagram = receive()) != null) {
+          onDatagram(datagram!);
+        }
+      },
+      onError: (Object e, StackTrace st) {
+        appLogger.w('$debugLabel datagram socket error', error: e, stackTrace: st);
+      },
+    );
   }
 }
 

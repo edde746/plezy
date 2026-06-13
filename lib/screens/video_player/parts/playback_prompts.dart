@@ -6,8 +6,9 @@ extension _VideoPlayerPlaybackPromptMethods on VideoPlayerScreenState {
     // inter-segment gaps in the chunked MKV transcode stream.
     if (widget.isLive) return;
     if (!completed) return;
-    // Ignore spurious EOF from the old file during in-place episode swap
-    if (_isSwappingEpisode) return;
+    // Ignore spurious EOF from the old file during an in-place media-source
+    // transition (episode swap, transcode restart, channel switch).
+    if (_playbackTransition != _PlaybackTransition.idle) return;
 
     // mpv does not flip the `pause` property on EOF, so _onPlayingStateChanged
     // never fires false.  Normalize all playback-dependent state.
@@ -28,14 +29,14 @@ extension _VideoPlayerPlaybackPromptMethods on VideoPlayerScreenState {
     // End-of-video sleep timer takes precedence over autoplay / next-episode
     // dialogs: the user explicitly asked to stop after this item.
     final sleepTimerService = SleepTimerService();
-    if (sleepTimerService.isEndOfVideoMode && !_completionTriggered) {
-      _completionTriggered = true;
+    if (sleepTimerService.isEndOfVideoMode && !_completionLatch.triggered) {
+      _completionLatch.latch();
       sleepTimerService.notifyVideoCompleted();
       return;
     }
 
-    if (_nextEpisode != null && !_showPlayNextDialog && !_showStillWatchingPrompt && !_completionTriggered) {
-      _completionTriggered = true;
+    if (_nextEpisode != null && !_showPlayNextDialog && !_showStillWatchingPrompt && !_completionLatch.triggered) {
+      _completionLatch.latch();
 
       // PiP: skip dialog (user can't interact), auto-play immediately
       if (PipService().isPipActive.value) {
@@ -72,8 +73,8 @@ extension _VideoPlayerPlaybackPromptMethods on VideoPlayerScreenState {
       if (autoPlayEnabled) {
         _startAutoPlayTimer();
       }
-    } else if (_nextEpisode == null && !_completionTriggered) {
-      _completionTriggered = true;
+    } else if (_nextEpisode == null && !_completionLatch.triggered) {
+      _completionLatch.latch();
       unawaited(_handleBackButton());
     }
   }
@@ -108,14 +109,15 @@ extension _VideoPlayerPlaybackPromptMethods on VideoPlayerScreenState {
     });
   }
 
-  /// Re-arm the end-of-video latch so Play Next can fire again — but only when no
-  /// prompt is visible and no auto-play countdown is running, so we never clobber
-  /// an active dialog. Callers decide *when* it is safe to re-arm (media reloaded,
-  /// or playback moved back out of the end region).
+  /// Re-arm the end-of-video latch so Play Next can fire again. Callers
+  /// decide *when* it is safe to re-arm (media reloaded, or playback moved
+  /// back out of the end region); the latch itself refuses while a prompt
+  /// or countdown is active.
   void _rearmCompletionLatch() {
-    if (_completionTriggered && !_showPlayNextDialog && _autoPlayTimer?.isActive != true) {
-      _completionTriggered = false;
-    }
+    _completionLatch.rearmIfClear(
+      promptVisible: _showPlayNextDialog,
+      countdownActive: _autoPlayTimer?.isActive == true,
+    );
   }
 
   void _showStillWatchingDialog() {

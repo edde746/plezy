@@ -1,14 +1,40 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vibe_stream/i18n/strings.g.dart';
+import 'package:vibe_stream/media/ids.dart';
+import 'package:vibe_stream/media/media_backend.dart';
+import 'package:vibe_stream/media/media_item.dart';
+import 'package:vibe_stream/media/media_kind.dart';
+import 'package:vibe_stream/media/media_server_client.dart';
+import 'package:vibe_stream/media/server_capabilities.dart';
 import 'package:vibe_stream/mixins/refreshable.dart';
+import 'package:vibe_stream/providers/multi_server_provider.dart';
 import 'package:vibe_stream/screens/search_screen.dart';
+import 'package:vibe_stream/services/data_aggregation_service.dart';
+import 'package:vibe_stream/services/multi_server_manager.dart';
+import 'package:vibe_stream/services/settings_service.dart';
+import 'package:vibe_stream/theme/mono_theme.dart';
+import 'package:vibe_stream/utils/platform_detector.dart';
+import 'package:provider/provider.dart';
+
+import '../test_helpers/prefs.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  setUp(() {
+  setUpAll(() {
     LocaleSettings.setLocaleSync(AppLocale.en);
+  });
+
+  setUp(() async {
+    resetSharedPreferencesForTest();
+    SettingsService.resetForTesting();
+    await SettingsService.getInstance();
+  });
+
+  tearDown(() {
+    TvDetectionService.debugSetAppleTVOverride(null);
+    TvDetectionService.setForceTVSync(false);
   });
 
   testWidgets('stale callbacks are no-ops after SearchScreen is disposed', (tester) async {
@@ -36,4 +62,124 @@ void main() {
     expect(() => (state as FocusableTab).focusActiveTabIfReady(), returnsNormally);
     expect(tester.takeException(), isNull);
   });
+
+  testWidgets('TV OSK search key moves focus to the first result', (tester) async {
+    final (client, key) = await _pumpTvSearchScreen(tester);
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('tv_virtual_keyboard_panel')), findsOneWidget);
+
+    final state = key.currentState!;
+    (state as SearchInputFocusable).setSearchQuery('movie');
+    // rate_limiter's Debounce compares DateTime.now() against the fake-clock
+    // timer, so it never invokes under FakeAsync — run the search via
+    // refresh() (same _performSearch path) to get results behind the dialog.
+    (state as Refreshable).refresh();
+    await tester.pumpAndSettle();
+    expect(client.queries, ['movie']);
+    expect(find.text('Movie 1'), findsOneWidget);
+
+    await tester.tap(_keyboardDoneKey());
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('tv_virtual_keyboard_panel')), findsNothing);
+    expect(FocusManager.instance.primaryFocus?.debugLabel, 'SearchFirstResult');
+    expect(find.text('Movie 1'), findsOneWidget);
+
+    // Dispose the screen so its still-armed debounce timer is cancelled.
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
+
+  testWidgets('TV OSK search key before the debounce fires searches immediately', (tester) async {
+    final (client, key) = await _pumpTvSearchScreen(tester);
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('tv_virtual_keyboard_panel')), findsOneWidget);
+
+    (key.currentState! as SearchInputFocusable).setSearchQuery('movie');
+    await tester.pump(const Duration(milliseconds: 100));
+    expect(client.queries, isEmpty);
+
+    await tester.tap(_keyboardDoneKey());
+    await tester.pumpAndSettle();
+
+    expect(client.queries, ['movie']);
+    expect(find.byKey(const Key('tv_virtual_keyboard_panel')), findsNothing);
+    expect(FocusManager.instance.primaryFocus?.debugLabel, 'SearchFirstResult');
+  });
+}
+
+Future<(_FakeMediaServerClient, GlobalKey<State<SearchScreen>>)> _pumpTvSearchScreen(WidgetTester tester) async {
+  TvDetectionService.debugSetAppleTVOverride(null);
+  await TvDetectionService.getInstance(forceTv: true);
+  TvDetectionService.setForceTVSync(true);
+  tester.view.devicePixelRatio = 1.0;
+  tester.view.physicalSize = const Size(1280, 720);
+  addTearDown(() {
+    tester.view.resetDevicePixelRatio();
+    tester.view.resetPhysicalSize();
+  });
+
+  final client = _FakeMediaServerClient(
+    items: [
+      MediaItem(
+        id: 'movie_1',
+        backend: MediaBackend.plex,
+        kind: MediaKind.movie,
+        title: 'Movie 1',
+        serverId: 'server_1',
+        serverName: 'Server',
+      ),
+    ],
+  );
+  final manager = MultiServerManager()..debugRegisterClientForTesting(client);
+  final provider = MultiServerProvider(manager, DataAggregationService(manager));
+  addTearDown(provider.dispose);
+
+  final key = GlobalKey<State<SearchScreen>>();
+  await tester.pumpWidget(
+    TranslationProvider(
+      child: ChangeNotifierProvider<MultiServerProvider>.value(
+        value: provider,
+        child: MaterialApp(
+          theme: monoTheme(dark: true),
+          home: SearchScreen(key: key),
+        ),
+      ),
+    ),
+  );
+  return (client, key);
+}
+
+Finder _keyboardDoneKey() {
+  return find.descendant(
+    of: find.byKey(const Key('tv_virtual_keyboard_panel')),
+    matching: find.byIcon(Icons.search_rounded),
+  );
+}
+
+class _FakeMediaServerClient implements MediaServerClient {
+  final List<MediaItem> items;
+  final List<String> queries = [];
+
+  _FakeMediaServerClient({required this.items});
+
+  @override
+  ServerId get serverId => ServerId('server_1');
+
+  @override
+  String? get serverName => 'Server';
+
+  @override
+  MediaBackend get backend => MediaBackend.plex;
+
+  @override
+  ServerCapabilities get capabilities => ServerCapabilities.plex;
+
+  @override
+  Future<List<MediaItem>> searchItems(String query, {int limit = 100}) async {
+    queries.add(query);
+    return items;
+  }
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }

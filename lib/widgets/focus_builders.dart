@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../focus/card_focus_scope.dart';
 import '../focus/focus_glow_overlay.dart';
 import '../focus/focus_theme.dart';
 import '../focus/input_mode_tracker.dart';
@@ -75,9 +76,8 @@ class FocusBuilders {
     VoidCallback? onLongPress,
     double borderRadius = FocusTheme.defaultBorderRadius,
     double focusScale = FocusTheme.focusScale,
-    double focusBorderStrokeAlign = BorderSide.strokeAlignInside,
     bool useFocusGlow = false,
-    bool useForegroundFocusDecoration = false,
+    bool delegateFocusBorder = false,
     Size? glowSize,
     required Widget child,
   }) {
@@ -99,21 +99,16 @@ class FocusBuilders {
 
     final duration = FocusTheme.getAnimationDuration(context);
     final showFocus = isFocused && isKeyboardMode;
-    final focusDecoration = FocusTheme.focusDecoration(
-      context,
-      isFocused: showFocus,
-      borderRadius: borderRadius,
-      borderStrokeAlign: focusBorderStrokeAlign,
-    );
     // Glow (full-bleed cards) renders in an overlay above siblings so it stays
     // symmetric; the in-card decoration only carries the border.
-    Widget card = AnimatedContainer(
-      duration: duration,
-      curve: Curves.easeOutCubic,
-      decoration: useForegroundFocusDecoration ? null : focusDecoration,
-      foregroundDecoration: useForegroundFocusDecoration ? focusDecoration : null,
-      child: child,
-    );
+    Widget card = delegateFocusBorder
+        ? CardFocusScope(showFocus: showFocus, child: child)
+        : AnimatedContainer(
+            duration: duration,
+            curve: Curves.easeOutCubic,
+            decoration: FocusTheme.focusDecoration(context, isFocused: showFocus, borderRadius: borderRadius),
+            child: child,
+          );
     if (useFocusGlow) {
       card = FocusGlowOverlay(
         isFocused: showFocus,
@@ -164,9 +159,8 @@ class FocusBuilders {
     VoidCallback? onLongPress,
     double borderRadius = FocusTheme.defaultBorderRadius,
     double focusScale = FocusTheme.focusScale,
-    double focusBorderStrokeAlign = BorderSide.strokeAlignInside,
     bool useFocusGlow = false,
-    bool useForegroundFocusDecoration = false,
+    bool delegateFocusBorder = false,
     Size? glowSize,
     required Widget child,
   }) {
@@ -179,9 +173,8 @@ class FocusBuilders {
       onLongPress: onLongPress,
       borderRadius: borderRadius,
       focusScale: focusScale,
-      focusBorderStrokeAlign: focusBorderStrokeAlign,
       useFocusGlow: useFocusGlow,
-      useForegroundFocusDecoration: useForegroundFocusDecoration,
+      delegateFocusBorder: delegateFocusBorder,
       glowSize: glowSize,
       child: child,
     );

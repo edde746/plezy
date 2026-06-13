@@ -2,7 +2,7 @@ part of '../../jellyfin_client.dart';
 
 mixin _JellyfinMetadataEditMethods on MediaServerCacheMixin {
   JellyfinConnection get connection;
-  MediaServerHttpClient get _http;
+  FailoverHttpClient get _http;
 
   Future<Map<String, dynamic>?> fetchEditableMetadataItem(String itemId) async {
     if (isOfflineMode) return null;

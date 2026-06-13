@@ -126,6 +126,68 @@ void main() {
     expect(find.byType(PinEntryDialog), findsNothing);
   });
 
+  testWidgets('mobile auto-submit after external dismiss does not pop route below PIN dialog', (tester) async {
+    TvDetectionService.debugSetAppleTVOverride(false);
+    final navigatorKey = GlobalKey<NavigatorState>();
+    String? pinResult = 'unchanged';
+    bool? boolRouteResult;
+
+    await tester.pumpWidget(
+      MaterialApp(
+        navigatorKey: navigatorKey,
+        theme: ThemeData(platform: TargetPlatform.iOS),
+        home: Builder(
+          builder: (context) {
+            return Scaffold(
+              body: TextButton(
+                onPressed: () async {
+                  boolRouteResult = await Navigator.of(context).push<bool>(
+                    MaterialPageRoute(
+                      builder: (routeContext) {
+                        return Scaffold(
+                          body: Column(
+                            children: [
+                              const Text('External Bool Route'),
+                              TextButton(
+                                onPressed: () async {
+                                  pinResult = await showPinEntryDialog(routeContext, 'Protected Profile');
+                                },
+                                child: const Text('Open External PIN'),
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
+                  );
+                },
+                child: const Text('Open External Bool Route'),
+              ),
+            );
+          },
+        ),
+      ),
+    );
+
+    await tester.tap(find.text('Open External Bool Route'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Open External PIN'));
+    await tester.pumpAndSettle();
+
+    final field = find.byType(TextField);
+    await tester.showKeyboard(field);
+    await tester.enterText(field, '1234');
+    navigatorKey.currentState!.pop();
+    await tester.pump();
+    await tester.pumpAndSettle();
+
+    expect(tester.takeException(), isNull);
+    expect(pinResult, isNull);
+    expect(boolRouteResult, isNull);
+    expect(find.text('External Bool Route'), findsOneWidget);
+    expect(find.byType(PinEntryDialog), findsNothing);
+  });
+
   testWidgets('D-pad keypad enters and submits PIN', (tester) async {
     TvDetectionService.debugSetAppleTVOverride(true);
     String? result;

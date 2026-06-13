@@ -1,3 +1,4 @@
+import 'package:flutter/gestures.dart' show DragStartBehavior;
 import 'package:flutter/material.dart';
 import '../../../media/media_source_info.dart';
 import '../../../mpv/models.dart';
@@ -6,6 +7,7 @@ import '../../../focus/focusable_wrapper.dart';
 import '../../../focus/input_mode_tracker.dart';
 import '../../../services/scrub_preview_source.dart';
 import '../../../utils/formatters.dart';
+import '../helpers/eager_horizontal_drag_recognizer.dart';
 import '../painters/buffer_range_painter.dart';
 
 /// Timeline slider with chapter markers for video playback
@@ -75,11 +77,69 @@ class _TimelineSliderState extends State<TimelineSlider> {
   ScrubFrame? _hoverFrame;
   Object? _hoverFrameKey;
   bool _isFocused = false;
+  bool _scrubbing = false;
 
   // Must match the slider track inset: max(overlayRadius, thumbRadius)
   static const _sliderPadding = 0.0;
 
   static const _thumbWidth = 160.0;
+
+  @override
+  void didUpdateWidget(TimelineSlider oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.enabled && !widget.enabled && _scrubbing) {
+      // The gestures map is only registered while enabled, so the swap
+      // disposes the recognizer without firing onCancel; finalize after this
+      // frame so the parent isn't notified mid-build.
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _handleScrubEnd();
+      });
+    }
+  }
+
+  void _handleScrubStart(DragStartDetails details, BuildContext sliderContext) {
+    if (widget.duration.inMilliseconds <= 0) return;
+    _scrubbing = true;
+    _applyScrub(details.localPosition.dx, sliderContext);
+  }
+
+  void _handleScrubUpdate(DragUpdateDetails details, BuildContext sliderContext) {
+    if (!_scrubbing) return;
+    _applyScrub(details.localPosition.dx, sliderContext);
+  }
+
+  void _applyScrub(double dx, BuildContext sliderContext) {
+    final durationMs = widget.duration.inMilliseconds;
+    final trackWidth = _sliderWidthOf(sliderContext) - 2 * _sliderPadding;
+    if (durationMs <= 0 || trackWidth <= 0) return;
+    final fraction = ((dx - _sliderPadding) / trackWidth).clamp(0.0, 1.0);
+    final value = fraction * durationMs;
+    setState(() => _dragValue = value);
+    widget.onSeek(Duration(milliseconds: value.round()));
+  }
+
+  /// Shared by onEnd and onCancel: a cancelled scrub still finalizes at the
+  /// last position (Material Slider parity) so `_dragValue` is never stuck.
+  void _handleScrubEnd() {
+    if (!_scrubbing) return;
+    _scrubbing = false;
+    final value = _dragValue;
+    setState(() => _dragValue = null);
+    if (value != null) widget.onSeekEnd(Duration(milliseconds: value.round()));
+  }
+
+  /// Discrete a11y step (VoiceOver/TalkBack swipe): a complete seek.
+  void _semanticSeekBy(Duration delta) {
+    final durationMs = widget.duration.inMilliseconds;
+    if (durationMs <= 0) return;
+    final base = _dragValue ?? widget.position.inMilliseconds.toDouble();
+    final target = (base + delta.inMilliseconds).clamp(0.0, durationMs.toDouble());
+    widget.onSeekEnd(Duration(milliseconds: target.round()));
+  }
+
+  // Keeps the visual Slider in its enabled style; real input goes through the
+  // eager scrub recognizer above it.
+  static void _noopSliderChanged(double _) {}
 
   Object? _scrubFrameKey(ScrubFrame? frame) {
     return switch (frame) {
@@ -230,74 +290,108 @@ class _TimelineSliderState extends State<TimelineSlider> {
             _mousePosition != null ||
             (widget.showKeyRepeatThumbnail && widget.thumbnailDataBuilder != null));
 
-    Widget buildSlider(Widget? tooltip) {
-      return Stack(
-        clipBehavior: Clip.none,
-        alignment: .center,
-        children: [
-          // Buffer range + segmented background track (with chapter gaps)
-          Positioned.fill(
-            child: IgnorePointer(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: _sliderPadding),
-                child: CustomPaint(
-                  painter: BufferRangePainter(
-                    ranges: widget.bufferRanges,
-                    duration: widget.duration,
-                    chapters: widget.chaptersLoaded && widget.showChapterMarkersOnTimeline ? widget.chapters : const [],
+    // The element tree below is structurally identical on every build: an
+    // in-flight drag must never be disposed mid-gesture by a tree flip, and
+    // the eager recognizer claims the arena at pointer-down so ancestor
+    // recognizers (content-strip swipe, long-press 2x) can't steal a scrub
+    // (#1302). The Material Slider is visual-only.
+    Widget slider = Builder(
+      builder: (sliderContext) => RawGestureDetector(
+        behavior: HitTestBehavior.opaque,
+        excludeFromSemantics: true,
+        gestures: widget.enabled
+            ? <Type, GestureRecognizerFactory>{
+                EagerHorizontalDragGestureRecognizer:
+                    GestureRecognizerFactoryWithHandlers<EagerHorizontalDragGestureRecognizer>(
+                      () =>
+                          EagerHorizontalDragGestureRecognizer(debugOwner: this)
+                            ..dragStartBehavior = DragStartBehavior.down,
+                      (instance) {
+                        instance.onStart = (details) => _handleScrubStart(details, sliderContext);
+                        instance.onUpdate = (details) => _handleScrubUpdate(details, sliderContext);
+                        instance.onEnd = (_) => _handleScrubEnd();
+                        instance.onCancel = _handleScrubEnd;
+                      },
+                    ),
+              }
+            : const <Type, GestureRecognizerFactory>{},
+        child: Stack(
+          clipBehavior: Clip.none,
+          alignment: .center,
+          children: [
+            // Buffer range + segmented background track (with chapter gaps)
+            Positioned.fill(
+              child: IgnorePointer(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: _sliderPadding),
+                  child: CustomPaint(
+                    painter: BufferRangePainter(
+                      ranges: widget.bufferRanges,
+                      duration: widget.duration,
+                      chapters: widget.chaptersLoaded && widget.showChapterMarkersOnTimeline
+                          ? widget.chapters
+                          : const [],
+                    ),
                   ),
                 ),
               ),
             ),
-          ),
-          // Slider - use IgnorePointer to block interaction while preserving visual style
-          IgnorePointer(
-            ignoring: !widget.enabled,
-            child: SliderTheme(
-              data: SliderTheme.of(context).copyWith(
-                trackHeight: 8,
-                trackGap: 0,
-                padding: .zero,
-                overlayShape: const RoundSliderOverlayShape(overlayRadius: 0),
-                tickMarkShape: SliderTickMarkShape.noTickMark,
-                thumbSize: WidgetStatePropertyAll(
-                  (!InputModeTracker.isKeyboardMode(context) || _isFocused) ? const Size(4, 20) : Size.zero,
-                ),
+            Semantics(
+              label: t.videoControls.timelineSlider,
+              slider: true,
+              value: formatDurationTimestamp(displayPosition),
+              increasedValue: formatDurationTimestamp(
+                Duration(milliseconds: (displayValue + 10000).clamp(0.0, max).round()),
               ),
-              child: Semantics(
-                label: t.videoControls.timelineSlider,
-                slider: true,
-                child: Slider(
-                  value: displayValue,
-                  min: 0.0,
-                  max: max,
-                  onChanged: (value) {
-                    setState(() => _dragValue = value);
-                    widget.onSeek(Duration(milliseconds: value.toInt()));
-                  },
-                  onChangeEnd: (value) {
-                    setState(() => _dragValue = null);
-                    widget.onSeekEnd(Duration(milliseconds: value.toInt()));
-                  },
-                  activeColor: Colors.white,
-                  inactiveColor: Colors.transparent,
+              decreasedValue: formatDurationTimestamp(
+                Duration(milliseconds: (displayValue - 10000).clamp(0.0, max).round()),
+              ),
+              enabled: widget.enabled,
+              onIncrease: widget.enabled && durationMs > 0 ? () => _semanticSeekBy(const Duration(seconds: 10)) : null,
+              onDecrease: widget.enabled && durationMs > 0 ? () => _semanticSeekBy(const Duration(seconds: -10)) : null,
+              child: ExcludeSemantics(
+                child: IgnorePointer(
+                  child: SliderTheme(
+                    data: SliderTheme.of(context).copyWith(
+                      trackHeight: 8,
+                      trackGap: 0,
+                      padding: .zero,
+                      overlayShape: const RoundSliderOverlayShape(overlayRadius: 0),
+                      tickMarkShape: SliderTickMarkShape.noTickMark,
+                      thumbSize: WidgetStatePropertyAll(
+                        (!InputModeTracker.isKeyboardMode(context) || _isFocused) ? const Size(4, 20) : Size.zero,
+                      ),
+                    ),
+                    child: Slider(
+                      value: displayValue,
+                      min: 0.0,
+                      max: max,
+                      onChanged: _noopSliderChanged,
+                      activeColor: Colors.white,
+                      inactiveColor: Colors.transparent,
+                    ),
+                  ),
                 ),
               ),
             ),
-          ),
-          ?tooltip,
-        ],
-      );
-    }
-
-    Widget slider = hasTooltip
-        ? LayoutBuilder(
-            builder: (context, constraints) {
-              final tooltip = _buildActiveTooltip(constraints.maxWidth, durationMs, displayValue, displayPosition);
-              return buildSlider(tooltip);
-            },
-          )
-        : buildSlider(null);
+            // Tooltip layer: a permanent child so showing/hiding the tooltip
+            // never changes the structure around the slider.
+            Positioned.fill(
+              child: IgnorePointer(
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    final tooltip = hasTooltip
+                        ? _buildActiveTooltip(constraints.maxWidth, durationMs, displayValue, displayPosition)
+                        : null;
+                    return Stack(clipBehavior: Clip.none, children: [?tooltip]);
+                  },
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
 
     // Wrap with FocusableWrapper when focusNode is provided
     if (widget.focusNode != null) {

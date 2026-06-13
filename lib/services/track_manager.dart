@@ -271,7 +271,7 @@ class TrackManager {
     if (isActive()) {
       final label = next.id == 'no'
           ? 'Subtitles: Off'
-          : 'Subtitles: ${TrackLabelBuilder.buildSubtitleLabel(title: next.title, language: next.language, codec: next.codec, index: nextIndex)}';
+          : 'Subtitles: ${TrackLabelBuilder.subtitleLabel(title: next.title, language: next.language, codec: next.codec, forced: next.isForced, index: nextIndex).joined}';
       showMessage?.call(label, duration: const Duration(seconds: 1));
     }
   }
@@ -290,7 +290,7 @@ class TrackManager {
 
     if (isActive()) {
       final label =
-          'Audio: ${TrackLabelBuilder.buildAudioLabel(title: next.title, language: next.language, codec: next.codec, channelsCount: next.channelsCount, index: nextIndex)}';
+          'Audio: ${TrackLabelBuilder.audioLabel(title: next.title, language: next.language, codec: next.codec, channels: next.channelsCount, index: nextIndex).joined}';
       showMessage?.call(label, duration: const Duration(seconds: 1));
     }
   }

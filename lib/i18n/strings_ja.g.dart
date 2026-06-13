@@ -115,7 +115,6 @@ class _TranslationsAuthJa extends TranslationsAuthEn {
 	@override String get or => 'または';
 	@override String get connectToJellyfin => 'Jellyfinに接続';
 	@override String get useQuickConnect => 'Quick Connect を使う';
-	@override String get quickConnectCode => 'Quick Connect コード';
 	@override String get quickConnectInstructions => 'JellyfinでQuick Connectを開き、このコードを入力してください。';
 	@override String get quickConnectWaiting => '承認を待っています…';
 	@override String get quickConnectCancel => 'キャンセル';
@@ -245,6 +244,9 @@ class _TranslationsSettingsJa extends TranslationsSettingsEn {
 	@override String get gridView => 'グリッド';
 	@override String get listView => 'リスト';
 	@override String get showHeroSection => 'ヒーローセクションを表示';
+	@override String get continueWatchingAction => '視聴中の操作';
+	@override String get continueWatchingPlay => '再生';
+	@override String get continueWatchingDetails => '詳細を開く';
 	@override String get useGlobalHubs => 'ホームレイアウトを使用';
 	@override String get useGlobalHubsDescription => '統合ホームハブを表示します。オフの場合はライブラリのおすすめを使用します。';
 	@override String get showServerNameOnHubs => 'ハブにサーバー名を表示';
@@ -261,6 +263,8 @@ class _TranslationsSettingsJa extends TranslationsSettingsEn {
 	@override String get showSeasonPostersOnTabsDescription => '各シーズンのポスターをタブの上に表示します';
 	@override String get tvFullCardLayout => 'フルTVカード';
 	@override String get tvFullCardLayoutDescription => 'TVカードを画像のみで表示し、俳優名を重ねて表示します';
+	@override String get focusGlow => 'フォーカス時の光彩';
+	@override String get focusGlowDescription => 'フォーカス中のカードの周りに柔らかい光彩を表示します';
 	@override String get hideSpoilers => '未視聴エピソードのネタバレを非表示';
 	@override String get hideSpoilersDescription => '未視聴エピソードのサムネイルと説明をぼかします';
 	@override String get playerBackend => 'プレーヤーバックエンド';
@@ -492,8 +496,8 @@ class _TranslationsMediaMenuJa extends TranslationsMediaMenuEn {
 	@override String get markAsWatched => '視聴済みにする';
 	@override String get markAsUnwatched => '未視聴にする';
 	@override String get removeFromContinueWatching => '視聴中から削除';
+	@override String get viewDetails => '詳細を表示';
 	@override String get goToSeries => 'シリーズへ移動';
-	@override String get goToSeason => 'シーズンへ移動';
 	@override String get shufflePlay => 'シャッフル再生';
 	@override String get shuffleNotAvailableOffline => 'オフラインではシャッフルを利用できません';
 	@override String get fileInfo => 'ファイル情報';
@@ -673,7 +677,6 @@ class _TranslationsMessagesJa extends TranslationsMessagesEn {
 	@override String get fileInfoNotAvailable => 'ファイル情報が利用できません';
 	@override String errorLoadingFileInfo({required Object error}) => 'ファイル情報の読み込みエラー: ${error}';
 	@override String get errorLoadingSeries => 'シリーズの読み込みエラー';
-	@override String get errorLoadingSeason => 'シーズンの読み込みエラー';
 	@override String get musicNotSupported => '音楽の再生はまだサポートされていません';
 	@override String get noDescriptionAvailable => '説明はありません';
 	@override String get noProfilesAvailable => '利用可能なプロフィールがありません';
@@ -727,6 +730,9 @@ class _TranslationsSubtitlingStylingJa extends TranslationsSubtitlingStylingEn {
 	@override String get assOverride => 'ASSオーバーライド';
 	@override String get bold => '太字';
 	@override String get italic => '斜体';
+	@override String get renderResolution => 'レンダリング解像度';
+	@override String get renderResolutionScreen => '画面解像度';
+	@override String get renderResolutionVideo => '動画解像度';
 }
 
 // Path: mpvConfig
@@ -1598,10 +1604,8 @@ class _TranslationsAddServerJa extends TranslationsAddServerEn {
 
 	// Translations
 	@override String get addJellyfinTitle => 'Jellyfinサーバーを追加';
-	@override String get jellyfinUrlIntro => 'サーバーURLを入力してください。例: `https://jellyfin.example.com`。';
-	@override String get jellyfinUrlsIntro => 'サーバーURLを1つ以上、カンマで区切って入力してください。Vibeは到達可能なURLのうち最も低遅延のものを使用します。';
-	@override String get serverUrl => 'サーバーURL';
 	@override String get serverUrls => 'サーバーURL';
+	@override String get serverUrlsHelper => '複数のURLをカンマ区切りで入力できます。';
 	@override String get findServer => 'サーバーを検索';
 	@override String get searchingLocalServers => 'ローカル Jellyfin サーバーを検索中...';
 	@override String get localServers => 'ローカル Jellyfin サーバー';
@@ -1614,17 +1618,12 @@ class _TranslationsAddServerJa extends TranslationsAddServerEn {
 	@override String signInFailed({required Object error}) => 'サインインに失敗しました: ${error}';
 	@override String quickConnectFailed({required Object error}) => 'Quick Connectに失敗しました: ${error}';
 	@override String get addPlexTitle => 'Plexでサインイン';
-	@override String get plexAuthIntro => 'ブラウザまたはQRコードでサインインします。';
-	@override String get plexQRPrompt => 'このQRコードをスキャンしてサインインしてください。';
-	@override String get waitingForPlexConfirmation => 'plex.tvがサインインを確認するのを待っています…';
 	@override String get pinExpired => 'サインイン前にPINの有効期限が切れました。もう一度お試しください。';
 	@override String get duplicatePlexAccount => 'すでにPlexにサインインしています。アカウントを切り替えるにはサインアウトしてください。';
 	@override String failedToRegisterAccount({required Object error}) => 'アカウントの登録に失敗しました: ${error}';
 	@override String get enterJellyfinUrlError => 'JellyfinサーバーのURLを入力してください';
 	@override String get addConnectionTitle => '接続を追加';
 	@override String addConnectionTitleScoped({required Object name}) => '${name}に追加';
-	@override String get addConnectionIntroGlobal => '別のメディアサーバーを追加します。PlexとJellyfinはホームに一緒に表示されます。';
-	@override String get addConnectionIntroScoped => '新しいサーバーを追加するか、別のプロファイルから借りてください。';
 	@override String get signInWithPlexCard => 'Plexでサインイン';
 	@override String get signInWithPlexCardSubtitle => 'このデバイスを承認します。共有サーバーが追加されます。';
 	@override String get signInWithPlexCardSubtitleScoped => 'Plexアカウントを承認します。Homeユーザーはプロフィールになります。';
@@ -1933,7 +1932,6 @@ extension on TranslationsJa {
 			'auth.or' => 'または',
 			'auth.connectToJellyfin' => 'Jellyfinに接続',
 			'auth.useQuickConnect' => 'Quick Connect を使う',
-			'auth.quickConnectCode' => 'Quick Connect コード',
 			'auth.quickConnectInstructions' => 'JellyfinでQuick Connectを開き、このコードを入力してください。',
 			'auth.quickConnectWaiting' => '承認を待っています…',
 			'auth.quickConnectCancel' => 'キャンセル',
@@ -2027,6 +2025,9 @@ extension on TranslationsJa {
 			'settings.gridView' => 'グリッド',
 			'settings.listView' => 'リスト',
 			'settings.showHeroSection' => 'ヒーローセクションを表示',
+			'settings.continueWatchingAction' => '視聴中の操作',
+			'settings.continueWatchingPlay' => '再生',
+			'settings.continueWatchingDetails' => '詳細を開く',
 			'settings.useGlobalHubs' => 'ホームレイアウトを使用',
 			'settings.useGlobalHubsDescription' => '統合ホームハブを表示します。オフの場合はライブラリのおすすめを使用します。',
 			'settings.showServerNameOnHubs' => 'ハブにサーバー名を表示',
@@ -2043,6 +2044,8 @@ extension on TranslationsJa {
 			'settings.showSeasonPostersOnTabsDescription' => '各シーズンのポスターをタブの上に表示します',
 			'settings.tvFullCardLayout' => 'フルTVカード',
 			'settings.tvFullCardLayoutDescription' => 'TVカードを画像のみで表示し、俳優名を重ねて表示します',
+			'settings.focusGlow' => 'フォーカス時の光彩',
+			'settings.focusGlowDescription' => 'フォーカス中のカードの周りに柔らかい光彩を表示します',
 			'settings.hideSpoilers' => '未視聴エピソードのネタバレを非表示',
 			'settings.hideSpoilersDescription' => '未視聴エピソードのサムネイルと説明をぼかします',
 			'settings.playerBackend' => 'プレーヤーバックエンド',
@@ -2262,8 +2265,8 @@ extension on TranslationsJa {
 			'mediaMenu.markAsWatched' => '視聴済みにする',
 			'mediaMenu.markAsUnwatched' => '未視聴にする',
 			'mediaMenu.removeFromContinueWatching' => '視聴中から削除',
+			'mediaMenu.viewDetails' => '詳細を表示',
 			'mediaMenu.goToSeries' => 'シリーズへ移動',
-			'mediaMenu.goToSeason' => 'シーズンへ移動',
 			'mediaMenu.shufflePlay' => 'シャッフル再生',
 			'mediaMenu.shuffleNotAvailableOffline' => 'オフラインではシャッフルを利用できません',
 			'mediaMenu.fileInfo' => 'ファイル情報',
@@ -2395,7 +2398,6 @@ extension on TranslationsJa {
 			'messages.fileInfoNotAvailable' => 'ファイル情報が利用できません',
 			'messages.errorLoadingFileInfo' => ({required Object error}) => 'ファイル情報の読み込みエラー: ${error}',
 			'messages.errorLoadingSeries' => 'シリーズの読み込みエラー',
-			'messages.errorLoadingSeason' => 'シーズンの読み込みエラー',
 			'messages.musicNotSupported' => '音楽の再生はまだサポートされていません',
 			'messages.noDescriptionAvailable' => '説明はありません',
 			'messages.noProfilesAvailable' => '利用可能なプロフィールがありません',
@@ -2430,11 +2432,11 @@ extension on TranslationsJa {
 			'subtitlingStyling.text' => 'テキスト',
 			'subtitlingStyling.border' => '枠線',
 			'subtitlingStyling.background' => '背景',
+			_ => null,
+		} ?? switch (path) {
 			'subtitlingStyling.fontSize' => 'フォントサイズ',
 			'subtitlingStyling.textColor' => 'テキストの色',
 			'subtitlingStyling.borderSize' => '枠線サイズ',
-			_ => null,
-		} ?? switch (path) {
 			'subtitlingStyling.borderColor' => '枠線の色',
 			'subtitlingStyling.backgroundOpacity' => '背景の不透明度',
 			'subtitlingStyling.backgroundColor' => '背景色',
@@ -2442,6 +2444,9 @@ extension on TranslationsJa {
 			'subtitlingStyling.assOverride' => 'ASSオーバーライド',
 			'subtitlingStyling.bold' => '太字',
 			'subtitlingStyling.italic' => '斜体',
+			'subtitlingStyling.renderResolution' => 'レンダリング解像度',
+			'subtitlingStyling.renderResolutionScreen' => '画面解像度',
+			'subtitlingStyling.renderResolutionVideo' => '動画解像度',
 			'mpvConfig.title' => 'mpv.conf',
 			'mpvConfig.description' => '高度な動画プレーヤー設定',
 			'mpvConfig.presets' => 'プリセット',
@@ -2941,14 +2946,14 @@ extension on TranslationsJa {
 			'companionRemote.remote.retryNow' => '今すぐ再試行',
 			'companionRemote.remote.tabRemote' => 'リモート',
 			'companionRemote.remote.tabPlay' => '再生',
+			_ => null,
+		} ?? switch (path) {
 			'companionRemote.remote.tabMore' => 'その他',
 			'companionRemote.remote.menu' => 'メニュー',
 			'companionRemote.remote.tabNavigation' => 'タブナビゲーション',
 			'companionRemote.remote.tabDiscover' => '探す',
 			'companionRemote.remote.tabLibraries' => 'ライブラリ',
 			'companionRemote.remote.tabSearch' => '検索',
-			_ => null,
-		} ?? switch (path) {
 			'companionRemote.remote.tabDownloads' => 'ダウンロード',
 			'companionRemote.remote.tabSettings' => '設定',
 			'companionRemote.remote.previous' => '前へ',
@@ -3162,10 +3167,8 @@ extension on TranslationsJa {
 			'trackers.libraryFilter.libraries' => 'ライブラリ',
 			'trackers.libraryFilter.noLibraries' => '利用できるライブラリがありません',
 			'addServer.addJellyfinTitle' => 'Jellyfinサーバーを追加',
-			'addServer.jellyfinUrlIntro' => 'サーバーURLを入力してください。例: `https://jellyfin.example.com`。',
-			'addServer.jellyfinUrlsIntro' => 'サーバーURLを1つ以上、カンマで区切って入力してください。Vibeは到達可能なURLのうち最も低遅延のものを使用します。',
-			'addServer.serverUrl' => 'サーバーURL',
 			'addServer.serverUrls' => 'サーバーURL',
+			'addServer.serverUrlsHelper' => '複数のURLをカンマ区切りで入力できます。',
 			'addServer.findServer' => 'サーバーを検索',
 			'addServer.searchingLocalServers' => 'ローカル Jellyfin サーバーを検索中...',
 			'addServer.localServers' => 'ローカル Jellyfin サーバー',
@@ -3178,17 +3181,12 @@ extension on TranslationsJa {
 			'addServer.signInFailed' => ({required Object error}) => 'サインインに失敗しました: ${error}',
 			'addServer.quickConnectFailed' => ({required Object error}) => 'Quick Connectに失敗しました: ${error}',
 			'addServer.addPlexTitle' => 'Plexでサインイン',
-			'addServer.plexAuthIntro' => 'ブラウザまたはQRコードでサインインします。',
-			'addServer.plexQRPrompt' => 'このQRコードをスキャンしてサインインしてください。',
-			'addServer.waitingForPlexConfirmation' => 'plex.tvがサインインを確認するのを待っています…',
 			'addServer.pinExpired' => 'サインイン前にPINの有効期限が切れました。もう一度お試しください。',
 			'addServer.duplicatePlexAccount' => 'すでにPlexにサインインしています。アカウントを切り替えるにはサインアウトしてください。',
 			'addServer.failedToRegisterAccount' => ({required Object error}) => 'アカウントの登録に失敗しました: ${error}',
 			'addServer.enterJellyfinUrlError' => 'JellyfinサーバーのURLを入力してください',
 			'addServer.addConnectionTitle' => '接続を追加',
 			'addServer.addConnectionTitleScoped' => ({required Object name}) => '${name}に追加',
-			'addServer.addConnectionIntroGlobal' => '別のメディアサーバーを追加します。PlexとJellyfinはホームに一緒に表示されます。',
-			'addServer.addConnectionIntroScoped' => '新しいサーバーを追加するか、別のプロファイルから借りてください。',
 			'addServer.signInWithPlexCard' => 'Plexでサインイン',
 			'addServer.signInWithPlexCardSubtitle' => 'このデバイスを承認します。共有サーバーが追加されます。',
 			'addServer.signInWithPlexCardSubtitleScoped' => 'Plexアカウントを承認します。Homeユーザーはプロフィールになります。',

@@ -12,6 +12,10 @@ mixin ContextMenuTapMixin<T extends StatefulWidget> on State<T> {
     _tapPosition = details.globalPosition;
   }
 
+  /// Last stored tap position, for menus shown outside [MediaContextMenu]
+  /// (null when activated via keyboard/gamepad).
+  Offset? get lastTapPosition => _tapPosition;
+
   bool get isContextMenuOpen => contextMenuKey.currentState?.isContextMenuOpen ?? false;
 
   /// Show at the last tap position (long-press, mouse).

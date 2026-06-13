@@ -47,7 +47,7 @@ extension _VideoPlayerBuildMethods on VideoPlayerScreenState {
     });
   }
 
-  int? _selectedSourceSubtitleStreamId(List<MediaSubtitleTrack> tracks) {
+  int? _selectedSourceSubtitleStreamIdForControls(List<MediaSubtitleTrack> tracks) {
     if (tracks.isEmpty) return null;
     for (final track in tracks) {
       if (track.selected) return track.id;
@@ -248,7 +248,6 @@ extension _VideoPlayerBuildMethods on VideoPlayerScreenState {
                         onPrevious: onPrevious,
                         availableVersions: _availableVersions,
                         selectedMediaIndex: _effectiveSelectedMediaIndex,
-                        selectedMediaSourceId: widget.selectedMediaSourceId,
                         selectedQualityPreset: _selectedQualityPreset,
                         serverSupportsTranscoding: _serverSupportsTranscoding,
                         isTranscoding: _isTranscoding,
@@ -256,8 +255,9 @@ extension _VideoPlayerBuildMethods on VideoPlayerScreenState {
                         sourceAudioTracks: sourceAudioTracks,
                         selectedAudioStreamId: _selectedAudioStreamId,
                         sourceSubtitleTracks: sourceSubtitleTracks,
-                        selectedSubtitleStreamId: _selectedSourceSubtitleStreamId(sourceSubtitleTracks),
+                        selectedSubtitleStreamId: _selectedSourceSubtitleStreamIdForControls(sourceSubtitleTracks),
                         sourcePartId: _currentMediaInfo?.partId,
+                        onPlaybackSourceChanged: _switchPlaybackSource,
                         onTogglePIPMode: _togglePIPMode,
                         boxFitMode: _videoFilterManager?.boxFitMode ?? 0,
                         videoZoomScale: _videoFilterManager?.zoomScale ?? 1.0,
@@ -285,14 +285,14 @@ extension _VideoPlayerBuildMethods on VideoPlayerScreenState {
                         onShaderChanged: () => _setPlayerState(() {}),
                         thumbnailDataBuilder: _scrubPreviewSource?.isAvailable == true ? _getThumbnailData : null,
                         isLive: widget.isLive,
-                        liveChannelName: _liveChannelName,
-                        captureBuffer: _captureBuffer,
-                        isAtLiveEdge: _isAtLiveEdge,
-                        streamStartEpoch: _streamStartEpoch,
+                        liveChannelName: _live.channelName,
+                        captureBuffer: _live.captureBuffer,
+                        isAtLiveEdge: _live.atLiveEdge,
+                        streamStartEpoch: _live.streamStartEpoch,
                         currentPositionEpoch: widget.isLive ? _currentPositionEpoch : null,
-                        onLiveSeek: _captureBuffer != null ? _seekLiveToEpoch : null,
-                        onLiveSeekBy: _captureBuffer != null ? _liveSeek.seekBy : null,
-                        onJumpToLive: _captureBuffer != null && !_isAtLiveEdge ? _jumpToLiveEdge : null,
+                        onLiveSeek: _live.captureBuffer != null ? _seekLiveToEpoch : null,
+                        onLiveSeekBy: _live.captureBuffer != null ? _liveSeek.seekBy : null,
+                        onJumpToLive: _live.captureBuffer != null && !_live.atLiveEdge ? _jumpToLiveEdge : null,
                         isAmbientLightingEnabled: _ambientLightingService?.isEnabled ?? false,
                         onToggleAmbientLighting: _ambientLightingService?.isSupported == true
                             ? _toggleAmbientLighting

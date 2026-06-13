@@ -145,7 +145,7 @@ extension _PlexVideoControlsVisibilityMethods on _PlexVideoControlsState {
   }
 
   Future<void> _checkPipSupport() async {
-    if (!Platform.isAndroid && !Platform.isIOS && !Platform.isMacOS) {
+    if (!PlatformDetector.supportsPictureInPicture()) {
       return;
     }
 
@@ -297,6 +297,9 @@ extension _PlexVideoControlsVisibilityMethods on _PlexVideoControlsState {
   void _requestFocusTarget(PlayerChromeFocusTarget target) {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted || !widget.chromeController.controlsVisible) return;
+      // Never steal focus from an open sheet (same rule as
+      // _reclaimFocusAfterControlsHide).
+      if (OverlaySheetController.maybeOf(context)?.isOpen ?? false) return;
       switch (target) {
         case PlayerChromeFocusTarget.playPause:
           _desktopControlsKey.currentState?.requestPlayPauseFocus();

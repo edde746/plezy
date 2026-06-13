@@ -10,11 +10,13 @@ import '../mpv/mpv.dart';
 import '../models/transcode_quality_preset.dart';
 import '../providers/download_provider.dart';
 import '../providers/multi_server_provider.dart';
+import '../providers/watch_state_store.dart';
 import '../screens/video_player_screen.dart';
 import '../services/external_player_service.dart';
 import '../services/offline_watch_sync_service.dart';
 import '../services/settings_service.dart';
 import 'app_logger.dart';
+import 'platform_detector.dart';
 
 const String kVideoPlayerRouteName = '/video_player';
 
@@ -85,6 +87,31 @@ class WatchTogetherPlaybackNavigationException implements Exception {
   String toString() => message;
 }
 
+/// Series (keyed by grandparent) or standalone-item key under
+/// [SettingsService.mediaVersionPreferences].
+String _mediaVersionPreferenceKey(MediaItem metadata) => metadata.grandparentId ?? metadata.id;
+
+/// Saved media-version preference for [metadata], or null when none is
+/// stored. Shared by launch navigation and in-player version switching so
+/// reads and writes can't drift onto different keys.
+Future<int?> savedMediaVersionIndexFor(MediaItem metadata) async {
+  try {
+    final settingsService = await SettingsService.getInstance();
+    return settingsService.read(SettingsService.mediaVersionPreferences)[_mediaVersionPreferenceKey(metadata)];
+  } catch (_) {
+    return null;
+  }
+}
+
+/// Persist [index] as the preferred media version for [metadata]'s series/movie.
+Future<void> saveMediaVersionIndexFor(MediaItem metadata, int index) async {
+  final settingsService = await SettingsService.getInstance();
+  await settingsService.write(SettingsService.mediaVersionPreferences, {
+    ...settingsService.read(SettingsService.mediaVersionPreferences),
+    _mediaVersionPreferenceKey(metadata): index,
+  });
+}
+
 /// Navigates to the VideoPlayerScreen with instant transitions to prevent white flash.
 ///
 /// This utility function provides a consistent way to navigate to the video player
@@ -102,6 +129,9 @@ class WatchTogetherPlaybackNavigationException implements Exception {
 /// - [usePushReplacement]: If true, replaces current route instead of pushing;
 ///   useful for episode-to-episode navigation. Defaults to false.
 /// - [isOffline]: If true, plays from downloaded content without requiring server connection.
+/// - [resolveWatchState]: Resolve [metadata] through [WatchStateStore] so the
+///   resume offset/watched flag are session-fresh even when the caller holds a
+///   stale list snapshot. Pass false for explicit intents like play-from-start.
 ///
 /// Returns a Future that completes with a boolean indicating whether the content
 /// was watched, or null if navigation was cancelled.
@@ -116,7 +146,11 @@ Future<bool?> navigateToVideoPlayer(
   TranscodeQualityPreset? selectedQualityPreset,
   bool usePushReplacement = false,
   bool isOffline = false,
+  bool resolveWatchState = true,
 }) async {
+  if (resolveWatchState) {
+    metadata = context.readFreshWatchState(metadata);
+  }
   final navigator = Navigator.of(context);
   final downloadProvider = context.read<DownloadProvider>();
   // Use the manager-routed lookup so Jellyfin items don't trip the
@@ -128,17 +162,7 @@ Future<bool?> navigateToVideoPlayer(
       ? manager.getClient(serverId)
       : null;
 
-  int mediaIndex = selectedMediaIndex ?? 0;
-  if (selectedMediaIndex == null) {
-    try {
-      final settingsService = await SettingsService.getInstance();
-      final seriesKey = metadata.grandparentId ?? metadata.id;
-      final savedPreference = settingsService.read(SettingsService.mediaVersionPreferences)[seriesKey];
-      if (savedPreference != null) {
-        mediaIndex = savedPreference;
-      }
-    } catch (_) {}
-  }
+  final mediaIndex = selectedMediaIndex ?? await savedMediaVersionIndexFor(metadata) ?? 0;
 
   var markedInFlight = false;
   if (!usePushReplacement) {
@@ -162,7 +186,7 @@ Future<bool?> navigateToVideoPlayer(
     // Check if external player is enabled
     try {
       final settingsService = await SettingsService.getInstance();
-      if (settingsService.read(SettingsService.useExternalPlayer)) {
+      if (PlatformDetector.supportsExternalPlayers() && settingsService.read(SettingsService.useExternalPlayer)) {
         bool launched = false;
 
         if (isOffline) {

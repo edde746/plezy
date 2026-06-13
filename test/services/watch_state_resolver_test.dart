@@ -1,6 +1,9 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vibe_stream/media/ids.dart';
 import 'package:vibe_stream/database/app_database.dart';
+import 'package:vibe_stream/media/media_backend.dart';
+import 'package:vibe_stream/media/media_item.dart';
+import 'package:vibe_stream/media/media_kind.dart';
 import 'package:vibe_stream/services/watch_state_resolver.dart';
 import 'package:vibe_stream/utils/watch_state_notifier.dart';
 
@@ -79,5 +82,25 @@ void main() {
     );
 
     expect(snapshot.isEmpty, isTrue);
+  });
+
+  test('applying a watched snapshot patches container leaf counts so isWatched flips', () {
+    const snapshot = WatchStateSnapshot(isWatched: true, hasViewOffsetMs: true, viewOffsetMs: 0);
+    final season = MediaItem(
+      id: 'season-1',
+      backend: MediaBackend.plex,
+      kind: MediaKind.season,
+      leafCount: 8,
+      viewedLeafCount: 2,
+      serverId: 'srv',
+    );
+
+    final resolved = snapshot.apply(season);
+    expect(resolved.viewedLeafCount, 8);
+    expect(resolved.isWatched, isTrue);
+
+    final unmarked = const WatchStateSnapshot(isWatched: false, hasViewOffsetMs: true, viewOffsetMs: 0).apply(resolved);
+    expect(unmarked.viewedLeafCount, 0);
+    expect(unmarked.isWatched, isFalse);
   });
 }

@@ -86,7 +86,7 @@ void main() {
     test('invokes onOnlineServersChanged with the visibility-filtered online set', () async {
       final p = MultiServerProvider(manager, aggregation);
       final calls = <Set<String>>[];
-      p.onOnlineServersChanged = calls.add;
+      p.addOnlineServersListener(calls.add);
 
       manager.updateServerStatus(ServerId('srv-1'), true);
       await Future<void>.delayed(Duration.zero);
@@ -218,7 +218,7 @@ void main() {
       test('expected servers become visible when they reconnect', () async {
         final p = MultiServerProvider(manager, aggregation);
         final onlineCalls = <Set<String>>[];
-        p.onOnlineServersChanged = onlineCalls.add;
+        p.addOnlineServersListener(onlineCalls.add);
 
         p.setVisibleServerIds({'srv-1'});
         p.setExpectedVisibleServerIds({'srv-1', 'srv-2'});

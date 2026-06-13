@@ -171,10 +171,15 @@ abstract class Pref<T> {
 
 class BoolPref extends Pref<bool> {
   final bool defaultValue;
+
+  /// Lazily-resolved default for values that depend on state unavailable at
+  /// static-init time (e.g. async TV detection). Wins over [defaultValue].
+  final bool Function()? defaultValueProvider;
   final void Function(bool)? onWrite;
-  const BoolPref(super.key, {this.defaultValue = false, this.onWrite});
+  const BoolPref(super.key, {this.defaultValue = false, this.defaultValueProvider, this.onWrite});
   @override
-  bool readFrom(BaseSharedPreferencesService svc) => svc.readBool(key, defaultValue: defaultValue);
+  bool readFrom(BaseSharedPreferencesService svc) =>
+      svc.readBool(key, defaultValue: defaultValueProvider?.call() ?? defaultValue);
   @override
   Future<void> writeTo(BaseSharedPreferencesService svc, bool value) async {
     await svc.writeBool(key, value);
@@ -248,17 +253,24 @@ class StringListPref extends Pref<List<String>> {
   Future<void> writeTo(BaseSharedPreferencesService svc, List<String> value) => svc.writeStringList(key, value);
 }
 
-/// Stores an enum by its [Enum.name]; falls back to [defaultValue] when the
+/// Stores an enum by its [Enum.name]; falls back to the default when the
 /// stored string doesn't match any value in [values].
+///
+/// Exactly one of [defaultValue] / [defaultValueProvider] must be given; the
+/// provider form resolves at read time, for defaults that depend on state
+/// unavailable at static-init time (e.g. async TV detection).
 class EnumPref<T extends Enum> extends Pref<T> {
   final List<T> values;
-  final T defaultValue;
-  const EnumPref(super.key, {required this.values, required this.defaultValue});
+  final T? defaultValue;
+  final T Function()? defaultValueProvider;
+  const EnumPref(super.key, {required this.values, this.defaultValue, this.defaultValueProvider})
+    : assert((defaultValue != null) != (defaultValueProvider != null));
+  T get _default => defaultValueProvider?.call() ?? defaultValue!;
   @override
   T readFrom(BaseSharedPreferencesService svc) {
     final stored = svc.prefs.getString(key);
-    if (stored == null) return defaultValue;
-    return values.firstWhere((v) => v.name == stored, orElse: () => defaultValue);
+    if (stored == null) return _default;
+    return values.firstWhere((v) => v.name == stored, orElse: () => _default);
   }
 
   @override

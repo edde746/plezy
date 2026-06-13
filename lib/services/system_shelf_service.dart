@@ -18,6 +18,7 @@ import 'settings_service.dart' show EpisodePosterMode;
 class SystemShelfService {
   static const MethodChannel _androidChannel = MethodChannel('com.plezy/watch_next');
   static const MethodChannel _tvosChannel = MethodChannel('com.plezy/system_shelf');
+  static const bool _tvosBuild = bool.fromEnvironment('TVOS_BUILD');
 
   static final SystemShelfService _instance = SystemShelfService._internal();
   factory SystemShelfService() => _instance;
@@ -32,7 +33,7 @@ class SystemShelfService {
 
   MethodChannel? get _channel {
     if (Platform.isAndroid) return _androidChannel;
-    if (Platform.isIOS && PlatformDetector.isAppleTV()) return _tvosChannel;
+    if (Platform.isIOS && (_tvosBuild || PlatformDetector.isAppleTV())) return _tvosChannel;
     return null;
   }
 
@@ -52,6 +53,9 @@ class SystemShelfService {
     if (channel == null) return null;
     try {
       return await channel.invokeMethod<String>('getInitialDeepLink');
+    } on MissingPluginException catch (e) {
+      appLogger.w('System shelf initial deep link failed: native channel missing', error: e);
+      return null;
     } catch (e) {
       appLogger.w('Failed to get system shelf initial deep link', error: e);
       return null;
@@ -64,7 +68,14 @@ class SystemShelfService {
     if (channel == null) return false;
     try {
       return await channel.invokeMethod<bool>('isSupported') ?? false;
-    } catch (_) {
+    } on MissingPluginException catch (e) {
+      appLogger.w('System shelf unsupported: native channel missing', error: e);
+      return false;
+    } on PlatformException catch (e) {
+      appLogger.w('System shelf unsupported: native platform error', error: e);
+      return false;
+    } catch (e) {
+      appLogger.w('System shelf unsupported: native support check failed', error: e);
       return false;
     }
   }
@@ -79,14 +90,20 @@ class SystemShelfService {
     if (channel == null) return false;
 
     try {
-      final supported = await isSupported();
-      if (!supported) return false;
-
       final items = continueWatchingItems.map((item) {
         return _convertToShelfItem(item, getClientForServerId, hideSpoilers: hideSpoilers);
       }).toList();
 
+      final supported = await isSupported();
+      if (!supported) return false;
+
       return await channel.invokeMethod<bool>('sync', {'items': items}) ?? false;
+    } on MissingPluginException catch (e) {
+      appLogger.e('Failed to sync system shelf: native channel missing', error: e);
+      return false;
+    } on PlatformException catch (e) {
+      appLogger.e('Failed to sync system shelf: native platform error', error: e);
+      return false;
     } catch (e) {
       appLogger.e('Failed to sync system shelf', error: e);
       return false;
@@ -99,6 +116,12 @@ class SystemShelfService {
     if (channel == null) return false;
     try {
       return await channel.invokeMethod<bool>('clear') ?? false;
+    } on MissingPluginException catch (e) {
+      appLogger.e('Failed to clear system shelf: native channel missing', error: e);
+      return false;
+    } on PlatformException catch (e) {
+      appLogger.e('Failed to clear system shelf: native platform error', error: e);
+      return false;
     } catch (e) {
       appLogger.e('Failed to clear system shelf', error: e);
       return false;
@@ -112,6 +135,12 @@ class SystemShelfService {
     try {
       final contentId = _buildContentId(serverId, ratingKey);
       return await channel.invokeMethod<bool>('remove', {'contentId': contentId}) ?? false;
+    } on MissingPluginException catch (e) {
+      appLogger.e('Failed to remove system shelf item: native channel missing', error: e);
+      return false;
+    } on PlatformException catch (e) {
+      appLogger.e('Failed to remove system shelf item: native platform error', error: e);
+      return false;
     } catch (e) {
       appLogger.e('Failed to remove system shelf item', error: e);
       return false;

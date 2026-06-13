@@ -2,7 +2,7 @@ part of '../../jellyfin_client.dart';
 
 mixin _JellyfinWatchStateMethods on MediaServerCacheMixin {
   JellyfinConnection get connection;
-  MediaServerHttpClient get _http;
+  FailoverHttpClient get _http;
 
   @override
   Future<void> markWatched(MediaItem item) async {
@@ -11,7 +11,6 @@ mixin _JellyfinWatchStateMethods on MediaServerCacheMixin {
       queryParameters: {'userId': connection.userId},
     );
     throwIfHttpError(response);
-    WatchStateNotifier().notifyWatched(item: item, isNowWatched: true, cacheServerId: cacheServerId);
   }
 
   @override
@@ -21,7 +20,6 @@ mixin _JellyfinWatchStateMethods on MediaServerCacheMixin {
       queryParameters: {'userId': connection.userId},
     );
     throwIfHttpError(response);
-    WatchStateNotifier().notifyWatched(item: item, isNowWatched: false, cacheServerId: cacheServerId);
   }
 
   @override

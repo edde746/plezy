@@ -115,7 +115,6 @@ class _TranslationsAuthSv extends TranslationsAuthEn {
 	@override String get or => 'eller';
 	@override String get connectToJellyfin => 'Anslut till Jellyfin';
 	@override String get useQuickConnect => 'Använd Quick Connect';
-	@override String get quickConnectCode => 'Quick Connect-kod';
 	@override String get quickConnectInstructions => 'Öppna Quick Connect i Jellyfin och ange den här koden.';
 	@override String get quickConnectWaiting => 'Väntar på godkännande…';
 	@override String get quickConnectCancel => 'Avbryt';
@@ -245,6 +244,9 @@ class _TranslationsSettingsSv extends TranslationsSettingsEn {
 	@override String get gridView => 'Rutnät';
 	@override String get listView => 'Lista';
 	@override String get showHeroSection => 'Visa hjältesektion';
+	@override String get continueWatchingAction => 'Åtgärd för Fortsätt titta';
+	@override String get continueWatchingPlay => 'Spela';
+	@override String get continueWatchingDetails => 'Öppna detaljer';
 	@override String get useGlobalHubs => 'Använd startlayout';
 	@override String get useGlobalHubsDescription => 'Visa enhetliga startsideshubbar. Annars används biblioteksrekommendationer.';
 	@override String get showServerNameOnHubs => 'Visa servernamn på hubbar';
@@ -261,6 +263,8 @@ class _TranslationsSettingsSv extends TranslationsSettingsEn {
 	@override String get showSeasonPostersOnTabsDescription => 'Visa varje säsongs affisch ovanför fliken';
 	@override String get tvFullCardLayout => 'Heltäckande TV-kort';
 	@override String get tvFullCardLayoutDescription => 'Använd TV-kort med enbart bild och skådespelarnamn ovanpå';
+	@override String get focusGlow => 'Fokusglöd';
+	@override String get focusGlowDescription => 'Visa en mjuk glöd runt kortet i fokus';
 	@override String get hideSpoilers => 'Dölj spoilers för osedda avsnitt';
 	@override String get hideSpoilersDescription => 'Sudda miniatyrbilder och beskrivningar för osedda avsnitt';
 	@override String get playerBackend => 'Spelarmotor';
@@ -492,8 +496,8 @@ class _TranslationsMediaMenuSv extends TranslationsMediaMenuEn {
 	@override String get markAsWatched => 'Markera som sedd';
 	@override String get markAsUnwatched => 'Markera som osedd';
 	@override String get removeFromContinueWatching => 'Ta bort från Fortsätt titta';
+	@override String get viewDetails => 'Visa detaljer';
 	@override String get goToSeries => 'Gå till serie';
-	@override String get goToSeason => 'Gå till säsong';
 	@override String get shufflePlay => 'Blanda uppspelning';
 	@override String get shuffleNotAvailableOffline => 'Blandad uppspelning är inte tillgänglig offline';
 	@override String get fileInfo => 'Filinformation';
@@ -673,7 +677,6 @@ class _TranslationsMessagesSv extends TranslationsMessagesEn {
 	@override String get fileInfoNotAvailable => 'Filinformation inte tillgänglig';
 	@override String errorLoadingFileInfo({required Object error}) => 'Fel vid laddning av filinformation: ${error}';
 	@override String get errorLoadingSeries => 'Fel vid laddning av serie';
-	@override String get errorLoadingSeason => 'Fel vid laddning av säsong';
 	@override String get musicNotSupported => 'Musikuppspelning stöds inte ännu';
 	@override String get noDescriptionAvailable => 'Ingen beskrivning tillgänglig';
 	@override String get noProfilesAvailable => 'Inga profiler tillgängliga';
@@ -727,6 +730,9 @@ class _TranslationsSubtitlingStylingSv extends TranslationsSubtitlingStylingEn {
 	@override String get assOverride => 'ASS-åsidosättning';
 	@override String get bold => 'Fet';
 	@override String get italic => 'Kursiv';
+	@override String get renderResolution => 'Renderingsupplösning';
+	@override String get renderResolutionScreen => 'Skärmupplösning';
+	@override String get renderResolutionVideo => 'Videoupplösning';
 }
 
 // Path: mpvConfig
@@ -1598,10 +1604,8 @@ class _TranslationsAddServerSv extends TranslationsAddServerEn {
 
 	// Translations
 	@override String get addJellyfinTitle => 'Lägg till Jellyfin-server';
-	@override String get jellyfinUrlIntro => 'Ange server-URL, t.ex. `https://jellyfin.example.com`.';
-	@override String get jellyfinUrlsIntro => 'Ange en eller flera server-URL:er, separerade med kommatecken. Vibe använder den nåbara URL:en med lägst latens.';
-	@override String get serverUrl => 'Server-URL';
 	@override String get serverUrls => 'Server-URL:er';
+	@override String get serverUrlsHelper => 'Flera URL:er tillåtna, separerade med kommatecken.';
 	@override String get findServer => 'Hitta server';
 	@override String get searchingLocalServers => 'Söker efter lokala Jellyfin-servrar...';
 	@override String get localServers => 'Lokala Jellyfin-servrar';
@@ -1614,17 +1618,12 @@ class _TranslationsAddServerSv extends TranslationsAddServerEn {
 	@override String signInFailed({required Object error}) => 'Inloggning misslyckades: ${error}';
 	@override String quickConnectFailed({required Object error}) => 'Quick Connect misslyckades: ${error}';
 	@override String get addPlexTitle => 'Logga in med Plex';
-	@override String get plexAuthIntro => 'Logga in med en webbläsare eller QR-kod.';
-	@override String get plexQRPrompt => 'Skanna denna QR-kod för att logga in.';
-	@override String get waitingForPlexConfirmation => 'Väntar på att plex.tv ska bekräfta inloggningen…';
 	@override String get pinExpired => 'PIN-koden gick ut innan inloggning. Försök igen.';
 	@override String get duplicatePlexAccount => 'Redan inloggad på Plex. Logga ut för att byta konto.';
 	@override String failedToRegisterAccount({required Object error}) => 'Kunde inte registrera kontot: ${error}';
 	@override String get enterJellyfinUrlError => 'Ange URL till din Jellyfin-server';
 	@override String get addConnectionTitle => 'Lägg till anslutning';
 	@override String addConnectionTitleScoped({required Object name}) => 'Lägg till i ${name}';
-	@override String get addConnectionIntroGlobal => 'Lägg till en annan medieserver. Plex och Jellyfin visas tillsammans på Hem.';
-	@override String get addConnectionIntroScoped => 'Lägg till en ny server, eller låna en från en annan profil.';
 	@override String get signInWithPlexCard => 'Logga in med Plex';
 	@override String get signInWithPlexCardSubtitle => 'Auktorisera den här enheten. Delade servrar läggs till.';
 	@override String get signInWithPlexCardSubtitleScoped => 'Auktorisera ett Plex-konto. Home-användare blir profiler.';
@@ -1933,7 +1932,6 @@ extension on TranslationsSv {
 			'auth.or' => 'eller',
 			'auth.connectToJellyfin' => 'Anslut till Jellyfin',
 			'auth.useQuickConnect' => 'Använd Quick Connect',
-			'auth.quickConnectCode' => 'Quick Connect-kod',
 			'auth.quickConnectInstructions' => 'Öppna Quick Connect i Jellyfin och ange den här koden.',
 			'auth.quickConnectWaiting' => 'Väntar på godkännande…',
 			'auth.quickConnectCancel' => 'Avbryt',
@@ -2027,6 +2025,9 @@ extension on TranslationsSv {
 			'settings.gridView' => 'Rutnät',
 			'settings.listView' => 'Lista',
 			'settings.showHeroSection' => 'Visa hjältesektion',
+			'settings.continueWatchingAction' => 'Åtgärd för Fortsätt titta',
+			'settings.continueWatchingPlay' => 'Spela',
+			'settings.continueWatchingDetails' => 'Öppna detaljer',
 			'settings.useGlobalHubs' => 'Använd startlayout',
 			'settings.useGlobalHubsDescription' => 'Visa enhetliga startsideshubbar. Annars används biblioteksrekommendationer.',
 			'settings.showServerNameOnHubs' => 'Visa servernamn på hubbar',
@@ -2043,6 +2044,8 @@ extension on TranslationsSv {
 			'settings.showSeasonPostersOnTabsDescription' => 'Visa varje säsongs affisch ovanför fliken',
 			'settings.tvFullCardLayout' => 'Heltäckande TV-kort',
 			'settings.tvFullCardLayoutDescription' => 'Använd TV-kort med enbart bild och skådespelarnamn ovanpå',
+			'settings.focusGlow' => 'Fokusglöd',
+			'settings.focusGlowDescription' => 'Visa en mjuk glöd runt kortet i fokus',
 			'settings.hideSpoilers' => 'Dölj spoilers för osedda avsnitt',
 			'settings.hideSpoilersDescription' => 'Sudda miniatyrbilder och beskrivningar för osedda avsnitt',
 			'settings.playerBackend' => 'Spelarmotor',
@@ -2262,8 +2265,8 @@ extension on TranslationsSv {
 			'mediaMenu.markAsWatched' => 'Markera som sedd',
 			'mediaMenu.markAsUnwatched' => 'Markera som osedd',
 			'mediaMenu.removeFromContinueWatching' => 'Ta bort från Fortsätt titta',
+			'mediaMenu.viewDetails' => 'Visa detaljer',
 			'mediaMenu.goToSeries' => 'Gå till serie',
-			'mediaMenu.goToSeason' => 'Gå till säsong',
 			'mediaMenu.shufflePlay' => 'Blanda uppspelning',
 			'mediaMenu.shuffleNotAvailableOffline' => 'Blandad uppspelning är inte tillgänglig offline',
 			'mediaMenu.fileInfo' => 'Filinformation',
@@ -2395,7 +2398,6 @@ extension on TranslationsSv {
 			'messages.fileInfoNotAvailable' => 'Filinformation inte tillgänglig',
 			'messages.errorLoadingFileInfo' => ({required Object error}) => 'Fel vid laddning av filinformation: ${error}',
 			'messages.errorLoadingSeries' => 'Fel vid laddning av serie',
-			'messages.errorLoadingSeason' => 'Fel vid laddning av säsong',
 			'messages.musicNotSupported' => 'Musikuppspelning stöds inte ännu',
 			'messages.noDescriptionAvailable' => 'Ingen beskrivning tillgänglig',
 			'messages.noProfilesAvailable' => 'Inga profiler tillgängliga',
@@ -2430,11 +2432,11 @@ extension on TranslationsSv {
 			'subtitlingStyling.text' => 'Text',
 			'subtitlingStyling.border' => 'Kantlinje',
 			'subtitlingStyling.background' => 'Bakgrund',
+			_ => null,
+		} ?? switch (path) {
 			'subtitlingStyling.fontSize' => 'Teckenstorlek',
 			'subtitlingStyling.textColor' => 'Textfärg',
 			'subtitlingStyling.borderSize' => 'Kantstorlek',
-			_ => null,
-		} ?? switch (path) {
 			'subtitlingStyling.borderColor' => 'Kantfärg',
 			'subtitlingStyling.backgroundOpacity' => 'Bakgrundsopacitet',
 			'subtitlingStyling.backgroundColor' => 'Bakgrundsfärg',
@@ -2442,6 +2444,9 @@ extension on TranslationsSv {
 			'subtitlingStyling.assOverride' => 'ASS-åsidosättning',
 			'subtitlingStyling.bold' => 'Fet',
 			'subtitlingStyling.italic' => 'Kursiv',
+			'subtitlingStyling.renderResolution' => 'Renderingsupplösning',
+			'subtitlingStyling.renderResolutionScreen' => 'Skärmupplösning',
+			'subtitlingStyling.renderResolutionVideo' => 'Videoupplösning',
 			'mpvConfig.title' => 'mpv-konfiguration',
 			'mpvConfig.description' => 'Avancerade videospelares inställningar',
 			'mpvConfig.presets' => 'Förval',
@@ -2941,14 +2946,14 @@ extension on TranslationsSv {
 			'companionRemote.remote.retryNow' => 'Försök nu',
 			'companionRemote.remote.tabRemote' => 'Fjärrkontroll',
 			'companionRemote.remote.tabPlay' => 'Spela',
+			_ => null,
+		} ?? switch (path) {
 			'companionRemote.remote.tabMore' => 'Mer',
 			'companionRemote.remote.menu' => 'Meny',
 			'companionRemote.remote.tabNavigation' => 'Fliknavigering',
 			'companionRemote.remote.tabDiscover' => 'Upptäck',
 			'companionRemote.remote.tabLibraries' => 'Bibliotek',
 			'companionRemote.remote.tabSearch' => 'Sök',
-			_ => null,
-		} ?? switch (path) {
 			'companionRemote.remote.tabDownloads' => 'Nedladdningar',
 			'companionRemote.remote.tabSettings' => 'Inställningar',
 			'companionRemote.remote.previous' => 'Föregående',
@@ -3162,10 +3167,8 @@ extension on TranslationsSv {
 			'trackers.libraryFilter.libraries' => 'Bibliotek',
 			'trackers.libraryFilter.noLibraries' => 'Inga bibliotek tillgängliga',
 			'addServer.addJellyfinTitle' => 'Lägg till Jellyfin-server',
-			'addServer.jellyfinUrlIntro' => 'Ange server-URL, t.ex. `https://jellyfin.example.com`.',
-			'addServer.jellyfinUrlsIntro' => 'Ange en eller flera server-URL:er, separerade med kommatecken. Vibe använder den nåbara URL:en med lägst latens.',
-			'addServer.serverUrl' => 'Server-URL',
 			'addServer.serverUrls' => 'Server-URL:er',
+			'addServer.serverUrlsHelper' => 'Flera URL:er tillåtna, separerade med kommatecken.',
 			'addServer.findServer' => 'Hitta server',
 			'addServer.searchingLocalServers' => 'Söker efter lokala Jellyfin-servrar...',
 			'addServer.localServers' => 'Lokala Jellyfin-servrar',
@@ -3178,17 +3181,12 @@ extension on TranslationsSv {
 			'addServer.signInFailed' => ({required Object error}) => 'Inloggning misslyckades: ${error}',
 			'addServer.quickConnectFailed' => ({required Object error}) => 'Quick Connect misslyckades: ${error}',
 			'addServer.addPlexTitle' => 'Logga in med Plex',
-			'addServer.plexAuthIntro' => 'Logga in med en webbläsare eller QR-kod.',
-			'addServer.plexQRPrompt' => 'Skanna denna QR-kod för att logga in.',
-			'addServer.waitingForPlexConfirmation' => 'Väntar på att plex.tv ska bekräfta inloggningen…',
 			'addServer.pinExpired' => 'PIN-koden gick ut innan inloggning. Försök igen.',
 			'addServer.duplicatePlexAccount' => 'Redan inloggad på Plex. Logga ut för att byta konto.',
 			'addServer.failedToRegisterAccount' => ({required Object error}) => 'Kunde inte registrera kontot: ${error}',
 			'addServer.enterJellyfinUrlError' => 'Ange URL till din Jellyfin-server',
 			'addServer.addConnectionTitle' => 'Lägg till anslutning',
 			'addServer.addConnectionTitleScoped' => ({required Object name}) => 'Lägg till i ${name}',
-			'addServer.addConnectionIntroGlobal' => 'Lägg till en annan medieserver. Plex och Jellyfin visas tillsammans på Hem.',
-			'addServer.addConnectionIntroScoped' => 'Lägg till en ny server, eller låna en från en annan profil.',
 			'addServer.signInWithPlexCard' => 'Logga in med Plex',
 			'addServer.signInWithPlexCardSubtitle' => 'Auktorisera den här enheten. Delade servrar läggs till.',
 			'addServer.signInWithPlexCardSubtitleScoped' => 'Auktorisera ett Plex-konto. Home-användare blir profiler.',

@@ -7,8 +7,8 @@ import androidx.media3.extractor.SeekMap
 import androidx.media3.extractor.TrackOutput
 import androidx.media3.extractor.mkv.MatroskaExtractor
 import androidx.media3.extractor.text.SubtitleParser
-import io.github.peerless2012.ass.media.AssHandler
-import io.github.peerless2012.ass.media.extractor.AssMatroskaExtractor
+import com.edde746.plezy.libass.media.AssHandler
+import com.edde746.plezy.libass.media.extractor.AssMatroskaExtractor
 
 /**
  * Extends AssMatroskaExtractor to add support for MKV ContentCompAlgo 0 (zlib).

@@ -14,6 +14,7 @@ import 'package:vibe_stream/services/multi_server_manager.dart';
 import 'package:vibe_stream/services/settings_service.dart';
 import 'package:vibe_stream/theme/mono_theme.dart';
 import 'package:vibe_stream/utils/platform_detector.dart';
+import 'package:vibe_stream/widgets/media_card.dart';
 import 'package:vibe_stream/widgets/side_navigation_rail.dart';
 import 'package:vibe_stream/widgets/tv_browse_rail.dart';
 import 'package:provider/provider.dart';
@@ -559,7 +560,7 @@ void main() {
     expect(find.text('Visible Movie'), findsOneWidget);
   });
 
-  testWidgets('detailed card focus ring wraps card content height', (tester) async {
+  testWidgets('detailed card focus border hugs the poster, captions outside', (tester) async {
     await SettingsService.instanceOrNull!.write(SettingsService.tvFullCardLayout, false);
     TvDetectionService.debugSetAppleTVOverride(true);
     tester.view.devicePixelRatio = 1.0;
@@ -599,11 +600,13 @@ void main() {
     );
     await tester.pump();
 
-    final focusDecoration = find.ancestor(
-      of: find.text('Visible Movie'),
+    // The border is drawn inside MediaCard around the poster only (#1278);
+    // the title/year captions render below it, outside the focus rect.
+    final focusDecoration = find.descendant(
+      of: find.ancestor(of: find.text('Visible Movie'), matching: find.byType(MediaCard)),
       matching: find.byWidgetPredicate((widget) {
-        if (widget is! AnimatedContainer || widget.decoration is! BoxDecoration) return false;
-        return (widget.decoration as BoxDecoration).border is Border && widget.foregroundDecoration == null;
+        if (widget is! AnimatedContainer || widget.foregroundDecoration is! BoxDecoration) return false;
+        return (widget.foregroundDecoration as BoxDecoration).border is Border;
       }),
     );
 
@@ -611,8 +614,12 @@ void main() {
     expect(find.text('2024'), findsOneWidget);
 
     final focusRect = tester.getRect(focusDecoration);
+    final titleRect = tester.getRect(find.text('Visible Movie'));
     final subtitleRect = tester.getRect(find.text('2024'));
-    expect(focusRect.bottom - subtitleRect.bottom, lessThan(8));
+    expect(focusRect.bottom, lessThanOrEqualTo(titleRect.top));
+    expect(focusRect.bottom, lessThanOrEqualTo(subtitleRect.top));
+    // Still a tight ring: the poster fills the card width above the captions.
+    expect(focusRect.top, lessThan(titleRect.top));
   });
 
   testWidgets('view all item uses compact pill focus style', (tester) async {
@@ -1691,6 +1698,158 @@ void main() {
     await tester.sendKeyUpEvent(LogicalKeyboardKey.enter);
     await tester.pump();
 
+    expect(activations, 1);
+  });
+
+  testWidgets('without a gesture signal, suppression clears on the legacy safety timeout', (tester) async {
+    var activations = 0;
+    final person = MediaItem(id: 'person_1', backend: MediaBackend.plex, kind: MediaKind.unknown, title: 'Person');
+    final hub = MediaHub(id: 'people', title: 'People', type: 'person', items: [person], size: 1);
+    final serverManager = MultiServerManager();
+
+    await tester.pumpWidget(
+      ChangeNotifierProvider<MultiServerProvider>(
+        create: (_) => MultiServerProvider(serverManager, DataAggregationService(serverManager)),
+        child: MaterialApp(
+          theme: monoTheme(dark: true),
+          home: Scaffold(
+            body: SizedBox(
+              width: 1280,
+              height: 720,
+              child: TvBrowseRail(
+                hubs: [hub],
+                iconForHub: (_, _) => Icons.person_rounded,
+                onActivateItem: (_, _) {
+                  activations++;
+                  return Future.value(true);
+                },
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    final railState = tester.state<TvBrowseRailState>(find.byType(TvBrowseRail));
+    railState.requestFocus();
+    railState.suppressSelectUntilKeyUp();
+    await tester.pump();
+
+    // With no touch gesture, suppression must not outlive the short safety
+    // timeout — a select after it elapses activates normally.
+    await tester.pump(const Duration(milliseconds: 300));
+    await tester.sendKeyDownEvent(LogicalKeyboardKey.enter);
+    await tester.pump();
+    await tester.sendKeyUpEvent(LogicalKeyboardKey.enter);
+    await tester.pump();
+    expect(activations, 1);
+  });
+
+  testWidgets('an active touch gesture holds select suppression past the legacy window', (tester) async {
+    var activations = 0;
+    final gesture = ValueNotifier<bool>(true);
+    addTearDown(gesture.dispose);
+    final person = MediaItem(id: 'person_1', backend: MediaBackend.plex, kind: MediaKind.unknown, title: 'Person');
+    final hub = MediaHub(id: 'people', title: 'People', type: 'person', items: [person], size: 1);
+    final serverManager = MultiServerManager();
+
+    await tester.pumpWidget(
+      ChangeNotifierProvider<MultiServerProvider>(
+        create: (_) => MultiServerProvider(serverManager, DataAggregationService(serverManager)),
+        child: MaterialApp(
+          theme: monoTheme(dark: true),
+          home: Scaffold(
+            body: SizedBox(
+              width: 1280,
+              height: 720,
+              child: TvBrowseRail(
+                hubs: [hub],
+                iconForHub: (_, _) => Icons.person_rounded,
+                selectSuppressionGestureSignal: gesture,
+                onActivateItem: (_, _) {
+                  activations++;
+                  return Future.value(true);
+                },
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    final railState = tester.state<TvBrowseRailState>(find.byType(TvBrowseRail));
+    railState.requestFocus();
+    railState.suppressSelectUntilKeyUp();
+    await tester.pump();
+
+    // Well past the legacy 220ms window, finger still down (gesture active): the
+    // stray same-gesture select (#1281) is still ignored.
+    await tester.pump(const Duration(milliseconds: 1000));
+    await tester.sendKeyDownEvent(LogicalKeyboardKey.enter);
+    await tester.pump();
+    await tester.sendKeyUpEvent(LogicalKeyboardKey.enter);
+    await tester.pump();
+    expect(activations, 0);
+
+    // Once cleared, deliberate selects work again.
+    await tester.sendKeyDownEvent(LogicalKeyboardKey.enter);
+    await tester.pump();
+    await tester.sendKeyUpEvent(LogicalKeyboardKey.enter);
+    await tester.pump();
+    expect(activations, 1);
+  });
+
+  testWidgets('ending the gesture clears select suppression before the backstop', (tester) async {
+    var activations = 0;
+    final gesture = ValueNotifier<bool>(true);
+    addTearDown(gesture.dispose);
+    final person = MediaItem(id: 'person_1', backend: MediaBackend.plex, kind: MediaKind.unknown, title: 'Person');
+    final hub = MediaHub(id: 'people', title: 'People', type: 'person', items: [person], size: 1);
+    final serverManager = MultiServerManager();
+
+    await tester.pumpWidget(
+      ChangeNotifierProvider<MultiServerProvider>(
+        create: (_) => MultiServerProvider(serverManager, DataAggregationService(serverManager)),
+        child: MaterialApp(
+          theme: monoTheme(dark: true),
+          home: Scaffold(
+            body: SizedBox(
+              width: 1280,
+              height: 720,
+              child: TvBrowseRail(
+                hubs: [hub],
+                iconForHub: (_, _) => Icons.person_rounded,
+                selectSuppressionGestureSignal: gesture,
+                onActivateItem: (_, _) {
+                  activations++;
+                  return Future.value(true);
+                },
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    final railState = tester.state<TvBrowseRailState>(find.byType(TvBrowseRail));
+    railState.requestFocus();
+    railState.suppressSelectUntilKeyUp();
+    await tester.pump();
+
+    // Suppression holds while the gesture is active, past the legacy window.
+    await tester.pump(const Duration(milliseconds: 1000));
+    // Finger lifts -> gesture ends -> suppression clears immediately, well before
+    // the safety backstop.
+    gesture.value = false;
+    await tester.pump();
+
+    await tester.sendKeyDownEvent(LogicalKeyboardKey.enter);
+    await tester.pump();
+    await tester.sendKeyUpEvent(LogicalKeyboardKey.enter);
+    await tester.pump();
     expect(activations, 1);
   });
 

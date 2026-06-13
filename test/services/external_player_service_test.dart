@@ -7,25 +7,35 @@ import 'package:vibe_stream/media/media_item.dart';
 import 'package:vibe_stream/media/media_kind.dart';
 import 'package:vibe_stream/media/media_server_client.dart';
 import 'package:vibe_stream/media/playback_report_metadata.dart';
+import 'package:vibe_stream/models/external_player_models.dart';
 import 'package:vibe_stream/services/external_player_service.dart';
 import 'package:vibe_stream/services/jellyfin_api_cache.dart';
 import 'package:vibe_stream/services/multi_server_manager.dart';
 import 'package:vibe_stream/services/offline_watch_sync_service.dart';
 
 class _RecordingClient implements MediaServerClient {
+  _RecordingClient({this.backend = MediaBackend.plex});
+
   bool failStart = false;
   bool failStop = false;
   final started = <({int positionMs, int? durationMs})>[];
   final stopped = <({int positionMs, int? durationMs})>[];
+  final watched = <String>[];
 
   @override
   ServerId get serverId => ServerId('srv');
 
   @override
-  MediaBackend get backend => MediaBackend.plex;
+  final MediaBackend backend;
 
   @override
   double get watchedThreshold => 0.9;
+
+  // Mirror the real clients: Jellyfin marks played from the stopped report, so
+  // the external-player completion path emits only the local watch event
+  // (#1287); Plex needs the explicit markWatched.
+  @override
+  bool get marksWatchedOnPlaybackStopped => backend == MediaBackend.jellyfin;
 
   @override
   Future<void> reportPlaybackStarted({
@@ -56,6 +66,11 @@ class _RecordingClient implements MediaServerClient {
   }
 
   @override
+  Future<void> markWatched(MediaItem item) async {
+    watched.add(item.id);
+  }
+
+  @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
@@ -70,6 +85,16 @@ MediaItem _item({int? durationMs}) {
 }
 
 void main() {
+  test('MX Player Android package candidates include free and Pro variants', () {
+    final mxPlayer = KnownPlayers.findById('mx_player');
+
+    expect(mxPlayer, isNotNull);
+    expect(KnownPlayers.androidPackageCandidates(mxPlayer!), [
+      'com.mxtech.videoplayer.ad',
+      'com.mxtech.videoplayer.pro',
+    ]);
+  });
+
   test('Android external progress preserves null duration and still stops after start failure', () async {
     final client = _RecordingClient()..failStart = true;
 
@@ -138,5 +163,24 @@ void main() {
 
     expect(client.started, [(positionMs: 100000, durationMs: 100000)]);
     expect(client.stopped, [(positionMs: 100000, durationMs: 100000)]);
+    expect(client.watched, ['item-1']);
+  });
+
+  test('Android external completion on Jellyfin marks watched via the stop report, not markWatched (#1287)', () async {
+    final client = _RecordingClient(backend: MediaBackend.jellyfin);
+
+    await ExternalPlayerService.reportAndroidExternalProgressForTesting(
+      positionMs: null,
+      durationMs: 100000,
+      playbackCompleted: true,
+      metadata: _item(durationMs: 100000),
+      client: client,
+    );
+
+    // The stopped report at full duration marks it played server-side…
+    expect(client.stopped, [(positionMs: 100000, durationMs: 100000)]);
+    // …so the explicit markWatched is skipped — issuing it would double-scrobble
+    // through the Jellyfin Trakt plugin.
+    expect(client.watched, isEmpty);
   });
 }

@@ -7,12 +7,10 @@ import 'package:provider/provider.dart';
 import '../media/media_item.dart';
 import '../media/media_item_types.dart';
 import '../media/play_queue.dart';
-import '../mpv/mpv.dart';
 import '../providers/multi_server_provider.dart';
 import '../providers/playback_state_provider.dart';
 import '../services/multi_server_manager.dart';
 import '../utils/app_logger.dart';
-import '../utils/video_player_navigation.dart';
 
 /// Result of loading adjacent episodes
 class AdjacentEpisodes {
@@ -144,50 +142,6 @@ class EpisodeNavigationService {
     );
     playbackState.setPlaybackFromLocalQueue(queue, contextKey: seriesId);
     appLogger.d('Local episode queue (${allEpisodes.length} episodes, anchor: $anchorIdx)');
-  }
-
-  /// Navigate to the next or previous episode
-  ///
-  /// Preserves the current audio track, subtitle track, and playback rate
-  /// selections when transitioning between episodes.
-  Future<void> navigateToEpisode({
-    required BuildContext context,
-    required MediaItem episode,
-    required Player? player,
-    bool usePushReplacement = true,
-  }) async {
-    if (!context.mounted) return;
-
-    // Capture current player state before navigation
-    AudioTrack? currentAudioTrack;
-    SubtitleTrack? currentSubtitleTrack;
-    SubtitleTrack? currentSecondarySubtitleTrack;
-    double? currentPlaybackRate;
-
-    if (player != null) {
-      currentAudioTrack = player.state.track.audio;
-      currentSubtitleTrack = player.state.track.subtitle;
-      currentSecondarySubtitleTrack = player.state.track.secondarySubtitle;
-      currentPlaybackRate = player.state.rate;
-
-      appLogger.d(
-        'Navigating to episode with preserved settings - Audio: ${currentAudioTrack?.id}, Subtitle: ${currentSubtitleTrack?.id}, Rate: ${currentPlaybackRate}x',
-      );
-    }
-
-    // Navigate to the new episode
-    if (context.mounted) {
-      unawaited(
-        navigateToVideoPlayer(
-          context,
-          metadata: episode,
-          preferredAudioTrack: currentAudioTrack,
-          preferredSubtitleTrack: currentSubtitleTrack,
-          preferredSecondarySubtitleTrack: currentSecondarySubtitleTrack,
-          usePushReplacement: usePushReplacement,
-        ),
-      );
-    }
   }
 
   /// LRU-touching read: re-inserts the entry so it becomes the most recent.

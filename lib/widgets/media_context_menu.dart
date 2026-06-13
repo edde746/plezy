@@ -5,8 +5,11 @@ import 'package:flutter/material.dart';
 import 'package:vibe_stream/widgets/app_icon.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
+
+import '../providers/watch_state_store.dart';
 import '../media/media_backend.dart';
 import '../media/media_item.dart';
+import '../media/media_item_types.dart';
 import '../media/media_kind.dart';
 import '../media/media_playlist.dart';
 import '../media/media_server_client.dart';
@@ -17,7 +20,7 @@ import '../services/plex_client.dart';
 import '../services/media_list_playback_launcher.dart';
 import '../services/offline_watch_sync_service.dart';
 import '../services/playlist_items_loader.dart';
-import '../services/trackers/tracker_coordinator.dart';
+import '../services/watch_actions.dart';
 import '../models/transcode_quality_preset.dart';
 import '../utils/download_version_utils.dart';
 import '../utils/download_utils.dart';
@@ -27,12 +30,12 @@ import '../utils/global_key_utils.dart';
 import '../providers/download_provider.dart';
 import '../providers/multi_server_provider.dart';
 import '../providers/offline_mode_provider.dart';
-import '../providers/offline_watch_provider.dart';
 import '../profiles/active_profile_provider.dart';
 import '../profiles/profile.dart';
 import '../utils/provider_extensions.dart';
 import '../utils/app_logger.dart';
 import '../utils/library_refresh_notifier.dart';
+import '../utils/media_navigation_helper.dart';
 import '../utils/media_server_http_client.dart';
 import '../utils/platform_detector.dart';
 import '../utils/snackbar_helper.dart';
@@ -130,8 +133,13 @@ class MediaContextMenuState extends State<MediaContextMenu> {
     widget.onListRefresh?.call();
   }
 
-  /// The widget's [item] cast as a [MediaItem]. Returns `null` for playlists.
-  MediaItem? get _mediaItem => widget.item is MediaItem ? widget.item as MediaItem : null;
+  /// The widget's [item] cast as a [MediaItem], resolved against the session
+  /// watch-state store so the offered actions match what the card shows.
+  /// Returns `null` for playlists.
+  MediaItem? get _mediaItem {
+    final item = widget.item;
+    return item is MediaItem ? context.readFreshWatchState(item) : null;
+  }
 
   /// The widget's [item] cast as a [MediaPlaylist]. Returns `null` for media items.
   MediaPlaylist? get _playlist => widget.item is MediaPlaylist ? widget.item as MediaPlaylist : null;
@@ -304,10 +312,13 @@ class MediaContextMenuState extends State<MediaContextMenu> {
         );
       }
 
-      if (mediaKind == MediaKind.movie ||
-          mediaKind == MediaKind.show ||
-          mediaKind == MediaKind.season ||
-          mediaKind == MediaKind.episode) {
+      final isVideoKind = mediaItem.isVideoContent;
+
+      if (widget.isInContinueWatching && isVideoKind) {
+        menuActions.add(_MenuAction(value: 'details', icon: Symbols.info_rounded, label: t.mediaMenu.viewDetails));
+      }
+
+      if (isVideoKind) {
         menuActions.add(_MenuAction(value: 'rate', icon: Symbols.star_rounded, label: t.mediaMenu.rate));
       }
 
@@ -356,17 +367,9 @@ class MediaContextMenuState extends State<MediaContextMenu> {
       final itemSeriesKey = mediaKind == MediaKind.episode ? mediaItem.grandparentId : mediaItem.parentId;
       if ((mediaKind == MediaKind.episode || mediaKind == MediaKind.season) &&
           itemSeriesKey != null &&
+          !widget.isInContinueWatching &&
           ancestorSeriesKey != itemSeriesKey) {
         menuActions.add(_MenuAction(value: 'series', icon: Symbols.tv_rounded, label: t.mediaMenu.goToSeries));
-      }
-
-      // Go to Season (for episodes) — hide if already viewing that season's MediaDetailScreen
-      if (mediaKind == MediaKind.episode &&
-          mediaItem.parentTitle != null &&
-          !(ancestorMeta != null && ancestorMeta.kind == MediaKind.season && ancestorMeta.id == mediaItem.parentId)) {
-        menuActions.add(
-          _MenuAction(value: 'season', icon: Symbols.playlist_play_rounded, label: t.mediaMenu.goToSeason),
-        );
       }
 
       if (mediaKind == MediaKind.show || mediaKind == MediaKind.season) {
@@ -400,7 +403,8 @@ class MediaContextMenuState extends State<MediaContextMenu> {
         menuActions.add(_MenuAction(value: 'fileinfo', icon: Symbols.info_rounded, label: t.mediaMenu.fileInfo));
       }
 
-      if (mediaKind == MediaKind.episode || mediaKind == MediaKind.movie) {
+      if (PlatformDetector.supportsExternalPlayers() &&
+          (mediaKind == MediaKind.episode || mediaKind == MediaKind.movie)) {
         menuActions.add(
           _MenuAction(
             value: 'play_external',
@@ -526,7 +530,11 @@ class MediaContextMenuState extends State<MediaContextMenu> {
         case 'play_from_beginning':
           didNavigate = true;
           if (context.mounted) {
-            await navigateToVideoPlayer(context, metadata: mediaItem!.copyWith(viewOffsetMs: 0));
+            await navigateToVideoPlayer(
+              context,
+              metadata: mediaItem!.copyWith(viewOffsetMs: 0),
+              resolveWatchState: false,
+            );
           }
           break;
 
@@ -536,49 +544,25 @@ class MediaContextMenuState extends State<MediaContextMenu> {
           break;
 
         case 'watch':
-          final isOffline = context.read<OfflineModeProvider>().isOffline;
-          if (isOffline && mediaItem?.serverId != null) {
-            // Offline mode: queue action for later sync (emits WatchStateEvent)
-            final offlineWatch = context.read<OfflineWatchProvider>();
-            await offlineWatch.markAsWatched(serverId: ServerId(mediaItem!.serverId!), itemId: mediaItem.id);
-            if (context.mounted) {
-              showAppSnackBar(context, t.messages.markedAsWatchedOffline);
-              _notifyRefresh(mediaItem.id);
-            }
-          } else {
-            // Resolve the right backend client — Plex hits scrobble, Jellyfin
-            // hits /UserPlayedItems. WatchStateNotifier event is fired in both
-            // paths so cross-screen UI updates regardless of backend.
-            await _executeAction(context, () async {
-              final item = mediaItem;
-              final client = context.tryGetMediaClientForServer(ServerId(_itemServerId!));
-              if (client != null && item != null) {
-                await client.markWatched(item);
-                unawaited(TrackerCoordinator.instance.markWatched(item, client));
-              }
-            }, t.messages.markedAsWatched);
-          }
-          break;
-
         case 'unwatch':
+          final watched = selected == 'watch';
+          final item = mediaItem;
+          if (item == null) break;
           final isOffline = context.read<OfflineModeProvider>().isOffline;
-          if (isOffline && mediaItem?.serverId != null) {
-            // Offline mode: queue action for later sync (emits WatchStateEvent)
-            final offlineWatch = context.read<OfflineWatchProvider>();
-            await offlineWatch.markAsUnwatched(serverId: ServerId(mediaItem!.serverId!), itemId: mediaItem.id);
+          if (isOffline && item.serverId != null) {
+            // Queue for later sync — the offline provider emits the WatchStateEvent.
+            await WatchActions.setWatched(context, item, watched: watched, offline: true);
             if (context.mounted) {
-              showAppSnackBar(context, t.messages.markedAsUnwatchedOffline);
-              _notifyRefresh(mediaItem.id);
+              showAppSnackBar(
+                context,
+                watched ? t.messages.markedAsWatchedOffline : t.messages.markedAsUnwatchedOffline,
+              );
+              _notifyRefresh(item.id);
             }
           } else {
             await _executeAction(context, () async {
-              final item = mediaItem;
-              final client = context.tryGetMediaClientForServer(ServerId(_itemServerId!));
-              if (client != null && item != null) {
-                await client.markUnwatched(item);
-                unawaited(TrackerCoordinator.instance.markUnwatched(item, client));
-              }
-            }, t.messages.markedAsUnwatched);
+              await WatchActions.setWatched(context, item, watched: watched, offline: false);
+            }, watched ? t.messages.markedAsWatched : t.messages.markedAsUnwatched);
           }
           break;
 
@@ -587,8 +571,7 @@ class MediaContextMenuState extends State<MediaContextMenu> {
           // This preserves the progression for partially watched items
           // and doesn't mark unwatched next episodes as watched
           try {
-            final client = _getMediaClientForItem();
-            await client.removeFromContinueWatching(mediaItem!);
+            await WatchActions.removeFromContinueWatching(context, mediaItem!);
             if (context.mounted) {
               showSuccessSnackBar(context, t.messages.removedFromContinueWatching);
               if (widget.onRemoveFromContinueWatching != null) {
@@ -601,6 +584,13 @@ class MediaContextMenuState extends State<MediaContextMenu> {
             if (context.mounted) {
               showErrorSnackBar(context, t.messages.errorLoading(error: e.toString()));
             }
+          }
+          break;
+
+        case 'details':
+          didNavigate = true;
+          if (context.mounted) {
+            await navigateToMediaItemDetails(context, mediaItem!, onRefresh: _notifyRefresh);
           }
           break;
 
@@ -648,21 +638,16 @@ class MediaContextMenuState extends State<MediaContextMenu> {
           await _navigateToRelated(
             context,
             mediaItem!.kind == MediaKind.season ? mediaItem.parentId : mediaItem.grandparentId,
-            (item) => mediaDetailRoute(metadata: item),
+            (item) {
+              final target = mediaDetailNavigationTargetFor(mediaItem, metadataOverride: item);
+              return mediaDetailRoute(
+                metadata: target.metadata,
+                initialSeasonIndex: target.initialSeasonIndex,
+                initialSeasonId: target.initialSeasonId,
+                initialEpisodeId: target.initialEpisodeId,
+              );
+            },
             t.messages.errorLoadingSeries,
-          );
-          break;
-
-        case 'season':
-          didNavigate = true;
-          // Navigate to the show with the season tab pre-selected
-          final seasonParentKey = mediaItem!.kind == MediaKind.episode ? mediaItem.grandparentId : mediaItem.parentId;
-          final seasonIndex = mediaItem.parentIndex;
-          await _navigateToRelated(
-            context,
-            seasonParentKey,
-            (show) => mediaDetailRoute(metadata: show, initialSeasonIndex: seasonIndex),
-            t.messages.errorLoadingSeason,
           );
           break;
 
@@ -725,6 +710,11 @@ class MediaContextMenuState extends State<MediaContextMenu> {
         case 'delete_media':
           await _handleDeleteMediaItem(context, mediaKind);
           break;
+      }
+    } catch (e, st) {
+      appLogger.e('Media context menu action failed', error: e, stackTrace: st);
+      if (context.mounted) {
+        showErrorSnackBar(context, t.messages.errorLoading(error: e.toString()));
       }
     } finally {
       _isContextMenuOpen = false;
@@ -828,11 +818,13 @@ class MediaContextMenuState extends State<MediaContextMenu> {
   }
 
   Future<void> _showFileInfo(BuildContext context) async {
-    final client = _getMediaClientForItem();
+    var loadingShown = false;
 
     try {
+      final client = _getMediaClientForItem();
       if (context.mounted) {
         showLoadingDialog(context);
+        loadingShown = true;
       }
 
       // Fetch file info
@@ -840,8 +832,9 @@ class MediaContextMenuState extends State<MediaContextMenu> {
       final fileInfo = await client.getFileInfo(item);
 
       // Close loading indicator
-      if (context.mounted) {
+      if (loadingShown && context.mounted) {
         Navigator.pop(context);
+        loadingShown = false;
       }
 
       if (fileInfo != null && context.mounted) {
@@ -856,7 +849,7 @@ class MediaContextMenuState extends State<MediaContextMenu> {
       }
     } catch (e) {
       // Close loading indicator if it's still open
-      if (context.mounted && Navigator.canPop(context)) {
+      if (loadingShown && context.mounted && Navigator.canPop(context)) {
         Navigator.pop(context);
       }
 
@@ -1245,6 +1238,8 @@ class MediaContextMenuState extends State<MediaContextMenu> {
 
   /// Handle play in external player action
   Future<void> _handlePlayExternal(BuildContext context) async {
+    if (!PlatformDetector.supportsExternalPlayers()) return;
+
     final item = _mediaItem!;
 
     // Check if the item is downloaded and use local file path if available
@@ -1362,10 +1357,10 @@ class MediaContextMenuState extends State<MediaContextMenu> {
   Future<void> _handleDownload(BuildContext context) async {
     final downloadProvider = Provider.of<DownloadProvider>(context, listen: false);
     final item = _mediaItem!;
-    // Backend-agnostic resolve so Jellyfin items can be downloaded too.
-    final client = context.getMediaClientWithFallback(serverIdOrNull(_itemServerId));
 
     try {
+      // Backend-agnostic resolve so Jellyfin items can be downloaded too.
+      final client = context.getMediaClientWithFallback(serverIdOrNull(_itemServerId));
       final result = await showDownloadOptionsAndQueue(
         context,
         metadata: item,

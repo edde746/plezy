@@ -115,7 +115,6 @@ class _TranslationsAuthZh extends TranslationsAuthEn {
 	@override String get or => '或';
 	@override String get connectToJellyfin => '连接到 Jellyfin';
 	@override String get useQuickConnect => '使用 Quick Connect';
-	@override String get quickConnectCode => 'Quick Connect 代码';
 	@override String get quickConnectInstructions => '在 Jellyfin 中打开 Quick Connect 并输入此代码。';
 	@override String get quickConnectWaiting => '等待批准…';
 	@override String get quickConnectCancel => '取消';
@@ -245,6 +244,9 @@ class _TranslationsSettingsZh extends TranslationsSettingsEn {
 	@override String get gridView => '网格视图';
 	@override String get listView => '列表视图';
 	@override String get showHeroSection => '显示主要精选区';
+	@override String get continueWatchingAction => '继续观看操作';
+	@override String get continueWatchingPlay => '播放';
+	@override String get continueWatchingDetails => '打开详情';
 	@override String get useGlobalHubs => '使用主页布局';
 	@override String get useGlobalHubsDescription => '显示统一主页中心。否则使用资料库推荐。';
 	@override String get showServerNameOnHubs => '在推荐栏显示服务器名称';
@@ -261,6 +263,8 @@ class _TranslationsSettingsZh extends TranslationsSettingsEn {
 	@override String get showSeasonPostersOnTabsDescription => '在每季标签上方显示该季海报';
 	@override String get tvFullCardLayout => '完整 TV 卡片';
 	@override String get tvFullCardLayoutDescription => '使用仅显示图片的 TV 卡片，并叠加演员姓名';
+	@override String get focusGlow => '焦点光晕';
+	@override String get focusGlowDescription => '在获得焦点的卡片周围显示柔和的光晕';
 	@override String get hideSpoilers => '隐藏未看剧集的剧透内容';
 	@override String get hideSpoilersDescription => '模糊未观看剧集的缩略图和描述';
 	@override String get playerBackend => '播放器引擎';
@@ -492,8 +496,8 @@ class _TranslationsMediaMenuZh extends TranslationsMediaMenuEn {
 	@override String get markAsWatched => '标记为已观看';
 	@override String get markAsUnwatched => '标记为未观看';
 	@override String get removeFromContinueWatching => '从继续观看中移除';
+	@override String get viewDetails => '查看详情';
 	@override String get goToSeries => '转到系列';
-	@override String get goToSeason => '转到季';
 	@override String get shufflePlay => '随机播放';
 	@override String get shuffleNotAvailableOffline => '离线时无法随机播放';
 	@override String get fileInfo => '文件信息';
@@ -673,7 +677,6 @@ class _TranslationsMessagesZh extends TranslationsMessagesEn {
 	@override String get fileInfoNotAvailable => '文件信息不可用';
 	@override String errorLoadingFileInfo({required Object error}) => '加载文件信息时出错: ${error}';
 	@override String get errorLoadingSeries => '加载系列时出错';
-	@override String get errorLoadingSeason => '加载季时出错';
 	@override String get musicNotSupported => '尚不支持播放音乐';
 	@override String get noDescriptionAvailable => '暂无描述';
 	@override String get noProfilesAvailable => '没有可用的用户';
@@ -727,6 +730,9 @@ class _TranslationsSubtitlingStylingZh extends TranslationsSubtitlingStylingEn {
 	@override String get assOverride => 'ASS 样式覆盖';
 	@override String get bold => '粗体';
 	@override String get italic => '斜体';
+	@override String get renderResolution => '渲染分辨率';
+	@override String get renderResolutionScreen => '屏幕分辨率';
+	@override String get renderResolutionVideo => '视频分辨率';
 }
 
 // Path: mpvConfig
@@ -1598,10 +1604,8 @@ class _TranslationsAddServerZh extends TranslationsAddServerEn {
 
 	// Translations
 	@override String get addJellyfinTitle => '添加 Jellyfin 服务器';
-	@override String get jellyfinUrlIntro => '输入服务器 URL，例如 `https://jellyfin.example.com`。';
-	@override String get jellyfinUrlsIntro => '输入一个或多个服务器 URL，用逗号分隔。Vibe 会使用可访问且延迟最低的 URL。';
-	@override String get serverUrl => '服务器 URL';
 	@override String get serverUrls => '服务器 URL';
+	@override String get serverUrlsHelper => '可输入多个 URL，以逗号分隔。';
 	@override String get findServer => '查找服务器';
 	@override String get searchingLocalServers => '正在查找本地 Jellyfin 服务器...';
 	@override String get localServers => '本地 Jellyfin 服务器';
@@ -1614,17 +1618,12 @@ class _TranslationsAddServerZh extends TranslationsAddServerEn {
 	@override String signInFailed({required Object error}) => '登录失败: ${error}';
 	@override String quickConnectFailed({required Object error}) => 'Quick Connect 失败: ${error}';
 	@override String get addPlexTitle => '使用 Plex 登录';
-	@override String get plexAuthIntro => '使用浏览器或二维码登录。';
-	@override String get plexQRPrompt => '扫描此 QR 码以登录。';
-	@override String get waitingForPlexConfirmation => '等待 plex.tv 确认登录…';
 	@override String get pinExpired => 'PIN 在登录前已过期。请重试。';
 	@override String get duplicatePlexAccount => '已登录 Plex。请退出登录以切换账号。';
 	@override String failedToRegisterAccount({required Object error}) => '注册帐户失败: ${error}';
 	@override String get enterJellyfinUrlError => '输入你的 Jellyfin 服务器 URL';
 	@override String get addConnectionTitle => '添加连接';
 	@override String addConnectionTitleScoped({required Object name}) => '添加到 ${name}';
-	@override String get addConnectionIntroGlobal => '添加另一个媒体服务器。Plex 和 Jellyfin 会一起显示在主页。';
-	@override String get addConnectionIntroScoped => '添加新服务器，或从另一个配置文件借用。';
 	@override String get signInWithPlexCard => '使用 Plex 登录';
 	@override String get signInWithPlexCardSubtitle => '授权此设备。共享服务器会被添加。';
 	@override String get signInWithPlexCardSubtitleScoped => '授权一个 Plex 账号。Home 用户会成为个人资料。';
@@ -1933,7 +1932,6 @@ extension on TranslationsZh {
 			'auth.or' => '或',
 			'auth.connectToJellyfin' => '连接到 Jellyfin',
 			'auth.useQuickConnect' => '使用 Quick Connect',
-			'auth.quickConnectCode' => 'Quick Connect 代码',
 			'auth.quickConnectInstructions' => '在 Jellyfin 中打开 Quick Connect 并输入此代码。',
 			'auth.quickConnectWaiting' => '等待批准…',
 			'auth.quickConnectCancel' => '取消',
@@ -2027,6 +2025,9 @@ extension on TranslationsZh {
 			'settings.gridView' => '网格视图',
 			'settings.listView' => '列表视图',
 			'settings.showHeroSection' => '显示主要精选区',
+			'settings.continueWatchingAction' => '继续观看操作',
+			'settings.continueWatchingPlay' => '播放',
+			'settings.continueWatchingDetails' => '打开详情',
 			'settings.useGlobalHubs' => '使用主页布局',
 			'settings.useGlobalHubsDescription' => '显示统一主页中心。否则使用资料库推荐。',
 			'settings.showServerNameOnHubs' => '在推荐栏显示服务器名称',
@@ -2043,6 +2044,8 @@ extension on TranslationsZh {
 			'settings.showSeasonPostersOnTabsDescription' => '在每季标签上方显示该季海报',
 			'settings.tvFullCardLayout' => '完整 TV 卡片',
 			'settings.tvFullCardLayoutDescription' => '使用仅显示图片的 TV 卡片，并叠加演员姓名',
+			'settings.focusGlow' => '焦点光晕',
+			'settings.focusGlowDescription' => '在获得焦点的卡片周围显示柔和的光晕',
 			'settings.hideSpoilers' => '隐藏未看剧集的剧透内容',
 			'settings.hideSpoilersDescription' => '模糊未观看剧集的缩略图和描述',
 			'settings.playerBackend' => '播放器引擎',
@@ -2262,8 +2265,8 @@ extension on TranslationsZh {
 			'mediaMenu.markAsWatched' => '标记为已观看',
 			'mediaMenu.markAsUnwatched' => '标记为未观看',
 			'mediaMenu.removeFromContinueWatching' => '从继续观看中移除',
+			'mediaMenu.viewDetails' => '查看详情',
 			'mediaMenu.goToSeries' => '转到系列',
-			'mediaMenu.goToSeason' => '转到季',
 			'mediaMenu.shufflePlay' => '随机播放',
 			'mediaMenu.shuffleNotAvailableOffline' => '离线时无法随机播放',
 			'mediaMenu.fileInfo' => '文件信息',
@@ -2395,7 +2398,6 @@ extension on TranslationsZh {
 			'messages.fileInfoNotAvailable' => '文件信息不可用',
 			'messages.errorLoadingFileInfo' => ({required Object error}) => '加载文件信息时出错: ${error}',
 			'messages.errorLoadingSeries' => '加载系列时出错',
-			'messages.errorLoadingSeason' => '加载季时出错',
 			'messages.musicNotSupported' => '尚不支持播放音乐',
 			'messages.noDescriptionAvailable' => '暂无描述',
 			'messages.noProfilesAvailable' => '没有可用的用户',
@@ -2430,11 +2432,11 @@ extension on TranslationsZh {
 			'subtitlingStyling.text' => '文本',
 			'subtitlingStyling.border' => '边框',
 			'subtitlingStyling.background' => '背景',
+			_ => null,
+		} ?? switch (path) {
 			'subtitlingStyling.fontSize' => '字号',
 			'subtitlingStyling.textColor' => '文本颜色',
 			'subtitlingStyling.borderSize' => '边框大小',
-			_ => null,
-		} ?? switch (path) {
 			'subtitlingStyling.borderColor' => '边框颜色',
 			'subtitlingStyling.backgroundOpacity' => '背景不透明度',
 			'subtitlingStyling.backgroundColor' => '背景颜色',
@@ -2442,6 +2444,9 @@ extension on TranslationsZh {
 			'subtitlingStyling.assOverride' => 'ASS 样式覆盖',
 			'subtitlingStyling.bold' => '粗体',
 			'subtitlingStyling.italic' => '斜体',
+			'subtitlingStyling.renderResolution' => '渲染分辨率',
+			'subtitlingStyling.renderResolutionScreen' => '屏幕分辨率',
+			'subtitlingStyling.renderResolutionVideo' => '视频分辨率',
 			'mpvConfig.title' => 'mpv 配置',
 			'mpvConfig.description' => '高级视频播放器设置',
 			'mpvConfig.presets' => '预设',
@@ -2941,14 +2946,14 @@ extension on TranslationsZh {
 			'companionRemote.remote.retryNow' => '立即重试',
 			'companionRemote.remote.tabRemote' => '遥控',
 			'companionRemote.remote.tabPlay' => '播放',
+			_ => null,
+		} ?? switch (path) {
 			'companionRemote.remote.tabMore' => '更多',
 			'companionRemote.remote.menu' => '菜单',
 			'companionRemote.remote.tabNavigation' => '标签导航',
 			'companionRemote.remote.tabDiscover' => '发现',
 			'companionRemote.remote.tabLibraries' => '媒体库',
 			'companionRemote.remote.tabSearch' => '搜索',
-			_ => null,
-		} ?? switch (path) {
 			'companionRemote.remote.tabDownloads' => '下载',
 			'companionRemote.remote.tabSettings' => '设置',
 			'companionRemote.remote.previous' => '上一个',
@@ -3162,10 +3167,8 @@ extension on TranslationsZh {
 			'trackers.libraryFilter.libraries' => '媒体库',
 			'trackers.libraryFilter.noLibraries' => '没有可用的媒体库',
 			'addServer.addJellyfinTitle' => '添加 Jellyfin 服务器',
-			'addServer.jellyfinUrlIntro' => '输入服务器 URL，例如 `https://jellyfin.example.com`。',
-			'addServer.jellyfinUrlsIntro' => '输入一个或多个服务器 URL，用逗号分隔。Vibe 会使用可访问且延迟最低的 URL。',
-			'addServer.serverUrl' => '服务器 URL',
 			'addServer.serverUrls' => '服务器 URL',
+			'addServer.serverUrlsHelper' => '可输入多个 URL，以逗号分隔。',
 			'addServer.findServer' => '查找服务器',
 			'addServer.searchingLocalServers' => '正在查找本地 Jellyfin 服务器...',
 			'addServer.localServers' => '本地 Jellyfin 服务器',
@@ -3178,17 +3181,12 @@ extension on TranslationsZh {
 			'addServer.signInFailed' => ({required Object error}) => '登录失败: ${error}',
 			'addServer.quickConnectFailed' => ({required Object error}) => 'Quick Connect 失败: ${error}',
 			'addServer.addPlexTitle' => '使用 Plex 登录',
-			'addServer.plexAuthIntro' => '使用浏览器或二维码登录。',
-			'addServer.plexQRPrompt' => '扫描此 QR 码以登录。',
-			'addServer.waitingForPlexConfirmation' => '等待 plex.tv 确认登录…',
 			'addServer.pinExpired' => 'PIN 在登录前已过期。请重试。',
 			'addServer.duplicatePlexAccount' => '已登录 Plex。请退出登录以切换账号。',
 			'addServer.failedToRegisterAccount' => ({required Object error}) => '注册帐户失败: ${error}',
 			'addServer.enterJellyfinUrlError' => '输入你的 Jellyfin 服务器 URL',
 			'addServer.addConnectionTitle' => '添加连接',
 			'addServer.addConnectionTitleScoped' => ({required Object name}) => '添加到 ${name}',
-			'addServer.addConnectionIntroGlobal' => '添加另一个媒体服务器。Plex 和 Jellyfin 会一起显示在主页。',
-			'addServer.addConnectionIntroScoped' => '添加新服务器，或从另一个配置文件借用。',
 			'addServer.signInWithPlexCard' => '使用 Plex 登录',
 			'addServer.signInWithPlexCardSubtitle' => '授权此设备。共享服务器会被添加。',
 			'addServer.signInWithPlexCardSubtitleScoped' => '授权一个 Plex 账号。Home 用户会成为个人资料。',

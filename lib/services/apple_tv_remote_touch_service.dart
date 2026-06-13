@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart' show ValueListenable;
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 
@@ -44,6 +45,7 @@ class AppleTvRemoteTouchService {
   bool _listening = false;
   bool _nativeKeyHandlerRegistered = false;
   bool _touchActive = false;
+  final ValueNotifier<bool> _touchActiveNotifier = ValueNotifier<bool>(false);
   double _startX = 0;
   double _startY = 0;
   double _anchorX = 0;
@@ -82,6 +84,14 @@ class AppleTvRemoteTouchService {
            duplicateInputGuard ?? GamepadDuplicateInputGuard(now: now, suppressionWindow: duplicateSuppressionWindow);
 
   Stream<AppleTvRemotePlayPauseAction> get playPauseActions => _playPauseController.stream;
+
+  /// Whether a Siri-remote touch gesture is currently in progress (finger down).
+  /// Cleared when the touch ends or cancels. tvOS-only; `false` elsewhere.
+  bool get isTouchActive => _touchActive;
+
+  /// Listenable mirror of [isTouchActive] so widgets can react when the active
+  /// touch gesture ends (used to extend Home-rail select suppression).
+  ValueListenable<bool> get touchActiveListenable => _touchActiveNotifier;
 
   void start() {
     if (_listening) return;
@@ -179,6 +189,7 @@ class AppleTvRemoteTouchService {
 
   void _startTouch(double x, double y) {
     _touchActive = true;
+    _touchActiveNotifier.value = true;
     _startX = x;
     _startY = y;
     _anchorX = x;
@@ -412,6 +423,7 @@ class AppleTvRemoteTouchService {
 
   void _resetTouch() {
     _touchActive = false;
+    _touchActiveNotifier.value = false;
     _lastSwipeAxis = null;
     _lastSwipeAt = null;
   }

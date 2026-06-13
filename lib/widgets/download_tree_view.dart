@@ -6,7 +6,6 @@ import '../focus/focusable_wrapper.dart';
 import '../i18n/strings.g.dart';
 import '../media/media_item.dart';
 import '../media/media_item_types.dart';
-import '../media/season_title.dart';
 import '../models/download_models.dart';
 import '../utils/dialogs.dart';
 import '../utils/global_key_utils.dart';
@@ -189,8 +188,12 @@ class _DownloadTreeViewState extends State<DownloadTreeView> {
 
         // Get season metadata from first episode
         final firstEpisode = widget.metadata[seasonEpisodes.first.key];
-        final seasonTitle = firstEpisode?.parentTitle ?? 'Unknown Season';
         final seasonNumber = firstEpisode?.parentIndex;
+        final seasonTitle = firstEpisode?.parentTitle?.isNotEmpty == true
+            ? firstEpisode!.parentTitle!
+            : seasonNumber != null
+            ? t.common.seasonNumber(number: seasonNumber)
+            : 'Unknown Season';
 
         // Build episode nodes
         final List<DownloadTreeNode> episodeNodes = [];
@@ -232,16 +235,10 @@ class _DownloadTreeViewState extends State<DownloadTreeView> {
             : episodeNodes.map((e) => e.progress).reduce((a, b) => a + b) / episodeNodes.length;
         final seasonStatus = _determineAggregateStatus(episodeNodes.map((e) => e.status).toList());
 
-        final displayTitle = localizedSeasonLabel(
-          title: firstEpisode?.parentTitle,
-          index: seasonNumber,
-          fallback: seasonTitle,
-        );
-
         seasons.add(
           DownloadTreeNode(
             key: '$showKey:$seasonKey',
-            title: displayTitle,
+            title: seasonTitle,
             type: DownloadNodeType.season,
             progress: seasonProgress,
             status: seasonStatus,

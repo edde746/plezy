@@ -15,6 +15,7 @@ import '../../../widgets/focusable_media_card.dart';
 import '../../../widgets/media_grid_delegate.dart';
 import '../../../widgets/settings_builder.dart';
 import '../../../widgets/skeleton_media_card.dart';
+import '../../../widgets/sliver_cross_axis_layout_builder.dart';
 import '../../../i18n/strings.g.dart';
 import '../../main_screen.dart';
 import 'base_library_tab.dart';
@@ -147,25 +148,20 @@ class _LibraryCollectionsTabState extends BaseLibraryTabState<MediaItem, Library
   Widget _buildGridSliver(int density, {required bool fullCardLayout}) {
     return SliverPadding(
       padding: _effectivePadding,
-      sliver: SliverLayoutBuilder(
-        builder: (context, constraints) {
-          final maxCrossAxisExtent = GridSizeCalculator.getMaxCrossAxisExtent(context, density);
-          final gridSpacing = MediaGridDelegate.spacingFor(context: context, fullBleedImage: fullCardLayout);
-          final columnCount = GridSizeCalculator.getColumnCount(
-            constraints.crossAxisExtent,
-            maxCrossAxisExtent,
-            crossAxisSpacing: gridSpacing,
+      sliver: SliverCrossAxisLayoutBuilder(
+        builder: (context, crossAxisExtent) {
+          final geometry = MediaGridGeometry.resolve(
+            context: context,
+            crossAxisExtent: crossAxisExtent,
+            density: density,
+            fullBleedImage: fullCardLayout,
           );
           return SliverGrid.builder(
-            gridDelegate: MediaGridDelegate.createDelegate(
-              context: context,
-              density: density,
-              fullBleedImage: fullCardLayout,
-            ),
+            gridDelegate: geometry.delegate,
             itemCount: totalSize,
             itemBuilder: (context, index) => _buildMediaCardItem(
               index,
-              isFirstColumn: GridSizeCalculator.isFirstColumn(index, columnCount),
+              isFirstColumn: GridSizeCalculator.isFirstColumn(index, geometry.columnCount),
               fullBleedImage: fullCardLayout,
             ),
           );

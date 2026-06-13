@@ -9,6 +9,7 @@ import 'package:uuid/uuid.dart';
 
 import '../../connection/connection.dart';
 import '../../exceptions/media_server_exceptions.dart';
+import '../../focus/card_focus_scope.dart';
 import '../../focus/focusable_button.dart';
 import '../../focus/focusable_text_field.dart';
 import '../../focus/focusable_wrapper.dart';
@@ -187,7 +188,7 @@ class _AddJellyfinScreenState extends State<AddJellyfinScreen> with AsyncFormSta
       setErrorText(t.addServer.enterJellyfinUrlError);
       return;
     }
-    await runAsync<void>(
+    final autoStartQuickConnect = await runAsync<bool>(
       () async {
         final auth = await _buildAuthService();
         final endpoint = await auth.raceEndpoints(
@@ -196,7 +197,7 @@ class _AddJellyfinScreenState extends State<AddJellyfinScreen> with AsyncFormSta
           baseUrlValidationGroups: input.validationBaseUrlGroups,
         );
         final qcEnabled = await auth.isQuickConnectEnabled(endpoint.activeBaseUrl);
-        if (!mounted) return;
+        if (!mounted) return false;
         setState(() {
           _serverEndpoint = endpoint;
           _serverInfo = endpoint.serverInfo;
@@ -206,15 +207,19 @@ class _AddJellyfinScreenState extends State<AddJellyfinScreen> with AsyncFormSta
         // On TV, typing a username/password with a remote is misery — auto-jump
         // to Quick Connect when the server supports it. Mirrors the
         // PlatformDetector.isTV() default in add_plex_account_screen.dart.
-        if (qcEnabled && PlatformDetector.isTV()) {
-          unawaited(_startQuickConnect());
-        } else {
-          _requestFocusAfterFrame(_usernameFocus);
-        }
+        final autoStart = qcEnabled && PlatformDetector.isTV();
+        if (!autoStart) _requestFocusAfterFrame(_usernameFocus);
+        return autoStart;
       },
       errorMapper: (e) =>
           e is MediaServerUrlException ? e.message : t.addServer.couldNotReachServer(error: e.toString()),
     );
+    // Sequenced after the probe's runAsync so busy stays set straight through
+    // /QuickConnect/Initiate. Started from inside the probe body, the probe's
+    // `finally` cleared busy mid-initiate, re-enabling the form — the focus
+    // fallback from the removed tile/button then landed on the URL field and
+    // auto-opened the TV keyboard over the Quick Connect panel.
+    if (autoStartQuickConnect == true && mounted) await _startQuickConnect();
   }
 
   Future<void> _signIn() async {
@@ -441,32 +446,30 @@ class _AddJellyfinScreenState extends State<AddJellyfinScreen> with AsyncFormSta
     return FocusedScrollScaffold(
       title: Text(t.addServer.addJellyfinTitle),
       slivers: [
-        SliverPadding(
-          padding: const EdgeInsets.all(16),
-          sliver: SliverToBoxAdapter(
-            child: Form(
-              key: _formKey,
-              child: Column(crossAxisAlignment: .stretch, children: _buildBodyChildren(theme)),
+        if (_qcInitiation != null)
+          SliverFillRemaining(
+            hasScrollBody: false,
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Center(child: _buildQuickConnectPanel(theme)),
+            ),
+          )
+        else
+          SliverPadding(
+            padding: const EdgeInsets.all(16),
+            sliver: SliverToBoxAdapter(
+              child: Form(
+                key: _formKey,
+                child: Column(crossAxisAlignment: .stretch, children: _buildBodyChildren(theme)),
+              ),
             ),
           ),
-        ),
       ],
     );
   }
 
   List<Widget> _buildBodyChildren(ThemeData theme) {
-    if (_qcInitiation != null) {
-      return [
-        ..._buildQuickConnectPanel(theme),
-        if (errorText != null) ...[
-          const SizedBox(height: 12),
-          Text(errorText!, style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.error)),
-        ],
-      ];
-    }
     return [
-      Text(t.addServer.jellyfinUrlsIntro, style: theme.textTheme.bodyMedium),
-      const SizedBox(height: 16),
       FocusableTextFormField(
         controller: _urlController,
         focusNode: _urlFocus,
@@ -491,6 +494,9 @@ class _AddJellyfinScreenState extends State<AddJellyfinScreen> with AsyncFormSta
         onFieldSubmitted: busy ? null : (_) => _probe(),
         decoration: InputDecoration(
           labelText: t.addServer.serverUrls,
+          // URL example — intentionally not localized.
+          hintText: 'https://jellyfin.example.com',
+          helperText: _serverInfo == null ? t.addServer.serverUrlsHelper : null,
           prefixIcon: const AppIcon(Symbols.link_rounded, fill: 1),
         ),
         validator: (_) => _enteredUrls().isEmpty ? t.addServer.required : null,
@@ -626,19 +632,17 @@ class _AddJellyfinScreenState extends State<AddJellyfinScreen> with AsyncFormSta
     if (_isDiscoveringLocalServers) {
       return [
         const SizedBox(height: 16),
-        Container(
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: theme.colorScheme.surfaceContainerHighest,
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Row(
-            children: [
-              const LoadingIndicatorBox(size: 20),
-              const SizedBox(width: 12),
-              Expanded(child: Text(t.addServer.searchingLocalServers, style: theme.textTheme.bodyMedium)),
-            ],
-          ),
+        Row(
+          children: [
+            const LoadingIndicatorBox(size: 16),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                t.addServer.searchingLocalServers,
+                style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurface.withValues(alpha: 0.7)),
+              ),
+            ),
+          ],
         ),
       ];
     }
@@ -675,57 +679,67 @@ class _AddJellyfinScreenState extends State<AddJellyfinScreen> with AsyncFormSta
     ];
   }
 
-  List<Widget> _buildQuickConnectPanel(ThemeData theme) {
+  Widget _buildQuickConnectPanel(ThemeData theme) {
     final code = _qcInitiation!.code;
-    return [
-      Container(
-        padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
-        decoration: BoxDecoration(
-          color: theme.colorScheme.surfaceContainerHighest,
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: Column(
-          children: [
-            Text(
-              t.auth.quickConnectCode,
-              style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurface.withValues(alpha: 0.7)),
-            ),
-            const SizedBox(height: 12),
-            Text(
-              code,
-              textAlign: TextAlign.center,
-              style: theme.textTheme.displayMedium?.copyWith(
-                fontFamily: 'monospace',
-                fontWeight: .bold,
-                letterSpacing: 8,
+    final muted = theme.colorScheme.onSurface.withValues(alpha: 0.7);
+    return ConstrainedBox(
+      constraints: const BoxConstraints(maxWidth: 420),
+      child: Column(
+        mainAxisSize: .min,
+        children: [
+          Text(
+            t.auth.quickConnectInstructions,
+            textAlign: TextAlign.center,
+            style: theme.textTheme.bodyLarge?.copyWith(color: muted),
+          ),
+          const SizedBox(height: 32),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Padding(
+              // letterSpacing adds a trailing gap after the last glyph;
+              // matching left padding keeps the code optically centered.
+              padding: const EdgeInsets.only(left: 12),
+              child: Text(
+                code,
+                style: theme.textTheme.displayLarge?.copyWith(
+                  fontFamily: 'monospace',
+                  fontWeight: .bold,
+                  letterSpacing: 12,
+                ),
               ),
             ),
+          ),
+          const SizedBox(height: 32),
+          Row(
+            mainAxisSize: .min,
+            children: [
+              const LoadingIndicatorBox(size: 16),
+              const SizedBox(width: 10),
+              Text(t.auth.quickConnectWaiting, style: theme.textTheme.bodyMedium?.copyWith(color: muted)),
+            ],
+          ),
+          const SizedBox(height: 32),
+          FocusableButton(
+            focusNode: _cancelQuickConnectFocus,
+            useBackgroundFocus: true,
+            onPressed: _cancelQuickConnect,
+            child: OutlinedButton.icon(
+              onPressed: _cancelQuickConnect,
+              icon: const AppIcon(Symbols.close_rounded, fill: 1),
+              label: Text(t.auth.quickConnectCancel),
+            ),
+          ),
+          if (errorText != null) ...[
+            const SizedBox(height: 16),
+            Text(
+              errorText!,
+              textAlign: TextAlign.center,
+              style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.error),
+            ),
           ],
-        ),
-      ),
-      const SizedBox(height: 16),
-      Text(t.auth.quickConnectInstructions, style: theme.textTheme.bodyMedium),
-      const SizedBox(height: 20),
-      Row(
-        mainAxisAlignment: .center,
-        children: [
-          const LoadingIndicatorBox(),
-          const SizedBox(width: 12),
-          Text(t.auth.quickConnectWaiting, style: theme.textTheme.bodyMedium),
         ],
       ),
-      const SizedBox(height: 20),
-      FocusableButton(
-        focusNode: _cancelQuickConnectFocus,
-        useBackgroundFocus: true,
-        onPressed: _cancelQuickConnect,
-        child: OutlinedButton.icon(
-          onPressed: _cancelQuickConnect,
-          icon: const AppIcon(Symbols.close_rounded, fill: 1),
-          label: Text(t.auth.quickConnectCancel),
-        ),
-      ),
-    ];
+    );
   }
 }
 
@@ -750,45 +764,49 @@ class _DiscoveredJellyfinServerTile extends StatelessWidget {
     return FocusableWrapper(
       focusNode: focusNode,
       disableScale: true,
-      borderRadius: 12,
-      useForegroundFocusDecoration: true,
+      // Border drawn by CardFocusBorder so it paints over the opaque Material.
+      delegateFocusBorder: true,
       descendantsAreFocusable: false,
       onSelect: onTap,
       onNavigateUp: onNavigateUp,
       onNavigateDown: onNavigateDown,
-      child: Material(
-        color: theme.colorScheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(12),
-        child: InkWell(
-          onTap: onTap,
+      child: CardFocusBorder(
+        borderRadius: 12,
+        strokeAlign: BorderSide.strokeAlignInside,
+        child: Material(
+          color: theme.colorScheme.surfaceContainerHighest,
           borderRadius: BorderRadius.circular(12),
-          child: Padding(
-            padding: const EdgeInsets.all(12),
-            child: Row(
-              children: [
-                const AppIcon(Symbols.dns_rounded, fill: 1),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: .start,
-                    mainAxisSize: .min,
-                    children: [
-                      Text(server.name, style: theme.textTheme.titleSmall),
-                      const SizedBox(height: 2),
-                      Text(
-                        server.address,
-                        maxLines: 1,
-                        overflow: .ellipsis,
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+          child: InkWell(
+            onTap: onTap,
+            borderRadius: BorderRadius.circular(12),
+            child: Padding(
+              padding: const EdgeInsets.all(12),
+              child: Row(
+                children: [
+                  const AppIcon(Symbols.dns_rounded, fill: 1),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: .start,
+                      mainAxisSize: .min,
+                      children: [
+                        Text(server.name, style: theme.textTheme.titleSmall),
+                        const SizedBox(height: 2),
+                        Text(
+                          server.address,
+                          maxLines: 1,
+                          overflow: .ellipsis,
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
-                ),
-                const SizedBox(width: 12),
-                const AppIcon(Symbols.chevron_right_rounded, fill: 1),
-              ],
+                  const SizedBox(width: 12),
+                  const AppIcon(Symbols.chevron_right_rounded, fill: 1),
+                ],
+              ),
             ),
           ),
         ),

@@ -51,9 +51,9 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
       children: [
         SettingsSectionHeader(t.settings.player),
         if (Platform.isAndroid) _playerBackendSelector(),
-        _externalPlayerTile(),
+        if (PlatformDetector.supportsExternalPlayers()) _externalPlayerTile(),
         _hardwareDecodingTile(),
-        if ((Platform.isAndroid && !PlatformDetector.isTV()) || Platform.isIOS || Platform.isMacOS) _autoPipTile(),
+        if (PlatformDetector.supportsPictureInPicture()) _autoPipTile(),
         if (Platform.isAndroid) _matchContentFrameRateTile(),
         if (Platform.isWindows) _matchRefreshRateTile(),
         if (Platform.isWindows) _matchDynamicRangeTile(),
@@ -284,6 +284,7 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
     builder: (context) {
       final svc = SettingsService.instance;
       final shouldShow =
+          PlatformDetector.isAppleTV() ||
           (Platform.isWindows &&
               (svc.read(SettingsService.matchRefreshRate) || svc.read(SettingsService.matchDynamicRange))) ||
           (Platform.isAndroid && svc.read(SettingsService.matchContentFrameRate));

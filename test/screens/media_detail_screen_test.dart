@@ -1,9 +1,13 @@
 import 'dart:async';
+import 'package:drift/native.dart';
 import 'package:vibe_stream/media/ids.dart';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter_svg/flutter_svg.dart';
+import 'package:material_symbols_icons/symbols.dart';
+import 'package:vibe_stream/database/app_database.dart';
 import 'package:vibe_stream/i18n/strings.g.dart';
 import 'package:vibe_stream/media/library_query.dart';
 import 'package:vibe_stream/media/media_backend.dart';
@@ -11,15 +15,24 @@ import 'package:vibe_stream/media/media_hub.dart';
 import 'package:vibe_stream/media/media_item.dart';
 import 'package:vibe_stream/media/media_kind.dart';
 import 'package:vibe_stream/media/media_server_client.dart';
+import 'package:vibe_stream/media/server_capabilities.dart';
+import 'package:vibe_stream/providers/download_provider.dart';
 import 'package:vibe_stream/providers/multi_server_provider.dart';
+import 'package:vibe_stream/providers/watch_state_store.dart';
 import 'package:vibe_stream/screens/media_detail_screen.dart';
 import 'package:vibe_stream/services/data_aggregation_service.dart';
+import 'package:vibe_stream/services/download_manager_service.dart';
+import 'package:vibe_stream/services/download_storage_service.dart';
+import 'package:vibe_stream/services/jellyfin_api_cache.dart';
 import 'package:vibe_stream/services/multi_server_manager.dart';
+import 'package:vibe_stream/services/plex_api_cache.dart';
 import 'package:vibe_stream/services/settings_service.dart';
 import 'package:vibe_stream/theme/mono_theme.dart';
 import 'package:vibe_stream/utils/layout_constants.dart';
 import 'package:vibe_stream/utils/media_server_http_client.dart';
 import 'package:vibe_stream/utils/platform_detector.dart';
+import 'package:vibe_stream/utils/watch_state_notifier.dart';
+import 'package:vibe_stream/widgets/episode_card.dart';
 import 'package:vibe_stream/widgets/tv_browse_rail.dart';
 import 'package:provider/provider.dart';
 
@@ -103,6 +116,73 @@ void main() {
     await tester.pump();
 
     expect(tester.widget<AnimatedOpacity>(revealGate).opacity, 1);
+  });
+
+  testWidgets('TV detail shows Rotten Tomatoes rating badge in metadata line', (tester) async {
+    await SettingsService.getInstance();
+    tester.view.physicalSize = const Size(1280, 720);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    const movie = MediaItem.plex(
+      id: 'movie_1',
+      kind: MediaKind.movie,
+      title: 'Rotten Tomatoes Movie',
+      summary: 'The TV detail metadata line should use the rating source badge.',
+      rating: 6.2,
+      ratingImage: 'rottentomatoes://image.rating.ripe',
+    );
+
+    await tester.pumpWidget(
+      TranslationProvider(
+        child: MaterialApp(
+          theme: monoTheme(dark: true),
+          home: MediaDetailScreen(metadata: movie),
+        ),
+      ),
+    );
+
+    await tester.pump();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
+
+    expect(find.text('62%'), findsOneWidget);
+    expect(find.byType(SvgPicture), findsOneWidget);
+    expect(find.textContaining('★ 6.2', findRichText: true), findsNothing);
+  });
+
+  testWidgets('TV detail falls back to Rotten Tomatoes audience rating in metadata line', (tester) async {
+    await SettingsService.getInstance();
+    tester.view.physicalSize = const Size(1280, 720);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    const movie = MediaItem.plex(
+      id: 'movie_1',
+      kind: MediaKind.movie,
+      title: 'Audience Rating Movie',
+      summary: 'The TV detail metadata line should use the available audience source badge.',
+      audienceRating: 8.7,
+      audienceRatingImage: 'rottentomatoes://image.rating.upright',
+    );
+
+    await tester.pumpWidget(
+      TranslationProvider(
+        child: MaterialApp(
+          theme: monoTheme(dark: true),
+          home: MediaDetailScreen(metadata: movie),
+        ),
+      ),
+    );
+
+    await tester.pump();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
+
+    expect(find.text('87%'), findsOneWidget);
+    expect(find.byType(SvgPicture), findsOneWidget);
   });
 
   testWidgets('TV detail defaults to first regular season when specials precede it', (tester) async {
@@ -514,6 +594,320 @@ void main() {
 
     expect(find.text('Episode 2'), findsOneWidget);
   });
+
+  group('watch state freshness (phone layout)', () {
+    MediaItem buildShow() => MediaItem(
+      id: 'show_1',
+      backend: MediaBackend.jellyfin,
+      kind: MediaKind.show,
+      title: 'The Show',
+      leafCount: 4,
+      viewedLeafCount: 0,
+      serverId: 'server_1',
+      serverName: 'Server',
+    );
+
+    MediaItem buildSeason(MediaItem show, int index) => MediaItem(
+      id: 'season_$index',
+      backend: MediaBackend.jellyfin,
+      kind: MediaKind.season,
+      title: 'Season $index',
+      index: index,
+      leafCount: 2,
+      viewedLeafCount: 0,
+      parentId: show.id,
+      serverId: show.serverId,
+      serverName: show.serverName,
+    );
+
+    MediaItem buildEpisode(MediaItem show, MediaItem season, int index) => MediaItem(
+      id: '${season.id}_episode_$index',
+      backend: MediaBackend.jellyfin,
+      kind: MediaKind.episode,
+      title: 'Episode S${season.index}E$index',
+      index: index,
+      durationMs: 30 * 60 * 1000,
+      parentId: season.id,
+      parentIndex: season.index,
+      grandparentId: show.id,
+      serverId: show.serverId,
+      serverName: show.serverName,
+    );
+
+    Future<void> pumpPhoneDetail(
+      WidgetTester tester,
+      _FakeMediaServerClient client,
+      MediaItem show, {
+      String? initialSeasonId,
+      int? initialSeasonIndex,
+      String? initialEpisodeId,
+    }) async {
+      TvDetectionService.debugSetAppleTVOverride(false);
+      await SettingsService.getInstance();
+      tester.view.physicalSize = const Size(1100, 2400);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      final db = AppDatabase.forTesting(NativeDatabase.memory());
+      PlexApiCache.initialize(db);
+      JellyfinApiCache.initialize(db);
+      final downloadManager = DownloadManagerService(database: db, storageService: DownloadStorageService.instance, clientResolver: (serverId, {clientScopeId}) => null);
+      downloadManager.recoveryFuture = Future<void>.value();
+      final downloadProvider = DownloadProvider.forTesting(downloadManager: downloadManager, database: db);
+      await downloadProvider.ensureInitialized();
+
+      final manager = MultiServerManager()..debugRegisterClientForTesting(client);
+      final multiServerProvider = MultiServerProvider(manager, DataAggregationService(manager));
+      final watchStateOverlay = WatchStateStore();
+
+      addTearDown(() async {
+        watchStateOverlay.dispose();
+        downloadProvider.dispose();
+        downloadManager.dispose();
+        multiServerProvider.dispose();
+        await db.close();
+      });
+
+      await tester.pumpWidget(
+        TranslationProvider(
+          child: MultiProvider(
+            providers: [
+              ChangeNotifierProvider<MultiServerProvider>.value(value: multiServerProvider),
+              ChangeNotifierProvider<DownloadProvider>.value(value: downloadProvider),
+              ChangeNotifierProvider<WatchStateStore>.value(value: watchStateOverlay),
+            ],
+            child: MaterialApp(
+              theme: monoTheme(dark: true),
+              home: MediaDetailScreen(
+                metadata: show,
+                initialSeasonId: initialSeasonId,
+                initialSeasonIndex: initialSeasonIndex,
+                initialEpisodeId: initialEpisodeId,
+              ),
+            ),
+          ),
+        ),
+      );
+
+      await tester.pump();
+      await tester.pump();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+    }
+
+    Finder episodeCardFor(String title) => find.ancestor(of: find.text(title), matching: find.byType(EpisodeCard));
+
+    bool episodeRowWatched(WidgetTester tester, String title) {
+      final card = episodeCardFor(title);
+      expect(card, findsOneWidget, reason: 'episode row "$title" should be visible');
+      return tester.any(find.descendant(of: card, matching: find.byIcon(Symbols.check_rounded)));
+    }
+
+    bool episodeRowHasProgress(WidgetTester tester, String title) {
+      final card = episodeCardFor(title);
+      expect(card, findsOneWidget, reason: 'episode row "$title" should be visible');
+      return tester.any(find.descendant(of: card, matching: find.byType(LinearProgressIndicator)));
+    }
+
+    Future<void> emit(WidgetTester tester, void Function() send) async {
+      send();
+      await tester.pump();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
+    }
+
+    testWidgets('phone detail focuses requested season tab', (tester) async {
+      final show = buildShow();
+      final season1 = buildSeason(show, 1);
+      final season2 = buildSeason(show, 2);
+      final client = _FakeMediaServerClient(
+        show: show,
+        childrenByParent: {
+          show.id: [season1, season2],
+          season1.id: [buildEpisode(show, season1, 1)],
+          season2.id: [buildEpisode(show, season2, 1)],
+        },
+      );
+
+      await pumpPhoneDetail(tester, client, show, initialSeasonId: season2.id);
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 200));
+
+      expect(find.text('Episode S2E1'), findsOneWidget);
+      expect(FocusManager.instance.primaryFocus?.debugLabel, 'season_tab_1');
+    });
+
+    testWidgets('phone detail focuses requested episode row', (tester) async {
+      final show = buildShow();
+      final season1 = buildSeason(show, 1);
+      final season2 = buildSeason(show, 2);
+      final episode2 = buildEpisode(show, season2, 2);
+      final client = _FakeMediaServerClient(
+        show: show,
+        childrenByParent: {
+          show.id: [season1, season2],
+          season1.id: [buildEpisode(show, season1, 1)],
+          season2.id: [buildEpisode(show, season2, 1), episode2, buildEpisode(show, season2, 3)],
+        },
+      );
+
+      await pumpPhoneDetail(
+        tester,
+        client,
+        show,
+        initialSeasonId: season2.id,
+        initialSeasonIndex: season2.index,
+        initialEpisodeId: episode2.id,
+      );
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 200));
+
+      expect(find.text('Episode S2E2'), findsOneWidget);
+      expect(FocusManager.instance.primaryFocus?.debugLabel, 'initial_episode');
+    });
+
+    testWidgets('phone detail keeps the first-episode role node when it is the target', (tester) async {
+      final show = buildShow();
+      final season1 = buildSeason(show, 1);
+      final season2 = buildSeason(show, 2);
+      final episode1 = buildEpisode(show, season2, 1);
+      final client = _FakeMediaServerClient(
+        show: show,
+        childrenByParent: {
+          show.id: [season1, season2],
+          season1.id: [buildEpisode(show, season1, 1)],
+          season2.id: [episode1, buildEpisode(show, season2, 2), buildEpisode(show, season2, 3)],
+        },
+      );
+
+      await pumpPhoneDetail(
+        tester,
+        client,
+        show,
+        initialSeasonId: season2.id,
+        initialSeasonIndex: season2.index,
+        initialEpisodeId: episode1.id,
+      );
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 200));
+
+      // The first row keeps _firstEpisodeFocusNode (so season-tab DOWN keeps
+      // working) and the initial focus lands on that node instead.
+      expect(find.text('Episode S2E1'), findsOneWidget);
+      expect(FocusManager.instance.primaryFocus?.debugLabel, 'first_episode');
+    });
+
+    testWidgets('marking the show watched flips every visible episode row', (tester) async {
+      final show = buildShow();
+      final season1 = buildSeason(show, 1);
+      final season2 = buildSeason(show, 2);
+      final episodes = [buildEpisode(show, season1, 1), buildEpisode(show, season1, 2)];
+      final client = _FakeMediaServerClient(
+        show: show,
+        childrenByParent: {
+          show.id: [season1, season2],
+          season1.id: episodes,
+          season2.id: [buildEpisode(show, season2, 1), buildEpisode(show, season2, 2)],
+        },
+      );
+
+      await pumpPhoneDetail(tester, client, show);
+      expect(episodeRowWatched(tester, 'Episode S1E1'), isFalse);
+      expect(episodeRowWatched(tester, 'Episode S1E2'), isFalse);
+
+      await emit(tester, () => WatchStateNotifier().notifyWatched(item: show, isNowWatched: true));
+
+      expect(episodeRowWatched(tester, 'Episode S1E1'), isTrue);
+      expect(episodeRowWatched(tester, 'Episode S1E2'), isTrue);
+    });
+
+    testWidgets('container mark overrides an older per-episode patch', (tester) async {
+      final show = buildShow();
+      final season1 = buildSeason(show, 1);
+      final episode1 = buildEpisode(show, season1, 1);
+      final episode2 = buildEpisode(show, season1, 2);
+      final client = _FakeMediaServerClient(
+        show: show,
+        childrenByParent: {
+          show.id: [season1, buildSeason(show, 2)],
+          season1.id: [episode1, episode2],
+        },
+      );
+
+      await pumpPhoneDetail(tester, client, show);
+
+      // Seed a session patch for one episode (e.g. user toggled it earlier).
+      await emit(tester, () => WatchStateNotifier().notifyWatched(item: episode1, isNowWatched: false));
+      expect(episodeRowWatched(tester, 'Episode S1E1'), isFalse);
+
+      await emit(tester, () => WatchStateNotifier().notifyWatched(item: show, isNowWatched: true));
+
+      expect(episodeRowWatched(tester, 'Episode S1E1'), isTrue);
+      expect(episodeRowWatched(tester, 'Episode S1E2'), isTrue);
+    });
+
+    testWidgets('marking a season watched flips its episode rows', (tester) async {
+      final show = buildShow();
+      final season1 = buildSeason(show, 1);
+      final season2 = buildSeason(show, 2);
+      final client = _FakeMediaServerClient(
+        show: show,
+        childrenByParent: {
+          show.id: [season1, season2],
+          season1.id: [buildEpisode(show, season1, 1), buildEpisode(show, season1, 2)],
+          season2.id: [buildEpisode(show, season2, 1)],
+        },
+      );
+
+      await pumpPhoneDetail(tester, client, show);
+
+      await emit(tester, () => WatchStateNotifier().notifyWatched(item: season1, isNowWatched: true));
+
+      expect(episodeRowWatched(tester, 'Episode S1E1'), isTrue);
+      expect(episodeRowWatched(tester, 'Episode S1E2'), isTrue);
+    });
+
+    testWidgets('container mark clears progress, including after a season tab round-trip', (tester) async {
+      final show = buildShow();
+      final season1 = buildSeason(show, 1);
+      final season2 = buildSeason(show, 2);
+      final episode1 = buildEpisode(show, season1, 1);
+      final client = _FakeMediaServerClient(
+        show: show,
+        childrenByParent: {
+          show.id: [season1, season2],
+          season1.id: [episode1, buildEpisode(show, season1, 2)],
+          season2.id: [buildEpisode(show, season2, 1)],
+        },
+      );
+
+      await pumpPhoneDetail(tester, client, show);
+
+      // Played partway earlier in the session.
+      await emit(
+        tester,
+        () => WatchStateNotifier().notifyProgress(item: episode1, viewOffset: 600000, duration: 1800000),
+      );
+      expect(episodeRowHasProgress(tester, 'Episode S1E1'), isTrue);
+
+      await emit(tester, () => WatchStateNotifier().notifyWatched(item: show, isNowWatched: true));
+      expect(episodeRowHasProgress(tester, 'Episode S1E1'), isFalse);
+      expect(episodeRowWatched(tester, 'Episode S1E1'), isTrue);
+
+      // Round-trip through another season tab; the cached page restore must not
+      // resurrect the dead progress offset.
+      await tester.tap(find.text('Season 2'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+      await tester.tap(find.text('Season 1'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+
+      expect(episodeRowHasProgress(tester, 'Episode S1E1'), isFalse);
+      expect(episodeRowWatched(tester, 'Episode S1E1'), isTrue);
+    });
+  });
 }
 
 class _FakeMediaServerClient implements MediaServerClient {
@@ -540,6 +934,9 @@ class _FakeMediaServerClient implements MediaServerClient {
 
   @override
   MediaBackend get backend => MediaBackend.jellyfin;
+
+  @override
+  ServerCapabilities get capabilities => ServerCapabilities.jellyfin;
 
   @override
   Future<({MediaItem? item, MediaItem? onDeckEpisode})> fetchItemWithOnDeck(String id) async {

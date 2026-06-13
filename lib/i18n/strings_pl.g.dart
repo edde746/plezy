@@ -115,7 +115,6 @@ class _TranslationsAuthPl extends TranslationsAuthEn {
 	@override String get or => 'lub';
 	@override String get connectToJellyfin => 'Połącz z Jellyfin';
 	@override String get useQuickConnect => 'Użyj Quick Connect';
-	@override String get quickConnectCode => 'Kod Quick Connect';
 	@override String get quickConnectInstructions => 'Otwórz Quick Connect w Jellyfin i wpisz ten kod.';
 	@override String get quickConnectWaiting => 'Oczekiwanie na zatwierdzenie…';
 	@override String get quickConnectCancel => 'Anuluj';
@@ -245,6 +244,9 @@ class _TranslationsSettingsPl extends TranslationsSettingsEn {
 	@override String get gridView => 'Siatka';
 	@override String get listView => 'Lista';
 	@override String get showHeroSection => 'Pokaż sekcję wyróżnioną';
+	@override String get continueWatchingAction => 'Akcja Kontynuuj oglądanie';
+	@override String get continueWatchingPlay => 'Odtwórz';
+	@override String get continueWatchingDetails => 'Otwórz szczegóły';
 	@override String get useGlobalHubs => 'Użyj układu strony głównej';
 	@override String get useGlobalHubsDescription => 'Pokaż ujednolicone huby ekranu głównego. W przeciwnym razie użyj rekomendacji bibliotek.';
 	@override String get showServerNameOnHubs => 'Pokaż nazwę serwera w hubach';
@@ -261,6 +263,8 @@ class _TranslationsSettingsPl extends TranslationsSettingsEn {
 	@override String get showSeasonPostersOnTabsDescription => 'Pokazuj plakat każdego sezonu nad jego kartą';
 	@override String get tvFullCardLayout => 'Pełne karty TV';
 	@override String get tvFullCardLayoutDescription => 'Używaj kart TV tylko z obrazem i nałożonymi nazwiskami aktorów';
+	@override String get focusGlow => 'Poświata zaznaczenia';
+	@override String get focusGlowDescription => 'Wyświetlaj delikatną poświatę wokół zaznaczonej karty';
 	@override String get hideSpoilers => 'Ukryj spoilery nieobejrzanych odcinków';
 	@override String get hideSpoilersDescription => 'Rozmywaj miniatury i opisy nieobejrzanych odcinków';
 	@override String get playerBackend => 'Backend odtwarzacza';
@@ -492,8 +496,8 @@ class _TranslationsMediaMenuPl extends TranslationsMediaMenuEn {
 	@override String get markAsWatched => 'Oznacz jako obejrzane';
 	@override String get markAsUnwatched => 'Oznacz jako nieobejrzane';
 	@override String get removeFromContinueWatching => 'Usuń z kontynuowania oglądania';
+	@override String get viewDetails => 'Pokaż szczegóły';
 	@override String get goToSeries => 'Przejdź do serialu';
-	@override String get goToSeason => 'Przejdź do sezonu';
 	@override String get shufflePlay => 'Odtwarzanie losowe';
 	@override String get shuffleNotAvailableOffline => 'Odtwarzanie losowe nie jest dostępne offline';
 	@override String get fileInfo => 'Informacje o pliku';
@@ -673,7 +677,6 @@ class _TranslationsMessagesPl extends TranslationsMessagesEn {
 	@override String get fileInfoNotAvailable => 'Informacje o pliku niedostępne';
 	@override String errorLoadingFileInfo({required Object error}) => 'Błąd ładowania informacji o pliku: ${error}';
 	@override String get errorLoadingSeries => 'Błąd ładowania serialu';
-	@override String get errorLoadingSeason => 'Błąd ładowania sezonu';
 	@override String get musicNotSupported => 'Odtwarzanie muzyki nie jest jeszcze obsługiwane';
 	@override String get noDescriptionAvailable => 'Brak dostępnego opisu';
 	@override String get noProfilesAvailable => 'Brak dostępnych profili';
@@ -727,6 +730,9 @@ class _TranslationsSubtitlingStylingPl extends TranslationsSubtitlingStylingEn {
 	@override String get assOverride => 'Nadpisywanie ASS';
 	@override String get bold => 'Pogrubienie';
 	@override String get italic => 'Kursywa';
+	@override String get renderResolution => 'Rozdzielczość renderowania';
+	@override String get renderResolutionScreen => 'Rozdzielczość ekranu';
+	@override String get renderResolutionVideo => 'Rozdzielczość wideo';
 }
 
 // Path: mpvConfig
@@ -1598,10 +1604,8 @@ class _TranslationsAddServerPl extends TranslationsAddServerEn {
 
 	// Translations
 	@override String get addJellyfinTitle => 'Dodaj serwer Jellyfin';
-	@override String get jellyfinUrlIntro => 'Wpisz URL serwera, np. `https://jellyfin.example.com`.';
-	@override String get jellyfinUrlsIntro => 'Wpisz co najmniej jeden URL serwera, oddzielając je przecinkami. Vibe użyje osiągalnego URL-a o najniższym opóźnieniu.';
-	@override String get serverUrl => 'URL serwera';
 	@override String get serverUrls => 'URL-e serwera';
+	@override String get serverUrlsHelper => 'Można podać wiele adresów URL, rozdzielonych przecinkami.';
 	@override String get findServer => 'Znajdź serwer';
 	@override String get searchingLocalServers => 'Szukanie lokalnych serwerów Jellyfin...';
 	@override String get localServers => 'Lokalne serwery Jellyfin';
@@ -1614,17 +1618,12 @@ class _TranslationsAddServerPl extends TranslationsAddServerEn {
 	@override String signInFailed({required Object error}) => 'Logowanie nie powiodło się: ${error}';
 	@override String quickConnectFailed({required Object error}) => 'Quick Connect nie powiodło się: ${error}';
 	@override String get addPlexTitle => 'Zaloguj się przez Plex';
-	@override String get plexAuthIntro => 'Zaloguj się przez przeglądarkę lub kod QR.';
-	@override String get plexQRPrompt => 'Zeskanuj ten kod QR, aby się zalogować.';
-	@override String get waitingForPlexConfirmation => 'Czekam na potwierdzenie logowania przez plex.tv…';
 	@override String get pinExpired => 'PIN wygasł przed zalogowaniem. Spróbuj ponownie.';
 	@override String get duplicatePlexAccount => 'Już zalogowano do Plex. Wyloguj się, aby zmienić konto.';
 	@override String failedToRegisterAccount({required Object error}) => 'Nie udało się zarejestrować konta: ${error}';
 	@override String get enterJellyfinUrlError => 'Podaj URL serwera Jellyfin';
 	@override String get addConnectionTitle => 'Dodaj połączenie';
 	@override String addConnectionTitleScoped({required Object name}) => 'Dodaj do ${name}';
-	@override String get addConnectionIntroGlobal => 'Dodaj kolejny serwer multimediów. Plex i Jellyfin pojawią się razem na ekranie głównym.';
-	@override String get addConnectionIntroScoped => 'Dodaj nowy serwer lub pożycz z innego profilu.';
 	@override String get signInWithPlexCard => 'Zaloguj się przez Plex';
 	@override String get signInWithPlexCardSubtitle => 'Autoryzuj to urządzenie. Serwery udostępnione zostaną dodane.';
 	@override String get signInWithPlexCardSubtitleScoped => 'Autoryzuj konto Plex. Użytkownicy Home staną się profilami.';
@@ -1933,7 +1932,6 @@ extension on TranslationsPl {
 			'auth.or' => 'lub',
 			'auth.connectToJellyfin' => 'Połącz z Jellyfin',
 			'auth.useQuickConnect' => 'Użyj Quick Connect',
-			'auth.quickConnectCode' => 'Kod Quick Connect',
 			'auth.quickConnectInstructions' => 'Otwórz Quick Connect w Jellyfin i wpisz ten kod.',
 			'auth.quickConnectWaiting' => 'Oczekiwanie na zatwierdzenie…',
 			'auth.quickConnectCancel' => 'Anuluj',
@@ -2027,6 +2025,9 @@ extension on TranslationsPl {
 			'settings.gridView' => 'Siatka',
 			'settings.listView' => 'Lista',
 			'settings.showHeroSection' => 'Pokaż sekcję wyróżnioną',
+			'settings.continueWatchingAction' => 'Akcja Kontynuuj oglądanie',
+			'settings.continueWatchingPlay' => 'Odtwórz',
+			'settings.continueWatchingDetails' => 'Otwórz szczegóły',
 			'settings.useGlobalHubs' => 'Użyj układu strony głównej',
 			'settings.useGlobalHubsDescription' => 'Pokaż ujednolicone huby ekranu głównego. W przeciwnym razie użyj rekomendacji bibliotek.',
 			'settings.showServerNameOnHubs' => 'Pokaż nazwę serwera w hubach',
@@ -2043,6 +2044,8 @@ extension on TranslationsPl {
 			'settings.showSeasonPostersOnTabsDescription' => 'Pokazuj plakat każdego sezonu nad jego kartą',
 			'settings.tvFullCardLayout' => 'Pełne karty TV',
 			'settings.tvFullCardLayoutDescription' => 'Używaj kart TV tylko z obrazem i nałożonymi nazwiskami aktorów',
+			'settings.focusGlow' => 'Poświata zaznaczenia',
+			'settings.focusGlowDescription' => 'Wyświetlaj delikatną poświatę wokół zaznaczonej karty',
 			'settings.hideSpoilers' => 'Ukryj spoilery nieobejrzanych odcinków',
 			'settings.hideSpoilersDescription' => 'Rozmywaj miniatury i opisy nieobejrzanych odcinków',
 			'settings.playerBackend' => 'Backend odtwarzacza',
@@ -2262,8 +2265,8 @@ extension on TranslationsPl {
 			'mediaMenu.markAsWatched' => 'Oznacz jako obejrzane',
 			'mediaMenu.markAsUnwatched' => 'Oznacz jako nieobejrzane',
 			'mediaMenu.removeFromContinueWatching' => 'Usuń z kontynuowania oglądania',
+			'mediaMenu.viewDetails' => 'Pokaż szczegóły',
 			'mediaMenu.goToSeries' => 'Przejdź do serialu',
-			'mediaMenu.goToSeason' => 'Przejdź do sezonu',
 			'mediaMenu.shufflePlay' => 'Odtwarzanie losowe',
 			'mediaMenu.shuffleNotAvailableOffline' => 'Odtwarzanie losowe nie jest dostępne offline',
 			'mediaMenu.fileInfo' => 'Informacje o pliku',
@@ -2395,7 +2398,6 @@ extension on TranslationsPl {
 			'messages.fileInfoNotAvailable' => 'Informacje o pliku niedostępne',
 			'messages.errorLoadingFileInfo' => ({required Object error}) => 'Błąd ładowania informacji o pliku: ${error}',
 			'messages.errorLoadingSeries' => 'Błąd ładowania serialu',
-			'messages.errorLoadingSeason' => 'Błąd ładowania sezonu',
 			'messages.musicNotSupported' => 'Odtwarzanie muzyki nie jest jeszcze obsługiwane',
 			'messages.noDescriptionAvailable' => 'Brak dostępnego opisu',
 			'messages.noProfilesAvailable' => 'Brak dostępnych profili',
@@ -2430,11 +2432,11 @@ extension on TranslationsPl {
 			'subtitlingStyling.text' => 'Tekst',
 			'subtitlingStyling.border' => 'Obramowanie',
 			'subtitlingStyling.background' => 'Tło',
+			_ => null,
+		} ?? switch (path) {
 			'subtitlingStyling.fontSize' => 'Rozmiar czcionki',
 			'subtitlingStyling.textColor' => 'Kolor tekstu',
 			'subtitlingStyling.borderSize' => 'Rozmiar obramowania',
-			_ => null,
-		} ?? switch (path) {
 			'subtitlingStyling.borderColor' => 'Kolor obramowania',
 			'subtitlingStyling.backgroundOpacity' => 'Przezroczystość tła',
 			'subtitlingStyling.backgroundColor' => 'Kolor tła',
@@ -2442,6 +2444,9 @@ extension on TranslationsPl {
 			'subtitlingStyling.assOverride' => 'Nadpisywanie ASS',
 			'subtitlingStyling.bold' => 'Pogrubienie',
 			'subtitlingStyling.italic' => 'Kursywa',
+			'subtitlingStyling.renderResolution' => 'Rozdzielczość renderowania',
+			'subtitlingStyling.renderResolutionScreen' => 'Rozdzielczość ekranu',
+			'subtitlingStyling.renderResolutionVideo' => 'Rozdzielczość wideo',
 			'mpvConfig.title' => 'mpv.conf',
 			'mpvConfig.description' => 'Zaawansowane ustawienia odtwarzacza wideo',
 			'mpvConfig.presets' => 'Presety',
@@ -2941,14 +2946,14 @@ extension on TranslationsPl {
 			'companionRemote.remote.retryNow' => 'Ponów teraz',
 			'companionRemote.remote.tabRemote' => 'Pilot',
 			'companionRemote.remote.tabPlay' => 'Odtwórz',
+			_ => null,
+		} ?? switch (path) {
 			'companionRemote.remote.tabMore' => 'Więcej',
 			'companionRemote.remote.menu' => 'Menu',
 			'companionRemote.remote.tabNavigation' => 'Nawigacja',
 			'companionRemote.remote.tabDiscover' => 'Odkryj',
 			'companionRemote.remote.tabLibraries' => 'Biblioteki',
 			'companionRemote.remote.tabSearch' => 'Szukaj',
-			_ => null,
-		} ?? switch (path) {
 			'companionRemote.remote.tabDownloads' => 'Pobrania',
 			'companionRemote.remote.tabSettings' => 'Ustawienia',
 			'companionRemote.remote.previous' => 'Poprzedni',
@@ -3162,10 +3167,8 @@ extension on TranslationsPl {
 			'trackers.libraryFilter.libraries' => 'Biblioteki',
 			'trackers.libraryFilter.noLibraries' => 'Brak dostępnych bibliotek',
 			'addServer.addJellyfinTitle' => 'Dodaj serwer Jellyfin',
-			'addServer.jellyfinUrlIntro' => 'Wpisz URL serwera, np. `https://jellyfin.example.com`.',
-			'addServer.jellyfinUrlsIntro' => 'Wpisz co najmniej jeden URL serwera, oddzielając je przecinkami. Vibe użyje osiągalnego URL-a o najniższym opóźnieniu.',
-			'addServer.serverUrl' => 'URL serwera',
 			'addServer.serverUrls' => 'URL-e serwera',
+			'addServer.serverUrlsHelper' => 'Można podać wiele adresów URL, rozdzielonych przecinkami.',
 			'addServer.findServer' => 'Znajdź serwer',
 			'addServer.searchingLocalServers' => 'Szukanie lokalnych serwerów Jellyfin...',
 			'addServer.localServers' => 'Lokalne serwery Jellyfin',
@@ -3178,17 +3181,12 @@ extension on TranslationsPl {
 			'addServer.signInFailed' => ({required Object error}) => 'Logowanie nie powiodło się: ${error}',
 			'addServer.quickConnectFailed' => ({required Object error}) => 'Quick Connect nie powiodło się: ${error}',
 			'addServer.addPlexTitle' => 'Zaloguj się przez Plex',
-			'addServer.plexAuthIntro' => 'Zaloguj się przez przeglądarkę lub kod QR.',
-			'addServer.plexQRPrompt' => 'Zeskanuj ten kod QR, aby się zalogować.',
-			'addServer.waitingForPlexConfirmation' => 'Czekam na potwierdzenie logowania przez plex.tv…',
 			'addServer.pinExpired' => 'PIN wygasł przed zalogowaniem. Spróbuj ponownie.',
 			'addServer.duplicatePlexAccount' => 'Już zalogowano do Plex. Wyloguj się, aby zmienić konto.',
 			'addServer.failedToRegisterAccount' => ({required Object error}) => 'Nie udało się zarejestrować konta: ${error}',
 			'addServer.enterJellyfinUrlError' => 'Podaj URL serwera Jellyfin',
 			'addServer.addConnectionTitle' => 'Dodaj połączenie',
 			'addServer.addConnectionTitleScoped' => ({required Object name}) => 'Dodaj do ${name}',
-			'addServer.addConnectionIntroGlobal' => 'Dodaj kolejny serwer multimediów. Plex i Jellyfin pojawią się razem na ekranie głównym.',
-			'addServer.addConnectionIntroScoped' => 'Dodaj nowy serwer lub pożycz z innego profilu.',
 			'addServer.signInWithPlexCard' => 'Zaloguj się przez Plex',
 			'addServer.signInWithPlexCardSubtitle' => 'Autoryzuj to urządzenie. Serwery udostępnione zostaną dodane.',
 			'addServer.signInWithPlexCardSubtitleScoped' => 'Autoryzuj konto Plex. Użytkownicy Home staną się profilami.',

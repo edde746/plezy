@@ -4,9 +4,11 @@ import 'package:vibe_stream/media/ids.dart';
 import 'package:drift/drift.dart' hide isNull, isNotNull;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:path_provider_platform_interface/path_provider_platform_interface.dart';
 import 'package:vibe_stream/database/app_database.dart';
 import 'package:vibe_stream/database/download_operations.dart';
 import 'package:vibe_stream/models/download_models.dart';
+import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 
 void main() {
   final suite = _AppDatabaseTestSuite();
@@ -232,6 +234,20 @@ class _AppDatabaseTestSuite {
 
         expect(await source.exists(), isTrue, reason: 'source should be preserved when copy fails');
         expect(await source.readAsBytes(), [0xAA, 0xBB]);
+        expect(await target.exists(), isFalse);
+      });
+
+      test('documents directory lookup failure is a silent no-op', () async {
+        final previousPathProvider = PathProviderPlatform.instance;
+        final target = File('${tempDir.path}/AppData/plezy_downloads.db');
+        PathProviderPlatform.instance = _ThrowingDocumentsPathProvider();
+
+        try {
+          await expectLater(migrateLegacyDesktopDatabase(target: target), completes);
+        } finally {
+          PathProviderPlatform.instance = previousPathProvider;
+        }
+
         expect(await target.exists(), isFalse);
       });
     });
@@ -1028,4 +1044,9 @@ class _AppDatabaseTestSuite {
       });
     });
   }
+}
+
+class _ThrowingDocumentsPathProvider extends PathProviderPlatform with MockPlatformInterfaceMixin {
+  @override
+  Future<String?> getApplicationDocumentsPath() async => throw Exception('documents unavailable');
 }

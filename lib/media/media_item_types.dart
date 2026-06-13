@@ -1,6 +1,5 @@
 import 'media_item.dart';
 import 'media_kind.dart';
-import 'season_title.dart';
 
 /// Convenience type-check getters and spoiler helpers on [MediaItem]. These
 /// give consumers a Plex-style fluent API (e.g. `item.isShow`) while keeping
@@ -28,9 +27,4 @@ extension MediaItemTypes on MediaItem {
 
   /// Non-spoiler art path for episodes (show/season background).
   String? get spoilerSafeArt => grandparentArtPath ?? artPath;
-
-  /// Localized season label for this item. Re-localizes a server's generic
-  /// English "Season N" to the app locale (see [localizedSeasonLabel]); falls
-  /// back to [displayTitle] when there is no usable title or index.
-  String get localizedSeasonTitle => localizedSeasonLabel(title: title, index: index, fallback: displayTitle);
 }

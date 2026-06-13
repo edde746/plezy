@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:material_symbols_icons/symbols.dart';
@@ -8,7 +10,64 @@ import '../mixins/mounted_set_state_mixin.dart';
 import '../utils/platform_detector.dart';
 import 'clickable_cursor.dart';
 
-Future<void> showTvVirtualKeyboard({
+bool _keyboardTextWarmedUp = false;
+
+/// One-shot warm-up of the keyboard's text layout caches.
+///
+/// The first keyboard open lays out ~60 key labels in one frame; on low-end
+/// TVs the first paragraph alone measured 130ms+ (cold font/shaping caches)
+/// and the full first open ~315ms. Laying the keyboard's glyph set out once
+/// during startup idle moves that cost off the first real open. Subsequent
+/// calls are no-ops.
+void warmUpTvVirtualKeyboardText(BuildContext context) {
+  if (_keyboardTextWarmedUp || !PlatformDetector.isTV()) return;
+  _keyboardTextWarmedUp = true;
+  // Matches the key cap style (titleLarge w800, see _buildKey) at the sizes
+  // the metrics clamp to; shaping caches are per font/size.
+  final baseStyle = Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800);
+  const samples = [
+    'abcdefghijklmnopqrstuvwxyz',
+    'ABCDEFGHIJKLMNOPQRSTUVWXYZ',
+    '0123456789 @#_/:=&-+()[]{}<>!?\'".,;*%\\^~|',
+    'Space Del Line Shift Symbols Done Cancel Clear Search Next Go',
+  ];
+  for (final fontSize in const [18.0, 22.0]) {
+    final style = baseStyle?.copyWith(fontSize: fontSize);
+    for (final sample in samples) {
+      final painter = TextPainter(
+        text: TextSpan(text: sample, style: style),
+        textDirection: TextDirection.ltr,
+      )..layout();
+      painter.dispose();
+    }
+  }
+}
+
+/// Handle to a TV virtual keyboard pushed by [showTvVirtualKeyboard].
+class TvVirtualKeyboardHandle {
+  TvVirtualKeyboardHandle._(this._navigator, this._route);
+
+  final NavigatorState _navigator;
+  final DialogRoute<void> _route;
+
+  /// Completes when the keyboard leaves the navigator — submit, cancel,
+  /// barrier/back dismiss, or [close].
+  Future<void> get closed => _route.popped;
+
+  /// Dismiss the keyboard if it is still up. No-ops once the route is gone
+  /// or the navigator is being torn down.
+  void close() {
+    if (!_navigator.mounted) return;
+    if (_route.isCurrent) {
+      _navigator.pop();
+    } else if (_route.isActive) {
+      // removeRoute also completes route.popped, which backs [closed].
+      _navigator.removeRoute(_route);
+    }
+  }
+}
+
+TvVirtualKeyboardHandle? showTvVirtualKeyboard({
   required BuildContext context,
   required TextEditingController controller,
   String? hintText,
@@ -22,13 +81,19 @@ Future<void> showTvVirtualKeyboard({
   ValueChanged<String>? onSubmitted,
   VoidCallback? onAction,
 }) {
-  if (!PlatformDetector.isTV()) return Future.value();
+  if (!PlatformDetector.isTV()) return null;
 
-  return showDialog<void>(
+  // A hand-built DialogRoute instead of showDialog so the caller gets a
+  // handle it can close when the owning field unmounts. Mirrors showDialog's
+  // root-navigator, captured-themes and closed-loop traversal defaults.
+  final navigator = Navigator.of(context, rootNavigator: true);
+  final route = DialogRoute<void>(
     context: context,
     barrierDismissible: true,
     barrierColor: Colors.black.withValues(alpha: 0.1),
     useSafeArea: false,
+    themes: InheritedTheme.capture(from: context, to: navigator.context),
+    traversalEdgeBehavior: TraversalEdgeBehavior.closedLoop,
     builder: (context) => _TvVirtualKeyboardDialog(
       controller: controller,
       hintText: hintText,
@@ -43,6 +108,8 @@ Future<void> showTvVirtualKeyboard({
       onAction: onAction,
     ),
   );
+  unawaited(navigator.push(route));
+  return TvVirtualKeyboardHandle._(navigator, route);
 }
 
 enum _TvKeyType { spacer, character, shift, symbols, space, newline, backspace, clear, cancel, done }

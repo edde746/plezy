@@ -6,12 +6,14 @@ import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 
 import '../../i18n/strings.g.dart';
+import '../../providers/multi_server_provider.dart';
 import '../../providers/theme_provider.dart';
 import '../../profiles/active_profile_provider.dart';
 import '../../navigation/navigation_tabs.dart';
 import '../../services/settings_service.dart' hide ThemeMode;
 import '../../services/settings_service.dart' as settings show ThemeMode;
 import '../../focus/focusable_slider.dart';
+import '../../services/device_performance.dart';
 import '../../utils/platform_detector.dart';
 import '../../widgets/app_icon.dart';
 import '../../widgets/setting_tile.dart';
@@ -41,6 +43,14 @@ class AppearanceSettingsScreen extends StatelessWidget {
             title: t.settings.tvFullCardLayout,
             subtitle: t.settings.tvFullCardLayoutDescription,
           ),
+        if (PlatformDetector.isTV())
+          SettingSwitchTile(
+            pref: SettingsService.focusGlow,
+            icon: Symbols.lightbulb_rounded,
+            title: t.settings.focusGlow,
+            subtitle: t.settings.focusGlowDescription,
+          ),
+        if (Platform.isAndroid) _visualEffectsSelector(context),
         SettingSwitchTile(
           pref: SettingsService.showEpisodeNumberOnCards,
           icon: Symbols.tag_rounded,
@@ -63,6 +73,7 @@ class AppearanceSettingsScreen extends StatelessWidget {
             title: t.settings.showHeroSection,
             subtitle: t.settings.showHeroSectionDescription,
           ),
+        _continueWatchingActionSelector(),
         SettingSwitchTile(
           pref: SettingsService.useGlobalHubs,
           icon: Symbols.home_rounded,
@@ -195,6 +206,9 @@ class AppearanceSettingsScreen extends StatelessWidget {
         if (value != null) {
           await SettingsService.instance.write(SettingsService.appLocale, value);
           unawaited(LocaleSettings.setLocale(value));
+          if (context.mounted) {
+            context.read<MultiServerProvider>().serverManager.updatePlexLanguage(value.languageCode);
+          }
           if (context.mounted) _restartApp(context);
         }
       },
@@ -252,6 +266,18 @@ class AppearanceSettingsScreen extends StatelessWidget {
     encode: (v) => v,
   );
 
+  Widget _continueWatchingActionSelector() => SettingSegmentedTile<ContinueWatchingAction, ContinueWatchingAction>(
+    pref: SettingsService.continueWatchingAction,
+    icon: Symbols.play_circle_rounded,
+    title: t.settings.continueWatchingAction,
+    segments: [
+      ButtonSegment(value: ContinueWatchingAction.play, label: Text(t.settings.continueWatchingPlay)),
+      ButtonSegment(value: ContinueWatchingAction.details, label: Text(t.settings.continueWatchingDetails)),
+    ],
+    decode: (v) => v,
+    encode: (v) => v,
+  );
+
   // Sections offered as a startup destination, in display order. Live TV is
   // always listed; if no server provides it, startup falls back to Home.
   static const _startupSectionOptions = [
@@ -272,6 +298,39 @@ class AppearanceSettingsScreen extends StatelessWidget {
     decode: (v) => v,
     encode: (v) => v,
   );
+
+  String _visualEffectsLabel(VisualEffectsSetting value) => switch (value) {
+    VisualEffectsSetting.auto => t.settings.visualEffectsAuto,
+    VisualEffectsSetting.full => t.settings.visualEffectsFull,
+    VisualEffectsSetting.reduced => t.settings.visualEffectsReduced,
+  };
+
+  Widget _visualEffectsSelector(BuildContext context) =>
+      SettingSelectionTile<VisualEffectsSetting, VisualEffectsSetting>(
+        pref: SettingsService.visualEffects,
+        icon: Symbols.animation_rounded,
+        title: t.settings.visualEffects,
+        subtitleBuilder: _visualEffectsLabel,
+        options: [
+          DialogOption(
+            value: VisualEffectsSetting.auto,
+            title: t.settings.visualEffectsAuto,
+            subtitle: t.settings.visualEffectsAutoDescription,
+          ),
+          DialogOption(value: VisualEffectsSetting.full, title: t.settings.visualEffectsFull),
+          DialogOption(
+            value: VisualEffectsSetting.reduced,
+            title: t.settings.visualEffectsReduced,
+            subtitle: t.settings.visualEffectsReducedDescription,
+          ),
+        ],
+        decode: (v) => v,
+        encode: (v) => v,
+        onAfterWrite: (value) {
+          DevicePerformance.setOverrideSync(value);
+          _restartApp(context);
+        },
+      );
 
   Widget _requireProfileSelection() {
     return Consumer<ActiveProfileProvider>(

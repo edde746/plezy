@@ -11,6 +11,7 @@ import '../media/media_item.dart';
 import '../media/media_kind.dart';
 import '../media/media_server_client.dart';
 import '../media/playback_report_metadata.dart';
+import '../media/watch_progress.dart';
 import '../utils/app_logger.dart';
 import '../utils/global_key_utils.dart';
 import 'offline_mode_source.dart';
@@ -52,18 +53,20 @@ class OfflineWatchSyncService extends ChangeNotifier {
   /// Get watched threshold for a server. Cascades:
   /// 1. Plex's fetched server prefs (`/:/prefs`)
   /// 2. Jellyfin's fixed [MediaServerClient.watchedThreshold] (0.9)
-  /// 3. Cached value in SettingsService
+  /// 3. Cached value in SettingsService (mirrored by PlexClient.fetchServerPrefs)
   /// 4. Default 90%
   double getWatchedThreshold(ServerId serverId) {
     final client = _serverManager.getClient(serverId);
     if (client is PlexClient && client.serverPrefs.isNotEmpty) {
-      return client.watchedThresholdPercent / 100.0;
+      return client.watchedThreshold;
     }
     if (client != null && client.backend != MediaBackend.plex) {
       // Jellyfin (and any future neutral backend) — the client exposes a
       // fixed threshold that mirrors the wire-protocol behaviour.
       return client.watchedThreshold;
     }
+    // No client bound (offline) or Plex prefs not loaded yet — use the
+    // mirror written on the last successful prefs fetch.
     final cached = SettingsService.instanceOrNull?.read(SettingsService.watchedThresholdPref(serverId)) ?? 90;
     return cached / 100.0;
   }
@@ -273,9 +276,8 @@ class OfflineWatchSyncService extends ChangeNotifier {
 
   /// Check if an item should be considered watched based on progress percentage.
   bool isWatchedByProgress(int viewOffset, int duration, {ServerId? serverId}) {
-    if (duration == 0) return false;
     final threshold = serverId != null ? getWatchedThreshold(serverId) : 0.9;
-    return (viewOffset / duration) >= threshold;
+    return isWatchedProgress(positionMs: viewOffset, durationMs: duration, threshold: threshold);
   }
 
   /// Get the local watch status for a media item.
@@ -519,17 +521,19 @@ class OfflineWatchSyncService extends ChangeNotifier {
   /// `/UserPlayedItems/{id}` and `/Sessions/Playing*` endpoints receive
   /// the same queued state Plex's `/:/scrobble` and `/:/timeline` do.
   Future<void> _syncAction(MediaServerClient client, OfflineWatchProgressItem action) async {
-    // Fetch metadata so the WatchStateNotifier emission inside
-    // markWatched/markUnwatched carries enough context for downstream
-    // listeners (UI invalidation, Trakt sync). Best-effort: a missed metadata
-    // fetch falls back to a minimal MediaItem — the network call still goes
-    // through, just without a rich event payload.
-    final emitsEvent =
+    // Fetch metadata so trackers (and the stop-path watch event) get enough
+    // context — external ids, parent chain, library section. The plain
+    // watched/unwatched replays deliberately emit no WatchStateEvent: the
+    // offline provider already emitted it when the action was queued, and
+    // client markWatched/markUnwatched are transport-only. Best-effort: a
+    // missed metadata fetch falls back to a minimal MediaItem — the network
+    // call still goes through.
+    final needsRichItem =
         action.actionType == OfflineActionType.watched.id ||
         action.actionType == OfflineActionType.unwatched.id ||
         (action.actionType == OfflineActionType.progress.id && action.shouldMarkWatched);
     MediaItem? item;
-    if (emitsEvent) {
+    if (needsRichItem) {
       try {
         item = await client.fetchItem(action.ratingKey);
       } catch (_) {
@@ -583,9 +587,12 @@ class OfflineWatchSyncService extends ChangeNotifier {
           );
         }
 
-        // If progress exceeded threshold, also mark as watched.
+        // If progress exceeded threshold, also mark as watched. On backends
+        // that mark played from the stopped report above (Jellyfin) this only
+        // emits the local watch event — an explicit markWatched would
+        // double-scrobble via the Trakt plugin (#1287).
         if (action.shouldMarkWatched) {
-          await client.markWatched(item);
+          await client.markWatchedFromPlaybackStop(item);
           await TrackerCoordinator.instance.markWatched(item, client);
         }
         break;

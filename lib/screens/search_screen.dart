@@ -12,6 +12,7 @@ import '../mixins/mounted_set_state_mixin.dart';
 import '../mixins/refreshable.dart';
 import '../providers/multi_server_provider.dart';
 import '../utils/app_logger.dart';
+import '../utils/platform_detector.dart';
 import '../utils/snackbar_helper.dart';
 import '../widgets/desktop_app_bar.dart';
 import '../widgets/loading_indicator_box.dart';
@@ -44,6 +45,7 @@ class _SearchScreenState extends State<SearchScreen>
   bool _hasSearched = false;
   late final Debounce _searchDebounce;
   String _lastSearchedQuery = '';
+  String? _focusResultsForQuery;
 
   @override
   void initState() {
@@ -69,6 +71,7 @@ class _SearchScreenState extends State<SearchScreen>
 
     if (query.trim().isEmpty) {
       _searchDebounce.cancel();
+      _focusResultsForQuery = null;
       setStateIfMounted(() {
         _searchResults = [];
         _hasSearched = false;
@@ -117,8 +120,10 @@ class _SearchScreenState extends State<SearchScreen>
           _isSearching = false;
           _lastSearchedQuery = query.trim();
         });
+        _maybeFocusResultsAfterSubmit(query, neutral);
       }
     } catch (e) {
+      _focusResultsForQuery = null;
       if (mounted) {
         setStateIfMounted(() {
           _isSearching = false;
@@ -126,6 +131,34 @@ class _SearchScreenState extends State<SearchScreen>
         showErrorSnackBar(context, t.errors.searchFailed(error: e));
       }
     }
+  }
+
+  /// OSK "Search" / hardware Enter on TV: jump to results, or force the
+  /// search to run now and focus results when it lands.
+  void _handleSearchSubmit() {
+    final query = _searchController.text.trim();
+    if (query.isEmpty) return;
+
+    if (_searchResults.isNotEmpty && !_isSearching && query == _lastSearchedQuery.trim()) {
+      _firstResultFocusNode.requestFocus();
+      return;
+    }
+
+    _focusResultsForQuery = query;
+    if (_searchDebounce.isPending || !_isSearching) {
+      _searchDebounce.cancel();
+      _performSearch(query);
+    }
+    // else: the in-flight search already covers the current text; its
+    // completion focuses the results.
+  }
+
+  void _maybeFocusResultsAfterSubmit(String query, List<MediaItem> results) {
+    if (_focusResultsForQuery == null || _focusResultsForQuery != query.trim()) return;
+    _focusResultsForQuery = null;
+    if (results.isEmpty) return;
+    if (_searchController.text.trim() != query.trim()) return; // user kept editing
+    FocusUtils.requestFocusAfterBuild(this, _firstResultFocusNode);
   }
 
   @override
@@ -163,6 +196,7 @@ class _SearchScreenState extends State<SearchScreen>
     appLogger.d('SearchScreen.fullRefresh() called - clearing search and reloading');
     // Clear search results and search text for new profile
     _searchController.clear();
+    _focusResultsForQuery = null;
     setStateIfMounted(() {
       _searchResults.clear();
       _isSearching = false;
@@ -228,6 +262,7 @@ class _SearchScreenState extends State<SearchScreen>
                   onNavigateDown: _searchResults.isNotEmpty && !_isSearching
                       ? _firstResultFocusNode.requestFocus
                       : null,
+                  onEditingComplete: PlatformDetector.isTV() ? _handleSearchSubmit : null,
                   onBack: () {
                     if (_searchController.text.isNotEmpty) {
                       _searchController.clear();

@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -38,6 +40,13 @@ class InputModeTracker extends StatefulWidget {
   /// Convenience method to check if we're in keyboard mode.
   static bool isKeyboardMode(BuildContext context) {
     return of(context) == InputMode.keyboard;
+  }
+
+  /// Whether system back must be blocked because the dpad key handler owns
+  /// back navigation: on Android in keyboard mode (TV/gamepad), letting the
+  /// system back through as well double-pops the route.
+  static bool shouldBlockSystemBack(BuildContext context) {
+    return Platform.isAndroid && isKeyboardMode(context);
   }
 
   @override

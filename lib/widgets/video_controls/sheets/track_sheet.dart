@@ -316,11 +316,11 @@ class _AudioColumnState extends State<_AudioColumn> {
             itemCount: widget.tracks.length,
             itemBuilder: (context, index) {
               final track = widget.tracks[index];
-              final label = TrackLabelBuilder.buildAudioLabel(
+              final label = TrackLabelBuilder.audioLabel(
                 title: track.title,
                 language: track.language,
                 codec: track.codec,
-                channelsCount: track.channelsCount,
+                channels: track.channelsCount,
                 index: index,
               );
               return TrackSelectionHelper.buildTrackTile<AudioTrack>(
@@ -426,10 +426,11 @@ class _SubtitleColumnState extends State<_SubtitleColumn> {
               final track = widget.tracks[index - 1];
               final isPrimary = !isOffSelected && track.id == selectedSub.id;
               final isSecondary = hasSecondary && track.id == secondarySub.id;
-              final label = TrackLabelBuilder.buildSubtitleLabel(
+              final label = TrackLabelBuilder.subtitleLabel(
                 title: track.title,
                 language: track.language,
                 codec: track.codec,
+                forced: track.isForced,
                 index: index - 1,
               );
 

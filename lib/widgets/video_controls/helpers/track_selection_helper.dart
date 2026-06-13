@@ -3,6 +3,8 @@ import 'package:vibe_stream/widgets/app_icon.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import '../../../i18n/strings.g.dart';
 import '../../../mpv/mpv.dart';
+import '../../../theme/mono_tokens.dart';
+import '../../../utils/track_label_builder.dart';
 import '../../../widgets/focusable_list_tile.dart';
 
 class TrackSelectionHelper {
@@ -59,7 +61,7 @@ class TrackSelectionHelper {
 
   static Widget buildTrackTile<T>({
     required BuildContext context,
-    required String label,
+    required TrackLabel label,
     required bool isSelected,
     required VoidCallback onTap,
     Key? key,
@@ -71,7 +73,8 @@ class TrackSelectionHelper {
     return _buildSelectableTile(
       context: context,
       key: key,
-      label: label,
+      label: label.primary,
+      secondaryLabel: label.secondary,
       isSelected: isSelected,
       onTap: onTap,
       focusNode: focusNode,
@@ -101,6 +104,7 @@ class TrackSelectionHelper {
     required String label,
     required bool isSelected,
     required VoidCallback onTap,
+    String? secondaryLabel,
     Key? key,
     FocusNode? focusNode,
     VoidCallback? onLongPress,
@@ -118,7 +122,23 @@ class TrackSelectionHelper {
     Widget tile = FocusableListTile(
       key: key,
       focusNode: focusNode,
-      title: Text(label, style: TextStyle(color: isSelected ? primaryColor : null)),
+      title: Text(
+        label,
+        style: TextStyle(color: isSelected ? primaryColor : null),
+        maxLines: 1,
+        overflow: .ellipsis,
+      ),
+      subtitle: secondaryLabel == null
+          ? null
+          : Text(
+              secondaryLabel,
+              style: TextStyle(
+                color: isSelected ? primaryColor.withValues(alpha: 0.7) : tokens(context).textMuted,
+                fontSize: 12,
+              ),
+              maxLines: 1,
+              overflow: .ellipsis,
+            ),
       trailing: trailing,
       onTap: onTap,
       onLongPress: onLongPress,

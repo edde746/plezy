@@ -115,7 +115,6 @@ class _TranslationsAuthRu extends TranslationsAuthEn {
 	@override String get or => 'или';
 	@override String get connectToJellyfin => 'Подключиться к Jellyfin';
 	@override String get useQuickConnect => 'Использовать Quick Connect';
-	@override String get quickConnectCode => 'Код Quick Connect';
 	@override String get quickConnectInstructions => 'Откройте Quick Connect в Jellyfin и введите этот код.';
 	@override String get quickConnectWaiting => 'Ожидание подтверждения…';
 	@override String get quickConnectCancel => 'Отмена';
@@ -245,6 +244,9 @@ class _TranslationsSettingsRu extends TranslationsSettingsEn {
 	@override String get gridView => 'Сетка';
 	@override String get listView => 'Список';
 	@override String get showHeroSection => 'Показать раздел избранного';
+	@override String get continueWatchingAction => 'Действие для «Продолжить просмотр»';
+	@override String get continueWatchingPlay => 'Воспроизвести';
+	@override String get continueWatchingDetails => 'Открыть сведения';
 	@override String get useGlobalHubs => 'Использовать макет главной';
 	@override String get useGlobalHubsDescription => 'Показывать единые разделы главной. Иначе использовать рекомендации библиотек.';
 	@override String get showServerNameOnHubs => 'Показывать имя сервера в хабах';
@@ -261,6 +263,8 @@ class _TranslationsSettingsRu extends TranslationsSettingsEn {
 	@override String get showSeasonPostersOnTabsDescription => 'Показывать постер каждого сезона над его вкладкой';
 	@override String get tvFullCardLayout => 'Полные TV-карточки';
 	@override String get tvFullCardLayoutDescription => 'Использовать TV-карточки только с изображением и именами актёров поверх него';
+	@override String get focusGlow => 'Свечение при фокусе';
+	@override String get focusGlowDescription => 'Показывать мягкое свечение вокруг карточки в фокусе';
 	@override String get hideSpoilers => 'Скрыть спойлеры непросмотренных эпизодов';
 	@override String get hideSpoilersDescription => 'Размывать миниатюры и описания непросмотренных серий';
 	@override String get playerBackend => 'Бэкенд плеера';
@@ -492,8 +496,8 @@ class _TranslationsMediaMenuRu extends TranslationsMediaMenuEn {
 	@override String get markAsWatched => 'Отметить как просмотренное';
 	@override String get markAsUnwatched => 'Отметить как непросмотренное';
 	@override String get removeFromContinueWatching => 'Удалить из «Продолжить просмотр»';
+	@override String get viewDetails => 'Показать сведения';
 	@override String get goToSeries => 'Перейти к сериалу';
-	@override String get goToSeason => 'Перейти к сезону';
 	@override String get shufflePlay => 'Случайное воспроизведение';
 	@override String get shuffleNotAvailableOffline => 'Перемешивание недоступно офлайн';
 	@override String get fileInfo => 'Информация о файле';
@@ -673,7 +677,6 @@ class _TranslationsMessagesRu extends TranslationsMessagesEn {
 	@override String get fileInfoNotAvailable => 'Информация о файле недоступна';
 	@override String errorLoadingFileInfo({required Object error}) => 'Ошибка загрузки информации о файле: ${error}';
 	@override String get errorLoadingSeries => 'Ошибка загрузки сериала';
-	@override String get errorLoadingSeason => 'Ошибка загрузки сезона';
 	@override String get musicNotSupported => 'Воспроизведение музыки пока не поддерживается';
 	@override String get noDescriptionAvailable => 'Описание недоступно';
 	@override String get noProfilesAvailable => 'Профили недоступны';
@@ -727,6 +730,9 @@ class _TranslationsSubtitlingStylingRu extends TranslationsSubtitlingStylingEn {
 	@override String get assOverride => 'Переопределение ASS';
 	@override String get bold => 'Жирный';
 	@override String get italic => 'Курсив';
+	@override String get renderResolution => 'Разрешение отрисовки';
+	@override String get renderResolutionScreen => 'Разрешение экрана';
+	@override String get renderResolutionVideo => 'Разрешение видео';
 }
 
 // Path: mpvConfig
@@ -1598,10 +1604,8 @@ class _TranslationsAddServerRu extends TranslationsAddServerEn {
 
 	// Translations
 	@override String get addJellyfinTitle => 'Добавить сервер Jellyfin';
-	@override String get jellyfinUrlIntro => 'Введите URL сервера, например `https://jellyfin.example.com`.';
-	@override String get jellyfinUrlsIntro => 'Введите один или несколько URL сервера, разделяя их запятыми. Vibe будет использовать доступный URL с минимальной задержкой.';
-	@override String get serverUrl => 'URL сервера';
 	@override String get serverUrls => 'URL сервера';
+	@override String get serverUrlsHelper => 'Можно указать несколько URL через запятую.';
 	@override String get findServer => 'Найти сервер';
 	@override String get searchingLocalServers => 'Поиск локальных серверов Jellyfin...';
 	@override String get localServers => 'Локальные серверы Jellyfin';
@@ -1614,17 +1618,12 @@ class _TranslationsAddServerRu extends TranslationsAddServerEn {
 	@override String signInFailed({required Object error}) => 'Не удалось войти: ${error}';
 	@override String quickConnectFailed({required Object error}) => 'Quick Connect не удался: ${error}';
 	@override String get addPlexTitle => 'Войти через Plex';
-	@override String get plexAuthIntro => 'Войдите через браузер или QR-код.';
-	@override String get plexQRPrompt => 'Отсканируйте этот QR-код, чтобы войти.';
-	@override String get waitingForPlexConfirmation => 'Ожидание подтверждения от plex.tv…';
 	@override String get pinExpired => 'Срок действия PIN истёк до входа. Попробуйте снова.';
 	@override String get duplicatePlexAccount => 'В Plex уже выполнен вход. Выйдите, чтобы сменить аккаунт.';
 	@override String failedToRegisterAccount({required Object error}) => 'Не удалось зарегистрировать учётную запись: ${error}';
 	@override String get enterJellyfinUrlError => 'Введите URL вашего сервера Jellyfin';
 	@override String get addConnectionTitle => 'Добавить подключение';
 	@override String addConnectionTitleScoped({required Object name}) => 'Добавить в ${name}';
-	@override String get addConnectionIntroGlobal => 'Добавьте еще один медиасервер. Plex и Jellyfin появятся вместе на главной.';
-	@override String get addConnectionIntroScoped => 'Добавьте новый сервер или одолжите из другого профиля.';
 	@override String get signInWithPlexCard => 'Войти через Plex';
 	@override String get signInWithPlexCardSubtitle => 'Авторизуйте это устройство. Общие серверы будут добавлены.';
 	@override String get signInWithPlexCardSubtitleScoped => 'Авторизуйте аккаунт Plex. Пользователи Home станут профилями.';
@@ -1933,7 +1932,6 @@ extension on TranslationsRu {
 			'auth.or' => 'или',
 			'auth.connectToJellyfin' => 'Подключиться к Jellyfin',
 			'auth.useQuickConnect' => 'Использовать Quick Connect',
-			'auth.quickConnectCode' => 'Код Quick Connect',
 			'auth.quickConnectInstructions' => 'Откройте Quick Connect в Jellyfin и введите этот код.',
 			'auth.quickConnectWaiting' => 'Ожидание подтверждения…',
 			'auth.quickConnectCancel' => 'Отмена',
@@ -2027,6 +2025,9 @@ extension on TranslationsRu {
 			'settings.gridView' => 'Сетка',
 			'settings.listView' => 'Список',
 			'settings.showHeroSection' => 'Показать раздел избранного',
+			'settings.continueWatchingAction' => 'Действие для «Продолжить просмотр»',
+			'settings.continueWatchingPlay' => 'Воспроизвести',
+			'settings.continueWatchingDetails' => 'Открыть сведения',
 			'settings.useGlobalHubs' => 'Использовать макет главной',
 			'settings.useGlobalHubsDescription' => 'Показывать единые разделы главной. Иначе использовать рекомендации библиотек.',
 			'settings.showServerNameOnHubs' => 'Показывать имя сервера в хабах',
@@ -2043,6 +2044,8 @@ extension on TranslationsRu {
 			'settings.showSeasonPostersOnTabsDescription' => 'Показывать постер каждого сезона над его вкладкой',
 			'settings.tvFullCardLayout' => 'Полные TV-карточки',
 			'settings.tvFullCardLayoutDescription' => 'Использовать TV-карточки только с изображением и именами актёров поверх него',
+			'settings.focusGlow' => 'Свечение при фокусе',
+			'settings.focusGlowDescription' => 'Показывать мягкое свечение вокруг карточки в фокусе',
 			'settings.hideSpoilers' => 'Скрыть спойлеры непросмотренных эпизодов',
 			'settings.hideSpoilersDescription' => 'Размывать миниатюры и описания непросмотренных серий',
 			'settings.playerBackend' => 'Бэкенд плеера',
@@ -2262,8 +2265,8 @@ extension on TranslationsRu {
 			'mediaMenu.markAsWatched' => 'Отметить как просмотренное',
 			'mediaMenu.markAsUnwatched' => 'Отметить как непросмотренное',
 			'mediaMenu.removeFromContinueWatching' => 'Удалить из «Продолжить просмотр»',
+			'mediaMenu.viewDetails' => 'Показать сведения',
 			'mediaMenu.goToSeries' => 'Перейти к сериалу',
-			'mediaMenu.goToSeason' => 'Перейти к сезону',
 			'mediaMenu.shufflePlay' => 'Случайное воспроизведение',
 			'mediaMenu.shuffleNotAvailableOffline' => 'Перемешивание недоступно офлайн',
 			'mediaMenu.fileInfo' => 'Информация о файле',
@@ -2395,7 +2398,6 @@ extension on TranslationsRu {
 			'messages.fileInfoNotAvailable' => 'Информация о файле недоступна',
 			'messages.errorLoadingFileInfo' => ({required Object error}) => 'Ошибка загрузки информации о файле: ${error}',
 			'messages.errorLoadingSeries' => 'Ошибка загрузки сериала',
-			'messages.errorLoadingSeason' => 'Ошибка загрузки сезона',
 			'messages.musicNotSupported' => 'Воспроизведение музыки пока не поддерживается',
 			'messages.noDescriptionAvailable' => 'Описание недоступно',
 			'messages.noProfilesAvailable' => 'Профили недоступны',
@@ -2430,11 +2432,11 @@ extension on TranslationsRu {
 			'subtitlingStyling.text' => 'Текст',
 			'subtitlingStyling.border' => 'Обводка',
 			'subtitlingStyling.background' => 'Фон',
+			_ => null,
+		} ?? switch (path) {
 			'subtitlingStyling.fontSize' => 'Размер шрифта',
 			'subtitlingStyling.textColor' => 'Цвет текста',
 			'subtitlingStyling.borderSize' => 'Размер обводки',
-			_ => null,
-		} ?? switch (path) {
 			'subtitlingStyling.borderColor' => 'Цвет обводки',
 			'subtitlingStyling.backgroundOpacity' => 'Прозрачность фона',
 			'subtitlingStyling.backgroundColor' => 'Цвет фона',
@@ -2442,6 +2444,9 @@ extension on TranslationsRu {
 			'subtitlingStyling.assOverride' => 'Переопределение ASS',
 			'subtitlingStyling.bold' => 'Жирный',
 			'subtitlingStyling.italic' => 'Курсив',
+			'subtitlingStyling.renderResolution' => 'Разрешение отрисовки',
+			'subtitlingStyling.renderResolutionScreen' => 'Разрешение экрана',
+			'subtitlingStyling.renderResolutionVideo' => 'Разрешение видео',
 			'mpvConfig.title' => 'mpv.conf',
 			'mpvConfig.description' => 'Расширенные настройки видеоплеера',
 			'mpvConfig.presets' => 'Пресеты',
@@ -2941,14 +2946,14 @@ extension on TranslationsRu {
 			'companionRemote.remote.retryNow' => 'Повторить сейчас',
 			'companionRemote.remote.tabRemote' => 'Пульт',
 			'companionRemote.remote.tabPlay' => 'Воспроизведение',
+			_ => null,
+		} ?? switch (path) {
 			'companionRemote.remote.tabMore' => 'Ещё',
 			'companionRemote.remote.menu' => 'Меню',
 			'companionRemote.remote.tabNavigation' => 'Навигация',
 			'companionRemote.remote.tabDiscover' => 'Обзор',
 			'companionRemote.remote.tabLibraries' => 'Библиотеки',
 			'companionRemote.remote.tabSearch' => 'Поиск',
-			_ => null,
-		} ?? switch (path) {
 			'companionRemote.remote.tabDownloads' => 'Загрузки',
 			'companionRemote.remote.tabSettings' => 'Настройки',
 			'companionRemote.remote.previous' => 'Предыдущий',
@@ -3162,10 +3167,8 @@ extension on TranslationsRu {
 			'trackers.libraryFilter.libraries' => 'Библиотеки',
 			'trackers.libraryFilter.noLibraries' => 'Библиотеки недоступны',
 			'addServer.addJellyfinTitle' => 'Добавить сервер Jellyfin',
-			'addServer.jellyfinUrlIntro' => 'Введите URL сервера, например `https://jellyfin.example.com`.',
-			'addServer.jellyfinUrlsIntro' => 'Введите один или несколько URL сервера, разделяя их запятыми. Vibe будет использовать доступный URL с минимальной задержкой.',
-			'addServer.serverUrl' => 'URL сервера',
 			'addServer.serverUrls' => 'URL сервера',
+			'addServer.serverUrlsHelper' => 'Можно указать несколько URL через запятую.',
 			'addServer.findServer' => 'Найти сервер',
 			'addServer.searchingLocalServers' => 'Поиск локальных серверов Jellyfin...',
 			'addServer.localServers' => 'Локальные серверы Jellyfin',
@@ -3178,17 +3181,12 @@ extension on TranslationsRu {
 			'addServer.signInFailed' => ({required Object error}) => 'Не удалось войти: ${error}',
 			'addServer.quickConnectFailed' => ({required Object error}) => 'Quick Connect не удался: ${error}',
 			'addServer.addPlexTitle' => 'Войти через Plex',
-			'addServer.plexAuthIntro' => 'Войдите через браузер или QR-код.',
-			'addServer.plexQRPrompt' => 'Отсканируйте этот QR-код, чтобы войти.',
-			'addServer.waitingForPlexConfirmation' => 'Ожидание подтверждения от plex.tv…',
 			'addServer.pinExpired' => 'Срок действия PIN истёк до входа. Попробуйте снова.',
 			'addServer.duplicatePlexAccount' => 'В Plex уже выполнен вход. Выйдите, чтобы сменить аккаунт.',
 			'addServer.failedToRegisterAccount' => ({required Object error}) => 'Не удалось зарегистрировать учётную запись: ${error}',
 			'addServer.enterJellyfinUrlError' => 'Введите URL вашего сервера Jellyfin',
 			'addServer.addConnectionTitle' => 'Добавить подключение',
 			'addServer.addConnectionTitleScoped' => ({required Object name}) => 'Добавить в ${name}',
-			'addServer.addConnectionIntroGlobal' => 'Добавьте еще один медиасервер. Plex и Jellyfin появятся вместе на главной.',
-			'addServer.addConnectionIntroScoped' => 'Добавьте новый сервер или одолжите из другого профиля.',
 			'addServer.signInWithPlexCard' => 'Войти через Plex',
 			'addServer.signInWithPlexCardSubtitle' => 'Авторизуйте это устройство. Общие серверы будут добавлены.',
 			'addServer.signInWithPlexCardSubtitleScoped' => 'Авторизуйте аккаунт Plex. Пользователи Home станут профилями.',

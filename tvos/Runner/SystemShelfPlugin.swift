@@ -7,7 +7,7 @@ import TVServices
   final class SystemShelfPlugin: NSObject, FlutterPlugin {
     private static let channelName = "com.plezy/system_shelf"
     private static let appGroupIdentifier = "group.com.edde746.plezy"
-    private static let cacheFileName = "PlezySystemShelfCache.json"
+    private static let cacheDataKey = "PlezySystemShelfCacheData"
     private static var pendingDeepLink: String?
     private static var methodChannel: FlutterMethodChannel?
 
@@ -36,11 +36,7 @@ import TVServices
     func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
       switch call.method {
       case "isSupported":
-        let supported = Self.cacheURL != nil
-        if !supported {
-          Self.log("App Group container unavailable")
-        }
-        result(supported)
+        result(Self.sharedDefaults != nil)
       case "sync":
         guard let args = call.arguments as? [String: Any], let rawItems = args["items"] as? [[String: Any]] else {
           result(FlutterError(code: "INVALID_ARGS", message: "Missing items", details: nil))
@@ -64,16 +60,8 @@ import TVServices
       }
     }
 
-    private static var appGroupContainerURL: URL? {
-      FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: appGroupIdentifier)
-    }
-
-    private static var cacheURL: URL? {
-      appGroupContainerURL?.appendingPathComponent(cacheFileName, isDirectory: false)
-    }
-
-    private static func log(_ message: String) {
-      NSLog("PlezySystemShelf: %@", message)
+    private static var sharedDefaults: UserDefaults? {
+      UserDefaults(suiteName: appGroupIdentifier)
     }
 
     private static func normalizedItem(_ item: [String: Any]) -> [String: Any] {
@@ -99,61 +87,84 @@ import TVServices
     }
 
     private static func writePayload(_ payload: [String: Any]) -> Bool {
-      guard let url = cacheURL else {
-        log("Cannot write cache because App Group container is unavailable")
+      guard let defaults = sharedDefaults else {
         return false
       }
 
-      guard JSONSerialization.isValidJSONObject(payload),
-        let data = try? JSONSerialization.data(withJSONObject: payload)
-      else {
-        log("Cannot write cache because payload is not valid JSON")
+      let sanitizedPayload = sanitizedJSONObject(payload)
+      guard JSONSerialization.isValidJSONObject(sanitizedPayload) else {
         return false
       }
 
       do {
-        try data.write(to: url, options: [.atomic])
+        let data = try JSONSerialization.data(withJSONObject: sanitizedPayload)
+        defaults.set(data, forKey: cacheDataKey)
+        defaults.synchronize()
       } catch {
-        log("Failed to write cache: \(error)")
         return false
       }
 
-      let itemCount =
-        (payload["sections"] as? [[String: Any]])?.reduce(0) { count, section in
-          count + ((section["items"] as? [[String: Any]])?.count ?? 0)
-        } ?? 0
-      log("Wrote cache with \(itemCount) items")
       TVTopShelfContentProvider.topShelfContentDidChange()
       return true
     }
 
-    private static func clearCache() -> Bool {
-      guard let url = cacheURL else {
-        log("Cannot clear cache because App Group container is unavailable")
-        return false
-      }
-
-      do {
-        if FileManager.default.fileExists(atPath: url.path) {
-          try FileManager.default.removeItem(at: url)
+    private static func sanitizedJSONObject(_ object: [String: Any]) -> [String: Any] {
+      object.reduce(into: [String: Any]()) { result, entry in
+        if let value = sanitizedJSONValue(entry.value) {
+          result[entry.key] = value
         }
-      } catch {
-        log("Failed to clear cache: \(error)")
+      }
+    }
+
+    private static func sanitizedJSONValue(_ value: Any) -> Any? {
+      if value is NSNull { return nil }
+
+      if let value = value as? String { return value }
+      if let value = value as? NSNumber {
+        if CFGetTypeID(value) == CFBooleanGetTypeID() { return value.boolValue }
+        return value.doubleValue.isFinite ? value : nil
+      }
+      if let value = value as? Bool { return value }
+      if let value = value as? Int { return value }
+      if let value = value as? Int64 { return value }
+      if let value = value as? Double { return value.isFinite ? value : nil }
+      if let value = value as? Float { return value.isFinite ? Double(value) : nil }
+
+      if let value = value as? [String: Any] {
+        return value.reduce(into: [String: Any]()) { result, entry in
+          if let nestedValue = sanitizedJSONValue(entry.value) {
+            result[entry.key] = nestedValue
+          }
+        }
+      }
+
+      if let value = value as? [Any] {
+        return value.compactMap { nestedValue in
+          sanitizedJSONValue(nestedValue)
+        }
+      }
+
+      return nil
+    }
+
+    private static func clearCache() -> Bool {
+      guard let defaults = sharedDefaults else {
         return false
       }
 
-      log("Cleared cache")
+      defaults.removeObject(forKey: cacheDataKey)
+      defaults.synchronize()
+
       TVTopShelfContentProvider.topShelfContentDidChange()
       return true
     }
 
     private static func removeItem(contentId: String) -> Bool {
-      guard let url = cacheURL,
-        let data = try? Data(contentsOf: url),
+      guard let defaults = sharedDefaults,
+        let data = defaults.data(forKey: cacheDataKey),
         var payload = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
         let sections = payload["sections"] as? [[String: Any]]
       else {
-        log("Cannot remove cache item because cache is unavailable or invalid")
         return false
       }
 
@@ -168,7 +179,9 @@ import TVServices
         return nextSection
       }
 
-      if !removed { return false }
+      if !removed {
+        return false
+      }
       payload["updatedAt"] = Date().timeIntervalSince1970
       payload["sections"] = filteredSections
       return writePayload(payload)

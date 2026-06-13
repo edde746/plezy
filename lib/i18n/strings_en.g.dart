@@ -141,9 +141,6 @@ class TranslationsAuthEn {
 	/// en: 'Use Quick Connect'
 	String get useQuickConnect => 'Use Quick Connect';
 
-	/// en: 'Quick Connect code'
-	String get quickConnectCode => 'Quick Connect code';
-
 	/// en: 'Open Quick Connect in Jellyfin and enter this code.'
 	String get quickConnectInstructions => 'Open Quick Connect in Jellyfin and enter this code.';
 
@@ -459,6 +456,15 @@ class TranslationsSettingsEn {
 	/// en: 'Show Hero Section'
 	String get showHeroSection => 'Show Hero Section';
 
+	/// en: 'Continue Watching Action'
+	String get continueWatchingAction => 'Continue Watching Action';
+
+	/// en: 'Play'
+	String get continueWatchingPlay => 'Play';
+
+	/// en: 'Open Details'
+	String get continueWatchingDetails => 'Open Details';
+
 	/// en: 'Use Home Layout'
 	String get useGlobalHubs => 'Use Home Layout';
 
@@ -506,6 +512,30 @@ class TranslationsSettingsEn {
 
 	/// en: 'Use image-only TV cards with actor names overlaid'
 	String get tvFullCardLayoutDescription => 'Use image-only TV cards with actor names overlaid';
+
+	/// en: 'Focus Glow'
+	String get focusGlow => 'Focus Glow';
+
+	/// en: 'Draw a soft glow around the focused card'
+	String get focusGlowDescription => 'Draw a soft glow around the focused card';
+
+	/// en: 'Visual Effects'
+	String get visualEffects => 'Visual Effects';
+
+	/// en: 'Auto'
+	String get visualEffectsAuto => 'Auto';
+
+	/// en: 'Reduce effects automatically on low-power devices'
+	String get visualEffectsAutoDescription => 'Reduce effects automatically on low-power devices';
+
+	/// en: 'Full'
+	String get visualEffectsFull => 'Full';
+
+	/// en: 'Reduced'
+	String get visualEffectsReduced => 'Reduced';
+
+	/// en: 'Fewer animations and lower-resolution artwork'
+	String get visualEffectsReducedDescription => 'Fewer animations and lower-resolution artwork';
 
 	/// en: 'Hide Spoilers for Unwatched Episodes'
 	String get hideSpoilers => 'Hide Spoilers for Unwatched Episodes';
@@ -1127,11 +1157,11 @@ class TranslationsMediaMenuEn {
 	/// en: 'Remove from Continue Watching'
 	String get removeFromContinueWatching => 'Remove from Continue Watching';
 
+	/// en: 'View details'
+	String get viewDetails => 'View details';
+
 	/// en: 'Go to series'
 	String get goToSeries => 'Go to series';
-
-	/// en: 'Go to season'
-	String get goToSeason => 'Go to season';
 
 	/// en: 'Shuffle Play'
 	String get shufflePlay => 'Shuffle Play';
@@ -1561,9 +1591,6 @@ class TranslationsMessagesEn {
 	/// en: 'Error loading series'
 	String get errorLoadingSeries => 'Error loading series';
 
-	/// en: 'Error loading season'
-	String get errorLoadingSeason => 'Error loading season';
-
 	/// en: 'Music playback is not yet supported'
 	String get musicNotSupported => 'Music playback is not yet supported';
 
@@ -1704,6 +1731,15 @@ class TranslationsSubtitlingStylingEn {
 
 	/// en: 'Italic'
 	String get italic => 'Italic';
+
+	/// en: 'Render Resolution'
+	String get renderResolution => 'Render Resolution';
+
+	/// en: 'Screen resolution'
+	String get renderResolutionScreen => 'Screen resolution';
+
+	/// en: 'Video resolution'
+	String get renderResolutionVideo => 'Video resolution';
 }
 
 // Path: mpvConfig
@@ -2889,8 +2925,17 @@ class TranslationsWatchTogetherEn {
 	/// en: '${name} is buffering'
 	String participantBuffering({required Object name}) => '${name} is buffering';
 
+	/// en: '${name} is on an older app version — sync unavailable'
+	String participantNeedsUpdate({required Object name}) => '${name} is on an older app version — sync unavailable';
+
+	/// en: 'Resuming without ${name}'
+	String resumingWithout({required Object name}) => 'Resuming without ${name}';
+
 	/// en: 'Waiting for others to load...'
 	String get waitingForParticipants => 'Waiting for others to load...';
+
+	/// en: 'Waiting for ${name}...'
+	String waitingForName({required Object name}) => 'Waiting for ${name}...';
 
 	/// en: 'Recent Rooms'
 	String get recentRooms => 'Recent Rooms';
@@ -3775,17 +3820,11 @@ class TranslationsAddServerEn {
 	/// en: 'Add Jellyfin server'
 	String get addJellyfinTitle => 'Add Jellyfin server';
 
-	/// en: 'Enter the server URL, e.g. `https://jellyfin.example.com`.'
-	String get jellyfinUrlIntro => 'Enter the server URL, e.g. `https://jellyfin.example.com`.';
-
-	/// en: 'Enter one or more server URLs, separated by commas. Vibe will use the reachable URL with the lowest latency.'
-	String get jellyfinUrlsIntro => 'Enter one or more server URLs, separated by commas. Vibe will use the reachable URL with the lowest latency.';
-
-	/// en: 'Server URL'
-	String get serverUrl => 'Server URL';
-
 	/// en: 'Server URLs'
 	String get serverUrls => 'Server URLs';
+
+	/// en: 'Multiple URLs allowed, separated by commas.'
+	String get serverUrlsHelper => 'Multiple URLs allowed, separated by commas.';
 
 	/// en: 'Find server'
 	String get findServer => 'Find server';
@@ -3823,15 +3862,6 @@ class TranslationsAddServerEn {
 	/// en: 'Sign in with Plex'
 	String get addPlexTitle => 'Sign in with Plex';
 
-	/// en: 'Sign in with a browser or QR code.'
-	String get plexAuthIntro => 'Sign in with a browser or QR code.';
-
-	/// en: 'Scan this QR code to sign in.'
-	String get plexQRPrompt => 'Scan this QR code to sign in.';
-
-	/// en: 'Waiting for plex.tv to confirm your sign-in…'
-	String get waitingForPlexConfirmation => 'Waiting for plex.tv to confirm your sign-in…';
-
 	/// en: 'PIN expired before sign-in. Please try again.'
 	String get pinExpired => 'PIN expired before sign-in. Please try again.';
 
@@ -3849,12 +3879,6 @@ class TranslationsAddServerEn {
 
 	/// en: 'Add to ${name}'
 	String addConnectionTitleScoped({required Object name}) => 'Add to ${name}';
-
-	/// en: 'Add another media server. Plex and Jellyfin appear together on Home.'
-	String get addConnectionIntroGlobal => 'Add another media server. Plex and Jellyfin appear together on Home.';
-
-	/// en: 'Add a new server, or borrow one from another profile.'
-	String get addConnectionIntroScoped => 'Add a new server, or borrow one from another profile.';
 
 	/// en: 'Sign in with Plex'
 	String get signInWithPlexCard => 'Sign in with Plex';
@@ -4483,7 +4507,6 @@ extension on Translations {
 			'auth.or' => 'or',
 			'auth.connectToJellyfin' => 'Connect to Jellyfin',
 			'auth.useQuickConnect' => 'Use Quick Connect',
-			'auth.quickConnectCode' => 'Quick Connect code',
 			'auth.quickConnectInstructions' => 'Open Quick Connect in Jellyfin and enter this code.',
 			'auth.quickConnectWaiting' => 'Waiting for approval…',
 			'auth.quickConnectCancel' => 'Cancel',
@@ -4577,6 +4600,9 @@ extension on Translations {
 			'settings.gridView' => 'Grid',
 			'settings.listView' => 'List',
 			'settings.showHeroSection' => 'Show Hero Section',
+			'settings.continueWatchingAction' => 'Continue Watching Action',
+			'settings.continueWatchingPlay' => 'Play',
+			'settings.continueWatchingDetails' => 'Open Details',
 			'settings.useGlobalHubs' => 'Use Home Layout',
 			'settings.useGlobalHubsDescription' => 'Show unified home hubs. Otherwise use library recommendations.',
 			'settings.showServerNameOnHubs' => 'Show Server Name on Hubs',
@@ -4593,6 +4619,14 @@ extension on Translations {
 			'settings.showSeasonPostersOnTabsDescription' => 'Show each season\'s poster above its tab',
 			'settings.tvFullCardLayout' => 'Full TV Cards',
 			'settings.tvFullCardLayoutDescription' => 'Use image-only TV cards with actor names overlaid',
+			'settings.focusGlow' => 'Focus Glow',
+			'settings.focusGlowDescription' => 'Draw a soft glow around the focused card',
+			'settings.visualEffects' => 'Visual Effects',
+			'settings.visualEffectsAuto' => 'Auto',
+			'settings.visualEffectsAutoDescription' => 'Reduce effects automatically on low-power devices',
+			'settings.visualEffectsFull' => 'Full',
+			'settings.visualEffectsReduced' => 'Reduced',
+			'settings.visualEffectsReducedDescription' => 'Fewer animations and lower-resolution artwork',
 			'settings.hideSpoilers' => 'Hide Spoilers for Unwatched Episodes',
 			'settings.hideSpoilersDescription' => 'Blur thumbnails and descriptions for unwatched episodes',
 			'settings.playerBackend' => 'Player Backend',
@@ -4812,8 +4846,8 @@ extension on Translations {
 			'mediaMenu.markAsWatched' => 'Mark as Watched',
 			'mediaMenu.markAsUnwatched' => 'Mark as Unwatched',
 			'mediaMenu.removeFromContinueWatching' => 'Remove from Continue Watching',
+			'mediaMenu.viewDetails' => 'View details',
 			'mediaMenu.goToSeries' => 'Go to series',
-			'mediaMenu.goToSeason' => 'Go to season',
 			'mediaMenu.shufflePlay' => 'Shuffle Play',
 			'mediaMenu.shuffleNotAvailableOffline' => 'Shuffle not available offline',
 			'mediaMenu.fileInfo' => 'File Info',
@@ -4945,7 +4979,6 @@ extension on Translations {
 			'messages.fileInfoNotAvailable' => 'File information not available',
 			'messages.errorLoadingFileInfo' => ({required Object error}) => 'Error loading file info: ${error}',
 			'messages.errorLoadingSeries' => 'Error loading series',
-			'messages.errorLoadingSeason' => 'Error loading season',
 			'messages.musicNotSupported' => 'Music playback is not yet supported',
 			'messages.noDescriptionAvailable' => 'No description available',
 			'messages.noProfilesAvailable' => 'No profiles available',
@@ -4974,6 +5007,8 @@ extension on Translations {
 			'messages.switchingToCompatiblePlayer' => 'Switching to compatible player...',
 			'messages.serverLimitTitle' => 'Playback failed',
 			'messages.serverLimitBody' => 'Server error (HTTP 500). A bandwidth/transcoding limit likely rejected this session. Ask the owner to adjust it.',
+			_ => null,
+		} ?? switch (path) {
 			'messages.logsUploaded' => 'Logs uploaded',
 			'messages.logsUploadFailed' => 'Failed to upload logs',
 			'messages.logId' => 'Log ID',
@@ -4983,8 +5018,6 @@ extension on Translations {
 			'subtitlingStyling.fontSize' => 'Font Size',
 			'subtitlingStyling.textColor' => 'Text Color',
 			'subtitlingStyling.borderSize' => 'Border Size',
-			_ => null,
-		} ?? switch (path) {
 			'subtitlingStyling.borderColor' => 'Border Color',
 			'subtitlingStyling.backgroundOpacity' => 'Background Opacity',
 			'subtitlingStyling.backgroundColor' => 'Background Color',
@@ -4992,6 +5025,9 @@ extension on Translations {
 			'subtitlingStyling.assOverride' => 'ASS Override',
 			'subtitlingStyling.bold' => 'Bold',
 			'subtitlingStyling.italic' => 'Italic',
+			'subtitlingStyling.renderResolution' => 'Render Resolution',
+			'subtitlingStyling.renderResolutionScreen' => 'Screen resolution',
+			'subtitlingStyling.renderResolutionVideo' => 'Video resolution',
 			'mpvConfig.title' => 'mpv.conf',
 			'mpvConfig.description' => 'Advanced video player settings',
 			'mpvConfig.presets' => 'Presets',
@@ -5370,7 +5406,10 @@ extension on Translations {
 			'watchTogether.participantResumed' => ({required Object name}) => '${name} resumed',
 			'watchTogether.participantSeeked' => ({required Object name}) => '${name} seeked',
 			'watchTogether.participantBuffering' => ({required Object name}) => '${name} is buffering',
+			'watchTogether.participantNeedsUpdate' => ({required Object name}) => '${name} is on an older app version — sync unavailable',
+			'watchTogether.resumingWithout' => ({required Object name}) => 'Resuming without ${name}',
 			'watchTogether.waitingForParticipants' => 'Waiting for others to load...',
+			'watchTogether.waitingForName' => ({required Object name}) => 'Waiting for ${name}...',
 			'watchTogether.recentRooms' => 'Recent Rooms',
 			'watchTogether.renameRoom' => 'Rename Room',
 			'watchTogether.removeRoom' => 'Remove',
@@ -5482,6 +5521,8 @@ extension on Translations {
 			'companionRemote.pairing.validationHostRequired' => 'Please enter host address',
 			'companionRemote.pairing.validationHostFormat' => 'Format must be IP:port (e.g., 192.168.1.100:48632)',
 			'companionRemote.pairing.connectionTimedOut' => 'Connection timed out. Use the same network on both devices.',
+			_ => null,
+		} ?? switch (path) {
 			'companionRemote.pairing.sessionNotFound' => 'Device not found. Make sure Vibe is running on the host.',
 			'companionRemote.pairing.authFailed' => 'Authentication failed. Both devices need the same Plex account.',
 			'companionRemote.pairing.failedToConnect' => ({required Object error}) => 'Failed to connect: ${error}',
@@ -5497,8 +5538,6 @@ extension on Translations {
 			'companionRemote.remote.tabDiscover' => 'Discover',
 			'companionRemote.remote.tabLibraries' => 'Libraries',
 			'companionRemote.remote.tabSearch' => 'Search',
-			_ => null,
-		} ?? switch (path) {
 			'companionRemote.remote.tabDownloads' => 'Downloads',
 			'companionRemote.remote.tabSettings' => 'Settings',
 			'companionRemote.remote.previous' => 'Previous',
@@ -5712,10 +5751,8 @@ extension on Translations {
 			'trackers.libraryFilter.libraries' => 'Libraries',
 			'trackers.libraryFilter.noLibraries' => 'No libraries available',
 			'addServer.addJellyfinTitle' => 'Add Jellyfin server',
-			'addServer.jellyfinUrlIntro' => 'Enter the server URL, e.g. `https://jellyfin.example.com`.',
-			'addServer.jellyfinUrlsIntro' => 'Enter one or more server URLs, separated by commas. Vibe will use the reachable URL with the lowest latency.',
-			'addServer.serverUrl' => 'Server URL',
 			'addServer.serverUrls' => 'Server URLs',
+			'addServer.serverUrlsHelper' => 'Multiple URLs allowed, separated by commas.',
 			'addServer.findServer' => 'Find server',
 			'addServer.searchingLocalServers' => 'Looking for local Jellyfin servers...',
 			'addServer.localServers' => 'Local Jellyfin servers',
@@ -5728,17 +5765,12 @@ extension on Translations {
 			'addServer.signInFailed' => ({required Object error}) => 'Sign-in failed: ${error}',
 			'addServer.quickConnectFailed' => ({required Object error}) => 'Quick Connect failed: ${error}',
 			'addServer.addPlexTitle' => 'Sign in with Plex',
-			'addServer.plexAuthIntro' => 'Sign in with a browser or QR code.',
-			'addServer.plexQRPrompt' => 'Scan this QR code to sign in.',
-			'addServer.waitingForPlexConfirmation' => 'Waiting for plex.tv to confirm your sign-in…',
 			'addServer.pinExpired' => 'PIN expired before sign-in. Please try again.',
 			'addServer.duplicatePlexAccount' => 'Already signed in to Plex. Sign out to switch accounts.',
 			'addServer.failedToRegisterAccount' => ({required Object error}) => 'Failed to register account: ${error}',
 			'addServer.enterJellyfinUrlError' => 'Enter your Jellyfin server URL',
 			'addServer.addConnectionTitle' => 'Add connection',
 			'addServer.addConnectionTitleScoped' => ({required Object name}) => 'Add to ${name}',
-			'addServer.addConnectionIntroGlobal' => 'Add another media server. Plex and Jellyfin appear together on Home.',
-			'addServer.addConnectionIntroScoped' => 'Add a new server, or borrow one from another profile.',
 			'addServer.signInWithPlexCard' => 'Sign in with Plex',
 			'addServer.signInWithPlexCardSubtitle' => 'Authorize this device. Shared servers are added.',
 			'addServer.signInWithPlexCardSubtitleScoped' => 'Authorize a Plex account. Home users become profiles.',

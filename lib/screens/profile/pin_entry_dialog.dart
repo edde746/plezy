@@ -57,14 +57,16 @@ class _PinEntryDialogState extends State<PinEntryDialog> with SingleTickerProvid
     super.dispose();
   }
 
+  bool get _isCurrentRoute => mounted && ModalRoute.of(context)?.isCurrent == true;
+
   void _submit(String pin) {
-    if (_completed) return;
+    if (_completed || !_isCurrentRoute) return;
     _completed = true;
     Navigator.of(context).pop<String>(pin);
   }
 
   void _cancel() {
-    if (_completed) return;
+    if (_completed || !_isCurrentRoute) return;
     _completed = true;
     Navigator.of(context).pop<String>();
   }

@@ -1,11 +1,42 @@
 part of '../../video_player_screen.dart';
 
 extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
+  void _queueScrubPreviewLoad({
+    required MediaItem metadata,
+    required MediaSourceInfo? mediaInfo,
+    required MediaServerClient? mediaClient,
+  }) {
+    if (mediaInfo == null || _isOfflinePlayback || mediaClient == null) return;
+
+    final mediaInfoAtStart = mediaInfo;
+    final metadataAtStart = metadata;
+    unawaited(
+      mediaClient
+          .createScrubPreviewSource(item: metadataAtStart, mediaSource: mediaInfoAtStart)
+          .then((service) {
+            if (service == null) return;
+            // Keyed on item + part rather than session identity: the preview
+            // is per part, so a load that outlives a same-part source switch
+            // (quality/audio) still applies.
+            if (mounted &&
+                _currentMetadata.globalKey == metadataAtStart.globalKey &&
+                _currentMediaInfo?.partId == mediaInfoAtStart.partId) {
+              _setPlayerState(() => _scrubPreviewSource = service);
+            } else {
+              service.dispose();
+            }
+          })
+          .catchError((e, st) {
+            appLogger.w('Scrub preview load failed', error: e, stackTrace: st);
+          }),
+    );
+  }
+
   /// Wire the per-item playback services that need to (re)bind whenever
   /// the active media item changes: [PlaybackProgressTracker],
   /// [MediaControlsManager.updateMetadata], and the
   /// Discord/Trakt/Tracker scrobblers. Both [_initializeServices] and
-  /// [_swapEpisodeInPip] call this so the two flows can't drift.
+  /// [_reloadMediaInPlace] call this so the two flows can't drift.
   ///
   /// The caller is responsible for ensuring `player != null` and (if the
   /// media-controls metadata refresh should run) for having created
@@ -21,8 +52,53 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
     final currentPlayer = player;
     if (currentPlayer == null) return;
 
-    // Progress tracker — local media still reports live when its server is
-    // online; only queue locally when no reporting client is reachable.
+    _rebindProgressTracker(
+      metadata: metadata,
+      mediaClient: mediaClient,
+      offlineWatchService: offlineWatchService,
+      playSessionId: playSessionId,
+      playMethod: playMethod,
+      mediaInfo: mediaInfo,
+    );
+
+    // Media controls metadata. Fire-and-forget — the OS plugin downloads
+    // the poster synchronously inside `setMetadata` (~270 ms); the
+    // controls populate a beat after first frame which is fine.
+    if (_mediaControlsManager != null) {
+      unawaited(
+        _mediaControlsManager!.updateMetadata(
+          metadata: metadata,
+          client: mediaClient,
+          duration: metadata.durationMs != null ? Duration(milliseconds: metadata.durationMs!) : null,
+        ),
+      );
+    }
+
+    // Scrobblers — Discord RPC, Trakt, unified tracker. All accept the
+    // neutral [MediaServerClient]; null short-circuits cleanly.
+    if (mediaClient != null) {
+      unawaited(DiscordRPCService.instance.startPlayback(metadata, mediaClient));
+      unawaited(TraktScrobbleService.instance.startPlayback(metadata, mediaClient, isLive: widget.isLive));
+      unawaited(TrackerCoordinator.instance.startPlayback(metadata, mediaClient, isLive: widget.isLive));
+    }
+  }
+
+  /// (Re)create the [PlaybackProgressTracker] for the current play session.
+  /// Session-keyed only — a transcode restart rebinds just this, while item
+  /// changes go through [_wirePerItemPlaybackServices] for the full set.
+  void _rebindProgressTracker({
+    required MediaItem metadata,
+    required MediaServerClient? mediaClient,
+    required OfflineWatchSyncService? offlineWatchService,
+    String? playSessionId,
+    String? playMethod,
+    MediaSourceInfo? mediaInfo,
+  }) {
+    final currentPlayer = player;
+    if (currentPlayer == null) return;
+
+    // Local media still reports live when its server is online; only queue
+    // locally when no reporting client is reachable.
     if (mediaClient != null) {
       _progressTracker = PlaybackProgressTracker(
         client: mediaClient,
@@ -44,27 +120,6 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
         offlineWatchService: offlineWatchService,
       );
       _progressTracker!.startTracking();
-    }
-
-    // Media controls metadata. Fire-and-forget — the OS plugin downloads
-    // the poster synchronously inside `setMetadata` (~270 ms); the
-    // controls populate a beat after first frame which is fine.
-    if (_mediaControlsManager != null) {
-      unawaited(
-        _mediaControlsManager!.updateMetadata(
-          metadata: metadata,
-          client: mediaClient,
-          duration: metadata.durationMs != null ? Duration(milliseconds: metadata.durationMs!) : null,
-        ),
-      );
-    }
-
-    // Scrobblers — Discord RPC, Trakt, unified tracker. All accept the
-    // neutral [MediaServerClient]; null short-circuits cleanly.
-    if (mediaClient != null) {
-      unawaited(DiscordRPCService.instance.startPlayback(metadata, mediaClient));
-      unawaited(TraktScrobbleService.instance.startPlayback(metadata, mediaClient, isLive: widget.isLive));
-      unawaited(TrackerCoordinator.instance.startPlayback(metadata, mediaClient, isLive: widget.isLive));
     }
   }
 
@@ -122,7 +177,7 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
         _wasPlayingBeforeInactive = false;
         _updateMediaControlsPlaybackState();
       } else if (event is PauseEvent) {
-        if (_suppressMediaPauseDuringFrameRateSwitch) {
+        if (_frameRate.suppressesMediaPause) {
           appLogger.d('Media control: Pause event suppressed (frame rate switch in progress)');
           return;
         }
@@ -152,7 +207,7 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
     });
 
     // Wire progress tracker, media-controls metadata, and the
-    // Discord/Trakt/Tracker scrobblers. Shared with [_swapEpisodeInPip]
+    // Discord/Trakt/Tracker scrobblers. Shared with [_reloadMediaInPlace]
     // so the two flows can't drift.
     _wirePerItemPlaybackServices(
       metadata: _currentMetadata,

@@ -78,9 +78,10 @@ class DownloadManagerService {
   // Items recovered with video complete but supplementary downloads missing
   final Set<String> _pendingSupplementaryDownloads = {};
 
-  // Resolve the correct MediaServerClient for a given serverId/scope (set via setClientResolver).
-  // Falls back to _fallbackClient only when no serverId or resolver is available.
-  MediaClientResolver? _clientResolver;
+  // Resolve the correct MediaServerClient for a given serverId/scope
+  // (constructor-injected). Falls back to _fallbackClient when no serverId
+  // is available.
+  final MediaClientResolver _clientResolver;
   MediaServerClient? _fallbackClient;
 
   OfflineModeSource? _offlineSource;
@@ -158,10 +159,12 @@ class DownloadManagerService {
   DownloadManagerService({
     required AppDatabase database,
     required DownloadStorageService storageService,
+    required MediaClientResolver clientResolver,
     MediaServerHttpClient? http,
     @visibleForTesting this._downloadsSupportedOverride,
   }) : _database = database,
        _storageService = storageService,
+       _clientResolver = clientResolver,
        _http = http ?? httpClient,
        _artworkService = DownloadArtworkService(storageService: storageService, http: http ?? httpClient);
 
@@ -178,10 +181,6 @@ class DownloadManagerService {
     return true;
   }
 
-  void setClientResolver(MediaClientResolver resolver) {
-    _clientResolver = resolver;
-  }
-
   /// Inject the offline-mode source. When `isOffline`, queue/resume paths skip
   /// network work and defer until connectivity returns.
   void setOfflineSource(OfflineModeSource? source) {
@@ -193,8 +192,8 @@ class DownloadManagerService {
   /// Look up the correct client for [serverId].
   /// Returns null if the server is offline — callers should skip/defer the work.
   MediaServerClient? _getClient(ServerId? serverId, {String? clientScopeId}) {
-    if (serverId != null && _clientResolver != null) {
-      return _clientResolver!(serverId, clientScopeId: clientScopeId);
+    if (serverId != null) {
+      return _clientResolver(serverId, clientScopeId: clientScopeId);
     }
     return _fallbackClient;
   }

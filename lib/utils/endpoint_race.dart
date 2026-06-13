@@ -23,10 +23,15 @@ class EndpointRaceSelection<C, R> {
 
 /// Shared two-phase endpoint discovery used by Plex and Jellyfin.
 ///
-/// Phase 1 emits the first reachable endpoint quickly, using a cached/preferred
-/// endpoint first when available. Phase 2 measures all candidates and emits the
-/// selector's best endpoint, letting callers promote a lower-latency URL in the
-/// background without blocking initial connection setup.
+/// Phase 1 emits the first reachable endpoint quickly. A cached/preferred
+/// endpoint is probed first and wins deterministically when it answers within
+/// [preferredHeadStart]; otherwise the full candidate race starts with the
+/// still-pending cached probe merged in as a participant, so a stale cached
+/// endpoint (e.g. a LAN address probed from outside the LAN) costs the head
+/// start instead of the full [preferredTimeout] serially. Phase 2 measures all
+/// candidates and emits the selector's best endpoint, letting callers promote
+/// a lower-latency URL in the background without blocking initial connection
+/// setup.
 Stream<EndpointRaceSelection<C, R>> raceEndpointCandidates<C, R>({
   required String label,
   required List<C> candidates,
@@ -41,6 +46,7 @@ Stream<EndpointRaceSelection<C, R>> raceEndpointCandidates<C, R>({
   required C? Function(Map<C, R> successfulResults) selectBestCandidate,
   void Function(C candidate, R result)? onFirstSuccess,
   Duration preferredTimeout = MediaServerTimeouts.preferredEndpointProbe,
+  Duration preferredHeadStart = MediaServerTimeouts.preferredEndpointHeadStart,
   Duration raceTimeout = MediaServerTimeouts.connectionRace,
 }) async* {
   if (candidates.isEmpty) {
@@ -48,50 +54,86 @@ Stream<EndpointRaceSelection<C, R>> raceEndpointCandidates<C, R>({
     return;
   }
 
+  final stopwatch = Stopwatch()..start();
   C? firstCandidate;
   R? firstResult;
   var fromPreferred = false;
 
+  C? cachedCandidate;
+  Future<R>? pendingCachedProbe;
   if (preferredUrl != null && preferredUrl.isNotEmpty) {
-    final cachedCandidate = candidateForUrl?.call(preferredUrl) ?? _candidateForUrl(candidates, urlOf, preferredUrl);
-    if (cachedCandidate != null) {
-      appLogger.d('Testing cached $label endpoint before running full race', error: {'uri': preferredUrl});
-      final result = await probe(cachedCandidate, preferredTimeout);
+    cachedCandidate = candidateForUrl?.call(preferredUrl) ?? _candidateForUrl(candidates, urlOf, preferredUrl);
+  }
+  if (cachedCandidate != null) {
+    final cached = cachedCandidate;
+    appLogger.d('Testing cached $label endpoint with a head start on the race', error: {'uri': preferredUrl});
+    final cachedProbe = probe(cached, preferredTimeout);
+    final headStartResult = await Future.any<R?>([cachedProbe, Future<R?>.delayed(preferredHeadStart, () => null)]);
 
-      if (isSuccess(result)) {
-        appLogger.i('Cached $label endpoint succeeded, using immediately', error: {'uri': preferredUrl});
-        firstCandidate = cachedCandidate;
-        firstResult = result;
-        fromPreferred = true;
-        onFirstSuccess?.call(cachedCandidate, result);
-      } else {
-        appLogger.w('Cached $label endpoint failed, falling back to candidate race', error: {'uri': preferredUrl});
-      }
+    if (headStartResult != null && isSuccess(headStartResult)) {
+      appLogger.i(
+        'Cached $label endpoint succeeded, using immediately',
+        error: {'uri': preferredUrl, 'elapsedMs': stopwatch.elapsedMilliseconds},
+      );
+      firstCandidate = cached;
+      firstResult = headStartResult;
+      fromPreferred = true;
+      onFirstSuccess?.call(cached, headStartResult);
+    } else if (headStartResult != null) {
+      // Failed within the head start (e.g. connection refused) — run the
+      // plain race; the cached URL is among the candidates and gets a fresh
+      // probe like any other.
+      appLogger.w(
+        'Cached $label endpoint failed, falling back to candidate race',
+        error: {'uri': preferredUrl, 'elapsedMs': stopwatch.elapsedMilliseconds},
+      );
+    } else {
+      appLogger.d(
+        'Cached $label endpoint still pending after head start, racing all candidates',
+        error: {'uri': preferredUrl},
+      );
+      pendingCachedProbe = cachedProbe;
     }
   }
 
   if (firstCandidate == null || firstResult == null) {
+    // When the cached probe is still in flight, merge it into the race as a
+    // participant (reusing its future) instead of probing the same URL twice.
+    final mergedCached = pendingCachedProbe != null ? cachedCandidate : null;
+    final raceCandidates = mergedCached == null
+        ? candidates
+        : <C>[mergedCached, ...candidates.where((c) => urlOf(c) != preferredUrl)];
     final first = await _raceFirstSuccess(
       label: label,
-      candidates: candidates,
+      candidates: raceCandidates,
       urlOf: urlOf,
       displayTypeOf: displayTypeOf,
       failureLogFields: failureLogFields,
-      probe: probe,
+      probe: (candidate, timeout) =>
+          mergedCached != null && identical(candidate, mergedCached) ? pendingCachedProbe! : probe(candidate, timeout),
       isSuccess: isSuccess,
       onFirstSuccess: onFirstSuccess,
       timeout: raceTimeout,
     );
     if (first == null) {
-      appLogger.e('No working $label endpoints after race', error: {'candidateCount': candidates.length});
+      appLogger.e(
+        'No working $label endpoints after race',
+        error: {'candidateCount': raceCandidates.length, 'elapsedMs': stopwatch.elapsedMilliseconds},
+      );
       return;
     }
-    appLogger.i(
-      '$label race found first working endpoint',
-      error: {'uri': urlOf(first.candidate), 'type': displayTypeOf?.call(first.candidate)},
-    );
     firstCandidate = first.candidate;
     firstResult = first.result;
+    fromPreferred = mergedCached != null && identical(firstCandidate, mergedCached);
+    appLogger.i(
+      '$label race found first working endpoint',
+      error: {
+        'uri': urlOf(first.candidate),
+        'type': displayTypeOf?.call(first.candidate),
+        'fromPreferred': fromPreferred,
+        'elapsedMs': stopwatch.elapsedMilliseconds,
+      },
+    );
   }
 
   final resolvedFirstCandidate = firstCandidate;
@@ -123,7 +165,7 @@ Stream<EndpointRaceSelection<C, R>> raceEndpointCandidates<C, R>({
 
   appLogger.d(
     'Completed latency sweep for $label endpoints',
-    error: {'successfulCandidates': successfulResults.length},
+    error: {'successfulCandidates': successfulResults.length, 'elapsedMs': stopwatch.elapsedMilliseconds},
   );
 
   final bestCandidate = selectBestCandidate(successfulResults);

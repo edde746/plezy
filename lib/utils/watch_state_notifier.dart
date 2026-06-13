@@ -1,5 +1,6 @@
 import '../media/media_item.dart';
 import '../media/ids.dart';
+import '../media/watch_progress.dart';
 import 'app_logger.dart';
 import 'base_notifier.dart';
 import 'global_key_utils.dart';
@@ -130,7 +131,7 @@ class WatchStateNotifier extends BaseNotifier<WatchStateEvent> {
       appLogger.w('WatchStateNotifier: missing serverId for ${item.id}, skipping progress event');
       return;
     }
-    final isNowWatched = duration > 0 && (viewOffset / duration) >= watchedThreshold;
+    final isNowWatched = isWatchedProgress(positionMs: viewOffset, durationMs: duration, threshold: watchedThreshold);
 
     notify(
       WatchStateEvent(

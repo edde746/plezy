@@ -14,7 +14,7 @@ class WatchStateSnapshot {
   MediaItem apply(MediaItem item) {
     var updated = item;
     if (isWatched != null) {
-      updated = updated.copyWith(viewCount: isWatched! ? 1 : 0);
+      updated = updated.withWatchedFlag(isWatched!);
     }
     if (hasViewOffsetMs) {
       updated = updated.copyWith(viewOffsetMs: viewOffsetMs);

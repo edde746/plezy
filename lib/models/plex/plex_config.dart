@@ -10,6 +10,7 @@ class PlexConfig {
   final String? device;
   final bool acceptJson;
   final String? machineIdentifier;
+  final String? languageCode;
 
   PlexConfig({
     required this.baseUrl,
@@ -21,6 +22,7 @@ class PlexConfig {
     this.device,
     this.acceptJson = true,
     this.machineIdentifier,
+    this.languageCode,
   });
 
   static Future<PlexConfig> create({
@@ -32,6 +34,7 @@ class PlexConfig {
     String? device,
     bool acceptJson = true,
     String? machineIdentifier,
+    String? languageCode,
   }) async {
     final packageInfo = await PackageInfo.fromPlatform();
     return PlexConfig(
@@ -44,6 +47,7 @@ class PlexConfig {
       device: device,
       acceptJson: acceptJson,
       machineIdentifier: machineIdentifier,
+      languageCode: languageCode,
     );
   }
 
@@ -57,6 +61,8 @@ class PlexConfig {
       'X-Plex-Device': ?device,
       if (acceptJson) 'Accept': 'application/json',
       'Accept-Charset': 'utf-8',
+      'Accept-Language': ?_normalizedLanguageCode,
+      'X-Plex-Language': ?_normalizedLanguageCode,
     };
 
     if (token != null) {
@@ -64,6 +70,11 @@ class PlexConfig {
     }
 
     return headers;
+  }
+
+  String? get _normalizedLanguageCode {
+    final value = languageCode?.trim();
+    return value == null || value.isEmpty ? null : value;
   }
 
   PlexConfig copyWith({
@@ -76,6 +87,7 @@ class PlexConfig {
     String? device,
     bool? acceptJson,
     String? machineIdentifier,
+    String? languageCode,
   }) {
     return PlexConfig(
       baseUrl: baseUrl ?? this.baseUrl,
@@ -87,6 +99,7 @@ class PlexConfig {
       device: device ?? this.device,
       acceptJson: acceptJson ?? this.acceptJson,
       machineIdentifier: machineIdentifier ?? this.machineIdentifier,
+      languageCode: languageCode ?? this.languageCode,
     );
   }
 }

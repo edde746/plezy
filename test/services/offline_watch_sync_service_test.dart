@@ -77,6 +77,12 @@ class _RecordingMediaClient implements MediaServerClient {
   @override
   double get watchedThreshold => 0.9;
 
+  // Mirror the real clients: Jellyfin marks played from the stopped report, so
+  // the auto-scrobble path emits only the local watch event (#1287); Plex needs
+  // the explicit markWatched.
+  @override
+  bool get marksWatchedOnPlaybackStopped => backend == MediaBackend.jellyfin;
+
   @override
   void close() {}
 
@@ -405,6 +411,29 @@ void main() {
       expect(client.stopped.single.report.willContinue, isFalse);
       expect(client.stopped.single.report.recordedAt?.millisecondsSinceEpoch, queued!.updatedAt);
       expect(client.watched, ['42']);
+      expect(await svc.getPendingSyncCount(), 0);
+    });
+
+    test('completed Jellyfin offline progress marks watched via the stop report, not markWatched (#1287)', () async {
+      final (svc: svc, db: db, mgr: mgr) = _makeService();
+      addTearDown(() async {
+        svc.dispose();
+        mgr.dispose();
+        await db.close();
+      });
+
+      final client = _RecordingMediaClient(serverId: ServerId('srv'), backend: MediaBackend.jellyfin);
+      mgr.debugRegisterClientForTesting(client);
+      await svc.queueProgressUpdate(serverId: ServerId('srv'), itemId: '42', viewOffset: 95000, duration: 100000);
+
+      await svc.syncPendingItems();
+
+      // The stopped report at full duration marks the item played server-side…
+      expect(client.stopped, hasLength(1));
+      expect(client.stopped.single.positionMs, 100000);
+      // …so the offline replay must NOT also call markWatched — that would
+      // double-scrobble through the Jellyfin Trakt plugin.
+      expect(client.watched, isEmpty);
       expect(await svc.getPendingSyncCount(), 0);
     });
   });

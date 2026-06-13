@@ -1,0 +1,60 @@
+import 'package:flutter_test/flutter_test.dart';
+import 'package:vibe_stream/media/media_backend.dart';
+import 'package:vibe_stream/media/media_item.dart';
+import 'package:vibe_stream/media/media_kind.dart';
+import 'package:vibe_stream/utils/media_navigation_helper.dart';
+
+void main() {
+  test('episode detail target opens parent show and focuses season episode', () {
+    final episode = MediaItem(
+      id: 'episode-1',
+      backend: MediaBackend.plex,
+      kind: MediaKind.episode,
+      title: 'Episode 1',
+      parentId: 'season-2',
+      parentIndex: 2,
+      grandparentId: 'show-1',
+      grandparentTitle: 'The Show',
+      serverId: 'server-1',
+    );
+
+    final target = mediaDetailNavigationTargetFor(episode);
+
+    expect(target.metadata.id, 'show-1');
+    expect(target.metadata.kind, MediaKind.show);
+    expect(target.initialSeasonId, 'season-2');
+    expect(target.initialSeasonIndex, 2);
+    expect(target.initialEpisodeId, 'episode-1');
+  });
+
+  test('season detail target opens parent show and focuses season', () {
+    final season = MediaItem(
+      id: 'season-3',
+      backend: MediaBackend.jellyfin,
+      kind: MediaKind.season,
+      title: 'Season 3',
+      index: 3,
+      parentId: 'show-1',
+      parentTitle: 'The Show',
+      serverId: 'server-1',
+    );
+
+    final target = mediaDetailNavigationTargetFor(season);
+
+    expect(target.metadata.id, 'show-1');
+    expect(target.metadata.kind, MediaKind.show);
+    expect(target.initialSeasonId, 'season-3');
+    expect(target.initialSeasonIndex, 3);
+    expect(target.initialEpisodeId, isNull);
+  });
+
+  test('movie detail target keeps the movie itself', () {
+    final movie = MediaItem(id: 'movie-1', backend: MediaBackend.plex, kind: MediaKind.movie, title: 'Movie');
+
+    final target = mediaDetailNavigationTargetFor(movie);
+
+    expect(target.metadata, same(movie));
+    expect(target.initialSeasonId, isNull);
+    expect(target.initialEpisodeId, isNull);
+  });
+}
