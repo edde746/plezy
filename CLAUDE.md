@@ -29,10 +29,12 @@ Typical flow: `git fetch origin && git fetch upstream && git checkout -b sync-up
 | Sentry org/project | `vibe` (URL stays `bugs.plezy.app`) | `pubspec.yaml` |
 | Kotlin package | `com.amaze.vibestream` | `android/app/src/main/kotlin/com/amaze/vibestream/**` |
 | JNI symbols | `Java_com_amaze_vibestream_*` | `android/app/src/main/cpp/dovi_bridge.cpp` |
+| iOS/macOS app-icon name | `vibe_stream` (folder `vibe_stream.icon`) | `ios/Runner.xcodeproj/project.pbxproj`, `macos/Runner.xcodeproj/project.pbxproj` |
 
 ## Don't
 
 - **Don't reintroduce `apple-tv/`** here — that code lives in `MazeDev7/vibe-tvos`. If a merge from upstream creates it, delete it.
+- **Don't let a merge reintroduce `plezy.icon`** — the app icon is `ios/vibe_stream.icon` / `macos/vibe_stream.icon` (Vibe artwork). If upstream's `plezy.icon` reappears, `git rm -r ios/plezy.icon macos/plezy.icon`. Android/Windows icons live at fixed paths (resolve icon conflicts "keep ours"). See SYNCING.md icon rows.
 - **Don't rename method channel strings** (`com.plezy/mpv_player`, `plezy/window`, etc.) — they're paired Dart↔native identifiers, breaking them requires coordinated changes on both sides.
 - **Don't rebrand wire/persistence/crypto `plezy` identifiers** — DB file `plezy_downloads.db`, prefs flag `plezy_legacy_prefs_migrated_v1`, PIN salt `plezy-app-profile-pin-v1`, companion-remote constants `plezy-remote-v1`/`plezy-session-v1`/`plezy-auth-v1`, the i18n key `addPlezyProfile` (value rebrands, key doesn't). Full list: SYNCING.md "Identifiers to preserve."
 - **Don't rebrand the vendored `:libass` module** (`android/libass/`, package `com.edde746.plezy.libass`) — its JNI symbols in `AssKt.c` are paired to that package name. Rebrand app code with `s/com\.edde746\.plezy(?!\.libass)/com.amaze.vibestream/g` so `.libass` imports survive. See SYNCING.md "Identifiers to preserve."

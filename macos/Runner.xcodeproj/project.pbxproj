@@ -29,7 +29,7 @@
 		33CC11132044BFA00003C045 /* MainFlutterWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 33CC11122044BFA00003C045 /* MainFlutterWindow.swift */; };
 		48A1C0CB0ECA2EA7D04EEF48 /* Pods_RunnerTests.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A1182D4EEFEC88235D8ECD2C /* Pods_RunnerTests.framework */; };
 		6AB6B0952EDB27C100EAC8DB /* MPVKit in Frameworks */ = {isa = PBXBuildFile; productRef = 6AB6B0942EDB27C100EAC8DB /* MPVKit */; };
-		6AC86ED72EA70B4C0067BC66 /* plezy.icon in Resources */ = {isa = PBXBuildFile; fileRef = 6AC86ED62EA70B4C0067BC66 /* plezy.icon */; };
+		6AC86ED72EA70B4C0067BC66 /* vibe_stream.icon in Resources */ = {isa = PBXBuildFile; fileRef = 6AC86ED62EA70B4C0067BC66 /* vibe_stream.icon */; };
 		6AD8B1612ED7B50000E9E1B4 /* MpvPlayerCore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6AD8B1632ED7B50000E9E1B4 /* MpvPlayerCore.swift */; };
 		6AD8B1622ED7B50000E9E1B4 /* MpvPlayerPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6AD8B1642ED7B50000E9E1B4 /* MpvPlayerPlugin.swift */; };
 		6AD8B1662ED7B50000E9E1B5 /* WindowUtilsPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6AD8B1682ED7B50000E9E1B5 /* WindowUtilsPlugin.swift */; };
@@ -88,7 +88,7 @@
 		33E51913231747F40026EE4D /* DebugProfile.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = DebugProfile.entitlements; sourceTree = "<group>"; };
 		33E51914231749380026EE4D /* Release.entitlements */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.entitlements; path = Release.entitlements; sourceTree = "<group>"; };
 		33E5194F232828860026EE4D /* AppInfo.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = AppInfo.xcconfig; sourceTree = "<group>"; };
-		6AC86ED62EA70B4C0067BC66 /* plezy.icon */ = {isa = PBXFileReference; lastKnownFileType = folder.iconcomposer.icon; path = plezy.icon; sourceTree = "<group>"; };
+		6AC86ED62EA70B4C0067BC66 /* vibe_stream.icon */ = {isa = PBXFileReference; lastKnownFileType = folder.iconcomposer.icon; path = vibe_stream.icon; sourceTree = "<group>"; };
 		6AD8B1632ED7B50000E9E1B4 /* MpvPlayerCore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MpvPlayerCore.swift; sourceTree = "<group>"; };
 		6AD8B1642ED7B50000E9E1B4 /* MpvPlayerPlugin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MpvPlayerPlugin.swift; sourceTree = "<group>"; };
 		6AD8B1682ED7B50000E9E1B5 /* WindowUtilsPlugin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindowUtilsPlugin.swift; sourceTree = "<group>"; };
@@ -165,7 +165,7 @@
 		33CC10E42044A3C60003C045 = {
 			isa = PBXGroup;
 			children = (
-				6AC86ED62EA70B4C0067BC66 /* plezy.icon */,
+				6AC86ED62EA70B4C0067BC66 /* vibe_stream.icon */,
 				33FAB671232836740065AC1E /* Runner */,
 				33CEB47122A05771004F2AC0 /* Flutter */,
 				331C80D6294CF71000263BE5 /* RunnerTests */,
@@ -358,7 +358,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				6AC86ED72EA70B4C0067BC66 /* plezy.icon in Resources */,
+				6AC86ED72EA70B4C0067BC66 /* vibe_stream.icon in Resources */,
 				33CC10F62044A3C60003C045 /* MainMenu.xib in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -619,7 +619,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 33E5194F232828860026EE4D /* AppInfo.xcconfig */;
 			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = plezy;
+				ASSETCATALOG_COMPILER_APPICON_NAME = vibe_stream;
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = Runner/DebugProfile.entitlements;
 				CODE_SIGN_STYLE = Automatic;
@@ -761,7 +761,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 33E5194F232828860026EE4D /* AppInfo.xcconfig */;
 			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = plezy;
+				ASSETCATALOG_COMPILER_APPICON_NAME = vibe_stream;
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = Runner/DebugProfile.entitlements;
 				CODE_SIGN_STYLE = Automatic;
@@ -791,7 +791,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 33E5194F232828860026EE4D /* AppInfo.xcconfig */;
 			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = plezy;
+				ASSETCATALOG_COMPILER_APPICON_NAME = vibe_stream;
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = Runner/Release.entitlements;
 				CODE_SIGN_STYLE = Automatic;
