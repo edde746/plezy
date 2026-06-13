@@ -417,6 +417,34 @@ void main() {
         },
       );
     });
+
+    test('dispose continues when native event stream cancellation is already detached', () async {
+      final calls = <MethodCall>[];
+
+      await _withMockChannels(
+        methodChannelName: 'com.plezy/mpv_player',
+        eventChannelName: 'com.plezy/mpv_player/events',
+        methodHandler: (call) {
+          calls.add(call);
+          return Future.value(null);
+        },
+        eventHandler: (call) {
+          if (call.method == 'cancel') {
+            throw PlatformException(code: 'error', message: 'No active stream to cancel');
+          }
+          return Future.value(null);
+        },
+        testBody: () async {
+          final player = PlayerNative();
+          final playingDone = expectLater(player.streams.playing, emitsDone);
+
+          await expectLater(player.dispose(), completes);
+          await playingDone;
+
+          expect(calls.where((call) => call.method == 'dispose'), hasLength(1));
+        },
+      );
+    });
   });
 }
 
@@ -424,6 +452,7 @@ Future<void> _withMockChannels({
   required String methodChannelName,
   required String eventChannelName,
   Future<Object?> Function(MethodCall call)? methodHandler,
+  Future<Object?> Function(MethodCall call)? eventHandler,
   required Future<void> Function() testBody,
 }) async {
   final messenger = TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
@@ -449,7 +478,7 @@ Future<void> _withMockChannels({
           }
         },
   );
-  messenger.setMockMethodCallHandler(eventChannel, (call) async => null);
+  messenger.setMockMethodCallHandler(eventChannel, eventHandler ?? (call) async => null);
 
   try {
     await testBody();

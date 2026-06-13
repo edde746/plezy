@@ -757,11 +757,23 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
     if (_disposed) return;
     _disposed = true;
 
-    await _eventSubscription?.cancel();
+    try {
+      await _eventSubscription?.cancel();
+    } on PlatformException catch (e, st) {
+      appLogger.d('Player event stream already detached during dispose', error: e, stackTrace: st);
+    } on MissingPluginException catch (e, st) {
+      appLogger.d('Player event stream plugin missing during dispose', error: e, stackTrace: st);
+    }
     await _logSubscription?.cancel();
-    await methodChannel.invokeMethod('dispose', {
-      'preserveDisplayMode': preserveDisplayMode,
-    }); // Direct call — already guarded by _disposed check above
+    try {
+      await methodChannel.invokeMethod('dispose', {
+        'preserveDisplayMode': preserveDisplayMode,
+      }); // Direct call — already guarded by _disposed check above
+    } on PlatformException catch (e, st) {
+      appLogger.w('Player native dispose failed during teardown', error: e, stackTrace: st);
+    } on MissingPluginException catch (e, st) {
+      appLogger.w('Player native dispose plugin missing during teardown', error: e, stackTrace: st);
+    }
     await closeStreamControllers();
   }
 }
