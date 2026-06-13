@@ -388,6 +388,7 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
       case 'file-loaded':
         _state = _state.copyWith(completed: false);
         completedController.add(false);
+        fileLoadedController.add(null);
         break;
 
       case 'playback-restart':

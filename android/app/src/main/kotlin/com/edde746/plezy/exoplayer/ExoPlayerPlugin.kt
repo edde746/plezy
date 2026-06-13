@@ -27,6 +27,7 @@ class ExoPlayerPlugin :
     private const val TAG = "ExoPlayerPlugin"
     private const val METHOD_CHANNEL = "com.plezy/exo_player"
     private const val EVENT_CHANNEL = "com.plezy/exo_player/events"
+    private const val MPV_FALLBACK_SWITCH_TIMEOUT_MS = 15_000L
   }
 
   private lateinit var methodChannel: MethodChannel
@@ -36,6 +37,7 @@ class ExoPlayerPlugin :
   private var mpvCore: MpvPlayerCore? = null // MPV fallback player
   private var usingMpvFallback: Boolean = false
   private var fallbackInProgress: Boolean = false
+  private var pendingMpvFallbackSwitchGeneration: Int? = null
   private var activity: Activity? = null
   private var activityBinding: ActivityPluginBinding? = null
 
@@ -93,6 +95,7 @@ class ExoPlayerPlugin :
     mpvCore = null
     usingMpvFallback = false
     fallbackInProgress = false
+    clearPendingMpvFallbackSwitch()
     pendingMpvProperties.clear()
     activity = null
     activityBinding = null
@@ -108,6 +111,7 @@ class ExoPlayerPlugin :
   override fun onDetachedFromActivityForConfigChanges() {
     sessionGeneration++
     fallbackInProgress = false
+    clearPendingMpvFallbackSwitch()
     activity = null
     activityBinding = null
     Log.d(TAG, "Detached from activity for config changes")
@@ -210,6 +214,7 @@ class ExoPlayerPlugin :
         mpvCore = null
         usingMpvFallback = false
         fallbackInProgress = false
+        clearPendingMpvFallbackSwitch()
       }
 
       try {
@@ -246,6 +251,7 @@ class ExoPlayerPlugin :
       mpvCore = null
       usingMpvFallback = false
       fallbackInProgress = false
+      clearPendingMpvFallbackSwitch()
       pendingMpvProperties.clear()
       Log.d(TAG, "Disposed")
       result.success(null)
@@ -747,13 +753,44 @@ class ExoPlayerPlugin :
     mainHandler.post { eventSink?.success(listOf(propId, value)) }
   }
 
-  override fun onEvent(name: String, data: Map<String, Any>?) {
+  private fun eventPayload(name: String, data: Map<String, Any>? = null): Map<String, Any> {
     val event = mutableMapOf<String, Any>(
       "type" to "event",
       "name" to name
     )
     data?.let { event["data"] = it }
-    mainHandler.post { eventSink?.success(event) }
+    return event
+  }
+
+  override fun onEvent(name: String, data: Map<String, Any>?) {
+    val pendingFallbackSwitch =
+      name == "file-loaded" && pendingMpvFallbackSwitchGeneration == sessionGeneration && usingMpvFallback
+    if (pendingFallbackSwitch) {
+      clearPendingMpvFallbackSwitch()
+    }
+
+    val event = eventPayload(name, data)
+    mainHandler.post {
+      eventSink?.success(event)
+      if (pendingFallbackSwitch) {
+        eventSink?.success(eventPayload("backend-switched"))
+      }
+    }
+  }
+
+  private fun armPendingMpvFallbackSwitch(generation: Int) {
+    pendingMpvFallbackSwitchGeneration = generation
+    mainHandler.postDelayed({
+      if (pendingMpvFallbackSwitchGeneration == generation && sessionGeneration == generation && usingMpvFallback) {
+        Log.w(TAG, "Timed out waiting for MPV fallback file-loaded before backend-switched")
+        clearPendingMpvFallbackSwitch()
+        onEvent("backend-switched", null)
+      }
+    }, MPV_FALLBACK_SWITCH_TIMEOUT_MS)
+  }
+
+  private fun clearPendingMpvFallbackSwitch() {
+    pendingMpvFallbackSwitchGeneration = null
   }
 
   /**
@@ -806,6 +843,7 @@ class ExoPlayerPlugin :
     if (mpvCore !== core) {
       core.dispose()
       fallbackInProgress = false
+      clearPendingMpvFallbackSwitch()
       return
     }
     // Configure basic MPV properties for Plex playback
@@ -840,6 +878,7 @@ class ExoPlayerPlugin :
       options.add("http-header-fields-append=$key: $value")
     }
     val optionsStr = options.joinToString(",")
+    armPendingMpvFallbackSwitch(sessionGeneration)
     core.command(arrayOf("loadfile", mpvUri, "replace", "-1", optionsStr))
 
     // On GPUs without compute shaders, MPV can't do dynamic peak detection
@@ -857,11 +896,6 @@ class ExoPlayerPlugin :
 
     // Request audio focus
     core.requestAudioFocus()
-
-    // Emit backend-switched event on main thread
-    activity?.runOnUiThread {
-      onEvent("backend-switched", null)
-    }
 
     Log.i(TAG, "Successfully switched to MPV fallback")
   }
@@ -900,17 +934,20 @@ class ExoPlayerPlugin :
         mpvCore?.dispose()
         mpvCore = null
         usingMpvFallback = false // Clear before handoff
+        clearPendingMpvFallbackSwitch()
 
         val generation = sessionGeneration
 
         Handler(Looper.getMainLooper()).post {
           if (generation != sessionGeneration) {
             fallbackInProgress = false
+            clearPendingMpvFallbackSwitch()
             return@post
           }
           val act = activity
           if (act == null) {
             fallbackInProgress = false
+            clearPendingMpvFallbackSwitch()
             return@post
           }
 
@@ -927,6 +964,7 @@ class ExoPlayerPlugin :
                   mpvCore = null
                 }
                 fallbackInProgress = false
+                clearPendingMpvFallbackSwitch()
                 return@initialize
               }
               if (!success) {
@@ -935,6 +973,7 @@ class ExoPlayerPlugin :
                   mpvCore = null
                 }
                 fallbackInProgress = false
+                clearPendingMpvFallbackSwitch()
                 Log.e(TAG, "Failed to initialize MPV fallback")
                 onEvent("end-file", mapOf("reason" to "error", "message" to "Fallback failed: $errorMessage"))
                 return@initialize
@@ -947,12 +986,14 @@ class ExoPlayerPlugin :
             }
           } catch (e: Exception) {
             fallbackInProgress = false
+            clearPendingMpvFallbackSwitch()
             Log.e(TAG, "Failed to switch to MPV fallback", e)
             onEvent("end-file", mapOf("reason" to "error", "message" to "Fallback failed: ${e.message}"))
           }
         }
       } catch (e: Exception) {
         fallbackInProgress = false
+        clearPendingMpvFallbackSwitch()
         Log.e(TAG, "Failed to switch to MPV fallback", e)
         onEvent("end-file", mapOf("reason" to "error", "message" to "Fallback failed: ${e.message}"))
       }

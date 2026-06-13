@@ -62,6 +62,7 @@ class TrackManager {
   // ── Internal state ─────────────────────────────────────────────────
 
   bool waitingForExternalSubsTrackSelection = false;
+  bool _externalSubtitleAddsInFlight = false;
   bool _isApplyingTrackSelection = false;
   List<SubtitleTrack> _lastExternalSubtitles = const [];
   StreamSubscription<Tracks>? _trackLoadingSubscription;
@@ -98,26 +99,40 @@ class TrackManager {
   /// adds dominate startup (~170ms × N). Firing them in parallel lets
   /// libavformat's network IO overlap and stops Dart → method channel → native
   /// round-trips from stacking.
-  Future<void> addExternalSubtitles(List<SubtitleTrack> externalSubtitles) async {
+  Future<void> addExternalSubtitles(List<SubtitleTrack> externalSubtitles, {Future<void>? waitUntilReady}) async {
     if (externalSubtitles.isEmpty) return;
 
-    appLogger.d('Adding ${externalSubtitles.length} external subtitle(s) to player');
-
-    await Future.wait(
-      externalSubtitles.where((s) => s.uri != null).map((subtitleTrack) async {
+    _externalSubtitleAddsInFlight = true;
+    try {
+      if (waitUntilReady != null) {
         try {
-          await player.addSubtitleTrack(
-            uri: subtitleTrack.uri!,
-            title: subtitleTrack.title,
-            language: subtitleTrack.language,
-            select: subtitleTrack.isDefault,
-          );
-          appLogger.d('Added external subtitle: ${subtitleTrack.title ?? subtitleTrack.uri}');
+          await waitUntilReady;
         } catch (e) {
-          appLogger.w('Failed to add external subtitle: ${subtitleTrack.title ?? subtitleTrack.uri}', error: e);
+          appLogger.w('Continuing external subtitle load after readiness wait failed', error: e);
         }
-      }),
-    );
+        if (!isActive()) return;
+      }
+
+      appLogger.d('Adding ${externalSubtitles.length} external subtitle(s) to player');
+
+      await Future.wait(
+        externalSubtitles.where((s) => s.uri != null).map((subtitleTrack) async {
+          try {
+            await player.addSubtitleTrack(
+              uri: subtitleTrack.uri!,
+              title: subtitleTrack.title,
+              language: subtitleTrack.language,
+              select: subtitleTrack.isDefault,
+            );
+            appLogger.d('Added external subtitle: ${subtitleTrack.title ?? subtitleTrack.uri}');
+          } catch (e) {
+            appLogger.w('Failed to add external subtitle: ${subtitleTrack.title ?? subtitleTrack.uri}', error: e);
+          }
+        }),
+      );
+    } finally {
+      _externalSubtitleAddsInFlight = false;
+    }
   }
 
   /// Resume playback after external subtitles have been loaded (or failed).
@@ -230,6 +245,7 @@ class TrackManager {
   /// Called when playbackRestart fires — checks the flag and applies selection.
   void onPlaybackRestart() {
     if (waitingForExternalSubsTrackSelection) {
+      if (_externalSubtitleAddsInFlight) return;
       waitingForExternalSubsTrackSelection = false;
       applyTrackSelection();
     }
@@ -478,6 +494,7 @@ class TrackManager {
 
   /// Clean up subscriptions.
   void dispose() {
+    _externalSubtitleAddsInFlight = false;
     _trackLoadingSubscription?.cancel();
     _trackLoadingSubscription = null;
     _subtitleFallbackTimer?.cancel();

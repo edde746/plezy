@@ -153,8 +153,6 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
       final settingsService = await SettingsService.getInstance();
       if (!attempt.isCurrent) return;
       final displayCriteria = result.mediaInfo?.displayCriteria;
-      final attachesSubsAtOpen = currentPlayer.attachesExternalSubtitlesAtOpen;
-      final hasExternalSubs = result.externalSubtitles.isNotEmpty;
       var audioFocusReady = false;
 
       Future<void> ensureAudioFocus() async {
@@ -184,6 +182,7 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
       // simultaneous group start.
       final wtOwnsStart = _watchTogetherOwnsPlaybackStart();
       Completer<void>? wtStartupHold;
+      late _ExternalSubtitleOpenPlan externalSubtitlePlan;
 
       // Open video through Player
       if (result.videoUrl != null) {
@@ -215,8 +214,13 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
           isTranscoding: result.isTranscoding,
         );
 
-        final shouldAutoPlay = !shouldHoldPlaybackStart && !wtOwnsStart && (attachesSubsAtOpen || !hasExternalSubs);
         frameRatePlan.armStartupRefreshGate(currentPlayer);
+        externalSubtitlePlan = _prepareExternalSubtitleOpenPlan(
+          player: currentPlayer,
+          externalSubtitles: result.externalSubtitles,
+        );
+        final shouldAutoPlay =
+            !shouldHoldPlaybackStart && !wtOwnsStart && externalSubtitlePlan.canStartBeforeTrackSetup;
 
         // ExoPlayer: attach external subs at open time so it discovers
         // them in a single prepare() — no media reload needed for selection.
@@ -237,7 +241,7 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
           timing: openTiming,
           headers: streamHeaders,
           play: shouldAutoPlay,
-          externalSubtitlesAtOpen: attachesSubsAtOpen && hasExternalSubs ? result.externalSubtitles : null,
+          externalSubtitlesAtOpen: externalSubtitlePlan.subtitlesAtOpen,
           shouldContinue: () => attempt.isCurrent,
         );
         if (!didOpen || !attempt.isCurrent) return;
@@ -252,6 +256,12 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
           _attachToWatchTogetherSession(startupHold: wtStartupHold?.future);
           _notifyWatchTogetherMediaChange();
         }
+      } else {
+        externalSubtitlePlan = _prepareExternalSubtitleOpenPlan(
+          player: currentPlayer,
+          externalSubtitles: result.externalSubtitles,
+          waitForFileLoaded: false,
+        );
       }
 
       // Versions/mediaInfo come from the committed session; rebuild so the
@@ -311,9 +321,8 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
         _trackManager!.cacheExternalSubtitles(result.externalSubtitles);
 
         await _applyTracksAfterOpen(
-          forPlayer: currentPlayer,
           trackManager: _trackManager!,
-          externalSubtitles: result.externalSubtitles,
+          externalSubtitlePlan: externalSubtitlePlan,
           // When a startup gate below owns the resume, skip this one to
           // avoid a double-play. Watch Together stays paused for the group
           // start, so selection is armed through the resume-skipped branch.
@@ -328,8 +337,7 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
           plan: frameRatePlan,
           resumeAfterStartupGate: (reason) => _resumeAfterStartupGateOrYieldToWatchTogether(
             currentPlayer: currentPlayer,
-            attachesSubsAtOpen: attachesSubsAtOpen,
-            hasExternalSubs: hasExternalSubs,
+            externalSubtitlePlan: externalSubtitlePlan,
             reason: reason,
             wtOwnsStart: wtOwnsStart,
             wtStartupHold: wtStartupHold,

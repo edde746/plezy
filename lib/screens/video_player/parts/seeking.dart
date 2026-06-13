@@ -87,9 +87,11 @@ extension _VideoPlayerSeekingMethods on VideoPlayerScreenState {
         requestedMediaSourceId: _requestedMediaSourceId,
       );
 
-      final attachesSubsAtOpen = currentPlayer.attachesExternalSubtitlesAtOpen;
-      final hasExternalSubs = result.externalSubtitles.isNotEmpty;
-      final shouldAutoPlay = wasPlaying && (attachesSubsAtOpen || !hasExternalSubs);
+      final externalSubtitlePlan = _prepareExternalSubtitleOpenPlan(
+        player: currentPlayer,
+        externalSubtitles: result.externalSubtitles,
+      );
+      final shouldAutoPlay = wasPlaying && externalSubtitlePlan.canStartBeforeTrackSetup;
 
       final didOpen = await _openMediaOnPlayer(
         player: currentPlayer,
@@ -106,7 +108,7 @@ extension _VideoPlayerSeekingMethods on VideoPlayerScreenState {
         ),
         headers: playbackContext.streamHeaders,
         play: shouldAutoPlay,
-        externalSubtitlesAtOpen: attachesSubsAtOpen && hasExternalSubs ? result.externalSubtitles : null,
+        externalSubtitlesAtOpen: externalSubtitlePlan.subtitlesAtOpen,
         shouldContinue: () => mounted && player == currentPlayer,
         onOpened: () {
           // A pre-open failure leaves the previous session (and ids)
@@ -142,9 +144,8 @@ extension _VideoPlayerSeekingMethods on VideoPlayerScreenState {
         trackManager.mediaInfo = _currentMediaInfo;
         trackManager.cacheExternalSubtitles(result.externalSubtitles);
         await _applyTracksAfterOpen(
-          forPlayer: currentPlayer,
           trackManager: trackManager,
-          externalSubtitles: result.externalSubtitles,
+          externalSubtitlePlan: externalSubtitlePlan,
           // A restart while paused must stay paused — selection is still
           // applied through the resume-skipped branch.
           shouldResumeAfterSubtitleLoad: () => wasPlaying && mounted && player == currentPlayer,

@@ -41,6 +41,19 @@ class _FrameRateStartupPlan {
   }
 }
 
+class _ExternalSubtitleOpenPlan {
+  const _ExternalSubtitleOpenPlan({required this.externalSubtitles, required this.attachesAtOpen, this.readyAfterOpen});
+
+  final List<SubtitleTrack> externalSubtitles;
+  final bool attachesAtOpen;
+  final Future<void>? readyAfterOpen;
+
+  bool get hasExternalSubtitles => externalSubtitles.isNotEmpty;
+  bool get requiresPostOpenAdd => !attachesAtOpen && hasExternalSubtitles;
+  bool get canStartBeforeTrackSetup => attachesAtOpen || !hasExternalSubtitles;
+  List<SubtitleTrack>? get subtitlesAtOpen => attachesAtOpen && hasExternalSubtitles ? externalSubtitles : null;
+}
+
 /// Shared building blocks for opening media on the live player.
 ///
 /// The initial start flow ([_startPlayback]), the in-place reload flow
@@ -267,15 +280,14 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
   /// the start and reload flows.
   Future<void> _resumeAfterFrameRateStartupGate({
     required Player currentPlayer,
-    required bool attachesSubsAtOpen,
-    required bool hasExternalSubs,
+    required _ExternalSubtitleOpenPlan externalSubtitlePlan,
     required String reason,
   }) async {
     if (!mounted || player != currentPlayer) return;
     final trackManager = _trackManager;
     if (trackManager == null) return;
     appLogger.d('Frame rate matching: resuming playback after $reason');
-    if (!attachesSubsAtOpen && hasExternalSubs) {
+    if (externalSubtitlePlan.requiresPostOpenAdd) {
       await trackManager.resumeAfterSubtitleLoad();
     } else {
       await currentPlayer.play();
@@ -289,8 +301,7 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
   /// flows.
   Future<void> _resumeAfterStartupGateOrYieldToWatchTogether({
     required Player currentPlayer,
-    required bool attachesSubsAtOpen,
-    required bool hasExternalSubs,
+    required _ExternalSubtitleOpenPlan externalSubtitlePlan,
     required String reason,
     required bool wtOwnsStart,
     Completer<void>? wtStartupHold,
@@ -298,14 +309,13 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
     if (!wtOwnsStart) {
       return _resumeAfterFrameRateStartupGate(
         currentPlayer: currentPlayer,
-        attachesSubsAtOpen: attachesSubsAtOpen,
-        hasExternalSubs: hasExternalSubs,
+        externalSubtitlePlan: externalSubtitlePlan,
         reason: reason,
       );
     }
     appLogger.d('Frame rate matching: yielding post-gate resume to Watch Together ($reason)');
     final trackManager = _trackManager;
-    if (trackManager != null && !attachesSubsAtOpen && hasExternalSubs) {
+    if (trackManager != null && externalSubtitlePlan.requiresPostOpenAdd) {
       trackManager.waitingForExternalSubsTrackSelection = false;
       trackManager.applyTrackSelectionWhenReady();
     }
@@ -328,6 +338,28 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
       subtitlePosition: settingsService.read(SettingsService.subtitlePosition),
       bold: settingsService.read(SettingsService.subtitleBold),
       italic: settingsService.read(SettingsService.subtitleItalic),
+    );
+  }
+
+  _ExternalSubtitleOpenPlan _prepareExternalSubtitleOpenPlan({
+    required Player player,
+    required List<SubtitleTrack> externalSubtitles,
+    bool waitForFileLoaded = true,
+  }) {
+    final attachesAtOpen = player.attachesExternalSubtitlesAtOpen;
+    final hasExternalSubtitles = externalSubtitles.isNotEmpty;
+
+    return _ExternalSubtitleOpenPlan(
+      externalSubtitles: externalSubtitles,
+      attachesAtOpen: attachesAtOpen,
+      readyAfterOpen: waitForFileLoaded && !attachesAtOpen && hasExternalSubtitles
+          ? player.streams.fileLoaded.first.timeout(
+              const Duration(seconds: 15),
+              onTimeout: () {
+                appLogger.w('Timed out waiting for file-loaded before adding external subtitles');
+              },
+            )
+          : null,
     );
   }
 
@@ -370,16 +402,18 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
   /// paused (e.g. a transcode restart while paused): selection is still
   /// armed and the waiting flag cleared instead of leaving both dangling.
   Future<void> _applyTracksAfterOpen({
-    required Player forPlayer,
     required TrackManager trackManager,
-    required List<SubtitleTrack> externalSubtitles,
+    required _ExternalSubtitleOpenPlan externalSubtitlePlan,
     required bool Function() shouldResumeAfterSubtitleLoad,
     bool applySelectionWhenResumeSkipped = false,
   }) async {
-    if (!forPlayer.attachesExternalSubtitlesAtOpen && externalSubtitles.isNotEmpty) {
+    if (externalSubtitlePlan.requiresPostOpenAdd) {
       trackManager.waitingForExternalSubsTrackSelection = true;
       try {
-        await trackManager.addExternalSubtitles(externalSubtitles);
+        await trackManager.addExternalSubtitles(
+          externalSubtitlePlan.externalSubtitles,
+          waitUntilReady: externalSubtitlePlan.readyAfterOpen,
+        );
       } finally {
         if (shouldResumeAfterSubtitleLoad()) {
           await trackManager.resumeAfterSubtitleLoad();

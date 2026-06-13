@@ -313,6 +313,25 @@ void main() {
       );
     });
 
+    test('MPV exposes file-loaded events through PlayerStreams', () async {
+      await _withMockChannels(
+        methodChannelName: 'com.plezy/mpv_player',
+        eventChannelName: 'com.plezy/mpv_player/events',
+        testBody: () async {
+          final player = PlayerNative();
+          try {
+            final fileLoaded = expectLater(player.streams.fileLoaded, emits(isNull));
+
+            player.handlePlayerEvent('file-loaded', null);
+
+            await fileLoaded;
+          } finally {
+            await player.dispose();
+          }
+        },
+      );
+    });
+
     test('MPV maps server-offset streams to absolute timeline positions', () async {
       final calls = <MethodCall>[];
 

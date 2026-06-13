@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/media/media_backend.dart';
 import 'package:plezy/media/media_item.dart';
@@ -46,6 +48,9 @@ class _FakePlayer implements Player {
 
   @override
   PlayerState get state => _state;
+
+  @override
+  bool get disposed => false;
 
   set tracks(Tracks t) {
     _state = _state.copyWith(tracks: t);
@@ -253,6 +258,26 @@ void main() {
       // One add failed, one succeeded.
       expect(player.addSubtitleCalls, hasLength(1));
     });
+
+    test('waits for player readiness before adding subtitles', () async {
+      final player = _FakePlayer();
+      final mgr = _make(player: player);
+      addTearDown(mgr.dispose);
+      final ready = Completer<void>();
+
+      final addFuture = mgr.addExternalSubtitles([
+        SubtitleTrack.uri('https://example/ready.srt', title: 'EN'),
+      ], waitUntilReady: ready.future);
+      await Future<void>.delayed(Duration.zero);
+
+      expect(player.addSubtitleCalls, isEmpty);
+
+      ready.complete();
+      await addFuture;
+
+      expect(player.addSubtitleCalls, hasLength(1));
+      expect(player.addSubtitleCalls.single.uri, 'https://example/ready.srt');
+    });
   });
 
   // ============================================================
@@ -330,6 +355,32 @@ void main() {
       mgr.onPlaybackRestart();
       // No exception is the contract.
       expect(mgr.waitingForExternalSubsTrackSelection, isFalse);
+    });
+
+    test('keeps selection pending while external subtitle add is in flight', () async {
+      final player = _FakePlayer();
+      final mgr = _make(player: player);
+      addTearDown(mgr.dispose);
+      final ready = Completer<void>();
+
+      mgr.waitingForExternalSubsTrackSelection = true;
+      final addFuture = mgr.addExternalSubtitles([
+        SubtitleTrack.uri('https://example/pending.srt', title: 'EN'),
+      ], waitUntilReady: ready.future);
+      await Future<void>.delayed(Duration.zero);
+
+      mgr.onPlaybackRestart();
+
+      expect(mgr.waitingForExternalSubsTrackSelection, isTrue);
+      expect(player.addSubtitleCalls, isEmpty);
+
+      ready.complete();
+      await addFuture;
+
+      mgr.onPlaybackRestart();
+
+      expect(mgr.waitingForExternalSubsTrackSelection, isFalse);
+      expect(player.addSubtitleCalls, hasLength(1));
     });
   });
 

@@ -53,6 +53,9 @@ class PlayerStreams {
   /// Stream that emits when playback restarts (first frame ready after load/seek).
   final Stream<void> playbackRestart;
 
+  /// Stream that emits when the player has loaded the current media file.
+  final Stream<void> fileLoaded;
+
   /// Stream of seekable buffer ranges from the demuxer cache.
   final Stream<List<BufferRange>> bufferRanges;
 
@@ -78,6 +81,7 @@ class PlayerStreams {
     required this.audioDevices,
     required this.bufferRanges,
     required this.playbackRestart,
+    this.fileLoaded = const Stream<void>.empty(),
     required this.backendSwitched,
   });
 }
