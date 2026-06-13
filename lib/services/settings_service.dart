@@ -169,6 +169,20 @@ class _UseExternalPlayerPref extends Pref<bool> {
   Future<void> writeTo(BaseSharedPreferencesService svc, bool value) => svc.writeBool(key, value);
 }
 
+/// Defaults to on for Apple TV, where passthrough is what gets Dolby Digital
+/// (Plus) / Atmos to the receiver; opt-in everywhere else.
+class _AudioPassthroughPref extends Pref<bool> {
+  const _AudioPassthroughPref() : super('audio_passthrough');
+
+  @override
+  bool readFrom(BaseSharedPreferencesService svc) {
+    return svc.prefs.getBool(key) ?? PlatformDetector.isAppleTV();
+  }
+
+  @override
+  Future<void> writeTo(BaseSharedPreferencesService svc, bool value) => svc.writeBool(key, value);
+}
+
 String? _trimEmptyAsNull(String? v) {
   final t = v?.trim();
   return (t == null || t.isEmpty) ? null : t;
@@ -393,7 +407,7 @@ class SettingsService extends BaseSharedPreferencesService {
     defaultValue: VisualEffectsSetting.auto,
   );
   static const ambientLighting = BoolPref('ambient_lighting');
-  static const audioPassthrough = BoolPref('audio_passthrough');
+  static const audioPassthrough = _AudioPassthroughPref();
   static const audioNormalization = BoolPref('audio_normalization');
   static const liveTvDefaultFavorites = BoolPref('live_tv_default_favorites');
   static const matchRefreshRate = BoolPref('match_refresh_rate');

@@ -352,11 +352,10 @@ class MpvPlayerCoreBase: NSObject {
       return false
     }
 
-    #if DEBUG
-      checkError(mpv_request_log_messages(mpv, "info"))
-    #else
-      checkError(mpv_request_log_messages(mpv, "warn"))
-    #endif
+    // TEMP: always "v" (tvOS builds in release) so the avfoundation VO's
+    // osd-perf timing lines show up — restore the DEBUG/warn split after the
+    // subtitle-timing investigation.
+    checkError(mpv_request_log_messages(mpv, "v"))
 
     var layer = Int64(Int(bitPattern: Unmanaged.passUnretained(renderLayer).toOpaque()))
     checkError(mpv_set_option(mpv, "wid", MPV_FORMAT_INT64, &layer))

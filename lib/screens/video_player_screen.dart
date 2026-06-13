@@ -808,8 +808,9 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
         );
       }
 
-      // Audio passthrough (desktop only - sends bitstream to receiver)
-      if (PlatformDetector.isDesktopOS()) {
+      // Audio passthrough (desktop bitstreams to the receiver; Apple TV
+      // hands compressed AC3/EAC3 to the system for Dolby/Atmos output)
+      if (PlatformDetector.isDesktopOS() || PlatformDetector.isAppleTV()) {
         if (settingsService.read(SettingsService.audioPassthrough)) {
           await currentPlayer.setAudioPassthrough(true);
         }
