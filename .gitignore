@@ -71,3 +71,5 @@ duplication-report/
 maestro/**/*.png
 
 server/deploy.sh
+# Stray native tvOS project — lives in MazeDev7/vibe-tvos, never tracked here (see CLAUDE.md)
+apple-tv/
