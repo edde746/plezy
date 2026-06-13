@@ -2590,15 +2590,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
               context,
               metadata: episode,
               isOffline: widget.isOffline,
-              onRefresh: () async {
-                final refreshed = await client?.fetchItem(episode.id);
-                if (refreshed != null) {
-                  setStateIfMounted(() {
-                    _episodes[index] = refreshed;
-                    _syncEpisodeToCache(index, refreshed);
-                  });
-                }
-              },
+              onRefresh: () => unawaited(_refreshItemInPlace(episode.id)),
             );
           },
           onRefresh: widget.isOffline ? null : _refreshItemInPlace,
@@ -2672,18 +2664,6 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
       padding: const EdgeInsets.all(24),
       child: const Center(child: CircularProgressIndicator()),
     );
-  }
-
-  /// Sync an updated episode back into the episode cache
-  void _syncEpisodeToCache(int episodeIndex, MediaItem updated) {
-    if (_isFlattenEpisodeList) {
-      _allEpisodes = _allEpisodes.replaceItems(_episodes);
-      return;
-    }
-    if (_seasons.isEmpty) return;
-    if (_selectedSeasonIndex >= _seasons.length) return;
-    final season = _seasons[_selectedSeasonIndex];
-    _seasonEpisodePager.updateEpisode(season.id, episodeIndex, updated);
   }
 
   void _syncFlattenEpisodeState() {

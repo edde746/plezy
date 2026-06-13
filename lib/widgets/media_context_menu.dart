@@ -553,7 +553,10 @@ class MediaContextMenuState extends State<MediaContextMenu> {
             // Queue for later sync — the offline provider emits the WatchStateEvent.
             await WatchActions.setWatched(context, item, watched: watched, offline: true);
             if (context.mounted) {
-              showAppSnackBar(context, watched ? t.messages.markedAsWatchedOffline : t.messages.markedAsUnwatchedOffline);
+              showAppSnackBar(
+                context,
+                watched ? t.messages.markedAsWatchedOffline : t.messages.markedAsUnwatchedOffline,
+              );
               _notifyRefresh(item.id);
             }
           } else {
@@ -708,6 +711,11 @@ class MediaContextMenuState extends State<MediaContextMenu> {
           await _handleDeleteMediaItem(context, mediaKind);
           break;
       }
+    } catch (e, st) {
+      appLogger.e('Media context menu action failed', error: e, stackTrace: st);
+      if (context.mounted) {
+        showErrorSnackBar(context, t.messages.errorLoading(error: e.toString()));
+      }
     } finally {
       _isContextMenuOpen = false;
 
@@ -810,11 +818,13 @@ class MediaContextMenuState extends State<MediaContextMenu> {
   }
 
   Future<void> _showFileInfo(BuildContext context) async {
-    final client = _getMediaClientForItem();
+    var loadingShown = false;
 
     try {
+      final client = _getMediaClientForItem();
       if (context.mounted) {
         showLoadingDialog(context);
+        loadingShown = true;
       }
 
       // Fetch file info
@@ -822,8 +832,9 @@ class MediaContextMenuState extends State<MediaContextMenu> {
       final fileInfo = await client.getFileInfo(item);
 
       // Close loading indicator
-      if (context.mounted) {
+      if (loadingShown && context.mounted) {
         Navigator.pop(context);
+        loadingShown = false;
       }
 
       if (fileInfo != null && context.mounted) {
@@ -838,7 +849,7 @@ class MediaContextMenuState extends State<MediaContextMenu> {
       }
     } catch (e) {
       // Close loading indicator if it's still open
-      if (context.mounted && Navigator.canPop(context)) {
+      if (loadingShown && context.mounted && Navigator.canPop(context)) {
         Navigator.pop(context);
       }
 
@@ -1346,10 +1357,10 @@ class MediaContextMenuState extends State<MediaContextMenu> {
   Future<void> _handleDownload(BuildContext context) async {
     final downloadProvider = Provider.of<DownloadProvider>(context, listen: false);
     final item = _mediaItem!;
-    // Backend-agnostic resolve so Jellyfin items can be downloaded too.
-    final client = context.getMediaClientWithFallback(serverIdOrNull(_itemServerId));
 
     try {
+      // Backend-agnostic resolve so Jellyfin items can be downloaded too.
+      final client = context.getMediaClientWithFallback(serverIdOrNull(_itemServerId));
       final result = await showDownloadOptionsAndQueue(
         context,
         metadata: item,
