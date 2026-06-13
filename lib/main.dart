@@ -287,8 +287,15 @@ FutureOr<SentryEvent?> _beforeSend(SentryEvent event, Hint _) {
   if (exceptions != null) {
     bool shouldDrop(SentryException e) {
       final v = e.value;
+      final lowerValue = v?.toLowerCase();
       // Windows file-lock errors from cache manager cleanup
       if (e.type == 'FileSystemException' && v != null && v.contains('plexImageCache') && v.contains('errno = 32')) {
+        return true;
+      }
+      if (e.type == 'FileSystemException' &&
+          lowerValue != null &&
+          lowerValue.contains('cached_network_image_ce') &&
+          (lowerValue.contains('lock failed') || lowerValue.contains('writefrom failed'))) {
         return true;
       }
       // Linux without DBus/NetworkManager
