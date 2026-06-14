@@ -56,6 +56,7 @@ class MediaCard extends StatefulWidget {
   final bool forceGridMode;
   final bool forceListMode;
   final bool isInContinueWatching;
+  final bool usesContinueWatchingAction;
   final String? collectionId; // The collection ID if displaying within a collection
   final bool isOffline; // True for downloaded content without server access
   final bool mixedHubContext; // True when in a hub with mixed content (movies + episodes)
@@ -74,13 +75,14 @@ class MediaCard extends StatefulWidget {
     this.forceGridMode = false,
     this.forceListMode = false,
     this.isInContinueWatching = false,
+    bool? usesContinueWatchingAction,
     this.collectionId,
     this.isOffline = false,
     this.mixedHubContext = false,
     this.showServerName = false,
     this.episodePosterModeOverride,
     this.fullBleedImage = false,
-  });
+  }) : usesContinueWatchingAction = usesContinueWatchingAction ?? isInContinueWatching;
 
   @override
   State<MediaCard> createState() => MediaCardState();
@@ -162,7 +164,7 @@ class MediaCardState extends State<MediaCard> with ContextMenuTapMixin<MediaCard
       item,
       onRefresh: widget.onRefresh,
       isOffline: widget.isOffline,
-      playDirectly: widget.isInContinueWatching,
+      playDirectly: widget.usesContinueWatchingAction,
     );
 
     if (!context.mounted) return;
@@ -900,7 +902,6 @@ class _MediaCardHelpers {
 
     return const SizedBox.shrink();
   }
-
 }
 
 /// Whether this media item has a clickable title that navigates somewhere.

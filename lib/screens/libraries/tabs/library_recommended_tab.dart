@@ -185,10 +185,9 @@ class _LibraryRecommendedTabState extends BaseLibraryTabState<MediaHub, LibraryR
 
   /// Detects Continue Watching hubs by hub identifier.
   /// Section-specific CW hubs use identifiers like "movie.inprogress.1".
-  static bool _isContinueWatchingHub(MediaHub hub) {
-    final hubId = hub.identifier?.toLowerCase() ?? '';
-    return hubId.contains('inprogress');
-  }
+  static bool _isContinueWatchingHub(MediaHub hub) => hub.isContinueWatchingHub;
+
+  static bool _usesContinueWatchingAction(MediaHub hub) => hub.usesContinueWatchingAction;
 
   @override
   Future<List<MediaHub>> loadData() async {
@@ -307,12 +306,14 @@ class _LibraryRecommendedTabState extends BaseLibraryTabState<MediaHub, LibraryR
             itemBuilder: (context, index) {
               final hub = items[index];
               final isContinueWatching = _isContinueWatchingHub(hub);
+              final usesContinueWatchingAction = _usesContinueWatchingAction(hub);
 
               return HubSection(
                 key: index < _hubKeys.length ? _hubKeys[index] : null,
                 hub: hub,
                 icon: _getHubIcon(hub),
                 isInContinueWatching: isContinueWatching,
+                usesContinueWatchingAction: usesContinueWatchingAction,
                 onRefresh: updateItem,
                 onRemoveFromContinueWatching: isContinueWatching ? _refreshContinueWatching : null,
                 onVerticalNavigation: (isUp) => _handleVerticalNavigation(index, isUp),
@@ -412,6 +413,7 @@ class _LibraryRecommendedTabState extends BaseLibraryTabState<MediaHub, LibraryR
                   onRefresh: updateItem,
                   onRemoveFromContinueWatching: _refreshContinueWatching,
                   isContinueWatchingHub: _isContinueWatchingHub,
+                  usesContinueWatchingAction: _usesContinueWatchingAction,
                   onNavigateUp: widget.onNavigateToChrome ?? widget.onBack,
                   onNavigateToSidebar: _navigateToSidebar,
                   onBack: widget.onBack,
