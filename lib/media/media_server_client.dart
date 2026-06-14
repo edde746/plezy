@@ -631,6 +631,19 @@ extension MediaServerClientScope on MediaServerClient {
   }
 }
 
+/// Optional capability for clients that can fetch a season's episodes without
+/// listing generic children. Jellyfin uses this to avoid mixing local extras or
+/// missing/virtual placeholders into normal season episode rails.
+abstract interface class SeasonEpisodePagingClient {
+  Future<LibraryPage<MediaItem>> fetchSeasonEpisodesPage(
+    String seriesId,
+    String seasonId, {
+    int? start,
+    int? size,
+    AbortController? abort,
+  });
+}
+
 /// Cache-aware fetch helpers shared by both backends so the offline-first /
 /// network-then-cache pattern lives in one place.
 ///

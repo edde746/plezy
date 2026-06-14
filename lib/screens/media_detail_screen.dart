@@ -2769,6 +2769,11 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     return null;
   }
 
+  String? _seriesIdForSeason(MediaItem season) {
+    if (_metadata.isShow) return (_fullMetadata ?? _metadata).id;
+    return season.grandparentId ?? season.parentId ?? _metadata.grandparentId ?? _metadata.parentId;
+  }
+
   Future<LibraryPage<MediaItem>> _fetchFlattenedEpisodePage(
     MediaServerClient client,
     ServerId serverId, {
@@ -2777,7 +2782,11 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   }) async {
     final season = _flattenedSeasonForDirectEpisodePaging;
     if (season != null) {
-      final page = await client.fetchChildrenPage(season.id, start: start, size: size);
+      final seriesId = _seriesIdForSeason(season);
+      final seasonPagingClient = client is SeasonEpisodePagingClient ? client as SeasonEpisodePagingClient : null;
+      final page = seriesId != null && seasonPagingClient != null
+          ? await seasonPagingClient.fetchSeasonEpisodesPage(seriesId, season.id, start: start, size: size)
+          : await client.fetchChildrenPage(season.id, start: start, size: size);
       return LibraryPage<MediaItem>(
         items: _enrichDirectSeasonEpisodes(page.items, season: season, serverId: serverId),
         totalCount: page.totalCount,
@@ -2991,7 +3000,11 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
       } else {
         final client = getServerBoundMediaClient(context);
         if (client == null) return;
-        firstEpisode = await fetchFirstEpisodeForSeason(client, firstSeason.id);
+        firstEpisode = await fetchFirstEpisodeForSeason(
+          client,
+          firstSeason.id,
+          seriesId: _seriesIdForSeason(firstSeason),
+        );
       }
 
       if (firstEpisode == null) {

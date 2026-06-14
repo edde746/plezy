@@ -98,13 +98,17 @@ Future<List<MediaVersion>?> fetchRepresentativeVersions(MediaServerClient client
     String? episodeRatingKey;
 
     if (metadata.kind == MediaKind.season) {
-      final firstEpisode = await fetchFirstEpisodeForSeason(client, metadata.id);
+      final firstEpisode = await fetchFirstEpisodeForSeason(
+        client,
+        metadata.id,
+        seriesId: metadata.grandparentId ?? metadata.parentId,
+      );
       episodeRatingKey = firstEpisode?.id;
     } else if (metadata.kind == MediaKind.show) {
       final seasons = await client.fetchChildren(metadata.id);
       final firstSeason = defaultPlaybackSeason(seasons);
       if (firstSeason != null) {
-        final firstEpisode = await fetchFirstEpisodeForSeason(client, firstSeason.id);
+        final firstEpisode = await fetchFirstEpisodeForSeason(client, firstSeason.id, seriesId: metadata.id);
         episodeRatingKey = firstEpisode?.id;
       }
     }

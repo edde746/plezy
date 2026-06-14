@@ -2906,6 +2906,44 @@ void main() {
       expect(requestUri!.queryParameters['Limit'], '10');
     });
 
+    test('fetchSeasonEpisodesPage uses Jellyfin episode endpoint scoped to season', () async {
+      Uri? requestUri;
+      final mock = MockClient((req) async {
+        if (req.url.path == '/Shows/show-1/Episodes') {
+          requestUri = req.url;
+          return http.Response(
+            jsonEncode({
+              'Items': [
+                {'Id': 'episode-1', 'Name': 'Episode', 'Type': 'Episode'},
+              ],
+              'TotalRecordCount': 40,
+            }),
+            200,
+            headers: {'content-type': 'application/json'},
+          );
+        }
+        return http.Response('not found', 404);
+      });
+      final client = JellyfinClient.forTesting(connection: _conn(), httpClient: mock);
+      addTearDown(client.close);
+
+      final page = await client.fetchSeasonEpisodesPage('show-1', 'season-1', start: 20, size: 10);
+
+      expect(page.items.single.id, 'episode-1');
+      expect(page.totalCount, 40);
+      expect(page.offset, 20);
+      expect(requestUri, isNotNull);
+      expect(requestUri!.queryParameters['SeasonId'], 'season-1');
+      expect(requestUri!.queryParameters['StartIndex'], '20');
+      expect(requestUri!.queryParameters['Limit'], '10');
+      expect(requestUri!.queryParameters['EnableTotalRecordCount'], 'true');
+      expect(requestUri!.queryParameters['IsMissing'], 'false');
+      expect(requestUri!.queryParameters['IsVirtualUnaired'], 'false');
+      expect(requestUri!.queryParameters['Fields']!.split(','), contains('MediaSources'));
+      expect(requestUri!.queryParameters.containsKey('SortBy'), isFalse);
+      expect(requestUri!.queryParameters.containsKey('SortOrder'), isFalse);
+    });
+
     test('fetchChildrenPage orders direct episode children by season and episode index', () async {
       Uri? requestUri;
       final mock = MockClient((req) async {

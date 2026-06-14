@@ -658,6 +658,39 @@ mixin _JellyfinBrowseMethods on MediaServerCacheMixin {
     return _pagedMediaItems(response.data, offset: offset, requestedSize: pageSize);
   }
 
+  @override
+  Future<LibraryPage<MediaItem>> fetchSeasonEpisodesPage(
+    String seriesId,
+    String seasonId, {
+    int? start,
+    int? size,
+    AbortController? abort,
+  }) async {
+    if (isOfflineMode) {
+      return fetchChildrenPage(seasonId, start: start, size: size, abort: abort);
+    }
+
+    final offset = start ?? 0;
+    final pageSize = size ?? _pagedListPageSize;
+    final response = await _http.get(
+      '/Shows/${_segment(seriesId)}/Episodes',
+      queryParameters: {
+        'userId': connection.userId,
+        'SeasonId': seasonId,
+        'StartIndex': offset.toString(),
+        'Limit': pageSize.toString(),
+        'EnableTotalRecordCount': 'true',
+        'IsMissing': 'false',
+        'IsVirtualUnaired': 'false',
+        'Fields': _episodeRowFields,
+        ...jellyfinImageQueryParameters,
+      },
+      abort: abort,
+    );
+    throwIfHttpError(response);
+    return _pagedMediaItems(response.data, offset: offset, requestedSize: pageSize);
+  }
+
   /// Jellyfin folder browsing mirrors Jellyfin Web/Findroid/Swiftfin: query
   /// direct children of the library/folder with `Recursive=false`. This is
   /// distinct from [fetchLibraryContent], which intentionally recurses through
@@ -890,6 +923,8 @@ mixin _JellyfinBrowseMethods on MediaServerCacheMixin {
           'Fields': _queueFields,
           'StartIndex': '$startIndex',
           'Limit': '$_episodeQueuePageSize',
+          'IsMissing': 'false',
+          'IsVirtualUnaired': 'false',
           ..._episodeOrderQueryParameters,
           ...jellyfinImageQueryParameters,
         },
