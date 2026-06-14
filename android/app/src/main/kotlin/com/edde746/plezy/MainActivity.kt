@@ -201,7 +201,7 @@ class MainActivity : FlutterActivity() {
       // Actual process bitness: low-end TV boxes often run 32-bit userspace.
       "is64Bit" to Process.is64Bit(),
       "isLowRamDevice" to activityManager.isLowRamDevice,
-      "totalMemBytes" to memoryInfo.totalMem,
+      "totalMemBytes" to memoryInfo.totalMem
     )
   }
 

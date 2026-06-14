@@ -9,8 +9,8 @@ import 'package:plezy/utils/platform_detector.dart';
 const _library = MediaLibrary(id: '1', backend: MediaBackend.plex, title: 'Movies');
 
 class _ProbeTab extends BaseLibraryTab<String> {
-  const _ProbeTab({super.key, required this.loadedItems, required super.onBack, super.isActive = true})
-    : super(library: _library);
+  const _ProbeTab({super.key, required this.loadedItems, required super.onBack})
+    : super(library: _library, isActive: true);
 
   final List<String> loadedItems;
 

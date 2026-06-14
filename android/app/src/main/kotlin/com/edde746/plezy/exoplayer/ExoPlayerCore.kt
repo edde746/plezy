@@ -2140,8 +2140,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
   }
 
   /** True when [format] is an ASS/SSA subtitle track (rendered by libass). */
-  private fun isAssSubtitleFormat(format: Format): Boolean =
-    format.sampleMimeType == MimeTypes.TEXT_SSA || format.codecs == MimeTypes.TEXT_SSA
+  private fun isAssSubtitleFormat(format: Format): Boolean = format.sampleMimeType == MimeTypes.TEXT_SSA || format.codecs == MimeTypes.TEXT_SSA
 
   /** Sets the ASS-subtitles tunneling block; returns true when the flag changed. */
   private fun updateAssSubtitlesForTunneling(assActive: Boolean): Boolean {
@@ -2150,15 +2149,19 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
     emitLog(
       "info",
       "tunneling",
-      if (assActive) "ASS subtitle track selected: tunneling DISABLED (frame metadata required for libass)"
-      else "ASS subtitle track deselected: tunneling unblocked"
+      if (assActive) {
+        "ASS subtitle track selected: tunneling DISABLED (frame metadata required for libass)"
+      } else {
+        "ASS subtitle track deselected: tunneling unblocked"
+      }
     )
     return true
   }
 
   private fun evaluateAssSubtitlesForTunneling(tracks: Tracks) {
     val assSelected = tracks.groups.any { group ->
-      group.type == C.TRACK_TYPE_TEXT && group.isSelected &&
+      group.type == C.TRACK_TYPE_TEXT &&
+        group.isSelected &&
         (0 until group.length).any { isAssSubtitleFormat(group.getTrackFormat(it)) }
     }
     updateAssSubtitlesForTunneling(assSelected)
@@ -2212,8 +2215,12 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
   private fun calculateTunnelingEnabled(): Boolean? {
     val player = exoPlayer ?: return null
     val audioDelayActive = (renderersFactory?.audioDelayUs?.get() ?: 0L) != 0L
-    return tunnelingUserEnabled && (player.playbackParameters.speed == 1f) && !tunnelingDisabledForCodec &&
-      !tunnelingDisabledForAssSubtitles && !audioDelayActive && !audioNormalizationEnabled
+    return tunnelingUserEnabled &&
+      (player.playbackParameters.speed == 1f) &&
+      !tunnelingDisabledForCodec &&
+      !tunnelingDisabledForAssSubtitles &&
+      !audioDelayActive &&
+      !audioNormalizationEnabled
   }
 
   private fun updateCurrentTunnelingState(reason: String, shouldTunnel: Boolean): Boolean {
@@ -2691,7 +2698,9 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
     val tunnelingWillFlip = calculateTunnelingEnabled() != currentTunneledPlayback
     val outputEncoding = lastAudioTrackConfig?.encoding
     val selectedMime = selectedAudioFormat()?.sampleMimeType
-    val needsBounce = !tunnelingWillFlip && outputEncoding != null && selectedMime != null &&
+    val needsBounce = !tunnelingWillFlip &&
+      outputEncoding != null &&
+      selectedMime != null &&
       isEncodedAudioMimeType(selectedMime) &&
       (if (enabled) !isPcmEncoding(outputEncoding) else isPcmEncoding(outputEncoding))
     if (needsBounce) {
