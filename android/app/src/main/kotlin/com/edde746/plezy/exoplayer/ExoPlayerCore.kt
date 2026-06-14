@@ -112,8 +112,8 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
 
     private var assGlCrashHandlerInstalled = false
 
-    private var cronetEngine: CronetEngine? = null
-    private var cronetUnavailable = false
+    @Volatile private var cronetEngine: CronetEngine? = null
+    @Volatile private var cronetUnavailable = false
     private fun getCronetEngine(context: Context): CronetEngine? {
       cronetEngine?.let { return it }
       if (cronetUnavailable) return null
@@ -2836,6 +2836,10 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
     } else {
       positionMs.coerceAtLeast(0L)
     }
+    // A user seek is authoritative. Do not let a pending start-position restore
+    // from open/reload recovery re-seek back over an early seek near zero once
+    // ExoPlayer reports STATE_READY.
+    pendingStartPositionMs = 0L
     player.seekTo(clampedPositionMs)
     lastPosition = clampedPositionMs
     delegate?.onPropertyChange("time-pos", clampedPositionMs / 1000.0)

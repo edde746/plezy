@@ -95,13 +95,13 @@ const String _sentryDist = String.fromEnvironment('SENTRY_DIST');
 bool _zeroOffsetPointerGuardInstalled = false;
 
 void _installZeroOffsetPointerGuard() {
-  if (_zeroOffsetPointerGuardInstalled) return;
+  if (_zeroOffsetPointerGuardInstalled || !Platform.isIOS) return;
   GestureBinding.instance.pointerRouter.addGlobalRoute(_absorbZeroOffsetPointerEvent);
   _zeroOffsetPointerGuardInstalled = true;
 }
 
 void _absorbZeroOffsetPointerEvent(PointerEvent event) {
-  if (event.position == Offset.zero) {
+  if (event is PointerDownEvent && event.position == Offset.zero) {
     GestureBinding.instance.cancelPointer(event.pointer);
   }
 }
