@@ -64,6 +64,14 @@ BoxDecoration? _railItemDecoration(WidgetTester tester, Finder item) {
       as BoxDecoration?;
 }
 
+AnimatedOpacity _railSurfaceOpacity(WidgetTester tester) {
+  return tester
+      .widgetList<AnimatedOpacity>(
+        find.descendant(of: find.byType(SideNavigationRail), matching: find.byType(AnimatedOpacity)),
+      )
+      .singleWhere((widget) => widget.child is ColoredBox);
+}
+
 Future<void> _pumpBasicRail(
   WidgetTester tester, {
   GlobalKey<SideNavigationRailState>? sideNavKey,
@@ -175,9 +183,19 @@ void main() {
       find.descendant(of: selectedItem, matching: find.byType(Container)).first,
     );
     expect((selectedItemContainer.decoration as BoxDecoration?)?.color, isNull);
+
+    expect(_railSurfaceOpacity(tester).opacity, 0.0);
   });
 
-  testWidgets('expanded TV rail draws an opaque surface', (tester) async {
+  testWidgets('closed non-TV rail keeps an opaque surface', (tester) async {
+    await _pumpBasicRail(tester);
+
+    final rail = find.descendant(of: find.byType(SideNavigationRail), matching: find.byType(AnimatedContainer)).first;
+    expect(tester.getSize(rail).width, SideNavigationRailState.collapsedWidth);
+    expect(_railSurfaceOpacity(tester).opacity, 1.0);
+  });
+
+  testWidgets('expanded TV rail keeps a transparent surface', (tester) async {
     TvDetectionService.debugSetAppleTVOverride(true);
     addTearDown(() => TvDetectionService.debugSetAppleTVOverride(null));
     await SettingsService.getInstance();
@@ -222,12 +240,7 @@ void main() {
     final rail = find.descendant(of: find.byType(SideNavigationRail), matching: find.byType(AnimatedContainer)).first;
     expect(tester.getSize(rail).width, SideNavigationRailState.expandedWidth);
 
-    final surfaceOpacity = tester
-        .widgetList<AnimatedOpacity>(
-          find.descendant(of: find.byType(SideNavigationRail), matching: find.byType(AnimatedOpacity)),
-        )
-        .singleWhere((widget) => widget.child is ColoredBox);
-    expect(surfaceOpacity.opacity, 1.0);
+    expect(_railSurfaceOpacity(tester).opacity, 0.0);
   });
 
   testWidgets('expanded rail keeps selected background outside sidebar keyboard focus', (tester) async {

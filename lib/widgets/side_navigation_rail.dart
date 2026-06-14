@@ -644,7 +644,7 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
                   children: [
                     Positioned.fill(
                       child: AnimatedOpacity(
-                        opacity: 1.0,
+                        opacity: PlatformDetector.isTV() ? 0.0 : 1.0,
                         duration: t.normal,
                         curve: Curves.easeOutCubic,
                         child: ColoredBox(color: t.surface),
