@@ -13,6 +13,9 @@ import 'package:plezy/widgets/video_controls/widgets/mobile_skip_zones.dart';
 import 'package:plezy/widgets/video_controls/widgets/skip_marker_button.dart';
 import 'package:plezy/widgets/video_controls/widgets/sync_offset_control.dart';
 import 'package:plezy/widgets/video_controls/widgets/timeline_slider.dart';
+import 'package:plezy/widgets/video_controls/widgets/video_timeline_bar.dart';
+
+import '../test_helpers/watch_together_fakes.dart';
 
 const _testTokens = MonoTokens(
   radiusSm: 8,
@@ -417,6 +420,32 @@ void main() {
 
       expect(slider.value, 0.0);
       expect(slider.max, 0.0);
+    });
+
+    testWidgets('timeline bar displays pending preview position while player position is stale', (tester) async {
+      final player = FakeSyncPlayer(position: const Duration(minutes: 1), duration: const Duration(minutes: 10));
+      addTearDown(player.dispose);
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: SizedBox(
+              width: 400,
+              child: VideoTimelineBar(
+                player: player,
+                chapters: const [],
+                chaptersLoaded: true,
+                previewPosition: const Duration(minutes: 4),
+                onSeek: (_) {},
+                onSeekEnd: (_) {},
+              ),
+            ),
+          ),
+        ),
+      );
+
+      final slider = tester.widget<Slider>(find.byType(Slider));
+      expect(slider.value, const Duration(minutes: 4).inMilliseconds.toDouble());
     });
 
     Future<void> pumpScrubSlider(

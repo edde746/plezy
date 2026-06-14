@@ -204,6 +204,10 @@ class PlexVideoControls extends StatefulWidget {
   /// the server-side transcode session at the requested absolute timestamp.
   final Future<void> Function(Duration position)? onSeekRequested;
 
+  /// Called for app-level play/pause requests so the owning screen can track
+  /// user playback intent separately from transient buffering state.
+  final Future<void> Function()? onPlayPauseRequested;
+
   /// Called when a seek operation completes (for Watch Together sync)
   final Function(Duration position)? onSeekCompleted;
 
@@ -307,6 +311,7 @@ class PlexVideoControls extends StatefulWidget {
     this.onSubtitleTrackChanged,
     this.onSecondarySubtitleTrackChanged,
     this.onSeekRequested,
+    this.onPlayPauseRequested,
     this.onSeekCompleted,
     this.onBack,
     this.onReachedEnd,

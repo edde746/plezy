@@ -242,7 +242,7 @@ extension _VideoPlayerEpisodeNavigationMethods on VideoPlayerScreenState {
     final currentSecondarySubtitleTrack = preserveCurrentTrackSelection
         ? currentPlayer.state.track.secondarySubtitle
         : null;
-    final wasPlayingBeforeReload = currentPlayer.state.playing;
+    final wasPlayingBeforeReload = _playbackIntentShouldPlay;
     var didOpenReplacement = false;
 
     // Capture context-dependent values before async gaps. The neutral
@@ -502,7 +502,7 @@ extension _VideoPlayerEpisodeNavigationMethods on VideoPlayerScreenState {
         // resumed session keeps reporting (and its eventual real stop sends).
         _progressTracker?.resumeAfterStoppedReport();
         if (wasPlayingBeforeReload && mounted && player == currentPlayer) {
-          unawaited(currentPlayer.play());
+          unawaited(_playWithPlaybackIntent(currentPlayer));
         }
       } else if (_progressTracker == null && player == currentPlayer) {
         // The new file is playing and its session is committed — keep the

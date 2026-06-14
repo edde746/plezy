@@ -171,9 +171,10 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
       if (activePlayer == null && event is! NextTrackEvent && event is! PreviousTrackEvent) return;
 
       if (event is PlayEvent) {
+        final currentPlayer = activePlayer!;
         appLogger.d('Media control: Play event received');
-        _seekBackForRewind(activePlayer!);
-        activePlayer.play();
+        unawaited(_seekBackForRewind(currentPlayer));
+        unawaited(_playWithPlaybackIntent(currentPlayer));
         _wasPlayingBeforeInactive = false;
         _updateMediaControlsPlaybackState();
       } else if (event is PauseEvent) {
@@ -182,15 +183,16 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
           return;
         }
         appLogger.d('Media control: Pause event received');
-        activePlayer!.pause();
+        unawaited(_pauseWithPlaybackIntent(activePlayer!));
         _updateMediaControlsPlaybackState();
       } else if (event is TogglePlayPauseEvent) {
+        final currentPlayer = activePlayer!;
         appLogger.d('Media control: Toggle play/pause event received');
-        if (activePlayer!.state.isActive) {
-          activePlayer.pause();
+        if (currentPlayer.state.isActive) {
+          unawaited(_pauseWithPlaybackIntent(currentPlayer));
         } else {
-          _seekBackForRewind(activePlayer);
-          activePlayer.play();
+          unawaited(_seekBackForRewind(currentPlayer));
+          unawaited(_playWithPlaybackIntent(currentPlayer));
           _wasPlayingBeforeInactive = false;
         }
         _updateMediaControlsPlaybackState();
@@ -266,7 +268,7 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
       );
       final currentPlayer = player;
       if (currentPlayer != null) {
-        unawaited(currentPlayer.pause());
+        unawaited(_pauseWithPlaybackIntent(currentPlayer));
       }
       unawaited(_setWakelock(false));
       return;
@@ -339,7 +341,7 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
     }
 
     try {
-      await currentPlayer.pause();
+      await _pauseWithPlaybackIntent(currentPlayer);
       appLogger.d('Video paused after Apple audio session $reason');
     } catch (e) {
       appLogger.w('Failed to pause after Apple audio session $reason', error: e);
@@ -366,7 +368,7 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
     if (expectedPlayer.state.isActive) return;
 
     try {
-      await expectedPlayer.play();
+      await _playWithPlaybackIntent(expectedPlayer);
       _wasPlayingBeforeInactive = false;
       appLogger.d('Video resumed after Apple audio session $reason');
     } catch (e) {

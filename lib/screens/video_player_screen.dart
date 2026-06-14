@@ -267,6 +267,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   // entry guards make reload / transcode-restart / channel-switch mutually
   // exclusive instead of relying on three independent booleans.
   _PlaybackTransition _playbackTransition = _PlaybackTransition.idle;
+  bool _playbackIntentShouldPlay = true;
 
   bool _showPlayNextDialog = false;
   bool _isPhone = false;
@@ -482,6 +483,21 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
 
   bool _isCurrentPlaybackGeneration(int generation, Player currentPlayer) {
     return mounted && player == currentPlayer && _playbackGeneration == generation;
+  }
+
+  Future<void> _playWithPlaybackIntent(Player currentPlayer) {
+    _playbackIntentShouldPlay = true;
+    return currentPlayer.play();
+  }
+
+  Future<void> _pauseWithPlaybackIntent(Player currentPlayer) {
+    _playbackIntentShouldPlay = false;
+    return currentPlayer.pause();
+  }
+
+  Future<void> _playOrPauseWithPlaybackIntent(Player currentPlayer) {
+    _playbackIntentShouldPlay = !currentPlayer.state.playing;
+    return currentPlayer.playOrPause();
   }
 
   final ValueNotifier<bool> _isBuffering = ValueNotifier<bool>(false);
@@ -867,7 +883,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
         });
 
         // Restart sleep timer if we're starting a new playback session
-        SleepTimerService().restartIfNeeded(() => currentPlayer.pause());
+        SleepTimerService().restartIfNeeded(() => unawaited(_pauseWithPlaybackIntent(currentPlayer)));
 
         // Enable wakelock to prevent screen from turning off during playback
         unawaited(_setWakelock(true));
@@ -1065,7 +1081,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     final exitPosition = currentPlayer.state.position;
     if (currentPlayer.state.isActive) {
       try {
-        await currentPlayer.pause();
+        await _pauseWithPlaybackIntent(currentPlayer);
       } catch (e, st) {
         appLogger.w('Failed to pause player during route exit', error: e, stackTrace: st);
       }
@@ -1347,7 +1363,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
         await _seekBackForRewind(currentPlayer);
         if (!mounted || player != currentPlayer) return;
       }
-      await currentPlayer.playOrPause();
+      await _playOrPauseWithPlaybackIntent(currentPlayer);
     } catch (e, st) {
       appLogger.w('Apple TV remote play/pause failed', error: e, stackTrace: st);
     }

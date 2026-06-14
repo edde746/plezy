@@ -84,7 +84,7 @@ extension _PlexVideoControlsPlaybackInputMethods on _PlexVideoControlsState {
       final clamped = clampSeekPosition(widget.player, target);
       await (widget.onSeekRequested ?? widget.player.seek)(clamped);
     }
-    await widget.player.playOrPause();
+    await (widget.onPlayPauseRequested ?? widget.player.playOrPause)();
   }
 
   /// Throttled seek for timeline slider - executes immediately then throttles to 200ms

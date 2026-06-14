@@ -96,7 +96,7 @@ extension _VideoPlayerLifecycleMethods on VideoPlayerScreenState {
       _wasPlayingBeforeInactive = currentPlayer.state.isActive;
       if (_wasPlayingBeforeInactive) {
         try {
-          await currentPlayer.pause();
+          await _pauseWithPlaybackIntent(currentPlayer);
           appLogger.d('Video paused due to app being hidden (${isTv ? 'tv' : 'handheld'})');
         } catch (e) {
           appLogger.w('Failed to pause video before background transition', error: e);

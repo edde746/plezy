@@ -287,10 +287,11 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
     final trackManager = _trackManager;
     if (trackManager == null) return;
     appLogger.d('Frame rate matching: resuming playback after $reason');
+    _playbackIntentShouldPlay = true;
     if (externalSubtitlePlan.requiresPostOpenAdd) {
       await trackManager.resumeAfterSubtitleLoad();
     } else {
-      await currentPlayer.play();
+      await _playWithPlaybackIntent(currentPlayer);
     }
   }
 
@@ -416,6 +417,7 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
         );
       } finally {
         if (shouldResumeAfterSubtitleLoad()) {
+          _playbackIntentShouldPlay = true;
           await trackManager.resumeAfterSubtitleLoad();
         } else if (applySelectionWhenResumeSkipped) {
           trackManager.waitingForExternalSubsTrackSelection = false;

@@ -47,6 +47,9 @@ class VideoTimelineBar extends StatelessWidget {
   /// (used during sustained dpad/keyboard key-repeat seeking).
   final bool showKeyRepeatThumbnail;
 
+  /// Optional UI-only position used while a remote/keyboard seek is pending.
+  final Duration? previewPosition;
+
   const VideoTimelineBar({
     super.key,
     required this.player,
@@ -65,6 +68,7 @@ class VideoTimelineBar extends StatelessWidget {
     this.showFinishTime = false,
     this.thumbnailDataBuilder,
     this.showKeyRepeatThumbnail = false,
+    this.previewPosition,
   });
 
   @override
@@ -81,8 +85,9 @@ class VideoTimelineBar extends StatelessWidget {
               stream: player.streams.bufferRanges,
               initialData: player.state.bufferRanges,
               builder: (context, bufferRangesSnapshot) {
-                final position = positionSnapshot.data ?? Duration.zero;
+                final rawPosition = positionSnapshot.data ?? Duration.zero;
                 final duration = durationSnapshot.data ?? Duration.zero;
+                final position = previewPosition == null ? rawPosition : clampDuration(previewPosition!, duration);
                 final bufferRanges = bufferRangesSnapshot.data ?? const [];
                 final remaining = position - duration; // We want this to be negative
 
@@ -95,6 +100,12 @@ class VideoTimelineBar extends StatelessWidget {
         );
       },
     );
+  }
+
+  static Duration clampDuration(Duration position, Duration duration) {
+    if (position.isNegative) return Duration.zero;
+    if (duration > Duration.zero && position > duration) return duration;
+    return position;
   }
 
   Widget _buildHorizontalLayout(

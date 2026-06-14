@@ -165,6 +165,7 @@ void main() {
             final openCall = calls.singleWhere((call) => call.method == 'open');
             final openArgs = Map<Object?, Object?>.from(openCall.arguments as Map);
             expect(openArgs['startPositionMs'], 0);
+            expect(openArgs['hasStartPosition'], isFalse);
 
             await Future<void>.delayed(const Duration(milliseconds: 260));
             player.handlePropertyChange('time-pos', 2058.0);
@@ -176,6 +177,83 @@ void main() {
             final seekArgs = Map<Object?, Object?>.from(seekCall.arguments as Map);
             expect(seekArgs['positionMs'], const Duration(minutes: 40).inMilliseconds);
             expect(player.state.position, const Duration(minutes: 40));
+          } finally {
+            await player.dispose();
+          }
+        },
+      );
+    });
+
+    test('ExoPlayer source-offset open keeps timeline offset after stale native zero position', () async {
+      final calls = <MethodCall>[];
+      late PlayerAndroid player;
+
+      await _withMockChannels(
+        methodChannelName: 'com.plezy/exo_player',
+        eventChannelName: 'com.plezy/exo_player/events',
+        methodHandler: (call) {
+          calls.add(call);
+          switch (call.method) {
+            case 'initialize':
+              return Future.value(true);
+            case 'open':
+              player.handlePropertyChange('time-pos', 0.0);
+              player.handlePropertyChange('duration', 0.0);
+              player.handlePropertyChange('demuxer-cache-time', 0.0);
+              return Future.value(null);
+            default:
+              return Future.value(null);
+          }
+        },
+        testBody: () async {
+          player = PlayerAndroid();
+          try {
+            const timelineStart = Duration(seconds: 2058);
+            const timelineDuration = Duration(seconds: 2903);
+            await player.open(
+              Media('https://example.test/transcode.mkv'),
+              timelineOffset: timelineStart,
+              timelineDuration: timelineDuration,
+            );
+
+            expect(player.state.position, timelineStart);
+            expect(player.state.duration, timelineDuration);
+
+            final openCall = calls.singleWhere((call) => call.method == 'open');
+            final openArgs = Map<Object?, Object?>.from(openCall.arguments as Map);
+            expect(openArgs['startPositionMs'], 0);
+            expect(openArgs['hasStartPosition'], isFalse);
+          } finally {
+            await player.dispose();
+          }
+        },
+      );
+    });
+
+    test('ExoPlayer marks explicit non-zero media starts for native fallback', () async {
+      final calls = <MethodCall>[];
+
+      await _withMockChannels(
+        methodChannelName: 'com.plezy/exo_player',
+        eventChannelName: 'com.plezy/exo_player/events',
+        methodHandler: (call) {
+          calls.add(call);
+          switch (call.method) {
+            case 'initialize':
+              return Future.value(true);
+            default:
+              return Future.value(null);
+          }
+        },
+        testBody: () async {
+          final player = PlayerAndroid();
+          try {
+            await player.open(Media('https://example.test/movie.mkv', start: const Duration(seconds: 12)));
+
+            final openCall = calls.singleWhere((call) => call.method == 'open');
+            final openArgs = Map<Object?, Object?>.from(openCall.arguments as Map);
+            expect(openArgs['startPositionMs'], 12000);
+            expect(openArgs['hasStartPosition'], isTrue);
           } finally {
             await player.dispose();
           }

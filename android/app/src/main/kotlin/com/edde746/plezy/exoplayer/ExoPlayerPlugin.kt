@@ -263,6 +263,7 @@ class ExoPlayerPlugin :
     val uri = call.argument<String>("uri")
     val headers = call.argument<Map<String, String>>("headers")
     val startPositionMs = call.argument<Number>("startPositionMs")?.toLong() ?: 0L
+    val hasStartPosition = call.argument<Boolean>("hasStartPosition") ?: (startPositionMs > 0L)
     val autoPlay = call.argument<Boolean>("autoPlay") ?: true
     val isLive = call.argument<Boolean>("isLive") ?: false
     val externalSubtitles = call.argument<List<Map<String, Any?>>>("externalSubtitles")
@@ -286,7 +287,7 @@ class ExoPlayerPlugin :
         // MPV: Build loadfile command with options
         val startSeconds = startPositionMs / 1000.0
         val options = mutableListOf<String>()
-        options.add("start=$startSeconds")
+        options.add(if (hasStartPosition && startPositionMs > 0L) "start=$startSeconds" else "start=none")
         if (!autoPlay) options.add("pause=yes")
         options.add("sid=no")
         options.add("secondary-sid=no")
@@ -296,7 +297,11 @@ class ExoPlayerPlugin :
         val optionsStr = options.joinToString(",")
         // Convert content:// URIs to fdclose:// for MPV (SAF SD card downloads)
         val mpvUri = openContentFd(uri)?.let { "fdclose://$it" } ?: uri
-        mpvCore?.command(arrayOf("loadfile", mpvUri, "replace", "-1", optionsStr))
+        mpvCore?.command(arrayOf("loadfile", mpvUri, "replace", "-1", optionsStr)) { success ->
+          if (success && autoPlay) {
+            mpvCore?.setProperty("pause", "no")
+          }
+        }
       } else {
         playerCore?.open(uri, headers, startPositionMs, autoPlay, isLive, externalSubtitles)
       }
@@ -652,6 +657,7 @@ class ExoPlayerPlugin :
         // mpv semantics mirrored on the libass overlay: anchor non-positioned ASS
         // events to the visible screen (Dart sets 'yes' for cover mode / zoom > 1)
         "sub-ass-force-margins" -> playerCore?.setAssForceMargins(value == "yes")
+        "force-seekable" -> playerCore?.setForceSeekable(value == "yes")
       }
     }
 
@@ -876,7 +882,7 @@ class ExoPlayerPlugin :
     // Load media at the same position
     val startSeconds = positionMs / 1000.0
     val options = mutableListOf<String>()
-    options.add("start=$startSeconds")
+    options.add(if (positionMs > 0L) "start=$startSeconds" else "start=none")
     headers?.forEach { (key, value) ->
       options.add("http-header-fields-append=$key: $value")
     }

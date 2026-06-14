@@ -193,6 +193,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
   private var pendingAudioRendererBounce: Boolean = false
   private val audioBounceTimeout = Runnable { completeAudioRendererBounce("audio-normalization bounce timeout") }
   private var lastSeekable: Boolean? = null
+  private var forceSeekable: Boolean = false
 
   @Volatile private var disposing: Boolean = false
   private var pendingStartPositionMs: Long = 0L
@@ -791,9 +792,8 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
     lastPosition = startPositionMs
     lastDuration = 0L
     lastBufferedPosition = 0L
-    delegate?.onPropertyChange("time-pos", startPositionMs / 1000.0)
-    delegate?.onPropertyChange("duration", 0.0)
-    delegate?.onPropertyChange("demuxer-cache-time", 0.0)
+    // Dart already seeds the visible timeline before open. Emitting native
+    // zeroes here races server-offset Plex transcode restarts back to 0:00.
     delegate?.onPropertyChange("eof-reached", false)
   }
 
@@ -805,8 +805,17 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
 
   private fun emitCurrentSeekable(force: Boolean = false) {
     val player = exoPlayer
-    val seekable = player?.isCurrentMediaItemSeekable == true && !currentMediaIsLive
+    val hasMedia = player?.currentMediaItem != null
+    val seekable = hasMedia &&
+      !currentMediaIsLive &&
+      (forceSeekable || player?.isCurrentMediaItemSeekable == true)
     emitSeekable(seekable, force)
+  }
+
+  fun setForceSeekable(force: Boolean) {
+    if (forceSeekable == force) return
+    forceSeekable = force
+    emitCurrentSeekable(force = true)
   }
 
   // Player.Listener
