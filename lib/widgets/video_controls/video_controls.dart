@@ -49,6 +49,7 @@ import '../../media/media_version.dart';
 import '../../screens/video_player_screen.dart';
 import '../../focus/key_event_utils.dart';
 import '../../services/keyboard_shortcuts_service.dart';
+import '../../services/device_adjustment_service.dart';
 import '../../services/scrub_preview_source.dart';
 import '../../services/settings_service.dart';
 import '../../utils/formatters.dart';
@@ -66,8 +67,10 @@ import '../../i18n/strings.g.dart';
 import '../../focus/input_mode_tracker.dart';
 import 'models/track_controls_state.dart';
 import 'widgets/double_tap_feedback.dart';
+import 'helpers/mobile_edge_adjustment_tracker.dart';
 import 'helpers/two_finger_double_tap_tracker.dart';
 import 'widgets/linux_keep_alive.dart';
+import 'widgets/mobile_edge_adjustment_indicator.dart';
 import 'widgets/mobile_skip_zones.dart';
 import 'widgets/skip_marker_button.dart';
 import 'widgets/track_chapter_controls.dart';
@@ -163,6 +166,8 @@ typedef PlaybackSourceChangeCallback =
       int? newAudioStreamId,
       int? newSubtitleStreamId,
     });
+
+typedef _EdgeAdjustmentIndicatorState = ({bool visible, MobileEdgeAdjustmentSide? side, double value});
 
 class PlexVideoControls extends StatefulWidget {
   final Player player;
@@ -377,7 +382,28 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
   Timer? _feedbackHideTimer; // Removes the skip pill after its fade-out completes
   Timer? _singleTapTimer; // Timer for delayed single-tap action (toggle controls)
   final TwoFingerDoubleTapTracker _twoFingerDoubleTapTracker = TwoFingerDoubleTapTracker();
+  final MobileEdgeAdjustmentTracker _edgeAdjustmentTracker = MobileEdgeAdjustmentTracker();
+  final DeviceAdjustmentService _deviceAdjustmentService = DeviceAdjustmentService.instance;
   DateTime? _suppressTouchTapUntil;
+  final ValueNotifier<_EdgeAdjustmentIndicatorState> _edgeAdjustmentIndicator = ValueNotifier((
+    visible: false,
+    side: null,
+    value: 0.0,
+  ));
+  double? _edgeAdjustmentStartValue;
+  bool _edgeAdjustmentWasActive = false;
+  MobileEdgeAdjustmentSide? _pendingEdgeAdjustmentSide;
+  double _pendingEdgeAdjustmentDelta = 0.0;
+  int? _pendingEdgeAdjustmentGeneration;
+  Future<double?>? _edgeAdjustmentBaselineFuture;
+  MobileEdgeAdjustmentSide? _edgeAdjustmentBaselineSide;
+  int _edgeAdjustmentBaselineGeneration = 0;
+  double? _lastKnownBrightness;
+  double? _lastKnownMediaVolume;
+  DateTime? _lastEdgeAdjustmentWriteAt;
+  double? _lastEdgeAdjustmentWriteValue;
+  Timer? _edgeAdjustmentIndicatorHideTimer;
+  Timer? _edgeAdjustmentIndicatorClearTimer;
   // Seek throttle
   late final Throttle _seekThrottle;
   // Current marker state
@@ -422,6 +448,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
   // PiP support
   bool _isPipSupported = false;
   final PipService _pipService = PipService();
+  AppLifecycleListener? _edgeAdjustmentLifecycleListener;
 
   @override
   void initState() {
@@ -469,6 +496,15 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
     _listenToPlayingState();
     _listenToCompleted();
     _checkPipSupport();
+    _deviceAdjustmentService.onResume = _refreshDeviceAdjustmentValues;
+    _deviceAdjustmentService.setRestoreSuppressed(_pipService.isPipActive.value);
+    _pipService.isPipActive.addListener(_onEdgeAdjustmentPipChanged);
+    _edgeAdjustmentLifecycleListener = AppLifecycleListener(
+      onResume: _refreshDeviceAdjustmentValues,
+      onShow: _refreshDeviceAdjustmentValues,
+      onHide: _cancelEdgeAdjustmentGesture,
+      onPause: _cancelEdgeAdjustmentGesture,
+    );
     // Add window listener for tracking fullscreen state (for button icon)
     if (PlatformDetector.isDesktopOS()) {
       if (Platform.isMacOS) {
@@ -497,6 +533,9 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
       _rateSubscription = widget.player.streams.rate.listen(_onRateChanged);
       _loadPlaybackExtras();
       _focusPlayPauseIfKeyboardMode();
+      if (PlatformDetector.isMobile(context) && !PlatformDetector.isTV()) {
+        _refreshDeviceAdjustmentValues();
+      }
     });
   }
 
@@ -538,10 +577,20 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
     _feedbackTimer?.cancel();
     _feedbackHideTimer?.cancel();
     _lockIconTimer?.cancel();
+    _edgeAdjustmentIndicatorHideTimer?.cancel();
+    _edgeAdjustmentIndicatorClearTimer?.cancel();
+    _edgeAdjustmentLifecycleListener?.dispose();
+    _edgeAdjustmentLifecycleListener = null;
     _autoSkipTimer?.cancel();
     _skipButtonDismissTimer?.cancel();
     _singleTapTimer?.cancel();
     _seekThrottle.cancel();
+    _edgeAdjustmentTracker.cancel();
+    _edgeAdjustmentIndicator.dispose();
+    _pipService.isPipActive.removeListener(_onEdgeAdjustmentPipChanged);
+    _deviceAdjustmentService.onResume = null;
+    _deviceAdjustmentService.setRestoreSuppressed(false);
+    unawaited(_deviceAdjustmentService.restoreBrightness());
     // A player exit mid-scrub must not leak the hold into the route teardown.
     widget.chromeController.release(PlayerChromeHold.scrub, notify: false, restartAutoHide: false);
     _playingSubscription?.cancel();
@@ -578,6 +627,12 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
       _isFullscreen = isFullscreen;
     });
     _updateTrafficLightVisibility();
+  }
+
+  void _onEdgeAdjustmentPipChanged() {
+    final isInPip = _pipService.isPipActive.value;
+    _deviceAdjustmentService.setRestoreSuppressed(isInPip);
+    if (isInPip) _cancelEdgeAdjustmentGesture();
   }
 
   @override
@@ -778,6 +833,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
                                                     widget.chromeController.setContentStripVisible(false);
                                                   }
                                                 },
+                                                isInEdgeAdjustmentZone: _isGlobalPositionInEdgeAdjustmentZone,
                                               );
                                             },
                                           ),
@@ -827,6 +883,29 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
                       ),
                     ),
                   ),
+                  if (isMobile)
+                    Positioned.fill(
+                      child: IgnorePointer(
+                        child: ValueListenableBuilder<_EdgeAdjustmentIndicatorState>(
+                          valueListenable: _edgeAdjustmentIndicator,
+                          builder: (context, indicator, _) {
+                            final side = indicator.side;
+                            if (side == null) return const SizedBox.shrink();
+                            return AnimatedOpacity(
+                              opacity: indicator.visible ? 1.0 : 0.0,
+                              duration: const Duration(milliseconds: 160),
+                              child: RepaintBoundary(
+                                child: MobileEdgeAdjustmentIndicator(
+                                  key: ValueKey(side),
+                                  side: side,
+                                  value: indicator.value,
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                    ),
                   // Skip intro/credits button (auto-dismisses after 7s, then only shows with controls)
                   if (shouldShowSkipMarkerButton(
                     hasFirstFrame: _hasRenderedFirstFrame,
