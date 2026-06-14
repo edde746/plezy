@@ -177,7 +177,7 @@ void main() {
     expect((selectedItemContainer.decoration as BoxDecoration?)?.color, isNull);
   });
 
-  testWidgets('expanded TV rail keeps its surface transparent', (tester) async {
+  testWidgets('expanded TV rail draws an opaque surface', (tester) async {
     TvDetectionService.debugSetAppleTVOverride(true);
     addTearDown(() => TvDetectionService.debugSetAppleTVOverride(null));
     await SettingsService.getInstance();
@@ -227,7 +227,7 @@ void main() {
           find.descendant(of: find.byType(SideNavigationRail), matching: find.byType(AnimatedOpacity)),
         )
         .singleWhere((widget) => widget.child is ColoredBox);
-    expect(surfaceOpacity.opacity, 0.0);
+    expect(surfaceOpacity.opacity, 1.0);
   });
 
   testWidgets('expanded rail keeps selected background outside sidebar keyboard focus', (tester) async {

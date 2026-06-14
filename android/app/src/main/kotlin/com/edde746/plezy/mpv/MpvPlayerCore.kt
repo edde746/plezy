@@ -813,6 +813,11 @@ class MpvPlayerCore(private val activity: Activity) : SurfaceHolder.Callback {
     check(Looper.myLooper() == Looper.getMainLooper())
     Log.d(TAG, "Disposing")
 
+    surfaceContainer?.let { container ->
+      container.visibility = View.INVISIBLE
+      Log.d(TAG, "Hiding surface container during dispose")
+    }
+
     handler.removeCallbacksAndMessages(null)
 
     // Clean up frame rate and audio focus.

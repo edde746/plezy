@@ -1057,6 +1057,32 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   /// latch, MediaSession pause-suppression window) — see [FrameRateMatcher].
   final FrameRateMatcher _frameRate = FrameRateMatcher();
 
+  Future<Duration?> _pauseAndHidePlayerForRouteExit() async {
+    final currentPlayer = player;
+    if (currentPlayer == null || !_isPlayerInitialized) return null;
+
+    final exitPosition = currentPlayer.state.position;
+    if (currentPlayer.state.isActive) {
+      try {
+        await currentPlayer.pause();
+      } catch (e, st) {
+        appLogger.w('Failed to pause player during route exit', error: e, stackTrace: st);
+      }
+    }
+
+    if (!mounted || currentPlayer != player) return exitPosition;
+
+    if (Platform.isAndroid && PlatformDetector.isTV()) {
+      try {
+        await currentPlayer.setVisible(false);
+      } catch (e, st) {
+        appLogger.w('Failed to hide Android TV player surface during route exit', error: e, stackTrace: st);
+      }
+    }
+
+    return exitPosition;
+  }
+
   /// Handle back button press
   /// For non-host participants in Watch Together, shows leave session confirmation
   Future<void> _handleBackButton() async {
@@ -1079,7 +1105,10 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
             final navigator = Navigator.of(context);
             if (navigator.canPop()) {
               _isExiting.value = true;
-              await _sendStoppedProgressOnce();
+              final exitPosition = await _pauseAndHidePlayerForRouteExit();
+              if (!mounted) return;
+              await _sendStoppedProgressOnce(positionOverride: exitPosition);
+              if (!mounted) return;
               await _restoreSystemUiAndOrientation();
               if (!mounted) return;
               navigator.pop(true);
@@ -1094,7 +1123,10 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       final navigator = Navigator.of(context);
       if (navigator.canPop()) {
         _isExiting.value = true;
-        await _sendStoppedProgressOnce();
+        final exitPosition = await _pauseAndHidePlayerForRouteExit();
+        if (!mounted) return;
+        await _sendStoppedProgressOnce(positionOverride: exitPosition);
+        if (!mounted) return;
         await _restoreSystemUiAndOrientation();
         if (!mounted) return;
         navigator.pop(true);

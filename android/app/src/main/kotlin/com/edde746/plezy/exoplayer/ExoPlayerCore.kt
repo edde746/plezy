@@ -3294,6 +3294,11 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
     check(Looper.myLooper() == Looper.getMainLooper())
     Log.d(TAG, "Disposing")
 
+    surfaceContainer?.let { container ->
+      container.visibility = View.INVISIBLE
+      Log.d(TAG, "Hiding surface container during dispose")
+    }
+
     stopFrameWatchdog()
     cancelDecoderHangCheck()
     stopPositionUpdates()
