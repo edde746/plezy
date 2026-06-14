@@ -169,14 +169,15 @@ class _UseExternalPlayerPref extends Pref<bool> {
   Future<void> writeTo(BaseSharedPreferencesService svc, bool value) => svc.writeBool(key, value);
 }
 
-/// Defaults to on for Apple TV, where passthrough is what gets Dolby Digital
-/// (Plus) / Atmos to the receiver; opt-in everywhere else.
+/// Experimental Dolby passthrough. Keep opt-in everywhere, including Apple TV,
+/// until the AVFoundation EAC3 path is verified across real receiver setups.
 class _AudioPassthroughPref extends Pref<bool> {
   const _AudioPassthroughPref() : super('audio_passthrough');
 
   @override
   bool readFrom(BaseSharedPreferencesService svc) {
-    return svc.prefs.getBool(key) ?? PlatformDetector.isAppleTV();
+    // TODO: Default Apple TV to on once EAC3 passthrough is hardware-verified.
+    return svc.prefs.getBool(key) ?? false;
   }
 
   @override
