@@ -791,12 +791,10 @@ class MainActivity : FlutterActivity() {
     audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, target, 0)
   }
 
-  private fun streamMinVolume(audioManager: AudioManager): Int {
-    return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-      audioManager.getStreamMinVolume(AudioManager.STREAM_MUSIC)
-    } else {
-      0
-    }
+  private fun streamMinVolume(audioManager: AudioManager): Int = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+    audioManager.getStreamMinVolume(AudioManager.STREAM_MUSIC)
+  } else {
+    0
   }
 
   override fun onPictureInPictureModeChanged(isInPictureInPictureMode: Boolean, newConfig: Configuration) {

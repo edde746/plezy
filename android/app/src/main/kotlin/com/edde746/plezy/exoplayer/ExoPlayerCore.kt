@@ -113,6 +113,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
     private var assGlCrashHandlerInstalled = false
 
     @Volatile private var cronetEngine: CronetEngine? = null
+
     @Volatile private var cronetUnavailable = false
     private fun getCronetEngine(context: Context): CronetEngine? {
       cronetEngine?.let { return it }

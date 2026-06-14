@@ -75,7 +75,9 @@ import MediaPlayer
       if setMediaVolume(value) {
         result(nil)
       } else {
-        result(FlutterError(code: "DEVICE_ADJUSTMENT_UNAVAILABLE", message: "System volume slider unavailable", details: nil))
+        result(
+          FlutterError(code: "DEVICE_ADJUSTMENT_UNAVAILABLE", message: "System volume slider unavailable", details: nil)
+        )
       }
     default:
       result(FlutterMethodNotImplemented)
