@@ -37,6 +37,8 @@ class MobileVideoControls extends StatefulWidget {
   final Widget trackChapterControls;
   final Function(Duration) onSeek;
   final Function(Duration) onSeekEnd;
+  final VoidCallback? onScrubStart;
+  final VoidCallback? onScrubEnd;
   final Future<void> Function(Duration position)? onSeekRequested;
   final Function(Duration)? onSeekCompleted;
   final VoidCallback onPlayPause;
@@ -96,6 +98,8 @@ class MobileVideoControls extends StatefulWidget {
     required this.trackChapterControls,
     required this.onSeek,
     required this.onSeekEnd,
+    this.onScrubStart,
+    this.onScrubEnd,
     required this.onPlayPause,
     this.onSeekRequested,
     this.onSeekCompleted,
@@ -453,6 +457,8 @@ class _MobileVideoControlsState extends State<MobileVideoControls> with SingleTi
           showChapterMarkersOnTimeline: widget.showChapterMarkersOnTimeline,
           onSeek: widget.onSeek,
           onSeekEnd: widget.onSeekEnd,
+          onScrubStart: widget.onScrubStart,
+          onScrubEnd: widget.onScrubEnd,
           horizontalLayout: false,
           enabled: widget.canControl,
           showFinishTime: true,

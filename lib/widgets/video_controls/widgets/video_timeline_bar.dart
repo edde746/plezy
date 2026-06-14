@@ -18,6 +18,8 @@ class VideoTimelineBar extends StatelessWidget {
   final bool showChapterMarkersOnTimeline;
   final ValueChanged<Duration> onSeek;
   final ValueChanged<Duration> onSeekEnd;
+  final VoidCallback? onScrubStart;
+  final VoidCallback? onScrubEnd;
 
   /// If true, timestamps are shown in a row beside the slider (desktop layout).
   /// If false, timestamps are shown in a row below the slider (mobile layout).
@@ -53,6 +55,8 @@ class VideoTimelineBar extends StatelessWidget {
     this.showChapterMarkersOnTimeline = true,
     required this.onSeek,
     required this.onSeekEnd,
+    this.onScrubStart,
+    this.onScrubEnd,
     this.horizontalLayout = true,
     this.focusNode,
     this.onKeyEvent,
@@ -166,6 +170,8 @@ class VideoTimelineBar extends StatelessWidget {
       showChapterMarkersOnTimeline: showChapterMarkersOnTimeline,
       onSeek: onSeek,
       onSeekEnd: onSeekEnd,
+      onScrubStart: onScrubStart,
+      onScrubEnd: onScrubEnd,
       focusNode: focusNode,
       onKeyEvent: onKeyEvent,
       onFocusChange: onFocusChange,

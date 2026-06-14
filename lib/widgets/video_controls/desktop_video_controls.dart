@@ -44,6 +44,8 @@ class DesktopVideoControls extends StatefulWidget {
   final VoidCallback? onSeekForward;
   final ValueChanged<Duration> onSeek;
   final ValueChanged<Duration> onSeekEnd;
+  final VoidCallback? onScrubStart;
+  final VoidCallback? onScrubEnd;
   final IconData Function(int) getReplayIcon;
   final IconData Function(int) getForwardIcon;
 
@@ -122,6 +124,8 @@ class DesktopVideoControls extends StatefulWidget {
     this.onSeekForward,
     required this.onSeek,
     required this.onSeekEnd,
+    this.onScrubStart,
+    this.onScrubEnd,
     required this.getReplayIcon,
     required this.getForwardIcon,
     this.onFocusActivity,
@@ -717,6 +721,8 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
               showChapterMarkersOnTimeline: widget.showChapterMarkersOnTimeline,
               onSeek: widget.onSeek,
               onSeekEnd: widget.onSeekEnd,
+              onScrubStart: widget.onScrubStart,
+              onScrubEnd: widget.onScrubEnd,
               horizontalLayout: true,
               focusNode: _timelineFocusNode,
               onKeyEvent: _handleTimelineKeyEvent,

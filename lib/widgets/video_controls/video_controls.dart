@@ -802,6 +802,8 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
                                                 ),
                                                 onSeek: _throttledSeek,
                                                 onSeekEnd: _finalizeSeek,
+                                                onScrubStart: _holdTimelineScrub,
+                                                onScrubEnd: _releaseTimelineScrub,
                                                 onSeekRequested: widget.onSeekRequested,
                                                 onSeekCompleted: widget.onSeekCompleted,
                                                 // ignore: no-empty-block - play/pause handled by parent VideoControlsState
