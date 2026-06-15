@@ -97,16 +97,18 @@ extension _VideoPlayerPlaybackPromptMethods on VideoPlayerScreenState {
   }
 
   void _cancelAutoPlay() {
+    // Cancel the countdown first: _handleBackButton is async (pause, stopped
+    // report, UI restore before pop), and a live timer could otherwise fire
+    // _playNext() mid-teardown and load the next episode while we're leaving.
     _autoPlayTimer?.cancel();
     _unfocusPlayNextPrompt();
-    _progressTracker?.resumeAfterStoppedReport();
-    // Keep _completionTriggered set: playback is still parked inside the
-    // end-of-video window, so clearing it here would let the position listener
-    // re-fire this prompt on the next tick. It is re-armed once playback seeks
-    // back clear of the end region (see the position listener) or new media loads.
+    // Hide the overlay so it doesn't linger during the async route exit.
     _setPlayerState(() {
       _showPlayNextDialog = false;
     });
+    // Return to the show view (episode selection): pop the player route, the
+    // same exit path used when an episode finishes with nothing left to play.
+    unawaited(_handleBackButton());
   }
 
   /// Re-arm the end-of-video latch so Play Next can fire again. Callers
