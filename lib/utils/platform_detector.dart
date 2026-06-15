@@ -210,6 +210,11 @@ class PlatformDetector {
     return Platform.isAndroid || Platform.isIOS || Platform.isMacOS || Platform.isLinux || Platform.isWindows;
   }
 
+  static bool supportsAudioPassthrough() {
+    if (TvDetectionService._tvosBuild || isAppleTV()) return false;
+    return isDesktopOS() || (Platform.isAndroid && isTV());
+  }
+
   static bool supportsPictureInPicture() {
     return !TvDetectionService._tvosBuild && !isTV() && (Platform.isAndroid || Platform.isIOS || Platform.isMacOS);
   }

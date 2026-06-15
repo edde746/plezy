@@ -88,6 +88,14 @@ void main() {
   });
 
   group('SettingsService platform gates', () {
+    test('audio passthrough stays available on desktop but not Apple TV', () {
+      expect(PlatformDetector.supportsAudioPassthrough(), isTrue);
+
+      TvDetectionService.debugSetAppleTVOverride(true);
+
+      expect(PlatformDetector.supportsAudioPassthrough(), isFalse);
+    });
+
     test('forces external player off on Apple TV even when stored enabled', () async {
       final settings = await SettingsService.getInstance();
       await settings.write(SettingsService.useExternalPlayer, true);
