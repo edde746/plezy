@@ -32,6 +32,135 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
     );
   }
 
+  Future<void> _markFirstFrameReady(Player currentPlayer, SettingsService settingsService) async {
+    if (!mounted || player != currentPlayer || _hasFirstFrame.value) return;
+
+    _hasFirstFrame.value = true;
+    unawaited(Sentry.addBreadcrumb(Breadcrumb(message: 'First frame ready', category: 'player')));
+
+    if (Platform.isAndroid && settingsService.read(SettingsService.matchContentFrameRate)) {
+      await _applyFrameRateMatching();
+    }
+
+    if (Platform.isWindows && _displayModeService != null) {
+      await _applyWindowsDisplayMatching();
+    }
+  }
+
+  Future<void> _wirePlayerStreams({
+    required Player currentPlayer,
+    required SettingsService settingsService,
+    required bool useExoPlayer,
+  }) async {
+    await Future.wait<void>([
+      if (_playingSubscription != null) _playingSubscription!.cancel(),
+      if (_completedSubscription != null) _completedSubscription!.cancel(),
+      if (_errorSubscription != null) _errorSubscription!.cancel(),
+      if (_logSubscription != null) _logSubscription!.cancel(),
+      if (_backendSwitchedSubscription != null) _backendSwitchedSubscription!.cancel(),
+      if (_bufferingSubscription != null) _bufferingSubscription!.cancel(),
+      if (_serverStatusSubscription != null) _serverStatusSubscription!.cancel(),
+      if (_playbackRestartSubscription != null) _playbackRestartSubscription!.cancel(),
+      if (_positionSubscription != null) _positionSubscription!.cancel(),
+    ]);
+    if (!mounted || player != currentPlayer) return;
+
+    _playingSubscription = currentPlayer.streams.playing.listen(_onPlayingStateChanged);
+
+    _completedSubscription = currentPlayer.streams.completed.listen((done) {
+      // completed=false means a file (re)loaded after a reconnect-seek or fresh
+      // open — re-arm the end-of-video latch so the real EOF can still show Play
+      // Next. But only when playback is clear of the end region: a stray
+      // completed=false while parked at EOF must NOT re-arm, or the position
+      // listener would immediately re-fire the Play Next prompt.
+      if (!done) {
+        final durMs = currentPlayer.state.duration.inMilliseconds;
+        final posMs = currentPlayer.state.position.inMilliseconds;
+        if (durMs <= 0 || posMs < durMs - _completionLatch.rearmWindowMs) {
+          _rearmCompletionLatch();
+        }
+      }
+      _onVideoCompleted(done);
+    });
+
+    _errorSubscription = currentPlayer.streams.error.listen(_onPlayerError);
+
+    // warn is included so we can catch ffmpeg's "HTTP error 500" line in
+    // _onPlayerLog — the error-level log that follows omits the status code.
+    _logSubscription = currentPlayer.streams.log
+        .where((log) => const {PlayerLogLevel.fatal, PlayerLogLevel.error, PlayerLogLevel.warn}.contains(log.level))
+        .listen(_onPlayerLog);
+
+    if (Platform.isAndroid && useExoPlayer) {
+      _backendSwitchedSubscription = currentPlayer.streams.backendSwitched.listen((_) => _onBackendSwitched());
+    }
+
+    _bufferingSubscription = currentPlayer.streams.buffering.listen((isBuffering) {
+      _isBuffering.value = isBuffering;
+    });
+
+    // When server comes back online while buffering, force mpv to reconnect
+    // immediately instead of waiting for ffmpeg's exponential backoff.
+    if (!_isOfflinePlayback && !widget.isLive) {
+      final serverId = _currentMetadata.serverId;
+      if (serverId != null) {
+        final serverManager = context.read<MultiServerProvider>().serverManager;
+        bool wasOffline = false;
+        _serverStatusSubscription = serverManager.statusStream.listen((statusMap) {
+          final isOnline = statusMap[serverId] == true;
+          if (!isOnline) {
+            wasOffline = true;
+          } else if (wasOffline && _isBuffering.value) {
+            wasOffline = false;
+            _forceStreamReconnect();
+          }
+        });
+      }
+    }
+
+    _playbackRestartSubscription = currentPlayer.streams.playbackRestart.listen((_) async {
+      if (!mounted || player != currentPlayer) return;
+      _lastLogError = null;
+      _sawServer500 = false;
+      _live.fallbackLevel = 0;
+      final markFirstFrameReady = _markFirstFrameReady(currentPlayer, settingsService);
+      _trackManager?.onPlaybackRestart();
+      await markFirstFrameReady;
+    });
+
+    int? lastObservedPositionMs;
+    _positionSubscription = currentPlayer.streams.position.listen((position) {
+      final activePlayer = player;
+      if (activePlayer == null || activePlayer != currentPlayer) return;
+
+      // Fallback for cases where playbackRestart doesn't fire (observed on
+      // some offline Android playback flows). Prevents a permanent loading
+      // spinner. Checking `position > 0` was broken for resume playback —
+      // the native layer sets position to the resume offset before the first
+      // frame renders, so the fallback tripped immediately. Requiring a
+      // position *change* ensures we only fire when playback is advancing.
+      if (!_hasFirstFrame.value) {
+        if (lastObservedPositionMs != null && position.inMilliseconds != lastObservedPositionMs) {
+          unawaited(_markFirstFrameReady(currentPlayer, settingsService));
+        }
+        lastObservedPositionMs = position.inMilliseconds;
+      }
+
+      final duration = activePlayer.state.duration;
+      final signal = _completionLatch.classifyPosition(
+        positionMs: position.inMilliseconds,
+        durationMs: duration.inMilliseconds,
+        promptVisible: _showPlayNextDialog,
+        countdownActive: _autoPlayTimer?.isActive == true,
+      );
+      if (signal == CompletionLatchSignal.completed) {
+        _onVideoCompleted(true);
+      }
+      // CompletionLatchSignal.rearmed needs no action here: the latch
+      // re-armed itself once playback seeked back out of the end region.
+    });
+  }
+
   /// Wire the per-item playback services that need to (re)bind whenever
   /// the active media item changes: [PlaybackProgressTracker],
   /// [MediaControlsManager.updateMetadata], and the
