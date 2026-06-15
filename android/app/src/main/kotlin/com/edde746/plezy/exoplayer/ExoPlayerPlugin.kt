@@ -169,6 +169,7 @@ class ExoPlayerPlugin :
       "setVideoZoom" -> handleSetVideoZoom(call, result)
       "setDvConversionMode" -> handleSetDvConversionMode(call, result)
       "setAudioNormalization" -> handleSetAudioNormalization(call, result)
+      "setAudioPassthrough" -> handleSetAudioPassthrough(call, result)
       "observeProperty" -> handleObserveProperty(call, result)
       "setMpvProperty" -> handleSetMpvProperty(call, result)
       "setLogLevel" -> {
@@ -201,6 +202,7 @@ class ExoPlayerPlugin :
     val bufferSizeBytes = call.argument<Int>("bufferSizeBytes")
     val tunnelingEnabled = call.argument<Boolean>("tunnelingEnabled") ?: true
     val dvConversionMode = call.argument<String>("dvConversionMode") ?: "auto"
+    val audioPassthroughEnabled = call.argument<Boolean>("audioPassthroughEnabled") ?: false
     configuredBufferSizeBytes = bufferSizeBytes
 
     currentActivity.runOnUiThread {
@@ -224,7 +226,8 @@ class ExoPlayerPlugin :
         }
         val success = playerCore?.initialize(
           bufferSizeBytes = bufferSizeBytes,
-          tunnelingEnabled = tunnelingEnabled
+          tunnelingEnabled = tunnelingEnabled,
+          audioPassthroughEnabled = audioPassthroughEnabled
         ) ?: false
         if (success && playerCore?.setDebugDvConversionMode(dvConversionMode) != true) {
           Log.w(TAG, "Invalid DV conversion mode during initialize: $dvConversionMode")
@@ -643,6 +646,25 @@ class ExoPlayerPlugin :
     }
     activity?.runOnUiThread {
       playerCore?.setAudioNormalization(enabled)
+      result.success(true)
+    } ?: result.error("NO_ACTIVITY", "Activity not available", null)
+  }
+
+  private fun handleSetAudioPassthrough(call: MethodCall, result: MethodChannel.Result) {
+    val enabled = call.argument<Boolean>("enabled")
+    if (enabled == null) {
+      result.error("INVALID_ARGS", "Missing 'enabled'", null)
+      return
+    }
+    val audioSpdif = if (enabled) "ac3,eac3,dts,dts-hd,truehd" else ""
+    pendingMpvProperties["audio-spdif"] = audioSpdif
+    if (usingMpvFallback) {
+      mpvCore?.setProperty("audio-spdif", audioSpdif)
+      result.success(true)
+      return
+    }
+    activity?.runOnUiThread {
+      playerCore?.setAudioPassthrough(enabled)
       result.success(true)
     } ?: result.error("NO_ACTIVITY", "Activity not available", null)
   }

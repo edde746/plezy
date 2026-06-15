@@ -13,6 +13,9 @@ class PlayerAndroid extends PlayerBase {
   bool _tunnelingEnabled = true;
   String _dvConversionMode = 'auto';
   bool _audioNormalizationEnabled = false;
+  bool _audioPassthroughEnabled = false;
+
+  static const String _passthroughCodecs = 'ac3,eac3,dts,dts-hd,truehd';
 
   /// The native plugin switched from ExoPlayer to its mpv fallback for this
   /// session. Sticky for the instance lifetime, mirroring the native flag
@@ -56,6 +59,9 @@ class PlayerAndroid extends PlayerBase {
   bool get providesNativeStats => true;
 
   @override
+  bool get audioPassthroughActive => _audioPassthroughEnabled;
+
+  @override
   void handlePlayerEvent(String name, Map? data) {
     if (name == 'backend-switched') {
       // Native player switched from ExoPlayer to MPV due to unsupported format.
@@ -88,6 +94,7 @@ class PlayerAndroid extends PlayerBase {
         'bufferSizeBytes': _bufferSizeBytes,
         'tunnelingEnabled': _tunnelingEnabled,
         'dvConversionMode': _dvConversionMode,
+        'audioPassthroughEnabled': _audioPassthroughEnabled,
       });
       if (result != true) {
         throw Exception('Failed to initialize ExoPlayer');
@@ -278,6 +285,22 @@ class PlayerAndroid extends PlayerBase {
     // Keep the mpv af property flowing through setMpvProperty so the plugin's
     // pendingMpvProperties replay applies loudnorm if exo falls back to mpv.
     await super.setAudioNormalization(enabled);
+  }
+
+  @override
+  Future<void> setAudioPassthrough(bool enabled) async {
+    if (disposed) return;
+    _audioPassthroughEnabled = enabled;
+    final initFuture = _initFuture;
+    if (initialized) {
+      await invoke('setAudioPassthrough', {'enabled': enabled});
+    } else if (initFuture != null) {
+      await initFuture;
+      if (!disposed && initialized && _audioPassthroughEnabled == enabled) {
+        await invoke('setAudioPassthrough', {'enabled': enabled});
+      }
+    }
+    await setProperty('audio-spdif', enabled ? _passthroughCodecs : '');
   }
 
   @override
