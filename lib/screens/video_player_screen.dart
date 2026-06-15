@@ -825,12 +825,9 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
         );
       }
 
-      // Audio passthrough (desktop bitstreams to the receiver; Apple TV
-      // hands compressed AC3/EAC3 to the system for Dolby/Atmos output)
-      if (PlatformDetector.isDesktopOS() || PlatformDetector.isAppleTV()) {
-        if (settingsService.read(SettingsService.audioPassthrough)) {
-          await currentPlayer.setAudioPassthrough(true);
-        }
+      // Audio passthrough (desktop and Android TV; disabled on tvOS)
+      if (PlatformDetector.supportsAudioPassthrough()) {
+        await currentPlayer.setAudioPassthrough(settingsService.read(SettingsService.audioPassthrough));
       }
 
       // HDR is controlled via custom hdr-enabled property on iOS/macOS/Windows
