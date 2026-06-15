@@ -188,10 +188,11 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
   // Loudness normalization (#1289): audiofx effects only process non-tunneled
   // PCM mixer streams, so while enabled we block direct/bitstream output and
   // disable tunneling.
+  private var audioPassthroughEnabled: Boolean = false
   private var audioNormalizationEnabled: Boolean = false
   private val audioNormalization = AudioNormalizationEffect(::emitLog)
   private var pendingAudioRendererBounce: Boolean = false
-  private val audioBounceTimeout = Runnable { completeAudioRendererBounce("audio-normalization bounce timeout") }
+  private val audioBounceTimeout = Runnable { completeAudioRendererBounce("audio renderer bounce timeout") }
   private var lastSeekable: Boolean? = null
   private var forceSeekable: Boolean = false
 
@@ -370,13 +371,18 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
     return decision.mode
   }
 
-  fun initialize(bufferSizeBytes: Int? = null, tunnelingEnabled: Boolean = true): Boolean {
+  fun initialize(
+    bufferSizeBytes: Int? = null,
+    tunnelingEnabled: Boolean = true,
+    audioPassthroughEnabled: Boolean = false
+  ): Boolean {
     if (isInitialized) {
       Log.d(TAG, "Already initialized")
       return true
     }
 
     tunnelingUserEnabled = tunnelingEnabled
+    this.audioPassthroughEnabled = audioPassthroughEnabled
     this.dvMode = getConfiguredDvMode()
     DoviBridge.logSupportSummary(activity)
     Log.i(
@@ -1840,6 +1846,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
     val mimeType = format.sampleMimeType ?: return false
     // Loudness normalization needs decoded PCM for the audiofx chain to act on.
     if (audioNormalizationEnabled && isEncodedAudioMimeType(mimeType)) return true
+    if (shouldBlockDirectOutputForPassthrough(mimeType, audioPassthroughEnabled)) return true
     if (directAudioOutputBlockedAfterFailure.contains(mimeType)) {
       if (loggedDirectAudioRecoveryBlocks.add("$mimeType|$reason")) {
         emitLog(
@@ -2720,6 +2727,25 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
     }
   }
 
+  fun setAudioPassthrough(enabled: Boolean) {
+    if (audioPassthroughEnabled == enabled) return
+    audioPassthroughEnabled = enabled
+    emitLog("info", "audio", "Audio passthrough ${if (enabled) "enabled" else "disabled"}")
+
+    if (exoPlayer == null) return
+    val outputEncoding = lastAudioTrackConfig?.encoding
+    val selectedMime = selectedAudioFormat()?.sampleMimeType
+    val needsBounce = outputEncoding != null &&
+      selectedMime != null &&
+      isPassthroughAudioMimeType(selectedMime) &&
+      (if (enabled) isPcmEncoding(outputEncoding) else !isPcmEncoding(outputEncoding))
+    if (needsBounce) {
+      startAudioRendererBounce("audio-passthrough")
+    } else {
+      updateTunnelingState("audio-passthrough")
+    }
+  }
+
   private fun attachNormalizationEffect() {
     val sessionId = exoPlayer?.audioSessionId ?: C.AUDIO_SESSION_ID_UNSET
     if (sessionId == C.AUDIO_SESSION_ID_UNSET) {
@@ -2737,7 +2763,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
   private fun startAudioRendererBounce(reason: String) {
     if (pendingAudioRendererBounce) return
     pendingAudioRendererBounce = true
-    emitLog("info", "audio-normalization", "Bouncing audio renderer to re-evaluate output path (reason=$reason)")
+    emitLog("info", "audio", "Bouncing audio renderer to re-evaluate output path (reason=$reason)")
     applyTrackSelectorPolicy(reason = "$reason (audio renderer off)", audioDisabled = true)
     handler.postDelayed(audioBounceTimeout, AUDIO_BOUNCE_TIMEOUT_MS)
   }
