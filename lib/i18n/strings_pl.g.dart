@@ -730,6 +730,9 @@ class _TranslationsSubtitlingStylingPl extends TranslationsSubtitlingStylingEn {
 	@override String get assOverride => 'Nadpisywanie ASS';
 	@override String get bold => 'Pogrubienie';
 	@override String get italic => 'Kursywa';
+	@override String get renderResolution => 'Rozdzielczość renderowania';
+	@override String get renderResolutionScreen => 'Rozdzielczość ekranu';
+	@override String get renderResolutionVideo => 'Rozdzielczość wideo';
 }
 
 // Path: mpvConfig
@@ -1406,6 +1409,7 @@ class _TranslationsPerformanceOverlayPl extends TranslationsPerformanceOverlayEn
 	@override String get maxCll => 'MaxCLL';
 	@override String get maxFall => 'MaxFALL';
 	@override String get cacheUsed => 'Użyty cache';
+	@override String get cacheLimit => 'Limit cache\'u';
 	@override String get speed => 'Szybkość';
 	@override String get player => 'Odtwarzacz';
 	@override String get memory => 'Pamięć';
@@ -2441,6 +2445,9 @@ extension on TranslationsPl {
 			'subtitlingStyling.assOverride' => 'Nadpisywanie ASS',
 			'subtitlingStyling.bold' => 'Pogrubienie',
 			'subtitlingStyling.italic' => 'Kursywa',
+			'subtitlingStyling.renderResolution' => 'Rozdzielczość renderowania',
+			'subtitlingStyling.renderResolutionScreen' => 'Rozdzielczość ekranu',
+			'subtitlingStyling.renderResolutionVideo' => 'Rozdzielczość wideo',
 			'mpvConfig.title' => 'mpv.conf',
 			'mpvConfig.description' => 'Zaawansowane ustawienia odtwarzacza wideo',
 			'mpvConfig.presets' => 'Presety',
@@ -2940,11 +2947,11 @@ extension on TranslationsPl {
 			'companionRemote.remote.retryNow' => 'Ponów teraz',
 			'companionRemote.remote.tabRemote' => 'Pilot',
 			'companionRemote.remote.tabPlay' => 'Odtwórz',
+			_ => null,
+		} ?? switch (path) {
 			'companionRemote.remote.tabMore' => 'Więcej',
 			'companionRemote.remote.menu' => 'Menu',
 			'companionRemote.remote.tabNavigation' => 'Nawigacja',
-			_ => null,
-		} ?? switch (path) {
 			'companionRemote.remote.tabDiscover' => 'Odkryj',
 			'companionRemote.remote.tabLibraries' => 'Biblioteki',
 			'companionRemote.remote.tabSearch' => 'Szukaj',
@@ -3009,6 +3016,7 @@ extension on TranslationsPl {
 			'performanceOverlay.maxCll' => 'MaxCLL',
 			'performanceOverlay.maxFall' => 'MaxFALL',
 			'performanceOverlay.cacheUsed' => 'Użyty cache',
+			'performanceOverlay.cacheLimit' => 'Limit cache\'u',
 			'performanceOverlay.speed' => 'Szybkość',
 			'performanceOverlay.player' => 'Odtwarzacz',
 			'performanceOverlay.memory' => 'Pamięć',

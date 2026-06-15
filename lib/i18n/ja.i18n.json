@@ -557,7 +557,10 @@
     "position": "位置",
     "assOverride": "ASSオーバーライド",
     "bold": "太字",
-    "italic": "斜体"
+    "italic": "斜体",
+    "renderResolution": "レンダリング解像度",
+    "renderResolutionScreen": "画面解像度",
+    "renderResolutionVideo": "動画解像度"
   },
   "mpvConfig": {
     "title": "mpv.conf",
@@ -1184,6 +1187,7 @@
     "maxCll": "MaxCLL",
     "maxFall": "MaxFALL",
     "cacheUsed": "使用キャッシュ",
+    "cacheLimit": "キャッシュ上限",
     "speed": "速度",
     "player": "プレーヤー",
     "memory": "メモリ",

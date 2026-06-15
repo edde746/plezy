@@ -84,14 +84,11 @@ extension _PlexVideoControlsPlaybackInputMethods on _PlexVideoControlsState {
       final clamped = clampSeekPosition(widget.player, target);
       await (widget.onSeekRequested ?? widget.player.seek)(clamped);
     }
-    await widget.player.playOrPause();
+    await (widget.onPlayPauseRequested ?? widget.player.playOrPause)();
   }
 
   /// Throttled seek for timeline slider - executes immediately then throttles to 200ms
   void _throttledSeek(Duration position) {
-    // Hold before the transcoding early-return so a slow scrub never loses
-    // the controls to auto-hide mid-drag (idempotent while held).
-    widget.chromeController.hold(PlayerChromeHold.scrub);
     if (widget.isTranscoding) return;
     _seekThrottle([position]);
   }
@@ -100,6 +97,13 @@ extension _PlexVideoControlsPlaybackInputMethods on _PlexVideoControlsState {
   void _finalizeSeek(Duration position) {
     _seekThrottle.cancel();
     unawaited(_seekToPosition(position));
+  }
+
+  void _holdTimelineScrub() {
+    widget.chromeController.hold(PlayerChromeHold.scrub);
+  }
+
+  void _releaseTimelineScrub() {
     widget.chromeController.release(PlayerChromeHold.scrub);
   }
 
@@ -122,18 +126,44 @@ extension _PlexVideoControlsPlaybackInputMethods on _PlexVideoControlsState {
   void _handleTouchPointerDown(PointerDownEvent event) {
     if (event.kind != PointerDeviceKind.touch) return;
     _twoFingerDoubleTapTracker.pointerDown(event.pointer, event.position);
-    if (_twoFingerDoubleTapTracker.isChordActive) _suppressTouchTaps();
+    if (_twoFingerDoubleTapTracker.isChordActive) {
+      _suppressTouchTaps();
+      _cancelEdgeAdjustmentGesture();
+      return;
+    }
+    final hit = _edgeAdjustmentSurfaceHit(event.position);
+    _handleEdgeAdjustmentEvent(
+      _edgeAdjustmentGesturesAllowed && hit != null
+          ? _edgeAdjustmentTracker.pointerDown(event.pointer, hit.position, hit.size)
+          : const MobileEdgeAdjustmentEvent.none(),
+    );
   }
 
   void _handleTouchPointerMove(PointerMoveEvent event) {
     if (event.kind != PointerDeviceKind.touch) return;
     _twoFingerDoubleTapTracker.pointerMove(event.pointer, event.position);
-    if (_twoFingerDoubleTapTracker.isChordActive) _suppressTouchTaps();
+    if (_twoFingerDoubleTapTracker.isChordActive) {
+      _suppressTouchTaps();
+      _cancelEdgeAdjustmentGesture();
+      return;
+    }
+    if (!_edgeAdjustmentGesturesAllowed) {
+      _cancelEdgeAdjustmentGesture();
+      return;
+    }
+    final hit = _edgeAdjustmentSurfaceHit(event.position);
+    if (hit == null) {
+      _cancelEdgeAdjustmentGesture();
+      return;
+    }
+    _handleEdgeAdjustmentEvent(_edgeAdjustmentTracker.pointerMove(event.pointer, hit.position));
   }
 
   void _handleTouchPointerUp(PointerUpEvent event) {
     if (event.kind != PointerDeviceKind.touch) return;
     final isResetGesture = _twoFingerDoubleTapTracker.pointerUp(event.pointer, event.position);
+    final hit = _edgeAdjustmentSurfaceHit(event.position);
+    _handleEdgeAdjustmentEvent(_edgeAdjustmentTracker.pointerUp(event.pointer, hit?.position ?? event.localPosition));
     if (_isTouchTapSuppressed || isResetGesture) _suppressTouchTaps();
     if (isResetGesture) widget.onResetVideoZoom?.call();
   }
@@ -141,7 +171,223 @@ extension _PlexVideoControlsPlaybackInputMethods on _PlexVideoControlsState {
   void _handleTouchPointerCancel(PointerCancelEvent event) {
     if (event.kind != PointerDeviceKind.touch) return;
     _twoFingerDoubleTapTracker.pointerCancel(event.pointer);
+    _handleEdgeAdjustmentEvent(_edgeAdjustmentTracker.pointerCancel(event.pointer));
     if (_twoFingerDoubleTapTracker.isChordActive) _suppressTouchTaps();
+  }
+
+  bool get _edgeAdjustmentGesturesAllowed {
+    return PlatformDetector.isMobile(context) &&
+        !PlatformDetector.isTV() &&
+        !_isScreenLocked &&
+        !_pipService.isPipActive.value &&
+        !widget.chromeController.contentStripVisible;
+  }
+
+  ({Offset position, Size size})? _edgeAdjustmentSurfaceHit(Offset globalPosition) {
+    final renderObject = context.findRenderObject();
+    if (renderObject is! RenderBox) return null;
+    return (position: renderObject.globalToLocal(globalPosition), size: renderObject.size);
+  }
+
+  bool _isGlobalPositionInEdgeAdjustmentZone(Offset globalPosition) {
+    final hit = _edgeAdjustmentSurfaceHit(globalPosition);
+    if (hit == null) return false;
+    return mobileEdgeAdjustmentZoneForPosition(position: hit.position, size: hit.size) != null;
+  }
+
+  void _refreshDeviceAdjustmentValues() {
+    unawaited(_readEdgeAdjustmentValue(MobileEdgeAdjustmentSide.left));
+    unawaited(_readEdgeAdjustmentValue(MobileEdgeAdjustmentSide.right));
+  }
+
+  Future<double?> _readEdgeAdjustmentValue(MobileEdgeAdjustmentSide side) {
+    ++_edgeAdjustmentBaselineGeneration;
+    _edgeAdjustmentBaselineSide = side;
+    final read = side == MobileEdgeAdjustmentSide.left
+        ? _deviceAdjustmentService.getBrightness()
+        : _deviceAdjustmentService.getMediaVolume();
+    final future = read.then((value) {
+      if (mounted) _cacheEdgeAdjustmentValue(side, value);
+      return value;
+    });
+    _edgeAdjustmentBaselineFuture = future;
+    return future;
+  }
+
+  void _cacheEdgeAdjustmentValue(MobileEdgeAdjustmentSide side, double? value) {
+    if (value == null) return;
+    if (side == MobileEdgeAdjustmentSide.left) {
+      _lastKnownBrightness = value;
+    } else {
+      _lastKnownMediaVolume = value;
+    }
+  }
+
+  void _handleEdgeAdjustmentEvent(MobileEdgeAdjustmentEvent event) {
+    final side = event.side;
+    switch (event.type) {
+      case MobileEdgeAdjustmentEventType.none:
+        return;
+      case MobileEdgeAdjustmentEventType.candidate:
+        if (side != null) unawaited(_readEdgeAdjustmentValue(side));
+        return;
+      case MobileEdgeAdjustmentEventType.activated:
+        if (side != null) _beginEdgeAdjustment(side, event.deltaFraction);
+        return;
+      case MobileEdgeAdjustmentEventType.update:
+        if (side != null) {
+          if (_pendingEdgeAdjustmentSide == side) {
+            _pendingEdgeAdjustmentDelta = event.deltaFraction;
+          } else if (_edgeAdjustmentWasActive) {
+            _updateEdgeAdjustment(side, event.deltaFraction);
+          }
+        }
+        return;
+      case MobileEdgeAdjustmentEventType.ended:
+        if (_pendingEdgeAdjustmentSide != null) {
+          _clearPendingEdgeAdjustment();
+          _finishEdgeAdjustment(suppressTap: false);
+        } else {
+          if (side != null && _edgeAdjustmentWasActive) {
+            _updateEdgeAdjustment(side, event.deltaFraction, forceWrite: true);
+          }
+          _finishEdgeAdjustment(suppressTap: _edgeAdjustmentWasActive);
+        }
+        return;
+      case MobileEdgeAdjustmentEventType.cancelled:
+        _clearPendingEdgeAdjustment();
+        _finishEdgeAdjustment(suppressTap: event.wasActive || _edgeAdjustmentWasActive);
+        return;
+    }
+  }
+
+  void _beginEdgeAdjustment(MobileEdgeAdjustmentSide side, double deltaFraction) {
+    final startValue = _currentEdgeAdjustmentValue(side);
+    if (startValue != null) {
+      _startEdgeAdjustment(side, deltaFraction, startValue: startValue);
+      return;
+    }
+
+    _suppressTouchTaps();
+    if (_isLongPressing) _handleLongPressCancel();
+
+    final Future<double?>? future;
+    final int generation;
+    if (_edgeAdjustmentBaselineSide == side && _edgeAdjustmentBaselineFuture != null) {
+      future = _edgeAdjustmentBaselineFuture;
+      generation = _edgeAdjustmentBaselineGeneration;
+    } else {
+      future = _readEdgeAdjustmentValue(side);
+      generation = _edgeAdjustmentBaselineGeneration;
+    }
+    _pendingEdgeAdjustmentSide = side;
+    _pendingEdgeAdjustmentDelta = deltaFraction;
+    _pendingEdgeAdjustmentGeneration = generation;
+    unawaited(_resolvePendingEdgeAdjustment(side, generation, future));
+  }
+
+  Future<void> _resolvePendingEdgeAdjustment(
+    MobileEdgeAdjustmentSide side,
+    int generation,
+    Future<double?>? future,
+  ) async {
+    final value = await (future ?? _readEdgeAdjustmentValue(side)).timeout(
+      const Duration(milliseconds: 300),
+      onTimeout: () => null,
+    );
+    if (!mounted) return;
+    if (_pendingEdgeAdjustmentSide != side || _pendingEdgeAdjustmentGeneration != generation) return;
+
+    final latestDelta = _pendingEdgeAdjustmentDelta;
+    _clearPendingEdgeAdjustment();
+    _cacheEdgeAdjustmentValue(side, value);
+    final startValue = _currentEdgeAdjustmentValue(side);
+    if (startValue == null) {
+      _finishEdgeAdjustment(suppressTap: false);
+      return;
+    }
+    _startEdgeAdjustment(side, latestDelta, startValue: startValue);
+  }
+
+  void _clearPendingEdgeAdjustment() {
+    _pendingEdgeAdjustmentSide = null;
+    _pendingEdgeAdjustmentDelta = 0.0;
+    _pendingEdgeAdjustmentGeneration = null;
+  }
+
+  void _startEdgeAdjustment(MobileEdgeAdjustmentSide side, double deltaFraction, {required double startValue}) {
+    _suppressTouchTaps();
+    if (_isLongPressing) _handleLongPressCancel();
+    _edgeAdjustmentIndicatorHideTimer?.cancel();
+    _edgeAdjustmentIndicatorClearTimer?.cancel();
+    _edgeAdjustmentWasActive = true;
+    _edgeAdjustmentStartValue = startValue;
+    _lastEdgeAdjustmentWriteAt = null;
+    _lastEdgeAdjustmentWriteValue = null;
+    widget.chromeController.cancelAutoHide();
+    _updateEdgeAdjustment(side, deltaFraction, forceWrite: true);
+  }
+
+  void _updateEdgeAdjustment(MobileEdgeAdjustmentSide side, double deltaFraction, {bool forceWrite = false}) {
+    final startValue = _edgeAdjustmentStartValue ?? _currentEdgeAdjustmentValue(side);
+    if (startValue == null) return;
+    final value = (startValue + deltaFraction).clamp(0.0, 1.0).toDouble();
+    final indicator = _edgeAdjustmentIndicator.value;
+    if (!indicator.visible || indicator.side != side || indicator.value != value) {
+      _edgeAdjustmentIndicator.value = (visible: true, side: side, value: value);
+    }
+    _writeEdgeAdjustment(side, value, force: forceWrite);
+  }
+
+  double? _currentEdgeAdjustmentValue(MobileEdgeAdjustmentSide side) {
+    return switch (side) {
+      MobileEdgeAdjustmentSide.left => _lastKnownBrightness,
+      MobileEdgeAdjustmentSide.right => _lastKnownMediaVolume,
+    };
+  }
+
+  void _writeEdgeAdjustment(MobileEdgeAdjustmentSide side, double value, {required bool force}) {
+    final now = DateTime.now();
+    final lastWriteAt = _lastEdgeAdjustmentWriteAt;
+    final lastValue = _lastEdgeAdjustmentWriteValue;
+    final valueChanged = lastValue == null || (value - lastValue).abs() >= 0.01;
+    final intervalElapsed = lastWriteAt == null || now.difference(lastWriteAt) >= const Duration(milliseconds: 45);
+    if (!force && (!valueChanged || !intervalElapsed)) return;
+
+    _lastEdgeAdjustmentWriteAt = now;
+    _lastEdgeAdjustmentWriteValue = value;
+    if (side == MobileEdgeAdjustmentSide.left) {
+      _lastKnownBrightness = value;
+      unawaited(_deviceAdjustmentService.setBrightness(value));
+    } else {
+      _lastKnownMediaVolume = value;
+      unawaited(_deviceAdjustmentService.setMediaVolume(value));
+    }
+  }
+
+  void _finishEdgeAdjustment({required bool suppressTap}) {
+    if (suppressTap) _suppressTouchTaps();
+    _edgeAdjustmentWasActive = false;
+    _edgeAdjustmentStartValue = null;
+    _lastEdgeAdjustmentWriteAt = null;
+    _lastEdgeAdjustmentWriteValue = null;
+    _restartHideTimerIfPlaying();
+    _edgeAdjustmentIndicatorHideTimer?.cancel();
+    _edgeAdjustmentIndicatorClearTimer?.cancel();
+    if (_edgeAdjustmentIndicator.value.side == null) return;
+    _edgeAdjustmentIndicatorHideTimer = Timer(const Duration(milliseconds: 700), () {
+      if (!mounted) return;
+      final current = _edgeAdjustmentIndicator.value;
+      _edgeAdjustmentIndicator.value = (visible: false, side: current.side, value: current.value);
+      _edgeAdjustmentIndicatorClearTimer = Timer(const Duration(milliseconds: 220), () {
+        if (!mounted) return;
+        _edgeAdjustmentIndicator.value = (visible: false, side: null, value: _edgeAdjustmentIndicator.value.value);
+      });
+    });
+  }
+
+  void _cancelEdgeAdjustmentGesture() {
+    _handleEdgeAdjustmentEvent(_edgeAdjustmentTracker.cancel());
   }
 
   /// Timing-based double-click detection: avoids `onDoubleTap`'s ~300 ms

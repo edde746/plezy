@@ -50,11 +50,13 @@ class _FakeAggregationService extends DataAggregationService {
   int hubCalls = 0;
   Set<String>? lastOnDeckServerIds;
   Set<String>? lastHubsServerIds;
+  Set<String>? onDeckSucceededServerIds;
+  Set<String>? hubSucceededServerIds;
   List<MediaItem> Function() onDeckResult = () => const [];
   List<MediaHub> Function() hubsResult = () => const [];
 
   @override
-  Future<List<MediaItem>> getOnDeckFromAllServers({
+  Future<OnDeckAggregationResult> getOnDeckFromAllServers({
     int? limit,
     Set<String>? hiddenLibraryKeys,
     Set<String>? serverIds,
@@ -62,11 +64,14 @@ class _FakeAggregationService extends DataAggregationService {
     onDeckCalls++;
     lastOnDeckServerIds = serverIds;
     final items = onDeckResult();
-    return limit != null && items.length > limit ? items.sublist(0, limit) : items;
+    return (
+      items: limit != null && items.length > limit ? items.sublist(0, limit) : items,
+      succeededServerIds: onDeckSucceededServerIds ?? serverIds ?? const {'server_1'},
+    );
   }
 
   @override
-  Future<List<MediaHub>> getHubsFromAllServers({
+  Future<HubAggregationResult> getHubsFromAllServers({
     int? limit,
     Set<String>? hiddenLibraryKeys,
     bool useGlobalHubs = true,
@@ -75,7 +80,10 @@ class _FakeAggregationService extends DataAggregationService {
   }) async {
     hubCalls++;
     lastHubsServerIds = serverIds;
-    return hubsResult();
+    return (
+      hubs: hubsResult(),
+      succeededServerIds: hubSucceededServerIds ?? serverIds ?? const {'server_1'},
+    );
   }
 }
 
@@ -339,6 +347,47 @@ void main() {
     final callsAfterDelta = aggregation.onDeckCalls;
     await provider.syncToOnlineServers({'server_1', 'server_2'});
     expect(aggregation.onDeckCalls, callsAfterDelta);
+  });
+
+  test('full load partial hub failure retries hubs without refetching continue watching', () async {
+    aggregation.onDeckResult = () => [_item('a')];
+    aggregation.hubsResult = () => const [];
+    aggregation.hubSucceededServerIds = const {};
+    await provider.load();
+    final onDeckCallsBefore = aggregation.onDeckCalls;
+    final hubCallsBefore = aggregation.hubCalls;
+
+    aggregation.hubsResult = () => [_hub('hub-1')];
+    aggregation.hubSucceededServerIds = const {'server_1'};
+    await provider.syncToOnlineServers({'server_1'});
+
+    expect(aggregation.onDeckCalls, onDeckCallsBefore);
+    expect(aggregation.hubCalls, hubCallsBefore + 1);
+    expect(aggregation.lastHubsServerIds, {'server_1'});
+    expect(provider.hubs.map((h) => h.id), ['hub-1']);
+  });
+
+  test('delta partial hub failure retries only the missing surface', () async {
+    aggregation.onDeckResult = () => [_item('a')];
+    aggregation.hubsResult = () => [_hub('hub-1')];
+    await provider.load();
+
+    aggregation.onDeckResult = () => [_item('b', serverId: 'server_2')];
+    aggregation.hubsResult = () => const [];
+    aggregation.hubSucceededServerIds = const {};
+    await provider.syncToOnlineServers({'server_1', 'server_2'});
+    final onDeckCallsAfterPartial = aggregation.onDeckCalls;
+    final hubCallsAfterPartial = aggregation.hubCalls;
+
+    aggregation.hubsResult = () => [_hub('hub-2', serverId: 'server_2')];
+    aggregation.hubSucceededServerIds = const {'server_2'};
+    await provider.syncToOnlineServers({'server_1', 'server_2'});
+
+    expect(aggregation.onDeckCalls, onDeckCallsAfterPartial);
+    expect(aggregation.hubCalls, hubCallsAfterPartial + 1);
+    expect(aggregation.lastHubsServerIds, {'server_2'});
+    expect(provider.onDeck.map((i) => i.id), containsAll(['a', 'b']));
+    expect(provider.hubs.map((h) => h.id), containsAll(['hub-1', 'hub-2']));
   });
 
   test('delta failure keeps the loaded state and retries on the next emission', () async {

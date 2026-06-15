@@ -115,12 +115,25 @@ class AssHandler(
   override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
     super.onMediaItemTransition(mediaItem, reason)
     Log.i("AssHandler", "onMediaItemTransition: item = $mediaItem, reason = $reason")
+    resetMediaState(releaseNative = true)
+  }
+
+  private fun resetMediaState(releaseNative: Boolean) {
+    val oldRender = render
+    val oldTracks = availableTracks.values.toList()
+
     render = null
     track = null
+    format = null
     availableTracks.clear()
     pendingFonts.clear()
     videoSize = Size.ZERO
     renderCallback?.invoke(null)
+
+    if (releaseNative) {
+      oldRender?.release()
+      oldTracks.forEach { it.release() }
+    }
   }
 
   /**
@@ -359,12 +372,7 @@ class AssHandler(
     videoFrameCallback = null
     player?.clearVideoFrameMetadataListener(videoFrameMetadataListener)
     player = null
-    render?.release()
-    render = null
-    availableTracks.values.forEach { it.release() }
-    availableTracks.clear()
-    track = null
-    pendingFonts.clear()
+    resetMediaState(releaseNative = true)
     if (assDelegate.isInitialized()) {
       ass.release()
     }

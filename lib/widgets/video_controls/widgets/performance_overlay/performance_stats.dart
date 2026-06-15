@@ -50,6 +50,7 @@ class PerformanceStats {
 
   // Buffer metrics
   final int? cacheUsed;
+  final int? cacheLimit;
   final double? cacheSpeed;
   final double? cacheDuration;
 
@@ -102,6 +103,7 @@ class PerformanceStats {
     this.frameDropCount,
     this.decoderFrameDropCount,
     this.cacheUsed,
+    this.cacheLimit,
     this.cacheSpeed,
     this.cacheDuration,
     this.dvConversionActive = false,
@@ -152,6 +154,7 @@ class PerformanceStats {
       frameDropCount = null,
       decoderFrameDropCount = null,
       cacheUsed = null,
+      cacheLimit = null,
       cacheSpeed = null,
       cacheDuration = null,
       dvConversionActive = false,
@@ -217,6 +220,13 @@ class PerformanceStats {
   String get cacheUsedFormatted {
     if (cacheUsed == null) return 'N/A';
     final mb = cacheUsed! / (1024 * 1024);
+    return '${mb.toStringAsFixed(1)} MB';
+  }
+
+  /// Format cache limit in MB.
+  String get cacheLimitFormatted {
+    if (cacheLimit == null || cacheLimit! <= 0) return 'N/A';
+    final mb = cacheLimit! / (1024 * 1024);
     return '${mb.toStringAsFixed(1)} MB';
   }
 

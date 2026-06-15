@@ -40,6 +40,11 @@ enum ContinueWatchingAction { play, details }
 
 enum SubAssOverride { no, yes, scale, force, strip }
 
+/// Resolution ASS/image subtitles are rasterized at on the avfoundation VO
+/// (iOS/tvOS): the display's, or the video's (much cheaper on 4K displays;
+/// subs can't carry more detail than the video they're typeset against).
+enum SubtitleRenderResolution { screen, video }
+
 enum DvConversionModePreference { auto, disabled, dv81, hevcStrip }
 
 extension DvConversionModePreferenceNativeValue on DvConversionModePreference {
@@ -145,6 +150,34 @@ class _AutoPipPref extends Pref<bool> {
     if (!Platform.isAndroid && !Platform.isIOS && !Platform.isMacOS) return false;
     if (PlatformDetector.isTV()) return false;
     return svc.prefs.getBool(key) ?? !Platform.isMacOS;
+  }
+
+  @override
+  Future<void> writeTo(BaseSharedPreferencesService svc, bool value) => svc.writeBool(key, value);
+}
+
+class _UseExternalPlayerPref extends Pref<bool> {
+  const _UseExternalPlayerPref() : super('use_external_player');
+
+  @override
+  bool readFrom(BaseSharedPreferencesService svc) {
+    if (!PlatformDetector.supportsExternalPlayers()) return false;
+    return svc.prefs.getBool(key) ?? false;
+  }
+
+  @override
+  Future<void> writeTo(BaseSharedPreferencesService svc, bool value) => svc.writeBool(key, value);
+}
+
+/// Experimental Dolby passthrough. Keep opt-in everywhere, including Apple TV,
+/// until the AVFoundation EAC3 path is verified across real receiver setups.
+class _AudioPassthroughPref extends Pref<bool> {
+  const _AudioPassthroughPref() : super('audio_passthrough');
+
+  @override
+  bool readFrom(BaseSharedPreferencesService svc) {
+    // TODO: Default Apple TV to on once EAC3 passthrough is hardware-verified.
+    return svc.prefs.getBool(key) ?? false;
   }
 
   @override
@@ -311,6 +344,11 @@ class SettingsService extends BaseSharedPreferencesService {
     values: SubAssOverride.values,
     defaultValue: SubAssOverride.no,
   );
+  static const subtitleRenderResolution = EnumPref<SubtitleRenderResolution>(
+    'subtitle_render_resolution',
+    values: SubtitleRenderResolution.values,
+    defaultValue: SubtitleRenderResolution.screen,
+  );
   static const subtitleBold = BoolPref('subtitle_bold');
   static const subtitleItalic = BoolPref('subtitle_italic');
   static const cleanedOldImageCache = BoolPref('cleaned_old_image_cache');
@@ -362,7 +400,7 @@ class SettingsService extends BaseSharedPreferencesService {
   static const showNavBarLabels = BoolPref('show_nav_bar_labels', defaultValue: true);
   static const globalShaderPreset = StringPref('global_shader_preset', defaultValue: 'none');
   static const requireProfileSelectionOnOpen = BoolPref('require_profile_selection_on_open');
-  static const useExternalPlayer = BoolPref('use_external_player');
+  static const useExternalPlayer = _UseExternalPlayerPref();
   static const forceTvMode = BoolPref('force_tv_mode');
   static const visualEffects = EnumPref<VisualEffectsSetting>(
     'visual_effects',
@@ -370,7 +408,7 @@ class SettingsService extends BaseSharedPreferencesService {
     defaultValue: VisualEffectsSetting.auto,
   );
   static const ambientLighting = BoolPref('ambient_lighting');
-  static const audioPassthrough = BoolPref('audio_passthrough');
+  static const audioPassthrough = _AudioPassthroughPref();
   static const audioNormalization = BoolPref('audio_normalization');
   static const liveTvDefaultFavorites = BoolPref('live_tv_default_favorites');
   static const matchRefreshRate = BoolPref('match_refresh_rate');

@@ -9,6 +9,7 @@ import '../media/media_server_client.dart';
 import '../mixins/disposable_change_notifier_mixin.dart';
 import '../mixins/event_aware.dart';
 import '../services/settings_service.dart';
+import '../services/data_aggregation_service.dart';
 import '../services/system_shelf_service.dart';
 import '../utils/app_logger.dart';
 import '../utils/global_key_utils.dart';
@@ -77,8 +78,16 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
   Set<String> _lastSeenHiddenKeys = {};
   List<String> _lastSeenLibraryOrderKeys = const [];
 
-  /// Online servers that contributed to the last successful [load] pass.
-  Set<String> _loadedOnlineServerIds = {};
+  /// Online servers whose Continue Watching fetch succeeded in the current
+  /// on-deck list. Tracked separately from hubs so a transient failure in one
+  /// surface does not cache the other as loaded forever or force unnecessary
+  /// refetches.
+  Set<String> _loadedOnDeckServerIds = {};
+
+  /// Online servers whose home-hub fetch succeeded in the current hub list.
+  Set<String> _loadedHubServerIds = {};
+
+  Set<String> get _fullyLoadedServerIds => _loadedOnDeckServerIds.intersection(_loadedHubServerIds);
 
   Future<void>? _inFlightLoad;
   bool _hasPendingLoad = false;
@@ -117,12 +126,16 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
   /// and merged in; already-loaded servers are not refetched.
   Future<void> syncToOnlineServers(Set<String> onlineServerIds) {
     if (onlineServerIds.isEmpty || isProfileBinding()) return Future<void>.value();
-    if (_onDeckState == DiscoverLoadState.loaded && _loadedOnlineServerIds.containsAll(onlineServerIds)) {
+    if (
+      _onDeckState == DiscoverLoadState.loaded &&
+      _hubsState == DiscoverLoadState.loaded &&
+      _fullyLoadedServerIds.containsAll(onlineServerIds)
+    ) {
       return Future<void>.value();
     }
     // Nothing (or a failed pass) to merge into yet — run the full load.
     if (_onDeckState != DiscoverLoadState.loaded || _hubsState != DiscoverLoadState.loaded) return load();
-    _pendingDeltaServerIds.addAll(onlineServerIds.difference(_loadedOnlineServerIds));
+    _pendingDeltaServerIds.addAll(onlineServerIds.difference(_fullyLoadedServerIds));
     return _ensureLoadLoop();
   }
 
@@ -187,26 +200,25 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
         includePlaybackHubs: false,
       );
 
-      final fetchedFromServerIds = Set<String>.of(_multiServer.onlineServerIds);
-
       final fetchedOnDeck = await onDeckFuture;
       if (isDisposed) return;
-      _applyOnDeck(fetchedOnDeck);
+      _applyOnDeck(fetchedOnDeck.items);
       _onDeckState = DiscoverLoadState.loaded;
-      _loadedOnlineServerIds = fetchedFromServerIds;
+      _loadedOnDeckServerIds = fetchedOnDeck.succeededServerIds;
       _loadGeneration++;
       safeNotifyListeners();
       unawaited(_syncSystemShelf(_onDeck));
 
-      final allHubs = await hubsFuture;
+      final fetchedHubs = await hubsFuture;
       if (isDisposed) return;
 
-      final filteredHubs = _filterDiscoverHubs(allHubs);
+      final filteredHubs = _filterDiscoverHubs(fetchedHubs.hubs);
       sortMediaHubsByLibraryOrder(filteredHubs, _libraries.libraries);
 
       appLogger.d('DiscoverProvider: ${_onDeck.length} on-deck items, ${filteredHubs.length} hubs');
       _hubs = filteredHubs;
       _hubsState = DiscoverLoadState.loaded;
+      _loadedHubServerIds = fetchedHubs.succeededServerIds;
       safeNotifyListeners();
     } catch (e) {
       appLogger.e('Failed to load discover content', error: e);
@@ -224,9 +236,11 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
   /// status emission retries them.
   Future<void> _loadDeltaOnce(Set<String> serverIds) async {
     // A full pass may have covered these ids while they sat in the queue.
-    final ids = serverIds.difference(_loadedOnlineServerIds);
-    if (ids.isEmpty) return;
-    appLogger.d('DiscoverProvider: merging content from newly-online servers $ids');
+    final ids = serverIds.difference(_fullyLoadedServerIds);
+    final onDeckIds = ids.difference(_loadedOnDeckServerIds);
+    final hubIds = ids.difference(_loadedHubServerIds);
+    if (onDeckIds.isEmpty && hubIds.isEmpty) return;
+    appLogger.d('DiscoverProvider: merging content from newly-online servers $ids (onDeck=$onDeckIds, hubs=$hubIds)');
 
     try {
       await _hiddenLibraries.ensureInitialized();
@@ -236,43 +250,53 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
       final useGlobalHubs = settings.read(SettingsService.useGlobalHubs);
       final aggregation = _multiServer.aggregationService;
 
-      final onDeckFuture = aggregation.getOnDeckFromAllServers(
-        limit: _continueWatchingProbeLimit,
-        hiddenLibraryKeys: _hiddenLibraries.hiddenLibraryKeys,
-        serverIds: ids,
-      );
-      final hubsFuture = aggregation.getHubsFromAllServers(
-        hiddenLibraryKeys: _hiddenLibraries.hiddenLibraryKeys,
-        useGlobalHubs: useGlobalHubs,
-        includePlaybackHubs: false,
-        serverIds: ids,
-      );
+      final Future<OnDeckAggregationResult?> onDeckFuture = onDeckIds.isEmpty
+          ? Future<OnDeckAggregationResult?>.value()
+          : aggregation.getOnDeckFromAllServers(
+              limit: _continueWatchingProbeLimit,
+              hiddenLibraryKeys: _hiddenLibraries.hiddenLibraryKeys,
+              serverIds: onDeckIds,
+            );
+      final Future<HubAggregationResult?> hubsFuture = hubIds.isEmpty
+          ? Future<HubAggregationResult?>.value()
+          : aggregation.getHubsFromAllServers(
+              hiddenLibraryKeys: _hiddenLibraries.hiddenLibraryKeys,
+              useGlobalHubs: useGlobalHubs,
+              includePlaybackHubs: false,
+              serverIds: hubIds,
+            );
 
       final freshOnDeck = await onDeckFuture;
       final freshHubs = await hubsFuture;
       if (isDisposed) return;
 
-      final hadMore = _hasMoreContinueWatching;
-      final mergedOnDeck = await aggregation.mergeContinueWatching(
-        _onDeck,
-        freshOnDeck,
-        limit: _continueWatchingProbeLimit,
-      );
-      if (isDisposed) return;
-      _applyOnDeck(mergedOnDeck);
-      // The stored list is already trimmed, so the merge can't see old items
-      // past the cap — a previously-true "more" affordance stays true.
-      if (hadMore) _hasMoreContinueWatching = true;
-      // No _loadGeneration bump: a delta behaves like the background Continue
-      // Watching refresh (the hero clamps instead of resetting).
+      if (freshOnDeck != null) {
+        final hadMore = _hasMoreContinueWatching;
+        final mergedOnDeck = await aggregation.mergeContinueWatching(
+          _onDeck,
+          freshOnDeck.items,
+          limit: _continueWatchingProbeLimit,
+        );
+        if (isDisposed) return;
+        _applyOnDeck(mergedOnDeck);
+        // The stored list is already trimmed, so the merge can't see old items
+        // past the cap — a previously-true "more" affordance stays true.
+        if (hadMore) _hasMoreContinueWatching = true;
+        _loadedOnDeckServerIds = {..._loadedOnDeckServerIds, ...freshOnDeck.succeededServerIds};
+        // No _loadGeneration bump: a delta behaves like the background Continue
+        // Watching refresh (the hero clamps instead of resetting).
+      }
 
-      final mergedHubs = [
-        ..._hubs.where((hub) => !ids.contains(hub.serverId)),
-        ..._filterDiscoverHubs(freshHubs),
-      ];
-      sortMediaHubsByLibraryOrder(mergedHubs, _libraries.libraries);
-      _hubs = mergedHubs;
-      _loadedOnlineServerIds = {..._loadedOnlineServerIds, ...ids};
+      if (freshHubs != null) {
+        final succeededHubIds = freshHubs.succeededServerIds;
+        final mergedHubs = [
+          ..._hubs.where((hub) => hub.serverId == null || !succeededHubIds.contains(hub.serverId)),
+          ..._filterDiscoverHubs(freshHubs.hubs),
+        ];
+        sortMediaHubsByLibraryOrder(mergedHubs, _libraries.libraries);
+        _hubs = mergedHubs;
+        _loadedHubServerIds = {..._loadedHubServerIds, ...succeededHubIds};
+      }
 
       appLogger.d('DiscoverProvider: ${_onDeck.length} on-deck items, ${_hubs.length} hubs after merging $ids');
       safeNotifyListeners();
@@ -308,7 +332,8 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
         hiddenLibraryKeys: _hiddenLibraries.hiddenLibraryKeys,
       );
       if (isDisposed) return;
-      _applyOnDeck(fetched);
+      _applyOnDeck(fetched.items);
+      _loadedOnDeckServerIds = fetched.succeededServerIds;
       safeNotifyListeners();
       unawaited(_syncSystemShelf(_onDeck));
     } catch (e) {
@@ -321,9 +346,10 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     if (!_multiServer.hasConnectedServers) return const [];
     await _hiddenLibraries.ensureInitialized();
     if (isDisposed) return const [];
-    return _multiServer.aggregationService.getOnDeckFromAllServers(
+    final fetched = await _multiServer.aggregationService.getOnDeckFromAllServers(
       hiddenLibraryKeys: _hiddenLibraries.hiddenLibraryKeys,
     );
+    return fetched.items;
   }
 
   /// Refetch a single item (post-edit refresh from a hub row) and swap it
@@ -464,9 +490,13 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
 
         try {
           final settings = await SettingsService.getInstance();
+          final syncableOnDeck = onDeck.where((item) {
+            final serverId = item.serverId;
+            return serverId != null && _multiServer.getClientForServer(ServerId(serverId)) != null;
+          }).toList(growable: false);
           await SystemShelfService().syncFromContinueWatching(
-            onDeck,
-            _clientWithFallback,
+            syncableOnDeck,
+            _clientForShelfItem,
             hideSpoilers: settings.read(SettingsService.hideSpoilers),
           );
         } catch (e) {
@@ -478,14 +508,10 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     }
   }
 
-  MediaServerClient _clientWithFallback(ServerId serverId) {
+  MediaServerClient _clientForShelfItem(ServerId serverId) {
     final direct = _multiServer.getClientForServer(serverId);
     if (direct != null) return direct;
-    for (final id in _multiServer.onlineServerIds) {
-      final fallback = _multiServer.getClientForServer(ServerId(id));
-      if (fallback != null) return fallback;
-    }
-    throw Exception('No client available for $serverId');
+    throw Exception('No owning client available for $serverId');
   }
 
   @override

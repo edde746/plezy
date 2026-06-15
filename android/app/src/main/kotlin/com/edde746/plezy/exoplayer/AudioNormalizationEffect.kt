@@ -94,7 +94,8 @@ class AudioNormalizationEffect(private val log: (String, String, String) -> Unit
   @RequiresApi(28)
   private fun tryDynamicsProcessing(sessionId: Int, channelCount: Int): Boolean = try {
     val band = DynamicsProcessing.MbcBand(
-      /* inUse = */ true,
+      // inUse
+      true,
       MBC_CUTOFF_HZ,
       MBC_ATTACK_MS,
       MBC_RELEASE_MS,
@@ -103,27 +104,49 @@ class AudioNormalizationEffect(private val log: (String, String, String) -> Unit
       MBC_KNEE_DB,
       MBC_NOISE_GATE_DB,
       MBC_EXPANDER_RATIO,
-      /* preGain = */ 0f,
+      // preGain
+      0f,
       MBC_POST_GAIN_DB
     )
-    val mbc = DynamicsProcessing.Mbc(/* inUse = */ true, /* enabled = */ true, /* bandCount = */ 1)
-      .apply { setBand(0, band) }
+    val mbc = DynamicsProcessing.Mbc(
+      // inUse
+      true,
+      // enabled
+      true,
+      // bandCount
+      1
+    ).apply { setBand(0, band) }
     val limiter = DynamicsProcessing.Limiter(
-      /* inUse = */ true,
-      /* enabled = */ true,
-      /* linkGroup = */ 0,
+      // inUse
+      true,
+      // enabled
+      true,
+      // linkGroup
+      0,
       LIMITER_ATTACK_MS,
       LIMITER_RELEASE_MS,
       LIMITER_RATIO,
       LIMITER_THRESHOLD_DB,
-      /* postGain = */ 0f
+      // postGain
+      0f
     )
     val channel = DynamicsProcessing.Channel(
-      /* inputGain = */ 0f,
-      /* preEqInUse = */ false, /* preEqBandCount = */ 0,
-      /* mbcInUse = */ true, /* mbcBandCount = */ 1,
-      /* postEqInUse = */ false, /* postEqBandCount = */ 0,
-      /* limiterInUse = */ true
+      // inputGain
+      0f,
+      // preEqInUse
+      false,
+      // preEqBandCount
+      0,
+      // mbcInUse
+      true,
+      // mbcBandCount
+      1,
+      // postEqInUse
+      false,
+      // postEqBandCount
+      0,
+      // limiterInUse
+      true
     ).apply {
       setMbc(mbc)
       setLimiter(limiter)
@@ -131,10 +154,20 @@ class AudioNormalizationEffect(private val log: (String, String, String) -> Unit
     val config = DynamicsProcessing.Config.Builder(
       DynamicsProcessing.VARIANT_FAVOR_FREQUENCY_RESOLUTION,
       channelCount,
-      /* preEqInUse = */ false, /* preEqBandCount = */ 0,
-      /* mbcInUse = */ true, /* mbcBandCount = */ 1,
-      /* postEqInUse = */ false, /* postEqBandCount = */ 0,
-      /* limiterInUse = */ true
+      // preEqInUse
+      false,
+      // preEqBandCount
+      0,
+      // mbcInUse
+      true,
+      // mbcBandCount
+      1,
+      // postEqInUse
+      false,
+      // postEqBandCount
+      0,
+      // limiterInUse
+      true
     )
       .setPreferredFrameDuration(FRAME_DURATION_MS)
       .setAllChannelsTo(channel)

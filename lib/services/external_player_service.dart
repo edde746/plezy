@@ -10,6 +10,7 @@ import '../media/media_server_client.dart';
 import '../media/watch_progress.dart';
 import '../models/external_player_models.dart';
 import '../utils/app_logger.dart';
+import '../utils/platform_detector.dart';
 import '../utils/snackbar_helper.dart';
 import '../utils/watch_state_notifier.dart';
 import '../i18n/strings.g.dart';
@@ -68,6 +69,8 @@ class ExternalPlayerService {
     String? mediaSourceId,
     String? videoUrl,
   }) async {
+    if (!PlatformDetector.supportsExternalPlayers()) return false;
+
     try {
       String resolvedUrl;
 

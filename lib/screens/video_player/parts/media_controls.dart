@@ -79,7 +79,7 @@ extension _VideoPlayerMediaControlsMethods on VideoPlayerScreenState {
 
     final playbackState = context.read<PlaybackStateProvider>();
     final canNavigateEpisodes = _currentMetadata.isEpisode || playbackState.isPlaylistActive;
-    final canSeek = !widget.isLive && (currentPlayer.state.seekable || _shouldRestartPlexTranscodeForSeek);
+    final canSeek = !widget.isLive && (currentPlayer.state.seekable || _usesPlexVodTranscodeSeekPolicy);
 
     if (!mounted || currentPlayer != player || manager != _mediaControlsManager) return;
 
@@ -124,7 +124,7 @@ extension _VideoPlayerMediaControlsMethods on VideoPlayerScreenState {
           : 'returning from inactive state';
       try {
         await _seekBackForRewind(currentPlayer);
-        await currentPlayer.play();
+        await _playWithPlaybackIntent(currentPlayer);
         appLogger.d('Video resumed after $resumeReason');
       } catch (e) {
         appLogger.w('Failed to resume playback after $resumeReason', error: e);

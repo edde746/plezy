@@ -557,7 +557,10 @@
     "position": "Position",
     "assOverride": "ASS-Überschreibung",
     "bold": "Fett",
-    "italic": "Kursiv"
+    "italic": "Kursiv",
+    "renderResolution": "Render-Auflösung",
+    "renderResolutionScreen": "Bildschirmauflösung",
+    "renderResolutionVideo": "Videoauflösung"
   },
   "mpvConfig": {
     "title": "mpv-Konfiguration",
@@ -1184,6 +1187,7 @@
     "maxCll": "MaxCLL",
     "maxFall": "MaxFALL",
     "cacheUsed": "Cache genutzt",
+    "cacheLimit": "Cache-Limit",
     "speed": "Geschwindigkeit",
     "player": "Player",
     "memory": "Speicher",

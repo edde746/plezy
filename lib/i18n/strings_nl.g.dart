@@ -730,6 +730,9 @@ class _TranslationsSubtitlingStylingNl extends TranslationsSubtitlingStylingEn {
 	@override String get assOverride => 'ASS-overschrijving';
 	@override String get bold => 'Vet';
 	@override String get italic => 'Cursief';
+	@override String get renderResolution => 'Renderresolutie';
+	@override String get renderResolutionScreen => 'Schermresolutie';
+	@override String get renderResolutionVideo => 'Videoresolutie';
 }
 
 // Path: mpvConfig
@@ -1406,6 +1409,7 @@ class _TranslationsPerformanceOverlayNl extends TranslationsPerformanceOverlayEn
 	@override String get maxCll => 'MaxCLL';
 	@override String get maxFall => 'MaxFALL';
 	@override String get cacheUsed => 'Cache gebruikt';
+	@override String get cacheLimit => 'Cachelimiet';
 	@override String get speed => 'Snelheid';
 	@override String get player => 'Speler';
 	@override String get memory => 'Geheugen';
@@ -2441,6 +2445,9 @@ extension on TranslationsNl {
 			'subtitlingStyling.assOverride' => 'ASS-overschrijving',
 			'subtitlingStyling.bold' => 'Vet',
 			'subtitlingStyling.italic' => 'Cursief',
+			'subtitlingStyling.renderResolution' => 'Renderresolutie',
+			'subtitlingStyling.renderResolutionScreen' => 'Schermresolutie',
+			'subtitlingStyling.renderResolutionVideo' => 'Videoresolutie',
 			'mpvConfig.title' => 'mpv-configuratie',
 			'mpvConfig.description' => 'Geavanceerde videospeler-instellingen',
 			'mpvConfig.presets' => 'Voorinstellingen',
@@ -2940,11 +2947,11 @@ extension on TranslationsNl {
 			'companionRemote.remote.retryNow' => 'Nu opnieuw proberen',
 			'companionRemote.remote.tabRemote' => 'Afstandsbediening',
 			'companionRemote.remote.tabPlay' => 'Afspelen',
+			_ => null,
+		} ?? switch (path) {
 			'companionRemote.remote.tabMore' => 'Meer',
 			'companionRemote.remote.menu' => 'Menu',
 			'companionRemote.remote.tabNavigation' => 'Tabnavigatie',
-			_ => null,
-		} ?? switch (path) {
 			'companionRemote.remote.tabDiscover' => 'Ontdekken',
 			'companionRemote.remote.tabLibraries' => 'Bibliotheken',
 			'companionRemote.remote.tabSearch' => 'Zoeken',
@@ -3009,6 +3016,7 @@ extension on TranslationsNl {
 			'performanceOverlay.maxCll' => 'MaxCLL',
 			'performanceOverlay.maxFall' => 'MaxFALL',
 			'performanceOverlay.cacheUsed' => 'Cache gebruikt',
+			'performanceOverlay.cacheLimit' => 'Cachelimiet',
 			'performanceOverlay.speed' => 'Snelheid',
 			'performanceOverlay.player' => 'Speler',
 			'performanceOverlay.memory' => 'Geheugen',

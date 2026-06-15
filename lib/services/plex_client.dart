@@ -203,7 +203,7 @@ bool? _parsePlexTranscoderVideoCapability(Object? value) {
 
 class PlexClient
     with MediaServerCacheMixin, _PlexLiveTvClientMethods
-    implements MediaServerClient, GracefullyCloseable {
+    implements MediaServerClient, SeasonEpisodePagingClient, GracefullyCloseable {
   @override
   PlexConfig config;
 
@@ -1237,6 +1237,7 @@ class PlexClient
       if (queryParams.isEmpty) {
         return true;
       }
+      queryParams['allParts'] = 1;
 
       // Use PUT request on /library/parts/{partId}
       return _wrapBoolApiCall(
@@ -3332,6 +3333,17 @@ class PlexClient
       totalCount: result.totalSize,
       offset: start ?? 0,
     );
+  }
+
+  @override
+  Future<LibraryPage<MediaItem>> fetchSeasonEpisodesPage(
+    String seriesId,
+    String seasonId, {
+    int? start,
+    int? size,
+    AbortController? abort,
+  }) {
+    return fetchChildrenPage(seasonId, start: start, size: size, abort: abort);
   }
 
   @override

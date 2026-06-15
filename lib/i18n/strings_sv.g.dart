@@ -730,6 +730,9 @@ class _TranslationsSubtitlingStylingSv extends TranslationsSubtitlingStylingEn {
 	@override String get assOverride => 'ASS-åsidosättning';
 	@override String get bold => 'Fet';
 	@override String get italic => 'Kursiv';
+	@override String get renderResolution => 'Renderingsupplösning';
+	@override String get renderResolutionScreen => 'Skärmupplösning';
+	@override String get renderResolutionVideo => 'Videoupplösning';
 }
 
 // Path: mpvConfig
@@ -1406,6 +1409,7 @@ class _TranslationsPerformanceOverlaySv extends TranslationsPerformanceOverlayEn
 	@override String get maxCll => 'MaxCLL';
 	@override String get maxFall => 'MaxFALL';
 	@override String get cacheUsed => 'Cache använd';
+	@override String get cacheLimit => 'Cachegräns';
 	@override String get speed => 'Hastighet';
 	@override String get player => 'Spelare';
 	@override String get memory => 'Minne';
@@ -2441,6 +2445,9 @@ extension on TranslationsSv {
 			'subtitlingStyling.assOverride' => 'ASS-åsidosättning',
 			'subtitlingStyling.bold' => 'Fet',
 			'subtitlingStyling.italic' => 'Kursiv',
+			'subtitlingStyling.renderResolution' => 'Renderingsupplösning',
+			'subtitlingStyling.renderResolutionScreen' => 'Skärmupplösning',
+			'subtitlingStyling.renderResolutionVideo' => 'Videoupplösning',
 			'mpvConfig.title' => 'mpv-konfiguration',
 			'mpvConfig.description' => 'Avancerade videospelares inställningar',
 			'mpvConfig.presets' => 'Förval',
@@ -2940,11 +2947,11 @@ extension on TranslationsSv {
 			'companionRemote.remote.retryNow' => 'Försök nu',
 			'companionRemote.remote.tabRemote' => 'Fjärrkontroll',
 			'companionRemote.remote.tabPlay' => 'Spela',
+			_ => null,
+		} ?? switch (path) {
 			'companionRemote.remote.tabMore' => 'Mer',
 			'companionRemote.remote.menu' => 'Meny',
 			'companionRemote.remote.tabNavigation' => 'Fliknavigering',
-			_ => null,
-		} ?? switch (path) {
 			'companionRemote.remote.tabDiscover' => 'Upptäck',
 			'companionRemote.remote.tabLibraries' => 'Bibliotek',
 			'companionRemote.remote.tabSearch' => 'Sök',
@@ -3009,6 +3016,7 @@ extension on TranslationsSv {
 			'performanceOverlay.maxCll' => 'MaxCLL',
 			'performanceOverlay.maxFall' => 'MaxFALL',
 			'performanceOverlay.cacheUsed' => 'Cache använd',
+			'performanceOverlay.cacheLimit' => 'Cachegräns',
 			'performanceOverlay.speed' => 'Hastighet',
 			'performanceOverlay.player' => 'Spelare',
 			'performanceOverlay.memory' => 'Minne',

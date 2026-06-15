@@ -1570,6 +1570,7 @@ class _MainScreenState extends State<MainScreen>
                           child: Stack(
                             clipBehavior: Clip.hardEdge,
                             children: [
+                              Positioned.fill(child: ColoredBox(color: Theme.of(context).scaffoldBackgroundColor)),
                               Positioned(
                                 top: 0,
                                 bottom: 0,

@@ -28,6 +28,8 @@ extension _PlexVideoControlsNavigationMethods on _PlexVideoControlsState {
         onSeekForward: () => unawaited(_seekByTime(forward: true)),
         onSeek: _throttledSeek,
         onSeekEnd: _finalizeSeek,
+        onScrubStart: _holdTimelineScrub,
+        onScrubEnd: _releaseTimelineScrub,
         onSeekRequested: widget.onSeekRequested,
         getReplayIcon: getReplayIcon,
         getForwardIcon: getForwardIcon,

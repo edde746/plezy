@@ -41,6 +41,19 @@ class _FrameRateStartupPlan {
   }
 }
 
+class _ExternalSubtitleOpenPlan {
+  const _ExternalSubtitleOpenPlan({required this.externalSubtitles, required this.attachesAtOpen, this.readyAfterOpen});
+
+  final List<SubtitleTrack> externalSubtitles;
+  final bool attachesAtOpen;
+  final Future<void>? readyAfterOpen;
+
+  bool get hasExternalSubtitles => externalSubtitles.isNotEmpty;
+  bool get requiresPostOpenAdd => !attachesAtOpen && hasExternalSubtitles;
+  bool get canStartBeforeTrackSetup => attachesAtOpen || !hasExternalSubtitles;
+  List<SubtitleTrack>? get subtitlesAtOpen => attachesAtOpen && hasExternalSubtitles ? externalSubtitles : null;
+}
+
 /// Shared building blocks for opening media on the live player.
 ///
 /// The initial start flow ([_startPlayback]), the in-place reload flow
@@ -202,7 +215,17 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
     required SettingsService settingsService,
     required _FrameRateStartupPlan plan,
     required Future<void> Function(String reason) resumeAfterStartupGate,
+    bool playbackResumedForStartupFrame = false,
   }) async {
+    Future<void> resumeAfterRefresh(String reason) async {
+      if (playbackResumedForStartupFrame) {
+        appLogger.d('Frame rate matching: continuing already-resumed playback after $reason');
+        await _playWithPlaybackIntent(currentPlayer);
+      } else {
+        await resumeAfterStartupGate(reason);
+      }
+    }
+
     // Fallback refresh-rate path. The player was opened paused;
     // setVideoFrameRate awaits the real display-change event (+ settle +
     // user delay) before returning, then we start playback.
@@ -228,7 +251,7 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
       // Always resume — either the switch completed and we want to play,
       // or no switch was needed and we need to start playback now that the
       // preparation gate has been cleared.
-      await resumeAfterStartupGate('post-open frame rate switch');
+      await resumeAfterRefresh('post-open frame rate switch');
 
       unawaited(
         Sentry.addBreadcrumb(
@@ -243,10 +266,10 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
         if (startupReady) {
           await Future<void>.delayed(const Duration(milliseconds: 100));
           await _refreshAndroidMpvDecoderAfterFrameRateSwitch(reason: 'pre-load frame rate startup');
-          await resumeAfterStartupGate('startup decoder refresh');
+          await resumeAfterRefresh('startup decoder refresh');
         } else {
           appLogger.w('Frame rate matching: skipping Android MPV decoder refresh because startup frame timed out');
-          await resumeAfterStartupGate('startup frame timeout');
+          await resumeAfterRefresh('startup frame timeout');
         }
       }
 
@@ -267,18 +290,18 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
   /// the start and reload flows.
   Future<void> _resumeAfterFrameRateStartupGate({
     required Player currentPlayer,
-    required bool attachesSubsAtOpen,
-    required bool hasExternalSubs,
+    required _ExternalSubtitleOpenPlan externalSubtitlePlan,
     required String reason,
   }) async {
     if (!mounted || player != currentPlayer) return;
     final trackManager = _trackManager;
     if (trackManager == null) return;
     appLogger.d('Frame rate matching: resuming playback after $reason');
-    if (!attachesSubsAtOpen && hasExternalSubs) {
+    _playbackIntentShouldPlay = true;
+    if (externalSubtitlePlan.requiresPostOpenAdd) {
       await trackManager.resumeAfterSubtitleLoad();
     } else {
-      await currentPlayer.play();
+      await _playWithPlaybackIntent(currentPlayer);
     }
   }
 
@@ -289,8 +312,7 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
   /// flows.
   Future<void> _resumeAfterStartupGateOrYieldToWatchTogether({
     required Player currentPlayer,
-    required bool attachesSubsAtOpen,
-    required bool hasExternalSubs,
+    required _ExternalSubtitleOpenPlan externalSubtitlePlan,
     required String reason,
     required bool wtOwnsStart,
     Completer<void>? wtStartupHold,
@@ -298,14 +320,13 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
     if (!wtOwnsStart) {
       return _resumeAfterFrameRateStartupGate(
         currentPlayer: currentPlayer,
-        attachesSubsAtOpen: attachesSubsAtOpen,
-        hasExternalSubs: hasExternalSubs,
+        externalSubtitlePlan: externalSubtitlePlan,
         reason: reason,
       );
     }
     appLogger.d('Frame rate matching: yielding post-gate resume to Watch Together ($reason)');
     final trackManager = _trackManager;
-    if (trackManager != null && !attachesSubsAtOpen && hasExternalSubs) {
+    if (trackManager != null && externalSubtitlePlan.requiresPostOpenAdd) {
       trackManager.waitingForExternalSubsTrackSelection = false;
       trackManager.applyTrackSelectionWhenReady();
     }
@@ -328,6 +349,28 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
       subtitlePosition: settingsService.read(SettingsService.subtitlePosition),
       bold: settingsService.read(SettingsService.subtitleBold),
       italic: settingsService.read(SettingsService.subtitleItalic),
+    );
+  }
+
+  _ExternalSubtitleOpenPlan _prepareExternalSubtitleOpenPlan({
+    required Player player,
+    required List<SubtitleTrack> externalSubtitles,
+    bool waitForFileLoaded = true,
+  }) {
+    final attachesAtOpen = player.attachesExternalSubtitlesAtOpen;
+    final hasExternalSubtitles = externalSubtitles.isNotEmpty;
+
+    return _ExternalSubtitleOpenPlan(
+      externalSubtitles: externalSubtitles,
+      attachesAtOpen: attachesAtOpen,
+      readyAfterOpen: waitForFileLoaded && !attachesAtOpen && hasExternalSubtitles
+          ? player.streams.fileLoaded.first.timeout(
+              const Duration(seconds: 15),
+              onTimeout: () {
+                appLogger.w('Timed out waiting for file-loaded before adding external subtitles');
+              },
+            )
+          : null,
     );
   }
 
@@ -362,26 +405,30 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
     );
   }
 
-  /// Apply track selection for a freshly opened source: mpv backends get
-  /// external subtitles via the post-open sub-add dance (opened paused to
-  /// avoid the issue #226 race), others arm selection directly.
+  /// Apply track selection for a freshly opened source: backends that cannot
+  /// attach external subtitles during open use the post-open sub-add dance
+  /// (opened paused to avoid the issue #226 race), others arm selection
+  /// directly.
   /// [shouldResumeAfterSubtitleLoad] lets a startup gate own the resume.
   /// [applySelectionWhenResumeSkipped] is for flows that legitimately stay
   /// paused (e.g. a transcode restart while paused): selection is still
   /// armed and the waiting flag cleared instead of leaving both dangling.
   Future<void> _applyTracksAfterOpen({
-    required Player forPlayer,
     required TrackManager trackManager,
-    required List<SubtitleTrack> externalSubtitles,
+    required _ExternalSubtitleOpenPlan externalSubtitlePlan,
     required bool Function() shouldResumeAfterSubtitleLoad,
     bool applySelectionWhenResumeSkipped = false,
   }) async {
-    if (!forPlayer.attachesExternalSubtitlesAtOpen && externalSubtitles.isNotEmpty) {
+    if (externalSubtitlePlan.requiresPostOpenAdd) {
       trackManager.waitingForExternalSubsTrackSelection = true;
       try {
-        await trackManager.addExternalSubtitles(externalSubtitles);
+        await trackManager.addExternalSubtitles(
+          externalSubtitlePlan.externalSubtitles,
+          waitUntilReady: externalSubtitlePlan.readyAfterOpen,
+        );
       } finally {
         if (shouldResumeAfterSubtitleLoad()) {
+          _playbackIntentShouldPlay = true;
           await trackManager.resumeAfterSubtitleLoad();
         } else if (applySelectionWhenResumeSkipped) {
           trackManager.waitingForExternalSubsTrackSelection = false;
@@ -407,8 +454,59 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
     _queueScrubPreviewLoad(metadata: metadata, mediaInfo: mediaInfo, mediaClient: mediaClient);
   }
 
-  /// Open [videoUrl] on [player]: force-seekable hint → open → native
-  /// subtitle style.
+  /// Per-open network stream tunings: ffmpeg auto-reconnect plus an enlarged
+  /// mpv stream ring buffer for poorly interleaved MP4/MOV direct play (the
+  /// ring absorbs the demuxer's audio↔video byte ping-pong so HTTP reads stay
+  /// linear instead of dropping the connection on every byte seek — see
+  /// [networkStreamRingBytes]). Both properties are always written, set or
+  /// reset, so a reused player never carries one item's tuning into the next
+  /// open. On Android with ExoPlayer active they are stashed natively and
+  /// replayed on the exo→mpv fallback, so keep them unconditional.
+  Future<void> _applyNetworkStreamTuning({
+    required Player player,
+    required bool isNetworkVod,
+    required bool isTranscoding,
+    required MediaVersion? selectedVersion,
+  }) async {
+    if (isNetworkVod) {
+      // Covers network drops up to 10 min; applies to transcode streams too.
+      await player.setProperty(
+        'stream-lavf-o',
+        'reconnect=1,reconnect_on_network_error=1,reconnect_streamed=1,reconnect_delay_max=600',
+      );
+    } else {
+      await player.setProperty('stream-lavf-o', '');
+    }
+
+    int? ringBytes;
+    if (isNetworkVod && !isTranscoding) {
+      // Transcode (HLS) playback only uses the mpv stream layer for the
+      // playlist file; segment fetches happen inside ffmpeg's hls demuxer.
+      final maxBytes = Platform.isAndroid
+          ? androidStreamRingCapBytes(await PlayerAndroid.getHeapSize())
+          : maxStreamRingBytes;
+      ringBytes = networkStreamRingBytes(
+        container: selectedVersion?.container,
+        bitrateKbps: selectedVersion?.bitrate,
+        maxBytes: maxBytes,
+      );
+    }
+    if (ringBytes != null) {
+      appLogger.i(
+        'Stream ring buffer: ${ringBytes ~/ (1024 * 1024)}MiB '
+        '(container=${selectedVersion?.container}, bitrate=${selectedVersion?.bitrate}kbps)',
+      );
+    } else {
+      appLogger.d(
+        'Stream ring buffer: default '
+        '(networkVod=$isNetworkVod, transcoding=$isTranscoding, container=${selectedVersion?.container})',
+      );
+    }
+    await player.setProperty('stream-buffer-size', '${ringBytes ?? mpvDefaultStreamBufferBytes}');
+  }
+
+  /// Open [videoUrl] on [player]: stream tuning + force-seekable hint →
+  /// open → native subtitle style.
   ///
   /// [shouldContinue] is re-checked between the awaits so stale generations
   /// stop without touching the player further. [onOpened] fires immediately
@@ -422,6 +520,8 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
     required SettingsService settingsService,
     required String videoUrl,
     required bool isTranscoding,
+    required bool isLocalMedia,
+    required MediaVersion? selectedVersion,
     required _PlaybackOpenTiming timing,
     Map<String, String>? headers,
     required bool play,
@@ -429,6 +529,12 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
     bool Function()? shouldContinue,
     void Function()? onOpened,
   }) async {
+    await _applyNetworkStreamTuning(
+      player: player,
+      isNetworkVod: !isLocalMedia && !widget.isLive,
+      isTranscoding: isTranscoding,
+      selectedVersion: selectedVersion,
+    );
     // Transcode streams can be seekable even when MPV cannot prove it
     // from response headers. Reset non-transcodes so live/direct/offline
     // streams keep native seekability detection.

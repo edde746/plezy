@@ -5,6 +5,7 @@ import 'dart:async';
 // ignore: implementation_imports
 import 'package:cached_network_image_ce/src/cache/default_cache_manager.dart' as ce_cache;
 import 'package:http/http.dart' as http;
+import 'package:path_provider/path_provider.dart';
 
 import '../utils/media_server_http_client.dart';
 
@@ -31,6 +32,7 @@ class PlexImageCacheManager extends ce_cache.DefaultCacheManager {
         stalePeriod: const Duration(days: 14),
         maxNrOfCacheObjects: 3000,
         httpClientFactory: () => _SharedHttpClient(_artworkHttpClient.inner),
+        cacheDirectoryProvider: getApplicationCacheDirectory,
       );
 }
 

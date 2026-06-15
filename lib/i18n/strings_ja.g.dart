@@ -730,6 +730,9 @@ class _TranslationsSubtitlingStylingJa extends TranslationsSubtitlingStylingEn {
 	@override String get assOverride => 'ASSオーバーライド';
 	@override String get bold => '太字';
 	@override String get italic => '斜体';
+	@override String get renderResolution => 'レンダリング解像度';
+	@override String get renderResolutionScreen => '画面解像度';
+	@override String get renderResolutionVideo => '動画解像度';
 }
 
 // Path: mpvConfig
@@ -1406,6 +1409,7 @@ class _TranslationsPerformanceOverlayJa extends TranslationsPerformanceOverlayEn
 	@override String get maxCll => 'MaxCLL';
 	@override String get maxFall => 'MaxFALL';
 	@override String get cacheUsed => '使用キャッシュ';
+	@override String get cacheLimit => 'キャッシュ上限';
 	@override String get speed => '速度';
 	@override String get player => 'プレーヤー';
 	@override String get memory => 'メモリ';
@@ -2441,6 +2445,9 @@ extension on TranslationsJa {
 			'subtitlingStyling.assOverride' => 'ASSオーバーライド',
 			'subtitlingStyling.bold' => '太字',
 			'subtitlingStyling.italic' => '斜体',
+			'subtitlingStyling.renderResolution' => 'レンダリング解像度',
+			'subtitlingStyling.renderResolutionScreen' => '画面解像度',
+			'subtitlingStyling.renderResolutionVideo' => '動画解像度',
 			'mpvConfig.title' => 'mpv.conf',
 			'mpvConfig.description' => '高度な動画プレーヤー設定',
 			'mpvConfig.presets' => 'プリセット',
@@ -2940,11 +2947,11 @@ extension on TranslationsJa {
 			'companionRemote.remote.retryNow' => '今すぐ再試行',
 			'companionRemote.remote.tabRemote' => 'リモート',
 			'companionRemote.remote.tabPlay' => '再生',
+			_ => null,
+		} ?? switch (path) {
 			'companionRemote.remote.tabMore' => 'その他',
 			'companionRemote.remote.menu' => 'メニュー',
 			'companionRemote.remote.tabNavigation' => 'タブナビゲーション',
-			_ => null,
-		} ?? switch (path) {
 			'companionRemote.remote.tabDiscover' => '探す',
 			'companionRemote.remote.tabLibraries' => 'ライブラリ',
 			'companionRemote.remote.tabSearch' => '検索',
@@ -3009,6 +3016,7 @@ extension on TranslationsJa {
 			'performanceOverlay.maxCll' => 'MaxCLL',
 			'performanceOverlay.maxFall' => 'MaxFALL',
 			'performanceOverlay.cacheUsed' => '使用キャッシュ',
+			'performanceOverlay.cacheLimit' => 'キャッシュ上限',
 			'performanceOverlay.speed' => '速度',
 			'performanceOverlay.player' => 'プレーヤー',
 			'performanceOverlay.memory' => 'メモリ',

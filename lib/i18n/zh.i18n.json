@@ -557,7 +557,10 @@
     "position": "位置",
     "assOverride": "ASS 样式覆盖",
     "bold": "粗体",
-    "italic": "斜体"
+    "italic": "斜体",
+    "renderResolution": "渲染分辨率",
+    "renderResolutionScreen": "屏幕分辨率",
+    "renderResolutionVideo": "视频分辨率"
   },
   "mpvConfig": {
     "title": "mpv 配置",
@@ -1184,6 +1187,7 @@
     "maxCll": "MaxCLL",
     "maxFall": "MaxFALL",
     "cacheUsed": "已用缓存",
+    "cacheLimit": "缓存限制",
     "speed": "速度",
     "player": "播放器",
     "memory": "内存",

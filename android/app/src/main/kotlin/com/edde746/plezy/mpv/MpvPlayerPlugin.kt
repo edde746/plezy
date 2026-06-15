@@ -110,6 +110,7 @@ class MpvPlayerPlugin :
       "dispose" -> handleDispose(result)
       "setProperty" -> handleSetProperty(call, result)
       "getProperty" -> handleGetProperty(call, result)
+      "getStats" -> handleGetStats(result)
       "observeProperty" -> handleObserveProperty(call, result)
       "command" -> handleCommand(call, result)
       "setVisible" -> handleSetVisible(call, result)
@@ -232,8 +233,15 @@ class MpvPlayerPlugin :
       return
     }
 
-    playerCore?.setProperty(name, value)
-    result.success(null)
+    val core = playerCore
+    if (core == null) {
+      result.success(null)
+      return
+    }
+
+    core.setProperty(name, value) {
+      result.success(null)
+    }
   }
 
   private fun handleGetProperty(call: MethodCall, result: MethodChannel.Result) {
@@ -244,8 +252,41 @@ class MpvPlayerPlugin :
       return
     }
 
-    val value = playerCore?.getProperty(name)
-    result.success(value)
+    val core = playerCore
+    if (core == null) {
+      result.success(null)
+      return
+    }
+
+    val gen = sessionGeneration
+    core.getPropertyAsync(name) { value ->
+      if (gen != sessionGeneration || playerCore !== core) {
+        result.success(null)
+      } else {
+        result.success(value)
+      }
+    }
+  }
+
+  private fun handleGetStats(result: MethodChannel.Result) {
+    val currentActivity = activity
+    val core = playerCore
+    if (currentActivity == null || core == null) {
+      result.success(mapOf("playerType" to "mpv"))
+      return
+    }
+
+    val gen = sessionGeneration
+    Thread {
+      val stats = core.getStats()
+      currentActivity.runOnUiThread {
+        if (gen != sessionGeneration || playerCore !== core) {
+          result.success(mapOf("playerType" to "mpv"))
+        } else {
+          result.success(stats)
+        }
+      }
+    }.start()
   }
 
   private fun handleObserveProperty(call: MethodCall, result: MethodChannel.Result) {

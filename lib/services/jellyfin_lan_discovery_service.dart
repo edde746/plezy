@@ -25,23 +25,14 @@ class JellyfinLanDiscoveryService {
     InternetAddress? broadcastAddress,
   }) async {
     UdpBroadcastSocketSet? socketSet;
-    final subscriptions = <StreamSubscription<RawSocketEvent>>[];
     final discovered = <String, DiscoveredJellyfinServer>{};
     try {
       socketSet = await UdpBroadcastSockets.bind();
-      for (final socket in socketSet.sockets) {
-        subscriptions.add(
-          socket.listen((event) {
-            if (event != RawSocketEvent.read) return;
-            Datagram? datagram;
-            while ((datagram = socket.receive()) != null) {
-              final server = parseDiscoveryResponse(datagram!.data);
-              if (server == null) continue;
-              discovered.putIfAbsent(server.id, () => server);
-            }
-          }),
-        );
-      }
+      socketSet.listen((datagram) {
+        final server = parseDiscoveryResponse(datagram.data);
+        if (server == null) return;
+        discovered.putIfAbsent(server.id, () => server);
+      }, debugLabel: 'Jellyfin LAN discovery');
 
       final data = utf8.encode(discoveryMessage);
       final target = broadcastAddress ?? UdpBroadcastSockets.limitedBroadcastAddress;
@@ -52,10 +43,7 @@ class JellyfinLanDiscoveryService {
     } catch (e, st) {
       appLogger.w('Jellyfin LAN discovery failed', error: e, stackTrace: st);
     } finally {
-      for (final subscription in subscriptions) {
-        await subscription.cancel();
-      }
-      socketSet?.close();
+      await socketSet?.close();
     }
 
     return sortDiscoveredServers(discovered.values);

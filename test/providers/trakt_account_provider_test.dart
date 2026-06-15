@@ -90,6 +90,32 @@ void main() {
       p.dispose();
     });
 
+    test('late refresh update after disconnect does not restore session', () async {
+      const uuid = 'profile-1';
+      await traktAccountStore.save(uuid, _session(username: 'alice'));
+      BaseSharedPreferencesService.resetForTesting();
+
+      final p = TraktAccountProvider();
+      await p.onActiveProfileChanged(uuid);
+      final staleGeneration = p.debugBindingGenerationForTesting;
+
+      await p.disconnect();
+      expect(p.isConnected, isFalse);
+      expect(await traktAccountStore.load(uuid), isNull);
+
+      p.debugHandleSessionUpdatedForTesting(
+        uuid,
+        staleGeneration,
+        _session(accessToken: 'late-at', refreshToken: 'late-rt', username: 'alice'),
+      );
+      await Future<void>.delayed(Duration.zero);
+
+      expect(p.isConnected, isFalse);
+      expect(await traktAccountStore.load(uuid), isNull);
+
+      p.dispose();
+    });
+
     test('cancelConnect is a no-op when not connecting', () {
       final p = TraktAccountProvider();
       // Should not throw when no completer exists.

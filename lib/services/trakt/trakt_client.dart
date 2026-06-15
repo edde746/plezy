@@ -10,7 +10,6 @@ import '../../utils/app_logger.dart';
 import '../../utils/platform_http_client_stub.dart'
     if (dart.library.io) '../../utils/platform_http_client_io.dart'
     as platform;
-import '../trackers/future_coalescer.dart';
 import '../trackers/tracker_constants.dart';
 import 'trakt_constants.dart';
 import 'trakt_session.dart';
@@ -21,6 +20,8 @@ import 'trakt_session.dart';
 /// coalesced so we only hit `/oauth/token` once per refresh.
 class TraktClient {
   static const Set<int> _scrobbleAllowedStatuses = {200, 201, 409};
+  static const Set<int> _permanentRefreshFailureStatuses = {400, 401, 403};
+  static final Map<String, Future<TraktSession>> _refreshesByToken = {};
 
   TraktSession _session;
   final http.Client _http;
@@ -29,13 +30,24 @@ class TraktClient {
   /// uses this to clear the stored session and notify the UI.
   final void Function() onSessionInvalidated;
 
-  final _refreshCoalescer = FutureCoalescer<TraktSession>();
+  /// Fired when refresh succeeds so the provider can persist the rotated
+  /// access/refresh token pair and share it with the other active Trakt clients.
+  final void Function(TraktSession session)? onSessionUpdated;
 
-  TraktClient(TraktSession session, {required this.onSessionInvalidated, http.Client? httpClient})
+  TraktClient(
+    TraktSession session, {
+    required this.onSessionInvalidated,
+    this.onSessionUpdated,
+    http.Client? httpClient,
+  })
     : _session = session,
       _http = httpClient ?? platform.createPlatformClient();
 
   TraktSession get session => _session;
+
+  void updateSession(TraktSession session) {
+    _session = session;
+  }
 
   void dispose() => _http.close();
 
@@ -71,9 +83,36 @@ class TraktClient {
 
   /// Refresh the access token. Coalesces concurrent calls so
   /// duplicate POSTs don't race when multiple in-flight requests hit 401.
-  Future<TraktSession> refresh() => _refreshCoalescer.run(_doRefresh);
+  Future<TraktSession> refresh() async {
+    final refreshToken = _session.refreshToken;
+    final existing = _refreshesByToken[refreshToken];
+    if (existing != null) {
+      try {
+        final session = await existing;
+        if (_session.refreshToken == refreshToken) {
+          _session = session;
+          onSessionUpdated?.call(session);
+        }
+        return _session;
+      } on TraktAuthException catch (e) {
+        if (e.isPermanent && _session.refreshToken == refreshToken) {
+          onSessionInvalidated();
+        }
+        rethrow;
+      }
+    }
 
-  Future<TraktSession> _doRefresh() async {
+    late final Future<TraktSession> refresh;
+    refresh = _doRefresh(refreshToken).whenComplete(() {
+      if (identical(_refreshesByToken[refreshToken], refresh)) {
+        _refreshesByToken.remove(refreshToken);
+      }
+    });
+    _refreshesByToken[refreshToken] = refresh;
+    return refresh;
+  }
+
+  Future<TraktSession> _doRefresh(String refreshToken) async {
     appLogger.d('Trakt: refreshing access token');
     final tokenUri = Uri.parse(TraktConstants.tokenUrl);
     final res = await sendAbortableHttpRequest(
@@ -82,7 +121,7 @@ class TraktClient {
       tokenUri,
       headers: TraktConstants.headers(),
       body: json.encode({
-        'refresh_token': _session.refreshToken,
+        'refresh_token': refreshToken,
         'client_id': TraktConstants.clientId,
         'client_secret': TraktConstants.clientSecret,
         'grant_type': 'refresh_token',
@@ -94,12 +133,27 @@ class TraktClient {
     if (res.statusCode == 200) {
       final body = json.decode(res.body) as Map<String, dynamic>;
       _session = TraktSession.fromTokenResponse(body).copyWith(username: _session.username);
+      onSessionUpdated?.call(_session);
       return _session;
     }
 
-    appLogger.w('Trakt: refresh failed (${res.statusCode}), session invalidated');
-    onSessionInvalidated();
-    throw TraktAuthException('Refresh failed: HTTP ${res.statusCode}');
+    if (_session.refreshToken != refreshToken) {
+      appLogger.d('Trakt: refresh failed (${res.statusCode}) after session update; keeping latest session');
+      return _session;
+    }
+
+    final isPermanent = _permanentRefreshFailureStatuses.contains(res.statusCode);
+    if (isPermanent) {
+      appLogger.w('Trakt: refresh failed permanently (${res.statusCode}), session invalidated');
+      onSessionInvalidated();
+    } else {
+      appLogger.w('Trakt: refresh failed (${res.statusCode}), will retry later');
+    }
+    throw TraktAuthException(
+      'Refresh failed: HTTP ${res.statusCode}',
+      statusCode: res.statusCode,
+      isPermanent: isPermanent,
+    );
   }
 
   /// Revoke the access token at Trakt. Best-effort; swallows network errors.
@@ -203,7 +257,9 @@ class TraktRateLimitException implements Exception {
 
 class TraktAuthException implements Exception {
   final String message;
-  const TraktAuthException(this.message);
+  final int? statusCode;
+  final bool isPermanent;
+  const TraktAuthException(this.message, {this.statusCode, this.isPermanent = false});
   @override
   String toString() => 'TraktAuthException: $message';
 }

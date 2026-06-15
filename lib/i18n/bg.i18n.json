@@ -557,7 +557,10 @@
     "position": "Позиция",
     "assOverride": "ASS презаписване",
     "bold": "Получер",
-    "italic": "Курсив"
+    "italic": "Курсив",
+    "renderResolution": "Резолюция на изобразяване",
+    "renderResolutionScreen": "Резолюция на екрана",
+    "renderResolutionVideo": "Резолюция на видеото"
   },
   "mpvConfig": {
     "title": "mpv.conf",
@@ -1184,6 +1187,7 @@
     "maxCll": "MaxCLL",
     "maxFall": "MaxFALL",
     "cacheUsed": "Използван кеш",
+    "cacheLimit": "Лимит на кеша",
     "speed": "Скорост",
     "player": "Плеър",
     "memory": "Памет",

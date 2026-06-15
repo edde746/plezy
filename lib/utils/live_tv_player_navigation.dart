@@ -54,14 +54,24 @@ Future<void> navigateToLiveTv(
     raw: {'key': channel.key},
   );
 
+  final normalizedChannels = List<LiveTvChannel>.of(channels);
+  var currentChannelIndex = normalizedChannels.indexWhere(
+    (ch) => liveTvChannelScopeKey(ch) == liveTvChannelScopeKey(channel),
+  );
+  if (currentChannelIndex < 0) {
+    normalizedChannels.insert(0, channel);
+    currentChannelIndex = 0;
+    appLogger.w('Live TV launch channel was not present in navigation list; prepending ${channel.key}');
+  }
+
   final route = PageRouteBuilder<bool>(
     settings: const RouteSettings(name: kVideoPlayerRouteName),
     pageBuilder: (context, animation, secondaryAnimation) => VideoPlayerScreen(
       metadata: placeholder,
       live: LiveTvSessionArgs(
         channel: channel,
-        channels: channels,
-        currentChannelIndex: channels.indexWhere((ch) => liveTvChannelScopeKey(ch) == liveTvChannelScopeKey(channel)),
+        channels: normalizedChannels,
+        currentChannelIndex: currentChannelIndex,
       ),
     ),
     transitionDuration: Duration.zero,

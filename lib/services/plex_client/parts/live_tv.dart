@@ -23,6 +23,7 @@ mixin _PlexLiveTvClientMethods on MediaServerCacheMixin {
     Duration? timeout,
     // ignore: unused_element_parameter
     AbortController? abort,
+    bool allowEndpointFailover = true,
   });
 
   Map<String, dynamic>? _getMediaContainer(MediaServerResponse response);
@@ -131,6 +132,12 @@ mixin _PlexLiveTvClientMethods on MediaServerCacheMixin {
         'playbackTime': playbackTime,
         'X-Plex-Session-Identifier': sessionIdentifier,
       },
+      // A live timeline ping is a transcode-session keepalive, not a general
+      // library fetch. If one ping hits a transient transport/DNS failure,
+      // endpoint failover can close the client held by the active session; the
+      // server then expires the tuner a few minutes later. Let the next
+      // heartbeat retry the current session endpoint instead.
+      allowEndpointFailover: false,
     );
     if (response.statusCode != 200) {
       appLogger.e('Live timeline returned ${response.statusCode}: ${response.data}');

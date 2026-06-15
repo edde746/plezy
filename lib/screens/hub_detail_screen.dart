@@ -37,6 +37,7 @@ class HubDetailScreen extends StatefulWidget {
   final MediaHub hub;
   final Future<List<MediaItem>> Function()? loadItems;
   final bool isInContinueWatching;
+  final bool usesContinueWatchingAction;
   final VoidCallback? onRemoveFromContinueWatching;
 
   const HubDetailScreen({
@@ -44,8 +45,9 @@ class HubDetailScreen extends StatefulWidget {
     required this.hub,
     this.loadItems,
     this.isInContinueWatching = false,
+    bool? usesContinueWatchingAction,
     this.onRemoveFromContinueWatching,
-  });
+  }) : usesContinueWatchingAction = usesContinueWatchingAction ?? isInContinueWatching;
 
   @override
   State<HubDetailScreen> createState() => _HubDetailScreenState();
@@ -550,6 +552,7 @@ class _HubDetailScreenState extends State<HubDetailScreen>
                                     ? _handleRemoveFromContinueWatching
                                     : null,
                                 isInContinueWatching: widget.isInContinueWatching,
+                                usesContinueWatchingAction: widget.usesContinueWatchingAction,
                                 onNavigateUp: index == 0 ? navigateToAppBar : null,
                                 onBack: handleBackFromContent,
                                 onFocusChange: (hasFocus) => trackGridItemFocus(index, hasFocus),
@@ -591,6 +594,7 @@ class _HubDetailScreenState extends State<HubDetailScreen>
                                       ? _handleRemoveFromContinueWatching
                                       : null,
                                   isInContinueWatching: widget.isInContinueWatching,
+                                  usesContinueWatchingAction: widget.usesContinueWatchingAction,
                                   onNavigateUp: isFirstRow ? navigateToAppBar : null,
                                   onNavigateLeft: isFirstColumn ? () {} : null,
                                   onBack: handleBackFromContent,

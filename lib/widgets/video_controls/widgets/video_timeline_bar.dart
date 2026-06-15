@@ -18,6 +18,8 @@ class VideoTimelineBar extends StatelessWidget {
   final bool showChapterMarkersOnTimeline;
   final ValueChanged<Duration> onSeek;
   final ValueChanged<Duration> onSeekEnd;
+  final VoidCallback? onScrubStart;
+  final VoidCallback? onScrubEnd;
 
   /// If true, timestamps are shown in a row beside the slider (desktop layout).
   /// If false, timestamps are shown in a row below the slider (mobile layout).
@@ -45,6 +47,9 @@ class VideoTimelineBar extends StatelessWidget {
   /// (used during sustained dpad/keyboard key-repeat seeking).
   final bool showKeyRepeatThumbnail;
 
+  /// Optional UI-only position used while a remote/keyboard seek is pending.
+  final Duration? previewPosition;
+
   const VideoTimelineBar({
     super.key,
     required this.player,
@@ -53,6 +58,8 @@ class VideoTimelineBar extends StatelessWidget {
     this.showChapterMarkersOnTimeline = true,
     required this.onSeek,
     required this.onSeekEnd,
+    this.onScrubStart,
+    this.onScrubEnd,
     this.horizontalLayout = true,
     this.focusNode,
     this.onKeyEvent,
@@ -61,6 +68,7 @@ class VideoTimelineBar extends StatelessWidget {
     this.showFinishTime = false,
     this.thumbnailDataBuilder,
     this.showKeyRepeatThumbnail = false,
+    this.previewPosition,
   });
 
   @override
@@ -77,8 +85,9 @@ class VideoTimelineBar extends StatelessWidget {
               stream: player.streams.bufferRanges,
               initialData: player.state.bufferRanges,
               builder: (context, bufferRangesSnapshot) {
-                final position = positionSnapshot.data ?? Duration.zero;
+                final rawPosition = positionSnapshot.data ?? Duration.zero;
                 final duration = durationSnapshot.data ?? Duration.zero;
+                final position = previewPosition == null ? rawPosition : clampDuration(previewPosition!, duration);
                 final bufferRanges = bufferRangesSnapshot.data ?? const [];
                 final remaining = position - duration; // We want this to be negative
 
@@ -91,6 +100,12 @@ class VideoTimelineBar extends StatelessWidget {
         );
       },
     );
+  }
+
+  static Duration clampDuration(Duration position, Duration duration) {
+    if (position.isNegative) return Duration.zero;
+    if (duration > Duration.zero && position > duration) return duration;
+    return position;
   }
 
   Widget _buildHorizontalLayout(
@@ -166,6 +181,8 @@ class VideoTimelineBar extends StatelessWidget {
       showChapterMarkersOnTimeline: showChapterMarkersOnTimeline,
       onSeek: onSeek,
       onSeekEnd: onSeekEnd,
+      onScrubStart: onScrubStart,
+      onScrubEnd: onScrubEnd,
       focusNode: focusNode,
       onKeyEvent: onKeyEvent,
       onFocusChange: onFocusChange,

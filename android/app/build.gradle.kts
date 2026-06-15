@@ -35,8 +35,15 @@ val extractMpvLibcxx by tasks.registering {
     outDir.deleteRecursively() // drop stale ABIs from a previous AAR version
     outDir.mkdirs()
     exec {
-      commandLine("unzip", "-q", "-o", aar.absolutePath,
-        "jni/*/libc++_shared.so", "-d", outDir.absolutePath)
+      commandLine(
+        "unzip",
+        "-q",
+        "-o",
+        aar.absolutePath,
+        "jni/*/libc++_shared.so",
+        "-d",
+        outDir.absolutePath
+      )
     }
   }
 }

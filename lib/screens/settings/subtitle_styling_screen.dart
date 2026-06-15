@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
@@ -27,6 +29,13 @@ class SubtitleStylingScreen extends StatelessWidget {
     return '$value%';
   }
 
+  String _renderResolutionLabel(SubtitleRenderResolution value) {
+    return switch (value) {
+      SubtitleRenderResolution.screen => t.subtitlingStyling.renderResolutionScreen,
+      SubtitleRenderResolution.video => t.subtitlingStyling.renderResolutionVideo,
+    };
+  }
+
   @override
   Widget build(BuildContext context) {
     return SettingsPage(
@@ -42,6 +51,19 @@ class SubtitleStylingScreen extends StatelessWidget {
           decode: (v) => v,
           encode: (v) => v,
         ),
+        // avfoundation VO (iOS/tvOS) only.
+        if (Platform.isIOS)
+          SettingSelectionTile<SubtitleRenderResolution, SubtitleRenderResolution>(
+            pref: SettingsService.subtitleRenderResolution,
+            icon: Symbols.aspect_ratio_rounded,
+            title: t.subtitlingStyling.renderResolution,
+            subtitleBuilder: _renderResolutionLabel,
+            options: SubtitleRenderResolution.values
+                .map((v) => DialogOption(value: v, title: _renderResolutionLabel(v)))
+                .toList(),
+            decode: (v) => v,
+            encode: (v) => v,
+          ),
         SettingNumberTile(
           pref: SettingsService.subtitleFontSize,
           icon: Symbols.format_size_rounded,

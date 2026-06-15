@@ -101,6 +101,7 @@ class _PlayerPerformanceOverlayState extends State<PlayerPerformanceOverlay> {
       _buildSection(Symbols.memory_rounded, t.performanceOverlay.buffer, [
         _metric(t.fileInfo.duration, _stats.cacheDurationFormatted),
         if (isMpv) _metric(t.performanceOverlay.cacheUsed, _stats.cacheUsedFormatted),
+        if (isMpv) _metric(t.performanceOverlay.cacheLimit, _stats.cacheLimitFormatted),
         if (isMpv) _metric(t.performanceOverlay.speed, _stats.cacheSpeedFormatted),
       ]),
       _buildSection(Symbols.apps_rounded, t.performanceOverlay.app, [
