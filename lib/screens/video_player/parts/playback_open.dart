@@ -405,9 +405,10 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
     );
   }
 
-  /// Apply track selection for a freshly opened source: mpv backends get
-  /// external subtitles via the post-open sub-add dance (opened paused to
-  /// avoid the issue #226 race), others arm selection directly.
+  /// Apply track selection for a freshly opened source: backends that cannot
+  /// attach external subtitles during open use the post-open sub-add dance
+  /// (opened paused to avoid the issue #226 race), others arm selection
+  /// directly.
   /// [shouldResumeAfterSubtitleLoad] lets a startup gate own the resume.
   /// [applySelectionWhenResumeSkipped] is for flows that legitimately stay
   /// paused (e.g. a transcode restart while paused): selection is still

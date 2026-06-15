@@ -222,9 +222,9 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
         final shouldAutoPlay =
             !shouldHoldPlaybackStart && !wtOwnsStart && externalSubtitlePlan.canStartBeforeTrackSetup;
 
-        // ExoPlayer: attach external subs at open time so it discovers
-        // them in a single prepare() — no media reload needed for selection.
-        // MPV (all platforms including Android): external subs added after open via sub-add.
+        // Backends that support at-open sidecars receive them with open()
+        // so tracks are discovered in a single prepare/loadfile cycle. Any
+        // backend that cannot do that still uses the post-open sub-add path.
         final openTiming = _playbackOpenTiming(
           backend: _currentMetadata.backend,
           isTranscoding: result.isTranscoding,
@@ -326,9 +326,10 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
           trackManager: _trackManager!,
           externalSubtitlePlan: externalSubtitlePlan,
           // When a startup gate below owns the resume, skip this one to
-          // avoid a double-play. Android mpv external-subtitle opens are the
-          // exception: after sub-add we must resume once so mpv can produce the
-          // startup frame that the decoder-refresh gate is waiting for.
+          // avoid a double-play. Post-open external-subtitle paths are the
+          // exception: after they attach we must resume once so mpv can
+          // produce the startup frame that the decoder-refresh gate is waiting
+          // for.
           // Watch Together stays paused for the group start, so selection is
           // armed through the resume-skipped branch.
           shouldResumeAfterSubtitleLoad: () =>

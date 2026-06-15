@@ -27,7 +27,6 @@ class ExoPlayerPlugin :
     private const val TAG = "ExoPlayerPlugin"
     private const val METHOD_CHANNEL = "com.plezy/exo_player"
     private const val EVENT_CHANNEL = "com.plezy/exo_player/events"
-    private const val MPV_FALLBACK_SWITCH_TIMEOUT_MS = 15_000L
   }
 
   private lateinit var methodChannel: MethodChannel
@@ -37,7 +36,6 @@ class ExoPlayerPlugin :
   private var mpvCore: MpvPlayerCore? = null // MPV fallback player
   private var usingMpvFallback: Boolean = false
   private var fallbackInProgress: Boolean = false
-  private var pendingMpvFallbackSwitchGeneration: Int? = null
   private var activity: Activity? = null
   private var activityBinding: ActivityPluginBinding? = null
 
@@ -60,6 +58,7 @@ class ExoPlayerPlugin :
   // fallback is already active) so one playback's properties never leak into
   // the next session's fallback.
   private val pendingMpvProperties = LinkedHashMap<String, String>()
+  private var currentExternalSubtitles: List<Map<String, Any?>>? = null
 
   // FlutterPlugin
 
@@ -95,7 +94,7 @@ class ExoPlayerPlugin :
     mpvCore = null
     usingMpvFallback = false
     fallbackInProgress = false
-    clearPendingMpvFallbackSwitch()
+    currentExternalSubtitles = null
     pendingMpvProperties.clear()
     activity = null
     activityBinding = null
@@ -111,7 +110,6 @@ class ExoPlayerPlugin :
   override fun onDetachedFromActivityForConfigChanges() {
     sessionGeneration++
     fallbackInProgress = false
-    clearPendingMpvFallbackSwitch()
     activity = null
     activityBinding = null
     Log.d(TAG, "Detached from activity for config changes")
@@ -216,7 +214,6 @@ class ExoPlayerPlugin :
         mpvCore = null
         usingMpvFallback = false
         fallbackInProgress = false
-        clearPendingMpvFallbackSwitch()
       }
 
       try {
@@ -254,7 +251,7 @@ class ExoPlayerPlugin :
       mpvCore = null
       usingMpvFallback = false
       fallbackInProgress = false
-      clearPendingMpvFallbackSwitch()
+      currentExternalSubtitles = null
       pendingMpvProperties.clear()
       Log.d(TAG, "Disposed")
       result.success(null)
@@ -275,13 +272,14 @@ class ExoPlayerPlugin :
       result.error("INVALID_ARGS", "Missing 'uri'", null)
       return
     }
+    val externalSubtitleSnapshot = externalSubtitles?.map { it.toMap() }
+    currentExternalSubtitles = externalSubtitleSnapshot
 
     // Only clear pending MPV state when MPV is the active backend. A same-core
     // MPV reload must not inherit a fallback switch that was armed for the
     // previous load. When ExoPlayer is active, keep queued properties for a
     // potential ExoPlayer→MPV fallback.
     if (usingMpvFallback) {
-      clearPendingMpvFallbackSwitch()
       pendingMpvProperties.clear()
     }
 
@@ -294,6 +292,7 @@ class ExoPlayerPlugin :
         if (!autoPlay) options.add("pause=yes")
         options.add("sid=no")
         options.add("secondary-sid=no")
+        appendExternalSubtitleOptions(options, externalSubtitleSnapshot)
         headers?.forEach { (key, value) ->
           options.add("http-header-fields-append=$key: $value")
         }
@@ -306,7 +305,7 @@ class ExoPlayerPlugin :
           }
         }
       } else {
-        playerCore?.open(uri, headers, startPositionMs, autoPlay, isLive, externalSubtitles)
+        playerCore?.open(uri, headers, startPositionMs, autoPlay, isLive, externalSubtitleSnapshot)
       }
       result.success(null)
     } ?: result.error("NO_ACTIVITY", "Activity not available", null)
@@ -751,34 +750,12 @@ class ExoPlayerPlugin :
   }
 
   override fun onEvent(name: String, data: Map<String, Any>?) {
-    val pendingFallbackSwitch =
-      name == "file-loaded" && pendingMpvFallbackSwitchGeneration == sessionGeneration && usingMpvFallback
-    if (pendingFallbackSwitch) {
-      clearPendingMpvFallbackSwitch()
-    }
-
     val event = eventPayload(name, data)
-    mainHandler.post {
-      eventSink?.success(event)
-      if (pendingFallbackSwitch) {
-        eventSink?.success(eventPayload("backend-switched"))
-      }
-    }
+    mainHandler.post { eventSink?.success(event) }
   }
 
-  private fun armPendingMpvFallbackSwitch(generation: Int) {
-    pendingMpvFallbackSwitchGeneration = generation
-    mainHandler.postDelayed({
-      if (pendingMpvFallbackSwitchGeneration == generation && sessionGeneration == generation && usingMpvFallback) {
-        Log.w(TAG, "Timed out waiting for MPV fallback file-loaded before backend-switched")
-        clearPendingMpvFallbackSwitch()
-        onEvent("backend-switched", null)
-      }
-    }, MPV_FALLBACK_SWITCH_TIMEOUT_MS)
-  }
-
-  private fun clearPendingMpvFallbackSwitch() {
-    pendingMpvFallbackSwitchGeneration = null
+  private fun notifyBackendSwitched() {
+    mainHandler.post { eventSink?.success(eventPayload("backend-switched")) }
   }
 
   /**
@@ -803,6 +780,26 @@ class ExoPlayerPlugin :
     }
   }
 
+  private fun appendExternalSubtitleOptions(
+    options: MutableList<String>,
+    externalSubtitles: List<Map<String, Any?>>?
+  ) {
+    val escapedUris = externalSubtitles.orEmpty()
+      .mapNotNull { it["uri"] as? String }
+      .filter { it.isNotEmpty() }
+      .map(::escapeMpvPathListEntry)
+      .toList()
+
+    if (escapedUris.isEmpty()) return
+
+    val pathList = escapedUris.joinToString(":")
+    options.add("sub-files=%${pathList.toByteArray(Charsets.UTF_8).size}%$pathList")
+  }
+
+  private fun escapeMpvPathListEntry(value: String): String {
+    return value.replace("\\", "\\\\").replace(":", "\\:")
+  }
+
   /**
    * Configure a freshly initialized MPV fallback core: replay the properties
    * and observers Dart registered against the ExoPlayer session, then resume
@@ -814,7 +811,8 @@ class ExoPlayerPlugin :
     act: Activity,
     uri: String,
     headers: Map<String, String>?,
-    positionMs: Long
+    positionMs: Long,
+    externalSubtitles: List<Map<String, Any?>>?
   ) {
     // Snapshot Dart-registered state on main thread before clearing
     val pendingProps = pendingMpvProperties.toList()
@@ -831,7 +829,6 @@ class ExoPlayerPlugin :
     if (mpvCore !== core) {
       core.dispose()
       fallbackInProgress = false
-      clearPendingMpvFallbackSwitch()
       return
     }
     // Configure basic MPV properties for Plex playback
@@ -862,11 +859,14 @@ class ExoPlayerPlugin :
     val startSeconds = positionMs / 1000.0
     val options = mutableListOf<String>()
     options.add(if (positionMs > 0L) "start=$startSeconds" else "start=none")
+    options.add("sid=no")
+    options.add("secondary-sid=no")
+    appendExternalSubtitleOptions(options, externalSubtitles)
     headers?.forEach { (key, value) ->
       options.add("http-header-fields-append=$key: $value")
     }
     val optionsStr = options.joinToString(",")
-    armPendingMpvFallbackSwitch(sessionGeneration)
+    notifyBackendSwitched()
     core.command(arrayOf("loadfile", mpvUri, "replace", "-1", optionsStr))
 
     // On GPUs without compute shaders, MPV can't do dynamic peak detection
@@ -900,6 +900,7 @@ class ExoPlayerPlugin :
     }
 
     val currentActivity = activity ?: return false
+    val fallbackExternalSubtitles = currentExternalSubtitles?.map { it.toMap() }
     fallbackInProgress = true
 
     Log.i(TAG, "ExoPlayer error, switching to MPV fallback at ${positionMs}ms: $errorMessage")
@@ -922,20 +923,17 @@ class ExoPlayerPlugin :
         mpvCore?.dispose()
         mpvCore = null
         usingMpvFallback = false // Clear before handoff
-        clearPendingMpvFallbackSwitch()
 
         val generation = sessionGeneration
 
         Handler(Looper.getMainLooper()).post {
           if (generation != sessionGeneration) {
             fallbackInProgress = false
-            clearPendingMpvFallbackSwitch()
             return@post
           }
           val act = activity
           if (act == null) {
             fallbackInProgress = false
-            clearPendingMpvFallbackSwitch()
             return@post
           }
 
@@ -952,7 +950,6 @@ class ExoPlayerPlugin :
                   mpvCore = null
                 }
                 fallbackInProgress = false
-                clearPendingMpvFallbackSwitch()
                 return@initialize
               }
               if (!success) {
@@ -961,7 +958,6 @@ class ExoPlayerPlugin :
                   mpvCore = null
                 }
                 fallbackInProgress = false
-                clearPendingMpvFallbackSwitch()
                 Log.e(TAG, "Failed to initialize MPV fallback")
                 onEvent("end-file", mapOf("reason" to "error", "message" to "Fallback failed: $errorMessage"))
                 return@initialize
@@ -970,18 +966,16 @@ class ExoPlayerPlugin :
               usingMpvFallback = true
               fallbackInProgress = false
 
-              setupMpvFallback(core, act, uri, headers, positionMs)
+              setupMpvFallback(core, act, uri, headers, positionMs, fallbackExternalSubtitles)
             }
           } catch (e: Exception) {
             fallbackInProgress = false
-            clearPendingMpvFallbackSwitch()
             Log.e(TAG, "Failed to switch to MPV fallback", e)
             onEvent("end-file", mapOf("reason" to "error", "message" to "Fallback failed: ${e.message}"))
           }
         }
       } catch (e: Exception) {
         fallbackInProgress = false
-        clearPendingMpvFallbackSwitch()
         Log.e(TAG, "Failed to switch to MPV fallback", e)
         onEvent("end-file", mapOf("reason" to "error", "message" to "Fallback failed: ${e.message}"))
       }

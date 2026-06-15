@@ -1,4 +1,6 @@
 import 'dart:async';
+import 'dart:convert';
+import 'dart:io' show Platform;
 
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -79,6 +81,42 @@ void main() {
             expect(subtitle['codec'], 'srt');
             expect(subtitle['isDefault'], isTrue);
             expect(subtitle['isForced'], isTrue);
+          } finally {
+            await player.dispose();
+          }
+        },
+      );
+    });
+
+    test('ExoPlayer backend switch clears stale tracks before fallback tracks arrive', () async {
+      await _withMockChannels(
+        methodChannelName: 'com.plezy/exo_player',
+        eventChannelName: 'com.plezy/exo_player/events',
+        testBody: () async {
+          final player = PlayerAndroid();
+          try {
+            _seedTracks(player);
+            expect(player.state.tracks.audio, isNotEmpty);
+            expect(player.needsDecoderRefreshAfterDisplaySwitch, isFalse);
+
+            player.handlePlayerEvent('backend-switched', null);
+
+            expect(player.needsDecoderRefreshAfterDisplaySwitch, isTrue);
+            expect(player.state.tracks.audio, isEmpty);
+            expect(player.state.tracks.subtitle, isEmpty);
+
+            player.handlePropertyChange('track-list', const [
+              {'type': 'audio', 'id': '1', 'title': 'Fallback Audio', 'lang': 'eng'},
+              {'type': 'sub', 'id': '2', 'title': 'Fallback Subtitle', 'lang': 'eng'},
+            ]);
+
+            expect(player.state.tracks.audio.single.id, '1');
+            expect(player.state.tracks.subtitle.single.id, '2');
+
+            player.handlePlayerEvent('backend-switched', null);
+
+            expect(player.state.tracks.audio.single.id, '1');
+            expect(player.state.tracks.subtitle.single.id, '2');
           } finally {
             await player.dispose();
           }
@@ -316,6 +354,93 @@ void main() {
             expect(secondarySidIndex, lessThan(loadIndex));
             expect(_setPropertyValue(calls[sidIndex]), 'no');
             expect(_setPropertyValue(calls[secondarySidIndex]), 'no');
+          } finally {
+            await player.dispose();
+          }
+        },
+      );
+    });
+
+    test('MPV passes external subtitles through loadfile options', () async {
+      final calls = <MethodCall>[];
+
+      await _withMockChannels(
+        methodChannelName: 'com.plezy/mpv_player',
+        eventChannelName: 'com.plezy/mpv_player/events',
+        methodHandler: (call) {
+          calls.add(call);
+          switch (call.method) {
+            case 'initialize':
+              return Future.value(true);
+            default:
+              return Future.value(null);
+          }
+        },
+        testBody: () async {
+          final player = PlayerNative();
+          try {
+            expect(player.attachesExternalSubtitlesAtOpen, isTrue);
+            const english = 'https://example.test/library/parts/1/subtitle.srt?token=a,b:c';
+            const french = 'https://example.test/subtitles/fr forced.ass';
+
+            await player.open(
+              Media('https://example.test/movie.mkv'),
+              externalSubtitles: const [
+                SubtitleTrack(id: 'external-en', uri: english, title: 'English', language: 'eng', codec: 'srt'),
+                SubtitleTrack(id: 'external-fr', uri: french, title: 'French Forced', language: 'fra', codec: 'ass'),
+              ],
+            );
+
+            expect(_loadfileArgs(calls), [
+              'loadfile',
+              'https://example.test/movie.mkv',
+              'replace',
+              '-1',
+              'sub-files=${_fixedLengthPathList([english, french])}',
+            ]);
+            expect(_commandCalls(calls, 'sub-add'), isEmpty);
+          } finally {
+            await player.dispose();
+          }
+        },
+      );
+    });
+
+    test('MPV preserves external subtitle metadata for loadfile sidecars', () async {
+      await _withMockChannels(
+        methodChannelName: 'com.plezy/mpv_player',
+        eventChannelName: 'com.plezy/mpv_player/events',
+        testBody: () async {
+          final player = PlayerNative();
+          try {
+            const subtitleUri = 'https://example.test/subtitles/en-forced.srt';
+            await player.open(
+              Media('https://example.test/movie.mkv'),
+              externalSubtitles: const [
+                SubtitleTrack(
+                  id: 'server-subtitle',
+                  uri: subtitleUri,
+                  title: 'English Forced',
+                  language: 'eng',
+                  codec: 'srt',
+                  isDefault: true,
+                  isForced: true,
+                  isExternal: true,
+                ),
+              ],
+            );
+
+            player.handlePropertyChange('track-list', const [
+              {'type': 'sub', 'id': '1', 'codec': 'subrip', 'external': true, 'external-filename': subtitleUri},
+            ]);
+
+            final subtitle = player.state.tracks.subtitle.single;
+            expect(subtitle.title, 'English Forced');
+            expect(subtitle.language, 'eng');
+            expect(subtitle.codec, 'srt');
+            expect(subtitle.isDefault, isTrue);
+            expect(subtitle.isForced, isTrue);
+            expect(subtitle.uri, subtitleUri);
           } finally {
             await player.dispose();
           }
@@ -612,4 +737,28 @@ int _loadfileCallIndex(List<MethodCall> calls) {
     final args = Map<Object?, Object?>.from(call.arguments as Map)['args'] as List;
     return args.isNotEmpty && args.first == 'loadfile';
   });
+}
+
+List _loadfileArgs(List<MethodCall> calls) {
+  final loadIndex = _loadfileCallIndex(calls);
+  expect(loadIndex, greaterThanOrEqualTo(0));
+  return Map<Object?, Object?>.from(calls[loadIndex].arguments as Map)['args'] as List;
+}
+
+Iterable<MethodCall> _commandCalls(List<MethodCall> calls, String command) {
+  return calls.where((call) {
+    if (call.method != 'command') return false;
+    final args = Map<Object?, Object?>.from(call.arguments as Map)['args'] as List;
+    return args.isNotEmpty && args.first == command;
+  });
+}
+
+String _fixedLengthPathList(List<String> values) {
+  final separator = Platform.isWindows ? ';' : ':';
+  final escaped = values.map((value) => _escapePathListEntry(value, separator)).join(separator);
+  return '%${utf8.encode(escaped).length}%$escaped';
+}
+
+String _escapePathListEntry(String value, String separator) {
+  return value.replaceAll(r'\', r'\\').replaceAll(separator, '\\$separator');
 }

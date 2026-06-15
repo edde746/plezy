@@ -39,11 +39,11 @@ class PlayerAndroid extends PlayerBase {
   @override
   bool get supportsSecondarySubtitles => false;
 
-  // Under the mpv fallback the native open path drops the externalSubtitles
-  // argument, so subsequent opens must use the post-open sub-add dance
-  // (handleAddSubtitleTrack routes to mpv natively).
+  // ExoPlayer attaches external subtitles to the MediaItem before prepare;
+  // the Android mpv fallback mirrors PlayerNative by passing sub-files through
+  // loadfile options.
   @override
-  bool get attachesExternalSubtitlesAtOpen => !_usingMpvFallback;
+  bool get attachesExternalSubtitlesAtOpen => true;
 
   // The fallback runs mpv over MediaCodec — the same display-switch decoder
   // constraint as PlayerNative on Android. The whole startup-gate chain
@@ -67,8 +67,11 @@ class PlayerAndroid extends PlayerBase {
       // Native player switched from ExoPlayer to MPV due to unsupported format.
       // Clear stale ExoPlayer tracks so applyTrackSelectionWhenReady waits for
       // mpv's track-list instead of immediately applying with ExoPlayer IDs.
+      final wasUsingMpvFallback = _usingMpvFallback;
       _usingMpvFallback = true;
-      clearTracks();
+      if (!wasUsingMpvFallback) {
+        clearTracks();
+      }
       backendSwitchedController.add(null);
       return;
     }
@@ -132,6 +135,7 @@ class PlayerAndroid extends PlayerBase {
     // again on Android ExoPlayer or seeks/progress jump to roughly 2x (#1221).
     configureTimeline(offset: Duration.zero, duration: timelineDuration);
     clearTracks();
+    setExternalSubtitleMetadata(externalSubtitles);
     setSeekable(false);
 
     // Show the video layer

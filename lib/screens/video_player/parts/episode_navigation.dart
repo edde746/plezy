@@ -446,7 +446,7 @@ extension _VideoPlayerEpisodeNavigationMethods on VideoPlayerScreenState {
         externalSubtitlePlan: externalSubtitlePlan,
         // Same guard as the start path: don't resume a player a newer flow
         // owns, and let a pending startup gate (or Watch Together's group
-        // start) own the resume instead. Android mpv external-subtitle opens
+        // start) own the resume instead. Post-open external-subtitle paths
         // resume once here so the startup refresh gate can observe a frame.
         shouldResumeAfterSubtitleLoad: () =>
             (!frameRatePlan.holdPlaybackStart || resumeForStartupFrame) &&
