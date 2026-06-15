@@ -23,6 +23,7 @@ class TraktAccountProvider extends ChangeNotifier with DisposableChangeNotifierM
 
   TraktSession? _session;
   String _activeUserUuid = '';
+  int _bindingGeneration = 0;
   bool _isConnecting = false;
   Completer<void>? _cancelCompleter;
 
@@ -41,9 +42,12 @@ class TraktAccountProvider extends ChangeNotifier with DisposableChangeNotifierM
 
   /// Called whenever the active Plex profile changes (or on initial load).
   Future<void> onActiveProfileChanged(String? newUserUuid) async {
-    _activeUserUuid = newUserUuid ?? '';
-    final loaded = await _store.load(_activeUserUuid);
-    _setSessionAndRebind(loaded);
+    if (isDisposed) return;
+    final userUuid = newUserUuid ?? '';
+    final generation = ++_bindingGeneration;
+    _activeUserUuid = userUuid;
+    final loaded = await _store.load(userUuid);
+    _setSessionAndRebind(userUuid, generation, loaded);
   }
 
   /// Run the device-code OAuth flow.
@@ -65,7 +69,7 @@ class TraktAccountProvider extends ChangeNotifier with DisposableChangeNotifierM
         ),
         enrich: _enrichUsername,
         save: (s) => _store.save(_activeUserUuid, s),
-        assign: _setSessionAndRebind,
+        assign: _bindCurrentSession,
       );
     } finally {
       final c = _cancelCompleter;
@@ -92,7 +96,10 @@ class TraktAccountProvider extends ChangeNotifier with DisposableChangeNotifierM
 
   /// Revoke the access token and clear local state.
   Future<void> disconnect() async {
+    final userUuid = _activeUserUuid;
+    final generation = ++_bindingGeneration;
     final session = _session;
+    _setSessionAndRebind(userUuid, generation, null);
     if (session != null) {
       final client = TraktClient(session, onSessionInvalidated: () {});
       try {
@@ -101,26 +108,67 @@ class TraktAccountProvider extends ChangeNotifier with DisposableChangeNotifierM
         client.dispose();
       }
     }
-    await _store.clear(_activeUserUuid);
-    _setSessionAndRebind(null);
+    await _store.clear(userUuid);
   }
 
-  void _setSessionAndRebind(TraktSession? session) {
+  void _bindCurrentSession(TraktSession? session) {
+    _setSessionAndRebind(_activeUserUuid, ++_bindingGeneration, session);
+  }
+
+  void _setSessionAndRebind(String userUuid, int generation, TraktSession? session) {
+    if (!_isCurrentBinding(userUuid, generation)) return;
     _session = session;
-    TraktScrobbleService.instance.rebindToProfile(session, onSessionInvalidated: _handleSessionInvalidated);
-    TraktSyncService.instance.rebindToProfile(
-      _activeUserUuid,
+
+    void handleInvalidated() => _handleSessionInvalidated(userUuid, generation);
+    void handleUpdated(TraktSession next) => _handleSessionUpdated(userUuid, generation, next);
+
+    TraktScrobbleService.instance.rebindToProfile(
       session,
-      onSessionInvalidated: _handleSessionInvalidated,
+      onSessionInvalidated: handleInvalidated,
+      onSessionUpdated: handleUpdated,
     );
+    TraktSyncService.instance.rebindToProfile(
+      userUuid,
+      session,
+      onSessionInvalidated: handleInvalidated,
+      onSessionUpdated: handleUpdated,
+    );
+    safeNotifyListeners();
+  }
+
+  bool _isCurrentBinding(String userUuid, int generation) {
+    return !isDisposed && userUuid == _activeUserUuid && generation == _bindingGeneration;
+  }
+
+  void _handleSessionUpdated(String userUuid, int generation, TraktSession session) {
+    if (!_isCurrentBinding(userUuid, generation)) return;
+    _session = session;
+    TraktScrobbleService.instance.updateSession(session);
+    TraktSyncService.instance.updateSession(session);
+    unawaited(_store.save(userUuid, session));
     safeNotifyListeners();
   }
 
   /// Called by [TraktClient] when refresh fails permanently. Clears local state
   /// so the UI shows "not connected" and the user can re-link.
-  void _handleSessionInvalidated() {
-    _store.clear(_activeUserUuid);
-    _setSessionAndRebind(null);
+  void _handleSessionInvalidated(String userUuid, int generation) {
+    if (!_isCurrentBinding(userUuid, generation)) return;
+    final nextGeneration = ++_bindingGeneration;
+    unawaited(_store.clear(userUuid));
+    _setSessionAndRebind(userUuid, nextGeneration, null);
+  }
+
+  @visibleForTesting
+  int get debugBindingGenerationForTesting => _bindingGeneration;
+
+  @visibleForTesting
+  void debugHandleSessionUpdatedForTesting(String userUuid, int generation, TraktSession session) {
+    _handleSessionUpdated(userUuid, generation, session);
+  }
+
+  @visibleForTesting
+  void debugHandleSessionInvalidatedForTesting(String userUuid, int generation) {
+    _handleSessionInvalidated(userUuid, generation);
   }
 
   @override
