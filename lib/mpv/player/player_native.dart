@@ -32,6 +32,9 @@ class PlayerNative extends PlayerBase {
   @override
   String get playerType => 'mpv';
 
+  @override
+  bool get providesNativeStats => Platform.isAndroid;
+
   /// Node properties are returned as structured maps on macOS/iOS/Linux,
   /// but as JSON strings on Android/Windows.
   static final String _nodeFormat = (Platform.isAndroid || Platform.isWindows) ? 'string' : 'node';
@@ -292,6 +295,14 @@ class PlayerNative extends PlayerBase {
     }
     await _ensureInitialized();
     return await invoke<String>('getProperty', {'name': name});
+  }
+
+  @override
+  Future<Map<String, dynamic>> getStats() async {
+    if (disposed || !Platform.isAndroid) return super.getStats();
+    await _ensureInitialized();
+    final result = await invoke<Map>('getStats');
+    return Map<String, dynamic>.from(result ?? const {});
   }
 
   @override

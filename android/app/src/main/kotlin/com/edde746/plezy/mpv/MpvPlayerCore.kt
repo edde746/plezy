@@ -76,6 +76,7 @@ class MpvPlayerCore(private val activity: Activity) : SurfaceHolder.Callback {
 
   @Volatile private var videoOutputEpoch: Long = 0L
   private val videoOutputMutex = Mutex()
+  private val commandMutex = Mutex()
   private var pendingVideoOutputDisableJob: Job? = null
   private var pendingVideoOutputRefreshJob: Job? = null
 
@@ -111,20 +112,29 @@ class MpvPlayerCore(private val activity: Activity) : SurfaceHolder.Callback {
     return refreshRate.toString()
   }
 
-  private fun updateDisplayFpsOverride(p: MpvPlayer, reason: String) {
+  private fun updateDisplayFpsOverride(p: MpvPlayer, reason: String, onComplete: () -> Unit = {}) {
     val fps = currentDisplayFpsOverride()
     if (fps == null) {
       Log.d(TAG, "Skipping display-fps-override update ($reason): no display rate")
+      onComplete()
+      return
+    }
+    if (!scope.isActive) {
+      onComplete()
       return
     }
 
-    try {
-      runBlocking(Dispatchers.IO) {
+    scope.launch(Dispatchers.IO) {
+      try {
         p.setProperty("display-fps-override", fps)
+        Log.d(TAG, "Updated display-fps-override=$fps ($reason)")
+      } catch (e: Exception) {
+        Log.w(TAG, "Failed to update display-fps-override ($reason)", e)
+      } finally {
+        withContext(NonCancellable + Dispatchers.Main) {
+          onComplete()
+        }
       }
-      Log.d(TAG, "Updated display-fps-override=$fps ($reason)")
-    } catch (e: Exception) {
-      Log.w(TAG, "Failed to update display-fps-override ($reason)", e)
     }
   }
 
@@ -649,8 +659,11 @@ class MpvPlayerCore(private val activity: Activity) : SurfaceHolder.Callback {
 
   // Public API
 
-  fun setProperty(name: String, value: String) {
-    if (!isInitialized || disposing) return
+  fun setProperty(name: String, value: String, onComplete: ((Boolean) -> Unit)? = null) {
+    if (!isInitialized || disposing || !scope.isActive) {
+      onComplete?.invoke(false)
+      return
+    }
     if (name == "pause") {
       val paused = normalizePauseValue(value)
       if (paused == true) {
@@ -664,6 +677,7 @@ class MpvPlayerCore(private val activity: Activity) : SurfaceHolder.Callback {
         if (!hasReadyVideoOutput()) {
           deferredResumeRequested = true
           Log.d(TAG, "Deferring public resume until video output is ready")
+          onComplete?.invoke(true)
           return
         }
         cachedPaused = false
@@ -671,22 +685,105 @@ class MpvPlayerCore(private val activity: Activity) : SurfaceHolder.Callback {
         Log.d(TAG, "Public pause state updated: paused=false")
       }
     }
-    scope.launch {
+    scope.launch(Dispatchers.IO) {
+      var success = false
       try {
         player?.setProperty(name, value)
+        success = true
       } catch (e: Exception) {
         Log.w(TAG, "setProperty($name) failed", e)
+      } finally {
+        withContext(NonCancellable + Dispatchers.Main) {
+          onComplete?.invoke(success)
+        }
       }
     }
   }
 
   fun getProperty(name: String): String? {
+    if (Looper.myLooper() == Looper.getMainLooper()) {
+      Log.w(TAG, "Refusing synchronous getProperty($name) on the main thread")
+      return null
+    }
+    return getPropertyBlocking(name)
+  }
+
+  private fun getPropertyBlocking(name: String): String? {
     if (!isInitialized || disposing) return null
     return try {
       runBlocking(Dispatchers.IO) { player?.getString(name) }
     } catch (e: Exception) {
       null
     }
+  }
+
+  fun getPropertyAsync(name: String, onResult: (String?) -> Unit) {
+    if (!isInitialized || disposing) {
+      onResult(null)
+      return
+    }
+
+    Thread {
+      val value = getPropertyBlocking(name)
+      activity.runOnUiThread {
+        onResult(if (!disposing && isInitialized) value else null)
+      }
+    }.start()
+  }
+
+  /**
+   * Returns MPV stats in the same key format used by the performance overlay.
+   * This method performs synchronous native property reads and must not be
+   * called on Android's main thread.
+   */
+  fun getStats(): Map<String, Any?> {
+    if (Looper.myLooper() == Looper.getMainLooper()) {
+      Log.w(TAG, "Refusing synchronous getStats() on the main thread")
+      return mapOf("playerType" to "mpv")
+    }
+
+    val hasVideo = getProperty("video-params/w") != null
+
+    val stats = mutableMapOf<String, Any?>(
+      "playerType" to "mpv",
+      "video-codec" to getProperty("video-codec"),
+      "video-params/w" to getProperty("video-params/w"),
+      "video-params/h" to getProperty("video-params/h"),
+      "videoWidth" to getProperty("dwidth"),
+      "videoHeight" to getProperty("dheight"),
+      "container-fps" to getProperty("container-fps"),
+      "estimated-vf-fps" to getProperty("estimated-vf-fps"),
+      "video-bitrate" to getProperty("video-bitrate"),
+      "hwdec-current" to getProperty("hwdec-current"),
+      "audio-codec-name" to getProperty("audio-codec-name"),
+      "audio-params/samplerate" to getProperty("audio-params/samplerate"),
+      "audio-params/hr-channels" to getProperty("audio-params/hr-channels"),
+      "audio-bitrate" to getProperty("audio-bitrate"),
+      "total-avsync-change" to getProperty("total-avsync-change"),
+      "cache-used" to getProperty("cache-used"),
+      "demuxer-max-bytes" to getProperty("demuxer-max-bytes"),
+      "cache-speed" to getProperty("cache-speed"),
+      "frame-drop-count" to getProperty("frame-drop-count"),
+      "decoder-frame-drop-count" to getProperty("decoder-frame-drop-count"),
+      "demuxer-cache-duration" to getProperty("demuxer-cache-duration")
+    )
+
+    if (hasVideo) {
+      stats["display-fps"] = getProperty("display-fps")
+      stats["video-params/pixelformat"] = getProperty("video-params/pixelformat")
+      stats["video-params/hw-pixelformat"] = getProperty("video-params/hw-pixelformat")
+      stats["video-params/colormatrix"] = getProperty("video-params/colormatrix")
+      stats["video-params/primaries"] = getProperty("video-params/primaries")
+      stats["video-params/gamma"] = getProperty("video-params/gamma")
+      stats["video-params/max-luma"] = getProperty("video-params/max-luma")
+      stats["video-params/min-luma"] = getProperty("video-params/min-luma")
+      stats["video-params/max-cll"] = getProperty("video-params/max-cll")
+      stats["video-params/max-fall"] = getProperty("video-params/max-fall")
+      stats["video-params/aspect-name"] = getProperty("video-params/aspect-name")
+      stats["video-params/rotate"] = getProperty("video-params/rotate")
+    }
+
+    return stats
   }
 
   fun observeProperty(name: String, format: String) {
@@ -706,15 +803,19 @@ class MpvPlayerCore(private val activity: Activity) : SurfaceHolder.Callback {
       onComplete?.invoke(false)
       return
     }
-    scope.launch {
+    scope.launch(Dispatchers.IO) {
       var success = false
       try {
-        player?.command(*args)
-        success = true
+        commandMutex.withLock {
+          player?.command(*args)
+          success = true
+        }
       } catch (e: Exception) {
         Log.w(TAG, "command failed", e)
       } finally {
-        onComplete?.invoke(success)
+        withContext(NonCancellable + Dispatchers.Main) {
+          onComplete?.invoke(success)
+        }
       }
     }
   }
@@ -793,8 +894,11 @@ class MpvPlayerCore(private val activity: Activity) : SurfaceHolder.Callback {
       return
     }
     mgr.setVideoFrameRate(fps, videoDurationMs, extraDelayMs) { switched ->
-      player?.let { updateDisplayFpsOverride(it, "frame rate switch, switched=$switched") }
-      onComplete(switched)
+      player?.let {
+        updateDisplayFpsOverride(it, "frame rate switch, switched=$switched") {
+          onComplete(switched)
+        }
+      } ?: onComplete(switched)
     }
   }
 
