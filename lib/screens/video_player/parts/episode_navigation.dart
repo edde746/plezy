@@ -439,14 +439,20 @@ extension _VideoPlayerEpisodeNavigationMethods on VideoPlayerScreenState {
       _trackManager = trackManager;
       trackManager.cacheExternalSubtitles(result.externalSubtitles);
 
+      final resumeForStartupFrame =
+          frameRatePlan.needsStartupRefresh && externalSubtitlePlan.requiresPostOpenAdd && !wtOwnsStart;
       await _applyTracksAfterOpen(
         trackManager: trackManager,
         externalSubtitlePlan: externalSubtitlePlan,
         // Same guard as the start path: don't resume a player a newer flow
         // owns, and let a pending startup gate (or Watch Together's group
-        // start) own the resume instead.
+        // start) own the resume instead. Android mpv external-subtitle opens
+        // resume once here so the startup refresh gate can observe a frame.
         shouldResumeAfterSubtitleLoad: () =>
-            !frameRatePlan.holdPlaybackStart && !wtOwnsStart && mounted && player == currentPlayer,
+            (!frameRatePlan.holdPlaybackStart || resumeForStartupFrame) &&
+            !wtOwnsStart &&
+            mounted &&
+            player == currentPlayer,
         applySelectionWhenResumeSkipped: wtOwnsStart && !frameRatePlan.holdPlaybackStart,
       );
       if (!isCurrentReload()) return true;
@@ -461,6 +467,7 @@ extension _VideoPlayerEpisodeNavigationMethods on VideoPlayerScreenState {
           reason: reason,
           wtOwnsStart: wtOwnsStart,
         ),
+        playbackResumedForStartupFrame: resumeForStartupFrame,
       );
       if (!isCurrentReload()) return true;
 

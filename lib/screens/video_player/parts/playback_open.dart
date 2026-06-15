@@ -215,7 +215,17 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
     required SettingsService settingsService,
     required _FrameRateStartupPlan plan,
     required Future<void> Function(String reason) resumeAfterStartupGate,
+    bool playbackResumedForStartupFrame = false,
   }) async {
+    Future<void> resumeAfterRefresh(String reason) async {
+      if (playbackResumedForStartupFrame) {
+        appLogger.d('Frame rate matching: continuing already-resumed playback after $reason');
+        await _playWithPlaybackIntent(currentPlayer);
+      } else {
+        await resumeAfterStartupGate(reason);
+      }
+    }
+
     // Fallback refresh-rate path. The player was opened paused;
     // setVideoFrameRate awaits the real display-change event (+ settle +
     // user delay) before returning, then we start playback.
@@ -241,7 +251,7 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
       // Always resume — either the switch completed and we want to play,
       // or no switch was needed and we need to start playback now that the
       // preparation gate has been cleared.
-      await resumeAfterStartupGate('post-open frame rate switch');
+      await resumeAfterRefresh('post-open frame rate switch');
 
       unawaited(
         Sentry.addBreadcrumb(
@@ -256,10 +266,10 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
         if (startupReady) {
           await Future<void>.delayed(const Duration(milliseconds: 100));
           await _refreshAndroidMpvDecoderAfterFrameRateSwitch(reason: 'pre-load frame rate startup');
-          await resumeAfterStartupGate('startup decoder refresh');
+          await resumeAfterRefresh('startup decoder refresh');
         } else {
           appLogger.w('Frame rate matching: skipping Android MPV decoder refresh because startup frame timed out');
-          await resumeAfterStartupGate('startup frame timeout');
+          await resumeAfterRefresh('startup frame timeout');
         }
       }
 

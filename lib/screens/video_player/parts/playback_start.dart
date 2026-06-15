@@ -320,14 +320,19 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
         // Store external subtitles for re-use after backend fallback
         _trackManager!.cacheExternalSubtitles(result.externalSubtitles);
 
+        final resumeForStartupFrame =
+            frameRatePlan.needsStartupRefresh && externalSubtitlePlan.requiresPostOpenAdd && !wtOwnsStart;
         await _applyTracksAfterOpen(
           trackManager: _trackManager!,
           externalSubtitlePlan: externalSubtitlePlan,
           // When a startup gate below owns the resume, skip this one to
-          // avoid a double-play. Watch Together stays paused for the group
-          // start, so selection is armed through the resume-skipped branch.
+          // avoid a double-play. Android mpv external-subtitle opens are the
+          // exception: after sub-add we must resume once so mpv can produce the
+          // startup frame that the decoder-refresh gate is waiting for.
+          // Watch Together stays paused for the group start, so selection is
+          // armed through the resume-skipped branch.
           shouldResumeAfterSubtitleLoad: () =>
-              !shouldHoldPlaybackStart && !wtOwnsStart && mounted && player == currentPlayer,
+              (!shouldHoldPlaybackStart || resumeForStartupFrame) && !wtOwnsStart && mounted && player == currentPlayer,
           applySelectionWhenResumeSkipped: wtOwnsStart && !shouldHoldPlaybackStart,
         );
 
@@ -342,6 +347,7 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
             wtOwnsStart: wtOwnsStart,
             wtStartupHold: wtStartupHold,
           ),
+          playbackResumedForStartupFrame: resumeForStartupFrame,
         );
         // Backstop: if the gate never ran its resume path (unmounted race),
         // don't leave Watch Together readiness held forever.
