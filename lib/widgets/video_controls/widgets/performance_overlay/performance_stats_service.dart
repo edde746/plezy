@@ -40,6 +40,7 @@ class PerformanceStatsService {
   // Values: 'exoplayer', 'mpv', or 'unknown'
   String _runtimePlayerType = 'unknown';
   StreamSubscription<void>? _backendSwitchedSubscription;
+  bool _fetchInProgress = false;
 
   PerformanceStatsService(this.player);
 
@@ -104,6 +105,8 @@ class PerformanceStatsService {
 
   /// Fetch all performance stats from the player.
   Future<void> _fetchStats() async {
+    if (_fetchInProgress) return;
+    _fetchInProgress = true;
     try {
       // Ensure we know the runtime type on first fetch
       if (_runtimePlayerType == 'unknown') {
@@ -120,6 +123,8 @@ class PerformanceStatsService {
       }
     } catch (e) {
       appLogger.w('Failed to fetch performance stats', error: e);
+    } finally {
+      _fetchInProgress = false;
     }
   }
 
