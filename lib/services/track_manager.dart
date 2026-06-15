@@ -203,8 +203,12 @@ class TrackManager {
     final info = mediaInfo;
     if (info == null || tracks.subtitle.isNotEmpty) return true;
 
-    final expectsSelectedSubtitle = info.subtitleTracks.any((track) => track.selected);
-    return !expectsSelectedSubtitle;
+    // Plex can legitimately report subtitles without selecting one. During an
+    // in-place item reload Android clears the old track list before the new
+    // demuxed subtitles arrive; applying selection at the first audio-only
+    // update would treat that temporary empty subtitle list as an explicit
+    // server "off" decision and leave the next episode without selectable subs.
+    return info.subtitleTracks.isEmpty;
   }
 
   /// Core track selection: delegates to [TrackSelectionService].
