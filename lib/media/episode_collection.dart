@@ -39,8 +39,15 @@ Future<void> collectEpisodesForSeason(
 
 /// Fetch just the first episode of a season without walking the entire season.
 /// Use this for representative lookups and immediate "play first" actions.
-Future<MediaItem?> fetchFirstEpisodeForSeason(MediaServerClient client, String seasonRatingKey) async {
-  final page = await client.fetchChildrenPage(seasonRatingKey, start: 0, size: 1);
+Future<MediaItem?> fetchFirstEpisodeForSeason(
+  MediaServerClient client,
+  String seasonRatingKey, {
+  String? seriesId,
+}) async {
+  final seasonPagingClient = client is SeasonEpisodePagingClient ? client as SeasonEpisodePagingClient : null;
+  final page = seriesId != null && seasonPagingClient != null
+      ? await seasonPagingClient.fetchSeasonEpisodesPage(seriesId, seasonRatingKey, start: 0, size: 1)
+      : await client.fetchChildrenPage(seasonRatingKey, start: 0, size: 1);
   for (final item in page.items) {
     if (item.kind == MediaKind.episode) return item;
   }
@@ -136,8 +143,8 @@ int preferredSeasonIndex(
   return defaultPlaybackSeasonIndex(seasons);
 }
 
-/// Fetch a page of direct season children and normalize the episode identity
-/// fields detail rows depend on. Local/session progress stays layered in UI.
+/// Fetch a page of season episodes and normalize the episode identity fields
+/// detail rows depend on. Local/session progress stays layered in UI.
 Future<LibraryPage<MediaItem>> fetchSeasonEpisodePage(
   MediaServerClient client, {
   required MediaItem show,
@@ -145,7 +152,10 @@ Future<LibraryPage<MediaItem>> fetchSeasonEpisodePage(
   required int start,
   required int size,
 }) async {
-  final page = await client.fetchChildrenPage(season.id, start: start, size: size);
+  final seasonPagingClient = client is SeasonEpisodePagingClient ? client as SeasonEpisodePagingClient : null;
+  final page = seasonPagingClient != null
+      ? await seasonPagingClient.fetchSeasonEpisodesPage(show.id, season.id, start: start, size: size)
+      : await client.fetchChildrenPage(season.id, start: start, size: size);
   return LibraryPage<MediaItem>(
     items: normalizeSeasonEpisodes(page.items, show: show, season: season),
     totalCount: page.totalCount,
@@ -159,6 +169,7 @@ List<MediaItem> normalizeSeasonEpisodes(
   required MediaItem season,
 }) {
   return episodes
+      .where((episode) => episode.kind == MediaKind.episode)
       .map(
         (episode) => _withFallbackLibrary(
           episode.copyWith(

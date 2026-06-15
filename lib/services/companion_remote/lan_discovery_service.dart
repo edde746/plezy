@@ -161,7 +161,7 @@ class LanDiscoveryService {
   Future<void> stopBroadcasting() async {
     _broadcastTimer?.cancel();
     _broadcastTimer = null;
-    _broadcastSockets?.close();
+    await _broadcastSockets?.close();
     _broadcastSockets = null;
     appLogger.d('LanDiscovery: Broadcasting stopped');
   }
@@ -222,14 +222,10 @@ class LanDiscoveryService {
 
       appLogger.d('LanDiscovery: Listening on port $discoveryPort');
 
-      _listenSubscription = _listenSocket!.listen((RawSocketEvent event) {
-        if (event == RawSocketEvent.read) {
-          final datagram = _listenSocket?.receive();
-          if (datagram != null) {
-            _handleDatagram(datagram, contexts);
-          }
-        }
-      });
+      _listenSubscription = _listenSocket!.listenDatagrams(
+        (datagram) => _handleDatagram(datagram, contexts),
+        debugLabel: 'LanDiscovery listener',
+      );
     } catch (e) {
       appLogger.e('LanDiscovery: Failed to bind listener', error: e);
     }

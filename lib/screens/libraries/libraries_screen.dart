@@ -251,7 +251,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
 
       final tabState = _getTabState(tabController.index);
       if (tabState != null) {
-        (tabState as dynamic).focusFirstItem();
+        (tabState as dynamic).focusContentOrChrome();
       } else {
         // State not available yet, retry after another frame
         WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -266,7 +266,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
   void _focusCurrentTabImmediate() {
     final tabState = _getTabState(tabController.index);
     if (tabState != null) {
-      (tabState as dynamic).focusFirstItem();
+      (tabState as dynamic).focusContentOrChrome();
     }
   }
 
@@ -296,7 +296,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
         if (_visibleTabs[tabController.index] == LibraryTabType.browse) {
           (tabState as dynamic).focusChipsBar();
         } else {
-          (tabState as dynamic).focusFirstItem();
+          (tabState as dynamic).focusContentOrChrome();
         }
       }
     });

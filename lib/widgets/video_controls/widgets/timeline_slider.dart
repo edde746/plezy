@@ -23,6 +23,8 @@ class TimelineSlider extends StatefulWidget {
   final bool showChapterMarkersOnTimeline;
   final ValueChanged<Duration> onSeek;
   final ValueChanged<Duration> onSeekEnd;
+  final VoidCallback? onScrubStart;
+  final VoidCallback? onScrubEnd;
 
   /// Optional FocusNode for D-pad/keyboard navigation.
   final FocusNode? focusNode;
@@ -56,6 +58,8 @@ class TimelineSlider extends StatefulWidget {
     this.showChapterMarkersOnTimeline = true,
     required this.onSeek,
     required this.onSeekEnd,
+    this.onScrubStart,
+    this.onScrubEnd,
     this.focusNode,
     this.onKeyEvent,
     this.onFocusChange,
@@ -85,6 +89,12 @@ class _TimelineSliderState extends State<TimelineSlider> {
   static const _thumbWidth = 160.0;
 
   @override
+  void dispose() {
+    if (_scrubbing) widget.onScrubEnd?.call();
+    super.dispose();
+  }
+
+  @override
   void didUpdateWidget(TimelineSlider oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.enabled && !widget.enabled && _scrubbing) {
@@ -100,6 +110,7 @@ class _TimelineSliderState extends State<TimelineSlider> {
   void _handleScrubStart(DragStartDetails details, BuildContext sliderContext) {
     if (widget.duration.inMilliseconds <= 0) return;
     _scrubbing = true;
+    widget.onScrubStart?.call();
     _applyScrub(details.localPosition.dx, sliderContext);
   }
 
@@ -125,7 +136,11 @@ class _TimelineSliderState extends State<TimelineSlider> {
     _scrubbing = false;
     final value = _dragValue;
     setState(() => _dragValue = null);
-    if (value != null) widget.onSeekEnd(Duration(milliseconds: value.round()));
+    try {
+      if (value != null) widget.onSeekEnd(Duration(milliseconds: value.round()));
+    } finally {
+      widget.onScrubEnd?.call();
+    }
   }
 
   /// Discrete a11y step (VoiceOver/TalkBack swipe): a complete seek.

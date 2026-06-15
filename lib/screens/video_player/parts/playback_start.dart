@@ -153,8 +153,6 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
       final settingsService = await SettingsService.getInstance();
       if (!attempt.isCurrent) return;
       final displayCriteria = result.mediaInfo?.displayCriteria;
-      final attachesSubsAtOpen = currentPlayer.attachesExternalSubtitlesAtOpen;
-      final hasExternalSubs = result.externalSubtitles.isNotEmpty;
       var audioFocusReady = false;
 
       Future<void> ensureAudioFocus() async {
@@ -184,6 +182,7 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
       // simultaneous group start.
       final wtOwnsStart = _watchTogetherOwnsPlaybackStart();
       Completer<void>? wtStartupHold;
+      late _ExternalSubtitleOpenPlan externalSubtitlePlan;
 
       // Open video through Player
       if (result.videoUrl != null) {
@@ -208,17 +207,6 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
         );
         if (!mounted || player != currentPlayer) return;
 
-        // Enable FFmpeg auto-reconnect for VOD streams (covers network drops
-        // up to 10 min). Forwarded to the Kotlin layer on Android so MPV
-        // inherits it on the ExoPlayer→MPV fallback path (see
-        // _onBackendSwitched), so keep it unconditional.
-        if (!_isOfflinePlayback && !widget.isLive) {
-          await currentPlayer.setProperty(
-            'stream-lavf-o',
-            'reconnect=1,reconnect_on_network_error=1,reconnect_streamed=1,reconnect_delay_max=600',
-          );
-        }
-
         await _primeDisplayCriteria(
           player: currentPlayer,
           settingsService: settingsService,
@@ -226,12 +214,17 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
           isTranscoding: result.isTranscoding,
         );
 
-        final shouldAutoPlay = !shouldHoldPlaybackStart && !wtOwnsStart && (attachesSubsAtOpen || !hasExternalSubs);
         frameRatePlan.armStartupRefreshGate(currentPlayer);
+        externalSubtitlePlan = _prepareExternalSubtitleOpenPlan(
+          player: currentPlayer,
+          externalSubtitles: result.externalSubtitles,
+        );
+        final shouldAutoPlay =
+            !shouldHoldPlaybackStart && !wtOwnsStart && externalSubtitlePlan.canStartBeforeTrackSetup;
 
-        // ExoPlayer: attach external subs at open time so it discovers
-        // them in a single prepare() — no media reload needed for selection.
-        // MPV (all platforms including Android): external subs added after open via sub-add.
+        // Backends that support at-open sidecars receive them with open()
+        // so tracks are discovered in a single prepare/loadfile cycle. Any
+        // backend that cannot do that still uses the post-open sub-add path.
         final openTiming = _playbackOpenTiming(
           backend: _currentMetadata.backend,
           isTranscoding: result.isTranscoding,
@@ -243,10 +236,12 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
           settingsService: settingsService,
           videoUrl: result.videoUrl!,
           isTranscoding: result.isTranscoding,
+          isLocalMedia: _isOfflinePlayback,
+          selectedVersion: result.selectedVersion,
           timing: openTiming,
           headers: streamHeaders,
           play: shouldAutoPlay,
-          externalSubtitlesAtOpen: attachesSubsAtOpen && hasExternalSubs ? result.externalSubtitles : null,
+          externalSubtitlesAtOpen: externalSubtitlePlan.subtitlesAtOpen,
           shouldContinue: () => attempt.isCurrent,
         );
         if (!didOpen || !attempt.isCurrent) return;
@@ -261,6 +256,12 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
           _attachToWatchTogetherSession(startupHold: wtStartupHold?.future);
           _notifyWatchTogetherMediaChange();
         }
+      } else {
+        externalSubtitlePlan = _prepareExternalSubtitleOpenPlan(
+          player: currentPlayer,
+          externalSubtitles: result.externalSubtitles,
+          waitForFileLoaded: false,
+        );
       }
 
       // Versions/mediaInfo come from the committed session; rebuild so the
@@ -319,15 +320,20 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
         // Store external subtitles for re-use after backend fallback
         _trackManager!.cacheExternalSubtitles(result.externalSubtitles);
 
+        final resumeForStartupFrame =
+            frameRatePlan.needsStartupRefresh && externalSubtitlePlan.requiresPostOpenAdd && !wtOwnsStart;
         await _applyTracksAfterOpen(
-          forPlayer: currentPlayer,
           trackManager: _trackManager!,
-          externalSubtitles: result.externalSubtitles,
+          externalSubtitlePlan: externalSubtitlePlan,
           // When a startup gate below owns the resume, skip this one to
-          // avoid a double-play. Watch Together stays paused for the group
-          // start, so selection is armed through the resume-skipped branch.
+          // avoid a double-play. Post-open external-subtitle paths are the
+          // exception: after they attach we must resume once so mpv can
+          // produce the startup frame that the decoder-refresh gate is waiting
+          // for.
+          // Watch Together stays paused for the group start, so selection is
+          // armed through the resume-skipped branch.
           shouldResumeAfterSubtitleLoad: () =>
-              !shouldHoldPlaybackStart && !wtOwnsStart && mounted && player == currentPlayer,
+              (!shouldHoldPlaybackStart || resumeForStartupFrame) && !wtOwnsStart && mounted && player == currentPlayer,
           applySelectionWhenResumeSkipped: wtOwnsStart && !shouldHoldPlaybackStart,
         );
 
@@ -337,12 +343,12 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
           plan: frameRatePlan,
           resumeAfterStartupGate: (reason) => _resumeAfterStartupGateOrYieldToWatchTogether(
             currentPlayer: currentPlayer,
-            attachesSubsAtOpen: attachesSubsAtOpen,
-            hasExternalSubs: hasExternalSubs,
+            externalSubtitlePlan: externalSubtitlePlan,
             reason: reason,
             wtOwnsStart: wtOwnsStart,
             wtStartupHold: wtStartupHold,
           ),
+          playbackResumedForStartupFrame: resumeForStartupFrame,
         );
         // Backstop: if the gate never ran its resume path (unmounted race),
         // don't leave Watch Together readiness held forever.

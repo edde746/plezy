@@ -248,19 +248,17 @@ extension _VideoPlayerLiveTvMethods on VideoPlayerScreenState {
     _playbackTransition = _PlaybackTransition.switchingChannel;
     _liveSeek.cancel();
 
-    // Stop old session heartbeats and notify server
-    _stopLiveTimelineUpdates();
-    await _sendLiveTimeline('stopped');
-
+    final previousSession = _live.session;
     final channel = channels[newIndex];
     appLogger.d('Switching to channel: ${channel.displayName} (${channel.key})');
 
-    if (!mounted) return;
-    _setPlayerState(() => _hasFirstFrame.value = false);
-
     LiveTvPlaybackSession? session;
+    var replacementOpenStarted = false;
     try {
-      // Channel switch IS a fresh start: same resolution path as launch.
+      // Channel switch IS a fresh start: same resolution path as launch. Keep
+      // the old session alive until the replacement stream is actually open so
+      // a failed zap does not tell the server to reclaim the still-playing
+      // tuner/transcode session.
       session = await _startLiveSession(channel);
       if (session == null) return;
       if (!mounted || player != currentPlayer) {
@@ -275,7 +273,25 @@ extension _VideoPlayerLiveTvMethods on VideoPlayerScreenState {
       }
 
       await _setLiveStreamOptions(currentPlayer);
+      if (!mounted || player != currentPlayer) {
+        _abandonLiveSession(session);
+        return;
+      }
+
+      _setPlayerState(() => _hasFirstFrame.value = false);
+      replacementOpenStarted = true;
       await currentPlayer.open(Media(streamUrl, headers: const {'Accept-Language': 'en'}), play: true, isLive: true);
+      if (!mounted || player != currentPlayer) {
+        _abandonLiveSession(session);
+        return;
+      }
+
+      // The new stream is now the active local playback. Stop the old heartbeat
+      // and send its terminal timeline before adopting the replacement session.
+      _stopLiveTimelineUpdates();
+      if (previousSession != null) {
+        await _sendLiveTimeline('stopped');
+      }
 
       _live.adoptSession(session);
       _live.fallbackLevel = 0;
@@ -294,6 +310,9 @@ extension _VideoPlayerLiveTvMethods on VideoPlayerScreenState {
       // would otherwise hold its server-side tuner until the backend times out.
       final orphan = session;
       if (orphan != null && _live.session != orphan) _abandonLiveSession(orphan);
+      if (replacementOpenStarted && mounted && _live.session == previousSession) {
+        _setPlayerState(() => _hasFirstFrame.value = true);
+      }
       appLogger.e('Failed to switch channel', error: e);
       if (mounted) showErrorSnackBar(context, e.toString());
     } finally {

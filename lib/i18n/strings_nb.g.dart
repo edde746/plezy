@@ -730,6 +730,9 @@ class _TranslationsSubtitlingStylingNb extends TranslationsSubtitlingStylingEn {
 	@override String get assOverride => 'ASS-overstyring';
 	@override String get bold => 'Fet';
 	@override String get italic => 'Kursiv';
+	@override String get renderResolution => 'Gjengivelsesoppløsning';
+	@override String get renderResolutionScreen => 'Skjermoppløsning';
+	@override String get renderResolutionVideo => 'Videooppløsning';
 }
 
 // Path: mpvConfig
@@ -1406,6 +1409,7 @@ class _TranslationsPerformanceOverlayNb extends TranslationsPerformanceOverlayEn
 	@override String get maxCll => 'MaxCLL';
 	@override String get maxFall => 'MaxFALL';
 	@override String get cacheUsed => 'Cache brukt';
+	@override String get cacheLimit => 'Cachegrense';
 	@override String get speed => 'Hastighet';
 	@override String get player => 'Spiller';
 	@override String get memory => 'Minne';
@@ -2441,6 +2445,9 @@ extension on TranslationsNb {
 			'subtitlingStyling.assOverride' => 'ASS-overstyring',
 			'subtitlingStyling.bold' => 'Fet',
 			'subtitlingStyling.italic' => 'Kursiv',
+			'subtitlingStyling.renderResolution' => 'Gjengivelsesoppløsning',
+			'subtitlingStyling.renderResolutionScreen' => 'Skjermoppløsning',
+			'subtitlingStyling.renderResolutionVideo' => 'Videooppløsning',
 			'mpvConfig.title' => 'mpv.conf',
 			'mpvConfig.description' => 'Avanserte videospillerinnstillinger',
 			'mpvConfig.presets' => 'Forhåndsinnstillinger',
@@ -2940,11 +2947,11 @@ extension on TranslationsNb {
 			'companionRemote.remote.retryNow' => 'Prøv nå',
 			'companionRemote.remote.tabRemote' => 'Fjernkontroll',
 			'companionRemote.remote.tabPlay' => 'Spill av',
+			_ => null,
+		} ?? switch (path) {
 			'companionRemote.remote.tabMore' => 'Mer',
 			'companionRemote.remote.menu' => 'Meny',
 			'companionRemote.remote.tabNavigation' => 'Fanenavigering',
-			_ => null,
-		} ?? switch (path) {
 			'companionRemote.remote.tabDiscover' => 'Oppdag',
 			'companionRemote.remote.tabLibraries' => 'Biblioteker',
 			'companionRemote.remote.tabSearch' => 'Søk',
@@ -3009,6 +3016,7 @@ extension on TranslationsNb {
 			'performanceOverlay.maxCll' => 'MaxCLL',
 			'performanceOverlay.maxFall' => 'MaxFALL',
 			'performanceOverlay.cacheUsed' => 'Cache brukt',
+			'performanceOverlay.cacheLimit' => 'Cachegrense',
 			'performanceOverlay.speed' => 'Hastighet',
 			'performanceOverlay.player' => 'Spiller',
 			'performanceOverlay.memory' => 'Minne',

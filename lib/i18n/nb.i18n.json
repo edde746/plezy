@@ -557,7 +557,10 @@
     "position": "Posisjon",
     "assOverride": "ASS-overstyring",
     "bold": "Fet",
-    "italic": "Kursiv"
+    "italic": "Kursiv",
+    "renderResolution": "Gjengivelsesoppløsning",
+    "renderResolutionScreen": "Skjermoppløsning",
+    "renderResolutionVideo": "Videooppløsning"
   },
   "mpvConfig": {
     "title": "mpv.conf",
@@ -1184,6 +1187,7 @@
     "maxCll": "MaxCLL",
     "maxFall": "MaxFALL",
     "cacheUsed": "Cache brukt",
+    "cacheLimit": "Cachegrense",
     "speed": "Hastighet",
     "player": "Spiller",
     "memory": "Minne",

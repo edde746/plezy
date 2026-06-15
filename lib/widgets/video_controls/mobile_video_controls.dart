@@ -37,6 +37,8 @@ class MobileVideoControls extends StatefulWidget {
   final Widget trackChapterControls;
   final Function(Duration) onSeek;
   final Function(Duration) onSeekEnd;
+  final VoidCallback? onScrubStart;
+  final VoidCallback? onScrubEnd;
   final Future<void> Function(Duration position)? onSeekRequested;
   final Function(Duration)? onSeekCompleted;
   final VoidCallback onPlayPause;
@@ -82,6 +84,9 @@ class MobileVideoControls extends StatefulWidget {
   /// Called when the content strip visibility changes
   final ValueChanged<bool>? onStripVisibilityChanged;
 
+  /// Returns true when a global touch position belongs to the parent edge-adjustment zone.
+  final bool Function(Offset globalPosition)? isInEdgeAdjustmentZone;
+
   const MobileVideoControls({
     super.key,
     required this.player,
@@ -93,6 +98,8 @@ class MobileVideoControls extends StatefulWidget {
     required this.trackChapterControls,
     required this.onSeek,
     required this.onSeekEnd,
+    this.onScrubStart,
+    this.onScrubEnd,
     required this.onPlayPause,
     this.onSeekRequested,
     this.onSeekCompleted,
@@ -115,6 +122,7 @@ class MobileVideoControls extends StatefulWidget {
     this.onQueueItemSelected,
     this.chromeController,
     this.onStripVisibilityChanged,
+    this.isInEdgeAdjustmentZone,
   });
 
   @override
@@ -125,6 +133,7 @@ class _MobileVideoControlsState extends State<MobileVideoControls> with SingleTi
   late final AnimationController _stripAnim;
   bool _stripVisible = false;
   late bool _lastControlsVisible;
+  bool _stripDragEnabled = true;
 
   /// Drag distance (in pixels) required to fully reveal the strip.
   static const _dragExtent = 150.0;
@@ -183,12 +192,21 @@ class _MobileVideoControlsState extends State<MobileVideoControls> with SingleTi
     }
   }
 
+  void _onVerticalDragStart(DragStartDetails details) {
+    _stripDragEnabled = widget.isInEdgeAdjustmentZone?.call(details.globalPosition) != true;
+  }
+
   void _onVerticalDragUpdate(DragUpdateDetails details) {
+    if (!_stripDragEnabled) return;
     // Negative primaryDelta = swipe up = reveal strip (increase value)
     _stripAnim.value -= (details.primaryDelta ?? 0) / _dragExtent;
   }
 
   void _onVerticalDragEnd(DragEndDetails details) {
+    if (!_stripDragEnabled) {
+      _stripDragEnabled = true;
+      return;
+    }
     final velocity = details.primaryVelocity ?? 0;
     // Fast swipe up or past halfway without fast swipe down → show strip
     if (velocity < -200 || (_stripAnim.value > 0.5 && velocity < 200)) {
@@ -219,6 +237,7 @@ class _MobileVideoControlsState extends State<MobileVideoControls> with SingleTi
         _buildTopBar(context),
         Expanded(
           child: GestureDetector(
+            onVerticalDragStart: _onVerticalDragStart,
             onVerticalDragUpdate: _onVerticalDragUpdate,
             onVerticalDragEnd: _onVerticalDragEnd,
             behavior: HitTestBehavior.translucent,
@@ -438,6 +457,8 @@ class _MobileVideoControlsState extends State<MobileVideoControls> with SingleTi
           showChapterMarkersOnTimeline: widget.showChapterMarkersOnTimeline,
           onSeek: widget.onSeek,
           onSeekEnd: widget.onSeekEnd,
+          onScrubStart: widget.onScrubStart,
+          onScrubEnd: widget.onScrubEnd,
           horizontalLayout: false,
           enabled: widget.canControl,
           showFinishTime: true,

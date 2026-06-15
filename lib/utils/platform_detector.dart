@@ -140,7 +140,7 @@ class TvDetectionService {
   static bool isTVSync() => _debugAppleTVOverride ?? _instance?._isTV ?? false;
 
   /// Synchronous Apple TV check (returns false if not initialized or not tvOS).
-  static bool isAppleTVSync() => _debugAppleTVOverride ?? _instance?._isAppleTV ?? false;
+  static bool isAppleTVSync() => _debugAppleTVOverride ?? (_tvosBuild || _instance?._isAppleTV == true);
 
   @visibleForTesting
   static void debugSetAppleTVOverride(bool? value) {
@@ -203,6 +203,20 @@ class PlatformDetector {
   /// keyboard, etc.); use [isDesktop] for layout decisions.
   static bool isDesktopOS() {
     return Platform.isWindows || Platform.isMacOS || Platform.isLinux;
+  }
+
+  static bool supportsExternalPlayers() {
+    if (isAppleTV()) return false;
+    return Platform.isAndroid || Platform.isIOS || Platform.isMacOS || Platform.isLinux || Platform.isWindows;
+  }
+
+  static bool supportsAudioPassthrough() {
+    if (isAppleTV()) return false;
+    return isDesktopOS() || (Platform.isAndroid && isTV());
+  }
+
+  static bool supportsPictureInPicture() {
+    return !isAppleTV() && !isTV() && (Platform.isAndroid || Platform.isIOS || Platform.isMacOS);
   }
 
   /// Detects if the device is likely a tablet based on screen size

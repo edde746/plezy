@@ -557,7 +557,10 @@
     "position": "Positie",
     "assOverride": "ASS-overschrijving",
     "bold": "Vet",
-    "italic": "Cursief"
+    "italic": "Cursief",
+    "renderResolution": "Renderresolutie",
+    "renderResolutionScreen": "Schermresolutie",
+    "renderResolutionVideo": "Videoresolutie"
   },
   "mpvConfig": {
     "title": "mpv-configuratie",
@@ -1184,6 +1187,7 @@
     "maxCll": "MaxCLL",
     "maxFall": "MaxFALL",
     "cacheUsed": "Cache gebruikt",
+    "cacheLimit": "Cachelimiet",
     "speed": "Snelheid",
     "player": "Speler",
     "memory": "Geheugen",

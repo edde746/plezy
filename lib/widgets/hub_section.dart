@@ -40,6 +40,7 @@ class HubSection extends StatefulWidget {
   final void Function(String)? onRefresh;
   final VoidCallback? onRemoveFromContinueWatching;
   final bool isInContinueWatching;
+  final bool usesContinueWatchingAction;
   final bool showServerName;
   final Future<List<MediaItem>> Function()? loadMoreItems;
 
@@ -75,6 +76,7 @@ class HubSection extends StatefulWidget {
     this.onRefresh,
     this.onRemoveFromContinueWatching,
     this.isInContinueWatching = false,
+    bool? usesContinueWatchingAction,
     this.showServerName = false,
     this.loadMoreItems,
     this.onFocusedItemChanged,
@@ -84,7 +86,7 @@ class HubSection extends StatefulWidget {
     this.onNavigateToSidebar,
     this.inset = false,
     this.focusScrollAlignment = 0.3,
-  });
+  }) : usesContinueWatchingAction = usesContinueWatchingAction ?? isInContinueWatching;
 
   @override
   State<HubSection> createState() => HubSectionState();
@@ -359,7 +361,12 @@ class HubSectionState extends State<HubSection> with MountedSetStateMixin {
   }
 
   Future<void> _navigateToItem(MediaItem item) async {
-    await navigateToMediaItem(context, item, onRefresh: widget.onRefresh, playDirectly: widget.isInContinueWatching);
+    await navigateToMediaItem(
+      context,
+      item,
+      onRefresh: widget.onRefresh,
+      playDirectly: widget.usesContinueWatchingAction,
+    );
   }
 
   void _navigateToHubDetail(BuildContext context) {
@@ -370,6 +377,7 @@ class HubSectionState extends State<HubSection> with MountedSetStateMixin {
           hub: widget.hub,
           loadItems: widget.loadMoreItems,
           isInContinueWatching: widget.isInContinueWatching,
+          usesContinueWatchingAction: widget.usesContinueWatchingAction,
           onRemoveFromContinueWatching: widget.onRemoveFromContinueWatching,
         ),
       ),
@@ -568,6 +576,7 @@ class HubSectionState extends State<HubSection> with MountedSetStateMixin {
                                   onRemoveFromContinueWatching: widget.onRemoveFromContinueWatching,
                                   forceGridMode: true,
                                   isInContinueWatching: widget.isInContinueWatching,
+                                  usesContinueWatchingAction: widget.usesContinueWatchingAction,
                                   mixedHubContext: isMixedHub,
                                 ),
                               ),

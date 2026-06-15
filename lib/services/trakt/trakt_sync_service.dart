@@ -80,12 +80,23 @@ class TraktSyncService {
 
   /// Switch to a different account. Drops cached resolvers (their backing
   /// clients are tied to the previous user's tokens) and rebinds the queue.
-  void rebindToProfile(String userUuid, TraktSession? session, {required void Function() onSessionInvalidated}) {
+  void rebindToProfile(
+    String userUuid,
+    TraktSession? session, {
+    required void Function() onSessionInvalidated,
+    void Function(TraktSession session)? onSessionUpdated,
+  }) {
     _client?.dispose();
-    _client = session != null ? TraktClient(session, onSessionInvalidated: onSessionInvalidated) : null;
+    _client = session != null
+        ? TraktClient(session, onSessionInvalidated: onSessionInvalidated, onSessionUpdated: onSessionUpdated)
+        : null;
     _activeUserUuid = userUuid;
     _resolvers.clear();
     if (_client != null) unawaited(flushQueue());
+  }
+
+  void updateSession(TraktSession session) {
+    _client?.updateSession(session);
   }
 
   Future<void> dispose() async {

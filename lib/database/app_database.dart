@@ -673,13 +673,18 @@ Future<void> migrateLegacyDesktopDatabase({
   Future<void> Function(File source, String targetPath)? renameOverride,
 }) async {
   final File oldFile;
-  if (sourceOverride != null) {
-    oldFile = sourceOverride;
-  } else {
-    final oldFolder = await getApplicationDocumentsDirectory();
-    oldFile = File(p.join(oldFolder.path, 'plezy_downloads.db'));
+  try {
+    if (sourceOverride != null) {
+      oldFile = sourceOverride;
+    } else {
+      final oldFolder = await getApplicationDocumentsDirectory();
+      oldFile = File(p.join(oldFolder.path, 'plezy_downloads.db'));
+    }
+    if (!await oldFile.exists()) return;
+  } catch (e, st) {
+    appLogger.w('Legacy DB migration skipped before source lookup completed', error: e, stackTrace: st);
+    return;
   }
-  if (!await oldFile.exists()) return;
 
   try {
     if (renameOverride != null) {

@@ -17,6 +17,7 @@ import '../utils/layout_constants.dart';
 import '../utils/media_image_helper.dart';
 import 'app_icon.dart';
 import 'fitting_title_text.dart';
+import 'media_rating_badge.dart';
 import 'optimized_media_image.dart' show blurArtwork;
 
 class TvSpotlightBackground extends StatelessWidget {
@@ -312,27 +313,58 @@ class TvSpotlightBackground extends StatelessWidget {
     final scale = _scale(context);
     final colorScheme = Theme.of(context).colorScheme;
     final episodeLabel = formatSeasonEpisodeLabel(media.parentIndex, media.index);
-    final parts = [
-      if (media.isEpisode && episodeLabel != null) episodeLabel,
-      if (media.isMovie) t.discover.movie else if (media.isShow) t.discover.tvShow,
-      if (media.rating != null) '★ ${formatRating(media.rating!)}',
-      if (media.contentRating != null) formatContentRating(media.contentRating!),
-      if (media.durationMs != null) formatDurationTextual(media.durationMs!),
-      if (media.isEpisode && media.originallyAvailableAt != null)
-        formatFullDate(media.originallyAvailableAt!)
-      else if (media.year != null)
-        media.year.toString(),
-    ];
-    return Text(
-      parts.join('  •  '),
-      maxLines: 1,
-      overflow: .ellipsis,
-      style: TextStyle(
-        color: colorScheme.onSurface,
-        fontSize: _metadataFontSize(scale),
-        fontWeight: .w700,
-        letterSpacing: 0.1,
-      ),
+    final textStyle = TextStyle(
+      color: colorScheme.onSurface,
+      fontSize: _metadataFontSize(scale),
+      fontWeight: .w700,
+      letterSpacing: 0.1,
+    );
+    final children = <Widget>[];
+
+    void addSeparator() {
+      if (children.isNotEmpty) children.add(Text('  •  ', maxLines: 1, style: textStyle));
+    }
+
+    void addTextPart(String text) {
+      addSeparator();
+      children.add(Text(text, maxLines: 1, style: textStyle));
+    }
+
+    void addWidgetPart(Widget widget) {
+      addSeparator();
+      children.add(widget);
+    }
+
+    if (media.isEpisode && episodeLabel != null) addTextPart(episodeLabel);
+    if (media.isMovie) {
+      addTextPart(t.discover.movie);
+    } else if (media.isShow) {
+      addTextPart(t.discover.tvShow);
+    }
+    final ratingBadge = MediaRatingBadge.inlineForMedia(
+      item: media,
+      foregroundColor: textStyle.color,
+      iconSize: textStyle.fontSize,
+      spacing: 4 * scale,
+      textStyle: textStyle,
+    );
+    if (ratingBadge != null) {
+      addWidgetPart(ratingBadge);
+    }
+    if (media.contentRating != null) addTextPart(formatContentRating(media.contentRating!));
+    if (media.durationMs != null) addTextPart(formatDurationTextual(media.durationMs!));
+    if (media.isEpisode && media.originallyAvailableAt != null) {
+      addTextPart(formatFullDate(media.originallyAvailableAt!));
+    } else if (media.year != null) {
+      addTextPart(media.year.toString());
+    }
+
+    if (children.isEmpty) return const SizedBox.shrink();
+
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      physics: const NeverScrollableScrollPhysics(),
+      child: Row(mainAxisSize: MainAxisSize.min, children: children),
     );
   }
 

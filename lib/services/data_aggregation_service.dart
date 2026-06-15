@@ -12,6 +12,9 @@ import '../utils/global_key_utils.dart';
 import '../utils/search_relevance.dart';
 import 'multi_server_manager.dart';
 
+typedef OnDeckAggregationResult = ({List<MediaItem> items, Set<String> succeededServerIds});
+typedef HubAggregationResult = ({List<MediaHub> hubs, Set<String> succeededServerIds});
+
 /// Cross-server aggregation: fans calls out to every online client and
 /// merges the results. Single-server operations now go through the
 /// [MediaServerClient] interface directly (resolved via
@@ -70,8 +73,9 @@ class DataAggregationService {
 
   /// Fetch "On Deck" (Continue Watching) from all servers and merge by recency.
   /// Items are tagged with server info by the underlying client. Returns
-  /// neutral [MediaItem]s. [serverIds] restricts the fan-out to those servers.
-  Future<List<MediaItem>> getOnDeckFromAllServers({
+  /// neutral [MediaItem]s plus the ids of servers whose fetch succeeded.
+  /// [serverIds] restricts the fan-out to those servers.
+  Future<OnDeckAggregationResult> getOnDeckFromAllServers({
     int? limit,
     Set<String>? hiddenLibraryKeys,
     Set<String>? serverIds,
@@ -79,18 +83,25 @@ class DataAggregationService {
     final clients = _clientsFor(serverIds);
     if (clients.isEmpty) {
       appLogger.w('No online servers available for fetching on deck');
-      return [];
+      return (items: const <MediaItem>[], succeededServerIds: const <String>{});
     }
+
     final futures = clients.entries.map((entry) async {
       final client = entry.value;
       try {
-        return await client.fetchContinueWatching(count: limit);
+        final items = await client.fetchContinueWatching(count: limit);
+        return (serverId: entry.key, items: items);
       } catch (e, st) {
         appLogger.e('Failed on-deck fetch from ${entry.key}', error: e, stackTrace: st);
-        return <MediaItem>[];
+        return (serverId: null, items: <MediaItem>[]);
       }
     });
-    final allOnDeck = (await Future.wait(futures)).expand((l) => l).toList();
+    final results = await Future.wait(futures);
+    final succeededServerIds = {
+      for (final result in results)
+        if (result.serverId != null) result.serverId!,
+    };
+    final allOnDeck = results.expand((result) => result.items).toList();
 
     // Filter out items from hidden libraries
     List<MediaItem> filteredOnDeck = allOnDeck;
@@ -110,11 +121,11 @@ class DataAggregationService {
     filteredOnDeck = await _deduplicateContinueWatching(filteredOnDeck);
 
     // Apply limit if specified
-    final result = limit != null && limit < filteredOnDeck.length ? filteredOnDeck.sublist(0, limit) : filteredOnDeck;
+    final items = limit != null && limit < filteredOnDeck.length ? filteredOnDeck.sublist(0, limit) : filteredOnDeck;
 
-    appLogger.i('Fetched ${result.length} on deck items from all servers');
+    appLogger.i('Fetched ${items.length} on deck items from all servers');
 
-    return result;
+    return (items: items, succeededServerIds: succeededServerIds);
   }
 
   /// Merge an [existing] Continue Watching list with [fresh] rows from
@@ -266,8 +277,9 @@ class DataAggregationService {
   /// Backends without rich home hubs fall back to per-library hubs so one
   /// capped "Latest" response cannot hide whole library types.
   /// [serverIds] restricts the fan-out (including the library prefetch) to
-  /// those servers.
-  Future<List<MediaHub>> getHubsFromAllServers({
+  /// those servers. Returns the ids of servers whose hub fetch succeeded so
+  /// callers do not cache transient per-server failures as loaded.
+  Future<HubAggregationResult> getHubsFromAllServers({
     int? limit,
     Set<String>? hiddenLibraryKeys,
     bool useGlobalHubs = true,
@@ -277,7 +289,7 @@ class DataAggregationService {
     final clients = _clientsFor(serverIds);
     if (clients.isEmpty) {
       appLogger.w('No online servers available for fetching hubs');
-      return [];
+      return (hubs: const <MediaHub>[], succeededServerIds: const <String>{});
     }
 
     // Only fallback clients need a library prefetch when home layout is on;
@@ -303,19 +315,27 @@ class DataAggregationService {
                 includePlaybackHubs: includePlaybackHubs,
                 libraries: useGlobalHubs ? serverLibraries : null,
               );
-        return _postProcessHubs(hubs, serverId: ServerId(serverId), hiddenLibraryKeys: hiddenLibraryKeys);
+        return (
+          serverId: serverId,
+          hubs: _postProcessHubs(hubs, serverId: ServerId(serverId), hiddenLibraryKeys: hiddenLibraryKeys),
+        );
       } catch (e, stackTrace) {
         appLogger.e('Failed to fetch hubs from server $serverId', error: e, stackTrace: stackTrace);
-        return <MediaHub>[];
+        return (serverId: null, hubs: <MediaHub>[]);
       }
     });
 
     final results = await Future.wait(futures);
+    final succeededServerIds = {
+      for (final result in results)
+        if (result.serverId != null) result.serverId!,
+    };
     final all = <MediaHub>[];
-    for (final list in results) {
-      all.addAll(list);
+    for (final result in results) {
+      all.addAll(result.hubs);
     }
-    return limit != null && limit < all.length ? all.sublist(0, limit) : all;
+    final hubs = limit != null && limit < all.length ? all.sublist(0, limit) : all;
+    return (hubs: hubs, succeededServerIds: succeededServerIds);
   }
 
   /// Per-library hub fetch for a single client. Filters to visible

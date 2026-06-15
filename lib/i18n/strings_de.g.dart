@@ -730,6 +730,9 @@ class _TranslationsSubtitlingStylingDe extends TranslationsSubtitlingStylingEn {
 	@override String get assOverride => 'ASS-Überschreibung';
 	@override String get bold => 'Fett';
 	@override String get italic => 'Kursiv';
+	@override String get renderResolution => 'Render-Auflösung';
+	@override String get renderResolutionScreen => 'Bildschirmauflösung';
+	@override String get renderResolutionVideo => 'Videoauflösung';
 }
 
 // Path: mpvConfig
@@ -1406,6 +1409,7 @@ class _TranslationsPerformanceOverlayDe extends TranslationsPerformanceOverlayEn
 	@override String get maxCll => 'MaxCLL';
 	@override String get maxFall => 'MaxFALL';
 	@override String get cacheUsed => 'Cache genutzt';
+	@override String get cacheLimit => 'Cache-Limit';
 	@override String get speed => 'Geschwindigkeit';
 	@override String get player => 'Player';
 	@override String get memory => 'Speicher';
@@ -2441,6 +2445,9 @@ extension on TranslationsDe {
 			'subtitlingStyling.assOverride' => 'ASS-Überschreibung',
 			'subtitlingStyling.bold' => 'Fett',
 			'subtitlingStyling.italic' => 'Kursiv',
+			'subtitlingStyling.renderResolution' => 'Render-Auflösung',
+			'subtitlingStyling.renderResolutionScreen' => 'Bildschirmauflösung',
+			'subtitlingStyling.renderResolutionVideo' => 'Videoauflösung',
 			'mpvConfig.title' => 'mpv-Konfiguration',
 			'mpvConfig.description' => 'Erweiterte Videoplayer-Einstellungen',
 			'mpvConfig.presets' => 'Voreinstellungen',
@@ -2940,11 +2947,11 @@ extension on TranslationsDe {
 			'companionRemote.remote.retryNow' => 'Jetzt wiederholen',
 			'companionRemote.remote.tabRemote' => 'Fernbedienung',
 			'companionRemote.remote.tabPlay' => 'Wiedergabe',
+			_ => null,
+		} ?? switch (path) {
 			'companionRemote.remote.tabMore' => 'Mehr',
 			'companionRemote.remote.menu' => 'Menü',
 			'companionRemote.remote.tabNavigation' => 'Tab-Navigation',
-			_ => null,
-		} ?? switch (path) {
 			'companionRemote.remote.tabDiscover' => 'Entdecken',
 			'companionRemote.remote.tabLibraries' => 'Mediatheken',
 			'companionRemote.remote.tabSearch' => 'Suche',
@@ -3009,6 +3016,7 @@ extension on TranslationsDe {
 			'performanceOverlay.maxCll' => 'MaxCLL',
 			'performanceOverlay.maxFall' => 'MaxFALL',
 			'performanceOverlay.cacheUsed' => 'Cache genutzt',
+			'performanceOverlay.cacheLimit' => 'Cache-Limit',
 			'performanceOverlay.speed' => 'Geschwindigkeit',
 			'performanceOverlay.player' => 'Player',
 			'performanceOverlay.memory' => 'Speicher',

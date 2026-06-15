@@ -56,6 +56,24 @@ void main() {
     return client.buildTranscodeSidecarSubtitlesForTesting(mediaInfoWithSubtitles(subtitleTracks));
   }
 
+  test('selectStreams sends audio stream selection with allParts', () async {
+    final requests = <http.Request>[];
+    final client = makeClient((request) async {
+      requests.add(request);
+      return http.Response('', 200);
+    });
+    addTearDown(client.close);
+
+    final saved = await client.selectStreams(99, audioStreamID: 301, allParts: true);
+
+    expect(saved, isTrue);
+    expect(requests, hasLength(1));
+    expect(requests.single.method, 'PUT');
+    expect(requests.single.url.path, '/library/parts/99');
+    expect(requests.single.url.queryParameters['audioStreamID'], '301');
+    expect(requests.single.url.queryParameters['allParts'], '1');
+  });
+
   test('playback metadata request includes streams for transcode sidecar subtitles', () async {
     final requests = <Uri>[];
     final client = makeClient((request) async {

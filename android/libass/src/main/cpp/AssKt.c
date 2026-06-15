@@ -217,8 +217,8 @@ static int truncationLogCounter = 0;
 // On changed == 0, returns (0, 0, 0, changed, 0) without touching the buffers —
 // caller reuses the atlas texture already on the GPU.
 JNIEXPORT jobject JNICALL Java_com_edde746_plezy_libass_AssRender_nativeAssRenderFrameAtlas(
-    JNIEnv* env, jclass clazz, jlong render, jlong track, jlong time, jobject atlasBuf, jint atlasMaxW,
-    jint atlasMaxH, jobject vertexBuf) {
+    JNIEnv* env, jclass clazz, jlong render, jlong track, jlong time, jobject atlasBuf, jint atlasMaxW, jint atlasMaxH,
+    jobject vertexBuf) {
   if (!render || !track || !atlasBuf || !vertexBuf || atlasMaxW <= 0 || atlasMaxH <= 0) return NULL;
 
   jclass atlasFrameClass = (*env)->FindClass(env, "com/edde746/plezy/libass/AssAtlasFrame");
@@ -317,8 +317,8 @@ JNIEXPORT jobject JNICALL Java_com_edde746_plezy_libass_AssRender_nativeAssRende
 
   if (truncated > 0 && (truncationLogCounter++ & 63) == 0) {
     __android_log_print(
-        ANDROID_LOG_WARN, LOG_TAG, "atlas truncation: %d of %d images dropped (atlas %dx%d, %d quads max)",
-        truncated, n, atlasMaxW, atlasMaxH, maxQuads);
+        ANDROID_LOG_WARN, LOG_TAG, "atlas truncation: %d of %d images dropped (atlas %dx%d, %d quads max)", truncated,
+        n, atlasMaxW, atlasMaxH, maxQuads);
   }
   if (accepted == 0) {
     free(items);
