@@ -717,9 +717,7 @@ class ExoPlayerPlugin :
    * Queries relevant MPV properties and returns them in a map format
    * compatible with the performance overlay.
    */
-  private fun getMpvStats(): Map<String, Any?> {
-    return mpvCore?.getStats() ?: mapOf("playerType" to "mpv")
-  }
+  private fun getMpvStats(): Map<String, Any?> = mpvCore?.getStats() ?: mapOf("playerType" to "mpv")
 
   // PiP Mode handling
 
@@ -796,9 +794,7 @@ class ExoPlayerPlugin :
     options.add("sub-files=%${pathList.toByteArray(Charsets.UTF_8).size}%$pathList")
   }
 
-  private fun escapeMpvPathListEntry(value: String): String {
-    return value.replace("\\", "\\\\").replace(":", "\\:")
-  }
+  private fun escapeMpvPathListEntry(value: String): String = value.replace("\\", "\\\\").replace(":", "\\:")
 
   /**
    * Configure a freshly initialized MPV fallback core: replay the properties

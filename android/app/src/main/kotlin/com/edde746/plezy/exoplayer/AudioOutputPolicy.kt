@@ -14,6 +14,4 @@ internal fun isPassthroughAudioMimeType(mimeType: String): Boolean = when (mimeT
   else -> false
 }
 
-internal fun shouldBlockDirectOutputForPassthrough(mimeType: String, audioPassthroughEnabled: Boolean): Boolean {
-  return !audioPassthroughEnabled && isPassthroughAudioMimeType(mimeType)
-}
+internal fun shouldBlockDirectOutputForPassthrough(mimeType: String, audioPassthroughEnabled: Boolean): Boolean = !audioPassthroughEnabled && isPassthroughAudioMimeType(mimeType)

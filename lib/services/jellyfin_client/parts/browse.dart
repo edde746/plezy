@@ -658,7 +658,6 @@ mixin _JellyfinBrowseMethods on MediaServerCacheMixin {
     return _pagedMediaItems(response.data, offset: offset, requestedSize: pageSize);
   }
 
-  @override
   Future<LibraryPage<MediaItem>> fetchSeasonEpisodesPage(
     String seriesId,
     String seasonId, {

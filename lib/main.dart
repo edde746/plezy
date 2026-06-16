@@ -960,50 +960,48 @@ class _AppShell extends StatelessWidget {
           child: Builder(
             builder: (context) {
               return Listener(
-                    onPointerDown: (event) {
-                      if ((event.buttons & kBackMouseButton) != 0) {
-                        rootNavigatorKey.currentState?.maybePop();
-                      }
+                onPointerDown: (event) {
+                  if ((event.buttons & kBackMouseButton) != 0) {
+                    rootNavigatorKey.currentState?.maybePop();
+                  }
+                },
+                behavior: HitTestBehavior.translucent,
+                child: InputModeTracker(
+                  child: MaterialApp(
+                    title: t.app.title,
+                    debugShowCheckedModeBanner: false,
+                    theme: themeProvider.lightTheme,
+                    darkTheme: themeProvider.darkTheme,
+                    themeMode: themeProvider.materialThemeMode,
+                    navigatorKey: rootNavigatorKey,
+                    navigatorObservers: [routeObserver, BackKeySuppressorObserver()],
+                    home: const OrientationAwareSetup(),
+                    // Siri Remote select + gamepad A report as
+                    // LogicalKeyboardKey.{select,gameButtonA} which aren't
+                    // in Flutter's default shortcut set — Material-level
+                    // widgets (menu items, showModalBottomSheet actions)
+                    // ignore them. Map both to ActivateIntent so tapping
+                    // select on tvOS activates the focused widget.
+                    shortcuts: <ShortcutActivator, Intent>{
+                      ...WidgetsApp.defaultShortcuts,
+                      const SingleActivator(LogicalKeyboardKey.select): const ActivateIntent(),
+                      const SingleActivator(LogicalKeyboardKey.gameButtonA): const ActivateIntent(),
+                      const SingleActivator(LogicalKeyboardKey.goBack): const DismissIntent(),
+                      const SingleActivator(LogicalKeyboardKey.browserBack): const DismissIntent(),
+                      const SingleActivator(LogicalKeyboardKey.gameButtonB): const DismissIntent(),
                     },
-                    behavior: HitTestBehavior.translucent,
-                    child: InputModeTracker(
-                      child: MaterialApp(
-                        title: t.app.title,
-                        debugShowCheckedModeBanner: false,
-                        theme: themeProvider.lightTheme,
-                        darkTheme: themeProvider.darkTheme,
-                        themeMode: themeProvider.materialThemeMode,
-                        navigatorKey: rootNavigatorKey,
-                        navigatorObservers: [routeObserver, BackKeySuppressorObserver()],
-                        home: const OrientationAwareSetup(),
-                        // Siri Remote select + gamepad A report as
-                        // LogicalKeyboardKey.{select,gameButtonA} which aren't
-                        // in Flutter's default shortcut set — Material-level
-                        // widgets (menu items, showModalBottomSheet actions)
-                        // ignore them. Map both to ActivateIntent so tapping
-                        // select on tvOS activates the focused widget.
-                        shortcuts: <ShortcutActivator, Intent>{
-                          ...WidgetsApp.defaultShortcuts,
-                          const SingleActivator(LogicalKeyboardKey.select): const ActivateIntent(),
-                          const SingleActivator(LogicalKeyboardKey.gameButtonA): const ActivateIntent(),
-                          const SingleActivator(LogicalKeyboardKey.goBack): const DismissIntent(),
-                          const SingleActivator(LogicalKeyboardKey.browserBack): const DismissIntent(),
-                          const SingleActivator(LogicalKeyboardKey.gameButtonB): const DismissIntent(),
-                        },
-                        builder: (context, child) => ScaffoldMessenger(
-                          key: rootScaffoldMessengerKey,
-                          child: Scaffold(
-                            backgroundColor: Colors.transparent,
-                            body: _AppleTvScale(child: child),
-                          ),
-                        ),
+                    builder: (context, child) => ScaffoldMessenger(
+                      key: rootScaffoldMessengerKey,
+                      child: Scaffold(
+                        backgroundColor: Colors.transparent,
+                        body: _AppleTvScale(child: child),
                       ),
                     ),
-                  );
-                },
-              ),
-            );
-          },
+                  ),
+                ),
+              );
+            },
+          ),
         );
       },
     );

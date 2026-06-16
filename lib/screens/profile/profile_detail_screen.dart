@@ -140,7 +140,7 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> with Controll
       serverManager: context.read<MultiServerProvider>().serverManager,
     );
     if (!mounted) return;
-    await Provider.maybeOf<HiddenLibrariesProvider>(context, listen: false)?.refresh();
+    await context.read<HiddenLibrariesProvider?>()?.refresh();
     if (!mounted) return;
     unawaited(context.read<ActiveProfileBinder>().rebindIfActive(_profile.id));
   }
