@@ -18,6 +18,7 @@ import 'connection/connection_registry.dart';
 import 'profiles/active_profile_binder.dart';
 import 'profiles/active_profile_provider.dart';
 import 'profiles/profile.dart';
+import 'profiles/profile_connection_cleanup.dart';
 import 'profiles/profile_connection_registry.dart';
 import 'profiles/profile_registry.dart';
 import 'mixins/mounted_set_state_mixin.dart';
@@ -1004,6 +1005,8 @@ class _AppShell extends StatelessWidget {
             );
           },
         );
+      },
+    );
   }
 }
 
@@ -1125,6 +1128,7 @@ class _SetupScreenState extends State<SetupScreen> with MountedSetStateMixin {
     if (mounted) {
       try {
         final connRegistry = context.read<ConnectionRegistry>();
+        final profileConnections = context.read<ProfileConnectionRegistry>();
         final profileRegistry = context.read<ProfileRegistry>();
         final activeProfiles = context.read<ActiveProfileProvider>();
         final bootstrap = ConnectionBootstrap(
@@ -1134,6 +1138,15 @@ class _SetupScreenState extends State<SetupScreen> with MountedSetStateMixin {
           profileRegistry: profileRegistry,
         );
         await bootstrap.run();
+        final pruned = await pruneUnreferencedJellyfinConnections(
+          profileConnections: profileConnections,
+          connections: connRegistry,
+          storage: storage,
+          serverManager: context.read<MultiServerProvider>().serverManager,
+        );
+        if (pruned > 0) {
+          appLogger.i('Setup: pruned $pruned unreferenced Jellyfin connection${pruned == 1 ? '' : 's'}');
+        }
         // Provider initialization starts before this screen runs the legacy
         // migration. Reload after bootstrap so copied Plex Home users and the
         // selected active profile are visible before setup decides binding is
