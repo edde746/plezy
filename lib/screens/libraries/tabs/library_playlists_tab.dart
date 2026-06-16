@@ -142,7 +142,12 @@ class _LibraryPlaylistsTabState extends BaseLibraryTabState<MediaPlaylist, Libra
       padding: _effectivePadding,
       sliver: SliverList.builder(
         itemCount: totalSize,
-        itemBuilder: (context, index) => _buildPlaylistCard(index, isFirstColumn: true, disableScale: true),
+        itemBuilder: (context, index) => _buildPlaylistCard(
+          index,
+          isFirstRow: index == 0,
+          isFirstColumn: true,
+          disableScale: true,
+        ),
       ),
     );
   }
@@ -163,6 +168,7 @@ class _LibraryPlaylistsTabState extends BaseLibraryTabState<MediaPlaylist, Libra
             itemCount: totalSize,
             itemBuilder: (context, index) => _buildPlaylistCard(
               index,
+              isFirstRow: GridSizeCalculator.isFirstRow(index, geometry.columnCount),
               isFirstColumn: GridSizeCalculator.isFirstColumn(index, geometry.columnCount),
               fullBleedImage: fullCardLayout,
             ),
@@ -174,6 +180,7 @@ class _LibraryPlaylistsTabState extends BaseLibraryTabState<MediaPlaylist, Libra
 
   Widget _buildPlaylistCard(
     int index, {
+    required bool isFirstRow,
     required bool isFirstColumn,
     bool disableScale = false,
     bool fullBleedImage = false,
@@ -191,6 +198,7 @@ class _LibraryPlaylistsTabState extends BaseLibraryTabState<MediaPlaylist, Libra
       disableScale: disableScale,
       fullBleedImage: fullBleedImage,
       onListRefresh: loadItems,
+      onNavigateUp: isFirstRow ? widget.onBack : null,
       onBack: widget.onBack,
       onNavigateLeft: isFirstColumn ? _navigateToSidebar : null,
     );
