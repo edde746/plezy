@@ -1,38 +1,21 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <svg width="1024" height="1024" viewBox="0 0 1024 1024" fill="none" xmlns="http://www.w3.org/2000/svg">
   <defs>
-    <!-- Background -->
-    <linearGradient id="bg" x1="120" y1="80" x2="904" y2="964" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#2D0B63"/>
-      <stop offset="0.55" stop-color="#141640"/>
-      <stop offset="1" stop-color="#040A24"/>
+    <!-- Vibe play-mark gradient (matches the logo's blue play button) -->
+    <linearGradient id="play" x1="360" y1="286" x2="788" y2="738" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#62CDF6"/>
+      <stop offset="0.5" stop-color="#2E97F1"/>
+      <stop offset="1" stop-color="#1257C8"/>
     </linearGradient>
-
-    <!-- Play gradient -->
-    <linearGradient id="play" x1="330" y1="250" x2="760" y2="780" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#FFB24A"/>
-      <stop offset="0.48" stop-color="#FF4FA6"/>
-      <stop offset="1" stop-color="#2AA8FF"/>
-    </linearGradient>
-
-    <!-- Soft highlight -->
-    <linearGradient id="highlight" x1="360" y1="290" x2="700" y2="720" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.22"/>
+    <!-- Soft top-left highlight -->
+    <linearGradient id="hl" x1="360" y1="300" x2="700" y2="720" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.28"/>
       <stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/>
     </linearGradient>
-
-    <!-- Drop shadow -->
-    <filter id="ds" x="-20%" y="-20%" width="140%" height="140%" color-interpolation-filters="sRGB">
-      <feDropShadow dx="0" dy="18" stdDeviation="18" flood-color="#000000" flood-opacity="0.45"/>
-    </filter>
   </defs>
 
-  <!-- Rounded-square app icon container -->
-  <rect x="64" y="64" width="896" height="896" rx="210" fill="url(#bg)"/>
-
-  <!-- Play mark -->
-  <g filter="url(#ds)">
-    <!-- Outer rounded triangle -->
+  <!-- Centered play mark, scaled into the adaptive-icon safe zone (~66%) -->
+  <g transform="translate(512,512) scale(0.66) translate(-574,-512)">
     <path d="
       M 382 286
       Q 360 286 360 308
@@ -45,7 +28,6 @@
       L 401 292
       Q 392 286 382 286
       Z" fill="url(#play)"/>
-    <!-- Subtle top-left highlight (flat but crisp) -->
     <path d="
       M 382 302
       Q 378 302 378 306
@@ -57,17 +39,6 @@
       Q 746 506 735 500
       L 394 324
       Q 388 320 382 320
-      Z" fill="url(#highlight)"/>
-    <!-- Inner inset triangle (no white text/artifacts) -->
-    <path d="
-      M 456 372
-      L 456 652
-      Q 456 668 472 660
-      L 686 546
-      Q 700 538 700 512
-      Q 700 486 686 478
-      L 472 364
-      Q 456 356 456 372
-      Z" fill="#070B20" opacity="0.18"/>
+      Z" fill="url(#hl)"/>
   </g>
 </svg>
