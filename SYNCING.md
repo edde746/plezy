@@ -63,7 +63,7 @@ These are the files where this fork diverges from upstream. Conflicts here are n
 | `windows/runner/mpv/display_mode_manager.cpp` | display-mode registry key | Keep `L"Software\\Vibe\\DisplayModeOverride"`. |
 | `assets/vibe_stream.{png,svg}`, `assets/vibe_stream_adaptive_foreground.svg` | renamed assets | Keep the renamed files. If Plezy re-adds `assets/plezy*`, discard. |
 | `lib/**/*.dart` | bundle ID literals, asset paths, i18n strings, package imports, app-name strings | Keep the Vibe versions. For new files Plezy adds: review for hardcoded `plezy`/`com.edde746.plezy` strings and rebrand if user-visible. |
-| `lib/services/lan_discovery_service.dart` | wire-protocol `'app': 'vibe_stream'` | Keep `'vibe_stream'`. |
+| `lib/services/companion_remote/lan_discovery_service.dart` | wire-protocol `'app': 'vibe_stream'` | Keep `'vibe_stream'`. |
 | `README.md`, `CONTRIBUTING.md` | branding text, install URLs | Keep Vibe wording, MazeDev7/alflix URLs. Take Plezy's new sections (new feature docs etc.). |
 | `Casks/vibe_stream.rb` | renamed file | Keep. If Plezy updates `Casks/plezy.rb` (e.g. for cask format changes), port the structural changes into `vibe_stream.rb`. |
 | `.github/workflows/*` | display names, artifact names, repo gates | Keep `Vibe` display names, `vibe_stream-*` artifact names. The repo-gate `github.repository == 'edde746/plezy'` guards in `build.yml` disable Sentry uploads when run from this fork — leave alone. |
