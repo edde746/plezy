@@ -1,7 +1,7 @@
 name: vibe_stream
 description: "A beautiful Plex and Jellyfin client for Flutter"
 publish_to: "none"
-version: 2.7.1+116
+version: 2.7.1+117
 
 environment:
   sdk: ">=3.12.0 <4.0.0"
