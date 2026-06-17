@@ -640,7 +640,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
     return filterParams;
   }
 
-  Future<void> _loadItems() async {
+  Future<void> _loadItems({bool preserveFocus = false}) async {
     final generation = _contentRequestId;
     setState(() {
       isLoading = true;
@@ -661,10 +661,12 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
       });
 
       hasLoadedData = true;
-      tryFocus();
+      if (!preserveFocus) {
+        tryFocus();
+      }
 
       // Notify parent
-      if (widget.onDataLoaded != null) {
+      if (!preserveFocus && widget.onDataLoaded != null) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
           widget.onDataLoaded!();
         });
@@ -1267,7 +1269,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
       isLoading = true;
     });
     _scheduleTopScrollReset();
-    _loadItems();
+    _loadItems(preserveFocus: _alphaJumpBarFocusNode.hasFocus && nextPrefix != null);
   }
 
   /// Scroll the current layout so that [index] is visible just below the chrome.
