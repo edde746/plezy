@@ -112,6 +112,7 @@ extension _PlexVideoControlsVisibilityMethods on _PlexVideoControlsState {
       }
     });
     if (locking) {
+      _cancelEdgeAdjustmentGesture();
       widget.chromeController.hide(ignoreHolds: true);
       _startLockIconHideTimer();
     }

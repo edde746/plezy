@@ -60,7 +60,9 @@ void main() {
 
     test('searchAcrossServers and getOnDeckFromAllServers return empty when no clients', () async {
       expect(await service.searchAcrossServers('hello'), isEmpty);
-      expect(await service.getOnDeckFromAllServers(), isEmpty);
+      final onDeck = await service.getOnDeckFromAllServers();
+      expect(onDeck.items, isEmpty);
+      expect(onDeck.succeededServerIds, isEmpty);
     });
 
     test('searchAcrossServers overfetches and ranks before trimming across backends', () async {
@@ -161,9 +163,10 @@ void main() {
       addTearDown(client.close);
       manager.debugRegisterClientForTesting(client);
 
-      final items = await service.getOnDeckFromAllServers(limit: 21);
+      final result = await service.getOnDeckFromAllServers(limit: 21);
 
-      expect(items.map((item) => item.id), ['movie-1']);
+      expect(result.items.map((item) => item.id), ['movie-1']);
+      expect(result.succeededServerIds, {'plex-1'});
       expect(captured.single.path, '/hubs');
       expect(captured.single.queryParameters['count'], '21');
     });
@@ -239,9 +242,10 @@ void main() {
       addTearDown(client.close);
       manager.debugRegisterClientForTesting(client);
 
-      final items = await service.getOnDeckFromAllServers(limit: 10);
+      final result = await service.getOnDeckFromAllServers(limit: 10);
 
-      expect(items.map((item) => item.id), ['new-episode']);
+      expect(result.items.map((item) => item.id), ['new-episode']);
+      expect(result.succeededServerIds, {'plex-1'});
     });
 
     test('getOnDeckFromAllServers keeps duplicate titles without stable ids', () async {
@@ -307,9 +311,10 @@ void main() {
       addTearDown(client.close);
       manager.debugRegisterClientForTesting(client);
 
-      final items = await service.getOnDeckFromAllServers(limit: 10);
+      final result = await service.getOnDeckFromAllServers(limit: 10);
 
-      expect(items.map((item) => item.id), ['new-unmatched', 'old-unmatched']);
+      expect(result.items.map((item) => item.id), ['new-unmatched', 'old-unmatched']);
+      expect(result.succeededServerIds, {'plex-1'});
     });
 
     test('per-library hubs skip playback rows and fetch in bounded batches', () async {
@@ -352,8 +357,10 @@ void main() {
       addTearDown(client.close);
       manager.debugRegisterJellyfinClientForTesting(client);
 
-      final hubs = await service.getHubsFromAllServers(useGlobalHubs: false, includePlaybackHubs: false);
+      final result = await service.getHubsFromAllServers(useGlobalHubs: false, includePlaybackHubs: false);
+      final hubs = result.hubs;
 
+      expect(result.succeededServerIds, {'srv-1'});
       expect(hubs.map((h) => h.identifier), [
         'library.lib-1.recent',
         'library.lib-2.recent',
@@ -410,8 +417,10 @@ void main() {
       addTearDown(client.close);
       manager.debugRegisterJellyfinClientForTesting(client);
 
-      final hubs = await service.getHubsFromAllServers(useGlobalHubs: true, includePlaybackHubs: false);
+      final result = await service.getHubsFromAllServers(useGlobalHubs: true, includePlaybackHubs: false);
+      final hubs = result.hubs;
 
+      expect(result.succeededServerIds, {'srv-1'});
       expect(hubs.map((h) => h.identifier), ['library.movies.recent', 'library.shows.recent']);
       expect(hubs.map((h) => h.items.single.id), ['movie-1', 'show-1']);
       expect(captured.where((uri) => uri.path == '/Users/user-1/Views'), hasLength(1));
@@ -473,8 +482,10 @@ void main() {
       addTearDown(client.close);
       manager.debugRegisterClientForTesting(client);
 
-      final hubs = await service.getHubsFromAllServers(useGlobalHubs: true, includePlaybackHubs: false);
+      final result = await service.getHubsFromAllServers(useGlobalHubs: true, includePlaybackHubs: false);
+      final hubs = result.hubs;
 
+      expect(result.succeededServerIds, {'plex-1'});
       expect(hubs, hasLength(1));
       expect(hubs.single.title, 'Recently Added TV');
       expect(hubs.single.identifier, 'home.television.recent');

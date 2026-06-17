@@ -13,6 +13,9 @@ import 'package:vibe_stream/widgets/video_controls/widgets/mobile_skip_zones.dar
 import 'package:vibe_stream/widgets/video_controls/widgets/skip_marker_button.dart';
 import 'package:vibe_stream/widgets/video_controls/widgets/sync_offset_control.dart';
 import 'package:vibe_stream/widgets/video_controls/widgets/timeline_slider.dart';
+import 'package:vibe_stream/widgets/video_controls/widgets/video_timeline_bar.dart';
+
+import '../test_helpers/watch_together_fakes.dart';
 
 const _testTokens = MonoTokens(
   radiusSm: 8,
@@ -419,12 +422,40 @@ void main() {
       expect(slider.max, 0.0);
     });
 
+    testWidgets('timeline bar displays pending preview position while player position is stale', (tester) async {
+      final player = FakeSyncPlayer(position: const Duration(minutes: 1), duration: const Duration(minutes: 10));
+      addTearDown(player.dispose);
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: SizedBox(
+              width: 400,
+              child: VideoTimelineBar(
+                player: player,
+                chapters: const [],
+                chaptersLoaded: true,
+                previewPosition: const Duration(minutes: 4),
+                onSeek: (_) {},
+                onSeekEnd: (_) {},
+              ),
+            ),
+          ),
+        ),
+      );
+
+      final slider = tester.widget<Slider>(find.byType(Slider));
+      expect(slider.value, const Duration(minutes: 4).inMilliseconds.toDouble());
+    });
+
     Future<void> pumpScrubSlider(
       WidgetTester tester, {
       required List<Duration> seeks,
       required List<Duration> seekEnds,
       Duration duration = const Duration(minutes: 10),
       bool enabled = true,
+      VoidCallback? onScrubStart,
+      VoidCallback? onScrubEnd,
       Widget Function(Widget child)? wrap,
     }) async {
       Widget slider = SizedBox(
@@ -437,6 +468,8 @@ void main() {
           enabled: enabled,
           onSeek: seeks.add,
           onSeekEnd: seekEnds.add,
+          onScrubStart: onScrubStart,
+          onScrubEnd: onScrubEnd,
         ),
       );
       if (wrap != null) slider = wrap(slider);
@@ -450,7 +483,15 @@ void main() {
     testWidgets('touch drag survives tooltip appearance and finalizes once', (tester) async {
       final seeks = <Duration>[];
       final seekEnds = <Duration>[];
-      await pumpScrubSlider(tester, seeks: seeks, seekEnds: seekEnds);
+      var scrubStarts = 0;
+      var scrubEnds = 0;
+      await pumpScrubSlider(
+        tester,
+        seeks: seeks,
+        seekEnds: seekEnds,
+        onScrubStart: () => scrubStarts++,
+        onScrubEnd: () => scrubEnds++,
+      );
 
       // Down at the center (200/400 → 5min), drag +100px (→ 7.5min). The
       // first scrub event makes the tooltip appear; the drag must keep
@@ -466,7 +507,71 @@ void main() {
 
       expect(seeks, isNotEmpty);
       expect(seekEnds, hasLength(1));
+      expect(scrubStarts, 1);
+      expect(scrubEnds, 1);
       expect(seekEnds.single.inMilliseconds, closeTo(const Duration(minutes: 7, seconds: 30).inMilliseconds, 2000));
+    });
+
+    testWidgets('keyboard input does not start a scrub lifecycle', (tester) async {
+      final focusNode = FocusNode();
+      addTearDown(focusNode.dispose);
+      var scrubStarts = 0;
+      var scrubEnds = 0;
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: SizedBox(
+              width: 400,
+              child: TimelineSlider(
+                position: const Duration(minutes: 1),
+                duration: const Duration(minutes: 10),
+                chapters: const [],
+                chaptersLoaded: true,
+                focusNode: focusNode,
+                onKeyEvent: (_, event) => KeyEventResult.handled,
+                onSeek: (_) {},
+                onSeekEnd: (_) {},
+                onScrubStart: () => scrubStarts++,
+                onScrubEnd: () => scrubEnds++,
+              ),
+            ),
+          ),
+        ),
+      );
+
+      focusNode.requestFocus();
+      await tester.pump();
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
+      await tester.pump();
+
+      expect(scrubStarts, 0);
+      expect(scrubEnds, 0);
+    });
+
+    testWidgets('disposing mid-drag ends the scrub lifecycle', (tester) async {
+      final seeks = <Duration>[];
+      final seekEnds = <Duration>[];
+      var scrubStarts = 0;
+      var scrubEnds = 0;
+      await pumpScrubSlider(
+        tester,
+        seeks: seeks,
+        seekEnds: seekEnds,
+        onScrubStart: () => scrubStarts++,
+        onScrubEnd: () => scrubEnds++,
+      );
+
+      final gesture = await tester.startGesture(tester.getCenter(find.byType(TimelineSlider)));
+      await tester.pump();
+      expect(scrubStarts, 1);
+      expect(scrubEnds, 0);
+
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pump();
+      await gesture.cancel();
+
+      expect(scrubEnds, 1);
     });
 
     testWidgets('tap seeks to the tapped position', (tester) async {

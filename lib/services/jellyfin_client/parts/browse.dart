@@ -90,6 +90,10 @@ const _childrenPageSize = 500;
 const _pagedListPageSize = 200;
 const _playableDescendantTypes = 'Movie,Episode';
 const _playableFolderDescendantTypes = 'Movie,Episode,Video,MusicVideo';
+const _episodeOrderQueryParameters = {
+  'SortBy': 'ParentIndexNumber,IndexNumber,SortName',
+  'SortOrder': 'Ascending,Ascending,Ascending',
+};
 
 bool _isJellyfinFolderDto(Map<String, dynamic> item) {
   final type = (item['Type'] as String?)?.toLowerCase();
@@ -551,6 +555,7 @@ mixin _JellyfinBrowseMethods on MediaServerCacheMixin {
           'Fields': _episodeRowFields,
           'StartIndex': '$startIndex',
           'Limit': '$_childrenPageSize',
+          ..._episodeOrderQueryParameters,
           ...jellyfinImageQueryParameters,
         },
       );
@@ -643,6 +648,39 @@ mixin _JellyfinBrowseMethods on MediaServerCacheMixin {
         'StartIndex': offset.toString(),
         'Limit': pageSize.toString(),
         'EnableTotalRecordCount': 'true',
+        'Fields': _episodeRowFields,
+        ..._episodeOrderQueryParameters,
+        ...jellyfinImageQueryParameters,
+      },
+      abort: abort,
+    );
+    throwIfHttpError(response);
+    return _pagedMediaItems(response.data, offset: offset, requestedSize: pageSize);
+  }
+
+  Future<LibraryPage<MediaItem>> fetchSeasonEpisodesPage(
+    String seriesId,
+    String seasonId, {
+    int? start,
+    int? size,
+    AbortController? abort,
+  }) async {
+    if (isOfflineMode) {
+      return fetchChildrenPage(seasonId, start: start, size: size, abort: abort);
+    }
+
+    final offset = start ?? 0;
+    final pageSize = size ?? _pagedListPageSize;
+    final response = await _http.get(
+      '/Shows/${_segment(seriesId)}/Episodes',
+      queryParameters: {
+        'userId': connection.userId,
+        'SeasonId': seasonId,
+        'StartIndex': offset.toString(),
+        'Limit': pageSize.toString(),
+        'EnableTotalRecordCount': 'true',
+        'IsMissing': 'false',
+        'IsVirtualUnaired': 'false',
         'Fields': _episodeRowFields,
         ...jellyfinImageQueryParameters,
       },
@@ -884,6 +922,9 @@ mixin _JellyfinBrowseMethods on MediaServerCacheMixin {
           'Fields': _queueFields,
           'StartIndex': '$startIndex',
           'Limit': '$_episodeQueuePageSize',
+          'IsMissing': 'false',
+          'IsVirtualUnaired': 'false',
+          ..._episodeOrderQueryParameters,
           ...jellyfinImageQueryParameters,
         },
       );

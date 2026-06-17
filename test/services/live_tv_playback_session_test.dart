@@ -6,6 +6,7 @@ import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:vibe_stream/connection/connection.dart';
 import 'package:vibe_stream/database/app_database.dart';
+import 'package:vibe_stream/exceptions/media_server_exceptions.dart';
 import 'package:vibe_stream/media/ids.dart';
 import 'package:vibe_stream/models/plex/plex_config.dart';
 import 'package:vibe_stream/services/jellyfin_client.dart';
@@ -58,17 +59,21 @@ void main() {
       },
     };
 
-    PlexClient makeClient(Future<http.Response> Function(http.Request request) handler) => PlexClient.forTesting(
+    PlexClient makeClient(
+      Future<http.Response> Function(http.Request request) handler, {
+      List<String>? prioritizedEndpoints,
+    }) => PlexClient.forTesting(
       config: PlexConfig(
         baseUrl: 'https://plex.example.com',
         token: 'tok',
         clientIdentifier: 'client',
-        product: 'Plezy',
+        product: 'Vibe',
         version: '1',
         machineIdentifier: 'machine-1',
       ),
       serverId: ServerId('machine-1'),
       httpClient: MockClient(handler),
+      prioritizedEndpoints: prioritizedEndpoints,
     );
 
     test('startPlayback without a dvrKey returns null (tune requires a DVR)', () async {
@@ -157,6 +162,28 @@ void main() {
       expect(timelineQuery!['duration'], '2000000');
       expect(updated, isNotNull);
       expect(updated!.seekableDurationSeconds, 300);
+    });
+
+    test('reportTimeline does not fail over because it keeps the active live session alive', () async {
+      final requests = <Uri>[];
+      final client = makeClient((request) async {
+        requests.add(request.url);
+        if (request.url.path.endsWith('/tune')) return jsonResponse(tuneResponse());
+        if (request.url.path == '/:/timeline') {
+          throw http.ClientException('temporary timeline DNS failure', request.url);
+        }
+        return jsonResponse(const {});
+      }, prioritizedEndpoints: const ['https://plex.example.com', 'https://fallback.example.com']);
+      addTearDown(client.close);
+
+      final session = (await client.liveTv.startPlayback('ch-1', dvrKey: 'dvr-1'))!;
+
+      await expectLater(
+        session.reportTimeline(state: 'playing', positionMs: 10000, durationMs: 1800000),
+        throwsA(isA<MediaServerHttpException>()),
+      );
+      expect(requests.where((uri) => uri.path == '/:/timeline'), hasLength(1));
+      expect(client.config.baseUrl, 'https://plex.example.com');
     });
 
     test('recover re-tunes and the fresh session builds degraded URLs', () async {

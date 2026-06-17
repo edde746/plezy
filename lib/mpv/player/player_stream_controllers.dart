@@ -21,6 +21,7 @@ mixin PlayerStreamControllersMixin {
   final audioDevicesController = StreamController<List<AudioDevice>>.broadcast();
   final bufferRangesController = StreamController<List<BufferRange>>.broadcast();
   final playbackRestartController = StreamController<void>.broadcast();
+  final fileLoadedController = StreamController<void>.broadcast();
   final backendSwitchedController = StreamController<void>.broadcast();
 
   PlayerStreams createStreams() {
@@ -42,6 +43,7 @@ mixin PlayerStreamControllersMixin {
       audioDevices: audioDevicesController.stream,
       bufferRanges: bufferRangesController.stream,
       playbackRestart: playbackRestartController.stream,
+      fileLoaded: fileLoadedController.stream,
       backendSwitched: backendSwitchedController.stream,
     );
   }
@@ -64,6 +66,7 @@ mixin PlayerStreamControllersMixin {
     await audioDevicesController.close();
     await bufferRangesController.close();
     await playbackRestartController.close();
+    await fileLoadedController.close();
     await backendSwitchedController.close();
   }
 }

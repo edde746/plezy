@@ -18,6 +18,7 @@ import 'connection/connection_registry.dart';
 import 'profiles/active_profile_binder.dart';
 import 'profiles/active_profile_provider.dart';
 import 'profiles/profile.dart';
+import 'profiles/profile_connection_cleanup.dart';
 import 'profiles/profile_connection_registry.dart';
 import 'profiles/profile_registry.dart';
 import 'mixins/mounted_set_state_mixin.dart';
@@ -95,13 +96,13 @@ const String _sentryDist = String.fromEnvironment('SENTRY_DIST');
 bool _zeroOffsetPointerGuardInstalled = false;
 
 void _installZeroOffsetPointerGuard() {
-  if (_zeroOffsetPointerGuardInstalled) return;
+  if (_zeroOffsetPointerGuardInstalled || !Platform.isIOS) return;
   GestureBinding.instance.pointerRouter.addGlobalRoute(_absorbZeroOffsetPointerEvent);
   _zeroOffsetPointerGuardInstalled = true;
 }
 
 void _absorbZeroOffsetPointerEvent(PointerEvent event) {
-  if (event.position == Offset.zero) {
+  if (event is PointerDownEvent && event.position == Offset.zero) {
     GestureBinding.instance.cancelPointer(event.pointer);
   }
 }
@@ -959,51 +960,51 @@ class _AppShell extends StatelessWidget {
           child: Builder(
             builder: (context) {
               return Listener(
-                    onPointerDown: (event) {
-                      if ((event.buttons & kBackMouseButton) != 0) {
-                        rootNavigatorKey.currentState?.maybePop();
-                      }
+                onPointerDown: (event) {
+                  if ((event.buttons & kBackMouseButton) != 0) {
+                    rootNavigatorKey.currentState?.maybePop();
+                  }
+                },
+                behavior: HitTestBehavior.translucent,
+                child: InputModeTracker(
+                  child: MaterialApp(
+                    title: t.app.title,
+                    debugShowCheckedModeBanner: false,
+                    theme: themeProvider.lightTheme,
+                    darkTheme: themeProvider.darkTheme,
+                    themeMode: themeProvider.materialThemeMode,
+                    navigatorKey: rootNavigatorKey,
+                    navigatorObservers: [routeObserver, BackKeySuppressorObserver()],
+                    home: const OrientationAwareSetup(),
+                    // Siri Remote select + gamepad A report as
+                    // LogicalKeyboardKey.{select,gameButtonA} which aren't
+                    // in Flutter's default shortcut set — Material-level
+                    // widgets (menu items, showModalBottomSheet actions)
+                    // ignore them. Map both to ActivateIntent so tapping
+                    // select on tvOS activates the focused widget.
+                    shortcuts: <ShortcutActivator, Intent>{
+                      ...WidgetsApp.defaultShortcuts,
+                      const SingleActivator(LogicalKeyboardKey.select): const ActivateIntent(),
+                      const SingleActivator(LogicalKeyboardKey.gameButtonA): const ActivateIntent(),
+                      const SingleActivator(LogicalKeyboardKey.goBack): const DismissIntent(),
+                      const SingleActivator(LogicalKeyboardKey.browserBack): const DismissIntent(),
+                      const SingleActivator(LogicalKeyboardKey.gameButtonB): const DismissIntent(),
                     },
-                    behavior: HitTestBehavior.translucent,
-                    child: InputModeTracker(
-                      child: MaterialApp(
-                        title: t.app.title,
-                        debugShowCheckedModeBanner: false,
-                        theme: themeProvider.lightTheme,
-                        darkTheme: themeProvider.darkTheme,
-                        themeMode: themeProvider.materialThemeMode,
-                        navigatorKey: rootNavigatorKey,
-                        navigatorObservers: [routeObserver, BackKeySuppressorObserver()],
-                        home: const OrientationAwareSetup(),
-                        // Siri Remote select + gamepad A report as
-                        // LogicalKeyboardKey.{select,gameButtonA} which aren't
-                        // in Flutter's default shortcut set — Material-level
-                        // widgets (menu items, showModalBottomSheet actions)
-                        // ignore them. Map both to ActivateIntent so tapping
-                        // select on tvOS activates the focused widget.
-                        shortcuts: <ShortcutActivator, Intent>{
-                          ...WidgetsApp.defaultShortcuts,
-                          const SingleActivator(LogicalKeyboardKey.select): const ActivateIntent(),
-                          const SingleActivator(LogicalKeyboardKey.gameButtonA): const ActivateIntent(),
-                          const SingleActivator(LogicalKeyboardKey.goBack): const DismissIntent(),
-                          const SingleActivator(LogicalKeyboardKey.browserBack): const DismissIntent(),
-                          const SingleActivator(LogicalKeyboardKey.gameButtonB): const DismissIntent(),
-                        },
-                        builder: (context, child) => ScaffoldMessenger(
-                          key: rootScaffoldMessengerKey,
-                          child: Scaffold(
-                            backgroundColor: Colors.transparent,
-                            body: _AppleTvScale(child: child),
-                          ),
-                        ),
+                    builder: (context, child) => ScaffoldMessenger(
+                      key: rootScaffoldMessengerKey,
+                      child: Scaffold(
+                        backgroundColor: Colors.transparent,
+                        body: _AppleTvScale(child: child),
                       ),
                     ),
-                  );
-                },
-              ),
-            );
-          },
+                  ),
+                ),
+              );
+            },
+          ),
         );
+      },
+    );
   }
 }
 
@@ -1125,6 +1126,7 @@ class _SetupScreenState extends State<SetupScreen> with MountedSetStateMixin {
     if (mounted) {
       try {
         final connRegistry = context.read<ConnectionRegistry>();
+        final profileConnections = context.read<ProfileConnectionRegistry>();
         final profileRegistry = context.read<ProfileRegistry>();
         final activeProfiles = context.read<ActiveProfileProvider>();
         final bootstrap = ConnectionBootstrap(
@@ -1134,6 +1136,15 @@ class _SetupScreenState extends State<SetupScreen> with MountedSetStateMixin {
           profileRegistry: profileRegistry,
         );
         await bootstrap.run();
+        final pruned = await pruneUnreferencedJellyfinConnections(
+          profileConnections: profileConnections,
+          connections: connRegistry,
+          storage: storage,
+          serverManager: context.read<MultiServerProvider>().serverManager,
+        );
+        if (pruned > 0) {
+          appLogger.i('Setup: pruned $pruned unreferenced Jellyfin connection${pruned == 1 ? '' : 's'}');
+        }
         // Provider initialization starts before this screen runs the legacy
         // migration. Reload after bootstrap so copied Plex Home users and the
         // selected active profile are visible before setup decides binding is

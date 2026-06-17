@@ -140,7 +140,12 @@ class _LibraryCollectionsTabState extends BaseLibraryTabState<MediaItem, Library
       padding: _effectivePadding,
       sliver: SliverList.builder(
         itemCount: totalSize,
-        itemBuilder: (context, index) => _buildMediaCardItem(index, isFirstColumn: true, disableScale: true),
+        itemBuilder: (context, index) => _buildMediaCardItem(
+          index,
+          isFirstRow: index == 0,
+          isFirstColumn: true,
+          disableScale: true,
+        ),
       ),
     );
   }
@@ -161,6 +166,7 @@ class _LibraryCollectionsTabState extends BaseLibraryTabState<MediaItem, Library
             itemCount: totalSize,
             itemBuilder: (context, index) => _buildMediaCardItem(
               index,
+              isFirstRow: GridSizeCalculator.isFirstRow(index, geometry.columnCount),
               isFirstColumn: GridSizeCalculator.isFirstColumn(index, geometry.columnCount),
               fullBleedImage: fullCardLayout,
             ),
@@ -172,6 +178,7 @@ class _LibraryCollectionsTabState extends BaseLibraryTabState<MediaItem, Library
 
   Widget _buildMediaCardItem(
     int index, {
+    required bool isFirstRow,
     required bool isFirstColumn,
     bool disableScale = false,
     bool fullBleedImage = false,
@@ -189,6 +196,7 @@ class _LibraryCollectionsTabState extends BaseLibraryTabState<MediaItem, Library
       disableScale: disableScale,
       fullBleedImage: fullBleedImage,
       onListRefresh: loadItems,
+      onNavigateUp: isFirstRow ? widget.onBack : null,
       onBack: widget.onBack,
       onNavigateLeft: isFirstColumn ? _navigateToSidebar : null,
     );

@@ -258,24 +258,40 @@ object DoviBridge {
   }
 
   private fun describeDisplayHdrCapabilities(display: Display): String {
-    val hdrCapabilities = display.hdrCapabilities
+    val hdrCapabilities = getDisplayHdrCapabilities(display)
     val parts = mutableListOf(
       "display=${display.displayId}:${display.name}",
-      "activeMode=${describeDisplayMode(display.mode)}",
-      "hdrCapabilities=${describeHdrTypes(hdrCapabilities.supportedHdrTypes)}",
-      "desiredLuminance=max=${formatLuminance(hdrCapabilities.desiredMaxLuminance)}, " +
+      "activeMode=${describeDisplayMode(display.mode)}"
+    )
+    if (hdrCapabilities == null) {
+      parts += "hdrCapabilities=unavailable"
+    } else {
+      @Suppress("DEPRECATION")
+      parts += "hdrCapabilities=${describeHdrTypes(hdrCapabilities.supportedHdrTypes)}"
+      parts += "desiredLuminance=max=${formatLuminance(hdrCapabilities.desiredMaxLuminance)}, " +
         "maxAvg=${formatLuminance(hdrCapabilities.desiredMaxAverageLuminance)}, " +
         "min=${formatLuminance(hdrCapabilities.desiredMinLuminance)}"
-    )
+    }
     parts += "supportedModes=${display.supportedModes.joinToString(prefix = "[", postfix = "]") { describeDisplayMode(it) }}"
     return parts.joinToString(prefix = "{", postfix = "}")
   }
 
-  private fun getDisplayHdrTypes(display: Display): IntArray = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-    display.mode.supportedHdrTypes
-  } else {
+  private fun getDisplayHdrCapabilities(display: Display): Display.HdrCapabilities? = runCatching {
+    display.hdrCapabilities
+  }.onFailure { Log.w(TAG, "Failed to query display HDR capabilities", it) }.getOrNull()
+
+  private fun getDisplayHdrTypes(display: Display): IntArray {
+    val hdrCapabilities = getDisplayHdrCapabilities(display) ?: return IntArray(0)
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+      return runCatching { display.mode.supportedHdrTypes }.getOrElse { error ->
+        Log.w(TAG, "Failed to query mode HDR types; falling back to display HDR capabilities", error)
+        @Suppress("DEPRECATION")
+        hdrCapabilities.supportedHdrTypes
+      }
+    }
+
     @Suppress("DEPRECATION")
-    display.hdrCapabilities.supportedHdrTypes
+    return hdrCapabilities.supportedHdrTypes
   }
 
   private fun describeDisplayMode(mode: Display.Mode): String {

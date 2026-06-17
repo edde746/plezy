@@ -1187,6 +1187,7 @@
     "maxCll": "MaxCLL",
     "maxFall": "MaxFALL",
     "cacheUsed": "Cache gebruikt",
+    "cacheLimit": "Cachelimiet",
     "speed": "Snelheid",
     "player": "Speler",
     "memory": "Geheugen",

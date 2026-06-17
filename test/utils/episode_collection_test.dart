@@ -43,6 +43,8 @@ MediaItem _episode(
   durationMs: durationMs,
 );
 
+MediaItem _clip(String id) => MediaItem(id: id, backend: MediaBackend.plex, kind: MediaKind.clip, title: 'Clip');
+
 class _RecordingClient implements MediaServerClient {
   _RecordingClient({this.childrenByParent = const {}, this.childrenPageByParent = const {}, this.itemsById = const {}});
 
@@ -74,6 +76,30 @@ class _RecordingClient implements MediaServerClient {
 
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
+class _SeasonPagingRecordingClient extends _RecordingClient implements SeasonEpisodePagingClient {
+  _SeasonPagingRecordingClient({this.seasonPageBySeason = const {}});
+
+  final Map<({String seriesId, String seasonId}), List<MediaItem>> seasonPageBySeason;
+  final seasonEpisodePageCalls = <({String seriesId, String seasonId, int? start, int? size})>[];
+
+  @override
+  Future<LibraryPage<MediaItem>> fetchSeasonEpisodesPage(
+    String seriesId,
+    String seasonId, {
+    int? start,
+    int? size,
+    abort,
+  }) async {
+    seasonEpisodePageCalls.add((seriesId: seriesId, seasonId: seasonId, start: start, size: size));
+    final all = seasonPageBySeason[(seriesId: seriesId, seasonId: seasonId)] ?? const <MediaItem>[];
+    final offset = start ?? 0;
+    final limit = size ?? all.length;
+    final end = (offset + limit).clamp(0, all.length).toInt();
+    final items = offset >= all.length ? const <MediaItem>[] : all.sublist(offset, end);
+    return LibraryPage(items: items, totalCount: all.length, offset: offset);
+  }
 }
 
 void main() {
@@ -180,6 +206,21 @@ void main() {
     expect(client.childrenPageCalls, [(parentId: 'season-1', start: 0, size: 1)]);
   });
 
+  test('fetchFirstEpisodeForSeason uses season episode paging when available', () async {
+    final episode = _episode('episode-1');
+    final client = _SeasonPagingRecordingClient(
+      seasonPageBySeason: {
+        (seriesId: 'show-1', seasonId: 'season-1'): [episode, _episode('episode-2')],
+      },
+    );
+
+    final result = await fetchFirstEpisodeForSeason(client, 'season-1', seriesId: 'show-1');
+
+    expect(result, same(episode));
+    expect(client.childrenPageCalls, isEmpty);
+    expect(client.seasonEpisodePageCalls, [(seriesId: 'show-1', seasonId: 'season-1', start: 0, size: 1)]);
+  });
+
   test('fetchSeasonEpisodePage normalizes show and season identity', () async {
     final show = MediaItem(
       id: 'show-1',
@@ -211,6 +252,32 @@ void main() {
     expect(page.items.single.parentId, season.id);
     expect(page.items.single.parentIndex, season.index);
     expect(page.items.single.libraryId, show.libraryId);
+  });
+
+  test('fetchSeasonEpisodePage uses season episode paging when available', () async {
+    final show = MediaItem(id: 'show-1', backend: MediaBackend.plex, kind: MediaKind.show, title: 'Show');
+    final season = _season('season-1');
+    final row = _episode('episode-1');
+    final client = _SeasonPagingRecordingClient(
+      seasonPageBySeason: {
+        (seriesId: show.id, seasonId: season.id): [row],
+      },
+    );
+
+    final page = await fetchSeasonEpisodePage(client, show: show, season: season, start: 0, size: 10);
+
+    expect(client.childrenPageCalls, isEmpty);
+    expect(client.seasonEpisodePageCalls, [(seriesId: show.id, seasonId: season.id, start: 0, size: 10)]);
+    expect(page.items.single.id, row.id);
+  });
+
+  test('normalizeSeasonEpisodes ignores non-episode rows', () {
+    final show = MediaItem(id: 'show-1', backend: MediaBackend.plex, kind: MediaKind.show, title: 'Show');
+    final season = _season('season-1');
+
+    final normalized = normalizeSeasonEpisodes([_clip('extra-1'), _episode('episode-1')], show: show, season: season);
+
+    expect(normalized.map((item) => item.id), ['episode-1']);
   });
 
   test('fetchRepresentativeVersions uses paged lookup for season metadata', () async {

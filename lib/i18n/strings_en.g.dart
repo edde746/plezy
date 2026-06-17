@@ -3368,6 +3368,9 @@ class TranslationsPerformanceOverlayEn {
 	/// en: 'Cache Used'
 	String get cacheUsed => 'Cache Used';
 
+	/// en: 'Cache Limit'
+	String get cacheLimit => 'Cache Limit';
+
 	/// en: 'Speed'
 	String get speed => 'Speed';
 
@@ -5599,6 +5602,7 @@ extension on Translations {
 			'performanceOverlay.maxCll' => 'MaxCLL',
 			'performanceOverlay.maxFall' => 'MaxFALL',
 			'performanceOverlay.cacheUsed' => 'Cache Used',
+			'performanceOverlay.cacheLimit' => 'Cache Limit',
 			'performanceOverlay.speed' => 'Speed',
 			'performanceOverlay.player' => 'Player',
 			'performanceOverlay.memory' => 'Memory',

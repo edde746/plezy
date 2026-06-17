@@ -1187,6 +1187,7 @@
     "maxCll": "MaxCLL",
     "maxFall": "MaxFALL",
     "cacheUsed": "Cache usata",
+    "cacheLimit": "Limite cache",
     "speed": "Velocità",
     "player": "Player",
     "memory": "Memoria",

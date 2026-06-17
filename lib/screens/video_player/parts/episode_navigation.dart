@@ -242,7 +242,7 @@ extension _VideoPlayerEpisodeNavigationMethods on VideoPlayerScreenState {
     final currentSecondarySubtitleTrack = preserveCurrentTrackSelection
         ? currentPlayer.state.track.secondarySubtitle
         : null;
-    final wasPlayingBeforeReload = currentPlayer.state.playing;
+    final wasPlayingBeforeReload = _playbackIntentShouldPlay;
     var didOpenReplacement = false;
 
     // Capture context-dependent values before async gaps. The neutral
@@ -341,8 +341,6 @@ extension _VideoPlayerEpisodeNavigationMethods on VideoPlayerScreenState {
       );
       if (!isCurrentReload()) return true;
 
-      final hasExternalSubs = result.externalSubtitles.isNotEmpty;
-      final attachesSubsAtOpen = currentPlayer.attachesExternalSubtitlesAtOpen;
       final displayCriteria = result.mediaInfo?.displayCriteria;
       final settingsService = await SettingsService.getInstance();
       if (!isCurrentReload()) return true;
@@ -384,6 +382,10 @@ extension _VideoPlayerEpisodeNavigationMethods on VideoPlayerScreenState {
       if (!isCurrentReload()) return true;
 
       frameRatePlan.armStartupRefreshGate(currentPlayer);
+      final externalSubtitlePlan = _prepareExternalSubtitleOpenPlan(
+        player: currentPlayer,
+        externalSubtitles: result.externalSubtitles,
+      );
       final didOpen = await _openMediaOnPlayer(
         player: currentPlayer,
         settingsService: settingsService,
@@ -395,8 +397,8 @@ extension _VideoPlayerEpisodeNavigationMethods on VideoPlayerScreenState {
         selectedVersion: result.selectedVersion,
         timing: openTiming,
         headers: result.usesLocalMedia ? null : streamHeaders,
-        play: !frameRatePlan.holdPlaybackStart && !wtOwnsStart && (attachesSubsAtOpen || !hasExternalSubs),
-        externalSubtitlesAtOpen: attachesSubsAtOpen && hasExternalSubs ? result.externalSubtitles : null,
+        play: !frameRatePlan.holdPlaybackStart && !wtOwnsStart && externalSubtitlePlan.canStartBeforeTrackSetup,
+        externalSubtitlesAtOpen: externalSubtitlePlan.subtitlesAtOpen,
         shouldContinue: isCurrentReload,
         onOpened: () {
           // The player now owns the new file — publish the session at the
@@ -437,15 +439,20 @@ extension _VideoPlayerEpisodeNavigationMethods on VideoPlayerScreenState {
       _trackManager = trackManager;
       trackManager.cacheExternalSubtitles(result.externalSubtitles);
 
+      final resumeForStartupFrame =
+          frameRatePlan.needsStartupRefresh && externalSubtitlePlan.requiresPostOpenAdd && !wtOwnsStart;
       await _applyTracksAfterOpen(
-        forPlayer: currentPlayer,
         trackManager: trackManager,
-        externalSubtitles: result.externalSubtitles,
+        externalSubtitlePlan: externalSubtitlePlan,
         // Same guard as the start path: don't resume a player a newer flow
         // owns, and let a pending startup gate (or Watch Together's group
-        // start) own the resume instead.
+        // start) own the resume instead. Post-open external-subtitle paths
+        // resume once here so the startup refresh gate can observe a frame.
         shouldResumeAfterSubtitleLoad: () =>
-            !frameRatePlan.holdPlaybackStart && !wtOwnsStart && mounted && player == currentPlayer,
+            (!frameRatePlan.holdPlaybackStart || resumeForStartupFrame) &&
+            !wtOwnsStart &&
+            mounted &&
+            player == currentPlayer,
         applySelectionWhenResumeSkipped: wtOwnsStart && !frameRatePlan.holdPlaybackStart,
       );
       if (!isCurrentReload()) return true;
@@ -456,11 +463,11 @@ extension _VideoPlayerEpisodeNavigationMethods on VideoPlayerScreenState {
         plan: frameRatePlan,
         resumeAfterStartupGate: (reason) => _resumeAfterStartupGateOrYieldToWatchTogether(
           currentPlayer: currentPlayer,
-          attachesSubsAtOpen: attachesSubsAtOpen,
-          hasExternalSubs: hasExternalSubs,
+          externalSubtitlePlan: externalSubtitlePlan,
           reason: reason,
           wtOwnsStart: wtOwnsStart,
         ),
+        playbackResumedForStartupFrame: resumeForStartupFrame,
       );
       if (!isCurrentReload()) return true;
 
@@ -502,7 +509,7 @@ extension _VideoPlayerEpisodeNavigationMethods on VideoPlayerScreenState {
         // resumed session keeps reporting (and its eventual real stop sends).
         _progressTracker?.resumeAfterStoppedReport();
         if (wasPlayingBeforeReload && mounted && player == currentPlayer) {
-          unawaited(currentPlayer.play());
+          unawaited(_playWithPlaybackIntent(currentPlayer));
         }
       } else if (_progressTracker == null && player == currentPlayer) {
         // The new file is playing and its session is committed — keep the

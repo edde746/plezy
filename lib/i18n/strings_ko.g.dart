@@ -1409,6 +1409,7 @@ class _TranslationsPerformanceOverlayKo extends TranslationsPerformanceOverlayEn
 	@override String get maxCll => 'MaxCLL';
 	@override String get maxFall => 'MaxFALL';
 	@override String get cacheUsed => '사용 캐시';
+	@override String get cacheLimit => '캐시 제한';
 	@override String get speed => '속도';
 	@override String get player => '플레이어';
 	@override String get memory => '메모리';
@@ -3015,6 +3016,7 @@ extension on TranslationsKo {
 			'performanceOverlay.maxCll' => 'MaxCLL',
 			'performanceOverlay.maxFall' => 'MaxFALL',
 			'performanceOverlay.cacheUsed' => '사용 캐시',
+			'performanceOverlay.cacheLimit' => '캐시 제한',
 			'performanceOverlay.speed' => '속도',
 			'performanceOverlay.player' => '플레이어',
 			'performanceOverlay.memory' => '메모리',

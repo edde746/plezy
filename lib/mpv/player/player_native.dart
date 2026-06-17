@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io' show Platform;
 
 import 'package:flutter/services.dart';
@@ -32,6 +33,12 @@ class PlayerNative extends PlayerBase {
   @override
   String get playerType => 'mpv';
 
+  @override
+  bool get providesNativeStats => Platform.isAndroid;
+
+  @override
+  bool get attachesExternalSubtitlesAtOpen => true;
+
   /// Node properties are returned as structured maps on macOS/iOS/Linux,
   /// but as JSON strings on Android/Windows.
   static final String _nodeFormat = (Platform.isAndroid || Platform.isWindows) ? 'string' : 'node';
@@ -50,6 +57,27 @@ class PlayerNative extends PlayerBase {
       '1' || 'true' || 'yes' || 'on' => 'yes',
       _ => 'no',
     };
+  }
+
+  static String _fixedLengthQuote(String value) {
+    return '%${utf8.encode(value).length}%$value';
+  }
+
+  static String _escapePathListEntry(String value, String separator) {
+    return value.replaceAll(r'\', r'\\').replaceAll(separator, '\\$separator');
+  }
+
+  static String? _externalSubtitlesLoadfileOption(List<SubtitleTrack>? externalSubtitles) {
+    final separator = Platform.isWindows ? ';' : ':';
+    final escapedUris = externalSubtitles
+        ?.map((subtitle) => subtitle.uri)
+        .whereType<String>()
+        .where((uri) => uri.isNotEmpty)
+        .map((uri) => _escapePathListEntry(uri, separator))
+        .toList();
+    if (escapedUris == null || escapedUris.isEmpty) return null;
+
+    return 'sub-files=${_fixedLengthQuote(escapedUris.join(separator))}';
   }
 
   MediaDisplayCriteria? _effectiveDisplayCriteria(MediaDisplayCriteria? criteria) {
@@ -148,6 +176,7 @@ class PlayerNative extends PlayerBase {
     final startPosition = media.start ?? Duration.zero;
     configureTimeline(offset: timelineOffset, duration: timelineDuration);
     clearTracks();
+    setExternalSubtitleMetadata(externalSubtitles);
     resetPlaybackProgress(startPosition);
     setSeekable(false);
 
@@ -184,7 +213,12 @@ class PlayerNative extends PlayerBase {
       }
     }
 
-    await command(['loadfile', uri, 'replace']);
+    final loadfileArgs = ['loadfile', uri, 'replace'];
+    final loadfileOption = _externalSubtitlesLoadfileOption(externalSubtitles);
+    if (loadfileOption != null) {
+      loadfileArgs.addAll(['-1', loadfileOption]);
+    }
+    await command(loadfileArgs);
 
     // mpv's pause property survives loadfile; in-place reloads pause the old
     // file before resolving, so explicitly unpause for the replacement. Set
@@ -292,6 +326,14 @@ class PlayerNative extends PlayerBase {
     }
     await _ensureInitialized();
     return await invoke<String>('getProperty', {'name': name});
+  }
+
+  @override
+  Future<Map<String, dynamic>> getStats() async {
+    if (disposed || !Platform.isAndroid) return super.getStats();
+    await _ensureInitialized();
+    final result = await invoke<Map>('getStats');
+    return Map<String, dynamic>.from(result ?? const {});
   }
 
   @override

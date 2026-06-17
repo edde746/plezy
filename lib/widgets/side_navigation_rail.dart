@@ -580,7 +580,6 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
     final horizontalPadding = horizontalPaddingForContext(context, isCollapsed: isCollapsed);
     final itemHorizontalPadding = itemHorizontalPaddingForContext(context, isCollapsed: isCollapsed);
     final hasLiveTv = context.watch<MultiServerProvider>().hasLiveTv;
-    final surfaceOpacity = PlatformDetector.isTV() ? 0.0 : 1.0;
 
     // Listen to fullscreen + groupLibrariesByServer setting so the rail
     // rebuilds when the user toggles "Group libraries by server" in Appearance.
@@ -645,7 +644,7 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
                   children: [
                     Positioned.fill(
                       child: AnimatedOpacity(
-                        opacity: surfaceOpacity,
+                        opacity: PlatformDetector.isTV() ? 0.0 : 1.0,
                         duration: t.normal,
                         curve: Curves.easeOutCubic,
                         child: ColoredBox(color: t.surface),

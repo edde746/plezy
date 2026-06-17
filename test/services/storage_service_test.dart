@@ -461,6 +461,84 @@ void main() {
       expect(s.prefs.getString('library_order'), isNull);
       expect(s.prefs.getString('library_filters_sec-1'), isNull);
     });
+
+    test('clearLibraryPreferencesForServer clears only the target profile server keys', () async {
+      final s = await StorageService.getInstance();
+      final serverA = ServerId('srv-a');
+      final serverB = ServerId('srv-b');
+
+      await s.setActiveProfileId('local-user-1');
+      await s.saveLibraryOrder(['srv-a:movies', 'srv-b:shows']);
+      await s.saveSelectedLibraryKey('srv-a:movies');
+      await s.saveHiddenLibraries({'srv-a:movies', 'srv-b:shows'});
+      await s.saveLibraryFilters({'genre': 'sci-fi'}, sectionId: 'srv-a:movies');
+      await s.saveLibraryFilters({'genre': 'drama'}, sectionId: 'srv-b:shows');
+      await s.saveLibrarySort('srv-a:movies', 'titleSort');
+      await s.saveLibraryGrouping('srv-a:movies', 'movies');
+      await s.saveLibraryTab('srv-a:movies', 'recommended');
+
+      await s.setActiveProfileId('local-user-2');
+      await s.saveLibraryOrder(['srv-a:movies']);
+      await s.saveHiddenLibraries({'srv-a:movies'});
+
+      await s.clearLibraryPreferencesForServer(serverA, profileId: 'local-user-1');
+
+      await s.setActiveProfileId('local-user-1');
+      expect(s.getLibraryOrder(), ['srv-b:shows']);
+      expect(s.getSelectedLibraryKey(), isNull);
+      expect(s.getHiddenLibraries(), {'srv-b:shows'});
+      expect(s.getLibraryFilters(sectionId: 'srv-a:movies'), isEmpty);
+      expect(s.getLibraryFilters(sectionId: 'srv-b:shows'), {'genre': 'drama'});
+      expect(s.getLibrarySort('srv-a:movies'), isNull);
+      expect(s.getLibraryGrouping('srv-a:movies'), isNull);
+      expect(s.getLibraryTab('srv-a:movies'), isNull);
+
+      await s.setActiveProfileId('local-user-2');
+      expect(s.getLibraryOrder(), ['srv-a:movies']);
+      expect(s.getHiddenLibraries(), {'srv-a:movies'});
+
+      await s.clearLibraryPreferencesForServer(serverB, profileId: 'local-user-1');
+      await s.setActiveProfileId('local-user-1');
+      expect(s.getLibraryOrder(), isNull);
+      expect(s.getHiddenLibraries(), isEmpty);
+    });
+
+    test('clearLibraryPreferencesForServerEverywhere clears server keys from all scopes', () async {
+      final s = await StorageService.getInstance();
+      final serverA = ServerId('srv-a');
+
+      await s.prefs.setString('library_order', json.encode(['srv-a:legacy', 'srv-b:legacy']));
+      await s.prefs.setString('hidden_libraries', json.encode(['srv-a:legacy', 'srv-b:legacy']));
+      await s.prefs.setString('selected_library_key', 'srv-a:legacy');
+      await s.prefs.setString('library_sort_srv-a:legacy', json.encode({'key': 'titleSort', 'descending': false}));
+      await s.prefs.setString('library_grouping_srv-a:legacy', 'movies');
+
+      await s.setActiveProfileId('local-user-1');
+      await s.saveLibraryOrder(['srv-a:movies', 'srv-b:shows']);
+      await s.saveHiddenLibraries({'srv-a:movies', 'srv-b:shows'});
+      await s.saveLibrarySort('srv-a:movies', 'titleSort');
+
+      await s.setActiveProfileId('local-user-2');
+      await s.saveLibraryOrder(['srv-a:movies']);
+      await s.saveHiddenLibraries({'srv-a:movies'});
+
+      await s.clearLibraryPreferencesForServerEverywhere(serverA);
+
+      expect(s.prefs.getString('library_order'), json.encode(['srv-b:legacy']));
+      expect(s.prefs.getString('hidden_libraries'), json.encode(['srv-b:legacy']));
+      expect(s.prefs.getString('selected_library_key'), isNull);
+      expect(s.prefs.getString('library_sort_srv-a:legacy'), isNull);
+      expect(s.prefs.getString('library_grouping_srv-a:legacy'), isNull);
+
+      await s.setActiveProfileId('local-user-1');
+      expect(s.getLibraryOrder(), ['srv-b:shows']);
+      expect(s.getHiddenLibraries(), {'srv-b:shows'});
+      expect(s.getLibrarySort('srv-a:movies'), isNull);
+
+      await s.setActiveProfileId('local-user-2');
+      expect(s.getLibraryOrder(), ['srv-b:legacy']);
+      expect(s.getHiddenLibraries(), {'srv-b:legacy'});
+    });
   });
 
   // ============================================================

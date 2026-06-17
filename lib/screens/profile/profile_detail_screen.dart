@@ -13,11 +13,15 @@ import '../../profiles/active_profile_binder.dart';
 import '../../profiles/plex_home_service.dart';
 import '../../profiles/profile.dart';
 import '../../profiles/profile_avatar.dart';
+import '../../profiles/profile_connection_cleanup.dart';
 import '../../profiles/profile_connection.dart';
 import '../../profiles/profile_connection_registry.dart';
 import '../../profiles/profile_registry.dart';
 import '../../profiles/profiles_view.dart';
 import '../../providers/download_provider.dart';
+import '../../providers/hidden_libraries_provider.dart';
+import '../../providers/multi_server_provider.dart';
+import '../../services/storage_service.dart';
 import '../../utils/snackbar_helper.dart';
 import '../../focus/focusable_button.dart';
 import '../../widgets/app_icon.dart';
@@ -127,7 +131,16 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> with Controll
       _serverIdsForConnection(conn),
     );
     if (!mounted) return;
-    await context.read<ProfileConnectionRegistry>().remove(_profile.id, pc.connectionId);
+    await removeProfileConnectionAndCleanup(
+      profileId: _profile.id,
+      connection: conn,
+      profileConnections: context.read<ProfileConnectionRegistry>(),
+      connections: context.read<ConnectionRegistry>(),
+      storage: context.read<StorageService>(),
+      serverManager: context.read<MultiServerProvider>().serverManager,
+    );
+    if (!mounted) return;
+    await context.read<HiddenLibrariesProvider?>()?.refresh();
     if (!mounted) return;
     unawaited(context.read<ActiveProfileBinder>().rebindIfActive(_profile.id));
   }

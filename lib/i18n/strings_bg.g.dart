@@ -1409,6 +1409,7 @@ class _TranslationsPerformanceOverlayBg extends TranslationsPerformanceOverlayEn
 	@override String get maxCll => 'MaxCLL';
 	@override String get maxFall => 'MaxFALL';
 	@override String get cacheUsed => 'Използван кеш';
+	@override String get cacheLimit => 'Лимит на кеша';
 	@override String get speed => 'Скорост';
 	@override String get player => 'Плеър';
 	@override String get memory => 'Памет';
@@ -3015,6 +3016,7 @@ extension on TranslationsBg {
 			'performanceOverlay.maxCll' => 'MaxCLL',
 			'performanceOverlay.maxFall' => 'MaxFALL',
 			'performanceOverlay.cacheUsed' => 'Използван кеш',
+			'performanceOverlay.cacheLimit' => 'Лимит на кеша',
 			'performanceOverlay.speed' => 'Скорост',
 			'performanceOverlay.player' => 'Плеър',
 			'performanceOverlay.memory' => 'Памет',

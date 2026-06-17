@@ -230,7 +230,8 @@ class SpecRenderEngineTest {
     h.script.add(changed())
     val first = h.engine.service(0, pinned = true) as SpecRenderEngine.Outcome.Post
     var pts = 0L
-    repeat(4) { // build cadence; renders return changed for simplicity
+    repeat(4) {
+      // build cadence; renders return changed for simplicity
       pts += DELTA
       h.engine.service(pts, pinned = true)
     }

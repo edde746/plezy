@@ -73,13 +73,23 @@ class TraktScrobbleService {
   void rebindToProfile(
     TraktSession? session, {
     required void Function() onSessionInvalidated,
+    void Function(TraktSession session)? onSessionUpdated,
     http.Client? httpClient,
   }) {
     _client?.dispose();
     _client = session != null
-        ? TraktClient(session, onSessionInvalidated: onSessionInvalidated, httpClient: httpClient)
+        ? TraktClient(
+            session,
+            onSessionInvalidated: onSessionInvalidated,
+            onSessionUpdated: onSessionUpdated,
+            httpClient: httpClient,
+          )
         : null;
     cancelInFlight();
+  }
+
+  void updateSession(TraktSession session) {
+    _client?.updateSession(session);
   }
 
   Future<int?> getRating(TrackerRatingContext ctx) async {

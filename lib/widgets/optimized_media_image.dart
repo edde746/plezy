@@ -250,7 +250,7 @@ class OptimizedMediaImage extends StatelessWidget {
       // CachedNetworkImageProvider.
       cacheHeight: memHeight > 0 ? memHeight : null,
       fit: fit,
-      filterQuality: _effectiveFilterQuality,
+      filterQuality: filterQuality,
       alignment: alignment,
       errorBuilder: (context, error, stackTrace) {
         if (errorWidget != null) {
@@ -260,10 +260,6 @@ class OptimizedMediaImage extends StatelessWidget {
       },
     );
   }
-
-  /// Reduced tier: bilinear-only sampling — mip generation per texture upload
-  /// adds up during scroll decode bursts on weak GPUs.
-  FilterQuality get _effectiveFilterQuality => DevicePerformance.isReduced ? FilterQuality.low : filterQuality;
 
   static double _resolvedDimension(double? explicit, double constraintMax, double fallback) {
     // Pick the explicit size when it's a finite positive number, otherwise
@@ -316,7 +312,7 @@ class OptimizedMediaImage extends StatelessWidget {
       width: width,
       height: height,
       fit: fit,
-      filterQuality: _effectiveFilterQuality,
+      filterQuality: filterQuality,
       alignment: alignment,
       errorBuilder: (context, error, stackTrace) {
         _imageFailureCount++;

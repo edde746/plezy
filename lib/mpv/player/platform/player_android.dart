@@ -13,6 +13,9 @@ class PlayerAndroid extends PlayerBase {
   bool _tunnelingEnabled = true;
   String _dvConversionMode = 'auto';
   bool _audioNormalizationEnabled = false;
+  bool _audioPassthroughEnabled = false;
+
+  static const String _passthroughCodecs = 'ac3,eac3,dts,dts-hd,truehd';
 
   /// The native plugin switched from ExoPlayer to its mpv fallback for this
   /// session. Sticky for the instance lifetime, mirroring the native flag
@@ -36,11 +39,11 @@ class PlayerAndroid extends PlayerBase {
   @override
   bool get supportsSecondarySubtitles => false;
 
-  // Under the mpv fallback the native open path drops the externalSubtitles
-  // argument, so subsequent opens must use the post-open sub-add dance
-  // (handleAddSubtitleTrack routes to mpv natively).
+  // ExoPlayer attaches external subtitles to the MediaItem before prepare;
+  // the Android mpv fallback mirrors PlayerNative by passing sub-files through
+  // loadfile options.
   @override
-  bool get attachesExternalSubtitlesAtOpen => !_usingMpvFallback;
+  bool get attachesExternalSubtitlesAtOpen => true;
 
   // The fallback runs mpv over MediaCodec — the same display-switch decoder
   // constraint as PlayerNative on Android. The whole startup-gate chain
@@ -56,13 +59,19 @@ class PlayerAndroid extends PlayerBase {
   bool get providesNativeStats => true;
 
   @override
+  bool get audioPassthroughActive => _audioPassthroughEnabled;
+
+  @override
   void handlePlayerEvent(String name, Map? data) {
     if (name == 'backend-switched') {
       // Native player switched from ExoPlayer to MPV due to unsupported format.
       // Clear stale ExoPlayer tracks so applyTrackSelectionWhenReady waits for
       // mpv's track-list instead of immediately applying with ExoPlayer IDs.
+      final wasUsingMpvFallback = _usingMpvFallback;
       _usingMpvFallback = true;
-      clearTracks();
+      if (!wasUsingMpvFallback) {
+        clearTracks();
+      }
       backendSwitchedController.add(null);
       return;
     }
@@ -88,6 +97,7 @@ class PlayerAndroid extends PlayerBase {
         'bufferSizeBytes': _bufferSizeBytes,
         'tunnelingEnabled': _tunnelingEnabled,
         'dvConversionMode': _dvConversionMode,
+        'audioPassthroughEnabled': _audioPassthroughEnabled,
       });
       if (result != true) {
         throw Exception('Failed to initialize ExoPlayer');
@@ -119,12 +129,13 @@ class PlayerAndroid extends PlayerBase {
     if (disposed) return;
     await _ensureInitialized();
     final startPosition = media.start ?? Duration.zero;
+    final hasStartPosition = media.start != null && startPosition > Duration.zero;
     // ExoPlayer reports Plex copyts transcodes in source-time coordinates,
     // unlike mpv which rebases them to zero. Do not add the timeline offset
     // again on Android ExoPlayer or seeks/progress jump to roughly 2x (#1221).
     configureTimeline(offset: Duration.zero, duration: timelineDuration);
     clearTracks();
-    resetPlaybackProgress(media.start ?? timelineOffset);
+    setExternalSubtitleMetadata(externalSubtitles);
     setSeekable(false);
 
     // Show the video layer
@@ -134,6 +145,7 @@ class PlayerAndroid extends PlayerBase {
       'uri': media.uri,
       'headers': media.headers,
       'startPositionMs': startPosition.inMilliseconds,
+      'hasStartPosition': hasStartPosition,
       'autoPlay': play,
       'isLive': isLive,
       if (externalSubtitles != null && externalSubtitles.isNotEmpty)
@@ -151,6 +163,7 @@ class PlayerAndroid extends PlayerBase {
             )
             .toList(),
     });
+    resetPlaybackProgress(media.start ?? timelineOffset);
   }
 
   @override
@@ -276,6 +289,22 @@ class PlayerAndroid extends PlayerBase {
     // Keep the mpv af property flowing through setMpvProperty so the plugin's
     // pendingMpvProperties replay applies loudnorm if exo falls back to mpv.
     await super.setAudioNormalization(enabled);
+  }
+
+  @override
+  Future<void> setAudioPassthrough(bool enabled) async {
+    if (disposed) return;
+    _audioPassthroughEnabled = enabled;
+    final initFuture = _initFuture;
+    if (initialized) {
+      await invoke('setAudioPassthrough', {'enabled': enabled});
+    } else if (initFuture != null) {
+      await initFuture;
+      if (!disposed && initialized && _audioPassthroughEnabled == enabled) {
+        await invoke('setAudioPassthrough', {'enabled': enabled});
+      }
+    }
+    await setProperty('audio-spdif', enabled ? _passthroughCodecs : '');
   }
 
   @override

@@ -1187,6 +1187,7 @@
     "maxCll": "MaxCLL",
     "maxFall": "MaxFALL",
     "cacheUsed": "Използван кеш",
+    "cacheLimit": "Лимит на кеша",
     "speed": "Скорост",
     "player": "Плеър",
     "memory": "Памет",

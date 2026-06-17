@@ -1313,7 +1313,8 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                 onFocusedItemChanged: _setSpotlightItem,
                 onRefresh: _discover.updateItem,
                 onRemoveFromContinueWatching: _discover.refreshContinueWatching,
-                isContinueWatchingHub: (hub) => hub.id == 'continue_watching',
+                isContinueWatchingHub: (hub) => hub.isContinueWatchingHub,
+                usesContinueWatchingAction: (hub) => hub.usesContinueWatchingAction,
                 loadMoreItems: (hub) =>
                     hub.id == 'continue_watching' ? _discover.loadAllContinueWatching() : Future.value(hub.items),
                 onNavigateUp: _focusTopActions,

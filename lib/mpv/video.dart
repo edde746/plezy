@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import 'player/player.dart';
@@ -23,8 +24,15 @@ class Video extends StatefulWidget {
   final Player player;
   final Widget Function(BuildContext context)? controls;
   final Color backgroundColor;
+  final ValueListenable<bool>? hasFirstFrame;
 
-  const Video({super.key, required this.player, this.controls, this.backgroundColor = Colors.black});
+  const Video({
+    super.key,
+    required this.player,
+    this.controls,
+    this.backgroundColor = Colors.black,
+    this.hasFirstFrame,
+  });
 
   @override
   State<Video> createState() => _VideoState();
@@ -38,17 +46,48 @@ class _VideoState extends State<Video> {
   @override
   void initState() {
     super.initState();
-    _playbackRestartSubscription = widget.player.streams.playbackRestart.listen((_) {
-      if (!_hasFirstFrame && mounted) {
-        setState(() => _hasFirstFrame = true);
-      }
-    });
+    _hasFirstFrame = widget.hasFirstFrame?.value ?? false;
+    widget.hasFirstFrame?.addListener(_syncExternalFirstFrame);
+    _listenForPlaybackRestart();
+  }
+
+  @override
+  void didUpdateWidget(covariant Video oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.hasFirstFrame != widget.hasFirstFrame) {
+      oldWidget.hasFirstFrame?.removeListener(_syncExternalFirstFrame);
+      widget.hasFirstFrame?.addListener(_syncExternalFirstFrame);
+      _syncExternalFirstFrame();
+    }
+    if (oldWidget.player != widget.player) {
+      _playbackRestartSubscription?.cancel();
+      _listenForPlaybackRestart();
+      _syncExternalFirstFrame();
+    }
   }
 
   @override
   void dispose() {
+    widget.hasFirstFrame?.removeListener(_syncExternalFirstFrame);
     _playbackRestartSubscription?.cancel();
     super.dispose();
+  }
+
+  void _listenForPlaybackRestart() {
+    _playbackRestartSubscription = widget.player.streams.playbackRestart.listen((_) {
+      _setHasFirstFrame(true);
+    });
+  }
+
+  void _syncExternalFirstFrame() {
+    final external = widget.hasFirstFrame;
+    if (external == null) return;
+    _setHasFirstFrame(external.value);
+  }
+
+  void _setHasFirstFrame(bool value) {
+    if (_hasFirstFrame == value || !mounted) return;
+    setState(() => _hasFirstFrame = value);
   }
 
   @override

@@ -2,7 +2,8 @@ part of '../../video_player_screen.dart';
 
 extension _VideoPlayerBuildMethods on VideoPlayerScreenState {
   static const double _videoLayoutSizeTolerance = 0.1;
-  static const double _pinchZoomActivationThreshold = 0.015;
+  static const double _pinchZoomActivationThreshold = 0.06;
+  static const int _pinchZoomActivationUpdateThreshold = 3;
 
   bool _isSameVideoLayoutSize(Size a, Size b) {
     return (a.width - b.width).abs() <= _videoLayoutSizeTolerance &&
@@ -143,14 +144,15 @@ extension _VideoPlayerBuildMethods on VideoPlayerScreenState {
     final filterManager = _videoFilterManager;
     if (filterManager == null || _isPinchZooming) return;
 
-    _ambientLightingService?.disable();
     _isPinchZooming = true;
+    _pinchZoomActivationUpdateCount = 0;
     _pinchZoomChanged = false;
     _pinchStartZoomScale = filterManager.zoomScale;
   }
 
   void _clearMobileZoomGesture() {
     _isPinchZooming = false;
+    _pinchZoomActivationUpdateCount = 0;
     _pinchZoomChanged = false;
     _pinchStartZoomScale = null;
   }
@@ -179,10 +181,23 @@ extension _VideoPlayerBuildMethods on VideoPlayerScreenState {
           final startZoom = _pinchStartZoomScale;
           final filterManager = _videoFilterManager;
           if (!_isPinchZooming || startZoom == null || filterManager == null) return;
-          if ((details.scale - 1.0).abs() <= _pinchZoomActivationThreshold && !_pinchZoomChanged) return;
+          final nextZoomScale = VideoFilterManager.normalizeZoomScale(startZoom * details.scale);
 
-          _pinchZoomChanged = true;
-          filterManager.setZoomScale(startZoom * details.scale);
+          if (!_pinchZoomChanged) {
+            if ((details.scale - 1.0).abs() <= _pinchZoomActivationThreshold) {
+              _pinchZoomActivationUpdateCount = 0;
+              return;
+            }
+
+            _pinchZoomActivationUpdateCount++;
+            if (_pinchZoomActivationUpdateCount < _pinchZoomActivationUpdateThreshold) return;
+            if (nextZoomScale == filterManager.zoomScale) return;
+
+            _pinchZoomChanged = true;
+            _ambientLightingService?.disable();
+          }
+
+          filterManager.setZoomScale(nextZoomScale);
         },
         onScaleEnd: (details) {
           if (!isMobile) return;
@@ -241,6 +256,7 @@ extension _VideoPlayerBuildMethods on VideoPlayerScreenState {
 
                     return Video(
                       player: player!,
+                      hasFirstFrame: _hasFirstFrame,
                       controls: (context) => PlexVideoControls(
                         player: player!,
                         metadata: _currentMetadata,
@@ -272,6 +288,7 @@ extension _VideoPlayerBuildMethods on VideoPlayerScreenState {
                         onSubtitleTrackChanged: _onSubtitleTrackChanged,
                         onSecondarySubtitleTrackChanged: _onSecondarySubtitleTrackChanged,
                         onSeekRequested: _seekPlayback,
+                        onPlayPauseRequested: () => _playOrPauseWithPlaybackIntent(player!),
                         onSeekCompleted: _notifyWatchTogetherSeek,
                         onBack: _handleBackButton,
                         onReachedEnd: ({skipAutoPlayCountdown = false}) =>

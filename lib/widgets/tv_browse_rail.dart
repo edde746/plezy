@@ -302,6 +302,7 @@ class TvBrowseRail extends StatefulWidget {
   final void Function(String)? onRefresh;
   final VoidCallback? onRemoveFromContinueWatching;
   final bool Function(MediaHub hub)? isContinueWatchingHub;
+  final bool Function(MediaHub hub)? usesContinueWatchingAction;
   final Future<List<MediaItem>> Function(MediaHub hub)? loadMoreItems;
 
   /// Optional per-hub trailing-slot state (loading/error/viewAll). When null the
@@ -344,6 +345,7 @@ class TvBrowseRail extends StatefulWidget {
     this.onRefresh,
     this.onRemoveFromContinueWatching,
     this.isContinueWatchingHub,
+    this.usesContinueWatchingAction,
     this.loadMoreItems,
     this.trailingForHub,
     this.onRetryHub,
@@ -915,6 +917,12 @@ class TvBrowseRailState extends State<TvBrowseRail> {
     return _mediaCardKeys.putIfAbsent('${hub.id}:$itemIndex', () => GlobalKey<MediaCardState>());
   }
 
+  bool _isContinueWatchingHub(MediaHub hub) => widget.isContinueWatchingHub?.call(hub) ?? false;
+
+  bool _usesContinueWatchingAction(MediaHub hub) {
+    return widget.usesContinueWatchingAction?.call(hub) ?? _isContinueWatchingHub(hub);
+  }
+
   void _showContextMenuForCurrentItem() {
     final hub = _activeHub;
     if (hub == null || _itemIndex >= hub.items.length) return;
@@ -947,7 +955,7 @@ class TvBrowseRailState extends State<TvBrowseRail> {
       context,
       item,
       onRefresh: widget.onRefresh,
-      playDirectly: widget.isContinueWatchingHub?.call(hub) ?? false,
+      playDirectly: _usesContinueWatchingAction(hub),
     );
   }
 
@@ -958,7 +966,8 @@ class TvBrowseRailState extends State<TvBrowseRail> {
         builder: (context) => HubDetailScreen(
           hub: hub,
           loadItems: widget.loadMoreItems == null ? null : () => widget.loadMoreItems!(hub),
-          isInContinueWatching: widget.isContinueWatchingHub?.call(hub) ?? false,
+          isInContinueWatching: _isContinueWatchingHub(hub),
+          usesContinueWatchingAction: _usesContinueWatchingAction(hub),
           onRemoveFromContinueWatching: widget.onRemoveFromContinueWatching,
         ),
       ),
@@ -1316,7 +1325,8 @@ class TvBrowseRailState extends State<TvBrowseRail> {
                           onRemoveFromContinueWatching: widget.onRemoveFromContinueWatching,
                           forceGridMode: true,
                           fullBleedImage: fullCardLayout,
-                          isInContinueWatching: widget.isContinueWatchingHub?.call(hub) ?? false,
+                          isInContinueWatching: _isContinueWatchingHub(hub),
+                          usesContinueWatchingAction: _usesContinueWatchingAction(hub),
                           mixedHubContext: metrics.isMixedHub,
                           episodePosterModeOverride: episodePosterMode,
                         ),

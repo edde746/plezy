@@ -547,8 +547,8 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
             },
           ),
 
-        // Audio Passthrough (desktop and Apple TV)
-        if (PlatformDetector.isDesktopOS() || PlatformDetector.isAppleTV())
+        // Audio Passthrough (desktop and Android TV)
+        if (PlatformDetector.supportsAudioPassthrough())
           _SettingsToggleItem(
             pref: SettingsService.audioPassthrough,
             icon: Symbols.surround_sound_rounded,

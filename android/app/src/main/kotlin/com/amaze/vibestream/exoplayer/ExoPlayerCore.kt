@@ -112,8 +112,9 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
 
     private var assGlCrashHandlerInstalled = false
 
-    private var cronetEngine: CronetEngine? = null
-    private var cronetUnavailable = false
+    @Volatile private var cronetEngine: CronetEngine? = null
+
+    @Volatile private var cronetUnavailable = false
     private fun getCronetEngine(context: Context): CronetEngine? {
       cronetEngine?.let { return it }
       if (cronetUnavailable) return null
@@ -187,11 +188,13 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
   // Loudness normalization (#1289): audiofx effects only process non-tunneled
   // PCM mixer streams, so while enabled we block direct/bitstream output and
   // disable tunneling.
+  private var audioPassthroughEnabled: Boolean = false
   private var audioNormalizationEnabled: Boolean = false
   private val audioNormalization = AudioNormalizationEffect(::emitLog)
   private var pendingAudioRendererBounce: Boolean = false
-  private val audioBounceTimeout = Runnable { completeAudioRendererBounce("audio-normalization bounce timeout") }
+  private val audioBounceTimeout = Runnable { completeAudioRendererBounce("audio renderer bounce timeout") }
   private var lastSeekable: Boolean? = null
+  private var forceSeekable: Boolean = false
 
   @Volatile private var disposing: Boolean = false
   private var pendingStartPositionMs: Long = 0L
@@ -368,13 +371,18 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
     return decision.mode
   }
 
-  fun initialize(bufferSizeBytes: Int? = null, tunnelingEnabled: Boolean = true): Boolean {
+  fun initialize(
+    bufferSizeBytes: Int? = null,
+    tunnelingEnabled: Boolean = true,
+    audioPassthroughEnabled: Boolean = false
+  ): Boolean {
     if (isInitialized) {
       Log.d(TAG, "Already initialized")
       return true
     }
 
     tunnelingUserEnabled = tunnelingEnabled
+    this.audioPassthroughEnabled = audioPassthroughEnabled
     this.dvMode = getConfiguredDvMode()
     DoviBridge.logSupportSummary(activity)
     Log.i(
@@ -790,9 +798,8 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
     lastPosition = startPositionMs
     lastDuration = 0L
     lastBufferedPosition = 0L
-    delegate?.onPropertyChange("time-pos", startPositionMs / 1000.0)
-    delegate?.onPropertyChange("duration", 0.0)
-    delegate?.onPropertyChange("demuxer-cache-time", 0.0)
+    // Dart already seeds the visible timeline before open. Emitting native
+    // zeroes here races server-offset Plex transcode restarts back to 0:00.
     delegate?.onPropertyChange("eof-reached", false)
   }
 
@@ -804,8 +811,17 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
 
   private fun emitCurrentSeekable(force: Boolean = false) {
     val player = exoPlayer
-    val seekable = player?.isCurrentMediaItemSeekable == true && !currentMediaIsLive
+    val hasMedia = player?.currentMediaItem != null
+    val seekable = hasMedia &&
+      !currentMediaIsLive &&
+      (forceSeekable || player?.isCurrentMediaItemSeekable == true)
     emitSeekable(seekable, force)
+  }
+
+  fun setForceSeekable(force: Boolean) {
+    if (forceSeekable == force) return
+    forceSeekable = force
+    emitCurrentSeekable(force = true)
   }
 
   // Player.Listener
@@ -1830,6 +1846,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
     val mimeType = format.sampleMimeType ?: return false
     // Loudness normalization needs decoded PCM for the audiofx chain to act on.
     if (audioNormalizationEnabled && isEncodedAudioMimeType(mimeType)) return true
+    if (shouldBlockDirectOutputForPassthrough(mimeType, audioPassthroughEnabled)) return true
     if (directAudioOutputBlockedAfterFailure.contains(mimeType)) {
       if (loggedDirectAudioRecoveryBlocks.add("$mimeType|$reason")) {
         emitLog(
@@ -2140,8 +2157,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
   }
 
   /** True when [format] is an ASS/SSA subtitle track (rendered by libass). */
-  private fun isAssSubtitleFormat(format: Format): Boolean =
-    format.sampleMimeType == MimeTypes.TEXT_SSA || format.codecs == MimeTypes.TEXT_SSA
+  private fun isAssSubtitleFormat(format: Format): Boolean = format.sampleMimeType == MimeTypes.TEXT_SSA || format.codecs == MimeTypes.TEXT_SSA
 
   /** Sets the ASS-subtitles tunneling block; returns true when the flag changed. */
   private fun updateAssSubtitlesForTunneling(assActive: Boolean): Boolean {
@@ -2150,15 +2166,19 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
     emitLog(
       "info",
       "tunneling",
-      if (assActive) "ASS subtitle track selected: tunneling DISABLED (frame metadata required for libass)"
-      else "ASS subtitle track deselected: tunneling unblocked"
+      if (assActive) {
+        "ASS subtitle track selected: tunneling DISABLED (frame metadata required for libass)"
+      } else {
+        "ASS subtitle track deselected: tunneling unblocked"
+      }
     )
     return true
   }
 
   private fun evaluateAssSubtitlesForTunneling(tracks: Tracks) {
     val assSelected = tracks.groups.any { group ->
-      group.type == C.TRACK_TYPE_TEXT && group.isSelected &&
+      group.type == C.TRACK_TYPE_TEXT &&
+        group.isSelected &&
         (0 until group.length).any { isAssSubtitleFormat(group.getTrackFormat(it)) }
     }
     updateAssSubtitlesForTunneling(assSelected)
@@ -2212,8 +2232,12 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
   private fun calculateTunnelingEnabled(): Boolean? {
     val player = exoPlayer ?: return null
     val audioDelayActive = (renderersFactory?.audioDelayUs?.get() ?: 0L) != 0L
-    return tunnelingUserEnabled && (player.playbackParameters.speed == 1f) && !tunnelingDisabledForCodec &&
-      !tunnelingDisabledForAssSubtitles && !audioDelayActive && !audioNormalizationEnabled
+    return tunnelingUserEnabled &&
+      (player.playbackParameters.speed == 1f) &&
+      !tunnelingDisabledForCodec &&
+      !tunnelingDisabledForAssSubtitles &&
+      !audioDelayActive &&
+      !audioNormalizationEnabled
   }
 
   private fun updateCurrentTunnelingState(reason: String, shouldTunnel: Boolean): Boolean {
@@ -2691,13 +2715,34 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
     val tunnelingWillFlip = calculateTunnelingEnabled() != currentTunneledPlayback
     val outputEncoding = lastAudioTrackConfig?.encoding
     val selectedMime = selectedAudioFormat()?.sampleMimeType
-    val needsBounce = !tunnelingWillFlip && outputEncoding != null && selectedMime != null &&
+    val needsBounce = !tunnelingWillFlip &&
+      outputEncoding != null &&
+      selectedMime != null &&
       isEncodedAudioMimeType(selectedMime) &&
       (if (enabled) !isPcmEncoding(outputEncoding) else isPcmEncoding(outputEncoding))
     if (needsBounce) {
       startAudioRendererBounce("audio-normalization")
     } else {
       updateTunnelingState("audio-normalization")
+    }
+  }
+
+  fun setAudioPassthrough(enabled: Boolean) {
+    if (audioPassthroughEnabled == enabled) return
+    audioPassthroughEnabled = enabled
+    emitLog("info", "audio", "Audio passthrough ${if (enabled) "enabled" else "disabled"}")
+
+    if (exoPlayer == null) return
+    val outputEncoding = lastAudioTrackConfig?.encoding
+    val selectedMime = selectedAudioFormat()?.sampleMimeType
+    val needsBounce = outputEncoding != null &&
+      selectedMime != null &&
+      isPassthroughAudioMimeType(selectedMime) &&
+      (if (enabled) isPcmEncoding(outputEncoding) else !isPcmEncoding(outputEncoding))
+    if (needsBounce) {
+      startAudioRendererBounce("audio-passthrough")
+    } else {
+      updateTunnelingState("audio-passthrough")
     }
   }
 
@@ -2718,7 +2763,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
   private fun startAudioRendererBounce(reason: String) {
     if (pendingAudioRendererBounce) return
     pendingAudioRendererBounce = true
-    emitLog("info", "audio-normalization", "Bouncing audio renderer to re-evaluate output path (reason=$reason)")
+    emitLog("info", "audio", "Bouncing audio renderer to re-evaluate output path (reason=$reason)")
     applyTrackSelectorPolicy(reason = "$reason (audio renderer off)", audioDisabled = true)
     handler.postDelayed(audioBounceTimeout, AUDIO_BOUNCE_TIMEOUT_MS)
   }
@@ -2827,6 +2872,10 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
     } else {
       positionMs.coerceAtLeast(0L)
     }
+    // A user seek is authoritative. Do not let a pending start-position restore
+    // from open/reload recovery re-seek back over an early seek near zero once
+    // ExoPlayer reports STATE_READY.
+    pendingStartPositionMs = 0L
     player.seekTo(clampedPositionMs)
     lastPosition = clampedPositionMs
     delegate?.onPropertyChange("time-pos", clampedPositionMs / 1000.0)
@@ -3293,6 +3342,11 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
     disposing = true
     check(Looper.myLooper() == Looper.getMainLooper())
     Log.d(TAG, "Disposing")
+
+    surfaceContainer?.let { container ->
+      container.visibility = View.INVISIBLE
+      Log.d(TAG, "Hiding surface container during dispose")
+    }
 
     stopFrameWatchdog()
     cancelDecoderHangCheck()

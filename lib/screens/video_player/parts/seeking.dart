@@ -6,12 +6,7 @@ extension _VideoPlayerSeekingMethods on VideoPlayerScreenState {
     if (!mounted || currentPlayer == null) return;
 
     final target = clampSeekPosition(currentPlayer, position);
-    if (!_shouldRestartPlexTranscodeForSeek) {
-      await currentPlayer.seek(target);
-      return;
-    }
-
-    if (_canSeekWithinCurrentTranscodeBuffer(currentPlayer, target)) {
+    if (_plexTranscodeSeekAction(currentPlayer, target) == PlexTranscodeSeekAction.nativeSeek) {
       await currentPlayer.seek(target);
       return;
     }
@@ -19,7 +14,7 @@ extension _VideoPlayerSeekingMethods on VideoPlayerScreenState {
     await _restartPlexTranscodeAt(target);
   }
 
-  bool get _shouldRestartPlexTranscodeForSeek {
+  bool get _usesPlexVodTranscodeSeekPolicy {
     return _isTranscoding &&
         !widget.isLive &&
         !_isOfflinePlayback &&
@@ -27,15 +22,22 @@ extension _VideoPlayerSeekingMethods on VideoPlayerScreenState {
         _selectedQualityPreset != TranscodeQualityPreset.original;
   }
 
-  bool _canSeekWithinCurrentTranscodeBuffer(Player currentPlayer, Duration target) {
-    const edgeTolerance = Duration(milliseconds: 500);
-    final targetMs = target.inMilliseconds;
-    for (final range in currentPlayer.state.bufferRanges) {
-      final startMs = range.start.inMilliseconds - edgeTolerance.inMilliseconds;
-      final endMs = range.end.inMilliseconds - edgeTolerance.inMilliseconds;
-      if (targetMs >= startMs && targetMs <= endMs) return true;
-    }
-    return false;
+  PlexTranscodeSeekAction _plexTranscodeSeekAction(Player currentPlayer, Duration target) {
+    if (!_usesPlexVodTranscodeSeekPolicy) return PlexTranscodeSeekAction.nativeSeek;
+
+    final state = currentPlayer.state;
+    final action = resolvePlexTranscodeSeekAction(
+      currentPosition: state.position,
+      target: target,
+      bufferRanges: state.bufferRanges,
+      allowBufferedNativeSeek: _playerBackendLabel == 'mpv',
+    );
+    appLogger.d(
+      'Plex transcode seek decision: action=${action.name}, '
+      'position=${state.position.inSeconds}s, target=${target.inSeconds}s, '
+      'buffer=${state.buffer.inSeconds}s, ranges=${state.bufferRanges.length}',
+    );
+    return action;
   }
 
   Future<void> _restartPlexTranscodeAt(Duration target) async {
@@ -52,8 +54,7 @@ extension _VideoPlayerSeekingMethods on VideoPlayerScreenState {
     }
 
     final replacementMetadata = _currentMetadata.copyWith(viewOffsetMs: target.inMilliseconds);
-    final wasPlaying = currentPlayer.state.playing;
-    final nextTranscodeSessionId = generateSessionIdentifier();
+    final shouldResumePlayback = _playbackIntentShouldPlay;
     final offlineWatchService = context.read<OfflineWatchSyncService>();
     final playbackResolver = PlaybackSourceResolver(
       serverManager: context.read<MultiServerProvider>().serverManager,
@@ -61,7 +62,6 @@ extension _VideoPlayerSeekingMethods on VideoPlayerScreenState {
     );
 
     try {
-      _playbackTranscodeSessionId = nextTranscodeSessionId;
       final playbackContext = await playbackResolver.resolve(
         metadata: replacementMetadata,
         selectedMediaIndex: _effectiveSelectedMediaIndex,
@@ -87,9 +87,11 @@ extension _VideoPlayerSeekingMethods on VideoPlayerScreenState {
         requestedMediaSourceId: _requestedMediaSourceId,
       );
 
-      final attachesSubsAtOpen = currentPlayer.attachesExternalSubtitlesAtOpen;
-      final hasExternalSubs = result.externalSubtitles.isNotEmpty;
-      final shouldAutoPlay = wasPlaying && (attachesSubsAtOpen || !hasExternalSubs);
+      final externalSubtitlePlan = _prepareExternalSubtitleOpenPlan(
+        player: currentPlayer,
+        externalSubtitles: result.externalSubtitles,
+      );
+      final shouldAutoPlay = shouldResumePlayback && externalSubtitlePlan.canStartBeforeTrackSetup;
 
       final didOpen = await _openMediaOnPlayer(
         player: currentPlayer,
@@ -106,7 +108,7 @@ extension _VideoPlayerSeekingMethods on VideoPlayerScreenState {
         ),
         headers: playbackContext.streamHeaders,
         play: shouldAutoPlay,
-        externalSubtitlesAtOpen: attachesSubsAtOpen && hasExternalSubs ? result.externalSubtitles : null,
+        externalSubtitlesAtOpen: externalSubtitlePlan.subtitlesAtOpen,
         shouldContinue: () => mounted && player == currentPlayer,
         onOpened: () {
           // A pre-open failure leaves the previous session (and ids)
@@ -142,12 +144,11 @@ extension _VideoPlayerSeekingMethods on VideoPlayerScreenState {
         trackManager.mediaInfo = _currentMediaInfo;
         trackManager.cacheExternalSubtitles(result.externalSubtitles);
         await _applyTracksAfterOpen(
-          forPlayer: currentPlayer,
           trackManager: trackManager,
-          externalSubtitles: result.externalSubtitles,
+          externalSubtitlePlan: externalSubtitlePlan,
           // A restart while paused must stay paused — selection is still
           // applied through the resume-skipped branch.
-          shouldResumeAfterSubtitleLoad: () => wasPlaying && mounted && player == currentPlayer,
+          shouldResumeAfterSubtitleLoad: () => shouldResumePlayback && mounted && player == currentPlayer,
           applySelectionWhenResumeSkipped: true,
         );
       }
