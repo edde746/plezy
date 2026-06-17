@@ -12,6 +12,7 @@
 		3B3967161E833CAA004F5970 /* AppFrameworkInfo.plist in Resources */ = {isa = PBXBuildFile; fileRef = 3B3967151E833CAA004F5970 /* AppFrameworkInfo.plist */; };
 		69E1B4BB161DC9D84D1DFC62 /* Pods_Runner.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = BB346A1D0705AB171F80B11B /* Pods_Runner.framework */; };
 		6A48DFB02EA70C7100C1F7CD /* vibe_stream.icon in Resources */ = {isa = PBXBuildFile; fileRef = 6A48DFAF2EA70C7100C1F7CD /* vibe_stream.icon */; };
+		6A48DFB12EA70C7100C1F7CD /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 6A48DFB22EA70C7100C1F7CD /* Assets.xcassets */; };
 		6A8A46212EDB320D0057B88C /* MPVKit in Frameworks */ = {isa = PBXBuildFile; productRef = 6A8A46202EDB320D0057B88C /* MPVKit */; };
 		6A8A46252EDB370C0057B88C /* MpvPlayerPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A8A46232EDB370C0057B88C /* MpvPlayerPlugin.swift */; };
 		6A8A46262EDB370C0057B88C /* MpvPlayerCore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A8A46222EDB370C0057B88C /* MpvPlayerCore.swift */; };
@@ -58,6 +59,7 @@
 		3A9EF9720208222F20B1495D /* Pods-RunnerTests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-RunnerTests.release.xcconfig"; path = "Target Support Files/Pods-RunnerTests/Pods-RunnerTests.release.xcconfig"; sourceTree = "<group>"; };
 		3B3967151E833CAA004F5970 /* AppFrameworkInfo.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = AppFrameworkInfo.plist; path = Flutter/AppFrameworkInfo.plist; sourceTree = "<group>"; };
 		6A48DFAF2EA70C7100C1F7CD /* vibe_stream.icon */ = {isa = PBXFileReference; lastKnownFileType = folder.iconcomposer.icon; path = vibe_stream.icon; sourceTree = "<group>"; };
+		6A48DFB22EA70C7100C1F7CD /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		6A8A46222EDB370C0057B88C /* MpvPlayerCore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MpvPlayerCore.swift; sourceTree = "<group>"; };
 		6A8A46232EDB370C0057B88C /* MpvPlayerPlugin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MpvPlayerPlugin.swift; sourceTree = "<group>"; };
 		74858FAD1ED2DC5600515810 /* Runner-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "Runner-Bridging-Header.h"; sourceTree = "<group>"; };
@@ -192,6 +194,7 @@
 				1498D2331E8E89220040F4C2 /* GeneratedPluginRegistrant.m */,
 				74858FAE1ED2DC5600515810 /* AppDelegate.swift */,
 				74858FAD1ED2DC5600515810 /* Runner-Bridging-Header.h */,
+				6A48DFB22EA70C7100C1F7CD /* Assets.xcassets */,
 			);
 			path = Runner;
 			sourceTree = "<group>";
@@ -300,6 +303,7 @@
 			files = (
 				97C147011CF9000F007C117D /* LaunchScreen.storyboard in Resources */,
 				6A48DFB02EA70C7100C1F7CD /* vibe_stream.icon in Resources */,
+				6A48DFB12EA70C7100C1F7CD /* Assets.xcassets in Resources */,
 				3B3967161E833CAA004F5970 /* AppFrameworkInfo.plist in Resources */,
 				97C146FC1CF9000F007C117D /* Main.storyboard in Resources */,
 			);
