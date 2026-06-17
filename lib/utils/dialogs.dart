@@ -13,6 +13,22 @@ import 'focus_utils.dart';
 const _buttonPadding = EdgeInsets.symmetric(horizontal: 18, vertical: 14);
 const _buttonShape = StadiumBorder();
 
+/// Shows a dialog on the nearest navigator instead of Flutter's default root
+/// navigator. Use this for profile/session-owned modal routes so they are
+/// disposed when the active profile session is replaced.
+Future<T?> showScopedDialog<T>({
+  required BuildContext context,
+  required WidgetBuilder builder,
+  bool barrierDismissible = true,
+}) {
+  return showDialog<T>(
+    context: context,
+    builder: builder,
+    barrierDismissible: barrierDismissible,
+    useRootNavigator: false,
+  );
+}
+
 /// Shows a confirmation dialog with consistent button sizing and autofocus.
 /// Returns true if user confirmed, false if cancelled.
 Future<bool> showConfirmDialog(
@@ -23,7 +39,7 @@ Future<bool> showConfirmDialog(
   String? cancelText,
   bool isDestructive = false,
 }) async {
-  final confirmed = await showDialog<bool>(
+  final confirmed = await showScopedDialog<bool>(
     context: context,
     builder: (dialogContext) {
       final colorScheme = Theme.of(dialogContext).colorScheme;
@@ -61,7 +77,7 @@ Future<bool> showConfirmDialog(
 /// Shows a non-dismissible loading-spinner dialog. Caller is responsible for
 /// closing it via `Navigator.pop(context)` when the work completes.
 void showLoadingDialog(BuildContext context) {
-  showDialog<void>(
+  showScopedDialog<void>(
     context: context,
     barrierDismissible: false,
     builder: (_) => const Center(child: CircularProgressIndicator()),
@@ -70,7 +86,7 @@ void showLoadingDialog(BuildContext context) {
 
 /// Shows the server-side 500 modal (bandwidth/transcoding limit rejection).
 Future<void> showServerLimitDialog(BuildContext context) async {
-  await showDialog<void>(
+  await showScopedDialog<void>(
     context: context,
     barrierDismissible: false,
     builder: (ctx) => AlertDialog(
@@ -122,7 +138,7 @@ Future<String?> showTextInputDialog(
   String? Function(String)? validator,
   bool allowEmpty = false,
 }) {
-  return showDialog<String>(
+  return showScopedDialog<String>(
     context: context,
     builder: (context) => _TextInputDialog(
       title: title,
@@ -147,7 +163,7 @@ Future<String?> showMultilineTextInputDialog(
   required String labelText,
   String? initialValue,
 }) {
-  return showDialog<String>(
+  return showScopedDialog<String>(
     context: context,
     builder: (context) => _MultilineTextInputDialog(title: title, labelText: labelText, initialValue: initialValue),
   );
@@ -313,7 +329,7 @@ Future<T?> showOptionPickerDialog<T>(
   Future<T?> Function(T value)? onBeforeClose,
 }) {
   final focusFirstItem = InputModeTracker.isKeyboardMode(context);
-  return showDialog<T>(
+  return showScopedDialog<T>(
     context: context,
     builder: (context) => _OptionPickerDialog<T>(
       title: title,

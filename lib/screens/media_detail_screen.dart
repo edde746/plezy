@@ -5,7 +5,7 @@ import 'dart:io';
 import 'package:cached_network_image_ce/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
-import '../main.dart' show routeObserver;
+import '../navigation/profile_navigation_scope.dart';
 import '../services/image_cache_service.dart';
 import 'package:flutter/services.dart';
 import 'package:plezy/utils/platform_detector.dart';
@@ -261,6 +261,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   bool _hasLoadedRelatedHubs = false;
   final _tvDetailRailKey = GlobalKey<TvBrowseRailState>();
   PageRoute<dynamic>? _route;
+  RouteObserver<PageRoute<dynamic>>? _routeObserver;
   late final ScrollController _scrollController;
   final ScrollController _extrasScrollController = ScrollController();
   bool _watchStateChanged = false;
@@ -662,10 +663,13 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    final routeObserver = ProfileNavigationScope.of(context).routeObserver;
     final route = ModalRoute.of(context);
-    if (route is! PageRoute<dynamic> || route == _route) return;
-    if (_route != null) routeObserver.unsubscribe(this);
+    if (route is! PageRoute<dynamic>) return;
+    if (route == _route && routeObserver == _routeObserver) return;
+    _routeObserver?.unsubscribe(this);
     _route = route;
+    _routeObserver = routeObserver;
     routeObserver.subscribe(this, route);
   }
 
@@ -771,7 +775,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
 
   @override
   void dispose() {
-    routeObserver.unsubscribe(this);
+    _routeObserver?.unsubscribe(this);
     _scrollController.dispose();
     _scrollOffset.dispose();
     _extrasScrollController.dispose();

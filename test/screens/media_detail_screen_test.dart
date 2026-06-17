@@ -37,6 +37,7 @@ import 'package:plezy/widgets/tv_browse_rail.dart';
 import 'package:provider/provider.dart';
 
 import '../test_helpers/prefs.dart';
+import '../test_helpers/profile_navigation.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -72,7 +73,7 @@ void main() {
       TranslationProvider(
         child: MaterialApp(
           theme: monoTheme(dark: true),
-          home: MediaDetailScreen(metadata: movie),
+          home: withProfileNavigationScope(child: MediaDetailScreen(metadata: movie)),
         ),
       ),
     );
@@ -101,7 +102,7 @@ void main() {
       TranslationProvider(
         child: MaterialApp(
           theme: monoTheme(dark: true),
-          home: MediaDetailScreen(metadata: movie),
+          home: withProfileNavigationScope(child: MediaDetailScreen(metadata: movie)),
         ),
       ),
     );
@@ -138,7 +139,7 @@ void main() {
       TranslationProvider(
         child: MaterialApp(
           theme: monoTheme(dark: true),
-          home: MediaDetailScreen(metadata: movie),
+          home: withProfileNavigationScope(child: MediaDetailScreen(metadata: movie)),
         ),
       ),
     );
@@ -172,7 +173,7 @@ void main() {
       TranslationProvider(
         child: MaterialApp(
           theme: monoTheme(dark: true),
-          home: MediaDetailScreen(metadata: movie),
+          home: withProfileNavigationScope(child: MediaDetailScreen(metadata: movie)),
         ),
       ),
     );
@@ -261,7 +262,9 @@ void main() {
           value: provider,
           child: MaterialApp(
             theme: monoTheme(dark: true),
-            home: SizedBox(width: 1280, height: 720, child: MediaDetailScreen(metadata: show)),
+            home: withProfileNavigationScope(
+              child: SizedBox(width: 1280, height: 720, child: MediaDetailScreen(metadata: show)),
+            ),
           ),
         ),
       ),
@@ -298,7 +301,7 @@ void main() {
       TranslationProvider(
         child: MaterialApp(
           theme: theme,
-          home: MediaDetailScreen(metadata: movie),
+          home: withProfileNavigationScope(child: MediaDetailScreen(metadata: movie)),
         ),
       ),
     );
@@ -385,7 +388,9 @@ void main() {
           value: provider,
           child: MaterialApp(
             theme: monoTheme(dark: true),
-            home: SizedBox(width: 1280, height: 720, child: MediaDetailScreen(metadata: show)),
+            home: withProfileNavigationScope(
+              child: SizedBox(width: 1280, height: 720, child: MediaDetailScreen(metadata: show)),
+            ),
           ),
         ),
       ),
@@ -480,7 +485,9 @@ void main() {
           value: provider,
           child: MaterialApp(
             theme: monoTheme(dark: true),
-            home: SizedBox(width: 1280, height: 720, child: MediaDetailScreen(metadata: show)),
+            home: withProfileNavigationScope(
+              child: SizedBox(width: 1280, height: 720, child: MediaDetailScreen(metadata: show)),
+            ),
           ),
         ),
       ),
@@ -569,7 +576,9 @@ void main() {
           value: provider,
           child: MaterialApp(
             theme: monoTheme(dark: true),
-            home: SizedBox(width: 1280, height: 720, child: MediaDetailScreen(metadata: show)),
+            home: withProfileNavigationScope(
+              child: SizedBox(width: 1280, height: 720, child: MediaDetailScreen(metadata: show)),
+            ),
           ),
         ),
       ),
@@ -652,7 +661,11 @@ void main() {
       final db = AppDatabase.forTesting(NativeDatabase.memory());
       PlexApiCache.initialize(db);
       JellyfinApiCache.initialize(db);
-      final downloadManager = DownloadManagerService(database: db, storageService: DownloadStorageService.instance, clientResolver: (serverId, {clientScopeId}) => null);
+      final downloadManager = DownloadManagerService(
+        database: db,
+        storageService: DownloadStorageService.instance,
+        clientResolver: (serverId, {clientScopeId}) => null,
+      );
       downloadManager.recoveryFuture = Future<void>.value();
       final downloadProvider = DownloadProvider.forTesting(downloadManager: downloadManager, database: db);
       await downloadProvider.ensureInitialized();
@@ -679,11 +692,13 @@ void main() {
             ],
             child: MaterialApp(
               theme: monoTheme(dark: true),
-              home: MediaDetailScreen(
-                metadata: show,
-                initialSeasonId: initialSeasonId,
-                initialSeasonIndex: initialSeasonIndex,
-                initialEpisodeId: initialEpisodeId,
+              home: withProfileNavigationScope(
+                child: MediaDetailScreen(
+                  metadata: show,
+                  initialSeasonId: initialSeasonId,
+                  initialSeasonIndex: initialSeasonIndex,
+                  initialEpisodeId: initialEpisodeId,
+                ),
               ),
             ),
           ),

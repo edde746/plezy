@@ -293,7 +293,10 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
           icon: Symbols.group_rounded,
           title: t.profiles.sectionTitle,
           subtitle: subtitle,
-          destinationBuilder: (_) => const ProfileSwitchScreen(),
+          onTap: () => Navigator.of(
+            context,
+            rootNavigator: true,
+          ).push(MaterialPageRoute(builder: (_) => const ProfileSwitchScreen())),
         );
       },
     );
@@ -534,7 +537,7 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
     final storageService = DownloadStorageService.instance;
     final isCustom = storageService.isUsingCustomPath();
 
-    await showDialog<void>(
+    await showScopedDialog<void>(
       context: context,
       builder: (dialogContext) => AlertDialog(
         title: Text(t.settings.downloads),
@@ -644,7 +647,7 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
   }
 
   Future<void> _showRelayUrlDialog() async {
-    await showDialog<void>(
+    await showScopedDialog<void>(
       context: context,
       builder: (_) => _RelayUrlDialog(settingsService: _settingsService),
     );

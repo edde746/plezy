@@ -142,6 +142,7 @@ class _MetadataEditScreenState extends State<MetadataEditScreen> {
       initialDate: initial,
       firstDate: DateTime(1800),
       lastDate: DateTime(2200),
+      useRootNavigator: false,
     );
 
     if (picked != null && mounted) {
@@ -154,7 +155,7 @@ class _MetadataEditScreenState extends State<MetadataEditScreen> {
   Future<void> _editStringList(MetadataEditField field) async {
     final draft = _draft;
     if (draft == null) return;
-    final result = await showDialog<List<String>>(
+    final result = await showScopedDialog<List<String>>(
       context: context,
       builder: (context) => TagEditDialog(title: field.label, initialTags: metadataStringList(draft.values[field.id])),
     );
@@ -168,7 +169,7 @@ class _MetadataEditScreenState extends State<MetadataEditScreen> {
     final draft = _draft;
     if (adapter == null || draft == null) return;
     final current = draft.value<String>(field.id) ?? '';
-    final result = await showDialog<String>(
+    final result = await showScopedDialog<String>(
       context: context,
       builder: (dialogContext) {
         String selected = current;
@@ -229,7 +230,7 @@ class _MetadataEditScreenState extends State<MetadataEditScreen> {
     final adapter = _adapter;
     final draft = _draft;
     if (adapter == null || draft == null) return;
-    final result = await showDialog<bool>(
+    final result = await showScopedDialog<bool>(
       context: context,
       builder: (context) => ArtworkPickerDialog(adapter: adapter, draft: draft, field: field),
     );

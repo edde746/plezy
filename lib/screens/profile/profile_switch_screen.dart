@@ -368,7 +368,7 @@ class _ProfileSwitchScreenState extends State<ProfileSwitchScreen> with MountedS
     if (_switching) return;
     setState(() => _switching = true);
     try {
-      final navigator = Navigator.of(context);
+      final navigator = Navigator.of(context, rootNavigator: true);
       final switched = await switchProfileFromUi(context, profile);
       if (!mounted || !switched) return;
       if (widget.requireSelection) {

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import '../../focus/focusable_text_field.dart';
 import '../../focus/input_mode_tracker.dart';
 import '../../i18n/strings.g.dart';
+import '../../utils/dialogs.dart';
 import '../../widgets/dialog_action_button.dart';
 import '../../widgets/focusable_list_tile.dart';
 import '../../widgets/tv_color_picker.dart';
@@ -36,7 +37,7 @@ void _showSettingsInputDialog({
   _SettingsDialogActionsBuilder? leadingActionsBuilder,
   VoidCallback? onDispose,
 }) {
-  showDialog<void>(
+  showScopedDialog<void>(
     context: context,
     builder: (_) => _SettingsInputDialog(
       title: title,
@@ -105,7 +106,7 @@ Future<T?> showSelectionDialog<T>({
   required T currentValue,
 }) {
   final focusFirstItem = InputModeTracker.isKeyboardMode(context);
-  return showDialog<T>(
+  return showScopedDialog<T>(
     context: context,
     builder: (dialogContext) => AlertDialog(
       title: Text(title),

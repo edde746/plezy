@@ -793,7 +793,10 @@ class _DiscoverScreenState extends State<DiscoverScreen>
   }
 
   void _handleSwitchProfile(BuildContext context) {
-    Navigator.push(context, MaterialPageRoute(builder: (context) => const ProfileSwitchScreen()));
+    Navigator.of(
+      context,
+      rootNavigator: true,
+    ).push(MaterialPageRoute(builder: (context) => const ProfileSwitchScreen()));
   }
 
   void _handleOpenSettings(BuildContext context) {

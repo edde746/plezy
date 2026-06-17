@@ -687,8 +687,11 @@ class _PinKey {
 
 /// Shows the PIN entry dialog and returns the entered PIN, or null if cancelled
 Future<String?> showPinEntryDialog(BuildContext context, String userName, {String? errorMessage}) {
+  // PIN entry guards root-owned profile activation and must survive disposal of
+  // the active profile session while the binder switches users.
   return showDialog<String>(
     context: context,
+    useRootNavigator: true,
     barrierDismissible: false,
     builder: (context) => PinEntryDialog(userName: userName, errorMessage: errorMessage),
   );

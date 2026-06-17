@@ -10,6 +10,7 @@ import '../media/media_playlist.dart';
 import '../media/play_queue.dart';
 import '../providers/playback_state_provider.dart';
 import '../utils/app_logger.dart';
+import '../utils/dialogs.dart';
 import '../utils/snackbar_helper.dart';
 import '../utils/video_player_navigation.dart';
 import 'jellyfin_sequential_launcher.dart';
@@ -131,7 +132,7 @@ abstract class MediaListPlaybackLauncher {
     if (showLoading && context.mounted) {
       loadingVisible = true;
       unawaited(
-        showDialog(
+        showScopedDialog<void>(
           context: context,
           barrierDismissible: false,
           builder: (dialogContext) {
@@ -162,14 +163,12 @@ abstract class MediaListPlaybackLauncher {
         showErrorSnackBar(context, t.messages.failedToCreatePlayQueueNoItems);
       }
 
-      await dismissLoading();
       return result;
     } catch (e) {
       appLogger.e('Failed to $actionLabel', error: e);
       if (context.mounted) {
         showErrorSnackBar(context, t.messages.failedPlayback(action: actionLabel, error: e.toString()));
       }
-      await dismissLoading();
       return PlayQueueError(e);
     } finally {
       await dismissLoading();

@@ -947,7 +947,7 @@ class MediaContextMenuState extends State<MediaContextMenu> {
     try {
       final item = _mediaItem!;
 
-      final result = await showDialog<String>(
+      final result = await showScopedDialog<String>(
         context: context,
         builder: (context) => _PlaylistSelectionDialog(client: client),
       );
@@ -1051,7 +1051,7 @@ class MediaContextMenuState extends State<MediaContextMenu> {
       final resolvedLibraryId = libraryId;
       if (!context.mounted) return;
 
-      final result = await showDialog<String>(
+      final result = await showScopedDialog<String>(
         context: context,
         builder: (context) => _CollectionSelectionDialog(client: client, libraryId: resolvedLibraryId),
       );

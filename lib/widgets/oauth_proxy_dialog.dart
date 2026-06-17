@@ -96,7 +96,7 @@ class OAuthProxyDialog extends StatelessWidget {
         DialogActionButton(
           onPressed: () {
             onCancel();
-            Navigator.of(context, rootNavigator: true).pop();
+            Navigator.of(context).pop();
           },
           label: t.common.cancel,
         ),

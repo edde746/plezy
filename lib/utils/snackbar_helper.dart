@@ -1,14 +1,11 @@
 import 'package:flutter/material.dart';
 
+import '../navigation/profile_navigation_scope.dart';
 import 'layout_constants.dart';
 import 'platform_detector.dart';
 
 /// Global key for the root ScaffoldMessenger, allowing snackbars to survive navigation.
 final rootScaffoldMessengerKey = GlobalKey<ScaffoldMessengerState>();
-
-/// Nested messenger inside MainScreen — its Scaffold owns the bottom NavigationBar
-/// so floating snackbars auto-offset above the navbar.
-final mainScaffoldMessengerKey = GlobalKey<ScaffoldMessengerState>();
 
 /// Types of snackbars available in the app
 enum SnackBarType { info, success, error }
@@ -119,7 +116,7 @@ void showGlobalErrorSnackBar(String message) {
 /// (so it floats above the mobile NavigationBar), falling back to the root
 /// messenger when the main screen is not mounted.
 void showMainSnackBar(String message, {Duration duration = AppDurations.snackBarDefault}) {
-  final messenger = mainScaffoldMessengerKey.currentState ?? rootScaffoldMessengerKey.currentState;
+  final messenger = profileNavigationRegistry.mainScaffoldMessenger ?? rootScaffoldMessengerKey.currentState;
   if (messenger == null) return;
   messenger
     ..removeCurrentSnackBar()

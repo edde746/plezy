@@ -23,12 +23,12 @@ import '../utils/platform_detector.dart';
 import '../utils/snackbar_helper.dart';
 import '../utils/update_dialog.dart';
 import '../utils/video_player_navigation.dart';
-import '../main.dart';
 import '../mixins/mounted_set_state_mixin.dart';
 import '../mixins/refreshable.dart';
 import '../widgets/overlay_sheet.dart';
 import '../mixins/tab_visibility_aware.dart';
 import '../navigation/navigation_tabs.dart';
+import '../navigation/profile_navigation_scope.dart';
 import '../profiles/active_profile_binder.dart';
 import '../profiles/active_profile_provider.dart';
 import '../profiles/plex_home_service.dart';
@@ -161,6 +161,7 @@ class _MainScreenState extends State<MainScreen>
 
   OfflineModeProvider? _offlineModeProvider;
   MultiServerProvider? _multiServerProvider;
+  RouteObserver<PageRoute<dynamic>>? _profileRouteObserver;
   bool _lastHasLiveTv = false;
 
   /// Whether a reconnection attempt is in progress
@@ -522,6 +523,7 @@ class _MainScreenState extends State<MainScreen>
     _setTvosMenuPassthrough(false);
     await Navigator.of(
       context,
+      rootNavigator: true,
     ).push(MaterialPageRoute(builder: (context) => const ProfileSwitchScreen(requireSelection: true)));
     if (!mounted) return;
     _isShowingProfileSelection = false;
@@ -569,9 +571,10 @@ class _MainScreenState extends State<MainScreen>
       };
       watchTogether.onHostExitedPlayer = () {
         appLogger.d('WatchTogether: Host exited player - exiting player for guest');
-        // Use rootNavigator to ensure we pop the video player even if nested
+        // Watch Together playback lives in the profile navigator; root-level
+        // dialogs/profile picker must not be affected.
         if (!mounted) return;
-        final navigator = Navigator.of(context, rootNavigator: true);
+        final navigator = Navigator.of(context);
         bool isVideoPlayerOnTop = false;
         navigator.popUntil((route) {
           if (route.isCurrent) {
@@ -687,7 +690,15 @@ class _MainScreenState extends State<MainScreen>
       _setupCompanionRemote();
     }
 
-    routeObserver.subscribe(this, ModalRoute.of(context) as PageRoute);
+    final scopedRouteObserver = ProfileNavigationScope.of(context).routeObserver;
+    if (scopedRouteObserver != _profileRouteObserver) {
+      _profileRouteObserver?.unsubscribe(this);
+      _profileRouteObserver = scopedRouteObserver;
+      final route = ModalRoute.of(context);
+      if (route is PageRoute<dynamic>) {
+        scopedRouteObserver.subscribe(this, route);
+      }
+    }
   }
 
   void _setupCompanionRemote() {
@@ -742,7 +753,7 @@ class _MainScreenState extends State<MainScreen>
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
-    routeObserver.unsubscribe(this);
+    _profileRouteObserver?.unsubscribe(this);
     if (PlatformDetector.isDesktopOS()) {
       windowManager.removeListener(this);
       windowManager.setPreventClose(false);
@@ -806,6 +817,7 @@ class _MainScreenState extends State<MainScreen>
     _setTvosMenuPassthrough(false);
     await Navigator.of(
       context,
+      rootNavigator: true,
     ).push(MaterialPageRoute(builder: (context) => const ProfileSwitchScreen(requireSelection: true)));
     if (!mounted) return;
     _isShowingProfileSelection = false;
@@ -1637,7 +1649,7 @@ class _MainScreenState extends State<MainScreen>
         _handleMainBack();
       },
       child: ScaffoldMessenger(
-        key: mainScaffoldMessengerKey,
+        key: ProfileNavigationScope.of(context).mainScaffoldMessengerKey,
         child: Scaffold(
           body: _buildTickerAwareStack(),
           bottomNavigationBar: Column(

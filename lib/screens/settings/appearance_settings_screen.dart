@@ -384,6 +384,6 @@ class AppearanceSettingsScreen extends StatelessWidget {
   }
 
   void _restartApp(BuildContext context) {
-    Navigator.pushNamedAndRemoveUntil(context, '/', (route) => false);
+    Navigator.of(context, rootNavigator: true).pushNamedAndRemoveUntil('/', (route) => false);
   }
 }

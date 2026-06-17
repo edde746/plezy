@@ -677,7 +677,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
     final allLibraries = librariesProvider.libraries;
 
     if (PlatformDetector.isTV()) {
-      showDialog(
+      showScopedDialog<void>(
         context: context,
         builder: (context) => _LibraryManagementSheet(
           isDialog: true,

@@ -6,6 +6,7 @@ import '../../mixins/mounted_set_state_mixin.dart';
 import '../../providers/companion_remote_provider.dart';
 import '../../services/companion_remote/companion_remote_host_controller.dart';
 import '../../services/settings_service.dart';
+import '../../utils/dialogs.dart';
 import '../../focus/focusable_button.dart';
 import '../../focus/key_event_utils.dart';
 
@@ -16,7 +17,7 @@ class RemoteSessionDialog extends StatefulWidget {
   State<RemoteSessionDialog> createState() => _RemoteSessionDialogState();
 
   static Future<void> show(BuildContext context) {
-    return showDialog<void>(
+    return showScopedDialog<void>(
       context: context,
       barrierDismissible: false,
       builder: (context) => const RemoteSessionDialog(),
