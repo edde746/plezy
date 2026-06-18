@@ -186,6 +186,38 @@ void main() {
     });
   });
 
+  group('handlePromptDismissBackKey', () {
+    test('ignores back keys when no prompt is visible', () {
+      var dismissCount = 0;
+
+      final result = handlePromptDismissBackKey(_keyUp(LogicalKeyboardKey.goBack), null);
+
+      expect(result, KeyEventResult.ignored);
+      expect(dismissCount, 0);
+    });
+
+    test('consumes key down and dismisses on key up', () {
+      var dismissCount = 0;
+      void dismissPrompt() => dismissCount++;
+
+      final downResult = handlePromptDismissBackKey(_keyDown(LogicalKeyboardKey.goBack), dismissPrompt);
+      final upResult = handlePromptDismissBackKey(_keyUp(LogicalKeyboardKey.goBack), dismissPrompt);
+
+      expect(downResult, KeyEventResult.handled);
+      expect(upResult, KeyEventResult.handled);
+      expect(dismissCount, 1);
+    });
+
+    test('ignores non-back keys', () {
+      var dismissCount = 0;
+
+      final result = handlePromptDismissBackKey(_keyDown(LogicalKeyboardKey.arrowLeft), () => dismissCount++);
+
+      expect(result, KeyEventResult.ignored);
+      expect(dismissCount, 0);
+    });
+  });
+
   group('SkipMarkerButton', () {
     testWidgets('tap cancels active auto-skip and performs skip', (tester) async {
       final focusNode = FocusNode();
@@ -721,6 +753,14 @@ void main() {
       expect(sliderTheme.data.tickMarkShape, same(SliderTickMarkShape.noTickMark));
     });
   });
+}
+
+KeyDownEvent _keyDown(LogicalKeyboardKey key) {
+  return KeyDownEvent(physicalKey: PhysicalKeyboardKey.escape, logicalKey: key, timeStamp: Duration.zero);
+}
+
+KeyUpEvent _keyUp(LogicalKeyboardKey key) {
+  return KeyUpEvent(physicalKey: PhysicalKeyboardKey.escape, logicalKey: key, timeStamp: Duration.zero);
 }
 
 Future<void> _pumpSkipMarkerButton(

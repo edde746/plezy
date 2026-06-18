@@ -159,6 +159,12 @@ bool shouldShowSkipMarkerButton({
   return hasFirstFrame && hasMarker && !hasPlayNextPrompt && (!skipButtonDismissed || controlsVisible);
 }
 
+@visibleForTesting
+KeyEventResult handlePromptDismissBackKey(KeyEvent event, VoidCallback? onDismissPrompt) {
+  if (onDismissPrompt == null || !event.logicalKey.isBackKey) return KeyEventResult.ignored;
+  return handleBackKeyAction(event, onDismissPrompt);
+}
+
 typedef PlaybackSourceChangeCallback =
     Future<void> Function({
       int? newMediaIndex,
@@ -213,6 +219,10 @@ class PlexVideoControls extends StatefulWidget {
 
   /// Called when back button is pressed (for Watch Together session leave confirmation)
   final VoidCallback? onBack;
+
+  /// Called when Back should dismiss a visible playback prompt before normal
+  /// player back handling.
+  final VoidCallback? onDismissPrompt;
 
   /// Called when the video has effectively reached the end (e.g. credits extend
   /// to EOF and can't be seeked past). Parent should route this into its normal
@@ -314,6 +324,7 @@ class PlexVideoControls extends StatefulWidget {
     this.onPlayPauseRequested,
     this.onSeekCompleted,
     this.onBack,
+    this.onDismissPrompt,
     this.onReachedEnd,
     this.canControl = true,
     this.hasFirstFrame,

@@ -109,6 +109,16 @@ extension _VideoPlayerPlaybackPromptMethods on VideoPlayerScreenState {
     });
   }
 
+  void _dismissPlaybackPromptForBack() {
+    if (_showPlayNextDialog) {
+      _cancelAutoPlay();
+      return;
+    }
+    if (_showStillWatchingPrompt) {
+      _dismissStillWatching();
+    }
+  }
+
   /// Re-arm the end-of-video latch so Play Next can fire again. Callers
   /// decide *when* it is safe to re-arm (media reloaded, or playback moved
   /// back out of the end region); the latch itself refuses while a prompt

@@ -91,6 +91,8 @@ extension _PlexVideoControlsKeyEventMethods on _PlexVideoControlsState {
         if (PlatformDetector.isTV() && event is KeyDownEvent) {
           BackKeyCoordinator.markHandled();
         }
+        final promptBackResult = handlePromptDismissBackKey(event, widget.onDismissPrompt);
+        if (promptBackResult != KeyEventResult.ignored) return true;
         final backResult = handleBackKeyAction(event, () {
           if (PlatformDetector.isTV()) {
             if (_showControls) {
@@ -192,6 +194,10 @@ extension _PlexVideoControlsKeyEventMethods on _PlexVideoControlsState {
     // sees it before KeyUp — prevents the system back from racing ahead.
     if (PlatformDetector.isTV() && event.logicalKey.isBackKey && event is KeyDownEvent) {
       BackKeyCoordinator.markHandled();
+    }
+    final promptBackResult = handlePromptDismissBackKey(event, widget.onDismissPrompt);
+    if (promptBackResult != KeyEventResult.ignored) {
+      return promptBackResult;
     }
     final backResult = handleBackKeyAction(event, () {
       if (PlatformDetector.isTV()) {

@@ -982,6 +982,10 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   /// Handle back button press
   /// For non-host participants in Watch Together, shows leave session confirmation
   Future<void> _handleBackButton() async {
+    if (_showPlayNextDialog || _showStillWatchingPrompt) {
+      _dismissPlaybackPromptForBack();
+      return;
+    }
     if (_isHandlingBack) return;
     _isHandlingBack = true;
     try {
