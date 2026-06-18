@@ -6,7 +6,10 @@ import '../../focus/focusable_action_bar.dart';
 import '../../media/media_item.dart';
 import '../../providers/download_provider.dart';
 import '../../providers/multi_server_provider.dart';
+import '../../providers/offline_mode_provider.dart';
 import '../../services/settings_service.dart';
+import '../../utils/snackbar_helper.dart';
+import '../video_player_screen.dart';
 import '../../widgets/settings_builder.dart';
 import '../../utils/global_key_utils.dart';
 import '../../mixins/tab_navigation_mixin.dart';
@@ -114,6 +117,24 @@ class DownloadsScreenState extends State<DownloadsScreen>
     return Text(t.downloads.title);
   }
 
+  /// Force an immediate sync-rule reconcile (delete watched if enabled + queue
+  /// missing episodes) and report the outcome. Guarded by the provider, so a
+  /// no-op if a reconcile is already running.
+  Future<void> _handleManualSync(BuildContext context) async {
+    final downloadProvider = context.read<DownloadProvider>();
+    final serverManager = context.read<MultiServerProvider>().serverManager;
+    final summary = await downloadProvider.reconcileNow(serverManager, activeId: VideoPlayerScreenState.activeId);
+    if (!context.mounted || summary == null) return;
+    if (summary.changed) {
+      showSuccessSnackBar(
+        context,
+        t.downloads.syncComplete(queued: summary.queuedCount, removed: summary.deletedCount),
+      );
+    } else {
+      showAppSnackBar(context, t.downloads.downloadsUpToDate);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -129,18 +150,47 @@ class DownloadsScreenState extends State<DownloadsScreen>
             shadowColor: Colors.transparent,
             scrolledUnderElevation: 0,
             actions: [
-              FocusableActionBar(
-                key: _actionBarKey,
-                onNavigateLeft: () => getTabChipFocusNode(tabCount - 1).requestFocus(),
-                onNavigateDown: _focusCurrentTab,
-                actions: [
-                  FocusableAction(
-                    icon: Symbols.rule_settings,
-                    tooltip: t.downloads.activeSyncRules,
-                    onPressed: () =>
-                        Navigator.push(context, MaterialPageRoute(builder: (_) => const SyncRulesScreen())),
-                  ),
-                ],
+              Consumer2<DownloadProvider, OfflineModeProvider>(
+                builder: (context, downloadProvider, offlineProvider, _) {
+                  // Manual sync is only meaningful online and when there's an
+                  // enabled rule to evaluate. The spinner shows while any
+                  // reconcile (manual or automatic) is in flight.
+                  final hasEnabledRule = downloadProvider.syncRules.values.any((r) => r.enabled);
+                  final showSync = !offlineProvider.isOffline && hasEnabledRule;
+                  final reconciling = downloadProvider.isReconciling;
+                  return FocusableActionBar(
+                    key: _actionBarKey,
+                    onNavigateLeft: () => getTabChipFocusNode(tabCount - 1).requestFocus(),
+                    onNavigateDown: _focusCurrentTab,
+                    actions: [
+                      if (showSync)
+                        FocusableAction(
+                          icon: Symbols.sync,
+                          tooltip: t.downloads.syncNow,
+                          onPressed: reconciling ? null : () => _handleManualSync(context),
+                          child: reconciling
+                              ? const SizedBox(
+                                  width: 48,
+                                  height: 48,
+                                  child: Center(
+                                    child: SizedBox(
+                                      width: 20,
+                                      height: 20,
+                                      child: CircularProgressIndicator(strokeWidth: 2),
+                                    ),
+                                  ),
+                                )
+                              : null,
+                        ),
+                      FocusableAction(
+                        icon: Symbols.rule_settings,
+                        tooltip: t.downloads.activeSyncRules,
+                        onPressed: () =>
+                            Navigator.push(context, MaterialPageRoute(builder: (_) => const SyncRulesScreen())),
+                      ),
+                    ],
+                  );
+                },
               ),
             ],
           ),
