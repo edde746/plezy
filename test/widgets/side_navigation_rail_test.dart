@@ -75,12 +75,19 @@ AnimatedOpacity _railSurfaceOpacity(WidgetTester tester) {
 Future<void> _pumpBasicRail(
   WidgetTester tester, {
   GlobalKey<SideNavigationRailState>? sideNavKey,
+  NavigationTabId selectedTab = NavigationTabId.discover,
+  String? selectedLibraryKey,
+  List<MediaLibrary> libraries = const [],
   bool isSidebarFocused = false,
   bool alwaysExpanded = false,
+  double? height,
 }) async {
   await SettingsService.getInstance();
 
   final librariesProvider = LibrariesProvider();
+  if (libraries.isNotEmpty) {
+    await librariesProvider.updateLibraryOrder(libraries);
+  }
   addTearDown(librariesProvider.dispose);
 
   final hiddenLibrariesProvider = HiddenLibrariesProvider();
@@ -91,6 +98,16 @@ Future<void> _pumpBasicRail(
   final aggregation = DataAggregationService(manager);
   final multiServerProvider = MultiServerProvider(manager, aggregation);
   addTearDown(multiServerProvider.dispose);
+
+  final rail = SideNavigationRail(
+    key: sideNavKey,
+    selectedTab: selectedTab,
+    selectedLibraryKey: selectedLibraryKey,
+    isSidebarFocused: isSidebarFocused,
+    alwaysExpanded: alwaysExpanded,
+    onDestinationSelected: (_) {},
+    onLibrarySelected: (_) {},
+  );
 
   await tester.pumpWidget(
     TranslationProvider(
@@ -103,14 +120,7 @@ Future<void> _pumpBasicRail(
         child: MaterialApp(
           theme: ThemeData(extensions: const [_testTokens]),
           home: Scaffold(
-            body: SideNavigationRail(
-              key: sideNavKey,
-              selectedTab: NavigationTabId.discover,
-              isSidebarFocused: isSidebarFocused,
-              alwaysExpanded: alwaysExpanded,
-              onDestinationSelected: (_) {},
-              onLibrarySelected: (_) {},
-            ),
+            body: height == null ? rail : SizedBox(height: height, child: rail),
           ),
         ),
       ),
@@ -260,6 +270,45 @@ void main() {
 
     final selectedItem = find.byType(NavigationRailItem).first;
     expect(_railItemDecoration(tester, selectedItem)?.color, isNull);
+  });
+
+  testWidgets('focusActiveItem focuses selected library and scrolls it into view', (tester) async {
+    final sideNavKey = GlobalKey<SideNavigationRailState>();
+    final libraries = List.generate(
+      18,
+      (index) => _library(id: '$index', title: 'Library $index', serverId: ServerId('server'), serverName: 'Server'),
+    );
+    final targetLibrary = libraries.last;
+
+    await _pumpBasicRail(
+      tester,
+      sideNavKey: sideNavKey,
+      selectedTab: NavigationTabId.libraries,
+      selectedLibraryKey: targetLibrary.globalKey,
+      libraries: libraries,
+      isSidebarFocused: true,
+      alwaysExpanded: true,
+      height: 260,
+    );
+
+    final scrollable = find.descendant(of: find.byType(SideNavigationRail), matching: find.byType(Scrollable)).first;
+    final scrollableState = tester.state<ScrollableState>(scrollable);
+    expect(scrollableState.position.pixels, 0);
+
+    sideNavKey.currentState!.focusActiveItem();
+    await tester.pump();
+    await tester.pumpAndSettle();
+
+    final targetItemFinder = find.widgetWithText(NavigationRailItem, targetLibrary.title);
+    expect(targetItemFinder, findsOneWidget);
+    final targetItem = tester.widget<NavigationRailItem>(targetItemFinder);
+    expect(targetItem.focusNode.hasFocus, isTrue);
+    expect(scrollableState.position.pixels, greaterThan(0));
+
+    final railRect = tester.getRect(find.byType(SideNavigationRail));
+    final targetRect = tester.getRect(find.text(targetLibrary.title));
+    expect(targetRect.top, greaterThanOrEqualTo(railRect.top));
+    expect(targetRect.bottom, lessThanOrEqualTo(railRect.bottom));
   });
 
   testWidgets('reports interaction expansion for shell content push', (tester) async {
