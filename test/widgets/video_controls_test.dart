@@ -219,18 +219,16 @@ void main() {
   });
 
   group('SkipMarkerButton', () {
-    testWidgets('tap cancels active auto-skip and performs skip', (tester) async {
+    testWidgets('tap activates skip', (tester) async {
       final focusNode = FocusNode();
       addTearDown(focusNode.dispose);
-      var cancelCount = 0;
-      var skipCount = 0;
+      var activateCount = 0;
 
       await _pumpSkipMarkerButton(
         tester,
         focusNode: focusNode,
         isAutoSkipActive: true,
-        onCancelAutoSkip: () => cancelCount++,
-        onPerformAutoSkip: () => skipCount++,
+        onActivate: () => activateCount++,
       );
 
       expect(find.text('Skip Intro (3)'), findsOneWidget);
@@ -238,22 +236,19 @@ void main() {
       await tester.tap(find.byType(InkWell));
       await tester.pump();
 
-      expect(cancelCount, 1);
-      expect(skipCount, 1);
+      expect(activateCount, 1);
     });
 
-    testWidgets('select cancels active auto-skip and performs skip', (tester) async {
+    testWidgets('select activates skip', (tester) async {
       final focusNode = FocusNode();
       addTearDown(focusNode.dispose);
-      var cancelCount = 0;
-      var skipCount = 0;
+      var activateCount = 0;
 
       await _pumpSkipMarkerButton(
         tester,
         focusNode: focusNode,
         isAutoSkipActive: true,
-        onCancelAutoSkip: () => cancelCount++,
-        onPerformAutoSkip: () => skipCount++,
+        onActivate: () => activateCount++,
       );
 
       focusNode.requestFocus();
@@ -261,23 +256,20 @@ void main() {
       await tester.sendKeyEvent(LogicalKeyboardKey.select);
       await tester.pump();
 
-      expect(cancelCount, 1);
-      expect(skipCount, 1);
+      expect(activateCount, 1);
     });
 
-    testWidgets('d-pad down moves focus; auto-skip cancellation is handled centrally', (tester) async {
+    testWidgets('d-pad down moves focus without activating', (tester) async {
       final focusNode = FocusNode();
       addTearDown(focusNode.dispose);
-      var cancelCount = 0;
-      var skipCount = 0;
+      var activateCount = 0;
       var focusDownCount = 0;
 
       await _pumpSkipMarkerButton(
         tester,
         focusNode: focusNode,
         isAutoSkipActive: true,
-        onCancelAutoSkip: () => cancelCount++,
-        onPerformAutoSkip: () => skipCount++,
+        onActivate: () => activateCount++,
         onFocusDown: () => focusDownCount++,
       );
 
@@ -286,25 +278,20 @@ void main() {
       await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
       await tester.pump();
 
-      // The button no longer cancels auto-skip itself — the player's central
-      // input handler cancels on any key. Arrow-down only moves focus.
-      expect(cancelCount, 0);
-      expect(skipCount, 0);
+      expect(activateCount, 0);
       expect(focusDownCount, 1);
     });
 
-    testWidgets('tap performs manual skip when auto-skip is inactive', (tester) async {
+    testWidgets('tap activates when auto-skip is inactive', (tester) async {
       final focusNode = FocusNode();
       addTearDown(focusNode.dispose);
-      var cancelCount = 0;
-      var skipCount = 0;
+      var activateCount = 0;
 
       await _pumpSkipMarkerButton(
         tester,
         focusNode: focusNode,
         isAutoSkipActive: false,
-        onCancelAutoSkip: () => cancelCount++,
-        onPerformAutoSkip: () => skipCount++,
+        onActivate: () => activateCount++,
       );
 
       expect(find.text('Skip Intro'), findsOneWidget);
@@ -312,8 +299,7 @@ void main() {
       await tester.tap(find.byType(InkWell));
       await tester.pump();
 
-      expect(cancelCount, 0);
-      expect(skipCount, 1);
+      expect(activateCount, 1);
     });
   });
 
@@ -767,8 +753,7 @@ Future<void> _pumpSkipMarkerButton(
   WidgetTester tester, {
   required FocusNode focusNode,
   required bool isAutoSkipActive,
-  required VoidCallback onCancelAutoSkip,
-  required VoidCallback onPerformAutoSkip,
+  required VoidCallback onActivate,
   VoidCallback? onFocusDown,
 }) {
   return tester.pumpWidget(
@@ -785,8 +770,7 @@ Future<void> _pumpSkipMarkerButton(
             autoSkipDelay: 5,
             autoSkipProgress: 0.4,
             focusNode: focusNode,
-            onCancelAutoSkip: onCancelAutoSkip,
-            onPerformAutoSkip: onPerformAutoSkip,
+            onActivate: onActivate,
             onFocusDown: onFocusDown ?? () {},
           ),
         ),

@@ -925,13 +925,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
                       ),
                     ),
                   // Skip intro/credits button (auto-dismisses after 7s, then only shows with controls)
-                  if (shouldShowSkipMarkerButton(
-                    hasFirstFrame: _hasRenderedFirstFrame,
-                    hasMarker: _currentMarker != null,
-                    hasPlayNextPrompt: widget.playNextFocusNode != null,
-                    skipButtonDismissed: _skipButtonDismissed,
-                    controlsVisible: _showControls,
-                  ))
+                  if (_isSkipMarkerButtonVisible)
                     AnimatedPositioned(
                       duration: const Duration(milliseconds: 200),
                       curve: Curves.easeInOut,
