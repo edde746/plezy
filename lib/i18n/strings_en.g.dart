@@ -3072,8 +3072,14 @@ class TranslationsDownloadsEn {
 	/// en: 'Next ${count} unwatched'
 	String nextNUnwatched({required Object count}) => 'Next ${count} unwatched';
 
-	/// en: 'Custom amount...'
-	String get customAmount => 'Custom amount...';
+	/// en: 'Custom Amount (Unwatched)'
+	String get customAmountUnwatched => 'Custom Amount (Unwatched)';
+
+	/// en: 'Custom Amount (Any)'
+	String get customAmountAny => 'Custom Amount (Any)';
+
+	/// en: 'Random episodes'
+	String get randomEpisodes => 'Random episodes';
 
 	/// en: 'How many episodes?'
 	String get howManyEpisodes => 'How many episodes?';
@@ -5455,7 +5461,9 @@ extension on Translations {
 			'downloads.allEpisodes' => 'All episodes',
 			'downloads.unwatchedOnly' => 'Unwatched only',
 			'downloads.nextNUnwatched' => ({required Object count}) => 'Next ${count} unwatched',
-			'downloads.customAmount' => 'Custom amount...',
+			'downloads.customAmountUnwatched' => 'Custom Amount (Unwatched)',
+			'downloads.customAmountAny' => 'Custom Amount (Any)',
+			'downloads.randomEpisodes' => 'Random episodes',
 			'downloads.howManyEpisodes' => 'How many episodes?',
 			'downloads.itemsQueued' => ({required Object count}) => '${count} items queued for download',
 			'downloads.keepSynced' => 'Keep synced',
@@ -5522,10 +5530,10 @@ extension on Translations {
 			'companionRemote.pairing.manualConnection' => 'Manual Connection',
 			'companionRemote.pairing.cryptoInitFailed' => 'Couldn\'t start secure connection. Sign in to Plex first.',
 			'companionRemote.pairing.validationHostRequired' => 'Please enter host address',
-			'companionRemote.pairing.validationHostFormat' => 'Format must be IP:port (e.g., 192.168.1.100:48632)',
-			'companionRemote.pairing.connectionTimedOut' => 'Connection timed out. Use the same network on both devices.',
 			_ => null,
 		} ?? switch (path) {
+			'companionRemote.pairing.validationHostFormat' => 'Format must be IP:port (e.g., 192.168.1.100:48632)',
+			'companionRemote.pairing.connectionTimedOut' => 'Connection timed out. Use the same network on both devices.',
 			'companionRemote.pairing.sessionNotFound' => 'Device not found. Make sure Plezy is running on the host.',
 			'companionRemote.pairing.authFailed' => 'Authentication failed. Both devices need the same Plex account.',
 			'companionRemote.pairing.failedToConnect' => ({required Object error}) => 'Failed to connect: ${error}',

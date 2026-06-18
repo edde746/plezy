@@ -15,7 +15,7 @@ import 'download_version_utils.dart';
 import 'snackbar_helper.dart';
 
 /// Dialog option for the download picker. Typed to avoid stringly-typed values.
-enum _DownloadChoice { all, unwatched, next5, next10, custom, delete }
+enum _DownloadChoice { all, unwatched, next5, next10, customUnwatched, customAny, delete }
 
 /// Whether the user chose a one-time download or a persistent sync rule.
 enum _SyncChoice { downloadOnce, keepSynced }
@@ -67,6 +67,7 @@ Future<DownloadResult?> showDownloadOptionsAndQueue(
   var filter = DownloadFilter.all;
   int? maxCount;
   bool keepSynced = false;
+  bool randomEpisodes = false;
 
   if (kind == MediaKind.show || kind == MediaKind.season) {
     int? customCount;
@@ -79,7 +80,8 @@ Future<DownloadResult?> showDownloadOptionsAndQueue(
         label: t.downloads.nextNUnwatched(count: 10),
         value: _DownloadChoice.next10,
       ),
-      (icon: Symbols.tune_rounded, label: t.downloads.customAmount, value: _DownloadChoice.custom),
+      (icon: Symbols.tune_rounded, label: t.downloads.customAmountUnwatched, value: _DownloadChoice.customUnwatched),
+      (icon: Symbols.tune_rounded, label: t.downloads.customAmountAny, value: _DownloadChoice.customAny),
     ];
     // Already-downloaded show/season: offer deletion as the last row.
     if (onDelete != null) {
@@ -88,9 +90,11 @@ Future<DownloadResult?> showDownloadOptionsAndQueue(
     final selected = await showOptionPickerDialog<_DownloadChoice>(
       context,
       title: t.downloads.downloadNow,
+      toggle: (icon: Symbols.shuffle_rounded, label: t.downloads.randomEpisodes, initialValue: false),
+      onToggleChanged: (value) => randomEpisodes = value,
       options: options,
       onBeforeClose: (value) async {
-        if (value != _DownloadChoice.custom) return value;
+        if (value != _DownloadChoice.customUnwatched && value != _DownloadChoice.customAny) return value;
         customCount = await _showEpisodeCountDialog(context);
         return customCount != null ? value : null;
       },
@@ -109,15 +113,20 @@ Future<DownloadResult?> showDownloadOptionsAndQueue(
       case _DownloadChoice.next10:
         filter = DownloadFilter.unwatched;
         maxCount = 10;
-      case _DownloadChoice.custom:
+      case _DownloadChoice.customUnwatched:
         filter = DownloadFilter.unwatched;
+        maxCount = customCount;
+      case _DownloadChoice.customAny:
+        filter = DownloadFilter.all;
         maxCount = customCount;
       case _DownloadChoice.delete:
         if (onDelete != null) await onDelete();
         return null;
     }
 
-    if (filter == DownloadFilter.unwatched && kind == MediaKind.show && context.mounted) {
+    // Keep-synced is offered for every choice except "All episodes" (which has
+    // no quota to maintain), and only for shows.
+    if (selected != _DownloadChoice.all && kind == MediaKind.show && context.mounted) {
       final syncChoice = await showOptionPickerDialog<_SyncChoice>(
         context,
         title: t.downloads.downloadNow,
@@ -139,7 +148,8 @@ Future<DownloadResult?> showDownloadOptionsAndQueue(
   // Create or update sync rule before queueing (so the rule exists even if queue fails)
   bool syncRuleUpdated = false;
   if (keepSynced) {
-    final syncCount = maxCount ?? 0; // 0 means "all unwatched" for the rule
+    final syncCount = maxCount ?? 0; // 0 means "all candidates" for the rule
+    final filterString = filter == DownloadFilter.all ? SyncRuleFilter.all : SyncRuleFilter.unwatched;
     final ruleKey = downloadProvider.syncRuleKeyFor(ServerId(metadata.serverId ?? client.serverId), metadata.id);
     syncRuleUpdated = downloadProvider.hasSyncRule(ruleKey);
 
@@ -149,6 +159,8 @@ Future<DownloadResult?> showDownloadOptionsAndQueue(
       targetType: metadata.kind.id.isNotEmpty ? metadata.kind.id : ContentTypes.show,
       episodeCount: syncCount,
       mediaIndex: versionConfig.mediaIndex,
+      downloadFilter: filterString,
+      randomEpisodes: randomEpisodes,
       targetMetadata: metadata,
     );
   }
@@ -159,6 +171,7 @@ Future<DownloadResult?> showDownloadOptionsAndQueue(
     versionConfig: versionConfig,
     filter: filter,
     maxCount: maxCount,
+    random: randomEpisodes,
   );
 
   return DownloadResult(
