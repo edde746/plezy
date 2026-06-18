@@ -1791,16 +1791,18 @@ class PlexClient
   /// Append sort options that Plex honors via the `sort=` parameter but does not
   /// advertise in `/library/sections/{id}/sorts`.
   ///
-  /// Plays (`viewCount`) and the signed-in user's rating (`userRating`) both
-  /// sort correctly on movie/show libraries, so we surface them client-side
-  /// (mirroring how the Jellyfin sort list is built). De-duped by key so we
-  /// never double up if a future Plex version starts advertising them.
+  /// Date Added (`addedAt`), plays (`viewCount`), and the signed-in user's
+  /// rating (`userRating`) sort correctly on movie/show libraries, so we
+  /// surface them client-side (mirroring how the Jellyfin sort list is built).
+  /// De-duped by key so we never double up if a future Plex version starts
+  /// advertising them.
   List<MediaSort> _withExtraSorts(List<MediaSort> base, String? libraryType) {
     final type = libraryType?.toLowerCase();
     if (type != 'movie' && type != 'show') return base;
 
     final keys = base.map((s) => s.key).toSet();
     final extras = [
+      _dateAddedSort(),
       MediaSort(
         key: 'viewCount',
         descKey: 'viewCount:desc',
@@ -1818,18 +1820,22 @@ class PlexClient
     return [...base, ...extras];
   }
 
+  MediaSort _dateAddedSort() {
+    return MediaSort(
+      key: 'addedAt',
+      descKey: 'addedAt:desc',
+      title: t.libraries.sortLabels.dateAdded,
+      defaultDirection: 'desc',
+    );
+  }
+
   /// Build fallback sort options based on library type.
   ///
   /// If [libraryType] is null, returns generic sorts without the show-specific options.
   List<MediaSort> _getFallbackSorts(String? libraryType) {
     final fallbackSorts = <MediaSort>[
       MediaSort(key: 'titleSort', title: t.libraries.sortLabels.title, defaultDirection: 'asc'),
-      MediaSort(
-        key: 'addedAt',
-        descKey: 'addedAt:desc',
-        title: t.libraries.sortLabels.dateAdded,
-        defaultDirection: 'desc',
-      ),
+      _dateAddedSort(),
     ];
 
     // Add "Latest Episode Air Date" only for TV show libraries
