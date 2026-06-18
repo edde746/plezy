@@ -247,6 +247,9 @@ class _TranslationsSettingsDe extends TranslationsSettingsEn {
 	@override String get continueWatchingAction => 'Aktion für Weiterschauen';
 	@override String get continueWatchingPlay => 'Abspielen';
 	@override String get continueWatchingDetails => 'Details öffnen';
+	@override String get episodeAction => 'Episodenaktion';
+	@override String get episodePlay => 'Abspielen';
+	@override String get episodeDetails => 'Details öffnen';
 	@override String get useGlobalHubs => 'Startlayout verwenden';
 	@override String get useGlobalHubsDescription => 'Einheitliche Start-Hubs anzeigen. Sonst Bibliotheksempfehlungen verwenden.';
 	@override String get showServerNameOnHubs => 'Servername bei Hubs anzeigen';
@@ -2029,6 +2032,9 @@ extension on TranslationsDe {
 			'settings.continueWatchingAction' => 'Aktion für Weiterschauen',
 			'settings.continueWatchingPlay' => 'Abspielen',
 			'settings.continueWatchingDetails' => 'Details öffnen',
+			'settings.episodeAction' => 'Episodenaktion',
+			'settings.episodePlay' => 'Abspielen',
+			'settings.episodeDetails' => 'Details öffnen',
 			'settings.useGlobalHubs' => 'Startlayout verwenden',
 			'settings.useGlobalHubsDescription' => 'Einheitliche Start-Hubs anzeigen. Sonst Bibliotheksempfehlungen verwenden.',
 			'settings.showServerNameOnHubs' => 'Servername bei Hubs anzeigen',
@@ -2430,11 +2436,11 @@ extension on TranslationsDe {
 			'messages.logsUploaded' => 'Protokolle hochgeladen',
 			'messages.logsUploadFailed' => 'Protokolle konnten nicht hochgeladen werden',
 			'messages.logId' => 'Protokoll-ID',
+			_ => null,
+		} ?? switch (path) {
 			'subtitlingStyling.text' => 'Text',
 			'subtitlingStyling.border' => 'Rahmen',
 			'subtitlingStyling.background' => 'Hintergrund',
-			_ => null,
-		} ?? switch (path) {
 			'subtitlingStyling.fontSize' => 'Schriftgröße',
 			'subtitlingStyling.textColor' => 'Textfarbe',
 			'subtitlingStyling.borderSize' => 'Rahmengröße',
@@ -2944,11 +2950,11 @@ extension on TranslationsDe {
 			'companionRemote.remote.disconnectConfirm' => 'Möchtest du die Verbindung zur Fernsteuerungssitzung trennen?',
 			'companionRemote.remote.reconnecting' => 'Verbindung wird wiederhergestellt...',
 			'companionRemote.remote.attemptOf' => ({required Object current}) => 'Versuch ${current} von 5',
+			_ => null,
+		} ?? switch (path) {
 			'companionRemote.remote.retryNow' => 'Jetzt wiederholen',
 			'companionRemote.remote.tabRemote' => 'Fernbedienung',
 			'companionRemote.remote.tabPlay' => 'Wiedergabe',
-			_ => null,
-		} ?? switch (path) {
 			'companionRemote.remote.tabMore' => 'Mehr',
 			'companionRemote.remote.menu' => 'Menü',
 			'companionRemote.remote.tabNavigation' => 'Tab-Navigation',

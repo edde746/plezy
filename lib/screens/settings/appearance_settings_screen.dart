@@ -157,6 +157,7 @@ class AppearanceSettingsScreen extends StatelessWidget {
           title: t.settings.hideSpoilers,
           subtitle: t.settings.hideSpoilersDescription,
         ),
+        _episodeActionSelector(),
         _requireProfileSelection(),
         SettingSwitchTile(
           pref: SettingsService.autoHidePerformanceOverlay,
@@ -273,6 +274,18 @@ class AppearanceSettingsScreen extends StatelessWidget {
     segments: [
       ButtonSegment(value: ContinueWatchingAction.play, label: Text(t.settings.continueWatchingPlay)),
       ButtonSegment(value: ContinueWatchingAction.details, label: Text(t.settings.continueWatchingDetails)),
+    ],
+    decode: (v) => v,
+    encode: (v) => v,
+  );
+
+  Widget _episodeActionSelector() => SettingSegmentedTile<EpisodeAction, EpisodeAction>(
+    pref: SettingsService.episodeAction,
+    icon: Symbols.tv_rounded,
+    title: t.settings.episodeAction,
+    segments: [
+      ButtonSegment(value: EpisodeAction.play, label: Text(t.settings.episodePlay)),
+      ButtonSegment(value: EpisodeAction.details, label: Text(t.settings.episodeDetails)),
     ],
     decode: (v) => v,
     encode: (v) => v,

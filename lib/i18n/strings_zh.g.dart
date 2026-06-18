@@ -247,6 +247,9 @@ class _TranslationsSettingsZh extends TranslationsSettingsEn {
 	@override String get continueWatchingAction => '继续观看操作';
 	@override String get continueWatchingPlay => '播放';
 	@override String get continueWatchingDetails => '打开详情';
+	@override String get episodeAction => '剧集操作';
+	@override String get episodePlay => '播放';
+	@override String get episodeDetails => '打开详情';
 	@override String get useGlobalHubs => '使用主页布局';
 	@override String get useGlobalHubsDescription => '显示统一主页中心。否则使用资料库推荐。';
 	@override String get showServerNameOnHubs => '在推荐栏显示服务器名称';
@@ -2029,6 +2032,9 @@ extension on TranslationsZh {
 			'settings.continueWatchingAction' => '继续观看操作',
 			'settings.continueWatchingPlay' => '播放',
 			'settings.continueWatchingDetails' => '打开详情',
+			'settings.episodeAction' => '剧集操作',
+			'settings.episodePlay' => '播放',
+			'settings.episodeDetails' => '打开详情',
 			'settings.useGlobalHubs' => '使用主页布局',
 			'settings.useGlobalHubsDescription' => '显示统一主页中心。否则使用资料库推荐。',
 			'settings.showServerNameOnHubs' => '在推荐栏显示服务器名称',
@@ -2430,11 +2436,11 @@ extension on TranslationsZh {
 			'messages.logsUploaded' => '日志已上传',
 			'messages.logsUploadFailed' => '上传日志失败',
 			'messages.logId' => '日志 ID',
+			_ => null,
+		} ?? switch (path) {
 			'subtitlingStyling.text' => '文本',
 			'subtitlingStyling.border' => '边框',
 			'subtitlingStyling.background' => '背景',
-			_ => null,
-		} ?? switch (path) {
 			'subtitlingStyling.fontSize' => '字号',
 			'subtitlingStyling.textColor' => '文本颜色',
 			'subtitlingStyling.borderSize' => '边框大小',
@@ -2944,11 +2950,11 @@ extension on TranslationsZh {
 			'companionRemote.remote.disconnectConfirm' => '是否要断开远程会话的连接？',
 			'companionRemote.remote.reconnecting' => '重新连接中...',
 			'companionRemote.remote.attemptOf' => ({required Object current}) => '第 ${current} 次尝试，共 5 次',
+			_ => null,
+		} ?? switch (path) {
 			'companionRemote.remote.retryNow' => '立即重试',
 			'companionRemote.remote.tabRemote' => '遥控',
 			'companionRemote.remote.tabPlay' => '播放',
-			_ => null,
-		} ?? switch (path) {
 			'companionRemote.remote.tabMore' => '更多',
 			'companionRemote.remote.menu' => '菜单',
 			'companionRemote.remote.tabNavigation' => '标签导航',

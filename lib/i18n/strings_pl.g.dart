@@ -247,6 +247,9 @@ class _TranslationsSettingsPl extends TranslationsSettingsEn {
 	@override String get continueWatchingAction => 'Akcja Kontynuuj oglądanie';
 	@override String get continueWatchingPlay => 'Odtwórz';
 	@override String get continueWatchingDetails => 'Otwórz szczegóły';
+	@override String get episodeAction => 'Akcja odcinka';
+	@override String get episodePlay => 'Odtwórz';
+	@override String get episodeDetails => 'Otwórz szczegóły';
 	@override String get useGlobalHubs => 'Użyj układu strony głównej';
 	@override String get useGlobalHubsDescription => 'Pokaż ujednolicone huby ekranu głównego. W przeciwnym razie użyj rekomendacji bibliotek.';
 	@override String get showServerNameOnHubs => 'Pokaż nazwę serwera w hubach';
@@ -2029,6 +2032,9 @@ extension on TranslationsPl {
 			'settings.continueWatchingAction' => 'Akcja Kontynuuj oglądanie',
 			'settings.continueWatchingPlay' => 'Odtwórz',
 			'settings.continueWatchingDetails' => 'Otwórz szczegóły',
+			'settings.episodeAction' => 'Akcja odcinka',
+			'settings.episodePlay' => 'Odtwórz',
+			'settings.episodeDetails' => 'Otwórz szczegóły',
 			'settings.useGlobalHubs' => 'Użyj układu strony głównej',
 			'settings.useGlobalHubsDescription' => 'Pokaż ujednolicone huby ekranu głównego. W przeciwnym razie użyj rekomendacji bibliotek.',
 			'settings.showServerNameOnHubs' => 'Pokaż nazwę serwera w hubach',
@@ -2430,11 +2436,11 @@ extension on TranslationsPl {
 			'messages.logsUploaded' => 'Logi przesłane',
 			'messages.logsUploadFailed' => 'Nie udało się przesłać logów',
 			'messages.logId' => 'ID logu',
+			_ => null,
+		} ?? switch (path) {
 			'subtitlingStyling.text' => 'Tekst',
 			'subtitlingStyling.border' => 'Obramowanie',
 			'subtitlingStyling.background' => 'Tło',
-			_ => null,
-		} ?? switch (path) {
 			'subtitlingStyling.fontSize' => 'Rozmiar czcionki',
 			'subtitlingStyling.textColor' => 'Kolor tekstu',
 			'subtitlingStyling.borderSize' => 'Rozmiar obramowania',
@@ -2944,11 +2950,11 @@ extension on TranslationsPl {
 			'companionRemote.remote.disconnectConfirm' => 'Czy chcesz się rozłączyć od sesji zdalnej?',
 			'companionRemote.remote.reconnecting' => 'Ponowne łączenie...',
 			'companionRemote.remote.attemptOf' => ({required Object current}) => 'Próba ${current} z 5',
+			_ => null,
+		} ?? switch (path) {
 			'companionRemote.remote.retryNow' => 'Ponów teraz',
 			'companionRemote.remote.tabRemote' => 'Pilot',
 			'companionRemote.remote.tabPlay' => 'Odtwórz',
-			_ => null,
-		} ?? switch (path) {
 			'companionRemote.remote.tabMore' => 'Więcej',
 			'companionRemote.remote.menu' => 'Menu',
 			'companionRemote.remote.tabNavigation' => 'Nawigacja',

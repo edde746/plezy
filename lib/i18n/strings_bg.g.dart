@@ -247,6 +247,9 @@ class _TranslationsSettingsBg extends TranslationsSettingsEn {
 	@override String get continueWatchingAction => 'Действие за продължаване на гледането';
 	@override String get continueWatchingPlay => 'Пусни';
 	@override String get continueWatchingDetails => 'Отвори подробности';
+	@override String get episodeAction => 'Действие за епизод';
+	@override String get episodePlay => 'Пусни';
+	@override String get episodeDetails => 'Отвори подробности';
 	@override String get useGlobalHubs => 'Използвай начално оформление';
 	@override String get useGlobalHubsDescription => 'Показвай обединени начални хъбове. В противен случай използвай препоръките на библиотеката.';
 	@override String get showServerNameOnHubs => 'Показвай името на сървъра в хъбовете';
@@ -2029,6 +2032,9 @@ extension on TranslationsBg {
 			'settings.continueWatchingAction' => 'Действие за продължаване на гледането',
 			'settings.continueWatchingPlay' => 'Пусни',
 			'settings.continueWatchingDetails' => 'Отвори подробности',
+			'settings.episodeAction' => 'Действие за епизод',
+			'settings.episodePlay' => 'Пусни',
+			'settings.episodeDetails' => 'Отвори подробности',
 			'settings.useGlobalHubs' => 'Използвай начално оформление',
 			'settings.useGlobalHubsDescription' => 'Показвай обединени начални хъбове. В противен случай използвай препоръките на библиотеката.',
 			'settings.showServerNameOnHubs' => 'Показвай името на сървъра в хъбовете',
@@ -2430,11 +2436,11 @@ extension on TranslationsBg {
 			'messages.logsUploaded' => 'Логовете са качени',
 			'messages.logsUploadFailed' => 'Неуспешно качване на логовете',
 			'messages.logId' => 'ID на лога',
+			_ => null,
+		} ?? switch (path) {
 			'subtitlingStyling.text' => 'Текст',
 			'subtitlingStyling.border' => 'Рамка',
 			'subtitlingStyling.background' => 'Фон',
-			_ => null,
-		} ?? switch (path) {
 			'subtitlingStyling.fontSize' => 'Размер на шрифта',
 			'subtitlingStyling.textColor' => 'Цвят на текста',
 			'subtitlingStyling.borderSize' => 'Размер на рамката',
@@ -2944,11 +2950,11 @@ extension on TranslationsBg {
 			'companionRemote.remote.disconnectConfirm' => 'Искате ли да прекъснете връзката с дистанционната сесия?',
 			'companionRemote.remote.reconnecting' => 'Повторно свързване...',
 			'companionRemote.remote.attemptOf' => ({required Object current}) => 'Опит ${current} от 5',
+			_ => null,
+		} ?? switch (path) {
 			'companionRemote.remote.retryNow' => 'Опитай сега',
 			'companionRemote.remote.tabRemote' => 'Дистанционно',
 			'companionRemote.remote.tabPlay' => 'Пускане',
-			_ => null,
-		} ?? switch (path) {
 			'companionRemote.remote.tabMore' => 'Още',
 			'companionRemote.remote.menu' => 'Меню',
 			'companionRemote.remote.tabNavigation' => 'Навигация с Tab',

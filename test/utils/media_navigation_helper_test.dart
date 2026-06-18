@@ -2,6 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/media/media_backend.dart';
 import 'package:plezy/media/media_item.dart';
 import 'package:plezy/media/media_kind.dart';
+import 'package:plezy/services/settings_service.dart';
 import 'package:plezy/utils/media_navigation_helper.dart';
 
 void main() {
@@ -56,5 +57,47 @@ void main() {
     expect(target.metadata, same(movie));
     expect(target.initialSeasonId, isNull);
     expect(target.initialEpisodeId, isNull);
+  });
+
+  group('episode activation details decision', () {
+    test('normal activation uses the episode action setting', () {
+      expect(
+        shouldOpenEpisodeDetailsForActivation(
+          playDirectly: false,
+          continueWatchingAction: ContinueWatchingAction.details,
+          episodeAction: EpisodeAction.play,
+        ),
+        isFalse,
+      );
+
+      expect(
+        shouldOpenEpisodeDetailsForActivation(
+          playDirectly: false,
+          continueWatchingAction: ContinueWatchingAction.play,
+          episodeAction: EpisodeAction.details,
+        ),
+        isTrue,
+      );
+    });
+
+    test('play-direct activation uses only the continue watching action setting', () {
+      expect(
+        shouldOpenEpisodeDetailsForActivation(
+          playDirectly: true,
+          continueWatchingAction: ContinueWatchingAction.play,
+          episodeAction: EpisodeAction.details,
+        ),
+        isFalse,
+      );
+
+      expect(
+        shouldOpenEpisodeDetailsForActivation(
+          playDirectly: true,
+          continueWatchingAction: ContinueWatchingAction.details,
+          episodeAction: EpisodeAction.play,
+        ),
+        isTrue,
+      );
+    });
   });
 }

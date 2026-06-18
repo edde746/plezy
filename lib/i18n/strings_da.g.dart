@@ -247,6 +247,9 @@ class _TranslationsSettingsDa extends TranslationsSettingsEn {
 	@override String get continueWatchingAction => 'Handling for Fortsæt med at se';
 	@override String get continueWatchingPlay => 'Afspil';
 	@override String get continueWatchingDetails => 'Åbn detaljer';
+	@override String get episodeAction => 'Handling for afsnit';
+	@override String get episodePlay => 'Afspil';
+	@override String get episodeDetails => 'Åbn detaljer';
 	@override String get useGlobalHubs => 'Brug startlayout';
 	@override String get useGlobalHubsDescription => 'Vis samlet startsideindhold. Brug ellers biblioteksanbefalinger.';
 	@override String get showServerNameOnHubs => 'Vis servernavn på hubbe';
@@ -2029,6 +2032,9 @@ extension on TranslationsDa {
 			'settings.continueWatchingAction' => 'Handling for Fortsæt med at se',
 			'settings.continueWatchingPlay' => 'Afspil',
 			'settings.continueWatchingDetails' => 'Åbn detaljer',
+			'settings.episodeAction' => 'Handling for afsnit',
+			'settings.episodePlay' => 'Afspil',
+			'settings.episodeDetails' => 'Åbn detaljer',
 			'settings.useGlobalHubs' => 'Brug startlayout',
 			'settings.useGlobalHubsDescription' => 'Vis samlet startsideindhold. Brug ellers biblioteksanbefalinger.',
 			'settings.showServerNameOnHubs' => 'Vis servernavn på hubbe',
@@ -2430,11 +2436,11 @@ extension on TranslationsDa {
 			'messages.logsUploaded' => 'Logs uploadet',
 			'messages.logsUploadFailed' => 'Kunne ikke uploade logs',
 			'messages.logId' => 'Log-ID',
+			_ => null,
+		} ?? switch (path) {
 			'subtitlingStyling.text' => 'Tekst',
 			'subtitlingStyling.border' => 'Kant',
 			'subtitlingStyling.background' => 'Baggrund',
-			_ => null,
-		} ?? switch (path) {
 			'subtitlingStyling.fontSize' => 'Skriftstørrelse',
 			'subtitlingStyling.textColor' => 'Tekstfarve',
 			'subtitlingStyling.borderSize' => 'Kantstørrelse',
@@ -2944,11 +2950,11 @@ extension on TranslationsDa {
 			'companionRemote.remote.disconnectConfirm' => 'Vil du afbryde fra fjernsessionen?',
 			'companionRemote.remote.reconnecting' => 'Genopretter forbindelse...',
 			'companionRemote.remote.attemptOf' => ({required Object current}) => 'Forsøg ${current} af 5',
+			_ => null,
+		} ?? switch (path) {
 			'companionRemote.remote.retryNow' => 'Prøv igen nu',
 			'companionRemote.remote.tabRemote' => 'Fjernbetjening',
 			'companionRemote.remote.tabPlay' => 'Afspil',
-			_ => null,
-		} ?? switch (path) {
 			'companionRemote.remote.tabMore' => 'Mere',
 			'companionRemote.remote.menu' => 'Menu',
 			'companionRemote.remote.tabNavigation' => 'Fanenavigation',

@@ -38,6 +38,8 @@ enum EpisodePosterMode { seriesPoster, seasonPoster, episodeThumbnail }
 
 enum ContinueWatchingAction { play, details }
 
+enum EpisodeAction { play, details }
+
 enum SubAssOverride { no, yes, scale, force, strip }
 
 /// Resolution ASS/image subtitles are rasterized at on the avfoundation VO
@@ -458,6 +460,11 @@ class SettingsService extends BaseSharedPreferencesService {
     values: ContinueWatchingAction.values,
     defaultValue: ContinueWatchingAction.play,
   );
+  static const episodeAction = EnumPref<EpisodeAction>(
+    'episode_action',
+    values: EpisodeAction.values,
+    defaultValue: EpisodeAction.play,
+  );
   static const mpvConfigText = _MpvConfigTextPref();
 
   static final keyboardShortcuts = JsonPref<Map<String, String>>(
@@ -755,6 +762,7 @@ class SettingsService extends BaseSharedPreferencesService {
     viewMode,
     showHeroSection,
     continueWatchingAction,
+    episodeAction,
     seekTimeSmall,
     seekTimeLarge,
     sleepTimerDuration,

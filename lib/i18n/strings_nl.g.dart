@@ -247,6 +247,9 @@ class _TranslationsSettingsNl extends TranslationsSettingsEn {
 	@override String get continueWatchingAction => 'Actie voor Doorgaan met kijken';
 	@override String get continueWatchingPlay => 'Afspelen';
 	@override String get continueWatchingDetails => 'Details openen';
+	@override String get episodeAction => 'Afleveringsactie';
+	@override String get episodePlay => 'Afspelen';
+	@override String get episodeDetails => 'Details openen';
 	@override String get useGlobalHubs => 'Startlayout gebruiken';
 	@override String get useGlobalHubsDescription => 'Toon gecombineerde home-hubs. Anders bibliotheekaanbevelingen gebruiken.';
 	@override String get showServerNameOnHubs => 'Servernaam tonen bij hubs';
@@ -2029,6 +2032,9 @@ extension on TranslationsNl {
 			'settings.continueWatchingAction' => 'Actie voor Doorgaan met kijken',
 			'settings.continueWatchingPlay' => 'Afspelen',
 			'settings.continueWatchingDetails' => 'Details openen',
+			'settings.episodeAction' => 'Afleveringsactie',
+			'settings.episodePlay' => 'Afspelen',
+			'settings.episodeDetails' => 'Details openen',
 			'settings.useGlobalHubs' => 'Startlayout gebruiken',
 			'settings.useGlobalHubsDescription' => 'Toon gecombineerde home-hubs. Anders bibliotheekaanbevelingen gebruiken.',
 			'settings.showServerNameOnHubs' => 'Servernaam tonen bij hubs',
@@ -2430,11 +2436,11 @@ extension on TranslationsNl {
 			'messages.logsUploaded' => 'Logs geüpload',
 			'messages.logsUploadFailed' => 'Uploaden van logs mislukt',
 			'messages.logId' => 'Log-ID',
+			_ => null,
+		} ?? switch (path) {
 			'subtitlingStyling.text' => 'Tekst',
 			'subtitlingStyling.border' => 'Rand',
 			'subtitlingStyling.background' => 'Achtergrond',
-			_ => null,
-		} ?? switch (path) {
 			'subtitlingStyling.fontSize' => 'Lettergrootte',
 			'subtitlingStyling.textColor' => 'Tekstkleur',
 			'subtitlingStyling.borderSize' => 'Rand grootte',
@@ -2944,11 +2950,11 @@ extension on TranslationsNl {
 			'companionRemote.remote.disconnectConfirm' => 'Wil je de verbinding met de externe sessie verbreken?',
 			'companionRemote.remote.reconnecting' => 'Opnieuw verbinden...',
 			'companionRemote.remote.attemptOf' => ({required Object current}) => 'Poging ${current} van 5',
+			_ => null,
+		} ?? switch (path) {
 			'companionRemote.remote.retryNow' => 'Nu opnieuw proberen',
 			'companionRemote.remote.tabRemote' => 'Afstandsbediening',
 			'companionRemote.remote.tabPlay' => 'Afspelen',
-			_ => null,
-		} ?? switch (path) {
 			'companionRemote.remote.tabMore' => 'Meer',
 			'companionRemote.remote.menu' => 'Menu',
 			'companionRemote.remote.tabNavigation' => 'Tabnavigatie',

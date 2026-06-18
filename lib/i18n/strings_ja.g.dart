@@ -247,6 +247,9 @@ class _TranslationsSettingsJa extends TranslationsSettingsEn {
 	@override String get continueWatchingAction => '視聴中の操作';
 	@override String get continueWatchingPlay => '再生';
 	@override String get continueWatchingDetails => '詳細を開く';
+	@override String get episodeAction => 'エピソードの操作';
+	@override String get episodePlay => '再生';
+	@override String get episodeDetails => '詳細を開く';
 	@override String get useGlobalHubs => 'ホームレイアウトを使用';
 	@override String get useGlobalHubsDescription => '統合ホームハブを表示します。オフの場合はライブラリのおすすめを使用します。';
 	@override String get showServerNameOnHubs => 'ハブにサーバー名を表示';
@@ -2029,6 +2032,9 @@ extension on TranslationsJa {
 			'settings.continueWatchingAction' => '視聴中の操作',
 			'settings.continueWatchingPlay' => '再生',
 			'settings.continueWatchingDetails' => '詳細を開く',
+			'settings.episodeAction' => 'エピソードの操作',
+			'settings.episodePlay' => '再生',
+			'settings.episodeDetails' => '詳細を開く',
 			'settings.useGlobalHubs' => 'ホームレイアウトを使用',
 			'settings.useGlobalHubsDescription' => '統合ホームハブを表示します。オフの場合はライブラリのおすすめを使用します。',
 			'settings.showServerNameOnHubs' => 'ハブにサーバー名を表示',
@@ -2430,11 +2436,11 @@ extension on TranslationsJa {
 			'messages.logsUploaded' => 'ログをアップロードしました',
 			'messages.logsUploadFailed' => 'ログのアップロードに失敗しました',
 			'messages.logId' => 'ログID',
+			_ => null,
+		} ?? switch (path) {
 			'subtitlingStyling.text' => 'テキスト',
 			'subtitlingStyling.border' => '枠線',
 			'subtitlingStyling.background' => '背景',
-			_ => null,
-		} ?? switch (path) {
 			'subtitlingStyling.fontSize' => 'フォントサイズ',
 			'subtitlingStyling.textColor' => 'テキストの色',
 			'subtitlingStyling.borderSize' => '枠線サイズ',
@@ -2944,11 +2950,11 @@ extension on TranslationsJa {
 			'companionRemote.remote.disconnectConfirm' => 'リモートセッションから切断しますか？',
 			'companionRemote.remote.reconnecting' => '再接続中...',
 			'companionRemote.remote.attemptOf' => ({required Object current}) => '試行 ${current}/5',
+			_ => null,
+		} ?? switch (path) {
 			'companionRemote.remote.retryNow' => '今すぐ再試行',
 			'companionRemote.remote.tabRemote' => 'リモート',
 			'companionRemote.remote.tabPlay' => '再生',
-			_ => null,
-		} ?? switch (path) {
 			'companionRemote.remote.tabMore' => 'その他',
 			'companionRemote.remote.menu' => 'メニュー',
 			'companionRemote.remote.tabNavigation' => 'タブナビゲーション',

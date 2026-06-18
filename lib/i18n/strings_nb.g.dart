@@ -247,6 +247,9 @@ class _TranslationsSettingsNb extends TranslationsSettingsEn {
 	@override String get continueWatchingAction => 'Handling for Fortsett å se';
 	@override String get continueWatchingPlay => 'Spill av';
 	@override String get continueWatchingDetails => 'Åpne detaljer';
+	@override String get episodeAction => 'Handling for episoder';
+	@override String get episodePlay => 'Spill av';
+	@override String get episodeDetails => 'Åpne detaljer';
 	@override String get useGlobalHubs => 'Bruk startoppsett';
 	@override String get useGlobalHubsDescription => 'Vis samlet startinnhold. Ellers brukes bibliotekanbefalinger.';
 	@override String get showServerNameOnHubs => 'Vis servernavn på huber';
@@ -2029,6 +2032,9 @@ extension on TranslationsNb {
 			'settings.continueWatchingAction' => 'Handling for Fortsett å se',
 			'settings.continueWatchingPlay' => 'Spill av',
 			'settings.continueWatchingDetails' => 'Åpne detaljer',
+			'settings.episodeAction' => 'Handling for episoder',
+			'settings.episodePlay' => 'Spill av',
+			'settings.episodeDetails' => 'Åpne detaljer',
 			'settings.useGlobalHubs' => 'Bruk startoppsett',
 			'settings.useGlobalHubsDescription' => 'Vis samlet startinnhold. Ellers brukes bibliotekanbefalinger.',
 			'settings.showServerNameOnHubs' => 'Vis servernavn på huber',
@@ -2430,11 +2436,11 @@ extension on TranslationsNb {
 			'messages.logsUploaded' => 'Logger lastet opp',
 			'messages.logsUploadFailed' => 'Kunne ikke laste opp logger',
 			'messages.logId' => 'Logg-ID',
+			_ => null,
+		} ?? switch (path) {
 			'subtitlingStyling.text' => 'Tekst',
 			'subtitlingStyling.border' => 'Kantlinje',
 			'subtitlingStyling.background' => 'Bakgrunn',
-			_ => null,
-		} ?? switch (path) {
 			'subtitlingStyling.fontSize' => 'Skriftstørrelse',
 			'subtitlingStyling.textColor' => 'Tekstfarge',
 			'subtitlingStyling.borderSize' => 'Kantstørrelse',
@@ -2944,11 +2950,11 @@ extension on TranslationsNb {
 			'companionRemote.remote.disconnectConfirm' => 'Vil du koble fra fjernøkten?',
 			'companionRemote.remote.reconnecting' => 'Kobler til på nytt...',
 			'companionRemote.remote.attemptOf' => ({required Object current}) => 'Forsøk ${current} av 5',
+			_ => null,
+		} ?? switch (path) {
 			'companionRemote.remote.retryNow' => 'Prøv nå',
 			'companionRemote.remote.tabRemote' => 'Fjernkontroll',
 			'companionRemote.remote.tabPlay' => 'Spill av',
-			_ => null,
-		} ?? switch (path) {
 			'companionRemote.remote.tabMore' => 'Mer',
 			'companionRemote.remote.menu' => 'Meny',
 			'companionRemote.remote.tabNavigation' => 'Fanenavigering',

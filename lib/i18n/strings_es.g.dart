@@ -247,6 +247,9 @@ class _TranslationsSettingsEs extends TranslationsSettingsEn {
 	@override String get continueWatchingAction => 'Acción de Seguir viendo';
 	@override String get continueWatchingPlay => 'Reproducir';
 	@override String get continueWatchingDetails => 'Abrir detalles';
+	@override String get episodeAction => 'Acción de episodio';
+	@override String get episodePlay => 'Reproducir';
+	@override String get episodeDetails => 'Abrir detalles';
 	@override String get useGlobalHubs => 'Usar diseño de inicio';
 	@override String get useGlobalHubsDescription => 'Mostrar hubs de inicio unificados. Si no, usar recomendaciones de biblioteca.';
 	@override String get showServerNameOnHubs => 'Mostrar Nombre del Servidor en los Hubs';
@@ -2029,6 +2032,9 @@ extension on TranslationsEs {
 			'settings.continueWatchingAction' => 'Acción de Seguir viendo',
 			'settings.continueWatchingPlay' => 'Reproducir',
 			'settings.continueWatchingDetails' => 'Abrir detalles',
+			'settings.episodeAction' => 'Acción de episodio',
+			'settings.episodePlay' => 'Reproducir',
+			'settings.episodeDetails' => 'Abrir detalles',
 			'settings.useGlobalHubs' => 'Usar diseño de inicio',
 			'settings.useGlobalHubsDescription' => 'Mostrar hubs de inicio unificados. Si no, usar recomendaciones de biblioteca.',
 			'settings.showServerNameOnHubs' => 'Mostrar Nombre del Servidor en los Hubs',
@@ -2430,11 +2436,11 @@ extension on TranslationsEs {
 			'messages.logsUploaded' => 'Registros subidos',
 			'messages.logsUploadFailed' => 'Error al subir registros',
 			'messages.logId' => 'ID de registro',
+			_ => null,
+		} ?? switch (path) {
 			'subtitlingStyling.text' => 'Texto',
 			'subtitlingStyling.border' => 'Borde',
 			'subtitlingStyling.background' => 'Fondo',
-			_ => null,
-		} ?? switch (path) {
 			'subtitlingStyling.fontSize' => 'Tamaño de Fuente',
 			'subtitlingStyling.textColor' => 'Color de Texto',
 			'subtitlingStyling.borderSize' => 'Tamaño de Borde',
@@ -2944,11 +2950,11 @@ extension on TranslationsEs {
 			'companionRemote.remote.disconnectConfirm' => '¿Quieres desconectarte de la sesión remota?',
 			'companionRemote.remote.reconnecting' => 'Reconectando...',
 			'companionRemote.remote.attemptOf' => ({required Object current}) => 'Intento ${current} de 5',
+			_ => null,
+		} ?? switch (path) {
 			'companionRemote.remote.retryNow' => 'Reintentar ahora',
 			'companionRemote.remote.tabRemote' => 'Remoto',
 			'companionRemote.remote.tabPlay' => 'Reproducir',
-			_ => null,
-		} ?? switch (path) {
 			'companionRemote.remote.tabMore' => 'Más',
 			'companionRemote.remote.menu' => 'Menú',
 			'companionRemote.remote.tabNavigation' => 'Navegación por pestañas',

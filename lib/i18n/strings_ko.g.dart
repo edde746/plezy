@@ -247,6 +247,9 @@ class _TranslationsSettingsKo extends TranslationsSettingsEn {
 	@override String get continueWatchingAction => '계속 보기 동작';
 	@override String get continueWatchingPlay => '재생';
 	@override String get continueWatchingDetails => '상세 정보 열기';
+	@override String get episodeAction => '에피소드 동작';
+	@override String get episodePlay => '재생';
+	@override String get episodeDetails => '상세 정보 열기';
 	@override String get useGlobalHubs => '홈 레이아웃 사용';
 	@override String get useGlobalHubsDescription => '통합 홈 허브를 표시합니다. 끄면 라이브러리 추천을 사용합니다.';
 	@override String get showServerNameOnHubs => '허브에 서버 이름 표시';
@@ -2029,6 +2032,9 @@ extension on TranslationsKo {
 			'settings.continueWatchingAction' => '계속 보기 동작',
 			'settings.continueWatchingPlay' => '재생',
 			'settings.continueWatchingDetails' => '상세 정보 열기',
+			'settings.episodeAction' => '에피소드 동작',
+			'settings.episodePlay' => '재생',
+			'settings.episodeDetails' => '상세 정보 열기',
 			'settings.useGlobalHubs' => '홈 레이아웃 사용',
 			'settings.useGlobalHubsDescription' => '통합 홈 허브를 표시합니다. 끄면 라이브러리 추천을 사용합니다.',
 			'settings.showServerNameOnHubs' => '허브에 서버 이름 표시',
@@ -2430,11 +2436,11 @@ extension on TranslationsKo {
 			'messages.logsUploaded' => '로그 업로드 완료',
 			'messages.logsUploadFailed' => '로그 업로드 실패',
 			'messages.logId' => '로그 ID',
+			_ => null,
+		} ?? switch (path) {
 			'subtitlingStyling.text' => '텍스트',
 			'subtitlingStyling.border' => '테두리',
 			'subtitlingStyling.background' => '배경',
-			_ => null,
-		} ?? switch (path) {
 			'subtitlingStyling.fontSize' => '글자 크기',
 			'subtitlingStyling.textColor' => '텍스트 색상',
 			'subtitlingStyling.borderSize' => '테두리 크기',
@@ -2944,11 +2950,11 @@ extension on TranslationsKo {
 			'companionRemote.remote.disconnectConfirm' => '원격 세션 연결을 해제하시겠습니까?',
 			'companionRemote.remote.reconnecting' => '재연결 중...',
 			'companionRemote.remote.attemptOf' => ({required Object current}) => '${current}/5 시도 중',
+			_ => null,
+		} ?? switch (path) {
 			'companionRemote.remote.retryNow' => '지금 재시도',
 			'companionRemote.remote.tabRemote' => '리모컨',
 			'companionRemote.remote.tabPlay' => '재생',
-			_ => null,
-		} ?? switch (path) {
 			'companionRemote.remote.tabMore' => '더 보기',
 			'companionRemote.remote.menu' => '메뉴',
 			'companionRemote.remote.tabNavigation' => '탭 탐색',

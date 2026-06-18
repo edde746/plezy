@@ -247,6 +247,9 @@ class _TranslationsSettingsSv extends TranslationsSettingsEn {
 	@override String get continueWatchingAction => 'Åtgärd för Fortsätt titta';
 	@override String get continueWatchingPlay => 'Spela';
 	@override String get continueWatchingDetails => 'Öppna detaljer';
+	@override String get episodeAction => 'Åtgärd för avsnitt';
+	@override String get episodePlay => 'Spela';
+	@override String get episodeDetails => 'Öppna detaljer';
 	@override String get useGlobalHubs => 'Använd startlayout';
 	@override String get useGlobalHubsDescription => 'Visa enhetliga startsideshubbar. Annars används biblioteksrekommendationer.';
 	@override String get showServerNameOnHubs => 'Visa servernamn på hubbar';
@@ -2029,6 +2032,9 @@ extension on TranslationsSv {
 			'settings.continueWatchingAction' => 'Åtgärd för Fortsätt titta',
 			'settings.continueWatchingPlay' => 'Spela',
 			'settings.continueWatchingDetails' => 'Öppna detaljer',
+			'settings.episodeAction' => 'Åtgärd för avsnitt',
+			'settings.episodePlay' => 'Spela',
+			'settings.episodeDetails' => 'Öppna detaljer',
 			'settings.useGlobalHubs' => 'Använd startlayout',
 			'settings.useGlobalHubsDescription' => 'Visa enhetliga startsideshubbar. Annars används biblioteksrekommendationer.',
 			'settings.showServerNameOnHubs' => 'Visa servernamn på hubbar',
@@ -2430,11 +2436,11 @@ extension on TranslationsSv {
 			'messages.logsUploaded' => 'Loggar uppladdade',
 			'messages.logsUploadFailed' => 'Uppladdning av loggar misslyckades',
 			'messages.logId' => 'Logg-ID',
+			_ => null,
+		} ?? switch (path) {
 			'subtitlingStyling.text' => 'Text',
 			'subtitlingStyling.border' => 'Kantlinje',
 			'subtitlingStyling.background' => 'Bakgrund',
-			_ => null,
-		} ?? switch (path) {
 			'subtitlingStyling.fontSize' => 'Teckenstorlek',
 			'subtitlingStyling.textColor' => 'Textfärg',
 			'subtitlingStyling.borderSize' => 'Kantstorlek',
@@ -2944,11 +2950,11 @@ extension on TranslationsSv {
 			'companionRemote.remote.disconnectConfirm' => 'Vill du koppla från fjärrsessionen?',
 			'companionRemote.remote.reconnecting' => 'Återansluter...',
 			'companionRemote.remote.attemptOf' => ({required Object current}) => 'Försök ${current} av 5',
+			_ => null,
+		} ?? switch (path) {
 			'companionRemote.remote.retryNow' => 'Försök nu',
 			'companionRemote.remote.tabRemote' => 'Fjärrkontroll',
 			'companionRemote.remote.tabPlay' => 'Spela',
-			_ => null,
-		} ?? switch (path) {
 			'companionRemote.remote.tabMore' => 'Mer',
 			'companionRemote.remote.menu' => 'Meny',
 			'companionRemote.remote.tabNavigation' => 'Fliknavigering',

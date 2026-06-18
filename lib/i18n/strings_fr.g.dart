@@ -247,6 +247,9 @@ class _TranslationsSettingsFr extends TranslationsSettingsEn {
 	@override String get continueWatchingAction => 'Action Continuer à regarder';
 	@override String get continueWatchingPlay => 'Lire';
 	@override String get continueWatchingDetails => 'Ouvrir les détails';
+	@override String get episodeAction => 'Action des épisodes';
+	@override String get episodePlay => 'Lire';
+	@override String get episodeDetails => 'Ouvrir les détails';
 	@override String get useGlobalHubs => 'Utiliser la mise en page d\'accueil';
 	@override String get useGlobalHubsDescription => 'Afficher des hubs d\'accueil unifiés. Sinon, utiliser les recommandations de bibliothèque.';
 	@override String get showServerNameOnHubs => 'Afficher le nom du serveur sur les hubs';
@@ -2029,6 +2032,9 @@ extension on TranslationsFr {
 			'settings.continueWatchingAction' => 'Action Continuer à regarder',
 			'settings.continueWatchingPlay' => 'Lire',
 			'settings.continueWatchingDetails' => 'Ouvrir les détails',
+			'settings.episodeAction' => 'Action des épisodes',
+			'settings.episodePlay' => 'Lire',
+			'settings.episodeDetails' => 'Ouvrir les détails',
 			'settings.useGlobalHubs' => 'Utiliser la mise en page d\'accueil',
 			'settings.useGlobalHubsDescription' => 'Afficher des hubs d\'accueil unifiés. Sinon, utiliser les recommandations de bibliothèque.',
 			'settings.showServerNameOnHubs' => 'Afficher le nom du serveur sur les hubs',
@@ -2430,11 +2436,11 @@ extension on TranslationsFr {
 			'messages.logsUploaded' => 'Logs envoyés',
 			'messages.logsUploadFailed' => 'Échec de l\'envoi des logs',
 			'messages.logId' => 'ID du log',
+			_ => null,
+		} ?? switch (path) {
 			'subtitlingStyling.text' => 'Texte',
 			'subtitlingStyling.border' => 'Bordure',
 			'subtitlingStyling.background' => 'Arrière-plan',
-			_ => null,
-		} ?? switch (path) {
 			'subtitlingStyling.fontSize' => 'Taille de la police',
 			'subtitlingStyling.textColor' => 'Couleur du texte',
 			'subtitlingStyling.borderSize' => 'Taille de la bordure',
@@ -2944,11 +2950,11 @@ extension on TranslationsFr {
 			'companionRemote.remote.disconnectConfirm' => 'Voulez-vous vous déconnecter de la session distante ?',
 			'companionRemote.remote.reconnecting' => 'Reconnexion...',
 			'companionRemote.remote.attemptOf' => ({required Object current}) => 'Tentative ${current} sur 5',
+			_ => null,
+		} ?? switch (path) {
 			'companionRemote.remote.retryNow' => 'Réessayer maintenant',
 			'companionRemote.remote.tabRemote' => 'Télécommande',
 			'companionRemote.remote.tabPlay' => 'Lecture',
-			_ => null,
-		} ?? switch (path) {
 			'companionRemote.remote.tabMore' => 'Plus',
 			'companionRemote.remote.menu' => 'Menu',
 			'companionRemote.remote.tabNavigation' => 'Navigation par onglets',

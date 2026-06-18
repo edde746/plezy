@@ -247,6 +247,9 @@ class _TranslationsSettingsPt extends TranslationsSettingsEn {
 	@override String get continueWatchingAction => 'Ação de Continuar Assistindo';
 	@override String get continueWatchingPlay => 'Reproduzir';
 	@override String get continueWatchingDetails => 'Abrir detalhes';
+	@override String get episodeAction => 'Ação de Episódio';
+	@override String get episodePlay => 'Reproduzir';
+	@override String get episodeDetails => 'Abrir detalhes';
 	@override String get useGlobalHubs => 'Usar layout inicial';
 	@override String get useGlobalHubsDescription => 'Mostrar hubs iniciais unificados. Caso contrário, usar recomendações da biblioteca.';
 	@override String get showServerNameOnHubs => 'Mostrar Nome do Servidor nos Hubs';
@@ -2029,6 +2032,9 @@ extension on TranslationsPt {
 			'settings.continueWatchingAction' => 'Ação de Continuar Assistindo',
 			'settings.continueWatchingPlay' => 'Reproduzir',
 			'settings.continueWatchingDetails' => 'Abrir detalhes',
+			'settings.episodeAction' => 'Ação de Episódio',
+			'settings.episodePlay' => 'Reproduzir',
+			'settings.episodeDetails' => 'Abrir detalhes',
 			'settings.useGlobalHubs' => 'Usar layout inicial',
 			'settings.useGlobalHubsDescription' => 'Mostrar hubs iniciais unificados. Caso contrário, usar recomendações da biblioteca.',
 			'settings.showServerNameOnHubs' => 'Mostrar Nome do Servidor nos Hubs',
@@ -2430,11 +2436,11 @@ extension on TranslationsPt {
 			'messages.logsUploaded' => 'Logs enviados',
 			'messages.logsUploadFailed' => 'Falha ao enviar logs',
 			'messages.logId' => 'ID do Log',
+			_ => null,
+		} ?? switch (path) {
 			'subtitlingStyling.text' => 'Texto',
 			'subtitlingStyling.border' => 'Borda',
 			'subtitlingStyling.background' => 'Fundo',
-			_ => null,
-		} ?? switch (path) {
 			'subtitlingStyling.fontSize' => 'Tamanho da Fonte',
 			'subtitlingStyling.textColor' => 'Cor do Texto',
 			'subtitlingStyling.borderSize' => 'Tamanho da Borda',
@@ -2944,11 +2950,11 @@ extension on TranslationsPt {
 			'companionRemote.remote.disconnectConfirm' => 'Deseja desconectar da sessão remota?',
 			'companionRemote.remote.reconnecting' => 'Reconectando...',
 			'companionRemote.remote.attemptOf' => ({required Object current}) => 'Tentativa ${current} de 5',
+			_ => null,
+		} ?? switch (path) {
 			'companionRemote.remote.retryNow' => 'Tentar Agora',
 			'companionRemote.remote.tabRemote' => 'Remoto',
 			'companionRemote.remote.tabPlay' => 'Reproduzir',
-			_ => null,
-		} ?? switch (path) {
 			'companionRemote.remote.tabMore' => 'Mais',
 			'companionRemote.remote.menu' => 'Menu',
 			'companionRemote.remote.tabNavigation' => 'Navegação',

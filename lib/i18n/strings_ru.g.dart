@@ -247,6 +247,9 @@ class _TranslationsSettingsRu extends TranslationsSettingsEn {
 	@override String get continueWatchingAction => 'Действие для «Продолжить просмотр»';
 	@override String get continueWatchingPlay => 'Воспроизвести';
 	@override String get continueWatchingDetails => 'Открыть сведения';
+	@override String get episodeAction => 'Действие для эпизодов';
+	@override String get episodePlay => 'Воспроизвести';
+	@override String get episodeDetails => 'Открыть сведения';
 	@override String get useGlobalHubs => 'Использовать макет главной';
 	@override String get useGlobalHubsDescription => 'Показывать единые разделы главной. Иначе использовать рекомендации библиотек.';
 	@override String get showServerNameOnHubs => 'Показывать имя сервера в хабах';
@@ -2029,6 +2032,9 @@ extension on TranslationsRu {
 			'settings.continueWatchingAction' => 'Действие для «Продолжить просмотр»',
 			'settings.continueWatchingPlay' => 'Воспроизвести',
 			'settings.continueWatchingDetails' => 'Открыть сведения',
+			'settings.episodeAction' => 'Действие для эпизодов',
+			'settings.episodePlay' => 'Воспроизвести',
+			'settings.episodeDetails' => 'Открыть сведения',
 			'settings.useGlobalHubs' => 'Использовать макет главной',
 			'settings.useGlobalHubsDescription' => 'Показывать единые разделы главной. Иначе использовать рекомендации библиотек.',
 			'settings.showServerNameOnHubs' => 'Показывать имя сервера в хабах',
@@ -2430,11 +2436,11 @@ extension on TranslationsRu {
 			'messages.logsUploaded' => 'Логи загружены',
 			'messages.logsUploadFailed' => 'Не удалось загрузить логи',
 			'messages.logId' => 'ID лога',
+			_ => null,
+		} ?? switch (path) {
 			'subtitlingStyling.text' => 'Текст',
 			'subtitlingStyling.border' => 'Обводка',
 			'subtitlingStyling.background' => 'Фон',
-			_ => null,
-		} ?? switch (path) {
 			'subtitlingStyling.fontSize' => 'Размер шрифта',
 			'subtitlingStyling.textColor' => 'Цвет текста',
 			'subtitlingStyling.borderSize' => 'Размер обводки',
@@ -2944,11 +2950,11 @@ extension on TranslationsRu {
 			'companionRemote.remote.disconnectConfirm' => 'Отключиться от удалённой сессии?',
 			'companionRemote.remote.reconnecting' => 'Переподключение...',
 			'companionRemote.remote.attemptOf' => ({required Object current}) => 'Попытка ${current} из 5',
+			_ => null,
+		} ?? switch (path) {
 			'companionRemote.remote.retryNow' => 'Повторить сейчас',
 			'companionRemote.remote.tabRemote' => 'Пульт',
 			'companionRemote.remote.tabPlay' => 'Воспроизведение',
-			_ => null,
-		} ?? switch (path) {
 			'companionRemote.remote.tabMore' => 'Ещё',
 			'companionRemote.remote.menu' => 'Меню',
 			'companionRemote.remote.tabNavigation' => 'Навигация',
