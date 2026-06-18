@@ -371,7 +371,7 @@ extension _PlexVideoControlsPlaybackInputMethods on _PlexVideoControlsState {
     _edgeAdjustmentStartValue = null;
     _lastEdgeAdjustmentWriteAt = null;
     _lastEdgeAdjustmentWriteValue = null;
-    _restartHideTimerIfPlaying();
+    _restartHideTimerForCurrentPlaybackState();
     _edgeAdjustmentIndicatorHideTimer?.cancel();
     _edgeAdjustmentIndicatorClearTimer?.cancel();
     if (_edgeAdjustmentIndicator.value.side == null) return;

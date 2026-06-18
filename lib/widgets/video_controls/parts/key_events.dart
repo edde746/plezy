@@ -108,7 +108,7 @@ extension _PlexVideoControlsKeyEventMethods on _PlexVideoControlsState {
               if (widget.chromeController.contentStripVisible) {
                 _desktopControlsKey.currentState?.dismissContentStrip();
                 widget.chromeController.setContentStripVisible(false);
-                _restartHideTimerIfPlaying();
+                _restartHideTimerForCurrentPlaybackState();
                 return;
               }
               _hideControls();
@@ -214,7 +214,7 @@ extension _PlexVideoControlsKeyEventMethods on _PlexVideoControlsState {
           if (widget.chromeController.contentStripVisible) {
             _desktopControlsKey.currentState?.dismissContentStrip();
             widget.chromeController.setContentStripVisible(false);
-            _restartHideTimerIfPlaying();
+            _restartHideTimerForCurrentPlaybackState();
             return;
           }
           _hideControls();
@@ -243,7 +243,7 @@ extension _PlexVideoControlsKeyEventMethods on _PlexVideoControlsState {
 
     // Reset hide timer on any keyboard/controller input when controls are visible.
     if (_showControls) {
-      _restartHideTimerIfPlaying();
+      _restartHideTimerForCurrentPlaybackState();
     }
 
     final key = event.logicalKey;

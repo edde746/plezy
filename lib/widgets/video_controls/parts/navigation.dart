@@ -11,7 +11,7 @@ extension _PlexVideoControlsNavigationMethods on _PlexVideoControlsState {
 
     return Listener(
       behavior: HitTestBehavior.translucent,
-      onPointerDown: (_) => _restartHideTimerIfPlaying(),
+      onPointerDown: (_) => _restartHideTimerForCurrentPlaybackState(),
       child: DesktopVideoControls(
         key: _desktopControlsKey,
         player: widget.player,
@@ -33,7 +33,7 @@ extension _PlexVideoControlsNavigationMethods on _PlexVideoControlsState {
         onSeekRequested: widget.onSeekRequested,
         getReplayIcon: getReplayIcon,
         getForwardIcon: getForwardIcon,
-        onFocusActivity: _restartHideTimerIfPlaying,
+        onFocusActivity: _restartHideTimerForCurrentPlaybackState,
         onHideControls: _hideControlsFromKeyboard,
         trackControlsState: trackControlsState,
         onBack: widget.onBack,

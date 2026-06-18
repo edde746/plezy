@@ -798,7 +798,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
                                           behavior: HitTestBehavior.translucent,
                                           onPointerDown: (_) {
                                             if (!widget.chromeController.contentStripVisible) {
-                                              _restartHideTimerIfPlaying();
+                                              _restartHideTimerForCurrentPlaybackState();
                                             }
                                           },
                                           child: Builder(
