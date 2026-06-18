@@ -774,7 +774,8 @@
       "studio": "Studio",
       "random": "Willekeurig",
       "dateShared": "Gedeeld op",
-      "latestEpisodeAirDate": "Laatste afleveringsuitzending"
+      "latestEpisodeAirDate": "Laatste afleveringsuitzending",
+      "lastEpisodeDateAdded": "Datum laatst toegevoegde aflevering"
     }
   },
   "about": {

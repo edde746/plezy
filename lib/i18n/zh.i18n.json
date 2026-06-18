@@ -774,7 +774,8 @@
       "studio": "工作室",
       "random": "随机",
       "dateShared": "共享日期",
-      "latestEpisodeAirDate": "最新一集播出日期"
+      "latestEpisodeAirDate": "最新一集播出日期",
+      "lastEpisodeDateAdded": "最新一集添加日期"
     }
   },
   "about": {

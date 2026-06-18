@@ -278,6 +278,7 @@ class JellyfinLibraryQueryTranslator implements LibraryQueryTranslator {
   static String _sortFieldFor(String neutral, MediaKind? kind) {
     return switch (neutral) {
       'addedAt' => 'DateCreated',
+      'episode.addedAt' => 'DateLastContentAdded,SortName',
       'dateCreated' => 'DateCreated',
       'originallyAvailableAt' => 'PremiereDate',
       'premiereDate' => 'PremiereDate',

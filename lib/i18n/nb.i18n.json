@@ -774,7 +774,8 @@
       "studio": "Studio",
       "random": "Tilfeldig",
       "dateShared": "Delingsdato",
-      "latestEpisodeAirDate": "Siste episodes sendedato"
+      "latestEpisodeAirDate": "Siste episodes sendedato",
+      "lastEpisodeDateAdded": "Dato for sist lagt til episode"
     }
   },
   "about": {

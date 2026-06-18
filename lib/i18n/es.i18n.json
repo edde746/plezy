@@ -774,7 +774,8 @@
       "studio": "Estudio",
       "random": "Aleatorio",
       "dateShared": "Fecha de compartición",
-      "latestEpisodeAirDate": "Última fecha de emisión del episodio"
+      "latestEpisodeAirDate": "Última fecha de emisión del episodio",
+      "lastEpisodeDateAdded": "Fecha de adición del último episodio"
     }
   },
   "about": {

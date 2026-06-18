@@ -774,7 +774,8 @@
       "studio": "Студия",
       "random": "Случайно",
       "dateShared": "Дата открытия доступа",
-      "latestEpisodeAirDate": "Дата выхода последнего эпизода"
+      "latestEpisodeAirDate": "Дата выхода последнего эпизода",
+      "lastEpisodeDateAdded": "Дата добавления последнего эпизода"
     }
   },
   "about": {

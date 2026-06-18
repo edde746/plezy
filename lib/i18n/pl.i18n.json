@@ -774,7 +774,8 @@
       "studio": "Studio",
       "random": "Losowo",
       "dateShared": "Data udostępnienia",
-      "latestEpisodeAirDate": "Data emisji ostatniego odcinka"
+      "latestEpisodeAirDate": "Data emisji ostatniego odcinka",
+      "lastEpisodeDateAdded": "Data dodania ostatniego odcinka"
     }
   },
   "about": {

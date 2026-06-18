@@ -774,7 +774,8 @@
       "studio": "スタジオ",
       "random": "ランダム",
       "dateShared": "共有日",
-      "latestEpisodeAirDate": "最新エピソード放送日"
+      "latestEpisodeAirDate": "最新エピソード放送日",
+      "lastEpisodeDateAdded": "最新エピソード追加日"
     }
   },
   "about": {

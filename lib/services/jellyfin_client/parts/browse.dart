@@ -272,7 +272,7 @@ mixin _JellyfinBrowseMethods on MediaServerCacheMixin {
   /// Jellyfin's `SortBy`/`SortOrder` at request time.
   @override
   Future<List<MediaSort>> fetchSortOptions(String libraryId, {String? libraryType}) async {
-    return [
+    final sorts = [
       MediaSort(key: 'title', descKey: 'title:desc', title: t.libraries.sortLabels.title, defaultDirection: 'asc'),
       MediaSort(
         key: 'rating',
@@ -343,6 +343,20 @@ mixin _JellyfinBrowseMethods on MediaServerCacheMixin {
       MediaSort(key: 'studio', descKey: 'studio:desc', title: t.libraries.sortLabels.studio, defaultDirection: 'asc'),
       MediaSort(key: 'random', title: t.libraries.sortLabels.random, defaultDirection: 'asc'),
     ];
+
+    if (libraryType?.toLowerCase() == 'show') {
+      sorts.insert(
+        4,
+        MediaSort(
+          key: 'episode.addedAt',
+          descKey: 'episode.addedAt:desc',
+          title: t.libraries.sortLabels.lastEpisodeDateAdded,
+          defaultDirection: 'desc',
+        ),
+      );
+    }
+
+    return sorts;
   }
 
   /// Jellyfin internalisation of the Plex-style filter map → [LibraryQuery]

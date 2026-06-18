@@ -774,7 +774,8 @@
       "studio": "스튜디오",
       "random": "무작위",
       "dateShared": "공유된 날짜",
-      "latestEpisodeAirDate": "최신 에피소드 방영일"
+      "latestEpisodeAirDate": "최신 에피소드 방영일",
+      "lastEpisodeDateAdded": "최신 에피소드 추가일"
     }
   },
   "about": {

@@ -774,7 +774,8 @@
       "studio": "Studio",
       "random": "Slumpmässigt",
       "dateShared": "Delningsdatum",
-      "latestEpisodeAirDate": "Senaste avsnittets sändningsdatum"
+      "latestEpisodeAirDate": "Senaste avsnittets sändningsdatum",
+      "lastEpisodeDateAdded": "Datum då senaste avsnittet lades till"
     }
   },
   "about": {

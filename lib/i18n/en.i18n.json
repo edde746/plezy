@@ -780,7 +780,8 @@
       "studio": "Studio",
       "random": "Random",
       "dateShared": "Date Shared",
-      "latestEpisodeAirDate": "Latest Episode Air Date"
+      "latestEpisodeAirDate": "Latest Episode Air Date",
+      "lastEpisodeDateAdded": "Last Episode Date Added"
     }
   },
   "about": {

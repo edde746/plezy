@@ -774,7 +774,8 @@
       "studio": "Studie",
       "random": "Tilfældig",
       "dateShared": "Delt dato",
-      "latestEpisodeAirDate": "Seneste episodes premieredato"
+      "latestEpisodeAirDate": "Seneste episodes premieredato",
+      "lastEpisodeDateAdded": "Dato for senest tilføjede episode"
     }
   },
   "about": {
