@@ -146,6 +146,7 @@ class _FakePlexClient implements PlexClient {
     required int time,
     required String state,
     int? duration,
+    String? sessionIdentifier,
     PlaybackReportMetadata report = const PlaybackReportMetadata.live(),
   }) async {
     if (throwOnNextCall != null) {
@@ -1025,6 +1026,7 @@ class _ScrobblePreciseClient implements PlexClient {
     required int time,
     required String state,
     int? duration,
+    String? sessionIdentifier,
     PlaybackReportMetadata report = const PlaybackReportMetadata.live(),
   }) async {}
 
