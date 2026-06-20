@@ -1633,12 +1633,19 @@ class PlexClient
     );
   }
 
-  /// Update playback progress
+  /// Update playback progress.
+  ///
+  /// [sessionIdentifier] is the playback's `X-Plex-Session-Identifier` — the
+  /// same value the (transcode) stream request carries. Sending it on the
+  /// timeline lets the server correlate this report with the active session,
+  /// so the dashboard reports the real stream decision (e.g. Transcode) instead
+  /// of falling back to a generic Direct Play / Original entry.
   Future<void> updateProgress(
     String ratingKey, {
     required int time,
     required String state, // 'playing', 'paused', 'stopped', 'buffering'
     int? duration,
+    String? sessionIdentifier,
     PlaybackReportMetadata report = const PlaybackReportMetadata.live(),
   }) async {
     final response = await _http.post(
@@ -1653,6 +1660,7 @@ class PlexClient
         if (report.recordedAt != null) 'updated': report.recordedAt!.millisecondsSinceEpoch ~/ 1000,
         if (report.willContinue != null) 'continuing': report.willContinue! ? 1 : 0,
       },
+      headers: {'X-Plex-Session-Identifier': ?sessionIdentifier},
     );
     // Surface non-2xx instead of swallowing — progress is the cornerstone
     // of resume/Continue Watching, so silent failures hurt the user later.
@@ -3425,6 +3433,7 @@ class PlexClient
             isTranscoding: true,
             activeAudioStreamId: resolvedAudioId,
             playMethod: 'Transcode',
+            playSessionId: options.sessionIdentifier,
             selectedMediaIndex: data.selectedMediaIndex,
           );
         }
@@ -3444,6 +3453,7 @@ class PlexClient
           isTranscoding: false,
           fallbackReason: fallbackReason,
           playMethod: 'DirectPlay',
+          playSessionId: options.sessionIdentifier,
           selectedMediaIndex: data.selectedMediaIndex,
         );
       }
@@ -3455,6 +3465,7 @@ class PlexClient
         externalSubtitles: _buildExternalSubtitles(data.mediaInfo),
         isOffline: false,
         playMethod: 'DirectPlay',
+        playSessionId: options.sessionIdentifier,
         selectedMediaIndex: data.selectedMediaIndex,
       );
     } catch (e) {
@@ -4089,7 +4100,13 @@ class PlexClient
     String? mediaSourceId,
     int? audioStreamIndex,
     int? subtitleStreamIndex,
-  }) => updateProgress(itemId, time: position.inMilliseconds, state: 'playing', duration: duration?.inMilliseconds);
+  }) => updateProgress(
+    itemId,
+    time: position.inMilliseconds,
+    state: 'playing',
+    duration: duration?.inMilliseconds,
+    sessionIdentifier: playSessionId,
+  );
 
   @override
   Future<void> reportPlaybackProgress({
@@ -4107,6 +4124,7 @@ class PlexClient
     time: position.inMilliseconds,
     state: isPaused ? 'paused' : 'playing',
     duration: duration.inMilliseconds,
+    sessionIdentifier: playSessionId,
   );
 
   @override
@@ -4122,6 +4140,7 @@ class PlexClient
     time: position.inMilliseconds,
     state: 'stopped',
     duration: duration?.inMilliseconds,
+    sessionIdentifier: playSessionId,
     report: report,
   );
 
