@@ -574,8 +574,8 @@ class MpvPlayerCoreBase: NSObject {
     #if os(macOS)
       setRawStringPropertyAsync("target-prim", value: enabled ? "auto" : "bt.709") { _ in }
       setRawStringPropertyAsync("target-trc", value: enabled ? "auto" : "bt.1886") { _ in }
-      setRawStringPropertyAsync("tone-mapping", value: enabled ? "clip" : "auto") { _ in }
-      setRawStringPropertyAsync("gamut-mapping-mode", value: enabled ? "clip" : "auto") { _ in }
+      setRawStringPropertyAsync("tone-mapping", value: "auto") { _ in }
+      setRawStringPropertyAsync("gamut-mapping-mode", value: "auto") { _ in }
     #endif
 
     DispatchQueue.main.async {

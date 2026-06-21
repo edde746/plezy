@@ -82,14 +82,6 @@ class MpvPlayerCore: MpvPlayerCoreBase {
   override func configurePlatformMpvOptions() {
     guard let mpv else { return }
     checkError(mpv_set_option_string(mpv, "ao", "avfoundation,coreaudio"))
-
-    let screen = window?.screen ?? NSScreen.main
-    let headroom = screen?.maximumPotentialExtendedDynamicRangeColorComponentValue ?? 1.0
-    if headroom > 1.0 {
-      let peakNits = Int(headroom * 80)
-      checkError(mpv_set_option_string(mpv, "target-peak", "\(peakNits)"))
-      print("[MpvPlayerCore] Display supports EDR with headroom \(headroom), setting target-peak=\(peakNits) nits")
-    }
   }
 
   func reattachMetalLayer() {
@@ -186,8 +178,29 @@ class MpvPlayerCore: MpvPlayerCoreBase {
   }
 
   override func updateEDRMode(sigPeak: Double) {
-    // macOS: mpv/gpu-next manages EDR on its own CAMetalLayer via
-    // target-colorspace-hint. No manual EDR toggle needed.
+    guard let metalLayer else { return }
+
+    let hdrEnabled = self.hdrEnabled
+    var potentialHeadroom: CGFloat = 1.0
+    if let screen = window?.screen ?? NSScreen.main {
+      potentialHeadroom = screen.maximumPotentialExtendedDynamicRangeColorComponentValue
+    }
+
+    let shouldEnableEDR = hdrEnabled && sigPeak > 1.0 && potentialHeadroom > 1.0
+    withoutLayerAnimations {
+      metalLayer.wantsExtendedDynamicRangeContent = shouldEnableEDR
+    }
+
+    if shouldEnableEDR {
+      let peakNits = Int(potentialHeadroom * 80)
+      setPropertyAsync("target-peak", value: "\(peakNits)") { _ in }
+    } else {
+      setPropertyAsync("target-peak", value: "auto") { _ in }
+    }
+
+    print(
+      "[MpvPlayerCore] EDR mode: \(shouldEnableEDR) (hdrEnabled: \(hdrEnabled), sigPeak: \(sigPeak), potentialHeadroom: \(potentialHeadroom))"
+    )
   }
 
   func dispose() {
