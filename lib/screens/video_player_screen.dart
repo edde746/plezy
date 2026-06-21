@@ -168,37 +168,24 @@ _PlaybackOpenTiming _playbackOpenTiming({
   );
 }
 
-/// Builds a [TrackPreferencePersister] that fans the language-preference +
-/// stream-selection writes out to a [PlexClient] resolved lazily on each
-/// call. Returns a no-op-on-null persister so the [TrackManager] doesn't
-/// have to import [PlexClient] itself; the resolver returning null (e.g.
-/// when the active server is Jellyfin) makes the call short-circuit.
+/// Builds a [TrackPreferencePersister] that writes the per-episode stream
+/// selection out to a [PlexClient] resolved lazily on each call. Returns a
+/// no-op-on-null persister so the [TrackManager] doesn't have to import
+/// [PlexClient] itself; the resolver returning null (e.g. when the active
+/// server is Jellyfin) makes the call short-circuit.
+///
+/// Only the current episode's part is touched — we deliberately do NOT write
+/// the show-wide audio/subtitle language default (#1393): an in-player track
+/// change should not silently rewrite the whole series' Plex prefs. The
+/// explicit path for that lives in the metadata-edit UI.
 TrackPreferencePersister _plexTrackPersister(PlexClient? Function() resolve) {
-  return ({
-    required String id,
-    required int partId,
-    required String trackType,
-    String? languageCode,
-    int? streamID,
-  }) async {
+  return ({required int partId, required String trackType, int? streamID}) async {
+    if (streamID == null) return;
     final client = resolve();
     if (client == null) return;
-    final futures = <Future>[];
-    if (languageCode != null && (trackType == 'subtitle' || languageCode.isNotEmpty)) {
-      futures.add(
-        trackType == 'audio'
-            ? client.setMetadataPreferences(id, audioLanguage: languageCode)
-            : client.setMetadataPreferences(id, subtitleLanguage: languageCode),
-      );
-    }
-    if (streamID != null) {
-      futures.add(
-        trackType == 'audio'
-            ? client.selectStreams(partId, audioStreamID: streamID, allParts: true)
-            : client.selectStreams(partId, subtitleStreamID: streamID, allParts: true),
-      );
-    }
-    await Future.wait(futures);
+    await (trackType == 'audio'
+        ? client.selectStreams(partId, audioStreamID: streamID, allParts: true)
+        : client.selectStreams(partId, subtitleStreamID: streamID, allParts: true));
   };
 }
 

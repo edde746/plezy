@@ -1198,29 +1198,6 @@ class PlexClient
     );
   }
 
-  /// Set per-media language preferences (audio and subtitle)
-  /// For TV shows, use grandparentRatingKey to set preference for the entire series
-  /// For movies, use the movie's ratingKey
-  Future<bool> setMetadataPreferences(String ratingKey, {String? audioLanguage, String? subtitleLanguage}) async {
-    final queryParams = <String, dynamic>{};
-    if (audioLanguage != null) {
-      queryParams['audioLanguage'] = audioLanguage;
-    }
-    if (subtitleLanguage != null) {
-      queryParams['subtitleLanguage'] = subtitleLanguage;
-    }
-
-    // If no preferences to set, return early
-    if (queryParams.isEmpty) {
-      return true;
-    }
-
-    return _wrapBoolApiCall(
-      () => _http.put('/library/metadata/$ratingKey/prefs', queryParameters: queryParams),
-      'Failed to set metadata preferences',
-    );
-  }
-
   /// Select specific audio and subtitle streams for playback
   /// This updates which streams are "selected" in the media metadata
   /// Uses the part ID from media info for accurate stream selection

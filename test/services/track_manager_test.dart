@@ -144,13 +144,7 @@ Future<void> _drainAsync() async {
   }
 }
 
-Future<void> _noopPersister({
-  required String id,
-  required int partId,
-  required String trackType,
-  String? languageCode,
-  int? streamID,
-}) async {}
+Future<void> _noopPersister({required int partId, required String trackType, int? streamID}) async {}
 
 void main() {
   // The constructor doesn't touch prefs, but [dispose] / [applyTrackSelection]
