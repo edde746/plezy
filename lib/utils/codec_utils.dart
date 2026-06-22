@@ -21,10 +21,14 @@ class CodecUtils {
       case 'mov_text':
         return 'srt';
       case 'pgs':
+      case 'pgssub':
       case 'hdmv_pgs_subtitle':
         return 'sup';
       case 'dvd_subtitle':
       case 'dvdsub':
+      case 'vobsub':
+      case 'dvb_sub':
+      case 'dvb_subtitle':
         return 'sub';
       default:
         return 'srt';
