@@ -88,6 +88,47 @@ void main() {
       p.dispose();
     });
 
+    test('explicit profile id stays isolated when active profile changes', () async {
+      final storage = await StorageService.getInstance();
+      await storage.saveHiddenLibrariesForProfile('owner', {'srv:movies'});
+      await storage.saveHiddenLibrariesForProfile('kids', {'srv:kids'});
+      await storage.setActiveProfileId('owner');
+
+      final ownerProvider = HiddenLibrariesProvider(storageService: storage, profileId: 'owner');
+      final kidsProvider = HiddenLibrariesProvider(storageService: storage, profileId: 'kids');
+
+      await storage.setActiveProfileId('kids');
+      await ownerProvider.refresh();
+      await kidsProvider.refresh();
+
+      expect(ownerProvider.hiddenLibraryKeys, {'srv:movies'});
+      expect(kidsProvider.hiddenLibraryKeys, {'srv:kids'});
+
+      await ownerProvider.hideLibrary('srv:documentaries');
+
+      expect(storage.getHiddenLibrariesForProfile('owner'), {'srv:movies', 'srv:documentaries'});
+      expect(storage.getHiddenLibrariesForProfile('kids'), {'srv:kids'});
+      expect(storage.getHiddenLibraries(), {'srv:kids'});
+
+      ownerProvider.dispose();
+      kidsProvider.dispose();
+    });
+
+    test('refresh marks provider initialized after deterministic reload', () async {
+      final storage = await StorageService.getInstance();
+      await storage.saveHiddenLibrariesForProfile('owner', {'srv:movies'});
+
+      final p = HiddenLibrariesProvider(storageService: storage, profileId: 'owner');
+      expect(p.isInitialized, isFalse);
+
+      await p.refresh();
+
+      expect(p.isInitialized, isTrue);
+      expect(p.hiddenLibraryKeys, {'srv:movies'});
+
+      p.dispose();
+    });
+
     test('hiddenLibraryKeys returns an unmodifiable view', () async {
       final p = HiddenLibrariesProvider();
       await p.ensureInitialized();

@@ -153,6 +153,19 @@ void main() {
       expect(s.getHiddenLibraries(), equals({'lib-a', 'lib-b'}));
     });
 
+    test('explicit profile helpers isolate hidden libraries from active profile changes', () async {
+      final s = await StorageService.getInstance();
+
+      await s.setActiveProfileId('owner');
+      await s.saveHiddenLibrariesForProfile('owner', {'srv:movies'});
+      await s.setActiveProfileId('kids');
+      await s.saveHiddenLibrariesForProfile('kids', {'srv:kids'});
+
+      expect(s.getHiddenLibrariesForProfile('owner'), {'srv:movies'});
+      expect(s.getHiddenLibrariesForProfile('kids'), {'srv:kids'});
+      expect(s.getHiddenLibraries(), {'srv:kids'});
+    });
+
     test('overwrite replaces previous set', () async {
       final s = await StorageService.getInstance();
       await s.saveHiddenLibraries({'lib-a', 'lib-b'});

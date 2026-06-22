@@ -113,7 +113,8 @@ class _ProfileSessionScreenState extends State<ProfileSessionScreen> {
                 },
               ),
               ChangeNotifierProvider(
-                create: (context) => HiddenLibrariesProvider(storageService: context.read<StorageService>()),
+                create: (context) =>
+                    HiddenLibrariesProvider(storageService: context.read<StorageService>(), profileId: activeId),
                 lazy: true,
               ),
               ChangeNotifierProvider(

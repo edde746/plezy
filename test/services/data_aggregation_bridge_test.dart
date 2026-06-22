@@ -171,6 +171,61 @@ void main() {
       expect(captured.single.queryParameters['count'], '21');
     });
 
+    test('getOnDeckFromAllServers filters hidden Plex continue-watching libraries', () async {
+      final client = PlexClient.forTesting(
+        config: PlexConfig(
+          baseUrl: 'https://plex.example.com',
+          token: 'token',
+          clientIdentifier: 'client-id',
+          product: 'Plezy',
+          version: 'test',
+        ),
+        serverId: ServerId('plex-1'),
+        serverName: 'Plex',
+        httpClient: MockClient((req) async {
+          if (req.url.path == '/hubs') {
+            return _json({
+              'MediaContainer': {
+                'Hub': [
+                  {
+                    'key': '/hubs/home/continueWatching',
+                    'title': 'Continue Watching',
+                    'type': 'mixed',
+                    'hubIdentifier': 'home.continue',
+                    'size': 2,
+                    'Metadata': [
+                      {
+                        'ratingKey': 'movie-visible',
+                        'type': 'movie',
+                        'title': 'Visible Movie',
+                        'lastViewedAt': 100,
+                        'librarySectionID': 1,
+                      },
+                      {
+                        'ratingKey': 'movie-hidden',
+                        'type': 'movie',
+                        'title': 'Hidden Movie',
+                        'lastViewedAt': 200,
+                        'librarySectionID': 2,
+                      },
+                    ],
+                  },
+                ],
+              },
+            });
+          }
+          return http.Response('unexpected request', 500);
+        }),
+      );
+      addTearDown(client.close);
+      manager.debugRegisterClientForTesting(client);
+
+      final result = await service.getOnDeckFromAllServers(limit: 10, hiddenLibraryKeys: {'plex-1:2'});
+
+      expect(result.items.map((item) => item.id), ['movie-visible']);
+      expect(result.succeededServerIds, {'plex-1'});
+    });
+
     test('getOnDeckFromAllServers hides duplicate show entries by stable show ids', () async {
       final client = PlexClient.forTesting(
         config: PlexConfig(
