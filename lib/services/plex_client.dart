@@ -3048,9 +3048,13 @@ class PlexClient
     int? offsetMs,
   }) {
     final isOriginal = preset.isOriginal;
-    final selectedEmbeddedTextSubtitle = _shouldEmbedSubtitleInHttpTranscode(selectedSubtitleTrack)
+    final selectedEmbeddedSubtitle = _shouldEmbedSubtitleInHttpTranscode(selectedSubtitleTrack)
         ? selectedSubtitleTrack
         : null;
+    // Only text subtitles get `advancedSubtitles=text`; image subtitles
+    // (PGS/VOBSUB) are copied into the MKV as-is for the player to render.
+    final embedSubtitleAsText =
+        selectedEmbeddedSubtitle != null && _canTranscodeSubtitleAsText(selectedEmbeddedSubtitle);
 
     // Build the client profile from scratch via X-Plex-Client-Profile-Extra.
     // We use the `Generic` base platform (see [_transcodePlatformName]) which
@@ -3104,12 +3108,13 @@ class PlexClient
       'directStreamAudio': '0',
       'mediaBufferSize': '102400',
       'session': transcodeSessionId,
-      // Embed selected text subtitles in the MKV stream. Bitmap subtitles and
-      // unselected tracks stay at `none` so the server cannot burn them into
-      // the video.
-      'subtitles': selectedEmbeddedTextSubtitle != null ? 'embedded' : 'none',
-      if (selectedEmbeddedTextSubtitle != null) 'subtitleStreamID': selectedEmbeddedTextSubtitle.id.toString(),
-      if (selectedEmbeddedTextSubtitle != null) 'advancedSubtitles': 'text',
+      // Embed the selected subtitle in the MKV stream: text codecs are
+      // converted to text, image codecs (PGS/VOBSUB) are copied as-is and
+      // rendered by the player — never burned into the video. Unselected tracks
+      // and keyed sidecars stay at `none`.
+      'subtitles': selectedEmbeddedSubtitle != null ? 'embedded' : 'none',
+      if (selectedEmbeddedSubtitle != null) 'subtitleStreamID': selectedEmbeddedSubtitle.id.toString(),
+      if (embedSubtitleAsText) 'advancedSubtitles': 'text',
       // Preserve source timestamps for the HTTP/MKV stream so player seeks and
       // sidecar subtitles stay aligned with Plex source time.
       'copyts': '1',
@@ -3504,7 +3509,7 @@ class PlexClient
   bool _shouldEmbedSubtitleInHttpTranscode(MediaSubtitleTrack? track) {
     if (track == null) return false;
     if (track.key != null && track.key!.isNotEmpty) return false;
-    return _canTranscodeSubtitleAsText(track);
+    return CodecUtils.isEmbeddableSubtitleCodec(track.codec);
   }
 
   SubtitleTrack _subtitleTrackFromMediaTrack(MediaSubtitleTrack track, String url) {
@@ -3521,8 +3526,8 @@ class PlexClient
   }
 
   /// Build subtitle sidecars for Plex transcode playback. Only real keyed
-  /// sidecars are loaded externally; selected embedded text subtitles are
-  /// carried by the main HTTP/MKV stream.
+  /// sidecars are loaded externally; selected embedded subtitles (text or
+  /// image) are carried by the main HTTP/MKV stream.
   List<SubtitleTrack> _buildTranscodeSidecarSubtitles(MediaSourceInfo? mediaInfo) {
     if (mediaInfo == null) return const [];
     if (config.token == null) {

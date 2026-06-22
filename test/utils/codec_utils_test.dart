@@ -42,6 +42,44 @@ void main() {
     });
   });
 
+  group('CodecUtils subtitle classification', () {
+    test('isTextSubtitleCodec recognizes text codecs only', () {
+      for (final codec in ['srt', 'subrip', 'ass', 'ssa', 'webvtt', 'vtt', 'mov_text', 'ASS']) {
+        expect(CodecUtils.isTextSubtitleCodec(codec), isTrue, reason: codec);
+      }
+      for (final codec in ['pgs', 'dvd_subtitle', 'vobsub', 'weird', null]) {
+        expect(CodecUtils.isTextSubtitleCodec(codec), isFalse, reason: '$codec');
+      }
+    });
+
+    test('isImageSubtitleCodec recognizes bitmap codecs only', () {
+      for (final codec in [
+        'pgs',
+        'pgssub',
+        'hdmv_pgs_subtitle',
+        'dvd_subtitle',
+        'dvdsub',
+        'vobsub',
+        'dvb_sub',
+        'dvb_subtitle',
+        'PGS',
+      ]) {
+        expect(CodecUtils.isImageSubtitleCodec(codec), isTrue, reason: codec);
+      }
+      for (final codec in ['srt', 'ass', 'mov_text', 'weird', null]) {
+        expect(CodecUtils.isImageSubtitleCodec(codec), isFalse, reason: '$codec');
+      }
+    });
+
+    test('isEmbeddableSubtitleCodec covers text and image, not unknown', () {
+      for (final codec in ['srt', 'ass', 'pgs', 'vobsub', 'dvd_subtitle']) {
+        expect(CodecUtils.isEmbeddableSubtitleCodec(codec), isTrue, reason: codec);
+      }
+      expect(CodecUtils.isEmbeddableSubtitleCodec('weird'), isFalse);
+      expect(CodecUtils.isEmbeddableSubtitleCodec(null), isFalse);
+    });
+  });
+
   group('CodecUtils.formatSubtitleCodec', () {
     test('maps known codecs to friendly labels', () {
       expect(CodecUtils.formatSubtitleCodec('subrip'), 'SRT');

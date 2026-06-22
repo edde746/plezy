@@ -39,6 +39,31 @@ class CodecUtils {
     };
   }
 
+  /// Image-based (bitmap) subtitle codecs. These can't be converted to text;
+  /// during an HTTP/MKV transcode Plex copies the stream into the container and
+  /// the player renders it natively.
+  static bool isImageSubtitleCodec(String? codec) {
+    if (codec == null) return false;
+    return switch (codec.toLowerCase()) {
+      'pgs' ||
+      'pgssub' ||
+      'hdmv_pgs_subtitle' ||
+      'dvd_subtitle' ||
+      'dvdsub' ||
+      'vobsub' ||
+      'dvb_sub' ||
+      'dvb_subtitle' => true,
+      _ => false,
+    };
+  }
+
+  /// Subtitle codecs that can be carried inside the HTTP/MKV transcode stream
+  /// (`subtitles=embedded`): text codecs plus the image codecs the MKV target
+  /// supports. Keyed sidecars are delivered separately and are not covered here.
+  static bool isEmbeddableSubtitleCodec(String? codec) {
+    return isTextSubtitleCodec(codec) || isImageSubtitleCodec(codec);
+  }
+
   /// Formats a subtitle codec name to a user-friendly display format.
   ///
   /// Converts internal codec names like 'SUBRIP' to friendly names like 'SRT'.
