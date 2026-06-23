@@ -100,6 +100,20 @@ bool shouldRenderMainScreenOffline({
 }
 
 @visibleForTesting
+List<NavigationTab> mainScreenBottomNavigationTabs({
+  required List<NavigationTab> visibleTabs,
+  required bool isMobile,
+  required bool isOffline,
+  required NavigationTabId currentTab,
+}) {
+  if (!isMobile) return visibleTabs;
+  return visibleTabs.where((tab) {
+    if (tab.id != NavigationTabId.settings) return true;
+    return isOffline || currentTab == NavigationTabId.settings;
+  }).toList();
+}
+
+@visibleForTesting
 bool shouldPassTvosMenuToSystem({
   required bool isAppleTV,
   required bool isShowingProfileSelection,
@@ -1494,9 +1508,12 @@ class _MainScreenState extends State<MainScreen>
   }
 
   List<NavigationTab> _getBottomNavigationTabs(BuildContext context) {
-    final tabs = _getVisibleTabs(_isOffline);
-    if (!PlatformDetector.isMobile(context)) return tabs;
-    return tabs.where((tab) => tab.id != NavigationTabId.settings).toList();
+    return mainScreenBottomNavigationTabs(
+      visibleTabs: _getVisibleTabs(_isOffline),
+      isMobile: PlatformDetector.isMobile(context),
+      isOffline: _isOffline,
+      currentTab: _currentTab,
+    );
   }
 
   /// Get the GlobalKey for a given tab.
