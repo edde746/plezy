@@ -3272,6 +3272,8 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
     fps: Float,
     videoDurationMs: Long,
     extraDelayMs: Long,
+    videoWidth: Int,
+    videoHeight: Int,
     onComplete: (switched: Boolean) -> Unit
   ) {
     val mgr = frameRateManager
@@ -3279,7 +3281,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
       onComplete(false)
       return
     }
-    mgr.setVideoFrameRate(fps, videoDurationMs, extraDelayMs, onComplete)
+    mgr.setVideoFrameRate(fps, videoDurationMs, extraDelayMs, videoWidth, videoHeight, onComplete)
   }
 
   fun clearVideoFrameRate() {

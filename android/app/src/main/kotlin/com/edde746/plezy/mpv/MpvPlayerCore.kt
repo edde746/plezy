@@ -886,6 +886,8 @@ class MpvPlayerCore(private val activity: Activity) : SurfaceHolder.Callback {
     fps: Float,
     videoDurationMs: Long,
     extraDelayMs: Long,
+    videoWidth: Int,
+    videoHeight: Int,
     onComplete: (switched: Boolean) -> Unit
   ) {
     val mgr = frameRateManager
@@ -893,7 +895,7 @@ class MpvPlayerCore(private val activity: Activity) : SurfaceHolder.Callback {
       onComplete(false)
       return
     }
-    mgr.setVideoFrameRate(fps, videoDurationMs, extraDelayMs) { switched ->
+    mgr.setVideoFrameRate(fps, videoDurationMs, extraDelayMs, videoWidth, videoHeight) { switched ->
       player?.let {
         updateDisplayFpsOverride(it, "frame rate switch, switched=$switched") {
           onComplete(switched)

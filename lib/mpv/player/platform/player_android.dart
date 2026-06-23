@@ -1,6 +1,8 @@
 import 'package:collection/collection.dart';
 import 'package:flutter/services.dart';
 
+import '../../../services/device_performance.dart';
+import '../../../services/settings_service.dart';
 import '../../models.dart';
 import '../player_base.dart';
 
@@ -98,6 +100,14 @@ class PlayerAndroid extends PlayerBase {
         'tunnelingEnabled': _tunnelingEnabled,
         'dvConversionMode': _dvConversionMode,
         'audioPassthroughEnabled': _audioPassthroughEnabled,
+        // Cheap (32-bit) TV boxes run the hardware video path a frame behind a GL
+        // subtitle overlay; render the ASS one frame earlier there to realign.
+        'assVideoLatencyFrames': DevicePerformance.isLowEndHardware ? 1 : 0,
+        // libass overlay raster scale from the "Render Resolution" subtitle setting
+        // (Full / ¾ / ½ / ⅓ / ¼); < 1 trades sharpness for throughput on slow GPUs.
+        'subtitleRenderScale': SettingsService.instance
+            .read(SettingsService.subtitleRenderResolution)
+            .androidRenderScale,
       });
       if (result != true) {
         throw Exception('Failed to initialize ExoPlayer');
@@ -459,12 +469,20 @@ class PlayerAndroid extends PlayerBase {
   }
 
   @override
-  Future<bool> setVideoFrameRate(double fps, int durationMs, {int extraDelayMs = 0}) async {
+  Future<bool> setVideoFrameRate(
+    double fps,
+    int durationMs, {
+    int extraDelayMs = 0,
+    int videoWidth = 0,
+    int videoHeight = 0,
+  }) async {
     if (disposed || !initialized) return false;
     final result = await invoke<bool>('setVideoFrameRate', {
       'fps': fps,
       'duration': durationMs,
       'extraDelayMs': extraDelayMs,
+      'videoWidth': videoWidth,
+      'videoHeight': videoHeight,
     });
     return result ?? false;
   }

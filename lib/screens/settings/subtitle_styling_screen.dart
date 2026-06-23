@@ -33,6 +33,10 @@ class SubtitleStylingScreen extends StatelessWidget {
     return switch (value) {
       SubtitleRenderResolution.screen => t.subtitlingStyling.renderResolutionScreen,
       SubtitleRenderResolution.video => t.subtitlingStyling.renderResolutionVideo,
+      SubtitleRenderResolution.threeQuarter => '¾',
+      SubtitleRenderResolution.half => '½',
+      SubtitleRenderResolution.third => '⅓',
+      SubtitleRenderResolution.quarter => '¼',
     };
   }
 
@@ -51,16 +55,34 @@ class SubtitleStylingScreen extends StatelessWidget {
           decode: (v) => v,
           encode: (v) => v,
         ),
-        // avfoundation VO (iOS/tvOS) only.
+        // iOS/tvOS avfoundation VO: screen vs video-resolution basis.
         if (Platform.isIOS)
           SettingSelectionTile<SubtitleRenderResolution, SubtitleRenderResolution>(
             pref: SettingsService.subtitleRenderResolution,
             icon: Symbols.aspect_ratio_rounded,
             title: t.subtitlingStyling.renderResolution,
             subtitleBuilder: _renderResolutionLabel,
-            options: SubtitleRenderResolution.values
+            options: const [SubtitleRenderResolution.screen, SubtitleRenderResolution.video]
                 .map((v) => DialogOption(value: v, title: _renderResolutionLabel(v)))
                 .toList(),
+            decode: (v) => v,
+            encode: (v) => v,
+          ),
+        // Android libass overlay: full or a fractional render scale (perf knob for
+        // render-bound low-end TVs; heavy/animated signs raster faster at < 1).
+        if (Platform.isAndroid)
+          SettingSelectionTile<SubtitleRenderResolution, SubtitleRenderResolution>(
+            pref: SettingsService.subtitleRenderResolution,
+            icon: Symbols.aspect_ratio_rounded,
+            title: t.subtitlingStyling.renderResolution,
+            subtitleBuilder: _renderResolutionLabel,
+            options: const [
+              SubtitleRenderResolution.screen,
+              SubtitleRenderResolution.threeQuarter,
+              SubtitleRenderResolution.half,
+              SubtitleRenderResolution.third,
+              SubtitleRenderResolution.quarter,
+            ].map((v) => DialogOption(value: v, title: _renderResolutionLabel(v))).toList(),
             decode: (v) => v,
             encode: (v) => v,
           ),

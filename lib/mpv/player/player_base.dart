@@ -613,7 +613,13 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
   Future<void> updateFrame() async {}
 
   @override
-  Future<bool> setVideoFrameRate(double fps, int durationMs, {int extraDelayMs = 0}) async => false;
+  Future<bool> setVideoFrameRate(
+    double fps,
+    int durationMs, {
+    int extraDelayMs = 0,
+    int videoWidth = 0,
+    int videoHeight = 0,
+  }) async => false;
 
   @override
   // ignore: no-empty-block - base no-op, overridden by platform subclasses
