@@ -11,11 +11,23 @@ package com.edde746.plezy.libass
  * @param truncated   images dropped because they exceeded the atlas/vertex capacity;
  *                    the frame is incomplete but never stale (> 0 should be rare —
  *                    it means even the GL-max-sized atlas couldn't fit the frame)
+ * @param hasOutput   true when libass reported at least one visible image for this
+ *                    timestamp, even when [changed] is 0 and the buffers were not
+ *                    rewritten. false means this timestamp should be blank.
  */
 class AssAtlasFrame(
   val atlasWidth: Int,
   val atlasHeight: Int,
   val quadCount: Int,
   val changed: Int,
-  val truncated: Int
-)
+  val truncated: Int,
+  val hasOutput: Boolean
+) {
+  constructor(
+    atlasWidth: Int,
+    atlasHeight: Int,
+    quadCount: Int,
+    changed: Int,
+    truncated: Int
+  ) : this(atlasWidth, atlasHeight, quadCount, changed, truncated, quadCount > 0)
+}

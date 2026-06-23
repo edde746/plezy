@@ -152,26 +152,17 @@ android {
 
   packaging {
     jniLibs {
-      // Three copies of libc++_shared.so reach the merge: the libmpv AAR's
-      // (NDK r29 — exports std::from_chars<float> that libmpv.so needs), the
-      // :libass module's CMake-contributed copy (NDK 28.2 — lacks it), and
-      // peerless2012:ass's bundled copy (also old). pickFirst keeps the merge
-      // from erroring on the duplicates; WHICH copy wins is pinned by the
-      // sourceSets block below: extractMpvLibcxx unpacks the libmpv AAR's copy
-      // into an app jniLibs dir, and PROJECT-scope sources beat sub-projects
-      // and external AARs. libc++ is backward ABI-compatible, so the older-NDK
-      // consumers (libass.so, libasskt.so, ffmpeg decoder, cronet) run fine
-      // against the newer copy.
+      // pickFirst only suppresses the duplicate libc++ merge error; the
+      // sourceSets rule below makes libmpv's newer runtime win for
+      // std::from_chars<float>, while older native consumers remain ABI-compatible.
       pickFirsts.add("lib/*/libc++_shared.so")
     }
   }
 
   sourceSets {
     getByName("main") {
-      // libc++_shared.so extracted from the libmpv AAR by extractMpvLibcxx.
-      // App source-set jniLibs sit in the PROJECT scope, merged ahead of
-      // subprojects (:libass) and external AARs, so with the pickFirst rule
-      // above this copy deterministically wins regardless of dependency order.
+      // PROJECT-scope jniLibs merge ahead of subprojects/AARs, so dependency
+      // order cannot accidentally select the older libc++ copy.
       jniLibs.srcDir(File(mpvDir, "libcxx/jni"))
     }
   }
@@ -181,17 +172,15 @@ flutter {
   source = "../.."
 }
 
-// Download libdovi before any CMake/native build task
 tasks.matching { it.name.contains("CMake") || it.name.contains("externalNative") }.configureEach {
   dependsOn(downloadLibdovi)
 }
 
-// Download the libmpv AAR before compilation
 tasks.matching { it.name.startsWith("pre") && it.name.endsWith("Build") }.configureEach {
   dependsOn(downloadLibmpv, extractMpvLibcxx)
 }
-// merge{Debug,Profile,Release}JniLibFolders snapshot jniLibs source dirs as inputs;
-// Gradle 8 requires an explicit dependency on the producing task.
+// Gradle snapshots jniLibs source dirs before task execution; this keeps the
+// extracted libmpv libc++ directory present during input discovery.
 tasks.matching { it.name.startsWith("merge") && it.name.endsWith("JniLibFolders") }.configureEach {
   dependsOn(extractMpvLibcxx)
 }
@@ -216,12 +205,8 @@ dependencies {
   // FFmpeg audio decoder for unsupported codecs (ALAC, DTS, TrueHD, etc.)
   implementation("org.jellyfin.media3:media3-ffmpeg-decoder:1.9.0+1")
 
-  // libass ASS/SSA subtitle rendering: optimized native core (libass.so +
-  // prefab headers) from the edde746/libass-android fork's releases; Kotlin/JNI
-  // bindings + Media3 glue live in the android/libass module. -PlocalAssCore
-  // swaps in a mavenLocal()-published core (0.4.0-local) for native A/B tests.
-  val assCoreVersion = if (project.hasProperty("localAssCore")) "0.4.0-local" else "0.4.1-plezy.1"
-  implementation("io.github.peerless2012:ass:$assCoreVersion@aar")
+  // Keeping libass in-project lets its static core share the app's native
+  // packaging rules.
   implementation(project(":libass"))
 
   testImplementation("junit:junit:4.13.2")

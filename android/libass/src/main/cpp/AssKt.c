@@ -1,10 +1,15 @@
 // JNI bindings for libass. Exports use standard Java_<package>_<Class>_<method>
 // naming so no RegisterNatives/JNI_OnLoad registration is needed.
+#include <EGL/egl.h>
+#include <EGL/eglext.h>
 #include <android/log.h>
 #include <jni.h>
+#include <limits.h>
 #include <stdarg.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/stat.h>
 #include <time.h>
 
 static inline long long nowMs(void) {
@@ -61,7 +66,13 @@ JNIEXPORT void JNICALL Java_com_edde746_plezy_libass_Ass_nativeAssDeinit(JNIEnv*
 
 JNIEXPORT jlong JNICALL
 Java_com_edde746_plezy_libass_AssTrack_nativeAssTrackInit(JNIEnv* env, jclass clazz, jlong ass) {
-  return (jlong)ass_new_track((ASS_Library*)ass);
+  ASS_Track* track = ass_new_track((ASS_Library*)ass);
+  if (track != NULL) {
+    if (ass_track_set_feature(track, ASS_FEATURE_FAST_BLUR, 1) != 0) {
+      __android_log_print(ANDROID_LOG_WARN, LOG_TAG, "ASS_FEATURE_FAST_BLUR unavailable in libass build");
+    }
+  }
+  return (jlong)track;
 }
 
 // Shared body of readBuffer/readChunk: pins the byte array and feeds libass.
@@ -132,10 +143,54 @@ JNIEXPORT jlong JNICALL Java_com_edde746_plezy_libass_AssTrack_nativeAssTrackNex
 
 // --- AssRender ---
 
+// The fork's fontconfig build has no Android font search defaults. A tiny
+// process-local config lets /system fonts resolve without adding Context/JNI plumbing.
+static char* ensureFontsConf(void) {
+  const char* tmp = getenv("TMPDIR");
+  if (tmp == NULL || tmp[0] == '\0') tmp = "/data/local/tmp";
+
+  char cacheDir[PATH_MAX];
+  snprintf(cacheDir, sizeof(cacheDir), "%s/fontconfig", tmp);
+  mkdir(cacheDir, 0700);
+
+  char* confPath = (char*)malloc(PATH_MAX);
+  if (confPath == NULL) return NULL;
+  snprintf(confPath, PATH_MAX, "%s/fonts.conf", tmp);
+
+  FILE* f = fopen(confPath, "w");
+  if (f == NULL) {
+    free(confPath);
+    return NULL;
+  }
+  fprintf(
+      f,
+      "<?xml version=\"1.0\"?>\n"
+      "<!DOCTYPE fontconfig SYSTEM \"fonts.dtd\">\n"
+      "<fontconfig>\n"
+      "  <dir>/system/fonts</dir>\n"
+      "  <dir>/system/font</dir>\n"
+      "  <dir>/product/fonts</dir>\n"
+      "  <dir>/data/fonts</dir>\n"
+      "  <cachedir>%s</cachedir>\n"
+      "</fontconfig>\n",
+      cacheDir);
+  fclose(f);
+  return confPath;
+}
+
 JNIEXPORT jlong JNICALL
 Java_com_edde746_plezy_libass_AssRender_nativeAssRenderInit(JNIEnv* env, jclass clazz, jlong ass) {
   ASS_Renderer* assRenderer = ass_renderer_init((ASS_Library*)ass);
-  ass_set_fonts(assRenderer, NULL, "sans-serif", ASS_FONTPROVIDER_FONTCONFIG, NULL, 1);
+  if (assRenderer == NULL) return 0;
+  unsigned threads = ass_set_threads(assRenderer, 0);
+  if (threads == 0) {
+    __android_log_print(ANDROID_LOG_WARN, LOG_TAG, "libass threading unavailable in native build");
+  } else {
+    __android_log_print(ANDROID_LOG_INFO, LOG_TAG, "libass rendering threads enabled: %u", threads);
+  }
+  char* fontsConf = ensureFontsConf();
+  ass_set_fonts(assRenderer, NULL, "sans-serif", ASS_FONTPROVIDER_FONTCONFIG, fontsConf, 1);
+  free(fontsConf);
   return (jlong)assRenderer;
 }
 
@@ -195,6 +250,13 @@ static int comparePackItemsByHeightDesc(const void* a, const void* b) {
   return ib->img->h - ia->img->h;
 }
 
+static int imageListHasOutput(ASS_Image* image) {
+  for (ASS_Image* img = image; img != NULL; img = img->next) {
+    if (img->w > 0 && img->h > 0) return 1;
+  }
+  return 0;
+}
+
 // Throttle for truncation warnings (shared across renderers; logging only).
 static int truncationLogCounter = 0;
 
@@ -214,8 +276,9 @@ static int truncationLogCounter = 0;
 // Never fails on content size: images that don't fit the remaining atlas/vertex
 // capacity are dropped and counted in AssAtlasFrame.truncated, so a heavy frame
 // degrades instead of going stale. Returns NULL only for missing buffers/handles.
-// On changed == 0, returns (0, 0, 0, changed, 0) without touching the buffers —
-// caller reuses the atlas texture already on the GPU.
+// On changed == 0, returns (0, 0, 0, changed, 0, hasOutput) without touching the
+// buffers. hasOutput lets Kotlin distinguish "reuse the previous atlas" from
+// "the current frame is blank and the GL surface must be cleared."
 JNIEXPORT jobject JNICALL Java_com_edde746_plezy_libass_AssRender_nativeAssRenderFrameAtlas(
     JNIEnv* env, jclass clazz, jlong render, jlong track, jlong time, jobject atlasBuf, jint atlasMaxW, jint atlasMaxH,
     jobject vertexBuf) {
@@ -223,7 +286,7 @@ JNIEXPORT jobject JNICALL Java_com_edde746_plezy_libass_AssRender_nativeAssRende
 
   jclass atlasFrameClass = (*env)->FindClass(env, "com/edde746/plezy/libass/AssAtlasFrame");
   if (!atlasFrameClass) return NULL;
-  jmethodID ctor = (*env)->GetMethodID(env, atlasFrameClass, "<init>", "(IIIII)V");
+  jmethodID ctor = (*env)->GetMethodID(env, atlasFrameClass, "<init>", "(IIIIIZ)V");
   if (!ctor) return NULL;
 
   const long long t0 = nowMs();
@@ -231,13 +294,23 @@ JNIEXPORT jobject JNICALL Java_com_edde746_plezy_libass_AssRender_nativeAssRende
   ASS_Image* image = ass_render_frame((ASS_Renderer*)render, (ASS_Track*)track, time, &changed);
   const long long tAss = nowMs();
 
-  if (changed == 0 || image == NULL) {
+  if (changed == 0) {
+    const jboolean hasOutput = imageListHasOutput(image) ? JNI_TRUE : JNI_FALSE;
+    if (tAss - t0 > 40) {
+      __android_log_print(
+          ANDROID_LOG_WARN, LOG_TAG, "slow render t=%lldms: ass=%lldms (changed=%d, hasOutput=%d)",
+          (long long)time, tAss - t0, changed, hasOutput == JNI_TRUE);
+    }
+    return (*env)->NewObject(env, atlasFrameClass, ctor, 0, 0, 0, changed, 0, hasOutput);
+  }
+
+  if (image == NULL) {
     if (tAss - t0 > 40) {
       __android_log_print(
           ANDROID_LOG_WARN, LOG_TAG, "slow render t=%lldms: ass=%lldms (changed=%d, no output)", (long long)time,
           tAss - t0, changed);
     }
-    return (*env)->NewObject(env, atlasFrameClass, ctor, 0, 0, 0, changed, 0);
+    return (*env)->NewObject(env, atlasFrameClass, ctor, 0, 0, 0, changed, 0, JNI_FALSE);
   }
 
   uint8_t* atlasPixels = (uint8_t*)(*env)->GetDirectBufferAddress(env, atlasBuf);
@@ -259,7 +332,7 @@ JNIEXPORT jobject JNICALL Java_com_edde746_plezy_libass_AssRender_nativeAssRende
     if (img->w > 0 && img->h > 0) total++;
   }
   if (total == 0) {
-    return (*env)->NewObject(env, atlasFrameClass, ctor, 0, 0, 0, changed, 0);
+    return (*env)->NewObject(env, atlasFrameClass, ctor, 0, 0, 0, changed, 0, JNI_FALSE);
   }
 
   // Pass 1: assign packing slots in height-sorted order so mixed-size frames pack
@@ -324,7 +397,7 @@ JNIEXPORT jobject JNICALL Java_com_edde746_plezy_libass_AssRender_nativeAssRende
     free(items);
     free(slotX);
     free(slotY);
-    return (*env)->NewObject(env, atlasFrameClass, ctor, 0, 0, 0, changed, truncated);
+    return (*env)->NewObject(env, atlasFrameClass, ctor, 0, 0, 0, changed, truncated, JNI_TRUE);
   }
 
   memset(atlasPixels, 0, (size_t)atlasMaxW * packedH);
@@ -432,5 +505,141 @@ JNIEXPORT jobject JNICALL Java_com_edde746_plezy_libass_AssRender_nativeAssRende
 
   // atlasWidth is the full row stride (GLES2 can't upload with stride ≠ width);
   // atlasHeight is the packed height — the only rows worth uploading.
-  return (*env)->NewObject(env, atlasFrameClass, ctor, atlasMaxW, packedH, qi, changed, truncated);
+  return (*env)->NewObject(env, atlasFrameClass, ctor, atlasMaxW, packedH, qi, changed, truncated, JNI_TRUE);
+}
+
+// --- AssFrameTimestamps (EGL_ANDROID_get_frame_timestamps) ---
+//
+// Measures the overlay buffer's ACTUAL on-screen present time so subtitle
+// frame-perfection can be checked against the video frame's release time as
+// ground truth, instead of the queue time (eglSwapBuffers return) the swap loop
+// otherwise sees. The Java EGLExt only exposes eglPresentationTimeANDROID, so the
+// frame-timestamp entry points are resolved here via eglGetProcAddress.
+//
+// All functions run on the GL thread with the pipeline's EGL context current.
+
+// Older NDK eglext.h may predate the extension; fall back to the spec values.
+#ifndef EGL_TIMESTAMPS_ANDROID
+#define EGL_TIMESTAMPS_ANDROID 0x3430
+#endif
+#ifndef EGL_COMPOSITION_LATCH_TIME_ANDROID
+#define EGL_COMPOSITION_LATCH_TIME_ANDROID 0x3436
+#endif
+#ifndef EGL_FIRST_COMPOSITION_START_TIME_ANDROID
+#define EGL_FIRST_COMPOSITION_START_TIME_ANDROID 0x3437
+#endif
+#ifndef EGL_DISPLAY_PRESENT_TIME_ANDROID
+#define EGL_DISPLAY_PRESENT_TIME_ANDROID 0x343A
+#endif
+#ifndef EGL_TIMESTAMP_INVALID_ANDROID
+#define EGL_TIMESTAMP_INVALID_ANDROID (-1)
+#endif
+#ifndef EGL_TIMESTAMP_PENDING_ANDROID
+#define EGL_TIMESTAMP_PENDING_ANDROID (-2)
+#endif
+#ifndef EGL_ANDROID_get_frame_timestamps
+typedef khronos_stime_nanoseconds_t EGLnsecsANDROID;
+typedef EGLBoolean(EGLAPIENTRYP PFNEGLGETNEXTFRAMEIDANDROIDPROC)(EGLDisplay, EGLSurface, EGLuint64KHR*);
+typedef EGLBoolean(EGLAPIENTRYP PFNEGLGETFRAMETIMESTAMPSANDROIDPROC)(
+    EGLDisplay, EGLSurface, EGLuint64KHR, EGLint, const EGLint*, EGLnsecsANDROID*);
+typedef EGLBoolean(EGLAPIENTRYP PFNEGLGETFRAMETIMESTAMPSUPPORTEDANDROIDPROC)(EGLDisplay, EGLSurface, EGLint);
+#endif
+
+// nativeInit status: success codes are the chosen timestamp source (≥ 0); the
+// actual display present time on code 0, and SurfaceFlinger composition timestamps
+// (a near-constant ~1-vsync earlier than scanout) on codes 1/2 — a constant bias
+// that doesn't hide the inter-layer jitter / multi-vsync outliers we look for.
+// Negative codes are failure reasons surfaced to the stats path for diagnosis.
+#define FT_SRC_PRESENT 0
+#define FT_SRC_COMPOSITION_START 1
+#define FT_SRC_COMPOSITION_LATCH 2
+#define FT_ERR_NO_SURFACE (-1)
+#define FT_ERR_NO_EXTENSION (-2)
+#define FT_ERR_NO_PROC (-3)
+#define FT_ERR_UNSUPPORTED (-4)
+#define FT_ERR_ENABLE_FAILED (-5)
+
+static PFNEGLGETNEXTFRAMEIDANDROIDPROC pEglGetNextFrameId = NULL;
+static PFNEGLGETFRAMETIMESTAMPSANDROIDPROC pEglGetFrameTimestamps = NULL;
+static PFNEGLGETFRAMETIMESTAMPSUPPORTEDANDROIDPROC pEglGetFrameTimestampSupported = NULL;
+static EGLDisplay gFtDisplay = EGL_NO_DISPLAY;
+static EGLSurface gFtSurface = EGL_NO_SURFACE;
+static EGLint gFtPresentName = EGL_DISPLAY_PRESENT_TIME_ANDROID;
+
+// Probes the extension on the currently-current draw surface and enables capture.
+// Re-resolves the display/surface each call so surface recreation is handled.
+// Returns one of the FT_* codes above.
+JNIEXPORT jint JNICALL
+Java_com_edde746_plezy_libass_AssFrameTimestamps_nativeInit(JNIEnv* env, jclass clazz) {
+  gFtSurface = EGL_NO_SURFACE;
+  EGLDisplay dpy = eglGetCurrentDisplay();
+  EGLSurface surf = eglGetCurrentSurface(EGL_DRAW);
+  if (dpy == EGL_NO_DISPLAY || surf == EGL_NO_SURFACE) return FT_ERR_NO_SURFACE;
+
+  const char* exts = eglQueryString(dpy, EGL_EXTENSIONS);
+  if (exts == NULL || strstr(exts, "EGL_ANDROID_get_frame_timestamps") == NULL) {
+    __android_log_print(ANDROID_LOG_INFO, LOG_TAG, "frame-timestamps: extension not present");
+    return FT_ERR_NO_EXTENSION;
+  }
+  if (pEglGetNextFrameId == NULL) {
+    pEglGetNextFrameId = (PFNEGLGETNEXTFRAMEIDANDROIDPROC)eglGetProcAddress("eglGetNextFrameIdANDROID");
+    pEglGetFrameTimestamps = (PFNEGLGETFRAMETIMESTAMPSANDROIDPROC)eglGetProcAddress("eglGetFrameTimestampsANDROID");
+    pEglGetFrameTimestampSupported =
+        (PFNEGLGETFRAMETIMESTAMPSUPPORTEDANDROIDPROC)eglGetProcAddress("eglGetFrameTimestampSupportedANDROID");
+  }
+  if (pEglGetNextFrameId == NULL || pEglGetFrameTimestamps == NULL || pEglGetFrameTimestampSupported == NULL) {
+    __android_log_print(ANDROID_LOG_WARN, LOG_TAG, "frame-timestamps: entry points unresolved");
+    return FT_ERR_NO_PROC;
+  }
+
+  // Prefer true display present; many TV HWCs (e.g. Amlogic) don't report present
+  // fences but do report SurfaceFlinger composition timestamps. Take the first
+  // supported — composition timing still pins the swap to a vsync for A-vs-B.
+  jint status;
+  if (pEglGetFrameTimestampSupported(dpy, surf, EGL_DISPLAY_PRESENT_TIME_ANDROID)) {
+    gFtPresentName = EGL_DISPLAY_PRESENT_TIME_ANDROID;
+    status = FT_SRC_PRESENT;
+  } else if (pEglGetFrameTimestampSupported(dpy, surf, EGL_FIRST_COMPOSITION_START_TIME_ANDROID)) {
+    gFtPresentName = EGL_FIRST_COMPOSITION_START_TIME_ANDROID;
+    status = FT_SRC_COMPOSITION_START;
+  } else if (pEglGetFrameTimestampSupported(dpy, surf, EGL_COMPOSITION_LATCH_TIME_ANDROID)) {
+    gFtPresentName = EGL_COMPOSITION_LATCH_TIME_ANDROID;
+    status = FT_SRC_COMPOSITION_LATCH;
+  } else {
+    __android_log_print(ANDROID_LOG_INFO, LOG_TAG, "frame-timestamps: no supported timestamp name");
+    return FT_ERR_UNSUPPORTED;
+  }
+
+  if (!eglSurfaceAttrib(dpy, surf, EGL_TIMESTAMPS_ANDROID, EGL_TRUE)) {
+    __android_log_print(ANDROID_LOG_WARN, LOG_TAG, "frame-timestamps: enable failed 0x%x", eglGetError());
+    return FT_ERR_ENABLE_FAILED;
+  }
+  gFtDisplay = dpy;
+  gFtSurface = surf;
+  __android_log_print(ANDROID_LOG_INFO, LOG_TAG, "frame-timestamps: enabled (source=%d)", status);
+  return status;
+}
+
+// Frame id the next eglSwapBuffers will produce; call immediately before it.
+JNIEXPORT jlong JNICALL
+Java_com_edde746_plezy_libass_AssFrameTimestamps_nativeGetNextFrameId(JNIEnv* env, jclass clazz) {
+  if (pEglGetNextFrameId == NULL || gFtSurface == EGL_NO_SURFACE) return -1;
+  EGLuint64KHR id = 0;
+  if (!pEglGetNextFrameId(gFtDisplay, gFtSurface, &id)) return -1;
+  return (jlong)id;
+}
+
+// Present (or composition) time for frameId (System.nanoTime() domain), or the
+// PENDING(-2)/INVALID(-1) sentinels. Reported a few frames after the swap.
+JNIEXPORT jlong JNICALL
+Java_com_edde746_plezy_libass_AssFrameTimestamps_nativeGetDisplayPresentTime(
+    JNIEnv* env, jclass clazz, jlong frameId) {
+  if (pEglGetFrameTimestamps == NULL || gFtSurface == EGL_NO_SURFACE) return EGL_TIMESTAMP_INVALID_ANDROID;
+  const EGLint names[1] = {gFtPresentName};
+  EGLnsecsANDROID values[1] = {0};
+  if (!pEglGetFrameTimestamps(gFtDisplay, gFtSurface, (EGLuint64KHR)frameId, 1, names, values)) {
+    // Frame id evicted from SurfaceFlinger's history, or bad surface.
+    return EGL_TIMESTAMP_INVALID_ANDROID;
+  }
+  return (jlong)values[0];
 }

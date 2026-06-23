@@ -53,7 +53,9 @@ class SpecRenderEngineTest {
 
     fun changed(quads: Int = 5) = AssAtlasFrame(2048, 100, quads, 2, 0)
 
-    fun unchanged() = AssAtlasFrame(0, 0, 0, 0, 0)
+    fun unchanged() = AssAtlasFrame(0, 0, 0, 0, 0, hasOutput = true)
+
+    fun blankUnchanged() = AssAtlasFrame(0, 0, 0, 0, 0, hasOutput = false)
   }
 
   @Test
@@ -74,13 +76,38 @@ class SpecRenderEngineTest {
   }
 
   @Test
-  fun `hit tolerates jitter within epsilon`() {
+  fun `hit tolerates jitter only within the same libass millisecond`() {
     val h = Harness()
     val last = h.prime()
 
-    val outcome = h.engine.service(last + DELTA + 3_000, pinned = true)
+    val outcome = h.engine.service(last + DELTA + 999, pinned = true)
 
     assertTrue((outcome as SpecRenderEngine.Outcome.Post).specHit)
+  }
+
+  @Test
+  fun `jitter crossing a libass millisecond boundary misses`() {
+    val h = Harness()
+    val last = h.prime()
+    val before = h.calls.size
+
+    h.script.add(changed())
+    val outcome = h.engine.service(last + DELTA + 1_000, pinned = true)
+
+    assertTrue(outcome is SpecRenderEngine.Outcome.Post)
+    assertFalse((outcome as SpecRenderEngine.Outcome.Post).specHit)
+    assertEquals(before + 1, h.calls.size)
+    assertEquals(1L, h.engine.specMisses)
+  }
+
+  @Test
+  fun `negative pts floors to the preceding libass millisecond`() {
+    val h = Harness()
+
+    h.script.add(changed())
+    h.engine.service(-1, pinned = true)
+
+    assertEquals(-1L, h.calls.last().timeMs)
   }
 
   @Test
@@ -202,6 +229,23 @@ class SpecRenderEngineTest {
   }
 
   @Test
+  fun `changed 0 without output clears previous content`() {
+    val h = Harness()
+    h.script.add(changed())
+    val first = h.engine.service(0, pinned = true) as SpecRenderEngine.Outcome.Post
+
+    h.script.add(blankUnchanged())
+    val outcome = h.engine.service(DELTA, pinned = true) as SpecRenderEngine.Outcome.Post
+
+    assertTrue(outcome.newContent)
+    assertFalse(outcome.specHit)
+    assertFalse(outcome.frame.hasOutput)
+    assertEquals(0, outcome.frame.quadCount)
+    assertTrue("blank frame should use a fresh metadata slot", outcome.slot != first.slot)
+    assertEquals(1L, h.engine.blankClearCount)
+  }
+
+  @Test
   fun `renderer gone skips`() {
     val h = Harness()
     h.script.add(null)
@@ -244,6 +288,34 @@ class SpecRenderEngineTest {
     assertFalse(outcome.newContent)
     assertEquals(before, h.calls.size)
     assertNotNull(first) // first slot existed; hit reposts whichever slot was last rendered
+  }
+
+  @Test
+  fun `speculative changed 0 without output clears on hit`() {
+    val h = Harness()
+    h.script.add(changed())
+    h.engine.service(0, pinned = true)
+    var pts = 0L
+    repeat(4) {
+      pts += DELTA
+      h.script.add(changed())
+      h.engine.service(pts, pinned = true)
+    }
+
+    h.script.add(blankUnchanged())
+    val write = h.engine.speculateAfter(pts, pinned = true, hasPending = false)
+    assertNotNull(write)
+    assertFalse(write!!.frame.hasOutput)
+
+    val before = h.calls.size
+    val outcome = h.engine.service(pts + DELTA, pinned = true) as SpecRenderEngine.Outcome.Post
+
+    assertTrue(outcome.specHit)
+    assertFalse(outcome.newContent)
+    assertFalse(outcome.frame.hasOutput)
+    assertEquals(0, outcome.frame.quadCount)
+    assertEquals(before, h.calls.size)
+    assertEquals(1L, h.engine.blankClearCount)
   }
 
   @Test

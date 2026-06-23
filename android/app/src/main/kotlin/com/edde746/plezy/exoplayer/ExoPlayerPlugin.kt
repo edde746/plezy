@@ -8,6 +8,7 @@ import android.net.Uri
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
+import com.edde746.plezy.libass.media.AssHandler
 import com.edde746.plezy.mpv.MpvPlayerCore
 import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.embedding.engine.plugins.activity.ActivityAware
@@ -201,7 +202,12 @@ class ExoPlayerPlugin :
     val tunnelingEnabled = call.argument<Boolean>("tunnelingEnabled") ?: true
     val dvConversionMode = call.argument<String>("dvConversionMode") ?: "auto"
     val audioPassthroughEnabled = call.argument<Boolean>("audioPassthroughEnabled") ?: false
+    val assVideoLatencyFrames = call.argument<Int>("assVideoLatencyFrames") ?: 0
+    val subtitleRenderScale = call.argument<Double>("subtitleRenderScale")?.toFloat() ?: 1.0f
     configuredBufferSizeBytes = bufferSizeBytes
+    // Global libass overlay render scale — set before the player/handler is built below so the
+    // first frame-size apply already uses it.
+    AssHandler.setRenderScale(subtitleRenderScale)
 
     currentActivity.runOnUiThread {
       sessionGeneration++
@@ -229,6 +235,8 @@ class ExoPlayerPlugin :
         if (success && playerCore?.setDebugDvConversionMode(dvConversionMode) != true) {
           Log.w(TAG, "Invalid DV conversion mode during initialize: $dvConversionMode")
         }
+        // Seed from this device's persisted calibration, falling back to the Dart perf-tier proxy.
+        playerCore?.seedAssVideoLatencyFrames(assVideoLatencyFrames)
 
         // Start hidden
         playerCore?.setVisible(false)

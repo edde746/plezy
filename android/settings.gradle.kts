@@ -24,6 +24,4 @@ plugins {
 }
 
 include(":app")
-// libass subtitle module (Kotlin/JNI bindings + Media3 glue); the native libass
-// core stays the upstream Maven artifact io.github.peerless2012:ass.
 include(":libass")
