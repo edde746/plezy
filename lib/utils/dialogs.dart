@@ -388,22 +388,47 @@ class _OptionPickerDialogState<T> extends State<_OptionPickerDialog<T>> {
 
   @override
   Widget build(BuildContext context) {
-    const rowPadding = EdgeInsets.symmetric(horizontal: 24, vertical: 4);
+    const rowPadding = EdgeInsets.symmetric(horizontal: 12, vertical: 4);
+    const rowHorizontalTitleGap = 8.0;
+    const rowMinLeadingWidth = 24.0;
     final toggle = widget.toggle;
+    void updateToggle(bool value) {
+      setState(() => _toggleValue = value);
+      toggle?.onChanged(value);
+    }
+
     return SimpleDialog(
       title: Text(widget.title),
+      insetPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 24),
+      constraints: const BoxConstraints(minWidth: 304),
       contentPadding: const EdgeInsets.symmetric(vertical: 8),
       children: [
         if (toggle != null)
-          FocusableSwitchListTile(
-            value: _toggleValue,
-            secondary: toggle.icon != null ? AppIcon(toggle.icon!, fill: 1, size: 24) : null,
-            title: Text(toggle.label, style: Theme.of(context).textTheme.bodyLarge),
-            contentPadding: rowPadding,
-            onChanged: (value) {
-              setState(() => _toggleValue = value);
-              toggle.onChanged(value);
-            },
+          MergeSemantics(
+            child: FocusableListTile(
+              title: Row(
+                children: [
+                  if (toggle.icon != null) ...[
+                    AppIcon(toggle.icon!, fill: 1, size: 24),
+                    const SizedBox(width: rowHorizontalTitleGap),
+                  ],
+                  Expanded(
+                    child: Text(
+                      toggle.label,
+                      style: Theme.of(context).textTheme.bodyLarge,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  const SizedBox(width: rowHorizontalTitleGap),
+                  ExcludeFocus(
+                    child: Switch(value: _toggleValue, onChanged: updateToggle),
+                  ),
+                ],
+              ),
+              contentPadding: rowPadding,
+              onTap: () => updateToggle(!_toggleValue),
+            ),
           ),
         ...List.generate(widget.options.length, (index) {
           final option = widget.options[index];
@@ -413,6 +438,8 @@ class _OptionPickerDialogState<T> extends State<_OptionPickerDialog<T>> {
             leading: icon != null ? AppIcon(icon, fill: 1, size: 24) : null,
             title: Text(option.label, style: Theme.of(context).textTheme.bodyLarge),
             contentPadding: rowPadding,
+            horizontalTitleGap: rowHorizontalTitleGap,
+            minLeadingWidth: rowMinLeadingWidth,
             onTap: () async {
               if (widget.onBeforeClose != null) {
                 final result = await widget.onBeforeClose!(option.value);
