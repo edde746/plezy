@@ -52,6 +52,7 @@ import '../../services/keyboard_shortcuts_service.dart';
 import '../../services/device_adjustment_service.dart';
 import '../../services/scrub_preview_source.dart';
 import '../../services/settings_service.dart';
+import '../../utils/codec_utils.dart';
 import '../../utils/formatters.dart';
 import '../../utils/platform_detector.dart';
 import '../../utils/player_utils.dart';
@@ -91,6 +92,26 @@ part 'parts/playback_extras.dart';
 part 'parts/playback_input.dart';
 part 'parts/track_controls.dart';
 part 'parts/visibility.dart';
+
+/// Subtitle tracks offered in the player's "source" subtitle list.
+///
+/// While transcoding, only tracks the HTTP/MKV stream can actually deliver are
+/// shown: keyed sidecars plus any codec the transcode can embed (text or
+/// image — see [CodecUtils.isEmbeddableSubtitleCodec]). Outside transcode the
+/// full list is returned unchanged, since the player has direct access to every
+/// embedded stream.
+List<MediaSubtitleTrack> selectableSourceSubtitleTracks(
+  List<MediaSubtitleTrack> tracks, {
+  required bool isTranscoding,
+}) {
+  if (!isTranscoding) return tracks;
+  return tracks
+      .where((track) {
+        final hasKey = track.key != null && track.key!.isNotEmpty;
+        return hasKey || CodecUtils.isEmbeddableSubtitleCodec(track.codec);
+      })
+      .toList(growable: false);
+}
 
 @visibleForTesting
 ShaderPreset resolveShaderTogglePreset({
