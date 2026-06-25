@@ -39,14 +39,16 @@ internal class AssLatencyCalibrator(
   private val overlaySurface: SurfaceView,
   private val onCalibrated: (Int) -> Unit,
   private val onDone: () -> Unit,
-  private val log: (String) -> Unit,
+  private val log: (String) -> Unit
 ) {
   private val lock = Any()
   private val finished = AtomicBoolean(false)
   private val applyFail = AtomicInteger(0)
 
   @Volatile private var frameIntervalNs: Long = 0L
+
   @Volatile private var converged = false
+
   @Volatile private var stopped = false
 
   private var videoFrames = 0
@@ -77,7 +79,11 @@ internal class AssLatencyCalibrator(
         doAttach = true
       }
     }
-    if (giveUp) finishIncomplete() else if (doAttach) attach(videoSurface, releaseTimeNs, SurfaceTxProbe.SOURCE_VIDEO)
+    if (giveUp) {
+      finishIncomplete()
+    } else if (doAttach) {
+      attach(videoSurface, releaseTimeNs, SurfaceTxProbe.SOURCE_VIDEO)
+    }
   }
 
   fun probeOverlay(releaseTimeNs: Long) {
@@ -114,7 +120,7 @@ internal class AssLatencyCalibrator(
     surfaceCount: Int,
     fenceState: Int,
     source: Int,
-    callbackNs: Long,
+    callbackNs: Long
   ) {
     if (surfaceCount <= 0 || fenceState != FENCE_OK || releaseNs <= 0) return
     val relMs = (releaseNs - tag) / 1_000_000.0

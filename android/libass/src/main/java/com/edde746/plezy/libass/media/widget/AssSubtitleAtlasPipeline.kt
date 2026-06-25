@@ -213,10 +213,9 @@ internal class AssAtlasPipeline(
   // first actual render. Confined to the libass thread after creation.
   private var slots: AtlasSlots? = null
 
-  private fun rendererStateGeneration(): Long =
-    assHandler.render?.let {
-      (System.identityHashCode(it).toLong() shl 32) or (it.stateGeneration.toLong() and 0xffffffffL)
-    } ?: -1L
+  private fun rendererStateGeneration(): Long = assHandler.render?.let {
+    (System.identityHashCode(it).toLong() shl 32) or (it.stateGeneration.toLong() and 0xffffffffL)
+  } ?: -1L
 
   private fun acquireSlots(): AtlasSlots {
     slots?.let { return it }
@@ -484,8 +483,10 @@ private class SubtitleFramePhaseEstimator {
 
     val ptsDeltaUs = ptsUs - prevPtsUs
     val releaseDeltaNs = releaseNs - prevReleaseNs
-    if (ptsDeltaUs <= 0 || ptsDeltaUs > MAX_DELTA_US ||
-      releaseDeltaNs <= 0 || releaseDeltaNs > MAX_DELTA_NS
+    if (ptsDeltaUs <= 0 ||
+      ptsDeltaUs > MAX_DELTA_US ||
+      releaseDeltaNs <= 0 ||
+      releaseDeltaNs > MAX_DELTA_NS
     ) {
       deltaCount = 0
       deltaIndex = 0
@@ -504,8 +505,7 @@ private class SubtitleFramePhaseEstimator {
     return copy[count / 2]
   }
 
-  private fun saturatedAdd(value: Long, delta: Long): Long =
-    if (delta > 0 && value > Long.MAX_VALUE - delta) Long.MAX_VALUE else value + delta
+  private fun saturatedAdd(value: Long, delta: Long): Long = if (delta > 0 && value > Long.MAX_VALUE - delta) Long.MAX_VALUE else value + delta
 
   private companion object {
     const val UNSET = Long.MIN_VALUE
@@ -947,11 +947,11 @@ private class AtlasGlThread(
       copy.sort()
       measuredIntervalNs = copy[releaseDeltaCount / 2]
       swapLeadNs = (measuredIntervalNs / 2).coerceIn(
-        SCHEDULED_SWAP_LEAD_MIN_NS, SCHEDULED_SWAP_LEAD_MAX_NS
+        SCHEDULED_SWAP_LEAD_MIN_NS,
+        SCHEDULED_SWAP_LEAD_MAX_NS
       )
     }
   }
-
 
   private lateinit var handler: Handler
   private var eglDisplay: EGLDisplay = EGL14.EGL_NO_DISPLAY
@@ -1322,6 +1322,7 @@ private class AtlasGlThread(
     private const val MSG_SIZE_CHANGED = 3
     private const val MSG_RELEASE = 4
     private const val SYNC_LOG_INTERVAL_SWAPS = 120L
+
     // Missing SurfaceFlinger's latch deadline costs a full refresh, so keep the
     // margin proportional to the active cadence.
     private const val SCHEDULED_SWAP_LEAD_MIN_NS = 6_000_000L

@@ -168,6 +168,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
   private var videoZoomScale: Float = 1.0f
   private var assHandler: AssHandler? = null
   private var assSubtitleView: AssSubtitleSurfaceView? = null
+
   // Touched from the codec metadata listener, the GL-thread overlay hook, and the main-thread
   // media-item-transition/dispose paths — keep visibility across threads.
   @Volatile private var latencyCalibrator: AssLatencyCalibrator? = null
@@ -739,7 +740,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
               overlaySurface = assView,
               onCalibrated = { frames -> onAssLatencyCalibrated(frames) },
               onDone = { assSubtitleView?.setPreSwapProbe(null) },
-              log = { msg -> emitLog("info", "ass-latency-cal", msg) },
+              log = { msg -> emitLog("info", "ass-latency-cal", msg) }
             ).also {
               it.start()
               // Bind the hook to THIS instance, not the volatile field, so a concurrent transition

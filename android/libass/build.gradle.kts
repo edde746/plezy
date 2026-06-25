@@ -25,7 +25,7 @@ android {
         // A shared cache keeps per-ABI CMake runs from redownloading libass.
         arguments += listOf(
           "-DANDROID_STL=c++_shared",
-          "-DLIBASS_CACHE_DIR=${layout.buildDirectory.get().asFile}/libass-prebuilt",
+          "-DLIBASS_CACHE_DIR=${layout.buildDirectory.get().asFile}/libass-prebuilt"
         )
       }
     }

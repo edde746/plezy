@@ -67,8 +67,7 @@ static int64_t readFenceTimeNs(int fd, int* outStatus) {
   if (ioctl(fd, SYNC_IOC_FILE_INFO, &probe) < 0) return -1;
   *outStatus = probe.status;
   if (probe.status != 1 || probe.num_fences == 0) return -1;
-  struct stp_fence_info* arr =
-      (struct stp_fence_info*)calloc(probe.num_fences, sizeof(struct stp_fence_info));
+  struct stp_fence_info* arr = (struct stp_fence_info*)calloc(probe.num_fences, sizeof(struct stp_fence_info));
   if (!arr) return -1;
   struct stp_file_info req;
   memset(&req, 0, sizeof(req));
@@ -118,10 +117,7 @@ static int resolveSc(void) {
   p_getControls = (pf_getControls)dlsym(h, "ASurfaceTransactionStats_getASurfaceControls");
   p_prevRelease = (pf_prevRelease)dlsym(h, "ASurfaceTransactionStats_getPreviousReleaseFenceFd");
   p_releaseControls = (pf_releaseControls)dlsym(h, "ASurfaceTransactionStats_releaseASurfaceControls");
-  gScOk = (p_fromJava && p_setOnComplete && p_latchTime && p_getControls && p_prevRelease &&
-           p_releaseControls)
-              ? 1
-              : 0;
+  gScOk = (p_fromJava && p_setOnComplete && p_latchTime && p_getControls && p_prevRelease && p_releaseControls) ? 1 : 0;
   return gScOk;
 }
 
@@ -143,12 +139,12 @@ static int64_t nowMonoNs(void) {
   return (int64_t)ts.tv_sec * 1000000000LL + ts.tv_nsec;
 }
 
-static void reportResult(JNIEnv* env, int64_t tag, int64_t latchNs, int64_t releaseNs, int count,
-                         int fenceState, int source, int64_t cbNs) {
+static void reportResult(
+    JNIEnv* env, int64_t tag, int64_t latchNs, int64_t releaseNs, int count, int fenceState, int source, int64_t cbNs) {
   if (!env || !gProbeClass || !gOnResult) return;
-  (*env)->CallStaticVoidMethod(env, gProbeClass, gOnResult, (jlong)tag, (jlong)latchNs,
-                               (jlong)releaseNs, (jint)count, (jint)fenceState, (jint)source,
-                               (jlong)cbNs);
+  (*env)->CallStaticVoidMethod(
+      env, gProbeClass, gOnResult, (jlong)tag, (jlong)latchNs, (jlong)releaseNs, (jint)count, (jint)fenceState,
+      (jint)source, (jlong)cbNs);
   if ((*env)->ExceptionCheck(env)) (*env)->ExceptionClear(env);
 }
 

@@ -210,8 +210,7 @@ internal class SpecRenderEngine(
     return SpecWrite(target, frame)
   }
 
-  private fun isImplicitBlank(frame: AssAtlasFrame): Boolean =
-    !frame.hasOutput && libassLastFrame?.hasOutput == true
+  private fun isImplicitBlank(frame: AssAtlasFrame): Boolean = !frame.hasOutput && libassLastFrame?.hasOutput == true
 
   /**
    * Pre-renders [ptsUs] (an upcoming event's start) purely to warm the

@@ -298,8 +298,8 @@ JNIEXPORT jobject JNICALL Java_com_edde746_plezy_libass_AssRender_nativeAssRende
     const jboolean hasOutput = imageListHasOutput(image) ? JNI_TRUE : JNI_FALSE;
     if (tAss - t0 > 40) {
       __android_log_print(
-          ANDROID_LOG_WARN, LOG_TAG, "slow render t=%lldms: ass=%lldms (changed=%d, hasOutput=%d)",
-          (long long)time, tAss - t0, changed, hasOutput == JNI_TRUE);
+          ANDROID_LOG_WARN, LOG_TAG, "slow render t=%lldms: ass=%lldms (changed=%d, hasOutput=%d)", (long long)time,
+          tAss - t0, changed, hasOutput == JNI_TRUE);
     }
     return (*env)->NewObject(env, atlasFrameClass, ctor, 0, 0, 0, changed, 0, hasOutput);
   }
@@ -569,8 +569,7 @@ static EGLint gFtPresentName = EGL_DISPLAY_PRESENT_TIME_ANDROID;
 // Probes the extension on the currently-current draw surface and enables capture.
 // Re-resolves the display/surface each call so surface recreation is handled.
 // Returns one of the FT_* codes above.
-JNIEXPORT jint JNICALL
-Java_com_edde746_plezy_libass_AssFrameTimestamps_nativeInit(JNIEnv* env, jclass clazz) {
+JNIEXPORT jint JNICALL Java_com_edde746_plezy_libass_AssFrameTimestamps_nativeInit(JNIEnv* env, jclass clazz) {
   gFtSurface = EGL_NO_SURFACE;
   EGLDisplay dpy = eglGetCurrentDisplay();
   EGLSurface surf = eglGetCurrentSurface(EGL_DRAW);
@@ -632,8 +631,7 @@ Java_com_edde746_plezy_libass_AssFrameTimestamps_nativeGetNextFrameId(JNIEnv* en
 // Present (or composition) time for frameId (System.nanoTime() domain), or the
 // PENDING(-2)/INVALID(-1) sentinels. Reported a few frames after the swap.
 JNIEXPORT jlong JNICALL
-Java_com_edde746_plezy_libass_AssFrameTimestamps_nativeGetDisplayPresentTime(
-    JNIEnv* env, jclass clazz, jlong frameId) {
+Java_com_edde746_plezy_libass_AssFrameTimestamps_nativeGetDisplayPresentTime(JNIEnv* env, jclass clazz, jlong frameId) {
   if (pEglGetFrameTimestamps == NULL || gFtSurface == EGL_NO_SURFACE) return EGL_TIMESTAMP_INVALID_ANDROID;
   const EGLint names[1] = {gFtPresentName};
   EGLnsecsANDROID values[1] = {0};

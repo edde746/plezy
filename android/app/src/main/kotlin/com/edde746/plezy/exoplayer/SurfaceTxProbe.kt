@@ -36,7 +36,7 @@ object SurfaceTxProbe {
     surfaceCount: Int,
     fenceState: Int,
     source: Int,
-    callbackNs: Long,
+    callbackNs: Long
   ) {
     val s = sink ?: return
     s.invoke(tag, latchNs, releaseNs, surfaceCount, fenceState, source, callbackNs)
