@@ -70,11 +70,13 @@ const _folderRowFields = 'SortName';
 
 /// Even slimmer set used by [fetchClientSideEpisodeQueue]. Queue rows
 /// only need title, thumbnail (`ImageTags['Primary']`), season/episode
-/// index, and watched state. Title + indices come back without any
-/// `Fields` request; we only need to ask for `UserData` for the
-/// watched indicator. Drops `Overview` etc. so that even a thousand-
-/// episode shounen show fits comfortably in one response.
-const _queueFields = 'UserData';
+/// index, watched state, and the air date that drives the watch order.
+/// Title + indices come back without any `Fields` request; we ask for
+/// `UserData` (watched indicator) and `PremiereDate` (air-date sort, so
+/// Specials interleave — see [compareEpisodesByWatchOrder]). Drops
+/// `Overview` etc. so even a thousand-episode shounen show fits in one
+/// response.
+const _queueFields = 'UserData,PremiereDate';
 
 /// Page size for [fetchClientSideEpisodeQueue]. Keeps each server response
 /// bounded while still returning the full series queue.
@@ -915,16 +917,17 @@ mixin _JellyfinBrowseMethods on MediaServerCacheMixin {
     return _pagedMediaItems(response.data, offset: offset, requestedSize: pageSize);
   }
 
-  /// All episodes of a series in the app's watch order — regular seasons
-  /// first, Specials (season 0) last — so the client-side next/previous queue
-  /// matches what downloads and offline playback use (#1414). The server sort
-  /// ([_episodeOrderQueryParameters]) keeps paging stable (and lists Specials
-  /// first); [sortEpisodesByWatchOrder] then normalizes the assembled list to
-  /// the shared convention, leaving a single definition of "episode order".
+  /// All episodes of a series in the app's **aired watch order** — primarily by
+  /// air date, so Specials interleave between regular episodes the way Plex's
+  /// own play queue does — so the client-side next/previous queue matches
+  /// streaming, downloads, and offline playback (#1416/#1414). The server sort
+  /// ([_episodeOrderQueryParameters]) only keeps paging stable;
+  /// [sortEpisodesByWatchOrder] then orders the assembled list, leaving a single
+  /// definition of "episode order".
   ///
-  /// Uses [_queueFields] (only `UserData`) instead of the browse field
-  /// set so the response stays small even for shows with thousands of
-  /// episodes.
+  /// Uses [_queueFields] (`UserData` + `PremiereDate`) instead of the full
+  /// browse field set so the response stays small even for shows with thousands
+  /// of episodes.
   ///
   /// Paged in [_episodeQueuePageSize] chunks so long-running shows still get
   /// a complete client-side next/previous queue without one huge response.
@@ -960,8 +963,8 @@ mixin _JellyfinBrowseMethods on MediaServerCacheMixin {
       startIndex += page.length;
     }
 
-    // Server lists Specials first (ParentIndexNumber asc); reorder to the
-    // shared watch order so online next/prev matches offline + downloads.
+    // Server lists Specials first (ParentIndexNumber asc); reorder into the
+    // shared aired watch order so online next/prev matches offline + downloads.
     sortEpisodesByWatchOrder(all);
     return all;
   }
