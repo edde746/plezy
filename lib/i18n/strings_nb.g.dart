@@ -1288,6 +1288,7 @@ class _TranslationsDownloadsNb extends TranslationsDownloadsEn {
 	@override String get unwatchedOnly => 'Kun usette';
 	@override String nextNUnwatched({required Object count}) => 'Neste ${count} usette';
 	@override String get customAmount => 'Egendefinert antall...';
+	@override String get includeSpecials => 'Inkluder spesialepisoder';
 	@override String get howManyEpisodes => 'Hvor mange episoder?';
 	@override String itemsQueued({required Object count}) => '${count} elementer i nedlastingskø';
 	@override String get keepSynced => 'Hold synkronisert';
@@ -2878,6 +2879,7 @@ extension on TranslationsNb {
 			'downloads.unwatchedOnly' => 'Kun usette',
 			'downloads.nextNUnwatched' => ({required Object count}) => 'Neste ${count} usette',
 			'downloads.customAmount' => 'Egendefinert antall...',
+			'downloads.includeSpecials' => 'Inkluder spesialepisoder',
 			'downloads.howManyEpisodes' => 'Hvor mange episoder?',
 			'downloads.itemsQueued' => ({required Object count}) => '${count} elementer i nedlastingskø',
 			'downloads.keepSynced' => 'Hold synkronisert',
@@ -2950,9 +2952,9 @@ extension on TranslationsNb {
 			'companionRemote.pairing.authFailed' => 'Autentisering mislyktes. Begge enheter må bruke samme Plex-konto.',
 			'companionRemote.pairing.failedToConnect' => ({required Object error}) => 'Kunne ikke koble til: ${error}',
 			'companionRemote.remote.disconnectConfirm' => 'Vil du koble fra fjernøkten?',
-			'companionRemote.remote.reconnecting' => 'Kobler til på nytt...',
 			_ => null,
 		} ?? switch (path) {
+			'companionRemote.remote.reconnecting' => 'Kobler til på nytt...',
 			'companionRemote.remote.attemptOf' => ({required Object current}) => 'Forsøk ${current} av 5',
 			'companionRemote.remote.retryNow' => 'Prøv nå',
 			'companionRemote.remote.tabRemote' => 'Fjernkontroll',

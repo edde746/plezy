@@ -273,6 +273,10 @@ class FocusableSwitchListTile extends StatefulWidget {
   /// Visual density for the list tile.
   final VisualDensity? visualDensity;
 
+  /// Content padding, e.g. to align with sibling rows. Null uses the
+  /// SwitchListTile default.
+  final EdgeInsetsGeometry? contentPadding;
+
   const FocusableSwitchListTile({
     super.key,
     this.title,
@@ -284,6 +288,7 @@ class FocusableSwitchListTile extends StatefulWidget {
     this.focusNode,
     this.autofocus = false,
     this.visualDensity = const VisualDensity(vertical: -3),
+    this.contentPadding,
   });
 
   @override
@@ -325,6 +330,7 @@ class _FocusableSwitchListTileState extends State<FocusableSwitchListTile>
         onChanged: widget.onChanged,
         dense: widget.dense,
         visualDensity: widget.visualDensity,
+        contentPadding: widget.contentPadding,
         focusNode: effectiveFocusNode,
         autofocus: widget.autofocus,
       ),

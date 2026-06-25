@@ -1031,6 +1031,7 @@
     "unwatchedOnly": "Только непросмотренные",
     "nextNUnwatched": "Следующие ${count} непросмотренных",
     "customAmount": "Указать количество...",
+    "includeSpecials": "Включить спецвыпуски",
     "howManyEpisodes": "Сколько эпизодов?",
     "itemsQueued": "${count} элементов добавлено в очередь загрузки",
     "keepSynced": "Синхронизировать",

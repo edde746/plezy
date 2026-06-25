@@ -261,6 +261,7 @@ class SyncRuleExecutor {
         unwatchedOnly: true,
         out: fromServer,
         fallback: sourceMetadata,
+        includeSpecials: rule.includeSpecials,
       );
     } else {
       await collectEpisodesForSeason(

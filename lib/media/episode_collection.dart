@@ -20,8 +20,16 @@ Future<void> collectEpisodesForShow(
   required bool unwatchedOnly,
   required List<MediaItem> out,
   MediaItem? fallback,
+  bool includeSpecials = true,
 }) {
-  return _collectPlayable(client, showRatingKey, unwatchedOnly: unwatchedOnly, out: out, fallback: fallback);
+  return _collectPlayable(
+    client,
+    showRatingKey,
+    unwatchedOnly: unwatchedOnly,
+    out: out,
+    fallback: fallback,
+    includeSpecials: includeSpecials,
+  );
 }
 
 /// Collect every episode of a single season into [out] via the same
@@ -33,8 +41,16 @@ Future<void> collectEpisodesForSeason(
   required bool unwatchedOnly,
   required List<MediaItem> out,
   MediaItem? fallback,
+  bool includeSpecials = true,
 }) {
-  return _collectPlayable(client, seasonRatingKey, unwatchedOnly: unwatchedOnly, out: out, fallback: fallback);
+  return _collectPlayable(
+    client,
+    seasonRatingKey,
+    unwatchedOnly: unwatchedOnly,
+    out: out,
+    fallback: fallback,
+    includeSpecials: includeSpecials,
+  );
 }
 
 /// Fetch just the first episode of a season without walking the entire season.
@@ -253,6 +269,7 @@ Future<void> _collectPlayable(
   required bool unwatchedOnly,
   required List<MediaItem> out,
   MediaItem? fallback,
+  bool includeSpecials = true,
 }) async {
   final leaves = await client.fetchPlayableDescendants(parentId);
   // Collect into a local list and order it before handing back: the backend
@@ -266,6 +283,7 @@ Future<void> _collectPlayable(
   final collected = <MediaItem>[];
   for (final ep in leaves) {
     if (ep.kind != MediaKind.episode) continue;
+    if (!includeSpecials && isSpecialSeasonNumber(ep.parentIndex)) continue;
     if (unwatchedOnly && !ep.isUnwatchedOrInProgress) continue;
     collected.add(_withFallbackLibrary(ep, fallback));
   }

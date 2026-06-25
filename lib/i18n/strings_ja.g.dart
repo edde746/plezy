@@ -1288,6 +1288,7 @@ class _TranslationsDownloadsJa extends TranslationsDownloadsEn {
 	@override String get unwatchedOnly => '未視聴のみ';
 	@override String nextNUnwatched({required Object count}) => '次の${count}件の未視聴';
 	@override String get customAmount => '数を指定...';
+	@override String get includeSpecials => 'スペシャルを含める';
 	@override String get howManyEpisodes => '何エピソード？';
 	@override String itemsQueued({required Object count}) => '${count}件をダウンロードキューに追加';
 	@override String get keepSynced => '同期を維持';
@@ -2878,6 +2879,7 @@ extension on TranslationsJa {
 			'downloads.unwatchedOnly' => '未視聴のみ',
 			'downloads.nextNUnwatched' => ({required Object count}) => '次の${count}件の未視聴',
 			'downloads.customAmount' => '数を指定...',
+			'downloads.includeSpecials' => 'スペシャルを含める',
 			'downloads.howManyEpisodes' => '何エピソード？',
 			'downloads.itemsQueued' => ({required Object count}) => '${count}件をダウンロードキューに追加',
 			'downloads.keepSynced' => '同期を維持',
@@ -2950,9 +2952,9 @@ extension on TranslationsJa {
 			'companionRemote.pairing.authFailed' => '認証に失敗しました。両方のデバイスで同じPlexアカウントが必要です。',
 			'companionRemote.pairing.failedToConnect' => ({required Object error}) => '接続に失敗しました: ${error}',
 			'companionRemote.remote.disconnectConfirm' => 'リモートセッションから切断しますか？',
-			'companionRemote.remote.reconnecting' => '再接続中...',
 			_ => null,
 		} ?? switch (path) {
+			'companionRemote.remote.reconnecting' => '再接続中...',
 			'companionRemote.remote.attemptOf' => ({required Object current}) => '試行 ${current}/5',
 			'companionRemote.remote.retryNow' => '今すぐ再試行',
 			'companionRemote.remote.tabRemote' => 'リモート',

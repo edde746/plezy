@@ -383,6 +383,11 @@ class SettingsService extends BaseSharedPreferencesService {
   static const customDownloadPathType = NullableStringPref('custom_download_path_type');
   static const downloadOnWifiOnly = BoolPref('download_on_wifi_only');
   static const autoRemoveWatchedDownloads = BoolPref('auto_remove_watched_downloads');
+
+  /// Remembered state of the "Include Specials" toggle on the show download
+  /// dialog. Defaults to true (include) so existing behavior is unchanged;
+  /// turning it off persists so the next download keeps the choice.
+  static const downloadIncludeSpecials = BoolPref('download_include_specials', defaultValue: true);
   static const autoCheckUpdatesOnStartup = BoolPref('auto_check_updates_on_startup', defaultValue: true);
   static const showPerformanceOverlay = BoolPref('show_performance_overlay');
   static const autoHidePerformanceOverlay = BoolPref('auto_hide_performance_overlay', defaultValue: true);
@@ -798,6 +803,7 @@ class SettingsService extends BaseSharedPreferencesService {
     rememberTrackSelections,
     customDownloadPathType,
     downloadOnWifiOnly,
+    downloadIncludeSpecials,
     autoCheckUpdatesOnStartup,
     showPerformanceOverlay,
     autoHidePerformanceOverlay,

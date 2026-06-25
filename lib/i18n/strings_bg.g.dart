@@ -1288,6 +1288,7 @@ class _TranslationsDownloadsBg extends TranslationsDownloadsEn {
 	@override String get unwatchedOnly => 'Само негледани';
 	@override String nextNUnwatched({required Object count}) => 'Следващите ${count} негледани';
 	@override String get customAmount => 'Персонален брой...';
+	@override String get includeSpecials => 'Включи специалните';
 	@override String get howManyEpisodes => 'Колко епизода?';
 	@override String itemsQueued({required Object count}) => '${count} елемента са добавени в опашката за изтегляне';
 	@override String get keepSynced => 'Поддържай синхронизирано';
@@ -2878,6 +2879,7 @@ extension on TranslationsBg {
 			'downloads.unwatchedOnly' => 'Само негледани',
 			'downloads.nextNUnwatched' => ({required Object count}) => 'Следващите ${count} негледани',
 			'downloads.customAmount' => 'Персонален брой...',
+			'downloads.includeSpecials' => 'Включи специалните',
 			'downloads.howManyEpisodes' => 'Колко епизода?',
 			'downloads.itemsQueued' => ({required Object count}) => '${count} елемента са добавени в опашката за изтегляне',
 			'downloads.keepSynced' => 'Поддържай синхронизирано',
@@ -2950,9 +2952,9 @@ extension on TranslationsBg {
 			'companionRemote.pairing.authFailed' => 'Удостоверяването е неуспешно. Двете устройства трябва да използват същия Plex акаунт.',
 			'companionRemote.pairing.failedToConnect' => ({required Object error}) => 'Неуспешно свързване: ${error}',
 			'companionRemote.remote.disconnectConfirm' => 'Искате ли да прекъснете връзката с дистанционната сесия?',
-			'companionRemote.remote.reconnecting' => 'Повторно свързване...',
 			_ => null,
 		} ?? switch (path) {
+			'companionRemote.remote.reconnecting' => 'Повторно свързване...',
 			'companionRemote.remote.attemptOf' => ({required Object current}) => 'Опит ${current} от 5',
 			'companionRemote.remote.retryNow' => 'Опитай сега',
 			'companionRemote.remote.tabRemote' => 'Дистанционно',

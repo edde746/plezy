@@ -1288,6 +1288,7 @@ class _TranslationsDownloadsDa extends TranslationsDownloadsEn {
 	@override String get unwatchedOnly => 'Kun usete';
 	@override String nextNUnwatched({required Object count}) => 'Næste ${count} usete';
 	@override String get customAmount => 'Angiv antal...';
+	@override String get includeSpecials => 'Inkludér specials';
 	@override String get howManyEpisodes => 'Hvor mange episoder?';
 	@override String itemsQueued({required Object count}) => '${count} elementer sat i kø til download';
 	@override String get keepSynced => 'Hold synkroniseret';
@@ -2878,6 +2879,7 @@ extension on TranslationsDa {
 			'downloads.unwatchedOnly' => 'Kun usete',
 			'downloads.nextNUnwatched' => ({required Object count}) => 'Næste ${count} usete',
 			'downloads.customAmount' => 'Angiv antal...',
+			'downloads.includeSpecials' => 'Inkludér specials',
 			'downloads.howManyEpisodes' => 'Hvor mange episoder?',
 			'downloads.itemsQueued' => ({required Object count}) => '${count} elementer sat i kø til download',
 			'downloads.keepSynced' => 'Hold synkroniseret',
@@ -2950,9 +2952,9 @@ extension on TranslationsDa {
 			'companionRemote.pairing.authFailed' => 'Godkendelse mislykkedes. Begge enheder skal bruge samme Plex-konto.',
 			'companionRemote.pairing.failedToConnect' => ({required Object error}) => 'Kunne ikke oprette forbindelse: ${error}',
 			'companionRemote.remote.disconnectConfirm' => 'Vil du afbryde fra fjernsessionen?',
-			'companionRemote.remote.reconnecting' => 'Genopretter forbindelse...',
 			_ => null,
 		} ?? switch (path) {
+			'companionRemote.remote.reconnecting' => 'Genopretter forbindelse...',
 			'companionRemote.remote.attemptOf' => ({required Object current}) => 'Forsøg ${current} af 5',
 			'companionRemote.remote.retryNow' => 'Prøv igen nu',
 			'companionRemote.remote.tabRemote' => 'Fjernbetjening',

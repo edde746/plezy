@@ -104,7 +104,36 @@ class _SeasonPagingRecordingClient extends _RecordingClient implements SeasonEpi
   }
 }
 
+class _LeavesClient implements MediaServerClient {
+  _LeavesClient(this.leaves);
+
+  final List<MediaItem> leaves;
+
+  @override
+  Future<List<MediaItem>> fetchPlayableDescendants(String parentId) async => leaves;
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
 void main() {
+  test('collectEpisodesForShow drops Specials when includeSpecials is false', () async {
+    final client = _LeavesClient([
+      _episode('s1e1', parentIndex: 1, index: 1, originallyAvailableAt: '2022-10-05'),
+      _episode('s0e1', parentIndex: 0, index: 1, originallyAvailableAt: '2022-10-27'),
+      _episode('s1e2', parentIndex: 1, index: 2, originallyAvailableAt: '2022-11-02'),
+    ]);
+
+    final withoutSpecials = <MediaItem>[];
+    await collectEpisodesForShow(client, 'show-1', unwatchedOnly: false, out: withoutSpecials, includeSpecials: false);
+    expect(withoutSpecials.map((e) => e.id), ['s1e1', 's1e2']);
+
+    // Default keeps Specials, interleaved into aired order.
+    final withSpecials = <MediaItem>[];
+    await collectEpisodesForShow(client, 'show-1', unwatchedOnly: false, out: withSpecials);
+    expect(withSpecials.map((e) => e.id), ['s1e1', 's0e1', 's1e2']);
+  });
+
   test('defaultPlaybackSeason skips specials when a regular season exists', () {
     final special = _season('specials', index: 0);
     final season1 = _season('season-1');

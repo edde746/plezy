@@ -3084,6 +3084,9 @@ class TranslationsDownloadsEn {
 	/// en: 'Custom amount...'
 	String get customAmount => 'Custom amount...';
 
+	/// en: 'Include Specials'
+	String get includeSpecials => 'Include Specials';
+
 	/// en: 'How many episodes?'
 	String get howManyEpisodes => 'How many episodes?';
 
@@ -5472,6 +5475,7 @@ extension on Translations {
 			'downloads.unwatchedOnly' => 'Unwatched only',
 			'downloads.nextNUnwatched' => ({required Object count}) => 'Next ${count} unwatched',
 			'downloads.customAmount' => 'Custom amount...',
+			'downloads.includeSpecials' => 'Include Specials',
 			'downloads.howManyEpisodes' => 'How many episodes?',
 			'downloads.itemsQueued' => ({required Object count}) => '${count} items queued for download',
 			'downloads.keepSynced' => 'Keep synced',
@@ -5535,9 +5539,9 @@ extension on Translations {
 			'companionRemote.pairing.noDevicesFound' => 'No devices found on your network',
 			'companionRemote.pairing.noDevicesHint' => 'Open Plezy on desktop and use the same WiFi',
 			'companionRemote.pairing.availableDevices' => 'Available Devices',
-			'companionRemote.pairing.manualConnection' => 'Manual Connection',
 			_ => null,
 		} ?? switch (path) {
+			'companionRemote.pairing.manualConnection' => 'Manual Connection',
 			'companionRemote.pairing.cryptoInitFailed' => 'Couldn\'t start secure connection. Sign in to Plex first.',
 			'companionRemote.pairing.validationHostRequired' => 'Please enter host address',
 			'companionRemote.pairing.validationHostFormat' => 'Format must be IP:port (e.g., 192.168.1.100:48632)',

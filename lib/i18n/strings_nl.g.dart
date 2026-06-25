@@ -1288,6 +1288,7 @@ class _TranslationsDownloadsNl extends TranslationsDownloadsEn {
 	@override String get unwatchedOnly => 'Alleen onbekeken';
 	@override String nextNUnwatched({required Object count}) => 'Volgende ${count} onbekeken';
 	@override String get customAmount => 'Aangepast aantal...';
+	@override String get includeSpecials => 'Specials opnemen';
 	@override String get howManyEpisodes => 'Hoeveel afleveringen?';
 	@override String itemsQueued({required Object count}) => '${count} items in downloadwachtrij';
 	@override String get keepSynced => 'Gesynchroniseerd houden';
@@ -2878,6 +2879,7 @@ extension on TranslationsNl {
 			'downloads.unwatchedOnly' => 'Alleen onbekeken',
 			'downloads.nextNUnwatched' => ({required Object count}) => 'Volgende ${count} onbekeken',
 			'downloads.customAmount' => 'Aangepast aantal...',
+			'downloads.includeSpecials' => 'Specials opnemen',
 			'downloads.howManyEpisodes' => 'Hoeveel afleveringen?',
 			'downloads.itemsQueued' => ({required Object count}) => '${count} items in downloadwachtrij',
 			'downloads.keepSynced' => 'Gesynchroniseerd houden',
@@ -2950,9 +2952,9 @@ extension on TranslationsNl {
 			'companionRemote.pairing.authFailed' => 'Authenticatie mislukt. Beide apparaten hebben hetzelfde Plex-account nodig.',
 			'companionRemote.pairing.failedToConnect' => ({required Object error}) => 'Kan niet verbinden: ${error}',
 			'companionRemote.remote.disconnectConfirm' => 'Wil je de verbinding met de externe sessie verbreken?',
-			'companionRemote.remote.reconnecting' => 'Opnieuw verbinden...',
 			_ => null,
 		} ?? switch (path) {
+			'companionRemote.remote.reconnecting' => 'Opnieuw verbinden...',
 			'companionRemote.remote.attemptOf' => ({required Object current}) => 'Poging ${current} van 5',
 			'companionRemote.remote.retryNow' => 'Nu opnieuw proberen',
 			'companionRemote.remote.tabRemote' => 'Afstandsbediening',

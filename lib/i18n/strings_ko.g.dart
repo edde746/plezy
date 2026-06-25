@@ -1288,6 +1288,7 @@ class _TranslationsDownloadsKo extends TranslationsDownloadsEn {
 	@override String get unwatchedOnly => '시청하지 않은 것만';
 	@override String nextNUnwatched({required Object count}) => '다음 ${count}개 미시청';
 	@override String get customAmount => '직접 입력...';
+	@override String get includeSpecials => '스페셜 포함';
 	@override String get howManyEpisodes => '몇 개의 에피소드?';
 	@override String itemsQueued({required Object count}) => '${count}개 항목이 다운로드 대기열에 추가됨';
 	@override String get keepSynced => '동기화 유지';
@@ -2878,6 +2879,7 @@ extension on TranslationsKo {
 			'downloads.unwatchedOnly' => '시청하지 않은 것만',
 			'downloads.nextNUnwatched' => ({required Object count}) => '다음 ${count}개 미시청',
 			'downloads.customAmount' => '직접 입력...',
+			'downloads.includeSpecials' => '스페셜 포함',
 			'downloads.howManyEpisodes' => '몇 개의 에피소드?',
 			'downloads.itemsQueued' => ({required Object count}) => '${count}개 항목이 다운로드 대기열에 추가됨',
 			'downloads.keepSynced' => '동기화 유지',
@@ -2950,9 +2952,9 @@ extension on TranslationsKo {
 			'companionRemote.pairing.authFailed' => '인증에 실패했습니다. 두 기기 모두 같은 Plex 계정이 필요합니다.',
 			'companionRemote.pairing.failedToConnect' => ({required Object error}) => '연결 실패: ${error}',
 			'companionRemote.remote.disconnectConfirm' => '원격 세션 연결을 해제하시겠습니까?',
-			'companionRemote.remote.reconnecting' => '재연결 중...',
 			_ => null,
 		} ?? switch (path) {
+			'companionRemote.remote.reconnecting' => '재연결 중...',
 			'companionRemote.remote.attemptOf' => ({required Object current}) => '${current}/5 시도 중',
 			'companionRemote.remote.retryNow' => '지금 재시도',
 			'companionRemote.remote.tabRemote' => '리모컨',

@@ -40,8 +40,8 @@ class _AppDatabaseTestSuite {
     // ============================================================
 
     group('schema', () {
-      test('schemaVersion is 15', () {
-        expect(db.schemaVersion, 15);
+      test('schemaVersion is 16', () {
+        expect(db.schemaVersion, 16);
       });
 
       test('all tables are accessible and start empty', () async {
@@ -865,6 +865,7 @@ class _AppDatabaseTestSuite {
         expect(rules.first.enabled, isTrue); // default
         expect(rules.first.downloadFilter, 'unwatched'); // default
         expect(rules.first.mediaIndex, 0); // default
+        expect(rules.first.includeSpecials, isTrue); // default
         expect(rules.first.lastExecutedAt, isNull);
       });
 
@@ -888,6 +889,7 @@ class _AppDatabaseTestSuite {
           targetType: 'season',
           episodeCount: 99,
           downloadFilter: 'all',
+          includeSpecials: false,
         );
 
         final rules = await db.getSyncRules();
@@ -895,6 +897,7 @@ class _AppDatabaseTestSuite {
         expect(rules.first.targetType, 'season');
         expect(rules.first.episodeCount, 99);
         expect(rules.first.downloadFilter, 'all');
+        expect(rules.first.includeSpecials, isFalse);
       });
 
       test('insertSyncRule allows the same server item for different profiles', () async {

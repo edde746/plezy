@@ -1031,6 +1031,7 @@
     "unwatchedOnly": "Alleen onbekeken",
     "nextNUnwatched": "Volgende ${count} onbekeken",
     "customAmount": "Aangepast aantal...",
+    "includeSpecials": "Specials opnemen",
     "howManyEpisodes": "Hoeveel afleveringen?",
     "itemsQueued": "${count} items in downloadwachtrij",
     "keepSynced": "Gesynchroniseerd houden",
