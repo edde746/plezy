@@ -54,11 +54,18 @@ Future<MediaItem?> fetchFirstEpisodeForSeason(
   return null;
 }
 
+/// A season number of 0 (or missing) denotes the Specials folder, which the
+/// app treats as a last resort for "what to watch next" — see
+/// [defaultPlaybackSeasonIndex], [firstUnwatchedSeasonIndex] and
+/// [compareEpisodesByWatchOrder].
+bool isSpecialSeasonNumber(int? seasonNumber) => (seasonNumber ?? 0) == 0;
+
 /// Prefer the first regular season over specials, falling back to the first
 /// season row when a show only has specials or lacks season indexes.
 int defaultPlaybackSeasonIndex(List<MediaItem> seasons) {
   if (seasons.isEmpty) return 0;
-  final regularSeasonIndex = seasons.indexWhere((season) => season.kind == MediaKind.season && (season.index ?? 0) > 0);
+  final regularSeasonIndex =
+      seasons.indexWhere((season) => season.kind == MediaKind.season && !isSpecialSeasonNumber(season.index));
   if (regularSeasonIndex != -1) return regularSeasonIndex;
   final firstSeasonIndex = seasons.indexWhere((season) => season.kind == MediaKind.season);
   return firstSeasonIndex == -1 ? 0 : firstSeasonIndex;
@@ -84,7 +91,7 @@ int? firstUnwatchedSeasonIndex(List<MediaItem> seasons) {
     final leaf = season.leafCount;
     if (leaf == null || leaf <= 0) continue;
     if ((season.viewedLeafCount ?? 0) >= leaf) continue; // fully watched
-    if ((season.index ?? 0) > 0) return i; // first regular season with unwatched
+    if (!isSpecialSeasonNumber(season.index)) return i; // first regular season with unwatched
     firstSpecial ??= i; // specials only count as a last resort
   }
   return firstSpecial;
@@ -96,11 +103,37 @@ int? firstUnwatchedSeasonIndex(List<MediaItem> seasons) {
 MediaItem? firstUnwatchedEpisode(List<MediaItem> episodes) {
   for (final episode in episodes) {
     if (episode.kind != MediaKind.episode) continue;
-    if (episode.isWatched && !episode.hasActiveProgress) continue;
+    if (!episode.isUnwatchedOrInProgress) continue;
     return episode;
   }
   return null;
 }
+
+/// Orders episodes the way the app selects "what to watch next": regular
+/// seasons first, Specials (season 0) last, then by season number, then
+/// episode number. Mirrors the "specials are a last resort" convention used by
+/// [defaultPlaybackSeasonIndex] / [firstUnwatchedSeasonIndex] and the offline
+/// continue-watching sort, so a count-capped "next N" selection (download /
+/// sync rule) takes the next regular episodes instead of the whole Specials
+/// folder first (#1414).
+///
+/// The trailing id comparison keeps the order deterministic for episodes that
+/// share a season/episode index — Dart's [List.sort] is not stable — so the
+/// "next N" cut is stable across runs.
+int compareEpisodesByWatchOrder(MediaItem a, MediaItem b) {
+  final aSpecial = isSpecialSeasonNumber(a.parentIndex);
+  final bSpecial = isSpecialSeasonNumber(b.parentIndex);
+  if (aSpecial != bSpecial) return aSpecial ? 1 : -1;
+  final season = (a.parentIndex ?? 0).compareTo(b.parentIndex ?? 0);
+  if (season != 0) return season;
+  final episode = (a.index ?? 0).compareTo(b.index ?? 0);
+  if (episode != 0) return episode;
+  return a.id.compareTo(b.id);
+}
+
+/// In-place sort by [compareEpisodesByWatchOrder]. See that function for the
+/// ordering rationale.
+void sortEpisodesByWatchOrder(List<MediaItem> episodes) => episodes.sort(compareEpisodesByWatchOrder);
 
 /// Find the season index matching an explicit navigation target or on-deck
 /// episode. With neither, fall back to the first season that still has
@@ -194,11 +227,20 @@ Future<void> _collectPlayable(
   MediaItem? fallback,
 }) async {
   final leaves = await client.fetchPlayableDescendants(parentId);
+  // Collect into a local list and order it before handing back: the backend
+  // returns episodes in raw container order (Plex /grandchildren puts S00
+  // first), and order-capped callers ("next N unwatched" download, sync-rule
+  // deficit) slice the front — so without this they'd grab Specials ahead of
+  // regular episodes (#1414). Sort the per-call slice, not the shared `out`
+  // accumulator, so multi-container callers don't interleave across shows.
+  final collected = <MediaItem>[];
   for (final ep in leaves) {
     if (ep.kind != MediaKind.episode) continue;
-    if (unwatchedOnly && ep.isWatched && !ep.hasActiveProgress) continue;
-    out.add(_withFallbackLibrary(ep, fallback));
+    if (unwatchedOnly && !ep.isUnwatchedOrInProgress) continue;
+    collected.add(_withFallbackLibrary(ep, fallback));
   }
+  sortEpisodesByWatchOrder(collected);
+  out.addAll(collected);
 }
 
 MediaItem _withFallbackLibrary(MediaItem item, MediaItem? fallback) {

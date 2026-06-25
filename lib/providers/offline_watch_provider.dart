@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import '../media/ids.dart';
 
 import '../i18n/strings.g.dart';
+import '../media/episode_collection.dart';
 import '../media/media_item.dart';
 import '../media/media_item_types.dart';
 import '../mixins/disposable_change_notifier_mixin.dart';
@@ -85,21 +86,13 @@ class OfflineWatchProvider extends ChangeNotifier with DisposableChangeNotifierM
     return metadata?.viewOffsetMs;
   }
 
-  /// Get sorted episodes for a show (by season, then episode number).
+  /// Get sorted episodes for a show: regular seasons first, Specials last,
+  /// then season then episode — the shared [sortEpisodesByWatchOrder] order,
+  /// so the offline watch order matches what "download next N" selects (#1414).
   List<MediaItem> _getSortedEpisodes(String showId) {
     final episodes = _downloadProvider.getDownloadedEpisodesForShow(showId);
     if (episodes.isEmpty) return episodes;
-
-    // Sort Season 0 (Specials) to the end so regular seasons play first
-    episodes.sort((a, b) {
-      final aIsSpecial = (a.parentIndex ?? 0) == 0;
-      final bIsSpecial = (b.parentIndex ?? 0) == 0;
-      if (aIsSpecial != bIsSpecial) return aIsSpecial ? 1 : -1;
-      final seasonCompare = (a.parentIndex ?? 0).compareTo(b.parentIndex ?? 0);
-      if (seasonCompare != 0) return seasonCompare;
-      return (a.index ?? 0).compareTo(b.index ?? 0);
-    });
-
+    sortEpisodesByWatchOrder(episodes);
     return episodes;
   }
 

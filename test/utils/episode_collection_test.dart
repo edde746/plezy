@@ -191,6 +191,49 @@ void main() {
     );
   });
 
+  test('sortEpisodesByWatchOrder puts regular seasons first and Specials last', () {
+    final s0e1 = _episode('s0e1', parentIndex: 0, index: 1);
+    final s0e2 = _episode('s0e2', parentIndex: 0, index: 2);
+    final s1e1 = _episode('s1e1', parentIndex: 1, index: 1);
+    final s1e2 = _episode('s1e2', parentIndex: 1, index: 2);
+    final s2e1 = _episode('s2e1', parentIndex: 2, index: 1);
+
+    // Raw /grandchildren order would lead with the Specials folder.
+    final episodes = [s0e1, s0e2, s1e1, s1e2, s2e1];
+    sortEpisodesByWatchOrder(episodes);
+
+    // A "next 2 unwatched" cut now takes S01E01/S01E02, not the Specials.
+    expect(episodes.map((e) => e.id), ['s1e1', 's1e2', 's2e1', 's0e1', 's0e2']);
+  });
+
+  test('compareEpisodesByWatchOrder breaks index ties on id for deterministic cuts', () {
+    final a = _episode('a', parentIndex: 1, index: 1);
+    final b = _episode('b', parentIndex: 1, index: 1);
+
+    expect(compareEpisodesByWatchOrder(a, b), lessThan(0));
+    expect(compareEpisodesByWatchOrder(b, a), greaterThan(0));
+    expect(compareEpisodesByWatchOrder(a, a), 0);
+  });
+
+  test('isSpecialSeasonNumber treats season 0 and missing numbers as Specials', () {
+    expect(isSpecialSeasonNumber(0), isTrue);
+    expect(isSpecialSeasonNumber(null), isTrue);
+    expect(isSpecialSeasonNumber(1), isFalse);
+    expect(isSpecialSeasonNumber(2), isFalse);
+  });
+
+  test('isUnwatchedOrInProgress keeps unwatched and resumable episodes', () {
+    // Unwatched.
+    expect(_episode('a', viewCount: 0).isUnwatchedOrInProgress, isTrue);
+    // Watched with no resume point — counts as done.
+    expect(_episode('b', viewCount: 1).isUnwatchedOrInProgress, isFalse);
+    // Watched but still resumable (re-watching) — counts as to-watch.
+    expect(
+      _episode('c', viewCount: 1, viewOffsetMs: 500, durationMs: 1000).isUnwatchedOrInProgress,
+      isTrue,
+    );
+  });
+
   test('fetchFirstEpisodeForSeason requests only the first children page', () async {
     final episode = _episode('episode-1');
     final client = _RecordingClient(

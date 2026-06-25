@@ -119,20 +119,11 @@ extension _VideoPlayerEpisodeQueueMethods on VideoPlayerScreenState {
 
       if (episodes.isEmpty) return;
 
-      // Sort by aired date, falling back to season/episode number
-      final sorted = List<MediaItem>.from(episodes)
-        ..sort((a, b) {
-          final aDate = a.originallyAvailableAt ?? '';
-          final bDate = b.originallyAvailableAt ?? '';
-          if (aDate.isEmpty && bDate.isEmpty) {
-            final seasonCmp = (a.parentIndex ?? 0).compareTo(b.parentIndex ?? 0);
-            if (seasonCmp != 0) return seasonCmp;
-            return (a.index ?? 0).compareTo(b.index ?? 0);
-          }
-          if (aDate.isEmpty) return 1;
-          if (bDate.isEmpty) return -1;
-          return aDate.compareTo(bDate);
-        });
+      // Regular seasons first, Specials last, then season/episode — the shared
+      // watch order, so offline next/prev matches what "download next N" selects
+      // and the offline continue-watching list use (#1414). Copy first so the
+      // provider's cached list isn't reordered.
+      final sorted = List<MediaItem>.from(episodes)..sort(compareEpisodesByWatchOrder);
 
       final currentIdx = sorted.indexWhere((ep) => ep.id == _currentMetadata.id);
 

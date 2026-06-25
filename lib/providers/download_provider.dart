@@ -921,7 +921,7 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     int count = 0;
 
     Future<void> queueItem(MediaItem item) async {
-      if (unwatchedOnly && item.isWatched && !item.hasActiveProgress) return;
+      if (unwatchedOnly && !item.isUnwatchedOrInProgress) return;
       final queued = await _queueSingleDownload(item, client, relatedContext: relatedContext);
       if (queued) count++;
     }

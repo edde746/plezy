@@ -915,7 +915,13 @@ mixin _JellyfinBrowseMethods on MediaServerCacheMixin {
     return _pagedMediaItems(response.data, offset: offset, requestedSize: pageSize);
   }
 
-  /// All episodes of a series in air order, optimised for queue-building.
+  /// All episodes of a series in the app's watch order — regular seasons
+  /// first, Specials (season 0) last — so the client-side next/previous queue
+  /// matches what downloads and offline playback use (#1414). The server sort
+  /// ([_episodeOrderQueryParameters]) keeps paging stable (and lists Specials
+  /// first); [sortEpisodesByWatchOrder] then normalizes the assembled list to
+  /// the shared convention, leaving a single definition of "episode order".
+  ///
   /// Uses [_queueFields] (only `UserData`) instead of the browse field
   /// set so the response stays small even for shows with thousands of
   /// episodes.
@@ -954,6 +960,9 @@ mixin _JellyfinBrowseMethods on MediaServerCacheMixin {
       startIndex += page.length;
     }
 
+    // Server lists Specials first (ParentIndexNumber asc); reorder to the
+    // shared watch order so online next/prev matches offline + downloads.
+    sortEpisodesByWatchOrder(all);
     return all;
   }
 
