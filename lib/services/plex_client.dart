@@ -2703,12 +2703,14 @@ class PlexClient
     String? librarySectionTitle,
   }) async {
     try {
-      final machineId = config.machineIdentifier ?? await getMachineIdentifier();
-      if (machineId == null) {
-        throw Exception('Could not get server machine identifier');
-      }
-
-      final uri = 'server://$machineId/com.plexapp.plugins.library/library/metadata/$showRatingKey/children';
+      // Build the queue from the show's `/allLeaves` (every episode) rather than
+      // `/children` (its seasons). Plex flattens `/children` season-by-season,
+      // which clumps the whole Specials folder together; `/allLeaves` makes Plex
+      // order the queue by the show's aired episode order, so Specials interleave
+      // between regular episodes the way Plex's own client plays them. `/children`
+      // otherwise strands interleaved Specials ahead of S01, so sequential
+      // auto-play walks the season and never reaches them (#1416).
+      final uri = '${await buildMetadataUri(showRatingKey)}/allLeaves';
       return await createPlayQueue(
         uri: uri,
         type: 'video',
