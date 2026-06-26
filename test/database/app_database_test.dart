@@ -40,8 +40,30 @@ class _AppDatabaseTestSuite {
     // ============================================================
 
     group('schema', () {
-      test('schemaVersion is 16', () {
-        expect(db.schemaVersion, 16);
+      test('schemaVersion is 17', () {
+        expect(db.schemaVersion, 17);
+      });
+
+      test('downloadQuality round-trips on DownloadedMedia and SyncRules (v17)', () async {
+        await db.insertDownload(
+          serverId: ServerId('srv'),
+          ratingKey: 'r1',
+          globalKey: 'srv:r1',
+          type: 'movie',
+          status: 0,
+          downloadQuality: 'p720_3mbps',
+        );
+        expect((await db.getDownloadedMedia('srv:r1'))?.downloadQuality, 'p720_3mbps');
+
+        await db.insertSyncRule(
+          serverId: ServerId('srv'),
+          ratingKey: 'show-1',
+          globalKey: 'srv:show-1',
+          targetType: 'show',
+          episodeCount: 0,
+          downloadQuality: 'p1080_10mbps',
+        );
+        expect((await db.getSyncRule('srv:show-1'))?.downloadQuality, 'p1080_10mbps');
       });
 
       test('all tables are accessible and start empty', () async {

@@ -14,7 +14,6 @@ import '../media/media_kind.dart';
 import '../media/media_playlist.dart';
 import '../media/media_server_client.dart';
 import '../metadata_edit/metadata_edit_adapters.dart';
-import '../media/media_version.dart';
 import '../mixins/controller_disposer_mixin.dart';
 import '../services/plex_client.dart';
 import '../services/media_list_playback_launcher.dart';
@@ -882,7 +881,7 @@ class MediaContextMenuState extends State<MediaContextMenu> {
         context,
         sourceBitrateKbps: selectedVersion?.bitrate,
         sourceDurationMs: item.durationMs,
-        sourceSizeBytes: _versionSizeBytes(selectedVersion),
+        sourceSizeBytes: selectedVersion?.totalSizeBytes,
       );
       if (picked == null || !context.mounted) return false;
       selectedQuality = picked;
@@ -896,20 +895,6 @@ class MediaContextMenuState extends State<MediaContextMenu> {
       selectedQualityPreset: selectedQuality,
     );
     return true;
-  }
-
-  /// Sum of [MediaPart.sizeBytes] across all parts of [version]. Returns
-  /// null when any part is missing a size (a partial sum would be misleading
-  /// for the "Original" row in the quality picker).
-  int? _versionSizeBytes(MediaVersion? version) {
-    if (version == null || version.parts.isEmpty) return null;
-    var total = 0;
-    for (final p in version.parts) {
-      final s = p.sizeBytes;
-      if (s == null || s <= 0) return null;
-      total += s;
-    }
-    return total > 0 ? total : null;
   }
 
   /// Handle shuffle play using play queues — dispatches via the

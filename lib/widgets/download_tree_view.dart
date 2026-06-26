@@ -41,6 +41,17 @@ class DownloadTreeNode {
   int get completedChildrenCount {
     return children.where((child) => child.status == DownloadStatus.completed).length;
   }
+
+  /// Whether this node (or any descendant) has a native download task that is
+  /// actively transferring. A node enqueued but held in the queue reads as
+  /// "Queued" rather than downloading.
+  bool get running => downloadProgress?.running ?? children.any((child) => child.running);
+
+  /// Whether this node has byte progress worth showing as a percentage. A
+  /// transcoded download whose server sends no Content-Length never does
+  /// (progress and total stay 0) → the UI shows an indeterminate bar; when the
+  /// server does report size, the normal percentage bar is shown as usual.
+  bool get hasMeasurableProgress => progress > 0 || (downloadProgress?.totalBytes ?? 0) > 0;
 }
 
 /// Type of node in the download tree
@@ -536,9 +547,9 @@ class _DownloadTreeItemState extends State<_DownloadTreeItem> {
   /// Treat downloading items with no progress/speed as effectively queued
   /// (they're waiting in background_downloader's HoldingQueue).
   DownloadStatus get _effectiveStatus {
-    if (widget.node.status == DownloadStatus.downloading &&
-        widget.node.progress == 0 &&
-        (widget.node.downloadProgress?.speed ?? 0) == 0) {
+    // An item is only really "downloading" once its native task is running;
+    // while it's enqueued and held in the download queue it reads as "Queued".
+    if (widget.node.status == DownloadStatus.downloading && !widget.node.running) {
       return DownloadStatus.queued;
     }
     return widget.node.status;
@@ -716,14 +727,28 @@ class _DownloadTreeItemState extends State<_DownloadTreeItem> {
               // Progress bar for active downloads
               if (_effectiveStatus == DownloadStatus.downloading) ...[
                 const SizedBox(height: 8),
+                // Show the real percentage when the server reports size; fall
+                // back to an indeterminate bar only for a transcode that
+                // reports no progress at all (and hide its "0.0% - 0 B/s" line).
                 LinearProgressIndicator(
-                  value: widget.node.progress,
+                  value: widget.node.hasMeasurableProgress ? widget.node.progress : null,
                   backgroundColor: theme.colorScheme.surfaceContainerHighest,
                 ),
-                if (widget.node.downloadProgress != null) ...[
+                if (widget.node.downloadProgress != null && widget.node.hasMeasurableProgress) ...[
                   const SizedBox(height: 4),
                   Text(
                     '${(widget.node.progress * 100).toStringAsFixed(1)}% - ${widget.node.downloadProgress!.speedFormatted}',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                    ),
+                  ),
+                ] else if (!widget.node.hasMeasurableProgress) ...[
+                  // No Content-Length (live server transcode) means no percentage
+                  // is ever reported — label the indeterminate bar so it isn't
+                  // mistaken for a finished download.
+                  const SizedBox(height: 4),
+                  Text(
+                    t.downloads.downloading,
                     style: theme.textTheme.bodySmall?.copyWith(
                       color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
                     ),

@@ -409,6 +409,14 @@ class SettingsService extends BaseSharedPreferencesService {
     values: TranscodeQualityPreset.values,
     defaultValue: TranscodeQualityPreset.original,
   );
+
+  /// Server-transcoded quality applied to new Plex downloads. Seeds the
+  /// per-download picker; downloads otherwise save the original file.
+  static const defaultDownloadQualityPreset = EnumPref<TranscodeQualityPreset>(
+    'default_download_quality_preset',
+    values: TranscodeQualityPreset.values,
+    defaultValue: TranscodeQualityPreset.original,
+  );
   static const autoPlayNextEpisode = BoolPref('auto_play_next_episode', defaultValue: true);
   static const useExoPlayer = BoolPref('use_exoplayer', defaultValue: true);
   static const startupSection = EnumPref<NavigationTabId>(

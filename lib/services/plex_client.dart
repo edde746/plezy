@@ -2976,6 +2976,7 @@ class PlexClient
     int? audioStreamId,
     MediaSubtitleTrack? selectedSubtitleTrack,
     int? offsetMs,
+    bool forDownload = false,
   }) async {
     try {
       final allParams = _buildTranscodeParams(
@@ -3017,7 +3018,7 @@ class PlexClient
           return (startPath: null, outcome: outcome);
         }
 
-        return (startPath: _buildTranscodeStartPathFromParams(allParams), outcome: outcome);
+        return (startPath: _buildTranscodeStartPathFromParams(allParams, forDownload: forDownload), outcome: outcome);
       } finally {
         decisionClient.close();
       }
@@ -3027,15 +3028,21 @@ class PlexClient
     }
   }
 
-  String _buildTranscodeStartPathFromParams(Map<String, String> params) {
+  String _buildTranscodeStartPathFromParams(Map<String, String> params, {bool forDownload = false}) {
     final startParams = Map<String, String>.from(params)..remove('X-Plex-Token');
     final startQuery = startParams.entries.map((e) => '${_plexEncode(e.key)}=${_plexEncode(e.value)}').join('&');
-    return '/video/:/transcode/universal/start?$startQuery';
+    // `download=1` puts the transcoder in offline mode: Plex serves a complete
+    // file as fast as the CPU allows instead of throttling to playback speed,
+    // and won't expire the session for racing ahead. Appended only to the start
+    // path (never the params map), so the /decision request stays identical to
+    // playback.
+    final downloadSuffix = forDownload ? '&download=1' : '';
+    return '/video/:/transcode/universal/start?$startQuery$downloadSuffix';
   }
 
   @visibleForTesting
-  String buildTranscodeStartPathFromParamsForTesting(Map<String, String> params) {
-    return _buildTranscodeStartPathFromParams(params);
+  String buildTranscodeStartPathFromParamsForTesting(Map<String, String> params, {bool forDownload = false}) {
+    return _buildTranscodeStartPathFromParams(params, forDownload: forDownload);
   }
 
   Map<String, String> _buildTranscodeParams({
@@ -4137,7 +4144,11 @@ class PlexClient
   }
 
   @override
-  Future<DownloadResolution> resolveDownload(MediaItem item, {int mediaIndex = 0}) async {
+  Future<DownloadResolution> resolveDownload(
+    MediaItem item, {
+    int mediaIndex = 0,
+    TranscodeQualityPreset preset = TranscodeQualityPreset.original,
+  }) async {
     final playbackData = await getVideoPlaybackData(item.id, mediaIndex: mediaIndex);
     final subtitles = <DownloadSubtitleSpec>[];
     final mediaInfo = playbackData.mediaInfo;
@@ -4159,11 +4170,52 @@ class PlexClient
         );
       }
     }
+
+    // Non-original quality: have the server transcode the download to the
+    // selected bitrate via the same universal-transcode flow playback uses
+    // (HTTP/MKV) with `download=1`. The decision flow falls back to the
+    // original file when transcoding isn't available, so this is non-fatal.
+    if (!preset.isOriginal) {
+      final transcodeUrl = await _resolveTranscodedDownloadUrl(item.id, mediaIndex, preset);
+      if (transcodeUrl != null) {
+        return DownloadResolution(
+          videoUrl: transcodeUrl,
+          mediaSourceId: playbackData.mediaInfo?.mediaSourceId,
+          externalSubtitles: subtitles,
+          container: 'mkv',
+        );
+      }
+    }
+
     return DownloadResolution(
       videoUrl: playbackData.videoUrl,
       mediaSourceId: playbackData.mediaInfo?.mediaSourceId,
       externalSubtitles: subtitles,
     );
+  }
+
+  /// Build a `download=1` universal-transcode URL for [ratingKey] at [preset],
+  /// or null when the server can't transcode it (the caller then falls back to
+  /// the direct original file). Uses a fresh transcode session with no resume
+  /// offset; downloads carry default audio and save subtitles as external
+  /// sidecars rather than muxing a selected track.
+  Future<String?> _resolveTranscodedDownloadUrl(String ratingKey, int mediaIndex, TranscodeQualityPreset preset) async {
+    final result = await buildTranscodeStartPath(
+      ratingKey: ratingKey,
+      mediaIndex: mediaIndex,
+      preset: preset,
+      sessionIdentifier: generateSessionIdentifier(),
+      transcodeSessionId: generateSessionIdentifier(),
+      offsetMs: null,
+      forDownload: true,
+    );
+    if (result.outcome == TranscodeDecisionOutcome.transcodeOk && result.startPath != null) {
+      return '${config.baseUrl}${result.startPath}'.withPlexToken(config.token);
+    }
+    appLogger.w(
+      'Transcoded download unavailable for $ratingKey (outcome: ${result.outcome}); falling back to original file',
+    );
+    return null;
   }
 
   @override

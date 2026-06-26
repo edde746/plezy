@@ -9,6 +9,7 @@ import 'package:plezy/media/library_query.dart';
 import 'package:plezy/media/media_backend.dart';
 import 'package:plezy/media/media_item.dart';
 import 'package:plezy/media/media_kind.dart';
+import 'package:plezy/models/transcode_quality_preset.dart';
 import 'package:plezy/media/media_server_client.dart';
 import 'package:plezy/media/server_capabilities.dart';
 import 'package:plezy/models/download_models.dart';
@@ -106,10 +107,11 @@ void main() {
       serverManager: manager,
       downloads: const {},
       metadata: const {},
-      queueSingleDownload: (item, client, {int mediaIndex = 0}) async {
-        queued.add((item: item, client: client));
-        return true;
-      },
+      queueSingleDownload:
+          (item, client, {int mediaIndex = 0, TranscodeQualityPreset quality = TranscodeQualityPreset.original}) async {
+            queued.add((item: item, client: client));
+            return true;
+          },
       isOffline: false,
       force: true,
     );
@@ -177,10 +179,11 @@ void main() {
       serverManager: manager,
       downloads: const {},
       metadata: const {},
-      queueSingleDownload: (item, client, {int mediaIndex = 0}) async {
-        queued.add(item);
-        return true;
-      },
+      queueSingleDownload:
+          (item, client, {int mediaIndex = 0, TranscodeQualityPreset quality = TranscodeQualityPreset.original}) async {
+            queued.add(item);
+            return true;
+          },
       isOffline: false,
       force: true,
     );
@@ -225,7 +228,13 @@ void main() {
       serverManager: manager,
       downloads: const {},
       metadata: const {},
-      queueSingleDownload: (item, client, {int mediaIndex = 0}) async => true,
+      queueSingleDownload:
+          (
+            item,
+            client, {
+            int mediaIndex = 0,
+            TranscodeQualityPreset quality = TranscodeQualityPreset.original,
+          }) async => true,
       isOffline: false,
       force: true,
     );
@@ -286,10 +295,11 @@ void main() {
         'jf-machine:ep-1': DownloadProgress(globalKey: 'jf-machine:ep-1', status: DownloadStatus.completed),
       },
       metadata: const {},
-      queueSingleDownload: (item, client, {int mediaIndex = 0}) async {
-        queued.add(item);
-        return true;
-      },
+      queueSingleDownload:
+          (item, client, {int mediaIndex = 0, TranscodeQualityPreset quality = TranscodeQualityPreset.original}) async {
+            queued.add(item);
+            return true;
+          },
       isOffline: false,
       force: true,
     );
@@ -333,10 +343,11 @@ void main() {
       serverManager: manager,
       downloads: const {},
       metadata: {ruleKey: show},
-      queueSingleDownload: (item, client, {int mediaIndex = 0}) async {
-        queued.add(item);
-        return true;
-      },
+      queueSingleDownload:
+          (item, client, {int mediaIndex = 0, TranscodeQualityPreset quality = TranscodeQualityPreset.original}) async {
+            queued.add(item);
+            return true;
+          },
       isOffline: false,
       force: true,
     );
@@ -344,6 +355,52 @@ void main() {
     expect(results.single.queuedCount, 2);
     expect(queued.map((item) => item.id), ['s1e1', 's1e2']);
     expect(client.fetchPlayableDescendantsCalls, ['show-1']);
+  });
+
+  test('show sync rule propagates downloadQuality to queued episodes', () async {
+    final db = AppDatabase.forTesting(NativeDatabase.memory());
+    final manager = MultiServerManager();
+    addTearDown(() async {
+      manager.dispose();
+      await db.close();
+    });
+
+    final client = _PlayableDescendantsClient([
+      _episode('s1e1', parentIndex: 1, index: 1, originallyAvailableAt: '2022-10-05'),
+      _episode('s1e2', parentIndex: 1, index: 2, originallyAvailableAt: '2022-11-02'),
+    ]);
+    manager.debugRegisterClientForTesting(client);
+
+    const ruleKey = 'profile-a|plex-machine:show-1';
+    final show = MediaItem(id: 'show-1', backend: MediaBackend.plex, kind: MediaKind.show, title: 'Show');
+    await db.insertSyncRule(
+      profileId: 'profile-a',
+      serverId: ServerId('plex-machine'),
+      ratingKey: 'show-1',
+      globalKey: ruleKey,
+      targetType: 'show',
+      episodeCount: 0,
+      downloadQuality: TranscodeQualityPreset.p720_3mbps.storageKey,
+    );
+
+    final qualities = <TranscodeQualityPreset>[];
+    final executor = SyncRuleExecutor(database: db);
+    final results = await executor.executeSyncRules(
+      profileId: 'profile-a',
+      serverManager: manager,
+      downloads: const {},
+      metadata: {ruleKey: show},
+      queueSingleDownload:
+          (item, client, {int mediaIndex = 0, TranscodeQualityPreset quality = TranscodeQualityPreset.original}) async {
+            qualities.add(quality);
+            return true;
+          },
+      isOffline: false,
+      force: true,
+    );
+
+    expect(results.single.queuedCount, 2);
+    expect(qualities, everyElement(TranscodeQualityPreset.p720_3mbps));
   });
 
   test('collection sync rule pages through collection API instead of metadata children', () async {
@@ -383,10 +440,11 @@ void main() {
       serverManager: manager,
       downloads: const {},
       metadata: {ruleKey: collection},
-      queueSingleDownload: (item, client, {int mediaIndex = 0}) async {
-        queued.add(item);
-        return true;
-      },
+      queueSingleDownload:
+          (item, client, {int mediaIndex = 0, TranscodeQualityPreset quality = TranscodeQualityPreset.original}) async {
+            queued.add(item);
+            return true;
+          },
       isOffline: false,
       force: true,
     );
@@ -395,6 +453,55 @@ void main() {
     expect(queued.single.id, 'movie-1');
     expect(client.collectionPageCalls, [(start: 0, size: 100)]);
     expect(client.fetchChildrenCalled, isFalse);
+  });
+
+  test('collection sync rule propagates downloadQuality to queued items', () async {
+    final db = AppDatabase.forTesting(NativeDatabase.memory());
+    final manager = MultiServerManager();
+    addTearDown(() async {
+      manager.dispose();
+      await db.close();
+    });
+
+    final client = _CollectionPagingClient();
+    manager.debugRegisterClientForTesting(client);
+
+    const ruleKey = 'profile-a|plex-machine:collection-1';
+    final collection = MediaItem(
+      id: 'collection-1',
+      backend: MediaBackend.plex,
+      kind: MediaKind.collection,
+      title: 'Collection',
+      serverId: 'plex-machine',
+    );
+    await db.insertSyncRule(
+      profileId: 'profile-a',
+      serverId: ServerId('plex-machine'),
+      ratingKey: 'collection-1',
+      globalKey: ruleKey,
+      targetType: 'collection',
+      episodeCount: 0,
+      downloadFilter: SyncRuleFilter.all,
+      downloadQuality: TranscodeQualityPreset.p720_3mbps.storageKey,
+    );
+
+    final qualities = <TranscodeQualityPreset>[];
+    final executor = SyncRuleExecutor(database: db);
+    await executor.executeSyncRules(
+      profileId: 'profile-a',
+      serverManager: manager,
+      downloads: const {},
+      metadata: {ruleKey: collection},
+      queueSingleDownload:
+          (item, client, {int mediaIndex = 0, TranscodeQualityPreset quality = TranscodeQualityPreset.original}) async {
+            qualities.add(quality);
+            return true;
+          },
+      isOffline: false,
+      force: true,
+    );
+
+    expect(qualities, everyElement(TranscodeQualityPreset.p720_3mbps));
   });
 }
 

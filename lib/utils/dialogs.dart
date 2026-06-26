@@ -333,6 +333,7 @@ Future<T?> showOptionPickerDialog<T>(
   required List<({IconData? icon, String label, T value})> options,
   Future<T?> Function(T value)? onBeforeClose,
   OptionPickerToggle? toggle,
+  T? selectedValue,
 }) {
   final focusFirstItem = InputModeTracker.isKeyboardMode(context);
   return showScopedDialog<T>(
@@ -343,6 +344,7 @@ Future<T?> showOptionPickerDialog<T>(
       focusFirstItem: focusFirstItem,
       onBeforeClose: onBeforeClose,
       toggle: toggle,
+      selectedValue: selectedValue,
     ),
   );
 }
@@ -354,12 +356,17 @@ class _OptionPickerDialog<T> extends StatefulWidget {
   final Future<T?> Function(T value)? onBeforeClose;
   final OptionPickerToggle? toggle;
 
+  /// When set, the matching option row is marked selected with a trailing
+  /// check — used to surface a persisted default (e.g. download quality).
+  final T? selectedValue;
+
   const _OptionPickerDialog({
     required this.title,
     required this.options,
     this.focusFirstItem = false,
     this.onBeforeClose,
     this.toggle,
+    this.selectedValue,
   });
 
   @override
@@ -433,10 +440,13 @@ class _OptionPickerDialogState<T> extends State<_OptionPickerDialog<T>> {
         ...List.generate(widget.options.length, (index) {
           final option = widget.options[index];
           final icon = option.icon;
+          final isSelected = widget.selectedValue != null && option.value == widget.selectedValue;
           return FocusableListTile(
             focusNode: index == 0 && widget.focusFirstItem ? _initialFocusNode : null,
             leading: icon != null ? AppIcon(icon, fill: 1, size: 24) : null,
             title: Text(option.label, style: Theme.of(context).textTheme.bodyLarge),
+            trailing: isSelected ? const Icon(Icons.check_rounded, size: 20) : null,
+            selected: isSelected,
             contentPadding: rowPadding,
             horizontalTitleGap: rowHorizontalTitleGap,
             minLeadingWidth: rowMinLeadingWidth,
