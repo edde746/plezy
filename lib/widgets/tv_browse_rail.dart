@@ -297,6 +297,11 @@ enum TvRailTrailing { none, loading, error, viewAll }
 class TvBrowseRail extends StatefulWidget {
   final List<MediaHub> hubs;
   final IconData Function(MediaHub hub, int index) iconForHub;
+
+  /// Whether to show each hub's originating server name in its header. Used when
+  /// the loaded hubs span more than one connected server so their origin stays
+  /// clear, mirroring the mobile [HubSection] behavior.
+  final bool showServerName;
   final ValueChanged<MediaItem>? onFocusedItemChanged;
   final void Function(MediaHub hub, MediaItem item)? onFocusedHubItemChanged;
   final void Function(String)? onRefresh;
@@ -340,6 +345,7 @@ class TvBrowseRail extends StatefulWidget {
     super.key,
     required this.hubs,
     required this.iconForHub,
+    this.showServerName = false,
     this.onFocusedItemChanged,
     this.onFocusedHubItemChanged,
     this.onRefresh,
@@ -1174,6 +1180,14 @@ class TvBrowseRailState extends State<TvBrowseRail> {
     final colorScheme = Theme.of(context).colorScheme;
     final titleColor = isActive ? colorScheme.onSurface : colorScheme.onSurface.withValues(alpha: 0.54);
     final iconColor = isActive ? colorScheme.onSurface : colorScheme.onSurface.withValues(alpha: 0.42);
+    final showServerName = widget.showServerName && hub.serverName != null;
+    final serverColor = colorScheme.primary.withValues(alpha: isActive ? 0.7 : 0.4);
+    final serverStyle = Theme.of(context).textTheme.titleMedium?.copyWith(
+      color: serverColor,
+      fontSize: 15 * scale,
+      height: 1,
+      fontWeight: FontWeight.w700,
+    );
 
     return SizedBox(
       height: TvBrowseRailLayout.hubStripHeightForScale(scale),
@@ -1185,16 +1199,30 @@ class TvBrowseRailState extends State<TvBrowseRail> {
               AppIcon(widget.iconForHub(hub, hubIndex), fill: 1, size: 20 * scale, color: iconColor),
               SizedBox(width: 8 * scale),
               Expanded(
-                child: Text(
-                  hub.title,
-                  maxLines: 1,
-                  overflow: .ellipsis,
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    color: titleColor,
-                    fontSize: 18 * scale,
-                    height: 1,
-                    fontWeight: isActive ? FontWeight.w800 : FontWeight.w700,
-                  ),
+                child: Row(
+                  children: [
+                    Flexible(
+                      child: Text(
+                        hub.title,
+                        maxLines: 1,
+                        overflow: .ellipsis,
+                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          color: titleColor,
+                          fontSize: 18 * scale,
+                          height: 1,
+                          fontWeight: isActive ? FontWeight.w800 : FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                    if (showServerName) ...[
+                      SizedBox(width: 8 * scale),
+                      Text('•', style: serverStyle),
+                      SizedBox(width: 8 * scale),
+                      Flexible(
+                        child: Text(hub.serverName!, maxLines: 1, overflow: .ellipsis, style: serverStyle),
+                      ),
+                    ],
+                  ],
                 ),
               ),
               if (_trailingFor(hub) == TvRailTrailing.viewAll) ...[

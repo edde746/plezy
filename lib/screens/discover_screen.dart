@@ -1210,6 +1210,8 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     final theme = Theme.of(context);
     final svc = SettingsService.instance;
     final hideSpoilers = svc.read(SettingsService.hideSpoilers);
+    final showServerNameOnHubs = svc.read(SettingsService.showServerNameOnHubs);
+    final hubsSpanMultipleServers = _hubsSpanMultipleServers();
     final browseHubs = _tvBrowseHubs;
     final scale = TvLayoutConstants.scaleForSize(size);
     // Only layout-aspect (flip-stable) scope values may be read here: an
@@ -1308,6 +1310,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
               child: TvBrowseRail(
                 key: _tvBrowseRailKey,
                 hubs: browseHubs,
+                showServerName: showServerNameOnHubs || hubsSpanMultipleServers,
                 iconForHub: (hub, _) =>
                     hub.id == 'continue_watching' ? Symbols.play_circle_rounded : _getHubIcon(hub.title),
                 onFocusedItemChanged: _setSpotlightItem,
