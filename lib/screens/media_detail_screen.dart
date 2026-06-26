@@ -3687,7 +3687,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     if (lineMetadata.contentRating != null) addTextPart(formatContentRating(lineMetadata.contentRating!));
     if (lineMetadata.durationMs != null) addTextPart(formatDurationTextual(lineMetadata.durationMs!));
     if (lineMetadata.isEpisode && lineMetadata.originallyAvailableAt != null) {
-      addTextPart(formatFullDate(lineMetadata.originallyAvailableAt!));
+      addTextPart(formatAbbreviatedDate(lineMetadata.originallyAvailableAt!));
     } else if (lineMetadata.year != null) {
       addTextPart(lineMetadata.year.toString());
     }
