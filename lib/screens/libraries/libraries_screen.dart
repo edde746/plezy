@@ -808,15 +808,6 @@ class _LibrariesScreenState extends State<LibrariesScreen>
     );
   }
 
-  /// Get set of library names that appear more than once (not globally unique)
-  Set<String> _getNonUniqueLibraryNames(List<MediaLibrary> libraries) {
-    final nameCounts = <String, int>{};
-    for (final lib in libraries) {
-      nameCounts[lib.title] = (nameCounts[lib.title] ?? 0) + 1;
-    }
-    return nameCounts.entries.where((e) => e.value > 1).map((e) => e.key).toSet();
-  }
-
   Widget _buildLibraryServerLabel(
     MediaLibrary library,
     TextStyle? style, {
@@ -879,9 +870,12 @@ class _LibrariesScreenState extends State<LibrariesScreen>
     required bool showServerHeaders,
   }) {
     if (!showServerHeaders) {
-      final nonUniqueNames = _getNonUniqueLibraryNames(visibleLibraries);
+      // With multiple servers connected (but not grouped under headers), show the
+      // server name on every library so its origin is always clear — not only when
+      // two libraries happen to share a title.
+      final showServerNames = _hasMultipleServers(visibleLibraries);
       return visibleLibraries.map((library) {
-        final showServerName = library.serverName != null && nonUniqueNames.contains(library.title);
+        final showServerName = library.serverName != null && showServerNames;
         return _buildLibraryMenuItem(library, showServerName: showServerName);
       }).toList();
     }
@@ -1430,13 +1424,10 @@ class _LibraryManagementSheetState extends State<_LibraryManagementSheet> {
     );
   }
 
-  /// Get set of library names that appear more than once (not globally unique)
-  Set<String> _getNonUniqueLibraryNames() {
-    final nameCounts = <String, int>{};
-    for (final lib in _tempLibraries) {
-      nameCounts[lib.title] = (nameCounts[lib.title] ?? 0) + 1;
-    }
-    return nameCounts.entries.where((e) => e.value > 1).map((e) => e.key).toSet();
+  /// Whether the libraries span more than one connected server.
+  bool _hasMultipleServers() {
+    final serverIds = _tempLibraries.where((lib) => lib.serverId != null).map((lib) => lib.serverId).toSet();
+    return serverIds.length > 1;
   }
 
   @override
@@ -1525,7 +1516,7 @@ class _LibraryManagementSheetState extends State<_LibraryManagementSheet> {
 
   /// Build library list for dialog (TV) using ListView with scroll-into-view support
   Widget _buildFlatLibraryListDialog(Set<String> hiddenLibraryKeys) {
-    final nonUniqueNames = _getNonUniqueLibraryNames();
+    final showServerNames = _hasMultipleServers();
     final isKeyboardMode = InputModeTracker.isKeyboardMode(context);
 
     return ReorderableListView.builder(
@@ -1536,7 +1527,7 @@ class _LibraryManagementSheetState extends State<_LibraryManagementSheet> {
       buildDefaultDragHandles: false,
       itemBuilder: (context, index) {
         final library = _tempLibraries[index];
-        final showServerName = nonUniqueNames.contains(library.title) && library.serverName != null;
+        final showServerName = showServerNames && library.serverName != null;
         final isFocused = isKeyboardMode && index == _focusedIndex;
         final isMoving = index == _movingIndex;
 
@@ -1553,9 +1544,9 @@ class _LibraryManagementSheetState extends State<_LibraryManagementSheet> {
     );
   }
 
-  /// Build flat library list with server subtitle for non-unique names
+  /// Build flat library list with a server subtitle when multiple servers are connected
   Widget _buildFlatLibraryList(ScrollController scrollController, Set<String> hiddenLibraryKeys) {
-    final nonUniqueNames = _getNonUniqueLibraryNames();
+    final showServerNames = _hasMultipleServers();
     final isKeyboardMode = InputModeTracker.isKeyboardMode(context);
 
     return ReorderableListView.builder(
@@ -1566,7 +1557,7 @@ class _LibraryManagementSheetState extends State<_LibraryManagementSheet> {
       buildDefaultDragHandles: false,
       itemBuilder: (context, index) {
         final library = _tempLibraries[index];
-        final showServerName = nonUniqueNames.contains(library.title) && library.serverName != null;
+        final showServerName = showServerNames && library.serverName != null;
         final isFocused = isKeyboardMode && index == _focusedIndex;
         final isMoving = index == _movingIndex;
         return _buildLibraryTile(
