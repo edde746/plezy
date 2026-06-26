@@ -193,6 +193,9 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
   private var subtitlePositionPercent: Int = 100
   private var subtitleFontSize: Float = 55f
   private var lastSubtitleCues: List<Cue> = emptyList()
+  // Tracks whether a text track was selected on the previous onTracksChanged so we
+  // can detect the transition to "no subtitle" and clear the painted overlays (#1387).
+  private var hadSelectedTextTrack: Boolean = false
   private var httpDataSourceFactory: HttpDataSource.Factory? = null
   private var dataSourceFactory: DefaultDataSource.Factory? = null
   private var trackSelector: DefaultTrackSelector? = null
@@ -1095,6 +1098,20 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
       }
     }
 
+    // Disabling the text track produces no trailing empty CueGroup, and no new
+    // video frame re-renders the libass overlay while paused, so the last SRT/VTT
+    // line stays painted on the SubtitleView and the last ASS frame stays on the
+    // overlay. AssHandler (registered before this listener) has already nulled the
+    // libass track by now, so re-rendering the last position clears it. Gate on the
+    // transition to avoid redundant clears on every track change. (#1387)
+    val hasSelectedText = hasSelectedTextTrack(tracks)
+    if (!hasSelectedText && hadSelectedTextTrack) {
+      lastSubtitleCues = emptyList()
+      subtitleView?.setCues(emptyList())
+      assSubtitleView?.invalidateSubtitles()
+    }
+    hadSelectedTextTrack = hasSelectedText
+
     evaluateAudioCodecForTunneling()
     evaluateVideoCodecForTunneling()
     evaluateAssSubtitlesForTunneling(tracks)
@@ -1766,6 +1783,9 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
     selectionFlags = format.selectionFlags
   )
 
+  private fun hasSelectedTextTrack(tracks: Tracks): Boolean =
+    tracks.groups.any { it.type == C.TRACK_TYPE_TEXT && it.isSelected }
+
   private fun restorePendingDvTrackSelection(tracks: Tracks): Boolean {
     val pending = pendingDvTrackRestore ?: return false
     if (trackSelector == null) return false
@@ -1774,7 +1794,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
 
     val audioMatch = pending.audio?.let { findTrackRestoreMatch(tracks, it) }
     val subtitleMatch = pending.subtitle?.let { findTrackRestoreMatch(tracks, it) }
-    val hasSelectedText = tracks.groups.any { it.type == C.TRACK_TYPE_TEXT && it.isSelected }
+    val hasSelectedText = hasSelectedTextTrack(tracks)
     var selectionWillChange = false
     var appliedRestore = false
     var audioOverride: TrackSelectionOverride? = null
@@ -2701,6 +2721,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
     externalSubtitles.clear()
     externalSubtitleUris.clear()
     lastSubtitleCues = emptyList()
+    hadSelectedTextTrack = false
     audioTrackGroupMap.clear()
     subtitleTrackGroupMap.clear()
     selectedAudioTrackId = null
