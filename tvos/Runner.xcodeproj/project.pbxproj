@@ -28,6 +28,7 @@
 		C6A15611158B29B0FF43A960 /* Pods_Runner.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 824D2C68D1F1206932E118C2 /* Pods_Runner.framework */; };
 		CD1C0534948840272E58248E /* PathMonitorConnectivityProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6AEF79DFBD1D80F00AB39CDA /* PathMonitorConnectivityProvider.swift */; };
 		D2A548D9DE1A0F319B30B74C /* SystemShelfPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0760C00EDC55A4D718BCB406 /* SystemShelfPlugin.swift */; };
+		EA0F4264E7B912702C490109 /* MPVKit in Frameworks */ = {isa = PBXBuildFile; productRef = EA0F4263E7B912702C490108 /* MPVKit */; };
 		E3DEAD2AAFC347A2E55AC0F7 /* SharedPreferencesPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0455EBA0EF4A61D3B71D2D7 /* SharedPreferencesPlugin.swift */; };
 		E79A4474D308631AFA59CAE7 /* DeviceInfoPlusPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5E1F41676FEF1AB57076F8B9 /* DeviceInfoPlusPlugin.swift */; };
 /* End PBXBuildFile section */
@@ -117,6 +118,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				EA0F4264E7B912702C490109 /* MPVKit in Frameworks */,
 				C6A15611158B29B0FF43A960 /* Pods_Runner.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -932,8 +934,8 @@
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/edde746/MPVKit";
 			requirement = {
-				kind = revision;
-				revision = 245b69dce22156e81b79c84cfcb748358b674e47;
+				kind = exactVersion;
+				version = 1.0.6;
 			};
 		};
 /* End XCRemoteSwiftPackageReference section */
