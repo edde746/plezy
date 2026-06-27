@@ -47,6 +47,7 @@ enum OfflineActionType {
     ApiCache,
     OfflineWatchProgress,
     SyncRules,
+    WatchlistItems,
     Connections,
     Profiles,
     ProfileConnections,
@@ -61,7 +62,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.e);
 
   @override
-  int get schemaVersion => 16;
+  int get schemaVersion => 17;
 
   @override
   MigrationStrategy get migration {
@@ -220,6 +221,12 @@ class AppDatabase extends _$AppDatabase {
             'SyncRules.includeSpecials column',
             () => m.addColumn(syncRules, syncRules.includeSpecials),
           );
+        }
+        if (from < 17) {
+          appLogger.i('Adding WatchlistItems table (v17 migration)');
+          await _ignoreAlreadyExists('WatchlistItems', () => m.createTable(watchlistItems));
+          await _ignoreAlreadyExists('idx_watchlist_profile', () => m.create(idxWatchlistProfile));
+          await _ignoreAlreadyExists('idx_watchlist_kind', () => m.create(idxWatchlistKind));
         }
       },
     );

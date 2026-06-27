@@ -3768,6 +3768,776 @@ class SyncRulesCompanion extends UpdateCompanion<SyncRuleItem> {
   }
 }
 
+class $WatchlistItemsTable extends WatchlistItems
+    with TableInfo<$WatchlistItemsTable, WatchlistItem> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $WatchlistItemsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _profileIdMeta = const VerificationMeta(
+    'profileId',
+  );
+  @override
+  late final GeneratedColumn<String> profileId = GeneratedColumn<String>(
+    'profile_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _globalKeyMeta = const VerificationMeta(
+    'globalKey',
+  );
+  @override
+  late final GeneratedColumn<String> globalKey = GeneratedColumn<String>(
+    'global_key',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _serverIdMeta = const VerificationMeta(
+    'serverId',
+  );
+  @override
+  late final GeneratedColumn<String> serverId = GeneratedColumn<String>(
+    'server_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _clientScopeIdMeta = const VerificationMeta(
+    'clientScopeId',
+  );
+  @override
+  late final GeneratedColumn<String> clientScopeId = GeneratedColumn<String>(
+    'client_scope_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _ratingKeyMeta = const VerificationMeta(
+    'ratingKey',
+  );
+  @override
+  late final GeneratedColumn<String> ratingKey = GeneratedColumn<String>(
+    'rating_key',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _kindMeta = const VerificationMeta('kind');
+  @override
+  late final GeneratedColumn<String> kind = GeneratedColumn<String>(
+    'kind',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _titleMeta = const VerificationMeta('title');
+  @override
+  late final GeneratedColumn<String> title = GeneratedColumn<String>(
+    'title',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _thumbPathMeta = const VerificationMeta(
+    'thumbPath',
+  );
+  @override
+  late final GeneratedColumn<String> thumbPath = GeneratedColumn<String>(
+    'thumb_path',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _backdropPathMeta = const VerificationMeta(
+    'backdropPath',
+  );
+  @override
+  late final GeneratedColumn<String> backdropPath = GeneratedColumn<String>(
+    'backdrop_path',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _yearMeta = const VerificationMeta('year');
+  @override
+  late final GeneratedColumn<int> year = GeneratedColumn<int>(
+    'year',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _indexMeta = const VerificationMeta('index');
+  @override
+  late final GeneratedColumn<int> index = GeneratedColumn<int>(
+    'index',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _parentTitleMeta = const VerificationMeta(
+    'parentTitle',
+  );
+  @override
+  late final GeneratedColumn<String> parentTitle = GeneratedColumn<String>(
+    'parent_title',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _addedAtMeta = const VerificationMeta(
+    'addedAt',
+  );
+  @override
+  late final GeneratedColumn<int> addedAt = GeneratedColumn<int>(
+    'added_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    profileId,
+    globalKey,
+    serverId,
+    clientScopeId,
+    ratingKey,
+    kind,
+    title,
+    thumbPath,
+    backdropPath,
+    year,
+    index,
+    parentTitle,
+    addedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'watchlist_items';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<WatchlistItem> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('profile_id')) {
+      context.handle(
+        _profileIdMeta,
+        profileId.isAcceptableOrUnknown(data['profile_id']!, _profileIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_profileIdMeta);
+    }
+    if (data.containsKey('global_key')) {
+      context.handle(
+        _globalKeyMeta,
+        globalKey.isAcceptableOrUnknown(data['global_key']!, _globalKeyMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_globalKeyMeta);
+    }
+    if (data.containsKey('server_id')) {
+      context.handle(
+        _serverIdMeta,
+        serverId.isAcceptableOrUnknown(data['server_id']!, _serverIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_serverIdMeta);
+    }
+    if (data.containsKey('client_scope_id')) {
+      context.handle(
+        _clientScopeIdMeta,
+        clientScopeId.isAcceptableOrUnknown(
+          data['client_scope_id']!,
+          _clientScopeIdMeta,
+        ),
+      );
+    }
+    if (data.containsKey('rating_key')) {
+      context.handle(
+        _ratingKeyMeta,
+        ratingKey.isAcceptableOrUnknown(data['rating_key']!, _ratingKeyMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_ratingKeyMeta);
+    }
+    if (data.containsKey('kind')) {
+      context.handle(
+        _kindMeta,
+        kind.isAcceptableOrUnknown(data['kind']!, _kindMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_kindMeta);
+    }
+    if (data.containsKey('title')) {
+      context.handle(
+        _titleMeta,
+        title.isAcceptableOrUnknown(data['title']!, _titleMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_titleMeta);
+    }
+    if (data.containsKey('thumb_path')) {
+      context.handle(
+        _thumbPathMeta,
+        thumbPath.isAcceptableOrUnknown(data['thumb_path']!, _thumbPathMeta),
+      );
+    }
+    if (data.containsKey('backdrop_path')) {
+      context.handle(
+        _backdropPathMeta,
+        backdropPath.isAcceptableOrUnknown(
+          data['backdrop_path']!,
+          _backdropPathMeta,
+        ),
+      );
+    }
+    if (data.containsKey('year')) {
+      context.handle(
+        _yearMeta,
+        year.isAcceptableOrUnknown(data['year']!, _yearMeta),
+      );
+    }
+    if (data.containsKey('index')) {
+      context.handle(
+        _indexMeta,
+        index.isAcceptableOrUnknown(data['index']!, _indexMeta),
+      );
+    }
+    if (data.containsKey('parent_title')) {
+      context.handle(
+        _parentTitleMeta,
+        parentTitle.isAcceptableOrUnknown(
+          data['parent_title']!,
+          _parentTitleMeta,
+        ),
+      );
+    }
+    if (data.containsKey('added_at')) {
+      context.handle(
+        _addedAtMeta,
+        addedAt.isAcceptableOrUnknown(data['added_at']!, _addedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_addedAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {profileId, globalKey};
+  @override
+  WatchlistItem map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return WatchlistItem(
+      profileId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}profile_id'],
+      )!,
+      globalKey: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}global_key'],
+      )!,
+      serverId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}server_id'],
+      )!,
+      clientScopeId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}client_scope_id'],
+      ),
+      ratingKey: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}rating_key'],
+      )!,
+      kind: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}kind'],
+      )!,
+      title: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}title'],
+      )!,
+      thumbPath: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}thumb_path'],
+      ),
+      backdropPath: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}backdrop_path'],
+      ),
+      year: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}year'],
+      ),
+      index: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}index'],
+      ),
+      parentTitle: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}parent_title'],
+      ),
+      addedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}added_at'],
+      )!,
+    );
+  }
+
+  @override
+  $WatchlistItemsTable createAlias(String alias) {
+    return $WatchlistItemsTable(attachedDatabase, alias);
+  }
+}
+
+class WatchlistItem extends DataClass implements Insertable<WatchlistItem> {
+  final String profileId;
+  final String globalKey;
+  final String serverId;
+  final String? clientScopeId;
+  final String ratingKey;
+  final String kind;
+  final String title;
+  final String? thumbPath;
+  final String? backdropPath;
+  final int? year;
+  final int? index;
+  final String? parentTitle;
+  final int addedAt;
+  const WatchlistItem({
+    required this.profileId,
+    required this.globalKey,
+    required this.serverId,
+    this.clientScopeId,
+    required this.ratingKey,
+    required this.kind,
+    required this.title,
+    this.thumbPath,
+    this.backdropPath,
+    this.year,
+    this.index,
+    this.parentTitle,
+    required this.addedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['profile_id'] = Variable<String>(profileId);
+    map['global_key'] = Variable<String>(globalKey);
+    map['server_id'] = Variable<String>(serverId);
+    if (!nullToAbsent || clientScopeId != null) {
+      map['client_scope_id'] = Variable<String>(clientScopeId);
+    }
+    map['rating_key'] = Variable<String>(ratingKey);
+    map['kind'] = Variable<String>(kind);
+    map['title'] = Variable<String>(title);
+    if (!nullToAbsent || thumbPath != null) {
+      map['thumb_path'] = Variable<String>(thumbPath);
+    }
+    if (!nullToAbsent || backdropPath != null) {
+      map['backdrop_path'] = Variable<String>(backdropPath);
+    }
+    if (!nullToAbsent || year != null) {
+      map['year'] = Variable<int>(year);
+    }
+    if (!nullToAbsent || index != null) {
+      map['index'] = Variable<int>(index);
+    }
+    if (!nullToAbsent || parentTitle != null) {
+      map['parent_title'] = Variable<String>(parentTitle);
+    }
+    map['added_at'] = Variable<int>(addedAt);
+    return map;
+  }
+
+  WatchlistItemsCompanion toCompanion(bool nullToAbsent) {
+    return WatchlistItemsCompanion(
+      profileId: Value(profileId),
+      globalKey: Value(globalKey),
+      serverId: Value(serverId),
+      clientScopeId: clientScopeId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(clientScopeId),
+      ratingKey: Value(ratingKey),
+      kind: Value(kind),
+      title: Value(title),
+      thumbPath: thumbPath == null && nullToAbsent
+          ? const Value.absent()
+          : Value(thumbPath),
+      backdropPath: backdropPath == null && nullToAbsent
+          ? const Value.absent()
+          : Value(backdropPath),
+      year: year == null && nullToAbsent ? const Value.absent() : Value(year),
+      index: index == null && nullToAbsent
+          ? const Value.absent()
+          : Value(index),
+      parentTitle: parentTitle == null && nullToAbsent
+          ? const Value.absent()
+          : Value(parentTitle),
+      addedAt: Value(addedAt),
+    );
+  }
+
+  factory WatchlistItem.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return WatchlistItem(
+      profileId: serializer.fromJson<String>(json['profileId']),
+      globalKey: serializer.fromJson<String>(json['globalKey']),
+      serverId: serializer.fromJson<String>(json['serverId']),
+      clientScopeId: serializer.fromJson<String?>(json['clientScopeId']),
+      ratingKey: serializer.fromJson<String>(json['ratingKey']),
+      kind: serializer.fromJson<String>(json['kind']),
+      title: serializer.fromJson<String>(json['title']),
+      thumbPath: serializer.fromJson<String?>(json['thumbPath']),
+      backdropPath: serializer.fromJson<String?>(json['backdropPath']),
+      year: serializer.fromJson<int?>(json['year']),
+      index: serializer.fromJson<int?>(json['index']),
+      parentTitle: serializer.fromJson<String?>(json['parentTitle']),
+      addedAt: serializer.fromJson<int>(json['addedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'profileId': serializer.toJson<String>(profileId),
+      'globalKey': serializer.toJson<String>(globalKey),
+      'serverId': serializer.toJson<String>(serverId),
+      'clientScopeId': serializer.toJson<String?>(clientScopeId),
+      'ratingKey': serializer.toJson<String>(ratingKey),
+      'kind': serializer.toJson<String>(kind),
+      'title': serializer.toJson<String>(title),
+      'thumbPath': serializer.toJson<String?>(thumbPath),
+      'backdropPath': serializer.toJson<String?>(backdropPath),
+      'year': serializer.toJson<int?>(year),
+      'index': serializer.toJson<int?>(index),
+      'parentTitle': serializer.toJson<String?>(parentTitle),
+      'addedAt': serializer.toJson<int>(addedAt),
+    };
+  }
+
+  WatchlistItem copyWith({
+    String? profileId,
+    String? globalKey,
+    String? serverId,
+    Value<String?> clientScopeId = const Value.absent(),
+    String? ratingKey,
+    String? kind,
+    String? title,
+    Value<String?> thumbPath = const Value.absent(),
+    Value<String?> backdropPath = const Value.absent(),
+    Value<int?> year = const Value.absent(),
+    Value<int?> index = const Value.absent(),
+    Value<String?> parentTitle = const Value.absent(),
+    int? addedAt,
+  }) => WatchlistItem(
+    profileId: profileId ?? this.profileId,
+    globalKey: globalKey ?? this.globalKey,
+    serverId: serverId ?? this.serverId,
+    clientScopeId: clientScopeId.present
+        ? clientScopeId.value
+        : this.clientScopeId,
+    ratingKey: ratingKey ?? this.ratingKey,
+    kind: kind ?? this.kind,
+    title: title ?? this.title,
+    thumbPath: thumbPath.present ? thumbPath.value : this.thumbPath,
+    backdropPath: backdropPath.present ? backdropPath.value : this.backdropPath,
+    year: year.present ? year.value : this.year,
+    index: index.present ? index.value : this.index,
+    parentTitle: parentTitle.present ? parentTitle.value : this.parentTitle,
+    addedAt: addedAt ?? this.addedAt,
+  );
+  WatchlistItem copyWithCompanion(WatchlistItemsCompanion data) {
+    return WatchlistItem(
+      profileId: data.profileId.present ? data.profileId.value : this.profileId,
+      globalKey: data.globalKey.present ? data.globalKey.value : this.globalKey,
+      serverId: data.serverId.present ? data.serverId.value : this.serverId,
+      clientScopeId: data.clientScopeId.present
+          ? data.clientScopeId.value
+          : this.clientScopeId,
+      ratingKey: data.ratingKey.present ? data.ratingKey.value : this.ratingKey,
+      kind: data.kind.present ? data.kind.value : this.kind,
+      title: data.title.present ? data.title.value : this.title,
+      thumbPath: data.thumbPath.present ? data.thumbPath.value : this.thumbPath,
+      backdropPath: data.backdropPath.present
+          ? data.backdropPath.value
+          : this.backdropPath,
+      year: data.year.present ? data.year.value : this.year,
+      index: data.index.present ? data.index.value : this.index,
+      parentTitle: data.parentTitle.present
+          ? data.parentTitle.value
+          : this.parentTitle,
+      addedAt: data.addedAt.present ? data.addedAt.value : this.addedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('WatchlistItem(')
+          ..write('profileId: $profileId, ')
+          ..write('globalKey: $globalKey, ')
+          ..write('serverId: $serverId, ')
+          ..write('clientScopeId: $clientScopeId, ')
+          ..write('ratingKey: $ratingKey, ')
+          ..write('kind: $kind, ')
+          ..write('title: $title, ')
+          ..write('thumbPath: $thumbPath, ')
+          ..write('backdropPath: $backdropPath, ')
+          ..write('year: $year, ')
+          ..write('index: $index, ')
+          ..write('parentTitle: $parentTitle, ')
+          ..write('addedAt: $addedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    profileId,
+    globalKey,
+    serverId,
+    clientScopeId,
+    ratingKey,
+    kind,
+    title,
+    thumbPath,
+    backdropPath,
+    year,
+    index,
+    parentTitle,
+    addedAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is WatchlistItem &&
+          other.profileId == this.profileId &&
+          other.globalKey == this.globalKey &&
+          other.serverId == this.serverId &&
+          other.clientScopeId == this.clientScopeId &&
+          other.ratingKey == this.ratingKey &&
+          other.kind == this.kind &&
+          other.title == this.title &&
+          other.thumbPath == this.thumbPath &&
+          other.backdropPath == this.backdropPath &&
+          other.year == this.year &&
+          other.index == this.index &&
+          other.parentTitle == this.parentTitle &&
+          other.addedAt == this.addedAt);
+}
+
+class WatchlistItemsCompanion extends UpdateCompanion<WatchlistItem> {
+  final Value<String> profileId;
+  final Value<String> globalKey;
+  final Value<String> serverId;
+  final Value<String?> clientScopeId;
+  final Value<String> ratingKey;
+  final Value<String> kind;
+  final Value<String> title;
+  final Value<String?> thumbPath;
+  final Value<String?> backdropPath;
+  final Value<int?> year;
+  final Value<int?> index;
+  final Value<String?> parentTitle;
+  final Value<int> addedAt;
+  final Value<int> rowid;
+  const WatchlistItemsCompanion({
+    this.profileId = const Value.absent(),
+    this.globalKey = const Value.absent(),
+    this.serverId = const Value.absent(),
+    this.clientScopeId = const Value.absent(),
+    this.ratingKey = const Value.absent(),
+    this.kind = const Value.absent(),
+    this.title = const Value.absent(),
+    this.thumbPath = const Value.absent(),
+    this.backdropPath = const Value.absent(),
+    this.year = const Value.absent(),
+    this.index = const Value.absent(),
+    this.parentTitle = const Value.absent(),
+    this.addedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  WatchlistItemsCompanion.insert({
+    required String profileId,
+    required String globalKey,
+    required String serverId,
+    this.clientScopeId = const Value.absent(),
+    required String ratingKey,
+    required String kind,
+    required String title,
+    this.thumbPath = const Value.absent(),
+    this.backdropPath = const Value.absent(),
+    this.year = const Value.absent(),
+    this.index = const Value.absent(),
+    this.parentTitle = const Value.absent(),
+    required int addedAt,
+    this.rowid = const Value.absent(),
+  }) : profileId = Value(profileId),
+       globalKey = Value(globalKey),
+       serverId = Value(serverId),
+       ratingKey = Value(ratingKey),
+       kind = Value(kind),
+       title = Value(title),
+       addedAt = Value(addedAt);
+  static Insertable<WatchlistItem> custom({
+    Expression<String>? profileId,
+    Expression<String>? globalKey,
+    Expression<String>? serverId,
+    Expression<String>? clientScopeId,
+    Expression<String>? ratingKey,
+    Expression<String>? kind,
+    Expression<String>? title,
+    Expression<String>? thumbPath,
+    Expression<String>? backdropPath,
+    Expression<int>? year,
+    Expression<int>? index,
+    Expression<String>? parentTitle,
+    Expression<int>? addedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (profileId != null) 'profile_id': profileId,
+      if (globalKey != null) 'global_key': globalKey,
+      if (serverId != null) 'server_id': serverId,
+      if (clientScopeId != null) 'client_scope_id': clientScopeId,
+      if (ratingKey != null) 'rating_key': ratingKey,
+      if (kind != null) 'kind': kind,
+      if (title != null) 'title': title,
+      if (thumbPath != null) 'thumb_path': thumbPath,
+      if (backdropPath != null) 'backdrop_path': backdropPath,
+      if (year != null) 'year': year,
+      if (index != null) 'index': index,
+      if (parentTitle != null) 'parent_title': parentTitle,
+      if (addedAt != null) 'added_at': addedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  WatchlistItemsCompanion copyWith({
+    Value<String>? profileId,
+    Value<String>? globalKey,
+    Value<String>? serverId,
+    Value<String?>? clientScopeId,
+    Value<String>? ratingKey,
+    Value<String>? kind,
+    Value<String>? title,
+    Value<String?>? thumbPath,
+    Value<String?>? backdropPath,
+    Value<int?>? year,
+    Value<int?>? index,
+    Value<String?>? parentTitle,
+    Value<int>? addedAt,
+    Value<int>? rowid,
+  }) {
+    return WatchlistItemsCompanion(
+      profileId: profileId ?? this.profileId,
+      globalKey: globalKey ?? this.globalKey,
+      serverId: serverId ?? this.serverId,
+      clientScopeId: clientScopeId ?? this.clientScopeId,
+      ratingKey: ratingKey ?? this.ratingKey,
+      kind: kind ?? this.kind,
+      title: title ?? this.title,
+      thumbPath: thumbPath ?? this.thumbPath,
+      backdropPath: backdropPath ?? this.backdropPath,
+      year: year ?? this.year,
+      index: index ?? this.index,
+      parentTitle: parentTitle ?? this.parentTitle,
+      addedAt: addedAt ?? this.addedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (profileId.present) {
+      map['profile_id'] = Variable<String>(profileId.value);
+    }
+    if (globalKey.present) {
+      map['global_key'] = Variable<String>(globalKey.value);
+    }
+    if (serverId.present) {
+      map['server_id'] = Variable<String>(serverId.value);
+    }
+    if (clientScopeId.present) {
+      map['client_scope_id'] = Variable<String>(clientScopeId.value);
+    }
+    if (ratingKey.present) {
+      map['rating_key'] = Variable<String>(ratingKey.value);
+    }
+    if (kind.present) {
+      map['kind'] = Variable<String>(kind.value);
+    }
+    if (title.present) {
+      map['title'] = Variable<String>(title.value);
+    }
+    if (thumbPath.present) {
+      map['thumb_path'] = Variable<String>(thumbPath.value);
+    }
+    if (backdropPath.present) {
+      map['backdrop_path'] = Variable<String>(backdropPath.value);
+    }
+    if (year.present) {
+      map['year'] = Variable<int>(year.value);
+    }
+    if (index.present) {
+      map['index'] = Variable<int>(index.value);
+    }
+    if (parentTitle.present) {
+      map['parent_title'] = Variable<String>(parentTitle.value);
+    }
+    if (addedAt.present) {
+      map['added_at'] = Variable<int>(addedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('WatchlistItemsCompanion(')
+          ..write('profileId: $profileId, ')
+          ..write('globalKey: $globalKey, ')
+          ..write('serverId: $serverId, ')
+          ..write('clientScopeId: $clientScopeId, ')
+          ..write('ratingKey: $ratingKey, ')
+          ..write('kind: $kind, ')
+          ..write('title: $title, ')
+          ..write('thumbPath: $thumbPath, ')
+          ..write('backdropPath: $backdropPath, ')
+          ..write('year: $year, ')
+          ..write('index: $index, ')
+          ..write('parentTitle: $parentTitle, ')
+          ..write('addedAt: $addedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 class $ConnectionsTable extends Connections
     with TableInfo<$ConnectionsTable, ConnectionRow> {
   @override
@@ -5312,6 +6082,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $OfflineWatchProgressTable offlineWatchProgress =
       $OfflineWatchProgressTable(this);
   late final $SyncRulesTable syncRules = $SyncRulesTable(this);
+  late final $WatchlistItemsTable watchlistItems = $WatchlistItemsTable(this);
   late final $ConnectionsTable connections = $ConnectionsTable(this);
   late final $ProfilesTable profiles = $ProfilesTable(this);
   late final $ProfileConnectionsTable profileConnections =
@@ -5352,6 +6123,14 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     'idx_sync_rules_profile',
     'CREATE INDEX idx_sync_rules_profile ON sync_rules (profile_id)',
   );
+  late final Index idxWatchlistProfile = Index(
+    'idx_watchlist_profile',
+    'CREATE INDEX idx_watchlist_profile ON watchlist_items (profile_id)',
+  );
+  late final Index idxWatchlistKind = Index(
+    'idx_watchlist_kind',
+    'CREATE INDEX idx_watchlist_kind ON watchlist_items (kind)',
+  );
   late final Index idxConnectionsKind = Index(
     'idx_connections_kind',
     'CREATE INDEX idx_connections_kind ON connections (kind)',
@@ -5379,6 +6158,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     apiCache,
     offlineWatchProgress,
     syncRules,
+    watchlistItems,
     connections,
     profiles,
     profileConnections,
@@ -5391,6 +6171,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     idxOfflineWatchProgressServer,
     idxOfflineWatchProgressProfile,
     idxSyncRulesProfile,
+    idxWatchlistProfile,
+    idxWatchlistKind,
     idxConnectionsKind,
     idxProfilesKind,
     idxProfileConnectionsConnectionId,
@@ -7240,6 +8022,366 @@ typedef $$SyncRulesTableProcessedTableManager =
       SyncRuleItem,
       PrefetchHooks Function()
     >;
+typedef $$WatchlistItemsTableCreateCompanionBuilder =
+    WatchlistItemsCompanion Function({
+      required String profileId,
+      required String globalKey,
+      required String serverId,
+      Value<String?> clientScopeId,
+      required String ratingKey,
+      required String kind,
+      required String title,
+      Value<String?> thumbPath,
+      Value<String?> backdropPath,
+      Value<int?> year,
+      Value<int?> index,
+      Value<String?> parentTitle,
+      required int addedAt,
+      Value<int> rowid,
+    });
+typedef $$WatchlistItemsTableUpdateCompanionBuilder =
+    WatchlistItemsCompanion Function({
+      Value<String> profileId,
+      Value<String> globalKey,
+      Value<String> serverId,
+      Value<String?> clientScopeId,
+      Value<String> ratingKey,
+      Value<String> kind,
+      Value<String> title,
+      Value<String?> thumbPath,
+      Value<String?> backdropPath,
+      Value<int?> year,
+      Value<int?> index,
+      Value<String?> parentTitle,
+      Value<int> addedAt,
+      Value<int> rowid,
+    });
+
+class $$WatchlistItemsTableFilterComposer
+    extends Composer<_$AppDatabase, $WatchlistItemsTable> {
+  $$WatchlistItemsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get profileId => $composableBuilder(
+    column: $table.profileId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get globalKey => $composableBuilder(
+    column: $table.globalKey,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get serverId => $composableBuilder(
+    column: $table.serverId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get clientScopeId => $composableBuilder(
+    column: $table.clientScopeId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get ratingKey => $composableBuilder(
+    column: $table.ratingKey,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get kind => $composableBuilder(
+    column: $table.kind,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get title => $composableBuilder(
+    column: $table.title,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get thumbPath => $composableBuilder(
+    column: $table.thumbPath,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get backdropPath => $composableBuilder(
+    column: $table.backdropPath,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get year => $composableBuilder(
+    column: $table.year,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get index => $composableBuilder(
+    column: $table.index,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get parentTitle => $composableBuilder(
+    column: $table.parentTitle,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get addedAt => $composableBuilder(
+    column: $table.addedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$WatchlistItemsTableOrderingComposer
+    extends Composer<_$AppDatabase, $WatchlistItemsTable> {
+  $$WatchlistItemsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get profileId => $composableBuilder(
+    column: $table.profileId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get globalKey => $composableBuilder(
+    column: $table.globalKey,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get serverId => $composableBuilder(
+    column: $table.serverId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get clientScopeId => $composableBuilder(
+    column: $table.clientScopeId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get ratingKey => $composableBuilder(
+    column: $table.ratingKey,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get kind => $composableBuilder(
+    column: $table.kind,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get title => $composableBuilder(
+    column: $table.title,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get thumbPath => $composableBuilder(
+    column: $table.thumbPath,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get backdropPath => $composableBuilder(
+    column: $table.backdropPath,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get year => $composableBuilder(
+    column: $table.year,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get index => $composableBuilder(
+    column: $table.index,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get parentTitle => $composableBuilder(
+    column: $table.parentTitle,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get addedAt => $composableBuilder(
+    column: $table.addedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$WatchlistItemsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $WatchlistItemsTable> {
+  $$WatchlistItemsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get profileId =>
+      $composableBuilder(column: $table.profileId, builder: (column) => column);
+
+  GeneratedColumn<String> get globalKey =>
+      $composableBuilder(column: $table.globalKey, builder: (column) => column);
+
+  GeneratedColumn<String> get serverId =>
+      $composableBuilder(column: $table.serverId, builder: (column) => column);
+
+  GeneratedColumn<String> get clientScopeId => $composableBuilder(
+    column: $table.clientScopeId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get ratingKey =>
+      $composableBuilder(column: $table.ratingKey, builder: (column) => column);
+
+  GeneratedColumn<String> get kind =>
+      $composableBuilder(column: $table.kind, builder: (column) => column);
+
+  GeneratedColumn<String> get title =>
+      $composableBuilder(column: $table.title, builder: (column) => column);
+
+  GeneratedColumn<String> get thumbPath =>
+      $composableBuilder(column: $table.thumbPath, builder: (column) => column);
+
+  GeneratedColumn<String> get backdropPath => $composableBuilder(
+    column: $table.backdropPath,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get year =>
+      $composableBuilder(column: $table.year, builder: (column) => column);
+
+  GeneratedColumn<int> get index =>
+      $composableBuilder(column: $table.index, builder: (column) => column);
+
+  GeneratedColumn<String> get parentTitle => $composableBuilder(
+    column: $table.parentTitle,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get addedAt =>
+      $composableBuilder(column: $table.addedAt, builder: (column) => column);
+}
+
+class $$WatchlistItemsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $WatchlistItemsTable,
+          WatchlistItem,
+          $$WatchlistItemsTableFilterComposer,
+          $$WatchlistItemsTableOrderingComposer,
+          $$WatchlistItemsTableAnnotationComposer,
+          $$WatchlistItemsTableCreateCompanionBuilder,
+          $$WatchlistItemsTableUpdateCompanionBuilder,
+          (
+            WatchlistItem,
+            BaseReferences<_$AppDatabase, $WatchlistItemsTable, WatchlistItem>,
+          ),
+          WatchlistItem,
+          PrefetchHooks Function()
+        > {
+  $$WatchlistItemsTableTableManager(
+    _$AppDatabase db,
+    $WatchlistItemsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$WatchlistItemsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$WatchlistItemsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$WatchlistItemsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> profileId = const Value.absent(),
+                Value<String> globalKey = const Value.absent(),
+                Value<String> serverId = const Value.absent(),
+                Value<String?> clientScopeId = const Value.absent(),
+                Value<String> ratingKey = const Value.absent(),
+                Value<String> kind = const Value.absent(),
+                Value<String> title = const Value.absent(),
+                Value<String?> thumbPath = const Value.absent(),
+                Value<String?> backdropPath = const Value.absent(),
+                Value<int?> year = const Value.absent(),
+                Value<int?> index = const Value.absent(),
+                Value<String?> parentTitle = const Value.absent(),
+                Value<int> addedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => WatchlistItemsCompanion(
+                profileId: profileId,
+                globalKey: globalKey,
+                serverId: serverId,
+                clientScopeId: clientScopeId,
+                ratingKey: ratingKey,
+                kind: kind,
+                title: title,
+                thumbPath: thumbPath,
+                backdropPath: backdropPath,
+                year: year,
+                index: index,
+                parentTitle: parentTitle,
+                addedAt: addedAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String profileId,
+                required String globalKey,
+                required String serverId,
+                Value<String?> clientScopeId = const Value.absent(),
+                required String ratingKey,
+                required String kind,
+                required String title,
+                Value<String?> thumbPath = const Value.absent(),
+                Value<String?> backdropPath = const Value.absent(),
+                Value<int?> year = const Value.absent(),
+                Value<int?> index = const Value.absent(),
+                Value<String?> parentTitle = const Value.absent(),
+                required int addedAt,
+                Value<int> rowid = const Value.absent(),
+              }) => WatchlistItemsCompanion.insert(
+                profileId: profileId,
+                globalKey: globalKey,
+                serverId: serverId,
+                clientScopeId: clientScopeId,
+                ratingKey: ratingKey,
+                kind: kind,
+                title: title,
+                thumbPath: thumbPath,
+                backdropPath: backdropPath,
+                year: year,
+                index: index,
+                parentTitle: parentTitle,
+                addedAt: addedAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$WatchlistItemsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $WatchlistItemsTable,
+      WatchlistItem,
+      $$WatchlistItemsTableFilterComposer,
+      $$WatchlistItemsTableOrderingComposer,
+      $$WatchlistItemsTableAnnotationComposer,
+      $$WatchlistItemsTableCreateCompanionBuilder,
+      $$WatchlistItemsTableUpdateCompanionBuilder,
+      (
+        WatchlistItem,
+        BaseReferences<_$AppDatabase, $WatchlistItemsTable, WatchlistItem>,
+      ),
+      WatchlistItem,
+      PrefetchHooks Function()
+    >;
 typedef $$ConnectionsTableCreateCompanionBuilder =
     ConnectionsCompanion Function({
       required String id,
@@ -8259,6 +9401,8 @@ class $AppDatabaseManager {
       $$OfflineWatchProgressTableTableManager(_db, _db.offlineWatchProgress);
   $$SyncRulesTableTableManager get syncRules =>
       $$SyncRulesTableTableManager(_db, _db.syncRules);
+  $$WatchlistItemsTableTableManager get watchlistItems =>
+      $$WatchlistItemsTableTableManager(_db, _db.watchlistItems);
   $$ConnectionsTableTableManager get connections =>
       $$ConnectionsTableTableManager(_db, _db.connections);
   $$ProfilesTableTableManager get profiles =>
