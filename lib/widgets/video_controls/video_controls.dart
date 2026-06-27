@@ -186,6 +186,15 @@ KeyEventResult handlePromptDismissBackKey(KeyEvent event, VoidCallback? onDismis
   return handleBackKeyAction(event, onDismissPrompt);
 }
 
+@visibleForTesting
+bool shouldSkipDuplicateTimelineSeek({
+  required bool isTranscoding,
+  required Duration? lastDispatchedSeek,
+  required Duration finalSeek,
+}) {
+  return !isTranscoding && lastDispatchedSeek == finalSeek;
+}
+
 typedef PlaybackSourceChangeCallback =
     Future<void> Function({
       int? newMediaIndex,
@@ -443,6 +452,8 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
   Timer? _edgeAdjustmentIndicatorClearTimer;
   // Seek throttle
   late final Throttle _seekThrottle;
+  Duration? _lastDispatchedTimelineSeek;
+  Future<void>? _lastDispatchedTimelineSeekFuture;
   // Current marker state
   MediaMarker? _currentMarker;
   List<MediaMarker> _markers = [];
@@ -495,7 +506,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
     _skipMarkerFocusNode = FocusNode(debugLabel: 'SkipMarkerButton');
     _seekThrottle = throttle(
       (Duration pos) {
-        unawaited(_seekToPosition(pos, notifyCompletion: false));
+        unawaited(_seekToTimelinePosition(pos));
       },
       const Duration(milliseconds: 200),
       leading: true,
