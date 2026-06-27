@@ -16,11 +16,7 @@ import '../utils/track_label_builder.dart';
 /// stream indexes) or lack server-side stream selection leave this null.
 /// [trackType] is `'audio'` or `'subtitle'`.
 typedef TrackPreferencePersister =
-    Future<void> Function({
-      required int partId,
-      required String trackType,
-      int? streamID,
-    });
+    Future<void> Function({required int partId, required String trackType, int? streamID});
 
 /// Manages track (audio + subtitle) lifecycle: external subtitle loading,
 /// automatic track selection, server preference sync, and cycling.

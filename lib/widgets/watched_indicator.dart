@@ -14,8 +14,24 @@ import 'unwatched_count_badge.dart';
 /// [compact] for dense surfaces (folder tree rows, episode thumbnails).
 /// Add a preset here instead of hand-rolling a new overlay variant.
 enum WatchedIndicatorSize {
-  standard(checkInset: 4, checkPadding: 4, checkIconSize: 16, badgeSize: 24, badgeFontSize: 12, barRadius: 8, barMinHeight: 4),
-  compact(checkInset: 3, checkPadding: 2, checkIconSize: 12, badgeSize: 20, badgeFontSize: 10, barRadius: 6, barMinHeight: 3);
+  standard(
+    checkInset: 4,
+    checkPadding: 4,
+    checkIconSize: 16,
+    badgeSize: 24,
+    badgeFontSize: 12,
+    barRadius: 8,
+    barMinHeight: 4,
+  ),
+  compact(
+    checkInset: 3,
+    checkPadding: 2,
+    checkIconSize: 12,
+    badgeSize: 20,
+    badgeFontSize: 10,
+    barRadius: 6,
+    barMinHeight: 3,
+  );
 
   const WatchedIndicatorSize({
     required this.checkInset,

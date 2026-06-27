@@ -193,6 +193,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
   private var subtitlePositionPercent: Int = 100
   private var subtitleFontSize: Float = 55f
   private var lastSubtitleCues: List<Cue> = emptyList()
+
   // Tracks whether a text track was selected on the previous onTracksChanged so we
   // can detect the transition to "no subtitle" and clear the painted overlays (#1387).
   private var hadSelectedTextTrack: Boolean = false
@@ -1783,8 +1784,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
     selectionFlags = format.selectionFlags
   )
 
-  private fun hasSelectedTextTrack(tracks: Tracks): Boolean =
-    tracks.groups.any { it.type == C.TRACK_TYPE_TEXT && it.isSelected }
+  private fun hasSelectedTextTrack(tracks: Tracks): Boolean = tracks.groups.any { it.type == C.TRACK_TYPE_TEXT && it.isSelected }
 
   private fun restorePendingDvTrackSelection(tracks: Tracks): Boolean {
     val pending = pendingDvTrackRestore ?: return false

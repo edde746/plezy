@@ -44,7 +44,11 @@ void main() {
     PlexApiCache.initialize(db);
     JellyfinApiCache.initialize(db);
 
-    final downloadManager = DownloadManagerService(database: db, storageService: DownloadStorageService.instance, clientResolver: (serverId, {clientScopeId}) => null);
+    final downloadManager = DownloadManagerService(
+      database: db,
+      storageService: DownloadStorageService.instance,
+      clientResolver: (serverId, {clientScopeId}) => null,
+    );
     downloadProvider = DownloadProvider.forTesting(downloadManager: downloadManager, database: db);
     await downloadProvider.ensureInitialized();
 

@@ -68,11 +68,7 @@ Future<void> navigateToLiveTv(
     settings: const RouteSettings(name: kVideoPlayerRouteName),
     pageBuilder: (context, animation, secondaryAnimation) => VideoPlayerScreen(
       metadata: placeholder,
-      live: LiveTvSessionArgs(
-        channel: channel,
-        channels: normalizedChannels,
-        currentChannelIndex: currentChannelIndex,
-      ),
+      live: LiveTvSessionArgs(channel: channel, channels: normalizedChannels, currentChannelIndex: currentChannelIndex),
     ),
     transitionDuration: Duration.zero,
     reverseTransitionDuration: Duration.zero,

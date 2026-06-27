@@ -62,9 +62,10 @@ class SubtitleStylingScreen extends StatelessWidget {
             icon: Symbols.aspect_ratio_rounded,
             title: t.subtitlingStyling.renderResolution,
             subtitleBuilder: _renderResolutionLabel,
-            options: const [SubtitleRenderResolution.screen, SubtitleRenderResolution.video]
-                .map((v) => DialogOption(value: v, title: _renderResolutionLabel(v)))
-                .toList(),
+            options: const [
+              SubtitleRenderResolution.screen,
+              SubtitleRenderResolution.video,
+            ].map((v) => DialogOption(value: v, title: _renderResolutionLabel(v))).toList(),
             decode: (v) => v,
             encode: (v) => v,
           ),

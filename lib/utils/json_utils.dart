@@ -56,7 +56,10 @@ List<dynamic>? flexibleList(Object? v) => switch (v) {
 List<String>? flexibleStringList(Object? v) {
   final list = flexibleList(v);
   if (list == null) return null;
-  final result = [for (final e in list) if (e is String) e];
+  final result = [
+    for (final e in list)
+      if (e is String) e,
+  ];
   return result.isEmpty ? null : result;
 }
 

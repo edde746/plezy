@@ -28,17 +28,22 @@ MediaItem _item(String id, {String? parentId, String serverId = 'server_1'}) => 
   parentId: parentId,
 );
 
-MediaHub _hub(String id, {String? identifier, String? libraryId, List<MediaItem>? items, String serverId = 'server_1'}) =>
-    MediaHub(
-      id: id,
-      title: id,
-      type: 'movie',
-      identifier: identifier,
-      items: items ?? [_item('$id-item', serverId: serverId)],
-      size: 1,
-      libraryId: libraryId,
-      serverId: serverId,
-    );
+MediaHub _hub(
+  String id, {
+  String? identifier,
+  String? libraryId,
+  List<MediaItem>? items,
+  String serverId = 'server_1',
+}) => MediaHub(
+  id: id,
+  title: id,
+  type: 'movie',
+  identifier: identifier,
+  items: items ?? [_item('$id-item', serverId: serverId)],
+  size: 1,
+  libraryId: libraryId,
+  serverId: serverId,
+);
 
 /// Counting fake — the provider's fetch-cost policy is the contract under
 /// test: a watch event must cost exactly one on-deck call and zero hub
@@ -80,10 +85,7 @@ class _FakeAggregationService extends DataAggregationService {
   }) async {
     hubCalls++;
     lastHubsServerIds = serverIds;
-    return (
-      hubs: hubsResult(),
-      succeededServerIds: hubSucceededServerIds ?? serverIds ?? const {'server_1'},
-    );
+    return (hubs: hubsResult(), succeededServerIds: hubSucceededServerIds ?? serverIds ?? const {'server_1'});
   }
 }
 
@@ -215,16 +217,12 @@ void main() {
   });
 
   test('library order change re-sorts hubs without any refetch', () async {
-    aggregation.hubsResult = () => [
-      _hub('hub-lib2', libraryId: 'lib-2'),
-      _hub('hub-lib1', libraryId: 'lib-1'),
-    ];
+    aggregation.hubsResult = () => [_hub('hub-lib2', libraryId: 'lib-2'), _hub('hub-lib1', libraryId: 'lib-1')];
     await provider.load();
     expect(provider.hubs.map((h) => h.id), ['hub-lib2', 'hub-lib1']);
     final hubCallsBefore = aggregation.hubCalls;
 
-    MediaLibrary lib(String id) =>
-        MediaLibrary(id: id, backend: MediaBackend.plex, title: id, serverId: 'server_1');
+    MediaLibrary lib(String id) => MediaLibrary(id: id, backend: MediaBackend.plex, title: id, serverId: 'server_1');
     await libraries.updateLibraryOrder([lib('lib-1'), lib('lib-2')]);
     await pumpEventQueue();
 
