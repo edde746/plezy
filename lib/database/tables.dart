@@ -104,6 +104,33 @@ class SyncRules extends Table {
   BoolColumn get includeSpecials => boolean().withDefault(const Constant(true))();
 }
 
+/// Profile-scoped watchlist bookmark for movies, shows, seasons, and episodes.
+///
+/// Composite primary key `(profileId, globalKey)` gives each profile an
+/// independent watchlist. Display metadata (title, thumb, year, etc.) is
+/// stored locally so the watchlist works offline.
+@DataClassName('WatchlistItem')
+@TableIndex(name: 'idx_watchlist_profile', columns: {#profileId})
+@TableIndex(name: 'idx_watchlist_kind', columns: {#kind})
+class WatchlistItems extends Table {
+  TextColumn get profileId => text()();
+  TextColumn get globalKey => text()();
+  TextColumn get serverId => text()();
+  TextColumn get clientScopeId => text().nullable()();
+  TextColumn get ratingKey => text()();
+  TextColumn get kind => text()(); // 'movie', 'show', 'season', 'episode'
+  TextColumn get title => text()();
+  TextColumn get thumbPath => text().nullable()();
+  TextColumn get backdropPath => text().nullable()();
+  IntColumn get year => integer().nullable()();
+  IntColumn get index => integer().nullable()();
+  TextColumn get parentTitle => text().nullable()();
+  IntColumn get addedAt => integer()(); // ms since epoch
+
+  @override
+  Set<Column> get primaryKey => {profileId, globalKey};
+}
+
 /// Persisted media-server connections.
 ///
 /// One row per "connection" the user has added — a Plex account (with its
