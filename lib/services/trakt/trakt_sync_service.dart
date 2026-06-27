@@ -14,9 +14,9 @@ import '../multi_server_manager.dart';
 import '../settings_service.dart';
 import '../trackers/tracker_constants.dart';
 import '../trackers/tracker_id_resolver.dart';
+import '../trackers/tracker_session.dart';
 import 'trakt_client.dart';
 import 'trakt_constants.dart';
-import 'trakt_session.dart';
 import 'trakt_sync_queue.dart';
 
 /// One-way push of watched/unwatched events from Plezy to Trakt.
@@ -82,9 +82,9 @@ class TraktSyncService {
   /// clients are tied to the previous user's tokens) and rebinds the queue.
   void rebindToProfile(
     String userUuid,
-    TraktSession? session, {
+    TrackerSession? session, {
     required void Function() onSessionInvalidated,
-    void Function(TraktSession session)? onSessionUpdated,
+    void Function(TrackerSession session)? onSessionUpdated,
   }) {
     _client?.dispose();
     _client = session != null
@@ -95,7 +95,7 @@ class TraktSyncService {
     if (_client != null) unawaited(flushQueue());
   }
 
-  void updateSession(TraktSession session) {
+  void updateSession(TrackerSession session) {
     _client?.updateSession(session);
   }
 

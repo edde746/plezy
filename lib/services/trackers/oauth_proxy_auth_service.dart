@@ -1,17 +1,18 @@
 import 'oauth_proxy_client.dart';
+import 'tracker_session.dart';
 
-abstract class OAuthProxyAuthServiceBase<T> {
+abstract class OAuthProxyAuthServiceBase {
   final OAuthProxyClient proxy;
 
   OAuthProxyAuthServiceBase({OAuthProxyClient? proxy}) : proxy = proxy ?? OAuthProxyClient();
 
   String get service;
 
-  T buildSession(OAuthProxyResult result);
+  TrackerSession buildSession(OAuthProxyResult result);
 
   void dispose() => proxy.dispose();
 
-  Future<T?> authorize({
+  Future<TrackerSession?> authorize({
     required void Function(OAuthProxyStart) onCodeReady,
     bool Function()? shouldCancel,
     Future<void>? onCancel,

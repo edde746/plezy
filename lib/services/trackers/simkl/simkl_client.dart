@@ -1,31 +1,29 @@
 import 'dart:async';
-import 'dart:convert';
 
 import 'package:http/http.dart' as http;
 
-import '../../../utils/abortable_http_request.dart';
-import '../../../utils/app_logger.dart';
-import '../../../utils/platform_http_client_stub.dart'
-    if (dart.library.io) '../../../utils/platform_http_client_io.dart'
-    as platform;
+import '../tracker.dart';
 import '../tracker_constants.dart';
+import '../tracker_exceptions.dart';
+import '../tracker_http_client.dart';
+import '../tracker_session.dart';
 import 'simkl_constants.dart';
-import 'simkl_session.dart';
 
 /// HTTP wrapper for the Simkl REST API.
 ///
 /// Simkl tokens don't expire; a 401 is terminal (user revoked access at
 /// simkl.com/settings/apps). [onSessionInvalidated] clears the local session
 /// in that case.
-class SimklClient {
-  final SimklSession session;
-  final http.Client _http;
+class SimklClient implements DisposableTrackerClient {
+  final TrackerSession session;
+  final TrackerHttpClient _http;
   final void Function() onSessionInvalidated;
 
   SimklClient(this.session, {required this.onSessionInvalidated, http.Client? httpClient})
-    : _http = httpClient ?? platform.createPlatformClient();
+    : _http = TrackerHttpClient(service: TrackerService.simkl, logLabel: 'Simkl', httpClient: httpClient);
 
-  void dispose() => _http.close();
+  @override
+  void dispose() => _http.dispose();
 
   /// Fetch current user info. Used to populate the display name.
   Future<Map<String, dynamic>?> getUserSettings() async {
@@ -55,51 +53,20 @@ class SimklClient {
   Future<dynamic> _request(String method, String path, {Map<String, dynamic>? body}) async {
     final uri = Uri.parse('${SimklConstants.apiBase}$path');
     final headers = SimklConstants.headers(accessToken: session.accessToken);
-    final encoded = body == null ? null : json.encode(body);
-
-    final sw = Stopwatch()..start();
-    final res = await switch (method) {
-      'GET' || 'POST' => sendAbortableHttpRequest(
-        _http,
-        method,
-        uri,
-        headers: headers,
-        body: encoded,
-        timeout: TrackerConstants.requestTimeout,
-        operation: 'Simkl $method ${uri.path}',
-      ),
-      _ => throw ArgumentError('Unsupported HTTP method: $method'),
-    };
-    sw.stop();
-    appLogger.d('Simkl $method ${uri.path} → ${res.statusCode} (${sw.elapsedMilliseconds}ms)');
+    final res = await _http.sendJson(method, uri, headers: headers, body: body, allowedMethods: const {'GET', 'POST'});
 
     if (res.statusCode == 401) {
       onSessionInvalidated();
-      throw SimklAuthException('Session invalidated (401)');
+      throw const TrackerAuthException(
+        service: TrackerService.simkl,
+        message: 'Session invalidated (401)',
+        statusCode: 401,
+        isPermanent: true,
+      );
     }
     if (res.statusCode < 200 || res.statusCode >= 300) {
-      throw SimklApiException(statusCode: res.statusCode, body: res.body);
+      throw TrackerApiException(service: TrackerService.simkl, statusCode: res.statusCode, body: res.body);
     }
-    if (res.body.isEmpty) return null;
-    try {
-      return json.decode(res.body);
-    } catch (_) {
-      return null;
-    }
+    return TrackerHttpClient.decodeJson(res.body);
   }
-}
-
-class SimklApiException implements Exception {
-  final int statusCode;
-  final String body;
-  const SimklApiException({required this.statusCode, required this.body});
-  @override
-  String toString() => 'SimklApiException(HTTP $statusCode): $body';
-}
-
-class SimklAuthException implements Exception {
-  final String message;
-  const SimklAuthException(this.message);
-  @override
-  String toString() => 'SimklAuthException: $message';
 }
