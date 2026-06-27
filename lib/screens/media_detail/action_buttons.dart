@@ -1,6 +1,17 @@
 part of '../media_detail_screen.dart';
 
 extension _MediaDetailActionButtons on _MediaDetailScreenState {
+  /// Returns `true` when [WatchlistProvider] is available in the widget tree.
+  /// Tests that predate the watchlist feature may not provide it.
+  bool get _hasWatchlistProvider {
+    try {
+      context.read<WatchlistProvider>();
+      return true;
+    } on ProviderNotFoundException {
+      return false;
+    }
+  }
+
   Widget _buildActionButtons(MediaItem metadata) {
     final isTv = PlatformDetector.isTV();
     final tvScale = TvLayoutConstants.scaleOf(context);
@@ -194,6 +205,27 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
           _buildWatchedToggleButton(metadata, actionButtonStyle, tvScale, showFocus: state.showFocus),
     );
 
+    final bookmarkAction = _hasWatchlistProvider
+        ? FocusableAction(
+            debugLabel: 'detail_bookmark',
+            onPressed: () => unawaited(_handleBookmarkTogglePressed(metadata)),
+            builder: (context, state) {
+              final isBookmarked =
+                  context.select<WatchlistProvider, bool>((wp) => wp.isBookmarked(metadata.globalKey));
+              return IconButton.filledTonal(
+                onPressed: () => unawaited(_handleBookmarkTogglePressed(metadata)),
+                icon: AppIcon(
+                  isBookmarked ? Symbols.bookmark_rounded : Symbols.bookmark,
+                  fill: 1,
+                ),
+                tooltip: isBookmarked ? t.tooltips.removeBookmark : t.tooltips.bookmark,
+                iconSize: PlatformDetector.isTV() ? 21 * tvScale : 20,
+                style: actionButtonStyle(showFocus: state.showFocus),
+              );
+            },
+          )
+        : null;
+
     void showMoreActions() => _contextMenuKey.currentState?.showContextMenu(context);
 
     final moreActionsAction = widget.isOffline
@@ -216,6 +248,7 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
       ?shuffleAction,
       ?downloadAction,
       watchedAction,
+      ?bookmarkAction,
       ?moreActionsAction,
     ];
 
@@ -241,18 +274,18 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
 
     List<FocusableAction> compactActionsFor(double maxWidth) {
       if (widget.isOffline) {
-        final compact = <FocusableAction>[playAction, watchedAction];
-        if (maxWidth.isFinite && estimatedRowWidth(compact) > maxWidth) return [playAction];
+        final compact = <FocusableAction>[playAction, watchedAction, ?bookmarkAction];
+        if (maxWidth.isFinite && estimatedRowWidth(compact) > maxWidth) return [playAction, ?bookmarkAction];
         return compact;
       }
 
-      final medium = <FocusableAction>[playAction, ?downloadAction, watchedAction, ?moreActionsAction];
+      final medium = <FocusableAction>[playAction, ?downloadAction, watchedAction, ?bookmarkAction, ?moreActionsAction];
       if (!maxWidth.isFinite || estimatedRowWidth(medium) <= maxWidth) return medium;
 
-      final compact = <FocusableAction>[playAction, watchedAction, ?moreActionsAction];
+      final compact = <FocusableAction>[playAction, watchedAction, ?bookmarkAction, ?moreActionsAction];
       if (estimatedRowWidth(compact) <= maxWidth) return compact;
 
-      return [playAction, ?moreActionsAction];
+      return [playAction, ?bookmarkAction, ?moreActionsAction];
     }
 
     Widget actionBar(List<FocusableAction> actions) {
@@ -294,6 +327,23 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
         case WatchMarkOutcome.skipped:
           break;
       }
+    } catch (e) {
+      if (mounted) {
+        showErrorSnackBar(context, t.messages.errorLoading(error: e.toString()));
+      }
+    }
+  }
+
+  Future<void> _handleBookmarkTogglePressed(MediaItem metadata) async {
+    try {
+      final watchlistProvider = context.read<WatchlistProvider>();
+      final isBookmarked = watchlistProvider.isBookmarked(metadata.globalKey);
+      await watchlistProvider.toggleBookmark(metadata);
+      if (!mounted) return;
+      showSuccessSnackBar(
+        context,
+        isBookmarked ? t.watchlist.removed : t.watchlist.added,
+      );
     } catch (e) {
       if (mounted) {
         showErrorSnackBar(context, t.messages.errorLoading(error: e.toString()));
