@@ -234,6 +234,7 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
   static const _kLibraries = 'libraries';
   static const _kSearch = 'search';
   static const _kDownloads = 'downloads';
+  static const _kWatchlist = 'watchlist';
   static const _kSettings = 'settings';
   static const _kReconnect = 'reconnect';
   static const _kFullscreen = 'fullscreen';
@@ -253,6 +254,8 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
   bool get _interactionExpanded => _isHovered || _isTouchExpanded;
 
   bool get _showDownloads => !PlatformDetector.isAppleTV();
+
+  bool get _showWatchlist => !PlatformDetector.isAppleTV();
 
   /// macOS has the system green button; mobile/TV have no OS fullscreen toggle.
   bool get _showFullscreenToggle => Platform.isWindows || Platform.isLinux;
@@ -379,6 +382,8 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
         return _kSearch;
       case NavigationTabId.downloads:
         return _showDownloads ? _kDownloads : null;
+      case NavigationTabId.watchlist:
+        return _showWatchlist ? _kWatchlist : null;
       case NavigationTabId.settings:
         return _kSettings;
       case NavigationTabId.liveTv:
@@ -419,6 +424,7 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
       _kLibraries,
       _kSearch,
       if (_showDownloads) _kDownloads,
+      if (_showWatchlist) _kWatchlist,
       _kSettings,
       _kReconnect,
       if (hasHiddenLibraries) _kHiddenLibraries,
@@ -507,6 +513,7 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
         _kSearch,
       ],
       if (_showDownloads) _kDownloads,
+      if (_showWatchlist) _kWatchlist,
       _kSettings,
       if (_showFullscreenToggle) _kFullscreen,
     ];
@@ -765,6 +772,20 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
                                       isFocused: _focusTracker.isFocused(_kDownloads),
                                       onTap: () => widget.onDestinationSelected(NavigationTabId.downloads),
                                       focusNode: _focusTracker.get(_kDownloads),
+                                      isCollapsed: isCollapsed,
+                                    ),
+                                    const SizedBox(height: 8),
+                                  ],
+                                  // Watchlist (hidden on Apple TV)
+                                  if (_showWatchlist) ...[
+                                    _buildNavItem(
+                                      icon: Symbols.bookmark_rounded,
+                                      selectedIcon: Symbols.bookmark_rounded,
+                                      label: Translations.of(context).navigation.watchlist,
+                                      isSelected: widget.selectedTab == NavigationTabId.watchlist,
+                                      isFocused: _focusTracker.isFocused(_kWatchlist),
+                                      onTap: () => widget.onDestinationSelected(NavigationTabId.watchlist),
+                                      focusNode: _focusTracker.get(_kWatchlist),
                                       isCollapsed: isCollapsed,
                                     ),
                                     const SizedBox(height: 8),
