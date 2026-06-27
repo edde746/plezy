@@ -58,6 +58,7 @@ import 'libraries/libraries_screen.dart';
 import 'livetv/live_tv_screen.dart';
 import 'search_screen.dart';
 import 'downloads/downloads_screen.dart';
+import 'watchlist/watchlist_screen.dart';
 import 'settings/settings_screen.dart';
 import 'profile/profile_switch_screen.dart';
 import '../services/system_shelf_service.dart';
@@ -219,6 +220,7 @@ class _MainScreenState extends State<MainScreen>
   final GlobalKey<State<LiveTvScreen>> _liveTvKey = GlobalKey();
   final GlobalKey<State<SearchScreen>> _searchKey = GlobalKey();
   final GlobalKey<State<DownloadsScreen>> _downloadsKey = GlobalKey();
+  final GlobalKey<State<WatchlistScreen>> _watchlistKey = GlobalKey();
   final GlobalKey<State<SettingsScreen>> _settingsKey = GlobalKey();
   final GlobalKey<SideNavigationRailState> _sideNavKey = GlobalKey();
 
@@ -918,6 +920,7 @@ class _MainScreenState extends State<MainScreen>
           NavigationTabId.liveTv => LiveTvScreen(key: _liveTvKey),
           NavigationTabId.search => SearchScreen(key: _searchKey),
           NavigationTabId.downloads => DownloadsScreen(key: _downloadsKey),
+          NavigationTabId.watchlist => WatchlistScreen(key: _watchlistKey),
           NavigationTabId.settings => SettingsScreen(key: _settingsKey),
         },
     ];
@@ -1524,6 +1527,7 @@ class _MainScreenState extends State<MainScreen>
       NavigationTabId.liveTv => _liveTvKey,
       NavigationTabId.search => _searchKey,
       NavigationTabId.downloads => _downloadsKey,
+      NavigationTabId.watchlist => _watchlistKey,
       NavigationTabId.settings => _settingsKey,
     };
   }
