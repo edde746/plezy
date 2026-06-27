@@ -415,7 +415,9 @@
     "shufflePlay": "Shuffle play",
     "playTrailer": "Play trailer",
     "markAsWatched": "Mark as watched",
-    "markAsUnwatched": "Mark as unwatched"
+    "markAsUnwatched": "Mark as unwatched",
+    "bookmark": "Bookmark",
+    "removeBookmark": "Remove bookmark"
   },
   "videoControls": {
     "audioLabel": "Audio",
@@ -817,6 +819,7 @@
   "navigation": {
     "libraries": "Libraries",
     "downloads": "Downloads",
+    "watchlist": "Watchlist",
     "liveTv": "Live TV"
   },
   "liveTv": {
@@ -1404,5 +1407,18 @@
     "connectToJellyfinCardSubtitleScoped": "Sign in to a Jellyfin server. Binds to ${name}.",
     "borrowFromAnotherProfile": "Borrow from another profile",
     "borrowFromAnotherProfileSubtitle": "Reuse another profile's connection. PIN-protected profiles require a PIN."
+  },
+  "watchlist": {
+    "title": "Watchlist",
+    "movies": "Movies",
+    "shows": "Shows",
+    "seasons": "Seasons",
+    "episodes": "Episodes",
+    "emptyTitle": "Your watchlist is empty",
+    "emptySubtitle": "Bookmark movies and shows to find them here later.",
+    "clearAll": "Clear All",
+    "clearAllConfirm": "Remove all bookmarked items? This cannot be undone.",
+    "added": "Added to watchlist",
+    "removed": "Removed from watchlist"
   }
 }

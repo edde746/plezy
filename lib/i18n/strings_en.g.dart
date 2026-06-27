@@ -86,6 +86,7 @@ class Translations with BaseTranslations<AppLocale, Translations> {
 	late final TranslationsTraktEn trakt = TranslationsTraktEn.internal(_root);
 	late final TranslationsTrackersEn trackers = TranslationsTrackersEn.internal(_root);
 	late final TranslationsAddServerEn addServer = TranslationsAddServerEn.internal(_root);
+	late final TranslationsWatchlistEn watchlist = TranslationsWatchlistEn.internal(_root);
 }
 
 // Path: app
@@ -1300,6 +1301,12 @@ class TranslationsTooltipsEn {
 
 	/// en: 'Mark as unwatched'
 	String get markAsUnwatched => 'Mark as unwatched';
+
+	/// en: 'Bookmark'
+	String get bookmark => 'Bookmark';
+
+	/// en: 'Remove bookmark'
+	String get removeBookmark => 'Remove bookmark';
 }
 
 // Path: videoControls
@@ -2399,6 +2406,9 @@ class TranslationsNavigationEn {
 
 	/// en: 'Downloads'
 	String get downloads => 'Downloads';
+
+	/// en: 'Watchlist'
+	String get watchlist => 'Watchlist';
 
 	/// en: 'Live TV'
 	String get liveTv => 'Live TV';
@@ -3920,6 +3930,48 @@ class TranslationsAddServerEn {
 	String get borrowFromAnotherProfileSubtitle => 'Reuse another profile\'s connection. PIN-protected profiles require a PIN.';
 }
 
+// Path: watchlist
+class TranslationsWatchlistEn {
+	TranslationsWatchlistEn.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// en: 'Watchlist'
+	String get title => 'Watchlist';
+
+	/// en: 'Movies'
+	String get movies => 'Movies';
+
+	/// en: 'Shows'
+	String get shows => 'Shows';
+
+	/// en: 'Seasons'
+	String get seasons => 'Seasons';
+
+	/// en: 'Episodes'
+	String get episodes => 'Episodes';
+
+	/// en: 'Your watchlist is empty'
+	String get emptyTitle => 'Your watchlist is empty';
+
+	/// en: 'Bookmark movies and shows to find them here later.'
+	String get emptySubtitle => 'Bookmark movies and shows to find them here later.';
+
+	/// en: 'Clear All'
+	String get clearAll => 'Clear All';
+
+	/// en: 'Remove all bookmarked items? This cannot be undone.'
+	String get clearAllConfirm => 'Remove all bookmarked items? This cannot be undone.';
+
+	/// en: 'Added to watchlist'
+	String get added => 'Added to watchlist';
+
+	/// en: 'Removed from watchlist'
+	String get removed => 'Removed from watchlist';
+}
+
 // Path: hotkeys.actions
 class TranslationsHotkeysActionsEn {
 	TranslationsHotkeysActionsEn.internal(this._root);
@@ -4903,6 +4955,8 @@ extension on Translations {
 			'tooltips.playTrailer' => 'Play trailer',
 			'tooltips.markAsWatched' => 'Mark as watched',
 			'tooltips.markAsUnwatched' => 'Mark as unwatched',
+			'tooltips.bookmark' => 'Bookmark',
+			'tooltips.removeBookmark' => 'Remove bookmark',
 			'videoControls.audioLabel' => 'Audio',
 			'videoControls.subtitlesLabel' => 'Subtitles',
 			'videoControls.resetToZero' => 'Reset to 0ms',
@@ -5023,10 +5077,10 @@ extension on Translations {
 			'messages.noResultsFound' => 'No results found',
 			'messages.sleepTimerSet' => ({required Object label}) => 'Sleep timer set for ${label}',
 			'messages.noItemsAvailable' => 'No items available',
-			'messages.failedToCreatePlayQueueNoItems' => 'Failed to create play queue - no items',
-			'messages.failedPlayback' => ({required Object action, required Object error}) => 'Failed to ${action}: ${error}',
 			_ => null,
 		} ?? switch (path) {
+			'messages.failedToCreatePlayQueueNoItems' => 'Failed to create play queue - no items',
+			'messages.failedPlayback' => ({required Object action, required Object error}) => 'Failed to ${action}: ${error}',
 			'messages.switchingToCompatiblePlayer' => 'Switching to compatible player...',
 			'messages.serverLimitTitle' => 'Playback failed',
 			'messages.serverLimitBody' => 'Server error (HTTP 500). A bandwidth/transcoding limit likely rejected this session. Ask the owner to adjust it.',
@@ -5262,6 +5316,7 @@ extension on Translations {
 			'licenses.licensesCount' => ({required Object count}) => '${count} licenses',
 			'navigation.libraries' => 'Libraries',
 			'navigation.downloads' => 'Downloads',
+			'navigation.watchlist' => 'Watchlist',
 			'navigation.liveTv' => 'Live TV',
 			'liveTv.title' => 'Live TV',
 			'liveTv.guide' => 'Guide',
@@ -5536,11 +5591,11 @@ extension on Translations {
 			'companionRemote.pairing.hostAddressHint' => '192.168.1.100:48632',
 			'companionRemote.pairing.connecting' => 'Connecting...',
 			'companionRemote.pairing.searchingForDevices' => 'Looking for devices...',
+			_ => null,
+		} ?? switch (path) {
 			'companionRemote.pairing.noDevicesFound' => 'No devices found on your network',
 			'companionRemote.pairing.noDevicesHint' => 'Open Plezy on desktop and use the same WiFi',
 			'companionRemote.pairing.availableDevices' => 'Available Devices',
-			_ => null,
-		} ?? switch (path) {
 			'companionRemote.pairing.manualConnection' => 'Manual Connection',
 			'companionRemote.pairing.cryptoInitFailed' => 'Couldn\'t start secure connection. Sign in to Plex first.',
 			'companionRemote.pairing.validationHostRequired' => 'Please enter host address',
@@ -5803,6 +5858,17 @@ extension on Translations {
 			'addServer.connectToJellyfinCardSubtitleScoped' => ({required Object name}) => 'Sign in to a Jellyfin server. Binds to ${name}.',
 			'addServer.borrowFromAnotherProfile' => 'Borrow from another profile',
 			'addServer.borrowFromAnotherProfileSubtitle' => 'Reuse another profile\'s connection. PIN-protected profiles require a PIN.',
+			'watchlist.title' => 'Watchlist',
+			'watchlist.movies' => 'Movies',
+			'watchlist.shows' => 'Shows',
+			'watchlist.seasons' => 'Seasons',
+			'watchlist.episodes' => 'Episodes',
+			'watchlist.emptyTitle' => 'Your watchlist is empty',
+			'watchlist.emptySubtitle' => 'Bookmark movies and shows to find them here later.',
+			'watchlist.clearAll' => 'Clear All',
+			'watchlist.clearAllConfirm' => 'Remove all bookmarked items? This cannot be undone.',
+			'watchlist.added' => 'Added to watchlist',
+			'watchlist.removed' => 'Removed from watchlist',
 			_ => null,
 		};
 	}
