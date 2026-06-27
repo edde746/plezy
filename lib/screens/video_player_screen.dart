@@ -337,10 +337,9 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   Timer? _autoPlayTimer;
   int _autoPlayCountdown = 5;
 
-  // End-of-video Play Next latch. Fires within 1s of the end; re-arms only
-  // once playback is more than 2s from the end — the gap is hysteresis so a
-  // position parked at the boundary can't oscillate (see CompletionLatch).
-  final CompletionLatch _completionLatch = CompletionLatch(triggerWindowMs: 1000, rearmWindowMs: 2000);
+  // End-of-video Play Next latch. Completion comes from the player EOF signal;
+  // position ticks only re-arm once playback is more than 2s from the end.
+  final CompletionLatch _completionLatch = CompletionLatch(rearmWindowMs: 2000);
 
   late final FocusNode _playNextCancelFocusNode;
   late final FocusNode _playNextConfirmFocusNode;
