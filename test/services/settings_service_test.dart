@@ -157,14 +157,14 @@ void main() {
       final settings = await SettingsService.getInstance();
       final crashReporting = settings.listenable(SettingsService.crashReporting);
 
-      expect(crashReporting.value, isTrue);
+      expect(crashReporting.value, isFalse);
 
-      await settings.prefs.setBool(SettingsService.crashReporting.key, false);
-      expect(crashReporting.value, isTrue);
+      await settings.prefs.setBool(SettingsService.crashReporting.key, true);
+      expect(crashReporting.value, isFalse);
 
       settings.refreshListenables();
 
-      expect(crashReporting.value, isFalse);
+      expect(crashReporting.value, isTrue);
     });
 
     test('resetAllSettings refreshes active dynamic tracker prefs', () async {
