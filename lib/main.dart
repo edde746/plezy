@@ -46,6 +46,7 @@ import 'providers/user_profile_provider.dart';
 import 'providers/multi_server_provider.dart';
 import 'providers/theme_provider.dart';
 import 'providers/download_provider.dart';
+import 'providers/watchlist_provider.dart';
 import 'providers/offline_mode_provider.dart';
 import 'providers/offline_watch_provider.dart';
 import 'providers/shader_provider.dart';
@@ -769,6 +770,16 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
           create: (context) => DownloadProvider(downloadManager: _downloadManager, database: _appDatabase),
           update: (context, activeProfile, previous) {
             final provider = previous ?? DownloadProvider(downloadManager: _downloadManager, database: _appDatabase);
+            provider.setActiveProfileId(activeProfile.activeId);
+            return provider;
+          },
+        ),
+        // Watchlist provider. Bookmarks are profile-scoped and reload when the
+        // active profile changes.
+        ChangeNotifierProxyProvider<ActiveProfileProvider, WatchlistProvider>(
+          create: (context) => WatchlistProvider(database: _appDatabase),
+          update: (context, activeProfile, previous) {
+            final provider = previous ?? WatchlistProvider(database: _appDatabase);
             provider.setActiveProfileId(activeProfile.activeId);
             return provider;
           },
