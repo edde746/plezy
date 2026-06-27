@@ -409,7 +409,9 @@
     "shufflePlay": "Lecture aléatoire",
     "playTrailer": "Lire la bande-annonce",
     "markAsWatched": "Marqué comme vu",
-    "markAsUnwatched": "Marqué comme non vu"
+    "markAsUnwatched": "Marqué comme non vu",
+    "bookmark": "Ajouter aux favoris",
+    "removeBookmark": "Retirer des favoris"
   },
   "videoControls": {
     "audioLabel": "Audio",
@@ -811,6 +813,7 @@
   "navigation": {
     "libraries": "Medias",
     "downloads": "Téléch.",
+    "watchlist": "Favoris",
     "liveTv": "TV direct"
   },
   "liveTv": {
@@ -1395,5 +1398,18 @@
     "connectToJellyfinCardSubtitleScoped": "Connectez-vous à un serveur Jellyfin. Lié à ${name}.",
     "borrowFromAnotherProfile": "Emprunter à un autre profil",
     "borrowFromAnotherProfileSubtitle": "Réutiliser la connexion d'un autre profil. Les profils protégés par PIN exigent un PIN."
+  },
+  "watchlist": {
+    "title": "Favoris",
+    "movies": "Films",
+    "shows": "Séries",
+    "seasons": "Saisons",
+    "episodes": "Épisodes",
+    "emptyTitle": "Aucun favori",
+    "emptySubtitle": "Ajoutez des films et séries aux favoris pour les retrouver ici.",
+    "clearAll": "Tout effacer",
+    "clearAllConfirm": "Supprimer tous les favoris ? Cette action est irréversible.",
+    "added": "Ajouté aux favoris",
+    "removed": "Retiré des favoris"
   }
 }

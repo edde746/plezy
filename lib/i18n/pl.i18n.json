@@ -409,7 +409,9 @@
     "shufflePlay": "Odtwarzanie losowe",
     "playTrailer": "Odtwórz zwiastun",
     "markAsWatched": "Oznacz jako obejrzane",
-    "markAsUnwatched": "Oznacz jako nieobejrzane"
+    "markAsUnwatched": "Oznacz jako nieobejrzane",
+    "bookmark": "Dodaj do zakładek",
+    "removeBookmark": "Usuń z zakładek"
   },
   "videoControls": {
     "audioLabel": "Audio",
@@ -811,6 +813,7 @@
   "navigation": {
     "libraries": "Biblioteki",
     "downloads": "Pobrania",
+    "watchlist": "Zakładki",
     "liveTv": "TV na żywo"
   },
   "liveTv": {
@@ -1395,5 +1398,18 @@
     "connectToJellyfinCardSubtitleScoped": "Zaloguj się do serwera Jellyfin. Powiązane z ${name}.",
     "borrowFromAnotherProfile": "Pożycz z innego profilu",
     "borrowFromAnotherProfileSubtitle": "Użyj połączenia z innego profilu. Profile chronione PIN wymagają PIN-u."
+  },
+  "watchlist": {
+    "title": "Zakładki",
+    "movies": "Filmy",
+    "shows": "Seriale",
+    "seasons": "Sezony",
+    "episodes": "Odcinki",
+    "emptyTitle": "Brak zakładek",
+    "emptySubtitle": "Dodaj filmy i seriale do zakładek, aby mieć do nich szybki dostęp.",
+    "clearAll": "Usuń wszystkie",
+    "clearAllConfirm": "Usunąć wszystkie zakładki? Tej operacji nie można cofnąć.",
+    "added": "Dodano do zakładek",
+    "removed": "Usunięto z zakładek"
   }
 }

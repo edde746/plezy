@@ -409,7 +409,9 @@
     "shufflePlay": "Willekeurig afspelen",
     "playTrailer": "Trailer afspelen",
     "markAsWatched": "Markeer als gekeken",
-    "markAsUnwatched": "Markeer als ongekeken"
+    "markAsUnwatched": "Markeer als ongekeken",
+    "bookmark": "Toevoegen aan bladwijzers",
+    "removeBookmark": "Verwijderen uit bladwijzers"
   },
   "videoControls": {
     "audioLabel": "Audio",
@@ -811,6 +813,7 @@
   "navigation": {
     "libraries": "Media",
     "downloads": "Downloads",
+    "watchlist": "Bladwijzers",
     "liveTv": "Live TV"
   },
   "liveTv": {
@@ -1395,5 +1398,18 @@
     "connectToJellyfinCardSubtitleScoped": "Log in op een Jellyfin-server. Wordt gekoppeld aan ${name}.",
     "borrowFromAnotherProfile": "Lenen van een ander profiel",
     "borrowFromAnotherProfileSubtitle": "Hergebruik de verbinding van een ander profiel. PIN-beveiligde profielen vereisen een PIN."
+  },
+  "watchlist": {
+    "title": "Bladwijzers",
+    "movies": "Films",
+    "shows": "Series",
+    "seasons": "Seizoenen",
+    "episodes": "Afleveringen",
+    "emptyTitle": "Geen bladwijzers",
+    "emptySubtitle": "Voeg films en series toe aan bladwijzers voor snelle toegang.",
+    "clearAll": "Alles wissen",
+    "clearAllConfirm": "Alle bladwijzers verwijderen? Dit kan niet ongedaan worden gemaakt.",
+    "added": "Toegevoegd aan bladwijzers",
+    "removed": "Verwijderd uit bladwijzers"
   }
 }

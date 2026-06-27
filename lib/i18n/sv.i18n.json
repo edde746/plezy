@@ -409,7 +409,9 @@
     "shufflePlay": "Blanda uppspelning",
     "playTrailer": "Spela trailer",
     "markAsWatched": "Markera som sedd",
-    "markAsUnwatched": "Markera som osedd"
+    "markAsUnwatched": "Markera som osedd",
+    "bookmark": "Lägg till bokmärke",
+    "removeBookmark": "Ta bort bokmärke"
   },
   "videoControls": {
     "audioLabel": "Ljud",
@@ -811,6 +813,7 @@
   "navigation": {
     "libraries": "Bibliotek",
     "downloads": "Nerladdat",
+    "watchlist": "Bokmärken",
     "liveTv": "Live-TV"
   },
   "liveTv": {
@@ -1395,5 +1398,18 @@
     "connectToJellyfinCardSubtitleScoped": "Logga in på en Jellyfin-server. Kopplas till ${name}.",
     "borrowFromAnotherProfile": "Låna från en annan profil",
     "borrowFromAnotherProfileSubtitle": "Återanvänd en annan profils anslutning. PIN-skyddade profiler kräver en PIN."
+  },
+  "watchlist": {
+    "title": "Bokmärken",
+    "movies": "Filmer",
+    "shows": "Serier",
+    "seasons": "Säsonger",
+    "episodes": "Avsnitt",
+    "emptyTitle": "Inga bokmärken",
+    "emptySubtitle": "Lägg till filmer och serier i dina bokmärken för enkel åtkomst.",
+    "clearAll": "Rensa alla",
+    "clearAllConfirm": "Ta bort alla bokmärken? Detta kan inte ångras.",
+    "added": "Tillagt i bokmärken",
+    "removed": "Borttaget från bokmärken"
   }
 }

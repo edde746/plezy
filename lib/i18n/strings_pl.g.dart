@@ -85,6 +85,7 @@ class TranslationsPl extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _TranslationsTraktPl trakt = _TranslationsTraktPl._(_root);
 	@override late final _TranslationsTrackersPl trackers = _TranslationsTrackersPl._(_root);
 	@override late final _TranslationsAddServerPl addServer = _TranslationsAddServerPl._(_root);
+	@override late final _TranslationsWatchlistPl watchlist = _TranslationsWatchlistPl._(_root);
 }
 
 // Path: app
@@ -562,6 +563,8 @@ class _TranslationsTooltipsPl extends TranslationsTooltipsEn {
 	@override String get playTrailer => 'Odtwórz zwiastun';
 	@override String get markAsWatched => 'Oznacz jako obejrzane';
 	@override String get markAsUnwatched => 'Oznacz jako nieobejrzane';
+	@override String get bookmark => 'Dodaj do zakładek';
+	@override String get removeBookmark => 'Usuń z zakładek';
 }
 
 // Path: videoControls
@@ -1033,6 +1036,7 @@ class _TranslationsNavigationPl extends TranslationsNavigationEn {
 	// Translations
 	@override String get libraries => 'Biblioteki';
 	@override String get downloads => 'Pobrania';
+	@override String get watchlist => 'Zakładki';
 	@override String get liveTv => 'TV na żywo';
 }
 
@@ -1637,6 +1641,26 @@ class _TranslationsAddServerPl extends TranslationsAddServerEn {
 	@override String connectToJellyfinCardSubtitleScoped({required Object name}) => 'Zaloguj się do serwera Jellyfin. Powiązane z ${name}.';
 	@override String get borrowFromAnotherProfile => 'Pożycz z innego profilu';
 	@override String get borrowFromAnotherProfileSubtitle => 'Użyj połączenia z innego profilu. Profile chronione PIN wymagają PIN-u.';
+}
+
+// Path: watchlist
+class _TranslationsWatchlistPl extends TranslationsWatchlistEn {
+	_TranslationsWatchlistPl._(TranslationsPl root) : this._root = root, super.internal(root);
+
+	final TranslationsPl _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Zakładki';
+	@override String get movies => 'Filmy';
+	@override String get shows => 'Seriale';
+	@override String get seasons => 'Sezony';
+	@override String get episodes => 'Odcinki';
+	@override String get emptyTitle => 'Brak zakładek';
+	@override String get emptySubtitle => 'Dodaj filmy i seriale do zakładek, aby mieć do nich szybki dostęp.';
+	@override String get clearAll => 'Usuń wszystkie';
+	@override String get clearAllConfirm => 'Usunąć wszystkie zakładki? Tej operacji nie można cofnąć.';
+	@override String get added => 'Dodano do zakładek';
+	@override String get removed => 'Usunięto z zakładek';
 }
 
 // Path: hotkeys.actions
@@ -2310,6 +2334,8 @@ extension on TranslationsPl {
 			'tooltips.playTrailer' => 'Odtwórz zwiastun',
 			'tooltips.markAsWatched' => 'Oznacz jako obejrzane',
 			'tooltips.markAsUnwatched' => 'Oznacz jako nieobejrzane',
+			'tooltips.bookmark' => 'Dodaj do zakładek',
+			'tooltips.removeBookmark' => 'Usuń z zakładek',
 			'videoControls.audioLabel' => 'Audio',
 			'videoControls.subtitlesLabel' => 'Napisy',
 			'videoControls.resetToZero' => 'Zresetuj do 0ms',
@@ -2436,10 +2462,10 @@ extension on TranslationsPl {
 			'messages.serverLimitTitle' => 'Odtwarzanie nie powiodło się',
 			'messages.serverLimitBody' => 'Błąd serwera (HTTP 500). Limit przepustowości/transkodowania prawdopodobnie odrzucił tę sesję. Poproś właściciela o zmianę.',
 			'messages.logsUploaded' => 'Logi przesłane',
-			'messages.logsUploadFailed' => 'Nie udało się przesłać logów',
-			'messages.logId' => 'ID logu',
 			_ => null,
 		} ?? switch (path) {
+			'messages.logsUploadFailed' => 'Nie udało się przesłać logów',
+			'messages.logId' => 'ID logu',
 			'subtitlingStyling.text' => 'Tekst',
 			'subtitlingStyling.border' => 'Obramowanie',
 			'subtitlingStyling.background' => 'Tło',
@@ -2669,6 +2695,7 @@ extension on TranslationsPl {
 			'licenses.licensesCount' => ({required Object count}) => '${count} licencji',
 			'navigation.libraries' => 'Biblioteki',
 			'navigation.downloads' => 'Pobrania',
+			'navigation.watchlist' => 'Zakładki',
 			'navigation.liveTv' => 'TV na żywo',
 			'liveTv.title' => 'TV na żywo',
 			'liveTv.guide' => 'Przewodnik',
@@ -2949,11 +2976,11 @@ extension on TranslationsPl {
 			'companionRemote.pairing.validationHostFormat' => 'Format musi być IP:port (np. 192.168.1.100:48632)',
 			'companionRemote.pairing.connectionTimedOut' => 'Limit czasu połączenia. Użyj tej samej sieci na obu urządzeniach.',
 			'companionRemote.pairing.sessionNotFound' => 'Nie znaleziono urządzenia. Upewnij się, że Plezy działa na hoście.',
+			_ => null,
+		} ?? switch (path) {
 			'companionRemote.pairing.authFailed' => 'Uwierzytelnianie nie powiodło się. Oba urządzenia muszą używać tego samego konta Plex.',
 			'companionRemote.pairing.failedToConnect' => ({required Object error}) => 'Nie udało się połączyć: ${error}',
 			'companionRemote.remote.disconnectConfirm' => 'Czy chcesz się rozłączyć od sesji zdalnej?',
-			_ => null,
-		} ?? switch (path) {
 			'companionRemote.remote.reconnecting' => 'Ponowne łączenie...',
 			'companionRemote.remote.attemptOf' => ({required Object current}) => 'Próba ${current} z 5',
 			'companionRemote.remote.retryNow' => 'Ponów teraz',
@@ -3207,6 +3234,17 @@ extension on TranslationsPl {
 			'addServer.connectToJellyfinCardSubtitleScoped' => ({required Object name}) => 'Zaloguj się do serwera Jellyfin. Powiązane z ${name}.',
 			'addServer.borrowFromAnotherProfile' => 'Pożycz z innego profilu',
 			'addServer.borrowFromAnotherProfileSubtitle' => 'Użyj połączenia z innego profilu. Profile chronione PIN wymagają PIN-u.',
+			'watchlist.title' => 'Zakładki',
+			'watchlist.movies' => 'Filmy',
+			'watchlist.shows' => 'Seriale',
+			'watchlist.seasons' => 'Sezony',
+			'watchlist.episodes' => 'Odcinki',
+			'watchlist.emptyTitle' => 'Brak zakładek',
+			'watchlist.emptySubtitle' => 'Dodaj filmy i seriale do zakładek, aby mieć do nich szybki dostęp.',
+			'watchlist.clearAll' => 'Usuń wszystkie',
+			'watchlist.clearAllConfirm' => 'Usunąć wszystkie zakładki? Tej operacji nie można cofnąć.',
+			'watchlist.added' => 'Dodano do zakładek',
+			'watchlist.removed' => 'Usunięto z zakładek',
 			_ => null,
 		};
 	}

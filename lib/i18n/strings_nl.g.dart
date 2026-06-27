@@ -85,6 +85,7 @@ class TranslationsNl extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _TranslationsTraktNl trakt = _TranslationsTraktNl._(_root);
 	@override late final _TranslationsTrackersNl trackers = _TranslationsTrackersNl._(_root);
 	@override late final _TranslationsAddServerNl addServer = _TranslationsAddServerNl._(_root);
+	@override late final _TranslationsWatchlistNl watchlist = _TranslationsWatchlistNl._(_root);
 }
 
 // Path: app
@@ -562,6 +563,8 @@ class _TranslationsTooltipsNl extends TranslationsTooltipsEn {
 	@override String get playTrailer => 'Trailer afspelen';
 	@override String get markAsWatched => 'Markeer als gekeken';
 	@override String get markAsUnwatched => 'Markeer als ongekeken';
+	@override String get bookmark => 'Toevoegen aan bladwijzers';
+	@override String get removeBookmark => 'Verwijderen uit bladwijzers';
 }
 
 // Path: videoControls
@@ -1033,6 +1036,7 @@ class _TranslationsNavigationNl extends TranslationsNavigationEn {
 	// Translations
 	@override String get libraries => 'Media';
 	@override String get downloads => 'Downloads';
+	@override String get watchlist => 'Bladwijzers';
 	@override String get liveTv => 'Live TV';
 }
 
@@ -1637,6 +1641,26 @@ class _TranslationsAddServerNl extends TranslationsAddServerEn {
 	@override String connectToJellyfinCardSubtitleScoped({required Object name}) => 'Log in op een Jellyfin-server. Wordt gekoppeld aan ${name}.';
 	@override String get borrowFromAnotherProfile => 'Lenen van een ander profiel';
 	@override String get borrowFromAnotherProfileSubtitle => 'Hergebruik de verbinding van een ander profiel. PIN-beveiligde profielen vereisen een PIN.';
+}
+
+// Path: watchlist
+class _TranslationsWatchlistNl extends TranslationsWatchlistEn {
+	_TranslationsWatchlistNl._(TranslationsNl root) : this._root = root, super.internal(root);
+
+	final TranslationsNl _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Bladwijzers';
+	@override String get movies => 'Films';
+	@override String get shows => 'Series';
+	@override String get seasons => 'Seizoenen';
+	@override String get episodes => 'Afleveringen';
+	@override String get emptyTitle => 'Geen bladwijzers';
+	@override String get emptySubtitle => 'Voeg films en series toe aan bladwijzers voor snelle toegang.';
+	@override String get clearAll => 'Alles wissen';
+	@override String get clearAllConfirm => 'Alle bladwijzers verwijderen? Dit kan niet ongedaan worden gemaakt.';
+	@override String get added => 'Toegevoegd aan bladwijzers';
+	@override String get removed => 'Verwijderd uit bladwijzers';
 }
 
 // Path: hotkeys.actions
@@ -2310,6 +2334,8 @@ extension on TranslationsNl {
 			'tooltips.playTrailer' => 'Trailer afspelen',
 			'tooltips.markAsWatched' => 'Markeer als gekeken',
 			'tooltips.markAsUnwatched' => 'Markeer als ongekeken',
+			'tooltips.bookmark' => 'Toevoegen aan bladwijzers',
+			'tooltips.removeBookmark' => 'Verwijderen uit bladwijzers',
 			'videoControls.audioLabel' => 'Audio',
 			'videoControls.subtitlesLabel' => 'Ondertitels',
 			'videoControls.resetToZero' => 'Reset naar 0ms',
@@ -2436,10 +2462,10 @@ extension on TranslationsNl {
 			'messages.serverLimitTitle' => 'Afspelen mislukt',
 			'messages.serverLimitBody' => 'Serverfout (HTTP 500). Waarschijnlijk weigerde een bandbreedte-/transcodeerlimiet deze sessie. Vraag de eigenaar dit aan te passen.',
 			'messages.logsUploaded' => 'Logs geüpload',
-			'messages.logsUploadFailed' => 'Uploaden van logs mislukt',
-			'messages.logId' => 'Log-ID',
 			_ => null,
 		} ?? switch (path) {
+			'messages.logsUploadFailed' => 'Uploaden van logs mislukt',
+			'messages.logId' => 'Log-ID',
 			'subtitlingStyling.text' => 'Tekst',
 			'subtitlingStyling.border' => 'Rand',
 			'subtitlingStyling.background' => 'Achtergrond',
@@ -2669,6 +2695,7 @@ extension on TranslationsNl {
 			'licenses.licensesCount' => ({required Object count}) => '${count} licenties',
 			'navigation.libraries' => 'Media',
 			'navigation.downloads' => 'Downloads',
+			'navigation.watchlist' => 'Bladwijzers',
 			'navigation.liveTv' => 'Live TV',
 			'liveTv.title' => 'Live TV',
 			'liveTv.guide' => 'Gids',
@@ -2949,11 +2976,11 @@ extension on TranslationsNl {
 			'companionRemote.pairing.validationHostFormat' => 'Formaat moet IP:poort zijn (bijv. 192.168.1.100:48632)',
 			'companionRemote.pairing.connectionTimedOut' => 'Verbinding verlopen. Gebruik hetzelfde netwerk op beide apparaten.',
 			'companionRemote.pairing.sessionNotFound' => 'Apparaat niet gevonden. Zorg dat Plezy op de host draait.',
+			_ => null,
+		} ?? switch (path) {
 			'companionRemote.pairing.authFailed' => 'Authenticatie mislukt. Beide apparaten hebben hetzelfde Plex-account nodig.',
 			'companionRemote.pairing.failedToConnect' => ({required Object error}) => 'Kan niet verbinden: ${error}',
 			'companionRemote.remote.disconnectConfirm' => 'Wil je de verbinding met de externe sessie verbreken?',
-			_ => null,
-		} ?? switch (path) {
 			'companionRemote.remote.reconnecting' => 'Opnieuw verbinden...',
 			'companionRemote.remote.attemptOf' => ({required Object current}) => 'Poging ${current} van 5',
 			'companionRemote.remote.retryNow' => 'Nu opnieuw proberen',
@@ -3207,6 +3234,17 @@ extension on TranslationsNl {
 			'addServer.connectToJellyfinCardSubtitleScoped' => ({required Object name}) => 'Log in op een Jellyfin-server. Wordt gekoppeld aan ${name}.',
 			'addServer.borrowFromAnotherProfile' => 'Lenen van een ander profiel',
 			'addServer.borrowFromAnotherProfileSubtitle' => 'Hergebruik de verbinding van een ander profiel. PIN-beveiligde profielen vereisen een PIN.',
+			'watchlist.title' => 'Bladwijzers',
+			'watchlist.movies' => 'Films',
+			'watchlist.shows' => 'Series',
+			'watchlist.seasons' => 'Seizoenen',
+			'watchlist.episodes' => 'Afleveringen',
+			'watchlist.emptyTitle' => 'Geen bladwijzers',
+			'watchlist.emptySubtitle' => 'Voeg films en series toe aan bladwijzers voor snelle toegang.',
+			'watchlist.clearAll' => 'Alles wissen',
+			'watchlist.clearAllConfirm' => 'Alle bladwijzers verwijderen? Dit kan niet ongedaan worden gemaakt.',
+			'watchlist.added' => 'Toegevoegd aan bladwijzers',
+			'watchlist.removed' => 'Verwijderd uit bladwijzers',
 			_ => null,
 		};
 	}

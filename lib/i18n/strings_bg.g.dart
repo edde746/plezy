@@ -85,6 +85,7 @@ class TranslationsBg extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _TranslationsTraktBg trakt = _TranslationsTraktBg._(_root);
 	@override late final _TranslationsTrackersBg trackers = _TranslationsTrackersBg._(_root);
 	@override late final _TranslationsAddServerBg addServer = _TranslationsAddServerBg._(_root);
+	@override late final _TranslationsWatchlistBg watchlist = _TranslationsWatchlistBg._(_root);
 }
 
 // Path: app
@@ -562,6 +563,8 @@ class _TranslationsTooltipsBg extends TranslationsTooltipsEn {
 	@override String get playTrailer => 'Пусни трейлър';
 	@override String get markAsWatched => 'Маркирай като гледано';
 	@override String get markAsUnwatched => 'Маркирай като негледано';
+	@override String get bookmark => 'Добавяне в отметки';
+	@override String get removeBookmark => 'Премахване от отметки';
 }
 
 // Path: videoControls
@@ -1033,6 +1036,7 @@ class _TranslationsNavigationBg extends TranslationsNavigationEn {
 	// Translations
 	@override String get libraries => 'Библиотеки';
 	@override String get downloads => 'Изтегляния';
+	@override String get watchlist => 'Отметки';
 	@override String get liveTv => 'Телевизия на живо';
 }
 
@@ -1637,6 +1641,26 @@ class _TranslationsAddServerBg extends TranslationsAddServerEn {
 	@override String connectToJellyfinCardSubtitleScoped({required Object name}) => 'Вход в Jellyfin сървър. Свързва се с ${name}.';
 	@override String get borrowFromAnotherProfile => 'Използвай от друг профил';
 	@override String get borrowFromAnotherProfileSubtitle => 'Използвай връзка от друг профил. PIN-защитените профили изискват PIN.';
+}
+
+// Path: watchlist
+class _TranslationsWatchlistBg extends TranslationsWatchlistEn {
+	_TranslationsWatchlistBg._(TranslationsBg root) : this._root = root, super.internal(root);
+
+	final TranslationsBg _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Отметки';
+	@override String get movies => 'Филми';
+	@override String get shows => 'Сериали';
+	@override String get seasons => 'Сезони';
+	@override String get episodes => 'Епизоди';
+	@override String get emptyTitle => 'Няма добавени отметки';
+	@override String get emptySubtitle => 'Добавете филми и сериали в отметки, за да ги намирате по-лесно.';
+	@override String get clearAll => 'Изчистване на всички';
+	@override String get clearAllConfirm => 'Премахване на всички отметки? Това действие не може да бъде отменено.';
+	@override String get added => 'Добавено в отметки';
+	@override String get removed => 'Премахнато от отметки';
 }
 
 // Path: hotkeys.actions
@@ -2310,6 +2334,8 @@ extension on TranslationsBg {
 			'tooltips.playTrailer' => 'Пусни трейлър',
 			'tooltips.markAsWatched' => 'Маркирай като гледано',
 			'tooltips.markAsUnwatched' => 'Маркирай като негледано',
+			'tooltips.bookmark' => 'Добавяне в отметки',
+			'tooltips.removeBookmark' => 'Премахване от отметки',
 			'videoControls.audioLabel' => 'Аудио',
 			'videoControls.subtitlesLabel' => 'Субтитри',
 			'videoControls.resetToZero' => 'Нулирай до 0ms',
@@ -2436,10 +2462,10 @@ extension on TranslationsBg {
 			'messages.serverLimitTitle' => 'Възпроизвеждането е неуспешно',
 			'messages.serverLimitBody' => 'Грешка на сървъра (HTTP 500). Вероятно лимит за пропускателна способност/транскодиране е отхвърлил тази сесия. Помолете собственика да го коригира.',
 			'messages.logsUploaded' => 'Логовете са качени',
-			'messages.logsUploadFailed' => 'Неуспешно качване на логовете',
-			'messages.logId' => 'ID на лога',
 			_ => null,
 		} ?? switch (path) {
+			'messages.logsUploadFailed' => 'Неуспешно качване на логовете',
+			'messages.logId' => 'ID на лога',
 			'subtitlingStyling.text' => 'Текст',
 			'subtitlingStyling.border' => 'Рамка',
 			'subtitlingStyling.background' => 'Фон',
@@ -2669,6 +2695,7 @@ extension on TranslationsBg {
 			'licenses.licensesCount' => ({required Object count}) => '${count} лиценза',
 			'navigation.libraries' => 'Библиотеки',
 			'navigation.downloads' => 'Изтегляния',
+			'navigation.watchlist' => 'Отметки',
 			'navigation.liveTv' => 'Телевизия на живо',
 			'liveTv.title' => 'Телевизия на живо',
 			'liveTv.guide' => 'ТВ програма',
@@ -2949,11 +2976,11 @@ extension on TranslationsBg {
 			'companionRemote.pairing.validationHostFormat' => 'Форматът трябва да е IP:port (напр. 192.168.1.100:48632)',
 			'companionRemote.pairing.connectionTimedOut' => 'Връзката изтече. Използвайте една и съща мрежа на двете устройства.',
 			'companionRemote.pairing.sessionNotFound' => 'Устройството не е намерено. Уверете се, че Plezy работи на хоста.',
+			_ => null,
+		} ?? switch (path) {
 			'companionRemote.pairing.authFailed' => 'Удостоверяването е неуспешно. Двете устройства трябва да използват същия Plex акаунт.',
 			'companionRemote.pairing.failedToConnect' => ({required Object error}) => 'Неуспешно свързване: ${error}',
 			'companionRemote.remote.disconnectConfirm' => 'Искате ли да прекъснете връзката с дистанционната сесия?',
-			_ => null,
-		} ?? switch (path) {
 			'companionRemote.remote.reconnecting' => 'Повторно свързване...',
 			'companionRemote.remote.attemptOf' => ({required Object current}) => 'Опит ${current} от 5',
 			'companionRemote.remote.retryNow' => 'Опитай сега',
@@ -3207,6 +3234,17 @@ extension on TranslationsBg {
 			'addServer.connectToJellyfinCardSubtitleScoped' => ({required Object name}) => 'Вход в Jellyfin сървър. Свързва се с ${name}.',
 			'addServer.borrowFromAnotherProfile' => 'Използвай от друг профил',
 			'addServer.borrowFromAnotherProfileSubtitle' => 'Използвай връзка от друг профил. PIN-защитените профили изискват PIN.',
+			'watchlist.title' => 'Отметки',
+			'watchlist.movies' => 'Филми',
+			'watchlist.shows' => 'Сериали',
+			'watchlist.seasons' => 'Сезони',
+			'watchlist.episodes' => 'Епизоди',
+			'watchlist.emptyTitle' => 'Няма добавени отметки',
+			'watchlist.emptySubtitle' => 'Добавете филми и сериали в отметки, за да ги намирате по-лесно.',
+			'watchlist.clearAll' => 'Изчистване на всички',
+			'watchlist.clearAllConfirm' => 'Премахване на всички отметки? Това действие не може да бъде отменено.',
+			'watchlist.added' => 'Добавено в отметки',
+			'watchlist.removed' => 'Премахнато от отметки',
 			_ => null,
 		};
 	}

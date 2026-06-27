@@ -409,7 +409,9 @@
     "shufflePlay": "Afspil tilfældigt",
     "playTrailer": "Afspil trailer",
     "markAsWatched": "Markér som set",
-    "markAsUnwatched": "Markér som uset"
+    "markAsUnwatched": "Markér som uset",
+    "bookmark": "Tilføj bogmærke",
+    "removeBookmark": "Fjern bogmærke"
   },
   "videoControls": {
     "audioLabel": "Lyd",
@@ -811,6 +813,7 @@
   "navigation": {
     "libraries": "Biblioteker",
     "downloads": "Downloads",
+    "watchlist": "Bogmærker",
     "liveTv": "Live TV"
   },
   "liveTv": {
@@ -1395,5 +1398,18 @@
     "connectToJellyfinCardSubtitleScoped": "Log ind på en Jellyfin-server. Tilknyttes ${name}.",
     "borrowFromAnotherProfile": "Lån fra en anden profil",
     "borrowFromAnotherProfileSubtitle": "Genbrug en anden profils forbindelse. PIN-beskyttede profiler kræver en PIN."
+  },
+  "watchlist": {
+    "title": "Bogmærker",
+    "movies": "Film",
+    "shows": "Serier",
+    "seasons": "Sæsoner",
+    "episodes": "Afsnit",
+    "emptyTitle": "Ingen bogmærker endnu",
+    "emptySubtitle": "Tilføj film og serier til dine bogmærker for nem adgang.",
+    "clearAll": "Ryd alle",
+    "clearAllConfirm": "Fjern alle bogmærker? Dette kan ikke fortrydes.",
+    "added": "Tilføjet til bogmærker",
+    "removed": "Fjernet fra bogmærker"
   }
 }

@@ -85,6 +85,7 @@ class TranslationsKo extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _TranslationsTraktKo trakt = _TranslationsTraktKo._(_root);
 	@override late final _TranslationsTrackersKo trackers = _TranslationsTrackersKo._(_root);
 	@override late final _TranslationsAddServerKo addServer = _TranslationsAddServerKo._(_root);
+	@override late final _TranslationsWatchlistKo watchlist = _TranslationsWatchlistKo._(_root);
 }
 
 // Path: app
@@ -562,6 +563,8 @@ class _TranslationsTooltipsKo extends TranslationsTooltipsEn {
 	@override String get playTrailer => '예고편 재생';
 	@override String get markAsWatched => '시청 완료로 표시';
 	@override String get markAsUnwatched => '시청 안 함으로 표시';
+	@override String get bookmark => '북마크 추가';
+	@override String get removeBookmark => '북마크 제거';
 }
 
 // Path: videoControls
@@ -1033,6 +1036,7 @@ class _TranslationsNavigationKo extends TranslationsNavigationEn {
 	// Translations
 	@override String get libraries => '미디어 라이브러리';
 	@override String get downloads => '다운로드';
+	@override String get watchlist => '북마크';
 	@override String get liveTv => '실시간 TV';
 }
 
@@ -1637,6 +1641,26 @@ class _TranslationsAddServerKo extends TranslationsAddServerEn {
 	@override String connectToJellyfinCardSubtitleScoped({required Object name}) => 'Jellyfin 서버에 로그인합니다. ${name}에 연결됩니다.';
 	@override String get borrowFromAnotherProfile => '다른 프로필에서 빌리기';
 	@override String get borrowFromAnotherProfileSubtitle => '다른 프로필의 연결을 재사용합니다. PIN으로 보호된 프로필에는 PIN이 필요합니다.';
+}
+
+// Path: watchlist
+class _TranslationsWatchlistKo extends TranslationsWatchlistEn {
+	_TranslationsWatchlistKo._(TranslationsKo root) : this._root = root, super.internal(root);
+
+	final TranslationsKo _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => '북마크';
+	@override String get movies => '영화';
+	@override String get shows => '드라마';
+	@override String get seasons => '시즌';
+	@override String get episodes => '에피소드';
+	@override String get emptyTitle => '북마크가 없습니다';
+	@override String get emptySubtitle => '영화와 드라마를 북마크하면 여기서 쉽게 찾을 수 있습니다.';
+	@override String get clearAll => '모두 삭제';
+	@override String get clearAllConfirm => '모든 북마크를 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.';
+	@override String get added => '북마크에 추가됨';
+	@override String get removed => '북마크에서 제거됨';
 }
 
 // Path: hotkeys.actions
@@ -2310,6 +2334,8 @@ extension on TranslationsKo {
 			'tooltips.playTrailer' => '예고편 재생',
 			'tooltips.markAsWatched' => '시청 완료로 표시',
 			'tooltips.markAsUnwatched' => '시청 안 함으로 표시',
+			'tooltips.bookmark' => '북마크 추가',
+			'tooltips.removeBookmark' => '북마크 제거',
 			'videoControls.audioLabel' => '오디오',
 			'videoControls.subtitlesLabel' => '자막',
 			'videoControls.resetToZero' => '0ms로 재설정',
@@ -2436,10 +2462,10 @@ extension on TranslationsKo {
 			'messages.serverLimitTitle' => '재생 실패',
 			'messages.serverLimitBody' => '서버 오류(HTTP 500). 대역폭/트랜스코딩 제한으로 세션이 거부된 것 같습니다. 소유자에게 조정을 요청하세요.',
 			'messages.logsUploaded' => '로그 업로드 완료',
-			'messages.logsUploadFailed' => '로그 업로드 실패',
-			'messages.logId' => '로그 ID',
 			_ => null,
 		} ?? switch (path) {
+			'messages.logsUploadFailed' => '로그 업로드 실패',
+			'messages.logId' => '로그 ID',
 			'subtitlingStyling.text' => '텍스트',
 			'subtitlingStyling.border' => '테두리',
 			'subtitlingStyling.background' => '배경',
@@ -2669,6 +2695,7 @@ extension on TranslationsKo {
 			'licenses.licensesCount' => ({required Object count}) => '${count} 개의 라이선스',
 			'navigation.libraries' => '미디어 라이브러리',
 			'navigation.downloads' => '다운로드',
+			'navigation.watchlist' => '북마크',
 			'navigation.liveTv' => '실시간 TV',
 			'liveTv.title' => '실시간 TV',
 			'liveTv.guide' => '편성표',
@@ -2949,11 +2976,11 @@ extension on TranslationsKo {
 			'companionRemote.pairing.validationHostFormat' => '형식은 IP:포트여야 합니다 (예: 192.168.1.100:48632)',
 			'companionRemote.pairing.connectionTimedOut' => '연결 시간이 초과되었습니다. 두 기기에서 같은 네트워크를 사용하세요.',
 			'companionRemote.pairing.sessionNotFound' => '기기를 찾을 수 없습니다. 호스트에서 Plezy가 실행 중인지 확인하세요.',
+			_ => null,
+		} ?? switch (path) {
 			'companionRemote.pairing.authFailed' => '인증에 실패했습니다. 두 기기 모두 같은 Plex 계정이 필요합니다.',
 			'companionRemote.pairing.failedToConnect' => ({required Object error}) => '연결 실패: ${error}',
 			'companionRemote.remote.disconnectConfirm' => '원격 세션 연결을 해제하시겠습니까?',
-			_ => null,
-		} ?? switch (path) {
 			'companionRemote.remote.reconnecting' => '재연결 중...',
 			'companionRemote.remote.attemptOf' => ({required Object current}) => '${current}/5 시도 중',
 			'companionRemote.remote.retryNow' => '지금 재시도',
@@ -3207,6 +3234,17 @@ extension on TranslationsKo {
 			'addServer.connectToJellyfinCardSubtitleScoped' => ({required Object name}) => 'Jellyfin 서버에 로그인합니다. ${name}에 연결됩니다.',
 			'addServer.borrowFromAnotherProfile' => '다른 프로필에서 빌리기',
 			'addServer.borrowFromAnotherProfileSubtitle' => '다른 프로필의 연결을 재사용합니다. PIN으로 보호된 프로필에는 PIN이 필요합니다.',
+			'watchlist.title' => '북마크',
+			'watchlist.movies' => '영화',
+			'watchlist.shows' => '드라마',
+			'watchlist.seasons' => '시즌',
+			'watchlist.episodes' => '에피소드',
+			'watchlist.emptyTitle' => '북마크가 없습니다',
+			'watchlist.emptySubtitle' => '영화와 드라마를 북마크하면 여기서 쉽게 찾을 수 있습니다.',
+			'watchlist.clearAll' => '모두 삭제',
+			'watchlist.clearAllConfirm' => '모든 북마크를 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.',
+			'watchlist.added' => '북마크에 추가됨',
+			'watchlist.removed' => '북마크에서 제거됨',
 			_ => null,
 		};
 	}

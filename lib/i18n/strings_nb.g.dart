@@ -85,6 +85,7 @@ class TranslationsNb extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _TranslationsTraktNb trakt = _TranslationsTraktNb._(_root);
 	@override late final _TranslationsTrackersNb trackers = _TranslationsTrackersNb._(_root);
 	@override late final _TranslationsAddServerNb addServer = _TranslationsAddServerNb._(_root);
+	@override late final _TranslationsWatchlistNb watchlist = _TranslationsWatchlistNb._(_root);
 }
 
 // Path: app
@@ -562,6 +563,8 @@ class _TranslationsTooltipsNb extends TranslationsTooltipsEn {
 	@override String get playTrailer => 'Spill trailer';
 	@override String get markAsWatched => 'Merk som sett';
 	@override String get markAsUnwatched => 'Merk som usett';
+	@override String get bookmark => 'Legg til bokmerke';
+	@override String get removeBookmark => 'Fjern bokmerke';
 }
 
 // Path: videoControls
@@ -1033,6 +1036,7 @@ class _TranslationsNavigationNb extends TranslationsNavigationEn {
 	// Translations
 	@override String get libraries => 'Biblioteker';
 	@override String get downloads => 'Nedlastinger';
+	@override String get watchlist => 'Bokmerker';
 	@override String get liveTv => 'Direkte-TV';
 }
 
@@ -1637,6 +1641,26 @@ class _TranslationsAddServerNb extends TranslationsAddServerEn {
 	@override String connectToJellyfinCardSubtitleScoped({required Object name}) => 'Logg på en Jellyfin-server. Knyttes til ${name}.';
 	@override String get borrowFromAnotherProfile => 'Lån fra en annen profil';
 	@override String get borrowFromAnotherProfileSubtitle => 'Gjenbruk en annen profils tilkobling. PIN-beskyttede profiler krever PIN.';
+}
+
+// Path: watchlist
+class _TranslationsWatchlistNb extends TranslationsWatchlistEn {
+	_TranslationsWatchlistNb._(TranslationsNb root) : this._root = root, super.internal(root);
+
+	final TranslationsNb _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Bokmerker';
+	@override String get movies => 'Filmer';
+	@override String get shows => 'Serier';
+	@override String get seasons => 'Sesonger';
+	@override String get episodes => 'Episoder';
+	@override String get emptyTitle => 'Ingen bokmerker';
+	@override String get emptySubtitle => 'Legg til filmer og serier i bokmerkene dine for enkel tilgang.';
+	@override String get clearAll => 'Fjern alle';
+	@override String get clearAllConfirm => 'Fjern alle bokmerker? Dette kan ikke angres.';
+	@override String get added => 'Lagt til i bokmerker';
+	@override String get removed => 'Fjernet fra bokmerker';
 }
 
 // Path: hotkeys.actions
@@ -2310,6 +2334,8 @@ extension on TranslationsNb {
 			'tooltips.playTrailer' => 'Spill trailer',
 			'tooltips.markAsWatched' => 'Merk som sett',
 			'tooltips.markAsUnwatched' => 'Merk som usett',
+			'tooltips.bookmark' => 'Legg til bokmerke',
+			'tooltips.removeBookmark' => 'Fjern bokmerke',
 			'videoControls.audioLabel' => 'Lyd',
 			'videoControls.subtitlesLabel' => 'Undertekster',
 			'videoControls.resetToZero' => 'Tilbakestill til 0ms',
@@ -2436,10 +2462,10 @@ extension on TranslationsNb {
 			'messages.serverLimitTitle' => 'Avspilling mislyktes',
 			'messages.serverLimitBody' => 'Serverfeil (HTTP 500). En båndbredde-/transkodingsgrense avviste trolig økten. Be eieren justere den.',
 			'messages.logsUploaded' => 'Logger lastet opp',
-			'messages.logsUploadFailed' => 'Kunne ikke laste opp logger',
-			'messages.logId' => 'Logg-ID',
 			_ => null,
 		} ?? switch (path) {
+			'messages.logsUploadFailed' => 'Kunne ikke laste opp logger',
+			'messages.logId' => 'Logg-ID',
 			'subtitlingStyling.text' => 'Tekst',
 			'subtitlingStyling.border' => 'Kantlinje',
 			'subtitlingStyling.background' => 'Bakgrunn',
@@ -2669,6 +2695,7 @@ extension on TranslationsNb {
 			'licenses.licensesCount' => ({required Object count}) => '${count} lisenser',
 			'navigation.libraries' => 'Biblioteker',
 			'navigation.downloads' => 'Nedlastinger',
+			'navigation.watchlist' => 'Bokmerker',
 			'navigation.liveTv' => 'Direkte-TV',
 			'liveTv.title' => 'Direkte-TV',
 			'liveTv.guide' => 'Programguide',
@@ -2949,11 +2976,11 @@ extension on TranslationsNb {
 			'companionRemote.pairing.validationHostFormat' => 'Format må være IP:port (f.eks. 192.168.1.100:48632)',
 			'companionRemote.pairing.connectionTimedOut' => 'Tilkoblingen fikk tidsavbrudd. Bruk samme nettverk på begge enheter.',
 			'companionRemote.pairing.sessionNotFound' => 'Enhet ikke funnet. Sørg for at Plezy kjører på verten.',
+			_ => null,
+		} ?? switch (path) {
 			'companionRemote.pairing.authFailed' => 'Autentisering mislyktes. Begge enheter må bruke samme Plex-konto.',
 			'companionRemote.pairing.failedToConnect' => ({required Object error}) => 'Kunne ikke koble til: ${error}',
 			'companionRemote.remote.disconnectConfirm' => 'Vil du koble fra fjernøkten?',
-			_ => null,
-		} ?? switch (path) {
 			'companionRemote.remote.reconnecting' => 'Kobler til på nytt...',
 			'companionRemote.remote.attemptOf' => ({required Object current}) => 'Forsøk ${current} av 5',
 			'companionRemote.remote.retryNow' => 'Prøv nå',
@@ -3207,6 +3234,17 @@ extension on TranslationsNb {
 			'addServer.connectToJellyfinCardSubtitleScoped' => ({required Object name}) => 'Logg på en Jellyfin-server. Knyttes til ${name}.',
 			'addServer.borrowFromAnotherProfile' => 'Lån fra en annen profil',
 			'addServer.borrowFromAnotherProfileSubtitle' => 'Gjenbruk en annen profils tilkobling. PIN-beskyttede profiler krever PIN.',
+			'watchlist.title' => 'Bokmerker',
+			'watchlist.movies' => 'Filmer',
+			'watchlist.shows' => 'Serier',
+			'watchlist.seasons' => 'Sesonger',
+			'watchlist.episodes' => 'Episoder',
+			'watchlist.emptyTitle' => 'Ingen bokmerker',
+			'watchlist.emptySubtitle' => 'Legg til filmer og serier i bokmerkene dine for enkel tilgang.',
+			'watchlist.clearAll' => 'Fjern alle',
+			'watchlist.clearAllConfirm' => 'Fjern alle bokmerker? Dette kan ikke angres.',
+			'watchlist.added' => 'Lagt til i bokmerker',
+			'watchlist.removed' => 'Fjernet fra bokmerker',
 			_ => null,
 		};
 	}

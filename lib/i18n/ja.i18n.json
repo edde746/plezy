@@ -409,7 +409,9 @@
     "shufflePlay": "シャッフル再生",
     "playTrailer": "予告編を再生",
     "markAsWatched": "視聴済みにする",
-    "markAsUnwatched": "未視聴にする"
+    "markAsUnwatched": "未視聴にする",
+    "bookmark": "ブックマークに追加",
+    "removeBookmark": "ブックマークを解除"
   },
   "videoControls": {
     "audioLabel": "音声",
@@ -811,6 +813,7 @@
   "navigation": {
     "libraries": "ライブラリ",
     "downloads": "ダウンロード",
+    "watchlist": "ブックマーク",
     "liveTv": "ライブTV"
   },
   "liveTv": {
@@ -1395,5 +1398,18 @@
     "connectToJellyfinCardSubtitleScoped": "Jellyfinサーバーにサインインします。${name}に紐付けられます。",
     "borrowFromAnotherProfile": "別のプロファイルから借りる",
     "borrowFromAnotherProfileSubtitle": "別のプロフィールの接続を再利用します。PIN保護されたプロフィールにはPINが必要です。"
+  },
+  "watchlist": {
+    "title": "ブックマーク",
+    "movies": "映画",
+    "shows": "ドラマ",
+    "seasons": "シーズン",
+    "episodes": "エピソード",
+    "emptyTitle": "ブックマークはありません",
+    "emptySubtitle": "映画やドラマをブックマークすると、ここから簡単に見つけられます。",
+    "clearAll": "すべて削除",
+    "clearAllConfirm": "すべてのブックマークを削除しますか？この操作は元に戻せません。",
+    "added": "ブックマークに追加しました",
+    "removed": "ブックマークを解除しました"
   }
 }

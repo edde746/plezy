@@ -409,7 +409,9 @@
     "shufflePlay": "随机播放",
     "playTrailer": "播放预告片",
     "markAsWatched": "标记为已观看",
-    "markAsUnwatched": "标记为未观看"
+    "markAsUnwatched": "标记为未观看",
+    "bookmark": "添加书签",
+    "removeBookmark": "移除书签"
   },
   "videoControls": {
     "audioLabel": "音频",
@@ -811,6 +813,7 @@
   "navigation": {
     "libraries": "媒体库",
     "downloads": "下载",
+    "watchlist": "书签",
     "liveTv": "电视直播"
   },
   "liveTv": {
@@ -1395,5 +1398,18 @@
     "connectToJellyfinCardSubtitleScoped": "登录到 Jellyfin 服务器。绑定到 ${name}。",
     "borrowFromAnotherProfile": "从另一个配置文件借用",
     "borrowFromAnotherProfileSubtitle": "复用另一个个人资料的连接。受 PIN 保护的个人资料需要 PIN。"
+  },
+  "watchlist": {
+    "title": "书签",
+    "movies": "电影",
+    "shows": "剧集",
+    "seasons": "季度",
+    "episodes": "集数",
+    "emptyTitle": "暂无书签",
+    "emptySubtitle": "将电影和剧集添加到书签，方便以后查找。",
+    "clearAll": "清除全部",
+    "clearAllConfirm": "删除所有书签？此操作无法撤销。",
+    "added": "已添加到书签",
+    "removed": "已从书签移除"
   }
 }

@@ -85,6 +85,7 @@ class TranslationsRu extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _TranslationsTraktRu trakt = _TranslationsTraktRu._(_root);
 	@override late final _TranslationsTrackersRu trackers = _TranslationsTrackersRu._(_root);
 	@override late final _TranslationsAddServerRu addServer = _TranslationsAddServerRu._(_root);
+	@override late final _TranslationsWatchlistRu watchlist = _TranslationsWatchlistRu._(_root);
 }
 
 // Path: app
@@ -562,6 +563,8 @@ class _TranslationsTooltipsRu extends TranslationsTooltipsEn {
 	@override String get playTrailer => 'Воспроизвести трейлер';
 	@override String get markAsWatched => 'Отметить как просмотренное';
 	@override String get markAsUnwatched => 'Отметить как непросмотренное';
+	@override String get bookmark => 'Добавить в закладки';
+	@override String get removeBookmark => 'Удалить из закладок';
 }
 
 // Path: videoControls
@@ -1033,6 +1036,7 @@ class _TranslationsNavigationRu extends TranslationsNavigationEn {
 	// Translations
 	@override String get libraries => 'Библиотеки';
 	@override String get downloads => 'Загрузки';
+	@override String get watchlist => 'Закладки';
 	@override String get liveTv => 'ТВ в прямом эфире';
 }
 
@@ -1637,6 +1641,26 @@ class _TranslationsAddServerRu extends TranslationsAddServerEn {
 	@override String connectToJellyfinCardSubtitleScoped({required Object name}) => 'Войдите на сервер Jellyfin. Привязывается к ${name}.';
 	@override String get borrowFromAnotherProfile => 'Одолжить из другого профиля';
 	@override String get borrowFromAnotherProfileSubtitle => 'Используйте подключение другого профиля. Для профилей с PIN нужен PIN.';
+}
+
+// Path: watchlist
+class _TranslationsWatchlistRu extends TranslationsWatchlistEn {
+	_TranslationsWatchlistRu._(TranslationsRu root) : this._root = root, super.internal(root);
+
+	final TranslationsRu _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Закладки';
+	@override String get movies => 'Фильмы';
+	@override String get shows => 'Сериалы';
+	@override String get seasons => 'Сезоны';
+	@override String get episodes => 'Эпизоды';
+	@override String get emptyTitle => 'Нет закладок';
+	@override String get emptySubtitle => 'Добавляйте фильмы и сериалы в закладки, чтобы быстро их находить.';
+	@override String get clearAll => 'Очистить все';
+	@override String get clearAllConfirm => 'Удалить все закладки? Это действие нельзя отменить.';
+	@override String get added => 'Добавлено в закладки';
+	@override String get removed => 'Удалено из закладок';
 }
 
 // Path: hotkeys.actions
@@ -2310,6 +2334,8 @@ extension on TranslationsRu {
 			'tooltips.playTrailer' => 'Воспроизвести трейлер',
 			'tooltips.markAsWatched' => 'Отметить как просмотренное',
 			'tooltips.markAsUnwatched' => 'Отметить как непросмотренное',
+			'tooltips.bookmark' => 'Добавить в закладки',
+			'tooltips.removeBookmark' => 'Удалить из закладок',
 			'videoControls.audioLabel' => 'Аудио',
 			'videoControls.subtitlesLabel' => 'Субтитры',
 			'videoControls.resetToZero' => 'Сбросить до 0мс',
@@ -2436,10 +2462,10 @@ extension on TranslationsRu {
 			'messages.serverLimitTitle' => 'Ошибка воспроизведения',
 			'messages.serverLimitBody' => 'Ошибка сервера (HTTP 500). Лимит пропускной способности/транскодирования, вероятно, отклонил сессию. Попросите владельца изменить настройки.',
 			'messages.logsUploaded' => 'Логи загружены',
-			'messages.logsUploadFailed' => 'Не удалось загрузить логи',
-			'messages.logId' => 'ID лога',
 			_ => null,
 		} ?? switch (path) {
+			'messages.logsUploadFailed' => 'Не удалось загрузить логи',
+			'messages.logId' => 'ID лога',
 			'subtitlingStyling.text' => 'Текст',
 			'subtitlingStyling.border' => 'Обводка',
 			'subtitlingStyling.background' => 'Фон',
@@ -2669,6 +2695,7 @@ extension on TranslationsRu {
 			'licenses.licensesCount' => ({required Object count}) => '${count} лицензий',
 			'navigation.libraries' => 'Библиотеки',
 			'navigation.downloads' => 'Загрузки',
+			'navigation.watchlist' => 'Закладки',
 			'navigation.liveTv' => 'ТВ в прямом эфире',
 			'liveTv.title' => 'ТВ в прямом эфире',
 			'liveTv.guide' => 'Программа',
@@ -2949,11 +2976,11 @@ extension on TranslationsRu {
 			'companionRemote.pairing.validationHostFormat' => 'Формат должен быть IP:порт (например, 192.168.1.100:48632)',
 			'companionRemote.pairing.connectionTimedOut' => 'Время подключения истекло. Используйте одну сеть на обоих устройствах.',
 			'companionRemote.pairing.sessionNotFound' => 'Устройство не найдено. Убедитесь, что Plezy запущен на хосте.',
+			_ => null,
+		} ?? switch (path) {
 			'companionRemote.pairing.authFailed' => 'Аутентификация не удалась. На обоих устройствах нужен один аккаунт Plex.',
 			'companionRemote.pairing.failedToConnect' => ({required Object error}) => 'Не удалось подключиться: ${error}',
 			'companionRemote.remote.disconnectConfirm' => 'Отключиться от удалённой сессии?',
-			_ => null,
-		} ?? switch (path) {
 			'companionRemote.remote.reconnecting' => 'Переподключение...',
 			'companionRemote.remote.attemptOf' => ({required Object current}) => 'Попытка ${current} из 5',
 			'companionRemote.remote.retryNow' => 'Повторить сейчас',
@@ -3207,6 +3234,17 @@ extension on TranslationsRu {
 			'addServer.connectToJellyfinCardSubtitleScoped' => ({required Object name}) => 'Войдите на сервер Jellyfin. Привязывается к ${name}.',
 			'addServer.borrowFromAnotherProfile' => 'Одолжить из другого профиля',
 			'addServer.borrowFromAnotherProfileSubtitle' => 'Используйте подключение другого профиля. Для профилей с PIN нужен PIN.',
+			'watchlist.title' => 'Закладки',
+			'watchlist.movies' => 'Фильмы',
+			'watchlist.shows' => 'Сериалы',
+			'watchlist.seasons' => 'Сезоны',
+			'watchlist.episodes' => 'Эпизоды',
+			'watchlist.emptyTitle' => 'Нет закладок',
+			'watchlist.emptySubtitle' => 'Добавляйте фильмы и сериалы в закладки, чтобы быстро их находить.',
+			'watchlist.clearAll' => 'Очистить все',
+			'watchlist.clearAllConfirm' => 'Удалить все закладки? Это действие нельзя отменить.',
+			'watchlist.added' => 'Добавлено в закладки',
+			'watchlist.removed' => 'Удалено из закладок',
 			_ => null,
 		};
 	}

@@ -409,7 +409,9 @@
     "shufflePlay": "무작위 재생",
     "playTrailer": "예고편 재생",
     "markAsWatched": "시청 완료로 표시",
-    "markAsUnwatched": "시청 안 함으로 표시"
+    "markAsUnwatched": "시청 안 함으로 표시",
+    "bookmark": "북마크 추가",
+    "removeBookmark": "북마크 제거"
   },
   "videoControls": {
     "audioLabel": "오디오",
@@ -811,6 +813,7 @@
   "navigation": {
     "libraries": "미디어 라이브러리",
     "downloads": "다운로드",
+    "watchlist": "북마크",
     "liveTv": "실시간 TV"
   },
   "liveTv": {
@@ -1395,5 +1398,18 @@
     "connectToJellyfinCardSubtitleScoped": "Jellyfin 서버에 로그인합니다. ${name}에 연결됩니다.",
     "borrowFromAnotherProfile": "다른 프로필에서 빌리기",
     "borrowFromAnotherProfileSubtitle": "다른 프로필의 연결을 재사용합니다. PIN으로 보호된 프로필에는 PIN이 필요합니다."
+  },
+  "watchlist": {
+    "title": "북마크",
+    "movies": "영화",
+    "shows": "드라마",
+    "seasons": "시즌",
+    "episodes": "에피소드",
+    "emptyTitle": "북마크가 없습니다",
+    "emptySubtitle": "영화와 드라마를 북마크하면 여기서 쉽게 찾을 수 있습니다.",
+    "clearAll": "모두 삭제",
+    "clearAllConfirm": "모든 북마크를 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.",
+    "added": "북마크에 추가됨",
+    "removed": "북마크에서 제거됨"
   }
 }

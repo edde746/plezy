@@ -409,7 +409,9 @@
     "shufflePlay": "Случайное воспроизведение",
     "playTrailer": "Воспроизвести трейлер",
     "markAsWatched": "Отметить как просмотренное",
-    "markAsUnwatched": "Отметить как непросмотренное"
+    "markAsUnwatched": "Отметить как непросмотренное",
+    "bookmark": "Добавить в закладки",
+    "removeBookmark": "Удалить из закладок"
   },
   "videoControls": {
     "audioLabel": "Аудио",
@@ -811,6 +813,7 @@
   "navigation": {
     "libraries": "Библиотеки",
     "downloads": "Загрузки",
+    "watchlist": "Закладки",
     "liveTv": "ТВ в прямом эфире"
   },
   "liveTv": {
@@ -1395,5 +1398,18 @@
     "connectToJellyfinCardSubtitleScoped": "Войдите на сервер Jellyfin. Привязывается к ${name}.",
     "borrowFromAnotherProfile": "Одолжить из другого профиля",
     "borrowFromAnotherProfileSubtitle": "Используйте подключение другого профиля. Для профилей с PIN нужен PIN."
+  },
+  "watchlist": {
+    "title": "Закладки",
+    "movies": "Фильмы",
+    "shows": "Сериалы",
+    "seasons": "Сезоны",
+    "episodes": "Эпизоды",
+    "emptyTitle": "Нет закладок",
+    "emptySubtitle": "Добавляйте фильмы и сериалы в закладки, чтобы быстро их находить.",
+    "clearAll": "Очистить все",
+    "clearAllConfirm": "Удалить все закладки? Это действие нельзя отменить.",
+    "added": "Добавлено в закладки",
+    "removed": "Удалено из закладок"
   }
 }

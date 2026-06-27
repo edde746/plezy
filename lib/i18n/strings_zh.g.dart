@@ -85,6 +85,7 @@ class TranslationsZh extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _TranslationsTraktZh trakt = _TranslationsTraktZh._(_root);
 	@override late final _TranslationsTrackersZh trackers = _TranslationsTrackersZh._(_root);
 	@override late final _TranslationsAddServerZh addServer = _TranslationsAddServerZh._(_root);
+	@override late final _TranslationsWatchlistZh watchlist = _TranslationsWatchlistZh._(_root);
 }
 
 // Path: app
@@ -562,6 +563,8 @@ class _TranslationsTooltipsZh extends TranslationsTooltipsEn {
 	@override String get playTrailer => '播放预告片';
 	@override String get markAsWatched => '标记为已观看';
 	@override String get markAsUnwatched => '标记为未观看';
+	@override String get bookmark => '添加书签';
+	@override String get removeBookmark => '移除书签';
 }
 
 // Path: videoControls
@@ -1033,6 +1036,7 @@ class _TranslationsNavigationZh extends TranslationsNavigationEn {
 	// Translations
 	@override String get libraries => '媒体库';
 	@override String get downloads => '下载';
+	@override String get watchlist => '书签';
 	@override String get liveTv => '电视直播';
 }
 
@@ -1637,6 +1641,26 @@ class _TranslationsAddServerZh extends TranslationsAddServerEn {
 	@override String connectToJellyfinCardSubtitleScoped({required Object name}) => '登录到 Jellyfin 服务器。绑定到 ${name}。';
 	@override String get borrowFromAnotherProfile => '从另一个配置文件借用';
 	@override String get borrowFromAnotherProfileSubtitle => '复用另一个个人资料的连接。受 PIN 保护的个人资料需要 PIN。';
+}
+
+// Path: watchlist
+class _TranslationsWatchlistZh extends TranslationsWatchlistEn {
+	_TranslationsWatchlistZh._(TranslationsZh root) : this._root = root, super.internal(root);
+
+	final TranslationsZh _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => '书签';
+	@override String get movies => '电影';
+	@override String get shows => '剧集';
+	@override String get seasons => '季度';
+	@override String get episodes => '集数';
+	@override String get emptyTitle => '暂无书签';
+	@override String get emptySubtitle => '将电影和剧集添加到书签，方便以后查找。';
+	@override String get clearAll => '清除全部';
+	@override String get clearAllConfirm => '删除所有书签？此操作无法撤销。';
+	@override String get added => '已添加到书签';
+	@override String get removed => '已从书签移除';
 }
 
 // Path: hotkeys.actions
@@ -2310,6 +2334,8 @@ extension on TranslationsZh {
 			'tooltips.playTrailer' => '播放预告片',
 			'tooltips.markAsWatched' => '标记为已观看',
 			'tooltips.markAsUnwatched' => '标记为未观看',
+			'tooltips.bookmark' => '添加书签',
+			'tooltips.removeBookmark' => '移除书签',
 			'videoControls.audioLabel' => '音频',
 			'videoControls.subtitlesLabel' => '字幕',
 			'videoControls.resetToZero' => '重置为 0ms',
@@ -2436,10 +2462,10 @@ extension on TranslationsZh {
 			'messages.serverLimitTitle' => '播放失败',
 			'messages.serverLimitBody' => '服务器错误 (HTTP 500)。带宽/转码限制可能拒绝了此会话。请让所有者调整。',
 			'messages.logsUploaded' => '日志已上传',
-			'messages.logsUploadFailed' => '上传日志失败',
-			'messages.logId' => '日志 ID',
 			_ => null,
 		} ?? switch (path) {
+			'messages.logsUploadFailed' => '上传日志失败',
+			'messages.logId' => '日志 ID',
 			'subtitlingStyling.text' => '文本',
 			'subtitlingStyling.border' => '边框',
 			'subtitlingStyling.background' => '背景',
@@ -2669,6 +2695,7 @@ extension on TranslationsZh {
 			'licenses.licensesCount' => ({required Object count}) => '${count} 个许可证',
 			'navigation.libraries' => '媒体库',
 			'navigation.downloads' => '下载',
+			'navigation.watchlist' => '书签',
 			'navigation.liveTv' => '电视直播',
 			'liveTv.title' => '电视直播',
 			'liveTv.guide' => '节目指南',
@@ -2949,11 +2976,11 @@ extension on TranslationsZh {
 			'companionRemote.pairing.validationHostFormat' => '格式必须为IP:端口（例如 192.168.1.100:48632）',
 			'companionRemote.pairing.connectionTimedOut' => '连接超时。请在两台设备上使用同一网络。',
 			'companionRemote.pairing.sessionNotFound' => '未找到设备。请确认 Plezy 正在主机上运行。',
+			_ => null,
+		} ?? switch (path) {
 			'companionRemote.pairing.authFailed' => '认证失败。两台设备需要使用同一 Plex 账号。',
 			'companionRemote.pairing.failedToConnect' => ({required Object error}) => '连接失败：${error}',
 			'companionRemote.remote.disconnectConfirm' => '是否要断开远程会话的连接？',
-			_ => null,
-		} ?? switch (path) {
 			'companionRemote.remote.reconnecting' => '重新连接中...',
 			'companionRemote.remote.attemptOf' => ({required Object current}) => '第 ${current} 次尝试，共 5 次',
 			'companionRemote.remote.retryNow' => '立即重试',
@@ -3207,6 +3234,17 @@ extension on TranslationsZh {
 			'addServer.connectToJellyfinCardSubtitleScoped' => ({required Object name}) => '登录到 Jellyfin 服务器。绑定到 ${name}。',
 			'addServer.borrowFromAnotherProfile' => '从另一个配置文件借用',
 			'addServer.borrowFromAnotherProfileSubtitle' => '复用另一个个人资料的连接。受 PIN 保护的个人资料需要 PIN。',
+			'watchlist.title' => '书签',
+			'watchlist.movies' => '电影',
+			'watchlist.shows' => '剧集',
+			'watchlist.seasons' => '季度',
+			'watchlist.episodes' => '集数',
+			'watchlist.emptyTitle' => '暂无书签',
+			'watchlist.emptySubtitle' => '将电影和剧集添加到书签，方便以后查找。',
+			'watchlist.clearAll' => '清除全部',
+			'watchlist.clearAllConfirm' => '删除所有书签？此操作无法撤销。',
+			'watchlist.added' => '已添加到书签',
+			'watchlist.removed' => '已从书签移除',
 			_ => null,
 		};
 	}

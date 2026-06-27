@@ -409,7 +409,9 @@
     "shufflePlay": "Разбъркано възпроизвеждане",
     "playTrailer": "Пусни трейлър",
     "markAsWatched": "Маркирай като гледано",
-    "markAsUnwatched": "Маркирай като негледано"
+    "markAsUnwatched": "Маркирай като негледано",
+    "bookmark": "Добавяне в отметки",
+    "removeBookmark": "Премахване от отметки"
   },
   "videoControls": {
     "audioLabel": "Аудио",
@@ -811,6 +813,7 @@
   "navigation": {
     "libraries": "Библиотеки",
     "downloads": "Изтегляния",
+    "watchlist": "Отметки",
     "liveTv": "Телевизия на живо"
   },
   "liveTv": {
@@ -1395,5 +1398,18 @@
     "connectToJellyfinCardSubtitleScoped": "Вход в Jellyfin сървър. Свързва се с ${name}.",
     "borrowFromAnotherProfile": "Използвай от друг профил",
     "borrowFromAnotherProfileSubtitle": "Използвай връзка от друг профил. PIN-защитените профили изискват PIN."
+  },
+  "watchlist": {
+    "title": "Отметки",
+    "movies": "Филми",
+    "shows": "Сериали",
+    "seasons": "Сезони",
+    "episodes": "Епизоди",
+    "emptyTitle": "Няма добавени отметки",
+    "emptySubtitle": "Добавете филми и сериали в отметки, за да ги намирате по-лесно.",
+    "clearAll": "Изчистване на всички",
+    "clearAllConfirm": "Премахване на всички отметки? Това действие не може да бъде отменено.",
+    "added": "Добавено в отметки",
+    "removed": "Премахнато от отметки"
   }
 }

@@ -85,6 +85,7 @@ class TranslationsJa extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _TranslationsTraktJa trakt = _TranslationsTraktJa._(_root);
 	@override late final _TranslationsTrackersJa trackers = _TranslationsTrackersJa._(_root);
 	@override late final _TranslationsAddServerJa addServer = _TranslationsAddServerJa._(_root);
+	@override late final _TranslationsWatchlistJa watchlist = _TranslationsWatchlistJa._(_root);
 }
 
 // Path: app
@@ -562,6 +563,8 @@ class _TranslationsTooltipsJa extends TranslationsTooltipsEn {
 	@override String get playTrailer => '予告編を再生';
 	@override String get markAsWatched => '視聴済みにする';
 	@override String get markAsUnwatched => '未視聴にする';
+	@override String get bookmark => 'ブックマークに追加';
+	@override String get removeBookmark => 'ブックマークを解除';
 }
 
 // Path: videoControls
@@ -1033,6 +1036,7 @@ class _TranslationsNavigationJa extends TranslationsNavigationEn {
 	// Translations
 	@override String get libraries => 'ライブラリ';
 	@override String get downloads => 'ダウンロード';
+	@override String get watchlist => 'ブックマーク';
 	@override String get liveTv => 'ライブTV';
 }
 
@@ -1637,6 +1641,26 @@ class _TranslationsAddServerJa extends TranslationsAddServerEn {
 	@override String connectToJellyfinCardSubtitleScoped({required Object name}) => 'Jellyfinサーバーにサインインします。${name}に紐付けられます。';
 	@override String get borrowFromAnotherProfile => '別のプロファイルから借りる';
 	@override String get borrowFromAnotherProfileSubtitle => '別のプロフィールの接続を再利用します。PIN保護されたプロフィールにはPINが必要です。';
+}
+
+// Path: watchlist
+class _TranslationsWatchlistJa extends TranslationsWatchlistEn {
+	_TranslationsWatchlistJa._(TranslationsJa root) : this._root = root, super.internal(root);
+
+	final TranslationsJa _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'ブックマーク';
+	@override String get movies => '映画';
+	@override String get shows => 'ドラマ';
+	@override String get seasons => 'シーズン';
+	@override String get episodes => 'エピソード';
+	@override String get emptyTitle => 'ブックマークはありません';
+	@override String get emptySubtitle => '映画やドラマをブックマークすると、ここから簡単に見つけられます。';
+	@override String get clearAll => 'すべて削除';
+	@override String get clearAllConfirm => 'すべてのブックマークを削除しますか？この操作は元に戻せません。';
+	@override String get added => 'ブックマークに追加しました';
+	@override String get removed => 'ブックマークを解除しました';
 }
 
 // Path: hotkeys.actions
@@ -2310,6 +2334,8 @@ extension on TranslationsJa {
 			'tooltips.playTrailer' => '予告編を再生',
 			'tooltips.markAsWatched' => '視聴済みにする',
 			'tooltips.markAsUnwatched' => '未視聴にする',
+			'tooltips.bookmark' => 'ブックマークに追加',
+			'tooltips.removeBookmark' => 'ブックマークを解除',
 			'videoControls.audioLabel' => '音声',
 			'videoControls.subtitlesLabel' => '字幕',
 			'videoControls.resetToZero' => '0msにリセット',
@@ -2436,10 +2462,10 @@ extension on TranslationsJa {
 			'messages.serverLimitTitle' => '再生に失敗しました',
 			'messages.serverLimitBody' => 'サーバーエラー（HTTP 500）。帯域幅/トランスコード制限により拒否された可能性があります。所有者に調整を依頼してください。',
 			'messages.logsUploaded' => 'ログをアップロードしました',
-			'messages.logsUploadFailed' => 'ログのアップロードに失敗しました',
-			'messages.logId' => 'ログID',
 			_ => null,
 		} ?? switch (path) {
+			'messages.logsUploadFailed' => 'ログのアップロードに失敗しました',
+			'messages.logId' => 'ログID',
 			'subtitlingStyling.text' => 'テキスト',
 			'subtitlingStyling.border' => '枠線',
 			'subtitlingStyling.background' => '背景',
@@ -2669,6 +2695,7 @@ extension on TranslationsJa {
 			'licenses.licensesCount' => ({required Object count}) => '${count}件のライセンス',
 			'navigation.libraries' => 'ライブラリ',
 			'navigation.downloads' => 'ダウンロード',
+			'navigation.watchlist' => 'ブックマーク',
 			'navigation.liveTv' => 'ライブTV',
 			'liveTv.title' => 'ライブTV',
 			'liveTv.guide' => '番組表',
@@ -2949,11 +2976,11 @@ extension on TranslationsJa {
 			'companionRemote.pairing.validationHostFormat' => '形式はIP:ポートである必要があります（例: 192.168.1.100:48632）',
 			'companionRemote.pairing.connectionTimedOut' => '接続がタイムアウトしました。両方のデバイスで同じネットワークを使用してください。',
 			'companionRemote.pairing.sessionNotFound' => 'デバイスが見つかりません。ホストでPlezyが実行中か確認してください。',
+			_ => null,
+		} ?? switch (path) {
 			'companionRemote.pairing.authFailed' => '認証に失敗しました。両方のデバイスで同じPlexアカウントが必要です。',
 			'companionRemote.pairing.failedToConnect' => ({required Object error}) => '接続に失敗しました: ${error}',
 			'companionRemote.remote.disconnectConfirm' => 'リモートセッションから切断しますか？',
-			_ => null,
-		} ?? switch (path) {
 			'companionRemote.remote.reconnecting' => '再接続中...',
 			'companionRemote.remote.attemptOf' => ({required Object current}) => '試行 ${current}/5',
 			'companionRemote.remote.retryNow' => '今すぐ再試行',
@@ -3207,6 +3234,17 @@ extension on TranslationsJa {
 			'addServer.connectToJellyfinCardSubtitleScoped' => ({required Object name}) => 'Jellyfinサーバーにサインインします。${name}に紐付けられます。',
 			'addServer.borrowFromAnotherProfile' => '別のプロファイルから借りる',
 			'addServer.borrowFromAnotherProfileSubtitle' => '別のプロフィールの接続を再利用します。PIN保護されたプロフィールにはPINが必要です。',
+			'watchlist.title' => 'ブックマーク',
+			'watchlist.movies' => '映画',
+			'watchlist.shows' => 'ドラマ',
+			'watchlist.seasons' => 'シーズン',
+			'watchlist.episodes' => 'エピソード',
+			'watchlist.emptyTitle' => 'ブックマークはありません',
+			'watchlist.emptySubtitle' => '映画やドラマをブックマークすると、ここから簡単に見つけられます。',
+			'watchlist.clearAll' => 'すべて削除',
+			'watchlist.clearAllConfirm' => 'すべてのブックマークを削除しますか？この操作は元に戻せません。',
+			'watchlist.added' => 'ブックマークに追加しました',
+			'watchlist.removed' => 'ブックマークを解除しました',
 			_ => null,
 		};
 	}

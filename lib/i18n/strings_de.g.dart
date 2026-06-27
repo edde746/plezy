@@ -85,6 +85,7 @@ class TranslationsDe extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _TranslationsTraktDe trakt = _TranslationsTraktDe._(_root);
 	@override late final _TranslationsTrackersDe trackers = _TranslationsTrackersDe._(_root);
 	@override late final _TranslationsAddServerDe addServer = _TranslationsAddServerDe._(_root);
+	@override late final _TranslationsWatchlistDe watchlist = _TranslationsWatchlistDe._(_root);
 }
 
 // Path: app
@@ -562,6 +563,8 @@ class _TranslationsTooltipsDe extends TranslationsTooltipsEn {
 	@override String get playTrailer => 'Trailer abspielen';
 	@override String get markAsWatched => 'Als gesehen markieren';
 	@override String get markAsUnwatched => 'Als ungesehen markieren';
+	@override String get bookmark => 'Lesezeichen setzen';
+	@override String get removeBookmark => 'Lesezeichen entfernen';
 }
 
 // Path: videoControls
@@ -1033,6 +1036,7 @@ class _TranslationsNavigationDe extends TranslationsNavigationEn {
 	// Translations
 	@override String get libraries => 'Medien';
 	@override String get downloads => 'Downloads';
+	@override String get watchlist => 'Merkliste';
 	@override String get liveTv => 'Live-TV';
 }
 
@@ -1637,6 +1641,26 @@ class _TranslationsAddServerDe extends TranslationsAddServerEn {
 	@override String connectToJellyfinCardSubtitleScoped({required Object name}) => 'Bei einem Jellyfin-Server anmelden. Wird mit ${name} verknüpft.';
 	@override String get borrowFromAnotherProfile => 'Von einem anderen Profil ausleihen';
 	@override String get borrowFromAnotherProfileSubtitle => 'Verbindung eines anderen Profils wiederverwenden. PIN-geschützte Profile erfordern eine PIN.';
+}
+
+// Path: watchlist
+class _TranslationsWatchlistDe extends TranslationsWatchlistEn {
+	_TranslationsWatchlistDe._(TranslationsDe root) : this._root = root, super.internal(root);
+
+	final TranslationsDe _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Merkliste';
+	@override String get movies => 'Filme';
+	@override String get shows => 'Serien';
+	@override String get seasons => 'Staffeln';
+	@override String get episodes => 'Episoden';
+	@override String get emptyTitle => 'Keine Einträge';
+	@override String get emptySubtitle => 'Füge Filme und Serien zur Merkliste hinzu, um sie später schnell zu finden.';
+	@override String get clearAll => 'Alle löschen';
+	@override String get clearAllConfirm => 'Alle Einträge entfernen? Dies kann nicht rückgängig gemacht werden.';
+	@override String get added => 'Zur Merkliste hinzugefügt';
+	@override String get removed => 'Von der Merkliste entfernt';
 }
 
 // Path: hotkeys.actions
@@ -2310,6 +2334,8 @@ extension on TranslationsDe {
 			'tooltips.playTrailer' => 'Trailer abspielen',
 			'tooltips.markAsWatched' => 'Als gesehen markieren',
 			'tooltips.markAsUnwatched' => 'Als ungesehen markieren',
+			'tooltips.bookmark' => 'Lesezeichen setzen',
+			'tooltips.removeBookmark' => 'Lesezeichen entfernen',
 			'videoControls.audioLabel' => 'Audio',
 			'videoControls.subtitlesLabel' => 'Untertitel',
 			'videoControls.resetToZero' => 'Auf 0 ms zurücksetzen',
@@ -2436,10 +2462,10 @@ extension on TranslationsDe {
 			'messages.serverLimitTitle' => 'Wiedergabe fehlgeschlagen',
 			'messages.serverLimitBody' => 'Serverfehler (HTTP 500). Ein Bandbreiten-/Transcoding-Limit lehnte diese Sitzung wohl ab. Bitte den Besitzer um Anpassung.',
 			'messages.logsUploaded' => 'Protokolle hochgeladen',
-			'messages.logsUploadFailed' => 'Protokolle konnten nicht hochgeladen werden',
-			'messages.logId' => 'Protokoll-ID',
 			_ => null,
 		} ?? switch (path) {
+			'messages.logsUploadFailed' => 'Protokolle konnten nicht hochgeladen werden',
+			'messages.logId' => 'Protokoll-ID',
 			'subtitlingStyling.text' => 'Text',
 			'subtitlingStyling.border' => 'Rahmen',
 			'subtitlingStyling.background' => 'Hintergrund',
@@ -2669,6 +2695,7 @@ extension on TranslationsDe {
 			'licenses.licensesCount' => ({required Object count}) => '${count} Lizenzen',
 			'navigation.libraries' => 'Medien',
 			'navigation.downloads' => 'Downloads',
+			'navigation.watchlist' => 'Merkliste',
 			'navigation.liveTv' => 'Live-TV',
 			'liveTv.title' => 'Live-TV',
 			'liveTv.guide' => 'Programmführer',
@@ -2949,11 +2976,11 @@ extension on TranslationsDe {
 			'companionRemote.pairing.validationHostFormat' => 'Format muss IP:Port sein (z.B. 192.168.1.100:48632)',
 			'companionRemote.pairing.connectionTimedOut' => 'Verbindung hat Zeitlimit überschritten. Nutze auf beiden Geräten dasselbe Netzwerk.',
 			'companionRemote.pairing.sessionNotFound' => 'Gerät nicht gefunden. Stelle sicher, dass Plezy auf dem Host läuft.',
+			_ => null,
+		} ?? switch (path) {
 			'companionRemote.pairing.authFailed' => 'Authentifizierung fehlgeschlagen. Beide Geräte benötigen dasselbe Plex-Konto.',
 			'companionRemote.pairing.failedToConnect' => ({required Object error}) => 'Verbindung fehlgeschlagen: ${error}',
 			'companionRemote.remote.disconnectConfirm' => 'Möchtest du die Verbindung zur Fernsteuerungssitzung trennen?',
-			_ => null,
-		} ?? switch (path) {
 			'companionRemote.remote.reconnecting' => 'Verbindung wird wiederhergestellt...',
 			'companionRemote.remote.attemptOf' => ({required Object current}) => 'Versuch ${current} von 5',
 			'companionRemote.remote.retryNow' => 'Jetzt wiederholen',
@@ -3207,6 +3234,17 @@ extension on TranslationsDe {
 			'addServer.connectToJellyfinCardSubtitleScoped' => ({required Object name}) => 'Bei einem Jellyfin-Server anmelden. Wird mit ${name} verknüpft.',
 			'addServer.borrowFromAnotherProfile' => 'Von einem anderen Profil ausleihen',
 			'addServer.borrowFromAnotherProfileSubtitle' => 'Verbindung eines anderen Profils wiederverwenden. PIN-geschützte Profile erfordern eine PIN.',
+			'watchlist.title' => 'Merkliste',
+			'watchlist.movies' => 'Filme',
+			'watchlist.shows' => 'Serien',
+			'watchlist.seasons' => 'Staffeln',
+			'watchlist.episodes' => 'Episoden',
+			'watchlist.emptyTitle' => 'Keine Einträge',
+			'watchlist.emptySubtitle' => 'Füge Filme und Serien zur Merkliste hinzu, um sie später schnell zu finden.',
+			'watchlist.clearAll' => 'Alle löschen',
+			'watchlist.clearAllConfirm' => 'Alle Einträge entfernen? Dies kann nicht rückgängig gemacht werden.',
+			'watchlist.added' => 'Zur Merkliste hinzugefügt',
+			'watchlist.removed' => 'Von der Merkliste entfernt',
 			_ => null,
 		};
 	}

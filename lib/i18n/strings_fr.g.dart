@@ -85,6 +85,7 @@ class TranslationsFr extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _TranslationsTraktFr trakt = _TranslationsTraktFr._(_root);
 	@override late final _TranslationsTrackersFr trackers = _TranslationsTrackersFr._(_root);
 	@override late final _TranslationsAddServerFr addServer = _TranslationsAddServerFr._(_root);
+	@override late final _TranslationsWatchlistFr watchlist = _TranslationsWatchlistFr._(_root);
 }
 
 // Path: app
@@ -562,6 +563,8 @@ class _TranslationsTooltipsFr extends TranslationsTooltipsEn {
 	@override String get playTrailer => 'Lire la bande-annonce';
 	@override String get markAsWatched => 'Marqué comme vu';
 	@override String get markAsUnwatched => 'Marqué comme non vu';
+	@override String get bookmark => 'Ajouter aux favoris';
+	@override String get removeBookmark => 'Retirer des favoris';
 }
 
 // Path: videoControls
@@ -1033,6 +1036,7 @@ class _TranslationsNavigationFr extends TranslationsNavigationEn {
 	// Translations
 	@override String get libraries => 'Medias';
 	@override String get downloads => 'Téléch.';
+	@override String get watchlist => 'Favoris';
 	@override String get liveTv => 'TV direct';
 }
 
@@ -1637,6 +1641,26 @@ class _TranslationsAddServerFr extends TranslationsAddServerEn {
 	@override String connectToJellyfinCardSubtitleScoped({required Object name}) => 'Connectez-vous à un serveur Jellyfin. Lié à ${name}.';
 	@override String get borrowFromAnotherProfile => 'Emprunter à un autre profil';
 	@override String get borrowFromAnotherProfileSubtitle => 'Réutiliser la connexion d\'un autre profil. Les profils protégés par PIN exigent un PIN.';
+}
+
+// Path: watchlist
+class _TranslationsWatchlistFr extends TranslationsWatchlistEn {
+	_TranslationsWatchlistFr._(TranslationsFr root) : this._root = root, super.internal(root);
+
+	final TranslationsFr _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Favoris';
+	@override String get movies => 'Films';
+	@override String get shows => 'Séries';
+	@override String get seasons => 'Saisons';
+	@override String get episodes => 'Épisodes';
+	@override String get emptyTitle => 'Aucun favori';
+	@override String get emptySubtitle => 'Ajoutez des films et séries aux favoris pour les retrouver ici.';
+	@override String get clearAll => 'Tout effacer';
+	@override String get clearAllConfirm => 'Supprimer tous les favoris ? Cette action est irréversible.';
+	@override String get added => 'Ajouté aux favoris';
+	@override String get removed => 'Retiré des favoris';
 }
 
 // Path: hotkeys.actions
@@ -2310,6 +2334,8 @@ extension on TranslationsFr {
 			'tooltips.playTrailer' => 'Lire la bande-annonce',
 			'tooltips.markAsWatched' => 'Marqué comme vu',
 			'tooltips.markAsUnwatched' => 'Marqué comme non vu',
+			'tooltips.bookmark' => 'Ajouter aux favoris',
+			'tooltips.removeBookmark' => 'Retirer des favoris',
 			'videoControls.audioLabel' => 'Audio',
 			'videoControls.subtitlesLabel' => 'Sous-titres',
 			'videoControls.resetToZero' => 'Réinitialiser à 0ms',
@@ -2436,10 +2462,10 @@ extension on TranslationsFr {
 			'messages.serverLimitTitle' => 'Échec de la lecture',
 			'messages.serverLimitBody' => 'Erreur serveur (HTTP 500). Une limite de bande passante/transcodage a probablement rejeté cette session. Demandez au propriétaire de l\'ajuster.',
 			'messages.logsUploaded' => 'Logs envoyés',
-			'messages.logsUploadFailed' => 'Échec de l\'envoi des logs',
-			'messages.logId' => 'ID du log',
 			_ => null,
 		} ?? switch (path) {
+			'messages.logsUploadFailed' => 'Échec de l\'envoi des logs',
+			'messages.logId' => 'ID du log',
 			'subtitlingStyling.text' => 'Texte',
 			'subtitlingStyling.border' => 'Bordure',
 			'subtitlingStyling.background' => 'Arrière-plan',
@@ -2669,6 +2695,7 @@ extension on TranslationsFr {
 			'licenses.licensesCount' => ({required Object count}) => '${count} licences',
 			'navigation.libraries' => 'Medias',
 			'navigation.downloads' => 'Téléch.',
+			'navigation.watchlist' => 'Favoris',
 			'navigation.liveTv' => 'TV direct',
 			'liveTv.title' => 'TV en direct',
 			'liveTv.guide' => 'Guide',
@@ -2949,11 +2976,11 @@ extension on TranslationsFr {
 			'companionRemote.pairing.validationHostFormat' => 'Le format doit être IP:port (ex. 192.168.1.100:48632)',
 			'companionRemote.pairing.connectionTimedOut' => 'Connexion expirée. Utilisez le même réseau sur les deux appareils.',
 			'companionRemote.pairing.sessionNotFound' => 'Appareil introuvable. Assurez-vous que Plezy fonctionne sur l\'hôte.',
+			_ => null,
+		} ?? switch (path) {
 			'companionRemote.pairing.authFailed' => 'Échec de l\'authentification. Les deux appareils doivent utiliser le même compte Plex.',
 			'companionRemote.pairing.failedToConnect' => ({required Object error}) => 'Échec de la connexion : ${error}',
 			'companionRemote.remote.disconnectConfirm' => 'Voulez-vous vous déconnecter de la session distante ?',
-			_ => null,
-		} ?? switch (path) {
 			'companionRemote.remote.reconnecting' => 'Reconnexion...',
 			'companionRemote.remote.attemptOf' => ({required Object current}) => 'Tentative ${current} sur 5',
 			'companionRemote.remote.retryNow' => 'Réessayer maintenant',
@@ -3207,6 +3234,17 @@ extension on TranslationsFr {
 			'addServer.connectToJellyfinCardSubtitleScoped' => ({required Object name}) => 'Connectez-vous à un serveur Jellyfin. Lié à ${name}.',
 			'addServer.borrowFromAnotherProfile' => 'Emprunter à un autre profil',
 			'addServer.borrowFromAnotherProfileSubtitle' => 'Réutiliser la connexion d\'un autre profil. Les profils protégés par PIN exigent un PIN.',
+			'watchlist.title' => 'Favoris',
+			'watchlist.movies' => 'Films',
+			'watchlist.shows' => 'Séries',
+			'watchlist.seasons' => 'Saisons',
+			'watchlist.episodes' => 'Épisodes',
+			'watchlist.emptyTitle' => 'Aucun favori',
+			'watchlist.emptySubtitle' => 'Ajoutez des films et séries aux favoris pour les retrouver ici.',
+			'watchlist.clearAll' => 'Tout effacer',
+			'watchlist.clearAllConfirm' => 'Supprimer tous les favoris ? Cette action est irréversible.',
+			'watchlist.added' => 'Ajouté aux favoris',
+			'watchlist.removed' => 'Retiré des favoris',
 			_ => null,
 		};
 	}
