@@ -5,9 +5,14 @@ part of '../../video_player_screen.dart';
 /// behind a startup gate, and which post-open follow-up (fallback switch
 /// or mpv decoder refresh) releases it.
 class _FrameRateStartupPlan {
-  _FrameRateStartupPlan({required this.fps});
+  _FrameRateStartupPlan({required this.fps, this.width = 0, this.height = 0});
 
   final double? fps;
+
+  /// Native video dimensions, so a display-mode fallback can avoid downscaling
+  /// the video below its resolution just to match cadence (0 = unknown).
+  final int width;
+  final int height;
   bool attemptedMpvPreLoad = false;
   bool didPreLoadSwitch = false;
   bool preOpenExoHandled = false;
@@ -89,10 +94,18 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
     required SettingsService settingsService,
     required double fps,
     required int durationMs,
+    int videoWidth = 0,
+    int videoHeight = 0,
   }) {
     final delaySec = settingsService.read(SettingsService.displaySwitchDelay);
     _frameRate.beginSuppressWindow(delaySec);
-    return player.setVideoFrameRate(fps, durationMs, extraDelayMs: delaySec * 1000);
+    return player.setVideoFrameRate(
+      fps,
+      durationMs,
+      extraDelayMs: delaySec * 1000,
+      videoWidth: videoWidth,
+      videoHeight: videoHeight,
+    );
   }
 
   /// Whether the Android pre-open frame-rate negotiation applies: the user
@@ -137,8 +150,10 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
     required double? preKnownFps,
     required bool hasVideoUrl,
     required Future<void> Function() ensureAudioFocus,
+    int preKnownWidth = 0,
+    int preKnownHeight = 0,
   }) async {
-    final plan = _FrameRateStartupPlan(fps: preKnownFps);
+    final plan = _FrameRateStartupPlan(fps: preKnownFps, width: preKnownWidth, height: preKnownHeight);
     final willAutoSwitch = _shouldAutoSwitchFrameRateForOpen(settingsService, preKnownFps);
     // willAutoSwitch is Android-only, so the strategy fork below is between
     // the two Android backends: mpv needs its decoder refreshed after a
@@ -161,6 +176,8 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
           settingsService: settingsService,
           fps: preKnownFps!,
           durationMs: durationMs,
+          videoWidth: plan.width,
+          videoHeight: plan.height,
         );
         if (!mounted || player != currentPlayer) return null;
         if (plan.didPreLoadSwitch) {
@@ -192,6 +209,8 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
           settingsService: settingsService,
           fps: preKnownFps!,
           durationMs: durationMs,
+          videoWidth: plan.width,
+          videoHeight: plan.height,
         );
         if (!mounted || player != currentPlayer) return null;
         plan.preOpenExoHandled = true;
@@ -239,6 +258,8 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
           settingsService: settingsService,
           fps: plan.fps!,
           durationMs: durationMs,
+          videoWidth: plan.width,
+          videoHeight: plan.height,
         );
         if (!mounted || player != currentPlayer) return;
         if (didSwitch) {

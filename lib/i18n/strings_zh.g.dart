@@ -1288,6 +1288,7 @@ class _TranslationsDownloadsZh extends TranslationsDownloadsEn {
 	@override String get unwatchedOnly => '仅未观看';
 	@override String nextNUnwatched({required Object count}) => '接下来 ${count} 集未观看';
 	@override String get customAmount => '自定义数量...';
+	@override String get includeSpecials => '包含特别篇';
 	@override String get howManyEpisodes => '下载几集？';
 	@override String itemsQueued({required Object count}) => '${count} 个项目已加入下载队列';
 	@override String get keepSynced => '保持同步';
@@ -2878,6 +2879,7 @@ extension on TranslationsZh {
 			'downloads.unwatchedOnly' => '仅未观看',
 			'downloads.nextNUnwatched' => ({required Object count}) => '接下来 ${count} 集未观看',
 			'downloads.customAmount' => '自定义数量...',
+			'downloads.includeSpecials' => '包含特别篇',
 			'downloads.howManyEpisodes' => '下载几集？',
 			'downloads.itemsQueued' => ({required Object count}) => '${count} 个项目已加入下载队列',
 			'downloads.keepSynced' => '保持同步',
@@ -2950,9 +2952,9 @@ extension on TranslationsZh {
 			'companionRemote.pairing.authFailed' => '认证失败。两台设备需要使用同一 Plex 账号。',
 			'companionRemote.pairing.failedToConnect' => ({required Object error}) => '连接失败：${error}',
 			'companionRemote.remote.disconnectConfirm' => '是否要断开远程会话的连接？',
-			'companionRemote.remote.reconnecting' => '重新连接中...',
 			_ => null,
 		} ?? switch (path) {
+			'companionRemote.remote.reconnecting' => '重新连接中...',
 			'companionRemote.remote.attemptOf' => ({required Object current}) => '第 ${current} 次尝试，共 5 次',
 			'companionRemote.remote.retryNow' => '立即重试',
 			'companionRemote.remote.tabRemote' => '遥控',

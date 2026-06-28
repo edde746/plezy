@@ -13,16 +13,17 @@ import '../settings_service.dart';
 import '../trackers/tracker.dart';
 import '../trackers/tracker_constants.dart';
 import '../trackers/tracker_id_resolver.dart';
+import '../trackers/tracker_rating_match.dart';
+import '../trackers/tracker_session.dart';
 import 'trakt_client.dart';
 import 'trakt_constants.dart';
-import 'trakt_session.dart';
 
 /// Real-time scrobble service for Trakt.
 ///
 /// Mirrors the lifecycle shape of `DiscordRPCService`: invoked from
 /// `video_player_screen.dart` at the same call sites (start/pause/resume/stop,
 /// position updates).
-class TraktScrobbleService {
+class TraktScrobbleService implements TrackerRatingSource {
   /// Drop a duplicate state transition within this window — mpv emits multiple
   /// playing-state events on seek.
   static const Duration _duplicateStateDebounce = Duration(seconds: 1);
@@ -71,9 +72,9 @@ class TraktScrobbleService {
   /// Switch to a different account. Cancels any in-flight scrobble for the
   /// previous account so we don't send a stop event to the wrong user.
   void rebindToProfile(
-    TraktSession? session, {
+    TrackerSession? session, {
     required void Function() onSessionInvalidated,
-    void Function(TraktSession session)? onSessionUpdated,
+    void Function(TrackerSession session)? onSessionUpdated,
     http.Client? httpClient,
   }) {
     _client?.dispose();
@@ -88,10 +89,11 @@ class TraktScrobbleService {
     cancelInFlight();
   }
 
-  void updateSession(TraktSession session) {
+  void updateSession(TrackerSession session) {
     _client?.updateSession(session);
   }
 
+  @override
   Future<int?> getRating(TrackerRatingContext ctx) async {
     final client = _client;
     if (client == null) throw const TrackerRatingUnavailableException('Trakt');
@@ -108,12 +110,14 @@ class TraktScrobbleService {
     return null;
   }
 
+  @override
   Future<void> rate(TrackerRatingContext ctx, int score) async {
     final client = _client;
     if (client == null) throw const TrackerRatingUnavailableException('Trakt');
     await client.addRatings(_ratingBody(ctx, rating: score.clamp(1, 10).toInt()));
   }
 
+  @override
   Future<void> clearRating(TrackerRatingContext ctx) async {
     final client = _client;
     if (client == null) throw const TrackerRatingUnavailableException('Trakt');
@@ -146,36 +150,16 @@ class TraktScrobbleService {
     final show = entry['show'];
     final movie = entry['movie'];
     return switch (ctx.kind) {
-      MediaKind.movie => _idsMatch(_nestedIds(movie), localIds),
-      MediaKind.show => _idsMatch(_nestedIds(show), localIds),
-      MediaKind.season => _idsMatch(_nestedIds(show), localIds) && _numberMatches(entry['season'], ctx.season),
+      MediaKind.movie => trackerIdsMatch(trackerNestedIds(movie), localIds),
+      MediaKind.show => trackerIdsMatch(trackerNestedIds(show), localIds),
+      MediaKind.season =>
+        trackerIdsMatch(trackerNestedIds(show), localIds) && _numberMatches(entry['season'], ctx.season),
       MediaKind.episode =>
-        _idsMatch(_nestedIds(show), localIds) &&
+        trackerIdsMatch(trackerNestedIds(show), localIds) &&
             _numberMatches(entry['episode'], ctx.episodeNumber) &&
             _seasonMatches(entry['episode'], ctx.season),
       _ => false,
     };
-  }
-
-  Map<String, dynamic>? _nestedIds(Object? value) {
-    if (value is! Map) return null;
-    final ids = value['ids'];
-    return ids is Map ? ids.cast<String, dynamic>() : null;
-  }
-
-  bool _idsMatch(Map<String, dynamic>? remoteIds, Map<String, dynamic> localIds) {
-    if (remoteIds == null) return false;
-    for (final entry in localIds.entries) {
-      final local = entry.value;
-      if (local == null) continue;
-      final remote = remoteIds[entry.key];
-      if (remote == null) continue;
-      if (local is String && remote.toString() == local) return true;
-      final remoteInt = flexibleInt(remote);
-      final localInt = flexibleInt(local);
-      if (remoteInt != null && localInt != null && remoteInt == localInt) return true;
-    }
-    return false;
   }
 
   bool _numberMatches(Object? value, int? expected) {

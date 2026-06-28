@@ -1288,6 +1288,7 @@ class _TranslationsDownloadsPl extends TranslationsDownloadsEn {
 	@override String get unwatchedOnly => 'Tylko nieobejrzane';
 	@override String nextNUnwatched({required Object count}) => 'Następne ${count} nieobejrzanych';
 	@override String get customAmount => 'Własna ilość...';
+	@override String get includeSpecials => 'Uwzględnij odcinki specjalne';
 	@override String get howManyEpisodes => 'Ile odcinków?';
 	@override String itemsQueued({required Object count}) => '${count} elementów dodanych do kolejki pobierania';
 	@override String get keepSynced => 'Synchronizuj na bieżąco';
@@ -2878,6 +2879,7 @@ extension on TranslationsPl {
 			'downloads.unwatchedOnly' => 'Tylko nieobejrzane',
 			'downloads.nextNUnwatched' => ({required Object count}) => 'Następne ${count} nieobejrzanych',
 			'downloads.customAmount' => 'Własna ilość...',
+			'downloads.includeSpecials' => 'Uwzględnij odcinki specjalne',
 			'downloads.howManyEpisodes' => 'Ile odcinków?',
 			'downloads.itemsQueued' => ({required Object count}) => '${count} elementów dodanych do kolejki pobierania',
 			'downloads.keepSynced' => 'Synchronizuj na bieżąco',
@@ -2950,9 +2952,9 @@ extension on TranslationsPl {
 			'companionRemote.pairing.authFailed' => 'Uwierzytelnianie nie powiodło się. Oba urządzenia muszą używać tego samego konta Plex.',
 			'companionRemote.pairing.failedToConnect' => ({required Object error}) => 'Nie udało się połączyć: ${error}',
 			'companionRemote.remote.disconnectConfirm' => 'Czy chcesz się rozłączyć od sesji zdalnej?',
-			'companionRemote.remote.reconnecting' => 'Ponowne łączenie...',
 			_ => null,
 		} ?? switch (path) {
+			'companionRemote.remote.reconnecting' => 'Ponowne łączenie...',
 			'companionRemote.remote.attemptOf' => ({required Object current}) => 'Próba ${current} z 5',
 			'companionRemote.remote.retryNow' => 'Ponów teraz',
 			'companionRemote.remote.tabRemote' => 'Pilot',

@@ -100,6 +100,20 @@ bool shouldRenderMainScreenOffline({
 }
 
 @visibleForTesting
+List<NavigationTab> mainScreenBottomNavigationTabs({
+  required List<NavigationTab> visibleTabs,
+  required bool isMobile,
+  required bool isOffline,
+  required NavigationTabId currentTab,
+}) {
+  if (!isMobile) return visibleTabs;
+  return visibleTabs.where((tab) {
+    if (tab.id != NavigationTabId.settings) return true;
+    return isOffline || currentTab == NavigationTabId.settings;
+  }).toList();
+}
+
+@visibleForTesting
 bool shouldPassTvosMenuToSystem({
   required bool isAppleTV,
   required bool isShowingProfileSelection,
@@ -116,6 +130,30 @@ bool shouldPassTvosMenuToSystem({
       isRouteCurrent &&
       hasVisibleTabs &&
       isCurrentTabRoot;
+}
+
+@visibleForTesting
+enum ProfileInvalidationAction { none, waitForProfileSwitch, invalidateNow }
+
+@visibleForTesting
+ProfileInvalidationAction profileInvalidationAction({
+  required String? previousProfileId,
+  required String? currentProfileId,
+  required bool wasBindingPreviously,
+  required bool isBindingNow,
+  required bool hasPendingProfileSwitchInvalidation,
+  required String? pendingProfileSwitchInvalidationId,
+}) {
+  if (currentProfileId != previousProfileId) {
+    return ProfileInvalidationAction.waitForProfileSwitch;
+  }
+  if (hasPendingProfileSwitchInvalidation && pendingProfileSwitchInvalidationId == currentProfileId) {
+    return ProfileInvalidationAction.none;
+  }
+  if (wasBindingPreviously && !isBindingNow) {
+    return ProfileInvalidationAction.invalidateNow;
+  }
+  return ProfileInvalidationAction.none;
 }
 
 class MainScreen extends StatefulWidget {
@@ -204,6 +242,8 @@ class _MainScreenState extends State<MainScreen>
   // we only invalidate on id change and the libraries sidebar keeps
   // stale entries until the user switches profiles.
   bool _wasBindingPrev = false;
+  bool _hasPendingProfileSwitchInvalidation = false;
+  String? _pendingProfileSwitchInvalidationId;
 
   /// Subscription to MultiServerManager status changes. Used to resume any
   /// queued downloads as soon as a Plex client comes online for the first
@@ -463,10 +503,20 @@ class _MainScreenState extends State<MainScreen>
     if (activeProfile == null) return;
     final id = activeProfile.activeId;
     final isBindingNow = activeProfile.isBinding;
+    final action = profileInvalidationAction(
+      previousProfileId: _lastSeenProfileId,
+      currentProfileId: id,
+      wasBindingPreviously: _wasBindingPrev,
+      isBindingNow: isBindingNow,
+      hasPendingProfileSwitchInvalidation: _hasPendingProfileSwitchInvalidation,
+      pendingProfileSwitchInvalidationId: _pendingProfileSwitchInvalidationId,
+    );
 
-    if (id != _lastSeenProfileId) {
+    if (action == ProfileInvalidationAction.waitForProfileSwitch) {
       _lastSeenProfileId = id;
       _wasBindingPrev = isBindingNow;
+      _hasPendingProfileSwitchInvalidation = true;
+      _pendingProfileSwitchInvalidationId = id;
       // We're called inside the synchronous notify cascade *before* the
       // binder's listener has fired (registration order). At this exact
       // instant `_isBinding` is still false, so calling awaitBindingSettle
@@ -474,10 +524,22 @@ class _MainScreenState extends State<MainScreen>
       // listener gets to flip the flag first, then wait properly.
       unawaited(
         Future.microtask(() async {
+          final scheduledProfileId = id;
           if (!mounted) return;
           await activeProfile.awaitBindingSettle();
           if (!mounted) return;
-          await _invalidateAllScreens();
+          try {
+            if (_hasPendingProfileSwitchInvalidation &&
+                _pendingProfileSwitchInvalidationId == scheduledProfileId &&
+                activeProfile.activeId == scheduledProfileId) {
+              await _invalidateAllScreens();
+            }
+          } finally {
+            if (_hasPendingProfileSwitchInvalidation && _pendingProfileSwitchInvalidationId == scheduledProfileId) {
+              _hasPendingProfileSwitchInvalidation = false;
+              _pendingProfileSwitchInvalidationId = null;
+            }
+          }
         }),
       );
       return;
@@ -487,7 +549,7 @@ class _MainScreenState extends State<MainScreen>
     // (true → false transition). Fires after borrow / connection-removal
     // flows trigger ActiveProfileBinder.rebindIfActive, so the libraries
     // sidebar reflects the new server set without an app restart.
-    if (_wasBindingPrev && !isBindingNow) {
+    if (action == ProfileInvalidationAction.invalidateNow) {
       _wasBindingPrev = isBindingNow;
       unawaited(_invalidateAllScreens());
       return;
@@ -1274,6 +1336,9 @@ class _MainScreenState extends State<MainScreen>
       appLogger.w('Failed to clear ApiCache on profile switch', error: e, stackTrace: st);
     }
 
+    await hiddenLibrariesProvider.refresh();
+    if (!mounted) return;
+
     librariesProvider.clear();
 
     if (multiServerProvider.serverManager.serverIds.isNotEmpty) {
@@ -1286,7 +1351,6 @@ class _MainScreenState extends State<MainScreen>
       await librariesProvider.refresh();
     }
 
-    unawaited(hiddenLibrariesProvider.refresh());
     playbackStateProvider.clearShuffle();
 
     if (_discoverKey.currentState case final FullRefreshable refreshable) {
@@ -1444,9 +1508,12 @@ class _MainScreenState extends State<MainScreen>
   }
 
   List<NavigationTab> _getBottomNavigationTabs(BuildContext context) {
-    final tabs = _getVisibleTabs(_isOffline);
-    if (!PlatformDetector.isMobile(context)) return tabs;
-    return tabs.where((tab) => tab.id != NavigationTabId.settings).toList();
+    return mainScreenBottomNavigationTabs(
+      visibleTabs: _getVisibleTabs(_isOffline),
+      isMobile: PlatformDetector.isMobile(context),
+      isOffline: _isOffline,
+      currentTab: _currentTab,
+    );
   }
 
   /// Get the GlobalKey for a given tab.

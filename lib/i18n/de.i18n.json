@@ -1031,6 +1031,7 @@
     "unwatchedOnly": "Nur ungesehene",
     "nextNUnwatched": "Nächste ${count} ungesehene",
     "customAmount": "Eigene Anzahl...",
+    "includeSpecials": "Specials einschließen",
     "howManyEpisodes": "Wie viele Episoden?",
     "itemsQueued": "${count} Elemente zum Download eingereiht",
     "keepSynced": "Synchronisiert halten",

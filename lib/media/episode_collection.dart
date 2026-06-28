@@ -20,8 +20,16 @@ Future<void> collectEpisodesForShow(
   required bool unwatchedOnly,
   required List<MediaItem> out,
   MediaItem? fallback,
+  bool includeSpecials = true,
 }) {
-  return _collectPlayable(client, showRatingKey, unwatchedOnly: unwatchedOnly, out: out, fallback: fallback);
+  return _collectPlayable(
+    client,
+    showRatingKey,
+    unwatchedOnly: unwatchedOnly,
+    out: out,
+    fallback: fallback,
+    includeSpecials: includeSpecials,
+  );
 }
 
 /// Collect every episode of a single season into [out] via the same
@@ -33,8 +41,16 @@ Future<void> collectEpisodesForSeason(
   required bool unwatchedOnly,
   required List<MediaItem> out,
   MediaItem? fallback,
+  bool includeSpecials = true,
 }) {
-  return _collectPlayable(client, seasonRatingKey, unwatchedOnly: unwatchedOnly, out: out, fallback: fallback);
+  return _collectPlayable(
+    client,
+    seasonRatingKey,
+    unwatchedOnly: unwatchedOnly,
+    out: out,
+    fallback: fallback,
+    includeSpecials: includeSpecials,
+  );
 }
 
 /// Fetch just the first episode of a season without walking the entire season.
@@ -54,11 +70,21 @@ Future<MediaItem?> fetchFirstEpisodeForSeason(
   return null;
 }
 
+/// A season number of 0 (or missing) denotes the Specials folder. Season
+/// selection treats it as a last resort for "what to watch next" — see
+/// [defaultPlaybackSeasonIndex] and [firstUnwatchedSeasonIndex], which open on
+/// the first regular season. Episode ordering ([compareEpisodesByWatchOrder])
+/// instead places Specials by air date, only falling back to Specials-last when
+/// an episode has no air date.
+bool isSpecialSeasonNumber(int? seasonNumber) => (seasonNumber ?? 0) == 0;
+
 /// Prefer the first regular season over specials, falling back to the first
 /// season row when a show only has specials or lacks season indexes.
 int defaultPlaybackSeasonIndex(List<MediaItem> seasons) {
   if (seasons.isEmpty) return 0;
-  final regularSeasonIndex = seasons.indexWhere((season) => season.kind == MediaKind.season && (season.index ?? 0) > 0);
+  final regularSeasonIndex = seasons.indexWhere(
+    (season) => season.kind == MediaKind.season && !isSpecialSeasonNumber(season.index),
+  );
   if (regularSeasonIndex != -1) return regularSeasonIndex;
   final firstSeasonIndex = seasons.indexWhere((season) => season.kind == MediaKind.season);
   return firstSeasonIndex == -1 ? 0 : firstSeasonIndex;
@@ -84,7 +110,7 @@ int? firstUnwatchedSeasonIndex(List<MediaItem> seasons) {
     final leaf = season.leafCount;
     if (leaf == null || leaf <= 0) continue;
     if ((season.viewedLeafCount ?? 0) >= leaf) continue; // fully watched
-    if ((season.index ?? 0) > 0) return i; // first regular season with unwatched
+    if (!isSpecialSeasonNumber(season.index)) return i; // first regular season with unwatched
     firstSpecial ??= i; // specials only count as a last resort
   }
   return firstSpecial;
@@ -96,11 +122,62 @@ int? firstUnwatchedSeasonIndex(List<MediaItem> seasons) {
 MediaItem? firstUnwatchedEpisode(List<MediaItem> episodes) {
   for (final episode in episodes) {
     if (episode.kind != MediaKind.episode) continue;
-    if (episode.isWatched && !episode.hasActiveProgress) continue;
+    if (!episode.isUnwatchedOrInProgress) continue;
     return episode;
   }
   return null;
 }
+
+/// Orders episodes into the **aired watch order** — the sequence they're meant
+/// to be played in: primarily by air date ([MediaItem.originallyAvailableAt]),
+/// so a Special that aired between two regular episodes is played between them,
+/// the way Plex's own play queue and clients do (#1416). This is the single
+/// shared definition of episode order, used by the offline next/prev queue, the
+/// Jellyfin online queue, the offline OnDeck list, and the count-capped
+/// "download / sync next N" selection — keeping streaming, offline, and
+/// download order consistent across both backends.
+///
+/// Episodes without a usable air date sort *after* dated ones, falling back to
+/// season → episode order with Specials last. So undated Specials never wedge
+/// into the middle of the aired run, and a "next N" cut still leads with regular
+/// episodes — preserving the #1414 guarantee that the whole Specials folder is
+/// never front-loaded. The trailing id comparison keeps ties deterministic
+/// (Dart's [List.sort] is not stable) so the "next N" cut is stable across runs.
+int compareEpisodesByWatchOrder(MediaItem a, MediaItem b) {
+  final aDate = _airDateKey(a);
+  final bDate = _airDateKey(b);
+  if (aDate != null && bDate != null) {
+    final byDate = aDate.compareTo(bDate);
+    if (byDate != 0) return byDate;
+  } else if (aDate == null && bDate != null) {
+    return 1; // undated episodes sort after dated ones
+  } else if (aDate != null && bDate == null) {
+    return -1;
+  }
+  // Same air date, or both undated: regular seasons before Specials, then by
+  // season number, episode number, and id.
+  final aSpecial = isSpecialSeasonNumber(a.parentIndex);
+  final bSpecial = isSpecialSeasonNumber(b.parentIndex);
+  if (aSpecial != bSpecial) return aSpecial ? 1 : -1;
+  final season = (a.parentIndex ?? 0).compareTo(b.parentIndex ?? 0);
+  if (season != 0) return season;
+  final episode = (a.index ?? 0).compareTo(b.index ?? 0);
+  if (episode != 0) return episode;
+  return a.id.compareTo(b.id);
+}
+
+/// Air date used to order episodes in [compareEpisodesByWatchOrder], or null
+/// when absent. Both backends normalize [MediaItem.originallyAvailableAt] to
+/// `YYYY-MM-DD` (Plex natively, Jellyfin from `PremiereDate`), so a plain
+/// lexicographic comparison is chronological.
+String? _airDateKey(MediaItem episode) {
+  final date = episode.originallyAvailableAt;
+  return (date == null || date.isEmpty) ? null : date;
+}
+
+/// In-place sort by [compareEpisodesByWatchOrder]. See that function for the
+/// ordering rationale.
+void sortEpisodesByWatchOrder(List<MediaItem> episodes) => episodes.sort(compareEpisodesByWatchOrder);
 
 /// Find the season index matching an explicit navigation target or on-deck
 /// episode. With neither, fall back to the first season that still has
@@ -192,13 +269,26 @@ Future<void> _collectPlayable(
   required bool unwatchedOnly,
   required List<MediaItem> out,
   MediaItem? fallback,
+  bool includeSpecials = true,
 }) async {
   final leaves = await client.fetchPlayableDescendants(parentId);
+  // Collect into a local list and order it before handing back: the backend
+  // returns episodes in raw container order (Plex /grandchildren puts S00
+  // first). Sorting into aired watch order means order-capped callers ("next N
+  // unwatched" download, sync-rule deficit) slice the next episodes in the order
+  // they're meant to be watched — Specials interleaved by air date, never the
+  // whole Specials folder front-loaded (#1414). Sort the per-call slice, not the
+  // shared `out` accumulator, so multi-container callers don't interleave across
+  // shows.
+  final collected = <MediaItem>[];
   for (final ep in leaves) {
     if (ep.kind != MediaKind.episode) continue;
-    if (unwatchedOnly && ep.isWatched && !ep.hasActiveProgress) continue;
-    out.add(_withFallbackLibrary(ep, fallback));
+    if (!includeSpecials && isSpecialSeasonNumber(ep.parentIndex)) continue;
+    if (unwatchedOnly && !ep.isUnwatchedOrInProgress) continue;
+    collected.add(_withFallbackLibrary(ep, fallback));
   }
+  sortEpisodesByWatchOrder(collected);
+  out.addAll(collected);
 }
 
 MediaItem _withFallbackLibrary(MediaItem item, MediaItem? fallback) {

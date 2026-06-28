@@ -70,6 +70,58 @@ void main() {
     expect(shouldPass(isAppleTV: false), isFalse);
   });
 
+  test('profile switch waits for one post-bind invalidation', () {
+    expect(
+      profileInvalidationAction(
+        previousProfileId: 'owner',
+        currentProfileId: 'kids',
+        wasBindingPreviously: false,
+        isBindingNow: false,
+        hasPendingProfileSwitchInvalidation: false,
+        pendingProfileSwitchInvalidationId: null,
+      ),
+      ProfileInvalidationAction.waitForProfileSwitch,
+    );
+
+    expect(
+      profileInvalidationAction(
+        previousProfileId: 'kids',
+        currentProfileId: 'kids',
+        wasBindingPreviously: true,
+        isBindingNow: false,
+        hasPendingProfileSwitchInvalidation: true,
+        pendingProfileSwitchInvalidationId: 'kids',
+      ),
+      ProfileInvalidationAction.none,
+    );
+  });
+
+  test('same-profile rebind invalidates once when binding settles', () {
+    expect(
+      profileInvalidationAction(
+        previousProfileId: 'owner',
+        currentProfileId: 'owner',
+        wasBindingPreviously: true,
+        isBindingNow: false,
+        hasPendingProfileSwitchInvalidation: false,
+        pendingProfileSwitchInvalidationId: null,
+      ),
+      ProfileInvalidationAction.invalidateNow,
+    );
+
+    expect(
+      profileInvalidationAction(
+        previousProfileId: 'owner',
+        currentProfileId: 'owner',
+        wasBindingPreviously: false,
+        isBindingNow: false,
+        hasPendingProfileSwitchInvalidation: false,
+        pendingProfileSwitchInvalidationId: null,
+      ),
+      ProfileInvalidationAction.none,
+    );
+  });
+
   testWidgets('side navigation bleed animates from the previous value', (tester) async {
     Widget build(double targetBleed) {
       return Directionality(

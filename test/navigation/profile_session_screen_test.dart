@@ -12,6 +12,7 @@ import 'package:plezy/profiles/profile.dart';
 import 'package:plezy/profiles/profile_connection_registry.dart';
 import 'package:plezy/profiles/profile_registry.dart';
 import 'package:plezy/providers/discover_provider.dart';
+import 'package:plezy/providers/hidden_libraries_provider.dart';
 import 'package:plezy/providers/multi_server_provider.dart';
 import 'package:plezy/services/data_aggregation_service.dart';
 import 'package:plezy/services/multi_server_manager.dart';
@@ -47,6 +48,7 @@ void main() {
     final serverManager = MultiServerManager();
     final multiServer = MultiServerProvider(serverManager, DataAggregationService(serverManager));
     final discoverProviders = <DiscoverProvider>[];
+    final hiddenProviders = <HiddenLibrariesProvider>[];
     final disposedActiveIds = <String>[];
 
     addTearDown(() async {
@@ -64,6 +66,8 @@ void main() {
     final kids = Profile.local(id: 'local-kids', displayName: 'Kids', createdAt: DateTime(2026, 1, 2));
     await profileRegistry.upsert(owner);
     await profileRegistry.upsert(kids);
+    await storage.saveHiddenLibrariesForProfile(owner.id, {'srv:owner'});
+    await storage.saveHiddenLibrariesForProfile(kids.id, {'srv:kids'});
     await storage.setActiveProfileId(owner.id);
     await activeProfile.initialize();
 
@@ -77,8 +81,11 @@ void main() {
         child: MaterialApp(
           home: ProfileSessionScreen.forTesting(
             initialPromptHandled: true,
-            profileShellBuilder: (context) =>
-                _ProfileProbeShell(discoverProviders: discoverProviders, disposedActiveIds: disposedActiveIds),
+            profileShellBuilder: (context) => _ProfileProbeShell(
+              discoverProviders: discoverProviders,
+              hiddenProviders: hiddenProviders,
+              disposedActiveIds: disposedActiveIds,
+            ),
           ),
         ),
       ),
@@ -87,8 +94,13 @@ void main() {
 
     expect(find.text('active:local-owner'), findsOneWidget);
     expect(discoverProviders, hasLength(1));
+    expect(hiddenProviders, hasLength(1));
     final ownerNavigator = profileNavigationRegistry.navigator;
     final ownerDiscover = discoverProviders.single;
+    final ownerHidden = hiddenProviders.single;
+    await ownerHidden.ensureInitialized();
+    expect(ownerHidden.profileId, owner.id);
+    expect(ownerHidden.hiddenLibraryKeys, {'srv:owner'});
 
     await tester.tap(find.byKey(const ValueKey('push-profile-route')));
     await tester.pumpAndSettle();
@@ -102,14 +114,24 @@ void main() {
     expect(disposedActiveIds, contains('local-owner'));
     expect(discoverProviders, hasLength(2));
     expect(discoverProviders.last, isNot(same(ownerDiscover)));
+    expect(hiddenProviders, hasLength(2));
+    expect(hiddenProviders.last, isNot(same(ownerHidden)));
+    await hiddenProviders.last.ensureInitialized();
+    expect(hiddenProviders.last.profileId, kids.id);
+    expect(hiddenProviders.last.hiddenLibraryKeys, {'srv:kids'});
     expect(profileNavigationRegistry.navigator, isNot(same(ownerNavigator)));
   });
 }
 
 class _ProfileProbeShell extends StatefulWidget {
-  const _ProfileProbeShell({required this.discoverProviders, required this.disposedActiveIds});
+  const _ProfileProbeShell({
+    required this.discoverProviders,
+    required this.hiddenProviders,
+    required this.disposedActiveIds,
+  });
 
   final List<DiscoverProvider> discoverProviders;
+  final List<HiddenLibrariesProvider> hiddenProviders;
   final List<String> disposedActiveIds;
 
   @override
@@ -118,15 +140,20 @@ class _ProfileProbeShell extends StatefulWidget {
 
 class _ProfileProbeShellState extends State<_ProfileProbeShell> {
   DiscoverProvider? _discoverProvider;
+  HiddenLibrariesProvider? _hiddenProvider;
   String _activeId = 'none';
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     _discoverProvider = context.read<DiscoverProvider>();
+    _hiddenProvider = context.read<HiddenLibrariesProvider>();
     _activeId = context.read<ActiveProfileProvider>().activeId ?? 'none';
     if (widget.discoverProviders.isEmpty || !identical(widget.discoverProviders.last, _discoverProvider)) {
       widget.discoverProviders.add(_discoverProvider!);
+    }
+    if (widget.hiddenProviders.isEmpty || !identical(widget.hiddenProviders.last, _hiddenProvider)) {
+      widget.hiddenProviders.add(_hiddenProvider!);
     }
   }
 

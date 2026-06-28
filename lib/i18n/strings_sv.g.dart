@@ -1288,6 +1288,7 @@ class _TranslationsDownloadsSv extends TranslationsDownloadsEn {
 	@override String get unwatchedOnly => 'Endast osedda';
 	@override String nextNUnwatched({required Object count}) => 'Nästa ${count} osedda';
 	@override String get customAmount => 'Ange antal...';
+	@override String get includeSpecials => 'Inkludera specialavsnitt';
 	@override String get howManyEpisodes => 'Hur många avsnitt?';
 	@override String itemsQueued({required Object count}) => '${count} objekt köade för nedladdning';
 	@override String get keepSynced => 'Håll synkroniserad';
@@ -2878,6 +2879,7 @@ extension on TranslationsSv {
 			'downloads.unwatchedOnly' => 'Endast osedda',
 			'downloads.nextNUnwatched' => ({required Object count}) => 'Nästa ${count} osedda',
 			'downloads.customAmount' => 'Ange antal...',
+			'downloads.includeSpecials' => 'Inkludera specialavsnitt',
 			'downloads.howManyEpisodes' => 'Hur många avsnitt?',
 			'downloads.itemsQueued' => ({required Object count}) => '${count} objekt köade för nedladdning',
 			'downloads.keepSynced' => 'Håll synkroniserad',
@@ -2950,9 +2952,9 @@ extension on TranslationsSv {
 			'companionRemote.pairing.authFailed' => 'Autentisering misslyckades. Båda enheter behöver samma Plex-konto.',
 			'companionRemote.pairing.failedToConnect' => ({required Object error}) => 'Kunde inte ansluta: ${error}',
 			'companionRemote.remote.disconnectConfirm' => 'Vill du koppla från fjärrsessionen?',
-			'companionRemote.remote.reconnecting' => 'Återansluter...',
 			_ => null,
 		} ?? switch (path) {
+			'companionRemote.remote.reconnecting' => 'Återansluter...',
 			'companionRemote.remote.attemptOf' => ({required Object current}) => 'Försök ${current} av 5',
 			'companionRemote.remote.retryNow' => 'Försök nu',
 			'companionRemote.remote.tabRemote' => 'Fjärrkontroll',

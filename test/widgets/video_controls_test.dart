@@ -122,6 +122,31 @@ void main() {
     });
   });
 
+  group('selectableSourceSubtitleTracks', () {
+    MediaSubtitleTrack sub(int id, {String? codec, String? key}) =>
+        MediaSubtitleTrack(id: id, codec: codec, key: key, languageCode: 'eng', selected: false, forced: false);
+
+    test('returns the full list unchanged when not transcoding', () {
+      final tracks = [sub(1, codec: 'srt'), sub(2, codec: 'pgs'), sub(3, codec: 'weird')];
+      expect(selectableSourceSubtitleTracks(tracks, isTranscoding: false), same(tracks));
+    });
+
+    test('keeps text, image and keyed tracks while transcoding', () {
+      final text = sub(1, codec: 'srt');
+      final image = sub(2, codec: 'pgs');
+      final keyed = sub(3, codec: 'weird', key: '/library/streams/3');
+      final result = selectableSourceSubtitleTracks([text, image, keyed], isTranscoding: true);
+      expect(result, [text, image, keyed]);
+    });
+
+    test('drops non-keyed unsupported codecs while transcoding', () {
+      final text = sub(1, codec: 'ass');
+      final unsupported = sub(2, codec: 'weird');
+      final result = selectableSourceSubtitleTracks([text, unsupported], isTranscoding: true);
+      expect(result, [text]);
+    });
+  });
+
   group('shouldShowSkipMarkerButton', () {
     test('does not show before the first frame is rendered', () {
       expect(
@@ -701,6 +726,49 @@ void main() {
       // 240/400 of 10min → 6min: follows the first pointer only.
       expect(seekEnds, hasLength(1));
       expect(seekEnds.single.inMilliseconds, closeTo(const Duration(minutes: 6).inMilliseconds, 2000));
+    });
+  });
+
+  group('shouldSkipDuplicateTimelineSeek', () {
+    test('skips a matching non-transcode final seek', () {
+      expect(
+        shouldSkipDuplicateTimelineSeek(
+          isTranscoding: false,
+          lastDispatchedSeek: const Duration(minutes: 7, seconds: 30),
+          finalSeek: const Duration(minutes: 7, seconds: 30),
+        ),
+        isTrue,
+      );
+    });
+
+    test('does not skip matching transcode seek', () {
+      expect(
+        shouldSkipDuplicateTimelineSeek(
+          isTranscoding: true,
+          lastDispatchedSeek: const Duration(minutes: 7, seconds: 30),
+          finalSeek: const Duration(minutes: 7, seconds: 30),
+        ),
+        isFalse,
+      );
+    });
+
+    test('does not skip when no matching seek was already dispatched', () {
+      expect(
+        shouldSkipDuplicateTimelineSeek(
+          isTranscoding: false,
+          lastDispatchedSeek: const Duration(minutes: 7),
+          finalSeek: const Duration(minutes: 7, seconds: 30),
+        ),
+        isFalse,
+      );
+      expect(
+        shouldSkipDuplicateTimelineSeek(
+          isTranscoding: false,
+          lastDispatchedSeek: null,
+          finalSeek: const Duration(minutes: 7, seconds: 30),
+        ),
+        isFalse,
+      );
     });
   });
 

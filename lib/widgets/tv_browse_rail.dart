@@ -297,6 +297,11 @@ enum TvRailTrailing { none, loading, error, viewAll }
 class TvBrowseRail extends StatefulWidget {
   final List<MediaHub> hubs;
   final IconData Function(MediaHub hub, int index) iconForHub;
+
+  /// Whether to show each hub's originating server name in its header. Used when
+  /// the loaded hubs span more than one connected server so their origin stays
+  /// clear, mirroring the mobile [HubSection] behavior.
+  final bool showServerName;
   final ValueChanged<MediaItem>? onFocusedItemChanged;
   final void Function(MediaHub hub, MediaItem item)? onFocusedHubItemChanged;
   final void Function(String)? onRefresh;
@@ -340,6 +345,7 @@ class TvBrowseRail extends StatefulWidget {
     super.key,
     required this.hubs,
     required this.iconForHub,
+    this.showServerName = false,
     this.onFocusedItemChanged,
     this.onFocusedHubItemChanged,
     this.onRefresh,
@@ -391,7 +397,7 @@ class TvBrowseRailState extends State<TvBrowseRail> {
   final Map<String, GlobalKey<MediaCardState>> _mediaCardKeys = {};
   final Map<String, TvBrowseRailLayoutMetrics> _metricsByHub = {};
   final Map<String, double> _scaleByHub = {};
-  final Map<String, TvRailTrailing> _lastTrailingByHubId = {};
+  final Map<String, TvRailTrailing> _lastTrailingByHubKey = {};
 
   int _hubIndex = 0;
   int _itemIndex = 0;
@@ -484,9 +490,9 @@ class TvBrowseRailState extends State<TvBrowseRail> {
       return;
     }
 
-    final oldActiveHubId = oldWidget.hubs.isEmpty
+    final oldActiveHubKey = oldWidget.hubs.isEmpty
         ? null
-        : oldWidget.hubs[_hubIndex.clamp(0, oldWidget.hubs.length - 1)].id;
+        : _hubKey(oldWidget.hubs[_hubIndex.clamp(0, oldWidget.hubs.length - 1)]);
 
     if (widget.hubs.isEmpty) {
       _hubIndex = 0;
@@ -497,8 +503,8 @@ class TvBrowseRailState extends State<TvBrowseRail> {
     }
 
     final selectedInitialHub = _selectInitialHubIfPossible();
-    if (!selectedInitialHub && oldActiveHubId != null) {
-      final preservedIndex = widget.hubs.indexWhere((hub) => hub.id == oldActiveHubId);
+    if (!selectedInitialHub && oldActiveHubKey != null) {
+      final preservedIndex = widget.hubs.indexWhere((hub) => _hubKey(hub) == oldActiveHubKey);
       if (preservedIndex != -1) {
         _hubIndex = preservedIndex;
       } else {
@@ -515,7 +521,8 @@ class TvBrowseRailState extends State<TvBrowseRail> {
     // notify:false — this runs during the build phase and the enclosing
     // rebuild already refreshes every selector.
     _focusPosition.set(_hubIndex, _itemIndex, notify: false);
-    final activeHubChanged = oldActiveHubId != _activeHub?.id;
+    final newActiveHub = _activeHub;
+    final activeHubChanged = oldActiveHubKey != (newActiveHub == null ? null : _hubKey(newActiveHub));
     final activeHubStateChanged =
         _hubStateChanged(oldWidget.hubs, widget.hubs, _hubIndex) ||
         (_activeHub != null && _trailingStateChanged(_activeHub!));
@@ -548,7 +555,9 @@ class TvBrowseRailState extends State<TvBrowseRail> {
     if (index < 0 || index >= oldHubs.length || index >= newHubs.length) return true;
     final oldHub = oldHubs[index];
     final newHub = newHubs[index];
-    if (oldHub.id != newHub.id || oldHub.more != newHub.more || oldHub.items.length != newHub.items.length) {
+    if (_hubKey(oldHub) != _hubKey(newHub) ||
+        oldHub.more != newHub.more ||
+        oldHub.items.length != newHub.items.length) {
       return true;
     }
     for (var j = 0; j < oldHub.items.length; j++) {
@@ -565,14 +574,14 @@ class TvBrowseRailState extends State<TvBrowseRail> {
   }
 
   bool _trailingStateChanged(MediaHub hub) {
-    final previous = _lastTrailingByHubId[hub.id];
+    final previous = _lastTrailingByHubKey[_hubKey(hub)];
     return previous != null && previous != _trailingFor(hub);
   }
 
   void _rememberTrailingStates() {
-    _lastTrailingByHubId
+    _lastTrailingByHubKey
       ..clear()
-      ..addEntries(widget.hubs.map((hub) => MapEntry(hub.id, _trailingFor(hub))));
+      ..addEntries(widget.hubs.map((hub) => MapEntry(_hubKey(hub), _trailingFor(hub))));
   }
 
   @override
@@ -643,6 +652,8 @@ class TvBrowseRailState extends State<TvBrowseRail> {
   bool _selectInitialHubIfPossible() {
     final initialHubId = widget.initialHubId;
     if (_hasUserChangedHub || initialHubId == null || widget.hubs.isEmpty) return false;
+    // External contract: `initialHubId` is a bare `hub.id` supplied by the
+    // single-server media-detail caller, so match on `hub.id` (not `_hubKey`).
     final initialIndex = widget.hubs.indexWhere((hub) => hub.id == initialHubId);
     if (initialIndex == -1) return false;
     if (initialIndex != _hubIndex) {
@@ -764,7 +775,7 @@ class TvBrowseRailState extends State<TvBrowseRail> {
     final currentHub = _activeHub;
     if (currentHub != null) _rememberFocus(currentHub);
     final nextHub = widget.hubs[next];
-    final remembered = HubFocusMemory.getForHubOnly(nextHub.id, _totalItemCount(nextHub));
+    final remembered = HubFocusMemory.getForHubOnly(_hubKey(nextHub), _totalItemCount(nextHub));
     setState(() {
       _hubIndex = next;
       _itemIndex = remembered.clamp(0, _totalItemCount(nextHub) == 0 ? 0 : _totalItemCount(nextHub) - 1);
@@ -812,7 +823,10 @@ class TvBrowseRailState extends State<TvBrowseRail> {
   }
 
   void _setHoveredItem(MediaHub hub, int index) {
-    if (_activeHub?.id != hub.id || index >= hub.items.length || _itemIndex == index) return;
+    final active = _activeHub;
+    if (active == null || _hubKey(active) != _hubKey(hub) || index >= hub.items.length || _itemIndex == index) {
+      return;
+    }
     _itemIndex = index;
     _hasUserChangedItem = true;
     _focusPosition.set(_hubIndex, _itemIndex);
@@ -843,18 +857,18 @@ class TvBrowseRailState extends State<TvBrowseRail> {
   }
 
   void _rememberFocus(MediaHub hub) {
-    HubFocusMemory.setForHub(hub.id, _itemIndex);
+    HubFocusMemory.setForHub(_hubKey(hub), _itemIndex);
   }
 
   void _scrollToItem({bool animate = true, Duration duration = _navigationScrollDuration}) {
     final hub = _activeHub;
     if (hub == null) return;
-    final controller = _scrollControllers[hub.id];
+    final controller = _scrollControllers[_hubKey(hub)];
     if (controller == null) return;
     if (controller.positions.length != 1) return;
-    final metrics = _metricsByHub[hub.id];
+    final metrics = _metricsByHub[_hubKey(hub)];
     if (metrics == null) return;
-    final scale = _scaleByHub[hub.id] ?? 1.0;
+    final scale = _scaleByHub[_hubKey(hub)] ?? 1.0;
     final position = controller.position;
     final viewportWidth = position.viewportDimension;
     final maxScrollExtent = position.maxScrollExtent;
@@ -892,7 +906,7 @@ class TvBrowseRailState extends State<TvBrowseRail> {
     double scale,
     int initialItemIndex,
   ) {
-    return _scrollControllers.putIfAbsent(hub.id, () {
+    return _scrollControllers.putIfAbsent(_hubKey(hub), () {
       final maxScrollExtent = TvBrowseRailLayout.estimatedMaxScrollExtent(
         hub: hub,
         metrics: metrics,
@@ -913,8 +927,14 @@ class TvBrowseRailState extends State<TvBrowseRail> {
     });
   }
 
+  /// Stable, collision-free per-hub key. `hub.id` (the backend hub key) is only
+  /// unique within one server; Discover aggregates hubs from several servers, so
+  /// prefix the server id to keep two same-id hubs from sharing rail state
+  /// (scroll position, metrics, card GlobalKeys, focus memory).
+  String _hubKey(MediaHub hub) => '${hub.serverId ?? ''}:${hub.id}';
+
   GlobalKey<MediaCardState> _cardKeyFor(MediaHub hub, int itemIndex) {
-    return _mediaCardKeys.putIfAbsent('${hub.id}:$itemIndex', () => GlobalKey<MediaCardState>());
+    return _mediaCardKeys.putIfAbsent('${_hubKey(hub)}:$itemIndex', () => GlobalKey<MediaCardState>());
   }
 
   bool _isContinueWatchingHub(MediaHub hub) => widget.isContinueWatchingHub?.call(hub) ?? false;
@@ -1174,6 +1194,11 @@ class TvBrowseRailState extends State<TvBrowseRail> {
     final colorScheme = Theme.of(context).colorScheme;
     final titleColor = isActive ? colorScheme.onSurface : colorScheme.onSurface.withValues(alpha: 0.54);
     final iconColor = isActive ? colorScheme.onSurface : colorScheme.onSurface.withValues(alpha: 0.42);
+    final showServerName = widget.showServerName && hub.serverName != null;
+    final serverColor = colorScheme.primary.withValues(alpha: isActive ? 0.7 : 0.4);
+    final serverStyle = Theme.of(
+      context,
+    ).textTheme.titleMedium?.copyWith(color: serverColor, fontSize: 15 * scale, height: 1, fontWeight: FontWeight.w700);
 
     return SizedBox(
       height: TvBrowseRailLayout.hubStripHeightForScale(scale),
@@ -1185,16 +1210,30 @@ class TvBrowseRailState extends State<TvBrowseRail> {
               AppIcon(widget.iconForHub(hub, hubIndex), fill: 1, size: 20 * scale, color: iconColor),
               SizedBox(width: 8 * scale),
               Expanded(
-                child: Text(
-                  hub.title,
-                  maxLines: 1,
-                  overflow: .ellipsis,
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    color: titleColor,
-                    fontSize: 18 * scale,
-                    height: 1,
-                    fontWeight: isActive ? FontWeight.w800 : FontWeight.w700,
-                  ),
+                child: Row(
+                  children: [
+                    Flexible(
+                      child: Text(
+                        hub.title,
+                        maxLines: 1,
+                        overflow: .ellipsis,
+                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          color: titleColor,
+                          fontSize: 18 * scale,
+                          height: 1,
+                          fontWeight: isActive ? FontWeight.w800 : FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                    if (showServerName) ...[
+                      SizedBox(width: 8 * scale),
+                      Text('•', style: serverStyle),
+                      SizedBox(width: 8 * scale),
+                      Flexible(
+                        child: Text(hub.serverName!, maxLines: 1, overflow: .ellipsis, style: serverStyle),
+                      ),
+                    ],
+                  ],
                 ),
               ),
               if (_trailingFor(hub) == TvRailTrailing.viewAll) ...[
@@ -1223,11 +1262,11 @@ class TvBrowseRailState extends State<TvBrowseRail> {
   }) {
     final isActiveHub = hubIndex == _hubIndex;
     final totalCount = _totalItemCount(hub);
-    final inactiveIndex = HubFocusMemory.getForHubOnly(hub.id, totalCount);
+    final inactiveIndex = HubFocusMemory.getForHubOnly(_hubKey(hub), totalCount);
     final focusedIndex = isActiveHub ? _itemIndex : inactiveIndex;
     final scrollController = _scrollControllerForHub(hub, metrics, railViewportWidth, scale, focusedIndex);
-    _metricsByHub[hub.id] = metrics;
-    _scaleByHub[hub.id] = scale;
+    _metricsByHub[_hubKey(hub)] = metrics;
+    _scaleByHub[_hubKey(hub)] = scale;
 
     return Transform.translate(
       offset: Offset(-interactionExpansion, 0),

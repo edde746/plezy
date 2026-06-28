@@ -1,7 +1,5 @@
-// libass ASS subtitle rendering: Kotlin/JNI bindings + Media3 integration
-// (extractor, parsers, AssHandler, GL atlas overlay). The native libass core
-// (libass.so + prefab headers) comes from the Maven artifact
-// io.github.peerless2012:ass; this module compiles its JNI against it.
+// Static-linking the native core here avoids shipping a separate libass.so with
+// different merge rules from the app.
 plugins {
   id("com.android.library")
   id("org.jetbrains.kotlin.android")
@@ -20,31 +18,16 @@ android {
   defaultConfig {
     minSdk = 21
     consumerProguardFiles("consumer-rules.pro")
-    if (project.hasProperty("localAssCore")) {
-      // The locally published A/B core only ships device ABIs (x86 would need
-      // nasm on the host); match it so prefab resolution doesn't fail.
-      ndk {
-        abiFilters += listOf("armeabi-v7a", "arm64-v8a")
-      }
-    }
     externalNativeBuild {
       cmake {
-        // libass.so in the prefab AAR is built against c++_shared (abi.json: stl=c++_shared);
-        // prefab validates consumer STL compatibility.
-        arguments += listOf("-DANDROID_STL=c++_shared")
+        // HarfBuzz pulls in C++, so the JNI library must use the shared STL that
+        // the app already pins through libmpv.
+        // A shared cache keeps per-ABI CMake runs from redownloading libass.
+        arguments += listOf(
+          "-DANDROID_STL=c++_shared",
+          "-DLIBASS_CACHE_DIR=${layout.buildDirectory.get().asFile}/libass-prebuilt"
+        )
       }
-    }
-  }
-
-  buildFeatures {
-    prefab = true
-  }
-
-  packaging {
-    jniLibs {
-      // libass.so is a prefab IMPORTED target (linked, not owned) — the app packages
-      // it from the io.github.peerless2012:ass AAR; don't duplicate it here.
-      excludes.add("**/libass.so")
     }
   }
 
@@ -66,13 +49,6 @@ android {
 }
 
 dependencies {
-  // compileOnly: prefab headers + link-time libass.so come from the AAR; runtime
-  // packaging of libass.so is the app's implementation dependency.
-  // -PlocalAssCore swaps in a mavenLocal()-published core for A/B tests (must
-  // match the app module's version so one libass.so is linked and packaged).
-  val assCoreVersion = if (project.hasProperty("localAssCore")) "0.4.0-local" else "0.4.1-plezy.1"
-  compileOnly("io.github.peerless2012:ass:$assCoreVersion@aar")
-
   implementation("androidx.annotation:annotation:1.9.1")
   implementation("androidx.annotation:annotation-experimental:1.5.1")
   implementation("androidx.media3:media3-exoplayer:1.9.2")

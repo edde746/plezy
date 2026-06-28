@@ -224,8 +224,33 @@ class StorageService extends BaseSharedPreferencesService {
     await _setStringList('$_userPrefix$_keyHiddenLibraries', libraryKeys.toList());
   }
 
+  Future<void> saveHiddenLibrariesForProfile(String profileId, Set<String> libraryKeys) async {
+    await _setStringList('${_userPrefixForProfileId(profileId)}$_keyHiddenLibraries', libraryKeys.toList());
+  }
+
   Set<String> getHiddenLibraries() {
     final jsonString = _getScopedString(_keyHiddenLibraries);
+    return _decodeStringSet(jsonString);
+  }
+
+  Set<String> getHiddenLibrariesForProfile(String profileId) {
+    final scopedKey = '${_userPrefixForProfileId(profileId)}$_keyHiddenLibraries';
+    var jsonString = prefs.getString(scopedKey);
+    if (jsonString == null && getActiveProfileId() == profileId) {
+      // One-time migration from the legacy unscoped key, but only for the
+      // currently active profile. Otherwise merely opening another profile's
+      // scoped provider could steal legacy preferences into the wrong scope.
+      final legacy = prefs.getString(_keyHiddenLibraries);
+      if (legacy != null) {
+        prefs.setString(scopedKey, legacy);
+        prefs.remove(_keyHiddenLibraries);
+        jsonString = legacy;
+      }
+    }
+    return _decodeStringSet(jsonString);
+  }
+
+  Set<String> _decodeStringSet(String? jsonString) {
     if (jsonString == null) return {};
 
     try {

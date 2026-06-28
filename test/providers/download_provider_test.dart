@@ -167,7 +167,13 @@ void main() {
       var notified = 0;
       p.addListener(() => notified++);
 
-      await p.createSyncRule(serverId: ServerId('srv'), ratingKey: '10', targetType: 'show', episodeCount: 5);
+      await p.createSyncRule(
+        serverId: ServerId('srv'),
+        ratingKey: '10',
+        targetType: 'show',
+        episodeCount: 5,
+        includeSpecials: false,
+      );
       final ruleKey = p.syncRuleKeyFor(ServerId('srv'), '10');
 
       expect(p.hasSyncRule(ruleKey), isTrue);
@@ -178,10 +184,12 @@ void main() {
       expect(rule.episodeCount, 5);
       expect(rule.enabled, isTrue);
       expect(rule.downloadFilter, 'unwatched'); // default
+      expect(rule.includeSpecials, isFalse);
       // Database state matches in-memory state.
       final dbRule = await db.getSyncRule(ruleKey);
       expect(dbRule, isNotNull);
       expect(dbRule!.targetType, 'show');
+      expect(dbRule.includeSpecials, isFalse);
 
       // createSyncRule notifies once on success.
       expect(notified, 1);

@@ -87,7 +87,13 @@ class FailoverHttpClient extends MediaServerHttpClient {
     final generation = _endpointManager?.generation;
     final MediaServerResponse response;
     try {
-      response = await super.get(path, queryParameters: queryParameters, headers: headers, timeout: timeout, abort: abort);
+      response = await super.get(
+        path,
+        queryParameters: queryParameters,
+        headers: headers,
+        timeout: timeout,
+        abort: abort,
+      );
     } on MediaServerHttpException catch (e) {
       if (!allowEndpointFailover || !_shouldAttemptFailover(exception: e) || !_canFailover(generation)) {
         rethrow;
@@ -102,7 +108,9 @@ class FailoverHttpClient extends MediaServerHttpClient {
       if (retried == null) rethrow;
       return retried;
     }
-    if (!allowEndpointFailover || !_shouldAttemptFailover(statusCode: response.statusCode) || !_canFailover(generation)) {
+    if (!allowEndpointFailover ||
+        !_shouldAttemptFailover(statusCode: response.statusCode) ||
+        !_canFailover(generation)) {
       return response;
     }
     return await _failoverOnce(

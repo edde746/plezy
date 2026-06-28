@@ -1288,6 +1288,7 @@ class _TranslationsDownloadsDe extends TranslationsDownloadsEn {
 	@override String get unwatchedOnly => 'Nur ungesehene';
 	@override String nextNUnwatched({required Object count}) => 'Nächste ${count} ungesehene';
 	@override String get customAmount => 'Eigene Anzahl...';
+	@override String get includeSpecials => 'Specials einschließen';
 	@override String get howManyEpisodes => 'Wie viele Episoden?';
 	@override String itemsQueued({required Object count}) => '${count} Elemente zum Download eingereiht';
 	@override String get keepSynced => 'Synchronisiert halten';
@@ -2878,6 +2879,7 @@ extension on TranslationsDe {
 			'downloads.unwatchedOnly' => 'Nur ungesehene',
 			'downloads.nextNUnwatched' => ({required Object count}) => 'Nächste ${count} ungesehene',
 			'downloads.customAmount' => 'Eigene Anzahl...',
+			'downloads.includeSpecials' => 'Specials einschließen',
 			'downloads.howManyEpisodes' => 'Wie viele Episoden?',
 			'downloads.itemsQueued' => ({required Object count}) => '${count} Elemente zum Download eingereiht',
 			'downloads.keepSynced' => 'Synchronisiert halten',
@@ -2950,9 +2952,9 @@ extension on TranslationsDe {
 			'companionRemote.pairing.authFailed' => 'Authentifizierung fehlgeschlagen. Beide Geräte benötigen dasselbe Plex-Konto.',
 			'companionRemote.pairing.failedToConnect' => ({required Object error}) => 'Verbindung fehlgeschlagen: ${error}',
 			'companionRemote.remote.disconnectConfirm' => 'Möchtest du die Verbindung zur Fernsteuerungssitzung trennen?',
-			'companionRemote.remote.reconnecting' => 'Verbindung wird wiederhergestellt...',
 			_ => null,
 		} ?? switch (path) {
+			'companionRemote.remote.reconnecting' => 'Verbindung wird wiederhergestellt...',
 			'companionRemote.remote.attemptOf' => ({required Object current}) => 'Versuch ${current} von 5',
 			'companionRemote.remote.retryNow' => 'Jetzt wiederholen',
 			'companionRemote.remote.tabRemote' => 'Fernbedienung',

@@ -42,10 +42,27 @@ enum EpisodeAction { play, details }
 
 enum SubAssOverride { no, yes, scale, force, strip }
 
-/// Resolution ASS/image subtitles are rasterized at on the avfoundation VO
-/// (iOS/tvOS): the display's, or the video's (much cheaper on 4K displays;
-/// subs can't carry more detail than the video they're typeset against).
-enum SubtitleRenderResolution { screen, video }
+/// Resolution ASS/image subtitles are rasterized at.
+///
+/// iOS/tvOS (avfoundation VO) uses the [screen] vs [video] basis (video is much
+/// cheaper on 4K displays; subs can't carry more detail than the video they're
+/// typeset against). Android (libass overlay) instead downscales by a fixed
+/// fraction of the surface — [screen] is full, and [threeQuarter]/[half]/[third]/
+/// [quarter] trade sharpness for raster throughput on render-bound low-end TVs.
+enum SubtitleRenderResolution { screen, video, threeQuarter, half, third, quarter }
+
+extension SubtitleRenderScale on SubtitleRenderResolution {
+  /// Android libass overlay render scale (fraction of the surface resolution).
+  /// Only Android reads this; the iOS-only [video] basis maps to full scale here.
+  double get androidRenderScale => switch (this) {
+    SubtitleRenderResolution.screen => 1.0,
+    SubtitleRenderResolution.video => 1.0,
+    SubtitleRenderResolution.threeQuarter => 0.75,
+    SubtitleRenderResolution.half => 0.5,
+    SubtitleRenderResolution.third => 1 / 3,
+    SubtitleRenderResolution.quarter => 0.25,
+  };
+}
 
 enum DvConversionModePreference { auto, disabled, dv81, hevcStrip }
 
@@ -366,6 +383,11 @@ class SettingsService extends BaseSharedPreferencesService {
   static const customDownloadPathType = NullableStringPref('custom_download_path_type');
   static const downloadOnWifiOnly = BoolPref('download_on_wifi_only');
   static const autoRemoveWatchedDownloads = BoolPref('auto_remove_watched_downloads');
+
+  /// Remembered state of the "Include Specials" toggle on the show download
+  /// dialog. Defaults to true (include) so existing behavior is unchanged;
+  /// turning it off persists so the next download keeps the choice.
+  static const downloadIncludeSpecials = BoolPref('download_include_specials', defaultValue: true);
   static const autoCheckUpdatesOnStartup = BoolPref('auto_check_updates_on_startup', defaultValue: true);
   static const showPerformanceOverlay = BoolPref('show_performance_overlay');
   static const autoHidePerformanceOverlay = BoolPref('auto_hide_performance_overlay', defaultValue: true);
@@ -781,6 +803,7 @@ class SettingsService extends BaseSharedPreferencesService {
     rememberTrackSelections,
     customDownloadPathType,
     downloadOnWifiOnly,
+    downloadIncludeSpecials,
     autoCheckUpdatesOnStartup,
     showPerformanceOverlay,
     autoHidePerformanceOverlay,

@@ -261,6 +261,7 @@ class SyncRuleExecutor {
         unwatchedOnly: true,
         out: fromServer,
         fallback: sourceMetadata,
+        includeSpecials: rule.includeSpecials,
       );
     } else {
       await collectEpisodesForSeason(
@@ -428,7 +429,7 @@ class SyncRuleExecutor {
       switch (item.kind) {
         case MediaKind.movie:
         case MediaKind.episode:
-          if (unwatchedOnly && item.isWatched && !item.hasActiveProgress) break;
+          if (unwatchedOnly && !item.isUnwatchedOrInProgress) break;
           out.add(item);
         case MediaKind.show:
           await collectEpisodesForShow(client, item.id, unwatchedOnly: unwatchedOnly, out: out, fallback: item);

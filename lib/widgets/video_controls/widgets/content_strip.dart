@@ -10,10 +10,12 @@ import '../../../focus/dpad_navigator.dart';
 import '../../../focus/focusable_wrapper.dart';
 import '../../../i18n/strings.g.dart';
 import '../../../media/media_item.dart';
+import '../../../media/media_item_types.dart';
 import '../../../media/media_server_client.dart';
 import '../../../mpv/mpv.dart';
 import '../../../media/media_source_info.dart';
 import '../../../providers/playback_state_provider.dart';
+import '../../../services/settings_service.dart';
 import '../../../services/download_storage_service.dart';
 import '../../../utils/formatters.dart';
 import '../../../utils/player_utils.dart';
@@ -22,6 +24,7 @@ import '../../../utils/scroll_utils.dart';
 import '../../app_icon.dart';
 import '../../clickable_cursor.dart';
 import '../../optimized_media_image.dart';
+import '../../settings_builder.dart';
 import 'media_selector_thumbnail.dart';
 
 /// Horizontal scrollable strip of chapter/queue items shown on swipe-up.
@@ -475,93 +478,97 @@ class ContentStripState extends State<ContentStrip> {
     final thumbWidth = isTablet ? 200.0 : 120.0;
     final thumbHeight = isTablet ? 112.0 : 68.0;
 
-    return Consumer<PlaybackStateProvider>(
-      builder: (context, playbackState, _) {
-        final items = playbackState.loadedItems;
-        final currentItemID = playbackState.currentPlayQueueItemID;
-        final currentIndex = currentItemID == null
-            ? -1
-            : items.indexWhere((item) => playbackState.playQueueItemIdFor(item) == currentItemID);
+    return SettingValueBuilder<bool>(
+      pref: SettingsService.hideSpoilers,
+      builder: (context, hideSpoilers, _) => Consumer<PlaybackStateProvider>(
+        builder: (context, playbackState, _) {
+          final items = playbackState.loadedItems;
+          final currentItemID = playbackState.currentPlayQueueItemID;
+          final currentIndex = currentItemID == null
+              ? -1
+              : items.indexWhere((item) => playbackState.playQueueItemIdFor(item) == currentItemID);
 
-        _trimItemKeys(_queueItemKeys, items.length);
+          _trimItemKeys(_queueItemKeys, items.length);
 
-        if (currentIndex >= 0 &&
-            (_lastAutoScrolledQueueItemID != currentItemID || _lastAutoScrolledQueueIndex != currentIndex)) {
-          _lastAutoScrolledQueueItemID = currentItemID;
-          _lastAutoScrolledQueueIndex = currentIndex;
-          _autoScrollTo(
-            _queueScrollController,
-            _queueItemKeys,
-            currentIndex,
-            isTablet: isTablet,
-            isCurrent: () =>
-                _lastAutoScrolledQueueItemID == currentItemID && _lastAutoScrolledQueueIndex == currentIndex,
-          );
-        }
-
-        if (widget.useFocusNavigation) {
-          _ensureFocusNodes(_queueFocusNodes, items.length, 'QueueFocus');
-        }
-
-        return ListView.builder(
-          controller: _queueScrollController,
-          scrollDirection: Axis.horizontal,
-          clipBehavior: widget.useFocusNavigation ? Clip.none : Clip.hardEdge,
-          itemCount: items.length,
-          padding: .symmetric(horizontal: widget.useFocusNavigation ? 12 : 4),
-          itemBuilder: (context, index) {
-            final item = items[index];
-            final isCurrent = playbackState.playQueueItemIdFor(item) == currentItemID;
-
-            final client = item.serverId != null
-                ? context.tryGetMediaClientForServer(serverIdOrNull(item.serverId))
-                : null;
-
-            void onTap() => widget.onQueueItemSelected?.call(item);
-
-            final itemKey = _itemKeyFor(_queueItemKeys, index);
-            final stripItem = _buildStripItem(
-              key: itemKey,
-              isCurrent: isCurrent,
+          if (currentIndex >= 0 &&
+              (_lastAutoScrolledQueueItemID != currentItemID || _lastAutoScrolledQueueIndex != currentIndex)) {
+            _lastAutoScrolledQueueItemID = currentItemID;
+            _lastAutoScrolledQueueIndex = currentIndex;
+            _autoScrollTo(
+              _queueScrollController,
+              _queueItemKeys,
+              currentIndex,
               isTablet: isTablet,
-              thumbnail: item.thumbPath != null
-                  ? OptimizedMediaImage.thumb(
-                      client: client,
-                      imagePath: item.thumbPath,
-                      width: thumbWidth,
-                      height: thumbHeight,
-                      fit: BoxFit.cover,
-                      errorWidget: (_, _, _) =>
-                          const AppIcon(Symbols.image_rounded, fill: 1, color: Colors.white54, size: 34),
-                    )
-                  : null,
-              title: item.title ?? '',
-              subtitle: _buildQueueSubtitle(item),
-              onTap: onTap,
+              isCurrent: () =>
+                  _lastAutoScrolledQueueItemID == currentItemID && _lastAutoScrolledQueueIndex == currentIndex,
             );
+          }
 
-            if (widget.useFocusNavigation) {
-              return Align(
-                alignment: .topCenter,
-                child: FocusableWrapper(
-                  focusNode: _queueFocusNodes[index],
-                  onSelect: onTap,
-                  onKeyEvent: (_, event) => _handleFocusItemKeyEvent(event, index, items.length, _StripTab.queue),
-                  onFocusChange: (hasFocus) {
-                    if (hasFocus) widget.onFocusActivity?.call();
-                  },
-                  borderRadius: 6,
-                  autoScroll: false,
-                  useBackgroundFocus: true,
-                  child: stripItem,
-                ),
+          if (widget.useFocusNavigation) {
+            _ensureFocusNodes(_queueFocusNodes, items.length, 'QueueFocus');
+          }
+
+          return ListView.builder(
+            controller: _queueScrollController,
+            scrollDirection: Axis.horizontal,
+            clipBehavior: widget.useFocusNavigation ? Clip.none : Clip.hardEdge,
+            itemCount: items.length,
+            padding: .symmetric(horizontal: widget.useFocusNavigation ? 12 : 4),
+            itemBuilder: (context, index) {
+              final item = items[index];
+              final isCurrent = playbackState.playQueueItemIdFor(item) == currentItemID;
+
+              final client = item.serverId != null
+                  ? context.tryGetMediaClientForServer(serverIdOrNull(item.serverId))
+                  : null;
+
+              void onTap() => widget.onQueueItemSelected?.call(item);
+
+              final itemKey = _itemKeyFor(_queueItemKeys, index);
+              final stripItem = _buildStripItem(
+                key: itemKey,
+                isCurrent: isCurrent,
+                isTablet: isTablet,
+                thumbnail: item.thumbPath != null
+                    ? OptimizedMediaImage.thumb(
+                        client: client,
+                        imagePath: item.thumbPath,
+                        width: thumbWidth,
+                        height: thumbHeight,
+                        fit: BoxFit.cover,
+                        errorWidget: (_, _, _) =>
+                            const AppIcon(Symbols.image_rounded, fill: 1, color: Colors.white54, size: 34),
+                      )
+                    : null,
+                blurThumbnail: hideSpoilers && item.shouldHideSpoiler,
+                title: item.title ?? '',
+                subtitle: _buildQueueSubtitle(item),
+                onTap: onTap,
               );
-            }
 
-            return stripItem;
-          },
-        );
-      },
+              if (widget.useFocusNavigation) {
+                return Align(
+                  alignment: .topCenter,
+                  child: FocusableWrapper(
+                    focusNode: _queueFocusNodes[index],
+                    onSelect: onTap,
+                    onKeyEvent: (_, event) => _handleFocusItemKeyEvent(event, index, items.length, _StripTab.queue),
+                    onFocusChange: (hasFocus) {
+                      if (hasFocus) widget.onFocusActivity?.call();
+                    },
+                    borderRadius: 6,
+                    autoScroll: false,
+                    useBackgroundFocus: true,
+                    child: stripItem,
+                  ),
+                );
+              }
+
+              return stripItem;
+            },
+          );
+        },
+      ),
     );
   }
 
@@ -584,6 +591,7 @@ class ContentStripState extends State<ContentStrip> {
     required String title,
     required String subtitle,
     required VoidCallback onTap,
+    bool blurThumbnail = false,
     bool isTablet = false,
   }) {
     final itemWidth = isTablet ? 200.0 : 120.0;
@@ -610,6 +618,7 @@ class ContentStripState extends State<ContentStrip> {
                 isCurrent: isCurrent,
                 borderColor: Colors.white,
                 radius: 6,
+                blurThumbnail: blurThumbnail,
               ),
               const SizedBox(height: 4),
               Text(

@@ -8,8 +8,8 @@ import '../../../utils/app_logger.dart';
 import '../device_code_auth_service.dart';
 import '../oauth_proxy_client.dart';
 import '../tracker_constants.dart';
+import '../tracker_session.dart';
 import 'simkl_constants.dart';
-import 'simkl_session.dart';
 
 /// Simkl OAuth PIN (device-code) flow.
 ///
@@ -17,7 +17,7 @@ import 'simkl_session.dart';
 /// user enters at https://simkl.com/pin. After entry Simkl redirects the
 /// browser to the relay's static "signed in" page. The app polls
 /// `/oauth/pin/<user_code>?client_id=...` until `result == "OK"`.
-class SimklAuthService extends DeviceCodeAuthServiceBase<SimklSession> {
+class SimklAuthService extends DeviceCodeAuthServiceBase {
   SimklAuthService({super.httpClient});
 
   @override
@@ -80,5 +80,6 @@ class SimklAuthService extends DeviceCodeAuthServiceBase<SimklSession> {
   }
 
   @override
-  SimklSession buildSession(Map<String, dynamic> tokenResponse) => SimklSession.fromTokenResponse(tokenResponse);
+  TrackerSession buildSession(Map<String, dynamic> tokenResponse) =>
+      TrackerSession.fromTokenResponse(TrackerService.simkl, tokenResponse);
 }

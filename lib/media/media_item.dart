@@ -387,6 +387,12 @@ sealed class MediaItem with _$MediaItem {
     return viewOffsetMs! > 0 && viewOffsetMs! < durationMs!;
   }
 
+  /// Whether this item still counts toward an "unwatched only" selection:
+  /// not fully watched, or watched-but-resumable (has active progress). The
+  /// shared predicate behind every `unwatchedOnly` filter (downloads, sync
+  /// rules, the unwatched-episode lookups in episode_collection.dart).
+  bool get isUnwatchedOrInProgress => !isWatched || hasActiveProgress;
+
   /// Whether this container (show/season) has some but not all leaves watched.
   bool get isPartiallyWatched =>
       viewedLeafCount != null && leafCount != null && viewedLeafCount! > 0 && viewedLeafCount! < leafCount!;

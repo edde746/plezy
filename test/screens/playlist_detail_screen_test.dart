@@ -159,7 +159,11 @@ Future<_PlaylistHarness> _createHarness(List<MediaItem> items) async {
   PlexApiCache.initialize(db);
   JellyfinApiCache.initialize(db);
 
-  final downloadManager = DownloadManagerService(database: db, storageService: DownloadStorageService.instance, clientResolver: (serverId, {clientScopeId}) => null);
+  final downloadManager = DownloadManagerService(
+    database: db,
+    storageService: DownloadStorageService.instance,
+    clientResolver: (serverId, {clientScopeId}) => null,
+  );
   downloadManager.recoveryFuture = Future<void>.value();
   final downloadProvider = DownloadProvider.forTesting(downloadManager: downloadManager, database: db);
   await downloadProvider.ensureInitialized();

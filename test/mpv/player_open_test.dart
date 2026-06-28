@@ -7,9 +7,18 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/mpv/mpv.dart';
 import 'package:plezy/mpv/player/platform/player_android.dart';
 import 'package:plezy/mpv/player/player_native.dart';
+import 'package:plezy/services/settings_service.dart';
+
+import '../test_helpers/prefs.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+
+  setUp(() async {
+    resetSharedPreferencesForTest();
+    SettingsService.resetForTesting();
+    await SettingsService.getInstance();
+  });
 
   group('player open', () {
     test('ExoPlayer clears stale Dart track state before opening new media', () async {

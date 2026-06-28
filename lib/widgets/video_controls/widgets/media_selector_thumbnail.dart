@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
@@ -14,6 +16,7 @@ class MediaSelectorThumbnail extends StatelessWidget {
   final Color fallbackIconColor;
   final double fallbackIconSize;
   final IconData fallbackIcon;
+  final bool blurThumbnail;
 
   const MediaSelectorThumbnail({
     super.key,
@@ -27,27 +30,27 @@ class MediaSelectorThumbnail extends StatelessWidget {
     this.fallbackIconColor = Colors.white38,
     this.fallbackIconSize = 28,
     this.fallbackIcon = Symbols.movie_rounded,
+    this.blurThumbnail = false,
   });
 
   @override
   Widget build(BuildContext context) {
     final borderRadius = BorderRadius.all(Radius.circular(radius));
+    final child = thumbnail != null
+        ? _maybeBlurThumbnail(thumbnail!)
+        : Container(
+            color: fallbackBackgroundColor,
+            child: Center(
+              child: AppIcon(fallbackIcon, fill: 1, color: fallbackIconColor, size: fallbackIconSize),
+            ),
+          );
+
     return SizedBox(
       width: width,
       height: height,
       child: Stack(
         children: [
-          ClipRRect(
-            borderRadius: borderRadius,
-            child:
-                thumbnail ??
-                Container(
-                  color: fallbackBackgroundColor,
-                  child: Center(
-                    child: AppIcon(fallbackIcon, fill: 1, color: fallbackIconColor, size: fallbackIconSize),
-                  ),
-                ),
-          ),
+          ClipRRect(borderRadius: borderRadius, child: child),
           if (isCurrent)
             Positioned.fill(
               child: DecoratedBox(
@@ -59,6 +62,13 @@ class MediaSelectorThumbnail extends StatelessWidget {
             ),
         ],
       ),
+    );
+  }
+
+  Widget _maybeBlurThumbnail(Widget child) {
+    if (!blurThumbnail) return child;
+    return ClipRect(
+      child: ImageFiltered(imageFilter: ImageFilter.blur(sigmaX: 12, sigmaY: 12), child: child),
     );
   }
 }

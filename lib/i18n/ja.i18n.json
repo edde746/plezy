@@ -1031,6 +1031,7 @@
     "unwatchedOnly": "未視聴のみ",
     "nextNUnwatched": "次の${count}件の未視聴",
     "customAmount": "数を指定...",
+    "includeSpecials": "スペシャルを含める",
     "howManyEpisodes": "何エピソード？",
     "itemsQueued": "${count}件をダウンロードキューに追加",
     "keepSynced": "同期を維持",

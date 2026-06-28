@@ -7,9 +7,7 @@ import '../../media/media_display_criteria.dart';
 import '../models.dart';
 import 'player_base.dart';
 
-/// Shared native implementation of [Player] for iOS, macOS, Android (MPV fallback), and Linux.
-/// Uses MPVKit via platform channels with Metal rendering (Apple), native window (Android),
-/// or FlTextureGL (Linux).
+/// MPV-backed player for platforms where AetherEngine is not the native route.
 class PlayerNative extends PlayerBase {
   int? _textureIdValue;
   String _dvConversionMode = 'auto';
@@ -403,12 +401,20 @@ class PlayerNative extends PlayerBase {
   }
 
   @override
-  Future<bool> setVideoFrameRate(double fps, int durationMs, {int extraDelayMs = 0}) async {
+  Future<bool> setVideoFrameRate(
+    double fps,
+    int durationMs, {
+    int extraDelayMs = 0,
+    int videoWidth = 0,
+    int videoHeight = 0,
+  }) async {
     if (!Platform.isAndroid || disposed || !initialized) return false;
     final result = await invoke<bool>('setVideoFrameRate', {
       'fps': fps,
       'duration': durationMs,
       'extraDelayMs': extraDelayMs,
+      'videoWidth': videoWidth,
+      'videoHeight': videoHeight,
     });
     return result ?? false;
   }

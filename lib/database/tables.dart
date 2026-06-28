@@ -101,6 +101,7 @@ class SyncRules extends Table {
   IntColumn get lastExecutedAt => integer().nullable()();
   IntColumn get mediaIndex => integer().withDefault(const Constant(0))();
   TextColumn get downloadFilter => text().withDefault(const Constant('unwatched'))();
+  BoolColumn get includeSpecials => boolean().withDefault(const Constant(true))();
 }
 
 /// Persisted media-server connections.

@@ -7,14 +7,14 @@ import '../../utils/abortable_http_request.dart';
 import '../../utils/app_logger.dart';
 import '../trackers/device_code_auth_service.dart';
 import '../trackers/tracker_constants.dart';
+import '../trackers/tracker_session.dart';
 import 'trakt_constants.dart';
-import 'trakt_session.dart';
 
 /// Trakt OAuth Device Authorization Grant flow (RFC 8628).
 ///
 /// The user enters a short code at `trakt.tv/activate` (in any browser); the
 /// app polls `/oauth/device/token` until the user completes the flow.
-class TraktAuthService extends DeviceCodeAuthServiceBase<TraktSession> {
+class TraktAuthService extends DeviceCodeAuthServiceBase {
   TraktAuthService({super.httpClient});
 
   @override
@@ -92,5 +92,6 @@ class TraktAuthService extends DeviceCodeAuthServiceBase<TraktSession> {
   }
 
   @override
-  TraktSession buildSession(Map<String, dynamic> tokenResponse) => TraktSession.fromTokenResponse(tokenResponse);
+  TrackerSession buildSession(Map<String, dynamic> tokenResponse) =>
+      TrackerSession.fromTokenResponse(TrackerService.trakt, tokenResponse);
 }

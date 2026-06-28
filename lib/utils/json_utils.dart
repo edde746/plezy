@@ -49,6 +49,20 @@ List<dynamic>? flexibleList(Object? v) => switch (v) {
   _ => <dynamic>[v],
 };
 
+/// Coerce a single String, a List of Strings, or null into `List<String>?`.
+/// Non-string elements are dropped; an empty result (or null input) yields
+/// `null`. Typed sibling of [flexibleList] — a bare String is wrapped into a
+/// single-element list, so callers tolerate both single-value and list shapes.
+List<String>? flexibleStringList(Object? v) {
+  final list = flexibleList(v);
+  if (list == null) return null;
+  final result = [
+    for (final e in list)
+      if (e is String) e,
+  ];
+  return result.isEmpty ? null : result;
+}
+
 List<String>? stringListFromRaw(Object? raw, {String? mapKey, bool stringify = false, bool nullIfEmpty = false}) {
   if (raw is! List) return null;
   final result = <String>[];

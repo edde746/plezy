@@ -1288,6 +1288,7 @@ class _TranslationsDownloadsEs extends TranslationsDownloadsEn {
 	@override String get unwatchedOnly => 'Solo no vistos';
 	@override String nextNUnwatched({required Object count}) => 'Próximos ${count} no vistos';
 	@override String get customAmount => 'Cantidad personalizada...';
+	@override String get includeSpecials => 'Incluir especiales';
 	@override String get howManyEpisodes => '¿Cuántos episodios?';
 	@override String itemsQueued({required Object count}) => '${count} elementos en cola de descarga';
 	@override String get keepSynced => 'Mantener sincronizado';
@@ -2878,6 +2879,7 @@ extension on TranslationsEs {
 			'downloads.unwatchedOnly' => 'Solo no vistos',
 			'downloads.nextNUnwatched' => ({required Object count}) => 'Próximos ${count} no vistos',
 			'downloads.customAmount' => 'Cantidad personalizada...',
+			'downloads.includeSpecials' => 'Incluir especiales',
 			'downloads.howManyEpisodes' => '¿Cuántos episodios?',
 			'downloads.itemsQueued' => ({required Object count}) => '${count} elementos en cola de descarga',
 			'downloads.keepSynced' => 'Mantener sincronizado',
@@ -2950,9 +2952,9 @@ extension on TranslationsEs {
 			'companionRemote.pairing.authFailed' => 'Autenticación fallida. Ambos dispositivos necesitan la misma cuenta Plex.',
 			'companionRemote.pairing.failedToConnect' => ({required Object error}) => 'Error al conectar: ${error}',
 			'companionRemote.remote.disconnectConfirm' => '¿Quieres desconectarte de la sesión remota?',
-			'companionRemote.remote.reconnecting' => 'Reconectando...',
 			_ => null,
 		} ?? switch (path) {
+			'companionRemote.remote.reconnecting' => 'Reconectando...',
 			'companionRemote.remote.attemptOf' => ({required Object current}) => 'Intento ${current} de 5',
 			'companionRemote.remote.retryNow' => 'Reintentar ahora',
 			'companionRemote.remote.tabRemote' => 'Remoto',

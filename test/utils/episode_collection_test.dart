@@ -28,6 +28,7 @@ MediaItem _episode(
   int? viewCount,
   int? viewOffsetMs,
   int? durationMs,
+  String? originallyAvailableAt,
 }) => MediaItem(
   id: id,
   backend: MediaBackend.plex,
@@ -41,6 +42,7 @@ MediaItem _episode(
   viewCount: viewCount,
   viewOffsetMs: viewOffsetMs,
   durationMs: durationMs,
+  originallyAvailableAt: originallyAvailableAt,
 );
 
 MediaItem _clip(String id) => MediaItem(id: id, backend: MediaBackend.plex, kind: MediaKind.clip, title: 'Clip');
@@ -102,7 +104,36 @@ class _SeasonPagingRecordingClient extends _RecordingClient implements SeasonEpi
   }
 }
 
+class _LeavesClient implements MediaServerClient {
+  _LeavesClient(this.leaves);
+
+  final List<MediaItem> leaves;
+
+  @override
+  Future<List<MediaItem>> fetchPlayableDescendants(String parentId) async => leaves;
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
 void main() {
+  test('collectEpisodesForShow drops Specials when includeSpecials is false', () async {
+    final client = _LeavesClient([
+      _episode('s1e1', parentIndex: 1, index: 1, originallyAvailableAt: '2022-10-05'),
+      _episode('s0e1', parentIndex: 0, index: 1, originallyAvailableAt: '2022-10-27'),
+      _episode('s1e2', parentIndex: 1, index: 2, originallyAvailableAt: '2022-11-02'),
+    ]);
+
+    final withoutSpecials = <MediaItem>[];
+    await collectEpisodesForShow(client, 'show-1', unwatchedOnly: false, out: withoutSpecials, includeSpecials: false);
+    expect(withoutSpecials.map((e) => e.id), ['s1e1', 's1e2']);
+
+    // Default keeps Specials, interleaved into aired order.
+    final withSpecials = <MediaItem>[];
+    await collectEpisodesForShow(client, 'show-1', unwatchedOnly: false, out: withSpecials);
+    expect(withSpecials.map((e) => e.id), ['s1e1', 's0e1', 's1e2']);
+  });
+
   test('defaultPlaybackSeason skips specials when a regular season exists', () {
     final special = _season('specials', index: 0);
     final season1 = _season('season-1');
@@ -189,6 +220,76 @@ void main() {
       firstUnwatchedEpisode([_episode('e1', index: 1, viewCount: 1), _episode('e2', index: 2, viewCount: 2)]),
       isNull,
     );
+  });
+
+  test('sortEpisodesByWatchOrder interleaves Specials into aired order by air date', () {
+    // Mirrors a real interleaved-Specials show (e.g. The Eminence in Shadow):
+    // S00E01 aired between S01E02 and S01E05, so it plays there — not after the
+    // whole season. This is what Plex's own play queue returns (#1416).
+    final s1e1 = _episode('s1e1', parentIndex: 1, index: 1, originallyAvailableAt: '2022-10-05');
+    final s1e2 = _episode('s1e2', parentIndex: 1, index: 2, originallyAvailableAt: '2022-10-12');
+    final s0e1 = _episode('s0e1', parentIndex: 0, index: 1, originallyAvailableAt: '2022-10-27');
+    final s1e5 = _episode('s1e5', parentIndex: 1, index: 5, originallyAvailableAt: '2022-11-02');
+    final s0e2 = _episode('s0e2', parentIndex: 0, index: 2, originallyAvailableAt: '2022-11-03');
+
+    // Raw container order would clump the Specials folder first.
+    final episodes = [s0e1, s0e2, s1e1, s1e2, s1e5];
+    sortEpisodesByWatchOrder(episodes);
+
+    expect(episodes.map((e) => e.id), ['s1e1', 's1e2', 's0e1', 's1e5', 's0e2']);
+  });
+
+  test('sortEpisodesByWatchOrder falls back to Specials-last when episodes have no air dates', () {
+    final s0e1 = _episode('s0e1', parentIndex: 0, index: 1);
+    final s0e2 = _episode('s0e2', parentIndex: 0, index: 2);
+    final s1e1 = _episode('s1e1', parentIndex: 1, index: 1);
+    final s1e2 = _episode('s1e2', parentIndex: 1, index: 2);
+    final s2e1 = _episode('s2e1', parentIndex: 2, index: 1);
+
+    // Raw /grandchildren order would lead with the Specials folder.
+    final episodes = [s0e1, s0e2, s1e1, s1e2, s2e1];
+    sortEpisodesByWatchOrder(episodes);
+
+    // With no air dates, a "next 2 unwatched" cut still takes S01E01/S01E02.
+    expect(episodes.map((e) => e.id), ['s1e1', 's1e2', 's2e1', 's0e1', 's0e2']);
+  });
+
+  test('sortEpisodesByWatchOrder trails undated Specials after dated episodes', () {
+    // A dated regular run with an undated Special: the Special can't be placed
+    // in the aired timeline, so it sorts last rather than wedging into the run.
+    final s1e1 = _episode('s1e1', parentIndex: 1, index: 1, originallyAvailableAt: '2022-10-05');
+    final s1e2 = _episode('s1e2', parentIndex: 1, index: 2, originallyAvailableAt: '2022-10-12');
+    final s0e1 = _episode('s0e1', parentIndex: 0, index: 1);
+
+    final episodes = [s0e1, s1e2, s1e1];
+    sortEpisodesByWatchOrder(episodes);
+
+    expect(episodes.map((e) => e.id), ['s1e1', 's1e2', 's0e1']);
+  });
+
+  test('compareEpisodesByWatchOrder breaks index ties on id for deterministic cuts', () {
+    final a = _episode('a', parentIndex: 1, index: 1);
+    final b = _episode('b', parentIndex: 1, index: 1);
+
+    expect(compareEpisodesByWatchOrder(a, b), lessThan(0));
+    expect(compareEpisodesByWatchOrder(b, a), greaterThan(0));
+    expect(compareEpisodesByWatchOrder(a, a), 0);
+  });
+
+  test('isSpecialSeasonNumber treats season 0 and missing numbers as Specials', () {
+    expect(isSpecialSeasonNumber(0), isTrue);
+    expect(isSpecialSeasonNumber(null), isTrue);
+    expect(isSpecialSeasonNumber(1), isFalse);
+    expect(isSpecialSeasonNumber(2), isFalse);
+  });
+
+  test('isUnwatchedOrInProgress keeps unwatched and resumable episodes', () {
+    // Unwatched.
+    expect(_episode('a', viewCount: 0).isUnwatchedOrInProgress, isTrue);
+    // Watched with no resume point — counts as done.
+    expect(_episode('b', viewCount: 1).isUnwatchedOrInProgress, isFalse);
+    // Watched but still resumable (re-watching) — counts as to-watch.
+    expect(_episode('c', viewCount: 1, viewOffsetMs: 500, durationMs: 1000).isUnwatchedOrInProgress, isTrue);
   });
 
   test('fetchFirstEpisodeForSeason requests only the first children page', () async {

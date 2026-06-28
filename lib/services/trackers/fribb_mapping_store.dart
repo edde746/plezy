@@ -91,7 +91,7 @@ class FribbMappingStore implements FribbMappingLookup {
       appLogger.d('Fribb: no disk cache, downloading from jsDelivr');
       final raw = await _download();
       if (raw == null) return const FribbIndex(byTvdb: {}, byTmdb: {}, byImdb: {});
-      return await compute(_parseAndIndex, raw);
+      return await compute(parseFribbIndex, raw);
     } catch (e) {
       appLogger.w('Fribb: parse failed — deleting disk copy so next lookup re-downloads', error: e);
       await _deleteDiskCopy();
@@ -185,7 +185,7 @@ class FribbMappingStore implements FribbMappingLookup {
         }
 
         await _writeDiskCopy(res.body, etag: res.headers['etag']);
-        final fresh = await compute(_parseAndIndex, res.body);
+        final fresh = await compute(parseFribbIndex, res.body);
         _index = fresh;
         appLogger.d('Fribb: mapping refreshed (${fresh.byTvdb.length} tvdb entries)');
       } finally {
@@ -230,12 +230,19 @@ class FribbMappingStore implements FribbMappingLookup {
 /// memory vs. reading the string on the main isolate and shipping it across.
 FribbIndex _readAndParse(String path) {
   final raw = File(path).readAsStringSync();
-  return _parseAndIndex(raw);
+  return parseFribbIndex(raw);
 }
 
-/// Top-level so it can run in a `compute` isolate (which can't capture
-/// instance state).
-FribbIndex _parseAndIndex(String raw) {
+/// Parse the raw `anime-list-mini.json` body into an indexed [FribbIndex].
+/// Top-level so it can run in a `compute` isolate (which can't capture instance
+/// state). A row may carry several imdb/tmdb ids (movie collections / the
+/// tv+movie split), so each row is fanned out under every id it declares.
+///
+/// Per-row parsing is guarded: a single malformed row is skipped rather than
+/// aborting the whole parse — that previously emptied the index and triggered a
+/// disk-delete/re-download loop (#1402).
+@visibleForTesting
+FribbIndex parseFribbIndex(String raw) {
   final decoded = json.decode(raw);
   if (decoded is! List) return const FribbIndex(byTvdb: {}, byTmdb: {}, byImdb: {});
 
@@ -243,22 +250,29 @@ FribbIndex _parseAndIndex(String raw) {
   final byTmdb = <int, List<FribbMappingRow>>{};
   final byImdb = <String, List<FribbMappingRow>>{};
 
+  var skipped = 0;
   for (final raw in decoded) {
     if (raw is! Map) continue;
-    final row = FribbMappingRow.fromJson(raw.cast<String, dynamic>());
+    final FribbMappingRow row;
+    try {
+      row = FribbMappingRow.fromJson(raw.cast<String, dynamic>());
+    } catch (_) {
+      skipped++;
+      continue;
+    }
     final tvdb = row.tvdbId;
     if (tvdb != null) {
       (byTvdb[tvdb] ??= <FribbMappingRow>[]).add(row);
     }
-    final tmdb = row.tmdbId;
-    if (tmdb != null) {
+    for (final tmdb in row.tmdbIds ?? const <int>[]) {
       (byTmdb[tmdb] ??= <FribbMappingRow>[]).add(row);
     }
-    final imdb = row.imdbId;
-    if (imdb != null && imdb.isNotEmpty) {
+    for (final imdb in row.imdbIds ?? const <String>[]) {
+      if (imdb.isEmpty) continue;
       (byImdb[imdb] ??= <FribbMappingRow>[]).add(row);
     }
   }
 
+  if (skipped > 0) appLogger.w('Fribb: skipped $skipped malformed row(s)');
   return FribbIndex(byTvdb: byTvdb, byTmdb: byTmdb, byImdb: byImdb);
 }

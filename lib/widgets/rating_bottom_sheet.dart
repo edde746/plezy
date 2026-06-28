@@ -255,9 +255,7 @@ class _RatingBottomSheetState extends State<RatingBottomSheet> {
           username: trakt.username,
           connectedLabel: t.trakt.connected,
           logoAsset: 'assets/trakt_circlemark.svg',
-          getRating: TraktScrobbleService.instance.getRating,
-          onRate: TraktScrobbleService.instance.rate,
-          onClear: TraktScrobbleService.instance.clearRating,
+          ratingSource: TraktScrobbleService.instance,
         ),
       );
     }
@@ -269,9 +267,7 @@ class _RatingBottomSheetState extends State<RatingBottomSheet> {
           username: trackers.malUsername,
           connectedLabel: t.trakt.connected,
           logoAsset: 'assets/mal_mark.svg',
-          getRating: MalTracker.instance.getRating,
-          onRate: MalTracker.instance.rate,
-          onClear: MalTracker.instance.clearRating,
+          ratingSource: MalTracker.instance,
         ),
       );
     }
@@ -283,9 +279,7 @@ class _RatingBottomSheetState extends State<RatingBottomSheet> {
           username: trackers.anilistUsername,
           connectedLabel: t.trakt.connected,
           logoAsset: 'assets/anilist_mark.svg',
-          getRating: AnilistTracker.instance.getRating,
-          onRate: AnilistTracker.instance.rate,
-          onClear: AnilistTracker.instance.clearRating,
+          ratingSource: AnilistTracker.instance,
         ),
       );
     }
@@ -297,9 +291,7 @@ class _RatingBottomSheetState extends State<RatingBottomSheet> {
           username: trackers.simklUsername,
           connectedLabel: t.trakt.connected,
           logoAsset: 'assets/simkl_mark.svg',
-          getRating: SimklTracker.instance.getRating,
-          onRate: SimklTracker.instance.rate,
-          onClear: SimklTracker.instance.clearRating,
+          ratingSource: SimklTracker.instance,
         ),
       );
     }
@@ -355,7 +347,7 @@ class _RatingBottomSheetState extends State<RatingBottomSheet> {
       sources.map((source) async {
         final key = source.service.name;
         try {
-          final score = await source.getRating(ctx);
+          final score = await source.ratingSource.getRating(ctx);
           if (!mounted) return;
           setState(() {
             _trackerScores[source.service] = score ?? 0;
@@ -496,7 +488,7 @@ class _RatingBottomSheetState extends State<RatingBottomSheet> {
     }
     await _run(source.service.name, () async {
       final ctx = await _resolveTrackerContext();
-      await source.onRate(ctx, value);
+      await source.ratingSource.rate(ctx, value);
       _trackerScores[source.service] = value;
     });
   }
@@ -505,7 +497,7 @@ class _RatingBottomSheetState extends State<RatingBottomSheet> {
     _cancelAutoSave(source.service.name);
     await _run(source.service.name, () async {
       final ctx = await _resolveTrackerContext();
-      await source.onClear(ctx);
+      await source.ratingSource.clearRating(ctx);
       _trackerScores[source.service] = 0;
     });
   }
@@ -611,9 +603,9 @@ class _RatingBottomSheetState extends State<RatingBottomSheet> {
       final ctx = await _resolveTrackerContext();
       final value = _trackerScores[source.service] ?? 0;
       if (value <= 0) {
-        await source.onClear(ctx);
+        await source.ratingSource.clearRating(ctx);
       } else {
-        await source.onRate(ctx, value);
+        await source.ratingSource.rate(ctx, value);
       }
     } catch (e) {
       appLogger.w('Failed to update tracker rating after sheet close', error: e);
@@ -643,9 +635,7 @@ class _TrackerRatingSource {
   final String? username;
   final String connectedLabel;
   final String logoAsset;
-  final Future<int?> Function(TrackerRatingContext ctx) getRating;
-  final Future<void> Function(TrackerRatingContext ctx, int score) onRate;
-  final Future<void> Function(TrackerRatingContext ctx) onClear;
+  final TrackerRatingSource ratingSource;
 
   const _TrackerRatingSource({
     required this.service,
@@ -653,9 +643,7 @@ class _TrackerRatingSource {
     required this.username,
     required this.connectedLabel,
     required this.logoAsset,
-    required this.getRating,
-    required this.onRate,
-    required this.onClear,
+    required this.ratingSource,
   });
 }
 

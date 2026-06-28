@@ -1031,6 +1031,7 @@
     "unwatchedOnly": "Kun usete",
     "nextNUnwatched": "Næste ${count} usete",
     "customAmount": "Angiv antal...",
+    "includeSpecials": "Inkludér specials",
     "howManyEpisodes": "Hvor mange episoder?",
     "itemsQueued": "${count} elementer sat i kø til download",
     "keepSynced": "Hold synkroniseret",

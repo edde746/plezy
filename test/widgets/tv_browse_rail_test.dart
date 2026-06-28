@@ -350,6 +350,47 @@ void main() {
     expect(headerText.style?.color, theme.colorScheme.onSurface);
   });
 
+  testWidgets('two hubs sharing a backend id across servers do not collide on card GlobalKeys', (tester) async {
+    final serverManager = MultiServerManager();
+    // Multi-server aggregation: two servers return a hub with the SAME backend
+    // id ('recently_added'). Per-card GlobalKeys must be qualified by serverId,
+    // or both rows hand the same GlobalKey<MediaCardState> to different cards
+    // and finalizeTree throws "Duplicate GlobalKey".
+    MediaHub hubFor(String serverId) => MediaHub(
+      id: 'recently_added',
+      title: 'Recently Added ($serverId)',
+      type: 'movie',
+      serverId: serverId,
+      size: 2,
+      items: [
+        MediaItem(id: 'movie_1', backend: MediaBackend.plex, kind: MediaKind.movie, title: 'A', serverId: serverId),
+        MediaItem(id: 'movie_2', backend: MediaBackend.plex, kind: MediaKind.movie, title: 'B', serverId: serverId),
+      ],
+    );
+
+    await tester.pumpWidget(
+      ChangeNotifierProvider<MultiServerProvider>(
+        create: (_) => MultiServerProvider(serverManager, DataAggregationService(serverManager)),
+        child: MaterialApp(
+          theme: monoTheme(dark: true),
+          home: Scaffold(
+            body: SizedBox(
+              width: 1280,
+              height: 720,
+              child: TvBrowseRail(
+                hubs: [hubFor('serverA'), hubFor('serverB')],
+                iconForHub: (_, _) => Icons.movie_rounded,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('full card layout hides media text and overlays actor text when enabled', (tester) async {
     await SettingsService.instanceOrNull!.write(SettingsService.tvFullCardLayout, true);
 
@@ -986,7 +1027,10 @@ void main() {
     final serverManager = MultiServerManager();
     final activeHubIds = <String>[];
     var parentRebuilds = 0;
-    HubFocusMemory.setForHub(episodeHub.id, 5);
+    // Seed remembered focus under the rail's server-qualified hub key (mirrors
+    // _TvBrowseRailState._hubKey: '<serverId>:<id>'), so the multi-server keying
+    // resolves it the same way the rail does.
+    HubFocusMemory.setForHub('${episodeHub.serverId ?? ''}:${episodeHub.id}', 5);
 
     await tester.pumpWidget(
       ChangeNotifierProvider<MultiServerProvider>(

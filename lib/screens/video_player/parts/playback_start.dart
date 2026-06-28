@@ -171,6 +171,8 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
         currentPlayer: currentPlayer,
         settingsService: settingsService,
         preKnownFps: displayCriteria?.fps,
+        preKnownWidth: displayCriteria?.width ?? 0,
+        preKnownHeight: displayCriteria?.height ?? 0,
         hasVideoUrl: result.videoUrl != null,
         ensureAudioFocus: ensureAudioFocus,
       );

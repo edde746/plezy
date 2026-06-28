@@ -57,14 +57,10 @@ extension _VideoPlayerBuildMethods on VideoPlayerScreenState {
   }
 
   List<MediaSubtitleTrack> _sourceSubtitleTracksForControls() {
-    final tracks = _currentMediaInfo?.subtitleTracks ?? const <MediaSubtitleTrack>[];
-    if (!_isTranscoding) return tracks;
-    return tracks
-        .where((track) {
-          final hasKey = track.key != null && track.key!.isNotEmpty;
-          return hasKey || CodecUtils.isTextSubtitleCodec(track.codec);
-        })
-        .toList(growable: false);
+    return selectableSourceSubtitleTracks(
+      _currentMediaInfo?.subtitleTracks ?? const <MediaSubtitleTrack>[],
+      isTranscoding: _isTranscoding,
+    );
   }
 
   Widget _buildLoadingSpinner() {

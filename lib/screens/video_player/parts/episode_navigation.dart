@@ -352,6 +352,8 @@ extension _VideoPlayerEpisodeNavigationMethods on VideoPlayerScreenState {
         currentPlayer: currentPlayer,
         settingsService: settingsService,
         preKnownFps: displayCriteria?.fps,
+        preKnownWidth: displayCriteria?.width ?? 0,
+        preKnownHeight: displayCriteria?.height ?? 0,
         hasVideoUrl: true,
         ensureAudioFocus: () => currentPlayer.requestAudioFocus(),
       );

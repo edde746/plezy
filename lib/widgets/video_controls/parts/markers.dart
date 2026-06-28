@@ -202,12 +202,12 @@ extension _PlexVideoControlsMarkerMethods on _PlexVideoControlsState {
   }
 
   bool get _isSkipMarkerButtonVisible => shouldShowSkipMarkerButton(
-        hasFirstFrame: _hasRenderedFirstFrame,
-        hasMarker: _currentMarker != null,
-        hasPlayNextPrompt: widget.playNextFocusNode != null,
-        skipButtonDismissed: _skipButtonDismissed,
-        controlsVisible: _showControls,
-      );
+    hasFirstFrame: _hasRenderedFirstFrame,
+    hasMarker: _currentMarker != null,
+    hasPlayNextPrompt: widget.playNextFocusNode != null,
+    skipButtonDismissed: _skipButtonDismissed,
+    controlsVisible: _showControls,
+  );
 
   void _activateSkipMarker() {
     if (!_isSkipMarkerButtonVisible) return;

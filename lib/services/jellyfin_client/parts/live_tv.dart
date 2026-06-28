@@ -483,7 +483,11 @@ class _JellyfinLiveTvPlaybackSession implements LiveTvPlaybackSession {
   Future<String?> streamUrlAt({int? offsetSeconds}) async => offsetSeconds == null ? _url : null;
 
   @override
-  Future<CaptureBuffer?> reportTimeline({required String state, required int positionMs, required int durationMs}) async {
+  Future<CaptureBuffer?> reportTimeline({
+    required String state,
+    required int positionMs,
+    required int durationMs,
+  }) async {
     await _tracker.report(
       client: _client,
       itemId: _channelKey,

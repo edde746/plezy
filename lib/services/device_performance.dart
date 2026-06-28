@@ -64,6 +64,14 @@ class DevicePerformance {
     }
   }
 
+  /// Auto-detected low-end hardware (32-bit process / low-RAM / ≤2.2 GiB),
+  /// independent of the visual-effects override. Use this for decisions tied to
+  /// the hardware itself — e.g. the codec→display video pipeline on cheap TV
+  /// boxes lagging a GL subtitle overlay — where a user's effects preference is
+  /// irrelevant. Safe before init (returns false). See [isReduced] for the
+  /// effects-tier gate that the override can force.
+  static bool get isLowEndHardware => _instance?._autoReduced ?? false;
+
   /// Primary gate for effect chokepoints. Safe before init (full tier).
   static bool get isReduced {
     final instance = _instance;

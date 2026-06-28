@@ -1031,6 +1031,7 @@
     "unwatchedOnly": "Само негледани",
     "nextNUnwatched": "Следващите ${count} негледани",
     "customAmount": "Персонален брой...",
+    "includeSpecials": "Включи специалните",
     "howManyEpisodes": "Колко епизода?",
     "itemsQueued": "${count} елемента са добавени в опашката за изтегляне",
     "keepSynced": "Поддържай синхронизирано",

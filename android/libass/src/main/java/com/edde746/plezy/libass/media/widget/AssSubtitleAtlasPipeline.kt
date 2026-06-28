@@ -6,6 +6,7 @@ import android.opengl.EGLDisplay
 import android.opengl.EGLExt
 import android.opengl.EGLSurface
 import android.opengl.GLES20
+import android.os.Build
 import android.os.Handler
 import android.os.HandlerThread
 import android.os.Process
@@ -17,18 +18,20 @@ import androidx.media3.common.util.GlUtil
 import androidx.media3.common.util.Size
 import androidx.media3.common.util.UnstableApi
 import com.edde746.plezy.libass.AssAtlasFrame
+import com.edde746.plezy.libass.AssFrameTimestamps
 import com.edde746.plezy.libass.media.AssHandler
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
+import java.util.concurrent.atomic.AtomicLong
 import java.util.concurrent.atomic.AtomicReference
+import java.util.concurrent.locks.LockSupport
 
 /**
  * Atlas-rendering pipeline behind [AssSubtitleSurfaceView].
  * Runs libass on its own [HandlerThread] into a packed
  * ALPHA_8 texture atlas plus a single vertex stream, and a GL thread that uploads
- * both and issues one `glDrawArrays` per frame. Each swap is pinned to the video's
- * target release time via [EGLExt.eglPresentationTimeANDROID]: SurfaceFlinger holds
- * the buffer and composes it on the same vsync as the corresponding video frame.
+ * both and issues one `glDrawArrays` per frame. Each timed swap is pinned to the
+ * corresponding video frame via [EGLExt.eglPresentationTimeANDROID].
  */
 @UnstableApi
 internal object AssAtlasPipelineConfig {
@@ -67,9 +70,32 @@ internal object AssAtlasPipelineConfig {
    * core's ~35-50ms renders it converts near-misses into on-time latches.
    */
   internal const val SPECULATION_ENABLED = true
+
+  /**
+   * Disabled by default: queueing subtitles one predicted video frame ahead made
+   * Android playback often look one frame early. Keep the estimator behind a flag
+   * in case a device-specific compositor path later proves it needs this again.
+   */
+  internal const val COMPOSITOR_PHASE_LEAD_ENABLED = false
+
+  /**
+   * Internal raster resolution for the libass overlay, as a fraction of the
+   * physical surface (1.0 = full, off). Lowering it shrinks the libass frame so
+   * heavy/animated signs rasterize over fewer pixels (raster cost ∝ area; layout
+   * cost unchanged) and the GL upscales the result to the full surface — a
+   * quality-for-throughput trade for render-bound low-end TVs. Applied
+   * consistently to the libass frame size, the mpv-style margins ([AssHandler])
+   * and the GL `u_SurfaceSize` ([AtlasRenderer]); at 1.0 it is an exact no-op.
+   * Runtime-settable from the user's "Render Resolution" subtitle setting (Android exposes
+   * Full / ¾ / ½ / ⅓ / ¼) via [AssHandler.setRenderScale]; 1.0 = exact no-op (the default).
+   */
+  @Volatile
+  internal var renderScale = 1.0f
+
+  /** Scales a physical-pixel extent to the libass render resolution; identity at 1.0. */
+  internal fun scaledForRender(px: Int): Int = if (renderScale == 1.0f) px else Math.round(px * renderScale)
 }
 
-/** Payload handed from the libass worker to the GL thread. */
 internal class AtlasPayload(
   val slotIndex: Int,
   val atlasBuf: ByteBuffer,
@@ -77,9 +103,38 @@ internal class AtlasPayload(
   var frame: AssAtlasFrame,
   var presentationTimeUs: Long,
   var releaseTimeNs: Long,
-  /** Bumped on every content-changing render; lets the GL thread tell "same slot,
-   *  new content" apart from "same slot, same content" when deciding to re-upload. */
-  var contentSeq: Long = 0L
+  var sourcePresentationTimeUs: Long = presentationTimeUs,
+  var phaseLeadUs: Long = 0L,
+  /** Slot identity alone is not enough because libass rewrites buffers in place. */
+  var contentSeq: Long = 0L,
+  var requestSeq: Long = 0L,
+  var stateGeneration: Long = 0L
+)
+
+private class AtlasDrawSnapshot(
+  val atlasBuf: ByteBuffer,
+  val vertexBuf: ByteBuffer,
+  val frame: AssAtlasFrame,
+  val sourcePresentationTimeUs: Long,
+  val presentationTimeUs: Long,
+  val releaseTimeNs: Long,
+  val phaseLeadUs: Long,
+  val contentSeq: Long,
+  val requestSeq: Long,
+  val stateGeneration: Long
+)
+
+private fun AtlasPayload.snapshot(): AtlasDrawSnapshot = AtlasDrawSnapshot(
+  atlasBuf = atlasBuf,
+  vertexBuf = vertexBuf,
+  frame = frame,
+  sourcePresentationTimeUs = sourcePresentationTimeUs,
+  presentationTimeUs = presentationTimeUs,
+  releaseTimeNs = releaseTimeNs,
+  phaseLeadUs = phaseLeadUs,
+  contentSeq = contentSeq,
+  requestSeq = requestSeq,
+  stateGeneration = stateGeneration
 )
 
 /** Payload slots plus the atlas dims their buffers were sized for. */
@@ -99,11 +154,22 @@ internal class AssAtlasPipeline(
   surface: Surface,
   width: Int,
   height: Int,
-  assHandler: AssHandler,
-  lowRamDevice: Boolean = false
+  private val assHandler: AssHandler,
+  lowRamDevice: Boolean = false,
+  refreshRateHz: Float = 60f
 ) {
   private val surfaceWidth = width
   private val surfaceHeight = height
+
+  /** The calibrator needs the final pre-swap point, and this must survive surface recreation. */
+  var preSwapProbe: ((releaseTimeNs: Long) -> Unit)?
+    get() = glThread.preSwapProbe
+    set(value) {
+      glThread.preSwapProbe = value
+    }
+
+  // Present-error buckets need to stay meaningful across display modes.
+  private val vsyncNs = (1_000_000_000.0 / (if (refreshRateHz >= 1f) refreshRateHz else 60f)).toLong()
 
   // 3 slots give the render-ahead engine a writable target while one slot is
   // posted and another is in GL's hands; low-RAM devices stay at 2 slots with
@@ -147,6 +213,10 @@ internal class AssAtlasPipeline(
   // first actual render. Confined to the libass thread after creation.
   private var slots: AtlasSlots? = null
 
+  private fun rendererStateGeneration(): Long = assHandler.render?.let {
+    (System.identityHashCode(it).toLong() shl 32) or (it.stateGeneration.toLong() and 0xffffffffL)
+  } ?: -1L
+
   private fun acquireSlots(): AtlasSlots {
     slots?.let { return it }
     if (!dimsLatch.await(1, java.util.concurrent.TimeUnit.SECONDS)) {
@@ -174,14 +244,18 @@ internal class AssAtlasPipeline(
   @Volatile private var glLastTakenSlot = -1
 
   private val pendingPayload = AtomicReference<AtlasPayload?>(null)
+  private val latestReadyRequestSeq = AtomicLong(0L)
   private val glThread = AtlasGlThread(
     surface,
     width,
     height,
     assHandler,
+    vsyncNs = vsyncNs,
     takePending = {
       pendingPayload.getAndSet(null)?.also { glLastTakenSlot = it.slotIndex }
     },
+    latestReadyRequestSeq = { latestReadyRequestSeq.get() },
+    currentStateGeneration = ::rendererStateGeneration,
     resolveAtlasDims = ::resolveAtlasDims
   )
   private val libassThread = AtlasLibassThread(
@@ -189,7 +263,9 @@ internal class AssAtlasPipeline(
     acquireSlots = ::acquireSlots,
     speculationEnabled = speculationEnabled,
     glTakenSlot = { glLastTakenSlot },
+    stateGeneration = ::rendererStateGeneration,
     onFrameReady = { payload ->
+      latestReadyRequestSeq.set(payload.requestSeq)
       pendingPayload.set(payload)
       glThread.triggerDraw()
     }
@@ -259,13 +335,71 @@ internal class AssAtlasPipeline(
   /** Speculation rounds skipped (paused, pending request, no confident cadence). */
   val specSkips: Long get() = libassThread.specSkips
 
+  /** changed==0/no-output renders forced into explicit transparent swaps. */
+  val blankClearCount: Long get() = libassThread.blankClearCount
+
   /** Cache-warming prefetch renders of upcoming events. */
   val prefetchCount: Long get() = libassThread.prefetchCount
+
+  /** Frame requests replaced before the libass worker serviced them. */
+  val coalescedRequestCount: Long get() = libassThread.coalescedRequestCount
+
+  /** Completed libass results discarded because renderer state changed before handoff. */
+  val staleGenerationCount: Long get() = libassThread.staleGenerationCount
+
+  /** Completed overlay snapshots skipped because a newer completed request superseded them before swap. */
+  val supersededBeforeSwapCount: Long get() = glThread.supersededBeforeSwapCount
+
+  /** Completed overlay snapshots skipped because renderer state changed before swap. */
+  val staleBeforeSwapCount: Long get() = glThread.staleBeforeSwapCount
 
   /** Worst (minimum) lead of a changed-content pinned swap vs its target release
    *  time, in ms; negative = the new content was queued after the video frame's
    *  vsync. Long.MAX_VALUE until a changed pinned swap happened. */
   val minLeadChangedMs: Long get() = glThread.minLeadChangedMs
+
+  /** Current steady-state compositor phase lead, in ms. */
+  val phaseLeadMs: Long get() = libassThread.phaseLeadUs / 1000
+
+  /** Most recent pinned swap lead vs its target release time, in ms. */
+  val lastSwapLeadMs: Long get() = glThread.lastSwapLeadMs
+
+  /** Most recent pinned swap headroom when GL work started, in ms. */
+  val lastSwapHeadroomMs: Long get() = glThread.lastSwapHeadroomMs
+
+  /** Most recent phase-led wait before swap, in ms. */
+  val lastScheduledSleepMs: Long get() = glThread.lastScheduledSleepMs
+
+  /** Adaptive swap lead actually in effect (half the measured refresh), in ms. */
+  val swapLeadMs: Long get() = glThread.swapLeadNs / 1_000_000
+
+  /** True once the EGL frame-timestamp extension is probed and capturing. */
+  val presentTimingEnabled: Boolean get() = glThread.presentTimingEnabled
+
+  /** Active present-time source, or why it's off (present/comp-start/comp-latch/off:…). */
+  val presentSource: String get() = glThread.presentSource
+
+  /** Actual on-screen present time of the most recent measured swap minus its
+   *  target release time, in ms (negative = presented before the video frame's
+   *  vsync, positive = after). The frame-perfection ground truth. */
+  val lastPresentErrorMs: Long get() = glThread.lastPresentErrorMs
+
+  /** Largest-magnitude present error observed, in ms. */
+  val worstPresentErrorMs: Long get() = glThread.worstPresentErrorMs
+
+  /** Pinned swaps whose actual present time was read back from SurfaceFlinger. */
+  val presentMeasuredCount: Long get() = glThread.presentMeasuredCount
+
+  /** Swaps SurfaceFlinger reported as dropped/never-presented. */
+  val presentInvalidCount: Long get() = glThread.presentInvalidCount
+
+  /** Pending present-time reads evicted unread because the ring filled. */
+  val presentDroppedCount: Long get() = glThread.presentDroppedCount
+
+  /** Present-error distribution in vsync-interval units:
+   *  [≤−1.5, (−1.5,−0.5), (−0.5,+0.5), [+0.5,+1.5), ≥+1.5]. A clean spike in the
+   *  middle bucket = frame-perfect; a spike at [+0.5,+1.5) = a 1-vsync late latch. */
+  val presentErrorHistogram: List<Long> get() = glThread.presentErrorHistogram
 
   fun releaseAndWait() {
     libassThread.releaseAndWait()
@@ -296,6 +430,92 @@ private fun postShutdownAndWait(
 /** Transport for [postShutdownAndWait] — the handler callback calls [release] then notifies. */
 private class Ack(val latch: Any, val release: () -> Unit)
 
+private class PhaseAdjustedFrame(
+  val sourcePtsUs: Long,
+  val renderPtsUs: Long,
+  val releaseNs: Long,
+  val phaseLeadUs: Long,
+  val releaseLeadNs: Long
+)
+
+/**
+ * Predicts the next video frame from the callback cadence. Media3 gives us the
+ * frame currently being released, but a separate subtitle SurfaceView may not latch
+ * in the same composition phase. Once cadence is stable, callback N renders and
+ * timestamps the ASS layer for predicted frame N+1.
+ */
+private class SubtitleFramePhaseEstimator {
+  private val ptsDeltasUs = LongArray(DELTA_SAMPLES)
+  private val releaseDeltasNs = LongArray(DELTA_SAMPLES)
+  private var deltaCount = 0
+  private var deltaIndex = 0
+  private var lastPtsUs = UNSET
+  private var lastReleaseNs = C.TIME_UNSET
+
+  @Synchronized
+  fun adjust(ptsUs: Long, releaseNs: Long): PhaseAdjustedFrame {
+    if (!AssAtlasPipelineConfig.COMPOSITOR_PHASE_LEAD_ENABLED || releaseNs == C.TIME_UNSET) {
+      return PhaseAdjustedFrame(ptsUs, ptsUs, releaseNs, 0L, 0L)
+    }
+
+    observe(ptsUs, releaseNs)
+    if (deltaCount < MIN_DELTA_SAMPLES) {
+      return PhaseAdjustedFrame(ptsUs, ptsUs, releaseNs, 0L, 0L)
+    }
+
+    val ptsLeadUs = median(ptsDeltasUs, deltaCount)
+    val releaseLeadNs = median(releaseDeltasNs, deltaCount)
+    return PhaseAdjustedFrame(
+      sourcePtsUs = ptsUs,
+      renderPtsUs = saturatedAdd(ptsUs, ptsLeadUs),
+      releaseNs = saturatedAdd(releaseNs, releaseLeadNs),
+      phaseLeadUs = ptsLeadUs,
+      releaseLeadNs = releaseLeadNs
+    )
+  }
+
+  private fun observe(ptsUs: Long, releaseNs: Long) {
+    val prevPtsUs = lastPtsUs
+    val prevReleaseNs = lastReleaseNs
+    lastPtsUs = ptsUs
+    lastReleaseNs = releaseNs
+    if (prevPtsUs == UNSET || prevReleaseNs == C.TIME_UNSET) return
+
+    val ptsDeltaUs = ptsUs - prevPtsUs
+    val releaseDeltaNs = releaseNs - prevReleaseNs
+    if (ptsDeltaUs <= 0 ||
+      ptsDeltaUs > MAX_DELTA_US ||
+      releaseDeltaNs <= 0 ||
+      releaseDeltaNs > MAX_DELTA_NS
+    ) {
+      deltaCount = 0
+      deltaIndex = 0
+      return
+    }
+
+    ptsDeltasUs[deltaIndex] = ptsDeltaUs
+    releaseDeltasNs[deltaIndex] = releaseDeltaNs
+    deltaIndex = (deltaIndex + 1) % DELTA_SAMPLES
+    if (deltaCount < DELTA_SAMPLES) deltaCount++
+  }
+
+  private fun median(values: LongArray, count: Int): Long {
+    val copy = values.copyOfRange(0, count)
+    copy.sort()
+    return copy[count / 2]
+  }
+
+  private fun saturatedAdd(value: Long, delta: Long): Long = if (delta > 0 && value > Long.MAX_VALUE - delta) Long.MAX_VALUE else value + delta
+
+  private companion object {
+    const val UNSET = Long.MIN_VALUE
+    const val DELTA_SAMPLES = 8
+    const val MIN_DELTA_SAMPLES = 4
+    const val MAX_DELTA_US = 250_000L
+    const val MAX_DELTA_NS = 250_000_000L
+  }
+}
+
 /**
  * Runs libass off the GL thread into a packed atlas + vertex stream. Latest-wins:
  * older pending renders are dropped when a newer one arrives. Slot choice, the
@@ -308,29 +528,53 @@ private class AtlasLibassThread(
   private val acquireSlots: () -> AtlasSlots,
   private val speculationEnabled: Boolean,
   private val glTakenSlot: () -> Int,
+  private val stateGeneration: () -> Long,
   private val onFrameReady: (AtlasPayload) -> Unit
 ) : HandlerThread(TAG, Process.THREAD_PRIORITY_DISPLAY) {
 
-  /** Immutable (pts, release) request — handed off through a single atomic so a
-   *  concurrent enqueue can neither be lost by drain's consume nor torn in half.
-   *  [enqueueNs] timestamps the handoff so drain can report how long the request
-   *  sat behind an in-flight render (the queue-wait component of subtitle lag). */
-  private class PendingFrame(val ptsUs: Long, val releaseNs: Long, val enqueueNs: Long = System.nanoTime())
+  /** Immutable frame request — handed off through a single atomic so a concurrent
+   *  enqueue can neither be lost by drain's consume nor torn in half. [ptsUs] is
+   *  the libass render timestamp after any phase lead; [sourcePtsUs] is the video
+   *  callback PTS after user subtitle delay but before the compositor lead.
+   *  [sequence] is the selected-video-frame request identity, and [enqueueNs]
+   *  timestamps the handoff so drain can report queue wait. */
+  private class PendingFrame(
+    val sourcePtsUs: Long,
+    val ptsUs: Long,
+    val releaseNs: Long,
+    val phaseLeadUs: Long,
+    val releaseLeadNs: Long,
+    val sequence: Long,
+    val enqueueNs: Long = System.nanoTime()
+  )
 
   private lateinit var handler: Handler
 
   private val pending = AtomicReference<PendingFrame?>(null)
+  private val phaseEstimator = SubtitleFramePhaseEstimator()
+  private val requestSeqCounter = AtomicLong(0L)
 
   @Volatile private var lastRequestedPtsUs = UNSET
   private var contentSeqCounter = 0L
 
   // Thread-confined; created on first render so non-ASS playback never allocates.
   private var engine: SpecRenderEngine? = null
+  private var engineStateGeneration = Long.MIN_VALUE
 
   val specHits: Long get() = engine?.specHits ?: 0L
   val specMisses: Long get() = engine?.specMisses ?: 0L
   val specSkips: Long get() = engine?.specSkips ?: 0L
+  val blankClearCount: Long get() = engine?.blankClearCount ?: 0L
   val prefetchCount: Long get() = engine?.prefetchCount ?: 0L
+
+  @Volatile var coalescedRequestCount = 0L
+    private set
+
+  @Volatile var staleGenerationCount = 0L
+    private set
+
+  @Volatile var phaseLeadUs = 0L
+    private set
 
   // Telemetry; single-writer (this thread), read from the stats path.
   @Volatile var renderCount = 0L
@@ -382,15 +626,31 @@ private class AtlasLibassThread(
 
   fun enqueue(presentationTimeUs: Long, releaseTimeNs: Long) {
     if (!::handler.isInitialized) return
-    val dropped = pending.getAndSet(PendingFrame(presentationTimeUs, releaseTimeNs))
-    if (dropped != null && AssAtlasPipelineConfig.TIMING_LOGS) {
-      // A request was coalesced away — the renderer is behind by at least one
-      // frame. agedMs = how long the dropped request had been waiting.
-      Log.d(
-        TAG,
-        "drop pts=${dropped.ptsUs / 1000}ms agedMs=${(System.nanoTime() - dropped.enqueueNs) / 1_000_000} " +
-          "replacedBy=${presentationTimeUs / 1000}ms"
+    val adjusted = phaseEstimator.adjust(presentationTimeUs, releaseTimeNs)
+    phaseLeadUs = adjusted.phaseLeadUs
+    val sequence = requestSeqCounter.incrementAndGet()
+    val dropped = pending.getAndSet(
+      PendingFrame(
+        sourcePtsUs = adjusted.sourcePtsUs,
+        ptsUs = adjusted.renderPtsUs,
+        releaseNs = adjusted.releaseNs,
+        phaseLeadUs = adjusted.phaseLeadUs,
+        releaseLeadNs = adjusted.releaseLeadNs,
+        sequence = sequence
       )
+    )
+    if (dropped != null) {
+      coalescedRequestCount++
+      if (AssAtlasPipelineConfig.TIMING_LOGS) {
+        // A request was coalesced away — the renderer is behind by at least one
+        // frame. agedMs = how long the dropped request had been waiting.
+        Log.d(
+          TAG,
+          "drop seq=${dropped.sequence} src=${dropped.sourcePtsUs / 1000}ms pts=${dropped.ptsUs / 1000}ms " +
+            "agedMs=${(System.nanoTime() - dropped.enqueueNs) / 1_000_000} " +
+            "replacedBySeq=$sequence replacedBySrc=${presentationTimeUs / 1000}ms replacedByPts=${adjusted.renderPtsUs / 1000}ms"
+        )
+      }
     }
     handler.removeMessages(MSG_RENDER)
     handler.sendEmptyMessage(MSG_RENDER)
@@ -405,8 +665,10 @@ private class AtlasLibassThread(
     enqueue(pts, C.TIME_UNSET)
   }
 
-  private fun ensureEngine(slots: AtlasSlots): SpecRenderEngine {
-    engine?.let { return it }
+  private fun ensureEngine(slots: AtlasSlots, generation: Long): SpecRenderEngine {
+    engine?.takeIf { engineStateGeneration == generation }?.let { return it }
+    engineStateGeneration = generation
+    unchangedStreak = 0
     return SpecRenderEngine(
       slotCount = slots.payloads.size,
       speculationEnabled = speculationEnabled,
@@ -414,11 +676,7 @@ private class AtlasLibassThread(
       // Renderer identity in the high bits + its state generation in the low bits:
       // a recreated renderer (media item transition) can never alias a stale
       // speculation, even if the new generation counter happens to match.
-      stateGeneration = {
-        assHandler.render?.let {
-          (System.identityHashCode(it).toLong() shl 32) or (it.stateGeneration.toLong() and 0xffffffffL)
-        } ?: -1L
-      },
+      stateGeneration = stateGeneration,
       glTakenSlot = glTakenSlot,
       debugLog = if (AssAtlasPipelineConfig.TIMING_LOGS) ({ msg -> Log.d(TAG, msg) }) else null
     ).also { engine = it }
@@ -453,9 +711,10 @@ private class AtlasLibassThread(
 
   private fun drainAndRender() {
     val request = pending.getAndSet(null) ?: return
+    val sourcePts = request.sourcePtsUs
     val pts = request.ptsUs
     val releaseNs = request.releaseNs
-    lastRequestedPtsUs = pts
+    lastRequestedPtsUs = sourcePts
     val tDrain = System.nanoTime()
     // How long the request sat in the handoff (behind an in-flight on-demand or
     // speculative render) — the queue-wait component of any subtitle lag.
@@ -464,27 +723,41 @@ private class AtlasLibassThread(
     // keeps the slot buffers unallocated for non-ASS playback.
     if (assHandler.render == null) return
     val slots = acquireSlots()
-    val engine = ensureEngine(slots)
+    val generation = stateGeneration()
+    val engine = ensureEngine(slots, generation)
     val pinned = releaseNs != C.TIME_UNSET
     // Budget left until the video frame's vsync when we START servicing.
     val budgetMs = if (pinned) (releaseNs - tDrain) / 1_000_000 else -1L
 
     when (val outcome = engine.service(pts, pinned)) {
       is SpecRenderEngine.Outcome.Post -> {
+        if (stateGeneration() != generation) {
+          staleGenerationCount++
+          engineStateGeneration = Long.MIN_VALUE
+          if (AssAtlasPipelineConfig.TIMING_LOGS) {
+            Log.d(TAG, "stale-render req=${request.sequence} pts=${pts / 1000}ms")
+          }
+          return
+        }
         val payload = slots.payloads[outcome.slot]
         if (outcome.newContent) {
           payload.frame = outcome.frame
           payload.contentSeq = ++contentSeqCounter
         }
+        payload.sourcePresentationTimeUs = sourcePts
         payload.presentationTimeUs = pts
         payload.releaseTimeNs = releaseNs
+        payload.phaseLeadUs = request.phaseLeadUs
+        payload.requestSeq = request.sequence
+        payload.stateGeneration = generation
         onFrameReady(payload)
         if (AssAtlasPipelineConfig.TIMING_LOGS) {
           Log.d(
             TAG,
-            "render pts=${pts / 1000}ms seq=${payload.contentSeq} waitMs=$waitMs budgetMs=$budgetMs " +
+            "render req=${request.sequence} src=${sourcePts / 1000}ms pts=${pts / 1000}ms phaseLeadMs=${request.phaseLeadUs / 1000} " +
+              "releaseLeadMs=${request.releaseLeadNs / 1_000_000} seq=${payload.contentSeq} waitMs=$waitMs budgetMs=$budgetMs " +
               "libassMs=$lastLibassMs lockWaitMs=${assHandler.render?.lastLockWaitMs} " +
-              "specHit=${outcome.specHit} changed=${payload.frame.changed} quads=${payload.frame.quadCount} " +
+              "specHit=${outcome.specHit} changed=${payload.frame.changed} output=${payload.frame.hasOutput} quads=${payload.frame.quadCount} " +
               "atlas=${payload.frame.atlasWidth}x${payload.frame.atlasHeight} truncated=${payload.frame.truncated}"
           )
         }
@@ -498,6 +771,7 @@ private class AtlasLibassThread(
 
     // Pre-render the predicted next frame in the dead time between requests so the
     // next service is (usually) a GL-only hit. Never delays a waiting request.
+    if (stateGeneration() != generation) return
     engine.speculateAfter(pts, pinned, hasPending = pending.get() != null)?.let { write ->
       val payload = slots.payloads[write.slot]
       payload.frame = write.frame
@@ -506,7 +780,7 @@ private class AtlasLibassThread(
         Log.d(
           TAG,
           "spec after=${pts / 1000}ms seq=${payload.contentSeq} libassMs=$lastLibassMs " +
-            "lockWaitMs=${assHandler.render?.lastLockWaitMs} slot=${write.slot} quads=${write.frame.quadCount}"
+            "lockWaitMs=${assHandler.render?.lastLockWaitMs} slot=${write.slot} output=${write.frame.hasOutput} quads=${write.frame.quadCount}"
         )
       }
     }
@@ -545,7 +819,7 @@ private class AtlasLibassThread(
     val now = System.nanoTime()
     if (now - lastPrefetchNs < PREFETCH_COOLDOWN_NS) return
     val track = assHandler.track ?: return
-    val nowMs = ptsUs / 1000
+    val nowMs = Math.floorDiv(ptsUs, 1_000L)
     // Events closer than MIN_AHEAD are the regular per-frame path's business;
     // beyond HORIZON the warmed bitmaps may be evicted before they're needed.
     val targetMs = track.nextEventStartMs(nowMs + PREFETCH_MIN_AHEAD_MS)
@@ -619,9 +893,8 @@ private class AtlasLibassThread(
 
 /**
  * Owns the EGL surface, uploads the atlas + vertex stream and issues a single
- * `glDrawArrays` per frame. Swaps immediately with the swap pinned to the video's
- * target release time via [EGLExt.eglPresentationTimeANDROID]; SurfaceFlinger
- * holds the buffer until then, so the thread is never blocked waiting for a vsync.
+ * `glDrawArrays` per frame. Timed swaps are queued close to the target video
+ * release time and stamped via [EGLExt.eglPresentationTimeANDROID].
  */
 @UnstableApi
 private class AtlasGlThread(
@@ -629,9 +902,56 @@ private class AtlasGlThread(
   @Volatile private var width: Int,
   @Volatile private var height: Int,
   private val assHandler: AssHandler,
+  private val vsyncNs: Long,
   private val takePending: () -> AtlasPayload?,
+  private val latestReadyRequestSeq: () -> Long,
+  private val currentStateGeneration: () -> Long,
   private val resolveAtlasDims: (maxTextureSize: Int) -> Pair<Int, Int>
 ) : HandlerThread(TAG, Process.THREAD_PRIORITY_DISPLAY) {
+
+  // Calibration hook invoked just before each pinned eglSwapBuffers (see AssAtlasPipeline).
+  @Volatile var preSwapProbe: ((releaseTimeNs: Long) -> Unit)? = null
+
+  // Swap lead = half the refresh interval, clamped. Measured live from the actual
+  // gap between video-frame release targets rather than display.refreshRate, which
+  // can still read the pre-switch rate when a pre-open mode change hasn't settled
+  // (the bug that pinned the lead at ~8 ms while the panel was really at 24 Hz).
+  private val releaseDeltasNs = LongArray(8)
+  private var releaseDeltaCount = 0
+  private var releaseDeltaIndex = 0
+  private var lastCadenceReleaseNs = C.TIME_UNSET
+
+  // Median gap between successive video-frame release targets (≈ one refresh at
+  // matched cadence). Drives both the swap lead and the present offset.
+  @Volatile private var measuredIntervalNs: Long = vsyncNs
+
+  @Volatile var swapLeadNs: Long =
+    (vsyncNs / 2).coerceIn(SCHEDULED_SWAP_LEAD_MIN_NS, SCHEDULED_SWAP_LEAD_MAX_NS)
+    private set
+
+  private fun updateSwapLead(releaseNs: Long) {
+    val prev = lastCadenceReleaseNs
+    lastCadenceReleaseNs = releaseNs
+    if (prev == C.TIME_UNSET) return
+    val d = releaseNs - prev
+    if (d <= 0 || d > MAX_RELEASE_DELTA_NS) {
+      releaseDeltaCount = 0
+      releaseDeltaIndex = 0
+      return
+    }
+    releaseDeltasNs[releaseDeltaIndex] = d
+    releaseDeltaIndex = (releaseDeltaIndex + 1) % releaseDeltasNs.size
+    if (releaseDeltaCount < releaseDeltasNs.size) releaseDeltaCount++
+    if (releaseDeltaCount >= 4) {
+      val copy = releaseDeltasNs.copyOf(releaseDeltaCount)
+      copy.sort()
+      measuredIntervalNs = copy[releaseDeltaCount / 2]
+      swapLeadNs = (measuredIntervalNs / 2).coerceIn(
+        SCHEDULED_SWAP_LEAD_MIN_NS,
+        SCHEDULED_SWAP_LEAD_MAX_NS
+      )
+    }
+  }
 
   private lateinit var handler: Handler
   private var eglDisplay: EGLDisplay = EGL14.EGL_NO_DISPLAY
@@ -657,6 +977,59 @@ private class AtlasGlThread(
    *  swaps; negative = content queued after the video frame's vsync. */
   @Volatile var minLeadChangedMs = Long.MAX_VALUE
     private set
+
+  @Volatile var lastSwapLeadMs = 0L
+    private set
+
+  @Volatile var lastSwapHeadroomMs = 0L
+    private set
+
+  @Volatile var lastScheduledSleepMs = 0L
+    private set
+
+  @Volatile var supersededBeforeSwapCount = 0L
+    private set
+
+  @Volatile var staleBeforeSwapCount = 0L
+    private set
+
+  // --- Present-time ground truth (EGL_ANDROID_get_frame_timestamps) ---
+  // The actual on-screen present time is reported a few swaps after eglSwapBuffers,
+  // so swapped frame ids are recorded here and resolved lazily. Confined to this
+  // (single) GL thread; telemetry fields are @Volatile for the stats reader.
+  @Volatile var presentTimingEnabled = false
+    private set
+
+  /** Which timestamp source the probe settled on, or why it's off (for diagnosis). */
+  @Volatile var presentSource = "off:uninit"
+    private set
+
+  private val ptFrameId = LongArray(PRESENT_RING)
+  private val ptReleaseNs = LongArray(PRESENT_RING)
+  private var ptHead = 0
+  private var ptCount = 0
+
+  @Volatile var lastPresentErrorMs = 0L
+    private set
+
+  @Volatile var worstPresentErrorMs = 0L
+    private set
+
+  @Volatile var presentMeasuredCount = 0L
+    private set
+
+  @Volatile var presentInvalidCount = 0L
+    private set
+
+  @Volatile var presentDroppedCount = 0L
+    private set
+
+  private val ptBuckets = LongArray(PRESENT_BUCKETS)
+  val presentErrorHistogram: List<Long> get() = ptBuckets.toList()
+
+  // Tracks renderer-state generation so transient seek swaps don't permanently
+  // corrupt the worst-case lead/present signals.
+  private var lastGenerationSeen = Long.MIN_VALUE
 
   override fun start() {
     super.start()
@@ -717,9 +1090,32 @@ private class AtlasGlThread(
       val (atlasW, atlasH) = resolveAtlasDims(maxTexture[0])
       renderer.allocateAtlasTexture(atlasW, atlasH)
       sizeChanged(width, height)
+      initPresentTiming()
     } catch (e: GlUtil.GlException) {
       Log.e(TAG, "Failed to initialize EGL", e)
     }
+  }
+
+  /** Probes the EGL frame-timestamp extension on the freshly-current surface.
+   *  EGL_ANDROID_get_frame_timestamps exists from Android 8.0 (entry points are
+   *  resolved at runtime via eglGetProcAddress), so gate at O and let the native
+   *  probe disable itself where the driver/emulator reports it unsupported — that
+   *  "unsupported" result is itself the signal that present time can't be measured. */
+  private fun initPresentTiming() {
+    ptHead = 0
+    ptCount = 0
+    val status = if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
+      AssFrameTimestamps.ERR_UNSUPPORTED
+    } else {
+      try {
+        AssFrameTimestamps.nativeInit()
+      } catch (t: Throwable) {
+        Log.w(TAG, "frame-timestamp init failed; present timing disabled", t)
+        AssFrameTimestamps.ERR_NO_PROC
+      }
+    }
+    presentTimingEnabled = status >= 0
+    presentSource = AssFrameTimestamps.sourceLabel(status)
   }
 
   private fun sizeChanged(width: Int, height: Int) {
@@ -732,60 +1128,175 @@ private class AtlasGlThread(
 
   private fun drawAndSwap() {
     if (eglDisplay == EGL14.EGL_NO_DISPLAY) return
+    drainPresentTimestamps()
     val payload = takePending() ?: return
 
-    // Render immediately (GL commands queue on the GPU). Re-upload only when the
-    // slot's content actually changed — identity alone is not enough because the
-    // libass side rewrites slot buffers in place (contentSeq tracks the rewrites).
     val t0 = System.nanoTime()
-    val reuse = payload === lastUploadedPayload && payload.contentSeq == lastUploadedSeq
-    renderer.onDrawFrame(payload, reuseUploads = reuse)
+    val snapshot = payload.snapshot()
+    val reuse = payload === lastUploadedPayload && snapshot.contentSeq == lastUploadedSeq
+    renderer.onDrawFrame(snapshot, reuseUploads = reuse)
     lastUploadedPayload = payload
-    lastUploadedSeq = payload.contentSeq
+    lastUploadedSeq = snapshot.contentSeq
     val t1 = System.nanoTime()
 
-    // Swap immediately with the presentation time set: SurfaceFlinger holds the
-    // queued buffer until the video frame's target release time, so the subtitle
-    // can never appear early, and the GL thread is free again within a couple of
-    // milliseconds. Sleeping here until near the target vsync (as a removed
-    // TextureView path once required) made this thread blind for almost a whole
-    // frame interval — the single-slot latest-wins handoff would then drop an
-    // intermediate subtitle state (e.g. the transition to blank), showing the
-    // previous state one frame too long.
-    if (payload.releaseTimeNs != C.TIME_UNSET) {
-      EGLExt.eglPresentationTimeANDROID(eglDisplay, eglSurface, payload.releaseTimeNs)
+    // The overlay needs latch margin, but a drawn pinned payload still belongs to
+    // its video frame even if the next frame becomes ready while we wait.
+    val pinned = snapshot.releaseTimeNs != C.TIME_UNSET
+    val contentChanged = snapshot.contentSeq != lastSwappedSeq
+    if (pinned) updateSwapLead(snapshot.releaseTimeNs)
+    val presentTarget = snapshot.releaseTimeNs
+    val scheduledSleepMs = if (pinned) sleepUntilScheduledSwap(presentTarget) else 0L
+    val latestReadySeq = latestReadyRequestSeq()
+    val currentGeneration = currentStateGeneration()
+    if (currentGeneration != lastGenerationSeen) {
+      // Seek/track/size churn should not poison the worst-case lead signal.
+      lastGenerationSeen = currentGeneration
+      minLeadChangedMs = Long.MAX_VALUE
+    }
+    val stale = snapshot.stateGeneration != currentGeneration
+    // A newer ready request can be for the next video frame, while this buffer is
+    // still the only correct content for its own target frame.
+    val superseded = !pinned && snapshot.requestSeq < latestReadySeq
+    if (stale || superseded) {
+      if (stale) staleBeforeSwapCount++
+      if (superseded) supersededBeforeSwapCount++
+      lastScheduledSleepMs = scheduledSleepMs
+      if (AssAtlasPipelineConfig.TIMING_LOGS) {
+        Log.d(
+          TAG,
+          "skip-before-swap req=${snapshot.requestSeq} latest=$latestReadySeq " +
+            "stale=$stale gen=${snapshot.stateGeneration}/$currentGeneration " +
+            "src=${snapshot.sourcePresentationTimeUs / 1000}ms pts=${snapshot.presentationTimeUs / 1000}ms " +
+            "sleepMs=$scheduledSleepMs pinned=$pinned"
+        )
+      }
+      return
+    }
+    if (pinned) {
+      // Keep the empty probe transaction out from between the presentation
+      // timestamp and the swap it is meant to measure.
+      preSwapProbe?.invoke(presentTarget)
+      EGLExt.eglPresentationTimeANDROID(eglDisplay, eglSurface, presentTarget)
+    }
+    // SurfaceFlinger only knows the frame id before swap and the present time later.
+    val frameId = if (pinned && presentTimingEnabled) {
+      try {
+        AssFrameTimestamps.nativeGetNextFrameId()
+      } catch (t: Throwable) {
+        presentTimingEnabled = false
+        -1L
+      }
+    } else {
+      -1L
     }
     EGL14.eglSwapBuffers(eglDisplay, eglSurface)
     val t2 = System.nanoTime()
-    if (payload.releaseTimeNs != C.TIME_UNSET) {
+    if (frameId >= 0) recordSwappedFrame(frameId, presentTarget)
+    var headroomMs = -1L
+    var leadMs = -1L
+    if (pinned) {
       swapCount++
-      val lateNs = t2 - payload.releaseTimeNs
+      headroomMs = (presentTarget - t0) / 1_000_000
+      val lateNs = t2 - presentTarget
+      leadMs = -lateNs / 1_000_000
+      lastSwapHeadroomMs = headroomMs
+      lastSwapLeadMs = leadMs
+      lastScheduledSleepMs = scheduledSleepMs
       if (lateNs > LATE_THRESHOLD_NS) {
         lateSwapCount++
         val lateMs = lateNs / 1_000_000
         if (lateMs > maxLateMs) maxLateMs = lateMs
       }
-      // Lead of changed-content swaps is the frame-perfection signal: ≥ 0 means
-      // the new subtitle content reached the queue before the video frame's vsync.
-      if (payload.contentSeq != lastSwappedSeq) {
-        val leadMs = -lateNs / 1_000_000
+      if (contentChanged) {
         if (leadMs < minLeadChangedMs) minLeadChangedMs = leadMs
       }
+      if (swapCount % SYNC_LOG_INTERVAL_SWAPS == 0L) {
+        Log.i(
+          TAG,
+          "[ASS-sync] swaps=$swapCount late=$lateSwapCount maxLateMs=$maxLateMs " +
+            "minLeadChangedMs=${if (minLeadChangedMs == Long.MAX_VALUE) "n/a" else minLeadChangedMs} " +
+            "present=$presentSource presentErrMs=$lastPresentErrorMs worstPresentMs=$worstPresentErrorMs " +
+            "presentHist=${ptBuckets.joinToString(",")} measured=$presentMeasuredCount " +
+            "presentInvalid=$presentInvalidCount presentDropped=$presentDroppedCount " +
+            "src=${snapshot.sourcePresentationTimeUs / 1000}ms pts=${snapshot.presentationTimeUs / 1000}ms " +
+            "phaseLeadMs=${snapshot.phaseLeadUs / 1000} sleepMs=$scheduledSleepMs headroomMs=$headroomMs leadMs=$leadMs " +
+            "req=${snapshot.requestSeq} seq=${snapshot.contentSeq} superseded=$supersededBeforeSwapCount stale=$staleBeforeSwapCount " +
+            "changed=$contentChanged reused=$reuse"
+        )
+      }
     }
-    lastSwappedSeq = payload.contentSeq
+    lastSwappedSeq = snapshot.contentSeq
     if (AssAtlasPipelineConfig.TIMING_LOGS) {
-      val pinned = payload.releaseTimeNs != C.TIME_UNSET
       // headroomMs: slack before the target vsync when GL STARTED; leadMs: slack
       // when the buffer was actually queued (negative = queued after the vsync).
-      val headroomMs = if (pinned) (payload.releaseTimeNs - t0) / 1_000_000 else -1L
-      val leadMs = if (pinned) (payload.releaseTimeNs - t2) / 1_000_000 else -1L
       Log.d(
         TAG,
-        "swap pts=${payload.presentationTimeUs / 1000}ms seq=${payload.contentSeq} " +
-          "quads=${payload.frame.quadCount} reused=$reuse drawMs=${(t1 - t0) / 1_000_000} " +
-          "swapMs=${(t2 - t1) / 1_000_000} headroomMs=$headroomMs leadMs=$leadMs pinned=$pinned"
+        "swap src=${snapshot.sourcePresentationTimeUs / 1000}ms pts=${snapshot.presentationTimeUs / 1000}ms " +
+          "phaseLeadMs=${snapshot.phaseLeadUs / 1000} req=${snapshot.requestSeq} seq=${snapshot.contentSeq} " +
+          "quads=${snapshot.frame.quadCount} reused=$reuse drawMs=${(t1 - t0) / 1_000_000} " +
+          "sleepMs=$scheduledSleepMs swapMs=${(t2 - t1) / 1_000_000} headroomMs=$headroomMs leadMs=$leadMs pinned=$pinned"
       )
     }
+  }
+
+  private fun sleepUntilScheduledSwap(releaseTimeNs: Long): Long {
+    val startNs = System.nanoTime()
+    val wakeNs = releaseTimeNs - swapLeadNs
+    var remainingNs = wakeNs - startNs
+    while (remainingNs > SCHEDULED_SWAP_SPIN_NS && !Thread.currentThread().isInterrupted) {
+      LockSupport.parkNanos(remainingNs)
+      remainingNs = wakeNs - System.nanoTime()
+    }
+    return ((System.nanoTime() - startNs).coerceAtLeast(0L)) / 1_000_000
+  }
+
+  private fun recordSwappedFrame(frameId: Long, releaseNs: Long) {
+    if (ptCount == PRESENT_RING) {
+      ptHead = (ptHead + 1) % PRESENT_RING
+      ptCount--
+      presentDroppedCount++
+    }
+    val tail = (ptHead + ptCount) % PRESENT_RING
+    ptFrameId[tail] = frameId
+    ptReleaseNs[tail] = releaseNs
+    ptCount++
+  }
+
+  private fun drainPresentTimestamps() {
+    if (!presentTimingEnabled) return
+    while (ptCount > 0) {
+      val idx = ptHead
+      val present = try {
+        AssFrameTimestamps.nativeGetDisplayPresentTime(ptFrameId[idx])
+      } catch (t: Throwable) {
+        presentTimingEnabled = false
+        return
+      }
+      if (present == AssFrameTimestamps.PENDING) return
+      ptHead = (ptHead + 1) % PRESENT_RING
+      ptCount--
+      if (present <= 0L) {
+        presentInvalidCount++
+        continue
+      }
+      recordPresentError(present - ptReleaseNs[idx])
+    }
+  }
+
+  private fun recordPresentError(errorNs: Long) {
+    presentMeasuredCount++
+    val errorMs = errorNs / 1_000_000
+    lastPresentErrorMs = errorMs
+    if (Math.abs(errorMs) > Math.abs(worstPresentErrorMs)) worstPresentErrorMs = errorMs
+    val frac = errorNs.toDouble() / vsyncNs.toDouble()
+    val bucket = when {
+      frac < -1.5 -> 0
+      frac < -0.5 -> 1
+      frac < 0.5 -> 2
+      frac < 1.5 -> 3
+      else -> 4
+    }
+    ptBuckets[bucket]++
   }
 
   private fun releaseEgl() {
@@ -810,6 +1321,16 @@ private class AtlasGlThread(
     private const val MSG_DRAW = 2
     private const val MSG_SIZE_CHANGED = 3
     private const val MSG_RELEASE = 4
+    private const val SYNC_LOG_INTERVAL_SWAPS = 120L
+
+    // Missing SurfaceFlinger's latch deadline costs a full refresh, so keep the
+    // margin proportional to the active cadence.
+    private const val SCHEDULED_SWAP_LEAD_MIN_NS = 6_000_000L
+    private const val SCHEDULED_SWAP_LEAD_MAX_NS = 18_000_000L
+    private const val SCHEDULED_SWAP_SPIN_NS = 200_000L
+    private const val MAX_RELEASE_DELTA_NS = 250_000_000L
+    private const val PRESENT_RING = 16
+    private const val PRESENT_BUCKETS = 5
 
     /**
      * Swaps finishing this far past the target release time arrived after the
@@ -850,8 +1371,9 @@ private class AtlasRenderer(private val assHandler: AssHandler) {
         varying vec4 v_Color;
         uniform sampler2D u_Texture;
         void main() {
-            float alpha = texture2D(u_Texture, v_TexCoord).a;
-            gl_FragColor = v_Color * alpha;
+            float mask = texture2D(u_Texture, v_TexCoord).a;
+            float alpha = v_Color.a * mask;
+            gl_FragColor = vec4(v_Color.rgb * alpha, alpha);
         }
   """.trimIndent()
 
@@ -915,17 +1437,30 @@ private class AtlasRenderer(private val assHandler: AssHandler) {
 
     GLES20.glPixelStorei(GLES20.GL_UNPACK_ALIGNMENT, 1)
     GLES20.glEnable(GLES20.GL_BLEND)
-    GLES20.glBlendFunc(GLES20.GL_SRC_ALPHA, GLES20.GL_ONE_MINUS_SRC_ALPHA)
+    // Store the translucent SurfaceView buffer premultiplied, matching Android
+    // layer composition and avoiding a second alpha multiply on libass masks.
+    GLES20.glBlendFuncSeparate(
+      GLES20.GL_ONE,
+      GLES20.GL_ONE_MINUS_SRC_ALPHA,
+      GLES20.GL_ONE,
+      GLES20.GL_ONE_MINUS_SRC_ALPHA
+    )
   }
 
   fun onSurfaceChanged(width: Int, height: Int) {
     surfaceSize = Size(width, height)
-    assHandler.render?.setFrameSize(width, height)
+    // Render libass at RENDER_SCALE of the physical surface; the viewport stays
+    // full-size so the GL upscales the lower-res atlas to fill the surface. The
+    // u_SurfaceSize denominator must match the (scaled) libass frame so vertices,
+    // baked in frame-space, still map across the whole surface.
+    val frameW = AssAtlasPipelineConfig.scaledForRender(width)
+    val frameH = AssAtlasPipelineConfig.scaledForRender(height)
+    assHandler.render?.setFrameSize(frameW, frameH)
     GLES20.glViewport(0, 0, width, height)
-    GLES20.glUniform2f(uSurfaceSize, width.toFloat(), height.toFloat())
+    GLES20.glUniform2f(uSurfaceSize, frameW.toFloat(), frameH.toFloat())
   }
 
-  fun onDrawFrame(payload: AtlasPayload, reuseUploads: Boolean) {
+  fun onDrawFrame(payload: AtlasDrawSnapshot, reuseUploads: Boolean) {
     GlUtil.clearFocusedBuffers()
 
     val frame = payload.frame

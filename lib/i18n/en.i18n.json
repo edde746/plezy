@@ -1040,6 +1040,7 @@
     "unwatchedOnly": "Unwatched only",
     "nextNUnwatched": "Next ${count} unwatched",
     "customAmount": "Custom amount...",
+    "includeSpecials": "Include Specials",
     "howManyEpisodes": "How many episodes?",
     "itemsQueued": "${count} items queued for download",
     "keepSynced": "Keep synced",

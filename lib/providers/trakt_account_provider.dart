@@ -4,12 +4,13 @@ import 'package:flutter/foundation.dart';
 
 import '../mixins/disposable_change_notifier_mixin.dart';
 import '../models/trackers/device_code.dart';
+import '../services/trackers/tracker_account_store.dart';
 import '../services/trackers/tracker_connect_runner.dart';
-import '../services/trakt/trakt_account_store.dart';
+import '../services/trackers/tracker_constants.dart';
+import '../services/trackers/tracker_session.dart';
 import '../services/trakt/trakt_auth_service.dart';
 import '../services/trakt/trakt_client.dart';
 import '../services/trakt/trakt_scrobble_service.dart';
-import '../services/trakt/trakt_session.dart';
 import '../services/trakt/trakt_sync_service.dart';
 import '../utils/app_logger.dart';
 
@@ -19,15 +20,15 @@ import '../utils/app_logger.dart';
 /// session and pushes it to both `TraktScrobbleService` and `TraktSyncService`.
 class TraktAccountProvider extends ChangeNotifier with DisposableChangeNotifierMixin {
   final TraktAuthService _auth = TraktAuthService();
-  final _store = traktAccountStore;
+  final TrackerAccountStore _store = trackerAccountStore(TrackerService.trakt);
 
-  TraktSession? _session;
+  TrackerSession? _session;
   String _activeUserUuid = '';
   int _bindingGeneration = 0;
   bool _isConnecting = false;
   Completer<void>? _cancelCompleter;
 
-  TraktSession? get session => _session;
+  TrackerSession? get session => _session;
   bool get isConnected => _session != null;
   String? get username => _session?.username;
   bool get isConnecting => _isConnecting;
@@ -60,7 +61,7 @@ class TraktAccountProvider extends ChangeNotifier with DisposableChangeNotifierM
     _cancelCompleter = Completer<void>();
     notifyListeners();
     try {
-      return await runConnectPipeline<TraktSession>(
+      return await runConnectPipeline<TrackerSession>(
         logLabel: 'Trakt',
         authorize: () => _auth.authorize(
           onCodeReady: onCodeReady,
@@ -80,7 +81,7 @@ class TraktAccountProvider extends ChangeNotifier with DisposableChangeNotifierM
     }
   }
 
-  Future<TraktSession> _enrichUsername(TraktSession raw) async {
+  Future<TrackerSession> _enrichUsername(TrackerSession raw) async {
     TraktClient? tmp;
     try {
       tmp = TraktClient(raw, onSessionInvalidated: () {});
@@ -111,16 +112,16 @@ class TraktAccountProvider extends ChangeNotifier with DisposableChangeNotifierM
     await _store.clear(userUuid);
   }
 
-  void _bindCurrentSession(TraktSession? session) {
+  void _bindCurrentSession(TrackerSession? session) {
     _setSessionAndRebind(_activeUserUuid, ++_bindingGeneration, session);
   }
 
-  void _setSessionAndRebind(String userUuid, int generation, TraktSession? session) {
+  void _setSessionAndRebind(String userUuid, int generation, TrackerSession? session) {
     if (!_isCurrentBinding(userUuid, generation)) return;
     _session = session;
 
     void handleInvalidated() => _handleSessionInvalidated(userUuid, generation);
-    void handleUpdated(TraktSession next) => _handleSessionUpdated(userUuid, generation, next);
+    void handleUpdated(TrackerSession next) => _handleSessionUpdated(userUuid, generation, next);
 
     TraktScrobbleService.instance.rebindToProfile(
       session,
@@ -140,7 +141,7 @@ class TraktAccountProvider extends ChangeNotifier with DisposableChangeNotifierM
     return !isDisposed && userUuid == _activeUserUuid && generation == _bindingGeneration;
   }
 
-  void _handleSessionUpdated(String userUuid, int generation, TraktSession session) {
+  void _handleSessionUpdated(String userUuid, int generation, TrackerSession session) {
     if (!_isCurrentBinding(userUuid, generation)) return;
     _session = session;
     TraktScrobbleService.instance.updateSession(session);
@@ -162,7 +163,7 @@ class TraktAccountProvider extends ChangeNotifier with DisposableChangeNotifierM
   int get debugBindingGenerationForTesting => _bindingGeneration;
 
   @visibleForTesting
-  void debugHandleSessionUpdatedForTesting(String userUuid, int generation, TraktSession session) {
+  void debugHandleSessionUpdatedForTesting(String userUuid, int generation, TrackerSession session) {
     _handleSessionUpdated(userUuid, generation, session);
   }
 

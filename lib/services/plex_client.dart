@@ -1198,29 +1198,6 @@ class PlexClient
     );
   }
 
-  /// Set per-media language preferences (audio and subtitle)
-  /// For TV shows, use grandparentRatingKey to set preference for the entire series
-  /// For movies, use the movie's ratingKey
-  Future<bool> setMetadataPreferences(String ratingKey, {String? audioLanguage, String? subtitleLanguage}) async {
-    final queryParams = <String, dynamic>{};
-    if (audioLanguage != null) {
-      queryParams['audioLanguage'] = audioLanguage;
-    }
-    if (subtitleLanguage != null) {
-      queryParams['subtitleLanguage'] = subtitleLanguage;
-    }
-
-    // If no preferences to set, return early
-    if (queryParams.isEmpty) {
-      return true;
-    }
-
-    return _wrapBoolApiCall(
-      () => _http.put('/library/metadata/$ratingKey/prefs', queryParameters: queryParams),
-      'Failed to set metadata preferences',
-    );
-  }
-
   /// Select specific audio and subtitle streams for playback
   /// This updates which streams are "selected" in the media metadata
   /// Uses the part ID from media info for accurate stream selection
@@ -2726,12 +2703,14 @@ class PlexClient
     String? librarySectionTitle,
   }) async {
     try {
-      final machineId = config.machineIdentifier ?? await getMachineIdentifier();
-      if (machineId == null) {
-        throw Exception('Could not get server machine identifier');
-      }
-
-      final uri = 'server://$machineId/com.plexapp.plugins.library/library/metadata/$showRatingKey/children';
+      // Build the queue from the show's `/allLeaves` (every episode) rather than
+      // `/children` (its seasons). Plex flattens `/children` season-by-season,
+      // which clumps the whole Specials folder together; `/allLeaves` makes Plex
+      // order the queue by the show's aired episode order, so Specials interleave
+      // between regular episodes the way Plex's own client plays them. `/children`
+      // otherwise strands interleaved Specials ahead of S01, so sequential
+      // auto-play walks the season and never reaches them (#1416).
+      final uri = '${await buildMetadataUri(showRatingKey)}/allLeaves';
       return await createPlayQueue(
         uri: uri,
         type: 'video',
@@ -3071,9 +3050,13 @@ class PlexClient
     int? offsetMs,
   }) {
     final isOriginal = preset.isOriginal;
-    final selectedEmbeddedTextSubtitle = _shouldEmbedSubtitleInHttpTranscode(selectedSubtitleTrack)
+    final selectedEmbeddedSubtitle = _shouldEmbedSubtitleInHttpTranscode(selectedSubtitleTrack)
         ? selectedSubtitleTrack
         : null;
+    // Only text subtitles get `advancedSubtitles=text`; image subtitles
+    // (PGS/VOBSUB) are copied into the MKV as-is for the player to render.
+    final embedSubtitleAsText =
+        selectedEmbeddedSubtitle != null && _canTranscodeSubtitleAsText(selectedEmbeddedSubtitle);
 
     // Build the client profile from scratch via X-Plex-Client-Profile-Extra.
     // We use the `Generic` base platform (see [_transcodePlatformName]) which
@@ -3127,12 +3110,13 @@ class PlexClient
       'directStreamAudio': '0',
       'mediaBufferSize': '102400',
       'session': transcodeSessionId,
-      // Embed selected text subtitles in the MKV stream. Bitmap subtitles and
-      // unselected tracks stay at `none` so the server cannot burn them into
-      // the video.
-      'subtitles': selectedEmbeddedTextSubtitle != null ? 'embedded' : 'none',
-      if (selectedEmbeddedTextSubtitle != null) 'subtitleStreamID': selectedEmbeddedTextSubtitle.id.toString(),
-      if (selectedEmbeddedTextSubtitle != null) 'advancedSubtitles': 'text',
+      // Embed the selected subtitle in the MKV stream: text codecs are
+      // converted to text, image codecs (PGS/VOBSUB) are copied as-is and
+      // rendered by the player — never burned into the video. Unselected tracks
+      // and keyed sidecars stay at `none`.
+      'subtitles': selectedEmbeddedSubtitle != null ? 'embedded' : 'none',
+      if (selectedEmbeddedSubtitle != null) 'subtitleStreamID': selectedEmbeddedSubtitle.id.toString(),
+      if (embedSubtitleAsText) 'advancedSubtitles': 'text',
       // Preserve source timestamps for the HTTP/MKV stream so player seeks and
       // sidecar subtitles stay aligned with Plex source time.
       'copyts': '1',
@@ -3527,7 +3511,7 @@ class PlexClient
   bool _shouldEmbedSubtitleInHttpTranscode(MediaSubtitleTrack? track) {
     if (track == null) return false;
     if (track.key != null && track.key!.isNotEmpty) return false;
-    return _canTranscodeSubtitleAsText(track);
+    return CodecUtils.isEmbeddableSubtitleCodec(track.codec);
   }
 
   SubtitleTrack _subtitleTrackFromMediaTrack(MediaSubtitleTrack track, String url) {
@@ -3544,8 +3528,8 @@ class PlexClient
   }
 
   /// Build subtitle sidecars for Plex transcode playback. Only real keyed
-  /// sidecars are loaded externally; selected embedded text subtitles are
-  /// carried by the main HTTP/MKV stream.
+  /// sidecars are loaded externally; selected embedded subtitles (text or
+  /// image) are carried by the main HTTP/MKV stream.
   List<SubtitleTrack> _buildTranscodeSidecarSubtitles(MediaSourceInfo? mediaInfo) {
     if (mediaInfo == null) return const [];
     if (config.token == null) {

@@ -1288,6 +1288,7 @@ class _TranslationsDownloadsRu extends TranslationsDownloadsEn {
 	@override String get unwatchedOnly => 'Только непросмотренные';
 	@override String nextNUnwatched({required Object count}) => 'Следующие ${count} непросмотренных';
 	@override String get customAmount => 'Указать количество...';
+	@override String get includeSpecials => 'Включить спецвыпуски';
 	@override String get howManyEpisodes => 'Сколько эпизодов?';
 	@override String itemsQueued({required Object count}) => '${count} элементов добавлено в очередь загрузки';
 	@override String get keepSynced => 'Синхронизировать';
@@ -2878,6 +2879,7 @@ extension on TranslationsRu {
 			'downloads.unwatchedOnly' => 'Только непросмотренные',
 			'downloads.nextNUnwatched' => ({required Object count}) => 'Следующие ${count} непросмотренных',
 			'downloads.customAmount' => 'Указать количество...',
+			'downloads.includeSpecials' => 'Включить спецвыпуски',
 			'downloads.howManyEpisodes' => 'Сколько эпизодов?',
 			'downloads.itemsQueued' => ({required Object count}) => '${count} элементов добавлено в очередь загрузки',
 			'downloads.keepSynced' => 'Синхронизировать',
@@ -2950,9 +2952,9 @@ extension on TranslationsRu {
 			'companionRemote.pairing.authFailed' => 'Аутентификация не удалась. На обоих устройствах нужен один аккаунт Plex.',
 			'companionRemote.pairing.failedToConnect' => ({required Object error}) => 'Не удалось подключиться: ${error}',
 			'companionRemote.remote.disconnectConfirm' => 'Отключиться от удалённой сессии?',
-			'companionRemote.remote.reconnecting' => 'Переподключение...',
 			_ => null,
 		} ?? switch (path) {
+			'companionRemote.remote.reconnecting' => 'Переподключение...',
 			'companionRemote.remote.attemptOf' => ({required Object current}) => 'Попытка ${current} из 5',
 			'companionRemote.remote.retryNow' => 'Повторить сейчас',
 			'companionRemote.remote.tabRemote' => 'Пульт',

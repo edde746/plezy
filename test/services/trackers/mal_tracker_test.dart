@@ -5,13 +5,13 @@ import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:plezy/models/trackers/anime_ids.dart';
 import 'package:plezy/models/trackers/tracker_context.dart';
-import 'package:plezy/services/trackers/mal/mal_session.dart';
 import 'package:plezy/services/trackers/mal/mal_tracker.dart';
+import 'package:plezy/services/trackers/tracker_session.dart';
 import 'package:plezy/utils/external_ids.dart';
 
-MalSession _session() {
+TrackerSession _session() {
   final now = DateTime.now().millisecondsSinceEpoch ~/ 1000;
-  return MalSession(accessToken: 'token', refreshToken: 'refresh', expiresAt: now + 86400, createdAt: now);
+  return TrackerSession(accessToken: 'token', refreshToken: 'refresh', expiresAt: now + 86400, createdAt: now);
 }
 
 TrackerContext _episode({int malId = 21, int episodeNumber = 12, int? animeProgress = 12}) {
@@ -112,6 +112,64 @@ void main() {
       final delete = requests.single;
       expect(delete.method, 'DELETE');
       expect(delete.url.path, '/v2/anime/21/my_list_status');
+    });
+
+    test('caches the episode count across repeated markWatched calls', () async {
+      var counts = 0;
+      final client = MockClient((request) async {
+        if (request.method == 'GET') {
+          counts++;
+          return http.Response(json.encode({'num_episodes': 12}), 200);
+        }
+        if (request.method == 'PUT') return http.Response('{}', 200);
+        fail('Unexpected ${request.method} ${request.url}');
+      });
+      tracker.rebindSession(_session(), onSessionInvalidated: () {}, httpClient: client);
+
+      await tracker.markWatched(_episode());
+      await tracker.markWatched(_episode());
+
+      expect(counts, 1);
+    });
+
+    test('re-fetches the episode count after a failed lookup', () async {
+      var counts = 0;
+      final client = MockClient((request) async {
+        if (request.method == 'GET') {
+          counts++;
+          // First lookup fails transiently; the failure is evicted so the next
+          // markWatched re-fetches rather than caching the miss forever.
+          return counts == 1 ? http.Response('boom', 500) : http.Response(json.encode({'num_episodes': 12}), 200);
+        }
+        if (request.method == 'PUT') return http.Response('{}', 200);
+        fail('Unexpected ${request.method} ${request.url}');
+      });
+      tracker.rebindSession(_session(), onSessionInvalidated: () {}, httpClient: client);
+
+      await tracker.markWatched(_episode());
+      await tracker.markWatched(_episode());
+
+      expect(counts, 2);
+    });
+
+    test('clears the cached episode count when the session is rebound', () async {
+      var counts = 0;
+      http.Client makeClient() => MockClient((request) async {
+        if (request.method == 'GET') {
+          counts++;
+          return http.Response(json.encode({'num_episodes': 12}), 200);
+        }
+        if (request.method == 'PUT') return http.Response('{}', 200);
+        fail('Unexpected ${request.method} ${request.url}');
+      });
+
+      tracker.rebindSession(_session(), onSessionInvalidated: () {}, httpClient: makeClient());
+      await tracker.markWatched(_episode());
+
+      tracker.rebindSession(_session(), onSessionInvalidated: () {}, httpClient: makeClient());
+      await tracker.markWatched(_episode());
+
+      expect(counts, 2);
     });
   });
 }

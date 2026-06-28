@@ -47,8 +47,11 @@ MediaItem _meta({String id = 'rk1'}) => MediaItem(id: id, backend: MediaBackend.
 /// Player that records calls and can be configured per-test.
 class _FakePlayer with PlayerStreamControllersMixin implements Player {
   PlayerState _state;
-  _FakePlayer({Tracks tracks = const Tracks(), TrackSelection track = const TrackSelection(), this.attachesExternalSubtitlesAtOpen = false})
-    : _state = PlayerState(tracks: tracks, track: track);
+  _FakePlayer({
+    Tracks tracks = const Tracks(),
+    TrackSelection track = const TrackSelection(),
+    this.attachesExternalSubtitlesAtOpen = false,
+  }) : _state = PlayerState(tracks: tracks, track: track);
 
   @override
   PlayerState get state => _state;
@@ -126,13 +129,7 @@ MediaSourceInfo _mediaInfoWithSubtitles({bool selected = false}) {
     videoUrl: 'https://example.com/video.mp4',
     audioTracks: [MediaAudioTrack(id: 1, language: 'English', languageCode: 'eng', selected: true)],
     subtitleTracks: [
-      MediaSubtitleTrack(
-        id: 10,
-        language: 'English',
-        languageCode: 'eng',
-        selected: selected,
-        forced: false,
-      ),
+      MediaSubtitleTrack(id: 10, language: 'English', languageCode: 'eng', selected: selected, forced: false),
     ],
     chapters: const [],
   );
@@ -144,13 +141,7 @@ Future<void> _drainAsync() async {
   }
 }
 
-Future<void> _noopPersister({
-  required String id,
-  required int partId,
-  required String trackType,
-  String? languageCode,
-  int? streamID,
-}) async {}
+Future<void> _noopPersister({required int partId, required String trackType, int? streamID}) async {}
 
 void main() {
   // The constructor doesn't touch prefs, but [dispose] / [applyTrackSelection]
@@ -358,7 +349,9 @@ void main() {
     test('waits for player subtitle tracks when Plex metadata advertises subtitles', () async {
       await SettingsService.getInstance();
       final player = _FakePlayer(
-        tracks: const Tracks(audio: [AudioTrack(id: '1', language: 'eng')]),
+        tracks: const Tracks(
+          audio: [AudioTrack(id: '1', language: 'eng')],
+        ),
       );
       final mgr = _make(player: player, mediaInfo: _mediaInfoWithSubtitles());
       addTearDown(mgr.dispose);
@@ -491,9 +484,7 @@ void main() {
       final mgr = _make(player: player);
       addTearDown(mgr.dispose);
 
-      mgr.cacheExternalSubtitles([
-        SubtitleTrack.uri('https://example/fallback.srt', title: 'EN'),
-      ]);
+      mgr.cacheExternalSubtitles([SubtitleTrack.uri('https://example/fallback.srt', title: 'EN')]);
 
       await mgr.onBackendSwitched();
 
@@ -505,9 +496,7 @@ void main() {
       final mgr = _make(player: player);
       addTearDown(mgr.dispose);
 
-      mgr.cacheExternalSubtitles([
-        SubtitleTrack.uri('https://example/fallback.srt', title: 'EN'),
-      ]);
+      mgr.cacheExternalSubtitles([SubtitleTrack.uri('https://example/fallback.srt', title: 'EN')]);
 
       await mgr.onBackendSwitched();
 

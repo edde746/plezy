@@ -1,4 +1,3 @@
-import 'dart:math' as math;
 import 'dart:ui';
 
 import 'package:cached_network_image_ce/cached_network_image.dart';
@@ -77,9 +76,8 @@ class JellyfinTrickplayService implements ScrubPreviewSource {
   }
 
   /// Pure math helper exposed for unit tests: maps a timestamp to the
-  /// sheet index, tile coordinates within the sheet, and the sheet's
-  /// (possibly partial) row/column count. Returns `null` only when the
-  /// manifest is degenerate.
+  /// sheet index, tile coordinates within the sheet, and the sheet's full
+  /// row/column count. Returns `null` only when the manifest is degenerate.
   TrickplayTileLocation? tileLocationFor(Duration time) {
     if (_disposed) return null;
     final info = _info;
@@ -94,17 +92,12 @@ class JellyfinTrickplayService implements ScrubPreviewSource {
     final tileColumn = tileInSheet % info.tileWidth;
     final tileRow = tileInSheet ~/ info.tileWidth;
 
-    final firstThumbInSheet = sheetIndex * tilesPerSheet;
-    final thumbsInSheet = math.min(tilesPerSheet, info.thumbnailCount - firstThumbInSheet);
-    final sheetColumns = thumbsInSheet >= info.tileWidth ? info.tileWidth : thumbsInSheet;
-    final sheetRows = (thumbsInSheet + info.tileWidth - 1) ~/ info.tileWidth;
-
     return TrickplayTileLocation(
       sheetIndex: sheetIndex,
       tileColumn: tileColumn,
       tileRow: tileRow,
-      sheetColumns: sheetColumns,
-      sheetRows: sheetRows,
+      sheetColumns: info.tileWidth,
+      sheetRows: info.tileHeight,
       sourceTileSize: Size(info.width.toDouble(), info.height.toDouble()),
     );
   }
@@ -176,9 +169,9 @@ class JellyfinTrickplayService implements ScrubPreviewSource {
 }
 
 /// Pure data: which sheet to fetch, which tile within it to display, the
-/// sheet's (possibly partial) row/column count, and the source tile's
-/// pixel dimensions for aspect-correct scaling at render time. Returned
-/// by [JellyfinTrickplayService.tileLocationFor] for unit tests.
+/// sheet's row/column count, and the source tile's pixel dimensions for
+/// aspect-correct scaling at render time. Returned by
+/// [JellyfinTrickplayService.tileLocationFor] for unit tests.
 class TrickplayTileLocation {
   final int sheetIndex;
   final int tileColumn;
