@@ -443,6 +443,29 @@ void main() {
     expect(startPath, isNot(contains('X-Plex-Token')));
   });
 
+  test('forDownload appends download=1 to the start path only', () {
+    final client = makeClient((_) async => http.Response('not used', 500));
+    addTearDown(client.close);
+
+    final params = client.buildTranscodeParamsForTesting(
+      ratingKey: '42',
+      mediaIndex: 0,
+      preset: TranscodeQualityPreset.p720_3mbps,
+      sessionIdentifier: 'session-id',
+      transcodeSessionId: 'transcode-id',
+    );
+
+    final downloadPath = client.buildTranscodeStartPathFromParamsForTesting(params, forDownload: true);
+    final streamPath = client.buildTranscodeStartPathFromParamsForTesting(params, forDownload: false);
+
+    // download=1 lives only in the start path, never in the params map, so the
+    // /decision request stays byte-identical to the playback transcode.
+    expect(params.containsKey('download'), isFalse);
+    expect(downloadPath, startsWith('/video/:/transcode/universal/start?'));
+    expect(downloadPath, contains('&download=1'));
+    expect(streamPath, isNot(contains('download=1')));
+  });
+
   test('transcode params preserve resolved media and part indices', () {
     final client = makeClient((_) async => http.Response('not used', 500));
     addTearDown(client.close);

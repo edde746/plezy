@@ -6,6 +6,7 @@ import '../media/media_item.dart';
 import '../media/media_kind.dart';
 import '../media/media_server_client.dart';
 import '../models/download_models.dart';
+import '../models/transcode_quality_preset.dart';
 import '../utils/app_logger.dart';
 import '../utils/content_utils.dart';
 import '../media/episode_collection.dart';
@@ -64,7 +65,13 @@ class SyncRuleExecutor {
     required MultiServerManager serverManager,
     required Map<String, DownloadProgress> downloads,
     required Map<String, MediaItem> metadata,
-    required Future<bool> Function(MediaItem episode, MediaServerClient client, {int mediaIndex}) queueSingleDownload,
+    required Future<bool> Function(
+      MediaItem episode,
+      MediaServerClient client, {
+      int mediaIndex,
+      TranscodeQualityPreset quality,
+    })
+    queueSingleDownload,
     required bool isOffline,
     bool force = false,
   }) async {
@@ -139,7 +146,13 @@ class SyncRuleExecutor {
     required MultiServerManager serverManager,
     required Map<String, DownloadProgress> downloads,
     required Map<String, MediaItem> metadata,
-    required Future<bool> Function(MediaItem episode, MediaServerClient client, {int mediaIndex}) queueSingleDownload,
+    required Future<bool> Function(
+      MediaItem episode,
+      MediaServerClient client, {
+      int mediaIndex,
+      TranscodeQualityPreset quality,
+    })
+    queueSingleDownload,
     required bool isOffline,
   }) async {
     if (_isExecuting) {
@@ -184,7 +197,13 @@ class SyncRuleExecutor {
     required MultiServerManager serverManager,
     required Map<String, DownloadProgress> downloads,
     required Map<String, MediaItem> metadata,
-    required Future<bool> Function(MediaItem episode, MediaServerClient client, {int mediaIndex}) queueSingleDownload,
+    required Future<bool> Function(
+      MediaItem episode,
+      MediaServerClient client, {
+      int mediaIndex,
+      TranscodeQualityPreset quality,
+    })
+    queueSingleDownload,
   }) async {
     final client = serverManager.getClient(ServerId(rule.serverId));
     if (client == null || !serverManager.isServerOnline(ServerId(rule.serverId))) {
@@ -250,7 +269,13 @@ class SyncRuleExecutor {
     required String profileId,
     required Map<String, DownloadProgress> downloads,
     required Map<String, MediaItem> metadata,
-    required Future<bool> Function(MediaItem episode, MediaServerClient client, {int mediaIndex}) queueSingleDownload,
+    required Future<bool> Function(
+      MediaItem episode,
+      MediaServerClient client, {
+      int mediaIndex,
+      TranscodeQualityPreset quality,
+    })
+    queueSingleDownload,
   }) async {
     final fromServer = <MediaItem>[];
     final sourceMetadata = metadata[rule.globalKey];
@@ -309,7 +334,12 @@ class SyncRuleExecutor {
       if (_isActiveDownload(downloads[gk])) continue;
 
       final episodeWithServer = ep.serverId != null ? ep : ep.copyWith(serverId: rule.serverId);
-      final ok = await queueSingleDownload(episodeWithServer, client, mediaIndex: rule.mediaIndex);
+      final ok = await queueSingleDownload(
+        episodeWithServer,
+        client,
+        mediaIndex: rule.mediaIndex,
+        quality: TranscodeQualityPreset.fromStorage(rule.downloadQuality),
+      );
       if (ok) {
         queued++;
         appLogger.i('Sync rule ${rule.globalKey}: queued ${ep.title ?? ep.id}');
@@ -334,7 +364,13 @@ class SyncRuleExecutor {
     required String profileId,
     required Map<String, DownloadProgress> downloads,
     required Map<String, MediaItem> metadata,
-    required Future<bool> Function(MediaItem episode, MediaServerClient client, {int mediaIndex}) queueSingleDownload,
+    required Future<bool> Function(
+      MediaItem episode,
+      MediaServerClient client, {
+      int mediaIndex,
+      TranscodeQualityPreset quality,
+    })
+    queueSingleDownload,
   }) async {
     final List<MediaItem> rootItems;
     try {
@@ -382,7 +418,12 @@ class SyncRuleExecutor {
       if (_isActiveDownload(downloads[gk])) continue;
 
       final itemWithServer = item.serverId != null ? item : item.copyWith(serverId: rule.serverId);
-      final ok = await queueSingleDownload(itemWithServer, client, mediaIndex: 0);
+      final ok = await queueSingleDownload(
+        itemWithServer,
+        client,
+        mediaIndex: 0,
+        quality: TranscodeQualityPreset.fromStorage(rule.downloadQuality),
+      );
       if (ok) {
         queued++;
         appLogger.i('Sync rule ${rule.globalKey}: queued ${item.title ?? item.id}');

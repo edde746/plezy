@@ -3,9 +3,12 @@ import '../media/ids.dart';
 import 'package:flutter/services.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import '../i18n/strings.g.dart';
+import '../media/media_backend.dart';
 import '../media/media_item.dart';
 import '../media/media_kind.dart';
 import '../media/media_server_client.dart';
+import '../media/media_version.dart';
+import '../models/transcode_quality_preset.dart';
 import '../database/app_database.dart';
 import '../providers/download_provider.dart';
 import '../services/settings_service.dart';
@@ -13,6 +16,7 @@ import '../services/sync_rule_executor.dart';
 import 'content_utils.dart';
 import 'dialogs.dart';
 import 'download_version_utils.dart';
+import 'quality_preset_labels.dart';
 import 'snackbar_helper.dart';
 
 /// Dialog option for the download picker. Typed to avoid stringly-typed values.
@@ -149,6 +153,26 @@ Future<DownloadResult?> showDownloadOptionsAndQueue(
   final versionConfig = await resolveDownloadVersion(context, metadata, client);
   if (versionConfig == null || !context.mounted) return null;
 
+  // Pick a server-transcoded download quality. Plex only — both backends
+  // advertise videoTranscoding, but Jellyfin downloads stay original.
+  var qualityPreset = TranscodeQualityPreset.original;
+  if (client.backend == MediaBackend.plex && client.capabilities.videoTranscoding) {
+    final isSingleItem = kind == MediaKind.movie || kind == MediaKind.episode;
+    // Size estimates only make sense for a single item; a show/season expands
+    // to many episodes, so omit per-row sizes there.
+    final selectedVersion = isSingleItem ? _selectedDownloadVersion(metadata, versionConfig.mediaIndex) : null;
+    final picked = await showQualityPickerDialog(
+      context,
+      title: t.downloads.downloadQuality,
+      initialPreset: settings?.read(SettingsService.defaultDownloadQualityPreset) ?? TranscodeQualityPreset.original,
+      sourceBitrateKbps: selectedVersion?.bitrate,
+      sourceDurationMs: isSingleItem ? metadata.durationMs : null,
+      sourceSizeBytes: selectedVersion?.totalSizeBytes,
+    );
+    if (picked == null || !context.mounted) return null;
+    qualityPreset = picked;
+  }
+
   // Create or update sync rule before queueing (so the rule exists even if queue fails)
   bool syncRuleUpdated = false;
   if (keepSynced) {
@@ -163,6 +187,7 @@ Future<DownloadResult?> showDownloadOptionsAndQueue(
       episodeCount: syncCount,
       mediaIndex: versionConfig.mediaIndex,
       includeSpecials: includeSpecials,
+      qualityPreset: qualityPreset,
       targetMetadata: metadata,
     );
   }
@@ -179,6 +204,7 @@ Future<DownloadResult?> showDownloadOptionsAndQueue(
     filter: filter,
     maxCount: maxCount,
     includeSpecials: includeSpecials,
+    qualityPreset: qualityPreset,
   );
 
   return DownloadResult(
@@ -186,6 +212,15 @@ Future<DownloadResult?> showDownloadOptionsAndQueue(
     syncRuleCreated: keepSynced && !syncRuleUpdated,
     syncRuleUpdated: syncRuleUpdated,
   );
+}
+
+/// The [MediaVersion] selected for a single-item download, or null when the
+/// item has no versions or the index is out of range (the quality picker then
+/// shows labels without a size estimate).
+MediaVersion? _selectedDownloadVersion(MediaItem metadata, int mediaIndex) {
+  final versions = metadata.mediaVersions;
+  if (versions == null || mediaIndex < 0 || mediaIndex >= versions.length) return null;
+  return versions[mediaIndex];
 }
 
 /// Shows download options dialog for a collection or playlist, then queues

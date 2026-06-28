@@ -60,7 +60,13 @@ mixin _JellyfinImageDownloadMethods on MediaServerCacheMixin {
   }
 
   @override
-  Future<DownloadResolution> resolveDownload(MediaItem item, {int mediaIndex = 0}) async {
+  Future<DownloadResolution> resolveDownload(
+    MediaItem item, {
+    int mediaIndex = 0,
+    // Server-transcoded downloads are Plex-only; Jellyfin always direct-streams
+    // the original file regardless of the requested preset.
+    TranscodeQualityPreset preset = TranscodeQualityPreset.original,
+  }) async {
     final bundle = await fetchPlaybackBundle(item.id, sourceIndex: mediaIndex);
     final selectedSourceId = bundle?.selectedSourceId;
     // Direct-stream the selected original file. Jellyfin's `Static=true`

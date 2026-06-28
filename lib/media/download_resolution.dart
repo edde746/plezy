@@ -50,5 +50,15 @@ class DownloadResolution {
   final String? mediaSourceId;
   final List<DownloadSubtitleSpec> externalSubtitles;
 
-  const DownloadResolution({required this.videoUrl, this.mediaSourceId, this.externalSubtitles = const []});
+  /// On-disk container/extension the saved file should use, e.g. `mkv` for a
+  /// server-transcoded download whose URL carries no file extension. Null means
+  /// derive the extension from [videoUrl] as before.
+  final String? container;
+
+  const DownloadResolution({
+    required this.videoUrl,
+    this.mediaSourceId,
+    this.externalSubtitles = const [],
+    this.container,
+  });
 }

@@ -10,6 +10,7 @@ import 'package:plezy/media/media_item.dart';
 import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/media/media_server_client.dart';
 import 'package:plezy/models/download_models.dart';
+import 'package:plezy/models/transcode_quality_preset.dart';
 import 'package:plezy/providers/download_provider.dart';
 import 'package:plezy/services/download_manager_service.dart';
 import 'package:plezy/services/download_storage_service.dart';
@@ -987,6 +988,95 @@ void main() {
     test('DownloadFilter has all/unwatched values', () {
       expect(DownloadFilter.values, contains(DownloadFilter.all));
       expect(DownloadFilter.values, contains(DownloadFilter.unwatched));
+    });
+  });
+
+  group('DownloadProvider — quality derivation for partial resume', () {
+    // A show/season has no row of its own, so a resume re-reads the quality from
+    // a representative already-downloaded child episode.
+    Future<void> seedDownloadedEpisode(
+      DownloadProvider p, {
+      required ServerId serverId,
+      required String ratingKey,
+      required String grandparentId,
+      required String parentId,
+      required TranscodeQualityPreset quality,
+    }) async {
+      final globalKey = '$serverId:$ratingKey';
+      await db.insertDownload(
+        serverId: serverId,
+        ratingKey: ratingKey,
+        globalKey: globalKey,
+        type: 'episode',
+        parentRatingKey: parentId,
+        grandparentRatingKey: grandparentId,
+        status: DownloadStatus.completed.index,
+        downloadQuality: quality.storageValue,
+      );
+      p.debugSeedState(
+        downloads: {globalKey: DownloadProgress(globalKey: globalKey, status: DownloadStatus.completed)},
+        metadata: {
+          globalKey: MediaItem(
+            id: ratingKey,
+            backend: MediaBackend.plex,
+            kind: MediaKind.episode,
+            title: 'Ep $ratingKey',
+            serverId: serverId,
+            grandparentId: grandparentId,
+            parentId: parentId,
+          ),
+        },
+      );
+    }
+
+    MediaItem container(MediaKind kind, String id, ServerId serverId) =>
+        MediaItem(id: id, backend: MediaBackend.plex, kind: kind, title: '$kind', serverId: serverId);
+
+    test('inherits a downloaded sibling episode quality (show and season)', () async {
+      final p = DownloadProvider.forTesting(downloadManager: downloadManager, database: db);
+      await p.ensureInitialized();
+      await seedDownloadedEpisode(
+        p,
+        serverId: ServerId('srvA'),
+        ratingKey: 'ep-1',
+        grandparentId: 'show-1',
+        parentId: 'season-1',
+        quality: TranscodeQualityPreset.p720_3mbps,
+      );
+
+      expect(
+        await p.debugDownloadedChildQuality(container(MediaKind.show, 'show-1', ServerId('srvA'))),
+        TranscodeQualityPreset.p720_3mbps,
+      );
+      expect(
+        await p.debugDownloadedChildQuality(container(MediaKind.season, 'season-1', ServerId('srvA'))),
+        TranscodeQualityPreset.p720_3mbps,
+      );
+
+      p.dispose();
+    });
+
+    test('ignores a same-rating-key sibling downloaded on another server', () async {
+      final p = DownloadProvider.forTesting(downloadManager: downloadManager, database: db);
+      await p.ensureInitialized();
+      // Plex rating keys are server-local and collide across servers, so a
+      // transcoded episode under show-1 on server B must not leak into a server
+      // A resume of "show-1".
+      await seedDownloadedEpisode(
+        p,
+        serverId: ServerId('srvB'),
+        ratingKey: 'ep-1',
+        grandparentId: 'show-1',
+        parentId: 'season-1',
+        quality: TranscodeQualityPreset.p1080_20mbps,
+      );
+
+      expect(
+        await p.debugDownloadedChildQuality(container(MediaKind.show, 'show-1', ServerId('srvA'))),
+        TranscodeQualityPreset.original,
+      );
+
+      p.dispose();
     });
   });
 }

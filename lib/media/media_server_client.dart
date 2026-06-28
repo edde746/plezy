@@ -6,6 +6,7 @@ import '../utils/app_logger.dart';
 import '../utils/media_server_http_client.dart' show AbortController, MediaServerResponse;
 import '../utils/external_ids.dart';
 import '../utils/watch_state_notifier.dart';
+import '../models/transcode_quality_preset.dart';
 import 'download_resolution.dart';
 import 'ids.dart';
 import 'library_filter_result.dart';
@@ -576,7 +577,15 @@ abstract class MediaServerClient {
   /// any external subtitle tracks that should be saved alongside it.
   ///
   /// [mediaIndex] selects among multiple media versions when an item has them.
-  Future<DownloadResolution> resolveDownload(MediaItem item, {int mediaIndex = 0});
+  ///
+  /// [preset] requests a server-transcoded download at that quality (Plex
+  /// only); [TranscodeQualityPreset.original] downloads the source file. Plex
+  /// falls back to the original file when the server can't transcode.
+  Future<DownloadResolution> resolveDownload(
+    MediaItem item, {
+    int mediaIndex = 0,
+    TranscodeQualityPreset preset = TranscodeQualityPreset.original,
+  });
 
   /// The artwork files the download pipeline should persist for [item] so
   /// the offline UI can render its poster, clear logo, and background art.

@@ -374,9 +374,16 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
       final versionConfig = await _resolveDownloadVersion(context, metadata, client);
       if (versionConfig == null || !mounted) return;
 
+      // Preserve the chosen quality across the delete + re-queue.
+      final retryQuality = await downloadProvider.downloadQualityFor(globalKey);
       await downloadProvider.deleteDownload(globalKey);
       try {
-        await downloadProvider.queueDownload(metadata, client, versionConfig: versionConfig);
+        await downloadProvider.queueDownload(
+          metadata,
+          client,
+          versionConfig: versionConfig,
+          qualityPreset: retryQuality,
+        );
         if (mounted) showSuccessSnackBar(context, t.downloads.downloadQueued);
       } on CellularDownloadBlockedException {
         if (mounted) showErrorSnackBar(context, t.settings.cellularDownloadBlocked);
@@ -403,9 +410,16 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
         final versionConfig = await _resolveDownloadVersion(context, metadata, client);
         if (versionConfig == null || !mounted) return;
 
+        // Preserve the chosen quality across the delete + re-queue.
+        final retryQuality = await downloadProvider.downloadQualityFor(globalKey);
         await downloadProvider.deleteDownload(globalKey);
         try {
-          await downloadProvider.queueDownload(metadata, client, versionConfig: versionConfig);
+          await downloadProvider.queueDownload(
+            metadata,
+            client,
+            versionConfig: versionConfig,
+            qualityPreset: retryQuality,
+          );
           if (mounted) showSuccessSnackBar(context, t.downloads.downloadQueued);
         } on CellularDownloadBlockedException {
           if (mounted) showErrorSnackBar(context, t.settings.cellularDownloadBlocked);
@@ -524,8 +538,9 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
           );
         }
 
-        // State 2: Queued (waiting to download)
-        if (progress?.status == DownloadStatus.queued) {
+        // State 2: Queued (waiting to download). A held item carries a
+        // `downloading` status but reads as queued (see [displayStatus]).
+        if (progress?.displayStatus == DownloadStatus.queued) {
           final currentFile = progress?.currentFile;
           final tooltip = currentFile != null && currentFile.contains('episodes')
               ? t.downloads.queuedFilesTooltip(files: currentFile)
@@ -540,8 +555,8 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
           );
         }
 
-        // State 3: Downloading (active download)
-        if (progress?.status == DownloadStatus.downloading) {
+        // State 3: Downloading (a native task is actively transferring)
+        if (progress?.displayStatus == DownloadStatus.downloading) {
           // Show episode count in tooltip for shows/seasons
           final currentFile = progress?.currentFile;
           final tooltip = currentFile != null && currentFile.contains('episodes')
@@ -551,7 +566,7 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
           return IconButton.filledTonal(
             onPressed: null,
             tooltip: tooltip,
-            icon: _buildRadialProgress(progress?.progressPercent),
+            icon: _buildRadialProgress(progress?.determinateProgress),
             iconSize: iconSize,
             style: actionButtonStyle(showFocus: showFocus),
           );

@@ -26,6 +26,10 @@ enum TranscodeQualityPreset {
 
   String get storageKey => name;
 
+  /// Value to persist on a download row / sync rule: null for [original] (the
+  /// absence of a transcode), else the [storageKey]. Inverse of [fromStorage].
+  String? get storageValue => isOriginal ? null : storageKey;
+
   static TranscodeQualityPreset fromStorage(String? stored) {
     if (stored == null) return TranscodeQualityPreset.original;
     for (final v in TranscodeQualityPreset.values) {

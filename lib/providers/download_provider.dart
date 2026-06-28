@@ -11,6 +11,7 @@ import '../media/media_version.dart';
 import '../models/download_models.dart';
 import '../utils/download_version_utils.dart';
 import '../database/app_database.dart';
+import '../models/transcode_quality_preset.dart';
 import '../database/download_operations.dart';
 import '../services/download_manager_service.dart';
 import '../services/api_cache.dart';
@@ -258,6 +259,9 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
       _ownedDownloadKeys.addAll(downloads.keys);
     }
   }
+
+  @visibleForTesting
+  Future<TranscodeQualityPreset> debugDownloadedChildQuality(MediaItem container) => _downloadedChildQuality(container);
 
   /// Load all persisted downloads and metadata from the database/cache
   Future<void> _loadPersistedDownloads() async {
@@ -697,6 +701,9 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
       progress: overallProgress,
       downloadedBytes: 0,
       totalBytes: 0,
+      // The aggregate is "running" iff a child is actively transferring, so a
+      // show/season whose children are all held reads as "Queued" too.
+      running: episodes.any((e) => e.running),
       currentFile: '$completedCount/$totalEpisodes episodes',
     );
   }
@@ -846,6 +853,7 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     DownloadFilter filter = DownloadFilter.all,
     int? maxCount,
     bool includeSpecials = true,
+    TranscodeQualityPreset qualityPreset = TranscodeQualityPreset.original,
   }) async {
     if (!_downloadManager.downloadsSupported) return 0;
 
@@ -863,7 +871,12 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
       safeNotifyListeners();
 
       if (metadata.isMovie || metadata.isEpisode) {
-        final queued = await _queueSingleDownload(metadata, client, mediaIndex: config.mediaIndex);
+        final queued = await _queueSingleDownload(
+          metadata,
+          client,
+          mediaIndex: config.mediaIndex,
+          qualityPreset: qualityPreset,
+        );
         return queued ? 1 : 0;
       } else if (metadata.isShow) {
         // Stash metadata pre-queue so the UI can render the queueing state;
@@ -878,6 +891,7 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
             filter: filter,
             maxCount: maxCount,
             includeSpecials: includeSpecials,
+            qualityPreset: qualityPreset,
           );
         } catch (_) {
           if (!hadMetadata) _metadata.remove(globalKey);
@@ -894,6 +908,7 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
             filter: filter,
             maxCount: maxCount,
             includeSpecials: includeSpecials,
+            qualityPreset: qualityPreset,
           );
         } catch (_) {
           if (!hadMetadata) _metadata.remove(globalKey);
@@ -967,6 +982,7 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     MediaServerClient client, {
     int mediaIndex = 0,
     DownloadVersionConfig? versionConfig,
+    TranscodeQualityPreset qualityPreset = TranscodeQualityPreset.original,
     _RelatedMetadataDownloadContext? relatedContext,
   }) async {
     if (!_downloadManager.downloadsSupported) return false;
@@ -1051,7 +1067,12 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     safeNotifyListeners();
 
     // Actually trigger download via DownloadManagerService
-    await _downloadManager.queueDownload(metadata: metadataToStore, client: client, mediaIndex: resolvedIndex);
+    await _downloadManager.queueDownload(
+      metadata: metadataToStore,
+      client: client,
+      mediaIndex: resolvedIndex,
+      qualityPreset: qualityPreset,
+    );
     return true;
   }
 
@@ -1130,6 +1151,7 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     DownloadFilter filter = DownloadFilter.all,
     int? maxCount,
     bool includeSpecials = true,
+    TranscodeQualityPreset qualityPreset = TranscodeQualityPreset.original,
   }) async {
     return _expandAndQueue(
       container: show,
@@ -1139,6 +1161,7 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
       maxCount: maxCount,
       skipExisting: false,
       includeSpecials: includeSpecials,
+      qualityPreset: qualityPreset,
     );
   }
 
@@ -1150,6 +1173,7 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     DownloadFilter filter = DownloadFilter.all,
     int? maxCount,
     bool includeSpecials = true,
+    TranscodeQualityPreset qualityPreset = TranscodeQualityPreset.original,
   }) async {
     return _expandAndQueue(
       container: season,
@@ -1159,7 +1183,38 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
       maxCount: maxCount,
       skipExisting: false,
       includeSpecials: includeSpecials,
+      qualityPreset: qualityPreset,
     );
+  }
+
+  /// The quality preset a download was queued at (persisted on its row), or
+  /// original when there's no row. Lets a manual retry that deletes and
+  /// re-queues the item preserve the originally chosen quality.
+  Future<TranscodeQualityPreset> downloadQualityFor(String globalKey) async {
+    final row = await _database.getDownloadedMedia(globalKey);
+    return TranscodeQualityPreset.fromStorage(row?.downloadQuality);
+  }
+
+  /// The download quality of an episode already downloaded under [container]
+  /// (show/season), so a partial resume keeps the same quality. A show/season
+  /// has no row of its own, so we read it from a representative child. Returns
+  /// original when none is found.
+  Future<TranscodeQualityPreset> _downloadedChildQuality(MediaItem container) async {
+    // Snapshot the keys: downloadQualityFor awaits a DB read, during which a
+    // progress/queue event could mutate the live map (matches the copy-before-
+    // await pattern used elsewhere in this file).
+    for (final globalKey in _downloads.keys.toList()) {
+      final meta = _metadata[globalKey];
+      if (meta == null || !meta.isEpisode) continue;
+      // Same guards as _ownedDescendantEntries: skip other profiles, and other
+      // servers (Plex rating keys are server-local and collide across servers).
+      if (!_ownsDownloadKey(globalKey) || meta.serverId != container.serverId) continue;
+      final belongs = container.isShow ? meta.grandparentId == container.id : meta.parentId == container.id;
+      if (!belongs) continue;
+      final quality = await downloadQualityFor(globalKey);
+      if (!quality.isOriginal) return quality;
+    }
+    return TranscodeQualityPreset.original;
   }
 
   /// Queue only the missing (not downloaded) episodes for a show/season.
@@ -1168,10 +1223,14 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     MediaItem metadata,
     MediaServerClient client, {
     DownloadVersionConfig? versionConfig,
+    TranscodeQualityPreset qualityPreset = TranscodeQualityPreset.original,
   }) async {
     if (!metadata.isShow && !metadata.isSeason) {
       throw Exception('queueMissingEpisodes only supports shows/seasons');
     }
+    // Match the quality of episodes already downloaded for this container so a
+    // partial resume doesn't mix qualities (the show/season has no row itself).
+    final resolvedQuality = qualityPreset.isOriginal ? await _downloadedChildQuality(metadata) : qualityPreset;
     final queued = await _expandAndQueue(
       container: metadata,
       client: client,
@@ -1179,6 +1238,7 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
       filter: DownloadFilter.all,
       maxCount: null,
       skipExisting: true,
+      qualityPreset: resolvedQuality,
     );
     if (metadata.isShow) {
       appLogger.i('Queued $queued missing episodes for show ${metadata.title}');
@@ -1197,6 +1257,7 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     required int? maxCount,
     required bool skipExisting,
     bool includeSpecials = true,
+    TranscodeQualityPreset qualityPreset = TranscodeQualityPreset.original,
   }) async {
     final unwatchedOnly = filter == DownloadFilter.unwatched;
     // Downloading the Specials season itself must still queue its episodes —
@@ -1246,6 +1307,7 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
         episodeWithServer,
         client,
         versionConfig: versionConfig,
+        qualityPreset: qualityPreset,
         relatedContext: relatedContext,
       );
       if (queued) count++;
@@ -1573,6 +1635,7 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     int mediaIndex = 0,
     String downloadFilter = SyncRuleFilter.unwatched,
     bool includeSpecials = true,
+    TranscodeQualityPreset qualityPreset = TranscodeQualityPreset.original,
     MediaItem? targetMetadata,
   }) async {
     final profileId = _requireActiveProfileId();
@@ -1588,6 +1651,7 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
       mediaIndex: mediaIndex,
       downloadFilter: downloadFilter,
       includeSpecials: includeSpecials,
+      downloadQuality: qualityPreset.storageValue,
     );
 
     if (targetMetadata != null) {
@@ -1681,8 +1745,15 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
       serverManager: serverManager,
       downloads: downloads,
       metadata: Map.unmodifiable(_metadata),
-      queueSingleDownload: (episode, client, {int mediaIndex = 0}) =>
-          _queueSingleDownload(episode, client, mediaIndex: mediaIndex, relatedContext: relatedContext),
+      queueSingleDownload:
+          (episode, client, {int mediaIndex = 0, TranscodeQualityPreset quality = TranscodeQualityPreset.original}) =>
+              _queueSingleDownload(
+                episode,
+                client,
+                mediaIndex: mediaIndex,
+                qualityPreset: quality,
+                relatedContext: relatedContext,
+              ),
       isOffline: _offlineSource?.isOffline ?? false,
       force: force,
     );
@@ -1709,8 +1780,15 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
       serverManager: serverManager,
       downloads: downloads,
       metadata: Map.unmodifiable(_metadata),
-      queueSingleDownload: (episode, client, {int mediaIndex = 0}) =>
-          _queueSingleDownload(episode, client, mediaIndex: mediaIndex, relatedContext: relatedContext),
+      queueSingleDownload:
+          (episode, client, {int mediaIndex = 0, TranscodeQualityPreset quality = TranscodeQualityPreset.original}) =>
+              _queueSingleDownload(
+                episode,
+                client,
+                mediaIndex: mediaIndex,
+                qualityPreset: quality,
+                relatedContext: relatedContext,
+              ),
       isOffline: _offlineSource?.isOffline ?? false,
     );
   }

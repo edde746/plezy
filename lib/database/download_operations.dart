@@ -87,6 +87,7 @@ extension DownloadDatabaseOperations on AppDatabase {
     required int status,
     int mediaIndex = 0,
     String? mediaSourceId,
+    String? downloadQuality,
   }) async {
     await into(downloadedMedia).insert(
       DownloadedMediaCompanion.insert(
@@ -100,6 +101,7 @@ extension DownloadDatabaseOperations on AppDatabase {
         status: status,
         mediaIndex: Value(mediaIndex),
         mediaSourceId: Value(mediaSourceId),
+        downloadQuality: Value(downloadQuality),
       ),
       mode: InsertMode.insertOrReplace,
     );

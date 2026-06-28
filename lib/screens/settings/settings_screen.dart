@@ -36,6 +36,9 @@ import '../../utils/update_dialog.dart';
 import '../../widgets/desktop_app_bar.dart';
 import '../../widgets/dialog_action_button.dart';
 import '../../widgets/setting_tile.dart';
+import '../../models/transcode_quality_preset.dart';
+import '../../utils/quality_preset_labels.dart';
+import 'settings_utils.dart';
 import '../../widgets/settings_builder.dart';
 import '../../widgets/settings_section.dart';
 import '../../profiles/active_profile_provider.dart';
@@ -331,6 +334,17 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
           icon: Symbols.wifi_rounded,
           title: t.settings.downloadOnWifiOnly,
           subtitle: t.settings.downloadOnWifiOnlyDescription,
+        ),
+        SettingSelectionTile<TranscodeQualityPreset, TranscodeQualityPreset>(
+          pref: settings.SettingsService.defaultDownloadQualityPreset,
+          icon: Symbols.high_quality_rounded,
+          title: t.settings.defaultDownloadQualityTitle,
+          subtitleBuilder: qualityPresetLabel,
+          options: TranscodeQualityPreset.displayOrder
+              .map((p) => DialogOption(value: p, title: qualityPresetLabel(p)))
+              .toList(),
+          decode: (p) => p,
+          encode: (p) => p,
         ),
         SettingSwitchTile(
           focusNode: _focusTracker.get(_kAutoRemoveWatchedDownloads),

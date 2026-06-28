@@ -68,6 +68,20 @@ class MediaVersion {
   /// them when metadata is fetched with `checkFiles=1`.
   bool get isPlayable => parts.isEmpty || parts.any((part) => part.isPlayable);
 
+  /// Total on-disk size of this version in bytes, summed across its parts.
+  /// Null when there are no parts or any part is missing its size (Plex only
+  /// populates part sizes when metadata is fetched with file access).
+  int? get totalSizeBytes {
+    if (parts.isEmpty) return null;
+    var total = 0;
+    for (final part in parts) {
+      final size = part.sizeBytes;
+      if (size == null || size <= 0) return null;
+      total += size;
+    }
+    return total > 0 ? total : null;
+  }
+
   /// Display label with detailed information: "1080p H.264 MKV (8.5 Mbps)".
   /// When [name] is set, it prefixes the technical label so a user can tell
   /// "Director's Cut · 1080p H.264 MKV" apart from "Theatrical Cut · 1080p

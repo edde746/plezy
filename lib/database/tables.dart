@@ -60,6 +60,7 @@ class DownloadedMedia extends Table {
   TextColumn get bgTaskId => text().nullable()();
   IntColumn get mediaIndex => integer().withDefault(const Constant(0))();
   TextColumn get mediaSourceId => text().nullable()();
+  TextColumn get downloadQuality => text().nullable()(); // TranscodeQualityPreset.storageKey; null = original
 }
 
 /// Profile ownership for shared physical downloads.
@@ -102,6 +103,7 @@ class SyncRules extends Table {
   IntColumn get mediaIndex => integer().withDefault(const Constant(0))();
   TextColumn get downloadFilter => text().withDefault(const Constant('unwatched'))();
   BoolColumn get includeSpecials => boolean().withDefault(const Constant(true))();
+  TextColumn get downloadQuality => text().nullable()(); // TranscodeQualityPreset.storageKey; null = original
 }
 
 /// Persisted media-server connections.

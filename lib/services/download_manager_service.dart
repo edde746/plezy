@@ -24,6 +24,7 @@ import 'settings_service.dart';
 import 'saf_storage_service.dart';
 import 'package:saf_util/saf_util_platform_interface.dart' show SafDocumentFile;
 import '../models/download_models.dart';
+import '../models/transcode_quality_preset.dart';
 import '../services/offline_mode_source.dart';
 import '../services/download_storage_service.dart';
 import '../i18n/strings.g.dart';
@@ -102,6 +103,12 @@ class DownloadManagerService {
 
   // Keys whose completion callback is in-flight — prevents orphan scan from re-queuing them
   final Set<String> _completingKeys = {};
+
+  /// Global keys whose native task is actively transferring (received
+  /// `TaskStatus.running`). Items enqueued but held in the download queue are
+  /// absent, so the UI shows them as "Queued" rather than downloading.
+  /// Transient — rebuilt from native status events, never persisted.
+  final Set<String> _runningKeys = {};
 
   // Prevents concurrent _processQueue calls
   bool _isProcessingQueue = false;
@@ -598,6 +605,25 @@ class DownloadManagerService {
   }
 
   Future<void> _reconcileDownloadingNativeTasks(DownloadedMediaItem row, List<Task> tasks) async {
+    // A transcoded download's native task holds a dead transcode session (and
+    // possibly a rotated token) after an app kill — never adopt it; rebuild
+    // from scratch so a fresh session/URL is used. downloadQuality records the
+    // requested preset, so a request that fell back to the original file is also
+    // re-fetched here rather than resumed; that wastes a rare re-download but is
+    // always correct, and avoids a column just to track the realized result.
+    if (!TranscodeQualityPreset.fromStorage(row.downloadQuality).isOriginal) {
+      appLogger.i('Re-queueing recovered transcoded download ${row.globalKey} (stale transcode session)');
+      await _cancelNativeTaskIds(
+        row.globalKey,
+        tasks.map((task) => task.taskId),
+        reason: 'stale transcode session during recovery',
+      );
+      await _database.updateBgTaskId(row.globalKey, null);
+      await _database.updateDownloadProgress(row.globalKey, 0, 0, 0);
+      await _transitionStatus(row.globalKey, DownloadStatus.queued);
+      await _database.addToQueue(mediaGlobalKey: row.globalKey);
+      return;
+    }
     final currentTaskId = row.bgTaskId;
     final matchingCurrentTasks = currentTaskId == null
         ? const <Task>[]
@@ -993,6 +1019,7 @@ class DownloadManagerService {
     bool downloadSubtitles = true,
     bool downloadArtwork = true,
     int mediaIndex = 0,
+    TranscodeQualityPreset qualityPreset = TranscodeQualityPreset.original,
   }) async {
     if (_skipDownloadsUnsupported('queue download')) return;
 
@@ -1030,6 +1057,7 @@ class DownloadManagerService {
       status: DownloadStatus.queued.index,
       mediaIndex: mediaIndex,
       mediaSourceId: _mediaSourceIdForIndex(metadata, mediaIndex),
+      downloadQuality: qualityPreset.storageValue,
     );
 
     // Populate the offline cache via the read path and pin so the row
@@ -1253,13 +1281,14 @@ class DownloadManagerService {
       }
 
       final selectedMediaIndex = existing.mediaIndex;
-      var resolution = await client.resolveDownload(metadata, mediaIndex: selectedMediaIndex);
+      final downloadPreset = TranscodeQualityPreset.fromStorage(existing.downloadQuality);
+      var resolution = await client.resolveDownload(metadata, mediaIndex: selectedMediaIndex, preset: downloadPreset);
       if (resolution.videoUrl == null) {
         // Cache miss for the per-version fields — refresh from network.
         appLogger.w('No video URL from cache for $globalKey, retrying via network');
         final fetched = await client.fetchItem(ratingKey);
         if (fetched != null) metadata = fetched.copyWith(serverId: serverId);
-        resolution = await client.resolveDownload(metadata, mediaIndex: selectedMediaIndex);
+        resolution = await client.resolveDownload(metadata, mediaIndex: selectedMediaIndex, preset: downloadPreset);
         if (resolution.videoUrl == null) throw Exception('Could not get video URL for $globalKey');
       }
       if (resolution.mediaSourceId != null && resolution.mediaSourceId != existing.mediaSourceId) {
@@ -1273,7 +1302,15 @@ class DownloadManagerService {
         return true;
       }
 
-      final ext = downloadExtensionFromUrl(resolution.videoUrl!) ?? 'mp4';
+      // Transcoded downloads carry no extension in the URL but are always MKV;
+      // resolution.container makes the saved filename match the bytes on disk.
+      final ext = resolution.container ?? downloadExtensionFromUrl(resolution.videoUrl!) ?? 'mp4';
+
+      // Did the server actually transcode, or fall back to the original file?
+      // A live transcode is a sizeless stream that can't be Range-resumed; an
+      // original file (including a transcode that fell back) can. Key resume and
+      // pause off the real result, not the requested preset.
+      final isTranscoded = resolution.container != null;
 
       // Look up show year for episodes
       final showYear = metadata.isEpisode
@@ -1319,7 +1356,10 @@ class DownloadManagerService {
           group: _downloadGroup,
           updates: Updates.statusAndProgress,
           requiresWiFi: requiresWiFi,
-          retries: _nativeRetries,
+          // A live transcode advertises no Content-Length/Accept-Ranges, so a
+          // native Range-append retry can corrupt the file. Force failures
+          // through the app-level retry, which rebuilds a fresh transcode URL.
+          retries: isTranscoded ? 0 : _nativeRetries,
           allowPause: false,
           metaData: globalKey,
           displayName: displayName,
@@ -1369,8 +1409,11 @@ class DownloadManagerService {
           group: _downloadGroup,
           updates: Updates.statusAndProgress,
           requiresWiFi: requiresWiFi,
-          retries: _nativeRetries,
-          allowPause: true,
+          // Transcoded downloads can't be safely Range-resumed (no
+          // Content-Length/Accept-Ranges on a live transcode), so disable
+          // native pause/retry and let the app-level retry rebuild the URL.
+          retries: isTranscoded ? 0 : _nativeRetries,
+          allowPause: !isTranscoded,
           metaData: globalKey,
           displayName: displayName,
         );
@@ -1453,6 +1496,8 @@ class DownloadManagerService {
     final totalBytes = update.hasExpectedFileSize ? update.expectedFileSize : 0;
     final downloadedBytes = totalBytes > 0 ? (update.progress * totalBytes).round() : 0;
 
+    // A progress event means the task is actively transferring.
+    _runningKeys.add(globalKey);
     _progressController.add(
       DownloadProgress(
         globalKey: globalKey,
@@ -1461,6 +1506,7 @@ class DownloadManagerService {
         downloadedBytes: downloadedBytes,
         totalBytes: totalBytes,
         speed: speedBytesPerSec,
+        running: true,
         currentFile: 'video',
       ),
     );
@@ -1525,12 +1571,25 @@ class DownloadManagerService {
           if (_pausingKeys.contains(globalKey) || _cancellingKeys.contains(globalKey)) break;
           await _onDownloadCanceled(globalKey, update.task.taskId);
         case TaskStatus.paused:
+          _runningKeys.remove(globalKey);
           appLogger.d('Download paused by system for $globalKey');
         case TaskStatus.waitingToRetry:
+          _runningKeys.remove(globalKey);
+          _emitProgress(globalKey, DownloadStatus.downloading, existing.progress);
           appLogger.d('Download waiting to retry for $globalKey');
         case TaskStatus.enqueued:
         case TaskStatus.running:
-          // If this item is being paused, the holding queue promoted it — cancel it
+          // `running` = the task is actively transferring; `enqueued` = it's
+          // held in the download queue and reads as "Queued". Re-emit so the UI
+          // reflects the change — a held task (or a sizeless transcode) sends no
+          // progress events to drive it otherwise.
+          if (update.status == TaskStatus.running) {
+            _runningKeys.add(globalKey);
+          } else {
+            _runningKeys.remove(globalKey);
+          }
+          _emitProgress(globalKey, DownloadStatus.downloading, existing.progress);
+          // If this item is being paused/cancelled, the holding queue promoted it — cancel it
           if (_pausingKeys.contains(globalKey)) {
             await _cancelNativeTask(globalKey, update.task.taskId, reason: 'pause in progress');
           }
@@ -1750,7 +1809,13 @@ class DownloadManagerService {
             clientScopeId: existing?.clientScopeId,
           );
           if (metadata == null) throw Exception('No metadata for SAF recovery of $globalKey');
-          final ext = downloadExtensionFromUrl(task.url) ?? 'mp4';
+          // Prefer the URL's own extension (a transcode that fell back to the
+          // original keeps e.g. .avi); a transcode URL has none, so fall back
+          // to the container the persisted quality implies (mkv for a
+          // transcode, mp4 otherwise).
+          final ext =
+              downloadExtensionFromUrl(task.url) ??
+              (TranscodeQualityPreset.fromStorage(existing?.downloadQuality).isOriginal ? 'mp4' : 'mkv');
           storedPath =
               await _resolveSafStoredPathForRecovery(metadata, ext, clientScopeId: existing?.clientScopeId) ?? '';
           if (storedPath.isEmpty) throw Exception('Cannot resolve SAF path on recovery');
@@ -2001,6 +2066,7 @@ class DownloadManagerService {
         globalKey: globalKey,
         status: status,
         progress: progress,
+        running: _runningKeys.contains(globalKey),
         errorMessage: errorMessage,
         currentFile: currentFile,
       ),
@@ -2016,6 +2082,9 @@ class DownloadManagerService {
   /// Default progress is 0 for most statuses, 100 for completed.
   Future<void> _transitionStatus(String globalKey, DownloadStatus status, {int? progress, String? errorMessage}) async {
     await _database.updateDownloadStatus(globalKey, status.index);
+    // Only an actively-transferring native task is "running"; leaving the
+    // downloading status (completed/failed/paused/queued) clears it.
+    if (status != DownloadStatus.downloading) _runningKeys.remove(globalKey);
     if (status == DownloadStatus.failed && errorMessage != null) {
       await _database.updateDownloadError(globalKey, errorMessage);
     }
@@ -2055,11 +2124,14 @@ class DownloadManagerService {
       await _cancelNativeTasksForGlobalKey(globalKey, exceptTaskId: bgTaskId, reason: 'duplicate task before pause');
       if (bgTaskId != null && downloadsSupported) {
         final task = await FileDownloader().taskForId(bgTaskId);
-        if (task != null && task is DownloadTask) {
-          // Normal mode: native pause support
+        if (task is DownloadTask && task.allowPause) {
+          // Normal mode with native pause support
           await FileDownloader().pause(task);
         } else {
-          // SAF mode (UriDownloadTask) or task not found: cancel (re-download on resume)
+          // SAF (UriDownloadTask), a non-pausable transcoded task, or task not
+          // found: cancel and re-download on resume. Pausing a non-pausable
+          // task no-ops natively while flipping the row to "paused", leaving
+          // the real download running.
           await FileDownloader().cancelTaskWithId(bgTaskId);
         }
       } else if (bgTaskId != null) {
@@ -2127,6 +2199,10 @@ class DownloadManagerService {
     return _tryResumeNativeTask(globalKey, bgTaskId, taskForId: taskForId, resumeTask: resumeTask);
   }
 
+  @visibleForTesting
+  Future<void> debugReconcileDownloadingNativeTasks(DownloadedMediaItem row, List<Task> tasks) =>
+      _reconcileDownloadingNativeTasks(row, tasks);
+
   /// Retry a failed download
   Future<void> retryDownload(String globalKey, MediaServerClient client) async {
     if (_skipDownloadsUnsupported('download retry')) return;
@@ -2164,6 +2240,10 @@ class DownloadManagerService {
       await _database.updateBgTaskId(globalKey, null);
       await _cancelNativeTasksForGlobalKey(globalKey, includeTaskId: bgTaskId, reason: 'delete download');
       _pendingDownloadContext.remove(globalKey);
+      // Deleting bypasses _transitionStatus, so clear the transient running flag
+      // here — otherwise a re-download of this key would briefly read as
+      // "Downloading" while still held (and the entry would leak).
+      _runningKeys.remove(globalKey);
 
       final parsed = parseGlobalKey(globalKey);
       if (parsed == null) {
@@ -2445,6 +2525,7 @@ class DownloadManagerService {
     for (int i = 0; i < episodes.length; i++) {
       final episode = episodes[i];
       final episodeGlobalKey = buildGlobalKey(ServerId(serverId), episode.ratingKey);
+      _runningKeys.remove(episodeGlobalKey); // see deleteDownload: row delete bypasses _transitionStatus
 
       _emitDeletionProgress(
         DeletionProgress(

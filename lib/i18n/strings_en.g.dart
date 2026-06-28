@@ -585,6 +585,9 @@ class TranslationsSettingsEn {
 	/// en: 'Used when starting playback. Lower values reduce bandwidth.'
 	String get defaultQualityDescription => 'Used when starting playback. Lower values reduce bandwidth.';
 
+	/// en: 'Default Download Quality'
+	String get defaultDownloadQualityTitle => 'Default Download Quality';
+
 	/// en: 'Subtitle Styling'
 	String get subtitleStyling => 'Subtitle Styling';
 
@@ -3000,6 +3003,9 @@ class TranslationsDownloadsEn {
 	/// en: 'Download queued'
 	String get downloadQueued => 'Download queued';
 
+	/// en: 'Downloading...'
+	String get downloading => 'Downloading...';
+
 	/// en: 'Download resumed'
 	String get downloadResumed => 'Download resumed';
 
@@ -3086,6 +3092,9 @@ class TranslationsDownloadsEn {
 
 	/// en: 'Include Specials'
 	String get includeSpecials => 'Include Specials';
+
+	/// en: 'Download Quality'
+	String get downloadQuality => 'Download Quality';
 
 	/// en: 'How many episodes?'
 	String get howManyEpisodes => 'How many episodes?';
@@ -4661,6 +4670,7 @@ extension on Translations {
 			'settings.bufferSizeWarning' => ({required Object heap, required Object size}) => '${heap}MB memory available. A ${size}MB buffer may affect playback.',
 			'settings.defaultQualityTitle' => 'Default Quality',
 			'settings.defaultQualityDescription' => 'Used when starting playback. Lower values reduce bandwidth.',
+			'settings.defaultDownloadQualityTitle' => 'Default Download Quality',
 			'settings.subtitleStyling' => 'Subtitle Styling',
 			'settings.subtitleStylingDescription' => 'Customize subtitle appearance',
 			'settings.smallSkipDuration' => 'Small Skip Duration',
@@ -5024,9 +5034,9 @@ extension on Translations {
 			'messages.sleepTimerSet' => ({required Object label}) => 'Sleep timer set for ${label}',
 			'messages.noItemsAvailable' => 'No items available',
 			'messages.failedToCreatePlayQueueNoItems' => 'Failed to create play queue - no items',
-			'messages.failedPlayback' => ({required Object action, required Object error}) => 'Failed to ${action}: ${error}',
 			_ => null,
 		} ?? switch (path) {
+			'messages.failedPlayback' => ({required Object action, required Object error}) => 'Failed to ${action}: ${error}',
 			'messages.switchingToCompatiblePlayer' => 'Switching to compatible player...',
 			'messages.serverLimitTitle' => 'Playback failed',
 			'messages.serverLimitBody' => 'Server error (HTTP 500). A bandwidth/transcoding limit likely rejected this session. Ask the owner to adjust it.',
@@ -5447,6 +5457,7 @@ extension on Translations {
 			'downloads.deleteDownload' => 'Delete download',
 			'downloads.retryDownload' => 'Retry download',
 			'downloads.downloadQueued' => 'Download queued',
+			'downloads.downloading' => 'Downloading...',
 			'downloads.downloadResumed' => 'Download resumed',
 			'downloads.serverErrorBitrate' => 'Server error: file may exceed the remote bitrate limit',
 			'downloads.episodesQueued' => ({required Object count}) => '${count} episodes queued for download',
@@ -5476,6 +5487,7 @@ extension on Translations {
 			'downloads.nextNUnwatched' => ({required Object count}) => 'Next ${count} unwatched',
 			'downloads.customAmount' => 'Custom amount...',
 			'downloads.includeSpecials' => 'Include Specials',
+			'downloads.downloadQuality' => 'Download Quality',
 			'downloads.howManyEpisodes' => 'How many episodes?',
 			'downloads.itemsQueued' => ({required Object count}) => '${count} items queued for download',
 			'downloads.keepSynced' => 'Keep synced',
@@ -5536,11 +5548,11 @@ extension on Translations {
 			'companionRemote.pairing.hostAddressHint' => '192.168.1.100:48632',
 			'companionRemote.pairing.connecting' => 'Connecting...',
 			'companionRemote.pairing.searchingForDevices' => 'Looking for devices...',
+			_ => null,
+		} ?? switch (path) {
 			'companionRemote.pairing.noDevicesFound' => 'No devices found on your network',
 			'companionRemote.pairing.noDevicesHint' => 'Open Plezy on desktop and use the same WiFi',
 			'companionRemote.pairing.availableDevices' => 'Available Devices',
-			_ => null,
-		} ?? switch (path) {
 			'companionRemote.pairing.manualConnection' => 'Manual Connection',
 			'companionRemote.pairing.cryptoInitFailed' => 'Couldn\'t start secure connection. Sign in to Plex first.',
 			'companionRemote.pairing.validationHostRequired' => 'Please enter host address',

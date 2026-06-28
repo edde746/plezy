@@ -38,6 +38,7 @@ import '../models/media_grab_operation.dart';
 import '../models/media_grabber_device.dart';
 import '../models/media_provider_info.dart';
 import '../models/media_subscription.dart';
+import '../models/transcode_quality_preset.dart';
 import '../media/media_source_info.dart';
 import '../media/media_sort.dart';
 import '../utils/app_logger.dart';

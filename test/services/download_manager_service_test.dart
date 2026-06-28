@@ -17,6 +17,7 @@ import 'package:plezy/media/media_item.dart';
 import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/media/media_server_client.dart';
 import 'package:plezy/models/download_models.dart';
+import 'package:plezy/models/transcode_quality_preset.dart';
 import 'package:plezy/services/download_artwork_helpers.dart';
 import 'package:plezy/services/download_artwork_service.dart';
 import 'package:plezy/services/download_manager_service.dart';
@@ -342,6 +343,52 @@ void main() {
       expect(row?.bgTaskId, 'current-task');
     });
 
+    test('running status sets the running flag; enqueued (held) clears it', () async {
+      final db = AppDatabase.forTesting(NativeDatabase.memory());
+      addTearDown(db.close);
+      const globalKey = 'srv:item-1';
+      await db.insertDownload(
+        serverId: ServerId('srv'),
+        ratingKey: 'item-1',
+        globalKey: globalKey,
+        type: 'movie',
+        status: DownloadStatus.downloading.index,
+      );
+      await db.updateBgTaskId(globalKey, 'current-task');
+
+      final manager = DownloadManagerService(
+        database: db,
+        storageService: DownloadStorageService.instance,
+        clientResolver: (serverId, {clientScopeId}) => null,
+        downloadsSupportedOverride: false,
+      );
+      addTearDown(manager.dispose);
+      final events = <DownloadProgress>[];
+      final sub = manager.progressStream.listen(events.add);
+      addTearDown(sub.cancel);
+
+      // Enqueued but held in the download queue → not running (reads as Queued).
+      await manager.debugHandleTaskStatus(
+        TaskStatusUpdate(_downloadTask('current-task', globalKey), TaskStatus.enqueued),
+      );
+      await Future<void>.delayed(Duration.zero);
+      expect(events.last.running, isFalse);
+
+      // The native task actually starts transferring → running.
+      await manager.debugHandleTaskStatus(
+        TaskStatusUpdate(_downloadTask('current-task', globalKey), TaskStatus.running),
+      );
+      await Future<void>.delayed(Duration.zero);
+      expect(events.last.running, isTrue);
+
+      // Completing clears it again.
+      await manager.debugHandleTaskStatus(
+        TaskStatusUpdate(_downloadTask('current-task', globalKey), TaskStatus.complete),
+      );
+      await Future<void>.delayed(Duration.zero);
+      expect(events.last.running, isFalse);
+    });
+
     test('requeues current system cancel without in-memory context', () async {
       final db = AppDatabase.forTesting(NativeDatabase.memory());
       addTearDown(db.close);
@@ -441,6 +488,70 @@ void main() {
       expect(resumed, isTrue);
       expect(row?.status, DownloadStatus.downloading.index);
       expect(row?.bgTaskId, 'current-task');
+    });
+  });
+
+  group('kill-recovery reconcile', () {
+    test('re-queues a transcoded download from scratch instead of adopting the stale session', () async {
+      final db = AppDatabase.forTesting(NativeDatabase.memory());
+      addTearDown(db.close);
+      const globalKey = 'srv:item-1';
+      await db.insertDownload(
+        serverId: ServerId('srv'),
+        ratingKey: 'item-1',
+        globalKey: globalKey,
+        type: 'movie',
+        status: DownloadStatus.downloading.index,
+        downloadQuality: TranscodeQualityPreset.p720_3mbps.storageValue,
+      );
+      await db.updateBgTaskId(globalKey, 'stale-task');
+      await db.updateDownloadProgress(globalKey, 42, 100, 200);
+
+      final manager = DownloadManagerService(
+        database: db,
+        storageService: DownloadStorageService.instance,
+        clientResolver: (serverId, {clientScopeId}) => null,
+        downloadsSupportedOverride: false,
+      );
+      addTearDown(manager.dispose);
+
+      final row = await db.getDownloadedMedia(globalKey);
+      await manager.debugReconcileDownloadingNativeTasks(row!, [_downloadTask('stale-task', globalKey)]);
+
+      final after = await db.getDownloadedMedia(globalKey);
+      expect(after?.status, DownloadStatus.queued.index, reason: 'transcode session is dead — must re-queue');
+      expect(after?.bgTaskId, isNull);
+      expect(after?.progress, 0, reason: 'progress reset so the fresh transcode starts clean');
+      expect((await db.getNextQueueItem())?.mediaGlobalKey, globalKey);
+    });
+
+    test('adopts a surviving native task for an original download', () async {
+      final db = AppDatabase.forTesting(NativeDatabase.memory());
+      addTearDown(db.close);
+      const globalKey = 'srv:item-2';
+      await db.insertDownload(
+        serverId: ServerId('srv'),
+        ratingKey: 'item-2',
+        globalKey: globalKey,
+        type: 'movie',
+        status: DownloadStatus.downloading.index,
+      );
+      await db.updateBgTaskId(globalKey, 'live-task');
+
+      final manager = DownloadManagerService(
+        database: db,
+        storageService: DownloadStorageService.instance,
+        clientResolver: (serverId, {clientScopeId}) => null,
+        downloadsSupportedOverride: false,
+      );
+      addTearDown(manager.dispose);
+
+      final row = await db.getDownloadedMedia(globalKey);
+      await manager.debugReconcileDownloadingNativeTasks(row!, [_downloadTask('live-task', globalKey)]);
+
+      final after = await db.getDownloadedMedia(globalKey);
+      expect(after?.status, DownloadStatus.downloading.index, reason: 'a resumable original adopts its task');
+      expect(after?.bgTaskId, 'live-task');
     });
   });
 }

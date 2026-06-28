@@ -363,8 +363,11 @@ class _DownloadSlice {
 
   const _DownloadSlice({required this.status, required this.progressPercent, required this.isQueueing});
 
-  factory _DownloadSlice.from(DownloadProgress? p, bool isQueueing) =>
-      _DownloadSlice(status: p?.status, progressPercent: p?.progressPercent, isQueueing: isQueueing);
+  factory _DownloadSlice.from(DownloadProgress? p, bool isQueueing) {
+    // A download enqueued but held (its native task isn't running yet) reads as
+    // "Queued", not "Downloading" — see [DownloadProgress.displayStatus].
+    return _DownloadSlice(status: p?.displayStatus, progressPercent: p?.determinateProgress, isQueueing: isQueueing);
+  }
 
   @override
   bool operator ==(Object other) {

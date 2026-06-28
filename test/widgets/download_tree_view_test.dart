@@ -133,4 +133,65 @@ void main() {
       expect(resolveDownloadContainerGlobalKey(show, metadata), 'plex1:42');
     });
   });
+
+  group('DownloadTreeNode.running', () {
+    DownloadTreeNode downloadingLeaf(String key, {required bool running}) => DownloadTreeNode(
+      key: key,
+      title: 'Ep',
+      type: DownloadNodeType.episode,
+      status: DownloadStatus.downloading,
+      downloadProgress: DownloadProgress(globalKey: key, status: DownloadStatus.downloading, running: running),
+    );
+
+    test('leaf mirrors its downloadProgress.running flag', () {
+      // A held (enqueued, not yet running) download is not "running".
+      expect(downloadingLeaf('plex1:ep1', running: false).running, isFalse);
+      expect(downloadingLeaf('plex1:ep2', running: true).running, isTrue);
+    });
+
+    test('parent is running when any descendant is', () {
+      final season = _seasonNode(key: 'show42:s7', children: [downloadingLeaf('plex1:ep2', running: true)]);
+      final show = _showNode(key: 'show42', children: [season]);
+      expect(season.running, isTrue);
+      expect(show.running, isTrue);
+    });
+
+    test('parent is not running when no descendant is', () {
+      final show = _showNode(
+        key: 'show42',
+        children: [
+          _seasonNode(key: 's', children: [_episodeNode('plex1:ep100')]),
+        ],
+      );
+      expect(show.running, isFalse);
+    });
+  });
+
+  group('DownloadTreeNode.hasMeasurableProgress', () {
+    DownloadTreeNode leaf({int progress = 0, int totalBytes = 0}) => DownloadTreeNode(
+      key: 'plex1:ep1',
+      title: 'Ep',
+      type: DownloadNodeType.episode,
+      progress: progress / 100,
+      status: DownloadStatus.downloading,
+      downloadProgress: DownloadProgress(
+        globalKey: 'plex1:ep1',
+        status: DownloadStatus.downloading,
+        progress: progress,
+        totalBytes: totalBytes,
+      ),
+    );
+
+    test('false when no size and no percent reported (live transcode)', () {
+      expect(leaf().hasMeasurableProgress, isFalse);
+    });
+
+    test('true when Content-Length (totalBytes) is known', () {
+      expect(leaf(totalBytes: 1000).hasMeasurableProgress, isTrue);
+    });
+
+    test('true when a percent has been reported', () {
+      expect(leaf(progress: 8).hasMeasurableProgress, isTrue);
+    });
+  });
 }
