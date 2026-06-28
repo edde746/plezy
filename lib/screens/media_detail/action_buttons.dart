@@ -194,6 +194,21 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
           _buildWatchedToggleButton(metadata, actionButtonStyle, tvScale, showFocus: state.showFocus),
     );
 
+    final letterboxdAction = FocusableAction(
+      debugLabel: 'detail_letterboxd',
+
+      builder: (context, state) => IconButton.filledTonal(
+        onPressed: () {
+          debugPrint('Letterboxd button clicked');
+          unawaited(openLetterboxdSearch(metadata));
+        },
+        icon: const AppIcon(Symbols.link_rounded, fill: 1),
+        tooltip: 'Search in Letterboxd',
+        iconSize: PlatformDetector.isTV() ? 21 * tvScale : 20,
+        style: actionButtonStyle(showFocus: state.showFocus),
+      ),
+    );  
+
     void showMoreActions() => _contextMenuKey.currentState?.showContextMenu(context);
 
     final moreActionsAction = widget.isOffline
@@ -216,6 +231,7 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
       ?shuffleAction,
       ?downloadAction,
       watchedAction,
+      letterboxdAction,
       ?moreActionsAction,
     ];
 
@@ -668,4 +684,15 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
       },
     );
   }
+}
+
+Future<void> openLetterboxdSearch(MediaItem metadata) async {
+  final query = Uri.encodeComponent(
+    '${metadata.title ?? ''} ${metadata.year ?? ''}',
+  );
+
+  await launchUrl(
+    Uri.parse('https://letterboxd.com/search/$query/'),
+    mode: LaunchMode.externalApplication,
+  );
 }

@@ -2,6 +2,8 @@ import 'dart:async';
 import '../media/ids.dart';
 import 'dart:io';
 
+import 'package:url_launcher/url_launcher.dart';
+
 import 'package:cached_network_image_ce/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
