@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<rss version="2.0" xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle">
+  <channel>
+    <title>Plezy Updates</title>
+    <item>
+      <title>Version 2.8.0</title>
+      <sparkle:version>119</sparkle:version>
+      <sparkle:shortVersionString>2.8.0</sparkle:shortVersionString>
+      <sparkle:releaseNotesLink>https://gh-html.edde746.dev/edde746/plezy/2.8.0</sparkle:releaseNotesLink>
+      <enclosure url="https://github.com/edde746/plezy/releases/download/2.8.0/plezy-macos.dmg"
+       length="64170760" type="application/octet-stream"
+       sparkle:edSignature="qgeGK94cf3bhfY93giIeE11XVtAuMQV1tTKkXyL4e1FSmSq0tzdZpN5qq3PmcxiHTp7iw393i5N+P9zzIVDaDg=="
+       sparkle:os="macos" />
+      <enclosure url="https://github.com/edde746/plezy/releases/download/2.8.0/plezy-windows-installer.exe"
+       length="127907656" type="application/octet-stream"
+       sparkle:edSignature="SquiVRObRu6F47Z130ijsnCf4Rcjms5qkcTahvbhD5Gwf4c37hr0TslfIRYIkELUaCM3wToVV32NG1agVxUeDA=="
+       sparkle:installerArguments="/SILENT /SP-"
+       sparkle:os="windows" />
+    </item>
+  </channel>
+</rss>
