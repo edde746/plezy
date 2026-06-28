@@ -237,17 +237,26 @@ Java_com_edde746_plezy_libass_AssRender_nativeAssRenderDeinit(JNIEnv* env, jclas
   }
 }
 
-// (image, original-list index) pair so packing can run in height-sorted order
-// while slots stay keyed by list position (= blend order) for pass 2.
+// A tile is a <= atlasMaxW x atlasMaxH sub-rect of an ASS_Image. Splitting wide
+// or tall images into tiles lets a full-screen sign whose line bitmaps exceed
+// the atlas pack completely instead of being dropped (issue #1436: a 4K-rendered
+// sign produces line bitmaps wider than a 2048 atlas). Tiles are built in list
+// order (= libass blend/painter order, preserved for pass 2); packing runs
+// height-sorted via a separate key array so emission order is untouched.
 typedef struct {
-  ASS_Image* img;
-  int idx;
-} PackItem;
+  ASS_Image* img;  // source image (for bitmap/stride/color/dst_x/dst_y)
+  int ox, oy;      // tile offset within the source bitmap
+  int tw, th;      // tile size (<= atlasMaxW x atlasMaxH)
+  int sx, sy;      // packed slot in the atlas; -1 if dropped for capacity
+} PackTile;
 
-static int comparePackItemsByHeightDesc(const void* a, const void* b) {
-  const PackItem* ia = (const PackItem*)a;
-  const PackItem* ib = (const PackItem*)b;
-  return ib->img->h - ia->img->h;
+typedef struct {
+  int th;   // tile height (the sort key)
+  int idx;  // index into the build-order tiles[] array
+} TileSortKey;
+
+static int compareTileKeysByHeightDesc(const void* a, const void* b) {
+  return ((const TileSortKey*)b)->th - ((const TileSortKey*)a)->th;
 }
 
 static int imageListHasOutput(ASS_Image* image) {
@@ -327,106 +336,110 @@ JNIEXPORT jobject JNICALL Java_com_edde746_plezy_libass_AssRender_nativeAssRende
   // 48 floats per quad × 4 bytes = 192 bytes/quad
   const int maxQuads = (int)(vertexCap / 192);
 
+  // Split every image into <= atlasMaxW x atlasMaxH tiles, then pack the tiles.
+  // tiles[] stays in list order (= blend/painter order for pass 2); keys[] is
+  // sorted by height so packing produces tight rows without disturbing it.
   int total = 0;
   for (ASS_Image* img = image; img != NULL; img = img->next) {
-    if (img->w > 0 && img->h > 0) total++;
+    if (img->w > 0 && img->h > 0) {
+      int cols = (img->w + atlasMaxW - 1) / atlasMaxW;
+      int rows = (img->h + atlasMaxH - 1) / atlasMaxH;
+      total += cols * rows;
+    }
   }
   if (total == 0) {
     return (*env)->NewObject(env, atlasFrameClass, ctor, 0, 0, 0, changed, 0, JNI_FALSE);
   }
 
-  // Pass 1: assign packing slots in height-sorted order so mixed-size frames pack
-  // tight rows. slotX/slotY are keyed by the image's position in the original
-  // list; -1 marks images dropped for capacity.
-  PackItem* items = (PackItem*)malloc(sizeof(PackItem) * (size_t)total);
-  int* slotX = (int*)malloc(sizeof(int) * (size_t)total);
-  int* slotY = (int*)malloc(sizeof(int) * (size_t)total);
-  if (!items || !slotX || !slotY) {
-    free(items);
-    free(slotX);
-    free(slotY);
+  PackTile* tiles = (PackTile*)malloc(sizeof(PackTile) * (size_t)total);
+  TileSortKey* keys = (TileSortKey*)malloc(sizeof(TileSortKey) * (size_t)total);
+  if (!tiles || !keys) {
+    free(tiles);
+    free(keys);
     return NULL;
   }
   int n = 0;
+  long long srcPixels = 0;
   for (ASS_Image* img = image; img != NULL; img = img->next) {
-    if (img->w > 0 && img->h > 0) {
-      items[n].img = img;
-      items[n].idx = n;
-      n++;
+    if (img->w <= 0 || img->h <= 0) continue;
+    srcPixels += (long long)img->w * img->h;
+    for (int oy = 0; oy < img->h; oy += atlasMaxH) {
+      int th = img->h - oy;
+      if (th > atlasMaxH) th = atlasMaxH;
+      for (int ox = 0; ox < img->w; ox += atlasMaxW) {
+        int tw = img->w - ox;
+        if (tw > atlasMaxW) tw = atlasMaxW;
+        tiles[n] = (PackTile){.img = img, .ox = ox, .oy = oy, .tw = tw, .th = th, .sx = -1, .sy = -1};
+        keys[n] = (TileSortKey){.th = th, .idx = n};
+        n++;
+      }
     }
   }
-  qsort(items, (size_t)n, sizeof(PackItem), comparePackItemsByHeightDesc);
+  qsort(keys, (size_t)n, sizeof(TileSortKey), compareTileKeysByHeightDesc);
 
   int cursorX = 0, cursorY = 0, rowH = 0;
   int truncated = 0;
   int packedH = 0;
   int accepted = 0;
-  long long srcPixels = 0;
   for (int i = 0; i < n; i++) {
-    ASS_Image* img = items[i].img;
-    srcPixels += (long long)img->w * img->h;
-    int sx = -1, sy = -1;
-    if (img->w <= atlasMaxW && accepted < maxQuads) {
+    PackTile* t = &tiles[keys[i].idx];
+    if (t->tw <= atlasMaxW && accepted < maxQuads) {
       int cx = cursorX, cy = cursorY, rh = rowH;
-      if (cx + img->w > atlasMaxW) {
+      if (cx + t->tw > atlasMaxW) {
         cy += rh;
         cx = 0;
         rh = 0;
       }
-      if (cy + img->h <= atlasMaxH) {
-        sx = cx;
-        sy = cy;
-        cursorX = cx + img->w;
+      if (cy + t->th <= atlasMaxH) {
+        t->sx = cx;
+        t->sy = cy;
+        cursorX = cx + t->tw;
         cursorY = cy;
-        rowH = (img->h > rh) ? img->h : rh;
-        if (cy + img->h > packedH) packedH = cy + img->h;
+        rowH = (t->th > rh) ? t->th : rh;
+        if (cy + t->th > packedH) packedH = cy + t->th;
         accepted++;
       }
     }
-    if (sx < 0) truncated++;
-    slotX[items[i].idx] = sx;
-    slotY[items[i].idx] = sy;
+    if (t->sx < 0) truncated++;
   }
 
   if (truncated > 0 && (truncationLogCounter++ & 63) == 0) {
     __android_log_print(
-        ANDROID_LOG_WARN, LOG_TAG, "atlas truncation: %d of %d images dropped (atlas %dx%d, %d quads max)", truncated,
-        n, atlasMaxW, atlasMaxH, maxQuads);
+        ANDROID_LOG_WARN, LOG_TAG, "atlas truncation: %d of %d tiles dropped (atlas %dx%d, %d quads max)", truncated, n,
+        atlasMaxW, atlasMaxH, maxQuads);
   }
   if (accepted == 0) {
-    free(items);
-    free(slotX);
-    free(slotY);
+    free(tiles);
+    free(keys);
     return (*env)->NewObject(env, atlasFrameClass, ctor, 0, 0, 0, changed, truncated, JNI_TRUE);
   }
 
   memset(atlasPixels, 0, (size_t)atlasMaxW * packedH);
 
-  // Pass 2: walk the original list (= libass's painter/blend order), copying each
-  // accepted image into its assigned slot and emitting its quad.
+  // Pass 2: emit tiles in build order (= libass's painter/blend order), copying
+  // each placed tile into its slot and emitting its quad.
   int qi = 0;
-  int k = 0;
-  for (ASS_Image* img = image; img != NULL; img = img->next) {
-    if (img->w <= 0 || img->h <= 0) continue;
-    const int px = slotX[k];
-    const int py = slotY[k];
-    k++;
-    if (px < 0) continue;
+  for (int i = 0; i < n; i++) {
+    PackTile* t = &tiles[i];
+    if (t->sx < 0) continue;
+    ASS_Image* img = t->img;
+    const int px = t->sx;
+    const int py = t->sy;
 
-    for (int y = 0; y < img->h; y++) {
+    for (int y = 0; y < t->th; y++) {
       uint8_t* dst = atlasPixels + (size_t)(py + y) * atlasMaxW + px;
-      const uint8_t* src = img->bitmap + (size_t)y * img->stride;
-      memcpy(dst, src, (size_t)img->w);
+      const uint8_t* src = img->bitmap + (size_t)(t->oy + y) * img->stride + t->ox;
+      memcpy(dst, src, (size_t)t->tw);
     }
 
-    const float x0 = (float)img->dst_x;
-    const float y0 = (float)img->dst_y;
-    const float x1 = x0 + (float)img->w;
-    const float y1 = y0 + (float)img->h;
+    const float x0 = (float)(img->dst_x + t->ox);
+    const float y0 = (float)(img->dst_y + t->oy);
+    const float x1 = x0 + (float)t->tw;
+    const float y1 = y0 + (float)t->th;
     const float u0 = (float)px / (float)atlasMaxW;
     const float v0 = (float)py / (float)atlasMaxH;
-    const float u1 = (float)(px + img->w) / (float)atlasMaxW;
-    const float v1 = (float)(py + img->h) / (float)atlasMaxH;
+    const float u1 = (float)(px + t->tw) / (float)atlasMaxW;
+    const float v1 = (float)(py + t->th) / (float)atlasMaxH;
     const unsigned int c = img->color;
     const float r = (float)((c >> 24) & 0xFFu) / 255.0f;
     const float g = (float)((c >> 16) & 0xFFu) / 255.0f;
@@ -489,9 +502,8 @@ JNIEXPORT jobject JNICALL Java_com_edde746_plezy_libass_AssRender_nativeAssRende
     qi++;
   }
 
-  free(items);
-  free(slotX);
-  free(slotY);
+  free(tiles);
+  free(keys);
 
   // Slow-render breakdown: separates libass's own cost (rasterize/blur/shape)
   // from this function's packing + memcpy, so device logs attribute the time.
