@@ -17,6 +17,7 @@ import '../widgets/rating_bottom_sheet.dart';
 
 import '../focus/dpad_navigator.dart';
 import '../focus/focusable_action_bar.dart';
+import '../focus/focusable_button.dart';
 import '../focus/focusable_wrapper.dart';
 import '../focus/key_event_utils.dart';
 import '../focus/input_mode_tracker.dart';
@@ -2562,6 +2563,120 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     );
   }
 
+  /// Banner shown above the rest of the detail screen content when the
+  /// active movie has no media files in the library (metadata-only entry
+  /// from a stub or pending Sonarr/Radarr import). Offers a one-tap
+  /// "Request via Seerr" — gated on a Seerr session being active.
+  ///
+  /// Returns null when the banner shouldn't render (TV show, offline,
+  /// movie has files, or Seerr isn't connected).
+  Widget? _buildMissingMovieRequestBanner(MediaItem metadata) {
+    if (widget.isOffline) return null;
+    if (!metadata.isMovie) return null;
+    final hasFiles = metadata.mediaVersions?.isNotEmpty ?? false;
+    if (hasFiles) return null;
+    return Consumer<SeerrSessionProvider>(
+      builder: (context, seerr, _) {
+        if (!seerr.isConnected) return const SizedBox.shrink();
+        final theme = Theme.of(context);
+        final muted = theme.colorScheme.onSurface.withValues(alpha: 0.7);
+        return Padding(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+          child: Card(
+            color: theme.colorScheme.surfaceContainerHighest,
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Row(
+                children: [
+                  const AppIcon(Symbols.playlist_add_check_rounded, fill: 1, size: 24),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(t.seerr.detail.missingMovieTitle, style: theme.textTheme.titleSmall),
+                        const SizedBox(height: 2),
+                        Text(
+                          t.seerr.detail.missingMovieBody,
+                          style: theme.textTheme.bodySmall?.copyWith(color: muted),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  FocusableButton(
+                    onPressed: () => unawaited(_openSeerrRequestFromLibrary(metadata)),
+                    child: FilledButton.icon(
+                      onPressed: () => unawaited(_openSeerrRequestFromLibrary(metadata)),
+                      icon: const AppIcon(Symbols.playlist_add_rounded, fill: 1),
+                      label: Text(t.seerr.detail.missingMovieCta),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  /// Empty-state for a season that has no episodes in the library yet —
+  /// when the user has a Seerr session, offer a one-tap request for just
+  /// that season. Falls back to the plain empty message otherwise.
+  Widget _sectionMissingSeasonRequest(BuildContext context, MediaItem season) {
+    return Consumer<SeerrSessionProvider>(
+      builder: (context, seerr, _) {
+        if (!seerr.isConnected || season.index == null) {
+          return _sectionEmpty(context, t.messages.noEpisodesFoundGeneral);
+        }
+        final theme = Theme.of(context);
+        final muted = theme.colorScheme.onSurface.withValues(alpha: 0.7);
+        return Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+          child: Card(
+            child: Padding(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      const AppIcon(Symbols.playlist_add_check_rounded, fill: 1, size: 24),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          t.seerr.detail.missingSeasonTitle(number: season.index!),
+                          style: theme.textTheme.titleSmall,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 6),
+                  Text(t.seerr.detail.missingSeasonBody, style: theme.textTheme.bodySmall?.copyWith(color: muted)),
+                  const SizedBox(height: 14),
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: FocusableButton(
+                      onPressed: () =>
+                          unawaited(_openSeerrRequestForSeasons(_metadata, [season.index!])),
+                      child: FilledButton.icon(
+                        onPressed: () =>
+                            unawaited(_openSeerrRequestForSeasons(_metadata, [season.index!])),
+                        icon: const AppIcon(Symbols.playlist_add_rounded, fill: 1),
+                        label: Text(t.seerr.detail.missingSeasonCta(number: season.index!)),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   /// Retryable error for a section whose fetch threw (vs. [_sectionEmpty], which
   /// means a successful-but-empty result). Reuses the app-wide [ErrorStateWidget]
   /// so the Retry button is dpad-focusable.
@@ -3210,6 +3325,10 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
                                     )
                                   else if (_episodes.isNotEmpty)
                                     _buildEpisodesList()
+                                  else if (_selectedSeasonIndex >= 0 &&
+                                      _selectedSeasonIndex < _seasons.length &&
+                                      (_seasons[_selectedSeasonIndex].leafCount ?? 0) == 0)
+                                    _sectionMissingSeasonRequest(context, _seasons[_selectedSeasonIndex])
                                   else
                                     _sectionEmpty(context, t.messages.noEpisodesFoundGeneral),
                                 ],
@@ -3567,6 +3686,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
                     ],
                     SizedBox(height: actionGap),
                     SizedBox(height: actionHeight, child: _buildActionButtons(metadata)),
+                    ?_buildMissingMovieRequestBanner(metadata),
                   ],
                 ),
               ),
@@ -4263,6 +4383,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
                       ],
                       if (chipActionGap > 0) SizedBox(height: chipActionGap),
                       if (showActions) SizedBox(height: actionHeight, child: _buildActionButtons(metadata)),
+                      ?_buildMissingMovieRequestBanner(metadata),
                     ],
                   ),
                 ),

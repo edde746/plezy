@@ -1468,7 +1468,13 @@
       "notConnected": "Not connected to Seerr.",
       "requestViaSeerr": "Request via Seerr",
       "requestNoTmdb": "No TMDB id on this item — Seerr can't match it.",
-      "requestLoadFailed": "Couldn't load Seerr details for this title."
+      "requestLoadFailed": "Couldn't load Seerr details for this title.",
+      "missingMovieTitle": "Not in your library yet",
+      "missingMovieBody": "This movie's metadata is here, but the file hasn't been imported.",
+      "missingMovieCta": "Request via Seerr",
+      "missingSeasonTitle": "Season ${number} isn't in your library",
+      "missingSeasonBody": "Request it via Seerr and it'll show up here once Sonarr finishes downloading.",
+      "missingSeasonCta": "Request Season ${number}"
     },
     "request": {
       "movieHelp": "Send a request for this movie to Seerr.",

@@ -41,6 +41,17 @@ class SeerrRequestSheet extends StatefulWidget {
   final String? year;
   final SeerrTvDetails? tv;
 
+  /// TV-only. When true, the sheet opens with every season that isn't
+  /// already AVAILABLE pre-checked — useful when the user lands on the
+  /// sheet from a library-detail screen and wants to fill in what's
+  /// missing without manually ticking each season.
+  final bool preSelectMissingSeasons;
+
+  /// TV-only. When non-null, the sheet opens with exactly these season
+  /// numbers pre-checked (any already-AVAILABLE numbers are silently
+  /// dropped). Takes precedence over [preSelectMissingSeasons].
+  final List<int>? preSelectedSeasons;
+
   const SeerrRequestSheet.movie({
     super.key,
     required this.tmdbId,
@@ -49,7 +60,9 @@ class SeerrRequestSheet extends StatefulWidget {
     this.overview,
     this.year,
   }) : tv = null,
-       mediaType = 'movie';
+       mediaType = 'movie',
+       preSelectMissingSeasons = false,
+       preSelectedSeasons = null;
 
   const SeerrRequestSheet.tv({
     super.key,
@@ -59,6 +72,8 @@ class SeerrRequestSheet extends StatefulWidget {
     this.posterPath,
     this.overview,
     this.year,
+    this.preSelectMissingSeasons = false,
+    this.preSelectedSeasons,
   }) : tv = details,
        mediaType = 'tv';
 
@@ -84,6 +99,24 @@ class _SeerrRequestSheetState extends State<SeerrRequestSheet> {
   final Set<int> _selectedSeasons = {};
   bool _submitting = false;
   String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.tv == null) return;
+    final explicit = widget.preSelectedSeasons;
+    if (explicit != null) {
+      // Caller picked specific seasons — honor them but skip ones that are
+      // already AVAILABLE (Seerr would reject the request anyway).
+      final requestable = _requestableSeasons.map((s) => s.seasonNumber).toSet();
+      _selectedSeasons.addAll(explicit.where(requestable.contains));
+    } else if (widget.preSelectMissingSeasons) {
+      // Pre-tick every season Seerr doesn't already report as available so
+      // the user can hit Submit immediately when they came in to fill the
+      // gaps. They can still uncheck specific seasons before submitting.
+      _selectedSeasons.addAll(_requestableSeasons.map((s) => s.seasonNumber));
+    }
+  }
 
   // Advanced-form state — only used when `_canRequestAdvanced` is true.
   bool _is4k = false;

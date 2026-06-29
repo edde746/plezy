@@ -4734,6 +4734,24 @@ class TranslationsSeerrDetailEn {
 
 	/// en: 'Couldn't load Seerr details for this title.'
 	String get requestLoadFailed => 'Couldn\'t load Seerr details for this title.';
+
+	/// en: 'Not in your library yet'
+	String get missingMovieTitle => 'Not in your library yet';
+
+	/// en: 'This movie's metadata is here, but the file hasn't been imported.'
+	String get missingMovieBody => 'This movie\'s metadata is here, but the file hasn\'t been imported.';
+
+	/// en: 'Request via Seerr'
+	String get missingMovieCta => 'Request via Seerr';
+
+	/// en: 'Season ${number} isn't in your library'
+	String missingSeasonTitle({required Object number}) => 'Season ${number} isn\'t in your library';
+
+	/// en: 'Request it via Seerr and it'll show up here once Sonarr finishes downloading.'
+	String get missingSeasonBody => 'Request it via Seerr and it\'ll show up here once Sonarr finishes downloading.';
+
+	/// en: 'Request Season ${number}'
+	String missingSeasonCta({required Object number}) => 'Request Season ${number}';
 }
 
 // Path: seerr.request
@@ -6311,6 +6329,12 @@ extension on Translations {
 			'seerr.detail.requestViaSeerr' => 'Request via Seerr',
 			'seerr.detail.requestNoTmdb' => 'No TMDB id on this item — Seerr can\'t match it.',
 			'seerr.detail.requestLoadFailed' => 'Couldn\'t load Seerr details for this title.',
+			'seerr.detail.missingMovieTitle' => 'Not in your library yet',
+			'seerr.detail.missingMovieBody' => 'This movie\'s metadata is here, but the file hasn\'t been imported.',
+			'seerr.detail.missingMovieCta' => 'Request via Seerr',
+			'seerr.detail.missingSeasonTitle' => ({required Object number}) => 'Season ${number} isn\'t in your library',
+			'seerr.detail.missingSeasonBody' => 'Request it via Seerr and it\'ll show up here once Sonarr finishes downloading.',
+			'seerr.detail.missingSeasonCta' => ({required Object number}) => 'Request Season ${number}',
 			'seerr.request.movieHelp' => 'Send a request for this movie to Seerr.',
 			'seerr.request.pickSeasonsHelp' => 'Pick the seasons you want to request.',
 			'seerr.request.noSeasons' => 'This show has no seasons available to request.',

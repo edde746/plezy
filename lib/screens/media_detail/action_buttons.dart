@@ -302,12 +302,25 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
     );
   }
 
+  /// Open the Seerr request sheet for [showMetadata] with exactly
+  /// [seasonNumbers] pre-checked. Used by the per-season missing-content
+  /// CTA on the show detail screen.
+  Future<void> _openSeerrRequestForSeasons(MediaItem showMetadata, List<int> seasonNumbers) =>
+      _openSeerrRequestFromLibrary(showMetadata, preSelectedSeasons: seasonNumbers);
+
   /// Resolve the TMDB id of the active library item, fetch the matching
   /// movie/tv details from Seerr, then open [SeerrRequestSheet]. Shows a
   /// brief loading dialog while the two round-trips run; surfaces an
   /// error snackbar when the TMDB id isn't known to the media server or
   /// Seerr can't return the matching record.
-  Future<void> _openSeerrRequestFromLibrary(MediaItem metadata) async {
+  ///
+  /// [preSelectedSeasons] (TV only) forwards to [SeerrRequestSheet.tv] so
+  /// callers can pre-tick specific seasons (e.g. just the one the user
+  /// chose from a per-season "missing" CTA).
+  Future<void> _openSeerrRequestFromLibrary(
+    MediaItem metadata, {
+    List<int>? preSelectedSeasons,
+  }) async {
     final session = context.read<SeerrSessionProvider>();
     final seerrClient = session.client;
     final mediaClient = _getMediaClientForMetadata(context);
@@ -367,6 +380,10 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
             year: (details.firstAirDate != null && details.firstAirDate!.length >= 4)
                 ? details.firstAirDate!.substring(0, 4)
                 : null,
+            // Caller-supplied wins; otherwise default to pre-ticking all
+            // seasons Seerr considers missing (request-via-library flow).
+            preSelectedSeasons: preSelectedSeasons,
+            preSelectMissingSeasons: preSelectedSeasons == null,
           ),
         );
       }
