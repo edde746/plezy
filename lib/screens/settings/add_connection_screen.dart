@@ -11,6 +11,7 @@ import '../../widgets/focused_scroll_scaffold.dart';
 import '../profile/borrow_connection_screen.dart';
 import 'add_jellyfin_screen.dart';
 import 'add_plex_account_screen.dart';
+import 'add_seerr_screen.dart';
 
 /// Picker shown when the user taps "Add connection".
 ///
@@ -71,6 +72,23 @@ class AddConnectionScreen extends StatelessWidget {
                   },
                 ),
               ],
+              // Seerr request server — separate from media-server backends
+              // (no MediaBackend mapping, distinct icon).
+              const SizedBox(height: 12),
+              _BackendCard(
+                leading: const AppIcon(Symbols.playlist_add_check_rounded, fill: 1, size: 28),
+                title: t.addSeerr.connectCard,
+                subtitle: t.addSeerr.connectCardSubtitle,
+                onTap: () async {
+                  final added = await Navigator.push<bool>(
+                    context,
+                    MaterialPageRoute(builder: (_) => const AddSeerrScreen()),
+                  );
+                  if (added == true && context.mounted) {
+                    Navigator.of(context).pop(true);
+                  }
+                },
+              ),
               if (scoped) ...[
                 const SizedBox(height: 12),
                 _BackendCard(

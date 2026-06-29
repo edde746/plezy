@@ -86,6 +86,8 @@ class Translations with BaseTranslations<AppLocale, Translations> {
 	late final TranslationsTraktEn trakt = TranslationsTraktEn.internal(_root);
 	late final TranslationsTrackersEn trackers = TranslationsTrackersEn.internal(_root);
 	late final TranslationsAddServerEn addServer = TranslationsAddServerEn.internal(_root);
+	late final TranslationsAddSeerrEn addSeerr = TranslationsAddSeerrEn.internal(_root);
+	late final TranslationsSeerrEn seerr = TranslationsSeerrEn.internal(_root);
 }
 
 // Path: app
@@ -3920,6 +3922,90 @@ class TranslationsAddServerEn {
 	String get borrowFromAnotherProfileSubtitle => 'Reuse another profile\'s connection. PIN-protected profiles require a PIN.';
 }
 
+// Path: addSeerr
+class TranslationsAddSeerrEn {
+	TranslationsAddSeerrEn.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// en: 'Add Seerr instance'
+	String get title => 'Add Seerr instance';
+
+	/// en: 'Connect to Seerr'
+	String get connectCard => 'Connect to Seerr';
+
+	/// en: 'Request movies and shows your library doesn't have yet.'
+	String get connectCardSubtitle => 'Request movies and shows your library doesn\'t have yet.';
+
+	/// en: 'Seerr URL'
+	String get urlLabel => 'Seerr URL';
+
+	/// en: 'The address of your Seerr instance (e.g. https://requests.example.com).'
+	String get urlHelper => 'The address of your Seerr instance (e.g. https://requests.example.com).';
+
+	/// en: 'Enter your Seerr URL'
+	String get urlRequired => 'Enter your Seerr URL';
+
+	/// en: 'Check server'
+	String get probe => 'Check server';
+
+	/// en: 'Could not reach Seerr: ${error}'
+	String couldNotReach({required Object error}) => 'Could not reach Seerr: ${error}';
+
+	/// en: 'This Seerr instance hasn't finished first-run setup yet.'
+	String get notInitialized => 'This Seerr instance hasn\'t finished first-run setup yet.';
+
+	/// en: 'Sign in with the same Jellyfin username and password you use for your media server.'
+	String get signInWithJellyfinHelp => 'Sign in with the same Jellyfin username and password you use for your media server.';
+
+	/// en: 'Jellyfin username'
+	String get jellyfinUsername => 'Jellyfin username';
+
+	/// en: 'Jellyfin password'
+	String get jellyfinPassword => 'Jellyfin password';
+
+	/// en: 'Sign in'
+	String get signIn => 'Sign in';
+
+	/// en: 'Sign-in failed: ${error}'
+	String signInFailed({required Object error}) => 'Sign-in failed: ${error}';
+
+	/// en: 'Sign-in failed. Please try again.'
+	String get signInFailedGeneric => 'Sign-in failed. Please try again.';
+
+	/// en: 'Connected to ${label}'
+	String signInSuccess({required Object label}) => 'Connected to ${label}';
+
+	/// en: 'Connected to Seerr'
+	String get signInSuccessGeneric => 'Connected to Seerr';
+
+	/// en: 'Required'
+	String get required => 'Required';
+}
+
+// Path: seerr
+class TranslationsSeerrEn {
+	TranslationsSeerrEn.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// en: 'Request'
+	String get tab => 'Request';
+
+	late final TranslationsSeerrTabsEn tabs = TranslationsSeerrTabsEn.internal(_root);
+	late final TranslationsSeerrLoginEn login = TranslationsSeerrLoginEn.internal(_root);
+	late final TranslationsSeerrDiscoverEn discover = TranslationsSeerrDiscoverEn.internal(_root);
+	late final TranslationsSeerrSearchEn search = TranslationsSeerrSearchEn.internal(_root);
+	late final TranslationsSeerrDetailEn detail = TranslationsSeerrDetailEn.internal(_root);
+	late final TranslationsSeerrRequestEn request = TranslationsSeerrRequestEn.internal(_root);
+	late final TranslationsSeerrMyRequestsEn myRequests = TranslationsSeerrMyRequestsEn.internal(_root);
+	late final TranslationsSeerrStatusEn status = TranslationsSeerrStatusEn.internal(_root);
+}
+
 // Path: hotkeys.actions
 class TranslationsHotkeysActionsEn {
 	TranslationsHotkeysActionsEn.internal(this._root);
@@ -4503,6 +4589,228 @@ class TranslationsTrackersLibraryFilterEn {
 
 	/// en: 'No libraries available'
 	String get noLibraries => 'No libraries available';
+}
+
+// Path: seerr.tabs
+class TranslationsSeerrTabsEn {
+	TranslationsSeerrTabsEn.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// en: 'Discover'
+	String get discover => 'Discover';
+
+	/// en: 'Search'
+	String get search => 'Search';
+
+	/// en: 'My Requests'
+	String get myRequests => 'My Requests';
+}
+
+// Path: seerr.login
+class TranslationsSeerrLoginEn {
+	TranslationsSeerrLoginEn.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// en: 'Your Seerr session expired'
+	String get sessionExpired => 'Your Seerr session expired';
+
+	/// en: 'Sign in as ${username} on ${instance}'
+	String signInAs({required Object username, required Object instance}) => 'Sign in as ${username} on ${instance}';
+
+	/// en: 'No Seerr server configured'
+	String get emptyTitle => 'No Seerr server configured';
+
+	/// en: 'Add a Seerr instance in Settings to request content.'
+	String get emptySubtitle => 'Add a Seerr instance in Settings to request content.';
+}
+
+// Path: seerr.discover
+class TranslationsSeerrDiscoverEn {
+	TranslationsSeerrDiscoverEn.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// en: 'Trending'
+	String get trending => 'Trending';
+
+	/// en: 'Popular movies'
+	String get popularMovies => 'Popular movies';
+
+	/// en: 'Popular shows'
+	String get popularTv => 'Popular shows';
+
+	/// en: 'Couldn't load this hub.'
+	String get failed => 'Couldn\'t load this hub.';
+
+	/// en: 'Retry'
+	String get retry => 'Retry';
+}
+
+// Path: seerr.search
+class TranslationsSeerrSearchEn {
+	TranslationsSeerrSearchEn.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// en: 'Search movies and shows…'
+	String get placeholder => 'Search movies and shows…';
+
+	/// en: 'Search Seerr's catalog to find something to request.'
+	String get startHint => 'Search Seerr\'s catalog to find something to request.';
+
+	/// en: 'No matches in the request catalog.'
+	String get noResults => 'No matches in the request catalog.';
+
+	/// en: 'Not in your library'
+	String get notInLibraryTitle => 'Not in your library';
+
+	/// en: 'Search the request catalog for "${query}"'
+	String notInLibrarySubtitle({required Object query}) => 'Search the request catalog for "${query}"';
+}
+
+// Path: seerr.detail
+class TranslationsSeerrDetailEn {
+	TranslationsSeerrDetailEn.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// en: 'Request movie'
+	String get requestMovie => 'Request movie';
+
+	/// en: 'Request show'
+	String get requestShow => 'Request show';
+
+	/// en: 'Already in your library'
+	String get alreadyAvailable => 'Already in your library';
+
+	/// en: '${count} seasons'
+	String seasonsCount({required Object count}) => '${count} seasons';
+
+	/// en: 'Seasons'
+	String get seasonsHeader => 'Seasons';
+
+	/// en: 'Not connected to Seerr.'
+	String get notConnected => 'Not connected to Seerr.';
+}
+
+// Path: seerr.request
+class TranslationsSeerrRequestEn {
+	TranslationsSeerrRequestEn.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// en: 'Send a request for this movie to Seerr.'
+	String get movieHelp => 'Send a request for this movie to Seerr.';
+
+	/// en: 'Pick the seasons you want to request.'
+	String get pickSeasonsHelp => 'Pick the seasons you want to request.';
+
+	/// en: 'This show has no seasons available to request.'
+	String get noSeasons => 'This show has no seasons available to request.';
+
+	/// en: 'All seasons'
+	String get allSeasons => 'All seasons';
+
+	/// en: 'Season ${number}'
+	String seasonNumber({required Object number}) => 'Season ${number}';
+
+	/// en: '${count} episodes'
+	String episodeCount({required Object count}) => '${count} episodes';
+
+	/// en: 'Pick at least one season.'
+	String get pickSeason => 'Pick at least one season.';
+
+	/// en: 'Submit request'
+	String get requestMovie => 'Submit request';
+
+	/// en: 'Request ${count} season(s)'
+	String requestSelectedSeasons({required Object count}) => 'Request ${count} season(s)';
+
+	/// en: 'Requested "${title}"'
+	String submitted({required Object title}) => 'Requested "${title}"';
+
+	/// en: 'Couldn't submit request. Please try again.'
+	String get failedGeneric => 'Couldn\'t submit request. Please try again.';
+
+	/// en: 'Not connected to Seerr.'
+	String get notConnected => 'Not connected to Seerr.';
+}
+
+// Path: seerr.myRequests
+class TranslationsSeerrMyRequestsEn {
+	TranslationsSeerrMyRequestsEn.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// en: 'No requests yet'
+	String get empty => 'No requests yet';
+
+	/// en: 'Anything you request will show up here.'
+	String get emptySubtitle => 'Anything you request will show up here.';
+
+	/// en: 'Couldn't load your requests.'
+	String get failedToLoad => 'Couldn\'t load your requests.';
+
+	/// en: 'Request cancelled'
+	String get cancelled => 'Request cancelled';
+
+	/// en: 'Couldn't cancel that request.'
+	String get cancelFailed => 'Couldn\'t cancel that request.';
+
+	/// en: 'Movie request #${id}'
+	String movieRowTitle({required Object id}) => 'Movie request #${id}';
+
+	/// en: 'Show request #${id}'
+	String tvRowTitle({required Object id}) => 'Show request #${id}';
+}
+
+// Path: seerr.status
+class TranslationsSeerrStatusEn {
+	TranslationsSeerrStatusEn.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// en: 'Not requested'
+	String get notRequested => 'Not requested';
+
+	/// en: 'Pending'
+	String get pending => 'Pending';
+
+	/// en: 'Approved'
+	String get approved => 'Approved';
+
+	/// en: 'Declined'
+	String get declined => 'Declined';
+
+	/// en: 'Failed'
+	String get failed => 'Failed';
+
+	/// en: 'Processing'
+	String get processing => 'Processing';
+
+	/// en: 'Partial'
+	String get partiallyAvailable => 'Partial';
+
+	/// en: 'Available'
+	String get available => 'Available';
 }
 
 /// The flat map containing all translations for locale <en>.
@@ -5803,6 +6111,75 @@ extension on Translations {
 			'addServer.connectToJellyfinCardSubtitleScoped' => ({required Object name}) => 'Sign in to a Jellyfin server. Binds to ${name}.',
 			'addServer.borrowFromAnotherProfile' => 'Borrow from another profile',
 			'addServer.borrowFromAnotherProfileSubtitle' => 'Reuse another profile\'s connection. PIN-protected profiles require a PIN.',
+			'addSeerr.title' => 'Add Seerr instance',
+			'addSeerr.connectCard' => 'Connect to Seerr',
+			'addSeerr.connectCardSubtitle' => 'Request movies and shows your library doesn\'t have yet.',
+			'addSeerr.urlLabel' => 'Seerr URL',
+			'addSeerr.urlHelper' => 'The address of your Seerr instance (e.g. https://requests.example.com).',
+			'addSeerr.urlRequired' => 'Enter your Seerr URL',
+			'addSeerr.probe' => 'Check server',
+			'addSeerr.couldNotReach' => ({required Object error}) => 'Could not reach Seerr: ${error}',
+			'addSeerr.notInitialized' => 'This Seerr instance hasn\'t finished first-run setup yet.',
+			'addSeerr.signInWithJellyfinHelp' => 'Sign in with the same Jellyfin username and password you use for your media server.',
+			'addSeerr.jellyfinUsername' => 'Jellyfin username',
+			'addSeerr.jellyfinPassword' => 'Jellyfin password',
+			'addSeerr.signIn' => 'Sign in',
+			'addSeerr.signInFailed' => ({required Object error}) => 'Sign-in failed: ${error}',
+			'addSeerr.signInFailedGeneric' => 'Sign-in failed. Please try again.',
+			'addSeerr.signInSuccess' => ({required Object label}) => 'Connected to ${label}',
+			'addSeerr.signInSuccessGeneric' => 'Connected to Seerr',
+			'addSeerr.required' => 'Required',
+			'seerr.tab' => 'Request',
+			'seerr.tabs.discover' => 'Discover',
+			'seerr.tabs.search' => 'Search',
+			'seerr.tabs.myRequests' => 'My Requests',
+			'seerr.login.sessionExpired' => 'Your Seerr session expired',
+			'seerr.login.signInAs' => ({required Object username, required Object instance}) => 'Sign in as ${username} on ${instance}',
+			'seerr.login.emptyTitle' => 'No Seerr server configured',
+			'seerr.login.emptySubtitle' => 'Add a Seerr instance in Settings to request content.',
+			'seerr.discover.trending' => 'Trending',
+			'seerr.discover.popularMovies' => 'Popular movies',
+			'seerr.discover.popularTv' => 'Popular shows',
+			'seerr.discover.failed' => 'Couldn\'t load this hub.',
+			'seerr.discover.retry' => 'Retry',
+			'seerr.search.placeholder' => 'Search movies and shows…',
+			'seerr.search.startHint' => 'Search Seerr\'s catalog to find something to request.',
+			'seerr.search.noResults' => 'No matches in the request catalog.',
+			'seerr.search.notInLibraryTitle' => 'Not in your library',
+			'seerr.search.notInLibrarySubtitle' => ({required Object query}) => 'Search the request catalog for "${query}"',
+			'seerr.detail.requestMovie' => 'Request movie',
+			'seerr.detail.requestShow' => 'Request show',
+			'seerr.detail.alreadyAvailable' => 'Already in your library',
+			'seerr.detail.seasonsCount' => ({required Object count}) => '${count} seasons',
+			'seerr.detail.seasonsHeader' => 'Seasons',
+			'seerr.detail.notConnected' => 'Not connected to Seerr.',
+			'seerr.request.movieHelp' => 'Send a request for this movie to Seerr.',
+			'seerr.request.pickSeasonsHelp' => 'Pick the seasons you want to request.',
+			'seerr.request.noSeasons' => 'This show has no seasons available to request.',
+			'seerr.request.allSeasons' => 'All seasons',
+			'seerr.request.seasonNumber' => ({required Object number}) => 'Season ${number}',
+			'seerr.request.episodeCount' => ({required Object count}) => '${count} episodes',
+			'seerr.request.pickSeason' => 'Pick at least one season.',
+			'seerr.request.requestMovie' => 'Submit request',
+			'seerr.request.requestSelectedSeasons' => ({required Object count}) => 'Request ${count} season(s)',
+			'seerr.request.submitted' => ({required Object title}) => 'Requested "${title}"',
+			'seerr.request.failedGeneric' => 'Couldn\'t submit request. Please try again.',
+			'seerr.request.notConnected' => 'Not connected to Seerr.',
+			'seerr.myRequests.empty' => 'No requests yet',
+			'seerr.myRequests.emptySubtitle' => 'Anything you request will show up here.',
+			'seerr.myRequests.failedToLoad' => 'Couldn\'t load your requests.',
+			'seerr.myRequests.cancelled' => 'Request cancelled',
+			'seerr.myRequests.cancelFailed' => 'Couldn\'t cancel that request.',
+			'seerr.myRequests.movieRowTitle' => ({required Object id}) => 'Movie request #${id}',
+			'seerr.myRequests.tvRowTitle' => ({required Object id}) => 'Show request #${id}',
+			'seerr.status.notRequested' => 'Not requested',
+			'seerr.status.pending' => 'Pending',
+			'seerr.status.approved' => 'Approved',
+			'seerr.status.declined' => 'Declined',
+			'seerr.status.failed' => 'Failed',
+			'seerr.status.processing' => 'Processing',
+			'seerr.status.partiallyAvailable' => 'Partial',
+			'seerr.status.available' => 'Available',
 			_ => null,
 		};
 	}

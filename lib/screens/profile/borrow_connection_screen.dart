@@ -142,6 +142,9 @@ class _BorrowConnectionScreenState extends State<BorrowConnectionScreen> {
       if (targetConnIds.contains(pc.connectionId)) continue;
       final conn = connById[pc.connectionId];
       if (conn == null) continue;
+      // Ancillary kinds (Seerr) authenticate per profile and have no shared
+      // user-token concept — borrowing makes no sense for them.
+      if (!conn.isMediaBackend) continue;
       final source = allProfiles.firstWhere(
         (p) => p.id == pc.profileId,
         orElse: () => widget.targetProfile, // sentinel — skipped below
@@ -213,6 +216,9 @@ class _BorrowConnectionScreenState extends State<BorrowConnectionScreen> {
           await _borrowPlex(cand);
         case JellyfinConnection():
           await _borrowJellyfin(cand);
+        case SeerrConnection():
+          // Pre-filtered in [_loadCandidates] but kept here for exhaustiveness.
+          break;
       }
     } finally {
       if (mounted) {

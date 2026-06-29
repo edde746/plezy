@@ -159,6 +159,9 @@ class _SyncRuleTileState extends State<_SyncRuleTile> {
           if (serverMachineId == rule.serverId && serverName.isNotEmpty) {
             return _RuleServerInfo(label: serverName, isKnown: true);
           }
+        case SeerrConnection():
+          // Sync rules don't reference Seerr — skip.
+          break;
       }
     }
 

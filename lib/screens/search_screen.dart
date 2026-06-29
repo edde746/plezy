@@ -10,7 +10,9 @@ import '../media/media_item.dart';
 import '../mixins/controller_disposer_mixin.dart';
 import '../mixins/mounted_set_state_mixin.dart';
 import '../mixins/refreshable.dart';
+import '../navigation/navigation_tabs.dart';
 import '../providers/multi_server_provider.dart';
+import '../providers/seerr_session_provider.dart';
 import '../utils/app_logger.dart';
 import '../utils/platform_detector.dart';
 import '../utils/snackbar_helper.dart';
@@ -21,6 +23,8 @@ import '../widgets/focusable_media_card.dart';
 import '../utils/focus_utils.dart';
 import 'libraries/state_messages.dart';
 import 'main_screen.dart';
+import 'seerr/seerr_tab_root.dart';
+import 'seerr/widgets/not_in_library_banner.dart';
 
 class SearchScreen extends StatefulWidget {
   const SearchScreen({super.key});
@@ -243,6 +247,12 @@ class _SearchScreenState extends State<SearchScreen>
     );
   }
 
+  void _openSeerrSearch(String query) {
+    Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => SeerrTabRoot(initialSearchQuery: query)),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -299,11 +309,29 @@ class _SearchScreenState extends State<SearchScreen>
               )
             else if (_searchResults.isEmpty)
               SliverFillRemaining(
-                child: StateMessageWidget(
-                  message: t.messages.noResultsFound,
-                  subtitle: t.search.tryDifferentTerm,
-                  icon: Symbols.search_off_rounded,
-                  iconSize: 80,
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Expanded(
+                      child: StateMessageWidget(
+                        message: t.messages.noResultsFound,
+                        subtitle: t.search.tryDifferentTerm,
+                        icon: Symbols.search_off_rounded,
+                        iconSize: 80,
+                      ),
+                    ),
+                    Consumer<SeerrSessionProvider>(
+                      builder: (context, seerr, _) {
+                        if (!seerr.hasConfiguredServer) return const SizedBox.shrink();
+                        final query = _searchController.text.trim();
+                        if (query.isEmpty) return const SizedBox.shrink();
+                        return NotInLibraryBanner(
+                          query: query,
+                          onTap: () => _openSeerrSearch(query),
+                        );
+                      },
+                    ),
+                  ],
                 ),
               )
             else

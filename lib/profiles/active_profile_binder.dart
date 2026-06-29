@@ -320,6 +320,9 @@ class ActiveProfileBinder {
           expected.addAll(servers.map((server) => server.clientIdentifier));
         case JellyfinConnection(:final serverMachineId):
           expected.add(serverMachineId);
+        case SeerrConnection():
+          // Seerr is not a media server — no expected server-id contribution.
+          break;
         case null:
           break;
       }
@@ -483,6 +486,10 @@ class ActiveProfileBinder {
         case JellyfinConnection():
           expected.add(conn.serverMachineId);
           futures.add(_bindJellyfin(conn));
+        case SeerrConnection():
+          // Seerr binds independently via SeerrSessionProvider — nothing to do
+          // in the media-server bind cycle.
+          break;
       }
     }
     final results = await Future.wait(futures);

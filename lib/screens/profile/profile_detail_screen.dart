@@ -159,6 +159,8 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> with Controll
     return switch (conn) {
       PlexAccountConnection(:final servers) => servers.map((s) => s.clientIdentifier).toSet(),
       JellyfinConnection(:final serverMachineId) => {serverMachineId},
+      // Seerr has no playable server ids.
+      SeerrConnection() => const <String>{},
     };
   }
 
@@ -324,7 +326,7 @@ class _ConnectionsList extends StatelessWidget {
                 }
                 return Column(
                   children: [
-                    if (parentConn != null)
+                    if (parentConn != null && parentConn.isMediaBackend)
                       Card(
                         child: ListTile(
                           leading: BackendBadge(backend: parentConn.backend, size: 24),
@@ -336,7 +338,9 @@ class _ConnectionsList extends StatelessWidget {
                       if (byId[pc.connectionId] case final conn?)
                         Card(
                           child: ListTile(
-                            leading: BackendBadge(backend: conn.backend, size: 24),
+                            leading: conn.isMediaBackend
+                                ? BackendBadge(backend: conn.backend, size: 24)
+                                : const AppIcon(Symbols.playlist_add_check_rounded, fill: 1, size: 24),
                             title: Text(conn.displayLabel),
                             subtitle: _ConnectionSubtitle.build(conn: conn, pc: pc, homeCache: homeCache, theme: theme),
                             trailing: FocusablePopupMenuButton<String>(
@@ -352,7 +356,8 @@ class _ConnectionsList extends StatelessWidget {
                                 }
                               },
                               itemBuilder: (_) => [
-                                if (!pc.isDefault) AppMenuItem(value: 'default', label: t.profiles.makeDefault),
+                                if (!pc.isDefault && conn.isMediaBackend)
+                                  AppMenuItem(value: 'default', label: t.profiles.makeDefault),
                                 if (conn is JellyfinConnection) AppMenuItem(value: 'edit', label: t.common.edit),
                                 AppMenuItem(value: 'remove', label: t.profiles.removeConnection),
                               ],

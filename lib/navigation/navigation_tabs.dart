@@ -6,7 +6,7 @@ import '../i18n/strings.g.dart';
 import '../utils/platform_detector.dart';
 
 /// Navigation tab identifiers
-enum NavigationTabId { discover, libraries, liveTv, search, downloads, settings }
+enum NavigationTabId { discover, libraries, liveTv, search, seerr, downloads, settings }
 
 /// Represents a navigation tab with its configuration
 class NavigationTab {
@@ -22,16 +22,17 @@ class NavigationTab {
   }
 
   /// Get the index for a tab ID in the visible tabs list
-  static int indexFor(NavigationTabId id, {required bool isOffline, bool hasLiveTv = false}) {
-    final tabs = getVisibleTabs(isOffline: isOffline, hasLiveTv: hasLiveTv);
+  static int indexFor(NavigationTabId id, {required bool isOffline, bool hasLiveTv = false, bool hasSeerr = false}) {
+    final tabs = getVisibleTabs(isOffline: isOffline, hasLiveTv: hasLiveTv, hasSeerr: hasSeerr);
     return tabs.indexWhere((tab) => tab.id == id);
   }
 
   /// Get tabs filtered by offline mode and feature availability
-  static List<NavigationTab> getVisibleTabs({required bool isOffline, bool hasLiveTv = false}) {
+  static List<NavigationTab> getVisibleTabs({required bool isOffline, bool hasLiveTv = false, bool hasSeerr = false}) {
     return allNavigationTabs.where((tab) {
       if (isOffline && tab.onlineOnly) return false;
       if (tab.id == NavigationTabId.liveTv && !hasLiveTv) return false;
+      if (tab.id == NavigationTabId.seerr && !hasSeerr) return false;
       if (tab.id == NavigationTabId.downloads && PlatformDetector.isAppleTV()) return false;
       return true;
     }).toList();
@@ -45,9 +46,10 @@ class NavigationTab {
   static NavigationTabId resolveDefaultTab({
     required bool isOffline,
     required bool hasLiveTv,
+    bool hasSeerr = false,
     required NavigationTabId? preferredStartup,
   }) {
-    final tabs = getVisibleTabs(isOffline: isOffline, hasLiveTv: hasLiveTv);
+    final tabs = getVisibleTabs(isOffline: isOffline, hasLiveTv: hasLiveTv, hasSeerr: hasSeerr);
     if (isOffline && tabs.any((t) => t.id == NavigationTabId.downloads)) {
       return NavigationTabId.downloads;
     }
@@ -63,6 +65,7 @@ String _getHomeLabel() => t.common.home;
 String _getLibrariesLabel() => t.navigation.libraries;
 String _getLiveTvLabel() => t.navigation.liveTv;
 String _getSearchLabel() => t.common.search;
+String _getSeerrLabel() => t.seerr.tab;
 String _getDownloadsLabel() => t.navigation.downloads;
 String _getSettingsLabel() => t.common.settings;
 
@@ -77,6 +80,12 @@ const allNavigationTabs = [
   ),
   NavigationTab(id: NavigationTabId.liveTv, onlineOnly: true, icon: Symbols.live_tv_rounded, getLabel: _getLiveTvLabel),
   NavigationTab(id: NavigationTabId.search, onlineOnly: true, icon: Symbols.search_rounded, getLabel: _getSearchLabel),
+  NavigationTab(
+    id: NavigationTabId.seerr,
+    onlineOnly: true,
+    icon: Symbols.playlist_add_check_rounded,
+    getLabel: _getSeerrLabel,
+  ),
   NavigationTab(
     id: NavigationTabId.downloads,
     onlineOnly: false,

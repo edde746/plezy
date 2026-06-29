@@ -1404,5 +1404,94 @@
     "connectToJellyfinCardSubtitleScoped": "Sign in to a Jellyfin server. Binds to ${name}.",
     "borrowFromAnotherProfile": "Borrow from another profile",
     "borrowFromAnotherProfileSubtitle": "Reuse another profile's connection. PIN-protected profiles require a PIN."
+  },
+  "addSeerr": {
+    "title": "Add Seerr instance",
+    "connectCard": "Connect to Seerr",
+    "connectCardSubtitle": "Request movies and shows your library doesn't have yet.",
+    "urlLabel": "Seerr URL",
+    "urlHelper": "The address of your Seerr instance (e.g. https://requests.example.com).",
+    "urlRequired": "Enter your Seerr URL",
+    "probe": "Check server",
+    "couldNotReach": "Could not reach Seerr: ${error}",
+    "notInitialized": "This Seerr instance hasn't finished first-run setup yet.",
+    "signInWithJellyfinHelp": "Sign in with the same Jellyfin username and password you use for your media server.",
+    "jellyfinUsername": "Jellyfin username",
+    "jellyfinPassword": "Jellyfin password",
+    "signIn": "Sign in",
+    "signInFailed": "Sign-in failed: ${error}",
+    "signInFailedGeneric": "Sign-in failed. Please try again.",
+    "signInSuccess": "Connected to ${label}",
+    "signInSuccessGeneric": "Connected to Seerr",
+    "required": "Required"
+  },
+  "seerr": {
+    "tab": "Request",
+    "tabs": {
+      "discover": "Discover",
+      "search": "Search",
+      "myRequests": "My Requests"
+    },
+    "login": {
+      "sessionExpired": "Your Seerr session expired",
+      "signInAs": "Sign in as ${username} on ${instance}",
+      "emptyTitle": "No Seerr server configured",
+      "emptySubtitle": "Add a Seerr instance in Settings to request content."
+    },
+    "discover": {
+      "trending": "Trending",
+      "popularMovies": "Popular movies",
+      "popularTv": "Popular shows",
+      "failed": "Couldn't load this hub.",
+      "retry": "Retry"
+    },
+    "search": {
+      "placeholder": "Search movies and shows…",
+      "startHint": "Search Seerr's catalog to find something to request.",
+      "noResults": "No matches in the request catalog.",
+      "notInLibraryTitle": "Not in your library",
+      "notInLibrarySubtitle": "Search the request catalog for \"${query}\""
+    },
+    "detail": {
+      "requestMovie": "Request movie",
+      "requestShow": "Request show",
+      "alreadyAvailable": "Already in your library",
+      "seasonsCount": "${count} seasons",
+      "seasonsHeader": "Seasons",
+      "notConnected": "Not connected to Seerr."
+    },
+    "request": {
+      "movieHelp": "Send a request for this movie to Seerr.",
+      "pickSeasonsHelp": "Pick the seasons you want to request.",
+      "noSeasons": "This show has no seasons available to request.",
+      "allSeasons": "All seasons",
+      "seasonNumber": "Season ${number}",
+      "episodeCount": "${count} episodes",
+      "pickSeason": "Pick at least one season.",
+      "requestMovie": "Submit request",
+      "requestSelectedSeasons": "Request ${count} season(s)",
+      "submitted": "Requested \"${title}\"",
+      "failedGeneric": "Couldn't submit request. Please try again.",
+      "notConnected": "Not connected to Seerr."
+    },
+    "myRequests": {
+      "empty": "No requests yet",
+      "emptySubtitle": "Anything you request will show up here.",
+      "failedToLoad": "Couldn't load your requests.",
+      "cancelled": "Request cancelled",
+      "cancelFailed": "Couldn't cancel that request.",
+      "movieRowTitle": "Movie request #${id}",
+      "tvRowTitle": "Show request #${id}"
+    },
+    "status": {
+      "notRequested": "Not requested",
+      "pending": "Pending",
+      "approved": "Approved",
+      "declined": "Declined",
+      "failed": "Failed",
+      "processing": "Processing",
+      "partiallyAvailable": "Partial",
+      "available": "Available"
+    }
   }
 }

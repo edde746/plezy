@@ -199,5 +199,7 @@ Set<ServerId> _serverIdsForConnection(Connection connection) {
     JellyfinConnection(:final serverMachineId) => {
       if (ServerId.tryParse(serverMachineId) case final serverId?) serverId,
     },
+    // Seerr has no playable server-ids.
+    SeerrConnection() => const <ServerId>{},
   };
 }

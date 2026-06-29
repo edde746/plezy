@@ -346,7 +346,9 @@ class _ProfileSwitchScreenState extends State<ProfileSwitchScreen> with MountedS
       final parentId = profile.parentConnectionId;
       if (parentId != null) {
         final conn = view.connectionsById[parentId];
-        if (conn != null) chips.add(_ChipData(backend: conn.backend, label: conn.displayLabel));
+        if (conn != null && conn.isMediaBackend) {
+          chips.add(_ChipData(backend: conn.backend, label: conn.displayLabel));
+        }
       }
     }
     final pcs = visibleProfileConnections(
@@ -355,7 +357,11 @@ class _ProfileSwitchScreenState extends State<ProfileSwitchScreen> with MountedS
     );
     for (final pc in pcs) {
       final conn = view.connectionsById[pc.connectionId];
-      if (conn != null) chips.add(_ChipData(backend: conn.backend, label: conn.displayLabel));
+      // Non-media-backend connections (e.g. Seerr) aren't playback servers,
+      // so they don't belong in the profile-switcher media chips.
+      if (conn != null && conn.isMediaBackend) {
+        chips.add(_ChipData(backend: conn.backend, label: conn.displayLabel));
+      }
     }
     return chips;
   }
