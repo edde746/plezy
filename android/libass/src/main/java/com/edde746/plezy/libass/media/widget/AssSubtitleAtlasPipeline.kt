@@ -28,10 +28,10 @@ import java.util.concurrent.locks.LockSupport
 
 /**
  * Atlas-rendering pipeline behind [AssSubtitleSurfaceView].
- * Runs libass on its own [HandlerThread] into a packed
- * ALPHA_8 texture atlas plus a single vertex stream, and a GL thread that uploads
- * both and issues one `glDrawArrays` per frame. Each timed swap is pinned to the
- * corresponding video frame via [EGLExt.eglPresentationTimeANDROID].
+ * Runs libass on its own [HandlerThread] into a packed ALPHA_8 atlas of one or more
+ * pages plus a vertex stream, and a GL thread that uploads both and issues one
+ * `glDrawArrays` per atlas page. Each timed swap is pinned to the corresponding
+ * video frame via [EGLExt.eglPresentationTimeANDROID].
  */
 @UnstableApi
 internal object AssAtlasPipelineConfig {
@@ -53,6 +53,16 @@ internal object AssAtlasPipelineConfig {
 
   /** Preallocated vertex-stream capacity (192 bytes × 16384 = 3 MB per buffer). */
   internal const val MAX_QUADS = 16384
+
+  /**
+   * Hard cap on vertically-stacked atlas pages per slot. A frame whose packed
+   * sub-pixels exceed one [ATLAS_PIXEL_BUDGET] texture (a 4K-rendered full-screen
+   * typeset sign) spills into extra pages so nothing is dropped (#1436); the atlas
+   * buffer grows on demand toward this cap. 4 covers the worst frame measured (a 4K
+   * letter needs 3); past it tiles are dropped and counted in `truncated`. Must match
+   * MAX_ATLAS_PAGES in AssKt.c.
+   */
+  internal const val MAX_ATLAS_PAGES = 4
 
   /** Must match the byte layout produced by `nativeAssRenderFrameAtlas` in AssKt.c. */
   internal const val BYTES_PER_VERTEX = 32
@@ -98,8 +108,12 @@ internal object AssAtlasPipelineConfig {
 
 internal class AtlasPayload(
   val slotIndex: Int,
-  val atlasBuf: ByteBuffer,
+  /** Vertically-stacked atlas pages (page p at byte offset p·atlasW·atlasH). Starts
+   *  one page; [growAtlas] reallocates it larger when a dense frame needs more. */
+  var atlasBuf: ByteBuffer,
   val vertexBuf: ByteBuffer,
+  /** How many pages [atlasBuf] currently holds — the high-water mark for this slot. */
+  var pageCapacity: Int,
   var frame: AssAtlasFrame,
   var presentationTimeUs: Long,
   var releaseTimeNs: Long,
@@ -109,7 +123,14 @@ internal class AtlasPayload(
   var contentSeq: Long = 0L,
   var requestSeq: Long = 0L,
   var stateGeneration: Long = 0L
-)
+) {
+  /** Reallocates [atlasBuf] to hold [pages] stacked atlasW×atlasH pages. Runs on the
+   *  libass thread before hand-off, so no GL reader can be looking at the old buffer. */
+  fun growAtlas(pages: Int, atlasW: Int, atlasH: Int) {
+    atlasBuf = ByteBuffer.allocateDirect(atlasW * atlasH * pages).order(ByteOrder.nativeOrder())
+    pageCapacity = pages
+  }
+}
 
 private class AtlasDrawSnapshot(
   val atlasBuf: ByteBuffer,
@@ -181,7 +202,7 @@ internal class AssAtlasPipeline(
   // GL_MAX_TEXTURE_SIZE right after EGL init; by the libass thread's 1 s fallback
   // if GL never comes up. Both threads then agree on the dims, which matters
   // because the C side bakes UV denominators = these dims into the vertex stream
-  // and the GL side allocates the texture once at these dims.
+  // and the GL side allocates each atlas-page texture at these dims.
   private val dimsResolved = java.util.concurrent.atomic.AtomicBoolean(false)
   private val dimsLatch = java.util.concurrent.CountDownLatch(1)
 
@@ -227,10 +248,12 @@ internal class AssAtlasPipeline(
     val payloads = Array(slotCount) { index ->
       AtlasPayload(
         slotIndex = index,
+        // One page up front (the common case); grows on demand for dense frames.
         atlasBuf = ByteBuffer.allocateDirect(w * h).order(ByteOrder.nativeOrder()),
         vertexBuf = ByteBuffer.allocateDirect(
           AssAtlasPipelineConfig.MAX_QUADS * AssAtlasPipelineConfig.BYTES_PER_QUAD
         ).order(ByteOrder.nativeOrder()),
+        pageCapacity = 1,
         frame = AssAtlasFrame(0, 0, 0, 0, 0),
         presentationTimeUs = 0L,
         releaseTimeNs = C.TIME_UNSET
@@ -692,8 +715,21 @@ private class AtlasLibassThread(
     val render = assHandler.render ?: return null
     val payload = slots.payloads[slot]
     val t0 = System.nanoTime()
-    val frame = render.renderFrameAtlas(timeMs, payload.atlasBuf, slots.atlasW, slots.atlasH, payload.vertexBuf)
+    var frame = render.renderFrameAtlas(timeMs, payload.atlasBuf, slots.atlasW, slots.atlasH, payload.vertexBuf)
       ?: return null
+    // A frame overflows one atlas page only on dense full-screen typesetting. When it
+    // does, grow this slot's buffer to the pages it needs (capped) and render once more
+    // — libass's caches make the re-render cheap, and the slot keeps the larger buffer
+    // so the same density never re-grows. The truncated first result is never handed off.
+    if (frame.requiredPages > payload.pageCapacity && payload.pageCapacity < AssAtlasPipelineConfig.MAX_ATLAS_PAGES) {
+      payload.growAtlas(
+        minOf(frame.requiredPages, AssAtlasPipelineConfig.MAX_ATLAS_PAGES),
+        slots.atlasW,
+        slots.atlasH
+      )
+      frame = render.renderFrameAtlas(timeMs, payload.atlasBuf, slots.atlasW, slots.atlasH, payload.vertexBuf)
+        ?: return null
+    }
     val libassMs = (System.nanoTime() - t0) / 1_000_000
     renderCount++
     lastLibassMs = libassMs
@@ -1083,8 +1119,8 @@ private class AtlasGlThread(
       EGL14.eglMakeCurrent(eglDisplay, eglSurface, eglSurface, eglContext)
       renderer.onSurfaceCreated()
       // Resolve atlas dims from real GL caps (first-wins against the libass
-      // thread's fallback) and allocate the texture once at those dims — uploads
-      // are glTexSubImage2D of the packed rows from then on.
+      // thread's fallback) and allocate the page-0 texture at those dims (extra
+      // pages lazily) — uploads are glTexSubImage2D of the packed rows from then on.
       val maxTexture = IntArray(1)
       GLES20.glGetIntegerv(GLES20.GL_MAX_TEXTURE_SIZE, maxTexture, 0)
       val (atlasW, atlasH) = resolveAtlasDims(maxTexture[0])
@@ -1342,9 +1378,11 @@ private class AtlasGlThread(
 }
 
 /**
- * GL-side work for the atlas-based path. Maintains a single atlas texture and a
- * single vertex buffer; uploads them per frame (unless the payload identity
- * matches the last upload) and issues one `glDrawArrays` for the whole frame.
+ * GL-side work for the atlas-based path. Maintains one ALPHA_8 atlas texture per
+ * page (allocated lazily, up to MAX_ATLAS_PAGES) plus a single vertex buffer;
+ * uploads them per frame (unless the payload identity matches the last upload) and
+ * issues one `glDrawArrays` per page, drawing pages in turn to reproduce libass's
+ * blend order.
  */
 @UnstableApi
 private class AtlasRenderer(private val assHandler: AssHandler) {
@@ -1380,7 +1418,9 @@ private class AtlasRenderer(private val assHandler: AssHandler) {
   private var surfaceSize = Size.ZERO
   private lateinit var glProgram: GlProgram
 
-  private var atlasTexId = 0
+  // One texture per atlas page; allocated lazily as the page count grows.
+  private val atlasTexIds = IntArray(AssAtlasPipelineConfig.MAX_ATLAS_PAGES)
+  private var allocatedPages = 0
   private var vertexBufferId = 0
 
   private var aPosition = 0
@@ -1393,20 +1433,38 @@ private class AtlasRenderer(private val assHandler: AssHandler) {
   private var atlasAllocatedH = 0
 
   /**
-   * Allocates the atlas texture once at the resolved dims. The C side bakes UV
-   * denominators = these dims into the vertex stream, so per-frame uploads can be
-   * partial ([uploadAtlas]) without ever reallocating — drivers keep one stable
-   * texture allocation instead of churning on packed-height changes.
+   * Records the per-page texture dims and allocates the first page's texture. The C
+   * side bakes UV denominators = these dims into the vertex stream and stacks pages
+   * at byte multiples of width×height, so per-frame uploads stay partial
+   * ([uploadPage]) — drivers keep stable texture allocations instead of churning on
+   * packed-height changes — and extra pages allocate lazily ([ensurePageTexture]).
    */
   fun allocateAtlasTexture(width: Int, height: Int) {
-    GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, atlasTexId)
-    GLES20.glTexImage2D(
-      GLES20.GL_TEXTURE_2D, 0, GLES20.GL_ALPHA,
-      width, height, 0,
-      GLES20.GL_ALPHA, GLES20.GL_UNSIGNED_BYTE, null
-    )
     atlasAllocatedW = width
     atlasAllocatedH = height
+    allocatedPages = 0
+    ensurePageTexture(0)
+  }
+
+  /** Lazily allocates atlas-page textures through [page] at the recorded dims. */
+  private fun ensurePageTexture(page: Int) {
+    while (allocatedPages <= page && allocatedPages < atlasTexIds.size) {
+      val p = allocatedPages
+      val tex = IntArray(1)
+      GLES20.glGenTextures(1, tex, 0)
+      atlasTexIds[p] = tex[0]
+      GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, atlasTexIds[p])
+      GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_WRAP_S, GLES20.GL_CLAMP_TO_EDGE)
+      GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_WRAP_T, GLES20.GL_CLAMP_TO_EDGE)
+      GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MIN_FILTER, GLES20.GL_LINEAR)
+      GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MAG_FILTER, GLES20.GL_LINEAR)
+      GLES20.glTexImage2D(
+        GLES20.GL_TEXTURE_2D, 0, GLES20.GL_ALPHA,
+        atlasAllocatedW, atlasAllocatedH, 0,
+        GLES20.GL_ALPHA, GLES20.GL_UNSIGNED_BYTE, null
+      )
+      allocatedPages = p + 1
+    }
   }
 
   fun onSurfaceCreated() {
@@ -1420,16 +1478,9 @@ private class AtlasRenderer(private val assHandler: AssHandler) {
     uTexture = glProgram.getUniformLocation("u_Texture")
     uSurfaceSize = glProgram.getUniformLocation("u_SurfaceSize")
 
-    val tex = IntArray(1)
-    GLES20.glGenTextures(1, tex, 0)
-    atlasTexId = tex[0]
     GLES20.glActiveTexture(GLES20.GL_TEXTURE0)
-    GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, atlasTexId)
-    GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_WRAP_S, GLES20.GL_CLAMP_TO_EDGE)
-    GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_WRAP_T, GLES20.GL_CLAMP_TO_EDGE)
-    GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MIN_FILTER, GLES20.GL_LINEAR)
-    GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MAG_FILTER, GLES20.GL_LINEAR)
     GLES20.glUniform1i(uTexture, 0)
+    // Atlas-page textures are generated lazily in allocateAtlasTexture/ensurePageTexture.
 
     val buf = IntArray(1)
     GLES20.glGenBuffers(1, buf, 0)
@@ -1468,7 +1519,6 @@ private class AtlasRenderer(private val assHandler: AssHandler) {
     if (quadCount == 0) return
 
     if (!reuseUploads) {
-      uploadAtlas(payload.atlasBuf, frame.atlasWidth, frame.atlasHeight)
       uploadVertices(payload.vertexBuf, quadCount)
     }
 
@@ -1477,30 +1527,42 @@ private class AtlasRenderer(private val assHandler: AssHandler) {
     GLES20.glVertexAttribPointer(aPosition, 2, GLES20.GL_FLOAT, false, stride, 0)
     GLES20.glVertexAttribPointer(aTexCoord, 2, GLES20.GL_FLOAT, false, stride, 8)
     GLES20.glVertexAttribPointer(aColor, 4, GLES20.GL_FLOAT, false, stride, 16)
-    GLES20.glDrawArrays(GLES20.GL_TRIANGLES, 0, quadCount * 6)
+
+    // Each atlas page is its own texture; its quads are one contiguous run in the
+    // stream (page assignment is monotonic in painter order). Upload + draw each in
+    // turn, which reproduces the libass blend order across pages.
+    GLES20.glActiveTexture(GLES20.GL_TEXTURE0)
+    var quadOffset = 0
+    for (p in 0 until frame.pageCount) {
+      val pageQuads = frame.pageQuadCounts[p]
+      if (pageQuads > 0) {
+        ensurePageTexture(p)
+        GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, atlasTexIds[p])
+        if (!reuseUploads) uploadPage(payload.atlasBuf, p, frame.atlasWidth, frame.pageHeights[p])
+        GLES20.glDrawArrays(GLES20.GL_TRIANGLES, quadOffset * 6, pageQuads * 6)
+      }
+      quadOffset += pageQuads
+    }
   }
 
-  private fun uploadAtlas(atlasBuf: ByteBuffer, atlasW: Int, atlasH: Int) {
-    atlasBuf.position(0).limit(atlasW * atlasH)
-    GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, atlasTexId)
-    if (atlasW == atlasAllocatedW && atlasH <= atlasAllocatedH) {
-      // Steady state: packed rows into the once-allocated texture.
-      GLES20.glTexSubImage2D(
-        GLES20.GL_TEXTURE_2D, 0, 0, 0, atlasW, atlasH,
-        GLES20.GL_ALPHA, GLES20.GL_UNSIGNED_BYTE, atlasBuf
-      )
-    } else {
-      // Defensive: dims disagree with the allocation (shouldn't happen — both
-      // sides resolve dims through the same first-wins gate).
-      Log.w("AssAtlasRenderer", "atlas upload ${atlasW}x$atlasH outside allocation ${atlasAllocatedW}x$atlasAllocatedH")
-      GLES20.glTexImage2D(
-        GLES20.GL_TEXTURE_2D, 0, GLES20.GL_ALPHA,
-        atlasW, atlasH, 0,
-        GLES20.GL_ALPHA, GLES20.GL_UNSIGNED_BYTE, atlasBuf
-      )
-      atlasAllocatedW = atlasW
-      atlasAllocatedH = atlasH
+  /** Uploads page [page]'s packed rows from the stacked atlas buffer into the
+   *  currently-bound page texture. */
+  private fun uploadPage(atlasBuf: ByteBuffer, page: Int, atlasW: Int, pageH: Int) {
+    if (pageH <= 0) return
+    if (atlasW != atlasAllocatedW || pageH > atlasAllocatedH) {
+      // Defensive: dims disagree with the allocation (shouldn't happen — both sides
+      // resolve dims through the same first-wins gate).
+      Log.w("AssAtlasRenderer", "page upload ${atlasW}x$pageH outside allocation ${atlasAllocatedW}x$atlasAllocatedH")
+      return
     }
+    val start = page * atlasW * atlasAllocatedH
+    atlasBuf.clear()
+    atlasBuf.limit(start + atlasW * pageH)
+    atlasBuf.position(start)
+    GLES20.glTexSubImage2D(
+      GLES20.GL_TEXTURE_2D, 0, 0, 0, atlasW, pageH,
+      GLES20.GL_ALPHA, GLES20.GL_UNSIGNED_BYTE, atlasBuf
+    )
   }
 
   private fun uploadVertices(vertexBuf: ByteBuffer, quadCount: Int) {
@@ -1511,10 +1573,10 @@ private class AtlasRenderer(private val assHandler: AssHandler) {
   }
 
   fun onSurfaceDestroyed() {
-    if (atlasTexId != 0) {
-      val tex = intArrayOf(atlasTexId)
-      GLES20.glDeleteTextures(1, tex, 0)
-      atlasTexId = 0
+    if (allocatedPages > 0) {
+      GLES20.glDeleteTextures(allocatedPages, atlasTexIds, 0)
+      atlasTexIds.fill(0)
+      allocatedPages = 0
     }
     if (vertexBufferId != 0) {
       val buf = intArrayOf(vertexBufferId)

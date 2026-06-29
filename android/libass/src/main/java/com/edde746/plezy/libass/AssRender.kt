@@ -8,6 +8,10 @@ class AssRender(nativeAss: Long, private val lock: ReentrantLock) {
 
   companion object {
 
+    /** Must match MAX_ATLAS_PAGES + the header layout in AssKt.c (`writeAtlasHeader`). */
+    private const val MAX_ATLAS_PAGES = 4
+    private const val HEADER_INTS = 7 + 2 * MAX_ATLAS_PAGES
+
     @JvmStatic
     external fun nativeAssRenderInit(ass: Long): Long
 
@@ -29,6 +33,12 @@ class AssRender(nativeAss: Long, private val lock: ReentrantLock) {
     @JvmStatic
     external fun nativeAssRenderSetUseMargins(render: Long, use: Boolean)
 
+    /**
+     * Renders into [atlasBuf]/[vertexBuf] and writes frame metadata into [header]
+     * (layout per `writeAtlasHeader` in AssKt.c). Returns 1 when the header was written,
+     * 0 for missing buffers/handles. The frame object is built on the Kotlin side from
+     * the header so the JNI boundary never constructs it (R8-safe; see [renderFrameAtlas]).
+     */
     @JvmStatic
     external fun nativeAssRenderFrameAtlas(
       render: Long,
@@ -37,14 +47,19 @@ class AssRender(nativeAss: Long, private val lock: ReentrantLock) {
       atlasBuf: ByteBuffer,
       atlasMaxWidth: Int,
       atlasMaxHeight: Int,
-      vertexBuf: ByteBuffer
-    ): AssAtlasFrame?
+      vertexBuf: ByteBuffer,
+      header: IntArray
+    ): Int
 
     @JvmStatic
     external fun nativeAssRenderDeinit(render: Long)
   }
 
   private var nativeRender: Long = nativeAssRenderInit(nativeAss)
+
+  /** Reusable JNI frame-metadata header (see `writeAtlasHeader` in AssKt.c). Calls to
+   *  [renderFrameAtlas] are serialized by [lock], so one buffer is safe to reuse. */
+  private val frameHeader = IntArray(HEADER_INTS)
 
   @Volatile
   var released = false
@@ -109,26 +124,31 @@ class AssRender(nativeAss: Long, private val lock: ReentrantLock) {
     withNative { nativeAssRenderSetUseMargins(it, use) }
   }
 
-  /**
-   * Renders a frame into a packed ALPHA_8 texture atlas plus a single vertex stream
-   * ready for `glDrawArrays(GL_TRIANGLES, 0, quadCount * 6)`.
-   *
-   * UVs are normalized against ([atlasMaxW], [atlasMaxH]) — the allocated texture
-   * dims — so the caller can allocate the texture once and `glTexSubImage2D` only
-   * the packed rows. Images that exceed the capacity are dropped and counted in
-   * [AssAtlasFrame.truncated]; the render never fails on content size.
-   *
-   * @param atlasBuf     direct ByteBuffer receiving the packed pixels (≥ atlasMaxW × atlasMaxH)
-   * @param atlasMaxW    atlas row stride in pixels (bound by `GL_MAX_TEXTURE_SIZE`)
-   * @param atlasMaxH    atlas height in pixels (bound by `GL_MAX_TEXTURE_SIZE`)
-   * @param vertexBuf    direct ByteBuffer receiving the vertex stream (192 bytes per quad)
-   */
   /** How long the most recent [renderFrameAtlas] waited to acquire the shared
    *  libass lock (contended by track dialogue/font feeding), in milliseconds. */
   @Volatile
   var lastLockWaitMs: Long = 0
     private set
 
+  /**
+   * Renders a frame into a packed ALPHA_8 texture atlas plus a vertex stream.
+   *
+   * The atlas may span one or more vertically-stacked pages (a dense full-screen
+   * sign can exceed a single GL-max texture); vertices stay in libass painter order,
+   * grouped per page ([AssAtlasFrame.pageQuadCounts]). The caller uploads each page
+   * to its own texture and draws it with its own `glDrawArrays`, reproducing the
+   * blend order. UVs are page-local, normalized against ([atlasMaxW], [atlasMaxH]).
+   *
+   * Never fails on content size: when the frame needs more pages than [atlasBuf]
+   * holds, [AssAtlasFrame.requiredPages] signals the caller to grow the buffer and
+   * re-render; only tiles past `MAX_ATLAS_PAGES` or the vertex budget are dropped
+   * and counted in [AssAtlasFrame.truncated].
+   *
+   * @param atlasBuf   direct ByteBuffer receiving the stacked pages (≥ atlasMaxW × atlasMaxH per page)
+   * @param atlasMaxW  per-page atlas row stride in pixels (bound by `GL_MAX_TEXTURE_SIZE`)
+   * @param atlasMaxH  per-page atlas height in pixels (bound by `GL_MAX_TEXTURE_SIZE`)
+   * @param vertexBuf  direct ByteBuffer receiving the vertex stream (192 bytes per quad)
+   */
   fun renderFrameAtlas(
     time: Long,
     atlasBuf: ByteBuffer,
@@ -142,7 +162,21 @@ class AssRender(nativeAss: Long, private val lock: ReentrantLock) {
       if (released || nativeRender == 0L) return null
       val t = track ?: return null
       if (t.released || t.nativeAssTrack == 0L) return null
-      return nativeAssRenderFrameAtlas(nativeRender, t.nativeAssTrack, time, atlasBuf, atlasMaxW, atlasMaxH, vertexBuf)
+      val header = frameHeader
+      val status =
+        nativeAssRenderFrameAtlas(nativeRender, t.nativeAssTrack, time, atlasBuf, atlasMaxW, atlasMaxH, vertexBuf, header)
+      if (status == 0) return null
+      val pageCount = header[6]
+      return AssAtlasFrame(
+        atlasWidth = header[0],
+        pageHeights = IntArray(pageCount) { header[7 + it] },
+        pageQuadCounts = IntArray(pageCount) { header[7 + MAX_ATLAS_PAGES + it] },
+        quadCount = header[1],
+        changed = header[2],
+        truncated = header[3],
+        requiredPages = header[4],
+        hasOutput = header[5] != 0
+      )
     }
   }
 
