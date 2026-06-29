@@ -1042,6 +1042,12 @@ class TranslationsSearchEn {
 
 	/// en: 'Enter a title, actor, or keyword'
 	String get enterTitleActorOrKeyword => 'Enter a title, actor, or keyword';
+
+	/// en: 'In your library'
+	String get inYourLibrary => 'In your library';
+
+	/// en: 'From Seerr · request these'
+	String get fromSeerr => 'From Seerr · request these';
 }
 
 // Path: hotkeys
@@ -4652,6 +4658,9 @@ class TranslationsSeerrDiscoverEn {
 
 	/// en: 'Retry'
 	String get retry => 'Retry';
+
+	/// en: 'View all'
+	String get viewAll => 'View all';
 }
 
 // Path: seerr.search
@@ -4698,8 +4707,20 @@ class TranslationsSeerrDetailEn {
 	/// en: '${count} seasons'
 	String seasonsCount({required Object count}) => '${count} seasons';
 
+	/// en: '${count} episodes'
+	String episodesCount({required Object count}) => '${count} episodes';
+
 	/// en: 'Seasons'
 	String get seasonsHeader => 'Seasons';
+
+	/// en: 'Cast'
+	String get castHeader => 'Cast';
+
+	/// en: 'More like this'
+	String get moreLikeThis => 'More like this';
+
+	/// en: 'Last aired ${date}'
+	String lastAired({required Object date}) => 'Last aired ${date}';
 
 	/// en: 'Not connected to Seerr.'
 	String get notConnected => 'Not connected to Seerr.';
@@ -4772,6 +4793,18 @@ class TranslationsSeerrMyRequestsEn {
 
 	/// en: 'Couldn't cancel that request.'
 	String get cancelFailed => 'Couldn\'t cancel that request.';
+
+	/// en: 'Cancel request'
+	String get cancelTooltip => 'Cancel request';
+
+	/// en: 'Cancel this request?'
+	String get cancelConfirmTitle => 'Cancel this request?';
+
+	/// en: 'The request will be removed from Seerr. This can't be undone.'
+	String get cancelConfirmBody => 'The request will be removed from Seerr. This can\'t be undone.';
+
+	/// en: 'Cancel request'
+	String get cancelConfirmYes => 'Cancel request';
 
 	/// en: 'Movie request #${id}'
 	String movieRowTitle({required Object id}) => 'Movie request #${id}';
@@ -5118,6 +5151,8 @@ extension on Translations {
 			'search.tryDifferentTerm' => 'Try a different search term',
 			'search.searchYourMedia' => 'Search your media',
 			'search.enterTitleActorOrKeyword' => 'Enter a title, actor, or keyword',
+			'search.inYourLibrary' => 'In your library',
+			'search.fromSeerr' => 'From Seerr · request these',
 			'hotkeys.setShortcutFor' => ({required Object actionName}) => 'Set Shortcut for ${actionName}',
 			'hotkeys.clearShortcut' => 'Clear shortcut',
 			'hotkeys.noShortcutSet' => 'No shortcut set',
@@ -5331,10 +5366,10 @@ extension on Translations {
 			'messages.noResultsFound' => 'No results found',
 			'messages.sleepTimerSet' => ({required Object label}) => 'Sleep timer set for ${label}',
 			'messages.noItemsAvailable' => 'No items available',
-			'messages.failedToCreatePlayQueueNoItems' => 'Failed to create play queue - no items',
-			'messages.failedPlayback' => ({required Object action, required Object error}) => 'Failed to ${action}: ${error}',
 			_ => null,
 		} ?? switch (path) {
+			'messages.failedToCreatePlayQueueNoItems' => 'Failed to create play queue - no items',
+			'messages.failedPlayback' => ({required Object action, required Object error}) => 'Failed to ${action}: ${error}',
 			'messages.switchingToCompatiblePlayer' => 'Switching to compatible player...',
 			'messages.serverLimitTitle' => 'Playback failed',
 			'messages.serverLimitBody' => 'Server error (HTTP 500). A bandwidth/transcoding limit likely rejected this session. Ask the owner to adjust it.',
@@ -5845,10 +5880,10 @@ extension on Translations {
 			'companionRemote.pairing.connecting' => 'Connecting...',
 			'companionRemote.pairing.searchingForDevices' => 'Looking for devices...',
 			'companionRemote.pairing.noDevicesFound' => 'No devices found on your network',
-			'companionRemote.pairing.noDevicesHint' => 'Open Plezy on desktop and use the same WiFi',
-			'companionRemote.pairing.availableDevices' => 'Available Devices',
 			_ => null,
 		} ?? switch (path) {
+			'companionRemote.pairing.noDevicesHint' => 'Open Plezy on desktop and use the same WiFi',
+			'companionRemote.pairing.availableDevices' => 'Available Devices',
 			'companionRemote.pairing.manualConnection' => 'Manual Connection',
 			'companionRemote.pairing.cryptoInitFailed' => 'Couldn\'t start secure connection. Sign in to Plex first.',
 			'companionRemote.pairing.validationHostRequired' => 'Please enter host address',
@@ -6142,6 +6177,7 @@ extension on Translations {
 			'seerr.discover.popularTv' => 'Popular shows',
 			'seerr.discover.failed' => 'Couldn\'t load this hub.',
 			'seerr.discover.retry' => 'Retry',
+			'seerr.discover.viewAll' => 'View all',
 			'seerr.search.placeholder' => 'Search movies and shows…',
 			'seerr.search.startHint' => 'Search Seerr\'s catalog to find something to request.',
 			'seerr.search.noResults' => 'No matches in the request catalog.',
@@ -6151,7 +6187,11 @@ extension on Translations {
 			'seerr.detail.requestShow' => 'Request show',
 			'seerr.detail.alreadyAvailable' => 'Already in your library',
 			'seerr.detail.seasonsCount' => ({required Object count}) => '${count} seasons',
+			'seerr.detail.episodesCount' => ({required Object count}) => '${count} episodes',
 			'seerr.detail.seasonsHeader' => 'Seasons',
+			'seerr.detail.castHeader' => 'Cast',
+			'seerr.detail.moreLikeThis' => 'More like this',
+			'seerr.detail.lastAired' => ({required Object date}) => 'Last aired ${date}',
 			'seerr.detail.notConnected' => 'Not connected to Seerr.',
 			'seerr.request.movieHelp' => 'Send a request for this movie to Seerr.',
 			'seerr.request.pickSeasonsHelp' => 'Pick the seasons you want to request.',
@@ -6170,6 +6210,10 @@ extension on Translations {
 			'seerr.myRequests.failedToLoad' => 'Couldn\'t load your requests.',
 			'seerr.myRequests.cancelled' => 'Request cancelled',
 			'seerr.myRequests.cancelFailed' => 'Couldn\'t cancel that request.',
+			'seerr.myRequests.cancelTooltip' => 'Cancel request',
+			'seerr.myRequests.cancelConfirmTitle' => 'Cancel this request?',
+			'seerr.myRequests.cancelConfirmBody' => 'The request will be removed from Seerr. This can\'t be undone.',
+			'seerr.myRequests.cancelConfirmYes' => 'Cancel request',
 			'seerr.myRequests.movieRowTitle' => ({required Object id}) => 'Movie request #${id}',
 			'seerr.myRequests.tvRowTitle' => ({required Object id}) => 'Show request #${id}',
 			'seerr.status.notRequested' => 'Not requested',

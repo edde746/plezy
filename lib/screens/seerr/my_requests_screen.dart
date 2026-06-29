@@ -151,12 +151,43 @@ class _MyRequestsScreenState extends State<MyRequestsScreen> {
             leading: _leadingFor(req, summary),
             title: Text(_titleFor(req, summary), maxLines: 1, overflow: TextOverflow.ellipsis),
             subtitle: Text(_subtitleFor(req, summary)),
-            trailing: SeerrStatusBadge.request(context, req.status),
+            trailing: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                SeerrStatusBadge.request(context, req.status),
+                if (canCancel) ...[
+                  const SizedBox(width: 4),
+                  IconButton(
+                    icon: const AppIcon(Symbols.cancel_rounded, fill: 1, size: 20),
+                    tooltip: t.seerr.myRequests.cancelTooltip,
+                    onPressed: () => _confirmCancel(req),
+                  ),
+                ],
+              ],
+            ),
             isThreeLine: false,
           ),
         );
       },
     );
+  }
+
+  Future<void> _confirmCancel(SeerrRequest req) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(t.seerr.myRequests.cancelConfirmTitle),
+        content: Text(t.seerr.myRequests.cancelConfirmBody),
+        actions: [
+          TextButton(onPressed: () => Navigator.of(ctx).pop(false), child: Text(t.common.cancel)),
+          FilledButton.tonal(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: Text(t.seerr.myRequests.cancelConfirmYes),
+          ),
+        ],
+      ),
+    );
+    if (confirmed == true) await _cancel(req);
   }
 
   Widget _leadingFor(SeerrRequest req, SeerrRequestSummary? summary) {

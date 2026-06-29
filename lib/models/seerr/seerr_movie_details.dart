@@ -1,3 +1,4 @@
+import 'seerr_credits.dart';
 import 'seerr_media_info.dart';
 
 /// One genre tag.
@@ -25,6 +26,8 @@ class SeerrMovieDetails {
   final String? backdropPath;
   final List<SeerrGenre> genres;
   final double voteAverage;
+  final int voteCount;
+  final SeerrCredits credits;
   final SeerrMediaInfo? mediaInfo;
 
   const SeerrMovieDetails({
@@ -40,6 +43,8 @@ class SeerrMovieDetails {
     this.backdropPath,
     this.genres = const [],
     this.voteAverage = 0,
+    this.voteCount = 0,
+    this.credits = const SeerrCredits(),
     this.mediaInfo,
   });
 
@@ -52,6 +57,7 @@ class SeerrMovieDetails {
       }
     }
     final info = json['mediaInfo'];
+    final rawCredits = json['credits'];
     return SeerrMovieDetails(
       id: (json['id'] as num).toInt(),
       imdbId: json['imdbId'] as String?,
@@ -65,6 +71,8 @@ class SeerrMovieDetails {
       backdropPath: json['backdropPath'] as String?,
       genres: genres,
       voteAverage: (json['voteAverage'] as num?)?.toDouble() ?? 0,
+      voteCount: (json['voteCount'] as num?)?.toInt() ?? 0,
+      credits: rawCredits is Map<String, dynamic> ? SeerrCredits.fromJson(rawCredits) : const SeerrCredits(),
       mediaInfo: info is Map<String, dynamic> ? SeerrMediaInfo.fromJson(info) : null,
     );
   }

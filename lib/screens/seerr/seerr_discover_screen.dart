@@ -8,6 +8,8 @@ import '../../providers/seerr_discover_provider.dart';
 import '../../widgets/app_icon.dart';
 import '../../widgets/loading_indicator_box.dart';
 import 'seerr_detail_screen.dart';
+import 'seerr_hub_detail_screen.dart';
+import 'widgets/seerr_horizontal_row.dart';
 import 'widgets/seerr_media_card.dart';
 
 /// Three horizontal "hub" rows: Trending, Popular Movies, Popular TV. Each
@@ -85,6 +87,12 @@ class _Hub extends StatelessWidget {
     );
   }
 
+  void _viewAll(BuildContext context) {
+    Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => SeerrHubDetailScreen(hubId: id, title: title, icon: icon)),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -102,7 +110,14 @@ class _Hub extends StatelessWidget {
                   children: [
                     AppIcon(icon, fill: 1, size: 20),
                     const SizedBox(width: 8),
-                    Text(title, style: theme.textTheme.titleMedium),
+                    Expanded(child: Text(title, style: theme.textTheme.titleMedium)),
+                    if (state.state == SeerrHubLoadState.loaded && state.results.isNotEmpty)
+                      TextButton.icon(
+                        icon: const AppIcon(Symbols.arrow_forward_rounded, fill: 1, size: 16),
+                        iconAlignment: IconAlignment.end,
+                        onPressed: () => _viewAll(context),
+                        label: Text(t.seerr.discover.viewAll),
+                      ),
                   ],
                 ),
               ),
@@ -144,18 +159,23 @@ class _Hub extends StatelessWidget {
         ),
       );
     }
-    return ListView.separated(
-      scrollDirection: Axis.horizontal,
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      itemCount: state.results.length + (state.hasMore ? 1 : 0),
-      separatorBuilder: (_, __) => const SizedBox(width: 12),
-      itemBuilder: (context, i) {
-        if (i >= state.results.length) {
-          provider.loadMore(id);
-          return const SizedBox(width: 132, child: Center(child: LoadingIndicatorBox()));
-        }
-        final r = state.results[i];
-        return SeerrMediaCard(result: r, onTap: () => _openDetail(context, r));
+    return SeerrHorizontalRow(
+      builder: (context, scrollController) {
+        return ListView.separated(
+          controller: scrollController,
+          scrollDirection: Axis.horizontal,
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          itemCount: state.results.length + (state.hasMore ? 1 : 0),
+          separatorBuilder: (_, __) => const SizedBox(width: 12),
+          itemBuilder: (context, i) {
+            if (i >= state.results.length) {
+              provider.loadMore(id);
+              return const SizedBox(width: 132, child: Center(child: LoadingIndicatorBox()));
+            }
+            final r = state.results[i];
+            return SeerrMediaCard(result: r, onTap: () => _openDetail(context, r));
+          },
+        );
       },
     );
   }

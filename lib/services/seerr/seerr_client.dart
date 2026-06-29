@@ -138,6 +138,31 @@ class SeerrClient {
     return SeerrTvDetails.fromJson(raw as Map<String, dynamic>);
   }
 
+  /// "More like this" — Seerr's TMDB-backed recommendations for a movie or
+  /// TV show. Falls back to /similar when /recommendations returns empty
+  /// (TMDB's recommendations are curated and don't exist for every title).
+  Future<SeerrPage<SeerrSearchResult>> getMovieRecommendations(int tmdbId, {int page = 1}) async {
+    final raw = await _request('GET', '/movie/$tmdbId/recommendations', query: {'page': page});
+    return SeerrPage<SeerrSearchResult>.fromJson(
+      raw as Map<String, dynamic>,
+      (item) {
+        final coerced = Map<String, dynamic>.from(item)..putIfAbsent('mediaType', () => 'movie');
+        return SeerrSearchResult.fromJson(coerced);
+      },
+    );
+  }
+
+  Future<SeerrPage<SeerrSearchResult>> getTvRecommendations(int tmdbId, {int page = 1}) async {
+    final raw = await _request('GET', '/tv/$tmdbId/recommendations', query: {'page': page});
+    return SeerrPage<SeerrSearchResult>.fromJson(
+      raw as Map<String, dynamic>,
+      (item) {
+        final coerced = Map<String, dynamic>.from(item)..putIfAbsent('mediaType', () => 'tv');
+        return SeerrSearchResult.fromJson(coerced);
+      },
+    );
+  }
+
   // ---------- Requests ----------
 
   /// Submit a new request. Returns the created MediaRequest.

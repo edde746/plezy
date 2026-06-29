@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:plezy/widgets/app_icon.dart';
 import 'package:material_symbols_icons/symbols.dart';
@@ -10,9 +12,11 @@ import '../media/media_item.dart';
 import '../mixins/controller_disposer_mixin.dart';
 import '../mixins/mounted_set_state_mixin.dart';
 import '../mixins/refreshable.dart';
+import '../models/seerr/seerr_search_result.dart';
 import '../navigation/navigation_tabs.dart';
 import '../providers/multi_server_provider.dart';
 import '../providers/seerr_session_provider.dart';
+import '../services/seerr/seerr_constants.dart';
 import '../utils/app_logger.dart';
 import '../utils/platform_detector.dart';
 import '../utils/snackbar_helper.dart';
@@ -23,6 +27,7 @@ import '../widgets/focusable_media_card.dart';
 import '../utils/focus_utils.dart';
 import 'libraries/state_messages.dart';
 import 'main_screen.dart';
+import 'seerr/seerr_detail_screen.dart';
 import 'seerr/seerr_tab_root.dart';
 import 'seerr/widgets/not_in_library_banner.dart';
 
@@ -45,11 +50,14 @@ class _SearchScreenState extends State<SearchScreen>
   final _searchFocusNode = FocusNode(debugLabel: 'SearchInput');
   final _firstResultFocusNode = FocusNode(debugLabel: 'SearchFirstResult');
   List<MediaItem> _searchResults = [];
+  List<SeerrSearchResult> _seerrResults = const [];
   bool _isSearching = false;
+  bool _isSearchingSeerr = false;
   bool _hasSearched = false;
   late final Debounce _searchDebounce;
   String _lastSearchedQuery = '';
   String? _focusResultsForQuery;
+  int _seerrSearchGeneration = 0;
 
   @override
   void initState() {
@@ -99,6 +107,7 @@ class _SearchScreenState extends State<SearchScreen>
     if (query.trim().isEmpty) {
       setStateIfMounted(() {
         _searchResults = [];
+        _seerrResults = const [];
         _hasSearched = false;
       });
       return;
@@ -108,6 +117,11 @@ class _SearchScreenState extends State<SearchScreen>
       _isSearching = true;
       _hasSearched = true;
     });
+
+    // Kick off the Seerr search in parallel — its result lands independently
+    // of the library search so the primary list isn't gated on Seerr being
+    // reachable.
+    unawaited(_performSeerrSearch(query));
 
     try {
       if (!mounted) return;
@@ -135,6 +149,60 @@ class _SearchScreenState extends State<SearchScreen>
         showErrorSnackBar(context, t.errors.searchFailed(error: e));
       }
     }
+  }
+
+  Future<void> _performSeerrSearch(String query) async {
+    final session = Provider.of<SeerrSessionProvider>(context, listen: false);
+    final client = session.client;
+    if (client == null) {
+      setStateIfMounted(() {
+        _seerrResults = const [];
+        _isSearchingSeerr = false;
+      });
+      return;
+    }
+    final generation = ++_seerrSearchGeneration;
+    setStateIfMounted(() {
+      _isSearchingSeerr = true;
+      _seerrResults = const [];
+    });
+    try {
+      final page = await client.search(query);
+      if (!mounted || generation != _seerrSearchGeneration) return;
+      // Skip persons — the user wants requestable media here.
+      final filtered = page.results.where((r) => r is! SeerrPersonResult).toList(growable: false);
+      setStateIfMounted(() {
+        _seerrResults = filtered;
+        _isSearchingSeerr = false;
+      });
+    } catch (e) {
+      appLogger.d('Seerr search (secondary) failed: $e');
+      if (!mounted || generation != _seerrSearchGeneration) return;
+      setStateIfMounted(() => _isSearchingSeerr = false);
+    }
+  }
+
+  void _openSeerrDetail(SeerrSearchResult r) {
+    final title = switch (r) {
+      SeerrMovieResult(:final title) => title,
+      SeerrTvResult(:final name) => name,
+      SeerrPersonResult(:final name) => name,
+    };
+    final poster = switch (r) {
+      SeerrMovieResult(:final posterPath) => posterPath,
+      SeerrTvResult(:final posterPath) => posterPath,
+      SeerrPersonResult(:final profilePath) => profilePath,
+    };
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => SeerrDetailScreen(
+          tmdbId: r.id,
+          mediaType: r.mediaType,
+          initialTitle: title,
+          initialPosterPath: poster,
+        ),
+      ),
+    );
   }
 
   /// OSK "Search" / hardware Enter on TV: jump to results, or force the
@@ -307,36 +375,167 @@ class _SearchScreenState extends State<SearchScreen>
                   iconSize: 80,
                 ),
               )
-            else if (_searchResults.isEmpty)
-              SliverFillRemaining(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Expanded(
-                      child: StateMessageWidget(
-                        message: t.messages.noResultsFound,
-                        subtitle: t.search.tryDifferentTerm,
-                        icon: Symbols.search_off_rounded,
-                        iconSize: 80,
+            else ...[
+              if (_searchResults.isNotEmpty) ...[
+                if (_seerrResults.isNotEmpty)
+                  SliverToBoxAdapter(
+                    child: _SectionHeader(
+                      icon: Symbols.video_library_rounded,
+                      label: t.search.inYourLibrary,
+                    ),
+                  ),
+                _buildResultsList(context),
+              ],
+              if (_searchResults.isEmpty && !_isSearchingSeerr && _seerrResults.isEmpty)
+                SliverFillRemaining(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Expanded(
+                        child: StateMessageWidget(
+                          message: t.messages.noResultsFound,
+                          subtitle: t.search.tryDifferentTerm,
+                          icon: Symbols.search_off_rounded,
+                          iconSize: 80,
+                        ),
                       ),
-                    ),
-                    Consumer<SeerrSessionProvider>(
-                      builder: (context, seerr, _) {
-                        if (!seerr.hasConfiguredServer) return const SizedBox.shrink();
-                        final query = _searchController.text.trim();
-                        if (query.isEmpty) return const SizedBox.shrink();
-                        return NotInLibraryBanner(
-                          query: query,
-                          onTap: () => _openSeerrSearch(query),
-                        );
+                      Consumer<SeerrSessionProvider>(
+                        builder: (context, seerr, _) {
+                          if (!seerr.hasConfiguredServer) return const SizedBox.shrink();
+                          final query = _searchController.text.trim();
+                          if (query.isEmpty) return const SizedBox.shrink();
+                          return NotInLibraryBanner(
+                            query: query,
+                            onTap: () => _openSeerrSearch(query),
+                          );
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+              if (_isSearchingSeerr && _seerrResults.isEmpty && _searchResults.isNotEmpty)
+                const SliverToBoxAdapter(
+                  child: Padding(padding: EdgeInsets.all(16), child: Center(child: LoadingIndicatorBox())),
+                ),
+              if (_seerrResults.isNotEmpty) ...[
+                SliverToBoxAdapter(
+                  child: _SectionHeader(
+                    icon: Symbols.playlist_add_check_rounded,
+                    label: t.search.fromSeerr,
+                  ),
+                ),
+                SliverPadding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  sliver: SliverList(
+                    delegate: SliverChildBuilderDelegate(
+                      (context, index) {
+                        final r = _seerrResults[index];
+                        return _SeerrSearchRow(result: r, onTap: () => _openSeerrDetail(r));
                       },
+                      childCount: _seerrResults.length,
                     ),
+                  ),
+                ),
+                const SliverToBoxAdapter(child: SizedBox(height: 16)),
+              ],
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _SectionHeader extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  const _SectionHeader({required this.icon, required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 6),
+      child: Row(
+        children: [
+          AppIcon(icon, fill: 1, size: 18),
+          const SizedBox(width: 6),
+          Text(label, style: theme.textTheme.titleSmall),
+        ],
+      ),
+    );
+  }
+}
+
+class _SeerrSearchRow extends StatelessWidget {
+  final SeerrSearchResult result;
+  final VoidCallback onTap;
+  const _SeerrSearchRow({required this.result, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final title = switch (result) {
+      SeerrMovieResult(:final title) => title,
+      SeerrTvResult(:final name) => name,
+      SeerrPersonResult(:final name) => name,
+    };
+    final poster = switch (result) {
+      SeerrMovieResult(:final posterPath) => posterPath,
+      SeerrTvResult(:final posterPath) => posterPath,
+      SeerrPersonResult(:final profilePath) => profilePath,
+    };
+    final year = switch (result) {
+      SeerrMovieResult(:final releaseDate) => (releaseDate != null && releaseDate.length >= 4) ? releaseDate.substring(0, 4) : null,
+      SeerrTvResult(:final firstAirDate) => (firstAirDate != null && firstAirDate.length >= 4) ? firstAirDate.substring(0, 4) : null,
+      SeerrPersonResult() => null,
+    };
+    final typeLabel = result.mediaType == 'tv' ? t.seerr.tabs.search : '';
+    final posterUrl = SeerrConstants.posterUrl(poster);
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(8),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          child: Row(
+            children: [
+              SizedBox(
+                width: 50,
+                height: 75,
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(4),
+                  child: posterUrl != null
+                      ? Image.network(
+                          posterUrl,
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, __, ___) => Container(color: theme.colorScheme.surfaceContainerHighest),
+                        )
+                      : Container(color: theme.colorScheme.surfaceContainerHighest),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(title, style: theme.textTheme.titleSmall, maxLines: 1, overflow: TextOverflow.ellipsis),
+                    if ((year ?? '').isNotEmpty || typeLabel.isNotEmpty) ...[
+                      const SizedBox(height: 2),
+                      Text(
+                        [year, if (typeLabel.isNotEmpty) typeLabel].whereType<String>().join(' · '),
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                        ),
+                      ),
+                    ],
                   ],
                 ),
-              )
-            else
-              _buildResultsList(context),
-          ],
+              ),
+              const Icon(Icons.chevron_right_rounded),
+            ],
+          ),
         ),
       ),
     );

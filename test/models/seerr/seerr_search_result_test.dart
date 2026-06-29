@@ -85,5 +85,19 @@ void main() {
       expect(page.totalResults, 100);
       expect(page.hasMore, isTrue);
     });
+
+    test('SeerrPage parses discover responses with totalPages field', () {
+      final raw = {
+        'page': 1,
+        'totalPages': 10,
+        'totalResults': 200,
+        'results': [],
+      };
+      final page = SeerrPage<dynamic>.fromJson(raw, (_) => null);
+      expect(page.page, 1);
+      expect(page.pages, 10);
+      expect(page.totalResults, 200);
+      expect(page.hasMore, isTrue);
+    });
   });
 }

@@ -25,11 +25,15 @@ class SeerrPage<T> {
         }
       }
     }
-    // `/search` and `/discover` use top-level page/pages; `/request` nests the
-    // same fields under `pageInfo`. Support both.
+    // Seerr surfaces pagination in a few different shapes:
+    //   - /search and /discover return top-level {page, totalPages, totalResults}
+    //   - some endpoints use top-level {page, pages, totalResults}
+    //   - /request and the user-scoped lists nest it as {pageInfo: {page, pages, results, pageSize}}
+    // Read whichever field is present.
+    final pages = ((pageInfoMap['pages'] ?? json['pages'] ?? json['totalPages']) as num?)?.toInt() ?? 1;
     return SeerrPage(
       page: ((pageInfoMap['page'] ?? json['page']) as num?)?.toInt() ?? 1,
-      pages: ((pageInfoMap['pages'] ?? json['pages']) as num?)?.toInt() ?? 1,
+      pages: pages,
       totalResults: ((pageInfoMap['results'] ?? json['totalResults']) as num?)?.toInt() ?? results.length,
       results: results,
     );

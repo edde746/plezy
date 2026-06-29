@@ -1,3 +1,4 @@
+import 'seerr_credits.dart';
 import 'seerr_media_info.dart';
 import 'seerr_movie_details.dart';
 
@@ -70,6 +71,8 @@ class SeerrTvDetails {
   final List<SeerrGenre> genres;
   final List<SeerrSeason> seasons;
   final double voteAverage;
+  final int voteCount;
+  final SeerrCredits credits;
   final SeerrMediaInfo? mediaInfo;
 
   const SeerrTvDetails({
@@ -88,6 +91,8 @@ class SeerrTvDetails {
     this.genres = const [],
     this.seasons = const [],
     this.voteAverage = 0,
+    this.voteCount = 0,
+    this.credits = const SeerrCredits(),
     this.mediaInfo,
   });
 
@@ -113,6 +118,7 @@ class SeerrTvDetails {
     }
     seasons.sort((a, b) => a.seasonNumber.compareTo(b.seasonNumber));
     final info = json['mediaInfo'];
+    final rawCredits = json['credits'];
     return SeerrTvDetails(
       id: (json['id'] as num).toInt(),
       name: json['name'] as String? ?? '',
@@ -129,6 +135,8 @@ class SeerrTvDetails {
       genres: genres,
       seasons: seasons,
       voteAverage: (json['voteAverage'] as num?)?.toDouble() ?? 0,
+      voteCount: (json['voteCount'] as num?)?.toInt() ?? 0,
+      credits: rawCredits is Map<String, dynamic> ? SeerrCredits.fromJson(rawCredits) : const SeerrCredits(),
       mediaInfo: info is Map<String, dynamic> ? SeerrMediaInfo.fromJson(info) : null,
     );
   }

@@ -308,7 +308,9 @@
     "hint": "Search movies, shows, music...",
     "tryDifferentTerm": "Try a different search term",
     "searchYourMedia": "Search your media",
-    "enterTitleActorOrKeyword": "Enter a title, actor, or keyword"
+    "enterTitleActorOrKeyword": "Enter a title, actor, or keyword",
+    "inYourLibrary": "In your library",
+    "fromSeerr": "From Seerr · request these"
   },
   "hotkeys": {
     "setShortcutFor": "Set Shortcut for ${actionName}",
@@ -1443,7 +1445,8 @@
       "popularMovies": "Popular movies",
       "popularTv": "Popular shows",
       "failed": "Couldn't load this hub.",
-      "retry": "Retry"
+      "retry": "Retry",
+      "viewAll": "View all"
     },
     "search": {
       "placeholder": "Search movies and shows…",
@@ -1457,7 +1460,11 @@
       "requestShow": "Request show",
       "alreadyAvailable": "Already in your library",
       "seasonsCount": "${count} seasons",
+      "episodesCount": "${count} episodes",
       "seasonsHeader": "Seasons",
+      "castHeader": "Cast",
+      "moreLikeThis": "More like this",
+      "lastAired": "Last aired ${date}",
       "notConnected": "Not connected to Seerr."
     },
     "request": {
@@ -1480,6 +1487,10 @@
       "failedToLoad": "Couldn't load your requests.",
       "cancelled": "Request cancelled",
       "cancelFailed": "Couldn't cancel that request.",
+      "cancelTooltip": "Cancel request",
+      "cancelConfirmTitle": "Cancel this request?",
+      "cancelConfirmBody": "The request will be removed from Seerr. This can't be undone.",
+      "cancelConfirmYes": "Cancel request",
       "movieRowTitle": "Movie request #${id}",
       "tvRowTitle": "Show request #${id}"
     },
