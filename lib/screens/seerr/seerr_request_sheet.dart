@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 
+import '../../focus/focusable_button.dart';
+import '../../focus/focusable_wrapper.dart';
 import '../../i18n/strings.g.dart';
 import '../../models/seerr/seerr_media_info.dart';
 import '../../models/seerr/seerr_request.dart';
@@ -19,7 +21,9 @@ import '../../utils/app_logger.dart';
 import '../../utils/snackbar_helper.dart';
 import '../../widgets/app_icon.dart';
 import '../../widgets/loading_indicator_box.dart';
+import '../../widgets/overlay_sheet.dart';
 import 'widgets/seerr_status_badge.dart';
+import 'widgets/seerr_tv_picker.dart';
 
 /// Bottom sheet to submit a Seerr request. The basic flow is a single
 /// "Submit request" button for movies and per-season checkboxes for TV.
@@ -62,8 +66,11 @@ class SeerrRequestSheet extends StatefulWidget {
   State<SeerrRequestSheet> createState() => _SeerrRequestSheetState();
 
   static Future<void> show(BuildContext context, SeerrRequestSheet sheet) {
-    return showModalBottomSheet(
-      context: context,
+    // Use the overlay sheet host when one's in the tree (TV-friendly: focus
+    // management + back-key handling + sub-page push). Falls back to the
+    // Material modal bottom sheet on screens without a host.
+    return OverlaySheetController.showAdaptive<void>(
+      context,
       isScrollControlled: true,
       builder: (_) => Padding(
         padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
@@ -343,12 +350,11 @@ class _SeerrRequestSheetState extends State<SeerrRequestSheet> {
               if (isTv) ..._buildSeasonList(theme),
               if (_canRequest4k) ...[
                 const SizedBox(height: 4),
-                SwitchListTile(
-                  contentPadding: EdgeInsets.zero,
-                  title: Text(t.seerr.request.request4kTitle),
-                  subtitle: Text(t.seerr.request.request4kSubtitle),
+                _FocusableToggleRow(
+                  title: t.seerr.request.request4kTitle,
+                  subtitle: t.seerr.request.request4kSubtitle,
                   value: _is4k,
-                  onChanged: _submitting ? null : (v) => _onToggle4k(v),
+                  onChanged: _submitting ? null : (v) => unawaited(_onToggle4k(v)),
                 ),
               ],
               if (_canRequestAdvanced) _AdvancedSection(
@@ -377,12 +383,15 @@ class _SeerrRequestSheetState extends State<SeerrRequestSheet> {
                 Text(_error!, style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.error)),
               ],
               const SizedBox(height: 16),
-              FilledButton.icon(
+              FocusableButton(
                 onPressed: _submitting ? null : _submit,
-                icon: _submitting
-                    ? const LoadingIndicatorBox()
-                    : const AppIcon(Symbols.send_rounded, fill: 1),
-                label: Text(_submitLabel(isTv)),
+                child: FilledButton.icon(
+                  onPressed: _submitting ? null : _submit,
+                  icon: _submitting
+                      ? const LoadingIndicatorBox()
+                      : const AppIcon(Symbols.send_rounded, fill: 1),
+                  label: Text(_submitLabel(isTv)),
+                ),
               ),
             ],
           ),
@@ -407,11 +416,9 @@ class _SeerrRequestSheetState extends State<SeerrRequestSheet> {
       ];
     }
     return [
-      CheckboxListTile(
-        contentPadding: EdgeInsets.zero,
-        title: Text(t.seerr.request.allSeasons),
-        value: _allRequestableSelected,
-        tristate: false,
+      _FocusableCheckRow(
+        title: t.seerr.request.allSeasons,
+        checked: _allRequestableSelected,
         onChanged: _requestableSeasons.isEmpty ? null : (_) => _toggleAll(),
       ),
       const Divider(height: 1),
@@ -424,25 +431,18 @@ class _SeerrRequestSheetState extends State<SeerrRequestSheet> {
     final status = info?.seasonStatus(s.seasonNumber, is4k: _is4k) ?? SeerrMediaStatus.unknown;
     final alreadyAvailable = status == SeerrMediaStatus.available;
     final episodeText = s.episodeCount > 0 ? t.seerr.request.episodeCount(count: s.episodeCount) : null;
+    final checked = _selectedSeasons.contains(s.seasonNumber);
 
-    return CheckboxListTile(
-      contentPadding: EdgeInsets.zero,
-      title: Row(
-        children: [
-          Expanded(child: Text(t.seerr.request.seasonNumber(number: s.seasonNumber))),
-          if (status != SeerrMediaStatus.unknown) ...[
-            const SizedBox(width: 8),
-            SeerrStatusBadge.media(context, status),
-          ],
-        ],
-      ),
-      subtitle: episodeText == null ? null : Text(episodeText),
-      value: _selectedSeasons.contains(s.seasonNumber),
+    return _FocusableCheckRow(
+      title: t.seerr.request.seasonNumber(number: s.seasonNumber),
+      subtitle: episodeText,
+      checked: checked,
+      trailing: status == SeerrMediaStatus.unknown ? null : SeerrStatusBadge.media(context, status),
       onChanged: alreadyAvailable
           ? null
           : (v) {
               setState(() {
-                if (v == true) {
+                if (v) {
                   _selectedSeasons.add(s.seasonNumber);
                 } else {
                   _selectedSeasons.remove(s.seasonNumber);
@@ -592,81 +592,182 @@ class _AdvancedSection extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         const SizedBox(height: 4),
-        DropdownButtonFormField<int>(
-          initialValue: selectedServerId,
-          decoration: InputDecoration(
-            labelText: t.seerr.request.serverLabel,
-            border: const OutlineInputBorder(),
-            isDense: true,
-          ),
-          items: [
+        SeerrTvPicker<int>(
+          label: t.seerr.request.serverLabel,
+          value: selectedServerId,
+          enabled: onServerChanged != null,
+          options: [
             for (final s in services)
-              DropdownMenuItem(
+              SeerrTvPickerOption(
                 value: s.id,
-                child: Text(s.isDefault ? '${s.name} · ${t.seerr.request.defaultTag}' : s.name),
+                label: s.name,
+                subtitle: s.isDefault ? t.seerr.request.defaultTag : null,
               ),
           ],
-          onChanged: onServerChanged,
+          onChanged: (id) => onServerChanged?.call(id),
         ),
         const SizedBox(height: 12),
         if (detail != null) ...[
-          DropdownButtonFormField<int?>(
-            initialValue: selectedProfileId,
-            decoration: InputDecoration(
-              labelText: t.seerr.request.profileLabel,
-              border: const OutlineInputBorder(),
-              isDense: true,
-            ),
-            items: [
+          SeerrTvPicker<int>(
+            label: t.seerr.request.profileLabel,
+            value: selectedProfileId,
+            options: [
               for (final p in detail!.profiles)
-                DropdownMenuItem(
+                SeerrTvPickerOption(
                   value: p.id,
-                  child: Text(
-                    detail!.server.activeProfileId == p.id ? '${p.name} · ${t.seerr.request.defaultTag}' : p.name,
-                  ),
+                  label: p.name,
+                  subtitle: detail!.server.activeProfileId == p.id ? t.seerr.request.defaultTag : null,
                 ),
             ],
-            onChanged: onProfileChanged,
+            onChanged: (id) => onProfileChanged(id),
           ),
           const SizedBox(height: 12),
-          DropdownButtonFormField<SeerrRootFolder?>(
-            initialValue: selectedRootFolder,
-            decoration: InputDecoration(
-              labelText: t.seerr.request.rootFolderLabel,
-              border: const OutlineInputBorder(),
-              isDense: true,
-            ),
-            items: [
+          SeerrTvPicker<SeerrRootFolder>(
+            label: t.seerr.request.rootFolderLabel,
+            value: selectedRootFolder,
+            options: [
               for (final r in detail!.rootFolders)
-                DropdownMenuItem(
+                SeerrTvPickerOption(
                   value: r,
-                  child: Text(
-                    detail!.server.activeDirectory == r.path
-                        ? '${r.path} · ${t.seerr.request.defaultTag}'
-                        : r.path,
-                  ),
+                  label: r.path,
+                  subtitle: detail!.server.activeDirectory == r.path ? t.seerr.request.defaultTag : null,
                 ),
             ],
-            onChanged: onRootFolderChanged,
+            onChanged: (root) => onRootFolderChanged(root),
           ),
           if (showLanguageProfile && detail!.languageProfiles.isNotEmpty) ...[
             const SizedBox(height: 12),
-            DropdownButtonFormField<int?>(
-              initialValue: selectedLanguageProfileId,
-              decoration: InputDecoration(
-                labelText: t.seerr.request.languageLabel,
-                border: const OutlineInputBorder(),
-                isDense: true,
-              ),
-              items: [
+            SeerrTvPicker<int>(
+              label: t.seerr.request.languageLabel,
+              value: selectedLanguageProfileId,
+              options: [
                 for (final l in detail!.languageProfiles)
-                  DropdownMenuItem(value: l.id, child: Text(l.name)),
+                  SeerrTvPickerOption(value: l.id, label: l.name),
               ],
-              onChanged: onLanguageChanged,
+              onChanged: (id) => onLanguageChanged(id),
             ),
           ],
         ],
       ],
+    );
+  }
+}
+
+/// Focusable replacement for [CheckboxListTile]. Toggleable via tap on
+/// desktop/mobile and via D-pad SELECT on TV; gets a Plezy focus border.
+class _FocusableCheckRow extends StatelessWidget {
+  final String title;
+  final String? subtitle;
+  final bool checked;
+  final Widget? trailing;
+  final ValueChanged<bool>? onChanged;
+
+  const _FocusableCheckRow({
+    required this.title,
+    this.subtitle,
+    required this.checked,
+    this.trailing,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final disabled = onChanged == null;
+    final muted = theme.colorScheme.onSurface.withValues(alpha: disabled ? 0.4 : 0.7);
+    return FocusableWrapper(
+      disableScale: true,
+      borderRadius: 6,
+      descendantsAreFocusable: false,
+      onSelect: disabled ? null : () => onChanged!(!checked),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: disabled ? null : () => onChanged!(!checked),
+          borderRadius: BorderRadius.circular(6),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 4),
+            child: Row(
+              children: [
+                Checkbox(
+                  value: checked,
+                  onChanged: disabled ? null : (v) => onChanged!(v ?? false),
+                ),
+                const SizedBox(width: 4),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        style: theme.textTheme.bodyLarge?.copyWith(
+                          color: disabled ? muted : theme.colorScheme.onSurface,
+                        ),
+                      ),
+                      if (subtitle != null)
+                        Text(subtitle!, style: theme.textTheme.bodySmall?.copyWith(color: muted)),
+                    ],
+                  ),
+                ),
+                if (trailing != null) ...[const SizedBox(width: 8), trailing!],
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Focusable replacement for [SwitchListTile].
+class _FocusableToggleRow extends StatelessWidget {
+  final String title;
+  final String? subtitle;
+  final bool value;
+  final ValueChanged<bool>? onChanged;
+
+  const _FocusableToggleRow({
+    required this.title,
+    this.subtitle,
+    required this.value,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final disabled = onChanged == null;
+    final muted = theme.colorScheme.onSurface.withValues(alpha: disabled ? 0.4 : 0.7);
+    return FocusableWrapper(
+      disableScale: true,
+      borderRadius: 6,
+      descendantsAreFocusable: false,
+      onSelect: disabled ? null : () => onChanged!(!value),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: disabled ? null : () => onChanged!(!value),
+          borderRadius: BorderRadius.circular(6),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(title, style: theme.textTheme.bodyLarge),
+                      if (subtitle != null)
+                        Text(subtitle!, style: theme.textTheme.bodySmall?.copyWith(color: muted)),
+                    ],
+                  ),
+                ),
+                Switch(value: value, onChanged: onChanged),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

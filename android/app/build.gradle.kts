@@ -25,27 +25,22 @@ val downloadLibmpv by tasks.registering {
 
 // Extract libc++_shared.so from the libmpv AAR so the app source set can package
 // it with top merge priority (see packaging { jniLibs } and sourceSets below).
-val extractMpvLibcxx by tasks.registering {
+//
+// Uses Gradle's built-in zipTree (pure JVM) rather than shelling out to the
+// `unzip` binary so the build runs on Windows without GnuWin32/cygwin.
+val extractMpvLibcxx by tasks.registering(Copy::class) {
   dependsOn(downloadLibmpv)
   val aar = File(mpvDir, mpvAar)
   val outDir = File(mpvDir, "libcxx")
   inputs.file(aar)
   outputs.dir(outDir)
-  doLast {
-    outDir.deleteRecursively() // drop stale ABIs from a previous AAR version
-    outDir.mkdirs()
-    exec {
-      commandLine(
-        "unzip",
-        "-q",
-        "-o",
-        aar.absolutePath,
-        "jni/*/libc++_shared.so",
-        "-d",
-        outDir.absolutePath
-      )
-    }
+  // AAR files are zip archives — zipTree handles them natively.
+  from(zipTree(aar)) {
+    include("jni/*/libc++_shared.so")
   }
+  into(outDir)
+  // Drop stale ABIs from a previous AAR version before extracting.
+  doFirst { outDir.deleteRecursively() }
 }
 
 val doviVersion = "2.3.1"

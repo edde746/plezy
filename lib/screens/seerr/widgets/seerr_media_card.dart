@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
+import '../../../focus/card_focus_scope.dart';
 import '../../../focus/focusable_wrapper.dart';
 import '../../../models/seerr/seerr_media_info.dart';
 import '../../../models/seerr/seerr_search_result.dart';
@@ -11,11 +12,25 @@ import 'seerr_status_badge.dart';
 /// Poster card for a Seerr discover/search result. Renders TMDB artwork via
 /// the public image CDN and overlays a status badge when the title is
 /// already tracked by Seerr.
+///
+/// TV/d-pad behavior: this card is itself focusable via the wrapping
+/// [FocusableWrapper] (`autoScroll: true` keeps it inside the row viewport
+/// as focus moves). The focus border is delegated to a [CardFocusBorder]
+/// drawn around the poster artwork so the highlight hugs the image rather
+/// than the full column.
 class SeerrMediaCard extends StatelessWidget {
   final SeerrSearchResult result;
   final VoidCallback? onTap;
   final double width;
   final double aspectRatio;
+
+  /// Optional external focus node — pass when a parent (e.g. the Discover
+  /// hub row) wants to track focus per item.
+  final FocusNode? focusNode;
+
+  /// Optional autofocus flag — set on the first card in a row so the row
+  /// can claim focus when the user navigates into it from outside.
+  final bool autofocus;
 
   const SeerrMediaCard({
     super.key,
@@ -23,6 +38,8 @@ class SeerrMediaCard extends StatelessWidget {
     required this.onTap,
     this.width = 132,
     this.aspectRatio = 2 / 3,
+    this.focusNode,
+    this.autofocus = false,
   });
 
   @override
@@ -49,8 +66,14 @@ class SeerrMediaCard extends StatelessWidget {
     return SizedBox(
       width: width,
       child: FocusableWrapper(
+        focusNode: focusNode,
+        autofocus: autofocus,
         disableScale: false,
         descendantsAreFocusable: false,
+        autoScroll: true,
+        // Let the poster draw its own border via [CardFocusBorder] so the
+        // highlight hugs the artwork instead of the whole column.
+        delegateFocusBorder: true,
         onSelect: onTap,
         child: Material(
           color: Colors.transparent,
@@ -62,26 +85,29 @@ class SeerrMediaCard extends StatelessWidget {
               children: [
                 AspectRatio(
                   aspectRatio: aspectRatio,
-                  child: Stack(
-                    fit: StackFit.expand,
-                    children: [
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(8),
-                        child: url != null
-                            ? Image.network(
-                                url,
-                                fit: BoxFit.cover,
-                                errorBuilder: (_, __, ___) => _posterFallback(theme),
-                              )
-                            : _posterFallback(theme),
-                      ),
-                      if (mediaInfo != null && mediaInfo.status != SeerrMediaStatus.unknown)
-                        Positioned(
-                          left: 6,
-                          bottom: 6,
-                          child: SeerrStatusBadge.media(context, mediaInfo.status),
+                  child: CardFocusBorder(
+                    borderRadius: 8,
+                    child: Stack(
+                      fit: StackFit.expand,
+                      children: [
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(8),
+                          child: url != null
+                              ? Image.network(
+                                  url,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (_, __, ___) => _posterFallback(theme),
+                                )
+                              : _posterFallback(theme),
                         ),
-                    ],
+                        if (mediaInfo != null && mediaInfo.status != SeerrMediaStatus.unknown)
+                          Positioned(
+                            left: 6,
+                            bottom: 6,
+                            child: SeerrStatusBadge.media(context, mediaInfo.status),
+                          ),
+                      ],
+                    ),
                   ),
                 ),
                 const SizedBox(height: 6),

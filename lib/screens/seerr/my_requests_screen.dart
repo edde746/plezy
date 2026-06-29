@@ -2,10 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 
+import '../../focus/focusable_button.dart';
+import '../../focus/focusable_wrapper.dart';
 import '../../i18n/strings.g.dart';
 import '../../models/seerr/seerr_request.dart';
 import '../../providers/seerr_requests_provider.dart';
 import '../../services/seerr/seerr_constants.dart';
+import '../../utils/platform_detector.dart';
 import '../../utils/snackbar_helper.dart';
 import '../../widgets/app_icon.dart';
 import '../../widgets/loading_indicator_box.dart';
@@ -64,9 +67,19 @@ class _MyRequestsScreenState extends State<MyRequestsScreen> {
   Widget build(BuildContext context) {
     return Consumer<SeerrRequestsProvider>(
       builder: (context, provider, _) {
-        return RefreshIndicator(
-          onRefresh: provider.refresh,
-          child: _buildBody(provider),
+        return Column(
+          children: [
+            _FilterChips(
+              current: provider.filter,
+              onChanged: (f) => provider.setFilter(f),
+            ),
+            Expanded(
+              child: RefreshIndicator(
+                onRefresh: provider.refresh,
+                child: _buildBody(provider),
+              ),
+            ),
+          ],
         );
       },
     );
@@ -133,19 +146,16 @@ class _MyRequestsScreenState extends State<MyRequestsScreen> {
         final req = provider.requests[i];
         final summary = provider.summaryFor(req);
         final canCancel = req.status == SeerrRequestStatus.pendingApproval || req.status == SeerrRequestStatus.approved;
-        return Dismissible(
-          key: ValueKey('seerr-request-${req.id}'),
-          direction: canCancel ? DismissDirection.endToStart : DismissDirection.none,
-          confirmDismiss: (_) async {
-            await _cancel(req);
-            return false; // we update the list via the provider, not via Dismissible removal
-          },
-          background: Container(
-            color: Theme.of(context).colorScheme.errorContainer,
-            alignment: Alignment.centerRight,
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            child: const AppIcon(Symbols.cancel_rounded, fill: 1),
-          ),
+        // ListTile body is shared between the TV and touch variants; cancel
+        // icon stays in the trailing slot regardless. On TV we wrap it in a
+        // FocusableButton so it gets its own focus stop alongside the row.
+        final tile = FocusableWrapper(
+          disableScale: true,
+          borderRadius: 4,
+          // Let the trailing cancel button receive focus separately.
+          descendantsAreFocusable: true,
+          autoScroll: true,
+          onSelect: () => _openDetail(req),
           child: ListTile(
             onTap: () => _openDetail(req),
             leading: _leadingFor(req, summary),
@@ -157,16 +167,37 @@ class _MyRequestsScreenState extends State<MyRequestsScreen> {
                 SeerrStatusBadge.request(context, req.status),
                 if (canCancel) ...[
                   const SizedBox(width: 4),
-                  IconButton(
-                    icon: const AppIcon(Symbols.cancel_rounded, fill: 1, size: 20),
-                    tooltip: t.seerr.myRequests.cancelTooltip,
+                  FocusableButton(
                     onPressed: () => _confirmCancel(req),
+                    child: IconButton(
+                      icon: const AppIcon(Symbols.cancel_rounded, fill: 1, size: 20),
+                      tooltip: t.seerr.myRequests.cancelTooltip,
+                      onPressed: () => _confirmCancel(req),
+                    ),
                   ),
                 ],
               ],
             ),
             isThreeLine: false,
           ),
+        );
+        // Swipe-to-cancel is dead on TV (no swipe gesture exists with a
+        // remote); the trailing cancel button covers the action there.
+        if (PlatformDetector.isTV() || !canCancel) return tile;
+        return Dismissible(
+          key: ValueKey('seerr-request-${req.id}'),
+          direction: DismissDirection.endToStart,
+          confirmDismiss: (_) async {
+            await _cancel(req);
+            return false; // we update the list via the provider, not via Dismissible removal
+          },
+          background: Container(
+            color: Theme.of(context).colorScheme.errorContainer,
+            alignment: Alignment.centerRight,
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: const AppIcon(Symbols.cancel_rounded, fill: 1),
+          ),
+          child: tile,
         );
       },
     );
@@ -237,6 +268,61 @@ class _MyRequestsScreenState extends State<MyRequestsScreen> {
           initialTitle: summary?.title,
           initialPosterPath: summary?.posterPath,
         ),
+      ),
+    );
+  }
+}
+
+/// Horizontal row of filter chips at the top of My Requests. Reuses the
+/// stock [ChoiceChip] so it inherits Material focus + selection visuals,
+/// wrapped in a [FocusableWrapper] for Plezy's TV focus border.
+class _FilterChips extends StatelessWidget {
+  final SeerrRequestsFilter current;
+  final ValueChanged<SeerrRequestsFilter> onChanged;
+
+  const _FilterChips({required this.current, required this.onChanged});
+
+  String _labelFor(SeerrRequestsFilter f) => switch (f) {
+    SeerrRequestsFilter.all => t.seerr.myRequests.filterAll,
+    SeerrRequestsFilter.pending => t.seerr.myRequests.filterPending,
+    SeerrRequestsFilter.approved => t.seerr.myRequests.filterApproved,
+    SeerrRequestsFilter.available => t.seerr.myRequests.filterAvailable,
+    SeerrRequestsFilter.unavailable => t.seerr.myRequests.filterUnavailable,
+    SeerrRequestsFilter.processing => t.seerr.myRequests.filterProcessing,
+  };
+
+  @override
+  Widget build(BuildContext context) {
+    // Order shown to the user; all + the most common four are surfaced.
+    const visible = [
+      SeerrRequestsFilter.all,
+      SeerrRequestsFilter.pending,
+      SeerrRequestsFilter.approved,
+      SeerrRequestsFilter.available,
+      SeerrRequestsFilter.processing,
+    ];
+    return SizedBox(
+      height: 48,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+        itemCount: visible.length,
+        separatorBuilder: (_, __) => const SizedBox(width: 8),
+        itemBuilder: (context, i) {
+          final f = visible[i];
+          final selected = current == f;
+          return FocusableWrapper(
+            disableScale: true,
+            borderRadius: 999,
+            descendantsAreFocusable: false,
+            onSelect: selected ? null : () => onChanged(f),
+            child: ChoiceChip(
+              label: Text(_labelFor(f)),
+              selected: selected,
+              onSelected: (_) => onChanged(f),
+            ),
+          );
+        },
       ),
     );
   }

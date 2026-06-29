@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 
+import '../../focus/focusable_button.dart';
 import '../../i18n/strings.g.dart';
 import '../../models/seerr/seerr_search_result.dart';
 import '../../providers/seerr_discover_provider.dart';
@@ -112,11 +113,14 @@ class _Hub extends StatelessWidget {
                     const SizedBox(width: 8),
                     Expanded(child: Text(title, style: theme.textTheme.titleMedium)),
                     if (state.state == SeerrHubLoadState.loaded && state.results.isNotEmpty)
-                      TextButton.icon(
-                        icon: const AppIcon(Symbols.arrow_forward_rounded, fill: 1, size: 16),
-                        iconAlignment: IconAlignment.end,
+                      FocusableButton(
                         onPressed: () => _viewAll(context),
-                        label: Text(t.seerr.discover.viewAll),
+                        child: TextButton.icon(
+                          icon: const AppIcon(Symbols.arrow_forward_rounded, fill: 1, size: 16),
+                          iconAlignment: IconAlignment.end,
+                          onPressed: () => _viewAll(context),
+                          label: Text(t.seerr.discover.viewAll),
+                        ),
                       ),
                   ],
                 ),
@@ -165,6 +169,11 @@ class _Hub extends StatelessWidget {
           controller: scrollController,
           scrollDirection: Axis.horizontal,
           padding: const EdgeInsets.symmetric(horizontal: 16),
+          // Generous cache extent so neighbor cards stay built — Flutter's
+          // d-pad focus traversal can only land on widgets that exist in the
+          // tree, so a tight ListView would strand focus at the last visible
+          // card on TV. The actual cards are cheap (poster + 2 lines of text).
+          cacheExtent: 800,
           itemCount: state.results.length + (state.hasMore ? 1 : 0),
           separatorBuilder: (_, __) => const SizedBox(width: 12),
           itemBuilder: (context, i) {

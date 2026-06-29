@@ -4010,6 +4010,7 @@ class TranslationsSeerrEn {
 	late final TranslationsSeerrRequestEn request = TranslationsSeerrRequestEn.internal(_root);
 	late final TranslationsSeerrMyRequestsEn myRequests = TranslationsSeerrMyRequestsEn.internal(_root);
 	late final TranslationsSeerrStatusEn status = TranslationsSeerrStatusEn.internal(_root);
+	late final TranslationsSeerrSettingsEn settings = TranslationsSeerrSettingsEn.internal(_root);
 }
 
 // Path: hotkeys.actions
@@ -4724,6 +4725,15 @@ class TranslationsSeerrDetailEn {
 
 	/// en: 'Not connected to Seerr.'
 	String get notConnected => 'Not connected to Seerr.';
+
+	/// en: 'Request via Seerr'
+	String get requestViaSeerr => 'Request via Seerr';
+
+	/// en: 'No TMDB id on this item — Seerr can't match it.'
+	String get requestNoTmdb => 'No TMDB id on this item — Seerr can\'t match it.';
+
+	/// en: 'Couldn't load Seerr details for this title.'
+	String get requestLoadFailed => 'Couldn\'t load Seerr details for this title.';
 }
 
 // Path: seerr.request
@@ -4841,6 +4851,24 @@ class TranslationsSeerrMyRequestsEn {
 
 	/// en: 'Show request #${id}'
 	String tvRowTitle({required Object id}) => 'Show request #${id}';
+
+	/// en: 'All'
+	String get filterAll => 'All';
+
+	/// en: 'Pending'
+	String get filterPending => 'Pending';
+
+	/// en: 'Approved'
+	String get filterApproved => 'Approved';
+
+	/// en: 'Available'
+	String get filterAvailable => 'Available';
+
+	/// en: 'Unavailable'
+	String get filterUnavailable => 'Unavailable';
+
+	/// en: 'Processing'
+	String get filterProcessing => 'Processing';
 }
 
 // Path: seerr.status
@@ -4874,6 +4902,63 @@ class TranslationsSeerrStatusEn {
 
 	/// en: 'Available'
 	String get available => 'Available';
+}
+
+// Path: seerr.settings
+class TranslationsSeerrSettingsEn {
+	TranslationsSeerrSettingsEn.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// en: 'Seerr / Request server'
+	String get title => 'Seerr / Request server';
+
+	/// en: 'Seerr'
+	String get tileTitle => 'Seerr';
+
+	/// en: 'Not configured. Set up a Seerr instance to request content.'
+	String get tileSubtitleNone => 'Not configured. Set up a Seerr instance to request content.';
+
+	/// en: '${instance} · ${user}'
+	String tileSubtitleConnected({required Object instance, required Object user}) => '${instance} · ${user}';
+
+	/// en: 'Configured · signed out'
+	String get tileSubtitleSignedOut => 'Configured · signed out';
+
+	/// en: 'Manage Seerr instances that this Plezy install knows about.'
+	String get description => 'Manage Seerr instances that this Plezy install knows about.';
+
+	/// en: 'No Seerr instances configured.'
+	String get empty => 'No Seerr instances configured.';
+
+	/// en: 'Add Seerr instance'
+	String get addInstance => 'Add Seerr instance';
+
+	/// en: 'Signed in as ${user}'
+	String signedInAs({required Object user}) => 'Signed in as ${user}';
+
+	/// en: 'Not signed in'
+	String get notSignedIn => 'Not signed in';
+
+	/// en: 'Sign out'
+	String get signOut => 'Sign out';
+
+	/// en: 'Remove'
+	String get remove => 'Remove';
+
+	/// en: 'Signed out of ${label}'
+	String signedOut({required Object label}) => 'Signed out of ${label}';
+
+	/// en: 'Remove this Seerr instance?'
+	String get removeTitle => 'Remove this Seerr instance?';
+
+	/// en: '${label} will be removed from Plezy. Existing Seerr requests aren't affected on the server.'
+	String removeBody({required Object label}) => '${label} will be removed from Plezy. Existing Seerr requests aren\'t affected on the server.';
+
+	/// en: 'Removed ${label}'
+	String removed({required Object label}) => 'Removed ${label}';
 }
 
 /// The flat map containing all translations for locale <en>.
@@ -6223,6 +6308,9 @@ extension on Translations {
 			'seerr.detail.moreLikeThis' => 'More like this',
 			'seerr.detail.lastAired' => ({required Object date}) => 'Last aired ${date}',
 			'seerr.detail.notConnected' => 'Not connected to Seerr.',
+			'seerr.detail.requestViaSeerr' => 'Request via Seerr',
+			'seerr.detail.requestNoTmdb' => 'No TMDB id on this item — Seerr can\'t match it.',
+			'seerr.detail.requestLoadFailed' => 'Couldn\'t load Seerr details for this title.',
 			'seerr.request.movieHelp' => 'Send a request for this movie to Seerr.',
 			'seerr.request.pickSeasonsHelp' => 'Pick the seasons you want to request.',
 			'seerr.request.noSeasons' => 'This show has no seasons available to request.',
@@ -6256,6 +6344,12 @@ extension on Translations {
 			'seerr.myRequests.cancelConfirmYes' => 'Cancel request',
 			'seerr.myRequests.movieRowTitle' => ({required Object id}) => 'Movie request #${id}',
 			'seerr.myRequests.tvRowTitle' => ({required Object id}) => 'Show request #${id}',
+			'seerr.myRequests.filterAll' => 'All',
+			'seerr.myRequests.filterPending' => 'Pending',
+			'seerr.myRequests.filterApproved' => 'Approved',
+			'seerr.myRequests.filterAvailable' => 'Available',
+			'seerr.myRequests.filterUnavailable' => 'Unavailable',
+			'seerr.myRequests.filterProcessing' => 'Processing',
 			'seerr.status.notRequested' => 'Not requested',
 			'seerr.status.pending' => 'Pending',
 			'seerr.status.approved' => 'Approved',
@@ -6264,6 +6358,22 @@ extension on Translations {
 			'seerr.status.processing' => 'Processing',
 			'seerr.status.partiallyAvailable' => 'Partial',
 			'seerr.status.available' => 'Available',
+			'seerr.settings.title' => 'Seerr / Request server',
+			'seerr.settings.tileTitle' => 'Seerr',
+			'seerr.settings.tileSubtitleNone' => 'Not configured. Set up a Seerr instance to request content.',
+			'seerr.settings.tileSubtitleConnected' => ({required Object instance, required Object user}) => '${instance} · ${user}',
+			'seerr.settings.tileSubtitleSignedOut' => 'Configured · signed out',
+			'seerr.settings.description' => 'Manage Seerr instances that this Plezy install knows about.',
+			'seerr.settings.empty' => 'No Seerr instances configured.',
+			'seerr.settings.addInstance' => 'Add Seerr instance',
+			'seerr.settings.signedInAs' => ({required Object user}) => 'Signed in as ${user}',
+			'seerr.settings.notSignedIn' => 'Not signed in',
+			'seerr.settings.signOut' => 'Sign out',
+			'seerr.settings.remove' => 'Remove',
+			'seerr.settings.signedOut' => ({required Object label}) => 'Signed out of ${label}',
+			'seerr.settings.removeTitle' => 'Remove this Seerr instance?',
+			'seerr.settings.removeBody' => ({required Object label}) => '${label} will be removed from Plezy. Existing Seerr requests aren\'t affected on the server.',
+			'seerr.settings.removed' => ({required Object label}) => 'Removed ${label}',
 			_ => null,
 		};
 	}

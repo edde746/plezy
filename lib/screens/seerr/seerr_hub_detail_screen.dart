@@ -90,6 +90,9 @@ class _SeerrHubDetailScreenState extends State<SeerrHubDetailScreen> {
           ),
           body: CustomScrollView(
             controller: _scrollController,
+            // Keep ahead-of-viewport rows built so d-pad nav between grid
+            // rows lands on real focus nodes instead of dropping focus.
+            cacheExtent: 800,
             slivers: [
               if (state.state == SeerrHubLoadState.loading && state.results.isEmpty)
                 const SliverFillRemaining(child: Center(child: LoadingIndicatorBox(size: 32)))

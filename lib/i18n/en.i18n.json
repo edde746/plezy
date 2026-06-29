@@ -1465,7 +1465,10 @@
       "castHeader": "Cast",
       "moreLikeThis": "More like this",
       "lastAired": "Last aired ${date}",
-      "notConnected": "Not connected to Seerr."
+      "notConnected": "Not connected to Seerr.",
+      "requestViaSeerr": "Request via Seerr",
+      "requestNoTmdb": "No TMDB id on this item — Seerr can't match it.",
+      "requestLoadFailed": "Couldn't load Seerr details for this title."
     },
     "request": {
       "movieHelp": "Send a request for this movie to Seerr.",
@@ -1502,7 +1505,13 @@
       "cancelConfirmBody": "The request will be removed from Seerr. This can't be undone.",
       "cancelConfirmYes": "Cancel request",
       "movieRowTitle": "Movie request #${id}",
-      "tvRowTitle": "Show request #${id}"
+      "tvRowTitle": "Show request #${id}",
+      "filterAll": "All",
+      "filterPending": "Pending",
+      "filterApproved": "Approved",
+      "filterAvailable": "Available",
+      "filterUnavailable": "Unavailable",
+      "filterProcessing": "Processing"
     },
     "status": {
       "notRequested": "Not requested",
@@ -1513,6 +1522,24 @@
       "processing": "Processing",
       "partiallyAvailable": "Partial",
       "available": "Available"
+    },
+    "settings": {
+      "title": "Seerr / Request server",
+      "tileTitle": "Seerr",
+      "tileSubtitleNone": "Not configured. Set up a Seerr instance to request content.",
+      "tileSubtitleConnected": "${instance} · ${user}",
+      "tileSubtitleSignedOut": "Configured · signed out",
+      "description": "Manage Seerr instances that this Plezy install knows about.",
+      "empty": "No Seerr instances configured.",
+      "addInstance": "Add Seerr instance",
+      "signedInAs": "Signed in as ${user}",
+      "notSignedIn": "Not signed in",
+      "signOut": "Sign out",
+      "remove": "Remove",
+      "signedOut": "Signed out of ${label}",
+      "removeTitle": "Remove this Seerr instance?",
+      "removeBody": "${label} will be removed from Plezy. Existing Seerr requests aren't affected on the server.",
+      "removed": "Removed ${label}"
     }
   }
 }

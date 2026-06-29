@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 
+import '../../focus/focusable_text_field.dart';
 import '../../i18n/strings.g.dart';
 import '../../models/seerr/seerr_search_result.dart';
 import '../../providers/seerr_session_provider.dart';
@@ -119,11 +120,13 @@ class _SeerrSearchScreenState extends State<SeerrSearchScreen> {
       children: [
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-          child: TextField(
+          child: FocusableTextField(
             controller: _controller,
-            autofocus: widget.initialQuery == null,
+            // Don't autofocus the bare-Seerr-tab open — on TV that pops the
+            // virtual keyboard immediately, hiding the discover content.
+            autofocus: false,
             onChanged: _onChanged,
-            onSubmitted: _search,
+            onSubmitted: (v) => _search(v),
             decoration: InputDecoration(
               hintText: t.seerr.search.placeholder,
               prefixIcon: const AppIcon(Symbols.search_rounded, fill: 1),

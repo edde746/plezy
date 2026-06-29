@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 
+import '../../focus/focusable_wrapper.dart';
 import '../../i18n/strings.g.dart';
 import '../../providers/seerr_session_provider.dart';
 import '../../widgets/app_icon.dart';
@@ -42,12 +43,27 @@ class SeerrTabRoot extends StatelessWidget {
           child: Scaffold(
             appBar: AppBar(
               title: Text(t.seerr.tab),
-              bottom: TabBar(
-                tabs: [
-                  Tab(icon: const AppIcon(Symbols.explore_rounded, fill: 1), text: t.seerr.tabs.discover),
-                  Tab(icon: const AppIcon(Symbols.search_rounded, fill: 1), text: t.seerr.tabs.search),
-                  Tab(icon: const AppIcon(Symbols.list_alt_rounded, fill: 1), text: t.seerr.tabs.myRequests),
-                ],
+              bottom: PreferredSize(
+                preferredSize: const Size.fromHeight(72),
+                child: Builder(
+                  builder: (innerContext) {
+                    final controller = DefaultTabController.of(innerContext);
+                    Widget tab(int index, IconData icon, String label) => FocusableWrapper(
+                      disableScale: true,
+                      borderRadius: 6,
+                      descendantsAreFocusable: false,
+                      onSelect: () => controller.animateTo(index),
+                      child: Tab(icon: AppIcon(icon, fill: 1), text: label),
+                    );
+                    return TabBar(
+                      tabs: [
+                        tab(0, Symbols.explore_rounded, t.seerr.tabs.discover),
+                        tab(1, Symbols.search_rounded, t.seerr.tabs.search),
+                        tab(2, Symbols.list_alt_rounded, t.seerr.tabs.myRequests),
+                      ],
+                    );
+                  },
+                ),
               ),
             ),
             body: TabBarView(

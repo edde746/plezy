@@ -7,6 +7,7 @@ import 'package:provider/provider.dart';
 import 'package:rate_limiter/rate_limiter.dart';
 
 import '../focus/focusable_text_field.dart';
+import '../focus/focusable_wrapper.dart';
 import '../i18n/strings.g.dart';
 import '../media/media_item.dart';
 import '../mixins/controller_disposer_mixin.dart';
@@ -492,12 +493,18 @@ class _SeerrSearchRow extends StatelessWidget {
     };
     final typeLabel = result.mediaType == 'tv' ? t.seerr.tabs.search : '';
     final posterUrl = SeerrConstants.posterUrl(poster);
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(8),
-        child: Padding(
+    return FocusableWrapper(
+      disableScale: true,
+      borderRadius: 8,
+      descendantsAreFocusable: false,
+      autoScroll: true,
+      onSelect: onTap,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(8),
+          child: Padding(
           padding: const EdgeInsets.symmetric(vertical: 8),
           child: Row(
             children: [
@@ -537,6 +544,7 @@ class _SeerrSearchRow extends StatelessWidget {
             ],
           ),
         ),
+      ),
       ),
     );
   }

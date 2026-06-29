@@ -9,6 +9,20 @@ import '../utils/app_logger.dart';
 
 enum SeerrRequestsLoadState { idle, loading, loaded, error }
 
+/// Filter values accepted by Seerr's `GET /request?filter=...` endpoint
+/// (lineage from Overseerr's `MediaRequestStatus`).
+enum SeerrRequestsFilter {
+  all('all'),
+  pending('pending'),
+  approved('approved'),
+  available('available'),
+  unavailable('unavailable'),
+  processing('processing');
+
+  final String wire;
+  const SeerrRequestsFilter(this.wire);
+}
+
 /// Tiny value type for a cached lookup: TMDB title + poster path for use in
 /// the My Requests list (the `/request` endpoint returns neither).
 class SeerrRequestSummary {
@@ -30,6 +44,7 @@ class SeerrRequestsProvider extends ChangeNotifier with DisposableChangeNotifier
   int _totalPages = 1;
   bool _loadingMore = false;
   String? _errorMessage;
+  SeerrRequestsFilter _filter = SeerrRequestsFilter.all;
 
   /// Cache of TMDB summaries (title + poster + year), keyed by
   /// `"$mediaType:$tmdbId"`. Populated lazily by [_hydrateSummaries] after
@@ -43,6 +58,15 @@ class SeerrRequestsProvider extends ChangeNotifier with DisposableChangeNotifier
   bool get loadingMore => _loadingMore;
   String? get errorMessage => _errorMessage;
   bool get isBound => _client != null;
+  SeerrRequestsFilter get filter => _filter;
+
+  /// Change the active filter. Refetches from page 1 if the filter actually
+  /// changed; no-op otherwise.
+  Future<void> setFilter(SeerrRequestsFilter next) async {
+    if (next == _filter) return;
+    _filter = next;
+    await refresh();
+  }
 
   /// Look up a cached TMDB summary for [req]. Returns null when the fetch
   /// hasn't completed (or failed) — the row should fall back to a generic
@@ -81,7 +105,7 @@ class SeerrRequestsProvider extends ChangeNotifier with DisposableChangeNotifier
     _errorMessage = null;
     safeNotifyListeners();
     try {
-      final page = await client.getRequests(page: 1, filter: 'all', sort: 'added');
+      final page = await client.getRequests(page: 1, filter: _filter.wire, sort: 'added');
       if (generation != _bindingGeneration || isDisposed) return;
       _state = SeerrRequestsLoadState.loaded;
       _requests = page.results;
@@ -105,7 +129,7 @@ class SeerrRequestsProvider extends ChangeNotifier with DisposableChangeNotifier
     _loadingMore = true;
     safeNotifyListeners();
     try {
-      final page = await client.getRequests(page: _currentPage + 1, filter: 'all', sort: 'added');
+      final page = await client.getRequests(page: _currentPage + 1, filter: _filter.wire, sort: 'added');
       if (generation != _bindingGeneration || isDisposed) return;
       _requests = [..._requests, ...page.results];
       _currentPage = page.page;

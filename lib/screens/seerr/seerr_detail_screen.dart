@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 
+import '../../focus/card_focus_scope.dart';
+import '../../focus/focusable_button.dart';
+import '../../focus/focusable_wrapper.dart';
 import '../../i18n/strings.g.dart';
 import '../../models/seerr/seerr_credits.dart';
 import '../../models/seerr/seerr_media_info.dart';
@@ -312,13 +315,17 @@ class _DetailBody extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 16),
           child: SizedBox(
             width: double.infinity,
-            child: FilledButton.icon(
+            child: FocusableButton(
               onPressed: canRequest ? onRequest : null,
-              icon: const AppIcon(Symbols.playlist_add_rounded, fill: 1),
-              label: Text(
-                canRequest
-                    ? (tv != null ? t.seerr.detail.requestShow : t.seerr.detail.requestMovie)
-                    : t.seerr.detail.alreadyAvailable,
+              autofocus: canRequest,
+              child: FilledButton.icon(
+                onPressed: canRequest ? onRequest : null,
+                icon: const AppIcon(Symbols.playlist_add_rounded, fill: 1),
+                label: Text(
+                  canRequest
+                      ? (tv != null ? t.seerr.detail.requestShow : t.seerr.detail.requestMovie)
+                      : t.seerr.detail.alreadyAvailable,
+                ),
               ),
             ),
           ),
@@ -434,6 +441,8 @@ class _CastRow extends StatelessWidget {
             child: ListView.separated(
               scrollDirection: Axis.horizontal,
               padding: const EdgeInsets.only(right: 16),
+              // Keep neighbor tiles built so d-pad traversal finds them on TV.
+              cacheExtent: 800,
               itemCount: shown.length,
               separatorBuilder: (_, __) => const SizedBox(width: 12),
               itemBuilder: (context, i) {
@@ -441,44 +450,56 @@ class _CastRow extends StatelessWidget {
                 final url = SeerrConstants.posterUrl(member.profilePath);
                 return SizedBox(
                   width: 84,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(8),
-                        child: SizedBox(
-                          width: 84,
-                          height: 100,
-                          child: url != null
-                              ? Image.network(
-                                  url,
-                                  fit: BoxFit.cover,
-                                  errorBuilder: (_, __, ___) => Container(
-                                    color: theme.colorScheme.surfaceContainerHighest,
-                                    child: const Center(child: AppIcon(Symbols.person_rounded, fill: 1)),
-                                  ),
-                                )
-                              : Container(
-                                  color: theme.colorScheme.surfaceContainerHighest,
-                                  child: const Center(child: AppIcon(Symbols.person_rounded, fill: 1)),
-                                ),
+                  child: FocusableWrapper(
+                    disableScale: false,
+                    descendantsAreFocusable: false,
+                    autoScroll: true,
+                    delegateFocusBorder: true,
+                    // Cast detail screens don't exist yet; focus + scroll-into-
+                    // view is the useful behavior here, so SELECT is a no-op.
+                    onSelect: () {},
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        CardFocusBorder(
+                          borderRadius: 8,
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(8),
+                            child: SizedBox(
+                              width: 84,
+                              height: 100,
+                              child: url != null
+                                  ? Image.network(
+                                      url,
+                                      fit: BoxFit.cover,
+                                      errorBuilder: (_, __, ___) => Container(
+                                        color: theme.colorScheme.surfaceContainerHighest,
+                                        child: const Center(child: AppIcon(Symbols.person_rounded, fill: 1)),
+                                      ),
+                                    )
+                                  : Container(
+                                      color: theme.colorScheme.surfaceContainerHighest,
+                                      child: const Center(child: AppIcon(Symbols.person_rounded, fill: 1)),
+                                    ),
+                            ),
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 6),
-                      Text(
-                        member.name,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: theme.textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w600),
-                      ),
-                      if (member.character != null && member.character!.isNotEmpty)
+                        const SizedBox(height: 6),
                         Text(
-                          member.character!,
-                          maxLines: 2,
+                          member.name,
+                          maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: theme.textTheme.labelSmall?.copyWith(color: muted),
+                          style: theme.textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w600),
                         ),
-                    ],
+                        if (member.character != null && member.character!.isNotEmpty)
+                          Text(
+                            member.character!,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: theme.textTheme.labelSmall?.copyWith(color: muted),
+                          ),
+                      ],
+                    ),
                   ),
                 );
               },
@@ -513,6 +534,7 @@ class _RecommendationsRow extends StatelessWidget {
             child: ListView.separated(
               scrollDirection: Axis.horizontal,
               padding: const EdgeInsets.only(right: 16),
+              cacheExtent: 800,
               itemCount: shown.length,
               separatorBuilder: (_, __) => const SizedBox(width: 12),
               itemBuilder: (context, i) {
@@ -528,39 +550,49 @@ class _RecommendationsRow extends StatelessWidget {
                   SeerrPersonResult(:final profilePath) => profilePath,
                 };
                 final posterUrl = SeerrConstants.posterUrl(poster);
+                void open() => Navigator.of(context).pushReplacement(
+                  MaterialPageRoute(
+                    builder: (_) => SeerrDetailScreen(
+                      tmdbId: r.id,
+                      mediaType: r.mediaType,
+                      initialTitle: title,
+                      initialPosterPath: poster,
+                    ),
+                  ),
+                );
                 return SizedBox(
                   width: 116,
-                  child: Material(
-                    color: Colors.transparent,
-                    child: InkWell(
-                      borderRadius: BorderRadius.circular(8),
-                      onTap: () => Navigator.of(context).pushReplacement(
-                        MaterialPageRoute(
-                          builder: (_) => SeerrDetailScreen(
-                            tmdbId: r.id,
-                            mediaType: r.mediaType,
-                            initialTitle: title,
-                            initialPosterPath: poster,
-                          ),
-                        ),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(8),
-                            child: SizedBox(
-                              width: 116,
-                              height: 174,
-                              child: posterUrl != null
-                                  ? Image.network(
-                                      posterUrl,
-                                      fit: BoxFit.cover,
-                                      errorBuilder: (_, __, ___) => Container(color: theme.colorScheme.surfaceContainerHighest),
-                                    )
-                                  : Container(color: theme.colorScheme.surfaceContainerHighest),
+                  child: FocusableWrapper(
+                    disableScale: false,
+                    descendantsAreFocusable: false,
+                    autoScroll: true,
+                    delegateFocusBorder: true,
+                    onSelect: open,
+                    child: Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(8),
+                        onTap: open,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            CardFocusBorder(
+                              borderRadius: 8,
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(8),
+                                child: SizedBox(
+                                  width: 116,
+                                  height: 174,
+                                  child: posterUrl != null
+                                      ? Image.network(
+                                          posterUrl,
+                                          fit: BoxFit.cover,
+                                          errorBuilder: (_, __, ___) => Container(color: theme.colorScheme.surfaceContainerHighest),
+                                        )
+                                      : Container(color: theme.colorScheme.surfaceContainerHighest),
+                                ),
+                              ),
                             ),
-                          ),
                           const SizedBox(height: 6),
                           Text(
                             title,
@@ -571,6 +603,7 @@ class _RecommendationsRow extends StatelessWidget {
                         ],
                       ),
                     ),
+                  ),
                   ),
                 );
               },
