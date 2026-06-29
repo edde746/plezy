@@ -169,7 +169,11 @@ class _Hub extends StatelessWidget {
           separatorBuilder: (_, __) => const SizedBox(width: 12),
           itemBuilder: (context, i) {
             if (i >= state.results.length) {
-              provider.loadMore(id);
+              // Defer to post-frame: loadMore notifies listeners synchronously
+              // and calling it during build trips "setState called during build".
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                provider.loadMore(id);
+              });
               return const SizedBox(width: 132, child: Center(child: LoadingIndicatorBox()));
             }
             final r = state.results[i];

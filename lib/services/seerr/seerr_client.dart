@@ -7,6 +7,7 @@ import '../../models/seerr/seerr_movie_details.dart';
 import '../../models/seerr/seerr_page.dart';
 import '../../models/seerr/seerr_request.dart';
 import '../../models/seerr/seerr_search_result.dart';
+import '../../models/seerr/seerr_service_instance.dart';
 import '../../models/seerr/seerr_tv_details.dart';
 import '../../models/seerr/seerr_user.dart';
 import '../../utils/app_logger.dart';
@@ -206,6 +207,66 @@ class SeerrClient {
       raw as Map<String, dynamic>,
       (item) => SeerrRequest.fromJson(item),
     );
+  }
+
+  // ---------- Service config (Sonarr / Radarr) ----------
+
+  /// Lightweight per-session cache: profile lists rarely change and a single
+  /// request sheet open shouldn't refetch them. Keyed by `"sonarr:$id"` etc.
+  final Map<String, SeerrServiceDetail> _serviceDetailCache = {};
+  List<SeerrServiceInstance>? _sonarrServicesCache;
+  List<SeerrServiceInstance>? _radarrServicesCache;
+
+  /// All configured Sonarr instances (one row per server, with which is
+  /// 4K-flagged + which is the default).
+  Future<List<SeerrServiceInstance>> getSonarrServices() async {
+    final cached = _sonarrServicesCache;
+    if (cached != null) return cached;
+    final raw = await _request('GET', '/service/sonarr');
+    final list = _parseServiceList(raw);
+    _sonarrServicesCache = list;
+    return list;
+  }
+
+  Future<List<SeerrServiceInstance>> getRadarrServices() async {
+    final cached = _radarrServicesCache;
+    if (cached != null) return cached;
+    final raw = await _request('GET', '/service/radarr');
+    final list = _parseServiceList(raw);
+    _radarrServicesCache = list;
+    return list;
+  }
+
+  /// Full detail for one Sonarr/Radarr instance including profiles + root
+  /// folders + language profiles. Cached for the lifetime of the client so
+  /// reopening the request sheet doesn't re-fetch.
+  Future<SeerrServiceDetail> getSonarrService(int sonarrId) async {
+    final key = 'sonarr:$sonarrId';
+    final cached = _serviceDetailCache[key];
+    if (cached != null) return cached;
+    final raw = await _request('GET', '/service/sonarr/$sonarrId');
+    final detail = SeerrServiceDetail.fromJson(raw as Map<String, dynamic>);
+    _serviceDetailCache[key] = detail;
+    return detail;
+  }
+
+  Future<SeerrServiceDetail> getRadarrService(int radarrId) async {
+    final key = 'radarr:$radarrId';
+    final cached = _serviceDetailCache[key];
+    if (cached != null) return cached;
+    final raw = await _request('GET', '/service/radarr/$radarrId');
+    final detail = SeerrServiceDetail.fromJson(raw as Map<String, dynamic>);
+    _serviceDetailCache[key] = detail;
+    return detail;
+  }
+
+  List<SeerrServiceInstance> _parseServiceList(dynamic raw) {
+    if (raw is! List) return const [];
+    final out = <SeerrServiceInstance>[];
+    for (final item in raw) {
+      if (item is Map<String, dynamic>) out.add(SeerrServiceInstance.fromJson(item));
+    }
+    return out;
   }
 
   // ---------- Internals ----------

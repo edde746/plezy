@@ -1479,7 +1479,17 @@
       "requestSelectedSeasons": "Request ${count} season(s)",
       "submitted": "Requested \"${title}\"",
       "failedGeneric": "Couldn't submit request. Please try again.",
-      "notConnected": "Not connected to Seerr."
+      "notConnected": "Not connected to Seerr.",
+      "request4kTitle": "Request in 4K",
+      "request4kSubtitle": "Use the 4K-flagged Sonarr/Radarr instance instead.",
+      "advancedOptions": "Advanced options",
+      "advancedLoadFailed": "Couldn't load server options. Using Seerr defaults.",
+      "advancedNoServers": "No matching server is configured for this quality tier.",
+      "serverLabel": "Server",
+      "profileLabel": "Quality profile",
+      "rootFolderLabel": "Root folder",
+      "languageLabel": "Language profile",
+      "defaultTag": "default"
     },
     "myRequests": {
       "empty": "No requests yet",

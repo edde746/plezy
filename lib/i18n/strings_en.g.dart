@@ -4769,6 +4769,36 @@ class TranslationsSeerrRequestEn {
 
 	/// en: 'Not connected to Seerr.'
 	String get notConnected => 'Not connected to Seerr.';
+
+	/// en: 'Request in 4K'
+	String get request4kTitle => 'Request in 4K';
+
+	/// en: 'Use the 4K-flagged Sonarr/Radarr instance instead.'
+	String get request4kSubtitle => 'Use the 4K-flagged Sonarr/Radarr instance instead.';
+
+	/// en: 'Advanced options'
+	String get advancedOptions => 'Advanced options';
+
+	/// en: 'Couldn't load server options. Using Seerr defaults.'
+	String get advancedLoadFailed => 'Couldn\'t load server options. Using Seerr defaults.';
+
+	/// en: 'No matching server is configured for this quality tier.'
+	String get advancedNoServers => 'No matching server is configured for this quality tier.';
+
+	/// en: 'Server'
+	String get serverLabel => 'Server';
+
+	/// en: 'Quality profile'
+	String get profileLabel => 'Quality profile';
+
+	/// en: 'Root folder'
+	String get rootFolderLabel => 'Root folder';
+
+	/// en: 'Language profile'
+	String get languageLabel => 'Language profile';
+
+	/// en: 'default'
+	String get defaultTag => 'default';
 }
 
 // Path: seerr.myRequests
@@ -6205,6 +6235,16 @@ extension on Translations {
 			'seerr.request.submitted' => ({required Object title}) => 'Requested "${title}"',
 			'seerr.request.failedGeneric' => 'Couldn\'t submit request. Please try again.',
 			'seerr.request.notConnected' => 'Not connected to Seerr.',
+			'seerr.request.request4kTitle' => 'Request in 4K',
+			'seerr.request.request4kSubtitle' => 'Use the 4K-flagged Sonarr/Radarr instance instead.',
+			'seerr.request.advancedOptions' => 'Advanced options',
+			'seerr.request.advancedLoadFailed' => 'Couldn\'t load server options. Using Seerr defaults.',
+			'seerr.request.advancedNoServers' => 'No matching server is configured for this quality tier.',
+			'seerr.request.serverLabel' => 'Server',
+			'seerr.request.profileLabel' => 'Quality profile',
+			'seerr.request.rootFolderLabel' => 'Root folder',
+			'seerr.request.languageLabel' => 'Language profile',
+			'seerr.request.defaultTag' => 'default',
 			'seerr.myRequests.empty' => 'No requests yet',
 			'seerr.myRequests.emptySubtitle' => 'Anything you request will show up here.',
 			'seerr.myRequests.failedToLoad' => 'Couldn\'t load your requests.',
