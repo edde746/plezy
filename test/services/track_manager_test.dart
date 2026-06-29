@@ -111,11 +111,12 @@ TrackManager _make({
   MediaSourceInfo? mediaInfo,
   bool active = true,
   void Function(String, {Duration? duration})? showMessage,
+  TrackPreferencePersister? persister,
 }) {
   return TrackManager(
     player: player,
     isActive: () => active,
-    persistTrackPreference: _noopPersister,
+    persistTrackPreference: persister ?? _noopPersister,
     getProfileSettings: () => null,
     waitForProfileSettings: () async {},
     metadata: metadata ?? _meta(),
@@ -510,6 +511,73 @@ void main() {
       addTearDown(mgr.dispose);
       // Just verify it returns normally; nothing else to assert.
       expect(() => mgr.onSecondarySubtitleTrackChanged(const SubtitleTrack(id: '1')), returnsNormally);
+    });
+  });
+
+  // ============================================================
+  // onSubtitleTrackChanged — same-language stream mapping (#1443)
+  // ============================================================
+
+  group('onSubtitleTrackChanged', () {
+    // Reproduces the #1443 MKVToolNix screenshot: the "forced" French subtitle
+    // is NOT flagged forced in the container — it only carries the name
+    // "Forced" — and the regular French sub has an empty name. So both sides
+    // report forced=false, and the saved streamID must come from the title
+    // (forced sub) and ordinal position (the empty-title regular sub), not from
+    // "first language match wins".
+    MediaSourceInfo info() => MediaSourceInfo(
+      videoUrl: 'https://example.com/video.mkv',
+      partId: 1,
+      audioTracks: [MediaAudioTrack(id: 1, languageCode: 'fre', selected: true)],
+      subtitleTracks: [
+        MediaSubtitleTrack(id: 30, languageCode: 'fre', title: 'Forced', codec: 'ass', selected: false, forced: false),
+        MediaSubtitleTrack(id: 31, languageCode: 'fre', codec: 'ass', selected: false, forced: false),
+        MediaSubtitleTrack(id: 32, languageCode: 'eng', title: 'SDH', codec: 'ass', selected: false, forced: false),
+      ],
+      chapters: const [],
+    );
+
+    const playerSubs = [
+      SubtitleTrack(id: '2_0', language: 'fre', title: 'Forced', codec: 'ass'),
+      SubtitleTrack(id: '2_1', language: 'fre', codec: 'ass'),
+      SubtitleTrack(id: '2_2', language: 'eng', title: 'SDH', codec: 'ass'),
+    ];
+
+    test('persists distinct streamIDs for title-only-forced vs regular same-language subs', () async {
+      await SettingsService.getInstance();
+      final player = _FakePlayer(tracks: const Tracks(subtitle: playerSubs));
+      int? captured;
+      final mgr = _make(
+        player: player,
+        mediaInfo: info(),
+        persister: ({required int partId, required String trackType, int? streamID}) async {
+          captured = streamID;
+        },
+      );
+      addTearDown(mgr.dispose);
+
+      await mgr.onSubtitleTrackChanged(playerSubs[0]); // "Forced"-named track
+      expect(captured, 30);
+
+      await mgr.onSubtitleTrackChanged(playerSubs[1]); // regular (empty title)
+      expect(captured, 31);
+    });
+
+    test('persists stream 0 when subtitles are turned off', () async {
+      await SettingsService.getInstance();
+      final player = _FakePlayer(tracks: const Tracks(subtitle: playerSubs));
+      int? captured = -1;
+      final mgr = _make(
+        player: player,
+        mediaInfo: info(),
+        persister: ({required int partId, required String trackType, int? streamID}) async {
+          captured = streamID;
+        },
+      );
+      addTearDown(mgr.dispose);
+
+      await mgr.onSubtitleTrackChanged(SubtitleTrack.off);
+      expect(captured, 0);
     });
   });
 
