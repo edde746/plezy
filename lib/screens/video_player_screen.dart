@@ -651,7 +651,16 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       }
 
       initPhase = 'creating player';
-      final currentPlayer = Player(useExoPlayer: useExoPlayer);
+      Map<String, String>? rendererConfig;
+      if (Platform.isMacOS) {
+        final macosVo = settingsService.read(SettingsService.macosVideoOutput);
+        rendererConfig = {
+          'vo': macosVo.voValue,
+          'gpuApi': macosVo.gpuApiValue,
+          'gpuContext': macosVo.gpuContextValue,
+        };
+      }
+      final currentPlayer = Player(useExoPlayer: useExoPlayer, rendererConfig: rendererConfig);
       player = currentPlayer;
       _playerBackendLabel = currentPlayer.playerType;
       if (Platform.isAndroid && useExoPlayer) {

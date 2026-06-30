@@ -53,6 +53,7 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
         if (Platform.isAndroid) _playerBackendSelector(),
         if (PlatformDetector.supportsExternalPlayers()) _externalPlayerTile(),
         _hardwareDecodingTile(),
+        if (Platform.isMacOS) _macosVideoOutputTile(),
         if (PlatformDetector.supportsPictureInPicture()) _autoPipTile(),
         if (Platform.isAndroid) _matchContentFrameRateTile(),
         if (Platform.isWindows) _matchRefreshRateTile(),
@@ -245,6 +246,18 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
     icon: Symbols.hardware_rounded,
     title: t.settings.hardwareDecoding,
     subtitle: t.settings.hardwareDecodingDescription,
+  );
+
+  Widget _macosVideoOutputTile() => SettingSelectionTile<MacosVideoOutput, MacosVideoOutput>(
+    pref: SettingsService.macosVideoOutput,
+    icon: Symbols.display_settings_rounded,
+    title: 'Renderer Pipeline',
+    subtitleBuilder: (mode) => '${mode.displayLabel} · ${mode.description}',
+    options: MacosVideoOutput.values
+        .map((m) => DialogOption(value: m, title: '${m.displayLabel}\n${m.description}'))
+        .toList(),
+    decode: (m) => m,
+    encode: (m) => m,
   );
 
   Widget _autoPipTile() => SettingSwitchTile(

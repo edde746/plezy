@@ -83,6 +83,12 @@ struct ServerDisplayCriteria {
 class MpvPlayerCoreBase: NSObject {
   weak var delegate: MpvPlayerDelegate?
 
+  /// Renderer overrides set from Dart settings (macOS only).
+  /// When nil, defaults are used (gpu-next + vulkan + moltenvk).
+  var rendererOverrideVo: String?
+  var rendererOverrideGpuApi: String?
+  var rendererOverrideGpuContext: String?
+
   #if os(macOS)
     var metalLayer: MpvMetalLayer?
   #else
@@ -751,9 +757,13 @@ class MpvPlayerCoreBase: NSObject {
   private func applySharedMpvOptions() {
     guard let mpv else { return }
     #if os(macOS)
-      checkError(mpv_set_option_string(mpv, "vo", "gpu-next"))
-      checkError(mpv_set_option_string(mpv, "gpu-api", "vulkan"))
-      checkError(mpv_set_option_string(mpv, "gpu-context", "moltenvk"))
+      let vo = rendererOverrideVo ?? "gpu-next"
+      let gpuApi = rendererOverrideGpuApi ?? "vulkan"
+      let gpuContext = rendererOverrideGpuContext ?? "moltenvk"
+      print("[MpvPlayerCore] Renderer config: vo=\(vo), gpu-api=\(gpuApi), gpu-context=\(gpuContext)")
+      checkError(mpv_set_option_string(mpv, "vo", vo))
+      checkError(mpv_set_option_string(mpv, "gpu-api", gpuApi))
+      checkError(mpv_set_option_string(mpv, "gpu-context", gpuContext))
       checkError(mpv_set_option_string(mpv, "hwdec", "videotoolbox"))
     #else
       checkError(mpv_set_option_string(mpv, "vo", "avfoundation"))

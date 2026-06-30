@@ -66,6 +66,50 @@ extension SubtitleRenderScale on SubtitleRenderResolution {
 
 enum DvConversionModePreference { auto, disabled, dv81, hevcStrip }
 
+/// macOS video output (VO) backend. Affects rendering pipeline performance.
+enum MacosVideoOutput {
+  /// gpu-next with Vulkan via MoltenVK (default, best HDR support, heaviest).
+  gpuNext,
+
+  /// gpu with Vulkan via MoltenVK (simpler renderer, less shader overhead).
+  gpu,
+
+  /// gpu with OpenGL (avoids MoltenVK entirely, lightest GPU usage).
+  gpuOpenGL,
+}
+
+extension MacosVideoOutputConfig on MacosVideoOutput {
+  String get voValue => switch (this) {
+    MacosVideoOutput.gpuNext => 'gpu-next',
+    MacosVideoOutput.gpu => 'gpu',
+    MacosVideoOutput.gpuOpenGL => 'gpu',
+  };
+
+  String get gpuApiValue => switch (this) {
+    MacosVideoOutput.gpuNext => 'vulkan',
+    MacosVideoOutput.gpu => 'vulkan',
+    MacosVideoOutput.gpuOpenGL => 'opengl',
+  };
+
+  String get gpuContextValue => switch (this) {
+    MacosVideoOutput.gpuNext => 'moltenvk',
+    MacosVideoOutput.gpu => 'moltenvk',
+    MacosVideoOutput.gpuOpenGL => 'cocoa',
+  };
+
+  String get displayLabel => switch (this) {
+    MacosVideoOutput.gpuNext => 'gpu-next + Vulkan (Default)',
+    MacosVideoOutput.gpu => 'gpu + Vulkan',
+    MacosVideoOutput.gpuOpenGL => 'gpu + OpenGL',
+  };
+
+  String get description => switch (this) {
+    MacosVideoOutput.gpuNext => 'Best quality, HDR tone-mapping. Heaviest on CPU/GPU.',
+    MacosVideoOutput.gpu => 'Simpler shaders, still uses MoltenVK. Moderate load.',
+    MacosVideoOutput.gpuOpenGL => 'No MoltenVK overhead. Lightest, but no HDR.',
+  };
+}
+
 extension DvConversionModePreferenceNativeValue on DvConversionModePreference {
   String get nativeValue => switch (this) {
     DvConversionModePreference.auto => 'auto',
@@ -333,6 +377,11 @@ class SettingsService extends BaseSharedPreferencesService {
   static const enableDebugLogging = BoolPref('enable_debug_logging', onWrite: setLoggerLevel);
   static const crashReporting = BoolPref('crash_reporting', defaultValue: true);
   static const enableHardwareDecoding = BoolPref('enable_hardware_decoding', defaultValue: true);
+  static const macosVideoOutput = EnumPref<MacosVideoOutput>(
+    'macos_video_output',
+    values: MacosVideoOutput.values,
+    defaultValue: MacosVideoOutput.gpuNext,
+  );
   static const enableHDR = BoolPref('enable_hdr', defaultValue: true);
   static const preferredVideoCodec = StringPref('preferred_video_codec', defaultValue: 'auto');
   static const preferredAudioCodec = StringPref('preferred_audio_codec', defaultValue: 'auto');
