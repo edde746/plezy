@@ -19,8 +19,7 @@ import '../navigation/navigation_tabs.dart';
 import '../utils/platform_detector.dart';
 import 'trackers/tracker_constants.dart';
 
-/// Called when the Skia/Impeller toggle changes. Updates the native Info.plist
-/// so the renderer switch takes effect on the next app launch.
+/// Updates the app bundle's Info.plist to toggle Impeller on next launch.
 void _updateImpellerPlist(bool useSkia) {
   if (!Platform.isMacOS) return;
   const channel = MethodChannel('com.plezy/window_utils');

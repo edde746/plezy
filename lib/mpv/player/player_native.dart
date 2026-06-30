@@ -13,8 +13,7 @@ class PlayerNative extends PlayerBase {
   String _dvConversionMode = 'auto';
   String _dvConversionLog = 'no';
 
-  /// Optional renderer configuration passed to the native layer during init.
-  /// Keys: 'vo', 'gpuApi', 'gpuContext'. macOS only.
+  /// macOS renderer overrides: 'vo', 'gpuApi', 'gpuContext'.
   final Map<String, String>? rendererConfig;
 
   PlayerNative({this.rendererConfig});

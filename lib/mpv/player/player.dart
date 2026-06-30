@@ -348,8 +348,7 @@ abstract class Player {
   /// - true: Use ExoPlayer (default, better hardware support)
   /// - false: Use MPV (more features, ASS subtitle rendering)
   ///
-  /// [rendererConfig] is an optional map of renderer properties (vo, gpuApi,
-  /// gpuContext) passed to the native layer at initialization time (macOS only).
+  /// [rendererConfig] overrides mpv renderer properties (macOS only).
   factory Player({bool? useExoPlayer, Map<String, String>? rendererConfig}) {
     if (Platform.isAndroid) {
       // Default to ExoPlayer on Android, with MPV as fallback

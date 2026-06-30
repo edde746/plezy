@@ -83,8 +83,7 @@ struct ServerDisplayCriteria {
 class MpvPlayerCoreBase: NSObject {
   weak var delegate: MpvPlayerDelegate?
 
-  /// Renderer overrides set from Dart settings (macOS only).
-  /// When nil, defaults are used (gpu-next + vulkan + moltenvk).
+  /// Renderer overrides from Dart settings (macOS). Nil = defaults.
   var rendererOverrideVo: String?
   var rendererOverrideGpuApi: String?
   var rendererOverrideGpuContext: String?
@@ -760,7 +759,6 @@ class MpvPlayerCoreBase: NSObject {
       let vo = rendererOverrideVo ?? "gpu-next"
       let gpuApi = rendererOverrideGpuApi ?? "vulkan"
       let gpuContext = rendererOverrideGpuContext ?? "moltenvk"
-      print("[MpvPlayerCore] Renderer config: vo=\(vo), gpu-api=\(gpuApi), gpu-context=\(gpuContext)")
       checkError(mpv_set_option_string(mpv, "vo", vo))
       checkError(mpv_set_option_string(mpv, "gpu-api", gpuApi))
       checkError(mpv_set_option_string(mpv, "gpu-context", gpuContext))

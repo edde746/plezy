@@ -3,9 +3,7 @@ import FlutterMacOS
 
 class MainFlutterWindow: NSWindow {
   override func awakeFromNib() {
-    // Sync the Info.plist with the Skia renderer preference before the Flutter
-    // engine reads FLTEnableImpeller. UserDefaults keys written by
-    // SharedPreferences are prefixed with "flutter.".
+    // Sync Impeller/Skia plist setting before Flutter engine starts.
     let useSkia = UserDefaults.standard.bool(forKey: "flutter.use_skia_renderer")
     WindowUtilsPlugin.updateImpellerPlist(enabled: !useSkia)
 

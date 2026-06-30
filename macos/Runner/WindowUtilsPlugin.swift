@@ -269,8 +269,7 @@ class WindowUtilsPlugin: NSObject, FlutterPlugin {
     }
   }
 
-  /// Updates FLTEnableImpeller in the app bundle's Info.plist on disk.
-  /// Takes effect on the next app launch.
+  /// Updates FLTEnableImpeller in the app bundle's Info.plist. Takes effect on next launch.
   static func updateImpellerPlist(enabled: Bool) {
     let plistURL = Bundle.main.bundleURL.appendingPathComponent("Contents/Info.plist")
     guard let dict = NSMutableDictionary(contentsOf: plistURL) else { return }
