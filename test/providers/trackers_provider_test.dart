@@ -1,17 +1,17 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vibe_stream/providers/trackers_provider.dart';
 import 'package:vibe_stream/services/base_shared_preferences_service.dart';
-import 'package:vibe_stream/services/trackers/anilist/anilist_account_store.dart';
-import 'package:vibe_stream/services/trackers/anilist/anilist_session.dart';
-import 'package:vibe_stream/services/trackers/mal/mal_account_store.dart';
-import 'package:vibe_stream/services/trackers/mal/mal_session.dart';
-import 'package:vibe_stream/services/trackers/simkl/simkl_account_store.dart';
-import 'package:vibe_stream/services/trackers/simkl/simkl_session.dart';
+import 'package:vibe_stream/services/trackers/tracker_account_store.dart';
 import 'package:vibe_stream/services/trackers/tracker_constants.dart';
+import 'package:vibe_stream/services/trackers/tracker_session.dart';
 
 import '../test_helpers/prefs.dart';
 
-MalSession _mal({String? username}) => MalSession(
+final _malStore = trackerAccountStore(TrackerService.mal);
+final _anilistStore = trackerAccountStore(TrackerService.anilist);
+final _simklStore = trackerAccountStore(TrackerService.simkl);
+
+TrackerSession _mal({String? username}) => TrackerSession(
   accessToken: 'mal-at',
   refreshToken: 'mal-rt',
   expiresAt: DateTime.now().millisecondsSinceEpoch ~/ 1000 + 3600,
@@ -19,15 +19,18 @@ MalSession _mal({String? username}) => MalSession(
   username: username,
 );
 
-AnilistSession _anilist({String? username}) => AnilistSession(
+TrackerSession _anilist({String? username}) => TrackerSession(
   accessToken: 'anilist-at',
   expiresAt: DateTime.now().millisecondsSinceEpoch ~/ 1000 + 3600,
   createdAt: DateTime.now().millisecondsSinceEpoch ~/ 1000,
   username: username,
 );
 
-SimklSession _simkl({String? username}) =>
-    SimklSession(accessToken: 'simkl-at', createdAt: DateTime.now().millisecondsSinceEpoch ~/ 1000, username: username);
+TrackerSession _simkl({String? username}) => TrackerSession(
+  accessToken: 'simkl-at',
+  createdAt: DateTime.now().millisecondsSinceEpoch ~/ 1000,
+  username: username,
+);
 
 void main() {
   setUp(resetSharedPreferencesForTest);
@@ -52,9 +55,9 @@ void main() {
 
     test('onActiveProfileChanged loads sessions from per-profile stores', () async {
       const uuid = 'profile-1';
-      await malAccountStore.save(uuid, _mal(username: 'alice'));
-      await anilistAccountStore.save(uuid, _anilist(username: 'bob'));
-      await simklAccountStore.save(uuid, _simkl(username: 'carol'));
+      await _malStore.save(uuid, _mal(username: 'alice'));
+      await _anilistStore.save(uuid, _anilist(username: 'bob'));
+      await _simklStore.save(uuid, _simkl(username: 'carol'));
 
       // Reset cached singletons so the provider reads fresh prefs state.
       BaseSharedPreferencesService.resetForTesting();
@@ -77,9 +80,9 @@ void main() {
 
     test('onActiveProfileChanged switching to empty profile clears all sessions', () async {
       const uuid = 'profile-1';
-      await malAccountStore.save(uuid, _mal(username: 'alice'));
-      await anilistAccountStore.save(uuid, _anilist(username: 'bob'));
-      await simklAccountStore.save(uuid, _simkl(username: 'carol'));
+      await _malStore.save(uuid, _mal(username: 'alice'));
+      await _anilistStore.save(uuid, _anilist(username: 'bob'));
+      await _simklStore.save(uuid, _simkl(username: 'carol'));
       BaseSharedPreferencesService.resetForTesting();
 
       final p = TrackersProvider();
@@ -97,7 +100,7 @@ void main() {
     test('onActiveProfileChanged loads only the populated stores', () async {
       const uuid = 'profile-2';
       // Only AniList is set up — MAL and Simkl remain absent.
-      await anilistAccountStore.save(uuid, _anilist(username: 'bob'));
+      await _anilistStore.save(uuid, _anilist(username: 'bob'));
       BaseSharedPreferencesService.resetForTesting();
 
       final p = TrackersProvider();
@@ -111,7 +114,7 @@ void main() {
 
     test('disconnectMal clears stored session and notifies', () async {
       const uuid = 'profile-3';
-      await malAccountStore.save(uuid, _mal(username: 'alice'));
+      await _malStore.save(uuid, _mal(username: 'alice'));
       BaseSharedPreferencesService.resetForTesting();
 
       final p = TrackersProvider();
@@ -128,15 +131,15 @@ void main() {
       expect(notified, 1);
 
       // Persistence is cleared too.
-      expect(await malAccountStore.load(uuid), isNull);
+      expect(await _malStore.load(uuid), isNull);
 
       p.dispose();
     });
 
     test('disconnectAnilist clears anilist while leaving MAL intact', () async {
       const uuid = 'profile-4';
-      await malAccountStore.save(uuid, _mal(username: 'alice'));
-      await anilistAccountStore.save(uuid, _anilist(username: 'bob'));
+      await _malStore.save(uuid, _mal(username: 'alice'));
+      await _anilistStore.save(uuid, _anilist(username: 'bob'));
       BaseSharedPreferencesService.resetForTesting();
 
       final p = TrackersProvider();
@@ -146,6 +149,31 @@ void main() {
       expect(p.isAnilistConnected, isFalse);
       expect(p.isMalConnected, isTrue);
       expect(p.malUsername, 'alice');
+
+      p.dispose();
+    });
+
+    test('disconnect during an in-flight profile load keeps the other trackers loaded', () async {
+      const uuid = 'profile-race';
+      await _malStore.save(uuid, _mal(username: 'alice'));
+      await _anilistStore.save(uuid, _anilist(username: 'bob'));
+      await _simklStore.save(uuid, _simkl(username: 'carol'));
+      BaseSharedPreferencesService.resetForTesting();
+
+      final p = TrackersProvider();
+      // Start the load, then disconnect MAL before it resolves.
+      final load = p.onActiveProfileChanged(uuid);
+      await p.disconnectMal();
+      await load;
+
+      // MAL stays disconnected (and cleared) — the racing load must not
+      // resurrect it — but it also must not drop AniList/Simkl.
+      expect(p.isMalConnected, isFalse);
+      expect(await _malStore.load(uuid), isNull);
+      expect(p.isAnilistConnected, isTrue);
+      expect(p.anilistUsername, 'bob');
+      expect(p.isSimklConnected, isTrue);
+      expect(p.simklUsername, 'carol');
 
       p.dispose();
     });

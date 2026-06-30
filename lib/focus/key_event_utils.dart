@@ -62,14 +62,15 @@ KeyEventResult handleBackKeyAction(KeyEvent event, VoidCallback onBack) {
     return KeyEventResult.handled;
   }
 
-  // AppleTV physical-keyboard back (Siri Remote Menu via engine-synthesized
-  // escape): run onBack on KeyDown only; consume KeyUp silently. The
-  // suppressor-based "arm-on-KeyDown, clear-on-KeyUp" pattern leaks here
+  // AppleTV back (Siri Remote Menu via engine-synthesized escape): run onBack
+  // on KeyDown only; consume KeyUp silently. Some engine paths report Menu as
+  // a non-keyboard device, but the same down-only handling is still required.
+  // The suppressor-based "arm-on-KeyDown, clear-on-KeyUp" pattern leaks here
   // because onBack typically calls Navigator.pop, swapping the focus tree
   // before the matching KeyUp is dispatched — the orphaned KeyUp then never
   // reaches a consumeIfSuppressed call, pinning the suppressor armed and
   // silently swallowing the next press's KeyDown.
-  if (PlatformDetector.isAppleTV() && event.isPhysicalKeyboardEvent) {
+  if (PlatformDetector.isAppleTV()) {
     if (event is KeyDownEvent) {
       BackKeyCoordinator.markHandled();
       onBack();

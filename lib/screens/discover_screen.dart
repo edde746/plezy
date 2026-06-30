@@ -737,13 +737,10 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     return Symbols.auto_awesome_rounded;
   }
 
-  /// Get the set of hub titles that appear more than once (duplicates)
-  Set<String> _getDuplicateHubTitles() {
-    final titleCounts = <String, int>{};
-    for (final hub in _hubs) {
-      titleCounts[hub.title] = (titleCounts[hub.title] ?? 0) + 1;
-    }
-    return titleCounts.entries.where((e) => e.value > 1).map((e) => e.key).toSet();
+  /// Whether the loaded hubs span more than one connected server.
+  bool _hubsSpanMultipleServers() {
+    final serverIds = _hubs.where((hub) => hub.serverId != null).map((hub) => hub.serverId).toSet();
+    return serverIds.length > 1;
   }
 
   Future<void> _handleLogout() async {
@@ -793,7 +790,10 @@ class _DiscoverScreenState extends State<DiscoverScreen>
   }
 
   void _handleSwitchProfile(BuildContext context) {
-    Navigator.push(context, MaterialPageRoute(builder: (context) => const ProfileSwitchScreen()));
+    Navigator.of(
+      context,
+      rootNavigator: true,
+    ).push(MaterialPageRoute(builder: (context) => const ProfileSwitchScreen()));
   }
 
   void _handleOpenSettings(BuildContext context) {
@@ -1068,7 +1068,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     }
 
     final showServerNameOnHubs = svc.read(SettingsService.showServerNameOnHubs);
-    final duplicateHubTitles = _getDuplicateHubTitles();
+    final hubsSpanMultipleServers = _hubsSpanMultipleServers();
 
     final bottomPadding = MediaQuery.paddingOf(context).bottom;
     final theme = Theme.of(context);
@@ -1126,7 +1126,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                       key: i < _orderedHubKeys.length ? _orderedHubKeys[i] : null,
                       hub: _hubs[i],
                       icon: _getHubIcon(_hubs[i].title),
-                      showServerName: showServerNameOnHubs || duplicateHubTitles.contains(_hubs[i].title),
+                      showServerName: showServerNameOnHubs || hubsSpanMultipleServers,
                       onRefresh: _discover.updateItem,
                       // Hub index is i + 1 if continue watching exists, otherwise i
                       onVerticalNavigation: (isUp) => _handleVerticalNavigation(_onDeck.isNotEmpty ? i + 1 : i, isUp),
@@ -1210,6 +1210,8 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     final theme = Theme.of(context);
     final svc = SettingsService.instance;
     final hideSpoilers = svc.read(SettingsService.hideSpoilers);
+    final showServerNameOnHubs = svc.read(SettingsService.showServerNameOnHubs);
+    final hubsSpanMultipleServers = _hubsSpanMultipleServers();
     final browseHubs = _tvBrowseHubs;
     final scale = TvLayoutConstants.scaleForSize(size);
     // Only layout-aspect (flip-stable) scope values may be read here: an
@@ -1308,6 +1310,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
               child: TvBrowseRail(
                 key: _tvBrowseRailKey,
                 hubs: browseHubs,
+                showServerName: showServerNameOnHubs || hubsSpanMultipleServers,
                 iconForHub: (hub, _) =>
                     hub.id == 'continue_watching' ? Symbols.play_circle_rounded : _getHubIcon(hub.title),
                 onFocusedItemChanged: _setSpotlightItem,

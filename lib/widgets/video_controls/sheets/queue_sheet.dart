@@ -6,12 +6,15 @@ import 'package:provider/provider.dart';
 
 import '../../../i18n/strings.g.dart';
 import '../../../media/media_item.dart';
+import '../../../media/media_item_types.dart';
 import '../../../providers/playback_state_provider.dart';
+import '../../../services/settings_service.dart';
 import '../../../theme/mono_tokens.dart';
 import '../../../utils/provider_extensions.dart';
 import '../../../utils/scroll_utils.dart';
 import '../../../widgets/focusable_list_tile.dart';
 import '../../../widgets/overlay_sheet.dart';
+import '../../../widgets/settings_builder.dart';
 import '../widgets/media_selector_thumbnail.dart';
 import 'base_video_control_sheet.dart';
 import '../../optimized_media_image.dart';
@@ -40,65 +43,68 @@ class _QueueSheetState extends State<QueueSheet> {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<PlaybackStateProvider>(
-      builder: (context, playbackState, _) {
-        final items = playbackState.loadedItems;
-        final currentItemID = playbackState.currentPlayQueueItemID;
+    return SettingValueBuilder<bool>(
+      pref: SettingsService.hideSpoilers,
+      builder: (context, hideSpoilers, _) => Consumer<PlaybackStateProvider>(
+        builder: (context, playbackState, _) {
+          final items = playbackState.loadedItems;
+          final currentItemID = playbackState.currentPlayQueueItemID;
 
-        Widget content;
-        if (items.isEmpty) {
-          content = Center(
-            child: Text(t.videoControls.noQueueItems, style: TextStyle(color: tokens(context).textMuted)),
-          );
-        } else {
-          final currentIndex = items.indexWhere((item) => playbackState.playQueueItemIdFor(item) == currentItemID);
-          _initialScroll.maybeScrollTo(currentIndex);
+          Widget content;
+          if (items.isEmpty) {
+            content = Center(
+              child: Text(t.videoControls.noQueueItems, style: TextStyle(color: tokens(context).textMuted)),
+            );
+          } else {
+            final currentIndex = items.indexWhere((item) => playbackState.playQueueItemIdFor(item) == currentItemID);
+            _initialScroll.maybeScrollTo(currentIndex);
 
-          content = ListView.builder(
-            controller: _initialScroll.controller,
-            itemCount: items.length,
-            itemBuilder: (context, index) {
-              final item = items[index];
-              final isCurrent = playbackState.playQueueItemIdFor(item) == currentItemID;
+            content = ListView.builder(
+              controller: _initialScroll.controller,
+              itemCount: items.length,
+              itemBuilder: (context, index) {
+                final item = items[index];
+                final isCurrent = playbackState.playQueueItemIdFor(item) == currentItemID;
 
-              final primaryColor = Theme.of(context).colorScheme.primary;
-              return FocusableListTile(
-                key: index == 0 ? _initialScroll.firstItemKey : null,
-                leading: _buildThumbnail(context, item, isCurrent),
-                title: Text(
-                  item.title ?? '',
-                  style: TextStyle(
-                    color: isCurrent ? primaryColor : null,
-                    fontWeight: isCurrent ? FontWeight.bold : FontWeight.normal,
+                final primaryColor = Theme.of(context).colorScheme.primary;
+                return FocusableListTile(
+                  key: index == 0 ? _initialScroll.firstItemKey : null,
+                  leading: _buildThumbnail(context, item, isCurrent, hideSpoilers: hideSpoilers),
+                  title: Text(
+                    item.title ?? '',
+                    style: TextStyle(
+                      color: isCurrent ? primaryColor : null,
+                      fontWeight: isCurrent ? FontWeight.bold : FontWeight.normal,
+                    ),
+                    maxLines: 1,
+                    overflow: .ellipsis,
                   ),
-                  maxLines: 1,
-                  overflow: .ellipsis,
-                ),
-                subtitle: Text(
-                  _buildSubtitle(item),
-                  style: TextStyle(
-                    color: isCurrent ? primaryColor.withValues(alpha: 0.7) : tokens(context).textMuted,
-                    fontSize: 12,
+                  subtitle: Text(
+                    _buildSubtitle(item),
+                    style: TextStyle(
+                      color: isCurrent ? primaryColor.withValues(alpha: 0.7) : tokens(context).textMuted,
+                      fontSize: 12,
+                    ),
+                    maxLines: 1,
+                    overflow: .ellipsis,
                   ),
-                  maxLines: 1,
-                  overflow: .ellipsis,
-                ),
-                trailing: isCurrent ? AppIcon(Symbols.play_circle_rounded, fill: 1, color: primaryColor) : null,
-                onTap: () {
-                  widget.onItemSelected(item);
-                  OverlaySheetController.of(context).close();
-                },
-              );
-            },
-          );
-        }
+                  trailing: isCurrent ? AppIcon(Symbols.play_circle_rounded, fill: 1, color: primaryColor) : null,
+                  onTap: () {
+                    widget.onItemSelected(item);
+                    OverlaySheetController.of(context).close();
+                  },
+                );
+              },
+            );
+          }
 
-        return BaseVideoControlSheet(title: t.videoControls.queue, icon: Symbols.queue_rounded, child: content);
-      },
+          return BaseVideoControlSheet(title: t.videoControls.queue, icon: Symbols.queue_rounded, child: content);
+        },
+      ),
     );
   }
 
-  Widget? _buildThumbnail(BuildContext context, MediaItem item, bool isCurrent) {
+  Widget? _buildThumbnail(BuildContext context, MediaItem item, bool isCurrent, {required bool hideSpoilers}) {
     if (item.thumbPath == null) return null;
 
     // Try to get client for thumbnails, may fail in offline mode
@@ -118,6 +124,7 @@ class _QueueSheetState extends State<QueueSheet> {
       ),
       isCurrent: isCurrent,
       borderColor: Theme.of(context).colorScheme.primary,
+      blurThumbnail: hideSpoilers && item.shouldHideSpoiler,
     );
   }
 

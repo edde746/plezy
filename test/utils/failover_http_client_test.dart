@@ -18,12 +18,7 @@ void main() {
   http.Response ok([String id = 'ok']) =>
       http.Response(jsonEncode({'id': id}), 200, headers: {'content-type': 'application/json'});
 
-  ({
-    FailoverHttpClient client,
-    List<({String url, bool persist})> switches,
-    List<String> exhausted,
-    List<Uri> requests,
-  })
+  ({FailoverHttpClient client, List<({String url, bool persist})> switches, List<String> exhausted, List<Uri> requests})
   build({
     required Future<http.Response> Function(http.Request request, List<Uri> seen) handler,
     List<String> endpoints = const [primary, fallback],

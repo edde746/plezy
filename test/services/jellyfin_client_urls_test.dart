@@ -104,6 +104,30 @@ void main() {
       ]);
     });
 
+    test('fetchSortOptions adds episode added sort only for shows', () async {
+      final showSorts = await client.fetchSortOptions('lib-1', libraryType: 'show');
+      expect(showSorts.map((sort) => sort.key).toList(), [
+        'title',
+        'rating',
+        'criticRating',
+        'addedAt',
+        'episode.addedAt',
+        'lastViewedAt',
+        'viewCount',
+        'productionYear',
+        'runtime',
+        'officialRating',
+        'originallyAvailableAt',
+        'startDate',
+        'airTime',
+        'studio',
+        'random',
+      ]);
+
+      final movieSorts = await client.fetchSortOptions('lib-1', libraryType: 'movie');
+      expect(movieSorts.map((sort) => sort.key), isNot(contains('episode.addedAt')));
+    });
+
     test('fetchExtras combines local trailers and special features as playable videos', () async {
       const itemId = 'movie/id #1?x';
       final encodedItemId = Uri.encodeComponent(itemId);

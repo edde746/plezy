@@ -142,12 +142,8 @@ class _LibraryPlaylistsTabState extends BaseLibraryTabState<MediaPlaylist, Libra
       padding: _effectivePadding,
       sliver: SliverList.builder(
         itemCount: totalSize,
-        itemBuilder: (context, index) => _buildPlaylistCard(
-          index,
-          isFirstRow: index == 0,
-          isFirstColumn: true,
-          disableScale: true,
-        ),
+        itemBuilder: (context, index) =>
+            _buildPlaylistCard(index, isFirstRow: index == 0, isFirstColumn: true, disableScale: true),
       ),
     );
   }

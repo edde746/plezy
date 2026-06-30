@@ -645,4 +645,69 @@ void main() {
       expect(result.track.id, 'no');
     });
   });
+
+  // ============================================================
+  // findPlexTrackForMpvSubtitle / findPlexTrackForMpvAudio — same-language
+  // disambiguation (regression for #1443). The player reports null titles for
+  // MKV tracks that carry only a forced flag, so the forced flag (+2) and the
+  // ordinal tiebreaker (+1) must separate two tracks that share a language.
+  // ============================================================
+
+  group('findPlexTrackForMpvSubtitle - forced disambiguation', () {
+    // Disposition-flagged forced track: forced is set in the container, so both
+    // Plex and the player carry forced=true on the forced track.
+    test('disposition-flagged forced track maps via the forced flag', () {
+      final plexTracks = [
+        _plexSub(10, index: 0, languageCode: 'fre', codec: 'ass', forced: false),
+        _plexSub(11, index: 1, languageCode: 'fre', codec: 'ass', forced: true),
+      ];
+      final mpvNonForced = _sub('2_0', lang: 'fre', codec: 'ass');
+      final mpvForced = _sub('2_1', lang: 'fre', codec: 'ass', isForced: true);
+      final allMpv = [mpvNonForced, mpvForced];
+
+      expect(findPlexTrackForMpvSubtitle(mpvForced, plexTracks, allMpvTracks: allMpv)?.id, 11);
+      expect(findPlexTrackForMpvSubtitle(mpvNonForced, plexTracks, allMpvTracks: allMpv)?.id, 10);
+    });
+
+    // Title-only "forced" track — the exact #1443 file (MKVToolNix screenshot):
+    // the forced sub is NOT flagged forced in the container, it only carries the
+    // name "Forced"; the regular French sub has an empty name. Both sides report
+    // forced=false, so disambiguation rides on title (forced sub) and ordinal
+    // position (the empty-title regular sub).
+    test('title-only forced track and empty-title regular track stay distinct (#1443)', () {
+      final plexTracks = [
+        _plexSub(30, index: 0, languageCode: 'fre', title: 'Forced', codec: 'ass', forced: false),
+        _plexSub(31, index: 1, languageCode: 'fre', codec: 'ass', forced: false),
+        _plexSub(32, index: 2, languageCode: 'eng', title: 'SDH', codec: 'ass', forced: false),
+      ];
+      final mpvForcedByName = _sub('2_0', lang: 'fre', title: 'Forced', codec: 'ass');
+      final mpvRegular = _sub('2_1', lang: 'fre', codec: 'ass');
+      final mpvSdh = _sub('2_2', lang: 'eng', title: 'SDH', codec: 'ass');
+      final allMpv = [mpvForcedByName, mpvRegular, mpvSdh];
+
+      expect(findPlexTrackForMpvSubtitle(mpvForcedByName, plexTracks, allMpvTracks: allMpv)?.id, 30);
+      expect(findPlexTrackForMpvSubtitle(mpvRegular, plexTracks, allMpvTracks: allMpv)?.id, 31);
+    });
+  });
+
+  group('findPlexTrackForMpvAudio - same-language disambiguation', () {
+    // Two French audio tracks differing only by channel count, titles null.
+    final plexTracks = [
+      _plexAudio(20, index: 0, languageCode: 'fre', codec: 'ac3', channels: 2),
+      _plexAudio(21, index: 1, languageCode: 'fre', codec: 'ac3', channels: 6),
+    ];
+    final mpvStereo = _audio('1_0', lang: 'fre', codec: 'ac3', channels: 2);
+    final mpvSurround = _audio('1_1', lang: 'fre', codec: 'ac3', channels: 6);
+    final allMpv = [mpvStereo, mpvSurround];
+
+    test('surround player track maps to the 6-channel Plex stream', () {
+      final match = findPlexTrackForMpvAudio(mpvSurround, plexTracks, allMpvTracks: allMpv);
+      expect(match?.id, 21);
+    });
+
+    test('stereo player track maps to the 2-channel Plex stream', () {
+      final match = findPlexTrackForMpvAudio(mpvStereo, plexTracks, allMpvTracks: allMpv);
+      expect(match?.id, 20);
+    });
+  });
 }

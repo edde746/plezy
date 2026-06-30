@@ -44,6 +44,10 @@ class FocusableListTile extends StatefulWidget {
 
   final VisualDensity? visualDensity;
 
+  final double? horizontalTitleGap;
+
+  final double? minLeadingWidth;
+
   const FocusableListTile({
     super.key,
     this.title,
@@ -63,6 +67,8 @@ class FocusableListTile extends StatefulWidget {
     this.textColor,
     this.iconColor,
     this.visualDensity = const VisualDensity(vertical: -3),
+    this.horizontalTitleGap,
+    this.minLeadingWidth,
   });
 
   @override
@@ -125,6 +131,8 @@ class _FocusableListTileState extends State<FocusableListTile> with FocusableTil
         hoverColor: widget.hoverColor,
         textColor: textColor,
         iconColor: iconColor,
+        horizontalTitleGap: widget.horizontalTitleGap,
+        minLeadingWidth: widget.minLeadingWidth,
       ),
     );
 
@@ -273,6 +281,16 @@ class FocusableSwitchListTile extends StatefulWidget {
   /// Visual density for the list tile.
   final VisualDensity? visualDensity;
 
+  /// Content padding, e.g. to align with sibling rows. Null uses the
+  /// SwitchListTile default.
+  final EdgeInsetsGeometry? contentPadding;
+
+  /// Horizontal gap between the leading/secondary widget and title.
+  final double? horizontalTitleGap;
+
+  /// Minimum width reserved for the leading/secondary widget.
+  final double? minLeadingWidth;
+
   const FocusableSwitchListTile({
     super.key,
     this.title,
@@ -284,6 +302,9 @@ class FocusableSwitchListTile extends StatefulWidget {
     this.focusNode,
     this.autofocus = false,
     this.visualDensity = const VisualDensity(vertical: -3),
+    this.contentPadding,
+    this.horizontalTitleGap,
+    this.minLeadingWidth,
   });
 
   @override
@@ -325,8 +346,11 @@ class _FocusableSwitchListTileState extends State<FocusableSwitchListTile>
         onChanged: widget.onChanged,
         dense: widget.dense,
         visualDensity: widget.visualDensity,
+        contentPadding: widget.contentPadding,
         focusNode: effectiveFocusNode,
         autofocus: widget.autofocus,
+        horizontalTitleGap: widget.horizontalTitleGap,
+        minLeadingWidth: widget.minLeadingWidth,
       ),
     );
   }

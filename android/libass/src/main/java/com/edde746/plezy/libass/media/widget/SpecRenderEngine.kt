@@ -1,7 +1,6 @@
 package com.edde746.plezy.libass.media.widget
 
 import com.edde746.plezy.libass.AssAtlasFrame
-import kotlin.math.abs
 
 /**
  * Decision core of the speculative render-ahead pipeline.
@@ -99,6 +98,10 @@ internal class SpecRenderEngine(
   var specSkips = 0L
     private set
 
+  @Volatile
+  var blankClearCount = 0L
+    private set
+
   /**
    * Services a render request for [ptsUs]. [pinned] is false for invalidate
    * repaints (paused margin changes etc.), which never feed the cadence
@@ -107,10 +110,11 @@ internal class SpecRenderEngine(
   fun service(ptsUs: Long, pinned: Boolean): Outcome {
     if (pinned) updateDeltaEstimator(ptsUs)
 
+    val ptsMs = toLibassMs(ptsUs)
     if (specPtsUs != UNSET) {
-      val eps = epsilonUs()
+      val specPtsMs = toLibassMs(specPtsUs)
       val genNow = stateGeneration()
-      val hit = genNow == specGen && eps > 0 && abs(ptsUs - specPtsUs) <= eps
+      val hit = genNow == specGen && ptsMs == specPtsMs
       val slot = if (specIsLibassLast) libassLastSlot else specSlot
       val frame = libassLastFrame
       val specPts = specPtsUs
@@ -118,23 +122,32 @@ internal class SpecRenderEngine(
       if (hit && slot >= 0 && frame != null) {
         specHits++
         lastPostedSlot = slot
-        debugLog?.invoke("hit pts=${ptsUs / 1000}ms spec=${specPts / 1000}ms d=${(ptsUs - specPts) / 1000}ms slot=$slot")
+        debugLog?.invoke(
+          "hit pts=${ptsMs}ms spec=${specPtsMs}ms dUs=${ptsUs - specPts} slot=$slot"
+        )
         return Outcome.Post(slot, frame, newContent = false, specHit = true)
       }
       specMisses++
       debugLog?.invoke(
-        "miss pts=${ptsUs / 1000}ms spec=${specPts / 1000}ms d=${(ptsUs - specPts) / 1000}ms eps=${eps / 1000}ms " +
+        "miss pts=${ptsMs}ms spec=${specPtsMs}ms dUs=${ptsUs - specPts} " +
           "gen=${if (genNow == specGen) "ok" else "CHANGED"} slot=$slot frame=${frame != null}"
       )
     } else {
-      debugLog?.invoke("no-spec pts=${ptsUs / 1000}ms")
+      debugLog?.invoke("no-spec pts=${ptsMs}ms")
     }
 
-    // On-demand render. Preferring libassLastSlot as the target makes changed == 0
-    // unambiguous: the buffers were untouched and already hold the right content.
+    // On-demand render. For changed == 0 with visible output, the buffers were
+    // untouched and libassLastSlot already holds the right content.
     val target = renderTargetSlot() ?: return Outcome.Skip
-    val frame = renderAt(ptsUs / 1000, target) ?: return Outcome.Skip
+    val frame = renderAt(ptsMs, target) ?: return Outcome.Skip
     if (frame.changed == 0) {
+      if (isImplicitBlank(frame)) {
+        blankClearCount++
+        libassLastSlot = target
+        libassLastFrame = frame
+        lastPostedSlot = target
+        return Outcome.Post(target, frame, newContent = true, specHit = false)
+      }
       val lastSlot = libassLastSlot
       val lastFrame = libassLastFrame ?: return Outcome.Skip
       if (lastSlot < 0) return Outcome.Skip
@@ -169,13 +182,21 @@ internal class SpecRenderEngine(
     }
     val gen = stateGeneration()
     val specPts = servicedPtsUs + medianDeltaUs()
-    val frame = renderAt(specPts / 1000, target) ?: run {
+    val frame = renderAt(toLibassMs(specPts), target) ?: run {
       specSkips++
       return null
     }
     specGen = gen
     specPtsUs = specPts
     if (frame.changed == 0) {
+      if (isImplicitBlank(frame)) {
+        blankClearCount++
+        libassLastSlot = target
+        libassLastFrame = frame
+        specIsLibassLast = false
+        specSlot = target
+        return SpecWrite(target, frame)
+      }
       // Content at specPts is identical to libass's last render — nothing was
       // written; a hit will repost libassLastSlot (and GL will skip the upload).
       specIsLibassLast = true
@@ -188,6 +209,8 @@ internal class SpecRenderEngine(
     specSlot = target
     return SpecWrite(target, frame)
   }
+
+  private fun isImplicitBlank(frame: AssAtlasFrame): Boolean = !frame.hasOutput && libassLastFrame?.hasOutput == true
 
   /**
    * Pre-renders [ptsUs] (an upcoming event's start) purely to warm the
@@ -204,7 +227,7 @@ internal class SpecRenderEngine(
   fun prefetch(ptsUs: Long): SpecWrite? {
     specPtsUs = UNSET
     val target = renderTargetSlot() ?: return null
-    val frame = renderAt(ptsUs / 1000, target) ?: return null
+    val frame = renderAt(toLibassMs(ptsUs), target) ?: return null
     prefetchCount++
     if (frame.changed == 0) return null
     libassLastSlot = target
@@ -253,13 +276,12 @@ internal class SpecRenderEngine(
     return copy[deltaCount / 2]
   }
 
-  private fun epsilonUs(): Long = if (deltaValid()) minOf(medianDeltaUs() / 2, EPSILON_CAP_US) else 0L
+  private fun toLibassMs(ptsUs: Long): Long = Math.floorDiv(ptsUs, 1_000L)
 
   private companion object {
     const val UNSET = Long.MIN_VALUE
     const val DELTA_SAMPLES = 8
     const val MIN_DELTA_SAMPLES = 4
     const val MAX_DELTA_US = 250_000L
-    const val EPSILON_CAP_US = 8_000L
   }
 }

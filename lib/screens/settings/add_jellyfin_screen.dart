@@ -371,6 +371,7 @@ class _AddJellyfinScreenState extends State<AddJellyfinScreen> with AsyncFormSta
     )) {
       await Navigator.of(
         context,
+        rootNavigator: true,
       ).push<bool>(MaterialPageRoute(builder: (_) => const ProfileSwitchScreen(requireSelection: true)));
       if (!mounted) return;
       boundProfile = activeProvider.active;

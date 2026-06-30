@@ -201,6 +201,20 @@ extension _PlexVideoControlsMarkerMethods on _PlexVideoControlsState {
     return _shouldAutoSkipForMarker(_currentMarker!);
   }
 
+  bool get _isSkipMarkerButtonVisible => shouldShowSkipMarkerButton(
+    hasFirstFrame: _hasRenderedFirstFrame,
+    hasMarker: _currentMarker != null,
+    hasPlayNextPrompt: widget.playNextFocusNode != null,
+    skipButtonDismissed: _skipButtonDismissed,
+    controlsVisible: _showControls,
+  );
+
+  void _activateSkipMarker() {
+    if (!_isSkipMarkerButtonVisible) return;
+    _cancelAutoSkipTimer();
+    _performAutoSkip();
+  }
+
   Widget _buildSkipMarkerButton() {
     final isAutoSkipActive = _autoSkipTimer?.isActive ?? false;
     return SkipMarkerButton(
@@ -212,8 +226,7 @@ extension _PlexVideoControlsMarkerMethods on _PlexVideoControlsState {
       autoSkipDelay: _autoSkipDelay,
       autoSkipProgress: _autoSkipProgress,
       focusNode: _skipMarkerFocusNode,
-      onCancelAutoSkip: _cancelAutoSkipTimer,
-      onPerformAutoSkip: _performAutoSkip,
+      onActivate: _activateSkipMarker,
       onFocusDown: () => _desktopControlsKey.currentState?.requestPlayPauseFocus(),
     );
   }

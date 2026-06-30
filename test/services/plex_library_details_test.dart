@@ -77,7 +77,7 @@ void main() {
     ]);
   });
 
-  test('appends Plays and User Rating sorts only for movie/show libraries', () async {
+  test('appends Date Added, Plays, and User Rating sorts only for movie/show libraries', () async {
     PlexClient clientReturning() => makeClient((request) async {
       if (request.url.path == '/library/sections/1/sorts') {
         return http.Response(
@@ -99,7 +99,11 @@ void main() {
       final client = clientReturning();
       addTearDown(client.close);
       final sorts = await client.fetchSortOptions('1', libraryType: type);
-      expect(sorts.map((s) => s.key), ['titleSort', 'viewCount', 'userRating'], reason: type);
+      expect(sorts.map((s) => s.key), ['titleSort', 'addedAt', 'viewCount', 'userRating'], reason: type);
+
+      final dateAdded = sorts.singleWhere((s) => s.key == 'addedAt');
+      expect(dateAdded.descKey, 'addedAt:desc', reason: type);
+      expect(dateAdded.defaultDirection, 'desc', reason: type);
     }
 
     // Other library types (e.g. music) are left as the server returned them.
@@ -109,7 +113,7 @@ void main() {
     expect(musicSorts.map((s) => s.key), ['titleSort']);
   });
 
-  test('does not duplicate Plays/User Rating when the server already advertises them', () async {
+  test('does not duplicate Date Added/Plays when the server already advertises them', () async {
     final client = makeClient((request) async {
       if (request.url.path == '/library/sections/1/sorts') {
         return http.Response(
@@ -117,6 +121,7 @@ void main() {
             'MediaContainer': {
               'Directory': [
                 {'key': 'titleSort', 'title': 'Title', 'defaultDirection': 'asc'},
+                {'key': 'addedAt', 'title': 'Date Added', 'defaultDirection': 'desc'},
                 {'key': 'viewCount', 'title': 'Plays', 'defaultDirection': 'desc'},
               ],
             },
@@ -130,8 +135,8 @@ void main() {
     addTearDown(client.close);
 
     final sorts = await client.fetchSortOptions('1', libraryType: 'movie');
-    // viewCount already advertised -> not duplicated; userRating still appended.
-    expect(sorts.map((s) => s.key), ['titleSort', 'viewCount', 'userRating']);
+    // addedAt/viewCount already advertised -> not duplicated; userRating still appended.
+    expect(sorts.map((s) => s.key), ['titleSort', 'addedAt', 'viewCount', 'userRating']);
   });
 
   test('library content stamps known section when Plex omits librarySectionID on rows', () async {

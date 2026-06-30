@@ -61,7 +61,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.e);
 
   @override
-  int get schemaVersion => 15;
+  int get schemaVersion => 16;
 
   @override
   MigrationStrategy get migration {
@@ -212,6 +212,13 @@ class AppDatabase extends _$AppDatabase {
           await _ignoreAlreadyExists(
             'DownloadedMedia.mediaSourceId column',
             () => m.addColumn(downloadedMedia, downloadedMedia.mediaSourceId),
+          );
+        }
+        if (from < 16) {
+          appLogger.i('Adding includeSpecials column to SyncRules (v16 migration)');
+          await _ignoreAlreadyExists(
+            'SyncRules.includeSpecials column',
+            () => m.addColumn(syncRules, syncRules.includeSpecials),
           );
         }
       },
@@ -532,6 +539,7 @@ class AppDatabase extends _$AppDatabase {
     required int episodeCount,
     int mediaIndex = 0,
     String downloadFilter = 'unwatched',
+    bool includeSpecials = true,
   }) async {
     // [insertOnConflictUpdate] defaults the conflict target to the primary
     // key (`id`), which is auto-incremented — the conflict never triggers
@@ -549,6 +557,7 @@ class AppDatabase extends _$AppDatabase {
         createdAt: DateTime.now().millisecondsSinceEpoch,
         mediaIndex: Value(mediaIndex),
         downloadFilter: Value(downloadFilter),
+        includeSpecials: Value(includeSpecials),
       ),
       onConflict: DoUpdate(
         (_) => SyncRulesCompanion(
@@ -559,6 +568,7 @@ class AppDatabase extends _$AppDatabase {
           episodeCount: Value(episodeCount),
           mediaIndex: Value(mediaIndex),
           downloadFilter: Value(downloadFilter),
+          includeSpecials: Value(includeSpecials),
         ),
         target: [syncRules.globalKey],
       ),

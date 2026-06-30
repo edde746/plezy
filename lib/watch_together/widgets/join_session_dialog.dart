@@ -7,6 +7,7 @@ import '../../focus/focusable_text_field.dart';
 import '../../focus/focusable_wrapper.dart';
 import '../../i18n/strings.g.dart';
 import '../../mixins/controller_disposer_mixin.dart';
+import '../../utils/dialogs.dart';
 
 class JoinSessionDialog extends StatefulWidget {
   const JoinSessionDialog({super.key});
@@ -153,5 +154,5 @@ class UpperCaseTextFormatter extends TextInputFormatter {
 }
 
 Future<String?> showJoinSessionDialog(BuildContext context) {
-  return showDialog<String>(context: context, builder: (context) => const JoinSessionDialog());
+  return showScopedDialog<String>(context: context, builder: (context) => const JoinSessionDialog());
 }

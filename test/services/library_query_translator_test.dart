@@ -146,6 +146,7 @@ void main() {
         'startDate': 'StartDate',
         'airTime': 'AirTime',
         'studio': 'Studio',
+        'episode.addedAt': 'DateLastContentAdded,SortName',
       };
 
       for (final entry in cases.entries) {
@@ -170,6 +171,26 @@ void main() {
         ),
       );
       expect(movieSort['SortBy'], 'DatePlayed');
+    });
+
+    test('episode added sort maps to Jellyfin series content added sort', () {
+      final descending = translator.toQueryParameters(
+        const LibraryQuery(
+          kind: MediaKind.show,
+          sort: LibrarySort(field: 'episode.addedAt'),
+        ),
+      );
+      expect(descending['SortBy'], 'DateLastContentAdded,SortName');
+      expect(descending['SortOrder'], 'Descending');
+
+      final ascending = translator.toQueryParameters(
+        const LibraryQuery(
+          kind: MediaKind.show,
+          sort: LibrarySort(field: 'episode.addedAt', direction: LibrarySortDirection.ascending),
+        ),
+      );
+      expect(ascending['SortBy'], 'DateLastContentAdded,SortName');
+      expect(ascending['SortOrder'], 'Ascending');
     });
 
     test('nameStartsWith="#" maps to NameLessThan=A', () {

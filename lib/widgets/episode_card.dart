@@ -163,12 +163,12 @@ class _EpisodeCardState extends State<EpisodeCard> with ContextMenuTapMixin<Epis
                   color: Theme.of(context).colorScheme.surfaceContainerLow,
                   borderRadius: BorderRadius.circular(FocusTheme.defaultBorderRadius),
                 ),
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                padding: const EdgeInsets.symmetric(vertical: 4),
                 child: Row(
                   crossAxisAlignment: .start,
                   children: [
                     SizedBox(
-                      width: 160,
+                      width: 144,
                       child: Stack(
                         children: [
                           ClipRRect(
@@ -226,7 +226,7 @@ class _EpisodeCardState extends State<EpisodeCard> with ContextMenuTapMixin<Epis
                       ),
                     ),
 
-                    const SizedBox(width: 12),
+                    const SizedBox(width: 10),
 
                     Expanded(
                       child: Column(
@@ -292,7 +292,7 @@ class _EpisodeCardState extends State<EpisodeCard> with ContextMenuTapMixin<Epis
                           ),
 
                           if (!shouldBlur && episode.summary != null && episode.summary!.isNotEmpty) ...[
-                            const SizedBox(height: 6),
+                            const SizedBox(height: 4),
                             if (PlatformDetector.isTV())
                               Text(
                                 episode.summary!,
@@ -313,7 +313,7 @@ class _EpisodeCardState extends State<EpisodeCard> with ContextMenuTapMixin<Epis
                               ),
                           ],
 
-                          const SizedBox(height: 8),
+                          const SizedBox(height: 6),
                           _buildEpisodeMetaRow(context, episode, qualityLabels),
                         ],
                       ),

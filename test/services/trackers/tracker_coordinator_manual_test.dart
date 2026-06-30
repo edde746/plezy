@@ -11,14 +11,12 @@ import 'package:vibe_stream/media/media_server_client.dart';
 import 'package:vibe_stream/models/trackers/anime_lists_mapping.dart';
 import 'package:vibe_stream/models/trackers/fribb_mapping_row.dart';
 import 'package:vibe_stream/services/trackers/anime_lists_mapping_store.dart';
-import 'package:vibe_stream/services/trackers/anilist/anilist_session.dart';
 import 'package:vibe_stream/services/trackers/anilist/anilist_tracker.dart';
 import 'package:vibe_stream/services/trackers/fribb_mapping_store.dart';
-import 'package:vibe_stream/services/trackers/mal/mal_session.dart';
 import 'package:vibe_stream/services/trackers/mal/mal_tracker.dart';
-import 'package:vibe_stream/services/trackers/simkl/simkl_session.dart';
 import 'package:vibe_stream/services/trackers/simkl/simkl_tracker.dart';
 import 'package:vibe_stream/services/trackers/tracker_coordinator.dart';
+import 'package:vibe_stream/services/trackers/tracker_session.dart';
 import 'package:vibe_stream/utils/external_ids.dart';
 
 class _FakeMediaServerClient implements MediaServerClient {
@@ -138,19 +136,19 @@ AnimeEpisodeMatch _match({required int anidbId, required int serverEpisode, requ
       kind: AnimeListMatchKind.range,
     );
 
-SimklSession _simklSession() {
+TrackerSession _simklSession() {
   final now = DateTime.now().millisecondsSinceEpoch ~/ 1000;
-  return SimklSession(accessToken: 'token', createdAt: now);
+  return TrackerSession(accessToken: 'token', createdAt: now);
 }
 
-MalSession _malSession() {
+TrackerSession _malSession() {
   final now = DateTime.now().millisecondsSinceEpoch ~/ 1000;
-  return MalSession(accessToken: 'token', refreshToken: 'refresh', expiresAt: now + 86400, createdAt: now);
+  return TrackerSession(accessToken: 'token', refreshToken: 'refresh', expiresAt: now + 86400, createdAt: now);
 }
 
-AnilistSession _anilistSession() {
+TrackerSession _anilistSession() {
   final now = DateTime.now().millisecondsSinceEpoch ~/ 1000;
-  return AnilistSession(accessToken: 'token', expiresAt: now + 86400, createdAt: now);
+  return TrackerSession(accessToken: 'token', expiresAt: now + 86400, createdAt: now);
 }
 
 void main() {

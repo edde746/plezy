@@ -100,13 +100,22 @@ extension _VideoPlayerPlaybackPromptMethods on VideoPlayerScreenState {
     _autoPlayTimer?.cancel();
     _unfocusPlayNextPrompt();
     _progressTracker?.resumeAfterStoppedReport();
-    // Keep _completionTriggered set: playback is still parked inside the
-    // end-of-video window, so clearing it here would let the position listener
-    // re-fire this prompt on the next tick. It is re-armed once playback seeks
-    // back clear of the end region (see the position listener) or new media loads.
+    // Keep the latch set while playback is still parked at EOF, so duplicate
+    // completed signals cannot re-open this prompt. It is re-armed once playback
+    // seeks back clear of the end region (see the position listener) or new media loads.
     _setPlayerState(() {
       _showPlayNextDialog = false;
     });
+  }
+
+  void _dismissPlaybackPromptForBack() {
+    if (_showPlayNextDialog) {
+      _cancelAutoPlay();
+      return;
+    }
+    if (_showStillWatchingPrompt) {
+      _dismissStillWatching();
+    }
   }
 
   /// Re-arm the end-of-video latch so Play Next can fire again. Callers

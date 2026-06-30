@@ -247,6 +247,9 @@ class _TranslationsSettingsSv extends TranslationsSettingsEn {
 	@override String get continueWatchingAction => 'Åtgärd för Fortsätt titta';
 	@override String get continueWatchingPlay => 'Spela';
 	@override String get continueWatchingDetails => 'Öppna detaljer';
+	@override String get episodeAction => 'Åtgärd för avsnitt';
+	@override String get episodePlay => 'Spela';
+	@override String get episodeDetails => 'Öppna detaljer';
 	@override String get useGlobalHubs => 'Använd startlayout';
 	@override String get useGlobalHubsDescription => 'Visa enhetliga startsideshubbar. Annars används biblioteksrekommendationer.';
 	@override String get showServerNameOnHubs => 'Visa servernamn på hubbar';
@@ -388,6 +391,8 @@ class _TranslationsSettingsSv extends TranslationsSettingsEn {
 	@override String get displaySwitchDelay => 'Fördröjning vid skärmbyte';
 	@override String get tunneledPlayback => 'Tunneluppspelning';
 	@override String get tunneledPlaybackDescription => 'Använd videotunnling. Inaktivera om HDR-uppspelning visar svart video.';
+	@override String get audioPassthrough => 'Ljudgenomkoppling';
+	@override String get audioPassthroughDescription => 'Skicka Dolby/DTS-ljud till din receiver eller TV utan omkodning och bevara surroundljudet. Stäng av om du inte har något ljud.';
 	@override String get dvConversionMode => 'Dolby Vision-konvertering';
 	@override String get dvConversionModeDescription => 'Välj hur ExoPlayer hanterar Dolby Vision Profile 7-filer.';
 	@override String get dvConversionAuto => 'Auto';
@@ -1285,6 +1290,7 @@ class _TranslationsDownloadsSv extends TranslationsDownloadsEn {
 	@override String get unwatchedOnly => 'Endast osedda';
 	@override String nextNUnwatched({required Object count}) => 'Nästa ${count} osedda';
 	@override String get customAmount => 'Ange antal...';
+	@override String get includeSpecials => 'Inkludera specialavsnitt';
 	@override String get howManyEpisodes => 'Hur många avsnitt?';
 	@override String itemsQueued({required Object count}) => '${count} objekt köade för nedladdning';
 	@override String get keepSynced => 'Håll synkroniserad';
@@ -1755,6 +1761,7 @@ class _TranslationsLibrariesSortLabelsSv extends TranslationsLibrariesSortLabels
 	@override String get random => 'Slumpmässigt';
 	@override String get dateShared => 'Delningsdatum';
 	@override String get latestEpisodeAirDate => 'Senaste avsnittets sändningsdatum';
+	@override String get lastEpisodeDateAdded => 'Datum då senaste avsnittet lades till';
 }
 
 // Path: companionRemote.session
@@ -2029,6 +2036,9 @@ extension on TranslationsSv {
 			'settings.continueWatchingAction' => 'Åtgärd för Fortsätt titta',
 			'settings.continueWatchingPlay' => 'Spela',
 			'settings.continueWatchingDetails' => 'Öppna detaljer',
+			'settings.episodeAction' => 'Åtgärd för avsnitt',
+			'settings.episodePlay' => 'Spela',
+			'settings.episodeDetails' => 'Öppna detaljer',
 			'settings.useGlobalHubs' => 'Använd startlayout',
 			'settings.useGlobalHubsDescription' => 'Visa enhetliga startsideshubbar. Annars används biblioteksrekommendationer.',
 			'settings.showServerNameOnHubs' => 'Visa servernamn på hubbar',
@@ -2170,6 +2180,8 @@ extension on TranslationsSv {
 			'settings.displaySwitchDelay' => 'Fördröjning vid skärmbyte',
 			'settings.tunneledPlayback' => 'Tunneluppspelning',
 			'settings.tunneledPlaybackDescription' => 'Använd videotunnling. Inaktivera om HDR-uppspelning visar svart video.',
+			'settings.audioPassthrough' => 'Ljudgenomkoppling',
+			'settings.audioPassthroughDescription' => 'Skicka Dolby/DTS-ljud till din receiver eller TV utan omkodning och bevara surroundljudet. Stäng av om du inte har något ljud.',
 			'settings.dvConversionMode' => 'Dolby Vision-konvertering',
 			'settings.dvConversionModeDescription' => 'Välj hur ExoPlayer hanterar Dolby Vision Profile 7-filer.',
 			'settings.dvConversionAuto' => 'Auto',
@@ -2428,13 +2440,13 @@ extension on TranslationsSv {
 			'messages.serverLimitTitle' => 'Uppspelningen misslyckades',
 			'messages.serverLimitBody' => 'Serverfel (HTTP 500). En bandbredds-/transkodningsgräns avvisade troligen sessionen. Be ägaren justera den.',
 			'messages.logsUploaded' => 'Loggar uppladdade',
+			_ => null,
+		} ?? switch (path) {
 			'messages.logsUploadFailed' => 'Uppladdning av loggar misslyckades',
 			'messages.logId' => 'Logg-ID',
 			'subtitlingStyling.text' => 'Text',
 			'subtitlingStyling.border' => 'Kantlinje',
 			'subtitlingStyling.background' => 'Bakgrund',
-			_ => null,
-		} ?? switch (path) {
 			'subtitlingStyling.fontSize' => 'Teckenstorlek',
 			'subtitlingStyling.textColor' => 'Textfärg',
 			'subtitlingStyling.borderSize' => 'Kantstorlek',
@@ -2638,6 +2650,7 @@ extension on TranslationsSv {
 			'libraries.sortLabels.random' => 'Slumpmässigt',
 			'libraries.sortLabels.dateShared' => 'Delningsdatum',
 			'libraries.sortLabels.latestEpisodeAirDate' => 'Senaste avsnittets sändningsdatum',
+			'libraries.sortLabels.lastEpisodeDateAdded' => 'Datum då senaste avsnittet lades till',
 			'about.title' => 'Om',
 			'about.openSourceLicenses' => 'Öppen källkod-licenser',
 			'about.versionLabel' => ({required Object version}) => 'Version ${version}',
@@ -2870,6 +2883,7 @@ extension on TranslationsSv {
 			'downloads.unwatchedOnly' => 'Endast osedda',
 			'downloads.nextNUnwatched' => ({required Object count}) => 'Nästa ${count} osedda',
 			'downloads.customAmount' => 'Ange antal...',
+			'downloads.includeSpecials' => 'Inkludera specialavsnitt',
 			'downloads.howManyEpisodes' => 'Hur många avsnitt?',
 			'downloads.itemsQueued' => ({required Object count}) => '${count} objekt köade för nedladdning',
 			'downloads.keepSynced' => 'Håll synkroniserad',
@@ -2940,6 +2954,8 @@ extension on TranslationsSv {
 			'companionRemote.pairing.connectionTimedOut' => 'Anslutningen tog för lång tid. Använd samma nätverk på båda enheter.',
 			'companionRemote.pairing.sessionNotFound' => 'Enhet hittades inte. Kontrollera att Vibe körs på värden.',
 			'companionRemote.pairing.authFailed' => 'Autentisering misslyckades. Båda enheter behöver samma Plex-konto.',
+			_ => null,
+		} ?? switch (path) {
 			'companionRemote.pairing.failedToConnect' => ({required Object error}) => 'Kunde inte ansluta: ${error}',
 			'companionRemote.remote.disconnectConfirm' => 'Vill du koppla från fjärrsessionen?',
 			'companionRemote.remote.reconnecting' => 'Återansluter...',
@@ -2947,8 +2963,6 @@ extension on TranslationsSv {
 			'companionRemote.remote.retryNow' => 'Försök nu',
 			'companionRemote.remote.tabRemote' => 'Fjärrkontroll',
 			'companionRemote.remote.tabPlay' => 'Spela',
-			_ => null,
-		} ?? switch (path) {
 			'companionRemote.remote.tabMore' => 'Mer',
 			'companionRemote.remote.menu' => 'Meny',
 			'companionRemote.remote.tabNavigation' => 'Fliknavigering',

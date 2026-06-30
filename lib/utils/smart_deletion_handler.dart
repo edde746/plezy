@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../i18n/strings.g.dart';
 import '../providers/download_provider.dart';
 import '../widgets/deletion_progress_dialog.dart';
+import 'dialogs.dart';
 
 class SmartDeletionHandler {
   /// Execute deletion with smart progress dialog
@@ -35,7 +36,7 @@ class SmartDeletionHandler {
   }
 
   static void _showProgressDialog(BuildContext context, DownloadProvider _, String globalKey) {
-    showDialog(
+    showScopedDialog<void>(
       context: context,
       barrierDismissible: false,
       builder: (dialogContext) => Consumer<DownloadProvider>(

@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'media/ids.dart';
 import 'dart:io' show Directory, Platform, ProcessInfo;
 import 'dart:ui' show AppExitResponse;
 import 'package:flutter/foundation.dart';
@@ -14,6 +13,8 @@ import 'package:sentry_flutter/sentry_flutter.dart';
 import 'connection/connection.dart';
 import 'connection/connection_bootstrap.dart';
 import 'connection/connection_registry.dart';
+import 'navigation/profile_navigation_scope.dart';
+import 'navigation/profile_session_screen.dart';
 import 'profiles/active_profile_binder.dart';
 import 'profiles/active_profile_provider.dart';
 import 'profiles/profile.dart';
@@ -22,7 +23,6 @@ import 'profiles/profile_connection_registry.dart';
 import 'profiles/profile_registry.dart';
 import 'mixins/mounted_set_state_mixin.dart';
 import 'profiles/plex_home_service.dart';
-import 'screens/main_screen.dart';
 import 'screens/auth_screen.dart';
 import 'screens/profile/pin_entry_dialog.dart';
 import 'screens/profile/profile_switch_screen.dart';
@@ -41,23 +41,14 @@ import 'services/gamepad_service.dart';
 import 'services/trakt/trakt_scrobble_service.dart';
 import 'services/trakt/trakt_sync_service.dart';
 import 'services/trackers/tracker_coordinator.dart';
-import 'providers/trakt_account_provider.dart';
-import 'providers/trackers_provider.dart';
 import 'providers/user_profile_provider.dart';
 import 'providers/multi_server_provider.dart';
 import 'providers/theme_provider.dart';
-import 'providers/hidden_libraries_provider.dart';
-import 'providers/libraries_provider.dart';
-import 'providers/discover_provider.dart';
-import 'providers/playback_state_provider.dart';
 import 'providers/download_provider.dart';
 import 'providers/offline_mode_provider.dart';
 import 'providers/offline_watch_provider.dart';
-import 'providers/watch_state_store.dart';
-import 'providers/companion_remote_provider.dart';
 import 'providers/shader_provider.dart';
 import 'utils/snackbar_helper.dart';
-import 'watch_together/providers/watch_together_provider.dart';
 import 'services/multi_server_manager.dart';
 import 'services/offline_watch_sync_service.dart';
 import 'services/data_aggregation_service.dart';
@@ -76,7 +67,6 @@ import 'utils/media_server_http_client.dart';
 import 'utils/orientation_helper.dart';
 import 'utils/watch_state_notifier.dart';
 import 'i18n/strings.g.dart';
-import 'media/media_server_client.dart';
 import 'focus/input_mode_tracker.dart';
 import 'focus/key_event_utils.dart';
 import 'package:intl/date_symbol_data_local.dart';
@@ -415,7 +405,6 @@ void _registerShaderLicenses() {
   });
 }
 
-final RouteObserver<PageRoute> routeObserver = RouteObserver<PageRoute>();
 final rootNavigatorKey = GlobalKey<NavigatorState>();
 
 @visibleForTesting
@@ -424,10 +413,10 @@ bool shouldEnterOfflineModeAfterStartupBind({required bool bindingSucceeded, req
 }
 
 /// Top-level PIN prompt used by [ActiveProfileBinder] when it runs above the
-/// per-screen widget tree. Routes through [rootNavigatorKey] so the dialog
-/// renders correctly whether the binder fires from the splash, MainScreen,
-/// or any future host. Returns `null` when no Navigator is available yet
-/// (early boot, post-dispose) so the binder treats it as "PIN cancelled".
+/// profile-scoped widget tree. Routes through the app-global
+/// [rootNavigatorKey] so the dialog survives profile-session remounts. Returns
+/// `null` when no Navigator is available yet (early boot, post-dispose) so the
+/// binder treats it as "PIN cancelled".
 Future<String?> _rootPinPrompt(Profile profile, {String? errorMessage}) {
   final ctx = rootNavigatorKey.currentContext;
   if (ctx == null) return Future.value(null);
@@ -856,98 +845,18 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
         ),
         ChangeNotifierProvider(create: (context) => ThemeProvider()),
         // Shader presets are app-global — deliberately outside the
-        // profile-scoped subtree below.
+        // profile-scoped session in ProfileSessionScreen.
         ChangeNotifierProvider(create: (context) => ShaderProvider()),
       ],
-      // Profile boundary: everything below is profile-scoped BY TREE
-      // POSITION. Switching the active profile changes the KeyedSubtree key,
-      // which disposes and recreates the inner providers and the whole app
-      // shell — including navigation, so routes showing the previous
-      // profile's content cannot survive into the next. A provider belongs in
-      // the inner list when its state is per-profile; app-global state
-      // (theme, shader presets, downloads, server manager) stays above.
-      // Shared singletons that span profiles (DownloadProvider's sync rules,
-      // OfflineWatchSyncService) keep their explicit setActiveProfileId
-      // wiring instead.
-      child: Consumer<ActiveProfileProvider>(
-        builder: (context, activeProfile, _) {
-          final activeId = activeProfile.activeId;
-          return KeyedSubtree(
-            key: ValueKey<String?>(activeId),
-            child: MultiProvider(
-              providers: [
-                ChangeNotifierProxyProvider<MultiServerProvider, WatchStateStore>(
-                  create: (_) => WatchStateStore(),
-                  update: (_, multiServer, previous) {
-                    final provider = previous ?? WatchStateStore();
-                    provider.setActiveProfileId(activeId);
-                    provider.setActiveClientScopesByServer({
-                      for (final serverId in multiServer.serverManager.serverIds)
-                        serverId: multiServer.serverManager.getClient(ServerId(serverId))?.cacheServerId,
-                    });
-                    return provider;
-                  },
-                ),
-                // Tracker accounts hydrate for the active profile on create —
-                // the subtree remount on profile switch is the rebind.
-                ChangeNotifierProvider(
-                  create: (context) {
-                    final provider = TraktAccountProvider();
-                    unawaited(
-                      provider.onActiveProfileChanged(activeId).catchError((Object e, StackTrace s) {
-                        appLogger.w('Trakt profile hydrate failed', error: e, stackTrace: s);
-                      }),
-                    );
-                    return provider;
-                  },
-                ),
-                ChangeNotifierProvider(
-                  create: (context) {
-                    final provider = TrackersProvider();
-                    unawaited(
-                      provider.onActiveProfileChanged(activeId).catchError((Object e, StackTrace s) {
-                        appLogger.w('Trackers profile hydrate failed', error: e, stackTrace: s);
-                      }),
-                    );
-                    return provider;
-                  },
-                ),
-                ChangeNotifierProvider(
-                  create: (context) => HiddenLibrariesProvider(storageService: context.read<StorageService>()),
-                  lazy: true,
-                ),
-                ChangeNotifierProvider(
-                  create: (context) => LibrariesProvider(
-                    storageService: context.read<StorageService>(),
-                    multiServer: context.read<MultiServerProvider>(),
-                  ),
-                ),
-                ChangeNotifierProvider(
-                  create: (context) {
-                    final activeProfile = context.read<ActiveProfileProvider>();
-                    return DiscoverProvider(
-                      context.read<MultiServerProvider>(),
-                      context.read<HiddenLibrariesProvider>(),
-                      context.read<LibrariesProvider>(),
-                      isProfileBinding: () => activeProfile.isBinding,
-                    );
-                  },
-                ),
-                ChangeNotifierProvider(create: (context) => PlaybackStateProvider()),
-                ChangeNotifierProvider(create: (context) => WatchTogetherProvider()),
-                ChangeNotifierProvider(create: (context) => CompanionRemoteProvider()),
-              ],
-              child: const _AppShell(),
-            ),
-          );
-        },
-      ),
+      child: const _AppShell(),
     );
   }
 }
 
-/// The app shell below the profile boundary: theme consumer, translations,
-/// global input handling, and the MaterialApp.
+/// App-global shell: theme consumer, translations, root input handling, and the
+/// root MaterialApp. Profile-scoped providers/navigation live in
+/// [ProfileSessionScreen], not here, so root auth/PIN/global dialogs survive a
+/// profile switch.
 class _AppShell extends StatelessWidget {
   const _AppShell();
 
@@ -961,7 +870,14 @@ class _AppShell extends StatelessWidget {
               return Listener(
                 onPointerDown: (event) {
                   if ((event.buttons & kBackMouseButton) != 0) {
-                    rootNavigatorKey.currentState?.maybePop();
+                    unawaited(() async {
+                      final rootNavigator = rootNavigatorKey.currentState;
+                      if (rootNavigator?.canPop() ?? false) {
+                        await rootNavigator?.maybePop();
+                        return;
+                      }
+                      await profileNavigationRegistry.maybePopProfileRoute();
+                    }());
                   }
                 },
                 behavior: HitTestBehavior.translucent,
@@ -973,7 +889,7 @@ class _AppShell extends StatelessWidget {
                     darkTheme: themeProvider.darkTheme,
                     themeMode: themeProvider.materialThemeMode,
                     navigatorKey: rootNavigatorKey,
-                    navigatorObservers: [routeObserver, BackKeySuppressorObserver()],
+                    navigatorObservers: [BackKeySuppressorObserver()],
                     home: const OrientationAwareSetup(),
                     // Siri Remote select + gamepad A report as
                     // LogicalKeyboardKey.{select,gameButtonA} which aren't
@@ -1110,7 +1026,7 @@ class _SetupScreenState extends State<SetupScreen> with MountedSetStateMixin {
     _setStatus(t.common.startingOfflineMode);
     await context.read<DownloadProvider>().ensureInitialized();
     if (!mounted) return;
-    unawaited(Navigator.pushReplacement(context, fadeRoute(const MainScreen(isOfflineMode: true))));
+    unawaited(Navigator.pushReplacement(context, fadeRoute(const ProfileSessionScreen(isOfflineMode: true))));
   }
 
   Future<void> _loadSavedCredentials() async {
@@ -1313,7 +1229,7 @@ class _SetupScreenState extends State<SetupScreen> with MountedSetStateMixin {
     await downloadProvider.refreshMetadataFromCache();
     if (!mounted) return;
 
-    unawaited(Navigator.pushReplacement(context, fadeRoute(MainScreen(initialPromptHandled: shouldPrompt))));
+    unawaited(Navigator.pushReplacement(context, fadeRoute(ProfileSessionScreen(initialPromptHandled: shouldPrompt))));
   }
 
   /// Wire per-server status updates from [MultiServerManager] into the

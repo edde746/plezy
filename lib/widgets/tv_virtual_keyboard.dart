@@ -84,9 +84,10 @@ TvVirtualKeyboardHandle? showTvVirtualKeyboard({
   if (!PlatformDetector.isTV()) return null;
 
   // A hand-built DialogRoute instead of showDialog so the caller gets a
-  // handle it can close when the owning field unmounts. Mirrors showDialog's
-  // root-navigator, captured-themes and closed-loop traversal defaults.
-  final navigator = Navigator.of(context, rootNavigator: true);
+  // handle it can close when the owning field unmounts. Use the nearest
+  // navigator so profile-owned keyboards are disposed with their profile
+  // session.
+  final navigator = Navigator.of(context);
   final route = DialogRoute<void>(
     context: context,
     barrierDismissible: true,

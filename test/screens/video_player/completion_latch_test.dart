@@ -2,7 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:vibe_stream/screens/video_player/completion_latch.dart';
 
 void main() {
-  CompletionLatch latch() => CompletionLatch(triggerWindowMs: 1000, rearmWindowMs: 2000);
+  CompletionLatch latch() => CompletionLatch(rearmWindowMs: 2000);
 
   CompletionLatchSignal tick(
     CompletionLatch l,
@@ -19,19 +19,18 @@ void main() {
     );
   }
 
-  test('signals completed once inside the trigger window, then stays quiet while latched', () {
+  test('position ticks near the end do not signal completion', () {
     final l = latch();
     expect(tick(l, 58000), CompletionLatchSignal.none);
-    expect(tick(l, 59200), CompletionLatchSignal.completed);
-    // The handler latches on success; until then ticks keep retrying.
-    expect(tick(l, 59300), CompletionLatchSignal.completed);
-    l.latch();
-    expect(tick(l, 59400), CompletionLatchSignal.none);
+    expect(tick(l, 59200), CompletionLatchSignal.none);
+    expect(tick(l, 60000), CompletionLatchSignal.none);
   });
 
-  test('does not fire while a prompt is visible', () {
+  test('stays quiet while latched at EOF', () {
     final l = latch();
-    expect(tick(l, 59500, promptVisible: true), CompletionLatchSignal.none);
+    l.latch();
+    expect(tick(l, 59400), CompletionLatchSignal.none);
+    expect(l.triggered, isTrue);
   });
 
   test('ignores ticks with no known duration', () {
@@ -42,14 +41,14 @@ void main() {
   test('re-arms only after moving back past the rearm window', () {
     final l = latch();
     l.latch();
-    // Inside the hysteresis gap (between trigger and rearm windows): no flap.
+    // Inside the rearm window: no flap.
     expect(tick(l, 58500), CompletionLatchSignal.none);
     expect(l.triggered, isTrue);
     // Clearly out of the end region: re-armed.
     expect(tick(l, 50000), CompletionLatchSignal.rearmed);
     expect(l.triggered, isFalse);
-    // Returning to the end can fire again.
-    expect(tick(l, 59500), CompletionLatchSignal.completed);
+    // Returning to the end stays quiet until the player emits EOF.
+    expect(tick(l, 59500), CompletionLatchSignal.none);
   });
 
   test('refuses to re-arm while a prompt or countdown is active', () {

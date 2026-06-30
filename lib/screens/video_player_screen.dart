@@ -22,6 +22,7 @@ import '../media/media_server_user_profile.dart';
 import '../media/media_item.dart';
 import '../media/media_item_types.dart';
 import '../media/media_server_client.dart';
+import '../media/episode_collection.dart';
 import '../media/live_tv_support.dart';
 import '../models/livetv_channel.dart';
 import '../services/live_seek_accumulator.dart';
@@ -65,7 +66,6 @@ import '../services/shader_service.dart';
 import '../providers/shader_provider.dart';
 import '../providers/user_profile_provider.dart';
 import '../utils/app_logger.dart';
-import '../utils/codec_utils.dart';
 import '../utils/dialogs.dart';
 import '../utils/log_redaction_manager.dart';
 import '../utils/live_tv_player_navigation.dart';
@@ -168,37 +168,24 @@ _PlaybackOpenTiming _playbackOpenTiming({
   );
 }
 
-/// Builds a [TrackPreferencePersister] that fans the language-preference +
-/// stream-selection writes out to a [PlexClient] resolved lazily on each
-/// call. Returns a no-op-on-null persister so the [TrackManager] doesn't
-/// have to import [PlexClient] itself; the resolver returning null (e.g.
-/// when the active server is Jellyfin) makes the call short-circuit.
+/// Builds a [TrackPreferencePersister] that writes the per-episode stream
+/// selection out to a [PlexClient] resolved lazily on each call. Returns a
+/// no-op-on-null persister so the [TrackManager] doesn't have to import
+/// [PlexClient] itself; the resolver returning null (e.g. when the active
+/// server is Jellyfin) makes the call short-circuit.
+///
+/// Only the current episode's part is touched — we deliberately do NOT write
+/// the show-wide audio/subtitle language default (#1393): an in-player track
+/// change should not silently rewrite the whole series' Plex prefs. The
+/// explicit path for that lives in the metadata-edit UI.
 TrackPreferencePersister _plexTrackPersister(PlexClient? Function() resolve) {
-  return ({
-    required String id,
-    required int partId,
-    required String trackType,
-    String? languageCode,
-    int? streamID,
-  }) async {
+  return ({required int partId, required String trackType, int? streamID}) async {
+    if (streamID == null) return;
     final client = resolve();
     if (client == null) return;
-    final futures = <Future>[];
-    if (languageCode != null && (trackType == 'subtitle' || languageCode.isNotEmpty)) {
-      futures.add(
-        trackType == 'audio'
-            ? client.setMetadataPreferences(id, audioLanguage: languageCode)
-            : client.setMetadataPreferences(id, subtitleLanguage: languageCode),
-      );
-    }
-    if (streamID != null) {
-      futures.add(
-        trackType == 'audio'
-            ? client.selectStreams(partId, audioStreamID: streamID, allParts: true)
-            : client.selectStreams(partId, subtitleStreamID: streamID, allParts: true),
-      );
-    }
-    await Future.wait(futures);
+    await (trackType == 'audio'
+        ? client.selectStreams(partId, audioStreamID: streamID, allParts: true)
+        : client.selectStreams(partId, subtitleStreamID: streamID, allParts: true));
   };
 }
 
@@ -350,10 +337,9 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   Timer? _autoPlayTimer;
   int _autoPlayCountdown = 5;
 
-  // End-of-video Play Next latch. Fires within 1s of the end; re-arms only
-  // once playback is more than 2s from the end — the gap is hysteresis so a
-  // position parked at the boundary can't oscillate (see CompletionLatch).
-  final CompletionLatch _completionLatch = CompletionLatch(triggerWindowMs: 1000, rearmWindowMs: 2000);
+  // End-of-video Play Next latch. Completion comes from the player EOF signal;
+  // position ticks only re-arm once playback is more than 2s from the end.
+  final CompletionLatch _completionLatch = CompletionLatch(rearmWindowMs: 2000);
 
   late final FocusNode _playNextCancelFocusNode;
   late final FocusNode _playNextConfirmFocusNode;
@@ -982,6 +968,10 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   /// Handle back button press
   /// For non-host participants in Watch Together, shows leave session confirmation
   Future<void> _handleBackButton() async {
+    if (_showPlayNextDialog || _showStillWatchingPrompt) {
+      _dismissPlaybackPromptForBack();
+      return;
+    }
     if (_isHandlingBack) return;
     _isHandlingBack = true;
     try {

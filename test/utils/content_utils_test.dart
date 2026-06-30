@@ -65,14 +65,11 @@ void main() {
       expect(_episode(viewCount: 1).shouldHideSpoiler, isFalse);
     });
 
-    test('false when >= 50% watched', () {
-      expect(_episode(viewOffsetMs: 5000, durationMs: 10000).shouldHideSpoiler, isFalse);
-      expect(_episode(viewOffsetMs: 8000, durationMs: 10000).shouldHideSpoiler, isFalse);
-    });
-
-    test('true when < 50% watched', () {
+    test('true while in progress until the episode is marked watched', () {
       expect(_episode(viewOffsetMs: 1000, durationMs: 10000).shouldHideSpoiler, isTrue);
       expect(_episode(viewOffsetMs: 4999, durationMs: 10000).shouldHideSpoiler, isTrue);
+      expect(_episode(viewOffsetMs: 5000, durationMs: 10000).shouldHideSpoiler, isTrue);
+      expect(_episode(viewOffsetMs: 8000, durationMs: 10000).shouldHideSpoiler, isTrue);
     });
 
     test('true when no progress at all (unwatched)', () {

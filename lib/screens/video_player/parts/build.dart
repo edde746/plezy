@@ -57,14 +57,10 @@ extension _VideoPlayerBuildMethods on VideoPlayerScreenState {
   }
 
   List<MediaSubtitleTrack> _sourceSubtitleTracksForControls() {
-    final tracks = _currentMediaInfo?.subtitleTracks ?? const <MediaSubtitleTrack>[];
-    if (!_isTranscoding) return tracks;
-    return tracks
-        .where((track) {
-          final hasKey = track.key != null && track.key!.isNotEmpty;
-          return hasKey || CodecUtils.isTextSubtitleCodec(track.codec);
-        })
-        .toList(growable: false);
+    return selectableSourceSubtitleTracks(
+      _currentMediaInfo?.subtitleTracks ?? const <MediaSubtitleTrack>[],
+      isTranscoding: _isTranscoding,
+    );
   }
 
   Widget _buildLoadingSpinner() {
@@ -291,6 +287,9 @@ extension _VideoPlayerBuildMethods on VideoPlayerScreenState {
                         onPlayPauseRequested: () => _playOrPauseWithPlaybackIntent(player!),
                         onSeekCompleted: _notifyWatchTogetherSeek,
                         onBack: _handleBackButton,
+                        onDismissPrompt: (_showPlayNextDialog || _showStillWatchingPrompt)
+                            ? _dismissPlaybackPromptForBack
+                            : null,
                         onReachedEnd: ({skipAutoPlayCountdown = false}) =>
                             _onVideoCompleted(true, skipAutoPlayCountdown: skipAutoPlayCountdown),
                         canControl: canControl,

@@ -1198,29 +1198,6 @@ class PlexClient
     );
   }
 
-  /// Set per-media language preferences (audio and subtitle)
-  /// For TV shows, use grandparentRatingKey to set preference for the entire series
-  /// For movies, use the movie's ratingKey
-  Future<bool> setMetadataPreferences(String ratingKey, {String? audioLanguage, String? subtitleLanguage}) async {
-    final queryParams = <String, dynamic>{};
-    if (audioLanguage != null) {
-      queryParams['audioLanguage'] = audioLanguage;
-    }
-    if (subtitleLanguage != null) {
-      queryParams['subtitleLanguage'] = subtitleLanguage;
-    }
-
-    // If no preferences to set, return early
-    if (queryParams.isEmpty) {
-      return true;
-    }
-
-    return _wrapBoolApiCall(
-      () => _http.put('/library/metadata/$ratingKey/prefs', queryParameters: queryParams),
-      'Failed to set metadata preferences',
-    );
-  }
-
   /// Select specific audio and subtitle streams for playback
   /// This updates which streams are "selected" in the media metadata
   /// Uses the part ID from media info for accurate stream selection
@@ -1633,12 +1610,19 @@ class PlexClient
     );
   }
 
-  /// Update playback progress
+  /// Update playback progress.
+  ///
+  /// [sessionIdentifier] is the playback's `X-Plex-Session-Identifier` — the
+  /// same value the (transcode) stream request carries. Sending it on the
+  /// timeline lets the server correlate this report with the active session,
+  /// so the dashboard reports the real stream decision (e.g. Transcode) instead
+  /// of falling back to a generic Direct Play / Original entry.
   Future<void> updateProgress(
     String ratingKey, {
     required int time,
     required String state, // 'playing', 'paused', 'stopped', 'buffering'
     int? duration,
+    String? sessionIdentifier,
     PlaybackReportMetadata report = const PlaybackReportMetadata.live(),
   }) async {
     final response = await _http.post(
@@ -1653,6 +1637,7 @@ class PlexClient
         if (report.recordedAt != null) 'updated': report.recordedAt!.millisecondsSinceEpoch ~/ 1000,
         if (report.willContinue != null) 'continuing': report.willContinue! ? 1 : 0,
       },
+      headers: {'X-Plex-Session-Identifier': ?sessionIdentifier},
     );
     // Surface non-2xx instead of swallowing — progress is the cornerstone
     // of resume/Continue Watching, so silent failures hurt the user later.
@@ -1791,16 +1776,18 @@ class PlexClient
   /// Append sort options that Plex honors via the `sort=` parameter but does not
   /// advertise in `/library/sections/{id}/sorts`.
   ///
-  /// Plays (`viewCount`) and the signed-in user's rating (`userRating`) both
-  /// sort correctly on movie/show libraries, so we surface them client-side
-  /// (mirroring how the Jellyfin sort list is built). De-duped by key so we
-  /// never double up if a future Plex version starts advertising them.
+  /// Date Added (`addedAt`), plays (`viewCount`), and the signed-in user's
+  /// rating (`userRating`) sort correctly on movie/show libraries, so we
+  /// surface them client-side (mirroring how the Jellyfin sort list is built).
+  /// De-duped by key so we never double up if a future Plex version starts
+  /// advertising them.
   List<MediaSort> _withExtraSorts(List<MediaSort> base, String? libraryType) {
     final type = libraryType?.toLowerCase();
     if (type != 'movie' && type != 'show') return base;
 
     final keys = base.map((s) => s.key).toSet();
     final extras = [
+      _dateAddedSort(),
       MediaSort(
         key: 'viewCount',
         descKey: 'viewCount:desc',
@@ -1818,18 +1805,22 @@ class PlexClient
     return [...base, ...extras];
   }
 
+  MediaSort _dateAddedSort() {
+    return MediaSort(
+      key: 'addedAt',
+      descKey: 'addedAt:desc',
+      title: t.libraries.sortLabels.dateAdded,
+      defaultDirection: 'desc',
+    );
+  }
+
   /// Build fallback sort options based on library type.
   ///
   /// If [libraryType] is null, returns generic sorts without the show-specific options.
   List<MediaSort> _getFallbackSorts(String? libraryType) {
     final fallbackSorts = <MediaSort>[
       MediaSort(key: 'titleSort', title: t.libraries.sortLabels.title, defaultDirection: 'asc'),
-      MediaSort(
-        key: 'addedAt',
-        descKey: 'addedAt:desc',
-        title: t.libraries.sortLabels.dateAdded,
-        defaultDirection: 'desc',
-      ),
+      _dateAddedSort(),
     ];
 
     // Add "Latest Episode Air Date" only for TV show libraries
@@ -2712,12 +2703,14 @@ class PlexClient
     String? librarySectionTitle,
   }) async {
     try {
-      final machineId = config.machineIdentifier ?? await getMachineIdentifier();
-      if (machineId == null) {
-        throw Exception('Could not get server machine identifier');
-      }
-
-      final uri = 'server://$machineId/com.plexapp.plugins.library/library/metadata/$showRatingKey/children';
+      // Build the queue from the show's `/allLeaves` (every episode) rather than
+      // `/children` (its seasons). Plex flattens `/children` season-by-season,
+      // which clumps the whole Specials folder together; `/allLeaves` makes Plex
+      // order the queue by the show's aired episode order, so Specials interleave
+      // between regular episodes the way Plex's own client plays them. `/children`
+      // otherwise strands interleaved Specials ahead of S01, so sequential
+      // auto-play walks the season and never reaches them (#1416).
+      final uri = '${await buildMetadataUri(showRatingKey)}/allLeaves';
       return await createPlayQueue(
         uri: uri,
         type: 'video',
@@ -3057,9 +3050,13 @@ class PlexClient
     int? offsetMs,
   }) {
     final isOriginal = preset.isOriginal;
-    final selectedEmbeddedTextSubtitle = _shouldEmbedSubtitleInHttpTranscode(selectedSubtitleTrack)
+    final selectedEmbeddedSubtitle = _shouldEmbedSubtitleInHttpTranscode(selectedSubtitleTrack)
         ? selectedSubtitleTrack
         : null;
+    // Only text subtitles get `advancedSubtitles=text`; image subtitles
+    // (PGS/VOBSUB) are copied into the MKV as-is for the player to render.
+    final embedSubtitleAsText =
+        selectedEmbeddedSubtitle != null && _canTranscodeSubtitleAsText(selectedEmbeddedSubtitle);
 
     // Build the client profile from scratch via X-Plex-Client-Profile-Extra.
     // We use the `Generic` base platform (see [_transcodePlatformName]) which
@@ -3113,12 +3110,13 @@ class PlexClient
       'directStreamAudio': '0',
       'mediaBufferSize': '102400',
       'session': transcodeSessionId,
-      // Embed selected text subtitles in the MKV stream. Bitmap subtitles and
-      // unselected tracks stay at `none` so the server cannot burn them into
-      // the video.
-      'subtitles': selectedEmbeddedTextSubtitle != null ? 'embedded' : 'none',
-      if (selectedEmbeddedTextSubtitle != null) 'subtitleStreamID': selectedEmbeddedTextSubtitle.id.toString(),
-      if (selectedEmbeddedTextSubtitle != null) 'advancedSubtitles': 'text',
+      // Embed the selected subtitle in the MKV stream: text codecs are
+      // converted to text, image codecs (PGS/VOBSUB) are copied as-is and
+      // rendered by the player — never burned into the video. Unselected tracks
+      // and keyed sidecars stay at `none`.
+      'subtitles': selectedEmbeddedSubtitle != null ? 'embedded' : 'none',
+      if (selectedEmbeddedSubtitle != null) 'subtitleStreamID': selectedEmbeddedSubtitle.id.toString(),
+      if (embedSubtitleAsText) 'advancedSubtitles': 'text',
       // Preserve source timestamps for the HTTP/MKV stream so player seeks and
       // sidecar subtitles stay aligned with Plex source time.
       'copyts': '1',
@@ -3419,6 +3417,7 @@ class PlexClient
             isTranscoding: true,
             activeAudioStreamId: resolvedAudioId,
             playMethod: 'Transcode',
+            playSessionId: options.sessionIdentifier,
             selectedMediaIndex: data.selectedMediaIndex,
           );
         }
@@ -3438,6 +3437,7 @@ class PlexClient
           isTranscoding: false,
           fallbackReason: fallbackReason,
           playMethod: 'DirectPlay',
+          playSessionId: options.sessionIdentifier,
           selectedMediaIndex: data.selectedMediaIndex,
         );
       }
@@ -3449,6 +3449,7 @@ class PlexClient
         externalSubtitles: _buildExternalSubtitles(data.mediaInfo),
         isOffline: false,
         playMethod: 'DirectPlay',
+        playSessionId: options.sessionIdentifier,
         selectedMediaIndex: data.selectedMediaIndex,
       );
     } catch (e) {
@@ -3510,7 +3511,7 @@ class PlexClient
   bool _shouldEmbedSubtitleInHttpTranscode(MediaSubtitleTrack? track) {
     if (track == null) return false;
     if (track.key != null && track.key!.isNotEmpty) return false;
-    return _canTranscodeSubtitleAsText(track);
+    return CodecUtils.isEmbeddableSubtitleCodec(track.codec);
   }
 
   SubtitleTrack _subtitleTrackFromMediaTrack(MediaSubtitleTrack track, String url) {
@@ -3527,8 +3528,8 @@ class PlexClient
   }
 
   /// Build subtitle sidecars for Plex transcode playback. Only real keyed
-  /// sidecars are loaded externally; selected embedded text subtitles are
-  /// carried by the main HTTP/MKV stream.
+  /// sidecars are loaded externally; selected embedded subtitles (text or
+  /// image) are carried by the main HTTP/MKV stream.
   List<SubtitleTrack> _buildTranscodeSidecarSubtitles(MediaSourceInfo? mediaInfo) {
     if (mediaInfo == null) return const [];
     if (config.token == null) {
@@ -4083,7 +4084,13 @@ class PlexClient
     String? mediaSourceId,
     int? audioStreamIndex,
     int? subtitleStreamIndex,
-  }) => updateProgress(itemId, time: position.inMilliseconds, state: 'playing', duration: duration?.inMilliseconds);
+  }) => updateProgress(
+    itemId,
+    time: position.inMilliseconds,
+    state: 'playing',
+    duration: duration?.inMilliseconds,
+    sessionIdentifier: playSessionId,
+  );
 
   @override
   Future<void> reportPlaybackProgress({
@@ -4101,6 +4108,7 @@ class PlexClient
     time: position.inMilliseconds,
     state: isPaused ? 'paused' : 'playing',
     duration: duration.inMilliseconds,
+    sessionIdentifier: playSessionId,
   );
 
   @override
@@ -4116,6 +4124,7 @@ class PlexClient
     time: position.inMilliseconds,
     state: 'stopped',
     duration: duration?.inMilliseconds,
+    sessionIdentifier: playSessionId,
     report: report,
   );
 

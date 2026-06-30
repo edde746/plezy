@@ -155,4 +155,26 @@ void main() {
       expect(flexibleList(<dynamic>[]), <dynamic>[]);
     });
   });
+
+  group('flexibleStringList', () {
+    test('passes a list of strings through, dropping non-strings', () {
+      expect(flexibleStringList(<dynamic>['tt1', 2, 'tt3', null]), ['tt1', 'tt3']);
+    });
+
+    test('wraps a single string in a list', () {
+      expect(flexibleStringList('tt1'), ['tt1']);
+    });
+
+    test('returns null for null input', () {
+      expect(flexibleStringList(null), isNull);
+    });
+
+    test('returns null for an empty list', () {
+      expect(flexibleStringList(<dynamic>[]), isNull);
+    });
+
+    test('returns null when no element is a string', () {
+      expect(flexibleStringList(<dynamic>[1, 2, 3]), isNull);
+    });
+  });
 }

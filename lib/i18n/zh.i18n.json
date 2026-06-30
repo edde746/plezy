@@ -118,6 +118,9 @@
     "continueWatchingAction": "继续观看操作",
     "continueWatchingPlay": "播放",
     "continueWatchingDetails": "打开详情",
+    "episodeAction": "剧集操作",
+    "episodePlay": "播放",
+    "episodeDetails": "打开详情",
     "useGlobalHubs": "使用主页布局",
     "useGlobalHubsDescription": "显示统一主页中心。否则使用资料库推荐。",
     "showServerNameOnHubs": "在推荐栏显示服务器名称",
@@ -259,6 +262,8 @@
     "displaySwitchDelay": "显示切换延迟",
     "tunneledPlayback": "通道化播放",
     "tunneledPlaybackDescription": "使用视频隧道。若 HDR 播放出现黑屏，请禁用。",
+    "audioPassthrough": "音频直通",
+    "audioPassthroughDescription": "将 Dolby/DTS 音频不经重新编码直接发送到功放或电视，保留环绕声。如果没有声音，请关闭。",
     "dvConversionMode": "Dolby Vision 转换",
     "dvConversionModeDescription": "选择 ExoPlayer 如何处理 Dolby Vision Profile 7 文件。",
     "dvConversionAuto": "自动",
@@ -771,7 +776,8 @@
       "studio": "工作室",
       "random": "随机",
       "dateShared": "共享日期",
-      "latestEpisodeAirDate": "最新一集播出日期"
+      "latestEpisodeAirDate": "最新一集播出日期",
+      "lastEpisodeDateAdded": "最新一集添加日期"
     }
   },
   "about": {
@@ -1027,6 +1033,7 @@
     "unwatchedOnly": "仅未观看",
     "nextNUnwatched": "接下来 ${count} 集未观看",
     "customAmount": "自定义数量...",
+    "includeSpecials": "包含特别篇",
     "howManyEpisodes": "下载几集？",
     "itemsQueued": "${count} 个项目已加入下载队列",
     "keepSynced": "保持同步",

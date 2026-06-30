@@ -247,6 +247,9 @@ class _TranslationsSettingsNl extends TranslationsSettingsEn {
 	@override String get continueWatchingAction => 'Actie voor Doorgaan met kijken';
 	@override String get continueWatchingPlay => 'Afspelen';
 	@override String get continueWatchingDetails => 'Details openen';
+	@override String get episodeAction => 'Afleveringsactie';
+	@override String get episodePlay => 'Afspelen';
+	@override String get episodeDetails => 'Details openen';
 	@override String get useGlobalHubs => 'Startlayout gebruiken';
 	@override String get useGlobalHubsDescription => 'Toon gecombineerde home-hubs. Anders bibliotheekaanbevelingen gebruiken.';
 	@override String get showServerNameOnHubs => 'Servernaam tonen bij hubs';
@@ -388,6 +391,8 @@ class _TranslationsSettingsNl extends TranslationsSettingsEn {
 	@override String get displaySwitchDelay => 'Vertraging bij schermwisseling';
 	@override String get tunneledPlayback => 'Getunnelde weergave';
 	@override String get tunneledPlaybackDescription => 'Gebruik videotunneling. Schakel uit als HDR-afspelen zwart beeld geeft.';
+	@override String get audioPassthrough => 'Audio-doorvoer';
+	@override String get audioPassthroughDescription => 'Stuur Dolby/DTS-audio zonder hercodering naar je receiver of tv en behoud surroundgeluid. Schakel uit als je geen geluid hebt.';
 	@override String get dvConversionMode => 'Dolby Vision-conversie';
 	@override String get dvConversionModeDescription => 'Kies hoe ExoPlayer Dolby Vision Profile 7-bestanden verwerkt.';
 	@override String get dvConversionAuto => 'Auto';
@@ -1285,6 +1290,7 @@ class _TranslationsDownloadsNl extends TranslationsDownloadsEn {
 	@override String get unwatchedOnly => 'Alleen onbekeken';
 	@override String nextNUnwatched({required Object count}) => 'Volgende ${count} onbekeken';
 	@override String get customAmount => 'Aangepast aantal...';
+	@override String get includeSpecials => 'Specials opnemen';
 	@override String get howManyEpisodes => 'Hoeveel afleveringen?';
 	@override String itemsQueued({required Object count}) => '${count} items in downloadwachtrij';
 	@override String get keepSynced => 'Gesynchroniseerd houden';
@@ -1755,6 +1761,7 @@ class _TranslationsLibrariesSortLabelsNl extends TranslationsLibrariesSortLabels
 	@override String get random => 'Willekeurig';
 	@override String get dateShared => 'Gedeeld op';
 	@override String get latestEpisodeAirDate => 'Laatste afleveringsuitzending';
+	@override String get lastEpisodeDateAdded => 'Datum laatst toegevoegde aflevering';
 }
 
 // Path: companionRemote.session
@@ -2029,6 +2036,9 @@ extension on TranslationsNl {
 			'settings.continueWatchingAction' => 'Actie voor Doorgaan met kijken',
 			'settings.continueWatchingPlay' => 'Afspelen',
 			'settings.continueWatchingDetails' => 'Details openen',
+			'settings.episodeAction' => 'Afleveringsactie',
+			'settings.episodePlay' => 'Afspelen',
+			'settings.episodeDetails' => 'Details openen',
 			'settings.useGlobalHubs' => 'Startlayout gebruiken',
 			'settings.useGlobalHubsDescription' => 'Toon gecombineerde home-hubs. Anders bibliotheekaanbevelingen gebruiken.',
 			'settings.showServerNameOnHubs' => 'Servernaam tonen bij hubs',
@@ -2170,6 +2180,8 @@ extension on TranslationsNl {
 			'settings.displaySwitchDelay' => 'Vertraging bij schermwisseling',
 			'settings.tunneledPlayback' => 'Getunnelde weergave',
 			'settings.tunneledPlaybackDescription' => 'Gebruik videotunneling. Schakel uit als HDR-afspelen zwart beeld geeft.',
+			'settings.audioPassthrough' => 'Audio-doorvoer',
+			'settings.audioPassthroughDescription' => 'Stuur Dolby/DTS-audio zonder hercodering naar je receiver of tv en behoud surroundgeluid. Schakel uit als je geen geluid hebt.',
 			'settings.dvConversionMode' => 'Dolby Vision-conversie',
 			'settings.dvConversionModeDescription' => 'Kies hoe ExoPlayer Dolby Vision Profile 7-bestanden verwerkt.',
 			'settings.dvConversionAuto' => 'Auto',
@@ -2428,13 +2440,13 @@ extension on TranslationsNl {
 			'messages.serverLimitTitle' => 'Afspelen mislukt',
 			'messages.serverLimitBody' => 'Serverfout (HTTP 500). Waarschijnlijk weigerde een bandbreedte-/transcodeerlimiet deze sessie. Vraag de eigenaar dit aan te passen.',
 			'messages.logsUploaded' => 'Logs geüpload',
+			_ => null,
+		} ?? switch (path) {
 			'messages.logsUploadFailed' => 'Uploaden van logs mislukt',
 			'messages.logId' => 'Log-ID',
 			'subtitlingStyling.text' => 'Tekst',
 			'subtitlingStyling.border' => 'Rand',
 			'subtitlingStyling.background' => 'Achtergrond',
-			_ => null,
-		} ?? switch (path) {
 			'subtitlingStyling.fontSize' => 'Lettergrootte',
 			'subtitlingStyling.textColor' => 'Tekstkleur',
 			'subtitlingStyling.borderSize' => 'Rand grootte',
@@ -2638,6 +2650,7 @@ extension on TranslationsNl {
 			'libraries.sortLabels.random' => 'Willekeurig',
 			'libraries.sortLabels.dateShared' => 'Gedeeld op',
 			'libraries.sortLabels.latestEpisodeAirDate' => 'Laatste afleveringsuitzending',
+			'libraries.sortLabels.lastEpisodeDateAdded' => 'Datum laatst toegevoegde aflevering',
 			'about.title' => 'Over',
 			'about.openSourceLicenses' => 'Open Source licenties',
 			'about.versionLabel' => ({required Object version}) => 'Versie ${version}',
@@ -2870,6 +2883,7 @@ extension on TranslationsNl {
 			'downloads.unwatchedOnly' => 'Alleen onbekeken',
 			'downloads.nextNUnwatched' => ({required Object count}) => 'Volgende ${count} onbekeken',
 			'downloads.customAmount' => 'Aangepast aantal...',
+			'downloads.includeSpecials' => 'Specials opnemen',
 			'downloads.howManyEpisodes' => 'Hoeveel afleveringen?',
 			'downloads.itemsQueued' => ({required Object count}) => '${count} items in downloadwachtrij',
 			'downloads.keepSynced' => 'Gesynchroniseerd houden',
@@ -2940,6 +2954,8 @@ extension on TranslationsNl {
 			'companionRemote.pairing.connectionTimedOut' => 'Verbinding verlopen. Gebruik hetzelfde netwerk op beide apparaten.',
 			'companionRemote.pairing.sessionNotFound' => 'Apparaat niet gevonden. Zorg dat Vibe op de host draait.',
 			'companionRemote.pairing.authFailed' => 'Authenticatie mislukt. Beide apparaten hebben hetzelfde Plex-account nodig.',
+			_ => null,
+		} ?? switch (path) {
 			'companionRemote.pairing.failedToConnect' => ({required Object error}) => 'Kan niet verbinden: ${error}',
 			'companionRemote.remote.disconnectConfirm' => 'Wil je de verbinding met de externe sessie verbreken?',
 			'companionRemote.remote.reconnecting' => 'Opnieuw verbinden...',
@@ -2947,8 +2963,6 @@ extension on TranslationsNl {
 			'companionRemote.remote.retryNow' => 'Nu opnieuw proberen',
 			'companionRemote.remote.tabRemote' => 'Afstandsbediening',
 			'companionRemote.remote.tabPlay' => 'Afspelen',
-			_ => null,
-		} ?? switch (path) {
 			'companionRemote.remote.tabMore' => 'Meer',
 			'companionRemote.remote.menu' => 'Menu',
 			'companionRemote.remote.tabNavigation' => 'Tabnavigatie',

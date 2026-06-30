@@ -89,7 +89,7 @@ class PlayerChromeController extends ChangeNotifier implements ValueListenable<b
       shouldNotify = true;
     }
     if (shouldNotify) notifyListeners();
-    if (restartAutoHide) startAutoHide();
+    if (restartAutoHide) _startAutoHideForCurrentPlaybackState();
   }
 
   PlayerChromeFocusTarget? takeFocusTarget() {
@@ -126,7 +126,7 @@ class PlayerChromeController extends ChangeNotifier implements ValueListenable<b
     _lastPointerActivityMs = nowMs;
 
     show(restartAutoHide: false);
-    restartAutoHideIfPlaying();
+    _startAutoHideForCurrentPlaybackState();
     return true;
   }
 
@@ -156,9 +156,7 @@ class PlayerChromeController extends ChangeNotifier implements ValueListenable<b
     }
   }
 
-  void restartAutoHideIfPlaying() {
-    if (_playing) startAutoHide();
-  }
+  void restartAutoHideForCurrentPlaybackState() => _startAutoHideForCurrentPlaybackState();
 
   void hideForPointerExit() {
     if (_holds.contains(PlayerChromeHold.pip)) return;

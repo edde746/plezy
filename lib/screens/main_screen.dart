@@ -23,12 +23,12 @@ import '../utils/platform_detector.dart';
 import '../utils/snackbar_helper.dart';
 import '../utils/update_dialog.dart';
 import '../utils/video_player_navigation.dart';
-import '../main.dart';
 import '../mixins/mounted_set_state_mixin.dart';
 import '../mixins/refreshable.dart';
 import '../widgets/overlay_sheet.dart';
 import '../mixins/tab_visibility_aware.dart';
 import '../navigation/navigation_tabs.dart';
+import '../navigation/profile_navigation_scope.dart';
 import '../profiles/active_profile_binder.dart';
 import '../profiles/active_profile_provider.dart';
 import '../profiles/plex_home_service.dart';
@@ -100,6 +100,20 @@ bool shouldRenderMainScreenOffline({
 }
 
 @visibleForTesting
+List<NavigationTab> mainScreenBottomNavigationTabs({
+  required List<NavigationTab> visibleTabs,
+  required bool isMobile,
+  required bool isOffline,
+  required NavigationTabId currentTab,
+}) {
+  if (!isMobile) return visibleTabs;
+  return visibleTabs.where((tab) {
+    if (tab.id != NavigationTabId.settings) return true;
+    return isOffline || currentTab == NavigationTabId.settings;
+  }).toList();
+}
+
+@visibleForTesting
 bool shouldPassTvosMenuToSystem({
   required bool isAppleTV,
   required bool isShowingProfileSelection,
@@ -116,6 +130,30 @@ bool shouldPassTvosMenuToSystem({
       isRouteCurrent &&
       hasVisibleTabs &&
       isCurrentTabRoot;
+}
+
+@visibleForTesting
+enum ProfileInvalidationAction { none, waitForProfileSwitch, invalidateNow }
+
+@visibleForTesting
+ProfileInvalidationAction profileInvalidationAction({
+  required String? previousProfileId,
+  required String? currentProfileId,
+  required bool wasBindingPreviously,
+  required bool isBindingNow,
+  required bool hasPendingProfileSwitchInvalidation,
+  required String? pendingProfileSwitchInvalidationId,
+}) {
+  if (currentProfileId != previousProfileId) {
+    return ProfileInvalidationAction.waitForProfileSwitch;
+  }
+  if (hasPendingProfileSwitchInvalidation && pendingProfileSwitchInvalidationId == currentProfileId) {
+    return ProfileInvalidationAction.none;
+  }
+  if (wasBindingPreviously && !isBindingNow) {
+    return ProfileInvalidationAction.invalidateNow;
+  }
+  return ProfileInvalidationAction.none;
 }
 
 class MainScreen extends StatefulWidget {
@@ -161,6 +199,7 @@ class _MainScreenState extends State<MainScreen>
 
   OfflineModeProvider? _offlineModeProvider;
   MultiServerProvider? _multiServerProvider;
+  RouteObserver<PageRoute<dynamic>>? _profileRouteObserver;
   bool _lastHasLiveTv = false;
 
   /// Whether a reconnection attempt is in progress
@@ -203,6 +242,8 @@ class _MainScreenState extends State<MainScreen>
   // we only invalidate on id change and the libraries sidebar keeps
   // stale entries until the user switches profiles.
   bool _wasBindingPrev = false;
+  bool _hasPendingProfileSwitchInvalidation = false;
+  String? _pendingProfileSwitchInvalidationId;
 
   /// Subscription to MultiServerManager status changes. Used to resume any
   /// queued downloads as soon as a Plex client comes online for the first
@@ -462,10 +503,20 @@ class _MainScreenState extends State<MainScreen>
     if (activeProfile == null) return;
     final id = activeProfile.activeId;
     final isBindingNow = activeProfile.isBinding;
+    final action = profileInvalidationAction(
+      previousProfileId: _lastSeenProfileId,
+      currentProfileId: id,
+      wasBindingPreviously: _wasBindingPrev,
+      isBindingNow: isBindingNow,
+      hasPendingProfileSwitchInvalidation: _hasPendingProfileSwitchInvalidation,
+      pendingProfileSwitchInvalidationId: _pendingProfileSwitchInvalidationId,
+    );
 
-    if (id != _lastSeenProfileId) {
+    if (action == ProfileInvalidationAction.waitForProfileSwitch) {
       _lastSeenProfileId = id;
       _wasBindingPrev = isBindingNow;
+      _hasPendingProfileSwitchInvalidation = true;
+      _pendingProfileSwitchInvalidationId = id;
       // We're called inside the synchronous notify cascade *before* the
       // binder's listener has fired (registration order). At this exact
       // instant `_isBinding` is still false, so calling awaitBindingSettle
@@ -473,10 +524,22 @@ class _MainScreenState extends State<MainScreen>
       // listener gets to flip the flag first, then wait properly.
       unawaited(
         Future.microtask(() async {
+          final scheduledProfileId = id;
           if (!mounted) return;
           await activeProfile.awaitBindingSettle();
           if (!mounted) return;
-          await _invalidateAllScreens();
+          try {
+            if (_hasPendingProfileSwitchInvalidation &&
+                _pendingProfileSwitchInvalidationId == scheduledProfileId &&
+                activeProfile.activeId == scheduledProfileId) {
+              await _invalidateAllScreens();
+            }
+          } finally {
+            if (_hasPendingProfileSwitchInvalidation && _pendingProfileSwitchInvalidationId == scheduledProfileId) {
+              _hasPendingProfileSwitchInvalidation = false;
+              _pendingProfileSwitchInvalidationId = null;
+            }
+          }
         }),
       );
       return;
@@ -486,7 +549,7 @@ class _MainScreenState extends State<MainScreen>
     // (true → false transition). Fires after borrow / connection-removal
     // flows trigger ActiveProfileBinder.rebindIfActive, so the libraries
     // sidebar reflects the new server set without an app restart.
-    if (_wasBindingPrev && !isBindingNow) {
+    if (action == ProfileInvalidationAction.invalidateNow) {
       _wasBindingPrev = isBindingNow;
       unawaited(_invalidateAllScreens());
       return;
@@ -522,6 +585,7 @@ class _MainScreenState extends State<MainScreen>
     _setTvosMenuPassthrough(false);
     await Navigator.of(
       context,
+      rootNavigator: true,
     ).push(MaterialPageRoute(builder: (context) => const ProfileSwitchScreen(requireSelection: true)));
     if (!mounted) return;
     _isShowingProfileSelection = false;
@@ -569,9 +633,10 @@ class _MainScreenState extends State<MainScreen>
       };
       watchTogether.onHostExitedPlayer = () {
         appLogger.d('WatchTogether: Host exited player - exiting player for guest');
-        // Use rootNavigator to ensure we pop the video player even if nested
+        // Watch Together playback lives in the profile navigator; root-level
+        // dialogs/profile picker must not be affected.
         if (!mounted) return;
-        final navigator = Navigator.of(context, rootNavigator: true);
+        final navigator = Navigator.of(context);
         bool isVideoPlayerOnTop = false;
         navigator.popUntil((route) {
           if (route.isCurrent) {
@@ -687,7 +752,15 @@ class _MainScreenState extends State<MainScreen>
       _setupCompanionRemote();
     }
 
-    routeObserver.subscribe(this, ModalRoute.of(context) as PageRoute);
+    final scopedRouteObserver = ProfileNavigationScope.of(context).routeObserver;
+    if (scopedRouteObserver != _profileRouteObserver) {
+      _profileRouteObserver?.unsubscribe(this);
+      _profileRouteObserver = scopedRouteObserver;
+      final route = ModalRoute.of(context);
+      if (route is PageRoute<dynamic>) {
+        scopedRouteObserver.subscribe(this, route);
+      }
+    }
   }
 
   void _setupCompanionRemote() {
@@ -742,7 +815,7 @@ class _MainScreenState extends State<MainScreen>
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
-    routeObserver.unsubscribe(this);
+    _profileRouteObserver?.unsubscribe(this);
     if (PlatformDetector.isDesktopOS()) {
       windowManager.removeListener(this);
       windowManager.setPreventClose(false);
@@ -806,6 +879,7 @@ class _MainScreenState extends State<MainScreen>
     _setTvosMenuPassthrough(false);
     await Navigator.of(
       context,
+      rootNavigator: true,
     ).push(MaterialPageRoute(builder: (context) => const ProfileSwitchScreen(requireSelection: true)));
     if (!mounted) return;
     _isShowingProfileSelection = false;
@@ -1262,6 +1336,9 @@ class _MainScreenState extends State<MainScreen>
       appLogger.w('Failed to clear ApiCache on profile switch', error: e, stackTrace: st);
     }
 
+    await hiddenLibrariesProvider.refresh();
+    if (!mounted) return;
+
     librariesProvider.clear();
 
     if (multiServerProvider.serverManager.serverIds.isNotEmpty) {
@@ -1274,7 +1351,6 @@ class _MainScreenState extends State<MainScreen>
       await librariesProvider.refresh();
     }
 
-    unawaited(hiddenLibrariesProvider.refresh());
     playbackStateProvider.clearShuffle();
 
     if (_discoverKey.currentState case final FullRefreshable refreshable) {
@@ -1432,9 +1508,12 @@ class _MainScreenState extends State<MainScreen>
   }
 
   List<NavigationTab> _getBottomNavigationTabs(BuildContext context) {
-    final tabs = _getVisibleTabs(_isOffline);
-    if (!PlatformDetector.isMobile(context)) return tabs;
-    return tabs.where((tab) => tab.id != NavigationTabId.settings).toList();
+    return mainScreenBottomNavigationTabs(
+      visibleTabs: _getVisibleTabs(_isOffline),
+      isMobile: PlatformDetector.isMobile(context),
+      isOffline: _isOffline,
+      currentTab: _currentTab,
+    );
   }
 
   /// Get the GlobalKey for a given tab.
@@ -1637,7 +1716,7 @@ class _MainScreenState extends State<MainScreen>
         _handleMainBack();
       },
       child: ScaffoldMessenger(
-        key: mainScaffoldMessengerKey,
+        key: ProfileNavigationScope.of(context).mainScaffoldMessengerKey,
         child: Scaffold(
           body: _buildTickerAwareStack(),
           bottomNavigationBar: Column(

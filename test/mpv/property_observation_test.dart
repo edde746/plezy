@@ -3,6 +3,9 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:vibe_stream/mpv/player/platform/player_android.dart';
 import 'package:vibe_stream/mpv/player/player_base.dart';
 import 'package:vibe_stream/mpv/player/player_native.dart';
+import 'package:vibe_stream/services/settings_service.dart';
+
+import '../test_helpers/prefs.dart';
 
 /// Guards the channel contract: every property [PlayerBase.handlePropertyChange]
 /// depends on for core state must be registered by each backend at init.
@@ -11,6 +14,12 @@ import 'package:vibe_stream/mpv/player/player_native.dart';
 /// event stream after a backend switch.
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+
+  setUp(() async {
+    resetSharedPreferencesForTest();
+    SettingsService.resetForTesting();
+    await SettingsService.getInstance();
+  });
 
   const coreNames = {
     'time-pos',

@@ -247,6 +247,9 @@ class _TranslationsSettingsDa extends TranslationsSettingsEn {
 	@override String get continueWatchingAction => 'Handling for Fortsæt med at se';
 	@override String get continueWatchingPlay => 'Afspil';
 	@override String get continueWatchingDetails => 'Åbn detaljer';
+	@override String get episodeAction => 'Handling for afsnit';
+	@override String get episodePlay => 'Afspil';
+	@override String get episodeDetails => 'Åbn detaljer';
 	@override String get useGlobalHubs => 'Brug startlayout';
 	@override String get useGlobalHubsDescription => 'Vis samlet startsideindhold. Brug ellers biblioteksanbefalinger.';
 	@override String get showServerNameOnHubs => 'Vis servernavn på hubbe';
@@ -388,6 +391,8 @@ class _TranslationsSettingsDa extends TranslationsSettingsEn {
 	@override String get displaySwitchDelay => 'Forsinkelse ved skærmskift';
 	@override String get tunneledPlayback => 'Tunneleret afspilning';
 	@override String get tunneledPlaybackDescription => 'Brug videotunneling. Slå fra, hvis HDR-afspilning viser sort video.';
+	@override String get audioPassthrough => 'Lyd-passthrough';
+	@override String get audioPassthroughDescription => 'Send Dolby/DTS-lyd til din receiver eller dit TV uden genkodning, så surroundlyd bevares. Slå fra, hvis du ikke har lyd.';
 	@override String get dvConversionMode => 'Dolby Vision-konvertering';
 	@override String get dvConversionModeDescription => 'Vælg, hvordan ExoPlayer håndterer Dolby Vision Profile 7-filer.';
 	@override String get dvConversionAuto => 'Auto';
@@ -1285,6 +1290,7 @@ class _TranslationsDownloadsDa extends TranslationsDownloadsEn {
 	@override String get unwatchedOnly => 'Kun usete';
 	@override String nextNUnwatched({required Object count}) => 'Næste ${count} usete';
 	@override String get customAmount => 'Angiv antal...';
+	@override String get includeSpecials => 'Inkludér specials';
 	@override String get howManyEpisodes => 'Hvor mange episoder?';
 	@override String itemsQueued({required Object count}) => '${count} elementer sat i kø til download';
 	@override String get keepSynced => 'Hold synkroniseret';
@@ -1755,6 +1761,7 @@ class _TranslationsLibrariesSortLabelsDa extends TranslationsLibrariesSortLabels
 	@override String get random => 'Tilfældig';
 	@override String get dateShared => 'Delt dato';
 	@override String get latestEpisodeAirDate => 'Seneste episodes premieredato';
+	@override String get lastEpisodeDateAdded => 'Dato for senest tilføjede episode';
 }
 
 // Path: companionRemote.session
@@ -2029,6 +2036,9 @@ extension on TranslationsDa {
 			'settings.continueWatchingAction' => 'Handling for Fortsæt med at se',
 			'settings.continueWatchingPlay' => 'Afspil',
 			'settings.continueWatchingDetails' => 'Åbn detaljer',
+			'settings.episodeAction' => 'Handling for afsnit',
+			'settings.episodePlay' => 'Afspil',
+			'settings.episodeDetails' => 'Åbn detaljer',
 			'settings.useGlobalHubs' => 'Brug startlayout',
 			'settings.useGlobalHubsDescription' => 'Vis samlet startsideindhold. Brug ellers biblioteksanbefalinger.',
 			'settings.showServerNameOnHubs' => 'Vis servernavn på hubbe',
@@ -2170,6 +2180,8 @@ extension on TranslationsDa {
 			'settings.displaySwitchDelay' => 'Forsinkelse ved skærmskift',
 			'settings.tunneledPlayback' => 'Tunneleret afspilning',
 			'settings.tunneledPlaybackDescription' => 'Brug videotunneling. Slå fra, hvis HDR-afspilning viser sort video.',
+			'settings.audioPassthrough' => 'Lyd-passthrough',
+			'settings.audioPassthroughDescription' => 'Send Dolby/DTS-lyd til din receiver eller dit TV uden genkodning, så surroundlyd bevares. Slå fra, hvis du ikke har lyd.',
 			'settings.dvConversionMode' => 'Dolby Vision-konvertering',
 			'settings.dvConversionModeDescription' => 'Vælg, hvordan ExoPlayer håndterer Dolby Vision Profile 7-filer.',
 			'settings.dvConversionAuto' => 'Auto',
@@ -2428,13 +2440,13 @@ extension on TranslationsDa {
 			'messages.serverLimitTitle' => 'Afspilning mislykkedes',
 			'messages.serverLimitBody' => 'Serverfejl (HTTP 500). En båndbredde-/transkodningsgrænse afviste nok sessionen. Bed ejeren om at justere den.',
 			'messages.logsUploaded' => 'Logs uploadet',
+			_ => null,
+		} ?? switch (path) {
 			'messages.logsUploadFailed' => 'Kunne ikke uploade logs',
 			'messages.logId' => 'Log-ID',
 			'subtitlingStyling.text' => 'Tekst',
 			'subtitlingStyling.border' => 'Kant',
 			'subtitlingStyling.background' => 'Baggrund',
-			_ => null,
-		} ?? switch (path) {
 			'subtitlingStyling.fontSize' => 'Skriftstørrelse',
 			'subtitlingStyling.textColor' => 'Tekstfarve',
 			'subtitlingStyling.borderSize' => 'Kantstørrelse',
@@ -2638,6 +2650,7 @@ extension on TranslationsDa {
 			'libraries.sortLabels.random' => 'Tilfældig',
 			'libraries.sortLabels.dateShared' => 'Delt dato',
 			'libraries.sortLabels.latestEpisodeAirDate' => 'Seneste episodes premieredato',
+			'libraries.sortLabels.lastEpisodeDateAdded' => 'Dato for senest tilføjede episode',
 			'about.title' => 'Om',
 			'about.openSourceLicenses' => 'Open source-licenser',
 			'about.versionLabel' => ({required Object version}) => 'Version ${version}',
@@ -2870,6 +2883,7 @@ extension on TranslationsDa {
 			'downloads.unwatchedOnly' => 'Kun usete',
 			'downloads.nextNUnwatched' => ({required Object count}) => 'Næste ${count} usete',
 			'downloads.customAmount' => 'Angiv antal...',
+			'downloads.includeSpecials' => 'Inkludér specials',
 			'downloads.howManyEpisodes' => 'Hvor mange episoder?',
 			'downloads.itemsQueued' => ({required Object count}) => '${count} elementer sat i kø til download',
 			'downloads.keepSynced' => 'Hold synkroniseret',
@@ -2940,6 +2954,8 @@ extension on TranslationsDa {
 			'companionRemote.pairing.connectionTimedOut' => 'Forbindelsen fik timeout. Brug samme netværk på begge enheder.',
 			'companionRemote.pairing.sessionNotFound' => 'Enhed ikke fundet. Sørg for, at Vibe kører på værten.',
 			'companionRemote.pairing.authFailed' => 'Godkendelse mislykkedes. Begge enheder skal bruge samme Plex-konto.',
+			_ => null,
+		} ?? switch (path) {
 			'companionRemote.pairing.failedToConnect' => ({required Object error}) => 'Kunne ikke oprette forbindelse: ${error}',
 			'companionRemote.remote.disconnectConfirm' => 'Vil du afbryde fra fjernsessionen?',
 			'companionRemote.remote.reconnecting' => 'Genopretter forbindelse...',
@@ -2947,8 +2963,6 @@ extension on TranslationsDa {
 			'companionRemote.remote.retryNow' => 'Prøv igen nu',
 			'companionRemote.remote.tabRemote' => 'Fjernbetjening',
 			'companionRemote.remote.tabPlay' => 'Afspil',
-			_ => null,
-		} ?? switch (path) {
 			'companionRemote.remote.tabMore' => 'Mere',
 			'companionRemote.remote.menu' => 'Menu',
 			'companionRemote.remote.tabNavigation' => 'Fanenavigation',

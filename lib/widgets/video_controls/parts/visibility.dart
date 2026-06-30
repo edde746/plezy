@@ -63,8 +63,8 @@ extension _PlexVideoControlsVisibilityMethods on _PlexVideoControlsState {
 
   void _startHideTimer() => widget.chromeController.startAutoHide();
 
-  /// Restart the hide timer on user interaction (if video is playing)
-  void _restartHideTimerIfPlaying() => widget.chromeController.restartAutoHideIfPlaying();
+  /// Restart the hide timer on user interaction for the current playback state.
+  void _restartHideTimerForCurrentPlaybackState() => widget.chromeController.restartAutoHideForCurrentPlaybackState();
 
   void _handlePointerSignal(PointerSignalEvent event) {
     if (event is PointerScrollEvent && _keyboardService != null) {

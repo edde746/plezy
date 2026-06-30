@@ -59,6 +59,7 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
         if (Platform.isWindows) _matchDynamicRangeTile(),
         _displaySwitchDelayTile(),
         _tunneledPlaybackTile(),
+        if (PlatformDetector.supportsAudioPassthrough()) _audioPassthroughTile(),
         _dvConversionModeTile(),
         _bufferSizeTile(),
         _defaultQualityTile(),
@@ -273,6 +274,13 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
     icon: Symbols.hdr_on_rounded,
     title: t.settings.matchDynamicRange,
     subtitle: t.settings.matchDynamicRangeDescription,
+  );
+
+  Widget _audioPassthroughTile() => SettingSwitchTile(
+    pref: SettingsService.audioPassthrough,
+    icon: Symbols.surround_sound_rounded,
+    title: t.settings.audioPassthrough,
+    subtitle: t.settings.audioPassthroughDescription,
   );
 
   Widget _displaySwitchDelayTile() => SettingsBuilder(

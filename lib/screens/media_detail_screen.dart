@@ -5,7 +5,7 @@ import 'dart:io';
 import 'package:cached_network_image_ce/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
-import '../main.dart' show routeObserver;
+import '../navigation/profile_navigation_scope.dart';
 import '../services/image_cache_service.dart';
 import 'package:flutter/services.dart';
 import 'package:vibe_stream/utils/platform_detector.dart';
@@ -261,6 +261,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   bool _hasLoadedRelatedHubs = false;
   final _tvDetailRailKey = GlobalKey<TvBrowseRailState>();
   PageRoute<dynamic>? _route;
+  RouteObserver<PageRoute<dynamic>>? _routeObserver;
   late final ScrollController _scrollController;
   final ScrollController _extrasScrollController = ScrollController();
   bool _watchStateChanged = false;
@@ -662,10 +663,13 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    final routeObserver = ProfileNavigationScope.of(context).routeObserver;
     final route = ModalRoute.of(context);
-    if (route is! PageRoute<dynamic> || route == _route) return;
-    if (_route != null) routeObserver.unsubscribe(this);
+    if (route is! PageRoute<dynamic>) return;
+    if (route == _route && routeObserver == _routeObserver) return;
+    _routeObserver?.unsubscribe(this);
     _route = route;
+    _routeObserver = routeObserver;
     routeObserver.subscribe(this, route);
   }
 
@@ -771,7 +775,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
 
   @override
   void dispose() {
-    routeObserver.unsubscribe(this);
+    _routeObserver?.unsubscribe(this);
     _scrollController.dispose();
     _scrollOffset.dispose();
     _extrasScrollController.dispose();
@@ -3122,9 +3126,14 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
                       // Main content
                       SliverToBoxAdapter(
                         child: Padding(
-                          padding: .symmetric(
-                            horizontal: isTv ? TvLayoutConstants.horizontalInset : 16,
-                            vertical: isTv ? 8 : 16,
+                          // Reduced top inset keeps the Overview/first section
+                          // tight under the hero's action row (the hero already
+                          // contributes its own bottom inset above this).
+                          padding: .fromLTRB(
+                            isTv ? TvLayoutConstants.horizontalInset : 16,
+                            isTv ? 8 : 4,
+                            isTv ? TvLayoutConstants.horizontalInset : 16,
+                            isTv ? 8 : 16,
                           ),
                           child: Column(
                             crossAxisAlignment: .start,
@@ -3442,22 +3451,29 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
 
         final availableHeight = constraints.maxHeight.isFinite ? constraints.maxHeight : 264.0;
         final desiredLogoHeight = 220 * scale;
-        final minLogoHeight = 72 * scale;
+        final minLogoHeight = 60 * scale;
         final desiredLogoWidth = 790 * scale;
         final metadataLineHeight = 22 * scale;
+        final genreLineHeight = 22 * scale;
+        final genreGap = 6 * scale;
         final logoMetadataGap = 10 * scale;
-        final summaryGap = 10 * scale;
+        final summaryGap = 6 * scale;
         final summaryFontSize = availableHeight < 260 * scale ? 16.2 * scale : 18 * scale;
         final summaryLineHeight = summaryFontSize * 1.35;
         final actionHeight = _tvDetailActionSize * scale;
         final actionGap = 12 * scale;
         final hasDescription = description != null && description.isNotEmpty;
+        // Genres come from the show/movie, not the focused episode, so the line
+        // stays stable as episode rows gain focus.
+        final genres = metadata.genres ?? const <String>[];
+        final genreBlockHeight = genres.isEmpty ? 0.0 : genreGap + genreLineHeight;
         var summaryMaxLines = 0;
         var logoHeight = 0.0;
 
         for (var lines = hasDescription ? 3 : 0; lines >= 0; lines--) {
           final descriptionHeight = lines > 0 ? summaryGap + (summaryLineHeight * lines) : 0.0;
-          final reservedHeight = logoMetadataGap + metadataLineHeight + descriptionHeight + actionGap + actionHeight;
+          final reservedHeight =
+              logoMetadataGap + metadataLineHeight + genreBlockHeight + descriptionHeight + actionGap + actionHeight;
           final remainingForLogo = availableHeight - reservedHeight;
           if (remainingForLogo >= minLogoHeight || lines == 0) {
             summaryMaxLines = lines;
@@ -3471,6 +3487,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
         final contentHeight =
             (showLogo ? logoHeight + logoMetadataGap : 0) +
             metadataLineHeight +
+            genreBlockHeight +
             descriptionHeight +
             actionGap +
             actionHeight;
@@ -3509,6 +3526,26 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
                       height: metadataLineHeight,
                       child: Align(alignment: .centerLeft, child: _buildTvDetailMetadataLine(context, metadata, scale)),
                     ),
+                    if (genres.isNotEmpty) ...[
+                      SizedBox(height: genreGap),
+                      SizedBox(
+                        height: genreLineHeight,
+                        child: Align(
+                          alignment: .centerLeft,
+                          child: Text(
+                            genres.join('  •  '),
+                            maxLines: 1,
+                            overflow: .ellipsis,
+                            style: TextStyle(
+                              color: mutedForegroundColor,
+                              fontSize: 16 * scale,
+                              fontWeight: .w600,
+                              letterSpacing: 0.1,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
                     if (hasDescription && summaryMaxLines > 0) ...[
                       SizedBox(height: summaryGap),
                       SizedBox(
@@ -3650,7 +3687,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     if (lineMetadata.contentRating != null) addTextPart(formatContentRating(lineMetadata.contentRating!));
     if (lineMetadata.durationMs != null) addTextPart(formatDurationTextual(lineMetadata.durationMs!));
     if (lineMetadata.isEpisode && lineMetadata.originallyAvailableAt != null) {
-      addTextPart(formatFullDate(lineMetadata.originallyAvailableAt!));
+      addTextPart(formatAbbreviatedDate(lineMetadata.originallyAvailableAt!));
     } else if (lineMetadata.year != null) {
       addTextPart(lineMetadata.year.toString());
     }
@@ -4102,8 +4139,12 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
           bottom: 16,
           left: 0,
           right: 0,
+          // bottom: false — the hero is the top sliver, so the bottom safe-area
+          // inset would otherwise push the action row far up off the hero edge.
+          // Left/right stay enabled for the landscape notch.
           child: SafeArea(
             top: false,
+            bottom: false,
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: _buildHeroHeaderContent(context, metadata),
@@ -4131,13 +4172,24 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
           for (final label in buildMediaQualityLabels(metadata)) _buildMetadataChip(label),
           ..._buildRatingChips(metadata),
         ];
+        // Genres render on their own line below the metadata chips.
+        final genreChips = [for (final genre in metadata.genres ?? const <String>[]) _buildMetadataChip(genre)];
 
         final showActions = availableHeight >= actionHeight;
         final remainingAfterActions = availableHeight - (showActions ? actionHeight : 0);
         final showChips = chips.isNotEmpty && remainingAfterActions >= 88;
         final chipHeight = showChips ? (remainingAfterActions >= 170 ? 68.0 : 32.0) : 0.0;
         final chipActionGap = showChips && showActions ? (availableHeight < 180 ? 8.0 : 16.0) : 0.0;
-        final remainingForLogo = remainingAfterActions - chipHeight - chipActionGap;
+        // Reserve a dedicated genre row, but only when the logo still keeps room
+        // afterwards so the title isn't crowded out on short heroes.
+        const genreRowHeight = 32.0;
+        const genreGap = 8.0;
+        final showGenres =
+            showChips &&
+            genreChips.isNotEmpty &&
+            remainingAfterActions - chipHeight - chipActionGap - (genreRowHeight + genreGap) >= 52;
+        final genreBlockHeight = showGenres ? genreRowHeight + genreGap : 0.0;
+        final remainingForLogo = remainingAfterActions - chipHeight - chipActionGap - genreBlockHeight;
         final logoGap = remainingForLogo >= 52 && (showChips || showActions)
             ? (availableHeight < 180 ? 8.0 : 12.0)
             : 0.0;
@@ -4149,6 +4201,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
         final contentHeight =
             (showLogo ? logoHeight + effectiveLogoGap : 0.0) +
             chipHeight +
+            genreBlockHeight +
             chipActionGap +
             (showActions ? actionHeight : 0.0);
 
@@ -4192,6 +4245,19 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
                             ),
                           ),
                         ),
+                      if (showGenres) ...[
+                        const SizedBox(height: genreGap),
+                        ClipRect(
+                          child: ConstrainedBox(
+                            constraints: const BoxConstraints(maxHeight: genreRowHeight),
+                            child: Align(
+                              alignment: .bottomLeft,
+                              heightFactor: 1,
+                              child: Wrap(spacing: 8, runSpacing: 8, children: genreChips),
+                            ),
+                          ),
+                        ),
+                      ],
                       if (chipActionGap > 0) SizedBox(height: chipActionGap),
                       if (showActions) SizedBox(height: actionHeight, child: _buildActionButtons(metadata)),
                     ],

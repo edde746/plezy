@@ -41,6 +41,37 @@ void main() {
     expect(downResult, KeyEventResult.handled);
     expect(upResult, KeyEventResult.handled);
     expect(backs, 1);
+    await tester.pump();
+  });
+
+  testWidgets('tvOS remote back runs on key down for non-keyboard device types', (tester) async {
+    TvDetectionService.debugSetAppleTVOverride(true);
+    var backs = 0;
+
+    final downResult = handleBackKeyAction(
+      const KeyDownEvent(
+        physicalKey: PhysicalKeyboardKey.escape,
+        logicalKey: LogicalKeyboardKey.escape,
+        timeStamp: Duration.zero,
+        deviceType: ui.KeyEventDeviceType.directionalPad,
+      ),
+      () => backs++,
+    );
+
+    final upResult = handleBackKeyAction(
+      const KeyUpEvent(
+        physicalKey: PhysicalKeyboardKey.escape,
+        logicalKey: LogicalKeyboardKey.escape,
+        timeStamp: Duration.zero,
+        deviceType: ui.KeyEventDeviceType.directionalPad,
+      ),
+      () => backs++,
+    );
+
+    expect(downResult, KeyEventResult.handled);
+    expect(upResult, KeyEventResult.handled);
+    expect(backs, 1);
+    await tester.pump();
   });
 
   group('dpadKeyHandler trapHorizontalEdges', () {

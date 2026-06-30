@@ -29,6 +29,7 @@ import '../../../utils/provider_extensions.dart';
 import '../alpha_jump_bar.dart';
 import '../alpha_jump_helper.dart';
 import '../alpha_scroll_handle.dart';
+import '../library_browse_grouping.dart';
 import '../library_alpha_bar_strategy.dart';
 import '../library_alpha_scroll_metrics.dart';
 import '../library_filter_sort_loader.dart';
@@ -42,6 +43,7 @@ import '../../../widgets/media_card_list_layout.dart';
 import '../../../widgets/bottom_sheet_page_scaffold.dart';
 import '../../../widgets/overlay_sheet.dart';
 import '../../../mixins/library_tab_focus_mixin.dart';
+import '../../../services/plex_client.dart';
 import '../folder_tree_view.dart';
 import '../filters_bottom_sheet.dart';
 import '../sort_bottom_sheet.dart';
@@ -71,10 +73,12 @@ class LibraryBrowseTab extends BaseLibraryTab<MediaItem> {
   /// (filter/sort change, library reload, etc.). Lets the parent resync the
   /// outer floating header — see `_resetOuterScroll` in libraries_screen.
   final VoidCallback? onResetScroll;
+  final bool canGroupByFolders;
 
   const LibraryBrowseTab({
     super.key,
     required super.library,
+    required this.canGroupByFolders,
     super.viewMode,
     super.density,
     super.onDataLoaded,
@@ -303,6 +307,17 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
       _alphaStrategy = _createAlphaStrategy();
     }
     super.didUpdateWidget(oldWidget);
+    if (oldWidget.canGroupByFolders != widget.canGroupByFolders) {
+      final normalized = _normalizeGrouping(_selectedGrouping);
+      if (normalized != _selectedGrouping) {
+        _selectedGrouping = normalized;
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted) return;
+          unawaited(_loadItems());
+          unawaited(_loadFirstCharacters());
+        });
+      }
+    }
   }
 
   bool get _isJellyfinLibrary => widget.library.backend == MediaBackend.jellyfin;
@@ -537,7 +552,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
         // assigning the empty map is a no-op for Plex and a real payload for Jellyfin.
         _jellyfinFilterValues = loaded.cachedValues;
         _selectedFilters = Map.from(savedFilters);
-        _selectedGrouping = savedGrouping ?? _getDefaultGrouping();
+        _selectedGrouping = _normalizeGrouping(savedGrouping);
 
         // Restore sort
         if (savedSort != null) {
@@ -640,7 +655,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
     return filterParams;
   }
 
-  Future<void> _loadItems() async {
+  Future<void> _loadItems({bool preserveFocus = false}) async {
     final generation = _contentRequestId;
     setState(() {
       isLoading = true;
@@ -661,10 +676,12 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
       });
 
       hasLoadedData = true;
-      tryFocus();
+      if (!preserveFocus) {
+        tryFocus();
+      }
 
       // Notify parent
-      if (widget.onDataLoaded != null) {
+      if (!preserveFocus && widget.onDataLoaded != null) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
           widget.onDataLoaded!();
         });
@@ -702,10 +719,11 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
   }
 
   String _getDefaultGrouping() {
-    final type = widget.library.kind.id.toLowerCase();
-    if (type == 'show') return 'shows';
-    if (type == 'movie') return 'movies';
-    return 'all';
+    return defaultLibraryBrowseGrouping(widget.library);
+  }
+
+  String _normalizeGrouping(String? grouping) {
+    return normalizeLibraryBrowseGrouping(widget.library, grouping, canGroupByFolders: widget.canGroupByFolders);
   }
 
   String _getGroupingTypeId() {
@@ -724,21 +742,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
   }
 
   List<String> _getGroupingOptions() {
-    final type = widget.library.kind.id.toLowerCase();
-    // Folder browsing is gated by backend capability: Plex uses its section
-    // folder API, while Jellyfin uses direct non-recursive Items queries.
-    final canFolder =
-        context.tryGetMediaClientForServer(serverIdOrNull(widget.library.serverId))?.capabilities.folderGrouping ??
-        false;
-    if (type == 'show') {
-      return ['shows', 'seasons', 'episodes', if (canFolder) 'folders'];
-    } else if (type == 'movie') {
-      return ['movies', if (canFolder) 'folders'];
-    } else if (type == 'mixed') {
-      // Shared libraries: all video content types, no folders
-      return ['all', 'movies', 'shows', 'seasons', 'episodes'];
-    }
-    return ['all', if (canFolder) 'folders'];
+    return libraryBrowseGroupingOptions(widget.library, canGroupByFolders: widget.canGroupByFolders);
   }
 
   String _getGroupingLabel(String grouping) {
@@ -879,7 +883,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
   }
 
   void _handleGroupingSelection(String? value) {
-    if (!mounted || value == null || value == _selectedGrouping) return;
+    if (!mounted || value == null || value == _selectedGrouping || !_getGroupingOptions().contains(value)) return;
     setState(() {
       _selectedGrouping = value;
     });
@@ -906,6 +910,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
       selectedFilters: _selectedFilters,
       serverId: widget.library.serverId!,
       libraryKey: widget.library.globalKey,
+      loadFilterValues: _loadFilterValues,
       onBack: onBack,
       // Pre-populated values arrive only from backends that bundle them
       // with the category listing (Jellyfin's `/Items/Filters`). The empty
@@ -925,6 +930,18 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
         unawaited(_loadFirstCharacters());
       },
     );
+  }
+
+  Future<List<MediaFilterValue>> _loadFilterValues(MediaFilter filter) async {
+    if (!mounted) return const [];
+
+    final client = context.tryGetMediaClientForServer(serverIdOrNull(widget.library.serverId));
+    if (client is PlexClient) return client.getFilterValues(filter.key);
+
+    // Jellyfin's canonical filter values come from the cached `/Items/Filters`
+    // payload. If that payload missed a category, there is no neutral endpoint
+    // to query yet, so return an empty list instead of routing to a Plex-only API.
+    return const [];
   }
 
   void _showSortBottomSheet() {
@@ -1267,7 +1284,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
       isLoading = true;
     });
     _scheduleTopScrollReset();
-    _loadItems();
+    _loadItems(preserveFocus: _alphaJumpBarFocusNode.hasFocus && nextPrefix != null);
   }
 
   /// Scroll the current layout so that [index] is visible just below the chrome.

@@ -10,6 +10,7 @@ import '../../focus/focusable_text_field.dart';
 import '../../i18n/strings.g.dart';
 import '../../models/external_player_models.dart';
 import '../../services/settings_service.dart';
+import '../../utils/dialogs.dart';
 import '../../widgets/setting_tile.dart';
 import '../../widgets/settings_builder.dart';
 import '../../widgets/settings_page.dart';
@@ -119,7 +120,7 @@ class _PlayerTile extends StatelessWidget {
 typedef _CustomPlayerDialogResult = ({String name, String value, CustomPlayerType type});
 
 Future<void> _showAddCustomPlayerDialog(BuildContext context) async {
-  final result = await showDialog<_CustomPlayerDialogResult>(
+  final result = await showScopedDialog<_CustomPlayerDialogResult>(
     context: context,
     builder: (_) => const _AddCustomPlayerDialog(),
   );

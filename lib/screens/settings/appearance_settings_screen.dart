@@ -157,6 +157,7 @@ class AppearanceSettingsScreen extends StatelessWidget {
           title: t.settings.hideSpoilers,
           subtitle: t.settings.hideSpoilersDescription,
         ),
+        _episodeActionSelector(),
         _requireProfileSelection(),
         SettingSwitchTile(
           pref: SettingsService.autoHidePerformanceOverlay,
@@ -278,6 +279,18 @@ class AppearanceSettingsScreen extends StatelessWidget {
     encode: (v) => v,
   );
 
+  Widget _episodeActionSelector() => SettingSegmentedTile<EpisodeAction, EpisodeAction>(
+    pref: SettingsService.episodeAction,
+    icon: Symbols.tv_rounded,
+    title: t.settings.episodeAction,
+    segments: [
+      ButtonSegment(value: EpisodeAction.play, label: Text(t.settings.episodePlay)),
+      ButtonSegment(value: EpisodeAction.details, label: Text(t.settings.episodeDetails)),
+    ],
+    decode: (v) => v,
+    encode: (v) => v,
+  );
+
   // Sections offered as a startup destination, in display order. Live TV is
   // always listed; if no server provides it, startup falls back to Home.
   static const _startupSectionOptions = [
@@ -384,6 +397,6 @@ class AppearanceSettingsScreen extends StatelessWidget {
   }
 
   void _restartApp(BuildContext context) {
-    Navigator.pushNamedAndRemoveUntil(context, '/', (route) => false);
+    Navigator.of(context, rootNavigator: true).pushNamedAndRemoveUntil('/', (route) => false);
   }
 }

@@ -126,11 +126,9 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
   /// and merged in; already-loaded servers are not refetched.
   Future<void> syncToOnlineServers(Set<String> onlineServerIds) {
     if (onlineServerIds.isEmpty || isProfileBinding()) return Future<void>.value();
-    if (
-      _onDeckState == DiscoverLoadState.loaded &&
-      _hubsState == DiscoverLoadState.loaded &&
-      _fullyLoadedServerIds.containsAll(onlineServerIds)
-    ) {
+    if (_onDeckState == DiscoverLoadState.loaded &&
+        _hubsState == DiscoverLoadState.loaded &&
+        _fullyLoadedServerIds.containsAll(onlineServerIds)) {
       return Future<void>.value();
     }
     // Nothing (or a failed pass) to merge into yet — run the full load.
@@ -490,10 +488,12 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
 
         try {
           final settings = await SettingsService.getInstance();
-          final syncableOnDeck = onDeck.where((item) {
-            final serverId = item.serverId;
-            return serverId != null && _multiServer.getClientForServer(ServerId(serverId)) != null;
-          }).toList(growable: false);
+          final syncableOnDeck = onDeck
+              .where((item) {
+                final serverId = item.serverId;
+                return serverId != null && _multiServer.getClientForServer(ServerId(serverId)) != null;
+              })
+              .toList(growable: false);
           await SystemShelfService().syncFromContinueWatching(
             syncableOnDeck,
             _clientForShelfItem,

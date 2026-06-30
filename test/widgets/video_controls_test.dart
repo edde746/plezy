@@ -122,6 +122,31 @@ void main() {
     });
   });
 
+  group('selectableSourceSubtitleTracks', () {
+    MediaSubtitleTrack sub(int id, {String? codec, String? key}) =>
+        MediaSubtitleTrack(id: id, codec: codec, key: key, languageCode: 'eng', selected: false, forced: false);
+
+    test('returns the full list unchanged when not transcoding', () {
+      final tracks = [sub(1, codec: 'srt'), sub(2, codec: 'pgs'), sub(3, codec: 'weird')];
+      expect(selectableSourceSubtitleTracks(tracks, isTranscoding: false), same(tracks));
+    });
+
+    test('keeps text, image and keyed tracks while transcoding', () {
+      final text = sub(1, codec: 'srt');
+      final image = sub(2, codec: 'pgs');
+      final keyed = sub(3, codec: 'weird', key: '/library/streams/3');
+      final result = selectableSourceSubtitleTracks([text, image, keyed], isTranscoding: true);
+      expect(result, [text, image, keyed]);
+    });
+
+    test('drops non-keyed unsupported codecs while transcoding', () {
+      final text = sub(1, codec: 'ass');
+      final unsupported = sub(2, codec: 'weird');
+      final result = selectableSourceSubtitleTracks([text, unsupported], isTranscoding: true);
+      expect(result, [text]);
+    });
+  });
+
   group('shouldShowSkipMarkerButton', () {
     test('does not show before the first frame is rendered', () {
       expect(
@@ -186,19 +211,49 @@ void main() {
     });
   });
 
+  group('handlePromptDismissBackKey', () {
+    test('ignores back keys when no prompt is visible', () {
+      var dismissCount = 0;
+
+      final result = handlePromptDismissBackKey(_keyUp(LogicalKeyboardKey.goBack), null);
+
+      expect(result, KeyEventResult.ignored);
+      expect(dismissCount, 0);
+    });
+
+    test('consumes key down and dismisses on key up', () {
+      var dismissCount = 0;
+      void dismissPrompt() => dismissCount++;
+
+      final downResult = handlePromptDismissBackKey(_keyDown(LogicalKeyboardKey.goBack), dismissPrompt);
+      final upResult = handlePromptDismissBackKey(_keyUp(LogicalKeyboardKey.goBack), dismissPrompt);
+
+      expect(downResult, KeyEventResult.handled);
+      expect(upResult, KeyEventResult.handled);
+      expect(dismissCount, 1);
+    });
+
+    test('ignores non-back keys', () {
+      var dismissCount = 0;
+
+      final result = handlePromptDismissBackKey(_keyDown(LogicalKeyboardKey.arrowLeft), () => dismissCount++);
+
+      expect(result, KeyEventResult.ignored);
+      expect(dismissCount, 0);
+    });
+  });
+
   group('SkipMarkerButton', () {
-    testWidgets('tap cancels active auto-skip and performs skip', (tester) async {
+    testWidgets('tap activates skip', (tester) async {
       final focusNode = FocusNode();
       addTearDown(focusNode.dispose);
-      var cancelCount = 0;
-      var skipCount = 0;
+      var activateCount = 0;
 
       await _pumpSkipMarkerButton(
         tester,
         focusNode: focusNode,
         isAutoSkipActive: true,
-        onCancelAutoSkip: () => cancelCount++,
-        onPerformAutoSkip: () => skipCount++,
+        onActivate: () => activateCount++,
       );
 
       expect(find.text('Skip Intro (3)'), findsOneWidget);
@@ -206,22 +261,19 @@ void main() {
       await tester.tap(find.byType(InkWell));
       await tester.pump();
 
-      expect(cancelCount, 1);
-      expect(skipCount, 1);
+      expect(activateCount, 1);
     });
 
-    testWidgets('select cancels active auto-skip and performs skip', (tester) async {
+    testWidgets('select activates skip', (tester) async {
       final focusNode = FocusNode();
       addTearDown(focusNode.dispose);
-      var cancelCount = 0;
-      var skipCount = 0;
+      var activateCount = 0;
 
       await _pumpSkipMarkerButton(
         tester,
         focusNode: focusNode,
         isAutoSkipActive: true,
-        onCancelAutoSkip: () => cancelCount++,
-        onPerformAutoSkip: () => skipCount++,
+        onActivate: () => activateCount++,
       );
 
       focusNode.requestFocus();
@@ -229,23 +281,20 @@ void main() {
       await tester.sendKeyEvent(LogicalKeyboardKey.select);
       await tester.pump();
 
-      expect(cancelCount, 1);
-      expect(skipCount, 1);
+      expect(activateCount, 1);
     });
 
-    testWidgets('d-pad down moves focus; auto-skip cancellation is handled centrally', (tester) async {
+    testWidgets('d-pad down moves focus without activating', (tester) async {
       final focusNode = FocusNode();
       addTearDown(focusNode.dispose);
-      var cancelCount = 0;
-      var skipCount = 0;
+      var activateCount = 0;
       var focusDownCount = 0;
 
       await _pumpSkipMarkerButton(
         tester,
         focusNode: focusNode,
         isAutoSkipActive: true,
-        onCancelAutoSkip: () => cancelCount++,
-        onPerformAutoSkip: () => skipCount++,
+        onActivate: () => activateCount++,
         onFocusDown: () => focusDownCount++,
       );
 
@@ -254,25 +303,20 @@ void main() {
       await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
       await tester.pump();
 
-      // The button no longer cancels auto-skip itself — the player's central
-      // input handler cancels on any key. Arrow-down only moves focus.
-      expect(cancelCount, 0);
-      expect(skipCount, 0);
+      expect(activateCount, 0);
       expect(focusDownCount, 1);
     });
 
-    testWidgets('tap performs manual skip when auto-skip is inactive', (tester) async {
+    testWidgets('tap activates when auto-skip is inactive', (tester) async {
       final focusNode = FocusNode();
       addTearDown(focusNode.dispose);
-      var cancelCount = 0;
-      var skipCount = 0;
+      var activateCount = 0;
 
       await _pumpSkipMarkerButton(
         tester,
         focusNode: focusNode,
         isAutoSkipActive: false,
-        onCancelAutoSkip: () => cancelCount++,
-        onPerformAutoSkip: () => skipCount++,
+        onActivate: () => activateCount++,
       );
 
       expect(find.text('Skip Intro'), findsOneWidget);
@@ -280,8 +324,7 @@ void main() {
       await tester.tap(find.byType(InkWell));
       await tester.pump();
 
-      expect(cancelCount, 0);
-      expect(skipCount, 1);
+      expect(activateCount, 1);
     });
   });
 
@@ -686,6 +729,49 @@ void main() {
     });
   });
 
+  group('shouldSkipDuplicateTimelineSeek', () {
+    test('skips a matching non-transcode final seek', () {
+      expect(
+        shouldSkipDuplicateTimelineSeek(
+          isTranscoding: false,
+          lastDispatchedSeek: const Duration(minutes: 7, seconds: 30),
+          finalSeek: const Duration(minutes: 7, seconds: 30),
+        ),
+        isTrue,
+      );
+    });
+
+    test('does not skip matching transcode seek', () {
+      expect(
+        shouldSkipDuplicateTimelineSeek(
+          isTranscoding: true,
+          lastDispatchedSeek: const Duration(minutes: 7, seconds: 30),
+          finalSeek: const Duration(minutes: 7, seconds: 30),
+        ),
+        isFalse,
+      );
+    });
+
+    test('does not skip when no matching seek was already dispatched', () {
+      expect(
+        shouldSkipDuplicateTimelineSeek(
+          isTranscoding: false,
+          lastDispatchedSeek: const Duration(minutes: 7),
+          finalSeek: const Duration(minutes: 7, seconds: 30),
+        ),
+        isFalse,
+      );
+      expect(
+        shouldSkipDuplicateTimelineSeek(
+          isTranscoding: false,
+          lastDispatchedSeek: null,
+          finalSeek: const Duration(minutes: 7, seconds: 30),
+        ),
+        isFalse,
+      );
+    });
+  });
+
   group('SyncOffsetControl', () {
     testWidgets('uses 100ms slider steps without rendering tick marks', (tester) async {
       LocaleSettings.setLocaleSync(AppLocale.en);
@@ -723,12 +809,19 @@ void main() {
   });
 }
 
+KeyDownEvent _keyDown(LogicalKeyboardKey key) {
+  return KeyDownEvent(physicalKey: PhysicalKeyboardKey.escape, logicalKey: key, timeStamp: Duration.zero);
+}
+
+KeyUpEvent _keyUp(LogicalKeyboardKey key) {
+  return KeyUpEvent(physicalKey: PhysicalKeyboardKey.escape, logicalKey: key, timeStamp: Duration.zero);
+}
+
 Future<void> _pumpSkipMarkerButton(
   WidgetTester tester, {
   required FocusNode focusNode,
   required bool isAutoSkipActive,
-  required VoidCallback onCancelAutoSkip,
-  required VoidCallback onPerformAutoSkip,
+  required VoidCallback onActivate,
   VoidCallback? onFocusDown,
 }) {
   return tester.pumpWidget(
@@ -745,8 +838,7 @@ Future<void> _pumpSkipMarkerButton(
             autoSkipDelay: 5,
             autoSkipProgress: 0.4,
             focusNode: focusNode,
-            onCancelAutoSkip: onCancelAutoSkip,
-            onPerformAutoSkip: onPerformAutoSkip,
+            onActivate: onActivate,
             onFocusDown: onFocusDown ?? () {},
           ),
         ),

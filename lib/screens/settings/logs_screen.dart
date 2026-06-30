@@ -150,7 +150,7 @@ class _LogsScreenState extends State<LogsScreen> with MountedSetStateMixin {
       final id = (data as Map<String, dynamic>)['id'] as String;
 
       unawaited(
-        showDialog(
+        showScopedDialog<void>(
           context: context,
           builder: (ctx) => AlertDialog(
             title: Text(t.messages.logsUploaded),

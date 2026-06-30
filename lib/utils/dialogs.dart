@@ -13,6 +13,22 @@ import 'focus_utils.dart';
 const _buttonPadding = EdgeInsets.symmetric(horizontal: 18, vertical: 14);
 const _buttonShape = StadiumBorder();
 
+/// Shows a dialog on the nearest navigator instead of Flutter's default root
+/// navigator. Use this for profile/session-owned modal routes so they are
+/// disposed when the active profile session is replaced.
+Future<T?> showScopedDialog<T>({
+  required BuildContext context,
+  required WidgetBuilder builder,
+  bool barrierDismissible = true,
+}) {
+  return showDialog<T>(
+    context: context,
+    builder: builder,
+    barrierDismissible: barrierDismissible,
+    useRootNavigator: false,
+  );
+}
+
 /// Shows a confirmation dialog with consistent button sizing and autofocus.
 /// Returns true if user confirmed, false if cancelled.
 Future<bool> showConfirmDialog(
@@ -23,7 +39,7 @@ Future<bool> showConfirmDialog(
   String? cancelText,
   bool isDestructive = false,
 }) async {
-  final confirmed = await showDialog<bool>(
+  final confirmed = await showScopedDialog<bool>(
     context: context,
     builder: (dialogContext) {
       final colorScheme = Theme.of(dialogContext).colorScheme;
@@ -61,7 +77,7 @@ Future<bool> showConfirmDialog(
 /// Shows a non-dismissible loading-spinner dialog. Caller is responsible for
 /// closing it via `Navigator.pop(context)` when the work completes.
 void showLoadingDialog(BuildContext context) {
-  showDialog<void>(
+  showScopedDialog<void>(
     context: context,
     barrierDismissible: false,
     builder: (_) => const Center(child: CircularProgressIndicator()),
@@ -70,7 +86,7 @@ void showLoadingDialog(BuildContext context) {
 
 /// Shows the server-side 500 modal (bandwidth/transcoding limit rejection).
 Future<void> showServerLimitDialog(BuildContext context) async {
-  await showDialog<void>(
+  await showScopedDialog<void>(
     context: context,
     barrierDismissible: false,
     builder: (ctx) => AlertDialog(
@@ -122,7 +138,7 @@ Future<String?> showTextInputDialog(
   String? Function(String)? validator,
   bool allowEmpty = false,
 }) {
-  return showDialog<String>(
+  return showScopedDialog<String>(
     context: context,
     builder: (context) => _TextInputDialog(
       title: title,
@@ -147,7 +163,7 @@ Future<String?> showMultilineTextInputDialog(
   required String labelText,
   String? initialValue,
 }) {
-  return showDialog<String>(
+  return showScopedDialog<String>(
     context: context,
     builder: (context) => _MultilineTextInputDialog(title: title, labelText: labelText, initialValue: initialValue),
   );
@@ -306,20 +322,27 @@ class _TextInputDialogState extends State<_TextInputDialog>
 /// Returns the selected value, or null if cancelled. Each option's [icon] may
 /// be `null` to render a label-only row (useful when the choices are variants
 /// of the same thing and a repeated icon would just be noise).
+/// Optional persistent toggle rendered above the option rows. Its state is held
+/// by the dialog (toggling does not pop), and [onChanged] mirrors the new value
+/// out so the caller can read it once an option row is picked.
+typedef OptionPickerToggle = ({String label, IconData? icon, bool value, ValueChanged<bool> onChanged});
+
 Future<T?> showOptionPickerDialog<T>(
   BuildContext context, {
   required String title,
   required List<({IconData? icon, String label, T value})> options,
   Future<T?> Function(T value)? onBeforeClose,
+  OptionPickerToggle? toggle,
 }) {
   final focusFirstItem = InputModeTracker.isKeyboardMode(context);
-  return showDialog<T>(
+  return showScopedDialog<T>(
     context: context,
     builder: (context) => _OptionPickerDialog<T>(
       title: title,
       options: options,
       focusFirstItem: focusFirstItem,
       onBeforeClose: onBeforeClose,
+      toggle: toggle,
     ),
   );
 }
@@ -329,12 +352,14 @@ class _OptionPickerDialog<T> extends StatefulWidget {
   final List<({IconData? icon, String label, T value})> options;
   final bool focusFirstItem;
   final Future<T?> Function(T value)? onBeforeClose;
+  final OptionPickerToggle? toggle;
 
   const _OptionPickerDialog({
     required this.title,
     required this.options,
     this.focusFirstItem = false,
     this.onBeforeClose,
+    this.toggle,
   });
 
   @override
@@ -343,11 +368,13 @@ class _OptionPickerDialog<T> extends StatefulWidget {
 
 class _OptionPickerDialogState<T> extends State<_OptionPickerDialog<T>> {
   late final FocusNode _initialFocusNode;
+  late bool _toggleValue;
 
   @override
   void initState() {
     super.initState();
     _initialFocusNode = FocusNode(debugLabel: 'OptionPickerInitialFocus');
+    _toggleValue = widget.toggle?.value ?? false;
     if (widget.focusFirstItem) {
       FocusUtils.requestFocusAfterBuild(this, _initialFocusNode);
     }
@@ -361,27 +388,69 @@ class _OptionPickerDialogState<T> extends State<_OptionPickerDialog<T>> {
 
   @override
   Widget build(BuildContext context) {
+    const rowPadding = EdgeInsets.symmetric(horizontal: 12, vertical: 4);
+    const rowHorizontalTitleGap = 8.0;
+    const rowMinLeadingWidth = 24.0;
+    final toggle = widget.toggle;
+    void updateToggle(bool value) {
+      setState(() => _toggleValue = value);
+      toggle?.onChanged(value);
+    }
+
     return SimpleDialog(
       title: Text(widget.title),
+      insetPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 24),
+      constraints: const BoxConstraints(minWidth: 304),
       contentPadding: const EdgeInsets.symmetric(vertical: 8),
-      children: List.generate(widget.options.length, (index) {
-        final option = widget.options[index];
-        final icon = option.icon;
-        return FocusableListTile(
-          focusNode: index == 0 && widget.focusFirstItem ? _initialFocusNode : null,
-          leading: icon != null ? AppIcon(icon, fill: 1, size: 24) : null,
-          title: Text(option.label, style: Theme.of(context).textTheme.bodyLarge),
-          contentPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 4),
-          onTap: () async {
-            if (widget.onBeforeClose != null) {
-              final result = await widget.onBeforeClose!(option.value);
-              if (context.mounted) Navigator.pop(context, result);
-            } else {
-              Navigator.pop(context, option.value);
-            }
-          },
-        );
-      }),
+      children: [
+        if (toggle != null)
+          MergeSemantics(
+            child: FocusableListTile(
+              title: Row(
+                children: [
+                  if (toggle.icon != null) ...[
+                    AppIcon(toggle.icon!, fill: 1, size: 24),
+                    const SizedBox(width: rowHorizontalTitleGap),
+                  ],
+                  Expanded(
+                    child: Text(
+                      toggle.label,
+                      style: Theme.of(context).textTheme.bodyLarge,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  const SizedBox(width: rowHorizontalTitleGap),
+                  ExcludeFocus(
+                    child: Switch(value: _toggleValue, onChanged: updateToggle),
+                  ),
+                ],
+              ),
+              contentPadding: rowPadding,
+              onTap: () => updateToggle(!_toggleValue),
+            ),
+          ),
+        ...List.generate(widget.options.length, (index) {
+          final option = widget.options[index];
+          final icon = option.icon;
+          return FocusableListTile(
+            focusNode: index == 0 && widget.focusFirstItem ? _initialFocusNode : null,
+            leading: icon != null ? AppIcon(icon, fill: 1, size: 24) : null,
+            title: Text(option.label, style: Theme.of(context).textTheme.bodyLarge),
+            contentPadding: rowPadding,
+            horizontalTitleGap: rowHorizontalTitleGap,
+            minLeadingWidth: rowMinLeadingWidth,
+            onTap: () async {
+              if (widget.onBeforeClose != null) {
+                final result = await widget.onBeforeClose!(option.value);
+                if (context.mounted) Navigator.pop(context, result);
+              } else {
+                Navigator.pop(context, option.value);
+              }
+            },
+          );
+        }),
+      ],
     );
   }
 }

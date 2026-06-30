@@ -118,6 +118,9 @@
     "continueWatchingAction": "Actie voor Doorgaan met kijken",
     "continueWatchingPlay": "Afspelen",
     "continueWatchingDetails": "Details openen",
+    "episodeAction": "Afleveringsactie",
+    "episodePlay": "Afspelen",
+    "episodeDetails": "Details openen",
     "useGlobalHubs": "Startlayout gebruiken",
     "useGlobalHubsDescription": "Toon gecombineerde home-hubs. Anders bibliotheekaanbevelingen gebruiken.",
     "showServerNameOnHubs": "Servernaam tonen bij hubs",
@@ -259,6 +262,8 @@
     "displaySwitchDelay": "Vertraging bij schermwisseling",
     "tunneledPlayback": "Getunnelde weergave",
     "tunneledPlaybackDescription": "Gebruik videotunneling. Schakel uit als HDR-afspelen zwart beeld geeft.",
+    "audioPassthrough": "Audio-doorvoer",
+    "audioPassthroughDescription": "Stuur Dolby/DTS-audio zonder hercodering naar je receiver of tv en behoud surroundgeluid. Schakel uit als je geen geluid hebt.",
     "dvConversionMode": "Dolby Vision-conversie",
     "dvConversionModeDescription": "Kies hoe ExoPlayer Dolby Vision Profile 7-bestanden verwerkt.",
     "dvConversionAuto": "Auto",
@@ -771,7 +776,8 @@
       "studio": "Studio",
       "random": "Willekeurig",
       "dateShared": "Gedeeld op",
-      "latestEpisodeAirDate": "Laatste afleveringsuitzending"
+      "latestEpisodeAirDate": "Laatste afleveringsuitzending",
+      "lastEpisodeDateAdded": "Datum laatst toegevoegde aflevering"
     }
   },
   "about": {
@@ -1027,6 +1033,7 @@
     "unwatchedOnly": "Alleen onbekeken",
     "nextNUnwatched": "Volgende ${count} onbekeken",
     "customAmount": "Aangepast aantal...",
+    "includeSpecials": "Specials opnemen",
     "howManyEpisodes": "Hoeveel afleveringen?",
     "itemsQueued": "${count} items in downloadwachtrij",
     "keepSynced": "Gesynchroniseerd houden",

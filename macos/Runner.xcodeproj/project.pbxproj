@@ -882,8 +882,8 @@
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/MazeDev7/MPVKitAM";
 			requirement = {
-				kind = revision;
-				revision = 245b69dce22156e81b79c84cfcb748358b674e47;
+				kind = exactVersion;
+				version = 1.0.6;
 			};
 		};
 /* End XCRemoteSwiftPackageReference section */

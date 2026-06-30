@@ -118,6 +118,9 @@
     "continueWatchingAction": "Действие для «Продолжить просмотр»",
     "continueWatchingPlay": "Воспроизвести",
     "continueWatchingDetails": "Открыть сведения",
+    "episodeAction": "Действие для эпизодов",
+    "episodePlay": "Воспроизвести",
+    "episodeDetails": "Открыть сведения",
     "useGlobalHubs": "Использовать макет главной",
     "useGlobalHubsDescription": "Показывать единые разделы главной. Иначе использовать рекомендации библиотек.",
     "showServerNameOnHubs": "Показывать имя сервера в хабах",
@@ -259,6 +262,8 @@
     "displaySwitchDelay": "Задержка переключения дисплея",
     "tunneledPlayback": "Туннельное воспроизведение",
     "tunneledPlaybackDescription": "Использовать видеотуннелирование. Отключите, если HDR показывает черный экран.",
+    "audioPassthrough": "Сквозной вывод аудио",
+    "audioPassthroughDescription": "Передавать звук Dolby/DTS на ресивер или телевизор без перекодирования, сохраняя объёмный звук. Отключите, если нет звука.",
     "dvConversionMode": "Преобразование Dolby Vision",
     "dvConversionModeDescription": "Выберите, как ExoPlayer обрабатывает файлы Dolby Vision Profile 7.",
     "dvConversionAuto": "Авто",
@@ -771,7 +776,8 @@
       "studio": "Студия",
       "random": "Случайно",
       "dateShared": "Дата открытия доступа",
-      "latestEpisodeAirDate": "Дата выхода последнего эпизода"
+      "latestEpisodeAirDate": "Дата выхода последнего эпизода",
+      "lastEpisodeDateAdded": "Дата добавления последнего эпизода"
     }
   },
   "about": {
@@ -1027,6 +1033,7 @@
     "unwatchedOnly": "Только непросмотренные",
     "nextNUnwatched": "Следующие ${count} непросмотренных",
     "customAmount": "Указать количество...",
+    "includeSpecials": "Включить спецвыпуски",
     "howManyEpisodes": "Сколько эпизодов?",
     "itemsQueued": "${count} элементов добавлено в очередь загрузки",
     "keepSynced": "Синхронизировать",

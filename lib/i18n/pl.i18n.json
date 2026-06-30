@@ -118,6 +118,9 @@
     "continueWatchingAction": "Akcja Kontynuuj oglądanie",
     "continueWatchingPlay": "Odtwórz",
     "continueWatchingDetails": "Otwórz szczegóły",
+    "episodeAction": "Akcja odcinka",
+    "episodePlay": "Odtwórz",
+    "episodeDetails": "Otwórz szczegóły",
     "useGlobalHubs": "Użyj układu strony głównej",
     "useGlobalHubsDescription": "Pokaż ujednolicone huby ekranu głównego. W przeciwnym razie użyj rekomendacji bibliotek.",
     "showServerNameOnHubs": "Pokaż nazwę serwera w hubach",
@@ -259,6 +262,8 @@
     "displaySwitchDelay": "Opóźnienie przełączania ekranu",
     "tunneledPlayback": "Tunelowane odtwarzanie",
     "tunneledPlaybackDescription": "Użyj tunelowania wideo. Wyłącz, jeśli HDR pokazuje czarny obraz.",
+    "audioPassthrough": "Bezpośrednie audio",
+    "audioPassthroughDescription": "Wysyłaj dźwięk Dolby/DTS do amplitunera lub telewizora bez ponownego kodowania, zachowując dźwięk przestrzenny. Wyłącz, jeśli nie ma dźwięku.",
     "dvConversionMode": "Konwersja Dolby Vision",
     "dvConversionModeDescription": "Wybierz, jak ExoPlayer obsługuje pliki Dolby Vision Profile 7.",
     "dvConversionAuto": "Automatycznie",
@@ -771,7 +776,8 @@
       "studio": "Studio",
       "random": "Losowo",
       "dateShared": "Data udostępnienia",
-      "latestEpisodeAirDate": "Data emisji ostatniego odcinka"
+      "latestEpisodeAirDate": "Data emisji ostatniego odcinka",
+      "lastEpisodeDateAdded": "Data dodania ostatniego odcinka"
     }
   },
   "about": {
@@ -1027,6 +1033,7 @@
     "unwatchedOnly": "Tylko nieobejrzane",
     "nextNUnwatched": "Następne ${count} nieobejrzanych",
     "customAmount": "Własna ilość...",
+    "includeSpecials": "Uwzględnij odcinki specjalne",
     "howManyEpisodes": "Ile odcinków?",
     "itemsQueued": "${count} elementów dodanych do kolejki pobierania",
     "keepSynced": "Synchronizuj na bieżąco",

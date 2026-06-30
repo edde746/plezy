@@ -133,7 +133,14 @@ void main() {
       final resolver = _resolver(
         animeProgress: animeProgress,
         rows: const [
-          FribbMappingRow(tvdbId: 81797, tmdbId: 37854, imdbId: 'tt0388629', malId: 21, anilistId: 21, type: 'TV'),
+          FribbMappingRow(
+            tvdbId: 81797,
+            tmdbIds: [37854],
+            imdbIds: ['tt0388629'],
+            malId: 21,
+            anilistId: 21,
+            type: 'TV',
+          ),
         ],
       );
 

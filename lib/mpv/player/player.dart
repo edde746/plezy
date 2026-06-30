@@ -254,7 +254,13 @@ abstract class Player {
   /// the caller is responsible for starting playback itself.
   ///
   /// On other platforms, this is a no-op that returns `false`.
-  Future<bool> setVideoFrameRate(double fps, int durationMs, {int extraDelayMs = 0});
+  Future<bool> setVideoFrameRate(
+    double fps,
+    int durationMs, {
+    int extraDelayMs = 0,
+    int videoWidth = 0,
+    int videoHeight = 0,
+  });
 
   /// Clear the video frame rate hint and restore default display mode.
   ///

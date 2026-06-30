@@ -4,19 +4,20 @@ import 'dart:convert';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
+import 'package:vibe_stream/services/trackers/tracker_exceptions.dart';
+import 'package:vibe_stream/services/trackers/tracker_session.dart';
 import 'package:vibe_stream/services/trakt/trakt_client.dart';
-import 'package:vibe_stream/services/trakt/trakt_session.dart';
 
 int _now() => DateTime.now().millisecondsSinceEpoch ~/ 1000;
 
-TraktSession _session({
+TrackerSession _session({
   String accessToken = 'access-old',
   String refreshToken = 'refresh-old',
   int? expiresAt,
   String? username = 'alice',
 }) {
   final now = _now();
-  return TraktSession(
+  return TrackerSession(
     accessToken: accessToken,
     refreshToken: refreshToken,
     expiresAt: expiresAt ?? now - 60,
@@ -39,7 +40,7 @@ String _tokenBody({String accessToken = 'access-new', String refreshToken = 'ref
 void main() {
   group('TraktClient refresh', () {
     test('publishes refreshed tokens before retrying the API request', () async {
-      final updates = <TraktSession>[];
+      final updates = <TrackerSession>[];
       final requests = <http.Request>[];
       final client = TraktClient(
         _session(),
@@ -153,7 +154,7 @@ void main() {
         httpClient: MockClient((request) async => http.Response('temporary outage', 500)),
       );
 
-      await expectLater(client.refresh(), throwsA(isA<TraktAuthException>()));
+      await expectLater(client.refresh(), throwsA(isA<TrackerAuthException>()));
 
       expect(invalidated, 0);
       expect(client.session.refreshToken, 'refresh-old');
@@ -170,7 +171,7 @@ void main() {
         httpClient: MockClient((request) async => http.Response(json.encode({'error': 'invalid_grant'}), 400)),
       );
 
-      await expectLater(client.refresh(), throwsA(isA<TraktAuthException>()));
+      await expectLater(client.refresh(), throwsA(isA<TrackerAuthException>()));
 
       expect(invalidated, 1);
       expect(client.session.refreshToken, 'refresh-old');
@@ -206,8 +207,8 @@ void main() {
 
       final ownerRefresh = owner.refresh();
       final waiterRefresh = waiter.refresh();
-      final ownerExpectation = expectLater(ownerRefresh, throwsA(isA<TraktAuthException>()));
-      final waiterExpectation = expectLater(waiterRefresh, throwsA(isA<TraktAuthException>()));
+      final ownerExpectation = expectLater(ownerRefresh, throwsA(isA<TrackerAuthException>()));
+      final waiterExpectation = expectLater(waiterRefresh, throwsA(isA<TrackerAuthException>()));
       await Future<void>.delayed(Duration.zero);
       releaseRefreshResponse.complete();
 

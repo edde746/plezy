@@ -204,3 +204,18 @@ String formatFullDate(String dateString) {
     return dateString;
   }
 }
+
+/// Like [formatFullDate] but uses an abbreviated month name (`DateFormat.yMMMd`)
+/// to keep the result compact for space-constrained, single-line layouts.
+/// If there is any error, `dateString` is returned as is
+String formatAbbreviatedDate(String dateString) {
+  try {
+    final date = DateTime.parse(dateString);
+
+    final formatter = DateFormat.yMMMd(LocaleSettings.currentLocale.languageCode);
+
+    return formatter.format(date);
+  } catch (e) {
+    return dateString;
+  }
+}

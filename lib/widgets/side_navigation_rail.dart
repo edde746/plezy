@@ -17,6 +17,7 @@ import '../providers/hidden_libraries_provider.dart';
 import '../providers/libraries_provider.dart';
 import '../services/settings_service.dart';
 import '../utils/platform_detector.dart';
+import '../utils/scroll_utils.dart';
 import '../utils/library_grouping.dart';
 import '../providers/multi_server_provider.dart';
 import '../services/fullscreen_state_manager.dart';
@@ -335,14 +336,60 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
   /// If [targetKey] is provided, try it first (used when the caller captured
   /// the intended target before a focus-scope switch overwrote it).
   void focusActiveItem({String? targetKey}) {
-    if (targetKey != null) {
-      final node = _focusTracker.nodeFor(targetKey);
-      if (node != null) {
-        node.requestFocus();
-        return;
-      }
+    final node = _resolveFocusNode(targetKey) ?? _mountedFocusNodeFor(_kHome);
+    if (node == null) return;
+    _requestFocusAndReveal(node);
+  }
+
+  /// Resolve the best mounted focus node in priority order:
+  /// 1. Explicit [targetKey] (captured before scope switch)
+  /// 2. Last focused key still in the tracker
+  /// 3. Currently selected navigation item (tab / library)
+  /// 4. Home fallback
+  FocusNode? _resolveFocusNode(String? targetKey) {
+    return _mountedFocusNodeFor(targetKey) ??
+        _mountedFocusNodeFor(_focusTracker.lastFocusedKey) ??
+        _mountedFocusNodeFor(_resolveSelectedFocusKey());
+  }
+
+  FocusNode? _mountedFocusNodeFor(String? key) {
+    if (key == null) return null;
+    final node = _focusTracker.nodeFor(key);
+    return node?.context == null ? null : node;
+  }
+
+  /// Derive a focus key from the current selection state (tab + library).
+  /// Returns null if no meaningful selected item exists.
+  String? _resolveSelectedFocusKey() {
+    switch (widget.selectedTab) {
+      case NavigationTabId.discover:
+        return _kHome;
+      case NavigationTabId.libraries:
+        final libKey = widget.selectedLibraryKey;
+        if (libKey != null && _librariesExpanded) {
+          final visibleKey = '$_kLibraryItemPrefix:${_LibraryNavSection.visible.name}:$libKey';
+          if (_mountedFocusNodeFor(visibleKey) != null) return visibleKey;
+          if (_hiddenLibrariesExpanded) {
+            final hiddenKey = '$_kLibraryItemPrefix:${_LibraryNavSection.hidden.name}:$libKey';
+            if (_mountedFocusNodeFor(hiddenKey) != null) return hiddenKey;
+          }
+        }
+        return _kLibraries;
+      case NavigationTabId.search:
+        return _kSearch;
+      case NavigationTabId.downloads:
+        return _showDownloads ? _kDownloads : null;
+      case NavigationTabId.settings:
+        return _kSettings;
+      case NavigationTabId.liveTv:
+        return 'liveTv';
     }
-    _focusTracker.restoreFocus(fallbackKey: _kHome);
+  }
+
+  /// Request focus on [node] and scroll it into view after the next frame.
+  void _requestFocusAndReveal(FocusNode node) {
+    node.requestFocus();
+    scrollContextToCenter(node.context);
   }
 
   String _serverHeaderFocusKey(_LibraryNavSection section, ServerId serverId) =>
@@ -497,14 +544,7 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
     final nextNode = _focusTracker.nodeFor(focusOrder[nextIndex]);
     if (nextNode == null) return KeyEventResult.ignored;
 
-    nextNode.requestFocus();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
-      final ctx = nextNode.context;
-      if (ctx != null) {
-        Scrollable.ensureVisible(ctx, alignment: 0.5, duration: const Duration(milliseconds: 200));
-      }
-    });
+    _requestFocusAndReveal(nextNode);
     return KeyEventResult.handled;
   }
 

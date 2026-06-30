@@ -5,13 +5,13 @@ import 'package:http/testing.dart';
 import 'package:http/http.dart' as http;
 import 'package:vibe_stream/models/trackers/anime_ids.dart';
 import 'package:vibe_stream/models/trackers/tracker_context.dart';
-import 'package:vibe_stream/services/trackers/anilist/anilist_session.dart';
 import 'package:vibe_stream/services/trackers/anilist/anilist_tracker.dart';
+import 'package:vibe_stream/services/trackers/tracker_session.dart';
 import 'package:vibe_stream/utils/external_ids.dart';
 
-AnilistSession _session() {
+TrackerSession _session() {
   final now = DateTime.now().millisecondsSinceEpoch ~/ 1000;
-  return AnilistSession(accessToken: 'token', expiresAt: now + 86400, createdAt: now);
+  return TrackerSession(accessToken: 'token', expiresAt: now + 86400, createdAt: now);
 }
 
 TrackerContext _episode({int anilistId = 21, int episodeNumber = 12, int? animeProgress = 12}) {
@@ -180,6 +180,80 @@ void main() {
         {'mediaId': 21},
         {'id': 99},
       ]);
+    });
+
+    test('caches the episode count across repeated markWatched calls', () async {
+      var counts = 0;
+      final client = MockClient((request) async {
+        final body = json.decode(request.body) as Map<String, dynamic>;
+        final query = body['query'] as String;
+        if (query.contains('Media(id:')) {
+          counts++;
+          return http.Response(
+            json.encode({
+              'data': {
+                'Media': {'episodes': 12},
+              },
+            }),
+            200,
+          );
+        }
+        if (query.contains('SaveMediaListEntry')) {
+          return http.Response(
+            json.encode({
+              'data': {
+                'SaveMediaListEntry': {'id': 1},
+              },
+            }),
+            200,
+          );
+        }
+        fail('Unexpected AniList query: $query');
+      });
+      tracker.rebindSession(_session(), onSessionInvalidated: () {}, httpClient: client);
+
+      await tracker.markWatched(_episode());
+      await tracker.markWatched(_episode());
+
+      expect(counts, 1);
+    });
+
+    test('re-fetches the episode count after a failed lookup', () async {
+      var counts = 0;
+      final client = MockClient((request) async {
+        final body = json.decode(request.body) as Map<String, dynamic>;
+        final query = body['query'] as String;
+        if (query.contains('Media(id:')) {
+          counts++;
+          return counts == 1
+              ? http.Response('boom', 500)
+              : http.Response(
+                  json.encode({
+                    'data': {
+                      'Media': {'episodes': 12},
+                    },
+                  }),
+                  200,
+                );
+        }
+        if (query.contains('SaveMediaListEntry')) {
+          return http.Response(
+            json.encode({
+              'data': {
+                'SaveMediaListEntry': {'id': 1},
+              },
+            }),
+            200,
+          );
+        }
+        fail('Unexpected AniList query: $query');
+      });
+      tracker.rebindSession(_session(), onSessionInvalidated: () {}, httpClient: client);
+
+      await tracker.markWatched(_episode());
+      await tracker.markWatched(_episode());
+
+      expect(counts, 2);
     });
   });
 }

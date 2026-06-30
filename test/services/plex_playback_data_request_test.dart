@@ -460,7 +460,7 @@ void main() {
     expect(params['partIndex'], '2');
   });
 
-  test('unsupported embedded subtitles keep main transcode subtitles disabled', () {
+  test('selected image-based subtitles are embedded in HTTP MKV transcode without advancedSubtitles', () {
     final client = makeClient((_) async => http.Response('not used', 500));
     addTearDown(client.close);
 
@@ -479,17 +479,21 @@ void main() {
       ),
     );
 
-    expect(params['subtitles'], 'none');
+    // PGS is copied into the MKV as a stream; `advancedSubtitles=text` is
+    // text-only and must be absent so the server doesn't try to convert it.
+    expect(params['subtitles'], 'embedded');
+    expect(params['subtitleStreamID'], '401');
     expect(params['protocol'], 'http');
-    expect(params.containsKey('subtitleStreamID'), isFalse);
     expect(params.containsKey('advancedSubtitles'), isFalse);
     expect(params['X-Plex-Client-Profile-Extra'], isNot(contains('type=subtitleProfile')));
   });
 
-  test('bitmap embedded subtitles are skipped during transcode instead of burned', () {
+  test('image-based embedded subtitles are carried in the MKV, not as sidecars', () {
     final client = makeClient((_) async => http.Response('not used', 500));
     addTearDown(client.close);
 
+    // Embedded bitmap streams have no Plex `key`, so there is no sidecar URL to
+    // build — they ride the main HTTP/MKV stream via `subtitles=embedded`.
     final subtitles = buildTranscodeSubtitles(client, [
       MediaSubtitleTrack(id: 401, codec: 'pgs', languageCode: 'eng', selected: true, forced: false),
       MediaSubtitleTrack(id: 402, codec: 'dvd_subtitle', languageCode: 'eng', selected: true, forced: false),

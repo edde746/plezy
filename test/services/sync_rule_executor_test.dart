@@ -299,6 +299,53 @@ void main() {
     expect(paths.where((p) => p.startsWith('GET /Items?')), isNotEmpty);
   });
 
+  test('show sync rule respects includeSpecials=false when expanding episodes', () async {
+    final db = AppDatabase.forTesting(NativeDatabase.memory());
+    final manager = MultiServerManager();
+    addTearDown(() async {
+      manager.dispose();
+      await db.close();
+    });
+
+    final client = _PlayableDescendantsClient([
+      _episode('s1e1', parentIndex: 1, index: 1, originallyAvailableAt: '2022-10-05'),
+      _episode('s0e1', parentIndex: 0, index: 1, originallyAvailableAt: '2022-10-27'),
+      _episode('s1e2', parentIndex: 1, index: 2, originallyAvailableAt: '2022-11-02'),
+    ]);
+    manager.debugRegisterClientForTesting(client);
+
+    const ruleKey = 'profile-a|plex-machine:show-1';
+    final show = MediaItem(id: 'show-1', backend: MediaBackend.plex, kind: MediaKind.show, title: 'Show');
+    await db.insertSyncRule(
+      profileId: 'profile-a',
+      serverId: ServerId('plex-machine'),
+      ratingKey: 'show-1',
+      globalKey: ruleKey,
+      targetType: 'show',
+      episodeCount: 0,
+      includeSpecials: false,
+    );
+
+    final queued = <MediaItem>[];
+    final executor = SyncRuleExecutor(database: db);
+    final results = await executor.executeSyncRules(
+      profileId: 'profile-a',
+      serverManager: manager,
+      downloads: const {},
+      metadata: {ruleKey: show},
+      queueSingleDownload: (item, client, {int mediaIndex = 0}) async {
+        queued.add(item);
+        return true;
+      },
+      isOffline: false,
+      force: true,
+    );
+
+    expect(results.single.queuedCount, 2);
+    expect(queued.map((item) => item.id), ['s1e1', 's1e2']);
+    expect(client.fetchPlayableDescendantsCalls, ['show-1']);
+  });
+
   test('collection sync rule pages through collection API instead of metadata children', () async {
     final db = AppDatabase.forTesting(NativeDatabase.memory());
     final manager = MultiServerManager();
@@ -349,6 +396,55 @@ void main() {
     expect(client.collectionPageCalls, [(start: 0, size: 100)]);
     expect(client.fetchChildrenCalled, isFalse);
   });
+}
+
+MediaItem _episode(String id, {required int parentIndex, required int index, String? originallyAvailableAt}) {
+  return MediaItem(
+    id: id,
+    backend: MediaBackend.plex,
+    kind: MediaKind.episode,
+    title: id,
+    parentIndex: parentIndex,
+    index: index,
+    originallyAvailableAt: originallyAvailableAt,
+  );
+}
+
+class _PlayableDescendantsClient implements MediaServerClient {
+  _PlayableDescendantsClient(this.leaves);
+
+  final List<MediaItem> leaves;
+  final fetchPlayableDescendantsCalls = <String>[];
+
+  @override
+  ServerId get serverId => ServerId('plex-machine');
+
+  @override
+  String? get serverName => 'Plex';
+
+  @override
+  MediaBackend get backend => MediaBackend.plex;
+
+  @override
+  ServerCapabilities get capabilities => ServerCapabilities.plex;
+
+  @override
+  bool get isOfflineMode => false;
+
+  @override
+  void close() {}
+
+  @override
+  Future<MediaItem?> fetchItem(String id) async => null;
+
+  @override
+  Future<List<MediaItem>> fetchPlayableDescendants(String parentId) async {
+    fetchPlayableDescendantsCalls.add(parentId);
+    return leaves;
+  }
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
 class _CollectionPagingClient implements MediaServerClient {

@@ -241,7 +241,7 @@ class _NotInSessionViewState extends State<_NotInSessionView> with MountedSetSta
   }
 
   Future<ControlMode?> _showControlModeDialog() {
-    return showDialog<ControlMode>(
+    return showScopedDialog<ControlMode>(
       context: context,
       builder: (context) => AlertDialog(
         title: Text(t.watchTogether.controlMode),
@@ -308,7 +308,7 @@ class _NotInSessionViewState extends State<_NotInSessionView> with MountedSetSta
   }
 
   Future<void> _renameRoom(RecentRoom room) async {
-    final name = await showDialog<String>(
+    final name = await showScopedDialog<String>(
       context: context,
       builder: (_) => _RenameRoomDialog(room: room),
     );

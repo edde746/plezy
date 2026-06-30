@@ -247,6 +247,9 @@ class _TranslationsSettingsRu extends TranslationsSettingsEn {
 	@override String get continueWatchingAction => 'Действие для «Продолжить просмотр»';
 	@override String get continueWatchingPlay => 'Воспроизвести';
 	@override String get continueWatchingDetails => 'Открыть сведения';
+	@override String get episodeAction => 'Действие для эпизодов';
+	@override String get episodePlay => 'Воспроизвести';
+	@override String get episodeDetails => 'Открыть сведения';
 	@override String get useGlobalHubs => 'Использовать макет главной';
 	@override String get useGlobalHubsDescription => 'Показывать единые разделы главной. Иначе использовать рекомендации библиотек.';
 	@override String get showServerNameOnHubs => 'Показывать имя сервера в хабах';
@@ -388,6 +391,8 @@ class _TranslationsSettingsRu extends TranslationsSettingsEn {
 	@override String get displaySwitchDelay => 'Задержка переключения дисплея';
 	@override String get tunneledPlayback => 'Туннельное воспроизведение';
 	@override String get tunneledPlaybackDescription => 'Использовать видеотуннелирование. Отключите, если HDR показывает черный экран.';
+	@override String get audioPassthrough => 'Сквозной вывод аудио';
+	@override String get audioPassthroughDescription => 'Передавать звук Dolby/DTS на ресивер или телевизор без перекодирования, сохраняя объёмный звук. Отключите, если нет звука.';
 	@override String get dvConversionMode => 'Преобразование Dolby Vision';
 	@override String get dvConversionModeDescription => 'Выберите, как ExoPlayer обрабатывает файлы Dolby Vision Profile 7.';
 	@override String get dvConversionAuto => 'Авто';
@@ -1285,6 +1290,7 @@ class _TranslationsDownloadsRu extends TranslationsDownloadsEn {
 	@override String get unwatchedOnly => 'Только непросмотренные';
 	@override String nextNUnwatched({required Object count}) => 'Следующие ${count} непросмотренных';
 	@override String get customAmount => 'Указать количество...';
+	@override String get includeSpecials => 'Включить спецвыпуски';
 	@override String get howManyEpisodes => 'Сколько эпизодов?';
 	@override String itemsQueued({required Object count}) => '${count} элементов добавлено в очередь загрузки';
 	@override String get keepSynced => 'Синхронизировать';
@@ -1755,6 +1761,7 @@ class _TranslationsLibrariesSortLabelsRu extends TranslationsLibrariesSortLabels
 	@override String get random => 'Случайно';
 	@override String get dateShared => 'Дата открытия доступа';
 	@override String get latestEpisodeAirDate => 'Дата выхода последнего эпизода';
+	@override String get lastEpisodeDateAdded => 'Дата добавления последнего эпизода';
 }
 
 // Path: companionRemote.session
@@ -2029,6 +2036,9 @@ extension on TranslationsRu {
 			'settings.continueWatchingAction' => 'Действие для «Продолжить просмотр»',
 			'settings.continueWatchingPlay' => 'Воспроизвести',
 			'settings.continueWatchingDetails' => 'Открыть сведения',
+			'settings.episodeAction' => 'Действие для эпизодов',
+			'settings.episodePlay' => 'Воспроизвести',
+			'settings.episodeDetails' => 'Открыть сведения',
 			'settings.useGlobalHubs' => 'Использовать макет главной',
 			'settings.useGlobalHubsDescription' => 'Показывать единые разделы главной. Иначе использовать рекомендации библиотек.',
 			'settings.showServerNameOnHubs' => 'Показывать имя сервера в хабах',
@@ -2170,6 +2180,8 @@ extension on TranslationsRu {
 			'settings.displaySwitchDelay' => 'Задержка переключения дисплея',
 			'settings.tunneledPlayback' => 'Туннельное воспроизведение',
 			'settings.tunneledPlaybackDescription' => 'Использовать видеотуннелирование. Отключите, если HDR показывает черный экран.',
+			'settings.audioPassthrough' => 'Сквозной вывод аудио',
+			'settings.audioPassthroughDescription' => 'Передавать звук Dolby/DTS на ресивер или телевизор без перекодирования, сохраняя объёмный звук. Отключите, если нет звука.',
 			'settings.dvConversionMode' => 'Преобразование Dolby Vision',
 			'settings.dvConversionModeDescription' => 'Выберите, как ExoPlayer обрабатывает файлы Dolby Vision Profile 7.',
 			'settings.dvConversionAuto' => 'Авто',
@@ -2428,13 +2440,13 @@ extension on TranslationsRu {
 			'messages.serverLimitTitle' => 'Ошибка воспроизведения',
 			'messages.serverLimitBody' => 'Ошибка сервера (HTTP 500). Лимит пропускной способности/транскодирования, вероятно, отклонил сессию. Попросите владельца изменить настройки.',
 			'messages.logsUploaded' => 'Логи загружены',
+			_ => null,
+		} ?? switch (path) {
 			'messages.logsUploadFailed' => 'Не удалось загрузить логи',
 			'messages.logId' => 'ID лога',
 			'subtitlingStyling.text' => 'Текст',
 			'subtitlingStyling.border' => 'Обводка',
 			'subtitlingStyling.background' => 'Фон',
-			_ => null,
-		} ?? switch (path) {
 			'subtitlingStyling.fontSize' => 'Размер шрифта',
 			'subtitlingStyling.textColor' => 'Цвет текста',
 			'subtitlingStyling.borderSize' => 'Размер обводки',
@@ -2638,6 +2650,7 @@ extension on TranslationsRu {
 			'libraries.sortLabels.random' => 'Случайно',
 			'libraries.sortLabels.dateShared' => 'Дата открытия доступа',
 			'libraries.sortLabels.latestEpisodeAirDate' => 'Дата выхода последнего эпизода',
+			'libraries.sortLabels.lastEpisodeDateAdded' => 'Дата добавления последнего эпизода',
 			'about.title' => 'О приложении',
 			'about.openSourceLicenses' => 'Лицензии открытого ПО',
 			'about.versionLabel' => ({required Object version}) => 'Версия ${version}',
@@ -2870,6 +2883,7 @@ extension on TranslationsRu {
 			'downloads.unwatchedOnly' => 'Только непросмотренные',
 			'downloads.nextNUnwatched' => ({required Object count}) => 'Следующие ${count} непросмотренных',
 			'downloads.customAmount' => 'Указать количество...',
+			'downloads.includeSpecials' => 'Включить спецвыпуски',
 			'downloads.howManyEpisodes' => 'Сколько эпизодов?',
 			'downloads.itemsQueued' => ({required Object count}) => '${count} элементов добавлено в очередь загрузки',
 			'downloads.keepSynced' => 'Синхронизировать',
@@ -2940,6 +2954,8 @@ extension on TranslationsRu {
 			'companionRemote.pairing.connectionTimedOut' => 'Время подключения истекло. Используйте одну сеть на обоих устройствах.',
 			'companionRemote.pairing.sessionNotFound' => 'Устройство не найдено. Убедитесь, что Vibe запущен на хосте.',
 			'companionRemote.pairing.authFailed' => 'Аутентификация не удалась. На обоих устройствах нужен один аккаунт Plex.',
+			_ => null,
+		} ?? switch (path) {
 			'companionRemote.pairing.failedToConnect' => ({required Object error}) => 'Не удалось подключиться: ${error}',
 			'companionRemote.remote.disconnectConfirm' => 'Отключиться от удалённой сессии?',
 			'companionRemote.remote.reconnecting' => 'Переподключение...',
@@ -2947,8 +2963,6 @@ extension on TranslationsRu {
 			'companionRemote.remote.retryNow' => 'Повторить сейчас',
 			'companionRemote.remote.tabRemote' => 'Пульт',
 			'companionRemote.remote.tabPlay' => 'Воспроизведение',
-			_ => null,
-		} ?? switch (path) {
 			'companionRemote.remote.tabMore' => 'Ещё',
 			'companionRemote.remote.menu' => 'Меню',
 			'companionRemote.remote.tabNavigation' => 'Навигация',

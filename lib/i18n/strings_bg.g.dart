@@ -247,6 +247,9 @@ class _TranslationsSettingsBg extends TranslationsSettingsEn {
 	@override String get continueWatchingAction => 'Действие за продължаване на гледането';
 	@override String get continueWatchingPlay => 'Пусни';
 	@override String get continueWatchingDetails => 'Отвори подробности';
+	@override String get episodeAction => 'Действие за епизод';
+	@override String get episodePlay => 'Пусни';
+	@override String get episodeDetails => 'Отвори подробности';
 	@override String get useGlobalHubs => 'Използвай начално оформление';
 	@override String get useGlobalHubsDescription => 'Показвай обединени начални хъбове. В противен случай използвай препоръките на библиотеката.';
 	@override String get showServerNameOnHubs => 'Показвай името на сървъра в хъбовете';
@@ -388,6 +391,8 @@ class _TranslationsSettingsBg extends TranslationsSettingsEn {
 	@override String get displaySwitchDelay => 'Забавяне при смяна на дисплея';
 	@override String get tunneledPlayback => 'Тунелно възпроизвеждане';
 	@override String get tunneledPlaybackDescription => 'Използвай видео тунелиране. Изключете, ако HDR възпроизвеждането показва черен екран.';
+	@override String get audioPassthrough => 'Аудио passthrough';
+	@override String get audioPassthroughDescription => 'Изпращай Dolby/DTS звук към ресийвъра или телевизора без прекодиране, запазвайки съраунд звука. Изключете, ако няма звук.';
 	@override String get dvConversionMode => 'Dolby Vision конвертиране';
 	@override String get dvConversionModeDescription => 'Изберете как ExoPlayer обработва Dolby Vision Profile 7 файлове.';
 	@override String get dvConversionAuto => 'Автоматично';
@@ -1285,6 +1290,7 @@ class _TranslationsDownloadsBg extends TranslationsDownloadsEn {
 	@override String get unwatchedOnly => 'Само негледани';
 	@override String nextNUnwatched({required Object count}) => 'Следващите ${count} негледани';
 	@override String get customAmount => 'Персонален брой...';
+	@override String get includeSpecials => 'Включи специалните';
 	@override String get howManyEpisodes => 'Колко епизода?';
 	@override String itemsQueued({required Object count}) => '${count} елемента са добавени в опашката за изтегляне';
 	@override String get keepSynced => 'Поддържай синхронизирано';
@@ -1755,6 +1761,7 @@ class _TranslationsLibrariesSortLabelsBg extends TranslationsLibrariesSortLabels
 	@override String get random => 'Случайно';
 	@override String get dateShared => 'Дата на споделяне';
 	@override String get latestEpisodeAirDate => 'Дата на излъчване на последния епизод';
+	@override String get lastEpisodeDateAdded => 'Дата на добавяне на последния епизод';
 }
 
 // Path: companionRemote.session
@@ -2029,6 +2036,9 @@ extension on TranslationsBg {
 			'settings.continueWatchingAction' => 'Действие за продължаване на гледането',
 			'settings.continueWatchingPlay' => 'Пусни',
 			'settings.continueWatchingDetails' => 'Отвори подробности',
+			'settings.episodeAction' => 'Действие за епизод',
+			'settings.episodePlay' => 'Пусни',
+			'settings.episodeDetails' => 'Отвори подробности',
 			'settings.useGlobalHubs' => 'Използвай начално оформление',
 			'settings.useGlobalHubsDescription' => 'Показвай обединени начални хъбове. В противен случай използвай препоръките на библиотеката.',
 			'settings.showServerNameOnHubs' => 'Показвай името на сървъра в хъбовете',
@@ -2170,6 +2180,8 @@ extension on TranslationsBg {
 			'settings.displaySwitchDelay' => 'Забавяне при смяна на дисплея',
 			'settings.tunneledPlayback' => 'Тунелно възпроизвеждане',
 			'settings.tunneledPlaybackDescription' => 'Използвай видео тунелиране. Изключете, ако HDR възпроизвеждането показва черен екран.',
+			'settings.audioPassthrough' => 'Аудио passthrough',
+			'settings.audioPassthroughDescription' => 'Изпращай Dolby/DTS звук към ресийвъра или телевизора без прекодиране, запазвайки съраунд звука. Изключете, ако няма звук.',
 			'settings.dvConversionMode' => 'Dolby Vision конвертиране',
 			'settings.dvConversionModeDescription' => 'Изберете как ExoPlayer обработва Dolby Vision Profile 7 файлове.',
 			'settings.dvConversionAuto' => 'Автоматично',
@@ -2428,13 +2440,13 @@ extension on TranslationsBg {
 			'messages.serverLimitTitle' => 'Възпроизвеждането е неуспешно',
 			'messages.serverLimitBody' => 'Грешка на сървъра (HTTP 500). Вероятно лимит за пропускателна способност/транскодиране е отхвърлил тази сесия. Помолете собственика да го коригира.',
 			'messages.logsUploaded' => 'Логовете са качени',
+			_ => null,
+		} ?? switch (path) {
 			'messages.logsUploadFailed' => 'Неуспешно качване на логовете',
 			'messages.logId' => 'ID на лога',
 			'subtitlingStyling.text' => 'Текст',
 			'subtitlingStyling.border' => 'Рамка',
 			'subtitlingStyling.background' => 'Фон',
-			_ => null,
-		} ?? switch (path) {
 			'subtitlingStyling.fontSize' => 'Размер на шрифта',
 			'subtitlingStyling.textColor' => 'Цвят на текста',
 			'subtitlingStyling.borderSize' => 'Размер на рамката',
@@ -2638,6 +2650,7 @@ extension on TranslationsBg {
 			'libraries.sortLabels.random' => 'Случайно',
 			'libraries.sortLabels.dateShared' => 'Дата на споделяне',
 			'libraries.sortLabels.latestEpisodeAirDate' => 'Дата на излъчване на последния епизод',
+			'libraries.sortLabels.lastEpisodeDateAdded' => 'Дата на добавяне на последния епизод',
 			'about.title' => 'Относно',
 			'about.openSourceLicenses' => 'Лицензи с отворен код',
 			'about.versionLabel' => ({required Object version}) => 'Версия ${version}',
@@ -2870,6 +2883,7 @@ extension on TranslationsBg {
 			'downloads.unwatchedOnly' => 'Само негледани',
 			'downloads.nextNUnwatched' => ({required Object count}) => 'Следващите ${count} негледани',
 			'downloads.customAmount' => 'Персонален брой...',
+			'downloads.includeSpecials' => 'Включи специалните',
 			'downloads.howManyEpisodes' => 'Колко епизода?',
 			'downloads.itemsQueued' => ({required Object count}) => '${count} елемента са добавени в опашката за изтегляне',
 			'downloads.keepSynced' => 'Поддържай синхронизирано',
@@ -2940,6 +2954,8 @@ extension on TranslationsBg {
 			'companionRemote.pairing.connectionTimedOut' => 'Връзката изтече. Използвайте една и съща мрежа на двете устройства.',
 			'companionRemote.pairing.sessionNotFound' => 'Устройството не е намерено. Уверете се, че Vibe работи на хоста.',
 			'companionRemote.pairing.authFailed' => 'Удостоверяването е неуспешно. Двете устройства трябва да използват същия Plex акаунт.',
+			_ => null,
+		} ?? switch (path) {
 			'companionRemote.pairing.failedToConnect' => ({required Object error}) => 'Неуспешно свързване: ${error}',
 			'companionRemote.remote.disconnectConfirm' => 'Искате ли да прекъснете връзката с дистанционната сесия?',
 			'companionRemote.remote.reconnecting' => 'Повторно свързване...',
@@ -2947,8 +2963,6 @@ extension on TranslationsBg {
 			'companionRemote.remote.retryNow' => 'Опитай сега',
 			'companionRemote.remote.tabRemote' => 'Дистанционно',
 			'companionRemote.remote.tabPlay' => 'Пускане',
-			_ => null,
-		} ?? switch (path) {
 			'companionRemote.remote.tabMore' => 'Още',
 			'companionRemote.remote.menu' => 'Меню',
 			'companionRemote.remote.tabNavigation' => 'Навигация с Tab',

@@ -95,7 +95,7 @@ void main() {
     // 250 thumbnails, 1s apart, 10×10 tiles per sheet ⇒ 3 sheets.
     // sheet 0: indices 0..99
     // sheet 1: indices 100..199 (full)
-    // sheet 2: indices 200..249 (last sheet, only 50 thumbs ⇒ 5 rows)
+    // sheet 2: indices 200..249 (last sheet, padded to a full 10x10 grid)
 
     setUp(() async {
       client = await JellyfinClient.create(_conn());
@@ -143,9 +143,10 @@ void main() {
       expect(loc.sheetIndex, 2);
       expect(loc.tileColumn, 9);
       expect(loc.tileRow, 4);
-      // Sheet 2 has 50 thumbs ⇒ 5 rows, full 10 cols
+      // Jellyfin pads the final tile image to the full configured grid, so
+      // the renderer must keep full sheet geometry even for partial sheets.
       expect(loc.sheetColumns, 10);
-      expect(loc.sheetRows, 5);
+      expect(loc.sheetRows, 10);
     });
 
     test('clamps past the end to the last available thumbnail', () {
@@ -168,7 +169,7 @@ void main() {
     });
   });
 
-  group('JellyfinTrickplayService — partial last sheet sizing', () {
+  group('JellyfinTrickplayService — padded last sheet sizing', () {
     late JellyfinClient client;
 
     setUp(() async {
@@ -177,7 +178,7 @@ void main() {
 
     tearDown(() => client.close());
 
-    test('last sheet with 1 thumbnail reports 1 col × 1 row', () {
+    test('last sheet with 1 thumbnail still reports the full sheet grid', () {
       // 17 thumbs, 4×4 sheet ⇒ sheet 0 full (16), sheet 1 has 1 thumb only.
       final svc = JellyfinTrickplayService.create(
         client: client,
@@ -192,8 +193,8 @@ void main() {
       expect(loc.sheetIndex, 1);
       expect(loc.tileColumn, 0);
       expect(loc.tileRow, 0);
-      expect(loc.sheetColumns, 1);
-      expect(loc.sheetRows, 1);
+      expect(loc.sheetColumns, 4);
+      expect(loc.sheetRows, 4);
     });
   });
 

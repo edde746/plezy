@@ -52,6 +52,7 @@ import '../../services/keyboard_shortcuts_service.dart';
 import '../../services/device_adjustment_service.dart';
 import '../../services/scrub_preview_source.dart';
 import '../../services/settings_service.dart';
+import '../../utils/codec_utils.dart';
 import '../../utils/formatters.dart';
 import '../../utils/platform_detector.dart';
 import '../../utils/player_utils.dart';
@@ -91,6 +92,26 @@ part 'parts/playback_extras.dart';
 part 'parts/playback_input.dart';
 part 'parts/track_controls.dart';
 part 'parts/visibility.dart';
+
+/// Subtitle tracks offered in the player's "source" subtitle list.
+///
+/// While transcoding, only tracks the HTTP/MKV stream can actually deliver are
+/// shown: keyed sidecars plus any codec the transcode can embed (text or
+/// image — see [CodecUtils.isEmbeddableSubtitleCodec]). Outside transcode the
+/// full list is returned unchanged, since the player has direct access to every
+/// embedded stream.
+List<MediaSubtitleTrack> selectableSourceSubtitleTracks(
+  List<MediaSubtitleTrack> tracks, {
+  required bool isTranscoding,
+}) {
+  if (!isTranscoding) return tracks;
+  return tracks
+      .where((track) {
+        final hasKey = track.key != null && track.key!.isNotEmpty;
+        return hasKey || CodecUtils.isEmbeddableSubtitleCodec(track.codec);
+      })
+      .toList(growable: false);
+}
 
 @visibleForTesting
 ShaderPreset resolveShaderTogglePreset({
@@ -159,6 +180,21 @@ bool shouldShowSkipMarkerButton({
   return hasFirstFrame && hasMarker && !hasPlayNextPrompt && (!skipButtonDismissed || controlsVisible);
 }
 
+@visibleForTesting
+KeyEventResult handlePromptDismissBackKey(KeyEvent event, VoidCallback? onDismissPrompt) {
+  if (onDismissPrompt == null || !event.logicalKey.isBackKey) return KeyEventResult.ignored;
+  return handleBackKeyAction(event, onDismissPrompt);
+}
+
+@visibleForTesting
+bool shouldSkipDuplicateTimelineSeek({
+  required bool isTranscoding,
+  required Duration? lastDispatchedSeek,
+  required Duration finalSeek,
+}) {
+  return !isTranscoding && lastDispatchedSeek == finalSeek;
+}
+
 typedef PlaybackSourceChangeCallback =
     Future<void> Function({
       int? newMediaIndex,
@@ -213,6 +249,10 @@ class PlexVideoControls extends StatefulWidget {
 
   /// Called when back button is pressed (for Watch Together session leave confirmation)
   final VoidCallback? onBack;
+
+  /// Called when Back should dismiss a visible playback prompt before normal
+  /// player back handling.
+  final VoidCallback? onDismissPrompt;
 
   /// Called when the video has effectively reached the end (e.g. credits extend
   /// to EOF and can't be seeked past). Parent should route this into its normal
@@ -314,6 +354,7 @@ class PlexVideoControls extends StatefulWidget {
     this.onPlayPauseRequested,
     this.onSeekCompleted,
     this.onBack,
+    this.onDismissPrompt,
     this.onReachedEnd,
     this.canControl = true,
     this.hasFirstFrame,
@@ -411,6 +452,8 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
   Timer? _edgeAdjustmentIndicatorClearTimer;
   // Seek throttle
   late final Throttle _seekThrottle;
+  Duration? _lastDispatchedTimelineSeek;
+  Future<void>? _lastDispatchedTimelineSeekFuture;
   // Current marker state
   MediaMarker? _currentMarker;
   List<MediaMarker> _markers = [];
@@ -463,7 +506,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
     _skipMarkerFocusNode = FocusNode(debugLabel: 'SkipMarkerButton');
     _seekThrottle = throttle(
       (Duration pos) {
-        unawaited(_seekToPosition(pos, notifyCompletion: false));
+        unawaited(_seekToTimelinePosition(pos));
       },
       const Duration(milliseconds: 200),
       leading: true,
@@ -787,7 +830,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
                                           behavior: HitTestBehavior.translucent,
                                           onPointerDown: (_) {
                                             if (!widget.chromeController.contentStripVisible) {
-                                              _restartHideTimerIfPlaying();
+                                              _restartHideTimerForCurrentPlaybackState();
                                             }
                                           },
                                           child: Builder(
@@ -914,13 +957,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
                       ),
                     ),
                   // Skip intro/credits button (auto-dismisses after 7s, then only shows with controls)
-                  if (shouldShowSkipMarkerButton(
-                    hasFirstFrame: _hasRenderedFirstFrame,
-                    hasMarker: _currentMarker != null,
-                    hasPlayNextPrompt: widget.playNextFocusNode != null,
-                    skipButtonDismissed: _skipButtonDismissed,
-                    controlsVisible: _showControls,
-                  ))
+                  if (_isSkipMarkerButtonVisible)
                     AnimatedPositioned(
                       duration: const Duration(milliseconds: 200),
                       curve: Curves.easeInOut,

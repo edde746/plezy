@@ -246,8 +246,7 @@ class OptimizedMediaImage extends StatelessWidget {
       width: width,
       height: height,
       // Only cacheHeight: leaving cacheWidth null preserves decode aspect
-      // ratio, mirroring the network branch which only passes maxHeight to
-      // CachedNetworkImageProvider.
+      // ratio, mirroring the network branch's ResizeImage wrapper.
       cacheHeight: memHeight > 0 ? memHeight : null,
       fit: fit,
       filterQuality: filterQuality,
@@ -301,14 +300,15 @@ class OptimizedMediaImage extends StatelessWidget {
 
     final effectiveCacheKey = cacheKey ?? _generateCacheKey(imageUrl);
 
+    final provider = CachedNetworkImageProvider(
+      imageUrl,
+      cacheKey: effectiveCacheKey,
+      cacheManager: PlexImageCacheManager.instance,
+      headers: const {'User-Agent': 'Vibe'},
+    );
+
     return Image(
-      image: CachedNetworkImageProvider(
-        imageUrl,
-        cacheKey: effectiveCacheKey,
-        cacheManager: PlexImageCacheManager.instance,
-        headers: const {'User-Agent': 'Vibe'},
-        maxHeight: memHeight,
-      ),
+      image: ResizeImage.resizeIfNeeded(null, memHeight > 0 ? memHeight : null, provider),
       width: width,
       height: height,
       fit: fit,

@@ -87,6 +87,20 @@ void main() {
     });
   });
 
+  group('SettingsService episode action', () {
+    test('defaults to play and resets to play', () async {
+      final settings = await SettingsService.getInstance();
+
+      expect(settings.read(SettingsService.episodeAction), EpisodeAction.play);
+
+      await settings.write(SettingsService.episodeAction, EpisodeAction.details);
+      expect(settings.read(SettingsService.episodeAction), EpisodeAction.details);
+
+      await settings.resetAllSettings();
+      expect(settings.read(SettingsService.episodeAction), EpisodeAction.play);
+    });
+  });
+
   group('SettingsService platform gates', () {
     test('audio passthrough stays available on desktop but not Apple TV', () {
       expect(PlatformDetector.supportsAudioPassthrough(), isTrue);
@@ -94,6 +108,19 @@ void main() {
       TvDetectionService.debugSetAppleTVOverride(true);
 
       expect(PlatformDetector.supportsAudioPassthrough(), isFalse);
+    });
+
+    test('audio passthrough defaults off on a non-Android-TV host and honors explicit writes', () async {
+      final settings = await SettingsService.getInstance();
+      // The Android-TV-on-ExoPlayer default-on branch depends on Platform.isAndroid,
+      // which is false (and unmockable) on the test host, so the default is off here.
+      expect(settings.read(SettingsService.audioPassthrough), isFalse);
+
+      await settings.write(SettingsService.audioPassthrough, true);
+      expect(settings.read(SettingsService.audioPassthrough), isTrue);
+
+      await settings.write(SettingsService.audioPassthrough, false);
+      expect(settings.read(SettingsService.audioPassthrough), isFalse);
     });
 
     test('forces external player off on Apple TV even when stored enabled', () async {

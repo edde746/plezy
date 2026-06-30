@@ -118,6 +118,9 @@
     "continueWatchingAction": "Åtgärd för Fortsätt titta",
     "continueWatchingPlay": "Spela",
     "continueWatchingDetails": "Öppna detaljer",
+    "episodeAction": "Åtgärd för avsnitt",
+    "episodePlay": "Spela",
+    "episodeDetails": "Öppna detaljer",
     "useGlobalHubs": "Använd startlayout",
     "useGlobalHubsDescription": "Visa enhetliga startsideshubbar. Annars används biblioteksrekommendationer.",
     "showServerNameOnHubs": "Visa servernamn på hubbar",
@@ -259,6 +262,8 @@
     "displaySwitchDelay": "Fördröjning vid skärmbyte",
     "tunneledPlayback": "Tunneluppspelning",
     "tunneledPlaybackDescription": "Använd videotunnling. Inaktivera om HDR-uppspelning visar svart video.",
+    "audioPassthrough": "Ljudgenomkoppling",
+    "audioPassthroughDescription": "Skicka Dolby/DTS-ljud till din receiver eller TV utan omkodning och bevara surroundljudet. Stäng av om du inte har något ljud.",
     "dvConversionMode": "Dolby Vision-konvertering",
     "dvConversionModeDescription": "Välj hur ExoPlayer hanterar Dolby Vision Profile 7-filer.",
     "dvConversionAuto": "Auto",
@@ -771,7 +776,8 @@
       "studio": "Studio",
       "random": "Slumpmässigt",
       "dateShared": "Delningsdatum",
-      "latestEpisodeAirDate": "Senaste avsnittets sändningsdatum"
+      "latestEpisodeAirDate": "Senaste avsnittets sändningsdatum",
+      "lastEpisodeDateAdded": "Datum då senaste avsnittet lades till"
     }
   },
   "about": {
@@ -1027,6 +1033,7 @@
     "unwatchedOnly": "Endast osedda",
     "nextNUnwatched": "Nästa ${count} osedda",
     "customAmount": "Ange antal...",
+    "includeSpecials": "Inkludera specialavsnitt",
     "howManyEpisodes": "Hur många avsnitt?",
     "itemsQueued": "${count} objekt köade för nedladdning",
     "keepSynced": "Håll synkroniserad",

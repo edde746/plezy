@@ -9,8 +9,9 @@ import '../../settings_service.dart';
 import '../tracker.dart';
 import '../tracker_constants.dart';
 import '../tracker_id_resolver.dart';
+import '../tracker_rating_match.dart';
+import '../tracker_session.dart';
 import 'simkl_client.dart';
-import 'simkl_session.dart';
 
 /// Simkl scrobble tracker. Fires `POST /sync/history` once playback crosses
 /// the watched threshold (Simkl has no real-time `/scrobble/*` endpoints).
@@ -19,7 +20,7 @@ import 'simkl_session.dart';
 /// so it fires for non-anime TV and movies too. Prefers Fribb's simkl_id
 /// when present for stricter anime match, otherwise falls back to whatever
 /// Plex exposes.
-class SimklTracker extends TrackerBase {
+class SimklTracker extends TrackerBase with ClientBackedTracker<SimklClient> implements TrackerRatingSource {
   static SimklTracker? _instance;
   static SimklTracker get instance => _instance ??= SimklTracker._();
   SimklTracker._();
@@ -33,24 +34,24 @@ class SimklTracker extends TrackerBase {
   @override
   bool get needsFribb => false;
 
-  SimklClient? _client;
-
-  @override
-  bool get hasActiveClient => _client != null;
-
   @override
   bool readEnabledSetting(SettingsService settings) => settings.read(SettingsService.enableSimklScrobble);
 
-  void rebindSession(SimklSession? session, {required void Function() onSessionInvalidated, http.Client? httpClient}) {
-    _client?.dispose();
-    _client = session != null
-        ? SimklClient(session, onSessionInvalidated: onSessionInvalidated, httpClient: httpClient)
-        : null;
+  void rebindSession(
+    TrackerSession? session, {
+    required void Function() onSessionInvalidated,
+    http.Client? httpClient,
+  }) {
+    rebindTrackerClient(
+      session,
+      createClient: (session) =>
+          SimklClient(session, onSessionInvalidated: onSessionInvalidated, httpClient: httpClient),
+    );
   }
 
   @override
   Future<void> markWatched(TrackerContext ctx) async {
-    final client = _client;
+    final client = this.client;
     if (client == null) return;
 
     final ids = _buildIds(external: ctx.external, anime: ctx.anime);
@@ -64,7 +65,7 @@ class SimklTracker extends TrackerBase {
 
   @override
   Future<void> markUnwatched(TrackerContext ctx) async {
-    final client = _client;
+    final client = this.client;
     if (client == null) return;
 
     final ids = _buildIds(external: ctx.external, anime: ctx.anime);
@@ -98,12 +99,19 @@ class SimklTracker extends TrackerBase {
           };
   }
 
-  Future<int?> getRating(TrackerRatingContext ctx) async {
-    final client = _client;
-    if (client == null) throw const TrackerRatingUnavailableException('Simkl');
+  /// Resolve the active client + matchable ids, or throw if rating is
+  /// unavailable (no session, or no usable external/anime ids).
+  (SimklClient, Map<String, Object>) _ratingTarget(TrackerRatingContext ctx) {
+    final activeClient = client;
+    if (activeClient == null) throw const TrackerRatingUnavailableException('Simkl');
     final ids = _buildIds(external: ctx.ids.external, anime: ctx.ids.anime);
     if (ids.isEmpty) throw const TrackerRatingUnavailableException('Simkl');
+    return (activeClient, ids);
+  }
 
+  @override
+  Future<int?> getRating(TrackerRatingContext ctx) async {
+    final (client, ids) = _ratingTarget(ctx);
     final types = ctx.isMovie ? const ['movies'] : const ['shows', 'anime'];
     for (final type in types) {
       final entries = await client.getRatings(type);
@@ -111,8 +119,8 @@ class SimklTracker extends TrackerBase {
         if (entry is! Map) continue;
         final map = entry.cast<String, dynamic>();
         final media = map[ctx.isMovie ? 'movie' : 'show'];
-        final remoteIds = _nestedIds(media) ?? _nestedIds(map);
-        if (!_idsMatch(remoteIds, ids)) continue;
+        final remoteIds = trackerNestedIds(media) ?? trackerNestedIds(map);
+        if (!trackerIdsMatch(remoteIds, ids)) continue;
         final rating = flexibleInt(map['user_rating']) ?? flexibleInt(map['rating']);
         return rating != null && rating > 0 ? rating.clamp(1, 10).toInt() : null;
       }
@@ -120,23 +128,17 @@ class SimklTracker extends TrackerBase {
     return null;
   }
 
+  @override
   Future<void> rate(TrackerRatingContext ctx, int score) async {
-    final client = _client;
-    if (client == null) throw const TrackerRatingUnavailableException('Simkl');
-    final ids = _buildIds(external: ctx.ids.external, anime: ctx.ids.anime);
-    if (ids.isEmpty) throw const TrackerRatingUnavailableException('Simkl');
-
+    final (client, ids) = _ratingTarget(ctx);
     final clamped = score.clamp(1, 10).toInt();
     await client.addRatings(_ratingBody(ctx, ids, rating: clamped));
     appLogger.d('Simkl: updated score (ids=$ids, score=$clamped)');
   }
 
+  @override
   Future<void> clearRating(TrackerRatingContext ctx) async {
-    final client = _client;
-    if (client == null) throw const TrackerRatingUnavailableException('Simkl');
-    final ids = _buildIds(external: ctx.ids.external, anime: ctx.ids.anime);
-    if (ids.isEmpty) throw const TrackerRatingUnavailableException('Simkl');
-
+    final (client, ids) = _ratingTarget(ctx);
     await client.removeRatings(_ratingBody(ctx, ids));
     appLogger.d('Simkl: cleared score (ids=$ids)');
   }
@@ -150,25 +152,6 @@ class SimklTracker extends TrackerBase {
         : {
             'shows': [item],
           };
-  }
-
-  Map<String, dynamic>? _nestedIds(Object? value) {
-    if (value is! Map) return null;
-    final ids = value['ids'];
-    return ids is Map ? ids.cast<String, dynamic>() : null;
-  }
-
-  bool _idsMatch(Map<String, dynamic>? remoteIds, Map<String, Object> localIds) {
-    if (remoteIds == null) return false;
-    for (final entry in localIds.entries) {
-      final remote = remoteIds[entry.key];
-      if (remote == null) continue;
-      if (entry.value is String && remote.toString() == entry.value) return true;
-      final remoteInt = flexibleInt(remote);
-      final localInt = flexibleInt(entry.value);
-      if (remoteInt != null && localInt != null && remoteInt == localInt) return true;
-    }
-    return false;
   }
 
   /// Prefer Fribb's simkl_id for precision; otherwise send whatever Plex

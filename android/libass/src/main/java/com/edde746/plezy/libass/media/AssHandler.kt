@@ -17,6 +17,7 @@ import com.edde746.plezy.libass.Ass
 import com.edde746.plezy.libass.AssRender
 import com.edde746.plezy.libass.AssTrack
 import com.edde746.plezy.libass.media.parser.AssHeaderParser
+import com.edde746.plezy.libass.media.widget.AssAtlasPipelineConfig
 
 /**
  * Handles ASS subtitle rendering and integration with ExoPlayer.
@@ -185,13 +186,15 @@ class AssHandler(
    * (re)created or the selected track changes, so renderer state survives both.
    */
   private fun applyRenderState(render: AssRender) {
+    // Storage (script/video authoring size) stays full-res; only the frame and
+    // margins follow RENDER_SCALE so the raster shrinks while layout is unchanged.
     if (videoSize.isValid) render.setStorageSize(videoSize.width, videoSize.height)
     when {
-      surfaceSize.isValid -> render.setFrameSize(surfaceSize.width, surfaceSize.height)
+      surfaceSize.isValid -> render.setFrameSize(scaledForRender(surfaceSize.width), scaledForRender(surfaceSize.height))
       // Fallback frame until the overlay surface reports its size.
-      videoSize.isValid -> render.setFrameSize(videoSize.width, videoSize.height)
+      videoSize.isValid -> render.setFrameSize(scaledForRender(videoSize.width), scaledForRender(videoSize.height))
     }
-    margins?.let { m -> render.setMargins(m[0], m[1], m[2], m[3]) }
+    margins?.let { m -> render.setMargins(scaledForRender(m[0]), scaledForRender(m[1]), scaledForRender(m[2]), scaledForRender(m[3])) }
     render.setUseMargins(useMargins)
   }
 
@@ -220,7 +223,7 @@ class AssHandler(
     if (surfaceSize.width == width && surfaceSize.height == height) return
     Log.i("AssHandler", "setOverlaySurfaceSize: width = $width, height = $height")
     surfaceSize = Size(width, height)
-    render?.setFrameSize(width, height)
+    render?.setFrameSize(scaledForRender(width), scaledForRender(height))
   }
 
   /**
@@ -230,8 +233,12 @@ class AssHandler(
    */
   fun setMargins(top: Int, bottom: Int, left: Int, right: Int) {
     margins = intArrayOf(top, bottom, left, right)
-    render?.setMargins(top, bottom, left, right)
+    render?.setMargins(scaledForRender(top), scaledForRender(bottom), scaledForRender(left), scaledForRender(right))
   }
+
+  /** Frame/margin extents go to libass at the overlay's render resolution; the GL
+   *  side scales the result back up. Identity unless RENDER_SCALE < 1. */
+  private fun scaledForRender(px: Int): Int = AssAtlasPipelineConfig.scaledForRender(px)
 
   /** mpv's sub-ass-force-margins: anchor non-positioned events to the visible frame. */
   fun setUseMargins(use: Boolean) {
@@ -383,4 +390,16 @@ class AssHandler(
    */
   private val Size.isValid
     get() = width > 0 && height > 0
+
+  companion object {
+    /**
+     * Sets the global libass overlay render scale (fraction of the surface resolution; 1.0 = no
+     * downscale). Cheaper raster for the render-bound tail on weak GPUs, at some sharpness. Set
+     * before/at playback init — [AssAtlasPipelineConfig.scaledForRender] reads it on the next
+     * frame-size apply (overlay surface create / size change), so it takes effect from playback.
+     */
+    fun setRenderScale(scale: Float) {
+      AssAtlasPipelineConfig.renderScale = scale.coerceIn(0.2f, 1.0f)
+    }
+  }
 }

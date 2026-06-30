@@ -20,11 +20,11 @@ import '../focus/focusable_button.dart';
 import '../focus/focusable_text_field.dart';
 import '../focus/key_event_utils.dart';
 import '../media/media_backend.dart';
+import '../navigation/profile_session_screen.dart';
 import '../utils/navigation_transitions.dart';
 import '../widgets/backend_badge.dart';
 import '../widgets/dialog_action_button.dart';
 import 'auth/plex_pin_auth_flow.dart';
-import 'main_screen.dart';
 import 'profile/profile_switch_screen.dart';
 import 'settings/add_jellyfin_screen.dart';
 
@@ -172,7 +172,9 @@ class _AuthScreenState extends State<AuthScreen> {
       await context.read<UserProfileProvider>().initialize();
 
       if (!mounted) return;
-      unawaited(Navigator.pushReplacement(context, fadeRoute(MainScreen(initialPromptHandled: promptHandled))));
+      unawaited(
+        Navigator.pushReplacement(context, fadeRoute(ProfileSessionScreen(initialPromptHandled: promptHandled))),
+      );
     } catch (e) {
       appLogger.e('Failed to connect to servers', error: e);
       if (!mounted) return;
@@ -196,7 +198,7 @@ class _AuthScreenState extends State<AuthScreen> {
     // The connection persisted and the manager registered the client; move
     // straight to the main screen. [MainScreen] reads the active client
     // from the server provider, so no client argument is needed here.
-    unawaited(Navigator.pushReplacement(context, fadeRoute(const MainScreen())));
+    unawaited(Navigator.pushReplacement(context, fadeRoute(const ProfileSessionScreen())));
   }
 
   void _showDebugTokenDialog() {

@@ -118,6 +118,9 @@
     "continueWatchingAction": "계속 보기 동작",
     "continueWatchingPlay": "재생",
     "continueWatchingDetails": "상세 정보 열기",
+    "episodeAction": "에피소드 동작",
+    "episodePlay": "재생",
+    "episodeDetails": "상세 정보 열기",
     "useGlobalHubs": "홈 레이아웃 사용",
     "useGlobalHubsDescription": "통합 홈 허브를 표시합니다. 끄면 라이브러리 추천을 사용합니다.",
     "showServerNameOnHubs": "허브에 서버 이름 표시",
@@ -259,6 +262,8 @@
     "displaySwitchDelay": "디스플레이 전환 지연",
     "tunneledPlayback": "터널 재생",
     "tunneledPlaybackDescription": "비디오 터널링을 사용합니다. HDR 재생 시 검은 화면이 보이면 비활성화하세요.",
+    "audioPassthrough": "오디오 패스스루",
+    "audioPassthroughDescription": "Dolby/DTS 오디오를 재인코딩 없이 리시버나 TV로 전송하여 서라운드 사운드를 유지합니다. 소리가 나지 않으면 비활성화하세요.",
     "dvConversionMode": "Dolby Vision 변환",
     "dvConversionModeDescription": "ExoPlayer가 Dolby Vision Profile 7 파일을 처리하는 방식을 선택합니다.",
     "dvConversionAuto": "자동",
@@ -771,7 +776,8 @@
       "studio": "스튜디오",
       "random": "무작위",
       "dateShared": "공유된 날짜",
-      "latestEpisodeAirDate": "최신 에피소드 방영일"
+      "latestEpisodeAirDate": "최신 에피소드 방영일",
+      "lastEpisodeDateAdded": "최신 에피소드 추가일"
     }
   },
   "about": {
@@ -1027,6 +1033,7 @@
     "unwatchedOnly": "시청하지 않은 것만",
     "nextNUnwatched": "다음 ${count}개 미시청",
     "customAmount": "직접 입력...",
+    "includeSpecials": "스페셜 포함",
     "howManyEpisodes": "몇 개의 에피소드?",
     "itemsQueued": "${count}개 항목이 다운로드 대기열에 추가됨",
     "keepSynced": "동기화 유지",

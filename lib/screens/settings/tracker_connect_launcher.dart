@@ -6,6 +6,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../focus/input_mode_tracker.dart';
 import '../../i18n/strings.g.dart';
 import '../../utils/app_logger.dart';
+import '../../utils/dialogs.dart';
 import '../../utils/snackbar_helper.dart';
 
 /// Shared "connect this tracker" launcher.
@@ -33,7 +34,7 @@ Future<void> launchTrackerConnect<T>(
   final ok = await connect((payload) {
     if (!context.mounted) return;
     dialogOpen = true;
-    showDialog<void>(
+    showScopedDialog<void>(
       context: context,
       barrierDismissible: false,
       builder: (_) => buildDialog(payload, () {
@@ -58,7 +59,7 @@ Future<void> launchTrackerConnect<T>(
   // the Cancel button). This is the ONLY site that dismisses the dialog —
   // popping here and having the dialog self-pop would pop the screen behind.
   if (dialogOpen) {
-    Navigator.of(context, rootNavigator: true).pop();
+    Navigator.of(context).pop();
   }
   if (!ok) {
     showAppSnackBar(context, t.trackers.connectFailed(service: serviceName));

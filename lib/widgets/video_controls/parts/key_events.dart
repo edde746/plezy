@@ -61,6 +61,15 @@ extension _PlexVideoControlsKeyEventMethods on _PlexVideoControlsState {
     return event is KeyDownEvent && _isPlayPauseKey(event);
   }
 
+  void _activateHiddenControlsPrimaryAction() {
+    if (_isSkipMarkerButtonVisible) {
+      _activateSkipMarker();
+      return;
+    }
+    _playOrPause();
+    _showControlsWithFocus();
+  }
+
   /// Global key event handler for focus-independent shortcuts (desktop only)
   bool _handleGlobalKeyEvent(KeyEvent event) {
     if (!mounted) return false;
@@ -91,13 +100,15 @@ extension _PlexVideoControlsKeyEventMethods on _PlexVideoControlsState {
         if (PlatformDetector.isTV() && event is KeyDownEvent) {
           BackKeyCoordinator.markHandled();
         }
+        final promptBackResult = handlePromptDismissBackKey(event, widget.onDismissPrompt);
+        if (promptBackResult != KeyEventResult.ignored) return true;
         final backResult = handleBackKeyAction(event, () {
           if (PlatformDetector.isTV()) {
             if (_showControls) {
               if (widget.chromeController.contentStripVisible) {
                 _desktopControlsKey.currentState?.dismissContentStrip();
                 widget.chromeController.setContentStripVisible(false);
-                _restartHideTimerIfPlaying();
+                _restartHideTimerForCurrentPlaybackState();
                 return;
               }
               _hideControls();
@@ -193,13 +204,17 @@ extension _PlexVideoControlsKeyEventMethods on _PlexVideoControlsState {
     if (PlatformDetector.isTV() && event.logicalKey.isBackKey && event is KeyDownEvent) {
       BackKeyCoordinator.markHandled();
     }
+    final promptBackResult = handlePromptDismissBackKey(event, widget.onDismissPrompt);
+    if (promptBackResult != KeyEventResult.ignored) {
+      return promptBackResult;
+    }
     final backResult = handleBackKeyAction(event, () {
       if (PlatformDetector.isTV()) {
         if (_showControls) {
           if (widget.chromeController.contentStripVisible) {
             _desktopControlsKey.currentState?.dismissContentStrip();
             widget.chromeController.setContentStripVisible(false);
-            _restartHideTimerIfPlaying();
+            _restartHideTimerForCurrentPlaybackState();
             return;
           }
           _hideControls();
@@ -228,7 +243,7 @@ extension _PlexVideoControlsKeyEventMethods on _PlexVideoControlsState {
 
     // Reset hide timer on any keyboard/controller input when controls are visible.
     if (_showControls) {
-      _restartHideTimerIfPlaying();
+      _restartHideTimerForCurrentPlaybackState();
     }
 
     final key = event.logicalKey;
@@ -267,12 +282,12 @@ extension _PlexVideoControlsKeyEventMethods on _PlexVideoControlsState {
       return KeyEventResult.handled;
     }
 
-    // Handle Select/Enter when controls are hidden: pause and show controls.
+    // Handle Select/Enter when controls are hidden.
     // Only intercept if this Focus node itself has primary focus (not a descendant).
+    // When the skip marker button is the only visible affordance, Select activates
+    // it; otherwise it falls back to play/pause + show controls.
     if (_isSelectKey(key) && !_showControls && _focusNode.hasPrimaryFocus) {
-      _playOrPause();
-      _showControlsWithFocus();
-      return KeyEventResult.handled;
+      return handleOneShotSelect(event, _activateHiddenControlsPrimaryAction);
     }
 
     // On desktop/TV, show controls on directional input.

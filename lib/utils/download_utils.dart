@@ -8,6 +8,7 @@ import '../media/media_kind.dart';
 import '../media/media_server_client.dart';
 import '../database/app_database.dart';
 import '../providers/download_provider.dart';
+import '../services/settings_service.dart';
 import '../services/sync_rule_executor.dart';
 import 'content_utils.dart';
 import 'dialogs.dart';
@@ -67,6 +68,10 @@ Future<DownloadResult?> showDownloadOptionsAndQueue(
   var filter = DownloadFilter.all;
   int? maxCount;
   bool keepSynced = false;
+  // Remembered "Include Specials" choice; the toggle is only shown for whole
+  // shows (a single season has no Specials to drop).
+  final settings = SettingsService.instanceOrNull;
+  bool includeSpecials = settings?.read(SettingsService.downloadIncludeSpecials) ?? true;
 
   if (kind == MediaKind.show || kind == MediaKind.season) {
     int? customCount;
@@ -89,6 +94,14 @@ Future<DownloadResult?> showDownloadOptionsAndQueue(
       context,
       title: t.downloads.downloadNow,
       options: options,
+      toggle: kind == MediaKind.show
+          ? (
+              label: t.downloads.includeSpecials,
+              icon: Symbols.star_rounded,
+              value: includeSpecials,
+              onChanged: (value) => includeSpecials = value,
+            )
+          : null,
       onBeforeClose: (value) async {
         if (value != _DownloadChoice.custom) return value;
         customCount = await _showEpisodeCountDialog(context);
@@ -149,8 +162,14 @@ Future<DownloadResult?> showDownloadOptionsAndQueue(
       targetType: metadata.kind.id.isNotEmpty ? metadata.kind.id : ContentTypes.show,
       episodeCount: syncCount,
       mediaIndex: versionConfig.mediaIndex,
+      includeSpecials: includeSpecials,
       targetMetadata: metadata,
     );
+  }
+
+  // Remember the toggle for next time (only shown, and thus meaningful, for shows).
+  if (kind == MediaKind.show) {
+    await settings?.write(SettingsService.downloadIncludeSpecials, includeSpecials);
   }
 
   final count = await downloadProvider.queueDownload(
@@ -159,6 +178,7 @@ Future<DownloadResult?> showDownloadOptionsAndQueue(
     versionConfig: versionConfig,
     filter: filter,
     maxCount: maxCount,
+    includeSpecials: includeSpecials,
   );
 
   return DownloadResult(

@@ -5,20 +5,17 @@ import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:vibe_stream/media/media_kind.dart';
 import 'package:vibe_stream/models/trackers/anime_ids.dart';
-import 'package:vibe_stream/services/trackers/anilist/anilist_session.dart';
 import 'package:vibe_stream/services/trackers/anilist/anilist_tracker.dart';
-import 'package:vibe_stream/services/trackers/mal/mal_session.dart';
 import 'package:vibe_stream/services/trackers/mal/mal_tracker.dart';
-import 'package:vibe_stream/services/trackers/simkl/simkl_session.dart';
 import 'package:vibe_stream/services/trackers/simkl/simkl_tracker.dart';
 import 'package:vibe_stream/services/trackers/tracker_id_resolver.dart';
+import 'package:vibe_stream/services/trackers/tracker_session.dart';
 import 'package:vibe_stream/services/trakt/trakt_scrobble_service.dart';
-import 'package:vibe_stream/services/trakt/trakt_session.dart';
 import 'package:vibe_stream/utils/external_ids.dart';
 
 int _now() => DateTime.now().millisecondsSinceEpoch ~/ 1000;
 
-TraktSession _traktSession() => TraktSession(
+TrackerSession _traktSession() => TrackerSession(
   accessToken: 'token',
   refreshToken: 'refresh',
   expiresAt: _now() + 86400,
@@ -26,12 +23,12 @@ TraktSession _traktSession() => TraktSession(
   createdAt: _now(),
 );
 
-SimklSession _simklSession() => SimklSession(accessToken: 'token', createdAt: _now());
+TrackerSession _simklSession() => TrackerSession(accessToken: 'token', createdAt: _now());
 
-MalSession _malSession() =>
-    MalSession(accessToken: 'token', refreshToken: 'refresh', expiresAt: _now() + 86400, createdAt: _now());
+TrackerSession _malSession() =>
+    TrackerSession(accessToken: 'token', refreshToken: 'refresh', expiresAt: _now() + 86400, createdAt: _now());
 
-AnilistSession _anilistSession() => AnilistSession(accessToken: 'token', expiresAt: _now() + 86400, createdAt: _now());
+TrackerSession _anilistSession() => TrackerSession(accessToken: 'token', expiresAt: _now() + 86400, createdAt: _now());
 
 TrackerRatingContext _ctx({
   required MediaKind kind,

@@ -247,6 +247,9 @@ class _TranslationsSettingsFr extends TranslationsSettingsEn {
 	@override String get continueWatchingAction => 'Action Continuer à regarder';
 	@override String get continueWatchingPlay => 'Lire';
 	@override String get continueWatchingDetails => 'Ouvrir les détails';
+	@override String get episodeAction => 'Action des épisodes';
+	@override String get episodePlay => 'Lire';
+	@override String get episodeDetails => 'Ouvrir les détails';
 	@override String get useGlobalHubs => 'Utiliser la mise en page d\'accueil';
 	@override String get useGlobalHubsDescription => 'Afficher des hubs d\'accueil unifiés. Sinon, utiliser les recommandations de bibliothèque.';
 	@override String get showServerNameOnHubs => 'Afficher le nom du serveur sur les hubs';
@@ -388,6 +391,8 @@ class _TranslationsSettingsFr extends TranslationsSettingsEn {
 	@override String get displaySwitchDelay => 'Délai de changement d\'affichage';
 	@override String get tunneledPlayback => 'Lecture tunnelée';
 	@override String get tunneledPlaybackDescription => 'Utiliser le tunneling vidéo. Désactivez si la lecture HDR affiche un écran noir.';
+	@override String get audioPassthrough => 'Audio Pass-Through';
+	@override String get audioPassthroughDescription => 'Envoyez l\'audio Dolby/DTS vers votre ampli ou téléviseur sans réencodage, en conservant le son surround. Désactivez si vous n\'avez aucun son.';
 	@override String get dvConversionMode => 'Conversion Dolby Vision';
 	@override String get dvConversionModeDescription => 'Choisissez comment ExoPlayer gère les fichiers Dolby Vision Profile 7.';
 	@override String get dvConversionAuto => 'Auto';
@@ -1285,6 +1290,7 @@ class _TranslationsDownloadsFr extends TranslationsDownloadsEn {
 	@override String get unwatchedOnly => 'Non vus uniquement';
 	@override String nextNUnwatched({required Object count}) => '${count} prochains non vus';
 	@override String get customAmount => 'Quantité personnalisée...';
+	@override String get includeSpecials => 'Inclure les spéciaux';
 	@override String get howManyEpisodes => 'Combien d\'épisodes ?';
 	@override String itemsQueued({required Object count}) => '${count} éléments mis en file d\'attente';
 	@override String get keepSynced => 'Garder synchronisé';
@@ -1755,6 +1761,7 @@ class _TranslationsLibrariesSortLabelsFr extends TranslationsLibrariesSortLabels
 	@override String get random => 'Aléatoire';
 	@override String get dateShared => 'Date de partage';
 	@override String get latestEpisodeAirDate => 'Dernière date de diffusion';
+	@override String get lastEpisodeDateAdded => 'Date d\'ajout du dernier épisode';
 }
 
 // Path: companionRemote.session
@@ -2029,6 +2036,9 @@ extension on TranslationsFr {
 			'settings.continueWatchingAction' => 'Action Continuer à regarder',
 			'settings.continueWatchingPlay' => 'Lire',
 			'settings.continueWatchingDetails' => 'Ouvrir les détails',
+			'settings.episodeAction' => 'Action des épisodes',
+			'settings.episodePlay' => 'Lire',
+			'settings.episodeDetails' => 'Ouvrir les détails',
 			'settings.useGlobalHubs' => 'Utiliser la mise en page d\'accueil',
 			'settings.useGlobalHubsDescription' => 'Afficher des hubs d\'accueil unifiés. Sinon, utiliser les recommandations de bibliothèque.',
 			'settings.showServerNameOnHubs' => 'Afficher le nom du serveur sur les hubs',
@@ -2170,6 +2180,8 @@ extension on TranslationsFr {
 			'settings.displaySwitchDelay' => 'Délai de changement d\'affichage',
 			'settings.tunneledPlayback' => 'Lecture tunnelée',
 			'settings.tunneledPlaybackDescription' => 'Utiliser le tunneling vidéo. Désactivez si la lecture HDR affiche un écran noir.',
+			'settings.audioPassthrough' => 'Audio Pass-Through',
+			'settings.audioPassthroughDescription' => 'Envoyez l\'audio Dolby/DTS vers votre ampli ou téléviseur sans réencodage, en conservant le son surround. Désactivez si vous n\'avez aucun son.',
 			'settings.dvConversionMode' => 'Conversion Dolby Vision',
 			'settings.dvConversionModeDescription' => 'Choisissez comment ExoPlayer gère les fichiers Dolby Vision Profile 7.',
 			'settings.dvConversionAuto' => 'Auto',
@@ -2428,13 +2440,13 @@ extension on TranslationsFr {
 			'messages.serverLimitTitle' => 'Échec de la lecture',
 			'messages.serverLimitBody' => 'Erreur serveur (HTTP 500). Une limite de bande passante/transcodage a probablement rejeté cette session. Demandez au propriétaire de l\'ajuster.',
 			'messages.logsUploaded' => 'Logs envoyés',
+			_ => null,
+		} ?? switch (path) {
 			'messages.logsUploadFailed' => 'Échec de l\'envoi des logs',
 			'messages.logId' => 'ID du log',
 			'subtitlingStyling.text' => 'Texte',
 			'subtitlingStyling.border' => 'Bordure',
 			'subtitlingStyling.background' => 'Arrière-plan',
-			_ => null,
-		} ?? switch (path) {
 			'subtitlingStyling.fontSize' => 'Taille de la police',
 			'subtitlingStyling.textColor' => 'Couleur du texte',
 			'subtitlingStyling.borderSize' => 'Taille de la bordure',
@@ -2638,6 +2650,7 @@ extension on TranslationsFr {
 			'libraries.sortLabels.random' => 'Aléatoire',
 			'libraries.sortLabels.dateShared' => 'Date de partage',
 			'libraries.sortLabels.latestEpisodeAirDate' => 'Dernière date de diffusion',
+			'libraries.sortLabels.lastEpisodeDateAdded' => 'Date d\'ajout du dernier épisode',
 			'about.title' => 'À propos',
 			'about.openSourceLicenses' => 'Licences Open Source',
 			'about.versionLabel' => ({required Object version}) => 'Version ${version}',
@@ -2870,6 +2883,7 @@ extension on TranslationsFr {
 			'downloads.unwatchedOnly' => 'Non vus uniquement',
 			'downloads.nextNUnwatched' => ({required Object count}) => '${count} prochains non vus',
 			'downloads.customAmount' => 'Quantité personnalisée...',
+			'downloads.includeSpecials' => 'Inclure les spéciaux',
 			'downloads.howManyEpisodes' => 'Combien d\'épisodes ?',
 			'downloads.itemsQueued' => ({required Object count}) => '${count} éléments mis en file d\'attente',
 			'downloads.keepSynced' => 'Garder synchronisé',
@@ -2940,6 +2954,8 @@ extension on TranslationsFr {
 			'companionRemote.pairing.connectionTimedOut' => 'Connexion expirée. Utilisez le même réseau sur les deux appareils.',
 			'companionRemote.pairing.sessionNotFound' => 'Appareil introuvable. Assurez-vous que Vibe fonctionne sur l\'hôte.',
 			'companionRemote.pairing.authFailed' => 'Échec de l\'authentification. Les deux appareils doivent utiliser le même compte Plex.',
+			_ => null,
+		} ?? switch (path) {
 			'companionRemote.pairing.failedToConnect' => ({required Object error}) => 'Échec de la connexion : ${error}',
 			'companionRemote.remote.disconnectConfirm' => 'Voulez-vous vous déconnecter de la session distante ?',
 			'companionRemote.remote.reconnecting' => 'Reconnexion...',
@@ -2947,8 +2963,6 @@ extension on TranslationsFr {
 			'companionRemote.remote.retryNow' => 'Réessayer maintenant',
 			'companionRemote.remote.tabRemote' => 'Télécommande',
 			'companionRemote.remote.tabPlay' => 'Lecture',
-			_ => null,
-		} ?? switch (path) {
 			'companionRemote.remote.tabMore' => 'Plus',
 			'companionRemote.remote.menu' => 'Menu',
 			'companionRemote.remote.tabNavigation' => 'Navigation par onglets',

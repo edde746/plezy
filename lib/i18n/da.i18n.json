@@ -118,6 +118,9 @@
     "continueWatchingAction": "Handling for Fortsæt med at se",
     "continueWatchingPlay": "Afspil",
     "continueWatchingDetails": "Åbn detaljer",
+    "episodeAction": "Handling for afsnit",
+    "episodePlay": "Afspil",
+    "episodeDetails": "Åbn detaljer",
     "useGlobalHubs": "Brug startlayout",
     "useGlobalHubsDescription": "Vis samlet startsideindhold. Brug ellers biblioteksanbefalinger.",
     "showServerNameOnHubs": "Vis servernavn på hubbe",
@@ -259,6 +262,8 @@
     "displaySwitchDelay": "Forsinkelse ved skærmskift",
     "tunneledPlayback": "Tunneleret afspilning",
     "tunneledPlaybackDescription": "Brug videotunneling. Slå fra, hvis HDR-afspilning viser sort video.",
+    "audioPassthrough": "Lyd-passthrough",
+    "audioPassthroughDescription": "Send Dolby/DTS-lyd til din receiver eller dit TV uden genkodning, så surroundlyd bevares. Slå fra, hvis du ikke har lyd.",
     "dvConversionMode": "Dolby Vision-konvertering",
     "dvConversionModeDescription": "Vælg, hvordan ExoPlayer håndterer Dolby Vision Profile 7-filer.",
     "dvConversionAuto": "Auto",
@@ -771,7 +776,8 @@
       "studio": "Studie",
       "random": "Tilfældig",
       "dateShared": "Delt dato",
-      "latestEpisodeAirDate": "Seneste episodes premieredato"
+      "latestEpisodeAirDate": "Seneste episodes premieredato",
+      "lastEpisodeDateAdded": "Dato for senest tilføjede episode"
     }
   },
   "about": {
@@ -1027,6 +1033,7 @@
     "unwatchedOnly": "Kun usete",
     "nextNUnwatched": "Næste ${count} usete",
     "customAmount": "Angiv antal...",
+    "includeSpecials": "Inkludér specials",
     "howManyEpisodes": "Hvor mange episoder?",
     "itemsQueued": "${count} elementer sat i kø til download",
     "keepSynced": "Hold synkroniseret",

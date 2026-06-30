@@ -247,6 +247,9 @@ class _TranslationsSettingsKo extends TranslationsSettingsEn {
 	@override String get continueWatchingAction => '계속 보기 동작';
 	@override String get continueWatchingPlay => '재생';
 	@override String get continueWatchingDetails => '상세 정보 열기';
+	@override String get episodeAction => '에피소드 동작';
+	@override String get episodePlay => '재생';
+	@override String get episodeDetails => '상세 정보 열기';
 	@override String get useGlobalHubs => '홈 레이아웃 사용';
 	@override String get useGlobalHubsDescription => '통합 홈 허브를 표시합니다. 끄면 라이브러리 추천을 사용합니다.';
 	@override String get showServerNameOnHubs => '허브에 서버 이름 표시';
@@ -388,6 +391,8 @@ class _TranslationsSettingsKo extends TranslationsSettingsEn {
 	@override String get displaySwitchDelay => '디스플레이 전환 지연';
 	@override String get tunneledPlayback => '터널 재생';
 	@override String get tunneledPlaybackDescription => '비디오 터널링을 사용합니다. HDR 재생 시 검은 화면이 보이면 비활성화하세요.';
+	@override String get audioPassthrough => '오디오 패스스루';
+	@override String get audioPassthroughDescription => 'Dolby/DTS 오디오를 재인코딩 없이 리시버나 TV로 전송하여 서라운드 사운드를 유지합니다. 소리가 나지 않으면 비활성화하세요.';
 	@override String get dvConversionMode => 'Dolby Vision 변환';
 	@override String get dvConversionModeDescription => 'ExoPlayer가 Dolby Vision Profile 7 파일을 처리하는 방식을 선택합니다.';
 	@override String get dvConversionAuto => '자동';
@@ -1285,6 +1290,7 @@ class _TranslationsDownloadsKo extends TranslationsDownloadsEn {
 	@override String get unwatchedOnly => '시청하지 않은 것만';
 	@override String nextNUnwatched({required Object count}) => '다음 ${count}개 미시청';
 	@override String get customAmount => '직접 입력...';
+	@override String get includeSpecials => '스페셜 포함';
 	@override String get howManyEpisodes => '몇 개의 에피소드?';
 	@override String itemsQueued({required Object count}) => '${count}개 항목이 다운로드 대기열에 추가됨';
 	@override String get keepSynced => '동기화 유지';
@@ -1755,6 +1761,7 @@ class _TranslationsLibrariesSortLabelsKo extends TranslationsLibrariesSortLabels
 	@override String get random => '무작위';
 	@override String get dateShared => '공유된 날짜';
 	@override String get latestEpisodeAirDate => '최신 에피소드 방영일';
+	@override String get lastEpisodeDateAdded => '최신 에피소드 추가일';
 }
 
 // Path: companionRemote.session
@@ -2029,6 +2036,9 @@ extension on TranslationsKo {
 			'settings.continueWatchingAction' => '계속 보기 동작',
 			'settings.continueWatchingPlay' => '재생',
 			'settings.continueWatchingDetails' => '상세 정보 열기',
+			'settings.episodeAction' => '에피소드 동작',
+			'settings.episodePlay' => '재생',
+			'settings.episodeDetails' => '상세 정보 열기',
 			'settings.useGlobalHubs' => '홈 레이아웃 사용',
 			'settings.useGlobalHubsDescription' => '통합 홈 허브를 표시합니다. 끄면 라이브러리 추천을 사용합니다.',
 			'settings.showServerNameOnHubs' => '허브에 서버 이름 표시',
@@ -2170,6 +2180,8 @@ extension on TranslationsKo {
 			'settings.displaySwitchDelay' => '디스플레이 전환 지연',
 			'settings.tunneledPlayback' => '터널 재생',
 			'settings.tunneledPlaybackDescription' => '비디오 터널링을 사용합니다. HDR 재생 시 검은 화면이 보이면 비활성화하세요.',
+			'settings.audioPassthrough' => '오디오 패스스루',
+			'settings.audioPassthroughDescription' => 'Dolby/DTS 오디오를 재인코딩 없이 리시버나 TV로 전송하여 서라운드 사운드를 유지합니다. 소리가 나지 않으면 비활성화하세요.',
 			'settings.dvConversionMode' => 'Dolby Vision 변환',
 			'settings.dvConversionModeDescription' => 'ExoPlayer가 Dolby Vision Profile 7 파일을 처리하는 방식을 선택합니다.',
 			'settings.dvConversionAuto' => '자동',
@@ -2428,13 +2440,13 @@ extension on TranslationsKo {
 			'messages.serverLimitTitle' => '재생 실패',
 			'messages.serverLimitBody' => '서버 오류(HTTP 500). 대역폭/트랜스코딩 제한으로 세션이 거부된 것 같습니다. 소유자에게 조정을 요청하세요.',
 			'messages.logsUploaded' => '로그 업로드 완료',
+			_ => null,
+		} ?? switch (path) {
 			'messages.logsUploadFailed' => '로그 업로드 실패',
 			'messages.logId' => '로그 ID',
 			'subtitlingStyling.text' => '텍스트',
 			'subtitlingStyling.border' => '테두리',
 			'subtitlingStyling.background' => '배경',
-			_ => null,
-		} ?? switch (path) {
 			'subtitlingStyling.fontSize' => '글자 크기',
 			'subtitlingStyling.textColor' => '텍스트 색상',
 			'subtitlingStyling.borderSize' => '테두리 크기',
@@ -2638,6 +2650,7 @@ extension on TranslationsKo {
 			'libraries.sortLabels.random' => '무작위',
 			'libraries.sortLabels.dateShared' => '공유된 날짜',
 			'libraries.sortLabels.latestEpisodeAirDate' => '최신 에피소드 방영일',
+			'libraries.sortLabels.lastEpisodeDateAdded' => '최신 에피소드 추가일',
 			'about.title' => '소개',
 			'about.openSourceLicenses' => '오픈소스 라이선스',
 			'about.versionLabel' => ({required Object version}) => '버전 ${version}',
@@ -2870,6 +2883,7 @@ extension on TranslationsKo {
 			'downloads.unwatchedOnly' => '시청하지 않은 것만',
 			'downloads.nextNUnwatched' => ({required Object count}) => '다음 ${count}개 미시청',
 			'downloads.customAmount' => '직접 입력...',
+			'downloads.includeSpecials' => '스페셜 포함',
 			'downloads.howManyEpisodes' => '몇 개의 에피소드?',
 			'downloads.itemsQueued' => ({required Object count}) => '${count}개 항목이 다운로드 대기열에 추가됨',
 			'downloads.keepSynced' => '동기화 유지',
@@ -2940,6 +2954,8 @@ extension on TranslationsKo {
 			'companionRemote.pairing.connectionTimedOut' => '연결 시간이 초과되었습니다. 두 기기에서 같은 네트워크를 사용하세요.',
 			'companionRemote.pairing.sessionNotFound' => '기기를 찾을 수 없습니다. 호스트에서 Vibe가 실행 중인지 확인하세요.',
 			'companionRemote.pairing.authFailed' => '인증에 실패했습니다. 두 기기 모두 같은 Plex 계정이 필요합니다.',
+			_ => null,
+		} ?? switch (path) {
 			'companionRemote.pairing.failedToConnect' => ({required Object error}) => '연결 실패: ${error}',
 			'companionRemote.remote.disconnectConfirm' => '원격 세션 연결을 해제하시겠습니까?',
 			'companionRemote.remote.reconnecting' => '재연결 중...',
@@ -2947,8 +2963,6 @@ extension on TranslationsKo {
 			'companionRemote.remote.retryNow' => '지금 재시도',
 			'companionRemote.remote.tabRemote' => '리모컨',
 			'companionRemote.remote.tabPlay' => '재생',
-			_ => null,
-		} ?? switch (path) {
 			'companionRemote.remote.tabMore' => '더 보기',
 			'companionRemote.remote.menu' => '메뉴',
 			'companionRemote.remote.tabNavigation' => '탭 탐색',

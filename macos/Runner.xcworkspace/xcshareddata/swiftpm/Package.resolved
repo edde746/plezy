@@ -13,7 +13,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/MazeDev7/MPVKitAM",
       "state" : {
-        "revision" : "245b69dce22156e81b79c84cfcb748358b674e47"
+        "revision" : "bed69a1cd381934c987376db1ed30b8c4725ae0c",
+        "version" : "1.0.6"
       }
     },
     {

@@ -465,6 +465,15 @@ class TranslationsSettingsEn {
 	/// en: 'Open Details'
 	String get continueWatchingDetails => 'Open Details';
 
+	/// en: 'Episode Action'
+	String get episodeAction => 'Episode Action';
+
+	/// en: 'Play'
+	String get episodePlay => 'Play';
+
+	/// en: 'Open Details'
+	String get episodeDetails => 'Open Details';
+
 	/// en: 'Use Home Layout'
 	String get useGlobalHubs => 'Use Home Layout';
 
@@ -905,6 +914,12 @@ class TranslationsSettingsEn {
 
 	/// en: 'Use video tunneling. Disable if HDR playback shows black video.'
 	String get tunneledPlaybackDescription => 'Use video tunneling. Disable if HDR playback shows black video.';
+
+	/// en: 'Audio Passthrough'
+	String get audioPassthrough => 'Audio Passthrough';
+
+	/// en: 'Send Dolby/DTS audio to your receiver or TV without re-encoding, preserving surround sound. Turn off if you have no sound.'
+	String get audioPassthroughDescription => 'Send Dolby/DTS audio to your receiver or TV without re-encoding, preserving surround sound. Turn off if you have no sound.';
 
 	/// en: 'Dolby Vision Conversion'
 	String get dvConversionMode => 'Dolby Vision Conversion';
@@ -3075,6 +3090,9 @@ class TranslationsDownloadsEn {
 	/// en: 'Custom amount...'
 	String get customAmount => 'Custom amount...';
 
+	/// en: 'Include Specials'
+	String get includeSpecials => 'Include Specials';
+
 	/// en: 'How many episodes?'
 	String get howManyEpisodes => 'How many episodes?';
 
@@ -4164,6 +4182,9 @@ class TranslationsLibrariesSortLabelsEn {
 
 	/// en: 'Latest Episode Air Date'
 	String get latestEpisodeAirDate => 'Latest Episode Air Date';
+
+	/// en: 'Last Episode Date Added'
+	String get lastEpisodeDateAdded => 'Last Episode Date Added';
 }
 
 // Path: companionRemote.session
@@ -4606,6 +4627,9 @@ extension on Translations {
 			'settings.continueWatchingAction' => 'Continue Watching Action',
 			'settings.continueWatchingPlay' => 'Play',
 			'settings.continueWatchingDetails' => 'Open Details',
+			'settings.episodeAction' => 'Episode Action',
+			'settings.episodePlay' => 'Play',
+			'settings.episodeDetails' => 'Open Details',
 			'settings.useGlobalHubs' => 'Use Home Layout',
 			'settings.useGlobalHubsDescription' => 'Show unified home hubs. Otherwise use library recommendations.',
 			'settings.showServerNameOnHubs' => 'Show Server Name on Hubs',
@@ -4753,6 +4777,8 @@ extension on Translations {
 			'settings.displaySwitchDelay' => 'Display Switch Delay',
 			'settings.tunneledPlayback' => 'Tunneled Playback',
 			'settings.tunneledPlaybackDescription' => 'Use video tunneling. Disable if HDR playback shows black video.',
+			'settings.audioPassthrough' => 'Audio Passthrough',
+			'settings.audioPassthroughDescription' => 'Send Dolby/DTS audio to your receiver or TV without re-encoding, preserving surround sound. Turn off if you have no sound.',
 			'settings.dvConversionMode' => 'Dolby Vision Conversion',
 			'settings.dvConversionModeDescription' => 'Choose how ExoPlayer handles Dolby Vision Profile 7 files.',
 			'settings.dvConversionAuto' => 'Auto',
@@ -5005,13 +5031,13 @@ extension on Translations {
 			'messages.noResultsFound' => 'No results found',
 			'messages.sleepTimerSet' => ({required Object label}) => 'Sleep timer set for ${label}',
 			'messages.noItemsAvailable' => 'No items available',
+			_ => null,
+		} ?? switch (path) {
 			'messages.failedToCreatePlayQueueNoItems' => 'Failed to create play queue - no items',
 			'messages.failedPlayback' => ({required Object action, required Object error}) => 'Failed to ${action}: ${error}',
 			'messages.switchingToCompatiblePlayer' => 'Switching to compatible player...',
 			'messages.serverLimitTitle' => 'Playback failed',
 			'messages.serverLimitBody' => 'Server error (HTTP 500). A bandwidth/transcoding limit likely rejected this session. Ask the owner to adjust it.',
-			_ => null,
-		} ?? switch (path) {
 			'messages.logsUploaded' => 'Logs uploaded',
 			'messages.logsUploadFailed' => 'Failed to upload logs',
 			'messages.logId' => 'Log ID',
@@ -5221,6 +5247,7 @@ extension on Translations {
 			'libraries.sortLabels.random' => 'Random',
 			'libraries.sortLabels.dateShared' => 'Date Shared',
 			'libraries.sortLabels.latestEpisodeAirDate' => 'Latest Episode Air Date',
+			'libraries.sortLabels.lastEpisodeDateAdded' => 'Last Episode Date Added',
 			'about.title' => 'About',
 			'about.openSourceLicenses' => 'Open Source Licenses',
 			'about.versionLabel' => ({required Object version}) => 'Version ${version}',
@@ -5456,6 +5483,7 @@ extension on Translations {
 			'downloads.unwatchedOnly' => 'Unwatched only',
 			'downloads.nextNUnwatched' => ({required Object count}) => 'Next ${count} unwatched',
 			'downloads.customAmount' => 'Custom amount...',
+			'downloads.includeSpecials' => 'Include Specials',
 			'downloads.howManyEpisodes' => 'How many episodes?',
 			'downloads.itemsQueued' => ({required Object count}) => '${count} items queued for download',
 			'downloads.keepSynced' => 'Keep synced',
@@ -5517,6 +5545,8 @@ extension on Translations {
 			'companionRemote.pairing.connecting' => 'Connecting...',
 			'companionRemote.pairing.searchingForDevices' => 'Looking for devices...',
 			'companionRemote.pairing.noDevicesFound' => 'No devices found on your network',
+			_ => null,
+		} ?? switch (path) {
 			'companionRemote.pairing.noDevicesHint' => 'Open Vibe on desktop and use the same WiFi',
 			'companionRemote.pairing.availableDevices' => 'Available Devices',
 			'companionRemote.pairing.manualConnection' => 'Manual Connection',
@@ -5524,8 +5554,6 @@ extension on Translations {
 			'companionRemote.pairing.validationHostRequired' => 'Please enter host address',
 			'companionRemote.pairing.validationHostFormat' => 'Format must be IP:port (e.g., 192.168.1.100:48632)',
 			'companionRemote.pairing.connectionTimedOut' => 'Connection timed out. Use the same network on both devices.',
-			_ => null,
-		} ?? switch (path) {
 			'companionRemote.pairing.sessionNotFound' => 'Device not found. Make sure Vibe is running on the host.',
 			'companionRemote.pairing.authFailed' => 'Authentication failed. Both devices need the same Plex account.',
 			'companionRemote.pairing.failedToConnect' => ({required Object error}) => 'Failed to connect: ${error}',

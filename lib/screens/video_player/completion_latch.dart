@@ -3,11 +3,6 @@ enum CompletionLatchSignal {
   /// Nothing to do.
   none,
 
-  /// Playback just entered the end-of-video window and the latch is clear —
-  /// the caller should run its completion handling (which latches on
-  /// success via [CompletionLatch.latch]).
-  completed,
-
   /// Playback moved back out of the end region and the latch re-armed.
   rearmed,
 }
@@ -15,22 +10,17 @@ enum CompletionLatchSignal {
 /// End-of-video latch with rearm hysteresis for the Play Next / completion
 /// prompts.
 ///
-/// The prompt fires when playback enters the last [triggerWindowMs] of the
-/// item and must not re-fire on every subsequent position tick — the latch
-/// stays set while playback is parked inside the end region. It re-arms only
-/// once playback moves back out past [rearmWindowMs] (a larger window, so a
-/// position oscillating at the boundary can't flap), and never while a
-/// prompt is visible or an auto-play countdown owns the screen.
+/// Completion itself comes from the player's EOF signal. The latch prevents
+/// that handling from re-running while playback is parked at EOF, and re-arms
+/// only once playback moves back out past [rearmWindowMs] from the end. It
+/// never re-arms while a prompt is visible or an auto-play countdown owns the
+/// screen.
 ///
-/// Latching is the *caller's* move ([latch]), not [classifyPosition]'s: the
-/// completion handler has its own bail-outs (live TV, in-flight media swap)
-/// and a tick that bails must stay un-latched so the next tick retries.
+/// Latching is the *caller's* move ([latch]), not [classifyPosition]'s: the EOF
+/// handler has its own bail-outs (live TV, in-flight media swap) and a signal
+/// that bails must stay un-latched so the next EOF signal retries.
 class CompletionLatch {
-  CompletionLatch({required this.triggerWindowMs, required this.rearmWindowMs})
-    : assert(rearmWindowMs > triggerWindowMs, 'rearm window must exceed trigger window for hysteresis');
-
-  /// Fire when within this many ms of the end.
-  final int triggerWindowMs;
+  CompletionLatch({required this.rearmWindowMs});
 
   /// Re-arm only after moving back out past this many ms from the end.
   final int rearmWindowMs;
@@ -63,10 +53,6 @@ class CompletionLatch {
     required bool countdownActive,
   }) {
     if (durationMs <= 0) return CompletionLatchSignal.none;
-    if (positionMs >= durationMs - triggerWindowMs) {
-      if (!promptVisible && !_triggered) return CompletionLatchSignal.completed;
-      return CompletionLatchSignal.none;
-    }
     if (positionMs < durationMs - rearmWindowMs) {
       final wasLatched = _triggered;
       rearmIfClear(promptVisible: promptVisible, countdownActive: countdownActive);

@@ -111,13 +111,22 @@ MediaDetailNavigationTarget mediaDetailNavigationTargetFor(MediaItem item, {Medi
   return MediaDetailNavigationTarget(metadata: metadataOverride ?? item);
 }
 
+bool shouldOpenEpisodeDetailsForActivation({
+  required bool playDirectly,
+  required ContinueWatchingAction continueWatchingAction,
+  required EpisodeAction episodeAction,
+}) {
+  if (playDirectly) return continueWatchingAction == ContinueWatchingAction.details;
+  return episodeAction == EpisodeAction.details;
+}
+
 /// Navigates to the appropriate screen based on the item type.
 ///
 /// Accepts a [MediaItem] or a [MediaPlaylist] (typed as [Object] because Dart
 /// has no nominal union type).
 ///
-/// For episodes, starts playback directly via video player unless [playDirectly]
-/// is paired with the Continue Watching details setting.
+/// For episodes, normal card activation follows the Episode Action setting;
+/// [playDirectly] surfaces instead follow the Continue Watching action setting.
 /// For movies, starts playback directly if [playDirectly] is true and the
 /// Continue Watching details setting is disabled; otherwise navigates to media
 /// detail screen.
@@ -132,9 +141,9 @@ MediaDetailNavigationTarget mediaDetailNavigationTargetFor(MediaItem item, {Medi
 ///
 /// Set [isOffline] to true for downloaded content without server access.
 ///
-/// Set [playDirectly] to true for Continue Watching activation; the user's
-/// Continue Watching action setting decides whether resumable movies/episodes
-/// play immediately or open details first.
+/// Set [playDirectly] to true for Continue Watching / Next Up / On Deck
+/// activation; those surfaces use the Continue Watching action setting instead
+/// of the normal Episode Action setting.
 ///
 /// Returns a [MediaNavigationResult] indicating what action was taken:
 /// - [MediaNavigationResult.navigated]: Navigation completed, item refresh handled
@@ -156,10 +165,15 @@ Future<MediaNavigationResult> navigateToMediaItem(
     return MediaNavigationResult.unsupported;
   }
   final mi = item;
-  final shouldOpenContinueWatchingDetails =
-      playDirectly &&
-      (SettingsService.instanceOrNull?.read(SettingsService.continueWatchingAction) ?? ContinueWatchingAction.play) ==
-          ContinueWatchingAction.details;
+  final settings = SettingsService.instanceOrNull;
+  final continueWatchingAction = settings?.read(SettingsService.continueWatchingAction) ?? ContinueWatchingAction.play;
+  final episodeAction = settings?.read(SettingsService.episodeAction) ?? EpisodeAction.play;
+  final shouldOpenContinueWatchingDetails = playDirectly && continueWatchingAction == ContinueWatchingAction.details;
+  final shouldOpenEpisodeDetails = shouldOpenEpisodeDetailsForActivation(
+    playDirectly: playDirectly,
+    continueWatchingAction: continueWatchingAction,
+    episodeAction: episodeAction,
+  );
 
   // Handle library section items (shared whole-library entries) — Plex-only;
   // [PlexLibrarySection.isLibrarySection] reads the stashed `key` from `raw`.
@@ -193,7 +207,7 @@ Future<MediaNavigationResult> navigateToMediaItem(
 
     case MediaKind.clip:
     case MediaKind.episode:
-      if (shouldOpenContinueWatchingDetails && mi.kind == MediaKind.episode) {
+      if (mi.kind == MediaKind.episode && shouldOpenEpisodeDetails) {
         return navigateToMediaItemDetails(context, mi, onRefresh: onRefresh, isOffline: isOffline);
       }
       final result = await navigateToVideoPlayer(context, metadata: mi, isOffline: isOffline);

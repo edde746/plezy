@@ -147,15 +147,12 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
       }
 
       final duration = activePlayer.state.duration;
-      final signal = _completionLatch.classifyPosition(
+      _completionLatch.classifyPosition(
         positionMs: position.inMilliseconds,
         durationMs: duration.inMilliseconds,
         promptVisible: _showPlayNextDialog,
         countdownActive: _autoPlayTimer?.isActive == true,
       );
-      if (signal == CompletionLatchSignal.completed) {
-        _onVideoCompleted(true);
-      }
       // CompletionLatchSignal.rearmed needs no action here: the latch
       // re-armed itself once playback seeked back out of the end region.
     });

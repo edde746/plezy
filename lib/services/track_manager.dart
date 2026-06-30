@@ -3,27 +3,19 @@ import 'dart:async';
 import '../mpv/mpv.dart';
 
 import '../media/media_item.dart';
-import '../media/media_item_types.dart';
 import '../media/media_server_user_profile.dart';
 import '../media/media_source_info.dart';
 import '../services/settings_service.dart';
 import '../services/track_selection_service.dart';
 import '../utils/app_logger.dart';
-import '../utils/language_codes.dart';
 import '../utils/track_label_builder.dart';
 
-/// Persists a track choice through Plex's immediate preference endpoints.
+/// Persists a track choice for the current part to the server.
 /// Backends that persist through another path (Jellyfin uses playback progress
-/// stream indexes) or lack server-side track preferences leave this null.
+/// stream indexes) or lack server-side stream selection leave this null.
 /// [trackType] is `'audio'` or `'subtitle'`.
 typedef TrackPreferencePersister =
-    Future<void> Function({
-      required String id,
-      required int partId,
-      required String trackType,
-      String? languageCode,
-      int? streamID,
-    });
+    Future<void> Function({required int partId, required String trackType, int? streamID});
 
 /// Manages track (audio + subtitle) lifecycle: external subtitle loading,
 /// automatic track selection, server preference sync, and cycling.
@@ -320,29 +312,15 @@ class TrackManager {
     final partId = await _guardTrackChange(info);
     if (partId == null || info == null) return;
 
-    int? streamID = _matchTrackByAttributes(
-      mpvLanguage: track.language,
-      mpvTitle: track.title,
-      plexTracks: info.audioTracks,
-      getLanguageCode: (t) => t.languageCode,
-      getDisplayTitle: (t) => t.displayTitle,
-      getTitle: (t) => t.title,
-      getId: (t) => t.id,
-    );
-
+    final matchedPlex = findPlexTrackForMpvAudio(track, info.audioTracks, allMpvTracks: player.state.tracks.audio);
+    final streamID = matchedPlex?.id;
     if (streamID != null) {
-      appLogger.d('Matched audio by lang/title: streamID $streamID');
+      appLogger.d('Matched audio to streamID $streamID');
     } else {
-      final matchedPlex = findPlexTrackForMpvAudio(track, info.audioTracks, allMpvTracks: player.state.tracks.audio);
-      streamID = matchedPlex?.id;
-      if (streamID != null) {
-        appLogger.d('Matched audio by properties: streamID $streamID');
-      } else {
-        appLogger.e('Could not match audio track to any Plex track');
-      }
+      appLogger.e('Could not match audio track to any Plex track');
     }
 
-    await _saveTrackPreferences(partId: partId, trackType: 'audio', languageCode: track.language, streamID: streamID);
+    await _saveTrackPreferences(partId: partId, trackType: 'audio', streamID: streamID);
   }
 
   /// Handle subtitle track changes — save stream selection and language preference.
@@ -351,44 +329,26 @@ class TrackManager {
     final partId = await _guardTrackChange(info);
     if (partId == null) return;
 
-    String? languageCode;
     int? streamID;
 
     if (track.id == 'no') {
-      languageCode = 'none';
       streamID = 0;
       appLogger.i('User turned subtitles off, saving preference');
     } else if (info != null) {
-      languageCode = track.language;
-
-      streamID = _matchTrackByAttributes(
-        mpvLanguage: track.language,
-        mpvTitle: track.title,
-        plexTracks: info.subtitleTracks,
-        getLanguageCode: (t) => t.languageCode,
-        getDisplayTitle: (t) => t.displayTitle,
-        getTitle: (t) => t.title,
-        getId: (t) => t.id,
+      final matchedPlex = findPlexTrackForMpvSubtitle(
+        track,
+        info.subtitleTracks,
+        allMpvTracks: player.state.tracks.subtitle,
       );
-
+      streamID = matchedPlex?.id;
       if (streamID != null) {
-        appLogger.d('Matched subtitle by lang/title: streamID $streamID');
+        appLogger.d('Matched subtitle to streamID $streamID');
       } else {
-        final matchedPlex = findPlexTrackForMpvSubtitle(
-          track,
-          info.subtitleTracks,
-          allMpvTracks: player.state.tracks.subtitle,
-        );
-        streamID = matchedPlex?.id;
-        if (streamID != null) {
-          appLogger.d('Matched subtitle by properties: streamID $streamID');
-        } else {
-          appLogger.e('Could not match subtitle track to any Plex track');
-        }
+        appLogger.e('Could not match subtitle track to any Plex track');
       }
     }
 
-    await _saveTrackPreferences(partId: partId, trackType: 'subtitle', languageCode: languageCode, streamID: streamID);
+    await _saveTrackPreferences(partId: partId, trackType: 'subtitle', streamID: streamID);
   }
 
   /// Handle secondary subtitle track changes — no server save needed.
@@ -398,11 +358,6 @@ class TrackManager {
   }
 
   // ── Private helpers ────────────────────────────────────────────────
-
-  /// Series/movie-level identifier used for language preferences.
-  String get _preferenceId {
-    return metadata.isEpisode ? (metadata.grandparentId ?? metadata.id) : metadata.id;
-  }
 
   /// Common guard checks for track change handlers.
   Future<int?> _guardTrackChange(MediaSourceInfo? info) async {
@@ -423,73 +378,18 @@ class TrackManager {
     return partId;
   }
 
-  /// Save language preference and stream selection to the server.
-  Future<void> _saveTrackPreferences({
-    required int partId,
-    required String trackType,
-    String? languageCode,
-    int? streamID,
-  }) async {
+  /// Save the stream selection for the current part to the server.
+  Future<void> _saveTrackPreferences({required int partId, required String trackType, int? streamID}) async {
     try {
       if (!isActive()) return;
       final persist = persistTrackPreference;
       if (persist == null) {
         return;
       }
-      await persist(
-        id: _preferenceId,
-        partId: partId,
-        trackType: trackType,
-        languageCode: languageCode,
-        streamID: streamID,
-      );
-      appLogger.d('Successfully saved $trackType preferences (language + stream)');
+      await persist(partId: partId, trackType: trackType, streamID: streamID);
+      appLogger.d('Successfully saved $trackType stream selection');
     } catch (e) {
-      appLogger.e('Failed to save $trackType preferences', error: e);
-    }
-  }
-
-  /// Match an mpv track against Plex tracks by language and title.
-  int? _matchTrackByAttributes<T>({
-    required String? mpvLanguage,
-    required String? mpvTitle,
-    required List<T> plexTracks,
-    required String? Function(T) getLanguageCode,
-    required String? Function(T) getDisplayTitle,
-    required String? Function(T) getTitle,
-    required int Function(T) getId,
-  }) {
-    final normalizedLang = _iso6391To6392(mpvLanguage);
-
-    for (final plexTrack in plexTracks) {
-      final matchLang = getLanguageCode(plexTrack) == normalizedLang;
-      final matchTitle = (mpvTitle == null || mpvTitle.isEmpty)
-          ? true
-          : (getDisplayTitle(plexTrack) == mpvTitle || getTitle(plexTrack) == mpvTitle);
-
-      if (matchLang && matchTitle) {
-        return getId(plexTrack);
-      }
-    }
-    return null;
-  }
-
-  /// Convert ISO 639-1 code (e.g. "fr") to ISO 639-2/B (e.g. "fre"). Plex
-  /// streams use the 3-letter form.
-  static String? _iso6391To6392(String? code) {
-    if (code == null || code.isEmpty) return null;
-    final lang = code.split('-').first.toLowerCase();
-
-    try {
-      final variations = LanguageCodes.getVariations(lang);
-      for (final variation in variations) {
-        if (variation.length == 3) {
-          return variation;
-        }
-      }
-      return null;
-    } catch (e) {
-      return null;
+      appLogger.e('Failed to save $trackType stream selection', error: e);
     }
   }
 
