@@ -173,14 +173,15 @@ class PlatformDetector {
     return isDesktop(context) || isTV();
   }
 
-  /// Detects if running on a mobile platform (iOS or Android).
+  /// Detects if running on a mobile platform (iOS, Android or Linux Mobile).
   /// Excludes TV platforms (Android TV / Apple TV) even though the underlying
   /// OS is iOS or Android.
   /// Uses Theme for consistent platform detection across the app.
   static bool isMobile(BuildContext context) {
     if (isTV()) return false;
     final platform = Theme.of(context).platform;
-    return platform == TargetPlatform.iOS || platform == TargetPlatform.android;
+    return platform == TargetPlatform.iOS || platform == TargetPlatform.android ||
+      (platform == TargetPlatform.linux && getDiagonalInches(context) <= 7.0);
   }
 
   static bool isHandheld(BuildContext context) {
@@ -219,17 +220,21 @@ class PlatformDetector {
     return !isAppleTV() && !isTV() && (Platform.isAndroid || Platform.isIOS || Platform.isMacOS);
   }
 
-  /// Detects if the device is likely a tablet based on screen size
-  /// Uses diagonal screen size to determine if device is a tablet
-  static bool isTablet(BuildContext context) {
+  /// Gets diagonal screen size.
+  /// Used to determine if a device is a tablet. Also, used to detect if a device is on LinuxMobile
+  static num getDiagonalInches(BuildContext context) {
     final size = MediaQuery.sizeOf(context);
     final diagonal = sqrt(size.width * size.width + size.height * size.height);
     final devicePixelRatio = MediaQuery.devicePixelRatioOf(context);
 
     // Convert diagonal from logical pixels to inches (assuming 160 DPI as baseline)
-    final diagonalInches = diagonal / (devicePixelRatio * 160 / 2.54);
+    return diagonal / (devicePixelRatio * 160 / 2.54);
+  }
 
-    return diagonalInches >= 7.0;
+  /// Detects if the device is likely a tablet based on screen size
+  /// Uses diagonal screen size to determine if device is a tablet
+  static bool isTablet(BuildContext context) {
+    return getDiagonalInches(context) >= 7.0;
   }
 
   static bool isPhone(BuildContext context) {
