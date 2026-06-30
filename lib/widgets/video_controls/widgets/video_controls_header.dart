@@ -1,9 +1,15 @@
+import 'package:cached_network_image_ce/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:plezy/utils/formatters.dart';
 
 import '../../../media/media_item.dart';
+import '../../../media/ids.dart';
+import '../../../media/media_server_client.dart';
 import '../../../i18n/strings.g.dart';
+import '../../../providers/multi_server_provider.dart';
+import '../../../services/image_cache_service.dart';
+import '../../../utils/media_image_helper.dart';
 import '../../../watch_together/widgets/watch_together_overlay.dart';
 import '../../../watch_together/providers/watch_together_provider.dart';
 import '../../app_bar_back_button.dart';
@@ -49,7 +55,7 @@ class VideoControlsHeader extends StatelessWidget {
           onPressed: onBack ?? () => Navigator.of(context).pop(true),
         ),
         const SizedBox(width: 16),
-        Expanded(child: style == VideoHeaderStyle.singleLine ? _buildSingleLineTitle() : _buildMultiLineTitle()),
+        Expanded(child: _buildLogoOrTitle(context)),
         Selector<WatchTogetherProvider, bool>(
           selector: (_, p) => p.isInSession,
           builder: (context, inSession, child) {
@@ -59,6 +65,55 @@ class VideoControlsHeader extends StatelessWidget {
         ),
         ?trailing,
       ],
+    );
+  }
+
+  /// Attempts to show the clear logo image for the movie/series; falls back
+  /// to text title when no logo is available or loading fails.
+  Widget _buildLogoOrTitle(BuildContext context) {
+    final logoPath = metadata.clearLogoPath;
+    if (logoPath == null || logoPath.isEmpty) {
+      return style == VideoHeaderStyle.singleLine ? _buildSingleLineTitle() : _buildMultiLineTitle();
+    }
+
+    const double logoMaxHeight = 48;
+    const double logoMaxWidth = 240;
+
+    MediaServerClient? client;
+    final serverId = metadata.serverId;
+    if (serverId != null) {
+      client = context.read<MultiServerProvider>().serverManager.getClient(ServerId(serverId));
+    }
+
+    final dpr = MediaImageHelper.effectiveDevicePixelRatio(context);
+    final imageUrl = MediaImageHelper.getOptimizedImageUrl(
+      client: client,
+      thumbPath: logoPath,
+      maxWidth: logoMaxWidth,
+      maxHeight: logoMaxHeight,
+      devicePixelRatio: dpr,
+      imageType: ImageType.logo,
+    );
+
+    if (imageUrl.isEmpty) {
+      return style == VideoHeaderStyle.singleLine ? _buildSingleLineTitle() : _buildMultiLineTitle();
+    }
+
+    final fallback = style == VideoHeaderStyle.singleLine ? _buildSingleLineTitle() : _buildMultiLineTitle();
+
+    return ConstrainedBox(
+      constraints: const BoxConstraints(maxWidth: logoMaxWidth, maxHeight: logoMaxHeight),
+      child: CachedNetworkImage(
+        imageUrl: imageUrl,
+        cacheManager: PlexImageCacheManager.instance,
+        fit: BoxFit.contain,
+        alignment: Alignment.centerLeft,
+        memCacheWidth: (logoMaxWidth * dpr).clamp(200, 600).round(),
+        fadeInDuration: const Duration(milliseconds: 150),
+        fadeOutDuration: const Duration(milliseconds: 150),
+        placeholder: (context, url) => fallback,
+        errorBuilder: (context, error, stackTrace) => fallback,
+      ),
     );
   }
 
