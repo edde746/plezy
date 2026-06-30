@@ -204,7 +204,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
   private var tunnelingUserEnabled: Boolean = true
   private var tunnelingDisabledForAudioCodec: Boolean = false
   private var tunnelingDisabledForVideoCodec: Boolean = false
-  private var tunnelingDisabledForDecodedTrueHdPcm: Boolean = false
+  private var tunnelingDisabledForDecodedPcm: Boolean = false
   private var tunnelingDisabledForAudioRecovery: Boolean = false
 
   // Tunneled playback never fires the VideoFrameMetadataListener (media3 releases
@@ -212,7 +212,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
   // ASS subs would freeze. Correctness over tunneling while an ASS track is active.
   private var tunnelingDisabledForAssSubtitles: Boolean = false
   private val tunnelingDisabledForCodec: Boolean
-    get() = tunnelingDisabledForAudioCodec || tunnelingDisabledForVideoCodec || tunnelingDisabledForDecodedTrueHdPcm || tunnelingDisabledForAudioRecovery
+    get() = tunnelingDisabledForAudioCodec || tunnelingDisabledForVideoCodec || tunnelingDisabledForDecodedPcm || tunnelingDisabledForAudioRecovery
   private var currentTunneledPlayback: Boolean = false
 
   // Loudness normalization (#1289): audiofx effects only process non-tunneled
@@ -247,7 +247,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
   private var lastAudioSinkError: String? = null
   private var loggedEwasteEac3Workaround: Boolean = false
   private var lastTrueHdDirectOutputLogKey: String? = null
-  private var loggedDecodedTrueHdTunnelingGuard: Boolean = false
+  private var loggedDecodedPcmTunnelingGuard: Boolean = false
   private var firstFrameRendered: Boolean = false
   var delegate: ExoPlayerDelegate? = null
   var debugLoggingEnabled: Boolean = false
@@ -2380,7 +2380,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
     currentTunneledPlayback = shouldTunnel
     val speed = exoPlayer?.playbackParameters?.speed ?: 1f
     val audioDelayActive = (renderersFactory?.audioDelayUs?.get() ?: 0L) != 0L
-    emitLog("info", "tunneling", "Toggling tunneling=$shouldTunnel (reason=$reason, user=$tunnelingUserEnabled, speed=$speed, audioCodecDisabled=$tunnelingDisabledForAudioCodec, videoCodecDisabled=$tunnelingDisabledForVideoCodec, decodedTrueHdPcmDisabled=$tunnelingDisabledForDecodedTrueHdPcm, audioRecoveryDisabled=$tunnelingDisabledForAudioRecovery, assSubtitlesDisabled=$tunnelingDisabledForAssSubtitles, audioDelay=$audioDelayActive, audioNormalization=$audioNormalizationEnabled)")
+    emitLog("info", "tunneling", "Toggling tunneling=$shouldTunnel (reason=$reason, user=$tunnelingUserEnabled, speed=$speed, audioCodecDisabled=$tunnelingDisabledForAudioCodec, videoCodecDisabled=$tunnelingDisabledForVideoCodec, decodedPcmDisabled=$tunnelingDisabledForDecodedPcm, audioRecoveryDisabled=$tunnelingDisabledForAudioRecovery, assSubtitlesDisabled=$tunnelingDisabledForAssSubtitles, audioDelay=$audioDelayActive, audioNormalization=$audioNormalizationEnabled)")
     return true
   }
 
@@ -2396,8 +2396,11 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
 
   private fun updateAudioCodecForTunneling(format: Format) {
     val mimeType = format.sampleMimeType ?: return
-    if (mimeType != MimeTypes.AUDIO_TRUEHD) {
-      tunnelingDisabledForDecodedTrueHdPcm = false
+    // The decoded-PCM guard only applies to passthrough-type codecs that can be
+    // force-decoded; clear it when the selected codec can't have set it. (onAudioTrackInitialized
+    // re-sets/clears it for passthrough codecs based on the actual output encoding.)
+    if (!isPassthroughAudioMimeType(mimeType)) {
+      tunnelingDisabledForDecodedPcm = false
     }
 
     val newDisabled = !hasHardwareAudioDecoder(mimeType)
@@ -2533,17 +2536,22 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
         "AudioTrack initialized: input=${audioFormat?.let { formatAudioSummary(it) } ?: "unknown"}, " +
           "decoder=${audioDecoderInitName ?: "direct/bypass"}, ${describeAudioTrackConfig(audioTrackConfig)}"
       )
-      if (audioFormat?.sampleMimeType == MimeTypes.AUDIO_TRUEHD) {
+      // A passthrough-type codec (AC3/EAC3/DTS/TrueHD…) force-decoded to PCM must not
+      // stay on a tunneled AudioTrack: some Amlogic/AOSP boxes deliver the PCM frames
+      // but render silence (#1458). Generalizes the original TrueHD-only guard to every
+      // codec the passthrough block (and #1289 normalization) can force-decode.
+      val passthroughSrcMime = audioFormat?.sampleMimeType?.takeIf { isPassthroughAudioMimeType(it) }
+      if (passthroughSrcMime != null) {
         if (audioTrackConfig.tunneling && isPcmEncoding(audioTrackConfig.encoding)) {
-          if (!loggedDecodedTrueHdTunnelingGuard) {
-            loggedDecodedTrueHdTunnelingGuard = true
-            emitLog("warn", "audio", "Decoded TrueHD PCM initialized with tunneling=true; forcing tunneling off")
+          if (!loggedDecodedPcmTunnelingGuard) {
+            loggedDecodedPcmTunnelingGuard = true
+            emitLog("warn", "audio", "Decoded $passthroughSrcMime PCM initialized with tunneling=true; forcing tunneling off")
           }
-          tunnelingDisabledForDecodedTrueHdPcm = true
-          updateTunnelingState("decoded TrueHD PCM tunneling guard", forceSelector = true)
-        } else if (!isPcmEncoding(audioTrackConfig.encoding) && tunnelingDisabledForDecodedTrueHdPcm) {
-          tunnelingDisabledForDecodedTrueHdPcm = false
-          updateTunnelingState("encoded TrueHD output initialized", forceSelector = true)
+          tunnelingDisabledForDecodedPcm = true
+          updateTunnelingState("decoded PCM tunneling guard", forceSelector = true)
+        } else if (!isPcmEncoding(audioTrackConfig.encoding) && tunnelingDisabledForDecodedPcm) {
+          tunnelingDisabledForDecodedPcm = false
+          updateTunnelingState("encoded passthrough output initialized", forceSelector = true)
         }
       }
       // Re-key the normalization effect to the actual output channel count
@@ -2735,7 +2743,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
     loggedNativeDvFirstFrame = false
     loggedDvPlaybackPathKey = null
     lastDvPlaybackInfo = null
-    loggedDecodedTrueHdTunnelingGuard = false
+    loggedDecodedPcmTunnelingGuard = false
     updateAudioDecoderPolicy("open")
     currentMediaUri = uri
     currentHeaders = headers
@@ -2781,7 +2789,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
     }
     tunnelingDisabledForAudioCodec = false
     tunnelingDisabledForVideoCodec = false
-    tunnelingDisabledForDecodedTrueHdPcm = false
+    tunnelingDisabledForDecodedPcm = false
     tunnelingDisabledForAudioRecovery = false
     tunnelingDisabledForAssSubtitles = false
     currentTunneledPlayback = false
@@ -3508,7 +3516,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
     if (player.playbackParameters.speed != 1f) return "Off (speed ≠ 1×)"
     if (audioNormalizationEnabled) return "Off (loudness normalization)"
     if (tunnelingDisabledForAudioRecovery) return "Off (audio recovery)"
-    if (tunnelingDisabledForDecodedTrueHdPcm) return "Off (decoded TrueHD PCM)"
+    if (tunnelingDisabledForDecodedPcm) return "Off (decoded PCM)"
     if (tunnelingDisabledForVideoCodec) return "Off (video codec unsupported)"
     if (tunnelingDisabledForAudioCodec) return "Off (no HW audio decoder)"
     if (tunnelingDisabledForAssSubtitles) return "Off (ASS subtitles active)"
@@ -3562,7 +3570,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
     loggedDirectAudioRecoveryBlocks.clear()
     tunnelingDisabledForAudioCodec = false
     tunnelingDisabledForVideoCodec = false
-    tunnelingDisabledForDecodedTrueHdPcm = false
+    tunnelingDisabledForDecodedPcm = false
     tunnelingDisabledForAudioRecovery = false
     tunnelingDisabledForAssSubtitles = false
     currentTunneledPlayback = false

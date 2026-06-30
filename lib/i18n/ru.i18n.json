@@ -262,6 +262,8 @@
     "displaySwitchDelay": "Задержка переключения дисплея",
     "tunneledPlayback": "Туннельное воспроизведение",
     "tunneledPlaybackDescription": "Использовать видеотуннелирование. Отключите, если HDR показывает черный экран.",
+    "audioPassthrough": "Сквозной вывод аудио",
+    "audioPassthroughDescription": "Передавать звук Dolby/DTS на ресивер или телевизор без перекодирования, сохраняя объёмный звук. Отключите, если нет звука.",
     "dvConversionMode": "Преобразование Dolby Vision",
     "dvConversionModeDescription": "Выберите, как ExoPlayer обрабатывает файлы Dolby Vision Profile 7.",
     "dvConversionAuto": "Авто",

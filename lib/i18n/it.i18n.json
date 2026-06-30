@@ -262,6 +262,8 @@
     "displaySwitchDelay": "Ritardo cambio display",
     "tunneledPlayback": "Riproduzione tunnelizzata",
     "tunneledPlaybackDescription": "Usa tunneling video. Disattiva se la riproduzione HDR mostra video nero.",
+    "audioPassthrough": "Audio Passthrough",
+    "audioPassthroughDescription": "Invia l'audio Dolby/DTS al ricevitore o alla TV senza ricodifica, mantenendo il suono surround. Disattiva se non senti audio.",
     "dvConversionMode": "Conversione Dolby Vision",
     "dvConversionModeDescription": "Scegli come ExoPlayer gestisce i file Dolby Vision Profile 7.",
     "dvConversionAuto": "Auto",

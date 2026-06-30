@@ -195,8 +195,14 @@ class _AudioPassthroughPref extends Pref<bool> {
 
   @override
   bool readFrom(BaseSharedPreferencesService svc) {
+    final stored = svc.prefs.getBool(key);
+    if (stored != null) return stored;
+    // Android TV on ExoPlayer defaults to bitstreaming AC3/EAC3/DTS to the TV/AVR
+    // (Media3 picks bitstream vs PCM via AudioCapabilities), preserving surround.
+    // Scoped to ExoPlayer — the mpv backend force-sets audio-spdif with no decode
+    // fallback. (#1458)
     // TODO: Default Apple TV to on once EAC3 passthrough is hardware-verified.
-    return svc.prefs.getBool(key) ?? false;
+    return Platform.isAndroid && PlatformDetector.isTV() && svc.read(SettingsService.useExoPlayer);
   }
 
   @override

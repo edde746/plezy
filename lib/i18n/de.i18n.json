@@ -262,6 +262,8 @@
     "displaySwitchDelay": "Verzögerung beim Displaywechsel",
     "tunneledPlayback": "Tunnelwiedergabe",
     "tunneledPlaybackDescription": "Video-Tunneling verwenden. Deaktivieren, wenn HDR-Wiedergabe schwarzes Video zeigt.",
+    "audioPassthrough": "Audio-Durchleitung",
+    "audioPassthroughDescription": "Dolby/DTS-Audio ohne Neukodierung an deinen Receiver oder Fernseher senden und Surround-Sound erhalten. Deaktivieren, wenn kein Ton zu hören ist.",
     "dvConversionMode": "Dolby-Vision-Konvertierung",
     "dvConversionModeDescription": "Wähle, wie ExoPlayer Dolby-Vision-Profil-7-Dateien behandelt.",
     "dvConversionAuto": "Automatisch",

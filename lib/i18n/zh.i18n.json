@@ -262,6 +262,8 @@
     "displaySwitchDelay": "显示切换延迟",
     "tunneledPlayback": "通道化播放",
     "tunneledPlaybackDescription": "使用视频隧道。若 HDR 播放出现黑屏，请禁用。",
+    "audioPassthrough": "音频直通",
+    "audioPassthroughDescription": "将 Dolby/DTS 音频不经重新编码直接发送到功放或电视，保留环绕声。如果没有声音，请关闭。",
     "dvConversionMode": "Dolby Vision 转换",
     "dvConversionModeDescription": "选择 ExoPlayer 如何处理 Dolby Vision Profile 7 文件。",
     "dvConversionAuto": "自动",

@@ -262,6 +262,8 @@
     "displaySwitchDelay": "디스플레이 전환 지연",
     "tunneledPlayback": "터널 재생",
     "tunneledPlaybackDescription": "비디오 터널링을 사용합니다. HDR 재생 시 검은 화면이 보이면 비활성화하세요.",
+    "audioPassthrough": "오디오 패스스루",
+    "audioPassthroughDescription": "Dolby/DTS 오디오를 재인코딩 없이 리시버나 TV로 전송하여 서라운드 사운드를 유지합니다. 소리가 나지 않으면 비활성화하세요.",
     "dvConversionMode": "Dolby Vision 변환",
     "dvConversionModeDescription": "ExoPlayer가 Dolby Vision Profile 7 파일을 처리하는 방식을 선택합니다.",
     "dvConversionAuto": "자동",
