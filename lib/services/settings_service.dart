@@ -19,6 +19,14 @@ import '../navigation/navigation_tabs.dart';
 import '../utils/platform_detector.dart';
 import 'trackers/tracker_constants.dart';
 
+/// Called when the Skia/Impeller toggle changes. Updates the native Info.plist
+/// so the renderer switch takes effect on the next app launch.
+void _updateImpellerPlist(bool useSkia) {
+  if (!Platform.isMacOS) return;
+  const channel = MethodChannel('com.plezy/window_utils');
+  channel.invokeMethod('setImpellerEnabled', {'enabled': !useSkia});
+}
+
 enum ThemeMode { system, light, dark, oled }
 
 /// Library density is now an int 1–5 (1 = most compact, 5 = most comfortable).
@@ -382,6 +390,7 @@ class SettingsService extends BaseSharedPreferencesService {
     values: MacosVideoOutput.values,
     defaultValue: MacosVideoOutput.gpuNext,
   );
+  static const useSkiaRenderer = BoolPref('use_skia_renderer', onWrite: _updateImpellerPlist);
   static const enableHDR = BoolPref('enable_hdr', defaultValue: true);
   static const preferredVideoCodec = StringPref('preferred_video_codec', defaultValue: 'auto');
   static const preferredAudioCodec = StringPref('preferred_audio_codec', defaultValue: 'auto');

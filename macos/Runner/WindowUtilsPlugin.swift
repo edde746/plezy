@@ -163,6 +163,12 @@ class WindowUtilsPlugin: NSObject, FlutterPlugin {
     case "isFullscreen":
       result(window.styleMask.contains(.fullScreen))
 
+    case "setImpellerEnabled":
+      let args = call.arguments as? [String: Any]
+      let enabled = args?["enabled"] as? Bool ?? true
+      Self.updateImpellerPlist(enabled: enabled)
+      result(nil)
+
     default:
       result(FlutterMethodNotImplemented)
     }
@@ -261,5 +267,18 @@ class WindowUtilsPlugin: NSObject, FlutterPlugin {
       button.translatesAutoresizingMaskIntoConstraints = true
       superview.layoutSubtreeIfNeeded()
     }
+  }
+
+  /// Updates FLTEnableImpeller in the app bundle's Info.plist on disk.
+  /// Takes effect on the next app launch.
+  static func updateImpellerPlist(enabled: Bool) {
+    let plistURL = Bundle.main.bundleURL.appendingPathComponent("Contents/Info.plist")
+    guard let dict = NSMutableDictionary(contentsOf: plistURL) else { return }
+    if enabled {
+      dict.removeObject(forKey: "FLTEnableImpeller")
+    } else {
+      dict["FLTEnableImpeller"] = false
+    }
+    dict.write(to: plistURL, atomically: true)
   }
 }

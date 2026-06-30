@@ -54,6 +54,7 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
         if (PlatformDetector.supportsExternalPlayers()) _externalPlayerTile(),
         _hardwareDecodingTile(),
         if (Platform.isMacOS) _macosVideoOutputTile(),
+        if (Platform.isMacOS) _useSkiaRendererTile(),
         if (PlatformDetector.supportsPictureInPicture()) _autoPipTile(),
         if (Platform.isAndroid) _matchContentFrameRateTile(),
         if (Platform.isWindows) _matchRefreshRateTile(),
@@ -258,6 +259,13 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
         .toList(),
     decode: (m) => m,
     encode: (m) => m,
+  );
+
+  Widget _useSkiaRendererTile() => SettingSwitchTile(
+    pref: SettingsService.useSkiaRenderer,
+    icon: Symbols.brush_rounded,
+    title: 'Use Skia Renderer',
+    subtitle: 'Use Skia instead of Impeller (Metal). May reduce idle CPU/GPU usage. Requires app restart.',
   );
 
   Widget _autoPipTile() => SettingSwitchTile(
