@@ -449,13 +449,18 @@ jobs:
         if: steps.windows-native-cache.outputs.cache-hit != 'true'
         run: choco install 7zip -y
 
-      - name: Setup Flutter
-        uses: subosito/flutter-action@v2
-        with:
-          channel: "stable"
-          flutter-version: "3.44.0"
-          cache: true
-          pub-cache: false
+      - name: Set up Flutter 3.44.0 (git tag)
+        # Flutter publishes no windows-arm64 SDK archive, so subosito can't
+        # resolve 3.44.0 for arm64: the stable manifest has no arm64 entry, and
+        # `channel: master` would git-clone master HEAD (whose engine != our
+        # patched 3.44.0). Clone the 3.44.0 tag directly to get engine rev
+        # 4c525dac, which install-patched-engine.ps1 asserts before swapping.
+        shell: pwsh
+        run: |
+          $root = "$env:RUNNER_TEMP\flutter"
+          git clone --depth 1 --branch 3.44.0 https://github.com/flutter/flutter.git $root
+          "$root\bin" | Out-File -FilePath $env:GITHUB_PATH -Append -Encoding utf8
+          & "$root\bin\flutter.bat" --version
 
       - name: Cache Pub dependencies
         uses: actions/cache@v4
