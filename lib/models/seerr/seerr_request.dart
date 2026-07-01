@@ -48,8 +48,6 @@ class SeerrRequest {
   final SeerrMediaInfo? media;
   final SeerrUser? requestedBy;
   final bool is4k;
-  final DateTime createdAt;
-  final DateTime updatedAt;
   final String mediaType;
   final List<SeerrRequestedSeason> seasons;
 
@@ -59,8 +57,6 @@ class SeerrRequest {
     this.media,
     this.requestedBy,
     required this.is4k,
-    required this.createdAt,
-    required this.updatedAt,
     required this.mediaType,
     this.seasons = const [],
   });
@@ -82,18 +78,9 @@ class SeerrRequest {
       media: mediaJson is Map<String, dynamic> ? SeerrMediaInfo.fromJson(mediaJson) : null,
       requestedBy: requestedByJson is Map<String, dynamic> ? SeerrUser.fromJson(requestedByJson) : null,
       is4k: json['is4k'] as bool? ?? false,
-      createdAt: _parseDate(json['createdAt']),
-      updatedAt: _parseDate(json['updatedAt']),
       mediaType: type ?? 'movie',
       seasons: seasons,
     );
-  }
-
-  static DateTime _parseDate(Object? raw) {
-    if (raw is String) {
-      return DateTime.tryParse(raw)?.toLocal() ?? DateTime.now();
-    }
-    return DateTime.now();
   }
 }
 

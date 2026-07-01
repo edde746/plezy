@@ -73,14 +73,6 @@ class SeerrClient {
     return SeerrUser.fromJson(res as Map<String, dynamic>);
   }
 
-  Future<void> logout() async {
-    try {
-      await _http.sendJson('POST', '/auth/logout');
-    } catch (e) {
-      appLogger.d('Seerr logout best-effort failed: $e');
-    }
-  }
-
   // ---------- Search ----------
 
   /// Search Seerr's TMDB-backed catalog. Returns a paginated list of mixed
@@ -188,25 +180,8 @@ class SeerrClient {
     );
   }
 
-  Future<SeerrRequest> getRequest(int id) async {
-    final raw = await _request('GET', '/request/$id');
-    return SeerrRequest.fromJson(raw as Map<String, dynamic>);
-  }
-
   Future<void> deleteRequest(int id) async {
     await _request('DELETE', '/request/$id');
-  }
-
-  /// User-scoped request history.
-  Future<SeerrPage<SeerrRequest>> getUserRequests(int userId, {int page = 1}) async {
-    final raw = await _request('GET', '/user/$userId/requests', query: {
-      'take': 20,
-      'skip': (page - 1) * 20,
-    });
-    return SeerrPage<SeerrRequest>.fromJson(
-      raw as Map<String, dynamic>,
-      (item) => SeerrRequest.fromJson(item),
-    );
   }
 
   // ---------- Service config (Sonarr / Radarr) ----------

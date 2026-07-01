@@ -426,23 +426,12 @@ class SeerrConnection extends Connection {
   /// request as the `Cookie` header.
   final String sessionCookie;
 
-  /// When [sessionCookie] was last captured (login or silent re-auth).
-  /// Diagnostic only — Seerr does not advertise a cookie lifetime.
-  final DateTime? sessionCookieCapturedAt;
-
   /// Seerr-side user id. Used to scope `/api/v1/user/{id}/requests`.
   final int seerrUserId;
-
-  /// Seerr `userType` enum (1 = local, 2 = plex, 3 = jellyfin). Captured at
-  /// auth time so the UI can surface "signed in via Jellyfin" hints.
-  final int seerrUserType;
 
   /// Permissions bitmask returned by `/auth/me`. Drives feature gates like
   /// "can request 4K".
   final int permissions;
-
-  /// Avatar URL surfaced by `/auth/me` for display in the connected header.
-  final String? avatarUrl;
 
   SeerrConnection({
     required this.id,
@@ -451,11 +440,8 @@ class SeerrConnection extends Connection {
     required this.jellyfinUsername,
     required this.jellyfinPassword,
     required this.sessionCookie,
-    this.sessionCookieCapturedAt,
     required this.seerrUserId,
-    required this.seerrUserType,
     required this.permissions,
-    this.avatarUrl,
     this.status = ConnectionStatus.unknown,
     required this.createdAt,
     this.lastAuthenticatedAt,
@@ -485,12 +471,8 @@ class SeerrConnection extends Connection {
     String? jellyfinUsername,
     String? jellyfinPassword,
     String? sessionCookie,
-    DateTime? sessionCookieCapturedAt,
     int? seerrUserId,
-    int? seerrUserType,
     int? permissions,
-    String? avatarUrl,
-    bool clearAvatarUrl = false,
     ConnectionStatus? status,
     DateTime? createdAt,
     DateTime? lastAuthenticatedAt,
@@ -502,11 +484,8 @@ class SeerrConnection extends Connection {
       jellyfinUsername: jellyfinUsername ?? this.jellyfinUsername,
       jellyfinPassword: jellyfinPassword ?? this.jellyfinPassword,
       sessionCookie: sessionCookie ?? this.sessionCookie,
-      sessionCookieCapturedAt: sessionCookieCapturedAt ?? this.sessionCookieCapturedAt,
       seerrUserId: seerrUserId ?? this.seerrUserId,
-      seerrUserType: seerrUserType ?? this.seerrUserType,
       permissions: permissions ?? this.permissions,
-      avatarUrl: clearAvatarUrl ? null : (avatarUrl ?? this.avatarUrl),
       status: status ?? this.status,
       createdAt: createdAt ?? this.createdAt,
       lastAuthenticatedAt: lastAuthenticatedAt ?? this.lastAuthenticatedAt,
@@ -521,11 +500,8 @@ class SeerrConnection extends Connection {
       'jellyfinUsername': jellyfinUsername,
       'jellyfinPassword': jellyfinPassword,
       'sessionCookie': sessionCookie,
-      'sessionCookieCapturedAt': sessionCookieCapturedAt?.millisecondsSinceEpoch,
       'seerrUserId': seerrUserId,
-      'seerrUserType': seerrUserType,
       'permissions': permissions,
-      'avatarUrl': avatarUrl,
     };
   }
 
@@ -536,8 +512,6 @@ class SeerrConnection extends Connection {
     required DateTime createdAt,
     DateTime? lastAuthenticatedAt,
   }) {
-    final capturedRaw = json['sessionCookieCapturedAt'];
-    final capturedAt = capturedRaw is int ? DateTime.fromMillisecondsSinceEpoch(capturedRaw) : null;
     return SeerrConnection(
       id: id,
       baseUrl: json['baseUrl'] as String? ?? '',
@@ -545,11 +519,8 @@ class SeerrConnection extends Connection {
       jellyfinUsername: json['jellyfinUsername'] as String? ?? '',
       jellyfinPassword: json['jellyfinPassword'] as String? ?? '',
       sessionCookie: json['sessionCookie'] as String? ?? '',
-      sessionCookieCapturedAt: capturedAt,
       seerrUserId: (json['seerrUserId'] as num?)?.toInt() ?? 0,
-      seerrUserType: (json['seerrUserType'] as num?)?.toInt() ?? 0,
       permissions: (json['permissions'] as num?)?.toInt() ?? 0,
-      avatarUrl: json['avatarUrl'] as String?,
       status: status,
       createdAt: createdAt,
       lastAuthenticatedAt: lastAuthenticatedAt,

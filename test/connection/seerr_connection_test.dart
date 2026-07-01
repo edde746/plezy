@@ -18,11 +18,8 @@ void main() {
         jellyfinUsername: 'edde',
         jellyfinPassword: 'pw',
         sessionCookie: 'abc.def',
-        sessionCookieCapturedAt: DateTime.fromMillisecondsSinceEpoch(1700000000000),
         seerrUserId: 7,
-        seerrUserType: 4,
         permissions: 8,
-        avatarUrl: 'https://example.com/a.png',
         status: ConnectionStatus.online,
         createdAt: DateTime.fromMillisecondsSinceEpoch(0),
         lastAuthenticatedAt: DateTime.fromMillisecondsSinceEpoch(123),
@@ -39,10 +36,8 @@ void main() {
       expect(restored.jellyfinUsername, original.jellyfinUsername);
       expect(restored.jellyfinPassword, original.jellyfinPassword);
       expect(restored.sessionCookie, original.sessionCookie);
-      expect(restored.sessionCookieCapturedAt, original.sessionCookieCapturedAt);
       expect(restored.seerrUserId, original.seerrUserId);
       expect(restored.permissions, original.permissions);
-      expect(restored.avatarUrl, original.avatarUrl);
     });
 
     test('CredentialVault encrypts sessionCookie and jellyfinPassword for seerr kind', () async {
@@ -52,11 +47,8 @@ void main() {
         'jellyfinUsername': 'edde',
         'jellyfinPassword': 'plain-password',
         'sessionCookie': 'plain-cookie',
-        'sessionCookieCapturedAt': 0,
         'seerrUserId': 1,
-        'seerrUserType': 4,
         'permissions': 0,
-        'avatarUrl': null,
       };
       final protected = await CredentialVault.protectConnectionConfig('seerr', config);
       expect(CredentialVault.isProtected(protected['jellyfinPassword'] as String), isTrue);
@@ -76,11 +68,8 @@ void main() {
         'jellyfinUsername': 'edde',
         'jellyfinPassword': 'plain',
         'sessionCookie': 'plain',
-        'sessionCookieCapturedAt': 0,
         'seerrUserId': 1,
-        'seerrUserType': 4,
         'permissions': 0,
-        'avatarUrl': null,
       };
       final revealed = await CredentialVault.revealConnectionConfig('seerr', legacy);
       expect(revealed.migrated, isTrue);
@@ -97,7 +86,6 @@ void main() {
         jellyfinPassword: 'x',
         sessionCookie: 'x',
         seerrUserId: 1,
-        seerrUserType: 4,
         permissions: 0,
         createdAt: DateTime.fromMillisecondsSinceEpoch(0),
       );
@@ -119,7 +107,6 @@ void main() {
         jellyfinPassword: 'x',
         sessionCookie: 'x',
         seerrUserId: 1,
-        seerrUserType: 4,
         permissions: 0,
         createdAt: DateTime.fromMillisecondsSinceEpoch(0),
       );

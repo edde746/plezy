@@ -13,7 +13,6 @@ import '../../models/seerr/seerr_service_instance.dart';
 import '../../models/seerr/seerr_tv_details.dart';
 import '../../providers/seerr_requests_provider.dart';
 import '../../providers/seerr_session_provider.dart';
-import '../../services/seerr/seerr_client.dart';
 import '../../services/seerr/seerr_constants.dart';
 import '../../services/seerr/seerr_exceptions.dart';
 import '../../services/seerr/seerr_permissions.dart';

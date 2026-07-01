@@ -25,7 +25,6 @@ class SeerrMovieResult extends SeerrSearchResult {
   String get mediaType => 'movie';
 
   final String title;
-  final String originalTitle;
   final String? overview;
   final String? posterPath;
   final String? backdropPath;
@@ -36,7 +35,6 @@ class SeerrMovieResult extends SeerrSearchResult {
   SeerrMovieResult({
     required this.id,
     required this.title,
-    required this.originalTitle,
     this.overview,
     this.posterPath,
     this.backdropPath,
@@ -50,7 +48,6 @@ class SeerrMovieResult extends SeerrSearchResult {
     return SeerrMovieResult(
       id: (json['id'] as num).toInt(),
       title: json['title'] as String? ?? '',
-      originalTitle: json['originalTitle'] as String? ?? json['title'] as String? ?? '',
       overview: json['overview'] as String?,
       posterPath: json['posterPath'] as String?,
       backdropPath: json['backdropPath'] as String?,
@@ -68,7 +65,6 @@ class SeerrTvResult extends SeerrSearchResult {
   String get mediaType => 'tv';
 
   final String name;
-  final String originalName;
   final String? overview;
   final String? posterPath;
   final String? backdropPath;
@@ -79,7 +75,6 @@ class SeerrTvResult extends SeerrSearchResult {
   SeerrTvResult({
     required this.id,
     required this.name,
-    required this.originalName,
     this.overview,
     this.posterPath,
     this.backdropPath,
@@ -93,7 +88,6 @@ class SeerrTvResult extends SeerrSearchResult {
     return SeerrTvResult(
       id: (json['id'] as num).toInt(),
       name: json['name'] as String? ?? '',
-      originalName: json['originalName'] as String? ?? json['name'] as String? ?? '',
       overview: json['overview'] as String?,
       posterPath: json['posterPath'] as String?,
       backdropPath: json['backdropPath'] as String?,

@@ -52,7 +52,7 @@ class _SeerrSettingsScreenState extends State<SeerrSettingsScreen> {
     if (!isActive) {
       // Signing out a non-active instance: just blank the cookie on the row.
       final registry = context.read<ConnectionRegistry>();
-      await registry.upsert(conn.copyWith(sessionCookie: '', sessionCookieCapturedAt: null));
+      await registry.upsert(conn.copyWith(sessionCookie: ''));
       if (!mounted) return;
       showSuccessSnackBar(context, t.seerr.settings.signedOut(label: conn.instanceLabel));
       _refresh();

@@ -17,7 +17,6 @@ class SeerrMovieDetails {
   final int id;
   final String? imdbId;
   final String title;
-  final String originalTitle;
   final String? overview;
   final String? tagline;
   final String? releaseDate;
@@ -34,7 +33,6 @@ class SeerrMovieDetails {
     required this.id,
     this.imdbId,
     required this.title,
-    required this.originalTitle,
     this.overview,
     this.tagline,
     this.releaseDate,
@@ -62,7 +60,6 @@ class SeerrMovieDetails {
       id: (json['id'] as num).toInt(),
       imdbId: json['imdbId'] as String?,
       title: json['title'] as String? ?? '',
-      originalTitle: json['originalTitle'] as String? ?? json['title'] as String? ?? '',
       overview: json['overview'] as String?,
       tagline: json['tagline'] as String?,
       releaseDate: json['releaseDate'] as String?,

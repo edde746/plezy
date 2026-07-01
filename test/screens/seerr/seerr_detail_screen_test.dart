@@ -23,9 +23,7 @@ SeerrConnection _conn() => SeerrConnection(
   jellyfinUsername: 'edde',
   jellyfinPassword: 'pw',
   sessionCookie: 'sid',
-  sessionCookieCapturedAt: DateTime.fromMillisecondsSinceEpoch(0),
   seerrUserId: 7,
-  seerrUserType: 4,
   permissions: 0,
   createdAt: DateTime.fromMillisecondsSinceEpoch(0),
 );

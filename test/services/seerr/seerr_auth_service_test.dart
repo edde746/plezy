@@ -66,11 +66,9 @@ void main() {
           expect(body['password'], 'secret');
           return _json(200, {
             'id': 7,
-            'email': 'edde@x',
             'username': 'edde',
             'userType': 4,
             'permissions': 8,
-            'requestCount': 0,
           }, extra: {'set-cookie': 'connect.sid=ABC.def; Path=/; HttpOnly; SameSite=Lax'});
         }
         fail('Unexpected ${req.method} ${req.url}');
@@ -117,7 +115,6 @@ void main() {
             'username': 'edde',
             'userType': 4,
             'permissions': 0,
-            'requestCount': 0,
           });
         }
         fail('Unexpected ${req.method} ${req.url}');
@@ -145,7 +142,6 @@ void main() {
             'username': 'edde',
             'userType': 4,
             'permissions': 0,
-            'requestCount': 0,
           }, extra: {'set-cookie': 'connect.sid=rotated; Path=/'});
         }
         fail('Unexpected ${req.method} ${req.url}');
@@ -174,7 +170,6 @@ void main() {
         jellyfinPassword: '',
         sessionCookie: 'stale',
         seerrUserId: 7,
-        seerrUserType: 4,
         permissions: 0,
         createdAt: DateTime.fromMillisecondsSinceEpoch(0),
       );

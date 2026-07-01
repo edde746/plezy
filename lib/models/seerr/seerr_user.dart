@@ -7,27 +7,22 @@
 /// opaque metadata and does not branch on the value beyond display.
 class SeerrUser {
   final int id;
-  final String? email;
   final String username;
   final int userType;
   final int permissions;
   final String? avatar;
-  final int requestCount;
 
   const SeerrUser({
     required this.id,
-    this.email,
     required this.username,
     required this.userType,
     required this.permissions,
     this.avatar,
-    this.requestCount = 0,
   });
 
   factory SeerrUser.fromJson(Map<String, dynamic> json) {
     return SeerrUser(
       id: (json['id'] as num).toInt(),
-      email: json['email'] as String?,
       // Seerr may return either `username` (local accounts) or `jellyfinUsername`
       // / `plexUsername` (SSO). Pick the first non-empty.
       username: (json['username'] as String?)?.trim().isNotEmpty == true
@@ -36,7 +31,6 @@ class SeerrUser {
       userType: (json['userType'] as num?)?.toInt() ?? 0,
       permissions: (json['permissions'] as num?)?.toInt() ?? 0,
       avatar: json['avatar'] as String?,
-      requestCount: (json['requestCount'] as num?)?.toInt() ?? 0,
     );
   }
 }

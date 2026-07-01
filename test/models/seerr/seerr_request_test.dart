@@ -50,11 +50,9 @@ void main() {
         'id': 12,
         'status': 1,
         'is4k': false,
-        'createdAt': '2026-06-28T12:00:00.000Z',
-        'updatedAt': '2026-06-28T12:00:00.000Z',
         'type': 'movie',
         'media': {'id': 1, 'tmdbId': 603, 'status': 2},
-        'requestedBy': {'id': 7, 'username': 'edde', 'userType': 4, 'permissions': 0, 'requestCount': 0},
+        'requestedBy': {'id': 7, 'username': 'edde', 'userType': 4, 'permissions': 0},
       });
       expect(r.id, 12);
       expect(r.status, SeerrRequestStatus.pendingApproval);
@@ -68,8 +66,6 @@ void main() {
         'id': 13,
         'status': 2,
         'is4k': false,
-        'createdAt': '2026-06-28T12:00:00.000Z',
-        'updatedAt': '2026-06-28T12:00:00.000Z',
         'type': 'tv',
         'seasons': [
           {'seasonNumber': 1, 'status': 5},

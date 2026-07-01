@@ -22,24 +22,12 @@ class SeerrMediaCard extends StatelessWidget {
   final SeerrSearchResult result;
   final VoidCallback? onTap;
   final double width;
-  final double aspectRatio;
-
-  /// Optional external focus node — pass when a parent (e.g. the Discover
-  /// hub row) wants to track focus per item.
-  final FocusNode? focusNode;
-
-  /// Optional autofocus flag — set on the first card in a row so the row
-  /// can claim focus when the user navigates into it from outside.
-  final bool autofocus;
 
   const SeerrMediaCard({
     super.key,
     required this.result,
     required this.onTap,
     this.width = 132,
-    this.aspectRatio = 2 / 3,
-    this.focusNode,
-    this.autofocus = false,
   });
 
   @override
@@ -66,8 +54,6 @@ class SeerrMediaCard extends StatelessWidget {
     return SizedBox(
       width: width,
       child: FocusableWrapper(
-        focusNode: focusNode,
-        autofocus: autofocus,
         disableScale: false,
         descendantsAreFocusable: false,
         autoScroll: true,
@@ -84,7 +70,7 @@ class SeerrMediaCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 AspectRatio(
-                  aspectRatio: aspectRatio,
+                  aspectRatio: 2 / 3,
                   child: CardFocusBorder(
                     borderRadius: 8,
                     child: Stack(

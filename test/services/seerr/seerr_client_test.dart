@@ -16,9 +16,7 @@ SeerrConnection _conn({String cookie = 'sid-old', String password = 'pw'}) => Se
   jellyfinUsername: 'edde',
   jellyfinPassword: password,
   sessionCookie: cookie,
-  sessionCookieCapturedAt: DateTime.fromMillisecondsSinceEpoch(0),
   seerrUserId: 7,
-  seerrUserType: 4,
   permissions: 0,
   createdAt: DateTime.fromMillisecondsSinceEpoch(0),
 );
@@ -55,11 +53,9 @@ void main() {
           observedCookie = req.headers['Cookie'] ?? req.headers['cookie'];
           return _json(200, {
             'id': 7,
-            'email': 'a@b.c',
             'username': 'edde',
             'userType': 4,
             'permissions': 0,
-            'requestCount': 0,
           });
         },
       );
@@ -100,8 +96,6 @@ void main() {
             'id': 99,
             'status': 1,
             'is4k': false,
-            'createdAt': '2026-06-28T00:00:00.000Z',
-            'updatedAt': '2026-06-28T00:00:00.000Z',
             'type': 'movie',
           });
         },
@@ -127,8 +121,6 @@ void main() {
             'id': 100,
             'status': 1,
             'is4k': false,
-            'createdAt': '2026-06-28T00:00:00.000Z',
-            'updatedAt': '2026-06-28T00:00:00.000Z',
             'type': 'tv',
           });
         },
@@ -151,8 +143,6 @@ void main() {
             'id': 101,
             'status': 1,
             'is4k': false,
-            'createdAt': '2026-06-28T00:00:00.000Z',
-            'updatedAt': '2026-06-28T00:00:00.000Z',
             'type': 'tv',
           });
         },
@@ -185,7 +175,6 @@ void main() {
               'username': 'edde',
               'userType': 4,
               'permissions': 0,
-              'requestCount': 0,
             }, extra: {'set-cookie': 'connect.sid=fresh; Path=/; HttpOnly'});
           }
           if (req.url.path.endsWith('/auth/me')) {
@@ -198,7 +187,6 @@ void main() {
               'username': 'edde',
               'userType': 4,
               'permissions': 0,
-              'requestCount': 0,
             });
           }
           fail('Unexpected ${req.method} ${req.url}');

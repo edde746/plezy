@@ -14,7 +14,6 @@ import '../mixins/controller_disposer_mixin.dart';
 import '../mixins/mounted_set_state_mixin.dart';
 import '../mixins/refreshable.dart';
 import '../models/seerr/seerr_search_result.dart';
-import '../navigation/navigation_tabs.dart';
 import '../providers/multi_server_provider.dart';
 import '../providers/seerr_session_provider.dart';
 import '../services/seerr/seerr_constants.dart';

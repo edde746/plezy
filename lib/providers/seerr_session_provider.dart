@@ -137,7 +137,7 @@ class SeerrSessionProvider extends ChangeNotifier with DisposableChangeNotifierM
       } catch (e) {
         appLogger.d('Seerr disconnect: signOut failed: $e');
       }
-      final cleared = conn.copyWith(sessionCookie: '', sessionCookieCapturedAt: null);
+      final cleared = conn.copyWith(sessionCookie: '');
       await _connections.upsert(cleared);
       if (profileId.isNotEmpty) {
         await _profileConnections.remove(profileId, conn.id);
@@ -194,7 +194,7 @@ class SeerrSessionProvider extends ChangeNotifier with DisposableChangeNotifierM
     _swapClient(null);
     if (conn != null) {
       // Wipe the cookie so an immediate retry re-prompts for password.
-      unawaited(_connections.upsert(conn.copyWith(sessionCookie: '', sessionCookieCapturedAt: null)));
+      unawaited(_connections.upsert(conn.copyWith(sessionCookie: '')));
     }
     if (_isCurrentBinding(profileId, generation)) safeNotifyListeners();
   }

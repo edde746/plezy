@@ -57,7 +57,6 @@ import '../providers/download_provider.dart';
 import '../providers/offline_watch_provider.dart';
 import '../providers/seerr_session_provider.dart';
 import '../providers/watch_state_store.dart';
-import '../utils/external_ids.dart';
 import 'seerr/seerr_request_sheet.dart';
 import '../theme/mono_tokens.dart';
 import '../utils/app_logger.dart';

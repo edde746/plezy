@@ -117,11 +117,8 @@ class SeerrAuthService {
         jellyfinUsername: username,
         jellyfinPassword: password,
         sessionCookie: client.sessionCookieValue ?? '',
-        sessionCookieCapturedAt: now,
         seerrUserId: user.id,
-        seerrUserType: user.userType,
         permissions: user.permissions,
-        avatarUrl: user.avatar,
         status: ConnectionStatus.online,
         createdAt: now,
         lastAuthenticatedAt: now,
@@ -145,11 +142,8 @@ class SeerrAuthService {
     );
     return connection.copyWith(
       sessionCookie: refreshed.sessionCookie,
-      sessionCookieCapturedAt: refreshed.sessionCookieCapturedAt,
       seerrUserId: refreshed.seerrUserId,
-      seerrUserType: refreshed.seerrUserType,
       permissions: refreshed.permissions,
-      avatarUrl: refreshed.avatarUrl,
       instanceLabel: refreshed.instanceLabel,
       status: ConnectionStatus.online,
       lastAuthenticatedAt: DateTime.now(),

@@ -2,54 +2,19 @@ import 'seerr_credits.dart';
 import 'seerr_media_info.dart';
 import 'seerr_movie_details.dart';
 
-class SeerrEpisode {
-  final int episodeNumber;
-  final String name;
-  final String? overview;
-  final String? airDate;
-
-  const SeerrEpisode({required this.episodeNumber, required this.name, this.overview, this.airDate});
-
-  factory SeerrEpisode.fromJson(Map<String, dynamic> json) => SeerrEpisode(
-    episodeNumber: (json['episodeNumber'] as num?)?.toInt() ?? 0,
-    name: json['name'] as String? ?? '',
-    overview: json['overview'] as String?,
-    airDate: json['airDate'] as String?,
-  );
-}
-
 class SeerrSeason {
   final int seasonNumber;
   final int episodeCount;
-  final String? name;
-  final String? overview;
-  final String? airDate;
-  final List<SeerrEpisode> episodes;
 
   const SeerrSeason({
     required this.seasonNumber,
     required this.episodeCount,
-    this.name,
-    this.overview,
-    this.airDate,
-    this.episodes = const [],
   });
 
   factory SeerrSeason.fromJson(Map<String, dynamic> json) {
-    final rawEps = json['episodes'];
-    final episodes = <SeerrEpisode>[];
-    if (rawEps is List) {
-      for (final e in rawEps) {
-        if (e is Map<String, dynamic>) episodes.add(SeerrEpisode.fromJson(e));
-      }
-    }
     return SeerrSeason(
       seasonNumber: (json['seasonNumber'] as num?)?.toInt() ?? 0,
       episodeCount: (json['episodeCount'] as num?)?.toInt() ?? 0,
-      name: json['name'] as String?,
-      overview: json['overview'] as String?,
-      airDate: json['airDate'] as String?,
-      episodes: episodes,
     );
   }
 }
@@ -63,7 +28,6 @@ class SeerrTvDetails {
   final String? tagline;
   final String? firstAirDate;
   final String? lastAirDate;
-  final bool inProduction;
   final int numberOfEpisodes;
   final int numberOfSeasons;
   final String? posterPath;
@@ -83,7 +47,6 @@ class SeerrTvDetails {
     this.tagline,
     this.firstAirDate,
     this.lastAirDate,
-    this.inProduction = false,
     this.numberOfEpisodes = 0,
     this.numberOfSeasons = 0,
     this.posterPath,
@@ -127,7 +90,6 @@ class SeerrTvDetails {
       tagline: json['tagline'] as String?,
       firstAirDate: json['firstAirDate'] as String?,
       lastAirDate: json['lastAirDate'] as String?,
-      inProduction: json['inProduction'] as bool? ?? false,
       numberOfEpisodes: (json['numberOfEpisodes'] as num?)?.toInt() ?? 0,
       numberOfSeasons: (json['numberOfSeasons'] as num?)?.toInt() ?? 0,
       posterPath: json['posterPath'] as String?,

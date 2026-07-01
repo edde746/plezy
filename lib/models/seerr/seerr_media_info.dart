@@ -56,7 +56,6 @@ class SeerrSeasonStatus {
 class SeerrMediaInfo {
   final int id;
   final int? tmdbId;
-  final int? tvdbId;
   final SeerrMediaStatus status;
   final SeerrMediaStatus status4k;
   final List<SeerrSeasonStatus> seasons;
@@ -64,7 +63,6 @@ class SeerrMediaInfo {
   const SeerrMediaInfo({
     required this.id,
     this.tmdbId,
-    this.tvdbId,
     this.status = SeerrMediaStatus.unknown,
     this.status4k = SeerrMediaStatus.unknown,
     this.seasons = const [],
@@ -81,7 +79,6 @@ class SeerrMediaInfo {
     return SeerrMediaInfo(
       id: (json['id'] as num?)?.toInt() ?? 0,
       tmdbId: (json['tmdbId'] as num?)?.toInt(),
-      tvdbId: (json['tvdbId'] as num?)?.toInt(),
       status: SeerrMediaStatus.fromValue((json['status'] as num?)?.toInt()),
       status4k: SeerrMediaStatus.fromValue((json['status4k'] as num?)?.toInt()),
       seasons: seasons,

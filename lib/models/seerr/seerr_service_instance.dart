@@ -6,7 +6,6 @@ class SeerrServiceInstance {
   final bool is4k;
   final bool isDefault;
   final int? activeProfileId;
-  final String? activeProfileName;
   final String? activeDirectory;
   final int? activeLanguageProfileId;
 
@@ -16,7 +15,6 @@ class SeerrServiceInstance {
     required this.is4k,
     required this.isDefault,
     this.activeProfileId,
-    this.activeProfileName,
     this.activeDirectory,
     this.activeLanguageProfileId,
   });
@@ -28,7 +26,6 @@ class SeerrServiceInstance {
       is4k: json['is4k'] as bool? ?? false,
       isDefault: json['isDefault'] as bool? ?? false,
       activeProfileId: (json['activeProfileId'] as num?)?.toInt(),
-      activeProfileName: json['activeProfileName'] as String?,
       activeDirectory: json['activeDirectory'] as String?,
       activeLanguageProfileId: (json['activeLanguageProfileId'] as num?)?.toInt(),
     );
@@ -48,16 +45,12 @@ class SeerrQualityProfile {
 class SeerrRootFolder {
   final int id;
   final String path;
-  final int? freeSpace;
-  final int? totalSpace;
 
-  const SeerrRootFolder({required this.id, required this.path, this.freeSpace, this.totalSpace});
+  const SeerrRootFolder({required this.id, required this.path});
 
   factory SeerrRootFolder.fromJson(Map<String, dynamic> json) => SeerrRootFolder(
     id: (json['id'] as num?)?.toInt() ?? 0,
     path: json['path'] as String? ?? '',
-    freeSpace: (json['freeSpace'] as num?)?.toInt(),
-    totalSpace: (json['totalSpace'] as num?)?.toInt(),
   );
 }
 

@@ -10,7 +10,6 @@ void main() {
         'id': 603,
         'mediaType': 'movie',
         'title': 'The Matrix',
-        'originalTitle': 'The Matrix',
         'overview': 'A hacker discovers ...',
         'posterPath': '/abc.jpg',
         'backdropPath': '/bg.jpg',
@@ -32,7 +31,6 @@ void main() {
         'id': 1396,
         'mediaType': 'tv',
         'name': 'Breaking Bad',
-        'originalName': 'Breaking Bad',
         'firstAirDate': '2008-01-20',
         'posterPath': '/p.jpg',
       });
@@ -57,8 +55,8 @@ void main() {
         'pages': 3,
         'totalResults': 60,
         'results': [
-          {'id': 603, 'mediaType': 'movie', 'title': 'The Matrix', 'originalTitle': 'The Matrix'},
-          {'id': 1396, 'mediaType': 'tv', 'name': 'Breaking Bad', 'originalName': 'Breaking Bad'},
+          {'id': 603, 'mediaType': 'movie', 'title': 'The Matrix'},
+          {'id': 1396, 'mediaType': 'tv', 'name': 'Breaking Bad'},
           {'id': 999, 'mediaType': 'unsupported'},
           {'id': 1100, 'mediaType': 'person', 'name': 'Brian Cox'},
         ],
