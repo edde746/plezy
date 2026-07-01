@@ -13,8 +13,13 @@ import '../providers/hidden_libraries_provider.dart';
 import '../providers/libraries_provider.dart';
 import '../providers/multi_server_provider.dart';
 import '../providers/playback_state_provider.dart';
+import '../providers/seerr_discover_provider.dart';
+import '../providers/seerr_requests_provider.dart';
+import '../providers/seerr_session_provider.dart';
 import '../providers/trakt_account_provider.dart';
 import '../providers/trackers_provider.dart';
+import '../connection/connection_registry.dart';
+import '../profiles/profile_connection_registry.dart';
 import '../providers/watch_state_store.dart';
 import '../screens/main_screen.dart';
 import '../services/storage_service.dart';
@@ -109,6 +114,37 @@ class _ProfileSessionScreenState extends State<ProfileSessionScreen> {
                       appLogger.w('Trackers profile hydrate failed', error: e, stackTrace: s);
                     }),
                   );
+                  return provider;
+                },
+              ),
+              ChangeNotifierProvider(
+                create: (context) {
+                  final provider = SeerrSessionProvider(
+                    connectionRegistry: context.read<ConnectionRegistry>(),
+                    profileConnectionRegistry: context.read<ProfileConnectionRegistry>(),
+                  );
+                  provider.initWatchers();
+                  unawaited(
+                    provider.onActiveProfileChanged(activeId).catchError((Object e, StackTrace s) {
+                      appLogger.w('Seerr profile hydrate failed', error: e, stackTrace: s);
+                    }),
+                  );
+                  return provider;
+                },
+              ),
+              ChangeNotifierProxyProvider<SeerrSessionProvider, SeerrDiscoverProvider>(
+                create: (_) => SeerrDiscoverProvider(),
+                update: (_, session, previous) {
+                  final provider = previous ?? SeerrDiscoverProvider();
+                  provider.bindClient(session.client);
+                  return provider;
+                },
+              ),
+              ChangeNotifierProxyProvider<SeerrSessionProvider, SeerrRequestsProvider>(
+                create: (_) => SeerrRequestsProvider(),
+                update: (_, session, previous) {
+                  final provider = previous ?? SeerrRequestsProvider();
+                  provider.bindClient(session.client);
                   return provider;
                 },
               ),

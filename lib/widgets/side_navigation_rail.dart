@@ -20,6 +20,7 @@ import '../utils/platform_detector.dart';
 import '../utils/scroll_utils.dart';
 import '../utils/library_grouping.dart';
 import '../providers/multi_server_provider.dart';
+import '../providers/seerr_session_provider.dart';
 import '../services/fullscreen_state_manager.dart';
 import '../theme/mono_tokens.dart';
 import '../widgets/backend_badge.dart';
@@ -377,6 +378,8 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
         return _kLibraries;
       case NavigationTabId.search:
         return _kSearch;
+      case NavigationTabId.seerr:
+        return 'seerr';
       case NavigationTabId.downloads:
         return _showDownloads ? _kDownloads : null;
       case NavigationTabId.settings:
@@ -413,11 +416,13 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
     required List<_LibraryNavRow> hiddenRows,
     required bool hasHiddenLibraries,
     required bool hasLiveTv,
+    bool hasSeerr = false,
   }) {
     return {
       _kHome,
       _kLibraries,
       _kSearch,
+      if (hasSeerr) 'seerr',
       if (_showDownloads) _kDownloads,
       _kSettings,
       _kReconnect,
@@ -490,6 +495,7 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
     List<_LibraryNavRow> hiddenRows, {
     required bool hasHiddenLibraries,
     required bool hasLiveTv,
+    bool hasSeerr = false,
   }) {
     return [
       if (widget.isOfflineMode && widget.onReconnect != null) _kReconnect,
@@ -505,6 +511,7 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
         ],
         if (hasLiveTv) 'liveTv',
         _kSearch,
+        if (hasSeerr) 'seerr',
       ],
       if (_showDownloads) _kDownloads,
       _kSettings,
@@ -620,6 +627,7 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
     final horizontalPadding = horizontalPaddingForContext(context, isCollapsed: isCollapsed);
     final itemHorizontalPadding = itemHorizontalPaddingForContext(context, isCollapsed: isCollapsed);
     final hasLiveTv = context.watch<MultiServerProvider>().hasLiveTv;
+    final hasSeerr = context.watch<SeerrSessionProvider>().hasConfiguredServer;
 
     // Listen to fullscreen + groupLibrariesByServer setting so the rail
     // rebuilds when the user toggles "Group libraries by server" in Appearance.
@@ -651,6 +659,7 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
             hiddenRows: hiddenRows,
             hasHiddenLibraries: hiddenLibraries.isNotEmpty,
             hasLiveTv: hasLiveTv,
+            hasSeerr: hasSeerr,
           ),
         );
         final focusOrder = _buildFocusOrder(
@@ -658,6 +667,7 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
           hiddenRows,
           hasHiddenLibraries: hiddenLibraries.isNotEmpty,
           hasLiveTv: hasLiveTv,
+          hasSeerr: hasSeerr,
         );
         _debugAssertUniqueFocusOrder(focusOrder);
         return TapRegion(
@@ -753,6 +763,19 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
                                       isCollapsed: isCollapsed,
                                     ),
                                     const SizedBox(height: 8),
+                                    if (hasSeerr) ...[
+                                      _buildNavItem(
+                                        icon: Symbols.playlist_add_check_rounded,
+                                        selectedIcon: Symbols.playlist_add_check_rounded,
+                                        label: Translations.of(context).seerr.tab,
+                                        isSelected: widget.selectedTab == NavigationTabId.seerr,
+                                        isFocused: _focusTracker.isFocused('seerr'),
+                                        onTap: () => widget.onDestinationSelected(NavigationTabId.seerr),
+                                        focusNode: _focusTracker.get('seerr'),
+                                        isCollapsed: isCollapsed,
+                                      ),
+                                      const SizedBox(height: 8),
+                                    ],
                                   ],
                                   // Downloads (hidden on Apple TV — no user
                                   // file storage)

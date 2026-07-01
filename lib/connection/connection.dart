@@ -7,22 +7,34 @@ import '../services/plex_auth_service.dart';
 /// (e.g. database column values).
 enum ConnectionKind {
   plex,
-  jellyfin;
+  jellyfin,
+  seerr;
 
   String get id => switch (this) {
     ConnectionKind.plex => 'plex',
     ConnectionKind.jellyfin => 'jellyfin',
+    ConnectionKind.seerr => 'seerr',
   };
 
   static ConnectionKind fromId(String id) => switch (id) {
     'plex' => ConnectionKind.plex,
     'jellyfin' => ConnectionKind.jellyfin,
+    'seerr' => ConnectionKind.seerr,
     _ => throw ArgumentError('Unknown ConnectionKind id: $id'),
+  };
+
+  /// Whether this kind backs a playable media library. False for ancillary
+  /// services (Seerr, etc.) that share the connection storage but are not
+  /// part of the [MediaBackend] consumer surface.
+  bool get isMediaBackend => switch (this) {
+    ConnectionKind.plex || ConnectionKind.jellyfin => true,
+    ConnectionKind.seerr => false,
   };
 
   MediaBackend get backend => switch (this) {
     ConnectionKind.plex => MediaBackend.plex,
     ConnectionKind.jellyfin => MediaBackend.jellyfin,
+    ConnectionKind.seerr => throw StateError('ConnectionKind.seerr has no MediaBackend; gate on isMediaBackend first'),
   };
 }
 
@@ -44,8 +56,14 @@ sealed class Connection {
   DateTime? get lastAuthenticatedAt;
 
   /// Backend kind as a [MediaBackend] — for UI that branches on backend
-  /// (badges, etc.). Just a passthrough to [kind.backend].
+  /// (badges, etc.). Just a passthrough to [kind.backend]. Only valid when
+  /// [isMediaBackend] is true; throws for ancillary kinds (e.g. Seerr).
   MediaBackend get backend => kind.backend;
+
+  /// Whether this connection backs a playable media library. False for
+  /// ancillary services like Seerr. Use to gate UI that assumes a media
+  /// backend (badges, library lookups, server pickers).
+  bool get isMediaBackend => kind.isMediaBackend;
 
   /// Primary label shown in connection-list UIs. Plex shows the active
   /// profile/account name; Jellyfin shows the server name.
@@ -357,6 +375,151 @@ class JellyfinConnection extends Connection {
       accessToken: json['accessToken'] as String? ?? '',
       deviceId: json['deviceId'] as String? ?? '',
       isAdministrator: json['isAdministrator'] as bool? ?? false,
+      status: status,
+      createdAt: createdAt,
+      lastAuthenticatedAt: lastAuthenticatedAt,
+    );
+  }
+}
+
+/// A user's authenticated session to a Seerr instance (the Overseerr +
+/// Jellyseerr successor at https://seerr.dev). One row per (seerr instance,
+/// jellyfin user) — the same Seerr can be backed by multiple Plezy profiles
+/// when several Jellyfin users sign in from the same install.
+///
+/// Seerr is not a media server (it does not stream content) so this kind has
+/// `isMediaBackend == false`. It rides the existing [ConnectionRegistry] and
+/// [ProfileConnectionRegistry] storage to avoid a parallel schema.
+class SeerrConnection extends Connection {
+  @override
+  final String id;
+
+  @override
+  final ConnectionStatus status;
+
+  @override
+  final DateTime createdAt;
+
+  @override
+  final DateTime? lastAuthenticatedAt;
+
+  /// Base URL of the Seerr instance, no trailing slash. e.g.
+  /// `https://requests.example.lan`. All API calls hit `{baseUrl}/api/v1/...`.
+  final String baseUrl;
+
+  /// Server-reported application title (from `/api/v1/settings/public`), used
+  /// as the primary label in connection-list UIs. Falls back to "Seerr".
+  final String instanceLabel;
+
+  /// Jellyfin username used to authenticate. Re-displayed at login and used
+  /// for silent re-auth on session expiry.
+  final String jellyfinUsername;
+
+  /// Jellyfin password, persisted (encrypted via CredentialVault) so the
+  /// client can silently re-auth when Seerr's `connect.sid` cookie expires.
+  /// May be empty for legacy rows pre-dating the silent-reauth feature.
+  final String jellyfinPassword;
+
+  /// Active Seerr session cookie value (the `connect.sid=...` content),
+  /// encrypted at rest. The HTTP client replays this on every authenticated
+  /// request as the `Cookie` header.
+  final String sessionCookie;
+
+  /// Seerr-side user id. Used to scope `/api/v1/user/{id}/requests`.
+  final int seerrUserId;
+
+  /// Permissions bitmask returned by `/auth/me`. Drives feature gates like
+  /// "can request 4K".
+  final int permissions;
+
+  SeerrConnection({
+    required this.id,
+    required this.baseUrl,
+    required this.instanceLabel,
+    required this.jellyfinUsername,
+    required this.jellyfinPassword,
+    required this.sessionCookie,
+    required this.seerrUserId,
+    required this.permissions,
+    this.status = ConnectionStatus.unknown,
+    required this.createdAt,
+    this.lastAuthenticatedAt,
+  });
+
+  @override
+  ConnectionKind get kind => ConnectionKind.seerr;
+
+  @override
+  String get displayName => '$jellyfinUsername · $instanceLabel';
+
+  @override
+  String get displayLabel => instanceLabel;
+
+  @override
+  String? get displaySubtitle => '$jellyfinUsername · ${_truncateSeerrUrl(baseUrl)}';
+
+  static String _truncateSeerrUrl(String url) {
+    if (url.length <= 40) return url;
+    return '${url.substring(0, 37)}…';
+  }
+
+  SeerrConnection copyWith({
+    String? id,
+    String? baseUrl,
+    String? instanceLabel,
+    String? jellyfinUsername,
+    String? jellyfinPassword,
+    String? sessionCookie,
+    int? seerrUserId,
+    int? permissions,
+    ConnectionStatus? status,
+    DateTime? createdAt,
+    DateTime? lastAuthenticatedAt,
+  }) {
+    return SeerrConnection(
+      id: id ?? this.id,
+      baseUrl: baseUrl ?? this.baseUrl,
+      instanceLabel: instanceLabel ?? this.instanceLabel,
+      jellyfinUsername: jellyfinUsername ?? this.jellyfinUsername,
+      jellyfinPassword: jellyfinPassword ?? this.jellyfinPassword,
+      sessionCookie: sessionCookie ?? this.sessionCookie,
+      seerrUserId: seerrUserId ?? this.seerrUserId,
+      permissions: permissions ?? this.permissions,
+      status: status ?? this.status,
+      createdAt: createdAt ?? this.createdAt,
+      lastAuthenticatedAt: lastAuthenticatedAt ?? this.lastAuthenticatedAt,
+    );
+  }
+
+  @override
+  Map<String, Object?> toConfigJson() {
+    return {
+      'baseUrl': baseUrl,
+      'instanceLabel': instanceLabel,
+      'jellyfinUsername': jellyfinUsername,
+      'jellyfinPassword': jellyfinPassword,
+      'sessionCookie': sessionCookie,
+      'seerrUserId': seerrUserId,
+      'permissions': permissions,
+    };
+  }
+
+  factory SeerrConnection.fromConfigJson({
+    required String id,
+    required Map<String, Object?> json,
+    required ConnectionStatus status,
+    required DateTime createdAt,
+    DateTime? lastAuthenticatedAt,
+  }) {
+    return SeerrConnection(
+      id: id,
+      baseUrl: json['baseUrl'] as String? ?? '',
+      instanceLabel: json['instanceLabel'] as String? ?? 'Seerr',
+      jellyfinUsername: json['jellyfinUsername'] as String? ?? '',
+      jellyfinPassword: json['jellyfinPassword'] as String? ?? '',
+      sessionCookie: json['sessionCookie'] as String? ?? '',
+      seerrUserId: (json['seerrUserId'] as num?)?.toInt() ?? 0,
+      permissions: (json['permissions'] as num?)?.toInt() ?? 0,
       status: status,
       createdAt: createdAt,
       lastAuthenticatedAt: lastAuthenticatedAt,

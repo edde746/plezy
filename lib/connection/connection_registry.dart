@@ -151,6 +151,19 @@ class ConnectionRegistry {
     return c is JellyfinConnection ? c : null;
   }
 
+  /// All Seerr connections in insertion order.
+  Future<List<SeerrConnection>> listSeerr() async {
+    final all = await list();
+    return all.whereType<SeerrConnection>().toList();
+  }
+
+  /// Lookup a [SeerrConnection] by id. Returns `null` if no row matches OR
+  /// the row exists but isn't a Seerr connection.
+  Future<SeerrConnection?> getSeerr(String id) async {
+    final c = await get(id);
+    return c is SeerrConnection ? c : null;
+  }
+
   Future<Connection?> _rowToConnection(ConnectionRow row) async {
     try {
       final json = jsonDecode(row.configJson) as Map<String, dynamic>;
@@ -169,6 +182,13 @@ class ConnectionRegistry {
           lastAuthenticatedAt: lastAuth,
         ),
         ConnectionKind.jellyfin => JellyfinConnection.fromConfigJson(
+          id: row.id,
+          json: revealed.config,
+          status: ConnectionStatus.unknown,
+          createdAt: createdAt,
+          lastAuthenticatedAt: lastAuth,
+        ),
+        ConnectionKind.seerr => SeerrConnection.fromConfigJson(
           id: row.id,
           json: revealed.config,
           status: ConnectionStatus.unknown,

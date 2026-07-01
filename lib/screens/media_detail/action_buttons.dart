@@ -178,6 +178,25 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
           )
         : null;
 
+    // Seerr "request via Seerr" — only when a Seerr session is active and
+    // the item is a movie or full show (not seasons, episodes, music, etc.).
+    // Episodes redirect requests to the parent show anyway, which is a
+    // worse UX than just showing the button on the show page directly.
+    final seerrSession = context.watch<SeerrSessionProvider>();
+    final canShowSeerr = !widget.isOffline && seerrSession.isConnected && (metadata.isMovie || metadata.isShow);
+    final seerrAction = canShowSeerr
+        ? FocusableAction(
+            debugLabel: 'detail_seerr_request',
+            onPressed: () => unawaited(_openSeerrRequestFromLibrary(metadata)),
+            builder: (context, state) => iconActionButton(
+              state,
+              onPressed: () => unawaited(_openSeerrRequestFromLibrary(metadata)),
+              icon: const AppIcon(Symbols.playlist_add_check_rounded, fill: 1),
+              tooltip: t.seerr.detail.requestViaSeerr,
+            ),
+          )
+        : null;
+
     final downloadAction = !widget.isOffline && !PlatformDetector.isAppleTV()
         ? FocusableAction(
             debugLabel: 'detail_download',
@@ -215,6 +234,7 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
       ?trailerAction,
       ?shuffleAction,
       ?downloadAction,
+      ?seerrAction,
       watchedAction,
       ?moreActionsAction,
     ];
@@ -278,6 +298,97 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
         return actionBar(compactActionsFor(maxWidth));
       },
     );
+  }
+
+  /// Open the Seerr request sheet for [showMetadata] with exactly
+  /// [seasonNumbers] pre-checked. Used by the per-season missing-content
+  /// CTA on the show detail screen.
+  Future<void> _openSeerrRequestForSeasons(MediaItem showMetadata, List<int> seasonNumbers) =>
+      _openSeerrRequestFromLibrary(showMetadata, preSelectedSeasons: seasonNumbers);
+
+  /// Resolve the TMDB id of the active library item, fetch the matching
+  /// movie/tv details from Seerr, then open [SeerrRequestSheet]. Shows a
+  /// brief loading dialog while the two round-trips run; surfaces an
+  /// error snackbar when the TMDB id isn't known to the media server or
+  /// Seerr can't return the matching record.
+  ///
+  /// [preSelectedSeasons] (TV only) forwards to [SeerrRequestSheet.tv] so
+  /// callers can pre-tick specific seasons (e.g. just the one the user
+  /// chose from a per-season "missing" CTA).
+  Future<void> _openSeerrRequestFromLibrary(MediaItem metadata, {List<int>? preSelectedSeasons}) async {
+    final session = context.read<SeerrSessionProvider>();
+    final seerrClient = session.client;
+    final mediaClient = _getMediaClientForMetadata(context);
+    if (seerrClient == null || mediaClient == null) return;
+
+    // Tiny non-dismissible spinner so the user knows we're working. Dismissed
+    // on every return path below.
+    bool dialogOpen = true;
+    unawaited(
+      showDialog<void>(
+        context: context,
+        barrierDismissible: false,
+        builder: (_) => const Center(child: LoadingIndicatorBox(size: 32)),
+      ).then((_) => dialogOpen = false),
+    );
+
+    void closeDialog() {
+      if (dialogOpen && mounted && Navigator.canPop(context)) {
+        Navigator.of(context, rootNavigator: true).pop();
+      }
+    }
+
+    try {
+      final externalIds = await mediaClient.fetchExternalIds(metadata.id);
+      final tmdbId = externalIds.tmdb;
+      if (tmdbId == null) {
+        closeDialog();
+        if (mounted) showErrorSnackBar(context, t.seerr.detail.requestNoTmdb);
+        return;
+      }
+      if (metadata.isMovie) {
+        final details = await seerrClient.getMovie(tmdbId);
+        closeDialog();
+        if (!mounted) return;
+        await SeerrRequestSheet.show(
+          context,
+          SeerrRequestSheet.movie(
+            tmdbId: tmdbId,
+            title: details.title,
+            posterPath: details.posterPath,
+            overview: details.overview,
+            year: (details.releaseDate != null && details.releaseDate!.length >= 4)
+                ? details.releaseDate!.substring(0, 4)
+                : null,
+          ),
+        );
+      } else {
+        final details = await seerrClient.getTv(tmdbId);
+        closeDialog();
+        if (!mounted) return;
+        await SeerrRequestSheet.show(
+          context,
+          SeerrRequestSheet.tv(
+            tmdbId: tmdbId,
+            title: details.name,
+            details: details,
+            posterPath: details.posterPath,
+            overview: details.overview,
+            year: (details.firstAirDate != null && details.firstAirDate!.length >= 4)
+                ? details.firstAirDate!.substring(0, 4)
+                : null,
+            // Caller-supplied wins; otherwise default to pre-ticking all
+            // seasons Seerr considers missing (request-via-library flow).
+            preSelectedSeasons: preSelectedSeasons,
+            preSelectMissingSeasons: preSelectedSeasons == null,
+          ),
+        );
+      }
+    } catch (e, st) {
+      appLogger.w('Seerr request from library failed', error: e, stackTrace: st);
+      closeDialog();
+      if (mounted) showErrorSnackBar(context, t.seerr.detail.requestLoadFailed);
+    }
   }
 
   Future<void> _handleWatchedTogglePressed(MediaItem metadata) async {

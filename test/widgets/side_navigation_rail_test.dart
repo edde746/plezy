@@ -1,17 +1,22 @@
 import 'dart:ui' show PointerDeviceKind;
 import 'package:plezy/media/ids.dart';
 
+import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:plezy/connection/connection_registry.dart';
+import 'package:plezy/database/app_database.dart';
 import 'package:plezy/i18n/strings.g.dart';
 import 'package:plezy/media/media_backend.dart';
 import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/media/media_library.dart';
 import 'package:plezy/navigation/navigation_tabs.dart';
+import 'package:plezy/profiles/profile_connection_registry.dart';
 import 'package:plezy/providers/hidden_libraries_provider.dart';
 import 'package:plezy/providers/libraries_provider.dart';
 import 'package:plezy/providers/multi_server_provider.dart';
+import 'package:plezy/providers/seerr_session_provider.dart';
 import 'package:plezy/services/data_aggregation_service.dart';
 import 'package:plezy/services/multi_server_manager.dart';
 import 'package:plezy/services/settings_service.dart';
@@ -72,6 +77,23 @@ AnimatedOpacity _railSurfaceOpacity(WidgetTester tester) {
       .singleWhere((widget) => widget.child is ColoredBox);
 }
 
+/// A disconnected [SeerrSessionProvider] (no active client) backed by an
+/// in-memory DB. SideNavigationRail consumes it via Consumer; in production
+/// it is always mounted above screens by ProfileSessionScreen. Registers its
+/// own teardown so callers just drop it into their provider list.
+SeerrSessionProvider _disconnectedSeerrSession() {
+  final db = AppDatabase.forTesting(NativeDatabase.memory());
+  final session = SeerrSessionProvider(
+    connectionRegistry: ConnectionRegistry(db),
+    profileConnectionRegistry: ProfileConnectionRegistry(db),
+  );
+  addTearDown(() async {
+    session.dispose();
+    await db.close();
+  });
+  return session;
+}
+
 Future<void> _pumpBasicRail(
   WidgetTester tester, {
   GlobalKey<SideNavigationRailState>? sideNavKey,
@@ -99,6 +121,18 @@ Future<void> _pumpBasicRail(
   final multiServerProvider = MultiServerProvider(manager, aggregation);
   addTearDown(multiServerProvider.dispose);
 
+  // SideNavigationRail consumes SeerrSessionProvider (mounted above screens in
+  // production via ProfileSessionScreen). A disconnected instance is enough.
+  final seerrDb = AppDatabase.forTesting(NativeDatabase.memory());
+  final seerrSession = SeerrSessionProvider(
+    connectionRegistry: ConnectionRegistry(seerrDb),
+    profileConnectionRegistry: ProfileConnectionRegistry(seerrDb),
+  );
+  addTearDown(() async {
+    seerrSession.dispose();
+    await seerrDb.close();
+  });
+
   final rail = SideNavigationRail(
     key: sideNavKey,
     selectedTab: selectedTab,
@@ -116,6 +150,7 @@ Future<void> _pumpBasicRail(
           ChangeNotifierProvider<LibrariesProvider>.value(value: librariesProvider),
           ChangeNotifierProvider<HiddenLibrariesProvider>.value(value: hiddenLibrariesProvider),
           ChangeNotifierProvider<MultiServerProvider>.value(value: multiServerProvider),
+          ChangeNotifierProvider<SeerrSessionProvider>.value(value: seerrSession),
         ],
         child: MaterialApp(
           theme: ThemeData(extensions: const [_testTokens]),
@@ -164,6 +199,7 @@ void main() {
             ChangeNotifierProvider<LibrariesProvider>.value(value: librariesProvider),
             ChangeNotifierProvider<HiddenLibrariesProvider>.value(value: hiddenLibrariesProvider),
             ChangeNotifierProvider<MultiServerProvider>.value(value: multiServerProvider),
+            ChangeNotifierProvider<SeerrSessionProvider>.value(value: _disconnectedSeerrSession()),
           ],
           child: MaterialApp(
             theme: ThemeData(extensions: const [_testTokens]),
@@ -229,6 +265,7 @@ void main() {
             ChangeNotifierProvider<LibrariesProvider>.value(value: librariesProvider),
             ChangeNotifierProvider<HiddenLibrariesProvider>.value(value: hiddenLibrariesProvider),
             ChangeNotifierProvider<MultiServerProvider>.value(value: multiServerProvider),
+            ChangeNotifierProvider<SeerrSessionProvider>.value(value: _disconnectedSeerrSession()),
           ],
           child: MaterialApp(
             theme: ThemeData(extensions: const [_testTokens]),
@@ -335,6 +372,7 @@ void main() {
             ChangeNotifierProvider<LibrariesProvider>.value(value: librariesProvider),
             ChangeNotifierProvider<HiddenLibrariesProvider>.value(value: hiddenLibrariesProvider),
             ChangeNotifierProvider<MultiServerProvider>.value(value: multiServerProvider),
+            ChangeNotifierProvider<SeerrSessionProvider>.value(value: _disconnectedSeerrSession()),
           ],
           child: MaterialApp(
             theme: ThemeData(extensions: const [_testTokens]),
@@ -400,6 +438,7 @@ void main() {
             ChangeNotifierProvider<LibrariesProvider>.value(value: librariesProvider),
             ChangeNotifierProvider<HiddenLibrariesProvider>.value(value: hiddenLibrariesProvider),
             ChangeNotifierProvider<MultiServerProvider>.value(value: multiServerProvider),
+            ChangeNotifierProvider<SeerrSessionProvider>.value(value: _disconnectedSeerrSession()),
           ],
           child: MaterialApp(
             theme: ThemeData(extensions: const [_testTokens]),
@@ -477,6 +516,7 @@ void main() {
             ChangeNotifierProvider<LibrariesProvider>.value(value: librariesProvider),
             ChangeNotifierProvider<HiddenLibrariesProvider>.value(value: hiddenLibrariesProvider),
             ChangeNotifierProvider<MultiServerProvider>.value(value: multiServerProvider),
+            ChangeNotifierProvider<SeerrSessionProvider>.value(value: _disconnectedSeerrSession()),
           ],
           child: MaterialApp(
             theme: ThemeData(extensions: const [_testTokens]),

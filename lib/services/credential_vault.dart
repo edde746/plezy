@@ -54,6 +54,12 @@ class CredentialVault {
     if (kind == 'plex') {
       copy['servers'] = await _protectPlexServers(copy['servers']);
     }
+    if (kind == 'seerr') {
+      for (final field in const ['sessionCookie', 'jellyfinPassword']) {
+        final value = copy[field];
+        if (value is String && value.isNotEmpty) copy[field] = await protect(value);
+      }
+    }
     return copy;
   }
 
@@ -77,6 +83,15 @@ class CredentialVault {
       final result = await _revealPlexServers(copy['servers']);
       copy['servers'] = result.servers;
       migrated = migrated || result.migrated;
+    }
+    if (kind == 'seerr') {
+      for (final field in const ['sessionCookie', 'jellyfinPassword']) {
+        final value = copy[field];
+        if (value is String && value.isNotEmpty) {
+          migrated = migrated || !isProtected(value);
+          copy[field] = await reveal(value);
+        }
+      }
     }
     return (config: copy, migrated: migrated);
   }

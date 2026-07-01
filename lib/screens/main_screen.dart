@@ -57,6 +57,8 @@ import 'libraries/library_quick_picker_sheet.dart';
 import 'libraries/libraries_screen.dart';
 import 'livetv/live_tv_screen.dart';
 import 'search_screen.dart';
+import 'seerr/seerr_tab_root.dart';
+import '../providers/seerr_session_provider.dart';
 import 'downloads/downloads_screen.dart';
 import 'settings/settings_screen.dart';
 import 'profile/profile_switch_screen.dart';
@@ -201,6 +203,8 @@ class _MainScreenState extends State<MainScreen>
   MultiServerProvider? _multiServerProvider;
   RouteObserver<PageRoute<dynamic>>? _profileRouteObserver;
   bool _lastHasLiveTv = false;
+  SeerrSessionProvider? _seerrSessionProvider;
+  bool _lastHasSeerr = false;
 
   /// Whether a reconnection attempt is in progress
   bool _isReconnecting = false;
@@ -218,6 +222,7 @@ class _MainScreenState extends State<MainScreen>
   final GlobalKey<State<LibrariesScreen>> _librariesKey = GlobalKey();
   final GlobalKey<State<LiveTvScreen>> _liveTvKey = GlobalKey();
   final GlobalKey<State<SearchScreen>> _searchKey = GlobalKey();
+  final GlobalKey _seerrKey = GlobalKey();
   final GlobalKey<State<DownloadsScreen>> _downloadsKey = GlobalKey();
   final GlobalKey<State<SettingsScreen>> _settingsKey = GlobalKey();
   final GlobalKey<SideNavigationRailState> _sideNavKey = GlobalKey();
@@ -291,6 +296,11 @@ class _MainScreenState extends State<MainScreen>
       _lastHasLiveTv = context.read<MultiServerProvider>().hasLiveTv;
     } catch (_) {
       _lastHasLiveTv = false;
+    }
+    try {
+      _lastHasSeerr = context.read<SeerrSessionProvider>().hasConfiguredServer;
+    } catch (_) {
+      _lastHasSeerr = false;
     }
     _currentTab = _defaultTabForMode(_isOffline);
     _lastOnlineTabId = _isOffline ? null : NavigationTabId.discover;
@@ -746,6 +756,14 @@ class _MainScreenState extends State<MainScreen>
       _multiServerProvider!.addListener(_handleLiveTvChanged);
     }
 
+    // Listen for Seerr configured-server changes (drives tab visibility).
+    final seerrSession = context.read<SeerrSessionProvider>();
+    if (seerrSession != _seerrSessionProvider) {
+      _seerrSessionProvider?.removeListener(_handleSeerrChanged);
+      _seerrSessionProvider = seerrSession;
+      _seerrSessionProvider!.addListener(_handleSeerrChanged);
+    }
+
     // Wire up Companion Remote command routing (host devices only, once)
     if (!_companionRemoteSetup && PlatformDetector.shouldActAsRemoteHost(context)) {
       _companionRemoteSetup = true;
@@ -822,6 +840,7 @@ class _MainScreenState extends State<MainScreen>
     }
     _offlineModeProvider?.removeListener(_handleOfflineStatusChanged);
     _multiServerProvider?.removeListener(_handleLiveTvChanged);
+    _seerrSessionProvider?.removeListener(_handleSeerrChanged);
     if (_bindingSettleListener != null) {
       _activeProfileForListener?.removeListener(_bindingSettleListener!);
     }
@@ -917,6 +936,7 @@ class _MainScreenState extends State<MainScreen>
           ),
           NavigationTabId.liveTv => LiveTvScreen(key: _liveTvKey),
           NavigationTabId.search => SearchScreen(key: _searchKey),
+          NavigationTabId.seerr => SeerrTabRoot(key: _seerrKey),
           NavigationTabId.downloads => DownloadsScreen(key: _downloadsKey),
           NavigationTabId.settings => SettingsScreen(key: _settingsKey),
         },
@@ -934,6 +954,7 @@ class _MainScreenState extends State<MainScreen>
   NavigationTabId _defaultTabForMode(bool isOffline) => NavigationTab.resolveDefaultTab(
     isOffline: isOffline,
     hasLiveTv: _hasLiveTv,
+    hasSeerr: _hasSeerr,
     preferredStartup: SettingsService.instanceOrNull?.read(SettingsService.startupSection),
   );
 
@@ -982,6 +1003,17 @@ class _MainScreenState extends State<MainScreen>
       _currentTab = _normalizeTabForMode(_currentTab, _isOffline);
     });
     _updateTvosMenuPassthrough();
+  }
+
+  void _handleSeerrChanged() {
+    final hasSeerr = _seerrSessionProvider?.hasConfiguredServer ?? false;
+    if (hasSeerr == _lastHasSeerr) return;
+    _lastHasSeerr = hasSeerr;
+    if (!mounted) return;
+    setState(() {
+      _screens = _buildScreens(_isOffline);
+      _currentTab = _normalizeTabForMode(_currentTab, _isOffline);
+    });
 
     // A preferred startup section (only Live TV can be deferred) just became
     // available — switch to it via _selectTab so it gets the usual visibility
@@ -1504,8 +1536,11 @@ class _MainScreenState extends State<MainScreen>
 
   /// Get navigation tabs filtered by offline mode
   List<NavigationTab> _getVisibleTabs(bool isOffline) {
-    return NavigationTab.getVisibleTabs(isOffline: isOffline, hasLiveTv: _hasLiveTv);
+    return NavigationTab.getVisibleTabs(isOffline: isOffline, hasLiveTv: _hasLiveTv, hasSeerr: _hasSeerr);
   }
+
+  /// Whether any Seerr server is configured (for any profile on this install).
+  bool get _hasSeerr => _lastHasSeerr;
 
   List<NavigationTab> _getBottomNavigationTabs(BuildContext context) {
     return mainScreenBottomNavigationTabs(
@@ -1523,6 +1558,7 @@ class _MainScreenState extends State<MainScreen>
       NavigationTabId.libraries => _librariesKey,
       NavigationTabId.liveTv => _liveTvKey,
       NavigationTabId.search => _searchKey,
+      NavigationTabId.seerr => _seerrKey,
       NavigationTabId.downloads => _downloadsKey,
       NavigationTabId.settings => _settingsKey,
     };
