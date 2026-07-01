@@ -405,6 +405,12 @@ jobs:
       - name: Install dependencies
         run: flutter pub get --enforce-lockfile --no-example
 
+      - name: Install patched Flutter engine (DComp)
+        shell: pwsh
+        run: |
+          flutter precache --windows
+          .\windows\tool\install-patched-engine.ps1
+
       - name: Build Windows x64
         run: flutter build windows --release --dart-define=ENABLE_UPDATE_CHECK=true ${{ env.SENTRY_DART_DEFINE }} ${{ env.GIT_COMMIT_DART_DEFINE }} ${{ env.SENTRY_ENV_DART_DEFINE }} --dart-define=SENTRY_DIST=github-windows-x64 ${{ env.DONATIONS_DART_DEFINE }} --split-debug-info=debug-info/windows-x64
 
@@ -446,7 +452,7 @@ jobs:
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
-          channel: "master"
+          channel: "stable"
           flutter-version: "3.44.0"
           cache: true
           pub-cache: false
@@ -460,6 +466,12 @@ jobs:
 
       - name: Install dependencies
         run: flutter pub get --no-example
+
+      - name: Install patched Flutter engine (DComp)
+        shell: pwsh
+        run: |
+          flutter precache --windows
+          .\windows\tool\install-patched-engine.ps1
 
       - name: Build Windows arm64
         run: flutter build windows --release --dart-define=ENABLE_UPDATE_CHECK=true ${{ env.SENTRY_DART_DEFINE }} ${{ env.GIT_COMMIT_DART_DEFINE }} ${{ env.SENTRY_ENV_DART_DEFINE }} --dart-define=SENTRY_DIST=github-windows-arm64 ${{ env.DONATIONS_DART_DEFINE }} --split-debug-info=debug-info/windows-arm64
