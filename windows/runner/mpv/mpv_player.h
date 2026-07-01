@@ -25,8 +25,11 @@ class MpvPlayer {
   MpvPlayer();
   ~MpvPlayer();
 
-  // Initializes mpv and creates the video window.
-  bool Initialize(HWND container, HWND flutter_window);
+  // Initializes mpv and creates the video window as a child of the Flutter
+  // |view| window. The flutter-plezy engine presents the UI on a topmost
+  // DirectComposition visual, so the video child composites beneath it in the
+  // same HWND.
+  bool Initialize(HWND view);
 
   // Disposes mpv and the video window.
   void Dispose();
@@ -87,10 +90,6 @@ class MpvPlayer {
 
   mpv_handle* mpv_ = nullptr;
   HWND hwnd_ = nullptr;
-  HWND container_ = nullptr;
-  HWND flutter_window_ = nullptr;
-  double device_pixel_ratio_ = 1.0;
-  RECT rect_ = {0, 0, 0, 0};
 
   std::thread event_thread_;
   std::atomic<bool> running_{false};

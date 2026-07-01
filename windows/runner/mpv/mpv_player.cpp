@@ -1,20 +1,69 @@
 #include "mpv_player.h"
 
+#include <windowsx.h>
+
 #include "sanitize_utf8.h"
 
 namespace mpv {
+
+namespace {
+
+// DComp-mode input forwarding. mpv's inner window lives on mpv's own thread
+// and consumes the mouse input over the video (WS_EX_TRANSPARENT hit-test
+// skipping is same-thread-only, and disabling the subtree makes the system
+// drop the input entirely instead of routing it to a sibling). Subclass the
+// inner window (legal within one process, even across threads) and forward
+// mouse input to the Flutter view with coordinates translated into view
+// space. The subclass proc runs on mpv's thread and only uses thread-safe
+// calls (PostMessage / MapWindowPoints / CallWindowProc).
+WNDPROC g_mpv_inner_original_proc = nullptr;
+HWND g_mpv_inner_hwnd = nullptr;
+HWND g_forward_target_view = nullptr;
+
+LRESULT CALLBACK MpvInnerSubclassProc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam) {
+  if (message >= WM_MOUSEFIRST && message <= WM_MOUSELAST) {
+    HWND view = g_forward_target_view;
+    if (view) {
+      LPARAM forwarded = lparam;
+      if (message != WM_MOUSEWHEEL && message != WM_MOUSEHWHEEL) {
+        // Client coordinates: translate inner-window-space -> view-space.
+        // (Wheel messages carry screen coordinates; pass through unchanged.)
+        POINT pt = {GET_X_LPARAM(lparam), GET_Y_LPARAM(lparam)};
+        ::MapWindowPoints(hwnd, view, &pt, 1);
+        forwarded = MAKELPARAM(pt.x, pt.y);
+      }
+      ::PostMessage(view, message, wparam, forwarded);
+    }
+    return 0;
+  }
+  return ::CallWindowProc(g_mpv_inner_original_proc, hwnd, message, wparam, lparam);
+}
+
+// Subclass mpv's lazily-created inner window if it exists and isn't yet
+// subclassed (or was recreated). Idempotent; callable from any thread in
+// this process.
+void EnsureMpvInnerSubclassed(HWND host) {
+  if (!host) {
+    return;
+  }
+  HWND inner = ::FindWindowExW(host, nullptr, nullptr, nullptr);
+  if (inner && inner != g_mpv_inner_hwnd) {
+    g_mpv_inner_hwnd = inner;
+    g_mpv_inner_original_proc = reinterpret_cast<WNDPROC>(
+        ::SetWindowLongPtrW(inner, GWLP_WNDPROC, reinterpret_cast<LONG_PTR>(MpvInnerSubclassProc)));
+  }
+}
+
+}  // namespace
 
 MpvPlayer::MpvPlayer() {}
 
 MpvPlayer::~MpvPlayer() { Dispose(); }
 
-bool MpvPlayer::Initialize(HWND container, HWND flutter_window) {
+bool MpvPlayer::Initialize(HWND view) {
   if (mpv_) {
     return true;  // Already initialized.
   }
-
-  container_ = container;
-  flutter_window_ = flutter_window;
 
   // Create mpv instance.
   mpv_ = mpv_create();
@@ -22,14 +71,22 @@ bool MpvPlayer::Initialize(HWND container, HWND flutter_window) {
     return false;
   }
 
-  // Create a child window for mpv to render into.
-  hwnd_ = ::CreateWindowW(
-      L"STATIC", L"", WS_CHILD | WS_VISIBLE, 0, 0, 100, 100, container, nullptr, GetModuleHandle(nullptr), nullptr);
+  // Create a child window for mpv to render into, parented to the Flutter
+  // |view|. The video child then sits in the view's own per-window layer
+  // stack, above the view's (never-painted) layer-1 content and below the
+  // engine's topmost DComp visual carrying the UI. WS_CLIPSIBLINGS keeps it
+  // from painting over neighboring view children. Mouse input over the video
+  // is delivered to mpv's own inner window (on mpv's thread); the subclass
+  // installed in EnsureMpvInnerSubclassed forwards it back to the view.
+  hwnd_ = ::CreateWindowExW(
+      WS_EX_NOPARENTNOTIFY, L"STATIC", L"", WS_CHILD | WS_CLIPSIBLINGS, 0, 0, 100, 100, view, nullptr,
+      GetModuleHandle(nullptr), nullptr);
   if (!hwnd_) {
     mpv_destroy(mpv_);
     mpv_ = nullptr;
     return false;
   }
+  g_forward_target_view = view;
 
   // Set the wid option to embed mpv in our window.
   int64_t wid = reinterpret_cast<int64_t>(hwnd_);
@@ -113,6 +170,10 @@ void MpvPlayer::Dispose() {
     ::DestroyWindow(hwnd_);
     hwnd_ = nullptr;
   }
+
+  // The subclassed inner window died with hwnd_; clear the forwarding state.
+  g_mpv_inner_hwnd = nullptr;
+  g_mpv_inner_original_proc = nullptr;
 
   observed_properties_.clear();
 }
@@ -245,39 +306,19 @@ void MpvPlayer::ObserveProperty(const std::string& name, const std::string& form
 }
 
 void MpvPlayer::SetRect(RECT rect, double device_pixel_ratio) {
-  rect_ = rect;
-  device_pixel_ratio_ = device_pixel_ratio;
-
-  if (hwnd_ && container_ && flutter_window_) {
-    // The rect from Dart is in Flutter client area coordinates (0,0 is top-left of Flutter
-    // content). The container window is positioned to match the Flutter window's full bounds
-    // (including title bar). We need to offset the mpv window within the container to align with
-    // Flutter's client area.
-
-    // Get the Flutter window's window rect (screen coordinates, includes title bar)
-    RECT window_rect;
-    ::GetWindowRect(flutter_window_, &window_rect);
-
-    // Get the Flutter window's client rect (client coordinates, 0,0 based)
-    RECT client_rect;
-    ::GetClientRect(flutter_window_, &client_rect);
-
-    // Convert client area origin to screen coordinates
-    POINT client_origin = {0, 0};
-    ::ClientToScreen(flutter_window_, &client_origin);
-
-    // Calculate the offset from window origin to client area origin
-    int client_offset_x = client_origin.x - window_rect.left;
-    int client_offset_y = client_origin.y - window_rect.top;
-
-    // Position the mpv window within the container, offset by the title bar/border size
-    int left = rect.left + client_offset_x;
-    int top = rect.top + client_offset_y;
-    int width = rect.right - rect.left;
-    int height = rect.bottom - rect.top;
-
-    ::MoveWindow(hwnd_, left, top, width, height, TRUE);
+  if (!hwnd_) {
+    return;
   }
+
+  // The video window is a child of the Flutter view; the Dart rect is already
+  // in view physical pixels, which is exactly the child coordinate space. No
+  // screen mapping, no padding.
+  ::SetWindowPos(hwnd_, HWND_TOP, rect.left, rect.top, rect.right - rect.left, rect.bottom - rect.top, SWP_NOACTIVATE);
+
+  // mpv creates its inner window lazily on its own thread; subclass it (and
+  // re-subclass if mpv ever recreates it) so mouse input over the video is
+  // forwarded to the Flutter view.
+  EnsureMpvInnerSubclassed(hwnd_);
 }
 
 void MpvPlayer::SetVisible(bool visible) {
@@ -439,6 +480,10 @@ void MpvPlayer::HandleMpvEvent(mpv_event* event) {
       break;
     }
     case MPV_EVENT_PLAYBACK_RESTART: {
+      // mpv's inner window exists by now (vo is configured); make sure the
+      // DComp-mode input forwarding subclass is installed. SetRect alone can
+      // miss it: the rect often settles before mpv creates the window.
+      EnsureMpvInnerSubclassed(hwnd_);
       SendEvent("playback-restart");
       break;
     }

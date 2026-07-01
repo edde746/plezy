@@ -1,8 +1,5 @@
 #include "mpv_plugin.h"
 
-#include "mpv_container.h"
-#include "mpv_core.h"
-
 static flutter::EncodableMap DisplayModeToMap(const mpv::DisplayMode& mode) {
   flutter::EncodableMap m;
   m[flutter::EncodableValue("width")] = flutter::EncodableValue(static_cast<int32_t>(mode.width));
@@ -106,54 +103,43 @@ void MpvPlayerPlugin::HandleMethodCall(
   const auto& method = method_call.method_name();
 
   if (method == "initialize") {
-    // Set up MpvCore for z-order management.
     if (proc_id_) {
       registrar_->UnregisterTopLevelWindowProcDelegate(proc_id_.value());
       proc_id_ = std::nullopt;
     }
 
-    HWND flutter_window = GetWindow();
-    flutter_window_ = flutter_window;
+    flutter_window_ = GetWindow();
 
-    MpvCore::SetInstance(std::make_unique<MpvCore>(flutter_window));
-
+    // The only top-level message we care about is the platform-task wakeup;
+    // mouse-over-video input is forwarded by the mpv inner-window subclass
+    // (see MpvPlayer), and compositing/z-order is handled by the engine's
+    // topmost DComp visual — there is no separate container window to manage.
     proc_id_ =
         registrar_->RegisterTopLevelWindowProcDelegate([this](HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam) {
           if (message == kPlatformTaskMessage) {
             DrainPlatformTasks();
             return std::optional<HRESULT>(0);
           }
-
-          auto* core = MpvCore::GetInstance();
-          if (core) {
-            return core->WindowProc(hwnd, message, wparam, lparam);
-          }
           return std::optional<HRESULT>(std::nullopt);
         });
 
-    MpvCore::GetInstance()->EnsureInitialized();
+    // The video window is a child of the FLUTTER VIEW itself, so DWM's
+    // per-window layer model puts it above the view's own (layer 1) content
+    // and below the view's topmost DComp visual carrying the UI (layer 4). As
+    // a *sibling* of the view, either the view's never-painted white content
+    // covers the video or the video covers the UI — the in-subtree placement
+    // is the only ordering that yields white < video < UI.
+    HWND view = GetChildWindow();
 
-    // Create player - use the container from MpvCore which was set up by EnsureInitialized
     player_ = std::make_unique<MpvPlayer>();
-    HWND container = MpvContainer::GetInstance()->handle();
-
-    if (!container) {
-      result->Error("INIT_FAILED", "Failed to create container window");
-      return;
-    }
-
-    bool success = player_->Initialize(container, flutter_window);
+    bool success = player_->Initialize(view);
 
     if (success) {
       // Set up event callback.
       player_->SetEventCallback([this](const flutter::EncodableValue& event) { SendEvent(event); });
 
-      // Register the mpv window with core for z-order management.
-      RECT rect = {0, 0, 100, 100};
-      MpvCore::GetInstance()->CreateMpvView(player_->GetHwnd(), rect, 1.0);
-
       // Start hidden.
-      MpvCore::GetInstance()->SetVisible(false);
+      player_->SetVisible(false);
       result->Success(flutter::EncodableValue(true));
     } else {
       player_.reset();  // Clear the player so we don't have a half-initialized state
@@ -161,13 +147,8 @@ void MpvPlayerPlugin::HandleMethodCall(
     }
   } else if (method == "dispose") {
     if (player_) {
-      auto hwnd = player_->GetHwnd();
       player_->Dispose();
       player_.reset();
-
-      if (MpvCore::GetInstance() && hwnd) {
-        MpvCore::GetInstance()->DisposeMpvView(hwnd);
-      }
     }
     result->Success();
   } else if (method == "command") {
@@ -353,9 +334,6 @@ void MpvPlayerPlugin::HandleMethodCall(
     if (player_) {
       player_->SetVisible(visible);
     }
-    if (MpvCore::GetInstance()) {
-      MpvCore::GetInstance()->SetVisible(visible);
-    }
 
     result->Success();
   } else if (method == "setVideoRect") {
@@ -394,8 +372,7 @@ void MpvPlayerPlugin::HandleMethodCall(
     rect.bottom = get_int("bottom");
     double dpr = get_double("devicePixelRatio");
 
-    if (player_ && MpvCore::GetInstance()) {
-      MpvCore::GetInstance()->ResizeMpvView(player_->GetHwnd(), rect);
+    if (player_) {
       player_->SetRect(rect, dpr);
     }
 
