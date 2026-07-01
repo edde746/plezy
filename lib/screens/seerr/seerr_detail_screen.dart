@@ -9,6 +9,7 @@ import '../../i18n/strings.g.dart';
 import '../../models/seerr/seerr_credits.dart';
 import '../../models/seerr/seerr_media_info.dart';
 import '../../models/seerr/seerr_movie_details.dart';
+import '../../models/seerr/seerr_page.dart';
 import '../../models/seerr/seerr_search_result.dart';
 import '../../models/seerr/seerr_tv_details.dart';
 import '../../providers/seerr_session_provider.dart';
@@ -67,30 +68,40 @@ class _SeerrDetailScreenState extends State<SeerrDetailScreen> {
         final results = await Future.wait([
           client.getTv(widget.tmdbId),
           // Recommendations are best-effort — surface the detail even if
-          // recommendations fail.
-          client.getTvRecommendations(widget.tmdbId).catchError((_) => null),
+          // recommendations fail. Widen to a nullable future so `null` is a
+          // valid completion instead of an unsound catchError return.
+          client
+              .getTvRecommendations(widget.tmdbId)
+              .then<SeerrPage<SeerrSearchResult>?>((p) => p)
+              .catchError((_) => null),
         ]);
         if (!mounted) return;
         setState(() {
           _tv = results[0] as SeerrTvDetails;
-          final recPage = results[1];
+          final recPage = results[1] as SeerrPage<SeerrSearchResult>?;
           _recommendations = recPage == null
               ? const []
-              : (recPage as dynamic).results.cast<SeerrSearchResult>().toList(growable: false);
+              : recPage.results.toList(growable: false);
           _loading = false;
         });
       } else {
         final results = await Future.wait([
           client.getMovie(widget.tmdbId),
-          client.getMovieRecommendations(widget.tmdbId).catchError((_) => null),
+          // Recommendations are best-effort — surface the detail even if
+          // recommendations fail. Widen to a nullable future so `null` is a
+          // valid completion instead of an unsound catchError return.
+          client
+              .getMovieRecommendations(widget.tmdbId)
+              .then<SeerrPage<SeerrSearchResult>?>((p) => p)
+              .catchError((_) => null),
         ]);
         if (!mounted) return;
         setState(() {
           _movie = results[0] as SeerrMovieDetails;
-          final recPage = results[1];
+          final recPage = results[1] as SeerrPage<SeerrSearchResult>?;
           _recommendations = recPage == null
               ? const []
-              : (recPage as dynamic).results.cast<SeerrSearchResult>().toList(growable: false);
+              : recPage.results.toList(growable: false);
           _loading = false;
         });
       }

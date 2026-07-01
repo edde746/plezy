@@ -1,5 +1,8 @@
+import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:plezy/connection/connection_registry.dart';
+import 'package:plezy/database/app_database.dart';
 import 'package:plezy/i18n/strings.g.dart';
 import 'package:plezy/media/ids.dart';
 import 'package:plezy/media/media_backend.dart';
@@ -8,7 +11,9 @@ import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/media/media_server_client.dart';
 import 'package:plezy/media/server_capabilities.dart';
 import 'package:plezy/mixins/refreshable.dart';
+import 'package:plezy/profiles/profile_connection_registry.dart';
 import 'package:plezy/providers/multi_server_provider.dart';
+import 'package:plezy/providers/seerr_session_provider.dart';
 import 'package:plezy/screens/search_screen.dart';
 import 'package:plezy/services/data_aggregation_service.dart';
 import 'package:plezy/services/multi_server_manager.dart';
@@ -134,11 +139,27 @@ Future<(_FakeMediaServerClient, GlobalKey<State<SearchScreen>>)> _pumpTvSearchSc
   final provider = MultiServerProvider(manager, DataAggregationService(manager));
   addTearDown(provider.dispose);
 
+  // SearchScreen consumes SeerrSessionProvider (mounted above screens in
+  // production via ProfileSessionScreen). A disconnected session — no active
+  // client — is enough here: the Seerr search just yields no results.
+  final db = AppDatabase.forTesting(NativeDatabase.memory());
+  final seerrSession = SeerrSessionProvider(
+    connectionRegistry: ConnectionRegistry(db),
+    profileConnectionRegistry: ProfileConnectionRegistry(db),
+  );
+  addTearDown(() async {
+    seerrSession.dispose();
+    await db.close();
+  });
+
   final key = GlobalKey<State<SearchScreen>>();
   await tester.pumpWidget(
     TranslationProvider(
-      child: ChangeNotifierProvider<MultiServerProvider>.value(
-        value: provider,
+      child: MultiProvider(
+        providers: [
+          ChangeNotifierProvider<MultiServerProvider>.value(value: provider),
+          ChangeNotifierProvider<SeerrSessionProvider>.value(value: seerrSession),
+        ],
         child: MaterialApp(
           theme: monoTheme(dark: true),
           home: SearchScreen(key: key),
