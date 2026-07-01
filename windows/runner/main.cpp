@@ -8,6 +8,14 @@
 
 int APIENTRY
 wWinMain(_In_ HINSTANCE instance, _In_opt_ HINSTANCE prev, _In_ wchar_t* command_line, _In_ int show_command) {
+  // Plezy requires the bundled flutter-plezy engine, which presents the Flutter
+  // UI on a topmost DirectComposition visual when FLUTTER_WINDOWS_DCOMP is set.
+  // The mpv video window is then a plain child composed beneath the UI in the
+  // same HWND: window capture (Discord/OBS) works, there is no transparency
+  // hack, and min/max animations are native. Must be set before the engine is
+  // created. (On a stock engine the flag is a no-op and compositing breaks.)
+  ::SetEnvironmentVariableW(L"FLUTTER_WINDOWS_DCOMP", L"1");
+
   // Single instance enforcement
   HANDLE mutex = CreateMutex(nullptr, TRUE, L"com.edde746.Plezy.SingleInstance");
   if (GetLastError() == ERROR_ALREADY_EXISTS) {

@@ -15,7 +15,6 @@
 #include <queue>
 
 #include "display_mode_manager.h"
-#include "mpv_core.h"
 #include "mpv_player.h"
 
 // C-style registration function for the plugin.
