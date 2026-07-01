@@ -96,10 +96,7 @@ class SeerrAuthService {
         authenticated: false,
       );
       if (loginRes.response.statusCode == 401 || loginRes.response.statusCode == 403) {
-        throw SeerrAuthException(
-          'Invalid Jellyfin username or password',
-          statusCode: loginRes.response.statusCode,
-        );
+        throw SeerrAuthException('Invalid Jellyfin username or password', statusCode: loginRes.response.statusCode);
       }
       SeerrHttpClient.throwForStatus(loginRes);
       if (!client.captureSessionCookie(loginRes.response)) {

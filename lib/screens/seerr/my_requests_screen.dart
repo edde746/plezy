@@ -69,15 +69,9 @@ class _MyRequestsScreenState extends State<MyRequestsScreen> {
       builder: (context, provider, _) {
         return Column(
           children: [
-            _FilterChips(
-              current: provider.filter,
-              onChanged: (f) => provider.setFilter(f),
-            ),
+            _FilterChips(current: provider.filter, onChanged: (f) => provider.setFilter(f)),
             Expanded(
-              child: RefreshIndicator(
-                onRefresh: provider.refresh,
-                child: _buildBody(provider),
-              ),
+              child: RefreshIndicator(onRefresh: provider.refresh, child: _buildBody(provider)),
             ),
           ],
         );
@@ -119,7 +113,12 @@ class _MyRequestsScreenState extends State<MyRequestsScreen> {
             padding: const EdgeInsets.all(40),
             child: Column(
               children: [
-                AppIcon(Symbols.playlist_add_check_rounded, fill: 1, size: 48, color: theme.colorScheme.onSurfaceVariant),
+                AppIcon(
+                  Symbols.playlist_add_check_rounded,
+                  fill: 1,
+                  size: 48,
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
                 const SizedBox(height: 8),
                 Text(t.seerr.myRequests.empty, style: theme.textTheme.titleMedium),
                 const SizedBox(height: 6),
@@ -141,7 +140,10 @@ class _MyRequestsScreenState extends State<MyRequestsScreen> {
       separatorBuilder: (_, __) => const Divider(height: 1),
       itemBuilder: (context, i) {
         if (i >= provider.requests.length) {
-          return const Padding(padding: EdgeInsets.all(16), child: Center(child: LoadingIndicatorBox()));
+          return const Padding(
+            padding: EdgeInsets.all(16),
+            child: Center(child: LoadingIndicatorBox()),
+          );
         }
         final req = provider.requests[i];
         final summary = provider.summaryFor(req);
@@ -316,11 +318,7 @@ class _FilterChips extends StatelessWidget {
             borderRadius: 999,
             descendantsAreFocusable: false,
             onSelect: selected ? null : () => onChanged(f),
-            child: ChoiceChip(
-              label: Text(_labelFor(f)),
-              selected: selected,
-              onSelected: (_) => onChanged(f),
-            ),
+            child: ChoiceChip(label: Text(_labelFor(f)), selected: selected, onSelected: (_) => onChanged(f)),
           );
         },
       ),

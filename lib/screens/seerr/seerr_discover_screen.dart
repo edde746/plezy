@@ -78,19 +78,17 @@ class _Hub extends StatelessWidget {
     };
     Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (_) => SeerrDetailScreen(
-          tmdbId: r.id,
-          mediaType: r.mediaType,
-          initialTitle: title,
-          initialPosterPath: poster,
-        ),
+        builder: (_) =>
+            SeerrDetailScreen(tmdbId: r.id, mediaType: r.mediaType, initialTitle: title, initialPosterPath: poster),
       ),
     );
   }
 
   void _viewAll(BuildContext context) {
     Navigator.of(context).push(
-      MaterialPageRoute(builder: (_) => SeerrHubDetailScreen(hubId: id, title: title, icon: icon)),
+      MaterialPageRoute(
+        builder: (_) => SeerrHubDetailScreen(hubId: id, title: title, icon: icon),
+      ),
     );
   }
 
@@ -126,10 +124,7 @@ class _Hub extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 8),
-              SizedBox(
-                height: 250,
-                child: _hubBody(context, theme, state, provider),
-              ),
+              SizedBox(height: 250, child: _hubBody(context, theme, state, provider)),
             ],
           ),
         );

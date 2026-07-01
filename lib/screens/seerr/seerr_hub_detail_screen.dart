@@ -62,12 +62,8 @@ class _SeerrHubDetailScreenState extends State<SeerrHubDetailScreen> {
     };
     Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (_) => SeerrDetailScreen(
-          tmdbId: r.id,
-          mediaType: r.mediaType,
-          initialTitle: title,
-          initialPosterPath: poster,
-        ),
+        builder: (_) =>
+            SeerrDetailScreen(tmdbId: r.id, mediaType: r.mediaType, initialTitle: title, initialPosterPath: poster),
       ),
     );
   }
@@ -81,11 +77,7 @@ class _SeerrHubDetailScreenState extends State<SeerrHubDetailScreen> {
           appBar: AppBar(
             title: Row(
               mainAxisSize: MainAxisSize.min,
-              children: [
-                AppIcon(widget.icon, fill: 1, size: 22),
-                const SizedBox(width: 8),
-                Text(widget.title),
-              ],
+              children: [AppIcon(widget.icon, fill: 1, size: 22), const SizedBox(width: 8), Text(widget.title)],
             ),
           ),
           body: CustomScrollView(
@@ -106,19 +98,19 @@ class _SeerrHubDetailScreenState extends State<SeerrHubDetailScreen> {
                       crossAxisSpacing: 12,
                       childAspectRatio: 0.52,
                     ),
-                    delegate: SliverChildBuilderDelegate(
-                      (context, i) {
-                        if (i >= state.results.length) return null;
-                        final r = state.results[i];
-                        return SeerrMediaCard(result: r, onTap: () => _openDetail(r), width: 160);
-                      },
-                      childCount: state.results.length,
-                    ),
+                    delegate: SliverChildBuilderDelegate((context, i) {
+                      if (i >= state.results.length) return null;
+                      final r = state.results[i];
+                      return SeerrMediaCard(result: r, onTap: () => _openDetail(r), width: 160);
+                    }, childCount: state.results.length),
                   ),
                 ),
               if (state.loadingMore)
                 const SliverToBoxAdapter(
-                  child: Padding(padding: EdgeInsets.all(24), child: Center(child: LoadingIndicatorBox())),
+                  child: Padding(
+                    padding: EdgeInsets.all(24),
+                    child: Center(child: LoadingIndicatorBox()),
+                  ),
                 ),
             ],
           ),

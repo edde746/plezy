@@ -6,10 +6,7 @@ class SeerrSeason {
   final int seasonNumber;
   final int episodeCount;
 
-  const SeerrSeason({
-    required this.seasonNumber,
-    required this.episodeCount,
-  });
+  const SeerrSeason({required this.seasonNumber, required this.episodeCount});
 
   factory SeerrSeason.fromJson(Map<String, dynamic> json) {
     return SeerrSeason(

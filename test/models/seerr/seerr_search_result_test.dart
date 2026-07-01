@@ -85,12 +85,7 @@ void main() {
     });
 
     test('SeerrPage parses discover responses with totalPages field', () {
-      final raw = {
-        'page': 1,
-        'totalPages': 10,
-        'totalResults': 200,
-        'results': [],
-      };
+      final raw = {'page': 1, 'totalPages': 10, 'totalResults': 200, 'results': []};
       final page = SeerrPage<dynamic>.fromJson(raw, (_) => null);
       expect(page.page, 1);
       expect(page.pages, 10);

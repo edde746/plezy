@@ -64,12 +64,11 @@ void main() {
           final body = jsonDecode(req.body) as Map<String, dynamic>;
           expect(body['username'], 'edde');
           expect(body['password'], 'secret');
-          return _json(200, {
-            'id': 7,
-            'username': 'edde',
-            'userType': 4,
-            'permissions': 8,
-          }, extra: {'set-cookie': 'connect.sid=ABC.def; Path=/; HttpOnly; SameSite=Lax'});
+          return _json(
+            200,
+            {'id': 7, 'username': 'edde', 'userType': 4, 'permissions': 8},
+            extra: {'set-cookie': 'connect.sid=ABC.def; Path=/; HttpOnly; SameSite=Lax'},
+          );
         }
         fail('Unexpected ${req.method} ${req.url}');
       });
@@ -110,12 +109,7 @@ void main() {
         }
         if (req.url.path.endsWith('/status')) return _json(200, {'version': ''});
         if (req.url.path.endsWith('/auth/jellyfin')) {
-          return _json(200, {
-            'id': 1,
-            'username': 'edde',
-            'userType': 4,
-            'permissions': 0,
-          });
+          return _json(200, {'id': 1, 'username': 'edde', 'userType': 4, 'permissions': 0});
         }
         fail('Unexpected ${req.method} ${req.url}');
       });
@@ -137,12 +131,11 @@ void main() {
         if (req.url.path.endsWith('/auth/jellyfin')) {
           final body = jsonDecode(req.body) as Map<String, dynamic>;
           sentPassword = body['password'] as String?;
-          return _json(200, {
-            'id': 7,
-            'username': 'edde',
-            'userType': 4,
-            'permissions': 0,
-          }, extra: {'set-cookie': 'connect.sid=rotated; Path=/'});
+          return _json(
+            200,
+            {'id': 7, 'username': 'edde', 'userType': 4, 'permissions': 0},
+            extra: {'set-cookie': 'connect.sid=rotated; Path=/'},
+          );
         }
         fail('Unexpected ${req.method} ${req.url}');
       });

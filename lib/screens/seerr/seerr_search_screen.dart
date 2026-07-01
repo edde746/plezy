@@ -165,9 +165,7 @@ class _SeerrSearchScreenState extends State<SeerrSearchScreen> {
           padding: const EdgeInsets.all(24),
           child: Text(
             t.seerr.search.startHint,
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
-            ),
+            style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurface.withValues(alpha: 0.6)),
             textAlign: TextAlign.center,
           ),
         ),

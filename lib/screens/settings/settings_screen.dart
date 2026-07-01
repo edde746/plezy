@@ -260,11 +260,11 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
         final subtitle = !seerr.hasConfiguredServer
             ? t.seerr.settings.tileSubtitleNone
             : seerr.isConnected
-                ? t.seerr.settings.tileSubtitleConnected(
-                    instance: connection!.instanceLabel,
-                    user: connection.jellyfinUsername,
-                  )
-                : t.seerr.settings.tileSubtitleSignedOut;
+            ? t.seerr.settings.tileSubtitleConnected(
+                instance: connection!.instanceLabel,
+                user: connection.jellyfinUsername,
+              )
+            : t.seerr.settings.tileSubtitleSignedOut;
         return SettingNavigationTile(
           focusNode: _focusTracker.get(_kSeerr),
           icon: Symbols.playlist_add_check_rounded,

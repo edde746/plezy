@@ -2595,10 +2595,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
                       children: [
                         Text(t.seerr.detail.missingMovieTitle, style: theme.textTheme.titleSmall),
                         const SizedBox(height: 2),
-                        Text(
-                          t.seerr.detail.missingMovieBody,
-                          style: theme.textTheme.bodySmall?.copyWith(color: muted),
-                        ),
+                        Text(t.seerr.detail.missingMovieBody, style: theme.textTheme.bodySmall?.copyWith(color: muted)),
                       ],
                     ),
                   ),
@@ -2657,11 +2654,9 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
                   Align(
                     alignment: Alignment.centerLeft,
                     child: FocusableButton(
-                      onPressed: () =>
-                          unawaited(_openSeerrRequestForSeasons(_metadata, [season.index!])),
+                      onPressed: () => unawaited(_openSeerrRequestForSeasons(_metadata, [season.index!])),
                       child: FilledButton.icon(
-                        onPressed: () =>
-                            unawaited(_openSeerrRequestForSeasons(_metadata, [season.index!])),
+                        onPressed: () => unawaited(_openSeerrRequestForSeasons(_metadata, [season.index!])),
                         icon: const AppIcon(Symbols.playlist_add_rounded, fill: 1),
                         label: Text(t.seerr.detail.missingSeasonCta(number: season.index!)),
                       ),

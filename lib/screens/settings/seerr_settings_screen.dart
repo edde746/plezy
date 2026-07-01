@@ -95,9 +95,7 @@ class _SeerrSettingsScreenState extends State<SeerrSettingsScreen> {
   }
 
   Future<void> _addInstance() async {
-    final added = await Navigator.of(context).push<bool>(
-      MaterialPageRoute(builder: (_) => const AddSeerrScreen()),
-    );
+    final added = await Navigator.of(context).push<bool>(MaterialPageRoute(builder: (_) => const AddSeerrScreen()));
     if (added == true && mounted) _refresh();
   }
 
@@ -112,16 +110,19 @@ class _SeerrSettingsScreenState extends State<SeerrSettingsScreen> {
               padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
               child: Text(
                 t.seerr.settings.description,
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                ),
+                style: Theme.of(
+                  context,
+                ).textTheme.bodyMedium?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
               ),
             ),
             FutureBuilder<List<SeerrConnection>>(
               future: _instancesFuture,
               builder: (context, snap) {
                 if (snap.connectionState != ConnectionState.done) {
-                  return const Padding(padding: EdgeInsets.all(24), child: Center(child: LoadingIndicatorBox()));
+                  return const Padding(
+                    padding: EdgeInsets.all(24),
+                    child: Center(child: LoadingIndicatorBox()),
+                  );
                 }
                 final instances = snap.data ?? const <SeerrConnection>[];
                 if (instances.isEmpty) {
@@ -167,12 +168,7 @@ class _InstanceRow extends StatelessWidget {
   final VoidCallback onSignOut;
   final VoidCallback onRemove;
 
-  const _InstanceRow({
-    required this.connection,
-    required this.busy,
-    required this.onSignOut,
-    required this.onRemove,
-  });
+  const _InstanceRow({required this.connection, required this.busy, required this.onSignOut, required this.onRemove});
 
   @override
   Widget build(BuildContext context) {

@@ -89,25 +89,19 @@ class SeerrClient {
 
   Future<SeerrPage<SeerrSearchResult>> discoverMovies({int page = 1}) async {
     final raw = await _request('GET', '/discover/movies', query: {'page': page});
-    return SeerrPage<SeerrSearchResult>.fromJson(
-      raw as Map<String, dynamic>,
-      (item) {
-        // /discover/movies items lack mediaType — coerce to movie.
-        final coerced = Map<String, dynamic>.from(item)..putIfAbsent('mediaType', () => 'movie');
-        return SeerrSearchResult.fromJson(coerced);
-      },
-    );
+    return SeerrPage<SeerrSearchResult>.fromJson(raw as Map<String, dynamic>, (item) {
+      // /discover/movies items lack mediaType — coerce to movie.
+      final coerced = Map<String, dynamic>.from(item)..putIfAbsent('mediaType', () => 'movie');
+      return SeerrSearchResult.fromJson(coerced);
+    });
   }
 
   Future<SeerrPage<SeerrSearchResult>> discoverTv({int page = 1}) async {
     final raw = await _request('GET', '/discover/tv', query: {'page': page});
-    return SeerrPage<SeerrSearchResult>.fromJson(
-      raw as Map<String, dynamic>,
-      (item) {
-        final coerced = Map<String, dynamic>.from(item)..putIfAbsent('mediaType', () => 'tv');
-        return SeerrSearchResult.fromJson(coerced);
-      },
-    );
+    return SeerrPage<SeerrSearchResult>.fromJson(raw as Map<String, dynamic>, (item) {
+      final coerced = Map<String, dynamic>.from(item)..putIfAbsent('mediaType', () => 'tv');
+      return SeerrSearchResult.fromJson(coerced);
+    });
   }
 
   /// Mixed trending — movies, tv, person.
@@ -136,24 +130,18 @@ class SeerrClient {
   /// (TMDB's recommendations are curated and don't exist for every title).
   Future<SeerrPage<SeerrSearchResult>> getMovieRecommendations(int tmdbId, {int page = 1}) async {
     final raw = await _request('GET', '/movie/$tmdbId/recommendations', query: {'page': page});
-    return SeerrPage<SeerrSearchResult>.fromJson(
-      raw as Map<String, dynamic>,
-      (item) {
-        final coerced = Map<String, dynamic>.from(item)..putIfAbsent('mediaType', () => 'movie');
-        return SeerrSearchResult.fromJson(coerced);
-      },
-    );
+    return SeerrPage<SeerrSearchResult>.fromJson(raw as Map<String, dynamic>, (item) {
+      final coerced = Map<String, dynamic>.from(item)..putIfAbsent('mediaType', () => 'movie');
+      return SeerrSearchResult.fromJson(coerced);
+    });
   }
 
   Future<SeerrPage<SeerrSearchResult>> getTvRecommendations(int tmdbId, {int page = 1}) async {
     final raw = await _request('GET', '/tv/$tmdbId/recommendations', query: {'page': page});
-    return SeerrPage<SeerrSearchResult>.fromJson(
-      raw as Map<String, dynamic>,
-      (item) {
-        final coerced = Map<String, dynamic>.from(item)..putIfAbsent('mediaType', () => 'tv');
-        return SeerrSearchResult.fromJson(coerced);
-      },
-    );
+    return SeerrPage<SeerrSearchResult>.fromJson(raw as Map<String, dynamic>, (item) {
+      final coerced = Map<String, dynamic>.from(item)..putIfAbsent('mediaType', () => 'tv');
+      return SeerrSearchResult.fromJson(coerced);
+    });
   }
 
   // ---------- Requests ----------
@@ -168,16 +156,17 @@ class SeerrClient {
   /// [filter] is one of `all`, `pending`, `approved`, `available`,
   /// `processing`, `unavailable`. [sort] is `added` or `modified`.
   Future<SeerrPage<SeerrRequest>> getRequests({int page = 1, String? filter, String? sort}) async {
-    final raw = await _request('GET', '/request', query: {
-      'take': 20,
-      'skip': (page - 1) * 20,
-      if (filter != null) 'filter': filter,
-      if (sort != null) 'sort': sort,
-    });
-    return SeerrPage<SeerrRequest>.fromJson(
-      raw as Map<String, dynamic>,
-      (item) => SeerrRequest.fromJson(item),
+    final raw = await _request(
+      'GET',
+      '/request',
+      query: {
+        'take': 20,
+        'skip': (page - 1) * 20,
+        if (filter != null) 'filter': filter,
+        if (sort != null) 'sort': sort,
+      },
     );
+    return SeerrPage<SeerrRequest>.fromJson(raw as Map<String, dynamic>, (item) => SeerrRequest.fromJson(item));
   }
 
   Future<void> deleteRequest(int id) async {

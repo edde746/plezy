@@ -71,7 +71,8 @@ class SeerrRequest {
         if (s is Map<String, dynamic>) seasons.add(SeerrRequestedSeason.fromJson(s));
       }
     }
-    final type = (json['type'] as String?) ?? (mediaJson is Map<String, dynamic> ? mediaJson['mediaType'] as String? : null);
+    final type =
+        (json['type'] as String?) ?? (mediaJson is Map<String, dynamic> ? mediaJson['mediaType'] as String? : null);
     return SeerrRequest(
       id: (json['id'] as num).toInt(),
       status: SeerrRequestStatus.fromValue((json['status'] as num?)?.toInt()),

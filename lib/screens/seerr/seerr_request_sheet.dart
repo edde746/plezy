@@ -132,15 +132,11 @@ class _SeerrRequestSheetState extends State<SeerrRequestSheet> {
   late final SeerrSessionProvider _session = context.read<SeerrSessionProvider>();
   int get _permissions => _session.connection?.permissions ?? 0;
 
-  bool get _canRequest4k => SeerrPermissions.can4kRequest(
-    permissions: _permissions,
-    forTv: widget.tv != null,
-  );
+  bool get _canRequest4k => SeerrPermissions.can4kRequest(permissions: _permissions, forTv: widget.tv != null);
 
   bool get _canRequestAdvanced => SeerrPermissions.has(_permissions, SeerrPermissions.requestAdvanced);
 
-  List<SeerrSeason> get _selectableSeasons =>
-      widget.tv?.seasons.where((s) => s.seasonNumber > 0).toList() ?? const [];
+  List<SeerrSeason> get _selectableSeasons => widget.tv?.seasons.where((s) => s.seasonNumber > 0).toList() ?? const [];
 
   /// Seasons that are already fully available — pre-marked so the user can't
   /// re-request them (no point) and they read as disabled in the list.
@@ -159,8 +155,7 @@ class _SeerrRequestSheetState extends State<SeerrRequestSheet> {
       _selectableSeasons.where((s) => !_availableSeasons.contains(s.seasonNumber));
 
   bool get _allRequestableSelected =>
-      _requestableSeasons.isNotEmpty &&
-      _requestableSeasons.every((s) => _selectedSeasons.contains(s.seasonNumber));
+      _requestableSeasons.isNotEmpty && _requestableSeasons.every((s) => _selectedSeasons.contains(s.seasonNumber));
 
   void _toggleAll() {
     setState(() {
@@ -247,14 +242,16 @@ class _SeerrRequestSheetState extends State<SeerrRequestSheet> {
       setState(() {
         _selectedDetail = detail;
         _loadingAdvanced = false;
-        _selectedProfileId = detail.server.activeProfileId ??
-            (detail.profiles.isNotEmpty ? detail.profiles.first.id : null);
+        _selectedProfileId =
+            detail.server.activeProfileId ?? (detail.profiles.isNotEmpty ? detail.profiles.first.id : null);
         _selectedRootFolder = detail.rootFolders.firstWhere(
           (r) => r.path == detail.server.activeDirectory,
-          orElse: () => detail.rootFolders.isNotEmpty ? detail.rootFolders.first : const SeerrRootFolder(id: 0, path: ''),
+          orElse: () =>
+              detail.rootFolders.isNotEmpty ? detail.rootFolders.first : const SeerrRootFolder(id: 0, path: ''),
         );
         if (_selectedRootFolder?.path.isEmpty == true) _selectedRootFolder = null;
-        _selectedLanguageProfileId = detail.server.activeLanguageProfileId ??
+        _selectedLanguageProfileId =
+            detail.server.activeLanguageProfileId ??
             (detail.languageProfiles.isNotEmpty ? detail.languageProfiles.first.id : null);
       });
     } catch (e, st) {
@@ -312,11 +309,7 @@ class _SeerrRequestSheetState extends State<SeerrRequestSheet> {
       requestsProvider.cacheSummary(
         mediaType: widget.mediaType,
         tmdbId: widget.tmdbId,
-        summary: SeerrRequestSummary(
-          title: widget.title,
-          posterPath: widget.posterPath,
-          year: widget.year,
-        ),
+        summary: SeerrRequestSummary(title: widget.title, posterPath: widget.posterPath, year: widget.year),
       );
       requestsProvider.prependOptimistic(created);
       showSuccessSnackBar(context, t.seerr.request.submitted(title: widget.title));
@@ -389,27 +382,28 @@ class _SeerrRequestSheetState extends State<SeerrRequestSheet> {
                   onChanged: _submitting ? null : (v) => unawaited(_onToggle4k(v)),
                 ),
               ],
-              if (_canRequestAdvanced) _AdvancedSection(
-                expanded: _advancedExpanded,
-                onToggle: _submitting ? null : _expandAdvanced,
-                loading: _loadingAdvanced,
-                error: _advancedError,
-                services: _allServices.where((s) => s.is4k == _is4k).toList(),
-                detail: _selectedDetail,
-                selectedServerId: _selectedServerId,
-                selectedProfileId: _selectedProfileId,
-                selectedRootFolder: _selectedRootFolder,
-                selectedLanguageProfileId: _selectedLanguageProfileId,
-                showLanguageProfile: isTv,
-                onServerChanged: _submitting
-                    ? null
-                    : (id) {
-                        if (id != null) unawaited(_selectServer(id));
-                      },
-                onProfileChanged: (id) => setState(() => _selectedProfileId = id),
-                onRootFolderChanged: (root) => setState(() => _selectedRootFolder = root),
-                onLanguageChanged: (id) => setState(() => _selectedLanguageProfileId = id),
-              ),
+              if (_canRequestAdvanced)
+                _AdvancedSection(
+                  expanded: _advancedExpanded,
+                  onToggle: _submitting ? null : _expandAdvanced,
+                  loading: _loadingAdvanced,
+                  error: _advancedError,
+                  services: _allServices.where((s) => s.is4k == _is4k).toList(),
+                  detail: _selectedDetail,
+                  selectedServerId: _selectedServerId,
+                  selectedProfileId: _selectedProfileId,
+                  selectedRootFolder: _selectedRootFolder,
+                  selectedLanguageProfileId: _selectedLanguageProfileId,
+                  showLanguageProfile: isTv,
+                  onServerChanged: _submitting
+                      ? null
+                      : (id) {
+                          if (id != null) unawaited(_selectServer(id));
+                        },
+                  onProfileChanged: (id) => setState(() => _selectedProfileId = id),
+                  onRootFolderChanged: (root) => setState(() => _selectedRootFolder = root),
+                  onLanguageChanged: (id) => setState(() => _selectedLanguageProfileId = id),
+                ),
               if (_error != null) ...[
                 const SizedBox(height: 12),
                 Text(_error!, style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.error)),
@@ -419,9 +413,7 @@ class _SeerrRequestSheetState extends State<SeerrRequestSheet> {
                 onPressed: _submitting ? null : _submit,
                 child: FilledButton.icon(
                   onPressed: _submitting ? null : _submit,
-                  icon: _submitting
-                      ? const LoadingIndicatorBox()
-                      : const AppIcon(Symbols.send_rounded, fill: 1),
+                  icon: _submitting ? const LoadingIndicatorBox() : const AppIcon(Symbols.send_rounded, fill: 1),
                   label: Text(_submitLabel(isTv)),
                 ),
               ),
@@ -590,10 +582,7 @@ class _AdvancedSection extends StatelessWidget {
                   const AppIcon(Symbols.tune_rounded, fill: 1, size: 18),
                   const SizedBox(width: 8),
                   Expanded(child: Text(t.seerr.request.advancedOptions, style: theme.textTheme.titleSmall)),
-                  AppIcon(
-                    expanded ? Symbols.expand_less_rounded : Symbols.expand_more_rounded,
-                    fill: 1,
-                  ),
+                  AppIcon(expanded ? Symbols.expand_less_rounded : Symbols.expand_more_rounded, fill: 1),
                 ],
               ),
             ),
@@ -606,7 +595,10 @@ class _AdvancedSection extends StatelessWidget {
 
   Widget _buildBody(BuildContext context, ThemeData theme) {
     if (loading && detail == null) {
-      return const Padding(padding: EdgeInsets.all(12), child: Center(child: LoadingIndicatorBox()));
+      return const Padding(
+        padding: EdgeInsets.all(12),
+        child: Center(child: LoadingIndicatorBox()),
+      );
     }
     if (error != null) {
       return Padding(
@@ -672,10 +664,7 @@ class _AdvancedSection extends StatelessWidget {
             SeerrTvPicker<int>(
               label: t.seerr.request.languageLabel,
               value: selectedLanguageProfileId,
-              options: [
-                for (final l in detail!.languageProfiles)
-                  SeerrTvPickerOption(value: l.id, label: l.name),
-              ],
+              options: [for (final l in detail!.languageProfiles) SeerrTvPickerOption(value: l.id, label: l.name)],
               onChanged: (id) => onLanguageChanged(id),
             ),
           ],
@@ -721,10 +710,7 @@ class _FocusableCheckRow extends StatelessWidget {
             padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 4),
             child: Row(
               children: [
-                Checkbox(
-                  value: checked,
-                  onChanged: disabled ? null : (v) => onChanged!(v ?? false),
-                ),
+                Checkbox(value: checked, onChanged: disabled ? null : (v) => onChanged!(v ?? false)),
                 const SizedBox(width: 4),
                 Expanded(
                   child: Column(
@@ -736,8 +722,7 @@ class _FocusableCheckRow extends StatelessWidget {
                           color: disabled ? muted : theme.colorScheme.onSurface,
                         ),
                       ),
-                      if (subtitle != null)
-                        Text(subtitle!, style: theme.textTheme.bodySmall?.copyWith(color: muted)),
+                      if (subtitle != null) Text(subtitle!, style: theme.textTheme.bodySmall?.copyWith(color: muted)),
                     ],
                   ),
                 ),
@@ -758,12 +743,7 @@ class _FocusableToggleRow extends StatelessWidget {
   final bool value;
   final ValueChanged<bool>? onChanged;
 
-  const _FocusableToggleRow({
-    required this.title,
-    this.subtitle,
-    required this.value,
-    required this.onChanged,
-  });
+  const _FocusableToggleRow({required this.title, this.subtitle, required this.value, required this.onChanged});
 
   @override
   Widget build(BuildContext context) {
@@ -789,8 +769,7 @@ class _FocusableToggleRow extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(title, style: theme.textTheme.bodyLarge),
-                      if (subtitle != null)
-                        Text(subtitle!, style: theme.textTheme.bodySmall?.copyWith(color: muted)),
+                      if (subtitle != null) Text(subtitle!, style: theme.textTheme.bodySmall?.copyWith(color: muted)),
                     ],
                   ),
                 ),
@@ -803,4 +782,3 @@ class _FocusableToggleRow extends StatelessWidget {
     );
   }
 }
-

@@ -34,8 +34,7 @@ enum ConnectionKind {
   MediaBackend get backend => switch (this) {
     ConnectionKind.plex => MediaBackend.plex,
     ConnectionKind.jellyfin => MediaBackend.jellyfin,
-    ConnectionKind.seerr =>
-      throw StateError('ConnectionKind.seerr has no MediaBackend; gate on isMediaBackend first'),
+    ConnectionKind.seerr => throw StateError('ConnectionKind.seerr has no MediaBackend; gate on isMediaBackend first'),
   };
 }
 

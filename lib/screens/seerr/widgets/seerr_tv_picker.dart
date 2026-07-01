@@ -73,12 +73,7 @@ class SeerrTvPicker<T> extends StatelessWidget {
               isDense: true,
               suffixIcon: AppIcon(Symbols.expand_more_rounded, fill: 1, color: muted, size: 22),
             ),
-            child: Text(
-              _currentLabel,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: theme.textTheme.bodyMedium,
-            ),
+            child: Text(_currentLabel, maxLines: 1, overflow: TextOverflow.ellipsis, style: theme.textTheme.bodyMedium),
           ),
         ),
       ),
@@ -127,7 +122,9 @@ class _SeerrTvPickerList<T> extends StatelessWidget {
                         child: Row(
                           children: [
                             AppIcon(
-                              isSelected ? Symbols.radio_button_checked_rounded : Symbols.radio_button_unchecked_rounded,
+                              isSelected
+                                  ? Symbols.radio_button_checked_rounded
+                                  : Symbols.radio_button_unchecked_rounded,
                               fill: 1,
                               color: isSelected ? theme.colorScheme.primary : theme.colorScheme.onSurfaceVariant,
                             ),

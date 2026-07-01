@@ -48,10 +48,8 @@ class SeerrRootFolder {
 
   const SeerrRootFolder({required this.id, required this.path});
 
-  factory SeerrRootFolder.fromJson(Map<String, dynamic> json) => SeerrRootFolder(
-    id: (json['id'] as num?)?.toInt() ?? 0,
-    path: json['path'] as String? ?? '',
-  );
+  factory SeerrRootFolder.fromJson(Map<String, dynamic> json) =>
+      SeerrRootFolder(id: (json['id'] as num?)?.toInt() ?? 0, path: json['path'] as String? ?? '');
 }
 
 class SeerrLanguageProfile {

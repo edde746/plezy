@@ -67,9 +67,7 @@ void main() {
     await tester.pumpWidget(
       ChangeNotifierProvider<SeerrSessionProvider>.value(
         value: session,
-        child: const MaterialApp(
-          home: SeerrDetailScreen(tmdbId: 42, mediaType: 'movie'),
-        ),
+        child: const MaterialApp(home: SeerrDetailScreen(tmdbId: 42, mediaType: 'movie')),
       ),
     );
     await tester.pumpAndSettle();
@@ -87,11 +85,7 @@ void main() {
 /// [SeerrClient]. The base constructor needs the registries but they are
 /// never exercised here — only [client] is read by the screen.
 class _FakeSeerrSession extends SeerrSessionProvider {
-  _FakeSeerrSession(
-    this._client, {
-    required super.connectionRegistry,
-    required super.profileConnectionRegistry,
-  });
+  _FakeSeerrSession(this._client, {required super.connectionRegistry, required super.profileConnectionRegistry});
 
   final SeerrClient? _client;
 

@@ -6,13 +6,7 @@ class SeerrCastMember {
   final String? profilePath;
   final int order;
 
-  const SeerrCastMember({
-    required this.id,
-    required this.name,
-    this.character,
-    this.profilePath,
-    this.order = 0,
-  });
+  const SeerrCastMember({required this.id, required this.name, this.character, this.profilePath, this.order = 0});
 
   factory SeerrCastMember.fromJson(Map<String, dynamic> json) {
     return SeerrCastMember(

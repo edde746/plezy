@@ -59,8 +59,10 @@ class _SeerrHorizontalRowState extends State<SeerrHorizontalRow> {
   void _animateBy(int direction) {
     if (_controller.positions.length != 1) return;
     final pos = _controller.position;
-    final target = (pos.pixels + direction * pos.viewportDimension * widget.scrollAmount)
-        .clamp(0.0, pos.maxScrollExtent);
+    final target = (pos.pixels + direction * pos.viewportDimension * widget.scrollAmount).clamp(
+      0.0,
+      pos.maxScrollExtent,
+    );
     _controller.animateTo(target, duration: const Duration(milliseconds: 280), curve: Curves.easeOutCubic);
   }
 
@@ -76,10 +78,7 @@ class _SeerrHorizontalRowState extends State<SeerrHorizontalRow> {
           if (event is PointerScrollEvent && _controller.hasClients) {
             final delta = event.scrollDelta.dy;
             if (delta != 0) {
-              final target = (_controller.position.pixels + delta).clamp(
-                0.0,
-                _controller.position.maxScrollExtent,
-              );
+              final target = (_controller.position.pixels + delta).clamp(0.0, _controller.position.maxScrollExtent);
               _controller.jumpTo(target);
             }
           }
@@ -114,12 +113,7 @@ class _ChevronButton extends StatefulWidget {
   final bool visible;
   final VoidCallback onPressed;
 
-  const _ChevronButton({
-    required this.alignment,
-    required this.icon,
-    required this.visible,
-    required this.onPressed,
-  });
+  const _ChevronButton({required this.alignment, required this.icon, required this.visible, required this.onPressed});
 
   @override
   State<_ChevronButton> createState() => _ChevronButtonState();

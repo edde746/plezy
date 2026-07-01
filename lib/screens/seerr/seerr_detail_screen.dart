@@ -79,9 +79,7 @@ class _SeerrDetailScreenState extends State<SeerrDetailScreen> {
         setState(() {
           _tv = results[0] as SeerrTvDetails;
           final recPage = results[1] as SeerrPage<SeerrSearchResult>?;
-          _recommendations = recPage == null
-              ? const []
-              : recPage.results.toList(growable: false);
+          _recommendations = recPage == null ? const [] : recPage.results.toList(growable: false);
           _loading = false;
         });
       } else {
@@ -99,9 +97,7 @@ class _SeerrDetailScreenState extends State<SeerrDetailScreen> {
         setState(() {
           _movie = results[0] as SeerrMovieDetails;
           final recPage = results[1] as SeerrPage<SeerrSearchResult>?;
-          _recommendations = recPage == null
-              ? const []
-              : recPage.results.toList(growable: false);
+          _recommendations = recPage == null ? const [] : recPage.results.toList(growable: false);
           _loading = false;
         });
       }
@@ -215,7 +211,8 @@ class _DetailBody extends StatelessWidget {
     final mediaInfo = tv?.mediaInfo ?? movie?.mediaInfo;
     final status = mediaInfo?.status ?? SeerrMediaStatus.unknown;
     final canRequest = status != SeerrMediaStatus.available;
-    final genres = tv?.genres.map((g) => g.name).toList() ?? movie?.genres.map((g) => g.name).toList() ?? const <String>[];
+    final genres =
+        tv?.genres.map((g) => g.name).toList() ?? movie?.genres.map((g) => g.name).toList() ?? const <String>[];
     final voteAverage = tv?.voteAverage ?? movie?.voteAverage ?? 0;
     final voteCount = tv?.voteCount ?? movie?.voteCount ?? 0;
     final credits = tv?.credits ?? movie?.credits ?? const SeerrCredits();
@@ -598,23 +595,24 @@ class _RecommendationsRow extends StatelessWidget {
                                       ? Image.network(
                                           posterUrl,
                                           fit: BoxFit.cover,
-                                          errorBuilder: (_, __, ___) => Container(color: theme.colorScheme.surfaceContainerHighest),
+                                          errorBuilder: (_, __, ___) =>
+                                              Container(color: theme.colorScheme.surfaceContainerHighest),
                                         )
                                       : Container(color: theme.colorScheme.surfaceContainerHighest),
                                 ),
                               ),
                             ),
-                          const SizedBox(height: 6),
-                          Text(
-                            title,
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                            style: theme.textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w600),
-                          ),
-                        ],
+                            const SizedBox(height: 6),
+                            Text(
+                              title,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: theme.textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w600),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
-                  ),
                   ),
                 );
               },
@@ -647,9 +645,7 @@ class _SeasonsList extends StatelessWidget {
               contentPadding: EdgeInsets.zero,
               leading: const AppIcon(Symbols.theaters_rounded, fill: 1),
               title: Text(t.seerr.request.seasonNumber(number: s.seasonNumber)),
-              subtitle: s.episodeCount > 0
-                  ? Text(t.seerr.request.episodeCount(count: s.episodeCount))
-                  : null,
+              subtitle: s.episodeCount > 0 ? Text(t.seerr.request.episodeCount(count: s.episodeCount)) : null,
             ),
         ],
       ),

@@ -23,12 +23,7 @@ class SeerrMediaCard extends StatelessWidget {
   final VoidCallback? onTap;
   final double width;
 
-  const SeerrMediaCard({
-    super.key,
-    required this.result,
-    required this.onTap,
-    this.width = 132,
-  });
+  const SeerrMediaCard({super.key, required this.result, required this.onTap, this.width = 132});
 
   @override
   Widget build(BuildContext context) {
@@ -87,11 +82,7 @@ class SeerrMediaCard extends StatelessWidget {
                               : _posterFallback(theme),
                         ),
                         if (mediaInfo != null && mediaInfo.status != SeerrMediaStatus.unknown)
-                          Positioned(
-                            left: 6,
-                            bottom: 6,
-                            child: SeerrStatusBadge.media(context, mediaInfo.status),
-                          ),
+                          Positioned(left: 6, bottom: 6, child: SeerrStatusBadge.media(context, mediaInfo.status)),
                       ],
                     ),
                   ),
@@ -124,11 +115,7 @@ class SeerrMediaCard extends StatelessWidget {
     return Container(
       color: theme.colorScheme.surfaceContainerHighest,
       child: Center(
-        child: AppIcon(
-          Symbols.image_not_supported_rounded,
-          fill: 1,
-          color: theme.colorScheme.onSurfaceVariant,
-        ),
+        child: AppIcon(Symbols.image_not_supported_rounded, fill: 1, color: theme.colorScheme.onSurfaceVariant),
       ),
     );
   }

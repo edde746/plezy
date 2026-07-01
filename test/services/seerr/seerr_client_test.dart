@@ -51,12 +51,7 @@ void main() {
         onSessionInvalidated: () => fail('should not invalidate'),
         handler: (req) async {
           observedCookie = req.headers['Cookie'] ?? req.headers['cookie'];
-          return _json(200, {
-            'id': 7,
-            'username': 'edde',
-            'userType': 4,
-            'permissions': 0,
-          });
+          return _json(200, {'id': 7, 'username': 'edde', 'userType': 4, 'permissions': 0});
         },
       );
       await client.getMe();
@@ -92,12 +87,7 @@ void main() {
         onSessionInvalidated: () => fail('should not invalidate'),
         handler: (req) async {
           observedBody = jsonDecode(req.body) as Map<String, dynamic>;
-          return _json(201, {
-            'id': 99,
-            'status': 1,
-            'is4k': false,
-            'type': 'movie',
-          });
+          return _json(201, {'id': 99, 'status': 1, 'is4k': false, 'type': 'movie'});
         },
       );
       final req = await client.createRequest(SeerrRequestPayload.movie(603));
@@ -117,12 +107,7 @@ void main() {
         onSessionInvalidated: () => fail('should not invalidate'),
         handler: (req) async {
           observedBody = jsonDecode(req.body) as Map<String, dynamic>;
-          return _json(201, {
-            'id': 100,
-            'status': 1,
-            'is4k': false,
-            'type': 'tv',
-          });
+          return _json(201, {'id': 100, 'status': 1, 'is4k': false, 'type': 'tv'});
         },
       );
       await client.createRequest(SeerrRequestPayload.tv(96677, seasons: [1, 3]));
@@ -139,12 +124,7 @@ void main() {
         onSessionInvalidated: () => fail('should not invalidate'),
         handler: (req) async {
           observedBody = jsonDecode(req.body) as Map<String, dynamic>;
-          return _json(201, {
-            'id': 101,
-            'status': 1,
-            'is4k': false,
-            'type': 'tv',
-          });
+          return _json(201, {'id': 101, 'status': 1, 'is4k': false, 'type': 'tv'});
         },
       );
       await client.createRequest(SeerrRequestPayload.tv(96677));
@@ -170,24 +150,18 @@ void main() {
           if (req.url.path.endsWith('/auth/jellyfin')) {
             loginCalls++;
             authBodySent = req.body;
-            return _json(200, {
-              'id': 7,
-              'username': 'edde',
-              'userType': 4,
-              'permissions': 0,
-            }, extra: {'set-cookie': 'connect.sid=fresh; Path=/; HttpOnly'});
+            return _json(
+              200,
+              {'id': 7, 'username': 'edde', 'userType': 4, 'permissions': 0},
+              extra: {'set-cookie': 'connect.sid=fresh; Path=/; HttpOnly'},
+            );
           }
           if (req.url.path.endsWith('/auth/me')) {
             meCalls++;
             // First call hits with stale cookie; reauth re-fires the request.
             if (meCalls == 1) return http.Response('', 401);
             cookieOnRetry = req.headers;
-            return _json(200, {
-              'id': 7,
-              'username': 'edde',
-              'userType': 4,
-              'permissions': 0,
-            });
+            return _json(200, {'id': 7, 'username': 'edde', 'userType': 4, 'permissions': 0});
           }
           fail('Unexpected ${req.method} ${req.url}');
         },

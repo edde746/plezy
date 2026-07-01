@@ -183,9 +183,7 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
     // Episodes redirect requests to the parent show anyway, which is a
     // worse UX than just showing the button on the show page directly.
     final seerrSession = context.watch<SeerrSessionProvider>();
-    final canShowSeerr = !widget.isOffline &&
-        seerrSession.isConnected &&
-        (metadata.isMovie || metadata.isShow);
+    final canShowSeerr = !widget.isOffline && seerrSession.isConnected && (metadata.isMovie || metadata.isShow);
     final seerrAction = canShowSeerr
         ? FocusableAction(
             debugLabel: 'detail_seerr_request',
@@ -317,10 +315,7 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
   /// [preSelectedSeasons] (TV only) forwards to [SeerrRequestSheet.tv] so
   /// callers can pre-tick specific seasons (e.g. just the one the user
   /// chose from a per-season "missing" CTA).
-  Future<void> _openSeerrRequestFromLibrary(
-    MediaItem metadata, {
-    List<int>? preSelectedSeasons,
-  }) async {
+  Future<void> _openSeerrRequestFromLibrary(MediaItem metadata, {List<int>? preSelectedSeasons}) async {
     final session = context.read<SeerrSessionProvider>();
     final seerrClient = session.client;
     final mediaClient = _getMediaClientForMetadata(context);
@@ -329,11 +324,13 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
     // Tiny non-dismissible spinner so the user knows we're working. Dismissed
     // on every return path below.
     bool dialogOpen = true;
-    unawaited(showDialog<void>(
-      context: context,
-      barrierDismissible: false,
-      builder: (_) => const Center(child: LoadingIndicatorBox(size: 32)),
-    ).then((_) => dialogOpen = false));
+    unawaited(
+      showDialog<void>(
+        context: context,
+        barrierDismissible: false,
+        builder: (_) => const Center(child: LoadingIndicatorBox(size: 32)),
+      ).then((_) => dialogOpen = false),
+    );
 
     void closeDialog() {
       if (dialogOpen && mounted && Navigator.canPop(context)) {

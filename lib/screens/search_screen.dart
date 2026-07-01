@@ -195,12 +195,8 @@ class _SearchScreenState extends State<SearchScreen>
     };
     Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (_) => SeerrDetailScreen(
-          tmdbId: r.id,
-          mediaType: r.mediaType,
-          initialTitle: title,
-          initialPosterPath: poster,
-        ),
+        builder: (_) =>
+            SeerrDetailScreen(tmdbId: r.id, mediaType: r.mediaType, initialTitle: title, initialPosterPath: poster),
       ),
     );
   }
@@ -316,9 +312,7 @@ class _SearchScreenState extends State<SearchScreen>
   }
 
   void _openSeerrSearch(String query) {
-    Navigator.of(context).push(
-      MaterialPageRoute(builder: (_) => SeerrTabRoot(initialSearchQuery: query)),
-    );
+    Navigator.of(context).push(MaterialPageRoute(builder: (_) => SeerrTabRoot(initialSearchQuery: query)));
   }
 
   @override
@@ -379,10 +373,7 @@ class _SearchScreenState extends State<SearchScreen>
               if (_searchResults.isNotEmpty) ...[
                 if (_seerrResults.isNotEmpty)
                   SliverToBoxAdapter(
-                    child: _SectionHeader(
-                      icon: Symbols.video_library_rounded,
-                      label: t.search.inYourLibrary,
-                    ),
+                    child: _SectionHeader(icon: Symbols.video_library_rounded, label: t.search.inYourLibrary),
                   ),
                 _buildResultsList(context),
               ],
@@ -404,10 +395,7 @@ class _SearchScreenState extends State<SearchScreen>
                           if (!seerr.hasConfiguredServer) return const SizedBox.shrink();
                           final query = _searchController.text.trim();
                           if (query.isEmpty) return const SizedBox.shrink();
-                          return NotInLibraryBanner(
-                            query: query,
-                            onTap: () => _openSeerrSearch(query),
-                          );
+                          return NotInLibraryBanner(query: query, onTap: () => _openSeerrSearch(query));
                         },
                       ),
                     ],
@@ -415,25 +403,22 @@ class _SearchScreenState extends State<SearchScreen>
                 ),
               if (_isSearchingSeerr && _seerrResults.isEmpty && _searchResults.isNotEmpty)
                 const SliverToBoxAdapter(
-                  child: Padding(padding: EdgeInsets.all(16), child: Center(child: LoadingIndicatorBox())),
+                  child: Padding(
+                    padding: EdgeInsets.all(16),
+                    child: Center(child: LoadingIndicatorBox()),
+                  ),
                 ),
               if (_seerrResults.isNotEmpty) ...[
                 SliverToBoxAdapter(
-                  child: _SectionHeader(
-                    icon: Symbols.playlist_add_check_rounded,
-                    label: t.search.fromSeerr,
-                  ),
+                  child: _SectionHeader(icon: Symbols.playlist_add_check_rounded, label: t.search.fromSeerr),
                 ),
                 SliverPadding(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   sliver: SliverList(
-                    delegate: SliverChildBuilderDelegate(
-                      (context, index) {
-                        final r = _seerrResults[index];
-                        return _SeerrSearchRow(result: r, onTap: () => _openSeerrDetail(r));
-                      },
-                      childCount: _seerrResults.length,
-                    ),
+                    delegate: SliverChildBuilderDelegate((context, index) {
+                      final r = _seerrResults[index];
+                      return _SeerrSearchRow(result: r, onTap: () => _openSeerrDetail(r));
+                    }, childCount: _seerrResults.length),
                   ),
                 ),
                 const SliverToBoxAdapter(child: SizedBox(height: 16)),
@@ -486,8 +471,10 @@ class _SeerrSearchRow extends StatelessWidget {
       SeerrPersonResult(:final profilePath) => profilePath,
     };
     final year = switch (result) {
-      SeerrMovieResult(:final releaseDate) => (releaseDate != null && releaseDate.length >= 4) ? releaseDate.substring(0, 4) : null,
-      SeerrTvResult(:final firstAirDate) => (firstAirDate != null && firstAirDate.length >= 4) ? firstAirDate.substring(0, 4) : null,
+      SeerrMovieResult(:final releaseDate) =>
+        (releaseDate != null && releaseDate.length >= 4) ? releaseDate.substring(0, 4) : null,
+      SeerrTvResult(:final firstAirDate) =>
+        (firstAirDate != null && firstAirDate.length >= 4) ? firstAirDate.substring(0, 4) : null,
       SeerrPersonResult() => null,
     };
     final typeLabel = result.mediaType == 'tv' ? t.seerr.tabs.search : '';
@@ -504,46 +491,46 @@ class _SeerrSearchRow extends StatelessWidget {
           onTap: onTap,
           borderRadius: BorderRadius.circular(8),
           child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 8),
-          child: Row(
-            children: [
-              SizedBox(
-                width: 50,
-                height: 75,
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(4),
-                  child: posterUrl != null
-                      ? Image.network(
-                          posterUrl,
-                          fit: BoxFit.cover,
-                          errorBuilder: (_, __, ___) => Container(color: theme.colorScheme.surfaceContainerHighest),
-                        )
-                      : Container(color: theme.colorScheme.surfaceContainerHighest),
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            child: Row(
+              children: [
+                SizedBox(
+                  width: 50,
+                  height: 75,
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(4),
+                    child: posterUrl != null
+                        ? Image.network(
+                            posterUrl,
+                            fit: BoxFit.cover,
+                            errorBuilder: (_, __, ___) => Container(color: theme.colorScheme.surfaceContainerHighest),
+                          )
+                        : Container(color: theme.colorScheme.surfaceContainerHighest),
+                  ),
                 ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(title, style: theme.textTheme.titleSmall, maxLines: 1, overflow: TextOverflow.ellipsis),
-                    if ((year ?? '').isNotEmpty || typeLabel.isNotEmpty) ...[
-                      const SizedBox(height: 2),
-                      Text(
-                        [year, if (typeLabel.isNotEmpty) typeLabel].whereType<String>().join(' · '),
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(title, style: theme.textTheme.titleSmall, maxLines: 1, overflow: TextOverflow.ellipsis),
+                      if ((year ?? '').isNotEmpty || typeLabel.isNotEmpty) ...[
+                        const SizedBox(height: 2),
+                        Text(
+                          [year, if (typeLabel.isNotEmpty) typeLabel].whereType<String>().join(' · '),
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                          ),
                         ),
-                      ),
+                      ],
                     ],
-                  ],
+                  ),
                 ),
-              ),
-              const Icon(Icons.chevron_right_rounded),
-            ],
+                const Icon(Icons.chevron_right_rounded),
+              ],
+            ),
           ),
         ),
-      ),
       ),
     );
   }
