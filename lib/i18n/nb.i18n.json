@@ -262,6 +262,8 @@
     "displaySwitchDelay": "Forsinkelse ved skjermbytte",
     "tunneledPlayback": "Tunnelert avspilling",
     "tunneledPlaybackDescription": "Bruk videotunneling. Slå av hvis HDR-avspilling viser svart video.",
+    "audioPassthrough": "Lydgjennomgang",
+    "audioPassthroughDescription": "Send Dolby/DTS-lyd til mottakeren eller TV-en uten omkoding, slik at surroundlyd bevares. Slå av hvis du ikke har lyd.",
     "dvConversionMode": "Dolby Vision-konvertering",
     "dvConversionModeDescription": "Velg hvordan ExoPlayer håndterer Dolby Vision Profile 7-filer.",
     "dvConversionAuto": "Auto",

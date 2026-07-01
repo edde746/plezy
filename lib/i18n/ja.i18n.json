@@ -262,6 +262,8 @@
     "displaySwitchDelay": "ディスプレイ切り替え遅延",
     "tunneledPlayback": "トンネル再生",
     "tunneledPlaybackDescription": "動画トンネリングを使用します。HDR再生で画面が黒くなる場合は無効にしてください。",
+    "audioPassthrough": "オーディオパススルー",
+    "audioPassthroughDescription": "Dolby/DTS音声を再エンコードせずにレシーバーやテレビに送り、サラウンドを維持します。音が出ない場合は無効にしてください。",
     "dvConversionMode": "Dolby Vision 変換",
     "dvConversionModeDescription": "ExoPlayer が Dolby Vision Profile 7 ファイルを処理する方法を選択します。",
     "dvConversionAuto": "自動",

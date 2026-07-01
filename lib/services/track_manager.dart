@@ -8,7 +8,6 @@ import '../media/media_source_info.dart';
 import '../services/settings_service.dart';
 import '../services/track_selection_service.dart';
 import '../utils/app_logger.dart';
-import '../utils/language_codes.dart';
 import '../utils/track_label_builder.dart';
 
 /// Persists a track choice for the current part to the server.
@@ -313,26 +312,12 @@ class TrackManager {
     final partId = await _guardTrackChange(info);
     if (partId == null || info == null) return;
 
-    int? streamID = _matchTrackByAttributes(
-      mpvLanguage: track.language,
-      mpvTitle: track.title,
-      plexTracks: info.audioTracks,
-      getLanguageCode: (t) => t.languageCode,
-      getDisplayTitle: (t) => t.displayTitle,
-      getTitle: (t) => t.title,
-      getId: (t) => t.id,
-    );
-
+    final matchedPlex = findPlexTrackForMpvAudio(track, info.audioTracks, allMpvTracks: player.state.tracks.audio);
+    final streamID = matchedPlex?.id;
     if (streamID != null) {
-      appLogger.d('Matched audio by lang/title: streamID $streamID');
+      appLogger.d('Matched audio to streamID $streamID');
     } else {
-      final matchedPlex = findPlexTrackForMpvAudio(track, info.audioTracks, allMpvTracks: player.state.tracks.audio);
-      streamID = matchedPlex?.id;
-      if (streamID != null) {
-        appLogger.d('Matched audio by properties: streamID $streamID');
-      } else {
-        appLogger.e('Could not match audio track to any Plex track');
-      }
+      appLogger.e('Could not match audio track to any Plex track');
     }
 
     await _saveTrackPreferences(partId: partId, trackType: 'audio', streamID: streamID);
@@ -350,30 +335,16 @@ class TrackManager {
       streamID = 0;
       appLogger.i('User turned subtitles off, saving preference');
     } else if (info != null) {
-      streamID = _matchTrackByAttributes(
-        mpvLanguage: track.language,
-        mpvTitle: track.title,
-        plexTracks: info.subtitleTracks,
-        getLanguageCode: (t) => t.languageCode,
-        getDisplayTitle: (t) => t.displayTitle,
-        getTitle: (t) => t.title,
-        getId: (t) => t.id,
+      final matchedPlex = findPlexTrackForMpvSubtitle(
+        track,
+        info.subtitleTracks,
+        allMpvTracks: player.state.tracks.subtitle,
       );
-
+      streamID = matchedPlex?.id;
       if (streamID != null) {
-        appLogger.d('Matched subtitle by lang/title: streamID $streamID');
+        appLogger.d('Matched subtitle to streamID $streamID');
       } else {
-        final matchedPlex = findPlexTrackForMpvSubtitle(
-          track,
-          info.subtitleTracks,
-          allMpvTracks: player.state.tracks.subtitle,
-        );
-        streamID = matchedPlex?.id;
-        if (streamID != null) {
-          appLogger.d('Matched subtitle by properties: streamID $streamID');
-        } else {
-          appLogger.e('Could not match subtitle track to any Plex track');
-        }
+        appLogger.e('Could not match subtitle track to any Plex track');
       }
     }
 
@@ -419,50 +390,6 @@ class TrackManager {
       appLogger.d('Successfully saved $trackType stream selection');
     } catch (e) {
       appLogger.e('Failed to save $trackType stream selection', error: e);
-    }
-  }
-
-  /// Match an mpv track against Plex tracks by language and title.
-  int? _matchTrackByAttributes<T>({
-    required String? mpvLanguage,
-    required String? mpvTitle,
-    required List<T> plexTracks,
-    required String? Function(T) getLanguageCode,
-    required String? Function(T) getDisplayTitle,
-    required String? Function(T) getTitle,
-    required int Function(T) getId,
-  }) {
-    final normalizedLang = _iso6391To6392(mpvLanguage);
-
-    for (final plexTrack in plexTracks) {
-      final matchLang = getLanguageCode(plexTrack) == normalizedLang;
-      final matchTitle = (mpvTitle == null || mpvTitle.isEmpty)
-          ? true
-          : (getDisplayTitle(plexTrack) == mpvTitle || getTitle(plexTrack) == mpvTitle);
-
-      if (matchLang && matchTitle) {
-        return getId(plexTrack);
-      }
-    }
-    return null;
-  }
-
-  /// Convert ISO 639-1 code (e.g. "fr") to ISO 639-2/B (e.g. "fre"). Plex
-  /// streams use the 3-letter form.
-  static String? _iso6391To6392(String? code) {
-    if (code == null || code.isEmpty) return null;
-    final lang = code.split('-').first.toLowerCase();
-
-    try {
-      final variations = LanguageCodes.getVariations(lang);
-      for (final variation in variations) {
-        if (variation.length == 3) {
-          return variation;
-        }
-      }
-      return null;
-    } catch (e) {
-      return null;
     }
   }
 

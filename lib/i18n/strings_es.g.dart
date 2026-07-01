@@ -391,6 +391,8 @@ class _TranslationsSettingsEs extends TranslationsSettingsEn {
 	@override String get displaySwitchDelay => 'Retraso de cambio de pantalla';
 	@override String get tunneledPlayback => 'Reproducción tunelizada';
 	@override String get tunneledPlaybackDescription => 'Usar tunelización de video. Desactívala si HDR muestra video negro.';
+	@override String get audioPassthrough => 'Audio Passthrough';
+	@override String get audioPassthroughDescription => 'Envía el audio Dolby/DTS a tu receptor o TV sin recodificar, conservando el sonido envolvente. Desactívalo si no tienes sonido.';
 	@override String get dvConversionMode => 'Conversión de Dolby Vision';
 	@override String get dvConversionModeDescription => 'Elige cómo ExoPlayer gestiona archivos Dolby Vision Profile 7.';
 	@override String get dvConversionAuto => 'Automático';
@@ -2178,6 +2180,8 @@ extension on TranslationsEs {
 			'settings.displaySwitchDelay' => 'Retraso de cambio de pantalla',
 			'settings.tunneledPlayback' => 'Reproducción tunelizada',
 			'settings.tunneledPlaybackDescription' => 'Usar tunelización de video. Desactívala si HDR muestra video negro.',
+			'settings.audioPassthrough' => 'Audio Passthrough',
+			'settings.audioPassthroughDescription' => 'Envía el audio Dolby/DTS a tu receptor o TV sin recodificar, conservando el sonido envolvente. Desactívalo si no tienes sonido.',
 			'settings.dvConversionMode' => 'Conversión de Dolby Vision',
 			'settings.dvConversionModeDescription' => 'Elige cómo ExoPlayer gestiona archivos Dolby Vision Profile 7.',
 			'settings.dvConversionAuto' => 'Automático',
@@ -2436,10 +2440,10 @@ extension on TranslationsEs {
 			'messages.serverLimitTitle' => 'Error de reproducción',
 			'messages.serverLimitBody' => 'Error del servidor (HTTP 500). Un límite de ancho de banda/transcodificación probablemente rechazó esta sesión. Pide al propietario que lo ajuste.',
 			'messages.logsUploaded' => 'Registros subidos',
-			'messages.logsUploadFailed' => 'Error al subir registros',
-			'messages.logId' => 'ID de registro',
 			_ => null,
 		} ?? switch (path) {
+			'messages.logsUploadFailed' => 'Error al subir registros',
+			'messages.logId' => 'ID de registro',
 			'subtitlingStyling.text' => 'Texto',
 			'subtitlingStyling.border' => 'Borde',
 			'subtitlingStyling.background' => 'Fondo',
@@ -2950,10 +2954,10 @@ extension on TranslationsEs {
 			'companionRemote.pairing.connectionTimedOut' => 'Tiempo de conexión agotado. Usa la misma red en ambos dispositivos.',
 			'companionRemote.pairing.sessionNotFound' => 'Dispositivo no encontrado. Asegúrate de que Plezy esté en ejecución en el host.',
 			'companionRemote.pairing.authFailed' => 'Autenticación fallida. Ambos dispositivos necesitan la misma cuenta Plex.',
-			'companionRemote.pairing.failedToConnect' => ({required Object error}) => 'Error al conectar: ${error}',
-			'companionRemote.remote.disconnectConfirm' => '¿Quieres desconectarte de la sesión remota?',
 			_ => null,
 		} ?? switch (path) {
+			'companionRemote.pairing.failedToConnect' => ({required Object error}) => 'Error al conectar: ${error}',
+			'companionRemote.remote.disconnectConfirm' => '¿Quieres desconectarte de la sesión remota?',
 			'companionRemote.remote.reconnecting' => 'Reconectando...',
 			'companionRemote.remote.attemptOf' => ({required Object current}) => 'Intento ${current} de 5',
 			'companionRemote.remote.retryNow' => 'Reintentar ahora',

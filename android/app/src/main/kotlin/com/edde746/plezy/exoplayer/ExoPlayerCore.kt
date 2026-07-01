@@ -165,6 +165,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
   private var surfaceContainer: FrameLayout? = null
   private var videoAspectContainer: AspectRatioFrameLayout? = null
   private var subtitleView: SubtitleView? = null
+  private var bitmapSubtitleView: SubtitleView? = null
   private var videoZoomScale: Float = 1.0f
   private var assHandler: AssHandler? = null
   private var assSubtitleView: AssSubtitleSurfaceView? = null
@@ -203,7 +204,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
   private var tunnelingUserEnabled: Boolean = true
   private var tunnelingDisabledForAudioCodec: Boolean = false
   private var tunnelingDisabledForVideoCodec: Boolean = false
-  private var tunnelingDisabledForDecodedTrueHdPcm: Boolean = false
+  private var tunnelingDisabledForDecodedPcm: Boolean = false
   private var tunnelingDisabledForAudioRecovery: Boolean = false
 
   // Tunneled playback never fires the VideoFrameMetadataListener (media3 releases
@@ -211,7 +212,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
   // ASS subs would freeze. Correctness over tunneling while an ASS track is active.
   private var tunnelingDisabledForAssSubtitles: Boolean = false
   private val tunnelingDisabledForCodec: Boolean
-    get() = tunnelingDisabledForAudioCodec || tunnelingDisabledForVideoCodec || tunnelingDisabledForDecodedTrueHdPcm || tunnelingDisabledForAudioRecovery
+    get() = tunnelingDisabledForAudioCodec || tunnelingDisabledForVideoCodec || tunnelingDisabledForDecodedPcm || tunnelingDisabledForAudioRecovery
   private var currentTunneledPlayback: Boolean = false
 
   // Loudness normalization (#1289): audiofx effects only process non-tunneled
@@ -246,7 +247,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
   private var lastAudioSinkError: String? = null
   private var loggedEwasteEac3Workaround: Boolean = false
   private var lastTrueHdDirectOutputLogKey: String? = null
-  private var loggedDecodedTrueHdTunnelingGuard: Boolean = false
+  private var loggedDecodedPcmTunnelingGuard: Boolean = false
   private var firstFrameRendered: Boolean = false
   var delegate: ExoPlayerDelegate? = null
   var debugLoggingEnabled: Boolean = false
@@ -474,9 +475,19 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
       videoAspectContainer!!.addView(surfaceView)
       surfaceContainer!!.addView(videoAspectContainer)
 
+      // Separate bitmap subtitles from text subtitles. Media3 scales PGS/VOB
+      // bitmap cue width and height against the SubtitleView bounds, so putting
+      // image cues in the screen-sized text view deforms them on stretch/zoom.
+      bitmapSubtitleView = SubtitleView(activity).apply {
+        layoutParams = FrameLayout.LayoutParams(
+          FrameLayout.LayoutParams.MATCH_PARENT,
+          FrameLayout.LayoutParams.MATCH_PARENT
+        )
+      }
+
       // Create SubtitleView - added to surfaceContainer above video. Hosts only
       // the built-in CanvasSubtitleOutput for non-ASS text cues; the ASS overlay
-      // lives inside videoAspectContainer so it tracks the video rect.
+      // is screen-sized and tracks the video rect via libass margins.
       subtitleView = SubtitleView(activity).apply {
         layoutParams = FrameLayout.LayoutParams(
           FrameLayout.LayoutParams.MATCH_PARENT,
@@ -485,8 +496,9 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
       }
       // Add SubtitleView to surfaceContainer (above video SurfaceView)
       // Flutter renders on top of entire surfaceContainer, keeping subtitles below UI
+      surfaceContainer!!.addView(bitmapSubtitleView)
       surfaceContainer!!.addView(subtitleView)
-      Log.d(TAG, "SubtitleView created and added to surfaceContainer")
+      Log.d(TAG, "SubtitleViews created and added to surfaceContainer")
 
       val contentView = activity.findViewById<ViewGroup>(android.R.id.content)
       contentView.addView(surfaceContainer, 0)
@@ -676,14 +688,21 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
       // eglPresentationTimeANDROID can vsync-pin to the video frame.
       // Z-order: video SurfaceView (-2) < this MediaOverlay-flagged
       // SurfaceView (-1) < parent canvas < Flutter SurfaceView (+1) in the window.
-      // Inserted before subtitleView so both punches run before SRT/VTT cues draw
-      // on the parent canvas.
+      // Inserted before the Media3 subtitle views so both punches run before
+      // PGS/VOB/SRT/VTT cues draw on the parent canvas.
       surfaceContainer?.let { container ->
         val assView = AssSubtitleSurfaceView(container.context, handler)
         assSubtitleView = assView
         // Pre-36 sublayer is already set by the view's own setZOrderMediaOverlay(true).
         FlutterOverlayHelper.applyCompositionOrder(assView, -1)
-        val subtitleIndex = container.indexOfChild(subtitleView)
+        val bitmapIndex = container.indexOfChild(bitmapSubtitleView)
+        val textIndex = container.indexOfChild(subtitleView)
+        val subtitleIndex = when {
+          bitmapIndex >= 0 && textIndex >= 0 -> minOf(bitmapIndex, textIndex)
+          bitmapIndex >= 0 -> bitmapIndex
+          textIndex >= 0 -> textIndex
+          else -> -1
+        }
         container.addView(
           assView,
           if (subtitleIndex >= 0) subtitleIndex else container.childCount,
@@ -804,11 +823,14 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
 
       // Debug: Log SubtitleView child hierarchy
       subtitleView?.post {
-        Log.d(TAG, "SubtitleView post-layout: width=${subtitleView?.width}, height=${subtitleView?.height}, childCount=${subtitleView?.childCount}")
+        Log.d(TAG, "Text SubtitleView post-layout: width=${subtitleView?.width}, height=${subtitleView?.height}, childCount=${subtitleView?.childCount}")
         for (i in 0 until (subtitleView?.childCount ?: 0)) {
           val child = subtitleView?.getChildAt(i)
           Log.d(TAG, "  Child $i: ${child?.javaClass?.simpleName}, w=${child?.width}, h=${child?.height}, visibility=${child?.visibility}")
         }
+      }
+      bitmapSubtitleView?.post {
+        Log.d(TAG, "Bitmap SubtitleView post-layout: width=${bitmapSubtitleView?.width}, height=${bitmapSubtitleView?.height}, childCount=${bitmapSubtitleView?.childCount}")
       }
 
       // Start position update loop
@@ -911,21 +933,28 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
   // Player.Listener
 
   override fun onCues(cueGroup: CueGroup) {
-    // ASS subtitles are rendered by the libass overlay surface.
-    // This callback is for non-ASS subtitles (SRT, VTT, etc.)
+    // ASS subtitles are rendered by the libass overlay surface. This callback
+    // handles non-ASS text cues plus bitmap image cues such as PGS/VOB.
     val incoming = cueGroup.cues
     lastSubtitleCues = incoming
-    val stacked = stackUnpositionedCues(incoming)
-    val outgoing = applySubtitlePosition(stacked)
     if (incoming.isNotEmpty()) {
+      val textCount = incoming.count { it.bitmap == null }
+      val bitmapCount = incoming.size - textCount
       Log.d(
         TAG,
-        "onCues: received ${incoming.size} cues (non-ASS)" +
-          (if (stacked !== incoming) " - stacked" else "") +
-          (if (outgoing !== stacked) " - positioned" else "")
+        "onCues: received ${incoming.size} cues (non-ASS, text=$textCount, bitmap=$bitmapCount)"
       )
     }
+    renderSubtitleCues(incoming)
+  }
+
+  private fun renderSubtitleCues(cues: List<Cue>) {
+    val textCues = cues.filter { it.bitmap == null }
+    val bitmapCues = cues.filter { it.bitmap != null }
+    val stacked = stackUnpositionedCues(textCues)
+    val outgoing = applySubtitlePosition(stacked)
     subtitleView?.setCues(outgoing)
+    bitmapSubtitleView?.setCues(bitmapCues)
   }
 
   // SRT carries no per-cue positioning, so SubripParser emits cues with
@@ -1101,7 +1130,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
 
     // Disabling the text track produces no trailing empty CueGroup, and no new
     // video frame re-renders the libass overlay while paused, so the last SRT/VTT
-    // line stays painted on the SubtitleView and the last ASS frame stays on the
+    // cue stays painted on the SubtitleViews and the last ASS frame stays on the
     // overlay. AssHandler (registered before this listener) has already nulled the
     // libass track by now, so re-rendering the last position clears it. Gate on the
     // transition to avoid redundant clears on every track change. (#1387)
@@ -1109,6 +1138,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
     if (!hasSelectedText && hadSelectedTextTrack) {
       lastSubtitleCues = emptyList()
       subtitleView?.setCues(emptyList())
+      bitmapSubtitleView?.setCues(emptyList())
       assSubtitleView?.invalidateSubtitles()
     }
     hadSelectedTextTrack = hasSelectedText
@@ -1441,53 +1471,57 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
     if (disposing) return
     if (videoWidth == 0 || videoHeight == 0) return
 
-    val subtitle = subtitleView ?: return
     val contentView = activity.findViewById<ViewGroup>(android.R.id.content)
-    val containerWidth = contentView.width
-    val containerHeight = contentView.height
+    val containerWidth = surfaceContainer?.width?.takeIf { it > 0 } ?: contentView.width
+    val containerHeight = surfaceContainer?.height?.takeIf { it > 0 } ?: contentView.height
     if (containerWidth == 0 || containerHeight == 0) return
 
-    // Sizes the non-ASS SubtitleView only (the ASS overlay is screen-sized and
-    // tracks the video rect via libass margins — see updateAssMargins()).
-    // In cover/stretch/zoomed-in modes text cues stay at container size so they
-    // never get cropped. In letterbox mode they follow the visible video rect.
-    val isLetterbox = videoAspectContainer?.resizeMode == AspectRatioFrameLayout.RESIZE_MODE_FIT
-    val (subWidth, subHeight) = if (isLetterbox) {
-      val videoAspect = (videoWidth * pixelRatio) / videoHeight
-      val containerAspect = containerWidth.toFloat() / containerHeight
-      val (baseWidth, baseHeight) = if (videoAspect > containerAspect) {
-        containerWidth to (containerWidth / videoAspect).toInt()
-      } else {
-        (containerHeight * videoAspect).toInt() to containerHeight
-      }
-      if (videoZoomScale < 0.999f) {
-        val zoomedWidth = ((baseWidth * videoZoomScale).toInt()).coerceAtLeast(1)
-        val zoomedHeight = ((baseHeight * videoZoomScale).toInt()).coerceAtLeast(1)
-        zoomedWidth to zoomedHeight
-      } else if (videoZoomScale > 1.001f) {
-        containerWidth to containerHeight
-      } else {
-        baseWidth to baseHeight
-      }
-    } else {
-      containerWidth to containerHeight
-    }
+    val resizeMode = videoAspectContainer?.resizeMode ?: AspectRatioFrameLayout.RESIZE_MODE_FIT
+    val textDimensions = SubtitleViewLayout.textDimensions(
+      containerWidth,
+      containerHeight,
+      videoWidth,
+      videoHeight,
+      pixelRatio,
+      resizeMode,
+      videoZoomScale
+    )
+    val bitmapDimensions = SubtitleViewLayout.bitmapDimensions(
+      containerWidth,
+      containerHeight,
+      videoWidth,
+      videoHeight,
+      pixelRatio,
+      resizeMode,
+      videoZoomScale
+    )
 
     activity.runOnUiThread {
-      // Skip when already at the target size: setLayoutParams always schedules a
-      // layout pass, and this runs from the global-layout listener — re-applying
-      // equal params would keep the UI thread laying out every frame (#1261).
-      val current = subtitle.layoutParams as? FrameLayout.LayoutParams
-      if (current != null &&
-        current.width == subWidth &&
-        current.height == subHeight &&
-        current.gravity == Gravity.CENTER
-      ) {
-        return@runOnUiThread
+      val textView = subtitleView
+      if (textView != null && textDimensions != null) {
+        applySubtitleViewSize(textView, textDimensions)
       }
-      subtitle.layoutParams = FrameLayout.LayoutParams(subWidth, subHeight).apply {
-        gravity = Gravity.CENTER
+      val bitmapView = bitmapSubtitleView
+      if (bitmapView != null && bitmapDimensions != null) {
+        applySubtitleViewSize(bitmapView, bitmapDimensions)
       }
+    }
+  }
+
+  private fun applySubtitleViewSize(view: View, dimensions: SubtitleViewDimensions) {
+    // Skip when already at the target size: setLayoutParams always schedules a
+    // layout pass, and this runs from the global-layout listener — re-applying
+    // equal params would keep the UI thread laying out every frame (#1261).
+    val current = view.layoutParams as? FrameLayout.LayoutParams
+    if (current != null &&
+      current.width == dimensions.width &&
+      current.height == dimensions.height &&
+      current.gravity == Gravity.CENTER
+    ) {
+      return
+    }
+    view.layoutParams = FrameLayout.LayoutParams(dimensions.width, dimensions.height).apply {
+      gravity = Gravity.CENTER
     }
   }
 
@@ -1529,12 +1563,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
           AspectRatioFrameLayout.RESIZE_MODE_FILL ->
             containerWidth.toFloat() to containerHeight.toFloat()
           // Fit: letterbox within the container
-          else ->
-            if (videoAspect > containerAspect) {
-              containerWidth.toFloat() to containerWidth / videoAspect
-            } else {
-              containerHeight * videoAspect to containerHeight.toFloat()
-            }
+          else -> SubtitleViewLayout.letterbox(containerWidth, containerHeight, videoAspect)
         }
       }
 
@@ -2351,7 +2380,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
     currentTunneledPlayback = shouldTunnel
     val speed = exoPlayer?.playbackParameters?.speed ?: 1f
     val audioDelayActive = (renderersFactory?.audioDelayUs?.get() ?: 0L) != 0L
-    emitLog("info", "tunneling", "Toggling tunneling=$shouldTunnel (reason=$reason, user=$tunnelingUserEnabled, speed=$speed, audioCodecDisabled=$tunnelingDisabledForAudioCodec, videoCodecDisabled=$tunnelingDisabledForVideoCodec, decodedTrueHdPcmDisabled=$tunnelingDisabledForDecodedTrueHdPcm, audioRecoveryDisabled=$tunnelingDisabledForAudioRecovery, assSubtitlesDisabled=$tunnelingDisabledForAssSubtitles, audioDelay=$audioDelayActive, audioNormalization=$audioNormalizationEnabled)")
+    emitLog("info", "tunneling", "Toggling tunneling=$shouldTunnel (reason=$reason, user=$tunnelingUserEnabled, speed=$speed, audioCodecDisabled=$tunnelingDisabledForAudioCodec, videoCodecDisabled=$tunnelingDisabledForVideoCodec, decodedPcmDisabled=$tunnelingDisabledForDecodedPcm, audioRecoveryDisabled=$tunnelingDisabledForAudioRecovery, assSubtitlesDisabled=$tunnelingDisabledForAssSubtitles, audioDelay=$audioDelayActive, audioNormalization=$audioNormalizationEnabled)")
     return true
   }
 
@@ -2367,8 +2396,11 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
 
   private fun updateAudioCodecForTunneling(format: Format) {
     val mimeType = format.sampleMimeType ?: return
-    if (mimeType != MimeTypes.AUDIO_TRUEHD) {
-      tunnelingDisabledForDecodedTrueHdPcm = false
+    // The decoded-PCM guard only applies to passthrough-type codecs that can be
+    // force-decoded; clear it when the selected codec can't have set it. (onAudioTrackInitialized
+    // re-sets/clears it for passthrough codecs based on the actual output encoding.)
+    if (!isPassthroughAudioMimeType(mimeType)) {
+      tunnelingDisabledForDecodedPcm = false
     }
 
     val newDisabled = !hasHardwareAudioDecoder(mimeType)
@@ -2504,17 +2536,22 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
         "AudioTrack initialized: input=${audioFormat?.let { formatAudioSummary(it) } ?: "unknown"}, " +
           "decoder=${audioDecoderInitName ?: "direct/bypass"}, ${describeAudioTrackConfig(audioTrackConfig)}"
       )
-      if (audioFormat?.sampleMimeType == MimeTypes.AUDIO_TRUEHD) {
+      // A passthrough-type codec (AC3/EAC3/DTS/TrueHD…) force-decoded to PCM must not
+      // stay on a tunneled AudioTrack: some Amlogic/AOSP boxes deliver the PCM frames
+      // but render silence (#1458). Generalizes the original TrueHD-only guard to every
+      // codec the passthrough block (and #1289 normalization) can force-decode.
+      val passthroughSrcMime = audioFormat?.sampleMimeType?.takeIf { isPassthroughAudioMimeType(it) }
+      if (passthroughSrcMime != null) {
         if (audioTrackConfig.tunneling && isPcmEncoding(audioTrackConfig.encoding)) {
-          if (!loggedDecodedTrueHdTunnelingGuard) {
-            loggedDecodedTrueHdTunnelingGuard = true
-            emitLog("warn", "audio", "Decoded TrueHD PCM initialized with tunneling=true; forcing tunneling off")
+          if (!loggedDecodedPcmTunnelingGuard) {
+            loggedDecodedPcmTunnelingGuard = true
+            emitLog("warn", "audio", "Decoded $passthroughSrcMime PCM initialized with tunneling=true; forcing tunneling off")
           }
-          tunnelingDisabledForDecodedTrueHdPcm = true
-          updateTunnelingState("decoded TrueHD PCM tunneling guard", forceSelector = true)
-        } else if (!isPcmEncoding(audioTrackConfig.encoding) && tunnelingDisabledForDecodedTrueHdPcm) {
-          tunnelingDisabledForDecodedTrueHdPcm = false
-          updateTunnelingState("encoded TrueHD output initialized", forceSelector = true)
+          tunnelingDisabledForDecodedPcm = true
+          updateTunnelingState("decoded PCM tunneling guard", forceSelector = true)
+        } else if (!isPcmEncoding(audioTrackConfig.encoding) && tunnelingDisabledForDecodedPcm) {
+          tunnelingDisabledForDecodedPcm = false
+          updateTunnelingState("encoded passthrough output initialized", forceSelector = true)
         }
       }
       // Re-key the normalization effect to the actual output channel count
@@ -2706,7 +2743,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
     loggedNativeDvFirstFrame = false
     loggedDvPlaybackPathKey = null
     lastDvPlaybackInfo = null
-    loggedDecodedTrueHdTunnelingGuard = false
+    loggedDecodedPcmTunnelingGuard = false
     updateAudioDecoderPolicy("open")
     currentMediaUri = uri
     currentHeaders = headers
@@ -2752,7 +2789,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
     }
     tunnelingDisabledForAudioCodec = false
     tunnelingDisabledForVideoCodec = false
-    tunnelingDisabledForDecodedTrueHdPcm = false
+    tunnelingDisabledForDecodedPcm = false
     tunnelingDisabledForAudioRecovery = false
     tunnelingDisabledForAssSubtitles = false
     currentTunneledPlayback = false
@@ -3162,7 +3199,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
     activity.runOnUiThread {
       if (disposing) return@runOnUiThread
       surfaceContainer?.visibility = if (visible) View.VISIBLE else View.INVISIBLE
-      // subtitleView is inside surfaceContainer, inherits visibility
+      // Subtitle views are inside surfaceContainer, so they inherit visibility.
       Log.d(TAG, "setVisible($visible)")
     }
   }
@@ -3233,9 +3270,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
       } else {
         subtitleView?.setBottomPaddingFraction(0f)
       }
-      if (lastSubtitleCues.isNotEmpty()) {
-        subtitleView?.setCues(applySubtitlePosition(stackUnpositionedCues(lastSubtitleCues)))
-      }
+      if (lastSubtitleCues.isNotEmpty()) renderSubtitleCues(lastSubtitleCues)
 
       // 2. ASS subtitles: font scale via libass
       // MPV default sub-font-size is 38
@@ -3481,7 +3516,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
     if (player.playbackParameters.speed != 1f) return "Off (speed ≠ 1×)"
     if (audioNormalizationEnabled) return "Off (loudness normalization)"
     if (tunnelingDisabledForAudioRecovery) return "Off (audio recovery)"
-    if (tunnelingDisabledForDecodedTrueHdPcm) return "Off (decoded TrueHD PCM)"
+    if (tunnelingDisabledForDecodedPcm) return "Off (decoded PCM)"
     if (tunnelingDisabledForVideoCodec) return "Off (video codec unsupported)"
     if (tunnelingDisabledForAudioCodec) return "Off (no HW audio decoder)"
     if (tunnelingDisabledForAssSubtitles) return "Off (ASS subtitles active)"
@@ -3535,7 +3570,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
     loggedDirectAudioRecoveryBlocks.clear()
     tunnelingDisabledForAudioCodec = false
     tunnelingDisabledForVideoCodec = false
-    tunnelingDisabledForDecodedTrueHdPcm = false
+    tunnelingDisabledForDecodedPcm = false
     tunnelingDisabledForAudioRecovery = false
     tunnelingDisabledForAssSubtitles = false
     currentTunneledPlayback = false
@@ -3575,6 +3610,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
     videoAspectContainer = null
     surfaceView = null
     subtitleView = null
+    bitmapSubtitleView = null
     assSubtitleView = null
 
     // Remove layout listener synchronously

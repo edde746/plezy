@@ -13,12 +13,14 @@ import '../../focus/input_mode_tracker.dart';
 import '../../focus/key_event_utils.dart';
 import '../../mixins/tab_navigation_mixin.dart';
 import '../../../services/plex_client.dart';
+import '../../media/ids.dart';
 import '../../media/media_backend.dart';
 import '../../media/media_item.dart';
 import '../../media/media_library.dart';
 import '../../media/media_server_client.dart';
 import '../../providers/hidden_libraries_provider.dart';
 import '../../providers/libraries_provider.dart';
+import '../../providers/multi_server_provider.dart';
 import '../../services/settings_service.dart';
 import '../../widgets/settings_builder.dart';
 import '../../utils/app_logger.dart';
@@ -401,6 +403,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
   Widget _buildTabContent(
     LibraryTabType type, {
     required MediaLibrary library,
+    required bool canGroupByFolders,
     required bool isActive,
     required int tabIndex,
   }) {
@@ -417,6 +420,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
       LibraryTabType.browse => LibraryBrowseTab(
         key: _browseTabKey,
         library: library,
+        canGroupByFolders: canGroupByFolders,
         isActive: isActive,
         suppressAutoFocus: suppressAutoFocus,
         onDataLoaded: () => _handleTabDataLoaded(tabIndex),
@@ -1008,6 +1012,12 @@ class _LibrariesScreenState extends State<LibrariesScreen>
     final useTvRecommendedBackdrop = PlatformDetector.isTV() && currentTabType == LibraryTabType.recommended;
     final showBrowseOptionsAction =
         selectedLibrary != null && PlatformDetector.isMobile(context) && currentTabType == LibraryTabType.browse;
+    final canSelectedLibraryGroupByFolders = context.select<MultiServerProvider, bool>((provider) {
+      if (selectedLibrary == null || selectedLibrary.isShared) return false;
+      final serverId = serverIdOrNull(selectedLibrary.serverId);
+      if (serverId == null) return false;
+      return provider.getClientForServer(serverId)?.capabilities.folderGrouping ?? false;
+    });
 
     List<FocusableAction> appBarActions() => [
       if (allLibraries.isNotEmpty)
@@ -1111,6 +1121,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
         final tabContent = _buildTabContent(
           _visibleTabs[index],
           library: selectedLibrary,
+          canGroupByFolders: canSelectedLibraryGroupByFolders,
           isActive: tabController.index == index,
           tabIndex: index,
         );

@@ -262,6 +262,8 @@
     "displaySwitchDelay": "Délai de changement d'affichage",
     "tunneledPlayback": "Lecture tunnelée",
     "tunneledPlaybackDescription": "Utiliser le tunneling vidéo. Désactivez si la lecture HDR affiche un écran noir.",
+    "audioPassthrough": "Audio Pass-Through",
+    "audioPassthroughDescription": "Envoyez l'audio Dolby/DTS vers votre ampli ou téléviseur sans réencodage, en conservant le son surround. Désactivez si vous n'avez aucun son.",
     "dvConversionMode": "Conversion Dolby Vision",
     "dvConversionModeDescription": "Choisissez comment ExoPlayer gère les fichiers Dolby Vision Profile 7.",
     "dvConversionAuto": "Auto",

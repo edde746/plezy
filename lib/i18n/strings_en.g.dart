@@ -917,6 +917,12 @@ class TranslationsSettingsEn {
 	/// en: 'Use video tunneling. Disable if HDR playback shows black video.'
 	String get tunneledPlaybackDescription => 'Use video tunneling. Disable if HDR playback shows black video.';
 
+	/// en: 'Audio Passthrough'
+	String get audioPassthrough => 'Audio Passthrough';
+
+	/// en: 'Send Dolby/DTS audio to your receiver or TV without re-encoding, preserving surround sound. Turn off if you have no sound.'
+	String get audioPassthroughDescription => 'Send Dolby/DTS audio to your receiver or TV without re-encoding, preserving surround sound. Turn off if you have no sound.';
+
 	/// en: 'Dolby Vision Conversion'
 	String get dvConversionMode => 'Dolby Vision Conversion';
 
@@ -5245,6 +5251,8 @@ extension on Translations {
 			'settings.displaySwitchDelay' => 'Display Switch Delay',
 			'settings.tunneledPlayback' => 'Tunneled Playback',
 			'settings.tunneledPlaybackDescription' => 'Use video tunneling. Disable if HDR playback shows black video.',
+			'settings.audioPassthrough' => 'Audio Passthrough',
+			'settings.audioPassthroughDescription' => 'Send Dolby/DTS audio to your receiver or TV without re-encoding, preserving surround sound. Turn off if you have no sound.',
 			'settings.dvConversionMode' => 'Dolby Vision Conversion',
 			'settings.dvConversionModeDescription' => 'Choose how ExoPlayer handles Dolby Vision Profile 7 files.',
 			'settings.dvConversionAuto' => 'Auto',
@@ -5497,10 +5505,10 @@ extension on Translations {
 			'messages.noEpisodesFoundGeneral' => 'No episodes found',
 			'messages.episodesLoadFailed' => 'Couldn\'t load episodes',
 			'messages.noResultsFound' => 'No results found',
-			'messages.sleepTimerSet' => ({required Object label}) => 'Sleep timer set for ${label}',
-			'messages.noItemsAvailable' => 'No items available',
 			_ => null,
 		} ?? switch (path) {
+			'messages.sleepTimerSet' => ({required Object label}) => 'Sleep timer set for ${label}',
+			'messages.noItemsAvailable' => 'No items available',
 			'messages.failedToCreatePlayQueueNoItems' => 'Failed to create play queue - no items',
 			'messages.failedPlayback' => ({required Object action, required Object error}) => 'Failed to ${action}: ${error}',
 			'messages.switchingToCompatiblePlayer' => 'Switching to compatible player...',
@@ -6011,10 +6019,10 @@ extension on Translations {
 			'companionRemote.pairing.discoveryDescription' => 'Plezy devices with the same Plex account appear here',
 			'companionRemote.pairing.hostAddressHint' => '192.168.1.100:48632',
 			'companionRemote.pairing.connecting' => 'Connecting...',
-			'companionRemote.pairing.searchingForDevices' => 'Looking for devices...',
-			'companionRemote.pairing.noDevicesFound' => 'No devices found on your network',
 			_ => null,
 		} ?? switch (path) {
+			'companionRemote.pairing.searchingForDevices' => 'Looking for devices...',
+			'companionRemote.pairing.noDevicesFound' => 'No devices found on your network',
 			'companionRemote.pairing.noDevicesHint' => 'Open Plezy on desktop and use the same WiFi',
 			'companionRemote.pairing.availableDevices' => 'Available Devices',
 			'companionRemote.pairing.manualConnection' => 'Manual Connection',

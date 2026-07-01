@@ -391,6 +391,8 @@ class _TranslationsSettingsPt extends TranslationsSettingsEn {
 	@override String get displaySwitchDelay => 'Atraso na Troca de Tela';
 	@override String get tunneledPlayback => 'Reprodução Tunelizada';
 	@override String get tunneledPlaybackDescription => 'Usar tunelamento de vídeo. Desative se HDR mostrar vídeo preto.';
+	@override String get audioPassthrough => 'Passagem de Áudio';
+	@override String get audioPassthroughDescription => 'Envie áudio Dolby/DTS para o seu receptor ou TV sem recodificar, preservando o som surround. Desative se não tiver som.';
 	@override String get dvConversionMode => 'Conversão Dolby Vision';
 	@override String get dvConversionModeDescription => 'Escolha como o ExoPlayer lida com arquivos Dolby Vision Profile 7.';
 	@override String get dvConversionAuto => 'Automático';
@@ -2178,6 +2180,8 @@ extension on TranslationsPt {
 			'settings.displaySwitchDelay' => 'Atraso na Troca de Tela',
 			'settings.tunneledPlayback' => 'Reprodução Tunelizada',
 			'settings.tunneledPlaybackDescription' => 'Usar tunelamento de vídeo. Desative se HDR mostrar vídeo preto.',
+			'settings.audioPassthrough' => 'Passagem de Áudio',
+			'settings.audioPassthroughDescription' => 'Envie áudio Dolby/DTS para o seu receptor ou TV sem recodificar, preservando o som surround. Desative se não tiver som.',
 			'settings.dvConversionMode' => 'Conversão Dolby Vision',
 			'settings.dvConversionModeDescription' => 'Escolha como o ExoPlayer lida com arquivos Dolby Vision Profile 7.',
 			'settings.dvConversionAuto' => 'Automático',
@@ -2436,10 +2440,10 @@ extension on TranslationsPt {
 			'messages.serverLimitTitle' => 'Falha na reprodução',
 			'messages.serverLimitBody' => 'Erro do servidor (HTTP 500). Um limite de largura de banda/transcodificação provavelmente rejeitou esta sessão. Peça ao dono para ajustar.',
 			'messages.logsUploaded' => 'Logs enviados',
-			'messages.logsUploadFailed' => 'Falha ao enviar logs',
-			'messages.logId' => 'ID do Log',
 			_ => null,
 		} ?? switch (path) {
+			'messages.logsUploadFailed' => 'Falha ao enviar logs',
+			'messages.logId' => 'ID do Log',
 			'subtitlingStyling.text' => 'Texto',
 			'subtitlingStyling.border' => 'Borda',
 			'subtitlingStyling.background' => 'Fundo',
@@ -2950,10 +2954,10 @@ extension on TranslationsPt {
 			'companionRemote.pairing.connectionTimedOut' => 'Conexão expirou. Use a mesma rede nos dois dispositivos.',
 			'companionRemote.pairing.sessionNotFound' => 'Dispositivo não encontrado. Verifique se Plezy está rodando no host.',
 			'companionRemote.pairing.authFailed' => 'Falha na autenticação. Ambos os dispositivos precisam da mesma conta Plex.',
-			'companionRemote.pairing.failedToConnect' => ({required Object error}) => 'Falha ao conectar: ${error}',
-			'companionRemote.remote.disconnectConfirm' => 'Deseja desconectar da sessão remota?',
 			_ => null,
 		} ?? switch (path) {
+			'companionRemote.pairing.failedToConnect' => ({required Object error}) => 'Falha ao conectar: ${error}',
+			'companionRemote.remote.disconnectConfirm' => 'Deseja desconectar da sessão remota?',
 			'companionRemote.remote.reconnecting' => 'Reconectando...',
 			'companionRemote.remote.attemptOf' => ({required Object current}) => 'Tentativa ${current} de 5',
 			'companionRemote.remote.retryNow' => 'Tentar Agora',

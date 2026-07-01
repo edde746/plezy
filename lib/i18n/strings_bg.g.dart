@@ -391,6 +391,8 @@ class _TranslationsSettingsBg extends TranslationsSettingsEn {
 	@override String get displaySwitchDelay => 'Забавяне при смяна на дисплея';
 	@override String get tunneledPlayback => 'Тунелно възпроизвеждане';
 	@override String get tunneledPlaybackDescription => 'Използвай видео тунелиране. Изключете, ако HDR възпроизвеждането показва черен екран.';
+	@override String get audioPassthrough => 'Аудио passthrough';
+	@override String get audioPassthroughDescription => 'Изпращай Dolby/DTS звук към ресийвъра или телевизора без прекодиране, запазвайки съраунд звука. Изключете, ако няма звук.';
 	@override String get dvConversionMode => 'Dolby Vision конвертиране';
 	@override String get dvConversionModeDescription => 'Изберете как ExoPlayer обработва Dolby Vision Profile 7 файлове.';
 	@override String get dvConversionAuto => 'Автоматично';
@@ -2178,6 +2180,8 @@ extension on TranslationsBg {
 			'settings.displaySwitchDelay' => 'Забавяне при смяна на дисплея',
 			'settings.tunneledPlayback' => 'Тунелно възпроизвеждане',
 			'settings.tunneledPlaybackDescription' => 'Използвай видео тунелиране. Изключете, ако HDR възпроизвеждането показва черен екран.',
+			'settings.audioPassthrough' => 'Аудио passthrough',
+			'settings.audioPassthroughDescription' => 'Изпращай Dolby/DTS звук към ресийвъра или телевизора без прекодиране, запазвайки съраунд звука. Изключете, ако няма звук.',
 			'settings.dvConversionMode' => 'Dolby Vision конвертиране',
 			'settings.dvConversionModeDescription' => 'Изберете как ExoPlayer обработва Dolby Vision Profile 7 файлове.',
 			'settings.dvConversionAuto' => 'Автоматично',
@@ -2436,10 +2440,10 @@ extension on TranslationsBg {
 			'messages.serverLimitTitle' => 'Възпроизвеждането е неуспешно',
 			'messages.serverLimitBody' => 'Грешка на сървъра (HTTP 500). Вероятно лимит за пропускателна способност/транскодиране е отхвърлил тази сесия. Помолете собственика да го коригира.',
 			'messages.logsUploaded' => 'Логовете са качени',
-			'messages.logsUploadFailed' => 'Неуспешно качване на логовете',
-			'messages.logId' => 'ID на лога',
 			_ => null,
 		} ?? switch (path) {
+			'messages.logsUploadFailed' => 'Неуспешно качване на логовете',
+			'messages.logId' => 'ID на лога',
 			'subtitlingStyling.text' => 'Текст',
 			'subtitlingStyling.border' => 'Рамка',
 			'subtitlingStyling.background' => 'Фон',
@@ -2950,10 +2954,10 @@ extension on TranslationsBg {
 			'companionRemote.pairing.connectionTimedOut' => 'Връзката изтече. Използвайте една и съща мрежа на двете устройства.',
 			'companionRemote.pairing.sessionNotFound' => 'Устройството не е намерено. Уверете се, че Plezy работи на хоста.',
 			'companionRemote.pairing.authFailed' => 'Удостоверяването е неуспешно. Двете устройства трябва да използват същия Plex акаунт.',
-			'companionRemote.pairing.failedToConnect' => ({required Object error}) => 'Неуспешно свързване: ${error}',
-			'companionRemote.remote.disconnectConfirm' => 'Искате ли да прекъснете връзката с дистанционната сесия?',
 			_ => null,
 		} ?? switch (path) {
+			'companionRemote.pairing.failedToConnect' => ({required Object error}) => 'Неуспешно свързване: ${error}',
+			'companionRemote.remote.disconnectConfirm' => 'Искате ли да прекъснете връзката с дистанционната сесия?',
 			'companionRemote.remote.reconnecting' => 'Повторно свързване...',
 			'companionRemote.remote.attemptOf' => ({required Object current}) => 'Опит ${current} от 5',
 			'companionRemote.remote.retryNow' => 'Опитай сега',
