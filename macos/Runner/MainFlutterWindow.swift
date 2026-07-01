@@ -3,6 +3,10 @@ import FlutterMacOS
 
 class MainFlutterWindow: NSWindow {
   override func awakeFromNib() {
+    // Sync Impeller/Skia plist setting before Flutter engine starts.
+    let useSkia = UserDefaults.standard.bool(forKey: "flutter.use_skia_renderer")
+    WindowUtilsPlugin.updateImpellerPlist(enabled: !useSkia)
+
     let flutterViewController = FlutterViewController()
 
     // Keep the window itself opaque so WindowServer does not have to blend the

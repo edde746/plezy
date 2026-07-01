@@ -53,6 +53,8 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
         if (Platform.isAndroid) _playerBackendSelector(),
         if (PlatformDetector.supportsExternalPlayers()) _externalPlayerTile(),
         _hardwareDecodingTile(),
+        if (Platform.isMacOS) _macosVideoOutputTile(),
+        if (Platform.isMacOS) _useSkiaRendererTile(),
         if (PlatformDetector.supportsPictureInPicture()) _autoPipTile(),
         if (Platform.isAndroid) _matchContentFrameRateTile(),
         if (Platform.isWindows) _matchRefreshRateTile(),
@@ -246,6 +248,25 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
     icon: Symbols.hardware_rounded,
     title: t.settings.hardwareDecoding,
     subtitle: t.settings.hardwareDecodingDescription,
+  );
+
+  Widget _macosVideoOutputTile() => SettingSelectionTile<MacosVideoOutput, MacosVideoOutput>(
+    pref: SettingsService.macosVideoOutput,
+    icon: Symbols.display_settings_rounded,
+    title: 'Renderer Pipeline',
+    subtitleBuilder: (mode) => '${mode.displayLabel} · ${mode.description}',
+    options: MacosVideoOutput.values
+        .map((m) => DialogOption(value: m, title: '${m.displayLabel}\n${m.description}'))
+        .toList(),
+    decode: (m) => m,
+    encode: (m) => m,
+  );
+
+  Widget _useSkiaRendererTile() => SettingSwitchTile(
+    pref: SettingsService.useSkiaRenderer,
+    icon: Symbols.brush_rounded,
+    title: 'Use Skia Renderer',
+    subtitle: 'Use Skia instead of Impeller (Metal). May reduce idle CPU/GPU usage. Requires app restart.',
   );
 
   Widget _autoPipTile() => SettingSwitchTile(

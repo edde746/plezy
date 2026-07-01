@@ -76,7 +76,7 @@ class MpvPlayerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler, MpvPluginS
   func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
     switch call.method {
     case "initialize":
-      handleInitialize(result: result)
+      handleInitialize(call: call, result: result)
 
     case "dispose":
       handleDispose(result: result)
@@ -219,7 +219,12 @@ class MpvPlayerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler, MpvPluginS
 
   // MARK: - Platform-Specific Method Handlers
 
-  private func handleInitialize(result: @escaping FlutterResult) {
+  private func handleInitialize(call: FlutterMethodCall, result: @escaping FlutterResult) {
+    let args = call.arguments as? [String: Any]
+    let vo = args?["vo"] as? String
+    let gpuApi = args?["gpuApi"] as? String
+    let gpuContext = args?["gpuContext"] as? String
+
     DispatchQueue.main.async { [weak self] in
       guard let self = self else {
         result(FlutterError(code: "ERROR", message: "Plugin deallocated", details: nil))
@@ -245,6 +250,9 @@ class MpvPlayerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler, MpvPluginS
       // Create and initialize player core
       let core = MpvPlayerCore()
       core.delegate = self
+      core.rendererOverrideVo = vo
+      core.rendererOverrideGpuApi = gpuApi
+      core.rendererOverrideGpuContext = gpuContext
 
       guard core.initialize(in: window) else {
         print("[MpvPlayerPlugin] Failed to initialize MPV")

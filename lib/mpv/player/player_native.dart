@@ -13,6 +13,11 @@ class PlayerNative extends PlayerBase {
   String _dvConversionMode = 'auto';
   String _dvConversionLog = 'no';
 
+  /// macOS renderer overrides: 'vo', 'gpuApi', 'gpuContext'.
+  final Map<String, String>? rendererConfig;
+
+  PlayerNative({this.rendererConfig});
+
   @override
   int? get textureId => _textureIdValue;
 
@@ -122,7 +127,7 @@ class PlayerNative extends PlayerBase {
 
   Future<void> _doInitialize() async {
     try {
-      final result = await invoke<Object>('initialize');
+      final result = await invoke<Object>('initialize', rendererConfig);
       final bool ok;
       if (result is int) {
         // Linux: initialize returns the texture ID

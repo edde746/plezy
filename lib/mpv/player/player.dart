@@ -347,7 +347,9 @@ abstract class Player {
   /// On Android, pass [useExoPlayer] to override the default:
   /// - true: Use ExoPlayer (default, better hardware support)
   /// - false: Use MPV (more features, ASS subtitle rendering)
-  factory Player({bool? useExoPlayer}) {
+  ///
+  /// [rendererConfig] overrides mpv renderer properties (macOS only).
+  factory Player({bool? useExoPlayer, Map<String, String>? rendererConfig}) {
     if (Platform.isAndroid) {
       // Default to ExoPlayer on Android, with MPV as fallback
       // The caller should pass useExoPlayer based on SettingsService.getUseExoPlayer()
@@ -358,7 +360,7 @@ abstract class Player {
       return PlayerNative(); // MPV fallback
     }
     if (Platform.isMacOS || Platform.isIOS) {
-      return PlayerNative();
+      return PlayerNative(rendererConfig: rendererConfig);
     }
     if (Platform.isWindows) {
       return PlayerWindows();
