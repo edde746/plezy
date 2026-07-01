@@ -68,6 +68,27 @@ void main() {
       client.dispose();
     });
 
+    test('search percent-encodes the query with %20 (not +) and escapes reserved chars', () async {
+      Uri? observedUrl;
+      final client = _buildClient(
+        _conn(cookie: 'abc123'),
+        onSessionInvalidated: () => fail('should not invalidate'),
+        handler: (req) async {
+          observedUrl = req.url;
+          return _json(200, {'page': 1, 'totalPages': 1, 'totalResults': 0, 'results': []});
+        },
+      );
+      await client.search('star wars & droids');
+      final rawQuery = observedUrl!.query;
+      // Spaces must be %20, never + — TMDB rejects `+` as a reserved character.
+      expect(rawQuery, contains('query=star%20wars%20%26%20droids'));
+      expect(rawQuery, isNot(contains('+')));
+      expect(rawQuery, contains('page=1'));
+      // And it must still round-trip to the original value.
+      expect(observedUrl!.queryParameters['query'], 'star wars & droids');
+      client.dispose();
+    });
+
     test('createRequest for a movie sends mediaType=movie and no seasons key', () async {
       Map<String, dynamic>? observedBody;
       final client = _buildClient(

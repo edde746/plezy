@@ -62,13 +62,21 @@ class SeerrHttpClient {
   Uri _uri(String path, {Map<String, dynamic>? query}) {
     final base = Uri.parse('$baseUrl${SeerrConstants.apiPath}$path');
     if (query == null || query.isEmpty) return base;
-    final stringified = <String, String>{};
+    // Build the query string by hand so spaces encode as `%20` (matching JS
+    // `encodeURIComponent`) rather than `+`. TMDB — which Seerr proxies for
+    // `/search` — rejects a `+` in the `query` value as a reserved character
+    // ("Parameter 'query' must be url encoded"), so `Uri`'s `queryParameters`
+    // encoding (which emits `+` for spaces) cannot be used here.
+    final parts = <String>[
+      for (final entry in base.queryParameters.entries)
+        '${Uri.encodeComponent(entry.key)}=${Uri.encodeComponent(entry.value)}',
+    ];
     for (final entry in query.entries) {
       final v = entry.value;
       if (v == null) continue;
-      stringified[entry.key] = v.toString();
+      parts.add('${Uri.encodeComponent(entry.key)}=${Uri.encodeComponent(v.toString())}');
     }
-    return base.replace(queryParameters: {...base.queryParameters, ...stringified});
+    return base.replace(query: parts.join('&'));
   }
 
   Map<String, String> _headers({Map<String, String>? extra, bool authenticated = true}) {

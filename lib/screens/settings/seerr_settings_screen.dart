@@ -41,7 +41,9 @@ class _SeerrSettingsScreenState extends State<SeerrSettingsScreen> {
   }
 
   void _refresh() {
-    setState(() => _instancesFuture = _load());
+    setState(() {
+      _instancesFuture = _load();
+    });
   }
 
   Future<void> _signOut(SeerrConnection conn) async {
