@@ -4,6 +4,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/foundation.dart' show ValueListenable;
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
@@ -398,6 +399,7 @@ class TvBrowseRailState extends State<TvBrowseRail> {
   final FocusNode _focusNode = FocusNode(debugLabel: 'tv_browse_rail');
   final Map<String, ScrollController> _scrollControllers = {};
   final ScrollController _verticalController = ScrollController();
+  late final ValueNotifier<double> _verticalScrollOffset = ValueNotifier<double>(0.0);
   final Map<int, GlobalKey> _hubSectionKeys = {};
   final Map<String, GlobalKey<MediaCardState>> _mediaCardKeys = {};
   final Map<String, TvBrowseRailLayoutMetrics> _metricsByHub = {};
@@ -463,6 +465,7 @@ class TvBrowseRailState extends State<TvBrowseRail> {
   @override
   void initState() {
     super.initState();
+    _verticalController.addListener(_onVerticalScroll);
     _focusNode.addListener(_handleFocusChange);
     _selectInitialHubIfPossible();
     final selectedInitialItem = _selectInitialItemIfPossible();
@@ -592,6 +595,8 @@ class TvBrowseRailState extends State<TvBrowseRail> {
 
   @override
   void dispose() {
+    _verticalController.removeListener(_onVerticalScroll);
+    _verticalScrollOffset.dispose();
     _longPressTimer?.cancel();
     _selectSuppressionTimer?.cancel();
     _selectSuppressionMaxTimer?.cancel();
@@ -656,6 +661,12 @@ class TvBrowseRailState extends State<TvBrowseRail> {
     final hub = _activeHub;
     if (hub == null) return;
     widget.onActiveHubChanged?.call(hub, _hubIndex);
+  }
+
+  void _onVerticalScroll() {
+    if (_verticalController.hasClients) {
+      _verticalScrollOffset.value = _verticalController.offset;
+    }
   }
 
   bool _selectInitialHubIfPossible() {
@@ -1121,6 +1132,7 @@ class TvBrowseRailState extends State<TvBrowseRail> {
                             interactionExpansion: interactionExpansion,
                             railViewportWidth: railViewportWidth,
                             bottomPadding: bottomPadding,
+                            viewportHeight: viewportHeight,
                           ),
                         ),
                       ),
@@ -1166,6 +1178,7 @@ class TvBrowseRailState extends State<TvBrowseRail> {
     required double interactionExpansion,
     required double railViewportWidth,
     required double bottomPadding,
+    required double viewportHeight,
   }) {
     return ListView.builder(
       key: const ValueKey('tv_browse_rail_vertical'),
@@ -1188,32 +1201,49 @@ class TvBrowseRailState extends State<TvBrowseRail> {
         // below is passed through as a stable child.
         bool isActiveHub() => _focusModel.hubIndex == hubIndex;
 
-        return SizedBox(
-          key: _hubSectionKeys.putIfAbsent(hubIndex, () => GlobalKey()),
-          height: sectionHeight,
-          child: Column(
-            crossAxisAlignment: .stretch,
-            children: [
-              ListenableSelector<bool>(
-                listenable: _focusModel,
-                selector: isActiveHub,
-                builder: (context, isActive, _) =>
-                    _buildHubHeader(context, hub: hub, hubIndex: hubIndex, isActive: isActive, scale: scale),
+        return ValueListenableBuilder<double>(
+          valueListenable: _verticalScrollOffset,
+          builder: (context, scrollOffset, _) {
+            final startOffset = _sectionOffsets[hubIndex];
+            final endOffset = startOffset + sectionHeight;
+            // Safe pre-rendering buffer (1.2 screens above/below)
+            final margin = viewportHeight * 1.2;
+            final isVisible =
+                (endOffset >= scrollOffset - margin) && (startOffset <= scrollOffset + viewportHeight + margin);
+
+            if (!isVisible && !isActiveHub()) {
+              // Vertically culled placeholder
+              return SizedBox(key: _hubSectionKeys.putIfAbsent(hubIndex, () => GlobalKey()), height: sectionHeight);
+            }
+
+            return SizedBox(
+              key: _hubSectionKeys.putIfAbsent(hubIndex, () => GlobalKey()),
+              height: sectionHeight,
+              child: Column(
+                crossAxisAlignment: .stretch,
+                children: [
+                  ListenableSelector<bool>(
+                    listenable: _focusModel,
+                    selector: isActiveHub,
+                    builder: (context, isActive, _) =>
+                        _buildHubHeader(context, hub: hub, hubIndex: hubIndex, isActive: isActive, scale: scale),
+                  ),
+                  SizedBox(height: TvBrowseRailLayout.hubStripGapForScale(scale)),
+                  _buildHubRail(
+                    hub: hub,
+                    hubIndex: hubIndex,
+                    episodePosterMode: modes[hubIndex],
+                    metrics: metrics,
+                    scale: scale,
+                    fullCardLayout: fullCardLayout,
+                    leftOverflow: leftOverflow,
+                    interactionExpansion: interactionExpansion,
+                    railViewportWidth: railViewportWidth,
+                  ),
+                ],
               ),
-              SizedBox(height: TvBrowseRailLayout.hubStripGapForScale(scale)),
-              _buildHubRail(
-                hub: hub,
-                hubIndex: hubIndex,
-                episodePosterMode: modes[hubIndex],
-                metrics: metrics,
-                scale: scale,
-                fullCardLayout: fullCardLayout,
-                leftOverflow: leftOverflow,
-                interactionExpansion: interactionExpansion,
-                railViewportWidth: railViewportWidth,
-              ),
-            ],
-          ),
+            );
+          },
         );
       },
     );
@@ -1389,6 +1419,7 @@ class TvBrowseRailState extends State<TvBrowseRail> {
         clipBehavior: Clip.none,
         addAutomaticKeepAlives: false,
         addSemanticIndexes: false,
+        scrollCacheExtent: const ScrollCacheExtent.pixels(20.0),
         padding: .fromLTRB(metrics.railEdgePadding, 2 * scale, metrics.railEdgePadding, 6 * scale),
         itemExtentBuilder: (itemIndex, _) => TvBrowseRailLayout.itemExtentForIndex(
           hub: hub,

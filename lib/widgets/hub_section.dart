@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:plezy/widgets/app_icon.dart';
 import 'package:material_symbols_icons/symbols.dart';
@@ -507,6 +508,7 @@ class HubSectionState extends State<HubSection> with MountedSetStateMixin {
                           // per-child wrappers shrinks build + semantics work per item.
                           addAutomaticKeepAlives: false,
                           addSemanticIndexes: false,
+                          scrollCacheExtent: const ScrollCacheExtent.pixels(20.0),
                           controller: scrollController,
                           scrollDirection: Axis.horizontal,
                           clipBehavior: Clip.none,

@@ -4,6 +4,7 @@ import 'dart:io';
 
 import 'package:cached_network_image_ce/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 
 import '../navigation/profile_navigation_scope.dart';
 import '../services/image_cache_service.dart';
@@ -4350,6 +4351,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
               builder: (scrollController) => ListView.builder(
                 addAutomaticKeepAlives: false,
                 addSemanticIndexes: false,
+                scrollCacheExtent: const ScrollCacheExtent.pixels(20.0),
                 controller: scrollController,
                 scrollDirection: Axis.horizontal,
                 clipBehavior: Clip.none,
@@ -4445,6 +4447,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
               builder: (scrollController) => ListView.builder(
                 addAutomaticKeepAlives: false,
                 addSemanticIndexes: false,
+                scrollCacheExtent: const ScrollCacheExtent.pixels(20.0),
                 controller: scrollController,
                 scrollDirection: Axis.horizontal,
                 clipBehavior: Clip.none,

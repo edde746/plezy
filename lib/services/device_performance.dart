@@ -103,6 +103,9 @@ class DevicePerformance {
     } else if (isReduced) {
       cache.maximumSize = 400;
       cache.maximumSizeBytes = 48 << 20; // 48MB
+    } else if (PlatformDetector.isTV()) {
+      cache.maximumSize = 500;
+      cache.maximumSizeBytes = 64 << 20; // 64MB - safer for TV box GPU memory
     } else {
       cache.maximumSize = 800;
       cache.maximumSizeBytes = 100 << 20; // 100MB

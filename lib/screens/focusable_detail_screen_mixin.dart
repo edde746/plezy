@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import '../focus/focusable_action_bar.dart';
 import '../focus/input_mode_tracker.dart';
 import '../focus/key_event_utils.dart';
@@ -110,7 +111,13 @@ mixin FocusableDetailScreenMixin<T extends StatefulWidget> on State<T>, GridFocu
         controller: scrollController,
         child: IosStatusBarTapScrollToTop(
           controller: scrollController,
-          child: Scaffold(body: CustomScrollView(primary: true, slivers: slivers)),
+          child: Scaffold(
+            body: CustomScrollView(
+              primary: true,
+              scrollCacheExtent: ScrollCacheExtent.pixels(PlatformDetector.isTV() ? 100.0 : 250.0),
+              slivers: slivers,
+            ),
+          ),
         ),
       ),
     );

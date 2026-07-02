@@ -381,13 +381,18 @@ class MainActivity : FlutterActivity() {
   override fun getFlutterShellArgs(): FlutterShellArgs {
     val args = super.getFlutterShellArgs()
     usingSkia = shouldDisableImpeller()
-    if (usingSkia) args.add("--enable-impeller=false")
+    if (usingSkia) {
+      args.add("--enable-impeller=false")
+    } else {
+      args.add("--enable-impeller=true")
+    }
     return args
   }
 
   private fun shouldDisableImpeller(): Boolean {
-    // Android TV devices — weaker GPUs, less Impeller testing
-    if (isAndroidTvDevice()) return true
+    // Enable Impeller on Android TV devices running Android 11 (API 30) or higher,
+    // as modern TV boxes (like Google Streamer 4K) have good Vulkan drivers.
+    if (isAndroidTvDevice() && Build.VERSION.SDK_INT < Build.VERSION_CODES.R) return true
     if (DeviceQuirks.isEWaste) return true
     // NVIDIA Tegra (Shield TV)
     if (Build.MANUFACTURER.equals("NVIDIA", ignoreCase = true)) return true

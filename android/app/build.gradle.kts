@@ -142,6 +142,8 @@ android {
       val keystorePropertiesFile = rootProject.file("key.properties")
       if (keystorePropertiesFile.exists()) {
         signingConfig = signingConfigs.getByName("release")
+      } else {
+        signingConfig = signingConfigs.getByName("debug")
       }
       // If key.properties doesn't exist, it will use debug signing for CI builds
       ndk {
