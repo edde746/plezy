@@ -15,10 +15,8 @@ protocol MpvPlayerDelegate: AnyObject {
   func onEvent(name: String, data: [String: Any]?)
 }
 
-#if os(macOS)
-  // Workaround for MoltenVK problems that cause flicker.
-  // https://github.com/mpv-player/mpv/pull/13651
-  class MpvMetalLayer: CAMetalLayer {
+  #if os(macOS)
+    class MpvMetalLayer: CAMetalLayer {
     override var drawableSize: CGSize {
       get { super.drawableSize }
       set {
@@ -84,7 +82,7 @@ class MpvPlayerCoreBase: NSObject {
   weak var delegate: MpvPlayerDelegate?
 
   #if os(macOS)
-    var metalLayer: MpvMetalLayer?
+    var metalLayer: CAMetalLayer?
   #else
     var videoLayer: MpvVideoLayer?
   #endif
@@ -336,6 +334,16 @@ class MpvPlayerCoreBase: NSObject {
     }
   }
 
+  #if os(macOS)
+    private func configureMoltenVKPlacementHeaps() {
+      guard let device = MTLCreateSystemDefaultDevice() else { return }
+      let supportsPlacementHeaps = device.supportsFamily(.apple2) || device.supportsFamily(.mac2)
+      if !supportsPlacementHeaps {
+        setenv("MVK_CONFIG_USE_MTLHEAP", "0", 1)
+      }
+    }
+  #endif
+
   func setupMpv() -> Bool {
     #if os(macOS)
       guard let renderLayer = metalLayer else { return false }
@@ -559,9 +567,16 @@ class MpvPlayerCoreBase: NSObject {
 
     setRawStringPropertyAsync(
       "target-colorspace-hint",
-      value: enabled ? "auto" : "no",
+      value: enabled ? "yes" : "no",
       completion: completion ?? { _ in }
     )
+
+    #if os(macOS)
+      setRawStringPropertyAsync("target-prim", value: enabled ? "auto" : "bt.709") { _ in }
+      setRawStringPropertyAsync("target-trc", value: enabled ? "auto" : "bt.1886") { _ in }
+      setRawStringPropertyAsync("tone-mapping", value: "auto") { _ in }
+      setRawStringPropertyAsync("gamut-mapping-mode", value: "auto") { _ in }
+    #endif
 
     DispatchQueue.main.async {
       self.updateEDRMode(sigPeak: sigPeak)
@@ -755,6 +770,11 @@ class MpvPlayerCoreBase: NSObject {
       checkError(mpv_set_option_string(mpv, "gpu-api", "vulkan"))
       checkError(mpv_set_option_string(mpv, "gpu-context", "moltenvk"))
       checkError(mpv_set_option_string(mpv, "hwdec", "videotoolbox"))
+      checkError(mpv_set_option_string(mpv, "tone-mapping", "auto"))
+      checkError(mpv_set_option_string(mpv, "hdr-compute-peak", "auto"))
+      checkError(mpv_set_option_string(mpv, "target-colorspace-hint", "auto"))
+      checkError(mpv_set_option_string(mpv, "target-prim", "auto"))
+      checkError(mpv_set_option_string(mpv, "target-trc", "auto"))
     #else
       checkError(mpv_set_option_string(mpv, "vo", "avfoundation"))
       #if targetEnvironment(simulator)
@@ -770,24 +790,14 @@ class MpvPlayerCoreBase: NSObject {
         checkError(mpv_set_option_string(mpv, "avfoundation-composite-osd", "no"))
         checkError(mpv_set_option_string(mpv, "hwdec", "videotoolbox"))
       #endif
+      checkError(mpv_set_option_string(mpv, "target-colorspace-hint", "auto"))
     #endif
     checkError(mpv_set_option_string(mpv, "hwdec-codecs", "all"))
     checkError(mpv_set_option_string(mpv, "hwdec-software-fallback", "yes"))
-    checkError(mpv_set_option_string(mpv, "target-colorspace-hint", "auto"))
     // Pause on the last frame at EOF instead of unloading the file, so seeking
     // back after the video ends still works (matches Linux/Windows).
     checkError(mpv_set_option_string(mpv, "keep-open", "yes"))
   }
-
-  #if os(macOS)
-    private func configureMoltenVKPlacementHeaps() {
-      guard let device = MTLCreateSystemDefaultDevice() else { return }
-      let supportsPlacementHeaps = device.supportsFamily(.apple2) || device.supportsFamily(.mac2)
-      if !supportsPlacementHeaps {
-        setenv("MVK_CONFIG_USE_MTLHEAP", "0", 1)
-      }
-    }
-  #endif
 
   private func isManagedRendererProperty(_ name: String) -> Bool {
     name == "vo" || name == "wid" || name == "gpu-api" || name == "gpu-context"
@@ -981,7 +991,9 @@ class MpvPlayerCoreBase: NSObject {
       print("[MpvPlayerCore] MPV shutdown event")
 
     case MPV_EVENT_PLAYBACK_RESTART:
+      let sigPeak = lastSigPeak
       DispatchQueue.main.async {
+        self.updateEDRMode(sigPeak: sigPeak)
         self.delegate?.onEvent(name: "playback-restart", data: nil)
       }
 
