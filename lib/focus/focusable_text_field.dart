@@ -26,6 +26,30 @@ enum TvKeyboardAutoOpenBehavior {
   never,
 }
 
+/// Imperative handle to the TV on-screen keyboard of a [FocusableTextField] /
+/// [FocusableTextFormField]. Pass the same instance to the field's
+/// `tvKeyboardController`; the field's host attaches itself on mount.
+///
+/// Only meaningful on TV. On other platforms the OSK never exists, so every
+/// method is an effective no-op.
+class TvKeyboardController {
+  _FocusableTextInputHostState? _host;
+
+  void _attach(_FocusableTextInputHostState host) => _host = host;
+  void _detach(_FocusableTextInputHostState host) {
+    if (identical(_host, host)) _host = null;
+  }
+
+  /// Dismiss the OSK if it is open (and prevent it from auto-reopening while
+  /// the field keeps focus). No-op when nothing is open.
+  void closeKeyboard() => _host?._dismissTvKeyboard();
+
+  /// Focus the field but do NOT open the OSK for this focus entry. Used as a
+  /// fallback landing spot (e.g. a remote search that returned no results) so
+  /// the remote isn't stranded on an off-screen element.
+  void focusInputWithoutKeyboard() => _host?._focusWithoutKeyboard();
+}
+
 String _describeTextInputKey(KeyEvent event) {
   return 'type=${event.runtimeType} logical=${event.logicalKey.keyLabel}/${event.logicalKey.keyId} '
       'physical=${event.physicalKey.usbHidUsage} deviceType=${event.deviceType} character=${event.character}';
@@ -527,6 +551,7 @@ abstract class _FocusableTextInputBase extends StatelessWidget {
   final bool enabled;
   final bool enableTvKeyboard;
   final TvKeyboardAutoOpenBehavior tvKeyboardAutoOpenBehavior;
+  final TvKeyboardController? tvKeyboardController;
   final bool obscureText;
   final bool autocorrect;
   final bool enableSuggestions;
@@ -560,6 +585,7 @@ abstract class _FocusableTextInputBase extends StatelessWidget {
     this.enabled = true,
     this.enableTvKeyboard = true,
     this.tvKeyboardAutoOpenBehavior = TvKeyboardAutoOpenBehavior.onFocus,
+    this.tvKeyboardController,
     this.obscureText = false,
     this.autocorrect = true,
     this.enableSuggestions = true,
@@ -659,8 +685,18 @@ class _FocusableTextInputHostState extends State<_FocusableTextInputHost> {
       widget.input.focusNode ?? (_ownedFocusNode ??= FocusNode(debugLabel: 'FocusableTextInput'));
 
   @override
+  void initState() {
+    super.initState();
+    widget.input.tvKeyboardController?._attach(this);
+  }
+
+  @override
   void didUpdateWidget(_FocusableTextInputHost oldWidget) {
     super.didUpdateWidget(oldWidget);
+    if (!identical(oldWidget.input.tvKeyboardController, widget.input.tvKeyboardController)) {
+      oldWidget.input.tvKeyboardController?._detach(this);
+      widget.input.tvKeyboardController?._attach(this);
+    }
     if (oldWidget.input.focusNode != widget.input.focusNode) {
       // An open keyboard dialog intentionally survives rebuilds and focusNode
       // swaps; it is closed only when this host unmounts — see dispose.
@@ -675,6 +711,7 @@ class _FocusableTextInputHostState extends State<_FocusableTextInputHost> {
 
   @override
   void dispose() {
+    widget.input.tvKeyboardController?._detach(this);
     _restoreInstalledHandler();
     // The keyboard is a navigator route — it must not outlive the field that
     // opened it (e.g. a form section swapped out while the keyboard is up).
@@ -818,6 +855,28 @@ class _FocusableTextInputHostState extends State<_FocusableTextInputHost> {
     );
   }
 
+  /// Dismiss an open OSK imperatively (e.g. a companion-remote search that must
+  /// show results instead of the keyboard). Suppresses auto-reopen so a field
+  /// that regains focus when the dialog route pops does not relaunch it.
+  void _dismissTvKeyboard() {
+    // No-op when nothing is up: setting the suppress flag here (with no
+    // compensating unfocus to clear it) would block a later legitimate
+    // auto-open when the user deliberately focuses the field.
+    if (!_tvKeyboardOpen && !_tvKeyboardOpenScheduled) return;
+    _tvKeyboardOpenScheduled = false;
+    _suppressTvKeyboardAutoOpen = true;
+    _tvKeyboardHandle?.close();
+  }
+
+  /// Focus the field without opening the OSK for this focus entry. Suppress is
+  /// set BEFORE requestFocus so the resulting focus-change sync already sees it;
+  /// the flag persists for this focus and resets on the next unfocus.
+  void _focusWithoutKeyboard() {
+    _suppressTvKeyboardAutoOpen = true;
+    _tvKeyboardOpenScheduled = false;
+    (_installedFocusNode ?? _effectiveFocusNode).requestFocus();
+  }
+
   void _setNativeTextInputFocused(bool focused) {
     if (_reportedNativeTextInputFocused == focused) {
       _logTvTextInput('Host.setNativeTextInputFocused no-op focused=$focused');
@@ -907,6 +966,7 @@ class FocusableTextField extends _FocusableTextInputBase {
     super.enabled,
     super.enableTvKeyboard,
     super.tvKeyboardAutoOpenBehavior,
+    super.tvKeyboardController,
     super.obscureText,
     super.autocorrect,
     super.enableSuggestions,
@@ -983,6 +1043,7 @@ class FocusableTextFormField extends _FocusableTextInputBase {
     super.enabled,
     super.enableTvKeyboard,
     super.tvKeyboardAutoOpenBehavior,
+    super.tvKeyboardController,
     super.obscureText,
     super.autocorrect,
     super.enableSuggestions,

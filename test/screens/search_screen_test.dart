@@ -105,9 +105,59 @@ void main() {
     expect(find.byKey(const Key('tv_virtual_keyboard_panel')), findsNothing);
     expect(FocusManager.instance.primaryFocus?.debugLabel, 'SearchFirstResult');
   });
+
+  testWidgets('companion-remote submitSearchQuery dismisses an open OSK and focuses results', (tester) async {
+    final (client, key) = await _pumpTvSearchScreen(tester);
+    await tester.pumpAndSettle();
+    // The search screen autofocuses its input on TV, so the OSK is already up —
+    // this is exactly the "keyboard already open when the remote search
+    // arrives" flow (a common way to hit the stuck-keyboard bug).
+    expect(find.byKey(const Key('tv_virtual_keyboard_panel')), findsOneWidget);
+
+    (key.currentState! as SearchInputFocusable).submitSearchQuery('movie');
+    await tester.pumpAndSettle();
+
+    expect(client.queries, ['movie']);
+    expect(find.text('Movie 1'), findsOneWidget);
+    // The OSK is dismissed (and does not auto-reopen), focus lands on results.
+    expect(find.byKey(const Key('tv_virtual_keyboard_panel')), findsNothing);
+    expect(FocusManager.instance.primaryFocus?.debugLabel, 'SearchFirstResult');
+
+    // Stays closed on subsequent frames.
+    await tester.pump(const Duration(milliseconds: 200));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('tv_virtual_keyboard_panel')), findsNothing);
+
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
+
+  testWidgets('companion-remote submitSearchQuery with no results focuses the input without the OSK', (tester) async {
+    final (client, key) = await _pumpTvSearchScreen(tester, items: []);
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('tv_virtual_keyboard_panel')), findsOneWidget);
+
+    (key.currentState! as SearchInputFocusable).submitSearchQuery('zzz');
+    await tester.pumpAndSettle();
+
+    expect(client.queries, ['zzz']);
+    // No results: the OSK is dismissed and the input is refocused WITHOUT
+    // reopening the keyboard, so the remote isn't stranded.
+    expect(find.byKey(const Key('tv_virtual_keyboard_panel')), findsNothing);
+    expect(FocusManager.instance.primaryFocus?.debugLabel, 'SearchInput');
+
+    // Does not auto-reopen while the input keeps focus.
+    await tester.pump(const Duration(milliseconds: 200));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('tv_virtual_keyboard_panel')), findsNothing);
+
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
 }
 
-Future<(_FakeMediaServerClient, GlobalKey<State<SearchScreen>>)> _pumpTvSearchScreen(WidgetTester tester) async {
+Future<(_FakeMediaServerClient, GlobalKey<State<SearchScreen>>)> _pumpTvSearchScreen(
+  WidgetTester tester, {
+  List<MediaItem>? items,
+}) async {
   TvDetectionService.debugSetAppleTVOverride(null);
   await TvDetectionService.getInstance(forceTv: true);
   TvDetectionService.setForceTVSync(true);
@@ -119,16 +169,18 @@ Future<(_FakeMediaServerClient, GlobalKey<State<SearchScreen>>)> _pumpTvSearchSc
   });
 
   final client = _FakeMediaServerClient(
-    items: [
-      MediaItem(
-        id: 'movie_1',
-        backend: MediaBackend.plex,
-        kind: MediaKind.movie,
-        title: 'Movie 1',
-        serverId: 'server_1',
-        serverName: 'Server',
-      ),
-    ],
+    items:
+        items ??
+        [
+          MediaItem(
+            id: 'movie_1',
+            backend: MediaBackend.plex,
+            kind: MediaKind.movie,
+            title: 'Movie 1',
+            serverId: 'server_1',
+            serverName: 'Server',
+          ),
+        ],
   );
   final manager = MultiServerManager()..debugRegisterClientForTesting(client);
   final provider = MultiServerProvider(manager, DataAggregationService(manager));

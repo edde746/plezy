@@ -17,6 +17,7 @@ class _RefreshProbeState extends State<_RefreshProbe>
   int focusActiveTabCalls = 0;
   int focusSearchInputCalls = 0;
   String? lastSearchQuery;
+  String? lastSubmittedQuery;
   String? lastLibraryKey;
 
   @override
@@ -39,6 +40,9 @@ class _RefreshProbeState extends State<_RefreshProbe>
 
   @override
   void setSearchQuery(String query) => lastSearchQuery = query;
+
+  @override
+  void submitSearchQuery(String query) => lastSubmittedQuery = query;
 
   @override
   void loadLibraryByKey(String libraryGlobalKey) => lastLibraryKey = libraryGlobalKey;
@@ -182,6 +186,16 @@ void main() {
 
       state.setSearchQuery('');
       expect(state.lastSearchQuery, '');
+    });
+
+    testWidgets('submitSearchQuery() forwards the query argument', (tester) async {
+      late _RefreshProbeState state;
+      await tester.pumpWidget(_RefreshProbe(onState: (s) => state = s));
+
+      if (state case final SearchInputFocusable s) {
+        s.submitSearchQuery('movie');
+      }
+      expect(state.lastSubmittedQuery, 'movie');
     });
   });
 

@@ -791,11 +791,15 @@ class _MainScreenState extends State<MainScreen>
     receiver.onTabSettings = () => _selectTab(NavigationTabId.settings);
     receiver.onHome = () => _selectTab(NavigationTabId.discover);
     receiver.onSearchAction = (query) {
-      _selectTab(NavigationTabId.search);
-      if (query != null && query.isNotEmpty) {
+      final trimmed = query?.trim() ?? '';
+      final hasQuery = trimmed.isNotEmpty;
+      // With a query, don't focus the input (which would auto-open the TV
+      // keyboard); submitSearchQuery runs the search and focuses results.
+      _selectTab(NavigationTabId.search, focusSearchInput: !hasQuery);
+      if (hasQuery) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (_searchKey.currentState case final SearchInputFocusable searchable) {
-            searchable.setSearchQuery(query);
+            searchable.submitSearchQuery(trimmed);
           }
         });
       }
@@ -1387,7 +1391,7 @@ class _MainScreenState extends State<MainScreen>
     }
   }
 
-  void _selectTab(NavigationTabId tab) {
+  void _selectTab(NavigationTabId tab, {bool focusSearchInput = true}) {
     // Guard: ignore if tab isn't available in current mode
     if (!_getVisibleTabs(_isOffline).any((t) => t.id == tab)) return;
 
@@ -1418,7 +1422,10 @@ class _MainScreenState extends State<MainScreen>
       // Back-to-home keeps the sidebar focused (chain: content → sidebar →
       // home → exit); stealing focus here left _isSidebarFocused stuck true
       // while real focus sat on a content card (#1411).
-      if (!_isSidebarFocused) {
+      // A companion-remote search (focusSearchInput: false) must NOT focus the
+      // search input, since focusing it auto-opens the on-screen keyboard; the
+      // query submit focuses results instead.
+      if (!_isSidebarFocused && !(tab == NavigationTabId.search && !focusSearchInput)) {
         if (newState case final FocusableTab focusable) {
           focusable.focusActiveTabIfReady();
         }
@@ -1430,8 +1437,10 @@ class _MainScreenState extends State<MainScreen>
       _onDiscoverBecameVisible();
     }
 
-    // Focus search input after rebuild so IndexedStack has made it visible
-    if (tab == NavigationTabId.search) {
+    // Focus search input after rebuild so IndexedStack has made it visible.
+    // Skipped for a companion-remote search (focusSearchInput: false), whose
+    // submit runs the search and focuses results without opening the keyboard.
+    if (tab == NavigationTabId.search && focusSearchInput) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (_searchKey.currentState case final SearchInputFocusable searchable) {
           searchable.focusSearchInput();

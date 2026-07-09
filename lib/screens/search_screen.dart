@@ -46,6 +46,11 @@ class _SearchScreenState extends State<SearchScreen>
   late final Debounce _searchDebounce;
   String _lastSearchedQuery = '';
   String? _focusResultsForQuery;
+  final _tvKeyboardController = TvKeyboardController();
+  // True while a companion-remote submit is awaiting results; drives the
+  // no-results focus fallback so the remote isn't stranded (see
+  // [_maybeFocusResultsAfterSubmit]).
+  bool _remoteSubmitPending = false;
 
   @override
   void initState() {
@@ -72,6 +77,7 @@ class _SearchScreenState extends State<SearchScreen>
     if (query.trim().isEmpty) {
       _searchDebounce.cancel();
       _focusResultsForQuery = null;
+      _remoteSubmitPending = false;
       setStateIfMounted(() {
         _searchResults = [];
         _hasSearched = false;
@@ -124,6 +130,7 @@ class _SearchScreenState extends State<SearchScreen>
       }
     } catch (e) {
       _focusResultsForQuery = null;
+      _remoteSubmitPending = false;
       if (mounted) {
         setStateIfMounted(() {
           _isSearching = false;
@@ -156,8 +163,16 @@ class _SearchScreenState extends State<SearchScreen>
   void _maybeFocusResultsAfterSubmit(String query, List<MediaItem> results) {
     if (_focusResultsForQuery == null || _focusResultsForQuery != query.trim()) return;
     _focusResultsForQuery = null;
-    if (results.isEmpty) return;
+    final focusInputWhenEmpty = _remoteSubmitPending;
+    _remoteSubmitPending = false;
     if (_searchController.text.trim() != query.trim()) return; // user kept editing
+    if (results.isEmpty) {
+      // A remote submit with no matches: land focus back on the (visible,
+      // query-filled) input without reopening the OSK, so the remote isn't
+      // stranded on the now-hidden previous tab.
+      if (focusInputWhenEmpty) _tvKeyboardController.focusInputWithoutKeyboard();
+      return;
+    }
     FocusUtils.requestFocusAfterBuild(this, _firstResultFocusNode);
   }
 
@@ -182,11 +197,49 @@ class _SearchScreenState extends State<SearchScreen>
     _searchFocusNode.requestFocus();
   }
 
-  /// Set the search query externally (e.g. from companion remote)
+  /// Set the search query text only (debounced search runs via the controller
+  /// listener; the field stays focused). For a completed remote submit use
+  /// [submitSearchQuery], which also focuses results and closes the OSK.
   @override
   void setSearchQuery(String query) {
     if (!mounted) return;
     _searchController.text = query;
+  }
+
+  /// Apply a complete query submitted from the Plezy companion remote: set the
+  /// text, dismiss any open on-screen keyboard, run the search now, and focus
+  /// the results when they land — never opening or re-opening the OSK (the user
+  /// already typed the query on their phone).
+  @override
+  void submitSearchQuery(String query) {
+    if (!mounted) return;
+    final trimmed = query.trim();
+    _searchController.text = trimmed;
+
+    // Focusing the field would auto-open the OSK; a remote search must not.
+    _tvKeyboardController.closeKeyboard();
+
+    if (trimmed.isEmpty) {
+      _focusResultsForQuery = null;
+      _remoteSubmitPending = false;
+      return;
+    }
+
+    // Results already match this exact query → jump straight to them.
+    if (_searchResults.isNotEmpty && !_isSearching && trimmed == _lastSearchedQuery.trim()) {
+      _remoteSubmitPending = false;
+      FocusUtils.requestFocusAfterBuild(this, _firstResultFocusNode);
+      return;
+    }
+
+    // Otherwise run now; results (or the empty-state fallback) take focus when
+    // the search lands, via _maybeFocusResultsAfterSubmit.
+    _focusResultsForQuery = trimmed;
+    _remoteSubmitPending = true;
+    if (_searchDebounce.isPending || !_isSearching) {
+      _searchDebounce.cancel();
+      _performSearch(trimmed);
+    }
   }
 
   // Public method to fully reload all content (for profile switches)
@@ -197,6 +250,7 @@ class _SearchScreenState extends State<SearchScreen>
     // Clear search results and search text for new profile
     _searchController.clear();
     _focusResultsForQuery = null;
+    _remoteSubmitPending = false;
     setStateIfMounted(() {
       _searchResults.clear();
       _isSearching = false;
@@ -262,6 +316,7 @@ class _SearchScreenState extends State<SearchScreen>
                 child: FocusableTextField(
                   controller: _searchController,
                   focusNode: _searchFocusNode,
+                  tvKeyboardController: _tvKeyboardController,
                   textInputAction: TextInputAction.search,
                   onNavigateLeft: _navigateToSidebar,
                   onNavigateDown: _searchResults.isNotEmpty && !_isSearching
