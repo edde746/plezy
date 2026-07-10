@@ -5,6 +5,7 @@ import '../../../media/media_library.dart';
 import '../../../utils/app_logger.dart';
 import '../../../mixins/library_tab_state.dart';
 import '../../../mixins/refreshable.dart';
+import '../../../widgets/app_refresh_indicator.dart';
 import '../content_state_builder.dart';
 
 /// Base class for library tab screens that provides common state management
@@ -268,7 +269,7 @@ abstract class BaseLibraryTabState<T, W extends BaseLibraryTab<T>> extends State
       emptyIcon: emptyIcon,
       emptyMessage: emptyMessage,
       onRetry: loadItems,
-      builder: (items) => RefreshIndicator(onRefresh: loadItems, child: buildContent(items)),
+      builder: (items) => AppRefreshIndicator(onRefresh: loadItems, child: buildContent(items)),
     );
   }
 }
