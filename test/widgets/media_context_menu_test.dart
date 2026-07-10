@@ -28,6 +28,7 @@ import 'package:plezy/metadata_edit/metadata_edit_adapters.dart';
 import 'package:plezy/models/plex/plex_home_user.dart';
 import 'package:plezy/models/plex/plex_config.dart';
 import 'package:plezy/models/catalog/catalog_item.dart';
+import 'package:plezy/models/seerr/seerr_session.dart';
 import 'package:plezy/profiles/profile.dart';
 import 'package:plezy/profiles/active_profile_provider.dart';
 import 'package:plezy/providers/download_provider.dart';
@@ -39,6 +40,7 @@ import 'package:plezy/screens/music/album_detail_screen.dart';
 import 'package:plezy/screens/music/artist_detail_screen.dart';
 import 'package:plezy/services/download_manager_service.dart';
 import 'package:plezy/services/download_storage_service.dart';
+import 'package:plezy/services/catalog/seerr_catalog_source.dart';
 import 'package:plezy/services/jellyfin_client.dart';
 import 'package:plezy/services/jellyfin_api_cache.dart';
 import 'package:plezy/services/music/music_playback_service.dart';
@@ -48,6 +50,8 @@ import 'package:plezy/services/settings_service.dart';
 import 'package:plezy/services/catalog/catalog_source.dart';
 import 'package:plezy/utils/deletion_notifier.dart';
 import 'package:plezy/utils/external_ids.dart';
+import 'package:plezy/services/seerr/seerr_client.dart';
+import 'package:plezy/services/seerr/seerr_constants.dart';
 import 'package:plezy/theme/mono_theme.dart';
 import 'package:plezy/utils/media_server_http_client.dart';
 import 'package:plezy/utils/media_server_timeouts.dart';
@@ -674,6 +678,86 @@ void main() {
       expect(supportsMetadataEdit(client, MediaKind.movie), isTrue);
       expect(supportsMetadataEdit(client, MediaKind.show), isTrue);
       expect(supportsMetadataEdit(client, MediaKind.track), isFalse);
+    });
+  });
+
+  group('isSeerrRequestVisible', () {
+    test('hidden when Seerr is missing, the kind is unsupported, or permission is absent', () {
+      final tvOnly = _seerrSourceWithPermissions(SeerrPermission.requestTv);
+
+      expect(
+        isSeerrRequestVisible(
+          seerrSource: null,
+          itemBackend: MediaBackend.plex,
+          kind: MediaKind.movie,
+          mediaVersions: null,
+        ),
+        isFalse,
+      );
+      expect(
+        isSeerrRequestVisible(
+          seerrSource: tvOnly,
+          itemBackend: MediaBackend.plex,
+          kind: MediaKind.season,
+          mediaVersions: null,
+        ),
+        isFalse,
+      );
+      expect(
+        isSeerrRequestVisible(
+          seerrSource: tvOnly,
+          itemBackend: MediaBackend.plex,
+          kind: MediaKind.movie,
+          mediaVersions: null,
+        ),
+        isFalse,
+      );
+    });
+
+    test('Plex movies gated on having no file; shows always offered', () {
+      final source = _seerrSourceWithPermissions(SeerrPermission.request);
+
+      expect(
+        isSeerrRequestVisible(
+          seerrSource: source,
+          itemBackend: MediaBackend.plex,
+          kind: MediaKind.movie,
+          mediaVersions: null,
+        ),
+        isTrue,
+      );
+      expect(
+        isSeerrRequestVisible(
+          seerrSource: source,
+          itemBackend: MediaBackend.plex,
+          kind: MediaKind.movie,
+          mediaVersions: const [MediaVersion(id: 'v1')],
+        ),
+        isFalse,
+      );
+      expect(
+        isSeerrRequestVisible(
+          seerrSource: source,
+          itemBackend: MediaBackend.plex,
+          kind: MediaKind.show,
+          mediaVersions: null,
+        ),
+        isTrue,
+      );
+    });
+
+    test('Jellyfin movie stays offered without version data (browse listing omits MediaSources)', () {
+      final source = _seerrSourceWithPermissions(SeerrPermission.request);
+
+      expect(
+        isSeerrRequestVisible(
+          seerrSource: source,
+          itemBackend: MediaBackend.jellyfin,
+          kind: MediaKind.movie,
+          mediaVersions: null,
+        ),
+        isTrue,
+      );
     });
   });
 
@@ -1932,6 +2016,31 @@ Future<void> _selectSiblingMusicMenuAction(
   await tester.pumpAndSettle();
   await tester.tap(find.text(actionLabel));
   await tester.pumpAndSettle();
+}
+
+SeerrCatalogSource _seerrSourceWithPermissions(int permissions) {
+  final client = SeerrClient(
+    SeerrSession(
+      baseUrl: 'https://seerr.example.com',
+      method: SeerrAuthMethod.local,
+      identifier: 'a@b.c',
+      secret: 'pw',
+      cookie: 'cookie',
+      userId: 1,
+      permissions: permissions,
+      displayName: 'Alice',
+      instanceLabel: 'Seerr',
+      createdAt: 0,
+    ),
+    onSessionInvalidated: () {},
+    httpClient: MockClient((_) async => http.Response('', 404)),
+  );
+  final source = SeerrCatalogSource(client);
+  addTearDown(() {
+    source.dispose();
+    client.dispose();
+  });
+  return source;
 }
 
 PlexHomeUser _homeUser({required bool admin}) {

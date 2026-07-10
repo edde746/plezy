@@ -13,6 +13,8 @@ import '../media/media_kind.dart';
 import '../media/media_playlist.dart';
 import '../media/media_server_client.dart';
 import '../metadata_edit/metadata_edit_adapters.dart';
+import '../media/media_version.dart';
+import '../services/catalog/seerr_catalog_source.dart';
 import '../services/plex_client.dart';
 import '../services/media_list_playback_launcher.dart';
 import '../services/music/music_playback_service.dart';
@@ -24,10 +26,10 @@ import '../utils/content_utils.dart';
 import '../utils/delete_impact.dart';
 import '../utils/download_utils.dart';
 import '../utils/global_key_utils.dart';
+import '../providers/catalog_sources_provider.dart';
 import '../providers/download_provider.dart';
 import '../providers/multi_server_provider.dart';
 import '../providers/offline_mode_provider.dart';
-import '../providers/catalog_sources_provider.dart';
 import '../profiles/active_profile_provider.dart';
 import '../profiles/profile.dart';
 import '../utils/provider_extensions.dart';
@@ -53,6 +55,7 @@ import '../widgets/file_info_bottom_sheet.dart';
 import '../widgets/overlay_sheet.dart';
 import 'watchlist_source_chooser.dart';
 import '../widgets/rating_bottom_sheet.dart';
+import '../widgets/seerr_request_sheet.dart';
 import '../i18n/strings.g.dart';
 
 class _MenuAction {
@@ -128,6 +131,30 @@ bool isMediaDeletionAllowed({
   MediaBackend.jellyfin || MediaBackend.emby => resolvedItemPermission == true,
   MediaBackend.plex => isAdminActionAllowed,
 };
+
+/// Whether the menu should offer a Seerr "Request" action: Seerr must be
+/// connected with request permission for [kind], and the item must be a
+/// movie or show.
+///
+/// Plex movies are additionally gated on having no local file, since Plex
+/// inlines `Media[]` in browse listings. Jellyfin's slim browse field set
+/// omits `MediaSources` (see `_browseFields`), so its movies — like shows,
+/// whose season completeness no listing exposes — are always offered;
+/// [SeerrRequestSheet] itself reports when everything is already available.
+bool isSeerrRequestVisible({
+  required SeerrCatalogSource? seerrSource,
+  required MediaBackend? itemBackend,
+  required MediaKind? kind,
+  required List<MediaVersion>? mediaVersions,
+}) {
+  if (seerrSource == null || kind == null) return false;
+  if (kind != MediaKind.movie && kind != MediaKind.show) return false;
+  final moviePlaceholderKnown = itemBackend == MediaBackend.plex;
+  if (kind == MediaKind.movie && moviePlaceholderKnown && (mediaVersions?.isNotEmpty ?? false)) {
+    return false;
+  }
+  return seerrSource.canRequest(kind);
+}
 
 /// A reusable wrapper widget that adds a context menu (long press / right click)
 /// to any media item with appropriate actions based on the item type.
@@ -645,6 +672,18 @@ class MediaContextMenuState extends State<MediaContextMenu> {
         );
       }
 
+      // Request via Seerr — offered for movies/shows when a connected Seerr
+      // instance grants request permission for this kind. See
+      // isSeerrRequestVisible for the movie placeholder-detection caveats.
+      if (isSeerrRequestVisible(
+        seerrSource: Provider.of<CatalogSourcesProvider?>(context, listen: false)?.seerrSource,
+        itemBackend: itemBackend,
+        kind: mediaKind,
+        mediaVersions: mediaItem.mediaVersions,
+      )) {
+        menuActions.add(_MenuAction(value: 'request_seerr', icon: Symbols.library_add_rounded, label: t.seerr.request));
+      }
+
       // Add to... (for episodes, movies, shows, and seasons). Plex-only —
       // uses `buildMetadataUri` + `addToPlaylist` / `addToCollection`. The
       // MediaBrowser item-add APIs are different and not wired here yet.
@@ -852,6 +891,10 @@ class MediaContextMenuState extends State<MediaContextMenu> {
 
         case 'fileinfo':
           await _showFileInfo(context);
+          break;
+
+        case 'request_seerr':
+          await _handleRequestSeerr(context);
           break;
 
         case 'add_to':
@@ -1159,6 +1202,59 @@ class MediaContextMenuState extends State<MediaContextMenu> {
       }
     } finally {
       await loadingDialog.dismiss();
+    }
+  }
+
+  /// Resolve the item's TMDB id and open the Seerr request sheet. Presented
+  /// from the menu's own context so a screen-level OverlaySheetHost is found
+  /// (see _showContextMenu). Falls back to an error snackbar when the server
+  /// can't resolve external ids or the item carries no TMDB id.
+  Future<void> _handleRequestSeerr(BuildContext context) async {
+    final seerrSource = Provider.of<CatalogSourcesProvider?>(context, listen: false)?.seerrSource;
+    if (seerrSource == null) return;
+
+    final item = _mediaItem!;
+    var loadingShown = false;
+
+    try {
+      final client = _getMediaClientForItem();
+      if (context.mounted) {
+        showLoadingDialog(context);
+        loadingShown = true;
+      }
+
+      final externalIds = await client.fetchExternalIds(item.id);
+
+      if (loadingShown && context.mounted) {
+        Navigator.pop(context);
+        loadingShown = false;
+      }
+
+      final tmdbId = externalIds.tmdb;
+      if (tmdbId == null) {
+        if (context.mounted) {
+          showErrorSnackBar(context, t.seerr.requestsLoadFailed);
+        }
+        return;
+      }
+
+      if (context.mounted && mounted) {
+        await showSeerrRequestSheet(
+          this.context,
+          source: seerrSource,
+          kind: item.kind,
+          tmdbId: tmdbId,
+          title: item.displayTitle,
+        );
+      }
+    } catch (e) {
+      if (loadingShown && context.mounted && Navigator.canPop(context)) {
+        Navigator.pop(context);
+      }
+
+      if (context.mounted) {
+        showErrorSnackBar(context, t.seerr.requestsLoadFailed);
+      }
     }
   }
 
