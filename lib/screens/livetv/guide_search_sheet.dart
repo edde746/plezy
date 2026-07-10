@@ -229,7 +229,10 @@ class _GuideSearchSheetState extends State<GuideSearchSheet> with ControllerDisp
     final showPrograms = _query.length >= _minProgramQueryLength;
     if (!_hasAnyResult && !(showPrograms && _isLoadingPrograms)) {
       return Center(
-        child: Padding(padding: const EdgeInsets.all(24), child: Text(t.liveTv.searchNoResults(query: _query))),
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Text(t.liveTv.searchNoResults(query: _query)),
+        ),
       );
     }
 
@@ -243,9 +246,7 @@ class _GuideSearchSheetState extends State<GuideSearchSheet> with ControllerDisp
         if (_isLoadingPrograms)
           const Padding(
             padding: EdgeInsets.all(16),
-            child: Center(
-              child: SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2)),
-            ),
+            child: Center(child: SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2))),
           )
         else
           for (var i = 0; i < _programResults.length; i++)
@@ -306,11 +307,7 @@ class _GuideSearchSheetState extends State<GuideSearchSheet> with ControllerDisp
         ),
       ),
       title: Text(entry.program.displayTitle, maxLines: 1, overflow: .ellipsis),
-      subtitle: Text(
-        toBulletedString([entry.channel.displayName, ?airTime]),
-        maxLines: 1,
-        overflow: .ellipsis,
-      ),
+      subtitle: Text(toBulletedString([entry.channel.displayName, ?airTime]), maxLines: 1, overflow: .ellipsis),
       onTap: () => _selectProgram(entry),
     );
   }

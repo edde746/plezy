@@ -247,9 +247,9 @@ class GuideTabState extends State<GuideTab>
 
     // Re-resolve against the loaded list — the search sheet's program objects
     // come from its own fetch and never match _programs by identity.
-    final target = _getProgramsForChannel(widget.channels[index])
-        .where((p) => p.beginsAt == program.beginsAt)
-        .firstOrNull;
+    final target = _getProgramsForChannel(
+      widget.channels[index],
+    ).where((p) => p.beginsAt == program.beginsAt).firstOrNull;
 
     setState(() {
       _focusZone = _GuideZone.grid;
