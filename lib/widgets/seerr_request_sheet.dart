@@ -7,7 +7,9 @@ import 'package:material_symbols_icons/symbols.dart';
 import '../focus/dpad_navigator.dart';
 import '../focus/focusable_button.dart';
 import '../i18n/strings.g.dart';
+import '../media/media_item.dart';
 import '../media/media_kind.dart';
+import '../media/media_server_client.dart';
 import '../models/seerr/seerr_details.dart';
 import '../models/seerr/seerr_media.dart';
 import '../models/seerr/seerr_public_settings.dart';
@@ -18,6 +20,7 @@ import '../services/catalog/seerr_catalog_source.dart';
 import '../services/seerr/seerr_constants.dart';
 import '../services/seerr/seerr_exceptions.dart';
 import '../utils/app_logger.dart';
+import '../utils/dialogs.dart';
 import '../utils/snackbar_helper.dart';
 import 'app_icon.dart';
 import 'app_menu.dart';
@@ -43,6 +46,67 @@ Future<void> showSeerrRequestSheet(
     builder: (_) =>
         SeerrRequestSheet(source: source, kind: kind, tmdbId: tmdbId, title: title, initialSeasons: initialSeasons),
   );
+}
+
+/// Resolve a library [item]'s TMDB id through its media server and open the
+/// request sheet. Seasons request through their show, preselected in the
+/// sheet. Shows a loading dialog while resolving and an error snackbar when
+/// the item can't be resolved to a TMDB id.
+Future<void> showSeerrRequestSheetForLibraryItem(
+  BuildContext context, {
+  required SeerrCatalogSource source,
+  required MediaServerClient client,
+  required MediaItem item,
+}) async {
+  // A season's show lands in a backend-dependent field: Plex children carry
+  // the show in `parentRatingKey` (parentId), while Jellyfin's seasons
+  // endpoint carries `SeriesId` (grandparentId) and may omit `ParentId`.
+  final isSeason = item.kind == MediaKind.season;
+  final lookupId = isSeason ? (item.parentId ?? item.grandparentId) : item.id;
+  if (lookupId == null) {
+    showErrorSnackBar(context, t.seerr.requestsLoadFailed);
+    return;
+  }
+
+  var loadingShown = false;
+  try {
+    showLoadingDialog(context);
+    loadingShown = true;
+
+    final externalIds = await client.fetchExternalIds(lookupId);
+
+    if (loadingShown && context.mounted) {
+      Navigator.pop(context);
+      loadingShown = false;
+    }
+
+    final tmdbId = externalIds.tmdb;
+    if (tmdbId == null) {
+      if (context.mounted) {
+        showErrorSnackBar(context, t.seerr.requestsLoadFailed);
+      }
+      return;
+    }
+
+    if (context.mounted) {
+      await showSeerrRequestSheet(
+        context,
+        source: source,
+        kind: isSeason ? MediaKind.show : item.kind,
+        tmdbId: tmdbId,
+        title: isSeason ? (item.parentTitle ?? item.grandparentTitle ?? item.displayTitle) : item.displayTitle,
+        initialSeasons: isSeason ? [?item.index] : const [],
+      );
+    }
+  } catch (e) {
+    appLogger.w('Seerr: library request resolution failed for ${item.id}', error: e);
+    if (loadingShown && context.mounted && Navigator.canPop(context)) {
+      Navigator.pop(context);
+    }
+    if (context.mounted) {
+      showErrorSnackBar(context, t.seerr.requestsLoadFailed);
+    }
+  }
 }
 
 /// The full Seerr request flow, mirroring the web UI: per-season selection

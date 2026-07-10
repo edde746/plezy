@@ -1216,8 +1216,7 @@ class MediaContextMenuState extends State<MediaContextMenu> {
 
   /// Resolve the item's TMDB id and open the Seerr request sheet. Presented
   /// from the menu's own context so a screen-level OverlaySheetHost is found
-  /// (see _showContextMenu). Falls back to an error snackbar when the server
-  /// can't resolve external ids or the item carries no TMDB id.
+  /// (see _showContextMenu).
   Future<void> _handleRequestSeerr(BuildContext context) async {
     // Re-read: Seerr can disconnect (session invalidated, or disconnected in
     // Settings) between menu build and tap.
@@ -1227,58 +1226,16 @@ class MediaContextMenuState extends State<MediaContextMenu> {
       return;
     }
 
-    final item = _mediaItem!;
-    // Seasons request through their show: Seerr keys requests by the show's
-    // TMDB id, so resolve the parent's ids and preselect the season instead.
-    final isSeason = item.kind == MediaKind.season;
-    final lookupId = isSeason ? item.parentId : item.id;
-    if (lookupId == null) {
+    final MediaServerClient client;
+    try {
+      client = _getMediaClientForItem();
+    } catch (_) {
       showErrorSnackBar(context, t.seerr.requestsLoadFailed);
       return;
     }
-    var loadingShown = false;
 
-    try {
-      final client = _getMediaClientForItem();
-      if (context.mounted) {
-        showLoadingDialog(context);
-        loadingShown = true;
-      }
-
-      final externalIds = await client.fetchExternalIds(lookupId);
-
-      if (loadingShown && context.mounted) {
-        Navigator.pop(context);
-        loadingShown = false;
-      }
-
-      final tmdbId = externalIds.tmdb;
-      if (tmdbId == null) {
-        if (context.mounted) {
-          showErrorSnackBar(context, t.seerr.requestsLoadFailed);
-        }
-        return;
-      }
-
-      if (context.mounted && mounted) {
-        await showSeerrRequestSheet(
-          this.context,
-          source: seerrSource,
-          kind: isSeason ? MediaKind.show : item.kind,
-          tmdbId: tmdbId,
-          title: isSeason ? (item.parentTitle ?? item.displayTitle) : item.displayTitle,
-          initialSeasons: isSeason ? [?item.index] : const [],
-        );
-      }
-    } catch (e) {
-      if (loadingShown && context.mounted && Navigator.canPop(context)) {
-        Navigator.pop(context);
-      }
-
-      if (context.mounted) {
-        showErrorSnackBar(context, t.seerr.requestsLoadFailed);
-      }
-    }
+    if (!mounted) return;
+    await showSeerrRequestSheetForLibraryItem(this.context, source: seerrSource, client: client, item: _mediaItem!);
   }
 
   /// The track list music playback should operate on for [item]: the item
