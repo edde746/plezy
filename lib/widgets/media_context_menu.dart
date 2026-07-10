@@ -5,6 +5,7 @@ import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 
 import '../providers/watch_state_store.dart';
+import '../media/episode_collection.dart';
 import '../media/media_backend.dart';
 import '../media/media_item.dart';
 import '../media/media_item_labels.dart';
@@ -134,23 +135,27 @@ bool isMediaDeletionAllowed({
 
 /// Whether the menu should offer a Seerr "Request" action: Seerr must be
 /// connected with request permission for [kind], and the item must be a
-/// movie or show.
+/// movie, show, or season.
 ///
-/// Plex movies are additionally gated on having no local file, since Plex
-/// inlines `Media[]` in browse listings. Jellyfin's slim browse field set
-/// omits `MediaSources` (see `_browseFields`), so its movies — like shows,
-/// whose season completeness no listing exposes — are always offered;
-/// [SeerrRequestSheet] itself reports when everything is already available.
+/// Movies are gated on having no known local file. Plex inlines `Media[]`
+/// in browse listings and both backends' detail fetches carry versions, but
+/// Jellyfin's slim browse field set omits `MediaSources` (see
+/// `_browseFields`), so its movie cards fail open — like shows, whose
+/// season completeness no listing exposes; [SeerrRequestSheet] itself
+/// reports when everything is already available. Seasons gate on
+/// [leafCount] instead: only a regular season with no episodes on the
+/// server is offered (the request sheet drops Specials).
 bool isSeerrRequestVisible({
   required SeerrCatalogSource? seerrSource,
-  required MediaBackend? itemBackend,
   required MediaKind? kind,
   required List<MediaVersion>? mediaVersions,
+  required int? seasonNumber,
+  required int? leafCount,
 }) {
   if (seerrSource == null || kind == null) return false;
-  if (kind != MediaKind.movie && kind != MediaKind.show) return false;
-  final moviePlaceholderKnown = itemBackend == MediaBackend.plex;
-  if (kind == MediaKind.movie && moviePlaceholderKnown && (mediaVersions?.isNotEmpty ?? false)) {
+  if (kind != MediaKind.movie && kind != MediaKind.show && kind != MediaKind.season) return false;
+  if (kind == MediaKind.movie && (mediaVersions?.isNotEmpty ?? false)) return false;
+  if (kind == MediaKind.season && (isSpecialSeasonNumber(seasonNumber) || (leafCount ?? 0) > 0)) {
     return false;
   }
   return seerrSource.canRequest(kind);
@@ -672,16 +677,20 @@ class MediaContextMenuState extends State<MediaContextMenu> {
         );
       }
 
-      // Request via Seerr — offered for movies/shows when a connected Seerr
-      // instance grants request permission for this kind. See
-      // isSeerrRequestVisible for the movie placeholder-detection caveats.
-      if (isSeerrRequestVisible(
-        seerrSource: Provider.of<CatalogSourcesProvider?>(context, listen: false)?.seerrSource,
-        itemBackend: itemBackend,
-        kind: mediaKind,
-        mediaVersions: mediaItem.mediaVersions,
-      )) {
-        menuActions.add(_MenuAction(value: 'request_seerr', icon: Symbols.library_add_rounded, label: t.seerr.request));
+      // Request via Seerr — offered for movies, shows, and episode-less
+      // regular seasons when a connected Seerr instance grants request
+      // permission for this kind; see isSeerrRequestVisible for the
+      // placeholder-detection caveats. Hidden while the item's server is
+      // unreachable: resolving the TMDB id needs a live metadata fetch.
+      if (itemServerOnline &&
+          isSeerrRequestVisible(
+            seerrSource: Provider.of<CatalogSourcesProvider?>(context, listen: false)?.seerrSource,
+            kind: mediaKind,
+            mediaVersions: mediaItem.mediaVersions,
+            seasonNumber: mediaItem.index,
+            leafCount: mediaItem.leafCount,
+          )) {
+        menuActions.add(_MenuAction(value: 'request_seerr', icon: Symbols.download_rounded, label: t.seerr.request));
       }
 
       // Add to... (for episodes, movies, shows, and seasons). Plex-only —
@@ -1210,10 +1219,23 @@ class MediaContextMenuState extends State<MediaContextMenu> {
   /// (see _showContextMenu). Falls back to an error snackbar when the server
   /// can't resolve external ids or the item carries no TMDB id.
   Future<void> _handleRequestSeerr(BuildContext context) async {
+    // Re-read: Seerr can disconnect (session invalidated, or disconnected in
+    // Settings) between menu build and tap.
     final seerrSource = Provider.of<CatalogSourcesProvider?>(context, listen: false)?.seerrSource;
-    if (seerrSource == null) return;
+    if (seerrSource == null) {
+      showErrorSnackBar(context, t.seerr.requestsLoadFailed);
+      return;
+    }
 
     final item = _mediaItem!;
+    // Seasons request through their show: Seerr keys requests by the show's
+    // TMDB id, so resolve the parent's ids and preselect the season instead.
+    final isSeason = item.kind == MediaKind.season;
+    final lookupId = isSeason ? item.parentId : item.id;
+    if (lookupId == null) {
+      showErrorSnackBar(context, t.seerr.requestsLoadFailed);
+      return;
+    }
     var loadingShown = false;
 
     try {
@@ -1223,7 +1245,7 @@ class MediaContextMenuState extends State<MediaContextMenu> {
         loadingShown = true;
       }
 
-      final externalIds = await client.fetchExternalIds(item.id);
+      final externalIds = await client.fetchExternalIds(lookupId);
 
       if (loadingShown && context.mounted) {
         Navigator.pop(context);
@@ -1242,9 +1264,10 @@ class MediaContextMenuState extends State<MediaContextMenu> {
         await showSeerrRequestSheet(
           this.context,
           source: seerrSource,
-          kind: item.kind,
+          kind: isSeason ? MediaKind.show : item.kind,
           tmdbId: tmdbId,
-          title: item.displayTitle,
+          title: isSeason ? (item.parentTitle ?? item.displayTitle) : item.displayTitle,
+          initialSeasons: isSeason ? [?item.index] : const [],
         );
       }
     } catch (e) {

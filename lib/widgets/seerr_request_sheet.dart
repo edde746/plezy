@@ -34,12 +34,14 @@ Future<void> showSeerrRequestSheet(
   required MediaKind kind,
   required int tmdbId,
   required String title,
+  List<int> initialSeasons = const [],
 }) {
   return OverlaySheetController.showAdaptive<void>(
     context,
     isScrollControlled: true,
     showDragHandle: true,
-    builder: (_) => SeerrRequestSheet(source: source, kind: kind, tmdbId: tmdbId, title: title),
+    builder: (_) =>
+        SeerrRequestSheet(source: source, kind: kind, tmdbId: tmdbId, title: title, initialSeasons: initialSeasons),
   );
 }
 
@@ -53,12 +55,17 @@ class SeerrRequestSheet extends StatefulWidget {
   final int tmdbId;
   final String title;
 
+  /// TV only: seasons to preselect once loaded, where requestable (e.g. a
+  /// season card's Request action preselects that season).
+  final List<int> initialSeasons;
+
   const SeerrRequestSheet({
     super.key,
     required this.source,
     required this.kind,
     required this.tmdbId,
     required this.title,
+    this.initialSeasons = const [],
   });
 
   @override
@@ -177,6 +184,11 @@ class _SeerrRequestSheetState extends State<SeerrRequestSheet> {
         _seasons = seasons;
         _allServers = servers;
         _loading = false;
+        _selectedSeasons.addAll([
+          for (final season in seasons)
+            if (widget.initialSeasons.contains(season.seasonNumber) && !_seasonBlocked(season.seasonNumber))
+              season.seasonNumber,
+        ]);
       });
       _selectDefaultServer();
     } catch (e) {

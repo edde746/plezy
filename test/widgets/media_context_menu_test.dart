@@ -688,75 +688,102 @@ void main() {
       expect(
         isSeerrRequestVisible(
           seerrSource: null,
-          itemBackend: MediaBackend.plex,
           kind: MediaKind.movie,
           mediaVersions: null,
+          seasonNumber: null,
+          leafCount: null,
         ),
         isFalse,
       );
       expect(
         isSeerrRequestVisible(
           seerrSource: tvOnly,
-          itemBackend: MediaBackend.plex,
-          kind: MediaKind.season,
+          kind: MediaKind.episode,
           mediaVersions: null,
+          seasonNumber: null,
+          leafCount: null,
         ),
         isFalse,
       );
       expect(
         isSeerrRequestVisible(
           seerrSource: tvOnly,
-          itemBackend: MediaBackend.plex,
           kind: MediaKind.movie,
           mediaVersions: null,
+          seasonNumber: null,
+          leafCount: null,
         ),
         isFalse,
       );
     });
 
-    test('Plex movies gated on having no file; shows always offered', () {
+    test('movies gated on having no known file; shows always offered', () {
       final source = _seerrSourceWithPermissions(SeerrPermission.request);
 
       expect(
         isSeerrRequestVisible(
           seerrSource: source,
-          itemBackend: MediaBackend.plex,
           kind: MediaKind.movie,
           mediaVersions: null,
+          seasonNumber: null,
+          leafCount: null,
         ),
         isTrue,
       );
       expect(
         isSeerrRequestVisible(
           seerrSource: source,
-          itemBackend: MediaBackend.plex,
           kind: MediaKind.movie,
           mediaVersions: const [MediaVersion(id: 'v1')],
+          seasonNumber: null,
+          leafCount: null,
         ),
         isFalse,
       );
       expect(
         isSeerrRequestVisible(
           seerrSource: source,
-          itemBackend: MediaBackend.plex,
           kind: MediaKind.show,
           mediaVersions: null,
+          seasonNumber: null,
+          leafCount: 12,
         ),
         isTrue,
       );
     });
 
-    test('Jellyfin movie stays offered without version data (browse listing omits MediaSources)', () {
+    test('seasons offered only when regular and without episodes', () {
       final source = _seerrSourceWithPermissions(SeerrPermission.request);
 
       expect(
         isSeerrRequestVisible(
           seerrSource: source,
-          itemBackend: MediaBackend.jellyfin,
-          kind: MediaKind.movie,
+          kind: MediaKind.season,
           mediaVersions: null,
+          seasonNumber: 1,
+          leafCount: 0,
         ),
         isTrue,
+      );
+      expect(
+        isSeerrRequestVisible(
+          seerrSource: source,
+          kind: MediaKind.season,
+          mediaVersions: null,
+          seasonNumber: 1,
+          leafCount: 8,
+        ),
+        isFalse,
+      );
+      expect(
+        isSeerrRequestVisible(
+          seerrSource: source,
+          kind: MediaKind.season,
+          mediaVersions: null,
+          seasonNumber: 0,
+          leafCount: 0,
+        ),
+        isFalse,
       );
     });
   });
