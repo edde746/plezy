@@ -1,9 +1,13 @@
 import '../connection/connection.dart';
 import '../connection/connection_registry.dart';
 import '../media/ids.dart';
+import '../models/plex/plex_home_user.dart';
 import '../services/multi_server_manager.dart';
 import '../services/storage_service.dart';
+import 'profile.dart';
 import 'profile_connection_registry.dart';
+import 'profile_merge.dart';
+import 'profile_registry.dart';
 
 Future<void> removeProfileConnectionAndCleanup({
   required String profileId,
@@ -62,6 +66,110 @@ Future<void> removeAllProfileConnectionsAndCleanup({
       serverManager: serverManager,
     );
   }
+}
+
+/// Profile ids affected by a Plex account removal, so the caller can sweep
+/// per-profile data (downloads, sync rules, queued watch actions) that this
+/// layer doesn't own.
+typedef PlexAccountRemoval = ({
+  /// The account's virtual Plex Home profiles — they cease to exist.
+  Set<String> removedVirtualProfileIds,
+
+  /// Profiles that survive but had a join row onto the removed account
+  /// (locals that borrowed a home user).
+  Set<String> borrowerProfileIds,
+});
+
+/// Sign out of a Plex account: remove the account [Connection], every join
+/// row referencing it, and everything owned by its virtual Plex Home
+/// profiles — including borrowed Jellyfin connections left unreferenced,
+/// which previously survived as orphans and wedged the session (#1423).
+///
+/// All cleanup is explicit and completes before this returns; correctness
+/// must not depend on [PlexHomeService]'s stream-driven `_onChange`, which
+/// runs later and no-ops.
+Future<PlexAccountRemoval> removePlexAccountConnectionAndCleanup({
+  required PlexAccountConnection account,
+  required ProfileConnectionRegistry profileConnections,
+  required ConnectionRegistry connections,
+  required StorageService storage,
+  MultiServerManager? serverManager,
+}) async {
+  final rows = await profileConnections.listAll();
+  final removedVirtualProfileIds = <String>{
+    for (final row in rows)
+      if (parsePlexHomeProfileId(row.profileId)?.accountConnectionId == account.id) row.profileId,
+  };
+  final borrowerProfileIds = <String>{
+    for (final row in rows)
+      if (row.connectionId == account.id && !removedVirtualProfileIds.contains(row.profileId)) row.profileId,
+  };
+
+  // Remove direct join rows first so per-profile pref cleanup observes each
+  // row going away; the FK cascade from the connection delete is then a no-op.
+  for (final row in rows.where((r) => r.connectionId == account.id)) {
+    await removeProfileConnectionAndCleanup(
+      profileId: row.profileId,
+      connection: account,
+      profileConnections: profileConnections,
+      connections: connections,
+      storage: storage,
+      serverManager: serverManager,
+    );
+  }
+  await connections.remove(account.id);
+  await storage.clearPlexHomeUsersCache(account.id);
+
+  // The account's virtual profiles die with the connection; their borrowed
+  // connections and per-profile prefs must go too.
+  for (final profileId in removedVirtualProfileIds) {
+    await removeAllProfileConnectionsAndCleanup(
+      profileId: profileId,
+      profileConnections: profileConnections,
+      connections: connections,
+      storage: storage,
+      serverManager: serverManager,
+    );
+    await storage.clearProfileLastUsed(profileId);
+    await storage.clearUserScopedPreferencesForProfile(profileId);
+  }
+
+  return (removedVirtualProfileIds: removedVirtualProfileIds, borrowerProfileIds: borrowerProfileIds);
+}
+
+/// Where the session should land after a profile or connection removal.
+enum PostRemovalRoute { signedOut, staySignedIn }
+
+/// In-session mirror of the boot guard (`main.dart`: "stored connections
+/// exist but no profiles resolved — returning to auth"): prune orphaned
+/// Jellyfin connections, then decide whether any selectable profile remains.
+/// [plexHomeUsers] is [PlexHomeService.current]; stale entries for removed
+/// accounts are harmless because the connection map is re-read here.
+Future<({PostRemovalRoute route, List<Profile> profiles})> resolvePostRemovalState({
+  required ProfileRegistry profileRegistry,
+  required ProfileConnectionRegistry profileConnections,
+  required ConnectionRegistry connections,
+  required Map<String, List<PlexHomeUser>> plexHomeUsers,
+  required StorageService storage,
+  MultiServerManager? serverManager,
+}) async {
+  await pruneUnreferencedJellyfinConnections(
+    profileConnections: profileConnections,
+    connections: connections,
+    storage: storage,
+    serverManager: serverManager,
+  );
+  final conns = await connections.list();
+  if (conns.isEmpty) return (route: PostRemovalRoute.signedOut, profiles: const <Profile>[]);
+
+  final merged = mergeLocalWithPlexHome(
+    locals: await profileRegistry.list(),
+    plexHomeByConnectionId: plexHomeUsers,
+    connectionsById: {for (final c in conns) c.id: c},
+    storage: storage,
+  );
+  if (merged.isEmpty) return (route: PostRemovalRoute.signedOut, profiles: const <Profile>[]);
+  return (route: PostRemovalRoute.staySignedIn, profiles: merged);
 }
 
 Future<int> pruneUnreferencedJellyfinConnections({
@@ -193,12 +301,9 @@ Future<bool> _isServerReferenced(
 Set<ServerId> _serverIdsForConnection(Connection connection) {
   return switch (connection) {
     PlexAccountConnection(:final servers) => {
-      for (final server in servers)
-        if (ServerId.tryParse(server.clientIdentifier) case final serverId?) serverId,
+      for (final server in servers) ?ServerId.tryParse(server.clientIdentifier),
     },
-    JellyfinConnection(:final serverMachineId) => {
-      if (ServerId.tryParse(serverMachineId) case final serverId?) serverId,
-    },
+    JellyfinConnection(:final serverMachineId) => {?ServerId.tryParse(serverMachineId)},
     // Seerr has no playable server-ids.
     SeerrConnection() => const <ServerId>{},
   };

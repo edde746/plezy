@@ -22,7 +22,7 @@ static void* get_opengl_proc_address(void* ctx, const char* name) {
 
 namespace mpv {
 
-MpvPlayer::MpvPlayer() {}
+MpvPlayer::MpvPlayer(bool audio_only) : audio_only_(audio_only) {}
 
 MpvPlayer::~MpvPlayer() { Dispose(); }
 
@@ -41,15 +41,27 @@ bool MpvPlayer::Initialize() {
     return false;
   }
 
-  // Configure mpv for embedded playback.
-  mpv_set_option_string(mpv_, "vo", "libmpv");
-  mpv_set_option_string(mpv_, "hwdec", "auto");
+  if (audio_only_) {
+    // Music core: no VO, no video decode. vid=no keeps embedded cover art
+    // from ever becoming a video track, and force-window/audio-display make
+    // sure mpv never opens a video output for it either.
+    mpv_set_option_string(mpv_, "vid", "no");
+    mpv_set_option_string(mpv_, "force-window", "no");
+    mpv_set_option_string(mpv_, "audio-display", "no");
+    mpv_set_option_string(mpv_, "gapless-audio", "weak");
+  } else {
+    // Configure mpv for embedded playback.
+    mpv_set_option_string(mpv_, "vo", "libmpv");
+    mpv_set_option_string(mpv_, "hwdec", "auto");
+  }
   mpv_set_option_string(mpv_, "keep-open", "yes");
 
-  // HDR tone mapping
-  mpv_set_option_string(mpv_, "tone-mapping", "auto");
-  mpv_set_option_string(mpv_, "target-colorspace-hint", "no");
-  mpv_set_option_string(mpv_, "hdr-compute-peak", "auto");
+  if (!audio_only_) {
+    // HDR tone mapping
+    mpv_set_option_string(mpv_, "tone-mapping", "auto");
+    mpv_set_option_string(mpv_, "target-colorspace-hint", "no");
+    mpv_set_option_string(mpv_, "hdr-compute-peak", "auto");
+  }
   mpv_set_option_string(mpv_, "idle", "yes");
   mpv_set_option_string(mpv_, "input-default-bindings", "no");
   mpv_set_option_string(mpv_, "input-vo-keyboard", "no");
@@ -71,11 +83,16 @@ bool MpvPlayer::Initialize() {
   // Set up event wakeup callback.
   mpv_set_wakeup_callback(mpv_, OnMpvWakeup, this);
 
-  g_message("MPV: Initialization successful (render context deferred)");
+  g_message("MPV: Initialization successful (%s)", audio_only_ ? "audio-only" : "render context deferred");
   return true;
 }
 
 bool MpvPlayer::InitRenderContext() {
+  if (audio_only_) {
+    g_warning("MPV: InitRenderContext called on an audio-only player");
+    return false;
+  }
+
   if (mpv_gl_) {
     return true;  // Already created.
   }

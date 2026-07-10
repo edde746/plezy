@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:ui' as ui;
 
-import 'package:flutter/foundation.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
@@ -70,10 +69,9 @@ class GamepadDuplicateInputGuard {
 
   GamepadDuplicateInputGuard({
     DateTime Function()? now,
-    bool Function()? enabled,
+    this._enabled,
     this.suppressionWindow = defaultSuppressionWindow,
-  }) : _now = now ?? DateTime.now,
-       _enabled = enabled;
+  }) : _now = now ?? DateTime.now;
 
   bool get _isEnabled => _enabled?.call() ?? true;
 

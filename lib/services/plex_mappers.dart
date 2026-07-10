@@ -79,6 +79,7 @@ MediaPart _mediaPartFromMap(
   return MediaPart(
     id: (json['id'] ?? fallbackId).toString(),
     streamPath: json['key']?.toString(),
+    file: json['file']?.toString(),
     sizeBytes: flexibleInt(json['size']),
     container: json['container']?.toString() ?? fallbackContainer,
     durationMs: flexibleInt(json['duration']),

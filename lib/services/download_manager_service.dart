@@ -1280,9 +1280,13 @@ class DownloadManagerService {
           ? await _fetchShowYear(serverId, metadata.grandparentId, clientScopeId: existing.clientScopeId)
           : null;
 
-      // Build display name for notifications
+      // Build display name for notifications. Episodes lead with the show,
+      // tracks with the artist — same "container - leaf" pattern.
+      final trackArtist = metadata.trackArtistTitle;
       final displayName = metadata.isEpisode
           ? '${metadata.grandparentTitle ?? metadata.displayTitle} - ${metadata.displayTitle}'
+          : metadata.kind == MediaKind.track && trackArtist != null && trackArtist.isNotEmpty
+          ? '$trackArtist - ${metadata.displayTitle}'
           : metadata.displayTitle;
 
       // Get WiFi-only setting for native enforcement
@@ -2232,6 +2236,12 @@ class DownloadManagerService {
       case MediaKind.show:
         final episodes = await _database.getEpisodesByShow(metadata.id, serverId: serverId);
         return episodes.length;
+      case MediaKind.album:
+        final tracks = await _database.getTracksByAlbum(metadata.id, serverId: serverId);
+        return tracks.length;
+      case MediaKind.artist:
+        final tracks = await _database.getTracksByArtist(metadata.id, serverId: serverId);
+        return tracks.length;
       default:
         return 1;
     }
@@ -2275,6 +2285,30 @@ class DownloadManagerService {
           isSaf
               ? await _deleteMovieFilesSaf(metadata, serverId, clientScopeId: scopeId)
               : await _deleteMovieFiles(metadata, serverId, clientScopeId: scopeId);
+          break;
+        // Tracks live in the generic downloads/{serverId}/{ratingKey}/ layout
+        // (both file and SAF mode), so deletion is DB-record-driven rather
+        // than storage-template-driven like movies/episodes.
+        case MediaKind.track:
+          if (downloadRecord != null) await _deleteTrackByRecord(downloadRecord);
+          break;
+        case MediaKind.album:
+          await _deleteTracksInContainer(
+            tracks: await _database.getTracksByAlbum(metadata.id, serverId: serverId),
+            serverId: serverId,
+            clientScopeId: scopeId,
+            containerKey: metadata.id,
+            containerTitle: metadata.displayTitle,
+          );
+          break;
+        case MediaKind.artist:
+          await _deleteTracksInContainer(
+            tracks: await _database.getTracksByArtist(metadata.id, serverId: serverId),
+            serverId: serverId,
+            clientScopeId: scopeId,
+            containerKey: metadata.id,
+            containerTitle: metadata.displayTitle,
+          );
           break;
         default:
           appLogger.w('Unknown type for deletion: ${metadata.kind.id}');
@@ -2489,6 +2523,66 @@ class DownloadManagerService {
         clientScopeId: episode.clientScopeId ?? clientScopeId,
       );
       await _database.deleteDownload(episodeGlobalKey);
+    }
+  }
+
+  /// Delete a single downloaded track. File deletion runs off the DB record
+  /// (video + .part + empty-parent cleanup via [_deleteByFilePath], which also
+  /// handles SAF URIs); the album-cover thumb is reference-counted because
+  /// every track of an album shares the same artwork blob.
+  Future<void> _deleteTrackByRecord(DownloadedMediaItem record) async {
+    final parsed = parseGlobalKey(record.globalKey);
+    final keepThumb =
+        parsed != null &&
+        record.thumbPath != null &&
+        await _isThumbPathInUseByOthers(parsed.serverId, record.thumbPath!, excludingGlobalKey: record.globalKey);
+    await _deleteByFilePath(record, deleteThumb: !keepThumb);
+  }
+
+  /// Whether any other download row on [serverId] references [thumbPath].
+  /// Mirrors the chapter-thumbnail in-use check: shared artwork survives
+  /// until the last referencing download is deleted.
+  Future<bool> _isThumbPathInUseByOthers(
+    ServerId serverId,
+    String thumbPath, {
+    required String excludingGlobalKey,
+  }) async {
+    final rows = await _database.getDownloadsByServerId(serverId);
+    return rows.any((row) => row.globalKey != excludingGlobalKey && row.thumbPath == thumbPath);
+  }
+
+  /// Delete every downloaded track of an album/artist container, mirroring
+  /// [_deleteEpisodesInCollection]: per-track deletion progress, file cleanup,
+  /// per-item server-side residue, then the DB rows.
+  Future<void> _deleteTracksInContainer({
+    required List<DownloadedMediaItem> tracks,
+    required ServerId serverId,
+    String? clientScopeId,
+    required String containerKey,
+    required String containerTitle,
+  }) async {
+    appLogger.d('Deleting ${tracks.length} tracks in container $containerKey');
+    for (int i = 0; i < tracks.length; i++) {
+      final track = tracks[i];
+      final trackGlobalKey = buildGlobalKey(ServerId(serverId), track.ratingKey);
+
+      _emitDeletionProgress(
+        DeletionProgress(
+          globalKey: buildGlobalKey(ServerId(serverId), containerKey),
+          itemTitle: containerTitle,
+          currentItem: i + 1,
+          totalItems: tracks.length,
+          currentOperation: 'Deleting track ${i + 1} of ${tracks.length}',
+        ),
+      );
+
+      await _deleteTrackByRecord(track);
+      await _deleteForItemByServer(
+        ServerId(serverId),
+        track.ratingKey,
+        clientScopeId: track.clientScopeId ?? clientScopeId,
+      );
+      await _database.deleteDownload(trackGlobalKey);
     }
   }
 
@@ -2816,8 +2910,12 @@ class DownloadManagerService {
     }
   }
 
-  /// Fallback deletion using file paths from database
-  Future<void> _deleteByFilePath(DownloadedMediaItem record) async {
+  /// Fallback deletion using file paths from database.
+  ///
+  /// [deleteThumb] lets callers preserve a shared artwork blob — album-cover
+  /// thumbs are deduped by path hash across every track of the album, so a
+  /// single-track delete must keep the file while sibling rows reference it.
+  Future<void> _deleteByFilePath(DownloadedMediaItem record, {bool deleteThumb = true}) async {
     try {
       if (record.videoFilePath != null && _storageService.isSafUri(record.videoFilePath!)) {
         // Metadata is gone by the time this fallback runs, so parent-dir cleanup
@@ -2845,7 +2943,7 @@ class DownloadManagerService {
       // thumbPath is a server-side API path (Plex /library/metadata/.../thumb,
       // Jellyfin /Items/.../Images/Primary), not a local file path —
       // resolve it via getArtworkPathFromThumb
-      if (record.thumbPath != null) {
+      if (deleteThumb && record.thumbPath != null) {
         final parsed = parseGlobalKey(record.globalKey);
         if (parsed != null) {
           final thumbPath = await _storageService.getArtworkPathFromThumb(parsed.serverId, record.thumbPath!);

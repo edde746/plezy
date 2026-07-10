@@ -75,6 +75,26 @@ void main() {
       );
       expect(session.mediaSourceId, 'requested');
     });
+
+    test('prefers the result source id over derived and requested ids', () {
+      // Offline fallback playback: the result names the downloaded version,
+      // which must win over the (stale) requested id even when a version
+      // list would derive something else.
+      final versions = [MediaVersion(id: 'v0'), MediaVersion(id: 'v1')];
+      final session = PlaybackSession.fromContext(
+        _context(
+          PlaybackInitializationResult(
+            availableVersions: versions,
+            videoUrl: 'u',
+            selectedMediaIndex: 1,
+            selectedMediaSourceId: 'downloaded',
+          ),
+        ),
+        requestedQualityPreset: TranscodeQualityPreset.original,
+        requestedMediaSourceId: 'requested',
+      );
+      expect(session.mediaSourceId, 'downloaded');
+    });
   });
 
   test('forwarding getters mirror the resolver output', () {

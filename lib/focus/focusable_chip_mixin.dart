@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../utils/scroll_utils.dart';
 import 'dpad_navigator.dart';
 import 'key_event_utils.dart';
 
@@ -86,6 +87,10 @@ mixin FocusableChipStateMixin<T extends StatefulWidget> on State<T> {
   void _onFocusChange() {
     if (mounted) {
       setState(() => _isFocused = focusNode.hasFocus);
+      // Same convention as FocusableTileStateMixin: a chip inside a
+      // scrollable strip (TabChipStrip, filter bars) reveals itself on
+      // focus; a no-op when no ancestor scrollable exists.
+      if (focusNode.hasFocus) scrollContextToCenter(context);
     }
   }
 

@@ -179,10 +179,10 @@ Future<void> _bootstrapApp() async {
     }
   }
 
-  // Initialize TV detection (Android leanback or Apple TV) and PiP on Android.
-  if (Platform.isAndroid || Platform.isIOS) {
-    futures.add(TvDetectionService.getInstance(forceTv: settings.read(SettingsService.forceTvMode)));
-  }
+  // Initialize TV detection on every platform: auto-detect covers Android
+  // leanback and Apple TV; the force-TV setting applies anywhere, including
+  // desktop home-theater setups.
+  futures.add(TvDetectionService.getInstance(forceTv: settings.read(SettingsService.forceTvMode)));
   // Visual-effects tier (auto-detects low-end Android; full elsewhere).
   futures.add(DevicePerformance.getInstance(override: settings.read(SettingsService.visualEffects)));
   if (Platform.isAndroid) {
@@ -213,12 +213,22 @@ Future<void> _bootstrapApp() async {
   final commitSuffix = gitCommit.isNotEmpty ? ' (${gitCommit.substring(0, 7)})' : '';
   String renderer = '';
   if (Platform.isAndroid) {
-    renderer = ' [${await const MethodChannel('com.plezy/theme').invokeMethod<String>('getRenderer')}]';
+    final rendererName = await const MethodChannel('com.plezy/theme').invokeMethod<String>('getRenderer');
+    renderer = ' [$rendererName]';
+    // Tag crash reports with the active renderer while Impeller rolls back
+    // out to Android TV, so device-specific regressions are attributable.
+    // configureScope returns FutureOr<void>; Future.sync flattens it for unawaited.
+    unawaited(Future.sync(() => Sentry.configureScope((scope) => scope.setTag('renderer', rendererName ?? 'unknown'))));
   }
   appLogger.i(
     'Plezy v${packageInfo.version}+${packageInfo.buildNumber}$commitSuffix$renderer'
     ' [effects: ${DevicePerformance.describeSync()}]',
   );
+  if (Platform.isAndroid) {
+    // Baseline for the RSS watchdog thresholds and a sanity anchor against
+    // `adb shell dumpsys meminfo` when tuning them.
+    appLogger.i('Startup RSS: ${ProcessInfo.currentRss >> 20}MB');
+  }
 
   await DownloadStorageService.instance.initialize(settings);
 
@@ -303,6 +313,10 @@ FutureOr<SentryEvent?> _beforeSend(SentryEvent event, Hint _) {
       }
       // Native HTTP errors from CFNetwork (server errors, not actionable)
       if (e.type == 'HTTPClientError') return true;
+      // Benign EventChannel teardown race: the engine replies this when a
+      // 'cancel' lands after the stream is already gone, and the framework
+      // reports it via FlutterError — nothing was ever wrong user-side.
+      if (e.type == 'PlatformException' && v != null && v.contains('No active stream to cancel')) return true;
       // Discord RPC errors when Discord is not running
       if (e.type == 'DiscordStateException') return true;
       return false;
@@ -456,24 +470,20 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
   /// Last time server health probes ran from a resume event (cooldown for desktop)
   DateTime _lastResumeProbe = DateTime(0);
 
-  /// Periodic memory check timer for desktop platforms
+  /// Periodic RSS watchdog timer (desktop + Android).
   Timer? _memoryCheckTimer;
+
+  /// Last watchdog eviction, for the cooldown; RSS at that moment so a
+  /// still-climbing RSS can re-evict inside the cooldown window.
+  DateTime _lastRssEviction = DateTime(0);
+  int _lastEvictionRss = 0;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
 
-    if (PlatformDetector.isDesktopOS()) {
-      _memoryCheckTimer = Timer.periodic(const Duration(seconds: 30), (_) {
-        final rss = ProcessInfo.currentRss;
-        if (rss > 1536 * 1024 * 1024) {
-          // 1.5GB
-          appLogger.w('RSS high ($rss bytes), evicting image caches');
-          _evictImageCaches();
-        }
-      });
-    }
+    _startRssWatchdog();
 
     _serverManager = MultiServerManager();
     _aggregationService = DataAggregationService(_serverManager);
@@ -549,6 +559,48 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
     super.didHaveMemoryPressure();
     appLogger.w('System memory pressure, evicting image caches');
     _evictImageCaches();
+  }
+
+  /// RSS-based image-cache eviction. Desktop keeps its fixed 1.5GB bar;
+  /// Android scales to the device because LMK on a 2GB TV box kills well
+  /// below any fixed desktop threshold — and Android trim callbacks
+  /// ([didHaveMemoryPressure]) are best-effort, LMK can kill without ever
+  /// delivering one (#1349).
+  void _startRssWatchdog() {
+    final int threshold;
+    final Duration period;
+    if (PlatformDetector.isDesktopOS()) {
+      threshold = 1536 << 20; // 1.5GB
+      period = const Duration(seconds: 30);
+    } else if (Platform.isAndroid) {
+      final totalMem = DevicePerformance.totalMemBytes;
+      threshold = totalMem != null ? (totalMem * 0.45).round().clamp(512 << 20, 1536 << 20) : 1 << 30;
+      // Decode bursts can spike RSS in seconds on low-end boxes; the read
+      // itself is an in-process syscall, cheap enough for a short period.
+      period = DevicePerformance.isLowEndHardware ? const Duration(seconds: 15) : const Duration(seconds: 30);
+    } else {
+      return; // iOS/tvOS: jetsam pressure arrives via didHaveMemoryPressure.
+    }
+
+    _memoryCheckTimer = Timer.periodic(period, (_) {
+      final rss = ProcessInfo.currentRss;
+      if (rss <= threshold) return;
+      final cache = PaintingBinding.instance.imageCache;
+      // Floor + cooldown: clearing an already-small cache buys nothing, and
+      // refetch churn is its own memory-spike and jank source. Inside the
+      // cooldown, re-evict only if RSS kept climbing past the last eviction.
+      if (cache.currentSizeBytes < (8 << 20)) return;
+      final now = DateTime.now();
+      final inCooldown = now.difference(_lastRssEviction) < const Duration(seconds: 60);
+      if (inCooldown && rss <= _lastEvictionRss) return;
+      _lastRssEviction = now;
+      _lastEvictionRss = rss;
+      appLogger.w(
+        'RSS high (${rss >> 20}MB > ${threshold >> 20}MB), evicting image caches '
+        '(cache ${cache.currentSizeBytes >> 20}MB/${cache.currentSize} images, ${cache.liveImageCount} live)',
+      );
+      _evictImageCaches();
+    });
   }
 
   void _evictImageCaches() {
@@ -666,6 +718,15 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
             // 1GB
             _evictImageCaches();
           }
+        } else if (Platform.isAndroid) {
+          // A backgrounded app is LMK's first candidate; shed the image
+          // caches at a lower bar than the foreground watchdog to survive
+          // the HOME press on low-RAM boxes.
+          final totalMem = DevicePerformance.totalMemBytes;
+          final bar = totalMem != null ? (totalMem * 0.35).round() : 768 << 20;
+          if (ProcessInfo.currentRss > bar) {
+            _evictImageCaches();
+          }
         }
       case AppLifecycleState.inactive:
       case AppLifecycleState.hidden:
@@ -780,7 +841,11 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
             final activeProfile = context.read<ActiveProfileProvider>();
             _offlineWatchSyncService.setActiveProfileId(
               activeProfile.activeId,
-              availableProfileCount: activeProfile.profiles.length,
+              // Legacy-adoption gate: only trust the count once the provider
+              // has hydrated (locals + cached home users) — a transient
+              // count of 1 mid-load would permanently mis-adopt pre-profile
+              // watch actions.
+              availableProfileCount: activeProfile.isInitialized ? activeProfile.profiles.length : null,
             );
 
             // Offline-sync drain replays a batch of queued watch actions without
@@ -818,7 +883,10 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
           },
           update: (_, activeProfile, previous) {
             final provider = previous ?? _offlineWatchSyncService;
-            provider.setActiveProfileId(activeProfile.activeId, availableProfileCount: activeProfile.profiles.length);
+            provider.setActiveProfileId(
+              activeProfile.activeId,
+              availableProfileCount: activeProfile.isInitialized ? activeProfile.profiles.length : null,
+            );
             return provider;
           },
         ),
@@ -1045,6 +1113,7 @@ class _SetupScreenState extends State<SetupScreen> with MountedSetStateMixin {
         final profileConnections = context.read<ProfileConnectionRegistry>();
         final profileRegistry = context.read<ProfileRegistry>();
         final activeProfiles = context.read<ActiveProfileProvider>();
+        final serverManager = context.read<MultiServerProvider>().serverManager;
         final bootstrap = ConnectionBootstrap(
           storage: storage,
           connectionRegistry: connRegistry,
@@ -1056,7 +1125,7 @@ class _SetupScreenState extends State<SetupScreen> with MountedSetStateMixin {
           profileConnections: profileConnections,
           connections: connRegistry,
           storage: storage,
-          serverManager: context.read<MultiServerProvider>().serverManager,
+          serverManager: serverManager,
         );
         if (pruned > 0) {
           appLogger.i('Setup: pruned $pruned unreferenced Jellyfin connection${pruned == 1 ? '' : 's'}');

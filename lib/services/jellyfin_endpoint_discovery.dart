@@ -61,8 +61,7 @@ class JellyfinEndpointUserInputCandidates {
 class JellyfinEndpointDiscovery {
   static const int defaultPort = 8096;
 
-  JellyfinEndpointDiscovery({http.Client Function()? testHttpClientFactory})
-    : _testHttpClientFactory = testHttpClientFactory;
+  JellyfinEndpointDiscovery({this._testHttpClientFactory});
 
   final http.Client Function()? _testHttpClientFactory;
 
@@ -263,12 +262,12 @@ class JellyfinEndpointDiscovery {
   }
 
   /// Normalizes a concrete Jellyfin base URL without inventing a scheme or port.
-  static String normalizeBaseUrl(String input) => stripTrailingSlash(input);
+  static String normalizeBaseUrl(String input) => canonicalizeBaseUrl(input);
 
   /// Expands a user-typed add/edit form entry into temporary probe candidates.
   /// These guesses are for discovery only; failed guesses should not be stored.
   static List<String> expandInputToBaseUrls(String input) {
-    final trimmed = stripTrailingSlash(input);
+    final trimmed = canonicalizeBaseUrl(input);
     if (trimmed.isEmpty) return const [];
     if (_hasScheme(trimmed)) return [trimmed];
 

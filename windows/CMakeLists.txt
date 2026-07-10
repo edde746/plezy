@@ -112,6 +112,15 @@ add_subdirectory(${FLUTTER_MANAGED_DIR})
 add_subdirectory("runner")
 
 
+# Sentry native crash capture: use the in-process handler instead of
+# crashpad. Crashpad uploads minidumps straight to the DSN's /minidump
+# endpoint, which our self-hosted tracker does not implement — every native
+# Windows crash (e.g. faults inside libmpv threads) was silently dropped.
+# The inproc handler stackwalks at crash time and reports through the
+# regular envelope endpoint on next launch. sentry-native.cmake gives this
+# environment variable highest precedence over the plugin's forced default.
+set(ENV{SENTRY_NATIVE_BACKEND} "inproc")
+
 # Generated plugin build rules, which manage building the plugins and adding
 # them to the application.
 include(flutter/generated_plugins.cmake)

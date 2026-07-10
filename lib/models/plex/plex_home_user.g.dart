@@ -7,19 +7,19 @@ part of 'plex_home_user.dart';
 // **************************************************************************
 
 PlexHomeUser _$PlexHomeUserFromJson(Map<String, dynamic> json) => PlexHomeUser(
-  id: (json['id'] as num?)?.toInt() ?? 0,
-  uuid: json['uuid'] as String? ?? '',
-  title: json['title'] as String? ?? 'Unknown',
-  username: json['username'] as String?,
-  email: json['email'] as String?,
-  friendlyName: json['friendlyName'] as String?,
-  thumb: json['thumb'] as String? ?? '',
-  hasPassword: json['hasPassword'] as bool? ?? false,
-  restricted: json['restricted'] as bool? ?? false,
-  updatedAt: (json['updatedAt'] as num?)?.toInt(),
-  admin: json['admin'] as bool? ?? false,
-  guest: json['guest'] as bool? ?? false,
-  protected: json['protected'] as bool? ?? false,
+  id: _intOr0(json['id']),
+  uuid: readStringField(json, 'uuid') as String? ?? '',
+  title: readStringField(json, 'title') as String? ?? 'Unknown',
+  username: readStringField(json, 'username') as String?,
+  email: readStringField(json, 'email') as String?,
+  friendlyName: readStringField(json, 'friendlyName') as String?,
+  thumb: readStringField(json, 'thumb') as String? ?? '',
+  hasPassword: flexibleBool(json['hasPassword']),
+  restricted: flexibleBool(json['restricted']),
+  updatedAt: flexibleInt(json['updatedAt']),
+  admin: flexibleBool(json['admin']),
+  guest: flexibleBool(json['guest']),
+  protected: flexibleBool(json['protected']),
 );
 
 Map<String, dynamic> _$PlexHomeUserToJson(PlexHomeUser instance) =>

@@ -90,6 +90,7 @@ class WatchTogetherController {
   void Function(bool correcting)? onCorrectingChanged;
   void Function(ControlMode mode)? onControlModeReceived;
   void Function(String ratingKey, String serverId, String? mediaTitle)? onMediaStateReceived;
+  void Function()? onHostExitedPlayer;
   void Function(String peerId, PlaybackActionHint hint)? onRemoteAction;
   void Function(String peerId)? onPeerNeedsUpdate;
   void Function(List<String> peerIds)? onResumedWithout;
@@ -339,7 +340,12 @@ class WatchTogetherController {
         break;
 
       case SyncMessageType.hostExitedPlayer:
-        // Handled at the provider level.
+        // Rides the ordered queue so it can't locally overtake state
+        // messages that preceded it on the wire. Only the host may end the
+        // media epoch.
+        if (!_session.isHost && senderId == _session.hostPeerId) {
+          onHostExitedPlayer?.call();
+        }
         break;
     }
   }

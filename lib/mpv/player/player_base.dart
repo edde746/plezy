@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:math' as math;
 
 import 'package:collection/collection.dart';
 import 'package:flutter/foundation.dart' show protected;
@@ -36,6 +37,11 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
 
   @override
   bool get audioPassthroughActive => false;
+
+  /// Gapless-audio arming — meaningful only on the audio players, which
+  /// override this. Video backends ignore it.
+  @override
+  Future<void> setNext(Media? media) async {}
 
   late final PlayerStreams _streams;
 
@@ -95,7 +101,17 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
     }
   }
 
+  /// Backends expose static per-backend [EventChannel]s, so two overlapping
+  /// instances (episode handoff, quick exit/reopen) share one channel name.
+  /// The engine allows a single active stream per channel: a newer instance's
+  /// listen displaces the older sink, and the older instance's late cancel
+  /// would then tear down the *newer* stream — leaving it eventless — while
+  /// the final cancel gets an engine "No active stream to cancel" error.
+  /// Only the instance recorded here may send the native cancel.
+  static final Map<String, PlayerBase> _eventChannelOwners = {};
+
   void _setupEventListener() {
+    _eventChannelOwners[eventChannel.name] = this;
     _eventSubscription = eventChannel.receiveBroadcastStream().listen(
       _handleEvent,
       onError: (error) {
@@ -700,6 +716,27 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
   }
 
   @override
+  Future<void> setAudioDownmix({required bool enabled, required int centerBoostDb, required bool normalize}) async {
+    if (enabled) {
+      // Kodi's mechanism: center coefficient = 10^((-3 + boost)/20); the
+      // surround (-3 dB) and LFE (dropped) swresample defaults already match.
+      final c = math.pow(10, (-3 + centerBoostDb.clamp(0, 12)) / 20).toStringAsFixed(4);
+      // Swresample AVOptions are read once at audio-filter creation, so they
+      // must land before audio-channels triggers the chain (re)build.
+      await setProperty('audio-swresample-o', 'center_mix_level=$c');
+      await setProperty('audio-normalize-downmix', normalize ? 'yes' : 'no');
+      // Bounce through auto-safe so boost/normalize changes re-apply while
+      // downmix is already active (same-value option sets are no-ops in mpv).
+      await setProperty('audio-channels', 'auto-safe');
+      await setProperty('audio-channels', 'stereo');
+    } else {
+      await setProperty('audio-channels', 'auto-safe');
+      await setProperty('audio-swresample-o', '');
+      await setProperty('audio-normalize-downmix', 'no');
+    }
+  }
+
+  @override
   // ignore: no-empty-block - base no-op, overridden by platform subclasses
   Future<void> setLogLevel(String level) async {}
 
@@ -779,13 +816,22 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
     if (_disposed) return;
     _disposed = true;
 
-    try {
-      await _eventSubscription?.cancel();
-    } on PlatformException catch (e, st) {
-      appLogger.d('Player event stream already detached during dispose', error: e, stackTrace: st);
-    } on MissingPluginException catch (e, st) {
-      appLogger.d('Player event stream plugin missing during dispose', error: e, stackTrace: st);
+    if (identical(_eventChannelOwners[eventChannel.name], this)) {
+      _eventChannelOwners.remove(eventChannel.name);
+      try {
+        await _eventSubscription?.cancel();
+      } on PlatformException catch (e, st) {
+        appLogger.d('Player event stream already detached during dispose', error: e, stackTrace: st);
+      } on MissingPluginException catch (e, st) {
+        appLogger.d('Player event stream plugin missing during dispose', error: e, stackTrace: st);
+      }
+    } else {
+      // A newer instance owns the channel; cancelling would send a stray
+      // native 'cancel' that kills *its* stream. Drop ours without cancelling
+      // — the newer listen already replaced this subscription's routing.
+      appLogger.d('Player event stream handed off to a newer instance, skipping cancel');
     }
+    _eventSubscription = null;
     await _logSubscription?.cancel();
     try {
       await methodChannel.invokeMethod('dispose', {

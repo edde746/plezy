@@ -56,9 +56,13 @@ class ServerCapabilities {
   /// returns synthesized hubs but with sparser categorisation.
   final bool richHubs;
 
-  /// Numeric ratings (Plex 0–10 via [Item.userRating]). Jellyfin offers
-  /// only a binary like/dislike, so star sliders should be hidden.
+  /// Numeric ratings (Plex 0–10 via [Item.userRating]). Jellyfin has no
+  /// numeric user rating, so star sliders should be hidden.
   final bool numericUserRating;
+
+  /// Per-user favorite flag ("heart") on media items. Jellyfin exposes it via
+  /// `/UserFavoriteItems/{itemId}?userId=...`; Plex has no equivalent.
+  final bool userFavorites;
 
   /// Hide an item from Continue Watching without changing watch state or
   /// playback progress. Plex exposes this directly; Jellyfin does not.
@@ -105,6 +109,22 @@ class ServerCapabilities {
   /// `/Items?ParentId=...&Recursive=false` queries.
   final bool folderGrouping;
 
+  /// Server can supply track lyrics. Jellyfin exposes `/Audio/{id}/Lyrics`;
+  /// Plex surfaces sidecar `.lrc`/`.txt` files as track streams
+  /// (`streamType 4`) fetched via `/library/streams/{id}`. Gates the lyrics
+  /// affordance in the music player; per-track absence is the runtime gate.
+  final bool lyrics;
+
+  /// Server can build an "instant mix" / radio track list from a seed item.
+  /// Jellyfin: `/Items/{id}/InstantMix`; Plex: station play queues
+  /// (`POST /playQueues?type=audio&uri=...station...`).
+  final bool instantMix;
+
+  /// Server can transcode audio to a capped bitrate. Plex:
+  /// `/music/:/transcode/universal`; Jellyfin: `PlaybackInfo` with an audio
+  /// `TranscodingProfile`. Gates the music quality picker (vs original-only).
+  final bool audioTranscoding;
+
   const ServerCapabilities({
     this.serverSidePlayQueue = false,
     this.serverSidePlaylists = false,
@@ -115,6 +135,7 @@ class ServerCapabilities {
     this.serverSideSync = false,
     this.richHubs = false,
     this.numericUserRating = false,
+    this.userFavorites = false,
     this.continueWatchingRemoval = false,
     this.externalSubtitleSearch = false,
     this.trackPreferencePersistence = false,
@@ -125,6 +146,9 @@ class ServerCapabilities {
     this.alphaBar = AlphaBarMode.none,
     this.scrubThumbnails = false,
     this.folderGrouping = false,
+    this.lyrics = false,
+    this.instantMix = false,
+    this.audioTranscoding = false,
   });
 
   /// Defaults for a fully-featured Plex server.
@@ -138,6 +162,7 @@ class ServerCapabilities {
     serverSideSync: true,
     richHubs: true,
     numericUserRating: true,
+    userFavorites: false,
     continueWatchingRemoval: true,
     externalSubtitleSearch: true,
     trackPreferencePersistence: true,
@@ -148,6 +173,9 @@ class ServerCapabilities {
     alphaBar: AlphaBarMode.scrollSnap,
     scrubThumbnails: true,
     folderGrouping: true,
+    lyrics: true,
+    instantMix: true,
+    audioTranscoding: true,
   );
 
   /// Defaults for a Jellyfin server.
@@ -169,6 +197,7 @@ class ServerCapabilities {
     serverSideSync: false,
     richHubs: false,
     numericUserRating: false,
+    userFavorites: true,
     externalSubtitleSearch: false,
     trackPreferencePersistence: true,
     endpointFailover: true,
@@ -178,6 +207,9 @@ class ServerCapabilities {
     alphaBar: AlphaBarMode.nameStartsWithFilter,
     scrubThumbnails: true,
     folderGrouping: true,
+    lyrics: true,
+    instantMix: true,
+    audioTranscoding: true,
   );
 
   ServerCapabilities copyWith({
@@ -190,6 +222,7 @@ class ServerCapabilities {
     bool? serverSideSync,
     bool? richHubs,
     bool? numericUserRating,
+    bool? userFavorites,
     bool? continueWatchingRemoval,
     bool? externalSubtitleSearch,
     bool? trackPreferencePersistence,
@@ -200,6 +233,9 @@ class ServerCapabilities {
     AlphaBarMode? alphaBar,
     bool? scrubThumbnails,
     bool? folderGrouping,
+    bool? lyrics,
+    bool? instantMix,
+    bool? audioTranscoding,
   }) {
     return ServerCapabilities(
       serverSidePlayQueue: serverSidePlayQueue ?? this.serverSidePlayQueue,
@@ -211,6 +247,7 @@ class ServerCapabilities {
       serverSideSync: serverSideSync ?? this.serverSideSync,
       richHubs: richHubs ?? this.richHubs,
       numericUserRating: numericUserRating ?? this.numericUserRating,
+      userFavorites: userFavorites ?? this.userFavorites,
       continueWatchingRemoval: continueWatchingRemoval ?? this.continueWatchingRemoval,
       externalSubtitleSearch: externalSubtitleSearch ?? this.externalSubtitleSearch,
       trackPreferencePersistence: trackPreferencePersistence ?? this.trackPreferencePersistence,
@@ -221,6 +258,9 @@ class ServerCapabilities {
       alphaBar: alphaBar ?? this.alphaBar,
       scrubThumbnails: scrubThumbnails ?? this.scrubThumbnails,
       folderGrouping: folderGrouping ?? this.folderGrouping,
+      lyrics: lyrics ?? this.lyrics,
+      instantMix: instantMix ?? this.instantMix,
+      audioTranscoding: audioTranscoding ?? this.audioTranscoding,
     );
   }
 }

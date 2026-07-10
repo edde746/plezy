@@ -92,6 +92,10 @@ extension _VideoPlayerEpisodeQueueMethods on VideoPlayerScreenState {
       final adjacentEpisodes = await _episodeNavigation.loadAdjacentEpisodes(
         context: context,
         metadata: targetMetadata,
+        // The part actually being played, so the queue can skip sibling
+        // entries of a Plex multi-episode file (#1500). MediaSourceInfo
+        // carries the Plex numeric part id; MediaPart.id is its string form.
+        playedPartId: _currentMediaInfo?.partId?.toString(),
       );
 
       if (mounted && _currentMetadata.globalKey == targetMetadata.globalKey && (attempt == null || attempt.isCurrent)) {
@@ -130,9 +134,12 @@ extension _VideoPlayerEpisodeQueueMethods on VideoPlayerScreenState {
       if (currentIdx == -1) return;
 
       if (mounted) {
+        // Same-file siblings are skipped by file-path intersection of the
+        // stored metadata (#1500) — offline media info doesn't carry the
+        // server part id, so the helpers compare the items' own parts.
         _setPlayerState(() {
-          _previousEpisode = currentIdx > 0 ? sorted[currentIdx - 1] : null;
-          _nextEpisode = currentIdx < sorted.length - 1 ? sorted[currentIdx + 1] : null;
+          _previousEpisode = previousEpisodeSkippingSameFile(sorted, currentIdx);
+          _nextEpisode = nextEpisodeSkippingSameFile(sorted, currentIdx);
         });
       }
     } catch (e) {

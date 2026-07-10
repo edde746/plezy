@@ -72,6 +72,7 @@ class TranslationsJa extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _TranslationsLiveTvJa liveTv = _TranslationsLiveTvJa._(_root);
 	@override late final _TranslationsCollectionsJa collections = _TranslationsCollectionsJa._(_root);
 	@override late final _TranslationsPlaylistsJa playlists = _TranslationsPlaylistsJa._(_root);
+	@override late final _TranslationsMusicJa music = _TranslationsMusicJa._(_root);
 	@override late final _TranslationsWatchTogetherJa watchTogether = _TranslationsWatchTogetherJa._(_root);
 	@override late final _TranslationsDownloadsJa downloads = _TranslationsDownloadsJa._(_root);
 	@override late final _TranslationsShadersJa shaders = _TranslationsShadersJa._(_root);
@@ -271,7 +272,7 @@ class _TranslationsSettingsJa extends TranslationsSettingsEn {
 	@override String get hideSpoilers => '未視聴エピソードのネタバレを非表示';
 	@override String get hideSpoilersDescription => '未視聴エピソードのサムネイルと説明をぼかします';
 	@override String get playerBackend => 'プレーヤーバックエンド';
-	@override String get exoPlayer => 'ExoPlayer（推奨）';
+	@override String get exoPlayer => 'ExoPlayer';
 	@override String get mpv => 'mpv';
 	@override String get hardwareDecoding => 'ハードウェアデコード';
 	@override String get hardwareDecodingDescription => '利用可能な場合にハードウェアアクセラレーションを使用';
@@ -393,6 +394,30 @@ class _TranslationsSettingsJa extends TranslationsSettingsEn {
 	@override String get tunneledPlaybackDescription => '動画トンネリングを使用します。HDR再生で画面が黒くなる場合は無効にしてください。';
 	@override String get audioPassthrough => 'オーディオパススルー';
 	@override String get audioPassthroughDescription => 'Dolby/DTS音声を再エンコードせずにレシーバーやテレビに送り、サラウンドを維持します。音が出ない場合は無効にしてください。';
+	@override String get audioPassthroughDescriptionAppleTv => 'Dolby Digital Plus（Atmos含む）をビットストリームとしてシステムに渡します。DTSとTrueHDは引き続きマルチチャンネルPCMで再生されます。シーク時に短い音切れが発生することがあります。';
+	@override String get audioDownmix => 'ステレオにダウンミックス';
+	@override String get audioDownmixDescription => 'サラウンド音声をステレオスピーカーやヘッドホン用に2チャンネルへミックスします';
+	@override String get downmixCenterBoost => 'センターチャンネルブースト';
+	@override String downmixCenterBoostValue({required Object db}) => '${db} dB';
+	@override String get downmixCenterBoostLabel => 'ブースト (dB)';
+	@override String get downmixCenterBoostShort => 'dB';
+	@override String get audioDownmixNormalize => 'ダウンミックス時の音量正規化';
+	@override String get audioDownmixNormalizeDescription => 'クリッピングを防ぐためにミックス音量を下げます。オフにすると元の音量を維持します（大音量シーンで歪む場合があります）。';
+	@override String get atmosDiagnostics => 'Atmos出力テスト';
+	@override String get atmosDiagnosticsDescription => 'システムプレイヤーでテスト信号を再生してDolby Atmos出力を診断します';
+	@override String get atmosTestHlsAtmos => 'Apple Atmosストリーム';
+	@override String get atmosTestHlsAtmosDescription => '動作確認済みのDolby Atmosストリーム。レシーバーにDolby Atmosと表示されるはずです。';
+	@override String get atmosTestHlsControl => 'Appleサラウンドストリーム';
+	@override String get atmosTestHlsControlDescription => 'Atmosなしの比較用ストリーム。レシーバーにAtmosなしのサラウンドが表示されるはずです。';
+	@override String get atmosTestRawStream => '生EAC3ストリーム';
+	@override String get atmosTestRawStreamDescription => 'プレイヤー内のAtmos再生と同じ方式でテストファイルをストリーミングします。テストファイルのURLが必要です。';
+	@override String get atmosTestRawFile => '生EAC3ファイル';
+	@override String get atmosTestRawFileDescription => '長さが既知のテストファイルを再生します。テストファイルのURLが必要です。';
+	@override String get atmosTestStop => 'テストを停止';
+	@override String get atmosTestUrl => 'テストファイルのURL';
+	@override String get atmosTestUrlDescription => '生の.ec3 Dolby AtmosファイルのHTTP URL（例: ffmpegで抽出）';
+	@override String get atmosTestUrlMissing => '先にテストファイルのURLを設定してください';
+	@override String get atmosTestStatus => 'ステータス';
 	@override String get dvConversionMode => 'Dolby Vision 変換';
 	@override String get dvConversionModeDescription => 'ExoPlayer が Dolby Vision Profile 7 ファイルを処理する方法を選択します。';
 	@override String get dvConversionAuto => '自動';
@@ -528,9 +553,6 @@ class _TranslationsRateSheetJa extends TranslationsRateSheetEn {
 	@override String starValue({required Object rating}) => '${rating} / 5';
 	@override String scoreValue({required Object score}) => '${score} / 10';
 	@override String get setScore => 'スコアを設定';
-	@override String get notRated => '未評価';
-	@override String get liked => 'いいね済み';
-	@override String get notLiked => 'いいねなし';
 	@override String get saved => '保存済み';
 	@override String get notAvailable => '一致なし';
 	@override String get noConnectedTrackers => '設定でトラッカーを接続すると、そこで評価できます。';
@@ -829,7 +851,9 @@ class _TranslationsProfilesJa extends TranslationsProfilesEn {
 	@override String get borrowConnectionBorrowed => '接続を借用しました。';
 	@override String get borrowFailed => '接続を借用できませんでした。';
 	@override String get incorrectPin => 'PINが正しくありません。';
+	@override String get incorrectPinTryAgain => 'PINが正しくありません。もう一度お試しください。';
 	@override String get sourceProfileMissingParentAccount => 'ソースプロフィールに親アカウントがありません。';
+	@override String get failedToLoadHomeUsers => 'Plex Homeユーザーを読み込めませんでした。接続を確認して、もう一度お試しください。';
 	@override String get failedToVerifyPin => 'PINを確認できませんでした。';
 	@override String get newProfile => '新しいプロファイル';
 	@override String get profileNameHint => '例：ゲスト、キッズ、ファミリールーム';
@@ -875,6 +899,9 @@ class _TranslationsDiscoverJa extends TranslationsDiscoverEn {
 	@override String nextUpIn({required Object library}) => '${library}の次のエピソード';
 	@override String get recentlyAdded => '最近追加';
 	@override String recentlyAddedIn({required Object library}) => '${library}に最近追加';
+	@override String latestAlbumsIn({required Object library}) => '${library}の最新アルバム';
+	@override String recentlyPlayedIn({required Object library}) => '${library}で最近再生';
+	@override String mostPlayedIn({required Object library}) => '${library}で最も再生';
 	@override String playEpisode({required Object season, required Object episode}) => 'S${season}E${episode}';
 	@override String get overview => 'あらすじ';
 	@override String get cast => 'キャスト';
@@ -1176,6 +1203,39 @@ class _TranslationsPlaylistsJa extends TranslationsPlaylistsEn {
 	@override String get errorRemoving => 'プレイリストからの削除に失敗しました';
 }
 
+// Path: music
+class _TranslationsMusicJa extends TranslationsMusicEn {
+	_TranslationsMusicJa._(TranslationsJa root) : this._root = root, super.internal(root);
+
+	final TranslationsJa _root; // ignore: unused_field
+
+	// Translations
+	@override String get goToAlbum => 'アルバムへ移動';
+	@override String get goToArtist => 'アーティストへ移動';
+	@override String get instantMix => 'インスタントミックス';
+	@override String get playNext => '次に再生';
+	@override String get addToQueue => 'キューに追加';
+	@override String discNumber({required Object n}) => 'ディスク ${n}';
+	@override String trackCount({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('ja'))(n,
+		other: '${n} 曲',
+	);
+	@override String get nowPlaying => '再生中';
+	@override String playingFrom({required Object title}) => '${title} から再生';
+	@override String get queue => '再生キュー';
+	@override String get clearQueue => 'キューをクリア';
+	@override String get lyrics => '歌詞';
+	@override String get noLyrics => '歌詞がありません';
+	@override String get sleepTimer => 'スリープタイマー';
+	@override String get sleepTimerEndOfTrack => '曲の終わり';
+	@override String sleepTimerMinutes({required Object n}) => '${n} 分';
+	@override String get stopPlayback => '再生を停止';
+	@override String get previousTrack => '前の曲';
+	@override String get nextTrack => '次の曲';
+	@override String get repeat => 'リピート';
+	@override String get repeatAll => '全曲リピート';
+	@override String get repeatOne => '1曲リピート';
+}
+
 // Path: watchTogether
 class _TranslationsWatchTogetherJa extends TranslationsWatchTogetherEn {
 	_TranslationsWatchTogetherJa._(TranslationsJa root) : this._root = root, super.internal(root);
@@ -1256,6 +1316,8 @@ class _TranslationsDownloadsJa extends TranslationsDownloadsEn {
 	@override String get manage => '管理';
 	@override String get tvShows => 'テレビ番組';
 	@override String get movies => '映画';
+	@override String get music => '音楽';
+	@override String tracksQueued({required Object count}) => '${count} 曲をダウンロード待機中';
 	@override String get noDownloads => 'ダウンロードなし';
 	@override String get noDownloadsDescription => 'ダウンロードしたコンテンツはここに表示され、オフラインで視聴できます';
 	@override String get downloadNow => 'ダウンロード';
@@ -1376,6 +1438,7 @@ class _TranslationsVideoSettingsJa extends TranslationsVideoSettingsEn {
 	@override String get performanceOverlay => 'パフォーマンスオーバーレイ';
 	@override String get audioPassthrough => 'オーディオパススルー';
 	@override String get audioNormalization => 'ラウドネス正規化';
+	@override String get audioDownmix => 'ステレオにダウンミックス';
 }
 
 // Path: performanceOverlay
@@ -1717,6 +1780,9 @@ class _TranslationsLibrariesGroupingsJa extends TranslationsLibrariesGroupingsEn
 	@override String get shows => 'テレビ番組';
 	@override String get seasons => 'シーズン';
 	@override String get episodes => 'エピソード';
+	@override String get artists => 'アーティスト';
+	@override String get albums => 'アルバム';
+	@override String get tracks => '曲';
 	@override String get folders => 'フォルダ';
 }
 
@@ -2060,7 +2126,7 @@ extension on TranslationsJa {
 			'settings.hideSpoilers' => '未視聴エピソードのネタバレを非表示',
 			'settings.hideSpoilersDescription' => '未視聴エピソードのサムネイルと説明をぼかします',
 			'settings.playerBackend' => 'プレーヤーバックエンド',
-			'settings.exoPlayer' => 'ExoPlayer（推奨）',
+			'settings.exoPlayer' => 'ExoPlayer',
 			'settings.mpv' => 'mpv',
 			'settings.hardwareDecoding' => 'ハードウェアデコード',
 			'settings.hardwareDecodingDescription' => '利用可能な場合にハードウェアアクセラレーションを使用',
@@ -2182,6 +2248,30 @@ extension on TranslationsJa {
 			'settings.tunneledPlaybackDescription' => '動画トンネリングを使用します。HDR再生で画面が黒くなる場合は無効にしてください。',
 			'settings.audioPassthrough' => 'オーディオパススルー',
 			'settings.audioPassthroughDescription' => 'Dolby/DTS音声を再エンコードせずにレシーバーやテレビに送り、サラウンドを維持します。音が出ない場合は無効にしてください。',
+			'settings.audioPassthroughDescriptionAppleTv' => 'Dolby Digital Plus（Atmos含む）をビットストリームとしてシステムに渡します。DTSとTrueHDは引き続きマルチチャンネルPCMで再生されます。シーク時に短い音切れが発生することがあります。',
+			'settings.audioDownmix' => 'ステレオにダウンミックス',
+			'settings.audioDownmixDescription' => 'サラウンド音声をステレオスピーカーやヘッドホン用に2チャンネルへミックスします',
+			'settings.downmixCenterBoost' => 'センターチャンネルブースト',
+			'settings.downmixCenterBoostValue' => ({required Object db}) => '${db} dB',
+			'settings.downmixCenterBoostLabel' => 'ブースト (dB)',
+			'settings.downmixCenterBoostShort' => 'dB',
+			'settings.audioDownmixNormalize' => 'ダウンミックス時の音量正規化',
+			'settings.audioDownmixNormalizeDescription' => 'クリッピングを防ぐためにミックス音量を下げます。オフにすると元の音量を維持します（大音量シーンで歪む場合があります）。',
+			'settings.atmosDiagnostics' => 'Atmos出力テスト',
+			'settings.atmosDiagnosticsDescription' => 'システムプレイヤーでテスト信号を再生してDolby Atmos出力を診断します',
+			'settings.atmosTestHlsAtmos' => 'Apple Atmosストリーム',
+			'settings.atmosTestHlsAtmosDescription' => '動作確認済みのDolby Atmosストリーム。レシーバーにDolby Atmosと表示されるはずです。',
+			'settings.atmosTestHlsControl' => 'Appleサラウンドストリーム',
+			'settings.atmosTestHlsControlDescription' => 'Atmosなしの比較用ストリーム。レシーバーにAtmosなしのサラウンドが表示されるはずです。',
+			'settings.atmosTestRawStream' => '生EAC3ストリーム',
+			'settings.atmosTestRawStreamDescription' => 'プレイヤー内のAtmos再生と同じ方式でテストファイルをストリーミングします。テストファイルのURLが必要です。',
+			'settings.atmosTestRawFile' => '生EAC3ファイル',
+			'settings.atmosTestRawFileDescription' => '長さが既知のテストファイルを再生します。テストファイルのURLが必要です。',
+			'settings.atmosTestStop' => 'テストを停止',
+			'settings.atmosTestUrl' => 'テストファイルのURL',
+			'settings.atmosTestUrlDescription' => '生の.ec3 Dolby AtmosファイルのHTTP URL（例: ffmpegで抽出）',
+			'settings.atmosTestUrlMissing' => '先にテストファイルのURLを設定してください',
+			'settings.atmosTestStatus' => 'ステータス',
 			'settings.dvConversionMode' => 'Dolby Vision 変換',
 			'settings.dvConversionModeDescription' => 'ExoPlayer が Dolby Vision Profile 7 ファイルを処理する方法を選択します。',
 			'settings.dvConversionAuto' => '自動',
@@ -2296,9 +2386,6 @@ extension on TranslationsJa {
 			'rateSheet.starValue' => ({required Object rating}) => '${rating} / 5',
 			'rateSheet.scoreValue' => ({required Object score}) => '${score} / 10',
 			'rateSheet.setScore' => 'スコアを設定',
-			'rateSheet.notRated' => '未評価',
-			'rateSheet.liked' => 'いいね済み',
-			'rateSheet.notLiked' => 'いいねなし',
 			'rateSheet.saved' => '保存済み',
 			'rateSheet.notAvailable' => '一致なし',
 			'rateSheet.noConnectedTrackers' => '設定でトラッカーを接続すると、そこで評価できます。',
@@ -2419,6 +2506,8 @@ extension on TranslationsJa {
 			'messages.logsCleared' => 'ログをクリアしました',
 			'messages.logsCopied' => 'ログをクリップボードにコピーしました',
 			'messages.noLogsAvailable' => 'ログがありません',
+			_ => null,
+		} ?? switch (path) {
 			'messages.libraryScanning' => ({required Object title}) => '"${title}"をスキャン中...',
 			'messages.libraryScanStarted' => ({required Object title}) => '"${title}"のライブラリスキャンを開始しました',
 			'messages.libraryScanFailed' => ({required Object error}) => 'ライブラリのスキャンに失敗しました: ${error}',
@@ -2440,8 +2529,6 @@ extension on TranslationsJa {
 			'messages.serverLimitTitle' => '再生に失敗しました',
 			'messages.serverLimitBody' => 'サーバーエラー（HTTP 500）。帯域幅/トランスコード制限により拒否された可能性があります。所有者に調整を依頼してください。',
 			'messages.logsUploaded' => 'ログをアップロードしました',
-			_ => null,
-		} ?? switch (path) {
 			'messages.logsUploadFailed' => 'ログのアップロードに失敗しました',
 			'messages.logId' => 'ログID',
 			'subtitlingStyling.text' => 'テキスト',
@@ -2524,7 +2611,9 @@ extension on TranslationsJa {
 			'profiles.borrowConnectionBorrowed' => '接続を借用しました。',
 			'profiles.borrowFailed' => '接続を借用できませんでした。',
 			'profiles.incorrectPin' => 'PINが正しくありません。',
+			'profiles.incorrectPinTryAgain' => 'PINが正しくありません。もう一度お試しください。',
 			'profiles.sourceProfileMissingParentAccount' => 'ソースプロフィールに親アカウントがありません。',
+			'profiles.failedToLoadHomeUsers' => 'Plex Homeユーザーを読み込めませんでした。接続を確認して、もう一度お試しください。',
 			'profiles.failedToVerifyPin' => 'PINを確認できませんでした。',
 			'profiles.newProfile' => '新しいプロファイル',
 			'profiles.profileNameHint' => '例：ゲスト、キッズ、ファミリールーム',
@@ -2552,6 +2641,9 @@ extension on TranslationsJa {
 			'discover.nextUpIn' => ({required Object library}) => '${library}の次のエピソード',
 			'discover.recentlyAdded' => '最近追加',
 			'discover.recentlyAddedIn' => ({required Object library}) => '${library}に最近追加',
+			'discover.latestAlbumsIn' => ({required Object library}) => '${library}の最新アルバム',
+			'discover.recentlyPlayedIn' => ({required Object library}) => '${library}で最近再生',
+			'discover.mostPlayedIn' => ({required Object library}) => '${library}で最も再生',
 			'discover.playEpisode' => ({required Object season, required Object episode}) => 'S${season}E${episode}',
 			'discover.overview' => 'あらすじ',
 			'discover.cast' => 'キャスト',
@@ -2624,6 +2716,9 @@ extension on TranslationsJa {
 			'libraries.groupings.shows' => 'テレビ番組',
 			'libraries.groupings.seasons' => 'シーズン',
 			'libraries.groupings.episodes' => 'エピソード',
+			'libraries.groupings.artists' => 'アーティスト',
+			'libraries.groupings.albums' => 'アルバム',
+			'libraries.groupings.tracks' => '曲',
 			'libraries.groupings.folders' => 'フォルダ',
 			'libraries.filterCategories.genre' => 'ジャンル',
 			'libraries.filterCategories.year' => '年',
@@ -2785,6 +2880,28 @@ extension on TranslationsJa {
 			'playlists.errorAdding' => 'プレイリストへの追加に失敗しました',
 			'playlists.errorReordering' => 'プレイリストアイテムの並べ替えに失敗しました',
 			'playlists.errorRemoving' => 'プレイリストからの削除に失敗しました',
+			'music.goToAlbum' => 'アルバムへ移動',
+			'music.goToArtist' => 'アーティストへ移動',
+			'music.instantMix' => 'インスタントミックス',
+			'music.playNext' => '次に再生',
+			'music.addToQueue' => 'キューに追加',
+			'music.discNumber' => ({required Object n}) => 'ディスク ${n}',
+			'music.trackCount' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('ja'))(n, other: '${n} 曲', ), 
+			'music.nowPlaying' => '再生中',
+			'music.playingFrom' => ({required Object title}) => '${title} から再生',
+			'music.queue' => '再生キュー',
+			'music.clearQueue' => 'キューをクリア',
+			'music.lyrics' => '歌詞',
+			'music.noLyrics' => '歌詞がありません',
+			'music.sleepTimer' => 'スリープタイマー',
+			'music.sleepTimerEndOfTrack' => '曲の終わり',
+			'music.sleepTimerMinutes' => ({required Object n}) => '${n} 分',
+			'music.stopPlayback' => '再生を停止',
+			'music.previousTrack' => '前の曲',
+			'music.nextTrack' => '次の曲',
+			'music.repeat' => 'リピート',
+			'music.repeatAll' => '全曲リピート',
+			'music.repeatOne' => '1曲リピート',
 			'watchTogether.title' => '一緒に見る',
 			'watchTogether.description' => '友達や家族と同期してコンテンツを視聴',
 			'watchTogether.createSession' => 'セッションを作成',
@@ -2849,6 +2966,8 @@ extension on TranslationsJa {
 			'downloads.manage' => '管理',
 			'downloads.tvShows' => 'テレビ番組',
 			'downloads.movies' => '映画',
+			'downloads.music' => '音楽',
+			'downloads.tracksQueued' => ({required Object count}) => '${count} 曲をダウンロード待機中',
 			'downloads.noDownloads' => 'ダウンロードなし',
 			'downloads.noDownloadsDescription' => 'ダウンロードしたコンテンツはここに表示され、オフラインで視聴できます',
 			'downloads.downloadNow' => 'ダウンロード',
@@ -2901,6 +3020,8 @@ extension on TranslationsJa {
 			'downloads.manageSyncRule' => '同期を管理',
 			'downloads.editEpisodeCount' => 'エピソード数',
 			'downloads.editSyncFilter' => '同期フィルター',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.syncAllItems' => 'すべてのアイテムを同期中',
 			'downloads.syncUnwatchedItems' => '未視聴のアイテムを同期中',
 			'downloads.syncRuleServerContext' => ({required Object server, required Object status}) => 'サーバー: ${server} • ${status}',
@@ -2954,8 +3075,6 @@ extension on TranslationsJa {
 			'companionRemote.pairing.connectionTimedOut' => '接続がタイムアウトしました。両方のデバイスで同じネットワークを使用してください。',
 			'companionRemote.pairing.sessionNotFound' => 'デバイスが見つかりません。ホストでPlezyが実行中か確認してください。',
 			'companionRemote.pairing.authFailed' => '認証に失敗しました。両方のデバイスで同じPlexアカウントが必要です。',
-			_ => null,
-		} ?? switch (path) {
 			'companionRemote.pairing.failedToConnect' => ({required Object error}) => '接続に失敗しました: ${error}',
 			'companionRemote.remote.disconnectConfirm' => 'リモートセッションから切断しますか？',
 			'companionRemote.remote.reconnecting' => '再接続中...',
@@ -3000,6 +3119,7 @@ extension on TranslationsJa {
 			'videoSettings.performanceOverlay' => 'パフォーマンスオーバーレイ',
 			'videoSettings.audioPassthrough' => 'オーディオパススルー',
 			'videoSettings.audioNormalization' => 'ラウドネス正規化',
+			'videoSettings.audioDownmix' => 'ステレオにダウンミックス',
 			'performanceOverlay.color' => '色',
 			'performanceOverlay.performance' => 'パフォーマンス',
 			'performanceOverlay.buffer' => 'バッファ',

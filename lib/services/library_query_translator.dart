@@ -131,6 +131,7 @@ LibraryQuery libraryQueryFromPlexMap({
     'contentRating',
     'tag',
     'unwatched',
+    'favorite',
     'sort',
     'type',
     'alphaPrefix',
@@ -168,6 +169,7 @@ LibraryQuery libraryQueryFromPlexMap({
     offset: offset,
     limit: limit,
     includeWatched: nonEmpty(map['unwatched']) != '1',
+    favoritesOnly: nonEmpty(map['favorite']) == '1',
     nameStartsWith: nonEmpty(map['alphaPrefix']),
     search: nonEmpty(map['title']),
     genres: singleton(nonEmpty(map['genre'])),
@@ -221,8 +223,9 @@ class JellyfinLibraryQueryTranslator implements LibraryQueryTranslator {
       'Fields': fields,
       ...jellyfinImageQueryParameters,
     };
-    if (!query.includeWatched) {
-      params['Filters'] = 'IsUnplayed';
+    final wireFilters = <String>[if (!query.includeWatched) 'IsUnplayed', if (query.favoritesOnly) 'IsFavorite'];
+    if (wireFilters.isNotEmpty) {
+      params['Filters'] = wireFilters.join(',');
     }
     if (query.genres != null && query.genres!.isNotEmpty) {
       // Jellyfin uses `|` as the multi-value separator for Genres.

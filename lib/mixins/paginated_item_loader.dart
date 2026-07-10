@@ -47,7 +47,7 @@ mixin PaginatedItemLoader<T, W extends StatefulWidget> on State<W> {
 
   /// Hook fired after each successful page merge. Default: no-op.
   /// Override for image prefetch, syncing a base-class `items` list, etc.
-  void onPageLoaded(int _, List<T> __) {}
+  void onPageLoaded(int _, List<T> _) {}
 
   /// Synchronously clear pagination state and bump the generation counter.
   /// Call from inside the subclass's `setState` before awaiting

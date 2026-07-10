@@ -16,6 +16,7 @@ import 'package:plezy/providers/hidden_libraries_provider.dart';
 import 'package:plezy/providers/multi_server_provider.dart';
 import 'package:plezy/services/data_aggregation_service.dart';
 import 'package:plezy/services/multi_server_manager.dart';
+import 'package:plezy/services/offline_watch_sync_service.dart';
 import 'package:plezy/services/storage_service.dart';
 import 'package:provider/provider.dart';
 
@@ -47,6 +48,9 @@ void main() {
     );
     final serverManager = MultiServerManager();
     final multiServer = MultiServerProvider(serverManager, DataAggregationService(serverManager));
+    // The session tree instantiates MusicPlaybackServiceImpl (the mini-player
+    // overlay watches it), which needs the database + offline watch service.
+    final offlineWatch = OfflineWatchSyncService(database: db, serverManager: serverManager);
     final discoverProviders = <DiscoverProvider>[];
     final hiddenProviders = <HiddenLibrariesProvider>[];
     final disposedActiveIds = <String>[];
@@ -59,6 +63,7 @@ void main() {
       multiServer.dispose();
       serverManager.dispose();
       await plexHome.dispose();
+      offlineWatch.dispose();
       await db.close();
     });
 
@@ -75,8 +80,10 @@ void main() {
       MultiProvider(
         providers: [
           Provider<StorageService>.value(value: storage),
+          Provider<AppDatabase>.value(value: db),
           ChangeNotifierProvider<ActiveProfileProvider>.value(value: activeProfile),
           ChangeNotifierProvider<MultiServerProvider>.value(value: multiServer),
+          ChangeNotifierProvider<OfflineWatchSyncService>.value(value: offlineWatch),
         ],
         child: MaterialApp(
           home: ProfileSessionScreen.forTesting(
@@ -184,16 +191,8 @@ class _ProfileProbeShellState extends State<_ProfileProbeShell> {
 }
 
 class _FakePlexHomeService extends PlexHomeService {
-  _FakePlexHomeService({
-    required ConnectionRegistry connections,
-    required ProfileConnectionRegistry profileConnections,
-    required StorageService storage,
-  }) : super(
-         connections: connections,
-         profileConnections: profileConnections,
-         storage: storage,
-         plexHomeUserFetcher: (_) async => const [],
-       );
+  _FakePlexHomeService({required super.connections, required super.profileConnections, required StorageService storage})
+    : super(storage: storage, plexHomeUserFetcher: (_) async => const []);
 
   @override
   Map<String, List<PlexHomeUser>> get current => const {};

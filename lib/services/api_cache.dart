@@ -34,6 +34,10 @@ abstract class ApiCache {
     return _instance!;
   }
 
+  /// Like [instance], but `null` before any backend cache registered —
+  /// for best-effort callers (nothing cached yet means nothing to clear).
+  static ApiCache? get maybeInstance => _instance;
+
   static final Map<MediaBackend, ApiCache> _byBackend = {};
 
   /// Subclasses call this from their own `initialize` to register themselves

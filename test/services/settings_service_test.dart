@@ -102,12 +102,12 @@ void main() {
   });
 
   group('SettingsService platform gates', () {
-    test('audio passthrough stays available on desktop but not Apple TV', () {
+    test('audio passthrough stays available on desktop and Apple TV', () {
       expect(PlatformDetector.supportsAudioPassthrough(), isTrue);
 
       TvDetectionService.debugSetAppleTVOverride(true);
 
-      expect(PlatformDetector.supportsAudioPassthrough(), isFalse);
+      expect(PlatformDetector.supportsAudioPassthrough(), isTrue);
     });
 
     test('audio passthrough defaults off on a non-Android-TV host and honors explicit writes', () async {

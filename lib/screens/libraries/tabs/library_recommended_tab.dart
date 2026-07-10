@@ -8,10 +8,12 @@ import '../../../i18n/strings.g.dart';
 import '../../../media/media_hub.dart';
 import '../../../media/media_item.dart';
 import '../../../media/media_server_client.dart';
+import '../../../mixins/deletion_aware.dart';
 import '../../../mixins/item_updatable.dart';
 import '../../../mixins/watch_state_aware.dart';
 import '../../../services/settings_service.dart';
 import '../../../utils/debouncer.dart';
+import '../../../utils/deletion_notifier.dart';
 import '../../../utils/global_key_utils.dart';
 import '../../../utils/layout_constants.dart';
 import '../../../utils/platform_detector.dart';
@@ -44,7 +46,7 @@ class LibraryRecommendedTab extends BaseLibraryTab<MediaHub> {
 }
 
 class _LibraryRecommendedTabState extends BaseLibraryTabState<MediaHub, LibraryRecommendedTab>
-    with ItemUpdatable, WatchStateAware {
+    with ItemUpdatable, WatchStateAware, DeletionAware {
   /// GlobalKeys for each hub section to enable vertical navigation
   final List<GlobalKey<HubSectionState>> _hubKeys = [];
   final _tvBrowseRailKey = GlobalKey<TvBrowseRailState>();
@@ -93,6 +95,18 @@ class _LibraryRecommendedTabState extends BaseLibraryTabState<MediaHub, LibraryR
 
   @override
   String? get watchStateServerId => widget.library.serverId;
+
+  @override
+  String? get deletionServerId => widget.library.serverId;
+
+  // Deletion filtering needs the same id sets as watch state: each visible
+  // item plus its parents, so deleting a season/show also matches the
+  // episodes it contains here.
+  @override
+  Set<String>? get deletionIds => watchedIds;
+
+  @override
+  Set<String>? get deletionGlobalKeys => watchedGlobalKeys;
 
   @override
   Set<String>? get watchedIds {
@@ -162,11 +176,37 @@ class _LibraryRecommendedTabState extends BaseLibraryTabState<MediaHub, LibraryR
   }
 
   void _removeContinueWatchingItem(String itemId) {
+    _removeItemsFromHubs(hubMatches: _isContinueWatchingHub, itemMatches: (item) => item.id == itemId);
+  }
+
+  @override
+  void onDeletionEvent(DeletionEvent event) {
+    // This tab is server-backed: a download-only deletion leaves the server
+    // item in place, so it must not evict anything here.
+    if (event.isDownloadOnly) return;
+
+    // Drop the item and any descendants (season/show deletions take their
+    // episodes with them) from every hub, then resync with the server for
+    // parent leaf counts and replacement on-deck items — same
+    // remove-in-place-then-reload shape as the removedFromContinueWatching
+    // path above.
+    _removeItemsFromHubs(
+      hubMatches: (_) => true,
+      itemMatches: (item) =>
+          item.id == event.itemId || item.parentId == event.itemId || item.grandparentId == event.itemId,
+    );
+    unawaited(loadItems());
+  }
+
+  void _removeItemsFromHubs({
+    required bool Function(MediaHub) hubMatches,
+    required bool Function(MediaItem) itemMatches,
+  }) {
     setState(() {
       for (var i = 0; i < items.length; i++) {
         final hub = items[i];
-        if (!_isContinueWatchingHub(hub)) continue;
-        final newItems = hub.items.where((item) => item.id != itemId).toList();
+        if (!hubMatches(hub)) continue;
+        final newItems = hub.items.where((item) => !itemMatches(item)).toList();
         if (newItems.length != hub.items.length) {
           items[i] = hub.copyWith(items: newItems, size: newItems.length);
         }

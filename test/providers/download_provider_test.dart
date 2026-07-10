@@ -33,6 +33,30 @@ class _ThrowingClient implements MediaServerClient {
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
+/// Returns canned tracks from [fetchPlayableDescendants] (album/artist
+/// expansion) and records the requested parent ids.
+class _MusicExpansionClient implements MediaServerClient {
+  _MusicExpansionClient(this.tracks);
+
+  final List<MediaItem> tracks;
+  final fetchPlayableDescendantsCalls = <String>[];
+
+  @override
+  Future<List<MediaItem>> fetchPlayableDescendants(String parentId) async {
+    fetchPlayableDescendantsCalls.add(parentId);
+    return tracks;
+  }
+
+  @override
+  MediaBackend get backend => MediaBackend.plex;
+
+  @override
+  ServerId get serverId => ServerId('srv');
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
 class _ScopedTestClient implements MediaServerClient, ScopedMediaServerClient {
   _ScopedTestClient({required this.serverId, required this.scopedServerId});
 
@@ -132,6 +156,34 @@ void main() {
 
       p.dispose();
     });
+
+    test('logout detaches ownership without deleting physical downloads', () async {
+      const globalKey = 'srv:preserved';
+      await db.insertDownload(
+        serverId: ServerId('srv'),
+        ratingKey: 'preserved',
+        globalKey: globalKey,
+        type: 'movie',
+        status: DownloadStatus.completed.index,
+      );
+      await db.addDownloadOwner(profileId: 'test-profile', globalKey: globalKey);
+
+      final p = DownloadProvider.forTesting(downloadManager: downloadManager, database: db);
+      await p.ensureInitialized();
+      p.debugSeedState(
+        downloads: {globalKey: const DownloadProgress(globalKey: globalKey, status: DownloadStatus.completed)},
+        ownedDownloadKeys: {globalKey},
+      );
+      expect(p.downloads, contains(globalKey));
+
+      await p.detachDownloadsForLogout();
+
+      expect(await db.getDownloadedMedia(globalKey), isNotNull);
+      expect(await db.hasDownloadOwner(globalKey), isFalse);
+      expect(p.downloads, isEmpty);
+
+      p.dispose();
+    });
   });
 
   group('DownloadProvider — local file selection', () {
@@ -154,6 +206,59 @@ void main() {
 
       expect(await p.getVideoFilePath(globalKey, mediaIndex: 1), isNull);
       expect(await p.getVideoFilePath(globalKey, mediaIndex: 0), 'content://offline/movie-1-v1');
+
+      p.dispose();
+    });
+
+    test('getCompletedDownload exposes the downloaded version for owned completed rows', () async {
+      const globalKey = 'srv:movie-1';
+      await db.insertDownload(
+        serverId: ServerId('srv'),
+        ratingKey: 'movie-1',
+        globalKey: globalKey,
+        type: 'movie',
+        status: DownloadStatus.completed.index,
+        mediaIndex: 1,
+        mediaSourceId: 'source-b',
+      );
+
+      final p = DownloadProvider.forTesting(downloadManager: downloadManager, database: db);
+      await p.ensureInitialized();
+      p.debugSeedState(ownedDownloadKeys: {globalKey});
+
+      final row = await p.getCompletedDownload(globalKey);
+      expect(row, isNotNull);
+      expect(row!.mediaIndex, 1);
+      expect(row.mediaSourceId, 'source-b');
+
+      p.dispose();
+    });
+
+    test('getCompletedDownload returns null for unowned or incomplete rows', () async {
+      await db.insertDownload(
+        serverId: ServerId('srv'),
+        ratingKey: 'unowned',
+        globalKey: 'srv:unowned',
+        type: 'movie',
+        status: DownloadStatus.completed.index,
+      );
+      // Owned by another profile — otherwise legacy adoption claims fully
+      // ownerless rows for the active profile during initialization.
+      await db.addDownloadOwner(profileId: 'profile-b', globalKey: 'srv:unowned');
+      await db.insertDownload(
+        serverId: ServerId('srv'),
+        ratingKey: 'partial',
+        globalKey: 'srv:partial',
+        type: 'movie',
+        status: DownloadStatus.downloading.index,
+      );
+
+      final p = DownloadProvider.forTesting(downloadManager: downloadManager, database: db);
+      await p.ensureInitialized();
+      p.debugSeedState(ownedDownloadKeys: {'srv:partial'});
+
+      expect(await p.getCompletedDownload('srv:unowned'), isNull);
+      expect(await p.getCompletedDownload('srv:partial'), isNull);
 
       p.dispose();
     });
@@ -454,6 +559,92 @@ void main() {
       expect(count, 1);
       expect(p.downloads.keys, ['srv:1']);
       expect(await db.getDownloadOwnerKeysForProfile('test-profile'), {'srv:1'});
+
+      p.dispose();
+    });
+
+    test('queueDownload expands an album into its tracks via fetchPlayableDescendants', () async {
+      final album = MediaItem(
+        id: 'album-1',
+        backend: MediaBackend.plex,
+        kind: MediaKind.album,
+        title: 'Album',
+        serverId: ServerId('srv'),
+      );
+      MediaItem track(String id) => MediaItem(
+        id: id,
+        backend: MediaBackend.plex,
+        kind: MediaKind.track,
+        title: id,
+        parentId: 'album-1',
+        serverId: ServerId('srv'),
+      );
+
+      final p = DownloadProvider.forTesting(downloadManager: downloadManager, database: db);
+      await p.ensureInitialized();
+      // Physical rows already exist (shared/unowned) so each expanded track
+      // takes the claim-existing early path — no manager/network needed.
+      p.debugSeedState(
+        downloads: {
+          'srv:t1': const DownloadProgress(globalKey: 'srv:t1', status: DownloadStatus.completed),
+          'srv:t2': const DownloadProgress(globalKey: 'srv:t2', status: DownloadStatus.completed),
+        },
+        metadata: {'srv:t1': track('t1'), 'srv:t2': track('t2')},
+        ownedDownloadKeys: const {},
+      );
+
+      final client = _MusicExpansionClient([track('t1'), track('t2')]);
+      final count = await p.queueDownload(album, client);
+
+      expect(count, 2);
+      expect(client.fetchPlayableDescendantsCalls, ['album-1']);
+      expect(await db.getDownloadOwnerKeysForProfile('test-profile'), {'srv:t1', 'srv:t2'});
+
+      p.dispose();
+    });
+
+    test('album aggregates, downloadedAlbums, and per-album track order come from track downloads', () async {
+      MediaItem track(String id, {required int disc, required int number}) => MediaItem(
+        id: id,
+        backend: MediaBackend.plex,
+        kind: MediaKind.track,
+        title: id,
+        parentId: 'album-1',
+        parentTitle: 'Album',
+        grandparentId: 'artist-1',
+        grandparentTitle: 'Artist',
+        parentIndex: disc,
+        index: number,
+        serverId: ServerId('srv'),
+      );
+
+      final p = DownloadProvider.forTesting(downloadManager: downloadManager, database: db);
+      await p.ensureInitialized();
+      p.debugSeedState(
+        downloads: {
+          'srv:t1': const DownloadProgress(globalKey: 'srv:t1', status: DownloadStatus.completed),
+          'srv:t2': const DownloadProgress(globalKey: 'srv:t2', status: DownloadStatus.completed),
+        },
+        // Seeded out of disc/track order on purpose.
+        metadata: {
+          'srv:t1': track('t1', disc: 2, number: 1),
+          'srv:t2': track('t2', disc: 1, number: 2),
+          'srv:album-1': MediaItem(
+            id: 'album-1',
+            backend: MediaBackend.plex,
+            kind: MediaKind.album,
+            title: 'Album',
+            parentId: 'artist-1',
+            parentTitle: 'Artist',
+            serverId: ServerId('srv'),
+          ),
+        },
+      );
+
+      expect(p.getProgress('srv:album-1')?.status, DownloadStatus.completed);
+      expect(p.isDownloaded('srv:album-1'), isTrue);
+      expect(p.downloadedAlbums.map((a) => a.id), ['album-1']);
+      expect(p.getDownloadedTracksForAlbum('album-1').map((item) => item.id), ['t2', 't1']);
 
       p.dispose();
     });

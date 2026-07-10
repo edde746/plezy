@@ -72,6 +72,7 @@ class TranslationsBg extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _TranslationsLiveTvBg liveTv = _TranslationsLiveTvBg._(_root);
 	@override late final _TranslationsCollectionsBg collections = _TranslationsCollectionsBg._(_root);
 	@override late final _TranslationsPlaylistsBg playlists = _TranslationsPlaylistsBg._(_root);
+	@override late final _TranslationsMusicBg music = _TranslationsMusicBg._(_root);
 	@override late final _TranslationsWatchTogetherBg watchTogether = _TranslationsWatchTogetherBg._(_root);
 	@override late final _TranslationsDownloadsBg downloads = _TranslationsDownloadsBg._(_root);
 	@override late final _TranslationsShadersBg shaders = _TranslationsShadersBg._(_root);
@@ -271,7 +272,7 @@ class _TranslationsSettingsBg extends TranslationsSettingsEn {
 	@override String get hideSpoilers => 'Скривай спойлери за негледани епизоди';
 	@override String get hideSpoilersDescription => 'Замазвай миниатюри и описания за негледани епизоди';
 	@override String get playerBackend => 'Енджин на плеъра';
-	@override String get exoPlayer => 'ExoPlayer (препоръчително)';
+	@override String get exoPlayer => 'ExoPlayer';
 	@override String get mpv => 'mpv';
 	@override String get hardwareDecoding => 'Хардуерно декодиране';
 	@override String get hardwareDecodingDescription => 'Използвай хардуерно ускорение, когато е налично';
@@ -393,6 +394,30 @@ class _TranslationsSettingsBg extends TranslationsSettingsEn {
 	@override String get tunneledPlaybackDescription => 'Използвай видео тунелиране. Изключете, ако HDR възпроизвеждането показва черен екран.';
 	@override String get audioPassthrough => 'Аудио passthrough';
 	@override String get audioPassthroughDescription => 'Изпращай Dolby/DTS звук към ресийвъра или телевизора без прекодиране, запазвайки съраунд звука. Изключете, ако няма звук.';
+	@override String get audioPassthroughDescriptionAppleTv => 'Предава Dolby Digital Plus (вкл. Atmos) на системата като битов поток. DTS и TrueHD продължават да се възпроизвеждат като многоканален PCM. При превъртане може да има кратки прекъсвания на звука.';
+	@override String get audioDownmix => 'Смесване до стерео';
+	@override String get audioDownmixDescription => 'Смесва съраунд звука до два канала за стерео тонколони или слушалки';
+	@override String get downmixCenterBoost => 'Усилване на централния канал';
+	@override String downmixCenterBoostValue({required Object db}) => '${db} дБ';
+	@override String get downmixCenterBoostLabel => 'Усилване (дБ)';
+	@override String get downmixCenterBoostShort => 'дБ';
+	@override String get audioDownmixNormalize => 'Нормализиране на звука при смесване';
+	@override String get audioDownmixNormalizeDescription => 'Понижава микса, за да се предотврати клипинг. Изключете, за да запазите оригиналната сила на звука (възможни изкривявания при силни сцени).';
+	@override String get atmosDiagnostics => 'Тест на Atmos изхода';
+	@override String get atmosDiagnosticsDescription => 'Диагностика на Dolby Atmos изхода чрез възпроизвеждане на тестови сигнали през системния плейър';
+	@override String get atmosTestHlsAtmos => 'Apple Atmos поток';
+	@override String get atmosTestHlsAtmosDescription => 'Гарантирано работещ Dolby Atmos поток. Ресийвърът трябва да покаже Dolby Atmos.';
+	@override String get atmosTestHlsControl => 'Apple съраунд поток';
+	@override String get atmosTestHlsControlDescription => 'Контролен поток без Atmos. Ресийвърът трябва да покаже съраунд без Atmos.';
+	@override String get atmosTestRawStream => 'Суров EAC3 поток';
+	@override String get atmosTestRawStreamDescription => 'Стриймва тестовия файл точно както Atmos възпроизвеждането в плейъра. Изисква URL на тестовия файл.';
+	@override String get atmosTestRawFile => 'Суров EAC3 файл';
+	@override String get atmosTestRawFileDescription => 'Възпроизвежда тестовия файл с известна дължина. Изисква URL на тестовия файл.';
+	@override String get atmosTestStop => 'Спри теста';
+	@override String get atmosTestUrl => 'URL на тестовия файл';
+	@override String get atmosTestUrlDescription => 'HTTP URL на суров .ec3 Dolby Atmos файл (напр. извлечен с ffmpeg)';
+	@override String get atmosTestUrlMissing => 'Първо задайте URL на тестовия файл';
+	@override String get atmosTestStatus => 'Състояние';
 	@override String get dvConversionMode => 'Dolby Vision конвертиране';
 	@override String get dvConversionModeDescription => 'Изберете как ExoPlayer обработва Dolby Vision Profile 7 файлове.';
 	@override String get dvConversionAuto => 'Автоматично';
@@ -528,9 +553,6 @@ class _TranslationsRateSheetBg extends TranslationsRateSheetEn {
 	@override String starValue({required Object rating}) => '${rating} / 5';
 	@override String scoreValue({required Object score}) => '${score} / 10';
 	@override String get setScore => 'Задай оценка';
-	@override String get notRated => 'Без оценка';
-	@override String get liked => 'Харесано';
-	@override String get notLiked => 'Не е харесано';
 	@override String get saved => 'Запазено';
 	@override String get notAvailable => 'Няма намерено съвпадение';
 	@override String get noConnectedTrackers => 'Свържете тракер в Настройки, за да оценявате там.';
@@ -829,7 +851,9 @@ class _TranslationsProfilesBg extends TranslationsProfilesEn {
 	@override String get borrowConnectionBorrowed => 'Връзката е използвана.';
 	@override String get borrowFailed => 'Неуспешно използване на връзка.';
 	@override String get incorrectPin => 'Неправилен PIN.';
+	@override String get incorrectPinTryAgain => 'Неправилен PIN. Опитайте отново.';
 	@override String get sourceProfileMissingParentAccount => 'Изходният профил няма родителски акаунт.';
+	@override String get failedToLoadHomeUsers => 'Потребителите на Plex Home не можаха да бъдат заредени. Проверете връзката си и опитайте отново.';
 	@override String get failedToVerifyPin => 'Неуспешна проверка на PIN.';
 	@override String get newProfile => 'Нов профил';
 	@override String get profileNameHint => 'напр. Гости, Деца, Семейна стая';
@@ -875,6 +899,9 @@ class _TranslationsDiscoverBg extends TranslationsDiscoverEn {
 	@override String nextUpIn({required Object library}) => 'Следва в ${library}';
 	@override String get recentlyAdded => 'Наскоро добавени';
 	@override String recentlyAddedIn({required Object library}) => 'Наскоро добавени в ${library}';
+	@override String latestAlbumsIn({required Object library}) => 'Последни албуми в ${library}';
+	@override String recentlyPlayedIn({required Object library}) => 'Наскоро възпроизведени в ${library}';
+	@override String mostPlayedIn({required Object library}) => 'Най-възпроизвеждани в ${library}';
 	@override String playEpisode({required Object season, required Object episode}) => 'S${season}E${episode}';
 	@override String get overview => 'Обзор';
 	@override String get cast => 'Актьори';
@@ -1176,6 +1203,40 @@ class _TranslationsPlaylistsBg extends TranslationsPlaylistsEn {
 	@override String get errorRemoving => 'Неуспешно премахване от плейлист';
 }
 
+// Path: music
+class _TranslationsMusicBg extends TranslationsMusicEn {
+	_TranslationsMusicBg._(TranslationsBg root) : this._root = root, super.internal(root);
+
+	final TranslationsBg _root; // ignore: unused_field
+
+	// Translations
+	@override String get goToAlbum => 'Към албума';
+	@override String get goToArtist => 'Към изпълнителя';
+	@override String get instantMix => 'Мигновен микс';
+	@override String get playNext => 'Пусни следващото';
+	@override String get addToQueue => 'Добави към опашката';
+	@override String discNumber({required Object n}) => 'Диск ${n}';
+	@override String trackCount({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('bg'))(n,
+		one: '${n} песен',
+		other: '${n} песни',
+	);
+	@override String get nowPlaying => 'Сега се възпроизвежда';
+	@override String playingFrom({required Object title}) => 'Възпроизвеждане от ${title}';
+	@override String get queue => 'Опашка';
+	@override String get clearQueue => 'Изчисти опашката';
+	@override String get lyrics => 'Текст';
+	@override String get noLyrics => 'Няма наличен текст';
+	@override String get sleepTimer => 'Таймер за заспиване';
+	@override String get sleepTimerEndOfTrack => 'Край на песента';
+	@override String sleepTimerMinutes({required Object n}) => '${n} минути';
+	@override String get stopPlayback => 'Спри възпроизвеждането';
+	@override String get previousTrack => 'Предишна песен';
+	@override String get nextTrack => 'Следваща песен';
+	@override String get repeat => 'Повтори';
+	@override String get repeatAll => 'Повтори всички';
+	@override String get repeatOne => 'Повтори една';
+}
+
 // Path: watchTogether
 class _TranslationsWatchTogetherBg extends TranslationsWatchTogetherEn {
 	_TranslationsWatchTogetherBg._(TranslationsBg root) : this._root = root, super.internal(root);
@@ -1256,6 +1317,8 @@ class _TranslationsDownloadsBg extends TranslationsDownloadsEn {
 	@override String get manage => 'Управление';
 	@override String get tvShows => 'ТВ сериали';
 	@override String get movies => 'Филми';
+	@override String get music => 'Музика';
+	@override String tracksQueued({required Object count}) => '${count} песни в опашката за изтегляне';
 	@override String get noDownloads => 'Все още няма изтегляния';
 	@override String get noDownloadsDescription => 'Изтегленото съдържание ще се показва тук за офлайн гледане';
 	@override String get downloadNow => 'Изтегли';
@@ -1376,6 +1439,7 @@ class _TranslationsVideoSettingsBg extends TranslationsVideoSettingsEn {
 	@override String get performanceOverlay => 'Оверлей за производителност';
 	@override String get audioPassthrough => 'Аудио passthrough';
 	@override String get audioNormalization => 'Нормализиране на силата на звука';
+	@override String get audioDownmix => 'Смесване до стерео';
 }
 
 // Path: performanceOverlay
@@ -1717,6 +1781,9 @@ class _TranslationsLibrariesGroupingsBg extends TranslationsLibrariesGroupingsEn
 	@override String get shows => 'ТВ сериали';
 	@override String get seasons => 'Сезони';
 	@override String get episodes => 'Епизоди';
+	@override String get artists => 'Изпълнители';
+	@override String get albums => 'Албуми';
+	@override String get tracks => 'Песни';
 	@override String get folders => 'Папки';
 }
 
@@ -2060,7 +2127,7 @@ extension on TranslationsBg {
 			'settings.hideSpoilers' => 'Скривай спойлери за негледани епизоди',
 			'settings.hideSpoilersDescription' => 'Замазвай миниатюри и описания за негледани епизоди',
 			'settings.playerBackend' => 'Енджин на плеъра',
-			'settings.exoPlayer' => 'ExoPlayer (препоръчително)',
+			'settings.exoPlayer' => 'ExoPlayer',
 			'settings.mpv' => 'mpv',
 			'settings.hardwareDecoding' => 'Хардуерно декодиране',
 			'settings.hardwareDecodingDescription' => 'Използвай хардуерно ускорение, когато е налично',
@@ -2182,6 +2249,30 @@ extension on TranslationsBg {
 			'settings.tunneledPlaybackDescription' => 'Използвай видео тунелиране. Изключете, ако HDR възпроизвеждането показва черен екран.',
 			'settings.audioPassthrough' => 'Аудио passthrough',
 			'settings.audioPassthroughDescription' => 'Изпращай Dolby/DTS звук към ресийвъра или телевизора без прекодиране, запазвайки съраунд звука. Изключете, ако няма звук.',
+			'settings.audioPassthroughDescriptionAppleTv' => 'Предава Dolby Digital Plus (вкл. Atmos) на системата като битов поток. DTS и TrueHD продължават да се възпроизвеждат като многоканален PCM. При превъртане може да има кратки прекъсвания на звука.',
+			'settings.audioDownmix' => 'Смесване до стерео',
+			'settings.audioDownmixDescription' => 'Смесва съраунд звука до два канала за стерео тонколони или слушалки',
+			'settings.downmixCenterBoost' => 'Усилване на централния канал',
+			'settings.downmixCenterBoostValue' => ({required Object db}) => '${db} дБ',
+			'settings.downmixCenterBoostLabel' => 'Усилване (дБ)',
+			'settings.downmixCenterBoostShort' => 'дБ',
+			'settings.audioDownmixNormalize' => 'Нормализиране на звука при смесване',
+			'settings.audioDownmixNormalizeDescription' => 'Понижава микса, за да се предотврати клипинг. Изключете, за да запазите оригиналната сила на звука (възможни изкривявания при силни сцени).',
+			'settings.atmosDiagnostics' => 'Тест на Atmos изхода',
+			'settings.atmosDiagnosticsDescription' => 'Диагностика на Dolby Atmos изхода чрез възпроизвеждане на тестови сигнали през системния плейър',
+			'settings.atmosTestHlsAtmos' => 'Apple Atmos поток',
+			'settings.atmosTestHlsAtmosDescription' => 'Гарантирано работещ Dolby Atmos поток. Ресийвърът трябва да покаже Dolby Atmos.',
+			'settings.atmosTestHlsControl' => 'Apple съраунд поток',
+			'settings.atmosTestHlsControlDescription' => 'Контролен поток без Atmos. Ресийвърът трябва да покаже съраунд без Atmos.',
+			'settings.atmosTestRawStream' => 'Суров EAC3 поток',
+			'settings.atmosTestRawStreamDescription' => 'Стриймва тестовия файл точно както Atmos възпроизвеждането в плейъра. Изисква URL на тестовия файл.',
+			'settings.atmosTestRawFile' => 'Суров EAC3 файл',
+			'settings.atmosTestRawFileDescription' => 'Възпроизвежда тестовия файл с известна дължина. Изисква URL на тестовия файл.',
+			'settings.atmosTestStop' => 'Спри теста',
+			'settings.atmosTestUrl' => 'URL на тестовия файл',
+			'settings.atmosTestUrlDescription' => 'HTTP URL на суров .ec3 Dolby Atmos файл (напр. извлечен с ffmpeg)',
+			'settings.atmosTestUrlMissing' => 'Първо задайте URL на тестовия файл',
+			'settings.atmosTestStatus' => 'Състояние',
 			'settings.dvConversionMode' => 'Dolby Vision конвертиране',
 			'settings.dvConversionModeDescription' => 'Изберете как ExoPlayer обработва Dolby Vision Profile 7 файлове.',
 			'settings.dvConversionAuto' => 'Автоматично',
@@ -2296,9 +2387,6 @@ extension on TranslationsBg {
 			'rateSheet.starValue' => ({required Object rating}) => '${rating} / 5',
 			'rateSheet.scoreValue' => ({required Object score}) => '${score} / 10',
 			'rateSheet.setScore' => 'Задай оценка',
-			'rateSheet.notRated' => 'Без оценка',
-			'rateSheet.liked' => 'Харесано',
-			'rateSheet.notLiked' => 'Не е харесано',
 			'rateSheet.saved' => 'Запазено',
 			'rateSheet.notAvailable' => 'Няма намерено съвпадение',
 			'rateSheet.noConnectedTrackers' => 'Свържете тракер в Настройки, за да оценявате там.',
@@ -2419,6 +2507,8 @@ extension on TranslationsBg {
 			'messages.logsCleared' => 'Логовете са изчистени',
 			'messages.logsCopied' => 'Логовете са копирани в клипборда',
 			'messages.noLogsAvailable' => 'Няма налични логове',
+			_ => null,
+		} ?? switch (path) {
 			'messages.libraryScanning' => ({required Object title}) => 'Сканиране на "${title}"...',
 			'messages.libraryScanStarted' => ({required Object title}) => 'Сканирането на библиотеката е стартирано за "${title}"',
 			'messages.libraryScanFailed' => ({required Object error}) => 'Неуспешно сканиране на библиотеката: ${error}',
@@ -2440,8 +2530,6 @@ extension on TranslationsBg {
 			'messages.serverLimitTitle' => 'Възпроизвеждането е неуспешно',
 			'messages.serverLimitBody' => 'Грешка на сървъра (HTTP 500). Вероятно лимит за пропускателна способност/транскодиране е отхвърлил тази сесия. Помолете собственика да го коригира.',
 			'messages.logsUploaded' => 'Логовете са качени',
-			_ => null,
-		} ?? switch (path) {
 			'messages.logsUploadFailed' => 'Неуспешно качване на логовете',
 			'messages.logId' => 'ID на лога',
 			'subtitlingStyling.text' => 'Текст',
@@ -2524,7 +2612,9 @@ extension on TranslationsBg {
 			'profiles.borrowConnectionBorrowed' => 'Връзката е използвана.',
 			'profiles.borrowFailed' => 'Неуспешно използване на връзка.',
 			'profiles.incorrectPin' => 'Неправилен PIN.',
+			'profiles.incorrectPinTryAgain' => 'Неправилен PIN. Опитайте отново.',
 			'profiles.sourceProfileMissingParentAccount' => 'Изходният профил няма родителски акаунт.',
+			'profiles.failedToLoadHomeUsers' => 'Потребителите на Plex Home не можаха да бъдат заредени. Проверете връзката си и опитайте отново.',
 			'profiles.failedToVerifyPin' => 'Неуспешна проверка на PIN.',
 			'profiles.newProfile' => 'Нов профил',
 			'profiles.profileNameHint' => 'напр. Гости, Деца, Семейна стая',
@@ -2552,6 +2642,9 @@ extension on TranslationsBg {
 			'discover.nextUpIn' => ({required Object library}) => 'Следва в ${library}',
 			'discover.recentlyAdded' => 'Наскоро добавени',
 			'discover.recentlyAddedIn' => ({required Object library}) => 'Наскоро добавени в ${library}',
+			'discover.latestAlbumsIn' => ({required Object library}) => 'Последни албуми в ${library}',
+			'discover.recentlyPlayedIn' => ({required Object library}) => 'Наскоро възпроизведени в ${library}',
+			'discover.mostPlayedIn' => ({required Object library}) => 'Най-възпроизвеждани в ${library}',
 			'discover.playEpisode' => ({required Object season, required Object episode}) => 'S${season}E${episode}',
 			'discover.overview' => 'Обзор',
 			'discover.cast' => 'Актьори',
@@ -2624,6 +2717,9 @@ extension on TranslationsBg {
 			'libraries.groupings.shows' => 'ТВ сериали',
 			'libraries.groupings.seasons' => 'Сезони',
 			'libraries.groupings.episodes' => 'Епизоди',
+			'libraries.groupings.artists' => 'Изпълнители',
+			'libraries.groupings.albums' => 'Албуми',
+			'libraries.groupings.tracks' => 'Песни',
 			'libraries.groupings.folders' => 'Папки',
 			'libraries.filterCategories.genre' => 'Жанр',
 			'libraries.filterCategories.year' => 'Година',
@@ -2785,6 +2881,28 @@ extension on TranslationsBg {
 			'playlists.errorAdding' => 'Неуспешно добавяне към плейлист',
 			'playlists.errorReordering' => 'Неуспешно пренареждане на елемент в плейлиста',
 			'playlists.errorRemoving' => 'Неуспешно премахване от плейлист',
+			'music.goToAlbum' => 'Към албума',
+			'music.goToArtist' => 'Към изпълнителя',
+			'music.instantMix' => 'Мигновен микс',
+			'music.playNext' => 'Пусни следващото',
+			'music.addToQueue' => 'Добави към опашката',
+			'music.discNumber' => ({required Object n}) => 'Диск ${n}',
+			'music.trackCount' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('bg'))(n, one: '${n} песен', other: '${n} песни', ), 
+			'music.nowPlaying' => 'Сега се възпроизвежда',
+			'music.playingFrom' => ({required Object title}) => 'Възпроизвеждане от ${title}',
+			'music.queue' => 'Опашка',
+			'music.clearQueue' => 'Изчисти опашката',
+			'music.lyrics' => 'Текст',
+			'music.noLyrics' => 'Няма наличен текст',
+			'music.sleepTimer' => 'Таймер за заспиване',
+			'music.sleepTimerEndOfTrack' => 'Край на песента',
+			'music.sleepTimerMinutes' => ({required Object n}) => '${n} минути',
+			'music.stopPlayback' => 'Спри възпроизвеждането',
+			'music.previousTrack' => 'Предишна песен',
+			'music.nextTrack' => 'Следваща песен',
+			'music.repeat' => 'Повтори',
+			'music.repeatAll' => 'Повтори всички',
+			'music.repeatOne' => 'Повтори една',
 			'watchTogether.title' => 'Гледане заедно',
 			'watchTogether.description' => 'Гледайте съдържание синхронизирано с приятели и семейство',
 			'watchTogether.createSession' => 'Създай сесия',
@@ -2849,6 +2967,8 @@ extension on TranslationsBg {
 			'downloads.manage' => 'Управление',
 			'downloads.tvShows' => 'ТВ сериали',
 			'downloads.movies' => 'Филми',
+			'downloads.music' => 'Музика',
+			'downloads.tracksQueued' => ({required Object count}) => '${count} песни в опашката за изтегляне',
 			'downloads.noDownloads' => 'Все още няма изтегляния',
 			'downloads.noDownloadsDescription' => 'Изтегленото съдържание ще се показва тук за офлайн гледане',
 			'downloads.downloadNow' => 'Изтегли',
@@ -2901,6 +3021,8 @@ extension on TranslationsBg {
 			'downloads.manageSyncRule' => 'Управление на синхронизацията',
 			'downloads.editEpisodeCount' => 'Брой епизоди',
 			'downloads.editSyncFilter' => 'Филтър за синхронизация',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.syncAllItems' => 'Синхронизират се всички елементи',
 			'downloads.syncUnwatchedItems' => 'Синхронизират се негледаните елементи',
 			'downloads.syncRuleServerContext' => ({required Object server, required Object status}) => 'Сървър: ${server} • ${status}',
@@ -2954,8 +3076,6 @@ extension on TranslationsBg {
 			'companionRemote.pairing.connectionTimedOut' => 'Връзката изтече. Използвайте една и съща мрежа на двете устройства.',
 			'companionRemote.pairing.sessionNotFound' => 'Устройството не е намерено. Уверете се, че Plezy работи на хоста.',
 			'companionRemote.pairing.authFailed' => 'Удостоверяването е неуспешно. Двете устройства трябва да използват същия Plex акаунт.',
-			_ => null,
-		} ?? switch (path) {
 			'companionRemote.pairing.failedToConnect' => ({required Object error}) => 'Неуспешно свързване: ${error}',
 			'companionRemote.remote.disconnectConfirm' => 'Искате ли да прекъснете връзката с дистанционната сесия?',
 			'companionRemote.remote.reconnecting' => 'Повторно свързване...',
@@ -3000,6 +3120,7 @@ extension on TranslationsBg {
 			'videoSettings.performanceOverlay' => 'Оверлей за производителност',
 			'videoSettings.audioPassthrough' => 'Аудио passthrough',
 			'videoSettings.audioNormalization' => 'Нормализиране на силата на звука',
+			'videoSettings.audioDownmix' => 'Смесване до стерео',
 			'performanceOverlay.color' => 'Цвят',
 			'performanceOverlay.performance' => 'Производителност',
 			'performanceOverlay.buffer' => 'Буфер',

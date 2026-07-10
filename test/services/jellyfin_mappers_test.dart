@@ -100,6 +100,32 @@ void main() {
       expect(item.isWatched, isFalse);
     });
 
+    test('maps UserData.IsFavorite and ignores the legacy Likes flag', () {
+      final json = {
+        'Id': 'fav-1',
+        'Name': 'Favorited Movie',
+        'Type': 'Movie',
+        'UserData': {'IsFavorite': true, 'Likes': true},
+      };
+
+      final item = JellyfinMappers.mediaItem(json, serverId: ServerId(_serverId), absolutizer: null)!;
+
+      expect(item.isFavorite, isTrue);
+      // Likes used to map to userRating 10.0/0.0; the rate sheet now uses
+      // IsFavorite for Jellyfin, so Likes must no longer surface anywhere.
+      expect(item.userRating, isNull);
+    });
+
+    test('missing UserData leaves isFavorite null', () {
+      final item = JellyfinMappers.mediaItem(
+        {'Id': 'no-userdata', 'Name': 'No UserData', 'Type': 'Movie'},
+        serverId: ServerId(_serverId),
+        absolutizer: null,
+      )!;
+
+      expect(item.isFavorite, isNull);
+    });
+
     test('maps generic Jellyfin video types to playable clips', () {
       final video = JellyfinMappers.mediaItem(
         {'Id': 'home-video', 'Name': 'Home Video', 'Type': 'Video'},

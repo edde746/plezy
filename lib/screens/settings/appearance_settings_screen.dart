@@ -27,163 +27,197 @@ class AppearanceSettingsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Watched at build level so the tile can be excluded with a plain `if` —
+    // a child that renders SizedBox.shrink() would corrupt the group corners.
+    final hasMultipleProfiles = context.watch<ActiveProfileProvider>().hasMultipleProfiles;
     return SettingsPage(
       title: Text(t.settings.appearance),
       children: [
-        SettingsSectionHeader(t.settings.display),
-        _themeSelector(),
-        _languageSelector(context),
-        _densitySelector(),
-        _viewModeSelector(),
-        _episodePosterModeSelector(),
-        if (PlatformDetector.isTV())
-          SettingSwitchTile(
-            pref: SettingsService.tvFullCardLayout,
-            icon: Symbols.image_rounded,
-            title: t.settings.tvFullCardLayout,
-            subtitle: t.settings.tvFullCardLayoutDescription,
-          ),
-        if (PlatformDetector.isTV())
-          SettingSwitchTile(
-            pref: SettingsService.focusGlow,
-            icon: Symbols.lightbulb_rounded,
-            title: t.settings.focusGlow,
-            subtitle: t.settings.focusGlowDescription,
-          ),
-        if (Platform.isAndroid) _visualEffectsSelector(context),
-        SettingSwitchTile(
-          pref: SettingsService.showEpisodeNumberOnCards,
-          icon: Symbols.tag_rounded,
-          title: t.settings.showEpisodeNumberOnCards,
-          subtitle: t.settings.showEpisodeNumberOnCardsDescription,
-        ),
-        if (!PlatformDetector.isTV())
-          SettingSwitchTile(
-            pref: SettingsService.showSeasonPostersOnTabs,
-            icon: Symbols.image_rounded,
-            title: t.settings.showSeasonPostersOnTabs,
-            subtitle: t.settings.showSeasonPostersOnTabsDescription,
-          ),
-
-        SettingsSectionHeader(t.settings.homeScreen),
-        if (!PlatformDetector.isTV())
-          SettingSwitchTile(
-            pref: SettingsService.showHeroSection,
-            icon: Symbols.featured_play_list_rounded,
-            title: t.settings.showHeroSection,
-            subtitle: t.settings.showHeroSectionDescription,
-          ),
-        _continueWatchingActionSelector(),
-        SettingSwitchTile(
-          pref: SettingsService.useGlobalHubs,
-          icon: Symbols.home_rounded,
-          title: t.settings.useGlobalHubs,
-          subtitle: t.settings.useGlobalHubsDescription,
-        ),
-        SettingSwitchTile(
-          pref: SettingsService.showServerNameOnHubs,
-          icon: Symbols.dns_rounded,
-          title: t.settings.showServerNameOnHubs,
-          subtitle: t.settings.showServerNameOnHubsDescription,
+        SettingsGroup(
+          title: t.settings.display,
+          children: [
+            _themeSelector(),
+            _languageSelector(context),
+            _densitySelector(),
+            _viewModeSelector(),
+            _episodePosterModeSelector(),
+            if (PlatformDetector.isTV())
+              SettingSwitchTile(
+                pref: SettingsService.tvFullCardLayout,
+                icon: Symbols.image_rounded,
+                title: t.settings.tvFullCardLayout,
+                subtitle: t.settings.tvFullCardLayoutDescription,
+              ),
+            if (PlatformDetector.isTV())
+              SettingSwitchTile(
+                pref: SettingsService.focusGlow,
+                icon: Symbols.lightbulb_rounded,
+                title: t.settings.focusGlow,
+                subtitle: t.settings.focusGlowDescription,
+              ),
+            if (Platform.isAndroid) _visualEffectsSelector(context),
+            SettingSwitchTile(
+              pref: SettingsService.showEpisodeNumberOnCards,
+              icon: Symbols.tag_rounded,
+              title: t.settings.showEpisodeNumberOnCards,
+              subtitle: t.settings.showEpisodeNumberOnCardsDescription,
+            ),
+            if (!PlatformDetector.isTV())
+              SettingSwitchTile(
+                pref: SettingsService.showSeasonPostersOnTabs,
+                icon: Symbols.image_rounded,
+                title: t.settings.showSeasonPostersOnTabs,
+                subtitle: t.settings.showSeasonPostersOnTabsDescription,
+              ),
+          ],
         ),
 
-        SettingsSectionHeader(t.settings.navigation),
-        _startupSectionSelector(),
-        if (Platform.isAndroid)
-          SettingSwitchTile(
-            pref: SettingsService.forceTvMode,
-            icon: Symbols.tv_rounded,
-            title: t.settings.forceTvMode,
-            subtitle: t.settings.forceTvModeDescription,
-            onAfterWrite: (value) {
-              TvDetectionService.setForceTVSync(value);
-              _restartApp(context);
-            },
-          ),
-        if (PlatformDetector.shouldUseSideNavigation(context))
-          SettingSwitchTile(
-            pref: SettingsService.alwaysKeepSidebarOpen,
-            icon: Symbols.dock_to_left_rounded,
-            title: t.settings.alwaysKeepSidebarOpen,
-            subtitle: t.settings.alwaysKeepSidebarOpenDescription,
-          ),
-        if (PlatformDetector.shouldUseSideNavigation(context))
-          SettingSwitchTile(
-            pref: SettingsService.groupLibrariesByServer,
-            icon: Symbols.dns_rounded,
-            title: t.settings.groupLibrariesByServer,
-            subtitle: t.settings.groupLibrariesByServerDescription,
-          ),
-        if (!PlatformDetector.shouldUseSideNavigation(context))
-          SettingSwitchTile(
-            pref: SettingsService.showNavBarLabels,
-            icon: Symbols.label_rounded,
-            title: t.settings.showNavBarLabels,
-            subtitle: t.settings.showNavBarLabelsDescription,
-          ),
-        SettingSwitchTile(
-          pref: SettingsService.showUnwatchedCount,
-          icon: Symbols.counter_1_rounded,
-          title: t.settings.showUnwatchedCount,
-          subtitle: t.settings.showUnwatchedCountDescription,
+        SettingsGroup(
+          title: t.settings.homeScreen,
+          children: [
+            if (!PlatformDetector.isTV())
+              SettingSwitchTile(
+                pref: SettingsService.showHeroSection,
+                icon: Symbols.featured_play_list_rounded,
+                title: t.settings.showHeroSection,
+                subtitle: t.settings.showHeroSectionDescription,
+              ),
+            _continueWatchingActionSelector(),
+            SettingSwitchTile(
+              pref: SettingsService.useGlobalHubs,
+              icon: Symbols.home_rounded,
+              title: t.settings.useGlobalHubs,
+              subtitle: t.settings.useGlobalHubsDescription,
+            ),
+            SettingSwitchTile(
+              pref: SettingsService.showServerNameOnHubs,
+              icon: Symbols.dns_rounded,
+              title: t.settings.showServerNameOnHubs,
+              subtitle: t.settings.showServerNameOnHubsDescription,
+            ),
+          ],
         ),
 
-        if (PlatformDetector.isDesktopOS()) ...[
-          SettingsSectionHeader(t.settings.window),
-          SettingSwitchTile(
-            pref: SettingsService.startInFullscreen,
-            icon: Symbols.fullscreen_rounded,
-            title: t.settings.startInFullscreen,
-            subtitle: t.settings.startInFullscreenDescription,
-          ),
-          SettingSwitchTile(
-            pref: SettingsService.exitFullscreenOnPlayerClose,
-            icon: Symbols.fullscreen_exit_rounded,
-            title: t.settings.exitFullscreenOnPlayerClose,
-            subtitle: t.settings.exitFullscreenOnPlayerCloseDescription,
-          ),
-        ],
+        SettingsGroup(
+          title: t.settings.navigation,
+          children: [
+            _startupSectionSelector(),
+            if (Platform.isAndroid || PlatformDetector.isDesktopOS())
+              SettingSwitchTile(
+                pref: SettingsService.forceTvMode,
+                icon: Symbols.tv_rounded,
+                title: t.settings.forceTvMode,
+                subtitle: t.settings.forceTvModeDescription,
+                onAfterWrite: (value) {
+                  TvDetectionService.setForceTVSync(value);
+                  _restartApp(context);
+                },
+              ),
+            if (PlatformDetector.shouldUseSideNavigation(context))
+              SettingSwitchTile(
+                pref: SettingsService.alwaysKeepSidebarOpen,
+                icon: Symbols.dock_to_left_rounded,
+                title: t.settings.alwaysKeepSidebarOpen,
+                subtitle: t.settings.alwaysKeepSidebarOpenDescription,
+              ),
+            if (PlatformDetector.shouldUseSideNavigation(context))
+              SettingSwitchTile(
+                pref: SettingsService.groupLibrariesByServer,
+                icon: Symbols.dns_rounded,
+                title: t.settings.groupLibrariesByServer,
+                subtitle: t.settings.groupLibrariesByServerDescription,
+              ),
+            if (!PlatformDetector.shouldUseSideNavigation(context))
+              SettingSwitchTile(
+                pref: SettingsService.showNavBarLabels,
+                icon: Symbols.label_rounded,
+                title: t.settings.showNavBarLabels,
+                subtitle: t.settings.showNavBarLabelsDescription,
+              ),
+            SettingSwitchTile(
+              pref: SettingsService.showUnwatchedCount,
+              icon: Symbols.counter_1_rounded,
+              title: t.settings.showUnwatchedCount,
+              subtitle: t.settings.showUnwatchedCountDescription,
+            ),
+          ],
+        ),
 
-        SettingsSectionHeader(t.settings.content),
-        SettingSwitchTile(
-          pref: SettingsService.liveTvDefaultFavorites,
-          icon: Symbols.star_rounded,
-          title: t.settings.liveTvDefaultFavorites,
-          subtitle: t.settings.liveTvDefaultFavoritesDescription,
-        ),
-        SettingSwitchTile(
-          pref: SettingsService.hideSpoilers,
-          icon: Symbols.visibility_off_rounded,
-          title: t.settings.hideSpoilers,
-          subtitle: t.settings.hideSpoilersDescription,
-        ),
-        _episodeActionSelector(),
-        _requireProfileSelection(),
-        SettingSwitchTile(
-          pref: SettingsService.autoHidePerformanceOverlay,
-          icon: Symbols.speed_rounded,
-          title: t.settings.autoHidePerformanceOverlay,
-          subtitle: t.settings.autoHidePerformanceOverlayDescription,
+        if (PlatformDetector.isDesktopOS())
+          SettingsGroup(
+            title: t.settings.window,
+            children: [
+              SettingSwitchTile(
+                pref: SettingsService.startInFullscreen,
+                icon: Symbols.fullscreen_rounded,
+                title: t.settings.startInFullscreen,
+                subtitle: t.settings.startInFullscreenDescription,
+              ),
+              SettingSwitchTile(
+                pref: SettingsService.exitFullscreenOnPlayerClose,
+                icon: Symbols.fullscreen_exit_rounded,
+                title: t.settings.exitFullscreenOnPlayerClose,
+                subtitle: t.settings.exitFullscreenOnPlayerCloseDescription,
+              ),
+            ],
+          ),
+
+        SettingsGroup(
+          title: t.settings.content,
+          children: [
+            SettingSwitchTile(
+              pref: SettingsService.liveTvDefaultFavorites,
+              icon: Symbols.star_rounded,
+              title: t.settings.liveTvDefaultFavorites,
+              subtitle: t.settings.liveTvDefaultFavoritesDescription,
+            ),
+            SettingSwitchTile(
+              pref: SettingsService.hideSpoilers,
+              icon: Symbols.visibility_off_rounded,
+              title: t.settings.hideSpoilers,
+              subtitle: t.settings.hideSpoilersDescription,
+            ),
+            _episodeActionSelector(),
+            if (hasMultipleProfiles)
+              SettingSwitchTile(
+                pref: SettingsService.requireProfileSelectionOnOpen,
+                icon: Symbols.person_rounded,
+                title: t.settings.requireProfileSelectionOnOpen,
+                subtitle: t.settings.requireProfileSelectionOnOpenDescription,
+              ),
+            SettingSwitchTile(
+              pref: SettingsService.autoHidePerformanceOverlay,
+              icon: Symbols.speed_rounded,
+              title: t.settings.autoHidePerformanceOverlay,
+              subtitle: t.settings.autoHidePerformanceOverlayDescription,
+            ),
+          ],
         ),
         const SizedBox(height: 24),
       ],
     );
   }
 
+  String _themeModeLabel(settings.ThemeMode mode) => switch (mode) {
+    settings.ThemeMode.system => t.settings.systemTheme,
+    settings.ThemeMode.light => t.settings.lightTheme,
+    settings.ThemeMode.dark => t.settings.darkTheme,
+    settings.ThemeMode.oled => t.settings.oledTheme,
+  };
+
+  // Writes the pref directly; ThemeProvider listens to the pref's listenable
+  // and applies the change live. The Consumer only feeds the dynamic icon.
   Widget _themeSelector() {
     return Consumer<ThemeProvider>(
       builder: (context, themeProvider, _) {
-        return SegmentedSetting<settings.ThemeMode>(
+        return SettingSelectionTile<settings.ThemeMode, settings.ThemeMode>(
+          pref: SettingsService.themeMode,
           icon: themeProvider.themeModeIcon,
           title: t.settings.theme,
-          segments: [
-            ButtonSegment(value: settings.ThemeMode.system, label: Text(t.settings.systemTheme)),
-            ButtonSegment(value: settings.ThemeMode.light, label: Text(t.settings.lightTheme)),
-            ButtonSegment(value: settings.ThemeMode.dark, label: Text(t.settings.darkTheme)),
-            ButtonSegment(value: settings.ThemeMode.oled, label: Text(t.settings.oledTheme)),
-          ],
-          selected: themeProvider.themeMode,
-          onChanged: themeProvider.setThemeMode,
+          subtitleBuilder: _themeModeLabel,
+          options: settings.ThemeMode.values.map((m) => DialogOption(value: m, title: _themeModeLabel(m))).toList(),
+          decode: (v) => v,
+          encode: (v) => v,
         );
       },
     );
@@ -216,29 +250,44 @@ class AppearanceSettingsScreen extends StatelessWidget {
     );
   }
 
+  // Same label-row-plus-control layout as SegmentedSetting so slider and
+  // button-group tiles read as one family inside a SettingsGroup.
   Widget _densitySelector() {
     return SettingValueBuilder<int>(
       pref: SettingsService.libraryDensity,
-      builder: (_, density, _) => Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        child: Row(
-          children: [
-            const AppIcon(Symbols.grid_view_rounded, fill: 1),
-            const SizedBox(width: 16),
-            Text(t.settings.compact, style: const TextStyle(fontSize: 12, color: Colors.grey)),
-            Expanded(
-              child: FocusableSlider(
+      builder: (context, density, _) {
+        final theme = Theme.of(context);
+        return Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          child: Column(
+            crossAxisAlignment: .start,
+            children: [
+              Row(
+                children: [
+                  const AppIcon(Symbols.grid_view_rounded, fill: 1),
+                  const SizedBox(width: 16),
+                  Text(t.settings.libraryDensity, style: theme.textTheme.bodyLarge),
+                ],
+              ),
+              const SizedBox(height: 12),
+              FocusableSlider(
                 value: density.toDouble(),
                 min: 1,
                 max: 5,
                 divisions: 4,
                 onChanged: (v) => SettingsService.instance.write(SettingsService.libraryDensity, v.round()),
               ),
-            ),
-            Text(t.settings.comfortable, style: const TextStyle(fontSize: 12, color: Colors.grey)),
-          ],
-        ),
-      ),
+              Row(
+                mainAxisAlignment: .spaceBetween,
+                children: [
+                  Text(t.settings.compact, style: theme.textTheme.bodySmall),
+                  Text(t.settings.comfortable, style: theme.textTheme.bodySmall),
+                ],
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 
@@ -344,20 +393,6 @@ class AppearanceSettingsScreen extends StatelessWidget {
           _restartApp(context);
         },
       );
-
-  Widget _requireProfileSelection() {
-    return Consumer<ActiveProfileProvider>(
-      builder: (context, activeProvider, _) {
-        if (!activeProvider.hasMultipleProfiles) return const SizedBox.shrink();
-        return SettingSwitchTile(
-          pref: SettingsService.requireProfileSelectionOnOpen,
-          icon: Symbols.person_rounded,
-          title: t.settings.requireProfileSelectionOnOpen,
-          subtitle: t.settings.requireProfileSelectionOnOpenDescription,
-        );
-      },
-    );
-  }
 
   String _getLanguageDisplayName(AppLocale locale) {
     switch (locale) {

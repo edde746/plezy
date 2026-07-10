@@ -47,6 +47,14 @@ class GridLayoutConstants {
 
   static const double episodeGridCellAspectRatio = 1.4;
 
+  /// 1:1 music artwork (albums/artists/tracks). Also the full-card image
+  /// ratio for square items, mirroring [fullCardPosterAspectRatio].
+  static const double squareAspectRatio = 1 / 1;
+
+  /// Square grid cell: 1:1 image plus the same text band the poster cell
+  /// reserves ([posterAspectRatio] adds 0.3 to the 2:3 image's denominator).
+  static const double squareGridCellAspectRatio = 2 / 2.3;
+
   static const double crossAxisSpacing = 0;
   static const double mainAxisSpacing = 0;
 

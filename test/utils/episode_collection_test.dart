@@ -3,6 +3,7 @@ import 'package:plezy/media/library_query.dart';
 import 'package:plezy/media/media_backend.dart';
 import 'package:plezy/media/media_item.dart';
 import 'package:plezy/media/media_kind.dart';
+import 'package:plezy/media/media_part.dart';
 import 'package:plezy/media/media_server_client.dart';
 import 'package:plezy/media/media_version.dart';
 import 'package:plezy/utils/download_version_utils.dart';
@@ -421,5 +422,42 @@ void main() {
     expect(result, same(versions));
     expect(client.childrenCalls, ['show-1']);
     expect(client.childrenPageCalls, [(parentId: 'season-1', start: 0, size: 1)]);
+  });
+
+  group('same-file adjacency (#1500)', () {
+    // Episodes of a Plex multi-episode file (S02E24-E25.mkv) are distinct
+    // items with distinct part ids but the same Part.file: e24/e25 here.
+    // e23 and e26 are their own files.
+    MediaVersion version(String key, String file) => MediaVersion(
+      id: 'v-$key',
+      parts: [MediaPart(id: 'part-$key', file: file)],
+    );
+    late final episodes = [
+      _episode('e23', versions: [version('e23', '/tv/S02E23.mkv')]),
+      _episode('e24', versions: [version('e24', '/tv/S02E24-E25.mkv')]),
+      _episode('e25', versions: [version('e25', '/tv/S02E24-E25.mkv')]),
+      _episode('e26', versions: [version('e26', '/tv/S02E26-E27.mkv')]),
+    ];
+
+    test('nextEpisodeSkippingSameFile skips same-file siblings', () {
+      expect(nextEpisodeSkippingSameFile(episodes, 1)!.id, 'e26');
+      expect(nextEpisodeSkippingSameFile(episodes, 0)!.id, 'e24');
+      expect(nextEpisodeSkippingSameFile(episodes, 3), isNull);
+      // No same-file sibling left before the end → null.
+      expect(nextEpisodeSkippingSameFile(episodes.sublist(0, 3), 1), isNull);
+    });
+
+    test('nextEpisodeSkippingSameFile degrades to plain adjacency without part data', () {
+      final plain = [_episode('a'), _episode('b')];
+      expect(nextEpisodeSkippingSameFile(plain, 0)!.id, 'b');
+    });
+
+    test('previousEpisodeSkippingSameFile collapses to the group head', () {
+      // From e26, previous is the e24-e25 file, entered at e24.
+      expect(previousEpisodeSkippingSameFile(episodes, 3)!.id, 'e24');
+      // From inside the group (e25), previous skips the same file entirely.
+      expect(previousEpisodeSkippingSameFile(episodes, 2)!.id, 'e23');
+      expect(previousEpisodeSkippingSameFile(episodes, 0), isNull);
+    });
   });
 }

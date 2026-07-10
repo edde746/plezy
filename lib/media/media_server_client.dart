@@ -12,6 +12,7 @@ import 'library_filter_result.dart';
 import 'library_first_character.dart';
 import 'library_query.dart';
 import 'live_tv_support.dart';
+import 'lyrics.dart';
 import 'media_backend.dart';
 import 'media_file_info.dart';
 import 'media_hub.dart';
@@ -235,6 +236,35 @@ abstract class MediaServerClient {
   /// series" via the null vs `[]` distinction.
   Future<List<MediaItem>?> fetchClientSideEpisodeQueue(String seriesId);
 
+  /// Albums credited to the artist [artistId], newest first. Not the same as
+  /// [fetchChildren]: Plex artists *are* folder-parents of their albums
+  /// (`/library/metadata/{id}/children`), but Jellyfin albums link to artists
+  /// only via tags, so it queries
+  /// `/Items?AlbumArtistIds={id}&IncludeItemTypes=MusicAlbum`.
+  Future<List<MediaItem>> fetchArtistAlbums(String artistId);
+
+  /// Tracks of album [albumId] in disc/track order. Plex:
+  /// `/library/metadata/{id}/children`; Jellyfin:
+  /// `/Items?AlbumIds={id}&IncludeItemTypes=Audio&SortBy=ParentIndexNumber,IndexNumber`
+  /// (AlbumIds rather than ParentId so tag-based albums whose files share one
+  /// physical folder still resolve).
+  Future<List<MediaItem>> fetchAlbumTracks(String albumId);
+
+  /// Server-built "instant mix" / radio track list seeded from [itemId]
+  /// (track, album, artist, or playlist). Jellyfin:
+  /// `/Items/{id}/InstantMix`; Plex: a station play queue
+  /// (`POST /playQueues?type=audio&uri=...station...`), consumed here as a
+  /// plain track list — music playback is queue-managed client-side on both
+  /// backends. Gated by [ServerCapabilities.instantMix].
+  Future<List<MediaItem>> fetchInstantMix(String itemId, {int limit = 100});
+
+  /// Lyrics for [track], or `null` when the server has none. Jellyfin:
+  /// `/Audio/{id}/Lyrics` (per-line tick offsets when synced); Plex: a
+  /// sidecar-lyrics track stream (`streamType 4`) fetched from
+  /// `/library/streams/{id}` and parsed from LRC. Synced-ness is per
+  /// [Lyrics.synced]; gated by [ServerCapabilities.lyrics].
+  Future<Lyrics?> fetchLyrics(MediaItem track);
+
   /// Free-text search across the user's libraries.
   Future<List<MediaItem>> searchItems(String query, {int limit = 100});
 
@@ -309,6 +339,11 @@ abstract class MediaServerClient {
   /// [markUnwatched] / [removeFromContinueWatching] — callers wrap the
   /// awaited call in `try/catch` and surface a snackbar on the catch arm.
   Future<void> rate(MediaItem item, double rating);
+
+  /// Set or clear the per-user favorite flag ("heart") for [item]. Only call
+  /// when [ServerCapabilities.userFavorites] is true; unsupported backends
+  /// throw [UnsupportedError]. Throws [MediaServerHttpException] on failure.
+  Future<void> setFavorite(MediaItem item, bool isFavorite);
 
   Future<List<MediaPlaylist>> fetchPlaylists({String playlistType = 'video', bool? smart});
 

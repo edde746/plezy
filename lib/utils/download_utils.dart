@@ -31,11 +31,16 @@ class DownloadResult {
   /// "created" snackbar wording (no "unwatched episodes" suffix).
   final bool isListRule;
 
+  /// `true` when the queued leaves are tracks (album/artist/track download)
+  /// — picks "tracks queued" over "episodes queued" wording.
+  final bool isMusic;
+
   const DownloadResult({
     required this.count,
     this.syncRuleCreated = false,
     this.syncRuleUpdated = false,
     this.isListRule = false,
+    this.isMusic = false,
   });
 
   String toSnackBarMessage() {
@@ -43,7 +48,7 @@ class DownloadResult {
     if (syncRuleCreated) {
       return isListRule ? t.downloads.syncRuleListCreated : t.downloads.syncRuleCreated(count: count.toString());
     }
-    if (count > 1) return t.downloads.episodesQueued(count: count);
+    if (count > 1) return isMusic ? t.downloads.tracksQueued(count: count) : t.downloads.episodesQueued(count: count);
     return t.downloads.downloadQueued;
   }
 }
@@ -185,6 +190,7 @@ Future<DownloadResult?> showDownloadOptionsAndQueue(
     count: count,
     syncRuleCreated: keepSynced && !syncRuleUpdated,
     syncRuleUpdated: syncRuleUpdated,
+    isMusic: kind.isMusic,
   );
 }
 

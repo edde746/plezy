@@ -162,12 +162,15 @@ mixin FocusableDetailScreenMixin<T extends StatefulWidget> on State<T>, GridFocu
   }
 
   /// Build a standard focusable grid sliver for media items.
-  /// Used by collection and smart playlist detail screens.
+  /// Used by collection, smart playlist, and music artist detail screens.
+  /// [shape] overrides the grid cell silhouette (e.g. [CardShape.square]
+  /// for album grids); null keeps the stock poster geometry.
   Widget buildFocusableGrid({
     required List<dynamic> items,
     required void Function(String itemId) onRefresh,
     String? collectionId,
     VoidCallback? onListRefresh,
+    CardShape? shape,
   }) {
     return SettingsBuilder(
       prefs: const [SettingsService.viewMode, SettingsService.libraryDensity, SettingsService.tvFullCardLayout],
@@ -181,6 +184,8 @@ mixin FocusableDetailScreenMixin<T extends StatefulWidget> on State<T>, GridFocu
           return SliverPadding(
             padding: const EdgeInsets.all(8),
             sliver: SliverList.builder(
+              addAutomaticKeepAlives: false,
+              addSemanticIndexes: false,
               itemCount: items.length,
               itemBuilder: (context, index) {
                 final item = items[index];
@@ -212,8 +217,11 @@ mixin FocusableDetailScreenMixin<T extends StatefulWidget> on State<T>, GridFocu
                 crossAxisExtent: crossAxisExtent,
                 density: libraryDensity,
                 fullBleedImage: fullCardLayout,
+                shape: shape,
               );
               return SliverGrid.builder(
+                addAutomaticKeepAlives: false,
+                addSemanticIndexes: false,
                 gridDelegate: geometry.delegate,
                 itemCount: items.length,
                 itemBuilder: (context, index) {
@@ -288,6 +296,8 @@ mixin FocusableDetailScreenMixin<T extends StatefulWidget> on State<T>, GridFocu
           return SliverPadding(
             padding: const EdgeInsets.all(8),
             sliver: SliverList.builder(
+              addAutomaticKeepAlives: false,
+              addSemanticIndexes: false,
               itemCount: totalItems,
               itemBuilder: (context, index) => buildTile(index, inFirstRow: index == 0, disableScale: true),
             ),
@@ -305,6 +315,8 @@ mixin FocusableDetailScreenMixin<T extends StatefulWidget> on State<T>, GridFocu
                 fullBleedImage: fullCardLayout,
               );
               return SliverGrid.builder(
+                addAutomaticKeepAlives: false,
+                addSemanticIndexes: false,
                 gridDelegate: geometry.delegate,
                 itemCount: totalItems,
                 itemBuilder: (context, index) => buildTile(

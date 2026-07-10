@@ -169,6 +169,7 @@ class ExoPlayerPlugin :
       "setDvConversionMode" -> handleSetDvConversionMode(call, result)
       "setAudioNormalization" -> handleSetAudioNormalization(call, result)
       "setAudioPassthrough" -> handleSetAudioPassthrough(call, result)
+      "setAudioDownmix" -> handleSetAudioDownmix(call, result)
       "observeProperty" -> handleObserveProperty(call, result)
       "setMpvProperty" -> handleSetMpvProperty(call, result)
       "setLogLevel" -> {
@@ -301,9 +302,7 @@ class ExoPlayerPlugin :
         options.add("sid=no")
         options.add("secondary-sid=no")
         appendExternalSubtitleOptions(options, externalSubtitleSnapshot)
-        headers?.forEach { (key, value) ->
-          options.add("http-header-fields-append=$key: $value")
-        }
+        appendHttpHeaderOptions(options, headers)
         val optionsStr = options.joinToString(",")
         // Convert content:// URIs to fdclose:// for MPV (SAF SD card downloads)
         val mpvUri = openContentFd(uri)?.let { "fdclose://$it" } ?: uri
@@ -659,6 +658,26 @@ class ExoPlayerPlugin :
     } ?: result.error("NO_ACTIVITY", "Activity not available", null)
   }
 
+  private fun handleSetAudioDownmix(call: MethodCall, result: MethodChannel.Result) {
+    val enabled = call.argument<Boolean>("enabled")
+    if (enabled == null) {
+      result.error("INVALID_ARGS", "Missing 'enabled'", null)
+      return
+    }
+    val centerBoostDb = call.argument<Int>("centerBoostDb") ?: 0
+    val normalize = call.argument<Boolean>("normalize") ?: true
+    if (usingMpvFallback) {
+      // mpv applies downmix via the audio-channels/audio-swresample-o
+      // properties the Dart layer also sends through setMpvProperty.
+      result.success(true)
+      return
+    }
+    activity?.runOnUiThread {
+      playerCore?.setAudioDownmix(enabled, centerBoostDb, normalize)
+      result.success(true)
+    } ?: result.error("NO_ACTIVITY", "Activity not available", null)
+  }
+
   private fun handleSetAudioPassthrough(call: MethodCall, result: MethodChannel.Result) {
     val enabled = call.argument<Boolean>("enabled")
     if (enabled == null) {
@@ -806,6 +825,16 @@ class ExoPlayerPlugin :
 
   private fun escapeMpvPathListEntry(value: String): String = value.replace("\\", "\\\\").replace(":", "\\:")
 
+  private fun appendHttpHeaderOptions(options: MutableList<String>, headers: Map<String, String>?) {
+    if (headers.isNullOrEmpty()) return
+
+    options.add("http-header-fields-clr=")
+    headers.forEach { (key, value) ->
+      val header = "$key: $value"
+      options.add("http-header-fields-append=%${header.toByteArray(Charsets.UTF_8).size}%$header")
+    }
+  }
+
   /**
    * Configure a freshly initialized MPV fallback core: replay the properties
    * and observers Dart registered against the ExoPlayer session, then resume
@@ -818,7 +847,8 @@ class ExoPlayerPlugin :
     uri: String,
     headers: Map<String, String>?,
     positionMs: Long,
-    externalSubtitles: List<Map<String, Any?>>?
+    externalSubtitles: List<Map<String, Any?>>?,
+    playWhenReady: Boolean
   ) {
     // Snapshot Dart-registered state on main thread before clearing
     val pendingProps = pendingMpvProperties.toList()
@@ -865,12 +895,11 @@ class ExoPlayerPlugin :
     val startSeconds = positionMs / 1000.0
     val options = mutableListOf<String>()
     options.add(if (positionMs > 0L) "start=$startSeconds" else "start=none")
+    if (!playWhenReady) options.add("pause=yes")
     options.add("sid=no")
     options.add("secondary-sid=no")
     appendExternalSubtitleOptions(options, externalSubtitles)
-    headers?.forEach { (key, value) ->
-      options.add("http-header-fields-append=$key: $value")
-    }
+    appendHttpHeaderOptions(options, headers)
     val optionsStr = options.joinToString(",")
     notifyBackendSwitched()
     core.command(arrayOf("loadfile", mpvUri, "replace", "-1", optionsStr))
@@ -898,6 +927,7 @@ class ExoPlayerPlugin :
     uri: String,
     headers: Map<String, String>?,
     positionMs: Long,
+    playWhenReady: Boolean,
     errorMessage: String
   ): Boolean {
     if (usingMpvFallback || fallbackInProgress) {
@@ -972,7 +1002,7 @@ class ExoPlayerPlugin :
               usingMpvFallback = true
               fallbackInProgress = false
 
-              setupMpvFallback(core, act, uri, headers, positionMs, fallbackExternalSubtitles)
+              setupMpvFallback(core, act, uri, headers, positionMs, fallbackExternalSubtitles, playWhenReady)
             }
           } catch (e: Exception) {
             fallbackInProgress = false

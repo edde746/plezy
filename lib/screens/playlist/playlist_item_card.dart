@@ -246,6 +246,10 @@ class _PlaylistItemCardState extends State<PlaylistItemCard> with ContextMenuTap
         return '$year · $edition';
       }
       return year ?? t.discover.movie;
+    } else if (kind == MediaKind.track) {
+      // Music: "Artist · Album" (either half may be missing).
+      final parts = [item.trackArtistTitle, item.albumTitle].nonNulls.where((part) => part.isNotEmpty).toList();
+      if (parts.isNotEmpty) return parts.join(' · ');
     }
 
     // Default to type

@@ -139,6 +139,7 @@ mixin _JellyfinPlaybackMethods on MediaServerCacheMixin {
       metadata.id,
       sourceIndex: options.selectedMediaIndex,
       sourceId: options.selectedMediaSourceId,
+      preferredSignature: options.preferredVersionSignature,
     );
     if (bundle == null) {
       throw PlaybackException('Item ${metadata.id} returned no MediaSources');
@@ -158,11 +159,24 @@ mixin _JellyfinPlaybackMethods on MediaServerCacheMixin {
     var isTranscoding = false;
     TranscodeFallbackReason? fallbackReason;
 
+    // Tracks negotiate with the audio device profile and ignore the
+    // (video-shaped) [PlaybackInitializationOptions.qualityPreset]; capping
+    // comes from [PlaybackInitializationOptions.audioQualityPreset] instead.
+    // Original / null keeps the unlimited default so high-bitrate lossless
+    // files direct-play uncapped.
+    final isTrack = metadata.kind == MediaKind.track;
     final preset = options.qualityPreset;
+    final audioPreset = options.audioQualityPreset ?? AudioQualityPreset.original;
+    final wantsOriginal = isTrack ? audioPreset.isOriginal : preset.isOriginal;
     final requestedAudioStreamId = _validJellyfinAudioStreamId(options.selectedAudioStreamId, mediaInfo);
-    final int? maxStreamingBitrate = preset.isOriginal ? null : (preset.videoBitrateKbps ?? 100_000) * 1000;
+    final int? maxStreamingBitrate = wantsOriginal
+        ? null
+        : isTrack
+        // Non-original audio presets always carry a bitrate by construction.
+        ? audioPreset.bitrateKbps! * 1000
+        : (preset.videoBitrateKbps ?? 100_000) * 1000;
     final resumeOffsetMs = metadata.viewOffsetMs;
-    final int? transcodeStartTimeTicks = !preset.isOriginal && resumeOffsetMs != null && resumeOffsetMs > 0
+    final int? transcodeStartTimeTicks = !wantsOriginal && resumeOffsetMs != null && resumeOffsetMs > 0
         ? msToJellyfinTicks(resumeOffsetMs)
         : null;
     final negotiation = await getPlaybackInfo(
@@ -171,9 +185,10 @@ mixin _JellyfinPlaybackMethods on MediaServerCacheMixin {
       mediaSourceId: bundle.selectedSourceId,
       startTimeTicks: transcodeStartTimeTicks,
       audioStreamIndex: requestedAudioStreamId,
+      audioProfile: isTrack,
     );
     if (negotiation == null) {
-      if (!preset.isOriginal) {
+      if (!wantsOriginal) {
         fallbackReason = TranscodeFallbackReason.decisionFailed;
       }
     } else {
@@ -199,7 +214,7 @@ mixin _JellyfinPlaybackMethods on MediaServerCacheMixin {
 
         final transcodingUrl = chosenSource['TranscodingUrl'];
         final directStreamUrl = chosenSource['DirectStreamUrl'];
-        if (!preset.isOriginal && transcodingUrl is String && transcodingUrl.isNotEmpty) {
+        if (!wantsOriginal && transcodingUrl is String && transcodingUrl.isNotEmpty) {
           // TranscodingUrl is server-relative and already encodes container,
           // codecs, MediaSourceId, and PlaySessionId; we just append the
           // api_key for auth.
@@ -213,25 +228,31 @@ mixin _JellyfinPlaybackMethods on MediaServerCacheMixin {
           videoUrl = _withApiKey(directStreamUrl);
           playMethod = 'DirectStream';
         } else {
-          if (!preset.isOriginal) {
+          if (!wantsOriginal) {
             fallbackReason = TranscodeFallbackReason.directPlayOnly;
           }
         }
-      } else if (!preset.isOriginal) {
+      } else if (!wantsOriginal) {
         fallbackReason = TranscodeFallbackReason.directPlayOnly;
       }
     }
 
     final effectiveAudioStreamId = _resolveJellyfinAudioStreamId(requestedAudioStreamId, mediaInfo);
     mediaInfo = _withSelectedJellyfinAudioStream(mediaInfo, effectiveAudioStreamId);
-    final externalSubtitles = _buildExternalSubtitles(
-      metadata.id,
-      effectiveSourceId,
-      mediaInfo,
-      includeExternalDelivery: includeExternalSubtitleDelivery,
-    );
+    // Tracks have no subtitle streams to assemble (a `Lyric` stream may be
+    // present, but lyrics flow through fetchLyrics, not the subtitle path).
+    final externalSubtitles = isTrack
+        ? const <SubtitleTrack>[]
+        : _buildExternalSubtitles(
+            metadata.id,
+            effectiveSourceId,
+            mediaInfo,
+            includeExternalDelivery: includeExternalSubtitleDelivery,
+          );
     final pinnedSourceId = bundle.pinnedSourceIdForItem(metadata.id);
-    videoUrl ??= buildDirectStreamUrl(metadata.id, container: effectiveContainer, mediaSourceId: pinnedSourceId);
+    videoUrl ??= isTrack
+        ? buildAudioDirectStreamUrl(metadata.id, container: effectiveContainer, mediaSourceId: pinnedSourceId)
+        : buildDirectStreamUrl(metadata.id, container: effectiveContainer, mediaSourceId: pinnedSourceId);
 
     return PlaybackInitializationResult(
       availableVersions: bundle.availableVersions,
@@ -362,7 +383,12 @@ mixin _JellyfinPlaybackMethods on MediaServerCacheMixin {
   /// [sourceId] wins when present because Jellyfin plugins may reorder merged
   /// `MediaSources` between requests. [sourceIndex] is clamped to the valid
   /// range as a fallback to mirror Plex's `parseVideoPlaybackDataFromJson`.
-  Future<JellyfinPlaybackBundle?> fetchPlaybackBundle(String itemId, {int sourceIndex = 0, String? sourceId}) async {
+  Future<JellyfinPlaybackBundle?> fetchPlaybackBundle(
+    String itemId, {
+    int sourceIndex = 0,
+    String? sourceId,
+    String? preferredSignature,
+  }) async {
     final item = await fetchItem(itemId);
     final raw = item?.raw;
     if (raw is! Map<String, dynamic>) return null;
@@ -371,9 +397,20 @@ mixin _JellyfinPlaybackMethods on MediaServerCacheMixin {
     final availableVersions = jellyfinSourcesToVersions(sources);
     var index = sourceIndex;
     final requestedSourceId = sourceId?.trim();
+    var resolvedBySourceId = false;
     if (requestedSourceId != null && requestedSourceId.isNotEmpty) {
       final byId = sources.indexWhere((source) => source is Map<String, dynamic> && source['Id'] == requestedSourceId);
-      if (byId >= 0) index = byId;
+      if (byId >= 0) {
+        index = byId;
+        resolvedBySourceId = true;
+      }
+    }
+    // Saved-preference signature: only meaningful when the id didn't pin a
+    // source (Resume rows omit MediaSources, so launch passes a signature and
+    // a stored index that may not fit this item's source ordering).
+    if (!resolvedBySourceId && preferredSignature != null && preferredSignature.isNotEmpty) {
+      final bySignature = MediaVersion.findMatchingIndex(availableVersions, {preferredSignature});
+      if (bySignature != null) index = bySignature;
     }
     if (index < 0 || index >= sources.length) index = 0;
     final source = sources[index];
@@ -419,6 +456,21 @@ mixin _JellyfinPlaybackMethods on MediaServerCacheMixin {
     );
   }
 
+  /// Audio sibling of [buildDirectStreamUrl]: `/Audio/{id}/stream` with the
+  /// same `Static=true` + `api_key` + `DeviceId` self-authentication. Used
+  /// for track direct-play fallback, downloads, and external players.
+  String buildAudioDirectStreamUrl(String itemId, {String? container, String? mediaSourceId}) {
+    return buildJellyfinDirectStreamUrl(
+      baseUrl: connection.baseUrl,
+      accessToken: connection.accessToken,
+      deviceId: connection.deviceId,
+      itemId: itemId,
+      mediaSegment: 'Audio',
+      container: container,
+      mediaSourceId: mediaSourceId,
+    );
+  }
+
   /// Trickplay sprite-sheet URL. [width] picks one of the resolutions
   /// declared in `BaseItemDto.Trickplay`; [sheetIndex] is the zero-based
   /// sheet number (each sheet packs `tileWidth * tileHeight` thumbnails).
@@ -452,6 +504,9 @@ mixin _JellyfinPlaybackMethods on MediaServerCacheMixin {
   /// [audioStreamIndex] / [subtitleStreamIndex] tell the server which streams
   /// to pick for the transcode profile (Jellyfin's negotiation factors them in
   /// when picking codec compatibility).
+  /// [audioProfile] extends the DeviceProfile with music direct-play and
+  /// audio→mp3 transcode entries for track playback; the video profiles (and
+  /// the request body when false) are untouched either way.
   Future<Map<String, dynamic>?> getPlaybackInfo(
     String itemId, {
     int? maxStreamingBitrate = 100_000_000,
@@ -466,6 +521,7 @@ mixin _JellyfinPlaybackMethods on MediaServerCacheMixin {
     bool? enableTranscoding,
     bool? allowVideoStreamCopy,
     bool? allowAudioStreamCopy,
+    bool audioProfile = false,
   }) async {
     try {
       final query = <String, String>{
@@ -509,26 +565,45 @@ mixin _JellyfinPlaybackMethods on MediaServerCacheMixin {
             // ahead of H.264 so a server that has "Allow encoding in HEVC
             // format" enabled will actually emit HEVC instead of falling
             // back to H.264.
-            'TranscodingProfiles': const <Map<String, Object?>>[
-              {
+            'TranscodingProfiles': <Map<String, Object?>>[
+              const {
                 'Type': 'Video',
                 'Container': 'ts',
                 'Protocol': 'hls',
                 'VideoCodec': 'hevc,h264',
                 'AudioCodec': 'aac,mp3,ac3,eac3,flac,opus',
               },
+              // Track playback transcode target: stereo mp3 over plain http.
+              // Appended after the video profile so the first-entry-wins
+              // ordering for video output codecs is untouched.
+              if (audioProfile)
+                const {
+                  'Type': 'Audio',
+                  'Container': 'mp3',
+                  'AudioCodec': 'mp3',
+                  'Protocol': 'http',
+                  'Context': 'Streaming',
+                  'MaxAudioChannels': '2',
+                },
             ],
             // Declaring HEVC in DirectPlayProfile.VideoCodec stops the server
             // from forcing a transcode for HEVC sources whose container we
             // already accept — mpv decodes HEVC natively on every platform
             // we ship.
-            'DirectPlayProfiles': const <Map<String, Object?>>[
-              {
+            'DirectPlayProfiles': <Map<String, Object?>>[
+              const {
                 'Type': 'Video',
                 'Container': 'mp4,mkv,m4v,webm,mov,ts',
                 'VideoCodec': 'hevc,h264,h265,vp8,vp9,av1,mpeg4,mpeg2video',
                 'AudioCodec': 'aac,mp3,mp2,ac3,eac3,flac,opus,vorbis,dts',
               },
+              // Music containers/codecs mpv plays natively everywhere.
+              if (audioProfile)
+                const {
+                  'Type': 'Audio',
+                  'Container': 'flac,mp3,ogg,oga,opus,m4a,m4b,aac,alac,wav,aiff,wma,webma',
+                  'AudioCodec': 'flac,mp3,aac,alac,opus,vorbis,wav,wma',
+                },
             ],
             'SubtitleProfiles': const <Map<String, Object?>>[
               {'Format': 'srt', 'Method': 'External'},

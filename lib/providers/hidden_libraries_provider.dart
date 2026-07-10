@@ -12,7 +12,7 @@ class HiddenLibrariesProvider extends ChangeNotifier with DisposableChangeNotifi
   bool _isInitialized = false;
   Future<void>? _initFuture;
 
-  HiddenLibrariesProvider({StorageService? storageService, this.profileId}) : _storageService = storageService {
+  HiddenLibrariesProvider({this._storageService, this.profileId}) {
     // Start initialization eagerly to reduce race conditions
     _initFuture = _initialize();
   }

@@ -20,11 +20,9 @@ void main() {
   setUp(resetSharedPreferencesForTest);
 
   group('UserProfileProvider (settings-only)', () {
-    test('starts with all-null state and no error', () {
+    test('starts with null settings', () {
       final p = UserProfileProvider();
       expect(p.profileSettings, isNull);
-      expect(p.isLoading, isFalse);
-      expect(p.error, isNull);
       p.dispose();
     });
 
@@ -43,7 +41,6 @@ void main() {
       final p = UserProfileProvider();
       await p.logout();
       expect(p.profileSettings, isNull);
-      expect(p.error, isNull);
       p.dispose();
     });
 

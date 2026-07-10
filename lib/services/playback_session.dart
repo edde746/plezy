@@ -41,7 +41,9 @@ class PlaybackSession {
       context: context,
       qualityPreset: fellBackToOriginal ? TranscodeQualityPreset.original : requestedQualityPreset,
       mediaSourceId:
-          mediaSourceIdForIndex(result.availableVersions, result.selectedMediaIndex) ?? requestedMediaSourceId,
+          result.selectedMediaSourceId ??
+          mediaSourceIdForIndex(result.availableVersions, result.selectedMediaIndex) ??
+          requestedMediaSourceId,
     );
   }
 

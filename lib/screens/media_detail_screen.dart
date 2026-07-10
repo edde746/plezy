@@ -6,6 +6,7 @@ import 'package:cached_network_image_ce/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
 import '../navigation/profile_navigation_scope.dart';
+import '../services/device_performance.dart';
 import '../services/image_cache_service.dart';
 import 'package:flutter/services.dart';
 import 'package:plezy/utils/platform_detector.dart';
@@ -86,6 +87,7 @@ import '../widgets/focusable_tab_chip.dart';
 import '../widgets/hub_section.dart';
 import '../widgets/ios_status_bar_tap_scroll_to_top.dart';
 import '../widgets/loading_indicator_box.dart';
+import '../widgets/rasterized_gradient.dart';
 import '../widgets/tv_browse_rail.dart';
 import '../widgets/tv_spotlight_background.dart';
 
@@ -155,6 +157,14 @@ class _SeasonEpisodePager {
     _states.remove(seasonId);
     _firstPageLoadsInFlight.remove(seasonId);
     _moreLoadsInFlight.remove(seasonId);
+  }
+
+  /// Drops cached episode pages for seasons outside [keepSeasonIds].
+  /// In-flight sets are left alone — a completing prefetch just re-adds one
+  /// bounded page. Evicted seasons transparently refetch through the normal
+  /// unloaded-hub path when refocused.
+  void retainOnly(Set<String> keepSeasonIds) {
+    _states.removeWhere((seasonId, _) => !keepSeasonIds.contains(seasonId));
   }
 
   void removeEpisode(String episodeId) {
@@ -228,7 +238,13 @@ PageRoute<bool> mediaDetailRoute({
   if (!PlatformDetector.isTV()) return MaterialPageRoute<bool>(builder: (_) => page);
 
   return PageRouteBuilder<bool>(
-    opaque: false,
+    // Opaque so the covered route stops painting/building once the fade
+    // completes (the framework only offstages routes below after the
+    // transition settles, so push/pop fades still composite over live
+    // content). The detail screen paints a full-screen opaque background
+    // immediately, and the video player route is itself opaque and never
+    // sits below a detail route, so nothing can leak through.
+    opaque: true,
     pageBuilder: (_, _, _) => page,
     transitionsBuilder: (_, animation, _, child) {
       return FadeTransition(
@@ -276,7 +292,10 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   bool _hasLoadedEpisodes = false;
   double? _tvDetailPendingRailHeight;
   double? _tvDetailStableRailHeight;
-  MediaItem? _tvDetailFocusedEpisode;
+  // ValueNotifier (not setState) so d-pad scrubbing across episodes rebuilds
+  // only the foreground info panel, never the whole screen with its rail
+  // (same isolation pattern as DiscoverScreen._spotlightItem).
+  final ValueNotifier<MediaItem?> _tvDetailFocusedEpisode = ValueNotifier(null);
   bool _tvDetailActionRowHasFocus = false;
 
   // Inline season tabs
@@ -781,6 +800,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     _routeObserver?.unsubscribe(this);
     _scrollController.dispose();
     _scrollOffset.dispose();
+    _tvDetailFocusedEpisode.dispose();
     _extrasScrollController.dispose();
     _extrasFocusNode.removeListener(_handleExtrasFocusChange);
     _extrasFocusNode.dispose();
@@ -945,11 +965,12 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     final isNumeric = mediaClient?.capabilities.numericUserRating ?? true;
     final hasRating = metadata.userRating != null && metadata.userRating! > 0;
     final starValue = hasRating ? metadata.userRating! / 2.0 : 0.0;
+    final active = isNumeric ? hasRating : metadata.isFavorite == true;
 
-    final iconData = isNumeric ? Symbols.star_rounded : Symbols.thumb_up_rounded;
-    final activeIconColor = isNumeric ? Colors.amber : Colors.teal;
-    // Numeric backends show the formatted rating when set; binary backends
-    // rely on the filled icon to communicate the like state and keep the
+    final iconData = isNumeric ? Symbols.star_rounded : Symbols.favorite_rounded;
+    final activeIconColor = isNumeric ? Colors.amber : Colors.redAccent;
+    // Numeric backends show the formatted rating when set; favorite backends
+    // rely on the filled heart to communicate the favorite state and keep the
     // "Rate" label as the action prompt either way.
     final label = isNumeric && hasRating ? formatRating(starValue) : t.mediaMenu.rate;
 
@@ -996,8 +1017,8 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
                 children: [
                   AppIcon(
                     iconData,
-                    fill: hasRating ? 1 : 0,
-                    color: showFocus ? fgColor : (hasRating ? activeIconColor : fgColor),
+                    fill: active ? 1 : 0,
+                    color: showFocus ? fgColor : (active ? activeIconColor : fgColor),
                     size: 16,
                   ),
                   const SizedBox(width: 4),
@@ -1023,6 +1044,11 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
         onServerRatingChanged: (rating) {
           setStateIfMounted(() {
             _fullMetadata = (_fullMetadata ?? widget.metadata).copyWith(userRating: rating);
+          });
+        },
+        onServerFavoriteChanged: (favorite) {
+          setStateIfMounted(() {
+            _fullMetadata = (_fullMetadata ?? widget.metadata).copyWith(isFavorite: favorite);
           });
         },
       ),
@@ -2691,6 +2717,8 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     final client = _getMediaClientForMetadata(context);
     final hasPinnedLastEpisode = _hasPinnedLastEpisodeInList;
     return ListView.builder(
+      addAutomaticKeepAlives: false,
+      addSemanticIndexes: false,
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
       padding: .zero,
@@ -3067,6 +3095,9 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   /// resumes it. No-op once a backend on-deck episode exists, or when every
   /// loaded episode is watched (keep the default S1E1 for a rewatch).
   void _ensureFallbackOnDeckEpisode() {
+    // Reached via unawaited fetch continuations — the screen may be gone by
+    // now, and _freshAll reads providers through State.context.
+    if (!mounted) return;
     if (_onDeckEpisode != null) return;
     final next = firstUnwatchedEpisode(_freshAll(_episodes));
     if (next == null) return;
@@ -3413,9 +3444,9 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
                           child: child!,
                         ),
                       ),
-                      child: Container(
+                      child: SizedBox(
                         height: MediaQuery.paddingOf(context).top + 58,
-                        decoration: BoxDecoration(
+                        child: RasterizedGradient(
                           gradient: LinearGradient(
                             begin: Alignment.topCenter,
                             end: Alignment.bottomCenter,
@@ -3484,7 +3515,11 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
           right: size.width * 0.43,
           top: spotlightTop,
           bottom: foregroundBottom,
-          child: _buildTvDetailForeground(context, metadata, hideSpoilers: hideSpoilers, scale: detailScale),
+          child: ValueListenableBuilder<MediaItem?>(
+            valueListenable: _tvDetailFocusedEpisode,
+            builder: (context, _, _) =>
+                _buildTvDetailForeground(context, metadata, hideSpoilers: hideSpoilers, scale: detailScale),
+          ),
         ),
         Positioned(
           top: 0,
@@ -3759,7 +3794,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   }
 
   Widget _buildTvDetailMetadataLine(BuildContext context, MediaItem metadata, double scale) {
-    final lineMetadata = _tvDetailFocusedEpisode ?? metadata;
+    final lineMetadata = _tvDetailFocusedEpisode.value ?? metadata;
     final episodeLabel = formatSeasonEpisodeLabel(lineMetadata.parentIndex, lineMetadata.index);
     final qualityLabels = buildMediaQualityLabels(lineMetadata);
     final textStyle = TextStyle(
@@ -3822,7 +3857,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   }
 
   String? _tvDetailDescription(MediaItem metadata, {required bool hideSpoilers}) {
-    final focusedEpisode = _tvDetailFocusedEpisode;
+    final focusedEpisode = _tvDetailFocusedEpisode.value;
     if (focusedEpisode == null) return _tvDetailItemDescription(metadata, hideSpoilers: hideSpoilers);
 
     final episodeDescription = _tvDetailItemDescription(
@@ -4053,10 +4088,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   }
 
   void _clearTvDetailFocusedEpisode() {
-    if (_tvDetailFocusedEpisode == null) return;
-    setStateIfMounted(() {
-      _tvDetailFocusedEpisode = null;
-    });
+    _tvDetailFocusedEpisode.value = null;
   }
 
   void _setTvDetailActionRowFocus(bool hasFocus) {
@@ -4079,10 +4111,8 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
       _clearTvDetailFocusedEpisode();
       return;
     }
-    if (_tvDetailFocusedEpisode?.id == item.id) return;
-    setStateIfMounted(() {
-      _tvDetailFocusedEpisode = item;
-    });
+    if (_tvDetailFocusedEpisode.value?.id == item.id) return;
+    _tvDetailFocusedEpisode.value = item;
     if (hub.id == 'detail_episodes') {
       if (!_allEpisodesPageError && _episodes.isNotEmpty && item.id == _episodes.last.id) {
         unawaited(_loadMoreAllEpisodes());
@@ -4122,6 +4152,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
         _episodes = List.of(_seasonEpisodePager.stateFor(season.id).items);
       });
       unawaited(_prefetchAdjacentSeasonEpisodePages(seasonIndex));
+      _pruneDistantSeasonPages(seasonIndex);
       return;
     }
 
@@ -4132,6 +4163,20 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     });
     unawaited(_fetchSeasonEpisodes(seasonIndex));
     unawaited(_prefetchAdjacentSeasonEpisodePages(seasonIndex));
+    _pruneDistantSeasonPages(seasonIndex);
+  }
+
+  /// Low-end TV only: keep episode pages for the selected season ±1 (the
+  /// prefetch window) and drop the rest. Visited 200-item pages otherwise
+  /// accumulate for the screen's lifetime — irrelevant for a 3-season show,
+  /// tens of MB of retained heap for a 30-season one.
+  void _pruneDistantSeasonPages(int seasonIndex) {
+    if (!DevicePerformance.isLowEndHardware || !PlatformDetector.isTV()) return;
+    final keep = <String>{
+      for (var i = seasonIndex - 1; i <= seasonIndex + 1; i++)
+        if (i >= 0 && i < _seasons.length) _seasons[i].id,
+    };
+    _seasonEpisodePager.retainOnly(keep);
   }
 
   /// What the rail should show in a hub's trailing slot: a spinner while the
@@ -4236,14 +4281,28 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
           child: Builder(
             builder: (context) {
               final bgColor = Theme.of(context).scaffoldBackgroundColor;
-              return Container(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [Colors.transparent, bgColor.withValues(alpha: 0.9), bgColor],
-                    stops: const [0.3, 0.8, 1.0],
-                  ),
+              // Full-height eased scrim. The light global dim (alpha 0.2 at
+              // the very top) lowers the contrast the ramp has to bridge on
+              // bright artwork — without it, any fade to solid compresses
+              // into a visible band above the content stack. The body samples
+              // easeInOut (continuous curvature — hand-picked stops kink at
+              // every boundary); the tail instead decays the remaining
+              // transparency geometrically (~1/8 per sample) because an eased
+              // zero-slope landing leaves a faint artwork glow that pure-black
+              // (OLED) backgrounds expose. Solid bg from 94% so nothing ghosts
+              // at the header/content boundary on any theme.
+              const scrimAlphas = [0.20, 0.234, 0.325, 0.453, 0.60, 0.747, 0.875, 0.985, 0.998, 1.0];
+              const scrimXs = [0.0, 0.125, 0.25, 0.375, 0.5, 0.625, 0.75, 0.875, 0.9375, 1.0];
+              const solidStop = 0.94;
+              return RasterizedGradient(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    for (final a in scrimAlphas) bgColor.withValues(alpha: a),
+                    bgColor,
+                  ],
+                  stops: [for (final x in scrimXs) solidStop * x, 1.0],
                 ),
               );
             },
@@ -4456,6 +4515,8 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
             child: HorizontalScrollWithArrows(
               controller: _castScrollController,
               builder: (scrollController) => ListView.builder(
+                addAutomaticKeepAlives: false,
+                addSemanticIndexes: false,
                 controller: scrollController,
                 scrollDirection: Axis.horizontal,
                 clipBehavior: Clip.none,
@@ -4549,6 +4610,8 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
             child: HorizontalScrollWithArrows(
               controller: _extrasScrollController,
               builder: (scrollController) => ListView.builder(
+                addAutomaticKeepAlives: false,
+                addSemanticIndexes: false,
                 controller: scrollController,
                 scrollDirection: Axis.horizontal,
                 clipBehavior: Clip.none,

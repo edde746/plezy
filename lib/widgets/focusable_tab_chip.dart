@@ -5,6 +5,27 @@ import '../focus/input_mode_tracker.dart';
 import '../utils/platform_detector.dart';
 import 'focus_builders.dart';
 
+/// Horizontally scrollable host for a row of [FocusableTabChip]s.
+///
+/// App-bar titles and header rows give the strip a bounded width; a plain
+/// Row overflows it on narrow windows (visible as the striped overflow
+/// indicator). The strip shrink-wraps like `mainAxisSize: min` and scrolls
+/// instead. D-pad stays correct: chips center themselves on focus via the
+/// chip mixin, so LEFT/RIGHT reaches off-screen tabs.
+class TabChipStrip extends StatelessWidget {
+  final List<Widget> children;
+
+  const TabChipStrip({super.key, required this.children});
+
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(mainAxisSize: .min, children: children),
+    );
+  }
+}
+
 /// A focusable tab chip that shows a color change when focused or selected.
 ///
 /// Used for tab navigation in LibrariesScreen. Handles:

@@ -202,7 +202,16 @@ class PlatformDetector {
   /// BuildContext. Use for OS-level capability checks (window state, native
   /// keyboard, etc.); use [isDesktop] for layout decisions.
   static bool isDesktopOS() {
-    return Platform.isWindows || Platform.isMacOS || Platform.isLinux;
+    return _debugIsDesktopOSOverride ?? (Platform.isWindows || Platform.isMacOS || Platform.isLinux);
+  }
+
+  static bool? _debugIsDesktopOSOverride;
+
+  /// Test-only: override [isDesktopOS] so device simulations (Android TV /
+  /// Apple TV) don't inherit the test host's real platform.
+  @visibleForTesting
+  static void debugSetIsDesktopOSOverride(bool? value) {
+    _debugIsDesktopOSOverride = value;
   }
 
   static bool supportsExternalPlayers() {
@@ -211,8 +220,10 @@ class PlatformDetector {
   }
 
   static bool supportsAudioPassthrough() {
-    if (isAppleTV()) return false;
-    return isDesktopOS() || (Platform.isAndroid && isTV());
+    // Apple TV: EAC3+JOC rides the AVPlayer Atmos sink in the mpv fork's
+    // ao_avfoundation; other Dolby content decodes to multichannel PCM.
+    // Route capability is gated at runtime inside the AO itself.
+    return isAppleTV() || isDesktopOS() || (Platform.isAndroid && isTV());
   }
 
   static bool supportsPictureInPicture() {

@@ -8,10 +8,12 @@ import '../media/media_item.dart';
 import '../media/media_item_types.dart';
 import '../media/media_server_client.dart';
 import '../media/media_source_info.dart';
+import '../models/audio_quality_preset.dart';
 import '../models/download_models.dart';
 import '../models/transcode_quality_preset.dart';
 import '../mpv/models.dart';
 import '../utils/app_logger.dart';
+import '../utils/downloaded_version_match.dart';
 import '../utils/global_key_utils.dart';
 import 'cached_playback_metadata_service.dart';
 import 'download_storage_service.dart';
@@ -52,6 +54,29 @@ class PlaybackInitializationService {
     int mediaIndex = 0,
     String? selectedMediaSourceId,
   }) async {
+    final source = await _resolveOfflineVideoSource(
+      serverId,
+      ratingKey,
+      mediaIndex: mediaIndex,
+      selectedMediaSourceId: selectedMediaSourceId,
+    );
+    return source?.path;
+  }
+
+  /// Resolve the downloaded copy of an item to its playable local path plus
+  /// the version that is actually on disk.
+  ///
+  /// Strict by default: a version mismatch returns null so online flows keep
+  /// streaming an explicitly requested non-downloaded version. With
+  /// [allowAnyDownloadedVersion] the single downloaded version is returned on
+  /// mismatch instead — for offline flows where the alternative is failing.
+  Future<({String path, int mediaIndex, String? mediaSourceId})?> _resolveOfflineVideoSource(
+    ServerId serverId,
+    String ratingKey, {
+    required int mediaIndex,
+    String? selectedMediaSourceId,
+    bool allowAnyDownloadedVersion = false,
+  }) async {
     if (database == null) {
       return null;
     }
@@ -70,28 +95,25 @@ class PlaybackInitializationService {
         return null;
       }
 
-      final downloadedSourceId = downloadedItem.mediaSourceId;
-      final requestedSourceId = selectedMediaSourceId?.trim();
-      final comparedBySourceId =
-          requestedSourceId != null &&
-          requestedSourceId.isNotEmpty &&
-          downloadedSourceId != null &&
-          downloadedSourceId.isNotEmpty;
-      if (comparedBySourceId && downloadedSourceId != requestedSourceId) {
+      final matches = downloadedVersionMatches(
+        downloadedItem,
+        requestedMediaIndex: mediaIndex,
+        requestedMediaSourceId: selectedMediaSourceId,
+      );
+      if (!matches) {
+        if (!allowAnyDownloadedVersion) {
+          appLogger.d(
+            '[VersionTrace] Offline video is version ${downloadedItem.mediaIndex} '
+            '(source ${downloadedItem.mediaSourceId}), but requested version '
+            '$mediaIndex (source ${selectedMediaSourceId?.trim()}) — skipping offline',
+          );
+          return null;
+        }
         appLogger.d(
-          '[VersionTrace] Offline video source is $downloadedSourceId, '
-          'but requested source $requestedSourceId — skipping offline',
+          '[VersionTrace] Requested version $mediaIndex (source ${selectedMediaSourceId?.trim()}) '
+          'is not downloaded — falling back to downloaded version '
+          '${downloadedItem.mediaIndex} (source ${downloadedItem.mediaSourceId})',
         );
-        return null;
-      }
-
-      // Fall back to index when either side lacks a stable source id.
-      if (!comparedBySourceId && downloadedItem.mediaIndex != mediaIndex) {
-        appLogger.d(
-          '[VersionTrace] Offline video is version ${downloadedItem.mediaIndex}, '
-          'but requested version $mediaIndex — skipping offline',
-        );
-        return null;
       }
 
       // Return null if no video file path
@@ -115,7 +137,7 @@ class PlaybackInitializationService {
       }
 
       appLogger.d('Found offline video: $readablePath');
-      return readablePath;
+      return (path: readablePath, mediaIndex: downloadedItem.mediaIndex, mediaSourceId: downloadedItem.mediaSourceId);
     } catch (e) {
       appLogger.w('Error checking offline video path', error: e);
       return null;
@@ -132,32 +154,40 @@ class PlaybackInitializationService {
     required MediaItem metadata,
     required int selectedMediaIndex,
     String? selectedMediaSourceId,
+    String? preferredVersionSignature,
     bool preferOffline = false,
     TranscodeQualityPreset qualityPreset = TranscodeQualityPreset.original,
+    AudioQualityPreset? audioQualityPreset,
     int? selectedAudioStreamId,
     String? sessionIdentifier,
     String? transcodeSessionId,
   }) async {
     final serverId = metadata.serverId ?? client?.serverId;
 
-    String? offlineVideoPath;
+    ({String path, int mediaIndex, String? mediaSourceId})? offlineSource;
     if (serverId != null && (preferOffline || client == null) && database != null) {
-      offlineVideoPath = await getOfflineVideoPath(
+      offlineSource = await _resolveOfflineVideoSource(
         ServerId(serverId),
         metadata.id,
         mediaIndex: selectedMediaIndex,
         selectedMediaSourceId: selectedMediaSourceId,
+        // With no client there is nothing to stream from, so any downloaded
+        // version beats failing. With a client the strict match must stand:
+        // an explicitly requested non-downloaded version streams from the
+        // server (issue #1440).
+        allowAnyDownloadedVersion: client == null,
       );
     }
 
     // Downloaded playback must not wait on a live server. Cached media info
     // preserves track labels where available; the local file is enough to play.
-    if (offlineVideoPath != null) {
+    if (offlineSource != null) {
       appLogger.d('Using offline playback for ${metadata.id}');
       return _buildOfflineResult(
         metadata: metadata,
-        offlineVideoPath: offlineVideoPath,
-        selectedMediaIndex: selectedMediaIndex,
+        offlineVideoPath: offlineSource.path,
+        selectedMediaIndex: offlineSource.mediaIndex,
+        selectedMediaSourceId: offlineSource.mediaSourceId,
       );
     }
 
@@ -170,7 +200,9 @@ class PlaybackInitializationService {
           metadata: metadata,
           selectedMediaIndex: selectedMediaIndex,
           selectedMediaSourceId: selectedMediaSourceId,
+          preferredVersionSignature: preferredVersionSignature,
           qualityPreset: qualityPreset,
+          audioQualityPreset: audioQualityPreset,
           selectedAudioStreamId: selectedAudioStreamId,
           sessionIdentifier: sessionIdentifier,
           transcodeSessionId: transcodeSessionId,
@@ -189,6 +221,7 @@ class PlaybackInitializationService {
     required MediaItem metadata,
     required String offlineVideoPath,
     required int selectedMediaIndex,
+    String? selectedMediaSourceId,
   }) async {
     MediaSourceInfo? mediaInfo;
     try {
@@ -219,6 +252,7 @@ class PlaybackInitializationService {
       isOffline: true,
       playMethod: 'DirectPlay',
       selectedMediaIndex: selectedMediaIndex,
+      selectedMediaSourceId: selectedMediaSourceId,
     );
   }
 

@@ -18,6 +18,7 @@ import '../media/media_version.dart';
 import '../mixins/controller_disposer_mixin.dart';
 import '../services/plex_client.dart';
 import '../services/media_list_playback_launcher.dart';
+import '../services/music/music_playback_service.dart';
 import '../services/offline_watch_sync_service.dart';
 import '../services/playlist_items_loader.dart';
 import '../services/watch_actions.dart';
@@ -37,6 +38,7 @@ import '../utils/app_logger.dart';
 import '../utils/library_refresh_notifier.dart';
 import '../utils/media_navigation_helper.dart';
 import '../utils/media_server_http_client.dart';
+import '../utils/music_navigation.dart';
 import '../utils/platform_detector.dart';
 import '../utils/snackbar_helper.dart';
 import '../utils/dialogs.dart';
@@ -46,6 +48,8 @@ import '../focus/focusable_text_field.dart';
 import '../screens/plex_match_screen.dart';
 import '../screens/media_detail_screen.dart';
 import '../screens/metadata_edit_screen.dart';
+import '../screens/music/album_detail_screen.dart';
+import '../screens/music/artist_detail_screen.dart';
 import '../utils/smart_deletion_handler.dart';
 import '../utils/video_player_navigation.dart';
 import '../utils/deletion_notifier.dart';
@@ -78,6 +82,16 @@ bool isAdminActionAllowedForMediaItem({
 
 /// A reusable wrapper widget that adds a context menu (long press / right click)
 /// to any media item with appropriate actions based on the item type.
+/// Caller-supplied entry appended to a [MediaContextMenu] (e.g. the
+/// now-playing screen's Sleep timer). Selection runs [onSelected].
+class MediaMenuExtraEntry {
+  final IconData icon;
+  final String label;
+  final VoidCallback onSelected;
+
+  const MediaMenuExtraEntry({required this.icon, required this.label, required this.onSelected});
+}
+
 class MediaContextMenu extends StatefulWidget {
   /// Either a [MediaItem] or a [MediaPlaylist]. Typed as [Object] because
   /// Dart has no nominal union type — guarded at runtime via the
@@ -98,6 +112,9 @@ class MediaContextMenu extends StatefulWidget {
   final bool isInContinueWatching;
   final String? collectionId; // The collection ID if displaying within a collection
 
+  /// Extra entries appended after the standard actions.
+  final List<MediaMenuExtraEntry> extraEntries;
+
   const MediaContextMenu({
     super.key,
     required this.item,
@@ -109,6 +126,7 @@ class MediaContextMenu extends StatefulWidget {
     required this.child,
     this.isInContinueWatching = false,
     this.collectionId,
+    this.extraEntries = const [],
   });
 
   @override
@@ -235,6 +253,10 @@ class MediaContextMenuState extends State<MediaContextMenu> {
     // active server cannot perform.
     final mediaClient = _itemServerId != null ? multiServerProvider.getClientForServer(ServerId(_itemServerId!)) : null;
     final canTranscode = mediaClient?.capabilities.videoTranscoding ?? false;
+    // Static capabilities stay truthy while the server is unreachable, so
+    // version/quality choices need a liveness check on top.
+    final itemServerOnline =
+        _itemServerId != null && multiServerProvider.serverManager.isClientOnline(ServerId(_itemServerId!));
     final canRemoveFromContinueWatching = mediaClient?.capabilities.continueWatchingRemoval ?? false;
     final canEditMetadata = isAdmin && supportsMetadataEdit(mediaClient, mediaKind);
 
@@ -245,10 +267,12 @@ class MediaContextMenuState extends State<MediaContextMenu> {
 
       menuActions.add(_MenuAction(value: 'shuffle', icon: Symbols.shuffle_rounded, label: t.mediaMenu.shufflePlay));
 
-      // Download + sync-rule management. Video playlists and any collection
-      // qualify — collections can contain movies, episodes, and shows.
-      final isVideoPlaylist = isPlaylist && playlist.playlistType == 'video';
-      if ((isVideoPlaylist || isCollection) && !PlatformDetector.isAppleTV()) {
+      // Download + sync-rule management. Video and audio playlists and any
+      // collection qualify — collections can contain movies, episodes,
+      // shows, albums, and artists; audio playlists queue their tracks.
+      final isDownloadablePlaylist =
+          isPlaylist && (playlist.playlistType == 'video' || playlist.playlistType == 'audio');
+      if ((isDownloadablePlaylist || isCollection) && !PlatformDetector.isAppleTV()) {
         final hasRule = Provider.of<DownloadProvider>(context, listen: false).hasSyncRule(_itemSyncRuleKey(context));
         if (hasRule) {
           menuActions.add(
@@ -272,6 +296,52 @@ class MediaContextMenuState extends State<MediaContextMenu> {
         _MenuAction(value: 'delete', icon: Symbols.delete_rounded, label: t.common.delete, destructive: true),
       );
     } else {
+      // Music (artist/album/track) playback + navigation actions. Play is
+      // always offered — the shared music_navigation helpers surface the
+      // "not supported yet" notice while the stub service is bound. Queue
+      // insertion only exists once a real playback engine is available.
+      final isMusicKind = mediaKind != null && mediaKind.isMusic;
+      if (isMusicKind) {
+        menuActions.add(_MenuAction(value: 'music_play', icon: Symbols.play_arrow_rounded, label: t.common.play));
+
+        final musicAvailable = context.read<MusicPlaybackService?>()?.isAvailable ?? false;
+        if (musicAvailable) {
+          menuActions.add(
+            _MenuAction(value: 'music_play_next', icon: Symbols.playlist_play_rounded, label: t.music.playNext),
+          );
+          menuActions.add(
+            _MenuAction(value: 'music_add_queue', icon: Symbols.queue_music_rounded, label: t.music.addToQueue),
+          );
+        }
+
+        // Instant Mix — capability-gated, and only while the server is
+        // reachable (capabilities stay truthy for offline servers).
+        if (itemServerOnline && (mediaClient?.capabilities.instantMix ?? false)) {
+          menuActions.add(
+            _MenuAction(value: 'music_instant_mix', icon: Symbols.instant_mix_rounded, label: t.music.instantMix),
+          );
+        }
+
+        // Go to Album (tracks only) — hidden when already on that album's
+        // detail screen, mirroring the Go to Series ancestor check.
+        final ancestorAlbumId = context.findAncestorWidgetOfExactType<AlbumDetailScreen>()?.album.id;
+        if (mediaKind == MediaKind.track && mediaItem!.parentId != null && ancestorAlbumId != mediaItem.parentId) {
+          menuActions.add(_MenuAction(value: 'music_album', icon: Symbols.album_rounded, label: t.music.goToAlbum));
+        }
+
+        // Go to Artist — album: parent, track: grandparent; hidden when
+        // already on that artist's detail screen.
+        final musicArtistId = switch (mediaKind) {
+          MediaKind.album => mediaItem!.parentId,
+          MediaKind.track => mediaItem!.grandparentId,
+          _ => null,
+        };
+        final ancestorArtistId = context.findAncestorWidgetOfExactType<ArtistDetailScreen>()?.artist.id;
+        if (musicArtistId != null && ancestorArtistId != musicArtistId) {
+          menuActions.add(_MenuAction(value: 'music_artist', icon: Symbols.artist_rounded, label: t.music.goToArtist));
+        }
+      }
+
       if (hasActiveProgress) {
         menuActions.add(
           _MenuAction(value: 'play_from_beginning', icon: Symbols.replay_rounded, label: t.mediaMenu.playFromBeginning),
@@ -385,10 +455,15 @@ class MediaContextMenuState extends State<MediaContextMenu> {
       // settings, which is what the regular Play action already does.
       // Both backends inline their version list in browse responses
       // (`Media[]` for Plex, `MediaSources` for Jellyfin), so the count
-      // is known up front.
+      // is known up front. Also hidden while the item's server is
+      // unreachable: at most one version exists locally and plain Play
+      // already targets it, so the picker would be a no-op detour
+      // offering versions that can't play (issue #1440).
       final versionCount = (mediaItem.mediaVersions ?? const []).length;
       final hasVersionChoice = versionCount > 1;
-      if ((mediaKind == MediaKind.episode || mediaKind == MediaKind.movie) && (hasVersionChoice || canTranscode)) {
+      if ((mediaKind == MediaKind.episode || mediaKind == MediaKind.movie) &&
+          (hasVersionChoice || canTranscode) &&
+          itemServerOnline) {
         menuActions.add(
           _MenuAction(value: 'play_version', icon: Symbols.video_file_rounded, label: t.mediaMenu.playVersion),
         );
@@ -414,13 +489,17 @@ class MediaContextMenuState extends State<MediaContextMenu> {
         );
       }
 
-      // Download options (for episodes, movies, shows, and seasons).
-      // Apple TV has no user-accessible file storage — skip entirely.
+      // Download options (for episodes, movies, shows, seasons, albums, and
+      // tracks — not artists, whose full discography is too large for a
+      // one-tap download). Apple TV has no user-accessible file storage —
+      // skip entirely.
       if (!PlatformDetector.isAppleTV() &&
           (mediaKind == MediaKind.episode ||
               mediaKind == MediaKind.movie ||
               mediaKind == MediaKind.show ||
-              mediaKind == MediaKind.season)) {
+              mediaKind == MediaKind.season ||
+              mediaKind == MediaKind.album ||
+              mediaKind == MediaKind.track)) {
         final downloadProvider = Provider.of<DownloadProvider>(context, listen: false);
         final globalKey = mediaItem.globalKey;
         final hasSyncRule = downloadProvider.hasSyncRule(_itemSyncRuleKey(context));
@@ -490,14 +569,23 @@ class MediaContextMenuState extends State<MediaContextMenu> {
       }
     }
 
+    for (var i = 0; i < widget.extraEntries.length; i++) {
+      final entry = widget.extraEntries[i];
+      menuActions.add(_MenuAction(value: 'extra_$i', icon: entry.icon, label: entry.label));
+    }
+
     String? selected;
 
     final openedFromKeyboard = _openedFromKeyboard;
     _openedFromKeyboard = false;
 
     if (useBottomSheet) {
+      // Present from the menu's own context: it sits at the trigger widget,
+      // below any screen-level OverlaySheetHost, while callers often pass a
+      // screen context from ABOVE its host (which would skip the host and
+      // fall back to a hostless modal sheet).
       selected = await OverlaySheetController.showAdaptive<String>(
-        context,
+        this.context,
         showDragHandle: true,
         builder: (context) => AppMenuSheet<String>(
           title: _itemDisplayTitle(),
@@ -525,6 +613,15 @@ class MediaContextMenuState extends State<MediaContextMenu> {
 
     try {
       if (!context.mounted) return;
+
+      // Caller-supplied extra entries dispatch straight to their callback.
+      if (selected != null && selected.startsWith('extra_')) {
+        final index = int.tryParse(selected.substring('extra_'.length));
+        if (index != null && index >= 0 && index < widget.extraEntries.length) {
+          widget.extraEntries[index].onSelected();
+        }
+        return;
+      }
 
       switch (selected) {
         case 'play_from_beginning':
@@ -710,6 +807,42 @@ class MediaContextMenuState extends State<MediaContextMenu> {
         case 'delete_media':
           await _handleDeleteMediaItem(context, mediaKind);
           break;
+
+        case 'music_play':
+          await _handleMusicPlay(context);
+          break;
+
+        case 'music_play_next':
+          await _handleMusicEnqueue(context, playNext: true);
+          break;
+
+        case 'music_add_queue':
+          await _handleMusicEnqueue(context, playNext: false);
+          break;
+
+        case 'music_instant_mix':
+          await playInstantMix(context, mediaItem!);
+          break;
+
+        case 'music_album':
+          didNavigate = true;
+          await _navigateToRelated(
+            context,
+            mediaItem!.parentId,
+            (item) => MaterialPageRoute(builder: (_) => AlbumDetailScreen(album: item)),
+            t.common.error,
+          );
+          break;
+
+        case 'music_artist':
+          didNavigate = true;
+          await _navigateToRelated(
+            context,
+            mediaItem!.kind == MediaKind.album ? mediaItem.parentId : mediaItem.grandparentId,
+            (item) => MaterialPageRoute(builder: (_) => ArtistDetailScreen(artist: item)),
+            t.common.error,
+          );
+          break;
       }
     } catch (e, st) {
       appLogger.e('Media context menu action failed', error: e, stackTrace: st);
@@ -837,10 +970,11 @@ class MediaContextMenuState extends State<MediaContextMenu> {
         loadingShown = false;
       }
 
-      if (fileInfo != null && context.mounted) {
-        // Show file info bottom sheet
+      if (fileInfo != null && context.mounted && mounted) {
+        // Show file info bottom sheet, presented from the menu's own context
+        // so a screen-level OverlaySheetHost is found (see _showContextMenu).
         await OverlaySheetController.showAdaptive(
-          context,
+          this.context,
           isScrollControlled: true,
           builder: (context) => FileInfoBottomSheet(fileInfo: fileInfo, title: item.displayTitle),
         );
@@ -861,10 +995,15 @@ class MediaContextMenuState extends State<MediaContextMenu> {
 
   Future<bool> _handlePlayVersion(BuildContext context) async {
     final item = _mediaItem!;
-    final client = context.tryGetMediaClientForServer(serverIdOrNull(_itemServerId));
+    final itemServerId = serverIdOrNull(_itemServerId);
+    final client = context.tryGetMediaClientForServer(itemServerId);
+    final itemServerOnline =
+        itemServerId != null && context.read<MultiServerProvider>().serverManager.isClientOnline(itemServerId);
     // Same flag the in-player Version & Quality sheet reads — keeps both
-    // surfaces honest about what the active backend can actually do.
-    final canTranscode = client?.capabilities.videoTranscoding ?? false;
+    // surfaces honest about what the active backend can actually do. Also
+    // requires a reachable server: capabilities are static, and a server
+    // dropping between menu open and tap must not offer transcodes.
+    final canTranscode = itemServerOnline && (client?.capabilities.videoTranscoding ?? false);
     final versions = client == null ? item.mediaVersions ?? const [] : await resolveMediaVersions(item, client);
     if (!context.mounted) return false;
 
@@ -886,6 +1025,13 @@ class MediaContextMenuState extends State<MediaContextMenu> {
       );
       if (picked == null || !context.mounted) return false;
       selectedQuality = picked;
+    }
+
+    // Remember the pick so Continue Watching / plain Play resume this version
+    // (#1492) — same store the in-player version switch writes.
+    if (versions.length > 1) {
+      await saveMediaVersionPreferenceFor(item, index: selectedVersionIndex, versions: versions);
+      if (!context.mounted) return false;
     }
 
     await navigateToVideoPlayer(
@@ -910,6 +1056,53 @@ class MediaContextMenuState extends State<MediaContextMenu> {
       total += s;
     }
     return total > 0 ? total : null;
+  }
+
+  /// The track list music playback should operate on for [item]: the item
+  /// itself for a track, an album's tracks, or an artist's playable
+  /// descendants (one server round-trip for the container kinds).
+  Future<List<MediaItem>> _musicTracksForItem(MediaItem item) async {
+    final client = _getMediaClientForItem();
+    return switch (item.kind) {
+      MediaKind.album => await client.fetchAlbumTracks(item.id),
+      MediaKind.artist => await client.fetchPlayableDescendants(item.id),
+      _ => [item],
+    };
+  }
+
+  Future<void> _handleMusicPlay(BuildContext context) async {
+    final item = _mediaItem!;
+    if (item.kind == MediaKind.track) {
+      await playTrackWithAlbumContext(context, item);
+      return;
+    }
+    // Availability gate before the container fetch so the stub costs no
+    // server round-trip.
+    if (!ensureMusicPlaybackAvailable(context)) return;
+    final tracks = await _musicTracksForItem(item);
+    if (!context.mounted) return;
+    await playTracks(
+      context,
+      tracks: tracks,
+      playContext: MusicPlayContext(
+        id: item.id,
+        title: item.displayTitle,
+        kind: item.kind == MediaKind.artist ? MusicPlayContextKind.artist : MusicPlayContextKind.album,
+      ),
+    );
+  }
+
+  Future<void> _handleMusicEnqueue(BuildContext context, {required bool playNext}) async {
+    final service = context.read<MusicPlaybackService?>();
+    // Menu entries are hidden on the stub; defensive re-check.
+    if (service == null || !service.isAvailable) return;
+    final tracks = await _musicTracksForItem(_mediaItem!);
+    if (tracks.isEmpty) return;
+    if (playNext) {
+      service.addNext(tracks);
+    } else {
+      service.addToEnd(tracks);
+    }
   }
 
   /// Handle shuffle play using play queues — dispatches via the
@@ -1120,11 +1313,18 @@ class MediaContextMenuState extends State<MediaContextMenu> {
   }
 
   Future<void> _showRatingSheet(BuildContext context, MediaItem item, MediaServerClient client) async {
+    if (!mounted) return;
+    // Presented from the menu's own context so a screen-level
+    // OverlaySheetHost is found (see _showContextMenu).
     await OverlaySheetController.showAdaptive(
-      context,
+      this.context,
       showDragHandle: true,
-      builder: (context) =>
-          RatingBottomSheet(item: item, serverClient: client, onServerRatingChanged: (_) => _notifyRefresh(item.id)),
+      builder: (context) => RatingBottomSheet(
+        item: item,
+        serverClient: client,
+        onServerRatingChanged: (_) => _notifyRefresh(item.id),
+        onServerFavoriteChanged: (_) => _notifyRefresh(item.id),
+      ),
     );
   }
 
@@ -1184,9 +1384,44 @@ class MediaContextMenuState extends State<MediaContextMenu> {
   /// backend — Plex uses server-side `/playQueues`, Jellyfin builds an
   /// in-memory queue locally.
   Future<void> _launchCollectionOrPlaylist(BuildContext context, {required bool shuffle}) async {
+    final playlist = _playlist;
+    if (playlist?.playlistType == 'audio') {
+      await _launchAudioPlaylist(context, playlist!, shuffle: shuffle);
+      return;
+    }
+
     // Launcher accepts both MediaItem (for collections) and MediaPlaylist.
     final launcher = MediaListPlaybackLauncher.forItem(context, widget.item);
     await launcher.launchFromCollectionOrPlaylist(item: widget.item, shuffle: shuffle, showLoadingIndicator: false);
+  }
+
+  Future<void> _launchAudioPlaylist(BuildContext context, MediaPlaylist playlist, {required bool shuffle}) async {
+    // Match PlaylistDetailScreen: fail the availability gate before paying
+    // for a full playlist fetch, then hand the tracks to the music session.
+    if (!ensureMusicPlaybackAvailable(context)) return;
+
+    List<MediaItem> tracks;
+    try {
+      tracks = await fetchAllPlaylistItems(_getMediaClientForItem(), playlist.id);
+    } catch (e, st) {
+      appLogger.w('Failed to fetch audio playlist ${playlist.id}', error: e, stackTrace: st);
+      if (context.mounted) {
+        showErrorSnackBar(context, t.messages.errorLoading(error: e.toString()));
+      }
+      return;
+    }
+    if (!context.mounted) return;
+    if (tracks.isEmpty) {
+      showErrorSnackBar(context, t.messages.failedToCreatePlayQueueNoItems);
+      return;
+    }
+
+    await playTracks(
+      context,
+      tracks: tracks,
+      playContext: MusicPlayContext(id: playlist.id, title: playlist.title, kind: MusicPlayContextKind.playlist),
+      shuffle: shuffle,
+    );
   }
 
   /// Handle delete action for collections and playlists

@@ -118,6 +118,140 @@ void main() {
       expect(result.availableVersions.single.parts.last.isPlayable, isTrue);
     });
 
+    test('selects version by media source id over the requested index', () {
+      final result = parsePlexVideoPlaybackDataFromJson(
+        {
+          'Media': [
+            {
+              'id': 101,
+              'videoResolution': '1080',
+              'videoCodec': 'h264',
+              'container': 'mkv',
+              'Part': [
+                {'id': 10, 'key': '/library/parts/10/file.mkv', 'accessible': 1, 'exists': 1},
+              ],
+            },
+            {
+              'id': 102,
+              'videoResolution': '4k',
+              'videoCodec': 'hevc',
+              'container': 'mkv',
+              'Part': [
+                {'id': 20, 'key': '/library/parts/20/file.mkv', 'accessible': 1, 'exists': 1},
+              ],
+            },
+          ],
+        },
+        baseUrl: 'http://plex:32400',
+        token: 'tok',
+        mediaIndex: 0,
+        selectedMediaSourceId: '102',
+      );
+
+      expect(result.selectedMediaIndex, 1);
+      expect(result.videoUrl, 'http://plex:32400/library/parts/20/file.mkv?X-Plex-Token=tok');
+    });
+
+    test('selects version by preferred signature when the id misses', () {
+      final result = parsePlexVideoPlaybackDataFromJson(
+        {
+          'Media': [
+            {
+              'id': 201,
+              'videoResolution': '1080',
+              'videoCodec': 'h264',
+              'container': 'mkv',
+              'Part': [
+                {'id': 10, 'key': '/library/parts/10/file.mkv', 'accessible': 1, 'exists': 1},
+              ],
+            },
+            {
+              'id': 202,
+              'videoResolution': '4k',
+              'videoCodec': 'hevc',
+              'container': 'mkv',
+              'Part': [
+                {'id': 20, 'key': '/library/parts/20/file.mkv', 'accessible': 1, 'exists': 1},
+              ],
+            },
+          ],
+        },
+        baseUrl: 'http://plex:32400',
+        token: 'tok',
+        mediaIndex: 0,
+        // Sibling episode's id — meaningless here; the signature must decide.
+        selectedMediaSourceId: '999',
+        preferredVersionSignature: '4k:hevc:mkv',
+      );
+
+      expect(result.selectedMediaIndex, 1);
+    });
+
+    test('keeps the requested index when id and signature both miss', () {
+      final result = parsePlexVideoPlaybackDataFromJson(
+        {
+          'Media': [
+            {
+              'id': 301,
+              'videoResolution': '1080',
+              'Part': [
+                {'id': 10, 'key': '/library/parts/10/file.mkv', 'accessible': 1, 'exists': 1},
+              ],
+            },
+            {
+              'id': 302,
+              'videoResolution': '720',
+              'Part': [
+                {'id': 20, 'key': '/library/parts/20/file.mkv', 'accessible': 1, 'exists': 1},
+              ],
+            },
+          ],
+        },
+        baseUrl: 'http://plex:32400',
+        token: 'tok',
+        mediaIndex: 1,
+        preferredVersionSignature: '4k:av1:mp4',
+      );
+
+      expect(result.selectedMediaIndex, 1);
+    });
+
+    test('signature-resolved version still falls back when unplayable', () {
+      late (int, int) fallback;
+      final result = parsePlexVideoPlaybackDataFromJson(
+        {
+          'Media': [
+            {
+              'id': 401,
+              'videoResolution': '1080',
+              'videoCodec': 'h264',
+              'container': 'mkv',
+              'Part': [
+                {'id': 10, 'key': '/library/parts/10/file.mkv', 'accessible': 1, 'exists': 1},
+              ],
+            },
+            {
+              'id': 402,
+              'videoResolution': '4k',
+              'videoCodec': 'hevc',
+              'container': 'mkv',
+              'Part': [
+                {'id': 20, 'key': '/library/parts/20/file.mkv', 'accessible': 0, 'exists': 0},
+              ],
+            },
+          ],
+        },
+        baseUrl: 'http://plex:32400',
+        token: 'tok',
+        mediaIndex: 0,
+        preferredVersionSignature: '4k:hevc:mkv',
+        onVersionFallback: (requested, selected) => fallback = (requested, selected),
+      );
+
+      expect(fallback, (1, 0));
+      expect(result.selectedMediaIndex, 0);
+    });
+
     test('maps server display criteria from selected video stream', () {
       final result = parsePlexVideoPlaybackDataFromJson(
         {

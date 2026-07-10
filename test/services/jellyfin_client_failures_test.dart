@@ -231,4 +231,65 @@ void main() {
       expect(requests.map((uri) => uri.host), ['primary.example.com', 'fallback.example.com', 'primary.example.com']);
     });
   });
+
+  group('cancellation vs treat-as-empty', () {
+    // The hub/next-up fetch helpers swallow per-endpoint failures into empty
+    // lists so one broken endpoint doesn't sink a whole row. A *cancelled*
+    // request is different: it means our own client was torn down mid-fetch
+    // and says nothing about the server's content, so it must propagate —
+    // otherwise a disrupted server counts as "succeeded with partial data"
+    // and aborted sign-in fetches flash an empty home screen.
+    MediaServerHttpException cancelled() =>
+        MediaServerHttpException(type: MediaServerHttpErrorType.cancelled, message: 'HTTP client is closing');
+
+    test('fetchContinueWatching propagates a cancelled NextUp sub-fetch', () async {
+      final client = _withMock(
+        MockClient((req) async {
+          if (req.url.path == '/Shows/NextUp') throw cancelled();
+          return http.Response(jsonEncode({'Items': []}), 200, headers: {'content-type': 'application/json'});
+        }),
+      );
+      addTearDown(client.close);
+
+      await expectLater(
+        client.fetchContinueWatching(),
+        throwsA(isA<MediaServerHttpException>().having((e) => e.isCancellation, 'isCancellation', isTrue)),
+      );
+    });
+
+    test('fetchContinueWatching still treats a NextUp server error as empty', () async {
+      final client = _withMock(
+        MockClient((req) async {
+          if (req.url.path == '/Shows/NextUp') return http.Response('Internal error', 500);
+          return http.Response(
+            jsonEncode({
+              'Items': [
+                {'Id': 'ep-1', 'Type': 'Episode', 'Name': 'Resume Me'},
+              ],
+            }),
+            200,
+            headers: {'content-type': 'application/json'},
+          );
+        }),
+      );
+      addTearDown(client.close);
+
+      final items = await client.fetchContinueWatching();
+
+      expect(items.map((i) => i.id), ['ep-1']);
+    });
+
+    test('fetchMoreHubItems propagates a cancellation and swallows server errors', () async {
+      final cancelledClient = _withMock(MockClient((_) async => throw cancelled()));
+      addTearDown(cancelledClient.close);
+      await expectLater(
+        cancelledClient.fetchMoreHubItems('home.nextup'),
+        throwsA(isA<MediaServerHttpException>().having((e) => e.isCancellation, 'isCancellation', isTrue)),
+      );
+
+      final failingClient = _withMock(MockClient((_) async => http.Response('Internal error', 500)));
+      addTearDown(failingClient.close);
+      expect(await failingClient.fetchMoreHubItems('home.nextup'), isEmpty);
+    });
+  });
 }

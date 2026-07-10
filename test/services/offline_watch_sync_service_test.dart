@@ -346,6 +346,7 @@ void main() {
         mgr.dispose();
         await db.close();
       });
+      svc.setActiveProfileId('p1');
 
       final client = _RecordingMediaClient(serverId: ServerId('srv'), backend: MediaBackend.plex);
       mgr.debugRegisterClientForTesting(client);
@@ -371,6 +372,7 @@ void main() {
         mgr.dispose();
         await db.close();
       });
+      svc.setActiveProfileId('p1');
 
       final client = _RecordingMediaClient(serverId: ServerId('srv'), backend: MediaBackend.plex);
       mgr.debugRegisterClientForTesting(client);
@@ -395,6 +397,7 @@ void main() {
         mgr.dispose();
         await db.close();
       });
+      svc.setActiveProfileId('p1');
 
       final client = _RecordingMediaClient(serverId: ServerId('srv'), backend: MediaBackend.plex);
       mgr.debugRegisterClientForTesting(client);
@@ -421,6 +424,7 @@ void main() {
         mgr.dispose();
         await db.close();
       });
+      svc.setActiveProfileId('p1');
 
       final client = _RecordingMediaClient(serverId: ServerId('srv'), backend: MediaBackend.jellyfin);
       mgr.debugRegisterClientForTesting(client);
@@ -442,6 +446,69 @@ void main() {
   // queueProgressUpdate (also exercised so we can test the progress branches
   // of getLocalWatchStatus / getLocalViewOffset).
   // ============================================================
+
+  group('syncPendingItems profile scoping', () {
+    test('defers entirely when no profile is active', () async {
+      final (svc: svc, db: db, mgr: mgr) = _makeService();
+      addTearDown(() async {
+        svc.dispose();
+        mgr.dispose();
+        await db.close();
+      });
+
+      svc.setActiveProfileId('p1');
+      final client = _RecordingMediaClient(serverId: ServerId('srv'), backend: MediaBackend.plex);
+      mgr.debugRegisterClientForTesting(client);
+      await svc.queueMarkWatched(serverId: ServerId('srv'), itemId: '42');
+
+      // Active profile cleared (sign-out/teardown window): replaying the
+      // queue through whatever clients are bound would hit the wrong user.
+      svc.setActiveProfileId(null);
+      await svc.syncPendingItems();
+
+      expect(client.watched, isEmpty);
+      expect(await db.getPendingSyncCount(), 1);
+    });
+
+    test('requeues remaining actions when the active profile changes mid-sync', () async {
+      final (svc: svc, db: db, mgr: mgr) = _makeService();
+      addTearDown(() async {
+        svc.dispose();
+        mgr.dispose();
+        await db.close();
+      });
+
+      svc.setActiveProfileId('p1');
+      final posts = <String>[];
+      final client = JellyfinClient.forTesting(
+        connection: _jellyfinConnection('user-a'),
+        httpClient: MockClient((request) async {
+          if (request.method == 'GET' && request.url.path.startsWith('/Users/user-a/Items/')) {
+            final id = request.url.pathSegments.last;
+            return http.Response('{"Id":"$id","Type":"Movie","Name":"Movie $id"}', 200);
+          }
+          if (request.method == 'POST' && request.url.path.startsWith('/UserPlayedItems/')) {
+            posts.add(request.url.path);
+            // The switch lands while action 1 is mid-flight — the binder
+            // would now be rebinding this server id to another user.
+            svc.setActiveProfileId('p2');
+            return http.Response('', 204);
+          }
+          return http.Response('not found', 404);
+        }),
+      );
+      addTearDown(client.close);
+      mgr.debugRegisterJellyfinClientForTesting(client);
+
+      await svc.queueMarkWatched(serverId: ServerId('jf-machine'), itemId: 'item-1');
+      await svc.queueMarkWatched(serverId: ServerId('jf-machine'), itemId: 'item-2');
+
+      await svc.syncPendingItems();
+
+      expect(posts, hasLength(1));
+      expect(await db.getPendingSyncCount(), 1);
+    });
+  });
 
   group('queueProgressUpdate', () {
     test('persists a progress row with shouldMarkWatched=false below threshold', () async {
@@ -881,6 +948,7 @@ void main() {
         mgr.dispose();
         await db.close();
       });
+      svc.setActiveProfileId('p1');
 
       final pathsByUser = <String, List<String>>{'user-a': [], 'user-b': []};
 

@@ -16,6 +16,7 @@ import '../../i18n/strings.g.dart';
 import '../../mixins/mounted_set_state_mixin.dart';
 import '../../utils/dialogs.dart';
 import '../../main.dart' show gitCommit;
+import '../../services/device_performance.dart';
 import '../../utils/app_logger.dart';
 import '../../utils/formatters.dart';
 import '../../utils/platform_detector.dart';
@@ -58,6 +59,15 @@ class _LogsScreenState extends State<LogsScreen> with MountedSetStateMixin {
         final suffix = reasons.isEmpty ? '' : ' (${reasons.join(', ')})';
         buffer.writeln('TV mode: yes$suffix');
       }
+      // Renderer + effects tier turn "did the reduced tier engage on this
+      // device" into something answerable from any uploaded log (#1349).
+      String renderer;
+      try {
+        renderer = await const MethodChannel('com.plezy/theme').invokeMethod<String>('getRenderer') ?? 'unknown';
+      } catch (_) {
+        renderer = 'unknown';
+      }
+      buffer.writeln('Renderer: $renderer');
     } else if (Platform.isIOS) {
       final info = await deviceInfo.iosInfo;
       buffer.writeln('iOS ${info.systemVersion}');
@@ -70,6 +80,8 @@ class _LogsScreenState extends State<LogsScreen> with MountedSetStateMixin {
       final info = await deviceInfo.linuxInfo;
       buffer.writeln('Linux ${info.versionId ?? info.id}');
     }
+
+    buffer.writeln('Effects: ${DevicePerformance.describeSync()}');
 
     setStateIfMounted(() => _deviceInfo = buffer.toString().trimRight());
   }

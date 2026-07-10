@@ -6,30 +6,13 @@ services:
     stop_grace_period: 15s
     volumes:
       - logs:/data
-    expose:
-      - "8080"
+    ports:
+      - "127.0.0.1:8080:8080"
     environment:
       OAUTH_BASE_URL: https://ice.plezy.app
       MAL_CLIENT_ID: ${MAL_CLIENT_ID:-}
       ANILIST_CLIENT_ID: ${ANILIST_CLIENT_ID:-}
       ANILIST_CLIENT_SECRET: ${ANILIST_CLIENT_SECRET:-}
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
-
-  caddy:
-    image: caddy:2-alpine
-    restart: unless-stopped
-    mem_limit: 128m
-    ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - ./Caddyfile:/etc/caddy/Caddyfile:ro
-      - caddy_data:/data
-      - caddy_config:/config
     logging:
       driver: "json-file"
       options:
@@ -51,8 +34,8 @@ services:
       BUGS_SQLITE__READER_CONNECTIONS: 4
       BUGS_SQLITE__CACHE_SIZE_MB: 16
       BUGS_SQLITE__MMAP_SIZE_MB: 64
-    expose:
-      - "9000"
+    ports:
+      - "127.0.0.1:9000:9000"
     logging:
       driver: "json-file"
       options:
@@ -61,6 +44,4 @@ services:
 
 volumes:
   logs:
-  caddy_data:
-  caddy_config:
   bugs_data:

@@ -117,8 +117,10 @@ class _InputModeTrackerState extends State<InputModeTracker> {
   Widget build(BuildContext context) {
     // On Android TV, don't switch to pointer mode from pointer events
     // as D-pad can generate synthetic pointer events that would incorrectly
-    // trigger pointer mode and show a cursor instead of D-pad focus navigation
-    if (TvDetectionService.isTVSync()) {
+    // trigger pointer mode and show a cursor instead of D-pad focus navigation.
+    // Desktop is exempt even in force-TV mode: its pointer events come from a
+    // real mouse, which should keep flipping modes (and the cursor) as usual.
+    if (TvDetectionService.isTVSync() && !PlatformDetector.isDesktopOS()) {
       return _InputModeProvider(mode: _mode, child: widget.child);
     }
 

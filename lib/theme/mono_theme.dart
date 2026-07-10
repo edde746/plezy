@@ -78,6 +78,10 @@ ThemeData monoTheme({required bool dark, bool oled = false}) {
     // remove "Material feel"
     splashFactory: NoSplash.splashFactory,
     highlightColor: Colors.transparent,
+    // Explicit mono-derived tile highlights: ListTile's native focus/hover
+    // fill is the dpad focus visual inside M3E grouped-list cards.
+    focusColor: c.text.withValues(alpha: 0.12),
+    hoverColor: c.text.withValues(alpha: 0.05),
     dividerColor: c.outline,
     scaffoldBackgroundColor: c.bg,
     appBarTheme: AppBarTheme(
@@ -109,6 +113,10 @@ ThemeData monoTheme({required bool dark, bool oled = false}) {
     outlinedButtonTheme: OutlinedButtonThemeData(style: ButtonStyle(mouseCursor: clickableCursor)),
     iconButtonTheme: IconButtonThemeData(style: ButtonStyle(mouseCursor: clickableCursor)),
     sliderTheme: SliderThemeData(
+      // The mono scheme maps surfaceContainerHighest (the M3 default inactive
+      // track) to the same color as surface cards, which makes the inactive
+      // track invisible inside grouped-list items.
+      inactiveTrackColor: c.text.withValues(alpha: 0.12),
       trackHeight: 16,
       trackGap: 6,
       thumbSize: const WidgetStatePropertyAll(Size(4, 20)),
@@ -154,10 +162,14 @@ ThemeData monoTheme({required bool dark, bool oled = false}) {
       MonoTokens(
         radiusSm: 8,
         radiusMd: 12,
+        radiusLg: 20,
+        radiusXs: 5,
+        groupGap: 2,
         space: 12,
         fast: const Duration(milliseconds: 120),
         normal: const Duration(milliseconds: 200),
         slow: const Duration(milliseconds: 300),
+        expressive: const Duration(milliseconds: 350),
         bg: c.bg,
         surface: c.surface,
         outline: c.outline,

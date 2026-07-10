@@ -138,6 +138,12 @@ import wakelock_plus
     if let r = self.registrar(forPlugin: "MpvPlayerPlugin") {
       MpvPlayerPlugin.register(with: r)
     }
+    if let r = self.registrar(forPlugin: "MpvAudioPlayerPlugin") {
+      MpvAudioPlayerPlugin.register(with: r)
+    }
+    if let r = self.registrar(forPlugin: "AtmosProbePlugin") {
+      AtmosProbePlugin.register(with: r)
+    }
     if let r = self.registrar(forPlugin: "PackageInfoPlusPlugin") {
       PackageInfoPlusPlugin.register(with: r)
     }

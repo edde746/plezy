@@ -20,6 +20,14 @@ class MediaPart {
   /// appending auth.
   final String? streamPath;
 
+  /// The server-side file path backing this part. The identity signal for
+  /// "same underlying file": Plex represents a multi-episode file
+  /// (`S02E24-E25.mkv`) as distinct episodes whose parts have *different*
+  /// part ids but the same [file] (#1500). May be absent (e.g. Plex hides
+  /// paths from restricted users), in which case same-file detection
+  /// degrades gracefully.
+  final String? file;
+
   @JsonKey(fromJson: flexibleInt)
   final int? sizeBytes;
   final String? container;
@@ -33,6 +41,7 @@ class MediaPart {
   const MediaPart({
     required this.id,
     this.streamPath,
+    this.file,
     this.sizeBytes,
     this.container,
     this.durationMs,

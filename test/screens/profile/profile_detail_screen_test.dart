@@ -30,13 +30,16 @@ void main() {
 
   tearDown(() {
     TvDetectionService.debugSetAppleTVOverride(null);
+    PlatformDetector.debugSetIsDesktopOSOverride(null);
   });
 
   testWidgets('remote back pops the manage profile page', (tester) async {
     TvDetectionService.debugSetAppleTVOverride(true);
+    // Simulated TV device, not desktop force-TV: keep locked keyboard mode.
+    PlatformDetector.debugSetIsDesktopOSOverride(false);
     final db = AppDatabase.forTesting(NativeDatabase.memory());
     final profile = Profile.local(id: 'local-owner', displayName: 'Owner', createdAt: DateTime(2026, 1, 1));
-    final profiles = ProfileRegistry(db);
+    final profiles = _FakeProfileRegistry(db, [profile]);
     final connections = _FakeConnectionRegistry(db);
     final profileConnections = _FakeProfileConnectionRegistry(db);
     final storage = await StorageService.getInstance();
@@ -106,6 +109,20 @@ class _FakeConnectionRegistry extends ConnectionRegistry {
 
   @override
   Future<List<Connection>> list() async => const [];
+
+  // Synthetic stream: a real drift watch leaves the stream store's
+  // keep-alive timer pending when the test ends.
+  @override
+  Stream<List<Connection>> watchConnections() => Stream.value(const []);
+}
+
+class _FakeProfileRegistry extends ProfileRegistry {
+  _FakeProfileRegistry(super.db, this._profiles);
+
+  final List<Profile> _profiles;
+
+  @override
+  Stream<List<Profile>> watchProfiles() => Stream.value(_profiles);
 }
 
 class _FakeProfileConnectionRegistry extends ProfileConnectionRegistry {

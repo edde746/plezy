@@ -9,6 +9,7 @@ part of 'media_part.dart';
 MediaPart _$MediaPartFromJson(Map<String, dynamic> json) => MediaPart(
   id: _stringFromJson(json['id']),
   streamPath: json['streamPath'] as String?,
+  file: json['file'] as String?,
   sizeBytes: flexibleInt(json['sizeBytes']),
   container: json['container'] as String?,
   durationMs: flexibleInt(json['durationMs']),
@@ -19,6 +20,7 @@ MediaPart _$MediaPartFromJson(Map<String, dynamic> json) => MediaPart(
 Map<String, dynamic> _$MediaPartToJson(MediaPart instance) => <String, dynamic>{
   'id': instance.id,
   'streamPath': ?instance.streamPath,
+  'file': ?instance.file,
   'sizeBytes': ?instance.sizeBytes,
   'container': ?instance.container,
   'durationMs': ?instance.durationMs,

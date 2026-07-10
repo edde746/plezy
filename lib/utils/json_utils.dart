@@ -8,22 +8,23 @@ int? flexibleInt(Object? v) => switch (v) {
   _ => null,
 };
 
-/// Parse a value that may be [bool], [int] (0/1), or [String] ('1') to [bool].
+/// Parse a value that may be [bool], [int] (0/1), or [String] ('1'/'true'/'false') to [bool].
 /// Returns `false` for `null` or unrecognised values.
 /// Handles Plex API responses where boolean fields may arrive as integers.
 bool flexibleBool(Object? v) => switch (v) {
   final bool b => b,
   final int n => n == 1,
-  final String s => s == '1',
+  final String s => s == '1' || s.toLowerCase() == 'true',
   _ => false,
 };
 
-/// Parse a value that may be [bool], [int] (0/1), or [String] ('1') to [bool].
-/// Returns `null` for `null` or unrecognised values.
+/// Parse a value that may be [bool], [int] (0/1), or [String] ('1'/'true'/'false') to [bool].
+/// Returns `null` for `null` or unsupported non-string values; legacy string
+/// values other than `'1'`/`'true'` map to `false`.
 bool? flexibleBoolNullable(Object? v) => switch (v) {
   final bool b => b,
   final int n => n == 1,
-  final String s => s == '1',
+  final String s => s == '1' || s.toLowerCase() == 'true',
   _ => null,
 };
 
@@ -59,6 +60,25 @@ List<String>? flexibleStringList(Object? v) {
   final result = [
     for (final e in list)
       if (e is String) e,
+  ];
+  return result.isEmpty ? null : result;
+}
+
+/// Coerce a comma-separated String ("en,sv"), a bare String, a List of
+/// Strings, or null into `List<String>?`. Since ~July 2026 the Plex account
+/// API (clients.plex.tv `/api/v2/user` and `/home/users/{uuid}/switch`)
+/// returns the profile language-list fields as CSV strings instead of arrays
+/// (#1488) — this tolerates both shapes. Parts are trimmed and empties
+/// dropped; an empty result (or null input) yields `null`. CSV-splitting
+/// sibling of [flexibleStringList], kept separate so that caller's strings
+/// (Fribb IMDb ids) stay verbatim.
+List<String>? flexibleCsvStringList(Object? v) {
+  final strings = flexibleStringList(v);
+  if (strings == null) return null;
+  final result = [
+    for (final s in strings)
+      for (final part in s.split(','))
+        if (part.trim().isNotEmpty) part.trim(),
   ];
   return result.isEmpty ? null : result;
 }

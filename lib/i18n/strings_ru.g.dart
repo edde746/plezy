@@ -72,6 +72,7 @@ class TranslationsRu extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _TranslationsLiveTvRu liveTv = _TranslationsLiveTvRu._(_root);
 	@override late final _TranslationsCollectionsRu collections = _TranslationsCollectionsRu._(_root);
 	@override late final _TranslationsPlaylistsRu playlists = _TranslationsPlaylistsRu._(_root);
+	@override late final _TranslationsMusicRu music = _TranslationsMusicRu._(_root);
 	@override late final _TranslationsWatchTogetherRu watchTogether = _TranslationsWatchTogetherRu._(_root);
 	@override late final _TranslationsDownloadsRu downloads = _TranslationsDownloadsRu._(_root);
 	@override late final _TranslationsShadersRu shaders = _TranslationsShadersRu._(_root);
@@ -271,7 +272,7 @@ class _TranslationsSettingsRu extends TranslationsSettingsEn {
 	@override String get hideSpoilers => 'Скрыть спойлеры непросмотренных эпизодов';
 	@override String get hideSpoilersDescription => 'Размывать миниатюры и описания непросмотренных серий';
 	@override String get playerBackend => 'Бэкенд плеера';
-	@override String get exoPlayer => 'ExoPlayer (Рекомендуется)';
+	@override String get exoPlayer => 'ExoPlayer';
 	@override String get mpv => 'mpv';
 	@override String get hardwareDecoding => 'Аппаратное декодирование';
 	@override String get hardwareDecodingDescription => 'Использовать аппаратное ускорение, когда доступно';
@@ -393,6 +394,30 @@ class _TranslationsSettingsRu extends TranslationsSettingsEn {
 	@override String get tunneledPlaybackDescription => 'Использовать видеотуннелирование. Отключите, если HDR показывает черный экран.';
 	@override String get audioPassthrough => 'Сквозной вывод аудио';
 	@override String get audioPassthroughDescription => 'Передавать звук Dolby/DTS на ресивер или телевизор без перекодирования, сохраняя объёмный звук. Отключите, если нет звука.';
+	@override String get audioPassthroughDescriptionAppleTv => 'Передаёт Dolby Digital Plus (включая Atmos) системе в виде битового потока. DTS и TrueHD по-прежнему воспроизводятся как многоканальный PCM. При перемотке возможны короткие пропадания звука.';
+	@override String get audioDownmix => 'Микширование в стерео';
+	@override String get audioDownmixDescription => 'Микширует объёмный звук в два канала для стереодинамиков или наушников';
+	@override String get downmixCenterBoost => 'Усиление центрального канала';
+	@override String downmixCenterBoostValue({required Object db}) => '${db} дБ';
+	@override String get downmixCenterBoostLabel => 'Усиление (дБ)';
+	@override String get downmixCenterBoostShort => 'дБ';
+	@override String get audioDownmixNormalize => 'Нормализация громкости при микшировании';
+	@override String get audioDownmixNormalizeDescription => 'Снижает уровень микса во избежание клиппинга. Отключите, чтобы сохранить исходную громкость (возможны искажения в громких сценах).';
+	@override String get atmosDiagnostics => 'Тест вывода Atmos';
+	@override String get atmosDiagnosticsDescription => 'Диагностика вывода Dolby Atmos воспроизведением тестовых сигналов через системный проигрыватель';
+	@override String get atmosTestHlsAtmos => 'Atmos-поток Apple';
+	@override String get atmosTestHlsAtmosDescription => 'Заведомо рабочий поток Dolby Atmos. Ресивер должен показать Dolby Atmos.';
+	@override String get atmosTestHlsControl => 'Surround-поток Apple';
+	@override String get atmosTestHlsControlDescription => 'Контрольный поток без Atmos. Ресивер должен показать объёмный звук без Atmos.';
+	@override String get atmosTestRawStream => 'Сырой поток EAC3';
+	@override String get atmosTestRawStreamDescription => 'Транслирует тестовый файл точно так же, как Atmos-воспроизведение в проигрывателе. Требуется URL тестового файла.';
+	@override String get atmosTestRawFile => 'Сырой файл EAC3';
+	@override String get atmosTestRawFileDescription => 'Воспроизводит тестовый файл с известной длиной. Требуется URL тестового файла.';
+	@override String get atmosTestStop => 'Остановить тест';
+	@override String get atmosTestUrl => 'URL тестового файла';
+	@override String get atmosTestUrlDescription => 'HTTP-URL сырого файла .ec3 Dolby Atmos (например, извлечённого через ffmpeg)';
+	@override String get atmosTestUrlMissing => 'Сначала укажите URL тестового файла';
+	@override String get atmosTestStatus => 'Статус';
 	@override String get dvConversionMode => 'Преобразование Dolby Vision';
 	@override String get dvConversionModeDescription => 'Выберите, как ExoPlayer обрабатывает файлы Dolby Vision Profile 7.';
 	@override String get dvConversionAuto => 'Авто';
@@ -528,9 +553,6 @@ class _TranslationsRateSheetRu extends TranslationsRateSheetEn {
 	@override String starValue({required Object rating}) => '${rating} / 5';
 	@override String scoreValue({required Object score}) => '${score} / 10';
 	@override String get setScore => 'Установить оценку';
-	@override String get notRated => 'Без оценки';
-	@override String get liked => 'Понравилось';
-	@override String get notLiked => 'Не отмечено понравившимся';
 	@override String get saved => 'Сохранено';
 	@override String get notAvailable => 'Совпадений не найдено';
 	@override String get noConnectedTrackers => 'Подключите трекер в настройках, чтобы оценивать там.';
@@ -829,7 +851,9 @@ class _TranslationsProfilesRu extends TranslationsProfilesEn {
 	@override String get borrowConnectionBorrowed => 'Подключение заимствовано.';
 	@override String get borrowFailed => 'Не удалось заимствовать подключение.';
 	@override String get incorrectPin => 'Неверный PIN.';
+	@override String get incorrectPinTryAgain => 'Неверный PIN. Попробуйте ещё раз.';
 	@override String get sourceProfileMissingParentAccount => 'У исходного профиля отсутствует родительская учетная запись.';
+	@override String get failedToLoadHomeUsers => 'Не удалось загрузить пользователей Plex Home. Проверьте подключение и попробуйте ещё раз.';
 	@override String get failedToVerifyPin => 'Не удалось проверить PIN.';
 	@override String get newProfile => 'Новый профиль';
 	@override String get profileNameHint => 'например, Гости, Дети, Семейная комната';
@@ -875,6 +899,9 @@ class _TranslationsDiscoverRu extends TranslationsDiscoverEn {
 	@override String nextUpIn({required Object library}) => 'Далее в ${library}';
 	@override String get recentlyAdded => 'Недавно добавленное';
 	@override String recentlyAddedIn({required Object library}) => 'Недавно добавленное в ${library}';
+	@override String latestAlbumsIn({required Object library}) => 'Последние альбомы в ${library}';
+	@override String recentlyPlayedIn({required Object library}) => 'Недавно прослушанное в ${library}';
+	@override String mostPlayedIn({required Object library}) => 'Часто прослушиваемое в ${library}';
 	@override String playEpisode({required Object season, required Object episode}) => 'S${season}E${episode}';
 	@override String get overview => 'Обзор';
 	@override String get cast => 'В ролях';
@@ -1176,6 +1203,42 @@ class _TranslationsPlaylistsRu extends TranslationsPlaylistsEn {
 	@override String get errorRemoving => 'Не удалось удалить из плейлиста';
 }
 
+// Path: music
+class _TranslationsMusicRu extends TranslationsMusicEn {
+	_TranslationsMusicRu._(TranslationsRu root) : this._root = root, super.internal(root);
+
+	final TranslationsRu _root; // ignore: unused_field
+
+	// Translations
+	@override String get goToAlbum => 'Перейти к альбому';
+	@override String get goToArtist => 'Перейти к исполнителю';
+	@override String get instantMix => 'Быстрый микс';
+	@override String get playNext => 'Воспроизвести следующим';
+	@override String get addToQueue => 'Добавить в очередь';
+	@override String discNumber({required Object n}) => 'Диск ${n}';
+	@override String trackCount({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('ru'))(n,
+		one: '${n} трек',
+		few: '${n} трека',
+		many: '${n} треков',
+		other: '${n} трека',
+	);
+	@override String get nowPlaying => 'Сейчас играет';
+	@override String playingFrom({required Object title}) => 'Воспроизведение из ${title}';
+	@override String get queue => 'Очередь';
+	@override String get clearQueue => 'Очистить очередь';
+	@override String get lyrics => 'Текст песни';
+	@override String get noLyrics => 'Текст песни недоступен';
+	@override String get sleepTimer => 'Таймер сна';
+	@override String get sleepTimerEndOfTrack => 'Конец трека';
+	@override String sleepTimerMinutes({required Object n}) => '${n} минут';
+	@override String get stopPlayback => 'Остановить воспроизведение';
+	@override String get previousTrack => 'Предыдущий трек';
+	@override String get nextTrack => 'Следующий трек';
+	@override String get repeat => 'Повтор';
+	@override String get repeatAll => 'Повторять все';
+	@override String get repeatOne => 'Повторять один';
+}
+
 // Path: watchTogether
 class _TranslationsWatchTogetherRu extends TranslationsWatchTogetherEn {
 	_TranslationsWatchTogetherRu._(TranslationsRu root) : this._root = root, super.internal(root);
@@ -1256,6 +1319,8 @@ class _TranslationsDownloadsRu extends TranslationsDownloadsEn {
 	@override String get manage => 'Управление';
 	@override String get tvShows => 'Сериалы';
 	@override String get movies => 'Фильмы';
+	@override String get music => 'Музыка';
+	@override String tracksQueued({required Object count}) => '${count} треков в очереди на загрузку';
 	@override String get noDownloads => 'Загрузок пока нет';
 	@override String get noDownloadsDescription => 'Загруженный контент появится здесь для просмотра офлайн';
 	@override String get downloadNow => 'Загрузить';
@@ -1376,6 +1441,7 @@ class _TranslationsVideoSettingsRu extends TranslationsVideoSettingsEn {
 	@override String get performanceOverlay => 'Оверлей производительности';
 	@override String get audioPassthrough => 'Сквозной вывод аудио';
 	@override String get audioNormalization => 'Нормализация громкости';
+	@override String get audioDownmix => 'Микширование в стерео';
 }
 
 // Path: performanceOverlay
@@ -1717,6 +1783,9 @@ class _TranslationsLibrariesGroupingsRu extends TranslationsLibrariesGroupingsEn
 	@override String get shows => 'Сериалы';
 	@override String get seasons => 'Сезоны';
 	@override String get episodes => 'Эпизоды';
+	@override String get artists => 'Исполнители';
+	@override String get albums => 'Альбомы';
+	@override String get tracks => 'Треки';
 	@override String get folders => 'Папки';
 }
 
@@ -2060,7 +2129,7 @@ extension on TranslationsRu {
 			'settings.hideSpoilers' => 'Скрыть спойлеры непросмотренных эпизодов',
 			'settings.hideSpoilersDescription' => 'Размывать миниатюры и описания непросмотренных серий',
 			'settings.playerBackend' => 'Бэкенд плеера',
-			'settings.exoPlayer' => 'ExoPlayer (Рекомендуется)',
+			'settings.exoPlayer' => 'ExoPlayer',
 			'settings.mpv' => 'mpv',
 			'settings.hardwareDecoding' => 'Аппаратное декодирование',
 			'settings.hardwareDecodingDescription' => 'Использовать аппаратное ускорение, когда доступно',
@@ -2182,6 +2251,30 @@ extension on TranslationsRu {
 			'settings.tunneledPlaybackDescription' => 'Использовать видеотуннелирование. Отключите, если HDR показывает черный экран.',
 			'settings.audioPassthrough' => 'Сквозной вывод аудио',
 			'settings.audioPassthroughDescription' => 'Передавать звук Dolby/DTS на ресивер или телевизор без перекодирования, сохраняя объёмный звук. Отключите, если нет звука.',
+			'settings.audioPassthroughDescriptionAppleTv' => 'Передаёт Dolby Digital Plus (включая Atmos) системе в виде битового потока. DTS и TrueHD по-прежнему воспроизводятся как многоканальный PCM. При перемотке возможны короткие пропадания звука.',
+			'settings.audioDownmix' => 'Микширование в стерео',
+			'settings.audioDownmixDescription' => 'Микширует объёмный звук в два канала для стереодинамиков или наушников',
+			'settings.downmixCenterBoost' => 'Усиление центрального канала',
+			'settings.downmixCenterBoostValue' => ({required Object db}) => '${db} дБ',
+			'settings.downmixCenterBoostLabel' => 'Усиление (дБ)',
+			'settings.downmixCenterBoostShort' => 'дБ',
+			'settings.audioDownmixNormalize' => 'Нормализация громкости при микшировании',
+			'settings.audioDownmixNormalizeDescription' => 'Снижает уровень микса во избежание клиппинга. Отключите, чтобы сохранить исходную громкость (возможны искажения в громких сценах).',
+			'settings.atmosDiagnostics' => 'Тест вывода Atmos',
+			'settings.atmosDiagnosticsDescription' => 'Диагностика вывода Dolby Atmos воспроизведением тестовых сигналов через системный проигрыватель',
+			'settings.atmosTestHlsAtmos' => 'Atmos-поток Apple',
+			'settings.atmosTestHlsAtmosDescription' => 'Заведомо рабочий поток Dolby Atmos. Ресивер должен показать Dolby Atmos.',
+			'settings.atmosTestHlsControl' => 'Surround-поток Apple',
+			'settings.atmosTestHlsControlDescription' => 'Контрольный поток без Atmos. Ресивер должен показать объёмный звук без Atmos.',
+			'settings.atmosTestRawStream' => 'Сырой поток EAC3',
+			'settings.atmosTestRawStreamDescription' => 'Транслирует тестовый файл точно так же, как Atmos-воспроизведение в проигрывателе. Требуется URL тестового файла.',
+			'settings.atmosTestRawFile' => 'Сырой файл EAC3',
+			'settings.atmosTestRawFileDescription' => 'Воспроизводит тестовый файл с известной длиной. Требуется URL тестового файла.',
+			'settings.atmosTestStop' => 'Остановить тест',
+			'settings.atmosTestUrl' => 'URL тестового файла',
+			'settings.atmosTestUrlDescription' => 'HTTP-URL сырого файла .ec3 Dolby Atmos (например, извлечённого через ffmpeg)',
+			'settings.atmosTestUrlMissing' => 'Сначала укажите URL тестового файла',
+			'settings.atmosTestStatus' => 'Статус',
 			'settings.dvConversionMode' => 'Преобразование Dolby Vision',
 			'settings.dvConversionModeDescription' => 'Выберите, как ExoPlayer обрабатывает файлы Dolby Vision Profile 7.',
 			'settings.dvConversionAuto' => 'Авто',
@@ -2296,9 +2389,6 @@ extension on TranslationsRu {
 			'rateSheet.starValue' => ({required Object rating}) => '${rating} / 5',
 			'rateSheet.scoreValue' => ({required Object score}) => '${score} / 10',
 			'rateSheet.setScore' => 'Установить оценку',
-			'rateSheet.notRated' => 'Без оценки',
-			'rateSheet.liked' => 'Понравилось',
-			'rateSheet.notLiked' => 'Не отмечено понравившимся',
 			'rateSheet.saved' => 'Сохранено',
 			'rateSheet.notAvailable' => 'Совпадений не найдено',
 			'rateSheet.noConnectedTrackers' => 'Подключите трекер в настройках, чтобы оценивать там.',
@@ -2419,6 +2509,8 @@ extension on TranslationsRu {
 			'messages.logsCleared' => 'Логи очищены',
 			'messages.logsCopied' => 'Логи скопированы в буфер обмена',
 			'messages.noLogsAvailable' => 'Логи отсутствуют',
+			_ => null,
+		} ?? switch (path) {
 			'messages.libraryScanning' => ({required Object title}) => 'Сканирование "${title}"...',
 			'messages.libraryScanStarted' => ({required Object title}) => 'Сканирование библиотеки начато для "${title}"',
 			'messages.libraryScanFailed' => ({required Object error}) => 'Не удалось отсканировать библиотеку: ${error}',
@@ -2440,8 +2532,6 @@ extension on TranslationsRu {
 			'messages.serverLimitTitle' => 'Ошибка воспроизведения',
 			'messages.serverLimitBody' => 'Ошибка сервера (HTTP 500). Лимит пропускной способности/транскодирования, вероятно, отклонил сессию. Попросите владельца изменить настройки.',
 			'messages.logsUploaded' => 'Логи загружены',
-			_ => null,
-		} ?? switch (path) {
 			'messages.logsUploadFailed' => 'Не удалось загрузить логи',
 			'messages.logId' => 'ID лога',
 			'subtitlingStyling.text' => 'Текст',
@@ -2524,7 +2614,9 @@ extension on TranslationsRu {
 			'profiles.borrowConnectionBorrowed' => 'Подключение заимствовано.',
 			'profiles.borrowFailed' => 'Не удалось заимствовать подключение.',
 			'profiles.incorrectPin' => 'Неверный PIN.',
+			'profiles.incorrectPinTryAgain' => 'Неверный PIN. Попробуйте ещё раз.',
 			'profiles.sourceProfileMissingParentAccount' => 'У исходного профиля отсутствует родительская учетная запись.',
+			'profiles.failedToLoadHomeUsers' => 'Не удалось загрузить пользователей Plex Home. Проверьте подключение и попробуйте ещё раз.',
 			'profiles.failedToVerifyPin' => 'Не удалось проверить PIN.',
 			'profiles.newProfile' => 'Новый профиль',
 			'profiles.profileNameHint' => 'например, Гости, Дети, Семейная комната',
@@ -2552,6 +2644,9 @@ extension on TranslationsRu {
 			'discover.nextUpIn' => ({required Object library}) => 'Далее в ${library}',
 			'discover.recentlyAdded' => 'Недавно добавленное',
 			'discover.recentlyAddedIn' => ({required Object library}) => 'Недавно добавленное в ${library}',
+			'discover.latestAlbumsIn' => ({required Object library}) => 'Последние альбомы в ${library}',
+			'discover.recentlyPlayedIn' => ({required Object library}) => 'Недавно прослушанное в ${library}',
+			'discover.mostPlayedIn' => ({required Object library}) => 'Часто прослушиваемое в ${library}',
 			'discover.playEpisode' => ({required Object season, required Object episode}) => 'S${season}E${episode}',
 			'discover.overview' => 'Обзор',
 			'discover.cast' => 'В ролях',
@@ -2624,6 +2719,9 @@ extension on TranslationsRu {
 			'libraries.groupings.shows' => 'Сериалы',
 			'libraries.groupings.seasons' => 'Сезоны',
 			'libraries.groupings.episodes' => 'Эпизоды',
+			'libraries.groupings.artists' => 'Исполнители',
+			'libraries.groupings.albums' => 'Альбомы',
+			'libraries.groupings.tracks' => 'Треки',
 			'libraries.groupings.folders' => 'Папки',
 			'libraries.filterCategories.genre' => 'Жанр',
 			'libraries.filterCategories.year' => 'Год',
@@ -2785,6 +2883,28 @@ extension on TranslationsRu {
 			'playlists.errorAdding' => 'Не удалось добавить в плейлист',
 			'playlists.errorReordering' => 'Не удалось переупорядочить элемент плейлиста',
 			'playlists.errorRemoving' => 'Не удалось удалить из плейлиста',
+			'music.goToAlbum' => 'Перейти к альбому',
+			'music.goToArtist' => 'Перейти к исполнителю',
+			'music.instantMix' => 'Быстрый микс',
+			'music.playNext' => 'Воспроизвести следующим',
+			'music.addToQueue' => 'Добавить в очередь',
+			'music.discNumber' => ({required Object n}) => 'Диск ${n}',
+			'music.trackCount' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('ru'))(n, one: '${n} трек', few: '${n} трека', many: '${n} треков', other: '${n} трека', ), 
+			'music.nowPlaying' => 'Сейчас играет',
+			'music.playingFrom' => ({required Object title}) => 'Воспроизведение из ${title}',
+			'music.queue' => 'Очередь',
+			'music.clearQueue' => 'Очистить очередь',
+			'music.lyrics' => 'Текст песни',
+			'music.noLyrics' => 'Текст песни недоступен',
+			'music.sleepTimer' => 'Таймер сна',
+			'music.sleepTimerEndOfTrack' => 'Конец трека',
+			'music.sleepTimerMinutes' => ({required Object n}) => '${n} минут',
+			'music.stopPlayback' => 'Остановить воспроизведение',
+			'music.previousTrack' => 'Предыдущий трек',
+			'music.nextTrack' => 'Следующий трек',
+			'music.repeat' => 'Повтор',
+			'music.repeatAll' => 'Повторять все',
+			'music.repeatOne' => 'Повторять один',
 			'watchTogether.title' => 'Смотреть вместе',
 			'watchTogether.description' => 'Смотрите контент синхронно с друзьями и семьёй',
 			'watchTogether.createSession' => 'Создать сессию',
@@ -2849,6 +2969,8 @@ extension on TranslationsRu {
 			'downloads.manage' => 'Управление',
 			'downloads.tvShows' => 'Сериалы',
 			'downloads.movies' => 'Фильмы',
+			'downloads.music' => 'Музыка',
+			'downloads.tracksQueued' => ({required Object count}) => '${count} треков в очереди на загрузку',
 			'downloads.noDownloads' => 'Загрузок пока нет',
 			'downloads.noDownloadsDescription' => 'Загруженный контент появится здесь для просмотра офлайн',
 			'downloads.downloadNow' => 'Загрузить',
@@ -2901,6 +3023,8 @@ extension on TranslationsRu {
 			'downloads.manageSyncRule' => 'Управление синхронизацией',
 			'downloads.editEpisodeCount' => 'Количество эпизодов',
 			'downloads.editSyncFilter' => 'Фильтр синхронизации',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.syncAllItems' => 'Синхронизация всех элементов',
 			'downloads.syncUnwatchedItems' => 'Синхронизация непросмотренных элементов',
 			'downloads.syncRuleServerContext' => ({required Object server, required Object status}) => 'Сервер: ${server} • ${status}',
@@ -2954,8 +3078,6 @@ extension on TranslationsRu {
 			'companionRemote.pairing.connectionTimedOut' => 'Время подключения истекло. Используйте одну сеть на обоих устройствах.',
 			'companionRemote.pairing.sessionNotFound' => 'Устройство не найдено. Убедитесь, что Plezy запущен на хосте.',
 			'companionRemote.pairing.authFailed' => 'Аутентификация не удалась. На обоих устройствах нужен один аккаунт Plex.',
-			_ => null,
-		} ?? switch (path) {
 			'companionRemote.pairing.failedToConnect' => ({required Object error}) => 'Не удалось подключиться: ${error}',
 			'companionRemote.remote.disconnectConfirm' => 'Отключиться от удалённой сессии?',
 			'companionRemote.remote.reconnecting' => 'Переподключение...',
@@ -3000,6 +3122,7 @@ extension on TranslationsRu {
 			'videoSettings.performanceOverlay' => 'Оверлей производительности',
 			'videoSettings.audioPassthrough' => 'Сквозной вывод аудио',
 			'videoSettings.audioNormalization' => 'Нормализация громкости',
+			'videoSettings.audioDownmix' => 'Микширование в стерео',
 			'performanceOverlay.color' => 'Цвет',
 			'performanceOverlay.performance' => 'Производительность',
 			'performanceOverlay.buffer' => 'Буфер',

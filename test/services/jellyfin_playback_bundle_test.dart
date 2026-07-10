@@ -168,6 +168,49 @@ void main() {
       client.close();
     });
 
+    test('selects source by preferred signature when no sourceId pins one', () async {
+      final body = jsonEncode({
+        'Id': 'item-5',
+        'Type': 'Movie',
+        'MediaSources': [
+          {
+            'Id': 'src-1080',
+            'Container': 'mp4',
+            'MediaStreams': [
+              {'Type': 'Video', 'Codec': 'h264', 'Height': 1080, 'Width': 1920},
+            ],
+          },
+          {
+            'Id': 'src-4k',
+            'Container': 'mkv',
+            'MediaStreams': [
+              {'Type': 'Video', 'Codec': 'hevc', 'Height': 2160, 'Width': 3840},
+            ],
+          },
+        ],
+      });
+      final client = buildClient(body);
+
+      // Grab the real signature of the 4K source, as a saved preference would
+      // have captured it on a previous play.
+      final probe = await client.fetchPlaybackBundle('item-5');
+      final signature = probe!.availableVersions[1].signature;
+
+      final bundle = await client.fetchPlaybackBundle('item-5', sourceIndex: 0, preferredSignature: signature);
+      expect(bundle!.selectedSourceId, 'src-4k');
+      expect(bundle.selectedSourceIndex, 1);
+
+      // An explicit sourceId still wins over the signature.
+      final pinned = await client.fetchPlaybackBundle(
+        'item-5',
+        sourceIndex: 0,
+        sourceId: 'src-1080',
+        preferredSignature: signature,
+      );
+      expect(pinned!.selectedSourceId, 'src-1080');
+      client.close();
+    });
+
     test('chapters defaults to empty list when item has no Chapters field', () async {
       final body = jsonEncode({
         'Id': 'item-3',

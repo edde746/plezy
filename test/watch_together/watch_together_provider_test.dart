@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/media/ids.dart';
 import 'package:plezy/watch_together/models/watch_session.dart';
@@ -138,6 +140,133 @@ void main() {
       p.addListener(() => notified++);
       p.notifyHostExitedPlayer();
       expect(notified, 0);
+      p.dispose();
+    });
+  });
+
+  group('WatchTogetherProvider — media switch dispatch', () {
+    test('dispatches once with typed args and suppresses the key after success', () async {
+      final p = WatchTogetherProvider();
+      final calls = <(String, String, String)>[];
+      p.onMediaSwitched = (ratingKey, serverId, mediaTitle) async {
+        calls.add((ratingKey, serverId, mediaTitle));
+        return true;
+      };
+
+      p.debugHandleMediaState('rk1', 's1', 'Ep 1');
+      await Future<void>.delayed(Duration.zero);
+      expect(calls, [('rk1', 's1', 'Ep 1')]);
+
+      // Heartbeat repeat of the handled key: no re-dispatch.
+      p.debugHandleMediaState('rk1', 's1', 'Ep 1');
+      await Future<void>.delayed(Duration.zero);
+      expect(calls.length, 1);
+      p.dispose();
+    });
+
+    test('a false result is retried on the next heartbeat state', () async {
+      final p = WatchTogetherProvider();
+      var calls = 0;
+      p.onMediaSwitched = (ratingKey, serverId, mediaTitle) async {
+        calls++;
+        return calls > 1; // Fail once, then succeed.
+      };
+
+      p.debugHandleMediaState('rk1', 's1', null);
+      await Future<void>.delayed(Duration.zero);
+      p.debugHandleMediaState('rk1', 's1', null);
+      await Future<void>.delayed(Duration.zero);
+      expect(calls, 2);
+
+      p.debugHandleMediaState('rk1', 's1', null);
+      await Future<void>.delayed(Duration.zero);
+      expect(calls, 2); // Second attempt succeeded; key now handled.
+      p.dispose();
+    });
+
+    test('a throwing callback is contained and retried', () async {
+      final p = WatchTogetherProvider();
+      var calls = 0;
+      p.onMediaSwitched = (ratingKey, serverId, mediaTitle) async {
+        calls++;
+        throw StateError('network down');
+      };
+
+      expect(() => p.debugHandleMediaState('rk1', 's1', null), returnsNormally);
+      await Future<void>.delayed(Duration.zero);
+      p.debugHandleMediaState('rk1', 's1', null);
+      await Future<void>.delayed(Duration.zero);
+      expect(calls, 2);
+      p.dispose();
+    });
+
+    test('no double dispatch while a switch is pending, even for another key', () async {
+      final p = WatchTogetherProvider();
+      final pending = Completer<bool>();
+      final calls = <String>[];
+      p.onMediaSwitched = (ratingKey, serverId, mediaTitle) {
+        calls.add(ratingKey);
+        return pending.future;
+      };
+
+      p.debugHandleMediaState('rk1', 's1', null);
+      p.debugHandleMediaState('rk1', 's1', null);
+      p.debugHandleMediaState('rk2', 's1', null); // Serialized behind rk1.
+      await Future<void>.delayed(Duration.zero);
+      expect(calls, ['rk1']);
+
+      pending.complete(false);
+      await Future<void>.delayed(Duration.zero);
+      // The slot is free again; the next heartbeat re-dispatches.
+      p.debugHandleMediaState('rk2', 's1', null);
+      await Future<void>.delayed(Duration.zero);
+      expect(calls, ['rk1', 'rk2']);
+      p.dispose();
+    });
+
+    test('onPlayerMediaSwitched takes priority over onMediaSwitched', () async {
+      final p = WatchTogetherProvider();
+      final calls = <String>[];
+      p.onMediaSwitched = (ratingKey, serverId, mediaTitle) async {
+        calls.add('main');
+        return true;
+      };
+      p.onPlayerMediaSwitched = (ratingKey, serverId, mediaTitle) async {
+        calls.add('player');
+        return true;
+      };
+
+      p.debugHandleMediaState('rk1', 's1', null);
+      await Future<void>.delayed(Duration.zero);
+      expect(calls, ['player']);
+      p.dispose();
+    });
+
+    test('markCurrentPlaybackHandled suppresses the marked key', () async {
+      final p = WatchTogetherProvider();
+      var calls = 0;
+      p.onMediaSwitched = (ratingKey, serverId, mediaTitle) async {
+        calls++;
+        return true;
+      };
+
+      p.markCurrentPlaybackHandled(ratingKey: 'rk1', serverId: ServerId('s1'));
+      p.debugHandleMediaState('rk1', 's1', null);
+      await Future<void>.delayed(Duration.zero);
+      expect(calls, 0);
+      p.dispose();
+    });
+
+    test('a blank serverId is ignored without throwing', () {
+      final p = WatchTogetherProvider();
+      var calls = 0;
+      p.onMediaSwitched = (ratingKey, serverId, mediaTitle) async {
+        calls++;
+        return true;
+      };
+
+      expect(() => p.debugHandleMediaState('rk1', '', null), returnsNormally);
+      expect(calls, 0);
       p.dispose();
     });
   });

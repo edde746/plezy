@@ -11,6 +11,7 @@ import '../screens/media_detail_screen.dart';
 import '../screens/playlist/playlist_detail_screen.dart';
 import '../services/settings_service.dart';
 import '../utils/global_key_utils.dart';
+import 'music_navigation.dart';
 import 'plex_library_section_helpers.dart';
 import 'video_player_navigation.dart';
 
@@ -22,7 +23,7 @@ enum MediaNavigationResult {
   /// Navigation completed, parent list should be refreshed (e.g., collection deleted)
   listRefreshNeeded,
 
-  /// Item type not supported (e.g., music content)
+  /// Item type not supported (e.g., photos)
   unsupported,
 
   /// Item is a library section — navigated to that library
@@ -134,7 +135,8 @@ bool shouldOpenEpisodeDetailsForActivation({
 /// For playlists, navigates to playlist detail screen.
 /// For collections, navigates to collection detail screen.
 /// For other types (shows), navigates to media detail screen.
-/// For music types (artist, album, track), returns [MediaNavigationResult.unsupported].
+/// For artists/albums, navigates to the music detail screens; tracks start
+/// playback in their album queue.
 ///
 /// The [onRefresh] callback is invoked with the item's id after returning from
 /// the detail screen, allowing the caller to refresh state.
@@ -200,10 +202,18 @@ Future<MediaNavigationResult> navigateToMediaItem(
       return MediaNavigationResult.navigated;
 
     case MediaKind.artist:
+      await navigateToArtist(context, mi);
+      return MediaNavigationResult.navigated;
+
     case MediaKind.album:
+      await navigateToAlbum(context, mi);
+      return MediaNavigationResult.navigated;
+
     case MediaKind.track:
-      // Music types not supported
-      return MediaNavigationResult.unsupported;
+      // Tracks start playback in their album queue instead of opening a
+      // detail surface.
+      await playTrackWithAlbumContext(context, mi);
+      return MediaNavigationResult.navigated;
 
     case MediaKind.clip:
     case MediaKind.episode:

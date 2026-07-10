@@ -6,6 +6,9 @@ const browseGroupingMovies = 'movies';
 const browseGroupingShows = 'shows';
 const browseGroupingSeasons = 'seasons';
 const browseGroupingEpisodes = 'episodes';
+const browseGroupingArtists = 'artists';
+const browseGroupingAlbums = 'albums';
+const browseGroupingTracks = 'tracks';
 const browseGroupingFolders = 'folders';
 
 List<String> libraryBrowseGroupingOptions(MediaLibrary library, {required bool canGroupByFolders}) {
@@ -27,6 +30,12 @@ List<String> libraryBrowseGroupingOptions(MediaLibrary library, {required bool c
       if (canGroupByFolders) browseGroupingFolders,
     ],
     MediaKind.movie => [browseGroupingMovies, if (canGroupByFolders) browseGroupingFolders],
+    MediaKind.artist => [
+      browseGroupingArtists,
+      browseGroupingAlbums,
+      browseGroupingTracks,
+      if (canGroupByFolders) browseGroupingFolders,
+    ],
     _ => [browseGroupingAll, if (canGroupByFolders) browseGroupingFolders],
   };
 }
@@ -36,6 +45,7 @@ String defaultLibraryBrowseGrouping(MediaLibrary library) {
   return switch (library.kind) {
     MediaKind.show => browseGroupingShows,
     MediaKind.movie => browseGroupingMovies,
+    MediaKind.artist => browseGroupingArtists,
     _ => browseGroupingAll,
   };
 }

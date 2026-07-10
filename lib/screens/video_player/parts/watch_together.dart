@@ -108,9 +108,23 @@ extension _VideoPlayerWatchTogetherMethods on VideoPlayerScreenState {
     }
   }
 
-  /// Handle media switch from host (guest only) using the in-place reload path.
-  Future<void> _handlePlayerMediaSwitch(String ratingKey, ServerId serverId, String title) async {
-    if (!mounted) return;
+  /// Handle media switch from host (guest only) using the in-place reload
+  /// path. Returns whether the switch was handled; unhandled switches are
+  /// re-dispatched on the host's next state heartbeat.
+  Future<bool> _handlePlayerMediaSwitch(String ratingKey, ServerId serverId, String title) async {
+    if (!mounted) return false;
+    final switchKey = '$serverId:$ratingKey';
+
+    // Idempotent retry: already on the target with a settled player. Don't
+    // test identity mid-transition — _currentMetadata is set eagerly at
+    // reload start and can roll back on failure.
+    if (_playbackTransition == _PlaybackTransition.idle &&
+        player != null &&
+        _currentMetadata.id == ratingKey &&
+        _currentMetadata.serverId == serverId) {
+      _wtSwitchToastShownForKey = null;
+      return true;
+    }
 
     appLogger.d('WatchTogether: Guest handling media switch to $title');
 
@@ -122,34 +136,84 @@ extension _VideoPlayerWatchTogetherMethods on VideoPlayerScreenState {
     final client = multiServer.getClientForServer(serverId);
     if (client == null) {
       appLogger.w('WatchTogether: Server $serverId not found for media switch');
-      if (mounted) showAppSnackBar(context, t.watchTogether.guestSwitchUnavailable);
-      return;
+      _showSwitchFailureToastOnce(switchKey, t.watchTogether.guestSwitchUnavailable);
+      return false;
     }
 
-    final metadata = await client.fetchItem(ratingKey);
-    if (!mounted) return;
+    MediaItem? metadata;
+    try {
+      metadata = await client.fetchItem(ratingKey);
+    } catch (e, stackTrace) {
+      appLogger.w('WatchTogether: Could not fetch metadata for $ratingKey', error: e, stackTrace: stackTrace);
+    }
+    if (!mounted) return false;
     if (metadata == null) {
       appLogger.w('WatchTogether: Could not fetch metadata for $ratingKey');
-      showAppSnackBar(context, t.watchTogether.guestSwitchFailed);
-      return;
+      _showSwitchFailureToastOnce(switchKey, t.watchTogether.guestSwitchFailed);
+      return false;
+    }
+
+    // The fetch can outlive the dispatch that requested it (slow server,
+    // host switching again, dispatcher timeout); reloading then would swap
+    // the live screen to stale media. Unhandled: the current key rides the
+    // next heartbeat.
+    final watchTogether = _activeWatchTogetherSession();
+    if (watchTogether == null ||
+        watchTogether.currentMediaRatingKey != ratingKey ||
+        watchTogether.currentMediaServerId != serverId) {
+      appLogger.d('WatchTogether: Skipping stale media switch to $ratingKey');
+      return false;
     }
 
     if (player == null || widget.isLive) {
+      // Route replacement: report handled at initiation — the navigation
+      // future only completes when the pushed route pops.
       unawaited(_replaceScreenWithPlayer(metadata));
-      return;
+      return true;
     }
 
+    // fetchItem populates mediaVersions, so the saved preference resolves to
+    // a verified index/id here rather than a raw stored index.
+    final savedVersion = await resolveSavedMediaVersionFor(metadata);
     final handled = await _reloadMediaInPlace(
       metadata: metadata,
-      selectedMediaIndex: await savedMediaVersionIndexFor(metadata) ?? 0,
-      selectedMediaSourceId: null,
+      selectedMediaIndex: savedVersion?.index ?? 0,
+      selectedMediaSourceId: savedVersion?.sourceId,
+      preferredVersionSignature: savedVersion?.signature,
       qualityPreset: _selectedQualityPreset,
       preserveCurrentTrackSelection: false,
       useCurrentAudioStreamSelection: false,
+      showErrorUi: false, // the retry loop owns user feedback (once per key)
       reason: 'watch together media switch',
     );
-    if (!handled && mounted && player == null) {
-      unawaited(_replaceScreenWithPlayer(metadata));
+    if (!mounted) return false;
+    if (!handled) {
+      if (player == null) {
+        unawaited(_replaceScreenWithPlayer(metadata));
+        return true;
+      }
+      // Busy transition (e.g. auto-advance racing the host switch) — not an
+      // error; the next heartbeat re-dispatches and converges once idle.
+      return false;
     }
+    // handled==true also covers "reload failed after rollback" and
+    // "superseded by a newer attempt" — trust only the committed identity.
+    final onTarget = _currentMetadata.id == ratingKey && _currentMetadata.serverId == serverId;
+    if (onTarget) {
+      // A success ends the failure episode for this key; a later failure to
+      // switch back here must toast again.
+      _wtSwitchToastShownForKey = null;
+    } else {
+      _showSwitchFailureToastOnce(switchKey, t.watchTogether.guestSwitchFailed);
+    }
+    return onTarget;
+  }
+
+  /// Toast a Watch Together switch failure at most once per media key (the
+  /// heartbeat retry loop calls the handler every few seconds).
+  void _showSwitchFailureToastOnce(String switchKey, String message) {
+    if (_wtSwitchToastShownForKey == switchKey) return;
+    _wtSwitchToastShownForKey = switchKey;
+    if (mounted) showAppSnackBar(context, message);
   }
 }

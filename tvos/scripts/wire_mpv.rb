@@ -42,18 +42,18 @@ end
 
 # Swift Package: MPVKit.
 pkg_url = 'https://github.com/edde746/MPVKit'
-pkg_revision = '1fc33029bc0317583866c62811dc0ab2aa2415b6'
+pkg_version = '1.0.8'
 existing_pkg = project.root_object.package_references.find do |p|
   p.repositoryURL == pkg_url rescue false
 end
 
 if existing_pkg
-  existing_pkg.requirement = { 'kind' => 'revision', 'revision' => pkg_revision }
-  puts "[set ] MPVKit SPM package revision"
+  existing_pkg.requirement = { 'kind' => 'exactVersion', 'version' => pkg_version }
+  puts "[set ] MPVKit SPM package version"
 else
   pkg = project.new(Xcodeproj::Project::Object::XCRemoteSwiftPackageReference)
   pkg.repositoryURL = pkg_url
-  pkg.requirement = { 'kind' => 'revision', 'revision' => pkg_revision }
+  pkg.requirement = { 'kind' => 'exactVersion', 'version' => pkg_version }
   project.root_object.package_references << pkg
 
   product = project.new(Xcodeproj::Project::Object::XCSwiftPackageProductDependency)

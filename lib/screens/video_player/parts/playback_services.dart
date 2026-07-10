@@ -1,5 +1,9 @@
 part of '../../video_player_screen.dart';
 
+/// Fallback for OS skip commands that arrive without an interval (the
+/// platforms normally send one — Android hardcodes 15s).
+const _defaultMediaControlSkip = Duration(seconds: 15);
+
 extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
   void _queueScrubPreviewLoad({
     required MediaItem metadata,
@@ -226,6 +230,10 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
     // Local media still reports live when its server is online; only queue
     // locally when no reporting client is reachable.
     if (mediaClient != null) {
+      // Captured now (synchronously); resolved at scrobble time because the
+      // play queue holding the siblings is created fire-and-forget and may
+      // not exist yet when the tracker is wired.
+      final playbackState = context.read<PlaybackStateProvider>();
       _progressTracker = PlaybackProgressTracker(
         client: mediaClient,
         metadata: metadata,
@@ -235,6 +243,18 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
         playMethod: playMethod ?? (_isTranscoding ? 'Transcode' : 'DirectPlay'),
         playSessionId: playSessionId,
         mediaInfo: mediaInfo,
+        onScrobbled: () async {
+          // Other episodes of a Plex multi-episode file share this item's
+          // part — watching the file watched them too (#1500). Reusing
+          // markWatchedFromPlaybackStop keeps the local watched-event
+          // emission and the Jellyfin double-scrobble guard (#1287).
+          final siblings = playbackState.sameFileSiblings(metadata, playedPartId: mediaInfo?.partId?.toString());
+          for (final sibling in siblings) {
+            if (sibling.isWatched) continue;
+            await mediaClient.markWatchedFromPlaybackStop(sibling);
+            appLogger.d('Scrobbled same-file sibling ${sibling.id} of ${metadata.id}');
+          }
+        },
       );
       _progressTracker!.startTracking();
     } else if (_isOfflinePlayback) {
@@ -274,13 +294,7 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
     _mediaControlSubscription = mediaControlsManager.controlEvents.listen((event) {
       final activePlayer = player;
       if (_mediaControlsSuspendedForTvBackground) {
-        final eventLabel = event.runtimeType.toString();
-        if (activePlayer != null && (event is PlayEvent || event is TogglePlayPauseEvent)) {
-          appLogger.d('Media control: $eventLabel received while Android TV background-suspended');
-          unawaited(_requestForegroundResumeFromSuspendedMediaControl(eventLabel));
-        } else {
-          appLogger.d('Media control: $eventLabel ignored while Android TV background-suspended');
-        }
+        appLogger.d('Media control: ${event.runtimeType} ignored while Android TV background-suspended');
         return;
       }
 
@@ -331,6 +345,21 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
       } else if (event is PreviousTrackEvent) {
         appLogger.d('Media control: Previous track event received');
         unawaited(_restartOrPlayPrevious());
+      } else if (event is StopEvent) {
+        // Same semantics as the companion remote's stop: exit the player.
+        appLogger.d('Media control: Stop event received');
+        unawaited(_handleBackButton());
+      } else if (event is SkipForwardEvent) {
+        appLogger.d('Media control: Skip forward event received (${event.interval})');
+        unawaited(_seekRelative(event.interval ?? _defaultMediaControlSkip));
+      } else if (event is SkipBackwardEvent) {
+        appLogger.d('Media control: Skip backward event received (${event.interval})');
+        unawaited(_seekRelative(-(event.interval ?? _defaultMediaControlSkip)));
+      } else if (event is SetSpeedEvent) {
+        // UI, Discord, and the media-session state all follow reactively
+        // via streams.rate — same unguarded path as keyboard shortcuts.
+        appLogger.d('Media control: Set speed event received (${event.speed}x)');
+        unawaited(activePlayer!.setRate(event.speed));
       }
     });
 

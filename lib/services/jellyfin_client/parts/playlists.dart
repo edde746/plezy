@@ -144,13 +144,17 @@ mixin _JellyfinPlaylistMethods on MediaServerCacheMixin {
 
   @override
   Future<MediaPlaylist?> createPlaylist({required String title, required List<MediaItem> items}) async {
+    // MediaType stamps the playlist's kind server-side; derive it from the
+    // seed items so music selections create Audio playlists (which is what
+    // fetchPlaylistsPage filters on). Empty seeds keep the Video default.
+    final isMusic = items.isNotEmpty && items.first.kind.isMusic;
     final response = await _http.post(
       '/Playlists',
       queryParameters: {
         'Name': title,
         'Ids': items.map((i) => i.id).join(','),
         'UserId': connection.userId,
-        'MediaType': 'Video',
+        'MediaType': isMusic ? 'Audio' : 'Video',
       },
     );
     throwIfHttpError(response);

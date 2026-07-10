@@ -237,4 +237,126 @@ void main() {
       expect(result!.previous?.id, 'ep1');
     });
   });
+
+  // ===========================================================
+  // loadAdjacentEpisodes: shuffled same-series queue (#1466)
+  // ===========================================================
+
+  group('loadAdjacentEpisodes with a shuffled same-series queue', () {
+    // Mirrors JellyfinSequentialLauncher.launchShuffledShow: the full series
+    // episode list, locally shuffled, published with contextKey == seriesId.
+    // The regression under test: _ensureLocalEpisodeQueue used to rebuild a
+    // sequential series queue whenever contextKey == seriesId, so shuffle
+    // held for exactly one episode (#1466).
+    final ep1 = _jfEpisode('ep1', seriesId: 'series-A');
+    final ep2 = _jfEpisode('ep2', seriesId: 'series-A');
+    final ep3 = _jfEpisode('ep3', seriesId: 'series-A');
+    final ep4 = _jfEpisode('ep4', seriesId: 'series-A');
+    final ep5 = _jfEpisode('ep5', seriesId: 'series-A');
+    final shuffledOrder = [ep3, ep1, ep5, ep2, ep4];
+    const shuffledIds = ['ep3', 'ep1', 'ep5', 'ep2', 'ep4'];
+
+    // Stub server answers with the sequential list, so an (unwanted) queue
+    // rebuild is observable both via seriesQueueCalls and via reordered
+    // loadedItems.
+    (PlaybackStateProvider, _RecordingClient, MultiServerProvider) buildShuffledSession() {
+      final playback = PlaybackStateProvider();
+      addTearDown(playback.dispose);
+      playback.setPlaybackFromLocalQueue(
+        LocalPlayQueue(
+          id: 'jellyfin:series-A',
+          items: shuffledOrder,
+          currentIndex: 0,
+          shuffled: true,
+          backendId: MediaBackend.jellyfin.id,
+        ),
+        contextKey: 'series-A',
+      );
+      final client = _RecordingClient(seriesEpisodes: [ep1, ep2, ep3, ep4, ep5]);
+      final manager = _StubManager(client);
+      final serverProvider = MultiServerProvider(manager, DataAggregationService(manager));
+      addTearDown(serverProvider.dispose);
+      return (playback, client, serverProvider);
+    }
+
+    Future<AdjacentEpisodes?> probe(
+      WidgetTester tester,
+      PlaybackStateProvider playback,
+      MultiServerProvider serverProvider,
+      MediaItem metadata,
+    ) async {
+      AdjacentEpisodes? result;
+      await tester.pumpWidget(
+        MultiProvider(
+          providers: [
+            ChangeNotifierProvider<PlaybackStateProvider>.value(value: playback),
+            ChangeNotifierProvider<MultiServerProvider>.value(value: serverProvider),
+          ],
+          child: _ProbeWidget(metadata: metadata, onResult: (r) => result = r),
+        ),
+      );
+      await tester.pump();
+      await tester.pump();
+      return result;
+    }
+
+    testWidgets('preserves the shuffled order instead of rebuilding sequentially', (tester) async {
+      final (playback, client, serverProvider) = buildShuffledSession();
+
+      final result = await probe(tester, playback, serverProvider, ep3);
+
+      expect(client.seriesQueueCalls, isEmpty);
+      expect(playback.loadedItems.map((e) => e.id), shuffledIds);
+      expect(playback.isShuffleActive, isTrue);
+      expect(playback.shuffleContextKey, 'series-A');
+      expect(result!.next?.id, 'ep1');
+      expect(result.previous, isNull);
+    });
+
+    testWidgets('continues the shuffled order after advancing to the next episode', (tester) async {
+      final (playback, client, serverProvider) = buildShuffledSession();
+      // What _reloadMediaInPlace does when the player swaps to the next item.
+      playback.setCurrentItem(ep1);
+
+      final result = await probe(tester, playback, serverProvider, ep1);
+
+      expect(client.seriesQueueCalls, isEmpty);
+      expect(playback.isShuffleActive, isTrue);
+      expect(result!.next?.id, 'ep5');
+      expect(result.previous?.id, 'ep3');
+    });
+
+    testWidgets('same-episode clone from a source switch does not clobber the queue', (tester) async {
+      final (playback, client, serverProvider) = buildShuffledSession();
+
+      // _switchPlaybackSource reloads with a copyWith clone of the playing
+      // item; MediaItem compares by identity, so queue membership misses and
+      // only the cursor-globalKey gate keeps the queue alive.
+      final result = await probe(tester, playback, serverProvider, ep3.copyWith(viewOffsetMs: 42));
+
+      expect(client.seriesQueueCalls, isEmpty);
+      expect(playback.loadedItems.map((e) => e.id), shuffledIds);
+      expect(playback.isShuffleActive, isTrue);
+      expect(result!.next?.id, 'ep1');
+    });
+
+    testWidgets('still builds a sequential series queue when no queue is active', (tester) async {
+      // Direct episode tap with no launcher: the preserve gates must not get
+      // in the way of the normal series-queue build.
+      final playback = PlaybackStateProvider();
+      addTearDown(playback.dispose);
+      final client = _RecordingClient(seriesEpisodes: [ep1, ep2, ep3, ep4, ep5]);
+      final manager = _StubManager(client);
+      final serverProvider = MultiServerProvider(manager, DataAggregationService(manager));
+      addTearDown(serverProvider.dispose);
+
+      final result = await probe(tester, playback, serverProvider, ep3);
+
+      expect(client.seriesQueueCalls, ['series-A']);
+      expect(playback.loadedItems.map((e) => e.id), ['ep1', 'ep2', 'ep3', 'ep4', 'ep5']);
+      expect(playback.isShuffleActive, isFalse);
+      expect(result!.next?.id, 'ep4');
+      expect(result.previous?.id, 'ep2');
+    });
+  });
 }

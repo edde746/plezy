@@ -346,6 +346,41 @@ class MpvPlayerCoreBase: NSObject {
 
     applyDvConversionModeEnvironment()
 
+    let created = createMpvContext { [self] in
+      guard let mpv else { return }
+      var layer = Int64(Int(bitPattern: Unmanaged.passUnretained(renderLayer).toOpaque()))
+      checkError(mpv_set_option(mpv, "wid", MPV_FORMAT_INT64, &layer))
+      applySharedMpvOptions()
+      configurePlatformMpvOptions()
+    }
+    guard created, let mpv else { return false }
+
+    mpv_observe_property(mpv, Self.internalSigPeakObserverId, "video-params/sig-peak", MPV_FORMAT_DOUBLE)
+    mpv_observe_property(mpv, Self.internalWidthObserverId, "width", MPV_FORMAT_DOUBLE)
+    mpv_observe_property(mpv, Self.internalHeightObserverId, "height", MPV_FORMAT_DOUBLE)
+    mpv_observe_property(
+      mpv, Self.internalDoviProfileObserverId,
+      "current-tracks/video/dolby-vision-profile", MPV_FORMAT_INT64)
+    mpv_observe_property(
+      mpv, Self.internalDoviLevelObserverId,
+      "current-tracks/video/dolby-vision-level", MPV_FORMAT_INT64)
+    mpv_observe_property(
+      mpv, Self.internalContainerFpsObserverId,
+      "container-fps", MPV_FORMAT_DOUBLE)
+    mpv_observe_property(mpv, Self.internalVideoGammaObserverId, "video-params/gamma", MPV_FORMAT_STRING)
+    mpv_observe_property(mpv, Self.internalVideoPrimariesObserverId, "video-params/primaries", MPV_FORMAT_STRING)
+    mpv_observe_property(
+      mpv, Self.internalVideoColorMatrixObserverId,
+      "video-params/colormatrix", MPV_FORMAT_STRING)
+    return true
+  }
+
+  /// Create the mpv context, apply pre-init options via `configure`, run
+  /// `mpv_initialize`, and install the wakeup callback. Everything here is
+  /// instance-scoped (per-instance dispatch queue, request table, and retained
+  /// wakeup context), so the video core and the audio-only core can each own
+  /// an independent context and be created/destroyed at any time.
+  func createMpvContext(configure: () -> Void) -> Bool {
     mpv = mpv_create()
     guard let mpv else {
       print("[MpvPlayerCore] Failed to create MPV context")
@@ -357,10 +392,7 @@ class MpvPlayerCoreBase: NSObject {
     // subtitle-timing investigation.
     checkError(mpv_request_log_messages(mpv, "v"))
 
-    var layer = Int64(Int(bitPattern: Unmanaged.passUnretained(renderLayer).toOpaque()))
-    checkError(mpv_set_option(mpv, "wid", MPV_FORMAT_INT64, &layer))
-    applySharedMpvOptions()
-    configurePlatformMpvOptions()
+    configure()
 
     let initResult = mpv_initialize(mpv)
     if initResult < 0 {
@@ -384,24 +416,6 @@ class MpvPlayerCoreBase: NSObject {
       },
       wakeupContext
     )
-
-    mpv_observe_property(mpv, Self.internalSigPeakObserverId, "video-params/sig-peak", MPV_FORMAT_DOUBLE)
-    mpv_observe_property(mpv, Self.internalWidthObserverId, "width", MPV_FORMAT_DOUBLE)
-    mpv_observe_property(mpv, Self.internalHeightObserverId, "height", MPV_FORMAT_DOUBLE)
-    mpv_observe_property(
-      mpv, Self.internalDoviProfileObserverId,
-      "current-tracks/video/dolby-vision-profile", MPV_FORMAT_INT64)
-    mpv_observe_property(
-      mpv, Self.internalDoviLevelObserverId,
-      "current-tracks/video/dolby-vision-level", MPV_FORMAT_INT64)
-    mpv_observe_property(
-      mpv, Self.internalContainerFpsObserverId,
-      "container-fps", MPV_FORMAT_DOUBLE)
-    mpv_observe_property(mpv, Self.internalVideoGammaObserverId, "video-params/gamma", MPV_FORMAT_STRING)
-    mpv_observe_property(mpv, Self.internalVideoPrimariesObserverId, "video-params/primaries", MPV_FORMAT_STRING)
-    mpv_observe_property(
-      mpv, Self.internalVideoColorMatrixObserverId,
-      "video-params/colormatrix", MPV_FORMAT_STRING)
     return true
   }
 

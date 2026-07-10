@@ -46,6 +46,39 @@ void main() {
       );
       expect(hosts, ['clients.plex.tv']);
     });
+
+    test('switchToUser tolerates drifted field shapes on the 201 body (#1488)', () async {
+      final client = MediaServerHttpClient(
+        client: MockClient((request) async {
+          expect(request.method, 'POST');
+          expect(request.url.host, 'clients.plex.tv');
+          expect(request.url.path, '/api/v2/home/users/uuid-1/switch');
+          return http.Response(
+            jsonEncode({
+              'id': 312174832,
+              'uuid': 'uuid-1',
+              'title': 'hi_phi',
+              'authToken': 'minted-user-token',
+              'profile': {
+                'defaultAudioLanguages': 'en,sv',
+                'defaultSubtitleLanguages': 'en,sv',
+                'mediaPostsVisibility': true,
+              },
+            }),
+            201,
+            headers: {'content-type': 'application/json'},
+          );
+        }),
+      );
+      addTearDown(client.close);
+      final auth = PlexAuthService.forTesting(http: client);
+
+      final response = await auth.switchToUser('uuid-1', 'account-token');
+
+      expect(response.authToken, 'minted-user-token');
+      expect(response.profile.defaultAudioLanguages, ['en', 'sv']);
+      expect(response.profile.defaultSubtitleLanguages, ['en', 'sv']);
+    });
   });
 }
 

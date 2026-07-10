@@ -30,12 +30,12 @@ dependencies:
   connectivity_plus:
     git:
       url: https://github.com/edde746/plus_plugins
-      ref: 2b614414ce95d920880765d07cbb9759699a4563
+      ref: 4c0d4071150481f76d753c6ce1ff325bb959b9b5
       path: packages/connectivity_plus/connectivity_plus
   os_media_controls:
     git:
       url: https://github.com/edde746/media_controls
-      ref: f51c805ebc15bf7a2f49a74174aeb470d3c4c78e
+      ref: 75556a968a4a1ebc42fbb8c31942c2418d4326e1
   rate_limiter: ^1.0.0
   wakelock_plus:
     git:
@@ -50,7 +50,10 @@ dependencies:
   crypto: ^3.0.7
   cryptography: ^2.9.0
   file_picker: ^10.3.10
-  saf_util: ^2.0.0
+  saf_util:
+    # Vendored 2.0.0 with a pendingResult lifecycle fix (see its CHANGELOG) —
+    # upstream double-replies MethodChannel results and crashes the activity.
+    path: packages/saf_util
   saf_stream: ^2.0.0
   material_symbols_icons: ^4.2906.0
   web_socket_channel: ^3.0.1
@@ -59,7 +62,7 @@ dependencies:
   background_downloader:
     git:
       url: https://github.com/edde746/background_downloader
-      ref: b4d36f88bb365faaf308ff26be7ade49bbaec859
+      ref: 021e2075260e324b7440a5c81b57bf0242d35020
   sentry_flutter:
     git:
       url: https://github.com/edde746/sentry-dart
@@ -72,7 +75,7 @@ dependencies:
       ref: 9e150f7
   cupertino_http: ^2.4.0
   cronet_http: ^1.6.0
-  win_http: ^0.2.1
+  win_http: ^0.2.2
   collection: ^1.18.0
   freezed_annotation: ^3.1.0
   xml: ^6.6.1
@@ -124,7 +127,6 @@ dependency_overrides:
     git:
       url: https://github.com/edde746/material_symbols_icons
       ref: 1d8cd83
-
 sentry:
   org: plezy
   project: plezy

@@ -2,6 +2,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/media/media_backend.dart';
 import 'package:plezy/media/media_item.dart';
 import 'package:plezy/media/media_kind.dart';
+import 'package:plezy/media/media_part.dart';
+import 'package:plezy/media/media_version.dart';
 import 'package:plezy/media/play_queue.dart';
 import 'package:plezy/models/plex/play_queue_response.dart';
 import 'package:plezy/providers/playback_state_provider.dart';
@@ -11,6 +13,22 @@ PlexMediaItem _item(String ratingKey, int playQueueItemID) => PlexMediaItem(
   kind: MediaKind.episode,
   playQueueItemId: playQueueItemID,
   title: 'Episode $ratingKey',
+);
+
+/// Episode queue entry carrying file identity, as Plex play-queue items do.
+/// Episodes of a multi-episode file (`S02E24-E25.mkv`) get *distinct* part
+/// ids (`part-<ratingKey>` here, mirroring real servers) but share [file].
+PlexMediaItem _itemWithFile(String ratingKey, int playQueueItemID, String file) => PlexMediaItem(
+  id: ratingKey,
+  kind: MediaKind.episode,
+  playQueueItemId: playQueueItemID,
+  title: 'Episode $ratingKey',
+  mediaVersions: [
+    MediaVersion(
+      id: 'v-$ratingKey',
+      parts: [MediaPart(id: 'part-$ratingKey', file: file)],
+    ),
+  ],
 );
 
 PlexMediaItem _miItem(String id, int playQueueItemId) =>
@@ -304,6 +322,153 @@ void main() {
       final ep = _item('ep1', 1);
       expect(p.isQueueActive, isFalse);
       expect(p.isItemInActiveQueue(ep), isFalse);
+    });
+  });
+
+  group('multi-episode files (#1500)', () {
+    // Plex lists each episode of a multi-episode file (S02E24-E25.mkv) as
+    // its own queue entry with a distinct ratingKey AND a distinct part id,
+    // but the same Part.file. e24/e25 share a file; e23 and e26 don't.
+    const fileA = '/tv/S02E24-E25.mkv';
+    Future<PlaybackStateProvider> queueWithMultiEpisodeFile({int selectedItemID = 1002}) async {
+      final p = PlaybackStateProvider();
+      final items = [
+        _itemWithFile('e23', 1001, '/tv/S02E23.mkv'),
+        _itemWithFile('e24', 1002, fileA),
+        _itemWithFile('e25', 1003, fileA),
+        _itemWithFile('e26', 1004, '/tv/S02E26-E27.mkv'),
+      ];
+      await p.setPlaybackFromPlayQueue(
+        _queue(playQueueID: 1, selectedItemID: selectedItemID, totalCount: 4, items: items),
+        null,
+      );
+      return p;
+    }
+
+    test('getNextEpisode skips the same-file sibling using playedPartId', () async {
+      final p = await queueWithMultiEpisodeFile();
+      addTearDown(p.dispose);
+
+      final next = await p.getNextEpisode('e24', playedPartId: 'part-e24');
+      expect(next!.id, 'e26');
+    });
+
+    test('getNextEpisode skips the same-file sibling via file intersection without playedPartId', () async {
+      final p = await queueWithMultiEpisodeFile();
+      addTearDown(p.dispose);
+
+      final next = await p.getNextEpisode('e24');
+      expect(next!.id, 'e26');
+    });
+
+    test('getNextEpisode skips multiple siblings of a triple-episode file', () async {
+      final p = PlaybackStateProvider();
+      addTearDown(p.dispose);
+      await p.setPlaybackFromPlayQueue(
+        _queue(
+          playQueueID: 1,
+          selectedItemID: 1001,
+          totalCount: 4,
+          items: [
+            _itemWithFile('e1', 1001, fileA),
+            _itemWithFile('e2', 1002, fileA),
+            _itemWithFile('e3', 1003, fileA),
+            _itemWithFile('e4', 1004, '/tv/S02E26-E27.mkv'),
+          ],
+        ),
+        null,
+      );
+
+      final next = await p.getNextEpisode('e1', playedPartId: 'part-e1');
+      expect(next!.id, 'e4');
+    });
+
+    test('getNextEpisode returns null when only same-file siblings remain', () async {
+      final p = PlaybackStateProvider();
+      addTearDown(p.dispose);
+      await p.setPlaybackFromPlayQueue(
+        _queue(
+          playQueueID: 1,
+          selectedItemID: 1001,
+          totalCount: 2,
+          items: [_itemWithFile('e24', 1001, fileA), _itemWithFile('e25', 1002, fileA)],
+        ),
+        null,
+      );
+
+      expect(await p.getNextEpisode('e24', playedPartId: 'part-e24'), isNull);
+    });
+
+    test('items without file data keep positional behavior even with playedPartId', () async {
+      final p = PlaybackStateProvider();
+      addTearDown(p.dispose);
+      final items = [_item('a', 1001), _item('b', 1002)];
+      await p.setPlaybackFromPlayQueue(_queue(playQueueID: 1, selectedItemID: 1001, totalCount: 2, items: items), null);
+
+      final next = await p.getNextEpisode('a', playedPartId: 'part-a');
+      expect(next!.id, 'b');
+    });
+
+    test('skip past the loaded window extends it and lands on the next distinct file', () async {
+      final p = PlaybackStateProvider();
+      addTearDown(p.dispose);
+      // Window holds only the two same-file entries; e26 lives past it.
+      final windowItems = [_itemWithFile('e24', 1001, fileA), _itemWithFile('e25', 1002, fileA)];
+      await p.setPlaybackFromPlayQueue(
+        _queue(playQueueID: 1, selectedItemID: 1001, totalCount: 3, items: windowItems),
+        null,
+      );
+
+      var fetchCount = 0;
+      p.setPlayQueueWindowFetcher((playQueueId, {center, window = 50}) async {
+        fetchCount++;
+        return _queue(
+          playQueueID: playQueueId,
+          selectedItemID: 1001,
+          totalCount: 3,
+          items: [...windowItems, _itemWithFile('e26', 1003, '/tv/S02E26-E27.mkv')],
+        );
+      });
+
+      final next = await p.getNextEpisode('e24', playedPartId: 'part-e24');
+      expect(next!.id, 'e26');
+      expect(fetchCount, 1);
+    });
+
+    test('getPreviousEpisode collapses to the first episode of the same-file group', () async {
+      final p = await queueWithMultiEpisodeFile(selectedItemID: 1004);
+      addTearDown(p.dispose);
+
+      // From e26, previous is the e24-e25 file, entered at e24 (not e25).
+      final prev = await p.getPreviousEpisode('e26', playedPartId: 'part-e26');
+      expect(prev!.id, 'e24');
+    });
+
+    test('getPreviousEpisode skips same-file siblings of the playing item', () async {
+      final p = await queueWithMultiEpisodeFile(selectedItemID: 1003);
+      addTearDown(p.dispose);
+
+      // Playing the file as e25: previous must not land inside the same file.
+      final prev = await p.getPreviousEpisode('e25', playedPartId: 'part-e25');
+      expect(prev!.id, 'e23');
+    });
+
+    test('sameFileSiblings returns the other episodes of the playing file', () async {
+      final p = await queueWithMultiEpisodeFile();
+      addTearDown(p.dispose);
+
+      final current = p.loadedItems[1]; // e24
+      final siblings = p.sameFileSiblings(current, playedPartId: 'part-e24');
+      expect(siblings.map((s) => s.id), ['e25']);
+
+      // Distinct-file episode has no siblings.
+      expect(p.sameFileSiblings(p.loadedItems.first, playedPartId: 'part-e23'), isEmpty);
+    });
+
+    test('sameFileSiblings is empty without an active queue', () {
+      final p = PlaybackStateProvider();
+      addTearDown(p.dispose);
+      expect(p.sameFileSiblings(_itemWithFile('e24', 1, fileA), playedPartId: 'part-e24'), isEmpty);
     });
   });
 }

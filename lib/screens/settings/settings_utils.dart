@@ -365,6 +365,37 @@ void _showColorInputDialogTV({
 }
 
 /// Shows a text input dialog with regex validation and reset-to-default support.
+/// Plain single-field text input dialog (dpad/TV friendly via
+/// [FocusableTextField]); the free-form sibling of [showRegexInputDialog].
+void showTextInputDialog({
+  required BuildContext context,
+  required String title,
+  required String labelText,
+  required String currentValue,
+  required Future<void> Function(String value) onSave,
+}) {
+  final controller = TextEditingController(text: currentValue);
+
+  _showSettingsInputDialog(
+    context: context,
+    title: title,
+    contentBuilder: (_, _, _, saveFocusNode) {
+      return FocusableTextField(
+        controller: controller,
+        decoration: InputDecoration(labelText: labelText),
+        autofocus: true,
+        textInputAction: TextInputAction.done,
+        onEditingComplete: () => saveFocusNode.requestFocus(),
+      );
+    },
+    onSave: (_) async {
+      await onSave(controller.text.trim());
+      return true;
+    },
+    onDispose: controller.dispose,
+  );
+}
+
 void showRegexInputDialog({
   required BuildContext context,
   required String title,

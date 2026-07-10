@@ -3,10 +3,13 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../connection/connection_registry.dart';
 import '../focus/key_event_utils.dart';
 import '../media/ids.dart';
 import '../media/media_server_client.dart';
 import '../profiles/active_profile_provider.dart';
+import '../profiles/plex_home_service.dart';
+import '../profiles/profile_connection_registry.dart';
 import '../providers/companion_remote_provider.dart';
 import '../providers/discover_provider.dart';
 import '../providers/hidden_libraries_provider.dart';
@@ -18,13 +21,17 @@ import '../providers/seerr_requests_provider.dart';
 import '../providers/seerr_session_provider.dart';
 import '../providers/trakt_account_provider.dart';
 import '../providers/trackers_provider.dart';
-import '../connection/connection_registry.dart';
-import '../profiles/profile_connection_registry.dart';
 import '../providers/watch_state_store.dart';
+import '../database/app_database.dart';
 import '../screens/main_screen.dart';
+import '../services/api_cache.dart';
+import '../services/music/music_playback_service.dart';
+import '../services/music/music_playback_service_impl.dart';
+import '../services/offline_watch_sync_service.dart';
 import '../services/storage_service.dart';
 import '../utils/app_logger.dart';
 import '../watch_together/providers/watch_together_provider.dart';
+import '../widgets/music/mini_player.dart';
 import 'profile_navigation_scope.dart';
 
 /// Root route for an active profile session.
@@ -65,6 +72,9 @@ class _ProfileSessionScreenState extends State<ProfileSessionScreen> {
   // callback rather than during build to avoid mutating state mid-build.
   bool _hasBuiltSession = false;
 
+  bool _seenFirstActiveId = false;
+  String? _lastSessionActiveId;
+
   @override
   void initState() {
     super.initState();
@@ -73,11 +83,30 @@ class _ProfileSessionScreenState extends State<ProfileSessionScreen> {
     });
   }
 
+  /// The keyed remount below recreates every session-scoped provider on a
+  /// profile switch, but [ApiCache] is app-global and its Plex rows are
+  /// keyed by server only — one home user's cached responses would serve
+  /// the next user's session. Clear the volatile rows at the seam itself;
+  /// doing it from inside MainScreen can't work, the remount unmounts it
+  /// before any settle-await completes.
+  void _onSessionProfileChanged(String? activeId) {
+    if (!_seenFirstActiveId) {
+      _seenFirstActiveId = true;
+      _lastSessionActiveId = activeId;
+      return;
+    }
+    if (_lastSessionActiveId == activeId) return;
+    _lastSessionActiveId = activeId;
+    final cache = ApiCache.maybeInstance;
+    if (cache != null) unawaited(cache.clearVolatile());
+  }
+
   @override
   Widget build(BuildContext context) {
     return Consumer<ActiveProfileProvider>(
       builder: (context, activeProfile, _) {
         final activeId = activeProfile.activeId;
+        _onSessionProfileChanged(activeId);
         final initialPromptHandled = widget.initialPromptHandled || _hasBuiltSession;
         return KeyedSubtree(
           key: ValueKey<String?>('profile-session:$activeId'),
@@ -154,10 +183,14 @@ class _ProfileSessionScreenState extends State<ProfileSessionScreen> {
                 lazy: true,
               ),
               ChangeNotifierProvider(
-                create: (context) => LibrariesProvider(
-                  storageService: context.read<StorageService>(),
-                  multiServer: context.read<MultiServerProvider>(),
-                ),
+                create: (context) {
+                  final activeProfile = context.read<ActiveProfileProvider>();
+                  return LibrariesProvider(
+                    storageService: context.read<StorageService>(),
+                    multiServer: context.read<MultiServerProvider>(),
+                    isProfileBinding: () => activeProfile.isBinding,
+                  );
+                },
               ),
               ChangeNotifierProvider(
                 create: (context) {
@@ -171,8 +204,32 @@ class _ProfileSessionScreenState extends State<ProfileSessionScreen> {
                 },
               ),
               ChangeNotifierProvider(create: (context) => PlaybackStateProvider()),
+              // Profile-session scope so a profile switch tears the music
+              // session down (dispose stops playback + releases the audio
+              // core).
+              ChangeNotifierProvider<MusicPlaybackService>(
+                create: (context) => MusicPlaybackServiceImpl(
+                  serverManager: context.read<MultiServerProvider>().serverManager,
+                  database: context.read<AppDatabase>(),
+                  offlineWatchService: context.read<OfflineWatchSyncService>(),
+                ),
+              ),
               ChangeNotifierProvider(create: (context) => WatchTogetherProvider()),
-              ChangeNotifierProvider(create: (context) => CompanionRemoteProvider()),
+              ChangeNotifierProvider(
+                create: (context) {
+                  final provider = CompanionRemoteProvider();
+                  // Keep a running host's crypto identity live: a home user
+                  // removed or a borrowed connection revoked mid-session must
+                  // stop controlling the broadcast.
+                  provider.bindProfileServices(
+                    connections: context.read<ConnectionRegistry>(),
+                    activeProfile: context.read<ActiveProfileProvider>(),
+                    profileConnections: context.read<ProfileConnectionRegistry>(),
+                    plexHome: context.read<PlexHomeService>(),
+                  );
+                  return provider;
+                },
+              ),
             ],
             child: _ProfileSessionNavigator(
               isOfflineMode: widget.isOfflineMode,
@@ -206,6 +263,12 @@ class _ProfileSessionNavigatorState extends State<_ProfileSessionNavigator> {
   final _mainScaffoldMessengerKey = GlobalKey<ScaffoldMessengerState>();
   final _routeObserver = RouteObserver<PageRoute<dynamic>>();
 
+  // Music mini-player wiring: the route observer hides the overlay while the
+  // video player / now-playing screen is up; the inset controller lets
+  // MainScreen report its bottom-bar height so the overlay floats above it.
+  final _musicRouteObserver = MusicUiRouteObserver();
+  final _miniPlayerInsets = MiniPlayerInsetController();
+
   @override
   void initState() {
     super.initState();
@@ -217,6 +280,8 @@ class _ProfileSessionNavigatorState extends State<_ProfileSessionNavigator> {
   void dispose() {
     profileNavigationRegistry.detachNavigator(_navigatorKey);
     profileNavigationRegistry.detachMainScaffoldMessenger(_mainScaffoldMessengerKey);
+    _miniPlayerInsets.dispose();
+    _musicRouteObserver.suppress.dispose();
     super.dispose();
   }
 
@@ -232,10 +297,24 @@ class _ProfileSessionNavigatorState extends State<_ProfileSessionNavigator> {
           if (didPop) return;
           unawaited(_navigatorKey.currentState?.maybePop());
         },
-        child: Navigator(
-          key: _navigatorKey,
-          observers: [_routeObserver, BackKeySuppressorObserver()],
-          onGenerateRoute: _onGenerateRoute,
+        child: MultiProvider(
+          providers: [
+            ChangeNotifierProvider<MiniPlayerInsetController>.value(value: _miniPlayerInsets),
+            Provider<MusicUiRouteObserver>.value(value: _musicRouteObserver),
+          ],
+          // The mini-player mounts ABOVE the nested navigator so it persists
+          // across content routes (but inside the profile provider scope so
+          // it dies with the session).
+          child: Stack(
+            children: [
+              Navigator(
+                key: _navigatorKey,
+                observers: [_routeObserver, _musicRouteObserver, BackKeySuppressorObserver()],
+                onGenerateRoute: _onGenerateRoute,
+              ),
+              const Positioned.fill(child: MusicMiniPlayerOverlay()),
+            ],
+          ),
         ),
       ),
     );

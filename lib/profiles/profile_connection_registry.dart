@@ -118,13 +118,6 @@ class ProfileConnectionRegistry {
     );
   }
 
-  /// Insert a new join row only if `(profileId, connectionId)` doesn't
-  /// already exist. Used by [ProfileSyncService] to surface new Plex Home
-  /// users without clobbering tokens cached by prior switches.
-  Future<void> insertIfAbsent(ProfileConnection pc) async {
-    await _db.into(_db.profileConnections).insert(await _companion(pc), mode: InsertMode.insertOrIgnore);
-  }
-
   /// Cache the freshly-acquired user token (e.g. after a `/home/users/switch`
   /// call). Updates `tokenAcquiredAt` to now.
   Future<void> recordToken(String profileId, String connectionId, String token) async {
@@ -138,6 +131,14 @@ class ProfileConnectionRegistry {
     );
   }
 
+  /// Reset the stored token to the empty-string lazy-fetch sentinel (used
+  /// when the vault can no longer decrypt it).
+  Future<void> _clearToken(String profileId, String connectionId) async {
+    await (_db.update(_db.profileConnections)
+          ..where((t) => t.profileId.equals(profileId) & t.connectionId.equals(connectionId)))
+        .write(const ProfileConnectionsCompanion(userToken: Value(''), tokenAcquiredAt: Value(null)));
+  }
+
   /// Mark the row as recently used.
   Future<void> markUsed(String profileId, String connectionId) async {
     await (_db.update(_db.profileConnections)
@@ -149,12 +150,30 @@ class ProfileConnectionRegistry {
     await (_db.delete(
       _db.profileConnections,
     )..where((t) => t.profileId.equals(profileId) & t.connectionId.equals(connectionId))).go();
-    // If we just removed the default, promote the oldest remaining row.
-    final remaining = await (_db.select(_db.profileConnections)..where((t) => t.profileId.equals(profileId))).get();
-    if (remaining.isNotEmpty && !remaining.any((r) => r.isDefault)) {
-      await (_db.update(_db.profileConnections)
-            ..where((t) => t.profileId.equals(profileId) & t.connectionId.equals(remaining.first.connectionId)))
-          .write(const ProfileConnectionsCompanion(isDefault: Value(true)));
+    await _promoteDefaultIfMissing(profileId);
+  }
+
+  /// Re-promote a default for [profileId] when it has join rows but none is
+  /// flagged default — removing the default row would otherwise leave the
+  /// profile defaultless. Deterministic: picks the lowest connectionId,
+  /// matching [listForProfile]'s secondary ordering.
+  Future<void> _promoteDefaultIfMissing(String profileId) async {
+    final rows = await (_db.select(_db.profileConnections)..where((t) => t.profileId.equals(profileId))).get();
+    if (rows.isEmpty || rows.any((r) => r.isDefault)) return;
+    final pick = rows.map((r) => r.connectionId).reduce((a, b) => a.compareTo(b) <= 0 ? a : b);
+    await (_db.update(_db.profileConnections)
+          ..where((t) => t.profileId.equals(profileId) & t.connectionId.equals(pick)))
+        .write(const ProfileConnectionsCompanion(isDefault: Value(true)));
+  }
+
+  /// Repair the "exactly one default per profile" invariant across every
+  /// profile. The `connectionId` FK cascade (PRAGMA foreign_keys=ON) deletes
+  /// join rows silently when a Connection is removed, so a profile can be left
+  /// with surviving rows but no default flag.
+  Future<void> promoteMissingDefaults() async {
+    final profileIds = (await _db.select(_db.profileConnections).get()).map((r) => r.profileId).toSet();
+    for (final profileId in profileIds) {
+      await _promoteDefaultIfMissing(profileId);
     }
   }
 
@@ -172,16 +191,14 @@ class ProfileConnectionRegistry {
   }
 
   /// Remove every join row referencing [connectionId] (e.g. when a Connection
-  /// is deleted). Drift's referential integrity isn't enabled by default for
-  /// SQLite without `PRAGMA foreign_keys=ON`, so we cascade explicitly.
+  /// is deleted). The `connectionId` FK (PRAGMA foreign_keys=ON) already
+  /// cascades these rows away when the Connection row itself is deleted; this
+  /// stays the explicit path for callers that drop the rows first, and either
+  /// way repairs any profile the removal left without a default.
   Future<int> removeAllForConnection(String connectionId) async {
-    return await (_db.delete(_db.profileConnections)..where((t) => t.connectionId.equals(connectionId))).go();
-  }
-
-  /// Wipe every join row for [profileId] (e.g. when a Plex Home profile's
-  /// parent connection is removed).
-  Future<int> removeAllForProfile(String profileId) async {
-    return await (_db.delete(_db.profileConnections)..where((t) => t.profileId.equals(profileId))).go();
+    final removed = await (_db.delete(_db.profileConnections)..where((t) => t.connectionId.equals(connectionId))).go();
+    await promoteMissingDefaults();
+    return removed;
   }
 
   /// Wipe the entire join table. Used by sign-out so a fresh sign-in starts
@@ -195,6 +212,12 @@ class ProfileConnectionRegistry {
     final userToken = row.userToken.isEmpty ? null : await CredentialVault.reveal(row.userToken);
     if (hasPlaintextToken) {
       unawaited(recordToken(row.profileId, row.connectionId, userToken!));
+    } else if (userToken == null && row.userToken.isNotEmpty) {
+      // Vault couldn't decrypt the stored token (key/ciphertext divergence).
+      // Clear it to the empty-string lazy-fetch sentinel so the binder
+      // re-acquires a token on next use instead of re-failing every boot.
+      appLogger.w('ProfileConnectionRegistry: clearing undecryptable token for ${row.profileId}/${row.connectionId}');
+      unawaited(_clearToken(row.profileId, row.connectionId));
     }
     return ProfileConnection(
       profileId: row.profileId,

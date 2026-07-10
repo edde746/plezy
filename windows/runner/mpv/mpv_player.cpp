@@ -2,11 +2,28 @@
 
 #include <windowsx.h>
 
+#include <algorithm>
+
 #include "sanitize_utf8.h"
 
 namespace mpv {
 
 namespace {
+
+// Audio recovery schedule (issue #783: silent WASAPI after wake from sleep).
+// Resume reloads fire unconditionally — a post-wake WASAPI session can stay
+// "healthy" from mpv's point of view while producing no sound, so there is no
+// property to gate on; the second shot covers a first reload that lands while
+// the audio stack is still restoring and creates another silent session.
+// Null-fallback retries are clock-driven because a failed ao-reload falls
+// back to null again without emitting a current-ao change event.
+constexpr int kResumeReloadAttempts = 2;
+constexpr std::chrono::milliseconds kResumeFirstDelay{1500};
+constexpr std::chrono::milliseconds kResumeRetryDelay{4500};
+constexpr int kNullRetryBudget = 5;
+constexpr std::chrono::milliseconds kNullFirstDelay{500};
+constexpr std::chrono::milliseconds kNullBackoffCap{8000};
+constexpr std::chrono::milliseconds kDeviceListDebounce{250};
 
 // DComp-mode input forwarding. mpv's inner window lives on mpv's own thread
 // and consumes the mouse input over the video (WS_EX_TRANSPARENT hit-test
@@ -56,7 +73,7 @@ void EnsureMpvInnerSubclassed(HWND host) {
 
 }  // namespace
 
-MpvPlayer::MpvPlayer() {}
+MpvPlayer::MpvPlayer(bool audio_only) : audio_only_(audio_only) {}
 
 MpvPlayer::~MpvPlayer() { Dispose(); }
 
@@ -71,47 +88,64 @@ bool MpvPlayer::Initialize(HWND view) {
     return false;
   }
 
-  // Create a child window for mpv to render into, parented to the Flutter
-  // |view|. The video child then sits in the view's own per-window layer
-  // stack, above the view's (never-painted) layer-1 content and below the
-  // engine's topmost DComp visual carrying the UI. WS_CLIPSIBLINGS keeps it
-  // from painting over neighboring view children. Mouse input over the video
-  // is delivered to mpv's own inner window (on mpv's thread); the subclass
-  // installed in EnsureMpvInnerSubclassed forwards it back to the view.
-  hwnd_ = ::CreateWindowExW(
-      WS_EX_NOPARENTNOTIFY, L"STATIC", L"", WS_CHILD | WS_CLIPSIBLINGS, 0, 0, 100, 100, view, nullptr,
-      GetModuleHandle(nullptr), nullptr);
-  if (!hwnd_) {
-    mpv_destroy(mpv_);
-    mpv_ = nullptr;
-    return false;
-  }
-  g_forward_target_view = view;
+  if (audio_only_) {
+    // Windowless music core: no HWND, no VO, no video decode. vid=no keeps
+    // embedded cover art from ever becoming a video track, and
+    // force-window/audio-display make sure mpv never opens a video output
+    // for it either.
+    mpv_set_option_string(mpv_, "vid", "no");
+    mpv_set_option_string(mpv_, "force-window", "no");
+    mpv_set_option_string(mpv_, "audio-display", "no");
+    mpv_set_option_string(mpv_, "gapless-audio", "weak");
+  } else {
+    // Create a child window for mpv to render into, parented to the Flutter
+    // |view|. The video child then sits in the view's own per-window layer
+    // stack, above the view's (never-painted) layer-1 content and below the
+    // engine's topmost DComp visual carrying the UI. WS_CLIPSIBLINGS keeps it
+    // from painting over neighboring view children. Mouse input over the video
+    // is delivered to mpv's own inner window (on mpv's thread); the subclass
+    // installed in EnsureMpvInnerSubclassed forwards it back to the view.
+    hwnd_ = ::CreateWindowExW(
+        WS_EX_NOPARENTNOTIFY, L"STATIC", L"", WS_CHILD | WS_CLIPSIBLINGS, 0, 0, 100, 100, view, nullptr,
+        GetModuleHandle(nullptr), nullptr);
+    if (!hwnd_) {
+      mpv_destroy(mpv_);
+      mpv_ = nullptr;
+      return false;
+    }
+    g_forward_target_view = view;
 
-  // Set the wid option to embed mpv in our window.
-  int64_t wid = reinterpret_cast<int64_t>(hwnd_);
-  mpv_set_option(mpv_, "wid", MPV_FORMAT_INT64, &wid);
+    // Set the wid option to embed mpv in our window.
+    int64_t wid = reinterpret_cast<int64_t>(hwnd_);
+    mpv_set_option(mpv_, "wid", MPV_FORMAT_INT64, &wid);
+
+    mpv_set_option_string(mpv_, "vo", "gpu-next");
+    mpv_set_option_string(mpv_, "gpu-api", "auto");
+    // hwdec is set from Flutter via setProperty based on user preference
+  }
 
   // Configure mpv for embedded playback.
-  mpv_set_option_string(mpv_, "vo", "gpu-next");
-  mpv_set_option_string(mpv_, "gpu-api", "auto");
-  // hwdec is set from Flutter via setProperty based on user preference
   mpv_set_option_string(mpv_, "keep-open", "yes");
   mpv_set_option_string(mpv_, "idle", "yes");
   mpv_set_option_string(mpv_, "input-default-bindings", "no");
   mpv_set_option_string(mpv_, "input-vo-keyboard", "no");
+  // Hardware media keys are owned by the SMTC integration (os_media_controls);
+  // mpv's default handling would double-handle Play/Pause.
+  mpv_set_option_string(mpv_, "input-media-keys", "no");
   mpv_set_option_string(mpv_, "osc", "no");
 
-  // Let mpv use display/context detection instead of forcing HDR signaling.
-  mpv_set_option_string(mpv_, "target-colorspace-hint", "auto");
+  if (!audio_only_) {
+    // Let mpv use display/context detection instead of forcing HDR signaling.
+    mpv_set_option_string(mpv_, "target-colorspace-hint", "auto");
 
-  // Fallback tone mapping when display doesn't support HDR
-  mpv_set_option_string(mpv_, "tone-mapping", "auto");
-  mpv_set_option_string(mpv_, "hdr-compute-peak", "auto");
+    // Fallback tone mapping when display doesn't support HDR
+    mpv_set_option_string(mpv_, "tone-mapping", "auto");
+    mpv_set_option_string(mpv_, "hdr-compute-peak", "auto");
+  }
 
   // When WASAPI becomes unavailable (sleep, device unplug), fall back to null
   // audio output instead of permanently dropping the audio track. Recovery is
-  // handled in the event loop when audio-device-list changes.
+  // handled by MaybeRunAudioRecovery in the event loop.
   mpv_set_option_string(mpv_, "audio-fallback-to-null", "yes");
 
   // Default to warn-level logging; Dart side can raise to "v" if debug logging is enabled.
@@ -120,16 +154,23 @@ bool MpvPlayer::Initialize(HWND view) {
   // Initialize mpv.
   int err = mpv_initialize(mpv_);
   if (err < 0) {
-    ::DestroyWindow(hwnd_);
-    hwnd_ = nullptr;
+    if (hwnd_) {
+      ::DestroyWindow(hwnd_);
+      hwnd_ = nullptr;
+    }
     mpv_destroy(mpv_);
     mpv_ = nullptr;
     return false;
   }
 
-  // Observe video-params/sig-peak for HDR detection
-  mpv_observe_property(mpv_, 0, "video-params/sig-peak", MPV_FORMAT_DOUBLE);
+  // Observe video-params/sig-peak for HDR detection (video core only).
+  if (!audio_only_) {
+    mpv_observe_property(mpv_, 0, "video-params/sig-peak", MPV_FORMAT_DOUBLE);
+  }
   mpv_observe_property(mpv_, 0, "current-ao", MPV_FORMAT_STRING);
+  // Native observation so audio recovery doesn't depend on the Dart side
+  // choosing to observe the device list.
+  mpv_observe_property(mpv_, 0, "audio-device-list", MPV_FORMAT_NONE);
 
   // Start event loop.
   StartEventLoop();
@@ -169,11 +210,13 @@ void MpvPlayer::Dispose() {
   if (hwnd_) {
     ::DestroyWindow(hwnd_);
     hwnd_ = nullptr;
-  }
 
-  // The subclassed inner window died with hwnd_; clear the forwarding state.
-  g_mpv_inner_hwnd = nullptr;
-  g_mpv_inner_original_proc = nullptr;
+    // The subclassed inner window died with hwnd_; clear the forwarding
+    // state. Only the owner of the window may do this: the audio-only core
+    // (which never has an hwnd_) must not wipe the video instance's state.
+    g_mpv_inner_hwnd = nullptr;
+    g_mpv_inner_original_proc = nullptr;
+  }
 
   observed_properties_.clear();
 }
@@ -337,10 +380,72 @@ void MpvPlayer::SetEventCallback(EventCallback callback) {
   event_callback_ = std::move(callback);
 }
 
-void MpvPlayer::ReloadAudioOutput() {
+void MpvPlayer::NotifyPowerSuspend() { LogRecovery("system suspending"); }
+
+void MpvPlayer::NotifyPowerResume() { resume_reload_requested_.store(true); }
+
+void MpvPlayer::LogRecovery(const std::string& text) {
+  char log_msg[512];
+  snprintf(log_msg, sizeof(log_msg), "MPV [warn] audio-recovery: %s", text.c_str());
+  OutputDebugStringA(log_msg);
+
+  // Emitted as a synthetic log-message event so it reaches the app logs
+  // regardless of the mpv log level.
+  flutter::EncodableMap data;
+  data[flutter::EncodableValue("prefix")] = flutter::EncodableValue("audio-recovery");
+  data[flutter::EncodableValue("level")] = flutter::EncodableValue("warn");
+  data[flutter::EncodableValue("text")] = flutter::EncodableValue(text);
+  SendEvent("log-message", data);
+}
+
+void MpvPlayer::TryAudioReload(const char* reason, int attempt) {
   if (audio_reload_pending_) return;
   audio_reload_pending_ = true;
-  CommandAsync({"ao-reload"}, [this](int) { audio_reload_pending_ = false; });
+  LogRecovery("issuing ao-reload (reason=" + std::string(reason) + ", attempt " + std::to_string(attempt) + ")");
+  std::string reason_str = reason;
+  CommandAsync({"ao-reload"}, [this, reason_str, attempt](int error) {
+    audio_reload_pending_ = false;
+    LogRecovery(
+        "ao-reload completed (reason=" + reason_str + ", attempt " + std::to_string(attempt) +
+        ", error=" + std::to_string(error) + ")");
+  });
+}
+
+void MpvPlayer::MaybeRunAudioRecovery() {
+  const auto now = std::chrono::steady_clock::now();
+
+  if (resume_reload_requested_.exchange(false)) {
+    if (file_loaded_) {
+      resume_attempts_left_ = kResumeReloadAttempts;
+      resume_next_attempt_ = now + kResumeFirstDelay;
+      LogRecovery("power resume detected; scheduling ao-reload in " + std::to_string(kResumeFirstDelay.count()) + "ms");
+    } else {
+      LogRecovery("power resume detected; no file loaded, nothing to recover");
+    }
+  }
+
+  if (resume_attempts_left_ > 0 && now >= resume_next_attempt_) {
+    int attempt = kResumeReloadAttempts - resume_attempts_left_ + 1;
+    resume_attempts_left_--;
+    resume_next_attempt_ = now + kResumeRetryDelay;
+    TryAudioReload("resume", attempt);
+  }
+
+  if (null_attempts_left_ > 0 && now >= null_next_attempt_) {
+    if (!current_ao_is_null_) {
+      null_attempts_left_ = 0;
+      LogRecovery("audio recovered (current-ao no longer null)");
+    } else {
+      int attempt = kNullRetryBudget - null_attempts_left_ + 1;
+      null_attempts_left_--;
+      null_next_attempt_ = now + null_backoff_;
+      null_backoff_ = std::min(null_backoff_ * 2, kNullBackoffCap);
+      TryAudioReload("null-fallback", attempt);
+      if (null_attempts_left_ == 0) {
+        LogRecovery("audio recovery budget exhausted; waiting for device list change or power resume");
+      }
+    }
+  }
 }
 
 void MpvPlayer::StartEventLoop() {
@@ -362,13 +467,15 @@ void MpvPlayer::StopEventLoop() {
 void MpvPlayer::EventLoop() {
   while (running_) {
     mpv_event* event = mpv_wait_event(mpv_, 0.1);
-    if (event->event_id == MPV_EVENT_NONE) {
-      continue;
-    }
     if (event->event_id == MPV_EVENT_SHUTDOWN) {
       break;
     }
-    HandleMpvEvent(event);
+    if (event->event_id != MPV_EVENT_NONE) {
+      HandleMpvEvent(event);
+    }
+    // Runs on every iteration including wait timeouts: this ~100ms tick is
+    // the clock that drives scheduled audio reload attempts.
+    MaybeRunAudioRecovery();
   }
 }
 
@@ -452,19 +559,42 @@ void MpvPlayer::HandleMpvEvent(mpv_event* event) {
         if (prop->format == MPV_FORMAT_STRING && prop->data) {
           current_ao = *static_cast<char**>(prop->data);
         }
-        current_ao_is_null_ = current_ao && strcmp(current_ao, "null") == 0;
+        bool is_null = current_ao && strcmp(current_ao, "null") == 0;
+        if (is_null && !current_ao_is_null_) {
+          // AO fell back to null (audio-fallback-to-null); start recovery.
+          null_attempts_left_ = kNullRetryBudget;
+          null_backoff_ = kNullFirstDelay;
+          null_next_attempt_ = std::chrono::steady_clock::now() + kNullFirstDelay;
+          LogRecovery(
+              "current-ao fell back to null; starting recovery (budget " + std::to_string(kNullRetryBudget) + ")");
+        } else if (!is_null && current_ao_is_null_) {
+          null_attempts_left_ = 0;
+          LogRecovery(std::string("current-ao is now '") + (current_ao ? current_ao : "") + "'");
+        }
+        current_ao_is_null_ = is_null;
       }
 
-      // Audio recovery for sleep/wake or unplugged devices.
-      // Mirrors mpv's TOOLS/lua/ao-null-reload.lua for embedded libmpv.
-      if (strcmp(prop->name, "audio-device-list") == 0 && current_ao_is_null_) {
-        ReloadAudioOutput();
+      // A device (re)appearing while the AO sits on the null fallback is a
+      // fresh recovery opportunity: refresh the retry budget and pull the next
+      // attempt close. Gated on the native observation (userdata 0) so the
+      // Dart-side observation of the same property doesn't double-trigger.
+      if (strcmp(prop->name, "audio-device-list") == 0 && event->reply_userdata == 0 && current_ao_is_null_) {
+        auto candidate = std::chrono::steady_clock::now() + kDeviceListDebounce;
+        if (null_attempts_left_ <= 0 || candidate < null_next_attempt_) {
+          null_next_attempt_ = candidate;
+        }
+        null_attempts_left_ = kNullRetryBudget;
+        null_backoff_ = kNullFirstDelay;
+        LogRecovery("audio-device-list changed while ao=null; rescheduling ao-reload");
       }
 
       SendPropertyChange(prop->name, &node);
       break;
     }
     case MPV_EVENT_END_FILE: {
+      file_loaded_ = false;
+      resume_attempts_left_ = 0;
+      null_attempts_left_ = 0;
       auto* end = static_cast<mpv_event_end_file*>(event->data);
       flutter::EncodableMap data;
       data[flutter::EncodableValue("reason")] = flutter::EncodableValue(static_cast<int>(end->reason));
@@ -476,6 +606,7 @@ void MpvPlayer::HandleMpvEvent(mpv_event* event) {
       break;
     }
     case MPV_EVENT_FILE_LOADED: {
+      file_loaded_ = true;
       SendEvent("file-loaded");
       break;
     }

@@ -58,10 +58,10 @@ class _AppDatabaseTestSuite {
 
       test('ProfileConnections has no profile_id FK (virtual plex_home profiles)', () async {
         // v20 dropped the profile_id FK so virtual Plex Home profiles can
-        // persist join rows without a parent `profiles` row. The two
-        // profile-delete sites (profile_detail_screen, profile_switch_screen)
-        // call ProfileConnectionRegistry.removeAllForProfile manually before
-        // deleting the profile, so the cascade isn't needed.
+        // persist join rows without a parent `profiles` row. Profile deletion
+        // instead cleans up join rows explicitly (via the teardown flow's
+        // removeAllProfileConnectionsAndCleanup) before deleting the profile,
+        // so the cascade isn't needed.
         final now = DateTime.now().millisecondsSinceEpoch;
         await db
             .into(db.connections)

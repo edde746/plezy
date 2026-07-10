@@ -34,11 +34,16 @@ Future<bool> persistAndBindConnection({
   required Future<bool> Function()? addToManager,
   String? visibleServerId,
 }) async {
-  await context.read<ConnectionRegistry>().upsert(connection);
+  // Snapshot the collaborators up front: persistence must complete even if
+  // the screen unmounts mid-await — a connection upserted without its join
+  // row is an orphan the profile never sees. Only the session-facing steps
+  // below stay gated on `mounted`.
+  final connections = context.read<ConnectionRegistry>();
+  final profileConnections = context.read<ProfileConnectionRegistry>();
 
-  if (!context.mounted) return false;
+  await connections.upsert(connection);
   if (bindToProfile != null) {
-    await context.read<ProfileConnectionRegistry>().upsert(bindToProfile);
+    await profileConnections.upsert(bindToProfile);
   }
 
   if (!context.mounted || addToManager == null) return false;

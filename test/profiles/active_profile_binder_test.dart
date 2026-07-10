@@ -511,6 +511,155 @@ void main() {
       expect(prepared.manager.refreshCalls, 3);
     });
   });
+
+  group('rebind cycle semantics', () {
+    test('queued same-id rebind settles once, after the last pass', () async {
+      binder.dispose();
+      multiServerProvider.dispose();
+
+      final gated = _GatedJellyfinManager();
+      manager = gated;
+      multiServerProvider = MultiServerProvider(manager, DataAggregationService(manager));
+      binder = ActiveProfileBinder(
+        activeProfile: activeProfile,
+        connections: connections,
+        profileConnections: profileConnections,
+        serverManager: manager,
+        multiServerProvider: multiServerProvider,
+        pinPrompt: (_, {String? errorMessage}) async => null,
+        shouldDeferInitialBind: (_) async => false,
+      );
+
+      final profile = await createActiveLocalProfile('local-queued');
+      final jellyfin = _jellyfinConnection();
+      await connections.upsert(jellyfin);
+      await profileConnections.upsert(
+        ProfileConnection(profileId: profile.id, connectionId: jellyfin.id, userIdentifier: jellyfin.userId),
+      );
+
+      final cycle = binder.rebindActive();
+      await pumpUntil(() async => gated.calls == 1);
+
+      int? callsAtSettle;
+      unawaited(activeProfile.awaitBindingSettle().then((_) => callsAtSettle = gated.calls));
+      unawaited(binder.rebindActive()); // queues a same-id follow-up pass
+      gated.gate.complete();
+      await cycle;
+      await Future<void>.delayed(Duration.zero);
+
+      expect(gated.calls, 2);
+      // Waiters must observe the whole cycle, not the first pass's outcome.
+      expect(callsAtSettle, 2);
+      expect(activeProfile.isBinding, isFalse);
+    });
+
+    test('passive notifications do not retry a failed profile; explicit rebind does', () async {
+      binder.dispose();
+      multiServerProvider.dispose();
+
+      final failing = _CountingFailingJellyfinManager();
+      manager = failing;
+      multiServerProvider = MultiServerProvider(manager, DataAggregationService(manager));
+      binder = ActiveProfileBinder(
+        activeProfile: activeProfile,
+        connections: connections,
+        profileConnections: profileConnections,
+        serverManager: manager,
+        multiServerProvider: multiServerProvider,
+        pinPrompt: (_, {String? errorMessage}) async => null,
+        shouldDeferInitialBind: (_) async => false,
+      );
+
+      final profile = await createActiveLocalProfile('local-failing');
+      final jellyfin = _jellyfinConnection();
+      await connections.upsert(jellyfin);
+      await profileConnections.upsert(
+        ProfileConnection(profileId: profile.id, connectionId: jellyfin.id, userIdentifier: jellyfin.userId),
+      );
+
+      binder.start();
+      await pumpUntil(() async => failing.calls == 1 && !activeProfile.isBinding);
+      expect(activeProfile.lastBindingSucceeded, isFalse);
+
+      // A passive data change (an unrelated connection appearing) must not
+      // re-run the failed bind — mid-session retries can pop PIN prompts.
+      await connections.upsert(_jellyfinConnection2());
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+      expect(failing.calls, 1);
+
+      // An explicit rebind clears the marker and retries.
+      await binder.rebindActive();
+      expect(failing.calls, greaterThan(1));
+    });
+
+    test('passive rebind of a protected Plex Home profile never prompts for a PIN', () async {
+      binder.dispose();
+      multiServerProvider.dispose();
+
+      var pinPrompts = 0;
+      manager = _CapturingMultiServerManager();
+      multiServerProvider = MultiServerProvider(manager, DataAggregationService(manager));
+      binder = ActiveProfileBinder(
+        activeProfile: activeProfile,
+        connections: connections,
+        profileConnections: profileConnections,
+        serverManager: manager,
+        multiServerProvider: multiServerProvider,
+        pinPrompt: (_, {String? errorMessage}) async {
+          pinPrompts++;
+          return null;
+        },
+        shouldDeferInitialBind: (_) async => false,
+        plexAuth: PlexAuthService.forTesting(
+          http: MediaServerHttpClient(client: MockClient((_) async => http.Response('{}', 500))),
+        ),
+      );
+
+      final account = PlexAccountConnection(
+        id: 'plex.account',
+        accountToken: 'account-token',
+        clientIdentifier: 'client-id',
+        accountLabel: 'Owner',
+        servers: [_server(accessToken: 'account-server-token')],
+        createdAt: DateTime(2026, 1, 1),
+      );
+      await connections.upsert(account);
+      final homeUser = PlexHomeUser(
+        id: 1,
+        uuid: 'protected-uuid',
+        title: 'Protected',
+        thumb: '',
+        hasPassword: true,
+        restricted: false,
+        updatedAt: null,
+        admin: false,
+        guest: false,
+        protected: true,
+      );
+      fetchedHomeUsers = [homeUser];
+      await storage.savePlexHomeUsersCache(account.id, [homeUser.toJson()]);
+
+      // Bind a harmless local profile first so the session crosses the
+      // cold-start boundary (_hasBoundOnce) — the state in which passive
+      // rebinds would otherwise PIN-prompt via /switch.
+      await createActiveLocalProfile('local-first');
+      binder.start();
+      await pumpUntil(() async => !activeProfile.isBinding && binder.debugLastBoundProfileId == 'local-first');
+
+      // Activation WITHOUT the user-initiated mark: the binder must fail the
+      // bind silently instead of popping a PIN dialog.
+      final protectedProfile = Profile.virtualPlexHome(connectionId: account.id, homeUser: homeUser);
+      await activeProfile.activate(protectedProfile);
+      await pumpUntil(() async => !activeProfile.isBinding);
+      expect(pinPrompts, 0);
+      expect(activeProfile.lastBindingSucceeded, isFalse);
+
+      // The same switch marked user-initiated prompts (and the spy cancels).
+      binder.markUserInitiatedActivation(protectedProfile.id);
+      await binder.rebindActive();
+      expect(pinPrompts, 1);
+    });
+  });
 }
 
 PlexServer _server({required String accessToken}) {
@@ -565,6 +714,44 @@ JellyfinConnection _jellyfinConnection() {
     deviceId: 'device',
     createdAt: DateTime(2026, 1, 1),
   );
+}
+
+JellyfinConnection _jellyfinConnection2() {
+  return JellyfinConnection(
+    id: 'jf-other/user-b',
+    baseUrl: 'https://other.example',
+    serverName: 'Other',
+    serverMachineId: 'jf-other',
+    userId: 'user-b',
+    userName: 'User B',
+    accessToken: 'token-b',
+    deviceId: 'device',
+    createdAt: DateTime(2026, 1, 2),
+  );
+}
+
+class _GatedJellyfinManager extends MultiServerManager {
+  final Completer<void> gate = Completer<void>();
+  int calls = 0;
+
+  @override
+  Future<bool> addJellyfinConnection(JellyfinConnection connection) async {
+    calls++;
+    if (calls == 1) await gate.future;
+    updateServerStatus(ServerId(connection.serverMachineId), true);
+    return true;
+  }
+}
+
+class _CountingFailingJellyfinManager extends MultiServerManager {
+  int calls = 0;
+
+  @override
+  Future<bool> addJellyfinConnection(JellyfinConnection connection) async {
+    calls++;
+    updateServerStatus(ServerId(connection.serverMachineId), false);
+    return false;
+  }
 }
 
 class _CapturingMultiServerManager extends MultiServerManager {

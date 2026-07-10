@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart' show ScrollCacheExtent;
 import 'package:flutter/services.dart';
 import 'package:plezy/widgets/app_icon.dart';
 import 'package:material_symbols_icons/symbols.dart';
@@ -20,8 +21,11 @@ import '../media/media_item.dart';
 import '../mixins/mounted_set_state_mixin.dart';
 import '../screens/hub_detail_screen.dart';
 import '../utils/media_navigation_helper.dart';
+import 'card_inflation_budget.dart';
 import 'focus_builders.dart';
 import 'media_card.dart';
+import 'skeleton_media_card.dart';
+import 'sliver_child_memo.dart';
 import '../utils/scroll_utils.dart';
 import 'horizontal_scroll_with_arrows.dart';
 import '../i18n/strings.g.dart';
@@ -92,7 +96,7 @@ class HubSection extends StatefulWidget {
   State<HubSection> createState() => HubSectionState();
 }
 
-class HubSectionState extends State<HubSection> with MountedSetStateMixin {
+class HubSectionState extends State<HubSection> with MountedSetStateMixin, SkeletonUpgradeScheduler {
   static const _longPressDuration = Duration(milliseconds: 500);
 
   late FocusNode _hubFocusNode;
@@ -100,6 +104,10 @@ class HubSectionState extends State<HubSection> with MountedSetStateMixin {
 
   /// Current visual focus index (not tied to Flutter's focus system)
   int _focusedIndex = 0;
+
+  /// Reuses card widgets across rebuilds (parent setStates, focus moves) so
+  /// only changed indices rebuild instead of every realized card in the row.
+  final SliverChildMemo<MediaItem> _cardMemo = SliverChildMemo<MediaItem>();
 
   double _itemExtent = 0;
   double _leadingPaddingFor(bool isTv) => widget.inset
@@ -484,6 +492,11 @@ class HubSectionState extends State<HubSection> with MountedSetStateMixin {
                     final useWideLayout =
                         episodePosterMode == EpisodePosterMode.episodeThumbnail && (isEpisodeOnlyHub || isMixedHub);
 
+                    // Music hubs render square album/artist artwork
+                    final isSquareHub =
+                        widget.hub.items.isNotEmpty &&
+                        widget.hub.items.every((item) => item.cardShape(episodePosterMode) == CardShape.square);
+
                     // Card dimensions based on hub type
                     const wideCardMultiplier = 1.5;
                     final cardWidth = useWideLayout ? baseCardWidth * wideCardMultiplier : baseCardWidth;
@@ -491,6 +504,8 @@ class HubSectionState extends State<HubSection> with MountedSetStateMixin {
                     final posterHeight = useWideLayout
                         ? posterWidth *
                               (9 / 16) // 16:9 for wide layout
+                        : isSquareHub
+                        ? posterWidth // 1:1 for music artwork
                         : posterWidth * 1.5; // 2:3 for poster layout
 
                     final containerHeight = posterHeight + (isTv ? 48 : 33);
@@ -498,14 +513,38 @@ class HubSectionState extends State<HubSection> with MountedSetStateMixin {
                     final focusExtra = focusBorderWidth * 2; // border on both sides
                     _itemExtent = cardWidth + focusExtra + 4;
 
+                    // Everything the card closures capture; a change flushes
+                    // the memo so cached cards can't carry stale geometry.
+                    final cardEpoch = (
+                      cardWidth,
+                      posterHeight,
+                      useWideLayout,
+                      isMixedHub,
+                      isKeyboardMode,
+                      widget.inset,
+                      widget.isInContinueWatching,
+                      widget.usesContinueWatchingAction,
+                    );
+
                     return SizedBox(
                       height: containerHeight + focusExtra + (isTv ? 12 : 4), // extra for scale + border top/bottom
                       child: HorizontalScrollWithArrows(
                         controller: _scrollController,
                         builder: (scrollController) => ListView.builder(
+                          // Inert on media lists (no keep-alive clients): dropping the
+                          // per-child wrappers shrinks build + semantics work per item.
+                          addAutomaticKeepAlives: false,
+                          addSemanticIndexes: false,
                           controller: scrollController,
                           scrollDirection: Axis.horizontal,
                           clipBehavior: Clip.none,
+                          // On touch, don't pre-inflate off-screen cards when a row
+                          // enters the viewport — the default 250px realizes 2+ extra
+                          // cards per side in the same frame, fattening the row-entry
+                          // spike. Cards inflate as they scroll in instead (a few ms
+                          // each). TV keeps the default: d-pad animateTo benefits from
+                          // the prefetch and TV rows inflate via the focus path anyway.
+                          scrollCacheExtent: isTv ? null : const ScrollCacheExtent.pixels(0),
                           padding: widget.inset
                               ? EdgeInsets.symmetric(vertical: isTv ? 6 : 2)
                               : EdgeInsets.symmetric(horizontal: isTv ? leadingPadding : 8, vertical: isTv ? 6 : 2),
@@ -556,28 +595,61 @@ class HubSectionState extends State<HubSection> with MountedSetStateMixin {
 
                             final item = widget.hub.items[index];
 
-                            return Padding(
-                              key: _itemKeyFor(index),
-                              padding: widget.inset
-                                  ? const EdgeInsets.only(right: 4)
-                                  : const EdgeInsets.symmetric(horizontal: 2),
-                              child: FocusBuilders.buildLockedFocusWrapper(
-                                context: context,
-                                isFocused: isItemFocused,
-                                onTap: () => _onItemTapped(index),
-                                onLongPress: () => _mediaCardKeys[index]?.currentState?.showContextMenu(),
-                                delegateFocusBorder: true,
-                                child: MediaCard(
-                                  key: _getMediaCardKey(index),
-                                  item: item,
-                                  width: cardWidth,
-                                  height: posterHeight,
-                                  onRefresh: widget.onRefresh,
-                                  onRemoveFromContinueWatching: widget.onRemoveFromContinueWatching,
-                                  forceGridMode: true,
-                                  isInContinueWatching: widget.isInContinueWatching,
-                                  usesContinueWatchingAction: widget.usesContinueWatchingAction,
-                                  mixedHubContext: isMixedHub,
+                            final cached = _cardMemo.tryGet(index, item, epoch: cardEpoch, salt: isItemFocused);
+                            if (cached != null) return cached;
+                            // Budget fresh inflations while an enclosing
+                            // scrollable is moving (rows enter on the parent's
+                            // vertical scroll); skeletons upgrade a frame
+                            // later. Keyboard mode is exempt — skeletons
+                            // aren't focus targets.
+                            if (!isKeyboardMode &&
+                                CardInflationBudget.isScrollingContext(context) &&
+                                !CardInflationBudget.tryTake()) {
+                              scheduleSkeletonUpgrade();
+                              return Padding(
+                                padding: widget.inset
+                                    ? const EdgeInsets.only(right: 4)
+                                    : const EdgeInsets.symmetric(horizontal: 2),
+                                child: SizedBox(width: cardWidth, child: const SkeletonMediaCard()),
+                              );
+                            }
+                            return _cardMemo.widgetFor(
+                              index,
+                              item,
+                              epoch: cardEpoch,
+                              // Focus moves only rebuild the two affected
+                              // indices instead of the whole realized row.
+                              salt: isItemFocused,
+                              build: () => Padding(
+                                key: _itemKeyFor(index),
+                                padding: widget.inset
+                                    ? const EdgeInsets.only(right: 4)
+                                    : const EdgeInsets.symmetric(horizontal: 2),
+                                child: FocusBuilders.buildLockedFocusWrapper(
+                                  context: context,
+                                  isFocused: isItemFocused,
+                                  // Pointer/touch taps never reach these: MediaCard's own
+                                  // tap region is deeper in the tree and always wins the
+                                  // gesture arena. Passing null lets the wrapper collapse
+                                  // to the bare card outside keyboard mode instead of
+                                  // building a second dead gesture-detector stack per card.
+                                  onTap: isKeyboardMode ? () => _onItemTapped(index) : null,
+                                  onLongPress: isKeyboardMode
+                                      ? () => _mediaCardKeys[index]?.currentState?.showContextMenu()
+                                      : null,
+                                  delegateFocusBorder: true,
+                                  child: MediaCard(
+                                    key: _getMediaCardKey(index),
+                                    item: item,
+                                    width: cardWidth,
+                                    height: posterHeight,
+                                    onRefresh: widget.onRefresh,
+                                    onRemoveFromContinueWatching: widget.onRemoveFromContinueWatching,
+                                    forceGridMode: true,
+                                    isInContinueWatching: widget.isInContinueWatching,
+                                    usesContinueWatchingAction: widget.usesContinueWatchingAction,
+                                    mixedHubContext: isMixedHub,
+                                  ),
                                 ),
                               ),
                             );

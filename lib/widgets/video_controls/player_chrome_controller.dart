@@ -12,7 +12,7 @@ enum PlayerChromeFocusTarget { playPause, timeline }
 
 /// Owns video-player chrome visibility and auto-hide policy for one player route.
 class PlayerChromeController extends ChangeNotifier implements ValueListenable<bool> {
-  PlayerChromeController({bool controlsVisible = true}) : _controlsVisible = controlsVisible;
+  PlayerChromeController({this._controlsVisible = true});
 
   bool _controlsVisible;
   bool _contentStripVisible = false;

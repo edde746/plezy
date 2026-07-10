@@ -6,6 +6,7 @@ import 'package:cached_network_image_ce/cached_network_image.dart' show FileResp
 // behind a narrower unsupported-platform stub.
 // ignore: implementation_imports
 import 'package:cached_network_image_ce/src/cache/default_cache_manager.dart' as ce_cache;
+import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
 
@@ -33,7 +34,7 @@ class PlexImageCacheManager extends ce_cache.DefaultCacheManager {
     : super(
         stalePeriod: const Duration(days: 14),
         maxNrOfCacheObjects: 3000,
-        httpClientFactory: () => _SharedHttpClient(_artworkHttpClient.inner),
+        httpClientFactory: () => _SharedHttpClient(_artworkHttpClient.inner, _artworkRequestLimiter),
         cacheDirectoryProvider: getApplicationCacheDirectory,
       );
 
@@ -57,12 +58,13 @@ class PlexImageCacheManager extends ce_cache.DefaultCacheManager {
 /// transferring ownership of its lifecycle, and cap artwork fan-out globally.
 class _SharedHttpClient extends http.BaseClient {
   final http.Client _inner;
+  final _RequestLimiter _limiter;
 
-  _SharedHttpClient(this._inner);
+  _SharedHttpClient(this._inner, this._limiter);
 
   @override
   Future<http.StreamedResponse> send(http.BaseRequest request) async {
-    final permit = await _artworkRequestLimiter.acquire();
+    final permit = await _limiter.acquire();
     var released = false;
 
     void release() {
@@ -73,6 +75,29 @@ class _SharedHttpClient extends http.BaseClient {
 
     try {
       final response = await _inner.send(request);
+
+      // CE's cache manager throws for any status other than 200/202 without
+      // listening to the body, so _releaseWhenDone would never fire and the
+      // permit would leak; six stale-thumb 404s then wedge all artwork loading
+      // until restart (#1473). Release now, drain the (tiny) error body in the
+      // background so the platform client reclaims the connection, and hand CE
+      // an empty body it never reads anyway. Status set mirrors CE 4.6.4
+      // _downloadFile; recheck if the pinned dep is ever bumped.
+      if (response.statusCode != 200 && response.statusCode != 202) {
+        release();
+        unawaited(response.stream.drain<void>().catchError((_) {}));
+        return http.StreamedResponse(
+          const Stream<List<int>>.empty(),
+          response.statusCode,
+          contentLength: 0,
+          request: response.request,
+          headers: response.headers,
+          isRedirect: response.isRedirect,
+          persistentConnection: response.persistentConnection,
+          reasonPhrase: response.reasonPhrase,
+        );
+      }
+
       return http.StreamedResponse(
         _releaseWhenDone(response.stream, release),
         response.statusCode,
@@ -92,6 +117,12 @@ class _SharedHttpClient extends http.BaseClient {
   @override
   void close() {}
 }
+
+// ignore: unused-code
+/// Test hook: builds the throttled artwork client with an isolated limiter.
+@visibleForTesting
+http.Client createArtworkHttpClientForTest(http.Client inner, {int maxConcurrent = 6}) =>
+    _SharedHttpClient(inner, _RequestLimiter(maxConcurrent));
 
 Stream<List<int>> _releaseWhenDone(Stream<List<int>> stream, void Function() release) async* {
   try {

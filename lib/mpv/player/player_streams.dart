@@ -63,6 +63,12 @@ class PlayerStreams {
   /// Only emitted on Android when ExoPlayer encounters an unsupported format.
   final Stream<void> backendSwitched;
 
+  /// Emits the URI the backend auto-advanced into after playing out the
+  /// current item, when a next item was pre-armed via [Player.setNext]
+  /// (gapless music). Only audio players emit this; the value is the armed
+  /// [Media.uri].
+  final Stream<String> trackTransition;
+
   const PlayerStreams({
     required this.playing,
     required this.completed,
@@ -83,5 +89,6 @@ class PlayerStreams {
     required this.playbackRestart,
     this.fileLoaded = const Stream<void>.empty(),
     required this.backendSwitched,
+    this.trackTransition = const Stream<String>.empty(),
   });
 }

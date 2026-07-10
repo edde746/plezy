@@ -16,6 +16,9 @@ class PlayerAndroid extends PlayerBase {
   String _dvConversionMode = 'auto';
   bool _audioNormalizationEnabled = false;
   bool _audioPassthroughEnabled = false;
+  bool _downmixEnabled = false;
+  int _downmixCenterBoostDb = 0;
+  bool _downmixNormalize = true;
 
   static const String _passthroughCodecs = 'ac3,eac3,dts,dts-hd,truehd';
 
@@ -299,6 +302,32 @@ class PlayerAndroid extends PlayerBase {
     // Keep the mpv af property flowing through setMpvProperty so the plugin's
     // pendingMpvProperties replay applies loudnorm if exo falls back to mpv.
     await super.setAudioNormalization(enabled);
+  }
+
+  @override
+  Future<void> setAudioDownmix({required bool enabled, required int centerBoostDb, required bool normalize}) async {
+    if (disposed) return;
+    _downmixEnabled = enabled;
+    _downmixCenterBoostDb = centerBoostDb;
+    _downmixNormalize = normalize;
+    Future<void> invokeNative() =>
+        invoke('setAudioDownmix', {'enabled': enabled, 'centerBoostDb': centerBoostDb, 'normalize': normalize});
+    final initFuture = _initFuture;
+    if (initialized) {
+      await invokeNative();
+    } else if (initFuture != null) {
+      await initFuture;
+      if (!disposed &&
+          initialized &&
+          _downmixEnabled == enabled &&
+          _downmixCenterBoostDb == centerBoostDb &&
+          _downmixNormalize == normalize) {
+        await invokeNative();
+      }
+    }
+    // Keep the mpv properties flowing through setMpvProperty so the plugin's
+    // pendingMpvProperties replay applies downmix if exo falls back to mpv.
+    await super.setAudioDownmix(enabled: enabled, centerBoostDb: centerBoostDb, normalize: normalize);
   }
 
   @override

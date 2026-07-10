@@ -61,6 +61,8 @@ PlexVideoPlaybackData parsePlexVideoPlaybackDataFromJson(
   required String baseUrl,
   required String? token,
   int mediaIndex = 0,
+  String? selectedMediaSourceId,
+  String? preferredVersionSignature,
   void Function(int requestedIndex, int fallbackIndex)? onVersionFallback,
 }) {
   String? videoUrl;
@@ -76,6 +78,24 @@ PlexVideoPlaybackData parsePlexVideoPlaybackDataFromJson(
       availableVersions = mediaList
           .map((media) => PlexMappers.mediaVersionFromJson(Map<String, dynamic>.from(media)))
           .toList();
+
+      // Re-resolve version evidence against this (authoritative) Media list:
+      // stable id first, then signature. The positional index is the last
+      // resort — and all an explicit user pick carries besides its id, so a
+      // saved-preference signature can never override one.
+      final requestedSourceId = selectedMediaSourceId?.trim();
+      var resolvedBySourceId = false;
+      if (requestedSourceId != null && requestedSourceId.isNotEmpty) {
+        final byId = availableVersions.indexWhere((v) => v.id == requestedSourceId);
+        if (byId >= 0) {
+          mediaIndex = byId;
+          resolvedBySourceId = true;
+        }
+      }
+      if (!resolvedBySourceId && preferredVersionSignature != null && preferredVersionSignature.isNotEmpty) {
+        final bySignature = MediaVersion.findMatchingIndex(availableVersions, {preferredVersionSignature});
+        if (bySignature != null) mediaIndex = bySignature;
+      }
 
       if (mediaIndex < 0 || mediaIndex >= mediaList.length) {
         mediaIndex = 0;

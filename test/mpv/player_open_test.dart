@@ -9,6 +9,7 @@ import 'package:plezy/mpv/player/platform/player_android.dart';
 import 'package:plezy/mpv/player/player_native.dart';
 import 'package:plezy/services/settings_service.dart';
 
+import '../test_helpers/mock_player_channels.dart';
 import '../test_helpers/prefs.dart';
 
 void main() {
@@ -22,7 +23,7 @@ void main() {
 
   group('player open', () {
     test('ExoPlayer clears stale Dart track state before opening new media', () async {
-      await _withMockChannels(
+      await withMockPlayerChannels(
         methodChannelName: 'com.plezy/exo_player',
         eventChannelName: 'com.plezy/exo_player/events',
         testBody: () async {
@@ -48,7 +49,7 @@ void main() {
     test('ExoPlayer forwards external subtitle metadata at open', () async {
       final calls = <MethodCall>[];
 
-      await _withMockChannels(
+      await withMockPlayerChannels(
         methodChannelName: 'com.plezy/exo_player',
         eventChannelName: 'com.plezy/exo_player/events',
         methodHandler: (call) {
@@ -98,7 +99,7 @@ void main() {
     });
 
     test('ExoPlayer backend switch clears stale tracks before fallback tracks arrive', () async {
-      await _withMockChannels(
+      await withMockPlayerChannels(
         methodChannelName: 'com.plezy/exo_player',
         eventChannelName: 'com.plezy/exo_player/events',
         testBody: () async {
@@ -137,7 +138,7 @@ void main() {
       final initialize = Completer<bool>();
       final calls = <MethodCall>[];
 
-      await _withMockChannels(
+      await withMockPlayerChannels(
         methodChannelName: 'com.plezy/exo_player',
         eventChannelName: 'com.plezy/exo_player/events',
         methodHandler: (call) {
@@ -183,7 +184,7 @@ void main() {
     test('ExoPlayer maps copyts transcode streams as absolute timeline positions', () async {
       final calls = <MethodCall>[];
 
-      await _withMockChannels(
+      await withMockPlayerChannels(
         methodChannelName: 'com.plezy/exo_player',
         eventChannelName: 'com.plezy/exo_player/events',
         methodHandler: (call) {
@@ -235,7 +236,7 @@ void main() {
       final calls = <MethodCall>[];
       late PlayerAndroid player;
 
-      await _withMockChannels(
+      await withMockPlayerChannels(
         methodChannelName: 'com.plezy/exo_player',
         eventChannelName: 'com.plezy/exo_player/events',
         methodHandler: (call) {
@@ -280,7 +281,7 @@ void main() {
     test('ExoPlayer marks explicit non-zero media starts for native fallback', () async {
       final calls = <MethodCall>[];
 
-      await _withMockChannels(
+      await withMockPlayerChannels(
         methodChannelName: 'com.plezy/exo_player',
         eventChannelName: 'com.plezy/exo_player/events',
         methodHandler: (call) {
@@ -309,7 +310,7 @@ void main() {
     });
 
     test('MPV clears stale Dart track state before opening new media', () async {
-      await _withMockChannels(
+      await withMockPlayerChannels(
         methodChannelName: 'com.plezy/mpv_player',
         eventChannelName: 'com.plezy/mpv_player/events',
         testBody: () async {
@@ -335,7 +336,7 @@ void main() {
     test('MPV disables subtitles before loading media', () async {
       final calls = <MethodCall>[];
 
-      await _withMockChannels(
+      await withMockPlayerChannels(
         methodChannelName: 'com.plezy/mpv_player',
         eventChannelName: 'com.plezy/mpv_player/events',
         methodHandler: (call) {
@@ -373,7 +374,7 @@ void main() {
     test('MPV passes external subtitles through loadfile options', () async {
       final calls = <MethodCall>[];
 
-      await _withMockChannels(
+      await withMockPlayerChannels(
         methodChannelName: 'com.plezy/mpv_player',
         eventChannelName: 'com.plezy/mpv_player/events',
         methodHandler: (call) {
@@ -416,7 +417,7 @@ void main() {
     });
 
     test('MPV preserves external subtitle metadata for loadfile sidecars', () async {
-      await _withMockChannels(
+      await withMockPlayerChannels(
         methodChannelName: 'com.plezy/mpv_player',
         eventChannelName: 'com.plezy/mpv_player/events',
         testBody: () async {
@@ -460,7 +461,7 @@ void main() {
     test('MPV open(play: true) unpauses after loadfile even when previously paused', () async {
       final calls = <MethodCall>[];
 
-      await _withMockChannels(
+      await withMockPlayerChannels(
         methodChannelName: 'com.plezy/mpv_player',
         eventChannelName: 'com.plezy/mpv_player/events',
         methodHandler: (call) {
@@ -494,7 +495,7 @@ void main() {
     test('MPV open(play: false) opens paused and never unpauses', () async {
       final calls = <MethodCall>[];
 
-      await _withMockChannels(
+      await withMockPlayerChannels(
         methodChannelName: 'com.plezy/mpv_player',
         eventChannelName: 'com.plezy/mpv_player/events',
         methodHandler: (call) {
@@ -526,7 +527,7 @@ void main() {
     });
 
     test('MPV exposes file-loaded events through PlayerStreams', () async {
-      await _withMockChannels(
+      await withMockPlayerChannels(
         methodChannelName: 'com.plezy/mpv_player',
         eventChannelName: 'com.plezy/mpv_player/events',
         testBody: () async {
@@ -547,7 +548,7 @@ void main() {
     test('MPV maps server-offset streams to absolute timeline positions', () async {
       final calls = <MethodCall>[];
 
-      await _withMockChannels(
+      await withMockPlayerChannels(
         methodChannelName: 'com.plezy/mpv_player',
         eventChannelName: 'com.plezy/mpv_player/events',
         methodHandler: (call) {
@@ -590,7 +591,7 @@ void main() {
     test('MPV refresh seek preserves timeline offset position', () async {
       final calls = <MethodCall>[];
 
-      await _withMockChannels(
+      await withMockPlayerChannels(
         methodChannelName: 'com.plezy/mpv_player',
         eventChannelName: 'com.plezy/mpv_player/events',
         methodHandler: (call) {
@@ -630,7 +631,7 @@ void main() {
     test('MPV forwards preserve display mode flag on dispose', () async {
       final calls = <MethodCall>[];
 
-      await _withMockChannels(
+      await withMockPlayerChannels(
         methodChannelName: 'com.plezy/mpv_player',
         eventChannelName: 'com.plezy/mpv_player/events',
         methodHandler: (call) {
@@ -652,7 +653,7 @@ void main() {
     test('dispose continues when native event stream cancellation is already detached', () async {
       final calls = <MethodCall>[];
 
-      await _withMockChannels(
+      await withMockPlayerChannels(
         methodChannelName: 'com.plezy/mpv_player',
         eventChannelName: 'com.plezy/mpv_player/events',
         methodHandler: (call) {
@@ -677,46 +678,6 @@ void main() {
       );
     });
   });
-}
-
-Future<void> _withMockChannels({
-  required String methodChannelName,
-  required String eventChannelName,
-  Future<Object?> Function(MethodCall call)? methodHandler,
-  Future<Object?> Function(MethodCall call)? eventHandler,
-  required Future<void> Function() testBody,
-}) async {
-  final messenger = TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
-  final methodChannel = MethodChannel(methodChannelName);
-  final eventChannel = MethodChannel(eventChannelName);
-
-  messenger.setMockMethodCallHandler(
-    methodChannel,
-    methodHandler ??
-        (call) async {
-          switch (call.method) {
-            case 'initialize':
-              return true;
-            case 'observeProperty':
-            case 'setVisible':
-            case 'setProperty':
-            case 'command':
-            case 'open':
-            case 'dispose':
-              return null;
-            default:
-              return null;
-          }
-        },
-  );
-  messenger.setMockMethodCallHandler(eventChannel, eventHandler ?? (call) async => null);
-
-  try {
-    await testBody();
-  } finally {
-    messenger.setMockMethodCallHandler(methodChannel, null);
-    messenger.setMockMethodCallHandler(eventChannel, null);
-  }
 }
 
 void _seedTracks(dynamic player) {

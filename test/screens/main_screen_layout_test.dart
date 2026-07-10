@@ -70,27 +70,13 @@ void main() {
     expect(shouldPass(isAppleTV: false), isFalse);
   });
 
-  test('profile switch waits for one post-bind invalidation', () {
+  test('profile switch invalidates nothing here — the keyed session remount owns it', () {
     expect(
       profileInvalidationAction(
         previousProfileId: 'owner',
         currentProfileId: 'kids',
         wasBindingPreviously: false,
         isBindingNow: false,
-        hasPendingProfileSwitchInvalidation: false,
-        pendingProfileSwitchInvalidationId: null,
-      ),
-      ProfileInvalidationAction.waitForProfileSwitch,
-    );
-
-    expect(
-      profileInvalidationAction(
-        previousProfileId: 'kids',
-        currentProfileId: 'kids',
-        wasBindingPreviously: true,
-        isBindingNow: false,
-        hasPendingProfileSwitchInvalidation: true,
-        pendingProfileSwitchInvalidationId: 'kids',
       ),
       ProfileInvalidationAction.none,
     );
@@ -103,8 +89,6 @@ void main() {
         currentProfileId: 'owner',
         wasBindingPreviously: true,
         isBindingNow: false,
-        hasPendingProfileSwitchInvalidation: false,
-        pendingProfileSwitchInvalidationId: null,
       ),
       ProfileInvalidationAction.invalidateNow,
     );
@@ -115,8 +99,6 @@ void main() {
         currentProfileId: 'owner',
         wasBindingPreviously: false,
         isBindingNow: false,
-        hasPendingProfileSwitchInvalidation: false,
-        pendingProfileSwitchInvalidationId: null,
       ),
       ProfileInvalidationAction.none,
     );

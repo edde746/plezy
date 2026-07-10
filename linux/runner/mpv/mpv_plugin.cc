@@ -16,6 +16,7 @@ struct _MpvPlugin {
   MpvTexture* texture;  // owned via GObject ref
   gboolean visible;
   gboolean initialized;
+  gboolean audio_only;
 };
 
 G_DEFINE_TYPE(MpvPlugin, mpv_plugin, G_TYPE_OBJECT)
@@ -67,31 +68,43 @@ static void mpv_plugin_init(MpvPlugin* self) {
   self->initialized = FALSE;
   self->texture = nullptr;
   self->texture_registrar = nullptr;
+  self->audio_only = FALSE;
 }
 
-MpvPlugin* mpv_plugin_new(FlPluginRegistrar* registrar) {
+MpvPlugin* mpv_plugin_new(FlPluginRegistrar* registrar, const gchar* channel_name, gboolean audio_only) {
   MpvPlugin* self = MPV_PLUGIN(g_object_new(MPV_PLUGIN_TYPE, nullptr));
 
   self->registrar = FL_PLUGIN_REGISTRAR(g_object_ref(registrar));
-  self->texture_registrar = fl_plugin_registrar_get_texture_registrar(registrar);
-  self->player = std::make_unique<mpv::MpvPlayer>();
+  self->audio_only = audio_only;
+  // The audio-only core never renders; leaving the texture registrar unset
+  // makes the GL/texture path structurally unreachable for it.
+  self->texture_registrar = audio_only ? nullptr : fl_plugin_registrar_get_texture_registrar(registrar);
+  self->player = std::make_unique<mpv::MpvPlayer>(audio_only);
 
   g_autoptr(FlStandardMethodCodec) codec = fl_standard_method_codec_new();
-  self->method_channel = fl_method_channel_new(
-      fl_plugin_registrar_get_messenger(registrar), "com.plezy/mpv_player", FL_METHOD_CODEC(codec));
+  self->method_channel =
+      fl_method_channel_new(fl_plugin_registrar_get_messenger(registrar), channel_name, FL_METHOD_CODEC(codec));
 
   fl_method_channel_set_method_call_handler(self->method_channel, mpv_plugin_handle_method_call, self, nullptr);
 
-  self->event_channel = fl_event_channel_new(
-      fl_plugin_registrar_get_messenger(registrar), "com.plezy/mpv_player/events", FL_METHOD_CODEC(codec));
+  g_autofree gchar* event_channel_name = g_strconcat(channel_name, "/events", nullptr);
+  self->event_channel =
+      fl_event_channel_new(fl_plugin_registrar_get_messenger(registrar), event_channel_name, FL_METHOD_CODEC(codec));
 
   return self;
 }
 
-// Static reference to keep the plugin alive.
+// Static references to keep the plugin instances alive.
 static MpvPlugin* g_mpv_plugin = nullptr;
+static MpvPlugin* g_mpv_audio_plugin = nullptr;
 
-void mpv_plugin_register_with_registrar(FlPluginRegistrar* registrar) { g_mpv_plugin = mpv_plugin_new(registrar); }
+void mpv_plugin_register_with_registrar(FlPluginRegistrar* registrar) {
+  g_mpv_plugin = mpv_plugin_new(registrar, "com.plezy/mpv_player", FALSE);
+}
+
+void mpv_audio_plugin_register_with_registrar(FlPluginRegistrar* registrar) {
+  g_mpv_audio_plugin = mpv_plugin_new(registrar, "com.plezy/mpv_audio_player", TRUE);
+}
 
 /// Method call handler.
 static void mpv_plugin_handle_method_call(FlMethodChannel* channel, FlMethodCall* method_call, gpointer user_data) {
@@ -103,7 +116,26 @@ static void mpv_plugin_handle_method_call(FlMethodChannel* channel, FlMethodCall
   g_autoptr(FlMethodResponse) response = nullptr;
 
   if (strcmp(method, "initialize") == 0) {
-    if (self->initialized && self->texture) {
+    if (self->audio_only) {
+      // Audio-only music core: no texture, no render context — mpv runs
+      // with video disabled entirely (see MpvPlayer). Returns `true`; the
+      // Dart side only treats int results as texture IDs.
+      if (!self->initialized) {
+        if (!self->player || self->player->IsDisposed()) {
+          self->player = std::make_unique<mpv::MpvPlayer>(/*audio_only=*/true);
+        }
+        if (self->player->Initialize()) {
+          self->player->SetEventCallback([self](FlValue* event) { send_event(self, event); });
+          self->initialized = TRUE;
+        }
+      }
+      if (self->initialized) {
+        response = FL_METHOD_RESPONSE(fl_method_success_response_new(fl_value_new_bool(TRUE)));
+      } else {
+        response =
+            FL_METHOD_RESPONSE(fl_method_error_response_new("INIT_FAILED", "Failed to initialize MPV player", nullptr));
+      }
+    } else if (self->initialized && self->texture) {
       // Already initialized — return existing texture ID
       response =
           FL_METHOD_RESPONSE(fl_method_success_response_new(fl_value_new_int(mpv_texture_get_id(self->texture))));

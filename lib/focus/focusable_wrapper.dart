@@ -68,6 +68,10 @@ class FocusableWrapper extends StatefulWidget {
   /// Border radius for the focus indicator.
   final double borderRadius;
 
+  /// Per-corner radii for the focus indicator; overrides [borderRadius] when
+  /// set (M3E grouped cards: large outer / small inner corners).
+  final BorderRadius? borderRadii;
+
   /// Whether to scroll the widget into view when focused.
   final bool autoScroll;
 
@@ -138,6 +142,7 @@ class FocusableWrapper extends StatefulWidget {
     this.autofocus = false,
     this.focusNode,
     this.borderRadius = FocusTheme.defaultBorderRadius,
+    this.borderRadii,
     this.autoScroll = true,
     this.scrollAlignment = 0.5,
     this.useComfortableZone = false,
@@ -164,8 +169,10 @@ class _FocusableWrapperState extends State<FocusableWrapper> with SingleTickerPr
   bool _ownsNode = false;
   bool _isFocused = false;
 
-  late final AnimationController _animationController;
-  late Animation<double> _scaleAnimation;
+  // Created lazily on first focus/keyboard-mode build: touch scrolling builds
+  // hundreds of these wrappers and must not pay for a Ticker per card.
+  AnimationController? _animationController;
+  Animation<double>? _scaleAnimation;
 
   // Long-press detection for SELECT key
   Timer? _longPressTimer;
@@ -175,7 +182,6 @@ class _FocusableWrapperState extends State<FocusableWrapper> with SingleTickerPr
   void initState() {
     super.initState();
     _initFocusNode();
-    _initAnimations();
   }
 
   void _initFocusNode() {
@@ -191,17 +197,20 @@ class _FocusableWrapperState extends State<FocusableWrapper> with SingleTickerPr
     }
   }
 
-  void _initAnimations() {
-    _animationController = AnimationController(vsync: this, duration: const Duration(milliseconds: 150));
-
-    _scaleAnimation = _createScaleAnimation();
+  AnimationController _ensureAnimationController() {
+    final existing = _animationController;
+    if (existing != null) return existing;
+    final controller = AnimationController(vsync: this, duration: const Duration(milliseconds: 150));
+    _animationController = controller;
+    _scaleAnimation = _createScaleAnimation(controller);
+    return controller;
   }
 
-  Animation<double> _createScaleAnimation() {
+  Animation<double> _createScaleAnimation(AnimationController controller) {
     return Tween<double>(
       begin: 1.0,
       end: widget.focusScale,
-    ).animate(CurvedAnimation(parent: _animationController, curve: Curves.easeOutCubic));
+    ).animate(CurvedAnimation(parent: controller, curve: Curves.easeOutCubic));
   }
 
   @override
@@ -222,14 +231,17 @@ class _FocusableWrapperState extends State<FocusableWrapper> with SingleTickerPr
     }
 
     if (widget.focusScale != oldWidget.focusScale) {
-      _scaleAnimation = _createScaleAnimation();
+      final controller = _animationController;
+      if (controller != null) {
+        _scaleAnimation = _createScaleAnimation(controller);
+      }
     }
   }
 
   @override
   void dispose() {
     _longPressTimer?.cancel();
-    _animationController.dispose();
+    _animationController?.dispose();
     if (_ownsNode) {
       _focusNode.dispose();
     }
@@ -250,9 +262,9 @@ class _FocusableWrapperState extends State<FocusableWrapper> with SingleTickerPr
 
       // Animate scale
       if (hasFocus) {
-        _animationController.forward();
+        _ensureAnimationController().forward();
       } else {
-        _animationController.reverse();
+        _animationController?.reverse();
       }
 
       // Auto-scroll into view
@@ -461,23 +473,28 @@ class _FocusableWrapperState extends State<FocusableWrapper> with SingleTickerPr
 
   @override
   Widget build(BuildContext context) {
-    final duration = FocusTheme.getAnimationDuration(context);
-    // Only show focus effects during keyboard/d-pad navigation
-    final showFocus = _isFocused && InputModeTracker.isKeyboardMode(context);
+    // Only show focus effects during keyboard/d-pad navigation. In pointer/
+    // touch mode no card ever shows focus chrome, so skip the animated
+    // scale/border wrappers entirely — they cost real build time multiplied
+    // by every card in a grid. The Focus node stays mounted so d-pad
+    // traversal finds the cards the moment keyboard mode activates (which
+    // rebuilds this widget via the inherited dependency below).
+    final isKeyboardMode = InputModeTracker.isKeyboardMode(context);
+    final showFocus = _isFocused && isKeyboardMode;
 
-    // Update animation duration if theme changes
-    if (_animationController.duration != duration) {
-      _animationController.duration = duration;
-    }
+    Widget inner;
+    if (!isKeyboardMode) {
+      inner = widget.child;
+    } else {
+      final duration = FocusTheme.getAnimationDuration(context);
+      final controller = _ensureAnimationController();
+      // Update animation duration if theme changes
+      if (controller.duration != duration) {
+        controller.duration = duration;
+      }
 
-    Widget result = Focus(
-      focusNode: _focusNode,
-      autofocus: widget.autofocus,
-      descendantsAreFocusable: widget.descendantsAreFocusable,
-      onFocusChange: _handleFocusChange,
-      onKeyEvent: _handleKeyEvent,
-      child: AnimatedBuilder(
-        animation: _scaleAnimation,
+      inner = AnimatedBuilder(
+        animation: _scaleAnimation!,
         builder: (context, child) {
           final shouldScale = showFocus && !widget.disableScale;
           // The glow (full-bleed cards) is drawn in an overlay above siblings so
@@ -487,11 +504,16 @@ class _FocusableWrapperState extends State<FocusableWrapper> with SingleTickerPr
             card = CardFocusScope(showFocus: showFocus, child: widget.child);
           } else {
             final focusDecoration = widget.useBackgroundFocus
-                ? FocusTheme.focusBackgroundDecoration(isFocused: showFocus, borderRadius: widget.borderRadius)
+                ? FocusTheme.focusBackgroundDecoration(
+                    isFocused: showFocus,
+                    borderRadius: widget.borderRadius,
+                    radii: widget.borderRadii,
+                  )
                 : FocusTheme.focusDecoration(
                     context,
                     isFocused: showFocus,
                     borderRadius: widget.borderRadius,
+                    radii: widget.borderRadii,
                     color: widget.focusColor,
                   );
             card = AnimatedContainer(
@@ -509,9 +531,18 @@ class _FocusableWrapperState extends State<FocusableWrapper> with SingleTickerPr
               child: card,
             );
           }
-          return Transform.scale(scale: shouldScale ? _scaleAnimation.value : 1.0, child: card);
+          return Transform.scale(scale: shouldScale ? _scaleAnimation!.value : 1.0, child: card);
         },
-      ),
+      );
+    }
+
+    Widget result = Focus(
+      focusNode: _focusNode,
+      autofocus: widget.autofocus,
+      descendantsAreFocusable: widget.descendantsAreFocusable,
+      onFocusChange: _handleFocusChange,
+      onKeyEvent: _handleKeyEvent,
+      child: inner,
     );
 
     // Add semantics if label provided

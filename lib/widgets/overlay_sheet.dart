@@ -46,6 +46,12 @@ class OverlaySheetController {
     return context.dependOnInheritedWidgetOfExactType<_OverlaySheetScope>()?.controller;
   }
 
+  /// Number of sheets currently open across all hosts (and [showAdaptive]
+  /// modal fallbacks). Sheets render inside their host's subtree, so chrome
+  /// mounted above the navigator (the music mini-player) can never sit under
+  /// them — such chrome listens here and hides itself while this is nonzero.
+  static final ValueNotifier<int> openSheetCount = ValueNotifier<int>(0);
+
   /// Whether a sheet is currently showing (including while animating closed).
   bool get isOpen => _state._isOpen;
 
@@ -108,7 +114,7 @@ class OverlaySheetController {
     FocusNode? initialFocusNode,
     Alignment alignment = Alignment.bottomCenter,
     bool showDragHandle = false,
-  }) {
+  }) async {
     final controller = maybeOf(context);
     if (controller != null) {
       return controller.show<T>(
@@ -128,19 +134,24 @@ class OverlaySheetController {
         () {
           final size = MediaQuery.sizeOf(context);
           final isDesktop = size.width > 600;
-          return BoxConstraints(
-            maxWidth: isDesktop ? 700 : double.infinity,
-            maxHeight: isDesktop ? 400 : size.height * 0.75,
-          );
+          return BoxConstraints(maxWidth: isDesktop ? 700 : double.infinity, maxHeight: size.height * 0.75);
         }();
-    return showModalBottomSheet<T>(
-      context: context,
-      builder: builder,
-      constraints: effectiveConstraints,
-      backgroundColor: backgroundColor ?? Theme.of(context).colorScheme.surface,
-      barrierColor: Colors.black54,
-      isScrollControlled: isScrollControlled,
-    );
+    openSheetCount.value++;
+    try {
+      return await showModalBottomSheet<T>(
+        context: context,
+        // The host path insets its sheet by the bottom safe area; mirror that
+        // here so the last row clears the home indicator / gesture nav bar.
+        builder: (context) => SafeArea(top: false, child: builder(context)),
+        constraints: effectiveConstraints,
+        backgroundColor: backgroundColor ?? Theme.of(context).colorScheme.surface,
+        barrierColor: Colors.black54,
+        isScrollControlled: isScrollControlled,
+        showDragHandle: showDragHandle,
+      );
+    } finally {
+      openSheetCount.value--;
+    }
   }
 
   /// Push a sub-page using the overlay system if available, otherwise fall
@@ -149,12 +160,20 @@ class OverlaySheetController {
     BuildContext context, {
     required WidgetBuilder builder,
     FocusNode? initialFocusNode,
-  }) {
+  }) async {
     final controller = maybeOf(context);
     if (controller != null) {
       return controller.push<T>(builder: builder, initialFocusNode: initialFocusNode);
     }
-    return showModalBottomSheet<T>(context: context, builder: builder);
+    openSheetCount.value++;
+    try {
+      return await showModalBottomSheet<T>(
+        context: context,
+        builder: (context) => SafeArea(top: false, child: builder(context)),
+      );
+    } finally {
+      openSheetCount.value--;
+    }
   }
 
   /// Close the sheet entirely. Uses overlay controller if available,
@@ -273,6 +292,9 @@ class _OverlaySheetHostState extends State<OverlaySheetHost> with SingleTickerPr
         entry.completer.complete(null);
       }
     }
+    // A host torn down mid-sheet (or mid-close animation) never reaches the
+    // close completion below — release its slot in the global count here.
+    if (_isOpen) OverlaySheetController.openSheetCount.value--;
     _sheetFocusScopeNode.dispose();
     _slideCurve.dispose();
     _animationController.dispose();
@@ -317,7 +339,10 @@ class _OverlaySheetHostState extends State<OverlaySheetHost> with SingleTickerPr
       _dragOffset = 0;
       _isDragging = false;
     });
-    if (!wasOpen) widget.onOpenChanged?.call(true);
+    if (!wasOpen) {
+      widget.onOpenChanged?.call(true);
+      OverlaySheetController.openSheetCount.value++;
+    }
 
     BackKeyUpSuppressor.clearSuppression();
     _animationController.forward(from: 0);
@@ -379,6 +404,7 @@ class _OverlaySheetHostState extends State<OverlaySheetHost> with SingleTickerPr
         _sheetHorizontalAnchor = null;
       });
       widget.onOpenChanged?.call(false);
+      OverlaySheetController.openSheetCount.value--;
     });
   }
 
@@ -566,8 +592,7 @@ class _OverlaySheetHostState extends State<OverlaySheetHost> with SingleTickerPr
     final showHandle = _showDragHandle && !isTV && !isTop;
 
     final effectiveConstraints =
-        _constraints ??
-        BoxConstraints(maxWidth: isDesktop ? 700 : double.infinity, maxHeight: isDesktop ? 400 : size.height * 0.75);
+        _constraints ?? BoxConstraints(maxWidth: isDesktop ? 700 : double.infinity, maxHeight: size.height * 0.75);
 
     // Slide direction depends on alignment: bottom sheets slide up, top sheets slide down.
     // Use a pixel transform instead of FractionalTranslation so mouse-tracker

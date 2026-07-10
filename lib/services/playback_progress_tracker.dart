@@ -55,6 +55,14 @@ class PlaybackProgressTracker {
   /// Jellyfin stream indexes in playback-progress reports.
   final MediaSourceInfo? mediaInfo;
 
+  /// Invoked once after the item is successfully scrobbled. The player wires
+  /// this to mark same-file sibling episodes of a Plex multi-episode file
+  /// watched (#1500) — resolved lazily here because the play queue holding
+  /// the siblings is created fire-and-forget and may not exist when this
+  /// tracker is constructed. Best-effort: failures are logged and never
+  /// un-scrobble the primary item.
+  final Future<void> Function()? onScrobbled;
+
   /// Timer for periodic progress updates
   Timer? _progressTimer;
 
@@ -96,6 +104,7 @@ class PlaybackProgressTracker {
     this.playMethod,
     this.playSessionId,
     this.mediaInfo,
+    this.onScrobbled,
     this.updateInterval = const Duration(seconds: 10),
   }) : assert(!isOffline || offlineWatchService != null, 'offlineWatchService is required when isOffline is true'),
        assert(isOffline || client != null, 'client is required when isOffline is false'),
@@ -343,6 +352,16 @@ class PlaybackProgressTracker {
         } catch (e) {
           appLogger.w('Failed to scrobble ${metadata.id}', error: e);
           _scrobbled = false; // Retry on next tick
+        }
+        // After (and only after) the primary mark succeeded. A failure here
+        // must not reset _scrobbled — that would re-scrobble the primary
+        // item and inflate its view count.
+        if (_scrobbled && onScrobbled != null) {
+          try {
+            await onScrobbled!();
+          } catch (e) {
+            appLogger.w('Post-scrobble hook failed for ${metadata.id}', error: e);
+          }
         }
       }
     }

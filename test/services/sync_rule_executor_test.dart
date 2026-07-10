@@ -396,6 +396,43 @@ void main() {
     expect(client.collectionPageCalls, [(start: 0, size: 100)]);
     expect(client.fetchChildrenCalled, isFalse);
   });
+
+  test('collectItemsForList accepts tracks and expands albums/artists', () async {
+    final db = AppDatabase.forTesting(NativeDatabase.memory());
+    addTearDown(db.close);
+    final executor = SyncRuleExecutor(database: db);
+
+    final albumTracks = [_track('album-track-1'), _track('album-track-2', played: true)];
+    final client = _PlayableDescendantsClient(albumTracks);
+
+    final items = [
+      _track('loose-track'),
+      MediaItem(id: 'album-1', backend: MediaBackend.plex, kind: MediaKind.album, title: 'Album'),
+      MediaItem(id: 'artist-1', backend: MediaBackend.plex, kind: MediaKind.artist, title: 'Artist'),
+      // Still skipped: nested lists / unplayable kinds.
+      MediaItem(id: 'photo-1', backend: MediaBackend.plex, kind: MediaKind.photo, title: 'Photo'),
+    ];
+
+    final out = <MediaItem>[];
+    await executor.collectItemsForList(client, items, unwatchedOnly: false, out: out);
+
+    expect(client.fetchPlayableDescendantsCalls, ['album-1', 'artist-1']);
+    expect(out.map((i) => i.id), ['loose-track', 'album-track-1', 'album-track-2', 'album-track-1', 'album-track-2']);
+
+    // unwatchedOnly applies the play-count filter to tracks too.
+    final unwatched = <MediaItem>[];
+    await executor.collectItemsForList(
+      client,
+      [_track('played-track', played: true), items[1]],
+      unwatchedOnly: true,
+      out: unwatched,
+    );
+    expect(unwatched.map((i) => i.id), ['album-track-1']);
+  });
+}
+
+MediaItem _track(String id, {bool played = false}) {
+  return MediaItem(id: id, backend: MediaBackend.plex, kind: MediaKind.track, title: id, viewCount: played ? 1 : 0);
 }
 
 MediaItem _episode(String id, {required int parentIndex, required int index, String? originallyAvailableAt}) {

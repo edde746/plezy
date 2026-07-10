@@ -999,7 +999,10 @@ mixin _PlexLiveTvClientMethods on MediaServerCacheMixin {
         'X-Plex-Product': config.product,
         'X-Plex-Version': config.version,
         'X-Plex-Client-Identifier': config.clientIdentifier,
-        'X-Plex-Platform': config.platform,
+        // Pinned rather than config.platform: this decision request is only
+        // known to work with the 'Plex Desktop' profile + 'Flutter' platform
+        // pairing, and real OS names map to server-side preset profiles.
+        'X-Plex-Platform': 'Flutter',
         'X-Plex-Client-Profile-Name': 'Plex Desktop',
         if (offsetSeconds != null) 'offset': offsetSeconds.toString(),
         if (config.token != null) 'X-Plex-Token': config.token!,

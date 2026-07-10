@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:plezy/media/ids.dart';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:plezy/exceptions/media_server_exceptions.dart';
 import 'package:plezy/media/media_backend.dart';
 import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/media/media_library.dart';
@@ -359,6 +360,103 @@ void main() {
 
       await p.syncToOnlineServers({'A'});
       expect(clientA.fetchLibrariesCalls, 2);
+
+      p.dispose();
+      manager.dispose();
+    });
+
+    test('a first load disrupted by cancellations stays loading instead of flashing empty', () async {
+      // The sign-in empty-flash regression: a rebind tore the client down
+      // mid-fetch, the aborted pass used to commit loaded-empty, and the
+      // sidebar flashed "no libraries found" until the follow-up load landed.
+      final manager = MultiServerManager();
+      final clientA = _FakeClient(serverId: ServerId('A'), libraries: [_serverLib(ServerId('A'), '1', 'Movies A')])
+        ..error = MediaServerHttpException(type: MediaServerHttpErrorType.cancelled, message: 'HTTP client is closing');
+      manager.debugRegisterClientForTesting(clientA);
+      final p = LibrariesProvider()..initialize(DataAggregationService(manager));
+
+      await p.loadLibraries();
+
+      expect(p.isLoading, isTrue);
+      expect(p.hasLoaded, isFalse);
+      expect(p.errorMessage, isNull);
+
+      // The guaranteed follow-up load (binding-settle prime / next status
+      // emission) lands the real list.
+      clientA.error = null;
+      await p.loadLibraries();
+      expect(p.hasLoaded, isTrue);
+      expect(p.libraries.map((l) => l.title), ['Movies A']);
+
+      p.dispose();
+      manager.dispose();
+    });
+
+    test('a zero-success first load during profile binding stays loading', () async {
+      // The timeout-during-bind window: every fetch failed while the binder
+      // was still wiring servers, with no cancellation marker.
+      final manager = MultiServerManager();
+      final clientA = _FakeClient(serverId: ServerId('A'), libraries: [_serverLib(ServerId('A'), '1', 'Movies A')])
+        ..error = Exception('probe timed out');
+      manager.debugRegisterClientForTesting(clientA);
+      var binding = true;
+      final p = LibrariesProvider(isProfileBinding: () => binding)..initialize(DataAggregationService(manager));
+
+      await p.loadLibraries();
+      expect(p.isLoading, isTrue);
+      expect(p.hasLoaded, isFalse);
+
+      binding = false;
+      clientA.error = null;
+      await p.loadLibraries();
+      expect(p.hasLoaded, isTrue);
+      expect(p.libraries.map((l) => l.title), ['Movies A']);
+
+      p.dispose();
+      manager.dispose();
+    });
+
+    test('a settled zero-success first load still commits loaded-empty', () async {
+      // Locks the no-eternal-spinner constraint: a genuinely dead server
+      // outside any disruption window keeps today's empty state.
+      final manager = MultiServerManager();
+      final clientA = _FakeClient(serverId: ServerId('A'))..error = Exception('connection refused');
+      manager.debugRegisterClientForTesting(clientA);
+      final p = LibrariesProvider()..initialize(DataAggregationService(manager));
+
+      await p.loadLibraries();
+
+      expect(p.hasLoaded, isTrue);
+      expect(p.libraries, isEmpty);
+      expect(p.errorMessage, isNull);
+
+      p.dispose();
+      manager.dispose();
+    });
+
+    test('a totally failed silent refresh keeps the last good list', () async {
+      // Regression (pre-existing wipe bug): a reload-in-place where every
+      // server fails without throwing used to replace the list with [] —
+      // blanking the sidebar on a transient outage.
+      final manager = MultiServerManager();
+      final clientA = _FakeClient(serverId: ServerId('A'), libraries: [_serverLib(ServerId('A'), '1', 'Movies A')]);
+      manager.debugRegisterClientForTesting(clientA);
+      final p = LibrariesProvider()..initialize(DataAggregationService(manager));
+
+      await p.loadLibraries();
+      expect(p.libraries.map((l) => l.title), ['Movies A']);
+
+      clientA.error = Exception('offline');
+      await p.loadLibraries();
+      expect(p.hasLoaded, isTrue);
+      expect(p.libraries.map((l) => l.title), ['Movies A']);
+
+      // The kept list does not count as covering the failed server — the
+      // next sync refetches it.
+      clientA.error = null;
+      final callsBefore = clientA.fetchLibrariesCalls;
+      await p.syncToOnlineServers({'A'});
+      expect(clientA.fetchLibrariesCalls, callsBefore + 1);
 
       p.dispose();
       manager.dispose();

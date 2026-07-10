@@ -38,6 +38,7 @@ class _DiscoveryViewState extends State<DiscoveryView> with ControllerDisposerMi
   String? _errorMessage;
   bool _showManualEntry = false;
   bool _cryptoReady = false;
+  bool _initializing = true;
 
   late final CompanionRemoteProvider _provider;
   StreamSubscription<List<DiscoveredHost>>? _discoverySubscription;
@@ -64,36 +65,47 @@ class _DiscoveryViewState extends State<DiscoveryView> with ControllerDisposerMi
   }
 
   Future<void> _initCryptoAndDiscover() async {
-    final connections = context.read<ConnectionRegistry>();
-    final activeProfile = context.read<ActiveProfileProvider>();
-    final profileConnections = context.read<ProfileConnectionRegistry>();
-    final plexHome = context.read<PlexHomeService>();
-    final identity = await resolveActivePlexIdentity(
-      activeProfile: activeProfile,
-      connections: connections,
-      profileConnections: profileConnections,
-    );
-    if (!mounted) return;
-    final home = await _resolveHome(identity?.account.id);
-    if (!mounted) return;
-    await _provider.ensureCryptoReady(
-      home,
-      connections: connections,
-      activeProfile: activeProfile,
-      profileConnections: profileConnections,
-      identity: identity,
-      plexHomeForConnection: plexHome.materializePlexHomeForConnection,
-    );
+    try {
+      final connections = context.read<ConnectionRegistry>();
+      final activeProfile = context.read<ActiveProfileProvider>();
+      final profileConnections = context.read<ProfileConnectionRegistry>();
+      final plexHome = context.read<PlexHomeService>();
+      final identity = await resolveActivePlexIdentity(
+        activeProfile: activeProfile,
+        connections: connections,
+        profileConnections: profileConnections,
+      );
+      if (!mounted) return;
+      final home = await _resolveHome(identity?.account.id);
+      if (!mounted) return;
+      await _provider.ensureCryptoReady(
+        home,
+        connections: connections,
+        activeProfile: activeProfile,
+        profileConnections: profileConnections,
+        identity: identity,
+        plexHomeForConnection: plexHome.materializePlexHomeForConnection,
+      );
+    } catch (e) {
+      appLogger.e('CompanionRemote: crypto init failed', error: e);
+    }
     if (!mounted) return;
 
+    // The "crypto init failed" card only surfaces once init has actually
+    // finished — while it's running the section shows a loading state so we
+    // don't flash an error at open, and a thrown init still resolves to a
+    // stable (non-stuck) failure card.
     if (_provider.isCryptoReady) {
-      setState(() => _cryptoReady = true);
+      setState(() {
+        _cryptoReady = true;
+        _initializing = false;
+      });
       _startDiscovery();
     } else {
       setState(() {
         _cryptoReady = false;
+        _initializing = false;
         _isSearching = false;
-        _errorMessage = t.companionRemote.pairing.cryptoInitFailed;
       });
     }
   }
@@ -245,6 +257,21 @@ class _DiscoveryViewState extends State<DiscoveryView> with ControllerDisposerMi
   }
 
   Widget _buildDiscoverySection() {
+    if (_initializing) {
+      return Card(
+        child: Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            children: [
+              const SizedBox(width: 32, height: 32, child: CircularProgressIndicator(strokeWidth: 3)),
+              const SizedBox(height: 16),
+              Text(t.companionRemote.pairing.searchingForDevices, style: Theme.of(context).textTheme.bodyMedium),
+            ],
+          ),
+        ),
+      );
+    }
+
     if (!_cryptoReady) {
       return Card(
         child: Padding(

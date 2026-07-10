@@ -14,6 +14,18 @@ extension _VideoPlayerSeekingMethods on VideoPlayerScreenState {
     await _restartPlexTranscodeAt(target);
   }
 
+  /// Relative seek shared by the companion remote and the OS media-control
+  /// skip commands, including the live-TV capture-buffer branch.
+  Future<void> _seekRelative(Duration delta) async {
+    final currentPlayer = player;
+    if (currentPlayer == null) return;
+    if (widget.isLive && _live.captureBuffer != null) {
+      _liveSeek.seekBy(delta.inSeconds);
+      return;
+    }
+    await _seekPlayback(currentPlayer.state.position + delta);
+  }
+
   bool get _usesPlexVodTranscodeSeekPolicy {
     return _isTranscoding &&
         !widget.isLive &&

@@ -273,4 +273,56 @@ void main() {
       room.dispose();
     });
   });
+
+  group('hostExitedPlayer routing', () {
+    test('rides the ordered queue: never overtakes states sent before it', () {
+      fakeAsync((async) {
+        final room = _Room(async);
+        final log = <String>[];
+        room.guest.onMediaStateReceived = (rk, sid, title) => log.add('state:$rk');
+        room.guest.onHostExitedPlayer = () => log.add('hostExit');
+
+        // Host starts media, then exits the player — wire order matters.
+        room.hostStartsMedia();
+        room.hostService.broadcast(SyncMessage.hostExitedPlayer(peerId: 'host'));
+        async.flushMicrotasks();
+
+        expect(log, isNotEmpty);
+        expect(log.first, 'state:rk1');
+        expect(log.last, 'hostExit');
+        room.dispose();
+      });
+    });
+
+    test('is ignored when forged by a non-host peer', () {
+      fakeAsync((async) {
+        final room = _Room(async);
+        var hostExits = 0;
+        room.guest.onHostExitedPlayer = () => hostExits++;
+
+        final evil = room.hub.register('evil');
+        evil.broadcast(SyncMessage.hostExitedPlayer(peerId: 'evil'));
+        async.flushMicrotasks();
+
+        expect(hostExits, 0);
+        room.dispose();
+      });
+    });
+
+    test('the host itself never reacts to a hostExitedPlayer echo', () {
+      fakeAsync((async) {
+        final room = _Room(async);
+        var hostExits = 0;
+        room.host.onHostExitedPlayer = () => hostExits++;
+
+        // A confused/malicious guest sends the message; the host must not
+        // tear down its own epoch.
+        room.guestService.broadcast(SyncMessage.hostExitedPlayer(peerId: 'guest'));
+        async.flushMicrotasks();
+
+        expect(hostExits, 0);
+        room.dispose();
+      });
+    });
+  });
 }

@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 
 import '../services/settings_service.dart';
@@ -15,19 +16,37 @@ extension SettingsContextRead on BuildContext {
 /// depends on multiple settings (conditional visibility, derived values).
 /// Inside [builder], read with [SettingsService.read] directly — the rebuild
 /// is already wired through.
-class SettingsBuilder extends StatelessWidget {
+///
+/// Stateful so the merged listenable is created once, not per build: cards
+/// rebuild this widget constantly and re-merging would unsubscribe/resubscribe
+/// every pref listener each time.
+class SettingsBuilder extends StatefulWidget {
   final List<Pref<Object?>> prefs;
   final WidgetBuilder builder;
 
   const SettingsBuilder({super.key, required this.prefs, required this.builder});
 
   @override
-  Widget build(BuildContext context) {
+  State<SettingsBuilder> createState() => _SettingsBuilderState();
+}
+
+class _SettingsBuilderState extends State<SettingsBuilder> {
+  late Listenable _merged = _merge();
+
+  Listenable _merge() {
     final svc = SettingsService.instance;
-    return ListenableBuilder(
-      listenable: Listenable.merge(prefs.map(svc.listenableOf).toList(growable: false)),
-      builder: (context, _) => builder(context),
-    );
+    return Listenable.merge(widget.prefs.map(svc.listenableOf).toList(growable: false));
+  }
+
+  @override
+  void didUpdateWidget(covariant SettingsBuilder oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!listEquals(widget.prefs, oldWidget.prefs)) _merged = _merge();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return ListenableBuilder(listenable: _merged, builder: (context, _) => widget.builder(context));
   }
 }
 

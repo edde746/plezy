@@ -518,6 +518,11 @@ class AppDatabase extends _$AppDatabase {
     return delete(offlineWatchProgress).go();
   }
 
+  /// Drop a removed profile's queued watch actions (profile teardown).
+  Future<void> deleteWatchActionsForProfile(String profileId) async {
+    await (delete(offlineWatchProgress)..where((t) => t.profileId.equals(profileId))).go();
+  }
+
   Future<List<SyncRuleItem>> getSyncRules({String? profileId}) {
     final query = select(syncRules);
     if (profileId != null) {
@@ -619,6 +624,16 @@ class AppDatabase extends _$AppDatabase {
 
   Future<void> deleteSyncRule(String globalKey) async {
     await (delete(syncRules)..where((t) => t.globalKey.equals(globalKey))).go();
+  }
+
+  /// Drop a removed profile's sync rules (profile teardown).
+  Future<void> deleteSyncRulesForProfile(String profileId) async {
+    await (delete(syncRules)..where((t) => t.profileId.equals(profileId))).go();
+  }
+
+  /// Drop every sync rule (full logout).
+  Future<void> clearAllSyncRules() async {
+    await delete(syncRules).go();
   }
 
   /// Get all downloaded media items (for syncing watch states)

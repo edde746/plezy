@@ -75,6 +75,13 @@ class ActiveProfileBinder {
   bool _isSwitching = false;
   String? _lastBoundProfileId;
   String? _bindingProfileId;
+
+  /// Profile whose most recent bind failed (PIN cancel, offline, error).
+  /// Passive provider notifications must not retry it — mid-session retries
+  /// bypass the token cache, so a protected Plex Home profile would pop a
+  /// PIN dialog with no user action. Explicit paths ([rebindActive], a
+  /// user-initiated activation, a pre-verified switch) clear the marker.
+  String? _lastFailedProfileId;
   bool _pendingRebind = false;
   // Set when something asks for a rebind of the *currently-active* profile
   // while a rebind is already in flight. The normal `_pendingRebind` path
@@ -103,10 +110,12 @@ class ActiveProfileBinder {
 
   void markPlexHomePreVerified(String profileId) {
     _plexHomePreVerified.add(profileId);
+    if (_lastFailedProfileId == profileId) _lastFailedProfileId = null;
   }
 
   void markUserInitiatedActivation(String profileId) {
     _userInitiatedActivations.add(profileId);
+    if (_lastFailedProfileId == profileId) _lastFailedProfileId = null;
   }
 
   @visibleForTesting
@@ -163,6 +172,9 @@ class ActiveProfileBinder {
       return;
     }
     if (id == _lastBoundProfileId) return;
+    // Don't retry a failed profile from a passive notification — see
+    // [_lastFailedProfileId]. A different profile id still rebinds.
+    if (id != null && id == _lastFailedProfileId) return;
     unawaited(_rebind());
   }
 
@@ -175,6 +187,7 @@ class ActiveProfileBinder {
   /// Safe to call while a rebind is in flight; the request is queued and
   /// the loop runs an extra pass when the current one settles.
   Future<void> rebindActive() async {
+    _lastFailedProfileId = null;
     if (_isSwitching) {
       _pendingSameIdRebind = true;
       return;
@@ -193,11 +206,18 @@ class ActiveProfileBinder {
   Future<void> _rebind() async {
     if (_isSwitching) return;
     _isSwitching = true;
+    // Binding is marked per CYCLE, not per pass: `awaitBindingSettle`
+    // waiters must observe the FINAL outcome. Settling between passes hands
+    // a caller who activated profile B mid-pass the outcome of profile A's
+    // pass — reporting a switch as succeeded/failed before B's bind ran.
+    _bindingProfileId = activeProfile.activeId;
+    activeProfile.markBindingStarted();
+    var success = false;
     try {
       do {
         _pendingRebind = false;
         _pendingSameIdRebind = false;
-        await _runRebindOnce();
+        success = await _runRebindOnce();
         // Loop only when the active id has drifted to something we haven't
         // bound yet, OR when an explicit same-id rebind was queued (borrow
         // / connection-list mutation while a rebind was in flight). Bare
@@ -206,13 +226,17 @@ class ActiveProfileBinder {
         // re-asserts).
       } while (_pendingSameIdRebind || (_pendingRebind && activeProfile.activeId != _lastBoundProfileId));
     } finally {
+      // Notify while `_isSwitching`/`_bindingProfileId` still attribute the
+      // notification to this cycle — otherwise the binder's own listener
+      // would treat it as an external change and immediately re-rebind.
+      activeProfile.markBindingFinished(success: success);
+      _bindingProfileId = null;
       _isSwitching = false;
     }
   }
 
-  Future<void> _runRebindOnce() async {
+  Future<bool> _runRebindOnce() async {
     _bindingProfileId = activeProfile.activeId;
-    activeProfile.markBindingStarted();
     final stopwatch = Stopwatch()..start();
     var success = false;
     String? attemptedProfileId;
@@ -226,7 +250,7 @@ class ActiveProfileBinder {
         // profile cannot leak into the no-selection state.
         _clearBoundServers();
         success = true;
-        return;
+        return success;
       }
       attemptedProfileId = profile.id;
 
@@ -236,27 +260,43 @@ class ActiveProfileBinder {
         _clearBoundServers();
         attemptedProfileId = null;
         success = true;
-        return;
+        return success;
       }
 
       appLogger.i('ActiveProfileBinder: rebinding for ${profile.displayName} (${profile.id})');
 
-      final expectedServerIds = await _expectedServerIdsForProfile(profile);
+      // One snapshot of the join rows + connections per pass — every
+      // downstream helper reads from these instead of re-querying (each
+      // registry read pays per-row CredentialVault reveals).
+      final joinRows = await profileConnections.listForProfile(profile.id);
+      final connectionsById = {for (final c in await connections.list()) c.id: c};
+
+      // PIN prompts may only surface from a user-initiated bind or the
+      // session's initial bind (cold-start resume). Passive rebinds — an
+      // hourly Plex Home refresh, an unrelated table write — must never pop
+      // a modal PIN dialog over whatever the user is doing.
+      final allowPinPrompt = userInitiated || !_hasBoundOnce;
+
+      final expectedServerIds = _expectedServerIdsForProfile(
+        profile,
+        joinRows: joinRows,
+        connectionsById: connectionsById,
+      );
       multiServerProvider.setExpectedVisibleServerIds(expectedServerIds);
-      final localProfileHasJoinRows =
-          profile.isLocal && (await profileConnections.listForProfile(profile.id)).isNotEmpty;
+      final localProfileHasJoinRows = profile.isLocal && joinRows.isNotEmpty;
 
       // Bind the implicit Plex Home parent and borrowed/extra join rows in
       // parallel. A slow/offline Plex parent should not add its timeout budget
       // on top of an otherwise reachable Jellyfin or borrowed-server bind.
       final results = await Future.wait([
-        if (profile.isPlexHome) _bindPlexHome(profile),
+        if (profile.isPlexHome)
+          _bindPlexHome(profile, joinRows: joinRows, connectionsById: connectionsById, allowPinPrompt: allowPinPrompt),
         // Both kinds also bind borrowed/extra connections via the join table.
         // For plex_home this handles a Jellyfin server (or extra Plex account)
         // that was attached to the profile via the borrow flow — the parent
         // account is bound by `_bindPlexHome` above and isn't represented in
         // the join table.
-        _bindJoinRows(profile),
+        _bindJoinRows(profile, joinRows: joinRows, connectionsById: connectionsById, allowPinPrompt: allowPinPrompt),
       ]);
       final visibleServerIds = <String>{};
       for (final result in results) {
@@ -287,35 +327,37 @@ class ActiveProfileBinder {
     } finally {
       if (success) {
         _lastBoundProfileId = attemptedProfileId;
-      } else if (_lastBoundProfileId == attemptedProfileId) {
-        _lastBoundProfileId = null;
+        _lastFailedProfileId = null;
+      } else {
+        if (_lastBoundProfileId == attemptedProfileId) {
+          _lastBoundProfileId = null;
+        }
+        _lastFailedProfileId = attemptedProfileId;
       }
       appLogger.i(
         'ActiveProfileBinder: rebind settled',
         error: {'profileId': attemptedProfileId, 'success': success, 'elapsedMs': stopwatch.elapsedMilliseconds},
       );
-      activeProfile.markBindingFinished(success: success);
-      _bindingProfileId = null;
     }
+    return success;
   }
 
-  Future<Set<String>> _expectedServerIdsForProfile(Profile profile) async {
+  Set<String> _expectedServerIdsForProfile(
+    Profile profile, {
+    required List<ProfileConnection> joinRows,
+    required Map<String, Connection> connectionsById,
+  }) {
     final expected = <String>{};
     final parentId = profile.parentConnectionId;
     if (profile.isPlexHome && parentId != null) {
-      final account = await connections.getPlexAccount(parentId);
-      if (account != null) {
-        expected.addAll(account.servers.map((server) => server.clientIdentifier));
+      if (connectionsById[parentId] case PlexAccountConnection(:final servers)) {
+        expected.addAll(servers.map((server) => server.clientIdentifier));
       }
     }
 
-    final pcs = await profileConnections.listForProfile(profile.id);
-    if (pcs.isEmpty) return expected;
-    final all = await connections.list();
-    final byId = {for (final c in all) c.id: c};
-    for (final pc in pcs) {
+    for (final pc in joinRows) {
       if (parentId != null && pc.connectionId == parentId) continue;
-      switch (byId[pc.connectionId]) {
+      switch (connectionsById[pc.connectionId]) {
         case PlexAccountConnection(:final servers):
           expected.addAll(servers.map((server) => server.clientIdentifier));
         case JellyfinConnection(:final serverMachineId):
@@ -330,14 +372,22 @@ class ActiveProfileBinder {
     return expected;
   }
 
-  Future<_ProfileBindResult> _bindPlexHome(Profile profile) async {
+  Future<_ProfileBindResult> _bindPlexHome(
+    Profile profile, {
+    required List<ProfileConnection> joinRows,
+    required Map<String, Connection> connectionsById,
+    required bool allowPinPrompt,
+  }) async {
     final parentId = profile.parentConnectionId;
     final homeUuid = profile.plexHomeUserUuid;
     if (parentId == null || homeUuid == null) {
       appLogger.w('ActiveProfileBinder: ${profile.displayName} missing parent/uuid metadata');
       return const _ProfileBindResult.empty();
     }
-    final account = await connections.getPlexAccount(parentId);
+    final account = switch (connectionsById[parentId]) {
+      final PlexAccountConnection a => a,
+      _ => null,
+    };
     if (account == null) {
       appLogger.w('ActiveProfileBinder: parent connection $parentId for ${profile.displayName} not found');
       return const _ProfileBindResult.empty();
@@ -351,10 +401,17 @@ class ActiveProfileBinder {
     // needed. A just-preverified activation also uses the fresh cache once to
     // avoid a redundant second prompt.
     final preVerified = consumePlexHomePreVerified(profile.id);
+    final allowPin = allowPinPrompt || preVerified;
     final useCache = shouldUsePlexHomeTokenCache(preVerified: preVerified, hasBoundOnce: _hasBoundOnce);
     String? cachedToken;
     if (useCache) {
-      final pc = await profileConnections.get(profile.id, parentId);
+      ProfileConnection? pc;
+      for (final row in joinRows) {
+        if (row.connectionId == parentId) {
+          pc = row;
+          break;
+        }
+      }
       cachedToken = pc?.hasToken == true ? pc!.userToken : null;
     }
     appLogger.d(
@@ -418,13 +475,21 @@ class ActiveProfileBinder {
       }
     }
 
+    if (!allowPin && profile.plexProtected) {
+      appLogger.i('ActiveProfileBinder: suppressing PIN-gated /switch for passive rebind of ${profile.displayName}');
+      return const _ProfileBindResult.empty();
+    }
     appLogger.i('ActiveProfileBinder: minting fresh user-token via /switch for ${profile.displayName}');
     final result = await switchPlexHomeUserWithPin(
       auth: auth,
       accountToken: account.accountToken,
       homeUserUuid: homeUuid,
       requiresPin: profile.plexProtected,
-      promptForPin: ({String? errorMessage}) => pinPrompt(profile, errorMessage: errorMessage),
+      // Plex can demand a PIN (error 1041) even when we didn't expect one;
+      // a passive rebind answers that demand with a cancel, not a dialog.
+      promptForPin: allowPin
+          ? ({String? errorMessage}) => pinPrompt(profile, errorMessage: errorMessage)
+          : ({String? errorMessage}) async => null,
       logLabel: profile.displayName,
     );
     if (!result.succeeded) return const _ProfileBindResult.empty();
@@ -457,24 +522,26 @@ class ActiveProfileBinder {
   /// join table). Skips Plex rows whose `connectionId` matches the parent
   /// (defensive guard — sync code shouldn't insert one, but treating it as
   /// a borrow would re-mint a redundant token).
-  Future<_ProfileBindResult> _bindJoinRows(Profile profile) async {
-    final pcs = await profileConnections.listForProfile(profile.id);
-    if (pcs.isEmpty) {
+  Future<_ProfileBindResult> _bindJoinRows(
+    Profile profile, {
+    required List<ProfileConnection> joinRows,
+    required Map<String, Connection> connectionsById,
+    required bool allowPinPrompt,
+  }) async {
+    if (joinRows.isEmpty) {
       if (profile.isLocal) {
         appLogger.w('ActiveProfileBinder: ${profile.displayName} has no connections');
       }
       return const _ProfileBindResult.empty();
     }
-    final all = await connections.list();
-    final byId = {for (final c in all) c.id: c};
     final parentId = profile.parentConnectionId;
 
     final visible = <String>{};
     final expected = <String>{};
     final futures = <Future<_ProfileBindResult>>[];
-    for (final pc in pcs) {
+    for (final pc in joinRows) {
       if (parentId != null && pc.connectionId == parentId) continue;
-      final conn = byId[pc.connectionId];
+      final conn = connectionsById[pc.connectionId];
       if (conn == null) {
         appLogger.w('ActiveProfileBinder: missing connection ${pc.connectionId} for ${profile.displayName}');
         continue;
@@ -482,7 +549,7 @@ class ActiveProfileBinder {
       switch (conn) {
         case PlexAccountConnection():
           expected.addAll(conn.servers.map((server) => server.clientIdentifier));
-          futures.add(_bindLocalPlexConnection(profile: profile, conn: conn, pc: pc));
+          futures.add(_bindLocalPlexConnection(profile: profile, conn: conn, pc: pc, allowPinPrompt: allowPinPrompt));
         case JellyfinConnection():
           expected.add(conn.serverMachineId);
           futures.add(_bindJellyfin(conn));
@@ -504,6 +571,7 @@ class ActiveProfileBinder {
     required Profile profile,
     required PlexAccountConnection conn,
     required ProfileConnection pc,
+    required bool allowPinPrompt,
   }) async {
     final auth = await _ensureAuth();
     String? userToken = pc.userToken;
@@ -557,7 +625,13 @@ class ActiveProfileBinder {
         appLogger.w('ActiveProfileBinder: ${profile.displayName} has no Plex Home user identifier');
         return const _ProfileBindResult.empty();
       }
-      final minted = await _mintLocalPlexToken(auth: auth, profile: profile, conn: conn, pc: pc);
+      final minted = await _mintLocalPlexToken(
+        auth: auth,
+        profile: profile,
+        conn: conn,
+        pc: pc,
+        allowPinPrompt: allowPinPrompt,
+      );
       if (minted == null) return const _ProfileBindResult.empty();
       userToken = minted;
       try {
@@ -594,15 +668,19 @@ class ActiveProfileBinder {
     required Profile profile,
     required PlexAccountConnection conn,
     required ProfileConnection pc,
+    required bool allowPinPrompt,
   }) async {
     final result = await switchPlexHomeUserWithPin(
       auth: auth,
       accountToken: conn.accountToken,
       homeUserUuid: pc.userIdentifier,
       // Local profiles don't carry the protected flag; the loop will
-      // re-prompt if Plex disagrees.
+      // re-prompt if Plex disagrees — unless this is a passive rebind, which
+      // answers the demand with a cancel instead of an unsolicited dialog.
       requiresPin: false,
-      promptForPin: ({String? errorMessage}) => pinPrompt(profile, errorMessage: errorMessage),
+      promptForPin: allowPinPrompt
+          ? ({String? errorMessage}) => pinPrompt(profile, errorMessage: errorMessage)
+          : ({String? errorMessage}) async => null,
       logLabel: profile.displayName,
     );
     if (!result.succeeded) return null;
@@ -898,6 +976,7 @@ class ActiveProfileBinder {
     activeProfile.removeListener(_onActiveProfileChanged);
     _plexHomePreVerified.clear();
     _userInitiatedActivations.clear();
+    _lastFailedProfileId = null;
     _plexAuth?.dispose();
     _plexAuth = null;
     _started = false;

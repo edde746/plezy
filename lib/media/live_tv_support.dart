@@ -166,7 +166,7 @@ abstract class LiveTvSupport {
 
   /// Persist the favorites list (and order, where supported). Plex pushes
   /// to its cloud sync endpoint; Jellyfin POSTs/DELETEs the
-  /// `/Users/{userId}/FavoriteItems/{channelId}` flag and saves the order
+  /// `/UserFavoriteItems/{channelId}?userId=...` flag and saves the order
   /// locally.
   Future<void> setFavoriteChannels(List<FavoriteChannel> channels);
 

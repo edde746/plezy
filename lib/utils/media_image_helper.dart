@@ -11,6 +11,7 @@ enum ImageType {
   thumb, // 16:9 episode thumbnails
   logo, // Variable ratio clear logos
   avatar, // Square-ish user avatars
+  square, // 1:1 music artwork (albums, artists, tracks)
 }
 
 /// Backend-neutral image URL helper.
@@ -116,6 +117,7 @@ class MediaImageHelper {
         return roundDimensions(thumbWidth, thumbHeight);
 
       case ImageType.avatar:
+      case ImageType.square:
         final size = min(targetWidth, targetHeight);
         return roundDimensions(size, size);
 
@@ -201,15 +203,10 @@ class MediaImageHelper {
       imageType: imageType,
     );
 
-    // For very small targets, skip server-side resizing — the cost of the
-    // transcode round-trip outweighs the savings.
-    if (maxWidth < 80 || maxHeight < 120) {
-      return client.thumbnailUrl(basePath);
-    }
-    if (width <= _minTranscodedWidth * 1.2 && height <= _minTranscodedHeight * 1.2) {
-      return client.thumbnailUrl(basePath);
-    }
-
+    // Always request a sized transcode — even tiny slots. An unsized URL
+    // hands the full original to the decoder, and a multi-megapixel
+    // original behind a 40px avatar is exactly the decode spike that OOMs
+    // low-RAM devices. The floor is 160×240 via [roundDimensions].
     return client.thumbnailUrl(basePath, width: width, height: height);
   }
 
@@ -232,10 +229,17 @@ class MediaImageHelper {
     final bucketedHeight = _bucketUp(displayHeight * scaleFactor, _heightRoundingFactor);
 
     final (int maxW, int maxH) = switch (imageType) {
+      // Reduced-tier caps match the smaller fetch sizes so oversized
+      // originals (failed transcodes, external images) can't decode past
+      // the tile budget on low-RAM hardware.
+      ImageType.poster when DevicePerformance.isReduced => (480, 720),
       ImageType.poster => (720, 1080),
+      // Square music artwork fills the same grid cells as posters, so both
+      // axes cap at the poster width budget.
+      ImageType.square when DevicePerformance.isReduced => (480, 480),
+      ImageType.square => (720, 720),
+      ImageType.thumb when DevicePerformance.isReduced => (640, 360),
       ImageType.thumb => (960, 540),
-      // Match the reduced-tier fetch cap so oversized originals (failed
-      // transcodes, external images) can't decode past the art budget.
       ImageType.art when DevicePerformance.isReduced => (_reducedMaxArtWidth, _reducedMaxArtHeight),
       ImageType.art => (1920, 1080),
       ImageType.logo => (600, 300),
@@ -243,6 +247,19 @@ class MediaImageHelper {
     };
 
     return (bucketedWidth.clamp(120, maxW), bucketedHeight.clamp(180, maxH));
+  }
+
+  /// Wraps [provider] so the decode is bounded on **both** axes.
+  ///
+  /// `fit` policy keeps aspect ratio and never upscales, so an over-generous
+  /// bound is harmless — but an oversized original (failed server transcode,
+  /// local artwork file, ultra-wide banner) can no longer decode past the
+  /// display budget the way a single-axis bound allows.
+  static ImageProvider boundedDecode(ImageProvider provider, {required int memWidth, required int memHeight}) {
+    final width = memWidth > 0 ? memWidth : null;
+    final height = memHeight > 0 ? memHeight : null;
+    if (width == null && height == null) return provider;
+    return ResizeImage(provider, width: width, height: height, policy: ResizeImagePolicy.fit);
   }
 
   /// Determines if an image path is suitable for transcoding

@@ -34,7 +34,10 @@ using RedrawCallback = std::function<void()>;
 /// commands, properties, and event dispatching.
 class MpvPlayer {
  public:
-  MpvPlayer();
+  /// |audio_only| runs mpv as a music core with video disabled entirely:
+  /// no render context is ever created (InitRenderContext must not be
+  /// called) and no GL/EGL state is touched.
+  explicit MpvPlayer(bool audio_only = false);
   ~MpvPlayer();
 
   /// Initializes the mpv instance and configures options.
@@ -45,6 +48,7 @@ class MpvPlayer {
 
   /// Creates the mpv OpenGL render context.
   /// Must be called with a valid GL context current (e.g., from FlTextureGL::populate).
+  /// Fails on audio-only players.
   /// @return true if render context creation succeeded.
   bool InitRenderContext();
 
@@ -60,8 +64,9 @@ class MpvPlayer {
   /// Disposes mpv and releases resources.
   void Dispose();
 
-  /// Returns true if mpv is initialized (has both mpv handle and render context).
-  bool IsInitialized() const { return mpv_ != nullptr && mpv_gl_ != nullptr; }
+  /// Returns true if mpv is initialized (has both mpv handle and render
+  /// context; audio-only players never have a render context).
+  bool IsInitialized() const { return mpv_ != nullptr && (audio_only_ || mpv_gl_ != nullptr); }
 
   /// Returns true if this player has been disposed.
   bool IsDisposed() const { return disposed_.load(); }
@@ -140,6 +145,7 @@ class MpvPlayer {
   /// Helper to convert mpv_node to FlValue.
   ::_FlValue* NodeToFlValue(mpv_node* node);
 
+  const bool audio_only_;
   mpv_handle* mpv_ = nullptr;
   mpv_render_context* mpv_gl_ = nullptr;
 

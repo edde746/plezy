@@ -23,6 +23,7 @@ import '../../utils/desktop_window_padding.dart';
 import '../../utils/platform_detector.dart';
 import '../../utils/snackbar_helper.dart';
 import '../../widgets/app_icon.dart';
+import '../../widgets/focusable_tab_chip.dart';
 import '../../widgets/overlay_sheet.dart';
 import 'reorder_favorites_sheet.dart';
 import 'tabs/guide_tab.dart';
@@ -549,7 +550,7 @@ class _LiveTvScreenState extends State<LiveTvScreen>
     final isRecordings = _currentTab == LiveTvTab.recordings;
     return Scaffold(
       appBar: AppBar(
-        title: useSideNav ? Row(children: _buildTabChipItems()) : Text(t.liveTv.title),
+        title: useSideNav ? TabChipStrip(children: _buildTabChipItems()) : Text(t.liveTv.title),
         actions: DesktopAppBarHelper.buildAdjustedActions([
           FocusableActionBar(
             key: _actionBarKey,
@@ -646,10 +647,7 @@ class _LiveTvScreenState extends State<LiveTvScreen>
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             alignment: .centerLeft,
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Row(children: _buildTabChipItems()),
-            ),
+            child: TabChipStrip(children: _buildTabChipItems()),
           ),
         Expanded(
           child: TabBarView(

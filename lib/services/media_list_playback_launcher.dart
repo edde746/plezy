@@ -200,7 +200,12 @@ abstract class MediaListPlaybackLauncher {
       await navigateForTesting(itemToPlay);
     } else {
       if (!context.mounted) return const PlayQueueError('Context not mounted');
-      await navigateToVideoPlayer(context, metadata: itemToPlay);
+      // The queue holds these exact instances and the player's initState gate
+      // matches by identity — a WatchStateStore clone here would wipe the
+      // launcher-set queue on entry. The items were fetched from the server
+      // in this same user action, so session watch patches are already
+      // reflected.
+      await navigateToVideoPlayer(context, metadata: itemToPlay, resolveWatchState: false);
     }
     return const PlayQueueSuccess();
   }

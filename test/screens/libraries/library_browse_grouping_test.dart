@@ -38,6 +38,22 @@ void main() {
       ]);
     });
 
+    test('music libraries group by artists, albums, and tracks', () {
+      final library = _library(kind: MediaKind.artist);
+
+      expect(libraryBrowseGroupingOptions(library, canGroupByFolders: false), const [
+        browseGroupingArtists,
+        browseGroupingAlbums,
+        browseGroupingTracks,
+      ]);
+      expect(libraryBrowseGroupingOptions(library, canGroupByFolders: true), const [
+        browseGroupingArtists,
+        browseGroupingAlbums,
+        browseGroupingTracks,
+        browseGroupingFolders,
+      ]);
+    });
+
     test('shared libraries expose all video groupings and never folders', () {
       final library = _library(kind: MediaKind.movie, isShared: true);
 
@@ -67,6 +83,16 @@ void main() {
       expect(
         normalizeLibraryBrowseGrouping(library, browseGroupingFolders, canGroupByFolders: false),
         browseGroupingMovies,
+      );
+    });
+
+    test('music libraries default to artists and keep a saved music grouping', () {
+      final library = _library(kind: MediaKind.artist);
+
+      expect(normalizeLibraryBrowseGrouping(library, null, canGroupByFolders: false), browseGroupingArtists);
+      expect(
+        normalizeLibraryBrowseGrouping(library, browseGroupingTracks, canGroupByFolders: false),
+        browseGroupingTracks,
       );
     });
 

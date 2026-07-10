@@ -106,7 +106,10 @@ class MultiServerProvider extends ChangeNotifier with DisposableChangeNotifierMi
         _expectedVisibleServerIds!.containsAll(ids)) {
       return;
     }
-    _expectedVisibleServerIds = ids;
+    // Defensive copy: callers (the binder) keep mutating their set after
+    // handing it over, which would silently edit provider state and defeat
+    // the idempotence check above.
+    _expectedVisibleServerIds = ids == null ? null : Set.of(ids);
     safeNotifyListeners();
   }
 

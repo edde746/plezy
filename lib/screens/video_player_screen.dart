@@ -44,11 +44,12 @@ import '../services/discord_rpc_service.dart';
 import '../services/trackers/tracker_coordinator.dart';
 import '../services/trakt/trakt_scrobble_service.dart';
 import '../services/episode_navigation_service.dart';
-import '../services/app_foreground_service.dart';
 import '../services/apple_tv_remote_touch_service.dart';
 import '../services/media_controls_manager.dart';
+import '../services/playback_coordinator.dart';
 import '../services/playback_initialization_service.dart';
 import '../services/playback_context.dart';
+import '../services/local_playback_history.dart';
 import '../services/playback_session.dart';
 import '../services/playback_progress_tracker.dart';
 import '../services/playback_source_resolver.dart';
@@ -80,6 +81,7 @@ import 'video_player/completion_latch.dart';
 import 'video_player/frame_rate_matcher.dart';
 import 'video_player/live_tv_session_args.dart';
 import 'video_player/live_tv_session_state.dart';
+import 'video_player/tv_background_suspend_policy.dart';
 import 'video_player/widgets/player_prompt_overlays.dart';
 import '../widgets/overlay_sheet.dart';
 import '../widgets/video_controls/player_chrome_controller.dart';
@@ -196,6 +198,12 @@ class VideoPlayerScreen extends StatefulWidget {
   final SubtitleTrack? preferredSecondarySubtitleTrack;
   final int selectedMediaIndex;
   final String? selectedMediaSourceId;
+
+  /// Version signature of a saved preference backing [selectedMediaIndex]
+  /// when that index is unverified (see
+  /// [PlaybackInitializationOptions.preferredVersionSignature]). Null for
+  /// explicit user selections.
+  final String? preferredVersionSignature;
   final bool isOffline;
 
   /// Quality preset override for this playback. When `null`, the screen uses
@@ -221,6 +229,7 @@ class VideoPlayerScreen extends StatefulWidget {
     this.preferredSecondarySubtitleTrack,
     this.selectedMediaIndex = 0,
     this.selectedMediaSourceId,
+    this.preferredVersionSignature,
     this.isOffline = false,
     this.selectedQualityPreset,
     this.selectedAudioStreamId,
@@ -255,6 +264,10 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   // exclusive instead of relying on three independent booleans.
   _PlaybackTransition _playbackTransition = _PlaybackTransition.idle;
   bool _playbackIntentShouldPlay = true;
+
+  /// Media key of the last Watch Together switch failure the user was
+  /// toasted about — the heartbeat retry loop must not re-toast every 2s.
+  String? _wtSwitchToastShownForKey;
 
   bool _showPlayNextDialog = false;
   bool _isPhone = false;
@@ -365,7 +378,6 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   bool _wasPlayingBeforeInactive = false;
   bool _hiddenForBackground = false;
   bool _mediaControlsSuspendedForTvBackground = false;
-  bool _resumeFromSuspendedMediaControlOnForeground = false;
   bool _resumeAfterAppleAudioSessionPause = false;
   DateTime? _lastPlaybackPauseAt;
   bool _autoPipEnabled = false;
@@ -376,7 +388,21 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   int _rewindOnResume = 0;
   Future<void> _lifecycleTransition = Future<void>.value();
   String _playerBackendLabel = 'unknown';
-  Timer? _tvBackgroundMediaControlResumeTimer;
+
+  /// Android TV: release the native AV pipeline once the app stays
+  /// backgrounded past this grace window. A merely paused player keeps its
+  /// MediaCodec decoders and (tunneled passthrough) AudioTrack alive, which
+  /// on shared-pipeline TV SoCs degrades every other app until Plezy is
+  /// force-stopped. The grace absorbs transient hidden/paused blips
+  /// (assistant overlay, HDMI-CEC events) so quick app switches don't churn
+  /// codecs.
+  static const Duration _tvBackgroundPlayerSuspendGrace = Duration(seconds: 30);
+  Timer? _tvBackgroundPlayerSuspendTimer;
+  bool _playerSuspendedForTvBackground = false;
+  Duration? _tvBackgroundSuspendPosition;
+  AudioTrack? _tvBackgroundSuspendAudioTrack;
+  SubtitleTrack? _tvBackgroundSuspendSubtitleTrack;
+  SubtitleTrack? _tvBackgroundSuspendSecondarySubtitleTrack;
 
   /// Whether to skip lifecycle actions because PiP is active or about to start.
   /// Apple auto-PiP is system-initiated during the background transition, and
@@ -451,6 +477,12 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     _requestedMediaSourceId = session.mediaSourceId;
     _selectedQualityPreset = session.qualityPreset;
     _selectedAudioStreamId = session.audioStreamId;
+    // Every successful open passes through here (never live TV), making it
+    // the chokepoint for the local last-played history. Offline plays are
+    // excluded — like version prefs, the history describes online intent.
+    if (!session.isOffline) {
+      unawaited(LocalPlaybackHistory.recordPlayback(session.metadata));
+    }
   }
 
   ScrubFrame? _getThumbnailData(Duration time) => _scrubPreviewSource?.getFrame(time);
@@ -543,10 +575,10 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       WidgetsBinding.instance.addPostFrameCallback((_) {
         // Keep the queue when this item belongs to it — that covers both
         // server-side queues (Plex `playQueueItemId`) and client-side
-        // launcher-seeded queues (Jellyfin playlist/collection, with
-        // synthetic ids tracked in the provider). For genuine standalone
-        // playback (continue-watching, direct episode tap with no queue
-        // launcher) clear any stale queue so prev/next stays consistent.
+        // launcher-seeded queues (Jellyfin playlist/collection/shuffled
+        // show, with synthetic ids tracked in the provider). For genuine
+        // standalone playback (continue-watching, direct episode tap with no
+        // queue launcher) clear any stale queue so prev/next stays consistent.
         final meta = _currentMetadata;
         if (playbackState.isItemInActiveQueue(meta)) {
           playbackState.setCurrentItem(meta);
@@ -615,6 +647,9 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
         _recordLifecycleState('paused', action: 'backgrounded');
         break;
       case AppLifecycleState.resumed:
+        // Synchronously, before the queued transition: a pending suspend must
+        // not fire between this event and _handleAppResumed running.
+        _cancelTvBackgroundPlayerSuspendTimer();
         _recordLifecycleState('resumed');
         _enqueueLifecycleTransition('resumed', _handleAppResumed);
         break;
@@ -649,6 +684,13 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
         if (!mounted) return;
         FullscreenStateManager().addListener(_onFullscreenChanged);
       }
+
+      // One-native-instance rule: a live music session owns the only audio
+      // core — stop it and wait for its dispose before constructing the
+      // video core (see PlaybackCoordinator).
+      initPhase = 'claiming playback session';
+      await PlaybackCoordinator.instance.claimVideo();
+      if (!mounted) return;
 
       initPhase = 'creating player';
       final currentPlayer = Player(useExoPlayer: useExoPlayer);
@@ -693,6 +735,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
           metadata: _currentMetadata,
           selectedMediaIndex: _effectiveSelectedMediaIndex,
           selectedMediaSourceId: _requestedMediaSourceId,
+          preferredVersionSignature: widget.preferredVersionSignature,
           offlineLibraryMode: false,
           qualityPreset: _selectedQualityPreset,
           selectedAudioStreamId: _selectedAudioStreamId,
@@ -811,7 +854,8 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
         );
       }
 
-      // Audio passthrough (desktop and Android TV; disabled on tvOS)
+      // Audio passthrough (desktop, Android TV, and Apple TV — where the
+      // fork's AVPlayer Atmos sink handles EAC3+JOC, #1300)
       if (PlatformDetector.supportsAudioPassthrough()) {
         await currentPlayer.setAudioPassthrough(settingsService.read(SettingsService.audioPassthrough));
       }
@@ -836,6 +880,16 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
 
       if (settingsService.read(SettingsService.audioNormalization)) {
         await currentPlayer.setAudioNormalization(true);
+      }
+
+      // After the passthrough apply: downmix wins on both backends (mpv
+      // clears audio-spdif, ExoPlayer force-decodes encoded audio).
+      if (settingsService.read(SettingsService.audioDownmix)) {
+        await currentPlayer.setAudioDownmix(
+          enabled: true,
+          centerBoostDb: settingsService.read(SettingsService.downmixCenterBoost),
+          normalize: settingsService.read(SettingsService.audioDownmixNormalize),
+        );
       }
 
       if (PlatformDetector.isDesktopOS()) {
@@ -1115,7 +1169,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     _serverStatusSubscription?.cancel();
 
     _autoPlayTimer?.cancel();
-    _tvBackgroundMediaControlResumeTimer?.cancel();
+    _tvBackgroundPlayerSuspendTimer?.cancel();
 
     _stillWatchingTimer?.cancel();
 
@@ -1209,23 +1263,29 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   }
 
   Future<void> _handleAppleTvRemotePlayPause(AppleTvRemotePlayPauseAction action) async {
-    if (!mounted || ModalRoute.of(context)?.isCurrent != true) return;
-
-    final currentPlayer = player;
-    if (!_isPlayerInitialized || currentPlayer == null) {
-      appLogger.d('Apple TV remote play/pause ignored: player not ready');
-      return;
-    }
-
-    if (!_canControlPlaybackFromRemote()) {
-      appLogger.d('Apple TV remote play/pause ignored: playback control unavailable');
-      return;
-    }
-
     appLogger.d(
       'Apple TV remote play/pause received source=${action.source}'
       '${action.detail == null ? '' : ' detail=${action.detail}'}',
     );
+    await _toggleRemotePlayPause(source: 'Apple TV remote');
+  }
+
+  /// Toggle play/pause on behalf of a hardware remote (Apple TV bridge or a
+  /// hardware media key). Mirrors the controls path: rewind-on-resume, then
+  /// play/pause with playback intent.
+  Future<void> _toggleRemotePlayPause({required String source}) async {
+    if (!mounted || ModalRoute.of(context)?.isCurrent != true) return;
+
+    final currentPlayer = player;
+    if (!_isPlayerInitialized || currentPlayer == null) {
+      appLogger.d('$source play/pause ignored: player not ready');
+      return;
+    }
+
+    if (!_canControlPlaybackFromRemote()) {
+      appLogger.d('$source play/pause ignored: playback control unavailable');
+      return;
+    }
 
     try {
       if (!currentPlayer.state.playing) {
@@ -1234,9 +1294,16 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       }
       await _playOrPauseWithPlaybackIntent(currentPlayer);
     } catch (e, st) {
-      appLogger.w('Apple TV remote play/pause failed', error: e, stackTrace: st);
+      appLogger.w('$source play/pause failed', error: e, stackTrace: st);
     }
   }
+
+  /// Hardware media play/pause keys (Android TV remotes). Deliberately not
+  /// space/configured hotkeys — text fields must still receive those.
+  static bool _isHardwarePlayPauseKey(LogicalKeyboardKey key) =>
+      key == LogicalKeyboardKey.mediaPlayPause ||
+      key == LogicalKeyboardKey.mediaPlay ||
+      key == LogicalKeyboardKey.mediaPause;
 
   bool _canControlPlaybackFromRemote() {
     try {
@@ -1325,6 +1392,23 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
         // Back keys pass through — handled by PopScope (system back
         // gesture) or overlay sheet's onKeyEvent.
         if (event.logicalKey.isBackKey) return KeyEventResult.ignored;
+        // Hardware media play/pause must act even when focus rests on this
+        // node or a sibling overlay — otherwise the key only reveals the
+        // chrome and leaks to the (possibly stale/suspended) Android
+        // MediaSession (#1375). Gated to TV-style nav: on desktop the global
+        // HardwareKeyboard handler already acts (handlers don't stop focus
+        // dispatch), and Apple TV delivers play/pause via its native bridge.
+        if (_videoPlayerNavigationEnabled &&
+            !PlatformDetector.isAppleTV() &&
+            _isHardwarePlayPauseKey(event.logicalKey)) {
+          if (event is KeyDownEvent) {
+            unawaited(_toggleRemotePlayPause(source: 'Hardware media key'));
+            if (node.hasPrimaryFocus) {
+              _chromeController.show(focusTarget: PlayerChromeFocusTarget.playPause);
+            }
+          }
+          return KeyEventResult.handled; // consume down, repeat, and up
+        }
         // Self-heal: if this node itself has primary focus (no descendant
         // focused, e.g. after controls auto-hide), redirect to first descendant.
         if (node.hasPrimaryFocus) {

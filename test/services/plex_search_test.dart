@@ -39,7 +39,7 @@ void main() {
     );
   }
 
-  test('search defaults to 100 movie and TV candidates', () async {
+  test('search defaults to 100 movie, TV, and music candidates', () async {
     final captured = <Uri>[];
     final client = makeClient((request) async {
       captured.add(request.url);
@@ -66,6 +66,6 @@ void main() {
     expect(captured.single.path, '/library/search');
     expect(captured.single.queryParameters['limit'], '100');
     expect(captured.single.queryParameters['X-Plex-Container-Size'], '100');
-    expect(captured.single.queryParameters['searchTypes'], 'movies,tv');
+    expect(captured.single.queryParameters['searchTypes'], 'movies,tv,music');
   });
 }

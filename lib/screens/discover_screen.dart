@@ -22,10 +22,9 @@ import '../media/media_hub.dart';
 import '../utils/media_image_helper.dart';
 import '../utils/content_utils.dart';
 import '../widgets/optimized_media_image.dart' show blurArtwork;
+import '../widgets/rasterized_gradient.dart';
 import '../providers/discover_provider.dart';
 import '../providers/multi_server_provider.dart';
-import '../providers/hidden_libraries_provider.dart';
-import '../providers/playback_state_provider.dart';
 import '../providers/watch_state_store.dart';
 import '../widgets/hub_section.dart';
 import '../widgets/app_menu.dart';
@@ -33,16 +32,11 @@ import '../widgets/clickable_cursor.dart';
 import '../widgets/loading_indicator_box.dart';
 import '../widgets/profile_switching_overlay.dart';
 import 'profile/profile_switch_screen.dart';
-import '../connection/connection_registry.dart';
+import 'profile/profile_teardown.dart';
 import '../profiles/active_profile_provider.dart';
-import '../profiles/plex_home_service.dart';
 import '../profiles/profile.dart';
 import '../profiles/profile_activation.dart';
 import '../profiles/profile_avatar.dart';
-import '../profiles/profile_connection_registry.dart';
-import '../profiles/profile_registry.dart';
-import '../providers/user_profile_provider.dart';
-import '../services/storage_service.dart';
 import '../services/settings_service.dart';
 import '../widgets/settings_builder.dart';
 import '../widgets/fitting_title_text.dart';
@@ -61,7 +55,6 @@ import '../utils/video_player_navigation.dart';
 import '../utils/layout_constants.dart';
 import '../utils/platform_detector.dart';
 import '../theme/mono_tokens.dart';
-import 'auth_screen.dart';
 import 'libraries/content_state_builder.dart';
 import 'main_screen.dart';
 import 'settings/settings_screen.dart';
@@ -186,7 +179,16 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     return null;
   }
 
+  // Memoized on provider list identity (the provider always replaces _onDeck/
+  // _hubs with fresh instances on change, never mutates in place) so unrelated
+  // rebuilds hand TvBrowseRail the same hubs list and its didUpdateWidget
+  // fast path — and the cached rail widget below — kick in.
+  List<MediaHub>? _tvBrowseHubsCache;
+  (List<MediaItem>, List<MediaHub>, bool, String)? _tvBrowseHubsCacheKey;
+
   List<MediaHub> get _tvBrowseHubs {
+    final key = (_onDeck, _hubs, _hasMoreContinueWatching, t.discover.continueWatching);
+    if (_tvBrowseHubsCache != null && key == _tvBrowseHubsCacheKey) return _tvBrowseHubsCache!;
     final hubs = <MediaHub>[];
     if (_onDeck.isNotEmpty) {
       hubs.add(
@@ -202,6 +204,8 @@ class _DiscoverScreenState extends State<DiscoverScreen>
       );
     }
     hubs.addAll(_hubs.where((hub) => hub.items.isNotEmpty));
+    _tvBrowseHubsCache = hubs;
+    _tvBrowseHubsCacheKey = key;
     return hubs;
   }
 
@@ -379,19 +383,34 @@ class _DiscoverScreenState extends State<DiscoverScreen>
   /// pending TV-rail focus, and keep the hero carousel index in sync — a
   /// fresh [DiscoverProvider.load] resets it, a background Continue Watching
   /// refresh only clamps it.
+  /// Everything the build reads from the provider (list identities — the
+  /// provider replaces lists on change — plus the scalar flags). Notifies
+  /// that leave this unchanged (e.g. a watch-state-driven Continue Watching
+  /// refresh that found nothing new) skip the setState so the whole screen —
+  /// TV rail included — is not rebuilt for nothing.
+  (List<MediaItem>, List<MediaHub>, bool, bool, bool, String?) get _renderSignature =>
+      (_onDeck, _hubs, _hasMoreContinueWatching, _isLoading, _areHubsLoading, _discover.errorMessage);
+
+  (List<MediaItem>, List<MediaHub>, bool, bool, bool, String?)? _seenRenderSignature;
+
   void _onDiscoverChanged() {
     if (!mounted) return;
     final generation = _discover.loadGeneration;
     final isNewLoad = generation != _seenLoadGeneration;
     _seenLoadGeneration = generation;
     final heroOutOfBounds = _currentHeroIndex >= _onDeck.length;
+    final signature = _renderSignature;
+    final renderChanged = isNewLoad || heroOutOfBounds || signature != _seenRenderSignature;
+    _seenRenderSignature = signature;
 
-    setState(() {
-      if (isNewLoad || heroOutOfBounds) {
-        _currentHeroIndex = 0;
-      }
-      _updateHubKeys();
-    });
+    if (renderChanged) {
+      setState(() {
+        if (isNewLoad || heroOutOfBounds) {
+          _currentHeroIndex = 0;
+        }
+        _updateHubKeys();
+      });
+    }
     _applyPendingTvBrowseRailFocus();
 
     if ((isNewLoad || heroOutOfBounds) && _heroController.hasClients && _onDeck.isNotEmpty) {
@@ -753,39 +772,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     );
 
     if (confirm && mounted) {
-      final navigator = Navigator.of(context, rootNavigator: true);
-      // Use comprehensive logout through UserProfileProvider
-      final userProfileProvider = Provider.of<UserProfileProvider>(context, listen: false);
-      final multiServerProvider = context.read<MultiServerProvider>();
-      final hiddenLibrariesProvider = context.read<HiddenLibrariesProvider>();
-      final playbackStateProvider = context.read<PlaybackStateProvider>();
-      final connectionRegistry = context.read<ConnectionRegistry>();
-      final profileRegistry = context.read<ProfileRegistry>();
-      final profileConnReg = context.read<ProfileConnectionRegistry>();
-      final plexHome = context.read<PlexHomeService>();
-      final companionRemote = context.read<CompanionRemoteProvider>();
-
-      // Clear all user data and provider states
-      await companionRemote.resetForLogout();
-      await userProfileProvider.logout();
-      multiServerProvider.clearAllConnections();
-      // Drop the profile/connection rows so the next sign-in starts clean
-      // and doesn't bind to stale tokens or orphaned profile rows.
-      await profileConnReg.clear();
-      await profileRegistry.clear();
-      await connectionRegistry.clear();
-      await plexHome.clearAll();
-      final storage = await StorageService.getInstance();
-      await storage.clearActiveProfileId();
-      await storage.clearAllProfileLastUsed();
-      await hiddenLibrariesProvider.refresh();
-      playbackStateProvider.clearShuffle();
-
-      if (navigator.mounted) {
-        unawaited(
-          navigator.pushAndRemoveUntil(MaterialPageRoute(builder: (context) => const AuthScreen()), (route) => false),
-        );
-      }
+      await logoutAllProfiles(context);
     }
   }
 
@@ -896,19 +883,17 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     final colorScheme = Theme.of(context).colorScheme;
     final overlayColor = colorScheme.brightness == Brightness.dark ? Colors.black : colorScheme.surface;
     final foregroundColor = colorScheme.onSurface;
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [
-            overlayColor.withValues(alpha: 0.7),
-            overlayColor.withValues(alpha: 0.5),
-            overlayColor.withValues(alpha: 0.3),
-            Colors.transparent,
-          ],
-          stops: const [0.0, 0.3, 0.6, 1.0],
-        ),
+    return RasterizedGradient(
+      gradient: LinearGradient(
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+        colors: [
+          overlayColor.withValues(alpha: 0.7),
+          overlayColor.withValues(alpha: 0.5),
+          overlayColor.withValues(alpha: 0.3),
+          Colors.transparent,
+        ],
+        stops: const [0.0, 0.3, 0.6, 1.0],
       ),
       child: Padding(
         padding: .only(top: statusBarHeight, left: 16, right: 16, bottom: 8),
@@ -1205,6 +1190,37 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     );
   }
 
+  // Cached so unrelated _buildTvContent rebuilds (loading flags, spotlight
+  // geometry) hand Element.updateChild the identical widget instance and the
+  // whole rail subtree is skipped. Rebuilt only when its actual inputs change.
+  TvBrowseRail? _tvBrowseRailWidget;
+  (List<MediaHub>, bool)? _tvBrowseRailWidgetKey;
+
+  Widget _cachedTvBrowseRail(List<MediaHub> browseHubs, {required bool showServerName}) {
+    final key = (browseHubs, showServerName);
+    if (_tvBrowseRailWidget != null && key == _tvBrowseRailWidgetKey) return _tvBrowseRailWidget!;
+    _tvBrowseRailWidgetKey = key;
+    return _tvBrowseRailWidget = TvBrowseRail(
+      key: _tvBrowseRailKey,
+      hubs: browseHubs,
+      showServerName: showServerName,
+      iconForHub: (hub, _) => hub.id == 'continue_watching' ? Symbols.play_circle_rounded : _getHubIcon(hub.title),
+      onFocusedItemChanged: _setSpotlightItem,
+      onRefresh: _discover.updateItem,
+      onRemoveFromContinueWatching: _discover.refreshContinueWatching,
+      isContinueWatchingHub: (hub) => hub.isContinueWatchingHub,
+      usesContinueWatchingAction: (hub) => hub.usesContinueWatchingAction,
+      loadMoreItems: (hub) =>
+          hub.id == 'continue_watching' ? _discover.loadAllContinueWatching() : Future.value(hub.items),
+      onNavigateUp: _focusTopActions,
+      onNavigateToSidebar: _navigateToSidebar,
+      tallPosterScale: TvBrowseRailLayout.compactTallPosterScale,
+      selectSuppressionGestureSignal: PlatformDetector.isAppleTV()
+          ? AppleTvRemoteTouchService.instance.touchActiveListenable
+          : null,
+    );
+  }
+
   Widget _buildTvContent(BuildContext context) {
     final size = MediaQuery.sizeOf(context);
     final theme = Theme.of(context);
@@ -1307,26 +1323,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
               left: 0,
               right: 0,
               bottom: 0,
-              child: TvBrowseRail(
-                key: _tvBrowseRailKey,
-                hubs: browseHubs,
-                showServerName: showServerNameOnHubs || hubsSpanMultipleServers,
-                iconForHub: (hub, _) =>
-                    hub.id == 'continue_watching' ? Symbols.play_circle_rounded : _getHubIcon(hub.title),
-                onFocusedItemChanged: _setSpotlightItem,
-                onRefresh: _discover.updateItem,
-                onRemoveFromContinueWatching: _discover.refreshContinueWatching,
-                isContinueWatchingHub: (hub) => hub.isContinueWatchingHub,
-                usesContinueWatchingAction: (hub) => hub.usesContinueWatchingAction,
-                loadMoreItems: (hub) =>
-                    hub.id == 'continue_watching' ? _discover.loadAllContinueWatching() : Future.value(hub.items),
-                onNavigateUp: _focusTopActions,
-                onNavigateToSidebar: _navigateToSidebar,
-                tallPosterScale: TvBrowseRailLayout.compactTallPosterScale,
-                selectSuppressionGestureSignal: PlatformDetector.isAppleTV()
-                    ? AppleTvRemoteTouchService.instance.touchActiveListenable
-                    : null,
-              ),
+              child: _cachedTvBrowseRail(browseHubs, showServerName: showServerNameOnHubs || hubsSpanMultipleServers),
             ),
           Builder(
             builder: (context) => SideNavigationBleedBuilder(
@@ -1376,8 +1373,11 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                   return _buildHeroItem(_onDeck[index], heroHeight);
                 },
               ),
-              // Page indicators with animated progress and pause/play button
-              if (!InputModeTracker.isKeyboardMode(context))
+              // Page indicators with animated progress and pause/play button.
+              // Hidden on TV only (issue #600: pointer-only control unreachable
+              // via d-pad) — never gated on transient input mode, which back-key
+              // events, BT keyboards, and gamepads can flip on phones/desktop.
+              if (!isTv)
                 Positioned(
                   bottom: 16,
                   left: -26,
@@ -1589,8 +1589,11 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                           gradient: LinearGradient(
                             begin: Alignment.topCenter,
                             end: Alignment.bottomCenter,
-                            colors: [Colors.transparent, bgColor.withValues(alpha: 0.9), bgColor],
-                            stops: isTv ? const [0.25, 0.78, 1.0] : const [0.5, 0.85, 1.0],
+                            // Reach full bg before the bottom edge so the hero
+                            // blends seamlessly into the content below and the
+                            // page dots sit on a solid band.
+                            colors: [Colors.transparent, bgColor.withValues(alpha: 0.9), bgColor, bgColor],
+                            stops: isTv ? const [0.25, 0.78, 0.94, 1.0] : const [0.5, 0.85, 0.94, 1.0],
                           ),
                         ),
                       );

@@ -55,7 +55,7 @@ void main() {
       p.dispose();
     });
 
-    test('isCryptoReady is false until initializeCrypto is called', () {
+    test('isCryptoReady is false until ensureCryptoReady succeeds', () {
       final p = CompanionRemoteProvider();
       expect(p.isCryptoReady, isFalse);
       p.dispose();
@@ -186,20 +186,35 @@ void main() {
       final accountB = _plexAccount('plex-b', 'client-b');
       final profileA = _localProfile('profile-a');
       final profileB = _localProfile('profile-b');
+      await connections.upsert(accountA);
       await connections.upsert(accountB);
+      await profiles.upsert(profileA);
       await profiles.upsert(profileB);
+      await profileConnections.upsert(
+        ProfileConnection(profileId: profileA.id, connectionId: accountA.id, userIdentifier: 'admin-a'),
+        makeDefault: true,
+      );
       await profileConnections.upsert(
         ProfileConnection(profileId: profileB.id, connectionId: accountB.id, userIdentifier: 'admin-b'),
         makeDefault: true,
       );
-      await storage.setActiveProfileId(profileB.id);
+      await storage.setActiveProfileId(profileA.id);
       await active.initialize();
 
       final provider = CompanionRemoteProvider();
       addTearDown(provider.dispose);
-      await provider.initializeCrypto(home: _home('admin-a'), account: accountA, activeProfile: profileA);
+      final okA = await provider.ensureCryptoReady(
+        _home('admin-a'),
+        connections: connections,
+        activeProfile: active,
+        profileConnections: profileConnections,
+        account: accountA,
+      );
+      expect(okA, isTrue);
       expect(provider.debugCryptoConnectionId, accountA.id);
       expect(provider.debugCryptoProfileId, profileA.id);
+
+      await active.activate(profileB);
 
       final ok = await provider.ensureCryptoReady(
         _home('admin-b'),
@@ -418,12 +433,49 @@ void main() {
     });
 
     test('resetForLogout clears crypto context', () async {
+      final db = AppDatabase.forTesting(NativeDatabase.memory());
+      final connections = ConnectionRegistry(db);
+      final profileConnections = ProfileConnectionRegistry(db);
+      final profiles = ProfileRegistry(db);
+      final storage = await StorageService.getInstance();
+      final plexHome = PlexHomeService(
+        connections: connections,
+        profileConnections: profileConnections,
+        storage: storage,
+        plexHomeUserFetcher: (_) async => const [],
+      );
+      final active = ActiveProfileProvider(
+        registry: profiles,
+        plexHome: plexHome,
+        connections: connections,
+        storage: storage,
+      );
+      addTearDown(() async {
+        await active.resetForTesting();
+        active.dispose();
+        await plexHome.dispose();
+        await db.close();
+      });
+
+      final account = _plexAccount('plex-a', 'client-a');
+      final profile = _localProfile('profile-a');
+      await connections.upsert(account);
+      await profiles.upsert(profile);
+      await profileConnections.upsert(
+        ProfileConnection(profileId: profile.id, connectionId: account.id, userIdentifier: 'admin-a'),
+        makeDefault: true,
+      );
+      await storage.setActiveProfileId(profile.id);
+      await active.initialize();
+
       final provider = CompanionRemoteProvider();
       addTearDown(provider.dispose);
-      await provider.initializeCrypto(
-        home: _home('admin-a'),
-        account: _plexAccount('plex-a', 'client-a'),
-        activeProfile: _localProfile('profile-a'),
+      await provider.ensureCryptoReady(
+        _home('admin-a'),
+        connections: connections,
+        activeProfile: active,
+        profileConnections: profileConnections,
+        account: account,
       );
       expect(provider.isCryptoReady, isTrue);
 

@@ -372,9 +372,14 @@ class OfflineWatchSyncService extends ChangeNotifier {
     try {
       await _adoptLegacyWatchActionsForActiveProfile();
       final profileId = _activeProfileId;
-      final pendingActions = profileId == null || profileId.isEmpty
-          ? await _database.getPendingWatchActions()
-          : await _database.getPendingWatchActions(profileId: profileId);
+      if (profileId == null || profileId.isEmpty) {
+        // No active profile: dropping the filter would replay EVERY
+        // profile's queued actions through whatever clients happen to be
+        // bound — the wrong user's account. Actions stay queued.
+        appLogger.d('No active profile — deferring pending watch sync');
+        return;
+      }
+      final pendingActions = await _database.getPendingWatchActions(profileId: profileId);
 
       if (pendingActions.isEmpty) {
         appLogger.d('No pending watch actions to sync');
@@ -384,6 +389,14 @@ class OfflineWatchSyncService extends ChangeNotifier {
       appLogger.i('Syncing ${pendingActions.length} pending watch actions');
 
       for (final action in pendingActions) {
+        if (_activeProfileId != profileId) {
+          // A profile switch mid-loop rebinds server clients to the NEW
+          // user's tokens under the same server ids — replaying the rest
+          // would write this profile's watch history to another account.
+          // Remaining actions stay queued for the next sync.
+          appLogger.i('Active profile changed mid-sync — requeueing remaining watch actions');
+          return;
+        }
         if (action.syncAttempts >= maxSyncAttempts) {
           appLogger.w(
             'Skipping action ${action.id} - exceeded retry limit '

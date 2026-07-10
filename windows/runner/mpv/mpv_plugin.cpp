@@ -13,29 +13,41 @@ void MpvPlayerPluginRegisterWithRegistrar(FlutterDesktopPluginRegistrarRef regis
       flutter::PluginRegistrarManager::GetInstance()->GetRegistrar<flutter::PluginRegistrarWindows>(registrar));
 }
 
+void MpvAudioPlayerPluginRegisterWithRegistrar(FlutterDesktopPluginRegistrarRef registrar) {
+  mpv::MpvPlayerPlugin::RegisterWithRegistrar(
+      flutter::PluginRegistrarManager::GetInstance()->GetRegistrar<flutter::PluginRegistrarWindows>(registrar),
+      "com.plezy/mpv_audio_player", /*audio_only=*/true);
+}
+
 namespace mpv {
 
 namespace {
 constexpr UINT kPlatformTaskMessage = WM_APP + 0x4D50;
-}
+constexpr UINT kAudioPlatformTaskMessage = WM_APP + 0x4D51;
+}  // namespace
 
-void MpvPlayerPlugin::RegisterWithRegistrar(flutter::PluginRegistrarWindows* registrar) {
-  auto plugin = std::make_unique<MpvPlayerPlugin>(registrar);
+void MpvPlayerPlugin::RegisterWithRegistrar(
+    flutter::PluginRegistrarWindows* registrar, const std::string& channel_name, bool audio_only) {
+  auto plugin = std::make_unique<MpvPlayerPlugin>(registrar, channel_name, audio_only);
   registrar->AddPlugin(std::move(plugin));
 }
 
-MpvPlayerPlugin::MpvPlayerPlugin(flutter::PluginRegistrarWindows* registrar)
-    : registrar_(registrar), platform_thread_id_(::GetCurrentThreadId()) {
+MpvPlayerPlugin::MpvPlayerPlugin(
+    flutter::PluginRegistrarWindows* registrar, const std::string& channel_name, bool audio_only)
+    : registrar_(registrar),
+      platform_thread_id_(::GetCurrentThreadId()),
+      audio_only_(audio_only),
+      platform_task_message_(audio_only ? kAudioPlatformTaskMessage : kPlatformTaskMessage) {
   // Create method channel.
   method_channel_ = std::make_unique<flutter::MethodChannel<flutter::EncodableValue>>(
-      registrar->messenger(), "com.plezy/mpv_player", &flutter::StandardMethodCodec::GetInstance());
+      registrar->messenger(), channel_name, &flutter::StandardMethodCodec::GetInstance());
 
   method_channel_->SetMethodCallHandler(
       [this](const auto& call, auto result) { HandleMethodCall(call, std::move(result)); });
 
   // Create event channel.
   event_channel_ = std::make_unique<flutter::EventChannel<flutter::EncodableValue>>(
-      registrar->messenger(), "com.plezy/mpv_player/events", &flutter::StandardMethodCodec::GetInstance());
+      registrar->messenger(), channel_name + "/events", &flutter::StandardMethodCodec::GetInstance());
 
   auto handler = std::make_unique<flutter::StreamHandlerFunctions<flutter::EncodableValue>>(
       [this](
@@ -55,6 +67,14 @@ MpvPlayerPlugin::MpvPlayerPlugin(flutter::PluginRegistrarWindows* registrar)
 }
 
 MpvPlayerPlugin::~MpvPlayerPlugin() {
+  // Join the mpv event thread before draining: it enqueues platform tasks,
+  // and platform_tasks_/platform_tasks_mutex_ are destroyed before player_
+  // (reverse declaration order).
+  if (player_) {
+    player_->Dispose();
+    player_.reset();
+  }
+
   DrainPlatformTasks();
 
   // Unregister window proc delegate.
@@ -74,13 +94,21 @@ void MpvPlayerPlugin::PostToPlatformThread(std::function<void()> task) {
     return;
   }
 
+  bool post_wakeup = false;
   {
     std::lock_guard<std::mutex> lock(platform_tasks_mutex_);
     platform_tasks_.push(std::move(task));
+    if (!wakeup_posted_ && flutter_window_) {
+      wakeup_posted_ = true;
+      post_wakeup = true;
+    }
   }
 
-  if (flutter_window_) {
-    ::PostMessage(flutter_window_, kPlatformTaskMessage, 0, 0);
+  if (post_wakeup && !::PostMessage(flutter_window_, platform_task_message_, 0, 0)) {
+    // Wakeup lost (e.g. message queue full during a log storm); let the next
+    // enqueue retry instead of stranding the queue.
+    std::lock_guard<std::mutex> lock(platform_tasks_mutex_);
+    wakeup_posted_ = false;
   }
 }
 
@@ -89,6 +117,7 @@ void MpvPlayerPlugin::DrainPlatformTasks() {
   {
     std::lock_guard<std::mutex> lock(platform_tasks_mutex_);
     tasks.swap(platform_tasks_);
+    wakeup_posted_ = false;
   }
 
   while (!tasks.empty()) {
@@ -116,9 +145,20 @@ void MpvPlayerPlugin::HandleMethodCall(
     // topmost DComp visual — there is no separate container window to manage.
     proc_id_ =
         registrar_->RegisterTopLevelWindowProcDelegate([this](HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam) {
-          if (message == kPlatformTaskMessage) {
+          if (message == platform_task_message_) {
             DrainPlatformTasks();
             return std::optional<HRESULT>(0);
+          }
+          // Both resume variants are handled: which of the two arrives (or
+          // both) depends on S3 vs Modern Standby; re-arming is idempotent.
+          // player_ create/reset also happens on this thread, so the
+          // null-check suffices. Never consume the message.
+          if (message == WM_POWERBROADCAST && player_ && player_->IsInitialized()) {
+            if (wparam == PBT_APMSUSPEND) {
+              player_->NotifyPowerSuspend();
+            } else if (wparam == PBT_APMRESUMEAUTOMATIC || wparam == PBT_APMRESUMESUSPEND) {
+              player_->NotifyPowerResume();
+            }
           }
           return std::optional<HRESULT>(std::nullopt);
         });
@@ -128,18 +168,21 @@ void MpvPlayerPlugin::HandleMethodCall(
     // and below the view's topmost DComp visual carrying the UI (layer 4). As
     // a *sibling* of the view, either the view's never-painted white content
     // covers the video or the video covers the UI — the in-subtree placement
-    // is the only ordering that yields white < video < UI.
-    HWND view = GetChildWindow();
+    // is the only ordering that yields white < video < UI. The audio-only
+    // core is windowless, so it gets no view at all.
+    HWND view = audio_only_ ? nullptr : GetChildWindow();
 
-    player_ = std::make_unique<MpvPlayer>();
+    player_ = std::make_unique<MpvPlayer>(audio_only_);
     bool success = player_->Initialize(view);
 
     if (success) {
       // Set up event callback.
       player_->SetEventCallback([this](const flutter::EncodableValue& event) { SendEvent(event); });
 
-      // Start hidden.
-      player_->SetVisible(false);
+      if (!audio_only_) {
+        // Start hidden.
+        player_->SetVisible(false);
+      }
       result->Success(flutter::EncodableValue(true));
     } else {
       player_.reset();  // Clear the player so we don't have a half-initialized state
@@ -315,6 +358,12 @@ void MpvPlayerPlugin::HandleMethodCall(
         std::get<int32_t>(id_it->second));
     result->Success();
   } else if (method == "setVisible") {
+    if (audio_only_) {
+      // Windowless core: nothing to show or hide, tolerate as a success no-op.
+      result->Success();
+      return;
+    }
+
     const auto* args = method_call.arguments();
     if (!args || !std::holds_alternative<flutter::EncodableMap>(*args)) {
       result->Error("INVALID_ARGS", "Expected map argument");
@@ -337,6 +386,12 @@ void MpvPlayerPlugin::HandleMethodCall(
 
     result->Success();
   } else if (method == "setVideoRect") {
+    if (audio_only_) {
+      // Windowless core: no rect to position, tolerate as a success no-op.
+      result->Success();
+      return;
+    }
+
     const auto* args = method_call.arguments();
     if (!args || !std::holds_alternative<flutter::EncodableMap>(*args)) {
       result->Error("INVALID_ARGS", "Expected map argument");
@@ -377,12 +432,15 @@ void MpvPlayerPlugin::HandleMethodCall(
     }
 
     result->Success();
+  } else if (audio_only_ && method == "updateFrame") {
+    // No frames to pump on the windowless core; tolerate as a success no-op.
+    result->Success();
   } else if (method == "isInitialized") {
     bool initialized = player_ && player_->IsInitialized();
     result->Success(flutter::EncodableValue(initialized));
 
-    // --- Display mode matching ---
-  } else if (method == "getDisplayModes") {
+    // --- Display mode matching (video instance only) ---
+  } else if (!audio_only_ && method == "getDisplayModes") {
     HWND hwnd = GetWindow();
     auto modes = display_mode_manager_.EnumerateDisplayModes(hwnd);
     flutter::EncodableList list;
@@ -390,11 +448,11 @@ void MpvPlayerPlugin::HandleMethodCall(
       list.push_back(flutter::EncodableValue(DisplayModeToMap(mode)));
     }
     result->Success(flutter::EncodableValue(list));
-  } else if (method == "getCurrentDisplayMode") {
+  } else if (!audio_only_ && method == "getCurrentDisplayMode") {
     HWND hwnd = GetWindow();
     auto mode = display_mode_manager_.GetCurrentMode(hwnd);
     result->Success(flutter::EncodableValue(DisplayModeToMap(mode)));
-  } else if (method == "setDisplayMode") {
+  } else if (!audio_only_ && method == "setDisplayMode") {
     const auto* args = method_call.arguments();
     if (!args || !std::holds_alternative<flutter::EncodableMap>(*args)) {
       result->Error("INVALID_ARGS", "Expected map argument");
@@ -410,17 +468,17 @@ void MpvPlayerPlugin::HandleMethodCall(
     bool success =
         display_mode_manager_.SetDisplayMode(hwnd, get_int("width"), get_int("height"), get_int("refreshRate"));
     result->Success(flutter::EncodableValue(success));
-  } else if (method == "restoreDisplayMode") {
+  } else if (!audio_only_ && method == "restoreDisplayMode") {
     HWND hwnd = GetWindow();
     bool success = display_mode_manager_.RestoreOriginalMode(hwnd);
     result->Success(flutter::EncodableValue(success));
-  } else if (method == "isHDRSupported") {
+  } else if (!audio_only_ && method == "isHDRSupported") {
     HWND hwnd = GetWindow();
     result->Success(flutter::EncodableValue(display_mode_manager_.IsHDRSupported(hwnd)));
-  } else if (method == "isHDREnabled") {
+  } else if (!audio_only_ && method == "isHDREnabled") {
     HWND hwnd = GetWindow();
     result->Success(flutter::EncodableValue(display_mode_manager_.IsHDREnabled(hwnd)));
-  } else if (method == "setSystemHDR") {
+  } else if (!audio_only_ && method == "setSystemHDR") {
     const auto* args = method_call.arguments();
     if (!args || !std::holds_alternative<flutter::EncodableMap>(*args)) {
       result->Error("INVALID_ARGS", "Expected map argument");
@@ -436,13 +494,13 @@ void MpvPlayerPlugin::HandleMethodCall(
     HWND hwnd = GetWindow();
     bool success = display_mode_manager_.SetHDREnabled(hwnd, enabled);
     result->Success(flutter::EncodableValue(success));
-  } else if (method == "restoreSystemHDR") {
+  } else if (!audio_only_ && method == "restoreSystemHDR") {
     HWND hwnd = GetWindow();
     bool success = display_mode_manager_.RestoreOriginalHDRState(hwnd);
     result->Success(flutter::EncodableValue(success));
-  } else if (method == "isModeChanged") {
+  } else if (!audio_only_ && method == "isModeChanged") {
     result->Success(flutter::EncodableValue(display_mode_manager_.IsModeChanged()));
-  } else if (method == "isHDRChanged") {
+  } else if (!audio_only_ && method == "isHDRChanged") {
     result->Success(flutter::EncodableValue(display_mode_manager_.IsHDRChanged()));
   } else {
     result->NotImplemented();
@@ -450,9 +508,14 @@ void MpvPlayerPlugin::HandleMethodCall(
 }
 
 void MpvPlayerPlugin::SendEvent(const flutter::EncodableValue& event) {
-  if (event_sink_) {
-    event_sink_->Success(event);
-  }
+  // mpv events arrive on the mpv event thread; Flutter channel APIs are
+  // platform-thread-only, so marshal onto the platform thread (the sink
+  // null-check then also runs on the same thread as onListen/onCancel).
+  PostToPlatformThread([this, event]() {
+    if (event_sink_) {
+      event_sink_->Success(event);
+    }
+  });
 }
 
 }  // namespace mpv

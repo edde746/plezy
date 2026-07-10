@@ -72,6 +72,7 @@ class TranslationsDe extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _TranslationsLiveTvDe liveTv = _TranslationsLiveTvDe._(_root);
 	@override late final _TranslationsCollectionsDe collections = _TranslationsCollectionsDe._(_root);
 	@override late final _TranslationsPlaylistsDe playlists = _TranslationsPlaylistsDe._(_root);
+	@override late final _TranslationsMusicDe music = _TranslationsMusicDe._(_root);
 	@override late final _TranslationsWatchTogetherDe watchTogether = _TranslationsWatchTogetherDe._(_root);
 	@override late final _TranslationsDownloadsDe downloads = _TranslationsDownloadsDe._(_root);
 	@override late final _TranslationsShadersDe shaders = _TranslationsShadersDe._(_root);
@@ -271,7 +272,7 @@ class _TranslationsSettingsDe extends TranslationsSettingsEn {
 	@override String get hideSpoilers => 'Spoiler für nicht gesehene Episoden verbergen';
 	@override String get hideSpoilersDescription => 'Vorschaubilder und Beschreibungen ungesehener Episoden verwischen';
 	@override String get playerBackend => 'Player-Backend';
-	@override String get exoPlayer => 'ExoPlayer (Empfohlen)';
+	@override String get exoPlayer => 'ExoPlayer';
 	@override String get mpv => 'mpv';
 	@override String get hardwareDecoding => 'Hardware-Decodierung';
 	@override String get hardwareDecodingDescription => 'Hardwarebeschleunigung verwenden, sofern verfügbar';
@@ -393,6 +394,30 @@ class _TranslationsSettingsDe extends TranslationsSettingsEn {
 	@override String get tunneledPlaybackDescription => 'Video-Tunneling verwenden. Deaktivieren, wenn HDR-Wiedergabe schwarzes Video zeigt.';
 	@override String get audioPassthrough => 'Audio-Durchleitung';
 	@override String get audioPassthroughDescription => 'Dolby/DTS-Audio ohne Neukodierung an deinen Receiver oder Fernseher senden und Surround-Sound erhalten. Deaktivieren, wenn kein Ton zu hören ist.';
+	@override String get audioPassthroughDescriptionAppleTv => 'Übergibt Dolby Digital Plus (inkl. Atmos) als Bitstream an das System. DTS und TrueHD werden weiterhin als Mehrkanal-PCM wiedergegeben. Beim Spulen können kurze Tonaussetzer auftreten.';
+	@override String get audioDownmix => 'Downmix auf Stereo';
+	@override String get audioDownmixDescription => 'Mischt Surround-Ton für Stereo-Lautsprecher oder Kopfhörer auf zwei Kanäle herunter';
+	@override String get downmixCenterBoost => 'Center-Kanal-Verstärkung';
+	@override String downmixCenterBoostValue({required Object db}) => '${db} dB';
+	@override String get downmixCenterBoostLabel => 'Verstärkung (dB)';
+	@override String get downmixCenterBoostShort => 'dB';
+	@override String get audioDownmixNormalize => 'Lautstärke beim Downmix normalisieren';
+	@override String get audioDownmixNormalizeDescription => 'Senkt den Mix ab, um Übersteuerung zu vermeiden. Deaktivieren, um die Originallautstärke zu behalten (laute Szenen können verzerren).';
+	@override String get atmosDiagnostics => 'Atmos-Ausgabetest';
+	@override String get atmosDiagnosticsDescription => 'Dolby-Atmos-Ausgabe diagnostizieren, indem Testsignale über den Systemplayer abgespielt werden';
+	@override String get atmosTestHlsAtmos => 'Apple-Atmos-Stream';
+	@override String get atmosTestHlsAtmosDescription => 'Garantiert funktionierender Dolby-Atmos-Stream. Der Receiver sollte Dolby Atmos anzeigen.';
+	@override String get atmosTestHlsControl => 'Apple-Surround-Stream';
+	@override String get atmosTestHlsControlDescription => 'Kontrollstream ohne Atmos. Der Receiver sollte Surround ohne Atmos anzeigen.';
+	@override String get atmosTestRawStream => 'Roher EAC3-Stream';
+	@override String get atmosTestRawStreamDescription => 'Streamt die Testdatei genau wie die Atmos-Wiedergabe im Player. Benötigt die URL der Testdatei.';
+	@override String get atmosTestRawFile => 'Rohe EAC3-Datei';
+	@override String get atmosTestRawFileDescription => 'Spielt die Testdatei mit bekannter Länge ab. Benötigt die URL der Testdatei.';
+	@override String get atmosTestStop => 'Test stoppen';
+	@override String get atmosTestUrl => 'URL der Testdatei';
+	@override String get atmosTestUrlDescription => 'HTTP-URL einer rohen .ec3-Dolby-Atmos-Datei (z. B. mit ffmpeg extrahiert)';
+	@override String get atmosTestUrlMissing => 'Zuerst die URL der Testdatei festlegen';
+	@override String get atmosTestStatus => 'Status';
 	@override String get dvConversionMode => 'Dolby-Vision-Konvertierung';
 	@override String get dvConversionModeDescription => 'Wähle, wie ExoPlayer Dolby-Vision-Profil-7-Dateien behandelt.';
 	@override String get dvConversionAuto => 'Automatisch';
@@ -528,9 +553,6 @@ class _TranslationsRateSheetDe extends TranslationsRateSheetEn {
 	@override String starValue({required Object rating}) => '${rating} / 5';
 	@override String scoreValue({required Object score}) => '${score} / 10';
 	@override String get setScore => 'Eine Wertung festlegen';
-	@override String get notRated => 'Nicht bewertet';
-	@override String get liked => 'Gefällt mir';
-	@override String get notLiked => 'Nicht geliket';
 	@override String get saved => 'Gespeichert';
 	@override String get notAvailable => 'Keine Übereinstimmung gefunden';
 	@override String get noConnectedTrackers => 'Verbinde einen Tracker in den Einstellungen, um dort zu bewerten.';
@@ -829,7 +851,9 @@ class _TranslationsProfilesDe extends TranslationsProfilesEn {
 	@override String get borrowConnectionBorrowed => 'Verbindung ausgeliehen.';
 	@override String get borrowFailed => 'Verbindung konnte nicht ausgeliehen werden.';
 	@override String get incorrectPin => 'Falsche PIN.';
+	@override String get incorrectPinTryAgain => 'Falsche PIN. Bitte erneut versuchen.';
 	@override String get sourceProfileMissingParentAccount => 'Dem Quellprofil fehlt das übergeordnete Konto.';
+	@override String get failedToLoadHomeUsers => 'Deine Plex Home-Benutzer konnten nicht geladen werden. Prüfe deine Verbindung und versuche es erneut.';
 	@override String get failedToVerifyPin => 'PIN konnte nicht verifiziert werden.';
 	@override String get newProfile => 'Neues Profil';
 	@override String get profileNameHint => 'z. B. Gäste, Kinder, Wohnzimmer';
@@ -875,6 +899,9 @@ class _TranslationsDiscoverDe extends TranslationsDiscoverEn {
 	@override String nextUpIn({required Object library}) => 'Als Nächstes in ${library}';
 	@override String get recentlyAdded => 'Kürzlich hinzugefügt';
 	@override String recentlyAddedIn({required Object library}) => 'Kürzlich hinzugefügt in ${library}';
+	@override String latestAlbumsIn({required Object library}) => 'Neueste Alben in ${library}';
+	@override String recentlyPlayedIn({required Object library}) => 'Kürzlich gespielt in ${library}';
+	@override String mostPlayedIn({required Object library}) => 'Am häufigsten gespielt in ${library}';
 	@override String playEpisode({required Object season, required Object episode}) => 'S${season}E${episode}';
 	@override String get overview => 'Übersicht';
 	@override String get cast => 'Besetzung';
@@ -1176,6 +1203,40 @@ class _TranslationsPlaylistsDe extends TranslationsPlaylistsEn {
 	@override String get errorRemoving => 'Konnte nicht aus der Wiedergabeliste entfernt werden';
 }
 
+// Path: music
+class _TranslationsMusicDe extends TranslationsMusicEn {
+	_TranslationsMusicDe._(TranslationsDe root) : this._root = root, super.internal(root);
+
+	final TranslationsDe _root; // ignore: unused_field
+
+	// Translations
+	@override String get goToAlbum => 'Zum Album';
+	@override String get goToArtist => 'Zum Interpreten';
+	@override String get instantMix => 'Instant-Mix';
+	@override String get playNext => 'Als Nächstes abspielen';
+	@override String get addToQueue => 'Zur Warteschlange hinzufügen';
+	@override String discNumber({required Object n}) => 'Disc ${n}';
+	@override String trackCount({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('de'))(n,
+		one: '${n} Titel',
+		other: '${n} Titel',
+	);
+	@override String get nowPlaying => 'Wird wiedergegeben';
+	@override String playingFrom({required Object title}) => 'Wiedergabe aus ${title}';
+	@override String get queue => 'Warteschlange';
+	@override String get clearQueue => 'Warteschlange leeren';
+	@override String get lyrics => 'Songtext';
+	@override String get noLyrics => 'Kein Songtext verfügbar';
+	@override String get sleepTimer => 'Einschlaf-Timer';
+	@override String get sleepTimerEndOfTrack => 'Ende des Titels';
+	@override String sleepTimerMinutes({required Object n}) => '${n} Minuten';
+	@override String get stopPlayback => 'Wiedergabe stoppen';
+	@override String get previousTrack => 'Vorheriger Titel';
+	@override String get nextTrack => 'Nächster Titel';
+	@override String get repeat => 'Wiederholen';
+	@override String get repeatAll => 'Alle wiederholen';
+	@override String get repeatOne => 'Titel wiederholen';
+}
+
 // Path: watchTogether
 class _TranslationsWatchTogetherDe extends TranslationsWatchTogetherEn {
 	_TranslationsWatchTogetherDe._(TranslationsDe root) : this._root = root, super.internal(root);
@@ -1256,6 +1317,8 @@ class _TranslationsDownloadsDe extends TranslationsDownloadsEn {
 	@override String get manage => 'Verwalten';
 	@override String get tvShows => 'Serien';
 	@override String get movies => 'Filme';
+	@override String get music => 'Musik';
+	@override String tracksQueued({required Object count}) => '${count} Titel zum Download in Warteschlange';
 	@override String get noDownloads => 'Noch keine Downloads';
 	@override String get noDownloadsDescription => 'Heruntergeladene Inhalte werden hier für die Offline-Wiedergabe angezeigt';
 	@override String get downloadNow => 'Herunterladen';
@@ -1376,6 +1439,7 @@ class _TranslationsVideoSettingsDe extends TranslationsVideoSettingsEn {
 	@override String get performanceOverlay => 'Leistungsanzeige';
 	@override String get audioPassthrough => 'Audio-Durchleitung';
 	@override String get audioNormalization => 'Lautstärke normalisieren';
+	@override String get audioDownmix => 'Downmix auf Stereo';
 }
 
 // Path: performanceOverlay
@@ -1717,6 +1781,9 @@ class _TranslationsLibrariesGroupingsDe extends TranslationsLibrariesGroupingsEn
 	@override String get shows => 'Serien';
 	@override String get seasons => 'Staffeln';
 	@override String get episodes => 'Episoden';
+	@override String get artists => 'Interpreten';
+	@override String get albums => 'Alben';
+	@override String get tracks => 'Titel';
 	@override String get folders => 'Ordner';
 }
 
@@ -2060,7 +2127,7 @@ extension on TranslationsDe {
 			'settings.hideSpoilers' => 'Spoiler für nicht gesehene Episoden verbergen',
 			'settings.hideSpoilersDescription' => 'Vorschaubilder und Beschreibungen ungesehener Episoden verwischen',
 			'settings.playerBackend' => 'Player-Backend',
-			'settings.exoPlayer' => 'ExoPlayer (Empfohlen)',
+			'settings.exoPlayer' => 'ExoPlayer',
 			'settings.mpv' => 'mpv',
 			'settings.hardwareDecoding' => 'Hardware-Decodierung',
 			'settings.hardwareDecodingDescription' => 'Hardwarebeschleunigung verwenden, sofern verfügbar',
@@ -2182,6 +2249,30 @@ extension on TranslationsDe {
 			'settings.tunneledPlaybackDescription' => 'Video-Tunneling verwenden. Deaktivieren, wenn HDR-Wiedergabe schwarzes Video zeigt.',
 			'settings.audioPassthrough' => 'Audio-Durchleitung',
 			'settings.audioPassthroughDescription' => 'Dolby/DTS-Audio ohne Neukodierung an deinen Receiver oder Fernseher senden und Surround-Sound erhalten. Deaktivieren, wenn kein Ton zu hören ist.',
+			'settings.audioPassthroughDescriptionAppleTv' => 'Übergibt Dolby Digital Plus (inkl. Atmos) als Bitstream an das System. DTS und TrueHD werden weiterhin als Mehrkanal-PCM wiedergegeben. Beim Spulen können kurze Tonaussetzer auftreten.',
+			'settings.audioDownmix' => 'Downmix auf Stereo',
+			'settings.audioDownmixDescription' => 'Mischt Surround-Ton für Stereo-Lautsprecher oder Kopfhörer auf zwei Kanäle herunter',
+			'settings.downmixCenterBoost' => 'Center-Kanal-Verstärkung',
+			'settings.downmixCenterBoostValue' => ({required Object db}) => '${db} dB',
+			'settings.downmixCenterBoostLabel' => 'Verstärkung (dB)',
+			'settings.downmixCenterBoostShort' => 'dB',
+			'settings.audioDownmixNormalize' => 'Lautstärke beim Downmix normalisieren',
+			'settings.audioDownmixNormalizeDescription' => 'Senkt den Mix ab, um Übersteuerung zu vermeiden. Deaktivieren, um die Originallautstärke zu behalten (laute Szenen können verzerren).',
+			'settings.atmosDiagnostics' => 'Atmos-Ausgabetest',
+			'settings.atmosDiagnosticsDescription' => 'Dolby-Atmos-Ausgabe diagnostizieren, indem Testsignale über den Systemplayer abgespielt werden',
+			'settings.atmosTestHlsAtmos' => 'Apple-Atmos-Stream',
+			'settings.atmosTestHlsAtmosDescription' => 'Garantiert funktionierender Dolby-Atmos-Stream. Der Receiver sollte Dolby Atmos anzeigen.',
+			'settings.atmosTestHlsControl' => 'Apple-Surround-Stream',
+			'settings.atmosTestHlsControlDescription' => 'Kontrollstream ohne Atmos. Der Receiver sollte Surround ohne Atmos anzeigen.',
+			'settings.atmosTestRawStream' => 'Roher EAC3-Stream',
+			'settings.atmosTestRawStreamDescription' => 'Streamt die Testdatei genau wie die Atmos-Wiedergabe im Player. Benötigt die URL der Testdatei.',
+			'settings.atmosTestRawFile' => 'Rohe EAC3-Datei',
+			'settings.atmosTestRawFileDescription' => 'Spielt die Testdatei mit bekannter Länge ab. Benötigt die URL der Testdatei.',
+			'settings.atmosTestStop' => 'Test stoppen',
+			'settings.atmosTestUrl' => 'URL der Testdatei',
+			'settings.atmosTestUrlDescription' => 'HTTP-URL einer rohen .ec3-Dolby-Atmos-Datei (z. B. mit ffmpeg extrahiert)',
+			'settings.atmosTestUrlMissing' => 'Zuerst die URL der Testdatei festlegen',
+			'settings.atmosTestStatus' => 'Status',
 			'settings.dvConversionMode' => 'Dolby-Vision-Konvertierung',
 			'settings.dvConversionModeDescription' => 'Wähle, wie ExoPlayer Dolby-Vision-Profil-7-Dateien behandelt.',
 			'settings.dvConversionAuto' => 'Automatisch',
@@ -2296,9 +2387,6 @@ extension on TranslationsDe {
 			'rateSheet.starValue' => ({required Object rating}) => '${rating} / 5',
 			'rateSheet.scoreValue' => ({required Object score}) => '${score} / 10',
 			'rateSheet.setScore' => 'Eine Wertung festlegen',
-			'rateSheet.notRated' => 'Nicht bewertet',
-			'rateSheet.liked' => 'Gefällt mir',
-			'rateSheet.notLiked' => 'Nicht geliket',
 			'rateSheet.saved' => 'Gespeichert',
 			'rateSheet.notAvailable' => 'Keine Übereinstimmung gefunden',
 			'rateSheet.noConnectedTrackers' => 'Verbinde einen Tracker in den Einstellungen, um dort zu bewerten.',
@@ -2419,6 +2507,8 @@ extension on TranslationsDe {
 			'messages.logsCleared' => 'Protokolle gelöscht',
 			'messages.logsCopied' => 'Protokolle in Zwischenablage kopiert',
 			'messages.noLogsAvailable' => 'Keine Protokolle verfügbar',
+			_ => null,
+		} ?? switch (path) {
 			'messages.libraryScanning' => ({required Object title}) => 'Scanne „${title}“...',
 			'messages.libraryScanStarted' => ({required Object title}) => 'Mediathekscan gestartet für „${title}“',
 			'messages.libraryScanFailed' => ({required Object error}) => 'Fehler beim Scannen der Mediathek: ${error}',
@@ -2440,8 +2530,6 @@ extension on TranslationsDe {
 			'messages.serverLimitTitle' => 'Wiedergabe fehlgeschlagen',
 			'messages.serverLimitBody' => 'Serverfehler (HTTP 500). Ein Bandbreiten-/Transcoding-Limit lehnte diese Sitzung wohl ab. Bitte den Besitzer um Anpassung.',
 			'messages.logsUploaded' => 'Protokolle hochgeladen',
-			_ => null,
-		} ?? switch (path) {
 			'messages.logsUploadFailed' => 'Protokolle konnten nicht hochgeladen werden',
 			'messages.logId' => 'Protokoll-ID',
 			'subtitlingStyling.text' => 'Text',
@@ -2524,7 +2612,9 @@ extension on TranslationsDe {
 			'profiles.borrowConnectionBorrowed' => 'Verbindung ausgeliehen.',
 			'profiles.borrowFailed' => 'Verbindung konnte nicht ausgeliehen werden.',
 			'profiles.incorrectPin' => 'Falsche PIN.',
+			'profiles.incorrectPinTryAgain' => 'Falsche PIN. Bitte erneut versuchen.',
 			'profiles.sourceProfileMissingParentAccount' => 'Dem Quellprofil fehlt das übergeordnete Konto.',
+			'profiles.failedToLoadHomeUsers' => 'Deine Plex Home-Benutzer konnten nicht geladen werden. Prüfe deine Verbindung und versuche es erneut.',
 			'profiles.failedToVerifyPin' => 'PIN konnte nicht verifiziert werden.',
 			'profiles.newProfile' => 'Neues Profil',
 			'profiles.profileNameHint' => 'z. B. Gäste, Kinder, Wohnzimmer',
@@ -2552,6 +2642,9 @@ extension on TranslationsDe {
 			'discover.nextUpIn' => ({required Object library}) => 'Als Nächstes in ${library}',
 			'discover.recentlyAdded' => 'Kürzlich hinzugefügt',
 			'discover.recentlyAddedIn' => ({required Object library}) => 'Kürzlich hinzugefügt in ${library}',
+			'discover.latestAlbumsIn' => ({required Object library}) => 'Neueste Alben in ${library}',
+			'discover.recentlyPlayedIn' => ({required Object library}) => 'Kürzlich gespielt in ${library}',
+			'discover.mostPlayedIn' => ({required Object library}) => 'Am häufigsten gespielt in ${library}',
 			'discover.playEpisode' => ({required Object season, required Object episode}) => 'S${season}E${episode}',
 			'discover.overview' => 'Übersicht',
 			'discover.cast' => 'Besetzung',
@@ -2624,6 +2717,9 @@ extension on TranslationsDe {
 			'libraries.groupings.shows' => 'Serien',
 			'libraries.groupings.seasons' => 'Staffeln',
 			'libraries.groupings.episodes' => 'Episoden',
+			'libraries.groupings.artists' => 'Interpreten',
+			'libraries.groupings.albums' => 'Alben',
+			'libraries.groupings.tracks' => 'Titel',
 			'libraries.groupings.folders' => 'Ordner',
 			'libraries.filterCategories.genre' => 'Genre',
 			'libraries.filterCategories.year' => 'Jahr',
@@ -2785,6 +2881,28 @@ extension on TranslationsDe {
 			'playlists.errorAdding' => 'Konnte nicht zur Wiedergabeliste hinzugefügt werden',
 			'playlists.errorReordering' => 'Element der Wiedergabeliste konnte nicht neu geordnet werden',
 			'playlists.errorRemoving' => 'Konnte nicht aus der Wiedergabeliste entfernt werden',
+			'music.goToAlbum' => 'Zum Album',
+			'music.goToArtist' => 'Zum Interpreten',
+			'music.instantMix' => 'Instant-Mix',
+			'music.playNext' => 'Als Nächstes abspielen',
+			'music.addToQueue' => 'Zur Warteschlange hinzufügen',
+			'music.discNumber' => ({required Object n}) => 'Disc ${n}',
+			'music.trackCount' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('de'))(n, one: '${n} Titel', other: '${n} Titel', ), 
+			'music.nowPlaying' => 'Wird wiedergegeben',
+			'music.playingFrom' => ({required Object title}) => 'Wiedergabe aus ${title}',
+			'music.queue' => 'Warteschlange',
+			'music.clearQueue' => 'Warteschlange leeren',
+			'music.lyrics' => 'Songtext',
+			'music.noLyrics' => 'Kein Songtext verfügbar',
+			'music.sleepTimer' => 'Einschlaf-Timer',
+			'music.sleepTimerEndOfTrack' => 'Ende des Titels',
+			'music.sleepTimerMinutes' => ({required Object n}) => '${n} Minuten',
+			'music.stopPlayback' => 'Wiedergabe stoppen',
+			'music.previousTrack' => 'Vorheriger Titel',
+			'music.nextTrack' => 'Nächster Titel',
+			'music.repeat' => 'Wiederholen',
+			'music.repeatAll' => 'Alle wiederholen',
+			'music.repeatOne' => 'Titel wiederholen',
 			'watchTogether.title' => 'Gemeinsam Schauen',
 			'watchTogether.description' => 'Inhalte synchron mit Freunden und Familie schauen',
 			'watchTogether.createSession' => 'Sitzung Erstellen',
@@ -2849,6 +2967,8 @@ extension on TranslationsDe {
 			'downloads.manage' => 'Verwalten',
 			'downloads.tvShows' => 'Serien',
 			'downloads.movies' => 'Filme',
+			'downloads.music' => 'Musik',
+			'downloads.tracksQueued' => ({required Object count}) => '${count} Titel zum Download in Warteschlange',
 			'downloads.noDownloads' => 'Noch keine Downloads',
 			'downloads.noDownloadsDescription' => 'Heruntergeladene Inhalte werden hier für die Offline-Wiedergabe angezeigt',
 			'downloads.downloadNow' => 'Herunterladen',
@@ -2901,6 +3021,8 @@ extension on TranslationsDe {
 			'downloads.manageSyncRule' => 'Synchronisierung verwalten',
 			'downloads.editEpisodeCount' => 'Episodenanzahl',
 			'downloads.editSyncFilter' => 'Synchronisierungsfilter',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.syncAllItems' => 'Alle Einträge synchronisieren',
 			'downloads.syncUnwatchedItems' => 'Ungesehene Einträge synchronisieren',
 			'downloads.syncRuleServerContext' => ({required Object server, required Object status}) => 'Server: ${server} • ${status}',
@@ -2954,8 +3076,6 @@ extension on TranslationsDe {
 			'companionRemote.pairing.connectionTimedOut' => 'Verbindung hat Zeitlimit überschritten. Nutze auf beiden Geräten dasselbe Netzwerk.',
 			'companionRemote.pairing.sessionNotFound' => 'Gerät nicht gefunden. Stelle sicher, dass Plezy auf dem Host läuft.',
 			'companionRemote.pairing.authFailed' => 'Authentifizierung fehlgeschlagen. Beide Geräte benötigen dasselbe Plex-Konto.',
-			_ => null,
-		} ?? switch (path) {
 			'companionRemote.pairing.failedToConnect' => ({required Object error}) => 'Verbindung fehlgeschlagen: ${error}',
 			'companionRemote.remote.disconnectConfirm' => 'Möchtest du die Verbindung zur Fernsteuerungssitzung trennen?',
 			'companionRemote.remote.reconnecting' => 'Verbindung wird wiederhergestellt...',
@@ -3000,6 +3120,7 @@ extension on TranslationsDe {
 			'videoSettings.performanceOverlay' => 'Leistungsanzeige',
 			'videoSettings.audioPassthrough' => 'Audio-Durchleitung',
 			'videoSettings.audioNormalization' => 'Lautstärke normalisieren',
+			'videoSettings.audioDownmix' => 'Downmix auf Stereo',
 			'performanceOverlay.color' => 'Farbe',
 			'performanceOverlay.performance' => 'Leistung',
 			'performanceOverlay.buffer' => 'Puffer',

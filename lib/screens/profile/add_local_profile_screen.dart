@@ -59,28 +59,35 @@ class _AddLocalProfileScreenState extends State<AddLocalProfileScreen> with Cont
   void _clearPin() => setState(() => _pinHash = null);
 
   Future<void> _saveAndContinue() async {
+    if (_saving) return;
     final name = _nameController.text.trim();
     if (name.isEmpty) return;
     setState(() => _saving = true);
 
-    final registry = context.read<ProfileRegistry>();
-    final profile = Profile.local(
-      id: 'local-${const Uuid().v4()}',
-      displayName: name,
-      pinHash: _pinHash,
-      sortOrder: DateTime.now().millisecondsSinceEpoch,
-      createdAt: DateTime.now(),
-    );
-    await registry.upsert(profile);
+    try {
+      final registry = context.read<ProfileRegistry>();
+      final profile = Profile.local(
+        id: 'local-${const Uuid().v4()}',
+        displayName: name,
+        pinHash: _pinHash,
+        sortOrder: DateTime.now().millisecondsSinceEpoch,
+        createdAt: DateTime.now(),
+      );
+      await registry.upsert(profile);
 
-    if (!mounted) return;
-    // Drop the user into the connection picker so they end up with at least
-    // one connection. The picker offers both new sign-ins and borrowing from
-    // existing profiles — empty borrow lists no longer trap the user.
-    final navigator = Navigator.of(context);
-    await navigator.push(MaterialPageRoute(builder: (_) => AddConnectionScreen(targetProfile: profile)));
-    if (!mounted) return;
-    navigator.pop(true);
+      if (!mounted) return;
+      // Drop the user into the connection picker so they end up with at least
+      // one connection. The picker offers both new sign-ins and borrowing from
+      // existing profiles — empty borrow lists no longer trap the user.
+      final navigator = Navigator.of(context);
+      await navigator.push(MaterialPageRoute(builder: (_) => AddConnectionScreen(targetProfile: profile)));
+      if (!mounted) return;
+      navigator.pop(true);
+    } finally {
+      // A failed upsert (or returning from the connection picker without
+      // popping) must re-enable the button instead of wedging it.
+      if (mounted) setState(() => _saving = false);
+    }
   }
 
   @override

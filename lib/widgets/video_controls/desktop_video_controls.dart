@@ -195,8 +195,13 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
   Duration? _timelinePreviewPosition;
   Duration? _lastFlushedTimelinePreviewPosition;
   static const _keyRepeatThumbnailTimeout = Duration(milliseconds: 400);
-  static const _timelineSeekDebounce = Duration(milliseconds: 350);
+  // Must exceed the OS initial key-repeat delay (~400-500ms on Android/TV),
+  // or a held key commits an extra seek in the gap before repeats begin.
+  // Release still flushes synchronously, so this adds no tap latency.
+  static const _timelineSeekDebounce = Duration(milliseconds: 800);
   static const _timelinePreviewClearDelay = Duration(seconds: 2);
+  static const _timelinePreviewSettleTolerance = Duration(seconds: 3);
+  static const _timelinePreviewClearCeiling = Duration(seconds: 10);
 
   // Content strip state
   bool _contentStripVisible = false;
@@ -469,14 +474,30 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
     }
   }
 
-  void _clearTimelinePreviewIfStill(Duration target) {
+  void _clearTimelinePreviewIfStill(Duration target, Duration elapsed) {
     if (!mounted || _timelinePreviewPosition != target) return;
+    // Hold the preview until playback has actually reached the committed
+    // target: clearing while a slow device is still buffering re-bases the
+    // next key-seek off the stale live position, silently discarding the
+    // seek that was just committed. The ceiling is a backstop for streams
+    // that never settle (mirrors LiveSeekAccumulator._scheduleClear).
+    final live = widget.player.state.position;
+    if ((live - target).abs() > _timelinePreviewSettleTolerance && elapsed < _timelinePreviewClearCeiling) {
+      _timelinePreviewClearTimer = Timer(
+        _timelinePreviewClearDelay,
+        () => _clearTimelinePreviewIfStill(target, elapsed + _timelinePreviewClearDelay),
+      );
+      return;
+    }
     setState(() => _timelinePreviewPosition = null);
   }
 
   void _scheduleTimelinePreviewClear(Duration target) {
     _timelinePreviewClearTimer?.cancel();
-    _timelinePreviewClearTimer = Timer(_timelinePreviewClearDelay, () => _clearTimelinePreviewIfStill(target));
+    _timelinePreviewClearTimer = Timer(
+      _timelinePreviewClearDelay,
+      () => _clearTimelinePreviewIfStill(target, Duration.zero),
+    );
   }
 
   void _flushTimelinePreviewSeek() {
@@ -533,15 +554,13 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
   KeyEventResult _handleTimelineKeyEvent(FocusNode _, KeyEvent event) {
     final key = event.logicalKey;
 
-    // Handle key release to reset progressive seek state
+    // Handle key release: commit the accumulated scrub target with a single
+    // seek (a no-op when nothing is pending) and reset progressive seek state.
     if (event is KeyUpEvent) {
       if (key == LogicalKeyboardKey.arrowLeft || key == LogicalKeyboardKey.arrowRight) {
-        if (_trackControlsState.isTranscoding) {
-          _flushTimelinePreviewSeek();
-          _resetSeekState();
-          return KeyEventResult.handled;
-        }
+        _flushTimelinePreviewSeek();
         _resetSeekState();
+        return KeyEventResult.handled;
       }
       return KeyEventResult.ignored;
     }
@@ -605,22 +624,22 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
       final stepMs = (baseStepMs * effectiveMultiplier).clamp(500, 120_000).toInt();
       final step = Duration(milliseconds: stepMs);
 
-      final newPosition = isForward ? position + step : position - step;
+      // Accumulate the scrub target from a stable base — the in-flight preview
+      // when a burst is already running, otherwise the live position — so the
+      // marker never snaps back when a real seek lands mid-burst.
+      final previewBase = _timelinePreviewPosition ?? position;
+      final rawTarget = isForward ? previewBase + step : previewBase - step;
+      final target = Duration(milliseconds: rawTarget.inMilliseconds.clamp(0, duration.inMilliseconds));
+      _setTimelinePreviewPosition(target);
 
-      // Clamp to valid range
-      final clampedPosition = Duration(milliseconds: newPosition.inMilliseconds.clamp(0, duration.inMilliseconds));
-
-      if (_trackControlsState.isTranscoding) {
-        final previewBase = _timelinePreviewPosition ?? position;
-        final previewPosition = isForward ? previewBase + step : previewBase - step;
-        final clampedPreview = Duration(milliseconds: previewPosition.inMilliseconds.clamp(0, duration.inMilliseconds));
-        _setTimelinePreviewPosition(clampedPreview);
-        _scheduleTimelinePreviewSeekFlush();
-        widget.onFocusActivity?.call();
-        return KeyEventResult.handled;
-      }
-
-      widget.onSeek(clampedPosition);
+      // Move only the preview while the key is held; commit a single seek once
+      // the burst pauses (debounce) or the key is released. Firing a real seek
+      // per key-repeat floods a direct/progressive stream with overlapping range
+      // requests and wedges low-power devices (e.g. Fire TV Stick) in BUFFERING.
+      // The player's `buffering` flag lags the key-repeat rate, so it can't gate
+      // this reliably — coalescing unconditionally matches the existing transcode
+      // path and cannot flood regardless of hardware.
+      _scheduleTimelinePreviewSeekFlush();
       widget.onFocusActivity?.call();
       return KeyEventResult.handled;
     }

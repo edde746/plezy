@@ -1,30 +1,39 @@
 import 'package:json_annotation/json_annotation.dart';
 
+import '../../utils/json_utils.dart';
+
 part 'plex_home_user.g.dart';
 
+/// Parsed from the clients.plex.tv `/api/v2/home/users` account API — the
+/// same drift-prone surface as PlexUserProfile (#1488), so scalar fields
+/// coerce tolerantly instead of hard-casting.
 @JsonSerializable()
 class PlexHomeUser {
-  @JsonKey(defaultValue: 0)
+  @JsonKey(fromJson: _intOr0)
   final int id;
-  @JsonKey(defaultValue: '')
+  @JsonKey(readValue: readStringField, defaultValue: '')
   final String uuid;
-  @JsonKey(defaultValue: 'Unknown')
+  @JsonKey(readValue: readStringField, defaultValue: 'Unknown')
   final String title;
+  @JsonKey(readValue: readStringField)
   final String? username;
+  @JsonKey(readValue: readStringField)
   final String? email;
+  @JsonKey(readValue: readStringField)
   final String? friendlyName;
-  @JsonKey(defaultValue: '')
+  @JsonKey(readValue: readStringField, defaultValue: '')
   final String thumb;
-  @JsonKey(defaultValue: false)
+  @JsonKey(fromJson: flexibleBool)
   final bool hasPassword;
-  @JsonKey(defaultValue: false)
+  @JsonKey(fromJson: flexibleBool)
   final bool restricted;
+  @JsonKey(fromJson: flexibleInt)
   final int? updatedAt;
-  @JsonKey(defaultValue: false)
+  @JsonKey(fromJson: flexibleBool)
   final bool admin;
-  @JsonKey(defaultValue: false)
+  @JsonKey(fromJson: flexibleBool)
   final bool guest;
-  @JsonKey(defaultValue: false)
+  @JsonKey(fromJson: flexibleBool)
   final bool protected;
 
   PlexHomeUser({
@@ -54,3 +63,5 @@ class PlexHomeUser {
   bool get isGuestUser => guest;
   bool get requiresPassword => protected;
 }
+
+int _intOr0(Object? v) => flexibleInt(v) ?? 0;

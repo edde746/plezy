@@ -8,6 +8,7 @@ import '../../providers/trackers_provider.dart';
 import '../../providers/trakt_account_provider.dart';
 import '../../widgets/app_icon.dart';
 import '../../widgets/focused_scroll_scaffold.dart';
+import '../../widgets/settings_section.dart';
 import 'tracker_settings_screen.dart';
 import 'trakt_settings_screen.dart';
 
@@ -32,10 +33,7 @@ class TrackersSettingsScreen extends StatelessWidget {
                 ).textTheme.bodyMedium?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
               ),
             ),
-            _trakt(),
-            _mal(),
-            _anilist(),
-            _simkl(),
+            SettingsGroup(children: [_trakt(), _mal(), _anilist(), _simkl()]),
             const SizedBox(height: 24),
           ]),
         ),

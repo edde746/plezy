@@ -292,21 +292,26 @@ class _SearchScreenState extends State<SearchScreen>
     return SliverPadding(
       padding: const EdgeInsets.all(16),
       sliver: SliverList(
-        delegate: SliverChildBuilderDelegate((context, index) {
-          final item = _searchResults[index];
-          return FocusableMediaCard(
-            key: Key(item.globalKey),
-            item: item,
-            forceListMode: true,
-            disableScale: true,
-            focusNode: index == 0 ? _firstResultFocusNode : null,
-            onRefresh: updateItem,
-            onListRefresh: () => updateItem(item.id),
-            onNavigateLeft: _navigateToSidebar,
-            onNavigateUp: index == 0 ? focusSearchInput : null,
-            showServerName: showServerName,
-          );
-        }, childCount: _searchResults.length),
+        delegate: SliverChildBuilderDelegate(
+          (context, index) {
+            final item = _searchResults[index];
+            return FocusableMediaCard(
+              key: Key(item.globalKey),
+              item: item,
+              forceListMode: true,
+              disableScale: true,
+              focusNode: index == 0 ? _firstResultFocusNode : null,
+              onRefresh: updateItem,
+              onListRefresh: () => updateItem(item.id),
+              onNavigateLeft: _navigateToSidebar,
+              onNavigateUp: index == 0 ? focusSearchInput : null,
+              showServerName: showServerName,
+            );
+          },
+          childCount: _searchResults.length,
+          addAutomaticKeepAlives: false,
+          addSemanticIndexes: false,
+        ),
       ),
     );
   }

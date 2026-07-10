@@ -10,6 +10,8 @@ import 'clock_sync.dart';
 /// Callbacks the reconciler surfaces to the provider/UI layer.
 class GuestReconcilerCallbacks {
   /// The host's state names media we don't have loaded — navigate/reload.
+  /// Fires on EVERY such state (the heartbeat is the retry channel for
+  /// failed switches); the provider's dispatcher dedups.
   final void Function(String ratingKey, String serverId, String? mediaTitle)? onMediaSwitchNeeded;
 
   final void Function(ControlMode mode)? onControlModeChanged;
@@ -226,7 +228,6 @@ class GuestPlaybackReconciler {
   void onState(PlaybackState state) {
     if (state.seq <= _lastSeq) return; // Stale or reordered.
     _lastSeq = state.seq;
-    final previous = _latestState;
     _latestState = state;
 
     if (state.controlMode != _reportedControlMode) {
@@ -259,13 +260,10 @@ class GuestPlaybackReconciler {
       _sendStatus(force: true);
     }
 
-    // The host moved to media we don't have — hand off to the switch flow.
-    if (_attachedMediaKey != null && state.mediaKey != _attachedMediaKey) {
-      _callbacks.onMediaSwitchNeeded?.call(state.ratingKey, state.serverId, state.mediaTitle);
-      return;
-    }
-    if (previous?.mediaKey != state.mediaKey && _attachedMediaKey == null) {
-      // Not in the player yet — let the provider navigate.
+    // Not attached to the host's media (detached, or attached to something
+    // else) — hand off to the switch flow on every state so a failed switch
+    // retries on the next heartbeat. The provider's dispatcher dedups.
+    if (_attachedMediaKey == null || state.mediaKey != _attachedMediaKey) {
       _callbacks.onMediaSwitchNeeded?.call(state.ratingKey, state.serverId, state.mediaTitle);
       return;
     }

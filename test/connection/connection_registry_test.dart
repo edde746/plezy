@@ -11,6 +11,15 @@ import 'package:plezy/services/plex_auth_service.dart';
 
 import '../test_helpers/prefs.dart';
 
+/// The id of the connection currently flagged default, read straight from the
+/// row (the registry maintains the flag; there is no public reader).
+Future<String?> _defaultConnectionId(AppDatabase db) async {
+  for (final row in await db.select(db.connections).get()) {
+    if (row.isDefault) return row.id;
+  }
+  return null;
+}
+
 JellyfinConnection _jellyfin({String id = 'srv-1', String userName = 'edde'}) {
   return JellyfinConnection(
     id: id,
@@ -71,7 +80,7 @@ void main() {
   group('ConnectionRegistry', () {
     test('list() returns empty when no connections stored', () async {
       expect(await registry.list(), isEmpty);
-      expect(await registry.getDefault(), isNull);
+      expect(await _defaultConnectionId(db), isNull);
     });
 
     test('first upserted connection becomes the default', () async {
@@ -80,8 +89,7 @@ void main() {
       expect(list.length, 1);
       expect(list.first.id, 'a');
 
-      final defaultConn = await registry.getDefault();
-      expect(defaultConn?.id, 'a');
+      expect(await _defaultConnectionId(db), 'a');
     });
 
     test('upsert preserves type discriminator (Plex vs Jellyfin)', () async {
@@ -141,10 +149,10 @@ void main() {
       await registry.upsert(_jellyfin(id: 'b'));
       // First is default by default; explicitly switch to b.
       await registry.setDefault('b');
-      expect((await registry.getDefault())?.id, 'b');
+      expect(await _defaultConnectionId(db), 'b');
       // Switch back to a.
       await registry.setDefault('a');
-      expect((await registry.getDefault())?.id, 'a');
+      expect(await _defaultConnectionId(db), 'a');
     });
 
     test('remove deletes a row and re-elects a default when needed', () async {
@@ -153,10 +161,10 @@ void main() {
       // a is default (first one in).
       await registry.remove('a');
       // b should now be the default.
-      expect((await registry.getDefault())?.id, 'b');
+      expect(await _defaultConnectionId(db), 'b');
       // Removing the last clears the default cleanly.
       await registry.remove('b');
-      expect(await registry.getDefault(), isNull);
+      expect(await _defaultConnectionId(db), isNull);
     });
 
     test('re-upsert preserves the existing default flag', () async {
@@ -165,15 +173,15 @@ void main() {
       // wrote `isFirst` (false on update).
       await registry.upsert(_jellyfin(id: 'a'));
       await registry.upsert(_jellyfin(id: 'b'));
-      expect((await registry.getDefault())?.id, 'a');
+      expect(await _defaultConnectionId(db), 'a');
 
       // Re-upsert the default with refreshed credentials.
       await registry.upsert(_jellyfin(id: 'a', userName: 'refreshed'));
-      expect((await registry.getDefault())?.id, 'a');
+      expect(await _defaultConnectionId(db), 'a');
 
       // And re-upserting a non-default row doesn't accidentally promote it.
       await registry.upsert(_jellyfin(id: 'b', userName: 'refreshed'));
-      expect((await registry.getDefault())?.id, 'a');
+      expect(await _defaultConnectionId(db), 'a');
     });
 
     test('recordAuthSuccess updates lastAuthenticatedAt without losing config', () async {

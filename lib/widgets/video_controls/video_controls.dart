@@ -76,6 +76,7 @@ import 'widgets/mobile_skip_zones.dart';
 import 'widgets/skip_marker_button.dart';
 import 'widgets/track_chapter_controls.dart';
 import 'widgets/performance_overlay/performance_overlay.dart';
+import '../rasterized_gradient.dart';
 import 'mobile_video_controls.dart';
 import 'desktop_video_controls.dart';
 import 'package:provider/provider.dart';
@@ -804,24 +805,25 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
                                 child: ValueListenableBuilder<bool>(
                                   valueListenable: widget.hasFirstFrame ?? _fallbackHasFirstFrame,
                                   builder: (context, hasFrame, child) {
-                                    return Container(
-                                      decoration: BoxDecoration(
-                                        // Use solid black when loading, gradient when loaded
-                                        color: hasFrame ? null : Colors.black,
-                                        gradient: hasFrame
-                                            ? LinearGradient(
-                                                begin: Alignment.topCenter,
-                                                end: Alignment.bottomCenter,
-                                                colors: [
-                                                  Colors.black.withValues(alpha: 0.7),
-                                                  Colors.transparent,
-                                                  Colors.transparent,
-                                                  Colors.black.withValues(alpha: 0.7),
-                                                ],
-                                                stops: const [0.0, 0.2, 0.8, 1.0],
-                                              )
-                                            : null,
-                                      ),
+                                    // Solid black while loading, scrim once frames flow.
+                                    // Both states share one widget type: hasFrame flips
+                                    // on every in-place episode switch / live-TV zap, and
+                                    // a runtimeType change here would re-inflate the whole
+                                    // controls subtree and drop its state.
+                                    return RasterizedGradient(
+                                      gradient: hasFrame
+                                          ? LinearGradient(
+                                              begin: Alignment.topCenter,
+                                              end: Alignment.bottomCenter,
+                                              colors: [
+                                                Colors.black.withValues(alpha: 0.7),
+                                                Colors.transparent,
+                                                Colors.transparent,
+                                                Colors.black.withValues(alpha: 0.7),
+                                              ],
+                                              stops: const [0.0, 0.2, 0.8, 1.0],
+                                            )
+                                          : const LinearGradient(colors: [Colors.black, Colors.black]),
                                       child: child,
                                     );
                                   },
@@ -979,10 +981,19 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
                       curve: Curves.easeInOut,
                       top: _showControls ? (isMobile ? 100.0 : 60.0) : 16.0,
                       left: 16,
-                      child: AnimatedOpacity(
-                        opacity: (!_autoHidePerformanceOverlay || _showControls) ? 1.0 : 0.0,
-                        duration: const Duration(milliseconds: 200),
-                        child: IgnorePointer(child: PlayerPerformanceOverlay(player: widget.player)),
+                      right: 16,
+                      // Clear the bottom controls (same clearance as the skip button) so the
+                      // overlay can shrink to fit instead of being clipped by the screen edge.
+                      bottom: !_showControls ? 16.0 : (isMobile ? 80.0 : 115.0),
+                      // Align loosens the tight constraints from the fully-anchored Positioned;
+                      // without it the card would stretch to fill the whole region.
+                      child: Align(
+                        alignment: Alignment.topLeft,
+                        child: AnimatedOpacity(
+                          opacity: (!_autoHidePerformanceOverlay || _showControls) ? 1.0 : 0.0,
+                          duration: const Duration(milliseconds: 200),
+                          child: IgnorePointer(child: PlayerPerformanceOverlay(player: widget.player)),
+                        ),
                       ),
                     ),
                   if (_isScreenLocked)

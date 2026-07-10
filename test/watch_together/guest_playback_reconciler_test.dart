@@ -364,6 +364,44 @@ void main() {
       });
     });
 
+    test('detached guest is re-notified on every state (heartbeat retry channel)', () {
+      fakeAsync((async) {
+        final switches = <String>[];
+        final h = _Harness(
+          async,
+          callbacks: GuestReconcilerCallbacks(onMediaSwitchNeeded: (rk, sid, title) => switches.add(rk)),
+        );
+
+        // Never attached: every heartbeat re-offers the switch so a failed
+        // navigation can retry (the provider's dispatcher dedups).
+        h.reconciler.onState(h.state());
+        h.reconciler.onState(h.state());
+        h.reconciler.onState(h.state());
+        async.flushMicrotasks();
+
+        expect(switches, ['rk1', 'rk1', 'rk1']);
+        expect(h.player.commandLog, isEmpty);
+        h.dispose();
+      });
+    });
+
+    test('attached to matching media never fires the switch callback', () {
+      fakeAsync((async) {
+        final switches = <String>[];
+        final h = _Harness(
+          async,
+          callbacks: GuestReconcilerCallbacks(onMediaSwitchNeeded: (rk, sid, title) => switches.add(rk)),
+        );
+        h.attachReady();
+
+        h.reconciler.onState(h.state());
+        async.elapse(const Duration(seconds: 2));
+
+        expect(switches, isEmpty);
+        h.dispose();
+      });
+    });
+
     test('attach reconciles to the latest state received while detached', () {
       fakeAsync((async) {
         final h = _Harness(async);

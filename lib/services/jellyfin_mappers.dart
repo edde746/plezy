@@ -60,6 +60,7 @@ MediaVersion jellyfinMediaSourceToVersion(
       MediaPart(
         id: partId,
         streamPath: streamPath,
+        file: source['Path'] as String?,
         sizeBytes: flexibleInt(source['Size']),
         container: source['Container'] as String?,
         durationMs: includePartDuration ? jellyfinTicksToMs(source['RunTimeTicks']) : null,
@@ -164,21 +165,38 @@ class JellyfinMappers {
       titleSort: item['SortName'] as String?,
       summary: item['Overview'] as String?,
       tagline: _firstString(item['Taglines']),
-      originalTitle: item['OriginalTitle'] as String?,
+      // Music: a compilation track's own performer(s) go into originalTitle
+      // (matching Plex's convention) so MediaItem.trackArtistTitle can prefer
+      // it over the album artist. Only set when it actually differs.
+      originalTitle: item['OriginalTitle'] as String? ?? _trackArtistsOriginalTitle(item),
       studio: _firstStudioName(item['Studios']),
       year: item['ProductionYear'] as int?,
       originallyAvailableAt: jellyfinIsoToYmd(item['PremiereDate'] as String?),
       contentRating: item['OfficialRating'] as String?,
-      parentId: item['SeasonId'] as String? ?? item['ParentId'] as String?,
-      parentTitle: item['SeasonName'] as String?,
+      // Music mirrors the episode hierarchy, matching Plex's parent chain:
+      // track parent = album (AlbumId / Album), track grandparent = album
+      // artist (AlbumArtists[0] / AlbumArtist), and an *album's* parent is its
+      // artist (Jellyfin album dtos link artists via tags, not ParentId).
+      // Video rows never carry the Album* fields, so the extra fallbacks are
+      // inert for them.
+      parentId:
+          item['SeasonId'] as String? ??
+          item['AlbumId'] as String? ??
+          (kind == MediaKind.album ? _firstAlbumArtistId(item) : null) ??
+          item['ParentId'] as String?,
+      parentTitle:
+          item['SeasonName'] as String? ??
+          item['Album'] as String? ??
+          (kind == MediaKind.album ? item['AlbumArtist'] as String? : null),
       parentThumbPath: _imagePath(item, 'SeasonId', 'SeasonPrimaryImageTag', 'Primary'),
       parentIndex: item['ParentIndexNumber'] as int?,
       index: item['IndexNumber'] as int?,
-      grandparentId: item['SeriesId'] as String?,
-      grandparentTitle: item['SeriesName'] as String?,
+      grandparentId: item['SeriesId'] as String? ?? (kind == MediaKind.track ? _firstAlbumArtistId(item) : null),
+      grandparentTitle:
+          item['SeriesName'] as String? ?? (kind == MediaKind.track ? item['AlbumArtist'] as String? : null),
       grandparentThumbPath: _seriesPrimaryImage(item),
       grandparentArtPath: _parentBackdropImage(item) ?? _seriesBackdropImage(item),
-      thumbPath: _selfImagePath(id, item, 'Primary'),
+      thumbPath: _selfImagePath(id, item, 'Primary') ?? _albumPrimaryImage(item),
       artPath: _selfImagePath(id, item, 'Backdrop'),
       // Episodes/seasons don't carry their own logo — Jellyfin exposes the
       // parent's logo via ParentLogoItemId/ParentLogoImageTag, which is
@@ -198,14 +216,7 @@ class JellyfinMappers {
       addedAt: jellyfinIsoToEpochSeconds(item['DateCreated'] as String?),
       updatedAt: jellyfinIsoToEpochSeconds(item['DateLastSaved'] as String? ?? item['DateModified'] as String?),
       rating: (item['CommunityRating'] as num?)?.toDouble(),
-      // Jellyfin stores a binary `Likes` flag rather than a numeric rating.
-      // Map true → 10 / false → 0 so the existing UI's `userRating > 0`
-      // check renders the chip as filled for liked items.
-      userRating: switch (_userData(item)?['Likes']) {
-        true => 10.0,
-        false => 0.0,
-        _ => null,
-      },
+      isFavorite: _userData(item)?['IsFavorite'] as bool?,
       genres: _stringList(item['Genres']),
       directors: _peopleByType(item['People'], 'Director'),
       writers: _peopleByType(item['People'], 'Writer'),
@@ -477,6 +488,38 @@ class JellyfinMappers {
     }
     if (tag == null) return null;
     return _itemImagePath(id, type, tag: tag);
+  }
+
+  /// First album-artist id for Audio/MusicAlbum rows — the music counterpart
+  /// of `SeriesId` in the parent hierarchy.
+  static String? _firstAlbumArtistId(Map<String, dynamic> item) {
+    final albumArtists = item['AlbumArtists'];
+    if (albumArtists is List && albumArtists.isNotEmpty) {
+      final first = albumArtists.first;
+      if (first is Map<String, dynamic>) return first['Id'] as String?;
+    }
+    return null;
+  }
+
+  /// Per-track performer(s) joined for display, only when they differ from
+  /// the album artist (Jellyfin sets `Artists == [AlbumArtist]` on
+  /// non-compilation tracks, where the value would be redundant).
+  static String? _trackArtistsOriginalTitle(Map<String, dynamic> item) {
+    final artists = stringListFromRaw(item['Artists']);
+    if (artists == null || artists.isEmpty) return null;
+    final joined = artists.join(', ');
+    return joined == item['AlbumArtist'] as String? ? null : joined;
+  }
+
+  /// Album cover fallback for tracks without embedded art. Requires the
+  /// `AlbumPrimaryImageTag` — its presence is Jellyfin's signal that the
+  /// album actually has a primary image, so we never emit a 404-ing URL as
+  /// an item's main thumb.
+  static String? _albumPrimaryImage(Map<String, dynamic> item) {
+    final albumId = item['AlbumId'] as String?;
+    final tag = item['AlbumPrimaryImageTag'] as String?;
+    if (albumId == null || tag == null) return null;
+    return _itemImagePath(albumId, 'Primary', tag: tag);
   }
 
   static String? _seriesPrimaryImage(Map<String, dynamic> item) {

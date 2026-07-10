@@ -37,12 +37,17 @@ class CardFocusScope extends InheritedWidget {
 class CardFocusBorder extends StatelessWidget {
   const CardFocusBorder({
     super.key,
-    required this.borderRadius,
+    this.borderRadius = FocusTheme.defaultBorderRadius,
+    this.borderRadii,
     this.strokeAlign = BorderSide.strokeAlignOutside,
     required this.child,
   });
 
   final double borderRadius;
+
+  /// Per-corner radii; overrides [borderRadius] when set (M3E grouped cards).
+  final BorderRadius? borderRadii;
+
   final double strokeAlign;
   final Widget child;
 
@@ -58,6 +63,7 @@ class CardFocusBorder extends StatelessWidget {
         context,
         isFocused: showFocus,
         borderRadius: borderRadius,
+        radii: borderRadii,
         borderStrokeAlign: strokeAlign,
       ),
       child: child,

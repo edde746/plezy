@@ -23,6 +23,7 @@ mixin PlayerStreamControllersMixin {
   final playbackRestartController = StreamController<void>.broadcast();
   final fileLoadedController = StreamController<void>.broadcast();
   final backendSwitchedController = StreamController<void>.broadcast();
+  final trackTransitionController = StreamController<String>.broadcast();
 
   PlayerStreams createStreams() {
     return PlayerStreams(
@@ -45,6 +46,7 @@ mixin PlayerStreamControllersMixin {
       playbackRestart: playbackRestartController.stream,
       fileLoaded: fileLoadedController.stream,
       backendSwitched: backendSwitchedController.stream,
+      trackTransition: trackTransitionController.stream,
     );
   }
 
@@ -68,5 +70,6 @@ mixin PlayerStreamControllersMixin {
     await playbackRestartController.close();
     await fileLoadedController.close();
     await backendSwitchedController.close();
+    await trackTransitionController.close();
   }
 }

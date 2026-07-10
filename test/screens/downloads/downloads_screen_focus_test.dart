@@ -62,7 +62,7 @@ void main() {
     await db.close();
   });
 
-  testWidgets('right from Movies focuses and opens Sync Rules action', (tester) async {
+  testWidgets('right from the last tab (Music) focuses and opens Sync Rules action', (tester) async {
     final screenKey = GlobalKey<DownloadsScreenState>();
 
     await tester.pumpWidget(
@@ -83,8 +83,8 @@ void main() {
     await tester.pumpAndSettle();
 
     final state = screenKey.currentState!;
-    state.tabController.index = 2;
-    state.getTabChipFocusNode(2).requestFocus();
+    state.tabController.index = 3;
+    state.getTabChipFocusNode(3).requestFocus();
     await tester.pumpAndSettle();
 
     await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);

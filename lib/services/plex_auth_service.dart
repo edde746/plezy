@@ -9,6 +9,7 @@ import '../models/plex/plex_user_profile.dart';
 import '../models/plex/plex_home.dart';
 import '../models/user_switch_response.dart';
 import '../utils/app_logger.dart';
+import '../utils/device_identity.dart';
 import '../utils/endpoint_race.dart';
 import '../utils/media_server_timeouts.dart';
 import '../utils/media_server_http_client.dart';
@@ -53,8 +54,17 @@ class PlexAuthService {
   final String _clientIdentifier;
   final String _appVersion;
   final String _platformVersion;
+  final String _platform;
+  final String? _deviceName;
 
-  PlexAuthService._(this._http, this._clientIdentifier, this._appVersion, this._platformVersion);
+  PlexAuthService._(
+    this._http,
+    this._clientIdentifier,
+    this._appVersion,
+    this._platformVersion,
+    this._platform,
+    this._deviceName,
+  );
 
   @visibleForTesting
   PlexAuthService.forTesting({
@@ -62,7 +72,9 @@ class PlexAuthService {
     String clientIdentifier = 'test-client',
     String appVersion = 'test',
     String platformVersion = 'test',
-  }) : this._(http, clientIdentifier, appVersion, platformVersion);
+    String platform = 'Flutter',
+    String? deviceName,
+  }) : this._(http, clientIdentifier, appVersion, platformVersion, platform, deviceName);
 
   /// Close the underlying HTTP client. Call when the service is short-lived
   /// (created for a single API call) to avoid leaking sockets.
@@ -76,7 +88,15 @@ class PlexAuthService {
     );
     final clientIdentifier = await storage.getOrCreateClientIdentifier();
     final packageInfo = await PackageInfo.fromPlatform();
-    return PlexAuthService._(http, clientIdentifier, packageInfo.version, Platform.operatingSystemVersion);
+    final identity = await DeviceIdentityService.resolve();
+    return PlexAuthService._(
+      http,
+      clientIdentifier,
+      packageInfo.version,
+      Platform.operatingSystemVersion,
+      identity.platform,
+      sanitizeHeaderValue(identity.deviceName),
+    );
   }
 
   String get clientIdentifier => _clientIdentifier;
@@ -86,6 +106,8 @@ class PlexAuthService {
       'Accept': 'application/json',
       'X-Plex-Product': _appName,
       'X-Plex-Client-Identifier': _clientIdentifier,
+      'X-Plex-Platform': _platform,
+      'X-Plex-Device-Name': ?_deviceName,
     };
 
     if (authToken != null) {
@@ -251,7 +273,7 @@ class PlexAuthService {
       'X-Plex-Product': _appName,
       'X-Plex-Version': _appVersion,
       'X-Plex-Client-Identifier': _clientIdentifier,
-      'X-Plex-Platform': 'Flutter',
+      'X-Plex-Platform': _platform,
       'X-Plex-Platform-Version': _platformVersion,
       'X-Plex-Token': currentToken,
       'X-Plex-Language': 'en',

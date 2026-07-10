@@ -9,8 +9,10 @@ import '../../media/media_item.dart';
 import '../../media/media_kind.dart';
 import '../../media/media_playlist.dart';
 import '../../services/media_list_playback_launcher.dart';
+import '../../services/music/music_playback_service.dart';
 import '../../services/playlist_items_loader.dart';
 import '../../utils/app_logger.dart';
+import '../../utils/music_navigation.dart';
 import '../../widgets/app_icon.dart';
 import '../../widgets/desktop_app_bar.dart';
 import '../../focus/dpad_navigator.dart';
@@ -69,20 +71,60 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
   /// filter rules, not direct edits). Jellyfin has no equivalent concept.
   bool get _isReadOnly => widget.playlist.smart;
 
+  /// Audio playlists play through the music session (mini-player /
+  /// now-playing) instead of the video play-queue launcher.
+  bool get _isAudioPlaylist => widget.playlist.playlistType == 'audio';
+
+  MusicPlayContext get _musicPlayContext =>
+      MusicPlayContext(id: widget.playlist.id, title: widget.playlist.title, kind: MusicPlayContextKind.playlist);
+
+  @override
+  Future<void> playItems() => _isAudioPlaylist ? _playAudioPlaylist(shuffle: false) : super.playItems();
+
+  @override
+  Future<void> shufflePlayItems() => _isAudioPlaylist ? _playAudioPlaylist(shuffle: true) : super.shufflePlayItems();
+
+  /// Uses the already-loaded items when the playlist is fully paged in;
+  /// otherwise fetches the full item list (one loader round-trip) so the
+  /// queue isn't truncated to the first page.
+  Future<void> _playAudioPlaylist({required bool shuffle, MediaItem? startTrack}) async {
+    if (items.isEmpty) {
+      showAppSnackBar(context, emptyMessage);
+      return;
+    }
+    if (!ensureMusicPlaybackAvailable(context)) return;
+    List<MediaItem> tracks;
+    if (_isPlaylistFullyLoaded) {
+      tracks = items;
+    } else {
+      try {
+        tracks = await fetchAllPlaylistItems(mediaClient, widget.playlist.id);
+      } catch (e) {
+        appLogger.w('Failed to fetch full audio playlist ${widget.playlist.id}', error: e);
+        if (mounted) showErrorSnackBar(context, t.messages.errorLoading(error: e.toString()));
+        return;
+      }
+      if (!mounted) return;
+    }
+    await playTracks(context, tracks: tracks, startTrack: startTrack, playContext: _musicPlayContext, shuffle: shuffle);
+  }
+
   @override
   List<FocusableAction> getAppBarActions() {
-    final isVideoPlaylist = widget.playlist.playlistType == 'video';
+    // Video AND audio playlists download (tracks queue through the same list
+    // pipeline); photo/mixed playlists keep the affordance hidden.
+    final isDownloadablePlaylist = widget.playlist.playlistType == 'video' || _isAudioPlaylist;
     final ruleKey = _playlistSyncRuleKey();
     // Select the specific bool we care about so unrelated DownloadProvider
     // ticks (e.g. active download progress) don't rebuild the app bar.
-    final hasRule = isVideoPlaylist && context.select<DownloadProvider, bool>((p) => p.hasSyncRule(ruleKey));
+    final hasRule = isDownloadablePlaylist && context.select<DownloadProvider, bool>((p) => p.hasSyncRule(ruleKey));
 
     return [
       if (items.isNotEmpty) ...[
         FocusableAction(icon: Symbols.play_arrow_rounded, tooltip: t.common.play, onPressed: playItems),
         FocusableAction(icon: Symbols.shuffle_rounded, tooltip: t.common.shuffle, onPressed: shufflePlayItems),
       ],
-      if (!PlatformDetector.isAppleTV() && isVideoPlaylist && (items.isNotEmpty || hasRule))
+      if (!PlatformDetector.isAppleTV() && isDownloadablePlaylist && (items.isNotEmpty || hasRule))
         FocusableAction(
           icon: hasRule ? Symbols.sync_rounded : Symbols.download_rounded,
           tooltip: hasRule ? t.downloads.manageSyncRule : t.downloads.downloadNow,
@@ -501,6 +543,10 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
     if (items.isEmpty || index < 0 || index >= items.length) return;
 
     final selectedItem = items[index];
+    if (_isAudioPlaylist) {
+      await _playAudioPlaylist(shuffle: false, startTrack: selectedItem);
+      return;
+    }
     final launcher = MediaListPlaybackLauncher.forItem(context, widget.playlist);
     await launcher.launchFromCollectionOrPlaylist(
       item: widget.playlist,

@@ -774,6 +774,94 @@ void main() {
       expect(precise.markWatchedAttempts, 2);
       expect(precise.markWatchedSuccesses, 1);
     });
+
+    test('onScrobbled fires once after a successful scrobble (#1500)', () async {
+      final client = _FakePlexClient(thresholdPercent: 90);
+      final player = _FakePlayer(position: const Duration(seconds: 95), duration: const Duration(seconds: 100));
+      var hookCalls = 0;
+      final tracker = PlaybackProgressTracker(
+        client: client,
+        metadata: _meta(ratingKey: '42'),
+        player: player,
+        isOffline: false,
+        onScrobbled: () async => hookCalls++,
+      );
+      addTearDown(tracker.dispose);
+
+      await tracker.sendProgress('stopped');
+      await tracker.sendProgress('stopped');
+
+      expect(client.markWatchedCalls, ['42']);
+      expect(hookCalls, 1);
+    });
+
+    test('onScrobbled is not invoked below threshold', () async {
+      final client = _FakePlexClient(thresholdPercent: 90);
+      final player = _FakePlayer(position: const Duration(seconds: 89), duration: const Duration(seconds: 100));
+      var hookCalls = 0;
+      final tracker = PlaybackProgressTracker(
+        client: client,
+        metadata: _meta(),
+        player: player,
+        isOffline: false,
+        onScrobbled: () async => hookCalls++,
+      );
+      addTearDown(tracker.dispose);
+
+      await tracker.sendProgress('stopped');
+      expect(hookCalls, 0);
+    });
+
+    test('onScrobbled waits for a successful scrobble when the first attempt fails', () async {
+      final precise = _ScrobblePreciseClient(thresholdPercent: 90, failScrobbleFirstTime: true);
+      final player = _FakePlayer(position: const Duration(seconds: 95), duration: const Duration(seconds: 100));
+      var hookCalls = 0;
+      final tracker = PlaybackProgressTracker(
+        client: precise,
+        metadata: _meta(ratingKey: '42'),
+        player: player,
+        isOffline: false,
+        onScrobbled: () async => hookCalls++,
+      );
+      addTearDown(tracker.dispose);
+
+      await tracker.sendProgress('playing');
+      await Future<void>.delayed(Duration.zero);
+      expect(precise.markWatchedAttempts, 1);
+      expect(hookCalls, 0);
+
+      await tracker.sendProgress('playing');
+      await Future<void>.delayed(Duration.zero);
+      expect(precise.markWatchedSuccesses, 1);
+      expect(hookCalls, 1);
+    });
+
+    test('a throwing onScrobbled does not reset the scrobble latch', () async {
+      // A sibling-mark failure must not re-scrobble the primary item — that
+      // would inflate its view count on the next progress tick.
+      final client = _FakePlexClient(thresholdPercent: 90);
+      final player = _FakePlayer(position: const Duration(seconds: 95), duration: const Duration(seconds: 100));
+      var hookCalls = 0;
+      final tracker = PlaybackProgressTracker(
+        client: client,
+        metadata: _meta(ratingKey: '42'),
+        player: player,
+        isOffline: false,
+        onScrobbled: () async {
+          hookCalls++;
+          throw Exception('sibling mark failed');
+        },
+      );
+      addTearDown(tracker.dispose);
+
+      await tracker.sendProgress('playing');
+      await Future<void>.delayed(Duration.zero);
+      await tracker.sendProgress('playing');
+      await Future<void>.delayed(Duration.zero);
+
+      expect(client.markWatchedCalls, hasLength(1));
+      expect(hookCalls, 1);
+    });
   });
 
   // ============================================================
@@ -1007,6 +1095,14 @@ class _ScrobblePreciseClient implements PlexClient {
   _ScrobblePreciseClient({this.thresholdPercent = 90, this.failScrobbleFirstTime = false});
 
   final int thresholdPercent;
+
+  /// markWatchedFromPlaybackStop resolves the event's cacheServerId from
+  /// [serverId] after the transport call — without this override the
+  /// notify step throws NoSuchMethodError and a successful markWatched
+  /// still registers as a failed scrobble.
+  @override
+  ServerId get serverId => ServerId('scrobbler');
+
   @override
   int get watchedThresholdPercent => thresholdPercent;
 

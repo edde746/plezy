@@ -87,15 +87,15 @@ Package managers:
 - Real-time play / pause / seek sync
 
 ### <img src="assets/readme_icons/integrations.svg" height="20" alt="" align="center" /> Integrations
-- Discord Rich Presence[^7]
+- Discord Rich Presence[^6]
 - Trakt, MyAnimeList, AniList, and Simkl tracking & rating
 - Plezy Remote — control desktop and TV from mobile
-- Watch Next row[^6]
+- Watch Next row
 
 ### <img src="assets/readme_icons/customization.svg" height="20" alt="" align="center" /> Platform & Customization
 - Desktop, mobile, and TV — full D-pad, keyboard, and gamepad support
-- Customizable keyboard shortcuts[^7]
-- Metadata and artwork editing[^2]
+- Customizable keyboard shortcuts[^6]
+- Metadata and artwork editing
 - Settings import/export
 - Localized in English plus 14 translations
 
@@ -104,8 +104,7 @@ Package managers:
 [^3]: Not available on iOS or tvOS.
 [^4]: Android, iOS, and macOS.
 [^5]: Windows, Android, and tvOS.
-[^6]: Android TV only.
-[^7]: Desktop only.
+[^6]: Desktop only.
 
 ## Building from Source
 

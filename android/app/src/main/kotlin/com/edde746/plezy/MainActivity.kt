@@ -30,6 +30,7 @@ import android.view.inputmethod.InputMethodManager
 import android.widget.FrameLayout
 import androidx.core.content.FileProvider
 import com.edde746.plezy.exoplayer.ExoPlayerPlugin
+import com.edde746.plezy.mpv.MpvAudioPlayerPlugin
 import com.edde746.plezy.mpv.MpvPlayerPlugin
 import com.edde746.plezy.shared.DeviceQuirks
 import com.edde746.plezy.shared.ThemeHelper
@@ -50,6 +51,10 @@ class MainActivity : FlutterActivity() {
     private const val TAG = "MainActivity"
     private const val TEXT_INPUT_DIAGNOSTICS_ENABLED = false
     private const val EXTERNAL_PLAYER_REQUEST_CODE = 7461
+
+    // Mirrors DevicePerformance._lowMemThresholdBytes (2252 MiB): nominal
+    // "2GB" devices report totalMem slightly above 2 GiB after carve-outs.
+    private const val LOW_MEM_THRESHOLD_BYTES = 2252L shl 20
 
     // External player result APIs used by Jellyfin Android TV.
     private const val API_MX_RETURN_RESULT = "return_result"
@@ -84,7 +89,6 @@ class MainActivity : FlutterActivity() {
   private val DEVICE_ADJUSTMENT_CHANNEL = "com.plezy/device_adjustment"
   private val TEXT_INPUT_CHANNEL = "com.plezy/text_input"
   private val APP_EXIT_CHANNEL = "com.plezy/app_exit"
-  private val APP_FOREGROUND_CHANNEL = "com.plezy/app_foreground"
   private var watchNextPlugin: WatchNextPlugin? = null
   private var nativeTextInputFocused = false
   private var pendingExternalPlayerResult: MethodChannel.Result? = null
@@ -208,6 +212,18 @@ class MainActivity : FlutterActivity() {
       "isLowRamDevice" to activityManager.isLowRamDevice,
       "totalMemBytes" to memoryInfo.totalMem
     )
+  }
+
+  /**
+   * Same triple DevicePerformance uses for the reduced tier on the Dart
+   * side — keep the two in sync. Evaluated here too because engine shell
+   * args must be decided before Dart runs.
+   */
+  private fun isLowRamClass(): Boolean {
+    val activityManager = getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
+    val memoryInfo = ActivityManager.MemoryInfo()
+    activityManager.getMemoryInfo(memoryInfo)
+    return !Process.is64Bit() || activityManager.isLowRamDevice || memoryInfo.totalMem <= LOW_MEM_THRESHOLD_BYTES
   }
 
   /** User-assigned device name (Settings > About > Device name), or null. */
@@ -382,12 +398,19 @@ class MainActivity : FlutterActivity() {
     val args = super.getFlutterShellArgs()
     usingSkia = shouldDisableImpeller()
     if (usingSkia) args.add("--enable-impeller=false")
+    if (isLowRamClass()) {
+      // Bound the memory pools Dart can't reach: Skia's GPU resource cache
+      // is sized from the surface area (hundreds of MB on a 4K-composited
+      // TV) and the Dart old gen defaults to a large fraction of physical
+      // RAM. Both drive LMK kills on 2GB boxes (#1349).
+      if (usingSkia) args.add("--resource-cache-max-bytes-threshold=50331648")
+      args.add("--old-gen-heap-size=256")
+      Log.i(TAG, "Low-RAM device: capped engine caches (skia=$usingSkia, oldGen=256MB)")
+    }
     return args
   }
 
   private fun shouldDisableImpeller(): Boolean {
-    // Android TV devices — weaker GPUs, less Impeller testing
-    if (isAndroidTvDevice()) return true
     if (DeviceQuirks.isEWaste) return true
     // NVIDIA Tegra (Shield TV)
     if (Build.MANUFACTURER.equals("NVIDIA", ignoreCase = true)) return true
@@ -397,7 +420,19 @@ class MainActivity : FlutterActivity() {
     ) {
       return true
     }
+    if (isAndroidTvDevice()) return !tvSupportsImpeller()
     return false
+  }
+
+  // Impeller froze API 30 Fire TV hardware (#749) and Flutter's Vulkan → GLES
+  // fallback still miscompiles gradients/SVGs, so only TV devices on Android 12+
+  // with a Vulkan 1.1 driver leave the Skia path.
+  private fun tvSupportsImpeller(): Boolean {
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) return false
+    // Fire OS reports modern API levels on GPUs whose drivers can't back it up
+    if (Build.MANUFACTURER.equals("Amazon", ignoreCase = true)) return false
+    val vulkan11 = 0x401000 // FEATURE_VULKAN_HARDWARE_VERSION encodes 1.1.0 as 0x401000
+    return packageManager.hasSystemFeature(PackageManager.FEATURE_VULKAN_HARDWARE_VERSION, vulkan11)
   }
 
   override fun getRenderMode(): RenderMode {
@@ -455,6 +490,7 @@ class MainActivity : FlutterActivity() {
     super.configureFlutterEngine(flutterEngine)
     flutterEngine.plugins.add(MpvPlayerPlugin())
     flutterEngine.plugins.add(ExoPlayerPlugin())
+    flutterEngine.plugins.add(MpvAudioPlayerPlugin())
 
     MethodChannel(flutterEngine.dartExecutor.binaryMessenger, DEVICE_CHANNEL).setMethodCallHandler { call, result ->
       when (call.method) {
@@ -491,13 +527,6 @@ class MainActivity : FlutterActivity() {
             finishAndRemoveTask()
           }
         }
-        else -> result.notImplemented()
-      }
-    }
-
-    MethodChannel(flutterEngine.dartExecutor.binaryMessenger, APP_FOREGROUND_CHANNEL).setMethodCallHandler { call, result ->
-      when (call.method) {
-        "requestForeground" -> result.success(requestForeground())
         else -> result.notImplemented()
       }
     }
@@ -683,31 +712,6 @@ class MainActivity : FlutterActivity() {
         }
         else -> result.notImplemented()
       }
-    }
-  }
-
-  private fun requestForeground(): Boolean = try {
-    val activityManager = getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
-    activityManager.moveTaskToFront(taskId, 0)
-    true
-  } catch (e: Exception) {
-    Log.w(TAG, "Failed to move task to foreground", e)
-    try {
-      val launchIntent = packageManager.getLaunchIntentForPackage(packageName)?.apply {
-        addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT)
-        addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP)
-        addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
-        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-      }
-      if (launchIntent != null) {
-        startActivity(launchIntent)
-        true
-      } else {
-        false
-      }
-    } catch (launchError: Exception) {
-      Log.w(TAG, "Failed to start foreground activity", launchError)
-      false
     }
   }
 

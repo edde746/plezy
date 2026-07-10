@@ -1,5 +1,6 @@
 import 'dart:convert';
 import '../media/ids.dart';
+import '../media/media_version_preference.dart';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/painting.dart';
@@ -14,6 +15,7 @@ import 'base_shared_preferences_service.dart';
 import 'device_performance.dart';
 export 'base_shared_preferences_service.dart'
     show Pref, BoolPref, IntPref, DoublePref, StringPref, NullableStringPref, StringListPref, EnumPref, JsonPref;
+import '../models/audio_quality_preset.dart';
 import '../models/transcode_quality_preset.dart';
 import '../navigation/navigation_tabs.dart';
 import '../utils/platform_detector.dart';
@@ -188,8 +190,9 @@ class _UseExternalPlayerPref extends Pref<bool> {
   Future<void> writeTo(BaseSharedPreferencesService svc, bool value) => svc.writeBool(key, value);
 }
 
-/// Experimental Dolby passthrough. Keep opt-in everywhere, including Apple TV,
-/// until the AVFoundation EAC3 path is verified across real receiver setups.
+/// Experimental Dolby passthrough. Keep opt-in on Apple TV until the
+/// AVPlayer Atmos sink (EAC3+JOC → Dolby MAT, #1300) is verified on real
+/// receiver setups; non-JOC content still decodes to multichannel PCM there.
 class _AudioPassthroughPref extends Pref<bool> {
   const _AudioPassthroughPref() : super('audio_passthrough');
 
@@ -201,7 +204,7 @@ class _AudioPassthroughPref extends Pref<bool> {
     // (Media3 picks bitstream vs PCM via AudioCapabilities), preserving surround.
     // Scoped to ExoPlayer — the mpv backend force-sets audio-spdif with no decode
     // fallback. (#1458)
-    // TODO: Default Apple TV to on once EAC3 passthrough is hardware-verified.
+    // TODO: Default Apple TV to on once the #1300 Atmos sink is hardware-verified.
     return Platform.isAndroid && PlatformDetector.isTV() && svc.read(SettingsService.useExoPlayer);
   }
 
@@ -337,6 +340,9 @@ class SettingsService extends BaseSharedPreferencesService {
   static const String defaultCreditsPattern = r'(?:^|\b)(?:outro|closing|credits?|ending)(?:\b|$)|^ed(?:\s?\d+)?$';
 
   static const enableDebugLogging = BoolPref('enable_debug_logging', onWrite: setLoggerLevel);
+  // Source URL for the Apple TV Atmos diagnostics screen; deliberately not
+  // resettable so a tester keeps it across "Reset All Settings".
+  static const atmosProbeUrl = StringPref('atmos_probe_url', defaultValue: '');
   static const crashReporting = BoolPref('crash_reporting', defaultValue: true);
   static const enableHardwareDecoding = BoolPref('enable_hardware_decoding', defaultValue: true);
   static const enableHDR = BoolPref('enable_hdr', defaultValue: true);
@@ -415,6 +421,16 @@ class SettingsService extends BaseSharedPreferencesService {
     values: TranscodeQualityPreset.values,
     defaultValue: TranscodeQualityPreset.original,
   );
+  static const musicQualityPreset = EnumPref<AudioQualityPreset>(
+    'music_quality_preset',
+    values: AudioQualityPreset.values,
+    defaultValue: AudioQualityPreset.original,
+  );
+
+  /// Music player volume (0–100), independent of the video player's
+  /// [volume] so desktop music listening levels don't drag video loudness
+  /// around.
+  static const musicVolume = DoublePref('music_volume', defaultValue: 100.0);
   static const autoPlayNextEpisode = BoolPref('auto_play_next_episode', defaultValue: true);
   static const useExoPlayer = BoolPref('use_exoplayer', defaultValue: true);
   static const startupSection = EnumPref<NavigationTabId>(
@@ -440,6 +456,8 @@ class SettingsService extends BaseSharedPreferencesService {
   static const ambientLighting = BoolPref('ambient_lighting');
   static const audioPassthrough = _AudioPassthroughPref();
   static const audioNormalization = BoolPref('audio_normalization');
+  static const audioDownmix = BoolPref('audio_downmix');
+  static const audioDownmixNormalize = BoolPref('audio_downmix_normalize', defaultValue: true);
   static const liveTvDefaultFavorites = BoolPref('live_tv_default_favorites');
   static const matchRefreshRate = BoolPref('match_refresh_rate');
   static const matchDynamicRange = BoolPref('match_dynamic_range');
@@ -454,6 +472,7 @@ class SettingsService extends BaseSharedPreferencesService {
   );
 
   static final maxVolume = IntPref('max_volume', defaultValue: 100, transform: (v) => v.clamp(100, 300));
+  static final downmixCenterBoost = IntPref('downmix_center_boost', transform: (v) => v.clamp(0, 12));
   static final subtitlePosition = IntPref('subtitle_position', defaultValue: 100, transform: (v) => v.clamp(0, 100));
   static final defaultPlaybackSpeed = DoublePref(
     'default_playback_speed',
@@ -507,8 +526,19 @@ class SettingsService extends BaseSharedPreferencesService {
     encode: (v) => json.encode(v.map((k, hk) => MapEntry(k, SettingsService.serializeHotKey(hk)))),
     decode: _decodeKeyboardHotkeys,
   );
-  static final mediaVersionPreferences = JsonPref<Map<String, int>>(
+  static final mediaVersionPreferences = JsonPref<Map<String, MediaVersionPreference>>(
     'media_version_preferences',
+    defaultValue: const {},
+    encode: (v) => json.encode(v.map((k, pref) => MapEntry(k, pref.toJson()))),
+    // Legacy values were bare ints; MediaVersionPreference.fromJson accepts both.
+    decode: (raw) => (raw as Map<String, dynamic>).map((k, v) => MapEntry(k, MediaVersionPreference.fromJson(v))),
+  );
+
+  /// Local record of when items were last played on this device
+  /// (item/show globalKey → epoch ms). Written by LocalPlaybackHistory; used
+  /// to pick the last-played sibling in the Continue Watching dedup (#1492).
+  static final localLastPlayedAt = JsonPref<Map<String, int>>(
+    'local_last_played_at',
     defaultValue: const {},
     encode: json.encode,
     decode: (raw) => (raw as Map<String, dynamic>).map((k, v) => MapEntry(k, v as int)),
@@ -822,6 +852,7 @@ class SettingsService extends BaseSharedPreferencesService {
     matchContentFrameRate,
     tunneledPlayback,
     dvConversionMode,
+    musicVolume,
     defaultPlaybackSpeed,
     defaultBoxFitMode,
     autoPlayNextEpisode,
@@ -841,12 +872,16 @@ class SettingsService extends BaseSharedPreferencesService {
     ambientLighting,
     audioPassthrough,
     audioNormalization,
+    audioDownmix,
+    audioDownmixNormalize,
+    downmixCenterBoost,
     themeMode,
     keyboardShortcuts,
     keyboardHotkeys,
     libraryDensity,
     episodePosterMode,
     mediaVersionPreferences,
+    localLastPlayedAt,
     appLocale,
     customDownloadPath,
     videoPlayerNavigationEnabled,

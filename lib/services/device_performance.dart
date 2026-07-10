@@ -64,6 +64,10 @@ class DevicePerformance {
     }
   }
 
+  /// Total device RAM as reported by the platform, or null off-Android /
+  /// before init. Used to scale memory-watchdog thresholds to the device.
+  static int? get totalMemBytes => _instance?._totalMemBytes;
+
   /// Auto-detected low-end hardware (32-bit process / low-RAM / ≤2.2 GiB),
   /// independent of the visual-effects override. Use this for decisions tied to
   /// the hardware itself — e.g. the codec→display video pipeline on cheap TV
@@ -103,24 +107,33 @@ class DevicePerformance {
     } else if (isReduced) {
       cache.maximumSize = 400;
       cache.maximumSizeBytes = 48 << 20; // 48MB
+    } else if (PlatformDetector.isTV()) {
+      // TV boxes share limited RAM with 4K video decode buffers.
+      cache.maximumSize = 500;
+      cache.maximumSizeBytes = 64 << 20; // 64MB
     } else {
       cache.maximumSize = 800;
       cache.maximumSizeBytes = 100 << 20; // 100MB
     }
   }
 
-  /// One-line tier summary for the startup log, e.g.
-  /// `reduced (auto: 32-bit, lowRam, 1.9GiB)` or `full (forced)`.
+  /// One-line tier summary for the startup log and bug-report headers, e.g.
+  /// `reduced (auto: 32-bit, lowRam, 1.9GiB)` or `full (forced; hw: 64-bit, 2.8GiB)`.
+  ///
+  /// Raw signals are always included (even when the tier is forced) so an
+  /// uploaded log answers "did the reduced tier engage, and why / why not".
   static String describeSync() {
     final instance = _instance;
     if (instance == null) return 'unknown';
     final tier = isReduced ? 'reduced' : 'full';
-    if (instance._override != VisualEffectsSetting.auto) return '$tier (forced)';
     final signals = <String>[
       if (instance._is64Bit != null) (instance._is64Bit! ? '64-bit' : '32-bit'),
-      if (instance._isLowRam == true) 'lowRam',
+      if (instance._isLowRam != null) 'lowRam:${instance._isLowRam}',
       if (instance._totalMemBytes != null) '${(instance._totalMemBytes! / (1024 * 1024 * 1024)).toStringAsFixed(1)}GiB',
     ];
+    if (instance._override != VisualEffectsSetting.auto) {
+      return signals.isEmpty ? '$tier (forced)' : '$tier (forced; hw: ${signals.join(', ')})';
+    }
     return signals.isEmpty ? tier : '$tier (auto: ${signals.join(', ')})';
   }
 

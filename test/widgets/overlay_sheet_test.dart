@@ -52,6 +52,46 @@ void main() {
     expect(find.text('Item 0'), findsOneWidget);
   });
 
+  testWidgets('desktop default constraints scale with window height', (tester) async {
+    tester.view.physicalSize = const Size(1280, 800);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: ThemeData(platform: TargetPlatform.android),
+        home: OverlaySheetHost(
+          child: Scaffold(
+            body: Center(
+              child: Builder(
+                builder: (context) => ElevatedButton(
+                  onPressed: () {
+                    OverlaySheetController.of(context).show<void>(
+                      builder: (_) => ListView.builder(
+                        itemCount: 100,
+                        itemBuilder: (_, index) => ListTile(title: Text('Item $index')),
+                      ),
+                    );
+                  },
+                  child: const Text('Open'),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    await tester.tap(find.text('Open'));
+    await tester.pumpAndSettle();
+
+    // Unbounded list content fills the default constraints: 75% of window
+    // height (previously a fixed 400 on desktop) capped at 700 wide.
+    final sheetSize = tester.getSize(find.byType(ListView));
+    expect(sheetSize.height, 800 * 0.75);
+    expect(sheetSize.width, 700);
+  });
+
   group('opt-in canPop / onSystemBack', () {
     // Pushes an OverlaySheetHost route on top of a home route so we can observe
     // whether a simulated system back pops the route. The host's child has an

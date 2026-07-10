@@ -13,26 +13,12 @@ extension _VideoPlayerCompanionRemoteMethods on VideoPlayerScreenState {
       if (mounted) unawaited(_restartOrPlayPrevious());
     };
     receiver.onSeekForward = () async {
-      if (player == null) return;
       final settings = await SettingsService.getInstance();
-      final seekSeconds = settings.read(SettingsService.seekTimeSmall);
-      if (widget.isLive && _live.captureBuffer != null) {
-        _liveSeek.seekBy(seekSeconds);
-        return;
-      }
-      final target = clampSeekPosition(player!, player!.state.position + Duration(seconds: seekSeconds));
-      await _seekPlayback(target);
+      await _seekRelative(Duration(seconds: settings.read(SettingsService.seekTimeSmall)));
     };
     receiver.onSeekBackward = () async {
-      if (player == null) return;
       final settings = await SettingsService.getInstance();
-      final seekSeconds = settings.read(SettingsService.seekTimeSmall);
-      if (widget.isLive && _live.captureBuffer != null) {
-        _liveSeek.seekBy(-seekSeconds);
-        return;
-      }
-      final target = clampSeekPosition(player!, player!.state.position - Duration(seconds: seekSeconds));
-      await _seekPlayback(target);
+      await _seekRelative(Duration(seconds: -settings.read(SettingsService.seekTimeSmall)));
     };
     receiver.onVolumeUp = () async {
       if (player == null) return;

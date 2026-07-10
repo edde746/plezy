@@ -14,10 +14,14 @@ import '../test_helpers/prefs.dart';
 const _testTokens = MonoTokens(
   radiusSm: 4,
   radiusMd: 8,
+  radiusLg: 20,
+  radiusXs: 5,
+  groupGap: 2,
   space: 8,
   fast: Duration(milliseconds: 100),
   normal: Duration(milliseconds: 200),
   slow: Duration(milliseconds: 300),
+  expressive: Duration(milliseconds: 300),
   bg: Colors.black,
   surface: Color(0xFF111111),
   outline: Color(0xFF333333),
@@ -46,14 +50,13 @@ void main() {
     expect(find.text('Audio Passthrough'), findsOneWidget);
   });
 
-  testWidgets('hides audio passthrough on Apple TV', (tester) async {
+  testWidgets('shows audio passthrough on Apple TV', (tester) async {
     TvDetectionService.debugSetAppleTVOverride(true);
 
     await _pumpSheet(tester);
-    await tester.drag(find.byType(ListView), const Offset(0, -800));
-    await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(find.text('Audio Passthrough'), 500, scrollable: find.byType(Scrollable).first);
 
-    expect(find.text('Audio Passthrough'), findsNothing);
+    expect(find.text('Audio Passthrough'), findsOneWidget);
   });
 }
 

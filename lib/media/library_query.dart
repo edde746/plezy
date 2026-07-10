@@ -49,6 +49,10 @@ sealed class LibraryQuery with _$LibraryQuery {
     /// Whether to include items the active user has already watched.
     @Default(true) bool includeWatched,
 
+    /// Restrict to items the user marked favorite (Jellyfin `Filters=IsFavorite`).
+    /// Plex has no equivalent; its translator ignores the flag.
+    @Default(false) bool favoritesOnly,
+
     /// Restrict the result to items whose sort name starts with this string —
     /// the alpha-jump bar's filter UX. The literal `#` is a sentinel for
     /// "non-alphabetic" and translates to a `NameLessThan=A` query for backends

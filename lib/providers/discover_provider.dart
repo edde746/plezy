@@ -12,6 +12,7 @@ import '../services/settings_service.dart';
 import '../services/data_aggregation_service.dart';
 import '../services/system_shelf_service.dart';
 import '../utils/app_logger.dart';
+import '../utils/deletion_notifier.dart';
 import '../utils/global_key_utils.dart';
 import '../utils/media_hub_ordering.dart';
 import '../utils/watch_state_notifier.dart';
@@ -24,9 +25,11 @@ enum DiscoverLoadState { initial, loading, loaded, error }
 /// Owns the Discover tab's data: the Continue Watching row and the home hub
 /// list, including the refresh policy that used to live in the screen —
 /// watch events refresh only Continue Watching (one on-deck call, zero hub
-/// refetches), hidden-library changes trigger a full reload, library-order
-/// changes re-sort hubs in place without refetching, and the platform
-/// launcher shelf syncs from every on-deck update.
+/// refetches), deletions drop the item from every visible list in place and
+/// then refresh only Continue Watching, hidden-library changes trigger a
+/// full reload, library-order changes re-sort hubs in place without
+/// refetching, and the platform launcher shelf syncs from every on-deck
+/// update.
 ///
 /// Lives inside the profile-keyed provider subtree, so a profile switch
 /// resets it by construction. The screen is a consumer: it renders this
@@ -54,6 +57,14 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
       itemIds: () => _watchedIds,
       onEvent: _onWatchStateChanged,
     );
+    _deletionSubscription = subscribeToHierarchicalEvents<DeletionEvent>(
+      notifier: DeletionNotifier(),
+      mounted: () => !isDisposed,
+      serverId: () => null,
+      globalKeys: () => _deletionGlobalKeys,
+      itemIds: () => _deletionIds,
+      onEvent: _onDeletion,
+    );
   }
 
   final MultiServerProvider _multiServer;
@@ -61,11 +72,14 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
   final LibrariesProvider _libraries;
 
   /// Whether the profile binder is still wiring servers — a no-servers load
-  /// during binding stays in the loading state instead of flashing an error
-  /// (main_screen primes another load once binding settles).
+  /// during binding stays in the loading state instead of flashing an error,
+  /// and a zero-success pass during binding stays in the loading state
+  /// instead of flashing the empty placeholder (main_screen primes another
+  /// load once binding settles).
   final bool Function() isProfileBinding;
 
   StreamSubscription<WatchStateEvent>? _watchStateSubscription;
+  StreamSubscription<DeletionEvent>? _deletionSubscription;
 
   List<MediaItem> _onDeck = [];
   List<MediaHub> _hubs = [];
@@ -198,17 +212,50 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
         includePlaybackHubs: false,
       );
 
+      // A pass in which zero servers succeeded is never authoritative: it
+      // must not wipe existing content, and it may only commit "loaded,
+      // empty" when the failure is settled — not a client-side abort
+      // (teardown mid-fetch) and not mid-binding. In both of those cases a
+      // follow-up load is guaranteed (binding-settle prime, or
+      // syncToOnlineServers falling through to load() while not loaded).
       final fetchedOnDeck = await onDeckFuture;
       if (isDisposed) return;
-      _applyOnDeck(fetchedOnDeck.items);
-      _onDeckState = DiscoverLoadState.loaded;
-      _loadedOnDeckServerIds = fetchedOnDeck.succeededServerIds;
-      _loadGeneration++;
-      safeNotifyListeners();
-      unawaited(_syncSystemShelf(_onDeck));
+      if (fetchedOnDeck.succeededServerIds.isEmpty && _onDeck.isNotEmpty) {
+        // Keep the stale rows; the empty succeeded set makes the next status
+        // emission refetch every server.
+        appLogger.w('DiscoverProvider: on-deck pass failed on all servers; keeping previous items');
+        _onDeckState = DiscoverLoadState.loaded;
+        _loadedOnDeckServerIds = fetchedOnDeck.succeededServerIds;
+        safeNotifyListeners();
+      } else if (fetchedOnDeck.succeededServerIds.isEmpty &&
+          (fetchedOnDeck.cancelledServerIds.isNotEmpty || isProfileBinding())) {
+        // Disrupted with nothing to show yet: stay in loading so the screen
+        // keeps its skeleton instead of flashing the empty placeholder.
+        // Don't return — the hubs fetch is still in flight below.
+        appLogger.d('DiscoverProvider: on-deck pass disrupted with no prior content; keeping loading state');
+      } else {
+        _applyOnDeck(fetchedOnDeck.items);
+        _onDeckState = DiscoverLoadState.loaded;
+        _loadedOnDeckServerIds = fetchedOnDeck.succeededServerIds;
+        _loadGeneration++;
+        safeNotifyListeners();
+        unawaited(_syncSystemShelf(_onDeck));
+      }
 
       final fetchedHubs = await hubsFuture;
       if (isDisposed) return;
+
+      if (fetchedHubs.succeededServerIds.isEmpty && _hubs.isNotEmpty) {
+        appLogger.w('DiscoverProvider: hub pass failed on all servers; keeping previous hubs');
+        _hubsState = DiscoverLoadState.loaded;
+        _loadedHubServerIds = fetchedHubs.succeededServerIds;
+        safeNotifyListeners();
+        return;
+      }
+      if (fetchedHubs.succeededServerIds.isEmpty && (fetchedHubs.cancelledServerIds.isNotEmpty || isProfileBinding())) {
+        appLogger.d('DiscoverProvider: hub pass disrupted with no prior content; keeping loading state');
+        return;
+      }
 
       final filteredHubs = _filterDiscoverHubs(fetchedHubs.hubs);
       sortMediaHubsByLibraryOrder(filteredHubs, _libraries.libraries);
@@ -439,6 +486,73 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     unawaited(refreshContinueWatching());
   }
 
+  /// Deletions can affect any visible list, so the filter covers on-deck and
+  /// hub items plus their parents (a deleted season/show takes its visible
+  /// episodes with it).
+  Set<String>? get _deletionIds {
+    final keys = <String>{};
+    void addItem(MediaItem item) {
+      keys.add(item.id);
+      if (item.parentId != null) keys.add(item.parentId!);
+      if (item.grandparentId != null) keys.add(item.grandparentId!);
+    }
+
+    _onDeck.forEach(addItem);
+    for (final hub in _hubs) {
+      hub.items.forEach(addItem);
+    }
+    return keys;
+  }
+
+  Set<String>? get _deletionGlobalKeys {
+    final keys = <String>{};
+    bool addItem(MediaItem item) {
+      final serverId = item.serverId;
+      if (serverId == null) return false;
+
+      keys.add(buildGlobalKey(ServerId(serverId), item.id));
+      if (item.parentId != null) keys.add(buildGlobalKey(ServerId(serverId), item.parentId!));
+      if (item.grandparentId != null) keys.add(buildGlobalKey(ServerId(serverId), item.grandparentId!));
+      return true;
+    }
+
+    for (final item in _onDeck) {
+      if (!addItem(item)) return null;
+    }
+    for (final hub in _hubs) {
+      for (final item in hub.items) {
+        if (!addItem(item)) return null;
+      }
+    }
+    return keys;
+  }
+
+  void _onDeletion(DeletionEvent event) {
+    // On-deck and hubs are server-backed: a download-only deletion leaves the
+    // server item in place, so it must not evict anything here.
+    if (event.isDownloadOnly) return;
+
+    bool affected(MediaItem item) =>
+        item.id == event.itemId || item.parentId == event.itemId || item.grandparentId == event.itemId;
+
+    var changed = false;
+    final remainingOnDeck = _onDeck.where((item) => !affected(item)).toList();
+    if (remainingOnDeck.length != _onDeck.length) {
+      _onDeck = remainingOnDeck;
+      changed = true;
+    }
+    for (var i = 0; i < _hubs.length; i++) {
+      final hub = _hubs[i];
+      final newItems = hub.items.where((item) => !affected(item)).toList();
+      if (newItems.length != hub.items.length) {
+        _hubs = List.of(_hubs)..[i] = hub.copyWith(items: newItems);
+        changed = true;
+      }
+    }
+    if (changed) safeNotifyListeners();
+    unawaited(refreshContinueWatching());
+  }
+
   void _onHiddenLibrariesChanged() {
     final currentKeys = _hiddenLibraries.hiddenLibraryKeys;
     if (currentKeys.length == _lastSeenHiddenKeys.length && currentKeys.containsAll(_lastSeenHiddenKeys)) {
@@ -521,6 +635,8 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     _libraries.removeListener(_onLibrariesChanged);
     _watchStateSubscription?.cancel();
     _watchStateSubscription = null;
+    _deletionSubscription?.cancel();
+    _deletionSubscription = null;
     _pendingSystemShelfItems = null;
     super.dispose();
   }

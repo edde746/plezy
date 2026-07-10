@@ -14,7 +14,9 @@ import 'package:plezy/services/multi_server_manager.dart';
 import 'package:plezy/services/settings_service.dart';
 import 'package:plezy/theme/mono_theme.dart';
 import 'package:plezy/utils/platform_detector.dart';
+import 'package:plezy/widgets/animated_dim_scrim.dart';
 import 'package:plezy/widgets/media_card.dart';
+import 'package:plezy/widgets/rasterized_gradient.dart';
 import 'package:plezy/widgets/side_navigation_rail.dart';
 import 'package:plezy/widgets/tv_browse_rail.dart';
 import 'package:provider/provider.dart';
@@ -862,8 +864,16 @@ void main() {
 
     await tester.pump();
 
-    final opacities = tester.widgetList<AnimatedOpacity>(find.byType(AnimatedOpacity)).map((widget) => widget.opacity);
-    expect(opacities, contains(0.7));
+    tester.state<TvBrowseRailState>(find.byType(TvBrowseRail)).requestFocus();
+    await tester.pumpAndSettle();
+
+    expect(FocusManager.instance.primaryFocus?.debugLabel, 'tv_browse_rail');
+
+    final scrims = tester.widgetList<AnimatedDimScrim>(find.byType(AnimatedDimScrim));
+    expect(
+      scrims,
+      contains(predicate<AnimatedDimScrim>((scrim) => scrim.dimmed && scrim.alpha == 0.3, 'inactive hub dim scrim')),
+    );
   });
 
   testWidgets('selects preferred hub when hubs are inserted asynchronously', (tester) async {
@@ -1995,12 +2005,7 @@ void main() {
     );
     await tester.pump();
 
-    final gradient = find.byWidgetPredicate(
-      (widget) =>
-          widget is DecoratedBox &&
-          widget.decoration is BoxDecoration &&
-          (widget.decoration as BoxDecoration).gradient is LinearGradient,
-    );
+    final gradient = find.byType(RasterizedGradient);
     final backgroundPosition = tester.widget<Positioned>(
       find.ancestor(of: gradient.first, matching: find.byType(Positioned)).first,
     );

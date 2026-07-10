@@ -450,6 +450,78 @@ void main() {
       expect(userB.map((e) => e.ratingKey), ['ep-b']);
     });
 
+    Future<void> seedMusic() async {
+      await db.insertDownload(
+        serverId: ServerId('srvA'),
+        ratingKey: 'track1',
+        globalKey: 'srvA:track1',
+        type: 'track',
+        parentRatingKey: 'album1',
+        grandparentRatingKey: 'artist1',
+        status: DownloadStatus.completed.index,
+      );
+      await db.insertDownload(
+        serverId: ServerId('srvA'),
+        ratingKey: 'track2',
+        globalKey: 'srvA:track2',
+        type: 'track',
+        parentRatingKey: 'album1',
+        grandparentRatingKey: 'artist1',
+        status: DownloadStatus.completed.index,
+      );
+      await db.insertDownload(
+        serverId: ServerId('srvA'),
+        ratingKey: 'track3',
+        globalKey: 'srvA:track3',
+        type: 'track',
+        parentRatingKey: 'album2',
+        grandparentRatingKey: 'artist1',
+        status: DownloadStatus.completed.index,
+      );
+      // Episode sharing the album's parent key must not leak into track
+      // queries (type filter).
+      await db.insertDownload(
+        serverId: ServerId('srvA'),
+        ratingKey: 'ep-collide',
+        globalKey: 'srvA:ep-collide',
+        type: 'episode',
+        parentRatingKey: 'album1',
+        grandparentRatingKey: 'artist1',
+        status: DownloadStatus.completed.index,
+      );
+      // Same album key on another server.
+      await db.insertDownload(
+        serverId: ServerId('srvB'),
+        ratingKey: 'track-b',
+        globalKey: 'srvB:track-b',
+        type: 'track',
+        parentRatingKey: 'album1',
+        grandparentRatingKey: 'artist1',
+        status: DownloadStatus.completed.index,
+      );
+    }
+
+    test('getTracksByAlbum filters by parentRatingKey and type', () async {
+      await seedMusic();
+
+      final album1 = await db.getTracksByAlbum('album1');
+      expect(album1.map((e) => e.globalKey).toSet(), {'srvA:track1', 'srvA:track2', 'srvB:track-b'});
+
+      final album1SrvA = await db.getTracksByAlbum('album1', serverId: ServerId('srvA'));
+      expect(album1SrvA.map((e) => e.ratingKey).toSet(), {'track1', 'track2'});
+
+      expect(await db.getTracksByAlbum('albumZ'), isEmpty);
+    });
+
+    test('getTracksByArtist filters by grandparentRatingKey and type', () async {
+      await seedMusic();
+
+      final artist = await db.getTracksByArtist('artist1', serverId: ServerId('srvA'));
+      expect(artist.map((e) => e.ratingKey).toSet(), {'track1', 'track2', 'track3'});
+
+      expect(await db.getTracksByArtist('artist-missing'), isEmpty);
+    });
+
     test('getDownloadsByServerId filters by serverId', () async {
       await seedTree();
 

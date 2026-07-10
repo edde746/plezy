@@ -28,11 +28,6 @@ class ProfilesView {
   const ProfilesView({required this.profiles, required this.connectionsByProfile, required this.connectionsById});
 
   static const empty = ProfilesView(profiles: [], connectionsByProfile: {}, connectionsById: {});
-
-  int countFor(Profile profile) {
-    if (profile.isPlexHome) return profile.parentConnectionId == null ? 0 : 1;
-    return connectionsByProfile[profile.id]?.length ?? 0;
-  }
 }
 
 /// Join-table rows that should be shown as explicit, user-manageable

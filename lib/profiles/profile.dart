@@ -211,11 +211,16 @@ String plexHomeProfileId({required String accountConnectionId, required String h
   return 'plex-home-$accountConnectionId-$homeUserUuid';
 }
 
-/// Anchor on the trailing 36-char UUID — both `accountConnectionId` and
-/// `homeUserUuid` may contain hyphens, so a `lastIndexOf('-')` would slice
-/// inside the UUID itself.
+/// Anchor on the trailing home-user uuid — `accountConnectionId` may contain
+/// hyphens, so a `lastIndexOf('-')` would slice inside a dashed uuid. The
+/// `$` anchor resolves ambiguous hyphens: an earlier candidate split only
+/// wins if the remainder is exactly one uuid.
+///
+/// Real plex.tv `/api/v2/home/users` uuids are 16-char plain hex
+/// (e.g. `7b4af7a9f26254bd`); the 36-char dashed RFC-4122 shape is kept as a
+/// defensive alternate.
 final RegExp _trailingHomeUserUuidPattern = RegExp(
-  r'-([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})$',
+  r'-([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}|[0-9a-fA-F]{16})$',
 );
 
 /// Inverse of [plexHomeProfileId]. Returns `null` if [id] doesn't match the

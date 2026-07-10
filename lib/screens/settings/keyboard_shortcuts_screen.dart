@@ -7,7 +7,9 @@ import '../../services/shader_service.dart';
 import '../../utils/dialogs.dart';
 import '../../utils/snackbar_helper.dart';
 import '../../focus/focusable_button.dart';
+import '../../theme/mono_tokens.dart';
 import '../../widgets/focused_scroll_scaffold.dart';
+import '../../widgets/settings_section.dart';
 import 'hotkey_recorder_widget.dart';
 
 class KeyboardShortcutsScreen extends StatelessWidget {
@@ -39,33 +41,30 @@ class KeyboardShortcutsScreen extends StatelessWidget {
                 ),
               ),
             ),
-            SliverPadding(
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-              sliver: SliverList(
-                delegate: SliverChildBuilderDelegate((context, index) {
-                  final action = actions[index];
-                  final hotkey = hotkeys[action]!;
-
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: 8),
-                    child: ListTile(
-                      title: Text(keyboardService.getActionDisplayName(action)),
-                      subtitle: Text(action),
-                      trailing: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                        decoration: BoxDecoration(
-                          border: Border.fromBorderSide(BorderSide(color: Theme.of(context).dividerColor)),
-                          borderRadius: const BorderRadius.all(Radius.circular(6)),
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.only(top: 8, bottom: 16),
+                child: SettingsGroup(
+                  children: [
+                    for (final action in actions)
+                      ListTile(
+                        title: Text(keyboardService.getActionDisplayName(action)),
+                        subtitle: Text(action),
+                        trailing: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                          decoration: BoxDecoration(
+                            border: Border.fromBorderSide(BorderSide(color: Theme.of(context).dividerColor)),
+                            borderRadius: BorderRadius.circular(tokens(context).radiusSm),
+                          ),
+                          child: Text(
+                            keyboardService.formatHotkey(hotkeys[action]!),
+                            style: const TextStyle(fontFamily: 'monospace'),
+                          ),
                         ),
-                        child: Text(
-                          keyboardService.formatHotkey(hotkey),
-                          style: const TextStyle(fontFamily: 'monospace'),
-                        ),
+                        onTap: () => _editHotkey(context, action, hotkeys[action]!),
                       ),
-                      onTap: () => _editHotkey(context, action, hotkey),
-                    ),
-                  );
-                }, childCount: actions.length),
+                  ],
+                ),
               ),
             ),
           ],

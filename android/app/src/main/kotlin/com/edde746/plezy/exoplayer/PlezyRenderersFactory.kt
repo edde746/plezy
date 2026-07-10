@@ -8,6 +8,8 @@ import androidx.annotation.OptIn
 import androidx.media3.common.Format
 import androidx.media3.common.MimeTypes
 import androidx.media3.common.PlaybackParameters
+import androidx.media3.common.audio.ChannelMixingAudioProcessor
+import androidx.media3.common.audio.ChannelMixingMatrix
 import androidx.media3.common.util.Clock
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.decoder.DecoderInputBuffer
@@ -25,6 +27,7 @@ import androidx.media3.exoplayer.mediacodec.MediaCodecAdapter
 import androidx.media3.exoplayer.mediacodec.MediaCodecSelector
 import androidx.media3.exoplayer.video.MediaCodecVideoRenderer
 import androidx.media3.exoplayer.video.VideoRendererEventListener
+import com.edde746.plezy.TvDetection
 import java.nio.ByteBuffer
 import java.util.concurrent.atomic.AtomicLong
 import kotlin.math.abs
@@ -32,8 +35,25 @@ import kotlin.math.abs
 @OptIn(UnstableApi::class)
 class PlezyRenderersFactory(context: Context) : DefaultRenderersFactory(context) {
 
+  /**
+   * Android TV: MediaCodec.setOutputSurface is broken on many TV SoCs (Sony Bravia
+   * MediaTek etc., ExoPlayer #5119/#8329) — force full codec re-init on surface
+   * changes instead (#1481). TV-only: phones keep the fast path for PiP churn.
+   */
+  private val forceSetOutputSurfaceWorkaround: Boolean = TvDetection.isTv(context)
+
   /** Audio delay in microseconds. Shared with PositionFixAudioSink for live updates. */
   val audioDelayUs = AtomicLong(0L)
+
+  /**
+   * Stereo-downmix processor; inactive while every registered matrix is identity.
+   * Pre-populated for counts 1..12 so sink configure can never hit
+   * "No mixing matrix for input channel count". ExoPlayerCore swaps in
+   * downmix matrices via [DownmixMatrices] when the setting is enabled.
+   */
+  val channelMixProcessor = ChannelMixingAudioProcessor().apply {
+    for (count in 1..12) putChannelMixingMatrix(ChannelMixingMatrix.create(count, count))
+  }
 
   /** Returns whether direct encoded output should be hidden so decoded PCM output can be selected. */
   var shouldBlockDirectAudioOutput: ((Format) -> Boolean)? = null
@@ -79,6 +99,7 @@ class PlezyRenderersFactory(context: Context) : DefaultRenderersFactory(context)
         .setEventHandler(eventHandler)
         .setEventListener(eventListener)
         .setMaxDroppedFramesToNotify(MAX_DROPPED_VIDEO_FRAME_COUNT_TO_NOTIFY),
+      forceSetOutputSurfaceWorkaround,
       videoDiagnosticsLogger
     )
   }
@@ -107,6 +128,9 @@ class PlezyRenderersFactory(context: Context) : DefaultRenderersFactory(context)
     val defaultSink = DefaultAudioSink.Builder(context)
       .setEnableFloatOutput(enableFloatOutput)
       .setEnableAudioOutputPlaybackParameters(enableAudioOutputPlaybackParams)
+      // Wraps in DefaultAudioProcessorChain, keeping stock silence-skip +
+      // Sonic; the downmix runs first and only in the decoded-PCM path.
+      .setAudioProcessors(arrayOf(channelMixProcessor))
       .setAudioOutputProvider(RawPositionOutputProvider(realProvider, rawPositionUs, audioDiagnosticsLogger))
       .build()
 
@@ -341,6 +365,7 @@ internal class SubtitleDelayRenderer(
 @OptIn(UnstableApi::class)
 internal class DvSanitizingVideoRenderer(
   builder: Builder,
+  private val forceSetOutputSurfaceWorkaround: Boolean,
   private val log: ((String, String, String) -> Unit)?
 ) : MediaCodecVideoRenderer(builder) {
 
@@ -348,6 +373,26 @@ internal class DvSanitizingVideoRenderer(
 
   private var stripHdr10PlusSei = false
   private var stripDvRpu = false
+  private var loggedSurfaceWorkaround = false
+
+  // On TV SoCs MediaCodec.setOutputSurface() silently yields a black picture after
+  // the screensaver/background destroys and recreates the surface (#1481). Returning
+  // true makes media3 release + re-init the codec instead. media3's built-in device
+  // list doesn't cover 2019+ Bravias; consulted once per codec init.
+  override fun codecNeedsSetOutputSurfaceWorkaround(name: String): Boolean {
+    if (forceSetOutputSurfaceWorkaround) {
+      if (!loggedSurfaceWorkaround) {
+        loggedSurfaceWorkaround = true
+        log?.invoke(
+          "info",
+          "video",
+          "TV setOutputSurface workaround active: codec will fully re-init on surface changes (codec=$name)"
+        )
+      }
+      return true
+    }
+    return super.codecNeedsSetOutputSurfaceWorkaround(name)
+  }
 
   // Sanitize diagnostics — playback-thread only, cumulative for the renderer's lifetime.
   private var sanitizedSampleCount = 0L

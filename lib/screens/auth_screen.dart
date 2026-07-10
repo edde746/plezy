@@ -4,11 +4,13 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../connection/connection.dart';
 import '../connection/connection_registry.dart';
+import '../connection/plex_account_setup.dart';
 import '../mixins/controller_disposer_mixin.dart';
 import '../profiles/active_profile_binder.dart';
 import '../profiles/active_profile_provider.dart';
 import '../profiles/plex_home_service.dart';
 import '../profiles/profile.dart';
+import '../profiles/profile_connection_registry.dart';
 import '../services/plex_auth_service.dart';
 import '../services/settings_service.dart';
 import '../services/storage_service.dart';
@@ -45,7 +47,9 @@ class _AuthScreenState extends State<AuthScreen> {
   @override
   void initState() {
     super.initState();
-    unawaited(_initVerifyService());
+    // Debug-token verification only — release builds must not hold an idle
+    // auth service (and its HTTP client) for a dialog that can't open.
+    if (kDebugMode) unawaited(_initVerifyService());
   }
 
   Future<void> _initVerifyService() async {
@@ -96,44 +100,47 @@ class _AuthScreenState extends State<AuthScreen> {
     });
 
     final connectionRegistry = context.read<ConnectionRegistry>();
+    final profileConnections = context.read<ProfileConnectionRegistry>();
     final plexHome = context.read<PlexHomeService>();
-    final svc = await PlexAuthService.create();
 
     try {
-      final userInfo = await svc.getUserInfo(plexToken);
-      final username = userInfo['username'] as String? ?? '';
-      final email = userInfo['email'] as String? ?? '';
-      final accountUuid = (userInfo['uuid'] as String?)?.trim() ?? '';
-
-      final servers = await svc.fetchServers(plexToken);
       final storage = await StorageService.getInstance();
+      final registration = await registerPlexAccountFromToken(
+        token: plexToken,
+        connections: connectionRegistry,
+        profileConnections: profileConnections,
+        storage: storage,
+        plexHome: plexHome,
+      );
+      final accountConnection = registration.connection;
 
-      if (servers.isEmpty) {
-        await storage.clearCredentials();
+      if (accountConnection.servers.isEmpty) {
+        // Nothing to roll back — the registered account row is exactly what
+        // a retry will upsert over; wiping global credentials here would
+        // also nuke the device identity and every server-endpoint cache.
         if (!mounted) return;
         setState(() {
           _isAuthenticating = false;
-          _errorMessage = t.serverSelection.noServersFoundForAccount(username: username, email: email);
+          _errorMessage = t.serverSelection.noServersFoundForAccount(
+            username: registration.username,
+            email: registration.email,
+          );
         });
         return;
       }
 
-      final clientId = await storage.getOrCreateClientIdentifier();
-      final accountConnection = PlexAccountConnection(
-        // Key the row by the plex.tv account UUID so signing into a second
-        // Plex account on the same device produces a distinct row. The
-        // clientIdentifier is per-device and would collide. Falls back to
-        // clientId only if plex.tv didn't return a uuid (rare).
-        id: 'plex.${accountUuid.isNotEmpty ? accountUuid : clientId}',
-        accountToken: plexToken,
-        clientIdentifier: clientId,
-        accountLabel: username.isNotEmpty ? username : (email.isNotEmpty ? email : 'Plex'),
-        servers: servers,
-        createdAt: DateTime.now(),
-        lastAuthenticatedAt: DateTime.now(),
-      );
-      await connectionRegistry.upsert(accountConnection);
-      await plexHome.refresh(accountConnection);
+      if (!registration.homeUsersFetched && plexHome.current[accountConnection.id] == null) {
+        // A failed home-user fetch is NOT "multiple users, let them pick":
+        // with no home users and no locals there is no profile to select,
+        // and navigating lands in a dead session. Surface a retry instead.
+        if (!mounted) return;
+        setState(() {
+          _isAuthenticating = false;
+          _errorMessage = t.profiles.failedToLoadHomeUsers;
+        });
+        return;
+      }
+
       if (!mounted) return;
       final activeProfiles = context.read<ActiveProfileProvider>();
       await _selectInitialProfile(plexHome, activeProfiles, accountConnection);
@@ -182,8 +189,6 @@ class _AuthScreenState extends State<AuthScreen> {
         _isAuthenticating = false;
         _errorMessage = t.serverSelection.failedToLoadServers(error: e);
       });
-    } finally {
-      svc.dispose();
     }
   }
 

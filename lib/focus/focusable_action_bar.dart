@@ -181,7 +181,7 @@ class FocusableActionBarState extends State<FocusableActionBar> {
     final isKeyboard = InputModeTracker.isKeyboardMode(context);
     final duration = FocusTheme.getAnimationDuration(context);
 
-    return Row(
+    final row = Row(
       mainAxisSize: widget.mainAxisSize,
       children: [
         for (var i = 0; i < widget.actions.length; i++) ...[
@@ -190,13 +190,20 @@ class FocusableActionBarState extends State<FocusableActionBar> {
         ],
       ],
     );
+    // While focus is outside the row (the common state — the user is browsing
+    // content), every button is equally dimmed, so dim once at row level:
+    // each sub-1.0 opacity is its own saveLayer, i.e. a full render-pass
+    // switch on the tiled GPUs low-end TVs use, and these bars sit on screen
+    // permanently. Per-button dims (below) take over only while the row holds
+    // focus; mid-transition the two multiply, which stays visually seamless.
+    return AnimatedOpacity(opacity: isKeyboard && !_hasAnyFocus ? 0.6 : 1.0, duration: duration, child: row);
   }
 
   Widget _buildButton(int index, bool isKeyboard, Duration duration) {
     final action = widget.actions[index];
     final isFocused = _focusStates[index];
     final showFocus = isFocused && isKeyboard;
-    final opacity = isKeyboard && !isFocused ? 0.6 : 1.0;
+    final opacity = isKeyboard && _hasAnyFocus && !isFocused ? 0.6 : 1.0;
 
     final buildState = FocusableActionBuildState(
       focusNode: _focusNodes[index],

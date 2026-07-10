@@ -17,6 +17,7 @@ import '../../widgets/app_menu.dart';
 import '../../widgets/focused_scroll_scaffold.dart';
 import '../../widgets/focusable_popup_menu_button.dart';
 import '../../widgets/settings_builder.dart';
+import '../../widgets/settings_section.dart';
 
 class MpvConfigScreen extends StatefulWidget {
   const MpvConfigScreen({super.key});
@@ -193,59 +194,51 @@ class _MpvConfigScreenState extends State<MpvConfigScreen> with SettingsEffectMi
   Widget _buildPresetsCard() {
     return SettingValueBuilder<List<MpvPreset>>(
       pref: SettingsService.mpvPresets,
-      builder: (context, presets, _) => Card(
-        child: Column(
-          crossAxisAlignment: .start,
-          children: [
+      builder: (context, presets, _) => SettingsGroup(
+        title: t.mpvConfig.presets,
+        // The page already pads its slivers by 16.
+        margin: EdgeInsets.zero,
+        children: [
+          ListTile(
+            focusNode: _savePresetFocusNode,
+            leading: const AppIcon(Symbols.save_rounded, fill: 1),
+            title: Text(t.mpvConfig.saveAsPreset),
+            enabled: _textController.text.trim().isNotEmpty,
+            onTap: _textController.text.trim().isNotEmpty ? _showSavePresetDialog : null,
+          ),
+          if (presets.isNotEmpty)
+            ...presets.map(
+              (preset) => ListTile(
+                leading: const AppIcon(Symbols.folder_rounded, fill: 1),
+                title: Text(preset.name),
+                trailing: FocusablePopupMenuButton<String>(
+                  icon: const AppIcon(Symbols.more_vert_rounded, fill: 1),
+                  onSelected: (value) {
+                    if (value == 'load') {
+                      _loadPreset(preset);
+                    } else if (value == 'delete') {
+                      _deletePreset(preset);
+                    }
+                  },
+                  itemBuilder: (context) => [
+                    AppMenuItem(value: 'load', label: t.mpvConfig.loadPreset),
+                    AppMenuItem(value: 'delete', label: t.mpvConfig.deletePreset),
+                  ],
+                ),
+                onTap: () => _loadPreset(preset),
+              ),
+            )
+          else
             Padding(
               padding: const EdgeInsets.all(16),
               child: Text(
-                t.mpvConfig.presets,
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: .bold),
+                t.mpvConfig.noPresets,
+                style: Theme.of(
+                  context,
+                ).textTheme.bodyMedium?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
               ),
             ),
-            ListTile(
-              focusNode: _savePresetFocusNode,
-              leading: const AppIcon(Symbols.save_rounded, fill: 1),
-              title: Text(t.mpvConfig.saveAsPreset),
-              enabled: _textController.text.trim().isNotEmpty,
-              onTap: _textController.text.trim().isNotEmpty ? _showSavePresetDialog : null,
-            ),
-            if (presets.isNotEmpty) ...[
-              const Divider(),
-              ...presets.map(
-                (preset) => ListTile(
-                  leading: const AppIcon(Symbols.folder_rounded, fill: 1),
-                  title: Text(preset.name),
-                  trailing: FocusablePopupMenuButton<String>(
-                    icon: const AppIcon(Symbols.more_vert_rounded, fill: 1),
-                    onSelected: (value) {
-                      if (value == 'load') {
-                        _loadPreset(preset);
-                      } else if (value == 'delete') {
-                        _deletePreset(preset);
-                      }
-                    },
-                    itemBuilder: (context) => [
-                      AppMenuItem(value: 'load', label: t.mpvConfig.loadPreset),
-                      AppMenuItem(value: 'delete', label: t.mpvConfig.deletePreset),
-                    ],
-                  ),
-                  onTap: () => _loadPreset(preset),
-                ),
-              ),
-            ] else
-              Padding(
-                padding: const EdgeInsets.only(left: 16, right: 16, bottom: 16),
-                child: Text(
-                  t.mpvConfig.noPresets,
-                  style: Theme.of(
-                    context,
-                  ).textTheme.bodyMedium?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
-                ),
-              ),
-          ],
-        ),
+        ],
       ),
     );
   }

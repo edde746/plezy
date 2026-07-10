@@ -547,7 +547,7 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
             },
           ),
 
-        // Audio Passthrough (desktop and Android TV)
+        // Audio Passthrough (desktop, Android TV, and Apple TV)
         if (PlatformDetector.supportsAudioPassthrough())
           _SettingsToggleItem(
             pref: SettingsService.audioPassthrough,
@@ -562,6 +562,18 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
           icon: Symbols.graphic_eq_rounded,
           title: t.videoSettings.audioNormalization,
           onAfterWrite: widget.player.setAudioNormalization,
+        ),
+
+        // Stereo Downmix
+        _SettingsToggleItem(
+          pref: SettingsService.audioDownmix,
+          icon: Symbols.headphones_rounded,
+          title: t.videoSettings.audioDownmix,
+          onAfterWrite: (enabled) => widget.player.setAudioDownmix(
+            enabled: enabled,
+            centerBoostDb: SettingsService.instance.read(SettingsService.downmixCenterBoost),
+            normalize: SettingsService.instance.read(SettingsService.audioDownmixNormalize),
+          ),
         ),
 
         // Shader Preset (MPV only)

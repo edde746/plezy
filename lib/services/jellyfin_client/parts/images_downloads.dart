@@ -2,7 +2,12 @@ part of '../../jellyfin_client.dart';
 
 mixin _JellyfinImageDownloadMethods on MediaServerCacheMixin {
   JellyfinConnection get connection;
-  Future<JellyfinPlaybackBundle?> fetchPlaybackBundle(String itemId, {int sourceIndex = 0, String? sourceId});
+  Future<JellyfinPlaybackBundle?> fetchPlaybackBundle(
+    String itemId, {
+    int sourceIndex = 0,
+    String? sourceId,
+    String? preferredSignature,
+  });
   String buildDirectStreamUrl(
     String itemId, {
     String? container,
@@ -11,6 +16,7 @@ mixin _JellyfinImageDownloadMethods on MediaServerCacheMixin {
     String? liveStreamId,
     int? audioStreamIndex,
   });
+  String buildAudioDirectStreamUrl(String itemId, {String? container, String? mediaSourceId});
   Future<Map<String, dynamic>?> getPlaybackInfo(
     String itemId, {
     int? maxStreamingBitrate = 100_000_000,
@@ -25,6 +31,7 @@ mixin _JellyfinImageDownloadMethods on MediaServerCacheMixin {
     bool? enableTranscoding,
     bool? allowVideoStreamCopy,
     bool? allowAudioStreamCopy,
+    bool audioProfile,
   });
   String _withApiKey(String urlOrPath);
 
@@ -50,19 +57,36 @@ mixin _JellyfinImageDownloadMethods on MediaServerCacheMixin {
 
   @override
   Future<String?> resolveExternalPlaybackUrl(MediaItem item, {int mediaIndex = 0, String? mediaSourceId}) async {
+    // Tracks stream from /Audio/{id}/stream; the URL contract (Static=true,
+    // api_key in the query string) is otherwise identical to the video one.
+    final isTrack = item.kind == MediaKind.track;
     final bundle = await fetchPlaybackBundle(item.id, sourceIndex: mediaIndex, sourceId: mediaSourceId);
-    if (bundle == null) return buildDirectStreamUrl(item.id);
-    return buildDirectStreamUrl(
-      item.id,
-      container: bundle.container,
-      mediaSourceId: bundle.pinnedSourceIdForItem(item.id),
-    );
+    if (bundle == null) {
+      return isTrack ? buildAudioDirectStreamUrl(item.id) : buildDirectStreamUrl(item.id);
+    }
+    final container = bundle.container;
+    final pinnedSourceId = bundle.pinnedSourceIdForItem(item.id);
+    return isTrack
+        ? buildAudioDirectStreamUrl(item.id, container: container, mediaSourceId: pinnedSourceId)
+        : buildDirectStreamUrl(item.id, container: container, mediaSourceId: pinnedSourceId);
   }
 
   @override
   Future<DownloadResolution> resolveDownload(MediaItem item, {int mediaIndex = 0}) async {
     final bundle = await fetchPlaybackBundle(item.id, sourceIndex: mediaIndex);
     final selectedSourceId = bundle?.selectedSourceId;
+
+    // Tracks download from the audio static-stream endpoint and have no
+    // subtitle sidecars to enumerate.
+    if (item.kind == MediaKind.track) {
+      final audioUrl = buildAudioDirectStreamUrl(
+        item.id,
+        container: bundle?.container,
+        mediaSourceId: bundle?.pinnedSourceIdForItem(item.id),
+      );
+      return DownloadResolution(videoUrl: audioUrl, mediaSourceId: selectedSourceId, externalSubtitles: const []);
+    }
+
     // Direct-stream the selected original file. Jellyfin's `Static=true`
     // skips the transcoder so the byte-for-byte source lands on disk.
     final videoUrl = buildDirectStreamUrl(

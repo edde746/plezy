@@ -110,12 +110,20 @@ extension _PlexVideoControlsPlaybackInputMethods on _PlexVideoControlsState {
     _seekThrottle.cancel();
     final clamped = clampSeekPosition(widget.player, position);
 
+    // The dedup state is per-gesture: it exists so a drag release doesn't
+    // re-issue the seek its own throttle just dispatched. Clear it before
+    // deciding, or a later gesture (e.g. a coalesced key-seek flush) landing
+    // on the same position would be silently dropped.
+    final lastDispatched = _lastDispatchedTimelineSeek;
+    final seekFuture = _lastDispatchedTimelineSeekFuture;
+    _lastDispatchedTimelineSeek = null;
+    _lastDispatchedTimelineSeekFuture = null;
+
     if (shouldSkipDuplicateTimelineSeek(
       isTranscoding: widget.isTranscoding,
-      lastDispatchedSeek: _lastDispatchedTimelineSeek,
+      lastDispatchedSeek: lastDispatched,
       finalSeek: clamped,
     )) {
-      final seekFuture = _lastDispatchedTimelineSeekFuture;
       if (seekFuture == null) {
         widget.onSeekCompleted?.call(clamped);
         return;

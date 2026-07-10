@@ -235,19 +235,20 @@ class OptimizedMediaImage extends StatelessWidget {
     final dpr = MediaImageHelper.effectiveDevicePixelRatio(context);
     final scaledWidth = effectiveWidth * dpr;
     final scaledHeight = effectiveHeight * dpr;
-    final (_, memHeight) = MediaImageHelper.getMemCacheDimensions(
+    final (memWidth, memHeight) = MediaImageHelper.getMemCacheDimensions(
       displayWidth: scaledWidth.isFinite && scaledWidth > 0 ? scaledWidth.round() : 0,
       displayHeight: scaledHeight.isFinite && scaledHeight > 0 ? scaledHeight.round() : 0,
       imageType: imageType,
     );
 
-    return Image.file(
-      file,
+    return Image(
+      image: MediaImageHelper.boundedDecode(FileImage(file), memWidth: memWidth, memHeight: memHeight),
       width: width,
       height: height,
-      // Only cacheHeight: leaving cacheWidth null preserves decode aspect
-      // ratio, mirroring the network branch's ResizeImage wrapper.
-      cacheHeight: memHeight > 0 ? memHeight : null,
+      // Artwork is decorative: the enclosing card exposes one merged node
+      // with the title, and a per-image node just grows the semantics tree
+      // the TV a11y services make Flutter rebuild every frame.
+      excludeFromSemantics: true,
       fit: fit,
       filterQuality: filterQuality,
       alignment: alignment,
@@ -292,7 +293,7 @@ class OptimizedMediaImage extends StatelessWidget {
 
     final scaledWidth = effectiveWidth * devicePixelRatio;
     final scaledHeight = effectiveHeight * devicePixelRatio;
-    final (_, memHeight) = MediaImageHelper.getMemCacheDimensions(
+    final (memWidth, memHeight) = MediaImageHelper.getMemCacheDimensions(
       displayWidth: scaledWidth.isFinite && scaledWidth > 0 ? scaledWidth.round() : 0,
       displayHeight: scaledHeight.isFinite && scaledHeight > 0 ? scaledHeight.round() : 0,
       imageType: imageType,
@@ -307,39 +308,54 @@ class OptimizedMediaImage extends StatelessWidget {
       headers: const {'User-Agent': 'Plezy'},
     );
 
-    return Image(
-      image: ResizeImage.resizeIfNeeded(null, memHeight > 0 ? memHeight : null, provider),
+    final resizedProvider = MediaImageHelper.boundedDecode(provider, memWidth: memWidth, memHeight: memHeight);
+
+    // Reduced tier: swap in directly, no fade machinery at all.
+    if (DevicePerformance.isReduced) {
+      return Image(
+        image: resizedProvider,
+        width: width,
+        height: height,
+        // Decorative — see the Image.file branch.
+        excludeFromSemantics: true,
+        fit: fit,
+        filterQuality: filterQuality,
+        alignment: alignment,
+        errorBuilder: _networkErrorBuilder(imageUrl),
+        frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
+          if (wasSynchronouslyLoaded || frame != null) return child;
+          return _buildPlaceholder(context, imageUrl);
+        },
+      );
+    }
+
+    return _FadeInNetworkImage(
+      image: resizedProvider,
       width: width,
       height: height,
       fit: fit,
       filterQuality: filterQuality,
       alignment: alignment,
-      errorBuilder: (context, error, stackTrace) {
-        _imageFailureCount++;
-        final now = DateTime.now();
-        if (now.difference(_lastFailureLog) >= _logInterval) {
-          appLogger.w('Image load failed ($_imageFailureCount since last log): $error');
-          _imageFailureCount = 0;
-          _lastFailureLog = now;
-        }
-        if (errorWidget != null) {
-          return errorWidget!(context, imageUrl, error);
-        }
-        return _buildErrorWidget(context, error);
-      },
-      frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
-        if (wasSynchronouslyLoaded) return child;
-        // Reduced tier: swap in directly — each in-flight fade is a tile-sized
-        // saveLayer, and grid scrolling runs many of them concurrently.
-        if (DevicePerformance.isReduced) {
-          return frame != null ? child : _buildPlaceholder(context, imageUrl);
-        }
-        return AnimatedSwitcher(
-          duration: const Duration(milliseconds: 300),
-          child: frame != null ? child : _buildPlaceholder(context, imageUrl),
-        );
-      },
+      duration: fadeInDuration,
+      placeholderBuilder: (context) => _buildPlaceholder(context, imageUrl),
+      errorBuilder: _networkErrorBuilder(imageUrl),
     );
+  }
+
+  ImageErrorWidgetBuilder _networkErrorBuilder(String imageUrl) {
+    return (context, error, stackTrace) {
+      _imageFailureCount++;
+      final now = DateTime.now();
+      if (now.difference(_lastFailureLog) >= _logInterval) {
+        appLogger.w('Image load failed ($_imageFailureCount since last log): $error');
+        _imageFailureCount = 0;
+        _lastFailureLog = now;
+      }
+      if (errorWidget != null) {
+        return errorWidget!(context, imageUrl, error);
+      }
+      return _buildErrorWidget(context, error);
+    };
   }
 
   Widget _surfacePlaceholder(BuildContext context, {IconData? icon, Color? iconColor, bool fillParent = false}) {
@@ -368,11 +384,128 @@ class OptimizedMediaImage extends StatelessWidget {
   Widget _buildFallback(BuildContext context) =>
       _surfacePlaceholder(context, icon: fallbackIcon ?? Symbols.image_not_supported_rounded);
 
+  /// url → disk-cache key. The SHA-1 is not free on the UI thread and this
+  /// runs per image per build, so memoize it (bounded LRU, same eviction
+  /// style as MediaCard's failed-poster set).
+  static final _cacheKeyByUrl = <String, String>{};
+  static const _cacheKeyCap = 512;
+
   String _generateCacheKey(String imageUrl) {
+    final cached = _cacheKeyByUrl.remove(imageUrl);
+    if (cached != null) {
+      _cacheKeyByUrl[imageUrl] = cached; // re-insert as most recently used
+      return cached;
+    }
     // URL already encodes bucketed transcode dimensions via roundDimensions,
     // so the URL hash alone uniquely identifies the bytes on disk. Including
     // mem-cache dimensions here would re-introduce churn on every pixel of
     // window resize and defeat getMemCacheDimensions' bucketing.
-    return 'plex_optimized_${sha1.convert(utf8.encode(imageUrl))}';
+    final key = 'plex_optimized_${sha1.convert(utf8.encode(imageUrl))}';
+    if (_cacheKeyByUrl.length >= _cacheKeyCap) {
+      _cacheKeyByUrl.remove(_cacheKeyByUrl.keys.first);
+    }
+    _cacheKeyByUrl[imageUrl] = key;
+    return key;
+  }
+}
+
+/// Fades a network image in by animating the image paint's alpha
+/// (`Image.opacity` → `RawImage`), not by wrapping it in an opacity widget:
+/// a widget-opacity fade is a tile-sized saveLayer per in-flight image, and
+/// grid scrolling runs many of them concurrently — a real GPU cost on the
+/// weak GLES devices most Android TVs are. The opaque placeholder sits below
+/// in a Stack until the fade completes, so the visual result matches the
+/// AnimatedSwitcher cross-fade this replaces.
+class _FadeInNetworkImage extends StatefulWidget {
+  const _FadeInNetworkImage({
+    required this.image,
+    required this.width,
+    required this.height,
+    required this.fit,
+    required this.filterQuality,
+    required this.alignment,
+    required this.duration,
+    required this.placeholderBuilder,
+    required this.errorBuilder,
+  });
+
+  final ImageProvider image;
+  final double? width;
+  final double? height;
+  final BoxFit fit;
+  final FilterQuality filterQuality;
+  final Alignment alignment;
+  final Duration duration;
+  final WidgetBuilder placeholderBuilder;
+  final ImageErrorWidgetBuilder errorBuilder;
+
+  @override
+  State<_FadeInNetworkImage> createState() => _FadeInNetworkImageState();
+}
+
+class _FadeInNetworkImageState extends State<_FadeInNetworkImage> with SingleTickerProviderStateMixin {
+  // Starts fully visible so synchronously-available (memory-cached) images
+  // paint immediately; dropped to 0 only once we know the load is async.
+  late final AnimationController _opacity = AnimationController(vsync: this, duration: widget.duration, value: 1);
+  bool _sawFirstFrame = false;
+  bool _placeholderVisible = false;
+
+  @override
+  void didUpdateWidget(covariant _FadeInNetworkImage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.image != oldWidget.image) {
+      // New stream: rearm so an async swap fades again (a memory-cached swap
+      // stays at full opacity via the wasSynchronouslyLoaded path).
+      _sawFirstFrame = false;
+      _placeholderVisible = false;
+      _opacity.value = 1;
+    }
+  }
+
+  @override
+  void dispose() {
+    _opacity.dispose();
+    super.dispose();
+  }
+
+  void _startFade() {
+    _sawFirstFrame = true;
+    _opacity.forward().whenComplete(() {
+      if (mounted && _placeholderVisible) setState(() => _placeholderVisible = false);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Image(
+      image: widget.image,
+      width: widget.width,
+      height: widget.height,
+      // Decorative — see OptimizedMediaImage.
+      excludeFromSemantics: true,
+      fit: widget.fit,
+      filterQuality: widget.filterQuality,
+      alignment: widget.alignment,
+      opacity: _opacity,
+      errorBuilder: widget.errorBuilder,
+      frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
+        if (wasSynchronouslyLoaded) return child;
+        if (frame == null && !_sawFirstFrame) {
+          // Async load in progress: hide the image and show the placeholder
+          // beneath until the first frame arrives. Mutating outside setState
+          // is fine here — we're inside build.
+          _opacity.value = 0;
+          _placeholderVisible = true;
+        } else if (frame != null && !_sawFirstFrame) {
+          _startFade();
+        }
+        if (!_placeholderVisible) return child;
+        return Stack(
+          alignment: Alignment.center,
+          fit: StackFit.passthrough,
+          children: [widget.placeholderBuilder(context), child],
+        );
+      },
+    );
   }
 }

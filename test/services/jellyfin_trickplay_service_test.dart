@@ -8,6 +8,7 @@ import 'package:plezy/media/media_source_info.dart';
 import 'package:plezy/services/jellyfin_client.dart';
 import 'package:plezy/services/jellyfin_trickplay_service.dart';
 import 'package:plezy/services/scrub_preview_source.dart';
+import 'package:plezy/utils/device_identity.dart';
 
 JellyfinConnection _conn() => JellyfinConnection(
   id: 'srv-1/user-1',
@@ -44,6 +45,11 @@ TrickplayInfo _info({
 ImageProvider _fakeSheet(String _) => MemoryImage(Uint8List.fromList(const [0]));
 
 void main() {
+  // Pin device identity so JellyfinClient.create doesn't resolve the host
+  // machine's name.
+  setUpAll(() => DeviceIdentityService.debugOverride(const DeviceIdentity(platform: 'Test')));
+  tearDownAll(() => DeviceIdentityService.debugOverride(null));
+
   group('JellyfinTrickplayService.create — width selection', () {
     late JellyfinClient client;
 

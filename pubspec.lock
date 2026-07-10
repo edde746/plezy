@@ -89,11 +89,11 @@ packages:
     dependency: "direct main"
     description:
       path: "."
-      ref: b4d36f88bb365faaf308ff26be7ade49bbaec859
-      resolved-ref: b4d36f88bb365faaf308ff26be7ade49bbaec859
+      ref: "021e2075260e324b7440a5c81b57bf0242d35020"
+      resolved-ref: "021e2075260e324b7440a5c81b57bf0242d35020"
       url: "https://github.com/edde746/background_downloader"
     source: git
-    version: "9.5.4"
+    version: "9.5.5"
   boolean_selector:
     dependency: transitive
     description:
@@ -242,8 +242,8 @@ packages:
     dependency: "direct main"
     description:
       path: "packages/connectivity_plus/connectivity_plus"
-      ref: "2b614414ce95d920880765d07cbb9759699a4563"
-      resolved-ref: "2b614414ce95d920880765d07cbb9759699a4563"
+      ref: "4c0d4071150481f76d753c6ce1ff325bb959b9b5"
+      resolved-ref: "4c0d4071150481f76d753c6ce1ff325bb959b9b5"
       url: "https://github.com/edde746/plus_plugins"
     source: git
     version: "7.1.1"
@@ -768,11 +768,11 @@ packages:
     dependency: "direct main"
     description:
       path: "."
-      ref: f51c805ebc15bf7a2f49a74174aeb470d3c4c78e
-      resolved-ref: f51c805ebc15bf7a2f49a74174aeb470d3c4c78e
+      ref: "75556a968a4a1ebc42fbb8c31942c2418d4326e1"
+      resolved-ref: "75556a968a4a1ebc42fbb8c31942c2418d4326e1"
       url: "https://github.com/edde746/media_controls"
     source: git
-    version: "0.2.4"
+    version: "0.3.0"
   package_config:
     dependency: transitive
     description:
@@ -984,10 +984,9 @@ packages:
   saf_util:
     dependency: "direct main"
     description:
-      name: saf_util
-      sha256: "0cf5fc462fc7e466e1d5608dd5a331d88d6dd6c7b01f62a305aaf469bf3309ea"
-      url: "https://pub.dev"
-    source: hosted
+      path: "packages/saf_util"
+      relative: true
+    source: path
     version: "2.0.0"
   screen_retriever:
     dependency: transitive
@@ -1473,10 +1472,10 @@ packages:
     dependency: "direct main"
     description:
       name: win_http
-      sha256: a50a14f1bf32bc5c9b39add9baa01658b97146b21de25237810ca6b850a6704e
+      sha256: ebc4d37e2c0e6800cc200e40d289d3bac22fc17d40fce3ae7909d49a20da77bc
       url: "https://pub.dev"
     source: hosted
-    version: "0.2.1"
+    version: "0.2.2"
   window_manager:
     dependency: "direct main"
     description:

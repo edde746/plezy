@@ -370,6 +370,55 @@ void main() {
   });
 
   // ============================================================
+  // Plex Home user-scope migration (full profile id → home-user uuid)
+  // ============================================================
+
+  group('migratePlexHomeUserScopes (onInit)', () {
+    const fullId = 'plex-home-plex.e443d57860076fc3-379704d0c6601309';
+    const uuid = '379704d0c6601309';
+
+    Future<StorageService> reinitialize(StorageService s) async {
+      BaseSharedPreferencesService.resetForTesting();
+      return StorageService.getInstance();
+    }
+
+    test('moves full-profile-id-scoped keys onto the uuid scope', () async {
+      var s = await StorageService.getInstance();
+      await s.prefs.setString('user_${fullId}_selected_library_key', 'lib-1');
+      await s.prefs.setBool('user_${fullId}_some_flag', true);
+      await s.prefs.setStringList('user_${fullId}_hidden_libraries', ['a', 'b']);
+
+      s = await reinitialize(s);
+
+      expect(s.prefs.getString('user_${uuid}_selected_library_key'), 'lib-1');
+      expect(s.prefs.getBool('user_${uuid}_some_flag'), isTrue);
+      expect(s.prefs.getStringList('user_${uuid}_hidden_libraries'), ['a', 'b']);
+      expect(s.prefs.keys.where((k) => k.contains('plex-home-')), isEmpty);
+    });
+
+    test('full-id value wins over a stale pre-migration uuid-scoped value', () async {
+      var s = await StorageService.getInstance();
+      await s.prefs.setString('user_${uuid}_selected_library_key', 'stale');
+      await s.prefs.setString('user_${fullId}_selected_library_key', 'fresh');
+
+      s = await reinitialize(s);
+
+      expect(s.prefs.getString('user_${uuid}_selected_library_key'), 'fresh');
+    });
+
+    test('leaves local-profile scopes and unparseable plex-home scopes untouched', () async {
+      var s = await StorageService.getInstance();
+      await s.prefs.setString('user_local-1_selected_library_key', 'keep');
+      await s.prefs.setString('user_plex-home-acct-not-a-uuid_key', 'keep-too');
+
+      s = await reinitialize(s);
+
+      expect(s.prefs.getString('user_local-1_selected_library_key'), 'keep');
+      expect(s.prefs.getString('user_plex-home-acct-not-a-uuid_key'), 'keep-too');
+    });
+  });
+
+  // ============================================================
   // clearCredentials
   // ============================================================
 

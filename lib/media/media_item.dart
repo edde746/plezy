@@ -60,6 +60,7 @@ sealed class MediaItem with _$MediaItem {
     int? updatedAt,
     double? rating,
     double? userRating,
+    bool? isFavorite,
     List<String>? genres,
     List<String>? directors,
     List<String>? writers,
@@ -119,6 +120,7 @@ sealed class MediaItem with _$MediaItem {
         updatedAt: updatedAt,
         rating: rating,
         userRating: userRating,
+        isFavorite: isFavorite,
         genres: genres,
         directors: directors,
         writers: writers,
@@ -177,6 +179,7 @@ sealed class MediaItem with _$MediaItem {
         updatedAt: updatedAt,
         rating: rating,
         userRating: userRating,
+        isFavorite: isFavorite,
         genres: genres,
         directors: directors,
         writers: writers,
@@ -243,6 +246,7 @@ sealed class MediaItem with _$MediaItem {
     @JsonKey(fromJson: flexibleDouble) double? rating,
     @JsonKey(fromJson: flexibleDouble) double? audienceRating,
     @JsonKey(fromJson: flexibleDouble) double? userRating,
+    bool? isFavorite,
     String? ratingImage,
     String? audienceRatingImage,
     @JsonKey(fromJson: _mediaItemStringList) List<String>? genres,
@@ -316,6 +320,7 @@ sealed class MediaItem with _$MediaItem {
     @JsonKey(fromJson: flexibleInt) int? updatedAt,
     @JsonKey(fromJson: flexibleDouble) double? rating,
     @JsonKey(fromJson: flexibleDouble) double? userRating,
+    bool? isFavorite,
     @JsonKey(fromJson: _mediaItemStringList) List<String>? genres,
     @JsonKey(fromJson: _mediaItemStringList) List<String>? directors,
     @JsonKey(fromJson: _mediaItemStringList) List<String>? writers,
@@ -372,9 +377,60 @@ sealed class MediaItem with _$MediaItem {
   String? get libraryGlobalKey =>
       serverId != null && libraryId != null ? buildGlobalKey(ServerId(serverId!), libraryId!) : null;
 
+  /// Global unique identifier of this item's series, for episodes/seasons.
+  /// Null for movies and shows themselves — their own [globalKey] is already
+  /// series-level.
+  String? get seriesGlobalKey {
+    final seriesId = switch (kind) {
+      MediaKind.episode => grandparentId,
+      MediaKind.season => grandparentId ?? parentId,
+      _ => null,
+    };
+    if (seriesId == null) return null;
+    return serverId != null ? buildGlobalKey(ServerId(serverId!), seriesId) : seriesId;
+  }
+
   /// Parent rating keys for hierarchical invalidation. For an episode:
   /// `[seasonId, showId]`. For a season: `[showId]`. For a movie: `[]`.
   List<String> get parentChain => [?parentId, ?grandparentId];
+
+  /// Server-side file paths across every version of this item. Plex
+  /// represents a multi-episode file (`S02E24-E25.mkv`) as distinct episode
+  /// items whose parts have *different* part ids but the same file, so the
+  /// file path — not the part id — is the "same underlying file" signal
+  /// (#1500).
+  Set<String> get allPartFiles => {
+    for (final version in mediaVersions ?? const <MediaVersion>[])
+      for (final part in version.parts)
+        if (part.file != null && part.file!.isNotEmpty) part.file!,
+  };
+
+  /// Whether [other] is backed by the same physical file as this item.
+  /// [playedPartId] — the part actually being played, when known — pins the
+  /// comparison to that part's file, so an episode with multiple versions
+  /// only matches against the file on screen; otherwise any file overlap
+  /// between the two items counts. Items without file metadata (Plex hides
+  /// paths from restricted users) or from a different server never match.
+  bool sharesFileWith(MediaItem other, {String? playedPartId}) {
+    if (other.serverId != serverId) return false;
+    final otherFiles = other.allPartFiles;
+    if (otherFiles.isEmpty) return false;
+    if (playedPartId != null) {
+      final playedFile = _filePathForPart(playedPartId);
+      if (playedFile != null) return otherFiles.contains(playedFile);
+    }
+    return allPartFiles.intersection(otherFiles).isNotEmpty;
+  }
+
+  /// The file path of this item's part with [partId], or null when unknown.
+  String? _filePathForPart(String partId) {
+    for (final version in mediaVersions ?? const <MediaVersion>[]) {
+      for (final part in version.parts) {
+        if (part.id == partId) return (part.file?.isEmpty ?? true) ? null : part.file;
+      }
+    }
+    return null;
+  }
 
   /// Recency used to order the Continue Watching / On Deck shelf: when the item
   /// was last watched, falling back to when it was added for never-watched rows.
@@ -446,6 +502,34 @@ sealed class MediaItem with _$MediaItem {
     return null;
   }
 
+  /// Track number within its disc, for [MediaKind.track] items.
+  int? get trackNumber => kind == MediaKind.track ? index : null;
+
+  /// Disc number for [MediaKind.track] items (Plex `parentIndex`, Jellyfin
+  /// `ParentIndexNumber`). Null/1 on single-disc albums.
+  int? get discNumber => kind == MediaKind.track ? parentIndex : null;
+
+  /// Album title for music items: a track's parent, an album's own title.
+  String? get albumTitle => switch (kind) {
+    MediaKind.track => parentTitle,
+    MediaKind.album => title,
+    _ => null,
+  };
+
+  /// Album-artist name for music items: a track's grandparent, an album's
+  /// parent.
+  String? get albumArtistTitle => switch (kind) {
+    MediaKind.track => grandparentTitle,
+    MediaKind.album => parentTitle,
+    _ => null,
+  };
+
+  /// Performing artist of a track. Falls back to [albumArtistTitle] — both
+  /// backends only populate a separate value when it differs (Plex stores a
+  /// compilation track's own artist in `originalTitle`; the Jellyfin mapper
+  /// mirrors that convention from `Artists`).
+  String? get trackArtistTitle => kind == MediaKind.track ? (originalTitle ?? albumArtistTitle) : null;
+
   /// Plex-only edition label. Jellyfin returns null.
   String? get editionTitle => null;
 
@@ -502,6 +586,14 @@ sealed class MediaItem with _$MediaItem {
     return false;
   }
 
+  /// The card silhouette this item renders with. Music items (artist/album/
+  /// track) are square; everything else folds in the [usesWideAspectRatio]
+  /// wide-vs-poster decision, so the two can never disagree.
+  CardShape cardShape(EpisodePosterMode mode, {bool mixedHubContext = false}) {
+    if (kind.isMusic) return CardShape.square;
+    return usesWideAspectRatio(mode, mixedHubContext: mixedHubContext) ? CardShape.wide : CardShape.poster;
+  }
+
   /// Returns the best hero art path based on the container's aspect ratio.
   String? heroArt({required double containerAspectRatio}) {
     final candidates = heroArtCandidates(containerAspectRatio: containerAspectRatio);
@@ -526,6 +618,11 @@ sealed class MediaItem with _$MediaItem {
     return candidates;
   }
 }
+
+/// The silhouette a media card renders with: 2:3 posters, 16:9 wide
+/// thumbnails (episodes/clips), or 1:1 squares (music artwork; artists clip
+/// to a circle). Resolved per item via [MediaItem.cardShape].
+enum CardShape { poster, wide, square }
 
 MediaKind _mediaKindFromJson(Object? raw) => MediaKind.fromString(raw as String?);
 

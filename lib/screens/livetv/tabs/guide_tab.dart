@@ -1112,7 +1112,7 @@ class GuideTabState extends State<GuideTab> with MountedSetStateMixin, WidgetsBi
       _gridEnd = _gridStart.add(const Duration(hours: 6));
       _nowWasInWindow = _nowInWindow(DateTime.now());
     });
-    _loadPrograms();
+    unawaited(_loadPrograms());
     _guideFocusNode.requestFocus();
   }
 

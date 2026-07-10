@@ -30,6 +30,10 @@ class MainFlutterWindow: NSWindow {
     MpvPlayerPlugin.register(
       with: flutterViewController.registrar(forPlugin: "MpvPlayerPlugin"))
 
+    // Register the audio-only MPV player plugin for music playback
+    MpvAudioPlayerPlugin.register(
+      with: flutterViewController.registrar(forPlugin: "MpvAudioPlayerPlugin"))
+
     // Register window utils plugin for dynamic titlebar/fullscreen control from Dart
     WindowUtilsPlugin.register(
       with: flutterViewController.registrar(forPlugin: "WindowUtilsPlugin"))

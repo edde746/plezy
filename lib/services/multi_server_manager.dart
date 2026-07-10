@@ -547,6 +547,15 @@ class MultiServerManager {
   /// Add a Jellyfin server backed by an authenticated [JellyfinConnection].
   /// Returns true on success.
   ///
+  /// When a live client already exists for the same compound id and the
+  /// connection is equivalent (see [canReuseJellyfinClient]), that client is
+  /// reused instead of recreated — profile rebinds re-add unchanged
+  /// connections routinely, and tearing the client down would abort its
+  /// in-flight requests. A material change (token, deviceId, URL set) still
+  /// replaces the client. This mirrors the Plex rebind path, where
+  /// [refreshTokensForProfile] reuses the online client via an in-place
+  /// token update.
+  ///
   /// Jellyfin clients use the shared endpoint-racing flow when multiple URLs
   /// are configured, then instantiate the client against the lowest-latency
   /// reachable URL.
@@ -557,6 +566,13 @@ class MultiServerManager {
   /// client (preserves any in-flight operations on the prior profile).
   Future<bool> addJellyfinConnection(JellyfinConnection connection) async {
     try {
+      // Every close path detaches the client from [_jellyfinByCompoundId]
+      // before closing it, so a client found here is never mid-close.
+      final existing = _jellyfinByCompoundId[connection.id];
+      if (existing != null && canReuseJellyfinClient(live: existing.connection, incoming: connection)) {
+        return _reuseJellyfinClient(existing);
+      }
+
       var resolvedConnection = connection;
       if (connection.baseUrls.length > 1) {
         try {
@@ -591,8 +607,9 @@ class MultiServerManager {
       final compoundId = resolvedConnection.id;
       final machineId = resolvedConnection.serverMachineId;
 
-      // Replace any prior client for this exact compound id (re-add of the
-      // same user — e.g., token refresh or settings re-add).
+      // Replace the prior client for this compound id — reaching here means
+      // the connection materially changed (token refresh, URL-set edit); an
+      // unchanged re-add was already handled by the reuse branch above.
       final oldClient = _jellyfinByCompoundId[compoundId];
       if (oldClient != null) _closeClient(oldClient);
       _jellyfinByCompoundId[compoundId] = client;
@@ -617,6 +634,66 @@ class MultiServerManager {
       appLogger.e('Failed to add Jellyfin server ${connection.serverName}', error: e, stackTrace: stackTrace);
       return false;
     }
+  }
+
+  /// Whether the live client bound to [live] can serve [incoming] without
+  /// being recreated. Recreation is required when a field baked into the
+  /// client at construction time changes:
+  /// - `accessToken` / `deviceId` are embedded in the auth headers when the
+  ///   HTTP client is built;
+  /// - `baseUrls` fixes the failover candidate set. Compared as a set: both
+  ///   the client and the add-path endpoint race reorder the list as
+  ///   endpoints are promoted, so ordering drifts on an unchanged server.
+  ///
+  /// Everything else is deliberately ignored: the active `baseUrl` drifts as
+  /// the client rotates endpoints, `isAdministrator` self-refreshes on health
+  /// checks, and the remaining fields are display metadata. `userId` and
+  /// `serverMachineId` equality is implied by the compound-id lookup that
+  /// precedes this check.
+  @visibleForTesting
+  static bool canReuseJellyfinClient({required JellyfinConnection live, required JellyfinConnection incoming}) {
+    return live.accessToken == incoming.accessToken &&
+        live.deviceId == incoming.deviceId &&
+        setEquals(live.baseUrls.toSet(), incoming.baseUrls.toSet());
+  }
+
+  /// Re-add of an unchanged connection: keep the live client (preserving its
+  /// in-flight requests and settled endpoint choice), re-bind it as the
+  /// machine's active user, and run a fresh health probe so callers still
+  /// get a current result. Skips the endpoint race ([JellyfinClient] has
+  /// per-request failover plus exhaustion-triggered reconnect), the
+  /// connection-update wiring (already attached when the client was first
+  /// added), and the connection persist (the client persists its own
+  /// endpoint rotations).
+  Future<bool> _reuseJellyfinClient(JellyfinClient client) async {
+    final compoundId = client.connection.id;
+    final machineId = client.connection.serverMachineId;
+    final rebound = _activeJellyfinMachine[machineId] != compoundId;
+    _clients[machineId] = client;
+    _activeJellyfinMachine[machineId] = compoundId;
+
+    final health = await client.checkHealth();
+    _jellyfinHealthByCompoundId[compoundId] = health;
+    if (_activeJellyfinMachine[machineId] != compoundId) {
+      // A concurrent remove/re-add won while the probe was in flight.
+      appLogger.d('Ignoring stale Jellyfin reuse result for ${client.connection.serverName}');
+      return health == HealthStatus.online;
+    }
+    _applyHealth(ServerId(machineId), health);
+    if (rebound) {
+      // The machine's active user changed even if its online status didn't;
+      // client-map consumers need to observe the swap.
+      _statusController.add(Map.from(_serverStatus));
+    }
+    final healthy = health == HealthStatus.online;
+    appLogger.i(
+      'Reusing existing Jellyfin client for ${client.connection.serverName}'
+      '${healthy ? '' : ' (unhealthy)'} (connection unchanged)',
+    );
+    if (_connectivitySubscription == null && healthy) {
+      _startNetworkMonitoring();
+    }
+    return healthy;
   }
 
   void _wireJellyfinConnectionUpdates(JellyfinClient client) {

@@ -46,10 +46,12 @@ void main() {
       expect(flexibleBool(-1), isFalse);
     });
 
-    test("maps '1' string to true, other strings to false", () {
+    test("maps '1' and true strings to true, other strings to false", () {
       expect(flexibleBool('1'), isTrue);
+      expect(flexibleBool('true'), isTrue);
+      expect(flexibleBool('TRUE'), isTrue);
       expect(flexibleBool('0'), isFalse);
-      expect(flexibleBool('true'), isFalse);
+      expect(flexibleBool('false'), isFalse);
       expect(flexibleBool(''), isFalse);
     });
 
@@ -72,10 +74,13 @@ void main() {
       expect(flexibleBoolNullable(2), isFalse);
     });
 
-    test("maps '1' string to true, other strings to false", () {
+    test("maps '1' and true strings to true, false strings to false", () {
       expect(flexibleBoolNullable('1'), isTrue);
+      expect(flexibleBoolNullable('true'), isTrue);
+      expect(flexibleBoolNullable('TRUE'), isTrue);
       expect(flexibleBoolNullable('0'), isFalse);
-      expect(flexibleBoolNullable('true'), isFalse);
+      expect(flexibleBoolNullable('false'), isFalse);
+      expect(flexibleBoolNullable('FALSE'), isFalse);
     });
 
     test('returns null for null and unsupported types', () {
@@ -175,6 +180,36 @@ void main() {
 
     test('returns null when no element is a string', () {
       expect(flexibleStringList(<dynamic>[1, 2, 3]), isNull);
+    });
+  });
+
+  group('flexibleCsvStringList', () {
+    test('passes a list of strings through', () {
+      expect(flexibleCsvStringList(<dynamic>['en', 'sv']), ['en', 'sv']);
+    });
+
+    test('wraps a bare string in a list', () {
+      expect(flexibleCsvStringList('en'), ['en']);
+    });
+
+    test('splits a CSV string', () {
+      expect(flexibleCsvStringList('en,sv'), ['en', 'sv']);
+    });
+
+    test('trims parts and drops empties', () {
+      expect(flexibleCsvStringList('en, sv , ,fr'), ['en', 'sv', 'fr']);
+      expect(flexibleCsvStringList(','), isNull);
+      expect(flexibleCsvStringList(''), isNull);
+    });
+
+    test('splits CSV inside list elements and drops non-strings', () {
+      expect(flexibleCsvStringList(<dynamic>['en,sv', 'fr']), ['en', 'sv', 'fr']);
+      expect(flexibleCsvStringList(<dynamic>[1, 'en']), ['en']);
+    });
+
+    test('returns null for null and empty input', () {
+      expect(flexibleCsvStringList(null), isNull);
+      expect(flexibleCsvStringList(<dynamic>[]), isNull);
     });
   });
 }

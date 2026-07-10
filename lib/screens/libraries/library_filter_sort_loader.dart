@@ -30,11 +30,15 @@ class LibraryFilterSortLoader {
 
   LibraryFilterSortLoader({required this.clientFor});
 
-  Future<LoadedFiltersAndSorts> load(MediaLibrary library) async {
+  /// [sortLibraryType] overrides the type the sort listing is fetched for —
+  /// music libraries serve a distinct sort list per browse grouping
+  /// (artist/album/track), so the caller passes the active grouping's kind id.
+  /// Defaults to the library's own kind.
+  Future<LoadedFiltersAndSorts> load(MediaLibrary library, {String? sortLibraryType}) async {
     final client = clientFor(library);
     final results = await Future.wait([
       client.fetchLibraryFiltersWithValues(library.id),
-      client.fetchSortOptions(library.id, libraryType: library.kind.id),
+      client.fetchSortOptions(library.id, libraryType: sortLibraryType ?? library.kind.id),
     ]);
     final filterResult = results.first as LibraryFilterResult;
     final sorts = results[1] as List<MediaSort>;

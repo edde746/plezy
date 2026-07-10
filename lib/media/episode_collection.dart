@@ -179,6 +179,36 @@ String? _airDateKey(MediaItem episode) {
 /// ordering rationale.
 void sortEpisodesByWatchOrder(List<MediaItem> episodes) => episodes.sort(compareEpisodesByWatchOrder);
 
+/// The episode after [currentIdx] in [ordered] that is backed by a different
+/// file than the current one. Plex lists each episode of a multi-episode file
+/// (`S02E24-E25.mkv`) as its own item, and advancing to a same-file sibling
+/// would replay the file from the start (#1500). Items without part metadata
+/// never match, so this degrades to plain adjacency.
+MediaItem? nextEpisodeSkippingSameFile(List<MediaItem> ordered, int currentIdx) {
+  final current = ordered[currentIdx];
+  for (var i = currentIdx + 1; i < ordered.length; i++) {
+    if (!current.sharesFileWith(ordered[i])) return ordered[i];
+  }
+  return null;
+}
+
+/// The episode before [currentIdx] in [ordered] backed by a different file,
+/// collapsed to the first episode of its same-file group so a multi-episode
+/// file is entered at the episode that fronts it (#1500).
+MediaItem? previousEpisodeSkippingSameFile(List<MediaItem> ordered, int currentIdx) {
+  final current = ordered[currentIdx];
+  for (var i = currentIdx - 1; i >= 0; i--) {
+    final candidate = ordered[i];
+    if (current.sharesFileWith(candidate)) continue;
+    var head = i;
+    while (head > 0 && candidate.sharesFileWith(ordered[head - 1])) {
+      head--;
+    }
+    return ordered[head];
+  }
+  return null;
+}
+
 /// Find the season index matching an explicit navigation target or on-deck
 /// episode. With neither, fall back to the first season that still has
 /// unwatched episodes (so a partially-watched show removed from Continue

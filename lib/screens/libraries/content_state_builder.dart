@@ -27,12 +27,30 @@ class SliverEmptyState extends StatelessWidget {
   final String message;
   final IconData? icon;
   final String? subtitle;
+  final VoidCallback? onAction;
+  final String? actionLabel;
+  final IconData? actionIcon;
 
-  const SliverEmptyState({super.key, required this.message, required this.icon, this.subtitle});
+  const SliverEmptyState({
+    super.key,
+    required this.message,
+    required this.icon,
+    this.subtitle,
+    this.onAction,
+    this.actionLabel,
+    this.actionIcon,
+  });
 
   @override
   Widget build(BuildContext context) => SliverFillRemaining(
-    child: EmptyStateWidget(message: message, icon: icon, subtitle: subtitle),
+    child: EmptyStateWidget(
+      message: message,
+      icon: icon,
+      subtitle: subtitle,
+      onAction: onAction,
+      actionLabel: actionLabel,
+      actionIcon: actionIcon,
+    ),
   );
 }
 

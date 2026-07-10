@@ -10,15 +10,19 @@ import 'package:provider/provider.dart';
 
 import '../focus/dpad_navigator.dart';
 import '../focus/focus_memory_tracker.dart';
+import '../media/media_item.dart';
 import '../media/media_library.dart';
 import '../mixins/mounted_set_state_mixin.dart';
 import '../navigation/navigation_tabs.dart';
 import '../providers/hidden_libraries_provider.dart';
 import '../providers/libraries_provider.dart';
+import '../services/music/music_playback_service.dart';
 import '../services/settings_service.dart';
+import '../utils/music_navigation.dart';
 import '../utils/platform_detector.dart';
 import '../utils/scroll_utils.dart';
 import '../utils/library_grouping.dart';
+import 'music/equalizer_icon.dart';
 import '../providers/multi_server_provider.dart';
 import '../providers/seerr_session_provider.dart';
 import '../services/fullscreen_state_manager.dart';
@@ -52,6 +56,10 @@ final class _LibraryItemRow extends _LibraryNavRow {
 class NavigationRailItem extends StatelessWidget {
   final IconData icon;
   final IconData? selectedIcon;
+
+  /// Custom leading widget rendered instead of the [icon] (e.g. the Now
+  /// Playing item's equalizer). Should be at most [iconSize] tall/wide.
+  final Widget? iconWidget;
   final Widget label;
   final bool isSelected;
   final bool isFocused;
@@ -72,6 +80,7 @@ class NavigationRailItem extends StatelessWidget {
     super.key,
     required this.icon,
     this.selectedIcon,
+    this.iconWidget,
     required this.label,
     required this.isSelected,
     required this.isFocused,
@@ -134,12 +143,13 @@ class NavigationRailItem extends StatelessWidget {
                   padding: .symmetric(vertical: 12, horizontal: horizontalPadding),
                   child: Row(
                     children: [
-                      AppIcon(
-                        isSelected && selectedIcon != null ? selectedIcon! : icon,
-                        fill: 1,
-                        size: iconSize,
-                        color: isSelected ? t.text : t.textMuted,
-                      ),
+                      iconWidget ??
+                          AppIcon(
+                            isSelected && selectedIcon != null ? selectedIcon! : icon,
+                            fill: 1,
+                            size: iconSize,
+                            color: isSelected ? t.text : t.textMuted,
+                          ),
                       const SizedBox(width: 11),
                       Expanded(
                         child: () {
@@ -232,6 +242,7 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
   }
 
   static const _kHome = 'home';
+  static const _kNowPlaying = 'nowPlaying';
   static const _kLibraries = 'libraries';
   static const _kSearch = 'search';
   static const _kDownloads = 'downloads';
@@ -342,6 +353,13 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
     _requestFocusAndReveal(node);
   }
 
+  /// Focus the Home nav item (Back returning to the home tab).
+  void focusHomeItem() {
+    final node = _mountedFocusNodeFor(_kHome);
+    if (node == null) return;
+    _requestFocusAndReveal(node);
+  }
+
   /// Resolve the best mounted focus node in priority order:
   /// 1. Explicit [targetKey] (captured before scope switch)
   /// 2. Last focused key still in the tracker
@@ -416,10 +434,12 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
     required List<_LibraryNavRow> hiddenRows,
     required bool hasHiddenLibraries,
     required bool hasLiveTv,
+    required bool hasNowPlaying,
     bool hasSeerr = false,
   }) {
     return {
       _kHome,
+      if (hasNowPlaying) _kNowPlaying,
       _kLibraries,
       _kSearch,
       if (hasSeerr) 'seerr',
@@ -495,12 +515,14 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
     List<_LibraryNavRow> hiddenRows, {
     required bool hasHiddenLibraries,
     required bool hasLiveTv,
+    required bool hasNowPlaying,
     bool hasSeerr = false,
   }) {
     return [
       if (widget.isOfflineMode && widget.onReconnect != null) _kReconnect,
       if (!widget.isOfflineMode) ...[
         _kHome,
+        if (hasNowPlaying) _kNowPlaying,
         _kLibraries,
         if (_librariesExpanded) ...[
           ..._focusKeysForLibraryRows(visibleRows),
@@ -628,6 +650,12 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
     final itemHorizontalPadding = itemHorizontalPaddingForContext(context, isCollapsed: isCollapsed);
     final hasLiveTv = context.watch<MultiServerProvider>().hasLiveTv;
     final hasSeerr = context.watch<SeerrSessionProvider>().hasConfiguredServer;
+    // Nullable watch: rail tests (and any host without the profile session
+    // scope) simply never show the Now Playing item. TV-only — it is the
+    // way back into the now-playing screen there; desktop already has the
+    // mini-player for that.
+    final musicService = context.watch<MusicPlaybackService?>();
+    final nowPlayingTrack = widget.isOfflineMode || !PlatformDetector.isTV() ? null : musicService?.currentTrack;
 
     // Listen to fullscreen + groupLibrariesByServer setting so the rail
     // rebuilds when the user toggles "Group libraries by server" in Appearance.
@@ -659,6 +687,7 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
             hiddenRows: hiddenRows,
             hasHiddenLibraries: hiddenLibraries.isNotEmpty,
             hasLiveTv: hasLiveTv,
+            hasNowPlaying: nowPlayingTrack != null,
             hasSeerr: hasSeerr,
           ),
         );
@@ -667,6 +696,7 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
           hiddenRows,
           hasHiddenLibraries: hiddenLibraries.isNotEmpty,
           hasLiveTv: hasLiveTv,
+          hasNowPlaying: nowPlayingTrack != null,
           hasSeerr: hasSeerr,
         );
         _debugAssertUniqueFocusOrder(focusOrder);
@@ -730,6 +760,11 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
                                       isCollapsed: isCollapsed,
                                     ),
                                     const SizedBox(height: 8),
+                                    // Now Playing — only while a music session is live.
+                                    if (nowPlayingTrack != null && musicService != null) ...[
+                                      _buildNowPlayingItem(nowPlayingTrack, musicService, isCollapsed: isCollapsed),
+                                      const SizedBox(height: 8),
+                                    ],
                                     _buildLibrariesSection(
                                       visibleRows,
                                       hiddenRows,
@@ -859,6 +894,50 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
       autofocus: autofocus,
       horizontalPadding: itemHorizontalPadding,
       suppressSelectedBackground: widget.isSidebarFocused,
+      onNavigateRight: widget.onNavigateToContent,
+    );
+  }
+
+  /// "Now Playing" rail item — the shared equalizer as its icon (animating
+  /// while audio plays), the current track's title as its label. SELECT/tap
+  /// opens the now-playing screen.
+  Widget _buildNowPlayingItem(MediaItem track, MusicPlaybackService musicService, {required bool isCollapsed}) {
+    final t = tokens(context);
+    final itemHorizontalPadding = itemHorizontalPaddingForContext(context, isCollapsed: isCollapsed);
+
+    return NavigationRailItem(
+      icon: Symbols.music_note_rounded,
+      iconWidget: SizedBox(
+        width: 22,
+        child: Center(
+          child: EqualizerIcon(animate: musicService.isPlaying, color: t.text),
+        ),
+      ),
+      label: Column(
+        crossAxisAlignment: .start,
+        mainAxisSize: .min,
+        children: [
+          Text(
+            Translations.of(context).music.nowPlaying,
+            style: TextStyle(fontSize: 14, fontWeight: .w600, color: t.text),
+            overflow: .ellipsis,
+            maxLines: 1,
+          ),
+          Text(
+            track.title ?? '',
+            style: TextStyle(fontSize: 11, color: t.textMuted),
+            overflow: .ellipsis,
+            maxLines: 1,
+          ),
+        ],
+      ),
+      isSelected: false,
+      isFocused: _focusTracker.isFocused(_kNowPlaying),
+      isCollapsed: isCollapsed,
+      useSimpleLayout: true,
+      onTap: () => unawaited(openNowPlaying(context)),
+      focusNode: _focusTracker.get(_kNowPlaying),
+      horizontalPadding: itemHorizontalPadding,
       onNavigateRight: widget.onNavigateToContent,
     );
   }

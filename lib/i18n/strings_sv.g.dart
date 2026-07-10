@@ -72,6 +72,7 @@ class TranslationsSv extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _TranslationsLiveTvSv liveTv = _TranslationsLiveTvSv._(_root);
 	@override late final _TranslationsCollectionsSv collections = _TranslationsCollectionsSv._(_root);
 	@override late final _TranslationsPlaylistsSv playlists = _TranslationsPlaylistsSv._(_root);
+	@override late final _TranslationsMusicSv music = _TranslationsMusicSv._(_root);
 	@override late final _TranslationsWatchTogetherSv watchTogether = _TranslationsWatchTogetherSv._(_root);
 	@override late final _TranslationsDownloadsSv downloads = _TranslationsDownloadsSv._(_root);
 	@override late final _TranslationsShadersSv shaders = _TranslationsShadersSv._(_root);
@@ -271,7 +272,7 @@ class _TranslationsSettingsSv extends TranslationsSettingsEn {
 	@override String get hideSpoilers => 'Dölj spoilers för osedda avsnitt';
 	@override String get hideSpoilersDescription => 'Sudda miniatyrbilder och beskrivningar för osedda avsnitt';
 	@override String get playerBackend => 'Spelarmotor';
-	@override String get exoPlayer => 'ExoPlayer (Rekommenderad)';
+	@override String get exoPlayer => 'ExoPlayer';
 	@override String get mpv => 'mpv';
 	@override String get hardwareDecoding => 'Hårdvaruavkodning';
 	@override String get hardwareDecodingDescription => 'Använd hårdvaruacceleration när tillgängligt';
@@ -393,6 +394,30 @@ class _TranslationsSettingsSv extends TranslationsSettingsEn {
 	@override String get tunneledPlaybackDescription => 'Använd videotunnling. Inaktivera om HDR-uppspelning visar svart video.';
 	@override String get audioPassthrough => 'Ljudgenomkoppling';
 	@override String get audioPassthroughDescription => 'Skicka Dolby/DTS-ljud till din receiver eller TV utan omkodning och bevara surroundljudet. Stäng av om du inte har något ljud.';
+	@override String get audioPassthroughDescriptionAppleTv => 'Lämnar Dolby Digital Plus (inkl. Atmos) till systemet som bitstream. DTS och TrueHD spelas fortfarande upp som flerkanals-PCM. Korta ljudavbrott kan förekomma vid sökning.';
+	@override String get audioDownmix => 'Nedmixning till stereo';
+	@override String get audioDownmixDescription => 'Mixar ner surroundljud till två kanaler för stereohögtalare eller hörlurar';
+	@override String get downmixCenterBoost => 'Förstärkning av centerkanal';
+	@override String downmixCenterBoostValue({required Object db}) => '${db} dB';
+	@override String get downmixCenterBoostLabel => 'Förstärkning (dB)';
+	@override String get downmixCenterBoostShort => 'dB';
+	@override String get audioDownmixNormalize => 'Normalisera ljudstyrka vid nedmixning';
+	@override String get audioDownmixNormalizeDescription => 'Sänker mixen för att undvika klippning. Stäng av för att behålla originalvolymen (höga scener kan förvrängas).';
+	@override String get atmosDiagnostics => 'Atmos-utgångstest';
+	@override String get atmosDiagnosticsDescription => 'Diagnostisera Dolby Atmos-utgången genom att spela testsignaler via systemspelaren';
+	@override String get atmosTestHlsAtmos => 'Apple Atmos-ström';
+	@override String get atmosTestHlsAtmosDescription => 'Känd fungerande Dolby Atmos-ström. Receivern bör visa Dolby Atmos.';
+	@override String get atmosTestHlsControl => 'Apple surround-ström';
+	@override String get atmosTestHlsControlDescription => 'Kontrollström utan Atmos. Receivern bör visa surround utan Atmos.';
+	@override String get atmosTestRawStream => 'Rå EAC3-ström';
+	@override String get atmosTestRawStreamDescription => 'Strömmar testfilen precis som Atmos-uppspelning i spelaren. Kräver testfilens URL.';
+	@override String get atmosTestRawFile => 'Rå EAC3-fil';
+	@override String get atmosTestRawFileDescription => 'Spelar upp testfilen med känd längd. Kräver testfilens URL.';
+	@override String get atmosTestStop => 'Stoppa test';
+	@override String get atmosTestUrl => 'Testfilens URL';
+	@override String get atmosTestUrlDescription => 'HTTP-URL till en rå .ec3 Dolby Atmos-fil (t.ex. extraherad med ffmpeg)';
+	@override String get atmosTestUrlMissing => 'Ange testfilens URL först';
+	@override String get atmosTestStatus => 'Status';
 	@override String get dvConversionMode => 'Dolby Vision-konvertering';
 	@override String get dvConversionModeDescription => 'Välj hur ExoPlayer hanterar Dolby Vision Profile 7-filer.';
 	@override String get dvConversionAuto => 'Auto';
@@ -528,9 +553,6 @@ class _TranslationsRateSheetSv extends TranslationsRateSheetEn {
 	@override String starValue({required Object rating}) => '${rating} / 5';
 	@override String scoreValue({required Object score}) => '${score} / 10';
 	@override String get setScore => 'Ange betyg';
-	@override String get notRated => 'Inte betygsatt';
-	@override String get liked => 'Gillad';
-	@override String get notLiked => 'Inte gillad';
 	@override String get saved => 'Sparat';
 	@override String get notAvailable => 'Ingen matchning hittades';
 	@override String get noConnectedTrackers => 'Anslut en spårare i Inställningar för att betygsätta där.';
@@ -829,7 +851,9 @@ class _TranslationsProfilesSv extends TranslationsProfilesEn {
 	@override String get borrowConnectionBorrowed => 'Anslutning lånad.';
 	@override String get borrowFailed => 'Kunde inte låna anslutningen.';
 	@override String get incorrectPin => 'Fel PIN.';
+	@override String get incorrectPinTryAgain => 'Fel PIN. Försök igen.';
 	@override String get sourceProfileMissingParentAccount => 'Källprofilen saknar sitt överordnade konto.';
+	@override String get failedToLoadHomeUsers => 'Kunde inte läsa in dina Plex Home-användare. Kontrollera anslutningen och försök igen.';
 	@override String get failedToVerifyPin => 'Kunde inte verifiera PIN.';
 	@override String get newProfile => 'Ny profil';
 	@override String get profileNameHint => 't.ex. Gäster, Barn, Familjerum';
@@ -875,6 +899,9 @@ class _TranslationsDiscoverSv extends TranslationsDiscoverEn {
 	@override String nextUpIn({required Object library}) => 'Nästa i ${library}';
 	@override String get recentlyAdded => 'Nyligen tillagda';
 	@override String recentlyAddedIn({required Object library}) => 'Nyligen tillagda i ${library}';
+	@override String latestAlbumsIn({required Object library}) => 'Senaste albumen i ${library}';
+	@override String recentlyPlayedIn({required Object library}) => 'Nyligen spelade i ${library}';
+	@override String mostPlayedIn({required Object library}) => 'Mest spelade i ${library}';
 	@override String playEpisode({required Object season, required Object episode}) => 'S${season}E${episode}';
 	@override String get overview => 'Översikt';
 	@override String get cast => 'Rollbesättning';
@@ -1176,6 +1203,40 @@ class _TranslationsPlaylistsSv extends TranslationsPlaylistsEn {
 	@override String get errorRemoving => 'Det gick inte att ta bort från spellista';
 }
 
+// Path: music
+class _TranslationsMusicSv extends TranslationsMusicEn {
+	_TranslationsMusicSv._(TranslationsSv root) : this._root = root, super.internal(root);
+
+	final TranslationsSv _root; // ignore: unused_field
+
+	// Translations
+	@override String get goToAlbum => 'Gå till album';
+	@override String get goToArtist => 'Gå till artist';
+	@override String get instantMix => 'Snabbmix';
+	@override String get playNext => 'Spela härnäst';
+	@override String get addToQueue => 'Lägg till i kö';
+	@override String discNumber({required Object n}) => 'Skiva ${n}';
+	@override String trackCount({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('sv'))(n,
+		one: '${n} låt',
+		other: '${n} låtar',
+	);
+	@override String get nowPlaying => 'Spelas nu';
+	@override String playingFrom({required Object title}) => 'Spelar från ${title}';
+	@override String get queue => 'Kö';
+	@override String get clearQueue => 'Rensa kön';
+	@override String get lyrics => 'Låttext';
+	@override String get noLyrics => 'Ingen låttext tillgänglig';
+	@override String get sleepTimer => 'Insomningstimer';
+	@override String get sleepTimerEndOfTrack => 'Slutet av låten';
+	@override String sleepTimerMinutes({required Object n}) => '${n} minuter';
+	@override String get stopPlayback => 'Stoppa uppspelning';
+	@override String get previousTrack => 'Föregående låt';
+	@override String get nextTrack => 'Nästa låt';
+	@override String get repeat => 'Upprepa';
+	@override String get repeatAll => 'Upprepa alla';
+	@override String get repeatOne => 'Upprepa en låt';
+}
+
 // Path: watchTogether
 class _TranslationsWatchTogetherSv extends TranslationsWatchTogetherEn {
 	_TranslationsWatchTogetherSv._(TranslationsSv root) : this._root = root, super.internal(root);
@@ -1256,6 +1317,8 @@ class _TranslationsDownloadsSv extends TranslationsDownloadsEn {
 	@override String get manage => 'Hantera';
 	@override String get tvShows => 'TV-serier';
 	@override String get movies => 'Filmer';
+	@override String get music => 'Musik';
+	@override String tracksQueued({required Object count}) => '${count} låtar i nedladdningskö';
 	@override String get noDownloads => 'Inga nedladdningar ännu';
 	@override String get noDownloadsDescription => 'Nedladdat innehåll visas här för offline-visning';
 	@override String get downloadNow => 'Ladda ner';
@@ -1376,6 +1439,7 @@ class _TranslationsVideoSettingsSv extends TranslationsVideoSettingsEn {
 	@override String get performanceOverlay => 'Prestandaöverlägg';
 	@override String get audioPassthrough => 'Ljudgenomkoppling';
 	@override String get audioNormalization => 'Normalisera ljudstyrka';
+	@override String get audioDownmix => 'Nedmixning till stereo';
 }
 
 // Path: performanceOverlay
@@ -1717,6 +1781,9 @@ class _TranslationsLibrariesGroupingsSv extends TranslationsLibrariesGroupingsEn
 	@override String get shows => 'Serier';
 	@override String get seasons => 'Säsonger';
 	@override String get episodes => 'Avsnitt';
+	@override String get artists => 'Artister';
+	@override String get albums => 'Album';
+	@override String get tracks => 'Låtar';
 	@override String get folders => 'Mappar';
 }
 
@@ -2060,7 +2127,7 @@ extension on TranslationsSv {
 			'settings.hideSpoilers' => 'Dölj spoilers för osedda avsnitt',
 			'settings.hideSpoilersDescription' => 'Sudda miniatyrbilder och beskrivningar för osedda avsnitt',
 			'settings.playerBackend' => 'Spelarmotor',
-			'settings.exoPlayer' => 'ExoPlayer (Rekommenderad)',
+			'settings.exoPlayer' => 'ExoPlayer',
 			'settings.mpv' => 'mpv',
 			'settings.hardwareDecoding' => 'Hårdvaruavkodning',
 			'settings.hardwareDecodingDescription' => 'Använd hårdvaruacceleration när tillgängligt',
@@ -2182,6 +2249,30 @@ extension on TranslationsSv {
 			'settings.tunneledPlaybackDescription' => 'Använd videotunnling. Inaktivera om HDR-uppspelning visar svart video.',
 			'settings.audioPassthrough' => 'Ljudgenomkoppling',
 			'settings.audioPassthroughDescription' => 'Skicka Dolby/DTS-ljud till din receiver eller TV utan omkodning och bevara surroundljudet. Stäng av om du inte har något ljud.',
+			'settings.audioPassthroughDescriptionAppleTv' => 'Lämnar Dolby Digital Plus (inkl. Atmos) till systemet som bitstream. DTS och TrueHD spelas fortfarande upp som flerkanals-PCM. Korta ljudavbrott kan förekomma vid sökning.',
+			'settings.audioDownmix' => 'Nedmixning till stereo',
+			'settings.audioDownmixDescription' => 'Mixar ner surroundljud till två kanaler för stereohögtalare eller hörlurar',
+			'settings.downmixCenterBoost' => 'Förstärkning av centerkanal',
+			'settings.downmixCenterBoostValue' => ({required Object db}) => '${db} dB',
+			'settings.downmixCenterBoostLabel' => 'Förstärkning (dB)',
+			'settings.downmixCenterBoostShort' => 'dB',
+			'settings.audioDownmixNormalize' => 'Normalisera ljudstyrka vid nedmixning',
+			'settings.audioDownmixNormalizeDescription' => 'Sänker mixen för att undvika klippning. Stäng av för att behålla originalvolymen (höga scener kan förvrängas).',
+			'settings.atmosDiagnostics' => 'Atmos-utgångstest',
+			'settings.atmosDiagnosticsDescription' => 'Diagnostisera Dolby Atmos-utgången genom att spela testsignaler via systemspelaren',
+			'settings.atmosTestHlsAtmos' => 'Apple Atmos-ström',
+			'settings.atmosTestHlsAtmosDescription' => 'Känd fungerande Dolby Atmos-ström. Receivern bör visa Dolby Atmos.',
+			'settings.atmosTestHlsControl' => 'Apple surround-ström',
+			'settings.atmosTestHlsControlDescription' => 'Kontrollström utan Atmos. Receivern bör visa surround utan Atmos.',
+			'settings.atmosTestRawStream' => 'Rå EAC3-ström',
+			'settings.atmosTestRawStreamDescription' => 'Strömmar testfilen precis som Atmos-uppspelning i spelaren. Kräver testfilens URL.',
+			'settings.atmosTestRawFile' => 'Rå EAC3-fil',
+			'settings.atmosTestRawFileDescription' => 'Spelar upp testfilen med känd längd. Kräver testfilens URL.',
+			'settings.atmosTestStop' => 'Stoppa test',
+			'settings.atmosTestUrl' => 'Testfilens URL',
+			'settings.atmosTestUrlDescription' => 'HTTP-URL till en rå .ec3 Dolby Atmos-fil (t.ex. extraherad med ffmpeg)',
+			'settings.atmosTestUrlMissing' => 'Ange testfilens URL först',
+			'settings.atmosTestStatus' => 'Status',
 			'settings.dvConversionMode' => 'Dolby Vision-konvertering',
 			'settings.dvConversionModeDescription' => 'Välj hur ExoPlayer hanterar Dolby Vision Profile 7-filer.',
 			'settings.dvConversionAuto' => 'Auto',
@@ -2296,9 +2387,6 @@ extension on TranslationsSv {
 			'rateSheet.starValue' => ({required Object rating}) => '${rating} / 5',
 			'rateSheet.scoreValue' => ({required Object score}) => '${score} / 10',
 			'rateSheet.setScore' => 'Ange betyg',
-			'rateSheet.notRated' => 'Inte betygsatt',
-			'rateSheet.liked' => 'Gillad',
-			'rateSheet.notLiked' => 'Inte gillad',
 			'rateSheet.saved' => 'Sparat',
 			'rateSheet.notAvailable' => 'Ingen matchning hittades',
 			'rateSheet.noConnectedTrackers' => 'Anslut en spårare i Inställningar för att betygsätta där.',
@@ -2419,6 +2507,8 @@ extension on TranslationsSv {
 			'messages.logsCleared' => 'Loggar rensade',
 			'messages.logsCopied' => 'Loggar kopierade till urklipp',
 			'messages.noLogsAvailable' => 'Inga loggar tillgängliga',
+			_ => null,
+		} ?? switch (path) {
 			'messages.libraryScanning' => ({required Object title}) => 'Skannar "${title}"...',
 			'messages.libraryScanStarted' => ({required Object title}) => 'Biblioteksskanning startad för "${title}"',
 			'messages.libraryScanFailed' => ({required Object error}) => 'Misslyckades att skanna bibliotek: ${error}',
@@ -2440,8 +2530,6 @@ extension on TranslationsSv {
 			'messages.serverLimitTitle' => 'Uppspelningen misslyckades',
 			'messages.serverLimitBody' => 'Serverfel (HTTP 500). En bandbredds-/transkodningsgräns avvisade troligen sessionen. Be ägaren justera den.',
 			'messages.logsUploaded' => 'Loggar uppladdade',
-			_ => null,
-		} ?? switch (path) {
 			'messages.logsUploadFailed' => 'Uppladdning av loggar misslyckades',
 			'messages.logId' => 'Logg-ID',
 			'subtitlingStyling.text' => 'Text',
@@ -2524,7 +2612,9 @@ extension on TranslationsSv {
 			'profiles.borrowConnectionBorrowed' => 'Anslutning lånad.',
 			'profiles.borrowFailed' => 'Kunde inte låna anslutningen.',
 			'profiles.incorrectPin' => 'Fel PIN.',
+			'profiles.incorrectPinTryAgain' => 'Fel PIN. Försök igen.',
 			'profiles.sourceProfileMissingParentAccount' => 'Källprofilen saknar sitt överordnade konto.',
+			'profiles.failedToLoadHomeUsers' => 'Kunde inte läsa in dina Plex Home-användare. Kontrollera anslutningen och försök igen.',
 			'profiles.failedToVerifyPin' => 'Kunde inte verifiera PIN.',
 			'profiles.newProfile' => 'Ny profil',
 			'profiles.profileNameHint' => 't.ex. Gäster, Barn, Familjerum',
@@ -2552,6 +2642,9 @@ extension on TranslationsSv {
 			'discover.nextUpIn' => ({required Object library}) => 'Nästa i ${library}',
 			'discover.recentlyAdded' => 'Nyligen tillagda',
 			'discover.recentlyAddedIn' => ({required Object library}) => 'Nyligen tillagda i ${library}',
+			'discover.latestAlbumsIn' => ({required Object library}) => 'Senaste albumen i ${library}',
+			'discover.recentlyPlayedIn' => ({required Object library}) => 'Nyligen spelade i ${library}',
+			'discover.mostPlayedIn' => ({required Object library}) => 'Mest spelade i ${library}',
 			'discover.playEpisode' => ({required Object season, required Object episode}) => 'S${season}E${episode}',
 			'discover.overview' => 'Översikt',
 			'discover.cast' => 'Rollbesättning',
@@ -2624,6 +2717,9 @@ extension on TranslationsSv {
 			'libraries.groupings.shows' => 'Serier',
 			'libraries.groupings.seasons' => 'Säsonger',
 			'libraries.groupings.episodes' => 'Avsnitt',
+			'libraries.groupings.artists' => 'Artister',
+			'libraries.groupings.albums' => 'Album',
+			'libraries.groupings.tracks' => 'Låtar',
 			'libraries.groupings.folders' => 'Mappar',
 			'libraries.filterCategories.genre' => 'Genre',
 			'libraries.filterCategories.year' => 'År',
@@ -2785,6 +2881,28 @@ extension on TranslationsSv {
 			'playlists.errorAdding' => 'Det gick inte att lägga till i spellista',
 			'playlists.errorReordering' => 'Det gick inte att omordna spellisteobjekt',
 			'playlists.errorRemoving' => 'Det gick inte att ta bort från spellista',
+			'music.goToAlbum' => 'Gå till album',
+			'music.goToArtist' => 'Gå till artist',
+			'music.instantMix' => 'Snabbmix',
+			'music.playNext' => 'Spela härnäst',
+			'music.addToQueue' => 'Lägg till i kö',
+			'music.discNumber' => ({required Object n}) => 'Skiva ${n}',
+			'music.trackCount' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('sv'))(n, one: '${n} låt', other: '${n} låtar', ), 
+			'music.nowPlaying' => 'Spelas nu',
+			'music.playingFrom' => ({required Object title}) => 'Spelar från ${title}',
+			'music.queue' => 'Kö',
+			'music.clearQueue' => 'Rensa kön',
+			'music.lyrics' => 'Låttext',
+			'music.noLyrics' => 'Ingen låttext tillgänglig',
+			'music.sleepTimer' => 'Insomningstimer',
+			'music.sleepTimerEndOfTrack' => 'Slutet av låten',
+			'music.sleepTimerMinutes' => ({required Object n}) => '${n} minuter',
+			'music.stopPlayback' => 'Stoppa uppspelning',
+			'music.previousTrack' => 'Föregående låt',
+			'music.nextTrack' => 'Nästa låt',
+			'music.repeat' => 'Upprepa',
+			'music.repeatAll' => 'Upprepa alla',
+			'music.repeatOne' => 'Upprepa en låt',
 			'watchTogether.title' => 'Titta Tillsammans',
 			'watchTogether.description' => 'Titta på innehåll synkroniserat med vänner och familj',
 			'watchTogether.createSession' => 'Skapa Session',
@@ -2849,6 +2967,8 @@ extension on TranslationsSv {
 			'downloads.manage' => 'Hantera',
 			'downloads.tvShows' => 'TV-serier',
 			'downloads.movies' => 'Filmer',
+			'downloads.music' => 'Musik',
+			'downloads.tracksQueued' => ({required Object count}) => '${count} låtar i nedladdningskö',
 			'downloads.noDownloads' => 'Inga nedladdningar ännu',
 			'downloads.noDownloadsDescription' => 'Nedladdat innehåll visas här för offline-visning',
 			'downloads.downloadNow' => 'Ladda ner',
@@ -2901,6 +3021,8 @@ extension on TranslationsSv {
 			'downloads.manageSyncRule' => 'Hantera synkronisering',
 			'downloads.editEpisodeCount' => 'Antal avsnitt',
 			'downloads.editSyncFilter' => 'Synkroniseringsfilter',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.syncAllItems' => 'Synkroniserar alla objekt',
 			'downloads.syncUnwatchedItems' => 'Synkroniserar osedda objekt',
 			'downloads.syncRuleServerContext' => ({required Object server, required Object status}) => 'Server: ${server} • ${status}',
@@ -2954,8 +3076,6 @@ extension on TranslationsSv {
 			'companionRemote.pairing.connectionTimedOut' => 'Anslutningen tog för lång tid. Använd samma nätverk på båda enheter.',
 			'companionRemote.pairing.sessionNotFound' => 'Enhet hittades inte. Kontrollera att Plezy körs på värden.',
 			'companionRemote.pairing.authFailed' => 'Autentisering misslyckades. Båda enheter behöver samma Plex-konto.',
-			_ => null,
-		} ?? switch (path) {
 			'companionRemote.pairing.failedToConnect' => ({required Object error}) => 'Kunde inte ansluta: ${error}',
 			'companionRemote.remote.disconnectConfirm' => 'Vill du koppla från fjärrsessionen?',
 			'companionRemote.remote.reconnecting' => 'Återansluter...',
@@ -3000,6 +3120,7 @@ extension on TranslationsSv {
 			'videoSettings.performanceOverlay' => 'Prestandaöverlägg',
 			'videoSettings.audioPassthrough' => 'Ljudgenomkoppling',
 			'videoSettings.audioNormalization' => 'Normalisera ljudstyrka',
+			'videoSettings.audioDownmix' => 'Nedmixning till stereo',
 			'performanceOverlay.color' => 'Färg',
 			'performanceOverlay.performance' => 'Prestanda',
 			'performanceOverlay.buffer' => 'Buffert',
