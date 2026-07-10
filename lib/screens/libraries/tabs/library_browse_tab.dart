@@ -60,6 +60,7 @@ import '../../../mixins/standard_paginated_view.dart';
 import '../../../widgets/card_inflation_budget.dart';
 import '../../../widgets/skeleton_media_card.dart';
 import '../../../widgets/sliver_child_memo.dart';
+import '../../../widgets/app_refresh_indicator.dart';
 import '../../../utils/deletion_notifier.dart';
 import '../../../utils/global_key_utils.dart';
 import '../../../utils/watch_state_notifier.dart';
@@ -1742,6 +1743,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
           // through to the outer floating header.
           // Allow focus decoration to render outside scroll bounds.
           clipBehavior: Clip.none,
+          physics: const AlwaysScrollableScrollPhysics(),
           slivers: [
             // Capture-only sliver: an invisible Builder whose context lives
             // inside this CustomScrollView, used to grab the per-tab
@@ -1783,13 +1785,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
     );
     scrollView = SafeArea(top: false, bottom: false, child: scrollView);
 
-    // Folders mode previously had its own RefreshIndicator inside FolderTreeView;
-    // it now lives at this level since FolderTreeView is a sliver.
-    if (isFolders) {
-      scrollView = RefreshIndicator(onRefresh: _refreshFolderTree, child: scrollView);
-    }
-
-    return scrollView;
+    return AppRefreshIndicator(onRefresh: isFolders ? _refreshFolderTree : loadItems, child: scrollView);
   }
 
   /// Self-healing: when a skeleton is rendered after scrolling stops,

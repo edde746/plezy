@@ -3,6 +3,7 @@ import 'package:drift/native.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:plezy/media/ids.dart';
+import 'package:flutter/gestures.dart' show PointerDeviceKind;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -695,6 +696,20 @@ void main() {
     await tester.pump(const Duration(milliseconds: 100));
     await tester.pump(const Duration(milliseconds: 100));
 
+    expect(find.byType(RefreshIndicator), findsOneWidget);
+    final scrollView = tester.widget<CustomScrollView>(find.byType(CustomScrollView));
+    expect(scrollView.physics, isA<AlwaysScrollableScrollPhysics>());
+    expect(client.globalHubsFetchCount, 1);
+
+    final trackpadGesture = await tester.createGesture(kind: PointerDeviceKind.trackpad);
+    final scrollViewCenter = tester.getCenter(find.byType(CustomScrollView));
+    await trackpadGesture.panZoomStart(scrollViewCenter);
+    await trackpadGesture.panZoomUpdate(scrollViewCenter, pan: const Offset(0, 300));
+    await trackpadGesture.panZoomEnd();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(client.globalHubsFetchCount, 2, reason: 'one pull gesture performs one Discover load');
+
     expect(find.byType(PageView), findsOneWidget);
     expect(find.byIcon(Symbols.pause_rounded), findsOneWidget, reason: 'hero indicators render in pointer mode');
 
@@ -1067,6 +1082,7 @@ Future<void> _pumpDiscoverShell(WidgetTester tester, {required bool isTv}) async
 class _FakeMediaServerClient implements MediaServerClient {
   final List<MediaHub> hubs;
   List<MediaItem> continueWatching;
+  int globalHubsFetchCount = 0;
 
   _FakeMediaServerClient({required this.hubs, this.continueWatching = const []});
 
@@ -1091,7 +1107,10 @@ class _FakeMediaServerClient implements MediaServerClient {
     int limit = defaultHubPreviewLimit,
     bool includePlaybackHubs = true,
     HubFetchDiagnostics? diagnostics,
-  }) async => hubs;
+  }) async {
+    globalHubsFetchCount++;
+    return hubs;
+  }
 
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
