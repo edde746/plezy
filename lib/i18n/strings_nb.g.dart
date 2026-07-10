@@ -1385,6 +1385,7 @@ class _Translations$liveTv$nb extends Translations$liveTv$en {
 	@override String get unknownChannel => 'Ukjent kanal';
 	@override String get live => 'DIREKTE';
 	@override String get reloadGuide => 'Last inn programguide på nytt';
+	@override String searchNoResults({required Object query}) => 'No matches for "${query}"';
 	@override String get now => 'Nå';
 	@override String get today => 'I dag';
 	@override String get tomorrow => 'I morgen';
@@ -3956,6 +3957,7 @@ extension on TranslationsNb {
 			'liveTv.unknownChannel' => 'Ukjent kanal',
 			'liveTv.live' => 'DIREKTE',
 			'liveTv.reloadGuide' => 'Last inn programguide på nytt',
+			'liveTv.searchNoResults' => ({required Object query}) => 'No matches for "${query}"',
 			'liveTv.now' => 'Nå',
 			'liveTv.today' => 'I dag',
 			'liveTv.tomorrow' => 'I morgen',
@@ -4315,9 +4317,9 @@ extension on TranslationsNb {
 			'companionRemote.pairing.noDevicesHint' => 'Åpne Plezy på datamaskinen, og bruk samme Wi-Fi',
 			'companionRemote.pairing.availableDevices' => 'Tilgjengelige enheter',
 			'companionRemote.pairing.manualConnection' => 'Manuell tilkobling',
-			'companionRemote.pairing.cryptoInitFailed' => 'Kunne ikke starte sikker tilkobling. Logg inn på Plex først.',
 			_ => null,
 		} ?? switch (path) {
+			'companionRemote.pairing.cryptoInitFailed' => 'Kunne ikke starte sikker tilkobling. Logg inn på Plex først.',
 			'companionRemote.pairing.validationHostRequired' => 'Vennligst oppgi vertsadresse',
 			'companionRemote.pairing.validationHostFormat' => 'Format må være IP:port (f.eks. 192.168.1.100:48632)',
 			'companionRemote.pairing.connectionTimedOut' => 'Tilkoblingen fikk tidsavbrudd. Bruk samme nettverk på begge enheter.',

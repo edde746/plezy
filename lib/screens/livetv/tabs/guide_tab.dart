@@ -204,6 +204,75 @@ class GuideTabState extends State<GuideTab>
     });
   }
 
+  /// Jump the guide to [channel] (from guide search): scroll to its row and
+  /// land d-pad focus on the channel cell in keyboard mode.
+  void jumpToChannel(LiveTvChannel channel) {
+    final index = _channelIndexFor(channel);
+    if (index == null) return;
+
+    setState(() {
+      _focusZone = _GuideZone.grid;
+      _gridChannelIndex = index;
+      _gridColumn = 0;
+      _focusedProgram = null;
+    });
+    if (InputModeTracker.isKeyboardMode(context)) _guideFocusNode.requestFocus();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _scrollToChannel(index);
+    });
+  }
+
+  /// Jump the guide to [program] on [channel] (from guide search), shifting
+  /// the time window first when the airing isn't visible in the current one.
+  Future<void> jumpToProgram(LiveTvChannel channel, LiveTvProgram program) async {
+    final index = _channelIndexFor(channel);
+    if (index == null) return;
+
+    final begin = program.startTime;
+    final end = program.endTime ?? begin;
+    final intersectsWindow = begin != null && end != null && begin.isBefore(_gridEnd) && end.isAfter(_gridStart);
+    if (begin != null && !intersectsWindow) {
+      // Same window mechanics as the day/time-slot picker: anchor a fresh
+      // 6-hour window one slot before the program and reload.
+      var start = DateTime(begin.year, begin.month, begin.day, begin.hour, begin.minute >= 30 ? 30 : 0);
+      start = start.subtract(const Duration(minutes: 30));
+      setState(() {
+        _gridStart = start;
+        _gridEnd = start.add(const Duration(hours: 6));
+        _nowWasInWindow = _nowInWindow(DateTime.now());
+      });
+      await _loadPrograms();
+      if (!mounted) return;
+    }
+
+    // Re-resolve against the loaded list — the search sheet's program objects
+    // come from its own fetch and never match _programs by identity.
+    final target = _getProgramsForChannel(widget.channels[index])
+        .where((p) => p.beginsAt == program.beginsAt)
+        .firstOrNull;
+
+    setState(() {
+      _focusZone = _GuideZone.grid;
+      _gridChannelIndex = index;
+      _gridColumn = target != null ? 1 : 0;
+      _focusedProgram = target;
+    });
+    if (InputModeTracker.isKeyboardMode(context)) _guideFocusNode.requestFocus();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _scrollToChannel(index);
+      if (target != null) _scrollToProgramTime(target);
+    });
+  }
+
+  int? _channelIndexFor(LiveTvChannel channel) {
+    final scopeKey = liveTvChannelScopeKey(channel);
+    for (var i = 0; i < widget.channels.length; i++) {
+      if (liveTvChannelScopeKey(widget.channels[i]) == scopeKey) return i;
+    }
+    return null;
+  }
+
   @override
   void initState() {
     super.initState();

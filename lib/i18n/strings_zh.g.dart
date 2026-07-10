@@ -1378,6 +1378,7 @@ class Translations$liveTv$zh extends Translations$liveTv$en {
 	@override String get unknownChannel => '未知频道';
 	@override String get live => '直播';
 	@override String get reloadGuide => '重新加载节目指南';
+	@override String searchNoResults({required Object query}) => 'No matches for "${query}"';
 	@override String get now => '现在';
 	@override String get today => '今天';
 	@override String get tomorrow => '明天';
@@ -3946,6 +3947,7 @@ extension on TranslationsZh {
 			'liveTv.unknownChannel' => '未知频道',
 			'liveTv.live' => '直播',
 			'liveTv.reloadGuide' => '重新加载节目指南',
+			'liveTv.searchNoResults' => ({required Object query}) => 'No matches for "${query}"',
 			'liveTv.now' => '现在',
 			'liveTv.today' => '今天',
 			'liveTv.tomorrow' => '明天',
@@ -4305,9 +4307,9 @@ extension on TranslationsZh {
 			'companionRemote.pairing.noDevicesHint' => '请在桌面端打开 Plezy，并确保设备连接到同一 Wi-Fi 网络',
 			'companionRemote.pairing.availableDevices' => '可用设备',
 			'companionRemote.pairing.manualConnection' => '手动连接',
-			'companionRemote.pairing.cryptoInitFailed' => '无法启动安全连接。请先登录 Plex。',
 			_ => null,
 		} ?? switch (path) {
+			'companionRemote.pairing.cryptoInitFailed' => '无法启动安全连接。请先登录 Plex。',
 			'companionRemote.pairing.validationHostRequired' => '请输入主机地址',
 			'companionRemote.pairing.validationHostFormat' => '格式必须为 IP:端口（例如 192.168.1.100:48632）',
 			'companionRemote.pairing.connectionTimedOut' => '连接超时。请在两台设备上使用同一网络。',

@@ -1385,6 +1385,7 @@ class _Translations$liveTv$es extends Translations$liveTv$en {
 	@override String get unknownChannel => 'Canal desconocido';
 	@override String get live => 'EN VIVO';
 	@override String get reloadGuide => 'Recargar guía';
+	@override String searchNoResults({required Object query}) => 'No matches for "${query}"';
 	@override String get now => 'Ahora';
 	@override String get today => 'Hoy';
 	@override String get tomorrow => 'Mañana';
@@ -3956,6 +3957,7 @@ extension on TranslationsEs {
 			'liveTv.unknownChannel' => 'Canal desconocido',
 			'liveTv.live' => 'EN VIVO',
 			'liveTv.reloadGuide' => 'Recargar guía',
+			'liveTv.searchNoResults' => ({required Object query}) => 'No matches for "${query}"',
 			'liveTv.now' => 'Ahora',
 			'liveTv.today' => 'Hoy',
 			'liveTv.tomorrow' => 'Mañana',
@@ -4315,9 +4317,9 @@ extension on TranslationsEs {
 			'companionRemote.pairing.noDevicesHint' => 'Abre Plezy en tu equipo y usa la misma red WiFi',
 			'companionRemote.pairing.availableDevices' => 'Dispositivos disponibles',
 			'companionRemote.pairing.manualConnection' => 'Conexión manual',
-			'companionRemote.pairing.cryptoInitFailed' => 'No se pudo iniciar la conexión segura. Inicia sesión en Plex primero.',
 			_ => null,
 		} ?? switch (path) {
+			'companionRemote.pairing.cryptoInitFailed' => 'No se pudo iniciar la conexión segura. Inicia sesión en Plex primero.',
 			'companionRemote.pairing.validationHostRequired' => 'Introduce la dirección del host',
 			'companionRemote.pairing.validationHostFormat' => 'El formato debe ser IP:puerto (p. ej., 192.168.1.100:48632)',
 			'companionRemote.pairing.connectionTimedOut' => 'Tiempo de conexión agotado. Usa la misma red en ambos dispositivos.',

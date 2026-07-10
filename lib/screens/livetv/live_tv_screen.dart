@@ -12,6 +12,7 @@ import '../../media/live_tv_support.dart';
 import '../../media/media_server_client.dart';
 import '../../models/livetv_channel.dart';
 import '../../models/livetv_dvr.dart';
+import '../../models/livetv_program.dart';
 import '../../mixins/refreshable.dart';
 import '../../mixins/tab_navigation_mixin.dart';
 import '../../providers/multi_server_provider.dart';
@@ -27,6 +28,7 @@ import '../../utils/snackbar_helper.dart';
 import '../../widgets/focusable_tab_chip.dart';
 import '../../widgets/overlay_sheet.dart';
 import '../libraries/state_messages.dart';
+import 'guide_search_sheet.dart';
 import 'live_tv_server_iteration.dart';
 import 'reorder_favorites_sheet.dart';
 import 'tabs/guide_tab.dart';
@@ -577,6 +579,34 @@ class _LiveTvScreenState extends State<LiveTvScreen>
     );
   }
 
+  void _showGuideSearch() {
+    OverlaySheetController.showAdaptive(
+      context,
+      builder: (sheetContext) => GuideSearchSheet(
+        channels: _channels,
+        onChannelSelected: _jumpToGuideChannel,
+        onProgramSelected: (channel, program) => _jumpToGuideChannel(channel, program: program),
+      ),
+    );
+  }
+
+  void _jumpToGuideChannel(LiveTvChannel channel, {LiveTvProgram? program}) {
+    // The guide only shows favorite rows while the filter is on — drop it so
+    // the target channel's row exists to land on.
+    if (_showFavoritesOnly && !_isFavoriteChannel(channel)) {
+      setState(() => _showFavoritesOnly = false);
+    }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final guide = _guideTabKey.currentState;
+      if (guide == null) return;
+      if (program != null) {
+        unawaited(guide.jumpToProgram(channel, program));
+      } else {
+        guide.jumpToChannel(channel);
+      }
+    });
+  }
+
   void _showReorderFavorites() {
     final channelMap = {for (final c in _channels) _favoriteKeyForChannel(c): c};
 
@@ -694,6 +724,12 @@ class _LiveTvScreenState extends State<LiveTvScreen>
             onNavigateLeft: () => getTabChipFocusNode(tabCount - 1).requestFocus(),
             onNavigateDown: _focusCurrentTab,
             actions: [
+              if (_currentTab == LiveTvTab.guide)
+                FocusableAction(
+                  icon: Symbols.search_rounded,
+                  tooltip: t.liveTv.searchGuide,
+                  onPressed: _showGuideSearch,
+                ),
               if (!isRecordings)
                 FocusableAction(
                   icon: _showFavoritesOnly ? Symbols.star_rounded : Symbols.star_outline_rounded,

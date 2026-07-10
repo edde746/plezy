@@ -3315,6 +3315,21 @@ class Translations$liveTv$en {
 	/// en: 'Reload Guide'
 	String get reloadGuide => 'Reload Guide';
 
+	/// en: 'Search Guide'
+	String get searchGuide => 'Search Guide';
+
+	/// en: 'Search channels & programs'
+	String get searchHint => 'Search channels & programs';
+
+	/// en: 'No matches for "${query}"'
+	String searchNoResults({required Object query}) => 'No matches for "${query}"';
+
+	/// en: 'Channels'
+	String get channelsSection => 'Channels';
+
+	/// en: 'Programs'
+	String get programsSection => 'Programs';
+
 	/// en: 'Now'
 	String get now => 'Now';
 
@@ -7745,6 +7760,11 @@ extension on Translations {
 			'liveTv.unknownChannel' => 'Unknown channel',
 			'liveTv.live' => 'LIVE',
 			'liveTv.reloadGuide' => 'Reload Guide',
+			'liveTv.searchGuide' => 'Search Guide',
+			'liveTv.searchHint' => 'Search channels & programs',
+			'liveTv.searchNoResults' => ({required Object query}) => 'No matches for "${query}"',
+			'liveTv.channelsSection' => 'Channels',
+			'liveTv.programsSection' => 'Programs',
 			'liveTv.now' => 'Now',
 			'liveTv.today' => 'Today',
 			'liveTv.tomorrow' => 'Tomorrow',
@@ -8100,13 +8120,13 @@ extension on Translations {
 			'companionRemote.pairing.hostAddressHint' => '192.168.1.100:48632',
 			'companionRemote.pairing.connecting' => 'Connecting...',
 			'companionRemote.pairing.searchingForDevices' => 'Looking for devices...',
+			_ => null,
+		} ?? switch (path) {
 			'companionRemote.pairing.noDevicesFound' => 'No devices found on your network',
 			'companionRemote.pairing.noDevicesHint' => 'Open Plezy on desktop and use the same Wi-Fi',
 			'companionRemote.pairing.availableDevices' => 'Available Devices',
 			'companionRemote.pairing.manualConnection' => 'Manual Connection',
 			'companionRemote.pairing.cryptoInitFailed' => 'Couldn\'t start secure connection. Sign in to Plex first.',
-			_ => null,
-		} ?? switch (path) {
 			'companionRemote.pairing.validationHostRequired' => 'Please enter host address',
 			'companionRemote.pairing.validationHostFormat' => 'Format must be IP:port (e.g., 192.168.1.100:48632)',
 			'companionRemote.pairing.connectionTimedOut' => 'Connection timed out. Use the same network on both devices.',
