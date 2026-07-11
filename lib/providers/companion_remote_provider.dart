@@ -40,6 +40,12 @@ class CompanionRemoteProvider with ChangeNotifier, DisposableChangeNotifierMixin
   int _reconnectAttempts = 0;
   bool _intentionalDisconnect = false;
 
+  // Explicit liveness flag for the client reconnect loop. Replaces abusing
+  // `_session.status` as the flag — the peer service clobbers status with
+  // disconnected/connecting/error events during a reconnect attempt, which
+  // would otherwise kill the loop after one try.
+  bool _isReconnecting = false;
+
   // Reconnection context (only hostAddresses and hostClientId are connection-specific)
   List<String>? _lastHostAddresses;
   String? _lastHostClientId;
@@ -421,6 +427,7 @@ class CompanionRemoteProvider with ChangeNotifier, DisposableChangeNotifierMixin
     return _serializeLifecycle(() async {
       _reconnectTimer?.cancel();
       _reconnectAttempts = 0;
+      _isReconnecting = false;
       _lastHostAddresses = null;
       _lastHostClientId = null;
       _lastAuthContextId = null;
@@ -662,6 +669,10 @@ class CompanionRemoteProvider with ChangeNotifier, DisposableChangeNotifierMixin
         safeNotifyListeners();
         appLogger.d('CompanionRemote: Host waiting for client to reconnect');
       } else {
+        // A failed attempt's channel-close onDone can fire here again while the
+        // loop is already running — don't double-schedule and burn attempts.
+        if (_isReconnecting) return;
+        _isReconnecting = true;
         _session = _session?.copyWith(status: RemoteSessionStatus.reconnecting);
         safeNotifyListeners();
         _scheduleReconnect();
@@ -670,12 +681,19 @@ class CompanionRemoteProvider with ChangeNotifier, DisposableChangeNotifierMixin
 
     _errorSubscription = _peerService!.onError.listen((error) {
       appLogger.e('CompanionRemote: Error: ${error.message}');
+      // A join failure during a reconnect attempt emits an error event; don't
+      // let it clobber the reconnecting status and kill the loop.
+      if (_isReconnecting) return;
       _session = _session?.copyWith(status: RemoteSessionStatus.error, errorMessage: error.message);
       safeNotifyListeners();
     });
 
     _statusSubscription = _peerService!.onConnectionStateChanged.listen((status) {
       appLogger.d('CompanionRemote: Status changed: $status');
+      // While reconnecting, the peer service emits disconnected/connecting/error
+      // that would overwrite `reconnecting`; ignore all but the connected event
+      // (which _attemptReconnect applies itself on success).
+      if (_isReconnecting && status != RemoteSessionStatus.connected) return;
       _session = _session?.copyWith(status: status);
       safeNotifyListeners();
     });
@@ -731,6 +749,7 @@ class CompanionRemoteProvider with ChangeNotifier, DisposableChangeNotifierMixin
   void _scheduleReconnect() {
     if (_reconnectAttempts >= _maxReconnectAttempts) {
       appLogger.w('CompanionRemote: Max reconnect attempts reached');
+      _isReconnecting = false;
       _session = _session?.copyWith(
         status: RemoteSessionStatus.error,
         errorMessage: t.companionRemote.errors.connectionLostAfterAttempts(attempts: _maxReconnectAttempts),
@@ -748,9 +767,47 @@ class CompanionRemoteProvider with ChangeNotifier, DisposableChangeNotifierMixin
     _reconnectTimer = Timer(delay, _attemptReconnect);
   }
 
+  /// Listen for LAN beacons and return the host whose clientId matches, or
+  /// null if it doesn't appear within [timeout]. Hosts beacon every 3s over
+  /// lossy UDP broadcast, so 7s covers two beacon windows plus margin — a
+  /// single dropped datagram won't waste a reconnect attempt. Uses its own
+  /// [LanDiscoveryService] instance so its teardown can't kill a
+  /// concurrently-mounted discovery screen listening on the shared service.
+  Future<DiscoveredHost?> _rediscoverHost(String clientId, {Duration timeout = const Duration(seconds: 7)}) async {
+    final discovery = LanDiscoveryService();
+
+    final completer = Completer<DiscoveredHost?>();
+    final timer = Timer(timeout, () {
+      if (!completer.isCompleted) {
+        appLogger.w('CompanionRemote: Rediscovery timed out for host $clientId');
+        completer.complete(null);
+      }
+    });
+
+    final sub = discovery.startListeningForContexts(_authContexts).listen((hosts) {
+      if (completer.isCompleted) return;
+      for (final host in hosts) {
+        if (host.clientId == clientId) {
+          appLogger.d('CompanionRemote: Rediscovered host $clientId at ${host.addresses}');
+          completer.complete(host);
+          return;
+        }
+      }
+    });
+
+    try {
+      return await completer.future;
+    } finally {
+      timer.cancel();
+      await sub.cancel();
+      discovery.dispose();
+    }
+  }
+
   Future<void> _attemptReconnect() async {
     if (_lastHostAddresses == null || !isCryptoReady) {
       appLogger.w('CompanionRemote: No stored context for reconnect');
+      _isReconnecting = false;
       _session = _session?.copyWith(
         status: RemoteSessionStatus.error,
         errorMessage: t.companionRemote.errors.connectionLost,
@@ -761,6 +818,15 @@ class CompanionRemoteProvider with ChangeNotifier, DisposableChangeNotifierMixin
 
     try {
       appLogger.d('CompanionRemote: Attempting reconnect...');
+
+      DiscoveredHost? fresh;
+      if (_lastHostClientId != null && _lastHostClientId!.isNotEmpty) {
+        fresh = await _rediscoverHost(_lastHostClientId!);
+      }
+
+      // The user may have tapped Cancel while we were waiting on discovery.
+      if (!_isReconnecting) return;
+
       _cleanupSubscriptions();
       try {
         await _peerService?.disconnect();
@@ -770,24 +836,52 @@ class CompanionRemoteProvider with ChangeNotifier, DisposableChangeNotifierMixin
       }
 
       final authContextId = _authContextForId(_lastAuthContextId)?.id;
-      await _peerService!.joinSessionWithContexts(
-        _deviceName,
-        _platform,
-        _lastHostAddresses!.first,
-        _authContexts,
-        authContextId: authContextId,
-        expectedHostClientId: _lastHostClientId ?? '',
-      );
+      if (fresh != null) {
+        final winner = await _peerService!.joinSessionRacingWithContexts(
+          _deviceName,
+          _platform,
+          fresh.addresses,
+          _authContexts,
+          authContextId: authContextId,
+          expectedHostClientId: _lastHostClientId ?? '',
+        );
+        _lastHostAddresses = [winner];
+      } else {
+        await _peerService!.joinSessionWithContexts(
+          _deviceName,
+          _platform,
+          _lastHostAddresses!.first,
+          _authContexts,
+          authContextId: authContextId,
+          expectedHostClientId: _lastHostClientId ?? '',
+        );
+      }
+
+      // Cancel could have landed while the join was in flight — don't resurrect
+      // a session the user tore down. Drop the freshly-joined connection. Cancel
+      // the subscriptions BEFORE disconnecting: cancelReconnect() doesn't set
+      // _intentionalDisconnect, so a stray onDeviceDisconnected from this
+      // disconnect would otherwise flip _isReconnecting back on and schedule a
+      // spurious reconnect.
+      if (!_isReconnecting) {
+        _cleanupSubscriptions();
+        final ps = _peerService;
+        _peerService = null;
+        await ps?.disconnect();
+        return;
+      }
+
       _lastAuthContextId = _peerService!.selectedAuthContextId ?? authContextId;
       _lastHostClientId = _peerService!.selectedHostClientId ?? _lastHostClientId;
 
+      _isReconnecting = false;
       _session = _session?.copyWith(status: RemoteSessionStatus.connected, errorMessage: null);
       _reconnectAttempts = 0;
       safeNotifyListeners();
       appLogger.d('CompanionRemote: Reconnected successfully');
     } catch (e) {
       appLogger.e('CompanionRemote: Reconnect failed', error: e);
-      if (_session?.status == RemoteSessionStatus.reconnecting) {
+      if (_isReconnecting) {
         _scheduleReconnect();
       }
     }
@@ -796,12 +890,14 @@ class CompanionRemoteProvider with ChangeNotifier, DisposableChangeNotifierMixin
   void retryReconnectNow() {
     _reconnectTimer?.cancel();
     _reconnectAttempts = 0;
+    _isReconnecting = true;
     _attemptReconnect();
   }
 
   void cancelReconnect() {
     _reconnectTimer?.cancel();
     _reconnectAttempts = 0;
+    _isReconnecting = false;
     _session = _session?.copyWith(status: RemoteSessionStatus.disconnected, connectedDevice: null);
     safeNotifyListeners();
   }
@@ -810,6 +906,7 @@ class CompanionRemoteProvider with ChangeNotifier, DisposableChangeNotifierMixin
     _intentionalDisconnect = true;
     _reconnectTimer?.cancel();
     _reconnectAttempts = 0;
+    _isReconnecting = false;
 
     // Don't stop the host server when leaving — only stop discovery listening
     if (_peerService != null && !isHost) {
