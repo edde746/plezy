@@ -12,7 +12,7 @@ import '../utils/platform_detector.dart';
 import '../utils/player_utils.dart';
 
 class KeyboardShortcutsService extends ChangeNotifier {
-  static const Set<String> _repeatableVideoActions = {'zoom_in', 'zoom_out'};
+  static const Set<String> _repeatableVideoActions = {'zoom_in', 'zoom_out', 'volume_up', 'volume_down'};
 
   static KeyboardShortcutsService? _instance;
   late SettingsService _settingsService;
@@ -188,6 +188,7 @@ class KeyboardShortcutsService extends ChangeNotifier {
     VoidCallback? onZoomIn,
     VoidCallback? onZoomOut,
     VoidCallback? onZoomReset,
+    ValueChanged<double>? onVolumeChanged,
     int? currentPositionEpoch,
     ValueChanged<int>? onLiveSeek,
     ValueChanged<int>? onLiveSeekBy,
@@ -275,6 +276,7 @@ class KeyboardShortcutsService extends ChangeNotifier {
           onZoomIn: onZoomIn,
           onZoomOut: onZoomOut,
           onZoomReset: onZoomReset,
+          onVolumeChanged: onVolumeChanged,
           currentPositionEpoch: currentPositionEpoch,
           onLiveSeek: onLiveSeek,
           onLiveSeekBy: onLiveSeekBy,
@@ -304,6 +306,7 @@ class KeyboardShortcutsService extends ChangeNotifier {
     VoidCallback? onZoomIn,
     VoidCallback? onZoomOut,
     VoidCallback? onZoomReset,
+    ValueChanged<double>? onVolumeChanged,
     int? currentPositionEpoch,
     ValueChanged<int>? onLiveSeek,
     ValueChanged<int>? onLiveSeekBy,
@@ -325,14 +328,16 @@ class KeyboardShortcutsService extends ChangeNotifier {
         player.playOrPause();
         break;
       case 'volume_up':
-        final newVolume = (player.state.volume + 10).clamp(0.0, _maxVolume.toDouble());
-        player.setVolume(newVolume);
-        _settingsService.write(SettingsService.volume, newVolume);
+        final newVolumeUp = (player.state.volume + 10).clamp(0.0, _maxVolume.toDouble());
+        player.setVolume(newVolumeUp);
+        _settingsService.write(SettingsService.volume, newVolumeUp);
+        onVolumeChanged?.call(newVolumeUp);
         break;
       case 'volume_down':
-        final newVolume = (player.state.volume - 10).clamp(0.0, _maxVolume.toDouble());
-        player.setVolume(newVolume);
-        _settingsService.write(SettingsService.volume, newVolume);
+        final newVolumeDown = (player.state.volume - 10).clamp(0.0, _maxVolume.toDouble());
+        player.setVolume(newVolumeDown);
+        _settingsService.write(SettingsService.volume, newVolumeDown);
+        onVolumeChanged?.call(newVolumeDown);
         break;
       case 'seek_forward':
         performSeek(_seekTimeSmall);
@@ -350,9 +355,10 @@ class KeyboardShortcutsService extends ChangeNotifier {
         onToggleFullscreen?.call();
         break;
       case 'mute_toggle':
-        final newVolume = player.state.volume > 0 ? 0.0 : 100.0;
-        player.setVolume(newVolume);
-        _settingsService.write(SettingsService.volume, newVolume);
+        final newVolumeMute = player.state.volume > 0 ? 0.0 : 100.0;
+        player.setVolume(newVolumeMute);
+        _settingsService.write(SettingsService.volume, newVolumeMute);
+        onVolumeChanged?.call(newVolumeMute);
         break;
       case 'subtitle_toggle':
         onToggleSubtitles?.call();

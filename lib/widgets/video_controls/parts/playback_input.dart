@@ -14,6 +14,12 @@ extension _PlexVideoControlsPlaybackInputMethods on _PlexVideoControlsState {
     widget.toastController.show(icon, formatPlaybackRate(newRate));
   }
 
+  void _onVolumeChanged(double newVolume) {
+    if (!mounted) return;
+    final icon = newVolume <= 0 ? Symbols.volume_off_rounded : Symbols.volume_up_rounded;
+    widget.toastController.show(icon, '${newVolume.round()}%');
+  }
+
   void _seekToPreviousChapter() => unawaited(_seekToChapter(forward: false));
 
   void _seekToNextChapter() => unawaited(_seekToChapter(forward: true));
