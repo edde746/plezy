@@ -78,7 +78,13 @@ class _FakeAggregationService extends DataAggregationService {
   }) async {
     onDeckCalls++;
     lastOnDeckServerIds = serverIds;
-    final items = onDeckResult();
+    // Honor the filter like the real fan-out: a non-null [serverIds] restricts
+    // results to those servers (an empty set yields nothing — the invariant
+    // that empty ≠ all, which lives in _clientsFor).
+    var items = onDeckResult();
+    if (serverIds != null) {
+      items = items.where((i) => i.serverId != null && serverIds.contains(i.serverId)).toList();
+    }
     return (
       items: limit != null && items.length > limit ? items.sublist(0, limit) : items,
       succeededServerIds: onDeckSucceededServerIds ?? serverIds ?? const {'server_1'},
@@ -96,8 +102,12 @@ class _FakeAggregationService extends DataAggregationService {
   }) async {
     hubCalls++;
     lastHubsServerIds = serverIds;
+    var hubs = hubsResult();
+    if (serverIds != null) {
+      hubs = hubs.where((h) => h.serverId != null && serverIds.contains(h.serverId)).toList();
+    }
     return (
-      hubs: hubsResult(),
+      hubs: hubs,
       succeededServerIds: hubSucceededServerIds ?? serverIds ?? const {'server_1'},
       cancelledServerIds: hubCancelledServerIds,
     );
@@ -582,6 +592,151 @@ void main() {
     await provider.syncToOnlineServers({'server_1', 'server_2'});
     expect(aggregation.onDeckCalls, callsBefore + 2);
     expect(provider.onDeck.map((i) => i.id), containsAll(['a', 'b']));
+  });
+
+  test('default (no hidden servers) fans out to every server (null filter)', () async {
+    await provider.load();
+
+    // Passing null — not the full set — preserves today's exact semantics.
+    expect(aggregation.lastOnDeckServerIds, isNull);
+    expect(aggregation.lastHubsServerIds, isNull);
+  });
+
+  test('hiding a server drops its rows and continue-watching items in place', () async {
+    aggregation.onDeckResult = () => [_item('a', serverId: 'server_1'), _item('b', serverId: 'server_2')];
+    aggregation.hubsResult = () => [_hub('hub-1', serverId: 'server_1'), _hub('hub-2', serverId: 'server_2')];
+    await provider.load();
+    expect(provider.onDeck.map((i) => i.id), containsAll(['a', 'b']));
+    expect(provider.hubs.map((h) => h.id), containsAll(['hub-1', 'hub-2']));
+
+    final settings = await SettingsService.getInstance();
+    await settings.write(SettingsService.discoverHiddenServerIds, ['server_2']);
+    await pumpEventQueue();
+
+    // Content from the hidden server is gone, everything else stays.
+    expect(provider.onDeck.map((i) => i.id), ['a']);
+    expect(provider.hubs.map((h) => h.id), ['hub-1']);
+  });
+
+  test('a hidden online server is never delta-fetched onto Home', () async {
+    aggregation.onDeckResult = () => [_item('a')];
+    aggregation.hubsResult = () => [_hub('hub-1')];
+    await provider.load();
+
+    final settings = await SettingsService.getInstance();
+    await settings.write(SettingsService.discoverHiddenServerIds, ['server_2']);
+    await pumpEventQueue();
+    final onDeckAfterWrite = aggregation.onDeckCalls;
+    final hubAfterWrite = aggregation.hubCalls;
+
+    // server_2 comes online but is hidden: the difference at the top of
+    // syncToOnlineServers drops it before it can be queued.
+    await provider.syncToOnlineServers({'server_1', 'server_2'});
+    expect(aggregation.onDeckCalls, onDeckAfterWrite);
+    expect(aggregation.hubCalls, hubAfterWrite);
+  });
+
+  test('un-hiding a server lets the delta machinery fetch it back', () async {
+    aggregation.onDeckResult = () => [_item('a')];
+    aggregation.hubsResult = () => [_hub('hub-1')];
+    await provider.load();
+
+    final settings = await SettingsService.getInstance();
+    await settings.write(SettingsService.discoverHiddenServerIds, ['server_2']);
+    await pumpEventQueue();
+    // While hidden, an online server_2 is ignored.
+    await provider.syncToOnlineServers({'server_1', 'server_2'});
+    expect(provider.onDeck.map((i) => i.id), ['a']);
+    final generationBefore = provider.loadGeneration;
+
+    // Un-hide, then the same online set now delta-fetches server_2 only and
+    // merges it in without a full reload (no hero carousel reset).
+    aggregation.onDeckResult = () => [_item('b', serverId: 'server_2')];
+    aggregation.hubsResult = () => [_hub('hub-2', serverId: 'server_2')];
+    await settings.write(SettingsService.discoverHiddenServerIds, <String>[]);
+    await pumpEventQueue();
+    await provider.syncToOnlineServers({'server_1', 'server_2'});
+
+    expect(aggregation.lastOnDeckServerIds, {'server_2'});
+    expect(provider.onDeck.map((i) => i.id), containsAll(['a', 'b']));
+    expect(provider.hubs.map((h) => h.id), containsAll(['hub-1', 'hub-2']));
+    expect(provider.loadGeneration, generationBefore);
+  });
+
+  test('hiding every server empties Home and a reload does not leak them back', () async {
+    aggregation.onDeckResult = () => [_item('a', serverId: 'server_1'), _item('b', serverId: 'server_2')];
+    aggregation.hubsResult = () => [_hub('hub-1', serverId: 'server_1'), _hub('hub-2', serverId: 'server_2')];
+    await provider.load();
+    expect(provider.onDeck, isNotEmpty);
+    expect(provider.hubs, isNotEmpty);
+
+    final settings = await SettingsService.getInstance();
+    await settings.write(SettingsService.discoverHiddenServerIds, ['server_1', 'server_2']);
+    await pumpEventQueue();
+
+    // Instant in-place drop clears everything.
+    expect(provider.onDeck, isEmpty);
+    expect(provider.hubs, isEmpty);
+
+    // The empty effective set must fetch NOTHING — not fall back to every
+    // server. Locks the empty-set ≠ null invariant that lives in _clientsFor.
+    await provider.load();
+    expect(provider.onDeck, isEmpty);
+    expect(provider.hubs, isEmpty);
+    expect(provider.errorMessage, isNull);
+  });
+
+  test('a stale hidden id (no such server) loads real content without error', () async {
+    aggregation.onDeckResult = () => [_item('a', serverId: 'server_1')];
+    aggregation.hubsResult = () => [_hub('hub-1', serverId: 'server_1')];
+
+    final settings = await SettingsService.getInstance();
+    await settings.write(SettingsService.discoverHiddenServerIds, ['server_does_not_exist']);
+    await pumpEventQueue();
+
+    await provider.load();
+
+    expect(provider.errorMessage, isNull);
+    expect(provider.onDeck.map((i) => i.id), ['a']);
+    expect(provider.hubs.map((h) => h.id), ['hub-1']);
+  });
+
+  test('shrinking the hidden set delta-fetches only the newly un-hidden server', () async {
+    // 3-server world: server_1 visible, server_2 + server_3 hidden. Servers
+    // are simulated through explicit syncToOnlineServers sets and per-item
+    // serverIds (the fake honors the serverIds filter), so a single registered
+    // client is enough — the branch under test is the hidden-set difference,
+    // not the manager's online reporting.
+    final settings = await SettingsService.getInstance();
+    await settings.write(SettingsService.discoverHiddenServerIds, ['server_2', 'server_3']);
+    await pumpEventQueue();
+
+    aggregation.onDeckResult = () => [_item('a', serverId: 'server_1')];
+    aggregation.hubsResult = () => [_hub('hub-1', serverId: 'server_1')];
+    await provider.load();
+    expect(provider.onDeck.map((i) => i.id), ['a']);
+
+    // Bring 2 and 3 online while both hidden → ignored.
+    await provider.syncToOnlineServers({'server_1', 'server_2', 'server_3'});
+    expect(provider.onDeck.map((i) => i.id), ['a']);
+    final generationBefore = provider.loadGeneration;
+
+    // Un-hide only server_2; server_3 stays hidden.
+    aggregation.onDeckResult = () => [_item('b', serverId: 'server_2'), _item('c', serverId: 'server_3')];
+    aggregation.hubsResult = () => [_hub('hub-2', serverId: 'server_2'), _hub('hub-3', serverId: 'server_3')];
+    await settings.write(SettingsService.discoverHiddenServerIds, ['server_3']);
+    await pumpEventQueue();
+    await provider.syncToOnlineServers({'server_1', 'server_2', 'server_3'});
+
+    // Delta scoped to server_2 only; server_3 content never enters Home.
+    expect(aggregation.lastOnDeckServerIds, {'server_2'});
+    expect(aggregation.lastHubsServerIds, {'server_2'});
+    expect(provider.onDeck.map((i) => i.id), containsAll(['a', 'b']));
+    expect(provider.onDeck.map((i) => i.id), isNot(contains('c')));
+    expect(provider.hubs.map((h) => h.id), containsAll(['hub-1', 'hub-2']));
+    expect(provider.hubs.map((h) => h.id), isNot(contains('hub-3')));
+    // A delta is a background refresh: no hero carousel reset.
+    expect(provider.loadGeneration, generationBefore);
   });
 
   test('dispose unregisters the online-servers listener', () {

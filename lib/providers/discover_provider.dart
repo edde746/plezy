@@ -49,6 +49,11 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     _hiddenLibraries.addListener(_onHiddenLibrariesChanged);
     _lastSeenLibraryOrderKeys = _libraryOrderKeys();
     _libraries.addListener(_onLibrariesChanged);
+    // Settings is bootstrapped (awaited in main) before this profile-scoped
+    // provider is built, so the synchronous instance is safe here. Removed in
+    // [dispose] like the other listeners.
+    _hiddenServersListenable = SettingsService.instance.listenable(SettingsService.discoverHiddenServerIds)
+      ..addListener(_onHiddenServersChanged);
     _watchStateSubscription = subscribeToHierarchicalEvents<WatchStateEvent>(
       notifier: WatchStateNotifier(),
       mounted: () => !isDisposed,
@@ -80,6 +85,11 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
 
   StreamSubscription<WatchStateEvent>? _watchStateSubscription;
   StreamSubscription<DeletionEvent>? _deletionSubscription;
+  late final ValueNotifier<List<String>> _hiddenServersListenable;
+
+  /// Servers the user has excluded from Discover. Empty = show all.
+  Set<String> get _hiddenServerIds =>
+      SettingsService.instance.read(SettingsService.discoverHiddenServerIds).toSet();
 
   List<MediaItem> _onDeck = [];
   List<MediaHub> _hubs = [];
@@ -139,6 +149,9 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
   /// Once a full pass has loaded, only the genuinely new servers are fetched
   /// and merged in; already-loaded servers are not refetched.
   Future<void> syncToOnlineServers(Set<String> onlineServerIds) {
+    // Drop hidden servers before any bookkeeping so a hidden online server is
+    // never queued for a delta pass (which would leak it onto Home).
+    onlineServerIds = onlineServerIds.difference(_hiddenServerIds);
     if (onlineServerIds.isEmpty || isProfileBinding()) return Future<void>.value();
     if (_onDeckState == DiscoverLoadState.loaded &&
         _hubsState == DiscoverLoadState.loaded &&
@@ -200,16 +213,24 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
       final useGlobalHubs = settings.read(SettingsService.useGlobalHubs);
       final aggregation = _multiServer.aggregationService;
 
+      // Restrict the fan-out to non-hidden online servers. Pass null (not the
+      // full set) when nothing is hidden so today's exact semantics — every
+      // online client — are preserved byte-for-byte.
+      final hidden = _hiddenServerIds;
+      final serverFilter = hidden.isEmpty ? null : _multiServer.onlineServerIds.toSet().difference(hidden);
+
       // On-deck and hubs fetch in parallel; on-deck is published as soon as
       // it lands so the hero renders while hubs are still loading.
       final onDeckFuture = aggregation.getOnDeckFromAllServers(
         limit: _continueWatchingProbeLimit,
         hiddenLibraryKeys: _hiddenLibraries.hiddenLibraryKeys,
+        serverIds: serverFilter,
       );
       final hubsFuture = aggregation.getHubsFromAllServers(
         hiddenLibraryKeys: _hiddenLibraries.hiddenLibraryKeys,
         useGlobalHubs: useGlobalHubs,
         includePlaybackHubs: false,
+        serverIds: serverFilter,
       );
 
       // A pass in which zero servers succeeded is never authoritative: it
@@ -562,6 +583,38 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     unawaited(load());
   }
 
+  /// The set of Discover servers changed. Newly-hidden servers are dropped
+  /// from the visible lists in place (instant hide, no network); newly
+  /// un-hidden online servers are brought back through the existing delta
+  /// machinery (a fetch of only those servers, not a full reload).
+  void _onHiddenServersChanged() {
+    final hidden = _hiddenServerIds;
+
+    if (hidden.isNotEmpty) {
+      var changed = false;
+      final remainingOnDeck = _onDeck.where((item) => !hidden.contains(item.serverId)).toList();
+      if (remainingOnDeck.length != _onDeck.length) {
+        _onDeck = remainingOnDeck;
+        changed = true;
+      }
+      final remainingHubs = _hubs.where((hub) => !hidden.contains(hub.serverId)).toList();
+      if (remainingHubs.length != _hubs.length) {
+        _hubs = remainingHubs;
+        changed = true;
+      }
+      // Un-load the hidden ids so un-hiding later re-fetches them.
+      _loadedOnDeckServerIds = _loadedOnDeckServerIds.difference(hidden);
+      _loadedHubServerIds = _loadedHubServerIds.difference(hidden);
+      if (changed) {
+        safeNotifyListeners();
+        unawaited(_syncSystemShelf(_onDeck));
+      }
+    }
+
+    // Delta-fetch any servers that are online and no longer hidden.
+    unawaited(syncToOnlineServers(_multiServer.onlineServerIds.toSet()));
+  }
+
   void _onLibrariesChanged() {
     final currentKeys = _libraryOrderKeys();
     if (listEquals(currentKeys, _lastSeenLibraryOrderKeys)) return;
@@ -633,6 +686,7 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     _multiServer.removeOnlineServersListener(syncToOnlineServers);
     _hiddenLibraries.removeListener(_onHiddenLibrariesChanged);
     _libraries.removeListener(_onLibrariesChanged);
+    _hiddenServersListenable.removeListener(_onHiddenServersChanged);
     _watchStateSubscription?.cancel();
     _watchStateSubscription = null;
     _deletionSubscription?.cancel();

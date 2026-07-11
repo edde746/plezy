@@ -357,6 +357,10 @@ class SettingsService extends BaseSharedPreferencesService {
   static const focusGlow = BoolPref('focus_glow', defaultValue: true);
   static const useGlobalHubs = BoolPref('use_global_hubs', defaultValue: true);
   static const showServerNameOnHubs = BoolPref('show_server_name_on_hubs');
+  // Servers excluded from the Discover (home) tab's rows. Stored as an
+  // exclusion set (hidden ids) so an empty list = show all servers, mirroring
+  // the subtractive hiddenLibraryKeys idiom.
+  static const discoverHiddenServerIds = StringListPref('discover_hidden_server_ids');
   static const groupLibrariesByServer = BoolPref('group_libraries_by_server', defaultValue: true);
   static const sleepTimerDuration = IntPref('sleep_timer_duration', defaultValue: 30);
   static const audioSyncOffset = IntPref('audio_sync_offset');

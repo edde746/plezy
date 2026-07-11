@@ -6,6 +6,7 @@ import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 
 import '../../i18n/strings.g.dart';
+import '../../media/ids.dart';
 import '../../providers/multi_server_provider.dart';
 import '../../providers/theme_provider.dart';
 import '../../profiles/active_profile_provider.dart';
@@ -16,6 +17,7 @@ import '../../focus/focusable_slider.dart';
 import '../../services/device_performance.dart';
 import '../../utils/platform_detector.dart';
 import '../../widgets/app_icon.dart';
+import '../../widgets/clickable_cursor.dart';
 import '../../widgets/setting_tile.dart';
 import '../../widgets/settings_page.dart';
 import '../../widgets/settings_builder.dart';
@@ -95,6 +97,9 @@ class AppearanceSettingsScreen extends StatelessWidget {
               title: t.settings.showServerNameOnHubs,
               subtitle: t.settings.showServerNameOnHubsDescription,
             ),
+            // Choosing which servers feed Home only makes sense with more than
+            // one; a plain `if` keeps the group's rounded corners intact.
+            if (context.watch<MultiServerProvider>().serverIds.length > 1) _discoverServersSelector(context),
           ],
         ),
 
@@ -195,6 +200,47 @@ class AppearanceSettingsScreen extends StatelessWidget {
         ),
         const SizedBox(height: 24),
       ],
+    );
+  }
+
+  // Multi-select over the profile's servers, driven by the hidden-ids pref
+  // (stored subtractively: checked = NOT hidden). Reactive to both the pref
+  // (subtitle) and the server list. Only rendered when there's >1 server.
+  Widget _discoverServersSelector(BuildContext context) {
+    final multiServer = context.watch<MultiServerProvider>();
+    final serverIds = multiServer.serverIds;
+    final manager = multiServer.serverManager;
+    return ValueListenableBuilder<List<String>>(
+      valueListenable: SettingsService.instance.listenable(SettingsService.discoverHiddenServerIds),
+      builder: (context, hiddenList, _) {
+        final hidden = hiddenList.toSet();
+        final shownCount = serverIds.where((id) => !hidden.contains(id)).length;
+        final total = serverIds.length;
+        final subtitle = shownCount >= total
+            ? t.settings.discoverServersAll
+            : t.settings.discoverServersCount(shown: shownCount, total: total);
+        return ClickableCursor(
+          child: ListTile(
+            leading: const AppIcon(Symbols.dns_rounded, fill: 1),
+            title: Text(t.settings.discoverServers),
+            subtitle: Text(subtitle),
+            trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
+            onTap: () => showMultiSelectDialog<String>(
+              context: context,
+              title: t.settings.discoverServers,
+              options: [
+                for (final id in serverIds) DialogOption(value: id, title: manager.serverDisplayName(ServerId(id))),
+              ],
+              selected: serverIds.where((id) => !hidden.contains(id)).toSet(),
+              minSelected: 1,
+              onChanged: (shown) {
+                final newHidden = serverIds.where((id) => !shown.contains(id)).toList();
+                SettingsService.instance.write(SettingsService.discoverHiddenServerIds, newHidden);
+              },
+            ),
+          ),
+        );
+      },
     );
   }
 

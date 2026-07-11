@@ -135,6 +135,66 @@ Future<T?> showSelectionDialog<T>({
   );
 }
 
+/// Multi-select dialog with D-pad-friendly checkbox rows. [selected] is the
+/// initial checked set; [onChanged] fires on every toggle with the new set
+/// (applied live). A toggle that would drop the checked count below
+/// [minSelected] is ignored, so callers can guarantee at least one item stays
+/// selected.
+void showMultiSelectDialog<T>({
+  required BuildContext context,
+  required String title,
+  required List<DialogOption<T>> options,
+  required Set<T> selected,
+  required ValueChanged<Set<T>> onChanged,
+  int minSelected = 0,
+}) {
+  final working = {...selected};
+  final focusFirstItem = InputModeTracker.isKeyboardMode(context);
+  showScopedDialog<void>(
+    context: context,
+    builder: (dialogContext) => StatefulBuilder(
+      builder: (dialogContext, setDialogState) => AlertDialog(
+        title: Text(title),
+        contentPadding: const EdgeInsets.only(top: 12, bottom: 24),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: .min,
+            children: options.map((option) {
+              final checked = working.contains(option.value);
+              return FocusableListTile(
+                key: ValueKey(option.value),
+                leading: Icon(
+                  checked ? Icons.check_box : Icons.check_box_outline_blank,
+                  color: checked ? Theme.of(dialogContext).colorScheme.primary : null,
+                ),
+                title: Text(option.title),
+                subtitle: option.subtitle != null ? Text(option.subtitle!) : null,
+                selected: checked,
+                autofocus: focusFirstItem && option == options.first,
+                onTap: () {
+                  // Never let the checked count fall below the floor.
+                  if (checked && working.length <= minSelected) return;
+                  setDialogState(() {
+                    if (checked) {
+                      working.remove(option.value);
+                    } else {
+                      working.add(option.value);
+                    }
+                  });
+                  onChanged({...working});
+                },
+              );
+            }).toList(),
+          ),
+        ),
+        actions: [
+          DialogActionButton(onPressed: () => Navigator.pop(dialogContext), label: t.common.close),
+        ],
+      ),
+    ),
+  );
+}
+
 /// Generic numeric input dialog.
 /// On TV/keyboard mode, uses a spinner widget with +/- buttons for D-pad navigation.
 /// On other platforms, uses a TextField with focus management.

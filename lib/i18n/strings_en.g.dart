@@ -489,6 +489,15 @@ class TranslationsSettingsEn {
 	/// en: 'Always show server names in hub titles.'
 	String get showServerNameOnHubsDescription => 'Always show server names in hub titles.';
 
+	/// en: 'Servers on Home'
+	String get discoverServers => 'Servers on Home';
+
+	/// en: 'All servers'
+	String get discoverServersAll => 'All servers';
+
+	/// en: '$shown of $total servers'
+	String discoverServersCount({required Object shown, required Object total}) => '${shown} of ${total} servers';
+
 	/// en: 'Group Libraries by Server'
 	String get groupLibrariesByServer => 'Group Libraries by Server';
 
@@ -5078,6 +5087,9 @@ extension on Translations {
 			'settings.useGlobalHubsDescription' => 'Show unified home hubs. Otherwise use library recommendations.',
 			'settings.showServerNameOnHubs' => 'Show Server Name on Hubs',
 			'settings.showServerNameOnHubsDescription' => 'Always show server names in hub titles.',
+			'settings.discoverServers' => 'Servers on Home',
+			'settings.discoverServersAll' => 'All servers',
+			'settings.discoverServersCount' => ({required Object shown, required Object total}) => '${shown} of ${total} servers',
 			'settings.groupLibrariesByServer' => 'Group Libraries by Server',
 			'settings.groupLibrariesByServerDescription' => 'Group sidebar libraries under each media server.',
 			'settings.alwaysKeepSidebarOpen' => 'Always Keep Sidebar Open',
@@ -5472,11 +5484,11 @@ extension on Translations {
 			'messages.markedAsUnwatchedOffline' => 'Marked as unwatched (will sync when online)',
 			'messages.autoRemovedWatchedDownload' => ({required Object title}) => 'Auto-removed: ${title}',
 			'messages.removedFromContinueWatching' => 'Removed from Continue Watching',
+			_ => null,
+		} ?? switch (path) {
 			'messages.errorLoading' => ({required Object error}) => 'Error: ${error}',
 			'messages.streamInterrupted' => 'The stream was interrupted. Press play or seek to retry.',
 			'messages.fileInfoNotAvailable' => 'File information not available',
-			_ => null,
-		} ?? switch (path) {
 			'messages.errorLoadingFileInfo' => ({required Object error}) => 'Error loading file info: ${error}',
 			'messages.errorLoadingSeries' => 'Error loading series',
 			'messages.musicNotSupported' => 'Music playback is not yet supported',
@@ -5986,11 +5998,11 @@ extension on Translations {
 			'watchTogether.guestSwitchFailed' => 'Couldn\'t switch — content not found on this server',
 			'downloads.title' => 'Downloads',
 			'downloads.manage' => 'Manage',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.tvShows' => 'TV Shows',
 			'downloads.movies' => 'Movies',
 			'downloads.music' => 'Music',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.tracksQueued' => ({required Object count}) => '${count} tracks queued for download',
 			'downloads.noDownloads' => 'No downloads yet',
 			'downloads.noDownloadsDescription' => 'Downloaded content will appear here for offline viewing',
