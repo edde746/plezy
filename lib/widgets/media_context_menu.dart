@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'dart:async';
 import '../media/ids.dart';
 import 'package:flutter/material.dart';
@@ -131,6 +132,23 @@ bool isMediaDeletionAllowed({
   null => false,
   MediaBackend.jellyfin || MediaBackend.emby => resolvedItemPermission == true,
   MediaBackend.plex => isAdminActionAllowed,
+};
+
+/// Whether the in-memory item is confirmed to have no playable media
+/// (a metadata-only placeholder, e.g. from a Seerr placeholder library).
+/// Deliberately fails open: shows/seasons trust an explicit leafCount of 0
+/// (populated by listings on both backends), while an empty version list is
+/// only trusted on Plex — Jellyfin listings omit MediaSources, so null is
+/// indistinguishable from "not loaded" there.
+bool hasKnownNoPlayableMedia({
+  required MediaKind? kind,
+  required MediaBackend? backend,
+  required List<MediaVersion>? mediaVersions,
+  required int? leafCount,
+}) => switch (kind) {
+  MediaKind.movie || MediaKind.episode => backend == MediaBackend.plex && (mediaVersions?.isEmpty ?? false),
+  MediaKind.show || MediaKind.season => leafCount == 0,
+  _ => false,
 };
 
 /// A reusable wrapper widget that adds a context menu (long press / right click)
@@ -501,13 +519,20 @@ class MediaContextMenuState extends State<MediaContextMenu> {
       // Play on connected device — mobile only, and only while this phone is
       // the controller in an active companion-remote session; the host device
       // performs the playback (shows/seasons resolve to their next-unwatched
-      // episode host-side).
+      // episode host-side). Hidden for items known to be metadata-only, but
+      // failing open when media presence is unknowable from the listing item.
       final companionRemote = context.read<CompanionRemoteProvider?>();
       final canPlayOnConnectedDevice =
           (Platform.isAndroid || Platform.isIOS) &&
           _itemServerId != null &&
           (companionRemote?.isRemote ?? false) &&
           (companionRemote?.isConnected ?? false) &&
+          !hasKnownNoPlayableMedia(
+            kind: mediaKind,
+            backend: itemBackend,
+            mediaVersions: mediaItem?.mediaVersions,
+            leafCount: mediaItem?.leafCount,
+          ) &&
           (mediaKind == MediaKind.movie ||
               mediaKind == MediaKind.episode ||
               mediaKind == MediaKind.show ||
