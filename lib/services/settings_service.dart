@@ -442,6 +442,7 @@ class SettingsService extends BaseSharedPreferencesService {
   static const showEpisodeNumberOnCards = BoolPref('show_episode_number_on_cards', defaultValue: true);
   static const showSeasonPostersOnTabs = BoolPref('show_season_posters_on_tabs');
   static const hideSpoilers = BoolPref('hide_spoilers');
+  static const continueWatchingShowArt = BoolPref('continue_watching_show_art');
   static const showNavBarLabels = BoolPref('show_nav_bar_labels', defaultValue: true);
   static const globalShaderPreset = StringPref('global_shader_preset', defaultValue: 'none');
   static const requireProfileSelectionOnOpen = BoolPref('require_profile_selection_on_open');
@@ -883,6 +884,7 @@ class SettingsService extends BaseSharedPreferencesService {
     showEpisodeNumberOnCards,
     showSeasonPostersOnTabs,
     hideSpoilers,
+    continueWatchingShowArt,
     showNavBarLabels,
     globalShaderPreset,
     requireProfileSelectionOnOpen,

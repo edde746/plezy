@@ -177,6 +177,12 @@ class AppearanceSettingsScreen extends StatelessWidget {
               title: t.settings.hideSpoilers,
               subtitle: t.settings.hideSpoilersDescription,
             ),
+            SettingSwitchTile(
+              pref: SettingsService.continueWatchingShowArt,
+              icon: Symbols.image_rounded,
+              title: t.settings.continueWatchingShowArt,
+              subtitle: t.settings.continueWatchingShowArtDescription,
+            ),
             _episodeActionSelector(),
             if (hasMultipleProfiles)
               SettingSwitchTile(
