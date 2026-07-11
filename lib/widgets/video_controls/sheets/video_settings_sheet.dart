@@ -425,13 +425,14 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
   }
 
   String _versionQualityValueText() {
+    final showVersions = widget.availableVersions.length > 1;
     final values = <String>[];
-    if (widget.availableVersions.length > 1) values.add(_selectedVersionLabel());
+    if (showVersions) values.add(_selectedVersionLabel());
     if (widget.serverSupportsTranscoding) {
       values.add(
         qualityPresetLabel(
           widget.selectedQualityPreset,
-          sourceBitrateKbps: _selectedSourceBitrateKbps(),
+          sourceBitrateKbps: showVersions ? null : _selectedSourceBitrateKbps(),
         ),
       );
     }
