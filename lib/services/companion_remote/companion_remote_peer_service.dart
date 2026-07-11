@@ -469,6 +469,20 @@ class CompanionRemotePeerService with KeepaliveMixin {
       throw const RemotePeerError(type: RemotePeerErrorType.authFailed, message: 'No auth contexts available');
     }
 
+    // Start every join from clean handshake state. A join that failed fast now
+    // leaves `_channel` null (see _teardownChannel), so the internal disconnect()
+    // below is skipped — reset the session scalars here so stale state from a
+    // prior attempt can't misroute this connection's plaintext handshake into
+    // the encrypted branch. Mirrors what disconnect() clears.
+    _isAuthenticated = false;
+    _sessionEncKey = null;
+    _sendCounter = 0;
+    _recvCounter = 0;
+    _selectedAuthContextId = null;
+    _selectedHostClientId = null;
+    _sendChain = null;
+    _recvChain = Future.value();
+
     if (_channel != null) {
       await disconnect();
     }
@@ -486,7 +500,7 @@ class CompanionRemotePeerService with KeepaliveMixin {
 
       _connectionStateController.add(RemoteSessionStatus.connecting);
 
-      _channel = IOWebSocketChannel.connect(Uri.parse(url));
+      _channel = IOWebSocketChannel.connect(Uri.parse(url), connectTimeout: const Duration(seconds: 5));
       await _channel!.ready;
 
       List<int>? hostNonce;
@@ -548,6 +562,7 @@ class CompanionRemotePeerService with KeepaliveMixin {
                     ),
                   );
                 }
+                unawaited(_teardownChannel());
               }
             } else {
               // Pre-auth: plaintext handshake
@@ -595,7 +610,7 @@ class CompanionRemotePeerService with KeepaliveMixin {
                       const RemotePeerError(type: RemotePeerErrorType.authFailed, message: 'No shared identity'),
                     );
                   }
-                  unawaited(_channel?.sink.close(4003, 'Authentication failed'));
+                  unawaited(_teardownChannel(4003, 'Authentication failed'));
                   return;
                 }
 
@@ -609,7 +624,7 @@ class CompanionRemotePeerService with KeepaliveMixin {
                       const RemotePeerError(type: RemotePeerErrorType.authFailed, message: 'Host identity mismatch'),
                     );
                   }
-                  unawaited(_channel?.sink.close(4003, 'Authentication failed'));
+                  unawaited(_teardownChannel(4003, 'Authentication failed'));
                   return;
                 }
 
@@ -659,6 +674,7 @@ class CompanionRemotePeerService with KeepaliveMixin {
                   ),
                 );
                 _connectionStateController.add(RemoteSessionStatus.error);
+                unawaited(_teardownChannel());
               }
             }
           } catch (e) {
@@ -681,6 +697,7 @@ class CompanionRemotePeerService with KeepaliveMixin {
           if (!completer.isCompleted) {
             completer.completeError(error);
           }
+          unawaited(_teardownChannel());
 
           _errorController.add(
             RemotePeerError(
@@ -698,6 +715,7 @@ class CompanionRemotePeerService with KeepaliveMixin {
       if (!completer.isCompleted) {
         completer.completeError(e);
       }
+      unawaited(_teardownChannel());
 
       _errorController.add(
         RemotePeerError(type: RemotePeerErrorType.connectionFailed, message: 'Failed to connect: $e', originalError: e),
@@ -707,14 +725,7 @@ class CompanionRemotePeerService with KeepaliveMixin {
     return completer.future.timeout(
       const Duration(seconds: 15),
       onTimeout: () async {
-        if (_channel != null) {
-          try {
-            await _channel!.sink.close();
-          } catch (e) {
-            appLogger.d('CompanionRemote: channel close on timeout failed', error: e);
-          }
-          _channel = null;
-        }
+        await _teardownChannel();
         throw RemotePeerError(type: RemotePeerErrorType.timeout, message: t.companionRemote.errors.joinTimedOut);
       },
     );
@@ -869,6 +880,9 @@ class CompanionRemotePeerService with KeepaliveMixin {
   // Serializes async sends to prevent counter interleaving
   Future<void>? _sendChain;
 
+  // Serializes async decrypts to prevent recv-counter interleaving
+  Future<void> _recvChain = Future.value();
+
   Future<List<int>> _encryptOutgoing(String plaintext) async {
     final encrypted = await RemoteAuthService.instance.encrypt(
       _sessionEncKey!,
@@ -886,7 +900,17 @@ class CompanionRemotePeerService with KeepaliveMixin {
     socket.add(encrypted);
   }
 
-  Future<String?> _decryptIncoming(dynamic data) async {
+  // Chain decrypts to prevent counter interleaving from concurrent async
+  // listen callbacks (Stream.listen does not backpressure async callbacks).
+  Future<String?> _decryptIncoming(dynamic data) {
+    final result = _recvChain.then((_) => _decryptIncomingSerial(data));
+    // Keep the chain alive; _decryptIncomingSerial never throws, but swallow
+    // defensively so one bad frame can't wedge the chain.
+    _recvChain = result.then((_) {}, onError: (_) {});
+    return result;
+  }
+
+  Future<String?> _decryptIncomingSerial(dynamic data) async {
     if (_sessionEncKey == null) return null;
     try {
       final auth = RemoteAuthService.instance;
@@ -974,6 +998,22 @@ class CompanionRemotePeerService with KeepaliveMixin {
     });
   }
 
+  /// Close and drop the client channel. Nulls the field *before* awaiting and
+  /// bounds the close so a dead socket whose close never completes can't wedge
+  /// every future connect attempt.
+  Future<void> _teardownChannel([int? closeCode, String? closeReason]) async {
+    final channel = _channel;
+    _channel = null;
+    if (channel == null) return;
+    try {
+      await channel.sink
+          .close(closeCode, closeReason)
+          .namedTimeout(const Duration(seconds: 2), operation: 'CompanionRemote channel close');
+    } catch (e) {
+      appLogger.d('CompanionRemote: channel close ignored', error: e);
+    }
+  }
+
   Future<void> disconnect() async {
     appLogger.d('CompanionRemote: Disconnecting');
 
@@ -981,21 +1021,17 @@ class CompanionRemotePeerService with KeepaliveMixin {
 
     if (_clientSocket != null) {
       try {
-        await _clientSocket!.close();
+        await _clientSocket!.close().namedTimeout(
+          const Duration(seconds: 2),
+          operation: 'CompanionRemote client socket close',
+        );
       } catch (e) {
         appLogger.d('CompanionRemote: client socket close ignored', error: e);
       }
       _clientSocket = null;
     }
 
-    if (_channel != null) {
-      try {
-        await _channel!.sink.close();
-      } catch (e) {
-        appLogger.d('CompanionRemote: channel close ignored', error: e);
-      }
-      _channel = null;
-    }
+    await _teardownChannel();
 
     if (_server != null) {
       await _server!.close();
@@ -1012,6 +1048,7 @@ class CompanionRemotePeerService with KeepaliveMixin {
     _recvCounter = 0;
     _isAuthenticated = false;
     _sendChain = null;
+    _recvChain = Future.value();
     _failedAuthAttempts.clear();
     _authLockouts.clear();
 

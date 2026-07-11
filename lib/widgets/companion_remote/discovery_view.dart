@@ -153,7 +153,6 @@ class _DiscoveryViewState extends State<DiscoveryView> with ControllerDisposerMi
     });
 
     try {
-      _provider.stopDiscovery();
       await action();
     } catch (e) {
       appLogger.e('Failed to connect', error: e);
