@@ -541,6 +541,12 @@ extension _PlexVideoControlsPlaybackInputMethods on _PlexVideoControlsState {
     final isMobile = PlatformDetector.isMobile(context);
 
     if (!isMobile) {
+      if (widget.chromeController.contentStripVisible) {
+        _desktopControlsKey.currentState?.dismissContentStrip();
+        widget.chromeController.setContentStripVisible(false);
+        _restartHideTimerForCurrentPlaybackState();
+        return;
+      }
       final DateTime now = DateTime.now();
 
       // Always perform the single-click behavior immediately

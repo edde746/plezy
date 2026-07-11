@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io' show Platform;
 
+import 'package:flutter/gestures.dart' show PointerScrollEvent;
 import 'package:flutter/material.dart';
 import 'package:plezy/widgets/app_icon.dart';
 import 'package:material_symbols_icons/symbols.dart';
@@ -29,6 +30,7 @@ import 'widgets/video_controls_header.dart';
 import 'widgets/video_timeline_bar.dart';
 import 'widgets/volume_control.dart';
 import 'widgets/track_chapter_controls.dart';
+import 'video_control_button.dart';
 
 /// Desktop-specific video controls layout with top bar and bottom controls
 class DesktopVideoControls extends StatefulWidget {
@@ -307,6 +309,10 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
   void dismissContentStrip() {
     if (!_contentStripVisible) return;
     _onContentStripNavigateUp();
+  }
+
+  bool handleContentStripScroll(PointerScrollEvent event) {
+    return _contentStripVisible && (_contentStripKey.currentState?.handlePointerScroll(event) ?? false);
   }
 
   /// Handle left navigation from first track control - go to volume (or last button on TV)
@@ -607,13 +613,24 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
                     clipBehavior: Clip.none,
                     children: [
                       _buildBottomControlsContent(context, hasFrame: true),
-                      // Down arrow hint when strip content is available
                       if (widget.useDpadNavigation && _hasStripContent)
-                        const Positioned(
+                        Positioned(
                           left: 0,
                           right: 0,
-                          bottom: 12,
-                          child: AppIcon(Symbols.keyboard_arrow_down_rounded, color: Colors.white24, size: 24),
+                          bottom: 0,
+                          child: Center(
+                            child: SizedBox.square(
+                              key: const ValueKey('desktop_content_strip_open'),
+                              dimension: 48,
+                              child: VideoControlButton(
+                                icon: Symbols.keyboard_arrow_up_rounded,
+                                color: Colors.white24,
+                                tooltip: t.videoControls.chaptersButton,
+                                semanticLabel: t.videoControls.chaptersButton,
+                                onPressed: _showContentStrip,
+                              ),
+                            ),
+                          ),
                         ),
                     ],
                   ),
@@ -636,7 +653,22 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
                     child: Column(
                       mainAxisSize: .min,
                       children: [
-                        const AppIcon(Symbols.keyboard_arrow_up_rounded, color: Colors.white38, size: 20),
+                        SizedBox.square(
+                          key: const ValueKey('desktop_content_strip_close'),
+                          dimension: 48,
+                          child: DecoratedBox(
+                            decoration: BoxDecoration(
+                              color: Colors.black.withValues(alpha: 0.4),
+                              shape: BoxShape.circle,
+                            ),
+                            child: VideoControlButton(
+                              icon: Symbols.keyboard_arrow_down_rounded,
+                              color: Colors.white38,
+                              semanticLabel: t.common.close,
+                              onPressed: _onContentStripNavigateUp,
+                            ),
+                          ),
+                        ),
                         const SizedBox(height: 4),
                         ContentStrip(
                           key: _contentStripKey,
@@ -649,6 +681,7 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
                           onSeekRequested: widget.onSeekRequested,
                           onSeekCompleted: widget.onSeekCompleted,
                           useFocusNavigation: true,
+                          showFocusNavigationLabel: PlatformDetector.isTV(),
                           onNavigateUp: _onContentStripNavigateUp,
                           onFocusActivity: widget.onFocusActivity,
                         ),

@@ -67,6 +67,10 @@ extension _PlexVideoControlsVisibilityMethods on _PlexVideoControlsState {
   void _restartHideTimerForCurrentPlaybackState() => widget.chromeController.restartAutoHideForCurrentPlaybackState();
 
   void _handlePointerSignal(PointerSignalEvent event) {
+    if (event is PointerScrollEvent && (_desktopControlsKey.currentState?.handleContentStripScroll(event) ?? false)) {
+      _cancelAutoSkipFromUserInteraction();
+      return;
+    }
     if (event is PointerScrollEvent && _keyboardService != null) {
       _cancelAutoSkipFromUserInteraction();
       final delta = event.scrollDelta.dy;
