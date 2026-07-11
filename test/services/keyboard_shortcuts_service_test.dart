@@ -279,6 +279,34 @@ void main() {
     expect(commandCommaResult, KeyEventResult.ignored);
   });
 
+  testWidgets('mute shortcut matches the button restoration behavior', (tester) async {
+    final service = await KeyboardShortcutsService.getInstance();
+    addTearDown(service.dispose);
+    final settings = SettingsService.instance;
+    await settings.write(SettingsService.volume, 37.0);
+    final player = _FakePlayer(volume: 37);
+    const muteKey = KeyDownEvent(
+      physicalKey: PhysicalKeyboardKey.keyM,
+      logicalKey: LogicalKeyboardKey.keyM,
+      timeStamp: Duration.zero,
+    );
+
+    final muteResult = service.handleVideoPlayerKeyEvent(muteKey, player, null, null, null, null, null, null);
+    await tester.pumpAndSettle();
+
+    expect(muteResult, KeyEventResult.handled);
+    expect(player.volume, 0);
+    expect(settings.read(SettingsService.volume), 37);
+
+    final unmuteResult = service.handleVideoPlayerKeyEvent(muteKey, player, null, null, null, null, null, null);
+    await tester.pumpAndSettle();
+
+    expect(unmuteResult, KeyEventResult.handled);
+    expect(player.volume, 37);
+    expect(settings.read(SettingsService.volume), 37);
+    expect(player.volumeChanges, [0, 37]);
+  });
+
   test('video zoom scale maps to mpv logarithmic property', () {
     expect(VideoFilterManager.videoZoomPropertyForScale(1.0), closeTo(0.0, 0.0001));
     expect(VideoFilterManager.videoZoomPropertyForScale(2.0), closeTo(1.0, 0.0001));
@@ -287,7 +315,11 @@ void main() {
 }
 
 class _FakePlayer implements Player {
+  _FakePlayer({this.volume = 100});
+
   final commands = <List<String>>[];
+  final volumeChanges = <double>[];
+  double volume;
 
   @override
   Future<void> command(List<String> args) async {
@@ -295,7 +327,13 @@ class _FakePlayer implements Player {
   }
 
   @override
-  PlayerState get state => PlayerState();
+  PlayerState get state => PlayerState(volume: volume);
+
+  @override
+  Future<void> setVolume(double volume) async {
+    this.volume = volume;
+    volumeChanges.add(volume);
+  }
 
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);

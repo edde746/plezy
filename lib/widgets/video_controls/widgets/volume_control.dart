@@ -148,9 +148,9 @@ class _VolumeControlState extends State<VolumeControl> {
                   color: Colors.white,
                 ),
                 onPressed: () async {
-                  final newVolume = isMuted ? 100.0 : 0.0;
-                  await widget.player.setVolume(newVolume);
-                  await _settings.write(SettingsService.volume, newVolume);
+                  final transition = _settings.resolveMuteToggle(widget.player.state.volume);
+                  await widget.player.setVolume(transition.playerVolume);
+                  await _settings.write(SettingsService.volume, transition.persistedVolume);
                 },
               ),
             );

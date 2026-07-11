@@ -350,9 +350,9 @@ class KeyboardShortcutsService extends ChangeNotifier {
         onToggleFullscreen?.call();
         break;
       case 'mute_toggle':
-        final newVolume = player.state.volume > 0 ? 0.0 : 100.0;
-        player.setVolume(newVolume);
-        _settingsService.write(SettingsService.volume, newVolume);
+        final transition = _settingsService.resolveMuteToggle(player.state.volume);
+        player.setVolume(transition.playerVolume);
+        _settingsService.write(SettingsService.volume, transition.persistedVolume);
         break;
       case 'subtitle_toggle':
         onToggleSubtitles?.call();

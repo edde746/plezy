@@ -614,6 +614,21 @@ class SettingsService extends BaseSharedPreferencesService {
     _cachedInstance = null;
   }
 
+  /// Resolves a video mute toggle without replacing the saved volume with 0.
+  ///
+  /// [persistedVolume] is the non-zero value callers should keep in [volume],
+  /// while [playerVolume] is the value to apply to the active player.
+  ({double playerVolume, double persistedVolume}) resolveMuteToggle(double currentVolume) {
+    if (currentVolume.isFinite && currentVolume > 0) {
+      return (playerVolume: 0, persistedVolume: currentVolume);
+    }
+
+    final previousVolume = read(volume);
+    final candidate = previousVolume.isFinite && previousVolume > 0 ? previousVolume : volume.defaultValue;
+    final restoredVolume = candidate.clamp(0.0, read(maxVolume).toDouble()).toDouble();
+    return (playerVolume: restoredVolume, persistedVolume: restoredVolume);
+  }
+
   static Map<String, String> defaultKeyboardShortcuts() => _defaultKeyboardShortcuts();
   static Map<String, HotKey> defaultKeyboardHotkeys() => _defaultKeyboardHotkeys();
 

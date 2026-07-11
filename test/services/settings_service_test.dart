@@ -79,6 +79,50 @@ void main() {
     });
   });
 
+  group('SettingsService mute volume restoration', () {
+    test('keeps 37 persisted across mute and restores it on unmute', () async {
+      final settings = await SettingsService.getInstance();
+      await settings.write(SettingsService.volume, 37.0);
+
+      final mute = settings.resolveMuteToggle(37);
+      await settings.write(SettingsService.volume, mute.persistedVolume);
+
+      expect(mute.playerVolume, 0);
+      expect(settings.read(SettingsService.volume), 37);
+
+      final unmute = settings.resolveMuteToggle(mute.playerVolume);
+
+      expect(unmute.playerVolume, 37);
+      expect(unmute.persistedVolume, 37);
+    });
+
+    test('restores amplified volumes when the configured maximum permits them', () async {
+      final settings = await SettingsService.getInstance();
+      await settings.write(SettingsService.maxVolume, 250);
+      await settings.write(SettingsService.volume, 175.0);
+
+      final mute = settings.resolveMuteToggle(175);
+      await settings.write(SettingsService.volume, mute.persistedVolume);
+      final unmute = settings.resolveMuteToggle(mute.playerVolume);
+
+      expect(mute.playerVolume, 0);
+      expect(mute.persistedVolume, 175);
+      expect(unmute.playerVolume, 175);
+      expect(unmute.persistedVolume, 175);
+    });
+
+    test('falls back to 100 when no previous non-zero volume exists', () async {
+      final settings = await SettingsService.getInstance();
+      await settings.write(SettingsService.maxVolume, 200);
+      await settings.write(SettingsService.volume, 0.0);
+
+      final unmute = settings.resolveMuteToggle(0);
+
+      expect(unmute.playerVolume, 100);
+      expect(unmute.persistedVolume, 100);
+    });
+  });
+
   group('SettingsService TV card defaults', () {
     test('full card layout starts disabled', () async {
       final settings = await SettingsService.getInstance();
