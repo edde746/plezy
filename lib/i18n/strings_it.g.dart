@@ -1753,6 +1753,7 @@ class _Translations$companionRemote$it extends Translations$companionRemote$en {
 	@override String get title => 'Telecomando';
 	@override String connectedTo({required Object name}) => 'Connesso a ${name}';
 	@override String get unknownDevice => 'Dispositivo sconosciuto';
+	@override String playSentToDevice({required Object device}) => 'Sent to ${device}';
 	@override late final _Translations$companionRemote$session$it session = _Translations$companionRemote$session$it._(_root);
 	@override late final _Translations$companionRemote$pairing$it pairing = _Translations$companionRemote$pairing$it._(_root);
 	@override late final _Translations$companionRemote$remote$it remote = _Translations$companionRemote$remote$it._(_root);
@@ -4295,6 +4296,7 @@ extension on TranslationsIt {
 			'companionRemote.title' => 'Telecomando',
 			'companionRemote.connectedTo' => ({required Object name}) => 'Connesso a ${name}',
 			'companionRemote.unknownDevice' => 'Dispositivo sconosciuto',
+			'companionRemote.playSentToDevice' => ({required Object device}) => 'Sent to ${device}',
 			'companionRemote.session.startingServer' => 'Avvio del server remoto...',
 			'companionRemote.session.hostAddress' => 'Indirizzo host',
 			'companionRemote.session.connected' => 'Connesso',
@@ -4315,9 +4317,9 @@ extension on TranslationsIt {
 			'companionRemote.pairing.noDevicesHint' => 'Apri Plezy sul computer e usa la stessa rete Wi-Fi',
 			'companionRemote.pairing.availableDevices' => 'Dispositivi disponibili',
 			'companionRemote.pairing.manualConnection' => 'Connessione manuale',
-			'companionRemote.pairing.cryptoInitFailed' => 'Impossibile avviare la connessione sicura. Accedi prima a Plex.',
 			_ => null,
 		} ?? switch (path) {
+			'companionRemote.pairing.cryptoInitFailed' => 'Impossibile avviare la connessione sicura. Accedi prima a Plex.',
 			'companionRemote.pairing.validationHostRequired' => 'Inserisci l\'indirizzo host',
 			'companionRemote.pairing.validationHostFormat' => 'Il formato deve essere IP:porta (es. 192.168.1.100:48632)',
 			'companionRemote.pairing.connectionTimedOut' => 'Tempo scaduto per la connessione. Usa la stessa rete su entrambi i dispositivi.',

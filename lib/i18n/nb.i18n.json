@@ -577,7 +577,8 @@
     "mediaFailedToDelete": "Kunne ikke slette medieelement",
     "rate": "Vurder",
     "playFromBeginning": "Spill fra begynnelsen",
-    "playVersion": "Spill av versjon..."
+    "playVersion": "Spill av versjon...",
+    "playOnConnectedDevice": ""
   },
   "rateSheet": {
     "title": "Vurder",
@@ -1668,6 +1669,7 @@
     "title": "Fjernkontroll",
     "connectedTo": "Tilkoblet ${name}",
     "unknownDevice": "Ukjent enhet",
+    "playSentToDevice": "Sent to ${device}",
     "session": {
       "startingServer": "Starter fjernserver...",
       "hostAddress": "Vertsadresse",

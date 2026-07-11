@@ -58,4 +58,18 @@ void main() {
     expect(chromeController.controlsVisible, isFalse);
     expect(exits, 0);
   });
+
+  testWidgets('playMedia command forwards its data payload to onPlayMedia', (tester) async {
+    final receiver = CompanionRemoteReceiver.instance;
+    Map<String, dynamic>? received;
+    receiver.onPlayMedia = (data) => received = data;
+    addTearDown(() => receiver.onPlayMedia = null);
+
+    receiver.handleCommand(
+      const RemoteCommand(type: RemoteCommandType.playMedia, data: {'serverId': 'srv1', 'ratingKey': '42'}),
+      null,
+    );
+
+    expect(received, {'serverId': 'srv1', 'ratingKey': '42'});
+  });
 }

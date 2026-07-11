@@ -577,7 +577,8 @@
     "mediaFailedToDelete": "Échec de la suppression de l'élément média",
     "rate": "Noter",
     "playFromBeginning": "Lire depuis le début",
-    "playVersion": "Lire la version..."
+    "playVersion": "Lire la version...",
+    "playOnConnectedDevice": ""
   },
   "rateSheet": {
     "title": "Noter",
@@ -1668,6 +1669,7 @@
     "title": "Télécommande compagnon",
     "connectedTo": "Connecté à ${name}",
     "unknownDevice": "Appareil inconnu",
+    "playSentToDevice": "Sent to ${device}",
     "session": {
       "startingServer": "Démarrage du serveur de télécommande…",
       "hostAddress": "Adresse de l’hôte",

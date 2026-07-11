@@ -577,7 +577,8 @@
     "mediaFailedToDelete": "Failed to delete media item",
     "rate": "Rate",
     "playFromBeginning": "Play from Beginning",
-    "playVersion": "Play Version..."
+    "playVersion": "Play Version...",
+    "playOnConnectedDevice": "Play on Connected Device"
   },
   "rateSheet": {
     "title": "Rate",
@@ -1668,6 +1669,7 @@
     "title": "Companion Remote",
     "connectedTo": "Connected to ${name}",
     "unknownDevice": "Unknown Device",
+    "playSentToDevice": "Sent to ${device}",
     "session": {
       "startingServer": "Starting remote server...",
       "hostAddress": "Host Address",

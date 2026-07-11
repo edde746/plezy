@@ -577,7 +577,8 @@
     "mediaFailedToDelete": "Mediet kunne ikke slettes",
     "rate": "Bedøm",
     "playFromBeginning": "Afspil fra begyndelsen",
-    "playVersion": "Afspil version..."
+    "playVersion": "Afspil version...",
+    "playOnConnectedDevice": ""
   },
   "rateSheet": {
     "title": "Bedøm",
@@ -1668,6 +1669,7 @@
     "title": "Fjernbetjening",
     "connectedTo": "Forbundet til ${name}",
     "unknownDevice": "Ukendt enhed",
+    "playSentToDevice": "Sent to ${device}",
     "session": {
       "startingServer": "Starter fjernbetjeningsserver...",
       "hostAddress": "Værtsadresse",
