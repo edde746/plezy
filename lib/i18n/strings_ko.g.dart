@@ -271,6 +271,12 @@ class _TranslationsSettingsKo extends TranslationsSettingsEn {
 	@override String get tvFullCardLayoutDescription => 'TV 카드에 이미지만 표시하고 배우 이름을 오버레이로 표시';
 	@override String get focusGlow => '포커스 글로우';
 	@override String get focusGlowDescription => '포커스된 카드 주위에 은은한 빛 효과를 표시';
+	@override String get visualEffects => '시각 효과';
+	@override String get visualEffectsAuto => '자동';
+	@override String get visualEffectsAutoDescription => '저전력 기기에서 효과를 자동으로 줄입니다';
+	@override String get visualEffectsFull => '전체';
+	@override String get visualEffectsReduced => '축소';
+	@override String get visualEffectsReducedDescription => '애니메이션을 줄이고 아트워크 해상도를 낮춥니다';
 	@override String get hideSpoilers => '미시청 에피소드 스포일러 숨기기';
 	@override String get hideSpoilersDescription => '시청하지 않은 에피소드의 썸네일과 설명을 흐리게 처리';
 	@override String get playerBackend => '플레이어 백엔드';
@@ -381,6 +387,7 @@ class _TranslationsSettingsKo extends TranslationsSettingsEn {
 	@override String get traktDescription => 'Trakt와 시청 기록 동기화';
 	@override String get services => '서비스';
 	@override String get servicesDescription => 'Trakt, MyAnimeList, Seerr 등 연결';
+	@override String get manageLibrariesDescription => '라이브러리 순서를 변경하거나 숨깁니다';
 	@override String get companionRemoteServer => '컴패니언 리모트 서버';
 	@override String get companionRemoteServerDescription => '네트워크의 모바일 기기가 이 앱을 제어할 수 있도록 허용';
 	@override String get autoPip => '자동 PIP 모드';
@@ -555,6 +562,8 @@ class _TranslationsRateSheetKo extends TranslationsRateSheetEn {
 	@override String starValue({required Object rating}) => '${rating} / 5';
 	@override String scoreValue({required Object score}) => '${score} / 10';
 	@override String get setScore => '점수 설정';
+	@override String get favorite => '즐겨찾기';
+	@override String get favorited => '즐겨찾기됨';
 	@override String get saved => '저장됨';
 	@override String get notAvailable => '일치 항목 없음';
 	@override String get noConnectedServices => '평가하려면 설정에서 서비스를 연결하세요.';
@@ -964,6 +973,8 @@ class _TranslationsLibrariesKo extends TranslationsLibrariesEn {
 	@override String get allLibrariesHidden => '모든 라이브러리가 숨겨졌습니다';
 	@override String hiddenLibrariesCount({required Object count}) => '숨겨진 라이브러리 (${count})';
 	@override String get thisLibraryIsEmpty => '이 미디어 라이브러리는 비어 있습니다';
+	@override String get noItemsMatchFilters => '활성화된 필터와 일치하는 항목이 없습니다';
+	@override String get resetFilters => '필터 초기화';
 	@override String get all => '전체';
 	@override String get clearAll => '모두 삭제';
 	@override String scanLibraryConfirm({required Object title}) => '「${title}」를 스캔 하시겠습니까?';
@@ -1333,7 +1344,10 @@ class _TranslationsWatchTogetherKo extends TranslationsWatchTogetherEn {
 	@override String participantResumed({required Object name}) => '${name}님이 재생했습니다';
 	@override String participantSeeked({required Object name}) => '${name}님이 탐색했습니다';
 	@override String participantBuffering({required Object name}) => '${name}님이 버퍼링 중입니다';
+	@override String participantNeedsUpdate({required Object name}) => '${name}님이 이전 버전의 앱을 사용 중입니다 — 동기화를 사용할 수 없습니다';
+	@override String resumingWithout({required Object name}) => '${name}님 없이 재생을 재개합니다';
 	@override String get waitingForParticipants => '다른 참가자의 로딩을 기다리는 중...';
+	@override String waitingForName({required Object name}) => '${name}님을 기다리는 중...';
 	@override String get recentRooms => '최근 방';
 	@override String get renameRoom => '방 이름 변경';
 	@override String get removeRoom => '제거';
@@ -1873,6 +1887,7 @@ class _TranslationsLibrariesFilterCategoriesKo extends TranslationsLibrariesFilt
 	@override String get contentRating => '시청 등급';
 	@override String get tag => '태그';
 	@override String get unwatched => '미시청';
+	@override String get favorites => '즐겨찾기';
 }
 
 // Path: libraries.sortLabels
@@ -2234,6 +2249,12 @@ extension on TranslationsKo {
 			'settings.tvFullCardLayoutDescription' => 'TV 카드에 이미지만 표시하고 배우 이름을 오버레이로 표시',
 			'settings.focusGlow' => '포커스 글로우',
 			'settings.focusGlowDescription' => '포커스된 카드 주위에 은은한 빛 효과를 표시',
+			'settings.visualEffects' => '시각 효과',
+			'settings.visualEffectsAuto' => '자동',
+			'settings.visualEffectsAutoDescription' => '저전력 기기에서 효과를 자동으로 줄입니다',
+			'settings.visualEffectsFull' => '전체',
+			'settings.visualEffectsReduced' => '축소',
+			'settings.visualEffectsReducedDescription' => '애니메이션을 줄이고 아트워크 해상도를 낮춥니다',
 			'settings.hideSpoilers' => '미시청 에피소드 스포일러 숨기기',
 			'settings.hideSpoilersDescription' => '시청하지 않은 에피소드의 썸네일과 설명을 흐리게 처리',
 			'settings.playerBackend' => '플레이어 백엔드',
@@ -2344,6 +2365,7 @@ extension on TranslationsKo {
 			'settings.traktDescription' => 'Trakt와 시청 기록 동기화',
 			'settings.services' => '서비스',
 			'settings.servicesDescription' => 'Trakt, MyAnimeList, Seerr 등 연결',
+			'settings.manageLibrariesDescription' => '라이브러리 순서를 변경하거나 숨깁니다',
 			'settings.companionRemoteServer' => '컴패니언 리모트 서버',
 			'settings.companionRemoteServerDescription' => '네트워크의 모바일 기기가 이 앱을 제어할 수 있도록 허용',
 			'settings.autoPip' => '자동 PIP 모드',
@@ -2497,6 +2519,8 @@ extension on TranslationsKo {
 			'rateSheet.starValue' => ({required Object rating}) => '${rating} / 5',
 			'rateSheet.scoreValue' => ({required Object score}) => '${score} / 10',
 			'rateSheet.setScore' => '점수 설정',
+			'rateSheet.favorite' => '즐겨찾기',
+			'rateSheet.favorited' => '즐겨찾기됨',
 			'rateSheet.saved' => '저장됨',
 			'rateSheet.notAvailable' => '일치 항목 없음',
 			'rateSheet.noConnectedServices' => '평가하려면 설정에서 서비스를 연결하세요.',
@@ -2608,6 +2632,8 @@ extension on TranslationsKo {
 			'messages.errorLoading' => ({required Object error}) => '오류: ${error}',
 			'messages.streamInterrupted' => '스트림이 중단되었습니다. 재생을 누르거나 탐색하여 다시 시도하세요.',
 			'messages.fileInfoNotAvailable' => '파일 정보가 없습니다',
+			_ => null,
+		} ?? switch (path) {
 			'messages.errorLoadingFileInfo' => ({required Object error}) => '파일 정보 로딩 중 오류: ${error}',
 			'messages.errorLoadingSeries' => '시리즈 로딩 중 오류',
 			'messages.musicNotSupported' => '음악 재생 미지원',
@@ -2617,8 +2643,6 @@ extension on TranslationsKo {
 			'messages.unableToDetermineLibrarySection' => '이 항목의 라이브러리 섹션을 확인할 수 없습니다',
 			'messages.logsCleared' => '로그가 삭제 되었습니다',
 			'messages.logsCopied' => '로그가 클립보드에 복사 되었습니다',
-			_ => null,
-		} ?? switch (path) {
 			'messages.noLogsAvailable' => '사용 가능한 로그가 없습니다',
 			'messages.libraryScanning' => ({required Object title}) => '"${title}"을(를) 스캔 중입니다...',
 			'messages.libraryScanStarted' => ({required Object title}) => '"${title}" 미디어 라이브러리 스캔 시작',
@@ -2797,6 +2821,8 @@ extension on TranslationsKo {
 			'libraries.allLibrariesHidden' => '모든 라이브러리가 숨겨졌습니다',
 			'libraries.hiddenLibrariesCount' => ({required Object count}) => '숨겨진 라이브러리 (${count})',
 			'libraries.thisLibraryIsEmpty' => '이 미디어 라이브러리는 비어 있습니다',
+			'libraries.noItemsMatchFilters' => '활성화된 필터와 일치하는 항목이 없습니다',
+			'libraries.resetFilters' => '필터 초기화',
 			'libraries.all' => '전체',
 			'libraries.clearAll' => '모두 삭제',
 			'libraries.scanLibraryConfirm' => ({required Object title}) => '「${title}」를 스캔 하시겠습니까?',
@@ -2837,6 +2863,7 @@ extension on TranslationsKo {
 			'libraries.filterCategories.contentRating' => '시청 등급',
 			'libraries.filterCategories.tag' => '태그',
 			'libraries.filterCategories.unwatched' => '미시청',
+			'libraries.filterCategories.favorites' => '즐겨찾기',
 			'libraries.sortLabels.title' => '제목',
 			'libraries.sortLabels.dateAdded' => '추가된 날짜',
 			'libraries.sortLabels.releaseDate' => '출시일',
@@ -3105,7 +3132,10 @@ extension on TranslationsKo {
 			'watchTogether.participantResumed' => ({required Object name}) => '${name}님이 재생했습니다',
 			'watchTogether.participantSeeked' => ({required Object name}) => '${name}님이 탐색했습니다',
 			'watchTogether.participantBuffering' => ({required Object name}) => '${name}님이 버퍼링 중입니다',
+			'watchTogether.participantNeedsUpdate' => ({required Object name}) => '${name}님이 이전 버전의 앱을 사용 중입니다 — 동기화를 사용할 수 없습니다',
+			'watchTogether.resumingWithout' => ({required Object name}) => '${name}님 없이 재생을 재개합니다',
 			'watchTogether.waitingForParticipants' => '다른 참가자의 로딩을 기다리는 중...',
+			'watchTogether.waitingForName' => ({required Object name}) => '${name}님을 기다리는 중...',
 			'watchTogether.recentRooms' => '최근 방',
 			'watchTogether.renameRoom' => '방 이름 변경',
 			'watchTogether.removeRoom' => '제거',
@@ -3116,6 +3146,8 @@ extension on TranslationsKo {
 			'downloads.tvShows' => 'TV 프로그램',
 			'downloads.movies' => '영화',
 			'downloads.music' => '음악',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.tracksQueued' => ({required Object count}) => '${count}곡 다운로드 대기 중',
 			'downloads.noDownloads' => '다운로드 없음',
 			'downloads.noDownloadsDescription' => '다운로드한 콘텐츠는 오프라인 시청을 위해 여기에 표시됩니다',
@@ -3131,8 +3163,6 @@ extension on TranslationsKo {
 			'downloads.cancelledDownloadTitle' => '취소된 다운로드',
 			'downloads.cancelledDownloadMessage' => '이 다운로드가 취소되었습니다. 어떻게 하시겠습니까?',
 			'downloads.allEpisodesAlreadyDownloaded' => '모든 에피소드가 이미 다운로드되었습니다',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.resumeDownload' => '다운로드 재개',
 			'downloads.cancelledDownload' => '취소된 다운로드',
 			'downloads.syncingFile' => ({required Object file, required Object status}) => '${file} (${status} 동기화 중)',
