@@ -39,9 +39,9 @@ extension _VideoPlayerCompanionRemoteMethods on VideoPlayerScreenState {
     receiver.onVolumeMute = () async {
       if (player == null) return;
       final settings = await SettingsService.getInstance();
-      final newVolume = player!.state.volume > 0 ? 0.0 : 100.0;
-      unawaited(player!.setVolume(newVolume));
-      unawaited(settings.write(SettingsService.volume, newVolume));
+      final transition = settings.resolveMuteToggle(player!.state.volume);
+      unawaited(player!.setVolume(transition.playerVolume));
+      unawaited(settings.write(SettingsService.volume, transition.persistedVolume));
     };
     receiver.onSubtitles = _cycleSubtitleTrack;
     receiver.onAudioTracks = _cycleAudioTrack;

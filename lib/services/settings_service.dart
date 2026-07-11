@@ -616,8 +616,8 @@ class SettingsService extends BaseSharedPreferencesService {
 
   /// Resolves a video mute toggle without replacing the saved volume with 0.
   ///
-  /// [persistedVolume] is the non-zero value callers should keep in [volume],
-  /// while [playerVolume] is the value to apply to the active player.
+  /// `persistedVolume` is the non-zero value callers should keep in [volume],
+  /// while `playerVolume` is the value to apply to the active player.
   ({double playerVolume, double persistedVolume}) resolveMuteToggle(double currentVolume) {
     if (currentVolume.isFinite && currentVolume > 0) {
       return (playerVolume: 0, persistedVolume: currentVolume);
