@@ -147,6 +147,8 @@
     "visualEffectsReducedDescription": "Fewer animations and lower-resolution artwork",
     "hideSpoilers": "Hide Spoilers for Unwatched Episodes",
     "hideSpoilersDescription": "Blur thumbnails and descriptions for unwatched episodes",
+    "continueWatchingShowArt": "Show Artwork for Unwatched Episodes",
+    "continueWatchingShowArtDescription": "In Continue Watching, show the series artwork instead of a blurred thumbnail when Hide Spoilers is on",
     "playerBackend": "Player Backend",
     "exoPlayer": "ExoPlayer",
     "mpv": "mpv",

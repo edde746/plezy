@@ -255,6 +255,7 @@ class MediaCardState extends State<MediaCard> with ContextMenuTapMixin<MediaCard
         SettingsService.episodePosterMode,
         SettingsService.showEpisodeNumberOnCards,
         SettingsService.hideSpoilers,
+        SettingsService.continueWatchingShowArt,
         SettingsService.showUnwatchedCount,
       ],
       builder: _buildContent,
@@ -290,6 +291,7 @@ class MediaCardState extends State<MediaCard> with ContextMenuTapMixin<MediaCard
             localPosterPath: localPosterPath,
             showServerName: widget.showServerName,
             episodePosterModeOverride: widget.episodePosterModeOverride,
+            isInContinueWatching: widget.isInContinueWatching,
           );
 
     // Catalog stand-ins (Explore tab) have no server-backed actions — every
@@ -373,6 +375,7 @@ class MediaCardState extends State<MediaCard> with ContextMenuTapMixin<MediaCard
                   episodePosterModeOverride: widget.episodePosterModeOverride,
                   knownWidth: width,
                   knownHeight: height,
+                  isInContinueWatching: widget.isInContinueWatching,
                 ),
                 if (item is MediaItem && _showsWatchedIndicator(item)) WatchedIndicator(item: item),
               ],
@@ -406,6 +409,7 @@ class MediaCardState extends State<MediaCard> with ContextMenuTapMixin<MediaCard
               episodePosterModeOverride: widget.episodePosterModeOverride,
               knownWidth: posterHeight != null ? posterWidth : null,
               knownHeight: posterHeight,
+              isInContinueWatching: widget.isInContinueWatching,
             ),
           ),
           if (item is MediaItem && _showsWatchedIndicator(item)) WatchedIndicator(item: item),
@@ -475,6 +479,7 @@ class _MediaCardList extends StatelessWidget {
   final String? localPosterPath;
   final bool showServerName;
   final EpisodePosterMode? episodePosterModeOverride;
+  final bool isInContinueWatching;
 
   const _MediaCardList({
     required this.item,
@@ -489,6 +494,7 @@ class _MediaCardList extends StatelessWidget {
     this.localPosterPath,
     this.showServerName = false,
     this.episodePosterModeOverride,
+    this.isInContinueWatching = false,
   });
 
   CardShape _cardShape() {
@@ -671,6 +677,7 @@ class _MediaCardList extends StatelessWidget {
                         isOffline: isOffline,
                         localPosterPath: localPosterPath,
                         episodePosterModeOverride: episodePosterModeOverride,
+                        isInContinueWatching: isInContinueWatching,
                       ),
                     ),
                     if (item is MediaItem && _showsWatchedIndicator(item as MediaItem))
@@ -815,6 +822,11 @@ double _posterFocusRadius(BuildContext context, Object item) =>
 /// state to draw; tracks can show watched/resume state).
 bool _showsWatchedIndicator(MediaItem item) => item.kind != MediaKind.artist;
 
+/// Wraps [image] in the spoiler blur used for unwatched-episode thumbnails.
+Widget _blurredThumbnail(Widget image) => ClipRect(
+  child: ImageFiltered(imageFilter: ImageFilter.blur(sigmaX: 12, sigmaY: 12), child: image),
+);
+
 Widget _buildPosterImage(
   BuildContext context,
   Object item, {
@@ -824,6 +836,7 @@ Widget _buildPosterImage(
   EpisodePosterMode? episodePosterModeOverride,
   double? knownWidth,
   double? knownHeight,
+  bool isInContinueWatching = false,
 }) {
   String? posterUrl;
 
@@ -843,12 +856,25 @@ Widget _buildPosterImage(
     final EpisodePosterMode episodePosterMode =
         episodePosterModeOverride ?? SettingsService.instance.read(SettingsService.episodePosterMode);
     final hideSpoilers = SettingsService.instance.read(SettingsService.hideSpoilers);
-    final shouldBlur =
+    final wantsSpoilerHiding =
         hideSpoilers && item.shouldHideSpoiler && episodePosterMode == EpisodePosterMode.episodeThumbnail;
+    final spoilerSafeArtCandidate =
+        wantsSpoilerHiding &&
+            isInContinueWatching &&
+            SettingsService.instance.read(SettingsService.continueWatchingShowArt)
+        ? item.spoilerSafeArt
+        : null;
+    // Skip the show art if a previous attempt already failed to load, so the
+    // rebuild after a failure falls through to the blurred episode thumbnail
+    // instead of a broken image.
+    final spoilerSafeArtUrl = (spoilerSafeArtCandidate != null && !_hasFailedPosterUrl(spoilerSafeArtCandidate))
+        ? spoilerSafeArtCandidate
+        : null;
+    final shouldBlur = wantsSpoilerHiding && spoilerSafeArtUrl == null;
     final primaryPosterUrl = item.posterThumb(mode: episodePosterMode, mixedHubContext: mixedHubContext);
     final posterFallbackUrl = item.posterThumbFallback(mode: episodePosterMode, mixedHubContext: mixedHubContext);
     final useRememberedFallback = posterFallbackUrl != null && _hasFailedPosterUrl(primaryPosterUrl);
-    posterUrl = useRememberedFallback ? posterFallbackUrl : primaryPosterUrl;
+    posterUrl = spoilerSafeArtUrl ?? (useRememberedFallback ? posterFallbackUrl : primaryPosterUrl);
     final mediaClient = isOffline ? null : context.tryGetMediaClientWithFallback(serverIdOrNull(item.serverId));
     final fallbackIcon = _mediaPosterFallbackIcon(item);
 
@@ -869,9 +895,10 @@ Widget _buildPosterImage(
       );
     } else if (item.usesWideAspectRatio(episodePosterMode, mixedHubContext: mixedHubContext)) {
       // Use thumb image type for 16:9 content (episodes, or movies in mixed hubs)
-      image = OptimizedMediaImage.thumb(
+      final episodeThumbUrl = useRememberedFallback ? posterFallbackUrl : primaryPosterUrl;
+      OptimizedMediaImage buildEpisodeThumb() => OptimizedMediaImage.thumb(
         client: mediaClient,
-        imagePath: posterUrl,
+        imagePath: episodeThumbUrl,
         width: knownWidth ?? double.infinity,
         height: knownHeight ?? double.infinity,
         fit: BoxFit.cover,
@@ -879,6 +906,28 @@ Widget _buildPosterImage(
         fallbackIcon: fallbackIcon,
         localFilePath: localPosterPath,
       );
+      if (spoilerSafeArtUrl != null) {
+        // Continue Watching show-art swap. If the show art fails to load, fall
+        // back to the blurred episode thumbnail — a broken image is a worse
+        // spoiler outcome than the blur it replaced. Record the failure so the
+        // next rebuild skips the doomed load and blurs straight away.
+        image = OptimizedMediaImage.thumb(
+          client: mediaClient,
+          imagePath: spoilerSafeArtUrl,
+          width: knownWidth ?? double.infinity,
+          height: knownHeight ?? double.infinity,
+          fit: BoxFit.cover,
+          placeholder: _buildPosterLoadingPlaceholder,
+          fallbackIcon: fallbackIcon,
+          localFilePath: localPosterPath,
+          errorWidget: (_, _, _) {
+            _rememberFailedPosterUrl(spoilerSafeArtUrl);
+            return _blurredThumbnail(buildEpisodeThumb());
+          },
+        );
+      } else {
+        image = buildEpisodeThumb();
+      }
     } else {
       image = OptimizedMediaImage.poster(
         client: mediaClient,
@@ -907,9 +956,7 @@ Widget _buildPosterImage(
     }
 
     if (shouldBlur) {
-      return ClipRect(
-        child: ImageFiltered(imageFilter: ImageFilter.blur(sigmaX: 12, sigmaY: 12), child: image),
-      );
+      return _blurredThumbnail(image);
     }
     return image;
   }
