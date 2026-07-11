@@ -40,6 +40,7 @@ import 'package:plezy/theme/mono_theme.dart';
 import 'package:plezy/utils/layout_constants.dart';
 import 'package:plezy/utils/platform_detector.dart';
 import 'package:plezy/watch_together/watch_together.dart';
+import 'package:plezy/widgets/app_refresh_indicator.dart';
 import 'package:plezy/widgets/side_navigation_rail.dart';
 import 'package:plezy/widgets/tv_browse_rail.dart';
 import 'package:plezy/widgets/tv_spotlight_background.dart';
@@ -342,12 +343,17 @@ void main() {
     await tester.pump(const Duration(milliseconds: 100));
 
     expect(find.byType(RefreshIndicator), findsOneWidget);
-    final scrollView = tester.widget<CustomScrollView>(find.byType(CustomScrollView));
+    final scrollViewFinder = find.descendant(
+      of: find.byType(AppRefreshIndicator),
+      matching: find.byType(CustomScrollView),
+    );
+    expect(scrollViewFinder, findsOneWidget);
+    final scrollView = tester.widget<CustomScrollView>(scrollViewFinder);
     expect(scrollView.physics, isA<AlwaysScrollableScrollPhysics>());
     expect(client.globalHubsFetchCount, 1);
 
     final trackpadGesture = await tester.createGesture(kind: PointerDeviceKind.trackpad);
-    final scrollViewCenter = tester.getCenter(find.byType(CustomScrollView));
+    final scrollViewCenter = tester.getCenter(scrollViewFinder);
     await trackpadGesture.panZoomStart(scrollViewCenter);
     await trackpadGesture.panZoomUpdate(scrollViewCenter, pan: const Offset(0, 300));
     await trackpadGesture.panZoomEnd();
