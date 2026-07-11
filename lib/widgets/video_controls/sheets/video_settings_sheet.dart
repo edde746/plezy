@@ -671,13 +671,14 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
   }
 
   String _versionQualityValueText() {
+    final showVersions = _state.availableVersions.length > 1;
     final values = <String>[];
-    if (_state.availableVersions.length > 1) values.add(_selectedVersionLabel());
+    if (showVersions) values.add(_selectedVersionLabel());
     if (_state.serverSupportsTranscoding) {
       values.add(
         qualityPresetLabel(
           _state.selectedQualityPreset,
-          sourceBitrateKbps: _selectedSourceBitrateKbps(),
+          sourceBitrateKbps: showVersions ? null : _selectedSourceBitrateKbps(),
         ),
       );
     }
