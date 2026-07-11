@@ -427,8 +427,24 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
   String _versionQualityValueText() {
     final values = <String>[];
     if (widget.availableVersions.length > 1) values.add(_selectedVersionLabel());
-    if (widget.serverSupportsTranscoding) values.add(qualityPresetLabel(widget.selectedQualityPreset));
+    if (widget.serverSupportsTranscoding) {
+      values.add(
+        qualityPresetLabel(
+          widget.selectedQualityPreset,
+          sourceBitrateKbps: _selectedSourceBitrateKbps(),
+        ),
+      );
+    }
     return values.join(' / ');
+  }
+
+  int? _selectedSourceBitrateKbps() {
+    final index = widget.selectedMediaIndex;
+    if (index < 0 || index >= widget.availableVersions.length) {
+      return null;
+    }
+    final bitrate = widget.availableVersions[index].bitrate;
+    return bitrate != null && bitrate > 0 ? bitrate : null;
   }
 
   String _selectedVersionLabel() {

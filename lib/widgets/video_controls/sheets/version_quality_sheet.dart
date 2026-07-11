@@ -229,7 +229,7 @@ class _QualityColumnState extends State<_QualityColumn> {
 
               return _SelectionTile(
                 key: index == 0 ? _initialScroll.firstItemKey : null,
-                label: qualityPresetLabel(preset),
+                label: qualityPresetLabel(preset, sourceBitrateKbps: widget.sourceBitrateKbps),
                 trailingText: trailing,
                 isSelected: isSelected,
                 enabled: enabled,
