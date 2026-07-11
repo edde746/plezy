@@ -596,6 +596,13 @@ class _LiveTvScreenState extends State<LiveTvScreen>
     if (_showFavoritesOnly && !_isFavoriteChannel(channel)) {
       setState(() => _showFavoritesOnly = false);
     }
+    // Search opens from any tab, but results live in the guide grid. A tab
+    // switch builds GuideTab fresh (no keep-alive); its jump methods stash
+    // the request until the initial program load completes.
+    final guideIndex = _visibleTabs.indexOf(LiveTvTab.guide);
+    if (guideIndex >= 0 && tabController.index != guideIndex) {
+      setState(() => tabController.index = guideIndex);
+    }
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final guide = _guideTabKey.currentState;
       if (guide == null) return;
@@ -724,12 +731,11 @@ class _LiveTvScreenState extends State<LiveTvScreen>
             onNavigateLeft: () => getTabChipFocusNode(tabCount - 1).requestFocus(),
             onNavigateDown: _focusCurrentTab,
             actions: [
-              if (_currentTab == LiveTvTab.guide)
-                FocusableAction(
-                  icon: Symbols.search_rounded,
-                  tooltip: t.liveTv.searchGuide,
-                  onPressed: _showGuideSearch,
-                ),
+              // Shown on every tab: the d-pad route into this bar traverses
+              // the tab chips, and RIGHT selects each tab it crosses — a
+              // guide-only action would be unmounted before focus could ever
+              // reach it. Selecting a result switches back to the guide tab.
+              FocusableAction(icon: Symbols.search_rounded, tooltip: t.liveTv.searchGuide, onPressed: _showGuideSearch),
               if (!isRecordings)
                 FocusableAction(
                   icon: _showFavoritesOnly ? Symbols.star_rounded : Symbols.star_outline_rounded,
