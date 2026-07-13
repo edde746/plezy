@@ -407,7 +407,8 @@
     "mediaFailedToDelete": "Impossibile eliminare l'elemento multimediale",
     "rate": "Valuta",
     "playFromBeginning": "Riproduci dall'inizio",
-    "playVersion": "Riproduci versione..."
+    "playVersion": "Riproduci versione...",
+    "playOnConnectedDevice": ""
   },
   "rateSheet": {
     "title": "Valuta",
@@ -1189,6 +1190,7 @@
     "title": "Telecomando",
     "connectedTo": "Connesso a ${name}",
     "unknownDevice": "Dispositivo sconosciuto",
+    "playSentToDevice": "Sent to ${device}",
     "session": {
       "startingServer": "Avvio del server remoto...",
       "hostAddress": "Indirizzo host",

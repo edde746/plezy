@@ -407,7 +407,8 @@
     "mediaFailedToDelete": "미디어 항목 삭제 실패",
     "rate": "평가",
     "playFromBeginning": "처음부터 재생",
-    "playVersion": "버전 재생..."
+    "playVersion": "버전 재생...",
+    "playOnConnectedDevice": ""
   },
   "rateSheet": {
     "title": "평가",
@@ -1187,6 +1188,7 @@
     "title": "컴패니언 리모컨",
     "connectedTo": "${name}에 연결됨",
     "unknownDevice": "알 수 없는 기기",
+    "playSentToDevice": "Sent to ${device}",
     "session": {
       "startingServer": "원격 서버 시작 중...",
       "hostAddress": "호스트 주소",

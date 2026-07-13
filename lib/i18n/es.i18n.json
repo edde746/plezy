@@ -407,7 +407,8 @@
     "mediaFailedToDelete": "Error al eliminar el elemento multimedia",
     "rate": "Calificar",
     "playFromBeginning": "Reproducir desde el inicio",
-    "playVersion": "Reproducir versión..."
+    "playVersion": "Reproducir versión...",
+    "playOnConnectedDevice": ""
   },
   "rateSheet": {
     "title": "Calificar",
@@ -1189,6 +1190,7 @@
     "title": "Control remoto",
     "connectedTo": "Conectado a ${name}",
     "unknownDevice": "Dispositivo desconocido",
+    "playSentToDevice": "Sent to ${device}",
     "session": {
       "startingServer": "Iniciando servidor remoto...",
       "hostAddress": "Dirección del host",

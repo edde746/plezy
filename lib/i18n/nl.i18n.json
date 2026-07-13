@@ -407,7 +407,8 @@
     "mediaFailedToDelete": "Verwijderen van media-item mislukt",
     "rate": "Beoordelen",
     "playFromBeginning": "Afspelen vanaf het begin",
-    "playVersion": "Versie afspelen..."
+    "playVersion": "Versie afspelen...",
+    "playOnConnectedDevice": ""
   },
   "rateSheet": {
     "title": "Beoordelen",
@@ -1189,6 +1190,7 @@
     "title": "Afstandsbediening",
     "connectedTo": "Verbonden met ${name}",
     "unknownDevice": "Onbekend apparaat",
+    "playSentToDevice": "Sent to ${device}",
     "session": {
       "startingServer": "Externe server starten...",
       "hostAddress": "Hostadres",

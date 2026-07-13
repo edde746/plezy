@@ -407,7 +407,8 @@
     "mediaFailedToDelete": "Неуспешно изтриване на медията",
     "rate": "Оцени",
     "playFromBeginning": "Пусни от началото",
-    "playVersion": "Пусни версия..."
+    "playVersion": "Пусни версия...",
+    "playOnConnectedDevice": ""
   },
   "rateSheet": {
     "title": "Оцени",
@@ -1189,6 +1190,7 @@
     "title": "Дистанционно управление",
     "connectedTo": "Свързан към ${name}",
     "unknownDevice": "Непознато устройство",
+    "playSentToDevice": "Sent to ${device}",
     "session": {
       "startingServer": "Стартиране на сървър за дистанционно управление...",
       "hostAddress": "Адрес на хоста",

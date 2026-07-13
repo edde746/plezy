@@ -52,6 +52,11 @@ enum RemoteCommandType {
   disconnect,
   ack,
   syncState,
+
+  /// Ask the host to start playing a specific item (or, for a show/season,
+  /// its next-unwatched episode). Data payload: `{serverId, ratingKey}`.
+  /// Serialized by index — new values must be appended after this one.
+  playMedia,
 }
 
 class _RemoteCommandTypeConverter extends IndexedEnumConverter<RemoteCommandType> {

@@ -407,7 +407,8 @@
     "mediaFailedToDelete": "删除媒体项失败",
     "rate": "评分",
     "playFromBeginning": "从头播放",
-    "playVersion": "播放版本..."
+    "playVersion": "播放版本...",
+    "playOnConnectedDevice": ""
   },
   "rateSheet": {
     "title": "评分",
@@ -1187,6 +1188,7 @@
     "title": "伴侣遥控",
     "connectedTo": "已连接到 ${name}",
     "unknownDevice": "未知设备",
+    "playSentToDevice": "Sent to ${device}",
     "session": {
       "startingServer": "正在启动远程服务器...",
       "hostAddress": "主机地址",

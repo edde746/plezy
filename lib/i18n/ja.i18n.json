@@ -407,7 +407,8 @@
     "mediaFailedToDelete": "メディアアイテムの削除に失敗しました",
     "rate": "評価",
     "playFromBeginning": "最初から再生",
-    "playVersion": "バージョンを再生..."
+    "playVersion": "バージョンを再生...",
+    "playOnConnectedDevice": ""
   },
   "rateSheet": {
     "title": "評価",
@@ -1187,6 +1188,7 @@
     "title": "コンパニオンリモート",
     "connectedTo": "${name}に接続中",
     "unknownDevice": "不明なデバイス",
+    "playSentToDevice": "Sent to ${device}",
     "session": {
       "startingServer": "リモートサーバーを起動中...",
       "hostAddress": "ホストアドレス",

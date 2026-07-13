@@ -16,6 +16,9 @@ import '../media/media_playlist.dart';
 import '../media/media_server_client.dart';
 import '../metadata_edit/metadata_edit_adapters.dart';
 import '../media/media_version.dart';
+import '../models/companion_remote/remote_command.dart';
+import '../providers/companion_remote_provider.dart';
+import '../screens/companion_remote/mobile_remote_screen.dart';
 import '../services/plex_client.dart';
 import '../services/media_list_playback_launcher.dart';
 import '../services/music/music_playback_service.dart';
@@ -80,6 +83,23 @@ bool isAdminActionAllowedForMediaItem({
       itemBackend == MediaBackend.plex && activeProfile != null && activeProfile.isPlexHome && !activeProfile.plexAdmin;
   return isOwnerOrAdmin && !blockedByPlexHomeRole;
 }
+
+/// Whether the in-memory item is confirmed to have no playable media
+/// (a metadata-only placeholder, e.g. from a Seerr placeholder library).
+/// Deliberately fails open: shows/seasons trust an explicit leafCount of 0
+/// (populated by listings on both backends), while an empty version list is
+/// only trusted on Plex — Jellyfin listings omit MediaSources, so null is
+/// indistinguishable from "not loaded" there.
+bool hasKnownNoPlayableMedia({
+  required MediaKind? kind,
+  required MediaBackend? backend,
+  required List<MediaVersion>? mediaVersions,
+  required int? leafCount,
+}) => switch (kind) {
+  MediaKind.movie || MediaKind.episode => backend == MediaBackend.plex && (mediaVersions?.isEmpty ?? false),
+  MediaKind.show || MediaKind.season => leafCount == 0,
+  _ => false,
+};
 
 /// A reusable wrapper widget that adds a context menu (long press / right click)
 /// to any media item with appropriate actions based on the item type.
@@ -205,6 +225,22 @@ class MediaContextMenuState extends State<MediaContextMenu> {
   /// Backend-neutral client for the active item's server. Used by flows
   /// that work for Jellyfin too (downloads, basic browse).
   MediaServerClient _getMediaClientForItem() => context.getMediaClientWithFallback(serverIdOrNull(_itemServerId));
+
+  /// Send the item to the connected companion-remote host for playback, then
+  /// open the remote screen so the user can control it from here.
+  Future<void> _handlePlayOnConnectedDevice(BuildContext context) async {
+    final item = _mediaItem;
+    final serverId = _itemServerId;
+    final companionRemote = context.read<CompanionRemoteProvider?>();
+    if (item == null || serverId == null || companionRemote == null) return;
+
+    companionRemote.sendCommand(RemoteCommandType.playMedia, data: {'serverId': serverId, 'ratingKey': item.id});
+
+    if (!context.mounted) return;
+    final deviceName = companionRemote.connectedDevice?.name ?? t.companionRemote.unknownDevice;
+    showAppSnackBar(context, t.companionRemote.playSentToDevice(device: deviceName));
+    await Navigator.push(context, MaterialPageRoute(builder: (_) => const MobileRemoteScreen()));
+  }
 
   void _showContextMenu(BuildContext context) async {
     if (_isContextMenuOpen) return;
@@ -354,6 +390,37 @@ class MediaContextMenuState extends State<MediaContextMenu> {
       if (widget.onPlayTrailer != null) {
         menuActions.add(
           _MenuAction(value: 'play_trailer', icon: Symbols.theaters_rounded, label: t.tooltips.playTrailer),
+        );
+      }
+
+      // Play on connected device — mobile only, and only while this phone is
+      // the controller in an active companion-remote session; the host device
+      // performs the playback (shows/seasons resolve to their next-unwatched
+      // episode host-side). Hidden for items known to be metadata-only, but
+      // failing open when media presence is unknowable from the listing item.
+      final companionRemote = context.read<CompanionRemoteProvider?>();
+      final canPlayOnConnectedDevice =
+          (Platform.isAndroid || Platform.isIOS) &&
+          _itemServerId != null &&
+          (companionRemote?.isRemote ?? false) &&
+          (companionRemote?.isConnected ?? false) &&
+          !hasKnownNoPlayableMedia(
+            kind: mediaKind,
+            backend: itemBackend,
+            mediaVersions: mediaItem?.mediaVersions,
+            leafCount: mediaItem?.leafCount,
+          ) &&
+          (mediaKind == MediaKind.movie ||
+              mediaKind == MediaKind.episode ||
+              mediaKind == MediaKind.show ||
+              mediaKind == MediaKind.season);
+      if (canPlayOnConnectedDevice) {
+        menuActions.add(
+          _MenuAction(
+            value: 'play_on_connected_device',
+            icon: Symbols.cast_rounded,
+            label: t.mediaMenu.playOnConnectedDevice,
+          ),
         );
       }
 
@@ -640,6 +707,13 @@ class MediaContextMenuState extends State<MediaContextMenu> {
         case 'play_trailer':
           didNavigate = true;
           widget.onPlayTrailer?.call();
+          break;
+
+        case 'play_on_connected_device':
+          didNavigate = true;
+          if (context.mounted) {
+            await _handlePlayOnConnectedDevice(context);
+          }
           break;
 
         case 'watch':

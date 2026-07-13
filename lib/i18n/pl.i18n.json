@@ -407,7 +407,8 @@
     "mediaFailedToDelete": "Nie udało się usunąć elementu multimedialnego",
     "rate": "Oceń",
     "playFromBeginning": "Odtwórz od początku",
-    "playVersion": "Odtwórz wersję..."
+    "playVersion": "Odtwórz wersję...",
+    "playOnConnectedDevice": ""
   },
   "rateSheet": {
     "title": "Oceń",
@@ -1193,6 +1194,7 @@
     "title": "Pilot zdalny",
     "connectedTo": "Połączono z ${name}",
     "unknownDevice": "Nieznane urządzenie",
+    "playSentToDevice": "Sent to ${device}",
     "session": {
       "startingServer": "Uruchamianie serwera zdalnego...",
       "hostAddress": "Adres hosta",
