@@ -1385,7 +1385,11 @@ class _Translations$liveTv$nl extends Translations$liveTv$en {
 	@override String get unknownChannel => 'Onbekend kanaal';
 	@override String get live => 'LIVE';
 	@override String get reloadGuide => 'Gids herladen';
-	@override String searchNoResults({required Object query}) => 'No matches for "${query}"';
+	@override String get searchGuide => 'Gids doorzoeken';
+	@override String get searchHint => 'Zoek zenders en programma’s';
+	@override String searchNoResults({required Object query}) => 'Geen resultaten voor "${query}"';
+	@override String get channelsSection => 'Zenders';
+	@override String get programsSection => 'Programma’s';
 	@override String get now => 'Nu';
 	@override String get today => 'Vandaag';
 	@override String get tomorrow => 'Morgen';
@@ -3957,7 +3961,11 @@ extension on TranslationsNl {
 			'liveTv.unknownChannel' => 'Onbekend kanaal',
 			'liveTv.live' => 'LIVE',
 			'liveTv.reloadGuide' => 'Gids herladen',
-			'liveTv.searchNoResults' => ({required Object query}) => 'No matches for "${query}"',
+			'liveTv.searchGuide' => 'Gids doorzoeken',
+			'liveTv.searchHint' => 'Zoek zenders en programma’s',
+			'liveTv.searchNoResults' => ({required Object query}) => 'Geen resultaten voor "${query}"',
+			'liveTv.channelsSection' => 'Zenders',
+			'liveTv.programsSection' => 'Programma’s',
 			'liveTv.now' => 'Nu',
 			'liveTv.today' => 'Vandaag',
 			'liveTv.tomorrow' => 'Morgen',
@@ -4313,12 +4321,12 @@ extension on TranslationsNl {
 			'companionRemote.pairing.hostAddressHint' => '192.168.1.100:48632',
 			'companionRemote.pairing.connecting' => 'Verbinden...',
 			'companionRemote.pairing.searchingForDevices' => 'Apparaten zoeken...',
+			_ => null,
+		} ?? switch (path) {
 			'companionRemote.pairing.noDevicesFound' => 'Geen apparaten gevonden op je netwerk',
 			'companionRemote.pairing.noDevicesHint' => 'Open Plezy op je desktop en gebruik op beide apparaten dezelfde wifi',
 			'companionRemote.pairing.availableDevices' => 'Beschikbare apparaten',
 			'companionRemote.pairing.manualConnection' => 'Handmatige verbinding',
-			_ => null,
-		} ?? switch (path) {
 			'companionRemote.pairing.cryptoInitFailed' => 'Kon beveiligde verbinding niet starten. Log eerst in bij Plex.',
 			'companionRemote.pairing.validationHostRequired' => 'Voer het hostadres in',
 			'companionRemote.pairing.validationHostFormat' => 'Formaat moet IP:poort zijn (bijv. 192.168.1.100:48632)',

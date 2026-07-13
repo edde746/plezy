@@ -1385,7 +1385,11 @@ class _Translations$liveTv$nb extends Translations$liveTv$en {
 	@override String get unknownChannel => 'Ukjent kanal';
 	@override String get live => 'DIREKTE';
 	@override String get reloadGuide => 'Last inn programguide på nytt';
-	@override String searchNoResults({required Object query}) => 'No matches for "${query}"';
+	@override String get searchGuide => 'Søk i guiden';
+	@override String get searchHint => 'Søk etter kanaler og programmer';
+	@override String searchNoResults({required Object query}) => 'Ingen treff for "${query}"';
+	@override String get channelsSection => 'Kanaler';
+	@override String get programsSection => 'Programmer';
 	@override String get now => 'Nå';
 	@override String get today => 'I dag';
 	@override String get tomorrow => 'I morgen';
@@ -3957,7 +3961,11 @@ extension on TranslationsNb {
 			'liveTv.unknownChannel' => 'Ukjent kanal',
 			'liveTv.live' => 'DIREKTE',
 			'liveTv.reloadGuide' => 'Last inn programguide på nytt',
-			'liveTv.searchNoResults' => ({required Object query}) => 'No matches for "${query}"',
+			'liveTv.searchGuide' => 'Søk i guiden',
+			'liveTv.searchHint' => 'Søk etter kanaler og programmer',
+			'liveTv.searchNoResults' => ({required Object query}) => 'Ingen treff for "${query}"',
+			'liveTv.channelsSection' => 'Kanaler',
+			'liveTv.programsSection' => 'Programmer',
 			'liveTv.now' => 'Nå',
 			'liveTv.today' => 'I dag',
 			'liveTv.tomorrow' => 'I morgen',
@@ -4313,12 +4321,12 @@ extension on TranslationsNb {
 			'companionRemote.pairing.hostAddressHint' => '192.168.1.100:48632',
 			'companionRemote.pairing.connecting' => 'Kobler til...',
 			'companionRemote.pairing.searchingForDevices' => 'Søker etter enheter...',
+			_ => null,
+		} ?? switch (path) {
 			'companionRemote.pairing.noDevicesFound' => 'Ingen enheter funnet på nettverket ditt',
 			'companionRemote.pairing.noDevicesHint' => 'Åpne Plezy på datamaskinen, og bruk samme Wi-Fi',
 			'companionRemote.pairing.availableDevices' => 'Tilgjengelige enheter',
 			'companionRemote.pairing.manualConnection' => 'Manuell tilkobling',
-			_ => null,
-		} ?? switch (path) {
 			'companionRemote.pairing.cryptoInitFailed' => 'Kunne ikke starte sikker tilkobling. Logg inn på Plex først.',
 			'companionRemote.pairing.validationHostRequired' => 'Vennligst oppgi vertsadresse',
 			'companionRemote.pairing.validationHostFormat' => 'Format må være IP:port (f.eks. 192.168.1.100:48632)',

@@ -1399,7 +1399,11 @@ class _Translations$liveTv$pl extends Translations$liveTv$en {
 	@override String get unknownChannel => 'Nieznany kanał';
 	@override String get live => 'NA ŻYWO';
 	@override String get reloadGuide => 'Odśwież przewodnik';
-	@override String searchNoResults({required Object query}) => 'No matches for "${query}"';
+	@override String get searchGuide => 'Szukaj w przewodniku';
+	@override String get searchHint => 'Szukaj kanałów i programów';
+	@override String searchNoResults({required Object query}) => 'Brak wyników dla „${query}”';
+	@override String get channelsSection => 'Kanały';
+	@override String get programsSection => 'Programy';
 	@override String get now => 'Teraz';
 	@override String get today => 'Dzisiaj';
 	@override String get tomorrow => 'Jutro';
@@ -3977,7 +3981,11 @@ extension on TranslationsPl {
 			'liveTv.unknownChannel' => 'Nieznany kanał',
 			'liveTv.live' => 'NA ŻYWO',
 			'liveTv.reloadGuide' => 'Odśwież przewodnik',
-			'liveTv.searchNoResults' => ({required Object query}) => 'No matches for "${query}"',
+			'liveTv.searchGuide' => 'Szukaj w przewodniku',
+			'liveTv.searchHint' => 'Szukaj kanałów i programów',
+			'liveTv.searchNoResults' => ({required Object query}) => 'Brak wyników dla „${query}”',
+			'liveTv.channelsSection' => 'Kanały',
+			'liveTv.programsSection' => 'Programy',
 			'liveTv.now' => 'Teraz',
 			'liveTv.today' => 'Dzisiaj',
 			'liveTv.tomorrow' => 'Jutro',
@@ -4333,12 +4341,12 @@ extension on TranslationsPl {
 			'companionRemote.pairing.hostAddressHint' => '192.168.1.100:48632',
 			'companionRemote.pairing.connecting' => 'Łączenie...',
 			'companionRemote.pairing.searchingForDevices' => 'Szukanie urządzeń...',
+			_ => null,
+		} ?? switch (path) {
 			'companionRemote.pairing.noDevicesFound' => 'Nie znaleziono urządzeń w sieci',
 			'companionRemote.pairing.noDevicesHint' => 'Otwórz Plezy na komputerze i połącz oba urządzenia z tą samą siecią Wi-Fi',
 			'companionRemote.pairing.availableDevices' => 'Dostępne urządzenia',
 			'companionRemote.pairing.manualConnection' => 'Połączenie ręczne',
-			_ => null,
-		} ?? switch (path) {
 			'companionRemote.pairing.cryptoInitFailed' => 'Nie udało się uruchomić bezpiecznego połączenia. Najpierw zaloguj się do Plex.',
 			'companionRemote.pairing.validationHostRequired' => 'Wprowadź adres hosta',
 			'companionRemote.pairing.validationHostFormat' => 'Format musi być IP:port (np. 192.168.1.100:48632)',

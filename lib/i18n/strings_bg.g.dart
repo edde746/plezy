@@ -1385,7 +1385,11 @@ class _Translations$liveTv$bg extends Translations$liveTv$en {
 	@override String get unknownChannel => 'Неизвестен канал';
 	@override String get live => 'НА ЖИВО';
 	@override String get reloadGuide => 'Презареди ТВ програмата';
-	@override String searchNoResults({required Object query}) => 'No matches for "${query}"';
+	@override String get searchGuide => 'Търсене в справочника';
+	@override String get searchHint => 'Търсене на канали и предавания';
+	@override String searchNoResults({required Object query}) => 'Няма съвпадения за „${query}“';
+	@override String get channelsSection => 'Канали';
+	@override String get programsSection => 'Предавания';
 	@override String get now => 'Сега';
 	@override String get today => 'Днес';
 	@override String get tomorrow => 'Утре';
@@ -3957,7 +3961,11 @@ extension on TranslationsBg {
 			'liveTv.unknownChannel' => 'Неизвестен канал',
 			'liveTv.live' => 'НА ЖИВО',
 			'liveTv.reloadGuide' => 'Презареди ТВ програмата',
-			'liveTv.searchNoResults' => ({required Object query}) => 'No matches for "${query}"',
+			'liveTv.searchGuide' => 'Търсене в справочника',
+			'liveTv.searchHint' => 'Търсене на канали и предавания',
+			'liveTv.searchNoResults' => ({required Object query}) => 'Няма съвпадения за „${query}“',
+			'liveTv.channelsSection' => 'Канали',
+			'liveTv.programsSection' => 'Предавания',
 			'liveTv.now' => 'Сега',
 			'liveTv.today' => 'Днес',
 			'liveTv.tomorrow' => 'Утре',
@@ -4313,12 +4321,12 @@ extension on TranslationsBg {
 			'companionRemote.pairing.hostAddressHint' => '192.168.1.100:48632',
 			'companionRemote.pairing.connecting' => 'Свързване...',
 			'companionRemote.pairing.searchingForDevices' => 'Търсене на устройства...',
+			_ => null,
+		} ?? switch (path) {
 			'companionRemote.pairing.noDevicesFound' => 'Не са намерени устройства във вашата мрежа',
 			'companionRemote.pairing.noDevicesHint' => 'Отворете Plezy на настолен компютър и използвайте същата Wi-Fi мрежа',
 			'companionRemote.pairing.availableDevices' => 'Налични устройства',
 			'companionRemote.pairing.manualConnection' => 'Ръчно свързване',
-			_ => null,
-		} ?? switch (path) {
 			'companionRemote.pairing.cryptoInitFailed' => 'Не може да се стартира защитена връзка. Първо влезте в Plex.',
 			'companionRemote.pairing.validationHostRequired' => 'Моля, въведете адрес на хоста',
 			'companionRemote.pairing.validationHostFormat' => 'Форматът трябва да е IP:port (напр. 192.168.1.100:48632)',

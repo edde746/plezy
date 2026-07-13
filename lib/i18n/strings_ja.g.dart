@@ -1378,7 +1378,11 @@ class _Translations$liveTv$ja extends Translations$liveTv$en {
 	@override String get unknownChannel => '不明なチャンネル';
 	@override String get live => 'ライブ';
 	@override String get reloadGuide => '番組表を再読み込み';
-	@override String searchNoResults({required Object query}) => 'No matches for "${query}"';
+	@override String get searchGuide => '番組表を検索';
+	@override String get searchHint => 'チャンネル・番組を検索';
+	@override String searchNoResults({required Object query}) => '「${query}」に一致する結果はありません';
+	@override String get channelsSection => 'チャンネル';
+	@override String get programsSection => '番組';
 	@override String get now => '現在';
 	@override String get today => '今日';
 	@override String get tomorrow => '明日';
@@ -3947,7 +3951,11 @@ extension on TranslationsJa {
 			'liveTv.unknownChannel' => '不明なチャンネル',
 			'liveTv.live' => 'ライブ',
 			'liveTv.reloadGuide' => '番組表を再読み込み',
-			'liveTv.searchNoResults' => ({required Object query}) => 'No matches for "${query}"',
+			'liveTv.searchGuide' => '番組表を検索',
+			'liveTv.searchHint' => 'チャンネル・番組を検索',
+			'liveTv.searchNoResults' => ({required Object query}) => '「${query}」に一致する結果はありません',
+			'liveTv.channelsSection' => 'チャンネル',
+			'liveTv.programsSection' => '番組',
 			'liveTv.now' => '現在',
 			'liveTv.today' => '今日',
 			'liveTv.tomorrow' => '明日',
@@ -4303,12 +4311,12 @@ extension on TranslationsJa {
 			'companionRemote.pairing.hostAddressHint' => '192.168.1.100:48632',
 			'companionRemote.pairing.connecting' => '接続中…',
 			'companionRemote.pairing.searchingForDevices' => 'デバイスを検索中…',
+			_ => null,
+		} ?? switch (path) {
 			'companionRemote.pairing.noDevicesFound' => 'ネットワーク上にデバイスが見つかりません',
 			'companionRemote.pairing.noDevicesHint' => 'デスクトップでPlezyを開き、同じWi-Fiネットワークに接続してください',
 			'companionRemote.pairing.availableDevices' => '利用可能なデバイス',
 			'companionRemote.pairing.manualConnection' => '手動接続',
-			_ => null,
-		} ?? switch (path) {
 			'companionRemote.pairing.cryptoInitFailed' => '安全な接続を開始できませんでした。先にPlexにサインインしてください。',
 			'companionRemote.pairing.validationHostRequired' => 'ホストアドレスを入力してください',
 			'companionRemote.pairing.validationHostFormat' => '形式はIP:ポートである必要があります（例: 192.168.1.100:48632）',

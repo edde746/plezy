@@ -1385,7 +1385,11 @@ class _Translations$liveTv$pt extends Translations$liveTv$en {
 	@override String get unknownChannel => 'Canal desconhecido';
 	@override String get live => 'AO VIVO';
 	@override String get reloadGuide => 'Recarregar Guia';
-	@override String searchNoResults({required Object query}) => 'No matches for "${query}"';
+	@override String get searchGuide => 'Pesquisar no guia';
+	@override String get searchHint => 'Pesquisar canais e programas';
+	@override String searchNoResults({required Object query}) => 'Sem resultados para "${query}"';
+	@override String get channelsSection => 'Canais';
+	@override String get programsSection => 'Programas';
 	@override String get now => 'Agora';
 	@override String get today => 'Hoje';
 	@override String get tomorrow => 'Amanhã';
@@ -3957,7 +3961,11 @@ extension on TranslationsPt {
 			'liveTv.unknownChannel' => 'Canal desconhecido',
 			'liveTv.live' => 'AO VIVO',
 			'liveTv.reloadGuide' => 'Recarregar Guia',
-			'liveTv.searchNoResults' => ({required Object query}) => 'No matches for "${query}"',
+			'liveTv.searchGuide' => 'Pesquisar no guia',
+			'liveTv.searchHint' => 'Pesquisar canais e programas',
+			'liveTv.searchNoResults' => ({required Object query}) => 'Sem resultados para "${query}"',
+			'liveTv.channelsSection' => 'Canais',
+			'liveTv.programsSection' => 'Programas',
 			'liveTv.now' => 'Agora',
 			'liveTv.today' => 'Hoje',
 			'liveTv.tomorrow' => 'Amanhã',
@@ -4313,12 +4321,12 @@ extension on TranslationsPt {
 			'companionRemote.pairing.hostAddressHint' => '192.168.1.100:48632',
 			'companionRemote.pairing.connecting' => 'Conectando...',
 			'companionRemote.pairing.searchingForDevices' => 'Procurando dispositivos...',
+			_ => null,
+		} ?? switch (path) {
 			'companionRemote.pairing.noDevicesFound' => 'Nenhum dispositivo encontrado na sua rede',
 			'companionRemote.pairing.noDevicesHint' => 'Abra o Plezy no desktop e use a mesma rede Wi-Fi',
 			'companionRemote.pairing.availableDevices' => 'Dispositivos disponíveis',
 			'companionRemote.pairing.manualConnection' => 'Conexão manual',
-			_ => null,
-		} ?? switch (path) {
 			'companionRemote.pairing.cryptoInitFailed' => 'Não foi possível iniciar a conexão segura. Entre no Plex primeiro.',
 			'companionRemote.pairing.validationHostRequired' => 'Insira o endereço do host',
 			'companionRemote.pairing.validationHostFormat' => 'O formato deve ser IP:porta (ex.: 192.168.1.100:48632)',

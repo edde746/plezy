@@ -1378,7 +1378,11 @@ class Translations$liveTv$zh extends Translations$liveTv$en {
 	@override String get unknownChannel => '未知频道';
 	@override String get live => '直播';
 	@override String get reloadGuide => '重新加载节目指南';
-	@override String searchNoResults({required Object query}) => 'No matches for "${query}"';
+	@override String get searchGuide => '搜索节目指南';
+	@override String get searchHint => '搜索频道和节目';
+	@override String searchNoResults({required Object query}) => '没有与"${query}"匹配的结果';
+	@override String get channelsSection => '频道';
+	@override String get programsSection => '节目';
 	@override String get now => '现在';
 	@override String get today => '今天';
 	@override String get tomorrow => '明天';
@@ -3947,7 +3951,11 @@ extension on TranslationsZh {
 			'liveTv.unknownChannel' => '未知频道',
 			'liveTv.live' => '直播',
 			'liveTv.reloadGuide' => '重新加载节目指南',
-			'liveTv.searchNoResults' => ({required Object query}) => 'No matches for "${query}"',
+			'liveTv.searchGuide' => '搜索节目指南',
+			'liveTv.searchHint' => '搜索频道和节目',
+			'liveTv.searchNoResults' => ({required Object query}) => '没有与"${query}"匹配的结果',
+			'liveTv.channelsSection' => '频道',
+			'liveTv.programsSection' => '节目',
 			'liveTv.now' => '现在',
 			'liveTv.today' => '今天',
 			'liveTv.tomorrow' => '明天',
@@ -4303,12 +4311,12 @@ extension on TranslationsZh {
 			'companionRemote.pairing.hostAddressHint' => '192.168.1.100:48632',
 			'companionRemote.pairing.connecting' => '正在连接…',
 			'companionRemote.pairing.searchingForDevices' => '正在搜索设备…',
+			_ => null,
+		} ?? switch (path) {
 			'companionRemote.pairing.noDevicesFound' => '未在网络中找到设备',
 			'companionRemote.pairing.noDevicesHint' => '请在桌面端打开 Plezy，并确保设备连接到同一 Wi-Fi 网络',
 			'companionRemote.pairing.availableDevices' => '可用设备',
 			'companionRemote.pairing.manualConnection' => '手动连接',
-			_ => null,
-		} ?? switch (path) {
 			'companionRemote.pairing.cryptoInitFailed' => '无法启动安全连接。请先登录 Plex。',
 			'companionRemote.pairing.validationHostRequired' => '请输入主机地址',
 			'companionRemote.pairing.validationHostFormat' => '格式必须为 IP:端口（例如 192.168.1.100:48632）',

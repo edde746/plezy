@@ -86,8 +86,12 @@ class _GuideSearchSheetState extends State<GuideSearchSheet> with ControllerDisp
 
   Future<void> _loadPrograms() async {
     final multiServer = context.read<MultiServerProvider>();
-    final from = DateTime.now().toUtc();
-    final to = from.add(_scheduleWindow);
+    final now = DateTime.now().toUtc();
+    // Jellyfin maps `from` to minStartDate, which would exclude programs that
+    // started before the sheet opened; look back an hour to keep the current
+    // airing searchable (same idiom as the show-schedule screen).
+    final from = now.subtract(const Duration(hours: 1));
+    final to = now.add(_scheduleWindow);
     final fetched = <LiveTvProgram>[];
     final queriedServers = <String>{};
 
@@ -105,9 +109,13 @@ class _GuideSearchSheetState extends State<GuideSearchSheet> with ControllerDisp
     if (!mounted) return;
 
     // Resolve each program's channel once so per-keystroke filtering never
-    // pays the programs × channels matching cost.
+    // pays the programs × channels matching cost. The lookback window can
+    // return programs that already finished — drop those.
+    final nowEpoch = now.millisecondsSinceEpoch ~/ 1000;
     final resolved = <({LiveTvProgram program, LiveTvChannel channel})>[];
     for (final program in fetched) {
+      final endsAt = program.endsAt;
+      if (endsAt != null && endsAt <= nowEpoch) continue;
       for (final channel in widget.channels) {
         if (liveTvProgramMatchesChannel(program, channel)) {
           resolved.add((program: program, channel: channel));

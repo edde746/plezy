@@ -1378,7 +1378,11 @@ class _Translations$liveTv$ko extends Translations$liveTv$en {
 	@override String get unknownChannel => '알 수 없는 채널';
 	@override String get live => '실시간';
 	@override String get reloadGuide => '편성표 새로고침';
-	@override String searchNoResults({required Object query}) => 'No matches for "${query}"';
+	@override String get searchGuide => '가이드 검색';
+	@override String get searchHint => '채널 및 프로그램 검색';
+	@override String searchNoResults({required Object query}) => '\'${query}\'에 대한 검색 결과가 없습니다';
+	@override String get channelsSection => '채널';
+	@override String get programsSection => '프로그램';
 	@override String get now => '지금';
 	@override String get today => '오늘';
 	@override String get tomorrow => '내일';
@@ -3947,7 +3951,11 @@ extension on TranslationsKo {
 			'liveTv.unknownChannel' => '알 수 없는 채널',
 			'liveTv.live' => '실시간',
 			'liveTv.reloadGuide' => '편성표 새로고침',
-			'liveTv.searchNoResults' => ({required Object query}) => 'No matches for "${query}"',
+			'liveTv.searchGuide' => '가이드 검색',
+			'liveTv.searchHint' => '채널 및 프로그램 검색',
+			'liveTv.searchNoResults' => ({required Object query}) => '\'${query}\'에 대한 검색 결과가 없습니다',
+			'liveTv.channelsSection' => '채널',
+			'liveTv.programsSection' => '프로그램',
 			'liveTv.now' => '지금',
 			'liveTv.today' => '오늘',
 			'liveTv.tomorrow' => '내일',
@@ -4303,12 +4311,12 @@ extension on TranslationsKo {
 			'companionRemote.pairing.hostAddressHint' => '192.168.1.100:48632',
 			'companionRemote.pairing.connecting' => '연결 중...',
 			'companionRemote.pairing.searchingForDevices' => '기기 검색 중...',
+			_ => null,
+		} ?? switch (path) {
 			'companionRemote.pairing.noDevicesFound' => '네트워크에서 기기를 찾을 수 없습니다',
 			'companionRemote.pairing.noDevicesHint' => '데스크톱에서 Plezy를 열고 같은 Wi-Fi를 사용하세요',
 			'companionRemote.pairing.availableDevices' => '사용 가능한 기기',
 			'companionRemote.pairing.manualConnection' => '수동 연결',
-			_ => null,
-		} ?? switch (path) {
 			'companionRemote.pairing.cryptoInitFailed' => '보안 연결을 시작할 수 없습니다. 먼저 Plex에 로그인하세요.',
 			'companionRemote.pairing.validationHostRequired' => '호스트 주소를 입력하세요',
 			'companionRemote.pairing.validationHostFormat' => '형식은 IP:포트여야 합니다 (예: 192.168.1.100:48632)',
