@@ -18,22 +18,27 @@ import 'package:plezy/media/media_item.dart';
 import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/media/media_playlist.dart';
 import 'package:plezy/media/media_server_client.dart';
+import 'package:plezy/media/media_version.dart';
 import 'package:plezy/media/server_capabilities.dart';
 import 'package:plezy/metadata_edit/metadata_edit_adapters.dart';
 import 'package:plezy/models/plex/plex_home_user.dart';
 import 'package:plezy/models/plex/plex_config.dart';
+import 'package:plezy/models/seerr/seerr_session.dart';
 import 'package:plezy/profiles/profile.dart';
 import 'package:plezy/profiles/active_profile_provider.dart';
 import 'package:plezy/profiles/plex_home_service.dart';
 import 'package:plezy/profiles/profile_connection_registry.dart';
 import 'package:plezy/profiles/profile_registry.dart';
 import 'package:plezy/providers/multi_server_provider.dart';
+import 'package:plezy/services/catalog/seerr_catalog_source.dart';
 import 'package:plezy/services/data_aggregation_service.dart';
 import 'package:plezy/services/jellyfin_client.dart';
 import 'package:plezy/services/music/music_playback_service.dart';
 import 'package:plezy/services/multi_server_manager.dart';
 import 'package:plezy/services/plex_api_cache.dart';
 import 'package:plezy/services/plex_client.dart';
+import 'package:plezy/services/seerr/seerr_client.dart';
+import 'package:plezy/services/seerr/seerr_constants.dart';
 import 'package:plezy/theme/mono_theme.dart';
 import 'package:plezy/utils/media_server_http_client.dart';
 import 'package:plezy/utils/platform_detector.dart';
@@ -88,6 +93,113 @@ void main() {
       expect(supportsMetadataEdit(client, MediaKind.movie), isTrue);
       expect(supportsMetadataEdit(client, MediaKind.show), isTrue);
       expect(supportsMetadataEdit(client, MediaKind.track), isFalse);
+    });
+  });
+
+  group('isSeerrRequestVisible', () {
+    test('hidden when Seerr is missing, the kind is unsupported, or permission is absent', () {
+      final tvOnly = _seerrSourceWithPermissions(SeerrPermission.requestTv);
+
+      expect(
+        isSeerrRequestVisible(
+          seerrSource: null,
+          kind: MediaKind.movie,
+          mediaVersions: null,
+          seasonNumber: null,
+          leafCount: null,
+        ),
+        isFalse,
+      );
+      expect(
+        isSeerrRequestVisible(
+          seerrSource: tvOnly,
+          kind: MediaKind.episode,
+          mediaVersions: null,
+          seasonNumber: null,
+          leafCount: null,
+        ),
+        isFalse,
+      );
+      expect(
+        isSeerrRequestVisible(
+          seerrSource: tvOnly,
+          kind: MediaKind.movie,
+          mediaVersions: null,
+          seasonNumber: null,
+          leafCount: null,
+        ),
+        isFalse,
+      );
+    });
+
+    test('movies gated on having no known file; shows always offered', () {
+      final source = _seerrSourceWithPermissions(SeerrPermission.request);
+
+      expect(
+        isSeerrRequestVisible(
+          seerrSource: source,
+          kind: MediaKind.movie,
+          mediaVersions: null,
+          seasonNumber: null,
+          leafCount: null,
+        ),
+        isTrue,
+      );
+      expect(
+        isSeerrRequestVisible(
+          seerrSource: source,
+          kind: MediaKind.movie,
+          mediaVersions: const [MediaVersion(id: 'v1')],
+          seasonNumber: null,
+          leafCount: null,
+        ),
+        isFalse,
+      );
+      expect(
+        isSeerrRequestVisible(
+          seerrSource: source,
+          kind: MediaKind.show,
+          mediaVersions: null,
+          seasonNumber: null,
+          leafCount: 12,
+        ),
+        isTrue,
+      );
+    });
+
+    test('seasons offered only when regular and without episodes', () {
+      final source = _seerrSourceWithPermissions(SeerrPermission.request);
+
+      expect(
+        isSeerrRequestVisible(
+          seerrSource: source,
+          kind: MediaKind.season,
+          mediaVersions: null,
+          seasonNumber: 1,
+          leafCount: 0,
+        ),
+        isTrue,
+      );
+      expect(
+        isSeerrRequestVisible(
+          seerrSource: source,
+          kind: MediaKind.season,
+          mediaVersions: null,
+          seasonNumber: 1,
+          leafCount: 8,
+        ),
+        isFalse,
+      );
+      expect(
+        isSeerrRequestVisible(
+          seerrSource: source,
+          kind: MediaKind.season,
+          mediaVersions: null,
+          seasonNumber: 0,
+          leafCount: 0,
+        ),
+        isFalse,
+      );
     });
   });
 
@@ -465,6 +577,31 @@ class _RecordingMusicPlaybackService extends StubMusicPlaybackService {
     playedContext = playContext;
     this.shuffle = shuffle;
   }
+}
+
+SeerrCatalogSource _seerrSourceWithPermissions(int permissions) {
+  final client = SeerrClient(
+    SeerrSession(
+      baseUrl: 'https://seerr.example.com',
+      method: SeerrAuthMethod.local,
+      identifier: 'a@b.c',
+      secret: 'pw',
+      cookie: 'cookie',
+      userId: 1,
+      permissions: permissions,
+      displayName: 'Alice',
+      instanceLabel: 'Seerr',
+      createdAt: 0,
+    ),
+    onSessionInvalidated: () {},
+    httpClient: MockClient((_) async => http.Response('', 404)),
+  );
+  final source = SeerrCatalogSource(client);
+  addTearDown(() {
+    source.dispose();
+    client.dispose();
+  });
+  return source;
 }
 
 PlexHomeUser _homeUser({required bool admin}) {

@@ -61,6 +61,7 @@ import '../providers/download_provider.dart';
 import '../providers/offline_watch_provider.dart';
 import '../providers/watch_state_store.dart';
 import '../services/catalog/catalog_source.dart';
+import '../services/catalog/seerr_catalog_source.dart';
 import '../utils/app_logger.dart';
 import '../utils/formatters.dart';
 import '../utils/scroll_utils.dart';
@@ -92,6 +93,7 @@ import '../widgets/hub_section.dart';
 import '../widgets/ios_status_bar_tap_scroll_to_top.dart';
 import '../widgets/loading_indicator_box.dart';
 import '../widgets/rasterized_gradient.dart';
+import '../widgets/seerr_request_sheet.dart';
 import '../widgets/tv_browse_rail.dart';
 import '../widgets/tv_spotlight_background.dart';
 
@@ -2547,6 +2549,46 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     );
   }
 
+  /// Empty episode list, upgraded with a Seerr Request action when a
+  /// connected Seerr may request TV. [season] scopes the request to that
+  /// season; null requests the whole show. Falls back to the plain empty
+  /// state offline, without permission, or on Specials (which the request
+  /// sheet drops).
+  Widget _sectionNoEpisodes(BuildContext context, MediaItem? season) {
+    final seerr = widget.isOffline ? null : Provider.of<CatalogSourcesProvider?>(context, listen: false)?.seerrSource;
+    final requestable =
+        seerr != null && seerr.canRequest(MediaKind.show) && !(season != null && isSpecialSeasonNumber(season.index));
+    if (!requestable) return _sectionEmpty(context, t.messages.noEpisodesFoundGeneral);
+    return Padding(
+      padding: const EdgeInsets.all(32),
+      child: Center(
+        child: Column(
+          children: [
+            Text(
+              t.messages.noEpisodesFoundGeneral,
+              style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: Colors.grey),
+            ),
+            const SizedBox(height: 16),
+            FilledButton.tonalIcon(
+              onPressed: () => unawaited(_requestMissingEpisodes(seerr, season)),
+              icon: const AppIcon(Symbols.download_rounded, fill: 1),
+              label: Text(t.seerr.request),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _requestMissingEpisodes(SeerrCatalogSource seerr, MediaItem? season) async {
+    final client = _getMediaClientForMetadata(context);
+    if (client == null) {
+      showErrorSnackBar(context, t.seerr.requestsLoadFailed);
+      return;
+    }
+    await showSeerrRequestSheetForLibraryItem(context, source: seerr, client: client, item: season ?? _metadata);
+  }
+
   /// Retryable error for a section whose fetch threw (vs. [_sectionEmpty], which
   /// means a successful-but-empty result). Reuses the app-wide [ErrorStateWidget]
   /// so the Retry button is dpad-focusable.
@@ -3201,7 +3243,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
                                   else if (_episodes.isNotEmpty)
                                     _buildEpisodesList()
                                   else
-                                    _sectionEmpty(context, t.messages.noEpisodesFoundGeneral),
+                                    _sectionNoEpisodes(context, _seasons[_selectedSeasonIndex]),
                                 ],
                                 const SizedBox(height: 24),
                               ] else if ((isShow && _showEpisodesDirectly) || metadata.isSeason) ...[
@@ -3215,7 +3257,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
                                 else if (_episodes.isNotEmpty)
                                   _buildEpisodesList()
                                 else
-                                  _sectionEmpty(context, t.messages.noEpisodesFoundGeneral),
+                                  _sectionNoEpisodes(context, metadata.isSeason ? metadata : null),
                                 const SizedBox(height: 24),
                               ],
 
