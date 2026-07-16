@@ -15,6 +15,7 @@ import 'package:shared_preferences_platform_interface/shared_preferences_async_p
 import 'package:shared_preferences_platform_interface/types.dart';
 
 import '../test_helpers/prefs.dart';
+import '../test_helpers/watch_together_fakes.dart';
 
 void main() {
   setUp(() {
@@ -64,6 +65,8 @@ void main() {
       expect(hotkey?.key, PhysicalKeyboardKey.keyP);
       expect(hotkey?.modifiers, [HotKeyModifier.control]);
       expect(service.getHotkey('volume_up')?.key, PhysicalKeyboardKey.arrowUp);
+      expect(service.getHotkey('frame_previous')?.key, PhysicalKeyboardKey.comma);
+      expect(service.getHotkey('frame_next')?.key, PhysicalKeyboardKey.period);
     });
 
     test('saves shortcuts in the current HID format', () async {
@@ -290,6 +293,33 @@ void main() {
       ['screenshot', 'subtitles'],
     ]);
     expect(feedbackCount, 1);
+  });
+
+  testWidgets('frame navigation handles direction, queued repeats, and playback guards', (tester) async {
+    final service = await KeyboardShortcutsService.getInstance();
+    addTearDown(service.dispose);
+    final player = _FramePlayer();
+
+    _handleFrameShortcut(service, player, PhysicalKeyboardKey.comma);
+    _handleFrameShortcut(service, player, PhysicalKeyboardKey.period);
+    _handleFrameShortcut(service, player, PhysicalKeyboardKey.period, repeat: true);
+    expect(player.commands, [
+      ['frame-step', '-1', 'seek'],
+    ]);
+
+    player.emitPlaybackRestart();
+    await tester.pump();
+    expect(player.commands, [
+      ['frame-step', '-1', 'seek'],
+      ['frame-step', '2', 'seek'],
+    ]);
+    player.emitPlaybackRestart();
+    await tester.pump();
+
+    for (final blockedPlayer in [_FramePlayer(playing: true), _FramePlayer(seekable: false)]) {
+      _handleFrameShortcut(service, blockedPlayer, PhysicalKeyboardKey.comma);
+      expect(blockedPlayer.commands, isEmpty);
+    }
   });
 
   testWidgets('Alt+Plus triggers zoom in callback', (tester) async {
@@ -722,6 +752,39 @@ void main() {
     expect(VideoFilterManager.videoZoomPropertyForScale(2.0), closeTo(1.0, 0.0001));
     expect(VideoFilterManager.videoZoomPropertyForScale(0.5), closeTo(-1.0, 0.0001));
   });
+}
+
+KeyEventResult _handleFrameShortcut(
+  KeyboardShortcutsService service,
+  Player player,
+  PhysicalKeyboardKey key, {
+  bool repeat = false,
+}) {
+  final logicalKey = key == PhysicalKeyboardKey.comma ? LogicalKeyboardKey.comma : LogicalKeyboardKey.period;
+  final event = repeat
+      ? KeyRepeatEvent(physicalKey: key, logicalKey: logicalKey, timeStamp: Duration.zero)
+      : KeyDownEvent(physicalKey: key, logicalKey: logicalKey, timeStamp: Duration.zero);
+  return service.handleVideoPlayerKeyEvent(
+    event,
+    player,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    canControlPlayback: true,
+    canNavigateMediaItems: true,
+  );
+}
+
+class _FramePlayer extends FakeSyncPlayer {
+  _FramePlayer({super.playing, super.seekable});
+
+  final commands = <List<String>>[];
+
+  @override
+  Future<void> command(List<String> args) async => commands.add(args);
 }
 
 class _FakePlayer implements Player {

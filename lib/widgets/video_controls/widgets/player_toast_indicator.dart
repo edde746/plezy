@@ -1,6 +1,8 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:material_symbols_icons/symbols.dart';
+import 'package:plezy/i18n/strings.g.dart';
 import 'package:plezy/widgets/app_icon.dart';
 
 import 'transport_feedback_indicator.dart';
@@ -74,6 +76,7 @@ class PlayerToastController extends ChangeNotifier {
   ({IconData icon, String text, PlayerToastKind kind, int pulse})? _current;
   Timer? _timer;
   int _pulse = 0;
+  int _frameSteps = 0;
 
   ({IconData icon, String text, PlayerToastKind kind, int pulse})? get current => _current;
 
@@ -98,6 +101,26 @@ class PlayerToastController extends ChangeNotifier {
     Duration duration = const Duration(milliseconds: 1200),
     PlayerToastKind kind = PlayerToastKind.notice,
   }) {
+    _frameSteps = 0;
+    _show(icon, text, duration, kind: kind);
+  }
+
+  void showFrameStep(int step) {
+    _frameSteps = _frameSteps.sign == step.sign ? _frameSteps + step : step;
+    _show(
+      step > 0 ? Symbols.fast_forward_rounded : Symbols.fast_rewind_rounded,
+      t.videoControls.frameCount(n: _frameSteps.abs()),
+      const Duration(milliseconds: 1200),
+      kind: PlayerToastKind.notice,
+    );
+  }
+
+  void _show(
+    IconData icon,
+    String text,
+    Duration duration, {
+    required PlayerToastKind kind,
+  }) {
     _timer?.cancel();
     // Every accepted command carries a fresh pulse. Two identical commands in a
     // row (an explicit pause while already paused, say) produce an identical
@@ -111,6 +134,7 @@ class PlayerToastController extends ChangeNotifier {
     _timer = Timer(effective, () {
       _current = null;
       _timer = null;
+      _frameSteps = 0;
       notifyListeners();
     });
   }
@@ -118,6 +142,7 @@ class PlayerToastController extends ChangeNotifier {
   void hide() {
     _timer?.cancel();
     _timer = null;
+    _frameSteps = 0;
     if (_current != null) {
       _current = null;
       notifyListeners();
