@@ -19,11 +19,36 @@ void MpvAudioPlayerPluginRegisterWithRegistrar(FlutterDesktopPluginRegistrarRef 
       "com.plezy/mpv_audio_player", /*audio_only=*/true);
 }
 
+void MpvClipPreviewPlayerPluginRegisterWithRegistrar(FlutterDesktopPluginRegistrarRef registrar) {
+  mpv::MpvPlayerPlugin::RegisterWithRegistrar(
+      flutter::PluginRegistrarManager::GetInstance()->GetRegistrar<flutter::PluginRegistrarWindows>(registrar),
+      "com.plezy/clip_preview_player", /*audio_only=*/false);
+}
+
 namespace mpv {
 
 namespace {
 constexpr UINT kPlatformTaskMessage = WM_APP + 0x4D50;
 constexpr UINT kAudioPlatformTaskMessage = WM_APP + 0x4D51;
+constexpr UINT kClipPreviewPlatformTaskMessage = WM_APP + 0x4D52;
+
+std::map<std::string, std::string> GetInitialOptions(const flutter::EncodableValue* arguments) {
+  std::map<std::string, std::string> options;
+  const auto* args = std::get_if<flutter::EncodableMap>(arguments);
+  if (!args) return options;
+
+  const auto options_it = args->find(flutter::EncodableValue("initialOptions"));
+  if (options_it == args->end()) return options;
+  const auto* encoded_options = std::get_if<flutter::EncodableMap>(&options_it->second);
+  if (!encoded_options) return options;
+
+  for (const auto& [key, value] : *encoded_options) {
+    const auto* name = std::get_if<std::string>(&key);
+    const auto* option_value = std::get_if<std::string>(&value);
+    if (name && option_value) options[*name] = *option_value;
+  }
+  return options;
+}
 }  // namespace
 
 void MpvPlayerPlugin::RegisterWithRegistrar(
@@ -37,7 +62,10 @@ MpvPlayerPlugin::MpvPlayerPlugin(
     : registrar_(registrar),
       platform_thread_id_(::GetCurrentThreadId()),
       audio_only_(audio_only),
-      platform_task_message_(audio_only ? kAudioPlatformTaskMessage : kPlatformTaskMessage) {
+      platform_task_message_(
+          audio_only ? kAudioPlatformTaskMessage
+                     : (channel_name == "com.plezy/clip_preview_player" ? kClipPreviewPlatformTaskMessage
+                                                                        : kPlatformTaskMessage)) {
   // Create method channel.
   method_channel_ = std::make_unique<flutter::MethodChannel<flutter::EncodableValue>>(
       registrar->messenger(), channel_name, &flutter::StandardMethodCodec::GetInstance());
@@ -181,7 +209,7 @@ void MpvPlayerPlugin::HandleMethodCall(
     HWND view = audio_only_ ? nullptr : GetChildWindow();
 
     player_ = std::make_unique<MpvPlayer>(audio_only_);
-    bool success = player_->Initialize(view);
+    bool success = player_->Initialize(view, GetInitialOptions(method_call.arguments()));
 
     if (success) {
       // Set up event callback.

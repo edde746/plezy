@@ -1,3 +1,5 @@
+import 'dart:async' show unawaited;
+
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:flutter/services.dart';
@@ -85,6 +87,7 @@ class TrackChapterControls extends StatelessWidget {
   VoidCallback? get onToggleFullscreen => trackControlsState.onToggleFullscreen;
   VoidCallback? get onToggleAlwaysOnTop => trackControlsState.onToggleAlwaysOnTop;
   Function(int)? get onSwitchVersion => trackControlsState.onSwitchVersion;
+  Future<void> Function()? get onClipRequested => trackControlsState.onClipRequested;
   VoidCallback? get onLoadSeekTimes => trackControlsState.onLoadSeekTimes;
   VoidCallback? get onCancelAutoHide => trackControlsState.onCancelAutoHide;
   VoidCallback? get onStartAutoHide => trackControlsState.onStartAutoHide;
@@ -278,6 +281,26 @@ class TrackChapterControls extends StatelessWidget {
           buttonIndex++;
         }
 
+        // Clip button (VOD only, hidden by state for TV/live playback)
+        if (onClipRequested != null) {
+          final currentIndex = buttonIndex;
+          buttons.add(
+            _buildTrackButton(
+              buttonIndex: currentIndex,
+              icon: Symbols.content_cut_rounded,
+              tooltip: 'Clip',
+              semanticLabel: 'Clip',
+              isMobile: isMobile,
+              isDesktop: isDesktop,
+              onPressed: () {
+                onCancelAutoHide?.call();
+                unawaited(onClipRequested!().whenComplete(() => onStartAutoHide?.call()));
+              },
+            ),
+          );
+          buttonIndex++;
+        }
+
         // Chapters button (hidden on mobile when content strip is available)
         if (chapters.isNotEmpty && !hideChaptersAndQueue) {
           final currentIndex = buttonIndex;
@@ -444,6 +467,7 @@ class TrackChapterControls extends StatelessWidget {
   int _getButtonCount(bool isMobile, bool isDesktop) {
     int count = 1; // Settings button always shown
     count++; // Audio & subtitles button always shown
+    if (onClipRequested != null) count++;
     if (chapters.isNotEmpty && !hideChaptersAndQueue) count++;
     if (showQueueButton && onQueueItemSelected != null && !hideChaptersAndQueue) count++;
     if (onTogglePIPMode != null) count++;

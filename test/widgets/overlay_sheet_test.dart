@@ -94,6 +94,65 @@ void main() {
     expect(sheetSize.width, 700);
   });
 
+  testWidgets('onCloseStart fires immediately for closeAdaptive, barrier, and system back', (tester) async {
+    var closeStarts = 0;
+
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: ThemeData(platform: TargetPlatform.android),
+        home: OverlaySheetHost(
+          canPop: false,
+          child: Scaffold(
+            body: Builder(
+              builder: (context) => Center(
+                child: ElevatedButton(
+                  onPressed: () {
+                    OverlaySheetController.of(context).show<void>(
+                      onCloseStart: () => closeStarts++,
+                      builder: (sheetContext) => SizedBox(
+                        height: 120,
+                        child: Center(
+                          child: ElevatedButton(
+                            onPressed: () => OverlaySheetController.closeAdaptive(sheetContext),
+                            child: const Text('Close Sheet'),
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                  child: const Text('Open'),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    Future<void> openSheet() async {
+      await tester.tap(find.text('Open'));
+      await tester.pumpAndSettle();
+      expect(find.text('Close Sheet'), findsOneWidget);
+    }
+
+    await openSheet();
+    await tester.tap(find.text('Close Sheet'));
+    await tester.pump();
+    expect(closeStarts, 1);
+    await tester.pumpAndSettle();
+
+    await openSheet();
+    await tester.tapAt(const Offset(10, 10));
+    await tester.pump();
+    expect(closeStarts, 2);
+    await tester.pumpAndSettle();
+
+    await openSheet();
+    await tester.binding.handlePopRoute();
+    await tester.pump();
+    expect(closeStarts, 3);
+  });
+
   testWidgets('pointer-opened sheet claims focus and handles Back before the screen', (tester) async {
     final screenFocusNode = FocusNode(debugLabel: 'Screen');
     addTearDown(screenFocusNode.dispose);

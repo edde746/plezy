@@ -58,6 +58,10 @@ static void my_application_activate(GApplication* application) {
       fl_plugin_registry_get_registrar_for_plugin(FL_PLUGIN_REGISTRY(self->flutter_view), "MpvAudioPlugin");
   mpv_audio_plugin_register_with_registrar(audio_registrar);
 
+  FlPluginRegistrar* clip_preview_registrar =
+      fl_plugin_registry_get_registrar_for_plugin(FL_PLUGIN_REGISTRY(self->flutter_view), "MpvClipPreviewPlugin");
+  mpv_clip_preview_plugin_register_with_registrar(clip_preview_registrar);
+
   gtk_widget_show(GTK_WIDGET(window));
   gtk_widget_grab_focus(GTK_WIDGET(self->flutter_view));
 }

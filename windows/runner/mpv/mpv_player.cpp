@@ -129,7 +129,7 @@ MpvPlayer::MpvPlayer(bool audio_only) : audio_only_(audio_only) {}
 
 MpvPlayer::~MpvPlayer() { Dispose(); }
 
-bool MpvPlayer::Initialize(HWND view) {
+bool MpvPlayer::Initialize(HWND view, const std::map<std::string, std::string>& initial_options) {
   if (mpv_) {
     return true;  // Already initialized.
   }
@@ -203,6 +203,10 @@ bool MpvPlayer::Initialize(HWND view) {
 
   // Default to warn-level logging; Dart side can raise to "v" if debug logging is enabled.
   mpv_request_log_messages(mpv_, "warn");
+
+  for (const auto& [name, value] : initial_options) {
+    mpv_set_option_string(mpv_, name.c_str(), value.c_str());
+  }
 
   // Initialize mpv.
   int err = mpv_initialize(mpv_);

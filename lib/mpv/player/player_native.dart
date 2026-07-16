@@ -13,19 +13,34 @@ import 'player_base.dart';
 /// MPV-backed player for platforms where AetherEngine is not the native route.
 class PlayerNative extends PlayerBase {
   /// Video player on the default mpv channels/core.
-  PlayerNative()
-    : methodChannel = const MethodChannel('com.plezy/mpv_player'),
-      eventChannel = const EventChannel('com.plezy/mpv_player/events'),
-      audioOnly = false;
+  PlayerNative() : this._(channelBase: 'com.plezy/mpv_player', audioOnly: false, logName: 'MPV');
 
   /// Audio-only player on the dedicated music channels/core (see
   /// [Player.audio]). Skips every video concern: no render layer
   /// ([setVisible] no-ops via [audioOnly]), no subtitle plumbing, no
   /// display-mode handling.
-  PlayerNative.audio()
-    : methodChannel = const MethodChannel('com.plezy/mpv_audio_player'),
-      eventChannel = const EventChannel('com.plezy/mpv_audio_player/events'),
-      audioOnly = true;
+  PlayerNative.audio() : this._(channelBase: 'com.plezy/mpv_audio_player', audioOnly: true, logName: 'MPV-audio');
+
+  /// Dedicated clip-preview player on its own native core/channel pair.
+  PlayerNative.preview() : this._(channelBase: 'com.plezy/clip_preview_player', audioOnly: false, logName: 'MPV-clip');
+
+  /// Clip encoder that sequentially reuses the dedicated preview channel.
+  PlayerNative.clipEncoder(Map<String, String> initialOptions)
+    : this._(
+        channelBase: 'com.plezy/clip_preview_player',
+        audioOnly: false,
+        logName: 'MPV-clip-export',
+        initialOptions: initialOptions,
+      );
+
+  PlayerNative._({
+    required String channelBase,
+    required this.audioOnly,
+    required String logName,
+    this.initialOptions = const {},
+  }) : methodChannel = MethodChannel(channelBase),
+       eventChannel = EventChannel('$channelBase/events'),
+       _logPrefix = logName;
 
   int? _textureIdValue;
   String _dvConversionMode = 'auto';
@@ -55,14 +70,19 @@ class PlayerNative extends PlayerBase {
   /// Whether this instance drives the audio-only core.
   final bool audioOnly;
 
+  /// Options that mpv must receive before initialization, such as encoding output.
+  final Map<String, String> initialOptions;
+
   @override
   final MethodChannel methodChannel;
 
   @override
   final EventChannel eventChannel;
 
+  final String _logPrefix;
+
   @override
-  String get logPrefix => audioOnly ? 'MPV-audio' : 'MPV';
+  String get logPrefix => _logPrefix;
 
   @override
   String get playerType => 'mpv';
@@ -183,7 +203,9 @@ class PlayerNative extends PlayerBase {
 
   Future<void> _doInitialize() async {
     try {
-      final result = await invoke<Object>('initialize');
+      final result = await invoke<Object>('initialize', {
+        if (initialOptions.isNotEmpty) 'initialOptions': initialOptions,
+      });
       final bool ok;
       if (result is int) {
         // Linux: initialize returns the texture ID
@@ -355,6 +377,12 @@ class PlayerNative extends PlayerBase {
     await command(['stop']);
     setSeekable(false);
     if (!audioOnly) await invoke('setVisible', {'visible': false});
+  }
+
+  @override
+  Future<bool> setVisible(bool visible, {bool restoreOnWindowVisible = false}) async {
+    if (initialOptions.containsKey('o')) return true;
+    return super.setVisible(visible, restoreOnWindowVisible: restoreOnWindowVisible);
   }
 
   @override

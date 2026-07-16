@@ -103,6 +103,8 @@ bool FlutterWindow::OnCreate() {
   MpvPlayerPluginRegisterWithRegistrar(flutter_controller_->engine()->GetRegistrarForPlugin("MpvPlayerPlugin"));
   MpvAudioPlayerPluginRegisterWithRegistrar(
       flutter_controller_->engine()->GetRegistrarForPlugin("MpvAudioPlayerPlugin"));
+  MpvClipPreviewPlayerPluginRegisterWithRegistrar(
+      flutter_controller_->engine()->GetRegistrarForPlugin("MpvClipPreviewPlayerPlugin"));
   OutputDebugStringA("FlutterWindow: MpvPlayerPlugin registered\n");
 
   RegisterWindowChannel();

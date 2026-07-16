@@ -10,6 +10,7 @@ class MpvPlayerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler, MpvPluginS
   var eventSink: FlutterEventSink?
   private weak var registrar: FlutterPluginRegistrar?
   var nameToId: [String: Int] = [:]
+  private let overlayMode: Bool
 
   // MpvPluginShared conformance
   var coreBase: MpvPlayerCoreBase? { playerCore }
@@ -24,33 +25,63 @@ class MpvPlayerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler, MpvPluginS
   private var autoPipEnabled = false
   private var enteredPipViaAuto = false
 
+  init(
+    overlayMode: Bool = false
+  ) {
+    self.overlayMode = overlayMode
+    super.init()
+  }
+
   // MARK: - FlutterPlugin Registration
 
   static func register(with registrar: FlutterPluginRegistrar) {
+    registerInstance(
+      with: registrar,
+      channelBase: "com.plezy/mpv_player",
+      overlayMode: false,
+      pipEnabled: true
+    )
+  }
+
+  static func registerClipPreview(with registrar: FlutterPluginRegistrar) {
+    registerInstance(
+      with: registrar,
+      channelBase: "com.plezy/clip_preview_player",
+      overlayMode: true,
+      pipEnabled: false
+    )
+  }
+
+  private static func registerInstance(
+    with registrar: FlutterPluginRegistrar,
+    channelBase: String,
+    overlayMode: Bool,
+    pipEnabled: Bool
+  ) {
     // Method channel for commands
     let methodChannel = FlutterMethodChannel(
-      name: "com.plezy/mpv_player",
+      name: channelBase,
       binaryMessenger: registrar.messenger
     )
 
     // Event channel for state updates
     let eventChannel = FlutterEventChannel(
-      name: "com.plezy/mpv_player/events",
+      name: "\(channelBase)/events",
       binaryMessenger: registrar.messenger
     )
 
-    let pipChannel = FlutterMethodChannel(
-      name: "com.plezy/pip",
-      binaryMessenger: registrar.messenger
-    )
+    let pipChannel =
+      pipEnabled
+      ? FlutterMethodChannel(name: "com.plezy/pip", binaryMessenger: registrar.messenger)
+      : nil
 
-    let instance = MpvPlayerPlugin()
+    let instance = MpvPlayerPlugin(overlayMode: overlayMode)
     instance.registrar = registrar
     instance.pipChannel = pipChannel
 
     registrar.addMethodCallDelegate(instance, channel: methodChannel)
     eventChannel.setStreamHandler(instance)
-    pipChannel.setMethodCallHandler(instance.handlePipCall)
+    pipChannel?.setMethodCallHandler(instance.handlePipCall)
 
     print("[MpvPlayerPlugin] Registered with Flutter")
   }
@@ -76,7 +107,7 @@ class MpvPlayerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler, MpvPluginS
   func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
     switch call.method {
     case "initialize":
-      handleInitialize(result: result)
+      handleInitialize(call: call, result: result)
 
     case "dispose":
       handleDispose(result: result)
@@ -101,6 +132,9 @@ class MpvPlayerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler, MpvPluginS
 
     case "updateFrame":
       handleUpdateFrame(result: result)
+
+    case "setVideoRect":
+      handleSetVideoRect(call: call, result: result)
 
     case "setLogLevel":
       handleSetLogLevel(call: call, result: result)
@@ -219,7 +253,37 @@ class MpvPlayerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler, MpvPluginS
 
   // MARK: - Platform-Specific Method Handlers
 
-  private func handleInitialize(result: @escaping FlutterResult) {
+  private func handleSetVideoRect(call: FlutterMethodCall, result: @escaping FlutterResult) {
+    guard let args = call.arguments as? [String: Any],
+      let left = args["left"] as? Int,
+      let top = args["top"] as? Int,
+      let right = args["right"] as? Int,
+      let bottom = args["bottom"] as? Int
+    else {
+      result(FlutterError(code: "INVALID_ARGS", message: "Missing video rect arguments", details: nil))
+      return
+    }
+
+    let dpr = args["devicePixelRatio"] as? Double ?? 1.0
+    DispatchQueue.main.async { [weak self] in
+      guard let self = self else { result(nil); return }
+      guard let (_, contentView, _) = self.findFlutterWindow() else {
+        result(FlutterError(code: "NO_WINDOW", message: "Could not find Flutter window", details: nil))
+        return
+      }
+
+      let x = CGFloat(left) / CGFloat(dpr)
+      let width = CGFloat(right - left) / CGFloat(dpr)
+      let height = CGFloat(bottom - top) / CGFloat(dpr)
+      let y = contentView.bounds.height - (CGFloat(bottom) / CGFloat(dpr))
+      self.playerCore?.updateFrame(CGRect(x: x, y: y, width: width, height: height))
+      result(nil)
+    }
+  }
+
+  private func handleInitialize(call: FlutterMethodCall, result: @escaping FlutterResult) {
+    let args = call.arguments as? [String: Any]
+    let initialOptions = args?["initialOptions"] as? [String: String] ?? [:]
     DispatchQueue.main.async { [weak self] in
       guard let self = self else {
         result(FlutterError(code: "ERROR", message: "Plugin deallocated", details: nil))
@@ -246,7 +310,7 @@ class MpvPlayerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler, MpvPluginS
       let core = MpvPlayerCore()
       core.delegate = self
 
-      guard core.initialize(in: window) else {
+      guard core.initialize(in: window, overlay: self.overlayMode, initialOptions: initialOptions) else {
         print("[MpvPlayerPlugin] Failed to initialize MPV")
         result(
           FlutterError(
