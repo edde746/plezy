@@ -5,6 +5,9 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/media/media_display_criteria.dart';
 import 'package:plezy/services/clip_export_service.dart';
+import 'package:plezy/services/settings_service.dart';
+
+import '../test_helpers/prefs.dart';
 
 ClipSource _source({
   String uri = 'https://example.test/video.mp4',
@@ -197,9 +200,9 @@ void main() {
       expect(ClipExportService.sourceFileExtension(_source(uri: 'https://example.test/video')), 'media');
     });
 
-    test('builds a sanitized PNG snapshot name from the video timestamp', () {
+    test('builds a sanitized PNG screenshot name from the video timestamp', () {
       expect(
-        ClipExportService.buildSnapshotFileName(
+        ClipExportService.buildScreenshotFileName(
           _source(title: 'Show: Name/Bad?', subtitle: 'S01E02'),
           const Duration(minutes: 49, seconds: 40),
         ),
@@ -207,12 +210,12 @@ void main() {
       );
     });
 
-    test('adds a suffix when a snapshot name already exists', () async {
-      final tempDir = await Directory.systemTemp.createTemp('plezy-snapshot-name-test-');
+    test('adds a suffix when a screenshot name already exists', () async {
+      final tempDir = await Directory.systemTemp.createTemp('plezy-screenshot-name-test-');
       addTearDown(() => tempDir.delete(recursive: true));
       await File('${tempDir.path}/Show - S01E02 - 02m00s.png').writeAsBytes([1]);
 
-      final output = await ClipExportService.createSnapshotOutputFile(
+      final output = await ClipExportService.createScreenshotOutputFile(
         _source(),
         const Duration(minutes: 2),
         directoryProvider: () async => tempDir,
@@ -260,6 +263,46 @@ void main() {
         ClipExportService.desktopDirectoryFromEnvironment(operatingSystem: 'linux', environment: const {}),
         isNull,
       );
+    });
+  });
+
+  group('configured capture directories', () {
+    setUp(() {
+      resetSharedPreferencesForTest();
+      SettingsService.resetForTesting();
+    });
+
+    tearDown(() {
+      SettingsService.resetForTesting();
+      resetSharedPreferencesForTest();
+    });
+
+    test('resolves clip and screenshot folders independently', () async {
+      final clipDirectory = await Directory.systemTemp.createTemp('plezy-clip-directory-test-');
+      final screenshotDirectory = await Directory.systemTemp.createTemp('plezy-screenshot-directory-test-');
+      addTearDown(() => clipDirectory.delete(recursive: true));
+      addTearDown(() => screenshotDirectory.delete(recursive: true));
+      final settings = await SettingsService.getInstance();
+      await settings.write(SettingsService.customClipPath, clipDirectory.path);
+      await settings.write(SettingsService.customScreenshotPath, screenshotDirectory.path);
+
+      final resolvedClipDirectory = await ClipExportService.clipDirectory();
+      final resolvedScreenshotDirectory = await ClipExportService.screenshotDirectory();
+      final screenshot = await ClipExportService.createScreenshotOutputFile(_source(), const Duration(minutes: 2));
+
+      expect(resolvedClipDirectory.path, clipDirectory.path);
+      expect(resolvedScreenshotDirectory.path, screenshotDirectory.path);
+      expect(screenshot.parent.path, screenshotDirectory.path);
+    });
+
+    test('validates whether a selected directory is writable', () async {
+      final directory = await Directory.systemTemp.createTemp('plezy-capture-write-test-');
+      addTearDown(() => directory.delete(recursive: true));
+      final blockingFile = File('${directory.path}/not-a-directory');
+      await blockingFile.writeAsString('file');
+
+      expect(await ClipExportService.isDirectoryWritable(directory), isTrue);
+      expect(await ClipExportService.isDirectoryWritable(Directory(blockingFile.path)), isFalse);
     });
   });
 

@@ -9,6 +9,7 @@ import '../media/media_item.dart';
 import '../media/media_kind.dart';
 import '../mpv/models.dart';
 import '../mpv/player/player.dart';
+import 'settings_service.dart';
 
 part 'clip_export/clip_export_models.dart';
 part 'clip_export/clip_export_runners.dart';
@@ -23,7 +24,7 @@ class ClipExportService {
   final ValueNotifier<ClipExportJobState> state = ValueNotifier<ClipExportJobState>(const ClipExportJobState.idle());
 
   ClipExportService({this.exportRunner, Future<Directory> Function()? clipsDirectoryProvider})
-    : _clipsDirectoryProvider = clipsDirectoryProvider ?? defaultClipsDirectory;
+    : _clipsDirectoryProvider = clipsDirectoryProvider ?? clipDirectory;
 
   static ClipSelection defaultSelection({
     required Duration position,
@@ -80,7 +81,20 @@ class ClipExportService {
     return mapped < Duration.zero ? Duration.zero : mapped;
   }
 
-  static Future<Directory> defaultClipsDirectory() async {
+  static Future<Directory> clipDirectory() => _captureDirectory(SettingsService.customClipPath);
+
+  static Future<Directory> screenshotDirectory() => _captureDirectory(SettingsService.customScreenshotPath);
+
+  static Future<Directory> _captureDirectory(NullableStringPref preference) async {
+    final customPath = SettingsService.instanceOrNull?.read(preference);
+    if (customPath != null) {
+      try {
+        return await _ensureDirectory(Directory(customPath));
+      } catch (_) {
+        // Fall back to Desktop if the configured folder is no longer available.
+      }
+    }
+
     final desktopDir = desktopDirectoryFromEnvironment(
       operatingSystem: Platform.operatingSystem,
       environment: Platform.environment,
@@ -95,6 +109,25 @@ class ClipExportService {
 
     final baseDir = await getApplicationSupportDirectory();
     return _ensureDirectory(Directory(path.join(baseDir.path, 'Plezy Clips')));
+  }
+
+  static bool isUsingCustomPath(NullableStringPref preference) =>
+      SettingsService.instanceOrNull?.read(preference) != null;
+
+  static Future<bool> isDirectoryWritable(Directory directory) async {
+    File? probe;
+    try {
+      await _ensureDirectory(directory);
+      probe = File(path.join(directory.path, '.plezy_write_test_${DateTime.now().microsecondsSinceEpoch}'));
+      await probe.writeAsString('test', flush: true);
+      await probe.delete();
+      return true;
+    } catch (_) {
+      try {
+        if (probe != null && await probe.exists()) await probe.delete();
+      } catch (_) {}
+      return false;
+    }
   }
 
   @visibleForTesting
@@ -130,18 +163,18 @@ class ClipExportService {
     return '${base.isEmpty ? 'Clip' : base} - $range.$extension';
   }
 
-  static String buildSnapshotFileName(ClipSource source, Duration position) {
+  static String buildScreenshotFileName(ClipSource source, Duration position) {
     final base = _metadataFileNameBase(source);
     return '${base.isEmpty ? 'Clip' : base} - ${formatClipTimestamp(position)}.png';
   }
 
-  static Future<File> createSnapshotOutputFile(
+  static Future<File> createScreenshotOutputFile(
     ClipSource source,
     Duration position, {
     Future<Directory> Function()? directoryProvider,
   }) async {
-    final directory = await _ensureDirectory(await (directoryProvider ?? defaultClipsDirectory)());
-    return _uniqueOutputFile(directory, buildSnapshotFileName(source, position));
+    final directory = await _ensureDirectory(await (directoryProvider ?? screenshotDirectory)());
+    return _uniqueOutputFile(directory, buildScreenshotFileName(source, position));
   }
 
   static String _metadataFileNameBase(ClipSource source) {

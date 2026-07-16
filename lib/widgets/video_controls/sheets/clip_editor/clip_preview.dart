@@ -143,10 +143,10 @@ class _ClipPreviewPlayerSurface extends StatefulWidget {
 class _ClipPreviewPlayerSurfaceState extends State<_ClipPreviewPlayerSurface> {
   bool _hovering = false;
 
-  Future<void> _saveSnapshot() async {
+  Future<void> _saveScreenshot() async {
     try {
-      final outputPath = await widget.controller.saveSnapshot();
-      if (mounted) showSuccessSnackBar(context, 'Snapshot saved to ${path.basename(outputPath)}');
+      final outputPath = await widget.controller.saveScreenshot();
+      if (mounted) showSuccessSnackBar(context, '${t.videoControls.screenshotSaved}: ${path.basename(outputPath)}');
     } catch (e) {
       if (mounted) showErrorSnackBar(context, e.toString());
     }
@@ -173,12 +173,12 @@ class _ClipPreviewPlayerSurfaceState extends State<_ClipPreviewPlayerSurface> {
               left: 8,
               bottom: 8,
               child: IconButton.filledTonal(
-                key: const ValueKey('clip_preview_snapshot'),
-                tooltip: 'Save snapshot',
-                onPressed: widget.state.firstFrame && !widget.state.snapshotting
-                    ? () => unawaited(_saveSnapshot())
+                key: const ValueKey('clip_preview_screenshot'),
+                tooltip: t.hotkeys.actions.screenshot,
+                onPressed: widget.state.firstFrame && !widget.state.screenshotting
+                    ? () => unawaited(_saveScreenshot())
                     : null,
-                icon: widget.state.snapshotting
+                icon: widget.state.screenshotting
                     ? const SizedBox.square(dimension: 18, child: CircularProgressIndicator(strokeWidth: 2))
                     : const Icon(Symbols.photo_camera_rounded),
               ),

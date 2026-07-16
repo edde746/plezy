@@ -63,7 +63,7 @@ class _FakePreviewBackend implements ClipPreviewPlayerBackend {
   }
 
   @override
-  Future<void> captureFrame(String outputPath) async {}
+  Future<void> captureScreenshot(String outputPath) async {}
 
   @override
   Future<void> hideSurfaceNow() async {}
@@ -137,7 +137,7 @@ void main() {
     expect(tester.getTopLeft(endLabel).dy, greaterThan(tester.getBottomLeft(slider).dy));
     expect(find.byKey(const ValueKey('clip_preview_volume')), findsOneWidget);
     expect(find.byKey(const ValueKey('clip_preview_volume_slider')), findsNothing);
-    expect(find.byKey(const ValueKey('clip_preview_snapshot')), findsNothing);
+    expect(find.byKey(const ValueKey('clip_preview_screenshot')), findsNothing);
 
     final center = tester.getCenter(slider);
     final gesture = await tester.createGesture(kind: PointerDeviceKind.mouse, pointer: 1);
@@ -168,8 +168,8 @@ void main() {
     await gesture.moveTo(tester.getCenter(previewSurface));
     await tester.pump(const Duration(milliseconds: 150));
     expect(find.byKey(const ValueKey('clip_preview_volume_slider')), findsNothing);
-    expect(find.byKey(const ValueKey('clip_preview_snapshot')), findsOneWidget);
-    expect(tester.widget<IconButton>(find.byKey(const ValueKey('clip_preview_snapshot'))).onPressed, isNotNull);
+    expect(find.byKey(const ValueKey('clip_preview_screenshot')), findsOneWidget);
+    expect(tester.widget<IconButton>(find.byKey(const ValueKey('clip_preview_screenshot'))).onPressed, isNotNull);
 
     exportService.state.value = const ClipExportJobState(stage: ClipExportStage.running, progress: 0.42);
     await tester.pump();

@@ -978,7 +978,8 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       }
 
       if (PlatformDetector.isDesktopOS()) {
-        await currentPlayer.setProperty('screenshot-directory', '~/Pictures');
+        final screenshotDirectory = await ClipExportService.screenshotDirectory();
+        await currentPlayer.setProperty('screenshot-directory', screenshotDirectory.path);
       }
 
       final customMpvConfig = SettingsService.parseMpvConfigText(settingsService.read(SettingsService.mpvConfigText));

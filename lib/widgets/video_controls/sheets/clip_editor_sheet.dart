@@ -7,6 +7,7 @@ import 'package:material_symbols_icons/symbols.dart';
 import 'package:path/path.dart' as path;
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../../i18n/strings.g.dart';
 import '../../../mpv/player/video_rect_support.dart';
 import '../../../mpv/video.dart';
 import '../../../services/clip_export_service.dart';

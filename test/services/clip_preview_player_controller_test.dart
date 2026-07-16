@@ -30,7 +30,7 @@ class _FakeClipPreviewBackend implements ClipPreviewPlayerBackend {
   int releasePlayerCount = 0;
   int openCount = 0;
   final List<double> volumes = [];
-  final List<String> snapshots = [];
+  final List<String> screenshots = [];
 
   @override
   Player? get player => null;
@@ -75,8 +75,8 @@ class _FakeClipPreviewBackend implements ClipPreviewPlayerBackend {
   }
 
   @override
-  Future<void> captureFrame(String outputPath) async {
-    snapshots.add(outputPath);
+  Future<void> captureScreenshot(String outputPath) async {
+    screenshots.add(outputPath);
   }
 
   @override
@@ -132,8 +132,8 @@ void main() {
       expect(clamped, (initialVolume: 150, lastNonZeroVolume: 150));
     });
 
-    test('builds a lossless video-only MPV snapshot command', () {
-      expect(PlayerClipPreviewPlayerBackend.buildSnapshotCommand('/tmp/frame.png'), [
+    test('builds a lossless video-only MPV screenshot command', () {
+      expect(PlayerClipPreviewPlayerBackend.buildScreenshotCommand('/tmp/frame.png'), [
         'screenshot-to-file',
         '/tmp/frame.png',
         'video',
@@ -206,23 +206,26 @@ void main() {
       expect(backend.openedMaxVolume, 100);
     });
 
-    test('captures a collision-safe snapshot at the current video timestamp', () async {
-      final tempDir = await Directory.systemTemp.createTemp('plezy-preview-snapshot-test-');
+    test('captures a collision-safe screenshot at the current video timestamp', () async {
+      final tempDir = await Directory.systemTemp.createTemp('plezy-preview-screenshot-test-');
       addTearDown(() => tempDir.delete(recursive: true));
       await File('${tempDir.path}/Show - 02m00s.png').writeAsBytes([1]);
       final backend = _FakeClipPreviewBackend();
-      final controller = ClipPreviewPlayerController(backend: backend, snapshotDirectoryProvider: () async => tempDir);
+      final controller = ClipPreviewPlayerController(
+        backend: backend,
+        screenshotDirectoryProvider: () async => tempDir,
+      );
       addTearDown(controller.dispose);
 
       await controller.open(_source(), const ClipSelection(start: Duration(minutes: 1), end: Duration(minutes: 2)));
       backend.emitFirstFrame();
       await pumpEventQueue();
 
-      final outputPath = await controller.saveSnapshot();
+      final outputPath = await controller.saveScreenshot();
 
       expect(outputPath, '${tempDir.path}/Show - 02m00s (2).png');
-      expect(backend.snapshots, [outputPath]);
-      expect(controller.value.snapshotting, isFalse);
+      expect(backend.screenshots, [outputPath]);
+      expect(controller.value.screenshotting, isFalse);
     });
 
     test('trim changes update the preview range without controlling playback', () async {

@@ -14,7 +14,7 @@ class ClipPreviewPlayerState {
   final bool playing;
   final bool firstFrame;
   final double volume;
-  final bool snapshotting;
+  final bool screenshotting;
   final String? error;
 
   const ClipPreviewPlayerState({
@@ -22,7 +22,7 @@ class ClipPreviewPlayerState {
     this.playing = false,
     this.firstFrame = false,
     this.volume = 0,
-    this.snapshotting = false,
+    this.screenshotting = false,
     this.error,
   });
 
@@ -31,7 +31,7 @@ class ClipPreviewPlayerState {
     bool? playing,
     bool? firstFrame,
     double? volume,
-    bool? snapshotting,
+    bool? screenshotting,
     String? error,
   }) {
     return ClipPreviewPlayerState(
@@ -39,7 +39,7 @@ class ClipPreviewPlayerState {
       playing: playing ?? this.playing,
       firstFrame: firstFrame ?? this.firstFrame,
       volume: volume ?? this.volume,
-      snapshotting: snapshotting ?? this.snapshotting,
+      screenshotting: screenshotting ?? this.screenshotting,
       error: error,
     );
   }
@@ -57,7 +57,7 @@ abstract class ClipPreviewPlayerBackend {
   Future<void> pause();
   Future<void> seek(Duration videoPosition);
   Future<void> setVolume(double volume);
-  Future<void> captureFrame(String outputPath);
+  Future<void> captureScreenshot(String outputPath);
   Future<void> hideSurfaceNow();
   Future<void> releasePlayer();
   Future<void> dispose();
@@ -147,12 +147,12 @@ class PlayerClipPreviewPlayerBackend implements ClipPreviewPlayerBackend {
   }
 
   @override
-  Future<void> captureFrame(String outputPath) async {
-    await _player?.command(buildSnapshotCommand(outputPath));
+  Future<void> captureScreenshot(String outputPath) async {
+    await _player?.command(buildScreenshotCommand(outputPath));
   }
 
   @visibleForTesting
-  static List<String> buildSnapshotCommand(String outputPath) => ['screenshot-to-file', outputPath, 'video'];
+  static List<String> buildScreenshotCommand(String outputPath) => ['screenshot-to-file', outputPath, 'video'];
 
   Future<void> _hideSurface({required bool pause}) async {
     final player = _player;
@@ -199,7 +199,7 @@ class PlayerClipPreviewPlayerBackend implements ClipPreviewPlayerBackend {
 class ClipPreviewPlayerController extends ValueNotifier<ClipPreviewPlayerState> {
   final ClipPreviewPlayerBackend _backend;
   final double maxVolume;
-  final Future<Directory> Function()? snapshotDirectoryProvider;
+  final Future<Directory> Function()? screenshotDirectoryProvider;
   late final StreamSubscription<Duration> _positionSubscription;
   late final StreamSubscription<bool> _playingSubscription;
   late final StreamSubscription<void> _firstFrameSubscription;
@@ -215,7 +215,7 @@ class ClipPreviewPlayerController extends ValueNotifier<ClipPreviewPlayerState> 
     double initialVolume = 0,
     double lastNonZeroVolume = 100,
     this.maxVolume = 100,
-    this.snapshotDirectoryProvider,
+    this.screenshotDirectoryProvider,
   }) : assert(maxVolume >= 0),
        _backend = backend ?? PlayerClipPreviewPlayerBackend(),
        super(ClipPreviewPlayerState(volume: initialVolume.clamp(0.0, maxVolume).toDouble())) {
@@ -323,26 +323,26 @@ class ClipPreviewPlayerController extends ValueNotifier<ClipPreviewPlayerState> 
 
   Future<void> toggleMute() => setVolume(value.volume > 0 ? 0 : _lastNonZeroVolume);
 
-  Future<String> saveSnapshot() async {
+  Future<String> saveScreenshot() async {
     final source = _source;
     if (!_opened || source == null || !value.firstFrame) {
-      throw const ClipExportException('The clip preview must finish loading before taking a snapshot.');
+      throw const ClipExportException('The clip preview must finish loading before taking a screenshot.');
     }
-    if (value.snapshotting) {
-      throw const ClipExportException('A snapshot is already being saved.');
+    if (value.screenshotting) {
+      throw const ClipExportException('A screenshot is already being saved.');
     }
 
-    value = value.copyWith(snapshotting: true, error: value.error);
+    value = value.copyWith(screenshotting: true, error: value.error);
     try {
-      final outputFile = await ClipExportService.createSnapshotOutputFile(
+      final outputFile = await ClipExportService.createScreenshotOutputFile(
         source,
         value.position,
-        directoryProvider: snapshotDirectoryProvider,
+        directoryProvider: screenshotDirectoryProvider,
       );
-      await _backend.captureFrame(outputFile.path);
+      await _backend.captureScreenshot(outputFile.path);
       return outputFile.path;
     } finally {
-      value = value.copyWith(snapshotting: false, error: value.error);
+      value = value.copyWith(screenshotting: false, error: value.error);
     }
   }
 
