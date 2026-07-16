@@ -15,6 +15,7 @@ import '../../../services/clip_preview_player_controller.dart';
 import '../../../services/file_picker_service.dart';
 import '../../../services/scrub_preview_source.dart';
 import '../../../utils/snackbar_helper.dart';
+import '../../../widgets/app_icon.dart';
 import '../../../widgets/expressive_button_group.dart';
 import '../../../widgets/overlay_sheet.dart';
 import '../widgets/scrub_frame_view.dart';
@@ -306,7 +307,7 @@ class _ClipEditorSheetState extends State<ClipEditorSheet> {
                                 Expanded(
                                   child: OutlinedButton.icon(
                                     onPressed: () => unawaited(_openSavedFolder()),
-                                    icon: const Icon(Symbols.folder_open_rounded),
+                                    icon: const AppIcon(Symbols.folder_open_rounded),
                                     label: Text(t.videoControls.clip.openFolder),
                                   ),
                                 ),
@@ -314,7 +315,7 @@ class _ClipEditorSheetState extends State<ClipEditorSheet> {
                                 Expanded(
                                   child: OutlinedButton.icon(
                                     onPressed: () => unawaited(_saveAs()),
-                                    icon: const Icon(Symbols.save_as_rounded),
+                                    icon: const AppIcon(Symbols.save_as_rounded),
                                     label: Text(t.videoControls.clip.saveAs),
                                   ),
                                 ),
@@ -339,7 +340,7 @@ class _ClipEditorSheetState extends State<ClipEditorSheet> {
                                           dimension: 18,
                                           child: CircularProgressIndicator(strokeWidth: 2),
                                         )
-                                      : const Icon(Symbols.save_rounded),
+                                      : const AppIcon(Symbols.save_rounded),
                                   label: Text(isExporting ? _exportProgressLabel(exportState) : t.common.save),
                                 ),
                               ),

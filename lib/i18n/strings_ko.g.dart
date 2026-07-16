@@ -370,6 +370,16 @@ class _TranslationsSettingsKo extends TranslationsSettingsEn {
 	@override String get downloadLocationReset => '다운로드 위치가 기본값으로 재설정 되었습니다';
 	@override String get downloadLocationInvalid => '선택한 폴더에 쓰기 권한이 없습니다';
 	@override String get downloadLocationSelectError => '폴더 선택 실패';
+	@override String get mediaCapture => '미디어 캡처';
+	@override String get clips => '클립';
+	@override String get screenshots => '스크린샷';
+	@override String captureLocationTitle({required Object title}) => '${title} 위치';
+	@override String get clipLocationDescription => '클립이 저장되는 위치를 선택하세요.';
+	@override String get screenshotLocationDescription => '스크린샷이 저장되는 위치를 선택하세요.';
+	@override String get clipLocationChanged => '클립 위치가 변경됨';
+	@override String get screenshotLocationChanged => '스크린샷 위치가 변경되었습니다.';
+	@override String get clipLocationReset => '클립 위치가 데스크탑으로 재설정됨';
+	@override String get screenshotLocationReset => '스크린샷 위치가 데스크톱으로 재설정됨';
 	@override String get downloadOnWifiOnly => 'WiFi 연결 시에만 다운로드';
 	@override String get downloadOnWifiOnlyDescription => '셀룰러 데이터 사용 시 다운로드 불가';
 	@override String get autoRemoveWatchedDownloads => '시청한 다운로드 자동 삭제';
@@ -668,6 +678,7 @@ class _TranslationsVideoControlsKo extends TranslationsVideoControlsEn {
 	@override String get pipActive => '화면 속 화면으로 재생 중';
 	@override String get pipFailed => '화면 속 화면 모드를 시작할 수 없습니다';
 	@override String get screenshotSaved => '스크린샷 저장됨';
+	@override late final _TranslationsVideoControlsClipKo clip = _TranslationsVideoControlsClipKo._(_root);
 	@override String zoomPercent({required Object percent}) => '확대/축소 ${percent}%';
 	@override late final _TranslationsVideoControlsPipErrorsKo pipErrors = _TranslationsVideoControlsPipErrorsKo._(_root);
 	@override String get chapters => '챕터';
@@ -1823,6 +1834,50 @@ class _TranslationsHotkeysActionsKo extends TranslationsHotkeysActionsEn {
 	@override String get screenshot => '스크린샷 찍기';
 }
 
+// Path: videoControls.clip
+class _TranslationsVideoControlsClipKo extends TranslationsVideoControlsClipEn {
+	_TranslationsVideoControlsClipKo._(TranslationsKo root) : this._root = root, super.internal(root);
+
+	final TranslationsKo _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => '클립';
+	@override String get vodOnly => '주문형 비디오 재생에 클립을 사용할 수 있습니다.';
+	@override String get sourceUnavailable => '이 재생 세션에는 클립 소스를 사용할 수 없습니다.';
+	@override String get playAtLeastOneSecond => '클리핑하기 최소 1초 전에 재생하세요.';
+	@override String get startBeforeBeginning => '클립 시작은 비디오 시작 이전일 수 없습니다.';
+	@override String get endAfterStart => '클립 끝은 시작보다 뒤에 있어야 합니다.';
+	@override String get minimumDuration => '클립의 길이는 1초 이상이어야 합니다.';
+	@override String get endPastVideo => '클립 끝이 동영상 끝을 지났습니다.';
+	@override String get exportCanceled => '클립 내보내기가 취소되었습니다.';
+	@override String get cacheUnavailable => '원본 내보내기를 위해 선택한 범위를 완전히 캐시할 수 없습니다. 더 짧은 클립을 사용해 보거나 저장하기 전에 미리보기를 한 번 재생해 보세요.';
+	@override String get sourceCopyNoEncoder => '소스 복사본 내보내기에서는 인코더를 사용하지 않습니다.';
+	@override String get encodingDesktopOnly => 'H.264 및 HEVC 클립 인코딩은 현재 macOS 및 Windows에서 사용할 수 있습니다.';
+	@override String get hdrRequiresSource => 'HDR 내보내기에는 직접 재생 HDR10 또는 HLG 호환 소스가 필요합니다.';
+	@override String get transcodeStartUnavailable => '이 클립은 활성 트랜스코딩된 스트림보다 먼저 시작됩니다. 이전에 찾아 클리핑을 다시 열거나 원본 품질로 전환하세요.';
+	@override String get previewRequired => '클립 미리보기는 저장되기 전에 로드를 완료해야 합니다.';
+	@override String get h264Failed => '이 소스는 H.264 SDR MP4로 인코딩할 수 없습니다.';
+	@override String get hevcSdrFailed => '이 소스는 HEVC SDR MP4로 인코딩할 수 없습니다.';
+	@override String get hevcHdrFailed => '이 소스는 HEVC HDR MP4로 인코딩할 수 없습니다.';
+	@override String get originalFailed => '이 소스를 mpv 캐시에서 복사할 수 없습니다.';
+	@override String get previewUnavailable => '이 빌드에서는 클립 미리보기 재생을 사용할 수 없습니다.';
+	@override String get previewFailed => '클립 미리보기 재생에 실패했습니다.';
+	@override String get previewLoadingScreenshot => '스크린샷을 찍기 전에 클립 미리보기 로드가 완료되어야 합니다.';
+	@override String get screenshotInProgress => '스크린샷이 이미 저장되고 있습니다.';
+	@override String get saveAsDialog => '클립을 다른 이름으로 저장';
+	@override String savedTo({required Object fileName}) => '${fileName}에 저장되었습니다.';
+	@override String get openFolder => '폴더 열기';
+	@override String get saveAs => '다른 이름으로 저장';
+	@override String get cancelExport => '내보내기 취소';
+	@override String get saving => '절약...';
+	@override String savingProgress({required Object percent}) => '${percent}% 저장 중';
+	@override String get mutePreview => '미리보기 음소거';
+	@override String get unmutePreview => '미리보기 음소거 해제';
+	@override String get formatHevcSdr => 'HEVC SDR';
+	@override String get formatH264Sdr => 'H.264 SDR';
+	@override String get formatHevcHdr => 'HEVC HDR';
+}
+
 // Path: videoControls.pipErrors
 class _TranslationsVideoControlsPipErrorsKo extends TranslationsVideoControlsPipErrorsEn {
 	_TranslationsVideoControlsPipErrorsKo._(TranslationsKo root) : this._root = root, super.internal(root);
@@ -2348,6 +2403,16 @@ extension on TranslationsKo {
 			'settings.downloadLocationReset' => '다운로드 위치가 기본값으로 재설정 되었습니다',
 			'settings.downloadLocationInvalid' => '선택한 폴더에 쓰기 권한이 없습니다',
 			'settings.downloadLocationSelectError' => '폴더 선택 실패',
+			'settings.mediaCapture' => '미디어 캡처',
+			'settings.clips' => '클립',
+			'settings.screenshots' => '스크린샷',
+			'settings.captureLocationTitle' => ({required Object title}) => '${title} 위치',
+			'settings.clipLocationDescription' => '클립이 저장되는 위치를 선택하세요.',
+			'settings.screenshotLocationDescription' => '스크린샷이 저장되는 위치를 선택하세요.',
+			'settings.clipLocationChanged' => '클립 위치가 변경됨',
+			'settings.screenshotLocationChanged' => '스크린샷 위치가 변경되었습니다.',
+			'settings.clipLocationReset' => '클립 위치가 데스크탑으로 재설정됨',
+			'settings.screenshotLocationReset' => '스크린샷 위치가 데스크톱으로 재설정됨',
 			'settings.downloadOnWifiOnly' => 'WiFi 연결 시에만 다운로드',
 			'settings.downloadOnWifiOnlyDescription' => '셀룰러 데이터 사용 시 다운로드 불가',
 			'settings.autoRemoveWatchedDownloads' => '시청한 다운로드 자동 삭제',
@@ -2598,6 +2663,43 @@ extension on TranslationsKo {
 			'videoControls.pipActive' => '화면 속 화면으로 재생 중',
 			'videoControls.pipFailed' => '화면 속 화면 모드를 시작할 수 없습니다',
 			'videoControls.screenshotSaved' => '스크린샷 저장됨',
+			'videoControls.clip.title' => '클립',
+			'videoControls.clip.vodOnly' => '주문형 비디오 재생에 클립을 사용할 수 있습니다.',
+			'videoControls.clip.sourceUnavailable' => '이 재생 세션에는 클립 소스를 사용할 수 없습니다.',
+			'videoControls.clip.playAtLeastOneSecond' => '클리핑하기 최소 1초 전에 재생하세요.',
+			'videoControls.clip.startBeforeBeginning' => '클립 시작은 비디오 시작 이전일 수 없습니다.',
+			'videoControls.clip.endAfterStart' => '클립 끝은 시작보다 뒤에 있어야 합니다.',
+			'videoControls.clip.minimumDuration' => '클립의 길이는 1초 이상이어야 합니다.',
+			'videoControls.clip.endPastVideo' => '클립 끝이 동영상 끝을 지났습니다.',
+			'videoControls.clip.exportCanceled' => '클립 내보내기가 취소되었습니다.',
+			'videoControls.clip.cacheUnavailable' => '원본 내보내기를 위해 선택한 범위를 완전히 캐시할 수 없습니다. 더 짧은 클립을 사용해 보거나 저장하기 전에 미리보기를 한 번 재생해 보세요.',
+			'videoControls.clip.sourceCopyNoEncoder' => '소스 복사본 내보내기에서는 인코더를 사용하지 않습니다.',
+			'videoControls.clip.encodingDesktopOnly' => 'H.264 및 HEVC 클립 인코딩은 현재 macOS 및 Windows에서 사용할 수 있습니다.',
+			'videoControls.clip.hdrRequiresSource' => 'HDR 내보내기에는 직접 재생 HDR10 또는 HLG 호환 소스가 필요합니다.',
+			'videoControls.clip.transcodeStartUnavailable' => '이 클립은 활성 트랜스코딩된 스트림보다 먼저 시작됩니다. 이전에 찾아 클리핑을 다시 열거나 원본 품질로 전환하세요.',
+			'videoControls.clip.previewRequired' => '클립 미리보기는 저장되기 전에 로드를 완료해야 합니다.',
+			'videoControls.clip.h264Failed' => '이 소스는 H.264 SDR MP4로 인코딩할 수 없습니다.',
+			'videoControls.clip.hevcSdrFailed' => '이 소스는 HEVC SDR MP4로 인코딩할 수 없습니다.',
+			'videoControls.clip.hevcHdrFailed' => '이 소스는 HEVC HDR MP4로 인코딩할 수 없습니다.',
+			'videoControls.clip.originalFailed' => '이 소스를 mpv 캐시에서 복사할 수 없습니다.',
+			'videoControls.clip.previewUnavailable' => '이 빌드에서는 클립 미리보기 재생을 사용할 수 없습니다.',
+			'videoControls.clip.previewFailed' => '클립 미리보기 재생에 실패했습니다.',
+			'videoControls.clip.previewLoadingScreenshot' => '스크린샷을 찍기 전에 클립 미리보기 로드가 완료되어야 합니다.',
+			'videoControls.clip.screenshotInProgress' => '스크린샷이 이미 저장되고 있습니다.',
+			_ => null,
+		} ?? switch (path) {
+			'videoControls.clip.saveAsDialog' => '클립을 다른 이름으로 저장',
+			'videoControls.clip.savedTo' => ({required Object fileName}) => '${fileName}에 저장되었습니다.',
+			'videoControls.clip.openFolder' => '폴더 열기',
+			'videoControls.clip.saveAs' => '다른 이름으로 저장',
+			'videoControls.clip.cancelExport' => '내보내기 취소',
+			'videoControls.clip.saving' => '절약...',
+			'videoControls.clip.savingProgress' => ({required Object percent}) => '${percent}% 저장 중',
+			'videoControls.clip.mutePreview' => '미리보기 음소거',
+			'videoControls.clip.unmutePreview' => '미리보기 음소거 해제',
+			'videoControls.clip.formatHevcSdr' => 'HEVC SDR',
+			'videoControls.clip.formatH264Sdr' => 'H.264 SDR',
+			'videoControls.clip.formatHevcHdr' => 'HEVC HDR',
 			'videoControls.zoomPercent' => ({required Object percent}) => '확대/축소 ${percent}%',
 			'videoControls.pipErrors.androidVersion' => 'Android 8.0 이상이 필요합니다',
 			'videoControls.pipErrors.iosVersion' => 'iOS 15.0 이상이 필요합니다',
@@ -2631,8 +2733,6 @@ extension on TranslationsKo {
 			'messages.streamInterrupted' => '스트림이 중단되었습니다. 재생을 누르거나 탐색하여 다시 시도하세요.',
 			'messages.liveStreamInterrupted' => '라이브 스트림이 중단되었습니다. 재생을 눌러 다시 시도하세요.',
 			'messages.fileInfoNotAvailable' => '파일 정보가 없습니다',
-			_ => null,
-		} ?? switch (path) {
 			'messages.errorLoadingFileInfo' => ({required Object error}) => '파일 정보 로딩 중 오류: ${error}',
 			'messages.errorLoadingSeries' => '시리즈 로딩 중 오류',
 			'messages.musicNotSupported' => '음악 재생 미지원',
@@ -3100,6 +3200,8 @@ extension on TranslationsKo {
 			'watchTogether.hostBadge' => '호스트',
 			'watchTogether.youAreHost' => '당신은 호스트 입니다',
 			'watchTogether.watchingWithOthers' => '다른 사람과 함께 시청 중',
+			_ => null,
+		} ?? switch (path) {
 			'watchTogether.endSession' => '세션 종료',
 			'watchTogether.leaveSession' => '세션 탈퇴',
 			'watchTogether.endSessionQuestion' => '세션을 종료 하시겠습니까?',
@@ -3145,8 +3247,6 @@ extension on TranslationsKo {
 			'downloads.manage' => '관리',
 			'downloads.tvShows' => 'TV 프로그램',
 			'downloads.movies' => '영화',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.music' => '음악',
 			'downloads.tracksQueued' => ({required Object count}) => '${count}곡 다운로드 대기 중',
 			'downloads.noDownloads' => '다운로드 없음',

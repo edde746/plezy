@@ -370,6 +370,16 @@ class _TranslationsSettingsZh extends TranslationsSettingsEn {
 	@override String get downloadLocationReset => '下载位置已重置为默认';
 	@override String get downloadLocationInvalid => '所选文件夹不可写入';
 	@override String get downloadLocationSelectError => '选择文件夹失败';
+	@override String get mediaCapture => '媒体捕捉';
+	@override String get clips => '剪辑';
+	@override String get screenshots => '截图';
+	@override String captureLocationTitle({required Object title}) => '${title} 位置';
+	@override String get clipLocationDescription => '选择剪辑的保存位置。';
+	@override String get screenshotLocationDescription => '选择屏幕截图的保存位置。';
+	@override String get clipLocationChanged => '剪辑位置已更改';
+	@override String get screenshotLocationChanged => '截图位置已更改';
+	@override String get clipLocationReset => '剪辑位置重置为桌面';
+	@override String get screenshotLocationReset => '屏幕截图位置重置为桌面';
 	@override String get downloadOnWifiOnly => '仅在 WiFi 时下载';
 	@override String get downloadOnWifiOnlyDescription => '使用蜂窝数据时禁止下载';
 	@override String get autoRemoveWatchedDownloads => '自动移除已观看的下载';
@@ -668,6 +678,7 @@ class _TranslationsVideoControlsZh extends TranslationsVideoControlsEn {
 	@override String get pipActive => '正在画中画模式中播放';
 	@override String get pipFailed => '画中画启动失败';
 	@override String get screenshotSaved => '截图已保存';
+	@override late final _TranslationsVideoControlsClipZh clip = _TranslationsVideoControlsClipZh._(_root);
 	@override String zoomPercent({required Object percent}) => '缩放 ${percent}%';
 	@override late final _TranslationsVideoControlsPipErrorsZh pipErrors = _TranslationsVideoControlsPipErrorsZh._(_root);
 	@override String get chapters => '章节';
@@ -1823,6 +1834,50 @@ class _TranslationsHotkeysActionsZh extends TranslationsHotkeysActionsEn {
 	@override String get screenshot => '截图';
 }
 
+// Path: videoControls.clip
+class _TranslationsVideoControlsClipZh extends TranslationsVideoControlsClipEn {
+	_TranslationsVideoControlsClipZh._(TranslationsZh root) : this._root = root, super.internal(root);
+
+	final TranslationsZh _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => '夹子';
+	@override String get vodOnly => '剪辑可用于点播视频播放。';
+	@override String get sourceUnavailable => '剪辑源不可用于此播放会话。';
+	@override String get playAtLeastOneSecond => '剪辑前至少播放 1 秒。';
+	@override String get startBeforeBeginning => '剪辑开始不能早于视频开始。';
+	@override String get endAfterStart => '剪辑结束必须在开始之后。';
+	@override String get minimumDuration => '剪辑的长度必须至少为 1 秒。';
+	@override String get endPastVideo => '剪辑结束超出了视频的结尾。';
+	@override String get exportCanceled => '剪辑导出已取消。';
+	@override String get cacheUnavailable => '无法为原始导出完全缓存所选范围。尝试使用较短的剪辑或在保存之前播放预览一次。';
+	@override String get sourceCopyNoEncoder => '源副本导出不使用编码器。';
+	@override String get encodingDesktopOnly => 'H.264 和 HEVC 剪辑编码目前可在 macOS 和 Windows 上使用。';
+	@override String get hdrRequiresSource => 'HDR 导出需要直接播放 HDR10 或 HLG 兼容的源。';
+	@override String get transcodeStartUnavailable => '该剪辑在活动转码流之前开始。提前查找并重新剪辑，或切换到原始质量。';
+	@override String get previewRequired => '剪辑预览必须完成加载才能保存。';
+	@override String get h264Failed => '该源无法编码为 H.264 SDR MP4。';
+	@override String get hevcSdrFailed => '该源无法编码为 HEVC SDR MP4。';
+	@override String get hevcHdrFailed => '该源无法编码为 HEVC HDR MP4。';
+	@override String get originalFailed => '无法从 mpv 缓存复制此源。';
+	@override String get previewUnavailable => '此版本中不支持剪辑预览播放。';
+	@override String get previewFailed => '剪辑预览播放失败。';
+	@override String get previewLoadingScreenshot => '剪辑预览必须在截图之前完成加载。';
+	@override String get screenshotInProgress => '屏幕截图已被保存。';
+	@override String get saveAsDialog => '将剪辑另存为';
+	@override String savedTo({required Object fileName}) => '保存到 ${fileName}';
+	@override String get openFolder => '打开文件夹';
+	@override String get saveAs => '另存为';
+	@override String get cancelExport => '取消导出';
+	@override String get saving => '保存...';
+	@override String savingProgress({required Object percent}) => '节省 ${percent}%';
+	@override String get mutePreview => '预览静音';
+	@override String get unmutePreview => '取消静音预览';
+	@override String get formatHevcSdr => 'HEVC特别提款权';
+	@override String get formatH264Sdr => 'H.264特别提款权';
+	@override String get formatHevcHdr => 'HEVC HDR';
+}
+
 // Path: videoControls.pipErrors
 class _TranslationsVideoControlsPipErrorsZh extends TranslationsVideoControlsPipErrorsEn {
 	_TranslationsVideoControlsPipErrorsZh._(TranslationsZh root) : this._root = root, super.internal(root);
@@ -2348,6 +2403,16 @@ extension on TranslationsZh {
 			'settings.downloadLocationReset' => '下载位置已重置为默认',
 			'settings.downloadLocationInvalid' => '所选文件夹不可写入',
 			'settings.downloadLocationSelectError' => '选择文件夹失败',
+			'settings.mediaCapture' => '媒体捕捉',
+			'settings.clips' => '剪辑',
+			'settings.screenshots' => '截图',
+			'settings.captureLocationTitle' => ({required Object title}) => '${title} 位置',
+			'settings.clipLocationDescription' => '选择剪辑的保存位置。',
+			'settings.screenshotLocationDescription' => '选择屏幕截图的保存位置。',
+			'settings.clipLocationChanged' => '剪辑位置已更改',
+			'settings.screenshotLocationChanged' => '截图位置已更改',
+			'settings.clipLocationReset' => '剪辑位置重置为桌面',
+			'settings.screenshotLocationReset' => '屏幕截图位置重置为桌面',
 			'settings.downloadOnWifiOnly' => '仅在 WiFi 时下载',
 			'settings.downloadOnWifiOnlyDescription' => '使用蜂窝数据时禁止下载',
 			'settings.autoRemoveWatchedDownloads' => '自动移除已观看的下载',
@@ -2598,6 +2663,43 @@ extension on TranslationsZh {
 			'videoControls.pipActive' => '正在画中画模式中播放',
 			'videoControls.pipFailed' => '画中画启动失败',
 			'videoControls.screenshotSaved' => '截图已保存',
+			'videoControls.clip.title' => '夹子',
+			'videoControls.clip.vodOnly' => '剪辑可用于点播视频播放。',
+			'videoControls.clip.sourceUnavailable' => '剪辑源不可用于此播放会话。',
+			'videoControls.clip.playAtLeastOneSecond' => '剪辑前至少播放 1 秒。',
+			'videoControls.clip.startBeforeBeginning' => '剪辑开始不能早于视频开始。',
+			'videoControls.clip.endAfterStart' => '剪辑结束必须在开始之后。',
+			'videoControls.clip.minimumDuration' => '剪辑的长度必须至少为 1 秒。',
+			'videoControls.clip.endPastVideo' => '剪辑结束超出了视频的结尾。',
+			'videoControls.clip.exportCanceled' => '剪辑导出已取消。',
+			'videoControls.clip.cacheUnavailable' => '无法为原始导出完全缓存所选范围。尝试使用较短的剪辑或在保存之前播放预览一次。',
+			'videoControls.clip.sourceCopyNoEncoder' => '源副本导出不使用编码器。',
+			'videoControls.clip.encodingDesktopOnly' => 'H.264 和 HEVC 剪辑编码目前可在 macOS 和 Windows 上使用。',
+			'videoControls.clip.hdrRequiresSource' => 'HDR 导出需要直接播放 HDR10 或 HLG 兼容的源。',
+			'videoControls.clip.transcodeStartUnavailable' => '该剪辑在活动转码流之前开始。提前查找并重新剪辑，或切换到原始质量。',
+			'videoControls.clip.previewRequired' => '剪辑预览必须完成加载才能保存。',
+			'videoControls.clip.h264Failed' => '该源无法编码为 H.264 SDR MP4。',
+			'videoControls.clip.hevcSdrFailed' => '该源无法编码为 HEVC SDR MP4。',
+			'videoControls.clip.hevcHdrFailed' => '该源无法编码为 HEVC HDR MP4。',
+			'videoControls.clip.originalFailed' => '无法从 mpv 缓存复制此源。',
+			'videoControls.clip.previewUnavailable' => '此版本中不支持剪辑预览播放。',
+			'videoControls.clip.previewFailed' => '剪辑预览播放失败。',
+			'videoControls.clip.previewLoadingScreenshot' => '剪辑预览必须在截图之前完成加载。',
+			'videoControls.clip.screenshotInProgress' => '屏幕截图已被保存。',
+			_ => null,
+		} ?? switch (path) {
+			'videoControls.clip.saveAsDialog' => '将剪辑另存为',
+			'videoControls.clip.savedTo' => ({required Object fileName}) => '保存到 ${fileName}',
+			'videoControls.clip.openFolder' => '打开文件夹',
+			'videoControls.clip.saveAs' => '另存为',
+			'videoControls.clip.cancelExport' => '取消导出',
+			'videoControls.clip.saving' => '保存...',
+			'videoControls.clip.savingProgress' => ({required Object percent}) => '节省 ${percent}%',
+			'videoControls.clip.mutePreview' => '预览静音',
+			'videoControls.clip.unmutePreview' => '取消静音预览',
+			'videoControls.clip.formatHevcSdr' => 'HEVC特别提款权',
+			'videoControls.clip.formatH264Sdr' => 'H.264特别提款权',
+			'videoControls.clip.formatHevcHdr' => 'HEVC HDR',
 			'videoControls.zoomPercent' => ({required Object percent}) => '缩放 ${percent}%',
 			'videoControls.pipErrors.androidVersion' => '需要 Android 8.0 或更高版本',
 			'videoControls.pipErrors.iosVersion' => '需要 iOS 15.0 或更高版本',
@@ -2631,8 +2733,6 @@ extension on TranslationsZh {
 			'messages.streamInterrupted' => '视频流已中断。按播放键或拖动进度条重试。',
 			'messages.liveStreamInterrupted' => '直播流已中断。按播放键重试。',
 			'messages.fileInfoNotAvailable' => '文件信息不可用',
-			_ => null,
-		} ?? switch (path) {
 			'messages.errorLoadingFileInfo' => ({required Object error}) => '加载文件信息时出错: ${error}',
 			'messages.errorLoadingSeries' => '加载系列时出错',
 			'messages.musicNotSupported' => '尚不支持播放音乐',
@@ -3100,6 +3200,8 @@ extension on TranslationsZh {
 			'watchTogether.hostBadge' => '主持人',
 			'watchTogether.youAreHost' => '你是主持人',
 			'watchTogether.watchingWithOthers' => '与他人一起观看',
+			_ => null,
+		} ?? switch (path) {
 			'watchTogether.endSession' => '结束会话',
 			'watchTogether.leaveSession' => '离开会话',
 			'watchTogether.endSessionQuestion' => '结束会话？',
@@ -3145,8 +3247,6 @@ extension on TranslationsZh {
 			'downloads.manage' => '管理',
 			'downloads.tvShows' => '电视剧',
 			'downloads.movies' => '电影',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.music' => '音乐',
 			'downloads.tracksQueued' => ({required Object count}) => '${count} 首曲目已加入下载队列',
 			'downloads.noDownloads' => '暂无下载',

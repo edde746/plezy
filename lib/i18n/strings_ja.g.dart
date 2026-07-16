@@ -370,6 +370,16 @@ class _TranslationsSettingsJa extends TranslationsSettingsEn {
 	@override String get downloadLocationReset => 'ダウンロード場所をデフォルトにリセットしました';
 	@override String get downloadLocationInvalid => '選択したフォルダは書き込みできません';
 	@override String get downloadLocationSelectError => 'フォルダの選択に失敗しました';
+	@override String get mediaCapture => 'メディアキャプチャ';
+	@override String get clips => 'クリップ';
+	@override String get screenshots => 'スクリーンショット';
+	@override String captureLocationTitle({required Object title}) => '${title} 場所';
+	@override String get clipLocationDescription => 'クリップの保存場所を選択します。';
+	@override String get screenshotLocationDescription => 'スクリーンショットの保存場所を選択します。';
+	@override String get clipLocationChanged => 'クリップの位置が変更されました';
+	@override String get screenshotLocationChanged => 'スクリーンショットの場所が変更されました';
+	@override String get clipLocationReset => 'クリップの場所をデスクトップにリセット';
+	@override String get screenshotLocationReset => 'スクリーンショットの場所がデスクトップにリセットされました';
 	@override String get downloadOnWifiOnly => 'WiFiのみでダウンロード';
 	@override String get downloadOnWifiOnlyDescription => 'モバイルデータ通信時のダウンロードを防止';
 	@override String get autoRemoveWatchedDownloads => '視聴済みダウンロードの自動削除';
@@ -668,6 +678,7 @@ class _TranslationsVideoControlsJa extends TranslationsVideoControlsEn {
 	@override String get pipActive => 'ピクチャーインピクチャーで再生中';
 	@override String get pipFailed => 'ピクチャーインピクチャーの開始に失敗しました';
 	@override String get screenshotSaved => 'スクリーンショットを保存しました';
+	@override late final _TranslationsVideoControlsClipJa clip = _TranslationsVideoControlsClipJa._(_root);
 	@override String zoomPercent({required Object percent}) => 'ズーム ${percent}%';
 	@override late final _TranslationsVideoControlsPipErrorsJa pipErrors = _TranslationsVideoControlsPipErrorsJa._(_root);
 	@override String get chapters => 'チャプター';
@@ -1823,6 +1834,50 @@ class _TranslationsHotkeysActionsJa extends TranslationsHotkeysActionsEn {
 	@override String get screenshot => 'スクリーンショットを撮る';
 }
 
+// Path: videoControls.clip
+class _TranslationsVideoControlsClipJa extends TranslationsVideoControlsClipEn {
+	_TranslationsVideoControlsClipJa._(TranslationsJa root) : this._root = root, super.internal(root);
+
+	final TranslationsJa _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'クリップ';
+	@override String get vodOnly => 'クリップはオンデマンドのビデオ再生に利用できます。';
+	@override String get sourceUnavailable => 'クリップ ソースはこの再生セッションでは使用できません。';
+	@override String get playAtLeastOneSecond => 'クリップする前に少なくとも 1 秒間再生してください。';
+	@override String get startBeforeBeginning => 'クリップの開始をビデオの先頭より前にすることはできません。';
+	@override String get endAfterStart => 'クリップの終了は開始より後でなければなりません。';
+	@override String get minimumDuration => 'クリップの長さは少なくとも 1 秒である必要があります。';
+	@override String get endPastVideo => 'クリップの終わりがビデオの終わりを超えています。';
+	@override String get exportCanceled => 'クリップのエクスポートがキャンセルされました。';
+	@override String get cacheUnavailable => '選択した範囲を元のエクスポート用に完全にキャッシュできませんでした。短いクリップを試すか、保存する前にプレビューを一度再生してください。';
+	@override String get sourceCopyNoEncoder => 'ソースコピーのエクスポートではエンコーダーは使用されません。';
+	@override String get encodingDesktopOnly => 'H.264 および HEVC クリップ エンコーディングは現在、macOS と Windows で利用できます。';
+	@override String get hdrRequiresSource => 'HDR エクスポートには、直接再生 HDR10 または HLG 互換のソースが必要です。';
+	@override String get transcodeStartUnavailable => 'このクリップは、アクティブなトランスコードされたストリームの前から始まります。早めにシークしてクリッピングを再開するか、元の品質に切り替えてください。';
+	@override String get previewRequired => 'クリップ プレビューは、保存する前に読み込みを完了する必要があります。';
+	@override String get h264Failed => 'このソースは H.264 SDR MP4 としてエンコードできませんでした。';
+	@override String get hevcSdrFailed => 'このソースは HEVC SDR MP4 としてエンコードできませんでした。';
+	@override String get hevcHdrFailed => 'このソースは HEVC HDR MP4 としてエンコードできませんでした。';
+	@override String get originalFailed => 'このソースは mpv キャッシュからコピーできませんでした。';
+	@override String get previewUnavailable => 'このビルドではクリップ プレビュー再生は利用できません。';
+	@override String get previewFailed => 'クリップのプレビュー再生に失敗しました。';
+	@override String get previewLoadingScreenshot => 'スクリーンショットを撮る前に、クリップ プレビューの読み込みを完了する必要があります。';
+	@override String get screenshotInProgress => 'スクリーンショットはすでに保存されています。';
+	@override String get saveAsDialog => 'クリップに名前を付けて保存';
+	@override String savedTo({required Object fileName}) => '${fileName}に保存されました';
+	@override String get openFolder => 'フォルダーを開く';
+	@override String get saveAs => '名前を付けて保存';
+	@override String get cancelExport => 'エクスポートのキャンセル';
+	@override String get saving => '保存中...';
+	@override String savingProgress({required Object percent}) => '${percent}% を節約';
+	@override String get mutePreview => 'プレビューをミュートする';
+	@override String get unmutePreview => 'プレビューのミュートを解除する';
+	@override String get formatHevcSdr => 'HEVC SDR';
+	@override String get formatH264Sdr => 'H.264 SDR';
+	@override String get formatHevcHdr => 'HEVC HDR';
+}
+
 // Path: videoControls.pipErrors
 class _TranslationsVideoControlsPipErrorsJa extends TranslationsVideoControlsPipErrorsEn {
 	_TranslationsVideoControlsPipErrorsJa._(TranslationsJa root) : this._root = root, super.internal(root);
@@ -2348,6 +2403,16 @@ extension on TranslationsJa {
 			'settings.downloadLocationReset' => 'ダウンロード場所をデフォルトにリセットしました',
 			'settings.downloadLocationInvalid' => '選択したフォルダは書き込みできません',
 			'settings.downloadLocationSelectError' => 'フォルダの選択に失敗しました',
+			'settings.mediaCapture' => 'メディアキャプチャ',
+			'settings.clips' => 'クリップ',
+			'settings.screenshots' => 'スクリーンショット',
+			'settings.captureLocationTitle' => ({required Object title}) => '${title} 場所',
+			'settings.clipLocationDescription' => 'クリップの保存場所を選択します。',
+			'settings.screenshotLocationDescription' => 'スクリーンショットの保存場所を選択します。',
+			'settings.clipLocationChanged' => 'クリップの位置が変更されました',
+			'settings.screenshotLocationChanged' => 'スクリーンショットの場所が変更されました',
+			'settings.clipLocationReset' => 'クリップの場所をデスクトップにリセット',
+			'settings.screenshotLocationReset' => 'スクリーンショットの場所がデスクトップにリセットされました',
 			'settings.downloadOnWifiOnly' => 'WiFiのみでダウンロード',
 			'settings.downloadOnWifiOnlyDescription' => 'モバイルデータ通信時のダウンロードを防止',
 			'settings.autoRemoveWatchedDownloads' => '視聴済みダウンロードの自動削除',
@@ -2598,6 +2663,43 @@ extension on TranslationsJa {
 			'videoControls.pipActive' => 'ピクチャーインピクチャーで再生中',
 			'videoControls.pipFailed' => 'ピクチャーインピクチャーの開始に失敗しました',
 			'videoControls.screenshotSaved' => 'スクリーンショットを保存しました',
+			'videoControls.clip.title' => 'クリップ',
+			'videoControls.clip.vodOnly' => 'クリップはオンデマンドのビデオ再生に利用できます。',
+			'videoControls.clip.sourceUnavailable' => 'クリップ ソースはこの再生セッションでは使用できません。',
+			'videoControls.clip.playAtLeastOneSecond' => 'クリップする前に少なくとも 1 秒間再生してください。',
+			'videoControls.clip.startBeforeBeginning' => 'クリップの開始をビデオの先頭より前にすることはできません。',
+			'videoControls.clip.endAfterStart' => 'クリップの終了は開始より後でなければなりません。',
+			'videoControls.clip.minimumDuration' => 'クリップの長さは少なくとも 1 秒である必要があります。',
+			'videoControls.clip.endPastVideo' => 'クリップの終わりがビデオの終わりを超えています。',
+			'videoControls.clip.exportCanceled' => 'クリップのエクスポートがキャンセルされました。',
+			'videoControls.clip.cacheUnavailable' => '選択した範囲を元のエクスポート用に完全にキャッシュできませんでした。短いクリップを試すか、保存する前にプレビューを一度再生してください。',
+			'videoControls.clip.sourceCopyNoEncoder' => 'ソースコピーのエクスポートではエンコーダーは使用されません。',
+			'videoControls.clip.encodingDesktopOnly' => 'H.264 および HEVC クリップ エンコーディングは現在、macOS と Windows で利用できます。',
+			'videoControls.clip.hdrRequiresSource' => 'HDR エクスポートには、直接再生 HDR10 または HLG 互換のソースが必要です。',
+			'videoControls.clip.transcodeStartUnavailable' => 'このクリップは、アクティブなトランスコードされたストリームの前から始まります。早めにシークしてクリッピングを再開するか、元の品質に切り替えてください。',
+			'videoControls.clip.previewRequired' => 'クリップ プレビューは、保存する前に読み込みを完了する必要があります。',
+			'videoControls.clip.h264Failed' => 'このソースは H.264 SDR MP4 としてエンコードできませんでした。',
+			'videoControls.clip.hevcSdrFailed' => 'このソースは HEVC SDR MP4 としてエンコードできませんでした。',
+			'videoControls.clip.hevcHdrFailed' => 'このソースは HEVC HDR MP4 としてエンコードできませんでした。',
+			'videoControls.clip.originalFailed' => 'このソースは mpv キャッシュからコピーできませんでした。',
+			'videoControls.clip.previewUnavailable' => 'このビルドではクリップ プレビュー再生は利用できません。',
+			'videoControls.clip.previewFailed' => 'クリップのプレビュー再生に失敗しました。',
+			'videoControls.clip.previewLoadingScreenshot' => 'スクリーンショットを撮る前に、クリップ プレビューの読み込みを完了する必要があります。',
+			'videoControls.clip.screenshotInProgress' => 'スクリーンショットはすでに保存されています。',
+			_ => null,
+		} ?? switch (path) {
+			'videoControls.clip.saveAsDialog' => 'クリップに名前を付けて保存',
+			'videoControls.clip.savedTo' => ({required Object fileName}) => '${fileName}に保存されました',
+			'videoControls.clip.openFolder' => 'フォルダーを開く',
+			'videoControls.clip.saveAs' => '名前を付けて保存',
+			'videoControls.clip.cancelExport' => 'エクスポートのキャンセル',
+			'videoControls.clip.saving' => '保存中...',
+			'videoControls.clip.savingProgress' => ({required Object percent}) => '${percent}% を節約',
+			'videoControls.clip.mutePreview' => 'プレビューをミュートする',
+			'videoControls.clip.unmutePreview' => 'プレビューのミュートを解除する',
+			'videoControls.clip.formatHevcSdr' => 'HEVC SDR',
+			'videoControls.clip.formatH264Sdr' => 'H.264 SDR',
+			'videoControls.clip.formatHevcHdr' => 'HEVC HDR',
 			'videoControls.zoomPercent' => ({required Object percent}) => 'ズーム ${percent}%',
 			'videoControls.pipErrors.androidVersion' => 'Android 8.0以降が必要です',
 			'videoControls.pipErrors.iosVersion' => 'iOS 15.0以降が必要です',
@@ -2631,8 +2733,6 @@ extension on TranslationsJa {
 			'messages.streamInterrupted' => 'ストリームが中断されました。再生を押すかシークして再試行してください。',
 			'messages.liveStreamInterrupted' => 'ライブストリームが中断されました。再生を押して再試行してください。',
 			'messages.fileInfoNotAvailable' => 'ファイル情報が利用できません',
-			_ => null,
-		} ?? switch (path) {
 			'messages.errorLoadingFileInfo' => ({required Object error}) => 'ファイル情報の読み込みエラー: ${error}',
 			'messages.errorLoadingSeries' => 'シリーズの読み込みエラー',
 			'messages.musicNotSupported' => '音楽の再生はまだサポートされていません',
@@ -3100,6 +3200,8 @@ extension on TranslationsJa {
 			'watchTogether.hostBadge' => 'HOST',
 			'watchTogether.youAreHost' => 'あなたはホストです',
 			'watchTogether.watchingWithOthers' => '他の人と視聴中',
+			_ => null,
+		} ?? switch (path) {
 			'watchTogether.endSession' => 'セッションを終了',
 			'watchTogether.leaveSession' => 'セッションを退出',
 			'watchTogether.endSessionQuestion' => 'セッションを終了しますか？',
@@ -3145,8 +3247,6 @@ extension on TranslationsJa {
 			'downloads.manage' => '管理',
 			'downloads.tvShows' => 'テレビ番組',
 			'downloads.movies' => '映画',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.music' => '音楽',
 			'downloads.tracksQueued' => ({required Object count}) => '${count} 曲をダウンロード待機中',
 			'downloads.noDownloads' => 'ダウンロードなし',

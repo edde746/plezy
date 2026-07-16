@@ -64,7 +64,7 @@ class _ClipPreviewPlayer extends StatelessWidget {
                         visualDensity: VisualDensity.compact,
                         tooltip: state.playing ? t.common.pause : t.common.play,
                         onPressed: () => state.playing ? unawaited(controller.pause()) : unawaited(controller.play()),
-                        icon: Icon(state.playing ? Symbols.pause_rounded : Symbols.play_arrow_rounded),
+                        icon: AppIcon(state.playing ? Symbols.pause_rounded : Symbols.play_arrow_rounded),
                       ),
                       _ClipPreviewVolumeControl(
                         controller: controller,
@@ -180,7 +180,7 @@ class _ClipPreviewPlayerSurfaceState extends State<_ClipPreviewPlayerSurface> {
                     : null,
                 icon: widget.state.screenshotting
                     ? const SizedBox.square(dimension: 18, child: CircularProgressIndicator(strokeWidth: 2))
-                    : const Icon(Symbols.photo_camera_rounded),
+                    : const AppIcon(Symbols.photo_camera_rounded),
               ),
             ),
         ],
@@ -288,7 +288,7 @@ class _ClipPreviewVolumeControlState extends State<_ClipPreviewVolumeControl> {
         visualDensity: VisualDensity.compact,
         tooltip: muted ? t.videoControls.clip.unmutePreview : t.videoControls.clip.mutePreview,
         onPressed: () => unawaited(widget.controller.toggleMute()),
-        icon: Icon(muted ? Symbols.volume_off_rounded : Symbols.volume_up_rounded),
+        icon: AppIcon(muted ? Symbols.volume_off_rounded : Symbols.volume_up_rounded),
       ),
     );
   }
@@ -321,7 +321,7 @@ class _ClipFrameView extends StatelessWidget {
   Widget build(BuildContext context) {
     final frame = this.frame;
     if (frame == null) {
-      return Center(child: Icon(Symbols.image_rounded, color: Theme.of(context).colorScheme.onSurfaceVariant));
+      return Center(child: AppIcon(Symbols.image_rounded, color: Theme.of(context).colorScheme.onSurfaceVariant));
     }
 
     return ScrubFrameView(frame: frame, fit: BoxFit.contain);
