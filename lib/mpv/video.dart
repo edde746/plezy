@@ -25,6 +25,7 @@ class Video extends StatefulWidget {
   final Widget Function(BuildContext context)? controls;
   final Color backgroundColor;
   final ValueListenable<bool>? hasFirstFrame;
+  final Listenable? rectUpdateListenable;
 
   const Video({
     super.key,
@@ -32,6 +33,7 @@ class Video extends StatefulWidget {
     this.controls,
     this.backgroundColor = Colors.black,
     this.hasFirstFrame,
+    this.rectUpdateListenable,
   });
 
   @override
@@ -41,6 +43,8 @@ class Video extends StatefulWidget {
 class _VideoState extends State<Video> {
   Rect? _lastRect;
   bool _hasFirstFrame = false;
+  BuildContext? _videoSurfaceContext;
+  bool _rectUpdateScheduled = false;
   StreamSubscription<void>? _playbackRestartSubscription;
 
   @override
@@ -48,6 +52,7 @@ class _VideoState extends State<Video> {
     super.initState();
     _hasFirstFrame = widget.hasFirstFrame?.value ?? false;
     widget.hasFirstFrame?.addListener(_syncExternalFirstFrame);
+    widget.rectUpdateListenable?.addListener(_scheduleVideoRectUpdate);
     _listenForPlaybackRestart();
   }
 
@@ -59,8 +64,14 @@ class _VideoState extends State<Video> {
       widget.hasFirstFrame?.addListener(_syncExternalFirstFrame);
       _syncExternalFirstFrame();
     }
+    if (oldWidget.rectUpdateListenable != widget.rectUpdateListenable) {
+      oldWidget.rectUpdateListenable?.removeListener(_scheduleVideoRectUpdate);
+      widget.rectUpdateListenable?.addListener(_scheduleVideoRectUpdate);
+      _scheduleVideoRectUpdate();
+    }
     if (oldWidget.player != widget.player) {
       _lastRect = null;
+      _videoSurfaceContext = null;
       _playbackRestartSubscription?.cancel();
       _listenForPlaybackRestart();
       _syncExternalFirstFrame();
@@ -70,6 +81,7 @@ class _VideoState extends State<Video> {
   @override
   void dispose() {
     widget.hasFirstFrame?.removeListener(_syncExternalFirstFrame);
+    widget.rectUpdateListenable?.removeListener(_scheduleVideoRectUpdate);
     _playbackRestartSubscription?.cancel();
     super.dispose();
   }
@@ -111,23 +123,35 @@ class _VideoState extends State<Video> {
   Widget _buildVideoSurface() {
     final textureId = widget.player.textureId;
     if (textureId != null) {
+      _videoSurfaceContext = null;
       return Texture(textureId: textureId);
     }
 
     if (widget.player is VideoRectSupport) {
       return LayoutBuilder(
         builder: (context, constraints) {
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            _updateVideoRect(context, constraints);
-          });
+          _videoSurfaceContext = context;
+          _scheduleVideoRectUpdate();
           return const SizedBox.expand();
         },
       );
     }
+    _videoSurfaceContext = null;
     return const SizedBox.expand();
   }
 
-  void _updateVideoRect(BuildContext context, BoxConstraints _) {
+  void _scheduleVideoRectUpdate() {
+    if (_rectUpdateScheduled) return;
+    _rectUpdateScheduled = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _rectUpdateScheduled = false;
+      if (!mounted) return;
+      final context = _videoSurfaceContext;
+      if (context != null) _updateVideoRect(context);
+    });
+  }
+
+  void _updateVideoRect(BuildContext context) {
     final renderBox = context.findRenderObject() as RenderBox?;
     if (renderBox == null || !renderBox.hasSize) return;
 

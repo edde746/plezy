@@ -156,6 +156,8 @@ class _ClipPreviewPlayerSurfaceState extends State<_ClipPreviewPlayerSurface> {
   Widget build(BuildContext context) {
     final player = widget.controller.player;
     final hasEmbeddedSurface = player != null && (player.textureId != null || player is VideoRectSupport);
+    final rectUpdateListenable =
+        OverlaySheetController.maybeOf(context)?.geometryChanges ?? ModalRoute.of(context)?.animation;
 
     return MouseRegion(
       onEnter: (_) => setState(() => _hovering = true),
@@ -163,7 +165,8 @@ class _ClipPreviewPlayerSurfaceState extends State<_ClipPreviewPlayerSurface> {
       child: Stack(
         fit: StackFit.expand,
         children: [
-          if (hasEmbeddedSurface) Video(player: player, backgroundColor: Colors.transparent),
+          if (hasEmbeddedSurface)
+            Video(player: player, backgroundColor: Colors.transparent, rectUpdateListenable: rectUpdateListenable),
           if (widget.forcePoster || !hasEmbeddedSurface || !widget.state.firstFrame) widget.poster,
           if (_hovering)
             Positioned(

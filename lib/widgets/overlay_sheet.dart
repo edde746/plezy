@@ -69,6 +69,10 @@ class OverlaySheetController {
   /// Whether a sheet is currently showing (including while animating closed).
   bool get isOpen => _state._isOpen;
 
+  /// Notifies when sheet presentation or drag motion can change descendant
+  /// global paint coordinates without triggering a new layout.
+  Listenable get geometryChanges => _state._geometryChanges;
+
   /// Show a sheet with [builder] content. Returns a Future that completes
   /// when the sheet is closed (with an optional result).
   ///
@@ -313,6 +317,7 @@ class _OverlaySheetHostState extends State<OverlaySheetHost> with SingleTickerPr
   late final AnimationController _animationController;
   late final CurvedAnimation _slideCurve;
   late final Animation<double> _barrierAnimation;
+  late final Listenable _geometryChanges;
   late final OverlaySheetController _controller;
 
   final List<_OverlaySheetEntry> _pageStack = [];
@@ -330,7 +335,7 @@ class _OverlaySheetHostState extends State<OverlaySheetHost> with SingleTickerPr
   double? _sheetHorizontalAnchor;
 
   // Drag-to-dismiss state
-  double _dragOffset = 0;
+  final ValueNotifier<double> _dragOffset = ValueNotifier<double>(0);
   bool _isDragging = false;
   final _sheetKey = GlobalKey();
 
@@ -346,6 +351,7 @@ class _OverlaySheetHostState extends State<OverlaySheetHost> with SingleTickerPr
       curve: Curves.easeOutCubic,
       reverseCurve: Curves.easeInCubic,
     );
+    _geometryChanges = Listenable.merge([_slideCurve, _dragOffset]);
 
     _barrierAnimation = Tween<double>(
       begin: 0,
@@ -365,6 +371,7 @@ class _OverlaySheetHostState extends State<OverlaySheetHost> with SingleTickerPr
     // close completion below — release its slot in the global count here.
     if (_isOpen) OverlaySheetController.openSheetCount.value--;
     _sheetFocusScopeNode.dispose();
+    _dragOffset.dispose();
     _slideCurve.dispose();
     _animationController.dispose();
     super.dispose();
@@ -414,7 +421,7 @@ class _OverlaySheetHostState extends State<OverlaySheetHost> with SingleTickerPr
       _explicitBackgroundColor = backgroundColor;
       _alignment = alignment;
       _sheetHorizontalAnchor = horizontalAnchor;
-      _dragOffset = 0;
+      _dragOffset.value = 0;
       _isDragging = false;
     });
     if (!wasOpen) {
@@ -479,7 +486,7 @@ class _OverlaySheetHostState extends State<OverlaySheetHost> with SingleTickerPr
         _isOpen = false;
         _isClosing = false;
         _closeStartNotified = false;
-        _dragOffset = 0;
+        _dragOffset.value = 0;
         _isDragging = false;
         _sheetHorizontalAnchor = null;
       });
@@ -669,11 +676,11 @@ class _OverlaySheetHostState extends State<OverlaySheetHost> with SingleTickerPr
 
   void _checkDismiss(double velocity) {
     final sheetHeight = _getSheetHeight();
-    if (_dragOffset > sheetHeight * 0.25 || velocity > 500) {
+    if (_dragOffset.value > sheetHeight * 0.25 || velocity > 500) {
       _close();
     } else {
       setState(() {
-        _dragOffset = 0;
+        _dragOffset.value = 0;
       });
     }
   }
@@ -711,7 +718,7 @@ class _OverlaySheetHostState extends State<OverlaySheetHost> with SingleTickerPr
             // Android (ClampingScrollPhysics): overscroll fires reliably
             if (notification.overscroll < 0) {
               setState(() {
-                _dragOffset += -notification.overscroll;
+                _dragOffset.value += -notification.overscroll;
               });
               return true;
             }
@@ -719,18 +726,18 @@ class _OverlaySheetHostState extends State<OverlaySheetHost> with SingleTickerPr
             // iOS (BouncingScrollPhysics): pixels go negative when bouncing past top
             if (notification.metrics.pixels < 0) {
               setState(() {
-                _dragOffset = -notification.metrics.pixels;
+                _dragOffset.value = -notification.metrics.pixels;
               });
               return true;
             }
             // If user scrolled back down from overscroll, reset drag offset
-            if (_dragOffset > 0 && notification.metrics.pixels >= 0) {
+            if (_dragOffset.value > 0 && notification.metrics.pixels >= 0) {
               setState(() {
-                _dragOffset = 0;
+                _dragOffset.value = 0;
               });
             }
           } else if (notification is ScrollEndNotification) {
-            if (_dragOffset > 0) {
+            if (_dragOffset.value > 0) {
               _checkDismiss(0);
               return true;
             }
@@ -784,7 +791,7 @@ class _OverlaySheetHostState extends State<OverlaySheetHost> with SingleTickerPr
               return Transform.translate(offset: Offset(0, dy), child: child);
             },
             child: Transform.translate(
-              offset: Offset(0, _dragOffset.clamp(0, double.infinity)),
+              offset: Offset(0, _dragOffset.value.clamp(0, double.infinity)),
               child: SafeArea(
                 left: true,
                 right: true,
@@ -820,12 +827,12 @@ class _OverlaySheetHostState extends State<OverlaySheetHost> with SingleTickerPr
               instance
                 ..onStart = (_) {
                   _isDragging = true;
-                  _dragOffset = 0;
+                  _dragOffset.value = 0;
                 }
                 ..onUpdate = (details) {
                   if (!_isDragging) return;
                   setState(() {
-                    _dragOffset += details.delta.dy;
+                    _dragOffset.value += details.delta.dy;
                   });
                 }
                 ..onEnd = (details) {

@@ -5,6 +5,57 @@ import 'package:plezy/focus/key_event_utils.dart';
 import 'package:plezy/widgets/overlay_sheet.dart';
 
 void main() {
+  testWidgets('geometryChanges notifies during sheet presentation and drag movement', (tester) async {
+    late OverlaySheetController controller;
+    var geometryNotifications = 0;
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: OverlaySheetHost(
+          child: Scaffold(
+            body: Builder(
+              builder: (context) {
+                controller = OverlaySheetController.of(context);
+                return Center(
+                  child: ElevatedButton(
+                    onPressed: () => controller.show<void>(
+                      showDragHandle: true,
+                      builder: (_) => const SizedBox(height: 180, child: Center(child: Text('Moving sheet'))),
+                    ),
+                    child: const Text('Open'),
+                  ),
+                );
+              },
+            ),
+          ),
+        ),
+      ),
+    );
+
+    void onGeometryChanged() => geometryNotifications++;
+    controller.geometryChanges.addListener(onGeometryChanged);
+    addTearDown(() => controller.geometryChanges.removeListener(onGeometryChanged));
+
+    await tester.tap(find.text('Open'));
+    await tester.pump();
+    geometryNotifications = 0;
+    await tester.pump(const Duration(milliseconds: 50));
+
+    expect(geometryNotifications, greaterThan(0));
+
+    await tester.pumpAndSettle();
+    geometryNotifications = 0;
+    final gesture = await tester.startGesture(tester.getCenter(find.text('Moving sheet')));
+    await gesture.moveBy(const Offset(0, 20));
+    await gesture.moveBy(const Offset(0, 10));
+    await tester.pump();
+
+    expect(geometryNotifications, greaterThan(0));
+
+    await gesture.up();
+    await tester.pumpAndSettle();
+  });
+
   testWidgets('scrollable sheet does not attach to parent primary controller', (tester) async {
     final parentController = ScrollController();
     addTearDown(parentController.dispose);
