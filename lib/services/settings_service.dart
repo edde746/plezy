@@ -291,6 +291,8 @@ Map<String, HotKey> _defaultKeyboardHotkeys() => {
   'shader_toggle': const HotKey(key: PhysicalKeyboardKey.keyG),
   'skip_marker': const HotKey(key: PhysicalKeyboardKey.enter),
   'screenshot': const HotKey(key: PhysicalKeyboardKey.keyS, modifiers: [HotKeyModifier.control]),
+  'frame_previous': const HotKey(key: PhysicalKeyboardKey.comma),
+  'frame_next': const HotKey(key: PhysicalKeyboardKey.period),
 };
 
 Map<String, HotKey> _decodeKeyboardHotkeys(dynamic raw) {
