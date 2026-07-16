@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 
+import '../i18n/strings.g.dart';
 import '../mpv/models.dart';
 import '../mpv/player/player.dart';
 import '../mpv/player/video_rect_support.dart';
@@ -268,9 +269,9 @@ class ClipPreviewPlayerController extends ValueNotifier<ClipPreviewPlayerState> 
       }
       await seekToVideoTime(clamped.end);
     } on MissingPluginException {
-      value = value.copyWith(error: 'Clip preview playback is not available in this build.');
+      value = value.copyWith(error: t.videoControls.clip.previewUnavailable);
     } on PlatformException catch (e) {
-      value = value.copyWith(error: e.message ?? 'Clip preview playback failed.');
+      value = value.copyWith(error: e.message ?? t.videoControls.clip.previewFailed);
     } catch (e) {
       value = value.copyWith(error: e.toString());
     }
@@ -326,10 +327,10 @@ class ClipPreviewPlayerController extends ValueNotifier<ClipPreviewPlayerState> 
   Future<String> saveScreenshot() async {
     final source = _source;
     if (!_opened || source == null || !value.firstFrame) {
-      throw const ClipExportException('The clip preview must finish loading before taking a screenshot.');
+      throw ClipExportException(t.videoControls.clip.previewLoadingScreenshot);
     }
     if (value.screenshotting) {
-      throw const ClipExportException('A screenshot is already being saved.');
+      throw ClipExportException(t.videoControls.clip.screenshotInProgress);
     }
 
     value = value.copyWith(screenshotting: true, error: value.error);

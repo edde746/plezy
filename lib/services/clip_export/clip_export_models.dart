@@ -51,16 +51,16 @@ class ClipSelection {
 
   void validate(Duration sourceDuration) {
     if (start < Duration.zero) {
-      throw const ClipExportException('Clip start cannot be before the beginning of the video.');
+      throw ClipExportException(t.videoControls.clip.startBeforeBeginning);
     }
     if (end <= start) {
-      throw const ClipExportException('Clip end must be after the start.');
+      throw ClipExportException(t.videoControls.clip.endAfterStart);
     }
     if (duration < clipMinimumDuration) {
-      throw const ClipExportException('Clips must be at least 1 second long.');
+      throw ClipExportException(t.videoControls.clip.minimumDuration);
     }
     if (sourceDuration > Duration.zero && end > sourceDuration) {
-      throw const ClipExportException('Clip end is past the end of the video.');
+      throw ClipExportException(t.videoControls.clip.endPastVideo);
     }
   }
 }

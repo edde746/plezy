@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/media/media_display_criteria.dart';
+import 'package:plezy/mpv/models.dart';
 import 'package:plezy/services/clip_export_service.dart';
 import 'package:plezy/services/settings_service.dart';
 
@@ -338,6 +339,39 @@ void main() {
       expect(command, ['dump-cache', '60.25', '91.5', '/tmp/clip.mp4']);
     });
 
+    test('requires the entire Original selection to be cached contiguously', () {
+      const start = Duration(seconds: 30);
+      const end = Duration(seconds: 60);
+
+      expect(
+        MpvClipExportRunner.cacheRangesCoverSelection(
+          ranges: const [BufferRange(start: Duration(seconds: 29), end: Duration(seconds: 61))],
+          start: start,
+          end: end,
+        ),
+        isTrue,
+      );
+      expect(
+        MpvClipExportRunner.cacheRangesCoverSelection(
+          ranges: const [BufferRange(start: Duration(seconds: 40), end: Duration(seconds: 61))],
+          start: start,
+          end: end,
+        ),
+        isFalse,
+      );
+      expect(
+        MpvClipExportRunner.cacheRangesCoverSelection(
+          ranges: const [
+            BufferRange(start: Duration(seconds: 29), end: Duration(seconds: 45)),
+            BufferRange(start: Duration(seconds: 50), end: Duration(seconds: 61)),
+          ],
+          start: start,
+          end: end,
+        ),
+        isFalse,
+      );
+    });
+
     test('reports runner progress and completes after a non-empty file is produced', () async {
       final tempDir = await Directory.systemTemp.createTemp('plezy-clip-export-test-');
       addTearDown(() => tempDir.delete(recursive: true));
@@ -384,6 +418,24 @@ void main() {
       await cancellation;
       expect(runner.canceled, isTrue);
       expect(service.state.value.stage, ClipExportStage.canceled);
+    });
+
+    test('dispose cancels an active export without updating disposed state', () async {
+      final tempDir = await Directory.systemTemp.createTemp('plezy-clip-dispose-test-');
+      addTearDown(() => tempDir.delete(recursive: true));
+      final runner = _FakeClipExportRunner();
+      final service = ClipExportService(exportRunner: runner, clipsDirectoryProvider: () async => tempDir);
+
+      final export = service.exportClip(
+        source: _source(),
+        selection: const ClipSelection(start: Duration(seconds: 30), end: Duration(seconds: 60)),
+      );
+      await pumpEventQueue();
+
+      service.dispose();
+
+      await expectLater(export, throwsA(isA<ClipExportException>()));
+      expect(runner.canceled, isTrue);
     });
 
     test('reports a failed Original export when no preview player is available', () async {

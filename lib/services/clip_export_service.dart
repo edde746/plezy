@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:path/path.dart' as path;
 import 'package:path_provider/path_provider.dart';
 
+import '../i18n/strings.g.dart';
 import '../media/media_display_criteria.dart';
 import '../media/media_item.dart';
 import '../media/media_kind.dart';
@@ -20,6 +21,7 @@ class ClipExportService {
 
   ClipExportRunner? _activeRunner;
   bool _cancelRequested = false;
+  bool _disposed = false;
 
   final ValueNotifier<ClipExportJobState> state = ValueNotifier<ClipExportJobState>(const ClipExportJobState.idle());
 
@@ -72,9 +74,7 @@ class ClipExportService {
 
   static Duration sourceStartForPosition(ClipSource source, Duration position) {
     if (source.isTranscoding && position < source.timelineOffset) {
-      throw const ClipExportException(
-        'This clip starts before the active transcoded stream. Seek earlier and re-open clipping, or switch to original quality.',
-      );
+      throw ClipExportException(t.videoControls.clip.transcodeStartUnavailable);
     }
     final offset = source.isTranscoding ? source.timelineOffset : Duration.zero;
     final mapped = position - offset;
@@ -248,7 +248,7 @@ class ClipExportService {
     final sourceEnd = sourceStartForPosition(source, clamped.end);
 
     _cancelRequested = false;
-    state.value = const ClipExportJobState(stage: ClipExportStage.running, progress: 0);
+    _setState(const ClipExportJobState(stage: ClipExportStage.running, progress: 0));
 
     final runner =
         exportRunner ??
@@ -258,31 +258,31 @@ class ClipExportService {
     _activeRunner = runner;
     try {
       if (runner == null) {
-        throw const ClipExportException('Clip preview must finish loading before it can be saved.');
+        throw ClipExportException(t.videoControls.clip.previewRequired);
       }
       await runner.export(start: sourceStart, end: sourceEnd, outputPath: outputFile.path, onProgress: _updateProgress);
       _activeRunner = null;
 
       if (_cancelRequested) {
-        state.value = const ClipExportJobState(stage: ClipExportStage.canceled);
-        throw const ClipExportException('Clip export canceled.');
+        _setState(const ClipExportJobState(stage: ClipExportStage.canceled));
+        throw ClipExportException(t.videoControls.clip.exportCanceled);
       }
       if (!await outputFile.exists() || await outputFile.length() == 0) {
         throw ClipExportException(_failureMessage(selectedFormat));
       }
-      state.value = const ClipExportJobState(stage: ClipExportStage.completed, progress: 1);
+      _setState(const ClipExportJobState(stage: ClipExportStage.completed, progress: 1));
       return outputFile.path;
     } catch (error) {
       _activeRunner = null;
-      if (_cancelRequested || (error is ClipExportException && error.message == 'Clip export canceled.')) {
+      if (_cancelRequested) {
         await _deleteIfExists(outputFile);
-        state.value = const ClipExportJobState(stage: ClipExportStage.canceled);
-        throw const ClipExportException('Clip export canceled.');
+        _setState(const ClipExportJobState(stage: ClipExportStage.canceled));
+        throw ClipExportException(t.videoControls.clip.exportCanceled);
       }
       await _deleteIfExists(outputFile);
       final message = error is ClipExportException ? error.message : _failureMessage(selectedFormat);
       final exception = error is ClipExportException ? error : ClipExportException(message);
-      state.value = const ClipExportJobState(stage: ClipExportStage.failed);
+      _setState(const ClipExportJobState(stage: ClipExportStage.failed));
       throw exception;
     }
   }
@@ -293,12 +293,21 @@ class ClipExportService {
   }
 
   void dispose() {
+    if (_disposed) return;
+    _disposed = true;
+    _cancelRequested = true;
+    unawaited(_activeRunner?.cancel());
     state.dispose();
   }
 
   void _updateProgress(double progress) {
+    if (_disposed) return;
     if (state.value.stage != ClipExportStage.running) return;
-    state.value = ClipExportJobState(stage: ClipExportStage.running, progress: progress.clamp(0.0, 0.99).toDouble());
+    _setState(ClipExportJobState(stage: ClipExportStage.running, progress: progress.clamp(0.0, 0.99).toDouble()));
+  }
+
+  void _setState(ClipExportJobState next) {
+    if (!_disposed) state.value = next;
   }
 
   static Future<Directory> _ensureDirectory(Directory directory) async {
@@ -320,10 +329,10 @@ class ClipExportService {
 
   static String _failureMessage(ClipExportFormat format) {
     return switch (format) {
-      ClipExportFormat.h264Sdr => 'This source could not be encoded as an H.264 SDR MP4.',
-      ClipExportFormat.hevcSdr => 'This source could not be encoded as an HEVC SDR MP4.',
-      ClipExportFormat.hevcHdr => 'This source could not be encoded as an HEVC HDR MP4.',
-      ClipExportFormat.source => 'This source could not be copied from the MPV cache.',
+      ClipExportFormat.h264Sdr => t.videoControls.clip.h264Failed,
+      ClipExportFormat.hevcSdr => t.videoControls.clip.hevcSdrFailed,
+      ClipExportFormat.hevcHdr => t.videoControls.clip.hevcHdrFailed,
+      ClipExportFormat.source => t.videoControls.clip.originalFailed,
     };
   }
 

@@ -10,14 +10,14 @@ extension _VideoPlayerClipMethods on VideoPlayerScreenState {
 
   Future<void> _handleClipRequested(BuildContext sheetContext) async {
     if (!_canClipCurrentPlayback) {
-      showErrorSnackBar(sheetContext, 'Clips are available for on-demand video playback.');
+      showErrorSnackBar(sheetContext, t.videoControls.clip.vodOnly);
       return;
     }
 
     final currentPlayer = player;
     final source = _buildClipSource();
     if (currentPlayer == null || source == null) {
-      showErrorSnackBar(sheetContext, 'Clip source is not available for this playback session.');
+      showErrorSnackBar(sheetContext, t.videoControls.clip.sourceUnavailable);
       return;
     }
 
@@ -26,7 +26,7 @@ extension _VideoPlayerClipMethods on VideoPlayerScreenState {
       duration: source.duration,
     );
     if (selection.duration < clipMinimumDuration) {
-      showErrorSnackBar(sheetContext, 'Play at least 1 second before clipping.');
+      showErrorSnackBar(sheetContext, t.videoControls.clip.playAtLeastOneSecond);
       return;
     }
 

@@ -186,7 +186,7 @@ class _ClipEditorSheetState extends State<ClipEditorSheet> {
     final bytes = await file.readAsBytes();
     final extension = path.extension(savedPath).replaceFirst('.', '');
     await FilePickerService.instance.saveFile(
-      dialogTitle: 'Save Clip As',
+      dialogTitle: t.videoControls.clip.saveAsDialog,
       fileName: path.basename(savedPath),
       bytes: bytes,
       type: FileType.custom,
@@ -224,7 +224,7 @@ class _ClipEditorSheetState extends State<ClipEditorSheet> {
             ),
           ),
           child: BaseVideoControlSheet(
-            title: 'Clip',
+            title: t.videoControls.clip.title,
             icon: Symbols.content_cut_rounded,
             compactHeader: true,
             shrinkWrap: true,
@@ -297,7 +297,7 @@ class _ClipEditorSheetState extends State<ClipEditorSheet> {
                           if (_savedPath != null) ...[
                             const SizedBox(height: 8),
                             Text(
-                              'Saved to ${path.basename(_savedPath!)}',
+                              t.videoControls.clip.savedTo(fileName: path.basename(_savedPath!)),
                               style: Theme.of(context).textTheme.bodyMedium,
                             ),
                             const SizedBox(height: 8),
@@ -307,7 +307,7 @@ class _ClipEditorSheetState extends State<ClipEditorSheet> {
                                   child: OutlinedButton.icon(
                                     onPressed: () => unawaited(_openSavedFolder()),
                                     icon: const Icon(Symbols.folder_open_rounded),
-                                    label: const Text('Open Folder'),
+                                    label: Text(t.videoControls.clip.openFolder),
                                   ),
                                 ),
                                 const SizedBox(width: 8),
@@ -315,7 +315,7 @@ class _ClipEditorSheetState extends State<ClipEditorSheet> {
                                   child: OutlinedButton.icon(
                                     onPressed: () => unawaited(_saveAs()),
                                     icon: const Icon(Symbols.save_as_rounded),
-                                    label: const Text('Save As'),
+                                    label: Text(t.videoControls.clip.saveAs),
                                   ),
                                 ),
                               ],
@@ -327,7 +327,7 @@ class _ClipEditorSheetState extends State<ClipEditorSheet> {
                               Expanded(
                                 child: TextButton(
                                   onPressed: () => unawaited(_cancel()),
-                                  child: Text(isExporting ? 'Cancel Export' : 'Cancel'),
+                                  child: Text(isExporting ? t.videoControls.clip.cancelExport : t.common.cancel),
                                 ),
                               ),
                               const SizedBox(width: 8),
@@ -340,7 +340,7 @@ class _ClipEditorSheetState extends State<ClipEditorSheet> {
                                           child: CircularProgressIndicator(strokeWidth: 2),
                                         )
                                       : const Icon(Symbols.save_rounded),
-                                  label: Text(isExporting ? _exportProgressLabel(exportState) : 'Save'),
+                                  label: Text(isExporting ? _exportProgressLabel(exportState) : t.common.save),
                                 ),
                               ),
                             ],
@@ -360,9 +360,9 @@ class _ClipEditorSheetState extends State<ClipEditorSheet> {
 
   String _exportProgressLabel(ClipExportJobState state) {
     final progress = state.progress;
-    if (progress == null) return 'Saving...';
+    if (progress == null) return t.videoControls.clip.saving;
     final percent = (progress.clamp(0.0, 1.0) * 100).floor();
-    return 'Saving $percent%';
+    return t.videoControls.clip.savingProgress(percent: percent);
   }
 }
 
@@ -392,8 +392,8 @@ class _ClipEditorBackgroundPainter extends CustomPainter {
 }
 
 String _clipExportFormatLabel(ClipExportFormat format) => switch (format) {
-  ClipExportFormat.hevcSdr => 'HEVC SDR',
-  ClipExportFormat.h264Sdr => 'H.264 SDR',
-  ClipExportFormat.hevcHdr => 'HEVC HDR',
-  ClipExportFormat.source => 'Original',
+  ClipExportFormat.hevcSdr => t.videoControls.clip.formatHevcSdr,
+  ClipExportFormat.h264Sdr => t.videoControls.clip.formatH264Sdr,
+  ClipExportFormat.hevcHdr => t.videoControls.clip.formatHevcHdr,
+  ClipExportFormat.source => t.videoControls.qualityOriginal,
 };

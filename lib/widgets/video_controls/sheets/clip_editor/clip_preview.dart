@@ -62,7 +62,7 @@ class _ClipPreviewPlayer extends StatelessWidget {
                       IconButton(
                         key: const ValueKey('clip_preview_play_pause'),
                         visualDensity: VisualDensity.compact,
-                        tooltip: state.playing ? 'Pause' : 'Play',
+                        tooltip: state.playing ? t.common.pause : t.common.play,
                         onPressed: () => state.playing ? unawaited(controller.pause()) : unawaited(controller.play()),
                         icon: Icon(state.playing ? Symbols.pause_rounded : Symbols.play_arrow_rounded),
                       ),
@@ -286,7 +286,7 @@ class _ClipPreviewVolumeControlState extends State<_ClipPreviewVolumeControl> {
       child: IconButton(
         key: const ValueKey('clip_preview_volume'),
         visualDensity: VisualDensity.compact,
-        tooltip: muted ? 'Unmute preview' : 'Mute preview',
+        tooltip: muted ? t.videoControls.clip.unmutePreview : t.videoControls.clip.mutePreview,
         onPressed: () => unawaited(widget.controller.toggleMute()),
         icon: Icon(muted ? Symbols.volume_off_rounded : Symbols.volume_up_rounded),
       ),

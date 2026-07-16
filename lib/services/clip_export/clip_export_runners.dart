@@ -26,6 +26,17 @@ class MpvClipExportRunner implements ClipExportRunner {
     return ['dump-cache', _formatMpvTime(start), _formatMpvTime(end), outputPath];
   }
 
+  @visibleForTesting
+  static bool cacheRangesCoverSelection({
+    required List<BufferRange> ranges,
+    required Duration start,
+    required Duration end,
+    Duration tolerance = const Duration(milliseconds: 150),
+  }) {
+    if (end <= start) return false;
+    return _contiguousCachedEnd(ranges, start, tolerance: tolerance) + tolerance >= end;
+  }
+
   @override
   Future<void> export({
     required Duration start,
@@ -35,7 +46,7 @@ class MpvClipExportRunner implements ClipExportRunner {
   }) async {
     _canceled = false;
     await _waitForCache(start: start, end: end, onProgress: onProgress);
-    if (_canceled) throw const ClipExportException('Clip export canceled.');
+    if (_canceled) throw ClipExportException(t.videoControls.clip.exportCanceled);
 
     onProgress(0.95);
     await player.command(buildDumpCacheCommand(start: start, end: end, outputPath: outputPath));
@@ -56,42 +67,46 @@ class MpvClipExportRunner implements ClipExportRunner {
     required Duration end,
     required ValueChanged<double> onProgress,
   }) async {
-    final startSeconds = start.inMicroseconds / Duration.microsecondsPerSecond;
-    final endSeconds = end.inMicroseconds / Duration.microsecondsPerSecond;
-    final totalSeconds = endSeconds - startSeconds;
-    if (totalSeconds <= 0) return;
+    final timelineOffset = player is PlayerBase ? (player as PlayerBase).timelineOffset : Duration.zero;
+    final timelineStart = start + timelineOffset;
+    final timelineEnd = end + timelineOffset;
+    final totalMicros = (timelineEnd - timelineStart).inMicroseconds;
+    if (totalMicros <= 0) return;
+
+    await player.pause();
+    await player.seek(timelineStart);
 
     final deadline = DateTime.now().add(const Duration(minutes: 5));
-    var unavailableReads = 0;
 
     while (!_canceled) {
-      String? rawCacheEnd;
-      try {
-        rawCacheEnd = await player.getProperty('demuxer-cache-time');
-      } catch (_) {
-        return;
-      }
-
-      final cacheEnd = double.tryParse(rawCacheEnd ?? '');
-      if (cacheEnd == null) {
-        unavailableReads++;
-        if (unavailableReads >= 4) return;
-      } else {
-        unavailableReads = 0;
-        final fraction = ((cacheEnd - startSeconds) / totalSeconds).clamp(0.0, 1.0);
-        onProgress(fraction * 0.9);
-        if (cacheEnd + 0.1 >= endSeconds) return;
-      }
+      final ranges = player.state.bufferRanges;
+      final coveredUntil = _contiguousCachedEnd(ranges, timelineStart);
+      final coveredMicros = (coveredUntil - timelineStart).inMicroseconds.clamp(0, totalMicros);
+      onProgress((coveredMicros / totalMicros) * 0.9);
+      if (cacheRangesCoverSelection(ranges: ranges, start: timelineStart, end: timelineEnd)) return;
 
       if (DateTime.now().isAfter(deadline)) {
-        throw const ClipExportException(
-          'The selected range could not be cached for export. Try a shorter clip or wait for the preview to load.',
-        );
+        throw ClipExportException(t.videoControls.clip.cacheUnavailable);
       }
       await Future<void>.delayed(const Duration(milliseconds: 200));
     }
 
-    throw const ClipExportException('Clip export canceled.');
+    throw ClipExportException(t.videoControls.clip.exportCanceled);
+  }
+
+  static Duration _contiguousCachedEnd(
+    List<BufferRange> ranges,
+    Duration start, {
+    Duration tolerance = const Duration(milliseconds: 150),
+  }) {
+    var coveredUntil = start;
+    final sorted = [...ranges]..sort((a, b) => a.start.compareTo(b.start));
+    for (final range in sorted) {
+      if (range.end + tolerance < coveredUntil) continue;
+      if (range.start - tolerance > coveredUntil) break;
+      if (range.end > coveredUntil) coveredUntil = range.end;
+    }
+    return coveredUntil;
   }
 }
 
@@ -125,17 +140,17 @@ class MpvEncodingClipExportRunner implements ClipExportRunner {
     required String outputPath,
   }) {
     if (format == ClipExportFormat.source) {
-      throw const ClipExportException('Source-copy export does not use an encoder.');
+      throw ClipExportException(t.videoControls.clip.sourceCopyNoEncoder);
     }
 
     final isMacOS = operatingSystem == 'macos';
     final isWindows = operatingSystem == 'windows';
     if (!isMacOS && !isWindows) {
-      throw const ClipExportException('H.264 and HEVC clip encoding is currently available on macOS and Windows.');
+      throw ClipExportException(t.videoControls.clip.encodingDesktopOnly);
     }
 
     if (format == ClipExportFormat.hevcHdr && !source.canEncodeHdr) {
-      throw const ClipExportException('HDR export requires a direct-play HDR10 or HLG-compatible source.');
+      throw ClipExportException(t.videoControls.clip.hdrRequiresSource);
     }
 
     final isH264 = format == ClipExportFormat.h264Sdr;
@@ -218,7 +233,7 @@ class MpvEncodingClipExportRunner implements ClipExportRunner {
       onProgress(0);
       await player.open(Media(source.uri, headers: source.headers, start: start), play: true);
       await completion.future;
-      if (_canceled) throw const ClipExportException('Clip export canceled.');
+      if (_canceled) throw ClipExportException(t.videoControls.clip.exportCanceled);
     } finally {
       for (final subscription in subscriptions) {
         await subscription.cancel();
@@ -234,7 +249,7 @@ class MpvEncodingClipExportRunner implements ClipExportRunner {
     _canceled = true;
     final completion = _completion;
     if (completion != null && !completion.isCompleted) {
-      completion.completeError(const ClipExportException('Clip export canceled.'));
+      completion.completeError(ClipExportException(t.videoControls.clip.exportCanceled));
     }
     try {
       await _player?.stop();

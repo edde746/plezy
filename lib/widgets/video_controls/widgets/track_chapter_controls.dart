@@ -288,8 +288,8 @@ class TrackChapterControls extends StatelessWidget {
             _buildTrackButton(
               buttonIndex: currentIndex,
               icon: Symbols.content_cut_rounded,
-              tooltip: 'Clip',
-              semanticLabel: 'Clip',
+              tooltip: t.videoControls.clip.title,
+              semanticLabel: t.videoControls.clip.title,
               isMobile: isMobile,
               isDesktop: isDesktop,
               onPressed: () {
