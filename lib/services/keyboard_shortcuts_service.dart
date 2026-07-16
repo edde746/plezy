@@ -26,6 +26,8 @@ class KeyboardShortcutsService extends ChangeNotifier {
   Future<void> _shortcutMutationTail = Future.value();
   int _seekTimeSmall = 10; // Default, loaded from settings
   int _seekTimeLarge = 30; // Default, loaded from settings
+  int _pendingFrameSteps = 0;
+  bool _frameStepInProgress = false;
   bool _disposed = false;
   bool _settingsInitialized = false;
 
@@ -204,6 +206,7 @@ class KeyboardShortcutsService extends ChangeNotifier {
   void dispose() {
     if (_disposed) return;
     _disposed = true;
+    _pendingFrameSteps = 0;
     _settingsBinding.dispose();
     if (identical(_instance, this)) {
       _instance = null;
@@ -271,6 +274,7 @@ class KeyboardShortcutsService extends ChangeNotifier {
     VoidCallback? onVolumeUp,
     VoidCallback? onVolumeDown,
     VoidCallback? onToggleMute,
+    ValueChanged<int>? onFrameStep,
 
     /// Persists a speed changed by the speed shortcuts. Supplied by the
     /// player surface so the write can honor the configured persistence
@@ -398,6 +402,9 @@ class KeyboardShortcutsService extends ChangeNotifier {
           onSkipMarker?.call();
         case ShortcutAction.screenshot:
           unawaited(player.command(['screenshot', 'subtitles']).then((_) => onScreenshot?.call()));
+        case ShortcutAction.framePrevious:
+        case ShortcutAction.frameNext:
+          _queueFrameStep(player, action == ShortcutAction.frameNext ? 1 : -1, onFrameStep);
         case ShortcutAction.zoomIn:
           onZoomIn?.call();
         case ShortcutAction.zoomOut:
@@ -409,6 +416,29 @@ class KeyboardShortcutsService extends ChangeNotifier {
     }
 
     return KeyEventResult.ignored;
+  }
+
+  void _queueFrameStep(Player player, int step, ValueChanged<int>? onFrameStep) {
+    if (player.state.playing || !player.state.seekable) return;
+    _pendingFrameSteps += step;
+    onFrameStep?.call(step);
+    if (!_frameStepInProgress) unawaited(_flushFrameSteps(player));
+  }
+
+  Future<void> _flushFrameSteps(Player player) async {
+    _frameStepInProgress = true;
+    try {
+      while (_pendingFrameSteps != 0 && !player.state.playing && player.state.seekable) {
+        final steps = _pendingFrameSteps;
+        _pendingFrameSteps = 0;
+        final frameRendered = player.streams.playbackRestart.first;
+        await player.command(['frame-step', '$steps', 'seek']);
+        await frameRendered;
+      }
+    } finally {
+      _pendingFrameSteps = 0;
+      _frameStepInProgress = false;
+    }
   }
 
   String getActionDisplayName(String action) {
