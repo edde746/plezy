@@ -124,13 +124,30 @@ class ClipExportService {
     ClipSelection selection, {
     ClipExportFormat format = ClipExportFormat.hevcSdr,
   }) {
-    final title = sanitizeClipFileName(source.title);
-    final subtitle = source.subtitle == null ? '' : sanitizeClipFileName(source.subtitle!);
-    final parts = <String>[title, if (subtitle.isNotEmpty) subtitle];
-    final base = parts.where((part) => part.isNotEmpty).join(' - ');
+    final base = _metadataFileNameBase(source);
     final range = '${formatClipTimestamp(selection.start)}-${formatClipTimestamp(selection.end)}';
     final extension = format == ClipExportFormat.source ? sourceFileExtension(source) : 'mp4';
     return '${base.isEmpty ? 'Clip' : base} - $range.$extension';
+  }
+
+  static String buildSnapshotFileName(ClipSource source, Duration position) {
+    final base = _metadataFileNameBase(source);
+    return '${base.isEmpty ? 'Clip' : base} - ${formatClipTimestamp(position)}.png';
+  }
+
+  static Future<File> createSnapshotOutputFile(
+    ClipSource source,
+    Duration position, {
+    Future<Directory> Function()? directoryProvider,
+  }) async {
+    final directory = await _ensureDirectory(await (directoryProvider ?? defaultClipsDirectory)());
+    return _uniqueOutputFile(directory, buildSnapshotFileName(source, position));
+  }
+
+  static String _metadataFileNameBase(ClipSource source) {
+    final title = sanitizeClipFileName(source.title);
+    final subtitle = source.subtitle == null ? '' : sanitizeClipFileName(source.subtitle!);
+    return <String>[title, if (subtitle.isNotEmpty) subtitle].where((part) => part.isNotEmpty).join(' - ');
   }
 
   @visibleForTesting

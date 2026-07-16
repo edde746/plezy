@@ -30,7 +30,19 @@ extension _VideoPlayerClipMethods on VideoPlayerScreenState {
       return;
     }
 
-    final previewController = ClipPreviewPlayerController();
+    final settings = SettingsService.instance;
+    final maxVolume = settings.read(SettingsService.maxVolume).toDouble();
+    final volumeDefaults = ClipPreviewPlayerController.volumeDefaultsForMainPlayer(
+      playing: currentPlayer.state.isActive,
+      volume: currentPlayer.state.volume,
+      savedVolume: settings.read(SettingsService.volume),
+      maxVolume: maxVolume,
+    );
+    final previewController = ClipPreviewPlayerController(
+      initialVolume: volumeDefaults.initialVolume,
+      lastNonZeroVolume: volumeDefaults.lastNonZeroVolume,
+      maxVolume: maxVolume,
+    );
     try {
       await OverlaySheetController.showAdaptive<void>(
         sheetContext,

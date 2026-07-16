@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/mpv/player/player.dart';
@@ -21,12 +22,15 @@ class _FakeClipPreviewBackend implements ClipPreviewPlayerBackend {
   final _firstFrames = StreamController<void>.broadcast();
 
   Duration? openedSourceStart;
+  double? openedMaxVolume;
   final List<Duration> seeks = [];
   int playCount = 0;
   int pauseCount = 0;
   int hideSurfaceNowCount = 0;
   int releasePlayerCount = 0;
   int openCount = 0;
+  final List<double> volumes = [];
+  final List<String> snapshots = [];
 
   @override
   Player? get player => null;
@@ -44,9 +48,10 @@ class _FakeClipPreviewBackend implements ClipPreviewPlayerBackend {
   void emitFirstFrame() => _firstFrames.add(null);
 
   @override
-  Future<void> open({required ClipSource source, required Duration sourceStart}) async {
+  Future<void> open({required ClipSource source, required Duration sourceStart, required double maxVolume}) async {
     openCount++;
     openedSourceStart = sourceStart;
+    openedMaxVolume = maxVolume;
   }
 
   @override
@@ -62,6 +67,16 @@ class _FakeClipPreviewBackend implements ClipPreviewPlayerBackend {
   @override
   Future<void> seek(Duration videoPosition) async {
     seeks.add(videoPosition);
+  }
+
+  @override
+  Future<void> setVolume(double volume) async {
+    volumes.add(volume);
+  }
+
+  @override
+  Future<void> captureFrame(String outputPath) async {
+    snapshots.add(outputPath);
   }
 
   @override
@@ -85,6 +100,46 @@ class _FakeClipPreviewBackend implements ClipPreviewPlayerBackend {
 
 void main() {
   group('ClipPreviewPlayerController', () {
+    test('resolves volume defaults without changing main player state', () {
+      final audiblePlaying = ClipPreviewPlayerController.volumeDefaultsForMainPlayer(
+        playing: true,
+        volume: 60,
+        savedVolume: 40,
+        maxVolume: 100,
+      );
+      final mutedPlaying = ClipPreviewPlayerController.volumeDefaultsForMainPlayer(
+        playing: true,
+        volume: 0,
+        savedVolume: 40,
+        maxVolume: 100,
+      );
+      final paused = ClipPreviewPlayerController.volumeDefaultsForMainPlayer(
+        playing: false,
+        volume: 60,
+        savedVolume: 40,
+        maxVolume: 100,
+      );
+      final clamped = ClipPreviewPlayerController.volumeDefaultsForMainPlayer(
+        playing: false,
+        volume: 0,
+        savedVolume: 175,
+        maxVolume: 150,
+      );
+
+      expect(audiblePlaying, (initialVolume: 0, lastNonZeroVolume: 60));
+      expect(mutedPlaying, (initialVolume: 40, lastNonZeroVolume: 40));
+      expect(paused, (initialVolume: 60, lastNonZeroVolume: 60));
+      expect(clamped, (initialVolume: 150, lastNonZeroVolume: 150));
+    });
+
+    test('builds a lossless video-only MPV snapshot command', () {
+      expect(PlayerClipPreviewPlayerBackend.buildSnapshotCommand('/tmp/frame.png'), [
+        'screenshot-to-file',
+        '/tmp/frame.png',
+        'video',
+      ]);
+    });
+
     test('direct source seeks use video timestamp unchanged', () async {
       final backend = _FakeClipPreviewBackend();
       final controller = ClipPreviewPlayerController(backend: backend);
@@ -93,7 +148,7 @@ void main() {
       await controller.open(_source(), const ClipSelection(start: Duration(minutes: 2), end: Duration(minutes: 3)));
       await controller.seekToVideoTime(const Duration(minutes: 2, seconds: 20));
 
-      expect(backend.openedSourceStart, const Duration(minutes: 2));
+      expect(backend.openedSourceStart, const Duration(minutes: 3));
       expect(backend.seeks.last, const Duration(minutes: 2, seconds: 20));
     });
 
@@ -106,7 +161,7 @@ void main() {
       await controller.open(source, const ClipSelection(start: Duration(minutes: 3), end: Duration(minutes: 4)));
       await controller.seekToVideoTime(const Duration(minutes: 3, seconds: 30));
 
-      expect(backend.openedSourceStart, const Duration(minutes: 1));
+      expect(backend.openedSourceStart, const Duration(minutes: 2));
       expect(backend.seeks.last, const Duration(minutes: 3, seconds: 30));
     });
 
@@ -128,6 +183,46 @@ void main() {
 
       expect(backend.seeks.last, selection.start);
       expect(backend.playCount, 2);
+    });
+
+    test('applies isolated volume and restores the last level after mute', () async {
+      final backend = _FakeClipPreviewBackend();
+      final controller = ClipPreviewPlayerController(
+        backend: backend,
+        initialVolume: 0,
+        lastNonZeroVolume: 65,
+        maxVolume: 100,
+      );
+      addTearDown(controller.dispose);
+
+      await controller.open(_source(), const ClipSelection(start: Duration(minutes: 1), end: Duration(minutes: 2)));
+      await controller.toggleMute();
+      await controller.setVolume(35);
+      await controller.toggleMute();
+      await controller.toggleMute();
+
+      expect(backend.volumes, [0, 65, 35, 0, 35]);
+      expect(controller.value.volume, 35);
+      expect(backend.openedMaxVolume, 100);
+    });
+
+    test('captures a collision-safe snapshot at the current video timestamp', () async {
+      final tempDir = await Directory.systemTemp.createTemp('plezy-preview-snapshot-test-');
+      addTearDown(() => tempDir.delete(recursive: true));
+      await File('${tempDir.path}/Show - 02m00s.png').writeAsBytes([1]);
+      final backend = _FakeClipPreviewBackend();
+      final controller = ClipPreviewPlayerController(backend: backend, snapshotDirectoryProvider: () async => tempDir);
+      addTearDown(controller.dispose);
+
+      await controller.open(_source(), const ClipSelection(start: Duration(minutes: 1), end: Duration(minutes: 2)));
+      backend.emitFirstFrame();
+      await pumpEventQueue();
+
+      final outputPath = await controller.saveSnapshot();
+
+      expect(outputPath, '${tempDir.path}/Show - 02m00s (2).png');
+      expect(backend.snapshots, [outputPath]);
+      expect(controller.value.snapshotting, isFalse);
     });
 
     test('trim changes update the preview range without controlling playback', () async {

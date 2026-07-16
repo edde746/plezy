@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
@@ -12,20 +13,33 @@ class ClipPreviewPlayerState {
   final Duration position;
   final bool playing;
   final bool firstFrame;
+  final double volume;
+  final bool snapshotting;
   final String? error;
 
   const ClipPreviewPlayerState({
     this.position = Duration.zero,
     this.playing = false,
     this.firstFrame = false,
+    this.volume = 0,
+    this.snapshotting = false,
     this.error,
   });
 
-  ClipPreviewPlayerState copyWith({Duration? position, bool? playing, bool? firstFrame, String? error}) {
+  ClipPreviewPlayerState copyWith({
+    Duration? position,
+    bool? playing,
+    bool? firstFrame,
+    double? volume,
+    bool? snapshotting,
+    String? error,
+  }) {
     return ClipPreviewPlayerState(
       position: position ?? this.position,
       playing: playing ?? this.playing,
       firstFrame: firstFrame ?? this.firstFrame,
+      volume: volume ?? this.volume,
+      snapshotting: snapshotting ?? this.snapshotting,
       error: error,
     );
   }
@@ -37,11 +51,13 @@ abstract class ClipPreviewPlayerBackend {
   Stream<bool> get playing;
   Stream<void> get firstFrames;
 
-  Future<void> open({required ClipSource source, required Duration sourceStart});
+  Future<void> open({required ClipSource source, required Duration sourceStart, required double maxVolume});
 
   Future<void> play();
   Future<void> pause();
   Future<void> seek(Duration videoPosition);
+  Future<void> setVolume(double volume);
+  Future<void> captureFrame(String outputPath);
   Future<void> hideSurfaceNow();
   Future<void> releasePlayer();
   Future<void> dispose();
@@ -92,7 +108,7 @@ class PlayerClipPreviewPlayerBackend implements ClipPreviewPlayerBackend {
   }
 
   @override
-  Future<void> open({required ClipSource source, required Duration sourceStart}) async {
+  Future<void> open({required ClipSource source, required Duration sourceStart, required double maxVolume}) async {
     final player = _ensurePlayer();
     await player.setProperty('cache', 'yes');
     await player.setProperty('cache-on-disk', 'yes');
@@ -101,13 +117,13 @@ class PlayerClipPreviewPlayerBackend implements ClipPreviewPlayerBackend {
     await player.setProperty('demuxer-max-back-bytes', '268435456');
     await player.setProperty('sid', 'no');
     await player.setProperty('secondary-sid', 'no');
+    await player.setProperty('volume-max', maxVolume.toString());
     await player.open(
       Media(source.uri, headers: source.headers, start: sourceStart),
       play: false,
       timelineOffset: source.isTranscoding ? source.timelineOffset : Duration.zero,
       timelineDuration: source.duration,
     );
-    await player.setVolume(0);
   }
 
   @override
@@ -124,6 +140,19 @@ class PlayerClipPreviewPlayerBackend implements ClipPreviewPlayerBackend {
   Future<void> seek(Duration videoPosition) async {
     await _player?.seek(videoPosition);
   }
+
+  @override
+  Future<void> setVolume(double volume) async {
+    await _player?.setVolume(volume);
+  }
+
+  @override
+  Future<void> captureFrame(String outputPath) async {
+    await _player?.command(buildSnapshotCommand(outputPath));
+  }
+
+  @visibleForTesting
+  static List<String> buildSnapshotCommand(String outputPath) => ['screenshot-to-file', outputPath, 'video'];
 
   Future<void> _hideSurface({required bool pause}) async {
     final player = _player;
@@ -169,6 +198,8 @@ class PlayerClipPreviewPlayerBackend implements ClipPreviewPlayerBackend {
 
 class ClipPreviewPlayerController extends ValueNotifier<ClipPreviewPlayerState> {
   final ClipPreviewPlayerBackend _backend;
+  final double maxVolume;
+  final Future<Directory> Function()? snapshotDirectoryProvider;
   late final StreamSubscription<Duration> _positionSubscription;
   late final StreamSubscription<bool> _playingSubscription;
   late final StreamSubscription<void> _firstFrameSubscription;
@@ -177,10 +208,21 @@ class ClipPreviewPlayerController extends ValueNotifier<ClipPreviewPlayerState> 
   ClipSelection? _selection;
   bool _opened = false;
   bool _surfaceHideRequested = false;
+  late double _lastNonZeroVolume;
 
-  ClipPreviewPlayerController({ClipPreviewPlayerBackend? backend})
-    : _backend = backend ?? PlayerClipPreviewPlayerBackend(),
-      super(const ClipPreviewPlayerState()) {
+  ClipPreviewPlayerController({
+    ClipPreviewPlayerBackend? backend,
+    double initialVolume = 0,
+    double lastNonZeroVolume = 100,
+    this.maxVolume = 100,
+    this.snapshotDirectoryProvider,
+  }) : assert(maxVolume >= 0),
+       _backend = backend ?? PlayerClipPreviewPlayerBackend(),
+       super(ClipPreviewPlayerState(volume: initialVolume.clamp(0.0, maxVolume).toDouble())) {
+    _lastNonZeroVolume = lastNonZeroVolume.clamp(0.0, maxVolume).toDouble();
+    if (_lastNonZeroVolume == 0) {
+      _lastNonZeroVolume = 100.0.clamp(0.0, maxVolume).toDouble();
+    }
     _positionSubscription = _backend.positions.listen(_handleBackendPosition);
     _playingSubscription = _backend.playing.listen((playing) {
       value = value.copyWith(playing: playing, error: value.error);
@@ -194,23 +236,37 @@ class ClipPreviewPlayerController extends ValueNotifier<ClipPreviewPlayerState> 
   ClipSelection? get selection => _selection;
   bool get isOpen => _opened;
 
+  static ({double initialVolume, double lastNonZeroVolume}) volumeDefaultsForMainPlayer({
+    required bool playing,
+    required double volume,
+    required double savedVolume,
+    required double maxVolume,
+  }) {
+    final safeMax = maxVolume < 0 ? 0.0 : maxVolume;
+    final current = volume.clamp(0.0, safeMax).toDouble();
+    final saved = savedVolume.clamp(0.0, safeMax).toDouble();
+    final restore = current > 0 ? current : (saved > 0 ? saved : 100.0.clamp(0.0, safeMax).toDouble());
+    return (initialVolume: playing && current > 0 ? 0 : restore, lastNonZeroVolume: restore);
+  }
+
   Future<void> open(ClipSource source, ClipSelection selection) async {
     final clamped = selection.clampedTo(source.duration);
     _source = source;
     _selection = clamped;
     _opened = false;
     _surfaceHideRequested = false;
-    value = ClipPreviewPlayerState(position: clamped.start);
+    value = ClipPreviewPlayerState(position: clamped.end, volume: value.volume);
 
     try {
-      final sourceStart = ClipExportService.sourceStartForPosition(source, clamped.start);
-      await _backend.open(source: source, sourceStart: sourceStart);
+      final sourceStart = ClipExportService.sourceStartForPosition(source, clamped.end);
+      await _backend.open(source: source, sourceStart: sourceStart, maxVolume: maxVolume);
+      await _backend.setVolume(value.volume);
       _opened = true;
       if (_surfaceHideRequested) {
         unawaited(_backend.hideSurfaceNow());
         return;
       }
-      await seekToVideoTime(clamped.start);
+      await seekToVideoTime(clamped.end);
     } on MissingPluginException {
       value = value.copyWith(error: 'Clip preview playback is not available in this build.');
     } on PlatformException catch (e) {
@@ -251,6 +307,42 @@ class ClipPreviewPlayerController extends ValueNotifier<ClipPreviewPlayerState> 
       await _backend.pause();
     } finally {
       value = value.copyWith(playing: false, error: value.error);
+    }
+  }
+
+  Future<void> setVolume(double volume) async {
+    final clamped = volume.clamp(0.0, maxVolume).toDouble();
+    if (clamped > 0) _lastNonZeroVolume = clamped;
+    value = value.copyWith(volume: clamped, error: value.error);
+    try {
+      await _backend.setVolume(clamped);
+    } catch (e) {
+      value = value.copyWith(error: e.toString());
+    }
+  }
+
+  Future<void> toggleMute() => setVolume(value.volume > 0 ? 0 : _lastNonZeroVolume);
+
+  Future<String> saveSnapshot() async {
+    final source = _source;
+    if (!_opened || source == null || !value.firstFrame) {
+      throw const ClipExportException('The clip preview must finish loading before taking a snapshot.');
+    }
+    if (value.snapshotting) {
+      throw const ClipExportException('A snapshot is already being saved.');
+    }
+
+    value = value.copyWith(snapshotting: true, error: value.error);
+    try {
+      final outputFile = await ClipExportService.createSnapshotOutputFile(
+        source,
+        value.position,
+        directoryProvider: snapshotDirectoryProvider,
+      );
+      await _backend.captureFrame(outputFile.path);
+      return outputFile.path;
+    } finally {
+      value = value.copyWith(snapshotting: false, error: value.error);
     }
   }
 

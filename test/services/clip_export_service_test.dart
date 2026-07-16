@@ -196,6 +196,30 @@ void main() {
     test('uses a neutral extension when the Original container is unknown', () {
       expect(ClipExportService.sourceFileExtension(_source(uri: 'https://example.test/video')), 'media');
     });
+
+    test('builds a sanitized PNG snapshot name from the video timestamp', () {
+      expect(
+        ClipExportService.buildSnapshotFileName(
+          _source(title: 'Show: Name/Bad?', subtitle: 'S01E02'),
+          const Duration(minutes: 49, seconds: 40),
+        ),
+        'Show Name Bad - S01E02 - 49m40s.png',
+      );
+    });
+
+    test('adds a suffix when a snapshot name already exists', () async {
+      final tempDir = await Directory.systemTemp.createTemp('plezy-snapshot-name-test-');
+      addTearDown(() => tempDir.delete(recursive: true));
+      await File('${tempDir.path}/Show - S01E02 - 02m00s.png').writeAsBytes([1]);
+
+      final output = await ClipExportService.createSnapshotOutputFile(
+        _source(),
+        const Duration(minutes: 2),
+        directoryProvider: () async => tempDir,
+      );
+
+      expect(output.path, '${tempDir.path}/Show - S01E02 - 02m00s (2).png');
+    });
   });
 
   group('desktop clip directory resolution', () {

@@ -29,6 +29,9 @@ class _FakePreviewBackend implements ClipPreviewPlayerBackend {
   final _positions = StreamController<Duration>.broadcast();
   final _playing = StreamController<bool>.broadcast();
   final _firstFrames = StreamController<void>.broadcast();
+  final List<double> volumes = [];
+
+  void emitFirstFrame() => _firstFrames.add(null);
 
   @override
   Player? get player => null;
@@ -43,7 +46,7 @@ class _FakePreviewBackend implements ClipPreviewPlayerBackend {
   Stream<void> get firstFrames => _firstFrames.stream;
 
   @override
-  Future<void> open({required ClipSource source, required Duration sourceStart}) async {}
+  Future<void> open({required ClipSource source, required Duration sourceStart, required double maxVolume}) async {}
 
   @override
   Future<void> play() async {}
@@ -53,6 +56,14 @@ class _FakePreviewBackend implements ClipPreviewPlayerBackend {
 
   @override
   Future<void> seek(Duration videoPosition) async {}
+
+  @override
+  Future<void> setVolume(double volume) async {
+    volumes.add(volume);
+  }
+
+  @override
+  Future<void> captureFrame(String outputPath) async {}
 
   @override
   Future<void> hideSurfaceNow() async {}
@@ -69,8 +80,9 @@ class _FakePreviewBackend implements ClipPreviewPlayerBackend {
 }
 
 void main() {
-  testWidgets('trim slider uses floating overlay tooltip without reserving thumbnail space', (tester) async {
-    final previewController = ClipPreviewPlayerController(backend: _FakePreviewBackend());
+  testWidgets('clip editor uses floating trim and preview controls without reserving space', (tester) async {
+    final backend = _FakePreviewBackend();
+    final previewController = ClipPreviewPlayerController(backend: backend, initialVolume: 0, lastNonZeroVolume: 55);
     final exportService = ClipExportService(exportRunner: _FakeClipExportRunner());
     addTearDown(previewController.dispose);
     addTearDown(exportService.dispose);
@@ -123,6 +135,9 @@ void main() {
     expect(sliderTheme.data.rangeTrackShape, isA<RoundedRectRangeSliderTrackShape>());
     expect(tester.getTopLeft(startLabel).dy, greaterThan(tester.getBottomLeft(slider).dy));
     expect(tester.getTopLeft(endLabel).dy, greaterThan(tester.getBottomLeft(slider).dy));
+    expect(find.byKey(const ValueKey('clip_preview_volume')), findsOneWidget);
+    expect(find.byKey(const ValueKey('clip_preview_volume_slider')), findsNothing);
+    expect(find.byKey(const ValueKey('clip_preview_snapshot')), findsNothing);
 
     final center = tester.getCenter(slider);
     final gesture = await tester.createGesture(kind: PointerDeviceKind.mouse, pointer: 1);
@@ -138,6 +153,23 @@ void main() {
 
     await gesture.moveTo(Offset(center.dx, center.dy + 80));
     await tester.pump();
+
+    await tester.tap(find.byKey(const ValueKey('clip_preview_volume')));
+    await tester.pump();
+    expect(previewController.value.volume, 55);
+    expect(backend.volumes.last, 55);
+
+    await gesture.moveTo(tester.getCenter(find.byKey(const ValueKey('clip_preview_volume'))));
+    await tester.pump();
+    expect(find.byKey(const ValueKey('clip_preview_volume_slider')), findsOneWidget);
+
+    backend.emitFirstFrame();
+    await tester.pump();
+    await gesture.moveTo(tester.getCenter(previewSurface));
+    await tester.pump(const Duration(milliseconds: 150));
+    expect(find.byKey(const ValueKey('clip_preview_volume_slider')), findsNothing);
+    expect(find.byKey(const ValueKey('clip_preview_snapshot')), findsOneWidget);
+    expect(tester.widget<IconButton>(find.byKey(const ValueKey('clip_preview_snapshot'))).onPressed, isNotNull);
 
     exportService.state.value = const ClipExportJobState(stage: ClipExportStage.running, progress: 0.42);
     await tester.pump();
