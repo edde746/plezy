@@ -15,6 +15,7 @@ import '../../../services/clip_preview_player_controller.dart';
 import '../../../services/file_picker_service.dart';
 import '../../../services/scrub_preview_source.dart';
 import '../../../utils/snackbar_helper.dart';
+import '../../../widgets/expressive_button_group.dart';
 import '../../../widgets/overlay_sheet.dart';
 import '../widgets/scrub_frame_view.dart';
 import 'base_video_control_sheet.dart';
@@ -272,22 +273,21 @@ class _ClipEditorSheetState extends State<ClipEditorSheet> {
                           _ClipTrimBoundsHeader(selection: _selection),
                           if (_availableFormats.length > 1) ...[
                             const SizedBox(height: 10),
-                            SegmentedButton<ClipExportFormat>(
+                            ExpressiveButtonGroup<ClipExportFormat>(
                               key: const ValueKey('clip_export_format'),
                               segments: [
                                 for (final format in _availableFormats)
                                   ButtonSegment(value: format, label: Text(_clipExportFormatLabel(format))),
                               ],
-                              selected: {_format},
-                              onSelectionChanged: isExporting
-                                  ? null
-                                  : (selection) {
-                                      setState(() {
-                                        _format = selection.first;
-                                        _savedPath = null;
-                                        _errorMessage = null;
-                                      });
-                                    },
+                              selected: _format,
+                              enabled: !isExporting,
+                              onChanged: (format) {
+                                setState(() {
+                                  _format = format;
+                                  _savedPath = null;
+                                  _errorMessage = null;
+                                });
+                              },
                             ),
                           ],
                           if (_errorMessage != null) ...[

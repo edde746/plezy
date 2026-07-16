@@ -8,6 +8,8 @@ import 'package:plezy/mpv/player/player.dart';
 import 'package:plezy/services/clip_export_service.dart';
 import 'package:plezy/services/clip_preview_player_controller.dart';
 import 'package:plezy/services/scrub_preview_source.dart';
+import 'package:plezy/theme/mono_theme.dart';
+import 'package:plezy/widgets/expressive_button_group.dart';
 import 'package:plezy/widgets/video_controls/sheets/clip_editor_sheet.dart';
 
 class _FakeClipExportRunner implements ClipExportRunner {
@@ -89,6 +91,7 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
+        theme: monoTheme(dark: true),
         home: Scaffold(
           body: Center(
             child: SizedBox(
@@ -138,6 +141,7 @@ void main() {
     expect(find.byKey(const ValueKey('clip_preview_volume')), findsOneWidget);
     expect(find.byKey(const ValueKey('clip_preview_volume_slider')), findsNothing);
     expect(find.byKey(const ValueKey('clip_preview_screenshot')), findsNothing);
+    expect(find.byType(ExpressiveButtonGroup<ClipExportFormat>), findsOneWidget);
 
     final center = tester.getCenter(slider);
     final gesture = await tester.createGesture(kind: PointerDeviceKind.mouse, pointer: 1);
