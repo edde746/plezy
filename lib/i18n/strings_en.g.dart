@@ -360,32 +360,32 @@ class TranslationsWatchlistEn {
 
 	// Translations
 
-	/// en: 'Watchlist'
-	String get title => 'Watchlist';
+	/// en: 'Plex Watchlist'
+	String get title => 'Plex Watchlist';
 
-	/// en: 'Your watchlist is empty'
-	String get empty => 'Your watchlist is empty';
+	/// en: 'Your Plex watchlist is empty'
+	String get empty => 'Your Plex watchlist is empty';
 
 	/// en: 'Add movies and shows to your Plex watchlist to see them here'
 	String get emptyDescription => 'Add movies and shows to your Plex watchlist to see them here';
 
-	/// en: 'Failed to load watchlist'
-	String get loadFailed => 'Failed to load watchlist';
+	/// en: 'Failed to load Plex watchlist'
+	String get loadFailed => 'Failed to load Plex watchlist';
 
 	/// en: 'Not available on your servers'
 	String get notOnServers => 'Not available on your servers';
 
-	/// en: 'Remove from Watchlist'
-	String get remove => 'Remove from Watchlist';
+	/// en: 'Remove from Plex Watchlist'
+	String get remove => 'Remove from Plex Watchlist';
 
-	/// en: 'Added to Watchlist'
-	String get added => 'Added to Watchlist';
+	/// en: 'Added to Plex Watchlist'
+	String get added => 'Added to Plex Watchlist';
 
-	/// en: 'Removed from Watchlist'
-	String get removed => 'Removed from Watchlist';
+	/// en: 'Removed from Plex Watchlist'
+	String get removed => 'Removed from Plex Watchlist';
 
-	/// en: 'Couldn't update watchlist'
-	String get actionFailed => 'Couldn\'t update watchlist';
+	/// en: 'Couldn't update Plex watchlist'
+	String get actionFailed => 'Couldn\'t update Plex watchlist';
 }
 
 // Path: settings
@@ -5086,15 +5086,15 @@ extension on Translations {
 			'update.viewRelease' => 'View Release',
 			'update.latestVersion' => 'You are on the latest version',
 			'update.checkFailed' => 'Failed to check for updates',
-			'watchlist.title' => 'Watchlist',
-			'watchlist.empty' => 'Your watchlist is empty',
+			'watchlist.title' => 'Plex Watchlist',
+			'watchlist.empty' => 'Your Plex watchlist is empty',
 			'watchlist.emptyDescription' => 'Add movies and shows to your Plex watchlist to see them here',
-			'watchlist.loadFailed' => 'Failed to load watchlist',
+			'watchlist.loadFailed' => 'Failed to load Plex watchlist',
 			'watchlist.notOnServers' => 'Not available on your servers',
-			'watchlist.remove' => 'Remove from Watchlist',
-			'watchlist.added' => 'Added to Watchlist',
-			'watchlist.removed' => 'Removed from Watchlist',
-			'watchlist.actionFailed' => 'Couldn\'t update watchlist',
+			'watchlist.remove' => 'Remove from Plex Watchlist',
+			'watchlist.added' => 'Added to Plex Watchlist',
+			'watchlist.removed' => 'Removed from Plex Watchlist',
+			'watchlist.actionFailed' => 'Couldn\'t update Plex watchlist',
 			'settings.title' => 'Settings',
 			'settings.supportDeveloper' => 'Support Plezy',
 			'settings.supportDeveloperDescription' => 'Donate via Liberapay to fund development',

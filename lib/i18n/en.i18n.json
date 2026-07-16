@@ -82,15 +82,15 @@
     "checkFailed": "Failed to check for updates"
   },
   "watchlist": {
-    "title": "Watchlist",
-    "empty": "Your watchlist is empty",
+    "title": "Plex Watchlist",
+    "empty": "Your Plex watchlist is empty",
     "emptyDescription": "Add movies and shows to your Plex watchlist to see them here",
-    "loadFailed": "Failed to load watchlist",
+    "loadFailed": "Failed to load Plex watchlist",
     "notOnServers": "Not available on your servers",
-    "remove": "Remove from Watchlist",
-    "added": "Added to Watchlist",
-    "removed": "Removed from Watchlist",
-    "actionFailed": "Couldn't update watchlist"
+    "remove": "Remove from Plex Watchlist",
+    "added": "Added to Plex Watchlist",
+    "removed": "Removed from Plex Watchlist",
+    "actionFailed": "Couldn't update Plex watchlist"
   },
   "settings": {
     "title": "Settings",
