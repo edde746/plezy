@@ -6,13 +6,15 @@
 #include <mpv/client.h>
 
 #include <atomic>
+#include <chrono>
 #include <functional>
-#include <map>
 #include <memory>
 #include <mutex>
 #include <string>
 #include <thread>
 #include <vector>
+
+#include "../../../shared/mpv/mpv_player_common.h"
 
 namespace mpv {
 
@@ -22,11 +24,17 @@ class MpvPlayer {
  public:
   using EventCallback = std::function<void(const flutter::EncodableValue&)>;
 
-  MpvPlayer();
+  // |audio_only| runs mpv as a windowless music core: no child HWND, no VO,
+  // video decode disabled entirely (vid=no).
+  explicit MpvPlayer(bool audio_only = false);
   ~MpvPlayer();
 
-  // Initializes mpv and creates the video window.
-  bool Initialize(HWND container, HWND flutter_window);
+  // Initializes mpv and creates the video window as a child of the Flutter
+  // |view| window. The flutter-plezy engine presents the UI on a topmost
+  // DirectComposition visual, so the video child composites beneath it in the
+  // same HWND. In audio-only mode |view| is ignored (pass nullptr) and no
+  // window is created.
+  bool Initialize(HWND view);
 
   // Disposes mpv and the video window.
   void Dispose();
@@ -38,9 +46,9 @@ class MpvPlayer {
   void Command(const std::vector<std::string>& args);
 
   // Callback types for async mpv requests.
-  using StatusCallback = std::function<void(int error)>;
+  using StatusCallback = plezy::mpv_common::StatusCallback;
   using CommandCallback = StatusCallback;
-  using GetPropertyCallback = std::function<void(int error, const std::string& value)>;
+  using GetPropertyCallback = plezy::mpv_common::GetPropertyCallback;
 
   // Executes an mpv command asynchronously to prevent UI blocking.
   void CommandAsync(const std::vector<std::string>& args, CommandCallback callback);
@@ -72,6 +80,12 @@ class MpvPlayer {
   // Sets the event callback for property changes and events.
   void SetEventCallback(EventCallback callback);
 
+  // Power notifications, called from the platform thread (window proc).
+  // NotifyPowerResume only sets an atomic flag consumed by the event thread —
+  // no mpv calls, no timers — so it cannot race Dispose and needs no cleanup.
+  void NotifyPowerSuspend();
+  void NotifyPowerResume();
+
  private:
   void StartEventLoop();
   void StopEventLoop();
@@ -79,42 +93,27 @@ class MpvPlayer {
   void HandleMpvEvent(mpv_event* event);
   void SendPropertyChange(const char* name, mpv_node* data);
   void SendEvent(const std::string& name, const flutter::EncodableMap& data = {});
-  void ReloadAudioOutput();
-  uint64_t RegisterStatusRequest(StatusCallback callback);
-  StatusCallback TakeStatusRequest(uint64_t request_id);
-  uint64_t RegisterGetPropertyRequest(GetPropertyCallback callback);
-  GetPropertyCallback TakeGetPropertyRequest(uint64_t request_id);
+  void MaybeRunAudioRecovery();
+  void TryAudioReload(const char* reason, int attempt);
+  void LogRecovery(const std::string& text);
 
+  const bool audio_only_;
   mpv_handle* mpv_ = nullptr;
   HWND hwnd_ = nullptr;
-  HWND container_ = nullptr;
-  HWND flutter_window_ = nullptr;
-  double device_pixel_ratio_ = 1.0;
-  RECT rect_ = {0, 0, 0, 0};
 
   std::thread event_thread_;
   std::atomic<bool> running_{false};
   EventCallback event_callback_;
   std::mutex callback_mutex_;
-  bool current_ao_is_null_ = false;
-  bool audio_reload_pending_ = false;
+  plezy::mpv_common::AudioRecoveryState audio_recovery_;
 
-  uint64_t next_reply_userdata_ = 1;
-  std::map<std::string, uint64_t> observed_properties_;
-  std::map<std::string, int> name_to_id_;
-
-  // Pending async requests: request_id -> callback
-  std::map<uint64_t, StatusCallback> pending_status_requests_;
-  std::map<uint64_t, GetPropertyCallback> pending_get_property_requests_;
-  std::mutex pending_requests_mutex_;
+  plezy::mpv_common::AsyncRequestRegistry pending_requests_;
+  plezy::mpv_common::PropertyObservationRegistry observed_properties_;
 
   // HDR state
-  bool hdr_enabled_ = true;     // User preference
-  double last_sig_peak_ = 0.0;  // Last known sig-peak for HDR content detection
+  bool hdr_enabled_ = true;
 
-  // HDR methods
   void SetHDREnabled(bool enabled, StatusCallback callback = nullptr);
-  void UpdateHDRMode(double sigPeak);
 };
 
 }  // namespace mpv

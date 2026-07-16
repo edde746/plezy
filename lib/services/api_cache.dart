@@ -1,4 +1,5 @@
 import 'dart:convert';
+import '../media/ids.dart';
 
 import 'package:drift/drift.dart';
 
@@ -19,28 +20,59 @@ import '../utils/isolate_helper.dart';
 /// implement the abstract [getMetadata] / [pinForOffline] / [deleteForItem]
 /// methods so callers can dispatch via [forBackend] instead of switching on
 /// the backend type at every call site.
-abstract class ApiCache {
-  static ApiCache? _instance;
+class ApiCacheSingleton<T extends ApiCache> {
+  ApiCacheSingleton(this.backend, this.typeName);
 
-  /// Returns the most recently registered cache instance — used by callers
-  /// that don't care which backend's helpers they're hitting (e.g. plain
-  /// `get`/`put` from `JellyfinClient`). Backend-specific operations should
-  /// route through [forBackend] instead.
-  static ApiCache get instance {
-    if (_instance == null) {
-      throw StateError('ApiCache not initialized. Call initialize() on a backend cache first.');
+  final MediaBackend backend;
+  final String typeName;
+  T? _instance;
+
+  T get instance {
+    final value = _instance;
+    if (value == null) {
+      throw StateError('$typeName not initialized. Call $typeName.initialize() first.');
     }
-    return _instance!;
+    return value;
   }
 
+  void install(T instance) {
+    _instance = instance;
+    ApiCache.registerInstance(backend, instance);
+  }
+}
+
+/// Decodes independent cached JSON rows, dropping only the malformed row.
+Map<String, MediaItem> decodeCachedMediaRows<T>(
+  Iterable<T> rows, {
+  required String Function(T row) serializedData,
+  required MapEntry<String, MediaItem>? Function(T row, Map<String, dynamic> json) decode,
+}) {
+  final result = <String, MediaItem>{};
+  for (final row in rows) {
+    try {
+      final json = jsonDecode(serializedData(row)) as Map<String, dynamic>;
+      final decoded = decode(row, json);
+      if (decoded != null) {
+        result[decoded.key] = decoded.value;
+      }
+    } catch (_) {
+      // A malformed cache row does not invalidate its siblings.
+    }
+  }
+  return result;
+}
+
+abstract class ApiCache {
   static final Map<MediaBackend, ApiCache> _byBackend = {};
 
-  /// Subclasses call this from their own `initialize` to register themselves
-  /// for backend dispatch. Also seeds [instance] so the legacy singleton
-  /// surface keeps working.
+  /// Registers a backend cache. A new database marks a new application/test
+  /// lifecycle, so registrations tied to the previous database are discarded
+  /// instead of leaving backend dispatch pointed at a closed connection.
   static void registerInstance(MediaBackend backend, ApiCache cache) {
+    if (_byBackend.values.any((registered) => !identical(registered.database, cache.database))) {
+      _byBackend.clear();
+    }
     _byBackend[backend] = cache;
-    _instance = cache;
   }
 
   /// Pick the cache for [backend]. Plex is the legacy default — covers items
@@ -53,6 +85,20 @@ abstract class ApiCache {
     return picked;
   }
 
+  /// Clears volatile rows for every distinct registered database.
+  ///
+  /// Production backend caches share one [AppDatabase], while focused tests
+  /// may register only one backend. This operation is therefore independent
+  /// of backend initialization order and is a no-op before registration.
+  static Future<void> clearRegisteredVolatile() async {
+    final cleared = <AppDatabase>{};
+    for (final cache in _byBackend.values) {
+      if (cleared.add(cache.database)) {
+        await cache.clearVolatile();
+      }
+    }
+  }
+
   final AppDatabase _db;
 
   ApiCache(this._db);
@@ -62,11 +108,11 @@ abstract class ApiCache {
   /// joins on adjacent tables).
   AppDatabase get database => _db;
 
-  String _buildKey(String serverId, String endpoint) {
+  String _buildKey(ServerId serverId, String endpoint) {
     return '$serverId:$endpoint';
   }
 
-  Future<Map<String, dynamic>?> get(String serverId, String endpoint) async {
+  Future<Map<String, dynamic>?> get(ServerId serverId, String endpoint) async {
     final key = _buildKey(serverId, endpoint);
     final result = await (_db.select(_db.apiCache)..where((t) => t.cacheKey.equals(key))).getSingleOrNull();
     if (result != null) {
@@ -75,7 +121,7 @@ abstract class ApiCache {
     return null;
   }
 
-  Future<void> put(String serverId, String endpoint, Map<String, dynamic> data) async {
+  Future<void> put(ServerId serverId, String endpoint, Map<String, dynamic> data) async {
     final key = _buildKey(serverId, endpoint);
     final encoded = await tryIsolateRun(() => jsonEncode(data));
     await _db
@@ -85,26 +131,26 @@ abstract class ApiCache {
         );
   }
 
-  Future<void> deleteForServer(String serverId) async {
+  Future<void> deleteForServer(ServerId serverId) async {
     await (_db.delete(_db.apiCache)..where((t) => t.cacheKey.like('$serverId:%'))).go();
   }
 
   /// Pin an endpoint's response so the row survives cache eviction.
-  Future<void> pin(String serverId, String endpoint) async {
+  Future<void> pin(ServerId serverId, String endpoint) async {
     final key = _buildKey(serverId, endpoint);
     await (_db.update(
       _db.apiCache,
     )..where((t) => t.cacheKey.equals(key))).write(const ApiCacheCompanion(pinned: Value(true)));
   }
 
-  Future<void> unpin(String serverId, String endpoint) async {
+  Future<void> unpin(ServerId serverId, String endpoint) async {
     final key = _buildKey(serverId, endpoint);
     await (_db.update(
       _db.apiCache,
     )..where((t) => t.cacheKey.equals(key))).write(const ApiCacheCompanion(pinned: Value(false)));
   }
 
-  Future<bool> isPinned(String serverId, String endpoint) async {
+  Future<bool> isPinned(ServerId serverId, String endpoint) async {
     final key = _buildKey(serverId, endpoint);
     final result = await (_db.select(_db.apiCache)..where((t) => t.cacheKey.equals(key))).getSingleOrNull();
     return result?.pinned ?? false;
@@ -145,7 +191,7 @@ abstract class ApiCache {
   /// [keyPattern] from each `cacheKey`. Returns the unique set of captured
   /// ids — backend subclasses use this to enumerate their pinned items
   /// (Plex ratingKeys, Jellyfin item ids).
-  Future<Set<String>> extractPinnedIds(String serverId, RegExp keyPattern) async {
+  Future<Set<String>> extractPinnedIds(ServerId serverId, RegExp keyPattern) async {
     final rows = await (_db.select(
       _db.apiCache,
     )..where((t) => t.cacheKey.like('$serverId:%') & t.pinned.equals(true))).get();
@@ -162,29 +208,29 @@ abstract class ApiCache {
   /// from the prefix before the first colon. Backend subclasses use this to
   /// batch-load all pinned metadata into their own model type without
   /// re-implementing the row walker.
-  Future<List<({String serverId, String id, String data})>> listPinnedRowsByPattern(RegExp keyPattern) async {
+  Future<List<({ServerId serverId, String id, String data})>> listPinnedRowsByPattern(RegExp keyPattern) async {
     final rows = await (_db.select(_db.apiCache)..where((t) => t.pinned.equals(true))).get();
-    final out = <({String serverId, String id, String data})>[];
+    final out = <({ServerId serverId, String id, String data})>[];
     for (final row in rows) {
       final colon = row.cacheKey.indexOf(':');
       if (colon < 0) continue;
       final match = keyPattern.firstMatch(row.cacheKey);
       if (match == null) continue;
-      out.add((serverId: row.cacheKey.substring(0, colon), id: match.group(1)!, data: row.data));
+      out.add((serverId: ServerId(row.cacheKey.substring(0, colon)), id: match.group(1)!, data: row.data));
     }
     return out;
   }
 
   /// Fetch and parse cached [MediaItem] for [itemId] on [serverId]. Returns
   /// `null` when the item isn't cached.
-  Future<MediaItem?> getMetadata(String serverId, String itemId);
+  Future<MediaItem?> getMetadata(ServerId serverId, String itemId);
 
   /// Pin the cached metadata row(s) for [itemId] so they survive cache
   /// eviction (used by the offline-download pipeline).
-  Future<void> pinForOffline(String serverId, String itemId);
+  Future<void> pinForOffline(ServerId serverId, String itemId);
 
   /// Delete cached metadata for [itemId] (used when removing a download).
-  Future<void> deleteForItem(String serverId, String itemId);
+  Future<void> deleteForItem(ServerId serverId, String itemId);
 
   /// Persist a watched/unwatched flip into the cached metadata JSON for
   /// [itemId] so reloads (`getMetadata` / `getAllPinnedMetadata`) reflect the
@@ -207,7 +253,7 @@ abstract class ApiCache {
   /// The mutations are too short (~3 lines per backend) for a shared
   /// adapter to be a net win, so they live duplicated by design.
   Future<void> applyWatchState({
-    required String serverId,
+    required ServerId serverId,
     required String itemId,
     required bool isWatched,
     int? viewOffsetMs,
@@ -216,7 +262,7 @@ abstract class ApiCache {
   });
 
   /// Bulk-load every pinned metadata row into a [MediaItem] map keyed by
-  /// `buildGlobalKey(serverId, itemId)`. Used by [DownloadManagerService] on
+  /// `buildGlobalKey(ServerId(serverId), itemId)`. Used by [DownloadManagerService] on
   /// cold start to hydrate offline state in a single query per backend.
   Future<Map<String, MediaItem>> getAllPinnedMetadata();
 }

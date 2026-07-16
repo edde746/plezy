@@ -1,0 +1,11 @@
+appId: com.edde746.plezy
+name: Open empty downloads state
+tags:
+  - e2e
+  - downloads
+---
+- runFlow: ../subflows/onboard_jellyfin.yaml
+- tapOn: "(?s)^Downloads.*"
+- extendedWaitUntil:
+    visible: "No downloads"
+    timeout: 15000

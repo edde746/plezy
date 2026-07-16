@@ -57,7 +57,7 @@ void main() {
       guard.clear();
       guard.handleNativeKeyEvent(_keyDown(LogicalKeyboardKey.browserBack));
 
-      expect(guard.shouldSuppressSyntheticKey(LogicalKeyboardKey.escape), isTrue);
+      expect(guard.shouldSuppressSyntheticKey(LogicalKeyboardKey.gameButtonB), isTrue);
     });
   });
 }

@@ -5,8 +5,18 @@ import '../utils/app_logger.dart';
 import '../utils/platform_detector.dart';
 import 'package:saf_util/saf_util_platform_interface.dart';
 
+abstract interface class SafStorageOperations {
+  Future<SafDocumentFile?> getChild(String parentUri, List<String> names);
+
+  Future<bool> delete(String uri, {required bool isDir});
+
+  Future<bool> exists(String uri, {required bool isDir});
+
+  Future<List<SafDocumentFile>?> list(String uri);
+}
+
 /// Handles Storage Access Framework (SAF) operations for Android
-class SafStorageService {
+class SafStorageService implements SafStorageOperations {
   static SafStorageService? _instance;
   static SafStorageService get instance => _instance ??= SafStorageService._();
   SafStorageService._();
@@ -48,6 +58,7 @@ class SafStorageService {
   /// Traverse to a child file/directory under a SAF directory.
   /// [names] is the path-component list from [parentUri] to the target;
   /// pass a single element for an immediate child.
+  @override
   Future<SafDocumentFile?> getChild(String parentUri, List<String> names) async {
     if (!isAvailable) return null;
     try {
@@ -72,6 +83,7 @@ class SafStorageService {
   }
 
   /// Delete a SAF file or directory. Returns true on success, false on error.
+  @override
   Future<bool> delete(String uri, {required bool isDir}) async {
     if (!isAvailable) return false;
     try {
@@ -84,6 +96,7 @@ class SafStorageService {
   }
 
   /// Check whether a SAF file or directory exists. Returns false on error.
+  @override
   Future<bool> exists(String uri, {required bool isDir}) async {
     if (!isAvailable) return false;
     try {
@@ -96,6 +109,7 @@ class SafStorageService {
 
   /// List children of a SAF directory. Returns null on error so callers can
   /// distinguish "error" from "empty dir".
+  @override
   Future<List<SafDocumentFile>?> list(String uri) async {
     if (!isAvailable) return null;
     try {

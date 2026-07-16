@@ -5,6 +5,27 @@ import '../focus/input_mode_tracker.dart';
 import '../utils/platform_detector.dart';
 import 'focus_builders.dart';
 
+/// Horizontally scrollable host for a row of [FocusableTabChip]s.
+///
+/// App-bar titles and header rows give the strip a bounded width; a plain
+/// Row overflows it on narrow windows (visible as the striped overflow
+/// indicator). The strip shrink-wraps like `mainAxisSize: min` and scrolls
+/// instead. D-pad stays correct: chips center themselves on focus via the
+/// chip mixin, so LEFT/RIGHT reaches off-screen tabs.
+class TabChipStrip extends StatelessWidget {
+  final List<Widget> children;
+
+  const TabChipStrip({super.key, required this.children});
+
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(mainAxisSize: .min, children: children),
+    );
+  }
+}
+
 /// A focusable tab chip that shows a color change when focused or selected.
 ///
 /// Used for tab navigation in LibrariesScreen. Handles:
@@ -31,6 +52,9 @@ class FocusableTabChip extends StatefulWidget {
   /// Called when the user presses DOWN from this chip.
   final VoidCallback? onNavigateDown;
 
+  /// Called when the user presses UP from this chip.
+  final VoidCallback? onNavigateUp;
+
   /// Called when the user presses BACK from this chip.
   final VoidCallback? onBack;
 
@@ -50,6 +74,7 @@ class FocusableTabChip extends StatefulWidget {
     this.onNavigateLeft,
     this.onNavigateRight,
     this.onNavigateDown,
+    this.onNavigateUp,
     this.onBack,
     this.onLongPress,
     this.topImage,
@@ -94,6 +119,7 @@ class _FocusableTabChipState extends State<FocusableTabChip> with FocusableChipS
         onNavigateLeft: widget.onNavigateLeft,
         onNavigateRight: widget.onNavigateRight,
         onNavigateDown: widget.onNavigateDown,
+        onNavigateUp: widget.onNavigateUp,
         onBack: widget.onBack,
       ),
     );
@@ -153,7 +179,7 @@ class _FocusableTabChipState extends State<FocusableTabChip> with FocusableChipS
       borderRadius: hasImage ? 12 : 20,
       child: hasImage
           ? Column(
-              mainAxisSize: MainAxisSize.min,
+              mainAxisSize: .min,
               children: [
                 ClipRRect(borderRadius: BorderRadius.circular(6), child: widget.topImage!),
                 const SizedBox(height: 6),

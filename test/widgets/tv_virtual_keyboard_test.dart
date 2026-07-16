@@ -1,9 +1,10 @@
-import 'dart:async';
 import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:material_symbols_icons/symbols.dart';
+import 'package:plezy/focus/dpad_navigator.dart';
 import 'package:plezy/utils/platform_detector.dart';
 import 'package:plezy/widgets/tv_virtual_keyboard.dart';
 
@@ -42,6 +43,21 @@ void main() {
     expect(find.byType(Dialog), findsOneWidget);
   });
 
+  testWidgets('held select activates the highlighted key once', (tester) async {
+    final controller = TextEditingController();
+    addTearDown(controller.dispose);
+
+    await _pumpKeyboard(tester, controller: controller);
+
+    await tester.sendKeyDownEvent(LogicalKeyboardKey.select);
+    await tester.sendKeyRepeatEvent(LogicalKeyboardKey.select);
+    await tester.sendKeyUpEvent(LogicalKeyboardKey.select);
+    await tester.pump();
+
+    expect(controller.text, '1');
+    expect(find.byType(Dialog), findsOneWidget);
+  });
+
   testWidgets('directional pad enter activates highlighted key', (tester) async {
     final controller = TextEditingController();
     addTearDown(controller.dispose);
@@ -60,6 +76,38 @@ void main() {
 
     expect(controller.text, '1');
     expect(find.byType(Dialog), findsOneWidget);
+  });
+
+  testWidgets('directional navigation selects the expected key and wraps around spacers', (tester) async {
+    final controller = TextEditingController();
+    addTearDown(controller.dispose);
+
+    await _pumpKeyboard(tester, controller: controller);
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
+    await tester.sendKeyEvent(LogicalKeyboardKey.select);
+    await tester.pump();
+    expect(controller.text, '2');
+
+    // Re-open at the first key, then wrap left past the leading spacer to 0.
+    await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+    await tester.pumpAndSettle();
+    await _pumpKeyboard(tester, controller: controller);
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowLeft);
+    await tester.sendKeyEvent(LogicalKeyboardKey.select);
+    await tester.pump();
+    expect(controller.text, '20');
+  });
+
+  testWidgets('external controller changes rebuild the preview', (tester) async {
+    final controller = TextEditingController();
+    addTearDown(controller.dispose);
+
+    await _pumpKeyboard(tester, controller: controller);
+    controller.text = 'updated externally';
+    await tester.pump();
+
+    expect(find.text('updated externally'), findsOneWidget);
   });
 
   testWidgets('keyboard enter inserts newline for multiline input', (tester) async {
@@ -121,14 +169,66 @@ void main() {
     await _pumpKeyboard(tester, controller: controller);
 
     expect(find.text('='), findsOneWidget);
-    expect(find.byIcon(Icons.functions_rounded), findsOneWidget);
+    expect(find.byIcon(Symbols.functions_rounded), findsOneWidget);
 
-    await tester.tap(find.byIcon(Icons.functions_rounded));
+    await tester.tap(find.byIcon(Symbols.functions_rounded));
     await tester.pumpAndSettle();
 
     expect(find.text('ABC'), findsOneWidget);
     expect(find.text('!'), findsOneWidget);
     expect(find.text('='), findsOneWidget);
+  });
+
+  testWidgets('back key dismisses on key up without leaking to underlying route', (tester) async {
+    TvDetectionService.debugSetAppleTVOverride(true);
+    await tester.binding.setSurfaceSize(const Size(1280, 720));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    final controller = TextEditingController();
+    final underlyingFocusNode = FocusNode(debugLabel: 'underlying_route');
+    var underlyingBackEvents = 0;
+    late BuildContext context;
+    addTearDown(controller.dispose);
+    addTearDown(underlyingFocusNode.dispose);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: Focus(
+            focusNode: underlyingFocusNode,
+            autofocus: true,
+            onKeyEvent: (_, event) {
+              if (event.logicalKey.isBackKey) {
+                underlyingBackEvents++;
+                return KeyEventResult.handled;
+              }
+              return KeyEventResult.ignored;
+            },
+            child: Builder(
+              builder: (builderContext) {
+                context = builderContext;
+                return const SizedBox.shrink();
+              },
+            ),
+          ),
+        ),
+      ),
+    );
+
+    showTvVirtualKeyboard(context: context, controller: controller);
+    await tester.pumpAndSettle();
+    expect(find.byType(Dialog), findsOneWidget);
+
+    await tester.sendKeyDownEvent(LogicalKeyboardKey.escape);
+    await tester.pump();
+
+    expect(find.byType(Dialog), findsOneWidget);
+    expect(underlyingBackEvents, 0);
+
+    await tester.sendKeyUpEvent(LogicalKeyboardKey.escape);
+    await tester.pumpAndSettle();
+
+    expect(find.byType(Dialog), findsNothing);
+    expect(underlyingBackEvents, 0);
   });
 }
 
@@ -155,14 +255,12 @@ Future<void> _pumpKeyboard(
     ),
   );
 
-  unawaited(
-    showTvVirtualKeyboard(
-      context: context,
-      controller: controller,
-      keyboardType: keyboardType,
-      maxLines: maxLines,
-      onSubmitted: onSubmitted,
-    ),
+  showTvVirtualKeyboard(
+    context: context,
+    controller: controller,
+    keyboardType: keyboardType,
+    maxLines: maxLines,
+    onSubmitted: onSubmitted,
   );
   await tester.pumpAndSettle();
 }

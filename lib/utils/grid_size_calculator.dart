@@ -47,15 +47,32 @@ class GridSizeCalculator {
 
   /// Calculates the number of columns for a given available width.
   ///
-  /// Uses the same formula as Flutter's SliverGridDelegateWithMaxCrossAxisExtent:
-  /// `((crossAxisExtent + crossAxisSpacing) / (maxCrossAxisExtent + crossAxisSpacing)).ceil()`
+  /// Matches Flutter's SliverGridDelegateWithMaxCrossAxisExtent exactly (see
+  /// rendering/sliver_grid.dart), so this navigation column count equals the
+  /// number of columns the grid actually renders. A mismatch makes dpad "down"
+  /// (`index + columnCount`) land diagonally — see issue #1288. Note the spacing
+  /// is added to the denominator only, not the numerator:
+  /// `(crossAxisExtent / (maxCrossAxisExtent + crossAxisSpacing)).ceil()`
   ///
-  /// [crossAxisExtent] should come from layout constraints (e.g. `SliverLayoutBuilder`
-  /// or `LayoutBuilder`), not from `MediaQuery`, to account for sidebars or other
-  /// elements that reduce the grid's actual width.
-  static int getColumnCount(double crossAxisExtent, double maxCrossAxisExtent) {
-    final crossAxisSpacing = GridLayoutConstants.crossAxisSpacing;
-    return ((crossAxisExtent + crossAxisSpacing) / (maxCrossAxisExtent + crossAxisSpacing)).ceil().clamp(1, 100);
+  /// [crossAxisExtent] should come from layout constraints (e.g.
+  /// `SliverCrossAxisLayoutBuilder` or `LayoutBuilder`), not from `MediaQuery`,
+  /// to account for sidebars or other elements that reduce the grid's actual
+  /// width. Never use a plain `SliverLayoutBuilder` for this: its constraints
+  /// include the scroll offset, so it rebuilds the whole grid every scroll tick.
+  static int getColumnCount(
+    double crossAxisExtent,
+    double maxCrossAxisExtent, {
+    double crossAxisSpacing = GridLayoutConstants.crossAxisSpacing,
+  }) {
+    return (crossAxisExtent / (maxCrossAxisExtent + crossAxisSpacing)).ceil().clamp(1, 100);
+  }
+
+  static double getCellWidthForColumnCount(
+    double crossAxisExtent,
+    int columnCount, {
+    double crossAxisSpacing = GridLayoutConstants.crossAxisSpacing,
+  }) {
+    return (crossAxisExtent - (crossAxisSpacing * (columnCount - 1))) / columnCount;
   }
 
   /// Computes the actual cell width that a grid with [getMaxCrossAxisExtent] would produce
@@ -64,7 +81,7 @@ class GridSizeCalculator {
   static double getCellWidth(double availableWidth, BuildContext context, int density) {
     final maxExtent = getMaxCrossAxisExtent(context, density);
     final columns = getColumnCount(availableWidth, maxExtent);
-    return availableWidth / columns;
+    return getCellWidthForColumnCount(availableWidth, columns);
   }
 
   static bool isFirstRow(int index, int columnCount) {

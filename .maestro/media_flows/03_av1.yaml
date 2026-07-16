@@ -1,0 +1,26 @@
+appId: com.edde746.plezy
+name: Codec sample - AV1 Opus ASS and SRT
+tags:
+  - e2e
+  - media
+  - av1
+---
+- runFlow:
+    file: ../subflows/open_codec_sample.yaml
+    env:
+      SAMPLE_TITLE: "Codec AV1 Opus ASS"
+      SAMPLE_OVERVIEW: "AV1 video with multilingual Opus audio, styled ASS subtitles, SRT subtitles, and embedded fonts."
+- runFlow:
+    file: ../subflows/switch_codec_tracks.yaml
+    env:
+      AUDIO_TRACK: "(?is)^English.*(?:Opus|Stereo).*"
+      SUBTITLE_TRACK: "(?is)^English.*(?:ASS|TEXT/X-SSA).*"
+- repeat:
+    times: 2
+    while:
+      notVisible: "Overview"
+    commands:
+      - back
+- extendedWaitUntil:
+    visible: "Overview"
+    timeout: 10000

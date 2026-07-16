@@ -9,7 +9,9 @@ import '../models/plex/plex_user_profile.dart';
 import '../models/plex/plex_home.dart';
 import '../models/user_switch_response.dart';
 import '../utils/app_logger.dart';
+import '../utils/device_identity.dart';
 import '../utils/endpoint_race.dart';
+import '../utils/json_utils.dart';
 import '../utils/media_server_timeouts.dart';
 import '../utils/media_server_http_client.dart';
 import '../utils/poll_with_backoff.dart';
@@ -53,8 +55,17 @@ class PlexAuthService {
   final String _clientIdentifier;
   final String _appVersion;
   final String _platformVersion;
+  final String _platform;
+  final String? _deviceName;
 
-  PlexAuthService._(this._http, this._clientIdentifier, this._appVersion, this._platformVersion);
+  PlexAuthService._(
+    this._http,
+    this._clientIdentifier,
+    this._appVersion,
+    this._platformVersion,
+    this._platform,
+    this._deviceName,
+  );
 
   @visibleForTesting
   PlexAuthService.forTesting({
@@ -62,7 +73,9 @@ class PlexAuthService {
     String clientIdentifier = 'test-client',
     String appVersion = 'test',
     String platformVersion = 'test',
-  }) : this._(http, clientIdentifier, appVersion, platformVersion);
+    String platform = 'Flutter',
+    String? deviceName,
+  }) : this._(http, clientIdentifier, appVersion, platformVersion, platform, deviceName);
 
   /// Close the underlying HTTP client. Call when the service is short-lived
   /// (created for a single API call) to avoid leaking sockets.
@@ -76,7 +89,15 @@ class PlexAuthService {
     );
     final clientIdentifier = await storage.getOrCreateClientIdentifier();
     final packageInfo = await PackageInfo.fromPlatform();
-    return PlexAuthService._(http, clientIdentifier, packageInfo.version, Platform.operatingSystemVersion);
+    final identity = await DeviceIdentityService.resolve();
+    return PlexAuthService._(
+      http,
+      clientIdentifier,
+      packageInfo.version,
+      Platform.operatingSystemVersion,
+      identity.platform,
+      sanitizeHeaderValue(identity.deviceName),
+    );
   }
 
   String get clientIdentifier => _clientIdentifier;
@@ -86,6 +107,8 @@ class PlexAuthService {
       'Accept': 'application/json',
       'X-Plex-Product': _appName,
       'X-Plex-Client-Identifier': _clientIdentifier,
+      'X-Plex-Platform': _platform,
+      'X-Plex-Device-Name': ?_deviceName,
     };
 
     if (authToken != null) {
@@ -251,7 +274,7 @@ class PlexAuthService {
       'X-Plex-Product': _appName,
       'X-Plex-Version': _appVersion,
       'X-Plex-Client-Identifier': _clientIdentifier,
-      'X-Plex-Platform': 'Flutter',
+      'X-Plex-Platform': _platform,
       'X-Plex-Platform-Version': _platformVersion,
       'X-Plex-Token': currentToken,
       'X-Plex-Language': 'en',
@@ -337,25 +360,18 @@ class PlexServer {
       throw const FormatException('Server has no valid connections');
     }
 
-    DateTime? lastSeenAt;
-    if (json['lastSeenAt'] != null) {
-      try {
-        lastSeenAt = DateTime.parse(json['lastSeenAt'] as String);
-      } catch (e) {
-        lastSeenAt = null;
-      }
-    }
+    final lastSeenAt = DateTime.tryParse(json['lastSeenAt']?.toString() ?? '');
 
     return PlexServer(
       name: json['name'] as String, // Safe because validated above
       clientIdentifier: json['clientIdentifier'] as String, // Safe because validated above
       accessToken: json['accessToken'] as String, // Safe because validated above
       connections: connections,
-      owned: json['owned'] as bool? ?? false,
-      product: json['product'] as String?,
-      platform: json['platform'] as String?,
+      owned: flexibleBool(json['owned']),
+      product: _optionalScalarString(json['product']),
+      platform: _optionalScalarString(json['platform']),
       lastSeenAt: lastSeenAt,
-      presence: json['presence'] as bool? ?? false,
+      presence: flexibleBool(json['presence']),
     );
   }
 
@@ -392,20 +408,6 @@ class PlexServer {
       'lastSeenAt': lastSeenAt?.toIso8601String(),
       'presence': presence,
     };
-  }
-
-  PlexServer withAccessToken(String token) {
-    return PlexServer(
-      name: name,
-      clientIdentifier: clientIdentifier,
-      accessToken: token,
-      connections: connections,
-      owned: owned,
-      product: product,
-      platform: platform,
-      lastSeenAt: lastSeenAt,
-      presence: presence,
-    );
   }
 
   /// Check if server is online using the presence field
@@ -487,24 +489,32 @@ class PlexServer {
     )) {
       if (selection.phase == EndpointRacePhase.first) {
         final firstCandidate = selection.candidate;
+        // Emit the winner immediately — the HTTPS upgrade probe (up to a full
+        // race timeout when the HTTPS variant is dead) must not gate startup.
+        // The StreamIterator consumer pulls lazily, so the upgrade below runs
+        // off the critical path and lands via the same background-promotion
+        // drain that applies Phase 2 results.
+        firstConnection = _updateConnectionUrl(firstCandidate.connection, firstCandidate.url);
+        yield firstConnection;
+        appLogger.d(
+          'Emitted first working connection, continuing latency tests in background',
+          error: {'uri': firstConnection.uri},
+        );
+
         final upgradedFirstCandidate = await _upgradeCandidateToHttpsIfPossible(
           firstCandidate,
           clientIdentifier: clientIdentifier,
         );
-        final emitCandidate = upgradedFirstCandidate ?? firstCandidate;
-
-        firstConnection = _updateConnectionUrl(emitCandidate.connection, emitCandidate.url);
-        yield firstConnection;
         if (upgradedFirstCandidate != null && upgradedFirstCandidate.url != firstCandidate.url) {
           appLogger.i(
             'Phase 1 winner upgraded to HTTPS',
             error: {'from': firstCandidate.url, 'to': upgradedFirstCandidate.url},
           );
+          // Track the upgrade as the effective first connection so the Phase 2
+          // dedup below doesn't re-emit the same HTTPS endpoint as "better".
+          firstConnection = _updateConnectionUrl(upgradedFirstCandidate.connection, upgradedFirstCandidate.url);
+          yield firstConnection;
         }
-        appLogger.d(
-          'Emitted first working connection, continuing latency tests in background',
-          error: {'uri': firstConnection.uri},
-        );
         continue;
       }
 
@@ -745,42 +755,6 @@ class PlexServer {
     return _ConnectionCandidate(httpsConnection, httpsUrl, resultingIsPlexDirect, true);
   }
 
-  Future<PlexConnection?> upgradeConnectionToHttps(PlexConnection current) async {
-    if (current.uri.startsWith('https://')) {
-      return current;
-    }
-
-    final baseConnection = _findMatchingBaseConnection(current);
-    if (baseConnection == null) {
-      return null;
-    }
-
-    final candidate = _ConnectionCandidate(
-      baseConnection,
-      current.uri,
-      current.uri.contains('.plex.direct'),
-      current.uri.startsWith('https://'),
-    );
-    final upgradedCandidate = await _upgradeCandidateToHttpsIfPossible(candidate);
-    if (upgradedCandidate == null) {
-      return null;
-    }
-    return _updateConnectionUrl(upgradedCandidate.connection, upgradedCandidate.url);
-  }
-
-  PlexConnection? _findMatchingBaseConnection(PlexConnection connection) {
-    for (final base in connections) {
-      final sameAddress = base.address == connection.address;
-      final samePort = base.port == connection.port;
-      final sameLocal = base.local == connection.local;
-      final sameRelay = base.relay == connection.relay;
-      if (sameAddress && samePort && sameLocal && sameRelay) {
-        return base;
-      }
-    }
-    return null;
-  }
-
   /// Select the best candidate considering priority, latency, and URL type preference
   _ConnectionCandidate? _selectBestCandidateWithLatency(Map<_ConnectionCandidate, ConnectionTestResult> results) {
     // Group candidates by connection type (local/remote/relay)
@@ -891,7 +865,7 @@ class PlexServer {
   static bool _isPrivateOrLocalAddress(InternetAddress address) {
     final bytes = address.rawAddress;
     if (address.type == InternetAddressType.IPv4 && bytes.length == 4) {
-      final a = bytes[0];
+      final a = bytes.first;
       final b = bytes[1];
       return a == 0 ||
           a == 10 ||
@@ -903,7 +877,7 @@ class PlexServer {
     }
 
     if (address.type == InternetAddressType.IPv6 && bytes.length == 16) {
-      final first = bytes[0];
+      final first = bytes.first;
       final second = bytes[1];
       final isLoopback = bytes.take(15).every((b) => b == 0) && bytes[15] == 1;
       final isUnspecified = bytes.every((b) => b == 0);
@@ -962,11 +936,11 @@ class PlexConnection {
     return PlexConnection(
       protocol: json['protocol'] as String, // Safe because validated above
       address: json['address'] as String, // Safe because validated above
-      port: json['port'] as int, // Safe because validated above
+      port: flexibleInt(json['port'])!, // Safe because validated above
       uri: json['uri'] as String, // Safe because validated above
-      local: json['local'] as bool? ?? false,
-      relay: json['relay'] as bool? ?? false,
-      ipv6: json['IPv6'] as bool? ?? false,
+      local: flexibleBool(json['local']),
+      relay: flexibleBool(json['relay']),
+      ipv6: flexibleBool(json['IPv6']),
     );
   }
 
@@ -983,8 +957,7 @@ class PlexConnection {
       return false;
     }
 
-    // Check for required port (integer)
-    if (json['port'] is! int) {
+    if (flexibleInt(json['port']) == null) {
       return false;
     }
 
@@ -1042,6 +1015,14 @@ class PlexConnection {
     );
   }
 }
+
+String? _optionalScalarString(Object? value) => switch (value) {
+  null => null,
+  final String value => value,
+  final num value => value.toString(),
+  final bool value => value.toString(),
+  _ => null,
+};
 
 /// Custom exception for server parsing errors that includes debug data
 class ServerParsingException implements Exception {

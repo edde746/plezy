@@ -25,8 +25,15 @@ I18N_DIR = ROOT / "lib" / "i18n"
 LIB_DIR = ROOT / "lib"
 SOURCE_LOCALE = "en"
 
-USAGE_RE = re.compile(r"\bt\s*\.\s*([A-Za-z_]\w*(?:\s*\.\s*[A-Za-z_]\w*)+)")
+USAGE_RES = (
+    re.compile(r"\bt\s*\.\s*([A-Za-z_]\w*(?:\s*\.\s*[A-Za-z_]\w*)+)"),
+    re.compile(
+        r"\bTranslations\s*\.\s*of\s*\([^)]*\)\s*\.\s*"
+        r"([A-Za-z_]\w*(?:\s*\.\s*[A-Za-z_]\w*)+)"
+    ),
+)
 DOT_WS_RE = re.compile(r"\s*\.\s*")
+PLURAL_CATEGORIES = ("zero", "one", "two", "few", "many", "other")
 
 
 def load_json(path: Path) -> dict:
@@ -37,6 +44,8 @@ def load_json(path: Path) -> dict:
 def dump_json(obj: dict) -> str:
     return json.dumps(obj, ensure_ascii=False, indent=2) + "\n"
 
+_MISSING = object()
+
 
 def empty_shaped_like(node):
     if isinstance(node, dict):
@@ -44,45 +53,79 @@ def empty_shaped_like(node):
     return ""
 
 
-def normalize(en_node, loc_node, path: str, stats: dict):
-    """Rebuild loc_node to match en_node's shape. Returns the new value."""
+def is_plural_map(node) -> bool:
+    return (
+        isinstance(node, dict)
+        and "other" in node
+        and bool(node)
+        and set(node).issubset(PLURAL_CATEGORIES)
+        and all(not isinstance(value, dict) for value in node.values())
+    )
+
+
+def locale_plural_categories(en_node, loc_node) -> tuple[str, ...]:
+    found: set[str] = set()
+
+    def visit(en_value, loc_value):
+        if is_plural_map(en_value):
+            if isinstance(loc_value, dict):
+                found.update(key for key in loc_value if key in PLURAL_CATEGORIES)
+            return
+        if not isinstance(en_value, dict) or not isinstance(loc_value, dict):
+            return
+        for key, child in en_value.items():
+            visit(child, loc_value.get(key, _MISSING))
+
+    visit(en_node, loc_node)
+    if not found:
+        found.update(en_node.keys() if is_plural_map(en_node) else ("one", "other"))
+    return tuple(category for category in PLURAL_CATEGORIES if category in found)
+
+
+def normalize(en_node, loc_node, path: str, stats: dict, plural_categories: tuple[str, ...]):
+    """Rebuild loc_node to match en_node while preserving locale plural categories."""
+    if is_plural_map(en_node):
+        if not isinstance(loc_node, dict):
+            if loc_node is not _MISSING:
+                stats["type_fixed"] += 1
+                print(f"  WARN type mismatch at '{path}' — replacing with empty plural map")
+            loc_node = {}
+        result = {}
+        for category in plural_categories:
+            value = loc_node.get(category, _MISSING)
+            if value is _MISSING or isinstance(value, dict):
+                stats["added"] += 1
+                result[category] = ""
+            else:
+                stats["unchanged"] += 1
+                result[category] = value
+        return result
+
     if isinstance(en_node, dict):
         if not isinstance(loc_node, dict):
-            # Type mismatch: en is branch, locale is leaf (or missing).
             if loc_node is not _MISSING:
                 stats["type_fixed"] += 1
                 print(f"  WARN type mismatch at '{path}' — replacing with empty branch")
-            result = {}
-            for k, v in en_node.items():
-                sub_path = f"{path}.{k}" if path else k
-                if isinstance(v, dict):
-                    result[k] = normalize(v, _MISSING, sub_path, stats)
-                else:
-                    stats["added"] += 1
-                    result[k] = ""
-            return result
+            loc_node = {}
 
         result = {}
-        for k, v in en_node.items():
-            sub_path = f"{path}.{k}" if path else k
-            if k in loc_node:
-                result[k] = normalize(v, loc_node[k], sub_path, stats)
-            else:
-                if isinstance(v, dict):
-                    result[k] = normalize(v, _MISSING, sub_path, stats)
-                else:
-                    stats["added"] += 1
-                    result[k] = ""
-        # Detect orphans (keys present in locale but not in en).
-        for k in loc_node:
-            if k not in en_node:
-                sub_path = f"{path}.{k}" if path else k
-                dropped = count_leaves(loc_node[k])
+        for key, value in en_node.items():
+            sub_path = f"{path}.{key}" if path else key
+            result[key] = normalize(
+                value,
+                loc_node.get(key, _MISSING),
+                sub_path,
+                stats,
+                plural_categories,
+            )
+        for key in loc_node:
+            if key not in en_node:
+                sub_path = f"{path}.{key}" if path else key
+                dropped = count_leaves(loc_node[key])
                 stats["removed"] += dropped
                 print(f"  INFO dropping orphan '{sub_path}' ({dropped} leaf key{'s' if dropped != 1 else ''})")
         return result
 
-    # en_node is a leaf.
     if loc_node is _MISSING:
         stats["added"] += 1
         return ""
@@ -92,9 +135,6 @@ def normalize(en_node, loc_node, path: str, stats: dict):
         return ""
     stats["unchanged"] += 1
     return loc_node
-
-
-_MISSING = object()
 
 
 def count_leaves(node) -> int:
@@ -123,13 +163,13 @@ def clean_pass(check_only: bool) -> bool:
     locale_files = sorted(
         p for p in I18N_DIR.glob("*.i18n.json") if p.name != f"{SOURCE_LOCALE}.i18n.json"
     )
-
     for path in locale_files:
         locale = path.name.split(".")[0]
         print(f"[{locale}]")
         loc = load_json(path)
         stats = {"added": 0, "removed": 0, "type_fixed": 0, "unchanged": 0}
-        normalized = normalize(en, loc, "", stats)
+        plural_categories = locale_plural_categories(en, loc)
+        normalized = normalize(en, loc, "", stats, plural_categories)
         new_text = dump_json(normalized)
         old_text = path.read_text(encoding="utf-8")
         file_changed = new_text != old_text
@@ -166,9 +206,10 @@ def collect_references() -> set[str]:
         if rel.parts and rel.parts[0] == "i18n":
             continue
         text = dart_file.read_text(encoding="utf-8", errors="replace")
-        for match in USAGE_RE.finditer(text):
-            chain = DOT_WS_RE.sub(".", match.group(1))
-            refs.add(chain)
+        for usage_re in USAGE_RES:
+            for match in usage_re.finditer(text):
+                chain = DOT_WS_RE.sub(".", match.group(1))
+                refs.add(chain)
     return refs
 
 
@@ -263,6 +304,9 @@ def main() -> int:
         code = unused_pass(strict=args.strict)
         if code:
             return code
+
+    if run_clean and args.check and changed:
+        return 1
 
     return 0
 

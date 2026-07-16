@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../media/ids.dart';
 import 'package:plezy/widgets/app_icon.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
@@ -10,6 +11,7 @@ import '../utils/provider_extensions.dart';
 import '../services/media_list_playback_launcher.dart';
 import '../widgets/loading_indicator_box.dart';
 import '../utils/app_logger.dart';
+import '../utils/error_message_utils.dart';
 import '../utils/snackbar_helper.dart';
 import '../mixins/refreshable.dart';
 import '../mixins/item_updatable.dart';
@@ -60,7 +62,7 @@ abstract class BaseMediaListDetailScreen<T extends StatefulWidget> extends State
     if (serverId == null) {
       throw Exception(t.errors.noClientAvailable);
     }
-    return context.getMediaClientWithFallback(serverId);
+    return context.getMediaClientWithFallback(ServerId(serverId));
   }
 
   @override
@@ -97,8 +99,8 @@ abstract class BaseMediaListDetailScreen<T extends StatefulWidget> extends State
   }
 
   @override
-  void updateItemInLists(String itemId, MediaItem updatedItem) {
-    final index = items.indexWhere((it) => it.id == itemId);
+  void updateItemInLists(String sourceGlobalKey, MediaItem updatedItem) {
+    final index = items.indexWhere((item) => item.globalKey == sourceGlobalKey);
     if (index != -1) {
       items[index] = updatedItem;
     }
@@ -168,11 +170,6 @@ mixin StandardItemLoader<T extends StatefulWidget> on BaseMediaListDetailScreen<
   /// Fetch items from the API (must be implemented by subclass)
   Future<List<MediaItem>> fetchItems();
 
-  /// Get error message for failed load (can be overridden)
-  String getLoadErrorMessage(Object error) {
-    return 'Failed to load items: ${error.toString()}';
-  }
-
   /// Get log message for successful load (can be overridden)
   String getLoadSuccessMessage(int itemCount) {
     return 'Loaded $itemCount items';
@@ -199,11 +196,11 @@ mixin StandardItemLoader<T extends StatefulWidget> on BaseMediaListDetailScreen<
       }
 
       appLogger.d(getLoadSuccessMessage(newItems.length));
-    } catch (e) {
-      appLogger.e('Failed to load items', error: e);
+    } catch (e, stackTrace) {
+      final message = localizedLoadErrorMessage(e, stackTrace, context: title);
       if (mounted) {
         setState(() {
-          errorMessage = getLoadErrorMessage(e);
+          errorMessage = message;
           isLoading = false;
         });
       }

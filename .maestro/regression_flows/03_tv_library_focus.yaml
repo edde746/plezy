@@ -1,0 +1,68 @@
+appId: com.edde746.plezy
+name: TV alphabet rail retains focus until returning to the media grid
+
+tags:
+  - e2e
+  - regression
+  - tv
+  - focus
+---
+- runFlow: ../subflows/onboard_jellyfin_tv.yaml
+- pressKey: "Remote Dpad Left"
+- pressKey: "Remote Dpad Down"
+- pressKey: "Remote Dpad Down"
+- pressKey: "Remote Dpad Center"
+- extendedWaitUntil:
+    visible: "Recommended"
+    timeout: 15000
+- pressKey: "Remote Dpad Right"
+- pressKey: "Remote Dpad Up"
+- pressKey: "Remote Dpad Right"
+- pressKey: "Remote Dpad Center"
+- pressKey: "Remote Dpad Up"
+- pressKey: "Remote Dpad Right"
+- pressKey: "Remote Dpad Right"
+- pressKey: "Remote Dpad Center"
+- extendedWaitUntil:
+    visible: "Title"
+    timeout: 10000
+- pressKey: "Remote Dpad Center"
+- pressKey: "Remote Dpad Left"
+- extendedWaitUntil:
+    notVisible: "Sort by"
+    timeout: 10000
+- pressKey: "Remote Dpad Down"
+- extendedWaitUntil:
+    visible: "(?s).*Alpha Archive.*"
+    timeout: 15000
+- repeat:
+    times: 8
+    commands:
+      - pressKey: "Remote Dpad Right"
+- repeat:
+    times: 13
+    commands:
+      - pressKey: "Remote Dpad Down"
+- extendedWaitUntil:
+    visible: "(?s).*Mike Matrix.*"
+    timeout: 15000
+- assertNotVisible: "(?s).*Alpha Archive.*"
+- repeat:
+    times: 13
+    commands:
+      - pressKey: "Remote Dpad Down"
+- extendedWaitUntil:
+    visible: "(?s).*Zulu Zone.*"
+    timeout: 15000
+- assertNotVisible: "(?s).*Mike Matrix.*"
+- pressKey: "Remote Dpad Left"
+- pressKey: "Remote Dpad Center"
+- extendedWaitUntil:
+    visible: "Play"
+    timeout: 15000
+- assertVisible: "(?s).*Zulu Zone.*"
+- pressKey: "back"
+- extendedWaitUntil:
+    visible: "Browse"
+    timeout: 15000
+- assertVisible: "(?s).*Zulu Zone.*"

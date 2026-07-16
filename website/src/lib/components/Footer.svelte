@@ -3,48 +3,33 @@
 </script>
 
 <footer class="site-footer">
-  <div class="footer-inner">
-    <!-- Gradient rule -->
-    <div class="gradient-rule"></div>
-
-    <div class="footer-content">
-      <!-- Logo + name -->
-      <div class="footer-brand">
-        <span class="footer-logo"><Logo /></span>
-        <span>Plezy</span>
-      </div>
-
-      <!-- Links -->
-      <nav class="footer-nav">
-        <a href="https://github.com/edde746/plezy" target="_blank" rel="noopener noreferrer">GitHub</a>
-        <a href="/privacy">Privacy Policy</a>
-      </nav>
+  <div class="footer-content">
+    <div class="footer-brand">
+      <span class="footer-logo"><Logo /></span>
+      <span>Plezy</span>
     </div>
+
+    <nav class="footer-nav" aria-label="Footer navigation">
+      <a href="https://github.com/edde746/plezy" target="_blank" rel="noopener noreferrer">GitHub</a>
+      <a href="/privacy">Privacy</a>
+      <a href="#home">Back to top</a>
+    </nav>
   </div>
 </footer>
 
 <style>
   .site-footer {
-    padding: 2.5rem 1.5rem;
-  }
-
-  .footer-inner {
-    max-width: 64rem;
-    margin-inline: auto;
-  }
-
-  .gradient-rule {
-    height: 1px;
-    margin-bottom: 2rem;
-    background: linear-gradient(to right, transparent, var(--color-border), transparent);
+    padding: clamp(3rem, 7vw, 5rem) var(--page-gutter);
   }
 
   .footer-content {
     display: flex;
+    width: min(100%, var(--page-width));
     flex-direction: column;
-    align-items: center;
+    align-items: flex-start;
     justify-content: space-between;
-    gap: 2rem;
+    gap: 1.5rem;
+    margin-inline: auto;
   }
 
   .footer-brand {
@@ -52,42 +37,43 @@
     align-items: center;
     gap: 0.625rem;
     color: var(--color-text-muted);
-    font-weight: 500;
+    font-weight: 700;
   }
 
   .footer-logo :global(svg) {
-    width: 1.75rem;
-    height: 1.75rem;
+    width: 1.5rem;
+    height: 1.5rem;
   }
 
   .footer-nav {
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
-    gap: 2rem;
+    gap: 0.25rem;
     color: var(--color-text-muted);
-    font-size: 0.875rem;
-    line-height: 1.25rem;
+    font-size: 0.8125rem;
+    font-weight: 600;
   }
 
   .footer-nav a {
-    transition: color 150ms ease;
+    border-radius: var(--radius-full);
+    padding: 0.625rem 0.875rem;
+    transition:
+      color var(--motion-fast) var(--ease-standard),
+      background-color var(--motion-fast) var(--ease-standard);
   }
 
-  .footer-nav a:hover {
+  .footer-nav a:hover,
+  .footer-nav a:focus-visible {
     color: var(--color-text);
+    background: rgb(237 237 237 / 0.12);
+    outline: none;
   }
 
   @media (min-width: 640px) {
-    .site-footer {
-      padding-block: 4rem;
-    }
-
-    .gradient-rule {
-      margin-bottom: 3rem;
-    }
-
     .footer-content {
       flex-direction: row;
+      align-items: center;
     }
   }
 </style>

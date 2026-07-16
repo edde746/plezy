@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../media/ids.dart';
 import 'package:provider/provider.dart';
 
 import '../../models/livetv_channel.dart';
@@ -33,25 +34,27 @@ mixin LiveTvActionsMixin<T extends StatefulWidget> on State<T> {
   ///
   /// Both backends route through the live-TV navigator so the player
   /// inherits the live-only branches (no Trakt scrobble, no progress
-  /// scrobble, channel up/down nav, no resume bookmark). Plex passes a
-  /// `client + dvrKey` and tunes inside the player; Jellyfin pre-resolves
-  /// the channel's `/Videos/{id}/stream` URL and lets the engine play it
-  /// directly.
+  /// scrobble, channel up/down nav, no resume bookmark). The player starts
+  /// the backend-neutral session itself (Plex tune / Jellyfin stream
+  /// negotiation under its loading spinner).
   Future<void> tuneChannel(LiveTvChannel channel) async {
     final multiServer = context.read<MultiServerProvider>();
-    await tuneAndNavigateToLiveTv(context, multiServer: multiServer, channel: channel, channels: liveTvChannels);
+    await navigateToLiveTv(context, multiServer: multiServer, channel: channel, channels: liveTvChannels);
   }
 
   /// Open the program-details bottom sheet. The poster is resolved from
   /// [posterThumb] on the server identified by [posterServerId].
   void showProgramDetails({
+    BuildContext? sheetContext,
     required LiveTvProgram program,
     required LiveTvChannel? channel,
     required String? posterThumb,
-    required String posterServerId,
+    required String? posterServerId,
   }) {
-    final multiServer = context.read<MultiServerProvider>();
-    final client = multiServer.getClientForServer(posterServerId);
+    final effectiveContext = sheetContext ?? context;
+    final multiServer = effectiveContext.read<MultiServerProvider>();
+    final serverId = serverIdOrNull(posterServerId);
+    final client = serverId == null ? null : multiServer.getClientForServer(serverId);
     String? posterUrl;
     if (posterThumb != null && client != null) {
       posterUrl = MediaImageHelper.getOptimizedImageUrl(
@@ -59,13 +62,13 @@ mixin LiveTvActionsMixin<T extends StatefulWidget> on State<T> {
         thumbPath: posterThumb,
         maxWidth: 80,
         maxHeight: 120,
-        devicePixelRatio: MediaImageHelper.effectiveDevicePixelRatio(context),
+        devicePixelRatio: MediaImageHelper.effectiveDevicePixelRatio(effectiveContext),
         imageType: ImageType.poster,
       );
     }
 
     showProgramDetailsSheet(
-      context,
+      effectiveContext,
       program: program,
       channel: channel,
       posterUrl: posterUrl,

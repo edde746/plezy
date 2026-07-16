@@ -1,0 +1,48 @@
+appId: com.edde746.plezy
+name: Removing a Jellyfin profile connection leaves no orphaned session
+
+tags:
+  - e2e
+  - regression
+  - profiles
+  - teardown
+---
+- runFlow: ../subflows/onboard_jellyfin.yaml
+- runFlow: ../subflows/create_guest_jellyfin_profile.yaml
+- tapOn:
+    text: "Manage"
+    index: 1
+- tapOn: "Manage"
+- extendedWaitUntil:
+    visible: "Profile name"
+    timeout: 10000
+- assertVisible: "(?s)^E2E Guest.*"
+- assertVisible: "(?s)^Maestro Jellyfin.*Default.*Manage$"
+- tapOn: "Manage"
+- extendedWaitUntil:
+    visible: "Remove"
+    timeout: 10000
+- tapOn: "Remove"
+- extendedWaitUntil:
+    visible: "^Remove connection\\?$"
+    timeout: 10000
+- assertVisible: "(?s).*E2E Guest's access to Maestro Jellyfin.*"
+- tapOn: "Remove"
+- extendedWaitUntil:
+    notVisible: "(?s)^Maestro Jellyfin.*Default.*Manage$"
+    timeout: 15000
+- assertVisible: "Delete profile"
+- tapOn: "Delete profile"
+- extendedWaitUntil:
+    visible: "^Delete profile\\?$"
+    timeout: 10000
+- tapOn: "^Delete$"
+- extendedWaitUntil:
+    visible: "Switch Profile"
+    timeout: 30000
+- assertNotVisible: "(?s).*E2E Guest.*"
+- assertVisible: "(?s)^M\nMaestro\nActive.*"
+- back
+- extendedWaitUntil:
+    visible: "(?s).*Zulu Zone 4.*"
+    timeout: 30000

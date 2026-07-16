@@ -1,0 +1,38 @@
+appId: com.edde746.plezy
+---
+- retry:
+    maxRetries: 1
+    commands:
+      - launchApp:
+          clearState: true
+          permissions:
+            all: allow
+      - extendedWaitUntil:
+          visible: "(?s)^(?:Connect to Jellyfin|Wait).*"
+          timeout: 30000
+      - tapOn:
+          text: "Wait"
+          optional: true
+      - extendedWaitUntil:
+          visible: "Connect to Jellyfin"
+          timeout: 30000
+- tapOn: "Connect to Jellyfin"
+- extendedWaitUntil:
+    visible: "Add Jellyfin server"
+    timeout: 10000
+- tapOn: "(?s)Server URLs.*"
+- inputText: ${JELLYFIN_URL}
+- hideKeyboard
+- tapOn: "Find server"
+- extendedWaitUntil:
+    visible: "Maestro Jellyfin"
+    timeout: 15000
+- tapOn: "Username"
+- inputText: "maestro"
+- tapOn: "Password"
+- inputText: "maestro"
+- hideKeyboard
+- tapOn: "Sign in"
+- extendedWaitUntil:
+    visible: "Discover"
+    timeout: 30000

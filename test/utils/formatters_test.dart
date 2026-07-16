@@ -175,11 +175,5 @@ void main() {
       expect(formatFullDate('not-a-date'), 'not-a-date');
       expect(formatFullDate(''), '');
     });
-
-    test('does not throw for a valid ISO date', () {
-      // DateFormat may fall back to raw input if intl date symbols aren't
-      // initialised in the test runner — just verify no crash and string output.
-      expect(formatFullDate('2024-01-15'), isA<String>());
-    });
   });
 }

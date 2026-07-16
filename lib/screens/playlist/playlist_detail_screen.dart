@@ -1,15 +1,22 @@
 import 'dart:async';
+import '../../media/ids.dart';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import '../../focus/focusable_action_bar.dart';
+import '../../focus/focusable_button.dart';
+import '../../media/library_query.dart';
 import '../../media/media_item.dart';
 import '../../media/media_kind.dart';
 import '../../media/media_playlist.dart';
 import '../../services/media_list_playback_launcher.dart';
+import '../../services/music/music_playback_service.dart';
 import '../../services/playlist_items_loader.dart';
 import '../../utils/app_logger.dart';
+import '../../utils/error_message_utils.dart';
+import '../../utils/continuation_pagination_coordinator.dart';
+import '../../utils/music_navigation.dart';
 import '../../widgets/app_icon.dart';
 import '../../widgets/desktop_app_bar.dart';
 import '../../focus/dpad_navigator.dart';
@@ -24,9 +31,11 @@ import '../../utils/dialogs.dart';
 import '../../utils/download_utils.dart';
 import '../../utils/snackbar_helper.dart';
 import '../../widgets/ios_status_bar_tap_scroll_to_top.dart';
+import '../../widgets/listenable_selector.dart';
 import '../base_media_list_detail_screen.dart';
 import '../focusable_detail_screen_mixin.dart';
 import '../../mixins/grid_focus_node_mixin.dart';
+import '../../widgets/overlay_sheet.dart';
 
 /// Screen to display the contents of a playlist
 class PlaylistDetailScreen extends StatefulWidget {
@@ -49,9 +58,6 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
   Object get mediaItem => widget.playlist;
 
   @override
-  String? get itemServerId => widget.playlist.serverId;
-
-  @override
   String get title => widget.playlist.title;
 
   @override
@@ -68,20 +74,60 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
   /// filter rules, not direct edits). Jellyfin has no equivalent concept.
   bool get _isReadOnly => widget.playlist.smart;
 
+  /// Audio playlists play through the music session (mini-player /
+  /// now-playing) instead of the video play-queue launcher.
+  bool get _isAudioPlaylist => widget.playlist.playlistType == 'audio';
+
+  MusicPlayContext get _musicPlayContext =>
+      MusicPlayContext(id: widget.playlist.id, title: widget.playlist.title, kind: MusicPlayContextKind.playlist);
+
+  @override
+  Future<void> playItems() => _isAudioPlaylist ? _playAudioPlaylist(shuffle: false) : super.playItems();
+
+  @override
+  Future<void> shufflePlayItems() => _isAudioPlaylist ? _playAudioPlaylist(shuffle: true) : super.shufflePlayItems();
+
+  /// Uses the already-loaded items when the playlist is fully paged in;
+  /// otherwise fetches the full item list (one loader round-trip) so the
+  /// queue isn't truncated to the first page.
+  Future<void> _playAudioPlaylist({required bool shuffle, MediaItem? startTrack}) async {
+    if (items.isEmpty) {
+      showAppSnackBar(context, emptyMessage);
+      return;
+    }
+    if (!ensureMusicPlaybackAvailable(context)) return;
+    List<MediaItem> tracks;
+    if (_isPlaylistFullyLoaded) {
+      tracks = items;
+    } else {
+      try {
+        tracks = await fetchAllPlaylistItems(mediaClient, widget.playlist.id);
+      } catch (e, stackTrace) {
+        final message = localizedLoadErrorMessage(e, stackTrace, context: widget.playlist.title);
+        if (mounted) showErrorSnackBar(context, message);
+        return;
+      }
+      if (!mounted) return;
+    }
+    await playTracks(context, tracks: tracks, startTrack: startTrack, playContext: _musicPlayContext, shuffle: shuffle);
+  }
+
   @override
   List<FocusableAction> getAppBarActions() {
-    final isVideoPlaylist = widget.playlist.playlistType == 'video';
+    // Video AND audio playlists download (tracks queue through the same list
+    // pipeline); photo/mixed playlists keep the affordance hidden.
+    final isDownloadablePlaylist = widget.playlist.playlistType == 'video' || _isAudioPlaylist;
     final ruleKey = _playlistSyncRuleKey();
     // Select the specific bool we care about so unrelated DownloadProvider
     // ticks (e.g. active download progress) don't rebuild the app bar.
-    final hasRule = isVideoPlaylist && context.select<DownloadProvider, bool>((p) => p.hasSyncRule(ruleKey));
+    final hasRule = isDownloadablePlaylist && context.select<DownloadProvider, bool>((p) => p.hasSyncRule(ruleKey));
 
     return [
       if (items.isNotEmpty) ...[
         FocusableAction(icon: Symbols.play_arrow_rounded, tooltip: t.common.play, onPressed: playItems),
         FocusableAction(icon: Symbols.shuffle_rounded, tooltip: t.common.shuffle, onPressed: shufflePlayItems),
       ],
-      if (!PlatformDetector.isAppleTV() && isVideoPlaylist && (items.isNotEmpty || hasRule))
+      if (!PlatformDetector.isAppleTV() && isDownloadablePlaylist && (items.isNotEmpty || hasRule))
         FocusableAction(
           icon: hasRule ? Symbols.sync_rounded : Symbols.download_rounded,
           tooltip: hasRule ? t.downloads.manageSyncRule : t.downloads.downloadNow,
@@ -122,7 +168,11 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
 
   String _playlistSyncRuleKey() {
     final serverId = widget.playlist.serverId ?? mediaClient.serverId;
-    return context.read<DownloadProvider>().syncRuleKeyForClient(mediaClient, widget.playlist.id, serverId: serverId);
+    return context.read<DownloadProvider>().syncRuleKeyForClient(
+      mediaClient,
+      widget.playlist.id,
+      serverId: ServerId(serverId),
+    );
   }
 
   Future<void> _managePlaylistSyncRule() =>
@@ -137,21 +187,29 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
 
   // Focus management for regular (non-smart) reorderable lists
   final FocusNode _listFocusNode = FocusNode(debugLabel: 'playlist_list');
+  final FocusNode _continuationRetryFocusNode = FocusNode(debugLabel: 'playlist_continuation_retry');
 
   // Navigation state for regular (non-smart) playlists
   int _focusedIndex = 0;
   int _focusedColumn = 0; // 0=content, 1=drag handle, 2=remove button
+  final ValueNotifier<int> _focusRevision = ValueNotifier<int>(0);
+
+  void _notifyFocusChanged() => _focusRevision.value++;
 
   // Move mode state
   int? _movingIndex;
   int? _originalIndex;
   List<MediaItem>? _originalOrder;
-  int? _playlistTotalSize;
-  int _playlistLoadGeneration = 0;
-  bool _isLoadingFullPlaylist = false;
-  String? _playlistContinuationErrorMessage;
 
-  bool get _isPlaylistFullyLoaded => _playlistTotalSize != null && items.length >= _playlistTotalSize!;
+  late final ContinuationPaginationCoordinator<MediaItem> _continuation = ContinuationPaginationCoordinator<MediaItem>(
+    loadPage: _fetchPlaylistContinuationPage,
+    onPage: _applyPlaylistContinuationPage,
+    onStateChanged: _handleContinuationStateChanged,
+    onError: (error, stackTrace) =>
+        appLogger.w('Failed to finish loading playlist items', error: error, stackTrace: stackTrace),
+  );
+
+  bool get _isPlaylistFullyLoaded => _continuation.totalCount != null && items.length >= _continuation.totalCount!;
 
   bool get _canEditPlaylist => !_isReadOnly && _isPlaylistFullyLoaded;
 
@@ -160,7 +218,10 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
 
   @override
   void dispose() {
+    _continuation.dispose();
     _listFocusNode.dispose();
+    _continuationRetryFocusNode.dispose();
+    _focusRevision.dispose();
     disposeFocusResources();
     super.dispose();
   }
@@ -172,15 +233,11 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
 
   @override
   Future<void> loadItems() async {
-    final generation = ++_playlistLoadGeneration;
     if (mounted) {
       setState(() {
         isLoading = true;
         errorMessage = null;
         items = [];
-        _playlistTotalSize = null;
-        _isLoadingFullPlaylist = false;
-        _playlistContinuationErrorMessage = null;
         _focusedIndex = 0;
         _focusedColumn = 0;
         _movingIndex = null;
@@ -190,86 +247,56 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
     }
 
     try {
-      final firstPage = await mediaClient.fetchPlaylistPage(widget.playlist.id, start: 0, size: _pageSize);
-      if (!mounted || generation != _playlistLoadGeneration) return;
+      LibraryPage<MediaItem>? firstPage;
+      final applied = await _continuation.runNewGeneration(() async {
+        firstPage = await mediaClient.fetchPlaylistPage(widget.playlist.id, start: 0, size: _pageSize);
+      });
+      if (!mounted || !applied) return;
+      final page = firstPage!;
+
+      _continuation.setContinuation(startIndex: page.items.length, totalCount: page.totalCount);
 
       setState(() {
-        items = List.of(firstPage.items);
-        _playlistTotalSize = firstPage.totalCount;
+        items = List.of(page.items);
         isLoading = false;
-        _isLoadingFullPlaylist = firstPage.items.length < firstPage.totalCount;
       });
 
-      appLogger.d(
-        'Loaded ${firstPage.items.length} of ${firstPage.totalCount} items for playlist: ${widget.playlist.title}',
-      );
+      appLogger.d('Loaded ${page.items.length} of ${page.totalCount} items for playlist: ${widget.playlist.title}');
       _autoFocusAfterLoad();
 
-      if (firstPage.items.length < firstPage.totalCount) {
-        unawaited(_loadRemainingPlaylistPages(generation, firstPage.items.length, firstPage.totalCount));
-      }
-    } catch (e) {
-      appLogger.e('Failed to load playlist items', error: e);
-      if (!mounted || generation != _playlistLoadGeneration) return;
+      if (_continuation.hasMore) unawaited(_continuation.loadRemaining());
+    } catch (e, stackTrace) {
+      final message = localizedLoadErrorMessage(e, stackTrace, context: widget.playlist.title);
+      if (!mounted) return;
       setState(() {
-        errorMessage = getLoadErrorMessage(e);
+        errorMessage = message;
         isLoading = false;
-        _isLoadingFullPlaylist = false;
       });
     }
   }
 
-  Future<void> _loadRemainingPlaylistPages(int generation, int startOffset, int totalCount) async {
-    var offset = startOffset;
-    var total = totalCount;
-    if (mounted && generation == _playlistLoadGeneration) {
-      setState(() {
-        _isLoadingFullPlaylist = true;
-        _playlistContinuationErrorMessage = null;
-      });
-    }
-    try {
-      while (offset < total) {
-        final page = await mediaClient.fetchPlaylistPage(widget.playlist.id, start: offset, size: _pageSize);
-        if (!mounted || generation != _playlistLoadGeneration) return;
-        if (page.items.isEmpty) break;
-        setState(() {
-          items = List.of(items)..addAll(page.items);
-          total = page.totalCount;
-          _playlistTotalSize = page.totalCount;
-        });
-        offset += page.items.length;
-      }
-      appLogger.d(
-        'Loaded ${items.length} of ${_playlistTotalSize ?? items.length} items for playlist: ${widget.playlist.title}',
-      );
-      if (mounted && generation == _playlistLoadGeneration) {
-        setState(() {
-          _playlistContinuationErrorMessage = null;
-        });
-      }
-    } catch (e, st) {
-      appLogger.w('Failed to finish loading playlist items', error: e, stackTrace: st);
-      if (mounted && generation == _playlistLoadGeneration) {
-        setState(() {
-          _playlistContinuationErrorMessage = t.messages.errorLoading(error: e.toString());
-        });
-      }
-    } finally {
-      if (mounted && generation == _playlistLoadGeneration) {
-        setState(() {
-          _isLoadingFullPlaylist = false;
-          if (_focusedColumn != 0 && !_canEditPlaylist) _focusedColumn = 0;
-        });
-      }
-    }
+  Future<ContinuationPage<MediaItem>> _fetchPlaylistContinuationPage(int startIndex) async {
+    final page = await mediaClient.fetchPlaylistPage(widget.playlist.id, start: startIndex, size: _pageSize);
+    return ContinuationPage(items: page.items, totalCount: page.totalCount, consumedCount: page.items.length);
   }
 
-  void _retryPlaylistContinuation() {
-    final total = _playlistTotalSize;
-    if (_isLoadingFullPlaylist || total == null || items.length >= total) return;
-    unawaited(_loadRemainingPlaylistPages(_playlistLoadGeneration, items.length, total));
+  void _applyPlaylistContinuationPage(ContinuationPage<MediaItem> page) {
+    if (!mounted) return;
+    setState(() {
+      items = List.of(items)..addAll(page.items);
+    });
   }
+
+  void _handleContinuationStateChanged() {
+    if (!mounted) return;
+    setState(() {
+      if (!_continuation.isLoading && _focusedColumn != 0 && !_canEditPlaylist) {
+        _focusedColumn = 0;
+      }
+    });
+  }
+
+  void _retryPlaylistContinuation() => unawaited(_continuation.retry());
 
   void _autoFocusAfterLoad() {
     if (mounted && items.isNotEmpty) {
@@ -357,7 +384,7 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
     if (!mounted) return;
     if (success) {
       showSuccessSnackBar(context, t.playlists.deleted);
-      Navigator.pop(context); // Return to playlists screen
+      Navigator.pop(context, true); // Signal the parent list to refresh.
     } else {
       showErrorSnackBar(context, t.playlists.errorDeleting);
     }
@@ -455,6 +482,8 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
     if (!_canEditPlaylist) return;
     if (items.isEmpty || index < 0 || index >= items.length) return;
     final item = items[index];
+    final previousItem = index > 0 ? items[index - 1] : null;
+    final nextItem = index + 1 < items.length ? items[index + 1] : null;
 
     appLogger.d('Removing item ${item.title} from playlist');
 
@@ -480,11 +509,19 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
       if (success) {
         showSuccessSnackBar(context, t.playlists.itemRemoved);
       } else {
-        // Revert on failure
+        // Restore relative to surviving neighbors; concurrent mutations can
+        // make the original numeric index stale.
         appLogger.e('Failed to remove playlist item, reverting UI');
         setState(() {
-          items.insert(index, item);
-          _focusedIndex = index;
+          final nextIndex = nextItem == null ? -1 : items.indexOf(nextItem);
+          final previousIndex = previousItem == null ? -1 : items.indexOf(previousItem);
+          final restoreIndex = nextIndex >= 0
+              ? nextIndex
+              : previousIndex >= 0
+              ? previousIndex + 1
+              : index.clamp(0, items.length);
+          items.insert(restoreIndex, item);
+          _focusedIndex = restoreIndex;
         });
 
         showErrorSnackBar(context, t.playlists.errorRemoving);
@@ -496,6 +533,10 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
     if (items.isEmpty || index < 0 || index >= items.length) return;
 
     final selectedItem = items[index];
+    if (_isAudioPlaylist) {
+      await _playAudioPlaylist(shuffle: false, startTrack: selectedItem);
+      return;
+    }
     final launcher = MediaListPlaybackLauncher.forItem(context, widget.playlist);
     await launcher.launchFromCollectionOrPlaylist(
       item: widget.playlist,
@@ -532,11 +573,11 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
 
     final backResult = handleBackKeyAction(event, () {
       if (_movingIndex != null) {
-        // Cancel move mode, set flag to prevent PopScope exit
+        // Cancel move mode and suppress route-level back handling.
         backHandledByKeyEvent = true;
         _cancelMoveMode();
       } else {
-        // Navigate to app bar on BACK, set flag to prevent PopScope exit
+        // Navigate to the app bar and suppress route-level back handling.
         handleBackFromContent();
       }
     });
@@ -588,10 +629,9 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
       // Navigation mode
       if (key.isUpKey) {
         if (_focusedIndex > 0) {
-          setState(() {
-            _focusedIndex--;
-            _focusedColumn = 0; // Reset to row when changing rows
-          });
+          _focusedIndex--;
+          _focusedColumn = 0;
+          _notifyFocusChanged();
           _ensureFocusedVisible();
         } else {
           // First item - navigate to app bar
@@ -599,23 +639,30 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
         }
         return KeyEventResult.handled;
       }
-      if (key.isDownKey && _focusedIndex < items.length - 1) {
-        setState(() {
+      if (key.isDownKey) {
+        if (_focusedIndex < items.length - 1) {
           _focusedIndex++;
-          _focusedColumn = 0; // Reset to row when changing rows
-        });
-        _ensureFocusedVisible();
-        return KeyEventResult.handled;
+          _focusedColumn = 0;
+          _notifyFocusChanged();
+          _ensureFocusedVisible();
+          return KeyEventResult.handled;
+        }
+        if (_continuation.error != null) {
+          _continuationRetryFocusNode.requestFocus();
+          return KeyEventResult.handled;
+        }
       }
       if (key.isLeftKey) {
         // Navigate left within columns
         if (_focusedColumn == 0 && _canEditPlaylist) {
           // Go to drag handle (column 1)
-          setState(() => _focusedColumn = 1);
+          _focusedColumn = 1;
+          _notifyFocusChanged();
           return KeyEventResult.handled;
         } else if (_focusedColumn == 2) {
           // Go back to content
-          setState(() => _focusedColumn = 0);
+          _focusedColumn = 0;
+          _notifyFocusChanged();
           return KeyEventResult.handled;
         }
       }
@@ -623,11 +670,13 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
         // Navigate right within columns
         if (_focusedColumn == 0 && _canEditPlaylist) {
           // Go to remove button (column 2)
-          setState(() => _focusedColumn = 2);
+          _focusedColumn = 2;
+          _notifyFocusChanged();
           return KeyEventResult.handled;
         } else if (_focusedColumn == 1) {
           // Go to content from drag handle
-          setState(() => _focusedColumn = 0);
+          _focusedColumn = 0;
+          _notifyFocusChanged();
           return KeyEventResult.handled;
         }
       }
@@ -670,7 +719,7 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
     return false;
   }
 
-  /// Handle back navigation for PopScope - extends mixin with move mode support
+  /// Handle route back from [OverlaySheetHost], extending the mixin with move mode support.
   bool _handleBackNavigation() {
     // If BACK was already handled by a key event, don't pop
     if (backHandledByKeyEvent) {
@@ -701,12 +750,12 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
       slivers: [
         CustomAppBar(
           title: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: .start,
             children: [
               Text(widget.playlist.title, style: const TextStyle(fontSize: 16)),
               if (widget.playlist.smart)
                 Row(
-                  mainAxisSize: MainAxisSize.min,
+                  mainAxisSize: .min,
                   children: [
                     AppIcon(
                       Symbols.auto_awesome_rounded,
@@ -717,11 +766,7 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
                     const SizedBox(width: 4),
                     Text(
                       t.playlists.smartPlaylist,
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: Theme.of(context).colorScheme.primary,
-                        fontWeight: FontWeight.normal,
-                      ),
+                      style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.primary, fontWeight: .normal),
                     ),
                   ],
                 ),
@@ -738,8 +783,7 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
           else
             // Plex regular playlists: sliver reorderable list
             _buildReorderableList(isKeyboardMode),
-          if (_isLoadingFullPlaylist || _playlistContinuationErrorMessage != null)
-            _buildPlaylistContinuationStatusSliver(),
+          if (_continuation.isLoading || _continuation.error != null) _buildPlaylistContinuationStatusSliver(),
         ],
       ],
     );
@@ -760,11 +804,10 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
       );
     }
 
-    return PopScope(
+    return OverlaySheetHost(
       canPop: allowsNativeBackGesture && _movingIndex == null,
-      onPopInvokedWithResult: (didPop, result) {
+      onSystemBack: () {
         if (BackKeyCoordinator.consumeIfHandled()) return;
-        if (didPop) return;
         final shouldPop = _handleBackNavigation();
         if (shouldPop && mounted) {
           Navigator.pop(context);
@@ -787,39 +830,43 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
       itemCount: items.length,
       itemBuilder: (context, index) {
         final item = items[index];
-        // Check keyboard mode directly to ensure we get latest value
-        final inKeyboardMode = InputModeTracker.isKeyboardMode(context);
-        final isFocused = inKeyboardMode && index == _focusedIndex && !isAppBarFocused;
-        final isMoving = index == _movingIndex;
-
-        // Both backends populate playlistItemId in playlist responses; the
-        // backend prefix avoids collisions if the same numeric/uuid string
-        // ever shows up across servers in the same key namespace.
         final keyId = switch (item) {
           PlexMediaItem(:final playlistItemId?) => 'p:$playlistItemId',
           JellyfinMediaItem(:final playlistItemId?) => 'j:$playlistItemId',
           _ => item.id,
         };
-        return RepaintBoundary(
+        return ListenableSelector<(bool, int?, bool)>(
           key: ValueKey(keyId),
-          child: PlaylistItemCard(
-            item: item,
-            index: index,
-            onRemove: () => _removeItem(index),
-            onTap: () => _playFromItem(index),
-            onRefresh: updateItem,
-            canReorder: _canEditPlaylist,
-            isFocused: isFocused,
-            focusedColumn: isFocused ? _focusedColumn : null,
-            isMoving: isMoving,
-          ),
+          listenable: _focusRevision,
+          selector: () {
+            final focused = index == _focusedIndex && !isAppBarFocused;
+            return (focused, focused ? _focusedColumn : null, index == _movingIndex);
+          },
+          builder: (context, focusState, _) {
+            final inKeyboardMode = InputModeTracker.isKeyboardMode(context);
+            final isFocused = inKeyboardMode && focusState.$1;
+            return RepaintBoundary(
+              child: PlaylistItemCard(
+                item: item,
+                index: index,
+                onRemove: () => _removeItem(index),
+                onTap: () => _playFromItem(index),
+                onRefresh: updateItem,
+                canReorder: _canEditPlaylist,
+                isFocused: isFocused,
+                focusedColumn: isFocused ? focusState.$2 : null,
+                isMoving: focusState.$3,
+              ),
+            );
+          },
         );
       },
     );
   }
 
   Widget _buildPlaylistContinuationStatusSliver() {
-    final error = _playlistContinuationErrorMessage;
+    final exception = _continuation.error;
+    final error = exception == null ? null : t.messages.errorLoading(error: exception.toString());
     return SliverToBoxAdapter(
       child: Padding(
         padding: const EdgeInsets.all(24),
@@ -827,11 +874,17 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
           child: error == null
               ? const CircularProgressIndicator()
               : Column(
-                  mainAxisSize: MainAxisSize.min,
+                  mainAxisSize: .min,
                   children: [
                     Text(error, textAlign: TextAlign.center),
                     const SizedBox(height: 8),
-                    TextButton(onPressed: _retryPlaylistContinuation, child: Text(t.common.retry)),
+                    FocusableButton(
+                      focusNode: _continuationRetryFocusNode,
+                      onPressed: _retryPlaylistContinuation,
+                      onNavigateUp: _isReadOnly ? navigateToGrid : _listFocusNode.requestFocus,
+                      onBack: handleBackFromContent,
+                      child: TextButton(onPressed: _retryPlaylistContinuation, child: Text(t.common.retry)),
+                    ),
                   ],
                 ),
         ),

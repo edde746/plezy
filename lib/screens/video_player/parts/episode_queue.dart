@@ -5,8 +5,8 @@ extension _VideoPlayerEpisodeQueueMethods on VideoPlayerScreenState {
   Future<void> _ensurePlayQueue() async {
     if (!mounted) return;
 
-    // Skip play queue in offline mode (requires server connection)
-    if (_isOfflinePlayback) return;
+    // Download/offline library mode uses the local downloaded queue instead.
+    if (_offlineLibraryMode) return;
 
     // Skip play queue for live TV (would interfere with tuner session)
     if (widget.isLive) return;
@@ -21,7 +21,7 @@ extension _VideoPlayerEpisodeQueueMethods on VideoPlayerScreenState {
     if (_currentMetadata.backend != MediaBackend.plex) return;
 
     try {
-      final client = context.getPlexClientForServer(_currentMetadata.serverId!);
+      final client = context.getPlexClientForServer(ServerId(_currentMetadata.serverId!));
 
       final playbackState = context.read<PlaybackStateProvider>();
 
@@ -77,10 +77,12 @@ extension _VideoPlayerEpisodeQueueMethods on VideoPlayerScreenState {
     }
   }
 
-  Future<void> _loadAdjacentEpisodes() async {
+  Future<void> _loadAdjacentEpisodes({MediaItem? metadata, _PlaybackAttempt? attempt}) async {
     if (!mounted || widget.isLive) return;
 
-    if (_isOfflinePlayback) {
+    final targetMetadata = metadata ?? _currentMetadata;
+
+    if (_offlineLibraryMode) {
       // Offline mode: find next/previous from downloaded episodes
       _loadAdjacentEpisodesOffline();
       return;
@@ -89,10 +91,14 @@ extension _VideoPlayerEpisodeQueueMethods on VideoPlayerScreenState {
     try {
       final adjacentEpisodes = await _episodeNavigation.loadAdjacentEpisodes(
         context: context,
-        metadata: _currentMetadata,
+        metadata: targetMetadata,
+        // The part actually being played, so the queue can skip sibling
+        // entries of a Plex multi-episode file (#1500). MediaSourceInfo
+        // carries the Plex numeric part id; MediaPart.id is its string form.
+        playedPartId: _currentMediaInfo?.partId?.toString(),
       );
 
-      if (mounted) {
+      if (mounted && _currentMetadata.globalKey == targetMetadata.globalKey && (attempt == null || attempt.isCurrent)) {
         _setPlayerState(() {
           _nextEpisode = adjacentEpisodes.next;
           _previousEpisode = adjacentEpisodes.previous;
@@ -117,29 +123,23 @@ extension _VideoPlayerEpisodeQueueMethods on VideoPlayerScreenState {
 
       if (episodes.isEmpty) return;
 
-      // Sort by aired date, falling back to season/episode number
-      final sorted = List<MediaItem>.from(episodes)
-        ..sort((a, b) {
-          final aDate = a.originallyAvailableAt ?? '';
-          final bDate = b.originallyAvailableAt ?? '';
-          if (aDate.isEmpty && bDate.isEmpty) {
-            final seasonCmp = (a.parentIndex ?? 0).compareTo(b.parentIndex ?? 0);
-            if (seasonCmp != 0) return seasonCmp;
-            return (a.index ?? 0).compareTo(b.index ?? 0);
-          }
-          if (aDate.isEmpty) return 1;
-          if (bDate.isEmpty) return -1;
-          return aDate.compareTo(bDate);
-        });
+      // Aired watch order (Specials interleaved by air date) — the shared
+      // episode order, so offline next/prev matches streaming, what "download
+      // next N" selects, and the offline OnDeck list (#1416/#1414). Copy first
+      // so the provider's cached list isn't reordered.
+      final sorted = List<MediaItem>.from(episodes)..sort(compareEpisodesByWatchOrder);
 
       final currentIdx = sorted.indexWhere((ep) => ep.id == _currentMetadata.id);
 
       if (currentIdx == -1) return;
 
       if (mounted) {
+        // Same-file siblings are skipped by file-path intersection of the
+        // stored metadata (#1500) — offline media info doesn't carry the
+        // server part id, so the helpers compare the items' own parts.
         _setPlayerState(() {
-          _previousEpisode = currentIdx > 0 ? sorted[currentIdx - 1] : null;
-          _nextEpisode = currentIdx < sorted.length - 1 ? sorted[currentIdx + 1] : null;
+          _previousEpisode = previousEpisodeSkippingSameFile(sorted, currentIdx);
+          _nextEpisode = nextEpisodeSkippingSameFile(sorted, currentIdx);
         });
       }
     } catch (e) {

@@ -46,6 +46,12 @@ class OverlaySheetController {
     return context.dependOnInheritedWidgetOfExactType<_OverlaySheetScope>()?.controller;
   }
 
+  /// Number of sheets currently open across all hosts (and [showAdaptive]
+  /// modal fallbacks). Sheets render inside their host's subtree, so chrome
+  /// mounted above the navigator (the music mini-player) can never sit under
+  /// them — such chrome listens here and hides itself while this is nonzero.
+  static final ValueNotifier<int> openSheetCount = ValueNotifier<int>(0);
+
   /// Whether a sheet is currently showing (including while animating closed).
   bool get isOpen => _state._isOpen;
 
@@ -108,7 +114,7 @@ class OverlaySheetController {
     FocusNode? initialFocusNode,
     Alignment alignment = Alignment.bottomCenter,
     bool showDragHandle = false,
-  }) {
+  }) async {
     final controller = maybeOf(context);
     if (controller != null) {
       return controller.show<T>(
@@ -128,33 +134,82 @@ class OverlaySheetController {
         () {
           final size = MediaQuery.sizeOf(context);
           final isDesktop = size.width > 600;
-          return BoxConstraints(
-            maxWidth: isDesktop ? 700 : double.infinity,
-            maxHeight: isDesktop ? 400 : size.height * 0.75,
-          );
+          return BoxConstraints(maxWidth: isDesktop ? 700 : double.infinity, maxHeight: size.height * 0.75);
         }();
-    return showModalBottomSheet<T>(
-      context: context,
-      builder: builder,
-      constraints: effectiveConstraints,
-      backgroundColor: backgroundColor ?? Theme.of(context).colorScheme.surface,
-      barrierColor: Colors.black54,
-      isScrollControlled: isScrollControlled,
-    );
+    openSheetCount.value++;
+    try {
+      return await showModalBottomSheet<T>(
+        context: context,
+        // The host path insets its sheet by the bottom safe area; mirror that
+        // here so the last row clears the home indicator / gesture nav bar.
+        builder: (context) => SafeArea(top: false, child: builder(context)),
+        constraints: effectiveConstraints,
+        backgroundColor: backgroundColor ?? Theme.of(context).colorScheme.surface,
+        barrierColor: Colors.black54,
+        isScrollControlled: isScrollControlled,
+        showDragHandle: showDragHandle,
+      );
+    } finally {
+      openSheetCount.value--;
+    }
   }
 
   /// Push a sub-page using the overlay system if available, otherwise fall
   /// back to [showModalBottomSheet]. Returns the result from the page.
+  ///
+  /// When a hosted sheet is already open, this pushes a nested page and
+  /// retains the root sheet's presentation. When a host is available but
+  /// idle, this opens [builder] as its root sheet using the supplied hosted
+  /// presentation options. Without a host, the modal fallback is used.
+  ///
+  /// [isScrollControlled] applies only to the modal fallback; hosted sheets
+  /// use their explicit or default constraints.
   static Future<T?> pushAdaptive<T>(
     BuildContext context, {
     required WidgetBuilder builder,
     FocusNode? initialFocusNode,
-  }) {
+    BoxConstraints? constraints,
+    Color? backgroundColor,
+    bool barrierDismissible = true,
+    bool isScrollControlled = false,
+    bool showDragHandle = false,
+  }) async {
     final controller = maybeOf(context);
     if (controller != null) {
-      return controller.push<T>(builder: builder, initialFocusNode: initialFocusNode);
+      if (controller.isOpen) {
+        return controller.push<T>(builder: builder, initialFocusNode: initialFocusNode);
+      }
+      return controller.show<T>(
+        builder: builder,
+        constraints: constraints,
+        backgroundColor: backgroundColor,
+        barrierDismissible: barrierDismissible,
+        initialFocusNode: initialFocusNode,
+        showDragHandle: showDragHandle,
+      );
     }
-    return showModalBottomSheet<T>(context: context, builder: builder);
+    final effectiveConstraints =
+        constraints ??
+        () {
+          final size = MediaQuery.sizeOf(context);
+          final isDesktop = size.width > 600;
+          return BoxConstraints(maxWidth: isDesktop ? 700 : double.infinity, maxHeight: size.height * 0.75);
+        }();
+    BackKeyCoordinator.clear();
+    openSheetCount.value++;
+    try {
+      return await showModalBottomSheet<T>(
+        context: context,
+        builder: (context) => SafeArea(top: false, child: builder(context)),
+        constraints: effectiveConstraints,
+        backgroundColor: backgroundColor ?? Theme.of(context).colorScheme.surface,
+        isDismissible: barrierDismissible,
+        isScrollControlled: isScrollControlled,
+        showDragHandle: showDragHandle,
+      );
+    } finally {
+      openSheetCount.value--;
+    }
   }
 
   /// Close the sheet entirely. Uses overlay controller if available,
@@ -187,13 +242,37 @@ class OverlaySheetController {
 /// Android TV and providing centralized focus management for keyboard/dpad
 /// navigation on all platforms.
 ///
-/// Screens that contain a [PopScope] should check [OverlaySheetController.isOpen]
-/// and skip their own back handling when a sheet is open.
+/// ## Back handling
+///
+/// The host already owns the dpad/key back path (its sheet [FocusScope] closes
+/// the sheet on BACK when focus is inside it). For the system/route back path
+/// (Android gesture, iOS swipe, predictive back), opt in via [canPop]: the host
+/// then renders its own [PopScope] that closes an open sheet instead of popping
+/// the screen, so callers don't have to hand-roll it. When [canPop] is null
+/// (the default) the host adds no [PopScope] and behaves exactly as before.
 class OverlaySheetHost extends StatefulWidget {
   final Widget child;
   final ValueChanged<bool>? onOpenChanged;
 
-  const OverlaySheetHost({super.key, required this.child, this.onOpenChanged});
+  /// Whether the enclosing route may pop when no sheet is open (the screen's own
+  /// business rule, mirroring [PopScope.canPop]).
+  ///
+  /// When non-null the host installs a [PopScope]:
+  /// - a system back with a sheet open closes the sheet (never pops the screen);
+  /// - otherwise, if `canPop` is true the route pops natively (preserving the
+  ///   iOS interactive swipe-back), and if false [onSystemBack] runs instead.
+  ///
+  /// When null (default) the host installs no [PopScope] — today's behavior.
+  final bool? canPop;
+
+  /// Called for a system/route back when no sheet is open and [canPop] is false.
+  /// Not called when a sheet is open (the sheet is closed instead) or when
+  /// [canPop] allows a native pop. Implementations that also have a dpad key
+  /// handler should start with `if (BackKeyCoordinator.consumeIfHandled()) return;`
+  /// so the system path dedups against the key path.
+  final VoidCallback? onSystemBack;
+
+  const OverlaySheetHost({super.key, required this.child, this.onOpenChanged, this.canPop, this.onSystemBack});
 
   @override
   State<OverlaySheetHost> createState() => _OverlaySheetHostState();
@@ -249,6 +328,9 @@ class _OverlaySheetHostState extends State<OverlaySheetHost> with SingleTickerPr
         entry.completer.complete(null);
       }
     }
+    // A host torn down mid-sheet (or mid-close animation) never reaches the
+    // close completion below — release its slot in the global count here.
+    if (_isOpen) OverlaySheetController.openSheetCount.value--;
     _sheetFocusScopeNode.dispose();
     _slideCurve.dispose();
     _animationController.dispose();
@@ -264,6 +346,7 @@ class _OverlaySheetHostState extends State<OverlaySheetHost> with SingleTickerPr
     Alignment alignment = Alignment.bottomCenter,
     bool showDragHandle = false,
   }) {
+    BackKeyCoordinator.clear();
     // If already open, close first (instant)
     final wasOpen = _isOpen;
     if (_isOpen) {
@@ -293,7 +376,10 @@ class _OverlaySheetHostState extends State<OverlaySheetHost> with SingleTickerPr
       _dragOffset = 0;
       _isDragging = false;
     });
-    if (!wasOpen) widget.onOpenChanged?.call(true);
+    if (!wasOpen) {
+      widget.onOpenChanged?.call(true);
+      OverlaySheetController.openSheetCount.value++;
+    }
 
     BackKeyUpSuppressor.clearSuppression();
     _animationController.forward(from: 0);
@@ -355,12 +441,7 @@ class _OverlaySheetHostState extends State<OverlaySheetHost> with SingleTickerPr
         _sheetHorizontalAnchor = null;
       });
       widget.onOpenChanged?.call(false);
-      // Clear stale back-key flags. handleBackKeyAction sets
-      // markClosedViaBackKey() expecting a route pop, but the overlay
-      // doesn't pop a route. Without clearing, the flag leaks into the
-      // next real route pop and disables KeyUp suppression, causing a
-      // double-pop on the underlying screen.
-      BackKeyUpSuppressor.clearSuppression();
+      OverlaySheetController.openSheetCount.value--;
     });
   }
 
@@ -371,21 +452,22 @@ class _OverlaySheetHostState extends State<OverlaySheetHost> with SingleTickerPr
 
   double? _resolveSheetHorizontalAnchor(Alignment alignment) {
     if (!PlatformDetector.isDesktopOS() || PlatformDetector.isTV()) return null;
-    if (InputModeTracker.isKeyboardMode(context)) return null;
+    if (InputModeTracker.isKeyboardMode(context, listen: false)) return null;
     if (alignment.x != 0 || alignment.y <= 0) return null;
     return _lastPointerPosition?.dx;
   }
 
   void _autoFocus() {
-    if (!InputModeTracker.isKeyboardMode(context)) return;
+    final focusDescendant = InputModeTracker.isKeyboardMode(context, listen: false);
 
     // First post-frame: the FocusScope is now built and the node is attached.
-    // Grab scope focus immediately so key events (especially back) are trapped.
-    // Second post-frame: ListView.builder items are laid out and their
-    // FocusNodes are registered — focus the first descendant for dpad nav.
+    // Always grab scope focus so key events (especially back) are trapped, even
+    // when a pointer opened the sheet. In keyboard mode, a second post-frame
+    // callback focuses the first descendant for dpad navigation.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted || !_isOpen) return;
       _sheetFocusScopeNode.requestFocus();
+      if (!focusDescendant) return;
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted || !_isOpen) return;
         // If the current top entry has an initialFocusNode that is attached,
@@ -412,11 +494,12 @@ class _OverlaySheetHostState extends State<OverlaySheetHost> with SingleTickerPr
   }
 
   void _refocus() {
-    if (!InputModeTracker.isKeyboardMode(context)) return;
+    final focusDescendant = InputModeTracker.isKeyboardMode(context, listen: false);
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted || !_isOpen) return;
       _sheetFocusScopeNode.requestFocus();
+      if (!focusDescendant) return;
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted || !_isOpen) return;
         final topEntry = _pageStack.isNotEmpty ? _pageStack.last : null;
@@ -460,6 +543,9 @@ class _OverlaySheetHostState extends State<OverlaySheetHost> with SingleTickerPr
 
     // Back key: pop sub-page or close sheet
     if (event.logicalKey.isBackKey) {
+      if (PlatformDetector.isTV() && event is KeyDownEvent) {
+        BackKeyCoordinator.markHandled();
+      }
       return handleBackKeyAction(event, _handleBack);
     }
 
@@ -473,38 +559,56 @@ class _OverlaySheetHostState extends State<OverlaySheetHost> with SingleTickerPr
 
   @override
   Widget build(BuildContext context) {
-    // No PopScope here — the parent screen's PopScope should check
-    // OverlaySheetController.isOpen and delegate to us. This avoids
-    // the double-callback problem with nested PopScopes in one route.
-
-    return _OverlaySheetScope(
-      controller: _controller,
-      child: Listener(
-        behavior: HitTestBehavior.translucent,
-        onPointerDown: _rememberPointerPosition,
-        onPointerHover: _rememberPointerPosition,
-        child: Stack(
-          children: [
-            widget.child,
-            // Barrier + sheet only when open
-            if (_isOpen) ...[
-              Positioned.fill(
-                child: AnimatedBuilder(
-                  animation: _barrierAnimation,
-                  builder: (context, child) {
-                    return GestureDetector(
-                      onTap: _barrierDismissible ? () => _close() : null,
-                      child: ColoredBox(color: Colors.black.withValues(alpha: _barrierAnimation.value)),
-                    );
-                  },
-                ),
+    Widget content = Listener(
+      behavior: HitTestBehavior.translucent,
+      onPointerDown: _rememberPointerPosition,
+      onPointerHover: _rememberPointerPosition,
+      child: Stack(
+        children: [
+          widget.child,
+          // Barrier + sheet only when open
+          if (_isOpen) ...[
+            Positioned.fill(
+              child: AnimatedBuilder(
+                animation: _barrierAnimation,
+                builder: (context, child) {
+                  return GestureDetector(
+                    onTap: _barrierDismissible ? () => _close() : null,
+                    child: ColoredBox(color: Colors.black.withValues(alpha: _barrierAnimation.value)),
+                  );
+                },
               ),
-              _buildSheet(context),
-            ],
+            ),
+            _buildSheet(context),
           ],
-        ),
+        ],
       ),
     );
+
+    // When a screen opts in via [canPop], the host owns the system/route back
+    // path so callers don't hand-roll it: a back with a sheet open closes the
+    // sheet (sub-page aware, matching the dpad path) instead of popping the
+    // screen; otherwise the route pops natively (canPop true) or [onSystemBack]
+    // runs (canPop false). `!_isClosing` lets a press during the ~250ms close
+    // animation fall through instead of being swallowed.
+    final canPop = widget.canPop;
+    if (canPop != null) {
+      content = PopScope(
+        canPop: canPop && !_isOpen,
+        onPopInvokedWithResult: (didPop, result) {
+          if (didPop) return;
+          if (_isOpen && !_isClosing) {
+            if (BackKeyCoordinator.consumeIfHandled()) return;
+            _handleBack();
+            return;
+          }
+          widget.onSystemBack?.call();
+        },
+        child: content,
+      );
+    }
+
+    return _OverlaySheetScope(controller: _controller, child: content);
   }
 
   double _getSheetHeight() {
@@ -531,8 +635,7 @@ class _OverlaySheetHostState extends State<OverlaySheetHost> with SingleTickerPr
     final showHandle = _showDragHandle && !isTV && !isTop;
 
     final effectiveConstraints =
-        _constraints ??
-        BoxConstraints(maxWidth: isDesktop ? 700 : double.infinity, maxHeight: isDesktop ? 400 : size.height * 0.75);
+        _constraints ?? BoxConstraints(maxWidth: isDesktop ? 700 : double.infinity, maxHeight: size.height * 0.75);
 
     // Slide direction depends on alignment: bottom sheets slide up, top sheets slide down.
     // Use a pixel transform instead of FractionalTranslation so mouse-tracker
@@ -591,7 +694,7 @@ class _OverlaySheetHostState extends State<OverlaySheetHost> with SingleTickerPr
     Widget sheetContent;
     if (showHandle) {
       sheetContent = Column(
-        mainAxisSize: MainAxisSize.min,
+        mainAxisSize: .min,
         children: [
           // M3 drag handle: 32x4, rounded, with 12dp top / 4dp bottom margin
           Container(

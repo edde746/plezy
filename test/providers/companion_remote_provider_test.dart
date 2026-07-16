@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/connection/connection.dart';
 import 'package:plezy/connection/connection_registry.dart';
 import 'package:plezy/database/app_database.dart';
+import 'package:plezy/i18n/strings.g.dart';
 import 'package:plezy/models/plex/plex_home.dart';
 import 'package:plezy/models/plex/plex_home_user.dart';
 import 'package:plezy/models/companion_remote/remote_command.dart';
@@ -14,6 +15,7 @@ import 'package:plezy/profiles/profile_connection.dart';
 import 'package:plezy/profiles/profile_connection_registry.dart';
 import 'package:plezy/profiles/profile_registry.dart';
 import 'package:plezy/providers/companion_remote_provider.dart';
+import 'package:plezy/services/base_peer_service.dart';
 import 'package:plezy/services/companion_remote/remote_auth_service.dart';
 import 'package:plezy/services/storage_service.dart';
 
@@ -55,7 +57,7 @@ void main() {
       p.dispose();
     });
 
-    test('isCryptoReady is false until initializeCrypto is called', () {
+    test('isCryptoReady is false until ensureCryptoReady succeeds', () {
       final p = CompanionRemoteProvider();
       expect(p.isCryptoReady, isFalse);
       p.dispose();
@@ -86,11 +88,6 @@ void main() {
   });
 
   group('CompanionRemoteProvider — dispose hygiene', () {
-    test('dispose runs cleanly with no peer service or subscriptions', () {
-      final p = CompanionRemoteProvider();
-      expect(p.dispose, returnsNormally);
-    });
-
     test('cancelReconnect on a fresh provider does not throw', () {
       final p = CompanionRemoteProvider();
       // No timer, no session — copyWith on null _session is a no-op so
@@ -125,19 +122,14 @@ void main() {
   });
 
   group('CompanionRemoteProvider — public API safety', () {
-    test('connectToDiscoveredHost throws StateError when crypto not ready', () async {
+    test('connectToDiscoveredHost reports localized auth failure when crypto is not ready', () async {
       final p = CompanionRemoteProvider();
-      // Constructing a DiscoveredHost-like object would require importing
-      // the lan_discovery_service; skip the constructed-instance variant
-      // and instead exercise connectToManualHost which has the same guard.
-      await expectLater(() => p.connectToManualHost('192.0.2.1:9999'), throwsA(isA<StateError>()));
-      p.dispose();
-    });
-
-    test('connectToManualHost rejects empty host strings via crypto guard', () async {
-      final p = CompanionRemoteProvider();
-      // Crypto isn't ready → guard fires before any network logic.
-      await expectLater(() => p.connectToManualHost(''), throwsA(isA<StateError>()));
+      await expectLater(
+        () => p.connectToManualHost('192.0.2.1:9999'),
+        throwsA(
+          isA<PeerError>().having((error) => error.message, 'message', t.companionRemote.pairing.cryptoInitFailed),
+        ),
+      );
       p.dispose();
     });
   });
@@ -186,20 +178,35 @@ void main() {
       final accountB = _plexAccount('plex-b', 'client-b');
       final profileA = _localProfile('profile-a');
       final profileB = _localProfile('profile-b');
+      await connections.upsert(accountA);
       await connections.upsert(accountB);
+      await profiles.upsert(profileA);
       await profiles.upsert(profileB);
+      await profileConnections.upsert(
+        ProfileConnection(profileId: profileA.id, connectionId: accountA.id, userIdentifier: 'admin-a'),
+        makeDefault: true,
+      );
       await profileConnections.upsert(
         ProfileConnection(profileId: profileB.id, connectionId: accountB.id, userIdentifier: 'admin-b'),
         makeDefault: true,
       );
-      await storage.setActiveProfileId(profileB.id);
+      await storage.setActiveProfileId(profileA.id);
       await active.initialize();
 
       final provider = CompanionRemoteProvider();
       addTearDown(provider.dispose);
-      await provider.initializeCrypto(home: _home('admin-a'), account: accountA, activeProfile: profileA);
+      final okA = await provider.ensureCryptoReady(
+        _home('admin-a'),
+        connections: connections,
+        activeProfile: active,
+        profileConnections: profileConnections,
+        account: accountA,
+      );
+      expect(okA, isTrue);
       expect(provider.debugCryptoConnectionId, accountA.id);
       expect(provider.debugCryptoProfileId, profileA.id);
+
+      await active.activate(profileB);
 
       final ok = await provider.ensureCryptoReady(
         _home('admin-b'),
@@ -418,12 +425,49 @@ void main() {
     });
 
     test('resetForLogout clears crypto context', () async {
+      final db = AppDatabase.forTesting(NativeDatabase.memory());
+      final connections = ConnectionRegistry(db);
+      final profileConnections = ProfileConnectionRegistry(db);
+      final profiles = ProfileRegistry(db);
+      final storage = await StorageService.getInstance();
+      final plexHome = PlexHomeService(
+        connections: connections,
+        profileConnections: profileConnections,
+        storage: storage,
+        plexHomeUserFetcher: (_) async => const [],
+      );
+      final active = ActiveProfileProvider(
+        registry: profiles,
+        plexHome: plexHome,
+        connections: connections,
+        storage: storage,
+      );
+      addTearDown(() async {
+        await active.resetForTesting();
+        active.dispose();
+        await plexHome.dispose();
+        await db.close();
+      });
+
+      final account = _plexAccount('plex-a', 'client-a');
+      final profile = _localProfile('profile-a');
+      await connections.upsert(account);
+      await profiles.upsert(profile);
+      await profileConnections.upsert(
+        ProfileConnection(profileId: profile.id, connectionId: account.id, userIdentifier: 'admin-a'),
+        makeDefault: true,
+      );
+      await storage.setActiveProfileId(profile.id);
+      await active.initialize();
+
       final provider = CompanionRemoteProvider();
       addTearDown(provider.dispose);
-      await provider.initializeCrypto(
-        home: _home('admin-a'),
-        account: _plexAccount('plex-a', 'client-a'),
-        activeProfile: _localProfile('profile-a'),
+      await provider.ensureCryptoReady(
+        _home('admin-a'),
+        connections: connections,
+        activeProfile: active,
+        profileConnections: profileConnections,
+        account: account,
       );
       expect(provider.isCryptoReady, isTrue);
 

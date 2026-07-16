@@ -47,7 +47,7 @@ mixin PaginatedItemLoader<T, W extends StatefulWidget> on State<W> {
 
   /// Hook fired after each successful page merge. Default: no-op.
   /// Override for image prefetch, syncing a base-class `items` list, etc.
-  void onPageLoaded(int _, List<T> __) {}
+  void onPageLoaded(int _, List<T> _) {}
 
   /// Synchronously clear pagination state and bump the generation counter.
   /// Call from inside the subclass's `setState` before awaiting
@@ -94,6 +94,43 @@ mixin PaginatedItemLoader<T, W extends StatefulWidget> on State<W> {
     totalSize = result.totalCount;
     onPageLoaded(0, result.items);
     return (page: result, applied: true);
+  }
+
+  /// Shared initial-load transaction for paginated consumers.
+  ///
+  /// Owns reset, stale-result rejection, mounted checks, and error-state
+  /// application. Callers supply only their view fields, logging, and
+  /// post-success behavior.
+  Future<bool> loadInitialPaginatedItems({
+    required int pageSize,
+    required VoidCallback resetViewState,
+    required void Function(List<T> items) applyLoadedItems,
+    required void Function(Object error, StackTrace stackTrace) applyError,
+    void Function(int loadedCount, int totalCount)? onLoaded,
+    void Function(Object error, StackTrace stackTrace)? onError,
+  }) async {
+    setState(() {
+      resetViewState();
+      resetPaginationState();
+    });
+
+    try {
+      final initialPage = await loadInitialPageWithStatus(pageSize);
+      if (!initialPage.applied || !mounted) return false;
+
+      setState(() {
+        applyLoadedItems(loadedItems.values.toList());
+      });
+      onLoaded?.call(loadedItems.length, totalSize);
+      return true;
+    } catch (error, stackTrace) {
+      onError?.call(error, stackTrace);
+      if (!mounted) return false;
+      setState(() {
+        applyError(error, stackTrace);
+      });
+      return false;
+    }
   }
 
   /// Fetch any unloaded items inside [firstIndex, firstIndex + visibleCount)
@@ -173,6 +210,13 @@ mixin PaginatedItemLoader<T, W extends StatefulWidget> on State<W> {
   /// Mirrors the "one item deleted on the server" invariant: decrements
   /// [totalSize] even if [index] wasn't in the sparse map (evicted).
   void removeLoadedItemAndShift(int index) {
+    _requestId++;
+    _cancelToken?.abort();
+    _cancelToken = AbortController();
+    _retryTimer?.cancel();
+    _retryTimer = null;
+    _loadingRanges.clear();
+    _scheduledRetry = null;
     loadedItems.remove(index);
     final shifted = <int, T>{};
     for (final entry in loadedItems.entries) {

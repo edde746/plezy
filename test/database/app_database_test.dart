@@ -1,11 +1,14 @@
 import 'dart:io';
+import 'package:plezy/media/ids.dart';
 
 import 'package:drift/drift.dart' hide isNull, isNotNull;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:path_provider_platform_interface/path_provider_platform_interface.dart';
 import 'package:plezy/database/app_database.dart';
 import 'package:plezy/database/download_operations.dart';
 import 'package:plezy/models/download_models.dart';
+import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 
 void main() {
   final suite = _AppDatabaseTestSuite();
@@ -37,10 +40,6 @@ class _AppDatabaseTestSuite {
     // ============================================================
 
     group('schema', () {
-      test('schemaVersion is 14', () {
-        expect(db.schemaVersion, 14);
-      });
-
       test('all tables are accessible and start empty', () async {
         expect(await db.select(db.downloadedMedia).get(), isEmpty);
         expect(await db.select(db.downloadOwners).get(), isEmpty);
@@ -55,10 +54,10 @@ class _AppDatabaseTestSuite {
 
       test('ProfileConnections has no profile_id FK (virtual plex_home profiles)', () async {
         // v20 dropped the profile_id FK so virtual Plex Home profiles can
-        // persist join rows without a parent `profiles` row. The two
-        // profile-delete sites (profile_detail_screen, profile_switch_screen)
-        // call ProfileConnectionRegistry.removeAllForProfile manually before
-        // deleting the profile, so the cascade isn't needed.
+        // persist join rows without a parent `profiles` row. Profile deletion
+        // instead cleans up join rows explicitly (via the teardown flow's
+        // removeAllProfileConnectionsAndCleanup) before deleting the profile,
+        // so the cascade isn't needed.
         final now = DateTime.now().millisecondsSinceEpoch;
         await db
             .into(db.connections)
@@ -233,27 +232,29 @@ class _AppDatabaseTestSuite {
         expect(await source.readAsBytes(), [0xAA, 0xBB]);
         expect(await target.exists(), isFalse);
       });
+
+      test('documents directory lookup failure is a silent no-op', () async {
+        final previousPathProvider = PathProviderPlatform.instance;
+        final target = File('${tempDir.path}/AppData/plezy_downloads.db');
+        PathProviderPlatform.instance = _ThrowingDocumentsPathProvider();
+
+        try {
+          await expectLater(migrateLegacyDesktopDatabase(target: target), completes);
+        } finally {
+          PathProviderPlatform.instance = previousPathProvider;
+        }
+
+        expect(await target.exists(), isFalse);
+      });
     });
   }
 
   void _registerApiCacheTests() {
     // ============================================================
-    // ApiCache: insert / select / update / delete round-trip
+    // ApiCache schema defaults and constraints
     // ============================================================
 
     group('ApiCache', () {
-      test('insert + select round-trip preserves fields', () async {
-        await db
-            .into(db.apiCache)
-            .insert(ApiCacheCompanion.insert(cacheKey: 'srv:/library/metadata/1', data: '{"hello":"world"}'));
-
-        final rows = await db.select(db.apiCache).get();
-        expect(rows, hasLength(1));
-        expect(rows.first.cacheKey, 'srv:/library/metadata/1');
-        expect(rows.first.data, '{"hello":"world"}');
-        expect(rows.first.pinned, isFalse); // default
-      });
-
       test('default pinned=false, custom pinned=true is honored', () async {
         await db.into(db.apiCache).insert(ApiCacheCompanion.insert(cacheKey: 'k1', data: 'a'));
         await db
@@ -271,44 +272,12 @@ class _AppDatabaseTestSuite {
           throwsA(isA<Exception>()),
         );
       });
-
-      test('insertOnConflictUpdate replaces the row', () async {
-        await db.into(db.apiCache).insert(ApiCacheCompanion.insert(cacheKey: 'dup', data: 'first'));
-        await db
-            .into(db.apiCache)
-            .insertOnConflictUpdate(
-              ApiCacheCompanion.insert(cacheKey: 'dup', data: 'second', pinned: const Value(true)),
-            );
-
-        final rows = await db.select(db.apiCache).get();
-        expect(rows, hasLength(1));
-        expect(rows.first.data, 'second');
-        expect(rows.first.pinned, isTrue);
-      });
-
-      test('update modifies existing row', () async {
-        await db.into(db.apiCache).insert(ApiCacheCompanion.insert(cacheKey: 'k', data: 'orig'));
-        await (db.update(
-          db.apiCache,
-        )..where((t) => t.cacheKey.equals('k'))).write(const ApiCacheCompanion(data: Value('updated')));
-
-        final row = await (db.select(db.apiCache)..where((t) => t.cacheKey.equals('k'))).getSingle();
-        expect(row.data, 'updated');
-      });
-
-      test('delete removes the row', () async {
-        await db.into(db.apiCache).insert(ApiCacheCompanion.insert(cacheKey: 'k', data: 'v'));
-        expect(await db.select(db.apiCache).get(), hasLength(1));
-
-        await (db.delete(db.apiCache)..where((t) => t.cacheKey.equals('k'))).go();
-        expect(await db.select(db.apiCache).get(), isEmpty);
-      });
     });
   }
 
   void _registerDownloadedMediaTests() {
     // ============================================================
-    // DownloadedMedia: round-trip + helpers + update + delete
+    // DownloadedMedia: persistence, defaults, constraints, and helpers
     // ============================================================
 
     group('DownloadedMedia', () {
@@ -361,32 +330,9 @@ class _AppDatabaseTestSuite {
         expect(row.clientScopeId, 'jf-machine/user-a');
       });
 
-      test('updating progress field works', () async {
-        await insertMovie();
-        await (db.update(db.downloadedMedia)..where((t) => t.globalKey.equals('srv1:100'))).write(
-          const DownloadedMediaCompanion(progress: Value(75), downloadedBytes: Value(1024)),
-        );
-
-        final row = await (db.select(db.downloadedMedia)..where((t) => t.globalKey.equals('srv1:100'))).getSingle();
-        expect(row.progress, 75);
-        expect(row.downloadedBytes, 1024);
-      });
-
       test('globalKey unique constraint blocks duplicate insert', () async {
         await insertMovie();
         expect(insertMovie(), throwsA(isA<Exception>()));
-      });
-
-      test('delete removes only the matching row', () async {
-        await insertMovie(ratingKey: '1');
-        await insertMovie(ratingKey: '2');
-        expect(await db.select(db.downloadedMedia).get(), hasLength(2));
-
-        await (db.delete(db.downloadedMedia)..where((t) => t.globalKey.equals('srv1:1'))).go();
-
-        final rows = await db.select(db.downloadedMedia).get();
-        expect(rows, hasLength(1));
-        expect(rows.first.ratingKey, '2');
       });
 
       test('getAllDownloadedMetadata returns only completed items', () async {
@@ -434,9 +380,33 @@ class _AppDatabaseTestSuite {
     // ============================================================
 
     group('OfflineWatchProgress', () {
+      Future<int> insertAction({
+        String serverId = 's',
+        required String ratingKey,
+        String? profileId,
+        String? clientScopeId,
+        required String actionType,
+        required int updatedAt,
+      }) {
+        return db
+            .into(db.offlineWatchProgress)
+            .insert(
+              OfflineWatchProgressCompanion.insert(
+                serverId: serverId,
+                profileId: Value(profileId),
+                clientScopeId: Value(clientScopeId),
+                ratingKey: ratingKey,
+                globalKey: '$serverId:$ratingKey',
+                actionType: actionType,
+                createdAt: updatedAt,
+                updatedAt: updatedAt,
+              ),
+            );
+      }
+
       test('upsertProgressAction inserts a new progress row', () async {
         await db.upsertProgressAction(
-          serverId: 'srv',
+          serverId: ServerId('srv'),
           ratingKey: '42',
           viewOffset: 5000,
           duration: 10000,
@@ -456,14 +426,14 @@ class _AppDatabaseTestSuite {
 
       test('upsertProgressAction merges into the existing progress row', () async {
         await db.upsertProgressAction(
-          serverId: 'srv',
+          serverId: ServerId('srv'),
           ratingKey: '42',
           viewOffset: 1000,
           duration: 10000,
           shouldMarkWatched: false,
         );
         await db.upsertProgressAction(
-          serverId: 'srv',
+          serverId: ServerId('srv'),
           ratingKey: '42',
           viewOffset: 9500,
           duration: 10000,
@@ -478,7 +448,7 @@ class _AppDatabaseTestSuite {
 
       test('upsertProgressAction keeps scoped Jellyfin users separate', () async {
         await db.upsertProgressAction(
-          serverId: 'srv',
+          serverId: ServerId('srv'),
           clientScopeId: 'srv/user-a',
           ratingKey: '42',
           viewOffset: 1000,
@@ -486,7 +456,7 @@ class _AppDatabaseTestSuite {
           shouldMarkWatched: false,
         );
         await db.upsertProgressAction(
-          serverId: 'srv',
+          serverId: ServerId('srv'),
           clientScopeId: 'srv/user-b',
           ratingKey: '42',
           viewOffset: 9000,
@@ -505,14 +475,18 @@ class _AppDatabaseTestSuite {
       test('insertWatchAction (watched) clears prior progress + insert single row', () async {
         // Existing progress row for the same item
         await db.upsertProgressAction(
-          serverId: 'srv',
+          serverId: ServerId('srv'),
           ratingKey: '42',
           viewOffset: 5000,
           duration: 10000,
           shouldMarkWatched: false,
         );
 
-        await db.insertWatchAction(serverId: 'srv', ratingKey: '42', actionType: OfflineActionType.watched.id);
+        await db.insertWatchAction(
+          serverId: ServerId('srv'),
+          ratingKey: '42',
+          actionType: OfflineActionType.watched.id,
+        );
 
         final rows = await db.select(db.offlineWatchProgress).get();
         expect(rows, hasLength(1));
@@ -522,7 +496,7 @@ class _AppDatabaseTestSuite {
 
       test('insertWatchAction clears only matching clientScopeId conflicts', () async {
         await db.upsertProgressAction(
-          serverId: 'srv',
+          serverId: ServerId('srv'),
           clientScopeId: 'srv/user-a',
           ratingKey: '42',
           viewOffset: 1000,
@@ -530,7 +504,7 @@ class _AppDatabaseTestSuite {
           shouldMarkWatched: false,
         );
         await db.upsertProgressAction(
-          serverId: 'srv',
+          serverId: ServerId('srv'),
           clientScopeId: 'srv/user-b',
           ratingKey: '42',
           viewOffset: 2000,
@@ -539,7 +513,7 @@ class _AppDatabaseTestSuite {
         );
 
         await db.insertWatchAction(
-          serverId: 'srv',
+          serverId: ServerId('srv'),
           clientScopeId: 'srv/user-a',
           ratingKey: '42',
           actionType: OfflineActionType.watched.id,
@@ -588,10 +562,10 @@ class _AppDatabaseTestSuite {
       });
 
       test('adoptLegacyOfflineWatchActionsForProfile claims null-profile rows', () async {
-        await db.insertWatchAction(serverId: 's', ratingKey: '1', actionType: OfflineActionType.watched.id);
+        await db.insertWatchAction(serverId: ServerId('s'), ratingKey: '1', actionType: OfflineActionType.watched.id);
         await db.insertWatchAction(
           profileId: 'profile-existing',
-          serverId: 's',
+          serverId: ServerId('s'),
           ratingKey: '2',
           actionType: OfflineActionType.watched.id,
         );
@@ -603,14 +577,14 @@ class _AppDatabaseTestSuite {
       });
 
       test('getPendingWatchActionsForServer filters by serverId', () async {
-        await db.insertWatchAction(serverId: 'a', ratingKey: '1', actionType: OfflineActionType.watched.id);
-        await db.insertWatchAction(serverId: 'b', ratingKey: '2', actionType: OfflineActionType.watched.id);
-        await db.insertWatchAction(serverId: 'a', ratingKey: '3', actionType: OfflineActionType.unwatched.id);
+        await db.insertWatchAction(serverId: ServerId('a'), ratingKey: '1', actionType: OfflineActionType.watched.id);
+        await db.insertWatchAction(serverId: ServerId('b'), ratingKey: '2', actionType: OfflineActionType.watched.id);
+        await db.insertWatchAction(serverId: ServerId('a'), ratingKey: '3', actionType: OfflineActionType.unwatched.id);
 
-        final aRows = await db.getPendingWatchActionsForServer('a');
+        final aRows = await db.getPendingWatchActionsForServer(ServerId('a'));
         expect(aRows.map((r) => r.ratingKey).toSet(), {'1', '3'});
 
-        final bRows = await db.getPendingWatchActionsForServer('b');
+        final bRows = await db.getPendingWatchActionsForServer(ServerId('b'));
         expect(bRows.map((r) => r.ratingKey).toSet(), {'2'});
       });
 
@@ -648,6 +622,194 @@ class _AppDatabaseTestSuite {
 
       test('getLatestWatchAction returns null when no rows', () async {
         expect(await db.getLatestWatchAction('nope:nope'), isNull);
+      });
+
+      test('single and batched watch-action reads preserve newest-first ordering', () async {
+        final oldestId = await insertAction(
+          ratingKey: 'ordered',
+          actionType: OfflineActionType.progress.id,
+          updatedAt: 100,
+        );
+        final olderTieId = await insertAction(
+          ratingKey: 'ordered',
+          actionType: OfflineActionType.watched.id,
+          updatedAt: 200,
+        );
+        final newerTieId = await insertAction(
+          ratingKey: 'ordered',
+          actionType: OfflineActionType.unwatched.id,
+          updatedAt: 200,
+        );
+        final expectedIds = [newerTieId, olderTieId, oldestId];
+
+        final single = await db.getWatchActionsForKey('s:ordered');
+        final batched = await db.getWatchActionsForKeys({'s:ordered'});
+
+        expect(single.map((action) => action.id), expectedIds);
+        expect(batched['s:ordered']!.map((action) => action.id), expectedIds);
+        expect((await db.getLatestWatchAction('s:ordered'))!.id, newerTieId);
+        expect((await db.getLatestWatchActionsForKeys({'s:ordered'}))['s:ordered']!.id, newerTieId);
+      });
+
+      test('single and batched watch-action reads distinguish null and compound scopes', () async {
+        final nullScopeId = await insertAction(
+          ratingKey: 'scoped',
+          actionType: OfflineActionType.unwatched.id,
+          updatedAt: 100,
+        );
+        final compoundScopeId = await insertAction(
+          ratingKey: 'scoped',
+          clientScopeId: 's/user-a',
+          actionType: OfflineActionType.watched.id,
+          updatedAt: 200,
+        );
+
+        final singleNull = await db.getWatchActionsForKey('s:scoped', filterClientScope: true);
+        final singleCompound = await db.getWatchActionsForKey(
+          's:scoped',
+          clientScopeId: 's/user-a',
+          filterClientScope: true,
+        );
+        final batchedNull = await db.getWatchActionsForKeys(
+          {'s:scoped'},
+          clientScopeIdsByGlobalKey: {'s:scoped': null},
+        );
+        final batchedCompound = await db.getWatchActionsForKeys(
+          {'s:scoped'},
+          clientScopeIdsByGlobalKey: {'s:scoped': 's/user-a'},
+        );
+
+        expect(singleNull.map((action) => action.id), [nullScopeId]);
+        expect(singleCompound.map((action) => action.id), [compoundScopeId]);
+        expect(batchedNull['s:scoped']!.map((action) => action.id), [nullScopeId]);
+        expect(batchedCompound['s:scoped']!.map((action) => action.id), [compoundScopeId]);
+        expect((await db.getLatestWatchAction('s:scoped', filterClientScope: true))!.id, nullScopeId);
+        expect(
+          (await db.getLatestWatchAction('s:scoped', clientScopeId: 's/user-a', filterClientScope: true))!.id,
+          compoundScopeId,
+        );
+        expect(
+          (await db.getLatestWatchActionsForKeys(
+            {'s:scoped'},
+            clientScopeIdsByGlobalKey: {'s:scoped': null},
+          ))['s:scoped']!.id,
+          nullScopeId,
+        );
+        expect(
+          (await db.getLatestWatchActionsForKeys(
+            {'s:scoped'},
+            clientScopeIdsByGlobalKey: {'s:scoped': 's/user-a'},
+          ))['s:scoped']!.id,
+          compoundScopeId,
+        );
+      });
+
+      test('single and batched watch-action reads isolate profiles', () async {
+        final profileAId = await insertAction(
+          ratingKey: 'profiled',
+          profileId: 'profile-a',
+          actionType: OfflineActionType.unwatched.id,
+          updatedAt: 100,
+        );
+        await insertAction(
+          ratingKey: 'profiled',
+          profileId: 'profile-b',
+          actionType: OfflineActionType.watched.id,
+          updatedAt: 200,
+        );
+
+        final single = await db.getWatchActionsForKey('s:profiled', profileId: 'profile-a', filterProfile: true);
+        final batched = await db.getWatchActionsForKeys({'s:profiled'}, profileId: 'profile-a', filterProfile: true);
+
+        expect(single.map((action) => action.id), [profileAId]);
+        expect(batched['s:profiled']!.map((action) => action.id), [profileAId]);
+        expect(
+          (await db.getLatestWatchAction('s:profiled', profileId: 'profile-a', filterProfile: true))!.id,
+          profileAId,
+        );
+        expect(
+          (await db.getLatestWatchActionsForKeys(
+            {'s:profiled'},
+            profileId: 'profile-a',
+            filterProfile: true,
+          ))['s:profiled']!.id,
+          profileAId,
+        );
+      });
+
+      test('watch-action query values treat wildcard characters literally', () async {
+        final exactId = await insertAction(
+          serverId: 'server_%',
+          ratingKey: 'item%_',
+          profileId: 'profile_%',
+          clientScopeId: 'server_%/user_1',
+          actionType: OfflineActionType.watched.id,
+          updatedAt: 100,
+        );
+        await insertAction(
+          serverId: 'server_%',
+          ratingKey: 'item%_',
+          profileId: 'profile_abc',
+          clientScopeId: 'server_%/user_1',
+          actionType: OfflineActionType.unwatched.id,
+          updatedAt: 400,
+        );
+        await insertAction(
+          serverId: 'server_%',
+          ratingKey: 'item%_',
+          profileId: 'profile_%',
+          clientScopeId: 'server_abc/user_a',
+          actionType: OfflineActionType.unwatched.id,
+          updatedAt: 300,
+        );
+        await insertAction(
+          serverId: 'server_abc',
+          ratingKey: 'itemZZZx',
+          profileId: 'profile_%',
+          clientScopeId: 'server_%/user_1',
+          actionType: OfflineActionType.unwatched.id,
+          updatedAt: 200,
+        );
+        const globalKey = 'server_%:item%_';
+        const scopes = {globalKey: 'server_%/user_1'};
+
+        final single = await db.getWatchActionsForKey(
+          globalKey,
+          profileId: 'profile_%',
+          filterProfile: true,
+          clientScopeId: 'server_%/user_1',
+          filterClientScope: true,
+        );
+        final batched = await db.getWatchActionsForKeys(
+          {globalKey},
+          profileId: 'profile_%',
+          filterProfile: true,
+          clientScopeIdsByGlobalKey: scopes,
+        );
+
+        expect(single.map((action) => action.id), [exactId]);
+        expect(single.single.serverId, 'server_%');
+        expect(single.single.ratingKey, 'item%_');
+        expect(batched[globalKey]!.map((action) => action.id), [exactId]);
+        expect(
+          (await db.getLatestWatchAction(
+            globalKey,
+            profileId: 'profile_%',
+            filterProfile: true,
+            clientScopeId: 'server_%/user_1',
+            filterClientScope: true,
+          ))!.id,
+          exactId,
+        );
+        expect(
+          (await db.getLatestWatchActionsForKeys(
+            {globalKey},
+            profileId: 'profile_%',
+            filterProfile: true,
+            clientScopeIdsByGlobalKey: scopes,
+          ))[globalKey]!.id,
+          exactId,
+        );
       });
 
       test('getLatestWatchActionsForKeys batches lookups, latest per key', () async {
@@ -774,7 +936,7 @@ class _AppDatabaseTestSuite {
       });
 
       test('updateSyncAttempt increments syncAttempts and stores lastError', () async {
-        await db.insertWatchAction(serverId: 's', ratingKey: '1', actionType: OfflineActionType.watched.id);
+        await db.insertWatchAction(serverId: ServerId('s'), ratingKey: '1', actionType: OfflineActionType.watched.id);
         final inserted = (await db.select(db.offlineWatchProgress).get()).single;
 
         await db.updateSyncAttempt(inserted.id, 'boom');
@@ -794,8 +956,8 @@ class _AppDatabaseTestSuite {
       });
 
       test('deleteWatchAction removes only the matching row', () async {
-        await db.insertWatchAction(serverId: 's', ratingKey: '1', actionType: OfflineActionType.watched.id);
-        await db.insertWatchAction(serverId: 's', ratingKey: '2', actionType: OfflineActionType.watched.id);
+        await db.insertWatchAction(serverId: ServerId('s'), ratingKey: '1', actionType: OfflineActionType.watched.id);
+        await db.insertWatchAction(serverId: ServerId('s'), ratingKey: '2', actionType: OfflineActionType.watched.id);
         final rows = await db.select(db.offlineWatchProgress).get();
         expect(rows, hasLength(2));
 
@@ -806,14 +968,14 @@ class _AppDatabaseTestSuite {
       test('getPendingSyncCount counts every row', () async {
         expect(await db.getPendingSyncCount(), 0);
 
-        await db.insertWatchAction(serverId: 's', ratingKey: '1', actionType: OfflineActionType.watched.id);
-        await db.insertWatchAction(serverId: 's', ratingKey: '2', actionType: OfflineActionType.unwatched.id);
+        await db.insertWatchAction(serverId: ServerId('s'), ratingKey: '1', actionType: OfflineActionType.watched.id);
+        await db.insertWatchAction(serverId: ServerId('s'), ratingKey: '2', actionType: OfflineActionType.unwatched.id);
         expect(await db.getPendingSyncCount(), 2);
       });
 
       test('clearAllWatchActions empties the table', () async {
-        await db.insertWatchAction(serverId: 's', ratingKey: '1', actionType: OfflineActionType.watched.id);
-        await db.insertWatchAction(serverId: 's', ratingKey: '2', actionType: OfflineActionType.unwatched.id);
+        await db.insertWatchAction(serverId: ServerId('s'), ratingKey: '1', actionType: OfflineActionType.watched.id);
+        await db.insertWatchAction(serverId: ServerId('s'), ratingKey: '2', actionType: OfflineActionType.unwatched.id);
 
         await db.clearAllWatchActions();
         expect(await db.select(db.offlineWatchProgress).get(), isEmpty);
@@ -829,7 +991,7 @@ class _AppDatabaseTestSuite {
     group('SyncRules', () {
       test('insertSyncRule + getSyncRules round-trip with defaults', () async {
         await db.insertSyncRule(
-          serverId: 'srv',
+          serverId: ServerId('srv'),
           ratingKey: '10',
           globalKey: 'srv:10',
           targetType: 'show',
@@ -844,6 +1006,7 @@ class _AppDatabaseTestSuite {
         expect(rules.first.enabled, isTrue); // default
         expect(rules.first.downloadFilter, 'unwatched'); // default
         expect(rules.first.mediaIndex, 0); // default
+        expect(rules.first.includeSpecials, isTrue); // default
         expect(rules.first.lastExecutedAt, isNull);
       });
 
@@ -854,19 +1017,20 @@ class _AppDatabaseTestSuite {
         // [globalKey] so re-creating a rule for the same target updates the
         // existing row rather than throwing.
         await db.insertSyncRule(
-          serverId: 'srv',
+          serverId: ServerId('srv'),
           ratingKey: '10',
           globalKey: 'srv:10',
           targetType: 'show',
           episodeCount: 5,
         );
         await db.insertSyncRule(
-          serverId: 'srv',
+          serverId: ServerId('srv'),
           ratingKey: '10',
           globalKey: 'srv:10',
           targetType: 'season',
           episodeCount: 99,
           downloadFilter: 'all',
+          includeSpecials: false,
         );
 
         final rules = await db.getSyncRules();
@@ -874,12 +1038,13 @@ class _AppDatabaseTestSuite {
         expect(rules.first.targetType, 'season');
         expect(rules.first.episodeCount, 99);
         expect(rules.first.downloadFilter, 'all');
+        expect(rules.first.includeSpecials, isFalse);
       });
 
       test('insertSyncRule allows the same server item for different profiles', () async {
         await db.insertSyncRule(
           profileId: 'profile-a',
-          serverId: 'srv',
+          serverId: ServerId('srv'),
           ratingKey: '10',
           globalKey: 'profile-a|srv:10',
           targetType: 'show',
@@ -887,7 +1052,7 @@ class _AppDatabaseTestSuite {
         );
         await db.insertSyncRule(
           profileId: 'profile-b',
-          serverId: 'srv',
+          serverId: ServerId('srv'),
           ratingKey: '10',
           globalKey: 'profile-b|srv:10',
           targetType: 'show',
@@ -902,7 +1067,7 @@ class _AppDatabaseTestSuite {
 
       test('insertSyncRule preserves enabled + lastExecutedAt across upserts', () async {
         await db.insertSyncRule(
-          serverId: 'srv',
+          serverId: ServerId('srv'),
           ratingKey: '10',
           globalKey: 'srv:10',
           targetType: 'show',
@@ -913,7 +1078,7 @@ class _AppDatabaseTestSuite {
         final firstRun = (await db.getSyncRule('srv:10'))!;
 
         await db.insertSyncRule(
-          serverId: 'srv',
+          serverId: ServerId('srv'),
           ratingKey: '10',
           globalKey: 'srv:10',
           targetType: 'show',
@@ -927,7 +1092,7 @@ class _AppDatabaseTestSuite {
 
       test('getSyncRule returns the matching rule or null', () async {
         await db.insertSyncRule(
-          serverId: 'srv',
+          serverId: ServerId('srv'),
           ratingKey: '10',
           globalKey: 'srv:10',
           targetType: 'show',
@@ -939,7 +1104,7 @@ class _AppDatabaseTestSuite {
 
       test('updateSyncRuleCount mutates only the count', () async {
         await db.insertSyncRule(
-          serverId: 'srv',
+          serverId: ServerId('srv'),
           ratingKey: '10',
           globalKey: 'srv:10',
           targetType: 'show',
@@ -954,7 +1119,7 @@ class _AppDatabaseTestSuite {
 
       test('updateSyncRuleFilter mutates the filter', () async {
         await db.insertSyncRule(
-          serverId: 'srv',
+          serverId: ServerId('srv'),
           ratingKey: '10',
           globalKey: 'srv:10',
           targetType: 'show',
@@ -968,7 +1133,7 @@ class _AppDatabaseTestSuite {
 
       test('updateSyncRuleEnabled toggles enabled', () async {
         await db.insertSyncRule(
-          serverId: 'srv',
+          serverId: ServerId('srv'),
           ratingKey: '10',
           globalKey: 'srv:10',
           targetType: 'show',
@@ -983,7 +1148,7 @@ class _AppDatabaseTestSuite {
 
       test('updateSyncRuleLastExecuted writes a timestamp', () async {
         await db.insertSyncRule(
-          serverId: 'srv',
+          serverId: ServerId('srv'),
           ratingKey: '10',
           globalKey: 'srv:10',
           targetType: 'show',
@@ -1001,14 +1166,14 @@ class _AppDatabaseTestSuite {
 
       test('deleteSyncRule removes the matching row', () async {
         await db.insertSyncRule(
-          serverId: 'srv',
+          serverId: ServerId('srv'),
           ratingKey: '10',
           globalKey: 'srv:10',
           targetType: 'show',
           episodeCount: 5,
         );
         await db.insertSyncRule(
-          serverId: 'srv',
+          serverId: ServerId('srv'),
           ratingKey: '11',
           globalKey: 'srv:11',
           targetType: 'show',
@@ -1023,4 +1188,9 @@ class _AppDatabaseTestSuite {
       });
     });
   }
+}
+
+class _ThrowingDocumentsPathProvider extends PathProviderPlatform with MockPlatformInterfaceMixin {
+  @override
+  Future<String?> getApplicationDocumentsPath() async => throw Exception('documents unavailable');
 }

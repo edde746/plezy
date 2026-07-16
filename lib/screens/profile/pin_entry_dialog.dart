@@ -57,14 +57,16 @@ class _PinEntryDialogState extends State<PinEntryDialog> with SingleTickerProvid
     super.dispose();
   }
 
+  bool get _isCurrentRoute => mounted && ModalRoute.of(context)?.isCurrent == true;
+
   void _submit(String pin) {
-    if (_completed) return;
+    if (_completed || !_isCurrentRoute) return;
     _completed = true;
     Navigator.of(context).pop<String>(pin);
   }
 
   void _cancel() {
-    if (_completed) return;
+    if (_completed || !_isCurrentRoute) return;
     _completed = true;
     Navigator.of(context).pop<String>();
   }
@@ -92,8 +94,8 @@ class _PinEntryDialogState extends State<PinEntryDialog> with SingleTickerProvid
     return AlertDialog(
       title: _buildTitle(theme),
       content: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: .min,
+        crossAxisAlignment: .start,
         children: [
           _TvPinInput(
             key: _pinInputKey,
@@ -134,8 +136,8 @@ class _PinEntryDialogState extends State<PinEntryDialog> with SingleTickerProvid
           borderRadius: BorderRadius.circular(28),
         ),
         child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
+          mainAxisSize: .min,
+          crossAxisAlignment: .stretch,
           children: [
             _buildTitle(theme),
             const SizedBox(height: 12),
@@ -161,7 +163,7 @@ class _PinEntryDialogState extends State<PinEntryDialog> with SingleTickerProvid
       children: [
         AppIcon(Symbols.lock_outline_rounded, fill: 1, size: 24, color: theme.colorScheme.primary),
         const SizedBox(width: 12),
-        Expanded(child: Text(widget.userName, overflow: TextOverflow.ellipsis)),
+        Expanded(child: Text(widget.userName, overflow: .ellipsis)),
       ],
     );
   }
@@ -378,15 +380,13 @@ class _TvPinInputState extends State<_TvPinInput> with ControllerDisposerMixin {
 
     final backResult = handleBackKeyAction(event, widget.onCancel);
     if (backResult != KeyEventResult.ignored) return backResult;
+    if (event.isTvSelectEvent || (PlatformDetector.isTV() && event.isPhysicalKeyboardEnter)) {
+      return handleOneShotSelect(event, () => _activate(_rows[_row][_column]));
+    }
 
     if (event is KeyDownEvent || event is KeyRepeatEvent) {
       if (key == LogicalKeyboardKey.backspace || key == LogicalKeyboardKey.delete) {
         _deleteLastDigit();
-        return KeyEventResult.handled;
-      }
-
-      if (event.isTvSelectEvent || (PlatformDetector.isTV() && event.isPhysicalKeyboardEnter)) {
-        _activate(_rows[_row][_column]);
         return KeyEventResult.handled;
       }
 
@@ -479,20 +479,20 @@ class _TvPinInputState extends State<_TvPinInput> with ControllerDisposerMixin {
 
   Widget _buildKeypadLayout(BuildContext context) {
     return Column(
-      mainAxisSize: MainAxisSize.min,
+      mainAxisSize: .min,
       children: [_buildDigitRow(context, obscureDigits: true), const SizedBox(height: 18), _buildKeypad(context)],
     );
   }
 
   Widget _buildKeypad(BuildContext context) {
     return Column(
-      mainAxisSize: MainAxisSize.min,
+      mainAxisSize: .min,
       children: [
         for (int row = 0; row < _rows.length; row++) ...[
           if (row > 0) const SizedBox(height: _rowGap),
           Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: .center,
+            mainAxisSize: .min,
             children: [
               for (int col = 0; col < _keypadColumns; col++) ...[
                 if (col > 0) const SizedBox(width: _keyGap),
@@ -524,7 +524,7 @@ class _TvPinInputState extends State<_TvPinInput> with ControllerDisposerMixin {
           duration: const Duration(milliseconds: 120),
           width: _keySize,
           height: _keySize,
-          alignment: Alignment.center,
+          alignment: .center,
           decoration: BoxDecoration(color: background, borderRadius: BorderRadius.circular(16)),
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 4),
@@ -537,22 +537,22 @@ class _TvPinInputState extends State<_TvPinInput> with ControllerDisposerMixin {
 
   Widget _buildKeyContent(BuildContext context, _PinKey key, Color foreground) {
     final icon = key.icon;
-    if (icon != null) return Icon(icon, color: foreground, size: 30);
+    if (icon != null) return AppIcon(icon, color: foreground, size: 30);
 
     return FittedBox(
       fit: BoxFit.scaleDown,
       child: Text(
         key.label,
         maxLines: 1,
-        style: Theme.of(context).textTheme.titleLarge?.copyWith(color: foreground, fontWeight: FontWeight.w800),
+        style: Theme.of(context).textTheme.titleLarge?.copyWith(color: foreground, fontWeight: .w800),
       ),
     );
   }
 
   Widget _buildDigitRow(BuildContext _, {bool obscureDigits = false}) {
     return Row(
-      mainAxisSize: MainAxisSize.min,
-      mainAxisAlignment: MainAxisAlignment.center,
+      mainAxisSize: .min,
+      mainAxisAlignment: .center,
       children: [
         for (int i = 0; i < 4; i++) ...[
           if (i > 0) const SizedBox(width: 10),
@@ -571,7 +571,7 @@ class _TvPinInputState extends State<_TvPinInput> with ControllerDisposerMixin {
       behavior: HitTestBehavior.opaque,
       onTap: _requestMobileKeyboardFocus,
       child: Stack(
-        alignment: Alignment.center,
+        alignment: .center,
         children: [
           SizedBox(
             width: 222,
@@ -591,11 +591,7 @@ class _TvPinInputState extends State<_TvPinInput> with ControllerDisposerMixin {
                 showCursor: false,
                 cursorColor: Colors.transparent,
                 style: const TextStyle(color: Colors.transparent, fontSize: 1, height: 1),
-                decoration: const InputDecoration(
-                  counterText: '',
-                  border: InputBorder.none,
-                  contentPadding: EdgeInsets.zero,
-                ),
+                decoration: const InputDecoration(counterText: '', border: InputBorder.none, contentPadding: .zero),
                 inputFormatters: [FilteringTextInputFormatter.digitsOnly, LengthLimitingTextInputFormatter(4)],
                 onChanged: _onMobilePinChanged,
                 onSubmitted: (_) => _trySubmit(),
@@ -622,13 +618,13 @@ class _DigitBox extends StatelessWidget {
     final focusColor = FocusTheme.getFocusBorderColor(context);
 
     return Column(
-      mainAxisSize: MainAxisSize.min,
+      mainAxisSize: .min,
       children: [
         AnimatedContainer(
           duration: const Duration(milliseconds: 150),
           width: 48,
           height: 56,
-          alignment: Alignment.center,
+          alignment: .center,
           decoration: BoxDecoration(
             borderRadius: const BorderRadius.all(Radius.circular(FocusTheme.defaultBorderRadius)),
             border: Border.fromBorderSide(
@@ -642,7 +638,7 @@ class _DigitBox extends StatelessWidget {
           child: Text(
             digit != null ? (obscureDigit || !isActive ? '•' : digit.toString()) : '–',
             style: theme.textTheme.headlineSmall?.copyWith(
-              fontWeight: FontWeight.bold,
+              fontWeight: .bold,
               color: digit != null
                   ? theme.colorScheme.onSurface
                   : theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.4),
@@ -680,17 +676,20 @@ class _PinKey {
       case _PinKeyType.digit:
         return null;
       case _PinKeyType.backspace:
-        return Icons.backspace_outlined;
+        return Symbols.backspace_rounded;
       case _PinKeyType.close:
-        return Icons.close_rounded;
+        return Symbols.close_rounded;
     }
   }
 }
 
 /// Shows the PIN entry dialog and returns the entered PIN, or null if cancelled
 Future<String?> showPinEntryDialog(BuildContext context, String userName, {String? errorMessage}) {
+  // PIN entry guards root-owned profile activation and must survive disposal of
+  // the active profile session while the binder switches users.
   return showDialog<String>(
     context: context,
+    useRootNavigator: true,
     barrierDismissible: false,
     builder: (context) => PinEntryDialog(userName: userName, errorMessage: errorMessage),
   );

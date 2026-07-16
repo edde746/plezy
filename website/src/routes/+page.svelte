@@ -5,7 +5,6 @@
   import Reviews from '$lib/components/Reviews.svelte';
   import FAQ from '$lib/components/FAQ.svelte';
   import Footer from '$lib/components/Footer.svelte';
-  import NoiseOverlay from '$lib/components/NoiseOverlay.svelte';
   import { faqSchemaMainEntity } from '$lib/content/faqs';
 
   const { data } = $props();
@@ -95,7 +94,6 @@
   {@html `<script type="application/ld+json">${JSON.stringify(faqSchema)}</script>`}
 </svelte:head>
 
-<NoiseOverlay />
 <Hero />
 <Features />
 <Screenshots />

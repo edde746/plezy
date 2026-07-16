@@ -129,7 +129,9 @@ class _HorizontalScrollWithArrowsState extends State<HorizontalScrollWithArrows>
   Widget build(BuildContext context) {
     final child = widget.builder(_scrollController);
 
-    if (!PlatformDetector.isDesktop(context)) {
+    // Hover arrows need a mouse; isDesktop(context) is also true on TV where
+    // the MouseRegion + scroll-notification machinery is dead weight per row.
+    if (!PlatformDetector.isDesktopOS()) {
       return child;
     }
 

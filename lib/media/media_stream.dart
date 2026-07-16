@@ -19,6 +19,9 @@ class MediaStream {
 
   // Video
   final double? frameRate;
+  final bool hdr;
+  final bool dolbyVision;
+  final int? dolbyVisionProfile;
 
   // Subtitle
   final bool forced;
@@ -40,6 +43,9 @@ class MediaStream {
     this.selected = false,
     this.channels,
     this.frameRate,
+    this.hdr = false,
+    this.dolbyVision = false,
+    this.dolbyVisionProfile,
     this.forced = false,
     this.sidecarPath,
   });

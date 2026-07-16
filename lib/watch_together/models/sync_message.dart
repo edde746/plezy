@@ -1,26 +1,20 @@
 import 'dart:convert';
 
-import 'watch_session.dart';
+import 'playback_state.dart';
 
-/// Types of sync messages sent over the WebRTC data channel
+/// Types of sync messages sent over the relay data channel (protocol v2).
 enum SyncMessageType {
-  /// Start playback
-  play,
+  /// Authoritative playback state broadcast by the host
+  state,
 
-  /// Pause playback
-  pause,
+  /// A peer's player status report to the host
+  status,
 
-  /// Seek to position
-  seek,
+  /// A guest's playback control request to the host
+  control,
 
-  /// Buffering state changed
-  buffering,
-
-  /// Periodic position update (for drift correction)
-  positionSync,
-
-  /// Playback rate changed
-  rate,
+  /// Request the current playback state from the host
+  requestState,
 
   /// Participant joined the session
   join,
@@ -28,44 +22,29 @@ enum SyncMessageType {
   /// Participant left the session
   leave,
 
-  /// Session configuration (sent by host on join)
-  sessionConfig,
-
-  /// Ping for latency measurement
+  /// Ping for clock-offset measurement
   ping,
 
   /// Pong response
   pong,
 
-  /// Media switch (host changed content)
-  mediaSwitch,
-
   /// Host exited the video player
   hostExitedPlayer,
-
-  /// Player is ready (attached and loaded)
-  playerReady,
-
-  /// Request session config from host (guest recovery)
-  requestSessionConfig,
 }
 
-/// A message sent over the WebRTC data channel for synchronization
+/// A message sent over the relay data channel for synchronization
 class SyncMessage {
+  /// Current sync protocol version, carried on join messages. Peers with a
+  /// different version are excluded from readiness gating and surfaced as
+  /// needing an update.
+  static const int protocolVersion = 2;
+
   /// Type of this message
   final SyncMessageType type;
 
-  /// Timestamp when this message was created (Unix ms)
+  /// Timestamp when this message was created (Unix ms). For pong messages
+  /// this is the responder's "clock now" used for offset estimation.
   final int timestamp;
-
-  /// Position in milliseconds (for seek, positionSync)
-  final int? positionMs;
-
-  /// Buffering state (for buffering message)
-  final bool? bufferingState;
-
-  /// Playback rate (for rate message)
-  final double? rate;
 
   /// Peer ID of the sender
   final String? peerId;
@@ -76,98 +55,74 @@ class SyncMessage {
   /// Whether the sender is the host (for join message)
   final bool? isHost;
 
-  /// Control mode (for sessionConfig message)
-  final ControlMode? controlMode;
-
   /// Ping ID for matching pong responses
   final int? pingId;
 
-  /// Rating key of the media (for mediaSwitch message)
-  final String? ratingKey;
+  /// Authoritative playback state (for state message)
+  final PlaybackState? state;
 
-  /// Server ID of the media (for mediaSwitch message)
-  final String? serverId;
+  /// Peer player status report (for status message)
+  final PeerStatus? status;
 
-  /// Title of the media (for mediaSwitch message)
-  final String? mediaTitle;
+  /// Playback control request (for control message)
+  final ControlRequest? control;
 
-  /// Whether playback is currently playing (for positionSync heartbeat)
-  final bool? isPlaying;
+  /// Sync protocol version (for join message)
+  final int? version;
 
   const SyncMessage({
     required this.type,
     required this.timestamp,
-    this.positionMs,
-    this.bufferingState,
-    this.rate,
     this.peerId,
     this.displayName,
     this.isHost,
-    this.controlMode,
     this.pingId,
-    this.ratingKey,
-    this.serverId,
-    this.mediaTitle,
-    this.isPlaying,
+    this.state,
+    this.status,
+    this.control,
+    this.version,
   });
 
-  /// Create a PLAY message
-  factory SyncMessage.play({String? peerId, Duration? position}) {
+  /// Create a STATE message carrying the host's authoritative playback state
+  factory SyncMessage.state(PlaybackState state, {String? peerId}) {
     return SyncMessage(
-      type: SyncMessageType.play,
+      type: SyncMessageType.state,
       timestamp: DateTime.now().millisecondsSinceEpoch,
       peerId: peerId,
-      positionMs: position?.inMilliseconds,
+      state: state,
     );
   }
 
-  /// Create a PAUSE message
-  factory SyncMessage.pause({String? peerId}) {
-    return SyncMessage(type: SyncMessageType.pause, timestamp: DateTime.now().millisecondsSinceEpoch, peerId: peerId);
-  }
-
-  /// Create a SEEK message
-  factory SyncMessage.seek(Duration position, {String? peerId}) {
+  /// Create a STATUS message reporting this peer's player state to the host
+  factory SyncMessage.status(PeerStatus status, {String? peerId}) {
     return SyncMessage(
-      type: SyncMessageType.seek,
+      type: SyncMessageType.status,
       timestamp: DateTime.now().millisecondsSinceEpoch,
-      positionMs: position.inMilliseconds,
       peerId: peerId,
+      status: status,
     );
   }
 
-  /// Create a BUFFERING message
-  factory SyncMessage.buffering(bool isBuffering, {String? peerId}) {
+  /// Create a CONTROL message requesting a playback action from the host
+  factory SyncMessage.control(ControlRequest control, {String? peerId}) {
     return SyncMessage(
-      type: SyncMessageType.buffering,
+      type: SyncMessageType.control,
       timestamp: DateTime.now().millisecondsSinceEpoch,
-      bufferingState: isBuffering,
       peerId: peerId,
+      control: control,
     );
   }
 
-  /// Create a POSITION_SYNC message (heartbeat with optional play/pause state)
-  factory SyncMessage.positionSync(Duration position, {String? peerId, bool? isPlaying}) {
+  /// Create a REQUEST_STATE message asking the host to re-send its state
+  factory SyncMessage.requestState({String? peerId}) {
     return SyncMessage(
-      type: SyncMessageType.positionSync,
+      type: SyncMessageType.requestState,
       timestamp: DateTime.now().millisecondsSinceEpoch,
-      positionMs: position.inMilliseconds,
-      peerId: peerId,
-      isPlaying: isPlaying,
-    );
-  }
-
-  /// Create a RATE message
-  factory SyncMessage.rate(double playbackRate, {String? peerId}) {
-    return SyncMessage(
-      type: SyncMessageType.rate,
-      timestamp: DateTime.now().millisecondsSinceEpoch,
-      rate: playbackRate,
       peerId: peerId,
     );
   }
 
-  /// Create a JOIN message
+  /// Create a JOIN message (carries the sender's protocol version)
   factory SyncMessage.join({required String peerId, required String displayName, required bool isHost}) {
     return SyncMessage(
       type: SyncMessageType.join,
@@ -175,50 +130,13 @@ class SyncMessage {
       peerId: peerId,
       displayName: displayName,
       isHost: isHost,
+      version: protocolVersion,
     );
   }
 
   /// Create a LEAVE message
   factory SyncMessage.leave({required String peerId}) {
     return SyncMessage(type: SyncMessageType.leave, timestamp: DateTime.now().millisecondsSinceEpoch, peerId: peerId);
-  }
-
-  /// Create a SESSION_CONFIG message (sent by host to new guests)
-  ///
-  /// Optionally includes current media info so guests can catch up
-  /// if they missed a mediaSwitch broadcast.
-  factory SyncMessage.sessionConfig({
-    required ControlMode controlMode,
-    required Duration currentPosition,
-    required bool isPlaying,
-    required double playbackRate,
-    String? peerId,
-    String? ratingKey,
-    String? serverId,
-    String? mediaTitle,
-  }) {
-    return SyncMessage(
-      type: SyncMessageType.sessionConfig,
-      timestamp: DateTime.now().millisecondsSinceEpoch,
-      controlMode: controlMode,
-      positionMs: currentPosition.inMilliseconds,
-      isPlaying: isPlaying,
-      bufferingState: !isPlaying, // Legacy compat: false = playing, true = paused
-      rate: playbackRate,
-      peerId: peerId,
-      ratingKey: ratingKey,
-      serverId: serverId,
-      mediaTitle: mediaTitle,
-    );
-  }
-
-  /// Create a REQUEST_SESSION_CONFIG message (sent by guest to request current config from host)
-  factory SyncMessage.requestSessionConfig({String? peerId}) {
-    return SyncMessage(
-      type: SyncMessageType.requestSessionConfig,
-      timestamp: DateTime.now().millisecondsSinceEpoch,
-      peerId: peerId,
-    );
   }
 
   /// Create a PING message
@@ -241,23 +159,6 @@ class SyncMessage {
     );
   }
 
-  /// Create a MEDIA_SWITCH message (sent by host when changing content)
-  factory SyncMessage.mediaSwitch({
-    required String ratingKey,
-    required String serverId,
-    required String mediaTitle,
-    String? peerId,
-  }) {
-    return SyncMessage(
-      type: SyncMessageType.mediaSwitch,
-      timestamp: DateTime.now().millisecondsSinceEpoch,
-      ratingKey: ratingKey,
-      serverId: serverId,
-      mediaTitle: mediaTitle,
-      peerId: peerId,
-    );
-  }
-
   /// Create a HOST_EXITED_PLAYER message (sent by host when exiting video player)
   factory SyncMessage.hostExitedPlayer({String? peerId}) {
     return SyncMessage(
@@ -267,59 +168,38 @@ class SyncMessage {
     );
   }
 
-  /// Create a PLAYER_READY message (sent when player is attached and ready)
-  factory SyncMessage.playerReady({required String peerId, required bool ready}) {
-    return SyncMessage(
-      type: SyncMessageType.playerReady,
-      timestamp: DateTime.now().millisecondsSinceEpoch,
-      peerId: peerId,
-      bufferingState: ready, // Reuse bufferingState field for ready status
-    );
-  }
-
-  /// Position as Duration (convenience getter)
-  Duration? get position => positionMs != null ? Duration(milliseconds: positionMs!) : null;
-
   SyncMessage copyWith({String? peerId}) {
     return SyncMessage(
       type: type,
       timestamp: timestamp,
-      positionMs: positionMs,
-      bufferingState: bufferingState,
-      rate: rate,
       peerId: peerId ?? this.peerId,
       displayName: displayName,
       isHost: isHost,
-      controlMode: controlMode,
       pingId: pingId,
-      ratingKey: ratingKey,
-      serverId: serverId,
-      mediaTitle: mediaTitle,
-      isPlaying: isPlaying,
+      state: state,
+      status: status,
+      control: control,
+      version: version,
     );
   }
 
-  /// Serialize to JSON string for sending over data channel
+  /// Serialize to JSON string for sending over the data channel
   String toJson() {
     final map = <String, dynamic>{'t': type.name, 'ts': timestamp};
 
-    if (positionMs != null) map['pos'] = positionMs;
-    if (bufferingState != null) map['buf'] = bufferingState;
-    if (rate != null) map['r'] = rate;
     if (peerId != null) map['pid'] = peerId;
     if (displayName != null) map['name'] = displayName;
     if (isHost != null) map['host'] = isHost;
-    if (controlMode != null) map['ctrl'] = controlMode!.index;
     if (pingId != null) map['ping'] = pingId;
-    if (ratingKey != null) map['rk'] = ratingKey;
-    if (serverId != null) map['sid'] = serverId;
-    if (mediaTitle != null) map['title'] = mediaTitle;
-    if (isPlaying != null) map['pl'] = isPlaying;
+    if (state != null) map['st'] = state!.toMap();
+    if (status != null) map['su'] = status!.toMap();
+    if (control != null) map['co'] = control!.toMap();
+    if (version != null) map['v'] = version;
 
     return jsonEncode(map);
   }
 
-  /// Parse from JSON string received from data channel
+  /// Parse from JSON string received from the data channel
   factory SyncMessage.fromJson(String jsonString) {
     final map = jsonDecode(jsonString) as Map<String, dynamic>;
 
@@ -330,24 +210,20 @@ class SyncMessage {
     return SyncMessage(
       type: type,
       timestamp: map['ts'] as int,
-      positionMs: map['pos'] as int?,
-      bufferingState: map['buf'] as bool?,
-      rate: (map['r'] as num?)?.toDouble(),
       peerId: map['pid'] as String?,
       displayName: map['name'] as String?,
       isHost: map['host'] as bool?,
-      controlMode: map['ctrl'] != null ? ControlMode.values[map['ctrl'] as int] : null,
       pingId: map['ping'] as int?,
-      ratingKey: map['rk'] as String?,
-      serverId: map['sid'] as String?,
-      mediaTitle: map['title'] as String?,
-      isPlaying: map['pl'] as bool?,
+      state: map['st'] != null ? PlaybackState.fromMap((map['st'] as Map).cast<String, dynamic>()) : null,
+      status: map['su'] != null ? PeerStatus.fromMap((map['su'] as Map).cast<String, dynamic>()) : null,
+      control: map['co'] != null ? ControlRequest.fromMap((map['co'] as Map).cast<String, dynamic>()) : null,
+      version: map['v'] as int?,
     );
   }
 
   @override
   String toString() {
-    return 'SyncMessage(type: $type, timestamp: $timestamp, positionMs: $positionMs, '
-        'bufferingState: $bufferingState, rate: $rate, peerId: $peerId)';
+    return 'SyncMessage(type: $type, timestamp: $timestamp, peerId: $peerId, '
+        'state: $state, status: $status, control: $control)';
   }
 }

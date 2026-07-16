@@ -2,16 +2,18 @@ import 'package:flutter/material.dart';
 import 'package:plezy/widgets/app_icon.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
-import 'package:rate_limiter/rate_limiter.dart';
 
 import '../focus/focusable_text_field.dart';
+import '../focus/focusable_button.dart';
 import '../i18n/strings.g.dart';
+import '../media/ids.dart';
 import '../media/media_item.dart';
-import '../mixins/controller_disposer_mixin.dart';
+import '../mixins/debounced_media_search.dart';
 import '../mixins/mounted_set_state_mixin.dart';
 import '../mixins/refreshable.dart';
 import '../providers/multi_server_provider.dart';
 import '../utils/app_logger.dart';
+import '../utils/platform_detector.dart';
 import '../utils/snackbar_helper.dart';
 import '../widgets/desktop_app_bar.dart';
 import '../widgets/loading_indicator_box.dart';
@@ -29,131 +31,117 @@ class SearchScreen extends StatefulWidget {
 }
 
 class _SearchScreenState extends State<SearchScreen>
-    with
-        Refreshable,
-        FullRefreshable,
-        SearchInputFocusable,
-        FocusableTab,
-        ControllerDisposerMixin,
-        MountedSetStateMixin {
-  late final _searchController = createTextEditingController();
-  final _searchFocusNode = FocusNode(debugLabel: 'SearchInput');
-  final _firstResultFocusNode = FocusNode(debugLabel: 'SearchFirstResult');
-  List<MediaItem> _searchResults = [];
-  bool _isSearching = false;
-  bool _hasSearched = false;
-  late final Debounce _searchDebounce;
-  String _lastSearchedQuery = '';
+    with Refreshable, FullRefreshable, SearchInputFocusable, FocusableTab, MountedSetStateMixin, DebouncedMediaSearch {
+  String? _focusResultsForQuery;
+  final _tvKeyboardController = TvKeyboardController();
+  final _clearFocusNode = FocusNode(debugLabel: 'Search.clear');
 
   @override
   void initState() {
     super.initState();
-    _searchDebounce = debounce(_performSearch, const Duration(milliseconds: 500));
-    _searchController.addListener(_onSearchChanged);
-    FocusUtils.requestFocusAfterBuild(this, _searchFocusNode);
+    FocusUtils.requestFocusAfterBuild(this, searchFocusNode);
   }
 
   @override
   void dispose() {
-    _searchDebounce.cancel();
-    _searchController.removeListener(_onSearchChanged);
-    _searchFocusNode.dispose();
-    _firstResultFocusNode.dispose();
+    _clearFocusNode.dispose();
     super.dispose();
   }
 
-  void _onSearchChanged() {
-    if (!mounted) return;
-
-    final query = _searchController.text;
-
-    if (query.trim().isEmpty) {
-      _searchDebounce.cancel();
-      setStateIfMounted(() {
-        _searchResults = [];
-        _hasSearched = false;
-        _isSearching = false;
-        _lastSearchedQuery = '';
-      });
-      return;
-    }
-
-    // Only search if the query has actually changed
-    if (query.trim() == _lastSearchedQuery.trim()) {
-      return;
-    }
-
-    _searchDebounce([query]);
+  void _clearSearch() {
+    searchController.clear();
+    searchFocusNode.requestFocus();
   }
 
-  Future<void> _performSearch(String query) async {
-    if (!mounted) return;
+  @override
+  String get searchDebugLabel => 'Search';
 
-    if (query.trim().isEmpty) {
-      setStateIfMounted(() {
-        _searchResults = [];
-        _hasSearched = false;
-      });
-      return;
+  @override
+  Future<List<MediaItem>> performSearchQuery(String query) async {
+    final multiServerProvider = Provider.of<MultiServerProvider>(context, listen: false);
+    if (!multiServerProvider.hasConnectedServers) {
+      throw Exception('No servers available');
     }
+    return multiServerProvider.aggregationService.searchAcrossServers(query);
+  }
 
-    setStateIfMounted(() {
-      _isSearching = true;
-      _hasSearched = true;
-    });
+  @override
+  void onSearchError(Object error) {
+    _focusResultsForQuery = null;
+    showErrorSnackBar(context, t.errors.searchFailed(error: error));
+  }
 
-    try {
-      if (!mounted) return;
-      final multiServerProvider = Provider.of<MultiServerProvider>(context, listen: false);
+  @override
+  void onSearchCleared() {
+    _focusResultsForQuery = null;
+  }
 
-      if (!multiServerProvider.hasConnectedServers) {
-        throw Exception('No servers available');
-      }
+  @override
+  void onSearchCompleted(String query, List<MediaItem> results) {
+    if (_focusResultsForQuery == null || _focusResultsForQuery != query) return;
+    _focusResultsForQuery = null;
+    if (results.isEmpty) return;
+    if (searchController.text.trim() != query) return; // user kept editing
+    FocusUtils.requestFocusAfterBuild(this, firstResultFocusNode);
+  }
 
-      final neutral = await multiServerProvider.aggregationService.searchAcrossServers(query);
-      if (mounted) {
-        setStateIfMounted(() {
-          _searchResults = neutral;
-          _isSearching = false;
-          _lastSearchedQuery = query.trim();
-        });
-      }
-    } catch (e) {
-      if (mounted) {
-        setStateIfMounted(() {
-          _isSearching = false;
-        });
-        showErrorSnackBar(context, t.errors.searchFailed(error: e));
-      }
+  /// OSK "Search" / hardware Enter on TV additionally focuses the results
+  /// when the forced search lands.
+  @override
+  void handleSearchSubmit() {
+    final query = searchController.text.trim();
+    if (query.isEmpty) return;
+    if (searchResults.isEmpty || isSearching || query != lastSearchedQuery) {
+      _focusResultsForQuery = query;
     }
+    super.handleSearchSubmit();
   }
 
   @override
   void refresh() {
     if (!mounted) return;
-    if (_searchController.text.isNotEmpty) {
-      _performSearch(_searchController.text);
-    }
+    runSearch(searchController.text.trim());
   }
 
   /// Focus the search input field
   @override
   void focusSearchInput() {
     if (!mounted) return;
-    _searchFocusNode.requestFocus();
+    searchFocusNode.requestFocus();
   }
 
   @override
   void focusActiveTabIfReady() {
     if (!mounted) return;
-    _searchFocusNode.requestFocus();
+    searchFocusNode.requestFocus();
   }
 
-  /// Set the search query externally (e.g. from companion remote)
+  /// Apply a complete query submitted from the Plezy companion remote: set the
+  /// text, dismiss any open on-screen keyboard, land focus on the input without
+  /// (re)opening the OSK, and run the search now — the first result takes focus
+  /// when it lands (via onSearchCompleted). The user already typed the query on
+  /// their phone, so the TV keyboard must never be up afterwards.
   @override
-  void setSearchQuery(String query) {
+  void submitSearchQuery(String query) {
     if (!mounted) return;
-    _searchController.text = query;
+    final trimmed = query.trim();
+    searchController.text = trimmed; // listener arms the debounce / resets state
+
+    // Focusing the field normally auto-opens the OSK; a remote search must not
+    // show it, and must dismiss one the TV user already had open (the phone's
+    // Search chip sends tabSearch before the query arrives).
+    _tvKeyboardController.closeKeyboard();
+    if (trimmed.isEmpty) return;
+
+    // Land focus on the (visible) input immediately so the D-pad remote is
+    // never stranded on the hidden previous tab — while the search is in
+    // flight, when it fails, and when it returns nothing.
+    _tvKeyboardController.focusInputWithoutKeyboard();
+
+    // Same path as the OSK Search key: jumps straight to already-matching
+    // results, or cancels the debounce and runs now; the screen override arms
+    // _focusResultsForQuery so results take focus when they land.
+    handleSearchSubmit();
   }
 
   // Public method to fully reload all content (for profile switches)
@@ -161,27 +149,33 @@ class _SearchScreenState extends State<SearchScreen>
   void fullRefresh() {
     if (!mounted) return;
     appLogger.d('SearchScreen.fullRefresh() called - clearing search and reloading');
-    // Clear search results and search text for new profile
-    _searchController.clear();
-    setStateIfMounted(() {
-      _searchResults.clear();
-      _isSearching = false;
-      _hasSearched = false;
-      _lastSearchedQuery = '';
-    });
+    // Clearing the field resets the search state through the text listener.
+    _focusResultsForQuery = null;
+    searchController.clear();
   }
 
-  void updateItem(String _) {
+  Future<void> updateItem(MediaItem source) async {
     if (!mounted) return;
-    // Trigger a refresh of the search to get updated metadata
-    if (_searchController.text.isNotEmpty) {
-      _performSearch(_searchController.text);
+    final serverId = source.serverId;
+    if (serverId == null) return;
+
+    try {
+      final multiServer = context.read<MultiServerProvider>();
+      final updated = await multiServer.getClientForServer(ServerId(serverId))?.fetchItem(source.id);
+      if (!mounted || updated == null) return;
+      final index = searchResults.indexWhere((item) => item.globalKey == source.globalKey);
+      if (index == -1) return;
+      setState(() {
+        searchResults[index] = updated;
+      });
+    } catch (e) {
+      appLogger.d('Search item refresh skipped for ${source.globalKey}', error: e);
     }
   }
 
   /// Navigate focus to the sidebar
   void _navigateToSidebar() {
-    MainScreenFocusScope.of(context, listen: false)?.focusSidebar();
+    MainScreenFocusScope.focusSidebarOf(context);
   }
 
   Widget _buildResultsList(BuildContext context) {
@@ -190,21 +184,26 @@ class _SearchScreenState extends State<SearchScreen>
     return SliverPadding(
       padding: const EdgeInsets.all(16),
       sliver: SliverList(
-        delegate: SliverChildBuilderDelegate((context, index) {
-          final item = _searchResults[index];
-          return FocusableMediaCard(
-            key: Key(item.globalKey),
-            item: item,
-            forceListMode: true,
-            disableScale: true,
-            focusNode: index == 0 ? _firstResultFocusNode : null,
-            onRefresh: updateItem,
-            onListRefresh: () => updateItem(item.id),
-            onNavigateLeft: _navigateToSidebar,
-            onNavigateUp: index == 0 ? focusSearchInput : null,
-            showServerName: showServerName,
-          );
-        }, childCount: _searchResults.length),
+        delegate: SliverChildBuilderDelegate(
+          (context, index) {
+            final item = searchResults[index];
+            return FocusableMediaCard(
+              key: Key(item.globalKey),
+              item: item,
+              forceListMode: true,
+              disableScale: true,
+              focusNode: index == 0 ? firstResultFocusNode : null,
+              onRefresh: updateItem,
+              onListRefresh: refresh,
+              onNavigateLeft: _navigateToSidebar,
+              onNavigateUp: index == 0 ? focusSearchInput : null,
+              showServerName: showServerName,
+            );
+          },
+          childCount: searchResults.length,
+          addAutomaticKeepAlives: false,
+          addSemanticIndexes: false,
+        ),
       ),
     );
   }
@@ -220,40 +219,52 @@ class _SearchScreenState extends State<SearchScreen>
             SliverToBoxAdapter(
               child: Padding(
                 padding: const EdgeInsets.only(left: 16, right: 16, bottom: 16),
-                child: FocusableTextField(
-                  controller: _searchController,
-                  focusNode: _searchFocusNode,
-                  textInputAction: TextInputAction.search,
-                  onNavigateLeft: _navigateToSidebar,
-                  onNavigateDown: _searchResults.isNotEmpty && !_isSearching
-                      ? _firstResultFocusNode.requestFocus
-                      : null,
-                  onBack: () {
-                    if (_searchController.text.isNotEmpty) {
-                      _searchController.clear();
-                    } else {
-                      _navigateToSidebar();
-                    }
-                  },
-                  decoration: pillInputDecoration(
-                    context,
-                    hintText: t.search.hint,
-                    prefixIcon: const AppIcon(Symbols.search_rounded, fill: 1),
-                    suffixIcon: _searchController.text.isNotEmpty
-                        ? IconButton(
-                            icon: const AppIcon(Symbols.clear_rounded, fill: 1),
-                            onPressed: () {
-                              _searchController.clear();
-                            },
-                          )
-                        : null,
-                  ),
+                child: Stack(
+                  alignment: Alignment.centerRight,
+                  children: [
+                    FocusableTextField(
+                      controller: searchController,
+                      focusNode: searchFocusNode,
+                      tvKeyboardController: _tvKeyboardController,
+                      textInputAction: TextInputAction.search,
+                      onNavigateLeft: _navigateToSidebar,
+                      onNavigateRight: searchController.text.isNotEmpty ? _clearFocusNode.requestFocus : null,
+                      onNavigateDown: searchResults.isNotEmpty && !isSearching
+                          ? firstResultFocusNode.requestFocus
+                          : null,
+                      onEditingComplete: PlatformDetector.isTV() ? handleSearchSubmit : null,
+                      onBack: () {
+                        if (searchController.text.isNotEmpty) {
+                          searchController.clear();
+                        } else {
+                          _navigateToSidebar();
+                        }
+                      },
+                      decoration: pillInputDecoration(
+                        context,
+                        hintText: t.search.hint,
+                        prefixIcon: const AppIcon(Symbols.search_rounded, fill: 1),
+                        suffixIcon: searchController.text.isNotEmpty ? const SizedBox(width: 48) : null,
+                      ),
+                    ),
+                    if (searchController.text.isNotEmpty)
+                      FocusableButton(
+                        focusNode: _clearFocusNode,
+                        onPressed: _clearSearch,
+                        onNavigateLeft: searchFocusNode.requestFocus,
+                        onNavigateDown: searchResults.isNotEmpty && !isSearching
+                            ? firstResultFocusNode.requestFocus
+                            : null,
+                        autoScroll: false,
+                        child: IconButton(icon: const AppIcon(Symbols.clear_rounded, fill: 1), onPressed: _clearSearch),
+                      ),
+                  ],
                 ),
               ),
             ),
-            if (_isSearching)
+            if (isSearching)
               LoadingIndicatorBox.sliver
-            else if (!_hasSearched)
+            else if (!hasSearched)
               SliverFillRemaining(
                 child: StateMessageWidget(
                   message: t.search.searchYourMedia,
@@ -262,7 +273,11 @@ class _SearchScreenState extends State<SearchScreen>
                   iconSize: 80,
                 ),
               )
-            else if (_searchResults.isEmpty)
+            else if (lastSearchFailed)
+              SliverFillRemaining(
+                child: StateMessageWidget(message: t.explore.searchFailed, icon: Symbols.error_rounded, iconSize: 80),
+              )
+            else if (searchResults.isEmpty)
               SliverFillRemaining(
                 child: StateMessageWidget(
                   message: t.messages.noResultsFound,

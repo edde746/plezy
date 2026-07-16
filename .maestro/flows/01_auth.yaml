@@ -1,0 +1,33 @@
+appId: com.edde746.plezy
+name: Fresh install authentication choices
+tags:
+  - e2e
+  - auth
+---
+- retry:
+    maxRetries: 1
+    commands:
+      - launchApp:
+          clearState: true
+          permissions:
+            all: allow
+      - extendedWaitUntil:
+          visible: "(?s)^(?:Sign in with Plex|Wait).*"
+          timeout: 30000
+      - tapOn:
+          text: "Wait"
+          optional: true
+      - extendedWaitUntil:
+          visible: "Sign in with Plex"
+          timeout: 30000
+- assertVisible: "Show QR Code"
+- assertVisible: "Connect to Jellyfin"
+- tapOn: "Connect to Jellyfin"
+- extendedWaitUntil:
+    visible: "Add Jellyfin server"
+    timeout: 10000
+- assertVisible: "(?s)Server URLs.*"
+- assertVisible: "Find server"
+- hideKeyboard
+- back
+- assertVisible: "Sign in with Plex"

@@ -19,6 +19,12 @@ class CompanionRemoteReceiver {
   /// Same pattern as [GamepadService.onGamepadInput].
   static VoidCallback? onRemoteInput;
 
+  /// Owners prevent a disposed screen from clearing callbacks installed by a
+  /// replacement screen later in the same frame.
+  Object? navigationOwner;
+  Object? playerOwner;
+  VoidCallback? playerHomeFallback;
+
   VoidCallback? onTabNext;
   VoidCallback? onTabPrevious;
   VoidCallback? onTabDiscover;
@@ -60,7 +66,7 @@ class CompanionRemoteReceiver {
       case RemoteCommandType.select:
         simulateKeyPress(LogicalKeyboardKey.enter);
       case RemoteCommandType.back:
-        simulateKeyPress(LogicalKeyboardKey.escape);
+        simulateKeyPress(LogicalKeyboardKey.gameButtonB);
       case RemoteCommandType.contextMenu:
         simulateKeyPress(LogicalKeyboardKey.contextMenu);
 

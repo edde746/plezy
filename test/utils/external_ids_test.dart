@@ -26,6 +26,68 @@ void main() {
     });
   });
 
+  group('ExternalIds.fromLegacyPlexGuid', () {
+    test('normalizes official Plex agent GUIDs', () {
+      final cases = <({String guid, String? imdb, int? tmdb, int? tvdb})>[
+        (guid: 'com.plexapp.agents.imdb://tt29768334?lang=en', imdb: 'tt29768334', tmdb: null, tvdb: null),
+        (guid: 'com.plexapp.agents.themoviedb://1241983', imdb: null, tmdb: 1241983, tvdb: null),
+        (guid: 'com.plexapp.agents.thetvdb://315500?lang=en', imdb: null, tmdb: null, tvdb: 315500),
+      ];
+
+      for (final testCase in cases) {
+        final ids = ExternalIds.fromLegacyPlexGuid(testCase.guid);
+        expect(
+          (imdb: ids.imdb, tmdb: ids.tmdb, tvdb: ids.tvdb),
+          (imdb: testCase.imdb, tmdb: testCase.tmdb, tvdb: testCase.tvdb),
+          reason: testCase.guid,
+        );
+      }
+    });
+
+    test('normalizes HAMA GUID modes with direct external IDs', () {
+      final cases = <({String guid, String? imdb, int? tmdb, int? tvdb})>[
+        (guid: 'com.plexapp.agents.hama://tvdb-315500', imdb: null, tmdb: null, tvdb: 315500),
+        (guid: 'com.plexapp.agents.hama://tvdb2-315500', imdb: null, tmdb: null, tvdb: 315500),
+        (guid: 'com.plexapp.agents.hama://tvdb9-315500', imdb: null, tmdb: null, tvdb: 315500),
+        (guid: 'com.plexapp.agents.hama://tmdb-69346', imdb: null, tmdb: 69346, tvdb: null),
+        (guid: 'com.plexapp.agents.hama://tsdb-69346?lang=en', imdb: null, tmdb: 69346, tvdb: null),
+        (guid: 'com.plexapp.agents.hama://imdb-6455986', imdb: 'tt6455986', tmdb: null, tvdb: null),
+        (guid: 'com.plexapp.agents.hama://imdb-tt6455986', imdb: 'tt6455986', tmdb: null, tvdb: null),
+      ];
+
+      for (final testCase in cases) {
+        final ids = ExternalIds.fromLegacyPlexGuid(testCase.guid);
+        expect(
+          (imdb: ids.imdb, tmdb: ids.tmdb, tvdb: ids.tvdb),
+          (imdb: testCase.imdb, tmdb: testCase.tmdb, tvdb: testCase.tvdb),
+          reason: testCase.guid,
+        );
+      }
+    });
+
+    test('rejects unsupported agents, AniDB modes, and malformed IDs', () {
+      final invalid = <Object?>[
+        null,
+        315500,
+        '',
+        'not a URI',
+        'plex://movie/abc',
+        'local://315500',
+        'com.plexapp.agents.none://315500',
+        'com.plexapp.agents.hama://anidb-11905',
+        'com.plexapp.agents.hama://tvdb10-315500',
+        'com.plexapp.agents.hama://tvdb-not-a-number',
+        'com.plexapp.agents.hama://tmdb-',
+        'com.plexapp.agents.hama://imdb-not-an-id',
+        'com.plexapp.agents.themoviedb://1241983/extra',
+      ];
+
+      for (final guid in invalid) {
+        expect(ExternalIds.fromLegacyPlexGuid(guid).hasAny, isFalse, reason: '$guid');
+      }
+    });
+  });
+
   group('ExternalIds.fromJellyfinProviderIds', () {
     test('extracts Tmdb/Imdb/Tvdb (case-insensitive)', () {
       final ids = ExternalIds.fromJellyfinProviderIds({'Tmdb': '12345', 'Imdb': 'tt99999', 'Tvdb': '777'});

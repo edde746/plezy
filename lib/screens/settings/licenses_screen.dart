@@ -71,7 +71,7 @@ class LicensesScreen extends StatelessWidget {
                     child: ListTile(
                       title: Text(
                         packageName,
-                        style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                        style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: .bold),
                       ),
                       subtitle: mergedLicense.licenseEntries.length > 1
                           ? Text(t.licenses.licensesCount(count: mergedLicense.licenseEntries.length))
@@ -120,11 +120,11 @@ class _LicenseDetailScreen extends StatelessWidget {
                   child: Padding(
                     padding: const EdgeInsets.all(16),
                     child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                      crossAxisAlignment: .start,
                       children: [
                         Text(
                           t.licenses.relatedPackages,
-                          style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                          style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: .bold),
                         ),
                         const SizedBox(height: 8),
                         Text(mergedLicense.allPackageNames.join(', '), style: Theme.of(context).textTheme.bodyMedium),
@@ -146,11 +146,11 @@ class _LicenseDetailScreen extends StatelessWidget {
                       child: Padding(
                         padding: const EdgeInsets.all(16),
                         child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                          crossAxisAlignment: .start,
                           children: [
                             Text(
                               isMultipleLicenses ? t.licenses.licenseNumber(number: index + 1) : t.licenses.license,
-                              style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                              style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: .bold),
                             ),
                             const SizedBox(height: 16),
                             ...license.paragraphs.map((paragraph) {

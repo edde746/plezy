@@ -2,10 +2,12 @@ import '../media/library_query.dart';
 import '../media/media_kind.dart';
 import 'plex_constants.dart';
 
-/// Limit browse payload image tags to the artwork types the UI maps.
+/// Browse responses retain up to three backdrops so hero surfaces can rotate
+/// artwork without allowing image-tag payloads to grow without bound.
+const jellyfinBackdropImageLimit = 3;
 const jellyfinImageQueryParameters = <String, String>{
   'EnableImageTypes': 'Primary,Backdrop,Thumb,Logo',
-  'ImageTypeLimit': '1',
+  'ImageTypeLimit': '$jellyfinBackdropImageLimit',
 };
 
 /// Translates a backend-neutral [LibraryQuery] into the per-backend
@@ -131,6 +133,7 @@ LibraryQuery libraryQueryFromPlexMap({
     'contentRating',
     'tag',
     'unwatched',
+    'favorite',
     'sort',
     'type',
     'alphaPrefix',
@@ -168,6 +171,7 @@ LibraryQuery libraryQueryFromPlexMap({
     offset: offset,
     limit: limit,
     includeWatched: nonEmpty(map['unwatched']) != '1',
+    favoritesOnly: nonEmpty(map['favorite']) == '1',
     nameStartsWith: nonEmpty(map['alphaPrefix']),
     search: nonEmpty(map['title']),
     genres: singleton(nonEmpty(map['genre'])),
@@ -221,8 +225,9 @@ class JellyfinLibraryQueryTranslator implements LibraryQueryTranslator {
       'Fields': fields,
       ...jellyfinImageQueryParameters,
     };
-    if (!query.includeWatched) {
-      params['Filters'] = 'IsUnplayed';
+    final wireFilters = <String>[if (!query.includeWatched) 'IsUnplayed', if (query.favoritesOnly) 'IsFavorite'];
+    if (wireFilters.isNotEmpty) {
+      params['Filters'] = wireFilters.join(',');
     }
     if (query.genres != null && query.genres!.isNotEmpty) {
       // Jellyfin uses `|` as the multi-value separator for Genres.
@@ -278,6 +283,7 @@ class JellyfinLibraryQueryTranslator implements LibraryQueryTranslator {
   static String _sortFieldFor(String neutral, MediaKind? kind) {
     return switch (neutral) {
       'addedAt' => 'DateCreated',
+      'episode.addedAt' => 'DateLastContentAdded,SortName',
       'dateCreated' => 'DateCreated',
       'originallyAvailableAt' => 'PremiereDate',
       'premiereDate' => 'PremiereDate',

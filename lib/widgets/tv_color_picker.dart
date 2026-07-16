@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../i18n/strings.g.dart';
 import '../focus/dpad_navigator.dart';
 import '../focus/focus_theme.dart';
 import '../focus/focusable_text_field.dart';
@@ -110,7 +111,7 @@ class _TvColorPickerState extends State<TvColorPicker> with ControllerDisposerMi
     final currentColor = _currentColor();
 
     return Column(
-      mainAxisSize: MainAxisSize.min,
+      mainAxisSize: .min,
       children: [
         Container(
           height: 64,
@@ -124,6 +125,7 @@ class _TvColorPickerState extends State<TvColorPicker> with ControllerDisposerMi
         const SizedBox(height: 16),
         _ColorChannelRow(
           label: 'H',
+          semanticLabel: Translations.of(context).accessibility.hue,
           value: _hue,
           min: 0,
           max: 360,
@@ -139,6 +141,7 @@ class _TvColorPickerState extends State<TvColorPicker> with ControllerDisposerMi
         const SizedBox(height: 8),
         _ColorChannelRow(
           label: 'S',
+          semanticLabel: Translations.of(context).accessibility.saturation,
           value: _saturation,
           min: 0,
           max: 100,
@@ -153,6 +156,7 @@ class _TvColorPickerState extends State<TvColorPicker> with ControllerDisposerMi
         const SizedBox(height: 8),
         _ColorChannelRow(
           label: 'V',
+          semanticLabel: Translations.of(context).accessibility.brightness,
           value: _value,
           min: 0,
           max: 100,
@@ -168,7 +172,11 @@ class _TvColorPickerState extends State<TvColorPicker> with ControllerDisposerMi
         FocusableTextField(
           controller: _hexController,
           focusNode: _hexFocusNode,
-          decoration: const InputDecoration(prefixText: '#', labelText: 'Hex', border: OutlineInputBorder()),
+          decoration: InputDecoration(
+            prefixText: '#',
+            labelText: Translations.of(context).accessibility.hexColor,
+            border: const OutlineInputBorder(),
+          ),
           maxLength: 6,
           inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9a-fA-F]'))],
           onChanged: _onHexChanged,
@@ -184,6 +192,7 @@ class _TvColorPickerState extends State<TvColorPicker> with ControllerDisposerMi
 /// UP/DOWN are ignored so focus traverses normally between rows.
 class _ColorChannelRow extends StatefulWidget {
   final String label;
+  final String semanticLabel;
   final int value;
   final int min;
   final int max;
@@ -197,6 +206,7 @@ class _ColorChannelRow extends StatefulWidget {
 
   const _ColorChannelRow({
     required this.label,
+    required this.semanticLabel,
     required this.value,
     required this.min,
     required this.max,
@@ -290,6 +300,7 @@ class _ColorChannelRowState extends State<_ColorChannelRow> with KeyRepeatHelper
     return Focus(
       focusNode: _focusNode,
       autofocus: widget.autofocus,
+      descendantsAreFocusable: false,
       onFocusChange: (hasFocus) {
         setState(() => _isFocused = hasFocus);
         if (!hasFocus) stopRepeat();
@@ -311,25 +322,25 @@ class _ColorChannelRowState extends State<_ColorChannelRow> with KeyRepeatHelper
           children: [
             SizedBox(
               width: 24,
-              child: Text(widget.label, style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+              child: Text(widget.label, style: theme.textTheme.titleMedium?.copyWith(fontWeight: .bold)),
             ),
             const SizedBox(width: 8),
             _ChannelButton(
               icon: Symbols.remove_rounded,
               onPressed: canDecrement ? _decrement : null,
-              semanticLabel: 'Decrease ${widget.label}',
+              semanticLabel: Translations.of(context).accessibility.decreaseValue(label: widget.semanticLabel),
             ),
             const SizedBox(width: 8),
             Container(
               constraints: const BoxConstraints(minWidth: 56),
-              alignment: Alignment.center,
+              alignment: .center,
               child: Text('${widget.value}${widget.suffix}', style: theme.textTheme.titleMedium),
             ),
             const SizedBox(width: 8),
             _ChannelButton(
               icon: Symbols.add_rounded,
               onPressed: canIncrement ? _increment : null,
-              semanticLabel: 'Increase ${widget.label}',
+              semanticLabel: Translations.of(context).accessibility.increaseValue(label: widget.semanticLabel),
             ),
           ],
         ),

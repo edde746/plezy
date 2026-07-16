@@ -8,13 +8,11 @@ import 'package:plezy/media/media_source_info.dart';
 import 'package:plezy/services/jellyfin_client.dart';
 import 'package:plezy/services/jellyfin_trickplay_service.dart';
 import 'package:plezy/services/scrub_preview_source.dart';
+import 'package:plezy/utils/device_identity.dart';
 
-JellyfinConnection _conn() => JellyfinConnection(
-  id: 'srv-1/user-1',
-  baseUrl: 'https://jf.example.com',
-  serverName: 'Home',
-  serverMachineId: 'srv-1',
-  userId: 'user-1',
+import '../test_helpers/backend_client_fixtures.dart';
+
+JellyfinConnection _conn() => testJellyfinConnection(
   userName: 'edde',
   accessToken: 'tok-abc',
   deviceId: 'dev-xyz',
@@ -44,6 +42,11 @@ TrickplayInfo _info({
 ImageProvider _fakeSheet(String _) => MemoryImage(Uint8List.fromList(const [0]));
 
 void main() {
+  // Pin device identity so JellyfinClient.create doesn't resolve the host
+  // machine's name.
+  setUpAll(() => DeviceIdentityService.debugOverride(const DeviceIdentity(platform: 'Test')));
+  tearDownAll(() => DeviceIdentityService.debugOverride(null));
+
   group('JellyfinTrickplayService.create — width selection', () {
     late JellyfinClient client;
 
@@ -95,7 +98,7 @@ void main() {
     // 250 thumbnails, 1s apart, 10×10 tiles per sheet ⇒ 3 sheets.
     // sheet 0: indices 0..99
     // sheet 1: indices 100..199 (full)
-    // sheet 2: indices 200..249 (last sheet, only 50 thumbs ⇒ 5 rows)
+    // sheet 2: indices 200..249 (last sheet, padded to a full 10x10 grid)
 
     setUp(() async {
       client = await JellyfinClient.create(_conn());
@@ -143,9 +146,10 @@ void main() {
       expect(loc.sheetIndex, 2);
       expect(loc.tileColumn, 9);
       expect(loc.tileRow, 4);
-      // Sheet 2 has 50 thumbs ⇒ 5 rows, full 10 cols
+      // Jellyfin pads the final tile image to the full configured grid, so
+      // the renderer must keep full sheet geometry even for partial sheets.
       expect(loc.sheetColumns, 10);
-      expect(loc.sheetRows, 5);
+      expect(loc.sheetRows, 10);
     });
 
     test('clamps past the end to the last available thumbnail', () {
@@ -168,7 +172,7 @@ void main() {
     });
   });
 
-  group('JellyfinTrickplayService — partial last sheet sizing', () {
+  group('JellyfinTrickplayService — padded last sheet sizing', () {
     late JellyfinClient client;
 
     setUp(() async {
@@ -177,7 +181,7 @@ void main() {
 
     tearDown(() => client.close());
 
-    test('last sheet with 1 thumbnail reports 1 col × 1 row', () {
+    test('last sheet with 1 thumbnail still reports the full sheet grid', () {
       // 17 thumbs, 4×4 sheet ⇒ sheet 0 full (16), sheet 1 has 1 thumb only.
       final svc = JellyfinTrickplayService.create(
         client: client,
@@ -192,8 +196,8 @@ void main() {
       expect(loc.sheetIndex, 1);
       expect(loc.tileColumn, 0);
       expect(loc.tileRow, 0);
-      expect(loc.sheetColumns, 1);
-      expect(loc.sheetRows, 1);
+      expect(loc.sheetColumns, 4);
+      expect(loc.sheetRows, 4);
     });
   });
 
@@ -249,6 +253,24 @@ void main() {
       expect(frame.tileColumn, 0);
       expect(frame.tileRow, 0);
       expect(frame.sourceTileSize, equals(const Size(320, 180)));
+    });
+
+    test('uses manifest thumbnail dimensions for non-16:9 previews', () async {
+      final client = await JellyfinClient.create(_conn());
+      addTearDown(client.close);
+      final svc = JellyfinTrickplayService.create(
+        client: client,
+        itemId: 'item-1',
+        mediaSourceId: null,
+        manifest: {320: _info(width: 320, height: 240)},
+        sheetImageBuilder: _fakeSheet,
+      )!;
+
+      final frame = svc.getFrame(Duration.zero);
+
+      expect(frame, isA<SheetScrubFrame>());
+      expect(frame!.aspectRatio, closeTo(4 / 3, 0.0001));
+      expect((frame as SheetScrubFrame).sourceTileSize, equals(const Size(320, 240)));
     });
   });
 }

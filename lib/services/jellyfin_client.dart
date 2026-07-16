@@ -5,14 +5,17 @@ import 'package:http/http.dart' as http;
 import 'package:package_info_plus/package_info_plus.dart';
 
 import '../connection/connection.dart';
+import '../media/episode_collection.dart';
 import '../media/library_filter_result.dart';
 import '../media/library_first_character.dart';
 import '../media/library_query.dart';
 import 'favorite_channels_repository.dart';
+import 'live_session_tracker.dart';
 import 'file_info_parser.dart';
 import 'library_query_translator.dart';
 import '../media/media_filter.dart';
 import '../media/live_tv_support.dart';
+import '../media/lyrics.dart';
 import '../media/media_backend.dart';
 import '../media/media_file_info.dart';
 import '../media/media_hub.dart';
@@ -20,31 +23,31 @@ import '../media/media_item.dart';
 import '../media/media_kind.dart';
 import '../media/media_library.dart';
 import '../media/media_playlist.dart';
+import '../media/ids.dart';
 import '../media/media_server_client.dart';
+import '../media/playback_report_metadata.dart';
 import '../media/server_capabilities.dart';
+import '../models/audio_quality_preset.dart';
 import '../models/jellyfin/jellyfin_user_profile.dart';
+import '../models/livetv_capture_buffer.dart';
 import '../models/livetv_channel.dart';
-import '../models/livetv_dvr.dart';
-import '../models/livetv_lineup.dart';
 import '../models/livetv_program.dart';
-import '../models/livetv_server_status.dart';
-import '../models/livetv_session.dart';
-import '../models/media_grab_operation.dart';
-import '../models/media_grabber_device.dart';
-import '../models/media_provider_info.dart';
-import '../models/media_subscription.dart';
 import '../media/media_source_info.dart';
 import '../media/media_sort.dart';
+import '../media/media_version.dart';
 import '../utils/app_logger.dart';
-import '../utils/endpoint_failover_interceptor.dart';
+import '../utils/device_identity.dart';
+import '../utils/failover_http_client.dart';
+import '../utils/media_server_retry.dart';
+import '../utils/media_server_timeouts.dart';
 import '../utils/log_redaction_manager.dart';
 import '../utils/external_ids.dart';
 import '../utils/media_server_http_client.dart';
 import '../utils/resolution_label.dart';
 import '../utils/track_label_builder.dart';
-import '../utils/watch_state_notifier.dart';
 import '../exceptions/media_server_exceptions.dart';
 import '../i18n/strings.g.dart';
+import '../utils/json_utils.dart';
 import '../utils/jellyfin_time.dart';
 import 'jellyfin_auth_header.dart';
 import '../media/download_resolution.dart';
@@ -61,6 +64,7 @@ import 'scrub_preview_source.dart';
 import '../mpv/mpv.dart';
 
 part 'jellyfin_client/parts/browse.dart';
+part 'jellyfin_client/parts/music.dart';
 part 'jellyfin_client/parts/playback.dart';
 part 'jellyfin_client/parts/watch_state.dart';
 part 'jellyfin_client/parts/playlists.dart';
@@ -68,6 +72,7 @@ part 'jellyfin_client/parts/collections.dart';
 part 'jellyfin_client/parts/file_info.dart';
 part 'jellyfin_client/parts/live_tv.dart';
 part 'jellyfin_client/parts/images_downloads.dart';
+part 'jellyfin_client/parts/metadata_edit.dart';
 
 /// [MediaServerClient] over a Jellyfin server.
 ///
@@ -79,14 +84,16 @@ class JellyfinClient
     with
         MediaServerCacheMixin,
         _JellyfinBrowseMethods,
+        _JellyfinMusicMethods,
         _JellyfinPlaybackMethods,
         _JellyfinWatchStateMethods,
         _JellyfinPlaylistMethods,
         _JellyfinCollectionMethods,
         _JellyfinFileInfoMethods,
         _JellyfinLiveTvMethods,
-        _JellyfinImageDownloadMethods
-    implements MediaServerClient, ScopedMediaServerClient, GracefullyCloseable {
+        _JellyfinImageDownloadMethods,
+        _JellyfinMetadataEditMethods
+    implements MediaServerClient, SeasonEpisodePagingClient, ScopedMediaServerClient, GracefullyCloseable {
   JellyfinClient._({required this._connection, required this._http, FavoriteChannelsRepository? favoritesRepository})
     : _favoritesRepository = favoritesRepository ?? const SharedPreferencesFavoriteChannelsRepository();
 
@@ -103,6 +110,7 @@ class JellyfinClient
   static Future<JellyfinClient> create(
     JellyfinConnection connection, {
     FavoriteChannelsRepository? favoritesRepository,
+    void Function()? onAllEndpointsExhausted,
   }) async {
     // Register before any HTTP traffic so the very first probe URL doesn't
     // leak the token verbatim. `LogRedactionManager.redact()` also has
@@ -116,10 +124,16 @@ class JellyfinClient
     } catch (_) {
       // Tests / non-platform contexts — keep the fallback version.
     }
+    String? deviceName;
+    try {
+      deviceName = sanitizeHeaderValue((await DeviceIdentityService.resolve()).deviceName);
+    } catch (_) {
+      // Tests / non-platform contexts — keep the fallback name.
+    }
     final authHeader = buildJellyfinAuthHeader(
       clientName: 'Plezy',
       clientVersion: version,
-      deviceName: 'Plezy',
+      deviceName: deviceName ?? 'Plezy',
       deviceId: connection.deviceId,
       accessToken: connection.accessToken,
     );
@@ -133,11 +147,13 @@ class JellyfinClient
       'Content-Type': 'application/json',
     };
     late JellyfinClient client;
-    final http = _JellyfinFailoverHttpClient(
+    final http = FailoverHttpClient(
       baseUrl: connection.baseUrl,
       defaultHeaders: headers,
+      logLabel: 'Jellyfin',
       prioritizedEndpoints: connection.baseUrls,
       onEndpointSwitch: (newBaseUrl, {required persist}) => client._handleEndpointSwitch(newBaseUrl, persist: persist),
+      onAllEndpointsExhausted: onAllEndpointsExhausted,
     );
     client = JellyfinClient._(connection: connection, http: http, favoritesRepository: favoritesRepository);
     return client;
@@ -150,13 +166,16 @@ class JellyfinClient
     required JellyfinConnection connection,
     required http.Client httpClient,
     FavoriteChannelsRepository? favoritesRepository,
+    void Function()? onAllEndpointsExhausted,
   }) {
     late JellyfinClient client;
-    final mediaHttp = _JellyfinFailoverHttpClient(
+    final mediaHttp = FailoverHttpClient(
       baseUrl: connection.baseUrl,
       defaultHeaders: {'X-Emby-Token': connection.accessToken, 'Accept': 'application/json'},
+      logLabel: 'Jellyfin',
       prioritizedEndpoints: connection.baseUrls,
       onEndpointSwitch: (newBaseUrl, {required persist}) => client._handleEndpointSwitch(newBaseUrl, persist: persist),
+      onAllEndpointsExhausted: onAllEndpointsExhausted,
       client: httpClient,
     );
     client = JellyfinClient._(connection: connection, http: mediaHttp, favoritesRepository: favoritesRepository);
@@ -170,7 +189,7 @@ class JellyfinClient
   @override
   JellyfinConnection get connection => _connection;
   @override
-  final MediaServerHttpClient _http;
+  final FailoverHttpClient _http;
   final FavoriteChannelsRepository _favoritesRepository;
   bool _offlineMode = false;
 
@@ -219,7 +238,7 @@ class JellyfinClient
       items.map(_mapItem).whereType<MediaItem>().toList();
 
   @override
-  String get serverId => connection.serverMachineId;
+  ServerId get serverId => ServerId(connection.serverMachineId);
 
   @override
   String get scopedServerId => connection.id;
@@ -237,6 +256,13 @@ class JellyfinClient
   /// Plex's default of 90%.
   @override
   double get watchedThreshold => 0.9;
+
+  /// Jellyfin marks an item played from `/Sessions/Playing/Stopped` itself
+  /// (server `MaxResumePct`, default 90%), so the in-player auto-scrobble must
+  /// not also `POST /UserPlayedItems` — that double-scrobbles via the Trakt
+  /// plugin (#1287). Manual mark-watched still hits `/UserPlayedItems`.
+  @override
+  bool get marksWatchedOnPlaybackStopped => true;
 
   @override
   void close() => _http.close();
@@ -260,7 +286,7 @@ class JellyfinClient
   @override
   Future<HealthStatus> checkHealth() async {
     try {
-      final response = await _http.get('/Users/Me', timeout: const Duration(seconds: 8));
+      final response = await _http.get('/Users/Me', timeout: MediaServerTimeouts.jellyfinProbe);
       final ok = response.statusCode >= 200 && response.statusCode < 300;
       if (ok) {
         final data = response.data;
@@ -343,123 +369,4 @@ class JellyfinClient
   /// route through the correct backend's cache substrate.
   @override
   ApiCache get cache => JellyfinApiCache.instance;
-}
-
-class _JellyfinFailoverHttpClient extends MediaServerHttpClient {
-  _JellyfinFailoverHttpClient({
-    super.client,
-    required super.baseUrl,
-    required super.defaultHeaders,
-    required List<String> prioritizedEndpoints,
-    required this.onEndpointSwitch,
-  }) : _endpointManager = prioritizedEndpoints.length > 1 ? EndpointFailoverManager(prioritizedEndpoints) : null;
-
-  final EndpointFailoverManager? _endpointManager;
-  final Future<void> Function(String newBaseUrl, {required bool persist}) onEndpointSwitch;
-  bool _failoverSwitching = false;
-
-  @override
-  Future<MediaServerResponse> get(
-    String path, {
-    Map<String, dynamic>? queryParameters,
-    Map<String, String>? headers,
-    Duration? timeout,
-    AbortController? abort,
-  }) async {
-    final gen = _endpointManager?.generation;
-    try {
-      final response = await super.get(
-        path,
-        queryParameters: queryParameters,
-        headers: headers,
-        timeout: timeout,
-        abort: abort,
-      );
-      if (!_shouldAttemptFailover(statusCode: response.statusCode) || !_canFailover(gen)) {
-        return response;
-      }
-      return _retryNextEndpoint(
-        path,
-        queryParameters: queryParameters,
-        headers: headers,
-        timeout: timeout,
-        abort: abort,
-      );
-    } on MediaServerHttpException catch (e) {
-      if (!_shouldAttemptFailover(exception: e) || !_canFailover(gen)) rethrow;
-      return _retryNextEndpoint(
-        path,
-        queryParameters: queryParameters,
-        headers: headers,
-        timeout: timeout,
-        abort: abort,
-      );
-    }
-  }
-
-  bool _canFailover(int? requestGeneration) {
-    final manager = _endpointManager;
-    return manager != null && !_failoverSwitching && requestGeneration == manager.generation;
-  }
-
-  bool _shouldAttemptFailover({MediaServerHttpException? exception, int? statusCode}) {
-    final e = exception;
-    if (e != null) {
-      if (e.isTransient) return true;
-      final sc = e.statusCode;
-      return sc != null && sc >= 500 && sc <= 599;
-    }
-    final sc = statusCode;
-    return sc != null && sc >= 500 && sc <= 599;
-  }
-
-  Future<MediaServerResponse> _retryNextEndpoint(
-    String path, {
-    Map<String, dynamic>? queryParameters,
-    Map<String, String>? headers,
-    Duration? timeout,
-    AbortController? abort,
-  }) async {
-    final manager = _endpointManager;
-    if (manager == null) {
-      throw StateError('No Jellyfin failover endpoints configured');
-    }
-
-    if (!manager.hasFallback) {
-      manager.resetToFirst();
-      throw MediaServerHttpException(
-        type: MediaServerHttpErrorType.connectionError,
-        message: 'All Jellyfin endpoints exhausted',
-      );
-    }
-
-    final failedEndpoint = manager.current;
-    final nextBaseUrl = manager.moveToNext();
-    if (nextBaseUrl == null) {
-      throw MediaServerHttpException(
-        type: MediaServerHttpErrorType.connectionError,
-        message: 'All Jellyfin endpoints exhausted',
-      );
-    }
-
-    _failoverSwitching = true;
-    try {
-      appLogger.i('Switching Jellyfin endpoint after GET failure', error: {'from': failedEndpoint, 'to': nextBaseUrl});
-      await onEndpointSwitch(nextBaseUrl, persist: false);
-      final response = await super.get(
-        path,
-        queryParameters: queryParameters,
-        headers: headers,
-        timeout: timeout,
-        abort: abort,
-      );
-      if (response.statusCode < 400) {
-        appLogger.i('Jellyfin endpoint failover retry succeeded', error: {'newEndpoint': nextBaseUrl});
-        await onEndpointSwitch(nextBaseUrl, persist: true);
-      }
-      return response;
-    } finally {
-      _failoverSwitching = false;
-    }
-  }
 }

@@ -1,14 +1,23 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../focus/dpad_navigator.dart';
 import '../models/hotkey_model.dart';
 
 /// Captures a key combination from the user and calls [onHotKeyRecorded].
 class HotKeyRecorder extends StatefulWidget {
-  const HotKeyRecorder({super.key, this.initalHotKey, required this.onHotKeyRecorded});
+  const HotKeyRecorder({
+    super.key,
+    this.initalHotKey,
+    required this.onHotKeyRecorded,
+    this.enabled = true,
+    this.placeholder,
+  });
 
   final HotKey? initalHotKey;
   final ValueChanged<HotKey> onHotKeyRecorded;
+  final bool enabled;
+  final Widget? placeholder;
 
   @override
   State<HotKeyRecorder> createState() => _HotKeyRecorderState();
@@ -25,12 +34,21 @@ class _HotKeyRecorderState extends State<HotKeyRecorder> {
   }
 
   @override
+  void didUpdateWidget(HotKeyRecorder oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.initalHotKey != oldWidget.initalHotKey) {
+      _hotKey = widget.initalHotKey;
+    }
+  }
+
+  @override
   void dispose() {
     HardwareKeyboard.instance.removeHandler(_handleKeyEvent);
     super.dispose();
   }
 
   bool _handleKeyEvent(KeyEvent keyEvent) {
+    if (!widget.enabled) return false;
     if (keyEvent is KeyUpEvent) return false;
 
     final physicalKeysPressed = HardwareKeyboard.instance.physicalKeysPressed;
@@ -42,16 +60,22 @@ class _HotKeyRecorderState extends State<HotKeyRecorder> {
         .where((m) => !m.physicalKeys.contains(key))
         .toList();
 
-    setState(() {
-      _hotKey = HotKey(key: key, modifiers: modifiers.isNotEmpty ? modifiers : null);
-    });
-    widget.onHotKeyRecorded(_hotKey!);
+    final hotKey = HotKey(key: key, modifiers: modifiers.isNotEmpty ? modifiers : null);
+    setState(() => _hotKey = hotKey);
+
+    final isModifierOnly = HotKeyModifier.values.any((modifier) => modifier.physicalKeys.contains(key));
+    if (isModifierOnly) return true;
+
+    if (keyEvent.logicalKey.isSelectKey) {
+      SelectKeyUpSuppressor.suppressSelectUntilKeyUp();
+    }
+    widget.onHotKeyRecorded(hotKey);
     return true;
   }
 
   @override
   Widget build(BuildContext context) {
-    if (_hotKey == null) return const SizedBox.shrink();
+    if (_hotKey == null) return widget.placeholder ?? const SizedBox.shrink();
     return HotKeyVirtualView(hotKey: _hotKey!);
   }
 }

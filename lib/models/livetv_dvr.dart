@@ -5,32 +5,11 @@ import 'media_subscription.dart';
 
 part 'livetv_dvr.g.dart';
 
-List<ChannelMapping> _parseChannelMappings(Object? raw) {
-  final result = <ChannelMapping>[];
-  final list = flexibleList(raw) ?? const [];
-  for (final item in list) {
-    try {
-      result.add(ChannelMapping.fromJson(item as Map<String, dynamic>));
-    } catch (_) {}
-  }
-  return result;
-}
+List<ChannelMapping> _parseChannelMappings(Object? raw) => parseFlexibleJsonList(raw, ChannelMapping.fromJson);
 
-List<SubscriptionSetting> _parseSettings(Object? raw) {
-  final list = flexibleList(raw) ?? const [];
-  return [
-    for (final item in list)
-      if (item is Map<String, dynamic>) SubscriptionSetting.fromJson(item),
-  ];
-}
+List<SubscriptionSetting> _parseSettings(Object? raw) => parseFlexibleJsonList(raw, SubscriptionSetting.fromJson);
 
-List<Map<String, dynamic>> _parseRawMaps(Object? raw) {
-  final list = flexibleList(raw) ?? const [];
-  return [
-    for (final item in list)
-      if (item is Map<String, dynamic>) item,
-  ];
-}
+List<Map<String, dynamic>> _parseRawMaps(Object? raw) => flexibleMapList(raw);
 
 /// Represents a Plex Live TV DVR device (e.g., HDHomeRun tuner, IPTV provider)
 @JsonSerializable(createToJson: false)

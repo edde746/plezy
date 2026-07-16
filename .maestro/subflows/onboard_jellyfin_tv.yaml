@@ -1,0 +1,54 @@
+appId: com.edde746.plezy
+---
+- retry:
+    maxRetries: 1
+    commands:
+      - launchApp:
+          appId: com.edde746.plezy
+          clearState: true
+          permissions:
+            all: allow
+      - extendedWaitUntil:
+          visible: "(?s)^(?:Connect to Jellyfin|Wait).*"
+          timeout: 30000
+      - tapOn:
+          text: "Wait"
+          optional: true
+      - extendedWaitUntil:
+          visible: "Connect to Jellyfin"
+          timeout: 30000
+- tapOn: "Connect to Jellyfin"
+- extendedWaitUntil:
+    visible: "Add Jellyfin server"
+    timeout: 10000
+- tapOn: "(?s)Server URLs.*"
+- inputText: ${JELLYFIN_URL}
+- tapOn: "Find server"
+- extendedWaitUntil:
+    visible: "Username"
+    timeout: 15000
+- tapOn: "Username"
+- inputText: "maestro"
+- tapOn: "Password"
+- inputText: "maestro"
+- tapOn: "Sign in"
+- extendedWaitUntil:
+    visible: "Discover"
+    timeout: 30000
+- tapOn: "M"
+- tapOn:
+    text: "Settings"
+    below:
+      text: "Profiles"
+- extendedWaitUntil:
+    visible: "(?s)^Appearance.*"
+    timeout: 10000
+- tapOn: "(?s)^Appearance.*"
+- swipe:
+    start: 50%, 85%
+    end: 50%, 25%
+    duration: 500
+- tapOn: "(?s)^Force TV mode.*"
+- extendedWaitUntil:
+    visible: "(?s).*Zulu Zone 4.*"
+    timeout: 30000

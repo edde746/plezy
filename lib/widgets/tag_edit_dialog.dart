@@ -70,7 +70,7 @@ class _TagEditDialogState extends State<TagEditDialog> with ControllerDisposerMi
       content: SizedBox(
         width: 400,
         child: Column(
-          mainAxisSize: MainAxisSize.min,
+          mainAxisSize: .min,
           children: [
             FocusableTextField(
               controller: _controller,

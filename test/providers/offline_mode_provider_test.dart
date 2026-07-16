@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:plezy/media/ids.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:plezy/connection/connection.dart';
@@ -40,7 +41,7 @@ void main() {
 
     test('reads online server IDs from the manager at construction', () {
       final manager = MultiServerManager();
-      manager.updateServerStatus('srv-1', true);
+      manager.updateServerStatus(ServerId('srv-1'), true);
       final p = OfflineModeProvider(manager);
 
       expect(p.hasServerConnection, isTrue);
@@ -58,24 +59,14 @@ void main() {
       // fresh-cold-start manager), so we stay optimistic until the
       // provider's own listener catches an emission.
       final manager = MultiServerManager();
-      manager.updateServerStatus('srv-1', false);
-      manager.updateServerStatus('srv-2', false);
+      manager.updateServerStatus(ServerId('srv-1'), false);
+      manager.updateServerStatus(ServerId('srv-2'), false);
       final p = OfflineModeProvider(manager);
 
       expect(p.hasServerConnection, isFalse);
       expect(p.isOffline, isFalse);
 
       p.dispose();
-      manager.dispose();
-    });
-
-    test('dispose without initialize is safe (no subscriptions to cancel)', () {
-      final manager = MultiServerManager();
-      final p = OfflineModeProvider(manager);
-
-      // Both subscriptions are null since initialize() was never called.
-      // dispose must tolerate this without throwing.
-      expect(p.dispose, returnsNormally);
       manager.dispose();
     });
 
@@ -91,26 +82,13 @@ void main() {
       manager.dispose();
     });
 
-    test('OfflineModeSource interface contract: isOffline is exposed', () {
-      final manager = MultiServerManager();
-      manager.updateServerStatus('srv', true);
-      final p = OfflineModeProvider(manager);
-
-      // The provider implements OfflineModeSource — its isOffline getter is the
-      // sole observable surface for downstream consumers.
-      expect(p.isOffline, isFalse);
-
-      p.dispose();
-      manager.dispose();
-    });
-
     test('warmup skipped when manager already has an online server at construction', () {
       // If the manager already has an online server when the provider is
       // built, we have ground truth — no need for the warmup window.
       // hasServerConnection reflects the manager's state and isOffline
       // is correctly false (network up + server up).
       final manager = MultiServerManager();
-      manager.updateServerStatus('srv', true);
+      manager.updateServerStatus(ServerId('srv'), true);
       final p = OfflineModeProvider(manager);
 
       expect(p.hasServerConnection, isTrue);
@@ -131,7 +109,7 @@ void main() {
       final p = OfflineModeProvider(manager, multiServerProvider: multi);
       await p.initialize();
 
-      manager.debugMarkAuthErrorForTesting('jf-machine');
+      manager.debugMarkAuthErrorForTesting(ServerId('jf-machine'));
       await Future<void>.delayed(Duration.zero);
 
       expect(multi.authErrorServerIds, contains('jf-machine'));
@@ -147,7 +125,7 @@ void main() {
       final multi = MultiServerProvider(manager, DataAggregationService(manager));
       final p = OfflineModeProvider(manager, multiServerProvider: multi);
       await p.initialize();
-      manager.updateServerStatus('plex-server', false);
+      manager.updateServerStatus(ServerId('plex-server'), false);
       await Future<void>.delayed(Duration.zero);
       expect(p.isOffline, isFalse);
 

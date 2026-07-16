@@ -32,21 +32,19 @@ extension _VideoPlayerPipMethods on VideoPlayerScreenState {
     final needsVideoFilter = _videoFilterManager == null;
     final settings = needsVideoFilter ? await SettingsService.getInstance() : null;
     if (!mounted || player != currentPlayer) return;
+    final initialPlayerSize = _lastVideoLayoutPlayer == currentPlayer ? _lastVideoLayoutSize : null;
 
     if (needsVideoFilter && _videoFilterManager == null && settings != null) {
       _videoFilterManager = VideoFilterManager(
         player: currentPlayer,
-        availableVersions: _availableVersions,
-        selectedMediaIndex: widget.selectedMediaIndex,
         initialBoxFitMode: settings.read(SettingsService.defaultBoxFitMode),
+        initialPlayerSize: initialPlayerSize,
         onBoxFitModeChanged: (mode) => settings.write(SettingsService.defaultBoxFitMode, mode),
       );
-      _videoFilterManager!.updateVideoFilter();
+      unawaited(_videoFilterManager!.updateVideoFilter());
     }
 
-    if (_videoPIPManager == null) {
-      _videoPIPManager = VideoPIPManager(player: currentPlayer);
-    }
+    _videoPIPManager ??= VideoPIPManager(player: currentPlayer, initialPlayerSize: initialPlayerSize);
     _videoPIPManager!.onBeforeEnterPip = _preparePipFiltersForEntry;
     _attachPipStateListener();
   }

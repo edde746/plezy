@@ -1,0 +1,26 @@
+appId: com.edde746.plezy
+---
+- runFlow: onboard_jellyfin.yaml
+- tapOn: "(?s)^Search.*"
+- extendedWaitUntil:
+    visible: "Search movies, shows, music..."
+    timeout: 10000
+- tapOn: "Search movies, shows, music..."
+- inputText: "${SAMPLE_TITLE}"
+- hideKeyboard
+- extendedWaitUntil:
+    visible: "(?s).*${SAMPLE_TITLE}$"
+    timeout: 15000
+- tapOn:
+    point: "50%,24%"
+- extendedWaitUntil:
+    visible: "Overview"
+    timeout: 15000
+- assertVisible: "${SAMPLE_OVERVIEW}"
+- tapOn:
+    text: "Play"
+    waitToSettleTimeoutMs: 1000
+- extendedWaitUntil:
+    notVisible: "Overview"
+    timeout: 15000
+- pressKey: "Remote Media Play Pause"

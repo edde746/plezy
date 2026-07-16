@@ -3,6 +3,7 @@ import 'package:plezy/widgets/app_icon.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
 import '../../focus/focusable_button.dart';
+import '../../i18n/strings.g.dart';
 
 /// Base widget for displaying state messages (empty, error, etc.)
 /// Provides a consistent UI pattern for showing icons, messages, and actions
@@ -36,6 +37,18 @@ class StateMessageWidget extends StatelessWidget {
 
   /// Optional icon for the action button
   final IconData? actionIcon;
+  final FocusNode? actionFocusNode;
+  final VoidCallback? onActionNavigateUp;
+  final VoidCallback? onActionNavigateDown;
+  final VoidCallback? onActionNavigateLeft;
+  final VoidCallback? onActionNavigateRight;
+  final VoidCallback? onActionBack;
+
+  /// Whether the action button should request focus when it appears.
+  final bool actionAutofocus;
+
+  /// Whether the action button uses a background focus indicator.
+  final bool actionUseBackgroundFocus;
 
   const StateMessageWidget({
     super.key,
@@ -48,7 +61,15 @@ class StateMessageWidget extends StatelessWidget {
     this.subtitleColor,
     this.onAction,
     this.actionLabel,
+    this.actionFocusNode,
+    this.onActionNavigateUp,
+    this.onActionNavigateDown,
+    this.onActionNavigateLeft,
+    this.onActionNavigateRight,
+    this.onActionBack,
     this.actionIcon,
+    this.actionAutofocus = false,
+    this.actionUseBackgroundFocus = false,
   });
 
   @override
@@ -58,7 +79,7 @@ class StateMessageWidget extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.all(24.0),
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisAlignment: .center,
           children: [
             if (icon != null) ...[
               AppIcon(
@@ -87,7 +108,15 @@ class StateMessageWidget extends StatelessWidget {
             if (onAction != null && actionLabel != null) ...[
               const SizedBox(height: 24),
               FocusableButton(
+                focusNode: actionFocusNode,
+                onNavigateUp: onActionNavigateUp,
+                onNavigateDown: onActionNavigateDown,
+                onNavigateLeft: onActionNavigateLeft,
+                onNavigateRight: onActionNavigateRight,
+                onBack: onActionBack,
                 onPressed: onAction,
+                autofocus: actionAutofocus,
+                useBackgroundFocus: actionUseBackgroundFocus,
                 child: FilledButton.icon(
                   onPressed: onAction,
                   icon: AppIcon(actionIcon ?? Symbols.refresh_rounded, fill: 1),
@@ -124,6 +153,12 @@ class EmptyStateWidget extends StatelessWidget {
 
   /// Optional icon for the action button (defaults to a generic add icon)
   final IconData? actionIcon;
+  final FocusNode? actionFocusNode;
+  final VoidCallback? onActionNavigateUp;
+  final VoidCallback? onActionNavigateDown;
+  final VoidCallback? onActionNavigateLeft;
+  final VoidCallback? onActionNavigateRight;
+  final VoidCallback? onActionBack;
 
   const EmptyStateWidget({
     super.key,
@@ -134,6 +169,12 @@ class EmptyStateWidget extends StatelessWidget {
     this.onAction,
     this.actionLabel,
     this.actionIcon,
+    this.actionFocusNode,
+    this.onActionNavigateUp,
+    this.onActionNavigateDown,
+    this.onActionNavigateLeft,
+    this.onActionNavigateRight,
+    this.onActionBack,
   });
 
   @override
@@ -146,6 +187,12 @@ class EmptyStateWidget extends StatelessWidget {
       onAction: onAction,
       actionLabel: actionLabel,
       actionIcon: actionIcon ?? Symbols.add_rounded,
+      actionFocusNode: actionFocusNode,
+      onActionNavigateUp: onActionNavigateUp,
+      onActionNavigateDown: onActionNavigateDown,
+      onActionNavigateLeft: onActionNavigateLeft,
+      onActionNavigateRight: onActionNavigateRight,
+      onActionBack: onActionBack,
     );
   }
 }
@@ -161,10 +208,36 @@ class ErrorStateWidget extends StatelessWidget {
   /// Optional callback for retry action
   final VoidCallback? onRetry;
 
+  /// Whether the retry action should request focus when it appears.
+  final bool actionAutofocus;
+
+  /// Whether the retry action uses a background focus indicator.
+  final bool actionUseBackgroundFocus;
+
   /// Optional label for the retry button
   final String? retryLabel;
+  final FocusNode? actionFocusNode;
+  final VoidCallback? onActionNavigateUp;
+  final VoidCallback? onActionNavigateDown;
+  final VoidCallback? onActionNavigateLeft;
+  final VoidCallback? onActionNavigateRight;
+  final VoidCallback? onActionBack;
 
-  const ErrorStateWidget({super.key, required this.message, this.icon, this.onRetry, this.retryLabel});
+  const ErrorStateWidget({
+    super.key,
+    required this.message,
+    this.icon,
+    this.onRetry,
+    this.retryLabel,
+    this.actionFocusNode,
+    this.onActionNavigateUp,
+    this.onActionNavigateDown,
+    this.onActionNavigateLeft,
+    this.onActionNavigateRight,
+    this.onActionBack,
+    this.actionAutofocus = false,
+    this.actionUseBackgroundFocus = false,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -174,8 +247,16 @@ class ErrorStateWidget extends StatelessWidget {
       iconColor: Theme.of(context).colorScheme.error,
       textColor: Theme.of(context).colorScheme.error,
       onAction: onRetry,
-      actionLabel: retryLabel ?? 'Retry',
+      actionLabel: retryLabel ?? t.common.retry,
       actionIcon: Symbols.refresh_rounded,
+      actionFocusNode: actionFocusNode,
+      onActionNavigateUp: onActionNavigateUp,
+      onActionNavigateDown: onActionNavigateDown,
+      onActionNavigateLeft: onActionNavigateLeft,
+      onActionNavigateRight: onActionNavigateRight,
+      onActionBack: onActionBack,
+      actionAutofocus: actionAutofocus,
+      actionUseBackgroundFocus: actionUseBackgroundFocus,
     );
   }
 }

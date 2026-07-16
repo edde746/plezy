@@ -76,6 +76,26 @@ void main() {
       expect(service.current[acct.id]!.firstWhere((u) => u.admin).uuid, 'admin-uuid');
     });
 
+    test('identical refreshes do not emit a second cache snapshot', () async {
+      service = PlexHomeService(
+        connections: connections,
+        profileConnections: profileConnections,
+        storage: storage,
+        plexHomeUserFetcher: (_) async => [_user('same-user')],
+      );
+      final acct = _account('plex.same');
+      await connections.upsert(acct);
+      final emissions = <Map<String, List<PlexHomeUser>>>[];
+      final subscription = service.stream.listen(emissions.add);
+      addTearDown(subscription.cancel);
+
+      await service.refresh(acct);
+      await service.refresh(acct);
+      await Future<void>.delayed(Duration.zero);
+
+      expect(emissions, hasLength(2));
+      expect(emissions.last[acct.id]!.single.uuid, 'same-user');
+    });
     test('refresh persists users to SharedPreferences', () async {
       service = PlexHomeService(
         connections: connections,

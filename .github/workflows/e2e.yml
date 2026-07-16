@@ -1,0 +1,289 @@
+name: E2E - Maestro
+
+on:
+  push:
+    branches:
+      - main
+  # Keep untrusted code on the read-only pull_request event. Never use pull_request_target here.
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+concurrency:
+  group: maestro-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  android-maestro:
+    name: Android Maestro suites
+    runs-on: ubuntu-latest
+    timeout-minutes: 150
+    permissions:
+      contents: read
+    env:
+      FLUTTER_VERSION: "3.44.0"
+      MAESTRO_VERSION: "2.6.1"
+      MAESTRO_SHA256: "3440825f514f537c6a96bcf5de995780c2a4a7f83a43208fdc95d4f1fecfad3b"
+      MAESTRO_CLI_NO_ANALYTICS: "1"
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+        with:
+          persist-credentials: false
+
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' \
+            | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Setup Java
+        uses: actions/setup-java@0f481fcb613427c0f801b606911222b5b6f3083a # v5
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
+        with:
+          channel: stable
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          cache: true
+          pub-cache: false
+
+      - name: Cache Pub dependencies
+        id: pub-cache
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
+        with:
+          path: ~/.pub-cache
+          key: ${{ runner.os }}-pub-v3-${{ hashFiles('**/pubspec.yaml', '**/pubspec.lock') }}
+
+      - name: Cache Gradle
+        id: gradle-cache
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-e2e-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-e2e-
+            ${{ runner.os }}-gradle-
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Build debug APK
+        run: flutter build apk --debug
+
+      - name: Cache Maestro CLI
+        id: maestro-cache
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
+        with:
+          path: |
+            ~/.maestro/bin
+            ~/.maestro/lib
+          key: ${{ runner.os }}-maestro-${{ env.MAESTRO_VERSION }}
+
+      - name: Install verified Maestro CLI
+        if: steps.maestro-cache.outputs.cache-hit != 'true'
+        run: |
+          archive="$RUNNER_TEMP/maestro.zip"
+          staging="$RUNNER_TEMP/maestro-install"
+          curl --fail --location --retry 3 \
+            --output "$archive" \
+            "https://github.com/mobile-dev-inc/maestro/releases/download/cli-${MAESTRO_VERSION}/maestro.zip"
+          echo "${MAESTRO_SHA256}  ${archive}" | sha256sum --check -
+          rm -rf "$staging" "$HOME/.maestro/bin" "$HOME/.maestro/lib"
+          mkdir -p "$staging" "$HOME/.maestro"
+          unzip -q "$archive" -d "$staging"
+          mv "$staging/maestro/bin" "$HOME/.maestro/bin"
+          mv "$staging/maestro/lib" "$HOME/.maestro/lib"
+
+      - name: Add Maestro to PATH
+        run: |
+          echo "$HOME/.maestro/bin" >> "$GITHUB_PATH"
+          "$HOME/.maestro/bin/maestro" --version
+
+      - name: Setup Docker Buildx
+        uses: docker/setup-buildx-action@bb05f3f5519dd87d3ba754cc423b652a5edd6d2c # v4
+
+      - name: Build deterministic Jellyfin image for pull request
+        if: github.event_name == 'pull_request'
+        uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7
+        with:
+          context: .
+          file: .maestro/jellyfin-demo/Dockerfile
+          load: true
+          tags: plezy-jellyfin-demo:local
+          cache-from: type=gha,scope=maestro-jellyfin
+
+      - name: Build and cache deterministic Jellyfin image
+        if: github.event_name != 'pull_request'
+        uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7
+        with:
+          context: .
+          file: .maestro/jellyfin-demo/Dockerfile
+          load: true
+          tags: plezy-jellyfin-demo:local
+          cache-from: type=gha,scope=maestro-jellyfin
+          cache-to: type=gha,mode=max,scope=maestro-jellyfin
+
+      - name: Cache Android 15 AVD
+        id: api35-avd-cache
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
+        with:
+          path: |
+            ~/.android/avd/maestro-api35.avd
+            ~/.android/avd/maestro-api35.ini
+          key: ${{ runner.os }}-avd-v1-api35-x86_64-pixel_6
+
+      - name: Generate Android 15 AVD snapshot
+        if: steps.api35-avd-cache.outputs.cache-hit != 'true'
+        uses: reactivecircus/android-emulator-runner@4c44018e59b437e86cdfc41da381398f93ed8808 # v2
+        with:
+          api-level: 35
+          arch: x86_64
+          profile: pixel_6
+          avd-name: maestro-api35
+          force-avd-creation: false
+          disable-animations: false
+          emulator-options: >-
+            -no-window -gpu swiftshader_indirect -noaudio
+            -no-boot-anim -camera-back none
+          script: echo "Generated Android 15 AVD snapshot."
+
+      - name: Cache Android 9 AVD
+        id: api28-avd-cache
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
+        with:
+          path: |
+            ~/.android/avd/maestro-api28.avd
+            ~/.android/avd/maestro-api28.ini
+          key: ${{ runner.os }}-avd-v1-api28-x86-pixel_2-playstore
+
+      - name: Generate Android 9 AVD snapshot
+        if: steps.api28-avd-cache.outputs.cache-hit != 'true'
+        uses: reactivecircus/android-emulator-runner@4c44018e59b437e86cdfc41da381398f93ed8808 # v2
+        with:
+          api-level: 28
+          target: google_apis_playstore
+          arch: x86
+          profile: pixel_2
+          avd-name: maestro-api28
+          force-avd-creation: false
+          disable-animations: false
+          emulator-options: >-
+            -no-window -gpu swiftshader_indirect -noaudio
+            -no-boot-anim -camera-back none
+          script: echo "Generated Android 9 AVD snapshot."
+
+      - name: Run Android 15 suites
+        id: api35
+        continue-on-error: true
+        uses: reactivecircus/android-emulator-runner@4c44018e59b437e86cdfc41da381398f93ed8808 # v2
+        env:
+          MAESTRO_SKIP_BUILD: "1"
+          MAESTRO_SKIP_JELLYFIN_BUILD: "1"
+          MAESTRO_DEVICE_ID: emulator-5554
+        with:
+          api-level: 35
+          arch: x86_64
+          profile: pixel_6
+          avd-name: maestro-api35
+          force-avd-creation: false
+          disable-animations: true
+          emulator-options: >-
+            -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio
+            -no-boot-anim -camera-back none
+          script: python3 scripts/run_maestro_ci.py android-15
+
+      - name: Run Android 9 legacy playback
+        id: api28
+        continue-on-error: true
+        uses: reactivecircus/android-emulator-runner@4c44018e59b437e86cdfc41da381398f93ed8808 # v2
+        env:
+          MAESTRO_SKIP_BUILD: "1"
+          MAESTRO_SKIP_JELLYFIN_BUILD: "1"
+          MAESTRO_DEVICE_ID: emulator-5554
+        with:
+          api-level: 28
+          target: google_apis_playstore
+          arch: x86
+          profile: pixel_2
+          avd-name: maestro-api28
+          force-avd-creation: false
+          disable-animations: true
+          emulator-options: >-
+            -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio
+            -no-boot-anim -camera-back none
+          script: python3 scripts/run_maestro_ci.py android-9
+      # Fork PRs may restore trusted caches, but only trusted events publish cache entries.
+      - name: Save Pub dependency cache
+        if: github.event_name != 'pull_request' && steps.pub-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
+        with:
+          path: ~/.pub-cache
+          key: ${{ runner.os }}-pub-v3-${{ hashFiles('**/pubspec.yaml', '**/pubspec.lock') }}
+
+      - name: Save Gradle cache
+        if: github.event_name != 'pull_request' && steps.gradle-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-e2e-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+
+      - name: Save Maestro CLI cache
+        if: github.event_name != 'pull_request' && steps.maestro-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
+        with:
+          path: |
+            ~/.maestro/bin
+            ~/.maestro/lib
+          key: ${{ runner.os }}-maestro-${{ env.MAESTRO_VERSION }}
+
+      - name: Save Android 15 AVD cache
+        if: github.event_name != 'pull_request' && steps.api35-avd-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
+        with:
+          path: |
+            ~/.android/avd/maestro-api35.avd
+            ~/.android/avd/maestro-api35.ini
+          key: ${{ runner.os }}-avd-v1-api35-x86_64-pixel_6
+
+      - name: Save Android 9 AVD cache
+        if: github.event_name != 'pull_request' && steps.api28-avd-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
+        with:
+          path: |
+            ~/.android/avd/maestro-api28.avd
+            ~/.android/avd/maestro-api28.ini
+          key: ${{ runner.os }}-avd-v1-api28-x86-pixel_2-playstore
+
+      - name: Upload Maestro diagnostics
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: maestro-android-diagnostics
+          path: |
+            build/maestro
+            build/maestro-real-jellyfin
+            build/maestro-media
+            build/maestro-tv
+            build/maestro-recovery
+            build/maestro-legacy
+            ~/.maestro/tests
+          if-no-files-found: ignore
+          retention-days: 7
+
+      - name: Report suite failures
+        if: ${{ always() && (steps.api35.outcome != 'success' || steps.api28.outcome != 'success') }}
+        run: |
+          echo "Android 15 outcome: ${{ steps.api35.outcome }}"
+          echo "Android 9 outcome: ${{ steps.api28.outcome }}"
+          exit 1

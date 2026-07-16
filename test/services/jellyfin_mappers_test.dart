@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:plezy/media/ids.dart';
 import 'package:plezy/media/media_backend.dart';
 import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/media/media_stream.dart';
@@ -40,10 +41,15 @@ void main() {
         'DateCreated': '2025-01-15T10:00:00.0000000Z',
         'DateLastSaved': '2026-03-01T10:00:00.0000000Z',
         'ImageTags': {'Primary': 'thumbtag', 'Logo': 'logotag'},
-        'BackdropImageTags': ['backtag'],
+        'BackdropImageTags': ['backtag', 'backtag-2', 'backtag-3'],
       };
 
-      final item = JellyfinMappers.mediaItem(json, serverId: _serverId, serverName: 'Home', absolutizer: null)!;
+      final item = JellyfinMappers.mediaItem(
+        json,
+        serverId: ServerId(_serverId),
+        serverName: 'Home',
+        absolutizer: null,
+      )!;
 
       expect(item.id, 'abc123');
       expect(item.backend, MediaBackend.jellyfin);
@@ -73,11 +79,35 @@ void main() {
       // Image paths.
       expect(item.thumbPath, '/Items/abc123/Images/Primary?tag=thumbtag');
       expect(item.artPath, '/Items/abc123/Images/Backdrop/0?tag=backtag');
+      expect(item.backdropPaths, [
+        '/Items/abc123/Images/Backdrop/0?tag=backtag',
+        '/Items/abc123/Images/Backdrop/1?tag=backtag-2',
+        '/Items/abc123/Images/Backdrop/2?tag=backtag-3',
+      ]);
       expect(item.clearLogoPath, '/Items/abc123/Images/Logo?tag=logotag');
 
       // Multi-server fields.
       expect(item.serverId, _serverId);
       expect(item.serverName, 'Home');
+    });
+
+    test('preserves backdrop indices, deduplicates tags, and absolutizes every valid path', () {
+      const absolutizer = JellyfinImageAbsolutizer(baseUrl: 'https://jellyfin.example', accessToken: 'secret');
+      final item = JellyfinMappers.mediaItem(
+        {
+          'Id': 'movie-1',
+          'Type': 'Movie',
+          'BackdropImageTags': ['first', 42, '', 'first', 'fifth'],
+        },
+        serverId: ServerId(_serverId),
+        absolutizer: absolutizer,
+      )!;
+
+      expect(item.artPath, 'https://jellyfin.example/Items/movie-1/Images/Backdrop/0?tag=first&api_key=secret');
+      expect(item.backdropPaths, [
+        'https://jellyfin.example/Items/movie-1/Images/Backdrop/0?tag=first&api_key=secret',
+        'https://jellyfin.example/Items/movie-1/Images/Backdrop/4?tag=fifth&api_key=secret',
+      ]);
     });
 
     test('does not treat Jellyfin PlayCount as watched when Played is false', () {
@@ -88,21 +118,47 @@ void main() {
         'UserData': {'PlayCount': 1, 'Played': false},
       };
 
-      final item = JellyfinMappers.mediaItem(json, serverId: _serverId, absolutizer: null)!;
+      final item = JellyfinMappers.mediaItem(json, serverId: ServerId(_serverId), absolutizer: null)!;
 
       expect(item.viewCount, 0);
       expect(item.isWatched, isFalse);
     });
 
+    test('maps UserData.IsFavorite and ignores the legacy Likes flag', () {
+      final json = {
+        'Id': 'fav-1',
+        'Name': 'Favorited Movie',
+        'Type': 'Movie',
+        'UserData': {'IsFavorite': true, 'Likes': true},
+      };
+
+      final item = JellyfinMappers.mediaItem(json, serverId: ServerId(_serverId), absolutizer: null)!;
+
+      expect(item.isFavorite, isTrue);
+      // Likes used to map to userRating 10.0/0.0; the rate sheet now uses
+      // IsFavorite for Jellyfin, so Likes must no longer surface anywhere.
+      expect(item.userRating, isNull);
+    });
+
+    test('missing UserData leaves isFavorite null', () {
+      final item = JellyfinMappers.mediaItem(
+        {'Id': 'no-userdata', 'Name': 'No UserData', 'Type': 'Movie'},
+        serverId: ServerId(_serverId),
+        absolutizer: null,
+      )!;
+
+      expect(item.isFavorite, isNull);
+    });
+
     test('maps generic Jellyfin video types to playable clips', () {
       final video = JellyfinMappers.mediaItem(
         {'Id': 'home-video', 'Name': 'Home Video', 'Type': 'Video'},
-        serverId: _serverId,
+        serverId: ServerId(_serverId),
         absolutizer: null,
       )!;
       final musicVideo = JellyfinMappers.mediaItem(
         {'Id': 'music-video', 'Name': 'Music Video', 'Type': 'MusicVideo'},
-        serverId: _serverId,
+        serverId: ServerId(_serverId),
         absolutizer: null,
       )!;
 
@@ -128,7 +184,7 @@ void main() {
         'UserData': {'UnplayedItemCount': 0},
       };
 
-      final item = JellyfinMappers.mediaItem(json, serverId: _serverId, absolutizer: null)!;
+      final item = JellyfinMappers.mediaItem(json, serverId: ServerId(_serverId), absolutizer: null)!;
 
       expect(item.kind, MediaKind.episode);
       expect(item.index, 1);
@@ -140,6 +196,28 @@ void main() {
       expect(item.grandparentTitle, 'Breaking Bad');
       expect(item.grandparentThumbPath, '/Items/series-1/Images/Primary?tag=seriesPrimary');
       expect(item.grandparentArtPath, '/Items/series-1/Images/Backdrop/0');
+    });
+
+    test('episode maps every inherited series backdrop', () {
+      final item = JellyfinMappers.mediaItem(
+        {
+          'Id': 'ep-parent-art',
+          'Type': 'Episode',
+          'SeriesId': 'series-fallback',
+          'ParentBackdropItemId': 'series-parent',
+          'ParentBackdropImageTags': ['parent-0', 'parent-1', 'parent-2'],
+        },
+        serverId: ServerId(_serverId),
+        absolutizer: null,
+      )!;
+
+      expect(item.grandparentArtPath, '/Items/series-parent/Images/Backdrop/0?tag=parent-0');
+      expect(item.grandparentBackdropPaths, [
+        '/Items/series-parent/Images/Backdrop/0?tag=parent-0',
+        '/Items/series-parent/Images/Backdrop/1?tag=parent-1',
+        '/Items/series-parent/Images/Backdrop/2?tag=parent-2',
+      ]);
+      expect(item.heroBackdropPaths, item.grandparentBackdropPaths);
     });
 
     test('episode season poster falls back to series poster when season image tag is absent', () {
@@ -154,7 +232,7 @@ void main() {
         'SeasonName': 'Season 1',
       };
 
-      final item = JellyfinMappers.mediaItem(json, serverId: _serverId, absolutizer: null)!;
+      final item = JellyfinMappers.mediaItem(json, serverId: ServerId(_serverId), absolutizer: null)!;
 
       expect(item.parentThumbPath, '/Items/season-1/Images/Primary');
       expect(item.grandparentThumbPath, '/Items/series-1/Images/Primary?tag=seriesPrimary');
@@ -175,7 +253,7 @@ void main() {
         'UserData': {'UnplayedItemCount': 4},
       };
 
-      final item = JellyfinMappers.mediaItem(json, serverId: _serverId, absolutizer: null)!;
+      final item = JellyfinMappers.mediaItem(json, serverId: ServerId(_serverId), absolutizer: null)!;
 
       expect(item.leafCount, 12);
       expect(item.viewedLeafCount, 8);
@@ -198,7 +276,7 @@ void main() {
             {'Type': 'Actor', 'Name': 'Actor', 'Id': 'person/id #1?x', 'PrimaryImageTag': 'person/tag ?x'},
           ],
         },
-        serverId: _serverId,
+        serverId: ServerId(_serverId),
         absolutizer: null,
       )!;
 
@@ -222,7 +300,7 @@ void main() {
         'UserData': {'UnplayedItemCount': 7},
       };
 
-      final item = JellyfinMappers.mediaItem(json, serverId: _serverId, absolutizer: null)!;
+      final item = JellyfinMappers.mediaItem(json, serverId: ServerId(_serverId), absolutizer: null)!;
 
       expect(item.leafCount, 50);
       expect(item.viewedLeafCount, 43);
@@ -273,7 +351,7 @@ void main() {
         ],
       };
 
-      final item = JellyfinMappers.mediaItem(json, serverId: _serverId, absolutizer: null)!;
+      final item = JellyfinMappers.mediaItem(json, serverId: ServerId(_serverId), absolutizer: null)!;
       expect(item.mediaVersions, isNotNull);
       final v = item.mediaVersions!.single;
       expect(v.id, 'src-1');
@@ -307,6 +385,73 @@ void main() {
       expect(subtitle.isExternal, isTrue);
       expect(subtitle.sidecarPath, '/Videos/movie-1/movie-1/Subtitles/2/Stream.srt');
     });
+
+    test('media streams map Jellyfin Dolby Vision, HDR, and source default audio', () {
+      final json = {
+        'Id': 'movie-1',
+        'Name': 'Movie',
+        'Type': 'Movie',
+        'MediaSources': [
+          {
+            'Id': 'src-1',
+            'DefaultAudioStreamIndex': 2,
+            'MediaStreams': [
+              {
+                'Index': 0,
+                'Type': 'Video',
+                'Codec': 'hevc',
+                'Width': 3840,
+                'Height': 2160,
+                'VideoRangeType': 'DOVI',
+                'VideoRange': 'HDR',
+                'VideoDoViTitle': 'Dolby Vision Profile 8',
+                'DvProfile': 8,
+                'DvLevel': 6,
+                'DvBlSignalCompatibilityId': 1,
+              },
+              {'Index': 1, 'Type': 'Audio', 'Codec': 'eac3', 'Channels': 6, 'IsDefault': true},
+              {'Index': 2, 'Type': 'Audio', 'Codec': 'aac', 'Channels': 2},
+            ],
+          },
+        ],
+      };
+
+      final item = JellyfinMappers.mediaItem(json, serverId: ServerId(_serverId), absolutizer: null)!;
+      final streams = item.mediaVersions!.single.parts.single.streams;
+      final video = streams.firstWhere((stream) => stream.kind == MediaStreamKind.video);
+      final firstAudio = streams.firstWhere((stream) => stream.index == 1);
+      final selectedAudio = streams.firstWhere((stream) => stream.index == 2);
+
+      expect(video.codec, 'hevc');
+      expect(video.hdr, isTrue);
+      expect(video.dolbyVision, isTrue);
+      expect(video.dolbyVisionProfile, 8);
+      expect(firstAudio.selected, isFalse);
+      expect(selectedAudio.selected, isTrue);
+    });
+
+    test('media streams map Jellyfin HDR without Dolby Vision', () {
+      final json = {
+        'Id': 'movie-1',
+        'Name': 'Movie',
+        'Type': 'Movie',
+        'MediaSources': [
+          {
+            'Id': 'src-1',
+            'MediaStreams': [
+              {'Index': 0, 'Type': 'Video', 'Codec': 'hevc', 'VideoRangeType': 'HDR10', 'VideoRange': 'HDR'},
+            ],
+          },
+        ],
+      };
+
+      final item = JellyfinMappers.mediaItem(json, serverId: ServerId(_serverId), absolutizer: null)!;
+      final video = item.mediaVersions!.single.parts.single.streams.single;
+
+      expect(video.hdr, isTrue);
+      expect(video.dolbyVision, isFalse);
+      expect(video.dolbyVisionProfile, isNull);
+    });
   });
 
   group('JellyfinMappers.library', () {
@@ -323,7 +468,7 @@ void main() {
           'Id': 'view-${entry.key}',
           'Name': 'Library',
           'CollectionType': entry.key,
-        }, serverId: _serverId)!;
+        }, serverId: ServerId(_serverId))!;
         expect(lib.kind, entry.value, reason: 'CollectionType ${entry.key}');
         expect(lib.backend, MediaBackend.jellyfin);
       }
@@ -334,7 +479,7 @@ void main() {
         'Id': 'view-x',
         'Name': 'Mixed',
         'CollectionType': 'mixed',
-      }, serverId: _serverId)!;
+      }, serverId: ServerId(_serverId))!;
       expect(lib.kind, MediaKind.unknown);
     });
   });
@@ -347,7 +492,7 @@ void main() {
     test('minimal payload (just Id + Type) yields a MediaItem with sane defaults', () {
       final item = JellyfinMappers.mediaItem(
         {'Id': 'bare-1', 'Type': 'Movie'},
-        serverId: _serverId,
+        serverId: ServerId(_serverId),
         serverName: 'Home',
         absolutizer: null,
       )!;
@@ -364,7 +509,7 @@ void main() {
     test('missing UserData leaves watch state nullable without throwing', () {
       final item = JellyfinMappers.mediaItem(
         {'Id': 'i', 'Type': 'Movie', 'Name': 'X'},
-        serverId: _serverId,
+        serverId: ServerId(_serverId),
         absolutizer: null,
       )!;
       // Either 0 or null is acceptable as long as we don't crash.
@@ -376,7 +521,7 @@ void main() {
     test('null People array does not crash', () {
       final item = JellyfinMappers.mediaItem(
         {'Id': 'i', 'Type': 'Movie', 'Name': 'X', 'People': null},
-        serverId: _serverId,
+        serverId: ServerId(_serverId),
         absolutizer: null,
       )!;
       expect(item.directors, anyOf(isNull, isEmpty));
@@ -387,7 +532,7 @@ void main() {
     test('null Genres / Studios / ProductionLocations degrade gracefully', () {
       final item = JellyfinMappers.mediaItem(
         {'Id': 'i', 'Type': 'Movie', 'Name': 'X', 'Genres': null, 'Studios': null, 'ProductionLocations': null},
-        serverId: _serverId,
+        serverId: ServerId(_serverId),
         absolutizer: null,
       )!;
       expect(item.genres, anyOf(isNull, isEmpty));
@@ -398,7 +543,7 @@ void main() {
     test('malformed RunTimeTicks does not throw — duration left null', () {
       final item = JellyfinMappers.mediaItem(
         {'Id': 'i', 'Type': 'Movie', 'Name': 'X', 'RunTimeTicks': 'not-a-number'},
-        serverId: _serverId,
+        serverId: ServerId(_serverId),
         absolutizer: null,
       )!;
       expect(item.durationMs, isNull);
@@ -407,7 +552,7 @@ void main() {
     test('null MediaSources does not crash', () {
       final item = JellyfinMappers.mediaItem(
         {'Id': 'i', 'Type': 'Movie', 'Name': 'X', 'MediaSources': null},
-        serverId: _serverId,
+        serverId: ServerId(_serverId),
         absolutizer: null,
       )!;
       expect(item.mediaVersions, anyOf(isNull, isEmpty));
@@ -417,7 +562,7 @@ void main() {
   group('JellyfinMappers.mediaItem missing-Id rejection', () {
     test('returns null when Id is absent', () {
       expect(
-        JellyfinMappers.mediaItem({'Type': 'Movie', 'Name': 'noId'}, serverId: _serverId, absolutizer: null),
+        JellyfinMappers.mediaItem({'Type': 'Movie', 'Name': 'noId'}, serverId: ServerId(_serverId), absolutizer: null),
         isNull,
       );
     });
@@ -426,7 +571,7 @@ void main() {
       expect(
         JellyfinMappers.mediaItem(
           {'Id': '', 'Type': 'Movie', 'Name': 'emptyId'},
-          serverId: _serverId,
+          serverId: ServerId(_serverId),
           absolutizer: null,
         ),
         isNull,
@@ -443,7 +588,7 @@ void main() {
             {'Id': 'src-ok', 'Container': 'mp4', 'Bitrate': 4000000, 'MediaStreams': []},
           ],
         },
-        serverId: _serverId,
+        serverId: ServerId(_serverId),
         absolutizer: null,
       )!;
       expect(item.mediaVersions!.length, 1);
@@ -453,7 +598,10 @@ void main() {
 
   group('JellyfinMappers.library missing-Id rejection', () {
     test('returns null when Id is absent', () {
-      expect(JellyfinMappers.library({'Name': 'Library', 'CollectionType': 'movies'}, serverId: _serverId), isNull);
+      expect(
+        JellyfinMappers.library({'Name': 'Library', 'CollectionType': 'movies'}, serverId: ServerId(_serverId)),
+        isNull,
+      );
     });
   });
 }

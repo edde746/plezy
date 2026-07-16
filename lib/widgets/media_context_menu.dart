@@ -1,24 +1,29 @@
 import 'dart:async';
-import 'dart:io';
-import 'package:flutter/gestures.dart';
+import '../media/ids.dart';
 import 'package:flutter/material.dart';
 import 'package:plezy/widgets/app_icon.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
+
+import '../providers/watch_state_store.dart';
 import '../media/media_backend.dart';
 import '../media/media_item.dart';
+import '../media/media_item_types.dart';
 import '../media/media_kind.dart';
+import '../media/library_query.dart';
 import '../media/media_playlist.dart';
 import '../media/media_server_client.dart';
+import '../metadata_edit/metadata_edit_adapters.dart';
 import '../media/media_version.dart';
-import '../mixins/controller_disposer_mixin.dart';
 import '../connection/connection_registry.dart';
 import '../services/plex_client.dart';
 import '../services/plex_watchlist_service.dart';
 import '../utils/watchlist_notifier.dart';
 import '../services/media_list_playback_launcher.dart';
+import '../services/music/music_playback_service.dart';
+import '../services/offline_watch_sync_service.dart';
 import '../services/playlist_items_loader.dart';
-import '../services/trackers/tracker_coordinator.dart';
+import '../services/watch_actions.dart';
 import '../models/transcode_quality_preset.dart';
 import '../utils/download_version_utils.dart';
 import '../utils/download_utils.dart';
@@ -28,28 +33,30 @@ import '../utils/global_key_utils.dart';
 import '../providers/download_provider.dart';
 import '../providers/multi_server_provider.dart';
 import '../providers/offline_mode_provider.dart';
-import '../providers/offline_watch_provider.dart';
 import '../profiles/active_profile_provider.dart';
 import '../profiles/profile.dart';
 import '../utils/provider_extensions.dart';
 import '../utils/app_logger.dart';
 import '../utils/library_refresh_notifier.dart';
+import '../utils/media_navigation_helper.dart';
 import '../utils/media_server_http_client.dart';
+import '../utils/music_navigation.dart';
 import '../utils/platform_detector.dart';
 import '../utils/snackbar_helper.dart';
 import '../utils/dialogs.dart';
-import '../utils/focus_utils.dart';
 import '../services/external_player_service.dart';
-import '../focus/focusable_button.dart';
+import 'dialog_action_button.dart';
 import '../focus/focusable_text_field.dart';
-import '../focus/dpad_navigator.dart';
+import '../focus/key_event_utils.dart';
 import '../screens/plex_match_screen.dart';
 import '../screens/media_detail_screen.dart';
-import '../screens/plex_metadata_edit_screen.dart';
+import '../screens/metadata_edit_screen.dart';
+import '../screens/music/album_detail_screen.dart';
+import '../screens/music/artist_detail_screen.dart';
 import '../utils/smart_deletion_handler.dart';
 import '../utils/video_player_navigation.dart';
 import '../utils/deletion_notifier.dart';
-import '../theme/mono_tokens.dart';
+import '../widgets/app_menu.dart';
 import '../widgets/file_info_bottom_sheet.dart';
 import 'pill_input_decoration.dart';
 import '../widgets/focusable_list_tile.dart';
@@ -61,18 +68,9 @@ class _MenuAction {
   final String value;
   final IconData icon;
   final String label;
-  final Color? hoverColor;
-  final Color? foregroundColor;
+  final bool destructive;
 
-  _MenuAction({required this.value, required this.icon, required this.label, this.hoverColor, this.foregroundColor});
-}
-
-Color _destructiveMenuForeground(BuildContext context) {
-  final colorScheme = Theme.of(context).colorScheme;
-  if (colorScheme.brightness != Brightness.dark) return colorScheme.error;
-
-  final error = HSLColor.fromColor(colorScheme.error);
-  return error.withLightness(error.lightness < 0.72 ? 0.72 : error.lightness).toColor();
+  _MenuAction({required this.value, required this.icon, required this.label, this.destructive = false});
 }
 
 bool isAdminActionAllowedForMediaItem({
@@ -87,18 +85,38 @@ bool isAdminActionAllowedForMediaItem({
 
 /// A reusable wrapper widget that adds a context menu (long press / right click)
 /// to any media item with appropriate actions based on the item type.
+/// Caller-supplied entry appended to a [MediaContextMenu] (e.g. the
+/// now-playing screen's Sleep timer). Selection runs [onSelected].
+class MediaMenuExtraEntry {
+  final IconData icon;
+  final String label;
+  final VoidCallback onSelected;
+
+  const MediaMenuExtraEntry({required this.icon, required this.label, required this.onSelected});
+}
+
 class MediaContextMenu extends StatefulWidget {
   /// Either a [MediaItem] or a [MediaPlaylist]. Typed as [Object] because
   /// Dart has no nominal union type — guarded at runtime via the
   /// [_itemAsMediaItem] / [_itemAsPlaylist] helpers.
   final Object item;
-  final void Function(String itemId)? onRefresh;
+  final void Function(MediaItem source)? onRefresh;
   final VoidCallback? onRemoveFromContinueWatching;
   final VoidCallback? onListRefresh; // For refreshing list after deletion
   final VoidCallback? onTap;
+
+  /// Plays the item's trailer. When non-null a "Play trailer" item is added to
+  /// the menu. Only the detail screen passes this (it resolves the trailer from
+  /// Plex extras), so the item never appears on card/browse context menus. This
+  /// keeps the trailer reachable even when the detail row hides its trailer
+  /// button to fit a small screen.
+  final VoidCallback? onPlayTrailer;
   final Widget child;
   final bool isInContinueWatching;
   final String? collectionId; // The collection ID if displaying within a collection
+
+  /// Extra entries appended after the standard actions.
+  final List<MediaMenuExtraEntry> extraEntries;
 
   const MediaContextMenu({
     super.key,
@@ -107,9 +125,11 @@ class MediaContextMenu extends StatefulWidget {
     this.onRemoveFromContinueWatching,
     this.onListRefresh,
     this.onTap,
+    this.onPlayTrailer,
     required this.child,
     this.isInContinueWatching = false,
     this.collectionId,
+    this.extraEntries = const [],
   });
 
   @override
@@ -124,9 +144,9 @@ class MediaContextMenuState extends State<MediaContextMenu> {
 
   bool get isContextMenuOpen => _isContextMenuOpen;
 
-  void _notifyRefresh(String itemId) {
+  void _notifyRefresh(MediaItem source) {
     if (!mounted) return;
-    widget.onRefresh?.call(itemId);
+    widget.onRefresh?.call(source);
   }
 
   void _notifyListRefresh() {
@@ -134,8 +154,13 @@ class MediaContextMenuState extends State<MediaContextMenu> {
     widget.onListRefresh?.call();
   }
 
-  /// The widget's [item] cast as a [MediaItem]. Returns `null` for playlists.
-  MediaItem? get _mediaItem => widget.item is MediaItem ? widget.item as MediaItem : null;
+  /// The widget's [item] cast as a [MediaItem], resolved against the session
+  /// watch-state store so the offered actions match what the card shows.
+  /// Returns `null` for playlists.
+  MediaItem? get _mediaItem {
+    final item = widget.item;
+    return item is MediaItem ? context.readFreshWatchState(item) : null;
+  }
 
   /// The widget's [item] cast as a [MediaPlaylist]. Returns `null` for media items.
   MediaPlaylist? get _playlist => widget.item is MediaPlaylist ? widget.item as MediaPlaylist : null;
@@ -166,7 +191,7 @@ class MediaContextMenuState extends State<MediaContextMenu> {
     _ => null,
   };
 
-  /// Item identifier for refresh callbacks.
+  /// Item identifier used for playlist and download sync operations.
   String _itemId() => switch (widget.item) {
     MediaItem(:final id) => id,
     MediaPlaylist(:final id) => id,
@@ -174,14 +199,14 @@ class MediaContextMenuState extends State<MediaContextMenu> {
   };
 
   /// Get the correct PlexClient for this item's server. Throws on
-  /// non-Plex backends — Plex-only flows (Add to Collection, metadata
-  /// edit, etc.) call this directly. Backend-neutral flows must use
+  /// non-Plex backends — Plex-only flows (Add to Collection, match,
+  /// unmatch, etc.) call this directly. Backend-neutral flows must use
   /// [_getMediaClientForItem] instead.
-  PlexClient _getClientForItem() => context.getPlexClientWithFallback(_itemServerId);
+  PlexClient _getClientForItem() => context.getPlexClientWithFallback(serverIdOrNull(_itemServerId));
 
   /// Backend-neutral client for the active item's server. Used by flows
   /// that work for Jellyfin too (downloads, basic browse).
-  MediaServerClient _getMediaClientForItem() => context.getMediaClientWithFallback(_itemServerId);
+  MediaServerClient _getMediaClientForItem() => context.getMediaClientWithFallback(serverIdOrNull(_itemServerId));
 
   void _showContextMenu(BuildContext context) async {
     if (_isContextMenuOpen) return;
@@ -197,7 +222,7 @@ class MediaContextMenuState extends State<MediaContextMenu> {
     final isCollection = mediaKind == MediaKind.collection;
 
     // Backend-aware gate: a few menu items remain Plex-only because the
-    // server-side feature has no Jellyfin equivalent (metadata edit, match).
+    // server-side feature has no Jellyfin equivalent (match/unmatch).
     // No fallback: items without a backend marker show only neutral actions —
     // dispatching a Plex-only action against an unknown-backend item could
     // crash or hit the wrong server.
@@ -211,15 +236,14 @@ class MediaContextMenuState extends State<MediaContextMenu> {
         (mediaKind == MediaKind.movie || mediaKind == MediaKind.episode) &&
         mediaItem?.hasActiveProgress == true;
 
-    final useBottomSheet = Platform.isIOS || Platform.isAndroid;
-
     // Check if user has admin privileges. Backend-neutral: Plex uses the
     // server-owned flag (folded with the active Plex Home profile's admin
     // bit, when applicable); Jellyfin uses `JellyfinConnection.isAdministrator`
     // captured at sign-in.
     final multiServerProvider = Provider.of<MultiServerProvider>(context, listen: false);
     final activeProfile = context.read<ActiveProfileProvider>().active;
-    final isOwnerOrAdmin = _itemServerId != null && multiServerProvider.serverManager.isOwnerOrAdmin(_itemServerId!);
+    final isOwnerOrAdmin =
+        _itemServerId != null && multiServerProvider.serverManager.isOwnerOrAdmin(ServerId(_itemServerId!));
     final isAdmin = isAdminActionAllowedForMediaItem(
       isOwnerOrAdmin: isOwnerOrAdmin,
       itemBackend: itemBackend,
@@ -228,9 +252,14 @@ class MediaContextMenuState extends State<MediaContextMenu> {
 
     // Backend capabilities gate menu items so we don't expose actions the
     // active server cannot perform.
-    final mediaClient = _itemServerId != null ? multiServerProvider.getClientForServer(_itemServerId!) : null;
+    final mediaClient = _itemServerId != null ? multiServerProvider.getClientForServer(ServerId(_itemServerId!)) : null;
     final canTranscode = mediaClient?.capabilities.videoTranscoding ?? false;
+    // Static capabilities stay truthy while the server is unreachable, so
+    // version/quality choices need a liveness check on top.
+    final itemServerOnline =
+        _itemServerId != null && multiServerProvider.serverManager.isClientOnline(ServerId(_itemServerId!));
     final canRemoveFromContinueWatching = mediaClient?.capabilities.continueWatchingRemoval ?? false;
+    final canEditMetadata = isAdmin && supportsMetadataEdit(mediaClient, mediaKind);
 
     final menuActions = <_MenuAction>[];
 
@@ -239,10 +268,12 @@ class MediaContextMenuState extends State<MediaContextMenu> {
 
       menuActions.add(_MenuAction(value: 'shuffle', icon: Symbols.shuffle_rounded, label: t.mediaMenu.shufflePlay));
 
-      // Download + sync-rule management. Video playlists and any collection
-      // qualify — collections can contain movies, episodes, and shows.
-      final isVideoPlaylist = isPlaylist && playlist.playlistType == 'video';
-      if ((isVideoPlaylist || isCollection) && !PlatformDetector.isAppleTV()) {
+      // Download + sync-rule management. Video and audio playlists and any
+      // collection qualify — collections can contain movies, episodes,
+      // shows, albums, and artists; audio playlists queue their tracks.
+      final isDownloadablePlaylist =
+          isPlaylist && (playlist.playlistType == 'video' || playlist.playlistType == 'audio');
+      if ((isDownloadablePlaylist || isCollection) && !PlatformDetector.isAppleTV()) {
         final hasRule = Provider.of<DownloadProvider>(context, listen: false).hasSyncRule(_itemSyncRuleKey(context));
         if (hasRule) {
           menuActions.add(
@@ -262,11 +293,67 @@ class MediaContextMenuState extends State<MediaContextMenu> {
         }
       }
 
-      menuActions.add(_MenuAction(value: 'delete', icon: Symbols.delete_rounded, label: t.common.delete));
+      menuActions.add(
+        _MenuAction(value: 'delete', icon: Symbols.delete_rounded, label: t.common.delete, destructive: true),
+      );
     } else {
+      // Music (artist/album/track) playback + navigation actions. Play is
+      // always offered — the shared music_navigation helpers surface the
+      // "not supported yet" notice while the stub service is bound. Queue
+      // insertion only exists once a real playback engine is available.
+      final isMusicKind = mediaKind != null && mediaKind.isMusic;
+      if (isMusicKind) {
+        menuActions.add(_MenuAction(value: 'music_play', icon: Symbols.play_arrow_rounded, label: t.common.play));
+
+        final musicAvailable = context.read<MusicPlaybackService?>()?.isAvailable ?? false;
+        if (musicAvailable) {
+          menuActions.add(
+            _MenuAction(value: 'music_play_next', icon: Symbols.playlist_play_rounded, label: t.music.playNext),
+          );
+          menuActions.add(
+            _MenuAction(value: 'music_add_queue', icon: Symbols.queue_music_rounded, label: t.music.addToQueue),
+          );
+        }
+
+        // Instant Mix — capability-gated, and only while the server is
+        // reachable (capabilities stay truthy for offline servers).
+        if (itemServerOnline && (mediaClient?.capabilities.instantMix ?? false)) {
+          menuActions.add(
+            _MenuAction(value: 'music_instant_mix', icon: Symbols.instant_mix_rounded, label: t.music.instantMix),
+          );
+        }
+
+        // Go to Album (tracks only) — hidden when already on that album's
+        // detail screen, mirroring the Go to Series ancestor check.
+        final ancestorAlbumId = context.findAncestorWidgetOfExactType<AlbumDetailScreen>()?.album.id;
+        if (mediaKind == MediaKind.track && mediaItem!.parentId != null && ancestorAlbumId != mediaItem.parentId) {
+          menuActions.add(_MenuAction(value: 'music_album', icon: Symbols.album_rounded, label: t.music.goToAlbum));
+        }
+
+        // Go to Artist — album: parent, track: grandparent; hidden when
+        // already on that artist's detail screen.
+        final musicArtistId = switch (mediaKind) {
+          MediaKind.album => mediaItem!.parentId,
+          MediaKind.track => mediaItem!.grandparentId,
+          _ => null,
+        };
+        final ancestorArtistId = context.findAncestorWidgetOfExactType<ArtistDetailScreen>()?.artist.id;
+        if (musicArtistId != null && ancestorArtistId != musicArtistId) {
+          menuActions.add(_MenuAction(value: 'music_artist', icon: Symbols.artist_rounded, label: t.music.goToArtist));
+        }
+      }
+
       if (hasActiveProgress) {
         menuActions.add(
           _MenuAction(value: 'play_from_beginning', icon: Symbols.replay_rounded, label: t.mediaMenu.playFromBeginning),
+        );
+      }
+
+      // Trailer playback. The detail row may hide its trailer button on small
+      // screens, so surface it here whenever the screen wires up onPlayTrailer.
+      if (widget.onPlayTrailer != null) {
+        menuActions.add(
+          _MenuAction(value: 'play_trailer', icon: Symbols.theaters_rounded, label: t.tooltips.playTrailer),
         );
       }
 
@@ -296,22 +383,18 @@ class MediaContextMenuState extends State<MediaContextMenu> {
         );
       }
 
-      if (mediaKind == MediaKind.movie ||
-          mediaKind == MediaKind.show ||
-          mediaKind == MediaKind.season ||
-          mediaKind == MediaKind.episode) {
+      final isVideoKind = mediaItem.isVideoContent;
+
+      if (widget.isInContinueWatching && isVideoKind) {
+        menuActions.add(_MenuAction(value: 'details', icon: Symbols.info_rounded, label: t.mediaMenu.viewDetails));
+      }
+
+      if (isVideoKind) {
         menuActions.add(_MenuAction(value: 'rate', icon: Symbols.star_rounded, label: t.mediaMenu.rate));
       }
 
-      // Edit Metadata (for movies, shows, seasons, and episodes) — admin only
-      // Plex-only: opens PlexMetadataEditScreen which talks to Plex's
-      // `/library/metadata/{id}` PUT API; Jellyfin has no equivalent in v1.
-      if (isPlex &&
-          isAdmin &&
-          (mediaKind == MediaKind.movie ||
-              mediaKind == MediaKind.show ||
-              mediaKind == MediaKind.season ||
-              mediaKind == MediaKind.episode)) {
+      // Edit Metadata — admin-only and backend-capability gated.
+      if (canEditMetadata) {
         menuActions.add(
           _MenuAction(value: 'edit_metadata', icon: Symbols.edit_rounded, label: t.metadataEdit.editMetadata),
         );
@@ -355,17 +438,9 @@ class MediaContextMenuState extends State<MediaContextMenu> {
       final itemSeriesKey = mediaKind == MediaKind.episode ? mediaItem.grandparentId : mediaItem.parentId;
       if ((mediaKind == MediaKind.episode || mediaKind == MediaKind.season) &&
           itemSeriesKey != null &&
+          !widget.isInContinueWatching &&
           ancestorSeriesKey != itemSeriesKey) {
         menuActions.add(_MenuAction(value: 'series', icon: Symbols.tv_rounded, label: t.mediaMenu.goToSeries));
-      }
-
-      // Go to Season (for episodes) — hide if already viewing that season's MediaDetailScreen
-      if (mediaKind == MediaKind.episode &&
-          mediaItem.parentTitle != null &&
-          !(ancestorMeta != null && ancestorMeta.kind == MediaKind.season && ancestorMeta.id == mediaItem.parentId)) {
-        menuActions.add(
-          _MenuAction(value: 'season', icon: Symbols.playlist_play_rounded, label: t.mediaMenu.goToSeason),
-        );
       }
 
       if (mediaKind == MediaKind.show || mediaKind == MediaKind.season) {
@@ -381,10 +456,15 @@ class MediaContextMenuState extends State<MediaContextMenu> {
       // settings, which is what the regular Play action already does.
       // Both backends inline their version list in browse responses
       // (`Media[]` for Plex, `MediaSources` for Jellyfin), so the count
-      // is known up front.
+      // is known up front. Also hidden while the item's server is
+      // unreachable: at most one version exists locally and plain Play
+      // already targets it, so the picker would be a no-op detour
+      // offering versions that can't play (issue #1440).
       final versionCount = (mediaItem.mediaVersions ?? const []).length;
       final hasVersionChoice = versionCount > 1;
-      if ((mediaKind == MediaKind.episode || mediaKind == MediaKind.movie) && (hasVersionChoice || canTranscode)) {
+      if ((mediaKind == MediaKind.episode || mediaKind == MediaKind.movie) &&
+          (hasVersionChoice || canTranscode) &&
+          itemServerOnline) {
         menuActions.add(
           _MenuAction(value: 'play_version', icon: Symbols.video_file_rounded, label: t.mediaMenu.playVersion),
         );
@@ -399,7 +479,8 @@ class MediaContextMenuState extends State<MediaContextMenu> {
         menuActions.add(_MenuAction(value: 'fileinfo', icon: Symbols.info_rounded, label: t.mediaMenu.fileInfo));
       }
 
-      if (mediaKind == MediaKind.episode || mediaKind == MediaKind.movie) {
+      if (PlatformDetector.supportsExternalPlayers() &&
+          (mediaKind == MediaKind.episode || mediaKind == MediaKind.movie)) {
         menuActions.add(
           _MenuAction(
             value: 'play_external',
@@ -409,13 +490,17 @@ class MediaContextMenuState extends State<MediaContextMenu> {
         );
       }
 
-      // Download options (for episodes, movies, shows, and seasons).
-      // Apple TV has no user-accessible file storage — skip entirely.
+      // Download options (for episodes, movies, shows, seasons, albums, and
+      // tracks — not artists, whose full discography is too large for a
+      // one-tap download). Apple TV has no user-accessible file storage —
+      // skip entirely.
       if (!PlatformDetector.isAppleTV() &&
           (mediaKind == MediaKind.episode ||
               mediaKind == MediaKind.movie ||
               mediaKind == MediaKind.show ||
-              mediaKind == MediaKind.season)) {
+              mediaKind == MediaKind.season ||
+              mediaKind == MediaKind.album ||
+              mediaKind == MediaKind.track)) {
         final downloadProvider = Provider.of<DownloadProvider>(context, listen: false);
         final globalKey = mediaItem.globalKey;
         final hasSyncRule = downloadProvider.hasSyncRule(_itemSyncRuleKey(context));
@@ -430,12 +515,22 @@ class MediaContextMenuState extends State<MediaContextMenu> {
           );
           if (hasAnyDownload) {
             menuActions.add(
-              _MenuAction(value: 'delete_download', icon: Symbols.delete_rounded, label: t.downloads.deleteDownload),
+              _MenuAction(
+                value: 'delete_download',
+                icon: Symbols.delete_rounded,
+                label: t.downloads.deleteDownload,
+                destructive: true,
+              ),
             );
           }
         } else if (hasAnyDownload) {
           menuActions.add(
-            _MenuAction(value: 'delete_download', icon: Symbols.delete_rounded, label: t.downloads.deleteDownload),
+            _MenuAction(
+              value: 'delete_download',
+              icon: Symbols.delete_rounded,
+              label: t.downloads.deleteDownload,
+              destructive: true,
+            ),
           );
         } else {
           menuActions.add(
@@ -469,131 +564,89 @@ class MediaContextMenuState extends State<MediaContextMenu> {
             value: 'delete_media',
             icon: Symbols.delete_forever_rounded,
             label: t.mediaMenu.deleteFromServer,
-            hoverColor: Theme.of(context).colorScheme.error,
-            foregroundColor: _destructiveMenuForeground(context),
+            destructive: true,
           ),
         );
       }
     }
 
-    String? selected;
+    for (var i = 0; i < widget.extraEntries.length; i++) {
+      final entry = widget.extraEntries[i];
+      menuActions.add(_MenuAction(value: 'extra_$i', icon: entry.icon, label: entry.label));
+    }
 
     final openedFromKeyboard = _openedFromKeyboard;
     _openedFromKeyboard = false;
 
-    if (useBottomSheet) {
-      selected = await OverlaySheetController.showAdaptive<String>(
-        context,
-        showDragHandle: true,
-        builder: (context) => _FocusableContextMenuSheet(
-          title: _itemDisplayTitle(),
-          actions: menuActions,
-          focusFirstItem: openedFromKeyboard,
-        ),
-      );
-    } else {
+    var position = _tapPosition;
+    if (position == null) {
       final RenderBox? overlay = Overlay.of(context).context.findRenderObject() as RenderBox?;
-
-      Offset position;
-      if (_tapPosition != null) {
-        position = _tapPosition!;
-      } else {
-        final RenderBox renderBox = context.findRenderObject() as RenderBox;
-        position = renderBox.localToGlobal(Offset.zero, ancestor: overlay);
-      }
-
-      selected = await showGeneralDialog<String>(
-        context: context,
-        barrierDismissible: true,
-        barrierLabel: MaterialLocalizations.of(context).modalBarrierDismissLabel,
-        barrierColor: Colors.transparent,
-        transitionDuration: const Duration(milliseconds: 120),
-        pageBuilder: (dialogContext, _, _) =>
-            _FocusablePopupMenu(actions: menuActions, position: position, focusFirstItem: openedFromKeyboard),
-        transitionBuilder: (dialogContext, animation, _, child) {
-          final curved = CurvedAnimation(
-            parent: animation,
-            curve: Curves.easeOutCubic,
-            reverseCurve: Curves.easeInCubic,
-          );
-          final screenSize = MediaQuery.sizeOf(dialogContext);
-          final alignment = Alignment(
-            screenSize.width <= 0 ? 0 : ((position.dx / screenSize.width) * 2 - 1).clamp(-1.0, 1.0).toDouble(),
-            screenSize.height <= 0 ? 0 : ((position.dy / screenSize.height) * 2 - 1).clamp(-1.0, 1.0).toDouble(),
-          );
-
-          return FadeTransition(
-            opacity: curved,
-            child: AnimatedBuilder(
-              animation: curved,
-              child: child,
-              builder: (context, child) => Transform.scale(
-                scale: 0.96 + curved.value * 0.04,
-                alignment: alignment,
-                transformHitTests: false,
-                child: child,
-              ),
-            ),
-          );
-        },
-      );
+      final RenderBox renderBox = context.findRenderObject() as RenderBox;
+      position = renderBox.localToGlobal(Offset.zero, ancestor: overlay);
     }
+
+    // Present from the menu's own context: it sits at the trigger widget,
+    // below any screen-level OverlaySheetHost, while callers often pass a
+    // screen context from ABOVE its host (which would skip the host and
+    // fall back to a hostless modal sheet).
+    final selected = await showAdaptiveAppMenu<String>(
+      this.context,
+      title: _itemDisplayTitle(),
+      entries: _menuEntries(menuActions),
+      position: position,
+      focusFirstItem: openedFromKeyboard,
+      isScrollControlled: true,
+    );
 
     try {
       if (!context.mounted) return;
+
+      // Caller-supplied extra entries dispatch straight to their callback.
+      if (selected != null && selected.startsWith('extra_')) {
+        final index = int.tryParse(selected.substring('extra_'.length));
+        if (index != null && index >= 0 && index < widget.extraEntries.length) {
+          widget.extraEntries[index].onSelected();
+        }
+        return;
+      }
 
       switch (selected) {
         case 'play_from_beginning':
           didNavigate = true;
           if (context.mounted) {
-            await navigateToVideoPlayer(context, metadata: mediaItem!.copyWith(viewOffsetMs: 0));
+            await navigateToVideoPlayer(
+              context,
+              metadata: mediaItem!.copyWith(viewOffsetMs: 0),
+              resolveWatchState: false,
+            );
           }
+          break;
+
+        case 'play_trailer':
+          didNavigate = true;
+          widget.onPlayTrailer?.call();
           break;
 
         case 'watch':
-          final isOffline = context.read<OfflineModeProvider>().isOffline;
-          if (isOffline && mediaItem?.serverId != null) {
-            // Offline mode: queue action for later sync (emits WatchStateEvent)
-            final offlineWatch = context.read<OfflineWatchProvider>();
-            await offlineWatch.markAsWatched(serverId: mediaItem!.serverId!, itemId: mediaItem.id);
-            if (context.mounted) {
-              showAppSnackBar(context, t.messages.markedAsWatchedOffline);
-              _notifyRefresh(mediaItem.id);
-            }
-          } else {
-            // Resolve the right backend client — Plex hits scrobble, Jellyfin
-            // hits /UserPlayedItems. WatchStateNotifier event is fired in both
-            // paths so cross-screen UI updates regardless of backend.
-            await _executeAction(context, () async {
-              final item = mediaItem;
-              final client = context.tryGetMediaClientForServer(_itemServerId!);
-              if (client != null && item != null) {
-                await client.markWatched(item);
-                unawaited(TrackerCoordinator.instance.markWatched(item, client));
-              }
-            }, t.messages.markedAsWatched);
-          }
-          break;
-
         case 'unwatch':
+          final watched = selected == 'watch';
+          final item = mediaItem;
+          if (item == null) break;
           final isOffline = context.read<OfflineModeProvider>().isOffline;
-          if (isOffline && mediaItem?.serverId != null) {
-            // Offline mode: queue action for later sync (emits WatchStateEvent)
-            final offlineWatch = context.read<OfflineWatchProvider>();
-            await offlineWatch.markAsUnwatched(serverId: mediaItem!.serverId!, itemId: mediaItem.id);
+          if (isOffline && item.serverId != null) {
+            // Queue for later sync — the offline provider emits the WatchStateEvent.
+            await WatchActions.setWatched(context, item, watched: watched, offline: true);
             if (context.mounted) {
-              showAppSnackBar(context, t.messages.markedAsUnwatchedOffline);
-              _notifyRefresh(mediaItem.id);
+              showAppSnackBar(
+                context,
+                watched ? t.messages.markedAsWatchedOffline : t.messages.markedAsUnwatchedOffline,
+              );
+              _notifyRefresh(item);
             }
           } else {
             await _executeAction(context, () async {
-              final item = mediaItem;
-              final client = context.tryGetMediaClientForServer(_itemServerId!);
-              if (client != null && item != null) {
-                await client.markUnwatched(item);
-                unawaited(TrackerCoordinator.instance.markUnwatched(item, client));
-              }
-            }, t.messages.markedAsUnwatched);
+              await WatchActions.setWatched(context, item, watched: watched, offline: false);
+            }, watched ? t.messages.markedAsWatched : t.messages.markedAsUnwatched);
           }
           break;
 
@@ -602,20 +655,26 @@ class MediaContextMenuState extends State<MediaContextMenu> {
           // This preserves the progression for partially watched items
           // and doesn't mark unwatched next episodes as watched
           try {
-            final client = _getMediaClientForItem();
-            await client.removeFromContinueWatching(mediaItem!);
+            await WatchActions.removeFromContinueWatching(context, mediaItem!);
             if (context.mounted) {
               showSuccessSnackBar(context, t.messages.removedFromContinueWatching);
               if (widget.onRemoveFromContinueWatching != null) {
                 widget.onRemoveFromContinueWatching!();
               } else {
-                _notifyRefresh(mediaItem.id);
+                _notifyRefresh(mediaItem);
               }
             }
           } catch (e) {
             if (context.mounted) {
               showErrorSnackBar(context, t.messages.errorLoading(error: e.toString()));
             }
+          }
+          break;
+
+        case 'details':
+          didNavigate = true;
+          if (context.mounted) {
+            await navigateToMediaItemDetails(context, mediaItem!, onRefresh: _notifyRefresh);
           }
           break;
 
@@ -636,11 +695,8 @@ class MediaContextMenuState extends State<MediaContextMenu> {
           didNavigate = true;
           if (context.mounted) {
             final item = mediaItem!;
-            await Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => PlexMetadataEditScreen(metadata: item)),
-            );
-            _notifyRefresh(item.id);
+            await Navigator.push(context, MaterialPageRoute(builder: (context) => MetadataEditScreen(metadata: item)));
+            _notifyRefresh(item);
           }
           break;
 
@@ -649,7 +705,7 @@ class MediaContextMenuState extends State<MediaContextMenu> {
           if (context.mounted) {
             final item = mediaItem!;
             await Navigator.push(context, MaterialPageRoute(builder: (context) => PlexMatchScreen(metadata: item)));
-            _notifyRefresh(item.id);
+            _notifyRefresh(item);
           }
           break;
 
@@ -666,21 +722,19 @@ class MediaContextMenuState extends State<MediaContextMenu> {
           await _navigateToRelated(
             context,
             mediaItem!.kind == MediaKind.season ? mediaItem.parentId : mediaItem.grandparentId,
-            (item) => mediaDetailRoute(metadata: item),
+            (context, item) async {
+              final target = mediaDetailNavigationTargetFor(mediaItem, metadataOverride: item);
+              await Navigator.push(
+                context,
+                mediaDetailRoute(
+                  metadata: target.metadata,
+                  initialSeasonIndex: target.initialSeasonIndex,
+                  initialSeasonId: target.initialSeasonId,
+                  initialEpisodeId: target.initialEpisodeId,
+                ),
+              );
+            },
             t.messages.errorLoadingSeries,
-          );
-          break;
-
-        case 'season':
-          didNavigate = true;
-          // Navigate to the show with the season tab pre-selected
-          final seasonParentKey = mediaItem!.kind == MediaKind.episode ? mediaItem.grandparentId : mediaItem.parentId;
-          final seasonIndex = mediaItem.parentIndex;
-          await _navigateToRelated(
-            context,
-            seasonParentKey,
-            (show) => mediaDetailRoute(metadata: show, initialSeasonIndex: seasonIndex),
-            t.messages.errorLoadingSeason,
           );
           break;
 
@@ -743,6 +797,42 @@ class MediaContextMenuState extends State<MediaContextMenu> {
         case 'delete_media':
           await _handleDeleteMediaItem(context, mediaKind);
           break;
+
+        case 'music_play':
+          await _handleMusicPlay(context);
+          break;
+
+        case 'music_play_next':
+          await _handleMusicEnqueue(context, playNext: true);
+          break;
+
+        case 'music_add_queue':
+          await _handleMusicEnqueue(context, playNext: false);
+          break;
+
+        case 'music_instant_mix':
+          await playInstantMix(context, mediaItem!);
+          break;
+
+        case 'music_album':
+          didNavigate = true;
+          await _navigateToRelated(context, mediaItem!.parentId, navigateToAlbum, t.common.error);
+          break;
+
+        case 'music_artist':
+          didNavigate = true;
+          await _navigateToRelated(
+            context,
+            mediaItem!.kind == MediaKind.album ? mediaItem.parentId : mediaItem.grandparentId,
+            navigateToArtist,
+            t.common.error,
+          );
+          break;
+      }
+    } catch (e, st) {
+      appLogger.e('Media context menu action failed', error: e, stackTrace: st);
+      if (context.mounted) {
+        showErrorSnackBar(context, t.messages.errorLoading(error: e.toString()));
       }
     } finally {
       _isContextMenuOpen = false;
@@ -759,13 +849,25 @@ class MediaContextMenuState extends State<MediaContextMenu> {
     }
   }
 
+  List<AppMenuEntry<String>> _menuEntries(List<_MenuAction> actions) {
+    return [
+      for (final action in actions)
+        AppMenuItem<String>(
+          value: action.value,
+          icon: action.icon,
+          label: action.label,
+          destructive: action.destructive,
+        ),
+    ];
+  }
+
   /// Execute an action with error handling and refresh
   Future<void> _executeAction(BuildContext context, Future<void> Function() action, String successMessage) async {
     try {
       await action();
       if (context.mounted) {
         showSuccessSnackBar(context, successMessage);
-        _notifyRefresh(_itemId());
+        if (_mediaItem case final source?) _notifyRefresh(source);
       }
     } catch (e) {
       if (context.mounted) {
@@ -797,7 +899,7 @@ class MediaContextMenuState extends State<MediaContextMenu> {
       if (!context.mounted) return;
       if (success) {
         showSuccessSnackBar(context, t.matchScreen.unmatchSuccess);
-        _notifyRefresh(item.id);
+        _notifyRefresh(item);
       } else {
         showErrorSnackBar(context, t.matchScreen.unmatchFailed);
       }
@@ -808,23 +910,24 @@ class MediaContextMenuState extends State<MediaContextMenu> {
     }
   }
 
-  /// Navigate to a related item (series or season)
+  /// Fetch and navigate to a related item (series, album, or artist).
   Future<void> _navigateToRelated(
     BuildContext context,
     String? id,
-    Route<Object?> Function(MediaItem) routeBuilder,
+    Future<void> Function(BuildContext context, MediaItem item) navigate,
     String errorPrefix,
   ) async {
     if (id == null) return;
 
     final client = _getMediaClientForItem();
-    final refreshItemId = _itemId();
+    final source = _mediaItem;
+    if (source == null) return;
 
     try {
       final metadata = await client.fetchItem(id);
       if (metadata != null && context.mounted) {
-        await Navigator.push(context, routeBuilder(metadata));
-        _notifyRefresh(refreshItemId);
+        await navigate(context, metadata);
+        _notifyRefresh(source);
       }
     } catch (e) {
       if (context.mounted) {
@@ -834,11 +937,13 @@ class MediaContextMenuState extends State<MediaContextMenu> {
   }
 
   Future<void> _showFileInfo(BuildContext context) async {
-    final client = _getMediaClientForItem();
+    var loadingShown = false;
 
     try {
+      final client = _getMediaClientForItem();
       if (context.mounted) {
         showLoadingDialog(context);
+        loadingShown = true;
       }
 
       // Fetch file info
@@ -846,14 +951,16 @@ class MediaContextMenuState extends State<MediaContextMenu> {
       final fileInfo = await client.getFileInfo(item);
 
       // Close loading indicator
-      if (context.mounted) {
+      if (loadingShown && context.mounted) {
         Navigator.pop(context);
+        loadingShown = false;
       }
 
-      if (fileInfo != null && context.mounted) {
-        // Show file info bottom sheet
+      if (fileInfo != null && context.mounted && mounted) {
+        // Show file info bottom sheet, presented from the menu's own context
+        // so a screen-level OverlaySheetHost is found (see _showContextMenu).
         await OverlaySheetController.showAdaptive(
-          context,
+          this.context,
           isScrollControlled: true,
           builder: (context) => FileInfoBottomSheet(fileInfo: fileInfo, title: item.displayTitle),
         );
@@ -862,7 +969,7 @@ class MediaContextMenuState extends State<MediaContextMenu> {
       }
     } catch (e) {
       // Close loading indicator if it's still open
-      if (context.mounted && Navigator.canPop(context)) {
+      if (loadingShown && context.mounted && Navigator.canPop(context)) {
         Navigator.pop(context);
       }
 
@@ -874,10 +981,15 @@ class MediaContextMenuState extends State<MediaContextMenu> {
 
   Future<bool> _handlePlayVersion(BuildContext context) async {
     final item = _mediaItem!;
-    final client = context.tryGetMediaClientForServer(_itemServerId);
+    final itemServerId = serverIdOrNull(_itemServerId);
+    final client = context.tryGetMediaClientForServer(itemServerId);
+    final itemServerOnline =
+        itemServerId != null && context.read<MultiServerProvider>().serverManager.isClientOnline(itemServerId);
     // Same flag the in-player Version & Quality sheet reads — keeps both
-    // surfaces honest about what the active backend can actually do.
-    final canTranscode = client?.capabilities.videoTranscoding ?? false;
+    // surfaces honest about what the active backend can actually do. Also
+    // requires a reachable server: capabilities are static, and a server
+    // dropping between menu open and tap must not offer transcodes.
+    final canTranscode = itemServerOnline && (client?.capabilities.videoTranscoding ?? false);
     final versions = client == null ? item.mediaVersions ?? const [] : await resolveMediaVersions(item, client);
     if (!context.mounted) return false;
 
@@ -899,6 +1011,13 @@ class MediaContextMenuState extends State<MediaContextMenu> {
       );
       if (picked == null || !context.mounted) return false;
       selectedQuality = picked;
+    }
+
+    // Remember the pick so Continue Watching / plain Play resume this version
+    // (#1492) — same store the in-player version switch writes.
+    if (versions.length > 1) {
+      await saveMediaVersionPreferenceFor(item, index: selectedVersionIndex, versions: versions);
+      if (!context.mounted) return false;
     }
 
     await navigateToVideoPlayer(
@@ -925,6 +1044,53 @@ class MediaContextMenuState extends State<MediaContextMenu> {
     return total > 0 ? total : null;
   }
 
+  /// The track list music playback should operate on for [item]: the item
+  /// itself for a track, an album's tracks, or an artist's playable
+  /// descendants (one server round-trip for the container kinds).
+  Future<List<MediaItem>> _musicTracksForItem(MediaItem item) async {
+    final client = _getMediaClientForItem();
+    return switch (item.kind) {
+      MediaKind.album => await client.fetchAlbumTracks(item.id),
+      MediaKind.artist => await client.fetchPlayableDescendants(item.id),
+      _ => [item],
+    };
+  }
+
+  Future<void> _handleMusicPlay(BuildContext context) async {
+    final item = _mediaItem!;
+    if (item.kind == MediaKind.track) {
+      await playTrackWithAlbumContext(context, item);
+      return;
+    }
+    // Availability gate before the container fetch so the stub costs no
+    // server round-trip.
+    if (!ensureMusicPlaybackAvailable(context)) return;
+    final tracks = await _musicTracksForItem(item);
+    if (!context.mounted) return;
+    await playTracks(
+      context,
+      tracks: tracks,
+      playContext: MusicPlayContext(
+        id: item.id,
+        title: item.displayTitle,
+        kind: item.kind == MediaKind.artist ? MusicPlayContextKind.artist : MusicPlayContextKind.album,
+      ),
+    );
+  }
+
+  Future<void> _handleMusicEnqueue(BuildContext context, {required bool playNext}) async {
+    final service = context.read<MusicPlaybackService?>();
+    // Menu entries are hidden on the stub; defensive re-check.
+    if (service == null || !service.isAvailable) return;
+    final tracks = await _musicTracksForItem(_mediaItem!);
+    if (tracks.isEmpty) return;
+    if (playNext) {
+      service.addNext(tracks);
+    } else {
+      service.addToEnd(tracks);
+    }
+  }
+
   /// Handle shuffle play using play queues — dispatches via the
   /// neutral [MediaListPlaybackLauncher] so Jellyfin items get routed to
   /// [JellyfinSequentialLauncher] instead of falling through to the
@@ -949,8 +1115,7 @@ class MediaContextMenuState extends State<MediaContextMenu> {
       options: [
         (icon: Symbols.playlist_play_rounded, label: t.playlists.playlist, value: 'playlist'),
         (icon: Symbols.collections_rounded, label: t.collections.collection, value: 'collection'),
-        if (watchlistEligible)
-          (icon: Symbols.bookmark_add_rounded, label: t.watchlist.title, value: 'watchlist'),
+        if (watchlistEligible) (icon: Symbols.bookmark_add_rounded, label: t.watchlist.title, value: 'watchlist'),
       ],
     );
 
@@ -993,7 +1158,7 @@ class MediaContextMenuState extends State<MediaContextMenu> {
     try {
       final item = _mediaItem!;
 
-      final result = await showDialog<String>(
+      final result = await showScopedDialog<String>(
         context: context,
         builder: (context) => _PlaylistSelectionDialog(client: client),
       );
@@ -1097,7 +1262,7 @@ class MediaContextMenuState extends State<MediaContextMenu> {
       final resolvedLibraryId = libraryId;
       if (!context.mounted) return;
 
-      final result = await showDialog<String>(
+      final result = await showScopedDialog<String>(
         context: context,
         builder: (context) => _CollectionSelectionDialog(client: client, libraryId: resolvedLibraryId),
       );
@@ -1166,11 +1331,19 @@ class MediaContextMenuState extends State<MediaContextMenu> {
   }
 
   Future<void> _showRatingSheet(BuildContext context, MediaItem item, MediaServerClient client) async {
+    if (!mounted) return;
+    // Presented from the menu's own context so a screen-level
+    // OverlaySheetHost is found (see _showContextMenu).
     await OverlaySheetController.showAdaptive(
-      context,
+      this.context,
       showDragHandle: true,
-      builder: (context) =>
-          RatingBottomSheet(item: item, serverClient: client, onServerRatingChanged: (_) => _notifyRefresh(item.id)),
+      isScrollControlled: true,
+      builder: (context) => RatingBottomSheet(
+        item: item,
+        serverClient: client,
+        onServerRatingChanged: (_) => _notifyRefresh(item),
+        onServerFavoriteChanged: (_) => _notifyRefresh(item),
+      ),
     );
   }
 
@@ -1230,9 +1403,44 @@ class MediaContextMenuState extends State<MediaContextMenu> {
   /// backend — Plex uses server-side `/playQueues`, Jellyfin builds an
   /// in-memory queue locally.
   Future<void> _launchCollectionOrPlaylist(BuildContext context, {required bool shuffle}) async {
+    final playlist = _playlist;
+    if (playlist?.playlistType == 'audio') {
+      await _launchAudioPlaylist(context, playlist!, shuffle: shuffle);
+      return;
+    }
+
     // Launcher accepts both MediaItem (for collections) and MediaPlaylist.
     final launcher = MediaListPlaybackLauncher.forItem(context, widget.item);
     await launcher.launchFromCollectionOrPlaylist(item: widget.item, shuffle: shuffle, showLoadingIndicator: false);
+  }
+
+  Future<void> _launchAudioPlaylist(BuildContext context, MediaPlaylist playlist, {required bool shuffle}) async {
+    // Match PlaylistDetailScreen: fail the availability gate before paying
+    // for a full playlist fetch, then hand the tracks to the music session.
+    if (!ensureMusicPlaybackAvailable(context)) return;
+
+    List<MediaItem> tracks;
+    try {
+      tracks = await fetchAllPlaylistItems(_getMediaClientForItem(), playlist.id);
+    } catch (e, st) {
+      appLogger.w('Failed to fetch audio playlist ${playlist.id}', error: e, stackTrace: st);
+      if (context.mounted) {
+        showErrorSnackBar(context, t.messages.errorLoading(error: e.toString()));
+      }
+      return;
+    }
+    if (!context.mounted) return;
+    if (tracks.isEmpty) {
+      showErrorSnackBar(context, t.messages.failedToCreatePlayQueueNoItems);
+      return;
+    }
+
+    await playTracks(
+      context,
+      tracks: tracks,
+      playContext: MusicPlayContext(id: playlist.id, title: playlist.title, kind: MusicPlayContextKind.playlist),
+      shuffle: shuffle,
+    );
   }
 
   /// Handle delete action for collections and playlists
@@ -1284,23 +1492,37 @@ class MediaContextMenuState extends State<MediaContextMenu> {
 
   /// Handle play in external player action
   Future<void> _handlePlayExternal(BuildContext context) async {
+    if (!PlatformDetector.supportsExternalPlayers()) return;
+
     final item = _mediaItem!;
 
     // Check if the item is downloaded and use local file path if available
     final downloadProvider = Provider.of<DownloadProvider>(context, listen: false);
+    final offlineWatchService = Provider.of<OfflineWatchSyncService>(context, listen: false);
+    final client = _getMediaClientForItem();
     final globalKey = item.globalKey;
     if (downloadProvider.isDownloaded(globalKey)) {
       final videoPath = await downloadProvider.getVideoFilePath(globalKey);
       if (videoPath != null && context.mounted) {
         final videoUrl = videoPath.contains('://') ? videoPath : 'file://$videoPath';
-        await ExternalPlayerService.launch(context: context, videoUrl: videoUrl);
+        await ExternalPlayerService.launch(
+          context: context,
+          videoUrl: videoUrl,
+          metadata: item,
+          client: client,
+          offlineWatchService: offlineWatchService,
+        );
         return;
       }
     }
 
-    final client = _getMediaClientForItem();
     if (!context.mounted) return;
-    await ExternalPlayerService.launch(context: context, metadata: item, client: client);
+    await ExternalPlayerService.launch(
+      context: context,
+      metadata: item,
+      client: client,
+      offlineWatchService: offlineWatchService,
+    );
   }
 
   /// Handle download collection action — opens the same sync/one-time dialog
@@ -1389,10 +1611,10 @@ class MediaContextMenuState extends State<MediaContextMenu> {
   Future<void> _handleDownload(BuildContext context) async {
     final downloadProvider = Provider.of<DownloadProvider>(context, listen: false);
     final item = _mediaItem!;
-    // Backend-agnostic resolve so Jellyfin items can be downloaded too.
-    final client = context.getMediaClientWithFallback(_itemServerId);
 
     try {
+      // Backend-agnostic resolve so Jellyfin items can be downloaded too.
+      final client = context.getMediaClientWithFallback(serverIdOrNull(_itemServerId));
       final result = await showDownloadOptionsAndQueue(
         context,
         metadata: item,
@@ -1438,7 +1660,7 @@ class MediaContextMenuState extends State<MediaContextMenu> {
         // DownloadProvider.deleteDownload now broadcasts the DeletionEvent,
         // so DeletionAware screens (e.g. offline season detail) update without
         // a duplicate notification here.
-        _notifyRefresh(item.id);
+        _notifyRefresh(item);
       }
     } catch (e) {
       appLogger.e('Failed to delete download', error: e);
@@ -1463,9 +1685,9 @@ class MediaContextMenuState extends State<MediaContextMenu> {
     final globalKey = _itemGlobalKey();
     final serverId = _itemServerId;
     if (serverId == null) return globalKey;
-    final client = context.tryGetMediaClientForServer(serverId);
+    final client = context.tryGetMediaClientForServer(ServerId(serverId));
     if (client == null) return globalKey;
-    return context.read<DownloadProvider>().syncRuleKeyForClient(client, _itemId(), serverId: serverId);
+    return context.read<DownloadProvider>().syncRuleKeyForClient(client, _itemId(), serverId: ServerId(serverId));
   }
 
   String _itemDisplayTitle() => switch (widget.item) {
@@ -1484,12 +1706,12 @@ class MediaContextMenuState extends State<MediaContextMenu> {
   /// Fire-and-forget: if a sync rule exists for the target list, run it now so
   /// newly-added items download immediately instead of waiting for the next
   /// cooldown-gated general pass. Fails silently — errors are logged only.
-  static void _triggerEagerSyncIfRuleExists(BuildContext context, String serverId, String listId) {
+  static void _triggerEagerSyncIfRuleExists(BuildContext context, ServerId serverId, String listId) {
     try {
       final downloadProvider = Provider.of<DownloadProvider>(context, listen: false);
       final client = Provider.of<MultiServerProvider>(context, listen: false).getClientForServer(serverId);
       final globalKey = client == null
-          ? buildGlobalKey(serverId, listId)
+          ? buildGlobalKey(ServerId(serverId), listId)
           : downloadProvider.syncRuleKeyForClient(client, listId, serverId: serverId);
       if (!downloadProvider.hasSyncRule(globalKey)) return;
       final serverManager = Provider.of<MultiServerProvider>(context, listen: false).serverManager;
@@ -1559,172 +1781,50 @@ class MediaContextMenuState extends State<MediaContextMenu> {
   }
 }
 
-/// Dialog to select a playlist or create a new one.
-class _PlaylistSelectionDialog extends StatefulWidget {
-  final MediaServerClient client;
+typedef _PickerPageLoader<T> = Future<LibraryPage<T>> Function(int start, int size, AbortController abort);
 
-  const _PlaylistSelectionDialog({required this.client});
+typedef _PickerItemBuilder<T> = Widget Function(BuildContext context, T item);
+
+/// Shared loading, filtering, and TV focus shell for collection-style pickers.
+class _PickerDialogScaffold<T> extends StatefulWidget {
+  final String title;
+  final String searchHint;
+  final String emptyMessage;
+  final _PickerPageLoader<T> loadPage;
+  final String Function(T item) itemTitle;
+  final _PickerItemBuilder<T> itemBuilder;
+
+  const _PickerDialogScaffold({
+    required this.title,
+    required this.searchHint,
+    required this.emptyMessage,
+    required this.loadPage,
+    required this.itemTitle,
+    required this.itemBuilder,
+  });
 
   @override
-  State<_PlaylistSelectionDialog> createState() => _PlaylistSelectionDialogState();
+  State<_PickerDialogScaffold<T>> createState() => _PickerDialogScaffoldState<T>();
 }
 
-class _PlaylistSelectionDialogState extends State<_PlaylistSelectionDialog> {
+class _PickerDialogScaffoldState<T> extends State<_PickerDialogScaffold<T>> {
   static const int _pageSize = 100;
+  static const int _filterThreshold = 10;
 
-  final AbortController _abortController = AbortController();
-  final ScrollController _scrollController = ScrollController();
-  final List<MediaPlaylist> _playlists = [];
-  bool _isLoading = false;
-  String? _errorMessage;
-  int? _totalCount;
-
-  bool get _hasMore => _totalCount == null || _playlists.length < _totalCount!;
-
-  @override
-  void initState() {
-    super.initState();
-    _scrollController.addListener(_onScroll);
-    unawaited(_loadNextPage());
-  }
-
-  @override
-  void dispose() {
-    _abortController.abort();
-    _scrollController.dispose();
-    super.dispose();
-  }
-
-  void _onScroll() {
-    if (!_scrollController.hasClients || !_hasMore || _isLoading) return;
-    final position = _scrollController.position;
-    if (position.pixels >= position.maxScrollExtent - 240) {
-      unawaited(_loadNextPage());
-    }
-  }
-
-  Future<void> _loadNextPage() async {
-    if (_isLoading || !_hasMore) return;
-    setState(() {
-      _isLoading = true;
-      _errorMessage = null;
-    });
-    try {
-      final page = await widget.client.fetchPlaylistsPage(
-        playlistType: 'video',
-        smart: false,
-        start: _playlists.length,
-        size: _pageSize,
-        abort: _abortController,
-      );
-      if (!mounted) return;
-      setState(() {
-        _playlists.addAll(page.items);
-        _totalCount = page.totalCount;
-        _isLoading = false;
-      });
-    } catch (e) {
-      if (!mounted) return;
-      setState(() {
-        _errorMessage = e.toString();
-        _isLoading = false;
-      });
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AlertDialog(
-      title: Text(t.playlists.selectPlaylist),
-      content: SizedBox(
-        width: double.maxFinite,
-        child: ListView.builder(
-          controller: _scrollController,
-          shrinkWrap: true,
-          itemCount: _playlists.length + 1 + (_hasMore || _isLoading || _errorMessage != null ? 1 : 0),
-          itemBuilder: (context, index) {
-            if (index == 0) {
-              // Create new playlist option (always shown first)
-              return ListTile(
-                leading: const AppIcon(Symbols.add_rounded, fill: 1),
-                title: Text(t.common.createNew),
-                onTap: () => Navigator.pop(context, '_create_new'),
-              );
-            }
-
-            if (index > _playlists.length) {
-              if (_errorMessage != null) {
-                return ListTile(
-                  leading: const AppIcon(Symbols.error_rounded, fill: 1),
-                  title: Text(t.messages.errorLoading(error: _errorMessage!)),
-                  trailing: TextButton(onPressed: _loadNextPage, child: Text(t.common.retry)),
-                );
-              }
-              if (_hasMore && !_isLoading) {
-                WidgetsBinding.instance.addPostFrameCallback((_) {
-                  if (mounted) unawaited(_loadNextPage());
-                });
-              }
-              return const Padding(
-                padding: EdgeInsets.all(16),
-                child: Center(child: CircularProgressIndicator()),
-              );
-            }
-
-            final playlist = _playlists[index - 1];
-            final leafCount = playlist.leafCount;
-            final subtitleText = leafCount == 1 ? t.playlists.oneItem : t.playlists.itemCount(count: leafCount ?? 0);
-            return ListTile(
-              leading: playlist.smart
-                  ? const AppIcon(Symbols.auto_awesome_rounded, fill: 1)
-                  : const AppIcon(Symbols.playlist_play_rounded, fill: 1),
-              title: Text(playlist.title),
-              subtitle: playlist.leafCount != null ? Text(subtitleText) : null,
-              onTap: playlist.smart
-                  ? null // Disable smart playlists
-                  : () => Navigator.pop(context, playlist.id),
-              enabled: !playlist.smart,
-            );
-          },
-        ),
-      ),
-      actions: [
-        FocusableButton(
-          autofocus: true,
-          onPressed: () => Navigator.pop(context),
-          child: TextButton(onPressed: () => Navigator.pop(context), child: Text(t.common.cancel)),
-        ),
-      ],
-    );
-  }
-}
-
-/// Dialog to select a collection or create a new one
-class _CollectionSelectionDialog extends StatefulWidget {
-  final MediaServerClient client;
-  final String libraryId;
-
-  const _CollectionSelectionDialog({required this.client, required this.libraryId});
-
-  @override
-  State<_CollectionSelectionDialog> createState() => _CollectionSelectionDialogState();
-}
-
-class _CollectionSelectionDialogState extends State<_CollectionSelectionDialog> with ControllerDisposerMixin {
-  static const int _pageSize = 100;
-
-  late final _filterController = createTextEditingController();
-  final _filterFocusNode = FocusNode(debugLabel: 'CollectionFilter');
-  final _firstCollectionFocusNode = FocusNode(debugLabel: 'CollectionFirstItem');
-  final AbortController _abortController = AbortController();
+  final _filterController = TextEditingController();
+  final _filterFocusNode = FocusNode(debugLabel: 'PickerFilter');
+  final _firstItemFocusNode = FocusNode(debugLabel: 'PickerFirstItem');
+  final _abortController = AbortController();
   final _scrollController = ScrollController();
-  final List<MediaItem> _collections = [];
-  List<MediaItem> _filteredCollections = [];
+  final List<T> _items = [];
+  List<T> _filteredItems = [];
   bool _isLoading = false;
+  bool _initialFocusRequested = false;
   String? _errorMessage;
   int? _totalCount;
 
-  bool get _hasMore => _totalCount == null || _collections.length < _totalCount!;
+  bool get _hasMore => _totalCount == null || _items.length < _totalCount!;
+  bool get _showFilter => _items.length >= _filterThreshold;
 
   @override
   void initState() {
@@ -1737,8 +1837,9 @@ class _CollectionSelectionDialogState extends State<_CollectionSelectionDialog> 
   void dispose() {
     _abortController.abort();
     _scrollController.dispose();
+    _filterController.dispose();
     _filterFocusNode.dispose();
-    _firstCollectionFocusNode.dispose();
+    _firstItemFocusNode.dispose();
     super.dispose();
   }
 
@@ -1758,24 +1859,17 @@ class _CollectionSelectionDialogState extends State<_CollectionSelectionDialog> 
     });
     try {
       while (mounted && _hasMore) {
-        final page = await widget.client.fetchCollectionsPage(
-          widget.libraryId,
-          start: _collections.length,
-          size: _pageSize,
-          abort: _abortController,
-        );
+        final page = await widget.loadPage(_items.length, _pageSize, _abortController);
         if (!mounted) return;
         setState(() {
-          _collections.addAll(page.items);
+          _items.addAll(page.items);
           _totalCount = page.totalCount;
           _applyFilter(_filterController.text);
         });
         if (_filterController.text.isEmpty || page.items.isEmpty) break;
       }
       if (!mounted) return;
-      setState(() {
-        _isLoading = false;
-      });
+      setState(() => _isLoading = false);
     } catch (e) {
       if (!mounted) return;
       setState(() {
@@ -1783,12 +1877,20 @@ class _CollectionSelectionDialogState extends State<_CollectionSelectionDialog> 
         _isLoading = false;
       });
     }
+    _requestInitialFocus();
+  }
+
+  void _requestInitialFocus() {
+    if (_initialFocusRequested) return;
+    _initialFocusRequested = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      (_showFilter ? _filterFocusNode : _firstItemFocusNode).requestFocus();
+    });
   }
 
   void _onFilterChanged(String query) {
-    setState(() {
-      _applyFilter(query);
-    });
+    setState(() => _applyFilter(query));
     if (query.isNotEmpty && _hasMore) {
       unawaited(_loadNextPage());
     }
@@ -1796,52 +1898,57 @@ class _CollectionSelectionDialogState extends State<_CollectionSelectionDialog> 
 
   void _applyFilter(String query) {
     final lower = query.toLowerCase();
-    _filteredCollections = lower.isEmpty
-        ? List.of(_collections)
-        : _collections.where((c) => (c.title ?? '').toLowerCase().contains(lower)).toList();
+    _filteredItems = lower.isEmpty
+        ? List.of(_items)
+        : _items.where((item) => widget.itemTitle(item).toLowerCase().contains(lower)).toList();
   }
 
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
-      title: Text(t.collections.selectCollection),
-      content: SizedBox(
-        width: double.maxFinite,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (_collections.length >= 10) ...[
-              FocusableTextField(
-                controller: _filterController,
-                focusNode: _filterFocusNode,
-                autofocus: true,
-                onNavigateDown: _firstCollectionFocusNode.requestFocus,
-                decoration: pillInputDecoration(
-                  context,
-                  hintText: t.collections.searchCollections,
-                  prefixIcon: const Icon(Symbols.search_rounded, size: 20),
+    final showStatus = _hasMore || _isLoading || _errorMessage != null || _filteredItems.isEmpty;
+    return Focus(
+      onKeyEvent: (_, event) => handleBackKeyNavigation(context, event),
+      child: AlertDialog(
+        title: Text(widget.title),
+        content: SizedBox(
+          width: double.maxFinite,
+          child: Column(
+            mainAxisSize: .min,
+            children: [
+              if (_showFilter) ...[
+                FocusableTextField(
+                  controller: _filterController,
+                  focusNode: _filterFocusNode,
+                  tvKeyboardAutoOpenBehavior: TvKeyboardAutoOpenBehavior.afterFirstFocus,
+                  onNavigateDown: _firstItemFocusNode.requestFocus,
+                  decoration: pillInputDecoration(
+                    context,
+                    hintText: widget.searchHint,
+                    prefixIcon: const AppIcon(Symbols.search_rounded, size: 20),
+                  ),
+                  onChanged: _onFilterChanged,
                 ),
-                onChanged: _onFilterChanged,
-              ),
-              const SizedBox(height: 8),
-            ],
-            Flexible(
-              child: ListView.builder(
-                controller: _scrollController,
-                shrinkWrap: true,
-                itemCount: _filteredCollections.length + 1 + (_hasMore || _isLoading || _errorMessage != null ? 1 : 0),
-                itemBuilder: (context, index) {
-                  if (index == 0) {
-                    return FocusableListTile(
-                      focusNode: _firstCollectionFocusNode,
-                      autofocus: _collections.length < 10,
-                      leading: const AppIcon(Symbols.add_rounded, fill: 1),
-                      title: Text(t.common.createNew),
-                      onTap: () => Navigator.pop(context, '_create_new'),
-                    );
-                  }
+                const SizedBox(height: 8),
+              ],
+              Flexible(
+                child: ListView.builder(
+                  controller: _scrollController,
+                  shrinkWrap: true,
+                  itemCount: _filteredItems.length + 1 + (showStatus ? 1 : 0),
+                  itemBuilder: (context, index) {
+                    if (index == 0) {
+                      return FocusableListTile(
+                        focusNode: _firstItemFocusNode,
+                        leading: const AppIcon(Symbols.add_rounded, fill: 1),
+                        title: Text(t.common.createNew),
+                        onTap: () => Navigator.pop(context, '_create_new'),
+                      );
+                    }
 
-                  if (index > _filteredCollections.length) {
+                    if (index <= _filteredItems.length) {
+                      return widget.itemBuilder(context, _filteredItems[index - 1]);
+                    }
+
                     if (_errorMessage != null) {
                       return FocusableListTile(
                         leading: const AppIcon(Symbols.error_rounded, fill: 1),
@@ -1849,235 +1956,87 @@ class _CollectionSelectionDialogState extends State<_CollectionSelectionDialog> 
                         onTap: _loadNextPage,
                       );
                     }
-                    if (_hasMore && !_isLoading) {
-                      WidgetsBinding.instance.addPostFrameCallback((_) {
-                        if (mounted) unawaited(_loadNextPage());
-                      });
+                    if (_hasMore || _isLoading) {
+                      if (_hasMore && !_isLoading) {
+                        WidgetsBinding.instance.addPostFrameCallback((_) {
+                          if (mounted) unawaited(_loadNextPage());
+                        });
+                      }
+                      return const Padding(
+                        padding: .all(16),
+                        child: Center(child: CircularProgressIndicator()),
+                      );
                     }
-                    return const Padding(
-                      padding: EdgeInsets.all(16),
-                      child: Center(child: CircularProgressIndicator()),
+                    return Padding(
+                      padding: const .all(16),
+                      child: Text(widget.emptyMessage, textAlign: TextAlign.center),
                     );
-                  }
-
-                  final collection = _filteredCollections[index - 1];
-                  return FocusableListTile(
-                    leading: const AppIcon(Symbols.collections_rounded, fill: 1),
-                    title: Text(collection.title ?? ''),
-                    subtitle: collection.childCount != null
-                        ? Text(t.playlists.itemCount(count: collection.childCount!))
-                        : null,
-                    onTap: () => Navigator.pop(context, collection.id),
-                  );
-                },
-              ),
-            ),
-          ],
-        ),
-      ),
-      actions: [
-        FocusableButton(
-          onPressed: () => Navigator.pop(context),
-          child: TextButton(onPressed: () => Navigator.pop(context), child: Text(t.common.cancel)),
-        ),
-      ],
-    );
-  }
-}
-
-/// Focusable context menu sheet for keyboard/gamepad navigation (mobile)
-class _FocusableContextMenuSheet extends StatefulWidget {
-  final String title;
-  final List<_MenuAction> actions;
-  final bool focusFirstItem;
-
-  const _FocusableContextMenuSheet({required this.title, required this.actions, this.focusFirstItem = false});
-
-  @override
-  State<_FocusableContextMenuSheet> createState() => _FocusableContextMenuSheetState();
-}
-
-class _FocusableContextMenuSheetState extends State<_FocusableContextMenuSheet> {
-  late final FocusNode _initialFocusNode;
-
-  @override
-  void initState() {
-    super.initState();
-    _initialFocusNode = FocusNode(debugLabel: 'ContextMenuSheetInitialFocus');
-  }
-
-  @override
-  void dispose() {
-    _initialFocusNode.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
-          child: Text(
-            widget.title,
-            style: Theme.of(context).textTheme.titleMedium,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-        ),
-        Flexible(
-          child: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                ...widget.actions.asMap().entries.map((entry) {
-                  final index = entry.key;
-                  final action = entry.value;
-                  return FocusableListTile(
-                    key: ValueKey(action.value),
-                    focusNode: index == 0 && widget.focusFirstItem ? _initialFocusNode : null,
-                    leading: AppIcon(action.icon, fill: 1),
-                    title: Text(action.label),
-                    onTap: () => OverlaySheetController.closeAdaptive(context, action.value),
-                    hoverColor: action.hoverColor,
-                    textColor: action.foregroundColor,
-                    iconColor: action.foregroundColor,
-                  );
-                }),
-              ],
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-/// Focusable popup menu for keyboard/gamepad navigation (desktop)
-class _FocusablePopupMenu extends StatefulWidget {
-  final List<_MenuAction> actions;
-  final Offset position;
-  final bool focusFirstItem;
-
-  const _FocusablePopupMenu({required this.actions, required this.position, this.focusFirstItem = false});
-
-  @override
-  State<_FocusablePopupMenu> createState() => _FocusablePopupMenuState();
-}
-
-class _FocusablePopupMenuState extends State<_FocusablePopupMenu> {
-  late final FocusNode _initialFocusNode;
-
-  @override
-  void initState() {
-    super.initState();
-    _initialFocusNode = FocusNode(debugLabel: 'PopupMenuInitialFocus');
-    if (widget.focusFirstItem) {
-      FocusUtils.requestFocusAfterBuild(this, _initialFocusNode);
-    }
-  }
-
-  @override
-  void dispose() {
-    _initialFocusNode.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final screenSize = MediaQuery.sizeOf(context);
-    const menuWidth = 220.0;
-
-    // Treat the requested origin as the menu center, then clamp to screen bounds.
-    const edgePadding = 8.0;
-    final estimatedHeight = widget.actions.length * 48.0 + 16;
-    final maxLeft = screenSize.width - menuWidth - edgePadding;
-    final left = (widget.position.dx - menuWidth / 2)
-        .clamp(edgePadding, maxLeft < edgePadding ? edgePadding : maxLeft)
-        .toDouble();
-
-    final availableHeight = screenSize.height - edgePadding * 2;
-    final menuHeight = availableHeight <= 0 ? 0.0 : estimatedHeight.clamp(0.0, availableHeight).toDouble();
-    final maxTop = screenSize.height - menuHeight - edgePadding;
-    final top = (widget.position.dy - menuHeight / 2)
-        .clamp(edgePadding, maxTop < edgePadding ? edgePadding : maxTop)
-        .toDouble();
-    final maxHeight = menuHeight;
-
-    return FocusScope(
-      // When opened via mouse, don't autofocus any item — let hover handle highlights.
-      // When opened via keyboard/dpad, autofocus is handled by _initialFocusNode.
-      autofocus: false,
-      child: Focus(
-        canRequestFocus: false,
-        skipTraversal: true,
-        onKeyEvent: (node, event) {
-          if (SelectKeyUpSuppressor.consumeIfSuppressed(event)) {
-            return KeyEventResult.handled;
-          }
-          if (BackKeyUpSuppressor.consumeIfSuppressed(event)) {
-            return KeyEventResult.handled;
-          }
-          return KeyEventResult.ignored;
-        },
-        child: Listener(
-          behavior: HitTestBehavior.translucent,
-          onPointerDown: (event) {
-            if ((event.buttons & kSecondaryMouseButton) != 0) {
-              Navigator.pop(context);
-            }
-          },
-          child: Stack(
-            children: [
-              // Barrier to close menu when clicking outside
-              Positioned.fill(
-                child: GestureDetector(
-                  onTap: () => Navigator.pop(context),
-                  behavior: HitTestBehavior.opaque,
-                  child: const ColoredBox(color: Colors.transparent),
-                ),
-              ),
-              // Menu
-              Positioned(
-                left: left,
-                top: top,
-                child: Material(
-                  elevation: 8,
-                  color: Color.alphaBlend(
-                    Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.08),
-                    Theme.of(context).colorScheme.surface,
-                  ),
-                  borderRadius: BorderRadius.circular(tokens(context).radiusSm),
-                  clipBehavior: Clip.antiAlias,
-                  child: ConstrainedBox(
-                    constraints: BoxConstraints(minWidth: menuWidth, maxWidth: menuWidth, maxHeight: maxHeight),
-                    child: SingleChildScrollView(
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: widget.actions.asMap().entries.map((entry) {
-                          final index = entry.key;
-                          final action = entry.value;
-                          return FocusableListTile(
-                            key: ValueKey(action.value),
-                            focusNode: index == 0 && widget.focusFirstItem ? _initialFocusNode : null,
-                            leading: AppIcon(action.icon, fill: 1, size: 20),
-                            title: Text(action.label),
-                            onTap: () => Navigator.pop(context, action.value),
-                            hoverColor: action.hoverColor,
-                            textColor: action.foregroundColor,
-                            iconColor: action.foregroundColor,
-                          );
-                        }).toList(),
-                      ),
-                    ),
-                  ),
+                  },
                 ),
               ),
             ],
           ),
         ),
+        actions: [DialogActionButton(onPressed: () => Navigator.pop(context), label: t.common.cancel)],
+      ),
+    );
+  }
+}
+
+/// Dialog to select a playlist or create a new one.
+class _PlaylistSelectionDialog extends StatelessWidget {
+  final MediaServerClient client;
+
+  const _PlaylistSelectionDialog({required this.client});
+
+  @override
+  Widget build(BuildContext context) {
+    return _PickerDialogScaffold<MediaPlaylist>(
+      title: t.playlists.selectPlaylist,
+      searchHint: t.playlists.searchPlaylists,
+      emptyMessage: t.playlists.noPlaylists,
+      loadPage: (start, size, abort) =>
+          client.fetchPlaylistsPage(playlistType: 'video', smart: false, start: start, size: size, abort: abort),
+      itemTitle: (playlist) => playlist.title,
+      itemBuilder: (context, playlist) {
+        final leafCount = playlist.leafCount;
+        final subtitleText = leafCount == 1 ? t.playlists.oneItem : t.playlists.itemCount(count: leafCount ?? 0);
+        return FocusableListTile(
+          leading: playlist.smart
+              ? const AppIcon(Symbols.auto_awesome_rounded, fill: 1)
+              : const AppIcon(Symbols.playlist_play_rounded, fill: 1),
+          title: Text(playlist.title),
+          subtitle: playlist.leafCount != null ? Text(subtitleText) : null,
+          onTap: playlist.smart
+              ? null // Disable smart playlists
+              : () => Navigator.pop(context, playlist.id),
+          enabled: !playlist.smart,
+        );
+      },
+    );
+  }
+}
+
+/// Dialog to select a collection or create a new one
+class _CollectionSelectionDialog extends StatelessWidget {
+  final MediaServerClient client;
+  final String libraryId;
+
+  const _CollectionSelectionDialog({required this.client, required this.libraryId});
+
+  @override
+  Widget build(BuildContext context) {
+    return _PickerDialogScaffold<MediaItem>(
+      title: t.collections.selectCollection,
+      searchHint: t.collections.searchCollections,
+      emptyMessage: t.libraries.noCollections,
+      loadPage: (start, size, abort) => client.fetchCollectionsPage(libraryId, start: start, size: size, abort: abort),
+      itemTitle: (collection) => collection.title ?? '',
+      itemBuilder: (context, collection) => FocusableListTile(
+        leading: const AppIcon(Symbols.collections_rounded, fill: 1),
+        title: Text(collection.title ?? ''),
+        subtitle: collection.childCount != null ? Text(t.playlists.itemCount(count: collection.childCount!)) : null,
+        onTap: () => Navigator.pop(context, collection.id),
       ),
     );
   }

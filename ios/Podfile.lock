@@ -3,7 +3,7 @@ PODS:
     - Flutter
     - FlutterMacOS
   - Flutter (1.0.0)
-  - os_media_controls (0.2.1):
+  - os_media_controls (0.2.4):
     - Flutter
   - universal_gamepad (0.1.0):
     - Flutter
@@ -27,7 +27,7 @@ EXTERNAL SOURCES:
 SPEC CHECKSUMS:
   cupertino_http: 94ac07f5ff090b8effa6c5e2c47871d48ab7c86c
   Flutter: cabc95a1d2626b1b06e7179b784ebcf0c0cde467
-  os_media_controls: 3b06fe2dc0977dfa94f9c1dd73df7a55022d202f
+  os_media_controls: 048eb9a75974191b2496d85575b6edcefc572d4e
   universal_gamepad: 838bbb70d37d8c7c719038aa397214f2c4c4f866
 
 PODFILE CHECKSUM: 16bb7f67e16d8aaa2bfb97666803fbfb291b6559

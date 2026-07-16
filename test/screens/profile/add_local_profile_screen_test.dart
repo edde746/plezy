@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import 'package:plezy/focus/input_mode_tracker.dart';
 import 'package:plezy/i18n/strings.g.dart';
 import 'package:plezy/screens/profile/add_local_profile_screen.dart';
@@ -14,12 +15,16 @@ void main() {
   setUp(() {
     resetSharedPreferencesForTest();
     TvDetectionService.debugSetAppleTVOverride(true);
+    // Simulated TV device: the test host's desktop OS must not leak into
+    // InputModeTracker's desktop force-TV exemption.
+    PlatformDetector.debugSetIsDesktopOSOverride(false);
     LocaleSettings.setLocaleSync(AppLocale.en);
   });
 
   tearDown(() {
     TvDetectionService.debugSetAppleTVOverride(null);
     TvDetectionService.setForceTVSync(false);
+    PlatformDetector.debugSetIsDesktopOSOverride(null);
   });
 
   testWidgets('D-pad leaves profile name input and reaches actions', (tester) async {
@@ -65,7 +70,7 @@ void main() {
 
     expect(FocusManager.instance.primaryFocus?.debugLabel, 'TvVirtualKeyboard');
 
-    await tester.tap(find.byIcon(Icons.check_rounded));
+    await tester.tap(find.byIcon(Symbols.check_rounded));
     await tester.pumpAndSettle();
 
     expect(FocusManager.instance.primaryFocus?.debugLabel, 'AddLocalProfile:SetPin');

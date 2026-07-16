@@ -1,4 +1,6 @@
 import 'dart:convert';
+import '../media/ids.dart';
+import '../media/media_version_preference.dart';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/painting.dart';
@@ -10,9 +12,12 @@ import '../i18n/strings.g.dart';
 import '../models/mpv_config_models.dart';
 import '../models/external_player_models.dart';
 import 'base_shared_preferences_service.dart';
+import 'device_performance.dart';
 export 'base_shared_preferences_service.dart'
     show Pref, BoolPref, IntPref, DoublePref, StringPref, NullableStringPref, StringListPref, EnumPref, JsonPref;
+import '../models/audio_quality_preset.dart';
 import '../models/transcode_quality_preset.dart';
+import '../navigation/navigation_tabs.dart';
 import '../utils/platform_detector.dart';
 import 'trackers/tracker_constants.dart';
 
@@ -33,7 +38,33 @@ enum ViewMode { grid, list }
 
 enum EpisodePosterMode { seriesPoster, seasonPoster, episodeThumbnail }
 
+enum ContinueWatchingAction { play, details }
+
+enum EpisodeAction { play, details }
+
 enum SubAssOverride { no, yes, scale, force, strip }
+
+/// Resolution ASS/image subtitles are rasterized at.
+///
+/// iOS/tvOS (avfoundation VO) uses the [screen] vs [video] basis (video is much
+/// cheaper on 4K displays; subs can't carry more detail than the video they're
+/// typeset against). Android (libass overlay) instead downscales by a fixed
+/// fraction of the surface — [screen] is full, and [threeQuarter]/[half]/[third]/
+/// [quarter] trade sharpness for raster throughput on render-bound low-end TVs.
+enum SubtitleRenderResolution { screen, video, threeQuarter, half, third, quarter }
+
+extension SubtitleRenderScale on SubtitleRenderResolution {
+  /// Android libass overlay render scale (fraction of the surface resolution).
+  /// Only Android reads this; the iOS-only [video] basis maps to full scale here.
+  double get androidRenderScale => switch (this) {
+    SubtitleRenderResolution.screen => 1.0,
+    SubtitleRenderResolution.video => 1.0,
+    SubtitleRenderResolution.threeQuarter => 0.75,
+    SubtitleRenderResolution.half => 0.5,
+    SubtitleRenderResolution.third => 1 / 3,
+    SubtitleRenderResolution.quarter => 0.25,
+  };
+}
 
 enum DvConversionModePreference { auto, disabled, dv81, hevcStrip }
 
@@ -146,6 +177,40 @@ class _AutoPipPref extends Pref<bool> {
   Future<void> writeTo(BaseSharedPreferencesService svc, bool value) => svc.writeBool(key, value);
 }
 
+class _UseExternalPlayerPref extends Pref<bool> {
+  const _UseExternalPlayerPref() : super('use_external_player');
+
+  @override
+  bool readFrom(BaseSharedPreferencesService svc) {
+    if (!PlatformDetector.supportsExternalPlayers()) return false;
+    return svc.prefs.getBool(key) ?? false;
+  }
+
+  @override
+  Future<void> writeTo(BaseSharedPreferencesService svc, bool value) => svc.writeBool(key, value);
+}
+
+/// Experimental native Dolby playback. Keep opt-in on Apple TV until the
+/// EAC3+JOC sample-buffer renderer (#1300) is verified on real receivers.
+class _AudioPassthroughPref extends Pref<bool> {
+  const _AudioPassthroughPref() : super('audio_passthrough');
+
+  @override
+  bool readFrom(BaseSharedPreferencesService svc) {
+    final stored = svc.prefs.getBool(key);
+    if (stored != null) return stored;
+    // Android TV on ExoPlayer defaults to bitstreaming AC3/EAC3/DTS to the TV/AVR
+    // (Media3 picks bitstream vs PCM via AudioCapabilities), preserving surround.
+    // Scoped to ExoPlayer — the mpv backend force-sets audio-spdif with no decode
+    // fallback. (#1458)
+    // TODO: Default Apple TV to on once the #1300 Atmos sink is hardware-verified.
+    return Platform.isAndroid && PlatformDetector.isTV() && svc.read(SettingsService.useExoPlayer);
+  }
+
+  @override
+  Future<void> writeTo(BaseSharedPreferencesService svc, bool value) => svc.writeBool(key, value);
+}
+
 String? _trimEmptyAsNull(String? v) {
   final t = v?.trim();
   return (t == null || t.isEmpty) ? null : t;
@@ -198,29 +263,6 @@ List<MpvPreset> _decodeMpvPresets(dynamic raw) {
   }).toList();
 }
 
-Map<String, String> _defaultKeyboardShortcuts() => {
-  'play_pause': 'Space',
-  'volume_up': 'Arrow Up',
-  'volume_down': 'Arrow Down',
-  'seek_forward': 'Arrow Right',
-  'seek_backward': 'Arrow Left',
-  'seek_forward_large': 'Shift+Arrow Right',
-  'seek_backward_large': 'Shift+Arrow Left',
-  'fullscreen_toggle': 'F',
-  'mute_toggle': 'M',
-  'subtitle_toggle': 'S',
-  'audio_track_next': 'A',
-  'subtitle_track_next': 'Shift+S',
-  'chapter_next': 'N',
-  'chapter_previous': 'P',
-  'speed_increase': 'Plus',
-  'speed_decrease': 'Minus',
-  'speed_reset': 'R',
-  'sub_seek_next': 'Ctrl+Right',
-  'sub_seek_prev': 'Ctrl+Left',
-  'screenshot': 'Ctrl+S',
-};
-
 Map<String, HotKey> _defaultKeyboardHotkeys() => {
   'play_pause': const HotKey(key: PhysicalKeyboardKey.space),
   'volume_up': const HotKey(key: PhysicalKeyboardKey.arrowUp),
@@ -241,18 +283,15 @@ Map<String, HotKey> _defaultKeyboardHotkeys() => {
   'speed_increase': const HotKey(key: PhysicalKeyboardKey.equal),
   'speed_decrease': const HotKey(key: PhysicalKeyboardKey.minus),
   'speed_reset': const HotKey(key: PhysicalKeyboardKey.keyR),
+  'zoom_in': const HotKey(key: PhysicalKeyboardKey.equal, modifiers: [HotKeyModifier.alt]),
+  'zoom_out': const HotKey(key: PhysicalKeyboardKey.minus, modifiers: [HotKeyModifier.alt]),
+  'zoom_reset': const HotKey(key: PhysicalKeyboardKey.backspace, modifiers: [HotKeyModifier.alt]),
   'sub_seek_next': const HotKey(key: PhysicalKeyboardKey.arrowRight, modifiers: [HotKeyModifier.control]),
   'sub_seek_prev': const HotKey(key: PhysicalKeyboardKey.arrowLeft, modifiers: [HotKeyModifier.control]),
   'shader_toggle': const HotKey(key: PhysicalKeyboardKey.keyG),
   'skip_marker': const HotKey(key: PhysicalKeyboardKey.enter),
   'screenshot': const HotKey(key: PhysicalKeyboardKey.keyS, modifiers: [HotKeyModifier.control]),
 };
-
-Map<String, String> _decodeKeyboardShortcuts(dynamic raw) {
-  final stored = (raw as Map<String, dynamic>).map((k, v) => MapEntry(k, v.toString()));
-  // Merge with defaults so newly-added defaults appear without resetting customizations.
-  return {..._defaultKeyboardShortcuts(), ...stored};
-}
 
 Map<String, HotKey> _decodeKeyboardHotkeys(dynamic raw) {
   final result = <String, HotKey>{};
@@ -268,6 +307,9 @@ class SettingsService extends BaseSharedPreferencesService {
   static const String defaultCreditsPattern = r'(?:^|\b)(?:outro|closing|credits?|ending)(?:\b|$)|^ed(?:\s?\d+)?$';
 
   static const enableDebugLogging = BoolPref('enable_debug_logging', onWrite: setLoggerLevel);
+  // Source URL for the Apple TV Atmos diagnostics screen; deliberately not
+  // resettable so a tester keeps it across "Reset All Settings".
+  static const atmosProbeUrl = StringPref('atmos_probe_url', defaultValue: '');
   static const crashReporting = BoolPref('crash_reporting', defaultValue: true);
   static const enableHardwareDecoding = BoolPref('enable_hardware_decoding', defaultValue: true);
   static const enableHDR = BoolPref('enable_hdr', defaultValue: true);
@@ -278,6 +320,8 @@ class SettingsService extends BaseSharedPreferencesService {
   static const seekTimeLarge = IntPref('seek_time_large', defaultValue: 30);
   static const rewindOnResume = IntPref('rewind_on_resume');
   static const showHeroSection = BoolPref('show_hero_section', defaultValue: true);
+  static const tvFullCardLayout = BoolPref('tv_full_card_layout', defaultValue: false);
+  static const focusGlow = BoolPref('focus_glow', defaultValue: true);
   static const useGlobalHubs = BoolPref('use_global_hubs', defaultValue: true);
   static const showServerNameOnHubs = BoolPref('show_server_name_on_hubs');
   static const groupLibrariesByServer = BoolPref('group_libraries_by_server', defaultValue: true);
@@ -298,6 +342,11 @@ class SettingsService extends BaseSharedPreferencesService {
     values: SubAssOverride.values,
     defaultValue: SubAssOverride.no,
   );
+  static const subtitleRenderResolution = EnumPref<SubtitleRenderResolution>(
+    'subtitle_render_resolution',
+    values: SubtitleRenderResolution.values,
+    defaultValue: SubtitleRenderResolution.screen,
+  );
   static const subtitleBold = BoolPref('subtitle_bold');
   static const subtitleItalic = BoolPref('subtitle_italic');
   static const cleanedOldImageCache = BoolPref('cleaned_old_image_cache');
@@ -313,6 +362,11 @@ class SettingsService extends BaseSharedPreferencesService {
   static const customDownloadPathType = NullableStringPref('custom_download_path_type');
   static const downloadOnWifiOnly = BoolPref('download_on_wifi_only');
   static const autoRemoveWatchedDownloads = BoolPref('auto_remove_watched_downloads');
+
+  /// Remembered state of the "Include Specials" toggle on the show download
+  /// dialog. Defaults to true (include) so existing behavior is unchanged;
+  /// turning it off persists so the next download keeps the choice.
+  static const downloadIncludeSpecials = BoolPref('download_include_specials', defaultValue: true);
   static const autoCheckUpdatesOnStartup = BoolPref('auto_check_updates_on_startup', defaultValue: true);
   static const showPerformanceOverlay = BoolPref('show_performance_overlay');
   static const autoHidePerformanceOverlay = BoolPref('auto_hide_performance_overlay', defaultValue: true);
@@ -334,8 +388,23 @@ class SettingsService extends BaseSharedPreferencesService {
     values: TranscodeQualityPreset.values,
     defaultValue: TranscodeQualityPreset.original,
   );
+  static const musicQualityPreset = EnumPref<AudioQualityPreset>(
+    'music_quality_preset',
+    values: AudioQualityPreset.values,
+    defaultValue: AudioQualityPreset.original,
+  );
+
+  /// Music player volume (0–100), independent of the video player's
+  /// [volume] so desktop music listening levels don't drag video loudness
+  /// around.
+  static const musicVolume = DoublePref('music_volume', defaultValue: 100.0);
   static const autoPlayNextEpisode = BoolPref('auto_play_next_episode', defaultValue: true);
   static const useExoPlayer = BoolPref('use_exoplayer', defaultValue: true);
+  static const startupSection = EnumPref<NavigationTabId>(
+    'startup_section',
+    values: NavigationTabId.values,
+    defaultValue: NavigationTabId.discover,
+  );
   static const alwaysKeepSidebarOpen = BoolPref('always_keep_sidebar_open');
   static const showUnwatchedCount = BoolPref('show_unwatched_count', defaultValue: true);
   static const showEpisodeNumberOnCards = BoolPref('show_episode_number_on_cards', defaultValue: true);
@@ -344,11 +413,18 @@ class SettingsService extends BaseSharedPreferencesService {
   static const showNavBarLabels = BoolPref('show_nav_bar_labels', defaultValue: true);
   static const globalShaderPreset = StringPref('global_shader_preset', defaultValue: 'none');
   static const requireProfileSelectionOnOpen = BoolPref('require_profile_selection_on_open');
-  static const useExternalPlayer = BoolPref('use_external_player');
+  static const useExternalPlayer = _UseExternalPlayerPref();
   static const forceTvMode = BoolPref('force_tv_mode');
+  static const visualEffects = EnumPref<VisualEffectsSetting>(
+    'visual_effects',
+    values: VisualEffectsSetting.values,
+    defaultValue: VisualEffectsSetting.auto,
+  );
   static const ambientLighting = BoolPref('ambient_lighting');
-  static const audioPassthrough = BoolPref('audio_passthrough');
+  static const audioPassthrough = _AudioPassthroughPref();
   static const audioNormalization = BoolPref('audio_normalization');
+  static const audioDownmix = BoolPref('audio_downmix');
+  static const audioDownmixNormalize = BoolPref('audio_downmix_normalize', defaultValue: true);
   static const liveTvDefaultFavorites = BoolPref('live_tv_default_favorites');
   static const matchRefreshRate = BoolPref('match_refresh_rate');
   static const matchDynamicRange = BoolPref('match_dynamic_range');
@@ -363,6 +439,7 @@ class SettingsService extends BaseSharedPreferencesService {
   );
 
   static final maxVolume = IntPref('max_volume', defaultValue: 100, transform: (v) => v.clamp(100, 300));
+  static final downmixCenterBoost = IntPref('downmix_center_boost', transform: (v) => v.clamp(0, 12));
   static final subtitlePosition = IntPref('subtitle_position', defaultValue: 100, transform: (v) => v.clamp(0, 100));
   static final defaultPlaybackSpeed = DoublePref(
     'default_playback_speed',
@@ -372,40 +449,57 @@ class SettingsService extends BaseSharedPreferencesService {
   static final defaultBoxFitMode = IntPref('default_box_fit_mode', transform: (v) => v.clamp(0, 2));
   static final displaySwitchDelay = IntPref('display_switch_delay', transform: (v) => v.clamp(0, 10));
 
-  static final themeMode = EnumPref<ThemeMode>(
+  static ThemeMode _tvAwareThemeModeDefault() => TvDetectionService.isTVSync() ? ThemeMode.oled : ThemeMode.system;
+  static const themeMode = EnumPref<ThemeMode>(
     'theme_mode',
     values: ThemeMode.values,
-    defaultValue: TvDetectionService.isTVSync() ? ThemeMode.oled : ThemeMode.system,
+    defaultValueProvider: _tvAwareThemeModeDefault,
   );
-  static final videoPlayerNavigationEnabled = BoolPref(
+  static const videoPlayerNavigationEnabled = BoolPref(
     'video_player_navigation_enabled',
-    defaultValue: TvDetectionService.isTVSync(),
+    defaultValueProvider: TvDetectionService.isTVSync,
   );
-  static final enableCompanionRemoteServer = BoolPref(
+  static const enableCompanionRemoteServer = BoolPref(
     'enable_companion_remote_server',
-    defaultValue: PlatformDetector.isDesktopOS(),
+    defaultValueProvider: PlatformDetector.isDesktopOS,
   );
   static const startInFullscreen = BoolPref('start_in_fullscreen');
+  static const exitFullscreenOnPlayerClose = BoolPref('exit_fullscreen_on_player_close');
 
   static const bufferSize = _BufferSizePref();
   static const libraryDensity = _LibraryDensityPref();
   static const episodePosterMode = _EpisodePosterModePref();
+  static const continueWatchingAction = EnumPref<ContinueWatchingAction>(
+    'continue_watching_action',
+    values: ContinueWatchingAction.values,
+    defaultValue: ContinueWatchingAction.play,
+  );
+  static const episodeAction = EnumPref<EpisodeAction>(
+    'episode_action',
+    values: EpisodeAction.values,
+    defaultValue: EpisodeAction.play,
+  );
   static const mpvConfigText = _MpvConfigTextPref();
 
-  static final keyboardShortcuts = JsonPref<Map<String, String>>(
-    'keyboard_shortcuts',
-    defaultValue: _defaultKeyboardShortcuts(),
-    encode: json.encode,
-    decode: _decodeKeyboardShortcuts,
-  );
   static final keyboardHotkeys = JsonPref<Map<String, HotKey>>(
     'keyboard_hotkeys',
     defaultValue: _defaultKeyboardHotkeys(),
     encode: (v) => json.encode(v.map((k, hk) => MapEntry(k, SettingsService.serializeHotKey(hk)))),
     decode: _decodeKeyboardHotkeys,
   );
-  static final mediaVersionPreferences = JsonPref<Map<String, int>>(
+  static final mediaVersionPreferences = JsonPref<Map<String, MediaVersionPreference>>(
     'media_version_preferences',
+    defaultValue: const {},
+    encode: (v) => json.encode(v.map((k, pref) => MapEntry(k, pref.toJson()))),
+    // Legacy values were bare ints; MediaVersionPreference.fromJson accepts both.
+    decode: (raw) => (raw as Map<String, dynamic>).map((k, v) => MapEntry(k, MediaVersionPreference.fromJson(v))),
+  );
+
+  /// Local record of when items were last played on this device
+  /// (item/show globalKey → epoch ms). Written by LocalPlaybackHistory; used
+  /// to pick the last-played sibling in the Continue Watching dedup (#1492).
+  static final localLastPlayedAt = JsonPref<Map<String, int>>(
+    'local_last_played_at',
     defaultValue: const {},
     encode: json.encode,
     decode: (raw) => (raw as Map<String, dynamic>).map((k, v) => MapEntry(k, v as int)),
@@ -435,7 +529,13 @@ class SettingsService extends BaseSharedPreferencesService {
     decode: _decodeMpvPresets,
   );
 
-  static IntPref watchedThresholdPref(String serverId) => IntPref('watched_threshold_$serverId', defaultValue: 90);
+  static IntPref watchedThresholdPref(ServerId serverId) => IntPref('watched_threshold_$serverId', defaultValue: 90);
+
+  /// Library section the user last picked as a DVR recording target, keyed by
+  /// subscription type (movie/show) so the two don't clobber each other.
+  /// 0 = unset (only explicit picks are written; the server template default
+  /// keeps applying until the user chooses).
+  static IntPref dvrTargetSectionPref(ServerId serverId, int type) => IntPref('dvr_target_section_${type}_$serverId');
 
   static EnumPref<TrackerLibraryFilterMode> trackerFilterModePref(TrackerService s) => EnumPref(
     'tracker_library_filter_mode_${s.name}',
@@ -458,6 +558,15 @@ class SettingsService extends BaseSharedPreferencesService {
   /// Synchronous access to the singleton, or null if not yet initialized.
   static SettingsService? get instanceOrNull => _cachedInstance;
 
+  /// Synchronous access to the bootstrapped singleton.
+  static SettingsService get instance {
+    final instance = _cachedInstance;
+    if (instance == null) {
+      throw StateError('SettingsService has not been initialized. Call SettingsService.getInstance() first.');
+    }
+    return instance;
+  }
+
   /// Drop the cached singleton so the next [getInstance] call rebuilds against
   /// the current SharedPreferences state. Test-only — pair with
   /// [BaseSharedPreferencesService.resetForTesting].
@@ -466,7 +575,21 @@ class SettingsService extends BaseSharedPreferencesService {
     _cachedInstance = null;
   }
 
-  static Map<String, String> defaultKeyboardShortcuts() => _defaultKeyboardShortcuts();
+  /// Resolves a video mute toggle without replacing the saved volume with 0.
+  ///
+  /// `persistedVolume` is the non-zero value callers should keep in [volume],
+  /// while `playerVolume` is the value to apply to the active player.
+  ({double playerVolume, double persistedVolume}) resolveMuteToggle(double currentVolume) {
+    if (currentVolume.isFinite && currentVolume > 0) {
+      return (playerVolume: 0, persistedVolume: currentVolume);
+    }
+
+    final previousVolume = read(volume);
+    final candidate = previousVolume.isFinite && previousVolume > 0 ? previousVolume : volume.defaultValue;
+    final restoredVolume = candidate.clamp(0.0, read(maxVolume).toDouble()).toDouble();
+    return (playerVolume: restoredVolume, persistedVolume: restoredVolume);
+  }
+
   static Map<String, HotKey> defaultKeyboardHotkeys() => _defaultKeyboardHotkeys();
 
   /// Unknown libraries are allowed only when no filter is configured.
@@ -677,6 +800,8 @@ class SettingsService extends BaseSharedPreferencesService {
     preferredAudioCodec,
     viewMode,
     showHeroSection,
+    continueWatchingAction,
+    episodeAction,
     seekTimeSmall,
     seekTimeLarge,
     sleepTimerDuration,
@@ -695,6 +820,7 @@ class SettingsService extends BaseSharedPreferencesService {
     rememberTrackSelections,
     customDownloadPathType,
     downloadOnWifiOnly,
+    downloadIncludeSpecials,
     autoCheckUpdatesOnStartup,
     showPerformanceOverlay,
     autoHidePerformanceOverlay,
@@ -707,10 +833,12 @@ class SettingsService extends BaseSharedPreferencesService {
     matchContentFrameRate,
     tunneledPlayback,
     dvConversionMode,
+    musicVolume,
     defaultPlaybackSpeed,
     defaultBoxFitMode,
     autoPlayNextEpisode,
     useExoPlayer,
+    startupSection,
     alwaysKeepSidebarOpen,
     showUnwatchedCount,
     showEpisodeNumberOnCards,
@@ -721,15 +849,19 @@ class SettingsService extends BaseSharedPreferencesService {
     requireProfileSelectionOnOpen,
     useExternalPlayer,
     forceTvMode,
+    visualEffects,
     ambientLighting,
     audioPassthrough,
     audioNormalization,
+    audioDownmix,
+    audioDownmixNormalize,
+    downmixCenterBoost,
     themeMode,
-    keyboardShortcuts,
     keyboardHotkeys,
     libraryDensity,
     episodePosterMode,
     mediaVersionPreferences,
+    localLastPlayedAt,
     appLocale,
     customDownloadPath,
     videoPlayerNavigationEnabled,

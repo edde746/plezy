@@ -30,8 +30,15 @@ PlexMediaItem _$PlexMediaItemFromJson(Map<String, dynamic> json) =>
       grandparentTitle: json['grandparentTitle'] as String?,
       grandparentThumbPath: json['grandparentThumbPath'] as String?,
       grandparentArtPath: json['grandparentArtPath'] as String?,
+      grandparentBackdropPaths:
+          (json['grandparentBackdropPaths'] as List<dynamic>?)
+              ?.map((e) => e as String)
+              .toList(),
       thumbPath: json['thumbPath'] as String?,
       artPath: json['artPath'] as String?,
+      backdropPaths: (json['backdropPaths'] as List<dynamic>?)
+          ?.map((e) => e as String)
+          .toList(),
       clearLogoPath: json['clearLogoPath'] as String?,
       backgroundSquarePath: json['backgroundSquarePath'] as String?,
       durationMs: flexibleInt(json['durationMs']),
@@ -46,6 +53,7 @@ PlexMediaItem _$PlexMediaItemFromJson(Map<String, dynamic> json) =>
       rating: flexibleDouble(json['rating']),
       audienceRating: flexibleDouble(json['audienceRating']),
       userRating: flexibleDouble(json['userRating']),
+      isFavorite: json['isFavorite'] as bool?,
       ratingImage: json['ratingImage'] as String?,
       audienceRatingImage: json['audienceRatingImage'] as String?,
       genres: _mediaItemStringList(json['genres']),
@@ -71,6 +79,7 @@ PlexMediaItem _$PlexMediaItemFromJson(Map<String, dynamic> json) =>
       extraType: flexibleInt(json['extraType']),
       serverId: json['serverId'] as String?,
       serverName: json['serverName'] as String?,
+      backendFolderKey: json['backendFolderKey'] as String?,
       raw: _mediaItemRawFromJson(json['raw']),
     );
 
@@ -98,8 +107,10 @@ Map<String, dynamic> _$PlexMediaItemToJson(PlexMediaItem instance) =>
       'grandparentTitle': ?instance.grandparentTitle,
       'grandparentThumbPath': ?instance.grandparentThumbPath,
       'grandparentArtPath': ?instance.grandparentArtPath,
+      'grandparentBackdropPaths': ?instance.grandparentBackdropPaths,
       'thumbPath': ?instance.thumbPath,
       'artPath': ?instance.artPath,
+      'backdropPaths': ?instance.backdropPaths,
       'clearLogoPath': ?instance.clearLogoPath,
       'backgroundSquarePath': ?instance.backgroundSquarePath,
       'durationMs': ?instance.durationMs,
@@ -114,6 +125,7 @@ Map<String, dynamic> _$PlexMediaItemToJson(PlexMediaItem instance) =>
       'rating': ?instance.rating,
       'audienceRating': ?instance.audienceRating,
       'userRating': ?instance.userRating,
+      'isFavorite': ?instance.isFavorite,
       'ratingImage': ?instance.ratingImage,
       'audienceRatingImage': ?instance.audienceRatingImage,
       'genres': ?instance.genres,
@@ -139,6 +151,7 @@ Map<String, dynamic> _$PlexMediaItemToJson(PlexMediaItem instance) =>
       'extraType': ?instance.extraType,
       'serverId': ?instance.serverId,
       'serverName': ?instance.serverName,
+      'backendFolderKey': ?instance.backendFolderKey,
       'raw': ?instance.raw,
     };
 
@@ -165,8 +178,15 @@ JellyfinMediaItem _$JellyfinMediaItemFromJson(Map<String, dynamic> json) =>
       grandparentTitle: json['grandparentTitle'] as String?,
       grandparentThumbPath: json['grandparentThumbPath'] as String?,
       grandparentArtPath: json['grandparentArtPath'] as String?,
+      grandparentBackdropPaths:
+          (json['grandparentBackdropPaths'] as List<dynamic>?)
+              ?.map((e) => e as String)
+              .toList(),
       thumbPath: json['thumbPath'] as String?,
       artPath: json['artPath'] as String?,
+      backdropPaths: (json['backdropPaths'] as List<dynamic>?)
+          ?.map((e) => e as String)
+          .toList(),
       clearLogoPath: json['clearLogoPath'] as String?,
       backgroundSquarePath: json['backgroundSquarePath'] as String?,
       durationMs: flexibleInt(json['durationMs']),
@@ -180,6 +200,7 @@ JellyfinMediaItem _$JellyfinMediaItemFromJson(Map<String, dynamic> json) =>
       updatedAt: flexibleInt(json['updatedAt']),
       rating: flexibleDouble(json['rating']),
       userRating: flexibleDouble(json['userRating']),
+      isFavorite: json['isFavorite'] as bool?,
       genres: _mediaItemStringList(json['genres']),
       directors: _mediaItemStringList(json['directors']),
       writers: _mediaItemStringList(json['writers']),
@@ -197,6 +218,7 @@ JellyfinMediaItem _$JellyfinMediaItemFromJson(Map<String, dynamic> json) =>
       playlistItemId: json['playlistItemId'] as String?,
       serverId: json['serverId'] as String?,
       serverName: json['serverName'] as String?,
+      backendFolderKey: json['backendFolderKey'] as String?,
       raw: _mediaItemRawFromJson(json['raw']),
     );
 
@@ -223,8 +245,10 @@ Map<String, dynamic> _$JellyfinMediaItemToJson(JellyfinMediaItem instance) =>
       'grandparentTitle': ?instance.grandparentTitle,
       'grandparentThumbPath': ?instance.grandparentThumbPath,
       'grandparentArtPath': ?instance.grandparentArtPath,
+      'grandparentBackdropPaths': ?instance.grandparentBackdropPaths,
       'thumbPath': ?instance.thumbPath,
       'artPath': ?instance.artPath,
+      'backdropPaths': ?instance.backdropPaths,
       'clearLogoPath': ?instance.clearLogoPath,
       'backgroundSquarePath': ?instance.backgroundSquarePath,
       'durationMs': ?instance.durationMs,
@@ -238,6 +262,7 @@ Map<String, dynamic> _$JellyfinMediaItemToJson(JellyfinMediaItem instance) =>
       'updatedAt': ?instance.updatedAt,
       'rating': ?instance.rating,
       'userRating': ?instance.userRating,
+      'isFavorite': ?instance.isFavorite,
       'genres': ?instance.genres,
       'directors': ?instance.directors,
       'writers': ?instance.writers,
@@ -255,5 +280,6 @@ Map<String, dynamic> _$JellyfinMediaItemToJson(JellyfinMediaItem instance) =>
       'playlistItemId': ?instance.playlistItemId,
       'serverId': ?instance.serverId,
       'serverName': ?instance.serverName,
+      'backendFolderKey': ?instance.backendFolderKey,
       'raw': ?instance.raw,
     };

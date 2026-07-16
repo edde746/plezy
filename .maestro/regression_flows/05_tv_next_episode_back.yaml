@@ -1,0 +1,43 @@
+appId: com.edde746.plezy
+name: TV Back dismisses Next Episode without leaving playback
+tags:
+  - e2e
+  - regression
+  - tv
+  - playback
+---
+- runFlow: ../subflows/onboard_jellyfin_tv.yaml
+- tapOn:
+    point: "6%,22%"
+- tapOn: "Search"
+- extendedWaitUntil:
+    visible: "Search movies, shows, music..."
+    timeout: 10000
+- tapOn: "Search movies, shows, music..."
+- inputText: "Maestro Show"
+- tapOn:
+    point: "87%,90%"
+- extendedWaitUntil:
+    visible: "(?s).*Maestro Show$"
+    timeout: 15000
+- tapOn:
+    point: "50%,24%"
+- waitForAnimationToEnd:
+    timeout: 5000
+- tapOn:
+    point: "15%,76%"
+- extendedWaitUntil:
+    visible: "Pause"
+    timeout: 30000
+- pressKey: "Remote Media Fast Forward"
+- pressKey: "Remote Media Fast Forward"
+- extendedWaitUntil:
+    visible: "Next Episode"
+    timeout: 20000
+- pressKey: "back"
+- assertNotVisible: "Next Episode"
+- assertNotVisible: "Overview"
+- pressKey: "Remote Dpad Up"
+- extendedWaitUntil:
+    visible: "(?s).*Maestro Episode 1.*"
+    timeout: 10000

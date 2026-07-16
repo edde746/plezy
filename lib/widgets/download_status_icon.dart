@@ -73,7 +73,7 @@ class DownloadStatusIcon extends StatelessWidget {
           width: size,
           height: size,
           child: Stack(
-            alignment: Alignment.center,
+            alignment: .center,
             children: [
               CircularProgressIndicator(
                 value: 1.0,

@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import '../../utils/app_logger.dart';
+import '../../utils/udp_broadcast_sockets.dart';
 import 'remote_auth_context.dart';
 import 'remote_auth_service.dart';
 
@@ -40,13 +41,14 @@ class LanDiscoveryService {
   static const int _beaconVersion = 1;
 
   // Broadcaster state (host)
-  RawDatagramSocket? _broadcastSocket;
+  UdpBroadcastSocketSet? _broadcastSockets;
   Timer? _broadcastTimer;
 
   // Listener state (client)
   RawDatagramSocket? _listenSocket;
   StreamSubscription<RawSocketEvent>? _listenSubscription;
   Timer? _staleCleanupTimer;
+  int _listenGeneration = 0;
   final Map<String, DiscoveredHost> _discoveredHosts = {};
   final _hostsController = StreamController<List<DiscoveredHost>>.broadcast();
 
@@ -57,34 +59,6 @@ class LanDiscoveryService {
   bool get isListening => _listenSocket != null;
 
   // ── Host: Broadcasting ──
-
-  Future<void> startBroadcasting({
-    required List<int> discoveryKey,
-    required String deviceName,
-    required String platform,
-    required String clientId,
-    required int wsPort,
-    required List<String> ips,
-  }) async {
-    return startBroadcastingForContexts(
-      contexts: [
-        RemoteAuthContext(
-          id: clientId,
-          backend: 'legacy',
-          connectionId: clientId,
-          homeSecret: const [],
-          discoveryKey: discoveryKey,
-          clientIdentifier: clientId,
-          userUuid: '',
-          allowedUserUuids: const [],
-        ),
-      ],
-      deviceName: deviceName,
-      platform: platform,
-      wsPort: wsPort,
-      ips: ips,
-    );
-  }
 
   Future<void> startBroadcastingForContexts({
     required List<RemoteAuthContext> contexts,
@@ -97,8 +71,8 @@ class LanDiscoveryService {
     if (contexts.isEmpty) return;
 
     try {
-      _broadcastSocket = await RawDatagramSocket.bind(InternetAddress.anyIPv4, 0);
-      _broadcastSocket!.broadcastEnabled = true;
+      _broadcastSockets = await UdpBroadcastSockets.bind();
+      if (_broadcastSockets!.isEmpty) return;
 
       appLogger.d('LanDiscovery: Broadcasting started on port $discoveryPort');
 
@@ -118,7 +92,8 @@ class LanDiscoveryService {
   }
 
   void _sendBeacon(RemoteAuthContext context, String deviceName, String platform, int wsPort, List<String> ips) {
-    if (_broadcastSocket == null) return;
+    final broadcastSockets = _broadcastSockets;
+    if (broadcastSockets == null || broadcastSockets.isEmpty) return;
 
     try {
       final auth = RemoteAuthService.instance;
@@ -150,7 +125,7 @@ class LanDiscoveryService {
       });
 
       final data = utf8.encode(packet);
-      _broadcastSocket!.send(data, InternetAddress('255.255.255.255'), discoveryPort);
+      broadcastSockets.send(data, UdpBroadcastSockets.limitedBroadcastAddress, discoveryPort);
     } catch (e) {
       appLogger.e('LanDiscovery: Failed to send beacon', error: e);
     }
@@ -159,36 +134,19 @@ class LanDiscoveryService {
   Future<void> stopBroadcasting() async {
     _broadcastTimer?.cancel();
     _broadcastTimer = null;
-    _broadcastSocket?.close();
-    _broadcastSocket = null;
+    await _broadcastSockets?.close();
+    _broadcastSockets = null;
     appLogger.d('LanDiscovery: Broadcasting stopped');
   }
 
   // ── Client: Listening ──
 
-  /// Start listening for host beacons.
-  /// Returns a stream of currently-visible hosts, updated on each beacon or stale cleanup.
-  Stream<List<DiscoveredHost>> startListening({required List<int> discoveryKey}) {
-    return startListeningForContexts([
-      RemoteAuthContext(
-        id: '',
-        backend: 'legacy',
-        connectionId: '',
-        homeSecret: const [],
-        discoveryKey: discoveryKey,
-        clientIdentifier: '',
-        userUuid: '',
-        allowedUserUuids: const [],
-      ),
-    ]);
-  }
-
   Stream<List<DiscoveredHost>> startListeningForContexts(List<RemoteAuthContext> contexts) {
     _stopListeningInternal();
     _discoveredHosts.clear();
+    final generation = _listenGeneration;
 
-    _bindListener(contexts);
-
+    unawaited(_bindListener(contexts, generation));
     // Periodically remove stale hosts
     _staleCleanupTimer = Timer.periodic(const Duration(seconds: 2), (_) {
       final now = DateTime.now();
@@ -209,27 +167,29 @@ class LanDiscoveryService {
     return _hostsController.stream;
   }
 
-  Future<void> _bindListener(List<RemoteAuthContext> contexts) async {
+  Future<void> _bindListener(List<RemoteAuthContext> contexts, int generation) async {
     try {
-      _listenSocket = await RawDatagramSocket.bind(
+      final socket = await RawDatagramSocket.bind(
         InternetAddress.anyIPv4,
         discoveryPort,
         reuseAddress: true,
         reusePort: true,
       );
-
+      if (generation != _listenGeneration) {
+        socket.close();
+        return;
+      }
+      _listenSocket = socket;
       appLogger.d('LanDiscovery: Listening on port $discoveryPort');
 
-      _listenSubscription = _listenSocket!.listen((RawSocketEvent event) {
-        if (event == RawSocketEvent.read) {
-          final datagram = _listenSocket?.receive();
-          if (datagram != null) {
-            _handleDatagram(datagram, contexts);
-          }
-        }
-      });
+      _listenSubscription = socket.listenDatagrams(
+        (datagram) => _handleDatagram(datagram, contexts),
+        debugLabel: 'LanDiscovery listener',
+      );
     } catch (e) {
-      appLogger.e('LanDiscovery: Failed to bind listener', error: e);
+      if (generation == _listenGeneration) {
+        appLogger.e('LanDiscovery: Failed to bind listener', error: e);
+      }
     }
   }
 
@@ -321,6 +281,7 @@ class LanDiscoveryService {
   }
 
   void _stopListeningInternal() {
+    ++_listenGeneration;
     _staleCleanupTimer?.cancel();
     _staleCleanupTimer = null;
     _listenSubscription?.cancel();

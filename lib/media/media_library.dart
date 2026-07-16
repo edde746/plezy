@@ -1,4 +1,5 @@
 import '../utils/global_key_utils.dart';
+import 'ids.dart';
 import 'media_backend.dart';
 import 'media_kind.dart';
 
@@ -45,33 +46,5 @@ class MediaLibrary {
     this.serverName,
   });
 
-  String get globalKey => serverId != null ? buildGlobalKey(serverId!, id) : id;
-
-  MediaLibrary copyWith({
-    String? id,
-    MediaBackend? backend,
-    String? title,
-    MediaKind? kind,
-    String? language,
-    int? updatedAt,
-    int? createdAt,
-    bool? hidden,
-    bool? isShared,
-    String? serverId,
-    String? serverName,
-  }) {
-    return MediaLibrary(
-      id: id ?? this.id,
-      backend: backend ?? this.backend,
-      title: title ?? this.title,
-      kind: kind ?? this.kind,
-      language: language ?? this.language,
-      updatedAt: updatedAt ?? this.updatedAt,
-      createdAt: createdAt ?? this.createdAt,
-      hidden: hidden ?? this.hidden,
-      isShared: isShared ?? this.isShared,
-      serverId: serverId ?? this.serverId,
-      serverName: serverName ?? this.serverName,
-    );
-  }
+  String get globalKey => serverId != null ? buildGlobalKey(ServerId(serverId!), id) : id;
 }

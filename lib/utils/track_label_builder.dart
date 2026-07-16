@@ -1,23 +1,59 @@
 import 'codec_utils.dart';
+import 'language_codes.dart';
 
-/// Builds a track label from parts with the standard `' · '` joiner pattern.
+/// Two-part track label: [primary] carries the human-readable name (language
+/// first when known), [secondary] the de-emphasized technical detail.
 ///
-/// Shared by both Plex track models and MPV track label utilities.
-/// If [title] is non-empty it is added first, then [language], then [extraParts].
-/// Falls back to `'$fallbackPrefix ${index + 1}'` when no parts are available.
-String buildTrackLabel({
-  String? title,
-  String? language,
-  List<String> extraParts = const [],
-  required int index,
-  String fallbackPrefix = 'Track',
-}) {
-  final parts = <String>[];
-  if (title != null && title.isNotEmpty) parts.add(title);
-  if (language != null && language.isNotEmpty) parts.add(language);
-  parts.addAll(extraParts);
-  return parts.isEmpty ? '$fallbackPrefix ${index + 1}' : parts.join(' · ');
+/// Sheet rows render the parts on two lines; single-line contexts (track
+/// cycling toasts) use [joined].
+class TrackLabel {
+  final String primary;
+
+  /// Technical detail line. Null when there is none — never an empty string.
+  final String? secondary;
+
+  const TrackLabel(this.primary, [this.secondary]);
+
+  String get joined => secondary == null ? primary : '$primary · $secondary';
+
+  @override
+  bool operator ==(Object other) => other is TrackLabel && other.primary == primary && other.secondary == secondary;
+
+  @override
+  int get hashCode => Object.hash(primary, secondary);
+
+  @override
+  String toString() => 'TrackLabel($primary, $secondary)';
 }
+
+/// Resolves the display name for a track's language.
+///
+/// A mappable ISO code wins ([languageCode] is the reliable field on server
+/// streams, [language] carries the container code on mpv tracks). When neither
+/// maps, a server-provided display name ("Filipino") beats an unmappable code,
+/// and bare codes keep the legacy uppercase rendering ("und" → "UND").
+String? resolveTrackLanguageDisplay({String? language, String? languageCode}) {
+  final code = cleanTrackMetadataValue(languageCode);
+  final lang = cleanTrackMetadataValue(language);
+
+  final display = _displayNameIfMapped(code) ?? _displayNameIfMapped(lang);
+  if (display != null) return display;
+
+  final fallback = lang ?? code;
+  if (fallback == null) return null;
+  return _looksLikeLanguageCode(fallback) ? fallback.toUpperCase() : fallback;
+}
+
+String? _displayNameIfMapped(String? value) {
+  if (value == null) return null;
+  final base = value.split(RegExp('[-_]')).first;
+  if (LanguageCodes.getLanguageName(base) == null) return null;
+  return LanguageCodes.getDisplayName(value.replaceAll('_', '-'));
+}
+
+final _languageCodePattern = RegExp(r'^[A-Za-z]{2,3}([-_][A-Za-z0-9]{2,8})?$');
+
+bool _looksLikeLanguageCode(String value) => _languageCodePattern.hasMatch(value);
 
 String? cleanTrackMetadataValue(String? value) {
   if (value == null) return null;
@@ -82,43 +118,100 @@ String _metadataToken(String value) => value.trim().toUpperCase().replaceAll(Reg
 class TrackLabelBuilder {
   TrackLabelBuilder._();
 
-  static String buildAudioLabel({
+  static TrackLabel audioLabel({
     String? title,
     String? language,
+    String? languageCode,
     String? codec,
-    int? channelsCount,
+    int? channels,
+    String? displayTitle,
     required int index,
   }) {
-    final extraParts = <String>[];
-    if (codec != null && codec.isNotEmpty) {
-      extraParts.add(CodecUtils.formatAudioCodec(codec));
-    }
-    if (channelsCount != null) {
-      extraParts.add('${channelsCount}ch');
-    }
-    return buildTrackLabel(
-      title: title,
-      language: language?.toUpperCase(),
-      extraParts: extraParts,
-      index: index,
+    final tech = <String>[];
+    if (codec != null && codec.isNotEmpty) tech.add(CodecUtils.formatAudioCodec(codec));
+    final channelsLabel = CodecUtils.formatAudioChannels(channels);
+    if (channelsLabel != null) tech.add(channelsLabel);
+
+    return _compose(
+      languageDisplay: resolveTrackLanguageDisplay(language: language, languageCode: languageCode),
+      title: cleanTrackMetadataValue(title),
+      displayTitle: cleanTrackMetadataValue(displayTitle),
+      rawLanguageValues: [language, languageCode],
+      techParts: tech,
       fallbackPrefix: 'Audio Track',
+      index: index,
     );
   }
 
-  static String buildSubtitleLabel({
+  static TrackLabel subtitleLabel({
     String? title,
     String? language,
+    String? languageCode,
     String? codec,
     bool forced = false,
+    String? displayTitle,
     required int index,
   }) {
     final cleanedTitle = cleanSubtitleTitle(title, codec: codec);
-    final cleanedLanguage = cleanTrackMetadataValue(language)?.toUpperCase();
-    final extraParts = <String>[];
-    if (forced && !_metadataToken(cleanedTitle ?? '').split('_').contains('FORCED')) extraParts.add('Forced');
-    if (codec != null && codec.isNotEmpty) {
-      extraParts.add(CodecUtils.formatSubtitleCodec(codec));
+    return _compose(
+      languageDisplay: resolveTrackLanguageDisplay(language: language, languageCode: languageCode),
+      title: cleanedTitle,
+      displayTitle: cleanSubtitleTitle(displayTitle, codec: codec),
+      rawLanguageValues: [language, languageCode],
+      techParts: [if (codec != null && codec.isNotEmpty) CodecUtils.formatSubtitleCodec(codec)],
+      fallbackPrefix: 'Track',
+      index: index,
+      forced: forced || _saysForced(cleanedTitle),
+    );
+  }
+
+  /// Primary ladder: language → title → displayTitle → `'<prefix> N'`. The
+  /// title joins the secondary line only when the language took the primary
+  /// slot and the title says more than the language/forced flag already do.
+  static TrackLabel _compose({
+    required String? languageDisplay,
+    required String? title,
+    required String? displayTitle,
+    required List<String?> rawLanguageValues,
+    required List<String> techParts,
+    required String fallbackPrefix,
+    required int index,
+    bool forced = false,
+  }) {
+    String primary;
+    String? secondaryTitle;
+    if (languageDisplay != null) {
+      primary = languageDisplay;
+      if (title != null &&
+          _metadataToken(title) != 'FORCED' &&
+          !_restatesLanguage(title, languageDisplay, rawLanguageValues)) {
+        secondaryTitle = title;
+      }
+    } else if (title != null) {
+      primary = title;
+    } else if (displayTitle != null) {
+      primary = displayTitle;
+    } else {
+      primary = '$fallbackPrefix ${index + 1}';
     }
-    return buildTrackLabel(title: cleanedTitle, language: cleanedLanguage, extraParts: extraParts, index: index);
+
+    if (forced && !_saysForced(primary)) {
+      primary = '$primary (Forced)';
+    }
+
+    final secondaryParts = [?secondaryTitle, ...techParts];
+    return TrackLabel(primary, secondaryParts.isEmpty ? null : secondaryParts.join(' · '));
+  }
+
+  static bool _saysForced(String? value) => _metadataToken(value ?? '').split('_').contains('FORCED');
+
+  static bool _restatesLanguage(String title, String languageDisplay, List<String?> rawLanguageValues) {
+    final normalized = title.trim().toLowerCase();
+    if (normalized == languageDisplay.trim().toLowerCase()) return true;
+    for (final raw in rawLanguageValues) {
+      final cleaned = cleanTrackMetadataValue(raw);
+      if (cleaned != null && normalized == cleaned.toLowerCase()) return true;
+    }
+    return false;
   }
 }

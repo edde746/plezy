@@ -1,5 +1,10 @@
 import 'dart:async';
+import '../media/ids.dart';
+import '../navigation/main_screen_scope.dart';
 import 'dart:io' show Platform, exit;
+
+export '../navigation/main_screen_scope.dart'
+    show MainScreenFocusScope, MainScreenScopeAspect, SideNavigationBleedBuilder;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart'
@@ -13,28 +18,31 @@ import '../services/tvos_system_navigation_service.dart';
 import '../services/update_service.dart';
 import '../utils/app_logger.dart';
 import '../widgets/auth_error_banner.dart';
+import '../widgets/app_icon.dart';
 import '../utils/provider_extensions.dart';
 import '../utils/platform_detector.dart';
 import '../utils/snackbar_helper.dart';
 import '../utils/update_dialog.dart';
 import '../utils/video_player_navigation.dart';
-import '../main.dart';
 import '../mixins/mounted_set_state_mixin.dart';
 import '../mixins/refreshable.dart';
 import '../widgets/overlay_sheet.dart';
 import '../mixins/tab_visibility_aware.dart';
 import '../navigation/navigation_tabs.dart';
 import '../connection/connection.dart';
-import '../connection/connection_registry.dart';
+import '../navigation/profile_navigation_scope.dart';
 import '../profiles/active_profile_binder.dart';
+import '../connection/connection_registry.dart';
 import '../profiles/active_profile_provider.dart';
 import '../profiles/plex_home_service.dart';
+import '../providers/catalog_sources_provider.dart';
 import '../providers/download_provider.dart';
 import '../providers/multi_server_provider.dart';
 import '../providers/hidden_libraries_provider.dart';
 import '../providers/libraries_provider.dart';
 import '../providers/playback_state_provider.dart';
 import '../widgets/settings_builder.dart';
+import '../widgets/tv_virtual_keyboard.dart';
 import '../services/api_cache.dart';
 import '../services/multi_server_manager.dart';
 import '../services/offline_watch_sync_service.dart';
@@ -45,10 +53,12 @@ import '../services/companion_remote/companion_remote_receiver.dart';
 import '../services/fullscreen_state_manager.dart';
 import '../providers/companion_remote_provider.dart';
 import '../utils/desktop_window_padding.dart';
+import '../widgets/music/mini_player.dart';
 import '../widgets/side_navigation_rail.dart';
 import '../focus/dpad_navigator.dart';
 import '../focus/key_event_utils.dart';
 import 'discover_screen.dart';
+import 'explore_screen.dart';
 import 'libraries/library_quick_picker_sheet.dart';
 import 'libraries/libraries_screen.dart';
 import 'livetv/live_tv_screen.dart';
@@ -57,97 +67,24 @@ import 'downloads/downloads_screen.dart';
 import 'watchlist/watchlist_screen.dart';
 import 'settings/settings_screen.dart';
 import 'profile/profile_switch_screen.dart';
-import '../services/watch_next_service.dart';
+import 'profile/profile_teardown.dart';
+import '../services/system_shelf_service.dart';
 import '../watch_together/watch_together.dart';
 
 /// Provides access to the main screen's focus control.
-class MainScreenFocusScope extends InheritedWidget {
-  final VoidCallback focusSidebar;
-  final VoidCallback focusContent;
-  final bool isSidebarFocused;
-  final double sideNavigationWidth;
-  final double? reservedSideNavigationWidth;
-  final double? foregroundLeft;
-  final double? foregroundWidth;
-  final double? viewportWidth;
-  final void Function(String libraryGlobalKey)? selectLibrary;
+// MainScreenFocusScope and SideNavigationBleedBuilder live in
+// navigation/main_screen_scope.dart (re-exported above) so widgets like the
+// browse rail can import the scope without an import cycle through this file.
 
-  const MainScreenFocusScope({
-    super.key,
-    required this.focusSidebar,
-    required this.focusContent,
-    required this.isSidebarFocused,
-    required this.sideNavigationWidth,
-    this.reservedSideNavigationWidth,
-    this.foregroundLeft,
-    this.foregroundWidth,
-    this.viewportWidth,
-    this.selectLibrary,
-    required super.child,
-  });
-
-  static MainScreenFocusScope? of(BuildContext context, {bool listen = true}) {
-    if (listen) return context.dependOnInheritedWidgetOfExactType<MainScreenFocusScope>();
-    return context.getElementForInheritedWidgetOfExactType<MainScreenFocusScope>()?.widget as MainScreenFocusScope?;
-  }
-
-  static double sideNavigationBleedOf(BuildContext context, {required bool alwaysKeepSidebarOpen}) {
-    final width = of(context)?.sideNavigationWidth;
-    if (width != null) return width;
-    return 0.0;
-  }
-
-  static double foregroundWidthOf(BuildContext context) {
-    final width = of(context)?.foregroundWidth;
-    if (width != null && width > 0) return width;
-    return MediaQuery.sizeOf(context).width;
-  }
-
-  static double foregroundLeftOf(BuildContext context) {
-    final left = of(context)?.foregroundLeft;
-    if (left != null) return left;
-    return 0.0;
-  }
-
-  static Size foregroundSizeOf(BuildContext context) {
-    final size = MediaQuery.sizeOf(context);
-    return Size(foregroundWidthOf(context), size.height);
-  }
-
-  static double fullBleedWidthOf(BuildContext context) {
-    final width = of(context)?.viewportWidth;
-    if (width != null && width > 0) return width;
-    return MediaQuery.sizeOf(context).width;
-  }
-
-  @override
-  bool updateShouldNotify(MainScreenFocusScope oldWidget) {
-    return isSidebarFocused != oldWidget.isSidebarFocused ||
-        sideNavigationWidth != oldWidget.sideNavigationWidth ||
-        reservedSideNavigationWidth != oldWidget.reservedSideNavigationWidth ||
-        foregroundLeft != oldWidget.foregroundLeft ||
-        foregroundWidth != oldWidget.foregroundWidth ||
-        viewportWidth != oldWidget.viewportWidth;
-  }
-}
-
-class SideNavigationBleedBuilder extends StatelessWidget {
-  final double targetBleed;
-  final Widget? child;
-  final Widget Function(BuildContext context, double bleed, Widget? child) builder;
-
-  const SideNavigationBleedBuilder({super.key, required this.targetBleed, this.child, required this.builder});
-
-  @override
-  Widget build(BuildContext context) {
-    return TweenAnimationBuilder<double>(
-      tween: Tween(end: targetBleed),
-      duration: const Duration(milliseconds: 200),
-      curve: Curves.easeOutCubic,
-      builder: builder,
-      child: child,
-    );
-  }
+@visibleForTesting
+bool shouldHandleMacOsRootEscape({
+  required bool isMacOS,
+  required bool isPhysicalKeyboardEvent,
+  required LogicalKeyboardKey logicalKey,
+  required bool isCurrentRoute,
+  required bool isHomeTab,
+}) {
+  return isMacOS && isPhysicalKeyboardEvent && logicalKey == LogicalKeyboardKey.escape && isCurrentRoute && isHomeTab;
 }
 
 @visibleForTesting
@@ -182,6 +119,20 @@ bool shouldRenderMainScreenOffline({
 }
 
 @visibleForTesting
+List<NavigationTab> mainScreenBottomNavigationTabs({
+  required List<NavigationTab> visibleTabs,
+  required bool isMobile,
+  required bool isOffline,
+  required NavigationTabId currentTab,
+}) {
+  if (!isMobile) return visibleTabs;
+  return visibleTabs.where((tab) {
+    if (tab.id != NavigationTabId.settings) return true;
+    return isOffline || currentTab == NavigationTabId.settings;
+  }).toList();
+}
+
+@visibleForTesting
 bool shouldPassTvosMenuToSystem({
   required bool isAppleTV,
   required bool isShowingProfileSelection,
@@ -198,6 +149,30 @@ bool shouldPassTvosMenuToSystem({
       isRouteCurrent &&
       hasVisibleTabs &&
       isCurrentTabRoot;
+}
+
+@visibleForTesting
+enum ProfileInvalidationAction { none, invalidateNow }
+
+@visibleForTesting
+ProfileInvalidationAction profileInvalidationAction({
+  required String? previousProfileId,
+  required String? currentProfileId,
+  required bool wasBindingPreviously,
+  required bool isBindingNow,
+}) {
+  // An active-id change remounts the whole session subtree
+  // ([ProfileSessionScreen] keys on the id), recreating this screen and
+  // every session-scoped provider — nothing to invalidate from here. The
+  // app-global pieces (ApiCache volatile rows) are cleared at that remount
+  // seam, where the unmount can't outrun the work.
+  if (currentProfileId != previousProfileId) {
+    return ProfileInvalidationAction.none;
+  }
+  if (wasBindingPreviously && !isBindingNow) {
+    return ProfileInvalidationAction.invalidateNow;
+  }
+  return ProfileInvalidationAction.none;
 }
 
 class MainScreen extends StatefulWidget {
@@ -233,12 +208,20 @@ class _MainScreenState extends State<MainScreen>
   /// Last selected online tab (restored when coming back online after an offline fallback)
   NavigationTabId? _lastOnlineTabId;
 
+  /// A preferred startup section (e.g. Live TV) that wasn't visible yet at cold
+  /// start because servers bind asynchronously. Applied once it becomes
+  /// available (see [_handleLiveTvChanged]); cleared on any explicit selection.
+  NavigationTabId? _pendingStartupTab;
+
   /// Whether we auto-switched to Downloads because the previous tab was unavailable offline
   bool _autoSwitchedToDownloads = false;
 
   OfflineModeProvider? _offlineModeProvider;
   MultiServerProvider? _multiServerProvider;
+  CatalogSourcesProvider? _catalogSourcesProvider;
+  RouteObserver<PageRoute<dynamic>>? _profileRouteObserver;
   bool _lastHasLiveTv = false;
+  bool _lastHasExplore = false;
 
   /// Whether a Plex.tv account is connected. Gates the Watchlist tab. Tracked
   /// via [_connectionsSub] on the ConnectionRegistry.
@@ -258,6 +241,7 @@ class _MainScreenState extends State<MainScreen>
 
   late List<Widget> _screens;
   final GlobalKey<State<DiscoverScreen>> _discoverKey = GlobalKey();
+  final GlobalKey<State<ExploreScreen>> _exploreKey = GlobalKey();
   final GlobalKey<State<LibrariesScreen>> _librariesKey = GlobalKey();
   final GlobalKey<State<LiveTvScreen>> _liveTvKey = GlobalKey();
   final GlobalKey<State<SearchScreen>> _searchKey = GlobalKey();
@@ -265,6 +249,10 @@ class _MainScreenState extends State<MainScreen>
   final GlobalKey<State<WatchlistScreen>> _watchlistKey = GlobalKey();
   final GlobalKey<State<SettingsScreen>> _settingsKey = GlobalKey();
   final GlobalKey<SideNavigationRailState> _sideNavKey = GlobalKey();
+
+  /// Measures the mobile bottom navigation area for the music mini-player.
+  final GlobalKey _bottomBarKey = GlobalKey();
+  MiniPlayerInsetController? _miniPlayerInsets;
 
   // Focus management for sidebar/content switching
   final FocusScopeNode _sidebarFocusScope = FocusScopeNode(debugLabel: 'Sidebar');
@@ -286,6 +274,7 @@ class _MainScreenState extends State<MainScreen>
   // we only invalidate on id change and the libraries sidebar keeps
   // stale entries until the user switches profiles.
   bool _wasBindingPrev = false;
+  bool _hadProfiles = false;
 
   /// Subscription to MultiServerManager status changes. Used to resume any
   /// queued downloads as soon as a Plex client comes online for the first
@@ -321,6 +310,7 @@ class _MainScreenState extends State<MainScreen>
     _offlineUntilConnected = widget.isOfflineMode;
 
     WidgetsBinding.instance.addObserver(this);
+    _contentFocusScope.addListener(_syncSidebarFocusWithContent);
 
     if (PlatformDetector.isDesktopOS()) {
       windowManager.addListener(this);
@@ -334,15 +324,37 @@ class _MainScreenState extends State<MainScreen>
     } catch (_) {
       _lastHasLiveTv = false;
     }
+    try {
+      _lastHasExplore = context.read<CatalogSourcesProvider>().hasAnySource;
+    } catch (_) {
+      _lastHasExplore = false;
+    }
     _currentTab = _defaultTabForMode(_isOffline);
     _lastOnlineTabId = _isOffline ? null : NavigationTabId.discover;
     _autoSwitchedToDownloads = _isOffline && _currentTab == NavigationTabId.downloads;
+    // If the preferred startup section isn't visible yet (e.g. Live TV before
+    // servers finish binding), remember it and switch once it becomes available.
+    final preferredStartup = SettingsService.instanceOrNull?.read(SettingsService.startupSection);
+    _pendingStartupTab = (!_isOffline && preferredStartup != null && preferredStartup != _currentTab)
+        ? preferredStartup
+        : null;
     _screens = _buildScreens(_isOffline);
+
+    // Warm the TV keyboard's text-layout caches off the first real open
+    // (measured ~315ms first-open frame on low-end boxes, mostly cold font
+    // shaping). Delayed past the startup burst; no-op off TV.
+    if (PlatformDetector.isTV()) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        Future.delayed(const Duration(seconds: 3), () {
+          if (mounted) warmUpTvVirtualKeyboardText(context);
+        });
+      });
+    }
 
     // Set up Watch Together callbacks immediately (must be synchronous to catch early messages)
     if (!_isOffline) {
       _setupWatchTogetherCallback();
-      _setupWatchNextDeepLink();
+      _setupSystemShelfDeepLink();
     }
 
     // Wire profile binder + tracker bootstrap (skip in offline mode)
@@ -510,7 +522,7 @@ class _MainScreenState extends State<MainScreen>
   void _resumeQueuedDownloadsIfPossible(MultiServerProvider mp) {
     if (_downloadResumeFired || !mounted) return;
     for (final serverId in mp.onlineServerIds) {
-      final onlineClient = mp.getClientForServer(serverId);
+      final onlineClient = mp.getClientForServer(ServerId(serverId));
       if (onlineClient == null) continue;
       _downloadResumeFired = true;
       unawaited(
@@ -528,36 +540,32 @@ class _MainScreenState extends State<MainScreen>
     if (activeProfile == null) return;
     final id = activeProfile.activeId;
     final isBindingNow = activeProfile.isBinding;
+    final action = profileInvalidationAction(
+      previousProfileId: _lastSeenProfileId,
+      currentProfileId: id,
+      wasBindingPreviously: _wasBindingPrev,
+      isBindingNow: isBindingNow,
+    );
+    _lastSeenProfileId = id;
+    _wasBindingPrev = isBindingNow;
 
-    if (id != _lastSeenProfileId) {
-      _lastSeenProfileId = id;
-      _wasBindingPrev = isBindingNow;
-      // We're called inside the synchronous notify cascade *before* the
-      // binder's listener has fired (registration order). At this exact
-      // instant `_isBinding` is still false, so calling awaitBindingSettle
-      // here would resolve immediately. Hop to a microtask so the binder's
-      // listener gets to flip the flag first, then wait properly.
-      unawaited(
-        Future.microtask(() async {
-          if (!mounted) return;
-          await activeProfile.awaitBindingSettle();
-          if (!mounted) return;
-          await _invalidateAllScreens();
-        }),
-      );
-      return;
+    // Re-arm the initial-profile prompt when profiles arrive late (e.g. a
+    // slow home-user fetch landing after the empty first snapshot) while
+    // nothing is active — otherwise the one-shot post-frame prompt has
+    // already passed and the user is stuck in a session with no picker.
+    final hasProfilesNow = activeProfile.profiles.isNotEmpty;
+    if (!_hadProfiles && hasProfilesNow && id == null && !_isShowingProfileSelection) {
+      unawaited(_promptForInitialProfileSelection());
     }
+    _hadProfiles = hasProfilesNow;
 
     // Same active id, but a rebind cycle for that profile just settled
     // (true → false transition). Fires after borrow / connection-removal
     // flows trigger ActiveProfileBinder.rebindIfActive, so the libraries
     // sidebar reflects the new server set without an app restart.
-    if (_wasBindingPrev && !isBindingNow) {
-      _wasBindingPrev = isBindingNow;
+    if (action == ProfileInvalidationAction.invalidateNow) {
       unawaited(_invalidateAllScreens());
-      return;
     }
-    _wasBindingPrev = isBindingNow;
   }
 
   Future<void> _promptForInitialProfileSelection() async {
@@ -565,6 +573,7 @@ class _MainScreenState extends State<MainScreen>
     if (widget.initialPromptHandled) return;
 
     final activeProfile = context.read<ActiveProfileProvider>();
+    final connections = context.read<ConnectionRegistry>();
     // The provider's initialize() is fire-and-forget from MultiProvider —
     // wait for it to settle so `active` and `profiles` reflect storage
     // before we decide whether to prompt.
@@ -573,6 +582,20 @@ class _MainScreenState extends State<MainScreen>
 
     final settingsService = await SettingsService.getInstance();
     if (!mounted) return;
+
+    // Connections but ZERO resolvable profiles (e.g. the home-user fetch
+    // failed at sign-in): a session with nothing to select and no picker is
+    // a dead end. Mirror the boot guard — prune orphans and route to auth
+    // when nothing selectable remains.
+    if (activeProfile.active == null && activeProfile.profiles.isEmpty) {
+      // Offline, "unresolvable" may just be an unreachable plex.tv — don't
+      // kick the user to auth over it.
+      if (!widget.isOfflineMode && (await connections.list()).isNotEmpty && mounted) {
+        appLogger.w('MainScreen: connections exist but no profiles resolved — settling session');
+        await settleSessionAfterRemoval(SessionTeardownScope.of(context));
+      }
+      return;
+    }
 
     // Always prompt when there's no active profile but profiles exist
     // (fresh sign-in with multiple Plex Home users): otherwise the binder
@@ -588,6 +611,7 @@ class _MainScreenState extends State<MainScreen>
     _setTvosMenuPassthrough(false);
     await Navigator.of(
       context,
+      rootNavigator: true,
     ).push(MaterialPageRoute(builder: (context) => const ProfileSwitchScreen(requireSelection: true)));
     if (!mounted) return;
     _isShowingProfileSelection = false;
@@ -629,15 +653,16 @@ class _MainScreenState extends State<MainScreen>
   void _setupWatchTogetherCallback() {
     try {
       final watchTogether = context.read<WatchTogetherProvider>();
-      watchTogether.onMediaSwitched = (ratingKey, serverId, mediaTitle) async {
+      watchTogether.onMediaSwitched = (ratingKey, serverId, mediaTitle) {
         appLogger.d('WatchTogether: Media switch received - navigating to $mediaTitle');
-        await _navigateToWatchTogetherMedia(ratingKey, serverId);
+        return _navigateToWatchTogetherMedia(ratingKey, serverId);
       };
       watchTogether.onHostExitedPlayer = () {
         appLogger.d('WatchTogether: Host exited player - exiting player for guest');
-        // Use rootNavigator to ensure we pop the video player even if nested
+        // Watch Together playback lives in the profile navigator; root-level
+        // dialogs/profile picker must not be affected.
         if (!mounted) return;
-        final navigator = Navigator.of(context, rootNavigator: true);
+        final navigator = Navigator.of(context);
         bool isVideoPlayerOnTop = false;
         navigator.popUntil((route) {
           if (route.isCurrent) {
@@ -654,35 +679,36 @@ class _MainScreenState extends State<MainScreen>
     }
   }
 
-  /// Set up Watch Next deep link handling for Android TV launcher taps
-  void _setupWatchNextDeepLink() {
-    if (!Platform.isAndroid) return;
+  /// Set up launcher shelf deep link handling for Android TV and tvOS taps.
+  void _setupSystemShelfDeepLink() {
+    if (!Platform.isAndroid && !PlatformDetector.isAppleTV()) return;
 
-    final watchNext = WatchNextService();
+    final systemShelf = SystemShelfService();
 
     // Listen for deep links when app is already running (warm start)
-    watchNext.onWatchNextTap = (contentId) {
-      appLogger.d('Watch Next tap: $contentId');
-      _handleWatchNextContentId(contentId);
+    systemShelf.onShelfItemTap = (contentId) {
+      appLogger.d('System shelf tap: $contentId');
+      _handleShelfContentId(contentId);
     };
+    _systemShelfTapCallback = systemShelf.onShelfItemTap;
 
     // Check for pending deep link from cold start
     WidgetsBinding.instance.addPostFrameCallback((_) async {
-      final contentId = await watchNext.getInitialDeepLink();
+      final contentId = await systemShelf.getInitialDeepLink();
       if (contentId != null && mounted) {
-        appLogger.d('Watch Next initial deep link: $contentId');
-        unawaited(_handleWatchNextContentId(contentId));
+        appLogger.d('System shelf initial deep link: $contentId');
+        unawaited(_handleShelfContentId(contentId));
       }
     });
   }
 
-  /// Handle a Watch Next content ID by fetching metadata and starting playback
-  Future<void> _handleWatchNextContentId(String contentId) async {
+  /// Handle a launcher shelf content ID by fetching metadata and starting playback.
+  Future<void> _handleShelfContentId(String contentId) async {
     if (!mounted) return;
 
-    final parsed = WatchNextService.parseContentId(contentId);
+    final parsed = SystemShelfService.parseContentId(contentId);
     if (parsed == null) {
-      appLogger.w('Watch Next: invalid content ID: $contentId');
+      appLogger.w('System shelf: invalid content ID: $contentId');
       return;
     }
 
@@ -693,7 +719,7 @@ class _MainScreenState extends State<MainScreen>
       final client = multiServer.getClientForServer(serverId);
 
       if (client == null) {
-        appLogger.w('Watch Next: server $serverId not available');
+        appLogger.w('System shelf: server $serverId not available');
         return;
       }
 
@@ -703,22 +729,26 @@ class _MainScreenState extends State<MainScreen>
 
       unawaited(navigateToVideoPlayer(context, metadata: metadata));
     } catch (e) {
-      appLogger.e('Watch Next: failed to navigate to media', error: e);
+      appLogger.e('System shelf: failed to navigate to media', error: e);
     }
   }
 
-  /// Navigate to media when host switches content in Watch Together session
-  Future<void> _navigateToWatchTogetherMedia(String ratingKey, String serverId) async {
-    if (!mounted) return; // Check before any context usage
+  /// Navigate to media when host switches content in Watch Together session.
+  /// Returns whether navigation was initiated; failures are re-dispatched on
+  /// the host's next state heartbeat.
+  Future<bool> _navigateToWatchTogetherMedia(String ratingKey, ServerId serverId) async {
+    if (!mounted) return false; // Check before any context usage
 
     try {
-      await navigateToWatchTogetherPlayback(context, ratingKey: ratingKey, serverId: serverId);
+      return await navigateToWatchTogetherPlayback(context, ratingKey: ratingKey, serverId: serverId);
     } catch (e) {
       appLogger.e('WatchTogether: Failed to navigate to media', error: e);
+      return false;
     }
   }
 
   bool _companionRemoteSetup = false;
+  ValueChanged<String>? _systemShelfTapCallback;
 
   @override
   void didChangeDependencies() {
@@ -762,13 +792,32 @@ class _MainScreenState extends State<MainScreen>
       });
     }
 
+    // Listen for catalog sources (Explore tab) appearing/disappearing when a
+    // provider like Trakt is connected or disconnected mid-session.
+    final catalogSources = context.read<CatalogSourcesProvider>();
+    if (catalogSources != _catalogSourcesProvider) {
+      _catalogSourcesProvider?.removeListener(_handleCatalogSourcesChanged);
+      _catalogSourcesProvider = catalogSources;
+      _catalogSourcesProvider!.addListener(_handleCatalogSourcesChanged);
+    }
+
     // Wire up Companion Remote command routing (host devices only, once)
     if (!_companionRemoteSetup && PlatformDetector.shouldActAsRemoteHost(context)) {
       _companionRemoteSetup = true;
       _setupCompanionRemote();
     }
 
-    routeObserver.subscribe(this, ModalRoute.of(context) as PageRoute);
+    _miniPlayerInsets = context.read<MiniPlayerInsetController?>();
+
+    final scopedRouteObserver = ProfileNavigationScope.of(context).routeObserver;
+    if (scopedRouteObserver != _profileRouteObserver) {
+      _profileRouteObserver?.unsubscribe(this);
+      _profileRouteObserver = scopedRouteObserver;
+      final route = ModalRoute.of(context);
+      if (route is PageRoute<dynamic>) {
+        scopedRouteObserver.subscribe(this, route);
+      }
+    }
   }
 
   void _setupCompanionRemote() {
@@ -780,7 +829,7 @@ class _MainScreenState extends State<MainScreen>
     };
 
     final receiver = CompanionRemoteReceiver.instance;
-
+    receiver.navigationOwner = this;
     receiver.onTabNext = () {
       final tabs = _getVisibleTabs(_isOffline);
       final idx = tabs.indexWhere((t) => t.id == _currentTab);
@@ -796,13 +845,24 @@ class _MainScreenState extends State<MainScreen>
     receiver.onTabSearch = () => _selectTab(NavigationTabId.search);
     receiver.onTabDownloads = () => _selectTab(NavigationTabId.downloads);
     receiver.onTabSettings = () => _selectTab(NavigationTabId.settings);
-    receiver.onHome = () => _selectTab(NavigationTabId.discover);
+    receiver.onHome = () {
+      final tabs = _getVisibleTabs(_isOffline);
+      if (tabs.isEmpty) return;
+      _selectTab(tabs.first.id);
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _sideNavKey.currentState?.focusHomeItem();
+      });
+    };
     receiver.onSearchAction = (query) {
-      _selectTab(NavigationTabId.search);
-      if (query != null && query.isNotEmpty) {
+      final trimmed = query?.trim() ?? '';
+      final hasQuery = trimmed.isNotEmpty;
+      // With a query, don't focus the input (which would auto-open the TV
+      // keyboard); submitSearchQuery runs the search and focuses results.
+      _selectTab(NavigationTabId.search, focusSearchInput: !hasQuery);
+      if (hasQuery) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (_searchKey.currentState case final SearchInputFocusable searchable) {
-            searchable.setSearchQuery(query);
+            searchable.submitSearchQuery(trimmed);
           }
         });
       }
@@ -823,7 +883,7 @@ class _MainScreenState extends State<MainScreen>
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
-    routeObserver.unsubscribe(this);
+    _profileRouteObserver?.unsubscribe(this);
     if (PlatformDetector.isDesktopOS()) {
       windowManager.removeListener(this);
       windowManager.setPreventClose(false);
@@ -831,6 +891,7 @@ class _MainScreenState extends State<MainScreen>
     _offlineModeProvider?.removeListener(_handleOfflineStatusChanged);
     _multiServerProvider?.removeListener(_handleLiveTvChanged);
     _connectionsSub?.cancel();
+    _catalogSourcesProvider?.removeListener(_handleCatalogSourcesChanged);
     if (_bindingSettleListener != null) {
       _activeProfileForListener?.removeListener(_bindingSettleListener!);
     }
@@ -839,21 +900,31 @@ class _MainScreenState extends State<MainScreen>
     _startupSettleTimeout?.cancel();
     _startupSettleTimeout = null;
     _sidebarFocusScope.dispose();
+    _contentFocusScope.removeListener(_syncSidebarFocusWithContent);
     _contentFocusScope.dispose();
     _setTvosMenuPassthrough(false);
 
-    // Clean up companion remote callbacks
+    // Clean up only callbacks still owned by this screen. A replacement
+    // MainScreen may already have installed its callbacks this frame.
     if (_companionRemoteSetup) {
       final receiver = CompanionRemoteReceiver.instance;
-      receiver.onTabNext = null;
-      receiver.onTabPrevious = null;
-      receiver.onTabDiscover = null;
-      receiver.onTabLibraries = null;
-      receiver.onTabSearch = null;
-      receiver.onTabDownloads = null;
-      receiver.onTabSettings = null;
-      receiver.onHome = null;
-      receiver.onSearchAction = null;
+      if (identical(receiver.navigationOwner, this)) {
+        receiver.onTabNext = null;
+        receiver.onTabPrevious = null;
+        receiver.onTabDiscover = null;
+        receiver.onTabLibraries = null;
+        receiver.onTabSearch = null;
+        receiver.onTabDownloads = null;
+        receiver.onTabSettings = null;
+        receiver.onHome = null;
+        receiver.onSearchAction = null;
+        receiver.navigationOwner = null;
+      }
+    }
+    final shelfCallback = _systemShelfTapCallback;
+    final systemShelf = SystemShelfService();
+    if (shelfCallback != null && identical(systemShelf.onShelfItemTap, shelfCallback)) {
+      systemShelf.onShelfItemTap = null;
     }
 
     super.dispose();
@@ -888,6 +959,7 @@ class _MainScreenState extends State<MainScreen>
     _setTvosMenuPassthrough(false);
     await Navigator.of(
       context,
+      rootNavigator: true,
     ).push(MaterialPageRoute(builder: (context) => const ProfileSwitchScreen(requireSelection: true)));
     if (!mounted) return;
     _isShowingProfileSelection = false;
@@ -918,6 +990,7 @@ class _MainScreenState extends State<MainScreen>
       for (final tab in _getVisibleTabs(offline))
         switch (tab.id) {
           NavigationTabId.discover => DiscoverScreen(key: _discoverKey),
+          NavigationTabId.explore => ExploreScreen(key: _exploreKey),
           NavigationTabId.libraries => LibrariesScreen(
             key: _librariesKey,
             onLibraryOrderChanged: _onLibraryOrderChanged,
@@ -940,14 +1013,12 @@ class _MainScreenState extends State<MainScreen>
     return _defaultTabForMode(isOffline);
   }
 
-  NavigationTabId _defaultTabForMode(bool isOffline) {
-    final tabs = _getVisibleTabs(isOffline);
-    if (isOffline) {
-      final downloads = tabs.where((t) => t.id == NavigationTabId.downloads).firstOrNull;
-      if (downloads != null) return downloads.id;
-    }
-    return tabs.first.id;
-  }
+  NavigationTabId _defaultTabForMode(bool isOffline) => NavigationTab.resolveDefaultTab(
+    isOffline: isOffline,
+    hasLiveTv: _hasLiveTv,
+    hasExplore: _lastHasExplore,
+    preferredStartup: SettingsService.instanceOrNull?.read(SettingsService.startupSection),
+  );
 
   void _triggerReconnect() {
     if (_isReconnecting) return;
@@ -993,6 +1064,28 @@ class _MainScreenState extends State<MainScreen>
       _screens = _buildScreens(_isOffline);
       _currentTab = _normalizeTabForMode(_currentTab, _isOffline);
     });
+    _updateTvosMenuPassthrough();
+
+    // A preferred startup section (only Live TV can be deferred) just became
+    // available — switch to it via _selectTab so it gets the usual visibility
+    // and focus handling. _selectTab clears _pendingStartupTab.
+    final pending = _pendingStartupTab;
+    if (pending != null && _getVisibleTabs(_isOffline).any((t) => t.id == pending)) {
+      _selectTab(pending);
+    }
+  }
+
+  void _handleCatalogSourcesChanged() {
+    final hasExplore = _catalogSourcesProvider?.hasAnySource ?? false;
+    if (hasExplore == _lastHasExplore) return;
+    _lastHasExplore = hasExplore;
+
+    setState(() {
+      _screens = _buildScreens(_isOffline);
+      _currentTab = _normalizeTabForMode(_currentTab, _isOffline);
+    });
+    // Same as the live-TV handler: the passthrough flag depends on whether
+    // _currentTab is the first tab, which the normalize above can change.
     _updateTvosMenuPassthrough();
   }
 
@@ -1100,6 +1193,15 @@ class _MainScreenState extends State<MainScreen>
     });
   }
 
+  /// _isSidebarFocused is hand-toggled; if anything moves real focus into the
+  /// content scope without going through _focusContent (e.g. a deferred
+  /// focusActiveTabIfReady), collapse the rail to match reality (#1411).
+  void _syncSidebarFocusWithContent() {
+    if (!mounted || !_isSidebarFocused || !_contentFocusScope.hasFocus) return;
+    setState(() => _isSidebarFocused = false);
+    _updateTvosMenuPassthrough();
+  }
+
   void _handleSidebarInteractionExpandedChanged(bool expanded) {
     if (_isSidebarInteractionExpanded == expanded) return;
     setState(() => _isSidebarInteractionExpanded = expanded);
@@ -1153,6 +1255,9 @@ class _MainScreenState extends State<MainScreen>
     final homeTab = tabs.first.id;
     if (_currentTab != homeTab) {
       _selectTab(homeTab);
+      // Keep the focus ring in step with the new selection; the sidebar scope
+      // already has focus, so no post-frame deferral is needed.
+      _sideNavKey.currentState?.focusHomeItem();
       _lastBackPressAt = null;
       return KeyEventResult.handled;
     }
@@ -1242,6 +1347,29 @@ class _MainScreenState extends State<MainScreen>
     return KeyEventResult.handled;
   }
 
+  /// On macOS, native fullscreen is window state shared by every route.
+  /// Player Escape therefore leaves it alone; only root Home owns the
+  /// conventional Escape-to-leave-fullscreen behavior.
+  KeyEventResult _handleMacOsRootEscape(KeyEvent event) {
+    final tabs = _getVisibleTabs(_isOffline);
+    final shouldHandle = shouldHandleMacOsRootEscape(
+      isMacOS: Platform.isMacOS,
+      isPhysicalKeyboardEvent: event.isPhysicalKeyboardEvent,
+      logicalKey: event.logicalKey,
+      isCurrentRoute: ModalRoute.of(context)?.isCurrent == true,
+      isHomeTab: tabs.isNotEmpty && _currentTab == tabs.first.id,
+    );
+    if (!shouldHandle) return KeyEventResult.ignored;
+
+    if (event is KeyUpEvent) {
+      BackKeyCoordinator.markHandled();
+      unawaited(FullscreenStateManager().exitFullscreenIfActive());
+    }
+    return event is KeyDownEvent || event is KeyRepeatEvent || event is KeyUpEvent
+        ? KeyEventResult.handled
+        : KeyEventResult.ignored;
+  }
+
   /// Handle Cmd+F (macOS) / Ctrl+F (Windows/Linux) to navigate to search.
   KeyEventResult _handleSearchShortcut(KeyEvent event) {
     if (event is! KeyDownEvent) return KeyEventResult.ignored;
@@ -1278,6 +1406,9 @@ class _MainScreenState extends State<MainScreen>
   @override
   void didPushNext() {
     _setTvosMenuPassthrough(false);
+    // A pushed detail route covers the bottom bar — drop the mini-player to
+    // the true (safe-area) bottom while it's hidden.
+    _miniPlayerInsets?.setNavBarSuspended(true);
     // Called when a child route is pushed on top (e.g., video player)
     if (_currentTab == NavigationTabId.discover) {
       if (_discoverKey.currentState case final TabVisibilityAware aware) {
@@ -1299,6 +1430,7 @@ class _MainScreenState extends State<MainScreen>
 
     // Called when returning to this route from a child route (e.g., from video player)
     _updateTvosMenuPassthrough();
+    _miniPlayerInsets?.setNavBarSuspended(false);
     if (_currentTab == NavigationTabId.discover) {
       if (_discoverKey.currentState case final TabVisibilityAware aware) {
         aware.onTabShown();
@@ -1335,10 +1467,13 @@ class _MainScreenState extends State<MainScreen>
     // Drop volatile API cache rows before screens kick off their refetch.
     // Pinned rows back offline downloads and must survive profile switches.
     try {
-      await ApiCache.instance.clearVolatile();
+      await ApiCache.clearRegisteredVolatile();
     } catch (e, st) {
       appLogger.w('Failed to clear ApiCache on profile switch', error: e, stackTrace: st);
     }
+
+    await hiddenLibrariesProvider.refresh();
+    if (!mounted) return;
 
     librariesProvider.clear();
 
@@ -1352,7 +1487,6 @@ class _MainScreenState extends State<MainScreen>
       await librariesProvider.refresh();
     }
 
-    unawaited(hiddenLibrariesProvider.refresh());
     playbackStateProvider.clearShuffle();
 
     if (_discoverKey.currentState case final FullRefreshable refreshable) {
@@ -1371,13 +1505,15 @@ class _MainScreenState extends State<MainScreen>
     }
   }
 
-  void _selectTab(NavigationTabId tab) {
+  void _selectTab(NavigationTabId tab, {bool focusSearchInput = true}) {
     // Guard: ignore if tab isn't available in current mode
     if (!_getVisibleTabs(_isOffline).any((t) => t.id == tab)) return;
 
     final previousTab = _currentTab;
     setState(() {
       _currentTab = tab;
+      // An explicit selection cancels any deferred startup-section switch.
+      _pendingStartupTab = null;
       if (!_isOffline) {
         _lastOnlineTabId = tab;
       } else if (previousTab != tab) {
@@ -1397,8 +1533,16 @@ class _MainScreenState extends State<MainScreen>
       if (newState case final TabVisibilityAware aware) {
         aware.onTabShown();
       }
-      if (newState case final FocusableTab focusable) {
-        focusable.focusActiveTabIfReady();
+      // Back-to-home keeps the sidebar focused (chain: content → sidebar →
+      // home → exit); stealing focus here left _isSidebarFocused stuck true
+      // while real focus sat on a content card (#1411).
+      // A companion-remote search (focusSearchInput: false) must NOT focus the
+      // search input, since focusing it auto-opens the on-screen keyboard; the
+      // query submit focuses results instead.
+      if (!_isSidebarFocused && (tab != NavigationTabId.search || focusSearchInput)) {
+        if (newState case final FocusableTab focusable) {
+          focusable.focusActiveTabIfReady();
+        }
       }
     }
 
@@ -1407,8 +1551,10 @@ class _MainScreenState extends State<MainScreen>
       _onDiscoverBecameVisible();
     }
 
-    // Focus search input after rebuild so IndexedStack has made it visible
-    if (tab == NavigationTabId.search) {
+    // Focus search input after rebuild so IndexedStack has made it visible.
+    // Skipped for a companion-remote search (focusSearchInput: false), whose
+    // submit runs the search and focuses results without opening the keyboard.
+    if (tab == NavigationTabId.search && focusSearchInput) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (_searchKey.currentState case final SearchInputFocusable searchable) {
           searchable.focusSearchInput();
@@ -1428,6 +1574,16 @@ class _MainScreenState extends State<MainScreen>
     if (_librariesKey.currentState case final FocusableTab focusable) {
       focusable.focusActiveTabIfReady();
     }
+  }
+
+  void _openSettings() {
+    if (PlatformDetector.shouldUseSideNavigation(context)) {
+      _selectTab(NavigationTabId.settings);
+      _focusContent(restorePreviousFocus: false);
+      return;
+    }
+
+    Navigator.push(context, MaterialPageRoute(builder: (_) => const SettingsScreen()));
   }
 
   void _handleLibrariesScreenSelected(String libraryGlobalKey) {
@@ -1494,13 +1650,28 @@ class _MainScreenState extends State<MainScreen>
 
   /// Get navigation tabs filtered by offline mode
   List<NavigationTab> _getVisibleTabs(bool isOffline) {
-    return NavigationTab.getVisibleTabs(isOffline: isOffline, hasLiveTv: _hasLiveTv, hasPlexAccount: _hasPlexAccount);
+    return NavigationTab.getVisibleTabs(
+      isOffline: isOffline,
+      hasLiveTv: _hasLiveTv,
+      hasExplore: _lastHasExplore,
+      hasPlexAccount: _hasPlexAccount,
+    );
+  }
+
+  List<NavigationTab> _getBottomNavigationTabs(BuildContext context) {
+    return mainScreenBottomNavigationTabs(
+      visibleTabs: _getVisibleTabs(_isOffline),
+      isMobile: PlatformDetector.isMobile(context),
+      isOffline: _isOffline,
+      currentTab: _currentTab,
+    );
   }
 
   /// Get the GlobalKey for a given tab.
   GlobalKey? _screenKeyFor(NavigationTabId tab) {
     return switch (tab) {
       NavigationTabId.discover => _discoverKey,
+      NavigationTabId.explore => _exploreKey,
       NavigationTabId.libraries => _librariesKey,
       NavigationTabId.liveTv => _liveTvKey,
       NavigationTabId.search => _searchKey,
@@ -1511,9 +1682,10 @@ class _MainScreenState extends State<MainScreen>
   }
 
   Widget _buildBottomNavigationBar(BuildContext context, {required bool hideLabels}) {
-    final tabs = _getVisibleTabs(_isOffline);
+    final tabs = _getBottomNavigationTabs(context);
+    final selectedIndex = tabs.indexWhere((tab) => tab.id == _currentTab);
     final navigationBar = NavigationBar(
-      selectedIndex: _currentIndex,
+      selectedIndex: selectedIndex >= 0 ? selectedIndex : 0,
       onDestinationSelected: (i) {
         if (i >= 0 && i < tabs.length) _selectTab(tabs[i].id);
       },
@@ -1558,6 +1730,19 @@ class _MainScreenState extends State<MainScreen>
     );
   }
 
+  /// Report the mobile bottom bar's rendered height to the mini-player inset
+  /// controller after this frame (the bar mixes NavigationBar, optional
+  /// offline banner, and label modes — measuring beats re-deriving).
+  void _scheduleBottomBarMeasure() {
+    final controller = _miniPlayerInsets;
+    if (controller == null) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final box = _bottomBarKey.currentContext?.findRenderObject() as RenderBox?;
+      if (box != null && box.hasSize) controller.setNavBarInset(box.size.height);
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final useSideNav = PlatformDetector.shouldUseSideNavigation(context);
@@ -1577,96 +1762,112 @@ class _MainScreenState extends State<MainScreen>
 
           return OverlaySheetHost(
             onOpenChanged: _handleOverlaySheetOpenChanged,
-            child: PopScope(
-              canPop: false, // Prevent system back from popping on Android TV
-              // ignore: no-empty-block - required callback, back navigation handled by _handleBackKey
-              onPopInvokedWithResult: (didPop, result) {},
-              child: Focus(
-                onKeyEvent: (node, event) {
-                  final fullscreenResult = _handleFullscreenShortcut(event);
-                  if (fullscreenResult == KeyEventResult.handled) return fullscreenResult;
-                  final searchResult = _handleSearchShortcut(event);
-                  if (searchResult == KeyEventResult.handled) return searchResult;
-                  return _handleBackKey(event);
-                },
-                child: TweenAnimationBuilder<double>(
-                  duration: const Duration(milliseconds: 200),
-                  curve: Curves.easeOutCubic,
-                  tween: Tween<double>(end: targetContentOffset),
-                  child: FocusScope(
-                    node: _contentFocusScope,
-                    // No autofocus - we control focus programmatically to prevent
-                    // autofocus from stealing focus back after setState() rebuilds
-                    child: _buildTickerAwareStack(),
-                  ),
-                  builder: (context, contentLeftPadding, contentChild) {
-                    return LayoutBuilder(
-                      builder: (context, constraints) {
-                        final viewportWidth = constraints.maxWidth;
-                        final contentLayout = mainScreenSideNavigationContentLayout(
-                          viewportWidth: viewportWidth,
-                          currentSideNavigationWidth: contentLeftPadding,
-                          reservedSideNavigationWidth: reservedContentOffset,
-                        );
-                        return MainScreenFocusScope(
-                          focusSidebar: _focusSidebar,
-                          focusContent: _focusContent,
-                          isSidebarFocused: _isSidebarFocused,
-                          sideNavigationWidth: targetContentOffset,
-                          reservedSideNavigationWidth: reservedContentOffset,
-                          foregroundLeft: contentLayout.left,
-                          foregroundWidth: contentLayout.width,
-                          viewportWidth: viewportWidth,
-                          selectLibrary: _selectLibrary,
-                          child: SideNavigationScope(
-                            child: Stack(
-                              clipBehavior: Clip.hardEdge,
-                              children: [
-                                Positioned(
-                                  top: 0,
-                                  bottom: 0,
-                                  left: contentLayout.left,
-                                  width: contentLayout.width,
+            // canPop:false blocks the system route-pop (matching the old inert
+            // PopScope). The dpad/key back chain (content → top tabs → sidebar →
+            // home) is owned entirely by the key path below; there is NO
+            // onSystemBack because a pure popRoute must not short-circuit that
+            // chain to home. The host still closes an open sheet on system back.
+            canPop: false,
+            child: Focus(
+              onKeyEvent: (node, event) {
+                final rootEscapeResult = _handleMacOsRootEscape(event);
+                if (rootEscapeResult == KeyEventResult.handled) return rootEscapeResult;
+                final fullscreenResult = _handleFullscreenShortcut(event);
+                if (fullscreenResult == KeyEventResult.handled) return fullscreenResult;
+                final searchResult = _handleSearchShortcut(event);
+                if (searchResult == KeyEventResult.handled) return searchResult;
+                return _handleBackKey(event);
+              },
+              child: TweenAnimationBuilder<double>(
+                duration: const Duration(milliseconds: 200),
+                curve: Curves.easeOutCubic,
+                tween: Tween<double>(end: targetContentOffset),
+                child: FocusScope(
+                  node: _contentFocusScope,
+                  // No autofocus - we control focus programmatically to prevent
+                  // autofocus from stealing focus back after setState() rebuilds
+                  child: _buildTickerAwareStack(),
+                ),
+                builder: (context, contentLeftPadding, contentChild) {
+                  return LayoutBuilder(
+                    builder: (context, constraints) {
+                      final viewportWidth = constraints.maxWidth;
+                      // Layout from the tween END value: deriving it from the
+                      // animated value changed MainScreenFocusScope every tick
+                      // of the sidebar expansion, rebuilding every dependent
+                      // (the whole TV content tree) per frame. The slide is a
+                      // paint-only translate on the content below instead.
+                      final contentLayout = mainScreenSideNavigationContentLayout(
+                        viewportWidth: viewportWidth,
+                        currentSideNavigationWidth: targetContentOffset,
+                        reservedSideNavigationWidth: reservedContentOffset,
+                      );
+                      return MainScreenFocusScope(
+                        focusSidebar: _focusSidebar,
+                        focusContent: _focusContent,
+                        isSidebarFocused: _isSidebarFocused,
+                        sideNavigationWidth: targetContentOffset,
+                        reservedSideNavigationWidth: reservedContentOffset,
+                        foregroundLeft: contentLayout.left,
+                        foregroundWidth: contentLayout.width,
+                        viewportWidth: viewportWidth,
+                        selectLibrary: _selectLibrary,
+                        openSettings: _openSettings,
+                        child: SideNavigationScope(
+                          child: Stack(
+                            clipBehavior: Clip.hardEdge,
+                            children: [
+                              Positioned.fill(child: ColoredBox(color: Theme.of(context).scaffoldBackgroundColor)),
+                              Positioned(
+                                top: 0,
+                                bottom: 0,
+                                left: contentLayout.left,
+                                width: contentLayout.width,
+                                // Duration/curve of this tween must stay in
+                                // sync with SideNavigationBleedBuilder, which
+                                // counter-animates viewport-pinned overlays.
+                                child: Transform.translate(
+                                  offset: Offset(contentLeftPadding - targetContentOffset, 0),
                                   child: contentChild!,
                                 ),
-                                Positioned(
-                                  top: 0,
-                                  bottom: 0,
-                                  left: 0,
-                                  child: FocusScope(
-                                    node: _sidebarFocusScope,
-                                    child: SideNavigationRail(
-                                      key: _sideNavKey,
-                                      selectedTab: _currentTab,
-                                      selectedLibraryKey: _selectedLibraryGlobalKey,
-                                      isOfflineMode: _isOffline,
-                                      isSidebarFocused: _isSidebarFocused,
-                                      alwaysExpanded: alwaysExpanded,
-                                      isReconnecting: _isReconnecting,
-                                      hasWatchlist: _hasPlexAccount,
-                                      onInteractionExpandedChanged: _handleSidebarInteractionExpandedChanged,
-                                      onDestinationSelected: (tab) {
-                                        final restorePreviousFocus = tab == _currentTab;
-                                        _selectTab(tab);
-                                        _focusContent(restorePreviousFocus: restorePreviousFocus);
-                                      },
-                                      onLibrarySelected: (key) {
-                                        _selectLibrary(key);
-                                        _focusContent(restorePreviousFocus: false);
-                                      },
-                                      onNavigateToContent: _focusContent,
-                                      onReconnect: _triggerReconnect,
-                                    ),
+                              ),
+                              Positioned(
+                                top: 0,
+                                bottom: 0,
+                                left: 0,
+                                child: FocusScope(
+                                  node: _sidebarFocusScope,
+                                  child: SideNavigationRail(
+                                    key: _sideNavKey,
+                                    selectedTab: _currentTab,
+                                    selectedLibraryKey: _selectedLibraryGlobalKey,
+                                    isOfflineMode: _isOffline,
+                                    isSidebarFocused: _isSidebarFocused,
+                                    alwaysExpanded: alwaysExpanded,
+                                    isReconnecting: _isReconnecting,
+                                    hasWatchlist: _hasPlexAccount,
+                                    onInteractionExpandedChanged: _handleSidebarInteractionExpandedChanged,
+                                    onDestinationSelected: (tab) {
+                                      final restorePreviousFocus = tab == _currentTab;
+                                      _selectTab(tab);
+                                      _focusContent(restorePreviousFocus: restorePreviousFocus);
+                                    },
+                                    onLibrarySelected: (key) {
+                                      _selectLibrary(key);
+                                      _focusContent(restorePreviousFocus: false);
+                                    },
+                                    onNavigateToContent: _focusContent,
+                                    onReconnect: _triggerReconnect,
                                   ),
                                 ),
-                              ],
-                            ),
+                              ),
+                            ],
                           ),
-                        );
-                      },
-                    );
-                  },
-                ),
+                        ),
+                      );
+                    },
+                  );
+                },
               ),
             ),
           );
@@ -1674,69 +1875,74 @@ class _MainScreenState extends State<MainScreen>
       );
     }
 
-    return PopScope(
+    return OverlaySheetHost(
+      onOpenChanged: _handleOverlaySheetOpenChanged,
+      // Host owns sheet + system back; onSystemBack mirrors the old PopScope
+      // (go to home tab, then press-back-twice to exit).
       canPop: false,
-      onPopInvokedWithResult: (didPop, result) {
-        if (didPop) return;
+      onSystemBack: () {
+        if (BackKeyCoordinator.consumeIfHandled()) return;
         _handleMainBack();
       },
-      child: OverlaySheetHost(
-        onOpenChanged: _handleOverlaySheetOpenChanged,
-        child: ScaffoldMessenger(
-          key: mainScaffoldMessengerKey,
-          child: Scaffold(
-            body: _buildTickerAwareStack(),
-            bottomNavigationBar: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // Reconnect bar when offline
-                if (_isOffline)
-                  Material(
-                    color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                    child: InkWell(
-                      onTap: _isReconnecting ? null : _triggerReconnect,
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            if (_isReconnecting)
-                              SizedBox(
-                                width: 16,
-                                height: 16,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  color: Theme.of(context).colorScheme.primary,
-                                ),
-                              )
-                            else
-                              Icon(Symbols.wifi_rounded, size: 18, color: Theme.of(context).colorScheme.primary),
-                            const SizedBox(width: 8),
-                            Text(
-                              t.common.reconnect,
-                              style: TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w500,
+      child: ScaffoldMessenger(
+        key: ProfileNavigationScope.of(context).mainScaffoldMessengerKey,
+        child: Scaffold(
+          body: _buildTickerAwareStack(),
+          bottomNavigationBar: Column(
+            key: _bottomBarKey,
+            mainAxisSize: .min,
+            children: [
+              // Reconnect bar when offline
+              if (_isOffline)
+                Material(
+                  color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                  child: InkWell(
+                    onTap: _isReconnecting ? null : _triggerReconnect,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                      child: Row(
+                        mainAxisAlignment: .center,
+                        children: [
+                          if (_isReconnecting)
+                            SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
                                 color: Theme.of(context).colorScheme.primary,
                               ),
+                            )
+                          else
+                            AppIcon(Symbols.wifi_rounded, size: 18, color: Theme.of(context).colorScheme.primary),
+                          const SizedBox(width: 8),
+                          Text(
+                            t.common.reconnect,
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: .w500,
+                              color: Theme.of(context).colorScheme.primary,
                             ),
-                          ],
-                        ),
+                          ),
+                        ],
                       ),
                     ),
                   ),
-                SettingValueBuilder<bool>(
-                  pref: SettingsService.showNavBarLabels,
-                  builder: (context, showNavBarLabels, _) {
-                    final hideLabels = !showNavBarLabels;
-                    return NavigationBarTheme(
-                      data: NavigationBarTheme.of(context).copyWith(height: hideLabels ? 56 : null),
-                      child: _buildBottomNavigationBar(context, hideLabels: hideLabels),
-                    );
-                  },
                 ),
-              ],
-            ),
+              SettingValueBuilder<bool>(
+                pref: SettingsService.showNavBarLabels,
+                builder: (context, showNavBarLabels, _) {
+                  final hideLabels = !showNavBarLabels;
+                  // Re-measure whenever the bar's composition can change:
+                  // this builder reruns on label toggles AND on every
+                  // MainScreen rebuild (offline bar appearing/disappearing).
+                  _scheduleBottomBarMeasure();
+                  return NavigationBarTheme(
+                    data: NavigationBarTheme.of(context).copyWith(height: hideLabels ? 56 : null),
+                    child: _buildBottomNavigationBar(context, hideLabels: hideLabels),
+                  );
+                },
+              ),
+            ],
           ),
         ),
       ),

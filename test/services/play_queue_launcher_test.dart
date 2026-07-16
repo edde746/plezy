@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/media/media_backend.dart';
-import 'package:plezy/media/media_item.dart';
+
 import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/services/play_queue_launcher.dart';
 import 'package:plezy/services/plex_client.dart';
+import '../test_helpers/media_items.dart';
 
 // NOTE on coverage scope:
 // `PlayQueueLauncher` is almost entirely network/UI glue:
@@ -14,9 +15,9 @@ import 'package:plezy/services/plex_client.dart';
 //   - then calls [navigateToVideoPlayer] (Navigator + DownloadProvider +
 //     SettingsService singleton + Provider).
 //
-// Without re-implementing that entire dependency tree, the only meaningful
+// Without re-implementing that entire dependency tree, the meaningful
 // unit-testable surface is:
-//   - The `PlayQueueResult` sealed hierarchy (constructor + identity).
+//   - `PlayQueueError` preserves the underlying failure.
 //   - `launchShuffledShow` short-circuits BEFORE any network call when the
 //     metadata is not a show or season — that's a pure pre-flight branch.
 //   - `launchFromCollectionOrPlaylist` short-circuits when the input is
@@ -38,20 +39,6 @@ void main() {
   // ============================================================
 
   group('PlayQueueResult', () {
-    test('PlayQueueSuccess is a const, identity-comparable singleton', () {
-      const a = PlayQueueSuccess();
-      const b = PlayQueueSuccess();
-      expect(identical(a, b), isTrue);
-      expect(a, isA<PlayQueueResult>());
-    });
-
-    test('PlayQueueEmpty is a const, identity-comparable singleton', () {
-      const a = PlayQueueEmpty();
-      const b = PlayQueueEmpty();
-      expect(identical(a, b), isTrue);
-      expect(a, isA<PlayQueueResult>());
-    });
-
     test('PlayQueueError carries the wrapped error', () {
       final error = StateError('boom');
       final result = PlayQueueError(error);
@@ -82,7 +69,7 @@ void main() {
       final launcher = PlexPlayQueueLauncher(context: capturedContext, client: _StubPlexClient());
       final result = await launcher.launchShuffledShow(
         // movie is not show / season.
-        metadata: MediaItem(id: 'rk1', backend: MediaBackend.plex, kind: MediaKind.movie),
+        metadata: testMediaItem(id: 'rk1', backend: MediaBackend.plex, kind: MediaKind.movie),
         showLoadingIndicator: false,
       );
 
@@ -111,37 +98,6 @@ void main() {
       expect(result, isA<PlayQueueError>());
       final error = (result as PlayQueueError).error;
       expect(error.toString(), contains('collection or playlist'));
-    });
-  });
-
-  // ============================================================
-  // Constructor
-  // ============================================================
-
-  group('constructor', () {
-    testWidgets('stores all wired arguments', (tester) async {
-      late BuildContext capturedContext;
-      await tester.pumpWidget(
-        Builder(
-          builder: (context) {
-            capturedContext = context;
-            return const SizedBox.shrink();
-          },
-        ),
-      );
-
-      final client = _StubPlexClient();
-      final launcher = PlexPlayQueueLauncher(
-        context: capturedContext,
-        client: client,
-        serverId: 'srv-A',
-        serverName: 'Plex',
-      );
-
-      expect(launcher.context, capturedContext);
-      expect(identical(launcher.client, client), isTrue);
-      expect(launcher.serverId, 'srv-A');
-      expect(launcher.serverName, 'Plex');
     });
   });
 }

@@ -1,0 +1,66 @@
+appId: com.edde746.plezy
+name: Profile switching isolates Jellyfin content and libraries
+
+tags:
+  - e2e
+  - regression
+  - profiles
+---
+- runFlow: ../subflows/onboard_jellyfin.yaml
+- assertVisible: "(?s).*Zulu Zone 4.*"
+- tapOn: "(?s)^Libraries.*"
+- extendedWaitUntil:
+    visible: "Maestro Movies"
+    timeout: 15000
+- assertNotVisible: "Guest Movies"
+- tapOn: "(?s)^Home.*"
+- runFlow: ../subflows/create_guest_jellyfin_profile.yaml
+- tapOn: "(?s)^E\nE2E Guest\n.*"
+- extendedWaitUntil:
+    visible: "(?s).*Guest Galaxy$"
+    timeout: 30000
+- assertNotVisible: "(?s).*Zulu Zone 4.*"
+- tapOn: "(?s)^Libraries.*"
+- extendedWaitUntil:
+    visible: "Guest Movies"
+    timeout: 15000
+- assertNotVisible: "Maestro Movies"
+- tapOn: "(?s)^Home.*"
+- extendedWaitUntil:
+    visible: "(?s).*Guest Galaxy$"
+    timeout: 15000
+- tapOn: "E"
+- tapOn:
+    text: "Profiles"
+    above:
+      text: "Settings"
+- extendedWaitUntil:
+    visible: "Switch Profile"
+    timeout: 10000
+- tapOn: "(?s)^M\nMaestro\n.*"
+- extendedWaitUntil:
+    visible: "(?s).*Zulu Zone 4.*"
+    timeout: 30000
+- assertNotVisible: "(?s).*Guest Galaxy$"
+- tapOn: "(?s)^Libraries.*"
+- extendedWaitUntil:
+    visible: "Maestro Movies"
+    timeout: 15000
+- assertNotVisible: "Guest Movies"
+- tapOn: "(?s)^Home.*"
+- extendedWaitUntil:
+    visible: "(?s).*Zulu Zone 4.*"
+    timeout: 15000
+- tapOn: "M"
+- tapOn:
+    text: "Profiles"
+    above:
+      text: "Settings"
+- extendedWaitUntil:
+    visible: "Switch Profile"
+    timeout: 10000
+- tapOn: "(?s)^E\nE2E Guest\n.*"
+- extendedWaitUntil:
+    visible: "(?s).*Guest Galaxy$"
+    timeout: 30000
+- assertNotVisible: "(?s).*Zulu Zone 4.*"

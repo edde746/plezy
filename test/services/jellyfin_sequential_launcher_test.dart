@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:plezy/media/ids.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/media/library_query.dart';
 import 'package:plezy/media/media_backend.dart';
@@ -11,6 +12,9 @@ import 'package:plezy/services/jellyfin_sequential_launcher.dart';
 import 'package:plezy/services/media_list_playback_launcher.dart';
 import 'package:plezy/services/playlist_items_loader.dart';
 import 'package:plezy/utils/media_server_http_client.dart';
+
+import '../test_helpers/paged_fakes.dart';
+import '../test_helpers/media_items.dart';
 
 /// Recording fake that satisfies [JellyfinClient] via `implements` +
 /// `noSuchMethod`. The launcher only needs the
@@ -61,17 +65,9 @@ class _RecordingJellyfinClient implements JellyfinClient {
   @override
   Future<LibraryPage<MediaItem>> fetchPlaylistPage(String id, {int? start, int? size, AbortController? abort}) async {
     final offset = start ?? 0;
-    final limit = size ?? 100;
+    final limit = size ?? fakeMediaPageSize;
     fetchPlaylistItemsCalls.add((id: id, offset: offset, limit: limit));
-    if (offset >= playlistItemsResponse.length) {
-      return LibraryPage<MediaItem>(items: const [], totalCount: playlistItemsResponse.length, offset: offset);
-    }
-    final end = (offset + limit).clamp(0, playlistItemsResponse.length);
-    return LibraryPage<MediaItem>(
-      items: playlistItemsResponse.sublist(offset, end),
-      totalCount: playlistItemsResponse.length,
-      offset: offset,
-    );
+    return fakeLibraryPage(playlistItemsResponse, start: start, size: size);
   }
 
   @override
@@ -81,22 +77,37 @@ class _RecordingJellyfinClient implements JellyfinClient {
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
-MediaItem _ep(String id, {String? serverId = 'srv-jf'}) => MediaItem(
+MediaItem _ep(String id, {ServerId? serverId}) => testMediaItem(
   id: id,
   backend: MediaBackend.jellyfin,
   kind: MediaKind.episode,
   title: 'Episode $id',
-  serverId: serverId,
+  serverId: serverId ?? ServerId('srv-jf'),
 );
 
-MediaItem _movie(String id, {String? serverId = 'srv-jf'}) =>
-    MediaItem(id: id, backend: MediaBackend.jellyfin, kind: MediaKind.movie, title: 'Movie $id', serverId: serverId);
+MediaItem _movie(String id, {ServerId? serverId}) => testMediaItem(
+  id: id,
+  backend: MediaBackend.jellyfin,
+  kind: MediaKind.movie,
+  title: 'Movie $id',
+  serverId: serverId ?? ServerId('srv-jf'),
+);
 
-MediaItem _clip(String id, {String? serverId = 'srv-jf'}) =>
-    MediaItem(id: id, backend: MediaBackend.jellyfin, kind: MediaKind.clip, title: 'Video $id', serverId: serverId);
+MediaItem _clip(String id, {ServerId? serverId}) => testMediaItem(
+  id: id,
+  backend: MediaBackend.jellyfin,
+  kind: MediaKind.clip,
+  title: 'Video $id',
+  serverId: serverId ?? ServerId('srv-jf'),
+);
 
-MediaItem _track(String id, {String? serverId = 'srv-jf'}) =>
-    MediaItem(id: id, backend: MediaBackend.jellyfin, kind: MediaKind.track, title: 'Track $id', serverId: serverId);
+MediaItem _track(String id, {ServerId? serverId}) => testMediaItem(
+  id: id,
+  backend: MediaBackend.jellyfin,
+  kind: MediaKind.track,
+  title: 'Track $id',
+  serverId: serverId ?? ServerId('srv-jf'),
+);
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -136,7 +147,7 @@ void main() {
       final ctx = await pumpContext(tester);
       final launcher = JellyfinSequentialLauncher(context: ctx);
 
-      final orphan = MediaItem(
+      final orphan = testMediaItem(
         id: 'col-1',
         backend: MediaBackend.jellyfin,
         kind: MediaKind.collection,
@@ -163,7 +174,7 @@ void main() {
         navigateForTesting: (m) async => navigated.add(m),
       );
 
-      final collection = MediaItem(
+      final collection = testMediaItem(
         id: 'col-99',
         backend: MediaBackend.jellyfin,
         kind: MediaKind.collection,
@@ -263,7 +274,12 @@ void main() {
       // container. If a future change reverts to fetchChildren the test
       // fails because a Series row would leak into the queue.
       final ctx = await pumpContext(tester);
-      final movie = MediaItem(id: 'movie-1', backend: MediaBackend.jellyfin, kind: MediaKind.movie, serverId: 'srv-jf');
+      final movie = testMediaItem(
+        id: 'movie-1',
+        backend: MediaBackend.jellyfin,
+        kind: MediaKind.movie,
+        serverId: 'srv-jf',
+      );
       final ep1 = _ep('series-A-ep1');
       final ep2 = _ep('series-A-ep2');
       final fakeClient = _RecordingJellyfinClient(playableDescendantsResponse: [movie, ep1, ep2]);
@@ -277,7 +293,7 @@ void main() {
         navigateForTesting: (m) async => navigated.add(m),
       );
 
-      final collection = MediaItem(
+      final collection = testMediaItem(
         id: 'col-mixed',
         backend: MediaBackend.jellyfin,
         kind: MediaKind.collection,
@@ -313,7 +329,7 @@ void main() {
         navigateForTesting: (_) async {},
       );
 
-      final collection = MediaItem(
+      final collection = testMediaItem(
         id: 'col-1',
         backend: MediaBackend.jellyfin,
         kind: MediaKind.collection,
@@ -350,7 +366,7 @@ void main() {
         navigateForTesting: (m) async => navigated.add(m),
       );
 
-      final collection = MediaItem(
+      final collection = testMediaItem(
         id: 'col-start',
         backend: MediaBackend.jellyfin,
         kind: MediaKind.collection,
@@ -384,7 +400,7 @@ void main() {
         navigateForTesting: (m) async => navigated.add(m),
       );
 
-      final collection = MediaItem(
+      final collection = testMediaItem(
         id: 'col',
         backend: MediaBackend.jellyfin,
         kind: MediaKind.collection,
@@ -417,7 +433,7 @@ void main() {
         navigateForTesting: (m) async => navigated.add(m),
       );
 
-      final folder = MediaItem(
+      final folder = testMediaItem(
         id: 'folder-1',
         backend: MediaBackend.jellyfin,
         kind: MediaKind.unknown,
@@ -455,7 +471,7 @@ void main() {
         navigateForTesting: (_) async {},
       );
 
-      final folder = MediaItem(
+      final folder = testMediaItem(
         id: 'folder-shuffle',
         backend: MediaBackend.jellyfin,
         kind: MediaKind.unknown,
@@ -487,7 +503,7 @@ void main() {
         },
       );
 
-      final folder = MediaItem(
+      final folder = testMediaItem(
         id: 'music-folder',
         backend: MediaBackend.jellyfin,
         kind: MediaKind.unknown,
@@ -505,7 +521,7 @@ void main() {
       final ctx = await pumpContext(tester);
       final launcher = JellyfinSequentialLauncher(context: ctx);
 
-      final movie = MediaItem(id: 'm1', backend: MediaBackend.jellyfin, kind: MediaKind.movie, serverId: 'srv-jf');
+      final movie = testMediaItem(id: 'm1', backend: MediaBackend.jellyfin, kind: MediaKind.movie, serverId: 'srv-jf');
 
       final result = await launcher.launchShuffledShow(metadata: movie, showLoadingIndicator: false);
 
@@ -517,7 +533,12 @@ void main() {
       final ctx = await pumpContext(tester);
       final launcher = JellyfinSequentialLauncher(context: ctx);
 
-      final season = MediaItem(id: 's1', backend: MediaBackend.jellyfin, kind: MediaKind.season, serverId: 'srv-jf');
+      final season = testMediaItem(
+        id: 's1',
+        backend: MediaBackend.jellyfin,
+        kind: MediaKind.season,
+        serverId: 'srv-jf',
+      );
 
       final result = await launcher.launchShuffledShow(metadata: season, showLoadingIndicator: false);
 
@@ -529,7 +550,7 @@ void main() {
       final ctx = await pumpContext(tester);
       final launcher = JellyfinSequentialLauncher(context: ctx);
 
-      final orphan = MediaItem(id: 'show-orphan', backend: MediaBackend.jellyfin, kind: MediaKind.show);
+      final orphan = testMediaItem(id: 'show-orphan', backend: MediaBackend.jellyfin, kind: MediaKind.show);
 
       final result = await launcher.launchShuffledShow(metadata: orphan, showLoadingIndicator: false);
 
@@ -553,7 +574,7 @@ void main() {
         navigateForTesting: (m) async => navigated.add(m),
       );
 
-      final show = MediaItem(
+      final show = testMediaItem(
         id: 'show-1',
         backend: MediaBackend.jellyfin,
         kind: MediaKind.show,
@@ -589,7 +610,7 @@ void main() {
         navigateForTesting: (_) async {},
       );
 
-      final season = MediaItem(
+      final season = testMediaItem(
         id: 'season-2',
         backend: MediaBackend.jellyfin,
         kind: MediaKind.season,
@@ -618,7 +639,7 @@ void main() {
         },
       );
 
-      final show = MediaItem(
+      final show = testMediaItem(
         id: 'show-empty',
         backend: MediaBackend.jellyfin,
         kind: MediaKind.show,
@@ -647,7 +668,7 @@ void main() {
         },
       );
 
-      final collection = MediaItem(
+      final collection = testMediaItem(
         id: 'col-empty',
         backend: MediaBackend.jellyfin,
         kind: MediaKind.collection,

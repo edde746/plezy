@@ -2,126 +2,203 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/utils/track_label_builder.dart';
 
 void main() {
-  group('buildTrackLabel', () {
-    test('joins title, language, and extra parts with " · "', () {
-      expect(
-        buildTrackLabel(title: 'Director Cut', language: 'EN', extraParts: const ['AAC', '2ch'], index: 0),
-        'Director Cut · EN · AAC · 2ch',
-      );
+  group('TrackLabel', () {
+    test('joined concatenates primary and secondary with " · "', () {
+      expect(const TrackLabel('Tamil', 'E-AC3 · 5.1').joined, 'Tamil · E-AC3 · 5.1');
     });
 
-    test('drops null/empty title and language', () {
-      expect(buildTrackLabel(title: null, language: null, extraParts: const ['AAC'], index: 0), 'AAC');
-      expect(buildTrackLabel(title: '', language: '', extraParts: const ['AAC'], index: 0), 'AAC');
+    test('joined is just primary when secondary is null', () {
+      expect(const TrackLabel('Tamil').joined, 'Tamil');
     });
 
-    test('falls back to "<prefix> <index+1>" when no parts', () {
-      expect(buildTrackLabel(index: 0), 'Track 1');
-      expect(buildTrackLabel(index: 4), 'Track 5');
-      expect(buildTrackLabel(index: 2, fallbackPrefix: 'Audio Track'), 'Audio Track 3');
-    });
-
-    test('preserves ordering: title, language, extras', () {
-      expect(buildTrackLabel(title: 'A', language: 'B', extraParts: const ['C', 'D'], index: 0), 'A · B · C · D');
-    });
-
-    test('only language', () {
-      expect(buildTrackLabel(language: 'FR', index: 0), 'FR');
-    });
-
-    test('only title', () {
-      expect(buildTrackLabel(title: 'Commentary', index: 0), 'Commentary');
+    test('equality compares both parts', () {
+      expect(const TrackLabel('A', 'B'), const TrackLabel('A', 'B'));
+      expect(const TrackLabel('A'), isNot(const TrackLabel('A', 'B')));
     });
   });
 
-  group('TrackLabelBuilder.buildAudioLabel', () {
-    test('combines title, uppercased language, codec, channels', () {
-      expect(
-        TrackLabelBuilder.buildAudioLabel(title: 'Main', language: 'en', codec: 'aac', channelsCount: 2, index: 0),
-        'Main · EN · AAC · 2ch',
-      );
+  group('resolveTrackLanguageDisplay', () {
+    test('resolves 2-letter, 3-letter, and bibliographic codes', () {
+      expect(resolveTrackLanguageDisplay(language: 'en'), 'English');
+      expect(resolveTrackLanguageDisplay(language: 'eng'), 'English');
+      expect(resolveTrackLanguageDisplay(language: 'ta'), 'Tamil');
+      expect(resolveTrackLanguageDisplay(language: 'tam'), 'Tamil');
+      expect(resolveTrackLanguageDisplay(language: 'ger'), 'German');
     });
 
-    test('uppercases language', () {
-      expect(
-        TrackLabelBuilder.buildAudioLabel(language: 'fr', codec: 'ac3', channelsCount: 6, index: 0),
-        'FR · AC3 · 6ch',
-      );
+    test('resolves region-qualified codes', () {
+      expect(resolveTrackLanguageDisplay(language: 'en-AU'), 'English (Australia)');
+      expect(resolveTrackLanguageDisplay(language: 'en-US'), 'English');
+      expect(resolveTrackLanguageDisplay(language: 'pt_BR'), 'Portuguese (Brazil)');
     });
 
-    test('formats codec via CodecUtils (e.g. eac3 -> E-AC3)', () {
-      final label = TrackLabelBuilder.buildAudioLabel(codec: 'eac3', index: 0);
-      expect(label, 'E-AC3');
+    test('prefers a mappable languageCode over the language field', () {
+      expect(resolveTrackLanguageDisplay(language: 'Englisch', languageCode: 'eng'), 'English');
     });
 
-    test('omits codec when null/empty', () {
-      expect(TrackLabelBuilder.buildAudioLabel(language: 'en', codec: null, index: 0), 'EN');
-      expect(TrackLabelBuilder.buildAudioLabel(language: 'en', codec: '', index: 0), 'EN');
+    test('unknown bare codes keep the legacy uppercase rendering', () {
+      expect(resolveTrackLanguageDisplay(language: 'und'), 'UND');
+      expect(resolveTrackLanguageDisplay(languageCode: 'zxx'), 'ZXX');
     });
 
-    test('omits channels when null', () {
-      expect(TrackLabelBuilder.buildAudioLabel(language: 'en', codec: 'aac', index: 0), 'EN · AAC');
+    test('server display names pass through unchanged', () {
+      expect(resolveTrackLanguageDisplay(language: 'English'), 'English');
+      // 'fil' has no ISO 639-1 entry; the server-provided name must win.
+      expect(resolveTrackLanguageDisplay(language: 'Filipino', languageCode: 'fil'), 'Filipino');
     });
 
-    test('falls back to "Audio Track N" when nothing supplied', () {
-      expect(TrackLabelBuilder.buildAudioLabel(index: 0), 'Audio Track 1');
-      expect(TrackLabelBuilder.buildAudioLabel(index: 3), 'Audio Track 4');
+    test('cleans lang= metadata prefixes before resolving', () {
+      expect(resolveTrackLanguageDisplay(language: 'LANG=DEU'), 'German');
     });
 
-    test('zero channel count is still rendered (caller decides validity)', () {
-      // Behavior check: 0 is non-null, so it appears as 0ch.
-      expect(TrackLabelBuilder.buildAudioLabel(channelsCount: 0, index: 0), '0ch');
+    test('returns null when nothing usable is provided', () {
+      expect(resolveTrackLanguageDisplay(), null);
+      expect(resolveTrackLanguageDisplay(language: '', languageCode: ' '), null);
     });
   });
 
-  group('TrackLabelBuilder.buildSubtitleLabel', () {
-    test('combines title, uppercased language, friendly codec', () {
+  group('TrackLabelBuilder.audioLabel', () {
+    test('language leads, title and tech detail go to the secondary line', () {
       expect(
-        TrackLabelBuilder.buildSubtitleLabel(title: 'Forced', language: 'en', codec: 'subrip', index: 0),
-        'Forced · EN · SRT',
+        TrackLabelBuilder.audioLabel(
+          title: 'Dolby Digital Plus 5.1 with Atmos',
+          language: 'ta',
+          codec: 'eac3',
+          channels: 6,
+          index: 0,
+        ),
+        const TrackLabel('Tamil', 'Dolby Digital Plus 5.1 with Atmos · E-AC3 · 5.1'),
       );
     });
 
-    test('uppercases language and formats codec', () {
-      expect(TrackLabelBuilder.buildSubtitleLabel(language: 'fr', codec: 'webvtt', index: 0), 'FR · VTT');
-      expect(TrackLabelBuilder.buildSubtitleLabel(language: 'de', codec: 'hdmv_pgs_subtitle', index: 0), 'DE · PGS');
-    });
-
-    test('omits codec when null/empty', () {
-      expect(TrackLabelBuilder.buildSubtitleLabel(language: 'en', index: 0), 'EN');
-      expect(TrackLabelBuilder.buildSubtitleLabel(language: 'en', codec: '', index: 0), 'EN');
-    });
-
-    test('does not duplicate forced when the title already says forced', () {
+    test('language with tech detail only', () {
       expect(
-        TrackLabelBuilder.buildSubtitleLabel(title: 'Forced', language: 'en', codec: 'subrip', forced: true, index: 0),
-        'Forced · EN · SRT',
+        TrackLabelBuilder.audioLabel(language: 'fr', codec: 'ac3', channels: 6, index: 0),
+        const TrackLabel('French', 'AC3 · 5.1'),
       );
     });
 
-    test('falls back to "Track N" with default prefix', () {
-      expect(TrackLabelBuilder.buildSubtitleLabel(index: 0), 'Track 1');
-      expect(TrackLabelBuilder.buildSubtitleLabel(index: 7), 'Track 8');
+    test('drops a title that restates the language', () {
+      expect(
+        TrackLabelBuilder.audioLabel(title: 'English', language: 'en', codec: 'aac', channels: 2, index: 0),
+        const TrackLabel('English', 'AAC · Stereo'),
+      );
+      expect(
+        TrackLabelBuilder.audioLabel(title: 'eng', language: 'eng', codec: 'aac', index: 0),
+        const TrackLabel('English', 'AAC'),
+      );
+    });
+
+    test('title becomes primary when there is no language', () {
+      expect(
+        TrackLabelBuilder.audioLabel(title: 'Commentary', codec: 'aac', channels: 2, index: 0),
+        const TrackLabel('Commentary', 'AAC · Stereo'),
+      );
+    });
+
+    test('displayTitle is the last-resort primary before the index fallback', () {
+      expect(
+        TrackLabelBuilder.audioLabel(displayTitle: 'English (EAC3 5.1)', codec: 'eac3', index: 0),
+        const TrackLabel('English (EAC3 5.1)', 'E-AC3'),
+      );
+    });
+
+    test('falls back to "Audio Track N"', () {
+      expect(TrackLabelBuilder.audioLabel(index: 0), const TrackLabel('Audio Track 1'));
+      expect(TrackLabelBuilder.audioLabel(index: 3), const TrackLabel('Audio Track 4'));
+      expect(TrackLabelBuilder.audioLabel(codec: 'eac3', index: 0), const TrackLabel('Audio Track 1', 'E-AC3'));
+    });
+
+    test('channel counts render as layout names and invalid counts are dropped', () {
+      expect(TrackLabelBuilder.audioLabel(language: 'en', channels: 1, index: 0).secondary, 'Mono');
+      expect(TrackLabelBuilder.audioLabel(language: 'en', channels: 2, index: 0).secondary, 'Stereo');
+      expect(TrackLabelBuilder.audioLabel(language: 'en', channels: 6, index: 0).secondary, '5.1');
+      expect(TrackLabelBuilder.audioLabel(language: 'en', channels: 10, index: 0).secondary, '10ch');
+      expect(TrackLabelBuilder.audioLabel(language: 'en', channels: 0, index: 0).secondary, null);
+    });
+
+    test('omits codec when null or empty', () {
+      expect(TrackLabelBuilder.audioLabel(language: 'en', codec: null, index: 0), const TrackLabel('English'));
+      expect(TrackLabelBuilder.audioLabel(language: 'en', codec: '', index: 0), const TrackLabel('English'));
+    });
+  });
+
+  group('TrackLabelBuilder.subtitleLabel', () {
+    test('language leads with the codec on the secondary line', () {
+      expect(
+        TrackLabelBuilder.subtitleLabel(language: 'en', codec: 'subrip', index: 0),
+        const TrackLabel('English', 'SRT'),
+      );
+      expect(
+        TrackLabelBuilder.subtitleLabel(language: 'de', codec: 'hdmv_pgs_subtitle', index: 0),
+        const TrackLabel('German', 'PGS'),
+      );
+    });
+
+    test('forced flag renders as a primary suffix', () {
+      expect(
+        TrackLabelBuilder.subtitleLabel(language: 'en', codec: 'subrip', forced: true, index: 0),
+        const TrackLabel('English (Forced)', 'SRT'),
+      );
+    });
+
+    test('a bare "Forced" title is folded into the suffix instead of repeating', () {
+      expect(
+        TrackLabelBuilder.subtitleLabel(title: 'Forced', language: 'en', codec: 'subrip', forced: true, index: 0),
+        const TrackLabel('English (Forced)', 'SRT'),
+      );
+      expect(
+        TrackLabelBuilder.subtitleLabel(title: 'Forced', language: 'en', codec: 'subrip', index: 0),
+        const TrackLabel('English (Forced)', 'SRT'),
+      );
+    });
+
+    test('no duplicate suffix when the title-primary already says forced', () {
+      expect(
+        TrackLabelBuilder.subtitleLabel(title: 'Signs Forced', codec: 'ass', forced: true, index: 0),
+        const TrackLabel('Signs Forced', 'ASS'),
+      );
+    });
+
+    test('descriptive titles stay on the secondary line, even when language-prefixed', () {
+      expect(
+        TrackLabelBuilder.subtitleLabel(title: 'English (SDH)', language: 'en', codec: 'subrip', index: 0),
+        const TrackLabel('English', 'English (SDH) · SRT'),
+      );
+    });
+
+    test('drops a title that restates the language', () {
+      expect(
+        TrackLabelBuilder.subtitleLabel(title: 'English', language: 'en', codec: 'subrip', index: 0),
+        const TrackLabel('English', 'SRT'),
+      );
+    });
+
+    test('falls back to "Track N", keeping the forced suffix', () {
+      expect(TrackLabelBuilder.subtitleLabel(index: 0), const TrackLabel('Track 1'));
+      expect(TrackLabelBuilder.subtitleLabel(forced: true, index: 1), const TrackLabel('Track 2 (Forced)'));
+    });
+
+    test('displayTitle fallback is codec-stripped like a title', () {
+      expect(
+        TrackLabelBuilder.subtitleLabel(displayTitle: 'Japanese Signs/Songs - ASS', codec: 'ass', index: 0),
+        const TrackLabel('Japanese Signs/Songs', 'ASS'),
+      );
     });
 
     test('cleans raw Jellyfin/ExoPlayer subtitle metadata prefixes', () {
       expect(
-        TrackLabelBuilder.buildSubtitleLabel(
-          title: 'title=German - SUBRIP',
-          language: 'LANG=DEU',
-          codec: 'srt',
-          index: 0,
-        ),
-        'German · DEU · SRT',
+        TrackLabelBuilder.subtitleLabel(title: 'title=German - SUBRIP', language: 'LANG=DEU', codec: 'srt', index: 0),
+        const TrackLabel('German', 'SRT'),
       );
       expect(
-        TrackLabelBuilder.buildSubtitleLabel(
+        TrackLabelBuilder.subtitleLabel(
           title: 'title=English - Default - SUBRIP',
           language: 'LANG=ENG',
           codec: 'subrip',
           index: 1,
         ),
-        'English - Default · ENG · SRT',
+        const TrackLabel('English', 'English - Default · SRT'),
       );
     });
   });

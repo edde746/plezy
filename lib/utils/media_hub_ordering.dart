@@ -1,4 +1,5 @@
 import '../media/media_hub.dart';
+import '../media/ids.dart';
 import '../media/media_library.dart';
 import 'global_key_utils.dart';
 
@@ -35,13 +36,13 @@ bool sortMediaHubsByLibraryOrder(List<MediaHub> hubs, List<MediaLibrary> library
 }
 
 int? _hubLibraryOrderIndex(MediaHub hub, Map<String, int> orderByGlobalKey) {
-  final hubLibraryKey = _globalKey(hub.serverId, hub.libraryId);
+  final hubLibraryKey = _globalKey(serverIdOrNull(hub.serverId), hub.libraryId);
   final hubIndex = hubLibraryKey == null ? null : orderByGlobalKey[hubLibraryKey];
   if (hubIndex != null) return hubIndex;
 
   int? bestIndex;
   for (final item in hub.items) {
-    final key = _globalKey(item.serverId ?? hub.serverId, item.libraryId);
+    final key = _globalKey(serverIdOrNull(item.serverId ?? hub.serverId), item.libraryId);
     final index = key == null ? null : orderByGlobalKey[key];
     if (index != null && (bestIndex == null || index < bestIndex)) {
       bestIndex = index;
@@ -50,7 +51,7 @@ int? _hubLibraryOrderIndex(MediaHub hub, Map<String, int> orderByGlobalKey) {
   return bestIndex;
 }
 
-String? _globalKey(String? serverId, String? libraryId) {
+String? _globalKey(ServerId? serverId, String? libraryId) {
   if (serverId == null || libraryId == null) return null;
-  return buildGlobalKey(serverId, libraryId);
+  return buildGlobalKey(ServerId(serverId), libraryId);
 }

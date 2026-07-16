@@ -3,6 +3,7 @@ import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import 'package:plezy/screens/profile/pin_entry_dialog.dart';
 import 'package:plezy/utils/platform_detector.dart';
 
@@ -126,6 +127,68 @@ void main() {
     expect(find.byType(PinEntryDialog), findsNothing);
   });
 
+  testWidgets('mobile auto-submit after external dismiss does not pop route below PIN dialog', (tester) async {
+    TvDetectionService.debugSetAppleTVOverride(false);
+    final navigatorKey = GlobalKey<NavigatorState>();
+    String? pinResult = 'unchanged';
+    bool? boolRouteResult;
+
+    await tester.pumpWidget(
+      MaterialApp(
+        navigatorKey: navigatorKey,
+        theme: ThemeData(platform: TargetPlatform.iOS),
+        home: Builder(
+          builder: (context) {
+            return Scaffold(
+              body: TextButton(
+                onPressed: () async {
+                  boolRouteResult = await Navigator.of(context).push<bool>(
+                    MaterialPageRoute(
+                      builder: (routeContext) {
+                        return Scaffold(
+                          body: Column(
+                            children: [
+                              const Text('External Bool Route'),
+                              TextButton(
+                                onPressed: () async {
+                                  pinResult = await showPinEntryDialog(routeContext, 'Protected Profile');
+                                },
+                                child: const Text('Open External PIN'),
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
+                  );
+                },
+                child: const Text('Open External Bool Route'),
+              ),
+            );
+          },
+        ),
+      ),
+    );
+
+    await tester.tap(find.text('Open External Bool Route'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Open External PIN'));
+    await tester.pumpAndSettle();
+
+    final field = find.byType(TextField);
+    await tester.showKeyboard(field);
+    await tester.enterText(field, '1234');
+    navigatorKey.currentState!.pop();
+    await tester.pump();
+    await tester.pumpAndSettle();
+
+    expect(tester.takeException(), isNull);
+    expect(pinResult, isNull);
+    expect(boolRouteResult, isNull);
+    expect(find.text('External Bool Route'), findsOneWidget);
+    expect(find.byType(PinEntryDialog), findsNothing);
+  });
+
   testWidgets('D-pad keypad enters and submits PIN', (tester) async {
     TvDetectionService.debugSetAppleTVOverride(true);
     String? result;
@@ -135,13 +198,36 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('1'), findsOneWidget);
-    expect(find.byIcon(Icons.close_rounded), findsOneWidget);
-    expect(find.byIcon(Icons.backspace_outlined), findsOneWidget);
+    expect(find.byIcon(Symbols.close_rounded), findsOneWidget);
+    expect(find.byIcon(Symbols.backspace_rounded), findsOneWidget);
     expect(find.byType(TextField), findsNothing);
     expect(find.widgetWithText(TextButton, 'Cancel'), findsNothing);
     expect(find.byType(FilledButton), findsNothing);
 
     await _pressDpadKey(tester, LogicalKeyboardKey.select, PhysicalKeyboardKey.select); // 1
+    await _pressDpadKey(tester, LogicalKeyboardKey.arrowRight, PhysicalKeyboardKey.arrowRight);
+    await _pressDpadKey(tester, LogicalKeyboardKey.select, PhysicalKeyboardKey.select); // 2
+    await _pressDpadKey(tester, LogicalKeyboardKey.arrowRight, PhysicalKeyboardKey.arrowRight);
+    await _pressDpadKey(tester, LogicalKeyboardKey.select, PhysicalKeyboardKey.select); // 3
+    await _pressDpadKey(tester, LogicalKeyboardKey.arrowLeft, PhysicalKeyboardKey.arrowLeft);
+    await _pressDpadKey(tester, LogicalKeyboardKey.arrowLeft, PhysicalKeyboardKey.arrowLeft);
+    await _pressDpadKey(tester, LogicalKeyboardKey.arrowDown, PhysicalKeyboardKey.arrowDown);
+    await _pressDpadKey(tester, LogicalKeyboardKey.select, PhysicalKeyboardKey.select); // 4
+    await tester.pumpAndSettle();
+
+    expect(result, '1234');
+    expect(find.byType(PinEntryDialog), findsNothing);
+  });
+
+  testWidgets('held D-pad select activates each PIN key once', (tester) async {
+    TvDetectionService.debugSetAppleTVOverride(true);
+    String? result;
+
+    await _pumpPinDialogLauncher(tester, onResult: (pin) => result = pin);
+    await tester.tap(find.text('Open'));
+    await tester.pumpAndSettle();
+
+    await _holdDpadSelect(tester); // 1
     await _pressDpadKey(tester, LogicalKeyboardKey.arrowRight, PhysicalKeyboardKey.arrowRight);
     await _pressDpadKey(tester, LogicalKeyboardKey.select, PhysicalKeyboardKey.select); // 2
     await _pressDpadKey(tester, LogicalKeyboardKey.arrowRight, PhysicalKeyboardKey.arrowRight);
@@ -293,6 +379,34 @@ Future<void> _pumpPinDialogLauncher(
 
 Future<void> _pressKey(WidgetTester tester, LogicalKeyboardKey key) async {
   await tester.sendKeyEvent(key);
+  await tester.pump();
+}
+
+Future<void> _holdDpadSelect(WidgetTester tester) async {
+  _dispatchKey(
+    const KeyDownEvent(
+      physicalKey: PhysicalKeyboardKey.select,
+      logicalKey: LogicalKeyboardKey.select,
+      timeStamp: Duration.zero,
+      deviceType: ui.KeyEventDeviceType.directionalPad,
+    ),
+  );
+  _dispatchKey(
+    const KeyRepeatEvent(
+      physicalKey: PhysicalKeyboardKey.select,
+      logicalKey: LogicalKeyboardKey.select,
+      timeStamp: Duration(milliseconds: 100),
+      deviceType: ui.KeyEventDeviceType.directionalPad,
+    ),
+  );
+  _dispatchKey(
+    const KeyUpEvent(
+      physicalKey: PhysicalKeyboardKey.select,
+      logicalKey: LogicalKeyboardKey.select,
+      timeStamp: Duration(milliseconds: 200),
+      deviceType: ui.KeyEventDeviceType.directionalPad,
+    ),
+  );
   await tester.pump();
 }
 

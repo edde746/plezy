@@ -3,6 +3,7 @@ import 'dart:convert';
 import '../models/plex/plex_home.dart';
 import '../models/plex/plex_home_user.dart';
 import '../profiles/profile.dart';
+import '../profiles/plex_home_cache_codec.dart';
 import '../profiles/profile_registry.dart';
 import '../services/plex_auth_service.dart';
 import '../services/server_registry.dart';
@@ -225,9 +226,7 @@ class ConnectionBootstrap {
     final raw = storage.getPlexHomeUsersCacheJson(connectionId);
     if (raw == null || raw.isEmpty) return null;
     try {
-      final decoded = jsonDecode(raw);
-      if (decoded is! List) return null;
-      return decoded.whereType<Map<String, dynamic>>().map(PlexHomeUser.fromJson).toList();
+      return decodePlexHomeUsersCache(raw);
     } catch (e, st) {
       appLogger.w('Migration: failed to read Plex Home cache for $connectionId', error: e, stackTrace: st);
       return null;
@@ -238,7 +237,7 @@ class ConnectionBootstrap {
     try {
       final users = await _plexHomeUserFetcher(account.accountToken);
       if (users.isNotEmpty) {
-        await storage.savePlexHomeUsersCache(account.id, users.map((u) => u.toJson()).toList());
+        await storage.savePlexHomeUsersCache(account.id, encodePlexHomeUsersCache(users));
         appLogger.i('Migration: fetched ${users.length} Plex Home users for ${account.id}');
       }
       return users;

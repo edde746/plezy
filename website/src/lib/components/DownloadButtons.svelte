@@ -1,7 +1,7 @@
 <script lang="ts">
   import AppleIcon from "~icons/simple-icons/apple";
   import GooglePlayIcon from "~icons/simple-icons/googleplay";
-  import LinuxIcon from "~icons/simple-icons/linux";
+  import LinuxIcon from "~icons/devicon-plain/linux";
   import AmazonIcon from "~icons/cib/amazon";
   import ChevronDownIcon from "~icons/heroicons/chevron-down-solid";
   import WindowsIcon from "./WindowsIcon.svelte";
@@ -133,80 +133,82 @@
   .download-buttons {
     display: flex;
     flex-direction: column;
-    gap: 1rem;
+    gap: 0.75rem;
   }
 
   .store-buttons,
   .desktop-buttons {
     display: flex;
     flex-wrap: wrap;
-  }
-
-  .store-buttons {
-    gap: 0.75rem;
-  }
-
-  .desktop-buttons {
-    gap: 0.625rem;
+    gap: 0.5rem;
   }
 
   .store-button,
   .desktop-button {
     display: inline-flex;
+    min-height: 2.875rem;
     align-items: center;
-    border-radius: 9999px;
-    font-size: 0.875rem;
-    line-height: 1.25rem;
-    transition: background-color 150ms ease, color 150ms ease;
+    justify-content: center;
+    gap: 0.625rem;
+    border-radius: var(--radius-pill);
+    padding-inline: 1rem;
+    font-size: 0.8125rem;
+    font-weight: 700;
+    line-height: 1;
+    transition:
+      border-radius var(--motion-expressive) var(--ease-standard),
+      color var(--motion-fast) var(--ease-standard),
+      background-color var(--motion-fast) var(--ease-standard);
   }
 
   .store-button {
-    gap: 0.625rem;
-    padding: 0.75rem 1.25rem;
-    color: #111827;
-    background: #fff;
-    font-weight: 600;
+    color: var(--color-on-primary);
+    background: var(--color-text);
   }
 
-  .store-button:hover {
-    background: #f3f4f6;
+  .store-button:hover,
+  .store-button:focus-visible {
+    border-radius: var(--radius-md);
+    background: #fff;
+    outline: none;
   }
 
   .store-button :global(svg) {
-    width: 1.25rem;
-    height: 1.25rem;
+    width: 1.125rem;
+    height: 1.125rem;
   }
 
   .desktop-button {
-    gap: 0.5rem;
-    padding: 0.5rem 1rem;
-    border: 1px solid var(--color-border);
-    background: color-mix(in srgb, var(--color-surface) 80%, transparent);
+    color: var(--color-text-muted);
+    background: var(--color-surface-highest);
   }
 
   .desktop-button:hover,
+  .desktop-button:focus-visible,
   .linux-button.active {
+    color: var(--color-text);
     background: var(--color-surface-hover);
+    outline: none;
+  }
+
+  .desktop-button:hover,
+  .desktop-button:focus-visible {
+    border-radius: var(--radius-md);
   }
 
   .desktop-button :global(svg) {
-    width: 0.875rem;
-    height: 0.875rem;
-    opacity: 0.7;
+    width: 0.9375rem;
+    height: 0.9375rem;
   }
 
   .linux-control {
     position: relative;
   }
 
-  .linux-button {
-    cursor: default;
-  }
-
   .chevron {
     width: 0.75rem;
     height: 0.75rem;
-    transition: transform 300ms ease;
+    transition: transform var(--motion-normal) var(--ease-standard);
   }
 
   .chevron.open {
@@ -216,55 +218,73 @@
   .chevron :global(svg) {
     width: 0.75rem;
     height: 0.75rem;
-    opacity: 1;
   }
 
   .linux-menu {
     position: absolute;
-    bottom: 100%;
-    left: 0;
+    bottom: calc(100% + 0.5rem);
+    right: 0;
     z-index: 10;
-    width: 14rem;
-    margin-bottom: 0.5rem;
+    width: min(16rem, calc(100vw - 2rem));
     overflow: hidden;
-    border: 1px solid var(--color-border);
-    border-radius: 1rem;
-    background: var(--color-surface);
-    box-shadow:
-      0 20px 25px -5px rgb(0 0 0 / 0.1),
-      0 8px 10px -6px rgb(0 0 0 / 0.1);
+    border-radius: var(--radius-lg);
+    padding: 0.375rem;
+    background: var(--color-surface-highest);
     opacity: 0;
     visibility: hidden;
-    transition: opacity 150ms ease, visibility 150ms ease;
+    transform: translateY(0.5rem);
+    transition:
+      opacity var(--motion-normal) var(--ease-standard),
+      transform var(--motion-normal) var(--ease-standard),
+      visibility var(--motion-normal) var(--ease-standard);
   }
 
   .linux-menu.open {
     opacity: 1;
     visibility: visible;
+    transform: translateY(0);
   }
 
   .linux-separator {
-    border-top: 1px solid var(--color-border);
+    height: var(--group-gap);
+    margin-block: 0.375rem;
+    background: var(--color-border);
   }
 
   .linux-arch-label {
-    padding: 0.625rem 1rem 0.25rem;
-    color: var(--color-text-muted);
-    font-size: 0.75rem;
-    font-weight: 600;
-    letter-spacing: 0.025em;
+    padding: 0.625rem 0.75rem 0.375rem;
+    color: var(--color-text-subtle);
+    font-family: var(--font-utility);
+    font-size: 0.6875rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
     text-transform: uppercase;
   }
 
   .linux-menu-item {
     display: block;
-    padding: 0.5rem 1rem;
-    font-size: 0.875rem;
+    border-radius: var(--radius-md);
+    padding: 0.625rem 0.75rem;
+    color: var(--color-text-muted);
+    font-size: 0.8125rem;
+    font-weight: 600;
     line-height: 1.25rem;
-    transition: background-color 150ms ease;
+    transition:
+      color var(--motion-fast) var(--ease-standard),
+      background-color var(--motion-fast) var(--ease-standard);
   }
 
-  .linux-menu-item:hover {
-    background: var(--color-surface-hover);
+  .linux-menu-item:hover,
+  .linux-menu-item:focus-visible {
+    color: var(--color-text);
+    background: rgb(237 237 237 / 0.12);
+    outline: none;
+  }
+
+  @media (max-width: 460px) {
+    .store-button,
+    .desktop-button {
+      flex: 1 1 auto;
+    }
   }
 </style>

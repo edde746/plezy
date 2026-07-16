@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 bool? mobileSkipZoneForTap({required Offset position, required Size size}) {
-  final dimensions = _mobileSkipZoneDimensions(size);
+  final dimensions = mobileSkipZoneDimensions(size);
   final inVerticalRange = position.dy > dimensions.topExclude && position.dy < (size.height - dimensions.bottomExclude);
   if (!inVerticalRange) return null;
   if (position.dx < dimensions.leftZoneWidth) return false;
@@ -9,7 +9,7 @@ bool? mobileSkipZoneForTap({required Offset position, required Size size}) {
   return null;
 }
 
-({double topExclude, double bottomExclude, double leftZoneWidth}) _mobileSkipZoneDimensions(Size size) {
+({double topExclude, double bottomExclude, double leftZoneWidth}) mobileSkipZoneDimensions(Size size) {
   return (topExclude: size.height * 0.15, bottomExclude: size.height * 0.15, leftZoneWidth: size.width * 0.35);
 }
 
@@ -33,7 +33,7 @@ class MobileSkipZones extends StatelessWidget {
       child: LayoutBuilder(
         builder: (context, constraints) {
           final size = Size(constraints.maxWidth, constraints.maxHeight);
-          final dimensions = _mobileSkipZoneDimensions(size);
+          final dimensions = mobileSkipZoneDimensions(size);
 
           return Stack(
             children: [

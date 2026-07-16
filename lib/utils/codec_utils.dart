@@ -21,10 +21,14 @@ class CodecUtils {
       case 'mov_text':
         return 'srt';
       case 'pgs':
+      case 'pgssub':
       case 'hdmv_pgs_subtitle':
         return 'sup';
       case 'dvd_subtitle':
       case 'dvdsub':
+      case 'vobsub':
+      case 'dvb_sub':
+      case 'dvb_subtitle':
         return 'sub';
       default:
         return 'srt';
@@ -37,6 +41,30 @@ class CodecUtils {
       'srt' || 'subrip' || 'ass' || 'ssa' || 'webvtt' || 'vtt' || 'mov_text' => true,
       _ => false,
     };
+  }
+
+  /// Image-based (bitmap) subtitle codecs. Plex burns these into the video
+  /// when the selected output transport cannot carry a bitmap subtitle
+  /// rendition.
+  static bool isImageSubtitleCodec(String? codec) {
+    if (codec == null) return false;
+    return switch (codec.toLowerCase()) {
+      'pgs' ||
+      'pgssub' ||
+      'hdmv_pgs_subtitle' ||
+      'dvd_subtitle' ||
+      'dvdsub' ||
+      'vobsub' ||
+      'dvb_sub' ||
+      'dvb_subtitle' => true,
+      _ => false,
+    };
+  }
+
+  /// Subtitle codecs Plex can deliver in a transcode. Text codecs can become
+  /// segmented HLS WebVTT; image codecs can be burned into the video.
+  static bool isTranscodableSubtitleCodec(String? codec) {
+    return isTextSubtitleCodec(codec) || isImageSubtitleCodec(codec);
   }
 
   /// Formats a subtitle codec name to a user-friendly display format.
@@ -69,6 +97,23 @@ class CodecUtils {
       'mpeg4' => 'MPEG-4',
       'vc1' => 'VC-1',
       _ => codec.toUpperCase(),
+    };
+  }
+
+  /// Formats an audio channel count as a friendly layout name (2 → 'Stereo',
+  /// 6 → '5.1'). Returns null when [channels] is null or not positive.
+  static String? formatAudioChannels(int? channels) {
+    if (channels == null || channels <= 0) return null;
+    return switch (channels) {
+      1 => 'Mono',
+      2 => 'Stereo',
+      3 => '3.0',
+      4 => '4.0',
+      5 => '4.1',
+      6 => '5.1',
+      7 => '6.1',
+      8 => '7.1',
+      _ => '${channels}ch',
     };
   }
 

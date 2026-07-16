@@ -8,6 +8,7 @@ import 'package:plezy/models/jellyfin/jellyfin_user_profile.dart';
 import 'package:plezy/models/plex/plex_user_profile.dart';
 import 'package:plezy/mpv/mpv.dart';
 import 'package:plezy/services/track_selection_service.dart';
+import '../test_helpers/media_items.dart';
 
 // NOTE on coverage scope:
 // `TrackSelectionService` is a large pure logic surface with one async
@@ -44,7 +45,7 @@ import 'package:plezy/services/track_selection_service.dart';
 // ============================================================
 
 MediaItem _meta({MediaBackend backend = MediaBackend.plex, String? audioLanguage, String? subtitleLanguage}) =>
-    MediaItem(
+    testMediaItem(
       id: 'rk1',
       backend: backend,
       kind: MediaKind.movie,
@@ -102,6 +103,7 @@ SubtitleTrack _sub(
 
 MediaAudioTrack _plexAudio(
   int id, {
+  int? index,
   String? language,
   String? languageCode,
   String? title,
@@ -111,6 +113,7 @@ MediaAudioTrack _plexAudio(
 }) {
   return MediaAudioTrack(
     id: id,
+    index: index,
     language: language,
     languageCode: languageCode ?? language,
     title: title,
@@ -122,6 +125,7 @@ MediaAudioTrack _plexAudio(
 
 MediaSubtitleTrack _plexSub(
   int id, {
+  int? index,
   String? language,
   String? languageCode,
   String? title,
@@ -131,6 +135,7 @@ MediaSubtitleTrack _plexSub(
 }) {
   return MediaSubtitleTrack(
     id: id,
+    index: index,
     language: language,
     languageCode: languageCode ?? language,
     title: title,
@@ -143,12 +148,14 @@ MediaSubtitleTrack _plexSub(
 MediaSourceInfo _info({
   List<MediaAudioTrack>? audio,
   List<MediaSubtitleTrack>? subs,
+  int? defaultAudioStreamIndex,
   int? defaultSubtitleStreamIndex,
 }) => MediaSourceInfo(
   videoUrl: '',
   audioTracks: audio ?? const [],
   subtitleTracks: subs ?? const [],
   chapters: const [],
+  defaultAudioStreamIndex: defaultAudioStreamIndex,
   defaultSubtitleStreamIndex: defaultSubtitleStreamIndex,
 );
 
@@ -345,6 +352,42 @@ void main() {
       expect(result.track.language, 'fre');
     });
 
+    test('Jellyfin selected audio stream wins over DefaultAudioStreamIndex', () {
+      final tracks = [_audio('A', lang: 'eng'), _audio('B', lang: 'fre')];
+      final info = _info(
+        defaultAudioStreamIndex: 1,
+        audio: [
+          _plexAudio(1, index: 1, language: 'eng', languageCode: 'eng'),
+          _plexAudio(2, index: 2, language: 'fre', languageCode: 'fre', selected: true),
+        ],
+      );
+      final result = _svc(
+        metadata: _meta(backend: MediaBackend.jellyfin),
+        info: info,
+      ).selectAudioTrack(tracks, null);
+      expect(result, isNotNull);
+      expect(result!.priority, TrackSelectionPriority.serverSelected);
+      expect(result.track.language, 'fre');
+    });
+
+    test('Jellyfin DefaultAudioStreamIndex selects audio when selected flag is missing', () {
+      final tracks = [_audio('A', lang: 'eng'), _audio('B', lang: 'fre')];
+      final info = _info(
+        defaultAudioStreamIndex: 2,
+        audio: [
+          _plexAudio(1, index: 1, language: 'eng', languageCode: 'eng'),
+          _plexAudio(2, index: 2, language: 'fre', languageCode: 'fre'),
+        ],
+      );
+      final result = _svc(
+        metadata: _meta(backend: MediaBackend.jellyfin),
+        info: info,
+      ).selectAudioTrack(tracks, null);
+      expect(result, isNotNull);
+      expect(result!.priority, TrackSelectionPriority.serverSelected);
+      expect(result.track.language, 'fre');
+    });
+
     test('Priority 3: per-media audioLanguage from metadata', () {
       final tracks = [_audio('A', lang: 'eng'), _audio('B', lang: 'fre')];
       final result = _svc(metadata: _meta(audioLanguage: 'fre')).selectAudioTrack(tracks, null);
@@ -420,6 +463,23 @@ void main() {
       expect(result.track.language, 'fre');
     });
 
+    test('Jellyfin selected subtitle stream wins over DefaultSubtitleStreamIndex', () {
+      final tracks = [_sub('1', lang: 'eng'), _sub('2', lang: 'fre')];
+      final info = _info(
+        defaultSubtitleStreamIndex: 10,
+        subs: [
+          _plexSub(10, index: 10, language: 'eng', languageCode: 'eng'),
+          _plexSub(11, index: 11, language: 'fre', languageCode: 'fre', selected: true),
+        ],
+      );
+      final result = _svc(
+        metadata: _meta(backend: MediaBackend.jellyfin),
+        info: info,
+      ).selectSubtitleTrack(tracks, null, null);
+      expect(result.priority, TrackSelectionPriority.serverSelected);
+      expect(result.track.language, 'fre');
+    });
+
     test('Priority 2: Plex media info has subs but none selected → off', () {
       // Server's explicit decision: there ARE subs but the user opted out.
       final tracks = [_sub('1', lang: 'eng'), _sub('2', lang: 'fre')];
@@ -448,6 +508,23 @@ void main() {
       ).selectSubtitleTrack(tracks, null, null);
       expect(result.priority, TrackSelectionPriority.defaultTrack);
       expect(result.track.id, '2');
+    });
+
+    test('Jellyfin DefaultSubtitleStreamIndex selects subtitle when selected flag is missing', () {
+      final tracks = [_sub('1', lang: 'eng'), _sub('2', lang: 'fre')];
+      final info = _info(
+        defaultSubtitleStreamIndex: 11,
+        subs: [
+          _plexSub(10, index: 10, language: 'eng', languageCode: 'eng'),
+          _plexSub(11, index: 11, language: 'fre', languageCode: 'fre'),
+        ],
+      );
+      final result = _svc(
+        metadata: _meta(backend: MediaBackend.jellyfin),
+        info: info,
+      ).selectSubtitleTrack(tracks, null, null);
+      expect(result.priority, TrackSelectionPriority.serverSelected);
+      expect(result.track.language, 'fre');
     });
 
     test('Jellyfin explicit DefaultSubtitleStreamIndex=-1 forces subtitles off', () {
@@ -567,6 +644,71 @@ void main() {
       final result = _svc().selectSubtitleTrack(const [], null, null);
       expect(result.priority, TrackSelectionPriority.off);
       expect(result.track.id, 'no');
+    });
+  });
+
+  // ============================================================
+  // findPlexTrackForMpvSubtitle / findPlexTrackForMpvAudio — same-language
+  // disambiguation (regression for #1443). The player reports null titles for
+  // MKV tracks that carry only a forced flag, so the forced flag (+2) and the
+  // ordinal tiebreaker (+1) must separate two tracks that share a language.
+  // ============================================================
+
+  group('findPlexTrackForMpvSubtitle - forced disambiguation', () {
+    // Disposition-flagged forced track: forced is set in the container, so both
+    // Plex and the player carry forced=true on the forced track.
+    test('disposition-flagged forced track maps via the forced flag', () {
+      final plexTracks = [
+        _plexSub(10, index: 0, languageCode: 'fre', codec: 'ass', forced: false),
+        _plexSub(11, index: 1, languageCode: 'fre', codec: 'ass', forced: true),
+      ];
+      final mpvNonForced = _sub('2_0', lang: 'fre', codec: 'ass');
+      final mpvForced = _sub('2_1', lang: 'fre', codec: 'ass', isForced: true);
+      final allMpv = [mpvNonForced, mpvForced];
+
+      expect(findPlexTrackForMpvSubtitle(mpvForced, plexTracks, allMpvTracks: allMpv)?.id, 11);
+      expect(findPlexTrackForMpvSubtitle(mpvNonForced, plexTracks, allMpvTracks: allMpv)?.id, 10);
+    });
+
+    // Title-only "forced" track — the exact #1443 file (MKVToolNix screenshot):
+    // the forced sub is NOT flagged forced in the container, it only carries the
+    // name "Forced"; the regular French sub has an empty name. Both sides report
+    // forced=false, so disambiguation rides on title (forced sub) and ordinal
+    // position (the empty-title regular sub).
+    test('title-only forced track and empty-title regular track stay distinct (#1443)', () {
+      final plexTracks = [
+        _plexSub(30, index: 0, languageCode: 'fre', title: 'Forced', codec: 'ass', forced: false),
+        _plexSub(31, index: 1, languageCode: 'fre', codec: 'ass', forced: false),
+        _plexSub(32, index: 2, languageCode: 'eng', title: 'SDH', codec: 'ass', forced: false),
+      ];
+      final mpvForcedByName = _sub('2_0', lang: 'fre', title: 'Forced', codec: 'ass');
+      final mpvRegular = _sub('2_1', lang: 'fre', codec: 'ass');
+      final mpvSdh = _sub('2_2', lang: 'eng', title: 'SDH', codec: 'ass');
+      final allMpv = [mpvForcedByName, mpvRegular, mpvSdh];
+
+      expect(findPlexTrackForMpvSubtitle(mpvForcedByName, plexTracks, allMpvTracks: allMpv)?.id, 30);
+      expect(findPlexTrackForMpvSubtitle(mpvRegular, plexTracks, allMpvTracks: allMpv)?.id, 31);
+    });
+  });
+
+  group('findPlexTrackForMpvAudio - same-language disambiguation', () {
+    // Two French audio tracks differing only by channel count, titles null.
+    final plexTracks = [
+      _plexAudio(20, index: 0, languageCode: 'fre', codec: 'ac3', channels: 2),
+      _plexAudio(21, index: 1, languageCode: 'fre', codec: 'ac3', channels: 6),
+    ];
+    final mpvStereo = _audio('1_0', lang: 'fre', codec: 'ac3', channels: 2);
+    final mpvSurround = _audio('1_1', lang: 'fre', codec: 'ac3', channels: 6);
+    final allMpv = [mpvStereo, mpvSurround];
+
+    test('surround player track maps to the 6-channel Plex stream', () {
+      final match = findPlexTrackForMpvAudio(mpvSurround, plexTracks, allMpvTracks: allMpv);
+      expect(match?.id, 21);
+    });
+
+    test('stereo player track maps to the 2-channel Plex stream', () {
+      final match = findPlexTrackForMpvAudio(mpvStereo, plexTracks, allMpvTracks: allMpv);
+      expect(match?.id, 20);
     });
   });
 }

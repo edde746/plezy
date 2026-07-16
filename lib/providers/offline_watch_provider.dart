@@ -1,6 +1,8 @@
 import 'package:flutter/foundation.dart';
+import '../media/ids.dart';
 
 import '../i18n/strings.g.dart';
+import '../media/episode_collection.dart';
 import '../media/media_item.dart';
 import '../media/media_item_types.dart';
 import '../mixins/disposable_change_notifier_mixin.dart';
@@ -76,26 +78,21 @@ class OfflineWatchProvider extends ChangeNotifier with DisposableChangeNotifierM
       return localOffset;
     }
 
+    final localStatus = await _syncService.getLocalWatchStatus(globalKey);
+    if (localStatus == true) return null;
+
     // Fall back to cached metadata
     final metadata = _downloadProvider.getMetadata(globalKey);
     return metadata?.viewOffsetMs;
   }
 
-  /// Get sorted episodes for a show (by season, then episode number).
+  /// Get sorted episodes for a show: regular seasons first, Specials last,
+  /// then season then episode — the shared [sortEpisodesByWatchOrder] order,
+  /// so the offline watch order matches what "download next N" selects (#1414).
   List<MediaItem> _getSortedEpisodes(String showId) {
     final episodes = _downloadProvider.getDownloadedEpisodesForShow(showId);
     if (episodes.isEmpty) return episodes;
-
-    // Sort Season 0 (Specials) to the end so regular seasons play first
-    episodes.sort((a, b) {
-      final aIsSpecial = (a.parentIndex ?? 0) == 0;
-      final bIsSpecial = (b.parentIndex ?? 0) == 0;
-      if (aIsSpecial != bIsSpecial) return aIsSpecial ? 1 : -1;
-      final seasonCompare = (a.parentIndex ?? 0).compareTo(b.parentIndex ?? 0);
-      if (seasonCompare != 0) return seasonCompare;
-      return (a.index ?? 0).compareTo(b.index ?? 0);
-    });
-
+    sortEpisodesByWatchOrder(episodes);
     return episodes;
   }
 
@@ -142,13 +139,13 @@ class OfflineWatchProvider extends ChangeNotifier with DisposableChangeNotifierM
 
   /// Emit a watch state change event for immediate UI update.
   void _emitWatchStateChange({
-    required String serverId,
+    required ServerId serverId,
     required String itemId,
     required bool isNowWatched,
     required WatchStateChangeType changeType,
     String? cacheServerId,
   }) {
-    final globalKey = buildGlobalKey(serverId, itemId);
+    final globalKey = buildGlobalKey(ServerId(serverId), itemId);
     final metadata = _downloadProvider.getMetadata(globalKey);
     if (metadata != null) {
       WatchStateNotifier().notifyWatched(item: metadata, isNowWatched: isNowWatched, cacheServerId: cacheServerId);
@@ -171,7 +168,7 @@ class OfflineWatchProvider extends ChangeNotifier with DisposableChangeNotifierM
   /// Mark an item as watched while offline.
   ///
   /// This queues the action for sync when online and emits a [WatchStateEvent].
-  Future<void> markAsWatched({required String serverId, required String itemId}) async {
+  Future<void> markAsWatched({required ServerId serverId, required String itemId}) async {
     final cacheServerId = await _syncService.queueMarkWatched(serverId: serverId, itemId: itemId);
     _emitWatchStateChange(
       serverId: serverId,
@@ -185,11 +182,11 @@ class OfflineWatchProvider extends ChangeNotifier with DisposableChangeNotifierM
   }
 
   /// Auto-delete a download if the auto-remove setting is enabled.
-  void _autoDeleteIfWatched(String serverId, String itemId) {
+  void _autoDeleteIfWatched(ServerId serverId, String itemId) {
     final settings = SettingsService.instanceOrNull;
     if (settings == null || !settings.read(SettingsService.autoRemoveWatchedDownloads)) return;
 
-    final globalKey = buildGlobalKey(serverId, itemId);
+    final globalKey = buildGlobalKey(ServerId(serverId), itemId);
     final meta = _downloadProvider.getMetadata(globalKey);
     if (meta == null) return;
     if (!meta.isEpisode && !meta.isMovie) return;
@@ -213,7 +210,7 @@ class OfflineWatchProvider extends ChangeNotifier with DisposableChangeNotifierM
   /// Mark an item as unwatched while offline.
   ///
   /// This queues the action for sync when online and emits a [WatchStateEvent].
-  Future<void> markAsUnwatched({required String serverId, required String itemId}) async {
+  Future<void> markAsUnwatched({required ServerId serverId, required String itemId}) async {
     final cacheServerId = await _syncService.queueMarkUnwatched(serverId: serverId, itemId: itemId);
     _emitWatchStateChange(
       serverId: serverId,

@@ -144,8 +144,7 @@ class PlexFileInfoStreamReader implements FileInfoStreamReader {
 
   @override
   FileInfoStreamType? typeOf(Map<String, dynamic> stream) {
-    final t = stream['streamType'];
-    if (t is! int) return null;
+    final t = flexibleInt(stream['streamType']);
     return switch (t) {
       PlexStreamType.video => FileInfoStreamType.video,
       PlexStreamType.audio => FileInfoStreamType.audio,
@@ -157,14 +156,14 @@ class PlexFileInfoStreamReader implements FileInfoStreamReader {
   @override
   MediaAudioTrack toAudioTrack(Map<String, dynamic> stream, int _) {
     return MediaAudioTrack(
-      id: stream['id'] as int,
-      index: stream['index'] as int?,
+      id: flexibleInt(stream['id']) ?? (throw const FormatException('Plex audio stream is missing a numeric id')),
+      index: flexibleInt(stream['index']),
       codec: stream['codec'] as String?,
       language: stream['language'] as String?,
       languageCode: stream['languageCode'] as String?,
       title: stream['title'] as String?,
       displayTitle: stream['displayTitle'] as String?,
-      channels: stream['channels'] as int?,
+      channels: flexibleInt(stream['channels']),
       selected: flexibleBool(stream['selected']),
     );
   }
@@ -172,8 +171,8 @@ class PlexFileInfoStreamReader implements FileInfoStreamReader {
   @override
   MediaSubtitleTrack toSubtitleTrack(Map<String, dynamic> stream, int _) {
     return MediaSubtitleTrack(
-      id: stream['id'] as int,
-      index: stream['index'] as int?,
+      id: flexibleInt(stream['id']) ?? (throw const FormatException('Plex subtitle stream is missing a numeric id')),
+      index: flexibleInt(stream['index']),
       codec: stream['codec'] as String?,
       language: stream['language'] as String?,
       languageCode: stream['languageCode'] as String?,

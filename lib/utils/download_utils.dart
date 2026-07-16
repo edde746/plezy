@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../media/ids.dart';
 import 'package:flutter/services.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import '../i18n/strings.g.dart';
@@ -7,14 +8,24 @@ import '../media/media_kind.dart';
 import '../media/media_server_client.dart';
 import '../database/app_database.dart';
 import '../providers/download_provider.dart';
+import '../services/settings_service.dart';
 import '../services/sync_rule_executor.dart';
 import 'content_utils.dart';
 import 'dialogs.dart';
 import 'download_version_utils.dart';
 import 'snackbar_helper.dart';
 
+@visibleForTesting
+String? validateEpisodeCountInput(String text, {required bool allowZero}) {
+  final count = int.tryParse(text);
+  if (count == null || count < 0 || (!allowZero && count == 0)) {
+    return t.downloads.invalidEpisodeCount;
+  }
+  return null;
+}
+
 /// Dialog option for the download picker. Typed to avoid stringly-typed values.
-enum _DownloadChoice { all, unwatched, next5, next10, custom }
+enum _DownloadChoice { all, unwatched, next5, next10, custom, delete }
 
 /// Whether the user chose a one-time download or a persistent sync rule.
 enum _SyncChoice { downloadOnce, keepSynced }
@@ -29,11 +40,16 @@ class DownloadResult {
   /// "created" snackbar wording (no "unwatched episodes" suffix).
   final bool isListRule;
 
+  /// `true` when the queued leaves are tracks (album/artist/track download)
+  /// — picks "tracks queued" over "episodes queued" wording.
+  final bool isMusic;
+
   const DownloadResult({
     required this.count,
     this.syncRuleCreated = false,
     this.syncRuleUpdated = false,
     this.isListRule = false,
+    this.isMusic = false,
   });
 
   String toSnackBarMessage() {
@@ -41,7 +57,7 @@ class DownloadResult {
     if (syncRuleCreated) {
       return isListRule ? t.downloads.syncRuleListCreated : t.downloads.syncRuleCreated(count: count.toString());
     }
-    if (count > 1) return t.downloads.episodesQueued(count: count);
+    if (count > 1) return isMusic ? t.downloads.tracksQueued(count: count) : t.downloads.episodesQueued(count: count);
     return t.downloads.downloadQueued;
   }
 }
@@ -49,34 +65,57 @@ class DownloadResult {
 /// Shows download options dialog for shows/seasons, then queues the download.
 /// For movies/episodes, queues directly without a dialog.
 /// Returns a [DownloadResult], or null if cancelled.
+///
+/// When [onDelete] is provided (i.e. the item already has downloads), a
+/// "Delete download" row is appended to the show/season options dialog so the
+/// completed-download button can double as a "download more / delete" menu.
+/// Selecting it runs [onDelete] and returns null.
 Future<DownloadResult?> showDownloadOptionsAndQueue(
   BuildContext context, {
   required MediaItem metadata,
   required MediaServerClient client,
   required DownloadProvider downloadProvider,
+  Future<void> Function()? onDelete,
 }) async {
   final kind = metadata.kind;
 
   var filter = DownloadFilter.all;
   int? maxCount;
   bool keepSynced = false;
+  // Remembered "Include Specials" choice; the toggle is only shown for whole
+  // shows (a single season has no Specials to drop).
+  final settings = SettingsService.instanceOrNull;
+  bool includeSpecials = settings?.read(SettingsService.downloadIncludeSpecials) ?? true;
 
   if (kind == MediaKind.show || kind == MediaKind.season) {
     int? customCount;
+    final options = <({IconData? icon, String label, _DownloadChoice value})>[
+      (icon: Symbols.download_rounded, label: t.downloads.allEpisodes, value: _DownloadChoice.all),
+      (icon: Symbols.visibility_off_rounded, label: t.downloads.unwatchedOnly, value: _DownloadChoice.unwatched),
+      (icon: Symbols.filter_5_rounded, label: t.downloads.nextNUnwatched(count: 5), value: _DownloadChoice.next5),
+      (
+        icon: Symbols.filter_9_plus_rounded,
+        label: t.downloads.nextNUnwatched(count: 10),
+        value: _DownloadChoice.next10,
+      ),
+      (icon: Symbols.tune_rounded, label: t.downloads.customAmount, value: _DownloadChoice.custom),
+    ];
+    // Already-downloaded show/season: offer deletion as the last row.
+    if (onDelete != null) {
+      options.add((icon: Symbols.delete_rounded, label: t.downloads.deleteDownload, value: _DownloadChoice.delete));
+    }
     final selected = await showOptionPickerDialog<_DownloadChoice>(
       context,
       title: t.downloads.downloadNow,
-      options: [
-        (icon: Symbols.download_rounded, label: t.downloads.allEpisodes, value: _DownloadChoice.all),
-        (icon: Symbols.visibility_off_rounded, label: t.downloads.unwatchedOnly, value: _DownloadChoice.unwatched),
-        (icon: Symbols.filter_5_rounded, label: t.downloads.nextNUnwatched(count: 5), value: _DownloadChoice.next5),
-        (
-          icon: Symbols.filter_9_plus_rounded,
-          label: t.downloads.nextNUnwatched(count: 10),
-          value: _DownloadChoice.next10,
-        ),
-        (icon: Symbols.tune_rounded, label: t.downloads.customAmount, value: _DownloadChoice.custom),
-      ],
+      options: options,
+      toggle: kind == MediaKind.show
+          ? (
+              label: t.downloads.includeSpecials,
+              icon: Symbols.star_rounded,
+              value: includeSpecials,
+              onChanged: (value) => includeSpecials = value,
+            )
+          : null,
       onBeforeClose: (value) async {
         if (value != _DownloadChoice.custom) return value;
         customCount = await _showEpisodeCountDialog(context);
@@ -100,6 +139,9 @@ Future<DownloadResult?> showDownloadOptionsAndQueue(
       case _DownloadChoice.custom:
         filter = DownloadFilter.unwatched;
         maxCount = customCount;
+      case _DownloadChoice.delete:
+        if (onDelete != null) await onDelete();
+        return null;
     }
 
     if (filter == DownloadFilter.unwatched && kind == MediaKind.show && context.mounted) {
@@ -125,17 +167,23 @@ Future<DownloadResult?> showDownloadOptionsAndQueue(
   bool syncRuleUpdated = false;
   if (keepSynced) {
     final syncCount = maxCount ?? 0; // 0 means "all unwatched" for the rule
-    final ruleKey = downloadProvider.syncRuleKeyFor(metadata.serverId ?? client.serverId, metadata.id);
+    final ruleKey = downloadProvider.syncRuleKeyFor(ServerId(metadata.serverId ?? client.serverId), metadata.id);
     syncRuleUpdated = downloadProvider.hasSyncRule(ruleKey);
 
     await downloadProvider.createSyncRule(
-      serverId: metadata.serverId ?? client.serverId,
+      serverId: ServerId(metadata.serverId ?? client.serverId),
       ratingKey: metadata.id,
       targetType: metadata.kind.id.isNotEmpty ? metadata.kind.id : ContentTypes.show,
       episodeCount: syncCount,
       mediaIndex: versionConfig.mediaIndex,
+      includeSpecials: includeSpecials,
       targetMetadata: metadata,
     );
+  }
+
+  // Remember the toggle for next time (only shown, and thus meaningful, for shows).
+  if (kind == MediaKind.show) {
+    await settings?.write(SettingsService.downloadIncludeSpecials, includeSpecials);
   }
 
   final count = await downloadProvider.queueDownload(
@@ -144,12 +192,14 @@ Future<DownloadResult?> showDownloadOptionsAndQueue(
     versionConfig: versionConfig,
     filter: filter,
     maxCount: maxCount,
+    includeSpecials: includeSpecials,
   );
 
   return DownloadResult(
     count: count,
     syncRuleCreated: keepSynced && !syncRuleUpdated,
     syncRuleUpdated: syncRuleUpdated,
+    isMusic: kind.isMusic,
   );
 }
 
@@ -198,13 +248,13 @@ Future<DownloadResult?> showListDownloadOptionsAndQueue(
   bool syncRuleUpdated = false;
 
   if (syncChoice == _SyncChoice.keepSynced) {
-    final ruleKey = downloadProvider.syncRuleKeyFor(serverId, rootMetadata.id);
+    final ruleKey = downloadProvider.syncRuleKeyFor(ServerId(serverId), rootMetadata.id);
     if (downloadProvider.hasSyncRule(ruleKey)) {
       await downloadProvider.updateSyncRuleFilter(ruleKey, filterString);
       syncRuleUpdated = true;
     } else {
       await downloadProvider.createSyncRule(
-        serverId: serverId,
+        serverId: ServerId(serverId),
         ratingKey: rootMetadata.id,
         targetType: targetType,
         episodeCount: 0,
@@ -272,11 +322,7 @@ Future<int?> _showEpisodeCountDialog(
     confirmText: t.common.ok,
     keyboardType: TextInputType.number,
     inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-    validator: (text) {
-      final n = int.tryParse(text);
-      if (n == null || n < 0 || (!allowZero && n == 0)) return '';
-      return null;
-    },
+    validator: (text) => validateEpisodeCountInput(text, allowZero: allowZero),
   );
   if (result == null) return null;
   return int.tryParse(result);

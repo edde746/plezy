@@ -1,0 +1,32 @@
+appId: com.edde746.plezy
+name: Playback recovers after a transient stream failure
+tags:
+  - e2e
+  - regression
+  - playback
+  - recovery
+---
+- runFlow: ../subflows/onboard_jellyfin.yaml
+- tapOn: "(?s)^Libraries.*"
+- extendedWaitUntil:
+    visible: "(?s).*Zulu Zone 4$"
+    timeout: 15000
+- tapOn: "(?s).*Zulu Zone 4$"
+- extendedWaitUntil:
+    visible: "Play"
+    timeout: 15000
+- tapOn:
+    text: "Play"
+    waitToSettleTimeoutMs: 1000
+- extendedWaitUntil:
+    visible: "Pause"
+    timeout: 45000
+- assertNotVisible: "Overview"
+- back
+- extendedWaitUntil:
+    notVisible: "Pause"
+    timeout: 10000
+- back
+- extendedWaitUntil:
+    visible: "Overview"
+    timeout: 15000

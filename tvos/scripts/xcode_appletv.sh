@@ -21,6 +21,9 @@ else
 fi
 
 ReadPubspecVersion() {
+  local fallback_build_name="${FLUTTER_BUILD_NAME:-}"
+  local fallback_build_number="${FLUTTER_BUILD_NUMBER:-}"
+
   local app_path="${FLUTTER_APPLICATION_PATH:-}"
   if [[ -z "$app_path" ]]; then
     if [[ -n "${PROJECT_DIR:-}" ]]; then
@@ -59,8 +62,8 @@ ReadPubspecVersion() {
       FLUTTER_BUILD_NUMBER="1"
     fi
   else
-    FLUTTER_BUILD_NAME="${FLUTTER_BUILD_NAME:-1.0.0}"
-    FLUTTER_BUILD_NUMBER="${FLUTTER_BUILD_NUMBER:-1}"
+    FLUTTER_BUILD_NAME="${fallback_build_name:-1.0.0}"
+    FLUTTER_BUILD_NUMBER="${fallback_build_number:-1}"
   fi
 
   export FLUTTER_BUILD_NAME
@@ -72,11 +75,184 @@ SetPlistString() {
   local key="$2"
   local value="$3"
 
-  if /usr/libexec/PlistBuddy -c "Print :$key" "$plist" >/dev/null 2>&1; then
-    /usr/libexec/PlistBuddy -c "Set :$key $value" "$plist"
+  local current=""
+  if current="$(/usr/libexec/PlistBuddy -c "Print :$key" "$plist" 2>/dev/null)"; then
+    if [[ "$current" != "$value" ]]; then
+      /usr/libexec/PlistBuddy -c "Set :$key $value" "$plist"
+    fi
   else
     /usr/libexec/PlistBuddy -c "Add :$key string $value" "$plist"
   fi
+}
+
+ValidatePlistVersion() {
+  local plist="$1"
+  local label="$2"
+  local build_name=""
+  local build_number=""
+
+  build_name="$(/usr/libexec/PlistBuddy -c "Print :CFBundleShortVersionString" "$plist" 2>/dev/null || true)"
+  build_number="$(/usr/libexec/PlistBuddy -c "Print :CFBundleVersion" "$plist" 2>/dev/null || true)"
+
+  if [[ "$build_name" != "$FLUTTER_BUILD_NAME" || "$build_number" != "$FLUTTER_BUILD_NUMBER" ]]; then
+    echo " └─ERROR: $label Info.plist version is $build_name ($build_number), expected $FLUTTER_BUILD_NAME ($FLUTTER_BUILD_NUMBER)"
+    return 1
+  fi
+}
+
+CopyAppFrameworkInfoPlist() {
+  local plist="$1"
+  local minimum_os_version="${2:-${TVOS_DEPLOYMENT_TARGET:-}}"
+
+  if [[ -z "$minimum_os_version" ]]; then
+    echo " └─ERROR: TVOS_DEPLOYMENT_TARGET is not set for App.framework Info.plist"
+    return 1
+  fi
+
+  cp "$PROJECT_DIR/scripts/Info.plist" "$plist"
+  SetPlistString "$plist" MinimumOSVersion "$minimum_os_version"
+}
+
+ValidateMinimumOSVersion() {
+  local plist="$1"
+  local label="$2"
+  local expected="$3"
+  local current=""
+
+  current="$(/usr/libexec/PlistBuddy -c "Print :MinimumOSVersion" "$plist" 2>/dev/null || true)"
+  if [[ "$current" != "$expected" ]]; then
+    echo " └─ERROR: $label MinimumOSVersion is $current, expected $expected"
+    return 1
+  fi
+}
+
+VersionLessThan() {
+  awk -v lhs="$1" -v rhs="$2" '
+    BEGIN {
+      split(lhs, left, ".")
+      split(rhs, right, ".")
+      for (i = 1; i <= 3; i++) {
+        l = left[i] == "" ? 0 : left[i] + 0
+        r = right[i] == "" ? 0 : right[i] + 0
+        if (l < r) exit 0
+        if (l > r) exit 1
+      }
+      exit 1
+    }
+  '
+}
+
+FrameworkExecutable() {
+  local framework="$1"
+  local plist="$framework/Info.plist"
+  local executable_name=""
+
+  executable_name="$(/usr/libexec/PlistBuddy -c "Print :CFBundleExecutable" "$plist" 2>/dev/null || true)"
+  if [[ -z "$executable_name" ]]; then
+    executable_name="$(basename "$framework" .framework)"
+  fi
+
+  printf "%s/%s\n" "$framework" "$executable_name"
+}
+
+MachOMinimumOSVersion() {
+  local executable="$1"
+
+  otool -l "$executable" 2>/dev/null | awk '
+    $1 == "cmd" && ($2 == "LC_BUILD_VERSION" || $2 == "LC_VERSION_MIN_APPLETVOS" || $2 == "LC_VERSION_MIN_IPHONEOS") {
+      in_version_command = 1
+      next
+    }
+    in_version_command && ($1 == "minos" || $1 == "version") {
+      print $2
+      exit
+    }
+    $1 == "cmd" {
+      in_version_command = 0
+    }
+  '
+}
+
+NormalizeFrameworkMinimumOSVersion() {
+  local framework="$1"
+  local app_minimum_os_version="$2"
+  local executable=""
+  local macho_minimum_os_version=""
+  local plist_minimum_os_version="$app_minimum_os_version"
+
+  executable="$(FrameworkExecutable "$framework")"
+  if [[ ! -f "$executable" ]]; then
+    echo " └─ERROR: framework executable missing: $executable"
+    return 1
+  fi
+
+  macho_minimum_os_version="$(MachOMinimumOSVersion "$executable")"
+  if [[ -n "$macho_minimum_os_version" ]] && VersionLessThan "$plist_minimum_os_version" "$macho_minimum_os_version"; then
+    plist_minimum_os_version="$macho_minimum_os_version"
+  fi
+
+  SetPlistString "$framework/Info.plist" MinimumOSVersion "$plist_minimum_os_version"
+  ValidateMinimumOSVersion "$framework/Info.plist" "$(basename "$framework")" "$plist_minimum_os_version"
+}
+
+CodeSignFramework() {
+  local framework="$1"
+  local executable=""
+
+  executable="$(FrameworkExecutable "$framework")"
+  if [[ ! -f "$executable" ]]; then
+    echo " └─ERROR: framework executable missing: $executable"
+    return 1
+  fi
+
+  if [[ "${PLATFORM_NAME:-}" != "appletvsimulator" && -n "${EXPANDED_CODE_SIGN_IDENTITY:-}" && "${CODE_SIGNING_ALLOWED:-YES}" != "NO" ]]; then
+    codesign --force --verbose --sign "${EXPANDED_CODE_SIGN_IDENTITY}" -- "$framework"
+  fi
+}
+
+EmbedFlutterFrameworks() {
+  if [[ "${TARGET_NAME:-}" != "Runner" ]]; then
+    return 0
+  fi
+
+  local minimum_os_version="${TVOS_DEPLOYMENT_TARGET:-}"
+  local runner_plist="$TARGET_BUILD_DIR/$WRAPPER_NAME/Info.plist"
+  if [[ -z "$minimum_os_version" && -f "$runner_plist" ]]; then
+    minimum_os_version="$(/usr/libexec/PlistBuddy -c "Print :MinimumOSVersion" "$runner_plist" 2>/dev/null || true)"
+  fi
+
+  if [[ -z "$minimum_os_version" ]]; then
+    echo " └─ERROR: could not resolve tvOS MinimumOSVersion for embedded Flutter frameworks"
+    return 1
+  fi
+
+  local app_frameworks_dir="$TARGET_BUILD_DIR/$WRAPPER_NAME/Frameworks"
+  mkdir -p "$app_frameworks_dir"
+
+  local framework=""
+  for framework in App.framework Flutter.framework; do
+    local source="$BUILT_PRODUCTS_DIR/$framework"
+    local destination="$app_frameworks_dir/$framework"
+
+    if [[ ! -d "$source" ]]; then
+      echo " └─ERROR: built framework missing: $source"
+      return 1
+    fi
+
+    NormalizeFrameworkMinimumOSVersion "$source" "$minimum_os_version"
+    rm -rf "$destination"
+    cp -R "$source" "$app_frameworks_dir"
+    NormalizeFrameworkMinimumOSVersion "$destination" "$minimum_os_version"
+  done
+
+  for framework in "$app_frameworks_dir"/*.framework; do
+    if [[ ! -d "$framework" ]]; then
+      continue
+    fi
+
+    NormalizeFrameworkMinimumOSVersion "$framework" "$minimum_os_version"
+    CodeSignFramework "$framework"
+  done
 }
 
 SyncRunnerVersion() {
@@ -95,9 +271,40 @@ SyncRunnerVersion() {
     return 1
   fi
 
-  echo " └─Syncing Runner version $FLUTTER_BUILD_NAME ($FLUTTER_BUILD_NUMBER)"
+  local bundle_label="${TARGET_NAME:-Runner}"
+  echo " └─Syncing $bundle_label version $FLUTTER_BUILD_NAME ($FLUTTER_BUILD_NUMBER)"
   SetPlistString "$plist" CFBundleShortVersionString "$FLUTTER_BUILD_NAME"
   SetPlistString "$plist" CFBundleVersion "$FLUTTER_BUILD_NUMBER"
+  ValidatePlistVersion "$plist" "$bundle_label"
+
+  local top_shelf_plist="$TARGET_BUILD_DIR/$WRAPPER_NAME/PlugIns/TopShelfExtension.appex/Info.plist"
+  if [[ -f "$top_shelf_plist" ]]; then
+    echo " └─Syncing TopShelfExtension version $FLUTTER_BUILD_NAME ($FLUTTER_BUILD_NUMBER)"
+    SetPlistString "$top_shelf_plist" CFBundleShortVersionString "$FLUTTER_BUILD_NAME"
+    SetPlistString "$top_shelf_plist" CFBundleVersion "$FLUTTER_BUILD_NUMBER"
+    ValidatePlistVersion "$top_shelf_plist" "TopShelfExtension"
+  fi
+
+  EmbedFlutterFrameworks
+}
+
+EngineOutputExists() {
+  local variant="$1"
+  [[ -d "$FLUTTER_LOCAL_ENGINE/out/$variant" ]]
+}
+
+ResolveEngineOutput() {
+  local variant
+  for variant in "$@"; do
+    local candidate="$FLUTTER_LOCAL_ENGINE/out/$variant"
+    if [[ -d "$candidate" ]]; then
+      printf '%s\n' "$candidate"
+      return 0
+    fi
+  done
+
+  echo " └─ERROR: none of these Flutter engine outputs exist: $*" >&2
+  return 1
 }
 
 BuildAppDebug() {
@@ -106,10 +313,10 @@ BuildAppDebug() {
   # compiles debug kernels regardless of the host build flavor.
   HOST_TOOLS=$FLUTTER_LOCAL_ENGINE/out/host_release
   if [[ "$debug_sim" == "true" ]]; then
-    DEVICE_TOOLS=$FLUTTER_LOCAL_ENGINE/out/tvos_debug_sim_unopt$TARGET_POSTFIX
+    DEVICE_TOOLS=$(ResolveEngineOutput "tvos_debug_sim_unopt$TARGET_POSTFIX" "tvos_debug_sim_unopt_arm64" "tvos_debug_sim_unopt") || return 1
   else
     # Device build is always arm64; gn outputs `tvos_debug_unopt` without suffix.
-    DEVICE_TOOLS=$FLUTTER_LOCAL_ENGINE/out/tvos_debug_unopt
+    DEVICE_TOOLS=$(ResolveEngineOutput "tvos_debug_unopt") || return 1
   fi
 
   ROOTDIR=$(dirname "$PROJECT_DIR")
@@ -123,8 +330,8 @@ BuildAppDebug() {
   rm -rf "$OUTDIR/Flutter.framework"
   cp -R "$DEVICE_TOOLS/Flutter.framework" "$OUTDIR"
   # The engine tarball's Flutter.framework/Info.plist declares MinimumOSVersion
-  # 13.0 but the binary is linked with minos=14.0. Apple's validator compares
-  # both against the host app — align the plist to 14.0 so the upload passes.
+  # 13.0 but the binary is linked with the resolved deployment target. Apple's
+  # validator compares both against the host app, so keep the plist aligned.
   plutil -replace MinimumOSVersion -string "$TVOS_DEPLOYMENT_TARGET" "$OUTDIR/Flutter.framework/Info.plist"
 
 
@@ -218,7 +425,7 @@ BuildAppDebug() {
   strip "$OUTDIR/App.framework/App"
 
   echo " └─copy frameworks"
-  cp "$PROJECT_DIR/scripts/Info.plist" "$OUTDIR/App.framework/Info.plist"
+  CopyAppFrameworkInfoPlist "$OUTDIR/App.framework/Info.plist" "$tvos_deployment_target"
 
   # Two destinations:
   # 1. BUILT_PRODUCTS_DIR — Swift/linker search path. For plain builds this
@@ -290,8 +497,8 @@ BuildAppRelease() {
   rm -rf "$OUTDIR/Flutter.framework"
   cp -R "$DEVICE_TOOLS/Flutter.framework" "$OUTDIR"
   # The engine tarball's Flutter.framework/Info.plist declares MinimumOSVersion
-  # 13.0 but the binary is linked with minos=14.0. Apple's validator compares
-  # both against the host app — align the plist to 14.0 so the upload passes.
+  # 13.0 but the binary is linked with the resolved deployment target. Apple's
+  # validator compares both against the host app, so keep the plist aligned.
   plutil -replace MinimumOSVersion -string "$TVOS_DEPLOYMENT_TARGET" "$OUTDIR/Flutter.framework/Info.plist"
 
   tvos_deployment_target="$TVOS_DEPLOYMENT_TARGET"
@@ -373,7 +580,7 @@ BuildAppRelease() {
 
   strip "$OUTDIR/App.framework/App"
 
-  cp "$PROJECT_DIR/scripts/Info.plist" "$OUTDIR/App.framework/Info.plist"
+  CopyAppFrameworkInfoPlist "$OUTDIR/App.framework/Info.plist" "$tvos_deployment_target"
 
   echo " └─copy frameworks"
   # BUILT_PRODUCTS_DIR = linker search path. DO NOT use TARGET_BUILD_DIR
@@ -420,11 +627,19 @@ BuildApp() {
   echo " └─engine $FLUTTER_LOCAL_ENGINE"
 
 
-  if [[ "$PLATFORM_NAME" == "appletvsimulator" && "$build_mode" =~ "debug" ]]; then
+  if [[ "$PLATFORM_NAME" == "appletvsimulator" ]]; then
     debug_sim="true"
+    if [[ ! "$build_mode" =~ "debug" ]]; then
+      echo " └─simulator builds use the debug simulator engine"
+    fi
     BuildAppDebug
   elif [[ "$build_mode" =~ "debug" ]]; then
-    BuildAppDebug
+    if EngineOutputExists "tvos_debug_unopt"; then
+      BuildAppDebug
+    else
+      echo " └─debug tvOS device engine not found; building release Flutter app"
+      BuildAppRelease
+    fi
   elif [[ "$build_mode" =~ "release" ]]; then
     # release/archive   (archive: build mode == "release" && ${ACTION} == "install")
     BuildAppRelease

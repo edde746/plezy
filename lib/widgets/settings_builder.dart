@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 
 import '../services/settings_service.dart';
@@ -7,27 +8,44 @@ import '../services/settings_service.dart';
 /// need to rebuild on change. For reactive reads in build methods, prefer
 /// [SettingValueBuilder] / [SettingsBuilder] so only the dependent subtree rebuilds.
 extension SettingsContextRead on BuildContext {
-  T settingsRead<T>(Pref<T> pref) => SettingsService.instanceOrNull!.read(pref);
-  Future<void> settingsWrite<T>(Pref<T> pref, T value) => SettingsService.instanceOrNull!.write(pref, value);
+  T settingsRead<T>(Pref<T> pref) => SettingsService.instance.read(pref);
 }
 
 /// Rebuild [builder] when any of [prefs] changes. Use when a widget's output
 /// depends on multiple settings (conditional visibility, derived values).
 /// Inside [builder], read with [SettingsService.read] directly — the rebuild
 /// is already wired through.
-class SettingsBuilder extends StatelessWidget {
+///
+/// Stateful so the merged listenable is created once, not per build: cards
+/// rebuild this widget constantly and re-merging would unsubscribe/resubscribe
+/// every pref listener each time.
+class SettingsBuilder extends StatefulWidget {
   final List<Pref<Object?>> prefs;
   final WidgetBuilder builder;
 
   const SettingsBuilder({super.key, required this.prefs, required this.builder});
 
   @override
+  State<SettingsBuilder> createState() => _SettingsBuilderState();
+}
+
+class _SettingsBuilderState extends State<SettingsBuilder> {
+  late Listenable _merged = _merge();
+
+  Listenable _merge() {
+    final svc = SettingsService.instance;
+    return Listenable.merge(widget.prefs.map(svc.listenableOf).toList(growable: false));
+  }
+
+  @override
+  void didUpdateWidget(covariant SettingsBuilder oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!listEquals(widget.prefs, oldWidget.prefs)) _merged = _merge();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final svc = SettingsService.instanceOrNull!;
-    return ListenableBuilder(
-      listenable: Listenable.merge(prefs.map(svc.listenableOf).toList(growable: false)),
-      builder: (context, _) => builder(context),
-    );
+    return ListenableBuilder(listenable: _merged, builder: (context, _) => widget.builder(context));
   }
 }
 
@@ -44,7 +62,7 @@ class SettingValueBuilder<T> extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ValueListenableBuilder<T>(
-      valueListenable: SettingsService.instanceOrNull!.listenable(pref),
+      valueListenable: SettingsService.instance.listenable(pref),
       builder: builder,
       child: child,
     );

@@ -1,14 +1,15 @@
 import 'dart:convert';
+import 'package:plezy/media/ids.dart';
 import 'dart:io';
 
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
-import 'package:http/testing.dart';
 import 'package:plezy/database/app_database.dart';
-import 'package:plezy/models/plex/plex_config.dart';
 import 'package:plezy/services/plex_api_cache.dart';
 import 'package:plezy/services/plex_client.dart';
+
+import '../test_helpers/backend_client_fixtures.dart';
 
 void main() {
   late AppDatabase db;
@@ -76,23 +77,16 @@ void main() {
 }
 
 PlexClient _makeClient(Map<String, dynamic> rootContainer) {
-  return PlexClient.forTesting(
-    config: PlexConfig(
-      baseUrl: 'https://plex.example.com',
-      token: 'token',
-      clientIdentifier: 'client-id',
-      product: 'Plezy',
-      version: 'test',
-    ),
-    serverId: 'server-id',
-    httpClient: MockClient((request) async {
+  return testPlexClient(
+    serverId: ServerId('server-id'),
+    handler: (request) async {
       expect(request.url.path, '/');
       return http.Response(
         jsonEncode({'MediaContainer': rootContainer}),
         200,
         headers: {'content-type': 'application/json'},
       );
-    }),
+    },
   );
 }
 

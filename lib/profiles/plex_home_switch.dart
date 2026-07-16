@@ -1,6 +1,10 @@
+import '../connection/connection.dart';
 import '../exceptions/media_server_exceptions.dart';
+import '../i18n/strings.g.dart';
 import '../services/plex_auth_service.dart';
 import '../utils/app_logger.dart';
+import 'profile_connection.dart';
+import 'profile_connection_registry.dart';
 
 /// Outcome of a Plex Home user switch attempt.
 enum PlexHomeSwitchStatus { success, cancelled, failed }
@@ -51,7 +55,7 @@ Future<PlexHomeSwitchResult> switchPlexHomeUserWithPin({
       return PlexHomeSwitchResult._(PlexHomeSwitchStatus.success, response.authToken);
     } on MediaServerHttpException catch (e) {
       if (e.statusCode == 403 && _isInvalidPin(e)) {
-        error = 'Incorrect PIN. Please try again.';
+        error = t.profiles.incorrectPinTryAgain;
         pin = null;
         // Force the next iteration to prompt even when the caller didn't
         // expect a PIN — Plex disagrees about whether one is required.
@@ -68,6 +72,52 @@ Future<PlexHomeSwitchResult> switchPlexHomeUserWithPin({
       );
       return const PlexHomeSwitchResult._(PlexHomeSwitchStatus.failed, null);
     }
+  }
+}
+
+/// One-shot UI-side mint of a Plex Home user-token: create a
+/// [PlexAuthService], run [switchPlexHomeUserWithPin], optionally persist
+/// the minted token as the ([persistProfileId], account) [ProfileConnection]
+/// row, and dispose the service.
+///
+/// This is the flow every UI surface needs (pre-verify on activation,
+/// borrow, source-PIN validation); hand-rolling it drifts on persistence
+/// and lifecycle. [ActiveProfileBinder] deliberately does NOT use this —
+/// it owns a long-lived auth service.
+Future<PlexHomeSwitchResult> mintPlexHomeUserToken({
+  required PlexAccountConnection account,
+  required String homeUserUuid,
+  required bool requiresPin,
+  required PlexHomeSwitchPinPrompt promptForPin,
+  ProfileConnectionRegistry? persistTo,
+  String? persistProfileId,
+  String? logLabel,
+}) async {
+  assert((persistTo == null) == (persistProfileId == null), 'persistTo and persistProfileId go together');
+  final auth = await PlexAuthService.create();
+  try {
+    final result = await switchPlexHomeUserWithPin(
+      auth: auth,
+      accountToken: account.accountToken,
+      homeUserUuid: homeUserUuid,
+      requiresPin: requiresPin,
+      promptForPin: promptForPin,
+      logLabel: logLabel,
+    );
+    if (result.succeeded && persistTo != null && persistProfileId != null) {
+      await persistTo.upsert(
+        ProfileConnection(
+          profileId: persistProfileId,
+          connectionId: account.id,
+          userToken: result.userToken,
+          userIdentifier: homeUserUuid,
+          tokenAcquiredAt: DateTime.now(),
+        ),
+      );
+    }
+    return result;
+  } finally {
+    auth.dispose();
   }
 }
 

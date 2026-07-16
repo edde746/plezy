@@ -1,0 +1,39 @@
+appId: com.edde746.plezy
+name: TV hardware media and back keys follow player chrome state
+
+tags:
+  - e2e
+  - regression
+  - tv
+  - playback
+---
+- runFlow: ../subflows/onboard_jellyfin_tv.yaml
+- pressKey: "Remote Dpad Center"
+- extendedWaitUntil:
+    visible: "Play"
+    timeout: 15000
+- pressKey: "Remote Dpad Center"
+- extendedWaitUntil:
+    visible: "Pause"
+    timeout: 30000
+- extendedWaitUntil:
+    notVisible: "Pause"
+    timeout: 15000
+- pressKey: "Remote Media Play Pause"
+- extendedWaitUntil:
+    visible: "Play"
+    timeout: 10000
+- pressKey: "Remote Media Play Pause"
+- extendedWaitUntil:
+    visible: "Pause"
+    timeout: 10000
+- pressKey: "back"
+- extendedWaitUntil:
+    notVisible: "Pause"
+    timeout: 10000
+- assertNotVisible: "Overview"
+- pressKey: "back"
+- extendedWaitUntil:
+    visible: "(?s)^(Play|Resume).*$"
+    timeout: 15000
+- assertVisible: "(?s).*Zulu Zone 4.*"

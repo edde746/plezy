@@ -53,12 +53,21 @@ class PlayerStreams {
   /// Stream that emits when playback restarts (first frame ready after load/seek).
   final Stream<void> playbackRestart;
 
+  /// Stream that emits when the player has loaded the current media file.
+  final Stream<void> fileLoaded;
+
   /// Stream of seekable buffer ranges from the demuxer cache.
   final Stream<List<BufferRange>> bufferRanges;
 
   /// Stream that emits when the native player backend switches (e.g., ExoPlayer to MPV).
   /// Only emitted on Android when ExoPlayer encounters an unsupported format.
   final Stream<void> backendSwitched;
+
+  /// Emits the URI the backend auto-advanced into after playing out the
+  /// current item, when a next item was pre-armed via [Player.setNext]
+  /// (gapless music). Only audio players emit this; the value is the armed
+  /// [Media.uri].
+  final Stream<String> trackTransition;
 
   const PlayerStreams({
     required this.playing,
@@ -78,6 +87,8 @@ class PlayerStreams {
     required this.audioDevices,
     required this.bufferRanges,
     required this.playbackRestart,
+    this.fileLoaded = const Stream<void>.empty(),
     required this.backendSwitched,
+    this.trackTransition = const Stream<String>.empty(),
   });
 }

@@ -1,0 +1,26 @@
+appId: com.edde746.plezy
+name: Codec sample - Web Dolby Vision EAC3 Atmos and SRT
+tags:
+  - e2e
+  - media
+  - dolby-vision
+---
+- runFlow:
+    file: ../subflows/open_codec_sample.yaml
+    env:
+      SAMPLE_TITLE: "Codec DV Web EAC3 SRT"
+      SAMPLE_OVERVIEW: "Dolby Vision profile 8 with an HDR fallback, E-AC-3 Atmos, and multilingual SRT subtitles."
+- runFlow:
+    file: ../subflows/switch_codec_tracks.yaml
+    env:
+      AUDIO_TRACK: "(?is)^German.*(?:E-AC3|Dolby Digital Plus|Surround|5\\.1).*"
+      SUBTITLE_TRACK: "(?is)^German.*(?:SRT|APPLICATION/X-SUBRIP).*"
+- repeat:
+    times: 2
+    while:
+      notVisible: "Overview"
+    commands:
+      - back
+- extendedWaitUntil:
+    visible: "Overview"
+    timeout: 10000

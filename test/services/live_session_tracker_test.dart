@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:plezy/media/playback_report_metadata.dart';
 import 'package:plezy/services/jellyfin_client.dart';
 import 'package:plezy/services/live_session_tracker.dart';
 
@@ -15,12 +16,13 @@ class _FakeJellyfinClient implements JellyfinClient {
     Duration? duration,
     String? playSessionId,
     String? playMethod,
+    String? liveStreamId,
     String? mediaSourceId,
     int? audioStreamIndex,
     int? subtitleStreamIndex,
   }) async {
     await startGate.future;
-    calls.add('started:$itemId:$playSessionId');
+    calls.add('started:$itemId:$playSessionId:$mediaSourceId:$liveStreamId');
   }
 
   @override
@@ -31,11 +33,12 @@ class _FakeJellyfinClient implements JellyfinClient {
     bool isPaused = false,
     String? playSessionId,
     String? playMethod,
+    String? liveStreamId,
     String? mediaSourceId,
     int? audioStreamIndex,
     int? subtitleStreamIndex,
   }) async {
-    calls.add('${isPaused ? 'paused' : 'playing'}:$itemId:$playSessionId');
+    calls.add('${isPaused ? 'paused' : 'playing'}:$itemId:$playSessionId:$mediaSourceId:$liveStreamId');
   }
 
   @override
@@ -44,9 +47,11 @@ class _FakeJellyfinClient implements JellyfinClient {
     required Duration position,
     Duration? duration,
     String? playSessionId,
+    String? liveStreamId,
     String? mediaSourceId,
+    PlaybackReportMetadata report = const PlaybackReportMetadata.live(),
   }) async {
-    calls.add('stopped:$itemId:$playSessionId');
+    calls.add('stopped:$itemId:$playSessionId:$mediaSourceId:$liveStreamId');
   }
 
   @override
@@ -56,7 +61,11 @@ class _FakeJellyfinClient implements JellyfinClient {
 void main() {
   test('coalesces duplicate live starts and orders stop after in-flight start', () async {
     final client = _FakeJellyfinClient();
-    final tracker = JellyfinLiveSessionTracker(playSessionId: 'live-session-1');
+    final tracker = JellyfinLiveSessionTracker(
+      playSessionId: 'live-session-1',
+      mediaSourceId: 'source-1',
+      liveStreamId: 'live-stream-1',
+    );
 
     final first = tracker.report(
       client: client,
@@ -87,6 +96,28 @@ void main() {
     client.startGate.complete();
     await Future.wait([first, second, stopped]);
 
-    expect(client.calls, ['started:channel-1:live-session-1', 'stopped:channel-1:live-session-1']);
+    expect(client.calls, [
+      'started:channel-1:live-session-1:source-1:live-stream-1',
+      'stopped:channel-1:live-session-1:source-1:live-stream-1',
+    ]);
+  });
+
+  test('stopping before the first heartbeat still reports the negotiated live identity', () async {
+    final client = _FakeJellyfinClient();
+    final tracker = JellyfinLiveSessionTracker(
+      playSessionId: 'live-session-1',
+      mediaSourceId: 'source-1',
+      liveStreamId: 'live-stream-1',
+    );
+
+    await tracker.report(
+      client: client,
+      itemId: 'channel-1',
+      state: 'stopped',
+      position: Duration.zero,
+      duration: Duration.zero,
+    );
+
+    expect(client.calls, ['stopped:channel-1:live-session-1:source-1:live-stream-1']);
   });
 }

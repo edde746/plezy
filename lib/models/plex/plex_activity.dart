@@ -1,20 +1,23 @@
 import 'package:json_annotation/json_annotation.dart';
 
+import '../../utils/json_utils.dart';
+
 part 'plex_activity.g.dart';
 
 /// Represents a running background task on a Plex Media Server (from /activities endpoint).
 @JsonSerializable(createToJson: false)
 class PlexActivity {
-  @JsonKey(defaultValue: '')
+  @JsonKey(fromJson: stringOrEmpty)
   final String uuid;
-  @JsonKey(defaultValue: '')
+  @JsonKey(fromJson: stringOrEmpty)
   final String type;
-  @JsonKey(defaultValue: '')
+  @JsonKey(fromJson: stringOrEmpty)
   final String title;
+  @JsonKey(readValue: readStringField)
   final String? subtitle;
-  @JsonKey(defaultValue: 0)
+  @JsonKey(fromJson: flexibleIntOrZero)
   final int progress; // 0–100
-  @JsonKey(defaultValue: false)
+  @JsonKey(fromJson: flexibleBool)
   final bool cancellable;
 
   const PlexActivity({

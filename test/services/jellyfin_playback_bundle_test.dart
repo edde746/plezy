@@ -3,19 +3,16 @@ import 'dart:convert';
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
-import 'package:http/testing.dart';
+
 import 'package:plezy/connection/connection.dart';
 import 'package:plezy/database/app_database.dart';
 import 'package:plezy/services/jellyfin_api_cache.dart';
 import 'package:plezy/services/jellyfin_client.dart';
 import 'package:plezy/services/plex_api_cache.dart';
 
-JellyfinConnection _conn() => JellyfinConnection(
-  id: 'srv-1/user-1',
-  baseUrl: 'https://jf.example.com',
-  serverName: 'Home',
-  serverMachineId: 'srv-1',
-  userId: 'user-1',
+import '../test_helpers/backend_client_fixtures.dart';
+
+JellyfinConnection _conn() => testJellyfinConnection(
   userName: 'edde',
   accessToken: 'tok-abc',
   deviceId: 'dev-xyz',
@@ -44,10 +41,10 @@ void main() {
   });
 
   JellyfinClient buildClient(String body) {
-    final mock = MockClient((req) async {
-      return http.Response(body, 200, headers: {'content-type': 'application/json'});
-    });
-    return JellyfinClient.forTesting(connection: _conn(), httpClient: mock);
+    return testJellyfinClient(
+      connection: _conn(),
+      handler: (_) async => http.Response(body, 200, headers: {'content-type': 'application/json'}),
+    );
   }
 
   group('JellyfinClient.fetchPlaybackBundle', () {
@@ -165,6 +162,49 @@ void main() {
       expect(bundle!.selectedSourceId, 'src-1080');
       expect(bundle.container, 'mp4');
       expect(bundle.availableVersions.map((version) => version.id), ['src-4k', 'src-1080']);
+      client.close();
+    });
+
+    test('selects source by preferred signature when no sourceId pins one', () async {
+      final body = jsonEncode({
+        'Id': 'item-5',
+        'Type': 'Movie',
+        'MediaSources': [
+          {
+            'Id': 'src-1080',
+            'Container': 'mp4',
+            'MediaStreams': [
+              {'Type': 'Video', 'Codec': 'h264', 'Height': 1080, 'Width': 1920},
+            ],
+          },
+          {
+            'Id': 'src-4k',
+            'Container': 'mkv',
+            'MediaStreams': [
+              {'Type': 'Video', 'Codec': 'hevc', 'Height': 2160, 'Width': 3840},
+            ],
+          },
+        ],
+      });
+      final client = buildClient(body);
+
+      // Grab the real signature of the 4K source, as a saved preference would
+      // have captured it on a previous play.
+      final probe = await client.fetchPlaybackBundle('item-5');
+      final signature = probe!.availableVersions[1].signature;
+
+      final bundle = await client.fetchPlaybackBundle('item-5', sourceIndex: 0, preferredSignature: signature);
+      expect(bundle!.selectedSourceId, 'src-4k');
+      expect(bundle.selectedSourceIndex, 1);
+
+      // An explicit sourceId still wins over the signature.
+      final pinned = await client.fetchPlaybackBundle(
+        'item-5',
+        sourceIndex: 0,
+        sourceId: 'src-1080',
+        preferredSignature: signature,
+      );
+      expect(pinned!.selectedSourceId, 'src-1080');
       client.close();
     });
 

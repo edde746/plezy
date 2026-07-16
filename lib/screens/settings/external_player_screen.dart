@@ -5,11 +5,15 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:plezy/widgets/app_icon.dart';
 
+import '../../widgets/dialog_action_button.dart';
 import '../../focus/focusable_button.dart';
 import '../../focus/focusable_text_field.dart';
 import '../../i18n/strings.g.dart';
 import '../../models/external_player_models.dart';
 import '../../services/settings_service.dart';
+import '../../utils/dialogs.dart';
+import '../../widgets/expressive_button_group.dart';
+import '../../widgets/focusable_list_tile.dart';
 import '../../widgets/setting_tile.dart';
 import '../../widgets/settings_builder.dart';
 import '../../widgets/settings_page.dart';
@@ -24,11 +28,15 @@ class ExternalPlayerScreen extends StatelessWidget {
     return SettingsPage(
       title: Text(t.externalPlayer.title),
       children: [
-        SettingSwitchTile(
-          pref: SettingsService.useExternalPlayer,
-          icon: Symbols.open_in_new_rounded,
-          title: t.externalPlayer.useExternalPlayer,
-          subtitle: t.externalPlayer.useExternalPlayerDescription,
+        SettingsGroup(
+          children: [
+            SettingSwitchTile(
+              pref: SettingsService.useExternalPlayer,
+              icon: Symbols.open_in_new_rounded,
+              title: t.externalPlayer.useExternalPlayer,
+              subtitle: t.externalPlayer.useExternalPlayerDescription,
+            ),
+          ],
         ),
         SettingsBuilder(
           prefs: [
@@ -37,20 +45,26 @@ class ExternalPlayerScreen extends StatelessWidget {
             SettingsService.customExternalPlayers,
           ],
           builder: (context) {
-            final svc = SettingsService.instanceOrNull!;
+            final svc = SettingsService.instance;
             if (!svc.read(SettingsService.useExternalPlayer)) return const SizedBox.shrink();
             final selected = svc.read(SettingsService.selectedExternalPlayer);
             final custom = svc.read(SettingsService.customExternalPlayers);
             return Column(
               children: [
-                SettingsSectionHeader(t.externalPlayer.selectPlayer),
-                ...knownPlayers.map((p) => _PlayerTile(player: p, selectedId: selected.id)),
-                SettingsSectionHeader(t.externalPlayer.customPlayers),
-                ...custom.map((p) => _PlayerTile(player: p, selectedId: selected.id, isCustom: true)),
-                ListTile(
-                  leading: const AppIcon(Symbols.add_rounded, fill: 1),
-                  title: Text(t.externalPlayer.addCustomPlayer),
-                  onTap: () => _showAddCustomPlayerDialog(context),
+                SettingsGroup(
+                  title: t.externalPlayer.selectPlayer,
+                  children: [for (final p in knownPlayers) _PlayerTile(player: p, selectedId: selected.id)],
+                ),
+                SettingsGroup(
+                  title: t.externalPlayer.customPlayers,
+                  children: [
+                    for (final p in custom) _PlayerTile(player: p, selectedId: selected.id, isCustom: true),
+                    FocusableListTile(
+                      leading: const AppIcon(Symbols.add_rounded, fill: 1),
+                      title: Text(t.externalPlayer.addCustomPlayer),
+                      onTap: () => _showAddCustomPlayerDialog(context),
+                    ),
+                  ],
                 ),
               ],
             );
@@ -72,7 +86,7 @@ class _PlayerTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isSelected = selectedId == player.id;
-    final svc = SettingsService.instanceOrNull!;
+    final svc = SettingsService.instance;
 
     Widget leading;
     if (player.iconAsset != null) {
@@ -93,16 +107,20 @@ class _PlayerTile extends StatelessWidget {
       leading = const AppIcon(Symbols.play_circle_rounded, fill: 1, size: 32);
     }
 
-    return ListTile(
+    return FocusableListTile(
       leading: leading,
       title: Text(player.id == 'system_default' ? t.externalPlayer.systemDefault : player.name),
       trailing: Row(
-        mainAxisSize: MainAxisSize.min,
+        mainAxisSize: .min,
         children: [
           if (isCustom)
-            IconButton(
-              icon: const AppIcon(Symbols.delete_rounded, fill: 1, size: 20),
+            FocusableButton(
               onPressed: () => svc.removeCustomExternalPlayer(player.id),
+              autoScroll: false,
+              child: IconButton(
+                icon: const AppIcon(Symbols.delete_rounded, fill: 1, size: 20),
+                onPressed: () => svc.removeCustomExternalPlayer(player.id),
+              ),
             ),
           AppIcon(
             isSelected ? Symbols.radio_button_checked_rounded : Symbols.radio_button_unchecked_rounded,
@@ -116,119 +134,112 @@ class _PlayerTile extends StatelessWidget {
   }
 }
 
+typedef _CustomPlayerDialogResult = ({String name, String value, CustomPlayerType type});
+
 Future<void> _showAddCustomPlayerDialog(BuildContext context) async {
-  final nameController = TextEditingController();
-  final valueController = TextEditingController();
-  final valueFocusNode = FocusNode();
-  final saveFocusNode = FocusNode();
-  var selectedType = CustomPlayerType.command;
-  String? playerName;
-  String? playerValue;
-
-  try {
-    final result = await showDialog<bool>(
-      context: context,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setDialogState) {
-          final isUrlScheme = selectedType == CustomPlayerType.urlScheme;
-          final String fieldLabel;
-          final String fieldHint;
-          if (isUrlScheme) {
-            fieldLabel = t.externalPlayer.playerUrlScheme;
-            fieldHint = 'myplayer://play?url=';
-          } else if (Platform.isAndroid) {
-            fieldLabel = t.externalPlayer.playerPackage;
-            fieldHint = 'com.example.player';
-          } else {
-            fieldLabel = t.externalPlayer.playerCommand;
-            fieldHint = Platform.isMacOS ? 'mpv' : '/usr/bin/player';
-          }
-
-          return AlertDialog(
-            title: Text(t.externalPlayer.addCustomPlayer),
-            content: SizedBox(
-              width: 300,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  FocusableTextField(
-                    controller: nameController,
-                    decoration: InputDecoration(labelText: t.externalPlayer.playerName, hintText: 'My Player'),
-                    autofocus: true,
-                    textInputAction: TextInputAction.next,
-                    onSubmitted: (_) => primaryFocus?.nextFocus(),
-                  ),
-                  const SizedBox(height: 16),
-                  SizedBox(
-                    width: double.infinity,
-                    child: SegmentedButton<CustomPlayerType>(
-                      segments: [
-                        ButtonSegment(
-                          value: CustomPlayerType.command,
-                          label: Text(
-                            Platform.isAndroid ? t.externalPlayer.playerPackage : t.externalPlayer.playerCommand,
-                          ),
-                        ),
-                        ButtonSegment(value: CustomPlayerType.urlScheme, label: Text(t.externalPlayer.playerUrlScheme)),
-                      ],
-                      selected: {selectedType},
-                      onSelectionChanged: (value) => setDialogState(() => selectedType = value.first),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  FocusableTextField(
-                    controller: valueController,
-                    focusNode: valueFocusNode,
-                    decoration: InputDecoration(labelText: fieldLabel, hintText: fieldHint),
-                    textInputAction: TextInputAction.done,
-                    onSubmitted: (_) => saveFocusNode.requestFocus(),
-                  ),
-                ],
-              ),
-            ),
-            actions: [
-              FocusableButton(
-                onPressed: () => Navigator.pop(context),
-                child: TextButton(onPressed: () => Navigator.pop(context), child: Text(t.common.cancel)),
-              ),
-              FocusableButton(
-                focusNode: saveFocusNode,
-                onPressed: () {
-                  if (nameController.text.isNotEmpty && valueController.text.isNotEmpty) {
-                    Navigator.pop(context, true);
-                  }
-                },
-                child: FilledButton(
-                  onPressed: () {
-                    if (nameController.text.isNotEmpty && valueController.text.isNotEmpty) {
-                      Navigator.pop(context, true);
-                    }
-                  },
-                  child: Text(t.common.save),
-                ),
-              ),
-            ],
-          );
-        },
-      ),
-    );
-
-    if (result != true) return;
-    playerName = nameController.text;
-    playerValue = valueController.text;
-  } finally {
-    nameController.dispose();
-    valueController.dispose();
-    valueFocusNode.dispose();
-    saveFocusNode.dispose();
-  }
+  final result = await showScopedDialog<_CustomPlayerDialogResult>(
+    context: context,
+    builder: (_) => const _AddCustomPlayerDialog(),
+  );
+  if (result == null) return;
 
   final id = 'custom_${DateTime.now().millisecondsSinceEpoch}';
-  final newPlayer = ExternalPlayer.custom(id: id, name: playerName, value: playerValue, type: selectedType);
+  final newPlayer = ExternalPlayer.custom(id: id, name: result.name, value: result.value, type: result.type);
 
-  final svc = SettingsService.instanceOrNull!;
+  final svc = SettingsService.instance;
   await svc.write(SettingsService.customExternalPlayers, [
     ...svc.read(SettingsService.customExternalPlayers),
     newPlayer,
   ]);
+}
+
+class _AddCustomPlayerDialog extends StatefulWidget {
+  const _AddCustomPlayerDialog();
+
+  @override
+  State<_AddCustomPlayerDialog> createState() => _AddCustomPlayerDialogState();
+}
+
+class _AddCustomPlayerDialogState extends State<_AddCustomPlayerDialog> {
+  final _nameController = TextEditingController();
+  final _valueController = TextEditingController();
+  final _valueFocusNode = FocusNode(debugLabel: 'CustomExternalPlayerValue');
+  final _saveFocusNode = FocusNode(debugLabel: 'CustomExternalPlayerSave');
+  CustomPlayerType _selectedType = CustomPlayerType.command;
+
+  @override
+  void dispose() {
+    _valueFocusNode.dispose();
+    _saveFocusNode.dispose();
+    _nameController.dispose();
+    _valueController.dispose();
+    super.dispose();
+  }
+
+  void _submit() {
+    final name = _nameController.text.trim();
+    final value = _valueController.text.trim();
+    if (name.isEmpty || value.isEmpty) return;
+    Navigator.pop(context, (name: name, value: value, type: _selectedType));
+  }
+
+  ({String label, String hint}) get _valueFieldInfo {
+    if (_selectedType == CustomPlayerType.urlScheme) {
+      return (label: t.externalPlayer.playerUrlScheme, hint: 'myplayer://play?url=');
+    }
+    if (Platform.isAndroid) {
+      return (label: t.externalPlayer.playerPackage, hint: 'com.example.player');
+    }
+    return (label: t.externalPlayer.playerCommand, hint: Platform.isMacOS ? 'mpv' : '/usr/bin/player');
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final (:label, :hint) = _valueFieldInfo;
+    return AlertDialog(
+      title: Text(t.externalPlayer.addCustomPlayer),
+      content: SizedBox(
+        width: 300,
+        child: Column(
+          mainAxisSize: .min,
+          children: [
+            FocusableTextField(
+              controller: _nameController,
+              decoration: InputDecoration(
+                labelText: t.externalPlayer.playerName,
+                hintText: t.externalPlayer.playerNameHint,
+              ),
+              autofocus: true,
+              textInputAction: TextInputAction.next,
+              onSubmitted: (_) => _valueFocusNode.requestFocus(),
+            ),
+            const SizedBox(height: 16),
+            ExpressiveButtonGroup<CustomPlayerType>(
+              segments: [
+                ButtonSegment(
+                  value: CustomPlayerType.command,
+                  label: Text(Platform.isAndroid ? t.externalPlayer.playerPackage : t.externalPlayer.playerCommand),
+                ),
+                ButtonSegment(value: CustomPlayerType.urlScheme, label: Text(t.externalPlayer.playerUrlScheme)),
+              ],
+              selected: _selectedType,
+              onChanged: (value) => setState(() => _selectedType = value),
+            ),
+            const SizedBox(height: 16),
+            FocusableTextField(
+              controller: _valueController,
+              focusNode: _valueFocusNode,
+              decoration: InputDecoration(labelText: label, hintText: hint),
+              textInputAction: TextInputAction.done,
+              onSubmitted: (_) => _saveFocusNode.requestFocus(),
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        DialogActionButton(onPressed: () => Navigator.pop(context), label: t.common.cancel),
+        DialogActionButton(focusNode: _saveFocusNode, onPressed: _submit, label: t.common.save, isPrimary: true),
+      ],
+    );
+  }
 }

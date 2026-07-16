@@ -116,6 +116,20 @@ class TvDetectionService {
     }
   }
 
+  /// User-assigned Android device name (Settings > About > Device name), or
+  /// null if unavailable. Android only.
+  static Future<String?> getAndroidDeviceName() async {
+    if (!Platform.isAndroid) return null;
+    try {
+      final name = (await _deviceChannel.invokeMethod<String>('getDeviceName'))?.trim();
+      return (name == null || name.isEmpty) ? null : name;
+    } on MissingPluginException {
+      return null;
+    } on PlatformException {
+      return null;
+    }
+  }
+
   /// Update the user force-TV override and recompute the effective flag.
   void setForceTv(bool value) {
     _forceTv = value;
@@ -126,7 +140,7 @@ class TvDetectionService {
   static bool isTVSync() => _debugAppleTVOverride ?? _instance?._isTV ?? false;
 
   /// Synchronous Apple TV check (returns false if not initialized or not tvOS).
-  static bool isAppleTVSync() => _debugAppleTVOverride ?? _instance?._isAppleTV ?? false;
+  static bool isAppleTVSync() => _debugAppleTVOverride ?? (_tvosBuild || _instance?._isAppleTV == true);
 
   @visibleForTesting
   static void debugSetAppleTVOverride(bool? value) {
@@ -188,7 +202,31 @@ class PlatformDetector {
   /// BuildContext. Use for OS-level capability checks (window state, native
   /// keyboard, etc.); use [isDesktop] for layout decisions.
   static bool isDesktopOS() {
-    return Platform.isWindows || Platform.isMacOS || Platform.isLinux;
+    return _debugIsDesktopOSOverride ?? (Platform.isWindows || Platform.isMacOS || Platform.isLinux);
+  }
+
+  static bool? _debugIsDesktopOSOverride;
+
+  /// Test-only: override [isDesktopOS] so device simulations (Android TV /
+  /// Apple TV) don't inherit the test host's real platform.
+  @visibleForTesting
+  static void debugSetIsDesktopOSOverride(bool? value) {
+    _debugIsDesktopOSOverride = value;
+  }
+
+  static bool supportsExternalPlayers() {
+    if (isAppleTV()) return false;
+    return Platform.isAndroid || Platform.isIOS || Platform.isMacOS || Platform.isLinux || Platform.isWindows;
+  }
+
+  static bool supportsAudioPassthrough() {
+    // Apple TV hands AC3/EAC3 access units to the native sample-buffer audio
+    // renderer; unsupported streams and renderer failures fall back to PCM.
+    return isAppleTV() || isDesktopOS() || (Platform.isAndroid && isTV());
+  }
+
+  static bool supportsPictureInPicture() {
+    return !isAppleTV() && !isTV() && (Platform.isAndroid || Platform.isIOS || Platform.isMacOS);
   }
 
   /// Detects if the device is likely a tablet based on screen size

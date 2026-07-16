@@ -1,21 +1,30 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
+import '../../media/ids.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 import '../../focus/focusable_action_bar.dart';
 import '../../media/media_item.dart';
 import '../../providers/download_provider.dart';
 import '../../providers/multi_server_provider.dart';
+import '../../services/music/music_playback_service.dart';
+import '../../theme/mono_tokens.dart';
+import '../../utils/music_navigation.dart';
+import '../../widgets/app_icon.dart';
+import '../../widgets/focusable_tab_chip.dart';
+import '../../widgets/music/mini_player.dart';
+import '../../widgets/music/track_row.dart';
 import '../../services/settings_service.dart';
 import '../../widgets/settings_builder.dart';
 import '../../utils/global_key_utils.dart';
 import '../../mixins/tab_navigation_mixin.dart';
 import '../../mixins/refreshable.dart';
-import '../../utils/grid_size_calculator.dart';
+import '../../utils/media_image_helper.dart';
 import '../../utils/platform_detector.dart';
 import '../../widgets/desktop_app_bar.dart';
-import '../../widgets/focusable_tab_chip.dart';
 import '../../widgets/focusable_media_card.dart';
-import '../../widgets/media_grid_delegate.dart';
+import '../../widgets/media_card_sliver_layout.dart';
 import '../../widgets/download_tree_view.dart';
 import '../main_screen.dart';
 import '../libraries/state_messages.dart';
@@ -35,10 +44,16 @@ class DownloadsScreenState extends State<DownloadsScreen>
   final _queueTabChipFocusNode = FocusNode(debugLabel: 'tab_chip_queue');
   final _tvShowsTabChipFocusNode = FocusNode(debugLabel: 'tab_chip_tv_shows');
   final _moviesTabChipFocusNode = FocusNode(debugLabel: 'tab_chip_movies');
+  final _musicTabChipFocusNode = FocusNode(debugLabel: 'tab_chip_music');
   final _actionBarKey = GlobalKey<FocusableActionBarState>();
 
   @override
-  List<FocusNode> get tabChipFocusNodes => [_queueTabChipFocusNode, _tvShowsTabChipFocusNode, _moviesTabChipFocusNode];
+  List<FocusNode> get tabChipFocusNodes => [
+    _queueTabChipFocusNode,
+    _tvShowsTabChipFocusNode,
+    _moviesTabChipFocusNode,
+    _musicTabChipFocusNode,
+  ];
 
   @override
   void initState() {
@@ -52,6 +67,7 @@ class DownloadsScreenState extends State<DownloadsScreen>
     _queueTabChipFocusNode.dispose();
     _tvShowsTabChipFocusNode.dispose();
     _moviesTabChipFocusNode.dispose();
+    _musicTabChipFocusNode.dispose();
     disposeTabNavigation();
     super.dispose();
   }
@@ -86,45 +102,12 @@ class DownloadsScreenState extends State<DownloadsScreen>
   }
 
   Widget _buildTabChip(String label, int index) {
-    final isSelected = tabController.index == index;
-
-    return FocusableTabChip(
-      label: label,
-      isSelected: isSelected,
-      focusNode: getTabChipFocusNode(index),
-      onSelect: () {
-        if (isSelected) {
-          // Already selected - navigate to tab content
-          _focusCurrentTab();
-        } else {
-          // Switch to this tab
-          setState(() {
-            tabController.index = index;
-          });
-        }
-      },
-      onNavigateLeft: index > 0
-          ? () {
-              final newIndex = index - 1;
-              setState(() {
-                suppressAutoFocus = true;
-                tabController.index = newIndex;
-              });
-              getTabChipFocusNode(newIndex).requestFocus();
-            }
-          : onTabBarBack,
-      onNavigateRight: index < tabCount - 1
-          ? () {
-              final newIndex = index + 1;
-              setState(() {
-                suppressAutoFocus = true;
-                tabController.index = newIndex;
-              });
-              getTabChipFocusNode(newIndex).requestFocus();
-            }
-          : () => _actionBarKey.currentState?.requestFocusOnFirst(),
+    return buildTabChip(
+      label,
+      index,
+      onSelectWhenActive: _focusCurrentTab,
       onNavigateDown: _focusCurrentTab,
-      onBack: onTabBarBack,
+      onNavigateToActions: () => _actionBarKey.currentState?.requestFocusOnFirst(),
     );
   }
 
@@ -132,13 +115,15 @@ class DownloadsScreenState extends State<DownloadsScreen>
   Widget _buildAppBarTitle() {
     // On desktop/TV with side nav, show tabs in app bar
     if (PlatformDetector.shouldUseSideNavigation(context)) {
-      return Row(
+      return TabChipStrip(
         children: [
           _buildTabChip(t.downloads.manage, 0),
           const SizedBox(width: 8),
           _buildTabChip(t.downloads.tvShows, 1),
           const SizedBox(width: 8),
           _buildTabChip(t.downloads.movies, 2),
+          const SizedBox(width: 8),
+          _buildTabChip(t.downloads.music, 3),
         ],
       );
     }
@@ -168,7 +153,7 @@ class DownloadsScreenState extends State<DownloadsScreen>
                 onNavigateDown: _focusCurrentTab,
                 actions: [
                   FocusableAction(
-                    icon: Symbols.rule_settings,
+                    icon: Symbols.rule_settings_rounded,
                     tooltip: t.downloads.activeSyncRules,
                     onPressed: () =>
                         Navigator.push(context, MaterialPageRoute(builder: (_) => const SyncRulesScreen())),
@@ -184,7 +169,7 @@ class DownloadsScreenState extends State<DownloadsScreen>
                 if (!PlatformDetector.shouldUseSideNavigation(context))
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    alignment: Alignment.centerLeft,
+                    alignment: .centerLeft,
                     child: SingleChildScrollView(
                       scrollDirection: Axis.horizontal,
                       child: Row(
@@ -194,6 +179,8 @@ class DownloadsScreenState extends State<DownloadsScreen>
                           _buildTabChip(t.downloads.tvShows, 1),
                           const SizedBox(width: 8),
                           _buildTabChip(t.downloads.movies, 2),
+                          const SizedBox(width: 8),
+                          _buildTabChip(t.downloads.music, 3),
                         ],
                       ),
                     ),
@@ -212,7 +199,7 @@ class DownloadsScreenState extends State<DownloadsScreen>
                           // (not a [PlexClient]) for both code paths.
                           getClient(String globalKey) {
                             final serverId = parseGlobalKey(globalKey)?.serverId ?? globalKey;
-                            return serverProvider.serverManager.getClient(serverId);
+                            return serverProvider.serverManager.getClient(ServerId(serverId));
                           }
 
                           return DownloadTreeView(
@@ -233,7 +220,7 @@ class DownloadsScreenState extends State<DownloadsScreen>
                             },
                             onCancel: downloadProvider.cancelDownload,
                             onDelete: downloadProvider.deleteDownload,
-                            onNavigateLeft: () => MainScreenFocusScope.of(context, listen: false)?.focusSidebar(),
+                            onNavigateLeft: () => MainScreenFocusScope.focusSidebarOf(context),
                             onBack: focusTabBar,
                             suppressAutoFocus: suppressAutoFocus,
                           );
@@ -249,6 +236,7 @@ class DownloadsScreenState extends State<DownloadsScreen>
                         suppressAutoFocus: suppressAutoFocus,
                         onBack: focusTabBar,
                       ),
+                      _DownloadedMusicContent(suppressAutoFocus: suppressAutoFocus, onBack: focusTabBar),
                     ],
                   ),
                 ),
@@ -299,7 +287,7 @@ class _DownloadsGridContentState extends State<_DownloadsGridContent> {
 
   /// Navigate focus to the sidebar
   void _navigateToSidebar() {
-    MainScreenFocusScope.of(context, listen: false)?.focusSidebar();
+    MainScreenFocusScope.focusSidebarOf(context);
   }
 
   @override
@@ -317,36 +305,38 @@ class _DownloadsGridContentState extends State<_DownloadsGridContent> {
         // Extra top padding for focus decoration (scale + border extends beyond item bounds)
         const effectivePadding = EdgeInsets.only(left: 8, right: 8, top: 8);
 
-        return SettingValueBuilder<int>(
-          pref: SettingsService.libraryDensity,
-          builder: (context, density, _) {
-            final maxCrossAxisExtent = GridSizeCalculator.getMaxCrossAxisExtent(context, density);
-            // Use LayoutBuilder to get actual available width (accounting for sidebar)
-            return LayoutBuilder(
-              builder: (context, constraints) {
-                final availableWidth = constraints.maxWidth - effectivePadding.left - effectivePadding.right;
-                final columnCount = GridSizeCalculator.getColumnCount(availableWidth, maxCrossAxisExtent);
+        return SettingsBuilder(
+          prefs: const [SettingsService.viewMode, SettingsService.libraryDensity, SettingsService.tvFullCardLayout],
+          builder: (context) {
+            final settings = SettingsService.instance;
+            final viewMode = settings.read(SettingsService.viewMode);
+            final density = settings.read(SettingsService.libraryDensity);
+            final fullCardLayout = PlatformDetector.isTV() && settings.read(SettingsService.tvFullCardLayout);
 
-                return GridView.builder(
-                  padding: effectivePadding,
-                  // Allow focus decoration to render outside scroll bounds
-                  clipBehavior: Clip.none,
-                  gridDelegate: MediaGridDelegate.createDelegate(context: context, density: density),
+            return CustomScrollView(
+              // Allow focus decoration to render outside scroll bounds.
+              clipBehavior: Clip.none,
+              slivers: [
+                MediaCardSliverLayout(
+                  viewMode: viewMode,
                   itemCount: items.length,
-                  itemBuilder: (context, index) {
-                    final item = items[index];
-                    final isFirstColumn = GridSizeCalculator.isFirstColumn(index, columnCount);
-                    final isFirst = index == 0;
+                  density: density,
+                  padding: effectivePadding,
+                  fullBleedImage: fullCardLayout,
+                  itemBuilder: (context, position) {
+                    final item = items[position.index];
                     return FocusableMediaCard(
                       item: item,
-                      focusNode: isFirst ? _firstItemFocusNode : null,
+                      focusNode: position.index == 0 ? _firstItemFocusNode : null,
+                      disableScale: position.disableScale,
                       onBack: widget.onBack,
                       isOffline: true, // Downloaded content works without server
-                      onNavigateLeft: isFirstColumn ? _navigateToSidebar : null,
+                      fullBleedImage: fullCardLayout && position.isGrid,
+                      onNavigateLeft: position.isFirstColumn ? _navigateToSidebar : null,
                     );
                   },
-                );
-              },
+                ),
+              ],
             );
           },
         );
@@ -360,6 +350,200 @@ class _DownloadsGridContentState extends State<_DownloadsGridContent> {
       subtitle: t.downloads.noDownloadsDescription,
       icon: Symbols.download_rounded,
       iconSize: 80,
+    );
+  }
+}
+
+/// A row of the downloaded-music list: an album header ([album] non-null) or
+/// a track at [trackIndex] within [albumTracks].
+class _MusicListEntry {
+  final MediaItem? album;
+  final List<MediaItem> albumTracks;
+  final int trackIndex;
+  final bool isFirst;
+  final bool isLast;
+
+  const _MusicListEntry.header(MediaItem this.album)
+    : albumTracks = const [],
+      trackIndex = -1,
+      isFirst = false,
+      isLast = false;
+
+  const _MusicListEntry.track(this.albumTracks, this.trackIndex, {required this.isFirst, required this.isLast})
+    : album = null;
+}
+
+/// Music tab: downloaded tracks grouped under their album (square cover +
+/// artist header, [TrackRow] entries). Tapping a track plays the album's
+/// downloaded tracks in disc/track order — fully offline through the shared
+/// music playback path.
+class _DownloadedMusicContent extends StatefulWidget {
+  final bool suppressAutoFocus;
+  final VoidCallback? onBack;
+
+  const _DownloadedMusicContent({required this.suppressAutoFocus, this.onBack});
+
+  @override
+  State<_DownloadedMusicContent> createState() => _DownloadedMusicContentState();
+}
+
+class _DownloadedMusicContentState extends State<_DownloadedMusicContent> {
+  final FocusNode _firstItemFocusNode = FocusNode(debugLabel: 'DownloadsMusic_firstItem');
+
+  @override
+  void dispose() {
+    _firstItemFocusNode.dispose();
+    super.dispose();
+  }
+
+  @override
+  void didUpdateWidget(_DownloadedMusicContent oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.suppressAutoFocus && !widget.suppressAutoFocus) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && _firstItemFocusNode.canRequestFocus) {
+          _firstItemFocusNode.requestFocus();
+        }
+      });
+    }
+  }
+
+  Future<void> _playAlbumFrom(List<MediaItem> albumTracks, MediaItem track) async {
+    final album = track.parentId;
+    await playTracks(
+      context,
+      tracks: albumTracks,
+      startTrack: track,
+      playContext: MusicPlayContext(id: album, title: track.albumTitle ?? '', kind: MusicPlayContextKind.album),
+    );
+  }
+
+  Widget _buildAlbumHeader(BuildContext context, DownloadProvider provider, MediaItem album) {
+    final tk = tokens(context);
+    final textTheme = Theme.of(context).textTheme;
+    final artist = album.albumArtistTitle;
+    final serverId = album.serverId;
+    final localArt = serverId == null ? null : provider.getArtworkLocalPath(ServerId(serverId), album.thumbPath);
+    final ImageProvider? localCoverImage;
+    if (localArt == null) {
+      localCoverImage = null;
+    } else {
+      final dpr = MediaImageHelper.effectiveDevicePixelRatio(context);
+      final (memWidth, memHeight) = MediaImageHelper.getMemCacheDimensions(
+        displayWidth: (48 * dpr).round(),
+        displayHeight: (48 * dpr).round(),
+        imageType: ImageType.square,
+      );
+      localCoverImage = MediaImageHelper.boundedDecode(
+        FileImage(File(localArt)),
+        memWidth: memWidth,
+        memHeight: memHeight,
+      );
+    }
+    Widget fallbackCover() => Container(
+      width: 48,
+      height: 48,
+      color: tk.surface,
+      child: AppIcon(Symbols.album_rounded, fill: 1, size: 24, color: tk.textMuted),
+    );
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(4, 16, 4, 8),
+      child: Row(
+        children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(tk.radiusSm),
+            child: localCoverImage != null
+                ? Image(
+                    image: localCoverImage,
+                    width: 48,
+                    height: 48,
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, _, _) => fallbackCover(),
+                  )
+                : fallbackCover(),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: .start,
+              children: [
+                Text(album.displayTitle, style: textTheme.titleSmall, maxLines: 1, overflow: .ellipsis),
+                if (artist != null && artist.isNotEmpty)
+                  Text(
+                    artist,
+                    style: textTheme.bodySmall?.copyWith(color: tk.textMuted),
+                    maxLines: 1,
+                    overflow: .ellipsis,
+                  ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  List<_MusicListEntry> _rowModels(DownloadProvider provider) {
+    final rows = <_MusicListEntry>[];
+    for (final album in provider.downloadedAlbums) {
+      final tracks = provider.getDownloadedTracksForAlbum(album.id);
+      if (tracks.isEmpty) continue;
+      rows.add(_MusicListEntry.header(album));
+      for (var i = 0; i < tracks.length; i++) {
+        rows.add(_MusicListEntry.track(tracks, i, isFirst: i == 0, isLast: i == tracks.length - 1));
+      }
+    }
+    return rows;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Consumer<DownloadProvider>(
+      builder: (context, downloadProvider, _) {
+        final rows = _rowModels(downloadProvider);
+
+        if (rows.isEmpty) {
+          return EmptyStateWidget(
+            message: t.downloads.noDownloads,
+            subtitle: t.downloads.noDownloadsDescription,
+            icon: Symbols.music_note_rounded,
+            iconSize: 80,
+          );
+        }
+
+        // Keep the last rows reachable above the floating mini-player.
+        final bottomInset = context.watch<MiniPlayerInsetController?>()?.overlayHeight ?? 0;
+
+        return ListView.builder(
+          padding: EdgeInsets.fromLTRB(16, 0, 16, 16 + bottomInset),
+          itemCount: rows.length,
+          itemBuilder: (context, index) {
+            final row = rows[index];
+            final album = row.album;
+            if (album != null) {
+              return _buildAlbumHeader(context, downloadProvider, album);
+            }
+            final item = row.albumTracks[row.trackIndex];
+            // Row 0 is always the first album's header, so the first track
+            // row sits at index 1.
+            final isFirstTrackRow = index == 1;
+            return Padding(
+              padding: EdgeInsets.only(top: row.isFirst ? 0 : tokens(context).groupGap),
+              child: TrackRow(
+                key: ValueKey(item.globalKey),
+                item: item,
+                isFirst: row.isFirst,
+                isLast: row.isLast,
+                showArtist: true,
+                focusNode: isFirstTrackRow ? _firstItemFocusNode : null,
+                onBack: widget.onBack,
+                onTap: () => _playAlbumFrom(row.albumTracks, item),
+              ),
+            );
+          },
+        );
+      },
     );
   }
 }

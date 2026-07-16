@@ -6,7 +6,7 @@ PODS:
     - Flutter
     - FlutterMacOS
   - FlutterMacOS (1.0.0)
-  - os_media_controls (0.2.1):
+  - os_media_controls (0.2.4):
     - FlutterMacOS
   - screen_retriever_macos (0.0.1):
     - FlutterMacOS
@@ -44,7 +44,7 @@ SPEC CHECKSUMS:
   auto_updater_macos: 3a42f1a06be6981f1a18be37e6e7bf86aa732118
   cupertino_http: 94ac07f5ff090b8effa6c5e2c47871d48ab7c86c
   FlutterMacOS: d0db08ddef1a9af05a5ec4b724367152bb0500b1
-  os_media_controls: 116bf9c1acadf13faf49b470b06a5033a19b67f0
+  os_media_controls: 20a765c7ebaae4fb3133cc47782eb99d7b50d851
   screen_retriever_macos: 452e51764a9e1cdb74b3c541238795849f21557f
   Sparkle: f4355f9ebbe9b7d932df4980d70f13922ac97b2a
   universal_gamepad: 8922f1f238f62d6847de887228976d5b572b57da

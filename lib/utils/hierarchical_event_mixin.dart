@@ -1,4 +1,5 @@
 import 'global_key_utils.dart';
+import '../media/ids.dart';
 
 /// Mixin providing hierarchical event matching methods.
 ///
@@ -11,7 +12,7 @@ mixin HierarchicalEventMixin {
 
   String get globalKey;
 
-  String get serverId;
+  ServerId get serverId;
 
   /// Parent chain for hierarchical matching.
   /// For an episode: [seasonId, showId]
@@ -27,8 +28,17 @@ mixin HierarchicalEventMixin {
       this.globalKey == globalKey || parentChain.any((pk) => buildGlobalKey(serverId, pk) == globalKey);
 
   /// Check if this event affects any item in a collection.
-  bool affectsAnyOf(Iterable<String> itemIds) => itemIds.any(affectsItem);
+  bool affectsAnyOf(Iterable<String> itemIds) {
+    if (itemIds.contains(itemId)) return true;
+    return parentChain.any(itemIds.contains);
+  }
 
   /// Check if this event affects any item in a global-key collection.
-  bool affectsAnyGlobalKey(Iterable<String> globalKeys) => globalKeys.any(affectsGlobalKey);
+  bool affectsAnyGlobalKey(Iterable<String> globalKeys) {
+    if (globalKeys.contains(globalKey)) return true;
+    for (final parentId in parentChain) {
+      if (globalKeys.contains(buildGlobalKey(serverId, parentId))) return true;
+    }
+    return false;
+  }
 }

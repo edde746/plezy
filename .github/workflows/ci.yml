@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+  # Keep untrusted code on the read-only pull_request event. Never use pull_request_target here.
   pull_request:
     branches:
       - main
@@ -17,10 +18,12 @@ jobs:
       contents: read
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+        with:
+          persist-credentials: false
 
       - name: Setup Flutter
-        uses: subosito/flutter-action@v2
+        uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
         with:
           channel: "stable"
           flutter-version: "3.44.0"
@@ -28,7 +31,7 @@ jobs:
           pub-cache: false
 
       - name: Cache Pub dependencies
-        uses: actions/cache@v4
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
         with:
           path: |
             ~/.pub-cache
@@ -39,44 +42,52 @@ jobs:
 
           flutter pub get
 
+      - name: Install saf_util development dependencies
+        working-directory: packages/saf_util
+        run: flutter pub get
+
       - name: Verify generated files committed
+        run: scripts/codegen.sh --check
+
+      - name: Verify translation hygiene
+        # Fork-only: the fork's Plex Watchlist strings are intentionally
+        # English-only and rely on slang's `fallback_strategy: base_locale`
+        # (see slang.yaml) to serve English for the other 15 locales. The
+        # cleanup pass instead requires every locale to declare every key and
+        # fills the gaps with "", which slang emits verbatim — a blank
+        # Watchlist label in 15 languages. The unused-key scan still runs here.
+        # Restore the full check by dropping the repository branch once the
+        # watchlist strings are translated.
         run: |
-          scripts/codegen.sh
-          if ! git diff --exit-code lib/; then
-            echo "::error::Generated files (.g.dart / .freezed.dart) are out of date."
-            echo "Run 'scripts/codegen.sh' and commit the result."
-            exit 1
+          if [ "$GITHUB_REPOSITORY" = "edde746/plezy" ]; then
+            python3 scripts/clean_translations.py --check --strict
+          else
+            python3 scripts/clean_translations.py --unused --strict
           fi
+
+      - name: Verify workflow and script guards
+        run: |
+          python3 scripts/check_build_workflow.py
+          python3 scripts/check_workflow_security.py
+          python3 scripts/test_check_workflow_security.py
+          python3 scripts/test_run_maestro.py
+          python3 scripts/check_update_packages_workflow.py
+          python3 scripts/test_pubspec_version.py
+          python3 scripts/test_clean_translations.py
+          python3 scripts/test_check_icon_consistency.py
 
       - name: Verify formatting
         run: |
-          # Find all Dart files excluding generated files
-          find lib $([ -d test ] && echo test) -name "*.dart" ! -name "*.g.dart" ! -name "*.freezed.dart" -type f 2>/dev/null | while IFS= read -r file; do
-            files_found=true
-            break
-          done
-          if [ "$files_found" != "true" ]; then
-            echo "No Dart files found to format"
-            exit 0
-          fi
-          find lib $([ -d test ] && echo test) -name "*.dart" ! -name "*.g.dart" ! -name "*.freezed.dart" -type f 2>/dev/null -print0 | xargs -0 dart format --output=none --set-exit-if-changed
-      - name: Analyze code
-        run: |
-          # Run flutter analyze
-          # Fails on errors or warnings only (info messages are allowed)
-          flutter analyze 2>&1 | tee analyze_output.txt || true
+          paths=(lib)
+          [ ! -d test ] || paths+=(test)
+          find "${paths[@]}" -name "*.dart" ! -name "*.g.dart" ! -name "*.freezed.dart" -type f -print0 |
+            xargs -0 -r dart format --output=none --set-exit-if-changed
 
-          # Check output for errors or warnings
-          if grep -q "error •" analyze_output.txt; then
-            echo "❌ Analysis failed with errors"
-            exit 1
-          elif grep -q "warning •" analyze_output.txt; then
-            echo "⚠️  Analysis completed with warnings"
-            exit 1
-          else
-            echo "✅ Analysis passed!"
-            exit 0
-          fi
+      - name: Verify icon consistency
+        run: dart run scripts/check_icon_consistency.dart
+
+      - name: Analyze code
+        run: dart run scripts/check_analyzer.dart
 
       - name: Check for unused code
         run: |
@@ -109,10 +120,12 @@ jobs:
       contents: read
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+        with:
+          persist-credentials: false
 
       - name: Setup Flutter
-        uses: subosito/flutter-action@v2
+        uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
         with:
           channel: "stable"
           flutter-version: "3.44.0"
@@ -120,7 +133,7 @@ jobs:
           pub-cache: false
 
       - name: Cache Pub dependencies
-        uses: actions/cache@v4
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
         with:
           path: |
             ~/.pub-cache
@@ -139,6 +152,62 @@ jobs:
             echo "No tests found, skipping test execution"
           fi
 
+  android-test:
+    name: Android JVM Unit Tests
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+        with:
+          persist-credentials: false
+
+      - name: Setup Java
+        uses: actions/setup-java@0f481fcb613427c0f801b606911222b5b6f3083a # v5
+        with:
+          distribution: "temurin"
+          java-version: "17"
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
+        with:
+          channel: "stable"
+          flutter-version: "3.44.0"
+          cache: true
+          pub-cache: false
+
+      - name: Cache Pub dependencies
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
+        with:
+          path: |
+            ~/.pub-cache
+          key: ${{ runner.os }}-pub-v3-${{ hashFiles('**/pubspec.yaml', '**/pubspec.lock') }}
+
+      - name: Cache Gradle
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Configure Android local properties
+        run: printf 'flutter.sdk=%s\nsdk.dir=%s\n' "$FLUTTER_ROOT" "$ANDROID_HOME" > android/local.properties
+
+      - name: Run Android JVM unit tests
+        working-directory: android
+        run: ./gradlew :app:testDebugUnitTest :saf_util:testDebugUnitTest :libass:testDebugUnitTest -x :app:compileFlutterBuildDebug --continue
+
+      - name: Check Android API compatibility
+        working-directory: android
+        run: ./gradlew :app:lintDebug
+
   native-format:
     name: Native Formatting
     runs-on: ubuntu-latest
@@ -146,10 +215,12 @@ jobs:
       contents: read
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+        with:
+          persist-credentials: false
 
       - name: Setup Java
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@0f481fcb613427c0f801b606911222b5b6f3083a # v5
         with:
           distribution: "temurin"
           java-version: "17"
@@ -164,10 +235,12 @@ jobs:
       contents: read
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+        with:
+          persist-credentials: false
 
       - name: Setup Flutter
-        uses: subosito/flutter-action@v2
+        uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
         with:
           channel: "stable"
           flutter-version: "3.44.0"
@@ -175,7 +248,7 @@ jobs:
           pub-cache: false
 
       - name: Cache Pub dependencies
-        uses: actions/cache@v4
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
         with:
           path: |
             ~/.pub-cache

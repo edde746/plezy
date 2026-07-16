@@ -2,7 +2,7 @@ import 'dart:io';
 
 import 'package:auto_updater/auto_updater.dart';
 import 'package:package_info_plus/package_info_plus.dart';
-import 'package:logger/logger.dart';
+import 'package:plezy/utils/app_logger.dart';
 import 'package:plezy/utils/media_server_http_client.dart';
 import 'base_shared_preferences_service.dart';
 
@@ -13,7 +13,6 @@ import 'base_shared_preferences_service.dart';
 /// via auto_updater for native update dialogs and in-app installs.
 /// On all other platforms: falls back to GitHub API check + browser link dialog.
 class UpdateService {
-  static final Logger _logger = Logger();
   static const String _githubRepo = 'edde746/plezy';
   static const String _feedUrl = 'https://cdn.jsdelivr.net/gh/edde746/plezy@appcast/appcast.xml';
 
@@ -47,8 +46,8 @@ class UpdateService {
     try {
       await autoUpdater.setFeedURL(_feedUrl);
       _nativeUpdaterInitialized = true;
-    } catch (e) {
-      _logger.e('Failed to initialize native auto updater: $e');
+    } catch (error, stackTrace) {
+      appLogger.e('Failed to initialize native auto updater', error: error, stackTrace: stackTrace);
     }
   }
 
@@ -61,8 +60,8 @@ class UpdateService {
     }
     try {
       await autoUpdater.checkForUpdates(inBackground: inBackground);
-    } catch (e) {
-      _logger.e('Native update check failed: $e');
+    } catch (error, stackTrace) {
+      appLogger.e('Native update check failed', error: error, stackTrace: stackTrace);
     }
   }
 
@@ -72,7 +71,8 @@ class UpdateService {
     try {
       final execPath = Platform.resolvedExecutable;
       return execPath.contains('/Caskroom/') || execPath.contains('/homebrew/');
-    } catch (_) {
+    } catch (error, stackTrace) {
+      appLogger.e('Failed to determine Homebrew install status', error: error, stackTrace: stackTrace);
       return false;
     }
   }
@@ -83,7 +83,8 @@ class UpdateService {
     try {
       final exeDir = File(Platform.resolvedExecutable).parent.path;
       return File('$exeDir\\.winget').existsSync();
-    } catch (_) {
+    } catch (error, stackTrace) {
+      appLogger.e('Failed to determine winget install status', error: error, stackTrace: stackTrace);
       return false;
     }
   }
@@ -94,7 +95,8 @@ class UpdateService {
     try {
       final exeDir = File(Platform.resolvedExecutable).parent.path;
       return File('$exeDir\\unins000.exe').existsSync();
-    } catch (_) {
+    } catch (error, stackTrace) {
+      appLogger.e('Failed to determine Windows installation status', error: error, stackTrace: stackTrace);
       return false;
     }
   }
@@ -107,11 +109,6 @@ class UpdateService {
   static Future<String?> getSkippedVersion() async {
     final prefs = await BaseSharedPreferencesService.sharedCache();
     return prefs.getString(_keySkippedVersion);
-  }
-
-  static Future<void> clearSkippedVersion() async {
-    final prefs = await BaseSharedPreferencesService.sharedCache();
-    await prefs.remove(_keySkippedVersion);
   }
 
   /// Check if cooldown period has passed since last check
@@ -195,8 +192,8 @@ class UpdateService {
       if (respectCooldown) {
         await _updateLastCheckTime();
       }
-    } catch (e) {
-      _logger.e('Failed to check for updates: $e');
+    } catch (error, stackTrace) {
+      appLogger.e('Failed to check for updates', error: error, stackTrace: stackTrace);
     }
 
     return null;
@@ -242,8 +239,8 @@ class UpdateService {
       }
 
       return false;
-    } catch (e) {
-      _logger.e('Error comparing versions: $e');
+    } catch (error, stackTrace) {
+      appLogger.e('Error comparing versions', error: error, stackTrace: stackTrace);
       return false;
     }
   }

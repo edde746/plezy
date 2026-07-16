@@ -1,0 +1,21 @@
+appId: com.edde746.plezy
+---
+- runFlow:
+    when:
+      notVisible: "${SHEET_MARKER}"
+    commands:
+      - repeat:
+          times: 8
+          while:
+            notVisible: "${SHEET_MARKER}"
+          commands:
+            - tapOn:
+                point: "50%,50%"
+            - runFlow:
+                when:
+                  visible: "Pause"
+                commands:
+                  - pressKey: "Remote Media Play Pause"
+            - tapOn:
+                point: "75%,11%"
+- assertVisible: "${SHEET_MARKER}"

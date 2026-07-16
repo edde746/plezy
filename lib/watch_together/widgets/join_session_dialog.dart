@@ -7,6 +7,8 @@ import '../../focus/focusable_text_field.dart';
 import '../../focus/focusable_wrapper.dart';
 import '../../i18n/strings.g.dart';
 import '../../mixins/controller_disposer_mixin.dart';
+import '../../utils/dialogs.dart';
+import '../../widgets/app_icon.dart';
 
 class JoinSessionDialog extends StatefulWidget {
   const JoinSessionDialog({super.key});
@@ -42,12 +44,12 @@ class _JoinSessionDialogState extends State<JoinSessionDialog> with ControllerDi
           child: Form(
             key: _formKey,
             child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
+              mainAxisSize: .min,
+              crossAxisAlignment: .stretch,
               children: [
                 Row(
                   children: [
-                    Icon(Symbols.group_add, color: theme.colorScheme.primary),
+                    AppIcon(Symbols.group_add_rounded, color: theme.colorScheme.primary),
                     const SizedBox(width: 12),
                     Expanded(child: Text(t.watchTogether.joinWatchSession, style: theme.textTheme.titleLarge)),
                     FocusableWrapper(
@@ -58,7 +60,10 @@ class _JoinSessionDialogState extends State<JoinSessionDialog> with ControllerDi
                       descendantsAreFocusable: false,
                       onSelect: () => Navigator.of(context).pop(),
                       onNavigateDown: _sessionIdFocusNode.requestFocus,
-                      child: IconButton(onPressed: () => Navigator.of(context).pop(), icon: const Icon(Symbols.close)),
+                      child: IconButton(
+                        onPressed: () => Navigator.of(context).pop(),
+                        icon: const AppIcon(Symbols.close_rounded),
+                      ),
                     ),
                   ],
                 ),
@@ -71,10 +76,10 @@ class _JoinSessionDialogState extends State<JoinSessionDialog> with ControllerDi
                   decoration: InputDecoration(
                     labelText: t.watchTogether.sessionCode,
                     hintText: t.watchTogether.enterCodeHint,
-                    prefixIcon: const Icon(Symbols.tag),
+                    prefixIcon: const AppIcon(Symbols.tag_rounded),
                     suffixIcon: IconButton(
                       onPressed: _pasteFromClipboard,
-                      icon: const Icon(Symbols.content_paste),
+                      icon: const AppIcon(Symbols.content_paste_rounded),
                       tooltip: t.watchTogether.pasteFromClipboard,
                     ),
                     border: const OutlineInputBorder(),
@@ -94,8 +99,6 @@ class _JoinSessionDialogState extends State<JoinSessionDialog> with ControllerDi
                     }
                     return null;
                   },
-                  onNavigateUp: _closeFocusNode.requestFocus,
-                  onNavigateDown: _joinFocusNode.requestFocus,
                   onFieldSubmitted: (_) => _join(),
                   autofocus: true,
                 ),
@@ -113,9 +116,10 @@ class _JoinSessionDialogState extends State<JoinSessionDialog> with ControllerDi
                   focusNode: _joinFocusNode,
                   onPressed: _join,
                   onNavigateUp: _sessionIdFocusNode.requestFocus,
+                  useBackgroundFocus: true,
                   child: FilledButton.icon(
                     onPressed: _join,
-                    icon: const Icon(Symbols.group_add),
+                    icon: const AppIcon(Symbols.group_add_rounded),
                     label: Text(t.watchTogether.joinSession),
                   ),
                 ),
@@ -155,5 +159,5 @@ class UpperCaseTextFormatter extends TextInputFormatter {
 }
 
 Future<String?> showJoinSessionDialog(BuildContext context) {
-  return showDialog<String>(context: context, builder: (context) => const JoinSessionDialog());
+  return showScopedDialog<String>(context: context, builder: (context) => const JoinSessionDialog());
 }

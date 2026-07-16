@@ -1,14 +1,15 @@
 import 'dart:convert';
+import 'package:plezy/media/ids.dart';
 
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
-import 'package:http/testing.dart';
 import 'package:plezy/database/app_database.dart';
 import 'package:plezy/media/library_query.dart';
-import 'package:plezy/models/plex/plex_config.dart';
 import 'package:plezy/services/plex_api_cache.dart';
 import 'package:plezy/services/plex_client.dart';
+
+import '../test_helpers/backend_client_fixtures.dart';
 
 void main() {
   late AppDatabase db;
@@ -22,19 +23,8 @@ void main() {
     await db.close();
   });
 
-  PlexClient makeClient(Future<http.Response> Function(http.Request request) handler) {
-    return PlexClient.forTesting(
-      config: PlexConfig(
-        baseUrl: 'https://plex.example.com',
-        token: 'token',
-        clientIdentifier: 'client-id',
-        product: 'Plezy',
-        version: '1',
-      ),
-      serverId: 'server-id',
-      httpClient: MockClient(handler),
-    );
-  }
+  PlexClient makeClient(Future<http.Response> Function(http.Request request) handler) =>
+      testPlexClient(serverId: ServerId('server-id'), handler: handler);
 
   test('filters and sorts use dedicated Plex endpoints', () async {
     final requests = <Uri>[];
@@ -70,7 +60,72 @@ void main() {
       'episode.addedAt',
       'lastViewedAt',
       'random',
+      // Plex doesn't advertise these in /sorts; we append them for movie/show.
+      'viewCount',
+      'userRating',
     ]);
+  });
+
+  test('appends Date Added, Plays, and User Rating sorts only for movie/show libraries', () async {
+    PlexClient clientReturning() => makeClient((request) async {
+      if (request.url.path == '/library/sections/1/sorts') {
+        return http.Response(
+          jsonEncode({
+            'MediaContainer': {
+              'Directory': [
+                {'key': 'titleSort', 'title': 'Title', 'defaultDirection': 'asc'},
+              ],
+            },
+          }),
+          200,
+          headers: {'content-type': 'application/json'},
+        );
+      }
+      return http.Response('not found', 404);
+    });
+
+    for (final type in ['movie', 'show']) {
+      final client = clientReturning();
+      addTearDown(client.close);
+      final sorts = await client.fetchSortOptions('1', libraryType: type);
+      expect(sorts.map((s) => s.key), ['titleSort', 'addedAt', 'viewCount', 'userRating'], reason: type);
+
+      final dateAdded = sorts.singleWhere((s) => s.key == 'addedAt');
+      expect(dateAdded.descKey, 'addedAt:desc', reason: type);
+      expect(dateAdded.defaultDirection, 'desc', reason: type);
+    }
+
+    // Other library types (e.g. music) are left as the server returned them.
+    final musicClient = clientReturning();
+    addTearDown(musicClient.close);
+    final musicSorts = await musicClient.fetchSortOptions('1', libraryType: 'artist');
+    expect(musicSorts.map((s) => s.key), ['titleSort']);
+  });
+
+  test('does not duplicate Date Added/Plays when the server already advertises them', () async {
+    final client = makeClient((request) async {
+      if (request.url.path == '/library/sections/1/sorts') {
+        return http.Response(
+          jsonEncode({
+            'MediaContainer': {
+              'Directory': [
+                {'key': 'titleSort', 'title': 'Title', 'defaultDirection': 'asc'},
+                {'key': 'addedAt', 'title': 'Date Added', 'defaultDirection': 'desc'},
+                {'key': 'viewCount', 'title': 'Plays', 'defaultDirection': 'desc'},
+              ],
+            },
+          }),
+          200,
+          headers: {'content-type': 'application/json'},
+        );
+      }
+      return http.Response('not found', 404);
+    });
+    addTearDown(client.close);
+
+    final sorts = await client.fetchSortOptions('1', libraryType: 'movie');
+    // addedAt/viewCount already advertised -> not duplicated; userRating still appended.
+    expect(sorts.map((s) => s.key), ['titleSort', 'addedAt', 'viewCount', 'userRating']);
   });
 
   test('library content stamps known section when Plex omits librarySectionID on rows', () async {

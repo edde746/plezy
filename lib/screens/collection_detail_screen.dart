@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../media/ids.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 import '../focus/focusable_action_bar.dart';
@@ -8,6 +9,7 @@ import '../mixins/paginated_item_loader.dart';
 import '../providers/download_provider.dart';
 import '../utils/app_logger.dart';
 import '../utils/dialogs.dart';
+import '../utils/error_message_utils.dart';
 import '../utils/download_utils.dart';
 import '../utils/platform_detector.dart';
 import '../utils/media_server_http_client.dart';
@@ -40,9 +42,6 @@ class _CollectionDetailScreenState extends BaseMediaListDetailScreen<CollectionD
   MediaItem get mediaItem => widget.collection;
 
   @override
-  String? get itemServerId => widget.collection.serverId;
-
-  @override
   String get title => widget.collection.title!;
 
   @override
@@ -71,12 +70,12 @@ class _CollectionDetailScreenState extends BaseMediaListDetailScreen<CollectionD
   }
 
   @override
-  void updateItemInLists(String itemId, MediaItem updatedItem) {
+  void updateItemInLists(String sourceGlobalKey, MediaItem updatedItem) {
     // Search [loadedItems] (not the flat [items] snapshot, which only has
     // the first page) so refreshing an item at a scrolled-in position updates
     // the grid in place.
     for (final entry in loadedItems.entries) {
-      if (entry.value.id == itemId) {
+      if (entry.value.globalKey == sourceGlobalKey) {
         loadedItems[entry.key] = updatedItem;
         return;
       }
@@ -85,32 +84,30 @@ class _CollectionDetailScreenState extends BaseMediaListDetailScreen<CollectionD
 
   @override
   Future<void> loadItems() async {
-    setState(() {
-      isLoading = true;
-      errorMessage = null;
-      items = [];
-      resetPaginationState();
-    });
-    try {
-      final initialPage = await loadInitialPageWithStatus(_pageSize);
-      if (!initialPage.applied || !mounted) return;
-      // Mirror loadedItems into base-class [items] once so state-sliver checks
-      // (items.isEmpty vs items.isEmpty && isLoading) pick the right branch.
-      // Further pages only update loadedItems; items.isEmpty stays false.
-      setState(() {
-        items = loadedItems.values.toList();
+    String? loadErrorMessage;
+    await loadInitialPaginatedItems(
+      pageSize: _pageSize,
+      resetViewState: () {
+        isLoading = true;
+        errorMessage = null;
+        items = [];
+      },
+      applyLoadedItems: (loaded) {
+        items = loaded;
         isLoading = false;
-      });
-      appLogger.d('Loaded ${loadedItems.length} of $totalSize items for collection: ${widget.collection.title}');
-      autoFocusFirstItemAfterLoad();
-    } catch (e) {
-      appLogger.e('Failed to load collection items', error: e);
-      if (!mounted) return;
-      setState(() {
-        errorMessage = t.collections.failedToLoadItems(error: e.toString());
+      },
+      applyError: (error, stackTrace) {
+        errorMessage = loadErrorMessage ?? t.errors.unableToLoad(context: t.collections.collection);
         isLoading = false;
-      });
-    }
+      },
+      onLoaded: (loadedCount, totalCount) {
+        appLogger.d('Loaded $loadedCount of $totalCount items for collection: ${widget.collection.title}');
+        autoFocusFirstItemAfterLoad();
+      },
+      onError: (error, stackTrace) {
+        loadErrorMessage = localizedLoadErrorMessage(error, stackTrace, context: t.collections.collection);
+      },
+    );
   }
 
   @override
@@ -191,7 +188,11 @@ class _CollectionDetailScreenState extends BaseMediaListDetailScreen<CollectionD
 
   String _collectionSyncRuleKey() {
     final serverId = widget.collection.serverId ?? mediaClient.serverId;
-    return context.read<DownloadProvider>().syncRuleKeyForClient(mediaClient, widget.collection.id, serverId: serverId);
+    return context.read<DownloadProvider>().syncRuleKeyForClient(
+      mediaClient,
+      widget.collection.id,
+      serverId: ServerId(serverId),
+    );
   }
 
   Future<void> _deleteCollection() async {

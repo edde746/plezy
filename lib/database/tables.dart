@@ -59,6 +59,7 @@ class DownloadedMedia extends Table {
   IntColumn get retryCount => integer().withDefault(const Constant(0))();
   TextColumn get bgTaskId => text().nullable()();
   IntColumn get mediaIndex => integer().withDefault(const Constant(0))();
+  TextColumn get mediaSourceId => text().nullable()();
 }
 
 /// Profile ownership for shared physical downloads.
@@ -100,6 +101,7 @@ class SyncRules extends Table {
   IntColumn get lastExecutedAt => integer().nullable()();
   IntColumn get mediaIndex => integer().withDefault(const Constant(0))();
   TextColumn get downloadFilter => text().withDefault(const Constant('unwatched'))();
+  BoolColumn get includeSpecials => boolean().withDefault(const Constant(true))();
 }
 
 /// Persisted media-server connections.
@@ -191,9 +193,9 @@ class ProfileConnections extends Table {
   // No FK on profile_id: Plex Home profiles are virtual (built by
   // Profile.virtualPlexHome from PlexHomeService's live cache, never
   // persisted in `profiles`), so an FK here would reject every join row
-  // they need. The two profile-delete sites clean up join rows manually
-  // via ProfileConnectionRegistry.removeAllForProfile before calling
-  // ProfileRegistry.remove.
+  // they need. Profile deletion instead cleans up join rows explicitly
+  // (removeAllProfileConnectionsAndCleanup in profile_connection_cleanup)
+  // before calling ProfileRegistry.remove.
   TextColumn get profileId => text()();
   TextColumn get connectionId => text().references(Connections, #id, onDelete: KeyAction.cascade)();
   TextColumn get userToken => text().withDefault(const Constant(''))();

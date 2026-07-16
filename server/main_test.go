@@ -328,10 +328,6 @@ func newRelayHarnessAt(t *testing.T, logDir, stateFile string) *relayHarness {
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("/relay", srv.handleWS)
-	mux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("ok"))
-	})
 	mux.HandleFunc("/logs", srv.handlePostLogs)
 	mux.HandleFunc("/logs/", srv.handleGetLogs)
 	mux.HandleFunc("/posters", srv.handlePostPosters)
@@ -390,6 +386,21 @@ func (h *relayHarness) waitRoomPeers(t *testing.T, sessionID string, want int) {
 		time.Sleep(20 * time.Millisecond)
 	}
 	t.Fatalf("room %s never reached %d peers within 2s", sessionID, want)
+}
+
+func (h *relayHarness) waitIPConnections(t *testing.T, ip string, want int) {
+	t.Helper()
+	deadline := time.Now().Add(2 * time.Second)
+	for time.Now().Before(deadline) {
+		h.srv.conns.mu.Lock()
+		got := h.srv.conns.perIP[ip]
+		h.srv.conns.mu.Unlock()
+		if got == want {
+			return
+		}
+		time.Sleep(20 * time.Millisecond)
+	}
+	t.Fatalf("IP %s never reached %d connections within 2s", ip, want)
 }
 
 type testConn struct {
@@ -521,6 +532,40 @@ func TestRateLimiterAllowRace(t *testing.T) {
 	}
 }
 
+func TestRateLimiterReclaimableOnlyAfterFullRefill(t *testing.T) {
+	now := time.Now()
+	limiter := &rateLimiter{
+		tokens:     0,
+		maxTokens:  5,
+		refillRate: 1,
+		lastTime:   now,
+	}
+
+	if limiter.reclaimable(now.Add(4 * time.Second)) {
+		t.Fatal("partially refilled limiter must retain its effective state")
+	}
+	if !limiter.reclaimable(now.Add(5 * time.Second)) {
+		t.Fatal("fully refilled limiter should be reclaimable")
+	}
+}
+
+func TestCleanupRateWindowsUsesWindowBoundary(t *testing.T) {
+	now := time.Now()
+	windows := map[string]time.Time{
+		"active":  now.Add(-logRateInterval + time.Nanosecond),
+		"expired": now.Add(-logRateInterval),
+	}
+
+	cleanupRateWindows(windows, now, logRateInterval)
+
+	if _, ok := windows["active"]; !ok {
+		t.Fatal("active fixed-window limiter was removed early")
+	}
+	if _, ok := windows["expired"]; ok {
+		t.Fatal("expired fixed-window limiter was retained")
+	}
+}
+
 // ======================================================================
 // connTracker unit tests
 // ======================================================================
@@ -588,25 +633,34 @@ func TestConnTrackerRoomQuota(t *testing.T) {
 	}
 }
 
-func TestConnTrackerCleanupPrunesStaleRateLimiters(t *testing.T) {
+func TestConnTrackerCleanupPreservesEffectiveRateLimits(t *testing.T) {
 	ct := newConnTracker()
-	for i := 0; i < 50; i++ {
-		ip := fmt.Sprintf("10.0.1.%d", i)
-		ct.tryConnect(ip)
+	ip := "10.0.1.1"
+	for i := range connRateBurst {
+		if !ct.tryConnect(ip) {
+			t.Fatalf("tryConnect %d: expected true", i)
+		}
+	}
+	for range connRateBurst {
 		ct.disconnect(ip)
 	}
-	ct.mu.Lock()
-	sizeBefore := len(ct.ipRate)
-	ct.mu.Unlock()
-	if sizeBefore == 0 {
-		t.Fatal("expected some rate limiter entries before cleanup")
+
+	ct.cleanup(time.Now())
+	if ct.tryConnect(ip) {
+		t.Fatal("cleanup reset a connection rate limit that was still effective")
 	}
-	ct.cleanup()
+
+	ct.cleanup(time.Now().Add(10 * time.Second))
+	if !ct.tryConnect(ip) {
+		t.Fatal("fully refilled limiter should be reclaimable")
+	}
+
+	ct.cleanup(time.Now().Add(10 * time.Second))
 	ct.mu.Lock()
-	sizeAfter := len(ct.ipRate)
+	_, retainedWhileConnected := ct.ipRate[ip]
 	ct.mu.Unlock()
-	if sizeAfter != 0 {
-		t.Errorf("cleanup should prune all stale rate limiters, got %d", sizeAfter)
+	if !retainedWhileConnected {
+		t.Fatal("cleanup removed a limiter with an active connection")
 	}
 }
 
@@ -771,6 +825,39 @@ func TestCreateHitsRoomsPerIPLimit(t *testing.T) {
 	c.expectError("rate_limited")
 }
 
+func TestConnectionCannotRetainMultipleRoomMemberships(t *testing.T) {
+	h := newRelayHarness(t)
+	ip := "1.1.1.8"
+	client := h.dial(t, ip)
+	client.send(clientMsg{Type: "create", SessionID: "PRIMARY", PeerID: "host"})
+	client.expect("created")
+
+	otherHost := h.dial(t, "1.1.1.9")
+	otherHost.send(clientMsg{Type: "create", SessionID: "OTHER", PeerID: "other-host"})
+	otherHost.expect("created")
+
+	client.send(clientMsg{Type: "join", SessionID: "OTHER", PeerID: "ghost"})
+	client.expectError("already_in_room")
+	client.send(clientMsg{Type: "create", SessionID: "EXTRA", PeerID: "extra-host"})
+	client.expectError("already_in_room")
+
+	h.waitRoomPeers(t, "PRIMARY", 1)
+	h.waitRoomPeers(t, "OTHER", 1)
+	h.srv.mu.RLock()
+	_, extraExists := h.srv.rooms["EXTRA"]
+	h.srv.mu.RUnlock()
+	if extraExists {
+		t.Fatal("rejected create retained an extra room")
+	}
+
+	h.srv.conns.mu.Lock()
+	roomsForIP := h.srv.conns.roomsPerIP[ip]
+	h.srv.conns.mu.Unlock()
+	if roomsForIP != 1 {
+		t.Fatalf("roomsPerIP[%q]=%d, want 1", ip, roomsForIP)
+	}
+}
+
 // ======================================================================
 // handleWS — join case
 // ======================================================================
@@ -802,6 +889,22 @@ func TestJoinMissingFieldsRejected(t *testing.T) {
 	h := newRelayHarness(t)
 	c := h.dial(t, "2.0.0.3")
 	c.send(clientMsg{Type: "join"})
+	c.expectError("invalid_message")
+}
+
+func TestRelayIdentifiersRejectUnsafeOrOversizedValues(t *testing.T) {
+	h := newRelayHarness(t)
+	c := h.dial(t, "2.0.0.30")
+
+	invalid := []string{"has space", "has/slash", strings.Repeat("x", maxSessionIDLength+1)}
+	for _, sessionID := range invalid {
+		c.send(clientMsg{Type: "create", SessionID: sessionID, PeerID: "H"})
+		c.expectError("invalid_message")
+	}
+
+	c.send(clientMsg{Type: "create", SessionID: "SAFE_ID-1", PeerID: "H"})
+	c.expect("created")
+	c.send(clientMsg{Type: "sendTo", To: "bad target", Payload: json.RawMessage(`{}`)})
 	c.expectError("invalid_message")
 }
 
@@ -905,6 +1008,47 @@ func TestSendToDeliversToTargetOnly(t *testing.T) {
 		t.Errorf("payload mismatch: %s", m.Payload)
 	}
 	g2.recvNothing(200 * time.Millisecond)
+}
+
+func TestRelayMessagesRefreshRoomActivity(t *testing.T) {
+	h := newRelayHarness(t)
+	host := h.dial(t, "4.0.0.7")
+	host.send(clientMsg{Type: "create", SessionID: "ACTIVE", PeerID: "H"})
+	host.expect("created")
+
+	guest := h.dial(t, "4.0.0.8")
+	guest.send(clientMsg{Type: "join", SessionID: "ACTIVE", PeerID: "G"})
+	guest.expect("joined")
+	host.expect("peerJoined")
+
+	h.srv.mu.RLock()
+	room := h.srv.rooms["ACTIVE"]
+	h.srv.mu.RUnlock()
+	old := time.Now().Add(-time.Hour)
+
+	room.mu.Lock()
+	room.LastActivityAt = old
+	room.mu.Unlock()
+	host.send(clientMsg{Type: "broadcast", Payload: json.RawMessage(`{"broadcast":true}`)})
+	guest.expect("message")
+	room.mu.RLock()
+	broadcastActivity := room.LastActivityAt
+	room.mu.RUnlock()
+	if !broadcastActivity.After(old) {
+		t.Fatalf("broadcast activity=%v, want after %v", broadcastActivity, old)
+	}
+
+	room.mu.Lock()
+	room.LastActivityAt = old
+	room.mu.Unlock()
+	host.send(clientMsg{Type: "sendTo", To: "G", Payload: json.RawMessage(`{"direct":true}`)})
+	guest.expect("message")
+	room.mu.RLock()
+	directActivity := room.LastActivityAt
+	room.mu.RUnlock()
+	if !directActivity.After(old) {
+		t.Fatalf("sendTo activity=%v, want after %v", directActivity, old)
+	}
 }
 
 func TestSendToUnknownTargetRejected(t *testing.T) {
@@ -1027,6 +1171,103 @@ func TestStalePeerSkipsCleanupBroadcast(t *testing.T) {
 	host.recvNothing(300 * time.Millisecond)
 }
 
+func TestHostReconnectReplacesStaleConnectionWithoutLeaving(t *testing.T) {
+	h := newRelayHarness(t)
+	oldHostIP := "6.1.1.1"
+	oldHost := h.dial(t, oldHostIP)
+	oldHost.send(clientMsg{Type: "create", SessionID: "REJOIN", PeerID: "H"})
+	oldHost.expect("created")
+
+	guest := h.dial(t, "6.1.1.2")
+	guest.send(clientMsg{Type: "join", SessionID: "REJOIN", PeerID: "G"})
+	guest.expect("joined")
+	oldHost.expect("peerJoined")
+
+	newHost := h.dial(t, "6.1.1.3")
+	newHost.send(clientMsg{Type: "join", SessionID: "REJOIN", PeerID: "H"})
+	joined := newHost.expect("joined")
+	if len(joined.Peers) != 1 || joined.Peers[0] != "G" {
+		t.Fatalf("reconnected host peers=%v, want [G]", joined.Peers)
+	}
+	guest.expect("peerJoined")
+
+	oldHost.conn.Close()
+	h.waitIPConnections(t, oldHostIP, 0)
+
+	newHost.send(clientMsg{Type: "broadcast", Payload: json.RawMessage(`{"state":"ready"}`)})
+	message := guest.expect("message")
+	if message.From != "H" {
+		t.Fatalf("message sender=%q, want H", message.From)
+	}
+}
+
+func TestEmptyRoomSupportsJoinThenExpiresForReconnectFallback(t *testing.T) {
+	h := newRelayHarness(t)
+	host := h.dial(t, "6.1.2.1")
+	host.send(clientMsg{Type: "create", SessionID: "EMPTY", PeerID: "H"})
+	host.expect("created")
+	host.conn.Close()
+	h.waitRoomPeers(t, "EMPTY", 0)
+
+	reconnected := h.dial(t, "6.1.2.2")
+	reconnected.send(clientMsg{Type: "join", SessionID: "EMPTY", PeerID: "H"})
+	joined := reconnected.expect("joined")
+	if len(joined.Peers) != 0 {
+		t.Fatalf("empty-room reconnect peers=%v, want none", joined.Peers)
+	}
+	reconnected.conn.Close()
+	h.waitRoomPeers(t, "EMPTY", 0)
+
+	now := time.Now()
+	h.srv.mu.RLock()
+	room := h.srv.rooms["EMPTY"]
+	h.srv.mu.RUnlock()
+	room.mu.Lock()
+	room.LastActivityAt = now.Add(-emptyRoomMaxAge - time.Second)
+	room.mu.Unlock()
+	h.srv.runCleanupStep(now)
+
+	fallback := h.dial(t, "6.1.2.3")
+	fallback.send(clientMsg{Type: "join", SessionID: "EMPTY", PeerID: "H"})
+	fallback.expectError("room_not_found")
+}
+
+func TestCleanupDisconnectsPeersBeforeRemovingExpiredOccupiedRoom(t *testing.T) {
+	h := newRelayHarness(t)
+	host := h.dial(t, "6.2.0.1")
+	host.send(clientMsg{Type: "create", SessionID: "EXPIRED", PeerID: "H"})
+	host.expect("created")
+
+	guest := h.dial(t, "6.2.0.2")
+	guest.send(clientMsg{Type: "join", SessionID: "EXPIRED", PeerID: "G"})
+	guest.expect("joined")
+	host.expect("peerJoined")
+
+	now := time.Now()
+	h.srv.mu.RLock()
+	room := h.srv.rooms["EXPIRED"]
+	h.srv.mu.RUnlock()
+	room.mu.Lock()
+	room.CreatedAt = now.Add(-roomMaxAge - time.Second)
+	room.mu.Unlock()
+
+	h.srv.runCleanupStep(now)
+
+	h.srv.mu.RLock()
+	_, exists := h.srv.rooms["EXPIRED"]
+	h.srv.mu.RUnlock()
+	if exists {
+		t.Fatal("expired room still exists after cleanup")
+	}
+
+	for name, connection := range map[string]*testConn{"host": host, "guest": guest} {
+		connection.conn.SetReadDeadline(time.Now().Add(2 * time.Second))
+		if _, _, err := connection.conn.ReadMessage(); err == nil {
+			t.Errorf("%s remained connected after occupied room removal", name)
+		}
+	}
+}
+
 // ======================================================================
 // Logs endpoints
 // ======================================================================
@@ -1129,6 +1370,44 @@ func TestLogsRoundTrip(t *testing.T) {
 	}
 	if ct := getResp.Header.Get("Content-Type"); !strings.HasPrefix(ct, "text/plain") {
 		t.Errorf("Content-Type=%q", ct)
+	}
+}
+
+func TestLogStorePersistsAcrossRestartAndAvoidsIDCollisions(t *testing.T) {
+	dir := t.TempDir()
+	now := time.Now().Add(-time.Second)
+	first := newLogStore(dir)
+	first.generateID = func() string { return "aaaaa" }
+	firstID, _, err := first.store([]byte("original"), now)
+	if err != nil {
+		t.Fatalf("store original: %v", err)
+	}
+
+	restarted := newLogStore(dir)
+	if _, ok := restarted.lookup(firstID, time.Now()); !ok {
+		t.Fatal("stored log was not restored after restart")
+	}
+
+	ids := []string{firstID, "bbbbb"}
+	restarted.generateID = func() string {
+		id := ids[0]
+		ids = ids[1:]
+		return id
+	}
+	secondID, _, err := restarted.store([]byte("second"), time.Now())
+	if err != nil {
+		t.Fatalf("store after restart: %v", err)
+	}
+	if secondID != "bbbbb" {
+		t.Fatalf("collision generated id %q, want bbbbb", secondID)
+	}
+
+	original, err := os.ReadFile(restarted.filePath(firstID))
+	if err != nil {
+		t.Fatalf("read original: %v", err)
+	}
+	if string(original) != "original" {
+		t.Fatalf("colliding store overwrote original: %q", original)
 	}
 }
 
@@ -1353,22 +1632,6 @@ func TestPosterStoreCleanupExpiresOldPosters(t *testing.T) {
 	}
 	if _, err := os.Stat(ps.filePath(entry.Filename)); !os.IsNotExist(err) {
 		t.Fatalf("expired file still exists or stat failed unexpectedly: %v", err)
-	}
-}
-
-func TestHealthEndpointReturnsOK(t *testing.T) {
-	h := newRelayHarness(t)
-	resp, err := http.Get(h.baseURL + "/health")
-	if err != nil {
-		t.Fatalf("get: %v", err)
-	}
-	defer resp.Body.Close()
-	if resp.StatusCode != http.StatusOK {
-		t.Fatalf("status=%d", resp.StatusCode)
-	}
-	body, _ := io.ReadAll(resp.Body)
-	if string(body) != "ok" {
-		t.Fatalf("body=%q want ok", body)
 	}
 }
 

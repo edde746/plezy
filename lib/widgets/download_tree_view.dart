@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import '../media/ids.dart';
 import 'package:plezy/widgets/app_icon.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import '../focus/focusable_wrapper.dart';
 import '../i18n/strings.g.dart';
 import '../media/media_item.dart';
 import '../media/media_item_types.dart';
+import '../media/media_kind.dart';
 import '../models/download_models.dart';
 import '../utils/dialogs.dart';
 import '../utils/global_key_utils.dart';
@@ -43,10 +45,10 @@ class DownloadTreeNode {
 }
 
 /// Type of node in the download tree
-enum DownloadNodeType { show, season, episode, movie }
+enum DownloadNodeType { show, season, episode, movie, album, track }
 
 /// Hierarchical tree view for downloads
-/// Groups TV shows by show -> season -> episode
+/// Groups TV shows by show -> season -> episode and music by album -> track
 /// Movies appear at top level
 class DownloadTreeView extends StatefulWidget {
   final Map<String, DownloadProgress> downloads;
@@ -111,7 +113,7 @@ class _DownloadTreeViewState extends State<DownloadTreeView> {
     }
 
     return ListView.builder(
-      padding: EdgeInsets.zero,
+      padding: .zero,
       itemCount: flattenedNodes.length,
       itemBuilder: (context, index) {
         final item = flattenedNodes[index];
@@ -123,6 +125,7 @@ class _DownloadTreeViewState extends State<DownloadTreeView> {
   /// Build the download tree from flat download list
   List<DownloadTreeNode> _buildTree() {
     final Map<String, List<MapEntry<String, DownloadProgress>>> showGroups = {};
+    final Map<String, List<MapEntry<String, DownloadProgress>>> albumGroups = {};
     final List<DownloadTreeNode> movies = [];
 
     // Group downloads
@@ -138,6 +141,11 @@ class _DownloadTreeViewState extends State<DownloadTreeView> {
         final showKey = meta.grandparentId ?? 'unknown';
         showGroups.putIfAbsent(showKey, () => []);
         showGroups[showKey]!.add(entry);
+      } else if (meta.kind == MediaKind.track) {
+        // Group tracks by album (single level — no per-disc tier)
+        final albumKey = meta.parentId ?? 'unknown';
+        albumGroups.putIfAbsent(albumKey, () => []);
+        albumGroups[albumKey]!.add(entry);
       } else if (meta.isMovie) {
         // Movies go at top level
         movies.add(
@@ -187,8 +195,12 @@ class _DownloadTreeViewState extends State<DownloadTreeView> {
 
         // Get season metadata from first episode
         final firstEpisode = widget.metadata[seasonEpisodes.first.key];
-        final seasonTitle = firstEpisode?.parentTitle ?? 'Unknown Season';
         final seasonNumber = firstEpisode?.parentIndex;
+        final seasonTitle = firstEpisode?.parentTitle?.isNotEmpty == true
+            ? firstEpisode!.parentTitle!
+            : seasonNumber != null
+            ? t.common.seasonNumber(number: seasonNumber)
+            : 'Unknown Season';
 
         // Build episode nodes
         final List<DownloadTreeNode> episodeNodes = [];
@@ -200,7 +212,9 @@ class _DownloadTreeViewState extends State<DownloadTreeView> {
           if (meta == null) continue;
 
           final episodeNumber = meta.index;
-          final episodeTitle = episodeNumber != null ? 'Episode $episodeNumber - ${meta.title!}' : meta.title!;
+          final episodeTitle = episodeNumber != null
+              ? t.common.episodeNumberTitle(number: episodeNumber, title: meta.title!)
+              : meta.title!;
 
           episodeNodes.add(
             DownloadTreeNode(
@@ -228,12 +242,10 @@ class _DownloadTreeViewState extends State<DownloadTreeView> {
             : episodeNodes.map((e) => e.progress).reduce((a, b) => a + b) / episodeNodes.length;
         final seasonStatus = _determineAggregateStatus(episodeNodes.map((e) => e.status).toList());
 
-        final displayTitle = seasonNumber != null ? 'Season $seasonNumber' : seasonTitle;
-
         seasons.add(
           DownloadTreeNode(
             key: '$showKey:$seasonKey',
-            title: displayTitle,
+            title: seasonTitle,
             type: DownloadNodeType.season,
             progress: seasonProgress,
             status: seasonStatus,
@@ -269,12 +281,69 @@ class _DownloadTreeViewState extends State<DownloadTreeView> {
       );
     }
 
-    // Sort shows and movies by status and title
+    // Build album nodes (album -> tracks)
+    final List<DownloadTreeNode> albums = [];
+    for (final albumEntry in albumGroups.entries) {
+      final albumKey = albumEntry.key;
+      final tracks = albumEntry.value;
+      if (tracks.isEmpty) continue;
+
+      // Album/artist names from any track's parent fields
+      final firstTrack = widget.metadata[tracks.first.key];
+      final albumTitle = firstTrack?.albumTitle ?? 'Unknown Album';
+      final artistTitle = firstTrack?.albumArtistTitle;
+      final albumNodeTitle = artistTitle != null && artistTitle.isNotEmpty ? '$artistTitle - $albumTitle' : albumTitle;
+
+      final List<DownloadTreeNode> trackNodes = [];
+      for (final trackEntry in tracks) {
+        final globalKey = trackEntry.key;
+        final download = trackEntry.value;
+        final meta = widget.metadata[globalKey];
+        if (meta == null) continue;
+
+        trackNodes.add(
+          DownloadTreeNode(
+            key: globalKey,
+            title: meta.title ?? globalKey,
+            type: DownloadNodeType.track,
+            progress: download.progressPercent,
+            status: download.status,
+            metadata: meta,
+            downloadProgress: download,
+          ),
+        );
+      }
+      if (trackNodes.isEmpty) continue;
+
+      // Sort tracks by disc then track number
+      trackNodes.sort((a, b) {
+        final byDisc = (a.metadata?.discNumber ?? 1).compareTo(b.metadata?.discNumber ?? 1);
+        if (byDisc != 0) return byDisc;
+        return (a.metadata?.trackNumber ?? 0).compareTo(b.metadata?.trackNumber ?? 0);
+      });
+
+      final albumProgress = trackNodes.map((e) => e.progress).reduce((a, b) => a + b) / trackNodes.length;
+      final albumStatus = _determineAggregateStatus(trackNodes.map((e) => e.status).toList());
+
+      albums.add(
+        DownloadTreeNode(
+          key: albumKey,
+          title: albumNodeTitle,
+          type: DownloadNodeType.album,
+          progress: albumProgress,
+          status: albumStatus,
+          children: trackNodes,
+        ),
+      );
+    }
+
+    // Sort shows, albums, and movies by status and title
     _sortNodesByStatusAndTitle(shows);
+    _sortNodesByStatusAndTitle(albums);
     _sortNodesByStatusAndTitle(movies);
 
-    // Combine movies and shows
-    return [...movies, ...shows];
+    // Combine movies, shows, and albums
+    return [...movies, ...shows, ...albums];
   }
 
   /// Determine aggregate status from child statuses
@@ -454,13 +523,15 @@ String? resolveDownloadContainerGlobalKey(DownloadTreeNode node, Map<String, Med
     case DownloadNodeType.show:
       final showRatingKey = firstLeafMeta!.grandparentId;
       if (showRatingKey == null) return null;
-      return buildGlobalKey(serverId, showRatingKey);
+      return buildGlobalKey(ServerId(serverId), showRatingKey);
     case DownloadNodeType.season:
-      final seasonRatingKey = firstLeafMeta!.parentId;
-      if (seasonRatingKey == null) return null;
-      return buildGlobalKey(serverId, seasonRatingKey);
+    case DownloadNodeType.album:
+      final parentRatingKey = firstLeafMeta!.parentId;
+      if (parentRatingKey == null) return null;
+      return buildGlobalKey(ServerId(serverId), parentRatingKey);
     case DownloadNodeType.episode:
     case DownloadNodeType.movie:
+    case DownloadNodeType.track:
       return null;
   }
 }
@@ -591,7 +662,10 @@ class _DownloadTreeItemState extends State<_DownloadTreeItem> {
   }
 
   int _getActionCount() {
-    final isContainer = widget.node.type == DownloadNodeType.show || widget.node.type == DownloadNodeType.season;
+    final isContainer =
+        widget.node.type == DownloadNodeType.show ||
+        widget.node.type == DownloadNodeType.season ||
+        widget.node.type == DownloadNodeType.album;
     if (isContainer) {
       return _getContainerActionCount();
     }
@@ -638,7 +712,7 @@ class _DownloadTreeItemState extends State<_DownloadTreeItem> {
     final hasActions = _buttonFocusNodes.isNotEmpty;
 
     return Padding(
-      padding: EdgeInsets.only(left: widget.depth * 16.0),
+      padding: .only(left: widget.depth * 16.0),
       child: FocusableWrapper(
         focusNode: _rowFocusNode,
         autofocus: widget.autofocus,
@@ -688,8 +762,8 @@ class _DownloadTreeItemState extends State<_DownloadTreeItem> {
         // Title and info
         Expanded(
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: .start,
+            mainAxisSize: .min,
             children: [
               Text(
                 widget.node.title,
@@ -697,7 +771,7 @@ class _DownloadTreeItemState extends State<_DownloadTreeItem> {
                   fontWeight: canExpand ? FontWeight.w600 : FontWeight.normal,
                 ),
                 maxLines: 1,
-                overflow: TextOverflow.ellipsis,
+                overflow: .ellipsis,
               ),
 
               if (canExpand) ...[
@@ -742,7 +816,7 @@ class _DownloadTreeItemState extends State<_DownloadTreeItem> {
                   widget.node.downloadProgress!.errorMessage!,
                   style: theme.textTheme.bodySmall?.copyWith(color: Colors.red.withValues(alpha: 0.8)),
                   maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
+                  overflow: .ellipsis,
                 ),
               ],
             ],
@@ -763,11 +837,14 @@ class _DownloadTreeItemState extends State<_DownloadTreeItem> {
   }
 
   Widget _buildActions() {
-    final isContainer = widget.node.type == DownloadNodeType.show || widget.node.type == DownloadNodeType.season;
+    final isContainer =
+        widget.node.type == DownloadNodeType.show ||
+        widget.node.type == DownloadNodeType.season ||
+        widget.node.type == DownloadNodeType.album;
 
     final actions = isContainer ? _buildContainerActions() : _buildItemActions();
 
-    return Row(mainAxisSize: MainAxisSize.min, children: actions);
+    return Row(mainAxisSize: .min, children: actions);
   }
 
   List<Widget> _buildItemActions() {

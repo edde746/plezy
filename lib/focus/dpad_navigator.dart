@@ -99,35 +99,17 @@ class SelectKeyUpSuppressor {
 
 /// Global helper to suppress the next BACK key-up event.
 ///
-/// Use this when a modal (bottom sheet, dialog) closes to prevent
-/// the BACK key-up from propagating to the underlying screen.
+/// Armed when a modal (dialog, sheet) closes while a back key is still held —
+/// e.g. by [BackKeySuppressorObserver] when a route pops mid-press — so the
+/// in-flight key-up doesn't propagate to the underlying screen's back handler.
 class BackKeyUpSuppressor {
   static final _instance = _KeyUpSuppressor((k) => k.isBackKey);
-  static bool _closedViaBackKey = false;
 
-  /// Mark that a modal is being closed via back key press.
-  /// Call this before Navigator.pop() in back key handlers.
-  static void markClosedViaBackKey() {
-    _closedViaBackKey = true;
-  }
-
-  /// Request suppression of back key-up events.
-  /// Suppression is skipped if the modal was closed via back key
-  /// (since the key-up already triggered the close).
-  static void suppressBackUntilKeyUp() {
-    if (_closedViaBackKey) {
-      _closedViaBackKey = false;
-      return;
-    }
-    _instance.suppress();
-  }
+  static void suppressBackUntilKeyUp() => _instance.suppress();
 
   /// Clear any pending suppression. Call when opening a new modal
   /// to ensure stale suppression from previous closes doesn't affect it.
-  static void clearSuppression() {
-    _instance.clearSuppression();
-    _closedViaBackKey = false;
-  }
+  static void clearSuppression() => _instance.clearSuppression();
 
   static bool consumeIfSuppressed(KeyEvent event) => _instance.consumeIfSuppressed(event);
 }

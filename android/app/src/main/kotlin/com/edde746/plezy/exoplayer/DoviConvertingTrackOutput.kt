@@ -2,10 +2,8 @@ package com.edde746.plezy.exoplayer
 
 import android.util.Log
 import androidx.media3.common.C
-import androidx.media3.common.DataReader
 import androidx.media3.common.Format
 import androidx.media3.common.MimeTypes
-import androidx.media3.common.util.ParsableByteArray
 import androidx.media3.extractor.TrackOutput
 
 /**
@@ -28,10 +26,10 @@ import androidx.media3.extractor.TrackOutput
  * All buffers are reused across samples to minimize GC pressure on the hot path.
  */
 class DoviConvertingTrackOutput(
-  private val delegate: TrackOutput,
+  delegate: TrackOutput,
   private val dvMode: DvConversionMode = DvConversionMode.HEVC_STRIP,
   private val emitLog: ((String, String, String) -> Unit)? = null
-) : TrackOutput {
+) : BufferedTransformingTrackOutput(delegate, INITIAL_BUFFER_SIZE) {
 
   companion object {
     private const val TAG = "DoviConvertTrack"
@@ -65,12 +63,8 @@ class DoviConvertingTrackOutput(
     get() = if (sampleCount > 0) totalSampleProcessingTimeUs / sampleCount else 0L
 
   // Reusable buffers — grown as needed, never shrunk
-  private var sampleBuf = ByteArray(INITIAL_BUFFER_SIZE)
-  private var sampleLen = 0
   private var outputBuf = ByteArray(INITIAL_BUFFER_SIZE)
   private var outputLen = 0
-  private val outputParsable = ParsableByteArray()
-  private var buffering = false
 
   // Sample counter for periodic logging
   private var sampleCount = 0L
@@ -79,6 +73,7 @@ class DoviConvertingTrackOutput(
   private var totalSampleProcessingTimeUs = 0L
   private var loggedSupplementalWrapper = false
   private var loggedEncryptedSupplementalPassthrough = false
+  private var outputIsProcessed = false
 
   override fun format(format: Format) {
     if (!conversionActive) {
@@ -135,55 +130,15 @@ class DoviConvertingTrackOutput(
     delegate.format(format)
   }
 
-  override fun sampleData(
-    input: DataReader,
-    length: Int,
-    allowEndOfInput: Boolean,
-    sampleDataPart: Int
-  ): Int {
-    if (!conversionActive) {
-      return delegate.sampleData(input, length, allowEndOfInput, sampleDataPart)
-    }
+  override val transformEnabled: Boolean
+    get() = conversionActive
 
-    buffering = true
-    ensureSampleCapacity(sampleLen + length)
-    val bytesRead = input.read(sampleBuf, sampleLen, length)
-    if (bytesRead > 0) {
-      sampleLen += bytesRead
-    }
-    return bytesRead
-  }
+  override val transformedBuffer: ByteArray
+    get() = if (outputIsProcessed) outputBuf else inputBuffer
 
-  override fun sampleData(data: ParsableByteArray, length: Int, sampleDataPart: Int) {
-    if (!conversionActive) {
-      delegate.sampleData(data, length, sampleDataPart)
-      return
-    }
-
-    buffering = true
-    ensureSampleCapacity(sampleLen + length)
-    data.readBytes(sampleBuf, sampleLen, length)
-    sampleLen += length
-  }
-
-  override fun sampleMetadata(
-    timeUs: Long,
-    flags: Int,
-    size: Int,
-    offset: Int,
-    cryptoData: TrackOutput.CryptoData?
-  ) {
-    if (!conversionActive || !buffering) {
-      delegate.sampleMetadata(timeUs, flags, size, offset, cryptoData)
-      return
-    }
-
-    buffering = false
-    val srcLen = sampleLen
-    sampleLen = 0
-
+  override fun transformSample(inputLength: Int, flags: Int): Int {
     val processStartNs = System.nanoTime()
-    val success = if ((flags and C.BUFFER_FLAG_ENCRYPTED) != 0) {
+    outputIsProcessed = if ((flags and C.BUFFER_FLAG_ENCRYPTED) != 0) {
       if (!loggedEncryptedSupplementalPassthrough && (flags and C.BUFFER_FLAG_HAS_SUPPLEMENTAL_DATA) != 0) {
         loggedEncryptedSupplementalPassthrough = true
         logWarn("Encrypted supplemental sample encountered, passing raw sample")
@@ -191,25 +146,20 @@ class DoviConvertingTrackOutput(
       false
     } else {
       try {
-        processSampleData(flags, srcLen)
+        processSampleData(flags, inputLength)
         true
       } catch (e: Exception) {
         logError("NAL processing failed, passing raw sample", e)
         false
       }
     }
-    val outLen = if (success) outputLen else srcLen
-    val outBuf = if (success) outputBuf else sampleBuf
-    if (success) {
+    val transformedLength = if (outputIsProcessed) outputLen else inputLength
+    if (outputIsProcessed) {
       recordSampleProcessing((System.nanoTime() - processStartNs) / 1_000L)
     }
 
-    // Skip empty samples (all NALs were DV layers) — don't confuse the decoder
-    if (outLen == 0) return
-
-    outputParsable.reset(outBuf, outLen)
-    delegate.sampleData(outputParsable, outLen, TrackOutput.SAMPLE_DATA_PART_MAIN)
-    delegate.sampleMetadata(timeUs, flags, outLen, 0, cryptoData)
+    // Skip empty samples (all NALs were DV layers) — don't confuse the decoder.
+    return if (transformedLength == 0) -1 else transformedLength
   }
 
   /**
@@ -231,7 +181,7 @@ class DoviConvertingTrackOutput(
       return
     }
 
-    val mainSampleLen = readInt32BE(sampleBuf, 0)
+    val mainSampleLen = readInt32BE(inputBuffer, 0)
     if (mainSampleLen < 0 || mainSampleLen > dataLen - 4) {
       logWarn("Bad supplemental sample: mainLen=$mainSampleLen total=$dataLen")
       copyRawSample(dataLen)
@@ -243,7 +193,7 @@ class DoviConvertingTrackOutput(
       loggedSupplementalWrapper = true
       logDebug(
         "Supplemental wrapper detected: total=${dataLen}B, main=${mainSampleLen}B, " +
-          "supplemental=${supplementalLen}B, innerFirstBytes=${formatBytes(sampleBuf, 4, 8)}"
+          "supplemental=${supplementalLen}B, innerFirstBytes=${formatBytes(inputBuffer, 4, 8)}"
       )
     }
 
@@ -259,7 +209,7 @@ class DoviConvertingTrackOutput(
     System.arraycopy(outputBuf, 0, outputBuf, 4, processedMainLen)
     writeInt32BE(outputBuf, 0, processedMainLen)
     if (supplementalLen > 0) {
-      System.arraycopy(sampleBuf, 4 + mainSampleLen, outputBuf, 4 + processedMainLen, supplementalLen)
+      System.arraycopy(inputBuffer, 4 + mainSampleLen, outputBuf, 4 + processedMainLen, supplementalLen)
     }
     outputLen = 4 + processedMainLen + supplementalLen
 
@@ -282,7 +232,7 @@ class DoviConvertingTrackOutput(
     outputLen = 0
     if (dataLen < 4) {
       ensureOutputCapacity(dataLen)
-      System.arraycopy(sampleBuf, dataOffset, outputBuf, 0, dataLen)
+      System.arraycopy(inputBuffer, dataOffset, outputBuf, 0, dataLen)
       outputLen = dataLen
       return
     }
@@ -290,22 +240,22 @@ class DoviConvertingTrackOutput(
     // Auto-detect: Annex B starts with 00 00 00 01 or 00 00 01
     val isAnnexB = (
       dataLen >= 4 &&
-        sampleBuf[dataOffset] == 0.toByte() &&
-        sampleBuf[dataOffset + 1] == 0.toByte() &&
-        sampleBuf[dataOffset + 2] == 0.toByte() &&
-        sampleBuf[dataOffset + 3] == 1.toByte()
+        inputBuffer[dataOffset] == 0.toByte() &&
+        inputBuffer[dataOffset + 1] == 0.toByte() &&
+        inputBuffer[dataOffset + 2] == 0.toByte() &&
+        inputBuffer[dataOffset + 3] == 1.toByte()
       ) ||
       (
         dataLen >= 3 &&
-          sampleBuf[dataOffset] == 0.toByte() &&
-          sampleBuf[dataOffset + 1] == 0.toByte() &&
-          sampleBuf[dataOffset + 2] == 1.toByte()
+          inputBuffer[dataOffset] == 0.toByte() &&
+          inputBuffer[dataOffset + 1] == 0.toByte() &&
+          inputBuffer[dataOffset + 2] == 1.toByte()
         )
 
     if (sampleCount == 0L) {
       logDebug(
         "NAL format detected: ${if (isAnnexB) "Annex B" else "length-prefixed"}, " +
-          "first bytes: ${formatBytes(sampleBuf, dataOffset, 8)}"
+          "first bytes: ${formatBytes(inputBuffer, dataOffset, 8)}"
       )
     }
 
@@ -323,11 +273,11 @@ class DoviConvertingTrackOutput(
     var scEnd = -1
     var i = dataOffset
     while (i < dataEnd - 2) {
-      if (sampleBuf[i] == 0.toByte() && sampleBuf[i + 1] == 0.toByte()) {
-        if (i + 3 < dataEnd && sampleBuf[i + 2] == 0.toByte() && sampleBuf[i + 3] == 1.toByte()) {
+      if (inputBuffer[i] == 0.toByte() && inputBuffer[i + 1] == 0.toByte()) {
+        if (i + 3 < dataEnd && inputBuffer[i + 2] == 0.toByte() && inputBuffer[i + 3] == 1.toByte()) {
           scEnd = i + 4
           break
-        } else if (sampleBuf[i + 2] == 1.toByte()) {
+        } else if (inputBuffer[i + 2] == 1.toByte()) {
           scEnd = i + 3
           break
         }
@@ -337,7 +287,7 @@ class DoviConvertingTrackOutput(
 
     if (scEnd < 0) {
       // No start codes found — pass through
-      System.arraycopy(sampleBuf, dataOffset, outputBuf, 0, dataLen)
+      System.arraycopy(inputBuffer, dataOffset, outputBuf, 0, dataLen)
       outputLen = dataLen
       sampleCount++
       return
@@ -350,11 +300,11 @@ class DoviConvertingTrackOutput(
       var nalEnd = dataEnd
       i = nalStart
       while (i < dataEnd - 2) {
-        if (sampleBuf[i] == 0.toByte() && sampleBuf[i + 1] == 0.toByte()) {
-          if (i + 3 < dataEnd && sampleBuf[i + 2] == 0.toByte() && sampleBuf[i + 3] == 1.toByte()) {
+        if (inputBuffer[i] == 0.toByte() && inputBuffer[i + 1] == 0.toByte()) {
+          if (i + 3 < dataEnd && inputBuffer[i + 2] == 0.toByte() && inputBuffer[i + 3] == 1.toByte()) {
             nalEnd = i
             break
-          } else if (sampleBuf[i + 2] == 1.toByte()) {
+          } else if (inputBuffer[i + 2] == 1.toByte()) {
             nalEnd = i
             break
           }
@@ -369,7 +319,7 @@ class DoviConvertingTrackOutput(
           ensureOutputCapacity(outputLen + 4 + nalLen)
           System.arraycopy(ANNEX_B_START_CODE, 0, outputBuf, outputLen, 4)
           outputLen += 4
-          System.arraycopy(sampleBuf, nalStart, outputBuf, outputLen, nalLen)
+          System.arraycopy(inputBuffer, nalStart, outputBuf, outputLen, nalLen)
           outputLen += nalLen
           kept++
         } else if (action == NalAction.CONVERT) {
@@ -392,7 +342,7 @@ class DoviConvertingTrackOutput(
 
       // Advance past the next start code
       if (nalEnd >= dataEnd) break
-      nalStart = if (nalEnd + 3 < dataEnd && sampleBuf[nalEnd + 2] == 0.toByte() && sampleBuf[nalEnd + 3] == 1.toByte()) {
+      nalStart = if (nalEnd + 3 < dataEnd && inputBuffer[nalEnd + 2] == 0.toByte() && inputBuffer[nalEnd + 3] == 1.toByte()) {
         nalEnd + 4
       } else {
         nalEnd + 3
@@ -417,10 +367,10 @@ class DoviConvertingTrackOutput(
     var stripped = 0
 
     while (pos + 4 <= dataEnd) {
-      val nalLen = ((sampleBuf[pos].toInt() and 0xFF) shl 24) or
-        ((sampleBuf[pos + 1].toInt() and 0xFF) shl 16) or
-        ((sampleBuf[pos + 2].toInt() and 0xFF) shl 8) or
-        (sampleBuf[pos + 3].toInt() and 0xFF)
+      val nalLen = ((inputBuffer[pos].toInt() and 0xFF) shl 24) or
+        ((inputBuffer[pos + 1].toInt() and 0xFF) shl 16) or
+        ((inputBuffer[pos + 2].toInt() and 0xFF) shl 8) or
+        (inputBuffer[pos + 3].toInt() and 0xFF)
 
       if (nalLen <= 0 || pos + 4 + nalLen > dataEnd) {
         if (sampleCount < 5) {
@@ -435,7 +385,7 @@ class DoviConvertingTrackOutput(
         ensureOutputCapacity(outputLen + 4 + nalLen)
         writeInt32BE(outputBuf, outputLen, nalLen)
         outputLen += 4
-        System.arraycopy(sampleBuf, nalStart, outputBuf, outputLen, nalLen)
+        System.arraycopy(inputBuffer, nalStart, outputBuf, outputLen, nalLen)
         outputLen += nalLen
         kept++
       } else if (action == NalAction.CONVERT) {
@@ -486,7 +436,7 @@ class DoviConvertingTrackOutput(
     while (true) {
       val startNs = System.nanoTime()
       val written = DoviBridge.convertRpuNalu(
-        payload = sampleBuf,
+        payload = inputBuffer,
         payloadOffset = nalStart,
         payloadLength = nalLen,
         output = outputBuf,
@@ -630,7 +580,7 @@ class DoviConvertingTrackOutput(
   }
 
   /** Classify a NAL at sampleBuf[offset..offset+len) without copying. */
-  private fun processNalInline(offset: Int, len: Int): NalAction = classifyNal(sampleBuf, offset, len, convertRpu = dvMode == DvConversionMode.DV81)
+  private fun processNalInline(offset: Int, len: Int): NalAction = classifyNal(inputBuffer, offset, len, convertRpu = dvMode == DvConversionMode.DV81)
 
   private fun isDvProfile7Codec(codecs: String?): Boolean {
     val normalized = codecs?.lowercase() ?: return false
@@ -662,7 +612,7 @@ class DoviConvertingTrackOutput(
 
   private fun copyRawSample(dataLen: Int) {
     ensureOutputCapacity(dataLen)
-    System.arraycopy(sampleBuf, 0, outputBuf, 0, dataLen)
+    System.arraycopy(inputBuffer, 0, outputBuf, 0, dataLen)
     outputLen = dataLen
   }
 
@@ -670,12 +620,6 @@ class DoviConvertingTrackOutput(
     val end = minOf(data.size, offset + length)
     if (offset >= end) return ""
     return (offset until end).joinToString(" ") { "%02X".format(data[it]) }
-  }
-
-  private fun ensureSampleCapacity(needed: Int) {
-    if (sampleBuf.size < needed) {
-      sampleBuf = sampleBuf.copyOf(maxOf(needed, sampleBuf.size * 2))
-    }
   }
 
   private fun ensureOutputCapacity(needed: Int) {

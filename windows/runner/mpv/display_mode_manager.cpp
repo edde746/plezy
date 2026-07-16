@@ -533,49 +533,4 @@ bool DisplayModeManager::RecoverIfNeeded(HWND window) {
   return recovered;
 }
 
-// --- Refresh rate matching ---
-
-DWORD DisplayModeManager::FindBestRefreshRate(
-    double video_fps, const std::vector<DisplayMode>& modes, DWORD current_width, DWORD current_height) {
-  if (video_fps <= 0) return 0;
-
-  // Collect unique refresh rates available at the current resolution.
-  std::vector<DWORD> rates;
-  for (const auto& mode : modes) {
-    if (mode.width == current_width && mode.height == current_height) {
-      if (std::find(rates.begin(), rates.end(), mode.refresh_rate) == rates.end()) {
-        rates.push_back(mode.refresh_rate);
-      }
-    }
-  }
-
-  if (rates.empty()) return 0;
-
-  DWORD best_rate = 0;
-  int best_multiplier = 0;
-
-  for (DWORD rate : rates) {
-    double ratio = static_cast<double>(rate) / video_fps;
-    double rounded = std::round(ratio);
-
-    // Must be a positive integer multiple (1x, 2x, 3x, ...).
-    if (rounded < 1.0) continue;
-
-    int multiplier = static_cast<int>(rounded);
-    double deviation = std::abs(ratio - rounded) / rounded;
-
-    // Within 0.5% tolerance (covers 23.976 -> 24Hz, 29.97 -> 30Hz, etc.).
-    if (deviation > 0.005) continue;
-
-    // Prefer lowest multiplier (exact match > 2x > 3x > ...).
-    // Among equal multipliers, prefer higher rate (shouldn't happen, but safe).
-    if (best_rate == 0 || multiplier < best_multiplier || (multiplier == best_multiplier && rate > best_rate)) {
-      best_rate = rate;
-      best_multiplier = multiplier;
-    }
-  }
-
-  return best_rate;
-}
-
 }  // namespace mpv

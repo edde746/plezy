@@ -288,6 +288,120 @@ void main() {
   });
 
   // ============================================================
+  // armEndOfVideo / notifyVideoCompleted
+  // ============================================================
+
+  group('armEndOfVideo', () {
+    test('sets isActive and isEndOfVideoMode without starting a periodic timer', () {
+      timer.armEndOfVideo(() {});
+      try {
+        expect(timer.isActive, isTrue);
+        expect(timer.isEndOfVideoMode, isTrue);
+        // No fixed duration / endTime in this mode — countdown UIs must
+        // detect end-of-video mode instead of falling through.
+        expect(timer.endTime, isNull);
+        expect(timer.duration, isNull);
+        expect(timer.originalDuration, isNull);
+        expect(timer.remainingTime, isNull);
+      } finally {
+        timer.cancelTimer();
+      }
+    });
+
+    test('replaces any running duration-based timer', () {
+      var firstFired = false;
+      timer.startTimer(const Duration(minutes: 30), () => firstFired = true);
+      expect(timer.isEndOfVideoMode, isFalse);
+
+      timer.armEndOfVideo(() {});
+      expect(timer.isEndOfVideoMode, isTrue);
+      // The previous duration is gone — armEndOfVideo calls cancelTimer first.
+      expect(timer.originalDuration, isNull);
+      expect(firstFired, isFalse);
+
+      timer.cancelTimer();
+    });
+
+    test('cancelTimer clears end-of-video mode', () {
+      timer.armEndOfVideo(() {});
+      timer.cancelTimer();
+      expect(timer.isActive, isFalse);
+      expect(timer.isEndOfVideoMode, isFalse);
+    });
+
+    test('arming notifies listeners', () {
+      var notifications = 0;
+      void listener() => notifications++;
+      timer.addListener(listener);
+
+      timer.armEndOfVideo(() {});
+      // cancelTimer (called inside armEndOfVideo when idle) is gated on existing
+      // state, so a fresh service only emits the single arm notification.
+      expect(notifications, greaterThanOrEqualTo(1));
+
+      timer.removeListener(listener);
+      timer.cancelTimer();
+    });
+  });
+
+  group('notifyVideoCompleted', () {
+    test('fires the stored callback and emits onCompleted', () async {
+      var fired = 0;
+      var completedFired = 0;
+      final sub = timer.onCompleted.listen((_) => completedFired++);
+
+      timer.armEndOfVideo(() => fired++);
+      timer.notifyVideoCompleted();
+      await Future<void>.delayed(Duration.zero);
+
+      expect(fired, 1);
+      expect(completedFired, 1);
+      // Mode is consumed after firing.
+      expect(timer.isEndOfVideoMode, isFalse);
+      expect(timer.isActive, isFalse);
+
+      await sub.cancel();
+    });
+
+    test('does nothing when end-of-video mode is not armed', () async {
+      var completedFired = 0;
+      final sub = timer.onCompleted.listen((_) => completedFired++);
+
+      timer.notifyVideoCompleted();
+      await Future<void>.delayed(Duration.zero);
+      expect(completedFired, 0);
+
+      // Also safe when a duration timer is running — should not interfere.
+      timer.startTimer(const Duration(minutes: 30), () {});
+      timer.notifyVideoCompleted();
+      await Future<void>.delayed(Duration.zero);
+      expect(completedFired, 0);
+      expect(timer.isActive, isTrue);
+
+      await sub.cancel();
+      timer.cancelTimer();
+    });
+  });
+
+  group('end-of-video + restartIfNeeded', () {
+    test('preserves the end-of-video mode across a playback session swap', () {
+      timer.armEndOfVideo(() {});
+      timer.markNeedsRestart();
+
+      var newCallbackHooked = false;
+      timer.restartIfNeeded(() => newCallbackHooked = true);
+
+      expect(timer.isActive, isTrue);
+      expect(timer.isEndOfVideoMode, isTrue);
+      // restartIfNeeded re-arms — the consumer callback should be wired up
+      // but not yet invoked.
+      expect(newCallbackHooked, isFalse);
+
+      timer.cancelTimer();
+    });
+  });
+
+  // ============================================================
   // What's NOT covered (and why)
   // ============================================================
   //

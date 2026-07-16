@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 
 import '../../models/trakt/trakt_ids.dart';
+import '../../profiles/profile.dart';
 import '../base_shared_preferences_service.dart';
 import '../../utils/app_logger.dart';
 import 'trakt_constants.dart';
@@ -97,7 +98,7 @@ class TraktSyncQueue {
 
   Future<List<TraktSyncQueueItem>> load(String userUuid) async {
     final prefs = await BaseSharedPreferencesService.sharedCache();
-    final key = traktUserKey(userUuid, _baseKey);
+    final key = profileScopedPrefsKey(userUuid, _baseKey);
     final raw = prefs.getString(key);
     if (raw == null) return [];
     try {
@@ -105,7 +106,7 @@ class TraktSyncQueue {
       return list.map((e) => TraktSyncQueueItem.fromJson(e as Map<String, dynamic>)).toList();
     } catch (e, st) {
       appLogger.e('Trakt sync queue parse failed, discarding', error: e, stackTrace: st);
-      await prefs.setString(traktUserKey(userUuid, '${_baseKey}_corrupt'), raw);
+      await prefs.setString(profileScopedPrefsKey(userUuid, '${_baseKey}_corrupt'), raw);
       await prefs.remove(key);
       return [];
     }
@@ -117,7 +118,7 @@ class TraktSyncQueue {
 
   Future<void> _saveRaw(String userUuid, List<TraktSyncQueueItem> items) async {
     final prefs = await BaseSharedPreferencesService.sharedCache();
-    final key = traktUserKey(userUuid, _baseKey);
+    final key = profileScopedPrefsKey(userUuid, _baseKey);
     if (items.isEmpty) {
       await prefs.remove(key);
     } else {

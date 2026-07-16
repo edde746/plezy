@@ -159,6 +159,10 @@ class _AlphaJumpBarState extends State<AlphaJumpBar> {
       }
     });
     if (selectResult != KeyEventResult.ignored) return selectResult;
+    if (widget.onBack != null) {
+      final backResult = handleBackKeyAction(event, widget.onBack!);
+      if (backResult != KeyEventResult.ignored) return backResult;
+    }
 
     if (event is! KeyDownEvent && event is! KeyRepeatEvent) {
       return KeyEventResult.ignored;
@@ -180,12 +184,6 @@ class _AlphaJumpBarState extends State<AlphaJumpBar> {
     }
     if (event.logicalKey == LogicalKeyboardKey.arrowLeft) {
       widget.onNavigateLeft?.call();
-      return KeyEventResult.handled;
-    }
-    if (event.logicalKey == LogicalKeyboardKey.escape ||
-        event.logicalKey == LogicalKeyboardKey.goBack ||
-        event.logicalKey == LogicalKeyboardKey.gameButtonB) {
-      widget.onBack?.call();
       return KeyEventResult.handled;
     }
     return KeyEventResult.ignored;
@@ -241,7 +239,7 @@ class _AlphaJumpBarState extends State<AlphaJumpBar> {
                   borderRadius: const BorderRadius.all(Radius.circular(10)),
                 ),
                 child: Column(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  mainAxisAlignment: .spaceEvenly,
                   children: List.generate(_displayed.length, (i) {
                     final letter = _displayed[i];
                     final isCurrent = letter == currentLetter && !_hasFocus;
@@ -273,7 +271,7 @@ class _AlphaJumpBarState extends State<AlphaJumpBar> {
                           width: markerSize,
                           height: markerSize,
                           decoration: decoration,
-                          alignment: Alignment.center,
+                          alignment: .center,
                           child: Text(
                             letter,
                             style: TextStyle(

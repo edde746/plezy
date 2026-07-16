@@ -1,4 +1,5 @@
 import 'dart:io';
+import '../media/ids.dart';
 
 import '../media/download_resolution.dart';
 import '../media/media_item.dart';
@@ -29,21 +30,21 @@ class DownloadArtworkService {
 
   static String normalizeKey(String pathOrUrl) => artworkStorageKey(pathOrUrl);
 
-  static String? localPathSync(DownloadStorageService storageService, String serverId, String? pathOrUrl) {
+  static String? localPathSync(DownloadStorageService storageService, ServerId serverId, String? pathOrUrl) {
     if (pathOrUrl == null || pathOrUrl.isEmpty) return null;
     return storageService.getArtworkPathSync(serverId, normalizeKey(pathOrUrl));
   }
 
-  Future<String> localPath(String serverId, String pathOrUrl) {
+  Future<String> localPath(ServerId serverId, String pathOrUrl) {
     return storageService.getArtworkPathFromThumb(serverId, normalizeKey(pathOrUrl));
   }
 
-  Future<bool> existsUsable(String serverId, String pathOrUrl) async {
+  Future<bool> existsUsable(ServerId serverId, String pathOrUrl) async {
     final file = File(await localPath(serverId, pathOrUrl));
     return isUsableArtworkFile(file);
   }
 
-  Future<bool> hasMissingArtwork(String serverId, Iterable<DownloadArtworkSpec> specs) async {
+  Future<bool> hasMissingArtwork(ServerId serverId, Iterable<DownloadArtworkSpec> specs) async {
     for (final spec in specs) {
       if (!await existsUsable(serverId, spec.localKey)) return true;
     }
@@ -53,10 +54,10 @@ class DownloadArtworkService {
   Future<void> ensureArtworkForMetadata(MediaItem metadata, MediaServerClient client) async {
     final serverId = metadata.serverId;
     if (serverId == null) return;
-    await ensureArtworkSpecs(serverId, client.resolveDownloadArtwork(metadata));
+    await ensureArtworkSpecs(ServerId(serverId), client.resolveDownloadArtwork(metadata));
   }
 
-  Future<void> ensureArtworkSpecs(String serverId, Iterable<DownloadArtworkSpec> specs) async {
+  Future<void> ensureArtworkSpecs(ServerId serverId, Iterable<DownloadArtworkSpec> specs) async {
     for (final spec in specs) {
       await downloadSingleArtwork(serverId, spec);
     }
@@ -66,7 +67,7 @@ class DownloadArtworkService {
   ///
   /// The HTTP helper writes atomically. This method validates the final file so
   /// HTML/JSON error bodies do not poison future existence checks.
-  Future<void> downloadSingleArtwork(String serverId, DownloadArtworkSpec spec) async {
+  Future<void> downloadSingleArtwork(ServerId serverId, DownloadArtworkSpec spec) async {
     if (spec.url.isEmpty) {
       appLogger.w('Empty artwork URL for: ${spec.localKey}');
       return;
@@ -90,7 +91,7 @@ class DownloadArtworkService {
     }
   }
 
-  Future<void> _downloadSingleArtworkToPath(String serverId, DownloadArtworkSpec spec, String filePath) async {
+  Future<void> _downloadSingleArtworkToPath(ServerId serverId, DownloadArtworkSpec spec, String filePath) async {
     try {
       if (await existsUsable(serverId, spec.localKey)) {
         appLogger.d('Artwork already exists: ${spec.localKey}');

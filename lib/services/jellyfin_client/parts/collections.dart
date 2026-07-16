@@ -2,7 +2,7 @@ part of '../../jellyfin_client.dart';
 
 mixin _JellyfinCollectionMethods on MediaServerCacheMixin {
   JellyfinConnection get connection;
-  MediaServerHttpClient get _http;
+  FailoverHttpClient get _http;
   List<MediaItem> _mapItems(Iterable<Map<String, dynamic>> items);
 
   static const int _collectionsPageSize = 36;
@@ -76,7 +76,7 @@ mixin _JellyfinCollectionMethods on MediaServerCacheMixin {
   LibraryPage<MediaItem> _itemsPage(Object? data, {required int offset, int? requestedSize}) {
     final rawItems = _itemsArray(data);
     final rawTotal = data is Map<String, dynamic> ? data['TotalRecordCount'] : null;
-    final fallbackTotal = _fallbackPageTotal(offset: offset, itemCount: rawItems.length, requestedSize: requestedSize);
+    final fallbackTotal = fallbackPageTotal(offset: offset, itemCount: rawItems.length, requestedSize: requestedSize);
     final total = rawTotal is int ? rawTotal : fallbackTotal;
     return LibraryPage<MediaItem>(items: _mapItems(rawItems), totalCount: total, offset: offset);
   }

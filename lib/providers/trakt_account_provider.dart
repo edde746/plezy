@@ -4,14 +4,15 @@ import 'package:flutter/foundation.dart';
 
 import '../mixins/disposable_change_notifier_mixin.dart';
 import '../models/trackers/device_code.dart';
+import '../services/trackers/tracker_account_store.dart';
 import '../services/trackers/tracker_connect_runner.dart';
-import '../services/trakt/trakt_account_store.dart';
+import '../services/trackers/tracker_constants.dart';
+import '../services/trackers/tracker_session.dart';
+import '../services/trackers/tracker_username_enricher.dart';
 import '../services/trakt/trakt_auth_service.dart';
 import '../services/trakt/trakt_client.dart';
 import '../services/trakt/trakt_scrobble_service.dart';
-import '../services/trakt/trakt_session.dart';
 import '../services/trakt/trakt_sync_service.dart';
-import '../utils/app_logger.dart';
 
 /// Owns the active Trakt session for the currently-selected Plex profile.
 ///
@@ -19,17 +20,24 @@ import '../utils/app_logger.dart';
 /// session and pushes it to both `TraktScrobbleService` and `TraktSyncService`.
 class TraktAccountProvider extends ChangeNotifier with DisposableChangeNotifierMixin {
   final TraktAuthService _auth = TraktAuthService();
-  final _store = traktAccountStore;
+  final TrackerAccountStore _store = trackerAccountStore(TrackerService.trakt);
 
-  TraktSession? _session;
+  TrackerSession? _session;
   String _activeUserUuid = '';
+  int _bindingGeneration = 0;
   bool _isConnecting = false;
   Completer<void>? _cancelCompleter;
+  TraktClient? _catalogClient;
 
-  TraktSession? get session => _session;
+  TrackerSession? get session => _session;
   bool get isConnected => _session != null;
   String? get username => _session?.username;
   bool get isConnecting => _isConnecting;
+
+  /// Client for the catalog/watchlist surfaces (Explore tab). Owned and
+  /// rebound here alongside the scrobble/sync services; null when
+  /// disconnected.
+  TraktClient? get catalogClient => _catalogClient;
 
   /// Cancel an in-flight `connect()` (e.g. user dismissed the device-code
   /// dialog). Completing the completer both wakes the blocking `Future.any`
@@ -41,9 +49,12 @@ class TraktAccountProvider extends ChangeNotifier with DisposableChangeNotifierM
 
   /// Called whenever the active Plex profile changes (or on initial load).
   Future<void> onActiveProfileChanged(String? newUserUuid) async {
-    _activeUserUuid = newUserUuid ?? '';
-    final loaded = await _store.load(_activeUserUuid);
-    _setSessionAndRebind(loaded);
+    if (isDisposed) return;
+    final userUuid = newUserUuid ?? '';
+    final generation = ++_bindingGeneration;
+    _activeUserUuid = userUuid;
+    final loaded = await _store.load(userUuid);
+    _setSessionAndRebind(userUuid, generation, loaded);
   }
 
   /// Run the device-code OAuth flow.
@@ -56,7 +67,7 @@ class TraktAccountProvider extends ChangeNotifier with DisposableChangeNotifierM
     _cancelCompleter = Completer<void>();
     notifyListeners();
     try {
-      return await runConnectPipeline<TraktSession>(
+      return await runConnectPipeline<TrackerSession>(
         logLabel: 'Trakt',
         authorize: () => _auth.authorize(
           onCodeReady: onCodeReady,
@@ -65,7 +76,7 @@ class TraktAccountProvider extends ChangeNotifier with DisposableChangeNotifierM
         ),
         enrich: _enrichUsername,
         save: (s) => _store.save(_activeUserUuid, s),
-        assign: _setSessionAndRebind,
+        assign: _bindCurrentSession,
       );
     } finally {
       final c = _cancelCompleter;
@@ -76,23 +87,19 @@ class TraktAccountProvider extends ChangeNotifier with DisposableChangeNotifierM
     }
   }
 
-  Future<TraktSession> _enrichUsername(TraktSession raw) async {
-    TraktClient? tmp;
-    try {
-      tmp = TraktClient(raw, onSessionInvalidated: () {});
-      final user = await tmp.getUserSettings();
-      return raw.copyWith(username: user.username);
-    } catch (e) {
-      appLogger.d('Trakt: getUserSettings failed (non-fatal)', error: e);
-      return raw;
-    } finally {
-      tmp?.dispose();
-    }
-  }
+  Future<TrackerSession> _enrichUsername(TrackerSession raw) => enrichTrackerSessionUsername(
+    session: raw,
+    failureMessage: 'Trakt: getUserSettings failed (non-fatal)',
+    createClient: () => TraktClient(raw, onSessionInvalidated: () {}),
+    fetchUsername: (client) async => (await client.getUserSettings()).username,
+  );
 
   /// Revoke the access token and clear local state.
   Future<void> disconnect() async {
+    final userUuid = _activeUserUuid;
+    final generation = ++_bindingGeneration;
     final session = _session;
+    _setSessionAndRebind(userUuid, generation, null);
     if (session != null) {
       final client = TraktClient(session, onSessionInvalidated: () {});
       try {
@@ -101,31 +108,79 @@ class TraktAccountProvider extends ChangeNotifier with DisposableChangeNotifierM
         client.dispose();
       }
     }
-    await _store.clear(_activeUserUuid);
-    _setSessionAndRebind(null);
+    await _store.clear(userUuid);
   }
 
-  void _setSessionAndRebind(TraktSession? session) {
+  void _bindCurrentSession(TrackerSession? session) {
+    _setSessionAndRebind(_activeUserUuid, ++_bindingGeneration, session);
+  }
+
+  void _setSessionAndRebind(String userUuid, int generation, TrackerSession? session) {
+    if (!_isCurrentBinding(userUuid, generation)) return;
     _session = session;
-    TraktScrobbleService.instance.rebindToProfile(session, onSessionInvalidated: _handleSessionInvalidated);
-    TraktSyncService.instance.rebindToProfile(
-      _activeUserUuid,
+
+    void handleInvalidated() => _handleSessionInvalidated(userUuid, generation);
+    void handleUpdated(TrackerSession next) => _handleSessionUpdated(userUuid, generation, next);
+
+    TraktScrobbleService.instance.rebindToProfile(
       session,
-      onSessionInvalidated: _handleSessionInvalidated,
+      onSessionInvalidated: handleInvalidated,
+      onSessionUpdated: handleUpdated,
     );
+    TraktSyncService.instance.rebindToProfile(
+      userUuid,
+      session,
+      onSessionInvalidated: handleInvalidated,
+      onSessionUpdated: handleUpdated,
+    );
+    _catalogClient?.dispose();
+    _catalogClient = session == null
+        ? null
+        : TraktClient(session, onSessionInvalidated: handleInvalidated, onSessionUpdated: handleUpdated);
+    safeNotifyListeners();
+  }
+
+  bool _isCurrentBinding(String userUuid, int generation) {
+    return !isDisposed && userUuid == _activeUserUuid && generation == _bindingGeneration;
+  }
+
+  void _handleSessionUpdated(String userUuid, int generation, TrackerSession session) {
+    if (!_isCurrentBinding(userUuid, generation)) return;
+    _session = session;
+    TraktScrobbleService.instance.updateSession(session);
+    TraktSyncService.instance.updateSession(session);
+    _catalogClient?.updateSession(session);
+    unawaited(_store.save(userUuid, session));
     safeNotifyListeners();
   }
 
   /// Called by [TraktClient] when refresh fails permanently. Clears local state
   /// so the UI shows "not connected" and the user can re-link.
-  void _handleSessionInvalidated() {
-    _store.clear(_activeUserUuid);
-    _setSessionAndRebind(null);
+  void _handleSessionInvalidated(String userUuid, int generation) {
+    if (!_isCurrentBinding(userUuid, generation)) return;
+    final nextGeneration = ++_bindingGeneration;
+    unawaited(_store.clear(userUuid));
+    _setSessionAndRebind(userUuid, nextGeneration, null);
+  }
+
+  @visibleForTesting
+  int get debugBindingGenerationForTesting => _bindingGeneration;
+
+  @visibleForTesting
+  void debugHandleSessionUpdatedForTesting(String userUuid, int generation, TrackerSession session) {
+    _handleSessionUpdated(userUuid, generation, session);
+  }
+
+  @visibleForTesting
+  void debugHandleSessionInvalidatedForTesting(String userUuid, int generation) {
+    _handleSessionInvalidated(userUuid, generation);
   }
 
   @override
   void dispose() {
     _auth.dispose();
+    _catalogClient?.dispose();
+    _catalogClient = null;
     super.dispose();
   }
 }

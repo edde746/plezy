@@ -26,7 +26,7 @@ class BaseVideoControlSheet extends StatelessWidget {
       icon: icon,
       iconColor: iconColor,
       onBack: onBack,
-      titleStyle: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+      titleStyle: const TextStyle(fontSize: 18, fontWeight: .bold),
       showHeaderBorder: false,
       showHeaderDivider: true,
       child: child,

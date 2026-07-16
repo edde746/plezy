@@ -1,0 +1,24 @@
+appId: com.edde746.plezy
+name: Search media and open a result
+tags:
+  - e2e
+  - search
+---
+- runFlow: ../subflows/onboard_jellyfin.yaml
+- tapOn: "(?s)^Search.*"
+- extendedWaitUntil:
+    visible: "Search movies, shows, music..."
+    timeout: 10000
+- tapOn: "Search movies, shows, music..."
+- inputText: "Maestro"
+- hideKeyboard
+- extendedWaitUntil:
+    visible: "Maestro Movie"
+    timeout: 15000
+- tapOn: "Maestro Movie"
+- extendedWaitUntil:
+    visible: "Overview"
+    timeout: 15000
+- assertVisible: "A deterministic movie used to verify Plezy's end-to-end flows."
+- back
+- assertVisible: "(?s)^Maestro Movie.*"

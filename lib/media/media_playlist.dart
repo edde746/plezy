@@ -1,4 +1,5 @@
 import '../utils/global_key_utils.dart';
+import 'ids.dart';
 import 'media_backend.dart';
 
 /// Backend-neutral playlist record. Holds metadata only — items are fetched
@@ -65,7 +66,7 @@ class MediaPlaylist {
   /// playlists are editable.
   bool get isEditable => !smart;
 
-  String get globalKey => serverId != null ? buildGlobalKey(serverId!, id) : id;
+  String get globalKey => serverId != null ? buildGlobalKey(ServerId(serverId!), id) : id;
 
   MediaPlaylist copyWith({
     String? id,

@@ -2,7 +2,7 @@ part of '../../jellyfin_client.dart';
 
 mixin _JellyfinPlaylistMethods on MediaServerCacheMixin {
   JellyfinConnection get connection;
-  MediaServerHttpClient get _http;
+  FailoverHttpClient get _http;
   String? _absolutizeImagePath(String? path);
   List<MediaItem> _mapItems(Iterable<Map<String, dynamic>> items);
 
@@ -83,7 +83,7 @@ mixin _JellyfinPlaylistMethods on MediaServerCacheMixin {
 
     final fallbackTotal = rawFinished
         ? filteredSeen
-        : _fallbackPageTotal(offset: offset, itemCount: items.length, requestedSize: pageSize);
+        : fallbackPageTotal(offset: offset, itemCount: items.length, requestedSize: pageSize);
     return LibraryPage<MediaPlaylist>(items: items, totalCount: fallbackTotal, offset: offset);
   }
 
@@ -94,7 +94,7 @@ mixin _JellyfinPlaylistMethods on MediaServerCacheMixin {
     return MediaPlaylist(
       id: item.id,
       backend: MediaBackend.jellyfin,
-      title: item.title ?? 'Playlist',
+      title: item.title ?? t.playlists.playlist,
       summary: item.summary,
       smart: false,
       playlistType: _playlistMediaType(item),
@@ -134,7 +134,7 @@ mixin _JellyfinPlaylistMethods on MediaServerCacheMixin {
     final rawTotal = response.data is Map<String, dynamic>
         ? (response.data as Map<String, dynamic>)['TotalRecordCount']
         : null;
-    final fallbackTotal = _fallbackPageTotal(offset: offset, itemCount: items.length, requestedSize: pageSize);
+    final fallbackTotal = fallbackPageTotal(offset: offset, itemCount: items.length, requestedSize: pageSize);
     return LibraryPage<MediaItem>(
       items: _mapItems(items),
       totalCount: rawTotal is int ? rawTotal : fallbackTotal,
@@ -144,13 +144,17 @@ mixin _JellyfinPlaylistMethods on MediaServerCacheMixin {
 
   @override
   Future<MediaPlaylist?> createPlaylist({required String title, required List<MediaItem> items}) async {
+    // MediaType stamps the playlist's kind server-side; derive it from the
+    // seed items so music selections create Audio playlists (which is what
+    // fetchPlaylistsPage filters on). Empty seeds keep the Video default.
+    final isMusic = items.isNotEmpty && items.first.kind.isMusic;
     final response = await _http.post(
       '/Playlists',
       queryParameters: {
         'Name': title,
         'Ids': items.map((i) => i.id).join(','),
         'UserId': connection.userId,
-        'MediaType': 'Video',
+        'MediaType': isMusic ? 'Audio' : 'Video',
       },
     );
     throwIfHttpError(response);
@@ -230,13 +234,13 @@ mixin _JellyfinPlaylistMethods on MediaServerCacheMixin {
     return MediaPlaylist(
       id: id,
       backend: MediaBackend.jellyfin,
-      title: json['Name'] as String? ?? 'Playlist',
+      title: json['Name'] as String? ?? t.playlists.playlist,
       summary: json['Overview'] as String?,
       smart: false,
       playlistType: (json['MediaType'] as String?)?.toLowerCase() ?? 'video',
       leafCount: json['ChildCount'] as int?,
-      addedAt: _epochSecondsFromJson(json['DateCreated'] as String?),
-      updatedAt: _epochSecondsFromJson(json['DateLastSaved'] as String?),
+      addedAt: jellyfinIsoToEpochSeconds(json['DateCreated'] as String?),
+      updatedAt: jellyfinIsoToEpochSeconds(json['DateLastSaved'] as String?),
       thumbPath: _absolutizeImagePath(_imageTagPath(id, json['ImageTags'])),
       serverId: serverId,
       serverName: serverName,
@@ -253,12 +257,6 @@ mixin _JellyfinPlaylistMethods on MediaServerCacheMixin {
     if (requestedType.isNotEmpty && playlist.playlistType.toLowerCase() != requestedType) return false;
     if (smart != null && playlist.smart != smart) return false;
     return true;
-  }
-
-  int? _epochSecondsFromJson(String? iso) {
-    if (iso == null || iso.isEmpty) return null;
-    final dt = DateTime.tryParse(iso);
-    return dt == null ? null : dt.millisecondsSinceEpoch ~/ 1000;
   }
 
   String? _imageTagPath(String id, Object? tags) {

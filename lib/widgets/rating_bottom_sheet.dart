@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
@@ -33,8 +32,15 @@ class RatingBottomSheet extends StatefulWidget {
   final MediaItem item;
   final MediaServerClient? serverClient;
   final ValueChanged<double>? onServerRatingChanged;
+  final ValueChanged<bool>? onServerFavoriteChanged;
 
-  const RatingBottomSheet({super.key, required this.item, required this.serverClient, this.onServerRatingChanged});
+  const RatingBottomSheet({
+    super.key,
+    required this.item,
+    required this.serverClient,
+    this.onServerRatingChanged,
+    this.onServerFavoriteChanged,
+  });
 
   @override
   State<RatingBottomSheet> createState() => _RatingBottomSheetState();
@@ -45,7 +51,7 @@ class _RatingBottomSheetState extends State<RatingBottomSheet> {
 
   late double _serverStars;
   late double _serverRating;
-  late bool? _serverLike;
+  late bool _serverFavorite;
   late final FocusNode _serverFocusNode;
 
   final Map<TrackerService, int> _trackerScores = {};
@@ -67,7 +73,7 @@ class _RatingBottomSheetState extends State<RatingBottomSheet> {
     final rawServerRating = widget.item.userRating;
     _serverRating = rawServerRating != null && rawServerRating > 0 ? rawServerRating : 0.0;
     _serverStars = _serverRating > 0 ? _serverRating / 2.0 : 0.0;
-    _serverLike = rawServerRating == null ? null : rawServerRating >= 6.0;
+    _serverFavorite = widget.item.isFavorite == true;
   }
 
   @override
@@ -94,8 +100,10 @@ class _RatingBottomSheetState extends State<RatingBottomSheet> {
         _resolverNeedsFribb = trackers.isMalConnected || trackers.isAnilistConnected;
         _queueTrackerScoreLoad(allTrackerSources);
 
+        final serverCaps = widget.serverClient?.capabilities;
+        final showServerRow = serverCaps != null && (serverCaps.numericUserRating || serverCaps.userFavorites);
         final focusNodes = <FocusNode>[
-          if (widget.serverClient != null) _serverFocusNode,
+          if (showServerRow) _serverFocusNode,
           for (final source in trackerSources) _trackerFocusNode(source.service),
         ];
         var focusIndex = 0;
@@ -103,14 +111,14 @@ class _RatingBottomSheetState extends State<RatingBottomSheet> {
         return ConstrainedBox(
           constraints: BoxConstraints(maxHeight: maxHeight),
           child: Column(
-            mainAxisSize: MainAxisSize.min,
+            mainAxisSize: .min,
             children: [
               BottomSheetHeader(title: t.rateSheet.title, icon: Symbols.star_rounded),
               Flexible(
                 child: ListView(
                   padding: const EdgeInsets.fromLTRB(10, 4, 10, 12),
                   children: [
-                    if (widget.serverClient != null)
+                    if (showServerRow)
                       _buildServerRow(
                         widget.serverClient!,
                         _serverFocusNode,
@@ -130,7 +138,7 @@ class _RatingBottomSheetState extends State<RatingBottomSheet> {
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 4),
                         child: Text(
-                          t.rateSheet.noConnectedTrackers,
+                          t.rateSheet.noConnectedServices,
                           style: Theme.of(
                             context,
                           ).textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
@@ -183,11 +191,6 @@ class _RatingBottomSheetState extends State<RatingBottomSheet> {
       );
     }
 
-    final value = switch (_serverLike) {
-      null => 0,
-      false => 1,
-      true => 2,
-    };
     return _RatingRow(
       focusNode: focusNode,
       autofocus: autofocus,
@@ -199,14 +202,13 @@ class _RatingBottomSheetState extends State<RatingBottomSheet> {
       enabled: !loading,
       onNavigateUp: onNavigateUp,
       onNavigateDown: onNavigateDown,
-      onDecrease: () => _setServerLikeValue(value - 1),
-      onIncrease: () => _setServerLikeValue(value + 1),
-      onSubmit: () => unawaited(_submitServerLike()),
-      control: _BinaryControl(
-        value: value,
+      onDecrease: () => _setServerFavorite(false),
+      onIncrease: () => _setServerFavorite(true),
+      onSubmit: () => unawaited(_submitServerFavorite(value: !_serverFavorite)),
+      control: _FavoriteControl(
+        value: _serverFavorite,
         enabled: !loading,
-        onChanged: _setServerLikeValue,
-        onSubmitValue: (next) => unawaited(_submitServerLike(value: _likeFromIndex(next))),
+        onToggle: (next) => unawaited(_submitServerFavorite(value: next)),
       ),
     );
   }
@@ -227,7 +229,7 @@ class _RatingBottomSheetState extends State<RatingBottomSheet> {
       autofocus: autofocus,
       leading: _TrackerLogo(source.logoAsset),
       title: source.title,
-      subtitle: source.username != null ? t.trackers.connectedAs(username: source.username!) : source.connectedLabel,
+      subtitle: source.username != null ? t.services.connectedAs(username: source.username!) : source.connectedLabel,
       loading: loading,
       status: status,
       enabled: !loading,
@@ -255,9 +257,7 @@ class _RatingBottomSheetState extends State<RatingBottomSheet> {
           username: trakt.username,
           connectedLabel: t.trakt.connected,
           logoAsset: 'assets/trakt_circlemark.svg',
-          getRating: TraktScrobbleService.instance.getRating,
-          onRate: TraktScrobbleService.instance.rate,
-          onClear: TraktScrobbleService.instance.clearRating,
+          ratingSource: TraktScrobbleService.instance,
         ),
       );
     }
@@ -265,13 +265,11 @@ class _RatingBottomSheetState extends State<RatingBottomSheet> {
       sources.add(
         _TrackerRatingSource(
           service: TrackerService.mal,
-          title: t.trackers.services.mal,
+          title: t.services.names.mal,
           username: trackers.malUsername,
           connectedLabel: t.trakt.connected,
           logoAsset: 'assets/mal_mark.svg',
-          getRating: MalTracker.instance.getRating,
-          onRate: MalTracker.instance.rate,
-          onClear: MalTracker.instance.clearRating,
+          ratingSource: MalTracker.instance,
         ),
       );
     }
@@ -279,13 +277,11 @@ class _RatingBottomSheetState extends State<RatingBottomSheet> {
       sources.add(
         _TrackerRatingSource(
           service: TrackerService.anilist,
-          title: t.trackers.services.anilist,
+          title: t.services.names.anilist,
           username: trackers.anilistUsername,
           connectedLabel: t.trakt.connected,
           logoAsset: 'assets/anilist_mark.svg',
-          getRating: AnilistTracker.instance.getRating,
-          onRate: AnilistTracker.instance.rate,
-          onClear: AnilistTracker.instance.clearRating,
+          ratingSource: AnilistTracker.instance,
         ),
       );
     }
@@ -293,13 +289,11 @@ class _RatingBottomSheetState extends State<RatingBottomSheet> {
       sources.add(
         _TrackerRatingSource(
           service: TrackerService.simkl,
-          title: t.trackers.services.simkl,
+          title: t.services.names.simkl,
           username: trackers.simklUsername,
           connectedLabel: t.trakt.connected,
           logoAsset: 'assets/simkl_mark.svg',
-          getRating: SimklTracker.instance.getRating,
-          onRate: SimklTracker.instance.rate,
-          onClear: SimklTracker.instance.clearRating,
+          ratingSource: SimklTracker.instance,
         ),
       );
     }
@@ -355,7 +349,7 @@ class _RatingBottomSheetState extends State<RatingBottomSheet> {
       sources.map((source) async {
         final key = source.service.name;
         try {
-          final score = await source.getRating(ctx);
+          final score = await source.ratingSource.getRating(ctx);
           if (!mounted) return;
           setState(() {
             _trackerScores[source.service] = score ?? 0;
@@ -415,22 +409,14 @@ class _RatingBottomSheetState extends State<RatingBottomSheet> {
     _scheduleAutoSave(_serverKey, _submitServerStars);
   }
 
-  void _setServerLikeValue(int value) {
-    final clamped = value.clamp(0, 2).toInt();
-    final next = _likeFromIndex(clamped);
-    if (_serverLike == next) return;
+  void _setServerFavorite(bool value) {
+    if (_serverFavorite == value) return;
     setState(() {
-      _serverLike = next;
+      _serverFavorite = value;
       _statuses.remove(_serverKey);
     });
-    _scheduleAutoSave(_serverKey, _submitServerLike);
+    _scheduleAutoSave(_serverKey, _submitServerFavorite);
   }
-
-  bool? _likeFromIndex(int value) => switch (value.clamp(0, 2).toInt()) {
-    0 => null,
-    1 => false,
-    _ => true,
-  };
 
   void _setTrackerScore(_TrackerRatingSource source, int score) {
     final clamped = score.clamp(0, 10).toInt();
@@ -465,25 +451,17 @@ class _RatingBottomSheetState extends State<RatingBottomSheet> {
       await widget.serverClient!.rate(widget.item, -1);
       _serverRating = 0;
       _serverStars = 0;
-      _serverLike = null;
       widget.onServerRatingChanged?.call(0);
     });
   }
 
-  Future<void> _submitServerLike({bool? value}) async {
+  Future<void> _submitServerFavorite({bool? value}) async {
     _cancelAutoSave(_serverKey);
-    final selected = value ?? _serverLike;
-    if (selected == null) {
-      await _clearServerRating();
-      return;
-    }
-
-    final rating = selected ? 10.0 : 0.0;
+    final selected = value ?? _serverFavorite;
     await _run(_serverKey, () async {
-      await widget.serverClient!.rate(widget.item, rating);
-      _serverLike = selected;
-      _serverRating = rating;
-      widget.onServerRatingChanged?.call(_serverRating);
+      await widget.serverClient!.setFavorite(widget.item, selected);
+      _serverFavorite = selected;
+      widget.onServerFavoriteChanged?.call(selected);
     });
   }
 
@@ -496,7 +474,7 @@ class _RatingBottomSheetState extends State<RatingBottomSheet> {
     }
     await _run(source.service.name, () async {
       final ctx = await _resolveTrackerContext();
-      await source.onRate(ctx, value);
+      await source.ratingSource.rate(ctx, value);
       _trackerScores[source.service] = value;
     });
   }
@@ -505,7 +483,7 @@ class _RatingBottomSheetState extends State<RatingBottomSheet> {
     _cancelAutoSave(source.service.name);
     await _run(source.service.name, () async {
       final ctx = await _resolveTrackerContext();
-      await source.onClear(ctx);
+      await source.ratingSource.clearRating(ctx);
       _trackerScores[source.service] = 0;
     });
   }
@@ -597,10 +575,8 @@ class _RatingBottomSheetState extends State<RatingBottomSheet> {
         return;
       }
 
-      final selected = _serverLike;
-      final rating = selected == null ? -1.0 : (selected ? 10.0 : 0.0);
-      await client.rate(widget.item, rating);
-      widget.onServerRatingChanged?.call(rating < 0 ? 0 : rating);
+      await client.setFavorite(widget.item, _serverFavorite);
+      widget.onServerFavoriteChanged?.call(_serverFavorite);
     } catch (e) {
       appLogger.w('Failed to update rating after sheet close', error: e);
     }
@@ -611,9 +587,9 @@ class _RatingBottomSheetState extends State<RatingBottomSheet> {
       final ctx = await _resolveTrackerContext();
       final value = _trackerScores[source.service] ?? 0;
       if (value <= 0) {
-        await source.onClear(ctx);
+        await source.ratingSource.clearRating(ctx);
       } else {
-        await source.onRate(ctx, value);
+        await source.ratingSource.rate(ctx, value);
       }
     } catch (e) {
       appLogger.w('Failed to update tracker rating after sheet close', error: e);
@@ -643,9 +619,7 @@ class _TrackerRatingSource {
   final String? username;
   final String connectedLabel;
   final String logoAsset;
-  final Future<int?> Function(TrackerRatingContext ctx) getRating;
-  final Future<void> Function(TrackerRatingContext ctx, int score) onRate;
-  final Future<void> Function(TrackerRatingContext ctx) onClear;
+  final TrackerRatingSource ratingSource;
 
   const _TrackerRatingSource({
     required this.service,
@@ -653,9 +627,7 @@ class _TrackerRatingSource {
     required this.username,
     required this.connectedLabel,
     required this.logoAsset,
-    required this.getRating,
-    required this.onRate,
-    required this.onClear,
+    required this.ratingSource,
   });
 }
 
@@ -742,15 +714,15 @@ class _RatingRow extends StatelessWidget {
               const SizedBox(width: 10),
               Expanded(
                 child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: .min,
+                  crossAxisAlignment: .start,
                   children: [
-                    Text(title, style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700)),
+                    Text(title, style: theme.textTheme.titleSmall?.copyWith(fontWeight: .w700)),
                     Text(
                       statusText,
                       style: theme.textTheme.bodySmall?.copyWith(color: statusColor),
                       maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+                      overflow: .ellipsis,
                     ),
                   ],
                 ),
@@ -835,7 +807,7 @@ class _StarRatingControlState extends State<_StarRatingControl> {
             child: SizedBox(
               height: 34,
               child: Row(
-                mainAxisAlignment: MainAxisAlignment.end,
+                mainAxisAlignment: .end,
                 children: List.generate(5, (i) {
                   final threshold = (i + 1) * 2;
                   final filled = widget.value >= threshold;
@@ -870,104 +842,47 @@ class _StarRatingControlState extends State<_StarRatingControl> {
   }
 }
 
-class _BinaryControl extends StatelessWidget {
-  final int value;
+class _FavoriteControl extends StatelessWidget {
+  final bool value;
   final bool enabled;
-  final ValueChanged<int> onChanged;
-  final ValueChanged<int> onSubmitValue;
+  final ValueChanged<bool> onToggle;
 
-  const _BinaryControl({
-    required this.value,
-    required this.enabled,
-    required this.onChanged,
-    required this.onSubmitValue,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final label = switch (value) {
-      0 => t.rateSheet.notRated,
-      1 => t.rateSheet.notLiked,
-      _ => t.rateSheet.liked,
-    };
-    return _StepperPill(
-      label: label,
-      enabled: enabled,
-      onDecrease: () => onChanged((value - 1).clamp(0, 2).toInt()),
-      onIncrease: () => onChanged((value + 1).clamp(0, 2).toInt()),
-      onSubmit: () => onSubmitValue(value),
-    );
-  }
-}
-
-class _StepperPill extends StatelessWidget {
-  final String label;
-  final bool enabled;
-  final VoidCallback onDecrease;
-  final VoidCallback onIncrease;
-  final VoidCallback onSubmit;
-
-  const _StepperPill({
-    required this.label,
-    required this.enabled,
-    required this.onDecrease,
-    required this.onIncrease,
-    required this.onSubmit,
-  });
+  const _FavoriteControl({required this.value, required this.enabled, required this.onToggle});
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
-    return Container(
-      height: 32,
-      decoration: BoxDecoration(
-        color: scheme.surfaceContainerHighest.withValues(alpha: 0.54),
-        borderRadius: const BorderRadius.all(Radius.circular(100)),
-      ),
-      child: Row(
-        children: [
-          _arrow(context, Symbols.chevron_left_rounded, onDecrease),
-          Expanded(
-            child: ClickableCursor(
-              enabled: enabled,
-              child: GestureDetector(
-                behavior: HitTestBehavior.opaque,
-                onTap: enabled ? onSubmit : null,
-                child: Center(
-                  child: Text(
-                    label,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: theme.textTheme.labelMedium?.copyWith(fontWeight: FontWeight.w700),
-                  ),
-                ),
-              ),
-            ),
-          ),
-          _arrow(context, Symbols.chevron_right_rounded, onIncrease),
-        ],
-      ),
-    );
-  }
-
-  Widget _arrow(BuildContext context, IconData icon, VoidCallback action) {
-    final theme = Theme.of(context);
     return ClickableCursor(
       enabled: enabled,
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
-        onTap: enabled ? action : null,
-        child: SizedBox(
-          width: 30,
+        onTap: enabled ? () => onToggle(!value) : null,
+        child: Container(
           height: 32,
-          child: Center(
-            child: AppIcon(
-              icon,
-              fill: 1,
-              color: enabled ? theme.colorScheme.onSurfaceVariant : theme.disabledColor,
-              size: 20,
-            ),
+          decoration: BoxDecoration(
+            color: scheme.surfaceContainerHighest.withValues(alpha: 0.54),
+            borderRadius: const BorderRadius.all(Radius.circular(100)),
+          ),
+          child: Row(
+            mainAxisAlignment: .center,
+            children: [
+              AppIcon(
+                Symbols.favorite_rounded,
+                fill: value ? 1 : 0,
+                color: value ? Colors.redAccent : (enabled ? scheme.onSurfaceVariant : theme.disabledColor),
+                size: 18,
+              ),
+              const SizedBox(width: 6),
+              Flexible(
+                child: Text(
+                  value ? t.rateSheet.favorited : t.rateSheet.favorite,
+                  maxLines: 1,
+                  overflow: .ellipsis,
+                  style: theme.textTheme.labelMedium?.copyWith(fontWeight: .w700),
+                ),
+              ),
+            ],
           ),
         ),
       ),

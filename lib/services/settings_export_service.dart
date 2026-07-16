@@ -306,14 +306,13 @@ class SettingsExportService {
     }
 
     try {
-      final savedPath = await FilePickerService.instance.saveFile(
+      return await FilePickerService.instance.saveFile(
         dialogTitle: 'Export Plezy settings',
         fileName: fileName,
         bytes: bytes,
         type: FileType.custom,
         allowedExtensions: const [fileExtension],
       );
-      return savedPath;
     } catch (e, st) {
       appLogger.e('Settings export failed', error: e, stackTrace: st);
       throw const SettingsExportException('Could not write export file');

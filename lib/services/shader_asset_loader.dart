@@ -257,24 +257,6 @@ class ShaderAssetLoader {
     }
   }
 
-  /// Pre-extract all shader files to the cache.
-  /// Call this at startup to avoid extraction delay during playback.
-  static Future<void> preloadShaders() async {
-    try {
-      await _extractShader(_nvscalerShader);
-
-      for (final shaderPath in _artcnnShaders.values) {
-        await _extractShader(shaderPath);
-      }
-
-      for (final shaderPath in _anime4kShaders.values) {
-        await _extractShader(shaderPath);
-      }
-    } catch (e, st) {
-      appLogger.w('Failed to preload shaders', error: e, stackTrace: st);
-    }
-  }
-
   /// Clear cached shader directory reference.
   /// Call when clearing app cache.
   static void clearCache() {

@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:plezy/media/ids.dart';
 import 'dart:convert';
 
 import 'package:drift/native.dart';
@@ -28,6 +29,37 @@ class _SequenceClient extends http.BaseClient {
 }
 
 void main() {
+  group('PlexConfig language headers', () {
+    test('includes Plex language headers when configured', () {
+      final config = PlexConfig(
+        baseUrl: 'http://server:32400',
+        token: 'token',
+        clientIdentifier: 'client-id',
+        product: 'Plezy',
+        version: 'test',
+        languageCode: 'fr',
+      );
+
+      expect(config.headers['Accept-Language'], 'fr');
+      expect(config.headers['X-Plex-Language'], 'fr');
+    });
+
+    test('copyWith preserves language headers when refreshing the token', () {
+      final config = PlexConfig(
+        baseUrl: 'http://server:32400',
+        token: 'old-token',
+        clientIdentifier: 'client-id',
+        product: 'Plezy',
+        version: 'test',
+        languageCode: 'es',
+      ).copyWith(token: 'new-token');
+
+      expect(config.headers['X-Plex-Token'], 'new-token');
+      expect(config.headers['Accept-Language'], 'es');
+      expect(config.headers['X-Plex-Language'], 'es');
+    });
+  });
+
   group('PlexClient home hub retries', () {
     test('fetchGlobalHubs retries a transient first failure', () async {
       final db = AppDatabase.forTesting(NativeDatabase.memory());
@@ -46,7 +78,7 @@ void main() {
           product: 'Plezy',
           version: 'test',
         ),
-        serverId: 'server-id',
+        serverId: ServerId('server-id'),
         serverName: 'Server',
         httpClient: httpClient,
       );
@@ -60,6 +92,67 @@ void main() {
       expect(httpClient.requests, hasLength(2));
       expect(httpClient.requests.map((r) => r.url.path), everyElement('/hubs'));
       expect(httpClient.requests.map((r) => r.url.queryParameters['count']), everyElement('12'));
+    });
+
+    test('fetchGlobalHubs sends configured Plex language headers', () async {
+      final db = AppDatabase.forTesting(NativeDatabase.memory());
+      PlexApiCache.initialize(db);
+      addTearDown(db.close);
+
+      final httpClient = _SequenceClient([(_) async => _jsonResponse(_globalHubsPayload())]);
+      final client = PlexClient.forTesting(
+        config: PlexConfig(
+          baseUrl: 'http://server:32400',
+          token: 'token',
+          clientIdentifier: 'client-id',
+          product: 'Plezy',
+          version: 'test',
+          languageCode: 'fr',
+        ),
+        serverId: ServerId('server-id'),
+        serverName: 'Server',
+        httpClient: httpClient,
+      );
+      addTearDown(client.close);
+
+      await client.fetchGlobalHubs(limit: 12);
+
+      expect(httpClient.requests.single.headers['Accept-Language'], 'fr');
+      expect(httpClient.requests.single.headers['X-Plex-Language'], 'fr');
+    });
+
+    test('applyLanguageUpdate refreshes headers on the live HTTP client', () async {
+      final db = AppDatabase.forTesting(NativeDatabase.memory());
+      PlexApiCache.initialize(db);
+      addTearDown(db.close);
+
+      final httpClient = _SequenceClient([
+        (_) async => _jsonResponse(_globalHubsPayload()),
+        (_) async => _jsonResponse(_globalHubsPayload()),
+      ]);
+      final client = PlexClient.forTesting(
+        config: PlexConfig(
+          baseUrl: 'http://server:32400',
+          token: 'token',
+          clientIdentifier: 'client-id',
+          product: 'Plezy',
+          version: 'test',
+          languageCode: 'en',
+        ),
+        serverId: ServerId('server-id'),
+        serverName: 'Server',
+        httpClient: httpClient,
+      );
+      addTearDown(client.close);
+
+      await client.fetchGlobalHubs(limit: 12);
+      client.applyLanguageUpdate('fr');
+      await client.fetchGlobalHubs(limit: 12);
+
+      expect(httpClient.requests[0].headers['Accept-Language'], 'en');
+      expect(httpClient.requests[0].headers['X-Plex-Language'], 'en');
+      expect(httpClient.requests[1].headers['Accept-Language'], 'fr');
+      expect(httpClient.requests[1].headers['X-Plex-Language'], 'fr');
     });
 
     test('fetchGlobalHubs retries transient failures without switching Plex endpoints', () async {
@@ -81,7 +174,7 @@ void main() {
           product: 'Plezy',
           version: 'test',
         ),
-        serverId: 'server-id',
+        serverId: ServerId('server-id'),
         serverName: 'Server',
         httpClient: httpClient,
         prioritizedEndpoints: const [primary, fallback],
@@ -93,6 +186,40 @@ void main() {
       expect(hubs, hasLength(1));
       expect(client.config.baseUrl, primary);
       expect(httpClient.requests.map((r) => r.url.origin), everyElement(primary));
+    });
+
+    test('resets live base URL after fallback endpoint is exhausted', () async {
+      const primary = 'http://primary:32400';
+      const fallback = 'http://fallback:32400';
+      final httpClient = _SequenceClient([
+        (_) async => throw TimeoutException('primary down'),
+        (_) async => throw TimeoutException('fallback down'),
+        (_) async => _jsonResponse({
+          'MediaContainer': {'machineIdentifier': 'server-id'},
+        }),
+      ]);
+      final client = PlexClient.forTesting(
+        config: PlexConfig(
+          baseUrl: primary,
+          token: 'token',
+          clientIdentifier: 'client-id',
+          product: 'Plezy',
+          version: 'test',
+        ),
+        serverId: ServerId('server-id'),
+        serverName: 'Server',
+        httpClient: httpClient,
+        prioritizedEndpoints: const [primary, fallback],
+      );
+      addTearDown(client.close);
+
+      await expectLater(client.getServerIdentity(), throwsA(isA<Object>()));
+
+      expect(client.config.baseUrl, primary);
+      expect(httpClient.requests.map((r) => r.url.origin), [primary, fallback]);
+
+      await client.getServerIdentity();
+      expect(httpClient.requests.map((r) => r.url.origin), [primary, fallback, primary]);
     });
 
     test('fetchGlobalHubs uses promoted hub endpoint advertised by media providers', () async {
@@ -112,7 +239,7 @@ void main() {
           product: 'Plezy',
           version: 'test',
         ),
-        serverId: 'server-id',
+        serverId: ServerId('server-id'),
         serverName: 'Server',
         httpClient: httpClient,
         seedTranscoderVideoSupport: true,
@@ -144,7 +271,7 @@ void main() {
           product: 'Plezy',
           version: 'test',
         ),
-        serverId: 'server-id',
+        serverId: ServerId('server-id'),
         serverName: 'Server',
         httpClient: httpClient,
         seedTranscoderVideoSupport: true,
@@ -175,7 +302,7 @@ void main() {
           product: 'Plezy',
           version: 'test',
         ),
-        serverId: 'server-id',
+        serverId: ServerId('server-id'),
         serverName: 'Server',
         httpClient: httpClient,
       );
@@ -210,7 +337,7 @@ void main() {
           product: 'Plezy',
           version: 'test',
         ),
-        serverId: 'server-id',
+        serverId: ServerId('server-id'),
         serverName: 'Server',
         httpClient: httpClient,
         prioritizedEndpoints: const [primary, fallback],

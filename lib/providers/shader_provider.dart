@@ -1,15 +1,16 @@
+import 'dart:async' show unawaited;
+
 import 'package:collection/collection.dart';
 import 'package:flutter/foundation.dart';
 
 import '../mixins/disposable_change_notifier_mixin.dart';
 import '../models/shader_preset.dart';
+import '../services/settings_binding_owner.dart';
 import '../services/settings_service.dart';
 import '../services/shader_asset_loader.dart';
 
 class ShaderProvider extends ChangeNotifier with DisposableChangeNotifierMixin {
-  SettingsService? _settingsService;
-  ValueNotifier<String>? _savedPresetListenable;
-  ValueNotifier<List<Map<String, dynamic>>>? _customPresetsListenable;
+  late final SettingsBindingOwner _settingsBinding;
 
   ShaderPreset _savedPreset = ShaderPreset.none;
   ShaderPreset _currentPreset = ShaderPreset.none;
@@ -17,30 +18,14 @@ class ShaderProvider extends ChangeNotifier with DisposableChangeNotifierMixin {
   bool _initialized = false;
 
   ShaderProvider() {
-    _initialize();
+    _settingsBinding = SettingsBindingOwner(
+      prefs: [SettingsService.globalShaderPreset, SettingsService.customShaderPresets],
+      onRefresh: _syncFromSettings,
+    );
+    unawaited(_settingsBinding.bind());
   }
 
-  Future<void> _initialize() async {
-    final service = await SettingsService.getInstance();
-    if (_settingsService == service && _savedPresetListenable != null && _customPresetsListenable != null) {
-      _syncFromSettings();
-      return;
-    }
-
-    _savedPresetListenable?.removeListener(_onSettingsChanged);
-    _customPresetsListenable?.removeListener(_onSettingsChanged);
-    _settingsService = service;
-    _savedPresetListenable = service.listenable(SettingsService.globalShaderPreset)..addListener(_onSettingsChanged);
-    _customPresetsListenable = service.listenable(SettingsService.customShaderPresets)..addListener(_onSettingsChanged);
-    _syncFromSettings();
-  }
-
-  void _onSettingsChanged() => _syncFromSettings();
-
-  void _syncFromSettings() {
-    final service = _settingsService;
-    if (service == null) return;
-
+  void _syncFromSettings(SettingsService service) {
     final customData = service.read(SettingsService.customShaderPresets);
     final customPresets = customData.map((json) => ShaderPreset.fromJson(json)).toList();
     _customPresets = customPresets;
@@ -55,8 +40,7 @@ class ShaderProvider extends ChangeNotifier with DisposableChangeNotifierMixin {
 
   @override
   void dispose() {
-    _savedPresetListenable?.removeListener(_onSettingsChanged);
-    _customPresetsListenable?.removeListener(_onSettingsChanged);
+    _settingsBinding.dispose();
     super.dispose();
   }
 
@@ -72,11 +56,12 @@ class ShaderProvider extends ChangeNotifier with DisposableChangeNotifierMixin {
   }
 
   Future<void> setPreset(ShaderPreset preset) async {
-    final service = _settingsService ?? await SettingsService.getInstance();
+    final service = _settingsBinding.settings ?? await SettingsService.getInstance();
     await service.write(SettingsService.globalShaderPreset, preset.id);
-    if (_savedPresetListenable == null) {
-      _savedPreset = preset;
-      _currentPreset = preset;
+    final changed = _savedPreset.id != preset.id || _currentPreset.id != preset.id;
+    _savedPreset = preset;
+    _currentPreset = preset;
+    if (changed || _settingsBinding.settings == null) {
       safeNotifyListeners();
     }
   }
@@ -118,7 +103,7 @@ class ShaderProvider extends ChangeNotifier with DisposableChangeNotifierMixin {
   }
 
   Future<void> _saveCustomPresets() async {
-    final service = _settingsService ?? await SettingsService.getInstance();
+    final service = _settingsBinding.settings ?? await SettingsService.getInstance();
     final data = _customPresets.map((p) => p.toJson()).toList();
     await service.write(SettingsService.customShaderPresets, data);
   }

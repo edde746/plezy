@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -30,14 +32,27 @@ class InputModeTracker extends StatefulWidget {
   const InputModeTracker({super.key, required this.child});
 
   /// Get the current input mode.
-  static InputMode of(BuildContext context) {
-    final provider = context.dependOnInheritedWidgetOfExactType<_InputModeProvider>();
+  ///
+  /// Set [listen] to false for event handlers and post-frame callbacks that
+  /// only need a one-shot value. Those reads must not subscribe their owning
+  /// screen to future input-mode changes.
+  static InputMode of(BuildContext context, {bool listen = true}) {
+    final provider = listen
+        ? context.dependOnInheritedWidgetOfExactType<_InputModeProvider>()
+        : context.getInheritedWidgetOfExactType<_InputModeProvider>();
     return provider?.mode ?? InputMode.pointer;
   }
 
   /// Convenience method to check if we're in keyboard mode.
-  static bool isKeyboardMode(BuildContext context) {
-    return of(context) == InputMode.keyboard;
+  static bool isKeyboardMode(BuildContext context, {bool listen = true}) {
+    return of(context, listen: listen) == InputMode.keyboard;
+  }
+
+  /// Whether system back must be blocked because the dpad key handler owns
+  /// back navigation: on Android in keyboard mode (TV/gamepad), letting the
+  /// system back through as well double-pops the route.
+  static bool shouldBlockSystemBack(BuildContext context) {
+    return Platform.isAndroid && isKeyboardMode(context);
   }
 
   @override
@@ -108,8 +123,10 @@ class _InputModeTrackerState extends State<InputModeTracker> {
   Widget build(BuildContext context) {
     // On Android TV, don't switch to pointer mode from pointer events
     // as D-pad can generate synthetic pointer events that would incorrectly
-    // trigger pointer mode and show a cursor instead of D-pad focus navigation
-    if (TvDetectionService.isTVSync()) {
+    // trigger pointer mode and show a cursor instead of D-pad focus navigation.
+    // Desktop is exempt even in force-TV mode: its pointer events come from a
+    // real mouse, which should keep flipping modes (and the cursor) as usual.
+    if (TvDetectionService.isTVSync() && !PlatformDetector.isDesktopOS()) {
       return _InputModeProvider(mode: _mode, child: widget.child);
     }
 

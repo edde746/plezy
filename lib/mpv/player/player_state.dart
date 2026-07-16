@@ -14,9 +14,6 @@ class PlayerState {
   final double rate;
   final Tracks tracks;
   final TrackSelection track;
-  final double audioDelay;
-  final double subtitleDelay;
-  final bool audioPassthrough;
   final AudioDevice audioDevice;
   final List<AudioDevice> audioDevices;
   final List<BufferRange> bufferRanges;
@@ -33,9 +30,6 @@ class PlayerState {
     this.rate = 1.0,
     this.tracks = const Tracks(),
     this.track = const TrackSelection(),
-    this.audioDelay = 0.0,
-    this.subtitleDelay = 0.0,
-    this.audioPassthrough = false,
     this.audioDevice = AudioDevice.auto,
     this.audioDevices = const [],
     this.bufferRanges = const [],
@@ -53,9 +47,6 @@ class PlayerState {
     double? rate,
     Tracks? tracks,
     TrackSelection? track,
-    double? audioDelay,
-    double? subtitleDelay,
-    bool? audioPassthrough,
     AudioDevice? audioDevice,
     List<AudioDevice>? audioDevices,
     List<BufferRange>? bufferRanges,
@@ -72,9 +63,6 @@ class PlayerState {
       rate: rate ?? this.rate,
       tracks: tracks ?? this.tracks,
       track: track ?? this.track,
-      audioDelay: audioDelay ?? this.audioDelay,
-      subtitleDelay: subtitleDelay ?? this.subtitleDelay,
-      audioPassthrough: audioPassthrough ?? this.audioPassthrough,
       audioDevice: audioDevice ?? this.audioDevice,
       audioDevices: audioDevices ?? this.audioDevices,
       bufferRanges: bufferRanges ?? this.bufferRanges,

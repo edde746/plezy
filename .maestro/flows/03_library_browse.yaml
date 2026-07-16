@@ -1,0 +1,22 @@
+appId: com.edde746.plezy
+name: Browse library and open media details
+tags:
+  - e2e
+  - library
+---
+- runFlow: ../subflows/onboard_jellyfin.yaml
+- tapOn: "(?s)^Libraries.*"
+- extendedWaitUntil:
+    visible: "Maestro Movies"
+    timeout: 15000
+- extendedWaitUntil:
+    visible: "(?s).*Zulu Zone 4$"
+    timeout: 15000
+- tapOn: "(?s).*Zulu Zone 4$"
+- extendedWaitUntil:
+    visible: "Overview"
+    timeout: 15000
+- assertVisible: "A deterministic title for TV alphabet focus coverage."
+- assertVisible: "Play"
+- back
+- assertVisible: "Maestro Movies"

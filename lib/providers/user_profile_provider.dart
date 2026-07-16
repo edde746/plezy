@@ -1,4 +1,5 @@
 import 'dart:async';
+import '../media/ids.dart';
 
 import 'package:flutter/foundation.dart';
 
@@ -32,14 +33,12 @@ import '../utils/app_logger.dart';
 /// account-owner's token would silently return the *owner's* settings —
 /// wrong defaults for kid profiles, parental restrictions, etc.
 class UserProfileProvider extends ChangeNotifier with DisposableChangeNotifierMixin {
+  UserProfileProvider({this._storageService});
+
   MediaServerUserProfile? _profileSettings;
-  bool _isLoading = false;
-  String? _error;
   bool _isInitialized = false;
 
   MediaServerUserProfile? get profileSettings => _profileSettings;
-  bool get isLoading => _isLoading;
-  String? get error => _error;
 
   PlexAuthService? _authService;
   StorageService? _storageService;
@@ -51,6 +50,7 @@ class UserProfileProvider extends ChangeNotifier with DisposableChangeNotifierMi
   StreamSubscription<List<ProfileConnection>>? _profileConnectionSubscription;
   String? _watchedProfileConnectionProfileId;
   ProfileConnectionRegistry? _watchedProfileConnectionRegistry;
+  String? _watchedProfileConnectionFingerprint;
 
   /// Wire the dependencies needed to resolve the active user's token / client.
   /// May be called multiple times (proxy provider re-builds) — only the
@@ -91,6 +91,11 @@ class UserProfileProvider extends ChangeNotifier with DisposableChangeNotifierMi
     final id = ap.activeId;
     if (id == _lastSeenActiveId) return;
     _lastSeenActiveId = id;
+    // The previous profile's settings must not bleed into the new profile
+    // (playback defaults, parental restrictions) while the fetch runs — or
+    // permanently, when the fetch fails/is unavailable.
+    _profileSettings = null;
+    safeNotifyListeners();
     _watchActiveProfileConnections(ap.active);
     if (_isInitialized) unawaited(refreshProfileSettings());
   }
@@ -106,9 +111,23 @@ class UserProfileProvider extends ChangeNotifier with DisposableChangeNotifierMi
     _profileConnectionSubscription = null;
     _watchedProfileConnectionRegistry = registry;
     _watchedProfileConnectionProfileId = profileId;
+    _watchedProfileConnectionFingerprint = null;
 
     if (registry == null || profileId == null) return;
-    _profileConnectionSubscription = registry.watchForProfile(profileId).listen((_) {
+    _profileConnectionSubscription = registry.watchForProfile(profileId).listen((rows) {
+      // Refresh only when something settings-relevant changed. The binder
+      // bumps lastUsedAt on every bind (markUsed), and drift re-emits on
+      // each of those writes — refetching plex.tv settings for them is
+      // wasted round-trips that also wake every awaitBindingSettle path.
+      final fingerprint = [
+        for (final row in rows) '${row.connectionId}|${row.userToken ?? ''}|${row.isDefault}',
+      ].join(';');
+      if (fingerprint == _watchedProfileConnectionFingerprint) return;
+      final first = _watchedProfileConnectionFingerprint == null;
+      _watchedProfileConnectionFingerprint = fingerprint;
+      // The initial emission mirrors the subscribe-time state; the profile
+      // change that created this subscription already refreshes.
+      if (first) return;
       if (_isInitialized) unawaited(refreshProfileSettings());
     });
   }
@@ -130,7 +149,6 @@ class UserProfileProvider extends ChangeNotifier with DisposableChangeNotifierMi
       _isInitialized = true;
     } catch (e) {
       appLogger.e('UserProfileProvider: critical initialization failure', error: e);
-      _setError('Failed to initialize profile services');
       _authService = null;
       _storageService = null;
       _isInitialized = false;
@@ -146,6 +164,11 @@ class UserProfileProvider extends ChangeNotifier with DisposableChangeNotifierMi
     // read the freshly-minted user-token rather than racing the cache.
     await _activeProfile?.awaitBindingSettle();
 
+    // A late-landing fetch must not clobber another profile's settings —
+    // discard the result when the active profile changed mid-flight.
+    final requestedId = _activeProfile?.activeId;
+    bool stale() => _activeProfile?.activeId != requestedId;
+
     final settingsConnection = await _resolveActiveSettingsConnection();
     final connection = settingsConnection?.connection;
     if (connection is JellyfinConnection) {
@@ -155,7 +178,7 @@ class UserProfileProvider extends ChangeNotifier with DisposableChangeNotifierMi
         return;
       }
       final profile = await jellyfinClient.fetchUserProfile();
-      if (profile != null) {
+      if (profile != null && !stale()) {
         _profileSettings = profile;
         safeNotifyListeners();
       }
@@ -171,6 +194,7 @@ class UserProfileProvider extends ChangeNotifier with DisposableChangeNotifierMi
     try {
       _authService ??= await PlexAuthService.create();
       final profile = await _authService!.getUserProfile(userToken);
+      if (stale()) return;
       _profileSettings = profile;
       safeNotifyListeners();
     } catch (e) {
@@ -181,7 +205,7 @@ class UserProfileProvider extends ChangeNotifier with DisposableChangeNotifierMi
   JellyfinClient? _resolveJellyfinClient(JellyfinConnection conn) {
     final manager = _serverManager;
     if (manager == null) return null;
-    final client = manager.getClient(conn.serverMachineId);
+    final client = manager.getClient(ServerId(conn.serverMachineId));
     return client is JellyfinClient ? client : null;
   }
 
@@ -281,8 +305,6 @@ class UserProfileProvider extends ChangeNotifier with DisposableChangeNotifierMi
   /// screen "sign out" action; the rest of the teardown (clearing
   /// connections, profiles, etc.) happens in the screen's logout flow.
   Future<void> logout() async {
-    _isLoading = true;
-    safeNotifyListeners();
     try {
       _storageService ??= await StorageService.getInstance();
       await _storageService!.clearUserData();
@@ -290,23 +312,12 @@ class UserProfileProvider extends ChangeNotifier with DisposableChangeNotifierMi
       _authService = null;
       _storageService = null;
       _isInitialized = false;
-      _clearError();
       appLogger.i('UserProfileProvider: logged out');
     } catch (e) {
       appLogger.e('UserProfileProvider: logout error', error: e);
     } finally {
-      _isLoading = false;
       safeNotifyListeners();
     }
-  }
-
-  void _setError(String error) {
-    _error = error;
-    safeNotifyListeners();
-  }
-
-  void _clearError() {
-    _error = null;
   }
 
   @override

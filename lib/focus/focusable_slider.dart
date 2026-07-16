@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import 'dpad_navigator.dart';
 import 'focusable_wrapper.dart';
@@ -10,9 +11,14 @@ class FocusableSlider extends StatefulWidget {
   final double max;
   final int? divisions;
   final ValueChanged<double>? onChanged;
+  final ValueChanged<double>? onChangeStart;
+  final ValueChanged<double>? onChangeEnd;
+  final VoidCallback? onSelect;
   final FocusNode? focusNode;
   final bool autofocus;
 
+  final Color? activeColor;
+  final Color? inactiveColor;
   const FocusableSlider({
     super.key,
     required this.value,
@@ -20,8 +26,13 @@ class FocusableSlider extends StatefulWidget {
     this.max = 1.0,
     this.divisions,
     this.onChanged,
+    this.onChangeStart,
+    this.onChangeEnd,
+    this.onSelect,
     this.focusNode,
     this.autofocus = false,
+    this.activeColor,
+    this.inactiveColor,
   });
 
   @override
@@ -44,8 +55,14 @@ class _FocusableSliderState extends State<FocusableSlider> {
       if (event.isActionable && widget.onChanged != null) {
         final delta = key.isRightKey ? _step : -_step;
         final newValue = (widget.value + delta).clamp(widget.min, widget.max);
+        widget.onChangeStart?.call(widget.value);
         widget.onChanged!(newValue);
+        widget.onChangeEnd?.call(newValue);
       }
+      return KeyEventResult.handled;
+    }
+    if (key.isSelectKey && event is KeyDownEvent && widget.onSelect != null) {
+      widget.onSelect!();
       return KeyEventResult.handled;
     }
     return KeyEventResult.ignored;
@@ -53,6 +70,7 @@ class _FocusableSliderState extends State<FocusableSlider> {
 
   @override
   Widget build(BuildContext context) {
+    final sliderTheme = SliderTheme.of(context);
     return FocusableWrapper(
       focusNode: widget.focusNode,
       autofocus: widget.autofocus,
@@ -62,8 +80,8 @@ class _FocusableSliderState extends State<FocusableSlider> {
       onFocusChange: (focused) => setState(() => _isFocused = focused),
       onKeyEvent: _handleKeyEvent,
       child: SliderTheme(
-        data: SliderTheme.of(context).copyWith(
-          overlayShape: const RoundSliderOverlayShape(overlayRadius: 0),
+        data: sliderTheme.copyWith(
+          overlayShape: sliderTheme.overlayShape ?? const RoundSliderOverlayShape(overlayRadius: 0),
           thumbSize: WidgetStatePropertyAll(
             (!InputModeTracker.isKeyboardMode(context) || _isFocused) ? const Size(4, 20) : Size.zero,
           ),
@@ -74,6 +92,10 @@ class _FocusableSliderState extends State<FocusableSlider> {
           max: widget.max,
           divisions: widget.divisions,
           onChanged: widget.onChanged,
+          onChangeStart: widget.onChangeStart,
+          onChangeEnd: widget.onChangeEnd,
+          activeColor: widget.activeColor,
+          inactiveColor: widget.inactiveColor,
         ),
       ),
     );

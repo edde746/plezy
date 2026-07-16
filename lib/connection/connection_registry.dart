@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
 
-import 'package:collection/collection.dart';
 import 'package:drift/drift.dart';
 
 import '../database/app_database.dart';
@@ -39,17 +38,6 @@ class ConnectionRegistry {
     final row = await (_db.select(_db.connections)..where((t) => t.id.equals(id))).getSingleOrNull();
     if (row == null) return null;
     return _rowToConnection(row);
-  }
-
-  /// Returns the user's preferred connection — either the row marked
-  /// [Connections.isDefault], or the only row if exactly one exists, or
-  /// null when no connections are stored.
-  Future<Connection?> getDefault() async {
-    final rows = await _db.select(_db.connections).get();
-    if (rows.isEmpty) return null;
-    final flagged = rows.firstWhereOrNull((r) => r.isDefault);
-    final picked = flagged ?? (rows.length == 1 ? rows.single : null);
-    return picked == null ? null : _rowToConnection(picked);
   }
 
   /// Insert or replace [connection]. If this is the first stored connection
@@ -130,25 +118,11 @@ class ConnectionRegistry {
     return all.whereType<PlexAccountConnection>().toList();
   }
 
-  /// All Jellyfin connections in insertion order. Symmetric helper to
-  /// [listPlexAccounts].
-  Future<List<JellyfinConnection>> listJellyfin() async {
-    final all = await list();
-    return all.whereType<JellyfinConnection>().toList();
-  }
-
   /// Lookup a [PlexAccountConnection] by id. Returns `null` if no row
   /// matches OR the row exists but isn't a Plex account.
   Future<PlexAccountConnection?> getPlexAccount(String id) async {
     final c = await get(id);
     return c is PlexAccountConnection ? c : null;
-  }
-
-  /// Lookup a [JellyfinConnection] by id. Returns `null` if no row matches
-  /// OR the row exists but isn't a Jellyfin connection.
-  Future<JellyfinConnection?> getJellyfin(String id) async {
-    final c = await get(id);
-    return c is JellyfinConnection ? c : null;
   }
 
   Future<Connection?> _rowToConnection(ConnectionRow row) async {

@@ -1,4 +1,5 @@
 import 'dart:async';
+import '../media/ids.dart';
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -6,12 +7,10 @@ import 'package:provider/provider.dart';
 import '../media/media_item.dart';
 import '../media/media_item_types.dart';
 import '../media/play_queue.dart';
-import '../mpv/mpv.dart';
 import '../providers/multi_server_provider.dart';
 import '../providers/playback_state_provider.dart';
 import '../services/multi_server_manager.dart';
 import '../utils/app_logger.dart';
-import '../utils/video_player_navigation.dart';
 
 /// Result of loading adjacent episodes
 class AdjacentEpisodes {
@@ -34,7 +33,7 @@ class AdjacentEpisodes {
 /// Plex episodes navigate through the server-side `/playQueues` queue;
 /// Jellyfin (and any other backend whose
 /// [MediaServerClient.fetchClientSideEpisodeQueue] returns rows) builds
-/// a centred 21-item local queue here and publishes it through
+/// a full-series local queue here and publishes it through
 /// [PlaybackStateProvider] so the rest of the player reads prev/next from
 /// the same source.
 class EpisodeNavigationService {
@@ -62,7 +61,15 @@ class EpisodeNavigationService {
   /// - Not applicable (e.g., movie content)
   /// - Next episode doesn't exist (end of season/series)
   /// - Previous episode doesn't exist (first episode)
-  Future<AdjacentEpisodes> loadAdjacentEpisodes({required BuildContext context, required MediaItem metadata}) async {
+  ///
+  /// [playedPartId] is the backend part id actually being played, when
+  /// known — it lets the queue skip sibling entries of a Plex
+  /// multi-episode file (#1500).
+  Future<AdjacentEpisodes> loadAdjacentEpisodes({
+    required BuildContext context,
+    required MediaItem metadata,
+    String? playedPartId,
+  }) async {
     try {
       // Resolve providers up-front so we don't reach for `context` after
       // any of the awaits below — avoids the
@@ -71,8 +78,8 @@ class EpisodeNavigationService {
       final serverManager = context.read<MultiServerProvider>().serverManager;
       final playbackState = context.read<PlaybackStateProvider>();
 
-      // For Jellyfin, build (or refresh) the centered 21-item window and
-      // publish it into PlaybackStateProvider so the rest of this method —
+      // For Jellyfin, make sure a local queue covering the current item is
+      // published into PlaybackStateProvider so the rest of this method —
       // and the queue button/sheet — can read prev/next from the same
       // place Plex does. Plex playback comes in here with its server-side
       // queue already populated by `_ensurePlayQueue` so this branch is
@@ -83,8 +90,8 @@ class EpisodeNavigationService {
       if (!playbackState.isQueueActive) {
         return AdjacentEpisodes();
       }
-      final next = await playbackState.getNextEpisode(metadata.id, loopQueue: false);
-      final previous = await playbackState.getPreviousEpisode(metadata.id);
+      final next = await playbackState.getNextEpisode(metadata.id, loopQueue: false, playedPartId: playedPartId);
+      final previous = await playbackState.getPreviousEpisode(metadata.id, playedPartId: playedPartId);
       final mode = playbackState.isShuffleActive ? 'Shuffle' : 'Sequential';
       appLogger.d('$mode mode - Next: ${next?.title}, Previous: ${previous?.title}');
       return AdjacentEpisodes(next: next, previous: previous);
@@ -95,10 +102,13 @@ class EpisodeNavigationService {
     }
   }
 
-  /// Ensure [PlaybackStateProvider] holds a centered 21-item window of
-  /// the current series. Cached per-series, so jumping anywhere in the
-  /// show only triggers one wire fetch per session. No-op for movies,
-  /// items without a series anchor, or backends whose
+  /// Ensure [PlaybackStateProvider] holds a queue covering the current
+  /// item. A queue the item already belongs to (launcher-seeded shuffle,
+  /// playlist, collection, or an earlier series build) is preserved as-is;
+  /// otherwise the full series episode list is published, anchored at the
+  /// current episode. Episode lists are cached per-series, so jumping
+  /// anywhere in the show only triggers one wire fetch per session. No-op
+  /// for movies, items without a series anchor, or backends whose
   /// [MediaServerClient.fetchClientSideEpisodeQueue] returns null (Plex's
   /// queue lives server-side and is populated elsewhere).
   Future<void> _ensureLocalEpisodeQueue(
@@ -110,17 +120,36 @@ class EpisodeNavigationService {
       return;
     }
     final seriesId = metadata.grandparentId!;
-    // Don't replace a playlist/collection queue with a series queue.
-    // The launcher (e.g. [JellyfinSequentialLauncher]) sets contextKey to
-    // the playlist/collection id; a series rebuild here would clobber it
-    // and prev/next would walk the show instead of the user's list.
+    // Preserve any queue this item already belongs to — a launcher-seeded
+    // shuffled show queue (contextKey == seriesId), a playlist/collection
+    // queue, or a series queue this method built earlier. setCurrentItem
+    // re-anchors the cursor, replacing the re-anchor the rebuild used to
+    // provide. Without this gate a shuffled show queue was clobbered by a
+    // sequential rebuild after the first episode (#1466).
+    if (playbackState.isItemInActiveQueue(metadata)) {
+      playbackState.setCurrentItem(metadata);
+      return;
+    }
+    // Same-episode reload with a fresh object: a source/quality switch hands
+    // _reloadMediaInPlace a copyWith clone of the playing item, and MediaItem
+    // compares by identity, so the membership gate above misses. The cursor
+    // already points at this episode — the queue (and any shuffled order)
+    // must survive.
+    if (playbackState.isQueueActive && playbackState.currentQueueItem?.globalKey == metadata.globalKey) {
+      return;
+    }
+    // The playing item isn't in the active queue. Still don't replace a
+    // playlist/collection queue with a series queue: the launcher (e.g.
+    // [JellyfinSequentialLauncher]) sets contextKey to the playlist or
+    // collection id; a series rebuild here would clobber it and prev/next
+    // would walk the show instead of the user's list.
     final activeKey = playbackState.shuffleContextKey;
     if (playbackState.isQueueActive && activeKey != null && activeKey != seriesId) {
       return;
     }
     var allEpisodes = _readSeriesCache(seriesId);
     if (allEpisodes == null) {
-      final client = serverManager.getClient(metadata.serverId!);
+      final client = serverManager.getClient(ServerId(metadata.serverId!));
       if (client == null) return;
       try {
         allEpisodes = await client.fetchClientSideEpisodeQueue(seriesId);
@@ -143,50 +172,6 @@ class EpisodeNavigationService {
     );
     playbackState.setPlaybackFromLocalQueue(queue, contextKey: seriesId);
     appLogger.d('Local episode queue (${allEpisodes.length} episodes, anchor: $anchorIdx)');
-  }
-
-  /// Navigate to the next or previous episode
-  ///
-  /// Preserves the current audio track, subtitle track, and playback rate
-  /// selections when transitioning between episodes.
-  Future<void> navigateToEpisode({
-    required BuildContext context,
-    required MediaItem episode,
-    required Player? player,
-    bool usePushReplacement = true,
-  }) async {
-    if (!context.mounted) return;
-
-    // Capture current player state before navigation
-    AudioTrack? currentAudioTrack;
-    SubtitleTrack? currentSubtitleTrack;
-    SubtitleTrack? currentSecondarySubtitleTrack;
-    double? currentPlaybackRate;
-
-    if (player != null) {
-      currentAudioTrack = player.state.track.audio;
-      currentSubtitleTrack = player.state.track.subtitle;
-      currentSecondarySubtitleTrack = player.state.track.secondarySubtitle;
-      currentPlaybackRate = player.state.rate;
-
-      appLogger.d(
-        'Navigating to episode with preserved settings - Audio: ${currentAudioTrack?.id}, Subtitle: ${currentSubtitleTrack?.id}, Rate: ${currentPlaybackRate}x',
-      );
-    }
-
-    // Navigate to the new episode
-    if (context.mounted) {
-      unawaited(
-        navigateToVideoPlayer(
-          context,
-          metadata: episode,
-          preferredAudioTrack: currentAudioTrack,
-          preferredSubtitleTrack: currentSubtitleTrack,
-          preferredSecondarySubtitleTrack: currentSecondarySubtitleTrack,
-          usePushReplacement: usePushReplacement,
-        ),
-      );
-    }
   }
 
   /// LRU-touching read: re-inserts the entry so it becomes the most recent.

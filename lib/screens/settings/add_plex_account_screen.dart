@@ -7,14 +7,16 @@ import 'package:provider/provider.dart';
 
 import '../../connection/connection.dart';
 import '../../connection/connection_registry.dart';
+import '../../connection/plex_account_setup.dart';
 import '../../focus/focusable_button.dart';
 import '../../i18n/strings.g.dart';
 import '../../profiles/active_profile_binder.dart';
 import '../../profiles/active_profile_provider.dart';
 import '../../profiles/plex_home_service.dart';
 import '../../profiles/profile.dart';
+import '../../profiles/profile_connection_cleanup.dart';
 import '../../profiles/profile_connection_registry.dart';
-import '../../services/plex_auth_service.dart';
+import '../../services/storage_service.dart';
 import '../../utils/app_logger.dart';
 import '../../media/media_backend.dart';
 import '../../widgets/backend_badge.dart';
@@ -22,7 +24,6 @@ import '../../widgets/focused_scroll_scaffold.dart';
 import '../auth/plex_pin_auth_flow.dart';
 import '../profile/borrow_connection_screen.dart';
 import 'async_form_state_mixin.dart';
-import 'connection_persistence.dart';
 
 /// Add a Plex account to the [ConnectionRegistry].
 ///
@@ -52,83 +53,56 @@ class _AddPlexAccountScreenState extends State<AddPlexAccountScreen> with AsyncF
   Future<void> _onTokenReceived(String token) async {
     final completed = await runAsync<bool>(
       () async {
-        // Pull the account label first so the row is human-readable. Falls
-        // back to "Plex" when the user info call fails (rare; e.g. token
-        // works but plex.tv is rate-limiting).
-        String accountLabel = 'Plex';
-        // Account UUID from plex.tv — this is what makes multi-account work.
-        // The clientIdentifier is per-device (same for every Plex account on
-        // this install), so keying connection.id off it would collapse two
-        // different Plex accounts into the same row. Falls back to the
-        // client identifier only if the user-info call fails outright;
-        // re-signing into the same account will then upsert the legacy row.
-        String accountUuid = '';
-        final auth = await PlexAuthService.create();
-        try {
-          try {
-            final info = await auth.getUserInfo(token);
-            accountLabel = (info['username'] as String?) ?? (info['email'] as String?) ?? 'Plex';
-            final uuid = (info['uuid'] as String?)?.trim();
-            if (uuid != null && uuid.isNotEmpty) accountUuid = uuid;
-          } catch (e) {
-            appLogger.d('getUserInfo after add-account failed (using fallback): $e');
-          }
+        final connRegistry = context.read<ConnectionRegistry>();
+        final pcRegistry = context.read<ProfileConnectionRegistry>();
+        final plexHome = context.read<PlexHomeService>();
+        final storage = context.read<StorageService>();
+        final target = widget.targetProfile;
 
-          final servers = await auth.fetchServers(token);
-          if (!mounted) return false;
+        // Shared token→connection pipeline: identity resolution, dedup of a
+        // legacy client-id-keyed row, registry upsert, and the home-user
+        // fetch (which must land before the borrow screen — it reads
+        // `activeProvider.profiles` once in initState). Binding is
+        // deliberately left to ActiveProfileBinder below (global reauth) or
+        // the borrow flow (profile-scoped add) so we never put the raw
+        // account token into the active runtime session.
+        final registration = await registerPlexAccountFromToken(
+          token: token,
+          connections: connRegistry,
+          profileConnections: pcRegistry,
+          storage: storage,
+          plexHome: plexHome,
+        );
+        final connection = registration.connection;
 
-          final connection = PlexAccountConnection(
-            id: 'plex.${accountUuid.isNotEmpty ? accountUuid : auth.clientIdentifier}',
-            accountToken: token,
-            clientIdentifier: auth.clientIdentifier,
-            accountLabel: accountLabel,
-            servers: servers,
-            createdAt: DateTime.now(),
-            lastAuthenticatedAt: DateTime.now(),
+        if (!mounted) return false;
+        if (target != null) {
+          final borrowed = await Navigator.of(context).push<bool>(
+            MaterialPageRoute(builder: (_) => BorrowConnectionScreen(targetProfile: target, popOnSuccess: true)),
           );
-
-          if (!mounted) return false;
-          // Persist the registry row. Binding is deliberately left to
-          // ActiveProfileBinder below (global reauth) or the borrow flow
-          // (profile-scoped add) so we never put the raw account token into
-          // the active runtime session.
-          final target = widget.targetProfile;
-          await persistAndBindConnection(
-            context: context,
-            connection: connection,
-            bindToProfile: null,
-            addToManager: null,
-          );
-
-          if (!mounted) return false;
-          // Live-fetch the new account's Home users into [PlexHomeService]'s
-          // cache so the picker immediately surfaces them as virtual profiles.
-          // Must be awaited before pushing the borrow screen — that screen
-          // reads `activeProvider.profiles` once in initState (no reactive
-          // subscription), so navigating before the home users land yields
-          // an empty candidate list. Errors are swallowed inside
-          // `_fetchAndCache`; await is safe.
-          await context.read<PlexHomeService>().refresh(connection);
-
-          if (!mounted) return false;
-          if (target != null) {
-            final borrowed = await Navigator.of(context).push<bool>(
-              MaterialPageRoute(builder: (_) => BorrowConnectionScreen(targetProfile: target, popOnSuccess: true)),
-            );
-            if (!mounted) return borrowed == true;
-            if (borrowed == true) {
-              Navigator.of(context).pop(true);
-              return true;
+          if (borrowed != true) {
+            // The user backed out of picking a home user — a cancel, not an
+            // error. If this flow created the account solely to attach it
+            // to the profile, remove it again so a cancelled attach doesn't
+            // leave a global account behind.
+            if (!registration.existedBefore) {
+              await removePlexAccountConnectionAndCleanup(
+                account: connection,
+                profileConnections: pcRegistry,
+                connections: connRegistry,
+                storage: storage,
+              );
             }
-            throw StateError(t.addServer.failedToRegisterAccount(error: 'Connection was not borrowed'));
+            if (mounted) Navigator.of(context).pop(false);
+            return true;
           }
-          await _rebindActiveIfUses(connection.id);
-          if (!mounted) return false;
-          Navigator.of(context).pop(true);
+          if (mounted) Navigator.of(context).pop(true);
           return true;
-        } finally {
-          auth.dispose();
         }
+        await _rebindActiveIfUses(connection.id);
+        if (!mounted) return false;
+        Navigator.of(context).pop(true);
+        return true;
       },
       errorMapper: (e) {
         appLogger.e('Failed to register Plex account', error: e);
@@ -136,7 +110,7 @@ class _AddPlexAccountScreenState extends State<AddPlexAccountScreen> with AsyncF
       },
     );
     if (mounted && completed != true) {
-      throw StateError(errorText ?? t.addServer.failedToRegisterAccount(error: 'Unknown error'));
+      throw StateError(errorText ?? t.addServer.failedToRegisterAccount(error: t.common.unknown));
     }
   }
 
@@ -162,51 +136,49 @@ class _AddPlexAccountScreenState extends State<AddPlexAccountScreen> with AsyncF
     return FocusedScrollScaffold(
       title: Text(t.addServer.addPlexTitle),
       slivers: [
-        SliverPadding(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
-          sliver: SliverToBoxAdapter(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Text(t.addServer.plexAuthIntro, style: theme.textTheme.bodyMedium),
-                const SizedBox(height: 24),
-                PlexPinAuthFlow(
-                  onTokenReceived: _onTokenReceived,
-                  initialButtonsBuilder: (context, browser, qr, busy) => Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      FocusableButton(
-                        useBackgroundFocus: true,
-                        onPressed: busy || this.busy ? null : browser,
-                        child: FilledButton.icon(
-                          onPressed: busy || this.busy ? null : browser,
-                          icon: const BackendBadge(backend: MediaBackend.plex, size: 18),
-                          label: Text(t.auth.signInWithPlex),
-                        ),
+        SliverFillRemaining(
+          hasScrollBody: false,
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 420),
+                child: Column(
+                  mainAxisSize: .min,
+                  crossAxisAlignment: .stretch,
+                  children: [
+                    PlexPinAuthFlow(
+                      onTokenReceived: _onTokenReceived,
+                      initialButtonsBuilder: (context, browser, qr, busy) => Column(
+                        mainAxisSize: .min,
+                        crossAxisAlignment: .stretch,
+                        children: [
+                          FocusableButton(
+                            useBackgroundFocus: true,
+                            onPressed: busy || this.busy ? null : browser,
+                            child: FilledButton.icon(
+                              onPressed: busy || this.busy ? null : browser,
+                              icon: const BackendBadge(backend: MediaBackend.plex, size: 18),
+                              label: Text(t.auth.signInWithPlex),
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          FocusableButton(
+                            useBackgroundFocus: true,
+                            onPressed: busy || this.busy ? null : qr,
+                            child: OutlinedButton.icon(
+                              onPressed: busy || this.busy ? null : qr,
+                              icon: const AppIcon(Symbols.qr_code_rounded, fill: 1),
+                              label: Text(t.auth.showQRCode),
+                            ),
+                          ),
+                        ],
                       ),
-                      const SizedBox(height: 12),
-                      FocusableButton(
-                        useBackgroundFocus: true,
-                        onPressed: busy || this.busy ? null : qr,
-                        child: OutlinedButton.icon(
-                          onPressed: busy || this.busy ? null : qr,
-                          icon: const AppIcon(Symbols.qr_code_rounded, fill: 1),
-                          label: Text(t.auth.showQRCode),
-                        ),
-                      ),
-                    ],
-                  ),
+                    ),
+                    ...buildInlineError(theme, gap: 16, center: true),
+                  ],
                 ),
-                if (errorText != null) ...[
-                  const SizedBox(height: 16),
-                  Text(
-                    errorText!,
-                    style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.error),
-                    textAlign: TextAlign.center,
-                  ),
-                ],
-              ],
+              ),
             ),
           ),
         ),

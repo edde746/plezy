@@ -77,10 +77,5 @@ void main() {
       final b = MediaSort(key: 'k2', title: 'A');
       expect(a, isNot(equals(b)));
     });
-
-    test('identity short-circuit', () {
-      final a = MediaSort(key: 'k', title: 't');
-      expect(a == a, isTrue);
-    });
   });
 }

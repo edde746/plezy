@@ -1,0 +1,54 @@
+appId: com.edde746.plezy
+name: Jellyfin music browsing survives grouping reloads
+
+tags:
+  - e2e
+  - real-jellyfin
+  - music
+  - regression
+---
+- runFlow: ../subflows/onboard_jellyfin.yaml
+- assertVisible: "(?s)^Latest Albums in Maestro Music.*"
+- assertVisible: "(?s)^Regression Album.*"
+- tapOn: "(?s)^Libraries.*"
+- extendedWaitUntil:
+    visible: "Maestro Movies"
+    timeout: 15000
+- tapOn: "Maestro Movies"
+- extendedWaitUntil:
+    visible: "Maestro Music"
+    timeout: 10000
+- tapOn: "Maestro Music"
+- extendedWaitUntil:
+    visible: "(?s)^Regression Album.*"
+    timeout: 15000
+- assertVisible: "(?s)^Latest Albums in Maestro Music.*"
+- tapOn: "Browse"
+- runFlow:
+    when:
+      visible: "Retry"
+    commands:
+      - tapOn: "Retry"
+- extendedWaitUntil:
+    visible: "Maestro Artist"
+    timeout: 15000
+- assertNotVisible: "(?i).*connection timeout.*"
+- tapOn: "Library options"
+- tapOn: "(?s)^Grouping.*Artists$"
+- tapOn: "Albums"
+- extendedWaitUntil:
+    visible: "(?s)^Regression Album.*"
+    timeout: 15000
+- tapOn: "Library options"
+- tapOn: "(?s)^Grouping.*Albums$"
+- tapOn: "Tracks"
+- extendedWaitUntil:
+    visible: "(?s)^Resilient Track.*"
+    timeout: 15000
+- tapOn: "Library options"
+- tapOn: "(?s)^Grouping.*Tracks$"
+- tapOn: "Folders"
+- extendedWaitUntil:
+    visible: "Maestro Artist"
+    timeout: 15000
+- assertNotVisible: "(?i).*connection timeout.*"

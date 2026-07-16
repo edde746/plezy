@@ -98,13 +98,6 @@ class DisplayModeManager {
   // Should be called early in app startup. Returns true if recovery was performed.
   static bool RecoverIfNeeded(HWND window);
 
-  // --- Refresh rate matching ---
-
-  // Find the best matching refresh rate for a given video fps from available modes.
-  // Returns 0 if no suitable match found.
-  static DWORD FindBestRefreshRate(
-      double video_fps, const std::vector<DisplayMode>& modes, DWORD current_width, DWORD current_height);
-
  private:
   // Get the GDI device name for the monitor containing the window.
   static std::wstring GetMonitorDeviceName(HWND window);

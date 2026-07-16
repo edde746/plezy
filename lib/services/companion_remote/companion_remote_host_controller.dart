@@ -14,6 +14,9 @@ Future<bool> startCompanionRemoteHost(BuildContext context) async {
   if (companionRemote.isHostServerRunning) return true;
 
   try {
+    // The host is an app-level service, not bound to this widget: everything
+    // it needs is captured up front, so an unmount mid-await must not abort a
+    // start the user asked for. Hence no `context.mounted` guards below.
     final connections = context.read<ConnectionRegistry>();
     final activeProfile = context.read<ActiveProfileProvider>();
     final profileConnections = context.read<ProfileConnectionRegistry>();
@@ -23,9 +26,7 @@ Future<bool> startCompanionRemoteHost(BuildContext context) async {
       connections: connections,
       profileConnections: profileConnections,
     );
-    if (!context.mounted) return false;
     final home = identity == null ? null : await plexHome.materializePlexHomeForConnection(identity.account.id);
-    if (!context.mounted) return false;
     final ok = await companionRemote.ensureCryptoReady(
       home,
       connections: connections,
@@ -34,7 +35,7 @@ Future<bool> startCompanionRemoteHost(BuildContext context) async {
       identity: identity,
       plexHomeForConnection: plexHome.materializePlexHomeForConnection,
     );
-    if (!context.mounted || !ok) return false;
+    if (!ok) return false;
 
     await companionRemote.startHostServer();
     return companionRemote.isHostServerRunning;

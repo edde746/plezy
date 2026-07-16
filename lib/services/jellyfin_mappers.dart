@@ -1,4 +1,5 @@
 import '../media/media_backend.dart';
+import '../media/ids.dart';
 import '../media/media_hub.dart';
 import '../media/media_item.dart';
 import '../media/media_kind.dart';
@@ -7,10 +8,12 @@ import '../media/media_part.dart';
 import '../media/media_role.dart';
 import '../media/media_stream.dart';
 import '../media/media_version.dart';
+import '../i18n/strings.g.dart';
 import '../utils/jellyfin_time.dart';
 import '../utils/json_utils.dart';
 import '../utils/resolution_label.dart';
 import 'file_info_parser.dart';
+import 'jellyfin_display_metadata.dart';
 
 // Re-export so existing callers that pulled `resolutionLabelFromHeight`
 // from this file keep compiling without a bulk import rewrite.
@@ -57,6 +60,7 @@ MediaVersion jellyfinMediaSourceToVersion(
       MediaPart(
         id: partId,
         streamPath: streamPath,
+        file: source['Path'] as String?,
         sizeBytes: flexibleInt(source['Size']),
         container: source['Container'] as String?,
         durationMs: includePartDuration ? jellyfinTicksToMs(source['RunTimeTicks']) : null,
@@ -97,14 +101,22 @@ class JellyfinImageAbsolutizer {
   /// absolute, self-authenticated form. Cheap — touches a handful of
   /// nullable strings and reuses the existing [MediaItem.copyWith].
   MediaItem applyTo(MediaItem item) {
+    final backdropPaths = item.backdropPaths?.map((path) => absolutize(path)!).toList(growable: false);
+    final grandparentBackdropPaths = item.grandparentBackdropPaths
+        ?.map((path) => absolutize(path)!)
+        .toList(growable: false);
     return item.copyWith(
       thumbPath: absolutize(item.thumbPath),
-      artPath: absolutize(item.artPath),
+      artPath: backdropPaths == null || backdropPaths.isEmpty ? absolutize(item.artPath) : backdropPaths.first,
+      backdropPaths: backdropPaths,
       clearLogoPath: absolutize(item.clearLogoPath),
       backgroundSquarePath: absolutize(item.backgroundSquarePath),
       parentThumbPath: absolutize(item.parentThumbPath),
       grandparentThumbPath: absolutize(item.grandparentThumbPath),
-      grandparentArtPath: absolutize(item.grandparentArtPath),
+      grandparentArtPath: grandparentBackdropPaths == null || grandparentBackdropPaths.isEmpty
+          ? absolutize(item.grandparentArtPath)
+          : grandparentBackdropPaths.first,
+      grandparentBackdropPaths: grandparentBackdropPaths,
       // Cast headshots come from the same /Items/{personId}/Images/Primary
       // endpoint and need the same absolutize+api_key treatment, otherwise
       // they get routed through Plex's photo proxy and 404.
@@ -141,14 +153,26 @@ class JellyfinMappers {
   /// `.whereType<MediaItem>()`.
   static MediaItem? mediaItem(
     Map<String, dynamic> item, {
-    required String serverId,
+    required ServerId serverId,
     String? serverName,
     required JellyfinImageAbsolutizer? absolutizer,
   }) {
     final id = item['Id'] as String?;
     if (id == null || id.isEmpty) return null;
     final type = item['Type'] as String?;
-    final kind = MediaKind.fromString(type);
+    // Untyped rows that Jellyfin still flags as folders (defensive — typed
+    // Folder/CollectionFolder rows resolve via fromString) classify as
+    // folders so folder browsing never falls back to raw-map sniffing.
+    final kind = type == null && item['IsFolder'] == true ? MediaKind.folder : MediaKind.fromString(type);
+    final albumPrimaryImage = kind == MediaKind.track ? _albumPrimaryImage(item) : null;
+    final backdropPaths = _backdropImagePaths(id, item['BackdropImageTags']);
+    final parentBackdropPaths = _parentBackdropImagePaths(item);
+    final seriesBackdropPath = _seriesBackdropImage(item);
+    final grandparentBackdropPaths = parentBackdropPaths.isNotEmpty
+        ? parentBackdropPaths
+        : seriesBackdropPath == null
+        ? const <String>[]
+        : <String>[seriesBackdropPath];
 
     final mapped = JellyfinMediaItem(
       id: id,
@@ -158,22 +182,41 @@ class JellyfinMappers {
       titleSort: item['SortName'] as String?,
       summary: item['Overview'] as String?,
       tagline: _firstString(item['Taglines']),
-      originalTitle: item['OriginalTitle'] as String?,
+      // Music: a compilation track's own performer(s) go into originalTitle
+      // (matching Plex's convention) so MediaItem.trackArtistTitle can prefer
+      // it over the album artist. Only set when it actually differs.
+      originalTitle: item['OriginalTitle'] as String? ?? _trackArtistsOriginalTitle(item),
       studio: _firstStudioName(item['Studios']),
       year: item['ProductionYear'] as int?,
       originallyAvailableAt: jellyfinIsoToYmd(item['PremiereDate'] as String?),
       contentRating: item['OfficialRating'] as String?,
-      parentId: item['SeasonId'] as String? ?? item['ParentId'] as String?,
-      parentTitle: item['SeasonName'] as String?,
-      parentThumbPath: _imagePath(item, 'SeasonId', 'SeasonPrimaryImageTag', 'Primary'),
+      // Music mirrors the episode hierarchy, matching Plex's parent chain:
+      // track parent = album (AlbumId / Album), track grandparent = album
+      // artist (AlbumArtists[0] / AlbumArtist), and an *album's* parent is its
+      // artist (Jellyfin album dtos link artists via tags, not ParentId).
+      // Video rows never carry the Album* fields, so the extra fallbacks are
+      // inert for them.
+      parentId:
+          item['SeasonId'] as String? ??
+          item['AlbumId'] as String? ??
+          (kind == MediaKind.album ? _firstAlbumArtistId(item) : null) ??
+          item['ParentId'] as String?,
+      parentTitle:
+          item['SeasonName'] as String? ??
+          item['Album'] as String? ??
+          (kind == MediaKind.album ? item['AlbumArtist'] as String? : null),
+      parentThumbPath: _imagePath(item, 'SeasonId', 'SeasonPrimaryImageTag', 'Primary') ?? albumPrimaryImage,
       parentIndex: item['ParentIndexNumber'] as int?,
       index: item['IndexNumber'] as int?,
-      grandparentId: item['SeriesId'] as String?,
-      grandparentTitle: item['SeriesName'] as String?,
+      grandparentId: item['SeriesId'] as String? ?? (kind == MediaKind.track ? _firstAlbumArtistId(item) : null),
+      grandparentTitle:
+          item['SeriesName'] as String? ?? (kind == MediaKind.track ? item['AlbumArtist'] as String? : null),
       grandparentThumbPath: _seriesPrimaryImage(item),
-      grandparentArtPath: _parentBackdropImage(item) ?? _seriesBackdropImage(item),
-      thumbPath: _selfImagePath(id, item, 'Primary'),
-      artPath: _selfImagePath(id, item, 'Backdrop'),
+      grandparentArtPath: grandparentBackdropPaths.firstOrNull,
+      grandparentBackdropPaths: grandparentBackdropPaths.isEmpty ? null : grandparentBackdropPaths,
+      thumbPath: _selfImagePath(id, item, 'Primary') ?? albumPrimaryImage,
+      artPath: backdropPaths.firstOrNull,
+      backdropPaths: backdropPaths.isEmpty ? null : backdropPaths,
       // Episodes/seasons don't carry their own logo — Jellyfin exposes the
       // parent's logo via ParentLogoItemId/ParentLogoImageTag, which is
       // what JF web renders on the hero card.
@@ -192,14 +235,7 @@ class JellyfinMappers {
       addedAt: jellyfinIsoToEpochSeconds(item['DateCreated'] as String?),
       updatedAt: jellyfinIsoToEpochSeconds(item['DateLastSaved'] as String? ?? item['DateModified'] as String?),
       rating: (item['CommunityRating'] as num?)?.toDouble(),
-      // Jellyfin stores a binary `Likes` flag rather than a numeric rating.
-      // Map true → 10 / false → 0 so the existing UI's `userRating > 0`
-      // check renders the chip as filled for liked items.
-      userRating: switch (_userData(item)?['Likes']) {
-        true => 10.0,
-        false => 0.0,
-        _ => null,
-      },
+      isFavorite: _userData(item)?['IsFavorite'] as bool?,
       genres: _stringList(item['Genres']),
       directors: _peopleByType(item['People'], 'Director'),
       writers: _peopleByType(item['People'], 'Writer'),
@@ -228,14 +264,14 @@ class JellyfinMappers {
   /// [MediaLibrary]. The CollectionType field maps onto [MediaKind] roughly.
   /// Returns `null` when the view is missing `Id` — same rationale as
   /// [mediaItem].
-  static MediaLibrary? library(Map<String, dynamic> view, {required String serverId, String? serverName}) {
+  static MediaLibrary? library(Map<String, dynamic> view, {required ServerId serverId, String? serverName}) {
     final id = view['Id'] as String?;
     if (id == null || id.isEmpty) return null;
     final collectionType = view['CollectionType'] as String?;
     return MediaLibrary(
       id: id,
       backend: MediaBackend.jellyfin,
-      title: view['Name'] as String? ?? 'Library',
+      title: view['Name'] as String? ?? t.libraries.fallbackTitle,
       kind: _libraryKindFromCollectionType(collectionType, view['Type'] as String?),
       updatedAt: jellyfinIsoToEpochSeconds(view['DateLastSaved'] as String? ?? view['DateModified'] as String?),
       createdAt: jellyfinIsoToEpochSeconds(view['DateCreated'] as String?),
@@ -259,9 +295,10 @@ class JellyfinMappers {
     required String title,
     required String type,
     required List<Map<String, dynamic>> items,
-    required String serverId,
+    required ServerId serverId,
     String? serverName,
     MediaItem? Function(Map<String, dynamic>)? mapItem,
+    int? previewLimit,
   }) {
     final mapper = mapItem ?? ((it) => mediaItem(it, serverId: serverId, serverName: serverName, absolutizer: null));
     final mappedItems = items.map(mapper).whereType<MediaItem>().toList();
@@ -272,7 +309,7 @@ class JellyfinMappers {
       type: type,
       items: mappedItems,
       size: mappedItems.length,
-      more: items.length >= 20,
+      more: previewLimit != null && items.length >= previewLimit,
       serverId: serverId,
       serverName: serverName,
     );
@@ -381,7 +418,7 @@ class JellyfinMappers {
       if (src is! Map<String, dynamic>) continue;
       final id = src['Id'] as String?;
       if (id == null || id.isEmpty) continue;
-      final streams = _mediaStreams(src['MediaStreams']);
+      final streams = _mediaStreams(src['MediaStreams'], source: src);
       result.add(
         jellyfinMediaSourceToVersion(
           src,
@@ -398,9 +435,11 @@ class JellyfinMappers {
     return nullIfEmptyList(result);
   }
 
-  static List<MediaStream> _mediaStreams(Object? raw) {
+  static List<MediaStream> _mediaStreams(Object? raw, {Map<String, dynamic>? source}) {
     if (raw is! List) return const [];
     final result = <MediaStream>[];
+    final defaultAudioStreamIndex = flexibleInt(source?['DefaultAudioStreamIndex']);
+    final defaultSubtitleStreamIndex = flexibleInt(source?['DefaultSubtitleStreamIndex']);
     for (final s in raw) {
       if (s is! Map<String, dynamic>) continue;
       final f = parseJellyfinStreamFields(s, fallbackIndex: result.length);
@@ -410,6 +449,8 @@ class JellyfinMappers {
         'subtitle' => MediaStreamKind.subtitle,
         _ => MediaStreamKind.unknown,
       };
+      final isVideo = kind == MediaStreamKind.video;
+      final isDolbyVision = isVideo && jellyfinVideoStreamIsDolbyVision(s);
       result.add(
         MediaStream(
           id: '${f.index}',
@@ -420,9 +461,17 @@ class JellyfinMappers {
           languageCode: f.languageCode,
           title: f.title,
           displayTitle: f.displayTitle,
-          selected: f.isDefault,
+          selected: _jellyfinStreamSelected(
+            kind,
+            f,
+            defaultAudioStreamIndex: defaultAudioStreamIndex,
+            defaultSubtitleStreamIndex: defaultSubtitleStreamIndex,
+          ),
           channels: f.channels,
           frameRate: f.frameRate,
+          hdr: isVideo && jellyfinVideoStreamIsHdr(source ?? const <String, dynamic>{}, s),
+          dolbyVision: isDolbyVision,
+          dolbyVisionProfile: isDolbyVision ? jellyfinDolbyVisionProfile(s) : null,
           forced: f.isForced,
           sidecarPath: f.isExternalFile ? f.deliveryUrl : null,
         ),
@@ -431,20 +480,68 @@ class JellyfinMappers {
     return result;
   }
 
+  static bool _jellyfinStreamSelected(
+    MediaStreamKind kind,
+    JellyfinStreamFields stream, {
+    int? defaultAudioStreamIndex,
+    int? defaultSubtitleStreamIndex,
+  }) {
+    return switch (kind) {
+      MediaStreamKind.audio when defaultAudioStreamIndex != null => stream.index == defaultAudioStreamIndex,
+      MediaStreamKind.subtitle when defaultSubtitleStreamIndex != null => stream.index == defaultSubtitleStreamIndex,
+      _ => stream.isDefault,
+    };
+  }
+
   static String? _selfImagePath(String id, Map<String, dynamic> item, String type) {
     final tags = item['ImageTags'];
-    final backdropTags = item['BackdropImageTags'];
-    String? tag;
-    if (type == 'Backdrop' && backdropTags is List && backdropTags.isNotEmpty) {
-      tag = backdropTags.first as String?;
-      return tag != null ? _itemImagePath(id, 'Backdrop', tag: tag, imageIndex: 0) : null;
-    }
-    if (tags is Map<String, dynamic>) {
-      final value = tags[type];
-      if (value is String) tag = value;
-    }
-    if (tag == null) return null;
+    if (tags is! Map<String, dynamic>) return null;
+    final tag = tags[type];
+    if (tag is! String || tag.isEmpty) return null;
     return _itemImagePath(id, type, tag: tag);
+  }
+
+  static List<String> _backdropImagePaths(String id, Object? rawTags) {
+    if (rawTags is! List) return const [];
+    final paths = <String>[];
+    final seenTags = <String>{};
+    for (var index = 0; index < rawTags.length; index++) {
+      final tag = rawTags[index];
+      if (tag is! String || tag.isEmpty || !seenTags.add(tag)) continue;
+      paths.add(_itemImagePath(id, 'Backdrop', tag: tag, imageIndex: index));
+    }
+    return paths;
+  }
+
+  /// First album-artist id for Audio/MusicAlbum rows — the music counterpart
+  /// of `SeriesId` in the parent hierarchy.
+  static String? _firstAlbumArtistId(Map<String, dynamic> item) {
+    final albumArtists = item['AlbumArtists'];
+    if (albumArtists is List && albumArtists.isNotEmpty) {
+      final first = albumArtists.first;
+      if (first is Map<String, dynamic>) return first['Id'] as String?;
+    }
+    return null;
+  }
+
+  /// Per-track performer(s) joined for display, only when they differ from
+  /// the album artist (Jellyfin sets `Artists == [AlbumArtist]` on
+  /// non-compilation tracks, where the value would be redundant).
+  static String? _trackArtistsOriginalTitle(Map<String, dynamic> item) {
+    final artists = stringListFromRaw(item['Artists']);
+    if (artists == null || artists.isEmpty) return null;
+    final joined = artists.join(', ');
+    return joined == item['AlbumArtist'] as String? ? null : joined;
+  }
+
+  /// Album-cover fallback for Audio rows. Jellyfin normally supplies
+  /// `AlbumPrimaryImageTag`, but the image endpoint does not require it and
+  /// older/incompletely scanned libraries can still serve a primary image by
+  /// `AlbumId`. Keep the tag when present for cache invalidation.
+  static String? _albumPrimaryImage(Map<String, dynamic> item) {
+    final albumId = item['AlbumId'] as String?;
+    if (albumId == null || albumId.isEmpty) return null;
+    return _itemImagePath(albumId, 'Primary', tag: item['AlbumPrimaryImageTag'] as String?);
   }
 
   static String? _seriesPrimaryImage(Map<String, dynamic> item) {
@@ -461,19 +558,14 @@ class JellyfinMappers {
   }
 
   /// Parent backdrop helper — works for episodes (parent = series) and
-  /// seasons (parent = series). Pulls the explicit
-  /// `ParentBackdropItemId`/`ParentBackdropImageTags` pair Jellyfin
-  /// inherits onto child items, falling back to a tagless URL when only
-  /// the id is present.
-  static String? _parentBackdropImage(Map<String, dynamic> item) {
+  /// seasons (parent = series). Pulls every explicit
+  /// `ParentBackdropItemId`/`ParentBackdropImageTags` pair Jellyfin inherits
+  /// onto child items, falling back to a tagless URL when only the id exists.
+  static List<String> _parentBackdropImagePaths(Map<String, dynamic> item) {
     final parentId = item['ParentBackdropItemId'] as String?;
-    if (parentId == null) return null;
-    final tags = item['ParentBackdropImageTags'];
-    if (tags is List && tags.isNotEmpty) {
-      final tag = tags.first as String?;
-      if (tag != null) return _itemImagePath(parentId, 'Backdrop', tag: tag, imageIndex: 0);
-    }
-    return _itemImagePath(parentId, 'Backdrop', imageIndex: 0);
+    if (parentId == null || parentId.isEmpty) return const [];
+    final paths = _backdropImagePaths(parentId, item['ParentBackdropImageTags']);
+    return paths.isEmpty ? [_itemImagePath(parentId, 'Backdrop', imageIndex: 0)] : paths;
   }
 
   /// Parent logo helper — episodes/seasons inherit the series' logo via

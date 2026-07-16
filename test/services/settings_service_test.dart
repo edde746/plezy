@@ -1,8 +1,11 @@
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:plezy/models/audio_quality_preset.dart';
 import 'package:plezy/models/hotkey_model.dart';
+import 'package:plezy/services/base_shared_preferences_service.dart';
 import 'package:plezy/services/settings_service.dart';
 import 'package:plezy/services/trackers/tracker_constants.dart';
+import 'package:plezy/utils/platform_detector.dart';
 
 import '../test_helpers/prefs.dart';
 
@@ -10,6 +13,10 @@ void main() {
   setUp(() {
     resetSharedPreferencesForTest();
     SettingsService.resetForTesting();
+  });
+
+  tearDown(() {
+    TvDetectionService.debugSetAppleTVOverride(null);
   });
 
   group('SettingsService.parseMpvConfigText', () {
@@ -63,14 +70,136 @@ void main() {
     });
   });
 
-  group('SettingsService keyboard shortcut defaults', () {
+  group('SettingsService keyboard hotkey defaults', () {
     test('includes Ctrl+S screenshot shortcut', () {
-      expect(SettingsService.defaultKeyboardShortcuts()['screenshot'], 'Ctrl+S');
-
       final hotkey = SettingsService.defaultKeyboardHotkeys()['screenshot'];
       expect(hotkey, isNotNull);
       expect(hotkey!.key, PhysicalKeyboardKey.keyS);
       expect(hotkey.modifiers, [HotKeyModifier.control]);
+    });
+  });
+
+  group('SettingsService mute volume restoration', () {
+    test('keeps 37 persisted across mute and restores it on unmute', () async {
+      final settings = await SettingsService.getInstance();
+      await settings.write(SettingsService.volume, 37.0);
+
+      final mute = settings.resolveMuteToggle(37);
+      await settings.write(SettingsService.volume, mute.persistedVolume);
+
+      expect(mute.playerVolume, 0);
+      expect(settings.read(SettingsService.volume), 37);
+
+      final unmute = settings.resolveMuteToggle(mute.playerVolume);
+
+      expect(unmute.playerVolume, 37);
+      expect(unmute.persistedVolume, 37);
+    });
+
+    test('restores amplified volumes when the configured maximum permits them', () async {
+      final settings = await SettingsService.getInstance();
+      await settings.write(SettingsService.maxVolume, 250);
+      await settings.write(SettingsService.volume, 175.0);
+
+      final mute = settings.resolveMuteToggle(175);
+      await settings.write(SettingsService.volume, mute.persistedVolume);
+      final unmute = settings.resolveMuteToggle(mute.playerVolume);
+
+      expect(mute.playerVolume, 0);
+      expect(mute.persistedVolume, 175);
+      expect(unmute.playerVolume, 175);
+      expect(unmute.persistedVolume, 175);
+    });
+
+    test('falls back to 100 when no previous non-zero volume exists', () async {
+      final settings = await SettingsService.getInstance();
+      await settings.write(SettingsService.maxVolume, 200);
+      await settings.write(SettingsService.volume, 0.0);
+
+      final unmute = settings.resolveMuteToggle(0);
+
+      expect(unmute.playerVolume, 100);
+      expect(unmute.persistedVolume, 100);
+    });
+  });
+
+  group('SettingsService TV card defaults', () {
+    test('full card layout starts disabled', () async {
+      final settings = await SettingsService.getInstance();
+
+      expect(settings.read(SettingsService.tvFullCardLayout), isFalse);
+    });
+  });
+
+  group('SettingsService episode action', () {
+    test('defaults to play and resets to play', () async {
+      final settings = await SettingsService.getInstance();
+
+      expect(settings.read(SettingsService.episodeAction), EpisodeAction.play);
+
+      await settings.write(SettingsService.episodeAction, EpisodeAction.details);
+      expect(settings.read(SettingsService.episodeAction), EpisodeAction.details);
+
+      await settings.resetAllSettings();
+      expect(settings.read(SettingsService.episodeAction), EpisodeAction.play);
+    });
+  });
+
+  group('SettingsService music quality', () {
+    test('defaults to original and persists changes by enum name', () async {
+      var settings = await SettingsService.getInstance();
+
+      expect(settings.read(SettingsService.musicQualityPreset), AudioQualityPreset.original);
+
+      await settings.write(SettingsService.musicQualityPreset, AudioQualityPreset.medium);
+      expect(settings.prefs.getString(SettingsService.musicQualityPreset.key), 'medium');
+
+      BaseSharedPreferencesService.resetForTesting();
+      SettingsService.resetForTesting();
+      settings = await SettingsService.getInstance();
+
+      expect(settings.read(SettingsService.musicQualityPreset), AudioQualityPreset.medium);
+    });
+  });
+
+  group('SettingsService platform gates', () {
+    test('audio passthrough stays available on desktop and Apple TV', () {
+      expect(PlatformDetector.supportsAudioPassthrough(), isTrue);
+
+      TvDetectionService.debugSetAppleTVOverride(true);
+
+      expect(PlatformDetector.supportsAudioPassthrough(), isTrue);
+    });
+
+    test('audio passthrough defaults off on a non-Android-TV host and honors explicit writes', () async {
+      final settings = await SettingsService.getInstance();
+      // The Android-TV-on-ExoPlayer default-on branch depends on Platform.isAndroid,
+      // which is false (and unmockable) on the test host, so the default is off here.
+      expect(settings.read(SettingsService.audioPassthrough), isFalse);
+
+      await settings.write(SettingsService.audioPassthrough, true);
+      expect(settings.read(SettingsService.audioPassthrough), isTrue);
+
+      await settings.write(SettingsService.audioPassthrough, false);
+      expect(settings.read(SettingsService.audioPassthrough), isFalse);
+    });
+
+    test('forces external player off on Apple TV even when stored enabled', () async {
+      final settings = await SettingsService.getInstance();
+      await settings.write(SettingsService.useExternalPlayer, true);
+
+      TvDetectionService.debugSetAppleTVOverride(true);
+
+      expect(settings.read(SettingsService.useExternalPlayer), isFalse);
+    });
+
+    test('forces auto PiP off on Apple TV even when stored enabled', () async {
+      final settings = await SettingsService.getInstance();
+      await settings.write(SettingsService.autoPip, true);
+
+      TvDetectionService.debugSetAppleTVOverride(true);
+
+      expect(settings.read(SettingsService.autoPip), isFalse);
     });
   });
 

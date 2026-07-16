@@ -2,6 +2,7 @@ import '../media/media_file_info.dart';
 import '../media/media_source_info.dart';
 import '../media/media_version.dart';
 import '../models/plex/plex_video_playback_data.dart';
+import '../utils/app_logger.dart';
 import '../utils/json_utils.dart';
 import '../utils/plex_url_helper.dart';
 import 'file_info_parser.dart';
@@ -9,25 +10,92 @@ import 'plex_mappers.dart';
 
 const _streamReader = PlexFileInfoStreamReader();
 
+List<Map> _mapList(Object? raw) {
+  final values = flexibleList(raw);
+  if (values == null || values.isEmpty) return const [];
+  return [
+    for (final value in values)
+      if (value is Map) value,
+  ];
+}
+
+int _firstPlayablePartIndex(MediaVersion version) {
+  final parts = version.parts;
+  if (parts.isEmpty) return 0;
+  final playable = parts.indexWhere((part) => part.isPlayable);
+  return playable >= 0 ? playable : 0;
+}
+
+void _logPartSelection(
+  List<Map> mediaList,
+  List<MediaVersion> versions,
+  int selectedMediaIndex,
+  int selectedPartIndex,
+) {
+  final candidateCount = mediaList.fold<int>(0, (count, media) => count + _mapList(media['Part']).length);
+  if (candidateCount <= 1) return;
+
+  final entries = <String>[];
+  for (var mediaIndex = 0; mediaIndex < mediaList.length; mediaIndex++) {
+    final partList = _mapList(mediaList[mediaIndex]['Part']);
+    for (var partIndex = 0; partIndex < partList.length; partIndex++) {
+      final part = partList[partIndex];
+      final versionPart = mediaIndex < versions.length && partIndex < versions[mediaIndex].parts.length
+          ? versions[mediaIndex].parts[partIndex]
+          : null;
+      final selected = mediaIndex == selectedMediaIndex && partIndex == selectedPartIndex ? ' selected' : '';
+      entries.add(
+        'Media[$mediaIndex].Part[$partIndex] '
+        'id=${part['id']} key=${part['key']} '
+        'exists=${versionPart?.exists} accessible=${versionPart?.accessible} '
+        'playable=${versionPart?.isPlayable}$selected',
+      );
+    }
+  }
+
+  appLogger.d('Plex playback part selection: ${entries.join('; ')}');
+}
+
 PlexVideoPlaybackData parsePlexVideoPlaybackDataFromJson(
   Map<String, dynamic>? metadataJson, {
   required String baseUrl,
   required String? token,
   int mediaIndex = 0,
+  String? selectedMediaSourceId,
+  String? preferredVersionSignature,
   void Function(int requestedIndex, int fallbackIndex)? onVersionFallback,
 }) {
   String? videoUrl;
   MediaSourceInfo? mediaInfo;
   List<MediaVersion> availableVersions = [];
+  var selectedMediaIndex = 0;
+  var selectedPartIndex = 0;
   final markers = plexMarkersFromCacheJson(metadataJson);
 
   if (metadataJson != null) {
-    if (metadataJson['Media'] != null && (metadataJson['Media'] as List).isNotEmpty) {
-      final mediaList = metadataJson['Media'] as List;
-
+    final mediaList = _mapList(metadataJson['Media']);
+    if (mediaList.isNotEmpty) {
       availableVersions = mediaList
-          .map((media) => PlexMappers.mediaVersionFromJson(media as Map<String, dynamic>))
+          .map((media) => PlexMappers.mediaVersionFromJson(Map<String, dynamic>.from(media)))
           .toList();
+
+      // Re-resolve version evidence against this (authoritative) Media list:
+      // stable id first, then signature. The positional index is the last
+      // resort — and all an explicit user pick carries besides its id, so a
+      // saved-preference signature can never override one.
+      final requestedSourceId = selectedMediaSourceId?.trim();
+      var resolvedBySourceId = false;
+      if (requestedSourceId != null && requestedSourceId.isNotEmpty) {
+        final byId = availableVersions.indexWhere((v) => v.id == requestedSourceId);
+        if (byId >= 0) {
+          mediaIndex = byId;
+          resolvedBySourceId = true;
+        }
+      }
+      if (!resolvedBySourceId && preferredVersionSignature != null && preferredVersionSignature.isNotEmpty) {
+        final bySignature = MediaVersion.findMatchingIndex(availableVersions, {preferredVersionSignature});
+        if (bySignature != null) mediaIndex = bySignature;
+      }
 
       if (mediaIndex < 0 || mediaIndex >= mediaList.length) {
         mediaIndex = 0;
@@ -41,15 +109,20 @@ PlexVideoPlaybackData parsePlexVideoPlaybackDataFromJson(
         }
       }
 
+      selectedMediaIndex = mediaIndex;
       final media = mediaList[mediaIndex];
-      if (media['Part'] != null && (media['Part'] as List).isNotEmpty) {
-        final part = media['Part'][0];
-        final partKey = part['key'] as String?;
+      final partList = _mapList(media['Part']);
+      if (partList.isNotEmpty) {
+        selectedPartIndex = _firstPlayablePartIndex(availableVersions[mediaIndex]);
+        if (selectedPartIndex < 0 || selectedPartIndex >= partList.length) selectedPartIndex = 0;
+        _logPartSelection(mediaList, availableVersions, selectedMediaIndex, selectedPartIndex);
+        final part = partList[selectedPartIndex];
+        final partKey = part['key']?.toString();
 
         if (partKey != null) {
           videoUrl = '$baseUrl$partKey'.withPlexToken(token);
 
-          final streams = walkStreams(part['Stream'] as List<dynamic>?, _streamReader);
+          final streams = walkStreams(flexibleList(part['Stream']), _streamReader);
           final chapters = plexChaptersFromCacheJson(metadataJson);
 
           mediaInfo = MediaSourceInfo(
@@ -57,8 +130,9 @@ PlexVideoPlaybackData parsePlexVideoPlaybackDataFromJson(
             audioTracks: streams.audioTracks,
             subtitleTracks: streams.subtitleTracks,
             chapters: chapters,
-            partId: part['id'] as int?,
-            displayCriteria: PlexMappers.displayCriteriaFromJson(media as Map<String, dynamic>?, streams.videoStream),
+            partId: flexibleInt(part['id']),
+            displayCriteria: PlexMappers.displayCriteriaFromJson(Map<String, dynamic>.from(media), streams.videoStream),
+            videoAspectRatio: flexibleDouble(media['aspectRatio']),
           );
         }
       }
@@ -70,18 +144,24 @@ PlexVideoPlaybackData parsePlexVideoPlaybackDataFromJson(
     mediaInfo: mediaInfo,
     availableVersions: availableVersions,
     markers: markers,
+    selectedMediaIndex: selectedMediaIndex,
+    selectedPartIndex: selectedPartIndex,
   );
 }
 
 MediaFileInfo? parsePlexFileInfoFromJson(Map<String, dynamic>? metadataJson) {
-  if (metadataJson != null && metadataJson['Media'] != null && (metadataJson['Media'] as List).isNotEmpty) {
-    final media = metadataJson['Media'][0];
-    final part = media['Part'] != null && (media['Part'] as List).isNotEmpty ? media['Part'][0] : null;
+  final mediaList = _mapList(metadataJson?['Media']);
+  if (mediaList.isNotEmpty) {
+    final media = mediaList.first;
+    final partList = _mapList(media['Part']);
+    final version = PlexMappers.mediaVersionFromJson(Map<String, dynamic>.from(media));
+    final partIndex = partList.isEmpty ? 0 : _firstPlayablePartIndex(version).clamp(0, partList.length - 1).toInt();
+    final part = partList.isNotEmpty ? partList[partIndex] : null;
 
     // One pass over the streams array, capturing both the raw video / audio
     // map pointers (for fields the parsed track classes don't carry —
     // colorSpace, bitDepth, …) and the parsed track lists.
-    final parsedTracks = walkStreams(part?['Stream'] as List<dynamic>?, _streamReader);
+    final parsedTracks = walkStreams(flexibleList(part?['Stream']), _streamReader);
     final videoStream = parsedTracks.videoStream;
     final audioStream = parsedTracks.audioStream;
 
@@ -92,27 +172,27 @@ MediaFileInfo? parsePlexFileInfoFromJson(Map<String, dynamic>? metadataJson) {
       videoResolution: media['videoResolution'] as String?,
       videoFrameRate: media['videoFrameRate'] as String?,
       videoProfile: media['videoProfile'] as String?,
-      width: media['width'] as int?,
-      height: media['height'] as int?,
-      aspectRatio: (media['aspectRatio'] as num?)?.toDouble(),
-      bitrate: media['bitrate'] as int?,
-      duration: media['duration'] as int?,
+      width: flexibleInt(media['width']),
+      height: flexibleInt(media['height']),
+      aspectRatio: flexibleDouble(media['aspectRatio']),
+      bitrate: flexibleInt(media['bitrate']),
+      duration: flexibleInt(media['duration']),
       audioCodec: media['audioCodec'] as String?,
       audioProfile: media['audioProfile'] as String?,
-      audioChannels: media['audioChannels'] as int?,
+      audioChannels: flexibleInt(media['audioChannels']),
       optimizedForStreaming: flexibleBool(media['optimizedForStreaming']),
       has64bitOffsets: flexibleBool(media['has64bitOffsets']),
       // Part level properties (file)
       filePath: part?['file'] as String?,
-      fileSize: part?['size'] as int?,
+      fileSize: flexibleInt(part?['size']),
       // Video stream details
       colorSpace: videoStream?['colorSpace'] as String?,
       colorRange: videoStream?['colorRange'] as String?,
       colorPrimaries: videoStream?['colorPrimaries'] as String?,
       chromaSubsampling: videoStream?['chromaSubsampling'] as String?,
-      frameRate: (videoStream?['frameRate'] as num?)?.toDouble(),
-      bitDepth: videoStream?['bitDepth'] as int?,
-      videoBitrate: videoStream?['bitrate'] as int?,
+      frameRate: flexibleDouble(videoStream?['frameRate']),
+      bitDepth: flexibleInt(videoStream?['bitDepth']),
+      videoBitrate: flexibleInt(videoStream?['bitrate']),
       // Audio stream details
       audioChannelLayout: audioStream?['audioChannelLayout'] as String?,
       // All audio and subtitle tracks

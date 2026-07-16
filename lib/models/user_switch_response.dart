@@ -1,3 +1,5 @@
+import '../utils/app_logger.dart';
+import '../utils/json_utils.dart';
 import 'plex/plex_user_profile.dart';
 
 class UserSwitchResponse {
@@ -61,36 +63,58 @@ class UserSwitchResponse {
     this.attributionPartner,
   });
 
+  /// INVARIANT (#1488): a successful token mint must never be lost to parsing
+  /// of decorative fields. `authToken` is the only field any caller consumes
+  /// (see plex_home_switch.dart) — it alone parses strictly; every other
+  /// field tolerates missing/wrong-typed values with sane defaults. Plex has
+  /// changed field shapes on this endpoint before (July 2026: profile
+  /// language lists became CSV strings), and each drift used to brick token
+  /// minting outright.
   factory UserSwitchResponse.fromJson(Map<String, dynamic> json) {
+    final authToken = json['authToken'];
+    if (authToken is! String || authToken.isEmpty) {
+      throw const FormatException('Plex /switch response has no usable authToken');
+    }
+
+    PlexUserProfile profile;
+    try {
+      profile = PlexUserProfile.fromJson(json);
+    } catch (e, st) {
+      appLogger.w('UserSwitchResponse: profile blob failed to parse; using defaults', error: e, stackTrace: st);
+      profile = PlexUserProfile.defaults();
+    }
+
+    String? optString(String key) => json[key]?.toString();
+
     return UserSwitchResponse(
-      id: json['id'] as int,
-      uuid: json['uuid'] as String,
-      username: json['username'] as String? ?? '',
-      title: json['title'] as String,
-      email: json['email'] as String? ?? '',
-      friendlyName: json['friendlyName'] as String?,
-      locale: json['locale'] as String?,
-      confirmed: json['confirmed'] as bool,
-      joinedAt: json['joinedAt'] as int,
-      emailOnlyAuth: json['emailOnlyAuth'] as bool,
-      hasPassword: json['hasPassword'] as bool,
-      protected: json['protected'] as bool,
-      thumb: json['thumb'] as String,
-      authToken: json['authToken'] as String,
-      mailingListActive: json['mailingListActive'] as bool?,
-      scrobbleTypes: json['scrobbleTypes'] as String? ?? '',
-      country: json['country'] as String? ?? '',
-      restricted: json['restricted'] as bool,
-      anonymous: json['anonymous'] as bool?,
-      home: json['home'] as bool,
-      guest: json['guest'] as bool,
-      homeSize: json['homeSize'] as int,
-      homeAdmin: json['homeAdmin'] as bool,
-      maxHomeSize: json['maxHomeSize'] as int,
-      profile: PlexUserProfile.fromJson(json),
-      twoFactorEnabled: json['twoFactorEnabled'] as bool,
-      backupCodesCreated: json['backupCodesCreated'] as bool,
-      attributionPartner: json['attributionPartner'] as String?,
+      id: flexibleInt(json['id']) ?? 0,
+      uuid: optString('uuid') ?? '',
+      username: optString('username') ?? '',
+      title: optString('title') ?? '',
+      email: optString('email') ?? '',
+      friendlyName: optString('friendlyName'),
+      locale: optString('locale'),
+      confirmed: flexibleBool(json['confirmed']),
+      joinedAt: flexibleInt(json['joinedAt']) ?? 0,
+      emailOnlyAuth: flexibleBool(json['emailOnlyAuth']),
+      hasPassword: flexibleBool(json['hasPassword']),
+      protected: flexibleBool(json['protected']),
+      thumb: optString('thumb') ?? '',
+      authToken: authToken,
+      mailingListActive: flexibleBoolNullable(json['mailingListActive']),
+      scrobbleTypes: optString('scrobbleTypes') ?? '',
+      country: optString('country') ?? '',
+      restricted: flexibleBool(json['restricted']),
+      anonymous: flexibleBoolNullable(json['anonymous']),
+      home: flexibleBool(json['home']),
+      guest: flexibleBool(json['guest']),
+      homeSize: flexibleInt(json['homeSize']) ?? 1,
+      homeAdmin: flexibleBool(json['homeAdmin']),
+      maxHomeSize: flexibleInt(json['maxHomeSize']) ?? 1,
+      profile: profile,
+      twoFactorEnabled: flexibleBool(json['twoFactorEnabled']),
+      backupCodesCreated: flexibleBool(json['backupCodesCreated']),
+      attributionPartner: optString('attributionPartner'),
     );
   }
 

@@ -126,6 +126,7 @@ class _AlphaScrollHandleState extends State<AlphaScrollHandle> with SingleTicker
     _dragFraction = newFraction;
 
     final letter = _helper.letterAtFraction(newFraction);
+    if (letter == _dragLetter) return;
 
     setState(() => _dragLetter = letter);
     widget.onJump(_helper.indexForLetter(letter) ?? 0);
@@ -187,7 +188,7 @@ class _AlphaScrollHandleState extends State<AlphaScrollHandle> with SingleTicker
                         width: _touchTargetWidth,
                         height: _handleHeight + _touchTargetVerticalPadding * 2,
                         child: Align(
-                          alignment: Alignment.centerRight,
+                          alignment: .centerRight,
                           child: Container(
                             margin: const EdgeInsets.only(right: 2),
                             width: _handleWidth,
@@ -211,14 +212,10 @@ class _AlphaScrollHandleState extends State<AlphaScrollHandle> with SingleTicker
                       width: _bubbleSize,
                       height: _bubbleSize,
                       decoration: BoxDecoration(color: colorScheme.primary, shape: BoxShape.circle),
-                      alignment: Alignment.center,
+                      alignment: .center,
                       child: Text(
                         _dragLetter!,
-                        style: TextStyle(
-                          color: colorScheme.onPrimary,
-                          fontSize: _bubbleFontSize,
-                          fontWeight: FontWeight.bold,
-                        ),
+                        style: TextStyle(color: colorScheme.onPrimary, fontSize: _bubbleFontSize, fontWeight: .bold),
                       ),
                     ),
                   ),

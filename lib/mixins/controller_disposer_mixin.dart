@@ -12,11 +12,6 @@ mixin ControllerDisposerMixin<T extends StatefulWidget> on State<T> {
     return controller;
   }
 
-  TextEditingController registerTextEditingController(TextEditingController controller) {
-    _textEditingControllers.add(controller);
-    return controller;
-  }
-
   @override
   void dispose() {
     for (final controller in _textEditingControllers.reversed) {

@@ -7,6 +7,12 @@ typedef MediaServerRetryCall<T> = Future<T> Function(Duration timeout, AbortCont
 /// Retries media-server calls only when the failure is transient transport
 /// noise. Callers pass per-attempt timeouts so cold-start surfaces can use a
 /// bounded retry budget without changing global HTTP defaults.
+///
+/// Retry vs failover (see `FailoverHttpClient` for the other half): retry is
+/// for a *slow-but-working* endpoint, failover is for a *dead* one. Surfaces
+/// wrapped in this helper should pass `allowEndpointFailover: false` on the
+/// inner GET so a slow row doesn't move the whole client off an otherwise
+/// working endpoint — every existing combined call site does.
 Future<T> retryTransientMediaServerCall<T>({
   required String operation,
   required List<Duration> attemptTimeouts,

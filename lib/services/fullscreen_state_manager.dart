@@ -96,6 +96,24 @@ class FullscreenStateManager extends ChangeNotifier with WindowListener {
     }
   }
 
+  /// Exits fullscreen when the platform window is currently fullscreen.
+  ///
+  /// Returns whether fullscreen consumed the request. Querying the native
+  /// source avoids relying on listener state that may still be catching up.
+  Future<bool> exitFullscreenIfActive() async {
+    if (!PlatformDetector.isDesktopOS()) return false;
+
+    final isActive = Platform.isMacOS
+        ? await MacOSWindowService.isFullscreen()
+        : Platform.isWindows
+        ? await NativeWindowService.isFullScreen()
+        : await windowManager.isFullScreen();
+    if (!isActive) return false;
+
+    await exitFullscreen();
+    return true;
+  }
+
   void startMonitoring() {
     if (!_shouldMonitor() || _isListening) return;
 

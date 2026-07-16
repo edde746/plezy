@@ -1,4 +1,5 @@
 import 'dart:async';
+import '../../../media/ids.dart';
 
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
@@ -59,6 +60,7 @@ class _SubtitleSearchSheetState extends State<SubtitleSearchSheet> with Controll
   bool _isSearching = false;
   String? _error;
   String? _downloadingKey;
+  int _searchGeneration = 0;
 
   bool _showLanguagePicker = false;
 
@@ -82,6 +84,7 @@ class _SubtitleSearchSheetState extends State<SubtitleSearchSheet> with Controll
 
   @override
   void dispose() {
+    ++_searchGeneration;
     _debounceTimer?.cancel();
     _languageFocusNode.dispose();
     _titleFocusNode.dispose();
@@ -91,37 +94,34 @@ class _SubtitleSearchSheetState extends State<SubtitleSearchSheet> with Controll
 
   Future<void> _search() async {
     if (!mounted) return;
+    final generation = ++_searchGeneration;
     setState(() {
       _isSearching = true;
       _error = null;
     });
 
     try {
-      // Defense-in-depth: searchSubtitles is Plex-only. The UI gates this
-      // sheet on `subtitleSearchSupported` upstream, but if a future caller
-      // reaches us with a Jellyfin server, fail soft instead of throwing.
-      final neutral = context.tryGetMediaClientForServer(widget.serverId);
+      final neutral = context.tryGetMediaClientForServer(ServerId(widget.serverId));
       final client = neutral is PlexClient ? neutral : null;
       if (client == null) {
-        if (!mounted) return;
-        setState(() {
-          _isSearching = false;
-        });
+        if (!mounted || generation != _searchGeneration) return;
+        setState(() => _isSearching = false);
         return;
       }
       final title = _titleController.text.trim();
+      final language = _languageCode;
       final results = await client.searchSubtitles(
         widget.ratingKey,
-        language: _languageCode,
+        language: language,
         title: title.isEmpty ? null : title,
       );
-      if (!mounted) return;
+      if (!mounted || generation != _searchGeneration) return;
       setState(() {
         _results = results;
         _isSearching = false;
       });
     } catch (e) {
-      if (!mounted) return;
+      if (!mounted || generation != _searchGeneration) return;
       setState(() {
         _error = e.toString();
         _isSearching = false;
@@ -139,6 +139,13 @@ class _SubtitleSearchSheetState extends State<SubtitleSearchSheet> with Controll
     OverlaySheetController.of(context).refocus();
   }
 
+  void _hideLanguagePickerView() {
+    setState(() => _showLanguagePicker = false);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _languageFocusNode.requestFocus();
+    });
+  }
+
   void _focusFirstResult() {
     if (_results != null && _results!.isNotEmpty && !_isSearching && _error == null) {
       _firstResultFocusNode.requestFocus();
@@ -148,7 +155,7 @@ class _SubtitleSearchSheetState extends State<SubtitleSearchSheet> with Controll
   Future<void> _submitSearchAndFocusFirstResult() async {
     _debounceTimer?.cancel();
     await _search();
-    if (!mounted || !InputModeTracker.isKeyboardMode(context)) return;
+    if (!mounted || !InputModeTracker.isKeyboardMode(context, listen: false)) return;
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
@@ -157,6 +164,7 @@ class _SubtitleSearchSheetState extends State<SubtitleSearchSheet> with Controll
   }
 
   void _onLanguageSelected(String code, String name) {
+    _debounceTimer?.cancel();
     setState(() {
       _languageCode = code;
       _languageName = name;
@@ -177,7 +185,7 @@ class _SubtitleSearchSheetState extends State<SubtitleSearchSheet> with Controll
     try {
       // Same Plex-only guard as in [_search]. Don't throw if a Jellyfin
       // server somehow reaches the download path.
-      final neutral = context.tryGetMediaClientForServer(widget.serverId);
+      final neutral = context.tryGetMediaClientForServer(ServerId(widget.serverId));
       final client = neutral is PlexClient ? neutral : null;
       if (client == null) {
         if (!mounted) return;
@@ -218,7 +226,7 @@ class _SubtitleSearchSheetState extends State<SubtitleSearchSheet> with Controll
       return _LanguagePickerView(
         currentCode: _languageCode,
         onSelected: _onLanguageSelected,
-        onBack: () => setState(() => _showLanguagePicker = false),
+        onBack: _hideLanguagePickerView,
       );
     }
 
@@ -251,7 +259,7 @@ class _SubtitleSearchSheetState extends State<SubtitleSearchSheet> with Controll
                       child: Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                         child: Row(
-                          mainAxisSize: MainAxisSize.min,
+                          mainAxisSize: .min,
                           children: [
                             Text(_languageName),
                             const SizedBox(width: 2),
@@ -269,8 +277,8 @@ class _SubtitleSearchSheetState extends State<SubtitleSearchSheet> with Controll
                     focusNode: _titleFocusNode,
                     decoration: pillInputDecoration(
                       context,
-                      hintText: widget.mediaTitle ?? 'Title',
-                      prefixIcon: const Icon(Symbols.search_rounded, size: 20),
+                      hintText: widget.mediaTitle ?? t.metadataEdit.title,
+                      prefixIcon: const AppIcon(Symbols.search_rounded, size: 20),
                     ),
                     onChanged: _onTitleChanged,
                     textInputAction: TextInputAction.search,
@@ -340,17 +348,17 @@ class _SubtitleSearchSheetState extends State<SubtitleSearchSheet> with Controll
             );
           }
           if (trailingChildren.isNotEmpty) {
-            trailing = Row(mainAxisSize: MainAxisSize.min, spacing: 4, children: trailingChildren);
+            trailing = Row(mainAxisSize: .min, spacing: 4, children: trailingChildren);
           }
         }
 
         return FocusableListTile(
           focusNode: index == 0 ? _firstResultFocusNode : null,
-          title: Text(result.title ?? result.displayTitle ?? 'Unknown', maxLines: 1, overflow: TextOverflow.ellipsis),
+          title: Text(result.title ?? result.displayTitle ?? t.common.unknown, maxLines: 1, overflow: .ellipsis),
           subtitle: Text(
             result.displayTitle ?? '',
             maxLines: 1,
-            overflow: TextOverflow.ellipsis,
+            overflow: .ellipsis,
             style: TextStyle(color: colorScheme.onSurfaceVariant),
           ),
           trailing: trailing,
@@ -438,7 +446,7 @@ class _LanguagePickerViewState extends State<_LanguagePickerView> with Controlle
               decoration: pillInputDecoration(
                 context,
                 hintText: t.videoControls.searchLanguages,
-                prefixIcon: const Icon(Symbols.search_rounded, size: 20),
+                prefixIcon: const AppIcon(Symbols.search_rounded, size: 20),
               ),
               onChanged: _onFilterChanged,
               onSubmitted: (_) => _focusFirstLanguageAfterSubmit(),

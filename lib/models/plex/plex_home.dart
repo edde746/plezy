@@ -1,21 +1,23 @@
 import 'package:json_annotation/json_annotation.dart';
 
+import '../../utils/json_utils.dart';
 import 'plex_home_user.dart';
 
 part 'plex_home.g.dart';
 
 @JsonSerializable()
 class PlexHome {
-  @JsonKey(defaultValue: 0)
+  @JsonKey(fromJson: flexibleIntOrZero)
   final int id;
-  @JsonKey(defaultValue: '')
+  @JsonKey(readValue: readStringField, defaultValue: '')
   final String name;
+  @JsonKey(fromJson: flexibleInt)
   final int? guestUserID;
-  @JsonKey(defaultValue: '')
+  @JsonKey(readValue: readStringField, defaultValue: '')
   final String guestUserUUID;
-  @JsonKey(defaultValue: false)
+  @JsonKey(fromJson: flexibleBool)
   final bool guestEnabled;
-  @JsonKey(defaultValue: false)
+  @JsonKey(fromJson: flexibleBool)
   final bool subscription;
   @JsonKey(defaultValue: <PlexHomeUser>[])
   final List<PlexHomeUser> users;

@@ -1,5 +1,5 @@
 import 'dart:async';
-import 'dart:convert';
+import 'dart:math' as math;
 
 import 'package:collection/collection.dart';
 import 'package:flutter/foundation.dart' show protected;
@@ -10,6 +10,7 @@ import '../../utils/app_logger.dart';
 import '../../utils/track_label_builder.dart';
 import '../font_loader.dart';
 import '../models.dart';
+import 'mpv_node_decoder.dart';
 import 'player.dart';
 import 'player_state.dart';
 import 'player_stream_controllers.dart';
@@ -31,6 +32,17 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
   @override
   PlayerState get state => _state;
 
+  @override
+  Duration get currentPosition => Duration(milliseconds: _positionMs);
+
+  @override
+  bool get audioPassthroughActive => false;
+
+  /// Gapless-audio arming — meaningful only on the audio players, which
+  /// override this. Video backends ignore it.
+  @override
+  Future<void> setNext(Media? media) async {}
+
   late final PlayerStreams _streams;
 
   @override
@@ -50,6 +62,7 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
   Duration? _timelineDuration;
   int _nextPropId = 0;
   final Map<int, String> _propIdToName = {};
+  Map<String, SubtitleTrack> _externalSubtitleMetadataByUri = const {};
 
   @protected
   bool initialized = false;
@@ -88,7 +101,17 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
     }
   }
 
+  /// Backends expose static per-backend [EventChannel]s, so two overlapping
+  /// instances (episode handoff, quick exit/reopen) share one channel name.
+  /// The engine allows a single active stream per channel: a newer instance's
+  /// listen displaces the older sink, and the older instance's late cancel
+  /// would then tear down the *newer* stream — leaving it eventless — while
+  /// the final cancel gets an engine "No active stream to cancel" error.
+  /// Only the instance recorded here may send the native cancel.
+  static final Map<String, PlayerBase> _eventChannelOwners = {};
+
   void _setupEventListener() {
+    _eventChannelOwners[eventChannel.name] = this;
     _eventSubscription = eventChannel.receiveBroadcastStream().listen(
       _handleEvent,
       onError: (error) {
@@ -96,6 +119,35 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
         errorController.add(PlayerError(error.toString()));
       },
     );
+  }
+
+  /// The (name, format) registrations every backend makes at init — the
+  /// properties [handlePropertyChange] needs for core [PlayerState].
+  /// `track-list` is registered separately because mpv uses node format on
+  /// Apple platforms; backend-specific extras (mpv: secondary-sid /
+  /// demuxer-cache-state / audio-device*; ExoPlayer: demuxer-cache-time)
+  /// are appended by the subclasses.
+  static const List<(String, String)> corePropertyObservations = [
+    ('time-pos', 'double'),
+    ('duration', 'double'),
+    ('seekable', 'flag'),
+    ('pause', 'flag'),
+    ('paused-for-cache', 'flag'),
+    ('eof-reached', 'flag'),
+    ('volume', 'double'),
+    ('speed', 'double'),
+    ('aid', 'string'),
+    ('sid', 'string'),
+  ];
+
+  /// Register [corePropertyObservations] plus `track-list` in the
+  /// backend's preferred format. Called from each subclass's initialize.
+  @protected
+  Future<void> observeCoreProperties({required String trackListFormat}) async {
+    for (final (name, format) in corePropertyObservations) {
+      await observeProperty(name, format);
+    }
+    await observeProperty('track-list', trackListFormat);
   }
 
   @protected
@@ -206,17 +258,7 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
         break;
 
       case 'track-list':
-        List? trackList;
-        if (value is List) {
-          trackList = value;
-        } else if (value is String && value.isNotEmpty) {
-          try {
-            final parsed = jsonDecode(value);
-            if (parsed is List) trackList = parsed;
-          } catch (e) {
-            appLogger.d('Player: track-list parse failed', error: e);
-          }
-        }
+        final trackList = MpvNodeDecoder.decodeList(value);
         if (trackList != null) {
           final result = parseTrackList(trackList);
           _state = _state.copyWith(tracks: result.tracks);
@@ -246,17 +288,7 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
         break;
 
       case 'audio-device-list':
-        List? deviceList;
-        if (value is List) {
-          deviceList = value;
-        } else if (value is String && value.isNotEmpty) {
-          try {
-            final parsed = jsonDecode(value);
-            if (parsed is List) deviceList = parsed;
-          } catch (e) {
-            appLogger.d('Player: device-list parse failed', error: e);
-          }
-        }
+        final deviceList = MpvNodeDecoder.decodeList(value);
         if (deviceList != null) {
           final devices = deviceList
               .whereType<Map>()
@@ -279,19 +311,13 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
 
   /// Parse demuxer-cache-state property to extract seekable ranges and buffer end.
   void _handleDemuxerCacheState(dynamic value) {
-    Map? cacheState;
-    if (value is Map) {
-      cacheState = value;
-    } else if (value is String && value.isNotEmpty) {
+    if (value is String && value.isNotEmpty) {
       // Throttle JSON parsing to avoid ANR on low-end devices
       final nowMs = _throttleSw.elapsedMilliseconds;
       if (nowMs - _lastCacheStateMs < 250) return;
       _lastCacheStateMs = nowMs;
-      try {
-        final parsed = jsonDecode(value);
-        if (parsed is Map) cacheState = parsed;
-      } catch (_) {}
     }
+    final cacheState = MpvNodeDecoder.decodeMap(value);
     if (cacheState == null) return;
 
     // Extract cache-end for the single buffer duration (replaces demuxer-cache-time)
@@ -353,6 +379,7 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
       case 'file-loaded':
         _state = _state.copyWith(completed: false);
         completedController.add(false);
+        fileLoadedController.add(null);
         break;
 
       case 'playback-restart':
@@ -411,16 +438,18 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
       } else if (type == 'sub') {
         if (selected) selectedSubtitleId = id;
         final codec = track['codec'] as String?;
+        final externalFilename = track['external-filename'] as String?;
+        final externalMetadata = externalFilename == null ? null : _externalSubtitleMetadataByUri[externalFilename];
         subtitleTracks.add(
           SubtitleTrack(
             id: id,
-            title: cleanSubtitleTitle(track['title'] as String?, codec: codec),
-            language: cleanTrackMetadataValue(track['lang'] as String?),
-            codec: codec,
-            isDefault: track['default'] as bool? ?? false,
-            isForced: track['forced'] as bool? ?? false,
+            title: externalMetadata?.title ?? cleanSubtitleTitle(track['title'] as String?, codec: codec),
+            language: externalMetadata?.language ?? cleanTrackMetadataValue(track['lang'] as String?),
+            codec: externalMetadata?.codec ?? codec,
+            isDefault: externalMetadata?.isDefault ?? (track['default'] as bool? ?? false),
+            isForced: externalMetadata?.isForced ?? (track['forced'] as bool? ?? false),
             isExternal: track['external'] as bool? ?? false,
-            uri: track['external-filename'] as String?,
+            uri: externalFilename,
           ),
         );
       }
@@ -476,6 +505,18 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
     const empty = Tracks();
     _state = _state.copyWith(tracks: empty, track: const TrackSelection());
     tracksController.add(empty);
+  }
+
+  @protected
+  void setExternalSubtitleMetadata(List<SubtitleTrack>? externalSubtitles) {
+    final metadataByUri = <String, SubtitleTrack>{};
+    for (final subtitle in externalSubtitles ?? const <SubtitleTrack>[]) {
+      final uri = subtitle.uri;
+      if (uri != null && uri.isNotEmpty) {
+        metadataByUri[uri] = subtitle;
+      }
+    }
+    _externalSubtitleMetadataByUri = metadataByUri;
   }
 
   @protected
@@ -543,7 +584,7 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
   }
 
   @override
-  Future<void> setDisplayCriteria(MediaDisplayCriteria? criteria) async {}
+  Future<void> setDisplayCriteria(MediaDisplayCriteria? criteria, {int extraDelayMs = 0}) async {}
 
   @override
   Future<bool> setVisible(bool visible, {bool restoreOnWindowVisible = false}) async {
@@ -562,11 +603,45 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
   Future<void> updateFrame() async {}
 
   @override
-  Future<bool> setVideoFrameRate(double fps, int durationMs, {int extraDelayMs = 0}) async => false;
+  Future<bool> setVideoFrameRate(
+    double fps,
+    int durationMs, {
+    int extraDelayMs = 0,
+    int videoWidth = 0,
+    int videoHeight = 0,
+  }) async => false;
 
   @override
   // ignore: no-empty-block - base no-op, overridden by platform subclasses
   Future<void> clearVideoFrameRate() async {}
+
+  @override
+  // ignore: no-empty-block - base no-op, ExoPlayer styles subtitles natively
+  Future<void> setSubtitleStyle({
+    required double fontSize,
+    required String textColor,
+    required double borderSize,
+    required String borderColor,
+    required String bgColor,
+    required int bgOpacity,
+    int subtitlePosition = 100,
+    bool bold = false,
+    bool italic = false,
+  }) async {}
+
+  @override
+  // ignore: no-empty-block - base no-op, mpv scales via panscan/aspect-override
+  Future<void> setBoxFitMode(int mode) async {}
+
+  @override
+  // ignore: no-empty-block - base no-op, mpv zooms via the video-zoom property
+  Future<void> setVideoZoom(double scale) async {}
+
+  @override
+  Future<Map<String, dynamic>> getStats() async => const {};
+
+  @override
+  Future<String> runtimePlayerType() async => playerType;
 
   @override
   Future<bool> requestAudioFocus() async {
@@ -586,12 +661,54 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
   bool get supportsSecondarySubtitles => true;
 
   @override
+  bool get attachesExternalSubtitlesAtOpen => false;
+
+  @override
+  bool get detectsFpsAfterRender => false;
+
+  @override
+  bool get needsDecoderRefreshAfterDisplaySwitch => false;
+
+  @override
+  bool get providesNativeStats => false;
+
+  @override
   // ignore: no-empty-block - base no-op, overridden by platform subclasses
   Future<void> selectSecondarySubtitleTrack(SubtitleTrack track) async {}
 
   @override
   // ignore: no-empty-block - base no-op, overridden by platform subclasses
   Future<void> setAudioPassthrough(bool enabled) async {}
+
+  /// mpv loudnorm targeting streaming-style loudness; mirrored by the
+  /// Android ExoPlayer effect parameters in AudioNormalizationEffect.kt.
+  static const _loudnormFilter = 'loudnorm=I=-14:TP=-3:LRA=4';
+
+  @override
+  Future<void> setAudioNormalization(bool enabled) async {
+    await setProperty('af', enabled ? _loudnormFilter : '');
+  }
+
+  @override
+  Future<void> setAudioDownmix({required bool enabled, required int centerBoostDb, required bool normalize}) async {
+    if (enabled) {
+      // Kodi's mechanism: center coefficient = 10^((-3 + boost)/20); the
+      // surround (-3 dB) and LFE (dropped) swresample defaults already match.
+      final c = math.pow(10, (-3 + centerBoostDb.clamp(0, 12)) / 20).toStringAsFixed(4);
+      // Swresample AVOptions are read once at audio-filter creation, so they
+      // must land before audio-channels triggers the chain (re)build.
+      await setProperty('audio-swresample-o', 'center_mix_level=$c');
+      await setProperty('audio-normalize-downmix', normalize ? 'yes' : 'no');
+      // Bounce through auto-safe so boost/normalize changes re-apply while
+      // downmix is already active (same-value option sets are no-ops in mpv).
+      await setProperty('audio-channels', 'auto-safe');
+      await setProperty('audio-channels', 'stereo');
+    } else {
+      await setProperty('audio-channels', 'auto-safe');
+      await setProperty('audio-swresample-o', '');
+      await setProperty('audio-normalize-downmix', 'no');
+    }
+  }
 
   @override
   // ignore: no-empty-block - base no-op, overridden by platform subclasses
@@ -669,13 +786,36 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
   }
 
   @override
-  Future<void> dispose() async {
+  Future<void> dispose({bool preserveDisplayMode = false}) async {
     if (_disposed) return;
     _disposed = true;
 
-    await _eventSubscription?.cancel();
+    if (identical(_eventChannelOwners[eventChannel.name], this)) {
+      _eventChannelOwners.remove(eventChannel.name);
+      try {
+        await _eventSubscription?.cancel();
+      } on PlatformException catch (e, st) {
+        appLogger.d('Player event stream already detached during dispose', error: e, stackTrace: st);
+      } on MissingPluginException catch (e, st) {
+        appLogger.d('Player event stream plugin missing during dispose', error: e, stackTrace: st);
+      }
+    } else {
+      // A newer instance owns the channel; cancelling would send a stray
+      // native 'cancel' that kills *its* stream. Drop ours without cancelling
+      // — the newer listen already replaced this subscription's routing.
+      appLogger.d('Player event stream handed off to a newer instance, skipping cancel');
+    }
+    _eventSubscription = null;
     await _logSubscription?.cancel();
-    await methodChannel.invokeMethod('dispose'); // Direct call — already guarded by _disposed check above
+    try {
+      await methodChannel.invokeMethod('dispose', {
+        'preserveDisplayMode': preserveDisplayMode,
+      }); // Direct call — already guarded by _disposed check above
+    } on PlatformException catch (e, st) {
+      appLogger.w('Player native dispose failed during teardown', error: e, stackTrace: st);
+    } on MissingPluginException catch (e, st) {
+      appLogger.w('Player native dispose plugin missing during teardown', error: e, stackTrace: st);
+    }
     await closeStreamControllers();
   }
 }

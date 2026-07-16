@@ -37,13 +37,12 @@ class TraktConstants {
   }
 }
 
-/// Build a `SharedPreferences` key scoped to the given Plex profile UUID.
-/// Mirrors the `_userPrefix` pattern in [StorageService] so each profile gets
-/// its own Trakt session and sync queue.
-String traktUserKey(String userUuid, String baseKey) => userUuid.isEmpty ? baseKey : 'user_${userUuid}_$baseKey';
-
 /// Scrobble lifecycle state sent to Trakt's `/scrobble/{name}` endpoints.
 enum TraktScrobbleState { start, pause, stop }
+
+/// Catalog list flavor for Trakt's discover/watchlist endpoints, named after
+/// the URL path segment (`/movies/trending`, `/sync/watchlist/shows/...`).
+enum TraktCatalogType { movies, shows }
 
 /// Direction of a watched-status sync push.
 enum TraktSyncOp {

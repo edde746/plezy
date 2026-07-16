@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/media/media_backend.dart';
-import 'package:plezy/media/media_item.dart';
+
 import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/screens/libraries/folder_tree_item.dart';
+import '../test_helpers/media_items.dart';
 
 void main() {
   testWidgets('folder rows use the item title for seasons', (tester) async {
-    final item = MediaItem(
+    final item = testMediaItem(
       id: 'season-1',
       backend: MediaBackend.jellyfin,
       kind: MediaKind.season,
@@ -28,7 +29,7 @@ void main() {
   });
 
   testWidgets('folder rows show play and shuffle buttons when callbacks are supplied', (tester) async {
-    final item = MediaItem(
+    final item = testMediaItem(
       id: 'folder-1',
       backend: MediaBackend.jellyfin,
       kind: MediaKind.unknown,

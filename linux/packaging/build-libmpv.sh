@@ -118,8 +118,8 @@ meson setup build \
   -Dlibmpv=true \
   -Dcplayer=false \
   -Dbuild-date=false \
-  -Dlua=disabled \
-  -Djavascript=disabled \
+  -Dlua=enabled \
+  -Djavascript=enabled \
   -Dcplugins=disabled \
   -Dmanpage-build=disabled \
   -Djack=disabled \

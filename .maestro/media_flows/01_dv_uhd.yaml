@@ -1,0 +1,26 @@
+appId: com.edde746.plezy
+name: Codec sample - UHD Dolby Vision TrueHD and PGS
+tags:
+  - e2e
+  - media
+  - dolby-vision
+---
+- runFlow:
+    file: ../subflows/open_codec_sample.yaml
+    env:
+      SAMPLE_TITLE: "Codec DV UHD TrueHD PGS"
+      SAMPLE_OVERVIEW: "Dolby Vision profile 8 with an HDR fallback, TrueHD Atmos, AC-3, and PGS subtitles."
+- runFlow:
+    file: ../subflows/switch_codec_tracks.yaml
+    env:
+      AUDIO_TRACK: "(?is)^English.*(?:AC3|TrueHD|Surround|5\\.1|7\\.1).*"
+      SUBTITLE_TRACK: "(?is)^Spanish.*PGS.*"
+- repeat:
+    times: 2
+    while:
+      notVisible: "Overview"
+    commands:
+      - back
+- extendedWaitUntil:
+    visible: "Overview"
+    timeout: 10000

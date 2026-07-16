@@ -7,7 +7,7 @@
 /// across mappers, the client, and the playback bundle.
 library;
 
-const int _ticksPerMs = 10000;
+const int _ticksPerMs = 10_000;
 
 /// Jellyfin ticks → milliseconds. Returns `null` for non-numeric input.
 int? jellyfinTicksToMs(Object? ticks) {

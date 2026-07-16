@@ -11,20 +11,18 @@ import 'package:plezy/exceptions/media_server_exceptions.dart';
 import 'package:plezy/services/jellyfin_api_cache.dart';
 import 'package:plezy/services/jellyfin_client.dart';
 
-JellyfinConnection _conn({String baseUrl = 'https://jf.example.com', List<String>? baseUrls}) => JellyfinConnection(
-  id: 'srv-1/user-1',
+import '../test_helpers/backend_client_fixtures.dart';
+
+JellyfinConnection _conn({String baseUrl = 'https://jf.example.com', List<String>? baseUrls}) => testJellyfinConnection(
   baseUrl: baseUrl,
   baseUrls: baseUrls,
-  serverName: 'Home',
-  serverMachineId: 'srv-1',
-  userId: 'user-1',
   userName: 'edde',
   accessToken: 'tok-abc',
   deviceId: 'dev-xyz',
   createdAt: DateTime.fromMillisecondsSinceEpoch(0),
 );
 
-JellyfinClient _withMock(MockClient mock) => JellyfinClient.forTesting(connection: _conn(), httpClient: mock);
+JellyfinClient _withMock(MockClient mock) => testJellyfinClient(connection: _conn(), httpClient: mock);
 
 /// Failure-path coverage for the Jellyfin HTTP layer.
 ///
@@ -163,6 +161,133 @@ void main() {
       expect(requests.map((uri) => uri.host), ['primary.example.com', 'fallback.example.com']);
       expect(client.connection.baseUrl, 'https://fallback.example.com');
       expect(client.connection.baseUrls, ['https://fallback.example.com', 'https://primary.example.com']);
+    });
+
+    test('hub surfaces retry transient failures without hopping endpoints', () async {
+      final attemptsByPath = <String, int>{};
+      final client = JellyfinClient.forTesting(
+        connection: _conn(
+          baseUrl: 'https://primary.example.com',
+          baseUrls: const ['https://primary.example.com', 'https://fallback.example.com'],
+        ),
+        httpClient: MockClient((req) async {
+          expect(req.url.host, 'primary.example.com', reason: 'retry-wrapped hub fetches must not fail over');
+          final attempt = attemptsByPath.update(req.url.path, (n) => n + 1, ifAbsent: () => 1);
+          if (attempt == 1) throw TimeoutException('slow row');
+          return http.Response(jsonEncode({'Items': []}), 200, headers: {'content-type': 'application/json'});
+        }),
+      );
+      addTearDown(client.close);
+
+      final items = await client.fetchContinueWatching();
+
+      expect(items, isEmpty);
+      expect(attemptsByPath.values, everyElement(2));
+      expect(client.connection.baseUrl, 'https://primary.example.com');
+    });
+
+    test('exhausting every endpoint fires onAllEndpointsExhausted', () async {
+      var exhausted = 0;
+      final client = JellyfinClient.forTesting(
+        connection: _conn(
+          baseUrl: 'https://primary.example.com',
+          baseUrls: const ['https://primary.example.com', 'https://fallback.example.com'],
+        ),
+        httpClient: MockClient((req) async => throw TimeoutException('endpoint down')),
+        onAllEndpointsExhausted: () => exhausted++,
+      );
+      addTearDown(client.close);
+
+      await client.getMachineIdentifier();
+
+      expect(exhausted, 1);
+    });
+
+    test('resets live base URL after fallback endpoint is exhausted', () async {
+      final requests = <Uri>[];
+      final client = JellyfinClient.forTesting(
+        connection: _conn(
+          baseUrl: 'https://primary.example.com',
+          baseUrls: const ['https://primary.example.com', 'https://fallback.example.com'],
+        ),
+        httpClient: MockClient((req) async {
+          requests.add(req.url);
+          if (requests.length <= 2) {
+            throw TimeoutException('endpoint down');
+          }
+          return http.Response(jsonEncode({'Id': 'srv-1'}), 200, headers: {'content-type': 'application/json'});
+        }),
+      );
+      addTearDown(client.close);
+
+      await client.getMachineIdentifier();
+
+      expect(requests.map((uri) => uri.host), ['primary.example.com', 'fallback.example.com']);
+      expect(client.connection.baseUrl, 'https://primary.example.com');
+
+      expect(await client.getMachineIdentifier(), 'srv-1');
+      expect(requests.map((uri) => uri.host), ['primary.example.com', 'fallback.example.com', 'primary.example.com']);
+    });
+  });
+
+  group('cancellation vs treat-as-empty', () {
+    // The hub/next-up fetch helpers swallow per-endpoint failures into empty
+    // lists so one broken endpoint doesn't sink a whole row. A *cancelled*
+    // request is different: it means our own client was torn down mid-fetch
+    // and says nothing about the server's content, so it must propagate —
+    // otherwise a disrupted server counts as "succeeded with partial data"
+    // and aborted sign-in fetches flash an empty home screen.
+    MediaServerHttpException cancelled() =>
+        MediaServerHttpException(type: MediaServerHttpErrorType.cancelled, message: 'HTTP client is closing');
+
+    test('fetchContinueWatching propagates a cancelled NextUp sub-fetch', () async {
+      final client = _withMock(
+        MockClient((req) async {
+          if (req.url.path == '/Shows/NextUp') throw cancelled();
+          return http.Response(jsonEncode({'Items': []}), 200, headers: {'content-type': 'application/json'});
+        }),
+      );
+      addTearDown(client.close);
+
+      await expectLater(
+        client.fetchContinueWatching(),
+        throwsA(isA<MediaServerHttpException>().having((e) => e.isCancellation, 'isCancellation', isTrue)),
+      );
+    });
+
+    test('fetchContinueWatching still treats a NextUp server error as empty', () async {
+      final client = _withMock(
+        MockClient((req) async {
+          if (req.url.path == '/Shows/NextUp') return http.Response('Internal error', 500);
+          return http.Response(
+            jsonEncode({
+              'Items': [
+                {'Id': 'ep-1', 'Type': 'Episode', 'Name': 'Resume Me'},
+              ],
+            }),
+            200,
+            headers: {'content-type': 'application/json'},
+          );
+        }),
+      );
+      addTearDown(client.close);
+
+      final items = await client.fetchContinueWatching();
+
+      expect(items.map((i) => i.id), ['ep-1']);
+    });
+
+    test('fetchMoreHubItems propagates a cancellation and swallows server errors', () async {
+      final cancelledClient = _withMock(MockClient((_) async => throw cancelled()));
+      addTearDown(cancelledClient.close);
+      await expectLater(
+        cancelledClient.fetchMoreHubItems('home.nextup'),
+        throwsA(isA<MediaServerHttpException>().having((e) => e.isCancellation, 'isCancellation', isTrue)),
+      );
+
+      final failingClient = _withMock(MockClient((_) async => http.Response('Internal error', 500)));
+      addTearDown(failingClient.close);
+      expect(await failingClient.fetchMoreHubItems('home.nextup'), isEmpty);
     });
   });
 }

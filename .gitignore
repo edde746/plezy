@@ -70,4 +70,6 @@ duplication-report/
 **/fastlane/report.xml
 maestro/**/*.png
 
-server/deploy.shbuild-output/
+server/deploy.sh
+server/Caddyfile
+build-output/

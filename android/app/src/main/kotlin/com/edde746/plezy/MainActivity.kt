@@ -7,23 +7,23 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.content.res.Configuration
-import android.graphics.SurfaceTexture
-import android.net.Uri
+import android.media.AudioManager
 import android.os.Build
 import android.os.Bundle
-import android.os.Handler
-import android.os.Looper
+import android.os.Process
+import android.provider.Settings
 import android.util.Log
 import android.util.Rational
 import android.view.InputDevice
 import android.view.KeyEvent
-import android.view.TextureView
 import android.view.ViewGroup
 import android.view.WindowInsets
+import android.view.WindowManager
 import android.view.inputmethod.InputMethodManager
 import android.widget.FrameLayout
-import androidx.core.content.FileProvider
+import androidx.annotation.RequiresApi
 import com.edde746.plezy.exoplayer.ExoPlayerPlugin
+import com.edde746.plezy.mpv.MpvAudioPlayerPlugin
 import com.edde746.plezy.mpv.MpvPlayerPlugin
 import com.edde746.plezy.shared.DeviceQuirks
 import com.edde746.plezy.shared.ThemeHelper
@@ -35,25 +35,34 @@ import io.flutter.embedding.android.TransparencyMode
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.embedding.engine.FlutterShellArgs
 import io.flutter.plugin.common.MethodChannel
-import java.io.File
+import kotlin.math.roundToInt
 
 class MainActivity : FlutterActivity() {
 
   companion object {
     private const val TAG = "MainActivity"
     private const val TEXT_INPUT_DIAGNOSTICS_ENABLED = false
+
+    // Mirrors DevicePerformance._lowMemThresholdBytes (2252 MiB): nominal
+    // "2GB" devices report totalMem slightly above 2 GiB after carve-outs.
+    private const val LOW_MEM_THRESHOLD_BYTES = 2252L shl 20
+
     var usingSkia = false
   }
 
   private val PIP_CHANNEL = "com.plezy/pip"
-  private val EXTERNAL_PLAYER_CHANNEL = "com.plezy/external_player"
   private val THEME_CHANNEL = "com.plezy/theme"
   private val DEVICE_CHANNEL = "com.plezy/device"
+  private val DEVICE_ADJUSTMENT_CHANNEL = "com.plezy/device_adjustment"
   private val TEXT_INPUT_CHANNEL = "com.plezy/text_input"
   private val APP_EXIT_CHANNEL = "com.plezy/app_exit"
-  private val APP_FOREGROUND_CHANNEL = "com.plezy/app_foreground"
   private var watchNextPlugin: WatchNextPlugin? = null
   private var nativeTextInputFocused = false
+  private var originalWindowBrightness: Float? = null
+  private var flutterTextureView: FlutterTextureView? = null
+  private var flutterSurfaceReconnectPending = false
+  private var activityStarted = false
+  private val externalPlayerChannel = ExternalPlayerChannel(this)
 
   private inline fun logTextInputDiag(message: () -> String) {
     if (TEXT_INPUT_DIAGNOSTICS_ENABLED) {
@@ -162,6 +171,42 @@ class MainActivity : FlutterActivity() {
     )
   }
 
+  /** Hardware capability signals used by Dart to pick the visual-effects tier. */
+  private fun getPerformanceSignals(): Map<String, Any> {
+    val activityManager = getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
+    val memoryInfo = ActivityManager.MemoryInfo()
+    activityManager.getMemoryInfo(memoryInfo)
+    return mapOf(
+      // Actual process bitness: low-end TV boxes often run 32-bit userspace.
+      "is64Bit" to Process.is64Bit(),
+      "isLowRamDevice" to activityManager.isLowRamDevice,
+      "totalMemBytes" to memoryInfo.totalMem
+    )
+  }
+
+  /**
+   * Same triple DevicePerformance uses for the reduced tier on the Dart
+   * side — keep the two in sync. Evaluated here too because engine shell
+   * args must be decided before Dart runs.
+   */
+  private fun isLowRamClass(): Boolean {
+    val activityManager = getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
+    val memoryInfo = ActivityManager.MemoryInfo()
+    activityManager.getMemoryInfo(memoryInfo)
+    return !Process.is64Bit() || activityManager.isLowRamDevice || memoryInfo.totalMem <= LOW_MEM_THRESHOLD_BYTES
+  }
+
+  /** User-assigned device name (Settings > About > Device name), or null. */
+  private fun getDeviceName(): String? {
+    // The name the user gave the device; also used by Cast/Nearby.
+    val name = Settings.Global.getString(contentResolver, Settings.Global.DEVICE_NAME)
+    if (!name.isNullOrBlank()) return name
+    // Fallback: the Bluetooth name usually mirrors the device name. Reading the
+    // settings string needs no BLUETOOTH permission (unlike BluetoothAdapter).
+    val bt = Settings.Secure.getString(contentResolver, "bluetooth_name")
+    return if (!bt.isNullOrBlank()) bt else null
+  }
+
   override fun onCreate(savedInstanceState: Bundle?) {
     // Apply persisted theme color to the window background before anything
     // else renders.  This prevents a white flash between the native splash
@@ -250,6 +295,20 @@ class MainActivity : FlutterActivity() {
     return handled
   }
 
+  override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+    if (!externalPlayerChannel.onActivityResult(requestCode, resultCode, data)) {
+      super.onActivityResult(requestCode, resultCode, data)
+    }
+  }
+
+  override fun onDestroy() {
+    externalPlayerChannel.dispose()
+    activityStarted = false
+    flutterSurfaceReconnectPending = false
+    flutterTextureView = null
+    super.onDestroy()
+  }
+
   private fun handleWatchNextIntent(intent: Intent?) {
     val contentId = WatchNextPlugin.handleIntent(intent)
     if (contentId != null) {
@@ -262,12 +321,19 @@ class MainActivity : FlutterActivity() {
     val args = super.getFlutterShellArgs()
     usingSkia = shouldDisableImpeller()
     if (usingSkia) args.add("--enable-impeller=false")
+    if (isLowRamClass()) {
+      // Bound the memory pools Dart can't reach: Skia's GPU resource cache
+      // is sized from the surface area (hundreds of MB on a 4K-composited
+      // TV) and the Dart old gen defaults to a large fraction of physical
+      // RAM. Both drive LMK kills on 2GB boxes (#1349).
+      if (usingSkia) args.add("--resource-cache-max-bytes-threshold=50331648")
+      args.add("--old-gen-heap-size=256")
+      Log.i(TAG, "Low-RAM device: capped engine caches (skia=$usingSkia, oldGen=256MB)")
+    }
     return args
   }
 
   private fun shouldDisableImpeller(): Boolean {
-    // Android TV devices — weaker GPUs, less Impeller testing
-    if (isAndroidTvDevice()) return true
     if (DeviceQuirks.isEWaste) return true
     // NVIDIA Tegra (Shield TV)
     if (Build.MANUFACTURER.equals("NVIDIA", ignoreCase = true)) return true
@@ -277,7 +343,19 @@ class MainActivity : FlutterActivity() {
     ) {
       return true
     }
+    if (isAndroidTvDevice()) return !tvSupportsImpeller()
     return false
+  }
+
+  // Impeller froze API 30 Fire TV hardware (#749) and Flutter's Vulkan → GLES
+  // fallback still miscompiles gradients/SVGs, so only TV devices on Android 12+
+  // with a Vulkan 1.1 driver leave the Skia path.
+  private fun tvSupportsImpeller(): Boolean {
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) return false
+    // Fire OS reports modern API levels on GPUs whose drivers can't back it up
+    if (Build.MANUFACTURER.equals("Amazon", ignoreCase = true)) return false
+    val vulkan11 = 0x401000 // FEATURE_VULKAN_HARDWARE_VERSION encodes 1.1.0 as 0x401000
+    return packageManager.hasSystemFeature(PackageManager.FEATURE_VULKAN_HARDWARE_VERSION, vulkan11)
   }
 
   override fun getRenderMode(): RenderMode {
@@ -293,41 +371,49 @@ class MainActivity : FlutterActivity() {
   }
 
   override fun onFlutterTextureViewCreated(flutterTextureView: FlutterTextureView) {
+    this.flutterTextureView = flutterTextureView
     val original = flutterTextureView.surfaceTextureListener ?: return
-    val handler = Handler(Looper.getMainLooper())
-    var pendingResize: Runnable? = null
-    var lastWidth = 0
-    var lastHeight = 0
+    flutterTextureView.surfaceTextureListener =
+      DeferredSurfaceTextureListener(
+        delegate = original,
+        onSurfaceAvailable = ::tryReconnectFlutterSurface
+      ) { surface ->
+        flutterTextureView.isAvailable && flutterTextureView.surfaceTexture === surface
+      }
+  }
 
-    flutterTextureView.surfaceTextureListener = object : TextureView.SurfaceTextureListener {
-      override fun onSurfaceTextureAvailable(surface: SurfaceTexture, width: Int, height: Int) {
-        original.onSurfaceTextureAvailable(surface, width, height)
+  override fun onStop() {
+    activityStarted = false
+    if (isAndroidTvDevice()) flutterSurfaceReconnectPending = true
+    super.onStop()
+  }
+
+  override fun onStart() {
+    super.onStart()
+    activityStarted = true
+    tryReconnectFlutterSurface()
+  }
+
+  private fun tryReconnectFlutterSurface() {
+    if (!activityStarted || !flutterSurfaceReconnectPending) return
+    val textureView = flutterTextureView ?: return
+    textureView.post {
+      if (!activityStarted ||
+        !flutterSurfaceReconnectPending ||
+        textureView !== flutterTextureView ||
+        !textureView.isAttachedToWindow ||
+        !textureView.isAvailable
+      ) {
+        return@post
       }
 
-      override fun onSurfaceTextureSizeChanged(surface: SurfaceTexture, width: Int, height: Int) {
-        if (width == lastWidth && height == lastHeight) return
-        lastWidth = width
-        lastHeight = height
-        pendingResize?.let { handler.removeCallbacks(it) }
-        pendingResize = Runnable {
-          if (flutterTextureView.isAvailable) {
-            original.onSurfaceTextureSizeChanged(surface, width, height)
-          }
-        }
-        handler.postDelayed(pendingResize!!, 100)
-      }
-
-      override fun onSurfaceTextureUpdated(surface: SurfaceTexture) {
-        original.onSurfaceTextureUpdated(surface)
-      }
-
-      override fun onSurfaceTextureDestroyed(surface: SurfaceTexture): Boolean {
-        pendingResize?.let { handler.removeCallbacks(it) }
-        pendingResize = null
-        lastWidth = 0
-        lastHeight = 0
-        return original.onSurfaceTextureDestroyed(surface)
-      }
+      // Some TV firmware retains an available TextureView while invalidating
+      // its compositor surface during standby. Force Flutter's supported
+      // surface-swap path so rendering resumes without restarting the engine.
+      Log.i(TAG, "Reconnecting Flutter texture surface after Android TV standby")
+      textureView.pause()
+      textureView.resume()
+      flutterSurfaceReconnectPending = false
     }
   }
 
@@ -335,12 +421,19 @@ class MainActivity : FlutterActivity() {
     super.configureFlutterEngine(flutterEngine)
     flutterEngine.plugins.add(MpvPlayerPlugin())
     flutterEngine.plugins.add(ExoPlayerPlugin())
+    flutterEngine.plugins.add(MpvAudioPlayerPlugin())
 
     MethodChannel(flutterEngine.dartExecutor.binaryMessenger, DEVICE_CHANNEL).setMethodCallHandler { call, result ->
       when (call.method) {
         "getTvDetection" -> result.success(getAndroidTvDetection())
+        "getDeviceName" -> result.success(getDeviceName())
+        "getPerformanceSignals" -> result.success(getPerformanceSignals())
         else -> result.notImplemented()
       }
+    }
+
+    MethodChannel(flutterEngine.dartExecutor.binaryMessenger, DEVICE_ADJUSTMENT_CHANNEL).setMethodCallHandler { call, result ->
+      handleDeviceAdjustmentCall(call.method, call.arguments, result)
     }
 
     MethodChannel(flutterEngine.dartExecutor.binaryMessenger, TEXT_INPUT_CHANNEL).setMethodCallHandler { call, result ->
@@ -369,62 +462,7 @@ class MainActivity : FlutterActivity() {
       }
     }
 
-    MethodChannel(flutterEngine.dartExecutor.binaryMessenger, APP_FOREGROUND_CHANNEL).setMethodCallHandler { call, result ->
-      when (call.method) {
-        "requestForeground" -> result.success(requestForeground())
-        else -> result.notImplemented()
-      }
-    }
-
-    // External player: open local video files with proper content:// URIs
-    MethodChannel(flutterEngine.dartExecutor.binaryMessenger, EXTERNAL_PLAYER_CHANNEL).setMethodCallHandler { call, result ->
-      when (call.method) {
-        "openVideo" -> {
-          val filePath = call.argument<String>("filePath")
-          val packageName = call.argument<String>("package")
-
-          if (filePath == null) {
-            result.error("INVALID_ARGUMENT", "filePath is required", null)
-            return@setMethodCallHandler
-          }
-
-          try {
-            val uri: Uri
-            val grantRead: Boolean
-
-            if (filePath.startsWith("http://") || filePath.startsWith("https://")) {
-              uri = Uri.parse(filePath)
-              grantRead = false
-            } else if (filePath.startsWith("content://")) {
-              uri = Uri.parse(filePath)
-              grantRead = true
-            } else {
-              val path = if (filePath.startsWith("file://")) filePath.removePrefix("file://") else filePath
-              uri = FileProvider.getUriForFile(this, "com.edde746.plezy.fileprovider", File(path))
-              grantRead = true
-            }
-
-            val intent = Intent(Intent.ACTION_VIEW).apply {
-              setDataAndType(uri, "video/*")
-              addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-              if (grantRead) {
-                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-              }
-              if (packageName != null) {
-                setPackage(packageName)
-              }
-            }
-            startActivity(intent)
-            result.success(true)
-          } catch (e: android.content.ActivityNotFoundException) {
-            result.error("APP_NOT_FOUND", "No app found for package: $packageName", null)
-          } catch (e: Exception) {
-            result.error("LAUNCH_FAILED", e.message ?: e.javaClass.simpleName, null)
-          }
-        }
-        else -> result.notImplemented()
-      }
-    }
+    externalPlayerChannel.attach(flutterEngine.dartExecutor.binaryMessenger)
 
     // Splash screen theme: persist user's chosen theme for next launch (API 31+)
     MethodChannel(flutterEngine.dartExecutor.binaryMessenger, THEME_CHANNEL).setMethodCallHandler { call, result ->
@@ -521,29 +559,90 @@ class MainActivity : FlutterActivity() {
     }
   }
 
-  private fun requestForeground(): Boolean = try {
-    val activityManager = getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
-    activityManager.moveTaskToFront(taskId, 0)
-    true
-  } catch (e: Exception) {
-    Log.w(TAG, "Failed to move task to foreground", e)
+  private fun handleDeviceAdjustmentCall(method: String, arguments: Any?, result: MethodChannel.Result) {
     try {
-      val launchIntent = packageManager.getLaunchIntentForPackage(packageName)?.apply {
-        addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT)
-        addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP)
-        addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
-        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+      when (method) {
+        "getBrightness" -> result.success(getScreenBrightnessFraction())
+        "setBrightness" -> {
+          setScreenBrightnessFraction(argumentAsDouble(arguments))
+          result.success(null)
+        }
+        "restoreBrightness" -> {
+          restoreScreenBrightness()
+          result.success(null)
+        }
+        "getMediaVolume" -> result.success(getMediaVolumeFraction())
+        "setMediaVolume" -> {
+          setMediaVolumeFraction(argumentAsDouble(arguments))
+          result.success(null)
+        }
+        else -> result.notImplemented()
       }
-      if (launchIntent != null) {
-        startActivity(launchIntent)
-        true
-      } else {
-        false
-      }
-    } catch (launchError: Exception) {
-      Log.w(TAG, "Failed to start foreground activity", launchError)
-      false
+    } catch (e: IllegalArgumentException) {
+      result.error("INVALID_ARGUMENT", e.message ?: e.javaClass.simpleName, null)
+    } catch (e: Exception) {
+      result.error("DEVICE_ADJUSTMENT_FAILED", e.message ?: e.javaClass.simpleName, null)
     }
+  }
+
+  private fun argumentAsDouble(arguments: Any?): Double {
+    val value = (arguments as? Number)?.toDouble()
+      ?: throw IllegalArgumentException("Expected a numeric value")
+    if (value.isNaN() || value.isInfinite()) {
+      throw IllegalArgumentException("Expected a finite numeric value")
+    }
+    return value.coerceIn(0.0, 1.0)
+  }
+
+  private fun getScreenBrightnessFraction(): Double {
+    val windowBrightness = window.attributes.screenBrightness
+    if (windowBrightness >= 0f) return windowBrightness.coerceIn(0f, 1f).toDouble()
+
+    return try {
+      Settings.System.getInt(contentResolver, Settings.System.SCREEN_BRIGHTNESS).coerceIn(0, 255) / 255.0
+    } catch (e: Settings.SettingNotFoundException) {
+      0.5
+    }
+  }
+
+  private fun setScreenBrightnessFraction(value: Double) {
+    if (originalWindowBrightness == null) originalWindowBrightness = window.attributes.screenBrightness
+    val attributes = window.attributes
+    attributes.screenBrightness = value.coerceIn(0.0, 1.0).toFloat()
+    window.attributes = attributes
+  }
+
+  private fun restoreScreenBrightness() {
+    val attributes = window.attributes
+    attributes.screenBrightness = originalWindowBrightness ?: WindowManager.LayoutParams.BRIGHTNESS_OVERRIDE_NONE
+    window.attributes = attributes
+    originalWindowBrightness = null
+  }
+
+  private fun getMediaVolumeFraction(): Double {
+    val audioManager = getSystemService(Context.AUDIO_SERVICE) as AudioManager
+    val maxVolume = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC)
+    val minVolume = streamMinVolume(audioManager)
+    if (maxVolume <= minVolume) return 0.0
+
+    val volume = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC).coerceIn(minVolume, maxVolume)
+    return (volume - minVolume).toDouble() / (maxVolume - minVolume).toDouble()
+  }
+
+  private fun setMediaVolumeFraction(value: Double) {
+    val audioManager = getSystemService(Context.AUDIO_SERVICE) as AudioManager
+    val maxVolume = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC)
+    val minVolume = streamMinVolume(audioManager)
+    val target = (minVolume + value.coerceIn(0.0, 1.0) * (maxVolume - minVolume))
+      .roundToInt()
+      .coerceIn(minVolume, maxVolume)
+    audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, target, 0)
+  }
+
+  private fun streamMinVolume(audioManager: AudioManager): Int = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+    audioManager.getStreamMinVolume(AudioManager.STREAM_MUSIC)
+  } else {
+    0
   }
 
   override fun onPictureInPictureModeChanged(isInPictureInPictureMode: Boolean, newConfig: Configuration) {
@@ -578,6 +677,7 @@ class MainActivity : FlutterActivity() {
     }
   }
 
+  @RequiresApi(Build.VERSION_CODES.O)
   private fun isPipPermissionGranted(): Boolean {
     val appOpsManager = getSystemService(Context.APP_OPS_SERVICE) as AppOpsManager
     return appOpsManager.checkOpNoThrow(
@@ -587,6 +687,7 @@ class MainActivity : FlutterActivity() {
     ) == AppOpsManager.MODE_ALLOWED
   }
 
+  @RequiresApi(Build.VERSION_CODES.O)
   private fun buildPipParams(width: Int, height: Int, autoEnterEnabled: Boolean? = null): PictureInPictureParams {
     val (w, h) = if (width <= 0 || height <= 0) {
       Pair(16, 9)

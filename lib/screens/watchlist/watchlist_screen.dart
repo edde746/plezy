@@ -8,6 +8,7 @@ import 'package:provider/provider.dart';
 import '../../connection/connection_registry.dart';
 import '../../focus/focusable_wrapper.dart';
 import '../../i18n/strings.g.dart';
+import '../../media/ids.dart';
 import '../../media/media_item.dart';
 import '../../mixins/refreshable.dart';
 import '../../providers/multi_server_provider.dart';
@@ -17,6 +18,7 @@ import '../../utils/app_logger.dart';
 import '../../utils/grid_size_calculator.dart';
 import '../../utils/media_navigation_helper.dart';
 import '../../utils/watchlist_notifier.dart';
+import '../../widgets/app_icon.dart';
 import '../../widgets/desktop_app_bar.dart';
 import '../../widgets/media_grid_delegate.dart';
 import '../../widgets/optimized_media_image.dart';
@@ -126,7 +128,7 @@ class WatchlistScreenState extends State<WatchlistScreen> with FocusableTab, Ref
     final manager = context.read<MultiServerProvider>().serverManager;
     MediaItem? match;
     for (final serverId in manager.onlineServerIds) {
-      final client = manager.getPlexClient(serverId);
+      final client = manager.getPlexClient(ServerId(serverId));
       if (client == null) continue;
       match = await client.findByGuid(guid);
       if (match != null) break;
@@ -154,7 +156,7 @@ class WatchlistScreenState extends State<WatchlistScreen> with FocusableTab, Ref
           mainAxisSize: MainAxisSize.min,
           children: [
             ListTile(
-              leading: const Icon(Symbols.bookmark_remove_rounded),
+              leading: const AppIcon(Symbols.bookmark_remove_rounded, fill: 1),
               title: Text(t.watchlist.remove),
               onTap: () => Navigator.pop(sheetContext, true),
             ),
@@ -224,7 +226,7 @@ class WatchlistScreenState extends State<WatchlistScreen> with FocusableTab, Ref
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Symbols.error_outline_rounded, size: 64, color: Colors.grey),
+            const AppIcon(Symbols.error_outline_rounded, fill: 1, size: 64, color: Colors.grey),
             const SizedBox(height: 16),
             Text(t.watchlist.loadFailed),
             const SizedBox(height: 16),

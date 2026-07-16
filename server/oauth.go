@@ -25,14 +25,14 @@ import (
 )
 
 const (
-	oauthSessionTTL        = 10 * time.Minute
-	oauthResultWait        = 50 * time.Second
-	oauthMaxSessions       = 5000
-	oauthStartBurst        = 3
+	oauthSessionTTL         = 10 * time.Minute
+	oauthResultWait         = 50 * time.Second
+	oauthMaxSessions        = 5000
+	oauthStartBurst         = 3
 	oauthStartRateSustained = 1
-	oauthSessionIDBytes    = 18 // 144 bits → 24 base64url chars
-	oauthPKCEVerifierLen   = 64
-	oauthUpstreamTimeout   = 15 * time.Second
+	oauthSessionIDBytes     = 18 // 144 bits → 24 base64url chars
+	oauthPKCEVerifierLen    = 64
+	oauthUpstreamTimeout    = 15 * time.Second
 )
 
 // oauthServiceConfig describes a single upstream OAuth provider. Populated from
@@ -422,11 +422,7 @@ func (p *oauthProxy) cleanup() {
 	p.mu.Unlock()
 
 	p.ipMu.Lock()
-	for ip, rl := range p.ipRate {
-		if rl.stale(now) {
-			delete(p.ipRate, ip)
-		}
-	}
+	cleanupRateLimiters(p.ipRate, now, nil)
 	p.ipMu.Unlock()
 }
 

@@ -32,24 +32,35 @@ import 'dpad_navigator.dart';
 class BackKeyCoordinator {
   static bool _handledThisFrame = false;
   static bool _clearScheduled = false;
+  static int _clearGeneration = 0;
 
   static void markHandled() {
     _handledThisFrame = true;
     if (_clearScheduled) return;
+
     _clearScheduled = true;
-    // Clear on next frame to avoid blocking unrelated future back presses.
+    final clearGeneration = _clearGeneration;
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (clearGeneration != _clearGeneration) return;
       _handledThisFrame = false;
       _clearScheduled = false;
     });
+    // addPostFrameCallback does not request a frame. Ensure the one-shot
+    // marker cannot leak when handling Back does not otherwise schedule one.
+    WidgetsBinding.instance.scheduleFrame();
+  }
+
+  static void clear() {
+    _handledThisFrame = false;
+    _clearScheduled = false;
+    // Invalidate a pending callback so it cannot clear a newer marker.
+    _clearGeneration++;
   }
 
   static bool consumeIfHandled() {
-    if (_handledThisFrame) {
-      _handledThisFrame = false;
-      return true;
-    }
-    return false;
+    if (!_handledThisFrame) return false;
+    clear();
+    return true;
   }
 }
 
@@ -62,14 +73,15 @@ KeyEventResult handleBackKeyAction(KeyEvent event, VoidCallback onBack) {
     return KeyEventResult.handled;
   }
 
-  // AppleTV physical-keyboard back (Siri Remote Menu via engine-synthesized
-  // escape): run onBack on KeyDown only; consume KeyUp silently. The
-  // suppressor-based "arm-on-KeyDown, clear-on-KeyUp" pattern leaks here
+  // AppleTV back (Siri Remote Menu via engine-synthesized escape): run onBack
+  // on KeyDown only; consume KeyUp silently. Some engine paths report Menu as
+  // a non-keyboard device, but the same down-only handling is still required.
+  // The suppressor-based "arm-on-KeyDown, clear-on-KeyUp" pattern leaks here
   // because onBack typically calls Navigator.pop, swapping the focus tree
   // before the matching KeyUp is dispatched — the orphaned KeyUp then never
   // reaches a consumeIfSuppressed call, pinning the suppressor armed and
   // silently swallowing the next press's KeyDown.
-  if (PlatformDetector.isAppleTV() && event.isPhysicalKeyboardEvent) {
+  if (PlatformDetector.isAppleTV()) {
     if (event is KeyDownEvent) {
       BackKeyCoordinator.markHandled();
       onBack();
@@ -79,8 +91,6 @@ KeyEventResult handleBackKeyAction(KeyEvent event, VoidCallback onBack) {
 
   if (event is KeyUpEvent) {
     BackKeyCoordinator.markHandled();
-    // Mark that we're closing via back key so suppressBackUntilKeyUp() knows to skip
-    BackKeyUpSuppressor.markClosedViaBackKey();
     onBack();
     return KeyEventResult.handled;
   }
@@ -120,6 +130,13 @@ KeyEventResult handleOneShotSelect(KeyEvent event, VoidCallback onActivate) {
 /// (passed through to the framework). Directions mapped to a callback
 /// automatically return [KeyEventResult.handled].
 ///
+/// When [trapHorizontalEdges] is true, LEFT/RIGHT with no callback return
+/// [KeyEventResult.handled] (consumed) instead of being passed through. Use
+/// this for a self-contained horizontal group (e.g. a button row) so D-pad
+/// can't escape off the edge into an off-screen "black hole" (#1181); wire an
+/// explicit [onLeft]/[onRight] only where edge-escape into another region is
+/// intended. UP/DOWN are unaffected and always pass through when unmapped.
+///
 /// Directional keys repeat on [KeyRepeatEvent] (via [isActionable]).
 /// Select is one-shot: fires on [KeyDownEvent] only, consumes repeat and up.
 ///
@@ -140,6 +157,7 @@ FocusOnKeyEventCallback dpadKeyHandler({
   VoidCallback? onLeft,
   VoidCallback? onRight,
   VoidCallback? onSelect,
+  bool trapHorizontalEdges = false,
 }) {
   return (FocusNode _, KeyEvent event) {
     // Select: one-shot activation (no repeat), must run before isActionable
@@ -160,13 +178,19 @@ FocusOnKeyEventCallback dpadKeyHandler({
       onDown();
       return KeyEventResult.handled;
     }
-    if (key.isLeftKey && onLeft != null) {
-      onLeft();
-      return KeyEventResult.handled;
+    if (key.isLeftKey) {
+      if (onLeft != null) {
+        onLeft();
+        return KeyEventResult.handled;
+      }
+      if (trapHorizontalEdges) return KeyEventResult.handled;
     }
-    if (key.isRightKey && onRight != null) {
-      onRight();
-      return KeyEventResult.handled;
+    if (key.isRightKey) {
+      if (onRight != null) {
+        onRight();
+        return KeyEventResult.handled;
+      }
+      if (trapHorizontalEdges) return KeyEventResult.handled;
     }
 
     return KeyEventResult.ignored;

@@ -1,0 +1,23 @@
+appId: com.edde746.plezy
+name: Logout returns to authentication
+tags:
+  - e2e
+  - auth
+---
+- runFlow: ../subflows/onboard_jellyfin.yaml
+- tapOn: "M"
+- tapOn:
+    text: "Logout"
+    below:
+      text: "Settings"
+- extendedWaitUntil:
+    visible: "Are you sure you want to logout?"
+    timeout: 10000
+- tapOn:
+    text: "Logout"
+    below:
+      text: "Are you sure you want to logout?"
+- extendedWaitUntil:
+    visible: "Sign in with Plex"
+    timeout: 20000
+- assertVisible: "Connect to Jellyfin"

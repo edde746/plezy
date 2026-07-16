@@ -17,9 +17,17 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Require the protected main branch
+        run: |
+          if [[ "$GITHUB_REF" != "refs/heads/main" ]]; then
+            echo "Release automation may only run from refs/heads/main." >&2
+            exit 1
+          fi
+
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
         with:
+          ref: main
           fetch-depth: 0
 
       - name: Validate version format
@@ -32,10 +40,8 @@ jobs:
       - name: Extract current build number
         id: get_build
         run: |
-          # Extract current build number from pubspec.yaml
-          CURRENT_VERSION=$(grep '^version:' pubspec.yaml | sed 's/version: //')
-          CURRENT_BUILD=$(echo "$CURRENT_VERSION" | cut -d'+' -f2)
-          NEW_BUILD=$((CURRENT_BUILD + 1))
+          CURRENT_BUILD=$(python3 scripts/pubspec_version.py --build-number pubspec.yaml)
+          NEW_BUILD=$((10#$CURRENT_BUILD + 1))
 
           echo "current_build=$CURRENT_BUILD" >> $GITHUB_OUTPUT
           echo "new_build=$NEW_BUILD" >> $GITHUB_OUTPUT
@@ -71,7 +77,7 @@ jobs:
 
       - name: Trigger build workflow
         run: |
-          curl -L \
+          curl --fail-with-body -L \
             -X POST \
             -H "Accept: application/vnd.github+json" \
             -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \

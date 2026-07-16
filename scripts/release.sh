@@ -22,7 +22,7 @@ create_changelogs() {
     fi
 
     local version_code
-    version_code=$(grep -E 'version:' "$PROJECT_ROOT/pubspec.yaml" | sed -E 's/.*\+([0-9]+).*/\1/')
+    version_code=$(python3 "$SCRIPT_DIR/pubspec_version.py" --build-number "$PROJECT_ROOT/pubspec.yaml")
 
     local prompt="Below is a changelog for a cross-platform Flutter app (iOS, Android, macOS, Linux, Windows). Return ONLY the entries relevant to the given platform. Keep the same format (section headers + bullet points). If a section has no relevant entries, omit it entirely. If an entry is not platform-specific, include it. You MUST stay under the character limit. Aggressively drop less important entries and consolidate similar ones to fit. Count your output characters before responding. Output nothing else."
     local notes

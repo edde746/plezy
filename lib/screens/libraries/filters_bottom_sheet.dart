@@ -4,13 +4,13 @@ import 'package:material_symbols_icons/symbols.dart';
 import '../../focus/focusable_button.dart';
 import '../../focus/input_mode_tracker.dart';
 import '../../media/media_filter.dart';
-import '../../services/plex_client.dart';
 import '../../utils/scroll_utils.dart';
 import '../../widgets/bottom_sheet_page_scaffold.dart';
 import '../../widgets/focusable_list_tile.dart';
 import '../../widgets/overlay_sheet.dart';
-import '../../utils/provider_extensions.dart';
 import '../../i18n/strings.g.dart';
+
+typedef FilterValuesLoader = Future<List<MediaFilterValue>> Function(MediaFilter filter);
 
 class FiltersBottomSheet extends StatefulWidget {
   final List<MediaFilter> filters;
@@ -18,6 +18,8 @@ class FiltersBottomSheet extends StatefulWidget {
   final Function(Map<String, String>) onFiltersChanged;
   final String serverId;
   final String libraryKey;
+  final FilterValuesLoader loadFilterValues;
+  final VoidCallback? onBack;
 
   /// Optional pre-fetched values per filter name. When non-null the sheet
   /// reads from this instead of calling `client.getFilterValues` — used
@@ -32,6 +34,8 @@ class FiltersBottomSheet extends StatefulWidget {
     required this.onFiltersChanged,
     required this.serverId,
     required this.libraryKey,
+    required this.loadFilterValues,
+    this.onBack,
     this.cachedValues,
   });
 
@@ -88,24 +92,9 @@ class _FiltersBottomSheetState extends State<FiltersBottomSheet> {
     });
 
     try {
-      // Cached path (Jellyfin) — `/Items/Filters` returned values inline.
+      // Cached path (Jellyfin) - `/Items/Filters` returned values inline.
       final cached = widget.cachedValues?[filter.filter];
-      // Backend-neutral lookup so a Jellyfin server with an empty/missing
-      // cache row doesn't throw from `getPlexClientForServer`. Jellyfin's
-      // canonical filter values come from the cached `/Items/Filters`
-      // payload; if that's unavailable, an empty list is the honest answer
-      // until a `getFilterValues` lands on [MediaServerClient].
-      final List<MediaFilterValue> values;
-      if (cached != null) {
-        values = cached;
-      } else {
-        final client = context.tryGetMediaClientForServer(widget.serverId);
-        if (client is PlexClient) {
-          values = await client.getFilterValues(filter.key);
-        } else {
-          values = const [];
-        }
-      }
+      final values = cached ?? await widget.loadFilterValues(filter);
       if (!mounted) return;
       setState(() {
         _filterValues = values;
@@ -181,7 +170,7 @@ class _FiltersBottomSheetState extends State<FiltersBottomSheet> {
     return BottomSheetPageScaffold(
       title: currentFilter?.title ?? t.libraries.filters,
       icon: Symbols.filter_alt_rounded,
-      onBack: currentFilter != null ? _goBack : null,
+      onBack: currentFilter != null ? _goBack : widget.onBack,
       action: currentFilter == null && _tempSelectedFilters.isNotEmpty
           ? FocusableButton(
               onPressed: _clearFilters,
@@ -295,14 +284,14 @@ class _FiltersBottomSheetState extends State<FiltersBottomSheet> {
           autofocus: index == 0 && autofocusFirst,
           title: Text(filter.title),
           trailing: Row(
-            mainAxisSize: MainAxisSize.min,
+            mainAxisSize: .min,
             children: [
               if (displayValue != null)
                 Flexible(
                   child: Text(
                     displayValue,
-                    style: TextStyle(color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.w500),
-                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(color: Theme.of(context).colorScheme.primary, fontWeight: .w500),
+                    overflow: .ellipsis,
                   ),
                 ),
               if (displayValue != null) const SizedBox(width: 8),

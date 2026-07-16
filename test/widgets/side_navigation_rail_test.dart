@@ -1,8 +1,11 @@
 import 'dart:ui' show PointerDeviceKind;
+import 'package:plezy/media/ids.dart';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:material_symbols_icons/symbols.dart';
+import 'package:plezy/focus/input_mode_tracker.dart';
 import 'package:plezy/i18n/strings.g.dart';
 import 'package:plezy/media/media_backend.dart';
 import 'package:plezy/media/media_kind.dart';
@@ -25,10 +28,14 @@ import '../test_helpers/prefs.dart';
 const _testTokens = MonoTokens(
   radiusSm: 8,
   radiusMd: 12,
+  radiusLg: 20,
+  radiusXs: 5,
+  groupGap: 2,
   space: 8,
   fast: Duration(milliseconds: 1),
   normal: Duration(milliseconds: 1),
   slow: Duration(milliseconds: 1),
+  expressive: Duration(milliseconds: 1),
   bg: Colors.black,
   surface: Colors.black,
   outline: Colors.white24,
@@ -40,7 +47,7 @@ const _testTokens = MonoTokens(
 MediaLibrary _library({
   required String id,
   required String title,
-  required String serverId,
+  required ServerId serverId,
   required String serverName,
 }) {
   return MediaLibrary(
@@ -63,15 +70,30 @@ BoxDecoration? _railItemDecoration(WidgetTester tester, Finder item) {
       as BoxDecoration?;
 }
 
+AnimatedOpacity _railSurfaceOpacity(WidgetTester tester) {
+  return tester
+      .widgetList<AnimatedOpacity>(
+        find.descendant(of: find.byType(SideNavigationRail), matching: find.byType(AnimatedOpacity)),
+      )
+      .singleWhere((widget) => widget.child is ColoredBox);
+}
+
 Future<void> _pumpBasicRail(
   WidgetTester tester, {
   GlobalKey<SideNavigationRailState>? sideNavKey,
+  NavigationTabId selectedTab = NavigationTabId.discover,
+  String? selectedLibraryKey,
+  List<MediaLibrary> libraries = const [],
   bool isSidebarFocused = false,
   bool alwaysExpanded = false,
+  double? height,
 }) async {
   await SettingsService.getInstance();
 
   final librariesProvider = LibrariesProvider();
+  if (libraries.isNotEmpty) {
+    await librariesProvider.updateLibraryOrder(libraries);
+  }
   addTearDown(librariesProvider.dispose);
 
   final hiddenLibrariesProvider = HiddenLibrariesProvider();
@@ -82,6 +104,16 @@ Future<void> _pumpBasicRail(
   final aggregation = DataAggregationService(manager);
   final multiServerProvider = MultiServerProvider(manager, aggregation);
   addTearDown(multiServerProvider.dispose);
+
+  final rail = SideNavigationRail(
+    key: sideNavKey,
+    selectedTab: selectedTab,
+    selectedLibraryKey: selectedLibraryKey,
+    isSidebarFocused: isSidebarFocused,
+    alwaysExpanded: alwaysExpanded,
+    onDestinationSelected: (_) {},
+    onLibrarySelected: (_) {},
+  );
 
   await tester.pumpWidget(
     TranslationProvider(
@@ -94,14 +126,7 @@ Future<void> _pumpBasicRail(
         child: MaterialApp(
           theme: ThemeData(extensions: const [_testTokens]),
           home: Scaffold(
-            body: SideNavigationRail(
-              key: sideNavKey,
-              selectedTab: NavigationTabId.discover,
-              isSidebarFocused: isSidebarFocused,
-              alwaysExpanded: alwaysExpanded,
-              onDestinationSelected: (_) {},
-              onLibrarySelected: (_) {},
-            ),
+            body: height == null ? rail : SizedBox(height: height, child: rail),
           ),
         ),
       ),
@@ -174,9 +199,19 @@ void main() {
       find.descendant(of: selectedItem, matching: find.byType(Container)).first,
     );
     expect((selectedItemContainer.decoration as BoxDecoration?)?.color, isNull);
+
+    expect(_railSurfaceOpacity(tester).opacity, 0.0);
   });
 
-  testWidgets('expanded TV rail keeps its surface transparent', (tester) async {
+  testWidgets('closed non-TV rail keeps an opaque surface', (tester) async {
+    await _pumpBasicRail(tester);
+
+    final rail = find.descendant(of: find.byType(SideNavigationRail), matching: find.byType(AnimatedContainer)).first;
+    expect(tester.getSize(rail).width, SideNavigationRailState.collapsedWidth);
+    expect(_railSurfaceOpacity(tester).opacity, 1.0);
+  });
+
+  testWidgets('expanded TV rail keeps a transparent surface', (tester) async {
     TvDetectionService.debugSetAppleTVOverride(true);
     addTearDown(() => TvDetectionService.debugSetAppleTVOverride(null));
     await SettingsService.getInstance();
@@ -221,12 +256,7 @@ void main() {
     final rail = find.descendant(of: find.byType(SideNavigationRail), matching: find.byType(AnimatedContainer)).first;
     expect(tester.getSize(rail).width, SideNavigationRailState.expandedWidth);
 
-    final surfaceOpacity = tester
-        .widgetList<AnimatedOpacity>(
-          find.descendant(of: find.byType(SideNavigationRail), matching: find.byType(AnimatedOpacity)),
-        )
-        .singleWhere((widget) => widget.child is ColoredBox);
-    expect(surfaceOpacity.opacity, 0.0);
+    expect(_railSurfaceOpacity(tester).opacity, 0.0);
   });
 
   testWidgets('expanded rail keeps selected background outside sidebar keyboard focus', (tester) async {
@@ -246,6 +276,45 @@ void main() {
 
     final selectedItem = find.byType(NavigationRailItem).first;
     expect(_railItemDecoration(tester, selectedItem)?.color, isNull);
+  });
+
+  testWidgets('focusActiveItem focuses selected library and scrolls it into view', (tester) async {
+    final sideNavKey = GlobalKey<SideNavigationRailState>();
+    final libraries = List.generate(
+      18,
+      (index) => _library(id: '$index', title: 'Library $index', serverId: ServerId('server'), serverName: 'Server'),
+    );
+    final targetLibrary = libraries.last;
+
+    await _pumpBasicRail(
+      tester,
+      sideNavKey: sideNavKey,
+      selectedTab: NavigationTabId.libraries,
+      selectedLibraryKey: targetLibrary.globalKey,
+      libraries: libraries,
+      isSidebarFocused: true,
+      alwaysExpanded: true,
+      height: 260,
+    );
+
+    final scrollable = find.descendant(of: find.byType(SideNavigationRail), matching: find.byType(Scrollable)).first;
+    final scrollableState = tester.state<ScrollableState>(scrollable);
+    expect(scrollableState.position.pixels, 0);
+
+    sideNavKey.currentState!.focusActiveItem();
+    await tester.pump();
+    await tester.pumpAndSettle();
+
+    final targetItemFinder = find.widgetWithText(NavigationRailItem, targetLibrary.title);
+    expect(targetItemFinder, findsOneWidget);
+    final targetItem = tester.widget<NavigationRailItem>(targetItemFinder);
+    expect(targetItem.focusNode.hasFocus, isTrue);
+    expect(scrollableState.position.pixels, greaterThan(0));
+
+    final railRect = tester.getRect(find.byType(SideNavigationRail));
+    final targetRect = tester.getRect(find.text(targetLibrary.title));
+    expect(targetRect.top, greaterThanOrEqualTo(railRect.top));
+    expect(targetRect.bottom, lessThanOrEqualTo(railRect.bottom));
   });
 
   testWidgets('reports interaction expansion for shell content push', (tester) async {
@@ -374,19 +443,19 @@ void main() {
     final visibleServerALibrary = _library(
       id: '1',
       title: 'Visible Server A',
-      serverId: 'server-a',
+      serverId: ServerId('server-a'),
       serverName: 'Server A',
     );
     final hiddenServerALibrary = _library(
       id: '2',
       title: 'Hidden Server A',
-      serverId: 'server-a',
+      serverId: ServerId('server-a'),
       serverName: 'Server A',
     );
     final visibleServerBLibrary = _library(
       id: '1',
       title: 'Visible Server B',
-      serverId: 'server-b',
+      serverId: ServerId('server-b'),
       serverName: 'Server B',
     );
 
@@ -448,5 +517,47 @@ void main() {
     await _press(tester, LogicalKeyboardKey.enter);
 
     expect(selectedLibraryKey, hiddenServerALibrary.globalKey);
+  });
+
+  testWidgets('rail item focus repaints locally without rebuilding its parent', (tester) async {
+    final focusNode = FocusNode();
+    addTearDown(focusNode.dispose);
+    var parentBuilds = 0;
+
+    await tester.pumpWidget(
+      InputModeTracker(
+        child: MaterialApp(
+          theme: ThemeData(extensions: const [_testTokens]),
+          home: Scaffold(
+            body: Builder(
+              builder: (context) {
+                parentBuilds++;
+                return NavigationRailItem(
+                  icon: Symbols.home_rounded,
+                  label: const Text('Home'),
+                  isSelected: false,
+                  onTap: () {},
+                  focusNode: focusNode,
+                );
+              },
+            ),
+          ),
+        ),
+      ),
+    );
+
+    final item = find.byType(NavigationRailItem);
+    expect(_railItemDecoration(tester, item)?.color, isNull);
+    expect(parentBuilds, 1);
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+    await tester.pump();
+
+    focusNode.requestFocus();
+    await tester.pump();
+
+    expect(focusNode.hasFocus, isTrue);
+    expect(_railItemDecoration(tester, item)?.color, isNotNull);
+    expect(parentBuilds, 1);
   });
 }

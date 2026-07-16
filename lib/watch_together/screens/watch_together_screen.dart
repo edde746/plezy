@@ -1,4 +1,5 @@
 import 'dart:io';
+import '../../media/ids.dart';
 
 import 'package:flutter/material.dart';
 import '../../utils/future_extensions.dart';
@@ -17,8 +18,10 @@ import '../../utils/app_logger.dart';
 import '../../utils/dialogs.dart';
 import '../../utils/snackbar_helper.dart';
 import '../../widgets/dialog_action_button.dart';
+import '../../widgets/app_icon.dart';
 import '../../utils/video_player_navigation.dart';
 import '../../widgets/focused_scroll_scaffold.dart';
+import '../../widgets/app_menu.dart';
 import '../../widgets/overlay_sheet.dart';
 import '../models/watch_session.dart';
 import '../providers/watch_together_provider.dart';
@@ -35,7 +38,11 @@ class WatchTogetherScreen extends StatelessWidget {
     return Consumer<WatchTogetherProvider>(
       builder: (context, watchTogether, child) {
         final canGoBack = watchTogether.isHost || !watchTogether.isInSession;
-        return PopScope(
+        // The host owns sheet + system back: a back with the actions sheet open
+        // closes it; otherwise the route pops only when [canGoBack] (a guest in
+        // an active session can't leave). canGoBack==true also preserves the iOS
+        // interactive swipe-back.
+        return OverlaySheetHost(
           canPop: canGoBack,
           child: FocusedScrollScaffold(
             title: Text(t.watchTogether.title),
@@ -127,9 +134,9 @@ class _NotInSessionViewState extends State<_NotInSessionView> with MountedSetSta
         child: Padding(
           padding: const EdgeInsets.all(24),
           child: Column(
-            mainAxisSize: MainAxisSize.min,
+            mainAxisSize: .min,
             children: [
-              Icon(Symbols.group_rounded, size: 80, color: theme.colorScheme.primary),
+              AppIcon(Symbols.group_rounded, size: 80, color: theme.colorScheme.primary),
               const SizedBox(height: 24),
               Text(t.watchTogether.title, style: theme.textTheme.headlineMedium, textAlign: TextAlign.center),
               const SizedBox(height: 8),
@@ -146,7 +153,7 @@ class _NotInSessionViewState extends State<_NotInSessionView> with MountedSetSta
                     padding: const EdgeInsets.all(12),
                     child: Row(
                       children: [
-                        Icon(Symbols.warning_rounded, color: theme.colorScheme.onErrorContainer),
+                        AppIcon(Symbols.warning_rounded, color: theme.colorScheme.onErrorContainer),
                         const SizedBox(width: 12),
                         Expanded(
                           child: Text(
@@ -165,9 +172,10 @@ class _NotInSessionViewState extends State<_NotInSessionView> with MountedSetSta
                 child: FocusableButton(
                   autofocus: _recentRooms.isEmpty,
                   onPressed: _isBusy ? null : _createSession,
+                  useBackgroundFocus: true,
                   child: FilledButton.icon(
                     onPressed: _isBusy ? null : _createSession,
-                    icon: _isCreating ? const LoadingIndicatorBox(size: 20) : const Icon(Symbols.add_rounded),
+                    icon: _isCreating ? const LoadingIndicatorBox(size: 20) : const AppIcon(Symbols.add_rounded),
                     label: Text(_isCreating ? t.watchTogether.creating : t.watchTogether.createSession),
                   ),
                 ),
@@ -179,7 +187,7 @@ class _NotInSessionViewState extends State<_NotInSessionView> with MountedSetSta
                   onPressed: _isBusy ? null : _joinSession,
                   child: OutlinedButton.icon(
                     onPressed: _isBusy ? null : _joinSession,
-                    icon: _isJoining ? const LoadingIndicatorBox(size: 20) : const Icon(Symbols.group_add_rounded),
+                    icon: _isJoining ? const LoadingIndicatorBox(size: 20) : const AppIcon(Symbols.group_add_rounded),
                     label: Text(_isJoining ? t.watchTogether.joining : t.watchTogether.joinSession),
                   ),
                 ),
@@ -187,7 +195,7 @@ class _NotInSessionViewState extends State<_NotInSessionView> with MountedSetSta
               if (_recentRooms.isNotEmpty) ...[
                 const SizedBox(height: 32),
                 Align(
-                  alignment: Alignment.centerLeft,
+                  alignment: .centerLeft,
                   child: Text(t.watchTogether.recentRooms, style: theme.textTheme.titleSmall),
                 ),
                 const SizedBox(height: 8),
@@ -235,7 +243,7 @@ class _NotInSessionViewState extends State<_NotInSessionView> with MountedSetSta
   }
 
   Future<ControlMode?> _showControlModeDialog() {
-    return showDialog<ControlMode>(
+    return showScopedDialog<ControlMode>(
       context: context,
       builder: (context) => AlertDialog(
         title: Text(t.watchTogether.controlMode),
@@ -302,49 +310,10 @@ class _NotInSessionViewState extends State<_NotInSessionView> with MountedSetSta
   }
 
   Future<void> _renameRoom(RecentRoom room) async {
-    final controller = TextEditingController(text: room.name ?? '');
-    final fieldFocusNode = FocusNode(debugLabel: 'WatchTogetherRenameField');
-    final cancelFocusNode = FocusNode(debugLabel: 'WatchTogetherRenameCancel');
-    final saveFocusNode = FocusNode(debugLabel: 'WatchTogetherRenameSave');
-    String? name;
-    try {
-      name = await showDialog<String>(
-        context: context,
-        builder: (context) => AlertDialog(
-          title: Text(t.watchTogether.renameRoom),
-          content: FocusableTextField(
-            controller: controller,
-            focusNode: fieldFocusNode,
-            autofocus: true,
-            decoration: InputDecoration(hintText: room.code),
-            onNavigateDown: saveFocusNode.requestFocus,
-            onSubmitted: (value) => Navigator.pop(context, value),
-          ),
-          actions: [
-            DialogActionButton(
-              focusNode: cancelFocusNode,
-              onPressed: () => Navigator.pop(context),
-              onNavigateUp: fieldFocusNode.requestFocus,
-              onNavigateRight: saveFocusNode.requestFocus,
-              label: t.common.cancel,
-            ),
-            DialogActionButton(
-              focusNode: saveFocusNode,
-              onPressed: () => Navigator.pop(context, controller.text),
-              onNavigateUp: fieldFocusNode.requestFocus,
-              onNavigateLeft: cancelFocusNode.requestFocus,
-              isPrimary: true,
-              label: t.common.save,
-            ),
-          ],
-        ),
-      );
-    } finally {
-      controller.dispose();
-      fieldFocusNode.dispose();
-      cancelFocusNode.dispose();
-      saveFocusNode.dispose();
-    }
+    final name = await showScopedDialog<String>(
+      context: context,
+      builder: (_) => _RenameRoomDialog(room: room),
+    );
     if (name == null || !mounted) return;
 
     await RecentRoomsService.renameRoom(room.code, name.isEmpty ? null : name);
@@ -354,6 +323,65 @@ class _NotInSessionViewState extends State<_NotInSessionView> with MountedSetSta
   Future<void> _removeRoom(RecentRoom room) async {
     await RecentRoomsService.removeRoom(room.code);
     setStateIfMounted(() => _recentRooms = RecentRoomsService.getRecentRooms());
+  }
+}
+
+class _RenameRoomDialog extends StatefulWidget {
+  final RecentRoom room;
+
+  const _RenameRoomDialog({required this.room});
+
+  @override
+  State<_RenameRoomDialog> createState() => _RenameRoomDialogState();
+}
+
+class _RenameRoomDialogState extends State<_RenameRoomDialog> {
+  late final _controller = TextEditingController(text: widget.room.name ?? '');
+  final _fieldFocusNode = FocusNode(debugLabel: 'WatchTogetherRenameField');
+  final _cancelFocusNode = FocusNode(debugLabel: 'WatchTogetherRenameCancel');
+  final _saveFocusNode = FocusNode(debugLabel: 'WatchTogetherRenameSave');
+
+  @override
+  void dispose() {
+    _fieldFocusNode.dispose();
+    _cancelFocusNode.dispose();
+    _saveFocusNode.dispose();
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _submit(String value) {
+    Navigator.pop(context, value);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Text(t.watchTogether.renameRoom),
+      content: FocusableTextField(
+        controller: _controller,
+        focusNode: _fieldFocusNode,
+        autofocus: true,
+        decoration: InputDecoration(hintText: widget.room.code),
+        onNavigateDown: _saveFocusNode.requestFocus,
+        onSubmitted: _submit,
+      ),
+      actions: [
+        DialogActionButton(
+          focusNode: _cancelFocusNode,
+          onPressed: () => Navigator.pop(context),
+          onNavigateRight: _saveFocusNode.requestFocus,
+          label: t.common.cancel,
+        ),
+        DialogActionButton(
+          focusNode: _saveFocusNode,
+          onPressed: () => _submit(_controller.text),
+          onNavigateLeft: _cancelFocusNode.requestFocus,
+          isPrimary: true,
+          label: t.common.save,
+        ),
+      ],
+    );
   }
 }
 
@@ -384,22 +412,31 @@ class _RecentRoomTile extends StatelessWidget {
       child: FocusableWrapper(
         useBackgroundFocus: true,
         borderRadius: 12,
+        // Hold SELECT/OK to open the rename/remove menu on TV/dpad (matches media cards).
+        enableLongPress: true,
+        // The wrapper owns key handling; the ListTile's InkWell and the trailing
+        // more_vert IconButton must not steal focus from the long-press handler.
+        descendantsAreFocusable: false,
         onSelect: isBusy ? null : onTap,
         onLongPress: () => _showActions(context),
         child: Material(
           type: MaterialType.transparency,
           child: ListTile(
             shape: const RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(12))),
-            leading: isEntering ? const LoadingIndicatorBox(size: 24) : const Icon(Symbols.meeting_room_rounded),
-            title: Text(title, maxLines: 1, overflow: TextOverflow.ellipsis),
+            leading: isEntering ? const LoadingIndicatorBox(size: 24) : const AppIcon(Symbols.meeting_room_rounded),
+            title: Text(title, maxLines: 1, overflow: .ellipsis),
             subtitle: room.name != null
                 ? Text(
                     room.code,
                     style: TextStyle(fontFamily: 'monospace', color: theme.colorScheme.onSurfaceVariant),
                   )
                 : null,
-            trailing: IconButton(icon: const Icon(Symbols.more_vert_rounded), onPressed: () => _showActions(context)),
+            trailing: IconButton(
+              icon: const AppIcon(Symbols.more_vert_rounded),
+              onPressed: () => _showActions(context),
+            ),
             onTap: isBusy ? null : onTap,
+            onLongPress: () => _showActions(context),
           ),
         ),
       ),
@@ -407,30 +444,25 @@ class _RecentRoomTile extends StatelessWidget {
   }
 
   void _showActions(BuildContext context) {
-    OverlaySheetController.showAdaptive(
-      context,
-      builder: (context) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              leading: const Icon(Symbols.edit_rounded),
-              title: Text(t.watchTogether.renameRoom),
-              onTap: () {
-                OverlaySheetController.closeAdaptive(context);
-                onRename();
-              },
-            ),
-            ListTile(
-              leading: Icon(Symbols.delete_rounded, color: Theme.of(context).colorScheme.error),
-              title: Text(t.watchTogether.removeRoom, style: TextStyle(color: Theme.of(context).colorScheme.error)),
-              onTap: () {
-                OverlaySheetController.closeAdaptive(context);
-                onRemove();
-              },
-            ),
-          ],
-        ),
+    OverlaySheetController.of(context).show(
+      showDragHandle: true,
+      builder: (context) => AppMenuSheet<String>(
+        entries: [
+          AppMenuItem(value: 'rename', icon: Symbols.edit_rounded, label: t.watchTogether.renameRoom),
+          AppMenuItem(
+            value: 'remove',
+            icon: Symbols.delete_rounded,
+            label: t.watchTogether.removeRoom,
+            destructive: true,
+          ),
+        ],
+        onSelected: (value) {
+          if (value == 'rename') {
+            onRename();
+          } else if (value == 'remove') {
+            onRemove();
+          }
+        },
       ),
     );
   }
@@ -447,24 +479,24 @@ class _ActiveSessionContent extends StatelessWidget {
     final session = watchTogether.session!;
 
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
+      crossAxisAlignment: .stretch,
       children: [
         Card(
           child: Padding(
             padding: const EdgeInsets.all(16),
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              crossAxisAlignment: .start,
               children: [
                 Row(
                   children: [
-                    Icon(
+                    AppIcon(
                       watchTogether.isHost ? Symbols.star_rounded : Symbols.group_rounded,
                       color: theme.colorScheme.primary,
                     ),
                     const SizedBox(width: 12),
                     Expanded(
                       child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                        crossAxisAlignment: .start,
                         children: [
                           Text(
                             watchTogether.isHost ? t.watchTogether.hostingSession : t.watchTogether.inSession,
@@ -481,7 +513,7 @@ class _ActiveSessionContent extends StatelessWidget {
                 const SizedBox(height: 8),
                 Row(
                   children: [
-                    Icon(
+                    AppIcon(
                       session.controlMode == ControlMode.anyone
                           ? Symbols.groups_rounded
                           : Symbols.admin_panel_settings_rounded,
@@ -508,11 +540,11 @@ class _ActiveSessionContent extends StatelessWidget {
           child: Padding(
             padding: const EdgeInsets.all(16),
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              crossAxisAlignment: .start,
               children: [
                 Row(
                   children: [
-                    Icon(Symbols.people_rounded, color: theme.colorScheme.primary),
+                    AppIcon(Symbols.people_rounded, color: theme.colorScheme.primary),
                     const SizedBox(width: 12),
                     Text(
                       '${t.watchTogether.participants} (${watchTogether.participantCount})',
@@ -526,7 +558,7 @@ class _ActiveSessionContent extends StatelessWidget {
                     padding: const EdgeInsets.symmetric(vertical: 4),
                     child: Row(
                       children: [
-                        Icon(
+                        AppIcon(
                           participant.isHost ? Symbols.star_rounded : Symbols.person_rounded,
                           size: 20,
                           color: participant.isHost ? Colors.amber : theme.colorScheme.onSurfaceVariant,
@@ -583,7 +615,7 @@ class _ActiveSessionContent extends StatelessWidget {
                 foregroundColor: theme.colorScheme.error,
                 side: BorderSide(color: theme.colorScheme.error),
               ),
-              icon: Icon(watchTogether.isHost ? Symbols.close_rounded : Symbols.logout_rounded),
+              icon: AppIcon(watchTogether.isHost ? Symbols.close_rounded : Symbols.logout_rounded),
               label: Text(watchTogether.isHost ? t.watchTogether.endSession : t.watchTogether.leaveSession),
             ),
           ),
@@ -630,9 +662,9 @@ class _JoinCurrentPlaybackCardState extends State<_JoinCurrentPlaybackCard> {
       await navigateToWatchTogetherPlayback(
         context,
         ratingKey: ratingKey,
-        serverId: serverId,
+        serverId: ServerId(serverId),
         onBeforeNavigate: () {
-          widget.watchTogether.markCurrentPlaybackHandled(ratingKey: ratingKey, serverId: serverId);
+          widget.watchTogether.markCurrentPlaybackHandled(ratingKey: ratingKey, serverId: ServerId(serverId));
         },
       );
     } catch (e, stackTrace) {
@@ -659,15 +691,15 @@ class _JoinCurrentPlaybackCardState extends State<_JoinCurrentPlaybackCard> {
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment: .start,
           children: [
             Row(
               children: [
-                Icon(Symbols.play_circle_rounded, color: theme.colorScheme.primary),
+                AppIcon(Symbols.play_circle_rounded, color: theme.colorScheme.primary),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                    crossAxisAlignment: .start,
                     children: [
                       Text(t.watchTogether.currentPlayback, style: theme.textTheme.titleMedium),
                       const SizedBox(height: 4),
@@ -688,9 +720,10 @@ class _JoinCurrentPlaybackCardState extends State<_JoinCurrentPlaybackCard> {
               child: FocusableButton(
                 autofocus: true,
                 onPressed: _isJoining ? null : _joinCurrentPlayback,
+                useBackgroundFocus: true,
                 child: FilledButton.icon(
                   onPressed: _isJoining ? null : _joinCurrentPlayback,
-                  icon: _isJoining ? const LoadingIndicatorBox() : const Icon(Symbols.play_arrow_rounded),
+                  icon: _isJoining ? const LoadingIndicatorBox() : const AppIcon(Symbols.play_arrow_rounded),
                   label: Text(_isJoining ? t.watchTogether.joining : t.watchTogether.joinCurrentPlayback),
                 ),
               ),
@@ -723,7 +756,7 @@ class _SessionCodeRow extends StatelessWidget {
         child: Padding(
           padding: const EdgeInsets.symmetric(vertical: 2),
           child: Row(
-            mainAxisSize: MainAxisSize.min,
+            mainAxisSize: .min,
             children: [
               Text(
                 '${t.watchTogether.sessionCode}: $sessionId',
@@ -733,7 +766,7 @@ class _SessionCodeRow extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 4),
-              Icon(Symbols.content_copy_rounded, size: 14, color: theme.colorScheme.onSurfaceVariant),
+              AppIcon(Symbols.content_copy_rounded, size: 14, color: theme.colorScheme.onSurfaceVariant),
             ],
           ),
         ),

@@ -27,33 +27,45 @@
 <style>
   .error-page {
     display: flex;
-    min-height: 100vh;
+    min-height: 100dvh;
     align-items: center;
     justify-content: center;
-    padding: 4rem 1.5rem;
+    padding: var(--page-gutter);
   }
 
   .error-card {
     display: flex;
-    max-width: 24rem;
+    width: min(100%, 32rem);
     flex-direction: column;
     align-items: center;
+    border-radius: var(--radius-xl);
+    padding: clamp(2rem, 8vw, 4rem);
+    background: var(--color-surface);
     text-align: center;
   }
 
   .error-logo {
-    margin-bottom: 1.5rem;
+    display: flex;
+    width: 5rem;
+    height: 5rem;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 2rem;
+    border-radius: var(--radius-lg);
+    background: var(--color-surface-highest);
   }
 
   .error-logo :global(svg) {
-    width: 4rem;
-    height: 4rem;
+    width: 2.5rem;
+    height: 2.5rem;
   }
 
   .error-code {
     margin-bottom: 0.5rem;
-    font-size: 3rem;
+    font-family: var(--font-display);
+    font-size: clamp(3.5rem, 16vw, 6rem);
     font-weight: 700;
+    letter-spacing: -0.06em;
     line-height: 1;
   }
 
@@ -64,19 +76,23 @@
 
   .home-link {
     display: inline-flex;
+    min-height: 3rem;
     align-items: center;
-    gap: 0.5rem;
-    padding: 0.75rem 1.25rem;
-    border-radius: 9999px;
-    background: var(--color-accent);
-    color: #fff;
-    font-size: 0.875rem;
-    font-weight: 600;
-    line-height: 1.25rem;
-    transition: background-color 150ms ease;
+    border-radius: var(--radius-pill);
+    padding-inline: 1.25rem;
+    color: var(--color-on-primary);
+    background: var(--color-text);
+    font-size: 0.8125rem;
+    font-weight: 700;
+    transition:
+      border-radius var(--motion-expressive) var(--ease-standard),
+      background-color var(--motion-fast) var(--ease-standard);
   }
 
-  .home-link:hover {
-    background: color-mix(in srgb, var(--color-accent) 90%, transparent);
+  .home-link:hover,
+  .home-link:focus-visible {
+    border-radius: var(--radius-md);
+    background: #fff;
+    outline: none;
   }
 </style>

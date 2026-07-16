@@ -1,0 +1,29 @@
+appId: com.edde746.plezy
+name: Start and exit video playback
+tags:
+  - e2e
+  - playback
+---
+- runFlow: ../subflows/onboard_jellyfin.yaml
+- tapOn: "(?s)^Libraries.*"
+- extendedWaitUntil:
+    visible: "(?s).*Zulu Zone 4$"
+    timeout: 15000
+- tapOn: "(?s).*Zulu Zone 4$"
+- extendedWaitUntil:
+    visible: "Play"
+    timeout: 15000
+- tapOn:
+    text: "Play"
+    waitToSettleTimeoutMs: 1000
+- extendedWaitUntil:
+    visible: "Pause"
+    timeout: 20000
+- back
+- extendedWaitUntil:
+    notVisible: "Pause"
+    timeout: 10000
+- back
+- extendedWaitUntil:
+    visible: "Overview"
+    timeout: 10000

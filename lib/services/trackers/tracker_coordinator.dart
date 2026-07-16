@@ -3,9 +3,10 @@ import 'dart:async';
 import '../../media/media_item.dart';
 import '../../media/media_kind.dart';
 import '../../media/media_server_client.dart';
+import '../../media/playback_timeline.dart';
 import '../../models/trackers/tracker_context.dart';
 import '../../utils/app_logger.dart';
-import '../../utils/episode_collection.dart';
+import '../../media/episode_collection.dart';
 import 'anime_episode_progress_resolver.dart';
 import 'anime_lists_mapping_store.dart';
 import 'anilist/anilist_tracker.dart';
@@ -38,18 +39,33 @@ class TrackerCoordinator {
   AnimeEpisodeProgressLookup? _debugAnimeProgress;
 
   TrackerContext? _ctx;
-  Duration _duration = Duration.zero;
-  Duration _lastPosition = Duration.zero;
+
+  /// Seed used before [startPlayback] captures the server's threshold; never
+  /// actually consulted (a crossing is only evaluated once `_ctx` is set,
+  /// after the client value is assigned).
+  static const double _fallbackWatchedThreshold = TrackerConstants.watchedThresholdPercent / 100.0;
+
+  /// Captures position, duration, and the active client's watched threshold so
+  /// tracker crossing semantics stay aligned with playback progress reporting.
+  final PlaybackTimeline _timeline = PlaybackTimeline(watchedThreshold: _fallbackWatchedThreshold);
   bool _thresholdCrossed = false;
+  int _playbackRevision = 0;
 
   Future<void> initialize() async {
     await Future.wait(_trackers.map((t) => t.initialize()));
   }
 
   Future<void> startPlayback(MediaItem metadata, MediaServerClient client, {bool isLive = false}) async {
-    if (isLive) return;
+    final revision = ++_playbackRevision;
+    if (isLive) {
+      _reset();
+      return;
+    }
     final mediaType = metadata.kind;
-    if (mediaType != MediaKind.movie && mediaType != MediaKind.episode) return;
+    if (mediaType != MediaKind.movie && mediaType != MediaKind.episode) {
+      _reset();
+      return;
+    }
     final libraryGlobalKey = metadata.libraryGlobalKey;
     if (!_hasActiveTrackerForLibrary(libraryGlobalKey)) {
       _reset();
@@ -64,6 +80,7 @@ class TrackerCoordinator {
       _resolverClientKey = clientKey;
     }
     final ctx = await _buildContext(metadata, _resolver!);
+    if (revision != _playbackRevision) return;
     if (ctx == null) {
       appLogger.d('Trackers: no external IDs for ${metadata.id}');
       _reset();
@@ -71,6 +88,7 @@ class TrackerCoordinator {
     }
     _reset();
     _ctx = ctx;
+    _timeline.watchedThreshold = client.watchedThreshold;
   }
 
   bool _anyTrackerNeedsFribb() => _anyTrackerNeedsFribbForLibrary(_activeLibraryGlobalKey);
@@ -133,11 +151,7 @@ class TrackerCoordinator {
     }
 
     final episodes = <MediaItem>[];
-    if (kind == MediaKind.show) {
-      await collectEpisodesForShow(client, item.id, unwatchedOnly: false, out: episodes, fallback: item);
-    } else {
-      await collectEpisodesForSeason(client, item.id, unwatchedOnly: false, out: episodes, fallback: item);
-    }
+    await collectEpisodes(client, item.id, unwatchedOnly: false, out: episodes, fallback: item);
     appLogger.d('Trackers: manual ${kind.name} ${item.id} expanded to ${episodes.length} episodes');
 
     await _markContainerEpisodesWatched(episodes, resolver);
@@ -160,11 +174,7 @@ class TrackerCoordinator {
     }
 
     final episodes = <MediaItem>[];
-    if (kind == MediaKind.show) {
-      await collectEpisodesForShow(client, item.id, unwatchedOnly: false, out: episodes, fallback: item);
-    } else {
-      await collectEpisodesForSeason(client, item.id, unwatchedOnly: false, out: episodes, fallback: item);
-    }
+    await collectEpisodes(client, item.id, unwatchedOnly: false, out: episodes, fallback: item);
     appLogger.d('Trackers: manual ${kind.name} ${item.id} unwatched expanded to ${episodes.length} episodes');
 
     await _markContainerEpisodesUnwatched(episodes, resolver);
@@ -286,35 +296,32 @@ class TrackerCoordinator {
   }
 
   Future<void> stopPlayback() async {
+    ++_playbackRevision;
     final ctx = _ctx;
-    if (ctx == null) {
-      _reset();
-      return;
-    }
-    // Safety net: fire if we passed the threshold but missed the tick.
-    if (!_thresholdCrossed && _crossed(_duration, _lastPosition)) {
+    final shouldMarkWatched = ctx != null && !_thresholdCrossed && _timeline.watchedThresholdReached;
+    _reset();
+    if (ctx != null && shouldMarkWatched) {
       await _dispatchMarkWatched(ctx);
     }
-    _reset();
   }
 
   void updatePosition(Duration position) {
-    _lastPosition = position;
+    _timeline.updatePosition(position);
     final ctx = _ctx;
     if (ctx == null || _thresholdCrossed) return;
-    if (!_crossed(_duration, position)) return;
+    if (!_timeline.watchedThresholdReached) return;
     _thresholdCrossed = true;
     unawaited(_dispatchMarkWatched(ctx));
   }
 
   void updateDuration(Duration duration) {
-    if (duration == _duration) return;
-    _duration = duration;
+    _timeline.updateDuration(duration);
   }
 
   /// Called on Plex profile switch — drops in-flight state across all
   /// trackers and invalidates the resolver so a fresh Plex client is used.
   void cancelInFlight() {
+    ++_playbackRevision;
     _reset();
     _resolver?.clearCache();
     _resolver = null;
@@ -329,15 +336,8 @@ class TrackerCoordinator {
   void _reset() {
     _ctx = null;
     _activeLibraryGlobalKey = null;
-    _duration = Duration.zero;
-    _lastPosition = Duration.zero;
+    _timeline.reset(watchedThreshold: _fallbackWatchedThreshold);
     _thresholdCrossed = false;
-  }
-
-  static bool _crossed(Duration duration, Duration position) {
-    final dMs = duration.inMilliseconds;
-    if (dMs == 0) return false;
-    return position.inMilliseconds * 100 >= dMs * TrackerConstants.watchedThresholdPercent;
   }
 
   Future<void> _dispatchMarkWatched(TrackerContext ctx) async {

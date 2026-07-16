@@ -8,8 +8,29 @@ class SliverErrorState extends StatelessWidget {
   final String message;
   final VoidCallback? onRetry;
   final String? retryLabel;
+  final FocusNode? actionFocusNode;
+  final VoidCallback? onActionNavigateUp;
+  final VoidCallback? onActionNavigateDown;
+  final VoidCallback? onActionNavigateLeft;
+  final VoidCallback? onActionNavigateRight;
+  final VoidCallback? onActionBack;
+  final bool actionAutofocus;
+  final bool actionUseBackgroundFocus;
 
-  const SliverErrorState({super.key, required this.message, this.onRetry, this.retryLabel});
+  const SliverErrorState({
+    super.key,
+    required this.message,
+    this.onRetry,
+    this.retryLabel,
+    this.actionFocusNode,
+    this.onActionNavigateUp,
+    this.onActionNavigateDown,
+    this.onActionNavigateLeft,
+    this.onActionNavigateRight,
+    this.onActionBack,
+    this.actionAutofocus = false,
+    this.actionUseBackgroundFocus = false,
+  });
 
   @override
   Widget build(BuildContext context) => SliverFillRemaining(
@@ -17,7 +38,15 @@ class SliverErrorState extends StatelessWidget {
       message: message,
       icon: Symbols.error_outline_rounded,
       onRetry: onRetry,
-      retryLabel: retryLabel ?? t.common.retry,
+      retryLabel: retryLabel,
+      actionFocusNode: actionFocusNode,
+      onActionNavigateUp: onActionNavigateUp,
+      onActionNavigateDown: onActionNavigateDown,
+      onActionNavigateLeft: onActionNavigateLeft,
+      onActionNavigateRight: onActionNavigateRight,
+      onActionBack: onActionBack,
+      actionAutofocus: actionAutofocus,
+      actionUseBackgroundFocus: actionUseBackgroundFocus,
     ),
   );
 }
@@ -27,12 +56,48 @@ class SliverEmptyState extends StatelessWidget {
   final String message;
   final IconData? icon;
   final String? subtitle;
+  final VoidCallback? onAction;
+  final String? actionLabel;
+  final IconData? actionIcon;
+  final FocusNode? actionFocusNode;
+  final VoidCallback? onActionNavigateUp;
+  final VoidCallback? onActionNavigateDown;
+  final VoidCallback? onActionNavigateLeft;
+  final VoidCallback? onActionNavigateRight;
+  final VoidCallback? onActionBack;
 
-  const SliverEmptyState({super.key, required this.message, required this.icon, this.subtitle});
+  const SliverEmptyState({
+    super.key,
+    required this.message,
+    required this.icon,
+    this.subtitle,
+    this.onAction,
+    this.actionLabel,
+    this.actionIcon,
+    this.actionFocusNode,
+    this.onActionNavigateUp,
+    this.onActionNavigateDown,
+    this.onActionNavigateLeft,
+    this.onActionNavigateRight,
+    this.onActionBack,
+  });
 
   @override
   Widget build(BuildContext context) => SliverFillRemaining(
-    child: EmptyStateWidget(message: message, icon: icon, subtitle: subtitle),
+    child: EmptyStateWidget(
+      message: message,
+      icon: icon,
+      subtitle: subtitle,
+      onAction: onAction,
+      actionLabel: actionLabel,
+      actionIcon: actionIcon,
+      actionFocusNode: actionFocusNode,
+      onActionNavigateUp: onActionNavigateUp,
+      onActionNavigateDown: onActionNavigateDown,
+      onActionNavigateLeft: onActionNavigateLeft,
+      onActionNavigateRight: onActionNavigateRight,
+      onActionBack: onActionBack,
+    ),
   );
 }
 

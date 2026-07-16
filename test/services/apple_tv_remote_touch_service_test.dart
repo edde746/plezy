@@ -172,6 +172,50 @@ void main() {
       expect(harness.keyUps, [LogicalKeyboardKey.enter]);
     });
 
+    test('native select during click fallback is consumed and releases synthetic select', () async {
+      final harness = _Harness();
+
+      await harness.send('click_s');
+
+      expect(harness.keyDowns, [LogicalKeyboardKey.enter]);
+      expect(harness.service.handleNativeKeyEvent(_keyDown(LogicalKeyboardKey.enter)), isTrue);
+      expect(harness.keyUps, isEmpty);
+
+      expect(harness.service.handleNativeKeyEvent(_keyUp(LogicalKeyboardKey.enter)), isTrue);
+
+      expect(harness.keyUps, [LogicalKeyboardKey.enter]);
+
+      await harness.send('click_e');
+
+      expect(harness.keyUps, [LogicalKeyboardKey.enter]);
+    });
+
+    test('native select burst consumes duplicate native pairs', () async {
+      final harness = _Harness();
+
+      expect(harness.service.handleNativeKeyEvent(_keyDown(LogicalKeyboardKey.select)), isFalse);
+      expect(harness.service.handleNativeKeyEvent(_keyUp(LogicalKeyboardKey.select)), isFalse);
+
+      expect(harness.service.handleNativeKeyEvent(_keyDown(LogicalKeyboardKey.select)), isTrue);
+      expect(harness.service.handleNativeKeyEvent(_keyUp(LogicalKeyboardKey.select)), isTrue);
+
+      harness.advance(const Duration(milliseconds: 121));
+
+      expect(harness.service.handleNativeKeyEvent(_keyDown(LogicalKeyboardKey.select)), isFalse);
+      expect(harness.service.handleNativeKeyEvent(_keyUp(LogicalKeyboardKey.select)), isFalse);
+    });
+
+    test('raw native enter suppresses click fallback from tvOS engine path', () async {
+      final harness = _Harness();
+
+      harness.service.handleNativeKeyEvent(_keyDown(_rawEnterKey));
+      await harness.send('click_s');
+      await harness.send('click_e');
+
+      expect(harness.keyDowns, isEmpty);
+      expect(harness.keyUps, isEmpty);
+    });
+
     test('recent directional input suppresses click fallback', () async {
       final harness = _Harness();
 
@@ -213,6 +257,32 @@ void main() {
 
       expect(harness.keys, isEmpty);
     });
+
+    test('isTouchActive and listenable track touch start and end', () async {
+      final harness = _Harness();
+      final seen = <bool>[];
+      harness.service.touchActiveListenable.addListener(() => seen.add(harness.service.isTouchActive));
+
+      expect(harness.service.isTouchActive, isFalse);
+
+      await harness.send('started', x: 500, y: 500);
+      expect(harness.service.isTouchActive, isTrue);
+
+      await harness.send('ended', x: 500, y: 500);
+      expect(harness.service.isTouchActive, isFalse);
+
+      expect(seen, [true, false]);
+    });
+
+    test('cancelled touch clears touch-active state', () async {
+      final harness = _Harness();
+
+      await harness.send('started', x: 500, y: 500);
+      expect(harness.service.isTouchActive, isTrue);
+
+      await harness.send('cancelled');
+      expect(harness.service.isTouchActive, isFalse);
+    });
   });
 }
 
@@ -239,6 +309,8 @@ class _Harness {
     now = now.add(duration);
   }
 }
+
+const _rawEnterKey = LogicalKeyboardKey(0x0d);
 
 KeyDownEvent _keyDown(LogicalKeyboardKey logicalKey) {
   return KeyDownEvent(physicalKey: PhysicalKeyboardKey.enter, logicalKey: logicalKey, timeStamp: Duration.zero);

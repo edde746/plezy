@@ -1,0 +1,40 @@
+appId: com.edde746.plezy
+---
+- runFlow:
+    file: show_codec_track_sheet.yaml
+    env:
+      SHEET_MARKER: "${SHEET_MARKER}"
+- assertVisible: "${AUDIO_TRACK}"
+- tapOn:
+    point: "30%,84%"
+- runFlow:
+    file: show_codec_track_sheet.yaml
+    env:
+      SHEET_MARKER: "${AUDIO_TRACK}"
+- repeat:
+    times: 12
+    while:
+      notVisible: "${SUBTITLE_TRACK}"
+    commands:
+      - swipe:
+          start: 70%, 82%
+          end: 70%, 68%
+          duration: 300
+- assertVisible: "${SUBTITLE_TRACK}"
+- swipe:
+    start: 70%, 78%
+    end: 70%, 68%
+    duration: 300
+- tapOn:
+    point: "70%,86%"
+- runFlow:
+    file: show_codec_track_sheet.yaml
+    env:
+      SHEET_MARKER: "${AUDIO_TRACK}"
+- assertVisible:
+    text: "${AUDIO_TRACK}"
+    selected: true
+- assertVisible:
+    text: "${SUBTITLE_TRACK}"
+    selected: true
+- back

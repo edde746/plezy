@@ -1,10 +1,15 @@
 import 'dart:convert';
+import 'package:plezy/media/ids.dart';
 
 import 'package:drift/drift.dart' show Value;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/database/app_database.dart';
+import 'package:plezy/media/media_backend.dart';
+import 'package:plezy/services/api_cache.dart';
+import 'package:plezy/services/jellyfin_api_cache.dart';
 import 'package:plezy/services/plex_api_cache.dart';
+import '../test_helpers/media_items.dart';
 
 void main() {
   late AppDatabase db;
@@ -50,8 +55,45 @@ void main() {
       await newDb.close();
     });
 
-    test('database getter exposes the underlying AppDatabase', () {
-      expect(identical(cache.database, db), isTrue);
+    test('registered cleanup ignores backend initialization order and preserves pinned rows', () async {
+      await cache.put(ServerId('srv'), '/volatile', {'value': 1});
+      await cache.put(ServerId('srv'), '/pinned', {'value': 2});
+      await cache.pin(ServerId('srv'), '/pinned');
+
+      // Register the other backend last; cleanup must not depend on whichever
+      // concrete singleton happened to initialize most recently.
+      JellyfinApiCache.initialize(db);
+      await ApiCache.clearRegisteredVolatile();
+
+      expect(await cache.get(ServerId('srv'), '/volatile'), isNull);
+      expect(await cache.get(ServerId('srv'), '/pinned'), {'value': 2});
+    });
+
+    test('registering a new database drops stale backend dispatch entries', () async {
+      final newDb = AppDatabase.forTesting(NativeDatabase.memory());
+      JellyfinApiCache.initialize(newDb);
+
+      expect(() => ApiCache.forBackend(MediaBackend.plex), throwsStateError);
+      expect(identical(ApiCache.forBackend(MediaBackend.jellyfin).database, newDb), isTrue);
+
+      await newDb.close();
+    });
+  });
+
+  group('shared row decoding', () {
+    test('drops malformed rows without discarding valid siblings', () {
+      final decoded = decodeCachedMediaRows(
+        ['{"id":"first"}', 'not json', '[]', '{"id":"last"}'],
+        serializedData: (row) => row,
+        decode: (_, json) {
+          final id = json['id'] as String;
+          return MapEntry(id, testMediaItem(id: id));
+        },
+      );
+
+      expect(decoded.keys, ['first', 'last']);
+      expect(decoded['first']?.id, 'first');
+      expect(decoded['last']?.id, 'last');
     });
   });
 
@@ -61,27 +103,27 @@ void main() {
 
   group('get / put', () {
     test('miss returns null for an unknown key', () async {
-      expect(await cache.get('srv', '/library/metadata/1'), isNull);
+      expect(await cache.get(ServerId('srv'), '/library/metadata/1'), isNull);
     });
 
     test('put + get round-trip preserves the JSON map', () async {
       final payload = mediaContainer(ratingKey: '1', title: 'Hello');
-      await cache.put('srv', '/library/metadata/1', payload);
+      await cache.put(ServerId('srv'), '/library/metadata/1', payload);
 
-      final hit = await cache.get('srv', '/library/metadata/1');
+      final hit = await cache.get(ServerId('srv'), '/library/metadata/1');
       expect(hit, isNotNull);
       expect(hit, equals(payload));
     });
 
     test('put on existing key overwrites prior data (insertOnConflictUpdate)', () async {
-      await cache.put('srv', '/library/metadata/1', {
+      await cache.put(ServerId('srv'), '/library/metadata/1', {
         'MediaContainer': {
           'Metadata': [
             {'title': 'first'},
           ],
         },
       });
-      await cache.put('srv', '/library/metadata/1', {
+      await cache.put(ServerId('srv'), '/library/metadata/1', {
         'MediaContainer': {
           'Metadata': [
             {'title': 'second'},
@@ -89,22 +131,22 @@ void main() {
         },
       });
 
-      final hit = await cache.get('srv', '/library/metadata/1');
+      final hit = await cache.get(ServerId('srv'), '/library/metadata/1');
       expect(((hit!['MediaContainer'] as Map)['Metadata'] as List).first['title'], 'second');
     });
 
     test('keys are namespaced by serverId — same endpoint on different servers is isolated', () async {
-      await cache.put('srv-a', '/library/metadata/1', mediaContainer(ratingKey: 'A'));
-      await cache.put('srv-b', '/library/metadata/1', mediaContainer(ratingKey: 'B'));
+      await cache.put(ServerId('srv-a'), '/library/metadata/1', mediaContainer(ratingKey: 'A'));
+      await cache.put(ServerId('srv-b'), '/library/metadata/1', mediaContainer(ratingKey: 'B'));
 
-      final a = await cache.get('srv-a', '/library/metadata/1');
-      final b = await cache.get('srv-b', '/library/metadata/1');
+      final a = await cache.get(ServerId('srv-a'), '/library/metadata/1');
+      final b = await cache.get(ServerId('srv-b'), '/library/metadata/1');
       expect(((a!['MediaContainer'] as Map)['Metadata'] as List).first['ratingKey'], 'A');
       expect(((b!['MediaContainer'] as Map)['Metadata'] as List).first['ratingKey'], 'B');
     });
 
     test('put writes a fresh cachedAt timestamp on overwrite', () async {
-      await cache.put('srv', '/library/metadata/1', mediaContainer());
+      await cache.put(ServerId('srv'), '/library/metadata/1', mediaContainer());
       final firstRow = await (db.select(
         db.apiCache,
       )..where((t) => t.cacheKey.equals('srv:/library/metadata/1'))).getSingle();
@@ -112,7 +154,7 @@ void main() {
       // Wait one tick so DateTime.now() advances.
       await Future<void>.delayed(const Duration(milliseconds: 5));
 
-      await cache.put('srv', '/library/metadata/1', mediaContainer(title: 'Updated'));
+      await cache.put(ServerId('srv'), '/library/metadata/1', mediaContainer(title: 'Updated'));
       final secondRow = await (db.select(
         db.apiCache,
       )..where((t) => t.cacheKey.equals('srv:/library/metadata/1'))).getSingle();
@@ -127,33 +169,33 @@ void main() {
 
   group('deletion', () {
     test('deleteForServer wipes only the targeted serverId', () async {
-      await cache.put('srv-a', '/library/metadata/1', mediaContainer(ratingKey: '1'));
-      await cache.put('srv-a', '/library/metadata/2', mediaContainer(ratingKey: '2'));
-      await cache.put('srv-b', '/library/metadata/1', mediaContainer(ratingKey: '1'));
+      await cache.put(ServerId('srv-a'), '/library/metadata/1', mediaContainer(ratingKey: '1'));
+      await cache.put(ServerId('srv-a'), '/library/metadata/2', mediaContainer(ratingKey: '2'));
+      await cache.put(ServerId('srv-b'), '/library/metadata/1', mediaContainer(ratingKey: '1'));
 
-      await cache.deleteForServer('srv-a');
+      await cache.deleteForServer(ServerId('srv-a'));
 
-      expect(await cache.get('srv-a', '/library/metadata/1'), isNull);
-      expect(await cache.get('srv-a', '/library/metadata/2'), isNull);
-      expect(await cache.get('srv-b', '/library/metadata/1'), isNotNull);
+      expect(await cache.get(ServerId('srv-a'), '/library/metadata/1'), isNull);
+      expect(await cache.get(ServerId('srv-a'), '/library/metadata/2'), isNull);
+      expect(await cache.get(ServerId('srv-b'), '/library/metadata/1'), isNotNull);
     });
 
     test('deleteForItem removes both metadata and children endpoints', () async {
-      await cache.put('srv', '/library/metadata/1', mediaContainer());
-      await cache.put('srv', '/library/metadata/1/children', mediaContainer());
-      await cache.put('srv', '/library/metadata/2', mediaContainer());
+      await cache.put(ServerId('srv'), '/library/metadata/1', mediaContainer());
+      await cache.put(ServerId('srv'), '/library/metadata/1/children', mediaContainer());
+      await cache.put(ServerId('srv'), '/library/metadata/2', mediaContainer());
 
-      await cache.deleteForItem('srv', '1');
+      await cache.deleteForItem(ServerId('srv'), '1');
 
-      expect(await cache.get('srv', '/library/metadata/1'), isNull);
-      expect(await cache.get('srv', '/library/metadata/1/children'), isNull);
+      expect(await cache.get(ServerId('srv'), '/library/metadata/1'), isNull);
+      expect(await cache.get(ServerId('srv'), '/library/metadata/1/children'), isNull);
       // Unrelated item not affected.
-      expect(await cache.get('srv', '/library/metadata/2'), isNotNull);
+      expect(await cache.get(ServerId('srv'), '/library/metadata/2'), isNotNull);
     });
 
     test('clearAll wipes every row across servers', () async {
-      await cache.put('srv-a', '/library/metadata/1', mediaContainer());
-      await cache.put('srv-b', '/library/metadata/2', mediaContainer());
+      await cache.put(ServerId('srv-a'), '/library/metadata/1', mediaContainer());
+      await cache.put(ServerId('srv-b'), '/library/metadata/2', mediaContainer());
 
       await cache.clearAll();
 
@@ -161,14 +203,14 @@ void main() {
     });
 
     test('clearVolatile preserves pinned offline metadata', () async {
-      await cache.put('srv-a', '/library/metadata/1', mediaContainer(ratingKey: '1'));
-      await cache.put('srv-a', '/library/metadata/2', mediaContainer(ratingKey: '2'));
-      await cache.pinForOffline('srv-a', '1');
+      await cache.put(ServerId('srv-a'), '/library/metadata/1', mediaContainer(ratingKey: '1'));
+      await cache.put(ServerId('srv-a'), '/library/metadata/2', mediaContainer(ratingKey: '2'));
+      await cache.pinForOffline(ServerId('srv-a'), '1');
 
       await cache.clearVolatile();
 
-      expect(await cache.get('srv-a', '/library/metadata/1'), isNotNull);
-      expect(await cache.get('srv-a', '/library/metadata/2'), isNull);
+      expect(await cache.get(ServerId('srv-a'), '/library/metadata/1'), isNotNull);
+      expect(await cache.get(ServerId('srv-a'), '/library/metadata/2'), isNull);
     });
   });
 
@@ -178,43 +220,43 @@ void main() {
 
   group('pinning', () {
     test('isPinned defaults to false for a freshly cached item', () async {
-      await cache.put('srv', '/library/metadata/1', mediaContainer());
-      expect(await cache.isPinnedRatingKey('srv', '1'), isFalse);
+      await cache.put(ServerId('srv'), '/library/metadata/1', mediaContainer());
+      expect(await cache.isPinnedRatingKey(ServerId('srv'), '1'), isFalse);
     });
 
     test('isPinned returns false when the item is not cached at all', () async {
-      expect(await cache.isPinnedRatingKey('srv', 'missing'), isFalse);
+      expect(await cache.isPinnedRatingKey(ServerId('srv'), 'missing'), isFalse);
     });
 
     test('pinForOffline marks the row as pinned', () async {
-      await cache.put('srv', '/library/metadata/1', mediaContainer());
-      await cache.pinForOffline('srv', '1');
-      expect(await cache.isPinnedRatingKey('srv', '1'), isTrue);
+      await cache.put(ServerId('srv'), '/library/metadata/1', mediaContainer());
+      await cache.pinForOffline(ServerId('srv'), '1');
+      expect(await cache.isPinnedRatingKey(ServerId('srv'), '1'), isTrue);
     });
 
     test('unpinForOffline reverts the pin', () async {
-      await cache.put('srv', '/library/metadata/1', mediaContainer());
-      await cache.pinForOffline('srv', '1');
-      await cache.unpinForOffline('srv', '1');
-      expect(await cache.isPinnedRatingKey('srv', '1'), isFalse);
+      await cache.put(ServerId('srv'), '/library/metadata/1', mediaContainer());
+      await cache.pinForOffline(ServerId('srv'), '1');
+      await cache.unpinForOffline(ServerId('srv'), '1');
+      expect(await cache.isPinnedRatingKey(ServerId('srv'), '1'), isFalse);
     });
 
     test('pinForOffline on missing row is a no-op (no insert, no throw)', () async {
-      await cache.pinForOffline('srv', 'missing');
-      expect(await cache.isPinnedRatingKey('srv', 'missing'), isFalse);
+      await cache.pinForOffline(ServerId('srv'), 'missing');
+      expect(await cache.isPinnedRatingKey(ServerId('srv'), 'missing'), isFalse);
     });
 
     test('getPinnedKeys extracts ratingKeys from pinned rows for the server', () async {
-      await cache.put('srv', '/library/metadata/1', mediaContainer());
-      await cache.put('srv', '/library/metadata/2', mediaContainer());
-      await cache.put('srv', '/library/metadata/3', mediaContainer());
-      await cache.put('other', '/library/metadata/4', mediaContainer());
+      await cache.put(ServerId('srv'), '/library/metadata/1', mediaContainer());
+      await cache.put(ServerId('srv'), '/library/metadata/2', mediaContainer());
+      await cache.put(ServerId('srv'), '/library/metadata/3', mediaContainer());
+      await cache.put(ServerId('other'), '/library/metadata/4', mediaContainer());
 
-      await cache.pinForOffline('srv', '1');
-      await cache.pinForOffline('srv', '3');
-      await cache.pinForOffline('other', '4');
+      await cache.pinForOffline(ServerId('srv'), '1');
+      await cache.pinForOffline(ServerId('srv'), '3');
+      await cache.pinForOffline(ServerId('other'), '4');
 
-      final keys = await cache.getPinnedKeys('srv');
+      final keys = await cache.getPinnedKeys(ServerId('srv'));
       expect(keys, equals({'1', '3'}));
     });
 
@@ -228,15 +270,15 @@ void main() {
         const ApiCacheCompanion(pinned: Value(true)),
       );
 
-      expect(await cache.getPinnedKeys('srv'), isEmpty);
+      expect(await cache.getPinnedKeys(ServerId('srv')), isEmpty);
     });
 
     test('getPinnedKeys handles alphanumeric ratingKeys', () async {
       // Plex sometimes uses alphanumeric ratingKeys (e.g. for online-content).
-      await cache.put('srv', '/library/metadata/abc-123', mediaContainer(ratingKey: 'abc-123'));
-      await cache.pinForOffline('srv', 'abc-123');
+      await cache.put(ServerId('srv'), '/library/metadata/abc-123', mediaContainer(ratingKey: 'abc-123'));
+      await cache.pinForOffline(ServerId('srv'), 'abc-123');
 
-      final keys = await cache.getPinnedKeys('srv');
+      final keys = await cache.getPinnedKeys(ServerId('srv'));
       expect(keys, equals({'abc-123'}));
     });
   });
@@ -247,20 +289,20 @@ void main() {
 
   group('metadata extraction', () {
     test('getMetadata returns null when the key is not cached', () async {
-      expect(await cache.getMetadata('srv', 'missing'), isNull);
+      expect(await cache.getMetadata(ServerId('srv'), 'missing'), isNull);
     });
 
     test('getMetadata returns null when cached payload has no Metadata array', () async {
-      await cache.put('srv', '/library/metadata/empty', {
+      await cache.put(ServerId('srv'), '/library/metadata/empty', {
         'MediaContainer': {'size': 0},
       });
-      expect(await cache.getMetadata('srv', 'empty'), isNull);
+      expect(await cache.getMetadata(ServerId('srv'), 'empty'), isNull);
     });
 
     test('getMetadata parses MediaContainer.Metadata[0] and tags it with serverId', () async {
-      await cache.put('srv', '/library/metadata/42', mediaContainer(ratingKey: '42', title: 'Hello'));
+      await cache.put(ServerId('srv'), '/library/metadata/42', mediaContainer(ratingKey: '42', title: 'Hello'));
 
-      final meta = await cache.getMetadata('srv', '42');
+      final meta = await cache.getMetadata(ServerId('srv'), '42');
       expect(meta, isNotNull);
       expect(meta!.id, '42');
       expect(meta.title, 'Hello');
@@ -269,12 +311,12 @@ void main() {
 
     test('getMetadata preserves hoisted MediaContainer library fields', () async {
       await cache.put(
-        'srv',
+        ServerId('srv'),
         '/library/metadata/42',
         mediaContainer(ratingKey: '42', title: 'Hello', librarySectionID: '7', librarySectionTitle: 'Movies'),
       );
 
-      final meta = await cache.getMetadata('srv', '42');
+      final meta = await cache.getMetadata(ServerId('srv'), '42');
 
       expect(meta, isNotNull);
       expect(meta!.libraryId, '7');
@@ -282,21 +324,21 @@ void main() {
     });
 
     test('getAllPinnedMetadata returns an empty map when nothing is pinned', () async {
-      await cache.put('srv', '/library/metadata/1', mediaContainer(ratingKey: '1'));
+      await cache.put(ServerId('srv'), '/library/metadata/1', mediaContainer(ratingKey: '1'));
       // No pin yet.
       expect(await cache.getAllPinnedMetadata(), isEmpty);
     });
 
     test('getAllPinnedMetadata aggregates pinned items across servers, keyed by globalKey', () async {
-      await cache.put('srv-a', '/library/metadata/1', mediaContainer(ratingKey: '1', title: 'A1'));
-      await cache.put('srv-a', '/library/metadata/2', mediaContainer(ratingKey: '2', title: 'A2'));
-      await cache.put('srv-b', '/library/metadata/9', mediaContainer(ratingKey: '9', title: 'B9'));
+      await cache.put(ServerId('srv-a'), '/library/metadata/1', mediaContainer(ratingKey: '1', title: 'A1'));
+      await cache.put(ServerId('srv-a'), '/library/metadata/2', mediaContainer(ratingKey: '2', title: 'A2'));
+      await cache.put(ServerId('srv-b'), '/library/metadata/9', mediaContainer(ratingKey: '9', title: 'B9'));
       // One unpinned row to verify it's filtered out.
-      await cache.put('srv-b', '/library/metadata/10', mediaContainer(ratingKey: '10', title: 'B10'));
+      await cache.put(ServerId('srv-b'), '/library/metadata/10', mediaContainer(ratingKey: '10', title: 'B10'));
 
-      await cache.pinForOffline('srv-a', '1');
-      await cache.pinForOffline('srv-a', '2');
-      await cache.pinForOffline('srv-b', '9');
+      await cache.pinForOffline(ServerId('srv-a'), '1');
+      await cache.pinForOffline(ServerId('srv-a'), '2');
+      await cache.pinForOffline(ServerId('srv-b'), '9');
 
       final result = await cache.getAllPinnedMetadata();
       expect(result.keys.toSet(), {'srv-a:1', 'srv-a:2', 'srv-b:9'});
@@ -308,11 +350,11 @@ void main() {
 
     test('getAllPinnedMetadata preserves hoisted MediaContainer library fields', () async {
       await cache.put(
-        'srv',
+        ServerId('srv'),
         '/library/metadata/42',
         mediaContainer(ratingKey: '42', title: 'Hello', librarySectionID: 7, librarySectionTitle: 'Movies'),
       );
-      await cache.pinForOffline('srv', '42');
+      await cache.pinForOffline(ServerId('srv'), '42');
 
       final result = await cache.getAllPinnedMetadata();
 
@@ -331,8 +373,8 @@ void main() {
               pinned: const Value(true),
             ),
           );
-      await cache.put('srv', '/library/metadata/1', mediaContainer(ratingKey: '1'));
-      await cache.pinForOffline('srv', '1');
+      await cache.put(ServerId('srv'), '/library/metadata/1', mediaContainer(ratingKey: '1'));
+      await cache.pinForOffline(ServerId('srv'), '1');
 
       final result = await cache.getAllPinnedMetadata();
       expect(result.keys.toSet(), {'srv:1'});
@@ -350,8 +392,8 @@ void main() {
             ),
           );
       // Good pinned row.
-      await cache.put('srv', '/library/metadata/good', mediaContainer(ratingKey: 'good', title: 'OK'));
-      await cache.pinForOffline('srv', 'good');
+      await cache.put(ServerId('srv'), '/library/metadata/good', mediaContainer(ratingKey: 'good', title: 'OK'));
+      await cache.pinForOffline(ServerId('srv'), 'good');
 
       final result = await cache.getAllPinnedMetadata();
       expect(result.keys, contains('srv:good'));

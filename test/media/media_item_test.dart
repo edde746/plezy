@@ -5,6 +5,7 @@ import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/media/media_part.dart';
 import 'package:plezy/media/media_role.dart';
 import 'package:plezy/media/media_version.dart';
+import '../test_helpers/media_items.dart';
 
 /// Backend-agnostic [MediaItem] tests. Existing coverage is split between
 /// `plex_mappers_test` and `jellyfin_mappers_test` — those exercise the
@@ -20,9 +21,10 @@ MediaItem _movie({
   int? durationMs,
   int? viewOffsetMs,
   String? artPath,
+  List<String>? backdropPaths,
   String? backgroundSquarePath,
   MediaBackend backend = MediaBackend.plex,
-}) => MediaItem(
+}) => testMediaItem(
   id: id,
   backend: backend,
   kind: MediaKind.movie,
@@ -33,6 +35,7 @@ MediaItem _movie({
   durationMs: durationMs,
   viewOffsetMs: viewOffsetMs,
   artPath: artPath,
+  backdropPaths: backdropPaths,
   backgroundSquarePath: backgroundSquarePath,
   serverId: 's1',
 );
@@ -50,7 +53,7 @@ void main() {
     });
 
     test('show with all leaves watched is watched', () {
-      final show = MediaItem(
+      final show = testMediaItem(
         id: 's',
         backend: MediaBackend.plex,
         kind: MediaKind.show,
@@ -62,7 +65,7 @@ void main() {
     });
 
     test('show with viewedLeafCount > leafCount is still watched (defensive)', () {
-      final show = MediaItem(
+      final show = testMediaItem(
         id: 's',
         backend: MediaBackend.plex,
         kind: MediaKind.show,
@@ -74,7 +77,13 @@ void main() {
     });
 
     test('show with no leaf info falls back to viewCount', () {
-      final show = MediaItem(id: 's', backend: MediaBackend.plex, kind: MediaKind.show, viewCount: 1, serverId: 's1');
+      final show = testMediaItem(
+        id: 's',
+        backend: MediaBackend.plex,
+        kind: MediaKind.show,
+        viewCount: 1,
+        serverId: 's1',
+      );
       expect(show.isWatched, isTrue);
     });
   });
@@ -102,7 +111,7 @@ void main() {
     });
 
     test('episodes prefer show art before episode art for wide hero containers', () {
-      final episode = MediaItem(
+      final episode = testMediaItem(
         id: 'e1',
         backend: MediaBackend.plex,
         kind: MediaKind.episode,
@@ -118,11 +127,51 @@ void main() {
       expect(episode.heroArt(containerAspectRatio: 16 / 9), '/show-art');
       expect(episode.heroArtCandidates(containerAspectRatio: 1.0), ['/square', '/show-art', '/episode-art']);
     });
+
+    test('Jellyfin movies expose every backdrop in display order', () {
+      final movie = _movie(
+        backend: MediaBackend.jellyfin,
+        artPath: '/art-0',
+        backdropPaths: ['/art-0', '/art-1', '/art-2'],
+        backgroundSquarePath: '/square',
+      );
+
+      expect(movie.heroBackdropPaths, ['/art-0', '/art-1', '/art-2']);
+      expect(movie.heroArtCandidates(containerAspectRatio: 16 / 9), ['/art-0', '/art-1', '/art-2', '/square']);
+    });
+
+    test('episodes prefer inherited backdrops over their own art', () {
+      final episode = testMediaItem(
+        id: 'e-multi',
+        backend: MediaBackend.jellyfin,
+        kind: MediaKind.episode,
+        artPath: '/episode-0',
+        backdropPaths: ['/episode-0', '/episode-1'],
+        grandparentArtPath: '/show-0',
+        grandparentBackdropPaths: ['/show-0', '/show-1', '/show-2'],
+      );
+
+      expect(episode.heroBackdropPaths, ['/show-0', '/show-1', '/show-2']);
+      expect(episode.heroArtCandidates(containerAspectRatio: 16 / 9), [
+        '/show-0',
+        '/show-1',
+        '/show-2',
+        '/episode-0',
+        '/episode-1',
+      ]);
+    });
+
+    test('legacy scalar art remains a single static backdrop', () {
+      final movie = _movie(artPath: '/legacy-art');
+
+      expect(movie.resolvedBackdropPaths, ['/legacy-art']);
+      expect(movie.heroBackdropPaths, ['/legacy-art']);
+    });
   });
 
   group('MediaItem.isPartiallyWatched', () {
     test('show with some leaves watched is partially watched', () {
-      final show = MediaItem(
+      final show = testMediaItem(
         id: 's',
         backend: MediaBackend.plex,
         kind: MediaKind.show,
@@ -134,7 +183,7 @@ void main() {
     });
 
     test('show with zero leaves watched is NOT partially watched', () {
-      final show = MediaItem(
+      final show = testMediaItem(
         id: 's',
         backend: MediaBackend.plex,
         kind: MediaKind.show,
@@ -146,7 +195,7 @@ void main() {
     });
 
     test('show with all leaves watched is NOT partially watched', () {
-      final show = MediaItem(
+      final show = testMediaItem(
         id: 's',
         backend: MediaBackend.plex,
         kind: MediaKind.show,
@@ -331,6 +380,23 @@ void main() {
       expect((decoded as JellyfinMediaItem).playlistItemId, 'entry-1');
     });
 
+    test('round-trips Jellyfin backdrop lists', () {
+      const original = JellyfinMediaItem(
+        id: 'j-backdrops',
+        kind: MediaKind.episode,
+        artPath: '/episode-0',
+        backdropPaths: ['/episode-0', '/episode-1'],
+        grandparentArtPath: '/show-0',
+        grandparentBackdropPaths: ['/show-0', '/show-1'],
+      );
+
+      final decoded = MediaItem.fromJson(original.toJson());
+
+      expect(decoded.backdropPaths, ['/episode-0', '/episode-1']);
+      expect(decoded.grandparentBackdropPaths, ['/show-0', '/show-1']);
+      expect(decoded.heroBackdropPaths, ['/show-0', '/show-1']);
+    });
+
     test('missing backend keeps legacy Plex fallback', () {
       final decoded = MediaItem.fromJson({'id': 'legacy', 'kind': 'movie'});
 
@@ -343,7 +409,7 @@ void main() {
 
   group('MediaItem.displayTitle', () {
     test('episode prefers grandparent (show) title', () {
-      final ep = MediaItem(
+      final ep = testMediaItem(
         id: 'e1',
         backend: MediaBackend.plex,
         kind: MediaKind.episode,
@@ -357,7 +423,7 @@ void main() {
     });
 
     test('season prefers grandparent over parent (when both present)', () {
-      final season = MediaItem(
+      final season = testMediaItem(
         id: 'sn1',
         backend: MediaBackend.plex,
         kind: MediaKind.season,

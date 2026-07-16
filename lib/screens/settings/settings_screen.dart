@@ -24,6 +24,7 @@ import '../../services/file_picker_service.dart';
 import '../../services/saf_storage_service.dart';
 import '../../services/settings_export_service.dart';
 import '../../providers/theme_provider.dart';
+import '../../providers/seerr_account_provider.dart';
 import '../../providers/trackers_provider.dart';
 import '../../providers/trakt_account_provider.dart';
 import '../../services/keyboard_shortcuts_service.dart';
@@ -35,12 +36,13 @@ import '../../utils/platform_detector.dart';
 import '../../utils/update_dialog.dart';
 import '../../widgets/desktop_app_bar.dart';
 import '../../widgets/dialog_action_button.dart';
+import '../../widgets/focusable_list_tile.dart';
+import '../../widgets/library_management_sheet.dart';
 import '../../widgets/setting_tile.dart';
 import '../../widgets/settings_builder.dart';
 import '../../widgets/settings_section.dart';
 import '../../profiles/active_profile_provider.dart';
 import '../../profiles/profile.dart';
-import '../../profiles/profile_registry.dart';
 import 'about_screen.dart';
 import 'add_connection_screen.dart';
 import 'appearance_settings_screen.dart';
@@ -48,7 +50,8 @@ import 'keyboard_shortcuts_screen.dart';
 import 'logs_screen.dart';
 import 'playback_settings_screen.dart';
 import '../profile/profile_switch_screen.dart';
-import 'trackers_settings_screen.dart';
+import 'services_settings_screen.dart';
+import 'settings_utils.dart';
 import '../../widgets/loading_indicator_box.dart';
 
 class SettingsScreen extends StatefulWidget {
@@ -65,7 +68,8 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
   static const _kDonate = 'donate';
   static const _kAppearance = 'appearance';
   static const _kPlayback = 'playback';
-  static const _kTrackers = 'trackers';
+  static const _kManageLibraries = 'manage_libraries';
+  static const _kServices = 'services';
   static const _kDownloadLocation = 'download_location';
   static const _kDownloadOnWifiOnly = 'download_on_wifi_only';
   static const _kAutoRemoveWatchedDownloads = 'auto_remove_watched_downloads';
@@ -93,13 +97,7 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
   @override
   void initState() {
     super.initState();
-    _focusTracker = FocusMemoryTracker(
-      onFocusChanged: () {
-        // ignore: no-empty-block - setState triggers rebuild to update focus styling
-        setStateIfMounted(() {});
-      },
-      debugLabelPrefix: 'settings',
-    );
+    _focusTracker = FocusMemoryTracker(debugLabelPrefix: 'settings');
     if (_keyboardShortcutsSupported) {
       KeyboardShortcutsService.getInstance().then((s) {
         setStateIfMounted(() => _keyboardService = s);
@@ -115,13 +113,13 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
 
   @override
   void focusActiveTabIfReady() {
-    if (InputModeTracker.isKeyboardMode(context)) {
+    if (InputModeTracker.isKeyboardMode(context, listen: false)) {
       _focusTracker.restoreFocus(fallbackKey: DonationService.isEnabled ? _kDonate : _kAppearance);
     }
   }
 
   void _navigateToSidebar() {
-    MainScreenFocusScope.of(context, listen: false)?.focusSidebar();
+    MainScreenFocusScope.focusSidebarOf(context);
   }
 
   KeyEventResult _handleKeyEvent(FocusNode _, KeyEvent event) {
@@ -132,10 +130,12 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
     return KeyEventResult.ignored;
   }
 
-  settings.SettingsService get _settingsService => settings.SettingsService.instanceOrNull!;
+  settings.SettingsService get _settingsService => settings.SettingsService.instance;
 
   @override
   Widget build(BuildContext context) {
+    final hasLibraries = context.select<LibrariesProvider, bool>((p) => p.libraries.isNotEmpty);
+
     return Scaffold(
       body: Focus(
         onKeyEvent: _handleKeyEvent,
@@ -145,17 +145,18 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
             ExcludeFocus(child: CustomAppBar(title: Text(t.settings.title), pinned: true)),
             SliverList(
               delegate: SliverChildListDelegate([
-                if (DonationService.isEnabled) _buildDonateTile(),
-
-                _buildAppearanceTile(),
-
-                _buildPlaybackTile(),
-
-                _buildTrackersTile(),
+                const SizedBox(height: 8),
+                SettingsGroup(
+                  children: [
+                    if (DonationService.isEnabled) _buildDonateTile(),
+                    _buildAppearanceTile(),
+                    _buildPlaybackTile(),
+                    if (hasLibraries) _buildManageLibrariesTile(),
+                    _buildServicesTile(),
+                  ],
+                ),
 
                 _buildConnectionsSection(),
-
-                _buildProfilesSection(),
 
                 if (!PlatformDetector.isAppleTV()) _buildDownloadsSection(),
 
@@ -165,14 +166,21 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
 
                 if (UpdateService.isUpdateCheckEnabled) ...[_buildUpdateSection()],
 
-                if (!PlatformDetector.isTV()) _buildBackupSection(),
+                // Hidden on Android TV / tvOS (no document picker); desktop in
+                // force-TV mode keeps it — FilePickerService works there.
+                if (!PlatformDetector.isTV() || PlatformDetector.isDesktopOS()) _buildBackupSection(),
 
-                SettingNavigationTile(
-                  focusNode: _focusTracker.get(_kAbout),
-                  icon: Symbols.info_rounded,
-                  title: t.settings.about,
-                  subtitle: t.settings.aboutDescription,
-                  destinationBuilder: (context) => const AboutScreen(),
+                const SizedBox(height: 24),
+                SettingsGroup(
+                  children: [
+                    SettingNavigationTile(
+                      focusNode: _focusTracker.get(_kAbout),
+                      icon: Symbols.info_rounded,
+                      title: t.settings.about,
+                      subtitle: t.settings.aboutDescription,
+                      destinationBuilder: (context) => const AboutScreen(),
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 24),
               ]),
@@ -184,12 +192,12 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
   }
 
   Widget _buildDonateTile() {
-    return ListTile(
+    return SettingNavigationTile(
       focusNode: _focusTracker.get(_kDonate),
-      leading: const AppIcon(Symbols.favorite_rounded, fill: 1),
-      title: Text(t.settings.supportDeveloper),
-      subtitle: Text(t.settings.supportDeveloperDescription),
-      trailing: const AppIcon(Symbols.open_in_new_rounded, fill: 1),
+      icon: Symbols.favorite_rounded,
+      title: t.settings.supportDeveloper,
+      subtitle: t.settings.supportDeveloperDescription,
+      trailingIcon: Symbols.open_in_new_rounded,
       onTap: () async {
         final url = Uri.parse(DonationService.donationUrl);
         if (await canLaunchUrl(url)) {
@@ -204,7 +212,7 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
       builder: (context, themeProvider, _) => SettingValueBuilder<int>(
         pref: settings.SettingsService.libraryDensity,
         builder: (context, libraryDensity, _) {
-          final summary = '${themeProvider.themeModeDisplayName} · ${t.settings.libraryDensity} $libraryDensity';
+          final summary = '${themeModeLabel(themeProvider.themeMode)} · ${t.settings.libraryDensity} $libraryDensity';
           return SettingNavigationTile(
             focusNode: _focusTracker.get(_kAppearance),
             icon: Symbols.palette_rounded,
@@ -227,22 +235,33 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
     );
   }
 
-  Widget _buildTrackersTile() {
-    return Consumer2<TraktAccountProvider, TrackersProvider>(
-      builder: (context, trakt, trackers, _) {
+  Widget _buildManageLibrariesTile() {
+    return SettingNavigationTile(
+      focusNode: _focusTracker.get(_kManageLibraries),
+      icon: Symbols.video_library_rounded,
+      title: t.libraries.manageLibraries,
+      subtitle: t.settings.manageLibrariesDescription,
+      onTap: () => showLibraryManagementSheet(context),
+    );
+  }
+
+  Widget _buildServicesTile() {
+    return Consumer3<TraktAccountProvider, TrackersProvider, SeerrAccountProvider>(
+      builder: (context, trakt, trackers, seerr, _) {
         final connectedNames = <String>[
           if (trakt.isConnected) t.trakt.title,
-          if (trackers.isMalConnected) t.trackers.services.mal,
-          if (trackers.isAnilistConnected) t.trackers.services.anilist,
-          if (trackers.isSimklConnected) t.trackers.services.simkl,
+          if (trackers.isMalConnected) t.services.names.mal,
+          if (trackers.isAnilistConnected) t.services.names.anilist,
+          if (trackers.isSimklConnected) t.services.names.simkl,
+          if (seerr.isConnected) t.services.names.seerr,
         ];
-        final subtitle = connectedNames.isEmpty ? t.settings.trackersDescription : connectedNames.join(' · ');
+        final subtitle = connectedNames.isEmpty ? t.settings.servicesDescription : connectedNames.join(' · ');
         return SettingNavigationTile(
-          focusNode: _focusTracker.get(_kTrackers),
+          focusNode: _focusTracker.get(_kServices),
           icon: Symbols.sync_rounded,
-          title: t.settings.trackers,
+          title: t.settings.services,
           subtitle: subtitle,
-          destinationBuilder: (_) => const TrackersSettingsScreen(),
+          destinationBuilder: (_) => const ServicesSettingsScreen(),
         );
       },
     );
@@ -254,10 +273,9 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
         ? t.connections.addConnectionSubtitleNoProfile
         : t.connections.addConnectionSubtitleScoped(displayName: active.displayName);
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+    return SettingsGroup(
+      title: t.connections.sectionTitle,
       children: [
-        SettingsSectionHeader(t.connections.sectionTitle),
         // Connections are managed per-profile (via the Profiles section
         // and each profile's detail screen). The shortcut here just opens
         // the picker scoped to the active profile so users can add a Plex
@@ -271,31 +289,32 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
             Navigator.push(context, MaterialPageRoute(builder: (_) => AddConnectionScreen(targetProfile: active)));
           },
         ),
+        _buildProfilesTile(),
       ],
     );
   }
 
-  Widget _buildProfilesSection() {
-    return StreamBuilder<List<Profile>>(
-      stream: context.read<ProfileRegistry>().watchProfiles(),
-      builder: (context, snapshot) {
-        final count = snapshot.data?.length ?? 0;
-        // `context.select` so this StreamBuilder doesn't rebuild on every
-        // ActiveProfileProvider notification — only when the active
-        // profile's display name actually changes.
-        final activeName = context.select<ActiveProfileProvider, String?>((p) => p.active?.displayName);
-        final subtitle = count <= 1
-            ? t.profiles.summarySingle
-            : (activeName != null
-                  ? t.profiles.summaryMultipleWithActive(count: count, activeName: activeName)
-                  : t.profiles.summaryMultiple(count: count));
-        return SettingNavigationTile(
-          icon: Symbols.group_rounded,
-          title: t.profiles.sectionTitle,
-          subtitle: subtitle,
-          destinationBuilder: (_) => const ProfileSwitchScreen(),
-        );
-      },
+  Widget _buildProfilesTile() {
+    // ActiveProfileProvider already merges local rows with virtual Plex
+    // Home profiles — counting only the local DB rows made every Plex Home
+    // household read as a single profile here. `context.select` keeps
+    // rebuilds scoped to actual count/name changes (a StreamBuilder here
+    // was also re-created on every settings rebuild).
+    final count = context.select<ActiveProfileProvider, int>((p) => p.profiles.length);
+    final activeName = context.select<ActiveProfileProvider, String?>((p) => p.active?.displayName);
+    final subtitle = count <= 1
+        ? t.profiles.summarySingle
+        : (activeName != null
+              ? t.profiles.summaryMultipleWithActive(count: count, activeName: activeName)
+              : t.profiles.summaryMultiple(count: count));
+    return SettingNavigationTile(
+      icon: Symbols.group_rounded,
+      title: t.profiles.sectionTitle,
+      subtitle: subtitle,
+      onTap: () => Navigator.of(
+        context,
+        rootNavigator: true,
+      ).push(MaterialPageRoute(builder: (_) => const ProfileSwitchScreen())),
     );
   }
 
@@ -303,22 +322,23 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
     final storageService = DownloadStorageService.instance;
     final isCustom = storageService.isUsingCustomPath();
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+    return SettingsGroup(
+      title: t.settings.downloads,
       children: [
-        SettingsSectionHeader(t.settings.downloads),
         if (!Platform.isIOS)
           FutureBuilder<String>(
             future: storageService.getCurrentDownloadPathDisplay(),
             builder: (context, snapshot) {
               final currentPath = snapshot.data ?? '...';
-              return ListTile(
+              return FocusableListTile(
                 focusNode: _focusTracker.get(_kDownloadLocation),
                 leading: const AppIcon(Symbols.folder_rounded, fill: 1),
                 title: Text(isCustom ? t.settings.downloadLocationCustom : t.settings.downloadLocationDefault),
-                subtitle: Text(currentPath, maxLines: 2, overflow: TextOverflow.ellipsis),
+                subtitle: Text(currentPath, maxLines: 2, overflow: .ellipsis),
                 trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
                 onTap: () => _showDownloadLocationDialog(),
+                dense: false,
+                visualDensity: VisualDensity.standard,
               );
             },
           ),
@@ -343,10 +363,9 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
   Widget _buildKeyboardShortcutsSection() {
     if (_keyboardService == null) return const SizedBox.shrink();
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+    return SettingsGroup(
+      title: t.settings.keyboardShortcuts,
       children: [
-        SettingsSectionHeader(t.settings.keyboardShortcuts),
         SettingNavigationTile(
           focusNode: _focusTracker.get(_kVideoPlayerControls),
           icon: Symbols.keyboard_rounded,
@@ -371,16 +390,14 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
   }
 
   Widget _buildAdvancedSection() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+    return SettingsGroup(
+      title: t.settings.advanced,
       children: [
-        SettingsSectionHeader(t.settings.advanced),
-        ListTile(
+        SettingNavigationTile(
           focusNode: _focusTracker.get(_kWatchTogetherRelay),
-          leading: const AppIcon(Symbols.dns_rounded, fill: 1),
-          title: Text(t.settings.watchTogetherRelay),
-          subtitle: Text(t.settings.watchTogetherRelayDescription),
-          trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
+          icon: Symbols.dns_rounded,
+          title: t.settings.watchTogetherRelay,
+          subtitle: t.settings.watchTogetherRelayDescription,
           onTap: () => _showRelayUrlDialog(),
         ),
         SettingSwitchTile(
@@ -404,38 +421,34 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
           subtitle: t.settings.viewLogsDescription,
           destinationBuilder: (context) => const LogsScreen(),
         ),
-        ListTile(
+        SettingNavigationTile(
           focusNode: _focusTracker.get(_kClearCache),
-          leading: const AppIcon(Symbols.cleaning_services_rounded, fill: 1),
-          title: Text(t.settings.clearCache),
-          subtitle: Text(t.settings.clearCacheDescription),
-          trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
+          icon: Symbols.cleaning_services_rounded,
+          title: t.settings.clearCache,
+          subtitle: t.settings.clearCacheDescription,
           onTap: () => _showClearCacheDialog(),
         ),
-        ListTile(
+        SettingNavigationTile(
           focusNode: _focusTracker.get(_kResetSettings),
-          leading: const AppIcon(Symbols.restore_rounded, fill: 1),
-          title: Text(t.settings.resetSettings),
-          subtitle: Text(t.settings.resetSettingsDescription),
-          trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
+          icon: Symbols.restore_rounded,
+          title: t.settings.resetSettings,
+          subtitle: t.settings.resetSettingsDescription,
           onTap: () => _showResetSettingsDialog(),
         ),
         if (kDebugMode)
-          ListTile(
-            leading: const AppIcon(Symbols.error_rounded, fill: 1),
-            title: const Text('Test Sentry'),
-            subtitle: const Text('Send a test error'),
-            trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
+          SettingNavigationTile(
+            icon: Symbols.error_rounded,
+            title: 'Test Sentry',
+            subtitle: 'Send a test error',
             onTap: () {
               throw Exception("Example exception");
             },
           ),
         if (kDebugMode)
-          ListTile(
-            leading: const AppIcon(Symbols.timer_rounded, fill: 1),
-            title: const Text('Test ANR'),
-            subtitle: const Text('Block the main thread for 10 seconds'),
-            trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
+          SettingNavigationTile(
+            icon: Symbols.timer_rounded,
+            title: 'Test ANR',
+            subtitle: 'Block the main thread for 10 seconds',
             onTap: () {
               showSnackBar(context, 'Blocking main thread...');
               final end = DateTime.now().add(const Duration(seconds: 10));
@@ -447,24 +460,21 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
   }
 
   Widget _buildBackupSection() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+    return SettingsGroup(
+      title: t.settings.backup,
       children: [
-        SettingsSectionHeader(t.settings.backup),
-        ListTile(
+        SettingNavigationTile(
           focusNode: _focusTracker.get(_kExportSettings),
-          leading: const AppIcon(Symbols.upload_rounded, fill: 1),
-          title: Text(t.settings.exportSettings),
-          subtitle: Text(t.settings.exportSettingsDescription),
-          trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
+          icon: Symbols.upload_rounded,
+          title: t.settings.exportSettings,
+          subtitle: t.settings.exportSettingsDescription,
           onTap: _handleExportSettings,
         ),
-        ListTile(
+        SettingNavigationTile(
           focusNode: _focusTracker.get(_kImportSettings),
-          leading: const AppIcon(Symbols.download_rounded, fill: 1),
-          title: Text(t.settings.importSettings),
-          subtitle: Text(t.settings.importSettingsDescription),
-          trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
+          icon: Symbols.download_rounded,
+          title: t.settings.importSettings,
+          subtitle: t.settings.importSettingsDescription,
           onTap: _showImportSettingsDialog,
         ),
       ],
@@ -481,15 +491,13 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
 
   Widget _buildUpdateSection() {
     if (UpdateService.useNativeUpdater) {
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      return SettingsGroup(
+        title: t.settings.updates,
         children: [
-          SettingsSectionHeader(t.settings.updates),
-          ListTile(
+          SettingNavigationTile(
             focusNode: _focusTracker.get(_kCheckForUpdates),
-            leading: const AppIcon(Symbols.system_update_rounded, fill: 1),
-            title: Text(t.settings.checkForUpdates),
-            trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
+            icon: Symbols.system_update_rounded,
+            title: t.settings.checkForUpdates,
             onTap: () => UpdateService.checkForUpdatesNative(inBackground: false),
           ),
           _buildAutoCheckUpdatesOnStartupTile(),
@@ -499,11 +507,10 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
 
     final hasUpdate = _updateInfo != null && _updateInfo!['hasUpdate'] == true;
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+    return SettingsGroup(
+      title: t.settings.updates,
       children: [
-        SettingsSectionHeader(t.settings.updates),
-        ListTile(
+        FocusableListTile(
           focusNode: _focusTracker.get(_kCheckForUpdates),
           leading: AppIcon(
             hasUpdate ? Symbols.system_update_rounded : Symbols.check_circle_rounded,
@@ -524,6 +531,8 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
                     _checkForUpdates();
                   }
                 },
+          dense: false,
+          visualDensity: VisualDensity.standard,
         ),
         _buildAutoCheckUpdatesOnStartupTile(),
       ],
@@ -534,13 +543,13 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
     final storageService = DownloadStorageService.instance;
     final isCustom = storageService.isUsingCustomPath();
 
-    await showDialog<void>(
+    await showScopedDialog<void>(
       context: context,
       builder: (dialogContext) => AlertDialog(
         title: Text(t.settings.downloads),
         content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: .min,
+          crossAxisAlignment: .start,
           children: [
             Text(t.settings.downloadLocationDescription),
             const SizedBox(height: 16),
@@ -644,52 +653,10 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
   }
 
   Future<void> _showRelayUrlDialog() async {
-    final controller = TextEditingController(
-      text: _settingsService.read(settings.SettingsService.customRelayUrl) ?? '',
+    await showScopedDialog<void>(
+      context: context,
+      builder: (_) => _RelayUrlDialog(settingsService: _settingsService),
     );
-    final saveFocusNode = FocusNode();
-    // try/finally guarantees disposal on every dismissal path (button,
-    // back, tap-outside) without depending on `.then` chaining.
-    try {
-      await showDialog<void>(
-        context: context,
-        builder: (BuildContext dialogContext) {
-          return AlertDialog(
-            title: Text(t.settings.watchTogetherRelay),
-            content: FocusableTextField(
-              controller: controller,
-              decoration: InputDecoration(labelText: 'URL', hintText: t.settings.watchTogetherRelayHint),
-              autofocus: true,
-              textInputAction: TextInputAction.done,
-              onEditingComplete: () => saveFocusNode.requestFocus(),
-            ),
-            actions: [
-              DialogActionButton(
-                onPressed: () async {
-                  controller.clear();
-                  await _settingsService.write(settings.SettingsService.customRelayUrl, null);
-                  if (dialogContext.mounted) Navigator.pop(dialogContext);
-                },
-                label: t.settings.resetToDefault,
-              ),
-              DialogActionButton(onPressed: () => Navigator.pop(dialogContext), label: t.common.cancel),
-              DialogActionButton(
-                focusNode: saveFocusNode,
-                onPressed: () async {
-                  final url = controller.text.trim().isEmpty ? null : controller.text.trim();
-                  await _settingsService.write(settings.SettingsService.customRelayUrl, url);
-                  if (dialogContext.mounted) Navigator.pop(dialogContext);
-                },
-                label: t.common.save,
-              ),
-            ],
-          );
-        },
-      );
-    } finally {
-      controller.dispose();
-      saveFocusNode.dispose();
-    }
   }
 
   Future<void> _showClearCacheDialog() async {
@@ -807,6 +774,66 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
     if (updateInfo == null) return;
     unawaited(
       showUpdateAvailableDialog(context, updateInfo, title: t.settings.updateAvailable, dismissLabel: t.common.close),
+    );
+  }
+}
+
+class _RelayUrlDialog extends StatefulWidget {
+  final settings.SettingsService settingsService;
+
+  const _RelayUrlDialog({required this.settingsService});
+
+  @override
+  State<_RelayUrlDialog> createState() => _RelayUrlDialogState();
+}
+
+class _RelayUrlDialogState extends State<_RelayUrlDialog> {
+  late final TextEditingController _controller;
+  final _saveFocusNode = FocusNode(debugLabel: 'WatchTogetherRelaySave');
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = TextEditingController(
+      text: widget.settingsService.read(settings.SettingsService.customRelayUrl) ?? '',
+    );
+  }
+
+  @override
+  void dispose() {
+    _saveFocusNode.dispose();
+    _controller.dispose();
+    super.dispose();
+  }
+
+  Future<void> _reset() async {
+    _controller.clear();
+    await widget.settingsService.write(settings.SettingsService.customRelayUrl, null);
+    if (mounted) Navigator.pop(context);
+  }
+
+  Future<void> _save() async {
+    final trimmed = _controller.text.trim();
+    await widget.settingsService.write(settings.SettingsService.customRelayUrl, trimmed.isEmpty ? null : trimmed);
+    if (mounted) Navigator.pop(context);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Text(t.settings.watchTogetherRelay),
+      content: FocusableTextField(
+        controller: _controller,
+        decoration: InputDecoration(labelText: 'URL', hintText: t.settings.watchTogetherRelayHint),
+        autofocus: true,
+        textInputAction: TextInputAction.done,
+        onEditingComplete: () => _saveFocusNode.requestFocus(),
+      ),
+      actions: [
+        DialogActionButton(onPressed: _reset, label: t.settings.resetToDefault),
+        DialogActionButton(onPressed: () => Navigator.pop(context), label: t.common.cancel),
+        DialogActionButton(focusNode: _saveFocusNode, onPressed: _save, label: t.common.save),
+      ],
     );
   }
 }

@@ -1,6 +1,8 @@
 import '../../models/trackers/tracker_context.dart';
 import '../settings_service.dart';
 import 'tracker_constants.dart';
+import 'tracker_id_resolver.dart';
+import 'tracker_session.dart';
 
 /// Abstract tracker contract: the coordinator calls [markWatched] once per
 /// playback when progress crosses the watched threshold. Enabled/auth gating
@@ -31,6 +33,16 @@ abstract class Tracker {
 
   Future<void> markWatched(TrackerContext ctx);
   Future<void> markUnwatched(TrackerContext ctx);
+}
+
+abstract interface class TrackerRatingSource {
+  Future<int?> getRating(TrackerRatingContext ctx);
+  Future<void> rate(TrackerRatingContext ctx, int score);
+  Future<void> clearRating(TrackerRatingContext ctx);
+}
+
+abstract interface class DisposableTrackerClient {
+  void dispose();
 }
 
 class TrackerRatingUnavailableException implements Exception {
@@ -70,4 +82,23 @@ abstract class TrackerBase implements Tracker {
   @override
   bool shouldScrobbleForLibrary(String? libraryGlobalKey) =>
       SettingsService.instanceOrNull?.isLibraryAllowedForTracker(service, libraryGlobalKey) ?? true;
+}
+
+mixin ClientBackedTracker<TClient extends DisposableTrackerClient> on TrackerBase {
+  TClient? _client;
+
+  TClient? get client => _client;
+
+  @override
+  bool get hasActiveClient => _client != null;
+
+  void rebindTrackerClient(
+    TrackerSession? session, {
+    required TClient Function(TrackerSession session) createClient,
+    void Function()? onBeforeBind,
+  }) {
+    _client?.dispose();
+    onBeforeBind?.call();
+    _client = session == null ? null : createClient(session);
+  }
 }

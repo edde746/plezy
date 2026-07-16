@@ -25,15 +25,21 @@
 <div
   bind:this={el}
   class="{className} scroll-reveal"
-  style="opacity: {visible ? 1 : 0}; transform: translateY({visible ? 0 : 24}px); transition-delay: {delay}ms;"
+  style="opacity: {visible ? 1 : 0}; transform: translateY({visible ? 0 : 16}px); transition-delay: {delay}ms;"
 >
   {@render children()}
 </div>
 
 <style>
   .scroll-reveal {
-    transition-property: opacity, transform;
-    transition-duration: 600ms;
-    transition-timing-function: ease-out;
+    transition:
+      opacity var(--motion-expressive) var(--ease-standard),
+      transform var(--motion-expressive) var(--ease-standard);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .scroll-reveal {
+      transform: none !important;
+    }
   }
 </style>

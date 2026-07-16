@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/screens/main_screen.dart';
 import 'package:plezy/widgets/side_navigation_rail.dart';
@@ -68,6 +69,65 @@ void main() {
     expect(shouldPass(isOverlaySheetOpen: true), isFalse);
     expect(shouldPass(isRouteCurrent: false), isFalse);
     expect(shouldPass(isAppleTV: false), isFalse);
+  });
+
+  test('macOS physical Escape is reserved for native fullscreen only at root Home', () {
+    bool shouldHandle({
+      bool isMacOS = true,
+      bool isPhysicalKeyboardEvent = true,
+      LogicalKeyboardKey logicalKey = LogicalKeyboardKey.escape,
+      bool isCurrentRoute = true,
+      bool isHomeTab = true,
+    }) {
+      return shouldHandleMacOsRootEscape(
+        isMacOS: isMacOS,
+        isPhysicalKeyboardEvent: isPhysicalKeyboardEvent,
+        logicalKey: logicalKey,
+        isCurrentRoute: isCurrentRoute,
+        isHomeTab: isHomeTab,
+      );
+    }
+
+    expect(shouldHandle(), isTrue);
+    expect(shouldHandle(isHomeTab: false), isFalse);
+    expect(shouldHandle(isCurrentRoute: false), isFalse);
+    expect(shouldHandle(isPhysicalKeyboardEvent: false), isFalse);
+    expect(shouldHandle(isMacOS: false), isFalse);
+    expect(shouldHandle(logicalKey: LogicalKeyboardKey.gameButtonB), isFalse);
+  });
+
+  test('profile switch invalidates nothing here — the keyed session remount owns it', () {
+    expect(
+      profileInvalidationAction(
+        previousProfileId: 'owner',
+        currentProfileId: 'kids',
+        wasBindingPreviously: false,
+        isBindingNow: false,
+      ),
+      ProfileInvalidationAction.none,
+    );
+  });
+
+  test('same-profile rebind invalidates once when binding settles', () {
+    expect(
+      profileInvalidationAction(
+        previousProfileId: 'owner',
+        currentProfileId: 'owner',
+        wasBindingPreviously: true,
+        isBindingNow: false,
+      ),
+      ProfileInvalidationAction.invalidateNow,
+    );
+
+    expect(
+      profileInvalidationAction(
+        previousProfileId: 'owner',
+        currentProfileId: 'owner',
+        wasBindingPreviously: false,
+        isBindingNow: false,
+      ),
+      ProfileInvalidationAction.none,
+    );
   });
 
   testWidgets('side navigation bleed animates from the previous value', (tester) async {

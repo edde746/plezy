@@ -5,13 +5,7 @@ import 'livetv_channel.dart';
 
 part 'livetv_lineup.g.dart';
 
-List<LiveTvChannel> _parseChannels(Object? raw) {
-  final list = flexibleList(raw) ?? const [];
-  return [
-    for (final item in list)
-      if (item is Map<String, dynamic>) LiveTvChannel.fromJson(item),
-  ];
-}
+List<LiveTvChannel> _parseChannels(Object? raw) => parseFlexibleJsonList(raw, LiveTvChannel.fromJson);
 
 @JsonSerializable(createToJson: false)
 class LiveTvCountry {

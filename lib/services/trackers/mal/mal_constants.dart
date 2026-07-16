@@ -1,3 +1,11 @@
+/// MAL `/anime/ranking` types used by the Explore catalog rows.
+enum MalRankingType {
+  airing,
+  bypopularity;
+
+  String get queryValue => name;
+}
+
 /// Bundled MyAnimeList API endpoints and public client ID.
 ///
 /// The authorize flow lives in the Plezy relay's OAuth proxy; see

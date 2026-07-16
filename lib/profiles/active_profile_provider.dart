@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 
@@ -131,19 +132,27 @@ class ActiveProfileProvider extends ChangeNotifier with DisposableChangeNotifier
   Future<void> _initialize() async {
     await _reloadSnapshot();
 
+    // Every listener diffs its snapshot first: drift re-emits on any table
+    // write (including no-op upserts like the binder's server refresh), and
+    // each unchecked pass rebuilds every Profile and notifies the whole
+    // listener tree (binder, MainScreen, pickers).
     _localSub = _registry.watchProfiles().listen((list) {
+      if (listEquals(list, _localProfiles)) return;
       _localProfiles = list;
       _recomputeProfiles();
       _resolveActive();
       safeNotifyListeners();
     });
     _connSub = _connections.watchConnections().listen((list) {
-      _connectionsById = {for (final c in list) c.id: c};
+      final byId = {for (final c in list) c.id: c};
+      if (_sameConnections(byId, _connectionsById)) return;
+      _connectionsById = byId;
       _recomputeProfiles();
       _resolveActive();
       safeNotifyListeners();
     });
     _plexHomeSub = _plexHome.stream.listen((cache) {
+      if (_samePlexHomeUsers(cache, _plexHomeUsers)) return;
       _plexHomeUsers = cache;
       _recomputeProfiles();
       _resolveActive();
@@ -166,6 +175,28 @@ class ActiveProfileProvider extends ChangeNotifier with DisposableChangeNotifier
     _plexHomeUsers = _plexHome.current;
     _recomputeProfiles();
     _resolveActive();
+  }
+
+  /// [Connection] has no value equality; its persisted config is the
+  /// cheapest faithful comparison key for the handful of rows involved.
+  static bool _sameConnections(Map<String, Connection> a, Map<String, Connection> b) {
+    if (a.length != b.length) return false;
+    for (final entry in a.entries) {
+      final other = b[entry.key];
+      if (other == null) return false;
+      if (identical(entry.value, other)) continue;
+      if (jsonEncode(entry.value.toConfigJson()) != jsonEncode(other.toConfigJson())) return false;
+    }
+    return true;
+  }
+
+  static bool _samePlexHomeUsers(Map<String, List<PlexHomeUser>> a, Map<String, List<PlexHomeUser>> b) {
+    if (a.length != b.length) return false;
+    for (final entry in a.entries) {
+      final other = b[entry.key];
+      if (other == null || !listEquals(entry.value, other)) return false;
+    }
+    return true;
   }
 
   void _recomputeProfiles() {
@@ -197,15 +228,13 @@ class ActiveProfileProvider extends ChangeNotifier with DisposableChangeNotifier
         return;
       }
     }
-    // Saved id no longer matches anything (e.g. Plex admin removed the
-    // home user). Clear it so storage-scoped settings do not keep reading
-    // and writing under the removed profile's user scope, and let the UI
-    // force an explicit profile choice.
+    // Saved id no longer matches anything. Keep the persisted id: this
+    // resolver runs on every stream emission, and early/partial snapshots
+    // (boot before migration, a Plex Home cache that hasn't hydrated yet)
+    // must not irreversibly wipe the user's selection. Genuinely
+    // unresolvable states clear the id at their decision points — the boot
+    // guard and the post-removal settle flow.
     _active = null;
-    final storage = _storage;
-    if (storage != null) {
-      unawaited(storage.clearActiveProfileId());
-    }
   }
 
   /// Activate [profile]. PIN-protected local profiles must supply a matching

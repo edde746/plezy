@@ -23,21 +23,28 @@ val downloadLibmpv by tasks.registering {
   }
 }
 
-val assVersion = "fp-3"
-val assDir = layout.buildDirectory.dir("libass").get().asFile
-val assAars = listOf("lib_ass-release.aar", "lib_ass_kt-release.aar", "lib_ass_media-release.aar")
-
-val downloadLibass by tasks.registering {
-  val stamp = File(assDir, ".version")
-  outputs.upToDateWhen { stamp.exists() && stamp.readText().trim() == assVersion }
+// Extract libc++_shared.so from the libmpv AAR so the app source set can package
+// it with top merge priority (see packaging { jniLibs } and sourceSets below).
+val extractMpvLibcxx by tasks.registering {
+  dependsOn(downloadLibmpv)
+  val aar = File(mpvDir, mpvAar)
+  val outDir = File(mpvDir, "libcxx")
+  inputs.file(aar)
+  outputs.dir(outDir)
   doLast {
-    assDir.mkdirs()
-    val baseUrl = "https://github.com/edde746/libass-android/releases/download/$assVersion"
-    assAars.forEach { name ->
-      val dest = File(assDir, name)
-      exec { commandLine("curl", "-sfL", "$baseUrl/$name", "-o", dest.absolutePath) }
+    outDir.deleteRecursively() // drop stale ABIs from a previous AAR version
+    outDir.mkdirs()
+    exec {
+      commandLine(
+        "unzip",
+        "-q",
+        "-o",
+        aar.absolutePath,
+        "jni/*/libc++_shared.so",
+        "-d",
+        outDir.absolutePath
+      )
     }
-    stamp.writeText(assVersion)
   }
 }
 
@@ -145,9 +152,25 @@ android {
 
   packaging {
     jniLibs {
-      // Resolve conflict between libass-android and libmpv native libraries
+      // pickFirst only suppresses the duplicate libc++ merge error; the
+      // sourceSets rule below makes libmpv's newer runtime win for
+      // std::from_chars<float>, while older native consumers remain ABI-compatible.
       pickFirsts.add("lib/*/libc++_shared.so")
     }
+  }
+
+  sourceSets {
+    getByName("main") {
+      // PROJECT-scope jniLibs merge ahead of subprojects/AARs, so dependency
+      // order cannot accidentally select the older libc++ copy.
+      jniLibs.srcDir(File(mpvDir, "libcxx/jni"))
+    }
+  }
+
+  lint {
+    // Enforce the app-owned minSdk boundary without auditing upstream AndroidX.
+    checkDependencies = false
+    checkOnly += setOf("NewApi")
   }
 }
 
@@ -155,15 +178,17 @@ flutter {
   source = "../.."
 }
 
-// Download libdovi before any CMake/native build task
 tasks.matching { it.name.contains("CMake") || it.name.contains("externalNative") }.configureEach {
   dependsOn(downloadLibdovi)
 }
 
-// Download libmpv and libass AARs before compilation
 tasks.matching { it.name.startsWith("pre") && it.name.endsWith("Build") }.configureEach {
-  dependsOn(downloadLibmpv)
-  dependsOn(downloadLibass)
+  dependsOn(downloadLibmpv, extractMpvLibcxx)
+}
+// Gradle snapshots jniLibs source dirs before task execution; this keeps the
+// extracted libmpv libc++ directory present during input discovery.
+tasks.matching { it.name.startsWith("merge") && it.name.endsWith("JniLibFolders") }.configureEach {
+  dependsOn(extractMpvLibcxx)
 }
 
 dependencies {
@@ -186,6 +211,12 @@ dependencies {
   // FFmpeg audio decoder for unsupported codecs (ALAC, DTS, TrueHD, etc.)
   implementation("org.jellyfin.media3:media3-ffmpeg-decoder:1.9.0+1")
 
-  // libass-android for ASS/SSA subtitle rendering
-  assAars.forEach { implementation(files(File(assDir, it))) }
+  // Keeping libass in-project lets its static core share the app's native
+  // packaging rules.
+  implementation(project(":libass"))
+
+  testImplementation("junit:junit:4.13.2")
+  // Real android.util.* implementations for tests exercising media3 classes
+  // (MatroskaExtractor uses SparseArray, which is a no-op stub on plain JVM)
+  testImplementation("org.robolectric:robolectric:4.15.1")
 }

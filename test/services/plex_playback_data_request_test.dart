@@ -1,16 +1,22 @@
 import 'dart:convert';
+import 'package:plezy/media/ids.dart';
 
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
-import 'package:http/testing.dart';
 import 'package:plezy/database/app_database.dart';
+import 'package:plezy/media/media_backend.dart';
+
+import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/media/media_source_info.dart';
 import 'package:plezy/mpv/mpv.dart';
-import 'package:plezy/models/plex/plex_config.dart';
 import 'package:plezy/models/transcode_quality_preset.dart';
+import 'package:plezy/services/playback_initialization_types.dart';
 import 'package:plezy/services/plex_api_cache.dart';
 import 'package:plezy/services/plex_client.dart';
+
+import '../test_helpers/backend_client_fixtures.dart';
+import '../test_helpers/media_items.dart';
 
 void main() {
   late AppDatabase db;
@@ -24,19 +30,8 @@ void main() {
     await db.close();
   });
 
-  PlexClient makeClient(Future<http.Response> Function(http.Request request) handler) {
-    return PlexClient.forTesting(
-      config: PlexConfig(
-        baseUrl: 'https://plex.example.com',
-        token: 'token',
-        clientIdentifier: 'client-id',
-        product: 'Plezy',
-        version: '1',
-      ),
-      serverId: 'server-id',
-      httpClient: MockClient(handler),
-    );
-  }
+  PlexClient makeClient(Future<http.Response> Function(http.Request request) handler) =>
+      testPlexClient(serverId: ServerId('server-id'), handler: handler);
 
   MediaSourceInfo mediaInfoWithSubtitles(List<MediaSubtitleTrack> subtitleTracks) {
     return MediaSourceInfo(
@@ -50,6 +45,24 @@ void main() {
   List<SubtitleTrack> buildTranscodeSubtitles(PlexClient client, List<MediaSubtitleTrack> subtitleTracks) {
     return client.buildTranscodeSidecarSubtitlesForTesting(mediaInfoWithSubtitles(subtitleTracks));
   }
+
+  test('selectStreams sends audio stream selection with allParts', () async {
+    final requests = <http.Request>[];
+    final client = makeClient((request) async {
+      requests.add(request);
+      return http.Response('', 200);
+    });
+    addTearDown(client.close);
+
+    final saved = await client.selectStreams(99, audioStreamID: 301, allParts: true);
+
+    expect(saved, isTrue);
+    expect(requests, hasLength(1));
+    expect(requests.single.method, 'PUT');
+    expect(requests.single.url.path, '/library/parts/99');
+    expect(requests.single.url.queryParameters['audioStreamID'], '301');
+    expect(requests.single.url.queryParameters['allParts'], '1');
+  });
 
   test('playback metadata request includes streams for transcode sidecar subtitles', () async {
     final requests = <Uri>[];
@@ -107,9 +120,209 @@ void main() {
 
     expect(requests, hasLength(1));
     expect(requests.single.queryParameters['includeStreams'], '1');
+    expect(requests.single.queryParameters['checkFiles'], '1');
+    expect(requests.single.queryParameters.containsKey('checkFileAvailability'), isFalse);
     expect(data.mediaInfo?.subtitleTracks, hasLength(1));
     expect(data.mediaInfo?.subtitleTracks.single.id, 401);
     expect(data.mediaInfo?.subtitleTracks.single.selected, isTrue);
+  });
+
+  test('playback uses metadata availability flags without probing part URLs', () async {
+    final requests = <http.Request>[];
+    final client = makeClient((request) async {
+      requests.add(request);
+      if (request.url.path != '/library/metadata/42') {
+        return http.Response('unexpected request', 500);
+      }
+
+      return http.Response(
+        jsonEncode({
+          'MediaContainer': {
+            'Metadata': [
+              {
+                'ratingKey': '42',
+                'type': 'movie',
+                'title': 'Movie',
+                'Media': [
+                  {
+                    'id': 7,
+                    'container': 'mkv',
+                    'Part': [
+                      {'id': 10, 'key': '/library/parts/10/file.mkv', 'exists': 0, 'accessible': 1},
+                      {'id': 20, 'key': '/library/parts/20/file.mkv', 'exists': 1, 'accessible': 1},
+                    ],
+                  },
+                ],
+              },
+            ],
+          },
+        }),
+        200,
+        headers: {'content-type': 'application/json'},
+      );
+    });
+    addTearDown(client.close);
+
+    final data = await client.getVideoPlaybackData('42');
+
+    expect(requests, hasLength(1));
+    expect(requests.single.url.queryParameters['checkFiles'], '1');
+    expect(requests.single.url.queryParameters.containsKey('checkFileAvailability'), isFalse);
+    expect(data.videoUrl, 'https://plex.example.com/library/parts/20/file.mkv?X-Plex-Token=token');
+    expect(data.selectedMediaIndex, 0);
+    expect(data.selectedPartIndex, 1);
+  });
+
+  test('latest server metadata overwrites cached playback media fields', () async {
+    final cache = PlexApiCache.instance;
+    await cache.put(ServerId('server-id'), '/library/metadata/42', {
+      'MediaContainer': {
+        'Metadata': [
+          {
+            'ratingKey': '42',
+            'type': 'movie',
+            'title': 'Playback title',
+            'Media': [
+              {
+                'id': 7,
+                'Part': [
+                  {
+                    'id': 99,
+                    'key': '/library/parts/99/file.mkv',
+                    'exists': true,
+                    'accessible': true,
+                    'Stream': [
+                      {'streamType': 1, 'id': 300, 'codec': 'h264'},
+                    ],
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      },
+    });
+
+    await cache.put(ServerId('server-id'), '/library/metadata/42', {
+      'MediaContainer': {
+        'Metadata': [
+          {
+            'ratingKey': '42',
+            'type': 'movie',
+            'title': 'Detail title',
+            'Media': [
+              {
+                'id': 7,
+                'Part': [
+                  {'id': 99, 'key': '/library/parts/99/weak.mkv'},
+                ],
+              },
+            ],
+          },
+        ],
+      },
+    });
+
+    final cached = await cache.get(ServerId('server-id'), '/library/metadata/42');
+    final metadata = (cached!['MediaContainer'] as Map<String, dynamic>)['Metadata'] as List<dynamic>;
+    final item = metadata.single as Map<String, dynamic>;
+    final media = item['Media'] as List<dynamic>;
+    final part = ((media.single as Map<String, dynamic>)['Part'] as List<dynamic>).single as Map<String, dynamic>;
+
+    expect(item['title'], 'Detail title');
+    expect(part['key'], '/library/parts/99/weak.mkv');
+    expect(part.containsKey('exists'), isFalse);
+    expect(part.containsKey('accessible'), isFalse);
+    expect(part.containsKey('Stream'), isFalse);
+  });
+
+  test('network failure falls back to lean cached playback metadata', () async {
+    await PlexApiCache.instance.put(ServerId('server-id'), '/library/metadata/42', {
+      'MediaContainer': {
+        'Metadata': [
+          {
+            'ratingKey': '42',
+            'type': 'movie',
+            'title': 'Movie',
+            'Media': [
+              {
+                'id': 7,
+                'Part': [
+                  {'id': 10, 'key': '/library/parts/10/stale.mkv'},
+                ],
+              },
+              {
+                'id': 8,
+                'Part': [
+                  {'id': 20, 'key': '/library/parts/20/current.mkv'},
+                ],
+              },
+            ],
+          },
+        ],
+      },
+    });
+    final requests = <http.Request>[];
+    final client = makeClient((request) async {
+      requests.add(request);
+      throw Exception('offline');
+    });
+    addTearDown(client.close);
+
+    final data = await client.getVideoPlaybackData('42');
+
+    expect(requests, hasLength(1));
+    expect(data.videoUrl, 'https://plex.example.com/library/parts/10/stale.mkv?X-Plex-Token=token');
+    expect(data.availableVersions, hasLength(2));
+  });
+
+  test('playback initialization exposes effective selected media index', () async {
+    final client = makeClient((request) async {
+      if (request.url.path != '/library/metadata/42') {
+        return http.Response('unexpected request', 500);
+      }
+
+      return http.Response(
+        jsonEncode({
+          'MediaContainer': {
+            'Metadata': [
+              {
+                'ratingKey': '42',
+                'type': 'movie',
+                'title': 'Movie',
+                'Media': [
+                  {
+                    'id': 7,
+                    'Part': [
+                      {'id': 10, 'key': '/library/parts/10/stale.mkv', 'exists': false, 'accessible': false},
+                    ],
+                  },
+                  {
+                    'id': 8,
+                    'Part': [
+                      {'id': 20, 'key': '/library/parts/20/current.mkv', 'exists': true, 'accessible': true},
+                    ],
+                  },
+                ],
+              },
+            ],
+          },
+        }),
+        200,
+        headers: {'content-type': 'application/json'},
+      );
+    });
+    addTearDown(client.close);
+
+    final result = await client.getPlaybackInitialization(
+      PlaybackInitializationOptions(
+        metadata: testMediaItem(id: '42', backend: MediaBackend.plex, kind: MediaKind.movie, serverId: 'server-id'),
+        selectedMediaIndex: 0,
+      ),
+    );
+
+    expect(result.videoUrl, 'https://plex.example.com/library/parts/20/current.mkv?X-Plex-Token=token');
+    expect(result.selectedMediaIndex, 1);
   });
 
   test('transcode subtitle sidecars only use real Plex stream keys', () {
@@ -152,7 +365,7 @@ void main() {
     expect(subtitles, isEmpty);
   });
 
-  test('selected internal text subtitles are embedded in HTTP MKV transcode', () {
+  test('selected internal text subtitles are segmented into the HLS transcode', () {
     final client = makeClient((_) async => http.Response('not used', 500));
     addTearDown(client.close);
 
@@ -171,33 +384,42 @@ void main() {
       ),
     );
 
-    expect(params['protocol'], 'http');
-    expect(params['subtitles'], 'embedded');
+    expect(params['protocol'], 'hls');
+    expect(params['subtitles'], 'segmented');
     expect(params['subtitleStreamID'], '401');
     expect(params['advancedSubtitles'], 'text');
-    expect(params['X-Plex-Chunked'], '1');
-    expect(params.containsKey('X-Plex-Incomplete-Segments'), isFalse);
-    expect(params['X-Plex-Client-Profile-Extra'], contains('add-settings(DirectPlayStreamSelection=true)'));
+    expect(params.containsKey('X-Plex-Chunked'), isFalse);
+    expect(params['X-Plex-Incomplete-Segments'], '1');
+    expect(params['X-Plex-Client-Profile-Name'], 'Generic');
+
+    final profile = params['X-Plex-Client-Profile-Extra'];
+    expect(profile, contains('add-settings(DirectPlayStreamSelection=true)'));
     expect(
-      params['X-Plex-Client-Profile-Extra'],
+      profile,
+      contains(
+        'add-limitation(scope=videoCodec&scopeName=*&type=upperBound'
+        '&name=video.bitrate&value=3000&replace=true)',
+      ),
+    );
+    expect(
+      profile,
       contains(
         'add-transcode-target(type=videoProfile&context=streaming'
-        '&protocol=http&container=mkv&videoCodec=h264%2Chevc%2C*'
-        '&audioCodec=opus%2Cvorbis%2Cflac%2C*&subtitleCodec=ass%2Cpgs%2Cvobsub%2C*)',
+        '&protocol=hls&container=mpegts&videoCodec=h264%2Chevc%2Cmpeg2video'
+        '&audioCodec=aac%2Cac3%2Ceac3%2Cmp3)',
       ),
     );
     expect(
-      params['X-Plex-Client-Profile-Extra'],
+      profile,
       contains(
-        'add-transcode-target-settings(type=videoProfile&context=streaming'
-        '&protocol=http&CopyMatroskaAttachments=true)',
+        'add-transcode-target(type=subtitleProfile&context=streaming'
+        '&protocol=hls&container=webvtt&subtitleCodec=webvtt)',
       ),
     );
-    expect(params['X-Plex-Client-Profile-Extra'], isNot(contains('protocol=hls')));
-    expect(params['X-Plex-Client-Profile-Extra'], isNot(contains('type=subtitleProfile')));
+    expect(profile, isNot(contains('protocol=http&container=mkv')));
   });
 
-  test('transcode start path uses HTTP start endpoint without token', () {
+  test('transcode start path uses the HLS manifest endpoint without token', () {
     final client = makeClient((_) async => http.Response('not used', 500));
     addTearDown(client.close);
 
@@ -207,20 +429,34 @@ void main() {
       preset: TranscodeQualityPreset.p720_3mbps,
       sessionIdentifier: 'session-id',
       transcodeSessionId: 'transcode-id',
-      offsetMs: 90500,
     );
 
     final startPath = client.buildTranscodeStartPathFromParamsForTesting(params);
 
-    expect(params['offset'], '90');
-    expect(startPath, startsWith('/video/:/transcode/universal/start?'));
-    expect(startPath, isNot(contains('start.m3u8')));
-    expect(startPath, contains('protocol=http'));
-    expect(startPath, contains('offset=90'));
+    expect(startPath, startsWith('/video/:/transcode/universal/start.m3u8?'));
+    expect(startPath, contains('protocol=hls'));
+    expect(startPath, isNot(contains('offset=')));
     expect(startPath, isNot(contains('X-Plex-Token')));
   });
 
-  test('unsupported embedded subtitles keep main transcode subtitles disabled', () {
+  test('transcode params preserve resolved media and part indices', () {
+    final client = makeClient((_) async => http.Response('not used', 500));
+    addTearDown(client.close);
+
+    final params = client.buildTranscodeParamsForTesting(
+      ratingKey: '42',
+      mediaIndex: 1,
+      partIndex: 2,
+      preset: TranscodeQualityPreset.p720_3mbps,
+      sessionIdentifier: 'session-id',
+      transcodeSessionId: 'transcode-id',
+    );
+
+    expect(params['mediaIndex'], '1');
+    expect(params['partIndex'], '2');
+  });
+
+  test('selected image subtitles are burned into HLS without advancedSubtitles', () {
     final client = makeClient((_) async => http.Response('not used', 500));
     addTearDown(client.close);
 
@@ -239,17 +475,18 @@ void main() {
       ),
     );
 
-    expect(params['subtitles'], 'none');
-    expect(params['protocol'], 'http');
-    expect(params.containsKey('subtitleStreamID'), isFalse);
+    expect(params['subtitles'], 'burn');
+    expect(params['subtitleStreamID'], '401');
+    expect(params['protocol'], 'hls');
     expect(params.containsKey('advancedSubtitles'), isFalse);
-    expect(params['X-Plex-Client-Profile-Extra'], isNot(contains('type=subtitleProfile')));
   });
 
-  test('bitmap embedded subtitles are skipped during transcode instead of burned', () {
+  test('image-based embedded subtitles are rendered by HLS, not attached as sidecars', () {
     final client = makeClient((_) async => http.Response('not used', 500));
     addTearDown(client.close);
 
+    // Embedded bitmap streams have no Plex `key`; the HLS request burns the
+    // selected track into the video rendition.
     final subtitles = buildTranscodeSubtitles(client, [
       MediaSubtitleTrack(id: 401, codec: 'pgs', languageCode: 'eng', selected: true, forced: false),
       MediaSubtitleTrack(id: 402, codec: 'dvd_subtitle', languageCode: 'eng', selected: true, forced: false),

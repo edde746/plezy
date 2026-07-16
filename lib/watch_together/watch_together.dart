@@ -1,10 +1,11 @@
 // Models
 export 'models/watch_session.dart';
 export 'models/sync_message.dart';
+export 'models/playback_state.dart';
 
 // Services
 export 'services/watch_together_peer_service.dart';
-export 'services/watch_together_sync_manager.dart';
+export 'services/watch_together_controller.dart';
 
 // Providers
 export 'providers/watch_together_provider.dart';

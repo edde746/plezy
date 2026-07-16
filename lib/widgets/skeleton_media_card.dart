@@ -11,9 +11,9 @@ class SkeletonMediaCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return const Padding(
-      padding: EdgeInsets.all(8),
+      padding: .all(8),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: .start,
         children: [
           Expanded(
             child: ClipRRect(
@@ -28,7 +28,7 @@ class SkeletonMediaCard extends StatelessWidget {
           ),
           SizedBox(height: 3),
           FractionallySizedBox(
-            alignment: Alignment.centerLeft,
+            alignment: .centerLeft,
             widthFactor: 0.6,
             child: SkeletonLoader(borderRadius: BorderRadius.all(Radius.circular(4)), child: SizedBox(height: 11)),
           ),

@@ -1,6 +1,5 @@
 import 'dart:convert';
-
-import 'package:drift/drift.dart';
+import '../media/ids.dart';
 
 import '../media/media_backend.dart';
 import '../media/media_source_info.dart';
@@ -8,6 +7,7 @@ import '../utils/app_logger.dart';
 import '../utils/plex_cache_parser.dart';
 import 'api_cache.dart';
 import 'jellyfin_api_cache.dart';
+import 'jellyfin_cache_resolver.dart';
 import 'jellyfin_media_info_mapper.dart';
 import 'plex_mappers.dart';
 
@@ -22,7 +22,7 @@ class CachedPlaybackMetadataService {
   }) async {
     try {
       return switch (backend) {
-        MediaBackend.plex => _fetchPlexMediaSourceInfo(cacheServerId, itemId, mediaIndex: mediaIndex),
+        MediaBackend.plex => _fetchPlexMediaSourceInfo(ServerId(cacheServerId), itemId, mediaIndex: mediaIndex),
         MediaBackend.jellyfin => _fetchJellyfinMediaSourceInfo(cacheServerId, itemId, mediaIndex: mediaIndex),
       };
     } catch (e) {
@@ -42,7 +42,7 @@ class CachedPlaybackMetadataService {
     try {
       return switch (backend) {
         MediaBackend.plex => _fetchPlexPlaybackExtras(
-          cacheServerId,
+          ServerId(cacheServerId),
           itemId,
           introPattern: introPattern,
           creditsPattern: creditsPattern,
@@ -63,22 +63,22 @@ class CachedPlaybackMetadataService {
   }
 
   static Future<MediaSourceInfo?> _fetchPlexMediaSourceInfo(
-    String serverId,
+    ServerId serverId,
     String itemId, {
     required int mediaIndex,
   }) async {
-    final metadata = await _plexMetadata(serverId, itemId);
+    final metadata = await _plexMetadata(ServerId(serverId), itemId);
     return metadata == null ? null : plexMediaSourceInfoFromCacheJson(metadata, mediaIndex: mediaIndex);
   }
 
   static Future<PlaybackExtras?> _fetchPlexPlaybackExtras(
-    String serverId,
+    ServerId serverId,
     String itemId, {
     String? introPattern,
     String? creditsPattern,
     bool forceChapterFallback = false,
   }) async {
-    final metadata = await _plexMetadata(serverId, itemId);
+    final metadata = await _plexMetadata(ServerId(serverId), itemId);
     if (metadata == null) return null;
     return plexPlaybackExtrasFromCacheJson(
       metadata,
@@ -88,7 +88,7 @@ class CachedPlaybackMetadataService {
     );
   }
 
-  static Future<Map<String, dynamic>?> _plexMetadata(String serverId, String itemId) async {
+  static Future<Map<String, dynamic>?> _plexMetadata(ServerId serverId, String itemId) async {
     final cached = await ApiCache.forBackend(MediaBackend.plex).get(serverId, '/library/metadata/$itemId');
     return PlexCacheParser.extractFirstMetadata(cached);
   }
@@ -98,7 +98,8 @@ class CachedPlaybackMetadataService {
     String itemId, {
     required int mediaIndex,
   }) async {
-    final raw = await _jellyfinRawItem(cacheServerId, itemId);
+    final resolved = await _jellyfinRawItem(cacheServerId, itemId);
+    final raw = resolved.raw;
     final sources = raw['MediaSources'];
     if (sources is! List || sources.isEmpty) return null;
     final selected = mediaIndex >= 0 && mediaIndex < sources.length ? sources[mediaIndex] : sources.first;
@@ -113,8 +114,9 @@ class CachedPlaybackMetadataService {
     String? creditsPattern,
     bool forceChapterFallback = false,
   }) async {
-    final raw = await _jellyfinRawItem(cacheServerId, itemId);
-    final markers = await _jellyfinMediaSegmentMarkers(cacheServerId, itemId);
+    final resolved = await _jellyfinRawItem(cacheServerId, itemId);
+    final raw = resolved.raw;
+    final markers = await _jellyfinMediaSegmentMarkers(resolved.scopeId, itemId);
     return jellyfinPlaybackExtrasFromRaw(
       raw,
       itemId,
@@ -129,7 +131,7 @@ class CachedPlaybackMetadataService {
     try {
       final raw = await ApiCache.forBackend(
         MediaBackend.jellyfin,
-      ).get(cacheServerId, JellyfinApiCache.mediaSegmentsEndpoint(itemId));
+      ).get(ServerId(cacheServerId), JellyfinApiCache.mediaSegmentsEndpoint(itemId));
       return jellyfinMediaSegmentsToMarkers(raw);
     } catch (e) {
       appLogger.d('Cached Jellyfin media segments unavailable for $cacheServerId:$itemId', error: e);
@@ -137,17 +139,13 @@ class CachedPlaybackMetadataService {
     }
   }
 
-  static Future<Map<String, dynamic>> _jellyfinRawItem(String cacheServerId, String itemId) async {
+  static Future<({Map<String, dynamic> raw, String scopeId})> _jellyfinRawItem(
+    String cacheServerId,
+    String itemId,
+  ) async {
     final cache = ApiCache.forBackend(MediaBackend.jellyfin);
-    final scopedPrefix = cacheServerId.contains('/') ? null : '$cacheServerId/%:/Users/%/Items/$itemId';
-    final rows =
-        await (cache.database.select(cache.database.apiCache)..where(
-              (t) =>
-                  t.cacheKey.like('$cacheServerId:/Users/%/Items/$itemId') |
-                  (scopedPrefix == null ? const Constant(false) : t.cacheKey.like(scopedPrefix)),
-            ))
-            .get();
-    if (rows.isEmpty) throw StateError('No Jellyfin cache row for $cacheServerId:$itemId');
-    return jsonDecode(rows.first.data) as Map<String, dynamic>;
+    final resolved = await JellyfinCacheResolver(cache.database).findItem(cacheServerId, itemId);
+    if (resolved == null) throw StateError('No Jellyfin cache row for $cacheServerId:$itemId');
+    return (raw: jsonDecode(resolved.cacheRow.data) as Map<String, dynamic>, scopeId: resolved.key.scopeId);
   }
 }

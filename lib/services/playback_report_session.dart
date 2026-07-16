@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import '../media/media_server_client.dart';
+import '../media/playback_report_metadata.dart';
 
 enum _PlaybackReportState { idle, starting, started, stopping, stopFailed, stopped }
 
@@ -35,12 +36,14 @@ class PlaybackReportSnapshot {
   final String state;
   final Duration position;
   final Duration duration;
+  final PlaybackReportMetadata report;
   final PlaybackStreamSelectionResolver resolveStreamSelection;
 
   const PlaybackReportSnapshot({
     required this.state,
     required this.position,
     required this.duration,
+    this.report = const PlaybackReportMetadata.live(),
     this.resolveStreamSelection = _noStreamSelection,
   });
 
@@ -55,20 +58,45 @@ class PlaybackReportSnapshot {
 /// fire reports concurrently, but state changes are recorded synchronously
 /// before any async work such as settings lookup, track mapping, or HTTP calls.
 class PlaybackReportSession {
-  PlaybackReportSession({required this.client, required this.itemId, this.playSessionId, this.playMethod});
+  PlaybackReportSession({
+    required this.client,
+    required this.itemId,
+    this.playSessionId,
+    this.playMethod,
+    this.liveStreamId,
+  });
 
   final MediaServerClient client;
   final String itemId;
   final String? playSessionId;
   final String? playMethod;
+  final String? liveStreamId;
 
   _PlaybackReportState _state = _PlaybackReportState.idle;
   PlaybackReportSnapshot? _startSnapshot;
   _PendingProgressReport? _pendingProgress;
   Future<void>? _pumpFuture;
   Future<void>? _stopFuture;
+  bool _resetAfterStopRequested = false;
 
   bool get isIdle => _state == _PlaybackReportState.idle;
+
+  bool get isStopped => _state == _PlaybackReportState.stopped;
+
+  void resetAfterStop() {
+    if (_state == _PlaybackReportState.stopping) {
+      _resetAfterStopRequested = true;
+      return;
+    }
+    if (_state == _PlaybackReportState.stopped || _state == _PlaybackReportState.stopFailed) {
+      _state = _PlaybackReportState.idle;
+      _startSnapshot = null;
+      _resetAfterStopRequested = false;
+      _discardPendingProgress();
+      _pumpFuture = null;
+      _stopFuture = null;
+    }
+  }
 
   bool get _isStoppingOrTerminal =>
       _state == _PlaybackReportState.stopping ||
@@ -188,10 +216,16 @@ class PlaybackReportSession {
       await _sendStopped(snapshot);
       stopSucceeded = true;
     } finally {
+      final shouldReset = _resetAfterStopRequested;
+      _resetAfterStopRequested = false;
       _stopFuture = null;
       _discardPendingProgress();
       _pumpFuture = null;
-      _state = stopSucceeded ? _PlaybackReportState.stopped : _PlaybackReportState.stopFailed;
+      _state = shouldReset
+          ? _PlaybackReportState.idle
+          : stopSucceeded
+          ? _PlaybackReportState.stopped
+          : _PlaybackReportState.stopFailed;
     }
   }
 
@@ -217,6 +251,7 @@ class PlaybackReportSession {
       duration: snapshot.duration,
       playSessionId: playSessionId,
       playMethod: playMethod,
+      liveStreamId: liveStreamId,
       mediaSourceId: selection.mediaSourceId,
       audioStreamIndex: selection.audioStreamIndex,
       subtitleStreamIndex: selection.subtitleStreamIndex,
@@ -233,6 +268,7 @@ class PlaybackReportSession {
       isPaused: snapshot.state == 'paused',
       playSessionId: playSessionId,
       playMethod: playMethod,
+      liveStreamId: liveStreamId,
       mediaSourceId: selection.mediaSourceId,
       audioStreamIndex: selection.audioStreamIndex,
       subtitleStreamIndex: selection.subtitleStreamIndex,
@@ -247,7 +283,9 @@ class PlaybackReportSession {
       position: snapshot.position,
       duration: snapshot.duration,
       playSessionId: playSessionId,
+      liveStreamId: liveStreamId,
       mediaSourceId: selection.mediaSourceId,
+      report: snapshot.report,
     );
   }
 }

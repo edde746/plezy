@@ -1,0 +1,27 @@
+appId: com.edde746.plezy
+name: Codec sample - H264 EAC3 multilingual SRT
+tags:
+  - e2e
+  - media
+  - subtitles
+---
+- runFlow:
+    file: ../subflows/open_codec_sample.yaml
+    env:
+      SAMPLE_TITLE: "Codec H264 EAC3 Multisub"
+      SAMPLE_OVERVIEW: "H.264 video with three E-AC-3 audio tracks and a broad multilingual SRT subtitle set."
+- runFlow:
+    file: ../subflows/switch_codec_tracks_deep.yaml
+    env:
+      AUDIO_TRACK: "(?is)^English.*(?:Dolby Digital Plus|E-AC3|Surround|5\\.1).*"
+      SUBTITLE_TRACK: "(?is)^English.*APPLICATION/X-SUBRIP.*"
+      SHEET_MARKER: "(?is)^Japanese.*(?:Dolby Digital Plus|E-AC3|Surround|5\\.1).*"
+- repeat:
+    times: 2
+    while:
+      notVisible: "Overview"
+    commands:
+      - back
+- extendedWaitUntil:
+    visible: "Overview"
+    timeout: 10000

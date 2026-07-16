@@ -27,10 +27,8 @@ class PlexWatchlistService {
   final String _accountToken;
   final String _clientIdentifier;
 
-  PlexWatchlistService({required String accountToken, required String clientIdentifier})
-    : _accountToken = accountToken,
-      _clientIdentifier = clientIdentifier,
-      _http = MediaServerHttpClient(
+  PlexWatchlistService({required this._accountToken, required this._clientIdentifier})
+    : _http = MediaServerHttpClient(
         baseUrl: _discoverBase,
         connectTimeout: MediaServerTimeouts.plexTvConnect,
         receiveTimeout: MediaServerTimeouts.plexTvReceive,

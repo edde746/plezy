@@ -1,4 +1,5 @@
 import 'dart:io';
+import '../media/ids.dart';
 import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
 import 'package:flutter/foundation.dart';
@@ -60,7 +61,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.e);
 
   @override
-  int get schemaVersion => 14;
+  int get schemaVersion => 16;
 
   @override
   MigrationStrategy get migration {
@@ -206,6 +207,20 @@ class AppDatabase extends _$AppDatabase {
             () => m.create(idxOfflineWatchProgressProfile),
           );
         }
+        if (from < 15) {
+          appLogger.i('Adding mediaSourceId column to DownloadedMedia (v15 migration)');
+          await _ignoreAlreadyExists(
+            'DownloadedMedia.mediaSourceId column',
+            () => m.addColumn(downloadedMedia, downloadedMedia.mediaSourceId),
+          );
+        }
+        if (from < 16) {
+          appLogger.i('Adding includeSpecials column to SyncRules (v16 migration)');
+          await _ignoreAlreadyExists(
+            'SyncRules.includeSpecials column',
+            () => m.addColumn(syncRules, syncRules.includeSpecials),
+          );
+        }
       },
     );
   }
@@ -251,7 +266,7 @@ class AppDatabase extends _$AppDatabase {
   }
 
   /// Get pending watch actions for a specific server
-  Future<List<OfflineWatchProgressItem>> getPendingWatchActionsForServer(String serverId, {String? profileId}) {
+  Future<List<OfflineWatchProgressItem>> getPendingWatchActionsForServer(ServerId serverId, {String? profileId}) {
     return (select(offlineWatchProgress)
           ..where(
             (t) =>
@@ -262,6 +277,23 @@ class AppDatabase extends _$AppDatabase {
         .get();
   }
 
+  SimpleSelectStatement<$OfflineWatchProgressTable, OfflineWatchProgressItem> _watchActionsQuery(
+    Expression<bool> Function($OfflineWatchProgressTable table) matchesKey, {
+    String? profileId,
+    bool filterProfile = false,
+    String? clientScopeId,
+    bool filterClientScope = false,
+  }) {
+    return select(offlineWatchProgress)
+      ..where(
+        (t) =>
+            matchesKey(t) &
+            (filterProfile ? _nullableTextPredicate(t.profileId, profileId) : const Constant(true)) &
+            (filterClientScope ? _clientScopePredicate(t.clientScopeId, clientScopeId) : const Constant(true)),
+      )
+      ..orderBy([(t) => OrderingTerm.desc(t.updatedAt), (t) => OrderingTerm.desc(t.id)]);
+  }
+
   /// Get the latest action for a specific item
   Future<OfflineWatchProgressItem?> getLatestWatchAction(
     String globalKey, {
@@ -270,16 +302,53 @@ class AppDatabase extends _$AppDatabase {
     String? clientScopeId,
     bool filterClientScope = false,
   }) {
-    return (select(offlineWatchProgress)
-          ..where(
-            (t) =>
-                t.globalKey.equals(globalKey) &
-                (filterProfile ? _nullableTextPredicate(t.profileId, profileId) : const Constant(true)) &
-                (filterClientScope ? _clientScopePredicate(t.clientScopeId, clientScopeId) : const Constant(true)),
-          )
-          ..orderBy([(t) => OrderingTerm.desc(t.updatedAt)])
-          ..limit(1))
-        .getSingleOrNull();
+    return (_watchActionsQuery(
+      (t) => t.globalKey.equals(globalKey),
+      profileId: profileId,
+      filterProfile: filterProfile,
+      clientScopeId: clientScopeId,
+      filterClientScope: filterClientScope,
+    )..limit(1)).getSingleOrNull();
+  }
+
+  Future<List<OfflineWatchProgressItem>> getWatchActionsForKey(
+    String globalKey, {
+    String? profileId,
+    bool filterProfile = false,
+    String? clientScopeId,
+    bool filterClientScope = false,
+  }) {
+    return _watchActionsQuery(
+      (t) => t.globalKey.equals(globalKey),
+      profileId: profileId,
+      filterProfile: filterProfile,
+      clientScopeId: clientScopeId,
+      filterClientScope: filterClientScope,
+    ).get();
+  }
+
+  Future<Map<String, List<OfflineWatchProgressItem>>> getWatchActionsForKeys(
+    Set<String> globalKeys, {
+    String? profileId,
+    bool filterProfile = false,
+    Map<String, String?>? clientScopeIdsByGlobalKey,
+  }) async {
+    if (globalKeys.isEmpty) return const {};
+    final rows = await _watchActionsQuery(
+      (t) => t.globalKey.isIn(globalKeys),
+      profileId: profileId,
+      filterProfile: filterProfile,
+    ).get();
+
+    final result = <String, List<OfflineWatchProgressItem>>{};
+    for (final action in rows) {
+      if (clientScopeIdsByGlobalKey != null && clientScopeIdsByGlobalKey.containsKey(action.globalKey)) {
+        final expectedScope = clientScopeIdsByGlobalKey[action.globalKey];
+        if (!_clientScopeValuesMatch(action.clientScopeId, expectedScope)) continue;
+      }
+      result.putIfAbsent(action.globalKey, () => <OfflineWatchProgressItem>[]).add(action);
+    }
+    return result;
   }
 
   /// Get the latest actions for multiple items in a single query
@@ -292,31 +361,13 @@ class AppDatabase extends _$AppDatabase {
     bool filterProfile = false,
     Map<String, String?>? clientScopeIdsByGlobalKey,
   }) async {
-    if (globalKeys.isEmpty) return {};
-
-    // Query all actions for the given keys
-    final allActions =
-        await (select(offlineWatchProgress)
-              ..where(
-                (t) =>
-                    t.globalKey.isIn(globalKeys) &
-                    (filterProfile ? _nullableTextPredicate(t.profileId, profileId) : const Constant(true)),
-              )
-              ..orderBy([(t) => OrderingTerm.desc(t.updatedAt)]))
-            .get();
-
-    // Group by globalKey and take the latest (first due to ordering)
-    final result = <String, OfflineWatchProgressItem>{};
-    for (final action in allActions) {
-      if (clientScopeIdsByGlobalKey != null && clientScopeIdsByGlobalKey.containsKey(action.globalKey)) {
-        final expectedScope = clientScopeIdsByGlobalKey[action.globalKey];
-        if (!_clientScopeValuesMatch(action.clientScopeId, expectedScope)) continue;
-      }
-      // Only keep the first (latest) action for each key
-      result.putIfAbsent(action.globalKey, () => action);
-    }
-
-    return result;
+    final actionsByKey = await getWatchActionsForKeys(
+      globalKeys,
+      profileId: profileId,
+      filterProfile: filterProfile,
+      clientScopeIdsByGlobalKey: clientScopeIdsByGlobalKey,
+    );
+    return {for (final entry in actionsByKey.entries) entry.key: entry.value.first};
   }
 
   bool _clientScopeValuesMatch(String? actual, String? expected) {
@@ -328,71 +379,75 @@ class AppDatabase extends _$AppDatabase {
   /// Insert or update a progress action (merges with existing).
   Future<void> upsertProgressAction({
     String? profileId,
-    required String serverId,
+    required ServerId serverId,
     String? clientScopeId,
     required String ratingKey,
     required int viewOffset,
-    required int duration,
+    required int? duration,
     required bool shouldMarkWatched,
   }) async {
-    final globalKey = buildGlobalKey(serverId, ratingKey);
+    final globalKey = buildGlobalKey(ServerId(serverId), ratingKey);
     final now = DateTime.now().millisecondsSinceEpoch;
 
-    // Check for existing progress entry
-    final existing =
-        await (select(offlineWatchProgress)
-              ..where(
-                (t) =>
-                    t.globalKey.equals(globalKey) &
-                    _nullableTextPredicate(t.profileId, profileId) &
-                    _clientScopePredicate(t.clientScopeId, clientScopeId) &
-                    t.actionType.equals(OfflineActionType.progress.id),
-              )
-              ..limit(1))
-            .getSingleOrNull();
+    await transaction(() async {
+      final existing =
+          await (select(offlineWatchProgress)
+                ..where(
+                  (t) =>
+                      t.globalKey.equals(globalKey) &
+                      _nullableTextPredicate(t.profileId, profileId) &
+                      _clientScopePredicate(t.clientScopeId, clientScopeId) &
+                      t.actionType.equals(OfflineActionType.progress.id),
+                )
+                ..orderBy([(t) => OrderingTerm.asc(t.id)]))
+              .get();
 
-    if (existing != null) {
-      // Update existing progress entry
-      await (update(offlineWatchProgress)..where((t) => t.id.equals(existing.id))).write(
-        OfflineWatchProgressCompanion(
-          viewOffset: Value(viewOffset),
-          duration: Value(duration),
-          shouldMarkWatched: Value(shouldMarkWatched),
-          profileId: Value(profileId),
-          clientScopeId: Value(clientScopeId),
-          updatedAt: Value(now),
-        ),
-      );
-    } else {
-      // Insert new progress entry
-      await into(offlineWatchProgress).insert(
-        OfflineWatchProgressCompanion.insert(
-          serverId: serverId,
-          profileId: Value(profileId),
-          clientScopeId: Value(clientScopeId),
-          ratingKey: ratingKey,
-          globalKey: globalKey,
-          actionType: OfflineActionType.progress.id,
-          viewOffset: Value(viewOffset),
-          duration: Value(duration),
-          shouldMarkWatched: Value(shouldMarkWatched),
-          createdAt: now,
-          updatedAt: now,
-        ),
-      );
-    }
+      final keep = existing.isEmpty ? null : existing.first;
+      if (keep != null) {
+        await (update(offlineWatchProgress)..where((t) => t.id.equals(keep.id))).write(
+          OfflineWatchProgressCompanion(
+            viewOffset: Value(viewOffset),
+            duration: Value(duration),
+            shouldMarkWatched: Value(shouldMarkWatched),
+            profileId: Value(profileId),
+            clientScopeId: Value(clientScopeId),
+            updatedAt: Value(now),
+          ),
+        );
+        final duplicateIds = existing.skip(1).map((row) => row.id).toList(growable: false);
+        if (duplicateIds.isNotEmpty) {
+          await (delete(offlineWatchProgress)..where((t) => t.id.isIn(duplicateIds))).go();
+        }
+      } else {
+        await into(offlineWatchProgress).insert(
+          OfflineWatchProgressCompanion.insert(
+            serverId: serverId,
+            profileId: Value(profileId),
+            clientScopeId: Value(clientScopeId),
+            ratingKey: ratingKey,
+            globalKey: globalKey,
+            actionType: OfflineActionType.progress.id,
+            viewOffset: Value(viewOffset),
+            duration: Value(duration),
+            shouldMarkWatched: Value(shouldMarkWatched),
+            createdAt: now,
+            updatedAt: now,
+          ),
+        );
+      }
+    });
   }
 
   /// Insert a manual watch action (watched or unwatched).
   /// Removes conflicting actions for the same item.
   Future<void> insertWatchAction({
     String? profileId,
-    required String serverId,
+    required ServerId serverId,
     String? clientScopeId,
     required String ratingKey,
     required String actionType, // 'watched' or 'unwatched'
   }) async {
-    final globalKey = buildGlobalKey(serverId, ratingKey);
+    final globalKey = buildGlobalKey(ServerId(serverId), ratingKey);
     final now = DateTime.now().millisecondsSinceEpoch;
 
     // Remove conflicting actions (opposite action type and progress)
@@ -436,10 +491,13 @@ class AppDatabase extends _$AppDatabase {
   }
 
   /// Get count of pending sync items
-  Future<int> getPendingSyncCount({String? profileId}) async {
+  Future<int> getPendingSyncCount({String? profileId, int? maxSyncAttempts}) async {
     final query = selectOnly(offlineWatchProgress)..addColumns([offlineWatchProgress.id.count()]);
     if (profileId != null) {
       query.where(offlineWatchProgress.profileId.equals(profileId));
+    }
+    if (maxSyncAttempts != null) {
+      query.where(offlineWatchProgress.syncAttempts.isSmallerThanValue(maxSyncAttempts));
     }
     final count = await query.map((row) => row.read(offlineWatchProgress.id.count())).getSingle();
     return count ?? 0;
@@ -448,6 +506,11 @@ class AppDatabase extends _$AppDatabase {
   /// Clear all pending watch actions (e.g., after logout)
   Future<void> clearAllWatchActions() {
     return delete(offlineWatchProgress).go();
+  }
+
+  /// Drop a removed profile's queued watch actions (profile teardown).
+  Future<void> deleteWatchActionsForProfile(String profileId) async {
+    await (delete(offlineWatchProgress)..where((t) => t.profileId.equals(profileId))).go();
   }
 
   Future<List<SyncRuleItem>> getSyncRules({String? profileId}) {
@@ -464,13 +527,14 @@ class AppDatabase extends _$AppDatabase {
 
   Future<void> insertSyncRule({
     String profileId = '',
-    required String serverId,
+    required ServerId serverId,
     required String ratingKey,
     required String globalKey,
     required String targetType,
     required int episodeCount,
     int mediaIndex = 0,
     String downloadFilter = 'unwatched',
+    bool includeSpecials = true,
   }) async {
     // [insertOnConflictUpdate] defaults the conflict target to the primary
     // key (`id`), which is auto-incremented — the conflict never triggers
@@ -488,6 +552,7 @@ class AppDatabase extends _$AppDatabase {
         createdAt: DateTime.now().millisecondsSinceEpoch,
         mediaIndex: Value(mediaIndex),
         downloadFilter: Value(downloadFilter),
+        includeSpecials: Value(includeSpecials),
       ),
       onConflict: DoUpdate(
         (_) => SyncRulesCompanion(
@@ -498,6 +563,7 @@ class AppDatabase extends _$AppDatabase {
           episodeCount: Value(episodeCount),
           mediaIndex: Value(mediaIndex),
           downloadFilter: Value(downloadFilter),
+          includeSpecials: Value(includeSpecials),
         ),
         target: [syncRules.globalKey],
       ),
@@ -510,7 +576,7 @@ class AppDatabase extends _$AppDatabase {
     if (profileId.isEmpty) return;
     final legacyRules = await (select(syncRules)..where((t) => t.profileId.equals(''))).get();
     for (final rule in legacyRules) {
-      final scopedKey = buildProfileScopedGlobalKey(profileId, rule.serverId, rule.ratingKey);
+      final scopedKey = buildProfileScopedGlobalKey(profileId, ServerId(rule.serverId), rule.ratingKey);
       final duplicate = await getSyncRule(scopedKey);
       if (duplicate != null) {
         await (delete(syncRules)..where((t) => t.id.equals(rule.id))).go();
@@ -548,6 +614,16 @@ class AppDatabase extends _$AppDatabase {
 
   Future<void> deleteSyncRule(String globalKey) async {
     await (delete(syncRules)..where((t) => t.globalKey.equals(globalKey))).go();
+  }
+
+  /// Drop a removed profile's sync rules (profile teardown).
+  Future<void> deleteSyncRulesForProfile(String profileId) async {
+    await (delete(syncRules)..where((t) => t.profileId.equals(profileId))).go();
+  }
+
+  /// Drop every sync rule (full logout).
+  Future<void> clearAllSyncRules() async {
+    await delete(syncRules).go();
   }
 
   /// Get all downloaded media items (for syncing watch states)
@@ -602,13 +678,18 @@ Future<void> migrateLegacyDesktopDatabase({
   Future<void> Function(File source, String targetPath)? renameOverride,
 }) async {
   final File oldFile;
-  if (sourceOverride != null) {
-    oldFile = sourceOverride;
-  } else {
-    final oldFolder = await getApplicationDocumentsDirectory();
-    oldFile = File(p.join(oldFolder.path, 'plezy_downloads.db'));
+  try {
+    if (sourceOverride != null) {
+      oldFile = sourceOverride;
+    } else {
+      final oldFolder = await getApplicationDocumentsDirectory();
+      oldFile = File(p.join(oldFolder.path, 'plezy_downloads.db'));
+    }
+    if (!await oldFile.exists()) return;
+  } catch (e, st) {
+    appLogger.w('Legacy DB migration skipped before source lookup completed', error: e, stackTrace: st);
+    return;
   }
-  if (!await oldFile.exists()) return;
 
   try {
     if (renameOverride != null) {

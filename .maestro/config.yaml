@@ -1,0 +1,14 @@
+flows:
+  - "flows/*.yaml"
+testOutputDir: "build/maestro"
+executionOrder:
+  continueOnFailure: false
+  flowsOrder:
+    - Fresh install authentication choices
+    - Jellyfin onboarding reaches Home
+    - Browse library and open media details
+    - Search media and open a result
+    - Start and exit video playback
+    - Open empty downloads state
+    - Manage profiles and open settings
+    - Logout returns to authentication

@@ -92,6 +92,12 @@ class MediaServerHttpException extends MediaServerException {
       type == MediaServerHttpErrorType.connectionError ||
       type == MediaServerHttpErrorType.receiveTimeout;
 
+  /// Whether the request was aborted client-side (client teardown or an
+  /// explicit abort), as opposed to failing against the server. A cancelled
+  /// fetch says nothing about the server's actual content — callers must not
+  /// treat it as an empty result.
+  bool get isCancellation => type == MediaServerHttpErrorType.cancelled;
+
   @override
   String toString() {
     final parts = <String>[type.name];

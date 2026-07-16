@@ -22,7 +22,7 @@ static void* get_opengl_proc_address(void* ctx, const char* name) {
 
 namespace mpv {
 
-MpvPlayer::MpvPlayer() {}
+MpvPlayer::MpvPlayer(bool audio_only) : audio_only_(audio_only) {}
 
 MpvPlayer::~MpvPlayer() { Dispose(); }
 
@@ -41,15 +41,28 @@ bool MpvPlayer::Initialize() {
     return false;
   }
 
-  // Configure mpv for embedded playback.
-  mpv_set_option_string(mpv_, "vo", "libmpv");
-  mpv_set_option_string(mpv_, "hwdec", "auto");
+  if (audio_only_) {
+    // Music core: no VO, no video decode. vid=no keeps embedded cover art
+    // from ever becoming a video track, and force-window/audio-display make
+    // sure mpv never opens a video output for it either.
+    mpv_set_option_string(mpv_, "vid", "no");
+    mpv_set_option_string(mpv_, "force-window", "no");
+    mpv_set_option_string(mpv_, "audio-display", "no");
+    mpv_set_option_string(mpv_, "gapless-audio", "weak");
+  } else {
+    // Configure mpv for embedded playback.
+    mpv_set_option_string(mpv_, "vo", "libmpv");
+    mpv_set_option_string(mpv_, "hwdec", "auto");
+  }
   mpv_set_option_string(mpv_, "keep-open", "yes");
+  mpv_set_option_string(mpv_, "audio-fallback-to-null", "yes");
 
-  // HDR tone mapping
-  mpv_set_option_string(mpv_, "tone-mapping", "auto");
-  mpv_set_option_string(mpv_, "target-colorspace-hint", "no");
-  mpv_set_option_string(mpv_, "hdr-compute-peak", "auto");
+  if (!audio_only_) {
+    // HDR tone mapping
+    mpv_set_option_string(mpv_, "tone-mapping", "auto");
+    mpv_set_option_string(mpv_, "target-colorspace-hint", plezy::mpv_common::TargetColorspaceHint(hdr_enabled_));
+    mpv_set_option_string(mpv_, "hdr-compute-peak", "auto");
+  }
   mpv_set_option_string(mpv_, "idle", "yes");
   mpv_set_option_string(mpv_, "input-default-bindings", "no");
   mpv_set_option_string(mpv_, "input-vo-keyboard", "no");
@@ -70,12 +83,19 @@ bool MpvPlayer::Initialize() {
 
   // Set up event wakeup callback.
   mpv_set_wakeup_callback(mpv_, OnMpvWakeup, this);
+  mpv_observe_property(mpv_, 0, "current-ao", MPV_FORMAT_STRING);
+  mpv_observe_property(mpv_, 0, "audio-device-list", MPV_FORMAT_NONE);
 
-  g_message("MPV: Initialization successful (render context deferred)");
+  g_message("MPV: Initialization successful (%s)", audio_only_ ? "audio-only" : "render context deferred");
   return true;
 }
 
 bool MpvPlayer::InitRenderContext() {
+  if (audio_only_) {
+    g_warning("MPV: InitRenderContext called on an audio-only player");
+    return false;
+  }
+
   if (mpv_gl_) {
     return true;  // Already created.
   }
@@ -202,24 +222,12 @@ void MpvPlayer::Dispose() {
     event_callback_ = nullptr;
   }
 
-  // 4. Cancel pending async requests
-  std::vector<StatusCallback> status_callbacks;
-  std::vector<GetPropertyCallback> get_callbacks;
-  {
-    std::lock_guard<std::mutex> request_lock(pending_requests_mutex_);
-    for (auto& pair : pending_status_requests_) {
-      if (pair.second) status_callbacks.push_back(std::move(pair.second));
-    }
-    for (auto& pair : pending_get_property_requests_) {
-      if (pair.second) get_callbacks.push_back(std::move(pair.second));
-    }
-    pending_status_requests_.clear();
-    pending_get_property_requests_.clear();
-  }
-  for (auto& callback : status_callbacks) {
+  // 4. Cancel pending async requests.
+  auto cancelled = pending_requests_.CancelAll();
+  for (auto& callback : cancelled.status) {
     callback(-1);
   }
-  for (auto& callback : get_callbacks) {
+  for (auto& callback : cancelled.properties) {
     callback(-1, "");
   }
 
@@ -227,6 +235,10 @@ void MpvPlayer::Dispose() {
   if (event_source_id_ != 0) {
     g_source_remove(event_source_id_);
     event_source_id_ = 0;
+  }
+  if (recovery_source_id_ != 0) {
+    g_source_remove(recovery_source_id_);
+    recovery_source_id_ = 0;
   }
 
   // 6. Free render context and mpv handle in a background thread.
@@ -259,7 +271,7 @@ void MpvPlayer::Dispose() {
     }
   }).detach();
 
-  observed_properties_.clear();
+  observed_properties_.Clear();
 }
 
 void MpvPlayer::Render(int width, int height, int fbo) {
@@ -298,11 +310,11 @@ void MpvPlayer::CommandAsync(const std::vector<std::string>& args, CommandCallba
   }
   c_args.push_back(nullptr);
 
-  uint64_t request_id = callback ? RegisterStatusRequest(std::move(callback)) : 0;
+  uint64_t request_id = callback ? pending_requests_.RegisterStatus(std::move(callback)) : 0;
 
   int result = mpv_command_async(mpv_, request_id, c_args.data());
   if (result < 0) {
-    auto cb = TakeStatusRequest(request_id);
+    auto cb = pending_requests_.TakeStatus(request_id);
     if (cb) cb(result);
   }
 }
@@ -317,12 +329,17 @@ void MpvPlayer::SetPropertyAsync(const std::string& name, const std::string& val
     return;
   }
 
-  uint64_t request_id = callback ? RegisterStatusRequest(std::move(callback)) : 0;
+  if (name == "hdr-enabled") {
+    SetHDREnabled(plezy::mpv_common::ParseEnabledFlag(value), std::move(callback));
+    return;
+  }
+
+  uint64_t request_id = callback ? pending_requests_.RegisterStatus(std::move(callback)) : 0;
 
   char* property_value = const_cast<char*>(value.c_str());
   int result = mpv_set_property_async(mpv_, request_id, name.c_str(), MPV_FORMAT_STRING, &property_value);
   if (result < 0) {
-    auto cb = TakeStatusRequest(request_id);
+    auto cb = pending_requests_.TakeStatus(request_id);
     if (cb) cb(result);
   }
 }
@@ -333,72 +350,21 @@ void MpvPlayer::GetPropertyAsync(const std::string& name, GetPropertyCallback ca
     return;
   }
 
-  uint64_t request_id = RegisterGetPropertyRequest(std::move(callback));
+  uint64_t request_id = pending_requests_.RegisterProperty(std::move(callback));
 
   int result = mpv_get_property_async(mpv_, request_id, name.c_str(), MPV_FORMAT_STRING);
   if (result < 0) {
-    auto cb = TakeGetPropertyRequest(request_id);
+    auto cb = pending_requests_.TakeProperty(request_id);
     if (cb) cb(result, "");
   }
-}
-
-uint64_t MpvPlayer::RegisterStatusRequest(StatusCallback callback) {
-  std::lock_guard<std::mutex> lock(pending_requests_mutex_);
-  uint64_t request_id = next_reply_userdata_++;
-  pending_status_requests_[request_id] = std::move(callback);
-  return request_id;
-}
-
-MpvPlayer::StatusCallback MpvPlayer::TakeStatusRequest(uint64_t request_id) {
-  std::lock_guard<std::mutex> lock(pending_requests_mutex_);
-  auto it = pending_status_requests_.find(request_id);
-  if (it == pending_status_requests_.end()) return nullptr;
-  auto callback = std::move(it->second);
-  pending_status_requests_.erase(it);
-  return callback;
-}
-
-uint64_t MpvPlayer::RegisterGetPropertyRequest(GetPropertyCallback callback) {
-  std::lock_guard<std::mutex> lock(pending_requests_mutex_);
-  uint64_t request_id = next_reply_userdata_++;
-  pending_get_property_requests_[request_id] = std::move(callback);
-  return request_id;
-}
-
-MpvPlayer::GetPropertyCallback MpvPlayer::TakeGetPropertyRequest(uint64_t request_id) {
-  std::lock_guard<std::mutex> lock(pending_requests_mutex_);
-  auto it = pending_get_property_requests_.find(request_id);
-  if (it == pending_get_property_requests_.end()) return nullptr;
-  auto callback = std::move(it->second);
-  pending_get_property_requests_.erase(it);
-  return callback;
 }
 
 void MpvPlayer::ObserveProperty(const std::string& name, const std::string& format, int id) {
   if (disposed_ || !mpv_) return;
 
-  if (observed_properties_.find(name) != observed_properties_.end()) {
-    return;
-  }
-
-  name_to_id_[name] = id;
-
-  mpv_format mpv_fmt = MPV_FORMAT_NONE;
-  if (format == "string") {
-    mpv_fmt = MPV_FORMAT_STRING;
-  } else if (format == "flag" || format == "bool") {
-    mpv_fmt = MPV_FORMAT_FLAG;
-  } else if (format == "int64") {
-    mpv_fmt = MPV_FORMAT_INT64;
-  } else if (format == "double") {
-    mpv_fmt = MPV_FORMAT_DOUBLE;
-  } else if (format == "node") {
-    mpv_fmt = MPV_FORMAT_NODE;
-  }
-
-  uint64_t userdata = next_reply_userdata_++;
-  observed_properties_[name] = userdata;
-  mpv_observe_property(mpv_, userdata, name.c_str(), mpv_fmt);
+  const auto request = observed_properties_.Register(name, format, id);
+  if (!request.added) return;
+  mpv_observe_property(mpv_, request.userdata, name.c_str(), request.format);
 }
 
 void MpvPlayer::ReportMouseMove(int x, int y) {
@@ -486,12 +452,65 @@ bool MpvPlayer::ProcessEvents() {
   return true;
 }
 
+void MpvPlayer::LogRecovery(const std::string& text) {
+  g_warning("MPV audio-recovery: %s", text.c_str());
+  FlValue* data = fl_value_new_map();
+  fl_value_set_string_take(data, "prefix", fl_value_new_string("audio-recovery"));
+  fl_value_set_string_take(data, "level", fl_value_new_string("warn"));
+  fl_value_set_string_take(data, "text", fl_value_new_string(text.c_str()));
+  SendEvent("log-message", data);
+  fl_value_unref(data);
+}
+
+void MpvPlayer::TryAudioReload(const char* reason, int attempt) {
+  LogRecovery("issuing ao-reload (reason=" + std::string(reason) + ", attempt " + std::to_string(attempt) + ")");
+  const std::string reason_copy = reason;
+  CommandAsync({"ao-reload"}, [this, reason_copy, attempt](int error) {
+    audio_recovery_.CompleteReload();
+    LogRecovery(
+        "ao-reload completed (reason=" + reason_copy + ", attempt " + std::to_string(attempt) +
+        ", error=" + std::to_string(error) + ")");
+  });
+}
+
+void MpvPlayer::MaybeRunAudioRecovery() {
+  const auto action = audio_recovery_.NextReload(plezy::mpv_common::AudioRecoveryState::Clock::now());
+  if (action.reason == plezy::mpv_common::AudioReloadReason::kNone) {
+    return;
+  }
+  const char* reason = action.reason == plezy::mpv_common::AudioReloadReason::kResume ? "resume" : "null-fallback";
+  TryAudioReload(reason, action.attempt);
+  if (action.exhausted) {
+    LogRecovery("audio recovery budget exhausted; waiting for device list change");
+  }
+}
+
+void MpvPlayer::EnsureAudioRecoveryTimer() {
+  if (recovery_source_id_ != 0 || !audio_recovery_.HasPendingWork()) return;
+  recovery_source_id_ = g_timeout_add(
+      100,
+      [](gpointer data) -> gboolean {
+        auto* player = static_cast<MpvPlayer*>(data);
+        if (player->disposed_) {
+          player->recovery_source_id_ = 0;
+          return G_SOURCE_REMOVE;
+        }
+        player->MaybeRunAudioRecovery();
+        if (!player->audio_recovery_.HasPendingWork()) {
+          player->recovery_source_id_ = 0;
+          return G_SOURCE_REMOVE;
+        }
+        return G_SOURCE_CONTINUE;
+      },
+      this);
+}
+
 void MpvPlayer::HandleMpvEvent(mpv_event* event) {
   switch (event->event_id) {
     case MPV_EVENT_COMMAND_REPLY:
     case MPV_EVENT_SET_PROPERTY_REPLY: {
       uint64_t request_id = event->reply_userdata;
-      StatusCallback callback = TakeStatusRequest(request_id);
+      StatusCallback callback = pending_requests_.TakeStatus(request_id);
       if (callback) {
         int error = event->error;
         g_idle_add(
@@ -507,7 +526,7 @@ void MpvPlayer::HandleMpvEvent(mpv_event* event) {
     }
     case MPV_EVENT_GET_PROPERTY_REPLY: {
       uint64_t request_id = event->reply_userdata;
-      GetPropertyCallback callback = TakeGetPropertyRequest(request_id);
+      GetPropertyCallback callback = pending_requests_.TakeProperty(request_id);
       if (callback) {
         int error = event->error;
         std::string value;
@@ -570,10 +589,32 @@ void MpvPlayer::HandleMpvEvent(mpv_event* event) {
           break;
       }
 
+      if (strcmp(prop->name, "current-ao") == 0) {
+        const char* current_ao = nullptr;
+        if (prop->format == MPV_FORMAT_STRING && prop->data) {
+          current_ao = *static_cast<char**>(prop->data);
+        }
+        const bool is_null = current_ao && strcmp(current_ao, "null") == 0;
+        const auto transition =
+            audio_recovery_.SetCurrentAudioOutputNull(is_null, plezy::mpv_common::AudioRecoveryState::Clock::now());
+        if (transition == plezy::mpv_common::AudioOutputTransition::kFellBackToNull) {
+          LogRecovery("current-ao fell back to null; starting recovery");
+          EnsureAudioRecoveryTimer();
+        } else if (transition == plezy::mpv_common::AudioOutputTransition::kRecovered) {
+          LogRecovery("audio recovered (current-ao no longer null)");
+        }
+      }
+      if (strcmp(prop->name, "audio-device-list") == 0 && event->reply_userdata == 0 &&
+          audio_recovery_.OnAudioDeviceListChanged(plezy::mpv_common::AudioRecoveryState::Clock::now())) {
+        LogRecovery("audio-device-list changed while ao=null; rescheduling ao-reload");
+        EnsureAudioRecoveryTimer();
+      }
+
       SendPropertyChange(prop->name, &node);
       break;
     }
     case MPV_EVENT_END_FILE: {
+      audio_recovery_.SetFileLoaded(false);
       auto* end = static_cast<mpv_event_end_file*>(event->data);
       FlValue* data = fl_value_new_map();
       fl_value_set_string_take(data, "reason", fl_value_new_int(static_cast<int>(end->reason)));
@@ -587,15 +628,12 @@ void MpvPlayer::HandleMpvEvent(mpv_event* event) {
       break;
     }
     case MPV_EVENT_FILE_LOADED: {
+      audio_recovery_.SetFileLoaded(true);
       SendEvent("file-loaded");
       break;
     }
     case MPV_EVENT_PLAYBACK_RESTART: {
       SendEvent("playback-restart");
-      break;
-    }
-    case MPV_EVENT_SEEK: {
-      SendEvent("seek");
       break;
     }
     default:
@@ -637,11 +675,11 @@ FlValue* MpvPlayer::NodeToFlValue(mpv_node* node) {
 void MpvPlayer::SendPropertyChange(const char* name, mpv_node* data) {
   if (!name) return;
 
-  auto it = name_to_id_.find(name);
-  if (it == name_to_id_.end()) return;
+  int id = 0;
+  if (!observed_properties_.LookupId(name, &id)) return;
 
   FlValue* list = fl_value_new_list();
-  fl_value_append_take(list, fl_value_new_int(it->second));
+  fl_value_append_take(list, fl_value_new_int(id));
   if (data) {
     fl_value_append_take(list, NodeToFlValue(data));
   } else {
@@ -670,4 +708,12 @@ void MpvPlayer::SendEvent(const std::string& name, FlValue* data) {
   fl_value_unref(event_map);
 }
 
+void MpvPlayer::SetHDREnabled(bool enabled, StatusCallback callback) {
+  hdr_enabled_ = enabled;
+  if (!mpv_) {
+    if (callback) callback(0);
+    return;
+  }
+  SetPropertyAsync("target-colorspace-hint", plezy::mpv_common::TargetColorspaceHint(enabled), std::move(callback));
+}
 }  // namespace mpv

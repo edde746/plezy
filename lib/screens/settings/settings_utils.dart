@@ -1,13 +1,24 @@
 import 'package:flex_color_picker/flex_color_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:material_symbols_icons/symbols.dart';
 
 import '../../focus/focusable_text_field.dart';
 import '../../focus/input_mode_tracker.dart';
 import '../../i18n/strings.g.dart';
+import '../../services/settings_service.dart' as settings;
+import '../../utils/dialogs.dart';
+import '../../widgets/app_icon.dart';
 import '../../widgets/dialog_action_button.dart';
 import '../../widgets/focusable_list_tile.dart';
 import '../../widgets/tv_color_picker.dart';
 import '../../widgets/tv_number_spinner.dart';
+
+String themeModeLabel(settings.ThemeMode mode) => switch (mode) {
+  settings.ThemeMode.system => t.settings.systemTheme,
+  settings.ThemeMode.light => t.settings.lightTheme,
+  settings.ThemeMode.dark => t.settings.darkTheme,
+  settings.ThemeMode.oled => t.settings.oledTheme,
+};
 
 /// Model for option selection dialogs.
 class DialogOption<T> {
@@ -36,38 +47,64 @@ void _showSettingsInputDialog({
   _SettingsDialogActionsBuilder? leadingActionsBuilder,
   VoidCallback? onDispose,
 }) {
-  final saveFocusNode = FocusNode();
-
-  showDialog(
+  showScopedDialog<void>(
     context: context,
-    builder: (BuildContext dialogContext) {
-      return StatefulBuilder(
-        builder: (context, setDialogState) {
-          return AlertDialog(
-            title: Text(title),
-            content: contentBuilder(dialogContext, context, setDialogState, saveFocusNode),
-            actions: [
-              ...?leadingActionsBuilder?.call(dialogContext, setDialogState),
-              DialogActionButton(onPressed: () => Navigator.pop(dialogContext), label: t.common.cancel),
-              DialogActionButton(
-                focusNode: saveFocusNode,
-                onPressed: () async {
-                  final shouldClose = await onSave(dialogContext);
-                  if (shouldClose && dialogContext.mounted) {
-                    Navigator.pop(dialogContext);
-                  }
-                },
-                label: t.common.save,
-              ),
-            ],
-          );
-        },
-      );
-    },
-  ).then((_) {
-    saveFocusNode.dispose();
-    onDispose?.call();
+    builder: (_) => _SettingsInputDialog(
+      title: title,
+      contentBuilder: contentBuilder,
+      onSave: onSave,
+      leadingActionsBuilder: leadingActionsBuilder,
+      onDispose: onDispose,
+    ),
+  );
+}
+
+class _SettingsInputDialog extends StatefulWidget {
+  final String title;
+  final _SettingsDialogContentBuilder contentBuilder;
+  final Future<bool> Function(BuildContext dialogContext) onSave;
+  final _SettingsDialogActionsBuilder? leadingActionsBuilder;
+  final VoidCallback? onDispose;
+
+  const _SettingsInputDialog({
+    required this.title,
+    required this.contentBuilder,
+    required this.onSave,
+    this.leadingActionsBuilder,
+    this.onDispose,
   });
+
+  @override
+  State<_SettingsInputDialog> createState() => _SettingsInputDialogState();
+}
+
+class _SettingsInputDialogState extends State<_SettingsInputDialog> {
+  final _saveFocusNode = FocusNode(debugLabel: 'SettingsInputSave');
+
+  @override
+  void dispose() {
+    _saveFocusNode.dispose();
+    widget.onDispose?.call();
+    super.dispose();
+  }
+
+  Future<void> _save() async {
+    final shouldClose = await widget.onSave(context);
+    if (shouldClose && mounted) Navigator.pop(context);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Text(widget.title),
+      content: widget.contentBuilder(context, context, setState, _saveFocusNode),
+      actions: [
+        ...?widget.leadingActionsBuilder?.call(context, setState),
+        DialogActionButton(onPressed: () => Navigator.pop(context), label: t.common.cancel),
+        DialogActionButton(focusNode: _saveFocusNode, onPressed: _save, label: t.common.save),
+      ],
+    );
+  }
 }
 
 /// Shows a selection dialog with focusable rows for dpad/keyboard navigation.
@@ -78,21 +115,21 @@ Future<T?> showSelectionDialog<T>({
   required List<DialogOption<T>> options,
   required T currentValue,
 }) {
-  final focusFirstItem = InputModeTracker.isKeyboardMode(context);
-  return showDialog<T>(
+  final focusFirstItem = InputModeTracker.isKeyboardMode(context, listen: false);
+  return showScopedDialog<T>(
     context: context,
     builder: (dialogContext) => AlertDialog(
       title: Text(title),
       contentPadding: const EdgeInsets.only(top: 12, bottom: 24),
       content: SingleChildScrollView(
         child: Column(
-          mainAxisSize: MainAxisSize.min,
+          mainAxisSize: .min,
           children: options.map((option) {
             final selected = option.value == currentValue;
             return FocusableListTile(
               key: ValueKey(option.value),
-              leading: Icon(
-                selected ? Icons.radio_button_checked : Icons.radio_button_unchecked,
+              leading: AppIcon(
+                selected ? Symbols.radio_button_checked_rounded : Symbols.radio_button_unchecked_rounded,
                 color: selected ? Theme.of(dialogContext).colorScheme.primary : null,
               ),
               title: Text(option.title),
@@ -121,7 +158,7 @@ void showNumericInputDialog({
   required int currentValue,
   required Future<void> Function(int value) onSave,
 }) {
-  final useDpadControls = InputModeTracker.isKeyboardMode(context);
+  final useDpadControls = InputModeTracker.isKeyboardMode(context, listen: false);
 
   if (useDpadControls) {
     _showNumericInputDialogTV(
@@ -163,7 +200,7 @@ void _showNumericInputDialogTV({
     title: title,
     contentBuilder: (dialogContext, context, setDialogState, saveFocusNode) {
       return Column(
-        mainAxisSize: MainAxisSize.min,
+        mainAxisSize: .min,
         children: [
           TvNumberSpinner(
             value: spinnerValue,
@@ -273,7 +310,7 @@ void showColorInputDialog({
   required String currentHex,
   required Future<void> Function(String hex) onSave,
 }) {
-  if (InputModeTracker.isKeyboardMode(context)) {
+  if (InputModeTracker.isKeyboardMode(context, listen: false)) {
     _showColorInputDialogTV(context: context, title: title, currentHex: currentHex, onSave: onSave);
   } else {
     _showColorInputDialogStandard(context: context, title: title, currentHex: currentHex, onSave: onSave);
@@ -337,7 +374,6 @@ void _showColorInputDialogTV({
   );
 }
 
-/// Shows a text input dialog with regex validation and reset-to-default support.
 void showRegexInputDialog({
   required BuildContext context,
   required String title,
@@ -354,7 +390,7 @@ void showRegexInputDialog({
     contentBuilder: (_, _, setDialogState, saveFocusNode) {
       return FocusableTextField(
         controller: controller,
-        decoration: InputDecoration(labelText: 'Regex', errorText: errorText),
+        decoration: InputDecoration(labelText: t.settings.regex, errorText: errorText),
         autofocus: true,
         textInputAction: TextInputAction.done,
         onEditingComplete: () => saveFocusNode.requestFocus(),

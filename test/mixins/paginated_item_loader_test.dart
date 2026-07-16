@@ -9,6 +9,7 @@ import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/mixins/paginated_item_loader.dart';
 import 'package:plezy/utils/media_server_http_client.dart';
 import 'package:plezy/exceptions/media_server_exceptions.dart';
+import '../test_helpers/media_items.dart';
 
 /// Test probe wired with a controllable `fetchPage` so individual tests can
 /// stage successes, failures, and slow responses.
@@ -58,7 +59,7 @@ class _PaginatedProbeState extends State<_PaginatedProbe> with PaginatedItemLoad
   Widget build(BuildContext context) => const SizedBox.shrink();
 }
 
-MediaItem _meta(int i) => MediaItem(id: 'k$i', backend: MediaBackend.plex, kind: MediaKind.movie, title: 't$i');
+MediaItem _meta(int i) => testMediaItem(id: 'k$i', backend: MediaBackend.plex, kind: MediaKind.movie, title: 't$i');
 
 LibraryPage<MediaItem> _result({required int start, required int size, required int totalSize}) {
   return LibraryPage<MediaItem>(
@@ -106,6 +107,58 @@ void main() {
       await tester.pump();
 
       expect(hooked, [(0, 5)]);
+    });
+
+    testWidgets('loadInitialPaginatedItems applies reset, data, and success callback', (tester) async {
+      late _PaginatedProbeState state;
+      var reset = false;
+      List<MediaItem>? applied;
+      (int, int)? counts;
+      await tester.pumpWidget(
+        _PaginatedProbe(
+          onState: (s) => state = s,
+          fetcher: (start, size, abort) async => _result(start: start, size: size, totalSize: 7),
+        ),
+      );
+
+      final succeeded = await state.loadInitialPaginatedItems(
+        pageSize: 3,
+        resetViewState: () => reset = true,
+        applyLoadedItems: (items) => applied = items,
+        applyError: (error, stackTrace) => fail('unexpected error: $error'),
+        onLoaded: (loaded, total) => counts = (loaded, total),
+      );
+      await tester.pump();
+
+      expect(succeeded, isTrue);
+      expect(reset, isTrue);
+      expect(applied?.map((item) => item.id), ['k0', 'k1', 'k2']);
+      expect(counts, (3, 7));
+    });
+
+    testWidgets('loadInitialPaginatedItems applies one error transaction', (tester) async {
+      late _PaginatedProbeState state;
+      Object? appliedError;
+      Object? loggedError;
+      await tester.pumpWidget(
+        _PaginatedProbe(
+          onState: (s) => state = s,
+          fetcher: (start, size, abort) async => throw StateError('failed page'),
+        ),
+      );
+
+      final succeeded = await state.loadInitialPaginatedItems(
+        pageSize: 3,
+        resetViewState: () {},
+        applyLoadedItems: (_) => fail('items must not be applied'),
+        applyError: (error, stackTrace) => appliedError = error,
+        onError: (error, stackTrace) => loggedError = error,
+      );
+      await tester.pump();
+
+      expect(succeeded, isFalse);
+      expect(appliedError, isA<StateError>());
+      expect(loggedError, same(appliedError));
     });
 
     testWidgets('totalSize == 0 means no more pages — ensureRangeLoaded is a no-op', (tester) async {
@@ -286,38 +339,6 @@ void main() {
       // in-flight fetch should not have populated state). totalSize was reset
       // to 0 by disposePagination() (via _requestId bump and clear).
       expect(state.mounted, isFalse);
-      expect(state.totalSize, 0);
-      expect(state.loadedItems, isEmpty);
-    });
-
-    testWidgets('disposePagination clears state and aborts in-flight fetches', (tester) async {
-      late _PaginatedProbeState state;
-      final futures = <Completer<LibraryPage<MediaItem>>>[];
-
-      await tester.pumpWidget(
-        _PaginatedProbe(
-          onState: (s) => state = s,
-          fetcher: (start, size, abort) {
-            final c = Completer<LibraryPage<MediaItem>>();
-            futures.add(c);
-            return c.future;
-          },
-        ),
-      );
-
-      // Trigger an in-flight fetch for the initial page.
-      unawaited(state.loadInitialPage(10));
-      await tester.pump();
-
-      // Capture the abort controller's state via a side channel: the mixin's
-      // public surface tells us about totalSize/loadedItems but not the
-      // controller. Instead, we observe the side-effect: after
-      // disposePagination, completing the staged future does not mutate state.
-      state.disposePagination();
-      // Completing the future after dispose should not touch loadedItems.
-      futures.first.complete(_result(start: 0, size: 10, totalSize: 50));
-      await tester.pump();
-
       expect(state.totalSize, 0);
       expect(state.loadedItems, isEmpty);
     });

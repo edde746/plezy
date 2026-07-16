@@ -19,7 +19,7 @@ LiveTvSession _$LiveTvSessionFromJson(Map<String, dynamic> json) =>
       startedAt: flexibleInt(json['startedAt']),
       captureBuffer: _captureBufferFromRaw(json['CaptureBuffer']),
       grabOperation: _grabOperationFromRaw(json['MediaGrabOperation']),
-      timeline: _firstMap(json['Timeline']),
+      timeline: firstFlexibleMap(json['Timeline']),
       airingMetadataItem: _programFromRaw(json['AiringMetadataItem']),
       upNextMetadataItem: _programFromRaw(json['UpNextMetadataItem']),
     );

@@ -6,21 +6,9 @@ import 'media_subscription.dart';
 
 part 'media_grabber_device.g.dart';
 
-List<ChannelMapping> _parseChannelMappings(Object? raw) {
-  final list = flexibleList(raw) ?? const [];
-  return [
-    for (final item in list)
-      if (item is Map<String, dynamic>) ChannelMapping.fromJson(item),
-  ];
-}
+List<ChannelMapping> _parseChannelMappings(Object? raw) => parseFlexibleJsonList(raw, ChannelMapping.fromJson);
 
-List<SubscriptionSetting> _parseSettings(Object? raw) {
-  final list = flexibleList(raw) ?? const [];
-  return [
-    for (final item in list)
-      if (item is Map<String, dynamic>) SubscriptionSetting.fromJson(item),
-  ];
-}
+List<SubscriptionSetting> _parseSettings(Object? raw) => parseFlexibleJsonList(raw, SubscriptionSetting.fromJson);
 
 @JsonSerializable(createToJson: false)
 class MediaGrabber {

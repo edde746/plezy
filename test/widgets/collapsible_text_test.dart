@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/widgets/collapsible_text.dart';
@@ -33,6 +34,46 @@ void main() {
 
     expect(_collapsiblePlainText(tester), text);
     expect(focusNode.skipTraversal, isTrue);
+  });
+
+  testWidgets('short focused text keeps navigation without an expand action', (tester) async {
+    final semantics = tester.ensureSemantics();
+    final focusNode = FocusNode(debugLabel: 'short_collapsible_text');
+    addTearDown(focusNode.dispose);
+    var downCount = 0;
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: SizedBox(
+            width: 320,
+            child: CollapsibleText(
+              text: 'Short overview',
+              maxLines: 2,
+              focusNode: focusNode,
+              skipTraversal: false,
+              onNavigateDown: () => downCount++,
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    expect(focusNode.context, isNotNull);
+    focusNode.requestFocus();
+    await tester.pump();
+    expect(focusNode.hasFocus, isTrue);
+
+    final node = tester.getSemantics(find.text('Short overview'));
+    expect(node.label, 'Short overview');
+    expect(node.getSemanticsData().hasAction(SemanticsAction.tap), isFalse);
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+    await tester.pump();
+
+    expect(downCount, 1);
+    semantics.dispose();
   });
 
   testWidgets('reports whether text overflows', (tester) async {

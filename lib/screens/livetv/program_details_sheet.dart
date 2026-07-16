@@ -10,6 +10,7 @@ import '../../models/livetv_channel.dart';
 import '../../models/livetv_program.dart';
 import '../../models/media_subscription.dart';
 import '../../services/image_cache_service.dart';
+import '../../theme/mono_tokens.dart';
 import '../../utils/app_logger.dart';
 import '../../utils/formatters.dart';
 import '../../widgets/app_icon.dart';
@@ -17,6 +18,7 @@ import '../../widgets/collapsible_text.dart';
 import '../../widgets/overlay_sheet.dart';
 import '../../widgets/optimized_media_image.dart' show blurArtwork;
 import 'livetv_recording_actions.dart';
+import 'livetv_styles.dart';
 
 /// Shows a bottom sheet with program details and actions (Play / Watch Channel /
 /// Record / Manage recording).
@@ -35,6 +37,7 @@ void showProgramDetailsSheet(
 }) {
   OverlaySheetController.showAdaptive(
     context,
+    showDragHandle: true,
     builder: (sheetContext) {
       return _ProgramDetailsSheetContent(
         program: program,
@@ -48,7 +51,7 @@ void showProgramDetailsSheet(
   );
 }
 
-enum _ActionStyle { filled, outlined }
+enum _ActionStyle { filled, tonal }
 
 class _SheetAction {
   final String label;
@@ -60,7 +63,7 @@ class _SheetAction {
     required this.label,
     required this.icon,
     required this.onPressed,
-    this.style = _ActionStyle.outlined,
+    this.style = _ActionStyle.tonal,
   });
 }
 
@@ -95,7 +98,7 @@ class _ProgramDetailsSheetContentState extends State<_ProgramDetailsSheetContent
   bool get _canRecord {
     final client = widget.client;
     if (client == null) return false;
-    if (!client.capabilities.liveTvDvr) return false;
+    if (client.liveTvDvr == null) return false;
     final guid = widget.program.guid;
     return guid != null && guid.isNotEmpty;
   }
@@ -128,7 +131,12 @@ class _ProgramDetailsSheetContentState extends State<_ProgramDetailsSheetContent
       return;
     }
     try {
-      final mapped = await client.liveTv.fetchSubscriptionMapping(providerId: providerId, ratingKeys: [ratingKey]);
+      final dvr = client.liveTvDvr;
+      if (dvr == null) {
+        setStateIfMounted(() => _checkedMapping = true);
+        return;
+      }
+      final mapped = await dvr.fetchSubscriptionMapping(providerId: providerId, ratingKeys: [ratingKey]);
       final match = mapped.where((s) => s.key.isNotEmpty).firstOrNull;
       if (!mounted) return;
       setState(() {
@@ -175,7 +183,7 @@ class _ProgramDetailsSheetContentState extends State<_ProgramDetailsSheetContent
         _SheetAction(
           label: isLive ? t.common.play : t.liveTv.watchChannel,
           icon: isLive ? Symbols.play_arrow_rounded : Symbols.live_tv_rounded,
-          style: isLive ? _ActionStyle.filled : _ActionStyle.outlined,
+          style: isLive ? _ActionStyle.filled : _ActionStyle.tonal,
           onPressed: () {
             _closeSheet();
             widget.onTuneChannel!();
@@ -232,8 +240,12 @@ class _ProgramDetailsSheetContentState extends State<_ProgramDetailsSheetContent
             icon: AppIcon(action.icon),
             label: Text(action.label),
           )
-        : OutlinedButton.icon(
-            style: OutlinedButton.styleFrom(tapTargetSize: MaterialTapTargetSize.shrinkWrap),
+        : FilledButton.icon(
+            style: FilledButton.styleFrom(
+              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              backgroundColor: tokens(context).text.withValues(alpha: 0.08),
+              foregroundColor: tokens(context).text,
+            ),
             onPressed: action.onPressed,
             icon: AppIcon(action.icon),
             label: Text(action.label),
@@ -246,6 +258,7 @@ class _ProgramDetailsSheetContentState extends State<_ProgramDetailsSheetContent
       onNavigateRight: index < total - 1 ? () => _focusButton(index + 1) : null,
       onNavigateUp: onNavigateUp,
       onBack: _closeSheet,
+      useBackgroundFocus: true,
       child: child,
     );
   }
@@ -277,11 +290,11 @@ class _ProgramDetailsSheetContentState extends State<_ProgramDetailsSheetContent
     return SingleChildScrollView(
       padding: const EdgeInsets.all(20),
       child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: .min,
+        crossAxisAlignment: .start,
         children: [
           Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: .start,
             children: [
               if (widget.posterUrl != null) ...[
                 ClipRRect(
@@ -302,23 +315,12 @@ class _ProgramDetailsSheetContentState extends State<_ProgramDetailsSheetContent
               ],
               Expanded(
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                  crossAxisAlignment: .start,
                   children: [
                     Row(
                       children: [
                         Expanded(child: Text(program.displayTitle, style: theme.textTheme.titleMedium)),
-                        if (program.isCurrentlyAiring)
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                            decoration: const BoxDecoration(
-                              color: Colors.red,
-                              borderRadius: BorderRadius.all(Radius.circular(4)),
-                            ),
-                            child: Text(
-                              t.liveTv.live,
-                              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 11),
-                            ),
-                          ),
+                        if (program.isCurrentlyAiring) StatusPill(label: t.liveTv.live, color: Colors.red),
                       ],
                     ),
                     const SizedBox(height: 4),
@@ -327,7 +329,7 @@ class _ProgramDetailsSheetContentState extends State<_ProgramDetailsSheetContent
                         if (channel != null) channel.displayName,
                         if (program.startTime != null && program.endTime != null)
                           '${formatClockTime(program.startTime!, is24Hour: MediaQuery.alwaysUse24HourFormatOf(context))} - ${formatClockTime(program.endTime!, is24Hour: MediaQuery.alwaysUse24HourFormatOf(context))}',
-                        if (program.durationMinutes > 0) formatDurationTextual(program.durationMinutes * 60000),
+                        if (program.durationMinutes > 0) formatDurationTextual(program.durationMinutes * 60_000),
                       ].join(' · '),
                       style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
                     ),

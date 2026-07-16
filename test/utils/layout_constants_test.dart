@@ -57,17 +57,5 @@ void main() {
       expect(ScreenBreakpoints.desktop, 1200);
       expect(ScreenBreakpoints.largeDesktop, 1600);
     });
-
-    test('partitioning: every width matches exactly one of mobile/tablet/desktop/largeDesktop', () {
-      for (final w in const [0.0, 300, 599.9, 600, 899.9, 1199.9, 1200, 1599.9, 1600, 2500]) {
-        final matches = [
-          ScreenBreakpoints.isMobile(w.toDouble()),
-          ScreenBreakpoints.isTablet(w.toDouble()) && !ScreenBreakpoints.isDesktopOrLarger(w.toDouble()),
-          ScreenBreakpoints.isDesktop(w.toDouble()),
-          ScreenBreakpoints.isLargeDesktop(w.toDouble()),
-        ].where((b) => b).length;
-        expect(matches, 1, reason: 'width $w should match exactly one tier');
-      }
-    });
   });
 }

@@ -1,4 +1,5 @@
-import 'dart:async' show unawaited;
+import 'dart:async' show Stream, unawaited;
+import '../../../media/ids.dart';
 
 import 'package:flutter/material.dart';
 import 'package:plezy/widgets/app_icon.dart';
@@ -45,6 +46,27 @@ class ChapterSheet extends StatefulWidget {
 
 class _ChapterSheetState extends State<ChapterSheet> {
   final _initialScroll = InitialItemScrollController();
+  late Stream<int?> _chapterIndexStream;
+
+  @override
+  void initState() {
+    super.initState();
+    _bindChapterIndexStream();
+  }
+
+  @override
+  void didUpdateWidget(ChapterSheet oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!identical(oldWidget.player, widget.player) || !identical(oldWidget.chapters, widget.chapters)) {
+      _bindChapterIndexStream();
+    }
+  }
+
+  void _bindChapterIndexStream() {
+    _chapterIndexStream = widget.player.streams.position
+        .map((position) => MediaChapter.indexAtPosition(position, widget.chapters))
+        .distinct();
+  }
 
   @override
   void dispose() {
@@ -63,18 +85,16 @@ class _ChapterSheetState extends State<ChapterSheet> {
 
   /// Get the media client for chapters, or null if unavailable (offline mode).
   MediaServerClient? _tryGetClientForChapters(BuildContext context) {
-    return context.tryGetMediaClientForServer(widget.serverId);
+    return context.tryGetMediaClientForServer(serverIdOrNull(widget.serverId));
   }
 
   @override
   Widget build(BuildContext context) {
-    return StreamBuilder<Duration>(
-      stream: widget.player.streams.position,
-      initialData: widget.player.state.position,
-      builder: (context, positionSnapshot) {
-        final currentPosition = positionSnapshot.data ?? Duration.zero;
-        final currentChapterIndex = MediaChapter.indexAtPosition(currentPosition, widget.chapters);
-
+    return StreamBuilder<int?>(
+      stream: _chapterIndexStream,
+      initialData: MediaChapter.indexAtPosition(widget.player.state.position, widget.chapters),
+      builder: (context, chapterSnapshot) {
+        final currentChapterIndex = chapterSnapshot.data;
         Widget content;
         if (!widget.chaptersLoaded) {
           content = const Center(child: CircularProgressIndicator());
@@ -93,7 +113,7 @@ class _ChapterSheetState extends State<ChapterSheet> {
               final isCurrentChapter = currentChapterIndex == index;
 
               final localThumbPath = widget.serverId != null && chapter.thumb != null
-                  ? DownloadStorageService.instance.getArtworkPathSync(widget.serverId!, chapter.thumb!)
+                  ? DownloadStorageService.instance.getArtworkPathSync(ServerId(widget.serverId!), chapter.thumb!)
                   : null;
 
               return FocusableListTile(

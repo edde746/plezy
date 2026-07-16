@@ -44,7 +44,11 @@ extension _PlexVideoControlsTrackMethods on _PlexVideoControlsState {
           .applyPreset(targetPreset)
           .then((_) async {
             if (!mounted) return;
-            await shaderProvider.setPreset(targetPreset);
+            if (targetPreset.isEnabled) {
+              await shaderProvider.setPreset(targetPreset);
+            } else {
+              shaderProvider.setCurrentPreset(targetPreset);
+            }
             if (!mounted) return;
             // ignore: no-empty-block - setState triggers rebuild to reflect shader changes
             _setControlsState(() {});
@@ -101,6 +105,7 @@ extension _PlexVideoControlsTrackMethods on _PlexVideoControlsState {
       sourcePartId: canSwitchSourceSubtitles ? widget.sourcePartId : null,
       sourceDurationMs: widget.metadata.durationMs,
       boxFitMode: widget.boxFitMode,
+      videoZoomScale: widget.videoZoomScale,
       audioSyncOffset: _audioSyncOffset,
       subtitleSyncOffset: _subtitleSyncOffset,
       isRotationLocked: _isRotationLocked,
@@ -109,6 +114,8 @@ extension _PlexVideoControlsTrackMethods on _PlexVideoControlsState {
       isAlwaysOnTop: _isAlwaysOnTop,
       onTogglePIPMode: (_isPipSupported && !PlatformDetector.isTV()) ? widget.onTogglePIPMode : null,
       onCycleBoxFitMode: widget.onCycleBoxFitMode,
+      onVideoZoomChanged: widget.onVideoZoomChanged,
+      onResetVideoZoom: widget.onResetVideoZoom,
       onToggleRotationLock: _toggleRotationLock,
       onToggleScreenLock: _toggleScreenLock,
       onToggleFullscreen: _toggleFullscreen,
@@ -123,13 +130,13 @@ extension _PlexVideoControlsTrackMethods on _PlexVideoControlsState {
       onSubtitleTrackChanged: _onSubtitleTrackChanged,
       onSecondarySubtitleTrackChanged: widget.onSecondarySubtitleTrackChanged,
       onLoadSeekTimes: null,
-      onCancelAutoHide: () => _hideTimer?.cancel(),
+      onCancelAutoHide: widget.chromeController.cancelAutoHide,
       onStartAutoHide: _startHideTimer,
       // Sync offsets are now driven by listenable rebuilds — the sheet writes
       // to SettingsService and the parent re-reads via `_audioSyncOffset` /
       // `_subtitleSyncOffset` getters. Callback kept for sheet API compat.
       onSyncOffsetChanged: null,
-      serverId: widget.metadata.serverId ?? '',
+      serverId: widget.metadata.serverId,
       shaderService: widget.shaderService,
       onShaderChanged: widget.onShaderChanged,
       isAmbientLightingEnabled: widget.isAmbientLightingEnabled,
@@ -158,7 +165,7 @@ extension _PlexVideoControlsTrackMethods on _PlexVideoControlsState {
       final serverId = widget.metadata.serverId;
       if (serverId == null) return false;
       final manager = context.read<MultiServerProvider>().serverManager;
-      final c = manager.getClient(serverId);
+      final c = manager.getClient(ServerId(serverId));
       return c?.capabilities.externalSubtitleSearch ?? false;
     } catch (_) {
       return false;

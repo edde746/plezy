@@ -41,6 +41,8 @@ body:
         1. As a user, I would...
         2. This would help me...
         3. The benefit would be...
+    validations:
+      required: true
 
   - type: dropdown
     id: platform
@@ -57,17 +59,20 @@ body:
         - tvOS
         - Linux
         - All platforms
+    validations:
+      required: true
 
   - type: dropdown
     id: media-server
     attributes:
       label: Media Server
-      description: Is this for Jellyfin, Plex, or both?
+      description: Which media server(s) is this for?
       multiple: true
       options:
         - Jellyfin
         - Plex
-        - Both
+    validations:
+      required: true
 
   - type: textarea
     id: additional

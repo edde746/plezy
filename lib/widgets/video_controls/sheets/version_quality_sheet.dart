@@ -75,7 +75,7 @@ class VersionQualityPicker extends StatelessWidget {
 
     if (showVersions && showQuality) {
       return Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: .start,
         children: [
           Expanded(child: versionColumn),
           VerticalDivider(width: 1, color: Theme.of(context).dividerColor),
@@ -270,7 +270,7 @@ class _SelectionTile extends StatelessWidget {
     final hasText = trailingText != null && trailingText!.isNotEmpty;
     final trailing = (hasText || isSelected)
         ? Row(
-            mainAxisSize: MainAxisSize.min,
+            mainAxisSize: .min,
             children: [
               if (hasText) Text(trailingText!, style: TextStyle(color: trailingColor)),
               if (hasText && isSelected) const SizedBox(width: 8),

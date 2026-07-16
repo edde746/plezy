@@ -1,0 +1,34 @@
+{
+  "clientMessageTypes": {
+    "create": "create",
+    "join": "join",
+    "broadcast": "broadcast",
+    "sendTo": "sendTo",
+    "ping": "ping"
+  },
+  "serverMessageTypes": {
+    "created": "created",
+    "joined": "joined",
+    "peerJoined": "peerJoined",
+    "peerLeft": "peerLeft",
+    "message": "message",
+    "error": "error",
+    "pong": "pong"
+  },
+  "errorCodes": {
+    "rateLimited": "rate_limited",
+    "invalidMessage": "invalid_message",
+    "roomExists": "room_exists",
+    "roomNotFound": "room_not_found",
+    "roomFull": "room_full",
+    "notInRoom": "not_in_room",
+    "alreadyInRoom": "already_in_room"
+  },
+  "limits": {
+    "maxRoomSize": 8,
+    "maxMessageSize": 65536,
+    "maxSessionIdLength": 64,
+    "maxPeerIdLength": 128
+  },
+  "idPattern": "^[A-Za-z0-9_-]+$"
+}

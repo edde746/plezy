@@ -1,4 +1,4 @@
-import 'dart:convert';
+import '../media/ids.dart';
 
 import 'package:drift/drift.dart';
 
@@ -19,27 +19,19 @@ import 'plex_mappers.dart';
 /// endpoint shape and parse cached JSON into [MediaItem] via
 /// [PlexMappers.mediaItemFromCacheJson].
 class PlexApiCache extends ApiCache {
-  static PlexApiCache? _instance;
-  static PlexApiCache get instance {
-    if (_instance == null) {
-      throw StateError('PlexApiCache not initialized. Call PlexApiCache.initialize() first.');
-    }
-    return _instance!;
-  }
+  static final _singleton = ApiCacheSingleton<PlexApiCache>(MediaBackend.plex, 'PlexApiCache');
+  static PlexApiCache get instance => _singleton.instance;
 
   PlexApiCache._(super.db);
 
   /// Initialize the singleton with an [AppDatabase] instance. Also registers
   /// this instance with the [ApiCache] backend dispatch so callers using
   /// `ApiCache.forBackend(MediaBackend.plex)` resolve here.
-  static void initialize(AppDatabase db) {
-    _instance = PlexApiCache._(db);
-    ApiCache.registerInstance(MediaBackend.plex, _instance!);
-  }
+  static void initialize(AppDatabase db) => _singleton.install(PlexApiCache._(db));
 
   /// Delete cached data for a specific item (when removing a download).
   @override
-  Future<void> deleteForItem(String serverId, String ratingKey) async {
+  Future<void> deleteForItem(ServerId serverId, String ratingKey) async {
     final metadataKey = '$serverId:/library/metadata/$ratingKey';
     final childrenKey = '$serverId:/library/metadata/$ratingKey/children';
 
@@ -49,11 +41,11 @@ class PlexApiCache extends ApiCache {
   }
 
   @override
-  Future<void> pinForOffline(String serverId, String ratingKey) async {
+  Future<void> pinForOffline(ServerId serverId, String ratingKey) async {
     return pin(serverId, '/library/metadata/$ratingKey');
   }
 
-  Future<void> unpinForOffline(String serverId, String ratingKey) async {
+  Future<void> unpinForOffline(ServerId serverId, String ratingKey) async {
     return unpin(serverId, '/library/metadata/$ratingKey');
   }
 
@@ -61,14 +53,14 @@ class PlexApiCache extends ApiCache {
   ///
   /// Named `isPinnedRatingKey` to avoid colliding with the inherited
   /// [ApiCache.isPinned]'s identical Dart signature.
-  Future<bool> isPinnedRatingKey(String serverId, String ratingKey) {
+  Future<bool> isPinnedRatingKey(ServerId serverId, String ratingKey) {
     return isPinned(serverId, '/library/metadata/$ratingKey');
   }
 
   // Rating keys can be alphanumeric, not just numeric.
   static final RegExp _metadataKeyPattern = RegExp(r'/library/metadata/([^/]+)$');
 
-  Future<Set<String>> getPinnedKeys(String serverId) => extractPinnedIds(serverId, _metadataKeyPattern);
+  Future<Set<String>> getPinnedKeys(ServerId serverId) => extractPinnedIds(serverId, _metadataKeyPattern);
 
   /// Fetch and parse a [MediaItem] from cache.
   ///
@@ -77,7 +69,7 @@ class PlexApiCache extends ApiCache {
   /// [MediaItem] at the boundary. Returns `null` when the endpoint is not
   /// cached or contains no metadata.
   @override
-  Future<MediaItem?> getMetadata(String serverId, String ratingKey) async {
+  Future<MediaItem?> getMetadata(ServerId serverId, String ratingKey) async {
     final cached = await get(serverId, '/library/metadata/$ratingKey');
     final container = PlexCacheParser.extractMediaContainer(cached);
     final json = PlexCacheParser.extractFirstMetadata(cached);
@@ -108,7 +100,7 @@ class PlexApiCache extends ApiCache {
   /// callers passing them have a more accurate read of server state.
   @override
   Future<void> applyWatchState({
-    required String serverId,
+    required ServerId serverId,
     required String itemId,
     required bool isWatched,
     int? viewOffsetMs,
@@ -116,7 +108,7 @@ class PlexApiCache extends ApiCache {
     int? viewedLeafCount,
   }) async {
     final endpoint = '/library/metadata/$itemId';
-    final cached = await get(serverId, endpoint);
+    final cached = await get(ServerId(serverId), endpoint);
     final json = PlexCacheParser.extractFirstMetadata(cached);
     if (cached == null || json == null) return;
     if (isWatched) {
@@ -130,12 +122,12 @@ class PlexApiCache extends ApiCache {
       if (lastViewedAt != null) json['lastViewedAt'] = lastViewedAt;
     }
     if (viewedLeafCount != null) json['viewedLeafCount'] = viewedLeafCount;
-    await put(serverId, endpoint, cached);
+    await put(ServerId(serverId), endpoint, cached);
   }
 
   /// Load all pinned Plex metadata in a single query.
   ///
-  /// Returns a map keyed by `buildGlobalKey(serverId, ratingKey)` for O(1)
+  /// Returns a map keyed by `buildGlobalKey(ServerId(serverId), ratingKey)` for O(1)
   /// lookups. Used by DownloadProvider to batch-load metadata on startup
   /// instead of issuing per-item DB queries.
   @override
@@ -143,23 +135,20 @@ class PlexApiCache extends ApiCache {
     final entries = await listPinnedRowsByPattern(_metadataKeyPattern);
     if (entries.isEmpty) return {};
 
-    return await tryIsolateRun(() {
-      final result = <String, MediaItem>{};
-      for (final entry in entries) {
-        try {
-          final data = jsonDecode(entry.data) as Map<String, dynamic>;
+    return await tryIsolateRun(
+      () => decodeCachedMediaRows(
+        entries,
+        serializedData: (entry) => entry.data,
+        decode: (entry, data) {
           final container = PlexCacheParser.extractMediaContainer(data);
           final json = PlexCacheParser.extractFirstMetadata(data);
-          if (json == null) continue;
-          result[buildGlobalKey(entry.serverId, entry.id)] = PlexMappers.mediaItemFromCacheJson(
-            _withContainerLibrary(json, container),
-            serverId: entry.serverId,
+          if (json == null) return null;
+          return MapEntry(
+            buildGlobalKey(ServerId(entry.serverId), entry.id),
+            PlexMappers.mediaItemFromCacheJson(_withContainerLibrary(json, container), serverId: entry.serverId),
           );
-        } catch (_) {
-          // Skip malformed entries
-        }
-      }
-      return result;
-    });
+        },
+      ),
+    );
   }
 }

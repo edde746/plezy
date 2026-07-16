@@ -2,8 +2,10 @@
 class TrackerConstants {
   TrackerConstants._();
 
-  /// Progress percent at which an episode/movie counts as watched and is
-  /// pushed to each tracker.
+  /// Fallback watched threshold (percent) used only until the active server's
+  /// threshold is known. The operative value follows
+  /// [MediaServerClient.watchedThreshold] (captured per playback in
+  /// [TrackerCoordinator]); this constant just seeds the field before playback.
   static const double watchedThresholdPercent = 80.0;
 
   static const Duration requestTimeout = Duration(seconds: 20);

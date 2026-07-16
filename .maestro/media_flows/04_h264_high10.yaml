@@ -1,0 +1,26 @@
+appId: com.edde746.plezy
+name: Codec sample - H264 High10 DTS-HD and ASS
+tags:
+  - e2e
+  - media
+  - h264-high10
+---
+- runFlow:
+    file: ../subflows/open_codec_sample.yaml
+    env:
+      SAMPLE_TITLE: "Codec H264 High10 DTS-HD ASS"
+      SAMPLE_OVERVIEW: "H.264 High 10 video with dual DTS-HD MA audio, styled ASS subtitles, and embedded fonts."
+- runFlow:
+    file: ../subflows/switch_codec_tracks.yaml
+    env:
+      AUDIO_TRACK: "(?is)^Japanese.*(?:DTS-HD MA|DTS|Surround|5\\.1).*"
+      SUBTITLE_TRACK: "(?is)^English.*(?:ASS|TEXT/X-SSA).*"
+- repeat:
+    times: 2
+    while:
+      notVisible: "Overview"
+    commands:
+      - back
+- extendedWaitUntil:
+    visible: "Overview"
+    timeout: 10000

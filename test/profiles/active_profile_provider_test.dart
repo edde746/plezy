@@ -122,15 +122,35 @@ void main() {
       expect(provider.active?.displayName, 'Migrated User');
     });
 
-    test('initialize clears storage when stored id is stale', () async {
-      // A previously-active profile that was deleted should not keep
-      // storage-scoped settings under the removed profile id.
+    test('initialize keeps a stored id it cannot resolve (transient snapshots must not wipe it)', () async {
+      // Early snapshots can legitimately miss state (boot before migration,
+      // Plex Home cache not hydrated yet) — resolution goes inactive but the
+      // persisted selection survives for a later snapshot to resolve.
+      // Genuinely unresolvable ids are cleared by the boot guard and the
+      // post-removal settle flow, not here.
       await registry.upsert(Profile.local(id: 'p1', displayName: 'Owner', createdAt: DateTime(2026, 1, 1)));
       await storage.setActiveProfileId('ghost-id-no-longer-exists');
       await provider.initialize();
       await Future<void>.delayed(Duration.zero);
       expect(provider.activeId, isNull);
-      expect(storage.getActiveProfileId(), isNull);
+      expect(storage.getActiveProfileId(), 'ghost-id-no-longer-exists');
+    });
+
+    test('re-upserting an identical connection does not notify listeners', () async {
+      await registry.upsert(Profile.local(id: 'p1', displayName: 'Owner', createdAt: DateTime(2026, 1, 1)));
+      final account = _account('plex.acct');
+      await connections.upsert(account);
+      await provider.initialize();
+      await Future<void>.delayed(const Duration(milliseconds: 20));
+
+      var notifications = 0;
+      provider.addListener(() => notifications++);
+      // Same row content — the binder does this on every successful bind
+      // (persisting refreshed-but-identical server metadata).
+      await connections.upsert(account);
+      await Future<void>.delayed(const Duration(milliseconds: 20));
+
+      expect(notifications, 0);
     });
 
     test('initialize resolves the stored active profile id', () async {

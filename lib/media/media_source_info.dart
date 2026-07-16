@@ -1,5 +1,5 @@
-import '../utils/codec_utils.dart';
-import '../utils/track_label_builder.dart' show TrackLabelBuilder, buildTrackLabel;
+import '../i18n/strings.g.dart';
+import '../utils/track_label_builder.dart' show TrackLabel, TrackLabelBuilder;
 import 'media_display_criteria.dart';
 
 class MediaSourceInfo {
@@ -25,6 +25,9 @@ class MediaSourceInfo {
   /// null here and uses [partId] + the BIF service instead.
   final Map<int, TrickplayInfo>? trickplayByWidth;
 
+  /// Display aspect ratio of the video stream (width / height).
+  final double? videoAspectRatio;
+
   MediaSourceInfo({
     required this.videoUrl,
     required this.audioTracks,
@@ -36,6 +39,7 @@ class MediaSourceInfo {
     this.defaultAudioStreamIndex,
     this.defaultSubtitleStreamIndex,
     this.trickplayByWidth,
+    this.videoAspectRatio,
   });
   int? getPartId() => partId;
 }
@@ -62,21 +66,15 @@ class TrickplayInfo {
   });
 }
 
-/// Mixin for building track labels with a consistent pattern.
-///
-/// Used by [MediaAudioTrack] and [MediaSubtitleTrack] to provide a [buildLabel]
-/// method that delegates to the shared [buildTrackLabel] function.
+/// Shared fallback-index math for [MediaAudioTrack] and [MediaSubtitleTrack]
+/// labels; the label content itself is built by [TrackLabelBuilder].
 mixin _TrackLabelMixin {
   int get id;
   int? get index;
-  String? get displayTitle;
-  String? get language;
 
-  String buildLabel(List<String> additionalParts) {
-    if (displayTitle != null && displayTitle!.isNotEmpty) {
-      return displayTitle!;
-    }
-    return buildTrackLabel(language: language, extraParts: additionalParts, index: (index ?? id) - 1);
+  int get _fallbackLabelIndex {
+    final streamIndex = index ?? id;
+    return streamIndex > 0 ? streamIndex - 1 : 0;
   }
 }
 
@@ -86,11 +84,9 @@ class MediaAudioTrack with _TrackLabelMixin {
   @override
   final int? index;
   final String? codec;
-  @override
   final String? language;
   final String? languageCode;
   final String? title;
-  @override
   final String? displayTitle;
   final int? channels;
   final bool selected;
@@ -111,11 +107,16 @@ class MediaAudioTrack with _TrackLabelMixin {
 
   bool get isExternal => external;
 
-  String get label {
-    final additionalParts = <String>[];
-    if (codec != null) additionalParts.add(CodecUtils.formatAudioCodec(codec!));
-    if (channels != null) additionalParts.add('${channels!}ch');
-    return buildLabel(additionalParts);
+  TrackLabel get label {
+    return TrackLabelBuilder.audioLabel(
+      title: title,
+      language: language,
+      languageCode: languageCode,
+      codec: codec,
+      channels: channels,
+      displayTitle: displayTitle,
+      index: _fallbackLabelIndex,
+    );
   }
 }
 
@@ -125,11 +126,9 @@ class MediaSubtitleTrack with _TrackLabelMixin {
   @override
   final int? index;
   final String? codec;
-  @override
   final String? language;
   final String? languageCode;
   final String? title;
-  @override
   final String? displayTitle;
   final bool selected;
   final bool forced;
@@ -152,29 +151,20 @@ class MediaSubtitleTrack with _TrackLabelMixin {
     this.usesExternalDelivery = false,
   });
 
-  String get label {
+  TrackLabel get label {
     return labelForIndex(_fallbackLabelIndex);
   }
 
-  String labelForIndex(int visibleIndex) {
-    return TrackLabelBuilder.buildSubtitleLabel(
-      title: _labelTitle,
-      language: languageCode ?? language,
+  TrackLabel labelForIndex(int visibleIndex) {
+    return TrackLabelBuilder.subtitleLabel(
+      title: title,
+      language: language,
+      languageCode: languageCode,
       codec: codec,
       forced: forced,
+      displayTitle: displayTitle,
       index: visibleIndex,
     );
-  }
-
-  String? get _labelTitle {
-    final explicitTitle = title;
-    if (explicitTitle != null && explicitTitle.trim().isNotEmpty) return explicitTitle;
-    return displayTitle;
-  }
-
-  int get _fallbackLabelIndex {
-    final streamIndex = index ?? id;
-    return streamIndex > 0 ? streamIndex - 1 : 0;
   }
 
   /// Returns true if this subtitle track is an external file (sidecar subtitle).
@@ -228,7 +218,7 @@ class MediaChapter {
     return chapters;
   }
 
-  String get label => title ?? 'Chapter ${(index ?? 0) + 1}';
+  String get label => title ?? t.common.chapterNumber(number: (index ?? 0) + 1);
 
   Duration get startTime => Duration(milliseconds: startTimeOffset ?? 0);
   Duration? get endTime => endTimeOffset != null ? Duration(milliseconds: endTimeOffset!) : null;
@@ -245,6 +235,30 @@ class MediaChapter {
           chapter.endTimeOffset ??
           (i < chapters.length - 1 ? chapters[i + 1].startTimeOffset ?? 0 : double.maxFinite.toInt());
       if (positionMs >= startMs && positionMs < endMs) return i;
+    }
+    return null;
+  }
+
+  /// Find the chapter targeted by next/previous traversal. Previous traversal
+  /// restarts the current chapter only after [previousRestartThreshold]; before
+  /// that it selects an earlier chapter.
+  static int? seekTargetIndex(
+    Duration position,
+    List<MediaChapter> chapters, {
+    required bool forward,
+    Duration previousRestartThreshold = const Duration(seconds: 3),
+  }) {
+    final positionMs = position.inMilliseconds;
+    if (forward) {
+      for (int i = 0; i < chapters.length; i++) {
+        if ((chapters[i].startTimeOffset ?? 0) > positionMs) return i;
+      }
+      return null;
+    }
+
+    final thresholdMs = previousRestartThreshold.inMilliseconds;
+    for (int i = chapters.length - 1; i >= 0; i--) {
+      if (positionMs > (chapters[i].startTimeOffset ?? 0) + thresholdMs) return i;
     }
     return null;
   }

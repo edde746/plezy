@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- TV (Android TV / Google TV / Fire TV) launch + window background.
+         The television UI-mode qualifier outranks night/notnight, so this wins
+         even on TVs that report notnight (most do) where values/ would resolve
+         the near-white #F7F7F8. Black matches the OLED default theme on TV. -->
+    <color name="splash_background">#000000</color>
+</resources>

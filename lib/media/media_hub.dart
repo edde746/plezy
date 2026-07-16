@@ -44,6 +44,21 @@ class MediaHub {
     this.serverName,
   });
 
+  /// True for hubs that represent the user's resumable Continue Watching row.
+  bool get isContinueWatchingHub => _anySemanticKey(_isContinueWatchingKey);
+
+  /// True when selecting an item should honor the Continue Watching action
+  /// preference. This is intentionally broader than [isContinueWatchingHub]:
+  /// backend "Next Up" rows should use the same activation preference without
+  /// inheriting remove-from-Continue-Watching menu semantics.
+  bool get usesContinueWatchingAction => isContinueWatchingHub || _anySemanticKey(_usesContinueWatchingActionKey);
+
+  bool _anySemanticKey(bool Function(String key) matches) {
+    if (matches(id)) return true;
+    final hubIdentifier = identifier;
+    return hubIdentifier != null && matches(hubIdentifier);
+  }
+
   MediaHub copyWith({
     String? id,
     String? identifier,
@@ -70,3 +85,24 @@ class MediaHub {
     );
   }
 }
+
+bool _isContinueWatchingKey(String rawKey) {
+  final compactKey = _compactHubKey(rawKey);
+  if (compactKey == 'continuewatching') return true;
+
+  final tokens = _hubKeyTokens(rawKey);
+  return tokens.contains('inprogress') || _hasTailToken(tokens, 'continue');
+}
+
+bool _usesContinueWatchingActionKey(String rawKey) {
+  final tokens = _hubKeyTokens(rawKey);
+  return _hasTailToken(tokens, 'nextup') || tokens.contains('ondeck');
+}
+
+List<String> _hubKeyTokens(String rawKey) {
+  return rawKey.toLowerCase().split(RegExp(r'[^a-z0-9]+')).where((part) => part.isNotEmpty).toList(growable: false);
+}
+
+String _compactHubKey(String rawKey) => rawKey.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]+'), '');
+
+bool _hasTailToken(List<String> tokens, String token) => tokens.isNotEmpty && tokens.last == token;

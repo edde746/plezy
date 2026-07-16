@@ -1,27 +1,40 @@
 import 'dart:async' show unawaited;
 import 'dart:io';
 
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../models/hotkey_model.dart';
 import '../i18n/strings.g.dart';
 import '../mpv/mpv.dart';
+import 'settings_binding_owner.dart';
 import 'settings_service.dart';
 import '../utils/platform_detector.dart';
 import '../utils/player_utils.dart';
 
 class KeyboardShortcutsService extends ChangeNotifier {
+  static const Set<String> _repeatableVideoActions = {'zoom_in', 'zoom_out'};
+
   static KeyboardShortcutsService? _instance;
-  late SettingsService _settingsService;
-  final List<VoidCallback> _settingsDisposers = [];
-  Map<String, String> _shortcuts = {}; // Legacy string shortcuts for backward compatibility
-  Map<String, HotKey> _hotkeys = {}; // New HotKey objects
+  late final SettingsBindingOwner _settingsBinding;
+  Map<String, HotKey> _hotkeys = {};
   int _seekTimeSmall = 10; // Default, loaded from settings
   int _seekTimeLarge = 30; // Default, loaded from settings
   int _maxVolume = 100; // Default, loaded from settings (100-300%)
+  bool _settingsInitialized = false;
 
-  KeyboardShortcutsService._();
+  KeyboardShortcutsService._() {
+    _settingsBinding = SettingsBindingOwner(
+      prefs: [
+        SettingsService.keyboardHotkeys,
+        SettingsService.seekTimeSmall,
+        SettingsService.seekTimeLarge,
+        SettingsService.maxVolume,
+      ],
+      onRefresh: _syncFromSettings,
+    );
+  }
+
+  SettingsService get _settingsService => _settingsBinding.settings!;
 
   static Future<KeyboardShortcutsService> getInstance() async {
     if (_instance == null) {
@@ -37,48 +50,28 @@ class KeyboardShortcutsService extends ChangeNotifier {
   }
 
   Future<void> _init() async {
-    _settingsService = await SettingsService.getInstance();
-    _bindSettings();
-    _syncFromSettings(notify: false);
+    await _settingsBinding.bind();
   }
 
-  void _bindSettings() {
-    if (_settingsDisposers.isNotEmpty) return;
-    void bind<T>(Pref<T> pref) {
-      final notifier = _settingsService.listenable(pref);
-      notifier.addListener(_onSettingsChanged);
-      _settingsDisposers.add(() => notifier.removeListener(_onSettingsChanged));
-    }
-
-    bind(SettingsService.keyboardShortcuts);
-    bind(SettingsService.keyboardHotkeys);
-    bind(SettingsService.seekTimeSmall);
-    bind(SettingsService.seekTimeLarge);
-    bind(SettingsService.maxVolume);
-  }
-
-  void _onSettingsChanged() => _syncFromSettings();
-
-  void _syncFromSettings({bool notify = true}) {
-    final shortcuts = _settingsService.read(SettingsService.keyboardShortcuts);
-    final hotkeys = _settingsService.read(SettingsService.keyboardHotkeys);
-    final seekTimeSmall = _settingsService.read(SettingsService.seekTimeSmall);
-    final seekTimeLarge = _settingsService.read(SettingsService.seekTimeLarge);
-    final maxVolume = _settingsService.read(SettingsService.maxVolume);
+  void _syncFromSettings(SettingsService service) {
+    final hotkeys = service.read(SettingsService.keyboardHotkeys);
+    final seekTimeSmall = service.read(SettingsService.seekTimeSmall);
+    final seekTimeLarge = service.read(SettingsService.seekTimeLarge);
+    final maxVolume = service.read(SettingsService.maxVolume);
 
     final changed =
-        !mapEquals(_shortcuts, shortcuts) ||
         !_hotkeyMapsEqual(_hotkeys, hotkeys) ||
         _seekTimeSmall != seekTimeSmall ||
         _seekTimeLarge != seekTimeLarge ||
         _maxVolume != maxVolume;
 
-    _shortcuts = Map<String, String>.from(shortcuts);
     _hotkeys = Map<String, HotKey>.from(hotkeys);
     _seekTimeSmall = seekTimeSmall;
     _seekTimeLarge = seekTimeLarge;
     _maxVolume = maxVolume;
 
+    final notify = _settingsInitialized;
+    _settingsInitialized = true;
     if (notify && changed) notifyListeners();
   }
 
@@ -91,20 +84,11 @@ class KeyboardShortcutsService extends ChangeNotifier {
     return true;
   }
 
-  Map<String, String> get shortcuts => Map.from(_shortcuts);
   Map<String, HotKey> get hotkeys => Map.from(_hotkeys);
   int get maxVolume => _maxVolume;
 
-  String getShortcut(String action) {
-    return _shortcuts[action] ?? '';
-  }
-
   HotKey? getHotkey(String action) {
     return _hotkeys[action];
-  }
-
-  Future<void> setShortcut(String action, String key) async {
-    await _settingsService.write(SettingsService.keyboardShortcuts, {..._shortcuts, action: key});
   }
 
   Future<void> setHotkey(String action, HotKey hotkey) async {
@@ -112,28 +96,23 @@ class KeyboardShortcutsService extends ChangeNotifier {
   }
 
   Future<void> refreshFromStorage() async {
-    _syncFromSettings();
+    _settingsBinding.refresh();
   }
 
   Future<void> resetToDefaults() async {
-    final shortcuts = SettingsService.defaultKeyboardShortcuts();
     final hotkeys = SettingsService.defaultKeyboardHotkeys();
-    await _settingsService.write(SettingsService.keyboardShortcuts, shortcuts);
     await _settingsService.write(SettingsService.keyboardHotkeys, hotkeys);
   }
 
   @override
   void dispose() {
-    for (final dispose in _settingsDisposers) {
-      dispose();
-    }
-    _settingsDisposers.clear();
+    _settingsBinding.dispose();
     if (identical(_instance, this)) _instance = null;
     super.dispose();
   }
 
   String formatHotkey(HotKey? hotKey) {
-    if (hotKey == null) return 'No shortcut set';
+    if (hotKey == null) return t.hotkeys.noShortcutSet;
 
     final isMac = Platform.isMacOS;
 
@@ -177,22 +156,21 @@ class KeyboardShortcutsService extends ChangeNotifier {
     VoidCallback? onNextSubtitleTrack,
     VoidCallback? onNextChapter,
     VoidCallback? onPreviousChapter, {
-    VoidCallback? onBack,
     VoidCallback? onToggleShader,
     VoidCallback? onSkipMarker,
     VoidCallback? onNextEpisode,
     VoidCallback? onPreviousEpisode,
     VoidCallback? onScreenshot,
+    VoidCallback? onZoomIn,
+    VoidCallback? onZoomOut,
+    VoidCallback? onZoomReset,
     int? currentPositionEpoch,
     ValueChanged<int>? onLiveSeek,
+    ValueChanged<int>? onLiveSeekBy,
     Future<void> Function(Duration position)? onSeekRequested,
   }) {
-    if (event is! KeyDownEvent) return KeyEventResult.ignored;
-
-    if (event.logicalKey == LogicalKeyboardKey.escape) {
-      onBack?.call();
-      return KeyEventResult.handled;
-    }
+    final isRepeat = event is KeyRepeatEvent;
+    if (event is! KeyDownEvent && !isRepeat) return KeyEventResult.ignored;
 
     final physicalKey = event.physicalKey;
     final isShiftPressed = HardwareKeyboard.instance.isShiftPressed;
@@ -247,6 +225,10 @@ class KeyboardShortcutsService extends ChangeNotifier {
           continue;
         }
 
+        if (isRepeat && !_repeatableVideoActions.contains(action)) {
+          return KeyEventResult.handled;
+        }
+
         _executeAction(
           action,
           player,
@@ -261,8 +243,12 @@ class KeyboardShortcutsService extends ChangeNotifier {
           onNextEpisode: onNextEpisode,
           onPreviousEpisode: onPreviousEpisode,
           onScreenshot: onScreenshot,
+          onZoomIn: onZoomIn,
+          onZoomOut: onZoomOut,
+          onZoomReset: onZoomReset,
           currentPositionEpoch: currentPositionEpoch,
           onLiveSeek: onLiveSeek,
+          onLiveSeekBy: onLiveSeekBy,
           onSeekRequested: onSeekRequested,
         );
         return KeyEventResult.handled;
@@ -286,13 +272,19 @@ class KeyboardShortcutsService extends ChangeNotifier {
     VoidCallback? onNextEpisode,
     VoidCallback? onPreviousEpisode,
     VoidCallback? onScreenshot,
+    VoidCallback? onZoomIn,
+    VoidCallback? onZoomOut,
+    VoidCallback? onZoomReset,
     int? currentPositionEpoch,
     ValueChanged<int>? onLiveSeek,
+    ValueChanged<int>? onLiveSeekBy,
     Future<void> Function(Duration position)? onSeekRequested,
   }) {
     void performSeek(int offsetSeconds) {
-      if (onLiveSeek != null && currentPositionEpoch != null) {
-        onLiveSeek(currentPositionEpoch + offsetSeconds);
+      // Relative live-TV skip: route through the parent accumulator, which
+      // coalesces a rapid burst into one transcode re-open (#1253).
+      if (onLiveSeekBy != null) {
+        onLiveSeekBy(offsetSeconds);
       } else {
         final target = clampSeekPosition(player, player.state.position + Duration(seconds: offsetSeconds));
         unawaited((onSeekRequested ?? player.seek)(target));
@@ -329,9 +321,9 @@ class KeyboardShortcutsService extends ChangeNotifier {
         onToggleFullscreen?.call();
         break;
       case 'mute_toggle':
-        final newVolume = player.state.volume > 0 ? 0.0 : 100.0;
-        player.setVolume(newVolume);
-        _settingsService.write(SettingsService.volume, newVolume);
+        final transition = _settingsService.resolveMuteToggle(player.state.volume);
+        player.setVolume(transition.playerVolume);
+        _settingsService.write(SettingsService.volume, transition.persistedVolume);
         break;
       case 'subtitle_toggle':
         onToggleSubtitles?.call();
@@ -382,6 +374,15 @@ class KeyboardShortcutsService extends ChangeNotifier {
         break;
       case 'screenshot':
         unawaited(player.command(['screenshot', 'subtitles']).then((_) => onScreenshot?.call()));
+        break;
+      case 'zoom_in':
+        onZoomIn?.call();
+        break;
+      case 'zoom_out':
+        onZoomOut?.call();
+        break;
+      case 'zoom_reset':
+        onZoomReset?.call();
         break;
     }
   }
@@ -436,6 +437,12 @@ class KeyboardShortcutsService extends ChangeNotifier {
         return t.hotkeys.actions.skipMarker;
       case 'screenshot':
         return t.hotkeys.actions.screenshot;
+      case 'zoom_in':
+        return t.hotkeys.actions.zoomIn;
+      case 'zoom_out':
+        return t.hotkeys.actions.zoomOut;
+      case 'zoom_reset':
+        return t.hotkeys.actions.zoomReset;
       default:
         return action;
     }

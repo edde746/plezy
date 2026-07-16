@@ -27,23 +27,22 @@ mixin _JellyfinFileInfoMethods on MediaServerCacheMixin {
     final audioTracks = parsed.audioTracks;
     final subtitleTracks = parsed.subtitleTracks;
 
-    final width = videoStream?['Width'] as int?;
-    final height = videoStream?['Height'] as int?;
+    final width = flexibleInt(videoStream?['Width']);
+    final height = flexibleInt(videoStream?['Height']);
     final aspectRatioString = videoStream?['AspectRatio'] as String?;
     double? aspectRatio;
     if (aspectRatioString != null && aspectRatioString.contains(':')) {
       final parts = aspectRatioString.split(':');
-      final num = double.tryParse(parts[0]);
-      final den = double.tryParse(parts[1]);
+      final num = flexibleDouble(parts.first);
+      final den = flexibleDouble(parts[1]);
       if (num != null && den != null && den != 0) aspectRatio = num / den;
     }
     aspectRatio ??= (width != null && height != null && height != 0) ? width / height : null;
 
-    final runtimeTicks = source['RunTimeTicks'] as int?;
-    final durationMs = runtimeTicks != null ? (runtimeTicks ~/ 10000) : null;
+    final durationMs = jellyfinTicksToMs(flexibleInt(source['RunTimeTicks']));
 
-    final bitrateBps = source['Bitrate'] as int?;
-    final videoBitrateBps = videoStream?['BitRate'] as int?;
+    final bitrateBps = flexibleInt(source['Bitrate']);
+    final videoBitrateBps = flexibleInt(videoStream?['BitRate']);
 
     return MediaFileInfo(
       container: source['Container'] as String?,
@@ -55,21 +54,20 @@ mixin _JellyfinFileInfoMethods on MediaServerCacheMixin {
       height: height,
       aspectRatio: aspectRatio,
       // Plex stores bitrate as kbps; Jellyfin returns bps. Normalise to kbps.
-      bitrate: bitrateBps != null ? bitrateBps ~/ 1000 : null,
+      bitrate: bitrateKbpsFromBps(bitrateBps),
       duration: durationMs,
       audioCodec: audioStream?['Codec'] as String?,
       audioProfile: audioStream?['Profile'] as String?,
-      audioChannels: audioStream?['Channels'] as int?,
+      audioChannels: flexibleInt(audioStream?['Channels']),
       filePath: source['Path'] as String?,
-      fileSize: source['Size'] as int?,
+      fileSize: flexibleInt(source['Size']),
       colorSpace: videoStream?['ColorSpace'] as String?,
       colorRange: videoStream?['ColorRange'] as String?,
       colorPrimaries: videoStream?['ColorPrimaries'] as String?,
       chromaSubsampling: null,
-      frameRate:
-          (videoStream?['RealFrameRate'] as num?)?.toDouble() ?? (videoStream?['AverageFrameRate'] as num?)?.toDouble(),
-      bitDepth: videoStream?['BitDepth'] as int?,
-      videoBitrate: videoBitrateBps != null ? videoBitrateBps ~/ 1000 : null,
+      frameRate: flexibleDouble(videoStream?['RealFrameRate']) ?? flexibleDouble(videoStream?['AverageFrameRate']),
+      bitDepth: flexibleInt(videoStream?['BitDepth']),
+      videoBitrate: bitrateKbpsFromBps(videoBitrateBps),
       audioChannelLayout: audioStream?['ChannelLayout'] as String?,
       audioTracks: audioTracks,
       subtitleTracks: subtitleTracks,

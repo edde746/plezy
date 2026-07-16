@@ -3,6 +3,7 @@
 // be found in the LICENSE file.
 
 import Flutter
+import UIKit
 
 public class ConnectivityPlusPlugin: NSObject, FlutterPlugin, FlutterStreamHandler {
   private let connectivityProvider: ConnectivityProvider
@@ -79,8 +80,12 @@ public class ConnectivityPlusPlugin: NSObject, FlutterPlugin, FlutterStreamHandl
   }
 
   private func connectivityUpdateHandler(connectivityTypes: [ConnectivityType]) {
-    DispatchQueue.main.async {
-      self.eventSink?(self.statusFrom(connectivityTypes: connectivityTypes))
+    DispatchQueue.main.async { [weak self] in
+      guard let self = self, let eventSink = self.eventSink else { return }
+      // NWPathMonitor can emit after the FlutterEngine shell is torn down.
+      // Do not call its event sink while tvOS is backgrounded.
+      guard UIApplication.shared.applicationState != .background else { return }
+      eventSink(self.statusFrom(connectivityTypes: connectivityTypes))
     }
   }
 

@@ -49,6 +49,10 @@ sealed class LibraryQuery with _$LibraryQuery {
     /// Whether to include items the active user has already watched.
     @Default(true) bool includeWatched,
 
+    /// Restrict to items the user marked favorite (Jellyfin `Filters=IsFavorite`).
+    /// Plex has no equivalent; its translator ignores the flag.
+    @Default(false) bool favoritesOnly,
+
     /// Restrict the result to items whose sort name starts with this string —
     /// the alpha-jump bar's filter UX. The literal `#` is a sentinel for
     /// "non-alphabetic" and translates to a `NameLessThan=A` query for backends
@@ -71,4 +75,12 @@ sealed class LibraryQuery with _$LibraryQuery {
 sealed class LibraryPage<T> with _$LibraryPage<T> {
   const factory LibraryPage({required List<T> items, required int totalCount, @Default(0) int offset}) =
       _LibraryPage<T>;
+}
+
+/// Conservative total for a page whose backend omitted an exact count. A full
+/// page adds one sentinel item so callers keep pagination enabled without
+/// claiming to know the real total.
+int fallbackPageTotal({required int offset, required int itemCount, int? requestedSize}) {
+  final fullPage = requestedSize != null && requestedSize > 0 && itemCount >= requestedSize;
+  return offset + itemCount + (fullPage ? 1 : 0);
 }

@@ -1,0 +1,13 @@
+appId: com.edde746.plezy
+name: Jellyfin onboarding reaches Home
+tags:
+  - e2e
+  - onboarding
+---
+- runFlow: ../subflows/onboard_jellyfin.yaml
+- assertVisible: "(?s)^Home.*"
+- assertVisible: "(?s)^Recently Added.*"
+- assertVisible: "(?s).*Zulu Zone 4.*"
+- assertVisible: "(?s)^Libraries.*"
+- assertVisible: "(?s)^Search.*"
+- assertVisible: "(?s)^Downloads.*"

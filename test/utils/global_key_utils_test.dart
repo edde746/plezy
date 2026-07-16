@@ -1,16 +1,15 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:plezy/media/ids.dart';
 import 'package:plezy/utils/global_key_utils.dart';
 
 void main() {
   group('buildGlobalKey', () {
     test('joins with a colon', () {
-      expect(buildGlobalKey('server', '123'), 'server:123');
+      expect(buildGlobalKey(ServerId('server'), '123'), 'server:123');
     });
 
-    test('passes through empty components', () {
-      expect(buildGlobalKey('', '123'), ':123');
-      expect(buildGlobalKey('server', ''), 'server:');
-      expect(buildGlobalKey('', ''), ':');
+    test('allows empty ratingKey', () {
+      expect(buildGlobalKey(ServerId('server'), ''), 'server:');
     });
   });
 
@@ -34,11 +33,8 @@ void main() {
       expect(result.ratingKey, 'path:with:colons');
     });
 
-    test('allows empty serverId', () {
-      final result = parseGlobalKey(':42');
-      expect(result, isNotNull);
-      expect(result!.serverId, '');
-      expect(result.ratingKey, '42');
+    test('rejects empty serverId', () {
+      expect(parseGlobalKey(':42'), isNull);
     });
 
     test('allows empty ratingKey', () {
@@ -47,15 +43,5 @@ void main() {
       expect(result!.serverId, 'server');
       expect(result.ratingKey, '');
     });
-  });
-
-  test('round-trip build → parse returns original components', () {
-    for (final pair in const [('s1', '42'), ('serverXYZ', '/library/metadata/123'), ('', 'abc'), ('s', '')]) {
-      final built = buildGlobalKey(pair.$1, pair.$2);
-      final parsed = parseGlobalKey(built);
-      expect(parsed, isNotNull);
-      expect(parsed!.serverId, pair.$1);
-      expect(parsed.ratingKey, pair.$2);
-    }
   });
 }

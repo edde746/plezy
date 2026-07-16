@@ -57,6 +57,10 @@ void main() {
       expect(params['unwatched'], '1');
     });
 
+    test('favoritesOnly is ignored (Plex has no favorites)', () {
+      expect(translator.toQueryParameters(const LibraryQuery(favoritesOnly: true)), isEmpty);
+    });
+
     test('arbitrary filter clauses pass through verbatim', () {
       final params = translator.toQueryParameters(
         const LibraryQuery(
@@ -81,7 +85,7 @@ void main() {
       expect(params['IncludeItemTypes'], isNotEmpty);
       expect(params['EnableTotalRecordCount'], 'true');
       expect(params['EnableImageTypes'], 'Primary,Backdrop,Thumb,Logo');
-      expect(params['ImageTypeLimit'], '1');
+      expect(params['ImageTypeLimit'], '3');
     });
 
     test('movie kind maps to IncludeItemTypes=Movie', () {
@@ -146,6 +150,7 @@ void main() {
         'startDate': 'StartDate',
         'airTime': 'AirTime',
         'studio': 'Studio',
+        'episode.addedAt': 'DateLastContentAdded,SortName',
       };
 
       for (final entry in cases.entries) {
@@ -172,6 +177,26 @@ void main() {
       expect(movieSort['SortBy'], 'DatePlayed');
     });
 
+    test('episode added sort maps to Jellyfin series content added sort', () {
+      final descending = translator.toQueryParameters(
+        const LibraryQuery(
+          kind: MediaKind.show,
+          sort: LibrarySort(field: 'episode.addedAt'),
+        ),
+      );
+      expect(descending['SortBy'], 'DateLastContentAdded,SortName');
+      expect(descending['SortOrder'], 'Descending');
+
+      final ascending = translator.toQueryParameters(
+        const LibraryQuery(
+          kind: MediaKind.show,
+          sort: LibrarySort(field: 'episode.addedAt', direction: LibrarySortDirection.ascending),
+        ),
+      );
+      expect(ascending['SortBy'], 'DateLastContentAdded,SortName');
+      expect(ascending['SortOrder'], 'Ascending');
+    });
+
     test('nameStartsWith="#" maps to NameLessThan=A', () {
       final params = translator.toQueryParameters(const LibraryQuery(nameStartsWith: '#'));
       expect(params['NameLessThan'], 'A');
@@ -187,6 +212,16 @@ void main() {
     test('includeWatched=false sets Filters=IsUnplayed', () {
       final params = translator.toQueryParameters(const LibraryQuery(includeWatched: false));
       expect(params['Filters'], 'IsUnplayed');
+    });
+
+    test('favoritesOnly sets Filters=IsFavorite', () {
+      final params = translator.toQueryParameters(const LibraryQuery(favoritesOnly: true));
+      expect(params['Filters'], 'IsFavorite');
+    });
+
+    test('unwatched + favorites combine into a comma-separated Filters list', () {
+      final params = translator.toQueryParameters(const LibraryQuery(includeWatched: false, favoritesOnly: true));
+      expect(params['Filters'], 'IsUnplayed,IsFavorite');
     });
 
     test('search puts text in SearchTerm', () {
@@ -275,6 +310,14 @@ void main() {
     test('unknown Plex filter keys (director) survive as generic LibraryFilter entries', () {
       final input = {'director': '12345'};
       expect(roundTrip(input)['director'], '12345');
+    });
+
+    test('favorite=1 maps to favoritesOnly, not a generic filter entry', () {
+      // Jellyfin-only key; the Plex translator deliberately drops it, so it
+      // must not leak into the verbatim-pass-through filters bucket either.
+      final query = libraryQueryFromPlexMap(map: {'favorite': '1'});
+      expect(query.favoritesOnly, isTrue);
+      expect(query.filters, isEmpty);
     });
 
     test('libraryKind argument overrides any type entry in the map', () {

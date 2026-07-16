@@ -34,8 +34,8 @@ double mediaSearchRelevanceScore(MediaItem item, String query) {
     (value: item.title, weight: 1.0),
     (value: item.titleSort, weight: 0.98),
     (value: item.originalTitle, weight: 0.96),
-    (value: item.grandparentTitle, weight: 0.90),
-    (value: item.parentTitle, weight: 0.80),
+    (value: item.grandparentTitle, weight: 0.9),
+    (value: item.parentTitle, weight: 0.8),
   ];
 
   var best = 0.0;

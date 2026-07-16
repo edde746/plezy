@@ -7,6 +7,7 @@ import 'package:plezy/i18n/strings.g.dart';
 import 'package:plezy/providers/companion_remote_provider.dart';
 import 'package:plezy/services/settings_service.dart';
 import 'package:plezy/utils/platform_detector.dart';
+import 'package:plezy/theme/mono_theme.dart';
 import 'package:plezy/widgets/companion_remote/remote_session_dialog.dart';
 import 'package:provider/provider.dart';
 
@@ -106,6 +107,7 @@ Future<void> _pumpDialogLauncher(WidgetTester tester, CompanionRemoteProvider pr
     ChangeNotifierProvider<CompanionRemoteProvider>.value(
       value: provider,
       child: MaterialApp(
+        theme: monoTheme(dark: true),
         home: Builder(
           builder: (context) {
             return Scaffold(

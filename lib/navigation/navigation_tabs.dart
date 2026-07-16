@@ -6,7 +6,7 @@ import '../i18n/strings.g.dart';
 import '../utils/platform_detector.dart';
 
 /// Navigation tab identifiers
-enum NavigationTabId { discover, libraries, liveTv, search, downloads, watchlist, settings }
+enum NavigationTabId { discover, explore, libraries, liveTv, search, downloads, watchlist, settings }
 
 /// Represents a navigation tab with its configuration
 class NavigationTab {
@@ -22,8 +22,19 @@ class NavigationTab {
   }
 
   /// Get the index for a tab ID in the visible tabs list
-  static int indexFor(NavigationTabId id, {required bool isOffline, bool hasLiveTv = false, bool hasPlexAccount = false}) {
-    final tabs = getVisibleTabs(isOffline: isOffline, hasLiveTv: hasLiveTv, hasPlexAccount: hasPlexAccount);
+  static int indexFor(
+    NavigationTabId id, {
+    required bool isOffline,
+    bool hasLiveTv = false,
+    bool hasExplore = false,
+    bool hasPlexAccount = false,
+  }) {
+    final tabs = getVisibleTabs(
+      isOffline: isOffline,
+      hasLiveTv: hasLiveTv,
+      hasExplore: hasExplore,
+      hasPlexAccount: hasPlexAccount,
+    );
     return tabs.indexWhere((tab) => tab.id == id);
   }
 
@@ -31,11 +42,13 @@ class NavigationTab {
   static List<NavigationTab> getVisibleTabs({
     required bool isOffline,
     bool hasLiveTv = false,
+    bool hasExplore = false,
     bool hasPlexAccount = false,
   }) {
     return allNavigationTabs.where((tab) {
       if (isOffline && tab.onlineOnly) return false;
       if (tab.id == NavigationTabId.liveTv && !hasLiveTv) return false;
+      if (tab.id == NavigationTabId.explore && !hasExplore) return false;
       if (tab.id == NavigationTabId.downloads && PlatformDetector.isAppleTV()) return false;
       // Watchlist is a Plex-account-level feature; hide it for Jellyfin-only
       // setups (no connected Plex.tv account).
@@ -43,10 +56,38 @@ class NavigationTab {
       return true;
     }).toList();
   }
+
+  /// Resolve which tab the app should open to on launch.
+  ///
+  /// Offline mode prefers Downloads when available. Online, honours the user's
+  /// [preferredStartup] section when it is currently visible, otherwise falls
+  /// back to the first visible tab (Home).
+  static NavigationTabId resolveDefaultTab({
+    required bool isOffline,
+    required bool hasLiveTv,
+    bool hasExplore = false,
+    bool hasPlexAccount = false,
+    required NavigationTabId? preferredStartup,
+  }) {
+    final tabs = getVisibleTabs(
+      isOffline: isOffline,
+      hasLiveTv: hasLiveTv,
+      hasExplore: hasExplore,
+      hasPlexAccount: hasPlexAccount,
+    );
+    if (isOffline && tabs.any((t) => t.id == NavigationTabId.downloads)) {
+      return NavigationTabId.downloads;
+    }
+    if (preferredStartup != null && tabs.any((t) => t.id == preferredStartup)) {
+      return preferredStartup;
+    }
+    return tabs.first.id;
+  }
 }
 
 // Label getters (must be top-level for const constructor)
 String _getHomeLabel() => t.common.home;
+String _getExploreLabel() => t.navigation.explore;
 String _getLibrariesLabel() => t.navigation.libraries;
 String _getLiveTvLabel() => t.navigation.liveTv;
 String _getSearchLabel() => t.common.search;
@@ -64,6 +105,12 @@ const allNavigationTabs = [
     getLabel: _getLibrariesLabel,
   ),
   NavigationTab(id: NavigationTabId.liveTv, onlineOnly: true, icon: Symbols.live_tv_rounded, getLabel: _getLiveTvLabel),
+  NavigationTab(
+    id: NavigationTabId.explore,
+    onlineOnly: true,
+    icon: Symbols.explore_rounded,
+    getLabel: _getExploreLabel,
+  ),
   NavigationTab(id: NavigationTabId.search, onlineOnly: true, icon: Symbols.search_rounded, getLabel: _getSearchLabel),
   NavigationTab(
     id: NavigationTabId.downloads,

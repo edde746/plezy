@@ -1,5 +1,6 @@
 import 'package:json_annotation/json_annotation.dart';
 
+import '../i18n/strings.g.dart';
 import '../utils/json_utils.dart';
 import 'mixins/multi_server_fields.dart';
 
@@ -133,7 +134,8 @@ class LiveTvChannel with MultiServerFields {
   }
 
   /// Display name: prefer callSign, fallback to title
-  String get displayName => callSign ?? title ?? 'Channel $number';
+  String get displayName =>
+      callSign ?? title ?? (number == null ? t.liveTv.unknownChannel : t.liveTv.channelNumber(number: number!));
 }
 
 /// A channel entry in the Plex cloud favorites list.

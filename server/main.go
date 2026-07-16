@@ -25,7 +25,6 @@ import (
 )
 
 const (
-	maxRoomSize        = 8
 	rateBurst          = 30
 	rateSustained      = 10
 	cleanupInterval    = 5 * time.Minute
@@ -34,7 +33,6 @@ const (
 	writeWait          = 10 * time.Second
 	pongWait           = 60 * time.Second
 	pingInterval       = 30 * time.Second
-	maxMessageSize     = 64 * 1024
 	maxLogSize         = 1 * 1024 * 1024 // 1MB
 	logMaxAge          = 3 * 24 * time.Hour
 	logIDLength        = 5
@@ -62,142 +60,6 @@ var upgrader = websocket.Upgrader{
 	CheckOrigin:     func(r *http.Request) bool { return true },
 }
 
-// --- Rate limiter (token bucket) ---
-
-type rateLimiter struct {
-	tokens     float64
-	maxTokens  float64
-	refillRate float64
-	lastTime   time.Time
-	mu         sync.Mutex
-}
-
-func newRateLimiter(burst, sustained int) *rateLimiter {
-	return &rateLimiter{
-		tokens:     float64(burst),
-		maxTokens:  float64(burst),
-		refillRate: float64(sustained),
-		lastTime:   time.Now(),
-	}
-}
-
-func (rl *rateLimiter) allow() bool {
-	rl.mu.Lock()
-	defer rl.mu.Unlock()
-
-	now := time.Now()
-	elapsed := now.Sub(rl.lastTime).Seconds()
-	rl.lastTime = now
-
-	rl.tokens += elapsed * rl.refillRate
-	if rl.tokens > rl.maxTokens {
-		rl.tokens = rl.maxTokens
-	}
-
-	if rl.tokens < 1 {
-		return false
-	}
-	rl.tokens--
-	return true
-}
-
-// stale reports whether a limiter hasn't been touched in over 10 minutes —
-// safe to GC from a per-IP map.
-func (rl *rateLimiter) stale(now time.Time) bool {
-	rl.mu.Lock()
-	defer rl.mu.Unlock()
-	return now.Sub(rl.lastTime) > 10*time.Minute
-}
-
-// --- Connection tracker (per-IP limits) ---
-
-type connTracker struct {
-	mu          sync.Mutex
-	perIP       map[string]int
-	ipRate      map[string]*rateLimiter
-	roomsPerIP  map[string]int
-	globalCount int
-}
-
-func newConnTracker() *connTracker {
-	return &connTracker{
-		perIP:      make(map[string]int),
-		ipRate:     make(map[string]*rateLimiter),
-		roomsPerIP: make(map[string]int),
-	}
-}
-
-func (ct *connTracker) tryConnect(ip string) bool {
-	ct.mu.Lock()
-	defer ct.mu.Unlock()
-
-	if ct.globalCount >= maxGlobalConns {
-		return false
-	}
-	if ct.perIP[ip] >= maxConnsPerIP {
-		return false
-	}
-
-	rl, ok := ct.ipRate[ip]
-	if !ok {
-		rl = newRateLimiter(connRateBurst, connRateSustained)
-		ct.ipRate[ip] = rl
-	}
-	// Unlock ct.mu before calling rl.allow() would be cleaner,
-	// but since rl has its own mutex this is safe (no deadlock).
-	if !rl.allow() {
-		return false
-	}
-
-	ct.perIP[ip]++
-	ct.globalCount++
-	return true
-}
-
-func (ct *connTracker) disconnect(ip string) {
-	ct.mu.Lock()
-	defer ct.mu.Unlock()
-
-	if ct.perIP[ip] > 0 {
-		ct.perIP[ip]--
-		ct.globalCount--
-	}
-	if ct.perIP[ip] == 0 {
-		delete(ct.perIP, ip)
-	}
-}
-
-func (ct *connTracker) tryCreateRoom(ip string) bool {
-	ct.mu.Lock()
-	defer ct.mu.Unlock()
-	if ct.roomsPerIP[ip] >= maxRoomsPerIP {
-		return false
-	}
-	ct.roomsPerIP[ip]++
-	return true
-}
-
-func (ct *connTracker) releaseRoom(ip string) {
-	ct.mu.Lock()
-	defer ct.mu.Unlock()
-	if ct.roomsPerIP[ip] > 0 {
-		ct.roomsPerIP[ip]--
-	}
-	if ct.roomsPerIP[ip] == 0 {
-		delete(ct.roomsPerIP, ip)
-	}
-}
-
-func (ct *connTracker) cleanup() {
-	ct.mu.Lock()
-	defer ct.mu.Unlock()
-	for ip := range ct.ipRate {
-		if ct.perIP[ip] == 0 {
-			delete(ct.ipRate, ip)
-		}
-	}
-}
-
 // --- Messages ---
 
 type clientMsg struct {
@@ -222,9 +84,10 @@ type serverMsg struct {
 // --- Client (serializes writes to a single goroutine) ---
 
 type Client struct {
-	conn *websocket.Conn
-	send chan []byte
-	done chan struct{}
+	conn      *websocket.Conn
+	send      chan []byte
+	done      chan struct{}
+	closeOnce sync.Once
 }
 
 func newClient(conn *websocket.Conn) *Client {
@@ -270,7 +133,10 @@ func (c *Client) sendJSON(msg serverMsg) {
 }
 
 func (c *Client) close() {
-	close(c.done)
+	c.closeOnce.Do(func() {
+		close(c.done)
+		_ = c.conn.Close()
+	})
 }
 
 // --- Room ---
@@ -312,15 +178,16 @@ func (r *Room) broadcastExcept(senderID string, msg serverMsg) {
 	if err != nil {
 		return
 	}
-	// Copy peers under lock, then send without holding it
-	r.mu.RLock()
+	// Copy peers and record activity under lock, then send without holding it.
+	r.mu.Lock()
 	targets := make([]*Client, 0, len(r.Peers))
+	r.LastActivityAt = time.Now()
 	for id, client := range r.Peers {
 		if id != senderID {
 			targets = append(targets, client)
 		}
 	}
-	r.mu.RUnlock()
+	r.mu.Unlock()
 
 	for _, client := range targets {
 		client.trySend(data)
@@ -332,9 +199,12 @@ func (r *Room) sendTo(targetID string, msg serverMsg) bool {
 	if err != nil {
 		return false
 	}
-	r.mu.RLock()
+	r.mu.Lock()
 	client, ok := r.Peers[targetID]
-	r.mu.RUnlock()
+	if ok {
+		r.LastActivityAt = time.Now()
+	}
+	r.mu.Unlock()
 	if !ok {
 		return false
 	}
@@ -346,14 +216,18 @@ func (r *Room) sendTo(targetID string, msg serverMsg) bool {
 
 type logEntry struct {
 	Size      int
+	CreatedAt time.Time
 	ExpiresAt time.Time
 }
 
+var errLogStoreFull = errors.New("log store full")
+
 type logStore struct {
-	entries   map[string]logEntry
-	rateLimit map[string]time.Time // IP -> last upload time
-	dir       string
-	mu        sync.RWMutex
+	entries    map[string]logEntry
+	rateLimit  map[string]time.Time // IP -> last upload time
+	dir        string
+	generateID func() string
+	mu         sync.RWMutex
 }
 
 func newLogStore(dir string) *logStore {
@@ -361,15 +235,12 @@ func newLogStore(dir string) *logStore {
 		log.Fatalf("failed to create log dir %s: %v", dir, err)
 	}
 	ls := &logStore{
-		entries:   make(map[string]logEntry),
-		rateLimit: make(map[string]time.Time),
-		dir:       dir,
+		entries:    make(map[string]logEntry),
+		rateLimit:  make(map[string]time.Time),
+		dir:        dir,
+		generateID: generateLogID,
 	}
-	// Clean orphaned files from prior runs
-	files, _ := os.ReadDir(dir)
-	for _, f := range files {
-		os.Remove(filepath.Join(dir, f.Name()))
-	}
+	ls.loadExisting(time.Now())
 	return ls
 }
 
@@ -392,21 +263,154 @@ func generateLogID() string {
 	return generateID(logIDLength)
 }
 
+func logIDFromFilename(filename string) (string, bool) {
+	if filepath.Ext(filename) != ".log" {
+		return "", false
+	}
+	id := strings.TrimSuffix(filename, ".log")
+	return id, validID(id, logIDLength)
+}
+
+func (ls *logStore) loadExisting(now time.Time) {
+	ls.mu.Lock()
+	defer ls.mu.Unlock()
+
+	files, err := os.ReadDir(ls.dir)
+	if err != nil {
+		log.Printf("logs: failed to read dir %s: %v", ls.dir, err)
+		return
+	}
+	for _, file := range files {
+		filename := file.Name()
+		path := filepath.Join(ls.dir, filename)
+		if file.IsDir() || strings.HasSuffix(filename, ".tmp") {
+			os.RemoveAll(path)
+			continue
+		}
+		id, ok := logIDFromFilename(filename)
+		if !ok {
+			os.Remove(path)
+			continue
+		}
+		info, err := file.Info()
+		if err != nil || info.Size() <= 0 || info.Size() > maxLogSize {
+			os.Remove(path)
+			continue
+		}
+		createdAt := info.ModTime()
+		expiresAt := createdAt.Add(logMaxAge)
+		if !now.Before(expiresAt) {
+			os.Remove(path)
+			continue
+		}
+		ls.entries[id] = logEntry{
+			Size:      int(info.Size()),
+			CreatedAt: createdAt,
+			ExpiresAt: expiresAt,
+		}
+	}
+	ls.evictOldestLocked(maxLogEntries)
+}
+
+func (ls *logStore) store(data []byte, now time.Time) (string, logEntry, error) {
+	if len(data) == 0 {
+		return "", logEntry{}, errors.New("empty log")
+	}
+	if len(data) > maxLogSize {
+		return "", logEntry{}, errors.New("log too large")
+	}
+
+	ls.mu.Lock()
+	defer ls.mu.Unlock()
+	ls.cleanupExpiredLocked(now)
+	if len(ls.entries) >= maxLogEntries {
+		return "", logEntry{}, errLogStoreFull
+	}
+
+	id := ls.generateID()
+	for {
+		if _, exists := ls.entries[id]; !exists {
+			if _, err := os.Stat(ls.filePath(id)); errors.Is(err, fs.ErrNotExist) {
+				break
+			}
+		}
+		id = ls.generateID()
+	}
+
+	path := ls.filePath(id)
+	tmpPath := path + ".tmp"
+	if err := os.WriteFile(tmpPath, data, 0644); err != nil {
+		os.Remove(tmpPath)
+		return "", logEntry{}, err
+	}
+	if err := os.Rename(tmpPath, path); err != nil {
+		os.Remove(tmpPath)
+		return "", logEntry{}, err
+	}
+	_ = os.Chtimes(path, now, now)
+
+	entry := logEntry{
+		Size:      len(data),
+		CreatedAt: now,
+		ExpiresAt: now.Add(logMaxAge),
+	}
+	ls.entries[id] = entry
+	return id, entry, nil
+}
+
+func (ls *logStore) lookup(id string, now time.Time) (logEntry, bool) {
+	if !validID(id, logIDLength) {
+		return logEntry{}, false
+	}
+	ls.mu.Lock()
+	defer ls.mu.Unlock()
+	entry, ok := ls.entries[id]
+	if !ok {
+		return logEntry{}, false
+	}
+	if !now.Before(entry.ExpiresAt) {
+		ls.deleteEntryLocked(id)
+		return logEntry{}, false
+	}
+	return entry, true
+}
+
+func (ls *logStore) cleanupExpiredLocked(now time.Time) {
+	for id, entry := range ls.entries {
+		if !now.Before(entry.ExpiresAt) {
+			ls.deleteEntryLocked(id)
+		}
+	}
+}
+
+func (ls *logStore) evictOldestLocked(limit int) {
+	for len(ls.entries) > limit {
+		var oldestID string
+		var oldest logEntry
+		for id, entry := range ls.entries {
+			if oldestID == "" || entry.CreatedAt.Before(oldest.CreatedAt) {
+				oldestID = id
+				oldest = entry
+			}
+		}
+		if oldestID == "" {
+			return
+		}
+		ls.deleteEntryLocked(oldestID)
+	}
+}
+
+func (ls *logStore) deleteEntryLocked(id string) {
+	os.Remove(ls.filePath(id))
+	delete(ls.entries, id)
+}
+
 func (ls *logStore) cleanup() {
 	ls.mu.Lock()
 	defer ls.mu.Unlock()
 	now := time.Now()
-	for id, entry := range ls.entries {
-		if now.After(entry.ExpiresAt) {
-			os.Remove(ls.filePath(id))
-			delete(ls.entries, id)
-		}
-	}
-	for ip, lastTime := range ls.rateLimit {
-		if now.Sub(lastTime) > logRateInterval {
-			delete(ls.rateLimit, ip)
-		}
-	}
+	ls.cleanupExpiredLocked(now)
+	cleanupRateWindows(ls.rateLimit, now, logRateInterval)
 }
 
 // --- Poster store ---
@@ -903,7 +907,7 @@ func (s *Server) loadSnapshot(path string) error {
 	loaded, skipped := 0, 0
 	s.mu.Lock()
 	for _, r := range snap.Rooms {
-		if r.SessionID == "" || r.HostPeerID == "" {
+		if !validRelayID(r.SessionID, maxSessionIDLength) || !validRelayID(r.HostPeerID, maxPeerIDLength) {
 			skipped++
 			continue
 		}
@@ -940,33 +944,45 @@ func (s *Server) cleanupLoop() {
 func (s *Server) runCleanupStep(now time.Time) {
 	s.mu.Lock()
 	changed := false
+	var expiredClients []*Client
 	for id, room := range s.rooms {
 		room.mu.RLock()
 		empty := len(room.Peers) == 0
 		age := now.Sub(room.CreatedAt)
 		idle := now.Sub(room.LastActivityAt)
+		expired := age > roomMaxAge
+		if expired && !empty {
+			for _, client := range room.Peers {
+				expiredClients = append(expiredClients, client)
+			}
+		}
 		room.mu.RUnlock()
 
-		if (empty && idle > emptyRoomMaxAge) || age > roomMaxAge {
+		if (empty && idle > emptyRoomMaxAge) || expired {
 			log.Printf("cleanup: removing room %s (empty=%v, idle=%v, age=%v)", id, empty, idle, age)
 			delete(s.rooms, id)
 			changed = true
 		}
 	}
+	roomCount := len(s.rooms)
 	s.mu.Unlock()
+
+	for _, client := range expiredClients {
+		client.close()
+	}
 	if changed {
 		s.snap.schedule()
 	}
 	s.logs.cleanup()
 	s.posters.cleanup(now)
-	s.conns.cleanup()
+	s.conns.cleanup(now)
 	if s.oauth != nil {
 		s.oauth.cleanup()
 	}
 
 	s.conns.mu.Lock()
 	log.Printf("stats: conns=%d ips=%d rooms=%d",
-		s.conns.globalCount, len(s.conns.perIP), len(s.rooms))
+		s.conns.globalCount, len(s.conns.perIP), roomCount)
 	s.conns.mu.Unlock()
 }
 
@@ -1021,29 +1037,18 @@ func (s *Server) handlePostLogs(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	s.logs.mu.Lock()
-	if len(s.logs.entries) >= maxLogEntries {
-		s.logs.mu.Unlock()
-		http.Error(w, "Log store full", http.StatusServiceUnavailable)
-		return
-	}
-	s.logs.mu.Unlock()
-
-	id := generateLogID()
-	if err := os.WriteFile(s.logs.filePath(id), body, 0644); err != nil {
-		log.Printf("logs: failed to write %s: %v", id, err)
+	id, entry, err := s.logs.store(body, time.Now())
+	if err != nil {
+		if errors.Is(err, errLogStoreFull) {
+			http.Error(w, "Log store full", http.StatusServiceUnavailable)
+			return
+		}
+		log.Printf("logs: failed to store from %s: %v", ip, err)
 		http.Error(w, "Failed to store log", http.StatusInternalServerError)
 		return
 	}
 
-	s.logs.mu.Lock()
-	s.logs.entries[id] = logEntry{
-		Size:      len(body),
-		ExpiresAt: time.Now().Add(logMaxAge),
-	}
-	s.logs.mu.Unlock()
-
-	log.Printf("logs: stored %s (%d bytes) from %s", id, len(body), ip)
+	log.Printf("logs: stored %s (%d bytes) from %s", id, entry.Size, ip)
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]string{"id": id})
@@ -1061,11 +1066,8 @@ func (s *Server) handleGetLogs(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	s.logs.mu.RLock()
-	entry, ok := s.logs.entries[id]
-	s.logs.mu.RUnlock()
-
-	if !ok || time.Now().After(entry.ExpiresAt) {
+	entry, ok := s.logs.lookup(id, time.Now())
+	if !ok {
 		http.Error(w, "Not found", http.StatusNotFound)
 		return
 	}
@@ -1185,6 +1187,17 @@ func (s *Server) handleWS(w http.ResponseWriter, r *http.Request) {
 	var currentRoom *Room
 	var currentPeerID string
 	var isHost bool
+	rejectRoomTransition := func() bool {
+		if currentRoom == nil {
+			return false
+		}
+		client.sendJSON(serverMsg{
+			Type:    relayTypeError,
+			Code:    relayErrorAlreadyInRoom,
+			Message: "Leave the current room before creating or joining another",
+		})
+		return true
+	}
 
 	// Cleanup on disconnect — only if our Client is still the one in the room.
 	// A reconnecting peer reuses the same peerId, so the map entry may have
@@ -1200,7 +1213,7 @@ func (s *Server) handleWS(w http.ResponseWriter, r *http.Request) {
 			currentRoom.mu.Unlock()
 			if !stale {
 				currentRoom.broadcastExcept(currentPeerID, serverMsg{
-					Type:   "peerLeft",
+					Type:   relayTypePeerLeft,
 					PeerID: currentPeerID,
 				})
 				s.snap.schedule()
@@ -1222,24 +1235,27 @@ func (s *Server) handleWS(w http.ResponseWriter, r *http.Request) {
 		}
 
 		if !rl.allow() {
-			client.sendJSON(serverMsg{Type: "error", Code: "rate_limited", Message: "Too many messages"})
+			client.sendJSON(serverMsg{Type: relayTypeError, Code: relayErrorRateLimited, Message: "Too many messages"})
 			continue
 		}
 
 		var msg clientMsg
 		if err := json.Unmarshal(raw, &msg); err != nil {
-			client.sendJSON(serverMsg{Type: "error", Code: "invalid_message", Message: "Invalid JSON"})
+			client.sendJSON(serverMsg{Type: relayTypeError, Code: relayErrorInvalidMessage, Message: "Invalid JSON"})
 			continue
 		}
 
 		switch msg.Type {
-		case "create":
-			if msg.SessionID == "" || msg.PeerID == "" {
-				client.sendJSON(serverMsg{Type: "error", Code: "invalid_message", Message: "sessionId and peerId required"})
+		case relayTypeCreate:
+			if !validRelayID(msg.SessionID, maxSessionIDLength) || !validRelayID(msg.PeerID, maxPeerIDLength) {
+				client.sendJSON(serverMsg{Type: relayTypeError, Code: relayErrorInvalidMessage, Message: "Invalid sessionId or peerId"})
+				continue
+			}
+			if rejectRoomTransition() {
 				continue
 			}
 			if !s.conns.tryCreateRoom(ip) {
-				client.sendJSON(serverMsg{Type: "error", Code: "rate_limited", Message: "Too many rooms created"})
+				client.sendJSON(serverMsg{Type: relayTypeError, Code: relayErrorRateLimited, Message: "Too many rooms created"})
 				continue
 			}
 			s.mu.Lock()
@@ -1250,7 +1266,7 @@ func (s *Server) handleWS(w http.ResponseWriter, r *http.Request) {
 				if !empty {
 					s.mu.Unlock()
 					s.conns.releaseRoom(ip)
-					client.sendJSON(serverMsg{Type: "error", Code: "room_exists", Message: "Room already exists"})
+					client.sendJSON(serverMsg{Type: relayTypeError, Code: relayErrorRoomExists, Message: "Room already exists"})
 					continue
 				}
 				// Empty stale room — reclaim the ID
@@ -1270,25 +1286,28 @@ func (s *Server) handleWS(w http.ResponseWriter, r *http.Request) {
 			currentPeerID = msg.PeerID
 			isHost = true
 			log.Printf("room %s created by %s", msg.SessionID, msg.PeerID)
-			client.sendJSON(serverMsg{Type: "created", SessionID: msg.SessionID})
+			client.sendJSON(serverMsg{Type: relayTypeCreated, SessionID: msg.SessionID})
 			s.snap.schedule()
 
-		case "join":
-			if msg.SessionID == "" || msg.PeerID == "" {
-				client.sendJSON(serverMsg{Type: "error", Code: "invalid_message", Message: "sessionId and peerId required"})
+		case relayTypeJoin:
+			if !validRelayID(msg.SessionID, maxSessionIDLength) || !validRelayID(msg.PeerID, maxPeerIDLength) {
+				client.sendJSON(serverMsg{Type: relayTypeError, Code: relayErrorInvalidMessage, Message: "Invalid sessionId or peerId"})
+				continue
+			}
+			if rejectRoomTransition() {
 				continue
 			}
 			s.mu.RLock()
 			room, exists := s.rooms[msg.SessionID]
 			s.mu.RUnlock()
 			if !exists {
-				client.sendJSON(serverMsg{Type: "error", Code: "room_not_found", Message: "Room does not exist"})
+				client.sendJSON(serverMsg{Type: relayTypeError, Code: relayErrorRoomNotFound, Message: "Room does not exist"})
 				continue
 			}
 			room.mu.Lock()
 			if len(room.Peers) >= maxRoomSize {
 				room.mu.Unlock()
-				client.sendJSON(serverMsg{Type: "error", Code: "room_full", Message: "Room is full"})
+				client.sendJSON(serverMsg{Type: relayTypeError, Code: relayErrorRoomFull, Message: "Room is full"})
 				continue
 			}
 			room.Peers[msg.PeerID] = client
@@ -1306,43 +1325,43 @@ func (s *Server) handleWS(w http.ResponseWriter, r *http.Request) {
 					existingPeers = append(existingPeers, p)
 				}
 			}
-			client.sendJSON(serverMsg{Type: "joined", SessionID: msg.SessionID, Peers: existingPeers})
-			room.broadcastExcept(msg.PeerID, serverMsg{Type: "peerJoined", PeerID: msg.PeerID})
+			client.sendJSON(serverMsg{Type: relayTypeJoined, SessionID: msg.SessionID, Peers: existingPeers})
+			room.broadcastExcept(msg.PeerID, serverMsg{Type: relayTypePeerJoined, PeerID: msg.PeerID})
 			s.snap.schedule()
 
-		case "broadcast":
+		case relayTypeBroadcast:
 			if currentRoom == nil {
-				client.sendJSON(serverMsg{Type: "error", Code: "not_in_room", Message: "Not in a room"})
+				client.sendJSON(serverMsg{Type: relayTypeError, Code: relayErrorNotInRoom, Message: "Not in a room"})
 				continue
 			}
 			currentRoom.broadcastExcept(currentPeerID, serverMsg{
-				Type:    "message",
+				Type:    relayTypeMessage,
 				From:    currentPeerID,
 				Payload: msg.Payload,
 			})
 
-		case "sendTo":
+		case relayTypeSendTo:
 			if currentRoom == nil {
-				client.sendJSON(serverMsg{Type: "error", Code: "not_in_room", Message: "Not in a room"})
+				client.sendJSON(serverMsg{Type: relayTypeError, Code: relayErrorNotInRoom, Message: "Not in a room"})
 				continue
 			}
-			if msg.To == "" {
-				client.sendJSON(serverMsg{Type: "error", Code: "invalid_message", Message: "to field required"})
+			if !validRelayID(msg.To, maxPeerIDLength) {
+				client.sendJSON(serverMsg{Type: relayTypeError, Code: relayErrorInvalidMessage, Message: "Invalid to field"})
 				continue
 			}
 			if !currentRoom.sendTo(msg.To, serverMsg{
-				Type:    "message",
+				Type:    relayTypeMessage,
 				From:    currentPeerID,
 				Payload: msg.Payload,
 			}) {
-				client.sendJSON(serverMsg{Type: "error", Code: "not_in_room", Message: "Target peer not found"})
+				client.sendJSON(serverMsg{Type: relayTypeError, Code: relayErrorNotInRoom, Message: "Target peer not found"})
 			}
 
-		case "ping":
-			client.sendJSON(serverMsg{Type: "pong"})
+		case relayTypePing:
+			client.sendJSON(serverMsg{Type: relayTypePong})
 
 		default:
-			client.sendJSON(serverMsg{Type: "error", Code: "invalid_message", Message: "Unknown message type"})
+			client.sendJSON(serverMsg{Type: relayTypeError, Code: relayErrorInvalidMessage, Message: "Unknown message type"})
 		}
 	}
 }

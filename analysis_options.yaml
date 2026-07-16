@@ -4,8 +4,6 @@ analyzer:
   exclude:
     - "**/*.g.dart"
     - "**/*.freezed.dart"
-  plugins:
-    - dart_code_linter
 
 linter:
   rules:
@@ -17,7 +15,14 @@ linter:
     prefer_final_in_for_each: true
     avoid_print: true
 
+# Do not register DCL as an analyzer plugin: its analyzer 10 integration crashes
+# on Linux. CI invokes the supported check-unused commands explicitly.
 dart_code_linter:
+  rules-exclude:
+    - "test/**"
+  metrics-exclude:
+    - "test/**"
+
   extends:
     - package:dart_code_linter/presets/recommended.yaml
 

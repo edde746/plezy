@@ -249,82 +249,110 @@
 <style>
   .screenshots-section {
     overflow: hidden;
-    padding-block: 4rem;
+    padding-block: clamp(4rem, 9vw, 8rem);
   }
 
   .screenshots-header {
     max-width: 64rem;
     margin-inline: auto;
-    margin-bottom: 2rem;
+    margin-bottom: clamp(2rem, 5vw, 3.5rem);
     padding-inline: 1.5rem;
   }
 
   .section-label {
-    margin-bottom: 0.75rem;
-    color: var(--color-accent);
-    font-size: 0.875rem;
-    font-weight: 500;
-    letter-spacing: 0.025em;
-    line-height: 1.25rem;
-    text-transform: uppercase;
+    width: fit-content;
+    margin-bottom: 1rem;
+    border-radius: var(--radius-full);
+    padding: 0.5rem 0.875rem;
+    color: var(--color-text-muted);
+    background: var(--color-surface);
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.03em;
   }
 
   .section-heading {
+    max-width: 12ch;
     margin-bottom: 1rem;
-    font-size: 2.25rem;
+    font-family: var(--font-display);
+    font-size: clamp(2.5rem, 7vw, 4.75rem);
     font-weight: 700;
-    line-height: 2.5rem;
+    letter-spacing: -0.045em;
+    line-height: 1;
+    text-wrap: balance;
   }
 
   .section-description {
-    max-width: 32rem;
-    margin-bottom: 1.5rem;
+    max-width: 34rem;
+    margin-bottom: 2rem;
     color: var(--color-text-muted);
-    font-size: 1.125rem;
-    line-height: 1.75rem;
+    font-size: clamp(1rem, 2vw, 1.125rem);
+    line-height: 1.7;
   }
 
   .screenshot-controls {
     display: flex;
     align-items: center;
-    gap: 1rem;
+    gap: 0.75rem;
   }
 
   .device-tabs {
     display: flex;
     width: fit-content;
-    gap: 0.25rem;
-    border-radius: 0.75rem;
-    background: rgb(255 255 255 / 0.04);
+    max-width: 100%;
+    gap: var(--group-gap);
+    overflow-x: auto;
+    border-radius: var(--radius-full);
     padding: 0.25rem;
+    background: var(--color-surface);
+    scrollbar-width: none;
+  }
+
+  .device-tabs::-webkit-scrollbar {
+    display: none;
   }
 
   .device-button {
     display: flex;
+    min-height: 2.75rem;
+    flex-shrink: 0;
     align-items: center;
+    justify-content: center;
     gap: 0.5rem;
-    border-radius: 0.5rem;
-    padding: 0.5rem 1rem;
+    border-radius: var(--radius-pill);
+    padding-inline: 0.875rem;
     color: var(--color-text-muted);
-    font-size: 0.875rem;
-    font-weight: 500;
-    line-height: 1.25rem;
-    transition: background-color 150ms ease, color 150ms ease;
+    font-size: 0.8125rem;
+    font-weight: 700;
+    transition:
+      border-radius var(--motion-expressive) var(--ease-standard),
+      color var(--motion-fast) var(--ease-standard),
+      background-color var(--motion-fast) var(--ease-standard);
   }
 
-  .device-button:not(.active):hover {
-    color: color-mix(in srgb, var(--color-text) 80%, transparent);
+  .device-button:not(.active):hover,
+  .device-button:not(.active):focus-visible {
+    color: var(--color-text);
+    background: rgb(237 237 237 / 0.12);
+    outline: none;
   }
 
   .device-button.active {
-    color: var(--color-text);
-    background: rgb(255 255 255 / 0.1);
+    color: var(--color-on-primary);
+    background: var(--color-text);
+  }
+
+  .device-button.active:hover,
+  .device-button.active:focus-visible {
+    border-radius: var(--radius-md);
+    background: #fff;
+    outline: none;
   }
 
   .device-button :global(svg),
   .scroll-arrow :global(svg) {
-    width: 1rem;
-    height: 1rem;
+    width: 1.125rem;
+    height: 1.125rem;
   }
 
   .device-label {
@@ -334,28 +362,34 @@
   .scroll-arrows {
     display: none;
     align-items: center;
-    gap: 0.25rem;
+    gap: var(--group-gap);
     margin-left: auto;
   }
 
   .scroll-arrow {
     display: flex;
-    width: 2rem;
-    height: 2rem;
+    width: 2.75rem;
+    height: 2.75rem;
     align-items: center;
     justify-content: center;
-    border-radius: 0.5rem;
-    background: rgb(255 255 255 / 0.04);
-    color: color-mix(in srgb, var(--color-text-muted) 30%, transparent);
-    transition: background-color 150ms ease, color 150ms ease;
+    border-radius: var(--radius-pill);
+    color: var(--color-text-subtle);
+    background: var(--color-surface);
+    transition:
+      border-radius var(--motion-expressive) var(--ease-standard),
+      color var(--motion-fast) var(--ease-standard),
+      background-color var(--motion-fast) var(--ease-standard);
   }
 
   .scroll-arrow.enabled {
     color: var(--color-text);
   }
 
-  .scroll-arrow.enabled:hover {
-    background: rgb(255 255 255 / 0.1);
+  .scroll-arrow.enabled:hover,
+  .scroll-arrow.enabled:focus-visible {
+    border-radius: var(--radius-md);
+    background: var(--color-surface-highest);
+    outline: none;
   }
 
   .screenshot-panels {
@@ -371,10 +405,11 @@
     width: 100%;
     gap: 1.25rem;
     overflow-x: auto;
-    opacity: 0;
     padding-bottom: 1rem;
+    opacity: 0;
     pointer-events: none;
-    transition: opacity 220ms ease;
+    scroll-snap-type: x mandatory;
+    transition: opacity var(--motion-normal) var(--ease-standard);
   }
 
   .screenshot-strip.panel-active {
@@ -393,8 +428,6 @@
   .screenshot-frame {
     height: 100%;
     overflow: hidden;
-    border: 1px solid color-mix(in srgb, var(--color-border) 40%, transparent);
-    box-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.5);
   }
 
   .phone-frame {
@@ -410,60 +443,35 @@
     border-radius: 0.75rem;
   }
 
-  .tv-frame {
-    border-width: 2px;
-    border-color: color-mix(in srgb, var(--color-border) 30%, transparent);
-    background: #000;
-  }
-
   .screenshot-image {
     display: block;
     width: auto;
     height: 100%;
+    object-fit: contain;
   }
 
   .content-pad {
-    /* Left padding aligns with max-w-5xl (64rem) + px-6 */
     padding-left: max(1.5rem, calc((100vw - 64rem) / 2 + 1.5rem));
     padding-right: 1.5rem;
+    scroll-padding-left: max(1.5rem, calc((100vw - 64rem) / 2 + 1.5rem));
   }
 
   .scrollbar-hide {
     -ms-overflow-style: none;
     scrollbar-width: none;
   }
+
   .scrollbar-hide::-webkit-scrollbar {
     display: none;
   }
 
-  @media (min-width: 640px) {
-    .screenshots-section {
-      padding-block: 6rem;
-    }
-
-    .screenshots-header {
-      margin-bottom: 3rem;
-    }
-
-    .section-description {
-      margin-bottom: 2.5rem;
-    }
-
+  @media (min-width: 560px) {
     .device-label {
       display: inline;
     }
   }
 
   @media (min-width: 768px) {
-    .screenshots-section {
-      padding-block: 8rem;
-    }
-
-    .section-heading {
-      font-size: 3rem;
-      line-height: 1;
-    }
-
     .scroll-arrows {
       display: flex;
     }
@@ -471,11 +479,11 @@
 
   @media (min-width: 1024px) {
     .screenshot-panels {
-      min-height: calc(480px + 1rem);
+      min-height: calc(500px + 1rem);
     }
 
     .screenshot-item {
-      height: 480px;
+      height: 500px;
     }
   }
 </style>

@@ -1,0 +1,12 @@
+flows:
+  - "*.yaml"
+testOutputDir: "build/maestro-media"
+executionOrder:
+  continueOnFailure: false
+  flowsOrder:
+    - Codec sample - UHD Dolby Vision TrueHD and PGS
+    - Codec sample - Web Dolby Vision EAC3 Atmos and SRT
+    - Codec sample - AV1 Opus ASS and SRT
+    - Codec sample - H264 High10 DTS-HD and ASS
+    - Codec sample - H264 EAC3 multilingual SRT
+    - Codec sample - HEVC10 FLAC and ASS

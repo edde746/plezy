@@ -1,15 +1,12 @@
-import 'dart:convert';
 import 'dart:io';
 import 'dart:ui';
 
-import 'package:cached_network_image_ce/cached_network_image.dart';
-import 'package:crypto/crypto.dart';
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:plezy/widgets/app_icon.dart';
 
 import '../media/media_server_client.dart';
-import '../services/image_cache_service.dart';
+import '../services/device_performance.dart';
 import '../utils/app_logger.dart';
 import '../utils/media_image_helper.dart';
 import '../utils/obfuscation_utils.dart';
@@ -200,19 +197,25 @@ class OptimizedMediaImage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final localFile = localFilePath != null ? File(localFilePath!) : null;
-    final hasLocal = localFile != null && localFile.existsSync();
+    final path = localFilePath;
+    if (path == null) {
+      return _buildResolved(context, _LocalFileResolution.missing, null);
+    }
+    return _ResolvedLocalFile(path: path, builder: _buildResolved);
+  }
 
-    // No local file and no network path → fallback
+  Widget _buildResolved(BuildContext context, _LocalFileResolution resolution, File? localFile) {
+    if (resolution == _LocalFileResolution.pending) return _surfacePlaceholder(context);
+    final hasLocal = resolution == _LocalFileResolution.present;
+
     if (!hasLocal && (imagePath == null || imagePath!.isEmpty)) {
       return _buildFallback(context);
     }
 
-    // Fast path: skip LayoutBuilder when both dimensions are explicitly known
     if (_hasKnownDimensions) {
       return blurArtwork(
         hasLocal
-            ? _buildLocalFileImage(context, localFile, width!, height!)
+            ? _buildLocalFileImage(context, localFile!, width!, height!)
             : _buildCachedImage(context, width!, height!),
       );
     }
@@ -223,7 +226,7 @@ class OptimizedMediaImage extends StatelessWidget {
           final effectiveWidth = _resolvedDimension(width, constraints.maxWidth, 300.0);
           final effectiveHeight = _resolvedDimension(height, constraints.maxHeight, 450.0);
           return hasLocal
-              ? _buildLocalFileImage(context, localFile, effectiveWidth, effectiveHeight)
+              ? _buildLocalFileImage(context, localFile!, effectiveWidth, effectiveHeight)
               : _buildCachedImage(context, effectiveWidth, effectiveHeight);
         },
       ),
@@ -234,20 +237,20 @@ class OptimizedMediaImage extends StatelessWidget {
     final dpr = MediaImageHelper.effectiveDevicePixelRatio(context);
     final scaledWidth = effectiveWidth * dpr;
     final scaledHeight = effectiveHeight * dpr;
-    final (_, memHeight) = MediaImageHelper.getMemCacheDimensions(
+    final (memWidth, memHeight) = MediaImageHelper.getMemCacheDimensions(
       displayWidth: scaledWidth.isFinite && scaledWidth > 0 ? scaledWidth.round() : 0,
       displayHeight: scaledHeight.isFinite && scaledHeight > 0 ? scaledHeight.round() : 0,
       imageType: imageType,
     );
 
-    return Image.file(
-      file,
+    return Image(
+      image: MediaImageHelper.boundedDecode(FileImage(file), memWidth: memWidth, memHeight: memHeight),
       width: width,
       height: height,
-      // Only cacheHeight: leaving cacheWidth null preserves decode aspect
-      // ratio, mirroring the network branch which only passes maxHeight to
-      // CachedNetworkImageProvider.
-      cacheHeight: memHeight > 0 ? memHeight : null,
+      // Artwork is decorative: the enclosing card exposes one merged node
+      // with the title, and a per-image node just grows the semantics tree
+      // the TV a11y services make Flutter rebuild every frame.
+      excludeFromSemantics: true,
       fit: fit,
       filterQuality: filterQuality,
       alignment: alignment,
@@ -292,48 +295,65 @@ class OptimizedMediaImage extends StatelessWidget {
 
     final scaledWidth = effectiveWidth * devicePixelRatio;
     final scaledHeight = effectiveHeight * devicePixelRatio;
-    final (_, memHeight) = MediaImageHelper.getMemCacheDimensions(
+    final (memWidth, memHeight) = MediaImageHelper.getMemCacheDimensions(
       displayWidth: scaledWidth.isFinite && scaledWidth > 0 ? scaledWidth.round() : 0,
       displayHeight: scaledHeight.isFinite && scaledHeight > 0 ? scaledHeight.round() : 0,
       imageType: imageType,
     );
 
-    final effectiveCacheKey = cacheKey ?? _generateCacheKey(imageUrl);
+    final resizedProvider = MediaImageHelper.serverArtworkProvider(
+      imageUrl: imageUrl,
+      memWidth: memWidth,
+      memHeight: memHeight,
+      cacheKey: cacheKey,
+    );
 
-    return Image(
-      image: CachedNetworkImageProvider(
-        imageUrl,
-        cacheKey: effectiveCacheKey,
-        cacheManager: PlexImageCacheManager.instance,
-        headers: const {'User-Agent': 'Plezy'},
-        maxHeight: memHeight,
-      ),
+    // Reduced tier: swap in directly, no fade machinery at all.
+    if (DevicePerformance.isReduced) {
+      return Image(
+        image: resizedProvider,
+        width: width,
+        height: height,
+        // Decorative — see the Image.file branch.
+        excludeFromSemantics: true,
+        fit: fit,
+        filterQuality: filterQuality,
+        alignment: alignment,
+        errorBuilder: _networkErrorBuilder(imageUrl),
+        frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
+          if (wasSynchronouslyLoaded || frame != null) return child;
+          return _buildPlaceholder(context, imageUrl);
+        },
+      );
+    }
+
+    return _FadeInNetworkImage(
+      image: resizedProvider,
       width: width,
       height: height,
       fit: fit,
       filterQuality: filterQuality,
       alignment: alignment,
-      errorBuilder: (context, error, stackTrace) {
-        _imageFailureCount++;
-        final now = DateTime.now();
-        if (now.difference(_lastFailureLog) >= _logInterval) {
-          appLogger.w('Image load failed ($_imageFailureCount since last log): $error');
-          _imageFailureCount = 0;
-          _lastFailureLog = now;
-        }
-        if (errorWidget != null) {
-          return errorWidget!(context, imageUrl, error);
-        }
-        return _buildErrorWidget(context, error);
-      },
-      frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
-        if (wasSynchronouslyLoaded) return child;
-        return AnimatedSwitcher(
-          duration: const Duration(milliseconds: 300),
-          child: frame != null ? child : _buildPlaceholder(context, imageUrl),
-        );
-      },
+      duration: fadeInDuration,
+      placeholderBuilder: (context) => _buildPlaceholder(context, imageUrl),
+      errorBuilder: _networkErrorBuilder(imageUrl),
     );
+  }
+
+  ImageErrorWidgetBuilder _networkErrorBuilder(String imageUrl) {
+    return (context, error, stackTrace) {
+      _imageFailureCount++;
+      final now = DateTime.now();
+      if (now.difference(_lastFailureLog) >= _logInterval) {
+        appLogger.w('Image load failed ($_imageFailureCount since last log): $error');
+        _imageFailureCount = 0;
+        _lastFailureLog = now;
+      }
+      if (errorWidget != null) {
+        return errorWidget!(context, imageUrl, error);
+      }
+      return _buildErrorWidget(context, error);
+    };
   }
 
   Widget _surfacePlaceholder(BuildContext context, {IconData? icon, Color? iconColor, bool fillParent = false}) {
@@ -353,17 +373,166 @@ class OptimizedMediaImage extends StatelessWidget {
     return _surfacePlaceholder(context, icon: fallbackIcon, iconColor: Colors.white54);
   }
 
-  Widget _buildErrorWidget(BuildContext context, dynamic _) =>
-      _surfacePlaceholder(context, icon: fallbackIcon ?? Symbols.broken_image_rounded, fillParent: true);
+  Widget _buildErrorWidget(BuildContext context, dynamic _) => _surfacePlaceholder(
+    context,
+    icon: fallbackIcon ?? Symbols.broken_image_rounded,
+    fillParent: !_hasKnownDimensions,
+  );
 
   Widget _buildFallback(BuildContext context) =>
       _surfacePlaceholder(context, icon: fallbackIcon ?? Symbols.image_not_supported_rounded);
+}
 
-  String _generateCacheKey(String imageUrl) {
-    // URL already encodes bucketed transcode dimensions via roundDimensions,
-    // so the URL hash alone uniquely identifies the bytes on disk. Including
-    // mem-cache dimensions here would re-introduce churn on every pixel of
-    // window resize and defeat getMemCacheDimensions' bucketing.
-    return 'plex_optimized_${sha1.convert(utf8.encode(imageUrl))}';
+/// Fades a network image in by animating the image paint's alpha
+/// (`Image.opacity` → `RawImage`), not by wrapping it in an opacity widget:
+/// a widget-opacity fade is a tile-sized saveLayer per in-flight image, and
+/// grid scrolling runs many of them concurrently — a real GPU cost on the
+/// weak GLES devices most Android TVs are. The opaque placeholder sits below
+/// in a Stack until the fade completes, so the visual result matches the
+/// AnimatedSwitcher cross-fade this replaces.
+class _FadeInNetworkImage extends StatefulWidget {
+  const _FadeInNetworkImage({
+    required this.image,
+    required this.width,
+    required this.height,
+    required this.fit,
+    required this.filterQuality,
+    required this.alignment,
+    required this.duration,
+    required this.placeholderBuilder,
+    required this.errorBuilder,
+  });
+
+  final ImageProvider image;
+  final double? width;
+  final double? height;
+  final BoxFit fit;
+  final FilterQuality filterQuality;
+  final Alignment alignment;
+  final Duration duration;
+  final WidgetBuilder placeholderBuilder;
+  final ImageErrorWidgetBuilder errorBuilder;
+
+  @override
+  State<_FadeInNetworkImage> createState() => _FadeInNetworkImageState();
+}
+
+class _FadeInNetworkImageState extends State<_FadeInNetworkImage> with SingleTickerProviderStateMixin {
+  // Starts fully visible so synchronously-available (memory-cached) images
+  // paint immediately; dropped to 0 only once we know the load is async.
+  late final AnimationController _opacity = AnimationController(vsync: this, duration: widget.duration, value: 1);
+  bool _sawFirstFrame = false;
+  bool _placeholderVisible = false;
+
+  @override
+  void didUpdateWidget(covariant _FadeInNetworkImage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.image != oldWidget.image) {
+      // New stream: rearm so an async swap fades again (a memory-cached swap
+      // stays at full opacity via the wasSynchronouslyLoaded path).
+      _sawFirstFrame = false;
+      _placeholderVisible = false;
+      _opacity.value = 1;
+    }
   }
+
+  @override
+  void dispose() {
+    _opacity.dispose();
+    super.dispose();
+  }
+
+  void _startFade() {
+    _sawFirstFrame = true;
+    _opacity.forward().whenComplete(() {
+      if (mounted && _placeholderVisible) setState(() => _placeholderVisible = false);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Image(
+      image: widget.image,
+      width: widget.width,
+      height: widget.height,
+      // Decorative — see OptimizedMediaImage.
+      excludeFromSemantics: true,
+      fit: widget.fit,
+      filterQuality: widget.filterQuality,
+      alignment: widget.alignment,
+      opacity: _opacity,
+      errorBuilder: widget.errorBuilder,
+      frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
+        if (wasSynchronouslyLoaded) return child;
+        if (frame == null && !_sawFirstFrame) {
+          // Async load in progress: hide the image and show the placeholder
+          // beneath until the first frame arrives. Mutating outside setState
+          // is fine here — we're inside build.
+          _opacity.value = 0;
+          _placeholderVisible = true;
+        } else if (frame != null && !_sawFirstFrame) {
+          _startFade();
+        }
+        if (!_placeholderVisible) return child;
+        return Stack(
+          alignment: Alignment.center,
+          fit: StackFit.passthrough,
+          children: [widget.placeholderBuilder(context), child],
+        );
+      },
+    );
+  }
+}
+
+enum _LocalFileResolution { pending, missing, present }
+
+class _ResolvedLocalFile extends StatefulWidget {
+  const _ResolvedLocalFile({required this.path, required this.builder});
+
+  final String path;
+  final Widget Function(BuildContext context, _LocalFileResolution resolution, File? file) builder;
+
+  @override
+  State<_ResolvedLocalFile> createState() => _ResolvedLocalFileState();
+}
+
+class _ResolvedLocalFileState extends State<_ResolvedLocalFile> {
+  File? _file;
+  _LocalFileResolution _resolution = _LocalFileResolution.pending;
+  int _generation = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _resolve();
+  }
+
+  @override
+  void didUpdateWidget(_ResolvedLocalFile oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.path != widget.path || _resolution == _LocalFileResolution.missing) _resolve();
+  }
+
+  void _resolve() {
+    final generation = ++_generation;
+    _file = null;
+    _resolution = _LocalFileResolution.pending;
+    final candidate = File(widget.path);
+    candidate.exists().then((exists) {
+      if (!mounted || generation != _generation) return;
+      setState(() {
+        _file = exists ? candidate : null;
+        _resolution = exists ? _LocalFileResolution.present : _LocalFileResolution.missing;
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    ++_generation;
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => widget.builder(context, _resolution, _file);
 }

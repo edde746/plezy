@@ -221,6 +221,17 @@ class $DownloadedMediaTable extends DownloadedMedia
     requiredDuringInsert: false,
     defaultValue: const Constant(0),
   );
+  static const VerificationMeta _mediaSourceIdMeta = const VerificationMeta(
+    'mediaSourceId',
+  );
+  @override
+  late final GeneratedColumn<String> mediaSourceId = GeneratedColumn<String>(
+    'media_source_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -242,6 +253,7 @@ class $DownloadedMediaTable extends DownloadedMedia
     retryCount,
     bgTaskId,
     mediaIndex,
+    mediaSourceId,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -397,6 +409,15 @@ class $DownloadedMediaTable extends DownloadedMedia
         mediaIndex.isAcceptableOrUnknown(data['media_index']!, _mediaIndexMeta),
       );
     }
+    if (data.containsKey('media_source_id')) {
+      context.handle(
+        _mediaSourceIdMeta,
+        mediaSourceId.isAcceptableOrUnknown(
+          data['media_source_id']!,
+          _mediaSourceIdMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -482,6 +503,10 @@ class $DownloadedMediaTable extends DownloadedMedia
         DriftSqlType.int,
         data['${effectivePrefix}media_index'],
       )!,
+      mediaSourceId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}media_source_id'],
+      ),
     );
   }
 
@@ -512,6 +537,7 @@ class DownloadedMediaItem extends DataClass
   final int retryCount;
   final String? bgTaskId;
   final int mediaIndex;
+  final String? mediaSourceId;
   const DownloadedMediaItem({
     required this.id,
     required this.serverId,
@@ -532,6 +558,7 @@ class DownloadedMediaItem extends DataClass
     required this.retryCount,
     this.bgTaskId,
     required this.mediaIndex,
+    this.mediaSourceId,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -573,6 +600,9 @@ class DownloadedMediaItem extends DataClass
       map['bg_task_id'] = Variable<String>(bgTaskId);
     }
     map['media_index'] = Variable<int>(mediaIndex);
+    if (!nullToAbsent || mediaSourceId != null) {
+      map['media_source_id'] = Variable<String>(mediaSourceId);
+    }
     return map;
   }
 
@@ -615,6 +645,9 @@ class DownloadedMediaItem extends DataClass
           ? const Value.absent()
           : Value(bgTaskId),
       mediaIndex: Value(mediaIndex),
+      mediaSourceId: mediaSourceId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(mediaSourceId),
     );
   }
 
@@ -645,6 +678,7 @@ class DownloadedMediaItem extends DataClass
       retryCount: serializer.fromJson<int>(json['retryCount']),
       bgTaskId: serializer.fromJson<String?>(json['bgTaskId']),
       mediaIndex: serializer.fromJson<int>(json['mediaIndex']),
+      mediaSourceId: serializer.fromJson<String?>(json['mediaSourceId']),
     );
   }
   @override
@@ -670,6 +704,7 @@ class DownloadedMediaItem extends DataClass
       'retryCount': serializer.toJson<int>(retryCount),
       'bgTaskId': serializer.toJson<String?>(bgTaskId),
       'mediaIndex': serializer.toJson<int>(mediaIndex),
+      'mediaSourceId': serializer.toJson<String?>(mediaSourceId),
     };
   }
 
@@ -693,6 +728,7 @@ class DownloadedMediaItem extends DataClass
     int? retryCount,
     Value<String?> bgTaskId = const Value.absent(),
     int? mediaIndex,
+    Value<String?> mediaSourceId = const Value.absent(),
   }) => DownloadedMediaItem(
     id: id ?? this.id,
     serverId: serverId ?? this.serverId,
@@ -721,6 +757,9 @@ class DownloadedMediaItem extends DataClass
     retryCount: retryCount ?? this.retryCount,
     bgTaskId: bgTaskId.present ? bgTaskId.value : this.bgTaskId,
     mediaIndex: mediaIndex ?? this.mediaIndex,
+    mediaSourceId: mediaSourceId.present
+        ? mediaSourceId.value
+        : this.mediaSourceId,
   );
   DownloadedMediaItem copyWithCompanion(DownloadedMediaCompanion data) {
     return DownloadedMediaItem(
@@ -763,6 +802,9 @@ class DownloadedMediaItem extends DataClass
       mediaIndex: data.mediaIndex.present
           ? data.mediaIndex.value
           : this.mediaIndex,
+      mediaSourceId: data.mediaSourceId.present
+          ? data.mediaSourceId.value
+          : this.mediaSourceId,
     );
   }
 
@@ -787,7 +829,8 @@ class DownloadedMediaItem extends DataClass
           ..write('errorMessage: $errorMessage, ')
           ..write('retryCount: $retryCount, ')
           ..write('bgTaskId: $bgTaskId, ')
-          ..write('mediaIndex: $mediaIndex')
+          ..write('mediaIndex: $mediaIndex, ')
+          ..write('mediaSourceId: $mediaSourceId')
           ..write(')'))
         .toString();
   }
@@ -813,6 +856,7 @@ class DownloadedMediaItem extends DataClass
     retryCount,
     bgTaskId,
     mediaIndex,
+    mediaSourceId,
   );
   @override
   bool operator ==(Object other) =>
@@ -836,7 +880,8 @@ class DownloadedMediaItem extends DataClass
           other.errorMessage == this.errorMessage &&
           other.retryCount == this.retryCount &&
           other.bgTaskId == this.bgTaskId &&
-          other.mediaIndex == this.mediaIndex);
+          other.mediaIndex == this.mediaIndex &&
+          other.mediaSourceId == this.mediaSourceId);
 }
 
 class DownloadedMediaCompanion extends UpdateCompanion<DownloadedMediaItem> {
@@ -859,6 +904,7 @@ class DownloadedMediaCompanion extends UpdateCompanion<DownloadedMediaItem> {
   final Value<int> retryCount;
   final Value<String?> bgTaskId;
   final Value<int> mediaIndex;
+  final Value<String?> mediaSourceId;
   const DownloadedMediaCompanion({
     this.id = const Value.absent(),
     this.serverId = const Value.absent(),
@@ -879,6 +925,7 @@ class DownloadedMediaCompanion extends UpdateCompanion<DownloadedMediaItem> {
     this.retryCount = const Value.absent(),
     this.bgTaskId = const Value.absent(),
     this.mediaIndex = const Value.absent(),
+    this.mediaSourceId = const Value.absent(),
   });
   DownloadedMediaCompanion.insert({
     this.id = const Value.absent(),
@@ -900,6 +947,7 @@ class DownloadedMediaCompanion extends UpdateCompanion<DownloadedMediaItem> {
     this.retryCount = const Value.absent(),
     this.bgTaskId = const Value.absent(),
     this.mediaIndex = const Value.absent(),
+    this.mediaSourceId = const Value.absent(),
   }) : serverId = Value(serverId),
        ratingKey = Value(ratingKey),
        globalKey = Value(globalKey),
@@ -925,6 +973,7 @@ class DownloadedMediaCompanion extends UpdateCompanion<DownloadedMediaItem> {
     Expression<int>? retryCount,
     Expression<String>? bgTaskId,
     Expression<int>? mediaIndex,
+    Expression<String>? mediaSourceId,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -947,6 +996,7 @@ class DownloadedMediaCompanion extends UpdateCompanion<DownloadedMediaItem> {
       if (retryCount != null) 'retry_count': retryCount,
       if (bgTaskId != null) 'bg_task_id': bgTaskId,
       if (mediaIndex != null) 'media_index': mediaIndex,
+      if (mediaSourceId != null) 'media_source_id': mediaSourceId,
     });
   }
 
@@ -970,6 +1020,7 @@ class DownloadedMediaCompanion extends UpdateCompanion<DownloadedMediaItem> {
     Value<int>? retryCount,
     Value<String?>? bgTaskId,
     Value<int>? mediaIndex,
+    Value<String?>? mediaSourceId,
   }) {
     return DownloadedMediaCompanion(
       id: id ?? this.id,
@@ -991,6 +1042,7 @@ class DownloadedMediaCompanion extends UpdateCompanion<DownloadedMediaItem> {
       retryCount: retryCount ?? this.retryCount,
       bgTaskId: bgTaskId ?? this.bgTaskId,
       mediaIndex: mediaIndex ?? this.mediaIndex,
+      mediaSourceId: mediaSourceId ?? this.mediaSourceId,
     );
   }
 
@@ -1056,6 +1108,9 @@ class DownloadedMediaCompanion extends UpdateCompanion<DownloadedMediaItem> {
     if (mediaIndex.present) {
       map['media_index'] = Variable<int>(mediaIndex.value);
     }
+    if (mediaSourceId.present) {
+      map['media_source_id'] = Variable<String>(mediaSourceId.value);
+    }
     return map;
   }
 
@@ -1080,7 +1135,8 @@ class DownloadedMediaCompanion extends UpdateCompanion<DownloadedMediaItem> {
           ..write('errorMessage: $errorMessage, ')
           ..write('retryCount: $retryCount, ')
           ..write('bgTaskId: $bgTaskId, ')
-          ..write('mediaIndex: $mediaIndex')
+          ..write('mediaIndex: $mediaIndex, ')
+          ..write('mediaSourceId: $mediaSourceId')
           ..write(')'))
         .toString();
   }
@@ -3094,6 +3150,21 @@ class $SyncRulesTable extends SyncRules
     requiredDuringInsert: false,
     defaultValue: const Constant('unwatched'),
   );
+  static const VerificationMeta _includeSpecialsMeta = const VerificationMeta(
+    'includeSpecials',
+  );
+  @override
+  late final GeneratedColumn<bool> includeSpecials = GeneratedColumn<bool>(
+    'include_specials',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("include_specials" IN (0, 1))',
+    ),
+    defaultValue: const Constant(true),
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -3108,6 +3179,7 @@ class $SyncRulesTable extends SyncRules
     lastExecutedAt,
     mediaIndex,
     downloadFilter,
+    includeSpecials,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -3211,6 +3283,15 @@ class $SyncRulesTable extends SyncRules
         ),
       );
     }
+    if (data.containsKey('include_specials')) {
+      context.handle(
+        _includeSpecialsMeta,
+        includeSpecials.isAcceptableOrUnknown(
+          data['include_specials']!,
+          _includeSpecialsMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -3268,6 +3349,10 @@ class $SyncRulesTable extends SyncRules
         DriftSqlType.string,
         data['${effectivePrefix}download_filter'],
       )!,
+      includeSpecials: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}include_specials'],
+      )!,
     );
   }
 
@@ -3290,6 +3375,7 @@ class SyncRuleItem extends DataClass implements Insertable<SyncRuleItem> {
   final int? lastExecutedAt;
   final int mediaIndex;
   final String downloadFilter;
+  final bool includeSpecials;
   const SyncRuleItem({
     required this.id,
     required this.profileId,
@@ -3303,6 +3389,7 @@ class SyncRuleItem extends DataClass implements Insertable<SyncRuleItem> {
     this.lastExecutedAt,
     required this.mediaIndex,
     required this.downloadFilter,
+    required this.includeSpecials,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -3321,6 +3408,7 @@ class SyncRuleItem extends DataClass implements Insertable<SyncRuleItem> {
     }
     map['media_index'] = Variable<int>(mediaIndex);
     map['download_filter'] = Variable<String>(downloadFilter);
+    map['include_specials'] = Variable<bool>(includeSpecials);
     return map;
   }
 
@@ -3340,6 +3428,7 @@ class SyncRuleItem extends DataClass implements Insertable<SyncRuleItem> {
           : Value(lastExecutedAt),
       mediaIndex: Value(mediaIndex),
       downloadFilter: Value(downloadFilter),
+      includeSpecials: Value(includeSpecials),
     );
   }
 
@@ -3361,6 +3450,7 @@ class SyncRuleItem extends DataClass implements Insertable<SyncRuleItem> {
       lastExecutedAt: serializer.fromJson<int?>(json['lastExecutedAt']),
       mediaIndex: serializer.fromJson<int>(json['mediaIndex']),
       downloadFilter: serializer.fromJson<String>(json['downloadFilter']),
+      includeSpecials: serializer.fromJson<bool>(json['includeSpecials']),
     );
   }
   @override
@@ -3379,6 +3469,7 @@ class SyncRuleItem extends DataClass implements Insertable<SyncRuleItem> {
       'lastExecutedAt': serializer.toJson<int?>(lastExecutedAt),
       'mediaIndex': serializer.toJson<int>(mediaIndex),
       'downloadFilter': serializer.toJson<String>(downloadFilter),
+      'includeSpecials': serializer.toJson<bool>(includeSpecials),
     };
   }
 
@@ -3395,6 +3486,7 @@ class SyncRuleItem extends DataClass implements Insertable<SyncRuleItem> {
     Value<int?> lastExecutedAt = const Value.absent(),
     int? mediaIndex,
     String? downloadFilter,
+    bool? includeSpecials,
   }) => SyncRuleItem(
     id: id ?? this.id,
     profileId: profileId ?? this.profileId,
@@ -3410,6 +3502,7 @@ class SyncRuleItem extends DataClass implements Insertable<SyncRuleItem> {
         : this.lastExecutedAt,
     mediaIndex: mediaIndex ?? this.mediaIndex,
     downloadFilter: downloadFilter ?? this.downloadFilter,
+    includeSpecials: includeSpecials ?? this.includeSpecials,
   );
   SyncRuleItem copyWithCompanion(SyncRulesCompanion data) {
     return SyncRuleItem(
@@ -3435,6 +3528,9 @@ class SyncRuleItem extends DataClass implements Insertable<SyncRuleItem> {
       downloadFilter: data.downloadFilter.present
           ? data.downloadFilter.value
           : this.downloadFilter,
+      includeSpecials: data.includeSpecials.present
+          ? data.includeSpecials.value
+          : this.includeSpecials,
     );
   }
 
@@ -3452,7 +3548,8 @@ class SyncRuleItem extends DataClass implements Insertable<SyncRuleItem> {
           ..write('createdAt: $createdAt, ')
           ..write('lastExecutedAt: $lastExecutedAt, ')
           ..write('mediaIndex: $mediaIndex, ')
-          ..write('downloadFilter: $downloadFilter')
+          ..write('downloadFilter: $downloadFilter, ')
+          ..write('includeSpecials: $includeSpecials')
           ..write(')'))
         .toString();
   }
@@ -3471,6 +3568,7 @@ class SyncRuleItem extends DataClass implements Insertable<SyncRuleItem> {
     lastExecutedAt,
     mediaIndex,
     downloadFilter,
+    includeSpecials,
   );
   @override
   bool operator ==(Object other) =>
@@ -3487,7 +3585,8 @@ class SyncRuleItem extends DataClass implements Insertable<SyncRuleItem> {
           other.createdAt == this.createdAt &&
           other.lastExecutedAt == this.lastExecutedAt &&
           other.mediaIndex == this.mediaIndex &&
-          other.downloadFilter == this.downloadFilter);
+          other.downloadFilter == this.downloadFilter &&
+          other.includeSpecials == this.includeSpecials);
 }
 
 class SyncRulesCompanion extends UpdateCompanion<SyncRuleItem> {
@@ -3503,6 +3602,7 @@ class SyncRulesCompanion extends UpdateCompanion<SyncRuleItem> {
   final Value<int?> lastExecutedAt;
   final Value<int> mediaIndex;
   final Value<String> downloadFilter;
+  final Value<bool> includeSpecials;
   const SyncRulesCompanion({
     this.id = const Value.absent(),
     this.profileId = const Value.absent(),
@@ -3516,6 +3616,7 @@ class SyncRulesCompanion extends UpdateCompanion<SyncRuleItem> {
     this.lastExecutedAt = const Value.absent(),
     this.mediaIndex = const Value.absent(),
     this.downloadFilter = const Value.absent(),
+    this.includeSpecials = const Value.absent(),
   });
   SyncRulesCompanion.insert({
     this.id = const Value.absent(),
@@ -3530,6 +3631,7 @@ class SyncRulesCompanion extends UpdateCompanion<SyncRuleItem> {
     this.lastExecutedAt = const Value.absent(),
     this.mediaIndex = const Value.absent(),
     this.downloadFilter = const Value.absent(),
+    this.includeSpecials = const Value.absent(),
   }) : serverId = Value(serverId),
        ratingKey = Value(ratingKey),
        globalKey = Value(globalKey),
@@ -3549,6 +3651,7 @@ class SyncRulesCompanion extends UpdateCompanion<SyncRuleItem> {
     Expression<int>? lastExecutedAt,
     Expression<int>? mediaIndex,
     Expression<String>? downloadFilter,
+    Expression<bool>? includeSpecials,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -3563,6 +3666,7 @@ class SyncRulesCompanion extends UpdateCompanion<SyncRuleItem> {
       if (lastExecutedAt != null) 'last_executed_at': lastExecutedAt,
       if (mediaIndex != null) 'media_index': mediaIndex,
       if (downloadFilter != null) 'download_filter': downloadFilter,
+      if (includeSpecials != null) 'include_specials': includeSpecials,
     });
   }
 
@@ -3579,6 +3683,7 @@ class SyncRulesCompanion extends UpdateCompanion<SyncRuleItem> {
     Value<int?>? lastExecutedAt,
     Value<int>? mediaIndex,
     Value<String>? downloadFilter,
+    Value<bool>? includeSpecials,
   }) {
     return SyncRulesCompanion(
       id: id ?? this.id,
@@ -3593,6 +3698,7 @@ class SyncRulesCompanion extends UpdateCompanion<SyncRuleItem> {
       lastExecutedAt: lastExecutedAt ?? this.lastExecutedAt,
       mediaIndex: mediaIndex ?? this.mediaIndex,
       downloadFilter: downloadFilter ?? this.downloadFilter,
+      includeSpecials: includeSpecials ?? this.includeSpecials,
     );
   }
 
@@ -3635,6 +3741,9 @@ class SyncRulesCompanion extends UpdateCompanion<SyncRuleItem> {
     if (downloadFilter.present) {
       map['download_filter'] = Variable<String>(downloadFilter.value);
     }
+    if (includeSpecials.present) {
+      map['include_specials'] = Variable<bool>(includeSpecials.value);
+    }
     return map;
   }
 
@@ -3652,7 +3761,8 @@ class SyncRulesCompanion extends UpdateCompanion<SyncRuleItem> {
           ..write('createdAt: $createdAt, ')
           ..write('lastExecutedAt: $lastExecutedAt, ')
           ..write('mediaIndex: $mediaIndex, ')
-          ..write('downloadFilter: $downloadFilter')
+          ..write('downloadFilter: $downloadFilter, ')
+          ..write('includeSpecials: $includeSpecials')
           ..write(')'))
         .toString();
   }
@@ -5319,6 +5429,7 @@ typedef $$DownloadedMediaTableCreateCompanionBuilder =
       Value<int> retryCount,
       Value<String?> bgTaskId,
       Value<int> mediaIndex,
+      Value<String?> mediaSourceId,
     });
 typedef $$DownloadedMediaTableUpdateCompanionBuilder =
     DownloadedMediaCompanion Function({
@@ -5341,6 +5452,7 @@ typedef $$DownloadedMediaTableUpdateCompanionBuilder =
       Value<int> retryCount,
       Value<String?> bgTaskId,
       Value<int> mediaIndex,
+      Value<String?> mediaSourceId,
     });
 
 class $$DownloadedMediaTableFilterComposer
@@ -5444,6 +5556,11 @@ class $$DownloadedMediaTableFilterComposer
 
   ColumnFilters<int> get mediaIndex => $composableBuilder(
     column: $table.mediaIndex,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get mediaSourceId => $composableBuilder(
+    column: $table.mediaSourceId,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -5551,6 +5668,11 @@ class $$DownloadedMediaTableOrderingComposer
     column: $table.mediaIndex,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<String> get mediaSourceId => $composableBuilder(
+    column: $table.mediaSourceId,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$DownloadedMediaTableAnnotationComposer
@@ -5638,6 +5760,11 @@ class $$DownloadedMediaTableAnnotationComposer
     column: $table.mediaIndex,
     builder: (column) => column,
   );
+
+  GeneratedColumn<String> get mediaSourceId => $composableBuilder(
+    column: $table.mediaSourceId,
+    builder: (column) => column,
+  );
 }
 
 class $$DownloadedMediaTableTableManager
@@ -5696,6 +5823,7 @@ class $$DownloadedMediaTableTableManager
                 Value<int> retryCount = const Value.absent(),
                 Value<String?> bgTaskId = const Value.absent(),
                 Value<int> mediaIndex = const Value.absent(),
+                Value<String?> mediaSourceId = const Value.absent(),
               }) => DownloadedMediaCompanion(
                 id: id,
                 serverId: serverId,
@@ -5716,6 +5844,7 @@ class $$DownloadedMediaTableTableManager
                 retryCount: retryCount,
                 bgTaskId: bgTaskId,
                 mediaIndex: mediaIndex,
+                mediaSourceId: mediaSourceId,
               ),
           createCompanionCallback:
               ({
@@ -5738,6 +5867,7 @@ class $$DownloadedMediaTableTableManager
                 Value<int> retryCount = const Value.absent(),
                 Value<String?> bgTaskId = const Value.absent(),
                 Value<int> mediaIndex = const Value.absent(),
+                Value<String?> mediaSourceId = const Value.absent(),
               }) => DownloadedMediaCompanion.insert(
                 id: id,
                 serverId: serverId,
@@ -5758,6 +5888,7 @@ class $$DownloadedMediaTableTableManager
                 retryCount: retryCount,
                 bgTaskId: bgTaskId,
                 mediaIndex: mediaIndex,
+                mediaSourceId: mediaSourceId,
               ),
           withReferenceMapper: (p0) => p0
               .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
@@ -6765,6 +6896,7 @@ typedef $$SyncRulesTableCreateCompanionBuilder =
       Value<int?> lastExecutedAt,
       Value<int> mediaIndex,
       Value<String> downloadFilter,
+      Value<bool> includeSpecials,
     });
 typedef $$SyncRulesTableUpdateCompanionBuilder =
     SyncRulesCompanion Function({
@@ -6780,6 +6912,7 @@ typedef $$SyncRulesTableUpdateCompanionBuilder =
       Value<int?> lastExecutedAt,
       Value<int> mediaIndex,
       Value<String> downloadFilter,
+      Value<bool> includeSpecials,
     });
 
 class $$SyncRulesTableFilterComposer
@@ -6848,6 +6981,11 @@ class $$SyncRulesTableFilterComposer
 
   ColumnFilters<String> get downloadFilter => $composableBuilder(
     column: $table.downloadFilter,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get includeSpecials => $composableBuilder(
+    column: $table.includeSpecials,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -6920,6 +7058,11 @@ class $$SyncRulesTableOrderingComposer
     column: $table.downloadFilter,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<bool> get includeSpecials => $composableBuilder(
+    column: $table.includeSpecials,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$SyncRulesTableAnnotationComposer
@@ -6976,6 +7119,11 @@ class $$SyncRulesTableAnnotationComposer
     column: $table.downloadFilter,
     builder: (column) => column,
   );
+
+  GeneratedColumn<bool> get includeSpecials => $composableBuilder(
+    column: $table.includeSpecials,
+    builder: (column) => column,
+  );
 }
 
 class $$SyncRulesTableTableManager
@@ -7021,6 +7169,7 @@ class $$SyncRulesTableTableManager
                 Value<int?> lastExecutedAt = const Value.absent(),
                 Value<int> mediaIndex = const Value.absent(),
                 Value<String> downloadFilter = const Value.absent(),
+                Value<bool> includeSpecials = const Value.absent(),
               }) => SyncRulesCompanion(
                 id: id,
                 profileId: profileId,
@@ -7034,6 +7183,7 @@ class $$SyncRulesTableTableManager
                 lastExecutedAt: lastExecutedAt,
                 mediaIndex: mediaIndex,
                 downloadFilter: downloadFilter,
+                includeSpecials: includeSpecials,
               ),
           createCompanionCallback:
               ({
@@ -7049,6 +7199,7 @@ class $$SyncRulesTableTableManager
                 Value<int?> lastExecutedAt = const Value.absent(),
                 Value<int> mediaIndex = const Value.absent(),
                 Value<String> downloadFilter = const Value.absent(),
+                Value<bool> includeSpecials = const Value.absent(),
               }) => SyncRulesCompanion.insert(
                 id: id,
                 profileId: profileId,
@@ -7062,6 +7213,7 @@ class $$SyncRulesTableTableManager
                 lastExecutedAt: lastExecutedAt,
                 mediaIndex: mediaIndex,
                 downloadFilter: downloadFilter,
+                includeSpecials: includeSpecials,
               ),
           withReferenceMapper: (p0) => p0
               .map((e) => (e.readTable(table), BaseReferences(db, table, e)))

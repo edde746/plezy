@@ -1,13 +1,16 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/providers/trakt_account_provider.dart';
 import 'package:plezy/services/base_shared_preferences_service.dart';
-import 'package:plezy/services/trakt/trakt_account_store.dart';
-import 'package:plezy/services/trakt/trakt_session.dart';
+import 'package:plezy/services/trackers/tracker_account_store.dart';
+import 'package:plezy/services/trackers/tracker_constants.dart';
+import 'package:plezy/services/trackers/tracker_session.dart';
 
 import '../test_helpers/prefs.dart';
 
-TraktSession _session({String? username, String accessToken = 'at', String refreshToken = 'rt'}) {
-  return TraktSession(
+final _store = trackerAccountStore(TrackerService.trakt);
+
+TrackerSession _session({String? username, String accessToken = 'at', String refreshToken = 'rt'}) {
+  return TrackerSession(
     accessToken: accessToken,
     refreshToken: refreshToken,
     expiresAt: DateTime.now().millisecondsSinceEpoch ~/ 1000 + 3600,
@@ -33,7 +36,7 @@ void main() {
     test('onActiveProfileChanged loads stored session and notifies', () async {
       // Pre-seed the store for a specific profile uuid.
       const uuid = 'profile-1';
-      await traktAccountStore.save(uuid, _session(username: 'alice'));
+      await _store.save(uuid, _session(username: 'alice'));
 
       // Reset cached singletons so the provider reads fresh prefs state.
       BaseSharedPreferencesService.resetForTesting();
@@ -54,7 +57,7 @@ void main() {
 
     test('onActiveProfileChanged with unknown uuid clears session', () async {
       const uuid = 'profile-1';
-      await traktAccountStore.save(uuid, _session(username: 'alice'));
+      await _store.save(uuid, _session(username: 'alice'));
       BaseSharedPreferencesService.resetForTesting();
 
       final p = TraktAccountProvider();
@@ -86,6 +89,32 @@ void main() {
       expect(p.session, isNull);
       // _setSessionAndRebind always notifies.
       expect(notified, 1);
+
+      p.dispose();
+    });
+
+    test('late refresh update after disconnect does not restore session', () async {
+      const uuid = 'profile-1';
+      await _store.save(uuid, _session(username: 'alice'));
+      BaseSharedPreferencesService.resetForTesting();
+
+      final p = TraktAccountProvider();
+      await p.onActiveProfileChanged(uuid);
+      final staleGeneration = p.debugBindingGenerationForTesting;
+
+      await p.disconnect();
+      expect(p.isConnected, isFalse);
+      expect(await _store.load(uuid), isNull);
+
+      p.debugHandleSessionUpdatedForTesting(
+        uuid,
+        staleGeneration,
+        _session(accessToken: 'late-at', refreshToken: 'late-rt', username: 'alice'),
+      );
+      await Future<void>.delayed(Duration.zero);
+
+      expect(p.isConnected, isFalse);
+      expect(await _store.load(uuid), isNull);
 
       p.dispose();
     });

@@ -73,16 +73,6 @@ class ProfileRegistry {
     return (_db.delete(_db.profiles)..where((t) => t.kind.equals(ProfileKind.plexHome.id))).go();
   }
 
-  Future<void> reorder(List<String> idsInOrder) async {
-    await _db.transaction(() async {
-      for (var i = 0; i < idsInOrder.length; i++) {
-        await (_db.update(
-          _db.profiles,
-        )..where((t) => t.id.equals(idsInOrder[i]))).write(ProfilesCompanion(sortOrder: Value(i)));
-      }
-    });
-  }
-
   Future<void> clear() async {
     await _db.delete(_db.profiles).go();
   }

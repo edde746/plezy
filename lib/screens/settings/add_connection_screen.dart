@@ -5,6 +5,7 @@ import 'package:material_symbols_icons/symbols.dart';
 import '../../focus/focusable_wrapper.dart';
 import '../../i18n/strings.g.dart';
 import '../../media/media_backend.dart';
+import '../../theme/mono_tokens.dart';
 import '../../profiles/profile.dart';
 import '../../widgets/backend_badge.dart';
 import '../../widgets/focused_scroll_scaffold.dart';
@@ -29,7 +30,6 @@ class AddConnectionScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final scoped = targetProfile != null;
     final options = <_BackendOption>[
       _BackendOption(
@@ -46,7 +46,21 @@ class AddConnectionScreen extends StatelessWidget {
             : t.addServer.connectToJellyfinCardSubtitle,
         builder: (_) => AddJellyfinScreen(targetProfile: targetProfile),
       ),
+      if (scoped)
+        _BackendOption(
+          backend: null,
+          title: t.addServer.borrowFromAnotherProfile,
+          subtitle: t.addServer.borrowFromAnotherProfileSubtitle,
+          builder: (_) => BorrowConnectionScreen(targetProfile: targetProfile!),
+        ),
     ];
+    final tokensRef = tokens(context);
+    // M3E connected-group geometry: large outer corners, small inner corners,
+    // hairline gaps.
+    BorderRadius radiiFor(int i) => BorderRadius.vertical(
+      top: Radius.circular(i == 0 ? tokensRef.radiusLg : tokensRef.radiusXs),
+      bottom: Radius.circular(i == options.length - 1 ? tokensRef.radiusLg : tokensRef.radiusXs),
+    );
     return FocusedScrollScaffold(
       title: Text(
         scoped
@@ -55,39 +69,20 @@ class AddConnectionScreen extends StatelessWidget {
       ),
       slivers: [
         SliverPadding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+          padding: const EdgeInsets.all(16),
           sliver: SliverList(
             delegate: SliverChildListDelegate([
-              Text(
-                scoped ? t.addServer.addConnectionIntroScoped : t.addServer.addConnectionIntroGlobal,
-                style: theme.textTheme.bodyMedium,
-              ),
-              const SizedBox(height: 16),
               for (var i = 0; i < options.length; i++) ...[
-                if (i > 0) const SizedBox(height: 12),
+                if (i > 0) SizedBox(height: tokensRef.groupGap),
                 _BackendCard(
-                  leading: BackendBadge(backend: options[i].backend, size: 28),
+                  borderRadius: radiiFor(i),
+                  leading: options[i].backend != null
+                      ? BackendBadge(backend: options[i].backend!, size: 28)
+                      : const AppIcon(Symbols.share_rounded, fill: 1, size: 28),
                   title: options[i].title,
                   subtitle: options[i].subtitle,
                   onTap: () async {
                     final added = await Navigator.push<bool>(context, MaterialPageRoute(builder: options[i].builder));
-                    if (added == true && context.mounted) {
-                      Navigator.of(context).pop(true);
-                    }
-                  },
-                ),
-              ],
-              if (scoped) ...[
-                const SizedBox(height: 12),
-                _BackendCard(
-                  leading: const AppIcon(Symbols.share_rounded, fill: 1, size: 28),
-                  title: t.addServer.borrowFromAnotherProfile,
-                  subtitle: t.addServer.borrowFromAnotherProfileSubtitle,
-                  onTap: () async {
-                    final added = await Navigator.push<bool>(
-                      context,
-                      MaterialPageRoute(builder: (_) => BorrowConnectionScreen(targetProfile: targetProfile!)),
-                    );
                     if (added == true && context.mounted) {
                       Navigator.of(context).pop(true);
                     }
@@ -103,7 +98,8 @@ class AddConnectionScreen extends StatelessWidget {
 }
 
 class _BackendOption {
-  final MediaBackend backend;
+  /// Null for the borrow option (renders a share icon instead of a badge).
+  final MediaBackend? backend;
   final String title;
   final String subtitle;
   final WidgetBuilder builder;
@@ -112,27 +108,34 @@ class _BackendOption {
 }
 
 class _BackendCard extends StatelessWidget {
+  final BorderRadius borderRadius;
   final Widget leading;
   final String title;
   final String subtitle;
   final VoidCallback onTap;
 
-  const _BackendCard({required this.leading, required this.title, required this.subtitle, required this.onTap});
+  const _BackendCard({
+    required this.borderRadius,
+    required this.leading,
+    required this.title,
+    required this.subtitle,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return FocusableWrapper(
       disableScale: true,
-      borderRadius: 12,
+      borderRadii: borderRadius,
       descendantsAreFocusable: false,
       onSelect: onTap,
       child: Material(
         color: theme.colorScheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: borderRadius,
         child: InkWell(
           onTap: onTap,
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: borderRadius,
           child: Padding(
             padding: const EdgeInsets.all(16),
             child: Row(
@@ -141,7 +144,7 @@ class _BackendCard extends StatelessWidget {
                 const SizedBox(width: 16),
                 Expanded(
                   child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                    crossAxisAlignment: .start,
                     children: [
                       Text(title, style: theme.textTheme.titleMedium),
                       const SizedBox(height: 4),

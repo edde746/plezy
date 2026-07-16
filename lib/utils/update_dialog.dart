@@ -4,6 +4,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../i18n/strings.g.dart';
 import '../services/update_service.dart';
 import '../widgets/dialog_action_button.dart';
+import 'dialogs.dart';
 
 Future<void> showUpdateAvailableDialog(
   BuildContext context,
@@ -12,7 +13,7 @@ Future<void> showUpdateAvailableDialog(
   required String dismissLabel,
   bool showSkipVersion = false,
 }) {
-  return showDialog<void>(
+  return showScopedDialog<void>(
     context: context,
     builder: (dialogContext) {
       final latestVersion = updateInfo['latestVersion'] as String;
@@ -21,8 +22,8 @@ Future<void> showUpdateAvailableDialog(
       return AlertDialog(
         title: Text(title),
         content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: .min,
+          crossAxisAlignment: .start,
           children: [
             Text(
               t.update.versionAvailable(version: latestVersion),

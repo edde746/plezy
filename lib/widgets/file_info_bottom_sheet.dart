@@ -42,7 +42,7 @@ class _FileInfoBottomSheetState extends State<FileInfoBottomSheet> {
             padding: const EdgeInsets.all(16),
             children: [
               if (widget.title.isNotEmpty) ...[
-                Text(widget.title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
+                Text(widget.title, style: const TextStyle(fontSize: 16, fontWeight: .w500)),
                 const SizedBox(height: 20),
               ],
 
@@ -64,7 +64,8 @@ class _FileInfoBottomSheetState extends State<FileInfoBottomSheet> {
               _buildSectionHeader(t.fileInfo.audio),
               const SizedBox(height: 8),
               if (info.audioTracks.isNotEmpty)
-                for (int i = 0; i < info.audioTracks.length; i++) _buildInfoRow('${i + 1}', info.audioTracks[i].label),
+                for (int i = 0; i < info.audioTracks.length; i++)
+                  _buildInfoRow('${i + 1}', info.audioTracks[i].label.joined),
               if (info.audioTracks.isEmpty) ...[
                 if (info.audioCodec != null) _buildInfoRow(t.fileInfo.codec, info.audioCodec!),
                 if (info.audioChannelsFormatted != null)
@@ -77,7 +78,7 @@ class _FileInfoBottomSheetState extends State<FileInfoBottomSheet> {
                 _buildSectionHeader(t.fileInfo.subtitles),
                 const SizedBox(height: 8),
                 for (int i = 0; i < info.subtitleTracks.length; i++)
-                  _buildInfoRow('${i + 1}', info.subtitleTracks[i].label),
+                  _buildInfoRow('${i + 1}', info.subtitleTracks[i].label.joined),
                 const SizedBox(height: 20),
               ],
 
@@ -109,7 +110,7 @@ class _FileInfoBottomSheetState extends State<FileInfoBottomSheet> {
   }
 
   Widget _buildSectionHeader(String title) {
-    return Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold));
+    return Text(title, style: const TextStyle(fontSize: 18, fontWeight: .bold));
   }
 
   Widget _buildInfoRow(String label, String value, {bool isMonospace = false}) {
@@ -158,7 +159,7 @@ class _FocusableInfoRowState extends State<_FocusableInfoRow> {
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 6),
         child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment: .start,
           children: [
             SizedBox(
               width: 140,

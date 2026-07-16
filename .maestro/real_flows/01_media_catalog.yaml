@@ -1,0 +1,38 @@
+appId: com.edde746.plezy
+name: Real Jellyfin imports and opens codec media
+tags:
+  - e2e
+  - real-jellyfin
+  - media
+---
+- runFlow: ../subflows/onboard_jellyfin.yaml
+- tapOn: "(?s)^Search.*"
+- extendedWaitUntil:
+    visible: "Search movies, shows, music..."
+    timeout: 10000
+- tapOn: "Search movies, shows, music..."
+- inputText: "Codec DV UHD"
+- hideKeyboard
+- extendedWaitUntil:
+    visible: "(?s).*Codec DV UHD TrueHD PGS$"
+    timeout: 15000
+- tapOn: "(?s).*Codec DV UHD TrueHD PGS$"
+- extendedWaitUntil:
+    visible: "Overview"
+    timeout: 15000
+- assertVisible: "Dolby Vision profile 8 with an HDR fallback, TrueHD Atmos, AC-3, and PGS subtitles."
+- tapOn:
+    text: "Play"
+    waitToSettleTimeoutMs: 1000
+- extendedWaitUntil:
+    notVisible: "Overview"
+    timeout: 15000
+- back
+- runFlow:
+    when:
+      notVisible: "Overview"
+    commands:
+      - back
+- extendedWaitUntil:
+    visible: "Overview"
+    timeout: 10000

@@ -60,6 +60,21 @@ void main() {
       expect(result.contains('Authenticated=false'), isTrue);
     });
 
+    test('redacts Plex Home pin query parameter without registration', () {
+      final input = 'POST https://clients.plex.tv/api/v2/home/users/uuid/switch?X-Plex-Token=tok&pin=1234 → 201';
+      final result = LogRedactionManager.redact(input);
+      expect(result.contains('pin=1234'), isFalse);
+      expect(result.contains('pin=[REDACTED]'), isTrue);
+    });
+
+    test('pin redaction is case-insensitive and leaves compound params intact', () {
+      final result = LogRedactionManager.redact('PIN=0000&checkPin=abc&next=1');
+      expect(result.contains('PIN=0000'), isFalse);
+      expect(result.contains('pin=[REDACTED]'), isTrue);
+      expect(result.contains('checkPin=abc'), isTrue);
+      expect(result.contains('next=1'), isTrue);
+    });
+
     test('redacts X-Emby-Token header form', () {
       final result = LogRedactionManager.redact('X-Emby-Token: emby-secret');
       expect(result.contains('emby-secret'), isFalse);
@@ -161,6 +176,16 @@ void main() {
       final r2 = LogRedactionManager.redact('host https://server.example.com/');
       expect(r1.contains('server.example.com'), isFalse);
       expect(r2.contains('server.example.com'), isFalse);
+    });
+
+    test('redacts the mpv-escaped form used in option-value logs', () {
+      LogRedactionManager.registerServerUrl('https://server.example.com');
+      // mpv echoes list options like sub-files with ':' escaped as '\:'.
+      final result = LogRedactionManager.redact(
+        r"Setting option 'sub-files' = 'https\://server.example.com/Videos/1/Subtitles/0/0/Stream.srt' (flags = 16)",
+      );
+      expect(result.contains('server.example.com'), isFalse);
+      expect(result.contains('[REDACTED_URL]'), isTrue);
     });
   });
 

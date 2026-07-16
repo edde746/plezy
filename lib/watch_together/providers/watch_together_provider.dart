@@ -1,4 +1,5 @@
 import 'dart:async';
+import '../../media/ids.dart';
 import 'dart:math';
 
 import 'package:flutter/foundation.dart';
@@ -6,13 +7,18 @@ import 'package:flutter/foundation.dart';
 import '../../mpv/mpv.dart';
 import '../../services/settings_service.dart';
 import '../../utils/app_logger.dart';
+import '../models/playback_state.dart';
 import '../models/sync_message.dart';
 import '../models/watch_session.dart';
+import '../primitives.dart';
+import '../services/current_playback_dispatcher.dart';
+import '../services/watch_together_controller.dart';
 import '../services/watch_together_peer_service.dart';
-import '../services/watch_together_sync_manager.dart';
 
-/// Callback type for when media switches (for guest navigation)
-typedef MediaSwitchCallback = void Function(String ratingKey, String serverId, String mediaTitle);
+/// Callback type for when media switches (for guest navigation). Returns
+/// whether the switch was handled; unhandled keys are re-dispatched on the
+/// host's next state heartbeat.
+typedef MediaSwitchCallback = Future<bool> Function(String ratingKey, ServerId serverId, String mediaTitle);
 
 /// Provider for Watch Together functionality
 ///
@@ -25,12 +31,14 @@ typedef MediaSwitchCallback = void Function(String ratingKey, String serverId, S
 class WatchTogetherProvider with ChangeNotifier {
   WatchSession? _session;
   WatchTogetherPeerService? _peerService;
-  WatchTogetherSyncManager? _syncManager;
+  WatchTogetherController? _controller;
   final List<Participant> _participants = [];
   bool _isSyncing = false;
-  bool _isDeferredPlay = false;
+  bool _isWaitingForPeers = false;
+  List<String> _waitingOnPeerIds = const [];
+  PlaybackPhase? _playbackPhase;
   String _displayName = 'User';
-  String? _lastHandledCurrentPlaybackKey;
+  final CurrentPlaybackDispatcher _playbackDispatcher = CurrentPlaybackDispatcher();
 
   // Coalesce rapid-fire notifyListeners() calls into a single rebuild per frame.
   // During Watch Together join, 4-5 notifications fire within milliseconds;
@@ -86,14 +94,44 @@ class WatchTogetherProvider with ChangeNotifier {
   bool get isHost => _session?.isHost ?? false;
   bool get isConnected => _session?.isConnected ?? false;
   bool get isSyncing => _isSyncing;
-  bool get isDeferredPlay => _isDeferredPlay;
   WatchSession? get session => _session;
   List<Participant> get participants => List.unmodifiable(_participants);
   int get participantCount => _participants.length;
   ControlMode get controlMode => _session?.controlMode ?? ControlMode.hostOnly;
   String? get sessionId => _session?.sessionId;
-  WatchTogetherSyncManager? get syncManager => _syncManager;
   bool get isWaitingForHostReconnect => _isWaitingForHostReconnect;
+
+  /// Whether the room is held up waiting on peers (readiness or stalls) —
+  /// drives the "Waiting for …" pill.
+  bool get isWaitingForPeers => _isWaitingForPeers;
+
+  String? _displayNameForPeer(String? peerId) {
+    if (peerId == null) return null;
+    return _participants
+        .where((participant) => participant.peerId == peerId)
+        .map((participant) => participant.displayName)
+        .firstOrNull;
+  }
+
+  /// Display names of the peers the room is waiting on (excluding self).
+  List<String> get waitingOnNames {
+    final myPeerId = _peerService?.myPeerId;
+    if (_waitingOnPeerIds.isEmpty) {
+      // Guests waiting on a still-loading host have an empty digest.
+      if (!isHost && _playbackPhase == PlaybackPhase.loading) {
+        final hostName = _participants.where((p) => p.isHost).map((p) => p.displayName).firstOrNull;
+        return [?hostName];
+      }
+      return const [];
+    }
+    return [
+      for (final peerId in _waitingOnPeerIds)
+        if (peerId != myPeerId) _displayNameForPeer(peerId) ?? '?',
+    ];
+  }
+
+  /// Whether a player is currently attached to the sync controller.
+  bool get hasAttachedPlayer => _controller?.hasPlayer ?? false;
 
   // Participant join/leave event stream
   final StreamController<ParticipantEvent> _participantEventController = StreamController<ParticipantEvent>.broadcast();
@@ -111,14 +149,14 @@ class WatchTogetherProvider with ChangeNotifier {
     _displayName = name;
   }
 
-  String? _buildPlaybackKey(String? ratingKey, String? serverId) {
+  String? _buildPlaybackKey(String? ratingKey, ServerId? serverId) {
     if (ratingKey == null || serverId == null) return null;
     return '$serverId:$ratingKey';
   }
 
   void _updateCurrentPlaybackSnapshot({
     required String ratingKey,
-    required String serverId,
+    required ServerId serverId,
     required String mediaTitle,
   }) {
     _session = _session?.copyWith(mediaRatingKey: ratingKey, mediaServerId: serverId, mediaTitle: mediaTitle);
@@ -136,12 +174,12 @@ class WatchTogetherProvider with ChangeNotifier {
       errorMessage: session.errorMessage,
       hostPeerId: session.hostPeerId,
     );
-    _lastHandledCurrentPlaybackKey = null;
+    _playbackDispatcher.reset();
   }
 
   void _dispatchCurrentPlayback({
     required String ratingKey,
-    required String serverId,
+    required ServerId serverId,
     required String mediaTitle,
     required String source,
   }) {
@@ -151,48 +189,114 @@ class WatchTogetherProvider with ChangeNotifier {
       return;
     }
 
-    _lastHandledCurrentPlaybackKey = _buildPlaybackKey(ratingKey, serverId);
     appLogger.d('WatchTogether: Dispatching current playback from $source: $mediaTitle');
-    callback(ratingKey, serverId, mediaTitle);
+    // The key is only marked handled if the callback reports success; a
+    // failed switch is retried on the host's next state heartbeat.
+    unawaited(
+      _playbackDispatcher.dispatch(
+        _buildPlaybackKey(ratingKey, serverId)!,
+        () => callback(ratingKey, serverId, mediaTitle),
+      ),
+    );
   }
 
-  void markCurrentPlaybackHandled({required String ratingKey, required String serverId}) {
-    _lastHandledCurrentPlaybackKey = _buildPlaybackKey(ratingKey, serverId);
+  void markCurrentPlaybackHandled({required String ratingKey, required ServerId serverId}) {
+    _playbackDispatcher.markHandled(_buildPlaybackKey(ratingKey, serverId)!);
   }
 
   void requestCurrentPlaybackSnapshot() {
-    if (isHost || _peerService == null || _session == null || _peerService!.myPeerId == null) {
-      return;
-    }
-
-    final request = SyncMessage.requestSessionConfig(peerId: _peerService!.myPeerId);
-    if (_session!.hostPeerId != null) {
-      appLogger.d('WatchTogether: Requesting current playback snapshot from host');
-      _peerService!.sendTo(_session!.hostPeerId!, request);
-    } else {
-      appLogger.d('WatchTogether: Host peer unknown, broadcasting current playback snapshot request');
-      _peerService!.broadcast(request);
-    }
+    if (isHost) return;
+    appLogger.d('WatchTogether: Requesting current playback state from host');
+    _controller?.requestState();
   }
 
-  /// Wire up reconnection handler to re-announce join and readiness after reconnect
+  /// Wire up reconnection handler to re-announce join and re-sync state
   void _wireReconnectHandler() {
     _peerService!.onReconnected = () {
-      _syncManager?.announceJoin(_displayName);
-      _syncManager?.reannounceReadyIfNeeded();
+      _controller?.announceJoin(_displayName);
+      _controller?.onReconnected();
     };
   }
 
-  /// Wire up sync manager's state change callback to update provider state
-  void _wireSyncStateChanges() {
-    _syncManager!.onSyncStateChanged = (isSyncing) {
-      _isSyncing = isSyncing;
+  /// Wire the controller's callbacks into provider/UI state
+  void _wireController() {
+    final controller = _controller!;
+
+    controller.onCorrectingChanged = (correcting) {
+      _isSyncing = correcting;
       notifyListeners();
     };
-    _syncManager!.onDeferredPlayChanged = (isDeferredPlay) {
-      _isDeferredPlay = isDeferredPlay;
+
+    controller.onPhaseChanged = (phase) {
+      _playbackPhase = phase;
+      _updateWaitingState();
+    };
+
+    controller.onWaitingOnChanged = (peerIds) {
+      _waitingOnPeerIds = peerIds;
+      for (var i = 0; i < _participants.length; i++) {
+        final isWaitedOn = peerIds.contains(_participants[i].peerId);
+        if (_participants[i].isBuffering != isWaitedOn) {
+          _participants[i] = _participants[i].copyWith(isBuffering: isWaitedOn);
+          if (isWaitedOn) {
+            _emitActionEvent(_participants[i].peerId, ParticipantEventType.buffering);
+          }
+        }
+      }
+      _updateWaitingState();
+    };
+
+    controller.onControlModeReceived = (mode) {
+      if (isHost || _session == null) return;
+      if (_session!.controlMode == mode) return;
+      _session = _session!.copyWith(controlMode: mode);
+      controller.updateSession(_session!);
       notifyListeners();
     };
+
+    controller.onMediaStateReceived = _handleMediaStateReceived;
+
+    controller.onHostExitedPlayer = _handleHostExitedPlayer;
+
+    controller.onRemoteAction = (peerId, hint) {
+      final type = switch (hint) {
+        PlaybackActionHint.play => ParticipantEventType.resumed,
+        PlaybackActionHint.pause => ParticipantEventType.paused,
+        PlaybackActionHint.seek => ParticipantEventType.seeked,
+        PlaybackActionHint.rate || PlaybackActionHint.mediaSwitch => null,
+      };
+      if (type != null) _emitActionEvent(peerId, type);
+    };
+
+    controller.onPeerNeedsUpdate = (peerId) {
+      final name = _displayNameForPeer(peerId);
+      _participantEventController.add(
+        ParticipantEvent(displayName: name ?? peerId, type: ParticipantEventType.needsUpdate),
+      );
+    };
+
+    controller.onResumedWithout = (peerIds) {
+      for (final peerId in peerIds) {
+        final name = _displayNameForPeer(peerId);
+        if (name != null) {
+          _participantEventController.add(
+            ParticipantEvent(displayName: name, type: ParticipantEventType.resumedWithout),
+          );
+        }
+      }
+    };
+  }
+
+  void _updateWaitingState() {
+    final phase = _playbackPhase;
+    final waiting =
+        phase == PlaybackPhase.waitingForPeers ||
+        // Guests waiting on a still-loading host (no digest in that phase).
+        (!isHost && phase == PlaybackPhase.loading && hasCurrentPlayback);
+    if (waiting != _isWaitingForPeers) {
+      _isWaitingForPeers = waiting;
+    }
+    notifyListeners();
   }
 
   /// Create a new watch together session as host
@@ -206,7 +310,7 @@ class WatchTogetherProvider with ChangeNotifier {
   }) async {
     // Clean up any existing session
     await leaveSession();
-    _lastHandledCurrentPlaybackKey = null;
+    _playbackDispatcher.reset();
 
     appLogger.d('WatchTogether: Creating session with control mode: $controlMode');
 
@@ -229,13 +333,9 @@ class WatchTogetherProvider with ChangeNotifier {
       _displayName = displayName ?? _generateDisplayName();
       _participants.add(Participant(peerId: _peerService!.myPeerId!, displayName: _displayName, isHost: true));
 
-      _syncManager = WatchTogetherSyncManager(
-        peerService: _peerService!,
-        session: _session!,
-        displayName: _displayName,
-      );
+      _controller = WatchTogetherController(peerService: _peerService!, session: _session!);
 
-      _wireSyncStateChanges();
+      _wireController();
       _wireReconnectHandler();
 
       notifyListeners();
@@ -254,7 +354,7 @@ class WatchTogetherProvider with ChangeNotifier {
   Future<void> joinSession(String sessionId, {String? displayName}) async {
     // Clean up any existing session
     await leaveSession();
-    _lastHandledCurrentPlaybackKey = null;
+    _playbackDispatcher.reset();
 
     appLogger.d('WatchTogether: Joining session: $sessionId');
 
@@ -269,38 +369,27 @@ class WatchTogetherProvider with ChangeNotifier {
       await _peerService!.joinSession(sessionId);
 
       // Session will be fully configured when we receive sessionConfig from host
-      _session = _session!.copyWith(state: SessionState.connected, hostPeerId: 'wt-${sessionId.toUpperCase()}');
+      _session = _session!.copyWith(state: SessionState.connected, hostPeerId: watchTogetherHostPeerId(sessionId));
 
       _displayName = displayName ?? _generateDisplayName();
 
-      _syncManager = WatchTogetherSyncManager(
-        peerService: _peerService!,
-        session: _session!,
-        displayName: _displayName,
-      );
+      _controller = WatchTogetherController(peerService: _peerService!, session: _session!);
 
-      _syncManager!.onSessionConfigReceived = (controlMode) {
-        _session = _session!.copyWith(controlMode: controlMode);
-        _syncManager!.updateSession(_session!);
-        notifyListeners();
-      };
-
-      _wireSyncStateChanges();
+      _wireController();
       _wireReconnectHandler();
 
       // Add self to participants
       _participants.add(Participant(peerId: _peerService!.myPeerId!, displayName: _displayName, isHost: false));
 
       // Announce join to other participants
-      _syncManager!.announceJoin(_displayName);
+      _controller!.announceJoin(_displayName);
       requestCurrentPlaybackSnapshot();
 
       notifyListeners();
       appLogger.d('WatchTogether: Joined session successfully');
     } catch (e) {
       appLogger.e('WatchTogether: Failed to join session', error: e);
-      _session = _session?.copyWith(state: SessionState.error, errorMessage: e.toString());
-      notifyListeners();
+      await leaveSession();
       rethrow;
     }
   }
@@ -345,7 +434,7 @@ class WatchTogetherProvider with ChangeNotifier {
     appLogger.d('WatchTogether: Leaving session');
 
     // Announce leave if connected
-    _syncManager?.announceLeave();
+    _controller?.announceLeave();
 
     // Clean up subscriptions
     unawaited(_peerConnectedSubscription?.cancel());
@@ -362,8 +451,8 @@ class WatchTogetherProvider with ChangeNotifier {
     _cancelHostReconnectGracePeriod();
 
     // Clean up services
-    _syncManager?.dispose();
-    _syncManager = null;
+    _controller?.dispose();
+    _controller = null;
 
     await _peerService?.disconnect();
     _peerService?.dispose();
@@ -372,8 +461,10 @@ class WatchTogetherProvider with ChangeNotifier {
     _session = null;
     _participants.clear();
     _isSyncing = false;
-    _isDeferredPlay = false;
-    _lastHandledCurrentPlaybackKey = null;
+    _isWaitingForPeers = false;
+    _waitingOnPeerIds = const [];
+    _playbackPhase = null;
+    _playbackDispatcher.reset();
     _lastActionEventMs.clear();
     _hostIntentionallyLeft = false;
 
@@ -381,30 +472,47 @@ class WatchTogetherProvider with ChangeNotifier {
     appLogger.d('WatchTogether: Session left');
   }
 
-  /// Attach a player to the sync manager
-  void attachPlayer(Player player) {
-    if (_syncManager == null) {
-      appLogger.w('WatchTogether: Cannot attach player - no sync manager');
+  /// Attach a player to the sync controller for the given media.
+  ///
+  /// [hasFirstFrame] is the screen's first-frame snapshot, [startupHold]
+  /// delays sync readiness past platform startup gates (frame-rate switch),
+  /// and [remoteSeek] routes sync-issued seeks through the screen's seek
+  /// path (Plex transcode restarts).
+  void attachPlayer(
+    Player player, {
+    required String ratingKey,
+    required String serverId,
+    String? mediaTitle,
+    bool hasFirstFrame = false,
+    Future<void>? startupHold,
+    Future<void> Function(Duration target)? remoteSeek,
+  }) {
+    if (_controller == null) {
+      appLogger.w('WatchTogether: Cannot attach player - no sync controller');
       return;
     }
 
-    // Initialize sync manager with existing participants (may have joined before player attached)
-    final peerIds = _participants.map((p) => p.peerId).toList();
-    _syncManager!.initializeParticipants(peerIds);
-
-    _syncManager!.attachPlayer(player);
-    appLogger.d('WatchTogether: Player attached to sync manager');
+    _controller!.attachPlayer(
+      player,
+      ratingKey: ratingKey,
+      serverId: serverId,
+      mediaTitle: mediaTitle,
+      hasFirstFrame: hasFirstFrame,
+      startupHold: startupHold,
+      remoteSeek: remoteSeek,
+    );
   }
 
-  /// Detach the player from the sync manager
-  void detachPlayer() {
-    _syncManager?.detachPlayer();
-    appLogger.d('WatchTogether: Player detached from sync manager');
+  /// Detach the player from the sync controller. [exiting] means the user
+  /// left the video player (ends the media epoch); episode switches detach
+  /// without exiting.
+  void detachPlayer({bool exiting = false}) {
+    _controller?.detachPlayer(exiting: exiting);
   }
 
-  /// Suppress position sync while the app is backgrounded.
+  /// Suppress sync heartbeats/corrections while the app is backgrounded.
   void setBackgrounded(bool value) {
-    _syncManager?.setBackgrounded(value);
+    _controller?.setBackgrounded(value);
   }
 
   /// Set up listeners for peer service events
@@ -429,10 +537,10 @@ class WatchTogetherProvider with ChangeNotifier {
       appLogger.d('WatchTogether: Peer disconnected: $peerId');
 
       // Capture display name before removal for notification
-      final disconnectedName = _participants.where((p) => p.peerId == peerId).map((p) => p.displayName).firstOrNull;
+      final disconnectedName = _displayNameForPeer(peerId);
 
+      // The sync controller observes peer disconnects itself.
       _participants.removeWhere((p) => p.peerId == peerId);
-      unawaited(_syncManager?.handlePeerDisconnected(peerId));
 
       // If host disconnected unexpectedly, start grace period for reconnection.
       // Skip if the host already sent a deliberate leave message.
@@ -502,10 +610,7 @@ class WatchTogetherProvider with ChangeNotifier {
 
       case SyncMessageType.leave:
         if (message.peerId != null) {
-          final leavingName = _participants
-              .where((p) => p.peerId == message.peerId)
-              .map((p) => p.displayName)
-              .firstOrNull;
+          final leavingName = _displayNameForPeer(message.peerId);
           _participants.removeWhere((p) => p.peerId == message.peerId);
           if (leavingName != null) {
             _participantEventController.add(
@@ -516,7 +621,7 @@ class WatchTogetherProvider with ChangeNotifier {
           // If the host deliberately left, end the session for everyone.
           if (!isHost && message.peerId == _session?.hostPeerId) {
             _hostIntentionallyLeft = true;
-            _handleHostExitedPlayer(message);
+            _handleHostExitedPlayer();
             leaveSession();
           }
 
@@ -524,61 +629,12 @@ class WatchTogetherProvider with ChangeNotifier {
         }
         break;
 
-      case SyncMessageType.buffering:
-        if (message.peerId != null) {
-          final index = _participants.indexWhere((p) => p.peerId == message.peerId);
-          if (index >= 0) {
-            final newState = message.bufferingState ?? false;
-            if (_participants[index].isBuffering != newState) {
-              _participants[index] = _participants[index].copyWith(isBuffering: newState);
-              if (newState) {
-                _emitActionEvent(message.peerId, ParticipantEventType.buffering);
-              }
-              notifyListeners();
-            }
-          }
-        }
-        break;
-
-      case SyncMessageType.positionSync:
-        if (message.peerId != null && message.position != null) {
-          final index = _participants.indexWhere((p) => p.peerId == message.peerId);
-          if (index >= 0) {
-            _participants[index] = _participants[index].copyWith(lastKnownPosition: message.position!);
-            // Don't notify for position updates - too frequent
-          }
-        }
-        break;
-
-      case SyncMessageType.mediaSwitch:
-        _handleMediaSwitch(message);
-        break;
-
-      case SyncMessageType.hostExitedPlayer:
-        _handleHostExitedPlayer(message);
-        break;
-
-      case SyncMessageType.sessionConfig:
-        _handleSessionConfig(message);
-        break;
-
-      case SyncMessageType.requestSessionConfig:
-        // Handled at sync manager level (host responds with config)
-        break;
-
-      case SyncMessageType.play:
-        _emitActionEvent(message.peerId, ParticipantEventType.resumed);
-        break;
-
-      case SyncMessageType.pause:
-        _emitActionEvent(message.peerId, ParticipantEventType.paused);
-        break;
-
-      case SyncMessageType.seek:
-        _emitActionEvent(message.peerId, ParticipantEventType.seeked);
-        break;
+      // hostExitedPlayer is routed through the controller's ordered message
+      // queue so it can't overtake (or be overtaken by) state messages.
 
       default:
+        // Playback sync messages (state/status/control/...) are handled by
+        // the session controller.
         break;
     }
   }
@@ -593,49 +649,53 @@ class WatchTogetherProvider with ChangeNotifier {
     if (now - last < 1000) return;
     _lastActionEventMs[key] = now;
 
-    final name = _participants.where((p) => p.peerId == peerId).map((p) => p.displayName).firstOrNull;
+    final name = _displayNameForPeer(peerId);
     if (name != null) {
       _participantEventController.add(ParticipantEvent(displayName: name, type: type));
     }
   }
 
-  /// Handle session config from host (guest only)
-  /// This is handled at provider level so it's processed even before player is attached
-  void _handleSessionConfig(SyncMessage message) {
-    if (isHost) return; // Host doesn't need to process config
+  /// Handle current-media info carried in the host's playback state
+  /// (guest only). Processed even when no player is attached so guests can
+  /// navigate into (or between) playback.
+  void _handleMediaStateReceived(String ratingKey, String serverId, String? mediaTitle) {
+    if (isHost) return;
 
-    if (message.controlMode != null) {
-      appLogger.d('WatchTogether: Received session config, controlMode: ${message.controlMode}');
-      _session = _session!.copyWith(controlMode: message.controlMode!);
-      _syncManager?.updateSession(_session!); // Update sync manager if it exists
-      notifyListeners();
+    final typedServerId = serverIdOrNull(serverId);
+    if (typedServerId == null) {
+      appLogger.w('WatchTogether: Ignoring playback state with blank serverId');
+      return;
     }
+    final playbackKey = _buildPlaybackKey(ratingKey, typedServerId);
 
-    if (message.ratingKey != null && message.serverId != null && message.mediaTitle != null) {
-      final playbackKey = _buildPlaybackKey(message.ratingKey, message.serverId);
-      final shouldDispatch = playbackKey != _lastHandledCurrentPlaybackKey;
+    // Detached guests receive this on every heartbeat; only rebuild when the
+    // snapshot actually changes.
+    final session = _session;
+    final snapshotChanged =
+        session == null ||
+        session.mediaRatingKey != ratingKey ||
+        session.mediaServerId != typedServerId ||
+        session.mediaTitle != (mediaTitle ?? '');
+    _updateCurrentPlaybackSnapshot(ratingKey: ratingKey, serverId: typedServerId, mediaTitle: mediaTitle ?? '');
+    if (snapshotChanged) notifyListeners();
 
-      _updateCurrentPlaybackSnapshot(
-        ratingKey: message.ratingKey!,
-        serverId: message.serverId!,
-        mediaTitle: message.mediaTitle!,
+    if (_playbackDispatcher.shouldDispatch(playbackKey)) {
+      _dispatchCurrentPlayback(
+        ratingKey: ratingKey,
+        serverId: typedServerId,
+        mediaTitle: mediaTitle ?? '',
+        source: 'playback state',
       );
-      notifyListeners();
-
-      if (shouldDispatch) {
-        _dispatchCurrentPlayback(
-          ratingKey: message.ratingKey!,
-          serverId: message.serverId!,
-          mediaTitle: message.mediaTitle!,
-          source: 'session config',
-        );
-      }
     }
   }
 
-  /// Called when user seeks locally (to broadcast to peers)
+  @visibleForTesting
+  void debugHandleMediaState(String ratingKey, String serverId, String? mediaTitle) =>
+      _handleMediaStateReceived(ratingKey, serverId, mediaTitle);
+
+  /// Called when user seeks locally (to sync with peers)
   void onLocalSeek(Duration position) {
-    _syncManager?.onLocalSeek(position);
+    _controller?.onLocalSeek(position);
   }
 
   /// Whether the current user can control playback
@@ -649,7 +709,7 @@ class WatchTogetherProvider with ChangeNotifier {
   ///
   /// Call this when the host starts playing new content.
   /// Guests will receive a media switch notification and should navigate.
-  void setCurrentMedia({required String ratingKey, required String serverId, required String mediaTitle}) {
+  void setCurrentMedia({required String ratingKey, required ServerId serverId, required String mediaTitle}) {
     if (!isHost || _session == null || _peerService == null) {
       appLogger.w('WatchTogether: Cannot set media - not host or not in session');
       return;
@@ -660,50 +720,10 @@ class WatchTogetherProvider with ChangeNotifier {
     // Update session with new media info
     _session = _session!.copyWith(mediaRatingKey: ratingKey, mediaServerId: serverId, mediaTitle: mediaTitle);
 
-    // Broadcast media switch to all guests
-    _peerService!.broadcast(
-      SyncMessage.mediaSwitch(
-        ratingKey: ratingKey,
-        serverId: serverId,
-        mediaTitle: mediaTitle,
-        peerId: _peerService!.myPeerId,
-      ),
-    );
+    // The controller broadcasts the new media epoch in its playback state.
+    _controller?.setCurrentMedia(ratingKey: ratingKey, serverId: serverId, mediaTitle: mediaTitle);
 
     notifyListeners();
-  }
-
-  /// Handle media switch message from host (guest only)
-  void _handleMediaSwitch(SyncMessage message) {
-    if (isHost) return; // Host doesn't need to handle their own switch
-
-    if (message.ratingKey == null || message.serverId == null || message.mediaTitle == null) {
-      appLogger.w('WatchTogether: Received incomplete media switch message');
-      return;
-    }
-
-    final playbackKey = _buildPlaybackKey(message.ratingKey, message.serverId);
-    final shouldDispatch = playbackKey != _lastHandledCurrentPlaybackKey;
-
-    _updateCurrentPlaybackSnapshot(
-      ratingKey: message.ratingKey!,
-      serverId: message.serverId!,
-      mediaTitle: message.mediaTitle!,
-    );
-    notifyListeners();
-
-    if (!shouldDispatch) {
-      appLogger.d('WatchTogether: Ignoring duplicate media switch for ${message.ratingKey}');
-      return;
-    }
-
-    appLogger.d('WatchTogether: Received media switch: ${message.mediaTitle}');
-    _dispatchCurrentPlayback(
-      ratingKey: message.ratingKey!,
-      serverId: message.serverId!,
-      mediaTitle: message.mediaTitle!,
-      source: 'media switch',
-    );
   }
 
   /// Notify guests that host is exiting the video player
@@ -720,7 +740,7 @@ class WatchTogetherProvider with ChangeNotifier {
   }
 
   /// Handle host exited player message (guest only)
-  void _handleHostExitedPlayer(SyncMessage _) {
+  void _handleHostExitedPlayer() {
     if (isHost) return; // Host doesn't need to handle their own exit
 
     appLogger.d('WatchTogether: Host exited player, callback set: ${onHostExitedPlayer != null}');
@@ -781,7 +801,7 @@ class WatchTogetherProvider with ChangeNotifier {
 }
 
 /// Type of participant event
-enum ParticipantEventType { joined, left, paused, resumed, seeked, buffering }
+enum ParticipantEventType { joined, left, paused, resumed, seeked, buffering, needsUpdate, resumedWithout }
 
 /// Event emitted when a participant joins or leaves
 class ParticipantEvent {

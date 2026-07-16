@@ -284,31 +284,10 @@ class MpvPlayerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler, MpvPluginS
     }
   }
 
-  private func handleSetProperty(call: FlutterMethodCall, result: @escaping FlutterResult) {
-    guard let args = call.arguments as? [String: Any],
-      let name = args["name"] as? String,
-      let value = args["value"] as? String
-    else {
-      result(
-        FlutterError(
-          code: "INVALID_ARGS", message: "Missing 'name' or 'value' argument",
-          details: nil))
-      return
-    }
-
-    guard let core = playerCore else {
-      result(nil)
-      return
-    }
-
-    core.setPropertyAsync(name, value: value) { [weak self] _ in
-      if name == "pause" {
-        let isPlaying = value == "no"
-        self?.pipController?.setPlaying(isPlaying)
-        core.setPaused(!isPlaying)
-      }
-      result(nil)
-    }
+  func didSetPauseProperty(value: String) {
+    let isPlaying = value == "no"
+    pipController?.setPlaying(isPlaying)
+    playerCore?.setPaused(!isPlaying)
   }
 
   // MARK: - Helpers

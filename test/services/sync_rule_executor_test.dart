@@ -1,4 +1,5 @@
 import 'package:drift/native.dart';
+import 'package:plezy/media/ids.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
@@ -16,14 +17,14 @@ import 'package:plezy/services/jellyfin_client.dart';
 import 'package:plezy/services/multi_server_manager.dart';
 import 'package:plezy/services/sync_rule_executor.dart';
 
+import '../test_helpers/backend_client_fixtures.dart';
 import '../test_helpers/prefs.dart';
+import '../test_helpers/media_items.dart';
 
-JellyfinConnection _jellyfinConnection(String userId) => JellyfinConnection(
-  id: 'jf-machine/$userId',
-  baseUrl: 'https://jf.example.com',
-  serverName: 'Shared JF',
-  serverMachineId: 'jf-machine',
+JellyfinConnection _jellyfinConnection(String userId) => testJellyfinConnection(
+  machineId: 'jf-machine',
   userId: userId,
+  serverName: 'Shared JF',
   userName: userId,
   accessToken: 'token-$userId',
   deviceId: 'device',
@@ -78,21 +79,21 @@ void main() {
 
     await db.insertSyncRule(
       profileId: 'profile-a',
-      serverId: 'jf-machine',
+      serverId: ServerId('jf-machine'),
       ratingKey: 'show-1',
       globalKey: 'profile-a|jf-machine:show-1',
       targetType: 'show',
       episodeCount: 1,
     );
     await db.insertWatchAction(
-      serverId: 'jf-machine',
+      serverId: ServerId('jf-machine'),
       clientScopeId: 'jf-machine/user-b',
       ratingKey: 'ep-1',
       actionType: OfflineActionType.watched.id,
     );
     await db.insertWatchAction(
       profileId: 'profile-b',
-      serverId: 'jf-machine',
+      serverId: ServerId('jf-machine'),
       clientScopeId: 'jf-machine/user-a',
       ratingKey: 'ep-1',
       actionType: OfflineActionType.watched.id,
@@ -109,6 +110,7 @@ void main() {
         queued.add((item: item, client: client));
         return true;
       },
+      isOffline: false,
       force: true,
     );
 
@@ -154,7 +156,7 @@ void main() {
 
     await db.insertSyncRule(
       profileId: 'profile-a',
-      serverId: 'jf-machine',
+      serverId: ServerId('jf-machine'),
       ratingKey: 'show-1',
       globalKey: 'profile-a|jf-machine:show-1',
       targetType: 'show',
@@ -162,7 +164,7 @@ void main() {
     );
     await db.insertWatchAction(
       profileId: 'profile-a',
-      serverId: 'jf-machine',
+      serverId: ServerId('jf-machine'),
       clientScopeId: 'jf-machine/user-a',
       ratingKey: 'ep-1',
       actionType: OfflineActionType.watched.id,
@@ -179,6 +181,7 @@ void main() {
         queued.add(item);
         return true;
       },
+      isOffline: false,
       force: true,
     );
 
@@ -209,7 +212,7 @@ void main() {
 
     await db.insertSyncRule(
       profileId: 'profile-a',
-      serverId: 'jf-machine',
+      serverId: ServerId('jf-machine'),
       ratingKey: 'show-1',
       globalKey: 'profile-a|jf-machine:show-1',
       targetType: 'show',
@@ -223,6 +226,7 @@ void main() {
       downloads: const {},
       metadata: const {},
       queueSingleDownload: (item, client, {int mediaIndex = 0}) async => true,
+      isOffline: false,
       force: true,
     );
 
@@ -266,7 +270,7 @@ void main() {
 
     await db.insertSyncRule(
       profileId: 'profile-b',
-      serverId: 'jf-machine',
+      serverId: ServerId('jf-machine'),
       ratingKey: 'show-1',
       globalKey: 'profile-b|jf-machine:show-1',
       targetType: 'show',
@@ -286,12 +290,60 @@ void main() {
         queued.add(item);
         return true;
       },
+      isOffline: false,
       force: true,
     );
 
     expect(results, isEmpty);
     expect(queued, isEmpty);
     expect(paths.where((p) => p.startsWith('GET /Items?')), isNotEmpty);
+  });
+
+  test('show sync rule respects includeSpecials=false when expanding episodes', () async {
+    final db = AppDatabase.forTesting(NativeDatabase.memory());
+    final manager = MultiServerManager();
+    addTearDown(() async {
+      manager.dispose();
+      await db.close();
+    });
+
+    final client = _PlayableDescendantsClient([
+      _episode('s1e1', parentIndex: 1, index: 1, originallyAvailableAt: '2022-10-05'),
+      _episode('s0e1', parentIndex: 0, index: 1, originallyAvailableAt: '2022-10-27'),
+      _episode('s1e2', parentIndex: 1, index: 2, originallyAvailableAt: '2022-11-02'),
+    ]);
+    manager.debugRegisterClientForTesting(client);
+
+    const ruleKey = 'profile-a|plex-machine:show-1';
+    final show = testMediaItem(id: 'show-1', backend: MediaBackend.plex, kind: MediaKind.show, title: 'Show');
+    await db.insertSyncRule(
+      profileId: 'profile-a',
+      serverId: ServerId('plex-machine'),
+      ratingKey: 'show-1',
+      globalKey: ruleKey,
+      targetType: 'show',
+      episodeCount: 0,
+      includeSpecials: false,
+    );
+
+    final queued = <MediaItem>[];
+    final executor = SyncRuleExecutor(database: db);
+    final results = await executor.executeSyncRules(
+      profileId: 'profile-a',
+      serverManager: manager,
+      downloads: const {},
+      metadata: {ruleKey: show},
+      queueSingleDownload: (item, client, {int mediaIndex = 0}) async {
+        queued.add(item);
+        return true;
+      },
+      isOffline: false,
+      force: true,
+    );
+
+    expect(results.single.queuedCount, 2);
+    expect(queued.map((item) => item.id), ['s1e1', 's1e2']);
+    expect(client.fetchPlayableDescendantsCalls, ['show-1']);
   });
 
   test('collection sync rule pages through collection API instead of metadata children', () async {
@@ -306,7 +358,7 @@ void main() {
     manager.debugRegisterClientForTesting(client);
 
     const ruleKey = 'profile-a|plex-machine:collection-1';
-    final collection = MediaItem(
+    final collection = testMediaItem(
       id: 'collection-1',
       backend: MediaBackend.plex,
       kind: MediaKind.collection,
@@ -316,7 +368,7 @@ void main() {
 
     await db.insertSyncRule(
       profileId: 'profile-a',
-      serverId: 'plex-machine',
+      serverId: ServerId('plex-machine'),
       ratingKey: 'collection-1',
       globalKey: ruleKey,
       targetType: 'collection',
@@ -335,6 +387,7 @@ void main() {
         queued.add(item);
         return true;
       },
+      isOffline: false,
       force: true,
     );
 
@@ -343,6 +396,92 @@ void main() {
     expect(client.collectionPageCalls, [(start: 0, size: 100)]);
     expect(client.fetchChildrenCalled, isFalse);
   });
+
+  test('collectItemsForList accepts tracks and expands albums/artists', () async {
+    final db = AppDatabase.forTesting(NativeDatabase.memory());
+    addTearDown(db.close);
+    final executor = SyncRuleExecutor(database: db);
+
+    final albumTracks = [_track('album-track-1'), _track('album-track-2', played: true)];
+    final client = _PlayableDescendantsClient(albumTracks);
+
+    final items = [
+      _track('loose-track'),
+      testMediaItem(id: 'album-1', backend: MediaBackend.plex, kind: MediaKind.album, title: 'Album'),
+      testMediaItem(id: 'artist-1', backend: MediaBackend.plex, kind: MediaKind.artist, title: 'Artist'),
+      // Still skipped: nested lists / unplayable kinds.
+      testMediaItem(id: 'photo-1', backend: MediaBackend.plex, kind: MediaKind.photo, title: 'Photo'),
+    ];
+
+    final out = <MediaItem>[];
+    await executor.collectItemsForList(client, items, unwatchedOnly: false, out: out);
+
+    expect(client.fetchPlayableDescendantsCalls, ['album-1', 'artist-1']);
+    expect(out.map((i) => i.id), ['loose-track', 'album-track-1', 'album-track-2', 'album-track-1', 'album-track-2']);
+
+    // unwatchedOnly applies the play-count filter to tracks too.
+    final unwatched = <MediaItem>[];
+    await executor.collectItemsForList(
+      client,
+      [_track('played-track', played: true), items[1]],
+      unwatchedOnly: true,
+      out: unwatched,
+    );
+    expect(unwatched.map((i) => i.id), ['album-track-1']);
+  });
+}
+
+MediaItem _track(String id, {bool played = false}) {
+  return testMediaItem(id: id, backend: MediaBackend.plex, kind: MediaKind.track, title: id, viewCount: played ? 1 : 0);
+}
+
+MediaItem _episode(String id, {required int parentIndex, required int index, String? originallyAvailableAt}) {
+  return testMediaItem(
+    id: id,
+    backend: MediaBackend.plex,
+    kind: MediaKind.episode,
+    title: id,
+    parentIndex: parentIndex,
+    index: index,
+    originallyAvailableAt: originallyAvailableAt,
+  );
+}
+
+class _PlayableDescendantsClient implements MediaServerClient {
+  _PlayableDescendantsClient(this.leaves);
+
+  final List<MediaItem> leaves;
+  final fetchPlayableDescendantsCalls = <String>[];
+
+  @override
+  ServerId get serverId => ServerId('plex-machine');
+
+  @override
+  String? get serverName => 'Plex';
+
+  @override
+  MediaBackend get backend => MediaBackend.plex;
+
+  @override
+  ServerCapabilities get capabilities => ServerCapabilities.plex;
+
+  @override
+  bool get isOfflineMode => false;
+
+  @override
+  void close() {}
+
+  @override
+  Future<MediaItem?> fetchItem(String id) async => null;
+
+  @override
+  Future<List<MediaItem>> fetchPlayableDescendants(String parentId) async {
+    fetchPlayableDescendantsCalls.add(parentId);
+    return leaves;
+  }
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
 class _CollectionPagingClient implements MediaServerClient {
@@ -350,7 +489,7 @@ class _CollectionPagingClient implements MediaServerClient {
   final collectionPageCalls = <({int? start, int? size})>[];
 
   @override
-  String get serverId => 'plex-machine';
+  ServerId get serverId => ServerId('plex-machine');
 
   @override
   String? get serverName => 'Plex';
@@ -388,7 +527,7 @@ class _CollectionPagingClient implements MediaServerClient {
     collectionPageCalls.add((start: start, size: size));
     expect(collectionId, 'collection-1');
     return LibraryPage(
-      items: [MediaItem(id: 'movie-1', backend: MediaBackend.plex, kind: MediaKind.movie, title: 'Movie')],
+      items: [testMediaItem(id: 'movie-1', backend: MediaBackend.plex, kind: MediaKind.movie, title: 'Movie')],
       totalCount: 1,
       offset: start ?? 0,
     );

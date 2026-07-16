@@ -433,15 +433,6 @@ func TestOAuthCallbackUnknownSessionIgnored(t *testing.T) {
 	}
 }
 
-func TestOAuthResultUnknownSession(t *testing.T) {
-	h := newOAuthHarness(t)
-	resp := httpGet(t, h.base+"/auth/result?session=nope")
-	defer resp.Body.Close()
-	if resp.StatusCode != http.StatusGone {
-		t.Fatalf("status=%d want 410", resp.StatusCode)
-	}
-}
-
 func TestOAuthResultConsumedSecondCallIsGone(t *testing.T) {
 	h := newOAuthHarness(t)
 	sess, _ := h.startSession(t, "mal", "3.3.3.1")

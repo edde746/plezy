@@ -78,6 +78,10 @@ ThemeData monoTheme({required bool dark, bool oled = false}) {
     // remove "Material feel"
     splashFactory: NoSplash.splashFactory,
     highlightColor: Colors.transparent,
+    // Explicit mono-derived tile highlights: ListTile's native focus/hover
+    // fill is the dpad focus visual inside M3E grouped-list cards.
+    focusColor: c.text.withValues(alpha: 0.12),
+    hoverColor: c.text.withValues(alpha: 0.05),
     dividerColor: c.outline,
     scaffoldBackgroundColor: c.bg,
     appBarTheme: AppBarTheme(
@@ -86,20 +90,20 @@ ThemeData monoTheme({required bool dark, bool oled = false}) {
       scrolledUnderElevation: 0,
       centerTitle: false,
       foregroundColor: c.text,
-      titleTextStyle: TextStyle(color: c.text, fontSize: 18, fontWeight: FontWeight.w700, letterSpacing: -0.2),
+      titleTextStyle: TextStyle(color: c.text, fontSize: 18, fontWeight: .w700, letterSpacing: -0.2),
     ),
     textTheme: Typography.englishLike2021
         .apply(bodyColor: c.text, displayColor: c.text)
         .copyWith(
-          displayLarge: const TextStyle(fontWeight: FontWeight.w700, letterSpacing: -0.5),
-          titleMedium: const TextStyle(fontWeight: FontWeight.w600),
+          displayLarge: const TextStyle(fontWeight: .w700, letterSpacing: -0.5),
+          titleMedium: const TextStyle(fontWeight: .w600),
           bodyMedium: TextStyle(color: c.text),
           bodySmall: TextStyle(color: c.textMuted),
         ),
     cardTheme: CardThemeData(
       color: c.surface,
       elevation: 0,
-      margin: EdgeInsets.zero,
+      margin: .zero,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(14))),
     ),
     inputDecorationTheme: _inputDecorationTheme(c.text, c.textMuted),
@@ -109,6 +113,10 @@ ThemeData monoTheme({required bool dark, bool oled = false}) {
     outlinedButtonTheme: OutlinedButtonThemeData(style: ButtonStyle(mouseCursor: clickableCursor)),
     iconButtonTheme: IconButtonThemeData(style: ButtonStyle(mouseCursor: clickableCursor)),
     sliderTheme: SliderThemeData(
+      // The mono scheme maps surfaceContainerHighest (the M3 default inactive
+      // track) to the same color as surface cards, which makes the inactive
+      // track invisible inside grouped-list items.
+      inactiveTrackColor: c.text.withValues(alpha: 0.12),
       trackHeight: 16,
       trackGap: 6,
       thumbSize: const WidgetStatePropertyAll(Size(4, 20)),
@@ -145,7 +153,7 @@ ThemeData monoTheme({required bool dark, bool oled = false}) {
       actionTextColor: c.text,
       elevation: 6,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(12))),
-      insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+      insetPadding: const EdgeInsets.all(16),
     ),
   );
 
@@ -154,10 +162,14 @@ ThemeData monoTheme({required bool dark, bool oled = false}) {
       MonoTokens(
         radiusSm: 8,
         radiusMd: 12,
+        radiusLg: 20,
+        radiusXs: 5,
+        groupGap: 2,
         space: 12,
         fast: const Duration(milliseconds: 120),
         normal: const Duration(milliseconds: 200),
         slow: const Duration(milliseconds: 300),
+        expressive: const Duration(milliseconds: 350),
         bg: c.bg,
         surface: c.surface,
         outline: c.outline,

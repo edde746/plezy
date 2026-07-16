@@ -14,6 +14,7 @@ import 'package:plezy/profiles/profile_connection_registry.dart';
 import 'package:plezy/profiles/profile_registry.dart';
 import 'package:plezy/screens/profile/profile_switch_screen.dart';
 import 'package:plezy/services/storage_service.dart';
+import 'package:plezy/theme/mono_theme.dart';
 import 'package:provider/provider.dart';
 
 import '../../test_helpers/prefs.dart';
@@ -61,7 +62,7 @@ void main() {
             Provider<PlexHomeService>.value(value: plexHome),
             ChangeNotifierProvider<ActiveProfileProvider>.value(value: activeProfile),
           ],
-          child: const MaterialApp(home: ProfileSwitchScreen()),
+          child: MaterialApp(theme: monoTheme(dark: true), home: const ProfileSwitchScreen()),
         ),
       ),
     );
@@ -123,7 +124,7 @@ void main() {
             Provider<PlexHomeService>.value(value: plexHome),
             ChangeNotifierProvider<ActiveProfileProvider>.value(value: activeProfile),
           ],
-          child: const MaterialApp(home: ProfileSwitchScreen()),
+          child: MaterialApp(theme: monoTheme(dark: true), home: const ProfileSwitchScreen()),
         ),
       ),
     );

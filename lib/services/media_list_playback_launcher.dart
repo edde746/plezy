@@ -10,6 +10,7 @@ import '../media/media_playlist.dart';
 import '../media/play_queue.dart';
 import '../providers/playback_state_provider.dart';
 import '../utils/app_logger.dart';
+import '../utils/dialogs.dart';
 import '../utils/snackbar_helper.dart';
 import '../utils/video_player_navigation.dart';
 import 'jellyfin_sequential_launcher.dart';
@@ -131,7 +132,7 @@ abstract class MediaListPlaybackLauncher {
     if (showLoading && context.mounted) {
       loadingVisible = true;
       unawaited(
-        showDialog(
+        showScopedDialog<void>(
           context: context,
           barrierDismissible: false,
           builder: (dialogContext) {
@@ -162,14 +163,12 @@ abstract class MediaListPlaybackLauncher {
         showErrorSnackBar(context, t.messages.failedToCreatePlayQueueNoItems);
       }
 
-      await dismissLoading();
       return result;
     } catch (e) {
       appLogger.e('Failed to $actionLabel', error: e);
       if (context.mounted) {
         showErrorSnackBar(context, t.messages.failedPlayback(action: actionLabel, error: e.toString()));
       }
-      await dismissLoading();
       return PlayQueueError(e);
     } finally {
       await dismissLoading();
@@ -201,7 +200,12 @@ abstract class MediaListPlaybackLauncher {
       await navigateForTesting(itemToPlay);
     } else {
       if (!context.mounted) return const PlayQueueError('Context not mounted');
-      await navigateToVideoPlayer(context, metadata: itemToPlay);
+      // The queue holds these exact instances and the player's initState gate
+      // matches by identity — a WatchStateStore clone here would wipe the
+      // launcher-set queue on entry. The items were fetched from the server
+      // in this same user action, so session watch patches are already
+      // reflected.
+      await navigateToVideoPlayer(context, metadata: itemToPlay, resolveWatchState: false);
     }
     return const PlayQueueSuccess();
   }

@@ -1,0 +1,62 @@
+appId: com.edde746.plezy
+name: Manage profiles and open settings
+tags:
+  - e2e
+  - profiles
+  - settings
+---
+- runFlow: ../subflows/onboard_jellyfin.yaml
+- tapOn: "M"
+- tapOn:
+    text: "Profiles"
+    above:
+      text: "Settings"
+- extendedWaitUntil:
+    visible: "Switch Profile"
+    timeout: 10000
+- assertVisible: "(?s).*Maestro.*"
+- tapOn: "Add Plezy profile"
+- extendedWaitUntil:
+    visible: "New profile"
+    timeout: 10000
+- tapOn: "e.g. Guests, Kids, Family Room"
+- inputText: "E2E Guest"
+- hideKeyboard
+- tapOn: "Continue"
+- extendedWaitUntil:
+    visible: "Add to E2E Guest"
+    timeout: 10000
+- assertVisible: "(?s)^Sign in with Plex.*"
+- assertVisible: "(?s)^Connect to Jellyfin.*"
+- back
+- assertVisible: "(?s).*E2E Guest.*"
+- back
+- extendedWaitUntil:
+    visible: "(?s)^Home.*"
+    timeout: 10000
+- waitForAnimationToEnd:
+    timeout: 5000
+- repeat:
+    times: 2
+    while:
+      notVisible: "Settings"
+    commands:
+      - tapOn: "M"
+      - waitForAnimationToEnd:
+          timeout: 3000
+- tapOn:
+    text: "Settings"
+    below:
+      text: "Profiles"
+- extendedWaitUntil:
+    visible: "(?s)^Appearance.*"
+    timeout: 10000
+- assertVisible: "(?s)^Video Playback.*"
+- assertVisible: "(?s)^Connections.*"
+- tapOn: "(?s)^Appearance.*"
+- extendedWaitUntil:
+    visible: "(?s)^Theme.*"
+    timeout: 10000
+- assertVisible: "(?s).*Library Density.*"
+- back
+- assertVisible: "(?s)^Appearance.*"

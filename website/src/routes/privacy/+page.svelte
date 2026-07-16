@@ -165,93 +165,109 @@
 
 <style>
   .privacy-article {
-    max-width: 64rem;
+    width: min(100%, 58rem);
     margin-inline: auto;
-    padding: 4rem 1.5rem;
+    padding: clamp(2rem, 7vw, 6rem) var(--page-gutter) clamp(5rem, 10vw, 9rem);
   }
 
   .back-link {
     display: inline-flex;
+    min-height: 2.75rem;
     align-items: center;
     gap: 0.625rem;
-    margin-bottom: 3rem;
+    margin-bottom: clamp(3rem, 8vw, 6rem);
+    border-radius: var(--radius-full);
+    padding-inline: 0.875rem;
     color: var(--color-text-muted);
-    font-size: 0.875rem;
-    font-weight: 500;
-    line-height: 1.25rem;
-    transition: color 150ms ease;
+    background: var(--color-surface);
+    font-size: 0.8125rem;
+    font-weight: 700;
+    transition:
+      color var(--motion-fast) var(--ease-standard),
+      background-color var(--motion-fast) var(--ease-standard);
   }
 
-  .back-link:hover {
+  .back-link:hover,
+  .back-link:focus-visible {
     color: var(--color-text);
+    background: var(--color-surface-highest);
+    outline: none;
   }
 
   .back-logo :global(svg) {
-    width: 1.5rem;
-    height: 1.5rem;
+    width: 1.375rem;
+    height: 1.375rem;
   }
 
   .privacy-heading {
-    margin-bottom: 0.5rem;
-    font-size: 1.875rem;
+    margin-bottom: 0.75rem;
+    font-family: var(--font-display);
+    font-size: clamp(2.75rem, 9vw, 5rem);
     font-weight: 700;
-    line-height: 2.25rem;
+    letter-spacing: -0.05em;
+    line-height: 1;
   }
 
   .last-updated {
-    margin-bottom: 3rem;
+    margin-bottom: clamp(3rem, 7vw, 5rem);
     color: var(--color-text-muted);
-    font-size: 0.875rem;
-    line-height: 1.25rem;
+    font-family: var(--font-utility);
+    font-size: 0.75rem;
   }
 
   .prose {
+    max-width: 48rem;
     color: var(--color-text-muted);
-    line-height: 1.75;
-    max-width: none;
-  }
-  .prose h2 {
-    color: var(--color-text);
-    font-size: 1.25rem;
-    font-weight: 600;
-    margin-top: 2.5rem;
-    margin-bottom: 0.75rem;
-  }
-  .prose h3 {
-    color: var(--color-text);
     font-size: 1rem;
-    font-weight: 600;
-    margin-top: 1.5rem;
-    margin-bottom: 0.5rem;
+    line-height: 1.8;
   }
+
+  .prose h2 {
+    margin-top: 3.5rem;
+    margin-bottom: 1rem;
+    color: var(--color-text);
+    font-family: var(--font-display);
+    font-size: clamp(1.5rem, 4vw, 2rem);
+    font-weight: 700;
+    letter-spacing: -0.025em;
+    line-height: 1.2;
+  }
+
+  .prose h3 {
+    margin-top: 2rem;
+    margin-bottom: 0.625rem;
+    color: var(--color-text);
+    font-family: var(--font-display);
+    font-size: 1.0625rem;
+    font-weight: 700;
+  }
+
   .prose p {
-    margin-bottom: 1rem;
+    margin-bottom: 1.125rem;
   }
+
   .prose ul {
+    margin-bottom: 1.25rem;
+    border-radius: var(--radius-lg);
+    padding: 1.25rem 1.25rem 1.25rem 2.75rem;
+    background: var(--color-surface);
     list-style: disc;
-    padding-left: 1.5rem;
-    margin-bottom: 1rem;
   }
-  .prose li {
-    margin-bottom: 0.25rem;
+
+  .prose li + li {
+    margin-top: 0.5rem;
   }
+
   .prose a {
-    color: var(--color-accent);
+    color: var(--color-text);
     text-decoration: underline;
-    text-underline-offset: 2px;
-  }
-  .prose a:hover {
-    opacity: 0.8;
+    text-decoration-color: var(--color-text-subtle);
+    text-underline-offset: 0.2em;
   }
 
-  @media (min-width: 640px) {
-    .privacy-article {
-      padding-block: 6rem;
-    }
-
-    .privacy-heading {
-      font-size: 2.25rem;
-      line-height: 2.5rem;
-    }
+  .prose a:hover,
+  .prose a:focus-visible {
+    text-decoration-color: var(--color-text);
+    outline: none;
   }
 </style>

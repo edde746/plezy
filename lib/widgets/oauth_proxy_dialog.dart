@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../i18n/strings.g.dart';
 import '../focus/focusable_button.dart';
+import '../focus/focusable_wrapper.dart';
 import '../services/trackers/oauth_proxy_client.dart';
 import '../utils/snackbar_helper.dart';
+import 'app_icon.dart';
 import 'dialog_action_button.dart';
 import 'loading_indicator_box.dart';
 
@@ -29,19 +32,19 @@ class OAuthProxyDialog extends StatelessWidget {
   Future<void> _copyUrl(BuildContext context) async {
     await Clipboard.setData(ClipboardData(text: start.url));
     if (!context.mounted) return;
-    showAppSnackBar(context, t.trackers.oauthProxy.urlCopied);
+    showAppSnackBar(context, t.services.oauthProxy.urlCopied);
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return AlertDialog(
-      title: Text(t.trackers.oauthProxy.title(service: serviceName)),
+      title: Text(t.services.oauthProxy.title(service: serviceName)),
       content: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: .min,
+        crossAxisAlignment: .start,
         children: [
-          Text(t.trackers.oauthProxy.body, style: theme.textTheme.bodyMedium),
+          Text(t.services.oauthProxy.body, style: theme.textTheme.bodyMedium),
           const SizedBox(height: 16),
           // QrImageView doesn't support intrinsic sizing; wrap in SizedBox so
           // AlertDialog's IntrinsicWidth walk sees a concrete width.
@@ -55,18 +58,26 @@ class OAuthProxyDialog extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 16),
-          InkWell(
-            onTap: () => _copyUrl(context),
-            borderRadius: BorderRadius.circular(8),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              child: Text(
-                start.url,
-                style: theme.textTheme.bodySmall?.copyWith(
-                  fontFamily: 'monospace',
-                  color: theme.colorScheme.onSurfaceVariant,
+          FocusableWrapper(
+            onSelect: () => _copyUrl(context),
+            semanticLabel: t.services.oauthProxy.copyUrl,
+            descendantsAreFocusable: false,
+            borderRadius: 8,
+            useBackgroundFocus: true,
+            child: InkWell(
+              canRequestFocus: false,
+              onTap: () => _copyUrl(context),
+              borderRadius: BorderRadius.circular(8),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                child: Text(
+                  start.url,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    fontFamily: 'monospace',
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                  textAlign: TextAlign.center,
                 ),
-                textAlign: TextAlign.center,
               ),
             ),
           ),
@@ -75,9 +86,10 @@ class OAuthProxyDialog extends StatelessWidget {
             width: double.infinity,
             child: FocusableButton(
               onPressed: _open,
+              useBackgroundFocus: true,
               child: FilledButton.icon(
-                icon: const Icon(Icons.open_in_new),
-                label: Text(t.trackers.oauthProxy.openToSignIn(service: serviceName)),
+                icon: const AppIcon(Symbols.open_in_new_rounded),
+                label: Text(t.services.oauthProxy.openToSignIn(service: serviceName)),
                 onPressed: _open,
               ),
             ),
@@ -87,7 +99,7 @@ class OAuthProxyDialog extends StatelessWidget {
             children: [
               const LoadingIndicatorBox(size: 16),
               const SizedBox(width: 12),
-              Expanded(child: Text(t.trackers.deviceCode.waitingForAuthorization, style: theme.textTheme.bodySmall)),
+              Expanded(child: Text(t.services.deviceCode.waitingForAuthorization, style: theme.textTheme.bodySmall)),
             ],
           ),
         ],
@@ -96,7 +108,7 @@ class OAuthProxyDialog extends StatelessWidget {
         DialogActionButton(
           onPressed: () {
             onCancel();
-            Navigator.of(context, rootNavigator: true).pop();
+            Navigator.of(context).pop();
           },
           label: t.common.cancel,
         ),

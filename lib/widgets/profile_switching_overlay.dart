@@ -17,7 +17,7 @@ class ProfileSwitchingOverlay extends StatelessWidget {
               child: Padding(
                 padding: const EdgeInsets.all(24),
                 child: Column(
-                  mainAxisSize: MainAxisSize.min,
+                  mainAxisSize: .min,
                   children: [
                     const SizedBox(width: 56, height: 56, child: CircularProgressIndicator()),
                     const SizedBox(height: 16),

@@ -1,12 +1,65 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:plezy/media/ids.dart';
 import 'package:plezy/media/media_backend.dart';
+import 'package:plezy/media/media_display_criteria.dart';
 import 'package:plezy/media/media_kind.dart';
+import 'package:plezy/media/media_stream.dart';
 import 'package:plezy/services/plex_mappers.dart';
 
 const _serverId = 'plex-machine-1';
 const _serverName = 'Home';
 
 void main() {
+  test('PlexMetadataDto accepts string ratings', () {
+    final dto = PlexMetadataDto.fromJson({
+      'ratingKey': '1',
+      'rating': '8.8',
+      'audienceRating': '9.1',
+      'userRating': '9.5',
+    });
+
+    expect(dto.rating, 8.8);
+    expect(dto.audienceRating, 9.1);
+    expect(dto.userRating, 9.5);
+  });
+
+  test('display criteria maps each Plex color metadata class', () {
+    final cases = <({Map<String, dynamic> stream, MediaDisplayColorType type, MediaDisplayColorTags tags})>[
+      (
+        stream: {'DOVIProfile': 5, 'DOVIPresent': 1},
+        type: MediaDisplayColorType.dolbyVision,
+        tags: (transfer: null, primaries: null, matrix: null),
+      ),
+      (
+        stream: {'DOVIProfile': 8, 'DOVIBLCompatID': 4},
+        type: MediaDisplayColorType.hlg,
+        tags: (transfer: 'arib-std-b67', primaries: 'bt2020', matrix: 'bt2020nc'),
+      ),
+      (
+        stream: {'colorTrc': 'smpte2084'},
+        type: MediaDisplayColorType.pq,
+        tags: (transfer: 'smpte2084', primaries: 'bt2020', matrix: 'bt2020nc'),
+      ),
+      (
+        stream: <String, dynamic>{},
+        type: MediaDisplayColorType.sdr,
+        tags: (transfer: 'bt709', primaries: 'bt709', matrix: 'bt709'),
+      ),
+    ];
+
+    for (final testCase in cases) {
+      final criteria = PlexMappers.displayCriteriaFromJson({'width': 1920, 'height': 1080}, testCase.stream);
+
+      expect(criteria, isNotNull);
+      expect(criteria!.colorType, testCase.type);
+      expect(
+        (transfer: criteria.transfer, primaries: criteria.primaries, matrix: criteria.matrix),
+        testCase.tags,
+        reason: testCase.type.name,
+      );
+    }
+  });
+
   group('PlexMappers.mediaItem (movie)', () {
     test('maps a Plex movie with watch state, ratings, genres, and people', () {
       final json = {
@@ -60,7 +113,7 @@ void main() {
         ],
       };
 
-      final item = PlexMappers.mediaItemFromJson(json, serverId: _serverId, serverName: _serverName);
+      final item = PlexMappers.mediaItemFromJson(json, serverId: ServerId(_serverId), serverName: _serverName);
 
       expect(item.id, '12345');
       expect(item.backend, MediaBackend.plex);
@@ -132,7 +185,7 @@ void main() {
         'year': 2008,
       };
 
-      final item = PlexMappers.mediaItemFromJson(json, serverId: _serverId);
+      final item = PlexMappers.mediaItemFromJson(json, serverId: ServerId(_serverId));
       expect(item.kind, MediaKind.show);
       expect(item.leafCount, 62);
       expect(item.viewedLeafCount, 62);
@@ -150,7 +203,7 @@ void main() {
         'flattenSeasons': '1',
       };
 
-      final item = PlexMappers.mediaItemFromJson(json, serverId: _serverId);
+      final item = PlexMappers.mediaItemFromJson(json, serverId: ServerId(_serverId));
 
       expect(item.raw, containsPair('key', '/library/metadata/500'));
       expect(item.raw, containsPair('skipChildren', true));
@@ -170,7 +223,7 @@ void main() {
         'viewedLeafCount': 3,
       };
 
-      final item = PlexMappers.mediaItemFromJson(json, serverId: _serverId);
+      final item = PlexMappers.mediaItemFromJson(json, serverId: ServerId(_serverId));
       expect(item.kind, MediaKind.season);
       expect(item.index, 1);
       expect(item.parentId, '500');
@@ -199,7 +252,7 @@ void main() {
         'viewOffset': 1410000,
       };
 
-      final item = PlexMappers.mediaItemFromJson(json, serverId: _serverId);
+      final item = PlexMappers.mediaItemFromJson(json, serverId: ServerId(_serverId));
       expect(item.kind, MediaKind.episode);
       expect(item.index, 1);
       expect(item.parentIndex, 1);
@@ -228,7 +281,7 @@ void main() {
         'leafCount': 13,
       };
 
-      final item = PlexMappers.mediaItemFromJson(json, serverId: _serverId);
+      final item = PlexMappers.mediaItemFromJson(json, serverId: ServerId(_serverId));
       expect(item.kind, MediaKind.album);
       expect(item.title, 'Random Access Memories');
       expect(item.parentId, '699');
@@ -251,7 +304,7 @@ void main() {
         'duration': 369000,
       };
 
-      final item = PlexMappers.mediaItemFromJson(json, serverId: _serverId);
+      final item = PlexMappers.mediaItemFromJson(json, serverId: ServerId(_serverId));
       expect(item.kind, MediaKind.track);
       expect(item.title, 'Get Lucky');
       expect(item.index, 8);
@@ -279,13 +332,30 @@ void main() {
             'height': 1080,
             'container': 'mkv',
             'Part': [
-              {'key': '/library/parts/1/file.mkv'},
+              {
+                'key': '/library/parts/1/file.mkv',
+                'Stream': [
+                  {
+                    'id': 10,
+                    'streamType': 1,
+                    'codec': 'hevc',
+                    'frameRate': 23.976,
+                    'DOVIProfile': 8,
+                    'DOVIPresent': 1,
+                    'DOVIBLCompatID': 1,
+                    'colorTrc': 'smpte2084',
+                    'colorPrimaries': 'bt2020',
+                    'colorSpace': 'bt2020nc',
+                  },
+                  {'id': 11, 'streamType': 2, 'codec': 'eac3', 'channels': 6, 'languageCode': 'eng', 'selected': true},
+                ],
+              },
             ],
           },
         ],
       };
 
-      final item = PlexMappers.mediaItemFromJson(json, serverId: _serverId);
+      final item = PlexMappers.mediaItemFromJson(json, serverId: ServerId(_serverId));
       expect(item.mediaVersions, isNotNull);
       final v = item.mediaVersions!.single;
       expect(v.id, '1');
@@ -296,6 +366,56 @@ void main() {
       expect(v.height, 1080);
       expect(v.container, 'mkv');
       expect(v.parts.single.streamPath, '/library/parts/1/file.mkv');
+      final video = v.parts.single.streams.firstWhere((stream) => stream.kind == MediaStreamKind.video);
+      expect(video.codec, 'hevc');
+      expect(video.frameRate, closeTo(23.976, 0.001));
+      expect(video.hdr, isTrue);
+      expect(video.dolbyVision, isTrue);
+      expect(video.dolbyVisionProfile, 8);
+      final audio = v.parts.single.streams.firstWhere((stream) => stream.kind == MediaStreamKind.audio);
+      expect(audio.codec, 'eac3');
+      expect(audio.channels, 6);
+      expect(audio.selected, isTrue);
+    });
+
+    test('Media-level audio and file hints backfill streams when Part.Stream is absent', () {
+      final json = {
+        'ratingKey': '6048',
+        'type': 'episode',
+        'title': 'Hello, Ms. Cobel',
+        'Media': [
+          {
+            'id': '6136',
+            'videoResolution': '4k',
+            'videoCodec': 'hevc',
+            'audioCodec': 'eac3',
+            'audioChannels': '6',
+            'width': '3840',
+            'height': '1606',
+            'container': 'mkv',
+            'Part': [
+              {
+                'id': '6154',
+                'key': '/library/parts/6154/file.mkv',
+                'file': '/tv/Severance.S02.Hybrid.MULTI.2160p.WEB-DL.DV.HDR.H265-AOC/S02/S02E01.mkv',
+              },
+            ],
+          },
+        ],
+      };
+
+      final item = PlexMappers.mediaItemFromJson(json, serverId: ServerId(_serverId));
+      final part = item.mediaVersions!.single.parts.single;
+      final video = part.streams.firstWhere((stream) => stream.kind == MediaStreamKind.video);
+      final audio = part.streams.firstWhere((stream) => stream.kind == MediaStreamKind.audio);
+
+      expect(video.codec, 'hevc');
+      expect(video.hdr, isTrue);
+      expect(video.dolbyVision, isTrue);
+      expect(video.dolbyVisionProfile, isNull);
+      expect(audio.codec, 'eac3');
+      expect(audio.channels, 6);
+      expect(audio.selected, isTrue);
     });
 
     test('Image array (clearLogo, backgroundSquare) is hoisted onto top-level fields', () {
@@ -310,7 +430,7 @@ void main() {
         ],
       };
 
-      final item = PlexMappers.mediaItemFromJson(json, serverId: _serverId);
+      final item = PlexMappers.mediaItemFromJson(json, serverId: ServerId(_serverId));
       expect(item.clearLogoPath, '/library/metadata/12345/clearLogo');
       expect(item.backgroundSquarePath, '/library/metadata/12345/squareBg');
     });
@@ -329,7 +449,7 @@ void main() {
         'hidden': 0,
       };
 
-      final lib = PlexMappers.mediaLibraryFromJson(json, serverId: _serverId, serverName: _serverName);
+      final lib = PlexMappers.mediaLibraryFromJson(json, serverId: ServerId(_serverId), serverName: _serverName);
       expect(lib.id, '1');
       expect(lib.backend, MediaBackend.plex);
       expect(lib.title, 'Movies');
@@ -345,13 +465,13 @@ void main() {
 
     test('shared library is marked isShared', () {
       final json = {'key': 'shared', 'title': 'Shared with you', 'type': 'movie'};
-      final lib = PlexMappers.mediaLibraryFromJson(json, serverId: _serverId, isShared: true);
+      final lib = PlexMappers.mediaLibraryFromJson(json, serverId: ServerId(_serverId), isShared: true);
       expect(lib.isShared, isTrue);
     });
 
     test('hidden=1 maps to true', () {
       final json = {'key': '2', 'title': 'Hidden', 'type': 'show', 'hidden': 1};
-      final lib = PlexMappers.mediaLibraryFromJson(json, serverId: _serverId);
+      final lib = PlexMappers.mediaLibraryFromJson(json, serverId: ServerId(_serverId));
       expect(lib.hidden, isTrue);
     });
 
@@ -384,7 +504,7 @@ void main() {
       // PlexLibraryDto.fromJson would throw TypeError when Plex omitted
       // either field. Confirms graceful degradation.
       final json = {'key': '99'};
-      final lib = PlexMappers.mediaLibraryFromJson(json, serverId: _serverId);
+      final lib = PlexMappers.mediaLibraryFromJson(json, serverId: ServerId(_serverId));
       expect(lib.id, '99');
       expect(lib.title, '');
       expect(lib.kind, MediaKind.unknown);
@@ -406,7 +526,7 @@ void main() {
         ],
       };
 
-      final hub = PlexMappers.mediaHubFromJson(json, serverId: _serverId, serverName: _serverName);
+      final hub = PlexMappers.mediaHubFromJson(json, serverId: ServerId(_serverId), serverName: _serverName);
       expect(hub.id, '/hubs/movie.recentlyAdded');
       expect(hub.identifier, 'movie.recentlyAdded.1');
       expect(hub.title, 'Recently Added Movies');
@@ -436,10 +556,10 @@ void main() {
         ],
       };
 
-      final hub = PlexMappers.mediaHubFromJson(json, serverId: _serverId);
+      final hub = PlexMappers.mediaHubFromJson(json, serverId: ServerId(_serverId));
       expect(hub.items.length, 2);
       expect(hub.items[0].kind, MediaKind.show);
-      expect(hub.items[1].kind, MediaKind.unknown);
+      expect(hub.items[1].kind, MediaKind.folder);
     });
 
     test('parses Metadata + Directory together', () {
@@ -455,7 +575,7 @@ void main() {
         ],
       };
 
-      final hub = PlexMappers.mediaHubFromJson(json, serverId: _serverId);
+      final hub = PlexMappers.mediaHubFromJson(json, serverId: ServerId(_serverId));
       expect(hub.items.length, 2);
       expect(hub.items[0].kind, MediaKind.movie);
       expect(hub.items[1].kind, MediaKind.show);
@@ -482,7 +602,7 @@ void main() {
         'thumb': '/playlists/999/thumb',
       };
 
-      final p = PlexMappers.mediaPlaylistFromJson(json, serverId: _serverId, serverName: _serverName);
+      final p = PlexMappers.mediaPlaylistFromJson(json, serverId: ServerId(_serverId), serverName: _serverName);
       expect(p.id, '999');
       expect(p.backend, MediaBackend.plex);
       expect(p.title, 'Date Night');
@@ -511,7 +631,7 @@ void main() {
         'playlistType': 'audio',
       };
 
-      final p = PlexMappers.mediaPlaylistFromJson(json, serverId: _serverId);
+      final p = PlexMappers.mediaPlaylistFromJson(json, serverId: ServerId(_serverId));
       expect(p.smart, isTrue);
       expect(p.playlistType, 'audio');
     });
@@ -521,7 +641,7 @@ void main() {
       // PlexPlaylistDto.fromJson would throw TypeError when Plex omitted
       // optional fields. Confirms graceful degradation.
       final json = {'ratingKey': '777', 'title': 'Bare', 'summary': null};
-      final p = PlexMappers.mediaPlaylistFromJson(json, serverId: _serverId);
+      final p = PlexMappers.mediaPlaylistFromJson(json, serverId: ServerId(_serverId));
       expect(p.id, '777');
       expect(p.title, 'Bare');
       expect(p.smart, isFalse);
@@ -562,7 +682,7 @@ void main() {
   group('PlexMappers DTO direct entry points', () {
     test('mediaItem (DTO) preserves data identical to JSON path', () {
       final json = {'ratingKey': '1', 'type': 'movie', 'title': 'Test', 'year': 2024};
-      final dto = PlexMetadataDto.fromJsonWithImages(json).copyWith(serverId: _serverId);
+      final dto = PlexMetadataDto.fromJsonWithImages(json).copyWith(serverId: ServerId(_serverId));
       final item = PlexMappers.mediaItem(dto);
       expect(item.id, '1');
       expect(item.title, 'Test');

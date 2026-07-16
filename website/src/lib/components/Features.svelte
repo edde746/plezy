@@ -2,12 +2,15 @@
   import ScrollReveal from "./ScrollReveal.svelte";
   import AppleIcon from "~icons/simple-icons/apple";
   import GooglePlayIcon from "~icons/simple-icons/googleplay";
-  import LinuxIcon from "~icons/simple-icons/linux";
+  import LinuxIcon from "~icons/devicon-plain/linux";
   import AniListIcon from "~icons/simple-icons/anilist";
   import MyAnimeListIcon from "~icons/simple-icons/myanimelist";
   import SimklIcon from "~icons/simple-icons/simkl";
   import TraktIcon from "~icons/simple-icons/trakt";
   import WindowsIcon from "./WindowsIcon.svelte";
+  import ArrowDownTrayIcon from "~icons/heroicons/arrow-down-tray-solid";
+  import PlayIcon from "~icons/heroicons/play-solid";
+  import UserIcon from "~icons/heroicons/user-solid";
 </script>
 
 <section id="features" class="features-section">
@@ -22,45 +25,42 @@
   <div class="bento-grid">
     <!-- HERO: Wide Codec Support — 2col × 2row -->
     <ScrollReveal class="bento-codec">
-      <div class="glass-card feature-card codec-card">
+      <div class="flat-card feature-card codec-card">
         <div class="card-content">
           <h3 class="card-title large">Wide Codec Support</h3>
           <p class="card-copy codec-copy">
             Play without transcoding. Your server does less work — you get better quality.
           </p>
         </div>
-        <!-- Codec wall with accent highlights on key codecs -->
-        <div class="codec-wall" aria-hidden="true">
-          <span class="codec-accent">HEVC</span>
-          <span class="codec-accent-80">AV1</span>
-          <span class="codec-text-70">H.264</span>
-          <span class="codec-text-70">VP9</span>
-          <span class="codec-accent-60">AAC</span>
-          <span class="codec-text-50">FLAC</span>
-          <span class="codec-text-50">OPUS</span>
-          <span class="codec-text-50">EAC3</span>
-          <span class="codec-text-40">DTS</span>
-          <span class="codec-text-40">MPEG-4</span>
-          <span class="codec-text-30">VP8</span>
-          <span class="codec-text-30">ALAC</span>
-          <span class="codec-text-30">TrueHD</span>
-          <span class="codec-text-20">MPEG-2</span>
-          <span class="codec-text-20">VC-1</span>
-          <span class="codec-text-20">AC3</span>
-          <span class="codec-text-15">PCM</span>
-          <span class="codec-text-10">Vorbis</span>
-          <span class="codec-text-10">MP3</span>
-          <span class="codec-text-10">WMA</span>
+        <div class="codec-scatter" aria-hidden="true">
+          <span class="featured" style="--x: 2%; --y: 2%; --r: -5deg;">HEVC</span>
+          <span class="bright" style="--x: 27%; --y: 0%; --r: 4deg;">AV1</span>
+          <span style="--x: 50%; --y: 2%; --r: -2deg;">H.264</span>
+          <span style="--x: 79%; --y: 1%; --r: 3deg;">VP9</span>
+          <span class="featured" style="--x: 0%; --y: 30%; --r: -3deg;">TrueHD</span>
+          <span style="--x: 21%; --y: 29%; --r: 2deg;">EAC3</span>
+          <span style="--x: 39%; --y: 30%; --r: -4deg;">DTS</span>
+          <span style="--x: 54%; --y: 29%; --r: 3deg;">FLAC</span>
+          <span style="--x: 69%; --y: 31%; --r: -2deg;">OPUS</span>
+          <span style="--x: 86%; --y: 30%; --r: 4deg;">AAC</span>
+          <span class="bright" style="--x: 5%; --y: 59%; --r: -3deg;">MPEG-4</span>
+          <span style="--x: 33%; --y: 58%; --r: 2deg;">ALAC</span>
+          <span style="--x: 53%; --y: 60%; --r: -4deg;">MPEG-2</span>
+          <span style="--x: 82%; --y: 59%; --r: 3deg;">VC-1</span>
+          <span style="--x: 1%; --y: 88%; --r: -2deg;">AC3</span>
+          <span style="--x: 18%; --y: 87%; --r: 4deg;">PCM</span>
+          <span style="--x: 34%; --y: 89%; --r: -3deg;">Vorbis</span>
+          <span style="--x: 57%; --y: 87%; --r: 2deg;">MP3</span>
+          <span style="--x: 72%; --y: 89%; --r: -4deg;">WMA</span>
+          <span style="--x: 87%; --y: 87%; --r: 3deg;">VP8</span>
         </div>
-        <div class="codec-fade"></div>
       </div>
     </ScrollReveal>
 
     <!-- HDR -->
     <ScrollReveal delay={50} class="bento-hdr">
-      <div class="glass-card feature-card hdr-card">
-        <!-- Subtle warm glow -->
-        <div class="hdr-glow"></div>
+      <div class="flat-card feature-card hdr-card">
+        <div class="hdr-orb" aria-hidden="true"></div>
         <p class="card-eyebrow">Display</p>
         <div class="card-bottom">
           <p class="hdr-title">
@@ -73,7 +73,7 @@
 
     <!-- Advanced Subtitles -->
     <ScrollReveal delay={100} class="bento-sub">
-      <div class="glass-card feature-card sub-card">
+      <div class="flat-card feature-card sub-card">
         <!-- Fake subtitle lines -->
         <div class="subtitle-lines" aria-hidden="true">
           <div class="subtitle-line wide"></div>
@@ -88,14 +88,14 @@
 
     <!-- Cross-Platform — 1col × 2row tall -->
     <ScrollReveal delay={80} class="bento-cross">
-      <div class="glass-card feature-card cross-card">
+      <div class="flat-card feature-card cross-card">
         <p class="card-title with-gap">Cross-Platform</p>
         <div class="platform-list">
           <div class="platform-row">
             <div class="platform-icon-box">
               <AppleIcon />
             </div>
-            <span>iOS &middot; macOS</span>
+            <span>iOS &middot; macOS &middot; tvOS</span>
           </div>
           <div class="platform-row">
             <div class="platform-icon-box">
@@ -121,41 +121,48 @@
 
     <!-- Offline Downloads -->
     <ScrollReveal delay={150} class="bento-offline">
-      <div class="glass-card feature-card offline-card">
-        <p class="card-title">Offline</p>
-        <!-- Download progress visual -->
-        <div class="progress-block" aria-hidden="true">
-          <div class="progress-track">
-            <div class="progress-fill"></div>
+      <div class="flat-card feature-card offline-card">
+        <div>
+          <p class="card-title">Offline</p>
+          <p class="card-caption">Download &amp; watch anywhere</p>
+        </div>
+        <div class="offline-ready" aria-hidden="true">
+          <span class="offline-progress"><span></span></span>
+          <div class="offline-download-icon">
+            <ArrowDownTrayIcon />
           </div>
-          <p class="progress-caption">Download &amp; watch anywhere</p>
         </div>
       </div>
     </ScrollReveal>
 
     <!-- Watch Together -->
     <ScrollReveal delay={180} class="bento-watch">
-      <div class="glass-card feature-card watch-card">
-        <p class="card-title">Watch Together</p>
-        <!-- Avatar circles -->
-        <div class="avatar-row" aria-hidden="true">
-          <div class="avatar avatar-a">
-            A
+      <div class="flat-card feature-card watch-card">
+        <div>
+          <p class="card-title">Watch Together</p>
+          <p class="card-caption">Perfectly synced playback</p>
+        </div>
+        <div class="watch-sync" aria-hidden="true">
+          <div class="sync-stage">
+            <div class="sync-avatars">
+              <span class="sync-avatar avatar-a"><UserIcon /></span>
+              <span class="sync-avatar avatar-b"><UserIcon /></span>
+              <span class="sync-avatar avatar-c"><UserIcon /></span>
+            </div>
+            <div class="sync-timelines">
+              <span class="sync-track"><span></span></span>
+              <span class="sync-track"><span></span></span>
+              <span class="sync-track"><span></span></span>
+              <span class="sync-cursor"><PlayIcon /></span>
+            </div>
           </div>
-          <div class="avatar avatar-b">
-            B
-          </div>
-          <div class="avatar avatar-c">
-            C
-          </div>
-          <span class="sync-label">Synced</span>
         </div>
       </div>
     </ScrollReveal>
 
     <!-- Tracker Sync -->
     <ScrollReveal delay={210} class="bento-trackers">
-      <div class="glass-card feature-card tracker-card">
+      <div class="flat-card feature-card tracker-card">
         <div class="tracker-copy">
           <p class="card-title">Tracker Sync</p>
           <p class="card-caption">Progress, ratings, and watch history</p>
@@ -183,7 +190,7 @@
 
     <!-- Much More — full width banner -->
     <ScrollReveal delay={270} class="bento-more">
-      <div class="glass-card feature-card more-card">
+      <div class="flat-card feature-card more-card">
         <div>
           <p class="card-title">& much more</p>
           <p class="more-description">
@@ -202,39 +209,56 @@
 
 <style>
   .features-section {
-    max-width: 64rem;
+    width: min(100%, var(--page-width));
     margin-inline: auto;
-    padding: 4rem 1.5rem;
+    padding: clamp(4rem, 9vw, 8rem) var(--page-gutter);
   }
 
   .section-label {
-    margin-bottom: 0.75rem;
-    color: var(--color-accent);
-    font-size: 0.875rem;
-    font-weight: 500;
-    letter-spacing: 0.025em;
-    line-height: 1.25rem;
-    text-transform: uppercase;
+    width: fit-content;
+    margin-bottom: 1rem;
+    border-radius: var(--radius-full);
+    padding: 0.5rem 0.875rem;
+    color: var(--color-text-muted);
+    background: var(--color-surface);
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.03em;
   }
 
   .section-heading {
+    max-width: 13ch;
     margin-bottom: 1rem;
-    font-size: 2.25rem;
+    font-family: var(--font-display);
+    font-size: clamp(2.5rem, 7vw, 4.75rem);
     font-weight: 700;
-    line-height: 2.5rem;
+    letter-spacing: -0.045em;
+    line-height: 1;
+    text-wrap: balance;
   }
 
   .section-description {
-    max-width: 32rem;
-    margin-bottom: 2.5rem;
+    max-width: 34rem;
+    margin-bottom: clamp(2.5rem, 6vw, 4.5rem);
     color: var(--color-text-muted);
-    font-size: 1.125rem;
-    line-height: 1.75rem;
+    font-size: clamp(1rem, 2vw, 1.125rem);
+    line-height: 1.7;
+  }
+
+  .bento-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--group-gap);
+  }
+
+  .bento-grid :global(.scroll-reveal) {
+    height: 100%;
   }
 
   .feature-card {
     height: 100%;
-    border-radius: 1rem;
+    border-radius: var(--radius-xs);
+    background: var(--color-surface);
   }
 
   .codec-card,
@@ -256,7 +280,9 @@
   }
 
   .codec-card {
-    padding: 2rem;
+    min-height: 20.5rem;
+    padding: clamp(1.5rem, 4vw, 1.75rem);
+    isolation: isolate;
   }
 
   .hdr-card,
@@ -265,53 +291,76 @@
   .offline-card,
   .watch-card,
   .tracker-card {
-    padding: 1.5rem;
+    min-height: 10rem;
+    padding: clamp(1.25rem, 3vw, 1.75rem);
+  }
+  .offline-card,
+  .watch-card {
+    padding: 1.25rem;
+  }
+
+  .hdr-card,
+  .cross-card,
+  .watch-card {
+    background: var(--color-surface-high);
+  }
+
+  .sub-card,
+  .offline-card {
+    background: var(--color-surface-highest);
   }
 
   .cross-card {
     display: flex;
     flex-direction: column;
+    min-height: 20.5rem;
   }
 
   .tracker-card {
-    gap: 1rem;
+    gap: 1.5rem;
   }
 
   .card-content {
     position: relative;
-    z-index: 10;
+    z-index: 1;
   }
 
   .card-title {
-    font-size: 1rem;
-    font-weight: 600;
-    line-height: 1.5rem;
+    font-family: var(--font-display);
+    font-size: 1.0625rem;
+    font-weight: 700;
+    letter-spacing: -0.015em;
+    line-height: 1.35;
   }
 
   .card-title.large {
-    margin-bottom: 0.5rem;
-    font-size: 1.25rem;
-    line-height: 1.75rem;
+    max-width: 10ch;
+    margin-bottom: 0.75rem;
+    font-size: clamp(1.75rem, 4vw, 2.75rem);
+    line-height: 1;
   }
 
   .card-title.with-gap {
-    margin-bottom: 1.25rem;
+    margin-bottom: 1.5rem;
   }
 
   .card-copy {
     color: var(--color-text-muted);
     font-size: 0.875rem;
-    line-height: 1.625;
+    line-height: 1.65;
   }
 
   .codec-copy {
-    max-width: 17.5rem;
+    max-width: 19rem;
   }
 
   .card-eyebrow {
-    color: var(--color-text-muted);
-    font-size: 0.75rem;
-    line-height: 1rem;
+    position: relative;
+    z-index: 1;
+    color: var(--color-text-subtle);
+    font-family: var(--font-utility);
+    font-size: 0.6875rem;
+    font-weight: 700;
     letter-spacing: 0.05em;
     text-transform: uppercase;
   }
@@ -321,37 +370,34 @@
     margin-top: auto;
   }
 
-  .hdr-glow {
+  .hdr-orb {
     position: absolute;
     top: -2rem;
-    right: -2rem;
-    width: 6rem;
-    height: 6rem;
-    border-radius: 9999px;
-    background: color-mix(in srgb, var(--color-accent) 15%, transparent);
-    filter: blur(40px);
-    pointer-events: none;
+    right: -1.5rem;
+    width: 8rem;
+    height: 8rem;
+    border-radius: 45% 55% 52% 48%;
+    background: rgb(237 237 237 / 0.08);
+    transform: rotate(20deg);
   }
 
   .hdr-title {
-    color: transparent;
-    background: linear-gradient(to right, var(--color-accent-dim), var(--color-accent));
-    -webkit-background-clip: text;
-    background-clip: text;
-    font-size: 1.875rem;
+    position: relative;
+    font-family: var(--font-display);
+    font-size: clamp(2rem, 5vw, 3rem);
     font-weight: 700;
-    line-height: 1.25;
+    letter-spacing: -0.04em;
+    line-height: 1;
   }
 
   .hdr-subtitle {
-    margin-top: 0.25rem;
-    color: color-mix(in srgb, var(--color-text-muted) 80%, transparent);
-    font-size: 0.875rem;
-    line-height: 1.25rem;
+    position: relative;
+    margin-top: 0.375rem;
+    color: var(--color-text-muted);
+    font-size: 0.8125rem;
   }
 
-  .subtitle-lines,
-  .progress-block {
+  .subtitle-lines {
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
@@ -359,40 +405,52 @@
   }
 
   .subtitle-line {
-    height: 0.375rem;
-    border-radius: 9999px;
+    height: 0.5rem;
+    border-radius: var(--radius-full);
+    background: rgb(237 237 237 / 0.16);
   }
 
   .subtitle-line.wide {
-    width: 75%;
-    background: rgb(255 255 255 / 0.08);
+    width: 78%;
   }
 
   .subtitle-line.short {
-    width: 50%;
-    background: rgb(255 255 255 / 0.05);
+    width: 52%;
+    opacity: 0.65;
   }
 
   .card-caption {
-    margin-top: 0.25rem;
+    margin-top: 0.375rem;
     color: var(--color-text-muted);
     font-size: 0.75rem;
-    line-height: 1rem;
+    line-height: 1.35;
   }
 
   .platform-list {
     display: flex;
     flex-direction: column;
-    gap: 0.75rem;
+    gap: var(--group-gap);
   }
 
   .platform-row {
     display: flex;
+    min-height: 3.25rem;
     align-items: center;
     gap: 0.75rem;
+    border-radius: var(--radius-xs);
+    padding: 0.5rem 0.75rem;
     color: var(--color-text-muted);
-    font-size: 0.875rem;
-    line-height: 1.25rem;
+    background: rgb(237 237 237 / 0.07);
+    font-size: 0.8125rem;
+    font-weight: 600;
+  }
+
+  .platform-row:first-child {
+    border-radius: var(--radius-md) var(--radius-md) var(--radius-xs) var(--radius-xs);
+  }
+
+  .platform-row:last-child {
+    border-radius: var(--radius-xs) var(--radius-xs) var(--radius-md) var(--radius-md);
   }
 
   .platform-icon-box {
@@ -402,146 +460,234 @@
     flex-shrink: 0;
     align-items: center;
     justify-content: center;
-    border-radius: 0.5rem;
-  }
-
-  .platform-icon-box {
-    background: rgb(255 255 255 / 0.05);
+    border-radius: var(--radius-full);
+    color: var(--color-text);
+    background: rgb(237 237 237 / 0.1);
   }
 
   .platform-icon-box :global(svg) {
-    width: 1rem;
-    height: 1rem;
+    width: 0.9375rem;
+    height: 0.9375rem;
   }
 
-  .progress-block {
-    margin-top: 1rem;
-    margin-bottom: 0;
-  }
-
-  .progress-track {
-    height: 0.25rem;
-    overflow: hidden;
-    border-radius: 9999px;
-    background: rgb(255 255 255 / 0.1);
-  }
-
-  .progress-fill {
-    width: 75%;
-    height: 100%;
-    border-radius: 9999px;
-    background: color-mix(in srgb, var(--color-accent) 60%, transparent);
-  }
-
-  .progress-caption {
-    color: color-mix(in srgb, var(--color-text-muted) 60%, transparent);
-    font-size: 0.625rem;
-    line-height: 1;
-  }
-
-  .avatar-row {
+  .offline-ready {
     display: flex;
+    min-width: 0;
     align-items: center;
-    margin-top: 1rem;
+    gap: 0.75rem;
+    margin-top: 0.75rem;
   }
 
-  .avatar {
+  .offline-progress {
+    height: 0.625rem;
+    flex: 1 1 auto;
+    overflow: hidden;
+    border-radius: var(--radius-full);
+    background: rgb(237 237 237 / 0.12);
+  }
+
+  .offline-progress > span {
+    display: block;
+    width: 76%;
+    height: 100%;
+    border-radius: inherit;
+    background: var(--color-brand);
+  }
+
+  .offline-download-icon {
     display: flex;
-    width: 2rem;
-    height: 2rem;
+    width: 2.75rem;
+    height: 2.75rem;
+    flex: 0 0 auto;
     align-items: center;
     justify-content: center;
-    border: 2px solid var(--color-surface);
-    border-radius: 9999px;
-    font-size: 0.625rem;
-    font-weight: 700;
-    line-height: 1;
+    border-radius: var(--radius-full);
+    color: var(--color-bg);
+    background: var(--color-text);
   }
 
-  .avatar + .avatar {
-    margin-left: -0.5rem;
+  .offline-download-icon :global(svg) {
+    width: 1.1rem;
+    height: 1.1rem;
+  }
+
+  .watch-card .card-caption {
+    white-space: nowrap;
+  }
+
+  .watch-sync {
+    margin-top: 0.75rem;
+  }
+
+  .sync-stage {
+    display: grid;
+    grid-template-columns: 1.1rem minmax(0, 1fr);
+    gap: 0.45rem;
+  }
+
+  .sync-avatars,
+  .sync-timelines {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+  }
+
+  .sync-timelines {
+    position: relative;
+  }
+
+  .sync-avatar {
+    display: flex;
+    width: 1.1rem;
+    height: 1.1rem;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-full);
+    font-size: 0.5rem;
+    font-weight: 800;
+  }
+  .sync-avatar :global(svg) {
+    width: 0.6rem;
+    height: 0.6rem;
   }
 
   .avatar-a {
-    color: var(--color-accent);
-    background: color-mix(in srgb, var(--color-accent) 20%, transparent);
+    color: #ffb39d;
+    background: #633326;
   }
 
   .avatar-b {
-    color: #60a5fa;
-    background: rgb(59 130 246 / 0.2);
+    color: #b9d8ff;
+    background: #293d59;
   }
 
   .avatar-c {
-    color: #34d399;
-    background: rgb(16 185 129 / 0.2);
+    color: #b5e6c8;
+    background: #294638;
   }
 
-  .sync-label {
-    margin-left: 0.5rem;
-    color: var(--color-text-muted);
-    font-size: 0.75rem;
-    line-height: 1rem;
+  .sync-track {
+    position: relative;
+    height: 1.1rem;
   }
+
+  .sync-track::before,
+  .sync-track > span {
+    position: absolute;
+    top: 50%;
+    left: 0;
+    height: 0.25rem;
+    border-radius: var(--radius-full);
+    content: "";
+    transform: translateY(-50%);
+  }
+
+  .sync-track::before {
+    width: 100%;
+    background: rgb(237 237 237 / 0.12);
+  }
+
+  .sync-track > span {
+    width: 63%;
+    background: color-mix(in srgb, var(--color-brand) 62%, var(--color-text-muted));
+  }
+
+  .sync-cursor {
+    position: absolute;
+    top: -0.15rem;
+    bottom: -0.15rem;
+    left: 63%;
+    width: 1px;
+    background: var(--color-brand);
+  }
+
+  .sync-cursor :global(svg) {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    box-sizing: border-box;
+    width: 1.1rem;
+    height: 1.1rem;
+    border-radius: var(--radius-full);
+    padding: 0.3rem;
+    color: var(--color-bg);
+    background: var(--color-brand);
+    transform: translate(-50%, -50%);
+  }
+
 
   .tracker-grid {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 0.5rem;
+    gap: var(--group-gap);
   }
 
   .tracker-pill {
     display: flex;
     min-width: 0;
+    min-height: 2.75rem;
     align-items: center;
-    gap: 0.375rem;
-    border-radius: 0.625rem;
-    padding: 0.5rem;
-    color: color-mix(in srgb, var(--color-text-muted) 90%, transparent);
-    background: rgb(255 255 255 / 0.05);
-    font-size: 0.6875rem;
-    font-weight: 600;
-    line-height: 1;
+    gap: 0.5rem;
+    border-radius: var(--radius-xs);
+    padding: 0.625rem 0.75rem;
+    background: rgb(237 237 237 / 0.07);
+    font-size: 0.75rem;
+    font-weight: 700;
+  }
+
+  .tracker-pill:nth-child(1) {
+    border-radius: var(--radius-md) var(--radius-xs) var(--radius-xs) var(--radius-xs);
+  }
+
+  .tracker-pill:nth-child(2) {
+    border-radius: var(--radius-xs) var(--radius-md) var(--radius-xs) var(--radius-xs);
+  }
+
+  .tracker-pill:nth-child(3) {
+    border-radius: var(--radius-xs) var(--radius-xs) var(--radius-xs) var(--radius-md);
+  }
+
+  .tracker-pill:nth-child(4) {
+    border-radius: var(--radius-xs) var(--radius-xs) var(--radius-md) var(--radius-xs);
   }
 
   .tracker-pill :global(svg) {
-    width: 0.875rem;
-    height: 0.875rem;
+    width: 1rem;
+    height: 1rem;
     flex-shrink: 0;
   }
 
   .tracker-pill.trakt {
-    color: #ed1c24;
-    background: color-mix(in srgb, #ed1c24 12%, transparent);
+    color: #ff6b70;
   }
 
   .tracker-pill.mal {
-    color: #2e51a2;
-    background: color-mix(in srgb, #2e51a2 18%, transparent);
+    color: #8caeff;
   }
 
   .tracker-pill.anilist {
-    color: #02a9ff;
-    background: color-mix(in srgb, #02a9ff 14%, transparent);
+    color: #6bcbff;
   }
 
   .tracker-pill.simkl {
-    color: #dbdbe0;
-    background: color-mix(in srgb, #dbdbe0 8%, transparent);
+    color: var(--color-text);
   }
 
   .more-card {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 1.5rem 2rem;
+    gap: 1.5rem;
+    min-height: 7rem;
+    padding: 1.5rem clamp(1.5rem, 4vw, 2.5rem);
   }
 
   .more-description {
-    margin-top: 0.125rem;
+    max-width: 34rem;
+    margin-top: 0.375rem;
     color: var(--color-text-muted);
     font-size: 0.75rem;
-    line-height: 1rem;
+    line-height: 1.45;
   }
 
   .dot-row {
@@ -550,157 +696,171 @@
   }
 
   .dot {
-    width: 0.375rem;
-    height: 0.375rem;
-    border-radius: 9999px;
-  }
-
-  .dot.strong {
-    background: color-mix(in srgb, var(--color-accent) 60%, transparent);
+    width: 0.5rem;
+    height: 0.5rem;
+    border-radius: var(--radius-full);
+    background: var(--color-text);
   }
 
   .dot.medium {
-    background: color-mix(in srgb, var(--color-accent) 40%, transparent);
+    opacity: 0.55;
   }
 
   .dot.faint {
-    background: color-mix(in srgb, var(--color-accent) 20%, transparent);
+    opacity: 0.25;
   }
 
-  .codec-wall {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.5rem 0.75rem;
-    margin-top: 1rem;
-    font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
-    font-size: 0.8125rem;
-    font-weight: 500;
-    line-height: 1.8;
-  }
-
-  .codec-accent {
-    color: var(--color-accent);
-  }
-
-  .codec-accent-80 {
-    color: color-mix(in srgb, var(--color-accent) 80%, transparent);
-  }
-
-  .codec-accent-60 {
-    color: color-mix(in srgb, var(--color-accent) 60%, transparent);
-  }
-
-  .codec-text-70 {
-    color: color-mix(in srgb, var(--color-text) 70%, transparent);
-  }
-
-  .codec-text-50 {
-    color: color-mix(in srgb, var(--color-text) 50%, transparent);
-  }
-
-  .codec-text-40 {
-    color: color-mix(in srgb, var(--color-text) 40%, transparent);
-  }
-
-  .codec-text-30 {
-    color: color-mix(in srgb, var(--color-text) 30%, transparent);
-  }
-
-  .codec-text-20 {
-    color: color-mix(in srgb, var(--color-text) 20%, transparent);
-  }
-
-  .codec-text-15 {
-    color: color-mix(in srgb, var(--color-text) 15%, transparent);
-  }
-
-  .codec-text-10 {
-    color: color-mix(in srgb, var(--color-text) 10%, transparent);
-  }
-
-  .codec-fade {
+  .codec-card::after {
     position: absolute;
-    inset-inline: 0;
-    bottom: 0;
+    right: -5rem;
+    bottom: -7rem;
+    z-index: -1;
+    width: 16rem;
+    height: 16rem;
+    border-radius: var(--radius-full);
+    background: var(--color-surface-high);
+    content: "";
+  }
+
+  .codec-scatter {
+    position: relative;
     z-index: 1;
-    height: 4rem;
-    background: linear-gradient(to top, var(--color-surface), transparent);
-    pointer-events: none;
+    height: 7rem;
+    margin-top: 0.75rem;
   }
 
-  .bento-grid {
-    display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    grid-template-rows: auto auto auto auto;
-    gap: 1rem;
+  .codec-scatter > span {
+    position: absolute;
+    top: var(--y);
+    left: var(--x);
+    display: flex;
+    min-height: 1.5rem;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-full);
+    padding: 0.25rem 0.65rem;
+    color: var(--color-text-muted);
+    background: var(--color-surface-high);
+    font-family: var(--font-utility);
+    font-size: clamp(0.5625rem, 1.5vw, 0.6875rem);
+    font-weight: 750;
+    letter-spacing: 0.015em;
+    transform: rotate(var(--r));
   }
 
-  /* Named areas for precise placement — :global because classes are on child components */
-  .bento-grid :global(.bento-codec) {
-    grid-column: 1 / 3;
-    grid-row: 1 / 3;
+  .codec-scatter > .featured {
+    color: var(--color-brand);
+    background: color-mix(in srgb, var(--color-brand) 11%, var(--color-surface-highest));
+    font-weight: 800;
   }
-  .bento-grid :global(.bento-hdr) {
-    grid-column: 3 / 4;
-    grid-row: 1 / 2;
+
+  .codec-scatter > .bright {
+    color: var(--color-text);
+    background: var(--color-surface-highest);
+    font-weight: 800;
   }
-  .bento-grid :global(.bento-sub) {
-    grid-column: 3 / 4;
-    grid-row: 2 / 3;
-  }
-  .bento-grid :global(.bento-cross) {
-    grid-column: 4 / 5;
-    grid-row: 1 / 3;
-  }
-  .bento-grid :global(.bento-trackers) {
-    grid-column: 3 / 5;
-    grid-row: 3 / 4;
-  }
-  .bento-grid :global(.bento-offline) {
-    grid-column: 1 / 2;
-    grid-row: 3 / 4;
-  }
-  .bento-grid :global(.bento-watch) {
-    grid-column: 2 / 3;
-    grid-row: 3 / 4;
-  }
+
+  .bento-grid :global(.bento-codec),
+  .bento-grid :global(.bento-cross),
+  .bento-grid :global(.bento-offline),
+  .bento-grid :global(.bento-watch),
+  .bento-grid :global(.bento-trackers),
   .bento-grid :global(.bento-more) {
-    grid-column: 1 / 5;
-    grid-row: 4 / 5;
+    grid-column: 1 / -1;
   }
 
-  /* Mobile: single column stack with HDR + Subtitles paired */
-  @media (max-width: 639px) {
+  .bento-grid :global(.bento-hdr) {
+    grid-column: 1;
+  }
+
+  .bento-grid :global(.bento-sub) {
+    grid-column: 2;
+  }
+
+  :global(.bento-codec) .feature-card {
+    border-radius: var(--radius-xl) var(--radius-xl) var(--radius-xs) var(--radius-xs);
+  }
+
+  :global(.bento-more) .feature-card {
+    border-radius: var(--radius-xs) var(--radius-xs) var(--radius-xl) var(--radius-xl);
+  }
+
+  @media (max-width: 719px) {
+    .offline-card,
+    .watch-card {
+      height: 10rem;
+      min-height: 10rem;
+    }
+  }
+
+  @media (min-width: 720px) {
     .bento-grid {
-      grid-template-columns: repeat(2, 1fr);
-      grid-template-rows: auto;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
     }
-    .bento-grid :global(.bento-codec),
-    .bento-grid :global(.bento-cross),
-    .bento-grid :global(.bento-offline),
-    .bento-grid :global(.bento-watch),
-    .bento-grid :global(.bento-trackers),
-    .bento-grid :global(.bento-more) {
-      grid-column: 1 / -1;
-      grid-row: auto;
+
+    .bento-grid :global(.bento-codec) {
+      grid-column: 1 / 3;
+      grid-row: 1 / 3;
     }
+
     .bento-grid :global(.bento-hdr) {
-      grid-column: 1 / 2;
-      grid-row: auto;
+      grid-column: 3;
+      grid-row: 1;
     }
+
     .bento-grid :global(.bento-sub) {
-      grid-column: 2 / 3;
-      grid-row: auto;
-    }
-  }
-
-  @media (min-width: 640px) {
-    .features-section {
-      padding-block: 6rem;
+      grid-column: 3;
+      grid-row: 2;
     }
 
-    .section-description {
-      margin-bottom: 4rem;
+    .bento-grid :global(.bento-cross) {
+      grid-column: 4;
+      grid-row: 1 / 3;
+    }
+
+    .bento-grid :global(.bento-offline) {
+      grid-column: 1;
+      grid-row: 3;
+    }
+
+    .bento-grid :global(.bento-watch) {
+      grid-column: 2;
+      grid-row: 3;
+    }
+
+    .bento-grid :global(.bento-trackers) {
+      grid-column: 3 / 5;
+      grid-row: 3;
+    }
+
+    .bento-grid :global(.bento-more) {
+      grid-column: 1 / 5;
+      grid-row: 4;
+    }
+
+    :global(.bento-codec) .feature-card {
+      border-radius: var(--radius-xl) var(--radius-xs) var(--radius-xs) var(--radius-xs);
+    }
+
+    :global(.bento-hdr) .feature-card,
+    :global(.bento-sub) .feature-card {
+      border-radius: var(--radius-xs);
+    }
+
+    :global(.bento-cross) .feature-card {
+      border-radius: var(--radius-xs) var(--radius-xl) var(--radius-xs) var(--radius-xs);
+    }
+
+    :global(.bento-offline) .feature-card {
+      border-radius: var(--radius-xs);
+    }
+
+    :global(.bento-watch) .feature-card {
+      border-radius: var(--radius-xs);
+    }
+
+    :global(.bento-trackers) .feature-card {
+      border-radius: var(--radius-xs);
     }
 
     .tracker-card {
@@ -709,22 +869,11 @@
     }
 
     .tracker-copy {
-      flex-shrink: 0;
+      flex: 1 1 40%;
     }
 
     .tracker-grid {
-      flex: 1;
-    }
-  }
-
-  @media (min-width: 768px) {
-    .features-section {
-      padding-block: 8rem;
-    }
-
-    .section-heading {
-      font-size: 3rem;
-      line-height: 1;
+      flex: 1 1 60%;
     }
   }
 </style>

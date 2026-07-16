@@ -10,7 +10,7 @@ class SheetColumnHeader extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
       child: Align(
-        alignment: Alignment.centerLeft,
+        alignment: .centerLeft,
         child: Text(
           label,
           style: Theme.of(

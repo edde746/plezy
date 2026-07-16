@@ -4,21 +4,9 @@ import '../utils/json_utils.dart';
 
 part 'media_provider_info.g.dart';
 
-List<MediaProviderFeature> _parseFeatures(Object? raw) {
-  final list = flexibleList(raw) ?? const [];
-  return [
-    for (final item in list)
-      if (item is Map<String, dynamic>) MediaProviderFeature.fromJson(item),
-  ];
-}
+List<MediaProviderFeature> _parseFeatures(Object? raw) => parseFlexibleJsonList(raw, MediaProviderFeature.fromJson);
 
-List<Map<String, dynamic>> _parseRawMaps(Object? raw) {
-  final list = flexibleList(raw) ?? const [];
-  return [
-    for (final item in list)
-      if (item is Map<String, dynamic>) item,
-  ];
-}
+List<Map<String, dynamic>> _parseRawMaps(Object? raw) => flexibleMapList(raw);
 
 @JsonSerializable(createToJson: false)
 class MediaProviderInfo {
