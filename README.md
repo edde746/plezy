@@ -106,6 +106,10 @@ Package managers:
 [^5]: Windows, Android, and tvOS.
 [^6]: Desktop only.
 
+## Relay Server
+
+Plezy's backend service coordinates Watch Together sessions and supports client logs, Discord artwork, and optional tracker sign-in flows. See the [Relay Server README](server/README.md) for Docker images, deployment, and development.
+
 ## Building from Source
 
 ### Prerequisites

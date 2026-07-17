@@ -86,6 +86,7 @@ if python3 scripts/check_build_workflow.py &&
    python3 scripts/check_workflow_security.py &&
    python3 scripts/test_check_workflow_security.py &&
    python3 scripts/check_update_packages_workflow.py &&
+   python3 scripts/check_publish_relay_image_workflow.py &&
    python3 scripts/test_pubspec_version.py &&
    python3 scripts/test_clean_translations.py &&
    python3 scripts/test_run_maestro.py &&

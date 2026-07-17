@@ -1,0 +1,201 @@
+name: Publish Relay Image
+
+on:
+  push:
+    tags:
+      - "*"
+
+jobs:
+  detect-server-changes:
+    name: Detect server changes since the previous release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      publish: ${{ steps.release.outputs.publish }}
+      version: ${{ steps.release.outputs.version }}
+      image: ${{ steps.release.outputs.image }}
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Check whether this release changes the relay
+        id: release
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          version="$GITHUB_REF_NAME"
+          owner="${GITHUB_REPOSITORY_OWNER,,}"
+          image="ghcr.io/$owner/plezy/relay-server"
+
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "image=$image" >> "$GITHUB_OUTPUT"
+
+          if [[ ! "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "Tag '$version' is not a release version; skipping relay image publication."
+            echo "publish=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          previous_tag="$(
+            git for-each-ref \
+              --merged "$GITHUB_SHA^" \
+              --sort=-version:refname \
+              --format='%(refname:strip=2)' \
+              refs/tags | while IFS= read -r candidate; do
+                if [[ "$candidate" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+                  printf '%s\n' "$candidate"
+                  break
+                fi
+              done
+          )"
+          if [[ -z "$previous_tag" ]]; then
+            echo "No previous release tag found; publishing the initial relay image."
+            echo "publish=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          if git diff --quiet "$previous_tag" "$GITHUB_SHA" -- server/; then
+            echo "No server changes since $previous_tag; skipping relay image publication."
+            echo "publish=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          echo "Server changes found since $previous_tag; publishing relay image."
+          echo "publish=true" >> "$GITHUB_OUTPUT"
+
+  build-amd64:
+    name: Build relay image (amd64)
+    needs: detect-server-changes
+    if: needs.detect-server-changes.outputs.publish == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      digest: ${{ steps.build.outputs.digest }}
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+        with:
+          persist-credentials: false
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@4907a6ddec9925e35a0a9e82d7399ccc52663121 # v4.1.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@bb05f3f5519dd87d3ba754cc423b652a5edd6d2c # v4
+
+      - name: Build and push relay image by digest
+        id: build
+        uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7
+        with:
+          context: ./server
+          file: ./server/Dockerfile
+          platforms: linux/amd64
+          labels: org.opencontainers.image.source=https://github.com/${{ github.repository }}
+          outputs: type=image,name=${{ needs.detect-server-changes.outputs.image }},push-by-digest=true,name-canonical=true,push=true
+          cache-from: type=gha,scope=relay-amd64
+          cache-to: type=gha,scope=relay-amd64,mode=max
+          provenance: false
+
+  build-arm64:
+    name: Build relay image (arm64)
+    needs: detect-server-changes
+    if: needs.detect-server-changes.outputs.publish == 'true'
+    runs-on: ubuntu-24.04-arm
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      digest: ${{ steps.build.outputs.digest }}
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+        with:
+          persist-credentials: false
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@4907a6ddec9925e35a0a9e82d7399ccc52663121 # v4.1.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@bb05f3f5519dd87d3ba754cc423b652a5edd6d2c # v4
+
+      - name: Build and push relay image by digest
+        id: build
+        uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7
+        with:
+          context: ./server
+          file: ./server/Dockerfile
+          platforms: linux/arm64
+          labels: org.opencontainers.image.source=https://github.com/${{ github.repository }}
+          outputs: type=image,name=${{ needs.detect-server-changes.outputs.image }},push-by-digest=true,name-canonical=true,push=true
+          cache-from: type=gha,scope=relay-arm64
+          cache-to: type=gha,scope=relay-arm64,mode=max
+          provenance: false
+
+  publish-manifest:
+    name: Publish relay manifest
+    needs: [detect-server-changes, build-amd64, build-arm64]
+    if: needs.detect-server-changes.outputs.publish == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+      attestations: write
+    steps:
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@4907a6ddec9925e35a0a9e82d7399ccc52663121 # v4.1.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@bb05f3f5519dd87d3ba754cc423b652a5edd6d2c # v4
+
+      - name: Generate image metadata
+        id: meta
+        uses: docker/metadata-action@dc802804100637a589fabce1cb79ff13a1411302 # v6.2.0
+        with:
+          images: ${{ needs.detect-server-changes.outputs.image }}
+          tags: |
+            type=raw,value=${{ needs.detect-server-changes.outputs.version }}
+            type=raw,value=sha-${{ github.sha }}
+            type=raw,value=latest
+
+      - name: Create multi-architecture manifest
+        id: manifest
+        env:
+          IMAGE: ${{ needs.detect-server-changes.outputs.image }}
+          VERSION: ${{ needs.detect-server-changes.outputs.version }}
+          AMD64_DIGEST: ${{ needs.build-amd64.outputs.digest }}
+          ARM64_DIGEST: ${{ needs.build-arm64.outputs.digest }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          tags=$(jq -cr '.tags | map("-t " + .) | join(" ")' <<< '${{ steps.meta.outputs.json }}')
+          docker buildx imagetools create $tags \
+            "$IMAGE@$AMD64_DIGEST" \
+            "$IMAGE@$ARM64_DIGEST"
+
+          digest="$(docker buildx imagetools inspect "$IMAGE:$VERSION" --format '{{.Manifest.Digest}}')"
+          echo "digest=$digest" >> "$GITHUB_OUTPUT"
+
+      - name: Attest relay image provenance
+        uses: actions/attest-build-provenance@78e6cbd37d0ac1a40113c04f2037dacf1ea3f12e # v4
+        with:
+          subject-name: ${{ needs.detect-server-changes.outputs.image }}
+          subject-digest: ${{ steps.manifest.outputs.digest }}
+          push-to-registry: true
