@@ -9,6 +9,8 @@ class BaseVideoControlSheet extends StatelessWidget {
   final Widget child;
   final Color? iconColor;
   final VoidCallback? onBack;
+  final bool shrinkWrap;
+  final bool compactHeader;
 
   const BaseVideoControlSheet({
     super.key,
@@ -17,6 +19,8 @@ class BaseVideoControlSheet extends StatelessWidget {
     required this.child,
     this.iconColor,
     this.onBack,
+    this.shrinkWrap = false,
+    this.compactHeader = false,
   });
 
   @override
@@ -29,6 +33,8 @@ class BaseVideoControlSheet extends StatelessWidget {
       titleStyle: const TextStyle(fontSize: 18, fontWeight: .bold),
       showHeaderBorder: false,
       showHeaderDivider: true,
+      shrinkWrap: shrinkWrap,
+      compactHeader: compactHeader,
       child: child,
     );
   }

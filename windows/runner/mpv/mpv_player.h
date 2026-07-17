@@ -8,6 +8,7 @@
 #include <atomic>
 #include <chrono>
 #include <functional>
+#include <map>
 #include <memory>
 #include <mutex>
 #include <string>
@@ -34,7 +35,7 @@ class MpvPlayer {
   // DirectComposition visual, so the video child composites beneath it in the
   // same HWND. In audio-only mode |view| is ignored (pass nullptr) and no
   // window is created.
-  bool Initialize(HWND view);
+  bool Initialize(HWND view, const std::map<std::string, std::string>& initial_options = {});
 
   // Disposes mpv and the video window.
   void Dispose();

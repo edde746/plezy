@@ -9,6 +9,7 @@ import '../../../services/scrub_preview_source.dart';
 import '../../../utils/formatters.dart';
 import '../helpers/eager_horizontal_drag_recognizer.dart';
 import '../painters/buffer_range_painter.dart';
+import 'scrub_frame_view.dart';
 
 /// Timeline slider with chapter markers for video playback
 ///
@@ -281,7 +282,7 @@ class _TimelineSliderState extends State<TimelineSlider> {
                 child: Stack(
                   fit: StackFit.expand,
                   children: [
-                    _ScrubFrameView(frame: resolvedFrame),
+                    ScrubFrameView(frame: resolvedFrame),
                     Positioned(bottom: 4, left: 0, right: 0, child: Center(child: timeLabel)),
                   ],
                 ),
@@ -438,72 +439,5 @@ class _TimelineSliderState extends State<TimelineSlider> {
         child: slider,
       ),
     );
-  }
-}
-
-class _ScrubFrameView extends StatelessWidget {
-  final ScrubFrame frame;
-  const _ScrubFrameView({required this.frame});
-
-  int? _cacheDimension(double logicalSize, double devicePixelRatio) {
-    if (!logicalSize.isFinite || logicalSize <= 0) return null;
-    return (logicalSize * devicePixelRatio).round().clamp(1, 8192).toInt();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final f = frame;
-    switch (f) {
-      case BytesScrubFrame():
-        return LayoutBuilder(
-          builder: (context, constraints) {
-            final devicePixelRatio = MediaQuery.devicePixelRatioOf(context);
-            return Image.memory(
-              f.bytes,
-              fit: BoxFit.cover,
-              gaplessPlayback: true,
-              cacheWidth: _cacheDimension(constraints.maxWidth, devicePixelRatio),
-              cacheHeight: _cacheDimension(constraints.maxHeight, devicePixelRatio),
-              errorBuilder: (_, _, _) => const SizedBox.shrink(),
-            );
-          },
-        );
-      case SheetScrubFrame():
-        // The parent tooltip box matches the source tile aspect (see
-        // `tooltipHeight = tooltipWidth / frame.aspectRatio` above), so each
-        // source tile maps 1:1 to the box without distortion or cropping.
-        return LayoutBuilder(
-          builder: (context, constraints) {
-            final tileW = constraints.maxWidth;
-            final tileH = constraints.maxHeight;
-            final sheetW = tileW * f.sheetColumns;
-            final sheetH = tileH * f.sheetRows;
-            final devicePixelRatio = MediaQuery.devicePixelRatioOf(context);
-            final sheet = ResizeImage.resizeIfNeeded(
-              _cacheDimension(sheetW, devicePixelRatio),
-              _cacheDimension(sheetH, devicePixelRatio),
-              f.sheet,
-            );
-            return ClipRect(
-              child: OverflowBox(
-                maxWidth: sheetW,
-                maxHeight: sheetH,
-                alignment: .topLeft,
-                child: Transform.translate(
-                  offset: Offset(-f.tileColumn * tileW, -f.tileRow * tileH),
-                  child: Image(
-                    image: sheet,
-                    width: sheetW,
-                    height: sheetH,
-                    fit: BoxFit.fill,
-                    gaplessPlayback: true,
-                    errorBuilder: (_, _, _) => const SizedBox.shrink(),
-                  ),
-                ),
-              ),
-            );
-          },
-        );
-    }
   }
 }

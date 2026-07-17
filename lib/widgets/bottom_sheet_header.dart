@@ -48,6 +48,8 @@ class BottomSheetHeader extends StatelessWidget {
   /// Optional focus node for the close button
   final FocusNode? closeFocusNode;
 
+  final bool compact;
+
   const BottomSheetHeader({
     super.key,
     required this.title,
@@ -61,11 +63,13 @@ class BottomSheetHeader extends StatelessWidget {
     this.titleColor,
     this.showBorder = true,
     this.closeFocusNode,
+    this.compact = false,
   });
 
   @override
   Widget build(BuildContext context) {
     final usesBackButton = leading == null && onBack != null;
+    final controlSize = compact ? 32.0 : kMinInteractiveDimension;
 
     // Determine the leading widget based on priority: leading > onBack > icon
     Widget? resolvedLeading;
@@ -74,7 +78,7 @@ class BottomSheetHeader extends StatelessWidget {
     } else if (onBack != null) {
       resolvedLeading = SizedBox(
         width: 24,
-        height: kMinInteractiveDimension,
+        height: controlSize,
         child: Align(
           alignment: Alignment.centerLeft,
           child: ExcludeSemantics(child: AppIcon(Symbols.arrow_back_rounded, fill: 1, color: iconColor)),
@@ -87,7 +91,9 @@ class BottomSheetHeader extends StatelessWidget {
     final effectiveTitleStyle = titleStyle ?? TextStyle(fontSize: 18, fontWeight: .bold, color: titleColor);
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: compact
+          ? const EdgeInsetsDirectional.fromSTEB(16, 4, 8, 4)
+          : const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: showBorder
           ? BoxDecoration(
               border: Border(bottom: BorderSide(color: Theme.of(context).dividerColor)),
@@ -104,6 +110,14 @@ class BottomSheetHeader extends StatelessWidget {
                 child: IconButton(
                   focusNode: closeFocusNode,
                   icon: AppIcon(Symbols.close_rounded, fill: 1, color: iconColor),
+                  padding: compact ? EdgeInsets.zero : null,
+                  constraints: compact ? BoxConstraints.tightFor(width: controlSize, height: controlSize) : null,
+                  style: compact
+                      ? IconButton.styleFrom(
+                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          minimumSize: Size.square(controlSize),
+                        )
+                      : null,
                   onPressed: onClose ?? () => OverlaySheetController.closeAdaptive(context),
                 ),
               ),
@@ -114,16 +128,12 @@ class BottomSheetHeader extends StatelessWidget {
               start: 0,
               top: 0,
               bottom: 0,
-              width: kMinInteractiveDimension,
+              width: controlSize,
               child: ExcludeFocusTraversal(
                 child: Semantics(
                   label: MaterialLocalizations.of(context).backButtonTooltip,
                   button: true,
-                  child: InkResponse(
-                    onTap: onBack,
-                    radius: kMinInteractiveDimension / 2,
-                    child: const SizedBox.expand(),
-                  ),
+                  child: InkResponse(onTap: onBack, radius: controlSize / 2, child: const SizedBox.expand()),
                 ),
               ),
             ),

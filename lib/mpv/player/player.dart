@@ -7,6 +7,7 @@ import 'player_native.dart';
 import 'player_state.dart';
 import 'player_streams.dart';
 import 'platform/player_linux.dart';
+import 'platform/player_preview_native.dart';
 import 'platform/player_windows.dart';
 
 export 'player_base.dart';
@@ -406,5 +407,33 @@ abstract class Player {
       return PlayerNative.audio();
     }
     throw UnsupportedError('Player is not supported on this platform');
+  }
+
+  /// Creates a dedicated muted player for embedded clip previews.
+  ///
+  /// This always uses a separate native core/channel pair so clip editing
+  /// cannot seek, pause, or unload the main playback session.
+  factory Player.preview() {
+    if (Platform.isMacOS) {
+      return PlayerPreviewNative();
+    }
+    if (Platform.isWindows) {
+      return PlayerWindows.preview();
+    }
+    if (Platform.isLinux) {
+      return PlayerLinux.preview();
+    }
+    throw UnsupportedError('Clip preview is only supported on desktop');
+  }
+
+  /// Creates an mpv core configured for clip encoding before initialization.
+  ///
+  /// It sequentially reuses the clip-preview native channel, so callers must
+  /// release the preview player before constructing this player.
+  factory Player.clipEncoder(Map<String, String> initialOptions) {
+    if (Platform.isMacOS || Platform.isWindows) {
+      return PlayerNative.clipEncoder(initialOptions);
+    }
+    throw UnsupportedError('Clip encoding is only supported on macOS and Windows');
   }
 }

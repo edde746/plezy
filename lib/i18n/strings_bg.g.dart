@@ -370,6 +370,16 @@ class _TranslationsSettingsBg extends TranslationsSettingsEn {
 	@override String get downloadLocationReset => 'Местоположението за изтегляния е върнато по подразбиране';
 	@override String get downloadLocationInvalid => 'Избраната папка не е записваема';
 	@override String get downloadLocationSelectError => 'Неуспешен избор на папка';
+	@override String get mediaCapture => 'Media Capture';
+	@override String get clips => 'клипове';
+	@override String get screenshots => 'Екранни снимки';
+	@override String captureLocationTitle({required Object title}) => '${title} Местоположение';
+	@override String get clipLocationDescription => 'Изберете къде да се записват клиповете.';
+	@override String get screenshotLocationDescription => 'Изберете къде да се запазват екранните снимки.';
+	@override String get clipLocationChanged => 'Местоположението на клипа е променено';
+	@override String get screenshotLocationChanged => 'Местоположението на екранната снимка е променено';
+	@override String get clipLocationReset => 'Местоположението на клипа се нулира на работния плот';
+	@override String get screenshotLocationReset => 'Местоположението на екранната снимка се нулира на работния плот';
 	@override String get downloadOnWifiOnly => 'Изтегляне само през WiFi';
 	@override String get downloadOnWifiOnlyDescription => 'Предотвратявай изтегляния през мобилни данни';
 	@override String get autoRemoveWatchedDownloads => 'Автоматично премахвай изгледаните изтегляния';
@@ -668,6 +678,7 @@ class _TranslationsVideoControlsBg extends TranslationsVideoControlsEn {
 	@override String get pipActive => 'Възпроизвеждане в режим картина в картината';
 	@override String get pipFailed => 'Режимът картина в картината не успя да стартира';
 	@override String get screenshotSaved => 'Екранната снимка е запазена';
+	@override late final _TranslationsVideoControlsClipBg clip = _TranslationsVideoControlsClipBg._(_root);
 	@override String zoomPercent({required Object percent}) => 'Мащаб ${percent}%';
 	@override late final _TranslationsVideoControlsPipErrorsBg pipErrors = _TranslationsVideoControlsPipErrorsBg._(_root);
 	@override String get chapters => 'Глави';
@@ -1826,6 +1837,50 @@ class _TranslationsHotkeysActionsBg extends TranslationsHotkeysActionsEn {
 	@override String get screenshot => 'Направи екранна снимка';
 }
 
+// Path: videoControls.clip
+class _TranslationsVideoControlsClipBg extends TranslationsVideoControlsClipEn {
+	_TranslationsVideoControlsClipBg._(TranslationsBg root) : this._root = root, super.internal(root);
+
+	final TranslationsBg _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Клип';
+	@override String get vodOnly => 'Налични са клипове за възпроизвеждане на видео при поискване.';
+	@override String get sourceUnavailable => 'Източникът на клип не е наличен за тази сесия на възпроизвеждане.';
+	@override String get playAtLeastOneSecond => 'Пуснете поне 1 секунда преди изрязване.';
+	@override String get startBeforeBeginning => 'Началото на клипа не може да бъде преди началото на видеоклипа.';
+	@override String get endAfterStart => 'Краят на клипа трябва да е след началото.';
+	@override String get minimumDuration => 'Клиповете трябва да са с дължина поне 1 секунда.';
+	@override String get endPastVideo => 'Краят на клипа е след края на видеоклипа.';
+	@override String get exportCanceled => 'Експортирането на клип е анулирано.';
+	@override String get cacheUnavailable => 'Избраният диапазон не може да бъде напълно кеширан за първоначално експортиране. Опитайте с по-кратък клип или пуснете визуализацията веднъж, преди да запазите.';
+	@override String get sourceCopyNoEncoder => 'Експортирането на изходно копие не използва енкодер.';
+	@override String get encodingDesktopOnly => 'H.264 и HEVC кодирането на клипове в момента е налично в macOS и Windows.';
+	@override String get hdrRequiresSource => 'HDR експортирането изисква HDR10 или HLG-съвместим източник за директно възпроизвеждане.';
+	@override String get transcodeStartUnavailable => 'Този клип започва преди активния транскодиран поток. Търсете по-рано и отворете отново изрезката или превключете към оригинално качество.';
+	@override String get previewRequired => 'Визуализацията на клип трябва да завърши зареждането, преди да може да бъде запазена.';
+	@override String get h264Failed => 'Този източник не може да бъде кодиран като H.264 SDR MP4.';
+	@override String get hevcSdrFailed => 'Този източник не може да бъде кодиран като HEVC SDR MP4.';
+	@override String get hevcHdrFailed => 'Този източник не можа да бъде кодиран като HEVC HDR MP4.';
+	@override String get originalFailed => 'Този източник не можа да бъде копиран от mpv кеша.';
+	@override String get previewUnavailable => 'Възпроизвеждането на предварителен преглед на клип не е налично в тази компилация.';
+	@override String get previewFailed => 'Неуспешно възпроизвеждане на визуализация на клип.';
+	@override String get previewLoadingScreenshot => 'Визуализацията на клипа трябва да завърши зареждането, преди да направите екранна снимка.';
+	@override String get screenshotInProgress => 'Вече се запазва екранна снимка.';
+	@override String get saveAsDialog => 'Запазване на клипа като';
+	@override String savedTo({required Object fileName}) => 'Запазено в ${fileName}';
+	@override String get openFolder => 'Отворете папката';
+	@override String get saveAs => 'Запиши като';
+	@override String get cancelExport => 'Отказ от експортиране';
+	@override String get saving => 'Запазва се...';
+	@override String savingProgress({required Object percent}) => 'Спестяване на ${percent}%';
+	@override String get mutePreview => 'Визуализация без звук';
+	@override String get unmutePreview => 'Включване на звука предварителен преглед';
+	@override String get formatHevcSdr => 'HEVC SDR';
+	@override String get formatH264Sdr => 'H.264 SDR';
+	@override String get formatHevcHdr => 'HEVC HDR';
+}
+
 // Path: videoControls.pipErrors
 class _TranslationsVideoControlsPipErrorsBg extends TranslationsVideoControlsPipErrorsEn {
 	_TranslationsVideoControlsPipErrorsBg._(TranslationsBg root) : this._root = root, super.internal(root);
@@ -2351,6 +2406,16 @@ extension on TranslationsBg {
 			'settings.downloadLocationReset' => 'Местоположението за изтегляния е върнато по подразбиране',
 			'settings.downloadLocationInvalid' => 'Избраната папка не е записваема',
 			'settings.downloadLocationSelectError' => 'Неуспешен избор на папка',
+			'settings.mediaCapture' => 'Media Capture',
+			'settings.clips' => 'клипове',
+			'settings.screenshots' => 'Екранни снимки',
+			'settings.captureLocationTitle' => ({required Object title}) => '${title} Местоположение',
+			'settings.clipLocationDescription' => 'Изберете къде да се записват клиповете.',
+			'settings.screenshotLocationDescription' => 'Изберете къде да се запазват екранните снимки.',
+			'settings.clipLocationChanged' => 'Местоположението на клипа е променено',
+			'settings.screenshotLocationChanged' => 'Местоположението на екранната снимка е променено',
+			'settings.clipLocationReset' => 'Местоположението на клипа се нулира на работния плот',
+			'settings.screenshotLocationReset' => 'Местоположението на екранната снимка се нулира на работния плот',
 			'settings.downloadOnWifiOnly' => 'Изтегляне само през WiFi',
 			'settings.downloadOnWifiOnlyDescription' => 'Предотвратявай изтегляния през мобилни данни',
 			'settings.autoRemoveWatchedDownloads' => 'Автоматично премахвай изгледаните изтегляния',
@@ -2601,6 +2666,43 @@ extension on TranslationsBg {
 			'videoControls.pipActive' => 'Възпроизвеждане в режим картина в картината',
 			'videoControls.pipFailed' => 'Режимът картина в картината не успя да стартира',
 			'videoControls.screenshotSaved' => 'Екранната снимка е запазена',
+			'videoControls.clip.title' => 'Клип',
+			'videoControls.clip.vodOnly' => 'Налични са клипове за възпроизвеждане на видео при поискване.',
+			'videoControls.clip.sourceUnavailable' => 'Източникът на клип не е наличен за тази сесия на възпроизвеждане.',
+			'videoControls.clip.playAtLeastOneSecond' => 'Пуснете поне 1 секунда преди изрязване.',
+			'videoControls.clip.startBeforeBeginning' => 'Началото на клипа не може да бъде преди началото на видеоклипа.',
+			'videoControls.clip.endAfterStart' => 'Краят на клипа трябва да е след началото.',
+			'videoControls.clip.minimumDuration' => 'Клиповете трябва да са с дължина поне 1 секунда.',
+			'videoControls.clip.endPastVideo' => 'Краят на клипа е след края на видеоклипа.',
+			'videoControls.clip.exportCanceled' => 'Експортирането на клип е анулирано.',
+			'videoControls.clip.cacheUnavailable' => 'Избраният диапазон не може да бъде напълно кеширан за първоначално експортиране. Опитайте с по-кратък клип или пуснете визуализацията веднъж, преди да запазите.',
+			'videoControls.clip.sourceCopyNoEncoder' => 'Експортирането на изходно копие не използва енкодер.',
+			'videoControls.clip.encodingDesktopOnly' => 'H.264 и HEVC кодирането на клипове в момента е налично в macOS и Windows.',
+			'videoControls.clip.hdrRequiresSource' => 'HDR експортирането изисква HDR10 или HLG-съвместим източник за директно възпроизвеждане.',
+			'videoControls.clip.transcodeStartUnavailable' => 'Този клип започва преди активния транскодиран поток. Търсете по-рано и отворете отново изрезката или превключете към оригинално качество.',
+			'videoControls.clip.previewRequired' => 'Визуализацията на клип трябва да завърши зареждането, преди да може да бъде запазена.',
+			'videoControls.clip.h264Failed' => 'Този източник не може да бъде кодиран като H.264 SDR MP4.',
+			'videoControls.clip.hevcSdrFailed' => 'Този източник не може да бъде кодиран като HEVC SDR MP4.',
+			'videoControls.clip.hevcHdrFailed' => 'Този източник не можа да бъде кодиран като HEVC HDR MP4.',
+			'videoControls.clip.originalFailed' => 'Този източник не можа да бъде копиран от mpv кеша.',
+			'videoControls.clip.previewUnavailable' => 'Възпроизвеждането на предварителен преглед на клип не е налично в тази компилация.',
+			'videoControls.clip.previewFailed' => 'Неуспешно възпроизвеждане на визуализация на клип.',
+			'videoControls.clip.previewLoadingScreenshot' => 'Визуализацията на клипа трябва да завърши зареждането, преди да направите екранна снимка.',
+			'videoControls.clip.screenshotInProgress' => 'Вече се запазва екранна снимка.',
+			_ => null,
+		} ?? switch (path) {
+			'videoControls.clip.saveAsDialog' => 'Запазване на клипа като',
+			'videoControls.clip.savedTo' => ({required Object fileName}) => 'Запазено в ${fileName}',
+			'videoControls.clip.openFolder' => 'Отворете папката',
+			'videoControls.clip.saveAs' => 'Запиши като',
+			'videoControls.clip.cancelExport' => 'Отказ от експортиране',
+			'videoControls.clip.saving' => 'Запазва се...',
+			'videoControls.clip.savingProgress' => ({required Object percent}) => 'Спестяване на ${percent}%',
+			'videoControls.clip.mutePreview' => 'Визуализация без звук',
+			'videoControls.clip.unmutePreview' => 'Включване на звука предварителен преглед',
+			'videoControls.clip.formatHevcSdr' => 'HEVC SDR',
+			'videoControls.clip.formatH264Sdr' => 'H.264 SDR',
+			'videoControls.clip.formatHevcHdr' => 'HEVC HDR',
 			'videoControls.zoomPercent' => ({required Object percent}) => 'Мащаб ${percent}%',
 			'videoControls.pipErrors.androidVersion' => 'Изисква Android 8.0 или по-нова версия',
 			'videoControls.pipErrors.iosVersion' => 'Изисква iOS 15.0 или по-нова версия',
@@ -2634,8 +2736,6 @@ extension on TranslationsBg {
 			'messages.streamInterrupted' => 'Потокът прекъсна. Натиснете „Пусни“ или превъртете, за да опитате отново.',
 			'messages.liveStreamInterrupted' => 'Потокът на живо прекъсна. Натиснете „Пусни“, за да опитате отново.',
 			'messages.fileInfoNotAvailable' => 'Информацията за файла не е налична',
-			_ => null,
-		} ?? switch (path) {
 			'messages.errorLoadingFileInfo' => ({required Object error}) => 'Грешка при зареждане на информация за файла: ${error}',
 			'messages.errorLoadingSeries' => 'Грешка при зареждане на сериала',
 			'messages.musicNotSupported' => 'Възпроизвеждането на музика все още не се поддържа',
@@ -3103,6 +3203,8 @@ extension on TranslationsBg {
 			'watchTogether.hostBadge' => 'ДОМАКИН',
 			'watchTogether.youAreHost' => 'Вие сте домакин',
 			'watchTogether.watchingWithOthers' => 'Гледате с други',
+			_ => null,
+		} ?? switch (path) {
 			'watchTogether.endSession' => 'Край на сесията',
 			'watchTogether.leaveSession' => 'Напусни сесията',
 			'watchTogether.endSessionQuestion' => 'Край на сесията?',
@@ -3148,8 +3250,6 @@ extension on TranslationsBg {
 			'downloads.manage' => 'Управление',
 			'downloads.tvShows' => 'ТВ сериали',
 			'downloads.movies' => 'Филми',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.music' => 'Музика',
 			'downloads.tracksQueued' => ({required Object count}) => '${count} песни в опашката за изтегляне',
 			'downloads.noDownloads' => 'Все още няма изтегляния',

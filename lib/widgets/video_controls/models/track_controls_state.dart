@@ -47,6 +47,7 @@ class TrackControlsState {
   final Function(AudioTrack)? onAudioTrackChanged;
   final Function(SubtitleTrack)? onSubtitleTrackChanged;
   final Function(SubtitleTrack)? onSecondarySubtitleTrackChanged;
+  final Future<void> Function()? onClipRequested;
   final VoidCallback? onLoadSeekTimes;
   final VoidCallback? onCancelAutoHide;
   final VoidCallback? onStartAutoHide;
@@ -106,6 +107,7 @@ class TrackControlsState {
     this.onAudioTrackChanged,
     this.onSubtitleTrackChanged,
     this.onSecondarySubtitleTrackChanged,
+    this.onClipRequested,
     this.onLoadSeekTimes,
     this.onCancelAutoHide,
     this.onStartAutoHide,

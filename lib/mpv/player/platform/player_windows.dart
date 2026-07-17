@@ -3,6 +3,9 @@ import '../video_rect_support.dart';
 
 /// Uses libmpv with native window embedding behind the Flutter window.
 class PlayerWindows extends PlayerNative with VideoRectSupport {
+  PlayerWindows() : super();
+  PlayerWindows.preview() : super.preview();
+
   // Native window embedding, not a Flutter texture.
   @override
   int? get textureId => null;
