@@ -40,6 +40,7 @@ class AppearanceSettingsScreen extends StatelessWidget {
             _themeSelector(),
             _languageSelector(context),
             _densitySelector(),
+            _gridSpacingSelector(),
             _viewModeSelector(),
             _episodePosterModeSelector(),
             if (PlatformDetector.isTV())
@@ -291,6 +292,19 @@ class AppearanceSettingsScreen extends StatelessWidget {
       },
     );
   }
+
+  Widget _gridSpacingSelector() => SettingSegmentedTile<GridSpacing, GridSpacing>(
+    pref: SettingsService.gridSpacing,
+    icon: Symbols.padding_rounded,
+    title: t.settings.gridSpacing,
+    segments: [
+      ButtonSegment(value: GridSpacing.tight, label: Text(t.settings.gridSpacingTight)),
+      ButtonSegment(value: GridSpacing.normal, label: Text(t.settings.gridSpacingNormal)),
+      ButtonSegment(value: GridSpacing.spacious, label: Text(t.settings.gridSpacingSpacious)),
+    ],
+    decode: (v) => v,
+    encode: (v) => v,
+  );
 
   Widget _viewModeSelector() => SettingSegmentedTile<ViewMode, ViewMode>(
     pref: SettingsService.viewMode,

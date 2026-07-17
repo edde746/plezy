@@ -34,6 +34,18 @@ class LibraryDensity {
   static double factor(int density) => (density.clamp(min, max) - min) / (max - min);
 }
 
+/// Gap between grid cells (#1597). [tight] is the pre-setting zero-gap look,
+/// so existing installs render unchanged.
+enum GridSpacing {
+  tight(0),
+  normal(6),
+  spacious(12);
+
+  const GridSpacing(this.gap);
+
+  final double gap;
+}
+
 enum ViewMode { grid, list }
 
 enum EpisodePosterMode { seriesPoster, seasonPoster, episodeThumbnail }
@@ -469,6 +481,11 @@ class SettingsService extends BaseSharedPreferencesService {
   static const bufferSize = _BufferSizePref();
   static const libraryDensity = _LibraryDensityPref();
   static const tvCornerSpotlightBackdrop = BoolPref('tv_corner_spotlight_backdrop');
+  static const gridSpacing = EnumPref<GridSpacing>(
+    'grid_spacing',
+    values: GridSpacing.values,
+    defaultValue: GridSpacing.tight,
+  );
   static const episodePosterMode = _EpisodePosterModePref();
   static const continueWatchingAction = EnumPref<ContinueWatchingAction>(
     'continue_watching_action',
@@ -861,6 +878,7 @@ class SettingsService extends BaseSharedPreferencesService {
     keyboardHotkeys,
     libraryDensity,
     tvCornerSpotlightBackdrop,
+    gridSpacing,
     episodePosterMode,
     mediaVersionPreferences,
     localLastPlayedAt,
