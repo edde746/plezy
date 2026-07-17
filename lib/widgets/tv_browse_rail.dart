@@ -78,7 +78,9 @@ class TvBrowseRailLayout {
 
   static double railInteractionExpansionForScale(double scale) => (12 * scale).clamp(8, 18).toDouble();
 
-  static double itemGapForScale(double _) => 0;
+  // Gap between rail cards follows the Grid Spacing setting (#1597);
+  // instanceOrNull keeps metric math usable before settings init (tests).
+  static double itemGapForScale(double _) => SettingsService.instanceOrNull?.read(SettingsService.gridSpacing).gap ?? 0;
 
   static double fullCardItemGapForScale(double scale) => (12 * scale).clamp(8, 18).toDouble();
 
@@ -1006,6 +1008,7 @@ class TvBrowseRailState extends State<TvBrowseRail> {
         SettingsService.libraryDensity,
         SettingsService.episodePosterMode,
         SettingsService.tvFullCardLayout,
+        SettingsService.gridSpacing,
       ],
       builder: (context) => LayoutBuilder(
         builder: (context, constraints) {
