@@ -46,6 +46,7 @@ class AppearanceSettingsScreen extends StatelessWidget {
             _languageSelector(context),
             _densitySelector(),
             if (PlatformDetector.isAutomotive()) _displayScaleSelector(),
+            _gridSpacingSelector(),
             _viewModeSelector(),
             _episodePosterModeSelector(),
             if (PlatformDetector.isTV())
@@ -335,6 +336,17 @@ class AppearanceSettingsScreen extends StatelessWidget {
       },
     );
   }
+
+  Widget _gridSpacingSelector() => SettingSegmentedTile<GridSpacing>(
+    pref: SettingsService.gridSpacing,
+    icon: Symbols.padding_rounded,
+    title: t.settings.gridSpacing,
+    segments: [
+      ButtonSegment(value: GridSpacing.tight, label: Text(t.settings.gridSpacingTight)),
+      ButtonSegment(value: GridSpacing.normal, label: Text(t.settings.gridSpacingNormal)),
+      ButtonSegment(value: GridSpacing.spacious, label: Text(t.settings.gridSpacingSpacious)),
+    ],
+  );
 
   Widget _viewModeSelector() => SettingSegmentedTile<ViewMode>(
     pref: SettingsService.viewMode,

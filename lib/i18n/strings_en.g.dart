@@ -471,6 +471,18 @@ class Translations$settings$en {
 	/// en: 'Show spotlight artwork in the top-right corner instead of filling the screen'
 	String get tvCornerSpotlightBackdropDescription => 'Show spotlight artwork in the top-right corner instead of filling the screen';
 
+	/// en: 'Grid Spacing'
+	String get gridSpacing => 'Grid Spacing';
+
+	/// en: 'Tight'
+	String get gridSpacingTight => 'Tight';
+
+	/// en: 'Normal'
+	String get gridSpacingNormal => 'Normal';
+
+	/// en: 'Spacious'
+	String get gridSpacingSpacious => 'Spacious';
+
 	/// en: 'View Mode'
 	String get viewMode => 'View Mode';
 
@@ -6951,6 +6963,10 @@ extension on Translations {
 			'settings.comfortable' => 'Comfortable',
 			'settings.tvCornerSpotlightBackdrop' => 'Corner Spotlight Backdrop',
 			'settings.tvCornerSpotlightBackdropDescription' => 'Show spotlight artwork in the top-right corner instead of filling the screen',
+			'settings.gridSpacing' => 'Grid Spacing',
+			'settings.gridSpacingTight' => 'Tight',
+			'settings.gridSpacingNormal' => 'Normal',
+			'settings.gridSpacingSpacious' => 'Spacious',
 			'settings.viewMode' => 'View Mode',
 			'settings.gridView' => 'Grid',
 			'settings.listView' => 'List',
@@ -7329,12 +7345,12 @@ extension on Translations {
 			'fileInfo.flagForced' => 'Forced',
 			'fileInfo.flagSelected' => 'Selected',
 			'fileInfo.flagExternal' => 'External',
+			_ => null,
+		} ?? switch (path) {
 			'fileInfo.flagHearingImpaired' => 'Hearing impaired',
 			'fileInfo.flagDub' => 'Dub',
 			'fileInfo.flagOriginal' => 'Original',
 			'fileInfo.channelsMono' => 'Mono',
-			_ => null,
-		} ?? switch (path) {
 			'fileInfo.dolbyVisionProfile' => ({required Object profile}) => 'Profile ${profile}',
 			'mediaMenu.markAsWatched' => 'Mark as Watched',
 			'mediaMenu.markAsUnwatched' => 'Mark as Unwatched',
@@ -7843,12 +7859,12 @@ extension on Translations {
 			'libraries.sortLabels.airTime' => 'Air Time',
 			'libraries.sortLabels.studio' => 'Studio',
 			'libraries.sortLabels.random' => 'Random',
+			_ => null,
+		} ?? switch (path) {
 			'libraries.sortLabels.dateShared' => 'Date Shared',
 			'libraries.sortLabels.latestEpisodeAirDate' => 'Latest Episode Air Date',
 			'libraries.sortLabels.lastEpisodeDateAdded' => 'Last Episode Date Added',
 			'about.title' => 'About',
-			_ => null,
-		} ?? switch (path) {
 			'about.openSourceLicenses' => 'Open Source Licenses',
 			'about.versionLabel' => ({required Object version}) => 'Version ${version}',
 			'about.appDescription' => 'A beautiful Plex, Jellyfin, and Emby client for Flutter',
@@ -8357,12 +8373,12 @@ extension on Translations {
 			'downloads.backgroundWarning.reasonNotificationsDisabled' => 'Notifications are turned off. On Android 13 or newer, they are required for long background downloads.',
 			'downloads.backgroundWarning.reasonDataSaver' => 'Data Saver is on, which blocks background downloads on mobile data. Downloads should still run on Wi-Fi.',
 			'downloads.backgroundWarning.reasonOemUnknown' => 'Downloads repeatedly stopped while Plezy was in the background. Check Plezy\'s battery or background usage settings.',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.backgroundWarning.openSettings' => 'Open settings',
 			'downloads.backgroundWarning.stillNotWorking' => 'Device-specific help',
 			'downloads.backgroundWarning.stillNotWorkingDescription' => 'See steps for your device, or send a log from Settings › View Logs if the issue continues.',
 			'downloads.backgroundWarning.dialogTitle' => 'Downloads may not finish',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.backgroundWarning.dialogDownloadAnyway' => 'Download anyway',
 			'downloads.backgroundWarning.dialogFixFirst' => 'Fix this first',
 			'downloads.backgroundWarning.statusTile' => 'Background downloads',

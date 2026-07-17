@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../media/media_item.dart' show CardShape;
+import '../services/settings_service.dart';
 import '../utils/grid_size_calculator.dart';
 import '../utils/layout_constants.dart';
 import '../utils/platform_detector.dart';
@@ -52,10 +53,13 @@ class MediaGridDelegate {
     return GridSizeCalculator.getCellWidthForColumnCount(availableWidth, columnCount, crossAxisSpacing: spacing);
   }
 
-  /// Inter-cell gutter for the resolved shape. Square (music) grids get
-  /// [GridLayoutConstants.squareGridSpacing] so cards have breathing room;
-  /// every other shape keeps the platform default (0, or 24 on automotive).
-  /// Full-bleed TV grids use the scaled full-card gutter.
+  /// Inter-cell gutter for the resolved shape. The [SettingsService.gridSpacing]
+  /// preference raises the gutter above the per-shape baseline: square (music)
+  /// grids keep [GridLayoutConstants.squareGridSpacing] as their floor so cards
+  /// never lose their breathing room, every other shape starts at the platform
+  /// default (0). At the default Tight (0px) setting this is byte-identical to
+  /// the unconfigurable behaviour. Automotive keeps its fixed platform gutter,
+  /// and full-bleed TV grids use the scaled full-card gutter.
   static double spacingFor({
     required BuildContext context,
     bool useWideAspectRatio = false,
@@ -64,9 +68,11 @@ class MediaGridDelegate {
   }) {
     if (PlatformDetector.isAutomotive()) return GridLayoutConstants.crossAxisSpacing;
     if (!fullBleedImage) {
-      return _resolveShape(shape, useWideAspectRatio) == CardShape.square
+      final baseline = _resolveShape(shape, useWideAspectRatio) == CardShape.square
           ? GridLayoutConstants.squareGridSpacing
           : GridLayoutConstants.crossAxisSpacing;
+      final gap = SettingsService.instance.read(SettingsService.gridSpacing).gap;
+      return gap > baseline ? gap : baseline;
     }
     return GridLayoutConstants.fullCardGridSpacingForScale(TvLayoutConstants.scaleOf(context));
   }

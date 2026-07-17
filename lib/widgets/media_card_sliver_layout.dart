@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../media/media_item.dart';
 import '../services/settings_service.dart';
 import 'media_grid_delegate.dart';
+import 'settings_builder.dart';
 import 'sliver_cross_axis_layout_builder.dart';
 
 @immutable
@@ -88,36 +89,42 @@ class MediaCardSliverLayout extends StatelessWidget {
 
     return SliverPadding(
       padding: padding,
-      sliver: SliverCrossAxisLayoutBuilder(
-        builder: (context, crossAxisExtent) {
-          final geometry = MediaGridGeometry.resolve(
-            context: context,
-            crossAxisExtent: crossAxisExtent,
-            crossAxisExtentForColumnCount: crossAxisExtentForColumnCount?.call(crossAxisExtent),
-            density: density,
-            useWideAspectRatio: useWideAspectRatio,
-            fullBleedImage: fullBleedImage,
-            shape: shape,
-          );
-          onGridGeometry?.call(geometry);
-          final layoutEpoch = gridEpochBuilder?.call(geometry);
-          return SliverGrid.builder(
-            addAutomaticKeepAlives: false,
-            addSemanticIndexes: false,
-            gridDelegate: geometry.delegate,
-            itemCount: itemCount,
-            itemBuilder: (context, index) => itemBuilder(
-              context,
-              MediaCardSliverPosition(
-                index: index,
-                itemCount: itemCount,
-                columnCount: geometry.columnCount,
-                isGrid: true,
-                layoutEpoch: layoutEpoch,
+      // Watched here — the single resolve() call site — so every grid surface
+      // re-lays-out when the spacing setting changes, without each screen
+      // having to add the pref to its own watch list.
+      sliver: SettingValueBuilder<GridSpacing>(
+        pref: SettingsService.gridSpacing,
+        builder: (context, _, _) => SliverCrossAxisLayoutBuilder(
+          builder: (context, crossAxisExtent) {
+            final geometry = MediaGridGeometry.resolve(
+              context: context,
+              crossAxisExtent: crossAxisExtent,
+              crossAxisExtentForColumnCount: crossAxisExtentForColumnCount?.call(crossAxisExtent),
+              density: density,
+              useWideAspectRatio: useWideAspectRatio,
+              fullBleedImage: fullBleedImage,
+              shape: shape,
+            );
+            onGridGeometry?.call(geometry);
+            final layoutEpoch = gridEpochBuilder?.call(geometry);
+            return SliverGrid.builder(
+              addAutomaticKeepAlives: false,
+              addSemanticIndexes: false,
+              gridDelegate: geometry.delegate,
+              itemCount: itemCount,
+              itemBuilder: (context, index) => itemBuilder(
+                context,
+                MediaCardSliverPosition(
+                  index: index,
+                  itemCount: itemCount,
+                  columnCount: geometry.columnCount,
+                  isGrid: true,
+                  layoutEpoch: layoutEpoch,
+                ),
               ),
-            ),
-          );
-        },
+            );
+          },
+        ),
       ),
     );
   }
