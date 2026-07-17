@@ -1096,11 +1096,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
                           if (toast == null) return const SizedBox.shrink();
                           return AnimatedSwitcher(
                             duration: const Duration(milliseconds: 150),
-                            child: PlayerToastIndicator(
-                              key: ValueKey('${toast.icon.codePoint}:${toast.text}'),
-                              icon: toast.icon,
-                              text: toast.text,
-                            ),
+                            child: PlayerToastIndicator(key: ValueKey(toast.key), icon: toast.icon, text: toast.text),
                           );
                         },
                       ),

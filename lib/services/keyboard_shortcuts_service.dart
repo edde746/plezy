@@ -12,7 +12,7 @@ import '../utils/platform_detector.dart';
 import '../utils/player_utils.dart';
 
 class KeyboardShortcutsService extends ChangeNotifier {
-  static const Set<String> _repeatableVideoActions = {'zoom_in', 'zoom_out'};
+  static const Set<String> _repeatableVideoActions = {'zoom_in', 'zoom_out', 'frame_previous', 'frame_next'};
 
   static KeyboardShortcutsService? _instance;
   late final SettingsBindingOwner _settingsBinding;
@@ -20,6 +20,8 @@ class KeyboardShortcutsService extends ChangeNotifier {
   int _seekTimeSmall = 10; // Default, loaded from settings
   int _seekTimeLarge = 30; // Default, loaded from settings
   int _maxVolume = 100; // Default, loaded from settings (100-300%)
+  int _pendingFrameSteps = 0;
+  bool _frameStepInProgress = false;
   bool _settingsInitialized = false;
 
   KeyboardShortcutsService._() {
@@ -106,6 +108,7 @@ class KeyboardShortcutsService extends ChangeNotifier {
 
   @override
   void dispose() {
+    _pendingFrameSteps = 0;
     _settingsBinding.dispose();
     if (identical(_instance, this)) _instance = null;
     super.dispose();
@@ -164,6 +167,7 @@ class KeyboardShortcutsService extends ChangeNotifier {
     VoidCallback? onZoomIn,
     VoidCallback? onZoomOut,
     VoidCallback? onZoomReset,
+    ValueChanged<int>? onFrameStep,
     int? currentPositionEpoch,
     ValueChanged<int>? onLiveSeek,
     ValueChanged<int>? onLiveSeekBy,
@@ -246,6 +250,7 @@ class KeyboardShortcutsService extends ChangeNotifier {
           onZoomIn: onZoomIn,
           onZoomOut: onZoomOut,
           onZoomReset: onZoomReset,
+          onFrameStep: onFrameStep,
           currentPositionEpoch: currentPositionEpoch,
           onLiveSeek: onLiveSeek,
           onLiveSeekBy: onLiveSeekBy,
@@ -256,6 +261,29 @@ class KeyboardShortcutsService extends ChangeNotifier {
     }
 
     return KeyEventResult.ignored;
+  }
+
+  void _queueFrameStep(Player player, int step, ValueChanged<int>? onFrameStep) {
+    if (player.state.playing || !player.state.seekable) return;
+    _pendingFrameSteps += step;
+    onFrameStep?.call(step);
+    if (!_frameStepInProgress) unawaited(_flushFrameSteps(player));
+  }
+
+  Future<void> _flushFrameSteps(Player player) async {
+    _frameStepInProgress = true;
+    try {
+      while (_pendingFrameSteps != 0 && !player.state.playing && player.state.seekable) {
+        final steps = _pendingFrameSteps;
+        _pendingFrameSteps = 0;
+        final frameRendered = player.streams.playbackRestart.first;
+        await player.command(['frame-step', '$steps', 'seek']);
+        await frameRendered;
+      }
+    } finally {
+      _pendingFrameSteps = 0;
+      _frameStepInProgress = false;
+    }
   }
 
   void _executeAction(
@@ -275,6 +303,7 @@ class KeyboardShortcutsService extends ChangeNotifier {
     VoidCallback? onZoomIn,
     VoidCallback? onZoomOut,
     VoidCallback? onZoomReset,
+    ValueChanged<int>? onFrameStep,
     int? currentPositionEpoch,
     ValueChanged<int>? onLiveSeek,
     ValueChanged<int>? onLiveSeekBy,
@@ -375,6 +404,10 @@ class KeyboardShortcutsService extends ChangeNotifier {
       case 'screenshot':
         unawaited(player.command(['screenshot', 'subtitles']).then((_) => onScreenshot?.call()));
         break;
+      case 'frame_previous':
+      case 'frame_next':
+        _queueFrameStep(player, action == 'frame_next' ? 1 : -1, onFrameStep);
+        break;
       case 'zoom_in':
         onZoomIn?.call();
         break;
@@ -437,6 +470,10 @@ class KeyboardShortcutsService extends ChangeNotifier {
         return t.hotkeys.actions.skipMarker;
       case 'screenshot':
         return t.hotkeys.actions.screenshot;
+      case 'frame_previous':
+        return t.hotkeys.actions.framePrevious;
+      case 'frame_next':
+        return t.hotkeys.actions.frameNext;
       case 'zoom_in':
         return t.hotkeys.actions.zoomIn;
       case 'zoom_out':
