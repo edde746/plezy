@@ -559,12 +559,21 @@ class HubSectionState extends State<HubSection> with MountedSetStateMixin, Skele
               focusNode: _hubFocusNode,
               onKeyEvent: _handleKeyEvent,
               child: SettingsBuilder(
-                prefs: const [SettingsService.libraryDensity, SettingsService.episodePosterMode],
+                prefs: const [
+                  SettingsService.libraryDensity,
+                  SettingsService.episodePosterMode,
+                  SettingsService.gridSpacing,
+                ],
                 builder: (context) => LayoutBuilder(
                   builder: (context, constraints) {
                     final svc = SettingsService.instanceOrNull;
                     if (svc == null) return const SizedBox.shrink();
                     final density = svc.read(SettingsService.libraryDensity);
+                    final hubGap = svc.read(SettingsService.gridSpacing).gap;
+                    final itemPadding = widget.inset
+                        ? EdgeInsets.only(right: 4 + hubGap)
+                        : EdgeInsets.symmetric(horizontal: 2 + hubGap / 2);
+
                     final EpisodePosterMode episodePosterMode =
                         widget.episodePosterModeOverride ?? svc.read(SettingsService.episodePosterMode);
 
@@ -604,7 +613,7 @@ class HubSectionState extends State<HubSection> with MountedSetStateMixin, Skele
                     final containerHeight = posterHeight + (isTv ? 48 : 33);
                     final focusBorderWidth = FocusTheme.focusBorderWidth;
                     final focusExtra = focusBorderWidth * 2; // border on both sides
-                    _itemExtent = cardWidth + focusExtra + 4;
+                    _itemExtent = cardWidth + focusExtra + 4 + hubGap;
 
                     // Everything the card closures capture; a change flushes
                     // the memo so cached cards can't carry stale geometry.
@@ -618,6 +627,7 @@ class HubSectionState extends State<HubSection> with MountedSetStateMixin, Skele
                       widget.inset,
                       widget.isInContinueWatching,
                       widget.usesContinueWatchingAction,
+                      hubGap,
                     );
 
                     return SizedBox(
@@ -649,9 +659,7 @@ class HubSectionState extends State<HubSection> with MountedSetStateMixin, Skele
                             if (index == widget.hub.items.length) {
                               return Padding(
                                 key: _itemKeyFor(index),
-                                padding: widget.inset
-                                    ? const EdgeInsets.only(right: 4)
-                                    : const EdgeInsets.symmetric(horizontal: 2),
+                                padding: itemPadding,
                                 child: FocusBuilders.buildLockedFocusWrapper(
                                   context: context,
                                   isFocused: isItemFocused,
@@ -701,9 +709,7 @@ class HubSectionState extends State<HubSection> with MountedSetStateMixin, Skele
                                 !CardInflationBudget.tryTake()) {
                               scheduleSkeletonUpgrade();
                               return Padding(
-                                padding: widget.inset
-                                    ? const EdgeInsets.only(right: 4)
-                                    : const EdgeInsets.symmetric(horizontal: 2),
+                                padding: itemPadding,
                                 child: SizedBox(width: cardWidth, child: const SkeletonMediaCard()),
                               );
                             }
@@ -716,9 +722,7 @@ class HubSectionState extends State<HubSection> with MountedSetStateMixin, Skele
                               salt: isItemFocused,
                               build: () => Padding(
                                 key: _itemKeyFor(index),
-                                padding: widget.inset
-                                    ? const EdgeInsets.only(right: 4)
-                                    : const EdgeInsets.symmetric(horizontal: 2),
+                                padding: itemPadding,
                                 child: FocusBuilders.buildLockedFocusWrapper(
                                   context: context,
                                   isFocused: isItemFocused,
