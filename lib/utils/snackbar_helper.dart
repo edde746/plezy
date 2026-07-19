@@ -23,6 +23,7 @@ SnackBar _buildSnackBar(
   required Color? backgroundColor,
   required Duration duration,
   bool? dismissible,
+  SnackBarAction? action,
 }) {
   final isDesktop = PlatformDetector.isDesktopOS();
   final tapToDismiss = dismissible ?? isDesktop;
@@ -44,6 +45,7 @@ SnackBar _buildSnackBar(
     behavior: isDesktop ? SnackBarBehavior.floating : null,
     width: isDesktop ? _desktopSnackBarWidth(context) : null,
     padding: tapToDismiss ? EdgeInsets.zero : null,
+    action: action,
   );
 }
 
@@ -98,7 +100,7 @@ void showErrorSnackBar(BuildContext context, String message) {
 }
 
 /// Shows an error snackbar using the root ScaffoldMessenger (survives navigation).
-void showGlobalErrorSnackBar(String message) {
+void showGlobalErrorSnackBar(String message, {String? actionLabel, VoidCallback? onAction}) {
   final messenger = rootScaffoldMessengerKey.currentState;
   if (messenger == null) return;
   messenger.showSnackBar(
@@ -108,6 +110,9 @@ void showGlobalErrorSnackBar(String message) {
       content: Text(message),
       backgroundColor: Colors.red,
       duration: AppDurations.snackBarLong,
+      action: actionLabel != null && onAction != null
+          ? SnackBarAction(label: actionLabel, textColor: Colors.white, onPressed: onAction)
+          : null,
     ),
   );
 }

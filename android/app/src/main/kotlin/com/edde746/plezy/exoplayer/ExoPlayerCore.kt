@@ -55,6 +55,7 @@ import androidx.media3.exoplayer.audio.AudioSink
 import androidx.media3.exoplayer.mediacodec.MediaCodecSelector
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
 import androidx.media3.exoplayer.trackselection.DefaultTrackSelector
+import androidx.media3.exoplayer.upstream.DefaultLoadErrorHandlingPolicy
 import androidx.media3.extractor.DefaultExtractorsFactory
 import androidx.media3.extractor.mkv.MatroskaExtractor
 import androidx.media3.extractor.mp4.FragmentedMp4Extractor
@@ -107,6 +108,9 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
     private const val MAX_AUDIO_RECOVERY_ATTEMPTS = 2
     private const val FPS_SAMPLE_COUNT = 8
     private const val AUDIO_BOUNCE_TIMEOUT_MS = 1000L
+    private const val HTTP_CONNECT_TIMEOUT_MS = 30_000
+    private const val HTTP_READ_TIMEOUT_MS = 120_000
+    private const val STREAM_LOAD_RETRY_COUNT = 5
 
     /** Per-frame "video is at X" logcat stream (tag AssFrameCb) for diagnosing
      *  ASS subtitle lag against the libass pipeline's render/swap lines. */
@@ -566,13 +570,13 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
       if (cronetEngine != null) {
         dataSourceLabel = "Cronet"
         httpFactory = CronetDataSource.Factory(cronetEngine, cronetExecutor)
-          .setConnectionTimeoutMs(15_000)
-          .setReadTimeoutMs(10_000)
+          .setConnectionTimeoutMs(HTTP_CONNECT_TIMEOUT_MS)
+          .setReadTimeoutMs(HTTP_READ_TIMEOUT_MS)
       } else {
         dataSourceLabel = "DefaultHttp"
         httpFactory = DefaultHttpDataSource.Factory()
-          .setConnectTimeoutMs(15_000)
-          .setReadTimeoutMs(10_000)
+          .setConnectTimeoutMs(HTTP_CONNECT_TIMEOUT_MS)
+          .setReadTimeoutMs(HTTP_READ_TIMEOUT_MS)
       }
       httpDataSourceFactory = httpFactory
       dataSourceFactory = DefaultDataSource.Factory(activity, httpFactory)
@@ -623,6 +627,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
       }
 
       val mediaSourceFactory = DefaultMediaSourceFactory(dataSourceFactory!!, wrappedExtractorsFactory)
+        .setLoadErrorHandlingPolicy(DefaultLoadErrorHandlingPolicy(STREAM_LOAD_RETRY_COUNT))
         .setSubtitleParserFactory(assParserFactory)
 
       // Wrap text renderers with subtitle delay support
@@ -1136,13 +1141,37 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
       if (handled) return
     }
 
+    val event = mutableMapOf<String, Any>(
+      "reason" to "error",
+      "message" to (error.message ?: "Unknown error")
+    )
+    if (isExhaustedTransientNetworkError(error)) {
+      event["cause"] = "transient-network"
+    }
     delegate?.onEvent(
       "end-file",
-      mapOf(
-        "reason" to "error",
-        "message" to (error.message ?: "Unknown error")
-      )
+      event
     )
+  }
+
+  private fun isExhaustedTransientNetworkError(error: PlaybackException): Boolean {
+    if (
+      error.errorCode == PlaybackException.ERROR_CODE_IO_NETWORK_CONNECTION_FAILED ||
+      error.errorCode == PlaybackException.ERROR_CODE_IO_NETWORK_CONNECTION_TIMEOUT
+    ) {
+      return true
+    }
+
+    var cause: Throwable? = error.cause
+    while (cause != null) {
+      if (cause is HttpDataSource.InvalidResponseCodeException) {
+        return cause.responseCode == 408 ||
+          cause.responseCode == 429 ||
+          cause.responseCode in 502..504
+      }
+      cause = cause.cause
+    }
+    return false
   }
 
   private fun retryAfterAudioTrackError(error: PlaybackException, causeChain: String): Boolean {

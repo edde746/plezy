@@ -20,6 +20,10 @@ sealed class PlayerError with _$PlayerError {
   /// transcoding limit rejection set by the server owner.
   static const String serverHttp500 = 'server-http-500';
 
+  /// Cause tag for an exhausted but potentially recoverable network read or
+  /// connection failure. Video playback can re-resolve and reopen in place.
+  static const String transientNetwork = 'transient-network';
+
   @override
   String toString() => message;
 }

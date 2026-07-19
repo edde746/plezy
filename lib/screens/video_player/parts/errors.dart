@@ -39,6 +39,19 @@ extension _VideoPlayerErrorMethods on VideoPlayerScreenState {
       }
     }
 
+    // A temporary VOD network failure should not throw the user out of the
+    // player. Re-resolve the selected source and reopen at the same position,
+    // sharing the same bounded recovery budget as a truncated mid-file EOF.
+    if (shouldRecoverTransientVodPlayerError(
+      isLive: widget.isLive,
+      isOffline: _isOfflinePlayback,
+      error: err,
+      recentLog: _lastLogError,
+    )) {
+      _interceptTransientStreamError(err);
+      return;
+    }
+
     showGlobalErrorSnackBar(_redactPlayerError(_lastLogError ?? err.message));
     _handleBackButton();
   }

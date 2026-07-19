@@ -616,8 +616,38 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
     }
     _spuriousEofRecoveryAttempts++;
     _spuriousEofRecoveryBaselineMs = positionMs;
-    unawaited(_recoverFromSpuriousEof(currentPlayer));
+    unawaited(_recoverFromStreamInterruption(currentPlayer, reason: 'spurious EOF recovery'));
     return true;
+  }
+
+  /// Handle a player-reported transient network failure without leaving the
+  /// route. Native read/connect timeouts and libmpv socket errors land here;
+  /// genuine EOF and codec failures retain their existing behavior.
+  void _interceptTransientStreamError(PlayerError error) {
+    if (widget.isLive || _isOfflinePlayback) return;
+    if (_spuriousEofRecoveryParked) return;
+
+    // Errors emitted by the old stream while a replacement is resolving or
+    // opening belong to that transition. Its result will either commit the
+    // fresh stream or park playback, so do not double-spend the retry budget.
+    if (_playbackTransition != _PlaybackTransition.idle) return;
+
+    final currentPlayer = player;
+    if (currentPlayer == null) return;
+    final positionMs = currentPlayer.state.position.inMilliseconds;
+    appLogger.w(
+      'Transient stream error at ${positionMs}ms: ${error.message}; '
+      'recovery attempt ${_spuriousEofRecoveryAttempts + 1}/'
+      '${VideoPlayerScreenState._maxSpuriousEofRecoveryAttempts}',
+    );
+
+    if (_spuriousEofRecoveryAttempts >= VideoPlayerScreenState._maxSpuriousEofRecoveryAttempts) {
+      _parkAfterFailedRecovery();
+      return;
+    }
+    _spuriousEofRecoveryAttempts++;
+    _spuriousEofRecoveryBaselineMs = positionMs;
+    unawaited(_recoverFromStreamInterruption(currentPlayer, reason: 'transient network error recovery'));
   }
 
   /// Leave playback parked on the dead stream: no auto-exit — the user keeps
@@ -626,7 +656,38 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
   void _parkAfterFailedRecovery() {
     _spuriousEofRecoveryParked = true;
     unawaited(_setWakelock(false));
-    showGlobalErrorSnackBar(t.messages.streamInterrupted);
+    showGlobalErrorSnackBar(
+      t.messages.streamInterrupted,
+      actionLabel: _availableVersions.length > 1 ? t.mediaMenu.playVersion : null,
+      onAction: _availableVersions.length > 1 ? () => unawaited(_chooseStreamAfterFailedRecovery()) : null,
+    );
+  }
+
+  Future<void> _chooseStreamAfterFailedRecovery() async {
+    if (!mounted || _availableVersions.length < 2) return;
+    final versionsAtOpen = List<MediaVersion>.unmodifiable(_availableVersions);
+    final selectedIndex = await showVersionPickerDialog(context, versionsAtOpen, t.mediaMenu.playVersion);
+    if (!mounted || selectedIndex == null || !_spuriousEofRecoveryParked) return;
+    if (_playbackTransition != _PlaybackTransition.idle || selectedIndex >= versionsAtOpen.length) return;
+
+    final selectedVersion = versionsAtOpen[selectedIndex];
+    final currentVersions = _availableVersions;
+    var currentIndex = selectedVersion.id.isEmpty
+        ? -1
+        : currentVersions.indexWhere((version) => version.id == selectedVersion.id);
+    if (currentIndex < 0) {
+      currentIndex = currentVersions.indexWhere((version) => version.signature == selectedVersion.signature);
+    }
+    if (currentIndex < 0) return;
+
+    if (currentIndex == _effectiveSelectedMediaIndex) {
+      await _retrySpuriousEofRecovery(reason: 'selected current stream');
+      return;
+    }
+    await _switchPlaybackSource(newMediaIndex: currentIndex);
+    if (mounted && _spuriousEofRecoveryParked && _playbackTransition == _PlaybackTransition.idle) {
+      _parkAfterFailedRecovery();
+    }
   }
 
   /// Recover from a spurious EOF by re-running the full playback decision in
@@ -634,14 +695,14 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
   /// failure is the same: the server-side stream is gone and only a fresh
   /// resolve replaces it (a seek-in-place lands inside the dead cache, and a
   /// same-session transcode seek can hit the reaped session).
-  Future<void> _recoverFromSpuriousEof(Player currentPlayer) async {
+  Future<void> _recoverFromStreamInterruption(Player currentPlayer, {required String reason}) async {
     final outcome = await _reloadMediaInPlace(
       metadata: _currentMetadata,
       resumePosition: currentPlayer.state.position,
       preserveCurrentTrackSelection: true,
       startPaused: !_playbackIntentShouldPlay,
       showErrorUi: false,
-      reason: 'spurious EOF recovery',
+      reason: reason,
     );
     if (outcome == _MediaReloadOutcome.failed) _parkAfterFailedRecovery();
     // rejected/superseded: another flow owns the player and will commit

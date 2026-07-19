@@ -520,8 +520,15 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
     required bool isTranscoding,
     required MediaVersion? selectedVersion,
   }) async {
+    await player.setProperty(
+      'network-timeout',
+      '${isNetworkVod ? mpvNetworkVodTimeoutSeconds : mpvDefaultNetworkTimeoutSeconds}',
+    );
+
     if (isNetworkVod) {
-      // Covers network drops up to 10 min; applies to transcode streams too.
+      // Each stalled read gets the finite VOD budget above; ffmpeg may then
+      // reconnect with bounded backoff for up to 10 min. Applies to transcode
+      // streams too.
       //
       // reconnect_on_http_error=503: without it, ffmpeg abandons a reconnect
       // that gets an HTTP error and the truncated body surfaces as a clean

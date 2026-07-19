@@ -5,6 +5,12 @@ import 'dart:math';
 /// never carries one item's tuning into the next.
 const mpvDefaultStreamBufferBytes = 128 * 1024;
 
+/// Per-read network stall budgets written before every mpv open. Keeping both
+/// values explicit ensures a reused player cannot carry the relaxed VOD value
+/// into a local or non-VOD item.
+const mpvNetworkVodTimeoutSeconds = 120;
+const mpvDefaultNetworkTimeoutSeconds = 60;
+
 /// QuickTime/MP4 muxer family. Apple capture muxers (iPhone recordings and
 /// friends) can store audio packets seconds away from coeval video packets —
 /// in bytes, seconds × video byterate — which makes ffmpeg's DTS-ordered

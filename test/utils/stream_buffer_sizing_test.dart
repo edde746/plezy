@@ -2,6 +2,11 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/utils/stream_buffer_sizing.dart';
 
 void main() {
+  test('network VOD uses a longer finite mpv stall timeout', () {
+    expect(mpvNetworkVodTimeoutSeconds, 120);
+    expect(mpvDefaultNetworkTimeoutSeconds, 60);
+  });
+
   group('nextPowerOfTwo', () {
     test('rounds up to the next power of two', () {
       expect(nextPowerOfTwo(1), 1);
