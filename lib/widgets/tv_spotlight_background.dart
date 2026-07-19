@@ -15,9 +15,11 @@ import '../utils/content_utils.dart';
 import '../utils/formatters.dart';
 import '../utils/layout_constants.dart';
 import '../utils/media_image_helper.dart';
+import '../services/settings_service.dart';
 import 'app_icon.dart';
 import 'cycling_media_backdrop.dart';
 import 'fitting_title_text.dart';
+import 'settings_builder.dart';
 import 'media_rating_badge.dart';
 import 'optimized_media_image.dart' show blurArtwork;
 import 'rasterized_gradient.dart';
@@ -69,73 +71,107 @@ class TvSpotlightBackground extends StatelessWidget {
     final fallbackPaths = media == null
         ? const <String>[]
         : <String>[...media.heroArtCandidates(containerAspectRatio: containerAspect), ?media.thumbPath];
-    return Stack(
-      fit: StackFit.expand,
-      children: [
-        RepaintBoundary(
-          child: blurArtwork(
-            CyclingMediaBackdrop(
-              mediaKey: media?.globalKey,
-              imagePaths: media?.heroBackdropPaths ?? const [],
-              fallbackImagePaths: fallbackPaths,
-              client: client,
-              localArtworkPathResolver: localArtworkPathResolver == null
-                  ? null
-                  : (path) => localArtworkPathResolver!(path),
-              allowNetwork: allowNetwork,
-              width: size.width,
-              height: size.height,
-              fallbackColor: media == null ? bgColor : Theme.of(context).colorScheme.surfaceContainerHighest,
+    return SettingValueBuilder<bool>(
+      pref: SettingsService.tvCornerSpotlightBackdrop,
+      builder: (context, cornerBackdrop, _) {
+        final backdropSize = cornerBackdrop ? Size(size.width * 0.68, size.height * 0.72) : size;
+        final backdrop = CyclingMediaBackdrop(
+          mediaKey: media?.globalKey,
+          imagePaths: media?.heroBackdropPaths ?? const [],
+          fallbackImagePaths: fallbackPaths,
+          client: client,
+          localArtworkPathResolver: localArtworkPathResolver == null ? null : (path) => localArtworkPathResolver!(path),
+          allowNetwork: allowNetwork,
+          // Always request at full-screen size: the corner box only crops the
+          // layout. A mode-dependent size would change the transcode URL and
+          // cold-start every cached backdrop when the setting is toggled.
+          width: size.width,
+          height: size.height,
+          fallbackColor: media == null ? bgColor : Theme.of(context).colorScheme.surfaceContainerHighest,
+        );
+        return Stack(
+          fit: StackFit.expand,
+          children: [
+            RepaintBoundary(
+              child: cornerBackdrop ? _buildCornerBackdrop(backdropSize, backdrop) : blurArtwork(backdrop),
             ),
-          ),
-        ),
-        _buildHorizontalScrim(bgColor),
-        RasterizedGradient(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [Colors.black.withValues(alpha: 0.45), Colors.transparent, bgColor.withValues(alpha: 0.96)],
-            stops: const [0.0, 0.38, 1.0],
-          ),
-        ),
-        if (media != null && showInfo)
-          Positioned(
-            left: contentLeft ?? TvLayoutConstants.horizontalInset,
-            right: MediaQuery.sizeOf(context).width * 0.43,
-            top: contentTop,
-            bottom: contentBottom,
-            // The info block still cross-fades via AnimatedSwitcher, but its
-            // saveLayers are bounded to the text region, not the screen.
-            child: AnimatedSwitcher(
-              duration: DevicePerformance.reducedDuration(const Duration(milliseconds: 280)),
-              switchInCurve: Curves.easeOutCubic,
-              switchOutCurve: Curves.easeOutCubic,
-              // Expand instead of the default loose centered Stack so the
-              // info keeps filling the region and bottom-left aligning.
-              layoutBuilder: (currentChild, previousChildren) =>
-                  Stack(fit: StackFit.expand, children: [...previousChildren, ?currentChild]),
-              child: KeyedSubtree(
-                key: ValueKey(media.globalKey),
-                child: LayoutBuilder(
-                  builder: (context, constraints) {
-                    if (!constraints.hasBoundedHeight || constraints.maxHeight <= 0 || constraints.maxWidth <= 0) {
-                      return Align(alignment: .bottomLeft, child: _buildInfo(context, media));
-                    }
-
-                    return Align(
-                      alignment: .bottomLeft,
-                      child: FittedBox(
-                        fit: BoxFit.scaleDown,
-                        alignment: .bottomLeft,
-                        child: SizedBox(width: constraints.maxWidth, child: _buildInfo(context, media)),
-                      ),
-                    );
-                  },
-                ),
+            _buildHorizontalScrim(bgColor),
+            RasterizedGradient(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [Colors.black.withValues(alpha: 0.45), Colors.transparent, bgColor.withValues(alpha: 0.96)],
+                stops: const [0.0, 0.38, 1.0],
               ),
             ),
+            if (media != null && showInfo)
+              Positioned(
+                left: contentLeft ?? TvLayoutConstants.horizontalInset,
+                right: MediaQuery.sizeOf(context).width * 0.43,
+                top: contentTop,
+                bottom: contentBottom,
+                // The info block still cross-fades via AnimatedSwitcher, but its
+                // saveLayers are bounded to the text region, not the screen.
+                child: AnimatedSwitcher(
+                  duration: DevicePerformance.reducedDuration(const Duration(milliseconds: 280)),
+                  switchInCurve: Curves.easeOutCubic,
+                  switchOutCurve: Curves.easeOutCubic,
+                  // Expand instead of the default loose centered Stack so the
+                  // info keeps filling the region and bottom-left aligning.
+                  layoutBuilder: (currentChild, previousChildren) =>
+                      Stack(fit: StackFit.expand, children: [...previousChildren, ?currentChild]),
+                  child: KeyedSubtree(
+                    key: ValueKey(media.globalKey),
+                    child: LayoutBuilder(
+                      builder: (context, constraints) {
+                        if (!constraints.hasBoundedHeight || constraints.maxHeight <= 0 || constraints.maxWidth <= 0) {
+                          return Align(alignment: .bottomLeft, child: _buildInfo(context, media));
+                        }
+
+                        return Align(
+                          alignment: .bottomLeft,
+                          child: FittedBox(
+                            fit: BoxFit.scaleDown,
+                            alignment: .bottomLeft,
+                            child: SizedBox(width: constraints.maxWidth, child: _buildInfo(context, media)),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        );
+      },
+    );
+  }
+
+  /// Corner spotlight: artwork pinned to the top-right corner, left and
+  /// bottom edges feathered into the scaffold background so the info block
+  /// sits on a calm surface instead of the image.
+  Widget _buildCornerBackdrop(Size backdropSize, Widget backdrop) {
+    return Align(
+      alignment: Alignment.topRight,
+      child: SizedBox(
+        width: backdropSize.width,
+        height: backdropSize.height,
+        child: ShaderMask(
+          shaderCallback: (rect) =>
+              const LinearGradient(colors: [Colors.transparent, Colors.white], stops: [0.0, 0.35]).createShader(rect),
+          blendMode: BlendMode.dstIn,
+          child: ShaderMask(
+            shaderCallback: (rect) => const LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [Colors.white, Colors.white, Colors.transparent],
+              stops: [0.0, 0.55, 1.0],
+            ).createShader(rect),
+            blendMode: BlendMode.dstIn,
+            child: backdrop,
           ),
-      ],
+        ),
+      ),
     );
   }
 

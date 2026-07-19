@@ -108,6 +108,8 @@
     "libraryDensity": "Mediathekdichte",
     "compact": "Kompakt",
     "comfortable": "Großzügig",
+    "tvCornerSpotlightBackdrop": "Backdrop in der Ecke",
+    "tvCornerSpotlightBackdropDescription": "Zeigt das Spotlight-Artwork oben rechts statt bildschirmfüllend",
     "viewMode": "Ansichtsmodus",
     "gridView": "Raster",
     "listView": "Liste",

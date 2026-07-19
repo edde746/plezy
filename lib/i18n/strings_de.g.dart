@@ -239,6 +239,8 @@ class _TranslationsSettingsDe extends TranslationsSettingsEn {
 	@override String get libraryDensity => 'Mediathekdichte';
 	@override String get compact => 'Kompakt';
 	@override String get comfortable => 'Großzügig';
+	@override String get tvCornerSpotlightBackdrop => 'Backdrop in der Ecke';
+	@override String get tvCornerSpotlightBackdropDescription => 'Zeigt das Spotlight-Artwork oben rechts statt bildschirmfüllend';
 	@override String get viewMode => 'Ansichtsmodus';
 	@override String get gridView => 'Raster';
 	@override String get listView => 'Liste';
@@ -2221,6 +2223,8 @@ extension on TranslationsDe {
 			'settings.libraryDensity' => 'Mediathekdichte',
 			'settings.compact' => 'Kompakt',
 			'settings.comfortable' => 'Großzügig',
+			'settings.tvCornerSpotlightBackdrop' => 'Backdrop in der Ecke',
+			'settings.tvCornerSpotlightBackdropDescription' => 'Zeigt das Spotlight-Artwork oben rechts statt bildschirmfüllend',
 			'settings.viewMode' => 'Ansichtsmodus',
 			'settings.gridView' => 'Raster',
 			'settings.listView' => 'Liste',
@@ -2633,10 +2637,10 @@ extension on TranslationsDe {
 			'messages.autoRemovedWatchedDownloads' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('de'))(n, one: 'Automatisch entfernt: ${n} angesehener Download', other: 'Automatisch entfernt: ${n} angesehene Downloads', ), 
 			'messages.removedFromContinueWatching' => 'Aus ‚Weiterschauen\' entfernt',
 			'messages.errorLoading' => ({required Object error}) => 'Fehler: ${error}',
-			'messages.streamInterrupted' => 'Der Stream wurde unterbrochen. Drücke auf Wiedergabe oder spule, um es erneut zu versuchen.',
-			'messages.liveStreamInterrupted' => 'Der Livestream wurde unterbrochen. Drücke auf Wiedergabe, um es erneut zu versuchen.',
 			_ => null,
 		} ?? switch (path) {
+			'messages.streamInterrupted' => 'Der Stream wurde unterbrochen. Drücke auf Wiedergabe oder spule, um es erneut zu versuchen.',
+			'messages.liveStreamInterrupted' => 'Der Livestream wurde unterbrochen. Drücke auf Wiedergabe, um es erneut zu versuchen.',
 			'messages.fileInfoNotAvailable' => 'Dateiinfo nicht verfügbar',
 			'messages.errorLoadingFileInfo' => ({required Object error}) => 'Fehler beim Laden der Dateiinfo: ${error}',
 			'messages.errorLoadingSeries' => 'Fehler beim Laden der Serie',
@@ -3147,10 +3151,10 @@ extension on TranslationsDe {
 			'watchTogether.guestSwitchUnavailable' => 'Wechsel fehlgeschlagen — Server nicht für Synchronisierung verfügbar',
 			'watchTogether.guestSwitchFailed' => 'Wechsel fehlgeschlagen — Inhalt auf diesem Server nicht gefunden',
 			'downloads.title' => 'Downloads',
-			'downloads.manage' => 'Verwalten',
-			'downloads.tvShows' => 'Serien',
 			_ => null,
 		} ?? switch (path) {
+			'downloads.manage' => 'Verwalten',
+			'downloads.tvShows' => 'Serien',
 			'downloads.movies' => 'Filme',
 			'downloads.music' => 'Musik',
 			'downloads.tracksQueued' => ({required Object count}) => '${count} Titel zum Download in Warteschlange',

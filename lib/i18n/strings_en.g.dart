@@ -437,6 +437,12 @@ class TranslationsSettingsEn {
 	/// en: 'Comfortable'
 	String get comfortable => 'Comfortable';
 
+	/// en: 'Corner Spotlight Backdrop'
+	String get tvCornerSpotlightBackdrop => 'Corner Spotlight Backdrop';
+
+	/// en: 'Show spotlight artwork in the top-right corner instead of filling the screen'
+	String get tvCornerSpotlightBackdropDescription => 'Show spotlight artwork in the top-right corner instead of filling the screen';
+
 	/// en: 'View Mode'
 	String get viewMode => 'View Mode';
 
@@ -5078,6 +5084,8 @@ extension on Translations {
 			'settings.libraryDensity' => 'Library Density',
 			'settings.compact' => 'Compact',
 			'settings.comfortable' => 'Comfortable',
+			'settings.tvCornerSpotlightBackdrop' => 'Corner Spotlight Backdrop',
+			'settings.tvCornerSpotlightBackdropDescription' => 'Show spotlight artwork in the top-right corner instead of filling the screen',
 			'settings.viewMode' => 'View Mode',
 			'settings.gridView' => 'Grid',
 			'settings.listView' => 'List',
@@ -5490,10 +5498,10 @@ extension on Translations {
 			'messages.autoRemovedWatchedDownloads' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(n, one: 'Auto-removed ${n} watched download', other: 'Auto-removed ${n} watched downloads', ), 
 			'messages.removedFromContinueWatching' => 'Removed from Continue Watching',
 			'messages.errorLoading' => ({required Object error}) => 'Error: ${error}',
-			'messages.streamInterrupted' => 'The stream was interrupted. Press play or seek to retry.',
-			'messages.liveStreamInterrupted' => 'The live stream was interrupted. Press play to retry.',
 			_ => null,
 		} ?? switch (path) {
+			'messages.streamInterrupted' => 'The stream was interrupted. Press play or seek to retry.',
+			'messages.liveStreamInterrupted' => 'The live stream was interrupted. Press play to retry.',
 			'messages.fileInfoNotAvailable' => 'File information not available',
 			'messages.errorLoadingFileInfo' => ({required Object error}) => 'Error loading file info: ${error}',
 			'messages.errorLoadingSeries' => 'Error loading series',
@@ -6004,10 +6012,10 @@ extension on Translations {
 			'watchTogether.guestSwitchUnavailable' => 'Couldn\'t switch — server unavailable for sync',
 			'watchTogether.guestSwitchFailed' => 'Couldn\'t switch — content not found on this server',
 			'downloads.title' => 'Downloads',
-			'downloads.manage' => 'Manage',
-			'downloads.tvShows' => 'TV Shows',
 			_ => null,
 		} ?? switch (path) {
+			'downloads.manage' => 'Manage',
+			'downloads.tvShows' => 'TV Shows',
 			'downloads.movies' => 'Movies',
 			'downloads.music' => 'Music',
 			'downloads.tracksQueued' => ({required Object count}) => '${count} tracks queued for download',

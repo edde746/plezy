@@ -108,6 +108,8 @@
     "libraryDensity": "Library Density",
     "compact": "Compact",
     "comfortable": "Comfortable",
+    "tvCornerSpotlightBackdrop": "Corner Spotlight Backdrop",
+    "tvCornerSpotlightBackdropDescription": "Show spotlight artwork in the top-right corner instead of filling the screen",
     "viewMode": "View Mode",
     "gridView": "Grid",
     "listView": "List",

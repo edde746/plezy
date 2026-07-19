@@ -51,6 +51,13 @@ class AppearanceSettingsScreen extends StatelessWidget {
               ),
             if (PlatformDetector.isTV())
               SettingSwitchTile(
+                pref: SettingsService.tvCornerSpotlightBackdrop,
+                icon: Symbols.picture_in_picture_alt_rounded,
+                title: t.settings.tvCornerSpotlightBackdrop,
+                subtitle: t.settings.tvCornerSpotlightBackdropDescription,
+              ),
+            if (PlatformDetector.isTV())
+              SettingSwitchTile(
                 pref: SettingsService.focusGlow,
                 icon: Symbols.lightbulb_rounded,
                 title: t.settings.focusGlow,
