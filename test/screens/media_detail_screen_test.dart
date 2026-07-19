@@ -18,6 +18,7 @@ import 'package:plezy/media/media_item.dart';
 import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/media/media_server_client.dart';
 import 'package:plezy/media/server_capabilities.dart';
+import 'package:plezy/providers/catalog_sources_provider.dart';
 import 'package:plezy/providers/download_provider.dart';
 import 'package:plezy/providers/multi_server_provider.dart';
 import 'package:plezy/providers/watch_state_store.dart';
@@ -170,6 +171,255 @@ void main() {
     await tester.pump();
 
     expect(tester.widget<AnimatedOpacity>(revealGate).opacity, 1);
+  });
+
+  testWidgets('Jellyfin movie detail toggles the server favorite action', (tester) async {
+    await SettingsService.getInstance();
+    tester.view.physicalSize = const Size(1280, 720);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final movie = testMediaItem(
+      id: 'favorite_movie',
+      backend: MediaBackend.jellyfin,
+      kind: MediaKind.movie,
+      title: 'Favorite Movie',
+      serverId: 'server_1',
+      isFavorite: false,
+    );
+    final client = _FakeMediaServerClient(show: movie, childrenByParent: const {});
+    final manager = MultiServerManager()..debugRegisterClientForTesting(client);
+    final provider = MultiServerProvider(manager, DataAggregationService(manager));
+    addTearDown(provider.dispose);
+    addTearDown(manager.dispose);
+
+    await tester.pumpWidget(
+      TranslationProvider(
+        child: ChangeNotifierProvider<MultiServerProvider>.value(
+          value: provider,
+          child: MaterialApp(
+            theme: monoTheme(dark: true),
+            home: withProfileNavigationScope(child: MediaDetailScreen(metadata: movie)),
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
+
+    expect(find.byTooltip(t.mediaMenu.addToFavorites), findsOneWidget);
+    await tester.tap(find.byTooltip(t.mediaMenu.addToFavorites));
+    await tester.pumpAndSettle();
+
+    expect(client.favoriteValues, [true]);
+    expect(find.byTooltip(t.mediaMenu.removeFromFavorites), findsOneWidget);
+
+    await tester.tap(find.byTooltip(t.mediaMenu.removeFromFavorites));
+    await tester.pumpAndSettle();
+
+    expect(client.favoriteValues, [true, false]);
+    expect(find.byTooltip(t.mediaMenu.addToFavorites), findsOneWidget);
+  });
+
+  testWidgets('favorite override survives stale metadata refreshes before and after completion', (tester) async {
+    await SettingsService.getInstance();
+    final movie = testMediaItem(
+      id: 'favorite_refresh_race',
+      backend: MediaBackend.jellyfin,
+      kind: MediaKind.movie,
+      title: 'Favorite Refresh Race',
+      serverId: 'server_1',
+      isFavorite: false,
+    );
+    final favoriteGate = Completer<void>();
+    final staleBeforeCompletion = Completer<MediaItem?>();
+    final staleAfterCompletion = Completer<MediaItem?>();
+    final client = _FakeMediaServerClient(
+      show: movie,
+      childrenByParent: const {},
+      favoriteGate: favoriteGate,
+      itemFetchResults: [Future.value(movie), staleBeforeCompletion.future, staleAfterCompletion.future],
+    );
+    final manager = MultiServerManager()..debugRegisterClientForTesting(client);
+    final provider = MultiServerProvider(manager, DataAggregationService(manager));
+    addTearDown(provider.dispose);
+    addTearDown(manager.dispose);
+
+    await tester.pumpWidget(
+      TranslationProvider(
+        child: ChangeNotifierProvider<MultiServerProvider>.value(
+          value: provider,
+          child: MaterialApp(
+            theme: monoTheme(dark: true),
+            home: withProfileNavigationScope(child: MediaDetailScreen(metadata: movie)),
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
+
+    await tester.tap(find.byTooltip(t.mediaMenu.addToFavorites));
+    await tester.pump();
+    expect(find.byTooltip(t.mediaMenu.removeFromFavorites), findsOneWidget);
+
+    WatchStateNotifier().notifyWatched(item: movie);
+    await tester.pump();
+    expect(client.fetchItemWithOnDeckCalls, 2);
+    staleBeforeCompletion.complete(movie);
+    await tester.pump();
+    await tester.pump();
+    expect(find.byTooltip(t.mediaMenu.removeFromFavorites), findsOneWidget);
+
+    favoriteGate.complete();
+    await tester.pump();
+    await tester.pump();
+    expect(find.byTooltip(t.mediaMenu.removeFromFavorites), findsOneWidget);
+
+    WatchStateNotifier().notifyWatched(item: movie);
+    await tester.pump();
+    expect(client.fetchItemWithOnDeckCalls, 3);
+    staleAfterCompletion.complete(movie);
+    await tester.pump();
+    await tester.pump();
+    expect(find.byTooltip(t.mediaMenu.removeFromFavorites), findsOneWidget);
+
+    // The bridge is bounded: if later server snapshots continue to disagree,
+    // the server eventually becomes authoritative again.
+    await tester.pump(const Duration(seconds: 16));
+    expect(find.byTooltip(t.mediaMenu.addToFavorites), findsOneWidget);
+  });
+
+  testWidgets('favorite detail action is hidden for unsupported clients and item types', (tester) async {
+    await SettingsService.getInstance();
+
+    Future<void> pumpDetail(MediaItem item, _FakeMediaServerClient client) async {
+      final manager = MultiServerManager()..debugRegisterClientForTesting(client);
+      final provider = MultiServerProvider(manager, DataAggregationService(manager));
+      addTearDown(provider.dispose);
+      addTearDown(manager.dispose);
+      await tester.pumpWidget(
+        TranslationProvider(
+          child: ChangeNotifierProvider<MultiServerProvider>.value(
+            value: provider,
+            child: MaterialApp(
+              theme: monoTheme(dark: true),
+              home: withProfileNavigationScope(child: MediaDetailScreen(metadata: item)),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 200));
+    }
+
+    final episode = testMediaItem(
+      id: 'favorite_episode',
+      backend: MediaBackend.jellyfin,
+      kind: MediaKind.episode,
+      title: 'Favorite Episode',
+      serverId: 'server_1',
+    );
+    await pumpDetail(episode, _FakeMediaServerClient(show: episode, childrenByParent: const {}));
+    expect(find.byTooltip(t.mediaMenu.addToFavorites), findsNothing);
+    expect(find.byTooltip(t.mediaMenu.removeFromFavorites), findsNothing);
+
+    final plexMovie = testMediaItem(
+      id: 'favorite_plex_movie',
+      backend: MediaBackend.plex,
+      kind: MediaKind.movie,
+      title: 'Plex Movie',
+      serverId: 'server_1',
+    );
+    await pumpDetail(
+      plexMovie,
+      _FakeMediaServerClient(
+        show: plexMovie,
+        childrenByParent: const {},
+        clientBackend: MediaBackend.plex,
+        clientCapabilities: ServerCapabilities.plex,
+      ),
+    );
+    expect(find.byTooltip(t.mediaMenu.addToFavorites), findsNothing);
+    expect(find.byTooltip(t.mediaMenu.removeFromFavorites), findsNothing);
+  });
+
+  testWidgets('favorite completion after Back updates Explore and the originating session item', (tester) async {
+    await SettingsService.getInstance();
+    final movie = testMediaItem(
+      id: 'favorite_dispose',
+      backend: MediaBackend.jellyfin,
+      kind: MediaKind.movie,
+      title: 'Favorite Dispose',
+      serverId: 'server_1',
+    );
+    final favoriteGate = Completer<void>();
+    final client = _FakeMediaServerClient(show: movie, childrenByParent: const {}, favoriteGate: favoriteGate);
+    final manager = MultiServerManager()..debugRegisterClientForTesting(client);
+    final provider = MultiServerProvider(manager, DataAggregationService(manager));
+    final catalogSources = _RecordingCatalogSourcesProvider();
+    final watchStateStore = WatchStateStore();
+    final navigatorKey = GlobalKey<NavigatorState>();
+    addTearDown(provider.dispose);
+    addTearDown(manager.dispose);
+    addTearDown(catalogSources.dispose);
+    addTearDown(watchStateStore.dispose);
+
+    await tester.pumpWidget(
+      TranslationProvider(
+        child: MultiProvider(
+          providers: [
+            ChangeNotifierProvider<MultiServerProvider>.value(value: provider),
+            ChangeNotifierProvider<CatalogSourcesProvider>.value(value: catalogSources),
+            ChangeNotifierProvider<WatchStateStore>.value(value: watchStateStore),
+          ],
+          child: withProfileNavigationScope(
+            child: MaterialApp(
+              navigatorKey: navigatorKey,
+              theme: monoTheme(dark: true),
+              home: Scaffold(
+                body: Builder(
+                  builder: (context) => Column(
+                    children: [
+                      Consumer<WatchStateStore>(
+                        builder: (_, store, _) => Text('favorite: ${store.apply(movie).isFavorite == true}'),
+                      ),
+                      FilledButton(
+                        onPressed: () => Navigator.push(context, mediaDetailRoute(metadata: movie)),
+                        child: const Text('Open details'),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    expect(find.text('favorite: false'), findsOneWidget);
+    await tester.tap(find.text('Open details'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byTooltip(t.mediaMenu.addToFavorites));
+    await tester.pump();
+    expect(client.favoriteValues, [true]);
+
+    navigatorKey.currentState!.pop();
+    await tester.pumpAndSettle();
+    expect(find.text('favorite: false'), findsOneWidget);
+
+    favoriteGate.complete();
+    await tester.pump();
+    await tester.pump();
+
+    expect(catalogSources.favoriteChanges.map((item) => item.id), ['favorite_dispose']);
+    expect(find.text('favorite: true'), findsOneWidget);
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets('TV detail shows Rotten Tomatoes rating badge in metadata line', (tester) async {
@@ -704,10 +954,11 @@ void main() {
       String? initialSeasonId,
       int? initialSeasonIndex,
       String? initialEpisodeId,
+      Size viewSize = const Size(1100, 2400),
     }) async {
       TvDetectionService.debugSetAppleTVOverride(false);
       await SettingsService.getInstance();
-      tester.view.physicalSize = const Size(1100, 2400);
+      tester.view.physicalSize = viewSize;
       tester.view.devicePixelRatio = 1;
       addTearDown(tester.view.resetPhysicalSize);
       addTearDown(tester.view.resetDevicePixelRatio);
@@ -805,6 +1056,17 @@ void main() {
       expect(overviewFocus, findsOneWidget);
       return tester.widget<Focus>(overviewFocus).focusNode!;
     }
+
+    testWidgets('compact detail keeps Watched and More ahead of the direct Favorite action', (tester) async {
+      final show = buildShow();
+
+      await pumpPhoneDetail(tester, singleSeasonClient(show), show, viewSize: const Size(300, 1200));
+
+      final actionBar = tester.widget<FocusableActionBar>(find.byType(FocusableActionBar));
+      final actionLabels = actionBar.actions.map((action) => action.debugLabel);
+      expect(actionLabels, containsAll(<String>['detail_play', 'detail_watched', 'detail_more']));
+      expect(actionLabels, isNot(contains('detail_favorite')));
+    });
 
     testWidgets('overflowing overview DOWN reaches the first real section', (tester) async {
       const summary =
@@ -1031,7 +1293,13 @@ class _FakeMediaServerClient implements MediaServerClient {
   final Map<String, Future<List<MediaItem>>> childrenPageFutures;
   final Map<String, Object> childrenPageErrors;
   final Future<List<MediaItem>>? pendingPlayableDescendants;
+  final MediaBackend clientBackend;
+  final ServerCapabilities clientCapabilities;
+  final Completer<void>? favoriteGate;
+  final List<Future<MediaItem?>> itemFetchResults;
   final childrenPageCalls = <({String parentId, int? start, int? size})>[];
+  final favoriteValues = <bool>[];
+  int fetchItemWithOnDeckCalls = 0;
 
   _FakeMediaServerClient({
     required this.show,
@@ -1039,6 +1307,10 @@ class _FakeMediaServerClient implements MediaServerClient {
     this.childrenPageFutures = const {},
     this.childrenPageErrors = const {},
     this.pendingPlayableDescendants,
+    this.clientBackend = MediaBackend.jellyfin,
+    this.clientCapabilities = ServerCapabilities.jellyfin,
+    this.favoriteGate,
+    this.itemFetchResults = const [],
   });
 
   @override
@@ -1048,14 +1320,16 @@ class _FakeMediaServerClient implements MediaServerClient {
   String? get serverName => 'Server';
 
   @override
-  MediaBackend get backend => MediaBackend.jellyfin;
+  MediaBackend get backend => clientBackend;
 
   @override
-  ServerCapabilities get capabilities => ServerCapabilities.jellyfin;
+  ServerCapabilities get capabilities => clientCapabilities;
 
   @override
   Future<({MediaItem? item, MediaItem? onDeckEpisode})> fetchItemWithOnDeck(String id) async {
-    return (item: show, onDeckEpisode: null);
+    final call = fetchItemWithOnDeckCalls++;
+    final item = call < itemFetchResults.length ? await itemFetchResults[call] : show;
+    return (item: item, onDeckEpisode: null);
   }
 
   @override
@@ -1093,5 +1367,23 @@ class _FakeMediaServerClient implements MediaServerClient {
   Future<List<MediaHub>> fetchRelatedHubs(String id, {int count = 10}) async => const [];
 
   @override
+  Future<void> setFavorite(MediaItem item, bool isFavorite) async {
+    favoriteValues.add(isFavorite);
+    await favoriteGate?.future;
+  }
+
+  @override
+  void close() {}
+
+  @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
+class _RecordingCatalogSourcesProvider extends CatalogSourcesProvider {
+  final favoriteChanges = <MediaItem>[];
+
+  @override
+  void notifyServerFavoriteChanged(MediaItem item) {
+    favoriteChanges.add(item);
+  }
 }

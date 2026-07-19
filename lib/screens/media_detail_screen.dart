@@ -86,6 +86,7 @@ import '../mixins/mounted_set_state_mixin.dart';
 import '../mixins/server_bound_media_mixin.dart';
 import '../utils/watch_state_notifier.dart';
 import '../utils/deletion_notifier.dart';
+import '../utils/favorite_state_notifier.dart';
 import '../utils/global_key_utils.dart';
 import '../widgets/episode_card.dart';
 import '../widgets/fitting_title_text.dart';
@@ -268,9 +269,11 @@ PageRoute<bool> mediaDetailRoute({
 
 class _MediaDetailScreenState extends State<MediaDetailScreen>
     with WatchStateAware, DeletionAware, MountedSetStateMixin, ServerBoundMediaMixin, RouteAware {
+  static const Duration _favoriteOverrideLifetime = Duration(seconds: 15);
+
   /// Public input alias — used as the live source of truth until the detail
   /// fetch returns. Holds backend-neutral [MediaItem] data.
-  MediaItem get _metadata => _fullMetadata ?? widget.metadata;
+  MediaItem get _metadata => _applyFavoriteOverride(_fullMetadata ?? widget.metadata);
   List<MediaItem> _seasons = [];
   bool _isLoadingSeasons = false;
   bool _seasonsLoadFailed = false; // the seasons fetch threw (vs. a genuinely empty show)
@@ -315,6 +318,11 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   List<CatalogSource> _watchlistListenedSources = const [];
   final GlobalKey _watchlistButtonKey = GlobalKey();
   bool _watchlistMutationInFlight = false;
+  bool _favoriteMutationInFlight = false;
+  String? _favoriteOverrideItemKey;
+  bool? _favoriteOverride;
+  Timer? _favoriteOverrideTimer;
+  int _favoriteOverrideGeneration = 0;
 
   // Inline season tabs
   int _selectedSeasonIndex = 0;
@@ -326,6 +334,44 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
       return const PagedMediaListState<MediaItem>();
     }
     return _seasonEpisodePager.stateFor(_seasons[_selectedSeasonIndex].id);
+  }
+
+  MediaItem _applyFavoriteOverride(MediaItem item) {
+    final favorite = _favoriteOverride;
+    if (_favoriteOverrideItemKey != item.globalKey || favorite == null) return item;
+    return item.copyWith(isFavorite: favorite);
+  }
+
+  void _setFavoriteOverride(MediaItem item, bool favorite, {bool expires = true}) {
+    _setFavoriteOverrideForKey(item.globalKey, favorite, expires: expires);
+  }
+
+  void _setFavoriteOverrideForKey(String itemKey, bool favorite, {bool expires = true}) {
+    final generation = ++_favoriteOverrideGeneration;
+    _favoriteOverrideItemKey = itemKey;
+    _favoriteOverride = favorite;
+    _favoriteOverrideTimer?.cancel();
+    _favoriteOverrideTimer = null;
+    if (!expires) return;
+    _favoriteOverrideTimer = Timer(_favoriteOverrideLifetime, () {
+      if (!mounted || generation != _favoriteOverrideGeneration) return;
+      setStateIfMounted(_clearFavoriteOverride);
+    });
+  }
+
+  void _clearFavoriteOverride() {
+    _favoriteOverrideGeneration++;
+    _favoriteOverrideTimer?.cancel();
+    _favoriteOverrideTimer = null;
+    _favoriteOverrideItemKey = null;
+    _favoriteOverride = null;
+  }
+
+  void _reconcileFavoriteOverride(MediaItem item) {
+    final favorite = _favoriteOverride;
+    if (_favoriteOverrideItemKey == item.globalKey && favorite != null && item.isFavorite == favorite) {
+      _clearFavoriteOverride();
+    }
   }
 
   bool get _isLoadingEpisodes => _allEpisodes.isInitialLoading;
@@ -465,6 +511,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   void _patchItemEverywhere(String sourceGlobalKey, MediaItem item) {
     final base = _fullMetadata ?? widget.metadata;
     if (base.globalKey == sourceGlobalKey) {
+      _reconcileFavoriteOverride(item);
       _fullMetadata = _normalizeRefreshedItem(item, base);
     }
 
@@ -664,6 +711,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
                 refreshedMetadata,
               );
         setStateIfMounted(() {
+          _reconcileFavoriteOverride(refreshedMetadata);
           _fullMetadata = refreshedMetadata;
           _onDeckEpisode = refreshedOnDeck;
         });
@@ -860,6 +908,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
 
   @override
   void dispose() {
+    _favoriteOverrideTimer?.cancel();
     for (final source in _watchlistListenedSources) {
       source.watchlistChanges.removeListener(_onWatchlistSourceChanged);
     }
@@ -1101,19 +1150,33 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   }
 
   void _showRatingDialog(BuildContext sheetContext, MediaItem metadata) {
+    final catalogSources = Provider.of<CatalogSourcesProvider?>(context, listen: false);
+    final serverClient = _getMediaClientForMetadata(context);
     OverlaySheetController.of(sheetContext).show(
       showDragHandle: true,
       builder: (context) => RatingBottomSheet(
         item: metadata,
-        serverClient: _getMediaClientForMetadata(this.context),
+        serverClient: serverClient,
         onServerRatingChanged: (rating) {
           setStateIfMounted(() {
             _fullMetadata = (_fullMetadata ?? widget.metadata).copyWith(userRating: rating);
           });
         },
         onServerFavoriteChanged: (favorite) {
+          final updated = metadata.copyWith(isFavorite: favorite);
+          if (serverClient != null) {
+            FavoriteStateNotifier().notifyFavorite(
+              item: updated,
+              cacheServerId: serverClient.cacheServerId,
+              isFavorite: favorite,
+            );
+          }
+          catalogSources?.notifyServerFavoriteChanged(updated);
+          if (!mounted) return;
           setStateIfMounted(() {
-            _fullMetadata = (_fullMetadata ?? widget.metadata).copyWith(isFavorite: favorite);
+            _setFavoriteOverride(metadata, favorite);
+            _fullMetadata = _metadata.copyWith(isFavorite: favorite);
+            _watchStateChanged = true;
           });
         },
       ),
@@ -1388,6 +1451,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
             );
 
       setState(() {
+        _reconcileFavoriteOverride(base);
         _fullMetadata = base;
         _onDeckEpisode = onDeckWithServerId;
         _isLoadingMetadata = false;
@@ -1450,7 +1514,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
       // a Plex client and a section id. The library section id came from
       // Plex as an int but lands in [MediaItem.libraryId] as the string
       // form (or null on Jellyfin items).
-      final sectionId = (_fullMetadata ?? _metadata).libraryId;
+      final sectionId = _metadata.libraryId;
       final seasonsFuture = client.fetchChildren(_metadata.id);
       // Prefs are a per-library nicety (Plex "flatten seasons"); a failure here
       // must never take down the seasons list, so degrade to defaults.
@@ -1969,7 +2033,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   /// Focus the first visible section above cast: season tabs → overview → play button.
   /// Shared by cast UP, extras UP, and related hub UP handlers.
   void _focusSectionAboveCast() {
-    final metadata = _fullMetadata ?? _metadata;
+    final metadata = _metadata;
     if (metadata.isShow && !_showEpisodesDirectly && _seasons.isNotEmpty && _seasonTabFocusNodes.isNotEmpty) {
       _seasonTabFocusNodes[_selectedSeasonIndex].requestFocus();
       _scrollSectionIntoView(_seasonsSectionKey);
@@ -1984,7 +2048,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
 
   /// Focus the first visible section above extras: cast → season tabs → overview → play button.
   void _focusSectionAboveExtras() {
-    final metadata = _fullMetadata ?? _metadata;
+    final metadata = _metadata;
     if (metadata.roles != null && metadata.roles!.isNotEmpty) {
       _castStripKey.currentState?.requestFocus();
       _scrollSectionIntoView(_castSectionKey);
@@ -1994,7 +2058,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   }
 
   bool get _hasInfoRows {
-    final metadata = _fullMetadata ?? _metadata;
+    final metadata = _metadata;
     return metadata.studio != null || metadata.contentRating != null;
   }
 
@@ -2116,7 +2180,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
 
   /// Focus the overview, or the first available content section when there is no overview.
   void _focusBelowActionRow() {
-    final metadata = _fullMetadata ?? _metadata;
+    final metadata = _metadata;
 
     if (PlatformDetector.isTV()) {
       _tvDetailRailKey.currentState?.requestFocus();
@@ -2134,7 +2198,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
 
   /// Focus the first available content section after the overview.
   void _focusBelowOverview() {
-    final metadata = _fullMetadata ?? _metadata;
+    final metadata = _metadata;
 
     // DOWN order: season tabs → episodes → cast → extras → related hubs → info rows.
     if (metadata.isShow && !_showEpisodesDirectly && _seasons.isNotEmpty && _seasonTabFocusNodes.isNotEmpty) {
@@ -2558,7 +2622,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
               ? () {
                   if (!_showEpisodesDirectly) {
                     _focusSelectedSeasonTab();
-                  } else if (!PlatformDetector.isTV() && (_fullMetadata ?? _metadata).summary?.isNotEmpty == true) {
+                  } else if (!PlatformDetector.isTV() && _metadata.summary?.isNotEmpty == true) {
                     _overviewFocusNode.requestFocus();
                     _scrollSectionIntoView(_overviewSectionKey);
                   } else {
@@ -2729,7 +2793,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   }
 
   String? _seriesIdForSeason(MediaItem season) {
-    if (_metadata.isShow) return (_fullMetadata ?? _metadata).id;
+    if (_metadata.isShow) return _metadata.id;
     return season.grandparentId ?? season.parentId ?? _metadata.grandparentId ?? _metadata.parentId;
   }
 
@@ -2767,7 +2831,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     required ServerId serverId,
   }) {
     if (_metadata.isShow) {
-      return normalizeSeasonEpisodes(episodes, show: _fullMetadata ?? _metadata, season: season);
+      return normalizeSeasonEpisodes(episodes, show: _metadata, season: season);
     }
 
     return _enrichPlayableEpisodes(episodes, serverId)
@@ -3022,7 +3086,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   Widget build(BuildContext context) {
     // Session-fresh hero: server snapshot resolved against the watch-state
     // store (onWatchStateChanged rebuilds on relevant events).
-    final metadata = _fresh(_fullMetadata ?? _metadata);
+    final metadata = _fresh(_metadata);
     final isShow = metadata.isShow;
     final isMobile = PlatformDetector.isMobile(context);
     final isTv = PlatformDetector.isTV();
@@ -4355,7 +4419,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     if (_extras == null || _extras!.isEmpty) return null;
 
     // If there's a trailerKey (Plex `primaryExtraKey`), try to find that specific trailer
-    final metadata = _fullMetadata ?? _metadata;
+    final metadata = _metadata;
     if (metadata case PlexMediaItem(:final trailerKey?)) {
       // Extract rating key from trailerKey (e.g., "/library/metadata/52601" -> "52601")
       final primaryKey = trailerKey.split('/').last;

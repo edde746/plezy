@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 
 import '../media/ids.dart';
 import '../media/media_backend.dart';
+import '../media/media_item.dart';
 import '../media/media_server_client.dart';
 import '../mixins/disposable_change_notifier_mixin.dart';
 import '../models/catalog/catalog_item.dart';
@@ -71,6 +72,14 @@ class CatalogSourcesProvider extends ChangeNotifier with DisposableChangeNotifie
   /// surfaces that offer a choice (media-detail bookmark with several
   /// providers connected).
   List<CatalogSource> get watchlistCapableSources => [...connectedSources.where((source) => source.supportsWatchlist)];
+
+  /// Notify Explore that a Jellyfin item's server-side favorite membership
+  /// changed. Other backends either do not expose this flag or manage their
+  /// list through the normal catalog watchlist machinery.
+  void notifyServerFavoriteChanged(MediaItem item) {
+    if (item.backend != MediaBackend.jellyfin) return;
+    _jellyfinFavorites?.notifyFavoriteChanged();
+  }
 
   /// The watchlist source catalog-item surfaces (detail screen, card menu)
   /// must bind to: the item's OWN source — a MAL card toggles the MAL Plan to

@@ -8,6 +8,7 @@ import 'package:provider/provider.dart';
 import '../media/media_item.dart';
 import '../mixins/disposable_change_notifier_mixin.dart';
 import '../services/watch_state_resolver.dart';
+import '../utils/favorite_state_notifier.dart';
 import '../utils/global_key_utils.dart';
 import '../utils/watch_state_notifier.dart';
 
@@ -83,6 +84,16 @@ class _WatchStatePatchEntry {
   int get hashCode => Object.hash(patch, updatedAt, sequence, isSessionEvent);
 }
 
+class _FavoritePatchEntry {
+  final bool isFavorite;
+  final int sequence;
+  final DateTime expiresAt;
+
+  const _FavoritePatchEntry(this.isFavorite, this.sequence, this.expiresAt);
+
+  bool isExpiredAt(DateTime now) => !now.isBefore(expiresAt);
+}
+
 /// The single session-local layer for watch-state freshness.
 ///
 /// Server fetches remain the source of truth; [MediaItem] snapshots are never
@@ -93,13 +104,22 @@ class _WatchStatePatchEntry {
 /// marking a show/season reaches every descendant, while a later per-item
 /// event still overrides an older container mark.
 class WatchStateStore extends ChangeNotifier with DisposableChangeNotifierMixin {
-  WatchStateStore() {
+  WatchStateStore({this.favoritePatchLifetime = const Duration(seconds: 30), DateTime Function()? favoriteClock})
+    : _favoriteClock = favoriteClock ?? DateTime.now {
     _subscription = WatchStateNotifier().stream.listen(_onWatchStateEvent);
+    _favoriteSubscription = FavoriteStateNotifier().stream.listen(_onFavoriteStateEvent);
   }
 
+  final Duration favoritePatchLifetime;
+  final DateTime Function() _favoriteClock;
   StreamSubscription<WatchStateEvent>? _subscription;
+  StreamSubscription<FavoriteStateEvent>? _favoriteSubscription;
   final Map<String, _WatchStatePatchEntry> _patches = {};
   final Map<String, _WatchStatePatchEntry> _hydratedPatches = {};
+  final Map<String, _FavoritePatchEntry> _favoritePatches = {};
+  final Set<String> _favoriteReconciliations = {};
+  Timer? _favoriteExpiryTimer;
+  DateTime? _favoriteExpiryAt;
   String? _activeProfileId;
   Map<String, String?> _activeClientScopesByServer = const {};
   int _sequence = 0;
@@ -129,6 +149,43 @@ class WatchStateStore extends ChangeNotifier with DisposableChangeNotifierMixin 
 
   WatchStatePatch? patchForGlobalKey(String globalKey) => _entryFor(globalKey)?.patch;
 
+  ({String key, _FavoritePatchEntry? entry}) _favoriteEntryForGlobalKey(String globalKey) {
+    _scheduleFavoriteExpiryNotification();
+    final now = _favoriteClock();
+    final parsed = parseGlobalKey(globalKey);
+    if (parsed != null) {
+      final scoped = _activeClientScopesByServer[parsed.serverId];
+      if (scoped != null && scoped.isNotEmpty) {
+        final key = buildGlobalKey(ServerId(scoped), parsed.ratingKey);
+        final entry = _favoritePatches[key];
+        if (entry?.isExpiredAt(now) ?? false) {
+          _scheduleFavoriteReconciliation(key, entry!.sequence);
+          return (key: key, entry: null);
+        }
+        return (key: key, entry: entry);
+      }
+    }
+    final entry = _favoritePatches[globalKey];
+    if (entry?.isExpiredAt(now) ?? false) {
+      _scheduleFavoriteReconciliation(globalKey, entry!.sequence);
+      return (key: globalKey, entry: null);
+    }
+    return (key: globalKey, entry: entry);
+  }
+
+  bool? favoriteForGlobalKey(String globalKey) => _favoriteEntryForGlobalKey(globalKey).entry?.isFavorite;
+
+  bool? favoriteForItem(MediaItem item) {
+    final resolved = _favoriteEntryForGlobalKey(item.globalKey);
+    final entry = resolved.entry;
+    if (entry == null) return null;
+    if (item.isFavorite == entry.isFavorite) {
+      _scheduleFavoriteReconciliation(resolved.key, entry.sequence);
+      return null;
+    }
+    return entry.isFavorite;
+  }
+
   WatchStatePatch? patchForItem(MediaItem item) {
     var best = _entryFor(item.globalKey);
     if (item.parentChain.isNotEmpty) {
@@ -143,29 +200,32 @@ class WatchStateStore extends ChangeNotifier with DisposableChangeNotifierMixin 
   }
 
   MediaItem apply(MediaItem item) {
-    return applyPatch(item, patchForItem(item));
+    return applyPatch(item, patchForItem(item), isFavorite: favoriteForItem(item));
   }
 
   List<MediaItem> applyAll(List<MediaItem> items) {
-    if (_patches.isEmpty && _hydratedPatches.isEmpty) return items;
+    if (_patches.isEmpty && _hydratedPatches.isEmpty && _favoritePatches.isEmpty) return items;
     return [for (final item in items) apply(item)];
   }
 
-  static MediaItem applyPatch(MediaItem item, WatchStatePatch? patch) {
-    if (patch == null) return item;
-    return WatchStateSnapshot(
-      isWatched: patch.isWatched,
-      hasViewOffsetMs: patch.hasViewOffsetMs,
-      viewOffsetMs: patch.viewOffsetMs,
-    ).apply(item);
+  static MediaItem applyPatch(MediaItem item, WatchStatePatch? patch, {bool? isFavorite}) {
+    final watchStateItem = patch == null
+        ? item
+        : WatchStateSnapshot(
+            isWatched: patch.isWatched,
+            hasViewOffsetMs: patch.hasViewOffsetMs,
+            viewOffsetMs: patch.viewOffsetMs,
+          ).apply(item);
+    return isFavorite == null ? watchStateItem : watchStateItem.copyWith(isFavorite: isFavorite);
   }
 
   void setActiveProfileId(String? profileId) {
     if (_activeProfileId == profileId) return;
     _activeProfileId = profileId;
-    if (_patches.isEmpty && _hydratedPatches.isEmpty) return;
+    if (_patches.isEmpty && _hydratedPatches.isEmpty && _favoritePatches.isEmpty) return;
     _patches.clear();
     _hydratedPatches.clear();
+    _clearFavoritePatches();
     safeNotifyListeners();
   }
 
@@ -176,7 +236,7 @@ class WatchStateStore extends ChangeNotifier with DisposableChangeNotifierMixin 
     };
     if (mapEquals(_activeClientScopesByServer, normalized)) return;
     _activeClientScopesByServer = Map.unmodifiable(normalized);
-    if (_patches.isNotEmpty || _hydratedPatches.isNotEmpty) safeNotifyListeners();
+    if (_patches.isNotEmpty || _hydratedPatches.isNotEmpty || _favoritePatches.isNotEmpty) safeNotifyListeners();
   }
 
   /// Replace the persisted local-action layer without disturbing newer
@@ -220,10 +280,100 @@ class WatchStateStore extends ChangeNotifier with DisposableChangeNotifierMixin 
     safeNotifyListeners();
   }
 
+  void _onFavoriteStateEvent(FavoriteStateEvent event) {
+    final key = event.stateKey;
+    final sequence = ++_sequence;
+    _favoritePatches[key] = _FavoritePatchEntry(
+      event.isFavorite,
+      sequence,
+      _favoriteClock().add(favoritePatchLifetime),
+    );
+    _favoriteReconciliations.remove(key);
+    // Consuming listeners re-run a favorite lookup below, which arms the
+    // shared expiry timer. Relay-only listeners should not retain a timer for
+    // state they never read (notably the download metadata bridge).
+    safeNotifyListeners();
+  }
+
+  void _scheduleFavoriteReconciliation(String key, int sequence) {
+    if (!_favoriteReconciliations.add(key)) return;
+    scheduleMicrotask(() {
+      _favoriteReconciliations.remove(key);
+      if (isDisposed || _favoritePatches[key]?.sequence != sequence) return;
+      _favoritePatches.remove(key);
+      _scheduleFavoriteExpiryNotification();
+      safeNotifyListeners();
+    });
+  }
+
+  void _scheduleFavoriteExpiryNotification() {
+    if (isDisposed || !hasListeners || _favoritePatches.isEmpty) {
+      _cancelFavoriteExpiryTimer();
+      return;
+    }
+
+    DateTime? earliest;
+    for (final entry in _favoritePatches.values) {
+      if (earliest == null || entry.expiresAt.isBefore(earliest)) earliest = entry.expiresAt;
+    }
+    if (earliest == null) {
+      _cancelFavoriteExpiryTimer();
+      return;
+    }
+    if (_favoriteExpiryTimer?.isActive == true && _favoriteExpiryAt == earliest) return;
+
+    _favoriteExpiryTimer?.cancel();
+    _favoriteExpiryAt = earliest;
+    final remaining = earliest.difference(_favoriteClock());
+    _favoriteExpiryTimer = Timer(remaining.isNegative ? Duration.zero : remaining, () {
+      if (isDisposed || _favoriteExpiryAt != earliest) return;
+      _favoriteExpiryTimer = null;
+      _favoriteExpiryAt = null;
+      final now = _favoriteClock();
+      final expiredKeys = [
+        for (final entry in _favoritePatches.entries)
+          if (entry.value.isExpiredAt(now)) entry.key,
+      ];
+      for (final key in expiredKeys) {
+        _favoritePatches.remove(key);
+        _favoriteReconciliations.remove(key);
+      }
+      if (expiredKeys.isNotEmpty) safeNotifyListeners();
+      _scheduleFavoriteExpiryNotification();
+    });
+  }
+
+  void _cancelFavoriteExpiryTimer() {
+    _favoriteExpiryTimer?.cancel();
+    _favoriteExpiryTimer = null;
+    _favoriteExpiryAt = null;
+  }
+
+  void _clearFavoritePatches() {
+    _cancelFavoriteExpiryTimer();
+    _favoriteReconciliations.clear();
+    _favoritePatches.clear();
+  }
+
+  @override
+  void addListener(VoidCallback listener) {
+    super.addListener(listener);
+    _scheduleFavoriteExpiryNotification();
+  }
+
+  @override
+  void removeListener(VoidCallback listener) {
+    super.removeListener(listener);
+    if (!hasListeners) _cancelFavoriteExpiryTimer();
+  }
+
   @override
   void dispose() {
     _subscription?.cancel();
     _subscription = null;
+    _favoriteSubscription?.cancel();
+    _favoriteSubscription = null;
+    _clearFavoritePatches();
     super.dispose();
   }
 }
@@ -236,8 +386,10 @@ extension WatchStateResolution on BuildContext {
   /// ancestor). Use in `build`.
   MediaItem withFreshWatchState(MediaItem item) {
     try {
-      final patch = select<WatchStateStore, WatchStatePatch?>((store) => store.patchForItem(item));
-      return WatchStateStore.applyPatch(item, patch);
+      final state = select<WatchStateStore, (WatchStatePatch?, bool?)>(
+        (store) => (store.patchForItem(item), store.favoriteForItem(item)),
+      );
+      return WatchStateStore.applyPatch(item, state.$1, isFavorite: state.$2);
     } on ProviderNotFoundException {
       return item;
     }

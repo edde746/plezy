@@ -1,13 +1,19 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:plezy/media/ids.dart';
 
 import 'package:drift/drift.dart' show Value;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:http/http.dart' as http;
 import 'package:plezy/database/app_database.dart';
+import 'package:plezy/exceptions/media_server_exceptions.dart';
+import 'package:plezy/media/media_item.dart';
+import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/services/credential_vault.dart';
 import 'package:plezy/services/jellyfin_api_cache.dart';
 
+import '../test_helpers/backend_client_fixtures.dart';
 import '../test_helpers/prefs.dart';
 
 void main() {
@@ -353,6 +359,359 @@ void main() {
       for (final row in rows) {
         expect((jsonDecode(row.data)['UserData'] as Map)['Played'], isFalse);
       }
+    });
+  });
+
+  group('applyFavoriteState', () {
+    test('concurrent favorite and watch-state patches preserve both fields', () async {
+      const scopeId = 'jf-machine/user-a';
+      await putItemRow(
+        serverId: ServerId(scopeId),
+        userId: 'user-a',
+        itemId: 'item-1',
+        data: {
+          ...jellyfinItem(id: 'item-1'),
+          'UserData': {'IsFavorite': false, 'Played': false, 'PlayCount': 0},
+        },
+        pinned: true,
+      );
+      final start = Completer<void>();
+
+      final watchPatch = () async {
+        await start.future;
+        await cache.applyWatchState(serverId: ServerId(scopeId), itemId: 'item-1', isWatched: true);
+      }();
+      final favoritePatch = () async {
+        await start.future;
+        await cache.applyFavoriteState(serverId: ServerId(scopeId), itemId: 'item-1', isFavorite: true);
+      }();
+      start.complete();
+      await Future.wait([watchPatch, favoritePatch]);
+
+      final row = await db.select(db.apiCache).getSingle();
+      final userData = jsonDecode(row.data)['UserData'] as Map<String, dynamic>;
+      expect(userData['Played'], isTrue);
+      expect(userData['IsFavorite'], isTrue);
+      expect(row.pinned, isTrue);
+    });
+
+    test('fetch commit ordering accepts older-first and ignores an uncommitted newer fetch', () async {
+      final serverId = ServerId('jf-machine/user-a');
+      const orderedItemId = 'ordered-item';
+      const orderedEndpoint = '/Users/user-a/Items/$orderedItemId';
+      final older = cache.beginItemFetch(serverId, orderedItemId);
+      final newer = cache.beginItemFetch(serverId, orderedItemId);
+
+      await cache.putFetchedItem(
+        serverId: serverId,
+        itemId: orderedItemId,
+        endpoint: orderedEndpoint,
+        favoriteGenerationAtStart: older.favoriteGeneration,
+        fetchSequence: older.fetchSequence,
+        data: {
+          ...jellyfinItem(id: orderedItemId),
+          'UserData': {'IsFavorite': true},
+        },
+      );
+      await cache.putFetchedItem(
+        serverId: serverId,
+        itemId: orderedItemId,
+        endpoint: orderedEndpoint,
+        favoriteGenerationAtStart: newer.favoriteGeneration,
+        fetchSequence: newer.fetchSequence,
+        data: {
+          ...jellyfinItem(id: orderedItemId),
+          'UserData': {'IsFavorite': false},
+        },
+      );
+
+      var cached = await cache.get(serverId, orderedEndpoint);
+      expect((cached!['UserData'] as Map)['IsFavorite'], isFalse);
+
+      const failedNewerItemId = 'failed-newer-item';
+      const failedNewerEndpoint = '/Users/user-a/Items/$failedNewerItemId';
+      final usableOlder = cache.beginItemFetch(serverId, failedNewerItemId);
+      cache.beginItemFetch(serverId, failedNewerItemId); // This newer request fails before committing.
+      await cache.putFetchedItem(
+        serverId: serverId,
+        itemId: failedNewerItemId,
+        endpoint: failedNewerEndpoint,
+        favoriteGenerationAtStart: usableOlder.favoriteGeneration,
+        fetchSequence: usableOlder.fetchSequence,
+        data: {
+          ...jellyfinItem(id: failedNewerItemId),
+          'UserData': {'IsFavorite': true},
+        },
+      );
+
+      cached = await cache.get(serverId, failedNewerEndpoint);
+      expect((cached!['UserData'] as Map)['IsFavorite'], isTrue);
+    });
+
+    test('mutates only the requested user while preserving pinned metadata and other UserData', () async {
+      const machineId = 'jf-machine';
+      await putItemRow(
+        serverId: ServerId('$machineId/user-a'),
+        userId: 'user-a',
+        itemId: 'item-1',
+        data: {
+          ...jellyfinItem(id: 'item-1'),
+          'UserData': {'IsFavorite': false, 'Played': true},
+        },
+        pinned: true,
+      );
+      await putItemRow(
+        serverId: ServerId('$machineId/user-b'),
+        userId: 'user-b',
+        itemId: 'item-1',
+        data: {
+          ...jellyfinItem(id: 'item-1'),
+          'UserData': {'IsFavorite': false, 'Played': false},
+        },
+      );
+
+      await cache.applyFavoriteState(serverId: ServerId('$machineId/user-a'), itemId: 'item-1', isFavorite: true);
+
+      var rows = await db.select(db.apiCache).get();
+      var byKey = {for (final row in rows) row.cacheKey: row};
+      final aKey = '$machineId/user-a:/Users/user-a/Items/item-1';
+      final bKey = '$machineId/user-b:/Users/user-b/Items/item-1';
+      var aUserData = jsonDecode(byKey[aKey]!.data)['UserData'] as Map<String, dynamic>;
+      var bUserData = jsonDecode(byKey[bKey]!.data)['UserData'] as Map<String, dynamic>;
+      expect(aUserData['IsFavorite'], isTrue);
+      expect(aUserData['Played'], isTrue);
+      expect(byKey[aKey]!.pinned, isTrue);
+      expect(bUserData['IsFavorite'], isFalse);
+
+      await cache.applyFavoriteState(serverId: ServerId('$machineId/user-a'), itemId: 'item-1', isFavorite: false);
+
+      rows = await db.select(db.apiCache).get();
+      byKey = {for (final row in rows) row.cacheKey: row};
+      aUserData = jsonDecode(byKey[aKey]!.data)['UserData'] as Map<String, dynamic>;
+      bUserData = jsonDecode(byKey[bKey]!.data)['UserData'] as Map<String, dynamic>;
+      expect(aUserData['IsFavorite'], isFalse);
+      expect(byKey[aKey]!.pinned, isTrue);
+      expect(bUserData['IsFavorite'], isFalse);
+    });
+
+    test('bare Jellyfin server id skips ambiguous multi-user cache updates', () async {
+      const machineId = 'jf-machine';
+      for (final userId in ['user-a', 'user-b']) {
+        await putItemRow(
+          serverId: ServerId(machineId),
+          userId: userId,
+          itemId: 'item-1',
+          data: {
+            ...jellyfinItem(id: 'item-1'),
+            'UserData': {'IsFavorite': false},
+          },
+        );
+      }
+
+      await cache.applyFavoriteState(serverId: ServerId(machineId), itemId: 'item-1', isFavorite: true);
+
+      final rows = await db.select(db.apiCache).get();
+      for (final row in rows) {
+        expect((jsonDecode(row.data)['UserData'] as Map)['IsFavorite'], isFalse);
+      }
+    });
+
+    test('malformed cached rows are skipped without throwing', () async {
+      await db
+          .into(db.apiCache)
+          .insert(
+            ApiCacheCompanion.insert(
+              cacheKey: 'jf-machine/user-a:/Users/user-a/Items/item-1',
+              data: 'not json',
+              pinned: const Value(true),
+            ),
+          );
+
+      await cache.applyFavoriteState(serverId: ServerId('jf-machine/user-a'), itemId: 'item-1', isFavorite: true);
+
+      final row = await db.select(db.apiCache).getSingle();
+      expect(row.data, 'not json');
+      expect(row.pinned, isTrue);
+    });
+  });
+
+  group('JellyfinClient favorite cache synchronization', () {
+    test('an older same-generation GET cannot replace a newer committed response', () async {
+      const machineId = 'jf-machine';
+      const userId = 'user-a';
+      const scopeId = '$machineId/$userId';
+      await insertJellyfinConnection(machineId: machineId, userId: userId, serverName: 'Shared JF');
+      await putItemRow(
+        serverId: ServerId(scopeId),
+        userId: userId,
+        itemId: 'item-1',
+        data: {
+          ...jellyfinItem(id: 'item-1'),
+          'UserData': {'IsFavorite': false},
+        },
+        pinned: true,
+      );
+      await cache.applyFavoriteState(serverId: ServerId(scopeId), itemId: 'item-1', isFavorite: true);
+      final olderStarted = Completer<void>();
+      final releaseOlder = Completer<void>();
+      var getCount = 0;
+      final client = testJellyfinClient(
+        connection: testJellyfinConnection(machineId: machineId, userId: userId),
+        handler: (_) async {
+          getCount++;
+          if (getCount == 1) {
+            olderStarted.complete();
+            await releaseOlder.future;
+            return http.Response(
+              jsonEncode({
+                ...jellyfinItem(id: 'item-1'),
+                'UserData': {'IsFavorite': true},
+              }),
+              200,
+              headers: const {'content-type': 'application/json'},
+            );
+          }
+          return http.Response(
+            jsonEncode({
+              ...jellyfinItem(id: 'item-1'),
+              'UserData': {'IsFavorite': false},
+            }),
+            200,
+            headers: const {'content-type': 'application/json'},
+          );
+        },
+      );
+      addTearDown(() {
+        if (!releaseOlder.isCompleted) releaseOlder.complete();
+        client.close();
+      });
+
+      final olderFetch = client.fetchItem('item-1');
+      await olderStarted.future;
+      final newer = await client.fetchItem('item-1');
+      releaseOlder.complete();
+      final older = await olderFetch;
+
+      final offline = await cache.getMetadata(ServerId(scopeId), 'item-1');
+      expect(newer!.isFavorite, isFalse);
+      expect(older!.isFavorite, isFalse);
+      expect(offline!.isFavorite, isFalse);
+      expect((await db.select(db.apiCache).getSingle()).pinned, isTrue);
+    });
+
+    test('a GET started before the mutation cannot overwrite the favorite cache patch', () async {
+      const machineId = 'jf-machine';
+      const userId = 'user-a';
+      const scopeId = '$machineId/$userId';
+      await insertJellyfinConnection(machineId: machineId, userId: userId, serverName: 'Shared JF');
+      await putItemRow(
+        serverId: ServerId(scopeId),
+        userId: userId,
+        itemId: 'item-1',
+        data: {
+          ...jellyfinItem(id: 'item-1'),
+          'UserData': {'IsFavorite': false},
+        },
+        pinned: true,
+      );
+      final getStarted = Completer<void>();
+      final releaseGet = Completer<void>();
+      final client = testJellyfinClient(
+        connection: testJellyfinConnection(machineId: machineId, userId: userId),
+        handler: (request) async {
+          if (request.method == 'GET') {
+            getStarted.complete();
+            await releaseGet.future;
+            return http.Response(
+              jsonEncode({
+                ...jellyfinItem(id: 'item-1'),
+                'UserData': {'IsFavorite': false},
+              }),
+              200,
+              headers: const {'content-type': 'application/json'},
+            );
+          }
+          return http.Response('', 204);
+        },
+      );
+      addTearDown(() {
+        if (!releaseGet.isCompleted) releaseGet.complete();
+        client.close();
+      });
+      const item = MediaItem.jellyfin(id: 'item-1', kind: MediaKind.movie, serverId: machineId);
+
+      final staleFetch = client.fetchItem(item.id);
+      await getStarted.future;
+      await client.setFavorite(item, true);
+      releaseGet.complete();
+
+      final fetched = await staleFetch;
+      final offline = await cache.getMetadata(ServerId(scopeId), item.id);
+      expect(fetched!.isFavorite, isTrue);
+      expect(offline!.isFavorite, isTrue);
+      expect((await db.select(db.apiCache).getSingle()).pinned, isTrue);
+    });
+
+    test('successful favorite changes update pinned cached metadata in place', () async {
+      const machineId = 'jf-machine';
+      const userId = 'user-a';
+      await insertJellyfinConnection(machineId: machineId, userId: userId, serverName: 'Shared JF');
+      await putItemRow(
+        serverId: ServerId('$machineId/$userId'),
+        userId: userId,
+        itemId: 'item-1',
+        data: {
+          ...jellyfinItem(id: 'item-1'),
+          'UserData': {'IsFavorite': false, 'Played': true},
+        },
+        pinned: true,
+      );
+      final client = testJellyfinClient(
+        connection: testJellyfinConnection(machineId: machineId, userId: userId),
+        handler: (_) async => http.Response('', 204),
+      );
+      addTearDown(client.close);
+      const item = MediaItem.jellyfin(id: 'item-1', kind: MediaKind.movie, serverId: machineId);
+
+      await client.setFavorite(item, true);
+
+      var cached = await cache.getMetadata(ServerId('$machineId/$userId'), 'item-1');
+      expect(cached!.isFavorite, isTrue);
+      expect(cached.isWatched, isTrue);
+      expect((await db.select(db.apiCache).getSingle()).pinned, isTrue);
+
+      await client.setFavorite(item, false);
+
+      cached = await cache.getMetadata(ServerId('$machineId/$userId'), 'item-1');
+      expect(cached!.isFavorite, isFalse);
+      expect((await db.select(db.apiCache).getSingle()).pinned, isTrue);
+    });
+
+    test('failed favorite requests leave cached metadata unchanged', () async {
+      const machineId = 'jf-machine';
+      const userId = 'user-a';
+      await putItemRow(
+        serverId: ServerId('$machineId/$userId'),
+        userId: userId,
+        itemId: 'item-1',
+        data: {
+          ...jellyfinItem(id: 'item-1'),
+          'UserData': {'IsFavorite': false},
+        },
+        pinned: true,
+      );
+      final client = testJellyfinClient(
+        connection: testJellyfinConnection(machineId: machineId, userId: userId),
+        handler: (_) async => http.Response('server error', 500),
+      );
+      addTearDown(client.close);
+      const item = MediaItem.jellyfin(id: 'item-1', kind: MediaKind.movie, serverId: machineId);
+
+      await expectLater(client.setFavorite(item, true), throwsA(isA<MediaServerHttpException>()));
+
+      final row = await db.select(db.apiCache).getSingle();
+      expect((jsonDecode(row.data)['UserData'] as Map)['IsFavorite'], isFalse);
+      expect(row.pinned, isTrue);
     });
   });
 }

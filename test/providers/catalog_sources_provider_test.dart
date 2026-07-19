@@ -1,4 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:plezy/media/media_backend.dart';
+import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/models/catalog/catalog_item.dart';
 import 'package:plezy/providers/catalog_sources_provider.dart';
 import 'package:plezy/providers/hidden_libraries_provider.dart';
@@ -10,6 +12,7 @@ import 'package:plezy/services/data_aggregation_service.dart';
 import 'package:plezy/services/multi_server_manager.dart';
 
 import '../test_helpers/backend_client_fixtures.dart';
+import '../test_helpers/media_items.dart';
 import '../test_helpers/prefs.dart';
 
 void main() {
@@ -41,6 +44,18 @@ void main() {
 
     await sources.setActiveSource(CatalogSourceId.jellyfin);
     expect(sources.activeSource?.id, CatalogSourceId.jellyfin);
+
+    var favoriteNotifications = 0;
+    sources.activeSource!.watchlistChanges.addListener(() => favoriteNotifications++);
+    sources.notifyServerFavoriteChanged(
+      testMediaItem(
+        id: 'movie-1',
+        backend: MediaBackend.jellyfin,
+        kind: MediaKind.movie,
+        serverId: client.serverId.value,
+      ),
+    );
+    expect(favoriteNotifications, 1);
 
     manager.debugMarkAuthErrorForTesting(client.serverId);
     await pumpEventQueue();

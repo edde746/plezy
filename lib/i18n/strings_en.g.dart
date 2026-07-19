@@ -1273,6 +1273,21 @@ class TranslationsMediaMenuEn {
 	/// en: 'Rate'
 	String get rate => 'Rate';
 
+	/// en: 'Add to Favorites'
+	String get addToFavorites => 'Add to Favorites';
+
+	/// en: 'Remove from Favorites'
+	String get removeFromFavorites => 'Remove from Favorites';
+
+	/// en: 'Added to Favorites'
+	String get addedToFavorites => 'Added to Favorites';
+
+	/// en: 'Removed from Favorites'
+	String get removedFromFavorites => 'Removed from Favorites';
+
+	/// en: 'Couldn't update Favorites'
+	String get favoritesUpdateFailed => 'Couldn\'t update Favorites';
+
 	/// en: 'Play from Beginning'
 	String get playFromBeginning => 'Play from Beginning';
 
@@ -5369,6 +5384,11 @@ extension on Translations {
 			'mediaMenu.mediaDeletedSuccessfully' => 'Media item deleted successfully',
 			'mediaMenu.mediaFailedToDelete' => 'Failed to delete media item',
 			'mediaMenu.rate' => 'Rate',
+			'mediaMenu.addToFavorites' => 'Add to Favorites',
+			'mediaMenu.removeFromFavorites' => 'Remove from Favorites',
+			'mediaMenu.addedToFavorites' => 'Added to Favorites',
+			'mediaMenu.removedFromFavorites' => 'Removed from Favorites',
+			'mediaMenu.favoritesUpdateFailed' => 'Couldn\'t update Favorites',
 			'mediaMenu.playFromBeginning' => 'Play from Beginning',
 			'mediaMenu.playVersion' => 'Play Version...',
 			'rateSheet.title' => 'Rate',
@@ -5487,13 +5507,13 @@ extension on Translations {
 			'messages.markedAsWatchedOffline' => 'Marked as watched (will sync when online)',
 			'messages.markedAsUnwatchedOffline' => 'Marked as unwatched (will sync when online)',
 			'messages.autoRemovedWatchedDownload' => ({required Object title}) => 'Auto-removed: ${title}',
+			_ => null,
+		} ?? switch (path) {
 			'messages.autoRemovedWatchedDownloads' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(n, one: 'Auto-removed ${n} watched download', other: 'Auto-removed ${n} watched downloads', ), 
 			'messages.removedFromContinueWatching' => 'Removed from Continue Watching',
 			'messages.errorLoading' => ({required Object error}) => 'Error: ${error}',
 			'messages.streamInterrupted' => 'The stream was interrupted. Press play or seek to retry.',
 			'messages.liveStreamInterrupted' => 'The live stream was interrupted. Press play to retry.',
-			_ => null,
-		} ?? switch (path) {
 			'messages.fileInfoNotAvailable' => 'File information not available',
 			'messages.errorLoadingFileInfo' => ({required Object error}) => 'Error loading file info: ${error}',
 			'messages.errorLoadingSeries' => 'Error loading series',
@@ -6001,13 +6021,13 @@ extension on Translations {
 			'watchTogether.recentRooms' => 'Recent Rooms',
 			'watchTogether.renameRoom' => 'Rename Room',
 			'watchTogether.removeRoom' => 'Remove',
+			_ => null,
+		} ?? switch (path) {
 			'watchTogether.guestSwitchUnavailable' => 'Couldn\'t switch — server unavailable for sync',
 			'watchTogether.guestSwitchFailed' => 'Couldn\'t switch — content not found on this server',
 			'downloads.title' => 'Downloads',
 			'downloads.manage' => 'Manage',
 			'downloads.tvShows' => 'TV Shows',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.movies' => 'Movies',
 			'downloads.music' => 'Music',
 			'downloads.tracksQueued' => ({required Object count}) => '${count} tracks queued for download',

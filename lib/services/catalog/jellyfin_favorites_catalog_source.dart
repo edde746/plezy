@@ -19,7 +19,7 @@ typedef _FavoriteLibrary = ({MediaServerClient client, MediaLibrary library});
 /// Unlike Trakt/MAL, these rows contain real server items. The
 /// [MediaItemCatalogSource] capability keeps them out of the external-catalog
 /// stand-in conversion so taps route directly to the owning Jellyfin server.
-class JellyfinFavoritesCatalogSource implements CatalogSource, MediaItemCatalogSource {
+class JellyfinFavoritesCatalogSource implements CatalogSource, MediaItemCatalogSource, MutableCatalogRowSource {
   JellyfinFavoritesCatalogSource(List<MediaServerClient> clients, {Set<String> hiddenLibraryKeys = const {}})
     : _clients = List.unmodifiable(clients),
       _hiddenLibraryKeys = Set.unmodifiable(hiddenLibraryKeys);
@@ -45,6 +45,15 @@ class JellyfinFavoritesCatalogSource implements CatalogSource, MediaItemCatalogS
 
   @override
   Listenable get watchlistChanges => _changes;
+
+  @override
+  CatalogRowId get mutableRow => CatalogRowId.favorites;
+
+  @override
+  Listenable get mutableRowChanges => _changes;
+
+  /// Invalidate the Favorites row after a successful server-side mutation.
+  void notifyFavoriteChanged() => _changes.notify();
 
   @override
   Future<ExploreMediaPage> fetchMediaRow(CatalogRowId row, {int page = 1, int limit = 25}) async {

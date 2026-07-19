@@ -409,6 +409,11 @@
     "mediaDeletedSuccessfully": "Media item deleted successfully",
     "mediaFailedToDelete": "Failed to delete media item",
     "rate": "Rate",
+    "addToFavorites": "Add to Favorites",
+    "removeFromFavorites": "Remove from Favorites",
+    "addedToFavorites": "Added to Favorites",
+    "removedFromFavorites": "Removed from Favorites",
+    "favoritesUpdateFailed": "Couldn't update Favorites",
     "playFromBeginning": "Play from Beginning",
     "playVersion": "Play Version..."
   },

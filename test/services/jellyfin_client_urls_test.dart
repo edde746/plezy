@@ -1306,11 +1306,11 @@ void main() {
     });
 
     test('path-encodes reserved ids for browse and watch-state endpoints', () async {
-      final captured = <Uri>[];
+      final captured = <({String method, Uri url})>[];
       final scoped = JellyfinClient.forTesting(
         connection: _conn(),
         httpClient: MockClient((request) async {
-          captured.add(request.url);
+          captured.add((method: request.method, url: request.url));
           return http.Response(jsonEncode({'Items': <Object>[]}), 200, headers: {'content-type': 'application/json'});
         }),
       );
@@ -1334,13 +1334,20 @@ void main() {
       await scoped.markUnwatched(item);
       await scoped.rate(item, 7);
       await scoped.rate(item, -1);
+      await scoped.setFavorite(item, true);
+      await scoped.setFavorite(item, false);
 
-      final paths = captured.map((u) => u.path).toList();
+      final paths = captured.map((request) => request.url.path).toList();
       expect(paths, contains('/Shows/folder%2Fshow%20%231%3Fx/Seasons'));
       expect(paths, contains('/Shows/folder%2Fshow%20%231%3Fx/Episodes'));
       expect(paths, contains('/UserPlayedItems/folder%2Fitem%20%231%3Fx'));
       expect(paths.where((p) => p == '/UserPlayedItems/folder%2Fitem%20%231%3Fx'), hasLength(2));
       expect(paths.where((p) => p == '/UserItems/folder%2Fitem%20%231%3Fx/Rating'), hasLength(2));
+      final favoriteRequests = captured
+          .where((request) => request.url.path == '/UserFavoriteItems/folder%2Fitem%20%231%3Fx')
+          .toList();
+      expect(favoriteRequests.map((request) => request.method), ['POST', 'DELETE']);
+      expect(favoriteRequests.map((request) => request.url.queryParameters['userId']), ['user-1', 'user-1']);
     });
 
     test('removeFromContinueWatching is unsupported for Jellyfin and does not call the server', () async {

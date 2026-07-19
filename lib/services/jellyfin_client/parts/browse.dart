@@ -531,17 +531,42 @@ mixin _JellyfinBrowseMethods on MediaServerCacheMixin {
       if (cached is Map<String, dynamic>) return _mapItem(cached);
       return null;
     }
+    final scopedServerId = ServerId(cacheServerId);
+    JellyfinApiCache? resolveItemCache() {
+      try {
+        final resolved = cache;
+        return resolved is JellyfinApiCache ? resolved : null;
+      } catch (_) {
+        return null;
+      }
+    }
+
+    final itemCacheAtStart = resolveItemCache();
+    final itemFetch = itemCacheAtStart?.beginItemFetch(scopedServerId, id);
     try {
       final response = await _http.get(endpoint, queryParameters: {'Fields': _detailFields});
       throwIfHttpError(response);
       final data = response.data;
       if (data is! Map<String, dynamic>) return null;
+      var effectiveData = data;
       try {
-        await cache.put(ServerId(cacheServerId), endpoint, data);
+        final itemCache = itemCacheAtStart ?? resolveItemCache();
+        if (itemCache != null && itemFetch != null) {
+          effectiveData = await itemCache.putFetchedItem(
+            serverId: scopedServerId,
+            itemId: id,
+            endpoint: endpoint,
+            favoriteGenerationAtStart: itemFetch.favoriteGeneration,
+            fetchSequence: itemFetch.fetchSequence,
+            data: data,
+          );
+        } else {
+          await cache.put(scopedServerId, endpoint, data);
+        }
       } catch (e, st) {
         appLogger.w('JellyfinClient.fetchItem cache write failed', error: e, stackTrace: st);
       }
-      return _mapItem(data);
+      return _mapItem(effectiveData);
     } on MediaServerHttpException catch (e) {
       if (e.statusCode == 404) return null;
       rethrow;

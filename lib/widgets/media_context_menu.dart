@@ -28,6 +28,7 @@ import '../utils/quality_preset_labels.dart';
 import '../utils/media_version_resolver.dart';
 import '../utils/global_key_utils.dart';
 import '../providers/download_provider.dart';
+import '../providers/catalog_sources_provider.dart';
 import '../providers/multi_server_provider.dart';
 import '../providers/offline_mode_provider.dart';
 import '../profiles/active_profile_provider.dart';
@@ -38,6 +39,7 @@ import '../utils/library_refresh_notifier.dart';
 import '../utils/media_navigation_helper.dart';
 import '../utils/media_server_http_client.dart';
 import '../utils/music_navigation.dart';
+import '../utils/favorite_state_notifier.dart';
 import '../utils/platform_detector.dart';
 import '../utils/snackbar_helper.dart';
 import '../utils/dialogs.dart';
@@ -98,6 +100,7 @@ class MediaContextMenu extends StatefulWidget {
   /// [_itemAsMediaItem] / [_itemAsPlaylist] helpers.
   final Object item;
   final void Function(MediaItem source)? onRefresh;
+  final ValueChanged<bool>? onFavoriteChanged;
   final VoidCallback? onRemoveFromContinueWatching;
   final VoidCallback? onListRefresh; // For refreshing list after deletion
   final VoidCallback? onTap;
@@ -119,6 +122,7 @@ class MediaContextMenu extends StatefulWidget {
     super.key,
     required this.item,
     this.onRefresh,
+    this.onFavoriteChanged,
     this.onRemoveFromContinueWatching,
     this.onListRefresh,
     this.onTap,
@@ -134,7 +138,13 @@ class MediaContextMenu extends StatefulWidget {
 }
 
 class MediaContextMenuState extends State<MediaContextMenu> {
+  static const Duration _favoriteOverrideLifetime = Duration(seconds: 15);
+
   Offset? _tapPosition;
+  String? _favoriteOverrideItemKey;
+  bool? _favoriteOverride;
+  Timer? _favoriteOverrideTimer;
+  int _favoriteOverrideGeneration = 0;
 
   bool _openedFromKeyboard = false;
   bool _isContextMenuOpen = false;
@@ -144,6 +154,40 @@ class MediaContextMenuState extends State<MediaContextMenu> {
   void _notifyRefresh(MediaItem source) {
     if (!mounted) return;
     widget.onRefresh?.call(source);
+  }
+
+  void _notifyFavoriteChanged(
+    MediaItem source,
+    bool favorite, {
+    required String cacheServerId,
+    required CatalogSourcesProvider? catalogSources,
+  }) {
+    final updated = source.copyWith(isFavorite: favorite);
+    FavoriteStateNotifier().notifyFavorite(item: updated, cacheServerId: cacheServerId, isFavorite: favorite);
+    catalogSources?.notifyServerFavoriteChanged(updated);
+    if (!mounted) return;
+    _setFavoriteOverride(source.globalKey, favorite);
+    widget.onFavoriteChanged?.call(favorite);
+    _notifyRefresh(updated);
+  }
+
+  void _setFavoriteOverride(String itemKey, bool favorite) {
+    final generation = ++_favoriteOverrideGeneration;
+    _favoriteOverrideItemKey = itemKey;
+    _favoriteOverride = favorite;
+    _favoriteOverrideTimer?.cancel();
+    _favoriteOverrideTimer = Timer(_favoriteOverrideLifetime, () {
+      if (!mounted || generation != _favoriteOverrideGeneration) return;
+      setState(_clearFavoriteOverride);
+    });
+  }
+
+  void _clearFavoriteOverride() {
+    _favoriteOverrideGeneration++;
+    _favoriteOverrideTimer?.cancel();
+    _favoriteOverrideTimer = null;
+    _favoriteOverrideItemKey = null;
+    _favoriteOverride = null;
   }
 
   void _notifyListRefresh() {
@@ -156,7 +200,39 @@ class MediaContextMenuState extends State<MediaContextMenu> {
   /// Returns `null` for playlists.
   MediaItem? get _mediaItem {
     final item = widget.item;
-    return item is MediaItem ? context.readFreshWatchState(item) : null;
+    if (item is! MediaItem) return null;
+    final fresh = context.readFreshWatchState(item);
+    final favorite = _favoriteOverride;
+    if (_favoriteOverrideItemKey == fresh.globalKey && favorite != null) {
+      if (fresh.isFavorite == favorite) {
+        _clearFavoriteOverride();
+        return fresh;
+      }
+      return fresh.copyWith(isFavorite: favorite);
+    }
+    return fresh;
+  }
+
+  @override
+  void didUpdateWidget(covariant MediaContextMenu oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    final oldItem = oldWidget.item;
+    final newItem = widget.item;
+    if (oldItem is! MediaItem || newItem is! MediaItem || oldItem.globalKey != newItem.globalKey) {
+      _clearFavoriteOverride();
+      return;
+    }
+    // Drop the local bridge once the parent supplies the settled server state.
+    if (_favoriteOverride != null && newItem.isFavorite == _favoriteOverride) {
+      _clearFavoriteOverride();
+    }
+  }
+
+  @override
+  void dispose() {
+    _favoriteOverrideTimer?.cancel();
+    _favoriteOverrideTimer = null;
+    super.dispose();
   }
 
   /// The widget's [item] cast as a [MediaPlaylist]. Returns `null` for media items.
@@ -256,6 +332,10 @@ class MediaContextMenuState extends State<MediaContextMenu> {
     final itemServerOnline =
         _itemServerId != null && multiServerProvider.serverManager.isClientOnline(ServerId(_itemServerId!));
     final canRemoveFromContinueWatching = mediaClient?.capabilities.continueWatchingRemoval ?? false;
+    final canFavorite =
+        itemServerOnline &&
+        (mediaKind == MediaKind.movie || mediaKind == MediaKind.show) &&
+        (mediaClient?.capabilities.userFavorites ?? false);
     final canEditMetadata = isAdmin && supportsMetadataEdit(mediaClient, mediaKind);
 
     final menuActions = <_MenuAction>[];
@@ -384,6 +464,17 @@ class MediaContextMenuState extends State<MediaContextMenu> {
 
       if (widget.isInContinueWatching && isVideoKind) {
         menuActions.add(_MenuAction(value: 'details', icon: Symbols.info_rounded, label: t.mediaMenu.viewDetails));
+      }
+
+      if (canFavorite) {
+        final isFavorite = mediaItem.isFavorite == true;
+        menuActions.add(
+          _MenuAction(
+            value: 'toggle_favorite',
+            icon: isFavorite ? Symbols.favorite_rounded : Symbols.favorite_border_rounded,
+            label: isFavorite ? t.mediaMenu.removeFromFavorites : t.mediaMenu.addToFavorites,
+          ),
+        );
       }
 
       if (isVideoKind) {
@@ -672,6 +763,25 @@ class MediaContextMenuState extends State<MediaContextMenu> {
           didNavigate = true;
           if (context.mounted) {
             await navigateToMediaItemDetails(context, mediaItem!, onRefresh: _notifyRefresh);
+          }
+          break;
+
+        case 'toggle_favorite':
+          final item = mediaItem;
+          final client = mediaClient;
+          if (item == null || client == null || !client.capabilities.userFavorites) break;
+          final favorite = item.isFavorite != true;
+          if (!mounted) break;
+          final catalogSources = Provider.of<CatalogSourcesProvider?>(this.context, listen: false);
+          try {
+            await client.setFavorite(item, favorite);
+            _notifyFavoriteChanged(item, favorite, cacheServerId: client.cacheServerId, catalogSources: catalogSources);
+            if (context.mounted) {
+              showSuccessSnackBar(context, favorite ? t.mediaMenu.addedToFavorites : t.mediaMenu.removedFromFavorites);
+            }
+          } catch (e) {
+            appLogger.w('Failed to update server favorite', error: e);
+            if (context.mounted) showErrorSnackBar(context, t.mediaMenu.favoritesUpdateFailed);
           }
           break;
 
@@ -1312,6 +1422,7 @@ class MediaContextMenuState extends State<MediaContextMenu> {
 
   Future<void> _showRatingSheet(BuildContext context, MediaItem item, MediaServerClient client) async {
     if (!mounted) return;
+    final catalogSources = Provider.of<CatalogSourcesProvider?>(this.context, listen: false);
     // Presented from the menu's own context so a screen-level
     // OverlaySheetHost is found (see _showContextMenu).
     await OverlaySheetController.showAdaptive(
@@ -1322,7 +1433,8 @@ class MediaContextMenuState extends State<MediaContextMenu> {
         item: item,
         serverClient: client,
         onServerRatingChanged: (_) => _notifyRefresh(item),
-        onServerFavoriteChanged: (_) => _notifyRefresh(item),
+        onServerFavoriteChanged: (favorite) =>
+            _notifyFavoriteChanged(item, favorite, cacheServerId: client.cacheServerId, catalogSources: catalogSources),
       ),
     );
   }

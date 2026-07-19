@@ -73,6 +73,17 @@ abstract interface class MediaItemCatalogSource {
   Future<ExploreMediaPage> fetchMediaRow(CatalogRowId row, {int page = 1, int limit = 25});
 }
 
+/// Optional capability for a catalog source whose server-backed row can
+/// change outside the external-watchlist methods on [CatalogSource].
+///
+/// Jellyfin Favorites uses this to invalidate its Explore row after a media
+/// item's per-user favorite flag changes elsewhere in the app.
+abstract interface class MutableCatalogRowSource {
+  CatalogRowId get mutableRow;
+
+  Listenable get mutableRowChanges;
+}
+
 /// A pluggable external catalog provider backing the Explore tab (Trakt
 /// today; Overseerr/Jellyfin or MAL later).
 ///

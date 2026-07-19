@@ -82,6 +82,19 @@ class _FakeSource implements CatalogSource {
   void dispose() => watchlist.dispose();
 }
 
+class _FakeMutableSource extends _FakeSource implements MutableCatalogRowSource {
+  _FakeMutableSource() : super(CatalogSourceId.jellyfin, rows: const [CatalogRowId.favorites]);
+
+  @override
+  bool get supportsWatchlist => false;
+
+  @override
+  CatalogRowId get mutableRow => CatalogRowId.favorites;
+
+  @override
+  Listenable get mutableRowChanges => watchlist;
+}
+
 /// Drives [activeSource] directly; the real provider derives it from the
 /// account providers, which is irrelevant to ExploreProvider's contract.
 class _FakeSourcesProvider extends CatalogSourcesProvider {
@@ -165,6 +178,40 @@ void main() {
       explore.ensureFresh();
       await _pumpMicrotasks();
       expect(source.fetches[CatalogRowId.watchlist], refetchesBefore + 1);
+    });
+
+    test('Jellyfin favorite mutation refreshes the Favorites row', () async {
+      final source = _FakeMutableSource();
+      addTearDown(source.dispose);
+
+      sources.setActive(source);
+      await _pumpMicrotasks();
+      expect(explore.state, ExploreLoadState.loaded);
+      expect(source.fetches[CatalogRowId.favorites], 1);
+
+      source.watchlist.notify();
+      explore.ensureFresh();
+      await _pumpMicrotasks();
+
+      expect(source.fetches[CatalogRowId.favorites], 2);
+      expect(explore.rowHubs.single.row, CatalogRowId.favorites);
+    });
+
+    test('full load cancels a redundant pending Favorites refresh', () async {
+      final source = _FakeMutableSource();
+      addTearDown(source.dispose);
+
+      sources.setActive(source);
+      await _pumpMicrotasks();
+      expect(source.fetches[CatalogRowId.favorites], 1);
+
+      source.watchlist.notify();
+      await explore.load();
+      expect(source.fetches[CatalogRowId.favorites], 2);
+
+      await Future<void>.delayed(const Duration(milliseconds: 1100));
+      await _pumpMicrotasks();
+      expect(source.fetches[CatalogRowId.favorites], 2);
     });
   });
 }

@@ -22,8 +22,8 @@ typedef ExploreRowHub = ({CatalogRowId row, MediaHub hub});
 ///
 /// Lives inside the profile-keyed provider subtree. Listens to
 /// [CatalogSourcesProvider] for the active source (connect/disconnect/switch)
-/// and to the source's watchlist changes so the Watchlist row stays current
-/// after mutations from anywhere in the app.
+/// and to the source's mutable-row changes so Watchlist or Jellyfin Favorites
+/// stays current after mutations from anywhere in the app.
 class ExploreProvider extends ChangeNotifier with DisposableChangeNotifierMixin {
   /// Rows reload when the tab is shown after this long.
   static const Duration staleAfter = Duration(minutes: 15);
@@ -31,14 +31,14 @@ class ExploreProvider extends ChangeNotifier with DisposableChangeNotifierMixin 
   static const int viewAllPageLimit = 100;
   static const int viewAllMaxPages = 3;
 
-  /// Watchlist mutations notify optimistically before the API call finishes;
-  /// the row refetch waits out the burst so it reads settled server state.
-  static const Duration _watchlistRefreshDelay = Duration(seconds: 1);
+  /// Membership mutations can notify optimistically before the API call
+  /// finishes; the row refetch waits out the burst so it reads settled state.
+  static const Duration _membershipRefreshDelay = Duration(seconds: 1);
 
   ExploreProvider(this._catalogSources) {
     _catalogSources.addListener(_onSourcesChanged);
     _source = _catalogSources.activeSource;
-    _source?.watchlistChanges.addListener(_onWatchlistChanged);
+    _addMembershipListener(_source);
   }
 
   final CatalogSourcesProvider _catalogSources;
@@ -50,15 +50,15 @@ class ExploreProvider extends ChangeNotifier with DisposableChangeNotifierMixin 
   DateTime? _loadedAt;
   final FutureCoalescer<void> _loadCoalescer = FutureCoalescer();
   int _generation = 0;
-  Timer? _watchlistRefreshTimer;
+  Timer? _membershipRefreshTimer;
 
-  // Watchlist-row freshness: every membership change bumps the mutation
-  // epoch; a successful row refetch records which epoch it covered. A tab
-  // re-shown with uncovered mutations refetches immediately — the debounced
-  // timer alone can lose the race when the user navigates back quickly.
-  int _watchlistMutationEpoch = 0;
-  int _watchlistRowFetchedEpoch = 0;
-  final FutureCoalescer<void> _watchlistRefreshCoalescer = FutureCoalescer();
+  // Mutable-row freshness: every membership change bumps the mutation epoch;
+  // a successful row refetch records which epoch it covered. A tab re-shown
+  // with uncovered mutations refetches immediately — the debounced timer
+  // alone can lose the race when the user navigates back quickly.
+  int _membershipMutationEpoch = 0;
+  int _membershipRowFetchedEpoch = 0;
+  final FutureCoalescer<void> _membershipRefreshCoalescer = FutureCoalescer();
 
   List<ExploreRowHub>? _hubsCache;
   (int, String)? _hubsCacheKey;
@@ -132,8 +132,8 @@ class ExploreProvider extends ChangeNotifier with DisposableChangeNotifierMixin 
       unawaited(load());
       return;
     }
-    if (_watchlistRowFetchedEpoch < _watchlistMutationEpoch) {
-      unawaited(_refreshWatchlistRow());
+    if (_membershipRowFetchedEpoch < _membershipMutationEpoch) {
+      unawaited(_refreshMembershipRow());
     }
   }
 
@@ -150,7 +150,8 @@ class ExploreProvider extends ChangeNotifier with DisposableChangeNotifierMixin 
     final source = _source;
     if (source == null) return;
     final generation = _generation;
-    final mutationEpochAtStart = _watchlistMutationEpoch;
+    final mutableRow = _mutableRowFor(source);
+    final mutationEpochAtStart = _membershipMutationEpoch;
 
     _state = ExploreLoadState.loading;
     _errorMessage = null;
@@ -172,10 +173,10 @@ class ExploreProvider extends ChangeNotifier with DisposableChangeNotifierMixin 
       for (var i = 0; i < rows.length; i++)
         if (results[i] case final ExploreMediaPage page) rows[i]: page,
     };
-    // A debounced watchlist-row refresh that landed while this load was in
+    // A debounced mutable-row refresh that landed while this load was in
     // flight covered later mutations than our page — keep the fresher one.
-    if (_watchlistRowFetchedEpoch > mutationEpochAtStart) {
-      fetched.remove(CatalogRowId.watchlist);
+    if (mutableRow != null && _membershipRowFetchedEpoch > mutationEpochAtStart) {
+      fetched.remove(mutableRow);
     }
 
     if (fetched.isEmpty) {
@@ -194,15 +195,21 @@ class ExploreProvider extends ChangeNotifier with DisposableChangeNotifierMixin 
       _state = ExploreLoadState.loaded;
       _loadedAt = DateTime.now();
       _rowsEpoch++;
-      if (fetched.containsKey(CatalogRowId.watchlist) && mutationEpochAtStart > _watchlistRowFetchedEpoch) {
-        _watchlistRowFetchedEpoch = mutationEpochAtStart;
+      if (mutableRow != null && fetched.containsKey(mutableRow) && mutationEpochAtStart > _membershipRowFetchedEpoch) {
+        _membershipRowFetchedEpoch = mutationEpochAtStart;
       }
     }
     // Mutations that landed while the load was in flight aren't reflected in
     // the page we just stored — schedule the debounced catch-up ourselves
     // (the mutation-time notification skips rows that aren't loaded yet).
-    if (_rows.containsKey(CatalogRowId.watchlist) && _watchlistRowFetchedEpoch < _watchlistMutationEpoch) {
-      _scheduleWatchlistRefresh();
+    if (mutableRow != null && _rows.containsKey(mutableRow)) {
+      if (_membershipRowFetchedEpoch < _membershipMutationEpoch) {
+        _scheduleMembershipRefresh();
+      } else {
+        // The full load covered the pending membership mutation, so the
+        // existing debounce would only fetch the same row a second time.
+        _membershipRefreshTimer?.cancel();
+      }
     }
     safeNotifyListeners();
   }
@@ -229,18 +236,18 @@ class ExploreProvider extends ChangeNotifier with DisposableChangeNotifierMixin 
   void _onSourcesChanged() {
     final next = _catalogSources.activeSource;
     if (identical(next, _source)) return;
-    _source?.watchlistChanges.removeListener(_onWatchlistChanged);
+    _removeMembershipListener(_source);
     _source = next;
-    _source?.watchlistChanges.addListener(_onWatchlistChanged);
+    _addMembershipListener(_source);
     _generation++;
-    _watchlistRefreshTimer?.cancel();
+    _membershipRefreshTimer?.cancel();
     // Detach any in-flight passes for the old source: their generation guard
     // already discards their results, but the new source's load must not
     // coalesce into them (that left the tab stuck on the loading state).
     _loadCoalescer.reset();
-    _watchlistRefreshCoalescer.reset();
-    _watchlistMutationEpoch = 0;
-    _watchlistRowFetchedEpoch = 0;
+    _membershipRefreshCoalescer.reset();
+    _membershipMutationEpoch = 0;
+    _membershipRowFetchedEpoch = 0;
     _rows = {};
     _loadedAt = null;
     _errorMessage = null;
@@ -250,52 +257,85 @@ class ExploreProvider extends ChangeNotifier with DisposableChangeNotifierMixin 
     if (next != null) unawaited(load());
   }
 
-  void _onWatchlistChanged() {
+  CatalogRowId? _mutableRowFor(CatalogSource source) {
+    if (source case final MutableCatalogRowSource mutableSource) {
+      return mutableSource.mutableRow;
+    }
+    if (source.supportsWatchlist && source.supportedRows.contains(CatalogRowId.watchlist)) {
+      return CatalogRowId.watchlist;
+    }
+    return null;
+  }
+
+  Listenable _membershipChangesFor(CatalogSource source) {
+    if (source case final MutableCatalogRowSource mutableSource) {
+      return mutableSource.mutableRowChanges;
+    }
+    return source.watchlistChanges;
+  }
+
+  void _addMembershipListener(CatalogSource? source) {
+    if (source == null) return;
+    _membershipChangesFor(source).addListener(_onMembershipChanged);
+  }
+
+  void _removeMembershipListener(CatalogSource? source) {
+    if (source == null) return;
+    _membershipChangesFor(source).removeListener(_onMembershipChanged);
+  }
+
+  void _onMembershipChanged() {
+    final source = _source;
+    if (source == null) return;
+    final mutableRow = _mutableRowFor(source);
+    if (mutableRow == null) return;
     // Always bump: a mutation during the initial full load has no row to
     // patch yet, but the load's completion checks this epoch to catch up.
-    _watchlistMutationEpoch++;
-    if (!_rows.containsKey(CatalogRowId.watchlist)) return;
-    _scheduleWatchlistRefresh();
+    _membershipMutationEpoch++;
+    if (!_rows.containsKey(mutableRow)) return;
+    _scheduleMembershipRefresh();
   }
 
-  void _scheduleWatchlistRefresh() {
-    _watchlistRefreshTimer?.cancel();
-    _watchlistRefreshTimer = Timer(_watchlistRefreshDelay, () => unawaited(_refreshWatchlistRow()));
+  void _scheduleMembershipRefresh() {
+    _membershipRefreshTimer?.cancel();
+    _membershipRefreshTimer = Timer(_membershipRefreshDelay, () => unawaited(_refreshMembershipRow()));
   }
 
-  Future<void> _refreshWatchlistRow() => _watchlistRefreshCoalescer.run(_refreshWatchlistRowOnce);
+  Future<void> _refreshMembershipRow() => _membershipRefreshCoalescer.run(_refreshMembershipRowOnce);
 
-  Future<void> _refreshWatchlistRowOnce() async {
+  Future<void> _refreshMembershipRowOnce() async {
     final source = _source;
     if (source == null || isDisposed) return;
+    final mutableRow = _mutableRowFor(source);
+    if (mutableRow == null) return;
     final generation = _generation;
-    final coveredEpoch = _watchlistMutationEpoch;
+    final coveredEpoch = _membershipMutationEpoch;
     try {
-      final page = await source.fetchExploreRow(CatalogRowId.watchlist, limit: rowLimit);
+      final page = await source.fetchExploreRow(mutableRow, limit: rowLimit);
       if (isDisposed || generation != _generation) return;
-      _rows = {..._rows, CatalogRowId.watchlist: page};
+      _rows = {..._rows, mutableRow: page};
       _rowsEpoch++;
-      _watchlistRowFetchedEpoch = coveredEpoch;
+      _membershipRowFetchedEpoch = coveredEpoch;
       safeNotifyListeners();
-      if (_watchlistMutationEpoch > coveredEpoch) {
+      if (_membershipMutationEpoch > coveredEpoch) {
         // Mutations that arrived while this pass was in flight coalesced
         // into it but aren't reflected in its page — go around once more.
-        _scheduleWatchlistRefresh();
+        _scheduleMembershipRefresh();
       } else {
         // Fully caught up: a still-pending debounce would only refetch the
         // same state.
-        _watchlistRefreshTimer?.cancel();
+        _membershipRefreshTimer?.cancel();
       }
     } catch (e) {
-      appLogger.w('Explore: watchlist row refresh failed', error: e);
+      appLogger.w('Explore: ${mutableRow.name} row refresh failed', error: e);
     }
   }
 
   @override
   void dispose() {
     _catalogSources.removeListener(_onSourcesChanged);
-    _source?.watchlistChanges.removeListener(_onWatchlistChanged);
-    _watchlistRefreshTimer?.cancel();
+    _removeMembershipListener(_source);
+    _membershipRefreshTimer?.cancel();
     super.dispose();
   }
 }

@@ -54,5 +54,14 @@ mixin _JellyfinWatchStateMethods on MediaServerCacheMixin {
         ? await _http.post(path, queryParameters: {'userId': connection.userId})
         : await _http.delete(path, queryParameters: {'userId': connection.userId});
     throwIfHttpError(response);
+    try {
+      await (cache as JellyfinApiCache).applyFavoriteState(
+        serverId: ServerId(cacheServerId),
+        itemId: itemId,
+        isFavorite: isFavorite,
+      );
+    } catch (e, st) {
+      appLogger.w('Jellyfin favorite cache update failed', error: e, stackTrace: st);
+    }
   }
 }

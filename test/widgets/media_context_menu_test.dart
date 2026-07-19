@@ -29,6 +29,7 @@ import 'package:plezy/profiles/active_profile_provider.dart';
 import 'package:plezy/profiles/plex_home_service.dart';
 import 'package:plezy/profiles/profile_connection_registry.dart';
 import 'package:plezy/profiles/profile_registry.dart';
+import 'package:plezy/providers/catalog_sources_provider.dart';
 import 'package:plezy/providers/download_provider.dart';
 import 'package:plezy/providers/multi_server_provider.dart';
 import 'package:plezy/screens/music/album_detail_screen.dart';
@@ -102,6 +103,144 @@ void main() {
   });
 
   group('MediaContextMenu actions', () {
+    testWidgets('Jellyfin movie context menu adds then removes the item from Favorites', (tester) async {
+      final movie = testMediaItem(
+        id: 'favorite-movie',
+        backend: MediaBackend.jellyfin,
+        kind: MediaKind.movie,
+        title: 'Favorite Movie',
+        serverId: 'srv-1',
+        isFavorite: false,
+      );
+      final harness = await _pumpSiblingMusicMenu(tester, item: movie, relatedItems: const []);
+
+      harness.menuKey.currentState!.showContextMenu(tester.element(find.text('mini-player menu target')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text(t.mediaMenu.addToFavorites));
+      await tester.pumpAndSettle();
+
+      expect(harness.client.favoriteValues, [true]);
+      expect(find.text(t.mediaMenu.addedToFavorites), findsOneWidget);
+
+      harness.menuKey.currentState!.showContextMenu(tester.element(find.text('mini-player menu target')));
+      await tester.pumpAndSettle();
+      expect(find.text(t.mediaMenu.removeFromFavorites), findsOneWidget);
+      await tester.tap(find.text(t.mediaMenu.removeFromFavorites));
+      await tester.pumpAndSettle();
+
+      expect(harness.client.favoriteValues, [true, false]);
+    });
+
+    testWidgets('favorite override expires so a later authoritative state is visible', (tester) async {
+      final movie = testMediaItem(
+        id: 'favorite-expiry',
+        backend: MediaBackend.jellyfin,
+        kind: MediaKind.movie,
+        title: 'Favorite Expiry',
+        serverId: 'srv-1',
+        isFavorite: false,
+      );
+      final harness = await _pumpSiblingMusicMenu(tester, item: movie, relatedItems: const []);
+
+      harness.menuKey.currentState!.showContextMenu(tester.element(find.text('mini-player menu target')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text(t.mediaMenu.addToFavorites));
+      await tester.pumpAndSettle();
+
+      harness.menuKey.currentState!.showContextMenu(tester.element(find.text('mini-player menu target')));
+      await tester.pumpAndSettle();
+      expect(find.text(t.mediaMenu.removeFromFavorites), findsOneWidget);
+      Navigator.of(tester.element(find.text(t.mediaMenu.removeFromFavorites))).pop();
+      await tester.pumpAndSettle();
+
+      await tester.pump(const Duration(seconds: 16));
+      harness.menuKey.currentState!.showContextMenu(tester.element(find.text('mini-player menu target')));
+      await tester.pumpAndSettle();
+
+      expect(find.text(t.mediaMenu.addToFavorites), findsOneWidget);
+    });
+
+    testWidgets('Jellyfin show context menu removes the item from Favorites', (tester) async {
+      final show = testMediaItem(
+        id: 'favorite-show',
+        backend: MediaBackend.jellyfin,
+        kind: MediaKind.show,
+        title: 'Favorite Show',
+        serverId: 'srv-1',
+        isFavorite: true,
+      );
+      final harness = await _pumpSiblingMusicMenu(tester, item: show, relatedItems: const []);
+
+      harness.menuKey.currentState!.showContextMenu(tester.element(find.text('mini-player menu target')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text(t.mediaMenu.removeFromFavorites));
+      await tester.pumpAndSettle();
+
+      expect(harness.client.favoriteValues, [false]);
+      expect(find.text(t.mediaMenu.removedFromFavorites), findsOneWidget);
+    });
+
+    testWidgets('favorite action is hidden for Jellyfin episodes', (tester) async {
+      final episode = testMediaItem(
+        id: 'episode-1',
+        backend: MediaBackend.jellyfin,
+        kind: MediaKind.episode,
+        title: 'Episode',
+        serverId: 'srv-1',
+      );
+      final harness = await _pumpSiblingMusicMenu(tester, item: episode, relatedItems: const []);
+
+      harness.menuKey.currentState!.showContextMenu(tester.element(find.text('mini-player menu target')));
+      await tester.pumpAndSettle();
+
+      expect(find.text(t.mediaMenu.addToFavorites), findsNothing);
+      expect(find.text(t.mediaMenu.removeFromFavorites), findsNothing);
+    });
+
+    testWidgets('favorite action is hidden when the server does not support favorites', (tester) async {
+      final menuKey = await _pumpPlexMovieMenu(tester, const []);
+
+      menuKey.currentState!.showContextMenu(tester.element(find.text('picker target')));
+      await tester.pumpAndSettle();
+
+      expect(find.text(t.mediaMenu.addToFavorites), findsNothing);
+      expect(find.text(t.mediaMenu.removeFromFavorites), findsNothing);
+    });
+
+    testWidgets('successful favorite mutation invalidates Explore after the menu is disposed', (tester) async {
+      final movie = testMediaItem(
+        id: 'favorite-dispose',
+        backend: MediaBackend.jellyfin,
+        kind: MediaKind.movie,
+        title: 'Favorite Dispose',
+        serverId: 'srv-1',
+      );
+      final catalogSources = _RecordingCatalogSourcesProvider();
+      addTearDown(catalogSources.dispose);
+      final harness = await _pumpSiblingMusicMenu(
+        tester,
+        item: movie,
+        relatedItems: const [],
+        catalogSources: catalogSources,
+      );
+      final favoriteGate = Completer<void>();
+      harness.client.favoriteGate = favoriteGate;
+
+      harness.menuKey.currentState!.showContextMenu(tester.element(find.text('mini-player menu target')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text(t.mediaMenu.addToFavorites));
+      await tester.pump();
+      expect(harness.client.favoriteValues, [true]);
+
+      await tester.pumpWidget(const SizedBox());
+      favoriteGate.complete();
+      await tester.pump();
+      await tester.pump();
+
+      expect(catalogSources.favoriteChanges.map((item) => item.id), ['favorite-dispose']);
+      expect(tester.takeException(), isNull);
+    });
+
     testWidgets('audio playlist play and shuffle actions use music playback', (tester) async {
       LocaleSettings.setLocaleSync(AppLocale.en);
       TvDetectionService.debugSetAppleTVOverride(true);
@@ -657,6 +796,8 @@ class _RelatedMusicClient implements MediaServerClient {
   final Map<String, MediaItem> _items;
   final List<MediaItem> albumTracks;
   Completer<void>? albumTracksGate;
+  Completer<void>? favoriteGate;
+  final favoriteValues = <bool>[];
 
   @override
   ServerId get serverId => ServerId('srv-1');
@@ -683,10 +824,25 @@ class _RelatedMusicClient implements MediaServerClient {
   Future<List<MediaItem>> fetchArtistAlbums(MediaItem artist) async => const [];
 
   @override
+  Future<void> setFavorite(MediaItem item, bool isFavorite) async {
+    favoriteValues.add(isFavorite);
+    await favoriteGate?.future;
+  }
+
+  @override
   void close() {}
 
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
+class _RecordingCatalogSourcesProvider extends CatalogSourcesProvider {
+  final favoriteChanges = <MediaItem>[];
+
+  @override
+  void notifyServerFavoriteChanged(MediaItem item) {
+    favoriteChanges.add(item);
+  }
 }
 
 class _SiblingMusicMenuHarness {
@@ -709,6 +865,7 @@ Future<_SiblingMusicMenuHarness> _pumpSiblingMusicMenu(
   WidgetTester tester, {
   required MediaItem item,
   required List<MediaItem> relatedItems,
+  CatalogSourcesProvider? catalogSources,
 }) async {
   resetSharedPreferencesForTest();
   SettingsService.resetForTesting();
@@ -767,6 +924,7 @@ Future<_SiblingMusicMenuHarness> _pumpSiblingMusicMenu(
             ChangeNotifierProvider<DownloadProvider>.value(value: downloadProvider),
             ChangeNotifierProvider<ActiveProfileProvider>.value(value: activeProfileProvider),
             ChangeNotifierProvider<MusicPlaybackService>.value(value: music),
+            if (catalogSources != null) ChangeNotifierProvider<CatalogSourcesProvider>.value(value: catalogSources),
           ],
           child: ProfileNavigationScope(
             navigatorKey: profileNavigatorKey,

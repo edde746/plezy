@@ -27,6 +27,11 @@ class JellyfinApiCache extends ApiCache {
 
   JellyfinApiCache._(super.db);
 
+  int _favoriteMutationEpoch = 0;
+  int _itemFetchEpoch = 0;
+  final Map<(ServerId, String), ({int generation, bool isFavorite})> _favoriteMutationStates = {};
+  final Map<(ServerId, String), ({int sequence, int favoriteGeneration, bool? isFavorite})> _itemFetchCommits = {};
+
   /// Initialize the singleton with an [AppDatabase] instance. Also registers
   /// this instance with the [ApiCache] backend dispatch so callers using
   /// `ApiCache.forBackend(MediaBackend.jellyfin)` resolve here.
@@ -129,7 +134,8 @@ class JellyfinApiCache extends ApiCache {
   /// [viewedLeafCount] is ignored — Jellyfin tracks per-show rollup via
   /// `UserData.UnplayedItemCount`, computed from individual children rather
   /// than aggregated on the parent. The parameter is accepted for API parity
-  /// with the Plex caller.
+  /// with the Plex caller. The transaction makes the JSON read/patch/write
+  /// atomic with favorite patches and other writes on this Drift connection.
   @override
   Future<void> applyWatchState({
     required ServerId serverId,
@@ -139,57 +145,184 @@ class JellyfinApiCache extends ApiCache {
     int? lastViewedAt,
     int? viewedLeafCount,
   }) async {
-    final query = database.select(database.apiCache)
-      ..where((t) => _resolver.itemKeyPredicate(t.cacheKey, serverId, itemId));
-    final rows = await query.get();
-    if (rows.isEmpty) return;
-    if (!serverId.contains('/')) {
-      final userIds = <String>{
-        for (final row in rows)
-          if (JellyfinCacheResolver.parseItemKey(row.cacheKey) case final key?) key.userId,
-      };
-      if (userIds.length > 1) {
-        appLogger.w(
-          'Skipping ambiguous bare-scope Jellyfin watch-state cache write',
-          error: {'serverId': serverId, 'itemId': itemId, 'userCount': userIds.length},
-        );
-        return;
-      }
-    }
-    for (final row in rows) {
-      try {
-        final data = jsonDecode(row.data) as Map<String, dynamic>;
-        final userData = (data['UserData'] is Map<String, dynamic>)
-            ? (data['UserData'] as Map<String, dynamic>)
-            : <String, dynamic>{};
-        userData['Played'] = isWatched;
-        final positionTicks = viewOffsetMs != null ? viewOffsetMs * 10_000 : 0;
-        if (isWatched) {
-          final current = (userData['PlayCount'] as num?)?.toInt() ?? 0;
-          userData['PlayCount'] = current < 1 ? 1 : current;
-          userData['PlaybackPositionTicks'] = positionTicks;
-          userData['LastPlayedDate'] = lastViewedAt != null
-              ? DateTime.fromMillisecondsSinceEpoch(lastViewedAt * 1000, isUtc: true).toIso8601String()
-              : DateTime.now().toUtc().toIso8601String();
-        } else {
-          userData['PlayCount'] = 0;
-          userData['PlaybackPositionTicks'] = positionTicks;
-          if (lastViewedAt != null) {
-            userData['LastPlayedDate'] = DateTime.fromMillisecondsSinceEpoch(
-              lastViewedAt * 1000,
-              isUtc: true,
-            ).toIso8601String();
-          }
+    await database.transaction(() async {
+      final query = database.select(database.apiCache)
+        ..where((t) => _resolver.itemKeyPredicate(t.cacheKey, serverId, itemId));
+      final rows = await query.get();
+      if (rows.isEmpty) return;
+      if (!serverId.contains('/')) {
+        final userIds = <String>{
+          for (final row in rows)
+            if (JellyfinCacheResolver.parseItemKey(row.cacheKey) case final key?) key.userId,
+        };
+        if (userIds.length > 1) {
+          appLogger.w(
+            'Skipping ambiguous bare-scope Jellyfin watch-state cache write',
+            error: {'serverId': serverId, 'itemId': itemId, 'userCount': userIds.length},
+          );
+          return;
         }
-        data['UserData'] = userData;
-        final encoded = jsonEncode(data);
-        await (database.update(database.apiCache)..where((t) => t.cacheKey.equals(row.cacheKey))).write(
-          ApiCacheCompanion(data: Value(encoded), cachedAt: Value(DateTime.now())),
-        );
-      } catch (_) {
-        // Skip malformed entries.
       }
-    }
+      for (final row in rows) {
+        try {
+          final data = jsonDecode(row.data) as Map<String, dynamic>;
+          final userData = (data['UserData'] is Map<String, dynamic>)
+              ? (data['UserData'] as Map<String, dynamic>)
+              : <String, dynamic>{};
+          userData['Played'] = isWatched;
+          final positionTicks = viewOffsetMs != null ? viewOffsetMs * 10_000 : 0;
+          if (isWatched) {
+            final current = (userData['PlayCount'] as num?)?.toInt() ?? 0;
+            userData['PlayCount'] = current < 1 ? 1 : current;
+            userData['PlaybackPositionTicks'] = positionTicks;
+            userData['LastPlayedDate'] = lastViewedAt != null
+                ? DateTime.fromMillisecondsSinceEpoch(lastViewedAt * 1000, isUtc: true).toIso8601String()
+                : DateTime.now().toUtc().toIso8601String();
+          } else {
+            userData['PlayCount'] = 0;
+            userData['PlaybackPositionTicks'] = positionTicks;
+            if (lastViewedAt != null) {
+              userData['LastPlayedDate'] = DateTime.fromMillisecondsSinceEpoch(
+                lastViewedAt * 1000,
+                isUtc: true,
+              ).toIso8601String();
+            }
+          }
+          data['UserData'] = userData;
+          final encoded = jsonEncode(data);
+          await (database.update(database.apiCache)..where((t) => t.cacheKey.equals(row.cacheKey))).write(
+            ApiCacheCompanion(data: Value(encoded), cachedAt: Value(DateTime.now())),
+          );
+        } catch (_) {
+          // Skip malformed entries.
+        }
+      }
+    });
+  }
+
+  /// Persist a per-user favorite flip into cached `BaseItemDto` rows for
+  /// [itemId] without evicting pinned offline metadata. Compound Jellyfin
+  /// scope ids update only their user. A legacy bare machine id is accepted
+  /// only when its matching rows belong to one user; ambiguous multi-user
+  /// writes are skipped rather than leaking state across profiles. The
+  /// transaction prevents concurrent watch-state patches from overwriting the
+  /// favorite field (or vice versa).
+  Future<void> applyFavoriteState({
+    required ServerId serverId,
+    required String itemId,
+    required bool isFavorite,
+  }) async {
+    _favoriteMutationStates[(serverId, itemId)] = (generation: ++_favoriteMutationEpoch, isFavorite: isFavorite);
+    await database.transaction(() async {
+      final query = database.select(database.apiCache)
+        ..where((t) => _resolver.itemKeyPredicate(t.cacheKey, serverId, itemId));
+      final rows = await query.get();
+      if (rows.isEmpty) return;
+      if (!serverId.contains('/')) {
+        final userIds = <String>{
+          for (final row in rows)
+            if (JellyfinCacheResolver.parseItemKey(row.cacheKey) case final key?) key.userId,
+        };
+        if (userIds.length > 1) {
+          appLogger.w(
+            'Skipping ambiguous bare-scope Jellyfin favorite cache write',
+            error: {'serverId': serverId, 'itemId': itemId, 'userCount': userIds.length},
+          );
+          return;
+        }
+      }
+      for (final row in rows) {
+        try {
+          final data = jsonDecode(row.data) as Map<String, dynamic>;
+          final userData = (data['UserData'] is Map<String, dynamic>)
+              ? (data['UserData'] as Map<String, dynamic>)
+              : <String, dynamic>{};
+          userData['IsFavorite'] = isFavorite;
+          data['UserData'] = userData;
+          await (database.update(database.apiCache)..where((t) => t.cacheKey.equals(row.cacheKey))).write(
+            ApiCacheCompanion(data: Value(jsonEncode(data)), cachedAt: Value(DateTime.now())),
+          );
+        } catch (_) {
+          // Skip malformed entries.
+        }
+      }
+    });
+  }
+
+  /// Stamp an item GET with both its favorite-state generation and start
+  /// sequence. [putFetchedItem] uses the token to reject an older same-
+  /// generation response when a newer request has already committed.
+  ({int favoriteGeneration, int fetchSequence}) beginItemFetch(ServerId serverId, String itemId) => (
+    favoriteGeneration: _favoriteMutationStates[(serverId, itemId)]?.generation ?? 0,
+    fetchSequence: ++_itemFetchEpoch,
+  );
+
+  /// Cache an item GET without letting a response started before a successful
+  /// favorite mutation overwrite the newer local state.
+  ///
+  /// The generation check and cache write share a transaction with the
+  /// favorite cache patch. If a mutation completed after the GET started, its
+  /// latest favorite value is merged into both the returned DTO and cached
+  /// JSON. A response started at the current generation remains authoritative;
+  /// its favorite value becomes the barrier applied to any still-older GETs.
+  Future<Map<String, dynamic>> putFetchedItem({
+    required ServerId serverId,
+    required String itemId,
+    required String endpoint,
+    required int favoriteGenerationAtStart,
+    required int fetchSequence,
+    required Map<String, dynamic> data,
+  }) async {
+    return database.transaction(() async {
+      final key = (serverId, itemId);
+      final committed = _itemFetchCommits[key];
+      final state = _favoriteMutationStates[key];
+      if (committed != null && fetchSequence < committed.sequence) {
+        final barrierFavorite = state != null && state.generation > committed.favoriteGeneration
+            ? state.isFavorite
+            : committed.isFavorite ??
+                  (state != null && state.generation == committed.favoriteGeneration ? state.isFavorite : null);
+        return barrierFavorite == null ? data : _withFavoriteState(data, barrierFavorite);
+      }
+
+      var effective = data;
+      var effectiveFavoriteGeneration = favoriteGenerationAtStart;
+      if (state != null && state.generation > favoriteGenerationAtStart) {
+        effective = _withFavoriteState(data, state.isFavorite);
+        effectiveFavoriteGeneration = state.generation;
+      }
+      await put(serverId, endpoint, effective);
+
+      final effectiveFavorite = _favoriteStateFrom(effective);
+      final stateAfterWrite = _favoriteMutationStates[key];
+      if (effectiveFavorite != null && stateAfterWrite?.generation == favoriteGenerationAtStart) {
+        _favoriteMutationStates[key] = (generation: favoriteGenerationAtStart, isFavorite: effectiveFavorite);
+      } else if (effectiveFavorite != null && state == null && stateAfterWrite == null) {
+        _favoriteMutationStates[key] = (generation: favoriteGenerationAtStart, isFavorite: effectiveFavorite);
+      }
+      _itemFetchCommits[key] = (
+        sequence: fetchSequence,
+        favoriteGeneration: effectiveFavoriteGeneration,
+        isFavorite: effectiveFavorite,
+      );
+      return effective;
+    });
+  }
+
+  static bool? _favoriteStateFrom(Map<String, dynamic> data) {
+    final userData = data['UserData'];
+    if (userData is! Map<String, dynamic>) return null;
+    final isFavorite = userData['IsFavorite'];
+    return isFavorite is bool ? isFavorite : null;
+  }
+
+  static Map<String, dynamic> _withFavoriteState(Map<String, dynamic> data, bool isFavorite) {
+    final effective = Map<String, dynamic>.from(data);
+    final rawUserData = data['UserData'];
+    final userData = rawUserData is Map<String, dynamic> ? Map<String, dynamic>.from(rawUserData) : <String, dynamic>{};
+    userData['IsFavorite'] = isFavorite;
+    effective['UserData'] = userData;
+    return effective;
   }
 
   /// Load all pinned Jellyfin metadata in a single query.

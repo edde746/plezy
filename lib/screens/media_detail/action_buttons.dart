@@ -203,6 +203,26 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
           _buildWatchedToggleButton(metadata, actionButtonStyle, tvScale, showFocus: state.showFocus),
     );
 
+    final favoriteClient = _getMediaClientForMetadata(context);
+    final canFavorite =
+        !widget.isOffline &&
+        (metadata.isMovie || metadata.isShow) &&
+        (favoriteClient?.capabilities.userFavorites ?? false);
+    final isFavorite = metadata.isFavorite == true;
+    final favoriteAction = !canFavorite
+        ? null
+        : FocusableAction(
+            debugLabel: 'detail_favorite',
+            onPressed: _favoriteMutationInFlight ? null : () => unawaited(_handleFavoriteTogglePressed(metadata)),
+            builder: (context, state) => iconActionButton(
+              state,
+              onPressed: _favoriteMutationInFlight ? null : () => unawaited(_handleFavoriteTogglePressed(metadata)),
+              icon: AppIcon(Symbols.favorite_rounded, fill: isFavorite ? 1 : 0),
+              tooltip: isFavorite ? t.mediaMenu.removeFromFavorites : t.mediaMenu.addToFavorites,
+              foregroundColor: isFavorite ? Colors.redAccent : null,
+            ),
+          );
+
     // Watchlist toggle for the connected catalog sources (Trakt, MAL).
     // Membership reads each source's session snapshot — no per-open API
     // call. Filled when the item is on ANY source's watchlist; with several
@@ -257,6 +277,7 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
       ?shuffleAction,
       ?downloadAction,
       watchedAction,
+      ?favoriteAction,
       ?watchlistAction,
       ?moreActionsAction,
     ];
@@ -320,6 +341,51 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
         return actionBar(compactActionsFor(maxWidth));
       },
     );
+  }
+
+  Future<void> _handleFavoriteTogglePressed(MediaItem metadata) async {
+    if (_favoriteMutationInFlight || widget.isOffline || (!metadata.isMovie && !metadata.isShow)) return;
+    final client = _getMediaClientForMetadata(context);
+    if (client == null || !client.capabilities.userFavorites) return;
+    final catalogSources = Provider.of<CatalogSourcesProvider?>(context, listen: false);
+
+    final previous = metadata.isFavorite == true;
+    final next = !previous;
+    final previousOverrideItemKey = _favoriteOverrideItemKey;
+    final previousOverride = _favoriteOverride;
+    setStateIfMounted(() {
+      _favoriteMutationInFlight = true;
+      _setFavoriteOverride(metadata, next, expires: false);
+      _fullMetadata = _metadata.copyWith(isFavorite: next);
+    });
+
+    try {
+      await client.setFavorite(metadata, next);
+      final updated = metadata.copyWith(isFavorite: next);
+      FavoriteStateNotifier().notifyFavorite(item: updated, cacheServerId: client.cacheServerId, isFavorite: next);
+      catalogSources?.notifyServerFavoriteChanged(updated);
+      if (!mounted) return;
+      setStateIfMounted(() {
+        _setFavoriteOverride(updated, next);
+        _fullMetadata = _metadata.copyWith(isFavorite: next);
+        _watchStateChanged = true;
+      });
+      showSuccessSnackBar(context, next ? t.mediaMenu.addedToFavorites : t.mediaMenu.removedFromFavorites);
+    } catch (e) {
+      appLogger.w('Failed to update server favorite', error: e);
+      if (!mounted) return;
+      setStateIfMounted(() {
+        if (previousOverrideItemKey != null && previousOverride != null) {
+          _setFavoriteOverrideForKey(previousOverrideItemKey, previousOverride);
+        } else {
+          _clearFavoriteOverride();
+        }
+        _fullMetadata = _applyFavoriteOverride(_metadata.copyWith(isFavorite: previous));
+      });
+      showErrorSnackBar(context, t.mediaMenu.favoritesUpdateFailed);
+    } finally {
+      setStateIfMounted(() => _favoriteMutationInFlight = false);
+    }
   }
 
   Future<void> _handleWatchlistTogglePressed(MediaItem metadata) async {
@@ -434,6 +500,13 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
       key: _contextMenuKey,
       item: metadata,
       onRefresh: (source) => unawaited(_refreshItemInPlace(source)),
+      onFavoriteChanged: (favorite) {
+        setStateIfMounted(() {
+          _setFavoriteOverride(metadata, favorite);
+          _fullMetadata = _metadata.copyWith(isFavorite: favorite);
+          _watchStateChanged = true;
+        });
+      },
       onPlayTrailer: onPlayTrailer,
       child: Builder(
         builder: (buttonContext) => IconButton.filledTonal(
