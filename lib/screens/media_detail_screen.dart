@@ -3232,6 +3232,13 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
                                         _buildInfoRow(t.discover.studio, metadata.studio!),
                                         const SizedBox(height: 12),
                                       ],
+                                      if (metadata.directors != null) ...[
+                                        _buildInfoRow(
+                                          metadata.directors!.length > 1 ? t.discover.directors : t.discover.director,
+                                          metadata.directors!.join(', '),
+                                        ),
+                                        const SizedBox(height: 12),
+                                      ],
                                       if (metadata.contentRating != null) ...[
                                         _buildInfoRow(t.discover.rating, formatContentRating(metadata.contentRating!)),
                                         const SizedBox(height: 12),

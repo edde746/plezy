@@ -916,6 +916,8 @@ class _TranslationsDiscoverJa extends TranslationsDiscoverEn {
 	@override String get extras => '予告編とエクストラ';
 	@override String get studio => 'スタジオ';
 	@override String get rating => '評価';
+	@override String get director => '監督';
+	@override String get directors => '監督';
 	@override String get movie => '映画';
 	@override String get tvShow => 'テレビ番組';
 	@override String minutesLeft({required Object minutes}) => '残り${minutes}分';
@@ -2790,6 +2792,8 @@ extension on TranslationsJa {
 			'discover.extras' => '予告編とエクストラ',
 			'discover.studio' => 'スタジオ',
 			'discover.rating' => '評価',
+			'discover.director' => '監督',
+			'discover.directors' => '監督',
 			'discover.movie' => '映画',
 			'discover.tvShow' => 'テレビ番組',
 			'discover.minutesLeft' => ({required Object minutes}) => '残り${minutes}分',

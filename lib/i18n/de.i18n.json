@@ -716,6 +716,8 @@
     "extras": "Trailer & Extras",
     "studio": "Studio",
     "rating": "Altersfreigabe",
+    "director": "Regisseur",
+    "directors": "Regisseure",
     "movie": "Film",
     "tvShow": "Serie",
     "minutesLeft": "${minutes} Min übrig",

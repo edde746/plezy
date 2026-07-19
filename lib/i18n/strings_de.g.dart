@@ -917,6 +917,8 @@ class _TranslationsDiscoverDe extends TranslationsDiscoverEn {
 	@override String get extras => 'Trailer & Extras';
 	@override String get studio => 'Studio';
 	@override String get rating => 'Altersfreigabe';
+	@override String get director => 'Regisseur';
+	@override String get directors => 'Regisseure';
 	@override String get movie => 'Film';
 	@override String get tvShow => 'Serie';
 	@override String minutesLeft({required Object minutes}) => '${minutes} Min übrig';
@@ -2793,6 +2795,8 @@ extension on TranslationsDe {
 			'discover.extras' => 'Trailer & Extras',
 			'discover.studio' => 'Studio',
 			'discover.rating' => 'Altersfreigabe',
+			'discover.director' => 'Regisseur',
+			'discover.directors' => 'Regisseure',
 			'discover.movie' => 'Film',
 			'discover.tvShow' => 'Serie',
 			'discover.minutesLeft' => ({required Object minutes}) => '${minutes} Min übrig',

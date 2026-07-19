@@ -917,6 +917,8 @@ class _TranslationsDiscoverBg extends TranslationsDiscoverEn {
 	@override String get extras => 'Трейлъри и екстри';
 	@override String get studio => 'Студио';
 	@override String get rating => 'Рейтинг';
+	@override String get director => 'Режисьор';
+	@override String get directors => 'Режисьори';
 	@override String get movie => 'Филм';
 	@override String get tvShow => 'ТВ сериал';
 	@override String minutesLeft({required Object minutes}) => 'Остават ${minutes} мин';
@@ -2793,6 +2795,8 @@ extension on TranslationsBg {
 			'discover.extras' => 'Трейлъри и екстри',
 			'discover.studio' => 'Студио',
 			'discover.rating' => 'Рейтинг',
+			'discover.director' => 'Режисьор',
+			'discover.directors' => 'Режисьори',
 			'discover.movie' => 'Филм',
 			'discover.tvShow' => 'ТВ сериал',
 			'discover.minutesLeft' => ({required Object minutes}) => 'Остават ${minutes} мин',

@@ -2193,6 +2193,12 @@ class TranslationsDiscoverEn {
 	/// en: 'Rating'
 	String get rating => 'Rating';
 
+	/// en: 'Director'
+	String get director => 'Director';
+
+	/// en: 'Directors'
+	String get directors => 'Directors';
+
 	/// en: 'Movie'
 	String get movie => 'Movie';
 
@@ -5650,6 +5656,8 @@ extension on Translations {
 			'discover.extras' => 'Trailers & Extras',
 			'discover.studio' => 'Studio',
 			'discover.rating' => 'Rating',
+			'discover.director' => 'Director',
+			'discover.directors' => 'Directors',
 			'discover.movie' => 'Movie',
 			'discover.tvShow' => 'TV Show',
 			'discover.minutesLeft' => ({required Object minutes}) => '${minutes} min left',

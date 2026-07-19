@@ -716,6 +716,8 @@
     "extras": "Trailere og ekstra",
     "studio": "Studie",
     "rating": "Bedømmelse",
+    "director": "Instruktør",
+    "directors": "Instruktører",
     "movie": "Film",
     "tvShow": "TV-serie",
     "minutesLeft": "${minutes} min tilbage",

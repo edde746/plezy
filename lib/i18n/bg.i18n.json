@@ -716,6 +716,8 @@
     "extras": "Трейлъри и екстри",
     "studio": "Студио",
     "rating": "Рейтинг",
+    "director": "Режисьор",
+    "directors": "Режисьори",
     "movie": "Филм",
     "tvShow": "ТВ сериал",
     "minutesLeft": "Остават ${minutes} мин",

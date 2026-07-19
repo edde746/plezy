@@ -715,6 +715,8 @@
     "cast": "Reparto",
     "extras": "Tráilers y Extras",
     "studio": "Estudio",
+    "director": "Director",
+    "directors": "Directores",
     "rating": "Calificación",
     "movie": "Película",
     "tvShow": "Serie de TV",

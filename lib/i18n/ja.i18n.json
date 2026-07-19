@@ -715,6 +715,8 @@
     "extras": "予告編とエクストラ",
     "studio": "スタジオ",
     "rating": "評価",
+    "director": "監督",
+    "directors": "監督",
     "movie": "映画",
     "tvShow": "テレビ番組",
     "minutesLeft": "残り${minutes}分",

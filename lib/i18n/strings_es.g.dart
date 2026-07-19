@@ -916,6 +916,8 @@ class _TranslationsDiscoverEs extends TranslationsDiscoverEn {
 	@override String get cast => 'Reparto';
 	@override String get extras => 'Tráilers y Extras';
 	@override String get studio => 'Estudio';
+	@override String get director => 'Director';
+	@override String get directors => 'Directores';
 	@override String get rating => 'Calificación';
 	@override String get movie => 'Película';
 	@override String get tvShow => 'Serie de TV';
@@ -2792,6 +2794,8 @@ extension on TranslationsEs {
 			'discover.cast' => 'Reparto',
 			'discover.extras' => 'Tráilers y Extras',
 			'discover.studio' => 'Estudio',
+			'discover.director' => 'Director',
+			'discover.directors' => 'Directores',
 			'discover.rating' => 'Calificación',
 			'discover.movie' => 'Película',
 			'discover.tvShow' => 'Serie de TV',

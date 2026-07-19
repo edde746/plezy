@@ -917,6 +917,8 @@ class _TranslationsDiscoverDa extends TranslationsDiscoverEn {
 	@override String get extras => 'Trailere og ekstra';
 	@override String get studio => 'Studie';
 	@override String get rating => 'Bedømmelse';
+	@override String get director => 'Instruktør';
+	@override String get directors => 'Instruktører';
 	@override String get movie => 'Film';
 	@override String get tvShow => 'TV-serie';
 	@override String minutesLeft({required Object minutes}) => '${minutes} min tilbage';
@@ -2793,6 +2795,8 @@ extension on TranslationsDa {
 			'discover.extras' => 'Trailere og ekstra',
 			'discover.studio' => 'Studie',
 			'discover.rating' => 'Bedømmelse',
+			'discover.director' => 'Instruktør',
+			'discover.directors' => 'Instruktører',
 			'discover.movie' => 'Film',
 			'discover.tvShow' => 'TV-serie',
 			'discover.minutesLeft' => ({required Object minutes}) => '${minutes} min tilbage',

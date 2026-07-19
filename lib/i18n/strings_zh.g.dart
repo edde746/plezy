@@ -916,6 +916,8 @@ class _TranslationsDiscoverZh extends TranslationsDiscoverEn {
 	@override String get extras => '预告片与花絮';
 	@override String get studio => '制作公司';
 	@override String get rating => '年龄分级';
+	@override String get director => '导演';
+	@override String get directors => '导演';
 	@override String get movie => '电影';
 	@override String get tvShow => '电视剧';
 	@override String minutesLeft({required Object minutes}) => '剩余 ${minutes} 分钟';
@@ -2790,6 +2792,8 @@ extension on TranslationsZh {
 			'discover.extras' => '预告片与花絮',
 			'discover.studio' => '制作公司',
 			'discover.rating' => '年龄分级',
+			'discover.director' => '导演',
+			'discover.directors' => '导演',
 			'discover.movie' => '电影',
 			'discover.tvShow' => '电视剧',
 			'discover.minutesLeft' => ({required Object minutes}) => '剩余 ${minutes} 分钟',

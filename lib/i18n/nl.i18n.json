@@ -716,6 +716,8 @@
     "extras": "Trailers & Extra's",
     "studio": "Studio",
     "rating": "Leeftijd",
+    "director": "Regisseur",
+    "directors": "Regisseurs",
     "movie": "Film",
     "tvShow": "TV Serie",
     "minutesLeft": "${minutes} min over",

@@ -716,6 +716,8 @@
     "extras": "Bandes-annonces et Extras",
     "studio": "Studio",
     "rating": "Évaluation",
+    "director": "Réalisateur",
+    "directors": "Réalisateurs",
     "movie": "Film",
     "tvShow": "Show TV",
     "minutesLeft": "${minutes} min restantes",

@@ -716,6 +716,8 @@
     "extras": "Trailer ed Extra",
     "studio": "Studio",
     "rating": "Classificazione",
+    "director": "Regista",
+    "directors": "Registi",
     "movie": "Film",
     "tvShow": "Serie TV",
     "minutesLeft": "${minutes} minuti rimanenti",

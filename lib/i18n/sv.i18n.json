@@ -716,6 +716,8 @@
     "extras": "Trailers och Extra",
     "studio": "Studio",
     "rating": "Åldersgräns",
+    "director": "Regissör",
+    "directors": "Regissörer",
     "movie": "Film",
     "tvShow": "TV-serie",
     "minutesLeft": "${minutes} min kvar",

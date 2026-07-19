@@ -919,6 +919,8 @@ class _TranslationsDiscoverRu extends TranslationsDiscoverEn {
 	@override String get extras => 'Трейлеры и доп. материалы';
 	@override String get studio => 'Студия';
 	@override String get rating => 'Рейтинг';
+	@override String get director => 'Режиссёр';
+	@override String get directors => 'Режиссёры';
 	@override String get movie => 'Фильм';
 	@override String get tvShow => 'Сериал';
 	@override String minutesLeft({required Object minutes}) => 'Осталось ${minutes} мин';
@@ -2799,6 +2801,8 @@ extension on TranslationsRu {
 			'discover.extras' => 'Трейлеры и доп. материалы',
 			'discover.studio' => 'Студия',
 			'discover.rating' => 'Рейтинг',
+			'discover.director' => 'Режиссёр',
+			'discover.directors' => 'Режиссёры',
 			'discover.movie' => 'Фильм',
 			'discover.tvShow' => 'Сериал',
 			'discover.minutesLeft' => ({required Object minutes}) => 'Осталось ${minutes} мин',

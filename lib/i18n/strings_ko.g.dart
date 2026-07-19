@@ -916,6 +916,8 @@ class _TranslationsDiscoverKo extends TranslationsDiscoverEn {
 	@override String get extras => '예고편 및 부가영상';
 	@override String get studio => '제작사';
 	@override String get rating => '연령 등급';
+	@override String get director => '감독';
+	@override String get directors => '감독';
 	@override String get movie => '영화';
 	@override String get tvShow => 'TV 시리즈';
 	@override String minutesLeft({required Object minutes}) => '${minutes}분 남음';
@@ -2790,6 +2792,8 @@ extension on TranslationsKo {
 			'discover.extras' => '예고편 및 부가영상',
 			'discover.studio' => '제작사',
 			'discover.rating' => '연령 등급',
+			'discover.director' => '감독',
+			'discover.directors' => '감독',
 			'discover.movie' => '영화',
 			'discover.tvShow' => 'TV 시리즈',
 			'discover.minutesLeft' => ({required Object minutes}) => '${minutes}분 남음',
