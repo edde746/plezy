@@ -4,6 +4,7 @@ import '../media/media_version.dart';
 import '../models/audio_quality_preset.dart';
 import '../models/transcode_quality_preset.dart';
 import '../mpv/mpv.dart';
+import '../utils/media_server_http_client.dart' show AbortController;
 
 /// Inputs for [MediaServerClient.getPlaybackInitialization]. Most fields
 /// are backend-specific knobs (transcode preset, audio stream, session ids).
@@ -51,6 +52,10 @@ class PlaybackInitializationOptions {
   /// for Plex transcode.
   final String? transcodeSessionId;
 
+  /// Cancels playback-source discovery and negotiation when the launch that
+  /// requested them is no longer relevant.
+  final AbortController? abort;
+
   const PlaybackInitializationOptions({
     required this.metadata,
     required this.selectedMediaIndex,
@@ -62,6 +67,7 @@ class PlaybackInitializationOptions {
     this.preferredSubtitleTrack,
     this.sessionIdentifier,
     this.transcodeSessionId,
+    this.abort,
   });
 }
 

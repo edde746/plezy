@@ -2,6 +2,7 @@ import '../media/media_item.dart';
 import '../media/media_server_client.dart';
 import '../media/media_version.dart';
 import 'app_logger.dart';
+import 'media_server_http_client.dart';
 
 List<MediaVersion>? _nonEmptyVersions(List<MediaVersion>? versions) {
   return versions == null || versions.isEmpty ? null : versions;
@@ -13,22 +14,25 @@ Future<List<MediaVersion>> resolveMediaVersions(
   MediaItem metadata,
   MediaServerClient client, {
   List<MediaVersion>? fallbackVersions,
+  AbortController? abort,
+  bool forceRefresh = false,
 }) async {
-  final inlineVersions = _nonEmptyVersions(metadata.mediaVersions);
-  if (inlineVersions != null) return inlineVersions;
+  if (!forceRefresh) {
+    final inlineVersions = _nonEmptyVersions(metadata.mediaVersions);
+    if (inlineVersions != null) return inlineVersions;
 
-  final fallback = _nonEmptyVersions(fallbackVersions);
-  if (fallback != null) return fallback;
+    final fallback = _nonEmptyVersions(fallbackVersions);
+    if (fallback != null) return fallback;
+  }
 
   try {
-    final fullMetadata = await client.fetchItem(metadata.id);
-    return _nonEmptyVersions(fullMetadata?.mediaVersions) ?? const <MediaVersion>[];
+    return await client.fetchPlaybackVersions(metadata.id, abort: abort);
   } catch (e, st) {
     appLogger.w(
       'Failed to resolve media versions for ${metadata.backend.id} item ${metadata.id}',
       error: e,
       stackTrace: st,
     );
-    return const <MediaVersion>[];
+    rethrow;
   }
 }

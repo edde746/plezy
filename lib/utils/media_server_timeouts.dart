@@ -7,6 +7,11 @@ class MediaServerTimeouts {
 
   static const receive = Duration(seconds: 120);
 
+  /// A source that discovery already found still needs a normal negotiation
+  /// budget. Discovery itself is intentionally unbounded because dynamic
+  /// providers can take an unpredictable amount of time to return sources.
+  static const playbackNegotiation = receive;
+
   /// Retry budget for home `/hubs` startup calls. These endpoints can be slow
   /// while Plex wakes idle disks, but should not block forever.
   static const homeHubAttemptTimeouts = [Duration(seconds: 10), Duration(seconds: 5), Duration(milliseconds: 2500)];

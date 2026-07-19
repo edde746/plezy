@@ -140,6 +140,30 @@ void main() {
     semantics.dispose();
   });
 
+  testWidgets('online movie detail keeps Play Version out of the direct action row', (tester) async {
+    await SettingsService.getInstance();
+    final movie = testMediaItem(
+      id: 'version_movie',
+      backend: MediaBackend.jellyfin,
+      kind: MediaKind.movie,
+      title: 'Version Movie',
+    );
+
+    await tester.pumpWidget(
+      TranslationProvider(
+        child: MaterialApp(
+          theme: monoTheme(dark: true),
+          home: withProfileNavigationScope(child: MediaDetailScreen(metadata: movie)),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    final actionBar = tester.widget<FocusableActionBar>(find.byType(FocusableActionBar));
+    expect(actionBar.actions.map((action) => action.debugLabel), isNot(contains('detail_play_version')));
+    expect(find.byTooltip(t.mediaMenu.playVersion), findsNothing);
+  });
+
   testWidgets('TV detail reveals without waiting for directional input', (tester) async {
     await SettingsService.getInstance();
 

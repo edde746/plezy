@@ -120,6 +120,93 @@ mixin _JellyfinPlaybackMethods on MediaServerCacheMixin {
     return uri.replace(queryParameters: params).toString();
   }
 
+  Future<Map<String, dynamic>> _fetchPlaybackDiscoveryInfo(String itemId, {AbortController? abort}) async {
+    final info = await getPlaybackInfo(
+      itemId,
+      // Discovery must not hide high-bitrate sources. The selected source is
+      // negotiated with the user's actual quality cap in the second request.
+      // AIOStreams can take an unpredictable amount of time to collect
+      // providers, so discovery has no deadline; explicit cancellation still
+      // aborts the underlying request.
+      maxStreamingBitrate: null,
+      abort: abort,
+      waitIndefinitely: true,
+      throwOnError: true,
+    );
+    if (info == null) {
+      throw PlaybackException('Item $itemId returned invalid PlaybackInfo');
+    }
+    return info;
+  }
+
+  Future<JellyfinPlaybackBundle?> fetchPlaybackDiscoveryBundle(
+    String itemId, {
+    int sourceIndex = 0,
+    String? sourceId,
+    String? preferredSignature,
+    AbortController? abort,
+  }) async {
+    final discovery = await _fetchPlaybackDiscoveryInfo(itemId, abort: abort);
+    return _playbackBundleFromDiscovery(
+      discovery['MediaSources'],
+      sourceIndex: sourceIndex,
+      sourceId: sourceId,
+      preferredSignature: preferredSignature,
+    );
+  }
+
+  /// Browse/Resume/Next Up DTOs deliberately omit heavy presentation fields.
+  /// Fetch only chapters and trickplay beside PlaybackInfo so automatic source
+  /// discovery stays authoritative without regressing seek markers or scrub
+  /// thumbnails. A detail DTO already carrying either field needs no request.
+  Future<Map<String, dynamic>?> _fetchPlaybackPresentationRaw(
+    MediaItem metadata, {
+    required Duration timeout,
+    AbortController? abort,
+  }) async {
+    final existing = metadata.raw;
+    if (metadata.kind == MediaKind.track) {
+      return existing is Map<String, dynamic> ? existing : null;
+    }
+    if (existing is Map<String, dynamic> && (existing.containsKey('Chapters') || existing.containsKey('Trickplay'))) {
+      return existing;
+    }
+
+    try {
+      final response = await _http.get(
+        '/Users/${_segment(connection.userId)}/Items/${_segment(metadata.id)}',
+        queryParameters: const {'Fields': 'Chapters,Trickplay'},
+        timeout: timeout,
+        abort: abort,
+      );
+      throwIfHttpError(response);
+      return response.data is Map<String, dynamic> ? response.data as Map<String, dynamic> : null;
+    } on MediaServerHttpException catch (error, stackTrace) {
+      // Discovery and pinned negotiation share this abort controller and stay
+      // authoritative for cancellation. Contain this best-effort side request
+      // so a discovery failure cannot leave an unawaited error.
+      if (error.isCancellation) {
+        return existing is Map<String, dynamic> ? existing : null;
+      }
+      appLogger.w('JellyfinClient: playback presentation metadata unavailable', error: error, stackTrace: stackTrace);
+      return existing is Map<String, dynamic> ? existing : null;
+    } catch (error, stackTrace) {
+      appLogger.w('JellyfinClient: playback presentation metadata unavailable', error: error, stackTrace: stackTrace);
+      return existing is Map<String, dynamic> ? existing : null;
+    }
+  }
+
+  /// Jellyfin/Remux playback sources are dynamic and may not be present on the
+  /// normal item DTO. An unpinned PlaybackInfo POST lets Remux/AIOStreams
+  /// return every candidate in its preferred server order.
+  @override
+  Future<List<MediaVersion>> fetchPlaybackVersions(String itemId, {AbortController? abort}) async {
+    final info = await _fetchPlaybackDiscoveryInfo(itemId, abort: abort);
+    final sources = info['MediaSources'];
+    if (sources is! List || sources.isEmpty) return const <MediaVersion>[];
+    return List<MediaVersion>.unmodifiable(jellyfinSourcesToVersions(sources));
+  }
+
   /// Jellyfin playback URL resolution.
   ///
   /// Always POSTs `/Items/{id}/PlaybackInfo` so Jellyfin can resolve external
@@ -135,11 +222,19 @@ mixin _JellyfinPlaybackMethods on MediaServerCacheMixin {
   @override
   Future<PlaybackInitializationResult> getPlaybackInitialization(PlaybackInitializationOptions options) async {
     final metadata = options.metadata;
-    final bundle = await fetchPlaybackBundle(
-      metadata.id,
+    final presentationFuture = _fetchPlaybackPresentationRaw(
+      metadata,
+      timeout: MediaServerTimeouts.playbackNegotiation,
+      abort: options.abort,
+    );
+    final discovery = await _fetchPlaybackDiscoveryInfo(metadata.id, abort: options.abort);
+    final presentationRaw = await presentationFuture;
+    final bundle = _playbackBundleFromDiscovery(
+      discovery['MediaSources'],
       sourceIndex: options.selectedMediaIndex,
       sourceId: options.selectedMediaSourceId,
       preferredSignature: options.preferredVersionSignature,
+      fallbackItemRaw: presentationRaw ?? metadata.raw,
     );
     if (bundle == null) {
       throw PlaybackException('Item ${metadata.id} returned no MediaSources');
@@ -186,61 +281,58 @@ mixin _JellyfinPlaybackMethods on MediaServerCacheMixin {
       startTimeTicks: transcodeStartTimeTicks,
       audioStreamIndex: requestedAudioStreamId,
       audioProfile: isTrack,
+      timeout: MediaServerTimeouts.playbackNegotiation,
+      abort: options.abort,
+      throwOnError: true,
     );
     if (negotiation == null) {
-      if (!wantsOriginal) {
-        fallbackReason = TranscodeFallbackReason.decisionFailed;
-      }
-    } else {
-      final chosenSource = _selectNegotiatedMediaSource(negotiation['MediaSources'], bundle.selectedSourceId);
-      if (chosenSource != null) {
-        effectiveSourceId = chosenSource['Id'] as String? ?? effectiveSourceId;
-        effectiveContainer = chosenSource['Container'] as String? ?? effectiveContainer;
-        if (chosenSource['MediaStreams'] is List) {
-          mediaInfo = jellyfinMediaSourceToMediaSourceInfo(
-            chosenSource,
-            chapters: bundle.chapters,
-            trickplay: bundle.trickplay,
-          );
-        }
+      throw PlaybackException('Item ${metadata.id} returned invalid pinned PlaybackInfo');
+    }
+    final chosenSource = _selectNegotiatedMediaSource(negotiation['MediaSources'], bundle.selectedSourceId);
+    if (chosenSource == null) {
+      throw PlaybackException('Item ${metadata.id} returned no pinned MediaSource ${bundle.selectedSourceId ?? ''}');
+    }
+    effectiveSourceId = chosenSource['Id'] as String? ?? effectiveSourceId;
+    effectiveContainer = chosenSource['Container'] as String? ?? effectiveContainer;
+    if (chosenSource['MediaStreams'] is List) {
+      mediaInfo = jellyfinMediaSourceToMediaSourceInfo(
+        chosenSource,
+        chapters: bundle.chapters,
+        trickplay: bundle.trickplay,
+      );
+    }
 
-        final negotiatedPlaySessionId = negotiation['PlaySessionId'];
-        void capturePlaySessionId(String urlOrPath) {
-          playSessionId = Uri.tryParse(urlOrPath)?.queryParameters['PlaySessionId'];
-          if ((playSessionId == null || playSessionId!.isEmpty) && negotiatedPlaySessionId is String) {
-            playSessionId = negotiatedPlaySessionId;
-          }
-        }
-
-        final transcodingUrl = chosenSource['TranscodingUrl'];
-        final directStreamUrl = chosenSource['DirectStreamUrl'];
-        if (!wantsOriginal && transcodingUrl is String && transcodingUrl.isNotEmpty) {
-          // TranscodingUrl is server-relative and already encodes container,
-          // codecs, MediaSourceId, and PlaySessionId; we just append the
-          // api_key for auth.
-          capturePlaySessionId(transcodingUrl);
-          videoUrl = _withApiKey(transcodingUrl);
-          playMethod = 'Transcode';
-          isTranscoding = true;
-          includeExternalSubtitleDelivery = true;
-        } else if (directStreamUrl is String && directStreamUrl.isNotEmpty) {
-          capturePlaySessionId(directStreamUrl);
-          videoUrl = _withApiKey(directStreamUrl);
-          playMethod = 'DirectStream';
-          // DirectStream remuxes the selected streams into a new container.
-          // Subtitle streams marked for external delivery are not present in
-          // that container, so expose their server URLs as sidecars just as we
-          // do for transcoded playback. True DirectPlay keeps using the
-          // embedded native tracks and does not incur a sidecar fetch.
-          includeExternalSubtitleDelivery = true;
-        } else {
-          if (!wantsOriginal) {
-            fallbackReason = TranscodeFallbackReason.directPlayOnly;
-          }
-        }
-      } else if (!wantsOriginal) {
-        fallbackReason = TranscodeFallbackReason.directPlayOnly;
+    final negotiatedPlaySessionId = negotiation['PlaySessionId'];
+    void capturePlaySessionId(String urlOrPath) {
+      playSessionId = Uri.tryParse(urlOrPath)?.queryParameters['PlaySessionId'];
+      if ((playSessionId == null || playSessionId!.isEmpty) && negotiatedPlaySessionId is String) {
+        playSessionId = negotiatedPlaySessionId;
       }
+    }
+
+    final transcodingUrl = chosenSource['TranscodingUrl'];
+    final directStreamUrl = chosenSource['DirectStreamUrl'];
+    if (!wantsOriginal && transcodingUrl is String && transcodingUrl.isNotEmpty) {
+      // TranscodingUrl is server-relative and already encodes container,
+      // codecs, MediaSourceId, and PlaySessionId; we just append the
+      // api_key for auth.
+      capturePlaySessionId(transcodingUrl);
+      videoUrl = _withApiKey(transcodingUrl);
+      playMethod = 'Transcode';
+      isTranscoding = true;
+      includeExternalSubtitleDelivery = true;
+    } else if (directStreamUrl is String && directStreamUrl.isNotEmpty) {
+      capturePlaySessionId(directStreamUrl);
+      videoUrl = _withApiKey(directStreamUrl);
+      playMethod = 'DirectStream';
+      // DirectStream remuxes the selected streams into a new container.
+      // Subtitle streams marked for external delivery are not present in
+      // that container, so expose their server URLs as sidecars just as we
+      // do for transcoded playback. True DirectPlay keeps using the embedded
+      // native tracks and does not incur a sidecar fetch.
+      includeExternalSubtitleDelivery = true;
+    } else if (!wantsOriginal) {
+      fallbackReason = TranscodeFallbackReason.directPlayOnly;
     }
 
     final effectiveAudioStreamId = _resolveJellyfinAudioStreamId(requestedAudioStreamId, mediaInfo);
@@ -255,7 +347,13 @@ mixin _JellyfinPlaybackMethods on MediaServerCacheMixin {
             mediaInfo,
             includeExternalDelivery: includeExternalSubtitleDelivery,
           );
-    final pinnedSourceId = bundle.pinnedSourceIdForItem(metadata.id);
+    final resolvedSourceId = effectiveSourceId?.trim();
+    final pinnedSourceId =
+        resolvedSourceId != null &&
+            resolvedSourceId.isNotEmpty &&
+            (bundle.availableVersions.length > 1 || resolvedSourceId != metadata.id)
+        ? resolvedSourceId
+        : null;
     videoUrl ??= isTrack
         ? buildAudioDirectStreamUrl(metadata.id, container: effectiveContainer, mediaSourceId: pinnedSourceId)
         : buildDirectStreamUrl(metadata.id, container: effectiveContainer, mediaSourceId: pinnedSourceId);
@@ -405,6 +503,42 @@ mixin _JellyfinPlaybackMethods on MediaServerCacheMixin {
     if (raw is! Map<String, dynamic>) return null;
     final sources = raw['MediaSources'];
     if (sources is! List || sources.isEmpty) return null;
+    return _buildPlaybackBundle(
+      sources,
+      itemRaw: raw,
+      sourceIndex: sourceIndex,
+      sourceId: sourceId,
+      preferredSignature: preferredSignature,
+    );
+  }
+
+  /// Build the launch bundle from the authoritative PlaybackInfo source list.
+  /// Existing metadata contributes chapters and trickplay only; its
+  /// potentially stale/hidden `MediaSources` are never used.
+  JellyfinPlaybackBundle? _playbackBundleFromDiscovery(
+    Object? rawSources, {
+    int sourceIndex = 0,
+    String? sourceId,
+    String? preferredSignature,
+    Object? fallbackItemRaw,
+  }) {
+    if (rawSources is! List || rawSources.isEmpty) return null;
+    return _buildPlaybackBundle(
+      rawSources,
+      itemRaw: fallbackItemRaw is Map<String, dynamic> ? fallbackItemRaw : null,
+      sourceIndex: sourceIndex,
+      sourceId: sourceId,
+      preferredSignature: preferredSignature,
+    );
+  }
+
+  JellyfinPlaybackBundle? _buildPlaybackBundle(
+    List<dynamic> sources, {
+    Map<String, dynamic>? itemRaw,
+    required int sourceIndex,
+    String? sourceId,
+    String? preferredSignature,
+  }) {
     final availableVersions = jellyfinSourcesToVersions(sources);
     var index = sourceIndex;
     final requestedSourceId = sourceId?.trim();
@@ -426,7 +560,7 @@ mixin _JellyfinPlaybackMethods on MediaServerCacheMixin {
     if (index < 0 || index >= sources.length) index = 0;
     final source = sources[index];
     if (source is! Map<String, dynamic>) return null;
-    final chapters = raw['Chapters'];
+    final chapters = itemRaw?['Chapters'];
     return JellyfinPlaybackBundle(
       availableVersions: availableVersions,
       selectedSource: source,
@@ -434,7 +568,7 @@ mixin _JellyfinPlaybackMethods on MediaServerCacheMixin {
       container: source['Container'] as String?,
       selectedSourceId: source['Id'] as String?,
       selectedSourceIndex: index,
-      trickplay: raw['Trickplay'],
+      trickplay: itemRaw?['Trickplay'],
     );
   }
 
@@ -533,6 +667,10 @@ mixin _JellyfinPlaybackMethods on MediaServerCacheMixin {
     bool? allowVideoStreamCopy,
     bool? allowAudioStreamCopy,
     bool audioProfile = false,
+    Duration? timeout,
+    AbortController? abort,
+    bool waitIndefinitely = false,
+    bool throwOnError = false,
   }) async {
     try {
       final query = <String, String>{
@@ -627,12 +765,26 @@ mixin _JellyfinPlaybackMethods on MediaServerCacheMixin {
             ],
           },
         },
+        timeout: timeout,
+        abort: abort,
+        waitIndefinitely: waitIndefinitely,
       );
       throwIfHttpError(response);
       final data = response.data;
-      return data is Map<String, dynamic> ? data : null;
+      if (data is Map<String, dynamic>) return data;
+      if (throwOnError) {
+        throw MediaServerHttpException(
+          type: MediaServerHttpErrorType.unknown,
+          statusCode: response.statusCode,
+          responseData: data,
+          requestUri: response.requestUri,
+          message: 'PlaybackInfo returned a non-object response',
+        );
+      }
+      return null;
     } catch (e, st) {
       appLogger.w('JellyfinClient: getPlaybackInfo failed', error: e, stackTrace: st);
+      if (throwOnError || (e is MediaServerHttpException && e.isCancellation)) rethrow;
       return null;
     }
   }

@@ -6,6 +6,7 @@ import '../media/media_server_client.dart';
 import '../models/audio_quality_preset.dart';
 import '../models/transcode_quality_preset.dart';
 import '../mpv/mpv.dart';
+import '../utils/media_server_http_client.dart' show AbortController;
 import 'multi_server_manager.dart';
 import 'playback_context.dart';
 import 'playback_initialization_service.dart';
@@ -36,6 +37,7 @@ class PlaybackSourceResolver {
     String? sessionIdentifier,
     String? transcodeSessionId,
     bool? preferOffline,
+    AbortController? abort,
   }) async {
     final reportingClient = _playbackClient(serverIdOrNull(metadata.serverId), offlineLibraryMode: offlineLibraryMode);
     final service = PlaybackInitializationService(client: reportingClient, database: database);
@@ -51,6 +53,7 @@ class PlaybackSourceResolver {
       preferredSubtitleTrack: preferredSubtitleTrack,
       sessionIdentifier: sessionIdentifier,
       transcodeSessionId: transcodeSessionId,
+      abort: abort,
     );
 
     final sourceKind = result.usesLocalMedia

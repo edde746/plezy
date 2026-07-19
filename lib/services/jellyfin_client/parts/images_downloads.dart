@@ -8,6 +8,13 @@ mixin _JellyfinImageDownloadMethods on MediaServerCacheMixin {
     String? sourceId,
     String? preferredSignature,
   });
+  Future<JellyfinPlaybackBundle?> fetchPlaybackDiscoveryBundle(
+    String itemId, {
+    int sourceIndex = 0,
+    String? sourceId,
+    String? preferredSignature,
+    AbortController? abort,
+  });
   String buildDirectStreamUrl(
     String itemId, {
     String? container,
@@ -31,9 +38,14 @@ mixin _JellyfinImageDownloadMethods on MediaServerCacheMixin {
     bool? enableTranscoding,
     bool? allowVideoStreamCopy,
     bool? allowAudioStreamCopy,
-    bool audioProfile,
+    bool audioProfile = false,
+    Duration? timeout,
+    AbortController? abort,
+    bool waitIndefinitely = false,
+    bool throwOnError = false,
   });
   String _withApiKey(String urlOrPath);
+  Map<String, dynamic>? _selectNegotiatedMediaSource(Object? sources, String? selectedSourceId);
 
   @override
   String thumbnailUrl(String? path, {int? width, int? height}) {
@@ -60,15 +72,59 @@ mixin _JellyfinImageDownloadMethods on MediaServerCacheMixin {
     // Tracks stream from /Audio/{id}/stream; the URL contract (Static=true,
     // api_key in the query string) is otherwise identical to the video one.
     final isTrack = item.kind == MediaKind.track;
-    final bundle = await fetchPlaybackBundle(item.id, sourceIndex: mediaIndex, sourceId: mediaSourceId);
-    if (bundle == null) {
-      return isTrack ? buildAudioDirectStreamUrl(item.id) : buildDirectStreamUrl(item.id);
+    if (isTrack) {
+      final bundle = await fetchPlaybackBundle(item.id, sourceIndex: mediaIndex, sourceId: mediaSourceId);
+      if (bundle == null) return buildAudioDirectStreamUrl(item.id);
+      return buildAudioDirectStreamUrl(
+        item.id,
+        container: bundle.container,
+        mediaSourceId: bundle.pinnedSourceIdForItem(item.id),
+      );
     }
-    final container = bundle.container;
-    final pinnedSourceId = bundle.pinnedSourceIdForItem(item.id);
-    return isTrack
-        ? buildAudioDirectStreamUrl(item.id, container: container, mediaSourceId: pinnedSourceId)
-        : buildDirectStreamUrl(item.id, container: container, mediaSourceId: pinnedSourceId);
+
+    // Dynamic Remux/AIOStreams sources exist only in PlaybackInfo. Discover
+    // them in server order, then pin the selected source in a second request
+    // just like the internal player path.
+    final bundle = await fetchPlaybackDiscoveryBundle(item.id, sourceIndex: mediaIndex, sourceId: mediaSourceId);
+    if (bundle == null) {
+      throw PlaybackException('Item ${item.id} returned no MediaSources');
+    }
+    final negotiation = await getPlaybackInfo(
+      item.id,
+      maxStreamingBitrate: null,
+      mediaSourceId: bundle.selectedSourceId,
+      timeout: MediaServerTimeouts.playbackNegotiation,
+      throwOnError: true,
+    );
+    if (negotiation == null) {
+      throw PlaybackException('Item ${item.id} returned invalid pinned PlaybackInfo');
+    }
+    final chosenSource = _selectNegotiatedMediaSource(negotiation['MediaSources'], bundle.selectedSourceId);
+    if (chosenSource == null) {
+      throw PlaybackException('Item ${item.id} returned no pinned MediaSource ${bundle.selectedSourceId ?? ''}');
+    }
+
+    final directStreamUrl = chosenSource['DirectStreamUrl'];
+    if (directStreamUrl is String && directStreamUrl.isNotEmpty) {
+      return _withApiKey(directStreamUrl);
+    }
+    final transcodingUrl = chosenSource['TranscodingUrl'];
+    if (transcodingUrl is String && transcodingUrl.isNotEmpty) {
+      return _withApiKey(transcodingUrl);
+    }
+
+    final effectiveSourceId = chosenSource['Id'] as String? ?? bundle.selectedSourceId;
+    final pinnedSourceId =
+        effectiveSourceId != null &&
+            effectiveSourceId.isNotEmpty &&
+            (bundle.availableVersions.length > 1 || effectiveSourceId != item.id)
+        ? effectiveSourceId
+        : null;
+    return buildDirectStreamUrl(
+      item.id,
+      container: chosenSource['Container'] as String? ?? bundle.container,
+      mediaSourceId: pinnedSourceId,
+    );
   }
 
   @override

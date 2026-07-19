@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import '../media/media_item.dart';
@@ -5,10 +7,14 @@ import '../media/media_kind.dart';
 import '../media/media_server_client.dart';
 import '../media/media_version.dart';
 import '../media/episode_collection.dart';
+import '../focus/input_mode_tracker.dart';
 import '../utils/app_logger.dart';
 import '../utils/dialogs.dart';
 import '../utils/media_version_resolver.dart';
 import '../i18n/strings.g.dart';
+import '../widgets/app_icon.dart';
+import '../widgets/dialog_action_button.dart';
+import '../widgets/focusable_list_tile.dart';
 
 /// Configuration for download version selection, threaded through the queue pipeline.
 class DownloadVersionConfig {
@@ -81,15 +87,61 @@ Future<DownloadVersionConfig?> resolveDownloadVersion(
 
 /// Show a dialog for selecting a media version.
 /// Returns the selected index, or null if cancelled.
-Future<int?> showVersionPickerDialog(BuildContext context, List<MediaVersion> versions, String title) {
-  return showOptionPickerDialog<int>(
-    context,
-    title: title,
-    options: List.generate(
-      versions.length,
-      (index) => (icon: Symbols.video_file_rounded, label: versions[index].displayLabel, value: index),
-    ),
+Future<int?> showVersionPickerDialog(
+  BuildContext context,
+  List<MediaVersion> versions,
+  String title, {
+  int initialIndex = 0,
+}) {
+  final highlightedIndex = initialIndex >= 0 && initialIndex < versions.length ? initialIndex : 0;
+  final autofocusSelection = InputModeTracker.isKeyboardMode(context, listen: false);
+  return showScopedDialog<int>(
+    context: context,
+    builder: (dialogContext) {
+      final viewport = MediaQuery.sizeOf(dialogContext);
+      final horizontalInset = viewport.width >= 600 ? 24.0 : 12.0;
+      final dialogWidth = math.max(280.0, math.min(1100.0, viewport.width - (horizontalInset * 2)));
+      final maxListHeight = math.max(96.0, math.min(viewport.height * 0.72, viewport.height - 180.0));
+      return AlertDialog(
+        key: const ValueKey('media-version-picker'),
+        insetPadding: EdgeInsets.symmetric(horizontal: horizontalInset, vertical: 24),
+        constraints: BoxConstraints.tightFor(width: dialogWidth),
+        title: Text(title),
+        contentPadding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+        content: ConstrainedBox(
+          constraints: BoxConstraints(maxHeight: maxListHeight),
+          child: ListView.builder(
+            shrinkWrap: true,
+            itemCount: versions.length,
+            itemBuilder: (context, index) {
+              final highlighted = index == highlightedIndex;
+              return FocusableListTile(
+                key: ValueKey('media-version-option-$index'),
+                autofocus: autofocusSelection && highlighted,
+                selected: highlighted,
+                dense: false,
+                visualDensity: VisualDensity.standard,
+                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                leading: const AppIcon(Symbols.video_file_rounded, fill: 1, size: 24),
+                title: Text(mediaVersionPickerLabel(versions[index]), softWrap: true),
+                trailing: highlighted ? const AppIcon(Symbols.check_rounded, fill: 1, size: 22) : null,
+                onTap: () => Navigator.pop(dialogContext, index),
+              );
+            },
+          ),
+        ),
+        actions: [DialogActionButton(onPressed: () => Navigator.pop(dialogContext), label: t.common.cancel)],
+      );
+    },
   );
+}
+
+/// Compact presentation label for server-provided version names. Remux/AIO
+/// may put a source name and description on separate lines; keep all of that
+/// content while preventing embedded whitespace from breaking picker rows.
+String mediaVersionPickerLabel(MediaVersion version) {
+  final label = version.displayLabel.replaceAll(RegExp(r'\s+'), ' ').trim();
+  return label.isEmpty ? t.common.unknown : label;
 }
 
 /// Fetch media versions from a representative episode (first episode of first season).

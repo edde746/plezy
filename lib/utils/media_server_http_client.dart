@@ -107,6 +107,7 @@ class MediaServerHttpClient {
     Object? body,
     Duration? timeout,
     AbortController? abort,
+    bool waitIndefinitely = false,
   }) => _send(
     'POST',
     path,
@@ -115,6 +116,7 @@ class MediaServerHttpClient {
     body: body,
     timeout: timeout,
     abort: abort,
+    waitIndefinitely: waitIndefinitely,
   );
 
   Future<MediaServerResponse> put(
@@ -278,6 +280,7 @@ class MediaServerHttpClient {
     Object? body,
     Duration? timeout,
     AbortController? abort,
+    bool waitIndefinitely = false,
   }) async {
     if (_closing) {
       throw MediaServerHttpException(type: MediaServerHttpErrorType.cancelled, message: 'HTTP client is closing');
@@ -297,23 +300,29 @@ class MediaServerHttpClient {
 
     final sw = Stopwatch()..start();
     try {
-      final streamed = await _withAbortOnTimeout(
-        _client.send(request),
-        timeout ?? connectTimeout,
-        operation: '$method ${uri.path} connect',
-        abort: requestAbort,
-      );
+      final send = _client.send(request);
+      final streamed = waitIndefinitely
+          ? await send
+          : await _withAbortOnTimeout(
+              send,
+              timeout ?? connectTimeout,
+              operation: '$method ${uri.path} connect',
+              abort: requestAbort,
+            );
       final effectiveUri = switch (streamed) {
         http.BaseResponseWithUrl(:final url) => url,
         _ => uri,
       };
 
-      final bytes = await _withAbortOnTimeout(
-        streamed.stream.toBytes(),
-        timeout ?? receiveTimeout,
-        operation: '$method ${uri.path} receive',
-        abort: requestAbort,
-      );
+      final bodyBytes = streamed.stream.toBytes();
+      final bytes = waitIndefinitely
+          ? await bodyBytes
+          : await _withAbortOnTimeout(
+              bodyBytes,
+              timeout ?? receiveTimeout,
+              operation: '$method ${uri.path} receive',
+              abort: requestAbort,
+            );
 
       sw.stop();
       _logResponse(method, uri, streamed.statusCode, sw.elapsedMilliseconds);

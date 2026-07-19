@@ -49,12 +49,12 @@ void main() {
   });
 
   group('resolveMediaVersions', () {
-    test('fetches full metadata when the browse row has no versions', () async {
-      final requests = <Uri>[];
+    test('fetches playback versions when the browse row has no versions', () async {
+      final requests = <http.Request>[];
       final client = JellyfinClient.forTesting(
         connection: _conn(),
         httpClient: MockClient((request) async {
-          requests.add(request.url);
+          requests.add(request);
           return http.Response(
             jsonEncode({
               'Id': 'movie-1',
@@ -88,8 +88,8 @@ void main() {
 
       expect(versions.map((version) => version.id), ['src-1080', 'src-4k']);
       expect(requests, hasLength(1));
-      expect(requests.single.path, '/Users/user-1/Items/movie-1');
-      expect(requests.single.queryParameters['Fields'], contains('MediaSources'));
+      expect(requests.single.method, 'POST');
+      expect(requests.single.url.path, '/Items/movie-1/PlaybackInfo');
     });
 
     test('uses inline versions without fetching full metadata', () async {
@@ -128,16 +128,14 @@ void main() {
       expect(requested, isFalse);
     });
 
-    test('returns an empty list when detail lookup fails', () async {
+    test('propagates playback-version discovery failures', () async {
       final client = JellyfinClient.forTesting(
         connection: _conn(),
         httpClient: MockClient((request) async => http.Response('server error', 500)),
       );
       addTearDown(client.close);
 
-      final versions = await resolveMediaVersions(_item(), client);
-
-      expect(versions, isEmpty);
+      expect(resolveMediaVersions(_item(), client), throwsA(anything));
     });
   });
 }

@@ -20,6 +20,7 @@ import 'package:plezy/media/media_item.dart';
 import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/media/media_playlist.dart';
 import 'package:plezy/media/media_server_client.dart';
+import 'package:plezy/media/media_version.dart';
 import 'package:plezy/media/server_capabilities.dart';
 import 'package:plezy/metadata_edit/metadata_edit_adapters.dart';
 import 'package:plezy/models/plex/plex_home_user.dart';
@@ -297,6 +298,132 @@ void main() {
       expect(tester.takeException(), isNull);
       expect(find.byType(SnackBar), findsOneWidget);
       expect(find.text('target'), findsOneWidget);
+    });
+
+    testWidgets('Play Version retries authoritative discovery before showing transcode quality', (tester) async {
+      LocaleSettings.setLocaleSync(AppLocale.en);
+      resetSharedPreferencesForTest();
+      SettingsService.resetForTesting();
+      await SettingsService.getInstance();
+      TvDetectionService.debugSetAppleTVOverride(true);
+      addTearDown(() => TvDetectionService.debugSetAppleTVOverride(null));
+
+      var discoveryAttempts = 0;
+      final db = AppDatabase.forTesting(NativeDatabase.memory());
+      JellyfinApiCache.initialize(db);
+      final client = JellyfinClient.forTesting(
+        connection: _jellyfinConnection(),
+        httpClient: MockClient((request) async {
+          if (request.url.path != '/Items/movie-1/PlaybackInfo') {
+            return http.Response('not found', 404);
+          }
+          discoveryAttempts++;
+          if (discoveryAttempts == 1) return http.Response('temporary failure', 500);
+          return http.Response(
+            jsonEncode({
+              'MediaSources': [
+                {
+                  'Id': 'aio-first',
+                  'Name': 'First source\nAIO description',
+                  'Container': 'mkv',
+                  'MediaStreams': [
+                    {'Type': 'Video', 'Codec': 'h264', 'Height': 1080, 'Width': 1920},
+                  ],
+                },
+                {
+                  'Id': 'aio-second',
+                  'Name': 'Second source',
+                  'Container': 'mkv',
+                  'MediaStreams': [
+                    {'Type': 'Video', 'Codec': 'hevc', 'Height': 2160, 'Width': 3840},
+                  ],
+                },
+              ],
+            }),
+            200,
+            headers: {'content-type': 'application/json'},
+          );
+        }),
+      );
+      final manager = MultiServerManager()..debugRegisterClientForTesting(client);
+      final multiServerProvider = MultiServerProvider(manager, DataAggregationService(manager));
+      final connections = ConnectionRegistry(db);
+      final profileConnections = ProfileConnectionRegistry(db);
+      final plexHome = PlexHomeService(
+        connections: connections,
+        profileConnections: profileConnections,
+        plexHomeUserFetcher: (_) async => const [],
+      );
+      final activeProfileProvider = ActiveProfileProvider(
+        registry: ProfileRegistry(db),
+        plexHome: plexHome,
+        connections: connections,
+      );
+      addTearDown(() async {
+        activeProfileProvider.dispose();
+        await plexHome.dispose();
+        multiServerProvider.dispose();
+        manager.dispose();
+        await db.close();
+      });
+
+      final menuKey = GlobalKey<MediaContextMenuState>();
+      final item = testMediaItem(
+        id: 'movie-1',
+        backend: MediaBackend.jellyfin,
+        kind: MediaKind.movie,
+        title: 'Movie',
+        serverId: 'srv-1',
+        mediaVersions: const [MediaVersion(id: 'stale-inline', name: 'Stale inline source')],
+      );
+      await tester.pumpWidget(
+        TranslationProvider(
+          child: MultiProvider(
+            providers: [
+              ChangeNotifierProvider<MultiServerProvider>.value(value: multiServerProvider),
+              ChangeNotifierProvider<ActiveProfileProvider>.value(value: activeProfileProvider),
+            ],
+            child: MaterialApp(
+              theme: monoTheme(dark: true),
+              home: Scaffold(
+                body: Center(
+                  child: MediaContextMenu(
+                    key: menuKey,
+                    item: item,
+                    child: const SizedBox(width: 120, height: 80, child: Text('version target')),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+
+      menuKey.currentState!.showContextMenu(tester.element(find.text('version target')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text(t.mediaMenu.playVersion));
+      await tester.pumpAndSettle();
+
+      expect(discoveryAttempts, 1);
+      expect(find.byKey(const ValueKey('playback-version-error')), findsOneWidget);
+      expect(find.text(t.videoControls.qualityColumnHeader), findsNothing);
+
+      await tester.tap(find.byKey(const ValueKey('playback-version-retry')));
+      await tester.pumpAndSettle();
+
+      expect(discoveryAttempts, 2);
+      expect(find.textContaining('First source AIO description'), findsOneWidget);
+      expect(find.textContaining('Second source'), findsOneWidget);
+      expect(find.textContaining('Stale inline source'), findsNothing);
+
+      await tester.tap(find.byKey(const ValueKey('media-version-option-1')));
+      await tester.pumpAndSettle();
+
+      expect(find.text(t.videoControls.qualityColumnHeader), findsOneWidget);
+      await tester.sendKeyDownEvent(LogicalKeyboardKey.escape);
+      await tester.sendKeyUpEvent(LogicalKeyboardKey.escape);
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
     });
 
     testWidgets('playlist picker filters playlists by title', (tester) async {

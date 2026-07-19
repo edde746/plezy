@@ -1,3 +1,4 @@
+import '../exceptions/media_server_exceptions.dart';
 import '../media/media_source_info.dart';
 import '../media/media_sort.dart';
 import '../services/api_cache.dart';
@@ -21,6 +22,7 @@ import 'media_item.dart';
 import 'media_kind.dart';
 import 'media_library.dart';
 import 'media_playlist.dart';
+import 'media_version.dart';
 import 'playback_report_metadata.dart';
 import 'server_capabilities.dart';
 
@@ -67,6 +69,28 @@ const int defaultHubPreviewLimit = 20;
 /// rejected) from a generic transport failure, so the manager can route the
 /// two states to different UI ("Sign in again" vs "Server offline").
 enum HealthStatus { online, offline, authError }
+
+MediaServerHttpException _playbackVersionDiscoveryCancelled() =>
+    MediaServerHttpException(type: MediaServerHttpErrorType.cancelled, message: 'Playback version discovery cancelled');
+
+Future<List<MediaVersion>> _fetchPlaybackVersionsFromItem(
+  MediaServerClient client,
+  String itemId, {
+  AbortController? abort,
+}) async {
+  if (abort?.isAborted ?? false) throw _playbackVersionDiscoveryCancelled();
+
+  final fetch = client.fetchItem(itemId);
+  final item = abort == null
+      ? await fetch
+      : await Future.any<MediaItem?>([
+          fetch,
+          abort.trigger.then<MediaItem?>((_) => throw _playbackVersionDiscoveryCancelled()),
+        ]);
+
+  if (abort?.isAborted ?? false) throw _playbackVersionDiscoveryCancelled();
+  return List<MediaVersion>.unmodifiable(item?.mediaVersions ?? const <MediaVersion>[]);
+}
 
 abstract interface class GracefullyCloseable {
   Future<void> closeGracefully({Duration drainTimeout});
@@ -164,6 +188,16 @@ abstract class MediaServerClient {
   /// Fetch a single item by its backend-opaque id. Returns `null` when the
   /// item no longer exists or the user can't see it.
   Future<MediaItem?> fetchItem(String id);
+
+  /// Fetch the media versions that can be selected before playback starts.
+  ///
+  /// The default implementation uses [fetchItem] so backends whose normal
+  /// item response already contains every version need no specialized wire
+  /// request. Backends with dynamic playback sources should override this.
+  /// Cancellation is cooperative for the fallback because [fetchItem] has no
+  /// abort parameter; specialized implementations can cancel the transport.
+  Future<List<MediaVersion>> fetchPlaybackVersions(String itemId, {AbortController? abort}) =>
+      _fetchPlaybackVersionsFromItem(this, itemId, abort: abort);
 
   /// Fetch a single item *and* its on-deck episode (the next unwatched /
   /// in-progress episode) in one round-trip when the backend supports it.
@@ -714,6 +748,13 @@ abstract interface class SeasonEpisodePagingClient {
 /// implementations — both clients use `implements MediaServerClient` so a
 /// shared base class isn't an option, but a `mixin on MediaServerClient` is.
 mixin MediaServerCacheMixin implements MediaServerClient {
+  // Both concrete clients use `implements MediaServerClient`, so they do not
+  // inherit concrete method bodies from the interface. Keep the fallback here
+  // as well; Jellyfin's later playback mixin overrides it with PlaybackInfo.
+  @override
+  Future<List<MediaVersion>> fetchPlaybackVersions(String itemId, {AbortController? abort}) =>
+      _fetchPlaybackVersionsFromItem(this, itemId, abort: abort);
+
   /// Fetch with cache fallback: offline → cached only; online → try network,
   /// cache the result, fall back to cached on any error.
   ///

@@ -492,6 +492,7 @@ extension _VideoPlayerEpisodeNavigationMethods on VideoPlayerScreenState {
         final stoppedProgressFuture = _sendStoppedProgressOnce();
 
         final playbackResolver = PlaybackSourceResolver(serverManager: serverManager, database: database);
+        final resolveAbort = _replacePlaybackResolveAbort();
         final playbackContext = await playbackResolver.resolve(
           metadata: metadata,
           selectedMediaIndex: targetMediaIndex,
@@ -503,6 +504,7 @@ extension _VideoPlayerEpisodeNavigationMethods on VideoPlayerScreenState {
           preferredSubtitleTrack: currentSubtitleTrack,
           sessionIdentifier: _playbackSessionIdentifier,
           transcodeSessionId: _playbackTranscodeSessionId,
+          abort: resolveAbort,
         );
         if (!isCurrentReload()) return _MediaReloadOutcome.superseded;
         final result = playbackContext.result;
