@@ -1,12 +1,14 @@
 import 'package:flutter/foundation.dart';
 
 import '../../media/media_kind.dart';
+import '../../media/media_item.dart';
 import '../../models/catalog/catalog_cast_member.dart';
 import '../../models/catalog/catalog_item.dart';
 import '../../utils/external_ids.dart';
 
 /// Content rows a catalog source can serve on the Explore tab.
 enum CatalogRowId {
+  favorites,
   watchlist,
   recommendedMovies,
   recommendedShows,
@@ -48,6 +50,27 @@ class CatalogPage {
   final bool hasMore;
 
   const CatalogPage({required this.items, this.hasMore = false});
+}
+
+/// A page ready for Explore's existing media-card stack.
+///
+/// External catalogs are adapted from [CatalogPage] into rendering-only
+/// [CatalogItem.toMediaItem] stand-ins. Server-backed Explore sources can
+/// implement [MediaItemCatalogSource] and return real [MediaItem]s instead,
+/// preserving their server identity and normal navigation path.
+class ExploreMediaPage {
+  final List<MediaItem> items;
+  final bool hasMore;
+
+  const ExploreMediaPage({required this.items, this.hasMore = false});
+}
+
+/// Optional capability for a [CatalogSource] whose Explore rows are already
+/// server-backed [MediaItem]s rather than external [CatalogItem]s.
+abstract interface class MediaItemCatalogSource {
+  bool get supportsExploreSearch;
+
+  Future<ExploreMediaPage> fetchMediaRow(CatalogRowId row, {int page = 1, int limit = 25});
 }
 
 /// A pluggable external catalog provider backing the Explore tab (Trakt
@@ -106,4 +129,24 @@ abstract class CatalogSource {
   Listenable get watchlistChanges;
 
   void dispose();
+}
+
+/// Explore-facing adapter shared by external and server-backed sources.
+extension ExploreCatalogSource on CatalogSource {
+  bool get supportsExploreSearch => switch (this) {
+    final MediaItemCatalogSource source => source.supportsExploreSearch,
+    _ => true,
+  };
+
+  Future<ExploreMediaPage> fetchExploreRow(CatalogRowId row, {int page = 1, int limit = 25}) async {
+    if (this is MediaItemCatalogSource) {
+      final mediaSource = this as MediaItemCatalogSource;
+      return mediaSource.fetchMediaRow(row, page: page, limit: limit);
+    }
+    final pageResult = await fetchRow(row, page: page, limit: limit);
+    return ExploreMediaPage(
+      items: [for (final item in pageResult.items) item.toMediaItem()],
+      hasMore: pageResult.hasMore,
+    );
+  }
 }

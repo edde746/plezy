@@ -84,6 +84,7 @@ class TraktCatalogSource with CatalogWatchlistMachinery implements CatalogSource
       case CatalogRowId.suggestedAnime:
       case CatalogRowId.airingAnime:
       case CatalogRowId.popularAnime:
+      case CatalogRowId.favorites:
       case CatalogRowId.trending:
       case CatalogRowId.upcomingMovies:
       case CatalogRowId.upcomingShows:

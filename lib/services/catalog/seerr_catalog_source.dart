@@ -62,6 +62,7 @@ class SeerrCatalogSource implements CatalogSource {
       CatalogRowId.upcomingMovies => client.getUpcomingMovies(page: page),
       CatalogRowId.upcomingShows => client.getUpcomingTv(page: page),
       CatalogRowId.watchlist ||
+      CatalogRowId.favorites ||
       CatalogRowId.recommendedMovies ||
       CatalogRowId.recommendedShows ||
       CatalogRowId.trendingMovies ||

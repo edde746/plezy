@@ -57,25 +57,32 @@ MediaHub _hub(
 );
 
 /// Counting fake — the provider's fetch-cost policy is the contract under
-/// test: a durable watch event must cost exactly one on-deck call and zero hub
-/// refetches, progress zero calls, an order change zero calls, and a hidden-set
-/// change one full pass.
+/// test: a durable watch event must cost one call to each playback shelf and
+/// zero hub refetches, progress zero calls, an order change zero calls, and a
+/// hidden-set change one full pass.
 class _FakeAggregationService extends DataAggregationService {
   _FakeAggregationService(super.serverManager);
 
   int onDeckCalls = 0;
+  int nextUpCalls = 0;
   int hubCalls = 0;
   Set<String>? lastOnDeckServerIds;
+  Set<String>? lastNextUpServerIds;
   Set<String>? lastHubsServerIds;
   Set<String>? onDeckSucceededServerIds;
+  Set<String>? nextUpSucceededServerIds;
   Set<String>? hubSucceededServerIds;
   Set<String> onDeckCancelledServerIds = const {};
+  Set<String> nextUpCancelledServerIds = const {};
   Set<String> hubCancelledServerIds = const {};
   List<MediaItem> Function() onDeckResult = () => const [];
+  List<MediaItem> Function() nextUpResult = () => const [];
   List<MediaHub> Function() hubsResult = () => const [];
   Future<void>? onDeckGate;
+  Future<void>? nextUpGate;
   Future<void>? hubGate;
   Completer<void>? onDeckStarted;
+  Completer<void>? nextUpStarted;
   Completer<void>? hubStarted;
 
   @override
@@ -95,6 +102,26 @@ class _FakeAggregationService extends DataAggregationService {
       items: limit != null && items.length > limit ? items.sublist(0, limit) : items,
       succeededServerIds: onDeckSucceededServerIds ?? serverIds ?? const {'server_1'},
       cancelledServerIds: onDeckCancelledServerIds,
+    );
+  }
+
+  @override
+  Future<NextUpAggregationResult> getNextUpFromAllServers({
+    int? limit,
+    Set<String>? hiddenLibraryKeys,
+    Set<String>? serverIds,
+  }) async {
+    nextUpCalls++;
+    lastNextUpServerIds = serverIds;
+    final started = nextUpStarted;
+    if (started != null && !started.isCompleted) started.complete();
+    final gate = nextUpGate;
+    if (gate != null) await gate;
+    final items = nextUpResult();
+    return (
+      items: limit != null && items.length > limit ? items.sublist(0, limit) : items,
+      succeededServerIds: nextUpSucceededServerIds ?? serverIds ?? const {'server_1'},
+      cancelledServerIds: nextUpCancelledServerIds,
     );
   }
 
@@ -206,7 +233,45 @@ void main() {
     expect(provider.areHubsLoading, isFalse);
     expect(provider.errorMessage, isNull);
     expect(aggregation.onDeckCalls, 2);
+    expect(aggregation.nextUpCalls, 2);
     expect(aggregation.hubCalls, 2);
+  });
+
+  test('load prepends one synthetic Next Up hub and keeps the system shelf on-deck only', () async {
+    aggregation.onDeckResult = () => [_item('resume')];
+    aggregation.nextUpResult = () => [_item('next')];
+    aggregation.hubsResult = () => [_hub('recommendation')];
+
+    await provider.load();
+    await pumpEventQueue();
+
+    expect(provider.hubs.map((hub) => hub.id), ['home.nextup', 'recommendation']);
+    expect(provider.hubs.first.identifier, 'home.nextup');
+    expect(provider.hubs.first.items.map((item) => item.id), ['next']);
+    expect(shelfSyncs.last.map((item) => item.id), ['resume']);
+  });
+
+  test('slow Next Up enrichment does not hold completed recommendation hubs', () async {
+    final nextUpGate = Completer<void>();
+    aggregation.nextUpGate = nextUpGate.future;
+    aggregation.nextUpStarted = Completer<void>();
+    aggregation.onDeckResult = () => [_item('resume')];
+    aggregation.nextUpResult = () => [_item('next')];
+    aggregation.hubsResult = () => [_hub('recommendation')];
+
+    var loadCompleted = false;
+    final load = provider.load().whenComplete(() => loadCompleted = true);
+    await aggregation.nextUpStarted!.future;
+    await pumpEventQueue();
+
+    expect(provider.areHubsLoading, isFalse);
+    expect(provider.hubs.map((hub) => hub.id), ['recommendation']);
+    expect(loadCompleted, isFalse);
+
+    nextUpGate.complete();
+    await load;
+
+    expect(provider.hubs.map((hub) => hub.id), ['home.nextup', 'recommendation']);
   });
 
   test('a failed in-flight pass still runs one coalesced trailing pass', () async {
@@ -282,24 +347,49 @@ void main() {
     expect(provider.hubs.map((h) => h.id), ['keep']);
   });
 
-  test('watched and unwatched events refresh continue watching only', () async {
+  test('watched and unwatched events refresh both playback shelves only', () async {
     aggregation.onDeckResult = () => [_item('ep-1', parentId: 'season-1')];
+    aggregation.nextUpResult = () => [_item('next-1', grandparentId: 'show-1')];
     aggregation.hubsResult = () => [_hub('hub-1')];
     await provider.load();
     final onDeckCallsBefore = aggregation.onDeckCalls;
+    final nextUpCallsBefore = aggregation.nextUpCalls;
     final hubCallsBefore = aggregation.hubCalls;
 
     WatchStateNotifier().notifyWatched(item: _item('ep-1', parentId: 'season-1'));
     await pumpEventQueue();
 
     expect(aggregation.onDeckCalls, onDeckCallsBefore + 1);
+    expect(aggregation.nextUpCalls, nextUpCallsBefore + 1);
     expect(aggregation.hubCalls, hubCallsBefore);
 
     WatchStateNotifier().notifyWatched(item: _item('ep-1', parentId: 'season-1'), isNowWatched: false);
     await pumpEventQueue();
 
     expect(aggregation.onDeckCalls, onDeckCallsBefore + 2);
+    expect(aggregation.nextUpCalls, nextUpCallsBefore + 2);
     expect(aggregation.hubCalls, hubCallsBefore);
+  });
+
+  test('watching a Next Up item refreshes and replaces the synthetic hub', () async {
+    final next = _item('next-1', grandparentId: 'show-1');
+    aggregation.onDeckResult = () => [_item('resume')];
+    aggregation.nextUpResult = () => [next];
+    aggregation.hubsResult = () => [_hub('hub-1')];
+    await provider.load();
+    final onDeckCallsBefore = aggregation.onDeckCalls;
+    final nextUpCallsBefore = aggregation.nextUpCalls;
+    final hubCallsBefore = aggregation.hubCalls;
+    aggregation.nextUpResult = () => [_item('next-2', grandparentId: 'show-2')];
+
+    WatchStateNotifier().notifyWatched(item: next);
+    await pumpEventQueue();
+
+    expect(aggregation.onDeckCalls, onDeckCallsBefore + 1);
+    expect(aggregation.nextUpCalls, nextUpCallsBefore + 1);
+    expect(aggregation.hubCalls, hubCallsBefore);
+    expect(provider.hubs.first.id, 'home.nextup');
+    expect(provider.hubs.first.items.map((item) => item.id), ['next-2']);
   });
 
   test('sub-threshold progress patches the row without refetching', () async {
@@ -310,6 +400,7 @@ void main() {
     await pumpEventQueue();
     shelfSyncs.clear();
     final onDeckCallsBefore = aggregation.onDeckCalls;
+    final nextUpCallsBefore = aggregation.nextUpCalls;
     final hubCallsBefore = aggregation.hubCalls;
 
     WatchStateNotifier().notifyProgress(item: playing, viewOffset: 30000, duration: 100000);
@@ -320,6 +411,7 @@ void main() {
     expect(provider.onDeck, hasLength(DiscoverProvider.continueWatchingPreviewLimit));
     expect(provider.hasMoreContinueWatching, isTrue);
     expect(aggregation.onDeckCalls, onDeckCallsBefore);
+    expect(aggregation.nextUpCalls, nextUpCallsBefore);
     expect(aggregation.hubCalls, hubCallsBefore);
     expect(shelfSyncs, hasLength(1));
     expect(shelfSyncs.single.first.viewOffsetMs, 30000);
@@ -455,6 +547,20 @@ void main() {
     expect(provider.onDeck.map((i) => i.id), ['a']);
     expect(provider.errorMessage, isNull);
     expect(provider.isLoading, isFalse);
+  });
+
+  test('playback refresh preserves prior Next Up when every server fetch fails', () async {
+    aggregation.onDeckResult = () => [_item('resume')];
+    aggregation.nextUpResult = () => [_item('next-stale')];
+    await provider.load();
+    expect(provider.hubs.first.items.map((item) => item.id), ['next-stale']);
+
+    aggregation.nextUpSucceededServerIds = const {};
+    aggregation.nextUpResult = () => const [];
+    await provider.refreshContinueWatching();
+
+    expect(provider.hubs.first.id, 'home.nextup');
+    expect(provider.hubs.first.items.map((item) => item.id), ['next-stale']);
   });
 
   test('load failure surfaces the error and ends both loading states', () async {
@@ -662,14 +768,18 @@ void main() {
     final generationBefore = provider.loadGeneration;
 
     aggregation.onDeckResult = () => [_item('b', serverId: 'server_2')];
+    aggregation.nextUpResult = () => [_item('next-b', serverId: 'server_2')];
     aggregation.hubsResult = () => [_hub('hub-2', serverId: 'server_2')];
     await provider.syncToOnlineServers({'server_1', 'server_2'});
 
     // The fetch fanned out to the new server only…
     expect(aggregation.lastOnDeckServerIds, {'server_2'});
+    expect(aggregation.lastNextUpServerIds, {'server_2'});
     expect(aggregation.lastHubsServerIds, {'server_2'});
     // …and merged into the loaded state instead of replacing it.
     expect(provider.onDeck.map((i) => i.id), containsAll(['a', 'b']));
+    expect(provider.hubs.first.id, 'home.nextup');
+    expect(provider.hubs.first.items.map((i) => i.id), ['next-b']);
     expect(provider.hubs.map((h) => h.id), containsAll(['hub-1', 'hub-2']));
     // A delta behaves like a background refresh: no hero carousel reset.
     expect(provider.loadGeneration, generationBefore);

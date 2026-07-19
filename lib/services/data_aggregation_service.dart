@@ -19,6 +19,11 @@ typedef OnDeckAggregationResult = ({
   Set<String> succeededServerIds,
   Set<String> cancelledServerIds,
 });
+typedef NextUpAggregationResult = ({
+  List<MediaItem> items,
+  Set<String> succeededServerIds,
+  Set<String> cancelledServerIds,
+});
 typedef HubAggregationResult = ({List<MediaHub> hubs, Set<String> succeededServerIds, Set<String> cancelledServerIds});
 typedef LibraryAggregationResult = ({
   List<MediaLibrary> libraries,
@@ -36,8 +41,8 @@ bool _isCancellation(Object error) => error is MediaServerHttpException && error
 /// merges the results. Single-server operations now go through the
 /// [MediaServerClient] interface directly (resolved via
 /// [ProviderExtensions.tryGetMediaClientForServer] etc.), so this service
-/// only owns the genuinely multi-server flows: home/discover hubs, on-deck,
-/// search, and the global library list.
+/// only owns the genuinely multi-server flows: home/discover hubs, playback
+/// shelves, search, and the global library list.
 class DataAggregationService {
   final MultiServerManager _serverManager;
 
@@ -143,8 +148,7 @@ class DataAggregationService {
     }
 
     // Sort by most recently viewed, falling back to addedAt for unwatched items.
-    // Same key as JellyfinClient's continue-watching merge (MediaItem.recencySortKey)
-    // so per-server and cross-server ordering can't drift apart.
+    // Shared with the Next Up shelf so playback-row ordering can't drift.
     filteredOnDeck.sort((a, b) => b.recencySortKey.compareTo(a.recencySortKey));
 
     filteredOnDeck = await _deduplicateContinueWatching(filteredOnDeck);
@@ -157,6 +161,56 @@ class DataAggregationService {
     return (items: items, succeededServerIds: succeededServerIds, cancelledServerIds: cancelledServerIds);
   }
 
+  /// Fetch dedicated Next Up rows from every online server. Backends without a
+  /// Next Up surface contribute an empty successful result through the neutral
+  /// client's default implementation. Items use the same hidden-library,
+  /// recency, and cross-server identity rules as Continue Watching.
+  Future<NextUpAggregationResult> getNextUpFromAllServers({
+    int? limit,
+    Set<String>? hiddenLibraryKeys,
+    Set<String>? serverIds,
+  }) async {
+    final clients = _clientsFor(serverIds);
+    if (clients.isEmpty) {
+      appLogger.w('No online servers available for fetching next up');
+      return (items: const <MediaItem>[], succeededServerIds: const <String>{}, cancelledServerIds: const <String>{});
+    }
+
+    final cancelledServerIds = <String>{};
+    final futures = clients.entries.map((entry) async {
+      try {
+        final items = await entry.value.fetchNextUp(count: limit);
+        return (serverId: entry.key, items: items);
+      } catch (e, st) {
+        if (_isCancellation(e)) cancelledServerIds.add(entry.key);
+        appLogger.e('Failed next-up fetch from ${entry.key}', error: e, stackTrace: st);
+        return (serverId: null, items: <MediaItem>[]);
+      }
+    });
+    final results = await Future.wait(futures);
+    final succeededServerIds = {
+      for (final result in results)
+        if (result.serverId != null) result.serverId!,
+    };
+    final allNextUp = results.expand((result) => result.items).toList();
+
+    List<MediaItem> filteredNextUp = allNextUp;
+    if (hiddenLibraryKeys != null && hiddenLibraryKeys.isNotEmpty) {
+      filteredNextUp = allNextUp.where((item) {
+        if (item.libraryId == null || item.serverId == null) return true;
+        final globalKey = buildGlobalKey(ServerId(item.serverId!), item.libraryId!);
+        return !hiddenLibraryKeys.contains(globalKey);
+      }).toList();
+    }
+
+    filteredNextUp.sort((a, b) => b.recencySortKey.compareTo(a.recencySortKey));
+    filteredNextUp = await _deduplicateContinueWatching(filteredNextUp);
+    final items = limit != null && limit < filteredNextUp.length ? filteredNextUp.sublist(0, limit) : filteredNextUp;
+
+    appLogger.i('Fetched ${items.length} next-up items from all servers');
+    return (items: items, succeededServerIds: succeededServerIds, cancelledServerIds: cancelledServerIds);
+  }
+
   /// Merge an [existing] Continue Watching list with [fresh] rows from
   /// newly-online servers: same recency ordering and cross-server identity
   /// dedup as [getOnDeckFromAllServers], applied to the union.
@@ -165,6 +219,10 @@ class DataAggregationService {
     final deduped = await _deduplicateContinueWatching(combined);
     return limit != null && limit < deduped.length ? deduped.sublist(0, limit) : deduped;
   }
+
+  /// Delta-merge counterpart to [getNextUpFromAllServers].
+  Future<List<MediaItem>> mergeNextUp(List<MediaItem> existing, List<MediaItem> fresh, {int? limit}) =>
+      mergeContinueWatching(existing, fresh, limit: limit);
 
   Future<List<MediaItem>> _deduplicateContinueWatching(List<MediaItem> items) async {
     if (items.length < 2) return items;

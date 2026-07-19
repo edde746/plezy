@@ -44,7 +44,7 @@ class ExploreProvider extends ChangeNotifier with DisposableChangeNotifierMixin 
   final CatalogSourcesProvider _catalogSources;
   CatalogSource? _source;
 
-  Map<CatalogRowId, CatalogPage> _rows = {};
+  Map<CatalogRowId, ExploreMediaPage> _rows = {};
   ExploreLoadState _state = ExploreLoadState.initial;
   String? _errorMessage;
   DateTime? _loadedAt;
@@ -82,7 +82,7 @@ class ExploreProvider extends ChangeNotifier with DisposableChangeNotifierMixin 
     if (_hubsCache != null && key == _hubsCacheKey) return _hubsCache!;
     final hubs = <ExploreRowHub>[
       for (final row in source.supportedRows)
-        if (_rows[row] case final CatalogPage page)
+        if (_rows[row] case final ExploreMediaPage page)
           if (page.items.isNotEmpty)
             (
               row: row,
@@ -91,7 +91,7 @@ class ExploreProvider extends ChangeNotifier with DisposableChangeNotifierMixin 
                 identifier: 'explore.${row.name}',
                 title: rowTitle(row),
                 type: 'mixed',
-                items: [for (final item in page.items) item.toMediaItem()],
+                items: page.items,
                 size: page.items.length,
                 more: page.hasMore,
               ),
@@ -103,6 +103,7 @@ class ExploreProvider extends ChangeNotifier with DisposableChangeNotifierMixin 
   }
 
   static String rowTitle(CatalogRowId row) => switch (row) {
+    CatalogRowId.favorites => t.libraries.filterCategories.favorites,
     CatalogRowId.watchlist => t.explore.rows.watchlist,
     CatalogRowId.recommendedMovies => t.explore.rows.recommendedMovies,
     CatalogRowId.recommendedShows => t.explore.rows.recommendedShows,
@@ -159,7 +160,7 @@ class ExploreProvider extends ChangeNotifier with DisposableChangeNotifierMixin 
     Object? firstError;
     final results = await Future.wait([
       for (final row in rows)
-        source.fetchRow(row, limit: rowLimit).then<CatalogPage?>((page) => page).catchError((Object e) {
+        source.fetchExploreRow(row, limit: rowLimit).then<ExploreMediaPage?>((page) => page).catchError((Object e) {
           appLogger.w('Explore: ${source.id.name} row ${row.name} failed', error: e);
           firstError ??= e;
           return null;
@@ -167,9 +168,9 @@ class ExploreProvider extends ChangeNotifier with DisposableChangeNotifierMixin 
     ]);
     if (isDisposed || generation != _generation) return;
 
-    final fetched = <CatalogRowId, CatalogPage>{
+    final fetched = <CatalogRowId, ExploreMediaPage>{
       for (var i = 0; i < rows.length; i++)
-        if (results[i] case final CatalogPage page) rows[i]: page,
+        if (results[i] case final ExploreMediaPage page) rows[i]: page,
     };
     // A debounced watchlist-row refresh that landed while this load was in
     // flight covered later mutations than our page — keep the fresher one.
@@ -213,8 +214,8 @@ class ExploreProvider extends ChangeNotifier with DisposableChangeNotifierMixin 
     final items = <MediaItem>[];
     var page = 1;
     while (true) {
-      final res = await source.fetchRow(row, page: page, limit: viewAllPageLimit);
-      items.addAll([for (final item in res.items) item.toMediaItem()]);
+      final res = await source.fetchExploreRow(row, page: page, limit: viewAllPageLimit);
+      items.addAll(res.items);
       if (!res.hasMore) break;
       if (page >= viewAllMaxPages) {
         appLogger.w('Explore: ${row.name} View All truncated at ${items.length} items ($page pages)');
@@ -270,7 +271,7 @@ class ExploreProvider extends ChangeNotifier with DisposableChangeNotifierMixin 
     final generation = _generation;
     final coveredEpoch = _watchlistMutationEpoch;
     try {
-      final page = await source.fetchRow(CatalogRowId.watchlist, limit: rowLimit);
+      final page = await source.fetchExploreRow(CatalogRowId.watchlist, limit: rowLimit);
       if (isDisposed || generation != _generation) return;
       _rows = {..._rows, CatalogRowId.watchlist: page};
       _rowsEpoch++;

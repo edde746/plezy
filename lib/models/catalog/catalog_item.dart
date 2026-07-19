@@ -4,7 +4,7 @@ import '../../media/media_kind.dart';
 import '../../utils/external_ids.dart';
 
 /// External catalog providers that can back the Explore tab.
-enum CatalogSourceId { trakt, mal, seerr }
+enum CatalogSourceId { trakt, mal, seerr, jellyfin }
 
 /// Normalized airing/production status across providers (Trakt `status`,
 /// MAL `status`). Null when unknown or uninteresting (released movies).

@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/i18n/strings.g.dart';
+import 'package:plezy/media/media_backend.dart';
+import 'package:plezy/media/media_item.dart';
 import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/models/catalog/catalog_item.dart';
 import 'package:plezy/providers/catalog_sources_provider.dart';
@@ -11,6 +13,7 @@ import 'package:plezy/services/catalog/catalog_source.dart';
 import 'package:plezy/services/settings_service.dart';
 import 'package:plezy/theme/mono_theme.dart';
 import 'package:plezy/utils/platform_detector.dart';
+import 'package:plezy/widgets/catalog_source_logo.dart';
 import 'package:provider/provider.dart';
 
 import '../test_helpers/prefs.dart';
@@ -58,6 +61,49 @@ class _FakeCatalogSource implements CatalogSource {
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
+class _FakeJellyfinFavoritesSource implements CatalogSource, MediaItemCatalogSource {
+  final WatchlistChangeNotifier _changes = WatchlistChangeNotifier();
+
+  @override
+  CatalogSourceId get id => CatalogSourceId.jellyfin;
+
+  @override
+  String get displayName => 'Jellyfin Favorites';
+
+  @override
+  List<CatalogRowId> get supportedRows => const [CatalogRowId.favorites];
+
+  @override
+  bool get supportsExploreSearch => false;
+
+  @override
+  bool get supportsWatchlist => false;
+
+  @override
+  Listenable get watchlistChanges => _changes;
+
+  @override
+  Future<ExploreMediaPage> fetchMediaRow(CatalogRowId row, {int page = 1, int limit = 25}) async {
+    return ExploreMediaPage(
+      items: [
+        MediaItem(
+          id: 'favorite-1',
+          backend: MediaBackend.jellyfin,
+          kind: MediaKind.movie,
+          title: 'Favorite Movie',
+          serverId: 'jellyfin-1',
+        ),
+      ],
+    );
+  }
+
+  @override
+  void dispose() => _changes.dispose();
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
 class _FakeCatalogSourcesProvider extends CatalogSourcesProvider {
   _FakeCatalogSourcesProvider(this.sources);
 
@@ -71,6 +117,7 @@ Future<_FakeCatalogSourcesProvider> _pumpExplore(
   WidgetTester tester, {
   int? traktItemId = 1,
   int? malItemId = 2,
+  bool includeJellyfin = false,
 }) async {
   tester.view.devicePixelRatio = 1;
   tester.view.physicalSize = const Size(1280, 720);
@@ -79,12 +126,14 @@ Future<_FakeCatalogSourcesProvider> _pumpExplore(
 
   final trakt = _FakeCatalogSource(CatalogSourceId.trakt, 'Trakt', traktItemId);
   final mal = _FakeCatalogSource(CatalogSourceId.mal, 'MyAnimeList', malItemId);
-  final sources = _FakeCatalogSourcesProvider([trakt, mal]);
+  final jellyfin = includeJellyfin ? _FakeJellyfinFavoritesSource() : null;
+  final sources = _FakeCatalogSourcesProvider([trakt, mal, ?jellyfin]);
   final explore = ExploreProvider(sources);
   addTearDown(explore.dispose);
   addTearDown(sources.dispose);
   addTearDown(trakt.dispose);
   addTearDown(mal.dispose);
+  if (jellyfin != null) addTearDown(jellyfin.dispose);
 
   await tester.pumpWidget(
     TranslationProvider(
@@ -164,5 +213,28 @@ void main() {
     await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
     await tester.pump();
     expect(FocusManager.instance.primaryFocus?.debugLabel, 'tv_browse_rail');
+  });
+
+  testWidgets('Jellyfin Favorites is selectable, uses its logo, and omits catalog search', (tester) async {
+    final sources = await _pumpExplore(tester, includeJellyfin: true);
+    tester.state<ExploreScreenState>(find.byType(ExploreScreen)).focusActiveTabIfReady();
+    await tester.pump();
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowUp);
+    await tester.sendKeyEvent(LogicalKeyboardKey.select);
+    await tester.pumpAndSettle();
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+    await tester.sendKeyEvent(LogicalKeyboardKey.select);
+    await tester.pumpAndSettle();
+
+    expect(sources.activeSource?.id, CatalogSourceId.jellyfin);
+    expect(find.text('Jellyfin Favorites'), findsOneWidget);
+    expect(find.text('Favorite Movie'), findsWidgets);
+    expect(find.byTooltip(t.common.search), findsNothing);
+    expect(
+      find.byWidgetPredicate((widget) => widget is CatalogSourceLogo && widget.id == CatalogSourceId.jellyfin),
+      findsWidgets,
+    );
   });
 }

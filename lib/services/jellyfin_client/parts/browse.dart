@@ -104,7 +104,7 @@ const _episodeQueuePageSize = 200;
 /// rows with their series' last-watched date (see [_attachSeriesLastPlayed]).
 /// Mirrors [_episodeQueuePageSize]; covers far more distinct series than the
 /// Next Up list ever returns, while keeping the response bounded.
-const _continueWatchingSeriesLookback = 200;
+const _nextUpSeriesLookback = 200;
 
 const _childrenPageSize = 500;
 const _pagedListPageSize = 200;
@@ -1197,31 +1197,31 @@ mixin _JellyfinBrowseMethods on MediaServerCacheMixin {
 
   @override
   Future<List<MediaItem>> fetchContinueWatching({int? count = 20}) async {
-    final results = await Future.wait([
-      _fetchItemsArray('/UserItems/Resume', {
-        'userId': connection.userId,
-        'Limit': ?count?.toString(),
-        'Fields': _browseFields,
-        'MediaTypes': 'Video',
-        'Recursive': 'true',
-        'EnableTotalRecordCount': 'false',
-        ...jellyfinImageQueryParameters,
-      }, retry: _continueWatchingRetry),
-      _safeFetchItemsArray('/Shows/NextUp', {
-        'userId': connection.userId,
-        'Limit': ?count?.toString(),
-        'Fields': _browseFields,
-        'EnableResumable': 'false',
-        'EnableTotalRecordCount': 'false',
-        ...jellyfinImageQueryParameters,
-      }, retry: _continueWatchingRetry),
-    ]);
+    if (count != null && count <= 0) return const [];
+    final items = await _fetchItemsArray('/UserItems/Resume', {
+      'userId': connection.userId,
+      'Limit': ?count?.toString(),
+      'Fields': _browseFields,
+      'MediaTypes': 'Video',
+      'Recursive': 'true',
+      'EnableTotalRecordCount': 'false',
+      ...jellyfinImageQueryParameters,
+    }, retry: _continueWatchingRetry);
+    return _mapItems(items);
+  }
 
-    return _mergeContinueWatchingAndNextUp(
-      resume: _mapItems(results.first),
-      nextUp: await _attachSeriesLastPlayed(_mapItems(results[1])),
-      limit: count,
-    );
+  @override
+  Future<List<MediaItem>> fetchNextUp({int? count = 20}) async {
+    if (count != null && count <= 0) return const [];
+    final items = await _fetchItemsArray('/Shows/NextUp', {
+      'userId': connection.userId,
+      'Limit': ?count?.toString(),
+      'Fields': _browseFields,
+      'EnableResumable': 'false',
+      'EnableTotalRecordCount': 'false',
+      ...jellyfinImageQueryParameters,
+    }, retry: _continueWatchingRetry);
+    return _attachSeriesLastPlayed(_mapItems(items));
   }
 
   @override
@@ -1717,10 +1717,9 @@ mixin _JellyfinBrowseMethods on MediaServerCacheMixin {
 
   /// Jellyfin's `/Shows/NextUp` returns the *next* (unwatched) episode for each
   /// series, so those rows have no `LastPlayedDate` of their own and a Series DTO
-  /// doesn't expose an aggregated one. To let the Continue Watching shelf
-  /// interleave Next Up with resume items by recency, stamp each Next Up episode
-  /// with its series' last-watched date, read from the most recently played
-  /// episode of that series.
+  /// doesn't expose an aggregated one. Stamp each Next Up episode with its
+  /// series' last-watched date so the dedicated shelf can be sorted by recency
+  /// across servers.
   Future<List<MediaItem>> _attachSeriesLastPlayed(List<MediaItem> nextUp) async {
     final pendingSeriesIds = <String>{
       for (final item in nextUp)
@@ -1746,7 +1745,7 @@ mixin _JellyfinBrowseMethods on MediaServerCacheMixin {
       'SortBy': 'DatePlayed',
       'SortOrder': 'Descending',
       'Fields': _queueFields,
-      'Limit': _continueWatchingSeriesLookback.toString(),
+      'Limit': _nextUpSeriesLookback.toString(),
       'EnableImages': 'false',
       'EnableTotalRecordCount': 'false',
     });
@@ -1768,45 +1767,6 @@ mixin _JellyfinBrowseMethods on MediaServerCacheMixin {
         else
           item,
     ];
-  }
-
-  /// Merge Jellyfin's two continue-watching sources into one recency-ordered
-  /// shelf. Resume items are deduped first so an in-progress episode wins over
-  /// the same series' Next Up entry, then the combined list is ordered by
-  /// [MediaItem.recencySortKey] (matching `DataAggregationService`) before the
-  /// limit is applied — so a recent Next Up episode is never starved by a long
-  /// run of older resume items.
-  List<MediaItem> _mergeContinueWatchingAndNextUp({
-    required List<MediaItem> resume,
-    required List<MediaItem> nextUp,
-    required int? limit,
-  }) {
-    if (limit != null && limit <= 0) return const [];
-
-    final merged = <MediaItem>[];
-    final seenIds = <String>{};
-    final seenSeriesIds = <String>{};
-
-    // Resume first: first-wins dedup makes an in-progress episode beat the same
-    // series' Next Up entry.
-    for (final item in [...resume, ...nextUp]) {
-      if (!seenIds.add(item.id)) continue;
-      final seriesId = item.kind == MediaKind.episode ? item.grandparentId : null;
-      if (seriesId != null && !seenSeriesIds.add(seriesId)) continue;
-      merged.add(item);
-    }
-
-    // Stable sort by recency: Dart's List.sort isn't stable, so break ties on the
-    // insertion index to keep ordering deterministic across refreshes.
-    final ordered = [for (var i = 0; i < merged.length; i++) (item: merged[i], index: i)];
-    ordered.sort((a, b) {
-      final byRecency = b.item.recencySortKey.compareTo(a.item.recencySortKey);
-      return byRecency != 0 ? byRecency : a.index.compareTo(b.index);
-    });
-    final result = [for (final entry in ordered) entry.item];
-
-    if (limit != null && result.length > limit) return result.sublist(0, limit);
-    return result;
   }
 
   /// GET [path], optionally under a hub-surface transport policy ([retry]):

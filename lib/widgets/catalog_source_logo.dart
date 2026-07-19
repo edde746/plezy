@@ -26,6 +26,7 @@ class CatalogSourceLogo extends StatelessWidget {
           CatalogSourceId.trakt => 'assets/trakt_circlemark.svg',
           CatalogSourceId.mal => 'assets/mal_mark.svg',
           CatalogSourceId.seerr => 'assets/seerr_mark.svg',
+          CatalogSourceId.jellyfin => 'assets/jellyfin_icon.svg',
         };
     final color = IconTheme.of(context).color ?? Theme.of(context).colorScheme.onSurface;
     return SvgPicture.asset(

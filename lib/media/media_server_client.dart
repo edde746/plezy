@@ -277,6 +277,12 @@ abstract class MediaServerClient {
   /// internally; the neutral name matches the Continue Watching UI surface.
   Future<List<MediaItem>> fetchContinueWatching({int? count = 20});
 
+  /// The next unwatched episode for each series the user is following.
+  ///
+  /// This is a distinct home surface from [fetchContinueWatching]. Backends
+  /// without a dedicated Next Up concept return an empty list by default.
+  Future<List<MediaItem>> fetchNextUp({int? count = 20}) async => const [];
+
   /// Curated home-screen hubs across all libraries (Plex Discover; Jellyfin
   /// synthesizes `Latest` plus optional `Resume` + `NextUp`).
   Future<List<MediaHub>> fetchGlobalHubs({int limit = defaultHubPreviewLimit, bool includePlaybackHubs = true});
@@ -714,6 +720,12 @@ abstract interface class SeasonEpisodePagingClient {
 /// implementations — both clients use `implements MediaServerClient` so a
 /// shared base class isn't an option, but a `mixin on MediaServerClient` is.
 mixin MediaServerCacheMixin implements MediaServerClient {
+  // Concrete clients use `implements MediaServerClient`, so they do not inherit
+  // default interface bodies. Keep the optional Next Up capability empty here;
+  // Jellyfin's later browse mixin overrides it with `/Shows/NextUp`.
+  @override
+  Future<List<MediaItem>> fetchNextUp({int? count = 20}) async => const [];
+
   /// Fetch with cache fallback: offline → cached only; online → try network,
   /// cache the result, fall back to cached on any error.
   ///

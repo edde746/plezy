@@ -231,16 +231,14 @@ void main() {
   });
 
   group('cancellation vs treat-as-empty', () {
-    // The hub/next-up fetch helpers swallow per-endpoint failures into empty
-    // lists so one broken endpoint doesn't sink a whole row. A *cancelled*
+    // Hub preview helpers can swallow ordinary endpoint failures into empty
+    // lists so one broken preview does not sink a whole screen. A *cancelled*
     // request is different: it means our own client was torn down mid-fetch
-    // and says nothing about the server's content, so it must propagate —
-    // otherwise a disrupted server counts as "succeeded with partial data"
-    // and aborted sign-in fetches flash an empty home screen.
+    // and says nothing about the server's content, so it must propagate.
     MediaServerHttpException cancelled() =>
         MediaServerHttpException(type: MediaServerHttpErrorType.cancelled, message: 'HTTP client is closing');
 
-    test('fetchContinueWatching propagates a cancelled NextUp sub-fetch', () async {
+    test('fetchNextUp propagates a cancelled request', () async {
       final client = _withMock(
         MockClient((req) async {
           if (req.url.path == '/Shows/NextUp') throw cancelled();
@@ -250,14 +248,16 @@ void main() {
       addTearDown(client.close);
 
       await expectLater(
-        client.fetchContinueWatching(),
+        client.fetchNextUp(),
         throwsA(isA<MediaServerHttpException>().having((e) => e.isCancellation, 'isCancellation', isTrue)),
       );
     });
 
-    test('fetchContinueWatching still treats a NextUp server error as empty', () async {
+    test('fetchContinueWatching stays isolated from the Next Up endpoint', () async {
+      final requestedPaths = <String>[];
       final client = _withMock(
         MockClient((req) async {
+          requestedPaths.add(req.url.path);
           if (req.url.path == '/Shows/NextUp') return http.Response('Internal error', 500);
           return http.Response(
             jsonEncode({
@@ -275,6 +275,7 @@ void main() {
       final items = await client.fetchContinueWatching();
 
       expect(items.map((i) => i.id), ['ep-1']);
+      expect(requestedPaths, ['/UserItems/Resume']);
     });
 
     test('fetchMoreHubItems propagates a cancellation and swallows server errors', () async {

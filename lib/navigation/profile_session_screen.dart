@@ -164,10 +164,17 @@ class _ProfileSessionScreenState extends State<ProfileSessionScreen> {
                   return provider;
                 },
               ),
-              ChangeNotifierProxyProvider3<
+              ChangeNotifierProvider(
+                create: (context) =>
+                    HiddenLibrariesProvider(storageService: context.read<StorageService>(), profileId: activeId),
+                lazy: true,
+              ),
+              ChangeNotifierProxyProvider5<
                 TraktAccountProvider,
                 TrackersProvider,
                 SeerrAccountProvider,
+                MultiServerProvider,
+                HiddenLibrariesProvider,
                 CatalogSourcesProvider
               >(
                 create: (context) {
@@ -179,9 +186,9 @@ class _ProfileSessionScreenState extends State<ProfileSessionScreen> {
                   );
                   return provider;
                 },
-                update: (_, trakt, trackers, seerr, previous) {
+                update: (_, trakt, trackers, seerr, multiServer, hiddenLibraries, previous) {
                   final provider = previous ?? CatalogSourcesProvider();
-                  provider.update(trakt, trackers, seerr);
+                  provider.update(trakt, trackers, seerr, multiServer, hiddenLibraries);
                   return provider;
                 },
               ),
@@ -190,11 +197,6 @@ class _ProfileSessionScreenState extends State<ProfileSessionScreen> {
                 lazy: true,
               ),
               Provider(create: (context) => CatalogLibraryMatcher(context.read<MultiServerProvider>()), lazy: true),
-              ChangeNotifierProvider(
-                create: (context) =>
-                    HiddenLibrariesProvider(storageService: context.read<StorageService>(), profileId: activeId),
-                lazy: true,
-              ),
               ChangeNotifierProvider(
                 create: (context) {
                   final activeProfile = context.read<ActiveProfileProvider>();

@@ -9,6 +9,7 @@ import 'package:plezy/connection/connection.dart';
 import 'package:plezy/database/app_database.dart';
 import 'package:plezy/exceptions/media_server_exceptions.dart';
 import 'package:plezy/media/media_backend.dart';
+import 'package:plezy/media/media_item.dart';
 import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/media/media_library.dart';
 import 'package:plezy/media/media_server_client.dart';
@@ -19,8 +20,10 @@ import 'package:plezy/services/multi_server_manager.dart';
 import 'package:plezy/services/plex_api_cache.dart';
 import 'package:plezy/services/plex_client.dart';
 import 'package:plezy/services/settings_service.dart';
+import 'package:plezy/utils/external_ids.dart';
 
 import '../test_helpers/backend_client_fixtures.dart';
+import '../test_helpers/media_items.dart';
 import '../test_helpers/prefs.dart';
 
 JellyfinConnection _conn() => testJellyfinConnection(
@@ -60,6 +63,34 @@ class _LibrariesClient implements MediaServerClient {
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
+class _NextUpClient implements MediaServerClient {
+  _NextUpClient(String id, this.items) : serverId = ServerId(id);
+
+  @override
+  final ServerId serverId;
+
+  @override
+  String get serverName => serverId;
+
+  final List<MediaItem> items;
+  int? lastCount;
+
+  @override
+  Future<List<MediaItem>> fetchNextUp({int? count = 20}) async {
+    lastCount = count;
+    return items;
+  }
+
+  @override
+  Future<ExternalIds> fetchExternalIds(String id) async => const ExternalIds();
+
+  @override
+  void close() {}
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
 /// Smoke tests for the surviving cross-server aggregation surface on
 /// [DataAggregationService]. Single-server passthroughs were removed in
 /// favour of `context.tryGetMediaClientForServer(...).<method>()`; what's
@@ -91,11 +122,14 @@ void main() {
       expect(result.succeededServerIds, isEmpty);
     });
 
-    test('searchAcrossServers and getOnDeckFromAllServers return empty when no clients', () async {
+    test('search and both playback aggregations return empty when no clients', () async {
       expect(await service.searchAcrossServers('hello'), isEmpty);
       final onDeck = await service.getOnDeckFromAllServers();
       expect(onDeck.items, isEmpty);
       expect(onDeck.succeededServerIds, isEmpty);
+      final nextUp = await service.getNextUpFromAllServers();
+      expect(nextUp.items, isEmpty);
+      expect(nextUp.succeededServerIds, isEmpty);
     });
 
     test('classifies cancelled per-server failures apart from settled ones', () async {
@@ -238,6 +272,83 @@ void main() {
       expect(result.succeededServerIds, {'plex-1'});
       expect(captured.single.path, '/hubs');
       expect(captured.single.queryParameters['count'], '21');
+    });
+
+    test('getNextUpFromAllServers filters, sorts, and deduplicates across servers', () async {
+      MediaItem episode({
+        required String id,
+        required String serverId,
+        required int lastViewedAt,
+        required String libraryId,
+        String? guid,
+        String showTitle = 'Show',
+      }) => testMediaItem(
+        id: id,
+        backend: MediaBackend.plex,
+        kind: MediaKind.episode,
+        title: id,
+        guid: guid,
+        grandparentId: '$serverId-$showTitle',
+        grandparentTitle: showTitle,
+        lastViewedAt: lastViewedAt,
+        libraryId: libraryId,
+        serverId: serverId,
+      );
+
+      final first = _NextUpClient('first', [
+        episode(id: 'hidden', serverId: 'first', lastViewedAt: 400, libraryId: 'hidden'),
+        episode(
+          id: 'duplicate-old',
+          serverId: 'first',
+          lastViewedAt: 100,
+          libraryId: 'shows',
+          guid: 'plex://episode/shared',
+          showTitle: 'Shared Show',
+        ),
+      ]);
+      final second = _NextUpClient('second', [
+        episode(
+          id: 'duplicate-new',
+          serverId: 'second',
+          lastViewedAt: 300,
+          libraryId: 'shows',
+          guid: 'plex://episode/shared',
+          showTitle: 'Shared Show',
+        ),
+        episode(id: 'unique', serverId: 'second', lastViewedAt: 200, libraryId: 'shows', showTitle: 'Unique Show'),
+      ]);
+      manager.debugRegisterClientForTesting(first);
+      manager.debugRegisterClientForTesting(second);
+
+      final result = await service.getNextUpFromAllServers(limit: 10, hiddenLibraryKeys: {'first:hidden'});
+
+      expect(result.items.map((item) => item.id), ['duplicate-new', 'unique']);
+      expect(result.succeededServerIds, {'first', 'second'});
+      expect(first.lastCount, 10);
+      expect(second.lastCount, 10);
+    });
+
+    test('backends without Next Up use the default empty implementation', () async {
+      var requests = 0;
+      final client = PlexClient.forTesting(
+        config: PlexConfig(
+          baseUrl: 'https://plex.example.com',
+          token: 'token',
+          clientIdentifier: 'client-id',
+          product: 'Plezy',
+          version: 'test',
+        ),
+        serverId: ServerId('plex-1'),
+        serverName: 'Plex',
+        httpClient: MockClient((_) async {
+          requests++;
+          return http.Response('unexpected request', 500);
+        }),
+      );
+      addTearDown(client.close);
+
+      expect(await client.fetchNextUp(), isEmpty);
+      expect(requests, 0);
     });
 
     test('getOnDeckFromAllServers filters hidden Plex continue-watching libraries', () async {

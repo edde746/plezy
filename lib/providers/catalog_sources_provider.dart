@@ -1,17 +1,23 @@
 import 'package:collection/collection.dart';
 import 'package:flutter/foundation.dart';
 
+import '../media/ids.dart';
+import '../media/media_backend.dart';
+import '../media/media_server_client.dart';
 import '../mixins/disposable_change_notifier_mixin.dart';
 import '../models/catalog/catalog_item.dart';
 import '../profiles/profile.dart';
 import '../services/base_shared_preferences_service.dart';
 import '../services/catalog/catalog_source.dart';
+import '../services/catalog/jellyfin_favorites_catalog_source.dart';
 import '../services/catalog/mal_catalog_source.dart';
 import '../services/catalog/seerr_catalog_source.dart';
 import '../services/catalog/trakt_catalog_source.dart';
 import '../services/seerr/seerr_client.dart';
 import '../services/trackers/mal/mal_client.dart';
 import '../services/trakt/trakt_client.dart';
+import 'hidden_libraries_provider.dart';
+import 'multi_server_provider.dart';
 import 'seerr_account_provider.dart';
 import 'trakt_account_provider.dart';
 import 'trackers_provider.dart';
@@ -19,11 +25,12 @@ import 'trackers_provider.dart';
 /// Enumerates the connected [CatalogSource]s for the active profile and owns
 /// which one the Explore tab shows.
 ///
-/// Profile-scoped; rebuilt through a `ChangeNotifierProxyProvider3` on
+/// Profile-scoped; rebuilt through a `ChangeNotifierProxyProvider5` on
 /// [TraktAccountProvider], [TrackersProvider] (MAL), and
-/// [SeerrAccountProvider] so sources appear and
-/// disappear live when a provider is connected or disconnected mid-session
-/// (which also drives the Explore tab's visibility).
+/// [SeerrAccountProvider] plus the online media-server set so sources appear and
+/// disappear live when a provider is connected or disconnected mid-session,
+/// and [HiddenLibrariesProvider] so Jellyfin Favorites follows library
+/// visibility changes (which also drives the Explore tab's visibility).
 class CatalogSourcesProvider extends ChangeNotifier with DisposableChangeNotifierMixin {
   static const String _activeSourceBaseKey = 'catalog_active_source';
 
@@ -33,12 +40,15 @@ class CatalogSourcesProvider extends ChangeNotifier with DisposableChangeNotifie
   MalClient? _lastMalClient;
   SeerrCatalogSource? _seerr;
   SeerrClient? _lastSeerrClient;
+  JellyfinFavoritesCatalogSource? _jellyfinFavorites;
+  List<MediaServerClient> _lastJellyfinClients = const [];
+  Set<String> _lastHiddenLibraryKeys = const {};
   CatalogSourceId? _preferredSourceId;
   String _activeUserUuid = '';
 
-  List<CatalogSource> get connectedSources => [?_trakt, ?_mal, ?_seerr];
+  List<CatalogSource> get connectedSources => [?_trakt, ?_mal, ?_seerr, ?_jellyfinFavorites];
 
-  bool get hasAnySource => _trakt != null || _mal != null || _seerr != null;
+  bool get hasAnySource => connectedSources.isNotEmpty;
 
   /// The connected Seerr source, for the request surfaces (detail-screen
   /// Request action and sheet) that need Seerr's client beyond the
@@ -94,7 +104,13 @@ class CatalogSourcesProvider extends ChangeNotifier with DisposableChangeNotifie
 
   /// Proxy-provider update hook: rebuild a source when its catalog client
   /// was rebound (connect/disconnect/profile switch).
-  void update(TraktAccountProvider trakt, TrackersProvider trackers, SeerrAccountProvider seerr) {
+  void update(
+    TraktAccountProvider trakt,
+    TrackersProvider trackers,
+    SeerrAccountProvider seerr,
+    MultiServerProvider multiServer,
+    HiddenLibrariesProvider hiddenLibraries,
+  ) {
     var changed = false;
 
     final traktClient = trakt.catalogClient;
@@ -121,7 +137,32 @@ class CatalogSourcesProvider extends ChangeNotifier with DisposableChangeNotifie
       changed = true;
     }
 
+    final jellyfinClients = <MediaServerClient>[
+      for (final id in multiServer.onlineServerIds)
+        if (multiServer.getClientForServer(ServerId(id)) case final MediaServerClient client)
+          if (client.backend == MediaBackend.jellyfin) client,
+    ];
+    final hiddenLibraryKeys = hiddenLibraries.hiddenLibraryKeys;
+    if (!_sameClientList(jellyfinClients, _lastJellyfinClients) ||
+        !setEquals(hiddenLibraryKeys, _lastHiddenLibraryKeys)) {
+      _lastJellyfinClients = List.unmodifiable(jellyfinClients);
+      _lastHiddenLibraryKeys = Set.unmodifiable(hiddenLibraryKeys);
+      _jellyfinFavorites?.dispose();
+      _jellyfinFavorites = jellyfinClients.isEmpty
+          ? null
+          : JellyfinFavoritesCatalogSource(jellyfinClients, hiddenLibraryKeys: hiddenLibraryKeys);
+      changed = true;
+    }
+
     if (changed) safeNotifyListeners();
+  }
+
+  static bool _sameClientList(List<MediaServerClient> a, List<MediaServerClient> b) {
+    if (a.length != b.length) return false;
+    for (var i = 0; i < a.length; i++) {
+      if (!identical(a[i], b[i])) return false;
+    }
+    return true;
   }
 
   @override
@@ -132,6 +173,10 @@ class CatalogSourcesProvider extends ChangeNotifier with DisposableChangeNotifie
     _mal = null;
     _seerr?.dispose();
     _seerr = null;
+    _jellyfinFavorites?.dispose();
+    _jellyfinFavorites = null;
+    _lastJellyfinClients = const [];
+    _lastHiddenLibraryKeys = const {};
     super.dispose();
   }
 }

@@ -128,6 +128,7 @@ class ExploreScreenState extends State<ExploreScreen>
   }
 
   static IconData _rowIcon(CatalogRowId row) => switch (row) {
+    CatalogRowId.favorites => Symbols.favorite_rounded,
     CatalogRowId.watchlist => Symbols.bookmark_rounded,
     CatalogRowId.recommendedMovies ||
     CatalogRowId.recommendedShows ||
@@ -241,7 +242,7 @@ class ExploreScreenState extends State<ExploreScreen>
           key: _actionBarKey,
           onNavigateDown: () => _orderedHubKeys.firstOrNull?.currentState?.requestFocusFromMemory(),
           actions: [
-            if (sources.activeSource case final CatalogSource source)
+            if (sources.activeSource case final CatalogSource source when source.supportsExploreSearch)
               FocusableAction(
                 icon: Symbols.search_rounded,
                 tooltip: t.common.search,
@@ -301,6 +302,7 @@ class ExploreScreenState extends State<ExploreScreen>
                 key: _orderedHubKeys[i],
                 hub: rowHubs[i].hub,
                 icon: _rowIcon(rowHubs[i].row),
+                onRefresh: explore.activeSource is MediaItemCatalogSource ? (_) => unawaited(_explore.load()) : null,
                 loadMoreItems: rowHubs[i].hub.more ? () => _explore.loadAllForRow(rowHubs[i].row) : null,
                 onVerticalNavigation: (isUp) => _handleVerticalNavigation(i, isUp),
                 onNavigateUp: i == 0 ? () => _actionBarKey.currentState?.requestFocusOnFirst() : null,
@@ -369,7 +371,7 @@ class ExploreScreenState extends State<ExploreScreen>
                       parentOwnsFocus: true,
                     ),
                   ),
-                if (active != null)
+                if (active != null && active.supportsExploreSearch)
                   FocusableAction(
                     icon: Symbols.search_rounded,
                     iconColor: foregroundColor,
@@ -431,6 +433,7 @@ class ExploreScreenState extends State<ExploreScreen>
                 hubs: tvHubs,
                 iconForHub: (hub, _) => _rowIcon(_rowForHub(hub) ?? CatalogRowId.watchlist),
                 onFocusedItemChanged: _setSpotlightItem,
+                onRefresh: _explore.activeSource is MediaItemCatalogSource ? (_) => unawaited(_explore.load()) : null,
                 loadMoreItems: (hub) {
                   final row = _rowForHub(hub);
                   return row == null ? Future.value(hub.items) : _explore.loadAllForRow(row);

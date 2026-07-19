@@ -1791,6 +1791,38 @@ void main() {
       expect(captured!.queryParameters['ImageTypeLimit'], '3');
     });
 
+    test('fetchLibraryContent sends the Jellyfin favorite filter', () async {
+      Uri? captured;
+      final scoped = JellyfinClient.forTesting(
+        connection: _conn(),
+        httpClient: MockClient((request) async {
+          captured = request.url;
+          return http.Response(
+            jsonEncode({'Items': const [], 'TotalRecordCount': 0}),
+            200,
+            headers: const {'content-type': 'application/json'},
+          );
+        }),
+      );
+      addTearDown(scoped.close);
+
+      await scoped.fetchLibraryContent(
+        'lib-1',
+        const LibraryQuery(
+          limit: 40,
+          sort: LibrarySort(field: 'title', direction: LibrarySortDirection.ascending),
+          favoritesOnly: true,
+        ),
+      );
+
+      expect(captured?.path, '/Items');
+      expect(captured?.queryParameters['ParentId'], 'lib-1');
+      expect(captured?.queryParameters['Limit'], '40');
+      expect(captured?.queryParameters['Filters'], 'IsFavorite');
+      expect(captured?.queryParameters['SortBy'], 'SortName');
+      expect(captured?.queryParameters['SortOrder'], 'Ascending');
+    });
+
     test('music browse and detail requests use leaf-appropriate fields', () async {
       final captured = <Uri>[];
       final scoped = JellyfinClient.forTesting(
@@ -2261,7 +2293,7 @@ void main() {
       expect(extras.markers.last.endTimeOffset, 120000);
     });
 
-    test('fetchContinueWatching merges resume with non-resumable Next Up', () async {
+    test('fetchContinueWatching uses Resume only and fetchNextUp uses non-resumable NextUp', () async {
       final requests = <Uri>[];
       final scoped = JellyfinClient.forTesting(
         connection: _conn(),
@@ -2296,9 +2328,10 @@ void main() {
       );
       addTearDown(scoped.close);
 
-      final items = await scoped.fetchContinueWatching(count: 3);
+      final resumeItems = await scoped.fetchContinueWatching(count: 3);
 
-      expect(items.map((item) => item.id), ['resume-show-1', 'resume-movie-1', 'next-show-2']);
+      expect(resumeItems.map((item) => item.id), ['resume-show-1', 'resume-movie-1']);
+      expect(requests.where((uri) => uri.path == '/Shows/NextUp'), isEmpty);
       final resume = requests.singleWhere((uri) => uri.path == '/UserItems/Resume');
       expect(resume.queryParameters['userId'], 'user-1');
       expect(resume.queryParameters['Limit'], '3');
@@ -2307,6 +2340,10 @@ void main() {
       expect(resume.queryParameters['EnableTotalRecordCount'], 'false');
       expect(resume.queryParameters['EnableImageTypes'], 'Primary,Backdrop,Thumb,Logo');
       expect(resume.queryParameters['ImageTypeLimit'], '3');
+
+      final nextItems = await scoped.fetchNextUp(count: 3);
+
+      expect(nextItems.map((item) => item.id), ['next-show-1', 'next-show-2']);
       final nextUp = requests.singleWhere((uri) => uri.path == '/Shows/NextUp');
       expect(nextUp.queryParameters['userId'], 'user-1');
       expect(nextUp.queryParameters['Limit'], '3');
@@ -2317,7 +2354,7 @@ void main() {
       expect(nextUp.queryParameters.containsKey('NextUpDateCutoff'), isFalse);
     });
 
-    test('fetchContinueWatching orders a recently watched series Next Up above an older resume item', () async {
+    test('fetchNextUp stamps rows with their series last-played date', () async {
       final requests = <Uri>[];
       final scoped = JellyfinClient.forTesting(
         connection: _conn(),
@@ -2371,11 +2408,11 @@ void main() {
       );
       addTearDown(scoped.close);
 
-      final items = await scoped.fetchContinueWatching(count: 10);
+      final items = await scoped.fetchNextUp(count: 10);
 
-      // The Next Up episode inherits its series' recent last-played date, so it
-      // sorts above the older resume item (issue #1266).
-      expect(items.map((item) => item.id), ['next-recent', 'resume-old']);
+      expect(items.map((item) => item.id), ['next-recent']);
+      expect(items.single.lastViewedAt, isNotNull);
+      expect(requests.where((uri) => uri.path == '/UserItems/Resume'), isEmpty);
 
       final lookup = requests.singleWhere((uri) => uri.path == '/Items');
       expect(lookup.queryParameters['userId'], 'user-1');
@@ -2389,7 +2426,7 @@ void main() {
       expect(lookup.queryParameters.containsKey('Filters'), isFalse);
     });
 
-    test('fetchContinueWatching does not let resume items starve Next Up under the limit', () async {
+    test('fetchNextUp has its own limit independent of Resume', () async {
       final scoped = JellyfinClient.forTesting(
         connection: _conn(),
         httpClient: MockClient((req) async {
@@ -2447,17 +2484,17 @@ void main() {
       );
       addTearDown(scoped.close);
 
-      // count equals the number of resume items: the old resume-first merge would
-      // have filled the limit and dropped Next Up entirely.
-      final items = await scoped.fetchContinueWatching(count: 2);
+      final items = await scoped.fetchNextUp(count: 2);
 
-      expect(items.map((item) => item.id), ['next-recent', 'resume-old-2']);
+      expect(items.map((item) => item.id), ['next-recent']);
     });
 
-    test('fetchContinueWatching keeps resume items when Next Up fails', () async {
+    test('fetchContinueWatching is independent when Next Up is unavailable', () async {
+      final requests = <Uri>[];
       final scoped = JellyfinClient.forTesting(
         connection: _conn(),
         httpClient: MockClient((req) async {
+          requests.add(req.url);
           if (req.url.path == '/UserItems/Resume') {
             return http.Response(
               jsonEncode({
@@ -2480,6 +2517,7 @@ void main() {
       final items = await scoped.fetchContinueWatching();
 
       expect(items.map((item) => item.id), ['resume-movie-1']);
+      expect(requests.where((uri) => uri.path == '/Shows/NextUp'), isEmpty);
     });
 
     test('fetchContinueWatching omits Limit when count is null', () async {
@@ -2517,9 +2555,11 @@ void main() {
       );
       addTearDown(scoped.close);
 
-      final items = await scoped.fetchContinueWatching(count: null);
+      final resumeItems = await scoped.fetchContinueWatching(count: null);
+      final nextUpItems = await scoped.fetchNextUp(count: null);
 
-      expect(items.map((item) => item.id), ['resume-movie-1', 'resume-movie-2', 'next-show-1', 'next-show-2']);
+      expect(resumeItems.map((item) => item.id), ['resume-movie-1', 'resume-movie-2']);
+      expect(nextUpItems.map((item) => item.id), ['next-show-1', 'next-show-2']);
       final resume = requests.singleWhere((uri) => uri.path == '/UserItems/Resume');
       expect(resume.queryParameters.containsKey('Limit'), isFalse);
       final nextUp = requests.singleWhere((uri) => uri.path == '/Shows/NextUp');
