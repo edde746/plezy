@@ -404,6 +404,8 @@ class AppearanceSettingsScreen extends StatelessWidget {
         return 'Deutsch';
       case AppLocale.zh:
         return '中文';
+      case AppLocale.zhHant:
+        return '繁體中文';
       case AppLocale.ko:
         return '한국어';
       case AppLocale.es:
