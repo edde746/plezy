@@ -4087,6 +4087,21 @@ class TranslationsSeerrEn {
 	/// en: 'The address of your Seerr instance'
 	String get serverUrlHelper => 'The address of your Seerr instance';
 
+	/// en: 'Use custom authentication header'
+	String get useCustomHeader => 'Use custom authentication header';
+
+	/// en: 'Authentication header name'
+	String get customHeaderName => 'Authentication header name';
+
+	/// en: 'Authentication header value'
+	String get customHeaderValue => 'Authentication header value';
+
+	/// en: 'Send an additional authentication header with every request to Seerr.'
+	String get customHeaderHelper => 'Send an additional authentication header with every request to Seerr.';
+
+	/// en: 'Enter both the authentication header name and value.'
+	String get customHeaderBothRequired => 'Enter both the authentication header name and value.';
+
 	/// en: 'Continue'
 	String get checkServer => 'Continue';
 
@@ -6331,6 +6346,11 @@ extension on Translations {
 			'seerr.connectTitle' => 'Connect Seerr',
 			'seerr.serverUrl' => 'Server URL',
 			'seerr.serverUrlHelper' => 'The address of your Seerr instance',
+			'seerr.useCustomHeader' => 'Use custom authentication header',
+			'seerr.customHeaderName' => 'Authentication header name',
+			'seerr.customHeaderValue' => 'Authentication header value',
+			'seerr.customHeaderHelper' => 'Send an additional authentication header with every request to Seerr.',
+			'seerr.customHeaderBothRequired' => 'Enter both the authentication header name and value.',
 			'seerr.checkServer' => 'Continue',
 			'seerr.signInWithJellyfin' => 'Sign in with Jellyfin',
 			'seerr.signInWithEmby' => 'Sign in with Emby',

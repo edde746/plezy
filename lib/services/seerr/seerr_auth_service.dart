@@ -16,14 +16,19 @@ class SeerrAuthService {
 
   SeerrAuthService({this.httpClientFactory});
 
-  SeerrHttpClient _client(String baseUrl, {String? cookie}) =>
-      SeerrHttpClient(baseUrl: baseUrl, httpClient: httpClientFactory?.call(), cookie: cookie);
+  SeerrHttpClient _client(String baseUrl, {String? cookie, String headerName = '', String headerValue = ''}) =>
+      SeerrHttpClient(
+        baseUrl: baseUrl,
+        httpClient: httpClientFactory?.call(),
+        cookie: cookie,
+        customHeaders: headerName.isEmpty ? const {} : {headerName: headerValue},
+      );
 
   /// Validate that [baseUrl] points at a running, initialized Seerr and
   /// collect the metadata the connect flow needs. Throws [SeerrUrlException]
   /// when unreachable or not set up.
-  Future<SeerrPublicSettings> probe(String baseUrl) async {
-    final client = _client(baseUrl);
+  Future<SeerrPublicSettings> probe(String baseUrl, {String headerName = '', String headerValue = ''}) async {
+    final client = _client(baseUrl, headerName: headerName, headerValue: headerValue);
     try {
       final SeerrResponse res;
       try {
@@ -46,13 +51,20 @@ class SeerrAuthService {
   }
 
   /// `POST /auth/plex` with a Plex account token.
-  Future<SeerrSession> signInWithPlex({required String baseUrl, required String plexToken}) => _signIn(
+  Future<SeerrSession> signInWithPlex({
+    required String baseUrl,
+    required String plexToken,
+    String headerName = '',
+    String headerValue = '',
+  }) => _signIn(
     baseUrl: baseUrl,
     method: SeerrAuthMethod.plex,
     path: '/auth/plex',
     body: {'authToken': plexToken},
     identifier: '',
     secret: '',
+    headerName: headerName,
+    headerValue: headerValue,
   );
 
   /// `POST /auth/jellyfin` with Jellyfin or Emby credentials.
@@ -61,6 +73,8 @@ class SeerrAuthService {
     required String username,
     required String password,
     bool emby = false,
+    String headerName = '',
+    String headerValue = '',
   }) => _signIn(
     baseUrl: baseUrl,
     method: emby ? SeerrAuthMethod.emby : SeerrAuthMethod.jellyfin,
@@ -72,18 +86,27 @@ class SeerrAuthService {
     },
     identifier: username,
     secret: password,
+    headerName: headerName,
+    headerValue: headerValue,
   );
 
   /// `POST /auth/local` with a Seerr local account.
-  Future<SeerrSession> signInWithLocal({required String baseUrl, required String email, required String password}) =>
-      _signIn(
-        baseUrl: baseUrl,
-        method: SeerrAuthMethod.local,
-        path: '/auth/local',
-        body: {'email': email, 'password': password},
-        identifier: email,
-        secret: password,
-      );
+  Future<SeerrSession> signInWithLocal({
+    required String baseUrl,
+    required String email,
+    required String password,
+    String headerName = '',
+    String headerValue = '',
+  }) => _signIn(
+    baseUrl: baseUrl,
+    method: SeerrAuthMethod.local,
+    path: '/auth/local',
+    body: {'email': email, 'password': password},
+    identifier: email,
+    secret: password,
+    headerName: headerName,
+    headerValue: headerValue,
+  );
 
   /// Silent re-login using the credentials carried by [session]
   /// ([plexToken] for plex-method sessions). Returns the refreshed session.
@@ -92,6 +115,8 @@ class SeerrAuthService {
       SeerrAuthMethod.plex when plexToken != null && plexToken.isNotEmpty => signInWithPlex(
         baseUrl: session.baseUrl,
         plexToken: plexToken,
+        headerName: session.headerName,
+        headerValue: session.headerValue,
       ),
       // No token RIGHT NOW is a degraded state (identity not hydrated yet,
       // vault decrypt hiccup), not a server rejection — retryable, so it
@@ -104,11 +129,15 @@ class SeerrAuthService {
         username: session.identifier,
         password: session.secret,
         emby: session.method == SeerrAuthMethod.emby,
+        headerName: session.headerName,
+        headerValue: session.headerValue,
       ),
       SeerrAuthMethod.local when session.secret.isNotEmpty => signInWithLocal(
         baseUrl: session.baseUrl,
         email: session.identifier,
         password: session.secret,
+        headerName: session.headerName,
+        headerValue: session.headerValue,
       ),
       _ => throw const SeerrAuthException('No stored credentials for silent re-auth'),
     };
@@ -117,7 +146,12 @@ class SeerrAuthService {
 
   /// Best-effort server-side sign-out; local cleanup must not depend on it.
   Future<void> signOut(SeerrSession session) async {
-    final client = _client(session.baseUrl, cookie: session.cookie);
+    final client = _client(
+      session.baseUrl,
+      cookie: session.cookie,
+      headerName: session.headerName,
+      headerValue: session.headerValue,
+    );
     try {
       await client.send('POST', '/auth/logout', timeout: SeerrConstants.authTimeout);
     } catch (e) {
@@ -134,8 +168,10 @@ class SeerrAuthService {
     required Map<String, Object?> body,
     required String identifier,
     required String secret,
+    required String headerName,
+    required String headerValue,
   }) async {
-    final client = _client(baseUrl);
+    final client = _client(baseUrl, headerName: headerName, headerValue: headerValue);
     try {
       final res = await client.send(
         'POST',
@@ -160,6 +196,8 @@ class SeerrAuthService {
         method: method,
         identifier: identifier,
         secret: secret,
+        headerName: headerName,
+        headerValue: headerValue,
         cookie: client.cookie!,
         userId: user.id,
         permissions: user.permissions ?? 0,

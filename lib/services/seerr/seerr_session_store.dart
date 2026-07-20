@@ -6,7 +6,7 @@ import '../credential_vault.dart';
 /// Per-Plex-profile persistence for the Seerr session, mirroring
 /// `TrackerAccountStore`'s `user_{uuid}_{baseKey}` scoping.
 ///
-/// The password ([SeerrSession.secret]) is CredentialVault-protected at the
+/// The password and custom header value are CredentialVault-protected at the
 /// store boundary; a failed decrypt degrades to an empty secret (the session
 /// keeps working until its cookie expires) rather than dropping the session.
 class SeerrSessionStore {
@@ -22,8 +22,10 @@ class SeerrSessionStore {
     if (raw == null) return null;
     try {
       final session = SeerrSession.decode(raw);
-      if (session.secret.isEmpty) return session;
-      return session.copyWith(secret: await CredentialVault.reveal(session.secret) ?? '');
+      return session.copyWith(
+        secret: session.secret.isEmpty ? '' : await CredentialVault.reveal(session.secret) ?? '',
+        headerValue: session.headerValue.isEmpty ? '' : await CredentialVault.reveal(session.headerValue) ?? '',
+      );
     } catch (_) {
       return null;
     }
@@ -31,9 +33,10 @@ class SeerrSessionStore {
 
   Future<void> save(String userUuid, SeerrSession session) async {
     final prefs = await BaseSharedPreferencesService.sharedCache();
-    final protected = session.secret.isEmpty
-        ? session
-        : session.copyWith(secret: await CredentialVault.protect(session.secret));
+    final protected = session.copyWith(
+      secret: session.secret.isEmpty ? '' : await CredentialVault.protect(session.secret),
+      headerValue: session.headerValue.isEmpty ? '' : await CredentialVault.protect(session.headerValue),
+    );
     await prefs.setString(_scopedKey(userUuid), protected.encode());
   }
 

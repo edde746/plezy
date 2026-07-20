@@ -14,6 +14,7 @@ import '../../services/seerr/seerr_exceptions.dart';
 import '../../theme/mono_tokens.dart';
 import '../../widgets/app_icon.dart';
 import '../../widgets/focused_scroll_scaffold.dart';
+import '../../widgets/focusable_list_tile.dart';
 import '../../widgets/loading_indicator_box.dart';
 import 'async_form_state_mixin.dart';
 
@@ -37,9 +38,14 @@ class SeerrConnectScreen extends StatefulWidget {
 
 class _SeerrConnectScreenState extends State<SeerrConnectScreen> with AsyncFormStateMixin, ControllerDisposerMixin {
   late final _urlController = createTextEditingController();
+  late final _headerNameController = createTextEditingController();
+  late final _headerValueController = createTextEditingController();
   late final _identifierController = createTextEditingController();
   late final _passwordController = createTextEditingController();
   final _urlFocus = FocusNode(debugLabel: 'SeerrConnect:Url');
+  final _headerAuthFocus = FocusNode(debugLabel: 'SeerrConnect:HeaderAuth');
+  final _headerNameFocus = FocusNode(debugLabel: 'SeerrConnect:HeaderName');
+  final _headerValueFocus = FocusNode(debugLabel: 'SeerrConnect:HeaderValue');
   final _continueFocus = FocusNode(debugLabel: 'SeerrConnect:Continue');
   final _changeServerFocus = FocusNode(debugLabel: 'SeerrConnect:ChangeServer');
   final _identifierFocus = FocusNode(debugLabel: 'SeerrConnect:Identifier');
@@ -49,11 +55,15 @@ class _SeerrConnectScreenState extends State<SeerrConnectScreen> with AsyncFormS
   SeerrPublicSettings? _instance;
   String _baseUrl = '';
   bool _plexTokenAvailable = false;
+  bool _useHeaderAuth = false;
   _CredentialForm _form = _CredentialForm.none;
 
   @override
   void dispose() {
     _urlFocus.dispose();
+    _headerAuthFocus.dispose();
+    _headerNameFocus.dispose();
+    _headerValueFocus.dispose();
     _continueFocus.dispose();
     _changeServerFocus.dispose();
     _identifierFocus.dispose();
@@ -79,6 +89,9 @@ class _SeerrConnectScreenState extends State<SeerrConnectScreen> with AsyncFormS
     };
   }
 
+  String get _headerName => _useHeaderAuth ? _headerNameController.text.trim() : '';
+  String get _headerValue => _useHeaderAuth ? _headerValueController.text : '';
+
   Future<void> _probe() async {
     final input = _urlController.text.trim();
     if (input.isEmpty) {
@@ -87,9 +100,15 @@ class _SeerrConnectScreenState extends State<SeerrConnectScreen> with AsyncFormS
     }
     // Bare hosts are common ("seerr.example.com") — default to https.
     final url = input.contains('://') ? input : 'https://$input';
+    final headerName = _headerName;
+    final headerValue = _headerValue;
+    if (_useHeaderAuth && (headerName.isEmpty || headerValue.isEmpty)) {
+      setErrorText(t.seerr.customHeaderBothRequired);
+      return;
+    }
     await runAsync<void>(() async {
       final account = context.read<SeerrAccountProvider>();
-      final settings = await account.authService.probe(url);
+      final settings = await account.authService.probe(url, headerName: headerName, headerValue: headerValue);
       final plexToken = await account.resolvePlexToken();
       if (!mounted) return;
       setState(() {
@@ -114,7 +133,12 @@ class _SeerrConnectScreenState extends State<SeerrConnectScreen> with AsyncFormS
       final account = context.read<SeerrAccountProvider>();
       final token = await account.resolvePlexToken();
       if (token == null || token.isEmpty) throw const SeerrAuthException('No Plex token available');
-      final session = await account.authService.signInWithPlex(baseUrl: _baseUrl, plexToken: token);
+      final session = await account.authService.signInWithPlex(
+        baseUrl: _baseUrl,
+        plexToken: token,
+        headerName: _headerName,
+        headerValue: _headerValue,
+      );
       await _finish(account, session);
     }, errorMapper: _describeError);
   }
@@ -132,11 +156,15 @@ class _SeerrConnectScreenState extends State<SeerrConnectScreen> with AsyncFormS
           username: identifier,
           password: password,
           emby: form == _CredentialForm.emby,
+          headerName: _headerName,
+          headerValue: _headerValue,
         ),
         _CredentialForm.local => await account.authService.signInWithLocal(
           baseUrl: _baseUrl,
           email: identifier,
           password: password,
+          headerName: _headerName,
+          headerValue: _headerValue,
         ),
         _CredentialForm.none => throw StateError('no credential form selected'),
       };
@@ -189,9 +217,9 @@ class _SeerrConnectScreenState extends State<SeerrConnectScreen> with AsyncFormS
         autocorrect: false,
         enableSuggestions: false,
         enabled: !busy,
-        onNavigateDown: () => _continueFocus.requestFocus(),
-        textInputAction: TextInputAction.go,
-        onFieldSubmitted: busy ? null : (_) => _probe(),
+        onNavigateDown: () => _headerAuthFocus.requestFocus(),
+        textInputAction: TextInputAction.next,
+        onFieldSubmitted: busy ? null : (_) => _headerAuthFocus.requestFocus(),
         decoration: InputDecoration(
           labelText: t.seerr.serverUrl,
           // URL example — intentionally not localized.
@@ -200,11 +228,65 @@ class _SeerrConnectScreenState extends State<SeerrConnectScreen> with AsyncFormS
           prefixIcon: const AppIcon(Symbols.link_rounded, fill: 1),
         ),
       ),
+      const SizedBox(height: 12),
+      FocusableSwitchListTile(
+        focusNode: _headerAuthFocus,
+        value: _useHeaderAuth,
+        onChanged: busy
+            ? null
+            : (value) {
+                setState(() => _useHeaderAuth = value);
+                if (value) {
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    if (mounted) _headerNameFocus.requestFocus();
+                  });
+                }
+              },
+        title: Text(t.seerr.useCustomHeader),
+        subtitle: Text(t.seerr.customHeaderHelper),
+        secondary: const AppIcon(Symbols.security_rounded, fill: 1),
+        contentPadding: EdgeInsets.zero,
+      ),
+      if (_useHeaderAuth) ...[
+        const SizedBox(height: 12),
+        FocusableTextFormField(
+          controller: _headerNameController,
+          focusNode: _headerNameFocus,
+          autocorrect: false,
+          enableSuggestions: false,
+          enabled: !busy,
+          textInputAction: TextInputAction.next,
+          onNavigateUp: () => _headerAuthFocus.requestFocus(),
+          onNavigateDown: () => _headerValueFocus.requestFocus(),
+          onFieldSubmitted: busy ? null : (_) => _headerValueFocus.requestFocus(),
+          decoration: InputDecoration(
+            labelText: t.seerr.customHeaderName,
+            hintText: 'X-Auth-Token',
+            prefixIcon: const AppIcon(Symbols.http_rounded, fill: 1),
+          ),
+        ),
+        const SizedBox(height: 12),
+        FocusableTextFormField(
+          controller: _headerValueController,
+          focusNode: _headerValueFocus,
+          autocorrect: false,
+          enableSuggestions: false,
+          enabled: !busy,
+          textInputAction: TextInputAction.go,
+          onNavigateUp: () => _headerNameFocus.requestFocus(),
+          onNavigateDown: () => _continueFocus.requestFocus(),
+          onFieldSubmitted: busy ? null : (_) => _probe(),
+          decoration: InputDecoration(
+            labelText: t.seerr.customHeaderValue,
+            prefixIcon: const AppIcon(Symbols.key_rounded, fill: 1),
+          ),
+        ),
+      ],
       const SizedBox(height: 16),
       FocusableButton(
         focusNode: _continueFocus,
         useBackgroundFocus: true,
-        onNavigateUp: () => _urlFocus.requestFocus(),
+        onNavigateUp: () => (_useHeaderAuth ? _headerValueFocus : _headerAuthFocus).requestFocus(),
         onPressed: busy ? null : _probe,
         child: FilledButton.icon(
           onPressed: busy ? null : _probe,
