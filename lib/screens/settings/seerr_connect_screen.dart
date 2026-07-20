@@ -14,6 +14,7 @@ import '../../services/seerr/seerr_exceptions.dart';
 import '../../theme/mono_tokens.dart';
 import '../../widgets/app_icon.dart';
 import '../../widgets/focused_scroll_scaffold.dart';
+import '../../widgets/focusable_list_tile.dart';
 import '../../widgets/loading_indicator_box.dart';
 import 'async_form_state_mixin.dart';
 
@@ -42,6 +43,7 @@ class _SeerrConnectScreenState extends State<SeerrConnectScreen> with AsyncFormS
   late final _identifierController = createTextEditingController();
   late final _passwordController = createTextEditingController();
   final _urlFocus = FocusNode(debugLabel: 'SeerrConnect:Url');
+  final _headerAuthFocus = FocusNode(debugLabel: 'SeerrConnect:HeaderAuth');
   final _headerNameFocus = FocusNode(debugLabel: 'SeerrConnect:HeaderName');
   final _headerValueFocus = FocusNode(debugLabel: 'SeerrConnect:HeaderValue');
   final _continueFocus = FocusNode(debugLabel: 'SeerrConnect:Continue');
@@ -53,11 +55,13 @@ class _SeerrConnectScreenState extends State<SeerrConnectScreen> with AsyncFormS
   SeerrPublicSettings? _instance;
   String _baseUrl = '';
   bool _plexTokenAvailable = false;
+  bool _useHeaderAuth = false;
   _CredentialForm _form = _CredentialForm.none;
 
   @override
   void dispose() {
     _urlFocus.dispose();
+    _headerAuthFocus.dispose();
     _headerNameFocus.dispose();
     _headerValueFocus.dispose();
     _continueFocus.dispose();
@@ -85,6 +89,9 @@ class _SeerrConnectScreenState extends State<SeerrConnectScreen> with AsyncFormS
     };
   }
 
+  String get _headerName => _useHeaderAuth ? _headerNameController.text.trim() : '';
+  String get _headerValue => _useHeaderAuth ? _headerValueController.text : '';
+
   Future<void> _probe() async {
     final input = _urlController.text.trim();
     if (input.isEmpty) {
@@ -93,9 +100,9 @@ class _SeerrConnectScreenState extends State<SeerrConnectScreen> with AsyncFormS
     }
     // Bare hosts are common ("seerr.example.com") — default to https.
     final url = input.contains('://') ? input : 'https://$input';
-    final headerName = _headerNameController.text.trim();
-    final headerValue = _headerValueController.text;
-    if ((headerName.isEmpty) != (headerValue.isEmpty)) {
+    final headerName = _headerName;
+    final headerValue = _headerValue;
+    if (_useHeaderAuth && (headerName.isEmpty || headerValue.isEmpty)) {
       setErrorText(t.seerr.customHeaderBothRequired);
       return;
     }
@@ -129,8 +136,8 @@ class _SeerrConnectScreenState extends State<SeerrConnectScreen> with AsyncFormS
       final session = await account.authService.signInWithPlex(
         baseUrl: _baseUrl,
         plexToken: token,
-        headerName: _headerNameController.text.trim(),
-        headerValue: _headerValueController.text,
+        headerName: _headerName,
+        headerValue: _headerValue,
       );
       await _finish(account, session);
     }, errorMapper: _describeError);
@@ -149,15 +156,15 @@ class _SeerrConnectScreenState extends State<SeerrConnectScreen> with AsyncFormS
           username: identifier,
           password: password,
           emby: form == _CredentialForm.emby,
-          headerName: _headerNameController.text.trim(),
-          headerValue: _headerValueController.text,
+          headerName: _headerName,
+          headerValue: _headerValue,
         ),
         _CredentialForm.local => await account.authService.signInWithLocal(
           baseUrl: _baseUrl,
           email: identifier,
           password: password,
-          headerName: _headerNameController.text.trim(),
-          headerValue: _headerValueController.text,
+          headerName: _headerName,
+          headerValue: _headerValue,
         ),
         _CredentialForm.none => throw StateError('no credential form selected'),
       };
@@ -210,9 +217,9 @@ class _SeerrConnectScreenState extends State<SeerrConnectScreen> with AsyncFormS
         autocorrect: false,
         enableSuggestions: false,
         enabled: !busy,
-        onNavigateDown: () => _headerNameFocus.requestFocus(),
+        onNavigateDown: () => _headerAuthFocus.requestFocus(),
         textInputAction: TextInputAction.next,
-        onFieldSubmitted: busy ? null : (_) => _headerNameFocus.requestFocus(),
+        onFieldSubmitted: busy ? null : (_) => _headerAuthFocus.requestFocus(),
         decoration: InputDecoration(
           labelText: t.seerr.serverUrl,
           // URL example — intentionally not localized.
@@ -222,45 +229,64 @@ class _SeerrConnectScreenState extends State<SeerrConnectScreen> with AsyncFormS
         ),
       ),
       const SizedBox(height: 12),
-      FocusableTextFormField(
-        controller: _headerNameController,
-        focusNode: _headerNameFocus,
-        autocorrect: false,
-        enableSuggestions: false,
-        enabled: !busy,
-        textInputAction: TextInputAction.next,
-        onNavigateUp: () => _urlFocus.requestFocus(),
-        onNavigateDown: () => _headerValueFocus.requestFocus(),
-        onFieldSubmitted: busy ? null : (_) => _headerValueFocus.requestFocus(),
-        decoration: InputDecoration(
-          labelText: t.seerr.customHeaderName,
-          hintText: 'X-Auth-Token',
-          helperText: t.seerr.customHeaderHelper,
-          prefixIcon: const AppIcon(Symbols.http_rounded, fill: 1),
-        ),
+      FocusableSwitchListTile(
+        focusNode: _headerAuthFocus,
+        value: _useHeaderAuth,
+        onChanged: busy
+            ? null
+            : (value) {
+                setState(() => _useHeaderAuth = value);
+                if (value) {
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    if (mounted) _headerNameFocus.requestFocus();
+                  });
+                }
+              },
+        title: Text(t.seerr.useCustomHeader),
+        subtitle: Text(t.seerr.customHeaderHelper),
+        secondary: const AppIcon(Symbols.security_rounded, fill: 1),
+        contentPadding: EdgeInsets.zero,
       ),
-      const SizedBox(height: 12),
-      FocusableTextFormField(
-        controller: _headerValueController,
-        focusNode: _headerValueFocus,
-        obscureText: true,
-        autocorrect: false,
-        enableSuggestions: false,
-        enabled: !busy,
-        textInputAction: TextInputAction.go,
-        onNavigateUp: () => _headerNameFocus.requestFocus(),
-        onNavigateDown: () => _continueFocus.requestFocus(),
-        onFieldSubmitted: busy ? null : (_) => _probe(),
-        decoration: InputDecoration(
-          labelText: t.seerr.customHeaderValue,
-          prefixIcon: const AppIcon(Symbols.key_rounded, fill: 1),
+      if (_useHeaderAuth) ...[
+        const SizedBox(height: 12),
+        FocusableTextFormField(
+          controller: _headerNameController,
+          focusNode: _headerNameFocus,
+          autocorrect: false,
+          enableSuggestions: false,
+          enabled: !busy,
+          textInputAction: TextInputAction.next,
+          onNavigateUp: () => _headerAuthFocus.requestFocus(),
+          onNavigateDown: () => _headerValueFocus.requestFocus(),
+          onFieldSubmitted: busy ? null : (_) => _headerValueFocus.requestFocus(),
+          decoration: InputDecoration(
+            labelText: t.seerr.customHeaderName,
+            hintText: 'X-Auth-Token',
+            prefixIcon: const AppIcon(Symbols.http_rounded, fill: 1),
+          ),
         ),
-      ),
+        const SizedBox(height: 12),
+        FocusableTextFormField(
+          controller: _headerValueController,
+          focusNode: _headerValueFocus,
+          autocorrect: false,
+          enableSuggestions: false,
+          enabled: !busy,
+          textInputAction: TextInputAction.go,
+          onNavigateUp: () => _headerNameFocus.requestFocus(),
+          onNavigateDown: () => _continueFocus.requestFocus(),
+          onFieldSubmitted: busy ? null : (_) => _probe(),
+          decoration: InputDecoration(
+            labelText: t.seerr.customHeaderValue,
+            prefixIcon: const AppIcon(Symbols.key_rounded, fill: 1),
+          ),
+        ),
+      ],
       const SizedBox(height: 16),
       FocusableButton(
         focusNode: _continueFocus,
         useBackgroundFocus: true,
-        onNavigateUp: () => _headerValueFocus.requestFocus(),
+        onNavigateUp: () => (_useHeaderAuth ? _headerValueFocus : _headerAuthFocus).requestFocus(),
         onPressed: busy ? null : _probe,
         child: FilledButton.icon(
           onPressed: busy ? null : _probe,
