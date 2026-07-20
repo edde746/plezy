@@ -51,7 +51,12 @@ class SeerrClient {
     SeerrAuthService? authService,
     http.Client? httpClient,
   }) : _session = session,
-       _http = SeerrHttpClient(baseUrl: session.baseUrl, httpClient: httpClient, cookie: session.cookie),
+       _http = SeerrHttpClient(
+         baseUrl: session.baseUrl,
+         httpClient: httpClient,
+         cookie: session.cookie,
+         customHeaders: session.headerName.isEmpty ? const {} : {session.headerName: session.headerValue},
+       ),
        _auth = authService ?? SeerrAuthService();
 
   SeerrSession get session => _session;

@@ -33,6 +33,11 @@ class SeerrSession {
   final String identifier;
   final String secret;
 
+  /// Optional header sent with every request to an access-protected Seerr
+  /// instance (for example, a reverse-proxy authentication header).
+  final String headerName;
+  final String headerValue;
+
   /// `connect.sid` cookie value.
   final String cookie;
   final int userId;
@@ -50,6 +55,8 @@ class SeerrSession {
     required this.method,
     required this.identifier,
     required this.secret,
+    this.headerName = '',
+    this.headerValue = '',
     required this.cookie,
     required this.userId,
     required this.permissions,
@@ -60,6 +67,8 @@ class SeerrSession {
 
   SeerrSession copyWith({
     String? secret,
+    String? headerName,
+    String? headerValue,
     String? cookie,
     int? permissions,
     String? displayName,
@@ -69,6 +78,8 @@ class SeerrSession {
     method: method,
     identifier: identifier,
     secret: secret ?? this.secret,
+    headerName: headerName ?? this.headerName,
+    headerValue: headerValue ?? this.headerValue,
     cookie: cookie ?? this.cookie,
     userId: userId,
     permissions: permissions ?? this.permissions,
@@ -82,6 +93,8 @@ class SeerrSession {
     'method': method.name,
     'identifier': identifier,
     'secret': secret,
+    'header_name': headerName,
+    'header_value': headerValue,
     'cookie': cookie,
     'user_id': userId,
     'permissions': permissions,
@@ -99,6 +112,8 @@ class SeerrSession {
         (throw ArgumentError('Unknown Seerr auth method: ${json['method']}')),
     identifier: json['identifier'] as String? ?? '',
     secret: json['secret'] as String? ?? '',
+    headerName: json['header_name'] as String? ?? '',
+    headerValue: json['header_value'] as String? ?? '',
     cookie: json['cookie'] as String? ?? '',
     userId: (json['user_id'] as num).toInt(),
     permissions: (json['permissions'] as num?)?.toInt() ?? 0,

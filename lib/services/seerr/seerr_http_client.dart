@@ -32,12 +32,18 @@ class SeerrResponse {
 class SeerrHttpClient {
   final String baseUrl;
   final http.Client _http;
+  final Map<String, String> _customHeaders;
   String? _cookie;
 
-  SeerrHttpClient({required String baseUrl, http.Client? httpClient, String? cookie})
-    : baseUrl = normalizeBaseUrl(baseUrl),
-      _http = httpClient ?? platform.createPlatformClient(),
-      _cookie = (cookie?.isNotEmpty ?? false) ? cookie : null;
+  SeerrHttpClient({
+    required String baseUrl,
+    http.Client? httpClient,
+    String? cookie,
+    Map<String, String> customHeaders = const {},
+  }) : baseUrl = normalizeBaseUrl(baseUrl),
+       _http = httpClient ?? platform.createPlatformClient(),
+       _customHeaders = Map.unmodifiable(customHeaders),
+       _cookie = (cookie?.isNotEmpty ?? false) ? cookie : null;
 
   /// Current `connect.sid` value (no `name=` prefix); null until a login
   /// response is captured or [cookie] was seeded.
@@ -87,6 +93,7 @@ class SeerrHttpClient {
     }
     final uri = _uri(path, query);
     final headers = <String, String>{
+      ..._customHeaders,
       'Accept': 'application/json',
       if (authenticated && _cookie != null) 'Cookie': '${SeerrConstants.sessionCookieName}=$_cookie',
       if (body != null) 'Content-Type': 'application/json',
