@@ -1859,6 +1859,7 @@ class _TranslationsVideoControlsClipZh extends TranslationsVideoControlsClipEn {
 	@override String get h264Failed => '该源无法编码为 H.264 SDR MP4。';
 	@override String get hevcSdrFailed => '该源无法编码为 HEVC SDR MP4。';
 	@override String get hevcHdrFailed => '该源无法编码为 HEVC HDR MP4。';
+	@override String get gifFailed => '无法将此源编码为 GIF。';
 	@override String get originalFailed => '无法从 mpv 缓存复制此源。';
 	@override String get previewUnavailable => '此版本中不支持剪辑预览播放。';
 	@override String get previewFailed => '剪辑预览播放失败。';
@@ -2681,13 +2682,14 @@ extension on TranslationsZh {
 			'videoControls.clip.h264Failed' => '该源无法编码为 H.264 SDR MP4。',
 			'videoControls.clip.hevcSdrFailed' => '该源无法编码为 HEVC SDR MP4。',
 			'videoControls.clip.hevcHdrFailed' => '该源无法编码为 HEVC HDR MP4。',
+			'videoControls.clip.gifFailed' => '无法将此源编码为 GIF。',
 			'videoControls.clip.originalFailed' => '无法从 mpv 缓存复制此源。',
 			'videoControls.clip.previewUnavailable' => '此版本中不支持剪辑预览播放。',
 			'videoControls.clip.previewFailed' => '剪辑预览播放失败。',
 			'videoControls.clip.previewLoadingScreenshot' => '剪辑预览必须在截图之前完成加载。',
-			'videoControls.clip.screenshotInProgress' => '屏幕截图已被保存。',
 			_ => null,
 		} ?? switch (path) {
+			'videoControls.clip.screenshotInProgress' => '屏幕截图已被保存。',
 			'videoControls.clip.saveAsDialog' => '将剪辑另存为',
 			'videoControls.clip.savedTo' => ({required Object fileName}) => '保存到 ${fileName}',
 			'videoControls.clip.openFolder' => '打开文件夹',
@@ -3199,9 +3201,9 @@ extension on TranslationsZh {
 			'watchTogether.host' => '主持人',
 			'watchTogether.hostBadge' => '主持人',
 			'watchTogether.youAreHost' => '你是主持人',
-			'watchTogether.watchingWithOthers' => '与他人一起观看',
 			_ => null,
 		} ?? switch (path) {
+			'watchTogether.watchingWithOthers' => '与他人一起观看',
 			'watchTogether.endSession' => '结束会话',
 			'watchTogether.leaveSession' => '离开会话',
 			'watchTogether.endSessionQuestion' => '结束会话？',

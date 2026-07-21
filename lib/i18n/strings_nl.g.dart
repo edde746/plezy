@@ -1862,6 +1862,7 @@ class _TranslationsVideoControlsClipNl extends TranslationsVideoControlsClipEn {
 	@override String get h264Failed => 'Deze bron kan niet worden gecodeerd als een H.264 SDR MP4.';
 	@override String get hevcSdrFailed => 'Deze bron kan niet worden gecodeerd als een HEVC SDR MP4.';
 	@override String get hevcHdrFailed => 'Deze bron kan niet worden gecodeerd als een HEVC HDR MP4.';
+	@override String get gifFailed => 'Deze bron kon niet worden gecodeerd als GIF.';
 	@override String get originalFailed => 'Deze bron kon niet worden gekopieerd uit de mpv-cache.';
 	@override String get previewUnavailable => 'Het afspelen van fragmentvoorbeelden is niet beschikbaar in deze build.';
 	@override String get previewFailed => 'Afspelen van clipvoorbeeld mislukt.';
@@ -2684,13 +2685,14 @@ extension on TranslationsNl {
 			'videoControls.clip.h264Failed' => 'Deze bron kan niet worden gecodeerd als een H.264 SDR MP4.',
 			'videoControls.clip.hevcSdrFailed' => 'Deze bron kan niet worden gecodeerd als een HEVC SDR MP4.',
 			'videoControls.clip.hevcHdrFailed' => 'Deze bron kan niet worden gecodeerd als een HEVC HDR MP4.',
+			'videoControls.clip.gifFailed' => 'Deze bron kon niet worden gecodeerd als GIF.',
 			'videoControls.clip.originalFailed' => 'Deze bron kon niet worden gekopieerd uit de mpv-cache.',
 			'videoControls.clip.previewUnavailable' => 'Het afspelen van fragmentvoorbeelden is niet beschikbaar in deze build.',
 			'videoControls.clip.previewFailed' => 'Afspelen van clipvoorbeeld mislukt.',
 			'videoControls.clip.previewLoadingScreenshot' => 'Het clipvoorbeeld moet zijn geladen voordat er een screenshot kan worden gemaakt.',
-			'videoControls.clip.screenshotInProgress' => 'Er wordt al een screenshot opgeslagen.',
 			_ => null,
 		} ?? switch (path) {
+			'videoControls.clip.screenshotInProgress' => 'Er wordt al een screenshot opgeslagen.',
 			'videoControls.clip.saveAsDialog' => 'Clip opslaan als',
 			'videoControls.clip.savedTo' => ({required Object fileName}) => 'Opgeslagen in ${fileName}',
 			'videoControls.clip.openFolder' => 'Map openen',
@@ -3202,9 +3204,9 @@ extension on TranslationsNl {
 			'watchTogether.host' => 'Host',
 			'watchTogether.hostBadge' => 'HOST',
 			'watchTogether.youAreHost' => 'Jij bent de host',
-			'watchTogether.watchingWithOthers' => 'Kijken met anderen',
 			_ => null,
 		} ?? switch (path) {
+			'watchTogether.watchingWithOthers' => 'Kijken met anderen',
 			'watchTogether.endSession' => 'Sessie Beëindigen',
 			'watchTogether.leaveSession' => 'Sessie Verlaten',
 			'watchTogether.endSessionQuestion' => 'Sessie Beëindigen?',

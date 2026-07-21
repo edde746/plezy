@@ -536,6 +536,7 @@
       "h264Failed": "Cette source n'a pas pu être codée en H.264 SDR MP4.",
       "hevcSdrFailed": "Cette source n'a pas pu être codée en HEVC SDR MP4.",
       "hevcHdrFailed": "Cette source n'a pas pu être encodée en HEVC HDR MP4.",
+      "gifFailed": "Cette source n'a pas pu être encodée en GIF.",
       "originalFailed": "Cette source n'a pas pu être copiée depuis le cache mpv.",
       "previewUnavailable": "La lecture de l’aperçu du clip n’est pas disponible dans cette version.",
       "previewFailed": "La lecture de l'aperçu du clip a échoué.",

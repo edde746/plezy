@@ -1862,6 +1862,7 @@ class _TranslationsVideoControlsClipNb extends TranslationsVideoControlsClipEn {
 	@override String get h264Failed => 'Denne kilden kunne ikke kodes som en H.264 SDR MP4.';
 	@override String get hevcSdrFailed => 'Denne kilden kunne ikke kodes som en HEVC SDR MP4.';
 	@override String get hevcHdrFailed => 'Denne kilden kunne ikke kodes som en HEVC HDR MP4.';
+	@override String get gifFailed => 'Denne kilden kunne ikke kodes som en GIF.';
 	@override String get originalFailed => 'Denne kilden kunne ikke kopieres fra mpv-bufferen.';
 	@override String get previewUnavailable => 'Forhåndsvisning av klipp er ikke tilgjengelig i denne versjonen.';
 	@override String get previewFailed => 'Forhåndsvisning av klipp mislyktes.';
@@ -2684,13 +2685,14 @@ extension on TranslationsNb {
 			'videoControls.clip.h264Failed' => 'Denne kilden kunne ikke kodes som en H.264 SDR MP4.',
 			'videoControls.clip.hevcSdrFailed' => 'Denne kilden kunne ikke kodes som en HEVC SDR MP4.',
 			'videoControls.clip.hevcHdrFailed' => 'Denne kilden kunne ikke kodes som en HEVC HDR MP4.',
+			'videoControls.clip.gifFailed' => 'Denne kilden kunne ikke kodes som en GIF.',
 			'videoControls.clip.originalFailed' => 'Denne kilden kunne ikke kopieres fra mpv-bufferen.',
 			'videoControls.clip.previewUnavailable' => 'Forhåndsvisning av klipp er ikke tilgjengelig i denne versjonen.',
 			'videoControls.clip.previewFailed' => 'Forhåndsvisning av klipp mislyktes.',
 			'videoControls.clip.previewLoadingScreenshot' => 'Forhåndsvisningen av klippet må fullføres innlasting før du tar et skjermbilde.',
-			'videoControls.clip.screenshotInProgress' => 'Et skjermbilde lagres allerede.',
 			_ => null,
 		} ?? switch (path) {
+			'videoControls.clip.screenshotInProgress' => 'Et skjermbilde lagres allerede.',
 			'videoControls.clip.saveAsDialog' => 'Lagre klipp som',
 			'videoControls.clip.savedTo' => ({required Object fileName}) => 'Lagret i ${fileName}',
 			'videoControls.clip.openFolder' => 'Åpne mappe',
@@ -3202,9 +3204,9 @@ extension on TranslationsNb {
 			'watchTogether.host' => 'Vert',
 			'watchTogether.hostBadge' => 'VERT',
 			'watchTogether.youAreHost' => 'Du er verten',
-			'watchTogether.watchingWithOthers' => 'Ser med andre',
 			_ => null,
 		} ?? switch (path) {
+			'watchTogether.watchingWithOthers' => 'Ser med andre',
 			'watchTogether.endSession' => 'Avslutt økt',
 			'watchTogether.leaveSession' => 'Forlat økt',
 			'watchTogether.endSessionQuestion' => 'Avslutte økt?',

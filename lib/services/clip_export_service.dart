@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:io';
+import 'dart:math' as math;
 import 'package:flutter/foundation.dart';
 import 'package:path/path.dart' as path;
 import 'package:path_provider/path_provider.dart';
@@ -47,6 +48,7 @@ class ClipExportService {
         ClipExportFormat.hevcSdr,
         ClipExportFormat.h264Sdr,
         if (source?.canEncodeHdr == true) ClipExportFormat.hevcHdr,
+        if (operatingSystem == 'macos') ClipExportFormat.gif,
         ClipExportFormat.source,
       ];
     }
@@ -159,7 +161,11 @@ class ClipExportService {
   }) {
     final base = _metadataFileNameBase(source);
     final range = '${formatClipTimestamp(selection.start)}-${formatClipTimestamp(selection.end)}';
-    final extension = format == ClipExportFormat.source ? sourceFileExtension(source) : 'mp4';
+    final extension = switch (format) {
+      ClipExportFormat.source => sourceFileExtension(source),
+      ClipExportFormat.gif => 'gif',
+      _ => 'mp4',
+    };
     return '${base.isEmpty ? 'Clip' : base} - $range.$extension';
   }
 
@@ -233,6 +239,7 @@ class ClipExportService {
     required ClipSource source,
     required ClipSelection selection,
     ClipExportFormat? format,
+    GifExportResolution gifResolution = GifExportResolution.automatic,
     Player? player,
   }) async {
     final clamped = selection.clampedTo(source.duration);
@@ -254,7 +261,7 @@ class ClipExportService {
         exportRunner ??
         (selectedFormat == ClipExportFormat.source
             ? (player == null ? null : MpvClipExportRunner(player))
-            : MpvEncodingClipExportRunner(source: source, format: selectedFormat));
+            : MpvEncodingClipExportRunner(source: source, format: selectedFormat, gifResolution: gifResolution));
     _activeRunner = runner;
     try {
       if (runner == null) {
@@ -332,6 +339,7 @@ class ClipExportService {
       ClipExportFormat.h264Sdr => t.videoControls.clip.h264Failed,
       ClipExportFormat.hevcSdr => t.videoControls.clip.hevcSdrFailed,
       ClipExportFormat.hevcHdr => t.videoControls.clip.hevcHdrFailed,
+      ClipExportFormat.gif => t.videoControls.clip.gifFailed,
       ClipExportFormat.source => t.videoControls.clip.originalFailed,
     };
   }

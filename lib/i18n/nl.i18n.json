@@ -536,6 +536,7 @@
       "h264Failed": "Deze bron kan niet worden gecodeerd als een H.264 SDR MP4.",
       "hevcSdrFailed": "Deze bron kan niet worden gecodeerd als een HEVC SDR MP4.",
       "hevcHdrFailed": "Deze bron kan niet worden gecodeerd als een HEVC HDR MP4.",
+      "gifFailed": "Deze bron kon niet worden gecodeerd als GIF.",
       "originalFailed": "Deze bron kon niet worden gekopieerd uit de mpv-cache.",
       "previewUnavailable": "Het afspelen van fragmentvoorbeelden is niet beschikbaar in deze build.",
       "previewFailed": "Afspelen van clipvoorbeeld mislukt.",

@@ -1859,6 +1859,7 @@ class _TranslationsVideoControlsClipJa extends TranslationsVideoControlsClipEn {
 	@override String get h264Failed => 'このソースは H.264 SDR MP4 としてエンコードできませんでした。';
 	@override String get hevcSdrFailed => 'このソースは HEVC SDR MP4 としてエンコードできませんでした。';
 	@override String get hevcHdrFailed => 'このソースは HEVC HDR MP4 としてエンコードできませんでした。';
+	@override String get gifFailed => 'このソースをGIFとしてエンコードできませんでした。';
 	@override String get originalFailed => 'このソースは mpv キャッシュからコピーできませんでした。';
 	@override String get previewUnavailable => 'このビルドではクリップ プレビュー再生は利用できません。';
 	@override String get previewFailed => 'クリップのプレビュー再生に失敗しました。';
@@ -2681,13 +2682,14 @@ extension on TranslationsJa {
 			'videoControls.clip.h264Failed' => 'このソースは H.264 SDR MP4 としてエンコードできませんでした。',
 			'videoControls.clip.hevcSdrFailed' => 'このソースは HEVC SDR MP4 としてエンコードできませんでした。',
 			'videoControls.clip.hevcHdrFailed' => 'このソースは HEVC HDR MP4 としてエンコードできませんでした。',
+			'videoControls.clip.gifFailed' => 'このソースをGIFとしてエンコードできませんでした。',
 			'videoControls.clip.originalFailed' => 'このソースは mpv キャッシュからコピーできませんでした。',
 			'videoControls.clip.previewUnavailable' => 'このビルドではクリップ プレビュー再生は利用できません。',
 			'videoControls.clip.previewFailed' => 'クリップのプレビュー再生に失敗しました。',
 			'videoControls.clip.previewLoadingScreenshot' => 'スクリーンショットを撮る前に、クリップ プレビューの読み込みを完了する必要があります。',
-			'videoControls.clip.screenshotInProgress' => 'スクリーンショットはすでに保存されています。',
 			_ => null,
 		} ?? switch (path) {
+			'videoControls.clip.screenshotInProgress' => 'スクリーンショットはすでに保存されています。',
 			'videoControls.clip.saveAsDialog' => 'クリップに名前を付けて保存',
 			'videoControls.clip.savedTo' => ({required Object fileName}) => '${fileName}に保存されました',
 			'videoControls.clip.openFolder' => 'フォルダーを開く',
@@ -3199,9 +3201,9 @@ extension on TranslationsJa {
 			'watchTogether.host' => 'ホスト',
 			'watchTogether.hostBadge' => 'HOST',
 			'watchTogether.youAreHost' => 'あなたはホストです',
-			'watchTogether.watchingWithOthers' => '他の人と視聴中',
 			_ => null,
 		} ?? switch (path) {
+			'watchTogether.watchingWithOthers' => '他の人と視聴中',
 			'watchTogether.endSession' => 'セッションを終了',
 			'watchTogether.leaveSession' => 'セッションを退出',
 			'watchTogether.endSessionQuestion' => 'セッションを終了しますか？',

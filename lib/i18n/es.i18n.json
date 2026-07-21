@@ -536,6 +536,7 @@
       "h264Failed": "Esta fuente no se pudo codificar como H.264 SDR MP4.",
       "hevcSdrFailed": "Esta fuente no se pudo codificar como HEVC SDR MP4.",
       "hevcHdrFailed": "Esta fuente no se pudo codificar como HEVC HDR MP4.",
+      "gifFailed": "Esta fuente no se pudo codificar como GIF.",
       "originalFailed": "Esta fuente no se pudo copiar del caché mpv.",
       "previewUnavailable": "La reproducción de vista previa del clip no está disponible en esta compilación.",
       "previewFailed": "Error en la reproducción de vista previa del clip.",

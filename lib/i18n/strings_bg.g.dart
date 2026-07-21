@@ -1862,6 +1862,7 @@ class _TranslationsVideoControlsClipBg extends TranslationsVideoControlsClipEn {
 	@override String get h264Failed => 'Този източник не може да бъде кодиран като H.264 SDR MP4.';
 	@override String get hevcSdrFailed => 'Този източник не може да бъде кодиран като HEVC SDR MP4.';
 	@override String get hevcHdrFailed => 'Този източник не можа да бъде кодиран като HEVC HDR MP4.';
+	@override String get gifFailed => 'Този източник не можа да бъде кодиран като GIF.';
 	@override String get originalFailed => 'Този източник не можа да бъде копиран от mpv кеша.';
 	@override String get previewUnavailable => 'Възпроизвеждането на предварителен преглед на клип не е налично в тази компилация.';
 	@override String get previewFailed => 'Неуспешно възпроизвеждане на визуализация на клип.';
@@ -2684,13 +2685,14 @@ extension on TranslationsBg {
 			'videoControls.clip.h264Failed' => 'Този източник не може да бъде кодиран като H.264 SDR MP4.',
 			'videoControls.clip.hevcSdrFailed' => 'Този източник не може да бъде кодиран като HEVC SDR MP4.',
 			'videoControls.clip.hevcHdrFailed' => 'Този източник не можа да бъде кодиран като HEVC HDR MP4.',
+			'videoControls.clip.gifFailed' => 'Този източник не можа да бъде кодиран като GIF.',
 			'videoControls.clip.originalFailed' => 'Този източник не можа да бъде копиран от mpv кеша.',
 			'videoControls.clip.previewUnavailable' => 'Възпроизвеждането на предварителен преглед на клип не е налично в тази компилация.',
 			'videoControls.clip.previewFailed' => 'Неуспешно възпроизвеждане на визуализация на клип.',
 			'videoControls.clip.previewLoadingScreenshot' => 'Визуализацията на клипа трябва да завърши зареждането, преди да направите екранна снимка.',
-			'videoControls.clip.screenshotInProgress' => 'Вече се запазва екранна снимка.',
 			_ => null,
 		} ?? switch (path) {
+			'videoControls.clip.screenshotInProgress' => 'Вече се запазва екранна снимка.',
 			'videoControls.clip.saveAsDialog' => 'Запазване на клипа като',
 			'videoControls.clip.savedTo' => ({required Object fileName}) => 'Запазено в ${fileName}',
 			'videoControls.clip.openFolder' => 'Отворете папката',
@@ -3202,9 +3204,9 @@ extension on TranslationsBg {
 			'watchTogether.host' => 'Домакин',
 			'watchTogether.hostBadge' => 'ДОМАКИН',
 			'watchTogether.youAreHost' => 'Вие сте домакин',
-			'watchTogether.watchingWithOthers' => 'Гледате с други',
 			_ => null,
 		} ?? switch (path) {
+			'watchTogether.watchingWithOthers' => 'Гледате с други',
 			'watchTogether.endSession' => 'Край на сесията',
 			'watchTogether.leaveSession' => 'Напусни сесията',
 			'watchTogether.endSessionQuestion' => 'Край на сесията?',

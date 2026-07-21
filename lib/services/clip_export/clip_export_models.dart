@@ -67,7 +67,9 @@ class ClipSelection {
 
 enum ClipExportStage { idle, running, completed, failed, canceled }
 
-enum ClipExportFormat { hevcSdr, h264Sdr, hevcHdr, source }
+enum ClipExportFormat { hevcSdr, h264Sdr, hevcHdr, gif, source }
+
+enum GifExportResolution { automatic, p480, p720, p1080 }
 
 class ClipExportJobState {
   final ClipExportStage stage;

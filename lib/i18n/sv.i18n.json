@@ -536,6 +536,7 @@
       "h264Failed": "Denna källa kunde inte kodas som en H.264 SDR MP4.",
       "hevcSdrFailed": "Denna källa kunde inte kodas som en HEVC SDR MP4.",
       "hevcHdrFailed": "Den här källan kunde inte kodas som en HEVC HDR MP4.",
+      "gifFailed": "Den här källan kunde inte kodas som en GIF.",
       "originalFailed": "Den här källan kunde inte kopieras från mpv-cachen.",
       "previewUnavailable": "Förhandsvisning av klipp är inte tillgängligt i den här versionen.",
       "previewFailed": "Förhandsvisning av klipp misslyckades.",

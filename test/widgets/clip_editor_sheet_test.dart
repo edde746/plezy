@@ -9,6 +9,7 @@ import 'package:plezy/services/clip_export_service.dart';
 import 'package:plezy/services/clip_preview_player_controller.dart';
 import 'package:plezy/services/scrub_preview_source.dart';
 import 'package:plezy/theme/mono_theme.dart';
+import 'package:plezy/widgets/app_menu.dart';
 import 'package:plezy/widgets/expressive_button_group.dart';
 import 'package:plezy/widgets/video_controls/sheets/clip_editor_sheet.dart';
 
@@ -142,6 +143,25 @@ void main() {
     expect(find.byKey(const ValueKey('clip_preview_volume_slider')), findsNothing);
     expect(find.byKey(const ValueKey('clip_preview_screenshot')), findsNothing);
     expect(find.byType(ExpressiveButtonGroup<ClipExportFormat>), findsOneWidget);
+    expect(find.text('GIF'), findsOneWidget);
+    expect(find.byKey(const ValueKey('clip_gif_resolution')), findsNothing);
+
+    await tester.tap(find.text('GIF'));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('clip_gif_resolution')), findsOneWidget);
+    expect(find.text('GIF - Auto'), findsOneWidget);
+
+    await tester.tap(find.byKey(const ValueKey('clip_gif_resolution')));
+    await tester.pumpAndSettle();
+    expect(find.text('480p'), findsOneWidget);
+    expect(find.text('720p'), findsOneWidget);
+    expect(find.text('1080p'), findsOneWidget);
+    await tester.tap(find.text('720p'));
+    await tester.pumpAndSettle();
+    expect(
+      find.descendant(of: find.byKey(const ValueKey('clip_gif_resolution')), matching: find.text('GIF - 720p')),
+      findsOneWidget,
+    );
 
     final center = tester.getCenter(slider);
     final gesture = await tester.createGesture(kind: PointerDeviceKind.mouse, pointer: 1);
@@ -179,5 +199,9 @@ void main() {
     await tester.pump();
 
     expect(find.text('Saving 42%'), findsOneWidget);
+    expect(
+      tester.widget<AppMenuButton<GifExportResolution>>(find.byKey(const ValueKey('clip_gif_resolution'))).enabled,
+      isFalse,
+    );
   });
 }

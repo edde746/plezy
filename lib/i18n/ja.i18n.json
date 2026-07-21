@@ -536,6 +536,7 @@
       "h264Failed": "このソースは H.264 SDR MP4 としてエンコードできませんでした。",
       "hevcSdrFailed": "このソースは HEVC SDR MP4 としてエンコードできませんでした。",
       "hevcHdrFailed": "このソースは HEVC HDR MP4 としてエンコードできませんでした。",
+      "gifFailed": "このソースをGIFとしてエンコードできませんでした。",
       "originalFailed": "このソースは mpv キャッシュからコピーできませんでした。",
       "previewUnavailable": "このビルドではクリップ プレビュー再生は利用できません。",
       "previewFailed": "クリップのプレビュー再生に失敗しました。",

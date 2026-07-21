@@ -1862,6 +1862,7 @@ class _TranslationsVideoControlsClipSv extends TranslationsVideoControlsClipEn {
 	@override String get h264Failed => 'Denna källa kunde inte kodas som en H.264 SDR MP4.';
 	@override String get hevcSdrFailed => 'Denna källa kunde inte kodas som en HEVC SDR MP4.';
 	@override String get hevcHdrFailed => 'Den här källan kunde inte kodas som en HEVC HDR MP4.';
+	@override String get gifFailed => 'Den här källan kunde inte kodas som en GIF.';
 	@override String get originalFailed => 'Den här källan kunde inte kopieras från mpv-cachen.';
 	@override String get previewUnavailable => 'Förhandsvisning av klipp är inte tillgängligt i den här versionen.';
 	@override String get previewFailed => 'Förhandsvisning av klipp misslyckades.';
@@ -2684,13 +2685,14 @@ extension on TranslationsSv {
 			'videoControls.clip.h264Failed' => 'Denna källa kunde inte kodas som en H.264 SDR MP4.',
 			'videoControls.clip.hevcSdrFailed' => 'Denna källa kunde inte kodas som en HEVC SDR MP4.',
 			'videoControls.clip.hevcHdrFailed' => 'Den här källan kunde inte kodas som en HEVC HDR MP4.',
+			'videoControls.clip.gifFailed' => 'Den här källan kunde inte kodas som en GIF.',
 			'videoControls.clip.originalFailed' => 'Den här källan kunde inte kopieras från mpv-cachen.',
 			'videoControls.clip.previewUnavailable' => 'Förhandsvisning av klipp är inte tillgängligt i den här versionen.',
 			'videoControls.clip.previewFailed' => 'Förhandsvisning av klipp misslyckades.',
 			'videoControls.clip.previewLoadingScreenshot' => 'Förhandsgranskningen av klippet måste avslutas innan du tar en skärmdump.',
-			'videoControls.clip.screenshotInProgress' => 'En skärmdump sparas redan.',
 			_ => null,
 		} ?? switch (path) {
+			'videoControls.clip.screenshotInProgress' => 'En skärmdump sparas redan.',
 			'videoControls.clip.saveAsDialog' => 'Spara klipp som',
 			'videoControls.clip.savedTo' => ({required Object fileName}) => 'Sparad till ${fileName}',
 			'videoControls.clip.openFolder' => 'Öppna mapp',
@@ -3202,9 +3204,9 @@ extension on TranslationsSv {
 			'watchTogether.host' => 'Värd',
 			'watchTogether.hostBadge' => 'VÄRD',
 			'watchTogether.youAreHost' => 'Du är värden',
-			'watchTogether.watchingWithOthers' => 'Tittar med andra',
 			_ => null,
 		} ?? switch (path) {
+			'watchTogether.watchingWithOthers' => 'Tittar med andra',
 			'watchTogether.endSession' => 'Avsluta Session',
 			'watchTogether.leaveSession' => 'Lämna Session',
 			'watchTogether.endSessionQuestion' => 'Avsluta Session?',

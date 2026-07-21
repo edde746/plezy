@@ -536,6 +536,7 @@
       "h264Failed": "Tego źródła nie można zakodować w formacie H.264 SDR MP4.",
       "hevcSdrFailed": "Tego źródła nie można zakodować w formacie HEVC SDR MP4.",
       "hevcHdrFailed": "Tego źródła nie można zakodować w formacie HEVC HDR MP4.",
+      "gifFailed": "Nie udało się zakodować tego źródła jako pliku GIF.",
       "originalFailed": "Nie można skopiować tego źródła z pamięci podręcznej mpv.",
       "previewUnavailable": "W tej kompilacji nie jest dostępne odtwarzanie podglądu klipu.",
       "previewFailed": "Odtwarzanie podglądu klipu nie powiodło się.",

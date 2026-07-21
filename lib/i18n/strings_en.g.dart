@@ -4469,6 +4469,9 @@ class TranslationsVideoControlsClipEn {
 	/// en: 'This source could not be encoded as an HEVC HDR MP4.'
 	String get hevcHdrFailed => 'This source could not be encoded as an HEVC HDR MP4.';
 
+	/// en: 'This source could not be encoded as a GIF.'
+	String get gifFailed => 'This source could not be encoded as a GIF.';
+
 	/// en: 'This source could not be copied from the mpv cache.'
 	String get originalFailed => 'This source could not be copied from the mpv cache.';
 
@@ -5630,13 +5633,14 @@ extension on Translations {
 			'videoControls.clip.h264Failed' => 'This source could not be encoded as an H.264 SDR MP4.',
 			'videoControls.clip.hevcSdrFailed' => 'This source could not be encoded as an HEVC SDR MP4.',
 			'videoControls.clip.hevcHdrFailed' => 'This source could not be encoded as an HEVC HDR MP4.',
+			'videoControls.clip.gifFailed' => 'This source could not be encoded as a GIF.',
 			'videoControls.clip.originalFailed' => 'This source could not be copied from the mpv cache.',
 			'videoControls.clip.previewUnavailable' => 'Clip preview playback is not available in this build.',
 			'videoControls.clip.previewFailed' => 'Clip preview playback failed.',
 			'videoControls.clip.previewLoadingScreenshot' => 'The clip preview must finish loading before taking a screenshot.',
-			'videoControls.clip.screenshotInProgress' => 'A screenshot is already being saved.',
 			_ => null,
 		} ?? switch (path) {
+			'videoControls.clip.screenshotInProgress' => 'A screenshot is already being saved.',
 			'videoControls.clip.saveAsDialog' => 'Save Clip As',
 			'videoControls.clip.savedTo' => ({required Object fileName}) => 'Saved to ${fileName}',
 			'videoControls.clip.openFolder' => 'Open Folder',
@@ -6148,9 +6152,9 @@ extension on Translations {
 			'watchTogether.host' => 'Host',
 			'watchTogether.hostBadge' => 'HOST',
 			'watchTogether.youAreHost' => 'You are the host',
-			'watchTogether.watchingWithOthers' => 'Watching with others',
 			_ => null,
 		} ?? switch (path) {
+			'watchTogether.watchingWithOthers' => 'Watching with others',
 			'watchTogether.endSession' => 'End Session',
 			'watchTogether.leaveSession' => 'Leave Session',
 			'watchTogether.endSessionQuestion' => 'End Session?',

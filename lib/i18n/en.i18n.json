@@ -536,6 +536,7 @@
       "h264Failed": "This source could not be encoded as an H.264 SDR MP4.",
       "hevcSdrFailed": "This source could not be encoded as an HEVC SDR MP4.",
       "hevcHdrFailed": "This source could not be encoded as an HEVC HDR MP4.",
+      "gifFailed": "This source could not be encoded as a GIF.",
       "originalFailed": "This source could not be copied from the mpv cache.",
       "previewUnavailable": "Clip preview playback is not available in this build.",
       "previewFailed": "Clip preview playback failed.",

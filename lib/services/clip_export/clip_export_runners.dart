@@ -112,11 +112,28 @@ class MpvClipExportRunner implements ClipExportRunner {
 
 typedef ClipEncoderPlayerFactory = Player Function(Map<String, String> initialOptions);
 
+const int _gifMaximumBytes = 10000000;
+const int _gifRetryTargetBytes = 9500000;
+const int _gifMaximumFramesPerSecond = 20;
+const int _gifMinimumFramesPerSecond = 10;
+
+typedef _GifEncodingSettings = ({int framesPerSecond, int maxWidth, int maxHeight});
+
+typedef ClipEncodingPassRunner =
+    Future<void> Function({
+      required Map<String, String> initialOptions,
+      required Duration start,
+      required Duration end,
+      required ValueChanged<double> onProgress,
+    });
+
 class MpvEncodingClipExportRunner implements ClipExportRunner {
   final ClipSource source;
   final ClipExportFormat format;
+  final GifExportResolution gifResolution;
   final String operatingSystem;
   final ClipEncoderPlayerFactory _playerFactory;
+  final ClipEncodingPassRunner? encodingPassRunner;
 
   Player? _player;
   Completer<void>? _completion;
@@ -125,8 +142,10 @@ class MpvEncodingClipExportRunner implements ClipExportRunner {
   MpvEncodingClipExportRunner({
     required this.source,
     required this.format,
+    this.gifResolution = GifExportResolution.automatic,
     String? operatingSystem,
     ClipEncoderPlayerFactory? playerFactory,
+    this.encodingPassRunner,
   }) : operatingSystem = operatingSystem ?? Platform.operatingSystem,
        _playerFactory = playerFactory ?? Player.clipEncoder;
 
@@ -138,6 +157,9 @@ class MpvEncodingClipExportRunner implements ClipExportRunner {
     required Duration start,
     required Duration end,
     required String outputPath,
+    int gifFramesPerSecond = _gifMaximumFramesPerSecond,
+    int gifMaxWidth = 1920,
+    int gifMaxHeight = 1080,
   }) {
     if (format == ClipExportFormat.source) {
       throw ClipExportException(t.videoControls.clip.sourceCopyNoEncoder);
@@ -147,6 +169,40 @@ class MpvEncodingClipExportRunner implements ClipExportRunner {
     final isWindows = operatingSystem == 'windows';
     if (!isMacOS && !isWindows) {
       throw ClipExportException(t.videoControls.clip.encodingDesktopOnly);
+    }
+
+    if (format == ClipExportFormat.gif) {
+      if (!isMacOS) throw ClipExportException(t.videoControls.clip.gifFailed);
+      final frameFilter =
+          "lavfi=[fps=$gifFramesPerSecond,scale=w='min(iw,$gifMaxWidth)':"
+          "h='min(ih,$gifMaxHeight)':force_original_aspect_ratio=decrease:"
+          'force_divisible_by=2:flags=lanczos]';
+      final options = <String, String>{
+        'o': outputPath,
+        'of': 'gif',
+        'ovc': 'gif',
+        'ofopts': 'loop=0',
+        'aid': 'no',
+        'start': _formatMpvTime(start),
+        'end': _formatMpvTime(end),
+        'sid': 'no',
+        'secondary-sid': 'no',
+        'keep-open': 'no',
+        'ocopy-metadata': 'no',
+        'hwdec': 'no',
+      };
+      if (source.colorType != MediaDisplayColorType.sdr) {
+        options
+          ..['vf'] = 'gpu=api=vulkan,$frameFilter,$_sdrFormatFilter'
+          ..['target-prim'] = 'bt.709'
+          ..['target-trc'] = 'bt.1886'
+          ..['target-peak'] = '203'
+          ..['tone-mapping'] = 'mobius'
+          ..['hdr-compute-peak'] = 'yes';
+      } else {
+        options['vf'] = '$frameFilter,$_sdrFormatFilter';
+      }
+      return options;
     }
 
     if (format == ClipExportFormat.hevcHdr && !source.canEncodeHdr) {
@@ -201,6 +257,74 @@ class MpvEncodingClipExportRunner implements ClipExportRunner {
     required ValueChanged<double> onProgress,
   }) async {
     _canceled = false;
+    if (format == ClipExportFormat.gif) {
+      await _exportGif(start: start, end: end, outputPath: outputPath, onProgress: onProgress);
+      return;
+    }
+    await _encodeAttempt(start: start, end: end, outputPath: outputPath, onProgress: onProgress);
+  }
+
+  Future<void> _exportGif({
+    required Duration start,
+    required Duration end,
+    required String outputPath,
+    required ValueChanged<double> onProgress,
+  }) async {
+    if (operatingSystem != 'macos') throw ClipExportException(t.videoControls.clip.gifFailed);
+
+    final temporaryFile = File('$outputPath.plezy-part');
+    var settings = switch (gifResolution) {
+      GifExportResolution.p480 => (framesPerSecond: _gifMaximumFramesPerSecond, maxWidth: 854, maxHeight: 480),
+      GifExportResolution.p720 => (framesPerSecond: _gifMaximumFramesPerSecond, maxWidth: 1280, maxHeight: 720),
+      GifExportResolution.automatic ||
+      GifExportResolution.p1080 => (framesPerSecond: _gifMaximumFramesPerSecond, maxWidth: 1920, maxHeight: 1080),
+    };
+    var reportedProgress = 0.0;
+
+    try {
+      while (true) {
+        await _deleteFileIfExists(temporaryFile);
+        final attemptStart = reportedProgress;
+        final attemptEnd = gifResolution == GifExportResolution.automatic
+            ? attemptStart + ((0.99 - attemptStart) / 2)
+            : 0.99;
+        await _encodeAttempt(
+          start: start,
+          end: end,
+          outputPath: temporaryFile.path,
+          gifSettings: settings,
+          onProgress: (progress) {
+            final next = attemptStart + ((attemptEnd - attemptStart) * progress.clamp(0.0, 1.0));
+            if (next > reportedProgress) {
+              reportedProgress = next;
+              onProgress(reportedProgress);
+            }
+          },
+        );
+        if (_canceled) throw ClipExportException(t.videoControls.clip.exportCanceled);
+        if (!await temporaryFile.exists()) throw ClipExportException(t.videoControls.clip.gifFailed);
+
+        final actualBytes = await temporaryFile.length();
+        if (actualBytes <= 0) throw ClipExportException(t.videoControls.clip.gifFailed);
+        if (gifResolution != GifExportResolution.automatic || actualBytes <= _gifMaximumBytes) {
+          await temporaryFile.rename(outputPath);
+          onProgress(0.99);
+          return;
+        }
+        settings = _nextGifSettings(settings, actualBytes);
+      }
+    } finally {
+      await _deleteFileIfExists(temporaryFile);
+    }
+  }
+
+  Future<void> _encodeAttempt({
+    required Duration start,
+    required Duration end,
+    required String outputPath,
+    required ValueChanged<double> onProgress,
+    _GifEncodingSettings? gifSettings,
+  }) async {
     final initialOptions = buildInitialOptions(
       operatingSystem: operatingSystem,
       format: format,
@@ -208,7 +332,24 @@ class MpvEncodingClipExportRunner implements ClipExportRunner {
       start: start,
       end: end,
       outputPath: outputPath,
+      gifFramesPerSecond: gifSettings?.framesPerSecond ?? _gifMaximumFramesPerSecond,
+      gifMaxWidth: gifSettings?.maxWidth ?? 1920,
+      gifMaxHeight: gifSettings?.maxHeight ?? 1080,
     );
+    await (encodingPassRunner ?? _runEncodingPass)(
+      initialOptions: initialOptions,
+      start: start,
+      end: end,
+      onProgress: onProgress,
+    );
+  }
+
+  Future<void> _runEncodingPass({
+    required Map<String, String> initialOptions,
+    required Duration start,
+    required Duration end,
+    required ValueChanged<double> onProgress,
+  }) async {
     final player = _playerFactory(initialOptions);
     final completion = Completer<void>();
     _completion = completion;
@@ -256,6 +397,45 @@ class MpvEncodingClipExportRunner implements ClipExportRunner {
     } catch (_) {
       // The encoder may already be finishing.
     }
+  }
+}
+
+_GifEncodingSettings _nextGifSettings(_GifEncodingSettings current, int actualBytes) {
+  final ratio = _gifRetryTargetBytes / actualBytes;
+  if (current.framesPerSecond > _gifMinimumFramesPerSecond) {
+    return (
+      framesPerSecond: (current.framesPerSecond * ratio).floor().clamp(
+        _gifMinimumFramesPerSecond,
+        current.framesPerSecond - 1,
+      ),
+      maxWidth: current.maxWidth,
+      maxHeight: current.maxHeight,
+    );
+  }
+
+  if (current.maxWidth <= 2 && current.maxHeight <= 2) {
+    throw ClipExportException(t.videoControls.clip.gifFailed);
+  }
+  final scale = math.min(math.sqrt(ratio), 0.95);
+  return (
+    framesPerSecond: _gifMinimumFramesPerSecond,
+    maxWidth: _smallerEvenDimension(current.maxWidth, scale),
+    maxHeight: _smallerEvenDimension(current.maxHeight, scale),
+  );
+}
+
+int _smallerEvenDimension(int current, double scale) {
+  var next = (current * scale).floor();
+  if (next.isOdd) next--;
+  if (next >= current) next = current - 2;
+  return math.max(2, next);
+}
+
+Future<void> _deleteFileIfExists(File file) async {
+  try {
+    if (await file.exists()) await file.delete();
+  } catch (_) {
+    // Preserve the export result if best-effort temporary cleanup fails.
   }
 }
 

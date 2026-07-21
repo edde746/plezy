@@ -536,6 +536,7 @@
       "h264Failed": "Denne kilde kunne ikke kodes som en H.264 SDR MP4.",
       "hevcSdrFailed": "Denne kilde kunne ikke kodes som en HEVC SDR MP4.",
       "hevcHdrFailed": "Denne kilde kunne ikke kodes som en HEVC HDR MP4.",
+      "gifFailed": "Denne kilde kunne ikke kodes som en GIF.",
       "originalFailed": "Denne kilde kunne ikke kopieres fra mpv-cachen.",
       "previewUnavailable": "Afspilning af forhåndsvisning af klip er ikke tilgængelig i denne build.",
       "previewFailed": "Afspilning af forhåndsvisning af klip mislykkedes.",

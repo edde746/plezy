@@ -536,6 +536,7 @@
       "h264Failed": "이 소스는 H.264 SDR MP4로 인코딩할 수 없습니다.",
       "hevcSdrFailed": "이 소스는 HEVC SDR MP4로 인코딩할 수 없습니다.",
       "hevcHdrFailed": "이 소스는 HEVC HDR MP4로 인코딩할 수 없습니다.",
+      "gifFailed": "이 소스를 GIF로 인코딩할 수 없습니다.",
       "originalFailed": "이 소스를 mpv 캐시에서 복사할 수 없습니다.",
       "previewUnavailable": "이 빌드에서는 클립 미리보기 재생을 사용할 수 없습니다.",
       "previewFailed": "클립 미리보기 재생에 실패했습니다.",

@@ -1862,6 +1862,7 @@ class _TranslationsVideoControlsClipPt extends TranslationsVideoControlsClipEn {
 	@override String get h264Failed => 'Esta fonte não pôde ser codificada como H.264 SDR MP4.';
 	@override String get hevcSdrFailed => 'Esta fonte não pôde ser codificada como HEVC SDR MP4.';
 	@override String get hevcHdrFailed => 'Esta fonte não pôde ser codificada como HEVC HDR MP4.';
+	@override String get gifFailed => 'Não foi possível codificar esta fonte como GIF.';
 	@override String get originalFailed => 'Esta fonte não pôde ser copiada do cache mpv.';
 	@override String get previewUnavailable => 'A reprodução da visualização do clipe não está disponível nesta versão.';
 	@override String get previewFailed => 'Falha na reprodução da visualização do clipe.';
@@ -2684,13 +2685,14 @@ extension on TranslationsPt {
 			'videoControls.clip.h264Failed' => 'Esta fonte não pôde ser codificada como H.264 SDR MP4.',
 			'videoControls.clip.hevcSdrFailed' => 'Esta fonte não pôde ser codificada como HEVC SDR MP4.',
 			'videoControls.clip.hevcHdrFailed' => 'Esta fonte não pôde ser codificada como HEVC HDR MP4.',
+			'videoControls.clip.gifFailed' => 'Não foi possível codificar esta fonte como GIF.',
 			'videoControls.clip.originalFailed' => 'Esta fonte não pôde ser copiada do cache mpv.',
 			'videoControls.clip.previewUnavailable' => 'A reprodução da visualização do clipe não está disponível nesta versão.',
 			'videoControls.clip.previewFailed' => 'Falha na reprodução da visualização do clipe.',
 			'videoControls.clip.previewLoadingScreenshot' => 'A visualização do clipe deve terminar de carregar antes de fazer uma captura de tela.',
-			'videoControls.clip.screenshotInProgress' => 'Uma captura de tela já está sendo salva.',
 			_ => null,
 		} ?? switch (path) {
+			'videoControls.clip.screenshotInProgress' => 'Uma captura de tela já está sendo salva.',
 			'videoControls.clip.saveAsDialog' => 'Salvar clipe como',
 			'videoControls.clip.savedTo' => ({required Object fileName}) => 'Salvo em ${fileName}',
 			'videoControls.clip.openFolder' => 'Abrir pasta',
@@ -3202,9 +3204,9 @@ extension on TranslationsPt {
 			'watchTogether.host' => 'Anfitrião',
 			'watchTogether.hostBadge' => 'HOST',
 			'watchTogether.youAreHost' => 'Você é o anfitrião',
-			'watchTogether.watchingWithOthers' => 'Assistindo com outros',
 			_ => null,
 		} ?? switch (path) {
+			'watchTogether.watchingWithOthers' => 'Assistindo com outros',
 			'watchTogether.endSession' => 'Encerrar Sessão',
 			'watchTogether.leaveSession' => 'Sair da Sessão',
 			'watchTogether.endSessionQuestion' => 'Encerrar Sessão?',

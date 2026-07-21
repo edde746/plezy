@@ -1859,6 +1859,7 @@ class _TranslationsVideoControlsClipKo extends TranslationsVideoControlsClipEn {
 	@override String get h264Failed => '이 소스는 H.264 SDR MP4로 인코딩할 수 없습니다.';
 	@override String get hevcSdrFailed => '이 소스는 HEVC SDR MP4로 인코딩할 수 없습니다.';
 	@override String get hevcHdrFailed => '이 소스는 HEVC HDR MP4로 인코딩할 수 없습니다.';
+	@override String get gifFailed => '이 소스를 GIF로 인코딩할 수 없습니다.';
 	@override String get originalFailed => '이 소스를 mpv 캐시에서 복사할 수 없습니다.';
 	@override String get previewUnavailable => '이 빌드에서는 클립 미리보기 재생을 사용할 수 없습니다.';
 	@override String get previewFailed => '클립 미리보기 재생에 실패했습니다.';
@@ -2681,13 +2682,14 @@ extension on TranslationsKo {
 			'videoControls.clip.h264Failed' => '이 소스는 H.264 SDR MP4로 인코딩할 수 없습니다.',
 			'videoControls.clip.hevcSdrFailed' => '이 소스는 HEVC SDR MP4로 인코딩할 수 없습니다.',
 			'videoControls.clip.hevcHdrFailed' => '이 소스는 HEVC HDR MP4로 인코딩할 수 없습니다.',
+			'videoControls.clip.gifFailed' => '이 소스를 GIF로 인코딩할 수 없습니다.',
 			'videoControls.clip.originalFailed' => '이 소스를 mpv 캐시에서 복사할 수 없습니다.',
 			'videoControls.clip.previewUnavailable' => '이 빌드에서는 클립 미리보기 재생을 사용할 수 없습니다.',
 			'videoControls.clip.previewFailed' => '클립 미리보기 재생에 실패했습니다.',
 			'videoControls.clip.previewLoadingScreenshot' => '스크린샷을 찍기 전에 클립 미리보기 로드가 완료되어야 합니다.',
-			'videoControls.clip.screenshotInProgress' => '스크린샷이 이미 저장되고 있습니다.',
 			_ => null,
 		} ?? switch (path) {
+			'videoControls.clip.screenshotInProgress' => '스크린샷이 이미 저장되고 있습니다.',
 			'videoControls.clip.saveAsDialog' => '클립을 다른 이름으로 저장',
 			'videoControls.clip.savedTo' => ({required Object fileName}) => '${fileName}에 저장되었습니다.',
 			'videoControls.clip.openFolder' => '폴더 열기',
@@ -3199,9 +3201,9 @@ extension on TranslationsKo {
 			'watchTogether.host' => '호스트',
 			'watchTogether.hostBadge' => '호스트',
 			'watchTogether.youAreHost' => '당신은 호스트 입니다',
-			'watchTogether.watchingWithOthers' => '다른 사람과 함께 시청 중',
 			_ => null,
 		} ?? switch (path) {
+			'watchTogether.watchingWithOthers' => '다른 사람과 함께 시청 중',
 			'watchTogether.endSession' => '세션 종료',
 			'watchTogether.leaveSession' => '세션 탈퇴',
 			'watchTogether.endSessionQuestion' => '세션을 종료 하시겠습니까?',

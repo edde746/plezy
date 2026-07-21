@@ -536,6 +536,7 @@
       "h264Failed": "Diese Quelle konnte nicht als H.264 SDR MP4 kodiert werden.",
       "hevcSdrFailed": "Diese Quelle konnte nicht als HEVC SDR MP4 kodiert werden.",
       "hevcHdrFailed": "Diese Quelle konnte nicht als HEVC HDR MP4 kodiert werden.",
+      "gifFailed": "Diese Quelle konnte nicht als GIF kodiert werden.",
       "originalFailed": "Diese Quelle konnte nicht aus dem MPV-Cache kopiert werden.",
       "previewUnavailable": "Die Clip-Vorschauwiedergabe ist in diesem Build nicht verfügbar.",
       "previewFailed": "Die Wiedergabe der Clipvorschau ist fehlgeschlagen.",

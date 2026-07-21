@@ -14,8 +14,10 @@ import '../../../services/clip_export_service.dart';
 import '../../../services/clip_preview_player_controller.dart';
 import '../../../services/file_picker_service.dart';
 import '../../../services/scrub_preview_source.dart';
+import '../../../utils/formatters.dart';
 import '../../../utils/snackbar_helper.dart';
 import '../../../widgets/app_icon.dart';
+import '../../../widgets/app_menu.dart';
 import '../../../widgets/expressive_button_group.dart';
 import '../../../widgets/overlay_sheet.dart';
 import '../widgets/scrub_frame_view.dart';
@@ -64,9 +66,11 @@ class _ClipEditorSheetState extends State<ClipEditorSheet> {
   late ClipSelection _trimWindow;
   late final List<ClipExportFormat> _availableFormats;
   late ClipExportFormat _format;
+  GifExportResolution _gifResolution = GifExportResolution.automatic;
 
   final Map<int, ScrubFrame> _frameCache = <int, ScrubFrame>{};
   String? _savedPath;
+  int? _savedFileBytes;
   String? _errorMessage;
 
   @override
@@ -110,6 +114,12 @@ class _ClipEditorSheetState extends State<ClipEditorSheet> {
     return scrubFrame;
   }
 
+  void _clearExportResult() {
+    _savedPath = null;
+    _savedFileBytes = null;
+    _errorMessage = null;
+  }
+
   void _setPreviewPosition(Duration position) {
     unawaited(widget.previewController.seekToVideoTime(position));
   }
@@ -118,8 +128,7 @@ class _ClipEditorSheetState extends State<ClipEditorSheet> {
     final nextPreview = update.handle == _ClipPreviewHandle.end ? update.selection.end : update.selection.start;
     setState(() {
       _selection = update.selection;
-      _savedPath = null;
-      _errorMessage = null;
+      _clearExportResult();
     });
     unawaited(widget.previewController.setSelection(update.selection));
     unawaited(widget.previewController.seekToVideoTime(nextPreview));
@@ -131,19 +140,21 @@ class _ClipEditorSheetState extends State<ClipEditorSheet> {
   }
 
   Future<void> _saveClip() async {
-    setState(() {
-      _errorMessage = null;
-      _savedPath = null;
-    });
+    setState(_clearExportResult);
     try {
       final outputPath = await widget.exportService.exportClip(
         source: widget.source,
         selection: _selection,
         format: _format,
+        gifResolution: _gifResolution,
         player: widget.previewController.player,
       );
+      final savedFileBytes = _format == ClipExportFormat.gif ? await File(outputPath).length() : null;
       if (!mounted) return;
-      setState(() => _savedPath = outputPath);
+      setState(() {
+        _savedPath = outputPath;
+        _savedFileBytes = savedFileBytes;
+      });
     } catch (e) {
       if (!mounted) return;
       setState(() => _errorMessage = e.toString());
@@ -259,15 +270,28 @@ class _ClipEditorSheetState extends State<ClipEditorSheet> {
                               key: const ValueKey('clip_export_format'),
                               segments: [
                                 for (final format in _availableFormats)
-                                  ButtonSegment(value: format, label: Text(_clipExportFormatLabel(format))),
+                                  ButtonSegment(
+                                    value: format,
+                                    label: format == ClipExportFormat.gif && _format == ClipExportFormat.gif
+                                        ? _ClipGifFormatSelector(
+                                            resolution: _gifResolution,
+                                            enabled: !isExporting,
+                                            onChanged: (resolution) {
+                                              setState(() {
+                                                _gifResolution = resolution;
+                                                _clearExportResult();
+                                              });
+                                            },
+                                          )
+                                        : Text(_clipExportFormatLabel(format)),
+                                  ),
                               ],
                               selected: _format,
                               enabled: !isExporting,
                               onChanged: (format) {
                                 setState(() {
                                   _format = format;
-                                  _savedPath = null;
-                                  _errorMessage = null;
+                                  _clearExportResult();
                                 });
                               },
                             ),
@@ -276,35 +300,46 @@ class _ClipEditorSheetState extends State<ClipEditorSheet> {
                             const SizedBox(height: 8),
                             Text(_errorMessage!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
                           ],
-                          if (_savedPath != null) ...[
-                            const SizedBox(height: 8),
-                            Text(
-                              t.videoControls.clip.savedTo(fileName: path.basename(_savedPath!)),
-                              style: Theme.of(context).textTheme.bodyMedium,
-                            ),
-                            const SizedBox(height: 8),
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: OutlinedButton.icon(
-                                    onPressed: () => unawaited(_openSavedFolder()),
-                                    icon: const AppIcon(Symbols.folder_open_rounded),
-                                    label: Text(t.videoControls.clip.openFolder),
+                          if (_savedPath != null)
+                            Padding(
+                              key: const ValueKey('clip_saved_result'),
+                              padding: const EdgeInsets.only(top: 8),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                children: [
+                                  Text(
+                                    _savedFileBytes == null
+                                        ? t.videoControls.clip.savedTo(fileName: path.basename(_savedPath!))
+                                        : '${t.videoControls.clip.savedTo(fileName: path.basename(_savedPath!))} · '
+                                              '${ByteFormatter.formatBytes(_savedFileBytes!, decimals: 2)}',
+                                    style: Theme.of(context).textTheme.bodyMedium,
                                   ),
-                                ),
-                                const SizedBox(width: 8),
-                                Expanded(
-                                  child: OutlinedButton.icon(
-                                    onPressed: () => unawaited(_saveAs()),
-                                    icon: const AppIcon(Symbols.save_as_rounded),
-                                    label: Text(t.videoControls.clip.saveAs),
+                                  const SizedBox(height: 8),
+                                  Row(
+                                    children: [
+                                      Expanded(
+                                        child: OutlinedButton.icon(
+                                          onPressed: () => unawaited(_openSavedFolder()),
+                                          icon: const AppIcon(Symbols.folder_open_rounded),
+                                          label: Text(t.videoControls.clip.openFolder),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Expanded(
+                                        child: OutlinedButton.icon(
+                                          onPressed: () => unawaited(_saveAs()),
+                                          icon: const AppIcon(Symbols.save_as_rounded),
+                                          label: Text(t.videoControls.clip.saveAs),
+                                        ),
+                                      ),
+                                    ],
                                   ),
-                                ),
-                              ],
+                                ],
+                              ),
                             ),
-                          ],
                           const SizedBox(height: 12),
                           Row(
+                            key: const ValueKey('clip_editor_actions'),
                             children: [
                               Expanded(
                                 child: TextButton(
@@ -348,6 +383,39 @@ class _ClipEditorSheetState extends State<ClipEditorSheet> {
   }
 }
 
+class _ClipGifFormatSelector extends StatelessWidget {
+  final GifExportResolution resolution;
+  final bool enabled;
+  final ValueChanged<GifExportResolution> onChanged;
+
+  const _ClipGifFormatSelector({required this.resolution, required this.enabled, required this.onChanged});
+
+  @override
+  Widget build(BuildContext context) {
+    return AppMenuButton<GifExportResolution>(
+      key: const ValueKey('clip_gif_resolution'),
+      enabled: enabled,
+      tooltip: t.fileInfo.resolution,
+      minWidth: 140,
+      anchorAlignment: AppMenuAnchorAlignment.end,
+      childPadding: const EdgeInsets.only(left: 8),
+      onSelected: onChanged,
+      entriesBuilder: (_) => [
+        for (final value in GifExportResolution.values)
+          AppMenuItem(value: value, label: _gifResolutionLabel(value), selected: value == resolution),
+      ],
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text('GIF - ${_gifResolutionLabel(resolution)}'),
+          const SizedBox(width: 4),
+          Icon(Symbols.expand_more_rounded, size: 18, color: DefaultTextStyle.of(context).style.color),
+        ],
+      ),
+    );
+  }
+}
+
 class _ClipEditorBackgroundPainter extends CustomPainter {
   final Color color;
   final Rect previewRect;
@@ -377,5 +445,13 @@ String _clipExportFormatLabel(ClipExportFormat format) => switch (format) {
   ClipExportFormat.hevcSdr => t.videoControls.clip.formatHevcSdr,
   ClipExportFormat.h264Sdr => t.videoControls.clip.formatH264Sdr,
   ClipExportFormat.hevcHdr => t.videoControls.clip.formatHevcHdr,
+  ClipExportFormat.gif => 'GIF',
   ClipExportFormat.source => t.videoControls.qualityOriginal,
+};
+
+String _gifResolutionLabel(GifExportResolution resolution) => switch (resolution) {
+  GifExportResolution.automatic => t.settings.visualEffectsAuto,
+  GifExportResolution.p480 => '480p',
+  GifExportResolution.p720 => '720p',
+  GifExportResolution.p1080 => '1080p',
 };

@@ -1868,6 +1868,7 @@ class _TranslationsVideoControlsClipRu extends TranslationsVideoControlsClipEn {
 	@override String get h264Failed => 'Этот источник не удалось закодировать как H.264 SDR MP4.';
 	@override String get hevcSdrFailed => 'Этот источник не удалось закодировать как HEVC SDR MP4.';
 	@override String get hevcHdrFailed => 'Этот источник не удалось закодировать как HEVC HDR MP4.';
+	@override String get gifFailed => 'Не удалось закодировать этот источник в GIF.';
 	@override String get originalFailed => 'Этот источник не удалось скопировать из кэша mpv.';
 	@override String get previewUnavailable => 'Предварительный просмотр клипа недоступен в этой сборке.';
 	@override String get previewFailed => 'Не удалось воспроизвести предварительный просмотр клипа.';
@@ -2690,13 +2691,14 @@ extension on TranslationsRu {
 			'videoControls.clip.h264Failed' => 'Этот источник не удалось закодировать как H.264 SDR MP4.',
 			'videoControls.clip.hevcSdrFailed' => 'Этот источник не удалось закодировать как HEVC SDR MP4.',
 			'videoControls.clip.hevcHdrFailed' => 'Этот источник не удалось закодировать как HEVC HDR MP4.',
+			'videoControls.clip.gifFailed' => 'Не удалось закодировать этот источник в GIF.',
 			'videoControls.clip.originalFailed' => 'Этот источник не удалось скопировать из кэша mpv.',
 			'videoControls.clip.previewUnavailable' => 'Предварительный просмотр клипа недоступен в этой сборке.',
 			'videoControls.clip.previewFailed' => 'Не удалось воспроизвести предварительный просмотр клипа.',
 			'videoControls.clip.previewLoadingScreenshot' => 'Прежде чем сделать снимок экрана, предварительный просмотр клипа должен завершить загрузку.',
-			'videoControls.clip.screenshotInProgress' => 'Скриншот уже сохраняется.',
 			_ => null,
 		} ?? switch (path) {
+			'videoControls.clip.screenshotInProgress' => 'Скриншот уже сохраняется.',
 			'videoControls.clip.saveAsDialog' => 'Сохранить клип как',
 			'videoControls.clip.savedTo' => ({required Object fileName}) => 'Сохранено в ${fileName}.',
 			'videoControls.clip.openFolder' => 'Открыть папку',
@@ -3208,9 +3210,9 @@ extension on TranslationsRu {
 			'watchTogether.host' => 'Хост',
 			'watchTogether.hostBadge' => 'HOST',
 			'watchTogether.youAreHost' => 'Вы — хост',
-			'watchTogether.watchingWithOthers' => 'Смотрите с другими',
 			_ => null,
 		} ?? switch (path) {
+			'watchTogether.watchingWithOthers' => 'Смотрите с другими',
 			'watchTogether.endSession' => 'Завершить сессию',
 			'watchTogether.leaveSession' => 'Покинуть сессию',
 			'watchTogether.endSessionQuestion' => 'Завершить сессию?',

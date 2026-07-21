@@ -1862,6 +1862,7 @@ class _TranslationsVideoControlsClipIt extends TranslationsVideoControlsClipEn {
 	@override String get h264Failed => 'Questa sorgente non può essere codificata come H.264 SDR MP4.';
 	@override String get hevcSdrFailed => 'Impossibile codificare questa sorgente come HEVC SDR MP4.';
 	@override String get hevcHdrFailed => 'Non è stato possibile codificare questa sorgente come HEVC HDR MP4.';
+	@override String get gifFailed => 'Non è stato possibile codificare questa sorgente come GIF.';
 	@override String get originalFailed => 'Impossibile copiare questa fonte dalla cache mpv.';
 	@override String get previewUnavailable => 'La riproduzione dell\'anteprima della clip non è disponibile in questa build.';
 	@override String get previewFailed => 'La riproduzione dell\'anteprima del clip non è riuscita.';
@@ -2684,13 +2685,14 @@ extension on TranslationsIt {
 			'videoControls.clip.h264Failed' => 'Questa sorgente non può essere codificata come H.264 SDR MP4.',
 			'videoControls.clip.hevcSdrFailed' => 'Impossibile codificare questa sorgente come HEVC SDR MP4.',
 			'videoControls.clip.hevcHdrFailed' => 'Non è stato possibile codificare questa sorgente come HEVC HDR MP4.',
+			'videoControls.clip.gifFailed' => 'Non è stato possibile codificare questa sorgente come GIF.',
 			'videoControls.clip.originalFailed' => 'Impossibile copiare questa fonte dalla cache mpv.',
 			'videoControls.clip.previewUnavailable' => 'La riproduzione dell\'anteprima della clip non è disponibile in questa build.',
 			'videoControls.clip.previewFailed' => 'La riproduzione dell\'anteprima del clip non è riuscita.',
 			'videoControls.clip.previewLoadingScreenshot' => 'L\'anteprima della clip deve terminare il caricamento prima di acquisire uno screenshot.',
-			'videoControls.clip.screenshotInProgress' => 'Uno screenshot è già stato salvato.',
 			_ => null,
 		} ?? switch (path) {
+			'videoControls.clip.screenshotInProgress' => 'Uno screenshot è già stato salvato.',
 			'videoControls.clip.saveAsDialog' => 'Salva clip con nome',
 			'videoControls.clip.savedTo' => ({required Object fileName}) => 'Salvato in ${fileName}',
 			'videoControls.clip.openFolder' => 'Apri cartella',
@@ -3202,9 +3204,9 @@ extension on TranslationsIt {
 			'watchTogether.host' => 'Host',
 			'watchTogether.hostBadge' => 'HOST',
 			'watchTogether.youAreHost' => 'Sei l\'host',
-			'watchTogether.watchingWithOthers' => 'Guardando con altri',
 			_ => null,
 		} ?? switch (path) {
+			'watchTogether.watchingWithOthers' => 'Guardando con altri',
 			'watchTogether.endSession' => 'Termina Sessione',
 			'watchTogether.leaveSession' => 'Lascia Sessione',
 			'watchTogether.endSessionQuestion' => 'Terminare la Sessione?',

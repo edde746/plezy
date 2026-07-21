@@ -536,6 +536,7 @@
       "h264Failed": "该源无法编码为 H.264 SDR MP4。",
       "hevcSdrFailed": "该源无法编码为 HEVC SDR MP4。",
       "hevcHdrFailed": "该源无法编码为 HEVC HDR MP4。",
+      "gifFailed": "无法将此源编码为 GIF。",
       "originalFailed": "无法从 mpv 缓存复制此源。",
       "previewUnavailable": "此版本中不支持剪辑预览播放。",
       "previewFailed": "剪辑预览播放失败。",

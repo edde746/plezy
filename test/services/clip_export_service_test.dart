@@ -51,7 +51,26 @@ Map<String, String> _encodingOptions(ClipExportFormat format, {String operatingS
     source: source ?? _source(),
     start: const Duration(seconds: 30),
     end: const Duration(seconds: 60),
-    outputPath: '/tmp/clip.mp4',
+    outputPath: format == ClipExportFormat.gif ? '/tmp/clip.gif' : '/tmp/clip.mp4',
+  );
+}
+
+Future<void> _writeSparseFile(String outputPath, int length) async {
+  final file = await File(outputPath).open(mode: FileMode.write);
+  try {
+    await file.truncate(length);
+  } finally {
+    await file.close();
+  }
+}
+
+({int framesPerSecond, int maxWidth, int maxHeight}) _gifSettings(Map<String, String> options) {
+  final filter = options['vf']!;
+  int value(String pattern) => int.parse(RegExp(pattern).firstMatch(filter)!.group(1)!);
+  return (
+    framesPerSecond: value(r'fps=(\d+)'),
+    maxWidth: value(r'min\(iw,(\d+)\)'),
+    maxHeight: value(r'min\(ih,(\d+)\)'),
   );
 }
 
@@ -199,6 +218,17 @@ void main() {
 
     test('uses a neutral extension when the Original container is unknown', () {
       expect(ClipExportService.sourceFileExtension(_source(uri: 'https://example.test/video')), 'media');
+    });
+
+    test('uses the GIF extension for GIF exports', () {
+      expect(
+        ClipExportService.buildClipFileName(
+          _source(),
+          const ClipSelection(start: Duration(seconds: 30), end: Duration(minutes: 1)),
+          format: ClipExportFormat.gif,
+        ),
+        'Show - S01E02 - 00m30s-01m00s.gif',
+      );
     });
 
     test('builds a sanitized PNG screenshot name from the video timestamp', () {
@@ -458,10 +488,11 @@ void main() {
   });
 
   group('desktop encoding formats', () {
-    test('defaults macOS and Windows to HEVC SDR and offers Original everywhere', () {
+    test('offers GIF on macOS without changing Windows or Linux formats', () {
       expect(ClipExportService.formatsForOperatingSystem('macos'), [
         ClipExportFormat.hevcSdr,
         ClipExportFormat.h264Sdr,
+        ClipExportFormat.gif,
         ClipExportFormat.source,
       ]);
       expect(ClipExportService.formatsForOperatingSystem('windows'), [
@@ -529,6 +560,38 @@ void main() {
       expect(options['hwdec'], 'no');
     });
 
+    test('builds a single-pass silent looping SDR GIF', () {
+      final options = MpvEncodingClipExportRunner.buildInitialOptions(
+        operatingSystem: 'macos',
+        format: ClipExportFormat.gif,
+        source: _source(displayCriteria: _pqCriteria),
+        start: const Duration(seconds: 30),
+        end: const Duration(seconds: 60),
+        outputPath: '/tmp/clip.gif',
+      );
+
+      expect(options['of'], 'gif');
+      expect(options['ovc'], 'gif');
+      expect(options['ofopts'], 'loop=0');
+      expect(options['aid'], 'no');
+      expect(options, isNot(contains('oac')));
+      expect(options['vf'], contains('fps=20'));
+      expect(options['vf'], contains("min(iw,1920)"));
+      expect(options['vf'], contains("min(ih,1080)"));
+      expect(options['vf'], contains('force_original_aspect_ratio=decrease'));
+      expect(options['vf'], startsWith('gpu=api=vulkan,lavfi=[fps=20,'));
+      expect(options['vf'], contains('fmt=yuv420p'));
+      expect(options['target-prim'], 'bt.709');
+      expect(options['target-trc'], 'bt.1886');
+    });
+
+    test('rejects GIF encoding outside macOS', () {
+      expect(
+        () => _encodingOptions(ClipExportFormat.gif, operatingSystem: 'windows'),
+        throwsA(isA<ClipExportException>()),
+      );
+    });
+
     test('uses color conversion for SDR export when source metadata is unknown', () {
       final options = _encodingOptions(ClipExportFormat.h264Sdr);
 
@@ -582,6 +645,136 @@ void main() {
       ]) {
         expect(() => _encodingOptions(ClipExportFormat.hevcHdr, source: source), throwsA(isA<ClipExportException>()));
       }
+    });
+  });
+
+  group('adaptive GIF export', () {
+    test('retries at lower fps and resolution with monotonic progress', () async {
+      final tempDir = await Directory.systemTemp.createTemp('plezy-gif-retry-test-');
+      addTearDown(() => tempDir.delete(recursive: true));
+      final attempts = <({int framesPerSecond, int maxWidth, int maxHeight})>[];
+      final progress = <double>[];
+      final outputPath = '${tempDir.path}/clip.gif';
+      final sizes = [12000000, 20000000, 11000000, 9000000];
+      final runner = MpvEncodingClipExportRunner(
+        source: _source(),
+        format: ClipExportFormat.gif,
+        operatingSystem: 'macos',
+        encodingPassRunner: ({required initialOptions, required start, required end, required onProgress}) async {
+          onProgress(0.5);
+          onProgress(1);
+          attempts.add(_gifSettings(initialOptions));
+          await _writeSparseFile(initialOptions['o']!, sizes[attempts.length - 1]);
+        },
+      );
+
+      await runner.export(
+        start: const Duration(seconds: 30),
+        end: const Duration(seconds: 60),
+        outputPath: outputPath,
+        onProgress: progress.add,
+      );
+
+      expect(attempts.map((settings) => settings.framesPerSecond), [20, 15, 10, 10]);
+      expect(attempts.last.maxWidth, lessThan(1920));
+      expect(attempts.last.maxHeight, lessThan(1080));
+      expect(progress, orderedEquals([...progress]..sort()));
+      expect(await File(outputPath).length(), lessThanOrEqualTo(10000000));
+      expect(File('$outputPath.plezy-part').existsSync(), isFalse);
+    });
+
+    test('fixed resolutions remain at 20 fps and accept files larger than 10 MB', () async {
+      final tempDir = await Directory.systemTemp.createTemp('plezy-gif-fixed-test-');
+      addTearDown(() => tempDir.delete(recursive: true));
+      for (final (resolution, width, height) in [
+        (GifExportResolution.p480, 854, 480),
+        (GifExportResolution.p720, 1280, 720),
+        (GifExportResolution.p1080, 1920, 1080),
+      ]) {
+        final attempts = <({int framesPerSecond, int maxWidth, int maxHeight})>[];
+        final outputPath = '${tempDir.path}/clip-${resolution.name}.gif';
+        final runner = MpvEncodingClipExportRunner(
+          source: _source(),
+          format: ClipExportFormat.gif,
+          gifResolution: resolution,
+          operatingSystem: 'macos',
+          encodingPassRunner: ({required initialOptions, required start, required end, required onProgress}) async {
+            onProgress(1);
+            attempts.add(_gifSettings(initialOptions));
+            await _writeSparseFile(initialOptions['o']!, 12000000);
+          },
+        );
+
+        await runner.export(
+          start: const Duration(seconds: 30),
+          end: const Duration(seconds: 60),
+          outputPath: outputPath,
+          onProgress: (_) {},
+        );
+
+        expect(attempts, [(framesPerSecond: 20, maxWidth: width, maxHeight: height)]);
+        expect(await File(outputPath).length(), 12000000);
+      }
+    });
+
+    test('cancellation removes the temporary and final GIF files', () async {
+      final tempDir = await Directory.systemTemp.createTemp('plezy-gif-cancel-test-');
+      addTearDown(() => tempDir.delete(recursive: true));
+      final started = Completer<void>();
+      final release = Completer<void>();
+      final outputPath = '${tempDir.path}/clip.gif';
+      final runner = MpvEncodingClipExportRunner(
+        source: _source(),
+        format: ClipExportFormat.gif,
+        operatingSystem: 'macos',
+        encodingPassRunner: ({required initialOptions, required start, required end, required onProgress}) async {
+          await _writeSparseFile(initialOptions['o']!, 100);
+          started.complete();
+          await release.future;
+        },
+      );
+
+      final export = runner.export(
+        start: const Duration(seconds: 30),
+        end: const Duration(seconds: 60),
+        outputPath: outputPath,
+        onProgress: (_) {},
+      );
+      await started.future;
+      await runner.cancel();
+      release.complete();
+
+      await expectLater(export, throwsA(isA<ClipExportException>()));
+      expect(File(outputPath).existsSync(), isFalse);
+      expect(File('$outputPath.plezy-part').existsSync(), isFalse);
+    });
+
+    test('failed attempts clean up their temporary file', () async {
+      final tempDir = await Directory.systemTemp.createTemp('plezy-gif-failure-test-');
+      addTearDown(() => tempDir.delete(recursive: true));
+      final outputPath = '${tempDir.path}/clip.gif';
+      final runner = MpvEncodingClipExportRunner(
+        source: _source(),
+        format: ClipExportFormat.gif,
+        operatingSystem: 'macos',
+        encodingPassRunner: ({required initialOptions, required start, required end, required onProgress}) async {
+          await _writeSparseFile(initialOptions['o']!, 100);
+          throw const ClipExportException('failed');
+        },
+      );
+
+      await expectLater(
+        runner.export(
+          start: const Duration(seconds: 30),
+          end: const Duration(seconds: 60),
+          outputPath: outputPath,
+          onProgress: (_) {},
+        ),
+        throwsA(isA<ClipExportException>()),
+      );
+
+      expect(File(outputPath).existsSync(), isFalse);
+      expect(File('$outputPath.plezy-part').existsSync(), isFalse);
     });
   });
 }

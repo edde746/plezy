@@ -536,6 +536,7 @@
       "h264Failed": "Questa sorgente non può essere codificata come H.264 SDR MP4.",
       "hevcSdrFailed": "Impossibile codificare questa sorgente come HEVC SDR MP4.",
       "hevcHdrFailed": "Non è stato possibile codificare questa sorgente come HEVC HDR MP4.",
+      "gifFailed": "Non è stato possibile codificare questa sorgente come GIF.",
       "originalFailed": "Impossibile copiare questa fonte dalla cache mpv.",
       "previewUnavailable": "La riproduzione dell'anteprima della clip non è disponibile in questa build.",
       "previewFailed": "La riproduzione dell'anteprima del clip non è riuscita.",
