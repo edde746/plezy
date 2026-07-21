@@ -347,20 +347,6 @@ class ClipPreviewPlayerController extends ValueNotifier<ClipPreviewPlayerState> 
     }
   }
 
-  Future<void> suspendForExport() async {
-    _opened = false;
-    value = value.copyWith(playing: false, firstFrame: false, error: value.error);
-    await _backend.releasePlayer();
-  }
-
-  Future<void> resumeAfterExport() async {
-    if (_surfaceHideRequested) return;
-    final source = _source;
-    final selection = _selection;
-    if (source == null || selection == null) return;
-    await open(source, selection);
-  }
-
   void hideSurfaceNow() {
     if (_surfaceHideRequested) return;
     _surfaceHideRequested = true;

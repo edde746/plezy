@@ -428,8 +428,8 @@ abstract class Player {
 
   /// Creates an mpv core configured for clip encoding before initialization.
   ///
-  /// It sequentially reuses the clip-preview native channel, so callers must
-  /// release the preview player before constructing this player.
+  /// It uses a separate hidden native core so encoding does not disturb the
+  /// main player or clip preview.
   factory Player.clipEncoder(Map<String, String> initialOptions) {
     if (Platform.isMacOS || Platform.isWindows) {
       return PlayerNative.clipEncoder(initialOptions);

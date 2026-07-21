@@ -68,7 +68,6 @@ class _ClipEditorSheetState extends State<ClipEditorSheet> {
   final Map<int, ScrubFrame> _frameCache = <int, ScrubFrame>{};
   String? _savedPath;
   String? _errorMessage;
-  bool _previewSuspended = false;
 
   @override
   void initState() {
@@ -136,35 +135,18 @@ class _ClipEditorSheetState extends State<ClipEditorSheet> {
       _errorMessage = null;
       _savedPath = null;
     });
-    final usesEncoder = _format != ClipExportFormat.source;
     try {
-      var previewPlayer = widget.previewController.player;
-      if (usesEncoder) {
-        setState(() => _previewSuspended = true);
-        await widget.previewController.suspendForExport();
-        previewPlayer = null;
-      }
       final outputPath = await widget.exportService.exportClip(
         source: widget.source,
         selection: _selection,
         format: _format,
-        player: previewPlayer,
+        player: widget.previewController.player,
       );
       if (!mounted) return;
       setState(() => _savedPath = outputPath);
     } catch (e) {
       if (!mounted) return;
       setState(() => _errorMessage = e.toString());
-    } finally {
-      if (usesEncoder && mounted) {
-        await widget.previewController.resumeAfterExport();
-        if (mounted) {
-          await WidgetsBinding.instance.endOfFrame;
-        }
-        if (mounted) {
-          setState(() => _previewSuspended = false);
-        }
-      }
     }
   }
 
@@ -249,7 +231,6 @@ class _ClipEditorSheetState extends State<ClipEditorSheet> {
                             frameFor: _frameFor,
                             selection: _selection,
                             onSeek: _setPreviewPosition,
-                            forcePoster: _previewSuspended,
                             height: previewHeight,
                           ),
                         ),

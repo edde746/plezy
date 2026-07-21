@@ -5,7 +5,6 @@ class _ClipPreviewPlayer extends StatelessWidget {
   final ScrubFrame? Function(Duration position) frameFor;
   final ClipSelection selection;
   final ValueChanged<Duration> onSeek;
-  final bool forcePoster;
   final double height;
 
   const _ClipPreviewPlayer({
@@ -13,7 +12,6 @@ class _ClipPreviewPlayer extends StatelessWidget {
     required this.frameFor,
     required this.selection,
     required this.onSeek,
-    required this.forcePoster,
     required this.height,
   });
 
@@ -47,7 +45,6 @@ class _ClipPreviewPlayer extends StatelessWidget {
                   controller: controller,
                   state: state,
                   poster: _ClipPreviewPoster(frame: frameFor(position)),
-                  forcePoster: forcePoster,
                 ),
               ),
             ),
@@ -127,14 +124,8 @@ class _ClipPreviewPlayerSurface extends StatefulWidget {
   final ClipPreviewPlayerController controller;
   final ClipPreviewPlayerState state;
   final Widget poster;
-  final bool forcePoster;
 
-  const _ClipPreviewPlayerSurface({
-    required this.controller,
-    required this.state,
-    required this.poster,
-    required this.forcePoster,
-  });
+  const _ClipPreviewPlayerSurface({required this.controller, required this.state, required this.poster});
 
   @override
   State<_ClipPreviewPlayerSurface> createState() => _ClipPreviewPlayerSurfaceState();
@@ -167,7 +158,7 @@ class _ClipPreviewPlayerSurfaceState extends State<_ClipPreviewPlayerSurface> {
         children: [
           if (hasEmbeddedSurface)
             Video(player: player, backgroundColor: Colors.transparent, rectUpdateListenable: rectUpdateListenable),
-          if (widget.forcePoster || !hasEmbeddedSurface || !widget.state.firstFrame) widget.poster,
+          if (!hasEmbeddedSurface || !widget.state.firstFrame) widget.poster,
           if (_hovering)
             Positioned(
               left: 8,

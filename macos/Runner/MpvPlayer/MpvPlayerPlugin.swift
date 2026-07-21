@@ -52,6 +52,15 @@ class MpvPlayerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler, MpvPluginS
     )
   }
 
+  static func registerClipExport(with registrar: FlutterPluginRegistrar) {
+    registerInstance(
+      with: registrar,
+      channelBase: "com.plezy/clip_export_player",
+      overlayMode: true,
+      pipEnabled: false
+    )
+  }
+
   private static func registerInstance(
     with registrar: FlutterPluginRegistrar,
     channelBase: String,

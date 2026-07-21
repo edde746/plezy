@@ -24,10 +24,10 @@ class PlayerNative extends PlayerBase {
   /// Dedicated clip-preview player on its own native core/channel pair.
   PlayerNative.preview() : this._(channelBase: 'com.plezy/clip_preview_player', audioOnly: false, logName: 'MPV-clip');
 
-  /// Clip encoder that sequentially reuses the dedicated preview channel.
+  /// Headless clip encoder on its own native core/channel pair.
   PlayerNative.clipEncoder(Map<String, String> initialOptions)
     : this._(
-        channelBase: 'com.plezy/clip_preview_player',
+        channelBase: 'com.plezy/clip_export_player',
         audioOnly: false,
         logName: 'MPV-clip-export',
         initialOptions: initialOptions,

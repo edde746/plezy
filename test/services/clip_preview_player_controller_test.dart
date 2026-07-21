@@ -274,22 +274,5 @@ void main() {
       expect(controller.value.playing, isFalse);
       expect(controller.value.firstFrame, isFalse);
     });
-
-    test('suspends and resumes the preview around an encoder using the same channel', () async {
-      final backend = _FakeClipPreviewBackend();
-      final controller = ClipPreviewPlayerController(backend: backend);
-      addTearDown(controller.dispose);
-
-      await controller.open(_source(), const ClipSelection(start: Duration(minutes: 1), end: Duration(minutes: 2)));
-      await controller.suspendForExport();
-
-      expect(backend.releasePlayerCount, 1);
-      expect(controller.isOpen, isFalse);
-
-      await controller.resumeAfterExport();
-
-      expect(backend.openCount, 2);
-      expect(controller.isOpen, isTrue);
-    });
   });
 }

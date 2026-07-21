@@ -35,6 +35,8 @@ class MainFlutterWindow: NSWindow {
       with: flutterViewController.registrar(forPlugin: "MpvAudioPlayerPlugin"))
     MpvPlayerPlugin.registerClipPreview(
       with: flutterViewController.registrar(forPlugin: "MpvClipPreviewPlayerPlugin"))
+    MpvPlayerPlugin.registerClipExport(
+      with: flutterViewController.registrar(forPlugin: "MpvClipExportPlayerPlugin"))
 
     // Register window utils plugin for dynamic titlebar/fullscreen control from Dart
     WindowUtilsPlugin.register(
