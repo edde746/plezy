@@ -119,12 +119,17 @@ class PlayerClipPreviewPlayerBackend implements ClipPreviewPlayerBackend {
     await player.setProperty('sid', 'no');
     await player.setProperty('secondary-sid', 'no');
     await player.setProperty('volume-max', maxVolume.toString());
+    final subtitle = source.subtitleTrack;
     await player.open(
       Media(source.uri, headers: source.headers, start: sourceStart),
       play: false,
+      externalSubtitles: subtitle?.uri == null ? null : [subtitle!],
       timelineOffset: source.isTranscoding ? source.timelineOffset : Duration.zero,
       timelineDuration: source.duration,
     );
+    if (source.audioTrack != null) await player.selectAudioTrack(source.audioTrack!);
+    if (subtitle != null) await player.selectSubtitleTrack(subtitle.uri == null ? subtitle : SubtitleTrack.auto);
+    await player.setProperty('sub-visibility', source.initialSubtitlesEnabled ? 'yes' : 'no');
   }
 
   @override
@@ -236,6 +241,7 @@ class ClipPreviewPlayerController extends ValueNotifier<ClipPreviewPlayerState> 
   Player? get player => _backend.player;
   ClipSelection? get selection => _selection;
   bool get isOpen => _opened;
+  bool get hasSubtitles => _source?.hasSubtitleTrack ?? false;
 
   static ({double initialVolume, double lastNonZeroVolume}) volumeDefaultsForMainPlayer({
     required bool playing,

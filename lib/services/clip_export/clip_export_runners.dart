@@ -131,6 +131,7 @@ class MpvEncodingClipExportRunner implements ClipExportRunner {
   final ClipSource source;
   final ClipExportFormat format;
   final GifExportResolution gifResolution;
+  final bool subtitlesEnabled;
   final String operatingSystem;
   final ClipEncoderPlayerFactory _playerFactory;
   final ClipEncodingPassRunner? encodingPassRunner;
@@ -143,6 +144,7 @@ class MpvEncodingClipExportRunner implements ClipExportRunner {
     required this.source,
     required this.format,
     this.gifResolution = GifExportResolution.automatic,
+    this.subtitlesEnabled = false,
     String? operatingSystem,
     ClipEncoderPlayerFactory? playerFactory,
     this.encodingPassRunner,
@@ -160,6 +162,7 @@ class MpvEncodingClipExportRunner implements ClipExportRunner {
     int gifFramesPerSecond = _gifMaximumFramesPerSecond,
     int gifMaxWidth = 1920,
     int gifMaxHeight = 1080,
+    bool subtitlesEnabled = false,
   }) {
     if (format == ClipExportFormat.source) {
       throw ClipExportException(t.videoControls.clip.sourceCopyNoEncoder);
@@ -173,6 +176,7 @@ class MpvEncodingClipExportRunner implements ClipExportRunner {
 
     if (format == ClipExportFormat.gif) {
       if (!isMacOS) throw ClipExportException(t.videoControls.clip.gifFailed);
+      final burnSubtitles = subtitlesEnabled && source.hasSubtitleTrack;
       final frameFilter =
           "lavfi=[fps=$gifFramesPerSecond,scale=w='min(iw,$gifMaxWidth)':"
           "h='min(ih,$gifMaxHeight)':force_original_aspect_ratio=decrease:"
@@ -191,6 +195,7 @@ class MpvEncodingClipExportRunner implements ClipExportRunner {
         'ocopy-metadata': 'no',
         'hwdec': 'no',
       };
+      if (burnSubtitles) options['blend-subtitles'] = 'video';
       if (source.colorType != MediaDisplayColorType.sdr) {
         options
           ..['vf'] = 'gpu=api=vulkan,$frameFilter,$_sdrFormatFilter'
@@ -200,7 +205,7 @@ class MpvEncodingClipExportRunner implements ClipExportRunner {
           ..['tone-mapping'] = 'mobius'
           ..['hdr-compute-peak'] = 'yes';
       } else {
-        options['vf'] = '$frameFilter,$_sdrFormatFilter';
+        options['vf'] = '${burnSubtitles ? 'gpu=api=vulkan,' : ''}$frameFilter,$_sdrFormatFilter';
       }
       return options;
     }
@@ -211,6 +216,7 @@ class MpvEncodingClipExportRunner implements ClipExportRunner {
 
     final isH264 = format == ClipExportFormat.h264Sdr;
     final isHdrOutput = format == ClipExportFormat.hevcHdr;
+    final burnSubtitles = subtitlesEnabled && source.hasSubtitleTrack;
     final colorOptions = isHdrOutput ? _hdrColorOptions(source.colorType) : _sdrColorOptions;
     final videoCodecOptions = isMacOS
         ? _macOsVideoCodecOptions(isH264: isH264, isHdr: isHdrOutput, colorOptions: colorOptions)
@@ -232,9 +238,15 @@ class MpvEncodingClipExportRunner implements ClipExportRunner {
       'audio-channels': 'stereo',
       'hwdec': 'no',
     };
+    if (burnSubtitles) options['blend-subtitles'] = 'video';
 
     if (isHdrOutput) {
-      options['vf'] = _hdrFormatFilter(source.colorType);
+      options['vf'] = '${burnSubtitles ? 'gpu=api=vulkan,' : ''}${_hdrFormatFilter(source.colorType)}';
+      if (burnSubtitles) {
+        options
+          ..['target-prim'] = 'bt.2020'
+          ..['target-trc'] = source.colorType == MediaDisplayColorType.hlg ? 'hlg' : 'pq';
+      }
     } else if (source.colorType != MediaDisplayColorType.sdr) {
       options
         ..['vf'] = _hdrToSdrFilter
@@ -244,7 +256,7 @@ class MpvEncodingClipExportRunner implements ClipExportRunner {
         ..['tone-mapping'] = 'mobius'
         ..['hdr-compute-peak'] = 'yes';
     } else {
-      options['vf'] = _sdrFormatFilter;
+      options['vf'] = '${burnSubtitles ? 'gpu=api=vulkan,' : ''}$_sdrFormatFilter';
     }
     return options;
   }
@@ -335,6 +347,7 @@ class MpvEncodingClipExportRunner implements ClipExportRunner {
       gifFramesPerSecond: gifSettings?.framesPerSecond ?? _gifMaximumFramesPerSecond,
       gifMaxWidth: gifSettings?.maxWidth ?? 1920,
       gifMaxHeight: gifSettings?.maxHeight ?? 1080,
+      subtitlesEnabled: subtitlesEnabled,
     );
     await (encodingPassRunner ?? _runEncodingPass)(
       initialOptions: initialOptions,
@@ -372,7 +385,21 @@ class MpvEncodingClipExportRunner implements ClipExportRunner {
 
     try {
       onProgress(0);
-      await player.open(Media(source.uri, headers: source.headers, start: start), play: true);
+      final subtitle = subtitlesEnabled ? source.subtitleTrack : null;
+      final externalSubtitle = subtitle?.uri == null ? null : [subtitle!];
+      await player.open(
+        Media(source.uri, headers: source.headers, start: start),
+        play: false,
+        externalSubtitles: externalSubtitle,
+      );
+      if (format != ClipExportFormat.gif && source.audioTrack != null) {
+        await player.selectAudioTrack(source.audioTrack!);
+      }
+      if (subtitle != null) {
+        await player.selectSubtitleTrack(subtitle.uri == null ? subtitle : SubtitleTrack.auto);
+        await player.setProperty('sub-visibility', 'yes');
+      }
+      await player.play();
       await completion.future;
       if (_canceled) throw ClipExportException(t.videoControls.clip.exportCanceled);
     } finally {

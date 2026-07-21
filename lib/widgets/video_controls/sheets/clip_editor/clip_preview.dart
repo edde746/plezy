@@ -5,6 +5,8 @@ class _ClipPreviewPlayer extends StatelessWidget {
   final ScrubFrame? Function(Duration position) frameFor;
   final ClipSelection selection;
   final ValueChanged<Duration> onSeek;
+  final bool subtitlesEnabled;
+  final VoidCallback onToggleSubtitles;
   final double height;
 
   const _ClipPreviewPlayer({
@@ -12,6 +14,8 @@ class _ClipPreviewPlayer extends StatelessWidget {
     required this.frameFor,
     required this.selection,
     required this.onSeek,
+    required this.subtitlesEnabled,
+    required this.onToggleSubtitles,
     required this.height,
   });
 
@@ -45,6 +49,8 @@ class _ClipPreviewPlayer extends StatelessWidget {
                   controller: controller,
                   state: state,
                   poster: _ClipPreviewPoster(frame: frameFor(position)),
+                  subtitlesEnabled: subtitlesEnabled,
+                  onToggleSubtitles: onToggleSubtitles,
                 ),
               ),
             ),
@@ -124,8 +130,16 @@ class _ClipPreviewPlayerSurface extends StatefulWidget {
   final ClipPreviewPlayerController controller;
   final ClipPreviewPlayerState state;
   final Widget poster;
+  final bool subtitlesEnabled;
+  final VoidCallback onToggleSubtitles;
 
-  const _ClipPreviewPlayerSurface({required this.controller, required this.state, required this.poster});
+  const _ClipPreviewPlayerSurface({
+    required this.controller,
+    required this.state,
+    required this.poster,
+    required this.subtitlesEnabled,
+    required this.onToggleSubtitles,
+  });
 
   @override
   State<_ClipPreviewPlayerSurface> createState() => _ClipPreviewPlayerSurfaceState();
@@ -172,6 +186,17 @@ class _ClipPreviewPlayerSurfaceState extends State<_ClipPreviewPlayerSurface> {
                 icon: widget.state.screenshotting
                     ? const SizedBox.square(dimension: 18, child: CircularProgressIndicator(strokeWidth: 2))
                     : const AppIcon(Symbols.photo_camera_rounded),
+              ),
+            ),
+          if (_hovering)
+            Positioned(
+              right: 8,
+              bottom: 8,
+              child: IconButton.filledTonal(
+                key: const ValueKey('clip_preview_subtitles'),
+                tooltip: t.videoControls.subtitlesLabel,
+                onPressed: widget.state.firstFrame && widget.controller.hasSubtitles ? widget.onToggleSubtitles : null,
+                icon: Icon(widget.subtitlesEnabled ? Symbols.subtitles_rounded : Symbols.subtitles_off_rounded),
               ),
             ),
         ],

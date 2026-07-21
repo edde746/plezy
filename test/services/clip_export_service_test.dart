@@ -20,6 +20,8 @@ ClipSource _source({
   String? subtitle = 'S01E02',
   String? container,
   MediaDisplayCriteria? displayCriteria,
+  AudioTrack? audioTrack,
+  SubtitleTrack? subtitleTrack,
 }) {
   return ClipSource(
     uri: uri,
@@ -31,6 +33,8 @@ ClipSource _source({
     subtitle: subtitle,
     container: container,
     displayCriteria: displayCriteria,
+    audioTrack: audioTrack,
+    subtitleTrack: subtitleTrack,
   );
 }
 
@@ -44,7 +48,12 @@ const _dolbyVisionHdr10Criteria = MediaDisplayCriteria(doviProfile: 8, doviCompa
 
 const _dolbyVisionOnlyCriteria = MediaDisplayCriteria(doviProfile: 5);
 
-Map<String, String> _encodingOptions(ClipExportFormat format, {String operatingSystem = 'macos', ClipSource? source}) {
+Map<String, String> _encodingOptions(
+  ClipExportFormat format, {
+  String operatingSystem = 'macos',
+  ClipSource? source,
+  bool subtitlesEnabled = false,
+}) {
   return MpvEncodingClipExportRunner.buildInitialOptions(
     operatingSystem: operatingSystem,
     format: format,
@@ -52,6 +61,7 @@ Map<String, String> _encodingOptions(ClipExportFormat format, {String operatingS
     start: const Duration(seconds: 30),
     end: const Duration(seconds: 60),
     outputPath: format == ClipExportFormat.gif ? '/tmp/clip.gif' : '/tmp/clip.mp4',
+    subtitlesEnabled: subtitlesEnabled,
   );
 }
 
@@ -485,6 +495,21 @@ void main() {
 
       expect(service.state.value.stage, ClipExportStage.failed);
     });
+
+    test('rejects subtitles that Original cannot burn in', () async {
+      final service = ClipExportService();
+      addTearDown(service.dispose);
+
+      await expectLater(
+        service.exportClip(
+          source: _source(),
+          selection: const ClipSelection(start: Duration(seconds: 30), end: Duration(seconds: 60)),
+          format: ClipExportFormat.source,
+          subtitlesEnabled: true,
+        ),
+        throwsA(isA<ClipExportException>()),
+      );
+    });
   });
 
   group('desktop encoding formats', () {
@@ -560,14 +585,33 @@ void main() {
       expect(options['hwdec'], 'no');
     });
 
-    test('builds a single-pass silent looping SDR GIF', () {
+    test('enables subtitle burn-in for encoded video', () {
+      final options = _encodingOptions(
+        ClipExportFormat.h264Sdr,
+        source: _source(
+          displayCriteria: _sdrCriteria,
+          audioTrack: const AudioTrack(id: '2', title: 'Commentary'),
+          subtitleTrack: const SubtitleTrack(id: '3', title: 'English'),
+        ),
+        subtitlesEnabled: true,
+      );
+
+      expect(options['blend-subtitles'], 'video');
+      expect(options['vf'], startsWith('gpu=api=vulkan,'));
+    });
+
+    test('builds a single-pass silent looping SDR GIF with burned subtitles', () {
       final options = MpvEncodingClipExportRunner.buildInitialOptions(
         operatingSystem: 'macos',
         format: ClipExportFormat.gif,
-        source: _source(displayCriteria: _pqCriteria),
+        source: _source(
+          displayCriteria: _pqCriteria,
+          subtitleTrack: const SubtitleTrack(id: '3', title: 'English'),
+        ),
         start: const Duration(seconds: 30),
         end: const Duration(seconds: 60),
         outputPath: '/tmp/clip.gif',
+        subtitlesEnabled: true,
       );
 
       expect(options['of'], 'gif');
@@ -583,6 +627,7 @@ void main() {
       expect(options['vf'], contains('fmt=yuv420p'));
       expect(options['target-prim'], 'bt.709');
       expect(options['target-trc'], 'bt.1886');
+      expect(options['blend-subtitles'], 'video');
     });
 
     test('rejects GIF encoding outside macOS', () {

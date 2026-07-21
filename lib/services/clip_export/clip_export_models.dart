@@ -15,6 +15,9 @@ class ClipSource {
   final String? subtitle;
   final String? container;
   final MediaDisplayCriteria? displayCriteria;
+  final AudioTrack? audioTrack;
+  final SubtitleTrack? subtitleTrack;
+  final bool initialSubtitlesEnabled;
 
   const ClipSource({
     required this.uri,
@@ -26,12 +29,17 @@ class ClipSource {
     this.subtitle,
     this.container,
     this.displayCriteria,
+    this.audioTrack,
+    this.subtitleTrack,
+    this.initialSubtitlesEnabled = false,
   });
 
   MediaDisplayColorType get colorType => displayCriteria?.colorType ?? MediaDisplayColorType.unknown;
 
   bool get canEncodeHdr =>
       !isTranscoding && (colorType == MediaDisplayColorType.pq || colorType == MediaDisplayColorType.hlg);
+
+  bool get hasSubtitleTrack => subtitleTrack != null && subtitleTrack!.id != SubtitleTrack.off.id;
 }
 
 class ClipSelection {

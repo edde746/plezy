@@ -142,6 +142,7 @@ void main() {
     expect(find.byKey(const ValueKey('clip_preview_volume')), findsOneWidget);
     expect(find.byKey(const ValueKey('clip_preview_volume_slider')), findsNothing);
     expect(find.byKey(const ValueKey('clip_preview_screenshot')), findsNothing);
+    expect(find.byKey(const ValueKey('clip_preview_subtitles')), findsNothing);
     expect(find.byType(ExpressiveButtonGroup<ClipExportFormat>), findsOneWidget);
     expect(find.text('GIF'), findsOneWidget);
     expect(find.byKey(const ValueKey('clip_gif_resolution')), findsNothing);
@@ -193,6 +194,7 @@ void main() {
     await tester.pump(const Duration(milliseconds: 150));
     expect(find.byKey(const ValueKey('clip_preview_volume_slider')), findsNothing);
     expect(find.byKey(const ValueKey('clip_preview_screenshot')), findsOneWidget);
+    expect(find.byKey(const ValueKey('clip_preview_subtitles')), findsOneWidget);
     expect(tester.widget<IconButton>(find.byKey(const ValueKey('clip_preview_screenshot'))).onPressed, isNotNull);
 
     exportService.state.value = const ClipExportJobState(stage: ClipExportStage.running, progress: 0.42);

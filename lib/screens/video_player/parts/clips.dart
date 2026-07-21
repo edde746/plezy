@@ -15,8 +15,19 @@ extension _VideoPlayerClipMethods on VideoPlayerScreenState {
     }
 
     final currentPlayer = player;
-    final source = _buildClipSource();
-    if (currentPlayer == null || source == null) {
+    if (currentPlayer == null) {
+      showErrorSnackBar(sheetContext, t.videoControls.clip.sourceUnavailable);
+      return;
+    }
+    var subtitlesVisible = true;
+    try {
+      subtitlesVisible = await currentPlayer.getProperty('sub-visibility') != 'no';
+    } catch (_) {
+      // The selected subtitle track below still prevents a false positive.
+    }
+    if (!sheetContext.mounted) return;
+    final source = _buildClipSource(subtitlesVisible: subtitlesVisible);
+    if (source == null) {
       showErrorSnackBar(sheetContext, t.videoControls.clip.sourceUnavailable);
       return;
     }
@@ -62,11 +73,11 @@ extension _VideoPlayerClipMethods on VideoPlayerScreenState {
     }
   }
 
-  ClipSource? _buildClipSource() {
+  ClipSource? _buildClipSource({required bool subtitlesVisible}) {
     final session = _playbackSession;
     final currentPlayer = player;
     final uri = session?.result.videoUrl;
-    if (session == null || uri == null || uri.isEmpty) return null;
+    if (session == null || currentPlayer == null || uri == null || uri.isEmpty) return null;
 
     final labels = ClipExportService.metadataLabels(_currentMetadata);
     return ClipSource(
@@ -79,6 +90,9 @@ extension _VideoPlayerClipMethods on VideoPlayerScreenState {
       subtitle: labels.subtitle,
       container: session.result.selectedVersion?.container,
       displayCriteria: session.mediaInfo?.displayCriteria,
+      audioTrack: currentPlayer.state.track.audio,
+      subtitleTrack: currentPlayer.state.track.subtitle,
+      initialSubtitlesEnabled: subtitlesVisible && currentPlayer.state.track.subtitle?.id != SubtitleTrack.off.id,
     );
   }
 

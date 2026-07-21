@@ -240,12 +240,16 @@ class ClipExportService {
     required ClipSelection selection,
     ClipExportFormat? format,
     GifExportResolution gifResolution = GifExportResolution.automatic,
+    bool subtitlesEnabled = false,
     Player? player,
   }) async {
     final clamped = selection.clampedTo(source.duration);
     clamped.validate(source.duration);
 
     final selectedFormat = format ?? defaultFormatForOperatingSystem(Platform.operatingSystem, source: source);
+    if (selectedFormat == ClipExportFormat.source && subtitlesEnabled) {
+      throw ClipExportException(t.videoControls.clip.sourceCopyNoEncoder);
+    }
     final clipsDirectory = await _clipsDirectoryProvider();
     final outputFile = await _uniqueOutputFile(
       clipsDirectory,
@@ -261,7 +265,12 @@ class ClipExportService {
         exportRunner ??
         (selectedFormat == ClipExportFormat.source
             ? (player == null ? null : MpvClipExportRunner(player))
-            : MpvEncodingClipExportRunner(source: source, format: selectedFormat, gifResolution: gifResolution));
+            : MpvEncodingClipExportRunner(
+                source: source,
+                format: selectedFormat,
+                gifResolution: gifResolution,
+                subtitlesEnabled: subtitlesEnabled,
+              ));
     _activeRunner = runner;
     try {
       if (runner == null) {

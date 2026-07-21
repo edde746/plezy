@@ -66,6 +66,7 @@ class _ClipEditorSheetState extends State<ClipEditorSheet> {
   late ClipSelection _trimWindow;
   late final List<ClipExportFormat> _availableFormats;
   late ClipExportFormat _format;
+  late bool _subtitlesEnabled;
   GifExportResolution _gifResolution = GifExportResolution.automatic;
 
   final Map<int, ScrubFrame> _frameCache = <int, ScrubFrame>{};
@@ -79,6 +80,7 @@ class _ClipEditorSheetState extends State<ClipEditorSheet> {
     _selection = widget.initialSelection.clampedTo(widget.source.duration);
     _availableFormats = ClipExportService.formatsForOperatingSystem(Platform.operatingSystem, source: widget.source);
     _format = _availableFormats.first;
+    _subtitlesEnabled = widget.source.initialSubtitlesEnabled;
     _trimWindow = ClipExportService.trimWindowForSelection(
       sourceDuration: widget.source.duration,
       selection: _selection,
@@ -124,6 +126,16 @@ class _ClipEditorSheetState extends State<ClipEditorSheet> {
     unawaited(widget.previewController.seekToVideoTime(position));
   }
 
+  void _togglePreviewSubtitles() {
+    final player = widget.previewController.player;
+    if (player == null) return;
+    setState(() {
+      _subtitlesEnabled = !_subtitlesEnabled;
+      _clearExportResult();
+    });
+    player.setProperty('sub-visibility', _subtitlesEnabled ? 'yes' : 'no');
+  }
+
   void _handleSelectionChanged(_ClipTrimUpdate update) {
     final nextPreview = update.handle == _ClipPreviewHandle.end ? update.selection.end : update.selection.start;
     setState(() {
@@ -147,6 +159,7 @@ class _ClipEditorSheetState extends State<ClipEditorSheet> {
         selection: _selection,
         format: _format,
         gifResolution: _gifResolution,
+        subtitlesEnabled: _subtitlesEnabled,
         player: widget.previewController.player,
       );
       final savedFileBytes = _format == ClipExportFormat.gif ? await File(outputPath).length() : null;
@@ -242,6 +255,8 @@ class _ClipEditorSheetState extends State<ClipEditorSheet> {
                             frameFor: _frameFor,
                             selection: _selection,
                             onSeek: _setPreviewPosition,
+                            subtitlesEnabled: _subtitlesEnabled,
+                            onToggleSubtitles: _togglePreviewSubtitles,
                             height: previewHeight,
                           ),
                         ),
