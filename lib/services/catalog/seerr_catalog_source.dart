@@ -66,6 +66,7 @@ class SeerrCatalogSource implements CatalogSource {
       CatalogRowId.recommendedShows ||
       CatalogRowId.trendingMovies ||
       CatalogRowId.trendingShows ||
+      CatalogRowId.trendingAnime ||
       CatalogRowId.suggestedAnime ||
       CatalogRowId.airingAnime ||
       CatalogRowId.popularAnime => throw ArgumentError('Seerr does not serve ${row.name}'),

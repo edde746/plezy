@@ -239,6 +239,8 @@ class _TranslationsSettingsBg extends TranslationsSettingsEn {
 	@override String get libraryDensity => 'Плътност на библиотеката';
 	@override String get compact => 'Компактна';
 	@override String get comfortable => 'Удобна';
+	@override String get tvCornerSpotlightBackdrop => '';
+	@override String get tvCornerSpotlightBackdropDescription => '';
 	@override String get viewMode => 'Режим на изглед';
 	@override String get gridView => 'Мрежа';
 	@override String get listView => 'Списък';
@@ -1934,6 +1936,7 @@ class _TranslationsExploreRowsBg extends TranslationsExploreRowsEn {
 	@override String get trendingShows => 'Актуални сериали';
 	@override String get popularMovies => 'Популярни филми';
 	@override String get popularShows => 'Популярни сериали';
+	@override String get trendingAnime => 'Актуални аниме';
 	@override String get suggestedAnime => 'Препоръчани аниме';
 	@override String get airingAnime => 'Топ излъчвани аниме';
 	@override String get popularAnime => 'Най-популярни аниме';
@@ -2221,6 +2224,8 @@ extension on TranslationsBg {
 			'settings.libraryDensity' => 'Плътност на библиотеката',
 			'settings.compact' => 'Компактна',
 			'settings.comfortable' => 'Удобна',
+			'settings.tvCornerSpotlightBackdrop' => '',
+			'settings.tvCornerSpotlightBackdropDescription' => '',
 			'settings.viewMode' => 'Режим на изглед',
 			'settings.gridView' => 'Мрежа',
 			'settings.listView' => 'Списък',
@@ -2633,10 +2638,10 @@ extension on TranslationsBg {
 			'messages.autoRemovedWatchedDownloads' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('bg'))(n, one: 'Автоматично премахнато ${n} гледано изтегляне', other: 'Автоматично премахнати ${n} гледани изтегляния', ), 
 			'messages.removedFromContinueWatching' => 'Премахнато от продължаване на гледането',
 			'messages.errorLoading' => ({required Object error}) => 'Грешка: ${error}',
-			'messages.streamInterrupted' => 'Потокът прекъсна. Натиснете „Пусни“ или превъртете, за да опитате отново.',
-			'messages.liveStreamInterrupted' => 'Потокът на живо прекъсна. Натиснете „Пусни“, за да опитате отново.',
 			_ => null,
 		} ?? switch (path) {
+			'messages.streamInterrupted' => 'Потокът прекъсна. Натиснете „Пусни“ или превъртете, за да опитате отново.',
+			'messages.liveStreamInterrupted' => 'Потокът на живо прекъсна. Натиснете „Пусни“, за да опитате отново.',
 			'messages.fileInfoNotAvailable' => 'Информацията за файла не е налична',
 			'messages.errorLoadingFileInfo' => ({required Object error}) => 'Грешка при зареждане на информация за файла: ${error}',
 			'messages.errorLoadingSeries' => 'Грешка при зареждане на сериала',
@@ -2922,6 +2927,7 @@ extension on TranslationsBg {
 			'explore.rows.trendingShows' => 'Актуални сериали',
 			'explore.rows.popularMovies' => 'Популярни филми',
 			'explore.rows.popularShows' => 'Популярни сериали',
+			'explore.rows.trendingAnime' => 'Актуални аниме',
 			'explore.rows.suggestedAnime' => 'Препоръчани аниме',
 			'explore.rows.airingAnime' => 'Топ излъчвани аниме',
 			'explore.rows.popularAnime' => 'Най-популярни аниме',
@@ -3146,11 +3152,11 @@ extension on TranslationsBg {
 			'watchTogether.removeRoom' => 'Премахни',
 			'watchTogether.guestSwitchUnavailable' => 'Превключването не е възможно — сървърът е недостъпен за синхронизация',
 			'watchTogether.guestSwitchFailed' => 'Превключването не е възможно — съдържанието не е намерено на този сървър',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.title' => 'Изтегляния',
 			'downloads.manage' => 'Управление',
 			'downloads.tvShows' => 'ТВ сериали',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.movies' => 'Филми',
 			'downloads.music' => 'Музика',
 			'downloads.tracksQueued' => ({required Object count}) => '${count} песни в опашката за изтегляне',

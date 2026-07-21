@@ -34,9 +34,11 @@ mixin CatalogWatchlistMachinery {
   int get watchlistPageLimit;
   int get watchlistMaxPages;
 
-  /// Every membership key form of [ids] under [kind]'s namespace rules.
-  /// Empty when [ids] carries no form this source can key on.
-  List<String> membershipKeysFor(MediaKind kind, CatalogItemIds ids);
+  /// Every membership key form of [ids], namespaced by [kind]. Sources with
+  /// different identity rules (MAL and AniList) override this.
+  List<String> membershipKeysFor(MediaKind kind, CatalogItemIds ids) => [
+    for (final key in ids.allKeys) '${kind.id}/$key',
+  ];
 
   /// One page of the snapshot as key groups (one group per entry).
   Future<WatchlistKeyPage> fetchWatchlistKeyPage(int page, int limit);

@@ -5,8 +5,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/media/media_item.dart';
 import 'package:plezy/media/media_kind.dart';
+import 'package:plezy/services/settings_service.dart';
 import 'package:plezy/widgets/cycling_media_backdrop.dart';
 import 'package:plezy/widgets/tv_spotlight_background.dart';
+
+import '../test_helpers/prefs.dart';
 
 const _png = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=';
 const _rotationInterval = Duration(seconds: 1);
@@ -19,7 +22,10 @@ void main() {
   late File third;
   late Map<String, MemoryImage> imageProviders;
 
-  setUp(() {
+  setUp(() async {
+    // TvSpotlightBackground reads the corner-backdrop pref during build.
+    resetSharedPreferencesForTest();
+    await SettingsService.getInstance();
     directory = Directory.systemTemp.createTempSync('plezy-backdrop-cycle');
     final bytes = base64Decode(_png);
     first = File('${directory.path}/first.png')..writeAsBytesSync(bytes);

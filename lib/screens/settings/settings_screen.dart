@@ -333,12 +333,15 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
               return FocusableListTile(
                 focusNode: _focusTracker.get(_kDownloadLocation),
                 leading: const AppIcon(Symbols.folder_rounded, fill: 1),
-                title: Text(isCustom ? t.settings.downloadLocationCustom : t.settings.downloadLocationDefault),
+                title: Text(
+                  isCustom ? t.settings.downloadLocationCustom : t.settings.downloadLocationDefault,
+                  style: settingsOptionTitleStyle(context),
+                ),
                 subtitle: Text(currentPath, maxLines: 2, overflow: .ellipsis),
                 trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
                 onTap: () => _showDownloadLocationDialog(),
-                dense: false,
-                visualDensity: VisualDensity.standard,
+                dense: settingsRowDense(),
+                visualDensity: settingsRowVisualDensity(),
               );
             },
           ),
@@ -517,7 +520,10 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
             fill: 1,
             color: hasUpdate ? Colors.orange : null,
           ),
-          title: Text(hasUpdate ? t.settings.updateAvailable : t.settings.checkForUpdates),
+          title: Text(
+            hasUpdate ? t.settings.updateAvailable : t.settings.checkForUpdates,
+            style: settingsOptionTitleStyle(context),
+          ),
           subtitle: hasUpdate ? Text(t.update.versionAvailable(version: _updateInfo!['latestVersion'])) : null,
           trailing: _isCheckingForUpdate
               ? const LoadingIndicatorBox(size: 24)
@@ -531,8 +537,8 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
                     _checkForUpdates();
                   }
                 },
-          dense: false,
-          visualDensity: VisualDensity.standard,
+          dense: settingsRowDense(),
+          visualDensity: settingsRowVisualDensity(),
         ),
         _buildAutoCheckUpdatesOnStartupTile(),
       ],

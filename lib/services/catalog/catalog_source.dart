@@ -15,6 +15,7 @@ enum CatalogRowId {
   popularMovies,
   popularShows,
   // Anime rows (MAL has no movie/show split).
+  trendingAnime,
   suggestedAnime,
   airingAnime,
   popularAnime,
@@ -48,6 +49,27 @@ class CatalogPage {
   final bool hasMore;
 
   const CatalogPage({required this.items, this.hasMore = false});
+}
+
+/// One provider-defined Explore shelf. Unlike [CatalogRowId], hubs are
+/// discovered at runtime and retain the provider's title and stable id.
+class CatalogHub {
+  final String id;
+  final String title;
+  final CatalogPage page;
+
+  const CatalogHub({required this.id, required this.title, required this.page});
+}
+
+/// Optional capability for catalog providers that expose dynamic hub rows.
+///
+/// [CatalogSource] stays fixed-row by default. Providers such as Plex can
+/// implement this alongside it without forcing every source to grow no-op
+/// methods.
+abstract interface class CatalogHubSource {
+  Future<List<CatalogHub>> fetchHubs({int limit = 25});
+
+  Future<CatalogPage> fetchHub(String id, {int page = 1, int limit = 25});
 }
 
 /// A pluggable external catalog provider backing the Explore tab (Trakt

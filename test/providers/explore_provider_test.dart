@@ -24,6 +24,7 @@ class _FakeSource implements CatalogSource {
   bool gate = false;
   final pending = <Completer<CatalogPage>>[];
   final fetches = <CatalogRowId, int>{};
+  final failedRows = <CatalogRowId>{};
 
   CatalogPage _page(CatalogRowId row) => CatalogPage(
     items: [
@@ -39,6 +40,7 @@ class _FakeSource implements CatalogSource {
   @override
   Future<CatalogPage> fetchRow(CatalogRowId row, {int page = 1, int limit = 25}) {
     fetches[row] = (fetches[row] ?? 0) + 1;
+    if (failedRows.contains(row)) throw StateError('${row.name} failed');
     if (gate) {
       final completer = Completer<CatalogPage>();
       pending.add(completer);
@@ -80,6 +82,45 @@ class _FakeSource implements CatalogSource {
   Future<void> removeFromWatchlist(MediaKind kind, CatalogItemIds ids) async {}
   @override
   void dispose() => watchlist.dispose();
+}
+
+class _FakeHubSource extends _FakeSource implements CatalogHubSource {
+  _FakeHubSource(super.id) : super(rows: const [CatalogRowId.watchlist]);
+
+  final hubPageFetches = <int>[];
+  int hubFetches = 0;
+  int hubFailuresRemaining = 0;
+  bool returnEmptyHubs = false;
+
+  CatalogItem _hubItem(String title) => CatalogItem(
+    source: id,
+    kind: MediaKind.movie,
+    title: title,
+    ids: const CatalogItemIds(plex: 'plex-hub-item'),
+  );
+
+  @override
+  Future<List<CatalogHub>> fetchHubs({int limit = 25}) async {
+    hubFetches++;
+    if (hubFailuresRemaining > 0) {
+      hubFailuresRemaining--;
+      throw StateError('hub fetch failed');
+    }
+    if (returnEmptyHubs) return const [];
+    return [
+      CatalogHub(
+        id: 'because-watchlisted',
+        title: 'Because You Watchlisted Inception',
+        page: CatalogPage(items: [_hubItem('Initial Recommendation')], hasMore: true),
+      ),
+    ];
+  }
+
+  @override
+  Future<CatalogPage> fetchHub(String id, {int page = 1, int limit = 25}) async {
+    hubPageFetches.add(page);
+    return CatalogPage(items: [_hubItem('Recommendation Page $page')], hasMore: page == 1);
+  }
 }
 
 /// Drives [activeSource] directly; the real provider derives it from the
@@ -145,6 +186,28 @@ void main() {
       expect(explore.rowHubs.single.row, CatalogRowId.popularAnime);
     });
 
+    test('provider-defined hubs retain their titles and page through View All', () async {
+      final source = _FakeHubSource(CatalogSourceId.plex);
+      addTearDown(source.dispose);
+
+      sources.setActive(source);
+      await _pumpMicrotasks();
+
+      expect(explore.state, ExploreLoadState.loaded);
+      expect(explore.rowHubs, hasLength(2));
+      final providerHub = explore.rowHubs.last;
+      expect(providerHub.row, isNull);
+      expect(providerHub.providerHubId, 'because-watchlisted');
+      expect(providerHub.hub.title, 'Because You Watchlisted Inception');
+      expect(providerHub.hub.items.single.title, 'Initial Recommendation');
+      expect(providerHub.hub.more, isTrue);
+
+      final allItems = await explore.loadAllForHub(providerHub);
+
+      expect(source.hubPageFetches, [1, 2]);
+      expect(allItems.map((item) => item.title), ['Recommendation Page 1', 'Recommendation Page 2']);
+    });
+
     test('mutation during the initial load is caught up by ensureFresh', () async {
       final source = _FakeSource(CatalogSourceId.trakt)..gate = true;
       addTearDown(source.dispose);
@@ -165,6 +228,39 @@ void main() {
       explore.ensureFresh();
       await _pumpMicrotasks();
       expect(source.fetches[CatalogRowId.watchlist], refetchesBefore + 1);
+    });
+
+    test('empty successful hubs do not mask every fixed row failing', () async {
+      final source = _FakeHubSource(CatalogSourceId.plex)
+        ..failedRows.add(CatalogRowId.watchlist)
+        ..returnEmptyHubs = true;
+      addTearDown(source.dispose);
+
+      sources.setActive(source);
+      await _pumpMicrotasks();
+
+      expect(explore.state, ExploreLoadState.error);
+      expect(explore.rowHubs, isEmpty);
+    });
+
+    test('mutation retries watchlist-derived hubs after a partial refresh failure', () async {
+      final source = _FakeHubSource(CatalogSourceId.plex);
+      addTearDown(source.dispose);
+      sources.setActive(source);
+      await _pumpMicrotasks();
+      expect(source.hubFetches, 1);
+
+      source.hubFailuresRemaining = 1;
+      source.watchlist.notify();
+      explore.ensureFresh();
+      await _pumpMicrotasks();
+      expect(source.hubFetches, 2);
+
+      // The successful row did not mark the mutation epoch covered while the
+      // parallel hub refresh failed, so a subsequent freshness pass retries.
+      explore.ensureFresh();
+      await _pumpMicrotasks();
+      expect(source.hubFetches, 3);
     });
   });
 }

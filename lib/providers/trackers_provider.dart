@@ -66,6 +66,12 @@ class TrackersProvider extends ChangeNotifier with DisposableChangeNotifierMixin
   /// every rebind is followed by a notify, so proxy consumers track identity.
   MalClient? get malCatalogClient => _mal == null ? null : MalTracker.instance.client;
 
+  /// Live AniList and Simkl clients for Explore. Like [malCatalogClient],
+  /// these are gated on this provider's profile-bound sessions so a fresh
+  /// profile subtree cannot observe clients still bound to the prior profile.
+  AnilistClient? get anilistCatalogClient => _anilist == null ? null : AnilistTracker.instance.client;
+  SimklClient? get simklCatalogClient => _simkl == null ? null : SimklTracker.instance.client;
+
   String? get malUsername => _mal?.username;
   String? get anilistUsername => _anilist?.username;
   String? get simklUsername => _simkl?.username;

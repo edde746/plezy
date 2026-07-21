@@ -239,6 +239,8 @@ class _TranslationsSettingsSv extends TranslationsSettingsEn {
 	@override String get libraryDensity => 'Biblioteksdensitet';
 	@override String get compact => 'Kompakt';
 	@override String get comfortable => 'Bekväm';
+	@override String get tvCornerSpotlightBackdrop => '';
+	@override String get tvCornerSpotlightBackdropDescription => '';
 	@override String get viewMode => 'Visningsläge';
 	@override String get gridView => 'Rutnät';
 	@override String get listView => 'Lista';
@@ -1934,6 +1936,7 @@ class _TranslationsExploreRowsSv extends TranslationsExploreRowsEn {
 	@override String get trendingShows => 'Trendande serier';
 	@override String get popularMovies => 'Populära filmer';
 	@override String get popularShows => 'Populära serier';
+	@override String get trendingAnime => 'Trendande anime';
 	@override String get suggestedAnime => 'Föreslagna anime';
 	@override String get airingAnime => 'Bästa pågående anime';
 	@override String get popularAnime => 'Mest populära anime';
@@ -2221,6 +2224,8 @@ extension on TranslationsSv {
 			'settings.libraryDensity' => 'Biblioteksdensitet',
 			'settings.compact' => 'Kompakt',
 			'settings.comfortable' => 'Bekväm',
+			'settings.tvCornerSpotlightBackdrop' => '',
+			'settings.tvCornerSpotlightBackdropDescription' => '',
 			'settings.viewMode' => 'Visningsläge',
 			'settings.gridView' => 'Rutnät',
 			'settings.listView' => 'Lista',
@@ -2633,10 +2638,10 @@ extension on TranslationsSv {
 			'messages.autoRemovedWatchedDownloads' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('sv'))(n, one: 'Tog automatiskt bort ${n} sedd nedladdning', other: 'Tog automatiskt bort ${n} sedda nedladdningar', ), 
 			'messages.removedFromContinueWatching' => 'Borttagen från Fortsätt titta',
 			'messages.errorLoading' => ({required Object error}) => 'Fel: ${error}',
-			'messages.streamInterrupted' => 'Uppspelningen avbröts. Tryck på play eller spola för att försöka igen.',
-			'messages.liveStreamInterrupted' => 'Livestreamen avbröts. Tryck på play för att försöka igen.',
 			_ => null,
 		} ?? switch (path) {
+			'messages.streamInterrupted' => 'Uppspelningen avbröts. Tryck på play eller spola för att försöka igen.',
+			'messages.liveStreamInterrupted' => 'Livestreamen avbröts. Tryck på play för att försöka igen.',
 			'messages.fileInfoNotAvailable' => 'Filinformation inte tillgänglig',
 			'messages.errorLoadingFileInfo' => ({required Object error}) => 'Fel vid laddning av filinformation: ${error}',
 			'messages.errorLoadingSeries' => 'Fel vid laddning av serie',
@@ -2922,6 +2927,7 @@ extension on TranslationsSv {
 			'explore.rows.trendingShows' => 'Trendande serier',
 			'explore.rows.popularMovies' => 'Populära filmer',
 			'explore.rows.popularShows' => 'Populära serier',
+			'explore.rows.trendingAnime' => 'Trendande anime',
 			'explore.rows.suggestedAnime' => 'Föreslagna anime',
 			'explore.rows.airingAnime' => 'Bästa pågående anime',
 			'explore.rows.popularAnime' => 'Mest populära anime',
@@ -3146,11 +3152,11 @@ extension on TranslationsSv {
 			'watchTogether.removeRoom' => 'Ta bort',
 			'watchTogether.guestSwitchUnavailable' => 'Kunde inte byta — server inte tillgänglig för synkronisering',
 			'watchTogether.guestSwitchFailed' => 'Kunde inte byta — innehåll hittades inte på denna server',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.title' => 'Nedladdningar',
 			'downloads.manage' => 'Hantera',
 			'downloads.tvShows' => 'TV-serier',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.movies' => 'Filmer',
 			'downloads.music' => 'Musik',
 			'downloads.tracksQueued' => ({required Object count}) => '${count} låtar i nedladdningskö',

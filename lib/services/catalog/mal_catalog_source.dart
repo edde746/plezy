@@ -69,6 +69,7 @@ class MalCatalogSource with CatalogWatchlistMachinery implements CatalogSource {
       CatalogRowId.trendingShows ||
       CatalogRowId.popularMovies ||
       CatalogRowId.popularShows ||
+      CatalogRowId.trendingAnime ||
       CatalogRowId.trending ||
       CatalogRowId.upcomingMovies ||
       CatalogRowId.upcomingShows => throw ArgumentError('MAL does not serve ${row.name}'),

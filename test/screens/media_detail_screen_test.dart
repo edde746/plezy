@@ -29,6 +29,7 @@ import 'package:plezy/services/download_manager_service.dart';
 import 'package:plezy/services/download_storage_service.dart';
 import 'package:plezy/services/jellyfin_api_cache.dart';
 import 'package:plezy/services/multi_server_manager.dart';
+import 'package:plezy/services/offline_watch_sync_service.dart';
 import 'package:plezy/services/plex_api_cache.dart';
 import 'package:plezy/services/settings_service.dart';
 import 'package:plezy/theme/mono_theme.dart';
@@ -36,6 +37,7 @@ import 'package:plezy/utils/layout_constants.dart';
 import 'package:plezy/utils/media_server_http_client.dart';
 import 'package:plezy/utils/platform_detector.dart';
 import 'package:plezy/utils/watch_state_notifier.dart';
+import 'package:plezy/utils/video_player_navigation.dart';
 import 'package:plezy/widgets/collapsible_text.dart';
 import 'package:plezy/widgets/episode_card.dart';
 import 'package:plezy/widgets/tv_browse_rail.dart';
@@ -657,6 +659,111 @@ void main() {
     expect(find.text('Episode 2'), findsOneWidget);
   });
 
+  testWidgets('TV detail episode activation bypasses the open-details preference', (tester) async {
+    final settings = await SettingsService.getInstance();
+    await settings.write(SettingsService.episodeAction, EpisodeAction.details);
+    tester.view.physicalSize = const Size(1280, 720);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final show = testMediaItem(
+      id: 'show_1',
+      backend: MediaBackend.jellyfin,
+      kind: MediaKind.show,
+      title: 'The Show',
+      serverId: 'server_1',
+      serverName: 'Server',
+    );
+    final season = testMediaItem(
+      id: 'season_1',
+      backend: MediaBackend.jellyfin,
+      kind: MediaKind.season,
+      title: 'Season 1',
+      index: 1,
+      parentId: show.id,
+      serverId: show.serverId,
+      serverName: show.serverName,
+    );
+    final episode = testMediaItem(
+      id: 'episode_1',
+      backend: MediaBackend.jellyfin,
+      kind: MediaKind.episode,
+      title: 'Episode 1',
+      index: 1,
+      parentId: season.id,
+      parentIndex: season.index,
+      grandparentId: show.id,
+      serverId: show.serverId,
+      serverName: show.serverName,
+    );
+    final client = _FakeMediaServerClient(
+      show: show,
+      childrenByParent: {
+        show.id: [season],
+        season.id: [episode],
+      },
+    );
+    final database = AppDatabase.forTesting(NativeDatabase.memory());
+    PlexApiCache.initialize(database);
+    JellyfinApiCache.initialize(database);
+    final manager = MultiServerManager()..debugRegisterClientForTesting(client);
+    final multiServerProvider = MultiServerProvider(manager, DataAggregationService(manager));
+    final offlineWatch = OfflineWatchSyncService(database: database, serverManager: manager);
+    final downloadManager = DownloadManagerService(
+      database: database,
+      storageService: DownloadStorageService.instance,
+      clientResolver: (serverId, {clientScopeId}) => null,
+    )..recoveryFuture = Future<void>.value();
+    final downloadProvider = DownloadProvider.forTesting(downloadManager: downloadManager, database: database);
+    await downloadProvider.ensureInitialized();
+    addTearDown(() async {
+      downloadProvider.dispose();
+      downloadManager.dispose();
+      offlineWatch.dispose();
+      multiServerProvider.dispose();
+      manager.dispose();
+      await database.close();
+    });
+
+    final navigatorKey = GlobalKey<NavigatorState>();
+    final observer = _RecordingNavigatorObserver(popVideoPlayerImmediately: true);
+    await tester.pumpWidget(
+      TranslationProvider(
+        child: MultiProvider(
+          providers: [
+            ChangeNotifierProvider<MultiServerProvider>.value(value: multiServerProvider),
+            ChangeNotifierProvider<DownloadProvider>.value(value: downloadProvider),
+            ChangeNotifierProvider<OfflineWatchSyncService>.value(value: offlineWatch),
+          ],
+          child: MaterialApp(
+            navigatorKey: navigatorKey,
+            navigatorObservers: [observer],
+            theme: monoTheme(dark: true),
+            home: withProfileNavigationScope(
+              child: SizedBox(width: 1280, height: 720, child: MediaDetailScreen(metadata: show)),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+    await tester.pump();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
+
+    expect(find.text('Episode 1'), findsOneWidget);
+    observer.pushedRouteNames.clear();
+    tester.state<TvBrowseRailState>(find.byType(TvBrowseRail)).requestFocus();
+    await tester.pump();
+    await tester.sendKeyDownEvent(LogicalKeyboardKey.enter);
+    await tester.pump();
+    await tester.sendKeyUpEvent(LogicalKeyboardKey.enter);
+    await tester.pump();
+
+    expect(observer.pushedRouteNames, contains(kVideoPlayerRouteName));
+  });
+
   group('watch state freshness (phone layout)', () {
     MediaItem buildShow({String? summary}) => testMediaItem(
       id: 'show_1',
@@ -1059,6 +1166,17 @@ class _FakeMediaServerClient implements MediaServerClient {
   }
 
   @override
+  Future<MediaItem?> fetchItem(String id) async {
+    if (show.id == id) return show;
+    for (final items in childrenByParent.values) {
+      for (final item in items) {
+        if (item.id == id) return item;
+      }
+    }
+    return null;
+  }
+
+  @override
   Future<List<MediaItem>> fetchChildren(String parentId) async {
     return childrenByParent[parentId] ?? const [];
   }
@@ -1093,5 +1211,24 @@ class _FakeMediaServerClient implements MediaServerClient {
   Future<List<MediaHub>> fetchRelatedHubs(String id, {int count = 10}) async => const [];
 
   @override
+  void close() {}
+
+  @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
+class _RecordingNavigatorObserver extends NavigatorObserver {
+  _RecordingNavigatorObserver({this.popVideoPlayerImmediately = false});
+
+  final bool popVideoPlayerImmediately;
+  final pushedRouteNames = <String?>[];
+
+  @override
+  void didPush(Route<dynamic> route, Route<dynamic>? previousRoute) {
+    super.didPush(route, previousRoute);
+    pushedRouteNames.add(route.settings.name);
+    if (popVideoPlayerImmediately && route.settings.name == kVideoPlayerRouteName) {
+      scheduleMicrotask(() => navigator?.pop());
+    }
+  }
 }

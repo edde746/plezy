@@ -81,6 +81,7 @@ class TraktCatalogSource with CatalogWatchlistMachinery implements CatalogSource
       case CatalogRowId.popularShows:
         final res = await _client.getPopular(TraktCatalogType.shows, page: page, limit: limit);
         return CatalogPage(items: _fromMedia(res.items, MediaKind.show), hasMore: res.hasMore);
+      case CatalogRowId.trendingAnime:
       case CatalogRowId.suggestedAnime:
       case CatalogRowId.airingAnime:
       case CatalogRowId.popularAnime:

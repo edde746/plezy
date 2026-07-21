@@ -239,6 +239,8 @@ class _TranslationsSettingsJa extends TranslationsSettingsEn {
 	@override String get libraryDensity => 'ライブラリの密度';
 	@override String get compact => 'コンパクト';
 	@override String get comfortable => 'ゆったり';
+	@override String get tvCornerSpotlightBackdrop => '';
+	@override String get tvCornerSpotlightBackdropDescription => '';
 	@override String get viewMode => '表示モード';
 	@override String get gridView => 'グリッド';
 	@override String get listView => 'リスト';
@@ -1931,6 +1933,7 @@ class _TranslationsExploreRowsJa extends TranslationsExploreRowsEn {
 	@override String get trendingShows => 'トレンドのテレビ番組';
 	@override String get popularMovies => '人気の映画';
 	@override String get popularShows => '人気のテレビ番組';
+	@override String get trendingAnime => 'トレンドのアニメ';
 	@override String get suggestedAnime => 'おすすめのアニメ';
 	@override String get airingAnime => '放送中の注目アニメ';
 	@override String get popularAnime => '人気のアニメ';
@@ -2218,6 +2221,8 @@ extension on TranslationsJa {
 			'settings.libraryDensity' => 'ライブラリの密度',
 			'settings.compact' => 'コンパクト',
 			'settings.comfortable' => 'ゆったり',
+			'settings.tvCornerSpotlightBackdrop' => '',
+			'settings.tvCornerSpotlightBackdropDescription' => '',
 			'settings.viewMode' => '表示モード',
 			'settings.gridView' => 'グリッド',
 			'settings.listView' => 'リスト',
@@ -2630,10 +2635,10 @@ extension on TranslationsJa {
 			'messages.autoRemovedWatchedDownloads' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('ja'))(n, other: '視聴済みダウンロードを${n}件自動削除しました', ), 
 			'messages.removedFromContinueWatching' => '視聴中から削除しました',
 			'messages.errorLoading' => ({required Object error}) => 'エラー: ${error}',
-			'messages.streamInterrupted' => 'ストリームが中断されました。再生を押すかシークして再試行してください。',
-			'messages.liveStreamInterrupted' => 'ライブストリームが中断されました。再生を押して再試行してください。',
 			_ => null,
 		} ?? switch (path) {
+			'messages.streamInterrupted' => 'ストリームが中断されました。再生を押すかシークして再試行してください。',
+			'messages.liveStreamInterrupted' => 'ライブストリームが中断されました。再生を押して再試行してください。',
 			'messages.fileInfoNotAvailable' => 'ファイル情報が利用できません',
 			'messages.errorLoadingFileInfo' => ({required Object error}) => 'ファイル情報の読み込みエラー: ${error}',
 			'messages.errorLoadingSeries' => 'シリーズの読み込みエラー',
@@ -2919,6 +2924,7 @@ extension on TranslationsJa {
 			'explore.rows.trendingShows' => 'トレンドのテレビ番組',
 			'explore.rows.popularMovies' => '人気の映画',
 			'explore.rows.popularShows' => '人気のテレビ番組',
+			'explore.rows.trendingAnime' => 'トレンドのアニメ',
 			'explore.rows.suggestedAnime' => 'おすすめのアニメ',
 			'explore.rows.airingAnime' => '放送中の注目アニメ',
 			'explore.rows.popularAnime' => '人気のアニメ',
@@ -3143,11 +3149,11 @@ extension on TranslationsJa {
 			'watchTogether.removeRoom' => '削除',
 			'watchTogether.guestSwitchUnavailable' => '切り替えできません — サーバーが同期できません',
 			'watchTogether.guestSwitchFailed' => '切り替えできません — このサーバーにコンテンツが見つかりません',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.title' => 'ダウンロード',
 			'downloads.manage' => '管理',
 			'downloads.tvShows' => 'テレビ番組',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.movies' => '映画',
 			'downloads.music' => '音楽',
 			'downloads.tracksQueued' => ({required Object count}) => '${count} 曲をダウンロード待機中',

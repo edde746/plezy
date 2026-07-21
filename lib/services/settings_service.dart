@@ -468,6 +468,7 @@ class SettingsService extends BaseSharedPreferencesService {
 
   static const bufferSize = _BufferSizePref();
   static const libraryDensity = _LibraryDensityPref();
+  static const tvCornerSpotlightBackdrop = BoolPref('tv_corner_spotlight_backdrop');
   static const episodePosterMode = _EpisodePosterModePref();
   static const continueWatchingAction = EnumPref<ContinueWatchingAction>(
     'continue_watching_action',
@@ -859,6 +860,7 @@ class SettingsService extends BaseSharedPreferencesService {
     themeMode,
     keyboardHotkeys,
     libraryDensity,
+    tvCornerSpotlightBackdrop,
     episodePosterMode,
     mediaVersionPreferences,
     localLastPlayedAt,

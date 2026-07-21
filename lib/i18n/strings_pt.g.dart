@@ -239,6 +239,8 @@ class _TranslationsSettingsPt extends TranslationsSettingsEn {
 	@override String get libraryDensity => 'Densidade da Biblioteca';
 	@override String get compact => 'Compacto';
 	@override String get comfortable => 'Confortável';
+	@override String get tvCornerSpotlightBackdrop => '';
+	@override String get tvCornerSpotlightBackdropDescription => '';
 	@override String get viewMode => 'Modo de Visualização';
 	@override String get gridView => 'Grade';
 	@override String get listView => 'Lista';
@@ -1934,6 +1936,7 @@ class _TranslationsExploreRowsPt extends TranslationsExploreRowsEn {
 	@override String get trendingShows => 'Séries em alta';
 	@override String get popularMovies => 'Filmes populares';
 	@override String get popularShows => 'Séries populares';
+	@override String get trendingAnime => 'Anime em alta';
 	@override String get suggestedAnime => 'Anime sugerido';
 	@override String get airingAnime => 'Melhor anime em exibição';
 	@override String get popularAnime => 'Anime mais popular';
@@ -2221,6 +2224,8 @@ extension on TranslationsPt {
 			'settings.libraryDensity' => 'Densidade da Biblioteca',
 			'settings.compact' => 'Compacto',
 			'settings.comfortable' => 'Confortável',
+			'settings.tvCornerSpotlightBackdrop' => '',
+			'settings.tvCornerSpotlightBackdropDescription' => '',
 			'settings.viewMode' => 'Modo de Visualização',
 			'settings.gridView' => 'Grade',
 			'settings.listView' => 'Lista',
@@ -2633,10 +2638,10 @@ extension on TranslationsPt {
 			'messages.autoRemovedWatchedDownloads' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('pt'))(n, one: 'Removido automaticamente ${n} download assistido', other: 'Removidos automaticamente ${n} downloads assistidos', ), 
 			'messages.removedFromContinueWatching' => 'Removido de Continuar Assistindo',
 			'messages.errorLoading' => ({required Object error}) => 'Erro: ${error}',
-			'messages.streamInterrupted' => 'A transmissão foi interrompida. Toque em reproduzir ou avance para tentar novamente.',
-			'messages.liveStreamInterrupted' => 'A transmissão ao vivo foi interrompida. Toque em reproduzir para tentar novamente.',
 			_ => null,
 		} ?? switch (path) {
+			'messages.streamInterrupted' => 'A transmissão foi interrompida. Toque em reproduzir ou avance para tentar novamente.',
+			'messages.liveStreamInterrupted' => 'A transmissão ao vivo foi interrompida. Toque em reproduzir para tentar novamente.',
 			'messages.fileInfoNotAvailable' => 'Informações do arquivo não disponíveis',
 			'messages.errorLoadingFileInfo' => ({required Object error}) => 'Erro ao carregar info do arquivo: ${error}',
 			'messages.errorLoadingSeries' => 'Erro ao carregar série',
@@ -2922,6 +2927,7 @@ extension on TranslationsPt {
 			'explore.rows.trendingShows' => 'Séries em alta',
 			'explore.rows.popularMovies' => 'Filmes populares',
 			'explore.rows.popularShows' => 'Séries populares',
+			'explore.rows.trendingAnime' => 'Anime em alta',
 			'explore.rows.suggestedAnime' => 'Anime sugerido',
 			'explore.rows.airingAnime' => 'Melhor anime em exibição',
 			'explore.rows.popularAnime' => 'Anime mais popular',
@@ -3146,11 +3152,11 @@ extension on TranslationsPt {
 			'watchTogether.removeRoom' => 'Remover',
 			'watchTogether.guestSwitchUnavailable' => 'Não foi possível trocar — servidor indisponível para sincronização',
 			'watchTogether.guestSwitchFailed' => 'Não foi possível trocar — conteúdo não encontrado neste servidor',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.title' => 'Downloads',
 			'downloads.manage' => 'Gerenciar',
 			'downloads.tvShows' => 'Séries de TV',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.movies' => 'Filmes',
 			'downloads.music' => 'Música',
 			'downloads.tracksQueued' => ({required Object count}) => '${count} faixas na fila para download',

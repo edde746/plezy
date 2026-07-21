@@ -4,7 +4,7 @@ import '../../media/media_kind.dart';
 import '../../utils/external_ids.dart';
 
 /// External catalog providers that can back the Explore tab.
-enum CatalogSourceId { trakt, mal, seerr }
+enum CatalogSourceId { plex, trakt, mal, anilist, simkl, seerr }
 
 /// Normalized airing/production status across providers (Trakt `status`,
 /// MAL `status`). Null when unknown or uninteresting (released movies).
@@ -12,21 +12,43 @@ enum CatalogAirStatus { airing, ended, canceled, upcoming }
 
 /// External ids identifying a catalog item across providers and media
 /// servers. A superset of [ExternalIds] that also carries provider-native
-/// ids (Trakt id/slug, MAL id today).
+/// ids (Plex rating key, Trakt id/slug, MAL, AniList, and Simkl).
 class CatalogItemIds {
+  final String? plex;
   final int? trakt;
   final String? slug;
   final int? mal;
+  final int? anilist;
+  final int? simkl;
   final String? imdb;
   final int? tmdb;
   final int? tvdb;
 
-  const CatalogItemIds({this.trakt, this.slug, this.mal, this.imdb, this.tmdb, this.tvdb});
+  const CatalogItemIds({
+    this.plex,
+    this.trakt,
+    this.slug,
+    this.mal,
+    this.anilist,
+    this.simkl,
+    this.imdb,
+    this.tmdb,
+    this.tvdb,
+  });
 
   factory CatalogItemIds.fromExternal(ExternalIds ids) =>
       CatalogItemIds(imdb: ids.imdb, tmdb: ids.tmdb, tvdb: ids.tvdb);
 
-  bool get hasAny => imdb != null || tmdb != null || tvdb != null || trakt != null || slug != null || mal != null;
+  bool get hasAny =>
+      imdb != null ||
+      tmdb != null ||
+      tvdb != null ||
+      mal != null ||
+      anilist != null ||
+      simkl != null ||
+      plex != null ||
+      trakt != null ||
+      slug != null;
 
   /// Stable identity key preferring globally-unique ids. Callers must
   /// namespace it by [MediaKind] (tmdb movie/show ids can collide).
@@ -35,6 +57,9 @@ class CatalogItemIds {
     if (tmdb != null) return 'tmdb:$tmdb';
     if (tvdb != null) return 'tvdb:$tvdb';
     if (mal != null) return 'mal:$mal';
+    if (anilist != null) return 'anilist:$anilist';
+    if (simkl != null) return 'simkl:$simkl';
+    if (plex != null) return 'plex:$plex';
     if (trakt != null) return 'trakt:$trakt';
     if (slug != null) return 'slug:$slug';
     return null;
@@ -48,6 +73,9 @@ class CatalogItemIds {
     if (tmdb != null) 'tmdb:$tmdb',
     if (tvdb != null) 'tvdb:$tvdb',
     if (mal != null) 'mal:$mal',
+    if (anilist != null) 'anilist:$anilist',
+    if (simkl != null) 'simkl:$simkl',
+    if (plex != null) 'plex:$plex',
     if (trakt != null) 'trakt:$trakt',
     if (slug != null) 'slug:$slug',
   ];
@@ -55,18 +83,24 @@ class CatalogItemIds {
   ExternalIds toExternalIds() => ExternalIds(imdb: imdb, tmdb: tmdb, tvdb: tvdb);
 
   Map<String, Object?> toJson() => {
+    if (plex != null) 'plex': plex,
     if (trakt != null) 'trakt': trakt,
     if (slug != null) 'slug': slug,
     if (mal != null) 'mal': mal,
+    if (anilist != null) 'anilist': anilist,
+    if (simkl != null) 'simkl': simkl,
     if (imdb != null) 'imdb': imdb,
     if (tmdb != null) 'tmdb': tmdb,
     if (tvdb != null) 'tvdb': tvdb,
   };
 
   factory CatalogItemIds.fromJson(Map<String, Object?> json) => CatalogItemIds(
+    plex: json['plex'] as String?,
     trakt: json['trakt'] as int?,
     slug: json['slug'] as String?,
     mal: json['mal'] as int?,
+    anilist: json['anilist'] as int?,
+    simkl: json['simkl'] as int?,
     imdb: json['imdb'] as String?,
     tmdb: json['tmdb'] as int?,
     tvdb: json['tvdb'] as int?,

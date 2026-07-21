@@ -718,8 +718,16 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
       // than one, the toggle opens a source chooser.
       final candidates = <WatchlistCandidate>[];
       for (final source in sources) {
-        final resolved = await source.resolveItemIds(_metadata.kind, ids);
-        if (resolved != null) candidates.add((source: source, ids: resolved));
+        try {
+          final resolved = await source.resolveItemIds(_metadata.kind, ids);
+          if (resolved != null) candidates.add((source: source, ids: resolved));
+        } catch (e, stackTrace) {
+          appLogger.d(
+            'Watchlist external-id resolution failed for ${source.id.name}',
+            error: e,
+            stackTrace: stackTrace,
+          );
+        }
       }
       if (!mounted || candidates.isEmpty) return;
       setState(() => _watchlistCandidates = candidates);
@@ -3961,7 +3969,16 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     );
   }
 
-  bool _handleTvDetailRailItemActivated(MediaHub hub, MediaItem item) {
+  Future<bool> _handleTvDetailRailItemActivated(MediaHub hub, MediaItem item) async {
+    if (_isTvDetailEpisodeHub(hub) && item.isEpisode) {
+      await navigateToVideoPlayerWithRefresh(
+        context,
+        metadata: item,
+        isOffline: widget.isOffline,
+        onRefresh: () => unawaited(_refreshItemInPlace(item)),
+      );
+      return true;
+    }
     if (hub.id != _tvDetailActorsHubId) return false;
     final personId = item.raw?[_tvDetailActorPersonIdRawKey];
     if (personId is String && personId.isNotEmpty) {

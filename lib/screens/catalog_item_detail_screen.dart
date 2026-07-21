@@ -408,7 +408,9 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
       crossAxisAlignment: .start,
       children: [
         Text(
-          widget.item.source == CatalogSourceId.mal ? t.explore.characters : t.explore.cast,
+          const {CatalogSourceId.mal, CatalogSourceId.anilist}.contains(widget.item.source)
+              ? t.explore.characters
+              : t.explore.cast,
           style: theme.textTheme.titleMedium,
         ),
         const SizedBox(height: 4),

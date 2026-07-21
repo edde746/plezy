@@ -6,13 +6,21 @@ import 'expressive_button_group.dart';
 
 /// Standard settings-option title style.
 ///
-/// Mobile matches Flutter's dense ListTile title size so custom controls and
-/// ordinary settings rows keep the same hierarchy. Desktop and TV retain the
-/// larger body style used for D-pad readability.
+/// Matches Flutter's dense ListTile title size so custom controls and
+/// ordinary settings rows keep the same hierarchy. TV retains the larger
+/// body style used for D-pad readability at distance.
 TextStyle? settingsOptionTitleStyle(BuildContext context) {
   final style = Theme.of(context).textTheme.bodyLarge;
-  return PlatformDetector.isMobile(context) ? style?.copyWith(fontSize: 13) : style;
+  return PlatformDetector.isTV() ? style : style?.copyWith(fontSize: 13);
 }
+
+/// Standard settings-row density, paired with [settingsOptionTitleStyle]:
+/// compact rows everywhere except TV, where full-height rows keep D-pad
+/// readability.
+bool settingsRowDense() => !PlatformDetector.isTV();
+
+VisualDensity settingsRowVisualDensity() =>
+    settingsRowDense() ? const VisualDensity(vertical: -3) : VisualDensity.standard;
 
 class SettingsSectionHeader extends StatelessWidget {
   final String title;

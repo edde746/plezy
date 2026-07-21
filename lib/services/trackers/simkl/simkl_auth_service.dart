@@ -13,18 +13,18 @@ import 'simkl_constants.dart';
 
 /// Simkl OAuth PIN (device-code) flow.
 ///
-/// `GET /oauth/pin?client_id=...&redirect=<success page>` returns a PIN the
-/// user enters at https://simkl.com/pin. After entry Simkl redirects the
-/// browser to the relay's static "signed in" page. The app polls
-/// `/oauth/pin/<user_code>?client_id=...` until `result == "OK"`.
+/// `GET /oauth/pin` with Simkl's required app identity parameters and a
+/// relay redirect returns a PIN the user enters at https://simkl.com/pin.
+/// After entry Simkl redirects the browser to the relay's static "signed in"
+/// page. The app polls `/oauth/pin/<user_code>` with the same identity.
 class SimklAuthService extends DeviceCodeAuthServiceBase {
   SimklAuthService({super.httpClient});
 
   @override
   Future<DeviceCode> createDeviceCode() async {
-    final uri = Uri.parse(SimklConstants.pinUrl).replace(
-      queryParameters: {'client_id': SimklConstants.clientId, 'redirect': '${OAuthProxyClient.baseUrl}/auth/done'},
-    );
+    final uri = Uri.parse(
+      SimklConstants.pinUrl,
+    ).replace(queryParameters: SimklConstants.queryParameters({'redirect': '${OAuthProxyClient.baseUrl}/auth/done'}));
     final res = await sendAbortableHttpRequest(
       httpClient,
       'GET',
@@ -52,7 +52,7 @@ class SimklAuthService extends DeviceCodeAuthServiceBase {
   Future<DevicePollEvent> probe(DeviceCode code) async {
     final pollUri = Uri.parse(
       SimklConstants.pinPollUrl(code.userCode),
-    ).replace(queryParameters: {'client_id': SimklConstants.clientId});
+    ).replace(queryParameters: SimklConstants.queryParameters());
     final http.Response res;
     try {
       res = await sendAbortableHttpRequest(

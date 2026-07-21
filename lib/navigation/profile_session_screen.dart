@@ -35,6 +35,16 @@ import '../watch_together/providers/watch_together_provider.dart';
 import '../widgets/music/mini_player.dart';
 import 'profile_navigation_scope.dart';
 
+CatalogSourcesProvider _createCatalogSourcesProvider(BuildContext context) {
+  return CatalogSourcesProvider(
+    plexSessionSupplier: () => resolvePlexDiscoverSession(
+      activeProfile: context.read<ActiveProfileProvider>(),
+      connections: context.read<ConnectionRegistry>(),
+      profileConnections: context.read<ProfileConnectionRegistry>(),
+    ),
+  );
+}
+
 /// Root route for an active profile session.
 ///
 /// The root app navigator owns setup/auth/profile-picking. This route owns the
@@ -164,14 +174,15 @@ class _ProfileSessionScreenState extends State<ProfileSessionScreen> {
                   return provider;
                 },
               ),
-              ChangeNotifierProxyProvider3<
+              ChangeNotifierProxyProvider4<
                 TraktAccountProvider,
                 TrackersProvider,
                 SeerrAccountProvider,
+                ActiveProfileProvider,
                 CatalogSourcesProvider
               >(
                 create: (context) {
-                  final provider = CatalogSourcesProvider();
+                  final provider = _createCatalogSourcesProvider(context);
                   unawaited(
                     provider.onActiveProfileChanged(activeId).catchError((Object e, StackTrace s) {
                       appLogger.w('Catalog sources profile hydrate failed', error: e, stackTrace: s);
@@ -179,9 +190,10 @@ class _ProfileSessionScreenState extends State<ProfileSessionScreen> {
                   );
                   return provider;
                 },
-                update: (_, trakt, trackers, seerr, previous) {
-                  final provider = previous ?? CatalogSourcesProvider();
+                update: (context, trakt, trackers, seerr, activeProfile, previous) {
+                  final provider = previous ?? _createCatalogSourcesProvider(context);
                   provider.update(trakt, trackers, seerr);
+                  unawaited(provider.onProfileBindingStateChanged(activeProfile.isBinding));
                   return provider;
                 },
               ),

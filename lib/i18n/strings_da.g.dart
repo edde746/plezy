@@ -239,6 +239,8 @@ class _TranslationsSettingsDa extends TranslationsSettingsEn {
 	@override String get libraryDensity => 'Bibliotekstæthed';
 	@override String get compact => 'Kompakt';
 	@override String get comfortable => 'Komfortabel';
+	@override String get tvCornerSpotlightBackdrop => '';
+	@override String get tvCornerSpotlightBackdropDescription => '';
 	@override String get viewMode => 'Visningstilstand';
 	@override String get gridView => 'Gitter';
 	@override String get listView => 'Liste';
@@ -1934,6 +1936,7 @@ class _TranslationsExploreRowsDa extends TranslationsExploreRowsEn {
 	@override String get trendingShows => 'Trending serier';
 	@override String get popularMovies => 'Populære film';
 	@override String get popularShows => 'Populære serier';
+	@override String get trendingAnime => 'Trending anime';
 	@override String get suggestedAnime => 'Foreslået anime';
 	@override String get airingAnime => 'Top igangværende anime';
 	@override String get popularAnime => 'Mest populære anime';
@@ -2221,6 +2224,8 @@ extension on TranslationsDa {
 			'settings.libraryDensity' => 'Bibliotekstæthed',
 			'settings.compact' => 'Kompakt',
 			'settings.comfortable' => 'Komfortabel',
+			'settings.tvCornerSpotlightBackdrop' => '',
+			'settings.tvCornerSpotlightBackdropDescription' => '',
 			'settings.viewMode' => 'Visningstilstand',
 			'settings.gridView' => 'Gitter',
 			'settings.listView' => 'Liste',
@@ -2633,10 +2638,10 @@ extension on TranslationsDa {
 			'messages.autoRemovedWatchedDownloads' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('da'))(n, one: 'Fjernede automatisk ${n} set download', other: 'Fjernede automatisk ${n} sete downloads', ), 
 			'messages.removedFromContinueWatching' => 'Fjernet fra Fortsæt med at se',
 			'messages.errorLoading' => ({required Object error}) => 'Fejl: ${error}',
-			'messages.streamInterrupted' => 'Streamen blev afbrudt. Tryk på afspil, eller spol for at prøve igen.',
-			'messages.liveStreamInterrupted' => 'Livestreamen blev afbrudt. Tryk på afspil for at prøve igen.',
 			_ => null,
 		} ?? switch (path) {
+			'messages.streamInterrupted' => 'Streamen blev afbrudt. Tryk på afspil, eller spol for at prøve igen.',
+			'messages.liveStreamInterrupted' => 'Livestreamen blev afbrudt. Tryk på afspil for at prøve igen.',
 			'messages.fileInfoNotAvailable' => 'Filinfo ikke tilgængelig',
 			'messages.errorLoadingFileInfo' => ({required Object error}) => 'Fejl ved indlæsning af filinfo: ${error}',
 			'messages.errorLoadingSeries' => 'Fejl ved indlæsning af serie',
@@ -2922,6 +2927,7 @@ extension on TranslationsDa {
 			'explore.rows.trendingShows' => 'Trending serier',
 			'explore.rows.popularMovies' => 'Populære film',
 			'explore.rows.popularShows' => 'Populære serier',
+			'explore.rows.trendingAnime' => 'Trending anime',
 			'explore.rows.suggestedAnime' => 'Foreslået anime',
 			'explore.rows.airingAnime' => 'Top igangværende anime',
 			'explore.rows.popularAnime' => 'Mest populære anime',
@@ -3146,11 +3152,11 @@ extension on TranslationsDa {
 			'watchTogether.removeRoom' => 'Fjern',
 			'watchTogether.guestSwitchUnavailable' => 'Kunne ikke skifte — server ikke tilgængelig for synkronisering',
 			'watchTogether.guestSwitchFailed' => 'Kunne ikke skifte — indhold blev ikke fundet på denne server',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.title' => 'Downloads',
 			'downloads.manage' => 'Administrer',
 			'downloads.tvShows' => 'TV-serier',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.movies' => 'Film',
 			'downloads.music' => 'Musik',
 			'downloads.tracksQueued' => ({required Object count}) => '${count} numre i kø til download',

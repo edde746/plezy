@@ -239,6 +239,8 @@ class _TranslationsSettingsRu extends TranslationsSettingsEn {
 	@override String get libraryDensity => 'Плотность библиотеки';
 	@override String get compact => 'Компактный';
 	@override String get comfortable => 'Комфортный';
+	@override String get tvCornerSpotlightBackdrop => '';
+	@override String get tvCornerSpotlightBackdropDescription => '';
 	@override String get viewMode => 'Режим просмотра';
 	@override String get gridView => 'Сетка';
 	@override String get listView => 'Список';
@@ -1940,6 +1942,7 @@ class _TranslationsExploreRowsRu extends TranslationsExploreRowsEn {
 	@override String get trendingShows => 'Сериалы в тренде';
 	@override String get popularMovies => 'Популярные фильмы';
 	@override String get popularShows => 'Популярные сериалы';
+	@override String get trendingAnime => 'Аниме в тренде';
 	@override String get suggestedAnime => 'Рекомендуемые аниме';
 	@override String get airingAnime => 'Топ выходящих аниме';
 	@override String get popularAnime => 'Самые популярные аниме';
@@ -2227,6 +2230,8 @@ extension on TranslationsRu {
 			'settings.libraryDensity' => 'Плотность библиотеки',
 			'settings.compact' => 'Компактный',
 			'settings.comfortable' => 'Комфортный',
+			'settings.tvCornerSpotlightBackdrop' => '',
+			'settings.tvCornerSpotlightBackdropDescription' => '',
 			'settings.viewMode' => 'Режим просмотра',
 			'settings.gridView' => 'Сетка',
 			'settings.listView' => 'Список',
@@ -2639,10 +2644,10 @@ extension on TranslationsRu {
 			'messages.autoRemovedWatchedDownloads' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('ru'))(n, one: 'Автоматически удалена ${n} просмотренная загрузка', few: 'Автоматически удалены ${n} просмотренные загрузки', many: 'Автоматически удалено ${n} просмотренных загрузок', other: 'Автоматически удалено ${n} просмотренной загрузки', ), 
 			'messages.removedFromContinueWatching' => 'Удалено из «Продолжить просмотр»',
 			'messages.errorLoading' => ({required Object error}) => 'Ошибка: ${error}',
-			'messages.streamInterrupted' => 'Поток прервался. Нажмите «Воспроизвести» или перемотайте, чтобы повторить попытку.',
-			'messages.liveStreamInterrupted' => 'Прямая трансляция прервалась. Нажмите «Воспроизвести», чтобы повторить попытку.',
 			_ => null,
 		} ?? switch (path) {
+			'messages.streamInterrupted' => 'Поток прервался. Нажмите «Воспроизвести» или перемотайте, чтобы повторить попытку.',
+			'messages.liveStreamInterrupted' => 'Прямая трансляция прервалась. Нажмите «Воспроизвести», чтобы повторить попытку.',
 			'messages.fileInfoNotAvailable' => 'Информация о файле недоступна',
 			'messages.errorLoadingFileInfo' => ({required Object error}) => 'Ошибка загрузки информации о файле: ${error}',
 			'messages.errorLoadingSeries' => 'Ошибка загрузки сериала',
@@ -2928,6 +2933,7 @@ extension on TranslationsRu {
 			'explore.rows.trendingShows' => 'Сериалы в тренде',
 			'explore.rows.popularMovies' => 'Популярные фильмы',
 			'explore.rows.popularShows' => 'Популярные сериалы',
+			'explore.rows.trendingAnime' => 'Аниме в тренде',
 			'explore.rows.suggestedAnime' => 'Рекомендуемые аниме',
 			'explore.rows.airingAnime' => 'Топ выходящих аниме',
 			'explore.rows.popularAnime' => 'Самые популярные аниме',
@@ -3152,11 +3158,11 @@ extension on TranslationsRu {
 			'watchTogether.removeRoom' => 'Удалить',
 			'watchTogether.guestSwitchUnavailable' => 'Не удалось переключиться — сервер недоступен для синхронизации',
 			'watchTogether.guestSwitchFailed' => 'Не удалось переключиться — содержимое не найдено на этом сервере',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.title' => 'Загрузки',
 			'downloads.manage' => 'Управление',
 			'downloads.tvShows' => 'Сериалы',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.movies' => 'Фильмы',
 			'downloads.music' => 'Музыка',
 			'downloads.tracksQueued' => ({required Object count}) => '${count} треков в очереди на загрузку',

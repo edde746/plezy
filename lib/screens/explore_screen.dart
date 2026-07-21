@@ -127,13 +127,15 @@ class ExploreScreenState extends State<ExploreScreen>
     MainScreenFocusScope.focusSidebarOf(context);
   }
 
-  static IconData _rowIcon(CatalogRowId row) => switch (row) {
+  static IconData _rowIcon(CatalogRowId? row) => switch (row) {
+    null => Symbols.thumb_up_rounded,
     CatalogRowId.watchlist => Symbols.bookmark_rounded,
     CatalogRowId.recommendedMovies ||
     CatalogRowId.recommendedShows ||
     CatalogRowId.suggestedAnime => Symbols.thumb_up_rounded,
     CatalogRowId.trendingMovies ||
     CatalogRowId.trendingShows ||
+    CatalogRowId.trendingAnime ||
     CatalogRowId.airingAnime ||
     CatalogRowId.trending => Symbols.trending_up_rounded,
     CatalogRowId.popularMovies || CatalogRowId.popularShows || CatalogRowId.popularAnime => Symbols.whatshot_rounded,
@@ -301,7 +303,7 @@ class ExploreScreenState extends State<ExploreScreen>
                 key: _orderedHubKeys[i],
                 hub: rowHubs[i].hub,
                 icon: _rowIcon(rowHubs[i].row),
-                loadMoreItems: rowHubs[i].hub.more ? () => _explore.loadAllForRow(rowHubs[i].row) : null,
+                loadMoreItems: rowHubs[i].hub.more ? () => _explore.loadAllForHub(rowHubs[i]) : null,
                 onVerticalNavigation: (isUp) => _handleVerticalNavigation(i, isUp),
                 onNavigateUp: i == 0 ? () => _actionBarKey.currentState?.requestFocusOnFirst() : null,
                 onNavigateToSidebar: _navigateToSidebar,
@@ -317,9 +319,9 @@ class ExploreScreenState extends State<ExploreScreen>
     );
   }
 
-  CatalogRowId? _rowForHub(MediaHub hub) {
+  ExploreRowHub? _rowForHub(MediaHub hub) {
     for (final rowHub in _explore.rowHubs) {
-      if (rowHub.hub.id == hub.id) return rowHub.row;
+      if (rowHub.hub.id == hub.id) return rowHub;
     }
     return null;
   }
@@ -429,11 +431,11 @@ class ExploreScreenState extends State<ExploreScreen>
               child: TvBrowseRail(
                 key: _tvBrowseRailKey,
                 hubs: tvHubs,
-                iconForHub: (hub, _) => _rowIcon(_rowForHub(hub) ?? CatalogRowId.watchlist),
+                iconForHub: (hub, _) => _rowIcon(_rowForHub(hub)?.row),
                 onFocusedItemChanged: _setSpotlightItem,
                 loadMoreItems: (hub) {
-                  final row = _rowForHub(hub);
-                  return row == null ? Future.value(hub.items) : _explore.loadAllForRow(row);
+                  final rowHub = _rowForHub(hub);
+                  return rowHub == null ? Future.value(hub.items) : _explore.loadAllForHub(rowHub);
                 },
                 onNavigateUp: _actionBarKey.currentState?.requestFocusOnFirst,
                 onNavigateToSidebar: _navigateToSidebar,

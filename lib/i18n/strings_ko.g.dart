@@ -239,6 +239,8 @@ class _TranslationsSettingsKo extends TranslationsSettingsEn {
 	@override String get libraryDensity => '라이브러리 표시 밀도';
 	@override String get compact => '좁게';
 	@override String get comfortable => '넓게';
+	@override String get tvCornerSpotlightBackdrop => '';
+	@override String get tvCornerSpotlightBackdropDescription => '';
 	@override String get viewMode => '보기 모드';
 	@override String get gridView => '그리드 보기';
 	@override String get listView => '목록 보기';
@@ -1931,6 +1933,7 @@ class _TranslationsExploreRowsKo extends TranslationsExploreRowsEn {
 	@override String get trendingShows => '지금 뜨는 TV 프로그램';
 	@override String get popularMovies => '인기 영화';
 	@override String get popularShows => '인기 TV 프로그램';
+	@override String get trendingAnime => '지금 뜨는 애니메이션';
 	@override String get suggestedAnime => '추천 애니메이션';
 	@override String get airingAnime => '방영 중인 인기 애니메이션';
 	@override String get popularAnime => '가장 인기 있는 애니메이션';
@@ -2218,6 +2221,8 @@ extension on TranslationsKo {
 			'settings.libraryDensity' => '라이브러리 표시 밀도',
 			'settings.compact' => '좁게',
 			'settings.comfortable' => '넓게',
+			'settings.tvCornerSpotlightBackdrop' => '',
+			'settings.tvCornerSpotlightBackdropDescription' => '',
 			'settings.viewMode' => '보기 모드',
 			'settings.gridView' => '그리드 보기',
 			'settings.listView' => '목록 보기',
@@ -2630,10 +2635,10 @@ extension on TranslationsKo {
 			'messages.autoRemovedWatchedDownloads' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('ko'))(n, other: '시청한 다운로드 ${n}개를 자동 삭제했습니다', ), 
 			'messages.removedFromContinueWatching' => '계속 시청 목록에서 제거됨',
 			'messages.errorLoading' => ({required Object error}) => '오류: ${error}',
-			'messages.streamInterrupted' => '스트림이 중단되었습니다. 재생을 누르거나 탐색하여 다시 시도하세요.',
-			'messages.liveStreamInterrupted' => '라이브 스트림이 중단되었습니다. 재생을 눌러 다시 시도하세요.',
 			_ => null,
 		} ?? switch (path) {
+			'messages.streamInterrupted' => '스트림이 중단되었습니다. 재생을 누르거나 탐색하여 다시 시도하세요.',
+			'messages.liveStreamInterrupted' => '라이브 스트림이 중단되었습니다. 재생을 눌러 다시 시도하세요.',
 			'messages.fileInfoNotAvailable' => '파일 정보가 없습니다',
 			'messages.errorLoadingFileInfo' => ({required Object error}) => '파일 정보 로딩 중 오류: ${error}',
 			'messages.errorLoadingSeries' => '시리즈 로딩 중 오류',
@@ -2919,6 +2924,7 @@ extension on TranslationsKo {
 			'explore.rows.trendingShows' => '지금 뜨는 TV 프로그램',
 			'explore.rows.popularMovies' => '인기 영화',
 			'explore.rows.popularShows' => '인기 TV 프로그램',
+			'explore.rows.trendingAnime' => '지금 뜨는 애니메이션',
 			'explore.rows.suggestedAnime' => '추천 애니메이션',
 			'explore.rows.airingAnime' => '방영 중인 인기 애니메이션',
 			'explore.rows.popularAnime' => '가장 인기 있는 애니메이션',
@@ -3143,11 +3149,11 @@ extension on TranslationsKo {
 			'watchTogether.removeRoom' => '제거',
 			'watchTogether.guestSwitchUnavailable' => '전환할 수 없음 — 동기화 서버를 사용할 수 없습니다',
 			'watchTogether.guestSwitchFailed' => '전환할 수 없음 — 이 서버에서 콘텐츠를 찾을 수 없습니다',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.title' => '다운로드',
 			'downloads.manage' => '관리',
 			'downloads.tvShows' => 'TV 프로그램',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.movies' => '영화',
 			'downloads.music' => '음악',
 			'downloads.tracksQueued' => ({required Object count}) => '${count}곡 다운로드 대기 중',

@@ -3,11 +3,11 @@ import 'package:flutter_svg/flutter_svg.dart';
 
 import '../models/catalog/catalog_item.dart';
 
-/// Brand mark of a catalog source (Trakt circle, MAL square) — or any
-/// service SVG via [CatalogSourceLogo.asset] — tinted with the ambient icon
-/// color. Uses [SvgTheme.currentColor] so SVGs with multiple explicit fills
-/// (AniList keeps its brand-blue L while the A follows the theme) render
-/// correctly alongside single-color wordmarks.
+/// Brand mark of a catalog source — or any service SVG via
+/// [CatalogSourceLogo.asset] — tinted with the ambient icon color. Uses
+/// [SvgTheme.currentColor] so SVGs with multiple explicit fills (AniList
+/// keeps its brand-blue L while the A follows the theme) render correctly
+/// alongside single-color wordmarks.
 class CatalogSourceLogo extends StatelessWidget {
   final CatalogSourceId? id;
   final String? assetPath;
@@ -15,7 +15,7 @@ class CatalogSourceLogo extends StatelessWidget {
 
   const CatalogSourceLogo(CatalogSourceId this.id, {super.key, this.size = 20}) : assetPath = null;
 
-  /// For services that aren't catalog sources (AniList, Simkl).
+  /// For services that do not participate in the Explore catalog.
   const CatalogSourceLogo.asset(String this.assetPath, {super.key, this.size = 20}) : id = null;
 
   @override
@@ -23,8 +23,11 @@ class CatalogSourceLogo extends StatelessWidget {
     final asset =
         assetPath ??
         switch (id!) {
+          CatalogSourceId.plex => 'assets/plex_chevron.svg',
           CatalogSourceId.trakt => 'assets/trakt_circlemark.svg',
           CatalogSourceId.mal => 'assets/mal_mark.svg',
+          CatalogSourceId.anilist => 'assets/anilist_mark.svg',
+          CatalogSourceId.simkl => 'assets/simkl_mark.svg',
           CatalogSourceId.seerr => 'assets/seerr_mark.svg',
         };
     final color = IconTheme.of(context).color ?? Theme.of(context).colorScheme.onSurface;
