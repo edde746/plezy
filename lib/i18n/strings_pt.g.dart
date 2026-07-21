@@ -241,6 +241,10 @@ class _TranslationsSettingsPt extends TranslationsSettingsEn {
 	@override String get comfortable => 'Confortável';
 	@override String get tvCornerSpotlightBackdrop => '';
 	@override String get tvCornerSpotlightBackdropDescription => '';
+	@override String get gridSpacing => '';
+	@override String get gridSpacingTight => '';
+	@override String get gridSpacingNormal => '';
+	@override String get gridSpacingSpacious => '';
 	@override String get viewMode => 'Modo de Visualização';
 	@override String get gridView => 'Grade';
 	@override String get listView => 'Lista';
@@ -2226,6 +2230,10 @@ extension on TranslationsPt {
 			'settings.comfortable' => 'Confortável',
 			'settings.tvCornerSpotlightBackdrop' => '',
 			'settings.tvCornerSpotlightBackdropDescription' => '',
+			'settings.gridSpacing' => '',
+			'settings.gridSpacingTight' => '',
+			'settings.gridSpacingNormal' => '',
+			'settings.gridSpacingSpacious' => '',
 			'settings.viewMode' => 'Modo de Visualização',
 			'settings.gridView' => 'Grade',
 			'settings.listView' => 'Lista',
@@ -2634,12 +2642,12 @@ extension on TranslationsPt {
 			'messages.markedAsUnwatched' => 'Marcado como não assistido',
 			'messages.markedAsWatchedOffline' => 'Marcado como assistido (será sincronizado quando online)',
 			'messages.markedAsUnwatchedOffline' => 'Marcado como não assistido (será sincronizado quando online)',
+			_ => null,
+		} ?? switch (path) {
 			'messages.autoRemovedWatchedDownload' => ({required Object title}) => 'Removido automaticamente: ${title}',
 			'messages.autoRemovedWatchedDownloads' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('pt'))(n, one: 'Removido automaticamente ${n} download assistido', other: 'Removidos automaticamente ${n} downloads assistidos', ), 
 			'messages.removedFromContinueWatching' => 'Removido de Continuar Assistindo',
 			'messages.errorLoading' => ({required Object error}) => 'Erro: ${error}',
-			_ => null,
-		} ?? switch (path) {
 			'messages.streamInterrupted' => 'A transmissão foi interrompida. Toque em reproduzir ou avance para tentar novamente.',
 			'messages.liveStreamInterrupted' => 'A transmissão ao vivo foi interrompida. Toque em reproduzir para tentar novamente.',
 			'messages.fileInfoNotAvailable' => 'Informações do arquivo não disponíveis',
@@ -3148,12 +3156,12 @@ extension on TranslationsPt {
 			'watchTogether.waitingForParticipants' => 'Aguardando outros carregarem...',
 			'watchTogether.waitingForName' => ({required Object name}) => 'Aguardando ${name}...',
 			'watchTogether.recentRooms' => 'Salas recentes',
+			_ => null,
+		} ?? switch (path) {
 			'watchTogether.renameRoom' => 'Renomear sala',
 			'watchTogether.removeRoom' => 'Remover',
 			'watchTogether.guestSwitchUnavailable' => 'Não foi possível trocar — servidor indisponível para sincronização',
 			'watchTogether.guestSwitchFailed' => 'Não foi possível trocar — conteúdo não encontrado neste servidor',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.title' => 'Downloads',
 			'downloads.manage' => 'Gerenciar',
 			'downloads.tvShows' => 'Séries de TV',

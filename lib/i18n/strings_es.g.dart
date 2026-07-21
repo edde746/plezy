@@ -241,6 +241,10 @@ class _TranslationsSettingsEs extends TranslationsSettingsEn {
 	@override String get comfortable => 'Cómodo';
 	@override String get tvCornerSpotlightBackdrop => '';
 	@override String get tvCornerSpotlightBackdropDescription => '';
+	@override String get gridSpacing => '';
+	@override String get gridSpacingTight => '';
+	@override String get gridSpacingNormal => '';
+	@override String get gridSpacingSpacious => '';
 	@override String get viewMode => 'Modo de Vista';
 	@override String get gridView => 'Cuadrícula';
 	@override String get listView => 'Lista';
@@ -2226,6 +2230,10 @@ extension on TranslationsEs {
 			'settings.comfortable' => 'Cómodo',
 			'settings.tvCornerSpotlightBackdrop' => '',
 			'settings.tvCornerSpotlightBackdropDescription' => '',
+			'settings.gridSpacing' => '',
+			'settings.gridSpacingTight' => '',
+			'settings.gridSpacingNormal' => '',
+			'settings.gridSpacingSpacious' => '',
 			'settings.viewMode' => 'Modo de Vista',
 			'settings.gridView' => 'Cuadrícula',
 			'settings.listView' => 'Lista',
@@ -2634,12 +2642,12 @@ extension on TranslationsEs {
 			'messages.markedAsUnwatched' => 'Marcado como no visto',
 			'messages.markedAsWatchedOffline' => 'Marcado como visto (se sincronizará al estar en línea)',
 			'messages.markedAsUnwatchedOffline' => 'Marcado como no visto (se sincronizará al estar en línea)',
+			_ => null,
+		} ?? switch (path) {
 			'messages.autoRemovedWatchedDownload' => ({required Object title}) => 'Eliminado automáticamente: ${title}',
 			'messages.autoRemovedWatchedDownloads' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('es'))(n, one: 'Se eliminó automáticamente ${n} descarga vista', other: 'Se eliminaron automáticamente ${n} descargas vistas', ), 
 			'messages.removedFromContinueWatching' => 'Eliminado de Seguir Viendo',
 			'messages.errorLoading' => ({required Object error}) => 'Error: ${error}',
-			_ => null,
-		} ?? switch (path) {
 			'messages.streamInterrupted' => 'La reproducción se interrumpió. Pulsa reproducir o avanza para volver a intentarlo.',
 			'messages.liveStreamInterrupted' => 'La transmisión en vivo se interrumpió. Pulsa reproducir para volver a intentarlo.',
 			'messages.fileInfoNotAvailable' => 'Información de archivo no disponible',
@@ -3148,12 +3156,12 @@ extension on TranslationsEs {
 			'watchTogether.waitingForParticipants' => 'Esperando a que otros carguen...',
 			'watchTogether.waitingForName' => ({required Object name}) => 'Esperando a ${name}...',
 			'watchTogether.recentRooms' => 'Salas recientes',
+			_ => null,
+		} ?? switch (path) {
 			'watchTogether.renameRoom' => 'Renombrar sala',
 			'watchTogether.removeRoom' => 'Eliminar',
 			'watchTogether.guestSwitchUnavailable' => 'No se pudo cambiar — servidor no disponible para sincronización',
 			'watchTogether.guestSwitchFailed' => 'No se pudo cambiar — contenido no encontrado en este servidor',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.title' => 'Descargas',
 			'downloads.manage' => 'Gestionar',
 			'downloads.tvShows' => 'Series de TV',

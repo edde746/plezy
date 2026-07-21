@@ -241,6 +241,10 @@ class _TranslationsSettingsJa extends TranslationsSettingsEn {
 	@override String get comfortable => 'ゆったり';
 	@override String get tvCornerSpotlightBackdrop => '';
 	@override String get tvCornerSpotlightBackdropDescription => '';
+	@override String get gridSpacing => '';
+	@override String get gridSpacingTight => '';
+	@override String get gridSpacingNormal => '';
+	@override String get gridSpacingSpacious => '';
 	@override String get viewMode => '表示モード';
 	@override String get gridView => 'グリッド';
 	@override String get listView => 'リスト';
@@ -2223,6 +2227,10 @@ extension on TranslationsJa {
 			'settings.comfortable' => 'ゆったり',
 			'settings.tvCornerSpotlightBackdrop' => '',
 			'settings.tvCornerSpotlightBackdropDescription' => '',
+			'settings.gridSpacing' => '',
+			'settings.gridSpacingTight' => '',
+			'settings.gridSpacingNormal' => '',
+			'settings.gridSpacingSpacious' => '',
 			'settings.viewMode' => '表示モード',
 			'settings.gridView' => 'グリッド',
 			'settings.listView' => 'リスト',
@@ -2631,12 +2639,12 @@ extension on TranslationsJa {
 			'messages.markedAsUnwatched' => '未視聴にしました',
 			'messages.markedAsWatchedOffline' => '視聴済みにしました（オンライン時に同期）',
 			'messages.markedAsUnwatchedOffline' => '未視聴にしました（オンライン時に同期）',
+			_ => null,
+		} ?? switch (path) {
 			'messages.autoRemovedWatchedDownload' => ({required Object title}) => '自動削除: ${title}',
 			'messages.autoRemovedWatchedDownloads' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('ja'))(n, other: '視聴済みダウンロードを${n}件自動削除しました', ), 
 			'messages.removedFromContinueWatching' => '視聴中から削除しました',
 			'messages.errorLoading' => ({required Object error}) => 'エラー: ${error}',
-			_ => null,
-		} ?? switch (path) {
 			'messages.streamInterrupted' => 'ストリームが中断されました。再生を押すかシークして再試行してください。',
 			'messages.liveStreamInterrupted' => 'ライブストリームが中断されました。再生を押して再試行してください。',
 			'messages.fileInfoNotAvailable' => 'ファイル情報が利用できません',
@@ -3145,12 +3153,12 @@ extension on TranslationsJa {
 			'watchTogether.waitingForParticipants' => '他の参加者の読み込みを待っています...',
 			'watchTogether.waitingForName' => ({required Object name}) => '${name}を待っています...',
 			'watchTogether.recentRooms' => '最近のルーム',
+			_ => null,
+		} ?? switch (path) {
 			'watchTogether.renameRoom' => 'ルーム名を変更',
 			'watchTogether.removeRoom' => '削除',
 			'watchTogether.guestSwitchUnavailable' => '切り替えできません — サーバーが同期できません',
 			'watchTogether.guestSwitchFailed' => '切り替えできません — このサーバーにコンテンツが見つかりません',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.title' => 'ダウンロード',
 			'downloads.manage' => '管理',
 			'downloads.tvShows' => 'テレビ番組',

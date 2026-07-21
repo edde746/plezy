@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../media/media_item.dart' show CardShape;
+import '../services/settings_service.dart';
 import '../utils/grid_size_calculator.dart';
 import '../utils/layout_constants.dart';
 
@@ -81,7 +82,7 @@ class MediaGridDelegate {
   }
 
   static double spacingFor({required BuildContext context, bool fullBleedImage = false}) {
-    if (!fullBleedImage) return GridLayoutConstants.crossAxisSpacing;
+    if (!fullBleedImage) return SettingsService.instance.read(SettingsService.gridSpacing).gap;
     return GridLayoutConstants.fullCardGridSpacingForScale(TvLayoutConstants.scaleOf(context));
   }
 

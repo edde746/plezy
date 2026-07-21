@@ -241,6 +241,10 @@ class _TranslationsSettingsSv extends TranslationsSettingsEn {
 	@override String get comfortable => 'Bekväm';
 	@override String get tvCornerSpotlightBackdrop => '';
 	@override String get tvCornerSpotlightBackdropDescription => '';
+	@override String get gridSpacing => '';
+	@override String get gridSpacingTight => '';
+	@override String get gridSpacingNormal => '';
+	@override String get gridSpacingSpacious => '';
 	@override String get viewMode => 'Visningsläge';
 	@override String get gridView => 'Rutnät';
 	@override String get listView => 'Lista';
@@ -2226,6 +2230,10 @@ extension on TranslationsSv {
 			'settings.comfortable' => 'Bekväm',
 			'settings.tvCornerSpotlightBackdrop' => '',
 			'settings.tvCornerSpotlightBackdropDescription' => '',
+			'settings.gridSpacing' => '',
+			'settings.gridSpacingTight' => '',
+			'settings.gridSpacingNormal' => '',
+			'settings.gridSpacingSpacious' => '',
 			'settings.viewMode' => 'Visningsläge',
 			'settings.gridView' => 'Rutnät',
 			'settings.listView' => 'Lista',
@@ -2634,12 +2642,12 @@ extension on TranslationsSv {
 			'messages.markedAsUnwatched' => 'Markerad som osedd',
 			'messages.markedAsWatchedOffline' => 'Markerad som sedd (synkroniseras när online)',
 			'messages.markedAsUnwatchedOffline' => 'Markerad som osedd (synkroniseras när online)',
+			_ => null,
+		} ?? switch (path) {
 			'messages.autoRemovedWatchedDownload' => ({required Object title}) => 'Automatiskt borttagen: ${title}',
 			'messages.autoRemovedWatchedDownloads' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('sv'))(n, one: 'Tog automatiskt bort ${n} sedd nedladdning', other: 'Tog automatiskt bort ${n} sedda nedladdningar', ), 
 			'messages.removedFromContinueWatching' => 'Borttagen från Fortsätt titta',
 			'messages.errorLoading' => ({required Object error}) => 'Fel: ${error}',
-			_ => null,
-		} ?? switch (path) {
 			'messages.streamInterrupted' => 'Uppspelningen avbröts. Tryck på play eller spola för att försöka igen.',
 			'messages.liveStreamInterrupted' => 'Livestreamen avbröts. Tryck på play för att försöka igen.',
 			'messages.fileInfoNotAvailable' => 'Filinformation inte tillgänglig',
@@ -3148,12 +3156,12 @@ extension on TranslationsSv {
 			'watchTogether.waitingForParticipants' => 'Väntar på att andra laddar...',
 			'watchTogether.waitingForName' => ({required Object name}) => 'Väntar på ${name}...',
 			'watchTogether.recentRooms' => 'Senaste rum',
+			_ => null,
+		} ?? switch (path) {
 			'watchTogether.renameRoom' => 'Byt namn på rum',
 			'watchTogether.removeRoom' => 'Ta bort',
 			'watchTogether.guestSwitchUnavailable' => 'Kunde inte byta — server inte tillgänglig för synkronisering',
 			'watchTogether.guestSwitchFailed' => 'Kunde inte byta — innehåll hittades inte på denna server',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.title' => 'Nedladdningar',
 			'downloads.manage' => 'Hantera',
 			'downloads.tvShows' => 'TV-serier',

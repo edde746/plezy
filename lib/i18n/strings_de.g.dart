@@ -241,6 +241,10 @@ class _TranslationsSettingsDe extends TranslationsSettingsEn {
 	@override String get comfortable => 'Großzügig';
 	@override String get tvCornerSpotlightBackdrop => 'Backdrop in der Ecke';
 	@override String get tvCornerSpotlightBackdropDescription => 'Zeigt das Spotlight-Artwork oben rechts statt bildschirmfüllend';
+	@override String get gridSpacing => 'Rasterabstand';
+	@override String get gridSpacingTight => 'Eng';
+	@override String get gridSpacingNormal => 'Normal';
+	@override String get gridSpacingSpacious => 'Luftig';
 	@override String get viewMode => 'Ansichtsmodus';
 	@override String get gridView => 'Raster';
 	@override String get listView => 'Liste';
@@ -2226,6 +2230,10 @@ extension on TranslationsDe {
 			'settings.comfortable' => 'Großzügig',
 			'settings.tvCornerSpotlightBackdrop' => 'Backdrop in der Ecke',
 			'settings.tvCornerSpotlightBackdropDescription' => 'Zeigt das Spotlight-Artwork oben rechts statt bildschirmfüllend',
+			'settings.gridSpacing' => 'Rasterabstand',
+			'settings.gridSpacingTight' => 'Eng',
+			'settings.gridSpacingNormal' => 'Normal',
+			'settings.gridSpacingSpacious' => 'Luftig',
 			'settings.viewMode' => 'Ansichtsmodus',
 			'settings.gridView' => 'Raster',
 			'settings.listView' => 'Liste',
@@ -2634,12 +2642,12 @@ extension on TranslationsDe {
 			'messages.markedAsUnwatched' => 'Als ungesehen markiert',
 			'messages.markedAsWatchedOffline' => 'Als gesehen markiert (wird synchronisiert, wenn online)',
 			'messages.markedAsUnwatchedOffline' => 'Als ungesehen markiert (wird synchronisiert, wenn online)',
+			_ => null,
+		} ?? switch (path) {
 			'messages.autoRemovedWatchedDownload' => ({required Object title}) => 'Automatisch entfernt: ${title}',
 			'messages.autoRemovedWatchedDownloads' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('de'))(n, one: 'Automatisch entfernt: ${n} angesehener Download', other: 'Automatisch entfernt: ${n} angesehene Downloads', ), 
 			'messages.removedFromContinueWatching' => 'Aus ‚Weiterschauen\' entfernt',
 			'messages.errorLoading' => ({required Object error}) => 'Fehler: ${error}',
-			_ => null,
-		} ?? switch (path) {
 			'messages.streamInterrupted' => 'Der Stream wurde unterbrochen. Drücke auf Wiedergabe oder spule, um es erneut zu versuchen.',
 			'messages.liveStreamInterrupted' => 'Der Livestream wurde unterbrochen. Drücke auf Wiedergabe, um es erneut zu versuchen.',
 			'messages.fileInfoNotAvailable' => 'Dateiinfo nicht verfügbar',
@@ -3148,12 +3156,12 @@ extension on TranslationsDe {
 			'watchTogether.waitingForParticipants' => 'Warte auf andere zum Laden...',
 			'watchTogether.waitingForName' => ({required Object name}) => 'Warten auf ${name}...',
 			'watchTogether.recentRooms' => 'Letzte Räume',
+			_ => null,
+		} ?? switch (path) {
 			'watchTogether.renameRoom' => 'Raum umbenennen',
 			'watchTogether.removeRoom' => 'Entfernen',
 			'watchTogether.guestSwitchUnavailable' => 'Wechsel fehlgeschlagen — Server nicht für Synchronisierung verfügbar',
 			'watchTogether.guestSwitchFailed' => 'Wechsel fehlgeschlagen — Inhalt auf diesem Server nicht gefunden',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.title' => 'Downloads',
 			'downloads.manage' => 'Verwalten',
 			'downloads.tvShows' => 'Serien',

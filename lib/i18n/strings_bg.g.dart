@@ -241,6 +241,10 @@ class _TranslationsSettingsBg extends TranslationsSettingsEn {
 	@override String get comfortable => 'Удобна';
 	@override String get tvCornerSpotlightBackdrop => '';
 	@override String get tvCornerSpotlightBackdropDescription => '';
+	@override String get gridSpacing => '';
+	@override String get gridSpacingTight => '';
+	@override String get gridSpacingNormal => '';
+	@override String get gridSpacingSpacious => '';
 	@override String get viewMode => 'Режим на изглед';
 	@override String get gridView => 'Мрежа';
 	@override String get listView => 'Списък';
@@ -2226,6 +2230,10 @@ extension on TranslationsBg {
 			'settings.comfortable' => 'Удобна',
 			'settings.tvCornerSpotlightBackdrop' => '',
 			'settings.tvCornerSpotlightBackdropDescription' => '',
+			'settings.gridSpacing' => '',
+			'settings.gridSpacingTight' => '',
+			'settings.gridSpacingNormal' => '',
+			'settings.gridSpacingSpacious' => '',
 			'settings.viewMode' => 'Режим на изглед',
 			'settings.gridView' => 'Мрежа',
 			'settings.listView' => 'Списък',
@@ -2634,12 +2642,12 @@ extension on TranslationsBg {
 			'messages.markedAsUnwatched' => 'Маркирано като негледано',
 			'messages.markedAsWatchedOffline' => 'Маркирано като гледано (ще се синхронизира, когато сте онлайн)',
 			'messages.markedAsUnwatchedOffline' => 'Маркирано като негледано (ще се синхронизира, когато сте онлайн)',
+			_ => null,
+		} ?? switch (path) {
 			'messages.autoRemovedWatchedDownload' => ({required Object title}) => 'Автоматично премахнато: ${title}',
 			'messages.autoRemovedWatchedDownloads' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('bg'))(n, one: 'Автоматично премахнато ${n} гледано изтегляне', other: 'Автоматично премахнати ${n} гледани изтегляния', ), 
 			'messages.removedFromContinueWatching' => 'Премахнато от продължаване на гледането',
 			'messages.errorLoading' => ({required Object error}) => 'Грешка: ${error}',
-			_ => null,
-		} ?? switch (path) {
 			'messages.streamInterrupted' => 'Потокът прекъсна. Натиснете „Пусни“ или превъртете, за да опитате отново.',
 			'messages.liveStreamInterrupted' => 'Потокът на живо прекъсна. Натиснете „Пусни“, за да опитате отново.',
 			'messages.fileInfoNotAvailable' => 'Информацията за файла не е налична',
@@ -3148,12 +3156,12 @@ extension on TranslationsBg {
 			'watchTogether.waitingForParticipants' => 'Изчакване другите да заредят...',
 			'watchTogether.waitingForName' => ({required Object name}) => 'Изчакване на ${name}...',
 			'watchTogether.recentRooms' => 'Скорошни стаи',
+			_ => null,
+		} ?? switch (path) {
 			'watchTogether.renameRoom' => 'Преименувай стая',
 			'watchTogether.removeRoom' => 'Премахни',
 			'watchTogether.guestSwitchUnavailable' => 'Превключването не е възможно — сървърът е недостъпен за синхронизация',
 			'watchTogether.guestSwitchFailed' => 'Превключването не е възможно — съдържанието не е намерено на този сървър',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.title' => 'Изтегляния',
 			'downloads.manage' => 'Управление',
 			'downloads.tvShows' => 'ТВ сериали',

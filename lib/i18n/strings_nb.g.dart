@@ -241,6 +241,10 @@ class _TranslationsSettingsNb extends TranslationsSettingsEn {
 	@override String get comfortable => 'Komfortabel';
 	@override String get tvCornerSpotlightBackdrop => '';
 	@override String get tvCornerSpotlightBackdropDescription => '';
+	@override String get gridSpacing => '';
+	@override String get gridSpacingTight => '';
+	@override String get gridSpacingNormal => '';
+	@override String get gridSpacingSpacious => '';
 	@override String get viewMode => 'Visningsmodus';
 	@override String get gridView => 'Rutenett';
 	@override String get listView => 'Liste';
@@ -2226,6 +2230,10 @@ extension on TranslationsNb {
 			'settings.comfortable' => 'Komfortabel',
 			'settings.tvCornerSpotlightBackdrop' => '',
 			'settings.tvCornerSpotlightBackdropDescription' => '',
+			'settings.gridSpacing' => '',
+			'settings.gridSpacingTight' => '',
+			'settings.gridSpacingNormal' => '',
+			'settings.gridSpacingSpacious' => '',
 			'settings.viewMode' => 'Visningsmodus',
 			'settings.gridView' => 'Rutenett',
 			'settings.listView' => 'Liste',
@@ -2634,12 +2642,12 @@ extension on TranslationsNb {
 			'messages.markedAsUnwatched' => 'Merket som usett',
 			'messages.markedAsWatchedOffline' => 'Merket som sett (synkroniseres når tilkoblet)',
 			'messages.markedAsUnwatchedOffline' => 'Merket som usett (synkroniseres når tilkoblet)',
+			_ => null,
+		} ?? switch (path) {
 			'messages.autoRemovedWatchedDownload' => ({required Object title}) => 'Automatisk fjernet: ${title}',
 			'messages.autoRemovedWatchedDownloads' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('nb'))(n, one: 'Fjernet automatisk ${n} sett nedlasting', other: 'Fjernet automatisk ${n} sette nedlastinger', ), 
 			'messages.removedFromContinueWatching' => 'Fjernet fra Fortsett å se',
 			'messages.errorLoading' => ({required Object error}) => 'Feil: ${error}',
-			_ => null,
-		} ?? switch (path) {
 			'messages.streamInterrupted' => 'Avspillingen ble avbrutt. Trykk på Spill av eller spol for å prøve på nytt.',
 			'messages.liveStreamInterrupted' => 'Direktesendingen ble avbrutt. Trykk på Spill av for å prøve på nytt.',
 			'messages.fileInfoNotAvailable' => 'Filinformasjon ikke tilgjengelig',
@@ -3148,12 +3156,12 @@ extension on TranslationsNb {
 			'watchTogether.waitingForParticipants' => 'Venter på at andre laster inn...',
 			'watchTogether.waitingForName' => ({required Object name}) => 'Venter på ${name}...',
 			'watchTogether.recentRooms' => 'Nylige rom',
+			_ => null,
+		} ?? switch (path) {
 			'watchTogether.renameRoom' => 'Gi nytt navn til rom',
 			'watchTogether.removeRoom' => 'Fjern',
 			'watchTogether.guestSwitchUnavailable' => 'Kunne ikke bytte — server ikke tilgjengelig for synkronisering',
 			'watchTogether.guestSwitchFailed' => 'Kunne ikke bytte — innhold ble ikke funnet på denne serveren',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.title' => 'Nedlastinger',
 			'downloads.manage' => 'Administrer',
 			'downloads.tvShows' => 'TV-serier',
