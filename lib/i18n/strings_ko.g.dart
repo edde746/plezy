@@ -241,6 +241,10 @@ class _TranslationsSettingsKo extends TranslationsSettingsEn {
 	@override String get comfortable => '넓게';
 	@override String get tvCornerSpotlightBackdrop => '';
 	@override String get tvCornerSpotlightBackdropDescription => '';
+	@override String get gridSpacing => '';
+	@override String get gridSpacingTight => '';
+	@override String get gridSpacingNormal => '';
+	@override String get gridSpacingSpacious => '';
 	@override String get viewMode => '보기 모드';
 	@override String get gridView => '그리드 보기';
 	@override String get listView => '목록 보기';
@@ -2223,6 +2227,10 @@ extension on TranslationsKo {
 			'settings.comfortable' => '넓게',
 			'settings.tvCornerSpotlightBackdrop' => '',
 			'settings.tvCornerSpotlightBackdropDescription' => '',
+			'settings.gridSpacing' => '',
+			'settings.gridSpacingTight' => '',
+			'settings.gridSpacingNormal' => '',
+			'settings.gridSpacingSpacious' => '',
 			'settings.viewMode' => '보기 모드',
 			'settings.gridView' => '그리드 보기',
 			'settings.listView' => '목록 보기',
@@ -2631,12 +2639,12 @@ extension on TranslationsKo {
 			'messages.markedAsUnwatched' => '시청 안 함으로 표시됨',
 			'messages.markedAsWatchedOffline' => '시청 완료로 표시됨 (연결 시 동기화됨)',
 			'messages.markedAsUnwatchedOffline' => '미시청으로 표시됨 (연결 시 동기화됨)',
+			_ => null,
+		} ?? switch (path) {
 			'messages.autoRemovedWatchedDownload' => ({required Object title}) => '자동 삭제됨: ${title}',
 			'messages.autoRemovedWatchedDownloads' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('ko'))(n, other: '시청한 다운로드 ${n}개를 자동 삭제했습니다', ), 
 			'messages.removedFromContinueWatching' => '계속 시청 목록에서 제거됨',
 			'messages.errorLoading' => ({required Object error}) => '오류: ${error}',
-			_ => null,
-		} ?? switch (path) {
 			'messages.streamInterrupted' => '스트림이 중단되었습니다. 재생을 누르거나 탐색하여 다시 시도하세요.',
 			'messages.liveStreamInterrupted' => '라이브 스트림이 중단되었습니다. 재생을 눌러 다시 시도하세요.',
 			'messages.fileInfoNotAvailable' => '파일 정보가 없습니다',
@@ -3145,12 +3153,12 @@ extension on TranslationsKo {
 			'watchTogether.waitingForParticipants' => '다른 참가자의 로딩을 기다리는 중...',
 			'watchTogether.waitingForName' => ({required Object name}) => '${name}님을 기다리는 중...',
 			'watchTogether.recentRooms' => '최근 방',
+			_ => null,
+		} ?? switch (path) {
 			'watchTogether.renameRoom' => '방 이름 변경',
 			'watchTogether.removeRoom' => '제거',
 			'watchTogether.guestSwitchUnavailable' => '전환할 수 없음 — 동기화 서버를 사용할 수 없습니다',
 			'watchTogether.guestSwitchFailed' => '전환할 수 없음 — 이 서버에서 콘텐츠를 찾을 수 없습니다',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.title' => '다운로드',
 			'downloads.manage' => '관리',
 			'downloads.tvShows' => 'TV 프로그램',

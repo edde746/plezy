@@ -241,6 +241,10 @@ class _TranslationsSettingsZh extends TranslationsSettingsEn {
 	@override String get comfortable => '舒适';
 	@override String get tvCornerSpotlightBackdrop => '';
 	@override String get tvCornerSpotlightBackdropDescription => '';
+	@override String get gridSpacing => '';
+	@override String get gridSpacingTight => '';
+	@override String get gridSpacingNormal => '';
+	@override String get gridSpacingSpacious => '';
 	@override String get viewMode => '视图模式';
 	@override String get gridView => '网格视图';
 	@override String get listView => '列表视图';
@@ -2223,6 +2227,10 @@ extension on TranslationsZh {
 			'settings.comfortable' => '舒适',
 			'settings.tvCornerSpotlightBackdrop' => '',
 			'settings.tvCornerSpotlightBackdropDescription' => '',
+			'settings.gridSpacing' => '',
+			'settings.gridSpacingTight' => '',
+			'settings.gridSpacingNormal' => '',
+			'settings.gridSpacingSpacious' => '',
 			'settings.viewMode' => '视图模式',
 			'settings.gridView' => '网格视图',
 			'settings.listView' => '列表视图',
@@ -2631,12 +2639,12 @@ extension on TranslationsZh {
 			'messages.markedAsUnwatched' => '已标记为未观看',
 			'messages.markedAsWatchedOffline' => '已标记为已观看 (将在联网时同步)',
 			'messages.markedAsUnwatchedOffline' => '已标记为未观看 (将在联网时同步)',
+			_ => null,
+		} ?? switch (path) {
 			'messages.autoRemovedWatchedDownload' => ({required Object title}) => '已自动移除: ${title}',
 			'messages.autoRemovedWatchedDownloads' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('zh'))(n, other: '已自动移除 ${n} 个看过的下载', ), 
 			'messages.removedFromContinueWatching' => '已从继续观看中移除',
 			'messages.errorLoading' => ({required Object error}) => '错误: ${error}',
-			_ => null,
-		} ?? switch (path) {
 			'messages.streamInterrupted' => '视频流已中断。按播放键或拖动进度条重试。',
 			'messages.liveStreamInterrupted' => '直播流已中断。按播放键重试。',
 			'messages.fileInfoNotAvailable' => '文件信息不可用',
@@ -3145,12 +3153,12 @@ extension on TranslationsZh {
 			'watchTogether.waitingForParticipants' => '等待其他人加载...',
 			'watchTogether.waitingForName' => ({required Object name}) => '正在等待 ${name}...',
 			'watchTogether.recentRooms' => '最近的房间',
+			_ => null,
+		} ?? switch (path) {
 			'watchTogether.renameRoom' => '重命名房间',
 			'watchTogether.removeRoom' => '移除',
 			'watchTogether.guestSwitchUnavailable' => '无法切换 — 服务器无法同步',
 			'watchTogether.guestSwitchFailed' => '无法切换 — 在此服务器上未找到内容',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.title' => '下载',
 			'downloads.manage' => '管理',
 			'downloads.tvShows' => '电视剧',
