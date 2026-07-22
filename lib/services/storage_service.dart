@@ -18,6 +18,7 @@ class StorageService extends BaseSharedPreferencesService {
   static const String _keyServersList = 'servers_list';
   static const String _keyServerOrder = 'server_order';
   static const String _keyActiveProfileId = 'active_app_profile_id';
+  static const String _keyTvosUserProfileMap = 'tvos_user_profile_map';
 
   // Key prefixes for per-id storage
   static const String _prefixServerEndpoint = 'server_endpoint_';
@@ -442,6 +443,35 @@ class StorageService extends BaseSharedPreferencesService {
 
   Future<void> clearActiveProfileId() async {
     await prefs.remove(_keyActiveProfileId);
+  }
+
+  // Apple TV (tvOS) system user → Plezy profile id mapping, so the app can
+  // auto-activate the matching profile when the Apple TV system user
+  // changes. Stored as a JSON object { "<tvosUserId>": "<profileId>" }.
+
+  Map<String, String> getTvosUserProfileMap() {
+    final jsonString = prefs.getString(_keyTvosUserProfileMap);
+    if (jsonString == null) return const {};
+    final decoded = decodeJsonStringToMap(jsonString);
+    return decoded.map((key, value) => MapEntry(key, value.toString()));
+  }
+
+  String? getProfileIdForTvosUser(String tvosUserId) => getTvosUserProfileMap()[tvosUserId];
+
+  Future<void> setProfileIdForTvosUser(String tvosUserId, String profileId) async {
+    final map = Map<String, String>.from(getTvosUserProfileMap());
+    map[tvosUserId] = profileId;
+    await _setJsonMap(_keyTvosUserProfileMap, map);
+  }
+
+  Future<void> clearProfileIdForTvosUser(String tvosUserId) async {
+    final map = Map<String, String>.from(getTvosUserProfileMap());
+    if (map.remove(tvosUserId) == null) return;
+    if (map.isEmpty) {
+      await prefs.remove(_keyTvosUserProfileMap);
+    } else {
+      await _setJsonMap(_keyTvosUserProfileMap, map);
+    }
   }
 
   // Per-connection Plex Home users cache. Plex Home profiles are not

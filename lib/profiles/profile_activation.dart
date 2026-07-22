@@ -5,6 +5,10 @@ import '../connection/connection.dart';
 import '../connection/connection_registry.dart';
 import '../i18n/strings.g.dart';
 import '../screens/profile/pin_entry_dialog.dart';
+import '../services/storage_service.dart';
+import '../services/tvos_user_profile_service.dart';
+import '../utils/app_logger.dart';
+import '../utils/platform_detector.dart';
 import '../utils/snackbar_helper.dart';
 import 'active_profile_binder.dart';
 import 'active_profile_provider.dart';
@@ -135,6 +139,37 @@ Future<PlexHomeSwitchStatus> _preVerifyPlexHomePin(BuildContext context, Profile
   );
   if (result.succeeded) binder.markPlexHomePreVerified(profile.id);
   return result.status;
+}
+
+/// Auto-activate the Plezy profile mapped to the current Apple TV system
+/// user, if any (see [TvosUserProfileService] and
+/// [StorageService.getProfileIdForTvosUser]).
+///
+/// Silent by design: no PIN prompts and no error surfaces. PIN-protected
+/// profiles are skipped — an auto-switch must never pop a dialog the user
+/// didn't ask for. Returns true when a different profile was activated.
+Future<bool> activateTvosMappedProfile({
+  required ActiveProfileProvider activeProfile,
+  required ActiveProfileBinder binder,
+  String? tvosUserId,
+}) async {
+  if (!PlatformDetector.isAppleTV()) return false;
+  final userId = tvosUserId ?? await TvosUserProfileService().getCurrentUser();
+  if (userId == null) return false;
+  final storage = await StorageService.getInstance();
+  final mappedId = storage.getProfileIdForTvosUser(userId);
+  if (mappedId == null || mappedId == activeProfile.active?.id) return false;
+  Profile? match;
+  for (final p in activeProfile.profiles) {
+    if (p.id == mappedId) {
+      match = p;
+      break;
+    }
+  }
+  if (match == null || match.isPinProtected) return false;
+  appLogger.i('tvOS user mapping: auto-activating ${match.displayName} ($mappedId)');
+  binder.markUserInitiatedActivation(match.id);
+  return activeProfile.activate(match);
 }
 
 /// Verify [pin] against [profile]'s stored PIN hash *without* activating it.

@@ -64,6 +64,8 @@ end
 
 system_shelf_ref = ensure_file(runner_group, 'SystemShelfPlugin.swift')
 ensure_source(runner, system_shelf_ref)
+tv_user_ref = ensure_file(runner_group, 'TvUserPlugin.swift')
+ensure_source(runner, tv_user_ref)
 ensure_file(runner_group, 'Runner.entitlements')
 
 extension_group = main_group['TopShelfExtension'] || main_group.new_group('TopShelfExtension', 'TopShelfExtension')

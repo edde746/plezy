@@ -31,6 +31,7 @@
 		C6A15611158B29B0FF43A960 /* Pods_Runner.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 824D2C68D1F1206932E118C2 /* Pods_Runner.framework */; };
 		CD1C0534948840272E58248E /* PathMonitorConnectivityProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6AEF79DFBD1D80F00AB39CDA /* PathMonitorConnectivityProvider.swift */; };
 		D2A548D9DE1A0F319B30B74C /* SystemShelfPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0760C00EDC55A4D718BCB406 /* SystemShelfPlugin.swift */; };
+		4E7D1B90A3C2F5E8D6104A21 /* TvUserPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8C2F6E41B7D90A35E14C8B02 /* TvUserPlugin.swift */; };
 		EA0F4264E7B912702C490109 /* MPVKit in Frameworks */ = {isa = PBXBuildFile; productRef = EA0F4263E7B912702C490108 /* MPVKit */; };
 		E3DEAD2AAFC347A2E55AC0F7 /* SharedPreferencesPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0455EBA0EF4A61D3B71D2D7 /* SharedPreferencesPlugin.swift */; };
 		E79A4474D308631AFA59CAE7 /* DeviceInfoPlusPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5E1F41676FEF1AB57076F8B9 /* DeviceInfoPlusPlugin.swift */; };
@@ -74,6 +75,7 @@
 		035F0D5A5E54BE7AD9AFA23C /* TopShelfExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; name = TopShelfExtension.appex; path = TopShelfExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		04DD35536DEE7C27FFA53862 /* Pods-Runner.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Runner.release.xcconfig"; path = "Target Support Files/Pods-Runner/Pods-Runner.release.xcconfig"; sourceTree = "<group>"; };
 		0760C00EDC55A4D718BCB406 /* SystemShelfPlugin.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SystemShelfPlugin.swift; sourceTree = "<group>"; };
+		8C2F6E41B7D90A35E14C8B02 /* TvUserPlugin.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TvUserPlugin.swift; sourceTree = "<group>"; };
 		0C25F4F2367A30B47E945AD6 /* Pods-Runner.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Runner.debug.xcconfig"; path = "Target Support Files/Pods-Runner/Pods-Runner.debug.xcconfig"; sourceTree = "<group>"; };
 		25B7925EFD8A2C1C7EB667D5 /* TVServices.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = TVServices.framework; path = System/Library/Frameworks/TVServices.framework; sourceTree = SDKROOT; };
 		34CD411CCD84E381C4BF4C1B /* messages.g.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = messages.g.swift; sourceTree = "<group>"; };
@@ -245,6 +247,7 @@
 				BF0B7DFE378943E9D7865D18 /* MpvPlayer */,
 				D58B788B11920D95BC7D750C /* Plugins */,
 				0760C00EDC55A4D718BCB406 /* SystemShelfPlugin.swift */,
+				8C2F6E41B7D90A35E14C8B02 /* TvUserPlugin.swift */,
 				937C0D45D6114EF1E957F5F6 /* Runner.entitlements */,
 			);
 			path = Runner;
@@ -501,6 +504,7 @@
 				A7596F780E93AF0BE3838A26 /* ConnectivityProvider.swift in Sources */,
 				CD1C0534948840272E58248E /* PathMonitorConnectivityProvider.swift in Sources */,
 				D2A548D9DE1A0F319B30B74C /* SystemShelfPlugin.swift in Sources */,
+				4E7D1B90A3C2F5E8D6104A21 /* TvUserPlugin.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

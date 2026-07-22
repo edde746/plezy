@@ -20,6 +20,7 @@ import 'navigation/profile_session_screen.dart';
 import 'profiles/active_profile_binder.dart';
 import 'profiles/active_profile_provider.dart';
 import 'profiles/profile.dart';
+import 'profiles/profile_activation.dart';
 import 'profiles/profile_connection_cleanup.dart';
 import 'profiles/profile_connection_registry.dart';
 import 'profiles/profile_registry.dart';
@@ -1273,6 +1274,13 @@ class _SetupScreenState extends State<SetupScreen> with MountedSetStateMixin {
     // Wire the per-server status listener before either branch so the splash
     // checkmarks fill in even while the user is choosing a profile.
     _bindServerStatusListener(activeProfile, _serverManagerFromContext);
+
+    // Apple TV: switch to the profile mapped to the current tvOS system
+    // user before the binder starts, so the initial bind already targets
+    // the mapped profile. A successful auto-switch also makes `hasNoActive`
+    // false below and skips the picker.
+    await activateTvosMappedProfile(activeProfile: activeProfile, binder: binder);
+    if (!mounted) return;
 
     // Start only after network/offline startup has been decided and the
     // active profile snapshot is hydrated. This prevents an eager binder
