@@ -711,6 +711,7 @@ class _MainScreenState extends State<MainScreen>
         activeProfile: context.read<ActiveProfileProvider>(),
         binder: context.read<ActiveProfileBinder>(),
         tvosUserId: tvosUserId,
+        context: context,
       );
     };
     _tvosUserChangedCallback = tvosUser.onUserChanged;

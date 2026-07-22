@@ -54,6 +54,9 @@ class _TvosProfileMappingScreenState extends State<TvosProfileMappingScreen> {
     if (storage == null || tvosUserId == null) return;
     if (profileId == null) {
       await storage.clearProfileIdForTvosUser(tvosUserId);
+      // An explicit "don't switch automatically" also silences the
+      // post-switch mapping prompt for this tvOS user.
+      await storage.markTvosUserPromptedForMapping(tvosUserId);
     } else {
       await storage.setProfileIdForTvosUser(tvosUserId, profileId);
     }
@@ -105,10 +108,9 @@ class _TvosProfileMappingScreenState extends State<TvosProfileMappingScreen> {
             selected: mappedId == profile.id,
             leading: ProfileAvatar(profile: profile, size: 32),
             title: profile.displayName,
-            // v1 deliberately never auto-switches into PIN-protected
-            // profiles, so mapping one is not offered.
-            subtitle: profile.isPinProtected ? t.profiles.appleTvSyncPinProtected : null,
-            enabled: !profile.isPinProtected,
+            // PIN-protected profiles are mappable — the auto-switch asks
+            // for their PIN, exactly like a manual switch would.
+            subtitle: profile.isPinProtected ? t.profiles.appleTvSyncAsksForPin : null,
             onTap: () => _select(profile.id),
           ),
       ],
@@ -121,7 +123,6 @@ class _OptionTile extends StatelessWidget {
   final Widget leading;
   final String title;
   final String? subtitle;
-  final bool enabled;
   final VoidCallback onTap;
 
   const _OptionTile({
@@ -129,7 +130,6 @@ class _OptionTile extends StatelessWidget {
     required this.leading,
     required this.title,
     this.subtitle,
-    this.enabled = true,
     required this.onTap,
   });
 
@@ -139,13 +139,12 @@ class _OptionTile extends StatelessWidget {
       leading: leading,
       title: Text(title),
       subtitle: subtitle != null ? Text(subtitle!) : null,
-      enabled: enabled,
       trailing: AppIcon(
         selected ? Symbols.radio_button_checked_rounded : Symbols.radio_button_unchecked_rounded,
         fill: 1,
         color: selected ? Theme.of(context).colorScheme.primary : null,
       ),
-      onTap: enabled ? onTap : null,
+      onTap: onTap,
     );
   }
 }

@@ -245,6 +245,33 @@ void main() {
     });
   });
 
+  group('Tvos user prompted flag', () {
+    test('defaults to not prompted', () async {
+      final s = await StorageService.getInstance();
+      expect(s.wasTvosUserPromptedForMapping('tv-user-1'), isFalse);
+    });
+
+    test('mark + read round-trip is per user', () async {
+      final s = await StorageService.getInstance();
+      await s.markTvosUserPromptedForMapping('tv-user-1');
+      expect(s.wasTvosUserPromptedForMapping('tv-user-1'), isTrue);
+      expect(s.wasTvosUserPromptedForMapping('tv-user-2'), isFalse);
+    });
+
+    test('marking twice keeps a single entry', () async {
+      final s = await StorageService.getInstance();
+      await s.markTvosUserPromptedForMapping('tv-user-1');
+      await s.markTvosUserPromptedForMapping('tv-user-1');
+      expect(json.decode(s.prefs.getString('tvos_user_prompted')!), ['tv-user-1']);
+    });
+
+    test('survives garbage JSON by reporting not prompted', () async {
+      final s = await StorageService.getInstance();
+      await s.prefs.setString('tvos_user_prompted', 'not-json');
+      expect(s.wasTvosUserPromptedForMapping('tv-user-1'), isFalse);
+    });
+  });
+
   // ============================================================
   // Library order (List<String>) — scoped to active profile
   // ============================================================

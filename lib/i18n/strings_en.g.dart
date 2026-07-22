@@ -2106,8 +2106,8 @@ class TranslationsProfilesEn {
 	/// en: 'Switch profiles automatically with the Apple TV user'
 	String get appleTvSyncSettingsSubtitle => 'Switch profiles automatically with the Apple TV user';
 
-	/// en: 'Map this Apple TV user to a profile and Plezy will activate it automatically after a user switch. Each household member should open this screen while their own Apple TV user is active and pick their profile. PIN-protected profiles can't be switched automatically.'
-	String get appleTvSyncExplain => 'Map this Apple TV user to a profile and Plezy will activate it automatically after a user switch. Each household member should open this screen while their own Apple TV user is active and pick their profile. PIN-protected profiles can\'t be switched automatically.';
+	/// en: 'Map this Apple TV user to a profile and Plezy will activate it automatically after a user switch. Each household member should open this screen while their own Apple TV user is active and pick their profile. PIN-protected profiles ask for their PIN before switching.'
+	String get appleTvSyncExplain => 'Map this Apple TV user to a profile and Plezy will activate it automatically after a user switch. Each household member should open this screen while their own Apple TV user is active and pick their profile. PIN-protected profiles ask for their PIN before switching.';
 
 	/// en: 'Apple TV user unavailable'
 	String get appleTvSyncUnavailable => 'Apple TV user unavailable';
@@ -2121,8 +2121,17 @@ class TranslationsProfilesEn {
 	/// en: 'Don't switch automatically'
 	String get appleTvSyncNoAutoSwitch => 'Don\'t switch automatically';
 
-	/// en: 'PIN-protected'
-	String get appleTvSyncPinProtected => 'PIN-protected';
+	/// en: 'Asks for the PIN when switching'
+	String get appleTvSyncAsksForPin => 'Asks for the PIN when switching';
+
+	/// en: 'Open ${displayName} automatically when you're on this Apple TV user?'
+	String appleTvSyncPromptMessage({required Object displayName}) => 'Open ${displayName} automatically when you\'re on this Apple TV user?';
+
+	/// en: 'Not now'
+	String get appleTvSyncPromptNotNow => 'Not now';
+
+	/// en: 'Don't ask again'
+	String get appleTvSyncPromptDontAskAgain => 'Don\'t ask again';
 }
 
 // Path: connections
@@ -5660,12 +5669,15 @@ extension on Translations {
 			'profiles.pinsDontMatch' => 'PINs don\'t match',
 			'profiles.appleTvSync' => 'Apple TV profile sync',
 			'profiles.appleTvSyncSettingsSubtitle' => 'Switch profiles automatically with the Apple TV user',
-			'profiles.appleTvSyncExplain' => 'Map this Apple TV user to a profile and Plezy will activate it automatically after a user switch. Each household member should open this screen while their own Apple TV user is active and pick their profile. PIN-protected profiles can\'t be switched automatically.',
+			'profiles.appleTvSyncExplain' => 'Map this Apple TV user to a profile and Plezy will activate it automatically after a user switch. Each household member should open this screen while their own Apple TV user is active and pick their profile. PIN-protected profiles ask for their PIN before switching.',
 			'profiles.appleTvSyncUnavailable' => 'Apple TV user unavailable',
 			'profiles.appleTvSyncUnavailableMessage' => 'Turn on multiple users in the Apple TV settings to map profiles. The default user can\'t be mapped.',
 			'profiles.appleTvSyncChooseProfile' => 'Profile for this Apple TV user',
 			'profiles.appleTvSyncNoAutoSwitch' => 'Don\'t switch automatically',
-			'profiles.appleTvSyncPinProtected' => 'PIN-protected',
+			'profiles.appleTvSyncAsksForPin' => 'Asks for the PIN when switching',
+			'profiles.appleTvSyncPromptMessage' => ({required Object displayName}) => 'Open ${displayName} automatically when you\'re on this Apple TV user?',
+			'profiles.appleTvSyncPromptNotNow' => 'Not now',
+			'profiles.appleTvSyncPromptDontAskAgain' => 'Don\'t ask again',
 			'connections.sectionTitle' => 'Connections',
 			'connections.addConnection' => 'Add connection',
 			'connections.addConnectionSubtitleNoProfile' => 'Sign in with Plex or connect a Jellyfin server',
@@ -6036,11 +6048,11 @@ extension on Translations {
 			'watchTogether.participantLeft' => ({required Object name}) => '${name} left',
 			'watchTogether.participantPaused' => ({required Object name}) => '${name} paused',
 			'watchTogether.participantResumed' => ({required Object name}) => '${name} resumed',
+			_ => null,
+		} ?? switch (path) {
 			'watchTogether.participantSeeked' => ({required Object name}) => '${name} seeked',
 			'watchTogether.participantBuffering' => ({required Object name}) => '${name} is buffering',
 			'watchTogether.participantNeedsUpdate' => ({required Object name}) => '${name} is on an older app version — sync unavailable',
-			_ => null,
-		} ?? switch (path) {
 			'watchTogether.resumingWithout' => ({required Object name}) => 'Resuming without ${name}',
 			'watchTogether.waitingForParticipants' => 'Waiting for others to load...',
 			'watchTogether.waitingForName' => ({required Object name}) => 'Waiting for ${name}...',

@@ -1278,8 +1278,9 @@ class _SetupScreenState extends State<SetupScreen> with MountedSetStateMixin {
     // Apple TV: switch to the profile mapped to the current tvOS system
     // user before the binder starts, so the initial bind already targets
     // the mapped profile. A successful auto-switch also makes `hasNoActive`
-    // false below and skips the picker.
-    await activateTvosMappedProfile(activeProfile: activeProfile, binder: binder);
+    // false below and skips the picker. A PIN-protected mapped profile
+    // prompts for its PIN here; cancelling falls through to the normal flow.
+    await activateTvosMappedProfile(activeProfile: activeProfile, binder: binder, context: context);
     if (!mounted) return;
 
     // Start only after network/offline startup has been decided and the

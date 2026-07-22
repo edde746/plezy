@@ -8,8 +8,10 @@ import '../screens/profile/pin_entry_dialog.dart';
 import '../services/storage_service.dart';
 import '../services/tvos_user_profile_service.dart';
 import '../utils/app_logger.dart';
+import '../utils/dialogs.dart';
 import '../utils/platform_detector.dart';
 import '../utils/snackbar_helper.dart';
+import '../widgets/dialog_action_button.dart';
 import 'active_profile_binder.dart';
 import 'active_profile_provider.dart';
 import 'plex_home_switch.dart';
@@ -94,7 +96,62 @@ Future<bool> switchProfileFromUi(BuildContext context, Profile profile) async {
     showErrorSnackBar(context, t.errors.failedToSwitchProfile(displayName: profile.displayName));
     return false;
   }
+  await maybePromptTvosProfileMapping(context, profile);
   return true;
+}
+
+enum _TvosMappingChoice { yes, notNow, dontAskAgain }
+
+/// After a successful manual profile switch on Apple TV, offer to map the
+/// current tvOS system user to [profile] so future user switches activate
+/// it automatically (see [activateTvosMappedProfile]).
+///
+/// Stays quiet once this tvOS user has a mapping or opted out: "not now"
+/// re-asks on a later switch, "don't ask again" (and clearing the mapping
+/// from the settings screen) silences it for good.
+Future<void> maybePromptTvosProfileMapping(BuildContext context, Profile profile) async {
+  if (!PlatformDetector.isAppleTV()) return;
+  final tvosUserId = await TvosUserProfileService().getCurrentUser();
+  if (tvosUserId == null) return;
+  final storage = await StorageService.getInstance();
+  if (storage.getProfileIdForTvosUser(tvosUserId) != null) return;
+  if (storage.wasTvosUserPromptedForMapping(tvosUserId)) return;
+  if (!context.mounted) return;
+
+  final choice = await showScopedDialog<_TvosMappingChoice>(
+    context: context,
+    builder: (dialogContext) => AlertDialog(
+      title: Text(t.profiles.appleTvSync),
+      content: Text(t.profiles.appleTvSyncPromptMessage(displayName: profile.displayName)),
+      actions: [
+        DialogActionButton(
+          onPressed: () => Navigator.pop(dialogContext, _TvosMappingChoice.dontAskAgain),
+          label: t.profiles.appleTvSyncPromptDontAskAgain,
+        ),
+        DialogActionButton(
+          onPressed: () => Navigator.pop(dialogContext, _TvosMappingChoice.notNow),
+          label: t.profiles.appleTvSyncPromptNotNow,
+        ),
+        DialogActionButton(
+          autofocus: true,
+          onPressed: () => Navigator.pop(dialogContext, _TvosMappingChoice.yes),
+          label: t.common.yes,
+          isPrimary: true,
+        ),
+      ],
+    ),
+  );
+
+  switch (choice) {
+    case _TvosMappingChoice.yes:
+      await storage.setProfileIdForTvosUser(tvosUserId, profile.id);
+    case _TvosMappingChoice.dontAskAgain:
+      await storage.markTvosUserPromptedForMapping(tvosUserId);
+    case _TvosMappingChoice.notNow:
+    case null:
+      // Ask again on a later manual switch.
+      break;
+  }
 }
 
 /// Validate [profile]'s PIN with Plex via `/home/users/{uuid}/switch`. On
@@ -145,13 +202,17 @@ Future<PlexHomeSwitchStatus> _preVerifyPlexHomePin(BuildContext context, Profile
 /// user, if any (see [TvosUserProfileService] and
 /// [StorageService.getProfileIdForTvosUser]).
 ///
-/// Silent by design: no PIN prompts and no error surfaces. PIN-protected
-/// profiles are skipped — an auto-switch must never pop a dialog the user
-/// didn't ask for. Returns true when a different profile was activated.
+/// Non-PIN profiles switch silently. A PIN-protected mapped profile routes
+/// through [activateProfileWithPin] — the same prompt as a manual switch —
+/// when [context] is usable; a cancelled or wrong PIN just leaves the
+/// current profile in place. Without a context, protected profiles are
+/// skipped as a safe fallback. Returns true when a different profile was
+/// activated.
 Future<bool> activateTvosMappedProfile({
   required ActiveProfileProvider activeProfile,
   required ActiveProfileBinder binder,
   String? tvosUserId,
+  BuildContext? context,
 }) async {
   if (!PlatformDetector.isAppleTV()) return false;
   final userId = tvosUserId ?? await TvosUserProfileService().getCurrentUser();
@@ -166,7 +227,12 @@ Future<bool> activateTvosMappedProfile({
       break;
     }
   }
-  if (match == null || match.isPinProtected) return false;
+  if (match == null) return false;
+  if (match.isPinProtected) {
+    if (context == null || !context.mounted) return false;
+    appLogger.i('tvOS user mapping: asking PIN to activate ${match.displayName} ($mappedId)');
+    return await activateProfileWithPin(context, match) == ProfileActivationOutcome.activated;
+  }
   appLogger.i('tvOS user mapping: auto-activating ${match.displayName} ($mappedId)');
   binder.markUserInitiatedActivation(match.id);
   return activeProfile.activate(match);
