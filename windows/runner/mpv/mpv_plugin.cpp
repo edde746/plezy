@@ -25,12 +25,19 @@ void MpvClipPreviewPlayerPluginRegisterWithRegistrar(FlutterDesktopPluginRegistr
       "com.plezy/clip_preview_player", /*audio_only=*/false);
 }
 
+void MpvClipExportPlayerPluginRegisterWithRegistrar(FlutterDesktopPluginRegistrarRef registrar) {
+  mpv::MpvPlayerPlugin::RegisterWithRegistrar(
+      flutter::PluginRegistrarManager::GetInstance()->GetRegistrar<flutter::PluginRegistrarWindows>(registrar),
+      "com.plezy/clip_export_player", /*audio_only=*/false);
+}
+
 namespace mpv {
 
 namespace {
 constexpr UINT kPlatformTaskMessage = WM_APP + 0x4D50;
 constexpr UINT kAudioPlatformTaskMessage = WM_APP + 0x4D51;
 constexpr UINT kClipPreviewPlatformTaskMessage = WM_APP + 0x4D52;
+constexpr UINT kClipExportPlatformTaskMessage = WM_APP + 0x4D53;
 
 std::map<std::string, std::string> GetInitialOptions(const flutter::EncodableValue* arguments) {
   std::map<std::string, std::string> options;
@@ -62,10 +69,12 @@ MpvPlayerPlugin::MpvPlayerPlugin(
     : registrar_(registrar),
       platform_thread_id_(::GetCurrentThreadId()),
       audio_only_(audio_only),
+      headless_(channel_name == "com.plezy/clip_export_player"),
       platform_task_message_(
-          audio_only ? kAudioPlatformTaskMessage
-                     : (channel_name == "com.plezy/clip_preview_player" ? kClipPreviewPlatformTaskMessage
-                                                                        : kPlatformTaskMessage)) {
+          audio_only                                        ? kAudioPlatformTaskMessage
+          : headless_                                       ? kClipExportPlatformTaskMessage
+          : channel_name == "com.plezy/clip_preview_player" ? kClipPreviewPlatformTaskMessage
+                                                            : kPlatformTaskMessage) {
   // Create method channel.
   method_channel_ = std::make_unique<flutter::MethodChannel<flutter::EncodableValue>>(
       registrar->messenger(), channel_name, &flutter::StandardMethodCodec::GetInstance());
@@ -204,9 +213,9 @@ void MpvPlayerPlugin::HandleMethodCall(
     // and below the view's topmost DComp visual carrying the UI (layer 4). As
     // a *sibling* of the view, either the view's never-painted white content
     // covers the video or the video covers the UI — the in-subtree placement
-    // is the only ordering that yields white < video < UI. The audio-only
-    // core is windowless, so it gets no view at all.
-    HWND view = audio_only_ ? nullptr : GetChildWindow();
+    // is the only ordering that yields white < video < UI. Audio-only and
+    // headless encoding cores are windowless, so they get no view at all.
+    HWND view = audio_only_ || headless_ ? nullptr : GetChildWindow();
 
     player_ = std::make_unique<MpvPlayer>(audio_only_);
     bool success = player_->Initialize(view, GetInitialOptions(method_call.arguments()));

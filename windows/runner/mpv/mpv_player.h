@@ -33,8 +33,8 @@ class MpvPlayer {
   // Initializes mpv and creates the video window as a child of the Flutter
   // |view| window. The flutter-plezy engine presents the UI on a topmost
   // DirectComposition visual, so the video child composites beneath it in the
-  // same HWND. In audio-only mode |view| is ignored (pass nullptr) and no
-  // window is created.
+  // same HWND. Pass nullptr for a headless encoding core; video decoding stays
+  // enabled without creating a window. Audio-only mode also creates no window.
   bool Initialize(HWND view, const std::map<std::string, std::string>& initial_options = {});
 
   // Disposes mpv and the video window.

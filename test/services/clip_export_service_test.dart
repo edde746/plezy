@@ -513,7 +513,7 @@ void main() {
   });
 
   group('desktop encoding formats', () {
-    test('offers GIF on macOS without changing Windows or Linux formats', () {
+    test('offers GIF on macOS and Windows without changing Linux formats', () {
       expect(ClipExportService.formatsForOperatingSystem('macos'), [
         ClipExportFormat.hevcSdr,
         ClipExportFormat.h264Sdr,
@@ -523,6 +523,7 @@ void main() {
       expect(ClipExportService.formatsForOperatingSystem('windows'), [
         ClipExportFormat.hevcSdr,
         ClipExportFormat.h264Sdr,
+        ClipExportFormat.gif,
         ClipExportFormat.source,
       ]);
       expect(ClipExportService.formatsForOperatingSystem('linux'), [ClipExportFormat.source]);
@@ -630,9 +631,18 @@ void main() {
       expect(options['blend-subtitles'], 'video');
     });
 
-    test('rejects GIF encoding outside macOS', () {
+    test('uses the existing GIF encoder pipeline on Windows', () {
+      final options = _encodingOptions(ClipExportFormat.gif, operatingSystem: 'windows');
+
+      expect(options['of'], 'gif');
+      expect(options['ovc'], 'gif');
+      expect(options['aid'], 'no');
+      expect(options['vf'], contains('fps=20'));
+    });
+
+    test('rejects GIF encoding on Linux', () {
       expect(
-        () => _encodingOptions(ClipExportFormat.gif, operatingSystem: 'windows'),
+        () => _encodingOptions(ClipExportFormat.gif, operatingSystem: 'linux'),
         throwsA(isA<ClipExportException>()),
       );
     });
@@ -704,7 +714,7 @@ void main() {
       final runner = MpvEncodingClipExportRunner(
         source: _source(),
         format: ClipExportFormat.gif,
-        operatingSystem: 'macos',
+        operatingSystem: 'windows',
         encodingPassRunner: ({required initialOptions, required start, required end, required onProgress}) async {
           onProgress(0.5);
           onProgress(1);

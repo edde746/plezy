@@ -48,7 +48,7 @@ class ClipExportService {
         ClipExportFormat.hevcSdr,
         ClipExportFormat.h264Sdr,
         if (source?.canEncodeHdr == true) ClipExportFormat.hevcHdr,
-        if (operatingSystem == 'macos') ClipExportFormat.gif,
+        ClipExportFormat.gif,
         ClipExportFormat.source,
       ];
     }

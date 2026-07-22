@@ -175,7 +175,6 @@ class MpvEncodingClipExportRunner implements ClipExportRunner {
     }
 
     if (format == ClipExportFormat.gif) {
-      if (!isMacOS) throw ClipExportException(t.videoControls.clip.gifFailed);
       final burnSubtitles = subtitlesEnabled && source.hasSubtitleTrack;
       final frameFilter =
           "lavfi=[fps=$gifFramesPerSecond,scale=w='min(iw,$gifMaxWidth)':"
@@ -282,7 +281,9 @@ class MpvEncodingClipExportRunner implements ClipExportRunner {
     required String outputPath,
     required ValueChanged<double> onProgress,
   }) async {
-    if (operatingSystem != 'macos') throw ClipExportException(t.videoControls.clip.gifFailed);
+    if (operatingSystem != 'macos' && operatingSystem != 'windows') {
+      throw ClipExportException(t.videoControls.clip.gifFailed);
+    }
 
     final temporaryFile = File('$outputPath.plezy-part');
     var settings = switch (gifResolution) {

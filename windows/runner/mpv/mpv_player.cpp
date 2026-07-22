@@ -149,7 +149,7 @@ bool MpvPlayer::Initialize(HWND view, const std::map<std::string, std::string>& 
     mpv_set_option_string(mpv_, "force-window", "no");
     mpv_set_option_string(mpv_, "audio-display", "no");
     mpv_set_option_string(mpv_, "gapless-audio", "weak");
-  } else {
+  } else if (view) {
     // Create a child window for mpv to render into, parented to the Flutter
     // |view|. The video child then sits in the view's own per-window layer
     // stack, above the view's (never-painted) layer-1 content and below the
