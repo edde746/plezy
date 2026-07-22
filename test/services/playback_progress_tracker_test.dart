@@ -14,6 +14,8 @@ import 'package:plezy/services/multi_server_manager.dart';
 import 'package:plezy/services/offline_watch_sync_service.dart';
 import 'package:plezy/services/playback_progress_tracker.dart';
 import 'package:plezy/services/plex_client.dart';
+import 'package:plezy/services/playback_subtitle_resolver.dart';
+import 'package:plezy/services/settings_service.dart';
 import 'package:plezy/utils/watch_state_notifier.dart';
 
 import '../test_helpers/prefs.dart';
@@ -601,8 +603,164 @@ void main() {
       expect(progressSelection.subtitleStreamIndex, -1);
     });
 
+    test('uses the authoritative source subtitle id when player and source orders differ', () async {
+      final client = _FakePlexClient();
+      var choice = const PlaybackSourceSubtitleChoice.source(8);
+      const selectedSubtitle = SubtitleTrack(id: 'text_ko', language: 'kor');
+      final player = _FakePlayer(
+        position: const Duration(seconds: 5),
+        duration: const Duration(seconds: 100),
+        tracks: const Tracks(
+          audio: [AudioTrack(id: 'audio_0', language: 'eng')],
+          subtitle: [
+            selectedSubtitle,
+            SubtitleTrack(id: 'text_en', language: 'eng'),
+          ],
+        ),
+        track: const TrackSelection(
+          audio: AudioTrack(id: 'audio_0', language: 'eng'),
+          subtitle: selectedSubtitle,
+        ),
+      );
+      final mediaInfo = MediaSourceInfo(
+        videoUrl: '',
+        audioTracks: [MediaAudioTrack(id: 1, languageCode: 'eng', selected: true)],
+        // Jellyfin order is English=3, Korean=8; MPV order above is Korean,
+        // English. The old ordinal mapping would incorrectly report 3.
+        subtitleTracks: [
+          MediaSubtitleTrack(id: 3, languageCode: 'eng', selected: false, forced: false),
+          MediaSubtitleTrack(id: 8, languageCode: 'kor', selected: true, forced: false),
+        ],
+        chapters: const [],
+        mediaSourceId: 'source-1',
+      );
+      final tracker = PlaybackProgressTracker(
+        client: client,
+        metadata: _meta(),
+        player: player,
+        isOffline: false,
+        mediaInfo: mediaInfo,
+        resolveSourceSubtitleChoice: () => choice,
+      );
+      addTearDown(tracker.dispose);
+
+      await tracker.sendProgress('playing');
+      await Future<void>.delayed(Duration.zero);
+      expect(client.playbackStreamSelections.last.subtitleStreamIndex, 8);
+
+      choice = const PlaybackSourceSubtitleChoice.source(3);
+      await tracker.sendProgress('playing');
+      await Future<void>.delayed(Duration.zero);
+      expect(client.playbackStreamSelections.last.subtitleStreamIndex, 3);
+    });
+
+    test('reports Off and source stream id zero distinctly', () async {
+      final client = _FakePlexClient();
+      var choice = const PlaybackSourceSubtitleChoice.source(0);
+      final player = _FakePlayer(position: const Duration(seconds: 5), duration: const Duration(seconds: 100));
+      final mediaInfo = MediaSourceInfo(
+        videoUrl: '',
+        audioTracks: const [],
+        subtitleTracks: const [],
+        chapters: const [],
+        mediaSourceId: 'source-1',
+      );
+      final tracker = PlaybackProgressTracker(
+        client: client,
+        metadata: _meta(),
+        player: player,
+        isOffline: false,
+        mediaInfo: mediaInfo,
+        resolveSourceSubtitleChoice: () => choice,
+      );
+      addTearDown(tracker.dispose);
+
+      await tracker.sendProgress('playing');
+      await Future<void>.delayed(Duration.zero);
+      expect(client.playbackStreamSelections.last.subtitleStreamIndex, 0);
+
+      choice = const PlaybackSourceSubtitleChoice.off();
+      await tracker.sendProgress('playing');
+      await Future<void>.delayed(Duration.zero);
+      expect(client.playbackStreamSelections.last.subtitleStreamIndex, -1);
+    });
+
+    test('does not guess an ordinal when the source subtitle choice is unknown', () async {
+      final client = _FakePlexClient();
+      var resolverCalls = 0;
+      final player = _FakePlayer(
+        position: const Duration(seconds: 5),
+        duration: const Duration(seconds: 100),
+        tracks: const Tracks(
+          audio: [AudioTrack(id: 'audio_0', language: 'eng')],
+          subtitle: [SubtitleTrack(id: 'text_0', language: 'eng')],
+        ),
+        track: const TrackSelection(
+          audio: AudioTrack(id: 'audio_0', language: 'eng'),
+          subtitle: SubtitleTrack(id: 'text_0', language: 'eng'),
+        ),
+      );
+      final mediaInfo = MediaSourceInfo(
+        videoUrl: '',
+        audioTracks: const [],
+        subtitleTracks: [MediaSubtitleTrack(id: 3, languageCode: 'eng', selected: true, forced: false)],
+        chapters: const [],
+        mediaSourceId: 'source-1',
+      );
+      final tracker = PlaybackProgressTracker(
+        client: client,
+        metadata: _meta(),
+        player: player,
+        isOffline: false,
+        mediaInfo: mediaInfo,
+        resolveSourceSubtitleChoice: () {
+          resolverCalls++;
+          return null;
+        },
+      );
+      addTearDown(tracker.dispose);
+
+      await tracker.sendProgress('playing');
+      await Future<void>.delayed(Duration.zero);
+
+      expect(resolverCalls, 1);
+      expect(client.playbackStreamSelections.last.subtitleStreamIndex, isNull);
+    });
+
+    test('does not resolve source subtitles when track-selection persistence is disabled', () async {
+      final settings = await SettingsService.getInstance();
+      await settings.write(SettingsService.rememberTrackSelections, false);
+      final client = _FakePlexClient();
+      var resolverCalls = 0;
+      final tracker = PlaybackProgressTracker(
+        client: client,
+        metadata: _meta(),
+        player: _FakePlayer(position: const Duration(seconds: 5), duration: const Duration(seconds: 100)),
+        isOffline: false,
+        mediaInfo: MediaSourceInfo(
+          videoUrl: '',
+          audioTracks: const [],
+          subtitleTracks: const [],
+          chapters: const [],
+          mediaSourceId: 'source-1',
+        ),
+        resolveSourceSubtitleChoice: () {
+          resolverCalls++;
+          return const PlaybackSourceSubtitleChoice.source(8);
+        },
+      );
+      addTearDown(tracker.dispose);
+
+      await tracker.sendProgress('playing');
+      await Future<void>.delayed(Duration.zero);
+
+      expect(resolverCalls, 0);
+      expect(client.playbackStreamSelections.last.subtitleStreamIndex, isNull);
+    });
+
     test('stopped reports only resolve media source and do not include selected streams', () async {
       final client = _FakePlexClient();
+      var resolverCalls = 0;
       const selectedAudio = AudioTrack(id: 'audio_1', language: 'jpn');
       final player = _FakePlayer(
         position: const Duration(seconds: 5),
@@ -629,6 +787,10 @@ void main() {
         player: player,
         isOffline: false,
         mediaInfo: mediaInfo,
+        resolveSourceSubtitleChoice: () {
+          resolverCalls++;
+          return const PlaybackSourceSubtitleChoice.source(8);
+        },
       );
       addTearDown(tracker.dispose);
 
@@ -638,6 +800,7 @@ void main() {
       expect(client.playbackStreamSelections.single.mediaSourceId, 'source-1');
       expect(client.playbackStreamSelections.single.audioStreamIndex, isNull);
       expect(client.playbackStreamSelections.single.subtitleStreamIndex, isNull);
+      expect(resolverCalls, 0);
     });
   });
 

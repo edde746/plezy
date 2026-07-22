@@ -10,6 +10,7 @@ import '../media/media_source_info.dart';
 import '../media/watch_progress.dart';
 import 'offline_watch_sync_service.dart';
 import 'playback_report_session.dart';
+import 'playback_subtitle_resolver.dart';
 import 'settings_service.dart';
 import 'track_selection_service.dart';
 import '../utils/app_logger.dart';
@@ -55,6 +56,10 @@ class PlaybackProgressTracker {
   /// Source-level stream metadata for mapping local player track ids back to
   /// Jellyfin stream indexes in playback-progress reports.
   final MediaSourceInfo? mediaInfo;
+
+  /// Resolves the current source subtitle choice for backends that keep an
+  /// authoritative source-stream identity outside the player track list.
+  final PlaybackSourceSubtitleChoice? Function()? resolveSourceSubtitleChoice;
 
   /// Invoked once after the item is successfully scrobbled. The player wires
   /// this to mark same-file sibling episodes of a Plex multi-episode file
@@ -109,6 +114,7 @@ class PlaybackProgressTracker {
     this.playMethod,
     this.playSessionId,
     this.mediaInfo,
+    this.resolveSourceSubtitleChoice,
     this.onScrobbled,
     this.onPausedKeepalive,
     this.updateInterval = const Duration(seconds: 10),
@@ -384,8 +390,18 @@ class PlaybackProgressTracker {
     return PlaybackStreamSelection(
       mediaSourceId: info.mediaSourceId,
       audioStreamIndex: _currentAudioStreamIndex(info),
-      subtitleStreamIndex: _currentSubtitleStreamIndex(info),
+      subtitleStreamIndex: _currentSubtitleStreamIndexForProgress(info),
     );
+  }
+
+  int? _currentSubtitleStreamIndexForProgress(MediaSourceInfo info) {
+    final resolveSourceChoice = resolveSourceSubtitleChoice;
+    if (resolveSourceChoice == null) return _currentSubtitleStreamIndex(info);
+
+    final choice = resolveSourceChoice();
+    if (choice == null) return null;
+    if (choice.isOff) return -1;
+    return choice.sourceStreamId;
   }
 
   Future<bool> _shouldReportTrackSelections() async {
