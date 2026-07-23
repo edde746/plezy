@@ -1,3 +1,5 @@
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+
 // Static-linking the native core here avoids shipping a separate libass.so with
 // different merge rules from the app.
 plugins {
@@ -8,12 +10,11 @@ plugins {
 android {
   namespace = "com.edde746.plezy.libass"
   compileSdk = 36
-  // Matches flutter.ndkVersion so only one NDK is provisioned. This module's
-  // CMake build (-DANDROID_STL=c++_shared) contributes NDK 28.2's
-  // libc++_shared.so to packaging, but that copy is NOT what ships: the app
-  // packages the libmpv AAR's newer copy with top merge priority (see
-  // app/build.gradle.kts packaging { jniLibs } + sourceSets).
-  ndkVersion = "28.2.13676358"
+  // Matches the app's latest stable NDK so every project-owned native library
+  // is built with the same 16 KB page-size-capable libc++ toolchain. That copy
+  // is NOT what ships: the app packages the libmpv AAR's newer copy with top
+  // merge priority (see app/build.gradle.kts packaging { jniLibs } + sourceSets).
+  ndkVersion = "29.0.14206865"
 
   defaultConfig {
     minSdk = 21
@@ -32,27 +33,29 @@ android {
   }
 
   compileOptions {
-    sourceCompatibility = JavaVersion.VERSION_11
-    targetCompatibility = JavaVersion.VERSION_11
-  }
-
-  kotlinOptions {
-    jvmTarget = JavaVersion.VERSION_11.toString()
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
   }
 
   externalNativeBuild {
     cmake {
       path = file("src/main/cpp/CMakeLists.txt")
-      version = "3.22.1"
+      version = "4.1.2"
     }
   }
 }
 
+kotlin {
+  compilerOptions {
+    jvmTarget.set(JvmTarget.JVM_17)
+  }
+}
+
 dependencies {
-  implementation("androidx.annotation:annotation:1.9.1")
-  implementation("androidx.annotation:annotation-experimental:1.5.1")
-  implementation("androidx.media3:media3-exoplayer:1.9.2")
-  implementation("androidx.media3:media3-ui:1.9.2")
+  implementation("androidx.annotation:annotation:1.10.0")
+  implementation("androidx.annotation:annotation-experimental:1.6.0")
+  implementation("androidx.media3:media3-exoplayer:1.10.1")
+  implementation("androidx.media3:media3-ui:1.10.1")
 
   testImplementation("junit:junit:4.13.2")
 }
