@@ -1,27 +1,242 @@
-/// Generates lib/data/ducet_order.dart from Unicode allkeys.txt and CLDR FractionalUCA.txt.
+/// Generates lib/data/ducet_order.dart from pinned Unicode and CLDR data.
 ///
 /// Usage:
 ///   dart run scripts/generate_ducet_ranks.dart [allkeys.txt] [FractionalUCA.txt]
 ///
-/// Downloads the files automatically if not provided.
+/// Default generation uses tracked deterministic gzip copies of the pinned source bytes.
+/// Unicode data is redistributed unmodified under the Unicode License v3.
+/// Explicit/cache/download inputs remain available for integrity and HTTP failure testing.
 library;
 
+import 'dart:async';
 import 'dart:io';
 
-// ---------------------------------------------------------------------------
-// Weight tuple for multi-level UCA comparison
-// ---------------------------------------------------------------------------
+import 'package:crypto/crypto.dart';
+
+final class SourceDescriptor {
+  const SourceDescriptor({
+    required this.name,
+    required this.url,
+    required this.bundledFileName,
+    required this.cacheFileName,
+    required this.sha256Digest,
+    required this.licenseUrl,
+  });
+
+  final String name;
+  final String url;
+  final String bundledFileName;
+  final String cacheFileName;
+  final String sha256Digest;
+  final String licenseUrl;
+}
+
+const allKeysSource = SourceDescriptor(
+  name: 'Unicode 13.0 allkeys',
+  url: 'https://www.unicode.org/Public/UCA/13.0.0/allkeys.txt',
+  bundledFileName: 'allkeys-13.0.0.txt.gz',
+  cacheFileName: 'plezy-allkeys-13.0.0-a3255d45b7af97f4dc14fb8364d7573b434425e5c58cacf00d16901ce081c78d.txt',
+  sha256Digest: 'a3255d45b7af97f4dc14fb8364d7573b434425e5c58cacf00d16901ce081c78d',
+  licenseUrl: 'https://www.unicode.org/license.txt',
+);
+
+const fractionalUcaSource = SourceDescriptor(
+  name: 'CLDR FractionalUCA at 651afecf9ccf1541a49306993e8210fa2209aa0b',
+  url:
+      'https://raw.githubusercontent.com/unicode-org/cldr/651afecf9ccf1541a49306993e8210fa2209aa0b/common/uca/FractionalUCA.txt',
+  bundledFileName: 'FractionalUCA-651afecf9ccf1541a49306993e8210fa2209aa0b.txt.gz',
+  cacheFileName:
+      'plezy-FractionalUCA-651afecf9ccf1541a49306993e8210fa2209aa0b-'
+      'a6144d0c8c19cc899a5d2f48fbc14e3e31e819049a73aa86b67111f1f3f81637.txt',
+  sha256Digest: 'a6144d0c8c19cc899a5d2f48fbc14e3e31e819049a73aa86b67111f1f3f81637',
+  licenseUrl: 'https://github.com/unicode-org/cldr/blob/651afecf9ccf1541a49306993e8210fa2209aa0b/LICENSE',
+);
+
+final class SourceDownloadResponse {
+  const SourceDownloadResponse({required this.statusCode, required this.bytes, this.close});
+
+  final int statusCode;
+  final Stream<List<int>> bytes;
+  final void Function()? close;
+}
+
+typedef SourceDownloader = Future<SourceDownloadResponse> Function(Uri uri);
+typedef GeneratedFileWriter = void Function(File output, String contents);
+
+final class SourceIntegrityException implements Exception {
+  const SourceIntegrityException(this.message);
+
+  final String message;
+
+  @override
+  String toString() => 'SourceIntegrityException: $message';
+}
+
+final class VerifiedSourceBundle {
+  VerifiedSourceBundle({
+    required this.allKeysFile,
+    required this.fractionalUcaFile,
+    required this._stagingDirectory,
+    required this._stagedCacheFiles,
+  });
+
+  final File allKeysFile;
+  final File fractionalUcaFile;
+  final Directory _stagingDirectory;
+  final Map<File, File> _stagedCacheFiles;
+
+  void commitCaches() {
+    for (final entry in _stagedCacheFiles.entries) {
+      final staged = entry.key;
+      final cache = entry.value;
+      cache.parent.createSync(recursive: true);
+      staged.renameSync(cache.path);
+    }
+    _stagedCacheFiles.clear();
+  }
+
+  void dispose() {
+    if (_stagingDirectory.existsSync()) {
+      _stagingDirectory.deleteSync(recursive: true);
+    }
+  }
+}
+
+Future<SourceDownloadResponse> downloadSource(Uri uri) async {
+  final client = HttpClient();
+  try {
+    final request = await client.getUrl(uri);
+    request.headers.set(HttpHeaders.userAgentHeader, 'Plezy DUCET generator');
+    final response = await request.close();
+    return SourceDownloadResponse(
+      statusCode: response.statusCode,
+      bytes: response,
+      close: () => client.close(force: true),
+    );
+  } catch (_) {
+    client.close(force: true);
+    rethrow;
+  }
+}
+
+Future<String> sha256ForFile(File file) async => (await sha256.bind(file.openRead()).first).toString();
+
+Future<void> verifySourceFile(File file, SourceDescriptor descriptor) async {
+  if (!await file.exists()) {
+    throw SourceIntegrityException('${descriptor.name} is missing: ${file.path}');
+  }
+  final actualDigest = await sha256ForFile(file);
+  if (actualDigest != descriptor.sha256Digest) {
+    throw SourceIntegrityException(
+      '${descriptor.name} SHA-256 mismatch: expected ${descriptor.sha256Digest}, got $actualDigest',
+    );
+  }
+}
+
+Future<VerifiedSourceBundle> loadBundledSources({
+  required Directory bundledSourceDirectory,
+  SourceDescriptor allKeysDescriptor = allKeysSource,
+  SourceDescriptor fractionalUcaDescriptor = fractionalUcaSource,
+}) async {
+  final staging = await Directory.systemTemp.createTemp('plezy_ducet_bundled_');
+
+  Future<File> decompressAndVerify(SourceDescriptor descriptor) async {
+    final compressed = File.fromUri(bundledSourceDirectory.uri.resolve(descriptor.bundledFileName));
+    if (!await compressed.exists()) {
+      throw SourceIntegrityException('${descriptor.name} bundled source is missing: ${compressed.path}');
+    }
+    final decompressed = File.fromUri(staging.uri.resolve('${descriptor.bundledFileName}.raw'));
+    try {
+      await compressed.openRead().transform(gzip.decoder).pipe(decompressed.openWrite());
+    } catch (error) {
+      throw SourceIntegrityException('${descriptor.name} bundled gzip is invalid: $error');
+    }
+    await verifySourceFile(decompressed, descriptor);
+    return decompressed;
+  }
+
+  try {
+    final allKeys = await decompressAndVerify(allKeysDescriptor);
+    final fractionalUca = await decompressAndVerify(fractionalUcaDescriptor);
+    return VerifiedSourceBundle(
+      allKeysFile: allKeys,
+      fractionalUcaFile: fractionalUca,
+      stagingDirectory: staging,
+      stagedCacheFiles: <File, File>{},
+    );
+  } catch (_) {
+    if (await staging.exists()) {
+      await staging.delete(recursive: true);
+    }
+    rethrow;
+  }
+}
+
+Future<VerifiedSourceBundle> loadVerifiedSources({
+  File? explicitAllKeys,
+  File? explicitFractionalUca,
+  Directory? cacheDirectory,
+  SourceDownloader downloader = downloadSource,
+  SourceDescriptor allKeysDescriptor = allKeysSource,
+  SourceDescriptor fractionalUcaDescriptor = fractionalUcaSource,
+}) async {
+  final cacheRoot = cacheDirectory ?? Directory.systemTemp;
+  final staging = await Directory.systemTemp.createTemp('plezy_ducet_sources_');
+  final stagedCacheFiles = <File, File>{};
+
+  Future<File> resolve(SourceDescriptor descriptor, File? explicit) async {
+    if (explicit != null) {
+      await verifySourceFile(explicit, descriptor);
+      return explicit;
+    }
+
+    final cache = File.fromUri(cacheRoot.uri.resolve(descriptor.cacheFileName));
+    if (await cache.exists()) {
+      await verifySourceFile(cache, descriptor);
+      return cache;
+    }
+
+    final staged = File.fromUri(staging.uri.resolve(descriptor.cacheFileName));
+    final response = await downloader(Uri.parse(descriptor.url));
+    try {
+      if (response.statusCode != HttpStatus.ok) {
+        throw SourceIntegrityException('${descriptor.name} download returned HTTP ${response.statusCode}');
+      }
+      await response.bytes.pipe(staged.openWrite());
+    } finally {
+      response.close?.call();
+    }
+    await verifySourceFile(staged, descriptor);
+    stagedCacheFiles[staged] = cache;
+    return staged;
+  }
+
+  try {
+    final allKeys = await resolve(allKeysDescriptor, explicitAllKeys);
+    final fractionalUca = await resolve(fractionalUcaDescriptor, explicitFractionalUca);
+    return VerifiedSourceBundle(
+      allKeysFile: allKeys,
+      fractionalUcaFile: fractionalUca,
+      stagingDirectory: staging,
+      stagedCacheFiles: stagedCacheFiles,
+    );
+  } catch (_) {
+    if (await staging.exists()) {
+      await staging.delete(recursive: true);
+    }
+    rethrow;
+  }
+}
+
 class Weight implements Comparable<Weight> {
   final List<(int, int, int)> levels;
-  final int codepoint; // tiebreaker
+  final int codepoint;
 
   const Weight(this.levels, this.codepoint);
 
   @override
   int compareTo(Weight other) {
     final len = levels.length < other.levels.length ? levels.length : other.levels.length;
-
-    // Primary pass
     for (var i = 0; i < len; i++) {
       final cmp = levels[i].$1.compareTo(other.levels[i].$1);
       if (cmp != 0) return cmp;
@@ -29,39 +244,21 @@ class Weight implements Comparable<Weight> {
     if (levels.length != other.levels.length) {
       return levels.length.compareTo(other.levels.length);
     }
-
-    // Secondary pass
     for (var i = 0; i < len; i++) {
       final cmp = levels[i].$2.compareTo(other.levels[i].$2);
       if (cmp != 0) return cmp;
     }
-
-    // Tertiary pass
     for (var i = 0; i < len; i++) {
       final cmp = levels[i].$3.compareTo(other.levels[i].$3);
       if (cmp != 0) return cmp;
     }
-
-    // Codepoint tiebreaker
     return codepoint.compareTo(other.codepoint);
   }
 }
 
-// ---------------------------------------------------------------------------
-// Katakana codepoint ranges (for CLDR kana tertiary reversal)
-// ---------------------------------------------------------------------------
 bool _isKatakana(int cp) =>
-    (cp >= 0x30A0 && cp <= 0x30FF) || // Katakana
-    (cp >= 0x31F0 && cp <= 0x31FF) || // Katakana Phonetic Extensions
-    (cp >= 0xFF65 && cp <= 0xFF9F); // Halfwidth Katakana
+    (cp >= 0x30A0 && cp <= 0x30FF) || (cp >= 0x31F0 && cp <= 0x31FF) || (cp >= 0xFF65 && cp <= 0xFF9F);
 
-// ---------------------------------------------------------------------------
-// Parse allkeys.txt → Map<codepoint, weight-tuples>
-//
-// CLDR kana fix: ICU/CLDR root collation sorts katakana before hiragana
-// (opposite of raw DUCET). We adjust by subtracting 6 from katakana tertiary
-// weights, placing them below hiragana tertiaries (0x000D+).
-// ---------------------------------------------------------------------------
 Map<int, Weight> parseAllKeys(String text) {
   final result = <int, Weight>{};
   final weightRe = RegExp(r'\[([.*])([0-9A-Fa-f]{4})\.([0-9A-Fa-f]{4})\.([0-9A-Fa-f]{4})\]');
@@ -69,251 +266,239 @@ Map<int, Weight> parseAllKeys(String text) {
   for (final line in text.split('\n')) {
     final trimmed = line.trim();
     if (trimmed.isEmpty || trimmed.startsWith('#') || trimmed.startsWith('@')) continue;
-
     final semiIdx = trimmed.indexOf(';');
     if (semiIdx < 0) continue;
-
     final cpPart = trimmed.substring(0, semiIdx).trim();
-    if (cpPart.contains(' ')) continue; // skip multi-codepoint
-
+    if (cpPart.contains(' ')) continue;
     final cp = int.tryParse(cpPart, radix: 16);
-    if (cp == null || cp > 0xFFFF) continue; // BMP only
+    if (cp == null || cp > 0xFFFF) continue;
 
-    final weightPart = trimmed.substring(semiIdx + 1);
-    final matches = weightRe.allMatches(weightPart);
+    final matches = weightRe.allMatches(trimmed.substring(semiIdx + 1));
     if (matches.isEmpty) continue;
-
-    final isKat = _isKatakana(cp);
     final levels = <(int, int, int)>[];
-    for (final m in matches) {
-      final p = int.parse(m.group(2)!, radix: 16);
-      final s = int.parse(m.group(3)!, radix: 16);
-      var t = int.parse(m.group(4)!, radix: 16);
-      // CLDR kana fix: lower katakana tertiary below hiragana range
-      if (isKat && t >= 0x000F) t -= 6;
-      levels.add((p, s, t));
+    for (final match in matches) {
+      final primary = int.parse(match.group(2)!, radix: 16);
+      final secondary = int.parse(match.group(3)!, radix: 16);
+      var tertiary = int.parse(match.group(4)!, radix: 16);
+      if (_isKatakana(cp) && tertiary >= 0x000F) tertiary -= 6;
+      levels.add((primary, secondary, tertiary));
     }
-
-    if (levels.every((l) => l.$1 == 0 && l.$2 == 0 && l.$3 == 0)) continue;
-
+    if (levels.every((level) => level.$1 == 0 && level.$2 == 0 && level.$3 == 0)) continue;
+    if (result.containsKey(cp)) {
+      throw FormatException('Duplicate allkeys entry for U+${cp.toRadixString(16).padLeft(4, '0')}');
+    }
     result[cp] = Weight(levels, cp);
   }
-
   return result;
 }
 
-// ---------------------------------------------------------------------------
-// Parse FractionalUCA.txt radical lines → CJK codepoints in radical-stroke
-// order, plus Kangxi radical → CJK decomposition map.
-// ---------------------------------------------------------------------------
 (List<int>, Map<int, int>) parseRadicals(String text) {
   final order = <int>[];
-  final kangxiDecomp = <int, int>{}; // kangxi radical CP → CJK CP
+  final kangxiDecomp = <int, int>{};
   final radicalRe = RegExp(r'^\[radical \d+');
 
   for (final line in text.split('\n')) {
     if (!radicalRe.hasMatch(line)) continue;
-
-    // Parse header: [radical N=<kangxi><cjk>:<char-list>]
     final eqIdx = line.indexOf('=');
     final colonIdx = line.indexOf(':');
     if (eqIdx < 0 || colonIdx < 0 || colonIdx <= eqIdx) continue;
     final closeBracket = line.lastIndexOf(']');
     if (closeBracket < 0) continue;
 
-    // Extract Kangxi radical → CJK mapping from header
     final headerChars = line.substring(eqIdx + 1, colonIdx).runes.toList();
     if (headerChars.length >= 2) {
       final kangxi = headerChars.first;
       final cjk = headerChars[1];
-      // Kangxi Radicals: U+2F00-U+2FD5
       if (kangxi >= 0x2F00 && kangxi <= 0x2FD5 && cjk <= 0xFFFF) {
         kangxiDecomp[kangxi] = cjk;
       }
     }
 
-    // Parse character list after colon
-    final charList = line.substring(colonIdx + 1, closeBracket);
-    final runes = charList.runes.toList();
+    final runes = line.substring(colonIdx + 1, closeBracket).runes.toList();
     var i = 0;
     while (i < runes.length) {
       final cp = runes[i];
-
       if (cp == 0x20) {
         i++;
         continue;
       }
-
-      // Check for range: <char>-<char>
       if (i + 2 < runes.length && runes[i + 1] == 0x2D) {
         final endCp = runes[i + 2];
-        for (var c = cp; c <= endCp; c++) {
-          if (c <= 0xFFFF) order.add(c);
+        for (var value = cp; value <= endCp; value++) {
+          if (value <= 0xFFFF) order.add(value);
         }
         i += 3;
         continue;
       }
-
       if (cp <= 0xFFFF) order.add(cp);
       i++;
     }
   }
 
-  // Deduplicate preserving order
   final seen = <int>{};
-  final deduped = order.where((cp) => seen.add(cp)).toList();
-  return (deduped, kangxiDecomp);
+  return (order.where(seen.add).toList(), kangxiDecomp);
 }
 
-// ---------------------------------------------------------------------------
-// Build final ordered list
-// ---------------------------------------------------------------------------
 List<int> buildOrder(Map<int, Weight> allKeys, List<int> cjkRadicalOrder) {
-  final entries = allKeys.entries.toList();
-  entries.sort((a, b) => a.value.compareTo(b.value));
-
+  final entries = allKeys.entries.toList()..sort((a, b) => a.value.compareTo(b.value));
   final ordered = <int>[];
   final cjkSet = cjkRadicalOrder.toSet();
-  bool cjkInserted = false;
+  var cjkInserted = false;
 
-  for (final e in entries) {
-    if (cjkSet.contains(e.key)) continue;
-
-    if (!cjkInserted && e.value.levels.isNotEmpty && e.value.levels.first.$1 >= 0xFB00) {
-      for (final cp in cjkRadicalOrder) {
-        if (cp <= 0xFFFF) ordered.add(cp);
-      }
+  for (final entry in entries) {
+    if (cjkSet.contains(entry.key)) continue;
+    if (!cjkInserted && entry.value.levels.isNotEmpty && entry.value.levels.first.$1 >= 0xFB00) {
+      ordered.addAll(cjkRadicalOrder);
       cjkInserted = true;
     }
-
-    ordered.add(e.key);
+    ordered.add(entry.key);
   }
-
-  if (!cjkInserted) {
-    for (final cp in cjkRadicalOrder) {
-      if (cp <= 0xFFFF) ordered.add(cp);
-    }
-  }
-
+  if (!cjkInserted) ordered.addAll(cjkRadicalOrder);
   return ordered;
 }
 
-// ---------------------------------------------------------------------------
-// Main
-// ---------------------------------------------------------------------------
-Future<void> main(List<String> args) async {
-  final allKeysPath = args.isNotEmpty ? args.first : '/tmp/allkeys.txt';
-  final fracUcaPath = args.length > 1 ? args[1] : '/tmp/FractionalUCA.txt';
-
-  // Download if missing
-  if (!File(allKeysPath).existsSync()) {
-    stderr.writeln('Downloading allkeys.txt...');
-    final result = await Process.run('curl', [
-      '-sL',
-      'https://www.unicode.org/Public/UCA/13.0.0/allkeys.txt',
-      '-o',
-      allKeysPath,
-    ]);
-    if (result.exitCode != 0) {
-      stderr.writeln('Failed to download allkeys.txt');
-      exit(1);
+String buildDenseRankLookup(List<int> ordered) {
+  if (ordered.length > 0xFFFF) {
+    throw StateError('Rank table overflow: ${ordered.length} entries exceed 65535');
+  }
+  final ranks = List<int>.filled(0x10000, 0);
+  for (var rank = 0; rank < ordered.length; rank++) {
+    final codepoint = ordered[rank];
+    if (codepoint < 0 || codepoint > 0xFFFF) {
+      throw RangeError.range(codepoint, 0, 0xFFFF, 'codepoint');
     }
+    if (ranks[codepoint] != 0) {
+      throw StateError('Duplicate codepoint U+${codepoint.toRadixString(16).padLeft(4, '0')}');
+    }
+    ranks[codepoint] = rank + 1;
+  }
+  return String.fromCharCodes(ranks);
+}
+
+String _escapeCodeUnit(int codeUnit) {
+  if (codeUnit == 0x27) return r"\'";
+  if (codeUnit == 0x5C) return r'\\';
+  if (codeUnit == 0x24) return r'\$';
+  return '\\u${codeUnit.toRadixString(16).padLeft(4, '0')}';
+}
+
+String renderDucetOrder(List<int> ordered, Map<int, int> kangxiDecomp) {
+  final denseRanks = buildDenseRankLookup(ordered);
+  final buffer = StringBuffer()
+    ..writeln('/// Dense BMP ranks per DUCET (Unicode 13.0) + pinned CLDR CJK radical-stroke.')
+    ..writeln('/// Each code unit stores rank + 1; zero means absent.')
+    ..writeln('/// Katakana sorts before hiragana (CLDR root tailoring).')
+    ..writeln('/// Generated by scripts/generate_ducet_ranks.dart — do not edit.')
+    ..writeln('library;')
+    ..writeln()
+    ..writeln('const String _ducetRanks =');
+  const unitsPerLine = 128;
+  for (var start = 0; start < denseRanks.length; start += unitsPerLine) {
+    final end = start + unitsPerLine < denseRanks.length ? start + unitsPerLine : denseRanks.length;
+    buffer.write("    '");
+    for (var i = start; i < end; i++) {
+      buffer.write(_escapeCodeUnit(denseRanks.codeUnitAt(i)));
+    }
+    buffer.writeln(start + unitsPerLine >= denseRanks.length ? "';" : "'");
   }
 
-  if (!File(fracUcaPath).existsSync()) {
-    stderr.writeln('Downloading FractionalUCA.txt...');
-    final result = await Process.run('curl', [
-      '-sL',
-      'https://raw.githubusercontent.com/unicode-org/cldr/release-39/common/uca/FractionalUCA.txt',
-      '-o',
-      fracUcaPath,
-    ]);
-    if (result.exitCode != 0) {
-      stderr.writeln('Failed to download FractionalUCA.txt');
-      exit(1);
-    }
-  }
-
-  stderr.writeln('Parsing allkeys.txt (with CLDR kana fix)...');
-  final allKeysText = File(allKeysPath).readAsStringSync();
-  final allKeys = parseAllKeys(allKeysText);
-  stderr.writeln('  ${allKeys.length} BMP entries');
-
-  stderr.writeln('Parsing FractionalUCA.txt...');
-  final fracText = File(fracUcaPath).readAsStringSync();
-  final (cjkOrder, kangxiDecomp) = parseRadicals(fracText);
-  stderr.writeln('  ${cjkOrder.length} CJK codepoints in radical-stroke order');
-  stderr.writeln('  ${kangxiDecomp.length} Kangxi radical decompositions');
-  final bmpCjk = cjkOrder.where((cp) => cp <= 0xFFFF).length;
-  stderr.writeln('  $bmpCjk BMP CJK codepoints');
-
-  stderr.writeln('Building total order...');
-  final ordered = buildOrder(allKeys, cjkOrder);
-  stderr.writeln('  ${ordered.length} total BMP codepoints in order');
-
-  stderr.writeln('  ${ordered.length * 2} raw bytes');
-
-  // Generate Dart file — store codepoints as a raw UTF-16 string constant.
-  // Each char IS the codepoint. Dart strings are UTF-16 natively, so the
-  // compiled snapshot stores the data as raw 2-byte values with zero decoding.
-  final outPath = '${Directory.current.path}/lib/data/ducet_order.dart';
-  final buf = StringBuffer();
-  buf.writeln('/// Sorted BMP codepoints per DUCET (Unicode 13.0) + CLDR 39 CJK radical-stroke.');
-  buf.writeln('/// Katakana sorts before hiragana (CLDR root tailoring).');
-  buf.writeln('/// Generated by scripts/generate_ducet_ranks.dart — do not edit.');
-  buf.writeln();
-
-  // Raw UTF-16 string — each code unit is a codepoint in DUCET order.
-  // Use \uXXXX escapes so the source stays ASCII-safe.
-  buf.write("const String _ducetOrder = '");
-  for (var i = 0; i < ordered.length; i++) {
-    final cp = ordered[i];
-    if (cp == 0x27) {
-      buf.write(r"\'"); // escape single quote
-    } else if (cp == 0x5C) {
-      buf.write(r'\\'); // escape backslash
-    } else if (cp == 0x24) {
-      buf.write(r'\$'); // escape dollar
-    } else {
-      buf.write('\\u${cp.toRadixString(16).padLeft(4, '0')}');
-    }
-  }
-  buf.writeln("';");
-
-  // Kangxi radical decomposition map
-  buf.writeln();
-  buf.writeln('/// Kangxi Radicals (U+2F00-U+2FD5) → CJK Unified equivalents.');
-  buf.writeln('/// ICU decomposes these via NFD before collation.');
-  buf.writeln('const Map<int, int> _kangxiDecomp = {');
+  buffer
+    ..writeln()
+    ..writeln('/// Kangxi Radicals (U+2F00-U+2FD5) → CJK Unified equivalents.')
+    ..writeln('/// ICU decomposes these via NFD before collation.')
+    ..writeln('const Map<int, int> _kangxiDecomp = {');
   final sortedKangxi = kangxiDecomp.entries.toList()..sort((a, b) => a.key.compareTo(b.key));
-  for (final e in sortedKangxi) {
-    buf.writeln('  0x${e.key.toRadixString(16).toUpperCase()}: 0x${e.value.toRadixString(16).toUpperCase()},');
+  for (final entry in sortedKangxi) {
+    buffer.writeln(
+      '  0x${entry.key.toRadixString(16).toUpperCase()}: '
+      '0x${entry.value.toRadixString(16).toUpperCase()},',
+    );
   }
-  buf.writeln('};');
+  buffer
+    ..writeln('};')
+    ..writeln()
+    ..writeln('/// Compare two characters using DUCET + CLDR ordering.')
+    ..writeln('/// Decomposes Kangxi radicals to CJK equivalents before lookup.')
+    ..writeln('/// Falls back to codepoint order for characters not in the table.')
+    ..writeln('int ducetCompare(String a, String b) {')
+    ..writeln('  var cpA = a.runes.first;')
+    ..writeln('  var cpB = b.runes.first;')
+    ..writeln('  cpA = _kangxiDecomp[cpA] ?? cpA;')
+    ..writeln('  cpB = _kangxiDecomp[cpB] ?? cpB;')
+    ..writeln('  final storedRankA = cpA <= 0xFFFF ? _ducetRanks.codeUnitAt(cpA) : 0;')
+    ..writeln('  final storedRankB = cpB <= 0xFFFF ? _ducetRanks.codeUnitAt(cpB) : 0;')
+    ..writeln('  final rankA = storedRankA == 0 ? 0x100000 + cpA : storedRankA - 1;')
+    ..writeln('  final rankB = storedRankB == 0 ? 0x100000 + cpB : storedRankB - 1;')
+    ..writeln('  return rankA.compareTo(rankB);')
+    ..writeln('}');
+  return buffer.toString();
+}
 
-  buf.writeln();
-  buf.writeln('late final Map<int, int> _ranks = _buildRanks();');
-  buf.writeln();
-  buf.writeln('Map<int, int> _buildRanks() {');
-  buf.writeln('  return {');
-  buf.writeln('    for (var i = 0; i < _ducetOrder.length; i++)');
-  buf.writeln('      _ducetOrder.codeUnitAt(i): i,');
-  buf.writeln('  };');
-  buf.writeln('}');
-  buf.writeln();
-  buf.writeln('/// Compare two characters using DUCET + CLDR ordering.');
-  buf.writeln('/// Decomposes Kangxi radicals to CJK equivalents before lookup.');
-  buf.writeln('/// Falls back to codepoint order for characters not in the table.');
-  buf.writeln('int ducetCompare(String a, String b) {');
-  buf.writeln('  var cpA = a.runes.first;');
-  buf.writeln('  var cpB = b.runes.first;');
-  buf.writeln('  cpA = _kangxiDecomp[cpA] ?? cpA;');
-  buf.writeln('  cpB = _kangxiDecomp[cpB] ?? cpB;');
-  buf.writeln('  final rankA = _ranks[cpA] ?? (0x100000 + cpA);');
-  buf.writeln('  final rankB = _ranks[cpB] ?? (0x100000 + cpB);');
-  buf.writeln('  return rankA.compareTo(rankB);');
-  buf.writeln('}');
+void writeGeneratedFile(File output, String contents) {
+  output.parent.createSync(recursive: true);
+  final staged = File('${output.path}.$pid.tmp');
+  try {
+    staged.writeAsStringSync(contents, flush: true);
+    staged.renameSync(output.path);
+  } finally {
+    if (staged.existsSync()) staged.deleteSync();
+  }
+}
 
-  File(outPath).writeAsStringSync(buf.toString());
-  stderr.writeln('Written to $outPath');
+Future<void> generateDucetRanks({
+  bool useBundledSources = true,
+  Directory? bundledSourceDirectory,
+  File? explicitAllKeys,
+  File? explicitFractionalUca,
+  Directory? cacheDirectory,
+  File? output,
+  SourceDownloader downloader = downloadSource,
+  GeneratedFileWriter writer = writeGeneratedFile,
+  SourceDescriptor allKeysDescriptor = allKeysSource,
+  SourceDescriptor fractionalUcaDescriptor = fractionalUcaSource,
+}) async {
+  final sources = useBundledSources
+      ? await loadBundledSources(
+          bundledSourceDirectory:
+              bundledSourceDirectory ?? Directory.fromUri(Directory.current.uri.resolve('scripts/data/')),
+          allKeysDescriptor: allKeysDescriptor,
+          fractionalUcaDescriptor: fractionalUcaDescriptor,
+        )
+      : await loadVerifiedSources(
+          explicitAllKeys: explicitAllKeys,
+          explicitFractionalUca: explicitFractionalUca,
+          cacheDirectory: cacheDirectory,
+          downloader: downloader,
+          allKeysDescriptor: allKeysDescriptor,
+          fractionalUcaDescriptor: fractionalUcaDescriptor,
+        );
+  try {
+    final allKeys = parseAllKeys(await sources.allKeysFile.readAsString());
+    final (cjkOrder, kangxiDecomp) = parseRadicals(await sources.fractionalUcaFile.readAsString());
+    final ordered = buildOrder(allKeys, cjkOrder);
+    final rendered = renderDucetOrder(ordered, kangxiDecomp);
+    sources.commitCaches();
+    writer(output ?? File.fromUri(Directory.current.uri.resolve('lib/data/ducet_order.dart')), rendered);
+  } finally {
+    sources.dispose();
+  }
+}
+
+Future<void> main(List<String> args) async {
+  if (args.length > 2) {
+    stderr.writeln('Usage: dart run scripts/generate_ducet_ranks.dart [allkeys.txt] [FractionalUCA.txt]');
+    exitCode = 64;
+    return;
+  }
+  try {
+    await generateDucetRanks(
+      explicitAllKeys: args.isNotEmpty ? File(args.first) : null,
+      explicitFractionalUca: args.length > 1 ? File(args[1]) : null,
+      useBundledSources: args.isEmpty,
+    );
+    stderr.writeln('Written to ${File.fromUri(Directory.current.uri.resolve('lib/data/ducet_order.dart')).path}');
+  } catch (error) {
+    stderr.writeln(error);
+    exitCode = 1;
+  }
 }

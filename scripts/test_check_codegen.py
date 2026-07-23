@@ -10,6 +10,9 @@ from pathlib import Path
 
 SCRIPT_DIR = Path(__file__).resolve().parent
 GENERATED_PATHS = (
+    "lib/data/ducet_order.dart",
+    "lib/data/hid_key_labels.dart",
+    "lib/data/iso_639_data.dart",
     "lib/i18n/strings.g.dart",
     "lib/models/model.freezed.dart",
     "lib/models/model.g.dart",
@@ -58,6 +61,18 @@ cp source.txt server/relay_protocol_gen.go
             """#!/usr/bin/env bash
 if [ "${FAIL_DART:-0}" -ne 0 ]; then exit "$FAIL_DART"; fi
 case "$*" in
+  *"generate_ducet_ranks.dart")
+    mkdir -p lib/data
+    cp source.txt lib/data/ducet_order.dart
+    ;;
+  *"generate_hid_key_labels.dart")
+    mkdir -p lib/data
+    cp source.txt lib/data/hid_key_labels.dart
+    ;;
+  *"generate_iso_639_data.dart")
+    mkdir -p lib/data
+    cp source.txt lib/data/iso_639_data.dart
+    ;;
   "run slang")
     mkdir -p lib/i18n
     cp source.txt lib/i18n/strings.g.dart
@@ -192,6 +207,18 @@ esac
         self.assertIn("lib/models/model.g.dart", result.stderr)
         self.assertFalse(deleted.exists())
         self.assertEqual(untracked.read_text(encoding="utf-8"), "caller sentinel\n")
+        self.assertEqual(self.git_status(), status_before)
+
+    def test_deleted_explicit_dart_output_is_reported_without_repair(self) -> None:
+        deleted = self.root / "lib" / "data" / "hid_key_labels.dart"
+        deleted.unlink()
+        status_before = self.git_status()
+
+        result = self.run_codegen("--check")
+
+        self.assertEqual(result.returncode, 1)
+        self.assertIn("lib/data/hid_key_labels.dart", result.stderr)
+        self.assertFalse(deleted.exists())
         self.assertEqual(self.git_status(), status_before)
 
     def test_write_mode_updates_outputs_and_forwards_build_runner_arguments(self) -> None:

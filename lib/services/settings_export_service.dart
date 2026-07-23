@@ -4,17 +4,20 @@ import 'dart:io';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../models/shader_preset.dart';
 import '../utils/app_logger.dart';
 import '../utils/formatters.dart';
 import '../utils/platform_detector.dart';
 import 'file_picker_service.dart';
 import 'settings_service.dart';
 import 'storage_service.dart';
+import 'trackers/tracker_constants.dart';
 
 class ImportResult {
   final int keysImported;
@@ -64,8 +67,7 @@ class _StoredPreferenceValue {
 
 /// Serializes / restores user-facing SharedPreferences to a JSON file.
 ///
-/// Strategy is allow-by-default: every key is exported unless it matches an
-/// exact denylist or a prefix denylist of auth/cache/internal keys. User-scoped
+/// Only preferences in the closed portable registry are exported. User-scoped
 /// keys (prefixed with `user_{uuid}_`) have that prefix stripped on export and
 /// re-applied with the current user's prefix on import, so preferences follow
 /// whichever account is signed in on the target device.
@@ -193,12 +195,20 @@ class SettingsExportService {
       SettingsService.keyboardHotkeys,
     ])
       pref.key: _PreferencePolicy(_storageTypeFor(pref)),
+    for (final service in TrackerService.values)
+      for (final pref in <Pref<Object?>>[
+        SettingsService.trackerFilterModePref(service),
+        SettingsService.trackerFilterIdsPref(service),
+      ])
+        pref.key: _PreferencePolicy(_storageTypeFor(pref)),
   };
 
+  static const Set<String> _jsonStringListPreferenceKeys = {'hidden_libraries', 'library_order'};
+
   static const Map<String, _PreferencePolicy> _userScopedPreferences = {
-    'hidden_libraries': _PreferencePolicy(_typeStringList, userScoped: true),
+    'hidden_libraries': _PreferencePolicy(_typeString, userScoped: true),
     'library_filters': _PreferencePolicy(_typeString, userScoped: true),
-    'library_order': _PreferencePolicy(_typeStringList, userScoped: true),
+    'library_order': _PreferencePolicy(_typeString, userScoped: true),
   };
 
   static final List<(RegExp, _PreferencePolicy)> _dynamicUserScopedPreferences = [
@@ -269,7 +279,7 @@ class SettingsExportService {
       final policy = _policyFor(baseKey);
       if (policy == null || policy.userScoped != sourceIsUserScoped) continue;
 
-      final entry = _encodeValue(prefs.get(fullKey), policy.type);
+      final entry = _encodeValue(_portableExportValue(baseKey, prefs.get(fullKey)), policy.type);
       if (entry != null) prefsOut[baseKey] = entry;
     }
 
@@ -280,6 +290,11 @@ class SettingsExportService {
       'platform': Platform.operatingSystem,
       'prefs': prefsOut,
     };
+  }
+
+  static Object? _portableExportValue(String baseKey, Object? value) {
+    if (baseKey != SettingsService.globalShaderPreset.key) return value;
+    return value is String && ShaderPreset.fromId(value) != null ? value : ShaderPreset.none.id;
   }
 
   static Map<String, dynamic>? _encodeValue(Object? value, String expectedType) {
@@ -331,9 +346,23 @@ class SettingsExportService {
         continue;
       }
 
-      final type = rawEntry['type'];
-      final value = rawEntry['value'];
+      var type = rawEntry['type'];
+      var value = rawEntry['value'];
+      // Early format-v1 exports described these JSON-backed values as native
+      // string lists. Normalize that narrowly admitted legacy shape to the
+      // String representation consumed by StorageService.
+      if (version == 1 &&
+          _jsonStringListPreferenceKeys.contains(baseKey) &&
+          type == _typeStringList &&
+          _isValidValue(_typeStringList, value)) {
+        type = _typeString;
+        value = jsonEncode((value as List).cast<String>());
+      }
       if (type is! String || type != policy.type || !_isValidValue(type, value)) {
+        skipped++;
+        continue;
+      }
+      if (baseKey == SettingsService.globalShaderPreset.key && value is String && ShaderPreset.fromId(value) == null) {
         skipped++;
         continue;
       }
@@ -362,8 +391,7 @@ class SettingsExportService {
       } catch (rollbackError, rollbackStackTrace) {
         appLogger.e('Settings import rollback failed', error: rollbackError, stackTrace: rollbackStackTrace);
       }
-      appLogger.e('Settings import failed', error: error, stackTrace: stackTrace);
-      throw const SettingsExportException('Could not apply settings import');
+      Error.throwWithStackTrace(error, stackTrace);
     }
 
     return ImportResult(keysImported: pending.length, keysSkipped: skipped);
@@ -436,7 +464,7 @@ class SettingsExportService {
   /// the user's choosing. Returns the saved path, or `null` if the user
   /// cancelled the picker.
   ///
-  /// Throws [SettingsExportException] on failure.
+  /// Platform and filesystem failures retain their original exception types.
   static Future<String?> exportToFile() async {
     final prefs = (await SettingsService.getInstance()).prefs;
     final storage = await StorageService.getInstance();
@@ -444,8 +472,8 @@ class SettingsExportService {
     try {
       final info = await PackageInfo.fromPlatform();
       appVersion = info.version;
-    } catch (_) {
-      // best-effort; tolerate platforms without PackageInfo
+    } on PlatformException {
+      // Best-effort metadata; platforms without PackageInfo still export.
     }
 
     final exportMap = buildExportMap(prefs, currentUserUuid: storage.activeUserScope(), appVersion: appVersion);
@@ -459,18 +487,13 @@ class SettingsExportService {
       return _writeToAppDocuments(fileName, bytes);
     }
 
-    try {
-      return await FilePickerService.instance.saveFile(
-        dialogTitle: 'Export Plezy settings',
-        fileName: fileName,
-        bytes: bytes,
-        type: FileType.custom,
-        allowedExtensions: const [fileExtension],
-      );
-    } catch (e, st) {
-      appLogger.e('Settings export failed', error: e, stackTrace: st);
-      throw const SettingsExportException('Could not write export file');
-    }
+    return FilePickerService.instance.saveFile(
+      dialogTitle: 'Export Plezy settings',
+      fileName: fileName,
+      bytes: bytes,
+      type: FileType.custom,
+      allowedExtensions: const [fileExtension],
+    );
   }
 
   static Future<String> _writeToAppDocuments(String fileName, Uint8List bytes) async {
@@ -483,8 +506,9 @@ class SettingsExportService {
   /// Prompts the user to pick a settings JSON and writes its contents into
   /// SharedPreferences. Requires a signed-in user.
   ///
-  /// Returns `null` if the user cancelled. Throws [SettingsExportException] on
-  /// malformed files or unsupported versions.
+  /// Returns `null` if the user cancelled. Malformed files throw
+  /// [InvalidExportFileException]; platform and filesystem failures retain
+  /// their original exception types.
   static Future<ImportResult?> importFromFile() async {
     final storage = await StorageService.getInstance();
     final uuid = storage.activeUserScope();
@@ -501,30 +525,29 @@ class SettingsExportService {
 
     final file = picked.files.first;
     String contents;
-    try {
-      final bytes = file.bytes;
-      if (bytes != null) {
+    final bytes = file.bytes;
+    if (bytes != null) {
+      try {
         contents = utf8.decode(bytes);
-      } else if (file.path != null) {
-        contents = await File(file.path!).readAsString();
-      } else {
+      } on FormatException {
         throw const InvalidExportFileException('Could not read the selected file');
       }
-    } catch (e, st) {
-      appLogger.e('Settings import read failed', error: e, stackTrace: st);
+    } else if (file.path != null) {
+      contents = await File(file.path!).readAsString();
+    } else {
       throw const InvalidExportFileException('Could not read the selected file');
     }
 
-    Map<String, dynamic> data;
+    final Object? decoded;
     try {
-      final decoded = json.decode(contents);
-      if (decoded is! Map<String, dynamic>) {
-        throw const InvalidExportFileException('Invalid export file');
-      }
-      data = decoded;
-    } catch (_) {
+      decoded = json.decode(contents);
+    } on FormatException {
       throw const InvalidExportFileException('Invalid export file');
     }
+    if (decoded is! Map<String, dynamic>) {
+      throw const InvalidExportFileException('Invalid export file');
+    }
+    final data = decoded;
 
     final prefs = (await SettingsService.getInstance()).prefs;
     return applyImportMap(data, prefs, currentUserUuid: uuid);

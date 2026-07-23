@@ -5,8 +5,11 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:package_info_plus/package_info_plus.dart';
+import 'package:plezy/models/shader_preset.dart';
 import 'package:plezy/services/base_shared_preferences_service.dart';
 import 'package:plezy/services/settings_export_service.dart';
+import 'package:plezy/services/settings_service.dart';
+import 'package:plezy/services/trackers/tracker_constants.dart';
 
 import '../test_helpers/prefs.dart';
 
@@ -34,14 +37,16 @@ void main() {
   });
 
   group('portable settings registry', () {
-    test('exports every supported storage type and strips only active-user library scope', () async {
+    test('exports scalar and JSON-backed values and strips only the active-user library scope', () async {
       final prefs = await BaseSharedPreferencesService.sharedCache();
       await prefs.setBool('enable_hardware_decoding', true);
       await prefs.setInt('seek_time_small', 42);
       await prefs.setDouble('volume', 75.5);
       await prefs.setString('preferred_video_codec', 'h264');
-      await prefs.setStringList('user_alice_library_order', const ['movies', 'shows']);
-      await prefs.setStringList('user_bob_library_order', const ['private']);
+      await prefs.setString('user_alice_hidden_libraries', jsonEncode(['server-a:hidden']));
+      await prefs.setString('user_alice_library_order', jsonEncode(['movies', 'shows']));
+      await prefs.setString('user_bob_hidden_libraries', jsonEncode(['private-hidden']));
+      await prefs.setString('user_bob_library_order', jsonEncode(['private-order']));
 
       final out = SettingsExportService.buildExportMap(prefs, currentUserUuid: 'alice', appVersion: '1.2.3');
       final exported = out['prefs'] as Map<String, dynamic>;
@@ -53,11 +58,16 @@ void main() {
       expect(exported['seek_time_small'], {'type': 'int', 'value': 42});
       expect(exported['volume'], {'type': 'double', 'value': 75.5});
       expect(exported['preferred_video_codec'], {'type': 'string', 'value': 'h264'});
-      expect(exported['library_order'], {
-        'type': 'stringList',
-        'value': ['movies', 'shows'],
+      expect(exported['hidden_libraries'], {
+        'type': 'string',
+        'value': jsonEncode(['server-a:hidden']),
       });
-      expect(jsonEncode(out), isNot(contains('private')));
+      expect(exported['library_order'], {
+        'type': 'string',
+        'value': jsonEncode(['movies', 'shows']),
+      });
+      expect(jsonEncode(out), isNot(contains('private-hidden')));
+      expect(jsonEncode(out), isNot(contains('private-order')));
     });
 
     test('excludes device-local download roots while preserving portable download controls', () async {
@@ -76,6 +86,32 @@ void main() {
       expect(exported, isNot(contains('custom_download_path')));
       expect(exported, isNot(contains('custom_download_path_type')));
       expect(encoded, isNot(contains(sourcePath)));
+    });
+
+    test('round-trips a custom shader selection as a portable disabled selection', () async {
+      const custom = ShaderPreset(
+        id: 'custom_local-only.glsl',
+        name: 'Local only',
+        type: ShaderPresetType.custom,
+        fileName: 'local-only.glsl',
+      );
+      final prefs = await BaseSharedPreferencesService.sharedCache();
+      await prefs.setString('custom_shader_presets', jsonEncode([custom.toJson()]));
+      await prefs.setString('global_shader_preset', custom.id);
+
+      final export = SettingsExportService.buildExportMap(prefs, currentUserUuid: 'alice');
+      final exported = export['prefs'] as Map<String, dynamic>;
+      expect(exported['global_shader_preset'], {'type': 'string', 'value': ShaderPreset.none.id});
+      expect(exported, isNot(contains('custom_shader_presets')));
+      expect(jsonEncode(export), isNot(contains(custom.fileName!)));
+
+      await prefs.clear();
+      final result = await SettingsExportService.applyImportMap(export, prefs, currentUserUuid: 'bob');
+
+      expect(result.keysImported, 1);
+      expect(result.keysSkipped, 0);
+      expect(prefs.getString('global_shader_preset'), ShaderPreset.none.id);
+      expect(prefs.getString('custom_shader_presets'), isNull);
     });
 
     test('fails closed for unknown, credential, account, path, history, and runtime keys', () async {
@@ -115,7 +151,7 @@ void main() {
 
     test('does not export any user-scoped value without an active user', () async {
       final prefs = await BaseSharedPreferencesService.sharedCache();
-      await prefs.setStringList('user_alice_library_order', const ['movies']);
+      await prefs.setString('user_alice_library_order', jsonEncode(['movies']));
       await prefs.setBool('enable_hdr', true);
 
       final exported = SettingsExportService.buildExportMap(prefs)['prefs'] as Map<String, dynamic>;
@@ -169,6 +205,130 @@ void main() {
       expect(prefs.getBool('enable_hdr'), isNull);
     });
 
+    test('round-trips both filter modes and IDs for every tracker service', () async {
+      final prefs = await BaseSharedPreferencesService.sharedCache();
+
+      for (final mode in TrackerLibraryFilterMode.values) {
+        await prefs.clear();
+        for (final service in TrackerService.values) {
+          await prefs.setString(SettingsService.trackerFilterModePref(service).key, mode.name);
+          await prefs.setStringList(SettingsService.trackerFilterIdsPref(service).key, [
+            '${service.name}:library-a',
+            '${service.name}:library-b',
+          ]);
+        }
+
+        final export = SettingsExportService.buildExportMap(prefs, currentUserUuid: 'source-user');
+        final exported = export['prefs'] as Map<String, dynamic>;
+        for (final service in TrackerService.values) {
+          final modeKey = SettingsService.trackerFilterModePref(service).key;
+          final idsKey = SettingsService.trackerFilterIdsPref(service).key;
+          expect(exported[modeKey], {'type': 'string', 'value': mode.name});
+          expect(exported[idsKey], {
+            'type': 'stringList',
+            'value': ['${service.name}:library-a', '${service.name}:library-b'],
+          });
+        }
+
+        await prefs.clear();
+        final result = await SettingsExportService.applyImportMap(export, prefs, currentUserUuid: 'target-user');
+
+        expect(result.keysImported, TrackerService.values.length * 2);
+        expect(result.keysSkipped, 0);
+        for (final service in TrackerService.values) {
+          expect(prefs.getString(SettingsService.trackerFilterModePref(service).key), mode.name);
+          expect(prefs.getStringList(SettingsService.trackerFilterIdsPref(service).key), [
+            '${service.name}:library-a',
+            '${service.name}:library-b',
+          ]);
+        }
+      }
+    });
+
+    test('preserves an empty whitelist so import cannot broaden tracker access', () async {
+      final prefs = await BaseSharedPreferencesService.sharedCache();
+      for (final service in TrackerService.values) {
+        await prefs.setString(
+          SettingsService.trackerFilterModePref(service).key,
+          TrackerLibraryFilterMode.whitelist.name,
+        );
+        await prefs.setStringList(SettingsService.trackerFilterIdsPref(service).key, const []);
+      }
+
+      final export = SettingsExportService.buildExportMap(prefs, currentUserUuid: 'source-user');
+      await prefs.clear();
+      final result = await SettingsExportService.applyImportMap(export, prefs, currentUserUuid: 'target-user');
+      final settings = await SettingsService.getInstance();
+
+      expect(result.keysImported, TrackerService.values.length * 2);
+      expect(result.keysSkipped, 0);
+      for (final service in TrackerService.values) {
+        expect(settings.read(SettingsService.trackerFilterModePref(service)), TrackerLibraryFilterMode.whitelist);
+        expect(settings.read(SettingsService.trackerFilterIdsPref(service)), isEmpty);
+        expect(settings.isLibraryAllowedForTracker(service, '${service.name}:unlisted'), isFalse);
+        expect(settings.isLibraryAllowedForTracker(service, null), isFalse);
+      }
+    });
+
+    test('rejects tracker preference keys with unknown service suffixes', () async {
+      const modeKey = 'tracker_library_filter_mode_future';
+      const idsKey = 'tracker_library_filter_ids_future';
+      final prefs = await BaseSharedPreferencesService.sharedCache();
+      await prefs.setString(modeKey, 'local-mode');
+      await prefs.setStringList(idsKey, const ['local-id']);
+
+      final exported = SettingsExportService.buildExportMap(prefs, currentUserUuid: 'alice')['prefs'] as Map;
+      expect(exported, isNot(contains(modeKey)));
+      expect(exported, isNot(contains(idsKey)));
+
+      final result = await SettingsExportService.applyImportMap(
+        {
+          'formatVersion': SettingsExportService.formatVersion,
+          'prefs': {
+            modeKey: {'type': 'string', 'value': TrackerLibraryFilterMode.whitelist.name},
+            idsKey: {
+              'type': 'stringList',
+              'value': ['crafted-id'],
+            },
+          },
+        },
+        prefs,
+        currentUserUuid: 'alice',
+      );
+
+      expect(result.keysImported, 0);
+      expect(result.keysSkipped, 2);
+      expect(prefs.getString(modeKey), 'local-mode');
+      expect(prefs.getStringList(idsKey), ['local-id']);
+    });
+
+    test('normalizes format-v1 hidden and order string lists into JSON string storage', () async {
+      final prefs = await BaseSharedPreferencesService.sharedCache();
+
+      final result = await SettingsExportService.applyImportMap(
+        {
+          'formatVersion': 1,
+          'prefs': {
+            'hidden_libraries': {
+              'type': 'stringList',
+              'value': ['server-a:hidden'],
+            },
+            'library_order': {
+              'type': 'stringList',
+              'value': ['server-b:movies', 'server-a:shows'],
+            },
+          },
+        },
+        prefs,
+        currentUserUuid: 'target-user',
+      );
+
+      expect(result.keysImported, 2);
+      expect(result.keysSkipped, 0);
+      expect(prefs.getString('user_target-user_hidden_libraries'), jsonEncode(['server-a:hidden']));
+      expect(prefs.getString('user_target-user_library_order'), jsonEncode(['server-b:movies', 'server-a:shows']));
+    });
+
     test('imports allowlisted values, re-scopes library settings, and skips unsafe entries', () async {
       const seerrCanary = 'SEERR-IMPORT-CANARY';
       final prefs = await BaseSharedPreferencesService.sharedCache();
@@ -184,8 +344,8 @@ void main() {
             'enable_hardware_decoding': {'type': 'bool', 'value': true},
             'default_playback_speed': {'type': 'double', 'value': 1},
             'library_order': {
-              'type': 'stringList',
-              'value': ['movies'],
+              'type': 'string',
+              'value': jsonEncode(['movies']),
             },
             'library_sort_movies': {'type': 'string', 'value': '{"key":"titleSort"}'},
             'seerr_session': {'type': 'string', 'value': seerrCanary},
@@ -206,7 +366,7 @@ void main() {
       expect(result.keysSkipped, 8);
       expect(prefs.getBool('enable_hardware_decoding'), isTrue);
       expect(prefs.getDouble('default_playback_speed'), 1.0);
-      expect(prefs.getStringList('user_alice_library_order'), ['movies']);
+      expect(prefs.getString('user_alice_library_order'), jsonEncode(['movies']));
       expect(prefs.getString('user_alice_library_sort_movies'), '{"key":"titleSort"}');
       expect(prefs.getString('seerr_session'), isNull);
       expect(prefs.getString('user_alice_seerr_session'), isNull);
@@ -246,6 +406,26 @@ void main() {
       expect(prefs.getString('custom_download_path'), targetPath);
       expect(prefs.getString('custom_download_path_type'), 'file');
       expect(prefs.getString('custom_download_path'), isNot(contains(sourcePath)));
+    });
+
+    test('reports an unresolved custom shader selection as skipped', () async {
+      final prefs = await BaseSharedPreferencesService.sharedCache();
+      await prefs.setString('global_shader_preset', ShaderPreset.nvscalerDefault.id);
+
+      final result = await SettingsExportService.applyImportMap(
+        {
+          'formatVersion': SettingsExportService.formatVersion,
+          'prefs': {
+            'global_shader_preset': {'type': 'string', 'value': 'custom_missing.glsl'},
+          },
+        },
+        prefs,
+        currentUserUuid: 'alice',
+      );
+
+      expect(result.keysImported, 0);
+      expect(result.keysSkipped, 1);
+      expect(prefs.getString('global_shader_preset'), ShaderPreset.nvscalerDefault.id);
     });
 
     test('skips malformed or mismatched entries before applying valid mutations', () async {
@@ -294,7 +474,7 @@ void main() {
           prefs,
           currentUserUuid: 'alice',
         ),
-        throwsA(isA<SettingsExportException>()),
+        throwsA(isA<StateError>()),
       );
 
       expect(prefs.getBool('enable_hdr'), isFalse);
@@ -304,7 +484,8 @@ void main() {
     test('round-trips portable values across user scopes without account identifiers', () async {
       final prefs = await BaseSharedPreferencesService.sharedCache();
       await prefs.setBool('enable_hardware_decoding', true);
-      await prefs.setStringList('user_alice_library_order', const ['movies']);
+      await prefs.setString('user_alice_hidden_libraries', jsonEncode(['server-a:hidden']));
+      await prefs.setString('user_alice_library_order', jsonEncode(['server-b:movies']));
 
       final export = SettingsExportService.buildExportMap(prefs, currentUserUuid: 'alice');
       expect(jsonEncode(export), isNot(contains('alice')));
@@ -312,11 +493,13 @@ void main() {
 
       final result = await SettingsExportService.applyImportMap(export, prefs, currentUserUuid: 'bob');
 
-      expect(result.keysImported, 2);
+      expect(result.keysImported, 3);
       expect(result.keysSkipped, 0);
       expect(prefs.getBool('enable_hardware_decoding'), isTrue);
-      expect(prefs.getStringList('user_bob_library_order'), ['movies']);
-      expect(prefs.getStringList('user_alice_library_order'), isNull);
+      expect(prefs.getString('user_bob_hidden_libraries'), jsonEncode(['server-a:hidden']));
+      expect(prefs.getString('user_bob_library_order'), jsonEncode(['server-b:movies']));
+      expect(prefs.getString('user_alice_hidden_libraries'), isNull);
+      expect(prefs.getString('user_alice_library_order'), isNull);
     });
 
     test('malicious import cannot replace any tvOS database recovery key', () async {
@@ -389,7 +572,7 @@ void main() {
       expect(await SettingsExportService.exportToFile(), isNull);
 
       picker.saveError = PlatformException(code: 'save_failed');
-      await expectLater(SettingsExportService.exportToFile(), throwsA(isA<SettingsExportException>()));
+      await expectLater(SettingsExportService.exportToFile(), throwsA(isA<PlatformException>()));
 
       picker.saveError = null;
       picker.saveResult = '/tmp/recovered.json';
@@ -432,11 +615,14 @@ void main() {
       picker.pickResult = FilePickerResult([
         PlatformFile(name: 'missing.json', size: 1, path: '/path/that/does/not/exist.json'),
       ]);
-      await expectLater(SettingsExportService.importFromFile(), throwsA(isA<InvalidExportFileException>()));
+      await expectLater(SettingsExportService.importFromFile(), throwsA(isA<FileSystemException>()));
 
       picker.pickResult = FilePickerResult([PlatformFile(name: 'settings.json', size: 1, bytes: importBytes())]);
       expect((await SettingsExportService.importFromFile())?.keysImported, 1);
       expect(picker.pickCalls, 4);
+
+      picker.pickError = PlatformException(code: 'pick_failed');
+      await expectLater(SettingsExportService.importFromFile(), throwsA(isA<PlatformException>()));
     });
 
     test('missing active profile rejects before opening the picker', () async {

@@ -52,6 +52,7 @@ class TranslationsZh extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _TranslationsRateSheetZh rateSheet = _TranslationsRateSheetZh._(_root);
 	@override late final _TranslationsAccessibilityZh accessibility = _TranslationsAccessibilityZh._(_root);
 	@override late final _TranslationsTooltipsZh tooltips = _TranslationsTooltipsZh._(_root);
+	@override late final _TranslationsAudioTracksZh audioTracks = _TranslationsAudioTracksZh._(_root);
 	@override late final _TranslationsVideoControlsZh videoControls = _TranslationsVideoControlsZh._(_root);
 	@override late final _TranslationsMessagesZh messages = _TranslationsMessagesZh._(_root);
 	@override late final _TranslationsSubtitlingStylingZh subtitlingStyling = _TranslationsSubtitlingStylingZh._(_root);
@@ -120,7 +121,7 @@ class _TranslationsAuthZh extends TranslationsAuthEn {
 	@override String get quickConnectWaiting => '等待批准…';
 	@override String get quickConnectCancel => '取消';
 	@override String get quickConnectExpired => 'Quick Connect 已过期。请重试。';
-	@override String get localDataRecoveryRequired => '';
+	@override String get localDataRecoveryRequired => 'Plezy could not safely recover local sign-in and pending playback data. Please sign in again.';
 }
 
 // Path: common
@@ -240,8 +241,6 @@ class _TranslationsSettingsZh extends TranslationsSettingsEn {
 	@override String get libraryDensity => '媒体库密度';
 	@override String get compact => '紧凑';
 	@override String get comfortable => '舒适';
-	@override String get tvCornerSpotlightBackdrop => '';
-	@override String get tvCornerSpotlightBackdropDescription => '';
 	@override String get viewMode => '视图模式';
 	@override String get gridView => '网格视图';
 	@override String get listView => '列表视图';
@@ -311,7 +310,7 @@ class _TranslationsSettingsZh extends TranslationsSettingsEn {
 	@override String get watchTogetherRelay => '一起看中继服务器';
 	@override String get watchTogetherRelayDescription => '设置自定义中继。所有人必须使用同一服务器。';
 	@override String get watchTogetherRelayHint => 'https://my-relay.example.com';
-	@override String get watchTogetherRelayInvalid => '';
+	@override String get watchTogetherRelayInvalid => 'Enter a valid HTTP or HTTPS relay base URL.';
 	@override String get crashReporting => '崩溃报告';
 	@override String get crashReportingDescription => '发送崩溃报告以帮助改进应用';
 	@override String get debugLogging => '调试日志';
@@ -328,12 +327,10 @@ class _TranslationsSettingsZh extends TranslationsSettingsEn {
 	@override String get exportSettings => '导出设置';
 	@override String get exportSettingsDescription => '将您的偏好保存到文件';
 	@override String get exportSettingsSuccess => '设置已导出';
-	@override String get exportSettingsFailed => '无法导出设置';
 	@override String get importSettings => '导入设置';
 	@override String get importSettingsDescription => '从文件恢复偏好';
 	@override String get importSettingsConfirm => '这将替换您当前的设置。继续吗？';
 	@override String get importSettingsSuccess => '设置已导入';
-	@override String get importSettingsFailed => '无法导入设置';
 	@override String get importSettingsInvalidFile => '此文件不是有效的 Plezy 设置导出';
 	@override String get importSettingsNoUser => '导入设置前请先登录';
 	@override String get shortcutsReset => '快捷键已重置为默认值';
@@ -348,6 +345,7 @@ class _TranslationsSettingsZh extends TranslationsSettingsEn {
 	@override String validationErrorDuration({required Object min, required Object max, required Object unit}) => '时长必须介于 ${min} 和 ${max} ${unit} 之间';
 	@override String shortcutAlreadyAssigned({required Object action}) => '快捷键已被分配给 ${action}';
 	@override String shortcutUpdated({required Object action}) => '快捷键已为 ${action} 更新';
+	@override String get saveFailed => 'Could not save changes. Try again.';
 	@override String get autoSkip => '自动跳过';
 	@override String get autoSkipIntro => '自动跳过片头';
 	@override String get autoSkipIntroDescription => '几秒钟后自动跳过片头标记';
@@ -373,7 +371,7 @@ class _TranslationsSettingsZh extends TranslationsSettingsEn {
 	@override String get downloadLocationChanged => '下载位置已更改';
 	@override String get downloadLocationReset => '下载位置已重置为默认';
 	@override String get downloadLocationInvalid => '所选文件夹不可写入';
-	@override String get downloadLocationSelectError => '选择文件夹失败';
+	@override String get downloadLocationPickerUnavailable => '此设备不支持选择文件夹';
 	@override String get downloadOnWifiOnly => '仅在 WiFi 时下载';
 	@override String get downloadOnWifiOnlyDescription => '使用蜂窝数据时禁止下载';
 	@override String get autoRemoveWatchedDownloads => '自动移除已观看的下载';
@@ -591,6 +589,10 @@ class _TranslationsAccessibilityZh extends TranslationsAccessibilityEn {
 	@override String get hexColor => '十六进制颜色';
 	@override String get expandText => '展开文本';
 	@override String get collapseText => '折叠文本';
+	@override String get alphabetNavigation => '字母导航';
+	@override String get alphabetScrollHint => '上下滑动以按字母移动';
+	@override String rowColumnPosition({required Object row, required Object rowCount, required Object column, required Object columnCount}) => '第 ${row} 行，共 ${rowCount} 行；第 ${column} 列，共 ${columnCount} 列';
+	@override String rowPosition({required Object row, required Object rowCount}) => '第 ${row} 行，共 ${rowCount} 行';
 }
 
 // Path: tooltips
@@ -604,6 +606,16 @@ class _TranslationsTooltipsZh extends TranslationsTooltipsEn {
 	@override String get playTrailer => '播放预告片';
 	@override String get markAsWatched => '标记为已观看';
 	@override String get markAsUnwatched => '标记为未观看';
+}
+
+// Path: audioTracks
+class _TranslationsAudioTracksZh extends TranslationsAudioTracksEn {
+	_TranslationsAudioTracksZh._(TranslationsZh root) : this._root = root, super.internal(root);
+
+	final TranslationsZh _root; // ignore: unused_field
+
+	// Translations
+	@override String track({required Object n}) => '音轨 ${n}';
 }
 
 // Path: videoControls
@@ -711,11 +723,11 @@ class _TranslationsMessagesZh extends TranslationsMessagesEn {
 	@override String get streamInterrupted => '视频流已中断。按播放键或拖动进度条重试。';
 	@override String get liveStreamInterrupted => '直播流已中断。按播放键重试。';
 	@override String get fileInfoNotAvailable => '文件信息不可用';
-	@override String get playbackAuthenticationRequired => '';
-	@override String get playbackServerUnavailable => '';
-	@override String get playbackDataInvalid => '';
-	@override String get playbackCancelled => '';
-	@override String get playbackFailed => '';
+	@override String get playbackAuthenticationRequired => 'Sign in to the media server again to play this item.';
+	@override String get playbackServerUnavailable => 'The media server is unavailable. Try again later.';
+	@override String get playbackDataInvalid => 'The server returned invalid playback information.';
+	@override String get playbackCancelled => 'Playback was cancelled.';
+	@override String get playbackFailed => 'Playback could not be started.';
 	@override String errorLoadingFileInfo({required Object error}) => '加载文件信息时出错: ${error}';
 	@override String get errorLoadingSeries => '加载系列时出错';
 	@override String get musicNotSupported => '尚不支持播放音乐';
@@ -866,6 +878,7 @@ class _TranslationsProfilesZh extends TranslationsProfilesEn {
 	@override String get borrowExplain => '借用另一个个人资料的连接。受 PIN 保护的个人资料需要 PIN。';
 	@override String get borrowEmpty => '暂无可借用的内容。';
 	@override String get borrowEmptySubtitle => '请先将 Plex 或 Jellyfin 连接到另一个个人资料。';
+	@override String get borrowLoadFailed => 'Available connections could not be loaded. Try again.';
 	@override String borrowFromProfile({required Object displayName}) => '来自 ${displayName}';
 	@override String get borrowConnectionBorrowed => '已借用连接。';
 	@override String get borrowFailed => '无法借用连接。';
@@ -1148,7 +1161,7 @@ class _TranslationsLiveTvZh extends TranslationsLiveTvEn {
 	@override String get favorites => '收藏';
 	@override String get reorderFavorites => '重新排序收藏';
 	@override String get favoritesLoadFailed => '无法加载收藏。请检查网络连接后重试。';
-	@override String get favoritesUpdateFailed => '';
+	@override String get favoritesUpdateFailed => 'Could not update favorites. Check your connection and try again.';
 	@override String get joinSession => '加入正在进行的会话';
 	@override String watchFromStart({required Object minutes}) => '从头观看（${minutes}分钟前开始）';
 	@override String get watchLive => '观看直播';
@@ -2146,7 +2159,7 @@ extension on TranslationsZh {
 			'auth.quickConnectWaiting' => '等待批准…',
 			'auth.quickConnectCancel' => '取消',
 			'auth.quickConnectExpired' => 'Quick Connect 已过期。请重试。',
-			'auth.localDataRecoveryRequired' => '',
+			'auth.localDataRecoveryRequired' => 'Plezy could not safely recover local sign-in and pending playback data. Please sign in again.',
 			'common.cancel' => '取消',
 			'common.save' => '保存',
 			'common.close' => '关闭',
@@ -2230,8 +2243,6 @@ extension on TranslationsZh {
 			'settings.libraryDensity' => '媒体库密度',
 			'settings.compact' => '紧凑',
 			'settings.comfortable' => '舒适',
-			'settings.tvCornerSpotlightBackdrop' => '',
-			'settings.tvCornerSpotlightBackdropDescription' => '',
 			'settings.viewMode' => '视图模式',
 			'settings.gridView' => '网格视图',
 			'settings.listView' => '列表视图',
@@ -2301,7 +2312,7 @@ extension on TranslationsZh {
 			'settings.watchTogetherRelay' => '一起看中继服务器',
 			'settings.watchTogetherRelayDescription' => '设置自定义中继。所有人必须使用同一服务器。',
 			'settings.watchTogetherRelayHint' => 'https://my-relay.example.com',
-			'settings.watchTogetherRelayInvalid' => '',
+			'settings.watchTogetherRelayInvalid' => 'Enter a valid HTTP or HTTPS relay base URL.',
 			'settings.crashReporting' => '崩溃报告',
 			'settings.crashReportingDescription' => '发送崩溃报告以帮助改进应用',
 			'settings.debugLogging' => '调试日志',
@@ -2318,12 +2329,10 @@ extension on TranslationsZh {
 			'settings.exportSettings' => '导出设置',
 			'settings.exportSettingsDescription' => '将您的偏好保存到文件',
 			'settings.exportSettingsSuccess' => '设置已导出',
-			'settings.exportSettingsFailed' => '无法导出设置',
 			'settings.importSettings' => '导入设置',
 			'settings.importSettingsDescription' => '从文件恢复偏好',
 			'settings.importSettingsConfirm' => '这将替换您当前的设置。继续吗？',
 			'settings.importSettingsSuccess' => '设置已导入',
-			'settings.importSettingsFailed' => '无法导入设置',
 			'settings.importSettingsInvalidFile' => '此文件不是有效的 Plezy 设置导出',
 			'settings.importSettingsNoUser' => '导入设置前请先登录',
 			'settings.shortcutsReset' => '快捷键已重置为默认值',
@@ -2338,6 +2347,7 @@ extension on TranslationsZh {
 			'settings.validationErrorDuration' => ({required Object min, required Object max, required Object unit}) => '时长必须介于 ${min} 和 ${max} ${unit} 之间',
 			'settings.shortcutAlreadyAssigned' => ({required Object action}) => '快捷键已被分配给 ${action}',
 			'settings.shortcutUpdated' => ({required Object action}) => '快捷键已为 ${action} 更新',
+			'settings.saveFailed' => 'Could not save changes. Try again.',
 			'settings.autoSkip' => '自动跳过',
 			'settings.autoSkipIntro' => '自动跳过片头',
 			'settings.autoSkipIntroDescription' => '几秒钟后自动跳过片头标记',
@@ -2363,7 +2373,7 @@ extension on TranslationsZh {
 			'settings.downloadLocationChanged' => '下载位置已更改',
 			'settings.downloadLocationReset' => '下载位置已重置为默认',
 			'settings.downloadLocationInvalid' => '所选文件夹不可写入',
-			'settings.downloadLocationSelectError' => '选择文件夹失败',
+			'settings.downloadLocationPickerUnavailable' => '此设备不支持选择文件夹',
 			'settings.downloadOnWifiOnly' => '仅在 WiFi 时下载',
 			'settings.downloadOnWifiOnlyDescription' => '使用蜂窝数据时禁止下载',
 			'settings.autoRemoveWatchedDownloads' => '自动移除已观看的下载',
@@ -2551,10 +2561,15 @@ extension on TranslationsZh {
 			'accessibility.hexColor' => '十六进制颜色',
 			'accessibility.expandText' => '展开文本',
 			'accessibility.collapseText' => '折叠文本',
+			'accessibility.alphabetNavigation' => '字母导航',
+			'accessibility.alphabetScrollHint' => '上下滑动以按字母移动',
+			'accessibility.rowColumnPosition' => ({required Object row, required Object rowCount, required Object column, required Object columnCount}) => '第 ${row} 行，共 ${rowCount} 行；第 ${column} 列，共 ${columnCount} 列',
+			'accessibility.rowPosition' => ({required Object row, required Object rowCount}) => '第 ${row} 行，共 ${rowCount} 行',
 			'tooltips.shufflePlay' => '随机播放',
 			'tooltips.playTrailer' => '播放预告片',
 			'tooltips.markAsWatched' => '标记为已观看',
 			'tooltips.markAsUnwatched' => '标记为未观看',
+			'audioTracks.track' => ({required Object n}) => '音轨 ${n}',
 			'videoControls.audioLabel' => '音频',
 			'videoControls.subtitlesLabel' => '字幕',
 			'videoControls.resetToZero' => '重置为 0ms',
@@ -2641,20 +2656,20 @@ extension on TranslationsZh {
 			'messages.markedAsUnwatched' => '已标记为未观看',
 			'messages.markedAsWatchedOffline' => '已标记为已观看 (将在联网时同步)',
 			'messages.markedAsUnwatchedOffline' => '已标记为未观看 (将在联网时同步)',
-			'messages.autoRemovedWatchedDownload' => ({required Object title}) => '已自动移除: ${title}',
-			'messages.autoRemovedWatchedDownloads' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('zh'))(n, other: '已自动移除 ${n} 个看过的下载', ), 
 			_ => null,
 		} ?? switch (path) {
+			'messages.autoRemovedWatchedDownload' => ({required Object title}) => '已自动移除: ${title}',
+			'messages.autoRemovedWatchedDownloads' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('zh'))(n, other: '已自动移除 ${n} 个看过的下载', ), 
 			'messages.removedFromContinueWatching' => '已从继续观看中移除',
 			'messages.errorLoading' => ({required Object error}) => '错误: ${error}',
 			'messages.streamInterrupted' => '视频流已中断。按播放键或拖动进度条重试。',
 			'messages.liveStreamInterrupted' => '直播流已中断。按播放键重试。',
 			'messages.fileInfoNotAvailable' => '文件信息不可用',
-			'messages.playbackAuthenticationRequired' => '',
-			'messages.playbackServerUnavailable' => '',
-			'messages.playbackDataInvalid' => '',
-			'messages.playbackCancelled' => '',
-			'messages.playbackFailed' => '',
+			'messages.playbackAuthenticationRequired' => 'Sign in to the media server again to play this item.',
+			'messages.playbackServerUnavailable' => 'The media server is unavailable. Try again later.',
+			'messages.playbackDataInvalid' => 'The server returned invalid playback information.',
+			'messages.playbackCancelled' => 'Playback was cancelled.',
+			'messages.playbackFailed' => 'Playback could not be started.',
 			'messages.errorLoadingFileInfo' => ({required Object error}) => '加载文件信息时出错: ${error}',
 			'messages.errorLoadingSeries' => '加载系列时出错',
 			'messages.musicNotSupported' => '尚不支持播放音乐',
@@ -2769,6 +2784,7 @@ extension on TranslationsZh {
 			'profiles.borrowExplain' => '借用另一个个人资料的连接。受 PIN 保护的个人资料需要 PIN。',
 			'profiles.borrowEmpty' => '暂无可借用的内容。',
 			'profiles.borrowEmptySubtitle' => '请先将 Plex 或 Jellyfin 连接到另一个个人资料。',
+			'profiles.borrowLoadFailed' => 'Available connections could not be loaded. Try again.',
 			'profiles.borrowFromProfile' => ({required Object displayName}) => '来自 ${displayName}',
 			'profiles.borrowConnectionBorrowed' => '已借用连接。',
 			'profiles.borrowFailed' => '无法借用连接。',
@@ -2994,7 +3010,7 @@ extension on TranslationsZh {
 			'liveTv.favorites' => '收藏',
 			'liveTv.reorderFavorites' => '重新排序收藏',
 			'liveTv.favoritesLoadFailed' => '无法加载收藏。请检查网络连接后重试。',
-			'liveTv.favoritesUpdateFailed' => '',
+			'liveTv.favoritesUpdateFailed' => 'Could not update favorites. Check your connection and try again.',
 			'liveTv.joinSession' => '加入正在进行的会话',
 			'liveTv.watchFromStart' => ({required Object minutes}) => '从头观看（${minutes}分钟前开始）',
 			'liveTv.watchLive' => '观看直播',
@@ -3154,11 +3170,11 @@ extension on TranslationsZh {
 			'watchTogether.participantLeft' => ({required Object name}) => '${name} 离开了',
 			'watchTogether.participantPaused' => ({required Object name}) => '${name} 暂停了',
 			'watchTogether.participantResumed' => ({required Object name}) => '${name} 继续播放了',
+			_ => null,
+		} ?? switch (path) {
 			'watchTogether.participantSeeked' => ({required Object name}) => '${name} 跳转了',
 			'watchTogether.participantBuffering' => ({required Object name}) => '${name} 正在缓冲',
 			'watchTogether.participantNeedsUpdate' => ({required Object name}) => '${name} 正在使用较旧版本的应用，无法同步',
-			_ => null,
-		} ?? switch (path) {
 			'watchTogether.resumingWithout' => ({required Object name}) => '不等待 ${name}，继续播放',
 			'watchTogether.waitingForParticipants' => '等待其他人加载...',
 			'watchTogether.waitingForName' => ({required Object name}) => '正在等待 ${name}...',

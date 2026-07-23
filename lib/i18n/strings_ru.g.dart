@@ -52,6 +52,7 @@ class TranslationsRu extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _TranslationsRateSheetRu rateSheet = _TranslationsRateSheetRu._(_root);
 	@override late final _TranslationsAccessibilityRu accessibility = _TranslationsAccessibilityRu._(_root);
 	@override late final _TranslationsTooltipsRu tooltips = _TranslationsTooltipsRu._(_root);
+	@override late final _TranslationsAudioTracksRu audioTracks = _TranslationsAudioTracksRu._(_root);
 	@override late final _TranslationsVideoControlsRu videoControls = _TranslationsVideoControlsRu._(_root);
 	@override late final _TranslationsMessagesRu messages = _TranslationsMessagesRu._(_root);
 	@override late final _TranslationsSubtitlingStylingRu subtitlingStyling = _TranslationsSubtitlingStylingRu._(_root);
@@ -120,7 +121,7 @@ class _TranslationsAuthRu extends TranslationsAuthEn {
 	@override String get quickConnectWaiting => 'Ожидание подтверждения…';
 	@override String get quickConnectCancel => 'Отмена';
 	@override String get quickConnectExpired => 'Срок Quick Connect истек. Попробуйте снова.';
-	@override String get localDataRecoveryRequired => '';
+	@override String get localDataRecoveryRequired => 'Plezy could not safely recover local sign-in and pending playback data. Please sign in again.';
 }
 
 // Path: common
@@ -240,8 +241,6 @@ class _TranslationsSettingsRu extends TranslationsSettingsEn {
 	@override String get libraryDensity => 'Плотность библиотеки';
 	@override String get compact => 'Компактный';
 	@override String get comfortable => 'Комфортный';
-	@override String get tvCornerSpotlightBackdrop => '';
-	@override String get tvCornerSpotlightBackdropDescription => '';
 	@override String get viewMode => 'Режим просмотра';
 	@override String get gridView => 'Сетка';
 	@override String get listView => 'Список';
@@ -311,7 +310,7 @@ class _TranslationsSettingsRu extends TranslationsSettingsEn {
 	@override String get watchTogetherRelay => 'Relay совместного просмотра';
 	@override String get watchTogetherRelayDescription => 'Задайте свой relay. Все должны использовать один сервер.';
 	@override String get watchTogetherRelayHint => 'https://my-relay.example.com';
-	@override String get watchTogetherRelayInvalid => '';
+	@override String get watchTogetherRelayInvalid => 'Enter a valid HTTP or HTTPS relay base URL.';
 	@override String get crashReporting => 'Отчёты об ошибках';
 	@override String get crashReportingDescription => 'Отправлять отчёты об ошибках для улучшения приложения';
 	@override String get debugLogging => 'Журнал отладки';
@@ -328,12 +327,10 @@ class _TranslationsSettingsRu extends TranslationsSettingsEn {
 	@override String get exportSettings => 'Экспорт настроек';
 	@override String get exportSettingsDescription => 'Сохранить настройки в файл';
 	@override String get exportSettingsSuccess => 'Настройки экспортированы';
-	@override String get exportSettingsFailed => 'Не удалось экспортировать настройки';
 	@override String get importSettings => 'Импорт настроек';
 	@override String get importSettingsDescription => 'Восстановить настройки из файла';
 	@override String get importSettingsConfirm => 'Это заменит ваши текущие настройки. Продолжить?';
 	@override String get importSettingsSuccess => 'Настройки импортированы';
-	@override String get importSettingsFailed => 'Не удалось импортировать настройки';
 	@override String get importSettingsInvalidFile => 'Этот файл не является действительным экспортом настроек Plezy';
 	@override String get importSettingsNoUser => 'Войдите в систему перед импортом настроек';
 	@override String get shortcutsReset => 'Горячие клавиши сброшены по умолчанию';
@@ -348,6 +345,7 @@ class _TranslationsSettingsRu extends TranslationsSettingsEn {
 	@override String validationErrorDuration({required Object min, required Object max, required Object unit}) => 'Длительность должна быть от ${min} до ${max} ${unit}';
 	@override String shortcutAlreadyAssigned({required Object action}) => 'Клавиша уже назначена для ${action}';
 	@override String shortcutUpdated({required Object action}) => 'Клавиша обновлена для ${action}';
+	@override String get saveFailed => 'Could not save changes. Try again.';
 	@override String get autoSkip => 'Автопропуск';
 	@override String get autoSkipIntro => 'Автопропуск вступления';
 	@override String get autoSkipIntroDescription => 'Автоматически пропускать маркеры вступления через несколько секунд';
@@ -373,7 +371,7 @@ class _TranslationsSettingsRu extends TranslationsSettingsEn {
 	@override String get downloadLocationChanged => 'Место загрузки изменено';
 	@override String get downloadLocationReset => 'Место загрузки сброшено по умолчанию';
 	@override String get downloadLocationInvalid => 'Выбранная папка недоступна для записи';
-	@override String get downloadLocationSelectError => 'Не удалось выбрать папку';
+	@override String get downloadLocationPickerUnavailable => 'Выбор папки недоступен на этом устройстве';
 	@override String get downloadOnWifiOnly => 'Загружать только по WiFi';
 	@override String get downloadOnWifiOnlyDescription => 'Запретить загрузку по мобильным данным';
 	@override String get autoRemoveWatchedDownloads => 'Автоудаление просмотренных загрузок';
@@ -591,6 +589,10 @@ class _TranslationsAccessibilityRu extends TranslationsAccessibilityEn {
 	@override String get hexColor => 'Шестнадцатеричный цвет';
 	@override String get expandText => 'Развернуть текст';
 	@override String get collapseText => 'Свернуть текст';
+	@override String get alphabetNavigation => 'Навигация по алфавиту';
+	@override String get alphabetScrollHint => 'Проведите вверх или вниз для перехода по буквам';
+	@override String rowColumnPosition({required Object row, required Object rowCount, required Object column, required Object columnCount}) => 'Строка ${row} из ${rowCount}, столбец ${column} из ${columnCount}';
+	@override String rowPosition({required Object row, required Object rowCount}) => 'Строка ${row} из ${rowCount}';
 }
 
 // Path: tooltips
@@ -604,6 +606,16 @@ class _TranslationsTooltipsRu extends TranslationsTooltipsEn {
 	@override String get playTrailer => 'Воспроизвести трейлер';
 	@override String get markAsWatched => 'Отметить как просмотренное';
 	@override String get markAsUnwatched => 'Отметить как непросмотренное';
+}
+
+// Path: audioTracks
+class _TranslationsAudioTracksRu extends TranslationsAudioTracksEn {
+	_TranslationsAudioTracksRu._(TranslationsRu root) : this._root = root, super.internal(root);
+
+	final TranslationsRu _root; // ignore: unused_field
+
+	// Translations
+	@override String track({required Object n}) => 'Аудиодорожка ${n}';
 }
 
 // Path: videoControls
@@ -714,11 +726,11 @@ class _TranslationsMessagesRu extends TranslationsMessagesEn {
 	@override String get streamInterrupted => 'Поток прервался. Нажмите «Воспроизвести» или перемотайте, чтобы повторить попытку.';
 	@override String get liveStreamInterrupted => 'Прямая трансляция прервалась. Нажмите «Воспроизвести», чтобы повторить попытку.';
 	@override String get fileInfoNotAvailable => 'Информация о файле недоступна';
-	@override String get playbackAuthenticationRequired => '';
-	@override String get playbackServerUnavailable => '';
-	@override String get playbackDataInvalid => '';
-	@override String get playbackCancelled => '';
-	@override String get playbackFailed => '';
+	@override String get playbackAuthenticationRequired => 'Sign in to the media server again to play this item.';
+	@override String get playbackServerUnavailable => 'The media server is unavailable. Try again later.';
+	@override String get playbackDataInvalid => 'The server returned invalid playback information.';
+	@override String get playbackCancelled => 'Playback was cancelled.';
+	@override String get playbackFailed => 'Playback could not be started.';
 	@override String errorLoadingFileInfo({required Object error}) => 'Ошибка загрузки информации о файле: ${error}';
 	@override String get errorLoadingSeries => 'Ошибка загрузки сериала';
 	@override String get musicNotSupported => 'Воспроизведение музыки пока не поддерживается';
@@ -869,6 +881,7 @@ class _TranslationsProfilesRu extends TranslationsProfilesEn {
 	@override String get borrowExplain => 'Заимствуйте подключение другого профиля. Для профилей с PIN нужен PIN.';
 	@override String get borrowEmpty => 'Пока нечего заимствовать.';
 	@override String get borrowEmptySubtitle => 'Сначала подключите Plex или Jellyfin к другому профилю.';
+	@override String get borrowLoadFailed => 'Available connections could not be loaded. Try again.';
 	@override String borrowFromProfile({required Object displayName}) => 'Из ${displayName}';
 	@override String get borrowConnectionBorrowed => 'Подключение заимствовано.';
 	@override String get borrowFailed => 'Не удалось заимствовать подключение.';
@@ -1154,7 +1167,7 @@ class _TranslationsLiveTvRu extends TranslationsLiveTvEn {
 	@override String get favorites => 'Избранное';
 	@override String get reorderFavorites => 'Изменить порядок избранного';
 	@override String get favoritesLoadFailed => 'Не удалось загрузить избранное. Проверьте подключение и повторите попытку.';
-	@override String get favoritesUpdateFailed => '';
+	@override String get favoritesUpdateFailed => 'Could not update favorites. Check your connection and try again.';
 	@override String get joinSession => 'Присоединиться к текущему сеансу';
 	@override String watchFromStart({required Object minutes}) => 'Смотреть сначала (${minutes} мин. назад)';
 	@override String get watchLive => 'Смотреть в прямом эфире';
@@ -2155,7 +2168,7 @@ extension on TranslationsRu {
 			'auth.quickConnectWaiting' => 'Ожидание подтверждения…',
 			'auth.quickConnectCancel' => 'Отмена',
 			'auth.quickConnectExpired' => 'Срок Quick Connect истек. Попробуйте снова.',
-			'auth.localDataRecoveryRequired' => '',
+			'auth.localDataRecoveryRequired' => 'Plezy could not safely recover local sign-in and pending playback data. Please sign in again.',
 			'common.cancel' => 'Отмена',
 			'common.save' => 'Сохранить',
 			'common.close' => 'Закрыть',
@@ -2239,8 +2252,6 @@ extension on TranslationsRu {
 			'settings.libraryDensity' => 'Плотность библиотеки',
 			'settings.compact' => 'Компактный',
 			'settings.comfortable' => 'Комфортный',
-			'settings.tvCornerSpotlightBackdrop' => '',
-			'settings.tvCornerSpotlightBackdropDescription' => '',
 			'settings.viewMode' => 'Режим просмотра',
 			'settings.gridView' => 'Сетка',
 			'settings.listView' => 'Список',
@@ -2310,7 +2321,7 @@ extension on TranslationsRu {
 			'settings.watchTogetherRelay' => 'Relay совместного просмотра',
 			'settings.watchTogetherRelayDescription' => 'Задайте свой relay. Все должны использовать один сервер.',
 			'settings.watchTogetherRelayHint' => 'https://my-relay.example.com',
-			'settings.watchTogetherRelayInvalid' => '',
+			'settings.watchTogetherRelayInvalid' => 'Enter a valid HTTP or HTTPS relay base URL.',
 			'settings.crashReporting' => 'Отчёты об ошибках',
 			'settings.crashReportingDescription' => 'Отправлять отчёты об ошибках для улучшения приложения',
 			'settings.debugLogging' => 'Журнал отладки',
@@ -2327,12 +2338,10 @@ extension on TranslationsRu {
 			'settings.exportSettings' => 'Экспорт настроек',
 			'settings.exportSettingsDescription' => 'Сохранить настройки в файл',
 			'settings.exportSettingsSuccess' => 'Настройки экспортированы',
-			'settings.exportSettingsFailed' => 'Не удалось экспортировать настройки',
 			'settings.importSettings' => 'Импорт настроек',
 			'settings.importSettingsDescription' => 'Восстановить настройки из файла',
 			'settings.importSettingsConfirm' => 'Это заменит ваши текущие настройки. Продолжить?',
 			'settings.importSettingsSuccess' => 'Настройки импортированы',
-			'settings.importSettingsFailed' => 'Не удалось импортировать настройки',
 			'settings.importSettingsInvalidFile' => 'Этот файл не является действительным экспортом настроек Plezy',
 			'settings.importSettingsNoUser' => 'Войдите в систему перед импортом настроек',
 			'settings.shortcutsReset' => 'Горячие клавиши сброшены по умолчанию',
@@ -2347,6 +2356,7 @@ extension on TranslationsRu {
 			'settings.validationErrorDuration' => ({required Object min, required Object max, required Object unit}) => 'Длительность должна быть от ${min} до ${max} ${unit}',
 			'settings.shortcutAlreadyAssigned' => ({required Object action}) => 'Клавиша уже назначена для ${action}',
 			'settings.shortcutUpdated' => ({required Object action}) => 'Клавиша обновлена для ${action}',
+			'settings.saveFailed' => 'Could not save changes. Try again.',
 			'settings.autoSkip' => 'Автопропуск',
 			'settings.autoSkipIntro' => 'Автопропуск вступления',
 			'settings.autoSkipIntroDescription' => 'Автоматически пропускать маркеры вступления через несколько секунд',
@@ -2372,7 +2382,7 @@ extension on TranslationsRu {
 			'settings.downloadLocationChanged' => 'Место загрузки изменено',
 			'settings.downloadLocationReset' => 'Место загрузки сброшено по умолчанию',
 			'settings.downloadLocationInvalid' => 'Выбранная папка недоступна для записи',
-			'settings.downloadLocationSelectError' => 'Не удалось выбрать папку',
+			'settings.downloadLocationPickerUnavailable' => 'Выбор папки недоступен на этом устройстве',
 			'settings.downloadOnWifiOnly' => 'Загружать только по WiFi',
 			'settings.downloadOnWifiOnlyDescription' => 'Запретить загрузку по мобильным данным',
 			'settings.autoRemoveWatchedDownloads' => 'Автоудаление просмотренных загрузок',
@@ -2560,10 +2570,15 @@ extension on TranslationsRu {
 			'accessibility.hexColor' => 'Шестнадцатеричный цвет',
 			'accessibility.expandText' => 'Развернуть текст',
 			'accessibility.collapseText' => 'Свернуть текст',
+			'accessibility.alphabetNavigation' => 'Навигация по алфавиту',
+			'accessibility.alphabetScrollHint' => 'Проведите вверх или вниз для перехода по буквам',
+			'accessibility.rowColumnPosition' => ({required Object row, required Object rowCount, required Object column, required Object columnCount}) => 'Строка ${row} из ${rowCount}, столбец ${column} из ${columnCount}',
+			'accessibility.rowPosition' => ({required Object row, required Object rowCount}) => 'Строка ${row} из ${rowCount}',
 			'tooltips.shufflePlay' => 'Случайное воспроизведение',
 			'tooltips.playTrailer' => 'Воспроизвести трейлер',
 			'tooltips.markAsWatched' => 'Отметить как просмотренное',
 			'tooltips.markAsUnwatched' => 'Отметить как непросмотренное',
+			'audioTracks.track' => ({required Object n}) => 'Аудиодорожка ${n}',
 			'videoControls.audioLabel' => 'Аудио',
 			'videoControls.subtitlesLabel' => 'Субтитры',
 			'videoControls.resetToZero' => 'Сбросить до 0мс',
@@ -2650,20 +2665,20 @@ extension on TranslationsRu {
 			'messages.markedAsUnwatched' => 'Отмечено как непросмотренное',
 			'messages.markedAsWatchedOffline' => 'Отмечено как просмотренное (синхронизируется при подключении)',
 			'messages.markedAsUnwatchedOffline' => 'Отмечено как непросмотренное (синхронизируется при подключении)',
-			'messages.autoRemovedWatchedDownload' => ({required Object title}) => 'Автоудалено: ${title}',
-			'messages.autoRemovedWatchedDownloads' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('ru'))(n, one: 'Автоматически удалена ${n} просмотренная загрузка', few: 'Автоматически удалены ${n} просмотренные загрузки', many: 'Автоматически удалено ${n} просмотренных загрузок', other: 'Автоматически удалено ${n} просмотренной загрузки', ), 
 			_ => null,
 		} ?? switch (path) {
+			'messages.autoRemovedWatchedDownload' => ({required Object title}) => 'Автоудалено: ${title}',
+			'messages.autoRemovedWatchedDownloads' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('ru'))(n, one: 'Автоматически удалена ${n} просмотренная загрузка', few: 'Автоматически удалены ${n} просмотренные загрузки', many: 'Автоматически удалено ${n} просмотренных загрузок', other: 'Автоматически удалено ${n} просмотренной загрузки', ), 
 			'messages.removedFromContinueWatching' => 'Удалено из «Продолжить просмотр»',
 			'messages.errorLoading' => ({required Object error}) => 'Ошибка: ${error}',
 			'messages.streamInterrupted' => 'Поток прервался. Нажмите «Воспроизвести» или перемотайте, чтобы повторить попытку.',
 			'messages.liveStreamInterrupted' => 'Прямая трансляция прервалась. Нажмите «Воспроизвести», чтобы повторить попытку.',
 			'messages.fileInfoNotAvailable' => 'Информация о файле недоступна',
-			'messages.playbackAuthenticationRequired' => '',
-			'messages.playbackServerUnavailable' => '',
-			'messages.playbackDataInvalid' => '',
-			'messages.playbackCancelled' => '',
-			'messages.playbackFailed' => '',
+			'messages.playbackAuthenticationRequired' => 'Sign in to the media server again to play this item.',
+			'messages.playbackServerUnavailable' => 'The media server is unavailable. Try again later.',
+			'messages.playbackDataInvalid' => 'The server returned invalid playback information.',
+			'messages.playbackCancelled' => 'Playback was cancelled.',
+			'messages.playbackFailed' => 'Playback could not be started.',
 			'messages.errorLoadingFileInfo' => ({required Object error}) => 'Ошибка загрузки информации о файле: ${error}',
 			'messages.errorLoadingSeries' => 'Ошибка загрузки сериала',
 			'messages.musicNotSupported' => 'Воспроизведение музыки пока не поддерживается',
@@ -2778,6 +2793,7 @@ extension on TranslationsRu {
 			'profiles.borrowExplain' => 'Заимствуйте подключение другого профиля. Для профилей с PIN нужен PIN.',
 			'profiles.borrowEmpty' => 'Пока нечего заимствовать.',
 			'profiles.borrowEmptySubtitle' => 'Сначала подключите Plex или Jellyfin к другому профилю.',
+			'profiles.borrowLoadFailed' => 'Available connections could not be loaded. Try again.',
 			'profiles.borrowFromProfile' => ({required Object displayName}) => 'Из ${displayName}',
 			'profiles.borrowConnectionBorrowed' => 'Подключение заимствовано.',
 			'profiles.borrowFailed' => 'Не удалось заимствовать подключение.',
@@ -3003,7 +3019,7 @@ extension on TranslationsRu {
 			'liveTv.favorites' => 'Избранное',
 			'liveTv.reorderFavorites' => 'Изменить порядок избранного',
 			'liveTv.favoritesLoadFailed' => 'Не удалось загрузить избранное. Проверьте подключение и повторите попытку.',
-			'liveTv.favoritesUpdateFailed' => '',
+			'liveTv.favoritesUpdateFailed' => 'Could not update favorites. Check your connection and try again.',
 			'liveTv.joinSession' => 'Присоединиться к текущему сеансу',
 			'liveTv.watchFromStart' => ({required Object minutes}) => 'Смотреть сначала (${minutes} мин. назад)',
 			'liveTv.watchLive' => 'Смотреть в прямом эфире',
@@ -3163,11 +3179,11 @@ extension on TranslationsRu {
 			'watchTogether.participantLeft' => ({required Object name}) => '${name} вышел',
 			'watchTogether.participantPaused' => ({required Object name}) => '${name} поставил на паузу',
 			'watchTogether.participantResumed' => ({required Object name}) => '${name} возобновил',
+			_ => null,
+		} ?? switch (path) {
 			'watchTogether.participantSeeked' => ({required Object name}) => '${name} перемотал',
 			'watchTogether.participantBuffering' => ({required Object name}) => '${name} буферизует',
 			'watchTogether.participantNeedsUpdate' => ({required Object name}) => '${name} использует старую версию приложения — синхронизация недоступна',
-			_ => null,
-		} ?? switch (path) {
 			'watchTogether.resumingWithout' => ({required Object name}) => 'Возобновление без ${name}',
 			'watchTogether.waitingForParticipants' => 'Ожидание загрузки у других...',
 			'watchTogether.waitingForName' => ({required Object name}) => 'Ожидание ${name}...',

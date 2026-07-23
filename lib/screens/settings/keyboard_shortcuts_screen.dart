@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../../i18n/strings.g.dart';
 import '../../models/hotkey_model.dart';
 import '../../services/keyboard_shortcuts_service.dart';
+import '../../utils/app_logger.dart';
 import '../../services/shader_service.dart';
 import '../../utils/dialogs.dart';
 import '../../utils/snackbar_helper.dart';
@@ -58,11 +60,11 @@ class KeyboardShortcutsScreen extends StatelessWidget {
                             borderRadius: BorderRadius.circular(tokens(context).radiusSm),
                           ),
                           child: Text(
-                            keyboardService.formatHotkey(hotkeys[action]!),
+                            keyboardService.formatHotkey(hotkeys[action]),
                             style: const TextStyle(fontFamily: 'monospace'),
                           ),
                         ),
-                        onTap: () => _editHotkey(context, action, hotkeys[action]!),
+                        onTap: () => _editHotkey(context, action, hotkeys[action]),
                       ),
                   ],
                 ),
@@ -79,37 +81,42 @@ class KeyboardShortcutsScreen extends StatelessWidget {
     if (context.mounted) showSuccessSnackBar(context, t.settings.shortcutsReset);
   }
 
-  void _editHotkey(BuildContext screenContext, String action, HotKey currentHotkey) {
+  void _editHotkey(BuildContext screenContext, String action, HotKey? currentHotkey) {
+    final actionId = action;
+    final actionName = keyboardService.getActionDisplayName(actionId);
     showScopedDialog<void>(
       context: screenContext,
       builder: (BuildContext context) {
         return HotKeyRecorderWidget(
-          actionName: keyboardService.getActionDisplayName(action),
+          actionName: actionName,
           currentHotKey: currentHotkey,
           onHotKeyRecorded: (newHotkey) async {
             final navigator = Navigator.of(context);
 
-            // Check for conflicts
-            final existingAction = keyboardService.getActionForHotkey(newHotkey);
-            if (existingAction != null && existingAction != action) {
-              navigator.pop();
-              showErrorSnackBar(
-                context,
-                t.settings.shortcutAlreadyAssigned(action: keyboardService.getActionDisplayName(existingAction)),
-              );
+            if (newHotkey != null) {
+              final existingAction = keyboardService.getActionForHotkey(newHotkey);
+              if (existingAction != null && existingAction != actionId) {
+                navigator.pop();
+                showErrorSnackBar(
+                  screenContext,
+                  t.settings.shortcutAlreadyAssigned(action: keyboardService.getActionDisplayName(existingAction)),
+                );
+                return;
+              }
+            }
+
+            try {
+              await keyboardService.setHotkey(actionId, newHotkey);
+            } on PlatformException catch (error, stackTrace) {
+              appLogger.e('Failed to update keyboard shortcut', error: error, stackTrace: stackTrace);
+              if (screenContext.mounted) showErrorSnackBar(screenContext, t.common.error);
               return;
             }
 
-            // Save the new hotkey
-            await keyboardService.setHotkey(action, newHotkey);
-
+            if (!context.mounted) return;
             navigator.pop();
-
             if (screenContext.mounted) {
-              showSuccessSnackBar(
-                screenContext,
-                t.settings.shortcutUpdated(action: keyboardService.getActionDisplayName(action)),
-              );
+              showSuccessSnackBar(screenContext, t.settings.shortcutUpdated(action: actionName));
             }
           },
           onCancel: () => Navigator.pop(context),

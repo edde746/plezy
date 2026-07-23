@@ -52,6 +52,7 @@ class TranslationsEs extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _TranslationsRateSheetEs rateSheet = _TranslationsRateSheetEs._(_root);
 	@override late final _TranslationsAccessibilityEs accessibility = _TranslationsAccessibilityEs._(_root);
 	@override late final _TranslationsTooltipsEs tooltips = _TranslationsTooltipsEs._(_root);
+	@override late final _TranslationsAudioTracksEs audioTracks = _TranslationsAudioTracksEs._(_root);
 	@override late final _TranslationsVideoControlsEs videoControls = _TranslationsVideoControlsEs._(_root);
 	@override late final _TranslationsMessagesEs messages = _TranslationsMessagesEs._(_root);
 	@override late final _TranslationsSubtitlingStylingEs subtitlingStyling = _TranslationsSubtitlingStylingEs._(_root);
@@ -120,7 +121,7 @@ class _TranslationsAuthEs extends TranslationsAuthEn {
 	@override String get quickConnectWaiting => 'Esperando aprobación…';
 	@override String get quickConnectCancel => 'Cancelar';
 	@override String get quickConnectExpired => 'Quick Connect caducó. Inténtalo de nuevo.';
-	@override String get localDataRecoveryRequired => '';
+	@override String get localDataRecoveryRequired => 'Plezy could not safely recover local sign-in and pending playback data. Please sign in again.';
 }
 
 // Path: common
@@ -240,8 +241,6 @@ class _TranslationsSettingsEs extends TranslationsSettingsEn {
 	@override String get libraryDensity => 'Densidad de Biblioteca';
 	@override String get compact => 'Compacto';
 	@override String get comfortable => 'Cómodo';
-	@override String get tvCornerSpotlightBackdrop => '';
-	@override String get tvCornerSpotlightBackdropDescription => '';
 	@override String get viewMode => 'Modo de Vista';
 	@override String get gridView => 'Cuadrícula';
 	@override String get listView => 'Lista';
@@ -311,7 +310,7 @@ class _TranslationsSettingsEs extends TranslationsSettingsEn {
 	@override String get watchTogetherRelay => 'Relay de Ver Juntos';
 	@override String get watchTogetherRelayDescription => 'Define un relay personalizado. Todos deben usar el mismo servidor.';
 	@override String get watchTogetherRelayHint => 'https://mi-relay.ejemplo.com';
-	@override String get watchTogetherRelayInvalid => '';
+	@override String get watchTogetherRelayInvalid => 'Enter a valid HTTP or HTTPS relay base URL.';
 	@override String get crashReporting => 'Informes de Errores';
 	@override String get crashReportingDescription => 'Enviar informes de errores para mejorar la aplicación';
 	@override String get debugLogging => 'Registro de Depuración';
@@ -328,12 +327,10 @@ class _TranslationsSettingsEs extends TranslationsSettingsEn {
 	@override String get exportSettings => 'Exportar Configuración';
 	@override String get exportSettingsDescription => 'Guardar tus preferencias en un archivo';
 	@override String get exportSettingsSuccess => 'Configuración exportada';
-	@override String get exportSettingsFailed => 'No se pudo exportar la configuración';
 	@override String get importSettings => 'Importar Configuración';
 	@override String get importSettingsDescription => 'Restaurar preferencias desde un archivo';
 	@override String get importSettingsConfirm => 'Esto reemplazará tu configuración actual. ¿Continuar?';
 	@override String get importSettingsSuccess => 'Configuración importada';
-	@override String get importSettingsFailed => 'No se pudo importar la configuración';
 	@override String get importSettingsInvalidFile => 'Este archivo no es una exportación válida de Plezy';
 	@override String get importSettingsNoUser => 'Inicia sesión antes de importar la configuración';
 	@override String get shortcutsReset => 'Atajos restablecidos a los valores predeterminados';
@@ -348,6 +345,7 @@ class _TranslationsSettingsEs extends TranslationsSettingsEn {
 	@override String validationErrorDuration({required Object min, required Object max, required Object unit}) => 'La duración debe estar entre ${min} y ${max} ${unit}';
 	@override String shortcutAlreadyAssigned({required Object action}) => 'El atajo ya está asignado a ${action}';
 	@override String shortcutUpdated({required Object action}) => 'Atajo actualizado para ${action}';
+	@override String get saveFailed => 'Could not save changes. Try again.';
 	@override String get autoSkip => 'Salto automático';
 	@override String get autoSkipIntro => 'Saltar Intro automáticamente';
 	@override String get autoSkipIntroDescription => 'Saltar automáticamente los marcadores de intro después de unos segundos';
@@ -373,7 +371,7 @@ class _TranslationsSettingsEs extends TranslationsSettingsEn {
 	@override String get downloadLocationChanged => 'Ubicación de descarga cambiada';
 	@override String get downloadLocationReset => 'Ubicación de descarga restablecida al predeterminado';
 	@override String get downloadLocationInvalid => 'La carpeta seleccionada no tiene permisos de escritura';
-	@override String get downloadLocationSelectError => 'Error al seleccionar la carpeta';
+	@override String get downloadLocationPickerUnavailable => 'La selección de carpetas no está disponible en este dispositivo';
 	@override String get downloadOnWifiOnly => 'Descargar solo con WiFi';
 	@override String get downloadOnWifiOnlyDescription => 'Evitar descargas cuando se usan datos móviles';
 	@override String get autoRemoveWatchedDownloads => 'Eliminar descargas vistas automáticamente';
@@ -591,6 +589,10 @@ class _TranslationsAccessibilityEs extends TranslationsAccessibilityEn {
 	@override String get hexColor => 'Color hexadecimal';
 	@override String get expandText => 'Expandir texto';
 	@override String get collapseText => 'Contraer texto';
+	@override String get alphabetNavigation => 'Navegación alfabética';
+	@override String get alphabetScrollHint => 'Desliza hacia arriba o abajo para avanzar por letra';
+	@override String rowColumnPosition({required Object row, required Object rowCount, required Object column, required Object columnCount}) => 'Fila ${row} de ${rowCount}, columna ${column} de ${columnCount}';
+	@override String rowPosition({required Object row, required Object rowCount}) => 'Fila ${row} de ${rowCount}';
 }
 
 // Path: tooltips
@@ -604,6 +606,16 @@ class _TranslationsTooltipsEs extends TranslationsTooltipsEn {
 	@override String get playTrailer => 'Reproducir tráiler';
 	@override String get markAsWatched => 'Marcar como visto';
 	@override String get markAsUnwatched => 'Marcar como no visto';
+}
+
+// Path: audioTracks
+class _TranslationsAudioTracksEs extends TranslationsAudioTracksEn {
+	_TranslationsAudioTracksEs._(TranslationsEs root) : this._root = root, super.internal(root);
+
+	final TranslationsEs _root; // ignore: unused_field
+
+	// Translations
+	@override String track({required Object n}) => 'Pista de audio ${n}';
 }
 
 // Path: videoControls
@@ -712,11 +724,11 @@ class _TranslationsMessagesEs extends TranslationsMessagesEn {
 	@override String get streamInterrupted => 'La reproducción se interrumpió. Pulsa reproducir o avanza para volver a intentarlo.';
 	@override String get liveStreamInterrupted => 'La transmisión en vivo se interrumpió. Pulsa reproducir para volver a intentarlo.';
 	@override String get fileInfoNotAvailable => 'Información de archivo no disponible';
-	@override String get playbackAuthenticationRequired => '';
-	@override String get playbackServerUnavailable => '';
-	@override String get playbackDataInvalid => '';
-	@override String get playbackCancelled => '';
-	@override String get playbackFailed => '';
+	@override String get playbackAuthenticationRequired => 'Sign in to the media server again to play this item.';
+	@override String get playbackServerUnavailable => 'The media server is unavailable. Try again later.';
+	@override String get playbackDataInvalid => 'The server returned invalid playback information.';
+	@override String get playbackCancelled => 'Playback was cancelled.';
+	@override String get playbackFailed => 'Playback could not be started.';
 	@override String errorLoadingFileInfo({required Object error}) => 'Error al cargar info de archivo: ${error}';
 	@override String get errorLoadingSeries => 'Error al cargar la serie';
 	@override String get musicNotSupported => 'La reproducción de música aún no está soportada';
@@ -867,6 +879,7 @@ class _TranslationsProfilesEs extends TranslationsProfilesEn {
 	@override String get borrowExplain => 'Toma prestada la conexión de otro perfil. Los perfiles protegidos con PIN requieren un PIN.';
 	@override String get borrowEmpty => 'Nada para tomar prestado todavía.';
 	@override String get borrowEmptySubtitle => 'Conecta Plex o Jellyfin primero a otro perfil.';
+	@override String get borrowLoadFailed => 'Available connections could not be loaded. Try again.';
 	@override String borrowFromProfile({required Object displayName}) => 'De ${displayName}';
 	@override String get borrowConnectionBorrowed => 'Conexión tomada prestada.';
 	@override String get borrowFailed => 'No se pudo tomar prestada la conexión.';
@@ -1150,7 +1163,7 @@ class _TranslationsLiveTvEs extends TranslationsLiveTvEn {
 	@override String get favorites => 'Favoritos';
 	@override String get reorderFavorites => 'Reordenar favoritos';
 	@override String get favoritesLoadFailed => 'No se pudieron cargar los favoritos. Comprueba tu conexión e inténtalo de nuevo.';
-	@override String get favoritesUpdateFailed => '';
+	@override String get favoritesUpdateFailed => 'Could not update favorites. Check your connection and try again.';
 	@override String get joinSession => 'Unirse a sesión en curso';
 	@override String watchFromStart({required Object minutes}) => 'Ver desde el inicio (hace ${minutes} min)';
 	@override String get watchLive => 'Ver en vivo';
@@ -2149,7 +2162,7 @@ extension on TranslationsEs {
 			'auth.quickConnectWaiting' => 'Esperando aprobación…',
 			'auth.quickConnectCancel' => 'Cancelar',
 			'auth.quickConnectExpired' => 'Quick Connect caducó. Inténtalo de nuevo.',
-			'auth.localDataRecoveryRequired' => '',
+			'auth.localDataRecoveryRequired' => 'Plezy could not safely recover local sign-in and pending playback data. Please sign in again.',
 			'common.cancel' => 'Cancelar',
 			'common.save' => 'Guardar',
 			'common.close' => 'Cerrar',
@@ -2233,8 +2246,6 @@ extension on TranslationsEs {
 			'settings.libraryDensity' => 'Densidad de Biblioteca',
 			'settings.compact' => 'Compacto',
 			'settings.comfortable' => 'Cómodo',
-			'settings.tvCornerSpotlightBackdrop' => '',
-			'settings.tvCornerSpotlightBackdropDescription' => '',
 			'settings.viewMode' => 'Modo de Vista',
 			'settings.gridView' => 'Cuadrícula',
 			'settings.listView' => 'Lista',
@@ -2304,7 +2315,7 @@ extension on TranslationsEs {
 			'settings.watchTogetherRelay' => 'Relay de Ver Juntos',
 			'settings.watchTogetherRelayDescription' => 'Define un relay personalizado. Todos deben usar el mismo servidor.',
 			'settings.watchTogetherRelayHint' => 'https://mi-relay.ejemplo.com',
-			'settings.watchTogetherRelayInvalid' => '',
+			'settings.watchTogetherRelayInvalid' => 'Enter a valid HTTP or HTTPS relay base URL.',
 			'settings.crashReporting' => 'Informes de Errores',
 			'settings.crashReportingDescription' => 'Enviar informes de errores para mejorar la aplicación',
 			'settings.debugLogging' => 'Registro de Depuración',
@@ -2321,12 +2332,10 @@ extension on TranslationsEs {
 			'settings.exportSettings' => 'Exportar Configuración',
 			'settings.exportSettingsDescription' => 'Guardar tus preferencias en un archivo',
 			'settings.exportSettingsSuccess' => 'Configuración exportada',
-			'settings.exportSettingsFailed' => 'No se pudo exportar la configuración',
 			'settings.importSettings' => 'Importar Configuración',
 			'settings.importSettingsDescription' => 'Restaurar preferencias desde un archivo',
 			'settings.importSettingsConfirm' => 'Esto reemplazará tu configuración actual. ¿Continuar?',
 			'settings.importSettingsSuccess' => 'Configuración importada',
-			'settings.importSettingsFailed' => 'No se pudo importar la configuración',
 			'settings.importSettingsInvalidFile' => 'Este archivo no es una exportación válida de Plezy',
 			'settings.importSettingsNoUser' => 'Inicia sesión antes de importar la configuración',
 			'settings.shortcutsReset' => 'Atajos restablecidos a los valores predeterminados',
@@ -2341,6 +2350,7 @@ extension on TranslationsEs {
 			'settings.validationErrorDuration' => ({required Object min, required Object max, required Object unit}) => 'La duración debe estar entre ${min} y ${max} ${unit}',
 			'settings.shortcutAlreadyAssigned' => ({required Object action}) => 'El atajo ya está asignado a ${action}',
 			'settings.shortcutUpdated' => ({required Object action}) => 'Atajo actualizado para ${action}',
+			'settings.saveFailed' => 'Could not save changes. Try again.',
 			'settings.autoSkip' => 'Salto automático',
 			'settings.autoSkipIntro' => 'Saltar Intro automáticamente',
 			'settings.autoSkipIntroDescription' => 'Saltar automáticamente los marcadores de intro después de unos segundos',
@@ -2366,7 +2376,7 @@ extension on TranslationsEs {
 			'settings.downloadLocationChanged' => 'Ubicación de descarga cambiada',
 			'settings.downloadLocationReset' => 'Ubicación de descarga restablecida al predeterminado',
 			'settings.downloadLocationInvalid' => 'La carpeta seleccionada no tiene permisos de escritura',
-			'settings.downloadLocationSelectError' => 'Error al seleccionar la carpeta',
+			'settings.downloadLocationPickerUnavailable' => 'La selección de carpetas no está disponible en este dispositivo',
 			'settings.downloadOnWifiOnly' => 'Descargar solo con WiFi',
 			'settings.downloadOnWifiOnlyDescription' => 'Evitar descargas cuando se usan datos móviles',
 			'settings.autoRemoveWatchedDownloads' => 'Eliminar descargas vistas automáticamente',
@@ -2554,10 +2564,15 @@ extension on TranslationsEs {
 			'accessibility.hexColor' => 'Color hexadecimal',
 			'accessibility.expandText' => 'Expandir texto',
 			'accessibility.collapseText' => 'Contraer texto',
+			'accessibility.alphabetNavigation' => 'Navegación alfabética',
+			'accessibility.alphabetScrollHint' => 'Desliza hacia arriba o abajo para avanzar por letra',
+			'accessibility.rowColumnPosition' => ({required Object row, required Object rowCount, required Object column, required Object columnCount}) => 'Fila ${row} de ${rowCount}, columna ${column} de ${columnCount}',
+			'accessibility.rowPosition' => ({required Object row, required Object rowCount}) => 'Fila ${row} de ${rowCount}',
 			'tooltips.shufflePlay' => 'Reproducción aleatoria',
 			'tooltips.playTrailer' => 'Reproducir tráiler',
 			'tooltips.markAsWatched' => 'Marcar como visto',
 			'tooltips.markAsUnwatched' => 'Marcar como no visto',
+			'audioTracks.track' => ({required Object n}) => 'Pista de audio ${n}',
 			'videoControls.audioLabel' => 'Audio',
 			'videoControls.subtitlesLabel' => 'Subtítulos',
 			'videoControls.resetToZero' => 'Restablecer a 0ms',
@@ -2644,20 +2659,20 @@ extension on TranslationsEs {
 			'messages.markedAsUnwatched' => 'Marcado como no visto',
 			'messages.markedAsWatchedOffline' => 'Marcado como visto (se sincronizará al estar en línea)',
 			'messages.markedAsUnwatchedOffline' => 'Marcado como no visto (se sincronizará al estar en línea)',
-			'messages.autoRemovedWatchedDownload' => ({required Object title}) => 'Eliminado automáticamente: ${title}',
-			'messages.autoRemovedWatchedDownloads' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('es'))(n, one: 'Se eliminó automáticamente ${n} descarga vista', other: 'Se eliminaron automáticamente ${n} descargas vistas', ), 
 			_ => null,
 		} ?? switch (path) {
+			'messages.autoRemovedWatchedDownload' => ({required Object title}) => 'Eliminado automáticamente: ${title}',
+			'messages.autoRemovedWatchedDownloads' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('es'))(n, one: 'Se eliminó automáticamente ${n} descarga vista', other: 'Se eliminaron automáticamente ${n} descargas vistas', ), 
 			'messages.removedFromContinueWatching' => 'Eliminado de Seguir Viendo',
 			'messages.errorLoading' => ({required Object error}) => 'Error: ${error}',
 			'messages.streamInterrupted' => 'La reproducción se interrumpió. Pulsa reproducir o avanza para volver a intentarlo.',
 			'messages.liveStreamInterrupted' => 'La transmisión en vivo se interrumpió. Pulsa reproducir para volver a intentarlo.',
 			'messages.fileInfoNotAvailable' => 'Información de archivo no disponible',
-			'messages.playbackAuthenticationRequired' => '',
-			'messages.playbackServerUnavailable' => '',
-			'messages.playbackDataInvalid' => '',
-			'messages.playbackCancelled' => '',
-			'messages.playbackFailed' => '',
+			'messages.playbackAuthenticationRequired' => 'Sign in to the media server again to play this item.',
+			'messages.playbackServerUnavailable' => 'The media server is unavailable. Try again later.',
+			'messages.playbackDataInvalid' => 'The server returned invalid playback information.',
+			'messages.playbackCancelled' => 'Playback was cancelled.',
+			'messages.playbackFailed' => 'Playback could not be started.',
 			'messages.errorLoadingFileInfo' => ({required Object error}) => 'Error al cargar info de archivo: ${error}',
 			'messages.errorLoadingSeries' => 'Error al cargar la serie',
 			'messages.musicNotSupported' => 'La reproducción de música aún no está soportada',
@@ -2772,6 +2787,7 @@ extension on TranslationsEs {
 			'profiles.borrowExplain' => 'Toma prestada la conexión de otro perfil. Los perfiles protegidos con PIN requieren un PIN.',
 			'profiles.borrowEmpty' => 'Nada para tomar prestado todavía.',
 			'profiles.borrowEmptySubtitle' => 'Conecta Plex o Jellyfin primero a otro perfil.',
+			'profiles.borrowLoadFailed' => 'Available connections could not be loaded. Try again.',
 			'profiles.borrowFromProfile' => ({required Object displayName}) => 'De ${displayName}',
 			'profiles.borrowConnectionBorrowed' => 'Conexión tomada prestada.',
 			'profiles.borrowFailed' => 'No se pudo tomar prestada la conexión.',
@@ -2997,7 +3013,7 @@ extension on TranslationsEs {
 			'liveTv.favorites' => 'Favoritos',
 			'liveTv.reorderFavorites' => 'Reordenar favoritos',
 			'liveTv.favoritesLoadFailed' => 'No se pudieron cargar los favoritos. Comprueba tu conexión e inténtalo de nuevo.',
-			'liveTv.favoritesUpdateFailed' => '',
+			'liveTv.favoritesUpdateFailed' => 'Could not update favorites. Check your connection and try again.',
 			'liveTv.joinSession' => 'Unirse a sesión en curso',
 			'liveTv.watchFromStart' => ({required Object minutes}) => 'Ver desde el inicio (hace ${minutes} min)',
 			'liveTv.watchLive' => 'Ver en vivo',
@@ -3157,11 +3173,11 @@ extension on TranslationsEs {
 			'watchTogether.participantLeft' => ({required Object name}) => '${name} se fue',
 			'watchTogether.participantPaused' => ({required Object name}) => '${name} pausó',
 			'watchTogether.participantResumed' => ({required Object name}) => '${name} reanudó',
+			_ => null,
+		} ?? switch (path) {
 			'watchTogether.participantSeeked' => ({required Object name}) => '${name} avanzó',
 			'watchTogether.participantBuffering' => ({required Object name}) => '${name} está cargando',
 			'watchTogether.participantNeedsUpdate' => ({required Object name}) => '${name} usa una versión anterior de la app — sincronización no disponible',
-			_ => null,
-		} ?? switch (path) {
 			'watchTogether.resumingWithout' => ({required Object name}) => 'Reanudando sin ${name}',
 			'watchTogether.waitingForParticipants' => 'Esperando a que otros carguen...',
 			'watchTogether.waitingForName' => ({required Object name}) => 'Esperando a ${name}...',

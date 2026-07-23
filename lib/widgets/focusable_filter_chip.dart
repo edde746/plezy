@@ -104,6 +104,7 @@ class _FocusableFilterChipState extends State<FocusableFilterChip> with Focusabl
       focusNode: focusNode,
       onKeyEvent: _handleKeyEvent,
       onTap: widget.onPressed,
+      semanticLabel: widget.label,
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       backgroundColor: backgroundColor,
       child: Row(

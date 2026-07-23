@@ -85,6 +85,12 @@ class FocusableWrapper extends StatefulWidget {
   /// Optional semantic label for accessibility.
   final String? semanticLabel;
 
+  /// Optional current value announced after [semanticLabel].
+  final String? semanticValue;
+
+  /// Optional checked state for toggle-style controls.
+  final bool? checked;
+
   /// Whether the wrapper can receive focus.
   final bool canRequestFocus;
 
@@ -147,6 +153,8 @@ class FocusableWrapper extends StatefulWidget {
     this.scrollAlignment = 0.5,
     this.useComfortableZone = false,
     this.semanticLabel,
+    this.semanticValue,
+    this.checked,
     this.canRequestFocus = true,
     this.onKeyEvent,
     this.enableLongPress = false,
@@ -521,7 +529,17 @@ class _FocusableWrapperState extends State<FocusableWrapper> with SingleTickerPr
 
     // Add semantics if label provided
     if (widget.semanticLabel != null) {
-      result = Semantics(label: widget.semanticLabel, button: widget.onSelect != null, child: result);
+      result = Semantics(
+        label: widget.semanticLabel,
+        value: widget.semanticValue,
+        button: true,
+        enabled: widget.onSelect != null,
+        checked: widget.checked,
+        onTap: widget.onSelect,
+        onLongPress: widget.onLongPress,
+        excludeSemantics: true,
+        child: result,
+      );
     }
 
     if (widget.onSelect != null || widget.onLongPress != null) {

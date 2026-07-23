@@ -150,7 +150,7 @@ void main() {
                 'SearchResult': [
                   {
                     'score': 100,
-                    'Metadata': {'ratingKey': 'plex-movie', 'type': 'movie', 'title': 'The Boys in the Boat'},
+                    'Metadata': {'ratingKey': 'plex-movie', 'type': 'movie', 'title': 'Spider Man Returns'},
                   },
                 ],
               },
@@ -169,7 +169,7 @@ void main() {
           if (req.url.path == '/Items') {
             return _json({
               'Items': [
-                {'Id': 'jf-show', 'Type': 'Series', 'Name': 'The Boys'},
+                {'Id': 'jf-show', 'Type': 'Series', 'Name': 'Spider‑Man'},
               ],
             });
           }
@@ -179,17 +179,19 @@ void main() {
       addTearDown(jellyfinClient.close);
       manager.debugRegisterJellyfinClientForTesting(jellyfinClient);
 
-      final results = await service.searchAcrossServers('The Boys', limit: 1);
+      final results = await service.searchAcrossServers('Spider Man', limit: 1);
 
       expect(results.map((item) => item.id), ['jf-show']);
+      expect(plexRequests.single.queryParameters['query'], 'Spider Man');
       expect(plexRequests.single.queryParameters['limit'], '100');
       expect(plexRequests.single.queryParameters['searchTypes'], 'movies,tv,music');
       // Jellyfin search fans out to /Items plus a best-effort /Artists call
       // (500 above → treated as empty).
       final jfItemsRequest = jellyfinRequests.singleWhere((url) => url.path == '/Items');
       expect(jfItemsRequest.queryParameters['Limit'], '100');
+      expect(jfItemsRequest.queryParameters['SearchTerm'], 'Spider Man');
       final jfArtistsRequest = jellyfinRequests.singleWhere((url) => url.path == '/Artists');
-      expect(jfArtistsRequest.queryParameters['searchTerm'], 'The Boys');
+      expect(jfArtistsRequest.queryParameters['searchTerm'], 'Spider Man');
     });
 
     test('getOnDeckFromAllServers forwards preview limit to clients', () async {

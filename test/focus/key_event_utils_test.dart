@@ -75,6 +75,35 @@ void main() {
     await tester.pump();
   });
 
+  test('one-shot select consumes every phase and activates only on key down', () {
+    var activations = 0;
+    const down = KeyDownEvent(
+      physicalKey: PhysicalKeyboardKey.select,
+      logicalKey: LogicalKeyboardKey.select,
+      timeStamp: Duration.zero,
+    );
+    const repeat = KeyRepeatEvent(
+      physicalKey: PhysicalKeyboardKey.select,
+      logicalKey: LogicalKeyboardKey.select,
+      timeStamp: Duration(milliseconds: 100),
+    );
+    const up = KeyUpEvent(
+      physicalKey: PhysicalKeyboardKey.select,
+      logicalKey: LogicalKeyboardKey.select,
+      timeStamp: Duration(milliseconds: 200),
+    );
+    const unrelated = KeyDownEvent(
+      physicalKey: PhysicalKeyboardKey.f12,
+      logicalKey: LogicalKeyboardKey.f12,
+      timeStamp: Duration.zero,
+    );
+
+    expect(handleOneShotSelect(down, () => activations++), KeyEventResult.handled);
+    expect(handleOneShotSelect(repeat, () => activations++), KeyEventResult.handled);
+    expect(handleOneShotSelect(up, () => activations++), KeyEventResult.handled);
+    expect(handleOneShotSelect(unrelated, () => activations++), KeyEventResult.ignored);
+    expect(activations, 1);
+  });
   group('BackKeyCoordinator', () {
     testWidgets('suppresses one parallel back dispatch in the current frame', (tester) async {
       BackKeyCoordinator.markHandled();
@@ -214,6 +243,77 @@ void main() {
       expect(FocusManager.instance.primaryFocus?.debugLabel, 'ActionBar[0]');
     });
 
+    testWidgets('skips disabled actions for entry and horizontal traversal', (tester) async {
+      final key = GlobalKey<FocusableActionBarState>();
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: FocusableActionBar(
+              key: key,
+              actions: [
+                const FocusableAction(icon: Icons.block),
+                FocusableAction(icon: Icons.add, onPressed: () {}),
+                const FocusableAction(icon: Icons.block),
+                FocusableAction(icon: Icons.remove, onPressed: () {}),
+              ],
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      key.currentState!.requestFocusOnFirst();
+      await tester.pump();
+      expect(FocusManager.instance.primaryFocus?.debugLabel, 'ActionBar[1]');
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
+      await tester.pump();
+      expect(FocusManager.instance.primaryFocus?.debugLabel, 'ActionBar[3]');
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowLeft);
+      await tester.pump();
+      expect(FocusManager.instance.primaryFocus?.debugLabel, 'ActionBar[1]');
+    });
+
+    testWidgets('dynamic callback changes remove a disabled action from focus', (tester) async {
+      final key = GlobalKey<FocusableActionBarState>();
+      late StateSetter rebuild;
+      var firstEnabled = true;
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: StatefulBuilder(
+              builder: (context, setState) {
+                rebuild = setState;
+                return FocusableActionBar(
+                  key: key,
+                  actions: [
+                    FocusableAction(icon: Icons.add, onPressed: firstEnabled ? () {} : null),
+                    FocusableAction(icon: Icons.remove, onPressed: () {}),
+                  ],
+                );
+              },
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      key.currentState!.requestFocusOnFirst();
+      await tester.pump();
+      expect(FocusManager.instance.primaryFocus?.debugLabel, 'ActionBar[0]');
+
+      rebuild(() => firstEnabled = false);
+      await tester.pump();
+      expect(key.currentState!.getFocusNode(0)!.canRequestFocus, isFalse);
+      expect(key.currentState!.getFocusNode(0)!.hasFocus, isFalse);
+
+      key.currentState!.requestFocusOnFirst();
+      await tester.pump();
+      expect(FocusManager.instance.primaryFocus?.debugLabel, 'ActionBar[1]');
+    });
     testWidgets('still invokes onNavigateLeft at the left edge when wired', (tester) async {
       final key = GlobalKey<FocusableActionBarState>();
       final leftTarget = FocusNode(debugLabel: 'left-target');
@@ -277,6 +377,27 @@ void main() {
       await tester.pump();
 
       expect(activations, 1);
+    });
+  });
+
+  group('expandToGraphemeRange', () {
+    for (final grapheme in ['😀', 'e\u0301', '🇯🇵', '👨‍👩‍👧‍👦']) {
+      test('expands partial ${grapheme.runes.length}-scalar ranges', () {
+        final text = 'A${grapheme}B';
+        final graphemeEnd = 1 + grapheme.length;
+        final expected = TextRange(start: 1, end: graphemeEnd);
+
+        expect(expandToGraphemeRange(text, const TextRange(start: 1, end: 2)), expected);
+        expect(expandToGraphemeRange(text, TextRange(start: graphemeEnd - 1, end: graphemeEnd)), expected);
+        expect(expandToGraphemeRange(text, TextSelection(baseOffset: graphemeEnd - 1, extentOffset: 1)), expected);
+        expect(expandToGraphemeRange(text, TextRange(start: graphemeEnd - 1, end: 1)), expected);
+      });
+    }
+
+    test('preserves document edges and empty ranges', () {
+      expect(expandToGraphemeRange('abc', const TextRange(start: 0, end: 1)), const TextRange(start: 0, end: 1));
+      expect(expandToGraphemeRange('abc', const TextRange(start: 3, end: 3)), const TextRange.collapsed(3));
+      expect(expandToGraphemeRange('', const TextRange(start: 0, end: 1)), TextRange.empty);
     });
   });
 }

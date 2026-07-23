@@ -121,26 +121,32 @@ class _InputModeTrackerState extends State<InputModeTracker> {
 
   @override
   Widget build(BuildContext context) {
-    // On Android TV, don't switch to pointer mode from pointer events
-    // as D-pad can generate synthetic pointer events that would incorrectly
-    // trigger pointer mode and show a cursor instead of D-pad focus navigation.
-    // Desktop is exempt even in force-TV mode: its pointer events come from a
-    // real mouse, which should keep flipping modes (and the cursor) as usual.
+    // Non-desktop TVs keep keyboard mode across synthetic pointer events, but
+    // their controls remain pointer-reachable for engine-generated taps.
     if (TvDetectionService.isTVSync() && !PlatformDetector.isDesktopOS()) {
       return _InputModeProvider(mode: _mode, child: widget.child);
     }
 
     return Listener(
-      // Switch to pointer mode on mouse activity
       onPointerDown: (_) => _setMode(InputMode.pointer),
       onPointerHover: (_) => _setMode(InputMode.pointer),
       behavior: HitTestBehavior.translucent,
-      child: MouseRegion(
-        cursor: _mode == InputMode.keyboard ? SystemMouseCursors.none : MouseCursor.defer,
-        child: IgnorePointer(
-          ignoring: _mode == InputMode.keyboard,
-          child: _InputModeProvider(mode: _mode, child: widget.child),
-        ),
+      child: Stack(
+        alignment: Alignment.topLeft,
+        fit: StackFit.passthrough,
+        children: [
+          _InputModeProvider(mode: _mode, child: widget.child),
+          // Hide the desktop cursor in keyboard mode without excluding the
+          // application subtree from the current pointer hit test.
+          if (_mode == InputMode.keyboard)
+            const Positioned.fill(
+              child: MouseRegion(
+                cursor: SystemMouseCursors.none,
+                opaque: false,
+                hitTestBehavior: HitTestBehavior.translucent,
+              ),
+            ),
+        ],
       ),
     );
   }

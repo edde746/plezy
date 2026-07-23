@@ -47,7 +47,12 @@ extension _PlexVideoControlsVisibilityMethods on _PlexVideoControlsState {
   }
 
   /// Controls hide delay: 5s on mobile/TV/keyboard-nav, 3s on desktop with mouse.
+  /// Maestro builds extend the delay because accessibility-tree queries can take
+  /// longer than the production timeout on physical devices.
   Duration get _hideDelay {
+    if (const bool.fromEnvironment('PLEZY_MAESTRO_E2E')) {
+      return const Duration(seconds: 30);
+    }
     final isMobile = (Platform.isIOS || Platform.isAndroid) && !PlatformDetector.isTV();
     if (isMobile || PlatformDetector.isTV() || _videoPlayerNavigationEnabled) {
       return const Duration(seconds: 5);
@@ -80,6 +85,15 @@ extension _PlexVideoControlsVisibilityMethods on _PlexVideoControlsState {
 
   void _toggleControls() {
     widget.chromeController.toggle();
+  }
+
+  void _toggleControlsFromSemantics() {
+    if (_showControls) {
+      widget.chromeController.hide();
+      return;
+    }
+    widget.chromeController.show(restartAutoHide: false);
+    widget.chromeController.cancelAutoHide();
   }
 
   /// Apply preferred orientations for the given lock state. Wired to

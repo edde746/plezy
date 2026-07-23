@@ -47,8 +47,8 @@ class TrackControlsState {
   final VoidCallback? onToggleAlwaysOnTop;
   final Function(int)? onSwitchVersion;
   final ValueChanged<TranscodeQualityPreset>? onSwitchQualityPreset;
-  final ValueChanged<int>? onSwitchAudioStreamId;
-  final ValueChanged<PlaybackSourceSubtitleChoice>? onSwitchSubtitle;
+  final Future<void> Function(int)? onSwitchAudioStreamId;
+  final Future<void> Function(PlaybackSourceSubtitleChoice)? onSwitchSubtitle;
   final Function(AudioTrack)? onAudioTrackChanged;
   final Function(SubtitleTrack)? onSubtitleTrackChanged;
   final Function(SubtitleTrack)? onSecondarySubtitleTrackChanged;

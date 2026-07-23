@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:file_picker/file_picker.dart';
@@ -24,11 +25,13 @@ import 'package:plezy/screens/settings/settings_screen.dart';
 import 'package:plezy/services/donation_service.dart';
 import 'package:plezy/services/download_storage_service.dart';
 import 'package:plezy/services/download_manager_service.dart';
+import 'package:plezy/services/settings_export_service.dart';
 import 'package:plezy/services/settings_service.dart';
 import 'package:plezy/services/update_service.dart';
 import 'package:plezy/theme/mono_theme.dart';
 import 'package:plezy/utils/platform_detector.dart';
 import 'package:plezy/widgets/app_icon.dart';
+import 'package:plezy/widgets/dialog_action_button.dart';
 import 'package:plezy/widgets/focusable_list_tile.dart';
 import 'package:plezy/widgets/loading_indicator_box.dart';
 import 'package:plezy/widgets/setting_tile.dart';
@@ -310,6 +313,148 @@ void main() {
     expect(SettingsService.instance.read(SettingsService.customDownloadPath), isNull);
     expect(find.text(t.settings.resetSettingsSuccess), findsOneWidget);
   });
+
+  testWidgets('cancelled directory picker remains silent and leaves the dialog retryable', (tester) async {
+    final harness = await _pumpSettingsScreen(tester);
+    addTearDown(() => harness.dispose(tester));
+
+    await tester.tap(find.text(t.settings.downloadLocationDefault));
+    await _pumpUi(tester);
+    await tester.tap(find.text(t.settings.selectFolder));
+    await _pumpUi(tester);
+
+    expect(find.byType(AlertDialog), findsOneWidget);
+    expect(find.text(t.settings.saveFailed), findsNothing);
+    expect(find.text(t.settings.downloadLocationChanged), findsNothing);
+    expect(harness.locationEvents, isEmpty);
+  });
+
+  testWidgets('directory picker platform failure uses shared settings feedback', (tester) async {
+    directoryPicker.directoryError = PlatformException(code: 'picker_failed');
+    final harness = await _pumpSettingsScreen(tester);
+    addTearDown(() => harness.dispose(tester));
+
+    await tester.tap(find.text(t.settings.downloadLocationDefault));
+    await _pumpUi(tester);
+    await tester.tap(find.text(t.settings.selectFolder));
+    await _pumpUi(tester);
+
+    expect(find.byType(AlertDialog), findsOneWidget);
+    expect(find.text(t.settings.saveFailed), findsOneWidget);
+    expect(harness.locationEvents, isEmpty);
+  });
+
+  testWidgets('directory filesystem failure uses shared settings feedback', (tester) async {
+    directoryPicker.directoryPath = '${temporaryDirectory.path}/selected-downloads';
+    final harness = await _pumpSettingsScreen(
+      tester,
+      writableChecker: (_) async => throw const FileSystemException('writable check failed'),
+    );
+    addTearDown(() => harness.dispose(tester));
+
+    await tester.tap(find.text(t.settings.downloadLocationDefault));
+    await _pumpUi(tester);
+    await tester.tap(find.text(t.settings.selectFolder));
+    await _pumpUi(tester);
+
+    expect(find.byType(AlertDialog), findsOneWidget);
+    expect(find.text(t.settings.saveFailed), findsOneWidget);
+    expect(harness.locationEvents, isEmpty);
+  });
+
+  testWidgets('late directory picker completion does not use a disposed context', (tester) async {
+    directoryPicker.directoryGate = Completer<String?>();
+    final harness = await _pumpSettingsScreen(tester);
+
+    await tester.tap(find.text(t.settings.downloadLocationDefault));
+    await _pumpUi(tester);
+    await tester.tap(find.text(t.settings.selectFolder));
+    await tester.pump();
+    await harness.dispose(tester);
+
+    directoryPicker.directoryGate!.complete('${temporaryDirectory.path}/late-downloads');
+    await tester.pump();
+
+    expect(tester.takeException(), isNull);
+    expect(harness.locationEvents, isEmpty);
+  });
+
+  testWidgets('late directory picker failure does not use a disposed context', (tester) async {
+    directoryPicker.directoryGate = Completer<String?>();
+    final harness = await _pumpSettingsScreen(tester);
+
+    await tester.tap(find.text(t.settings.downloadLocationDefault));
+    await _pumpUi(tester);
+    await tester.tap(find.text(t.settings.selectFolder));
+    await tester.pump();
+    await harness.dispose(tester);
+
+    directoryPicker.directoryGate!.completeError(PlatformException(code: 'late_picker_failure'));
+    await tester.pump();
+
+    expect(tester.takeException(), isNull);
+    expect(harness.locationEvents, isEmpty);
+  });
+
+  testWidgets('late settings export failure does not use a disposed context', (tester) async {
+    final exportGate = Completer<String?>();
+    final harness = await _pumpSettingsScreen(tester, settingsExporter: () => exportGate.future);
+
+    await tester.tap(find.text(t.settings.exportSettings));
+    await tester.pump();
+    await harness.dispose(tester);
+
+    exportGate.completeError(PlatformException(code: 'late_export_failure'));
+    await tester.pump();
+
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('late settings import failure does not use a disposed context', (tester) async {
+    final importGate = Completer<ImportResult?>();
+    final harness = await _pumpSettingsScreen(tester, settingsImporter: () => importGate.future);
+
+    await tester.tap(find.text(t.settings.importSettings));
+    await _pumpUi(tester);
+    await tester.tap(find.widgetWithText(DialogActionButton, t.settings.importSettings));
+    await tester.pump();
+    await harness.dispose(tester);
+
+    importGate.completeError(PlatformException(code: 'late_import_failure'));
+    await tester.pump();
+
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('settings export platform failure uses shared settings feedback', (tester) async {
+    final harness = await _pumpSettingsScreen(
+      tester,
+      settingsExporter: () async => throw PlatformException(code: 'save_failed'),
+    );
+    addTearDown(() => harness.dispose(tester));
+
+    await tester.tap(find.text(t.settings.exportSettings));
+    await _pumpUi(tester);
+
+    expect(find.text(t.settings.saveFailed), findsOneWidget);
+    expect(find.text(t.settings.exportSettingsSuccess), findsNothing);
+  });
+
+  testWidgets('settings import platform failure uses shared settings feedback', (tester) async {
+    final harness = await _pumpSettingsScreen(
+      tester,
+      settingsImporter: () async => throw PlatformException(code: 'pick_failed'),
+    );
+    addTearDown(() => harness.dispose(tester));
+
+    await tester.tap(find.text(t.settings.importSettings));
+    await _pumpUi(tester);
+    await tester.tap(find.widgetWithText(DialogActionButton, t.settings.importSettings));
+    await _pumpUi(tester);
+
+    expect(find.text(t.settings.saveFailed), findsOneWidget);
+    expect(find.text(t.settings.importSettingsSuccess), findsNothing);
+  });
 }
 
 Finder _navigationTileFor(String title) =>
@@ -376,7 +521,12 @@ class _SettingsHarness {
   }
 }
 
-Future<_SettingsHarness> _pumpSettingsScreen(WidgetTester tester) async {
+Future<_SettingsHarness> _pumpSettingsScreen(
+  WidgetTester tester, {
+  Future<bool> Function(Directory directory)? writableChecker,
+  Future<String?> Function()? settingsExporter,
+  Future<ImportResult?> Function()? settingsImporter,
+}) async {
   tester.view.physicalSize = const Size(1800, 3200);
   tester.view.devicePixelRatio = 1;
   addTearDown(tester.view.resetPhysicalSize);
@@ -451,7 +601,11 @@ Future<_SettingsHarness> _pumpSettingsScreen(WidgetTester tester) async {
         ],
         child: MaterialApp(
           theme: monoTheme(dark: true).copyWith(platform: TargetPlatform.android),
-          home: SettingsScreen(downloadDirectoryWritableChecker: (_) async => true),
+          home: SettingsScreen(
+            downloadDirectoryWritableChecker: writableChecker ?? (_) async => true,
+            settingsExporter: settingsExporter,
+            settingsImporter: settingsImporter,
+          ),
         ),
       ),
     ),
@@ -463,6 +617,8 @@ Future<_SettingsHarness> _pumpSettingsScreen(WidgetTester tester) async {
 
 class _FakeDirectoryPicker extends FilePicker {
   String? directoryPath;
+  Object? directoryError;
+  Completer<String?>? directoryGate;
 
   @override
   Future<String?> getDirectoryPath({
@@ -470,6 +626,10 @@ class _FakeDirectoryPicker extends FilePicker {
     String? initialDirectory,
     bool lockParentWindow = false,
   }) async {
+    final gate = directoryGate;
+    if (gate != null) return gate.future;
+    final error = directoryError;
+    if (error != null) throw error;
     return directoryPath;
   }
 }

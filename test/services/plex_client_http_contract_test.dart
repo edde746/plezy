@@ -13,6 +13,7 @@ import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/services/plex_api_cache.dart';
 import 'package:plezy/services/plex_client.dart';
 import 'package:plezy/utils/active_client_scope.dart';
+import 'package:plezy/utils/media_server_http_client.dart';
 
 import '../test_helpers/backend_client_fixtures.dart';
 import '../test_helpers/media_items.dart';
@@ -266,6 +267,29 @@ void main() {
     expect(activities.last.subtitle, '99');
     expect(activities.last.progress, 75);
     expect(activities.last.cancellable, isTrue);
+  });
+
+  test('activity fetch abort reaches transport and preserves cancellation identity', () async {
+    final transport = _AbortAwareActivitiesClient();
+    final client = testPlexClient(
+      serverId: publicServerId,
+      profileScopeId: defaultProfileScopeId,
+      httpClient: transport,
+      prioritizedEndpoints: const ['https://plex.example.com', 'https://plex-fallback.example.com'],
+    );
+    addTearDown(client.close);
+    final abort = AbortController();
+
+    final activities = client.getActivities(abort: abort);
+    await transport.requestStarted.future;
+    abort.abort();
+
+    await expectLater(
+      activities,
+      throwsA(isA<MediaServerHttpException>().having((error) => error.isCancellation, 'isCancellation', isTrue)),
+    );
+    await expectLater(transport.abortObserved.future, completes);
+    expect(transport.requestCount, 1);
   });
 
   test('metadata edit preserves locked fields and removed tag wire format', () async {

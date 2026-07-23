@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -12,7 +14,7 @@ void main() {
   tearDown(SelectKeyUpSuppressor.clearSuppression);
 
   testWidgets('initially unbound shortcut captures from a tap and saves', (tester) async {
-    final saved = <HotKey>[];
+    final saved = <HotKey?>[];
     await _pumpRecorder(tester, saved: saved);
 
     expect(_recorder(tester).enabled, isFalse);
@@ -39,48 +41,106 @@ void main() {
     await tester.tap(find.widgetWithText(FilledButton, t.common.save));
 
     expect(saved, hasLength(1));
-    expect(saved.single.key, PhysicalKeyboardKey.keyK);
-    expect(saved.single.modifiers, isNull);
+    expect(saved.single!.key, PhysicalKeyboardKey.keyK);
+    expect(saved.single!.modifiers, isNull);
   });
 
-  testWidgets('cleared shortcut can capture and save a replacement', (tester) async {
-    final saved = <HotKey>[];
+  testWidgets('cleared assigned shortcut saves an explicit unassignment', (tester) async {
+    final saved = <HotKey?>[];
     await _pumpRecorder(
       tester,
       saved: saved,
       currentHotKey: const HotKey(key: PhysicalKeyboardKey.keyJ, modifiers: [HotKeyModifier.shift]),
     );
 
-    expect(find.text(physicalKeyLabel(PhysicalKeyboardKey.keyJ)), findsOneWidget);
-    expect(_saveAction(tester).onPressed, isNotNull);
-
     await tester.tap(find.byTooltip(t.hotkeys.clearShortcut));
     await tester.pump();
 
     expect(_recorder(tester).enabled, isFalse);
     expect(find.text(physicalKeyLabel(PhysicalKeyboardKey.keyJ)), findsNothing);
-    expect(find.text(t.hotkeys.pressToRecord), findsNWidgets(2));
     expect(FocusManager.instance.primaryFocus?.debugLabel, 'HotKeyRecorder.record');
-    expect(_saveAction(tester).onPressed, isNull);
-
-    await tester.tap(find.byType(HotKeyRecorder));
-    await tester.pump();
-    await tester.sendKeyEvent(LogicalKeyboardKey.keyL, physicalKey: PhysicalKeyboardKey.keyL);
-    await _pumpFocusChange(tester);
-
-    expect(_recorder(tester).enabled, isFalse);
-    expect(find.text(physicalKeyLabel(PhysicalKeyboardKey.keyL)), findsOneWidget);
-    expect(FocusManager.instance.primaryFocus?.debugLabel, 'HotKeyRecorder.save');
+    expect(_saveAction(tester).onPressed, isNotNull);
 
     await tester.tap(find.widgetWithText(FilledButton, t.common.save));
+    await tester.pump();
 
-    expect(saved, hasLength(1));
-    expect(saved.single.key, PhysicalKeyboardKey.keyL);
-    expect(saved.single.modifiers, isNull);
+    expect(saved, <HotKey?>[null]);
+  });
+
+  testWidgets('D-pad can save a cleared shortcut', (tester) async {
+    final saved = <HotKey?>[];
+    await _pumpRecorder(
+      tester,
+      saved: saved,
+      currentHotKey: const HotKey(key: PhysicalKeyboardKey.keyJ),
+    );
+
+    await tester.tap(find.byTooltip(t.hotkeys.clearShortcut));
+    await tester.pump();
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+    await _pumpFocusChange(tester);
+
+    expect(FocusManager.instance.primaryFocus?.debugLabel, 'HotKeyRecorder.save');
+    await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+    await tester.pump();
+    expect(saved, <HotKey?>[null]);
+  });
+
+  testWidgets('cancel and Escape discard a local clear', (tester) async {
+    final saved = <HotKey?>[];
+    var cancelCount = 0;
+    const original = HotKey(key: PhysicalKeyboardKey.keyJ);
+    await _pumpRecorder(tester, saved: saved, currentHotKey: original, onCancel: () => cancelCount++);
+
+    await tester.tap(find.byTooltip(t.hotkeys.clearShortcut));
+    await tester.pump();
+    await tester.tap(find.widgetWithText(TextButton, t.common.cancel));
+    expect(saved, isEmpty);
+    expect(cancelCount, 1);
+
+    await _pumpRecorder(tester, saved: saved, currentHotKey: original, onCancel: () => cancelCount++);
+    expect(find.text(physicalKeyLabel(PhysicalKeyboardKey.keyJ)), findsOneWidget);
+    await tester.tap(find.ancestor(of: find.byType(HotKeyRecorder), matching: find.byType(GestureDetector)).first);
+    await tester.pump();
+    await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+    await tester.pump();
+
+    expect(saved, isEmpty);
+    expect(cancelCount, 2);
+  });
+
+  testWidgets('save is single-flight and blocks cancellation', (tester) async {
+    final gate = Completer<void>();
+    var saveCount = 0;
+    var cancelCount = 0;
+    await _pumpRecorder(
+      tester,
+      saved: <HotKey?>[],
+      currentHotKey: const HotKey(key: PhysicalKeyboardKey.keyJ),
+      onCancel: () => cancelCount++,
+      onSave: (_) {
+        saveCount++;
+        return gate.future;
+      },
+    );
+
+    await tester.tap(find.widgetWithText(FilledButton, t.common.save));
+    await tester.tap(find.widgetWithText(FilledButton, t.common.save), warnIfMissed: false);
+    await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+    await tester.pump();
+
+    expect(saveCount, 1);
+    expect(cancelCount, 0);
+    expect(_saveAction(tester).onPressed, isNull);
+    expect(_cancelAction(tester).onPressed, isNull);
+
+    gate.complete();
+    await tester.pump();
+    expect(_cancelAction(tester).onPressed, isNotNull);
   });
 
   testWidgets('modifier-first Control+P completes with the held modifier', (tester) async {
-    final saved = <HotKey>[];
+    final saved = <HotKey?>[];
     await _pumpRecorder(tester, saved: saved);
     await tester.tap(find.byType(HotKeyRecorder));
     await tester.pump();
@@ -105,8 +165,8 @@ void main() {
     await tester.tap(find.widgetWithText(FilledButton, t.common.save));
 
     expect(saved, hasLength(1));
-    expect(saved.single.key, PhysicalKeyboardKey.keyP);
-    expect(saved.single.modifiers, [HotKeyModifier.control]);
+    expect(saved.single!.key, PhysicalKeyboardKey.keyP);
+    expect(saved.single!.modifiers, [HotKeyModifier.control]);
   });
 
   for (final entry in <(String, LogicalKeyboardKey, PhysicalKeyboardKey)>[
@@ -114,7 +174,7 @@ void main() {
     ('select', LogicalKeyboardKey.select, PhysicalKeyboardKey.select),
   ]) {
     testWidgets('${entry.$1} completion does not rearm capture or activate Save on key-up', (tester) async {
-      final saved = <HotKey>[];
+      final saved = <HotKey?>[];
       await _pumpRecorder(tester, saved: saved);
       await tester.tap(find.byType(HotKeyRecorder));
       await tester.pump();
@@ -138,21 +198,28 @@ void main() {
       await tester.tap(find.widgetWithText(FilledButton, t.common.save));
 
       expect(saved, hasLength(1));
-      expect(saved.single.key, entry.$3);
-      expect(saved.single.modifiers, isNull);
+      expect(saved.single!.key, entry.$3);
+      expect(saved.single!.modifiers, isNull);
     });
   }
 }
 
-Future<void> _pumpRecorder(WidgetTester tester, {required List<HotKey> saved, HotKey? currentHotKey}) async {
+Future<void> _pumpRecorder(
+  WidgetTester tester, {
+  required List<HotKey?> saved,
+  HotKey? currentHotKey,
+  VoidCallback? onCancel,
+  FutureOr<void> Function(HotKey?)? onSave,
+}) async {
   await tester.pumpWidget(
     MaterialApp(
       home: Scaffold(
         body: HotKeyRecorderWidget(
+          key: UniqueKey(),
           actionName: 'Play/Pause',
           currentHotKey: currentHotKey,
-          onHotKeyRecorded: saved.add,
-          onCancel: () {},
+          onHotKeyRecorded: onSave ?? saved.add,
+          onCancel: onCancel ?? () {},
         ),
       ),
     ),
@@ -169,3 +236,6 @@ HotKeyRecorder _recorder(WidgetTester tester) => tester.widget(find.byType(HotKe
 
 DialogActionButton _saveAction(WidgetTester tester) =>
     tester.widget(find.widgetWithText(DialogActionButton, t.common.save));
+
+DialogActionButton _cancelAction(WidgetTester tester) =>
+    tester.widget(find.widgetWithText(DialogActionButton, t.common.cancel));

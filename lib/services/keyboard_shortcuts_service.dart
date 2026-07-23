@@ -16,7 +16,8 @@ class KeyboardShortcutsService extends ChangeNotifier {
 
   static KeyboardShortcutsService? _instance;
   late final SettingsBindingOwner _settingsBinding;
-  Map<String, HotKey> _hotkeys = {};
+  Map<String, HotKey?> _hotkeys = {};
+  Future<void> _shortcutMutationTail = Future.value();
   int _seekTimeSmall = 10; // Default, loaded from settings
   int _seekTimeLarge = 30; // Default, loaded from settings
   bool _settingsInitialized = false;
@@ -55,7 +56,7 @@ class KeyboardShortcutsService extends ChangeNotifier {
     final changed =
         !_hotkeyMapsEqual(_hotkeys, hotkeys) || _seekTimeSmall != seekTimeSmall || _seekTimeLarge != seekTimeLarge;
 
-    _hotkeys = Map<String, HotKey>.from(hotkeys);
+    _hotkeys = Map<String, HotKey?>.from(hotkeys);
     _seekTimeSmall = seekTimeSmall;
     _seekTimeLarge = seekTimeLarge;
 
@@ -64,32 +65,49 @@ class KeyboardShortcutsService extends ChangeNotifier {
     if (notify && changed) notifyListeners();
   }
 
-  bool _hotkeyMapsEqual(Map<String, HotKey> a, Map<String, HotKey> b) {
+  bool _hotkeyMapsEqual(Map<String, HotKey?> a, Map<String, HotKey?> b) {
     if (a.length != b.length) return false;
     for (final entry in a.entries) {
+      if (!b.containsKey(entry.key)) return false;
+      final value = entry.value;
       final other = b[entry.key];
-      if (other == null || !_hotkeyEquals(entry.value, other)) return false;
+      if (value == null || other == null) {
+        if (value != other) return false;
+      } else if (!_hotkeyEquals(value, other)) {
+        return false;
+      }
     }
     return true;
   }
 
-  Map<String, HotKey> get hotkeys => Map.from(_hotkeys);
+  Map<String, HotKey?> get hotkeys => Map.from(_hotkeys);
 
   HotKey? getHotkey(String action) {
     return _hotkeys[action];
   }
 
-  Future<void> setHotkey(String action, HotKey hotkey) async {
-    await _settingsService.write(SettingsService.keyboardHotkeys, {..._hotkeys, action: hotkey});
+  Future<void> setHotkey(String action, HotKey? hotkey) {
+    return _serializeShortcutMutation(() async {
+      await _settingsService.write(SettingsService.keyboardHotkeys, <String, HotKey?>{..._hotkeys, action: hotkey});
+    });
   }
 
   Future<void> refreshFromStorage() async {
     _settingsBinding.refresh();
   }
 
-  Future<void> resetToDefaults() async {
-    final hotkeys = SettingsService.defaultKeyboardHotkeys();
-    await _settingsService.write(SettingsService.keyboardHotkeys, hotkeys);
+  Future<void> resetToDefaults() {
+    return _serializeShortcutMutation(() async {
+      await _settingsService.write(SettingsService.keyboardHotkeys, <String, HotKey?>{
+        ...SettingsService.defaultKeyboardHotkeys(),
+      });
+    });
+  }
+
+  Future<void> _serializeShortcutMutation(Future<void> Function() operation) {
+    final result = _shortcutMutationTail.then((_) => operation());
+    _shortcutMutationTail = result.then<void>((_) {}, onError: (Object _, StackTrace _) {});
+    return result;
   }
 
   @override
@@ -175,6 +193,7 @@ class KeyboardShortcutsService extends ChangeNotifier {
     for (final entry in _hotkeys.entries) {
       final action = entry.key;
       final hotkey = entry.value;
+      if (hotkey == null) continue;
 
       if (physicalKey != hotkey.key) continue;
 
@@ -470,7 +489,8 @@ class KeyboardShortcutsService extends ChangeNotifier {
   // Check if a hotkey is already assigned to another action
   String? getActionForHotkey(HotKey hotkey) {
     for (final entry in _hotkeys.entries) {
-      if (_hotkeyEquals(entry.value, hotkey)) {
+      final assignedHotkey = entry.value;
+      if (assignedHotkey != null && _hotkeyEquals(assignedHotkey, hotkey)) {
         return entry.key;
       }
     }

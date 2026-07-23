@@ -24,6 +24,7 @@ import 'package:plezy/theme/mono_theme.dart';
 import 'package:plezy/utils/media_server_http_client.dart';
 import 'package:plezy/utils/platform_detector.dart';
 import 'package:plezy/widgets/focusable_media_card.dart';
+import 'package:plezy/widgets/media_card.dart';
 import 'package:plezy/widgets/media_card_sliver_layout.dart';
 import 'package:provider/provider.dart';
 
@@ -65,6 +66,42 @@ void main() {
     expect(layout.shape, CardShape.square);
     expect(layout.fullBleedImage, isFalse);
     expect(tester.widget<FocusableMediaCard>(find.byType(FocusableMediaCard)).cardShapeOverride, CardShape.square);
+  });
+
+  testWidgets('collection cards announce list position without duplicate actions', (tester) async {
+    final semantics = tester.ensureSemantics();
+    final items = [
+      testMediaItem(
+        id: 'movie_1',
+        backend: MediaBackend.plex,
+        kind: MediaKind.movie,
+        title: 'First movie',
+        serverId: 'server_1',
+        serverName: 'Server',
+      ),
+      testMediaItem(
+        id: 'movie_2',
+        backend: MediaBackend.plex,
+        kind: MediaKind.movie,
+        title: 'Second movie',
+        serverId: 'server_1',
+        serverName: 'Server',
+      ),
+    ];
+    final harness = await _createHarness(items);
+    await SettingsService.instance.write(SettingsService.viewMode, ViewMode.list);
+
+    await tester.pumpWidget(
+      harness.wrap(SizedBox(width: 1280, height: 720, child: CollectionDetailScreen(collection: _collection))),
+    );
+    await tester.pumpAndSettle();
+
+    final cards = tester.widgetList<FocusableMediaCard>(find.byType(FocusableMediaCard)).toList();
+    expect(cards.map((card) => card.semanticValue), ['Row 1 of 2', 'Row 2 of 2']);
+
+    final first = tester.getSemantics(find.bySemanticsLabel(mediaCardSemanticLabel(items.first))).getSemanticsData();
+    expect(first.value, 'Row 1 of 2');
+    semantics.dispose();
   });
 }
 

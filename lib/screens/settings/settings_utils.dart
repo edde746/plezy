@@ -1,5 +1,8 @@
+import 'dart:io';
+
 import 'package:flex_color_picker/flex_color_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
 import '../../focus/focusable_text_field.dart';
@@ -7,6 +10,8 @@ import '../../focus/input_mode_tracker.dart';
 import '../../i18n/strings.g.dart';
 import '../../services/settings_service.dart' as settings;
 import '../../utils/dialogs.dart';
+import '../../utils/app_logger.dart';
+import '../../utils/snackbar_helper.dart';
 import '../../widgets/app_icon.dart';
 import '../../widgets/dialog_action_button.dart';
 import '../../widgets/focusable_list_tile.dart';
@@ -38,6 +43,18 @@ typedef _SettingsDialogContentBuilder =
     );
 
 typedef _SettingsDialogActionsBuilder = List<Widget> Function(BuildContext dialogContext, StateSetter setDialogState);
+
+/// Reports a recoverable settings persistence failure without swallowing
+/// programming errors or other unexpected exception types.
+void showSettingsFailure(
+  BuildContext context, {
+  required String operation,
+  required Object error,
+  required StackTrace stackTrace,
+}) {
+  appLogger.e('$operation failed', error: error, stackTrace: stackTrace);
+  if (context.mounted) showErrorSnackBar(context, t.settings.saveFailed);
+}
 
 void _showSettingsInputDialog({
   required BuildContext context,
@@ -89,8 +106,16 @@ class _SettingsInputDialogState extends State<_SettingsInputDialog> {
   }
 
   Future<void> _save() async {
-    final shouldClose = await widget.onSave(context);
-    if (shouldClose && mounted) Navigator.pop(context);
+    try {
+      final shouldClose = await widget.onSave(context);
+      if (shouldClose && mounted) Navigator.pop(context);
+    } on PlatformException catch (error, stackTrace) {
+      if (!mounted) return;
+      showSettingsFailure(context, operation: 'Settings input save', error: error, stackTrace: stackTrace);
+    } on FileSystemException catch (error, stackTrace) {
+      if (!mounted) return;
+      showSettingsFailure(context, operation: 'Settings input save', error: error, stackTrace: stackTrace);
+    }
   }
 
   @override
@@ -347,7 +372,16 @@ Future<void> _showColorInputDialogStandard({
     },
     actionButtons: const ColorPickerActionButtons(okButton: true, closeButton: true, dialogActionButtons: false),
   );
-  if (selected != initial) await onSave(colorToHex(selected));
+  if (selected == initial || !context.mounted) return;
+  try {
+    await onSave(colorToHex(selected));
+  } on PlatformException catch (error, stackTrace) {
+    if (!context.mounted) return;
+    showSettingsFailure(context, operation: 'Color setting save', error: error, stackTrace: stackTrace);
+  } on FileSystemException catch (error, stackTrace) {
+    if (!context.mounted) return;
+    showSettingsFailure(context, operation: 'Color setting save', error: error, stackTrace: stackTrace);
+  }
 }
 
 void _showColorInputDialogTV({

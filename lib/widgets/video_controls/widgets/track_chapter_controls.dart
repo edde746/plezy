@@ -9,6 +9,7 @@ import '../../../mpv/mpv.dart';
 import '../../../media/media_source_info.dart';
 import '../../../services/sleep_timer_service.dart';
 import '../../../utils/platform_detector.dart';
+import '../../../utils/quality_preset_labels.dart';
 import '../../../i18n/strings.g.dart';
 import '../../../widgets/overlay_sheet.dart';
 import '../models/track_controls_state.dart';
@@ -18,6 +19,7 @@ import '../sheets/queue_sheet.dart';
 import '../sheets/track_sheet.dart';
 import '../sheets/video_settings_sheet.dart';
 import '../../../services/shader_service.dart';
+import '../../../utils/track_label_builder.dart';
 import '../video_control_button.dart';
 
 /// Row of track and chapter control buttons for the video player
@@ -154,12 +156,16 @@ class TrackChapterControls extends StatelessWidget {
     required bool isMobile,
     required bool isDesktop,
     String? tooltip,
+    String? semanticValue,
+    bool? checked,
     bool isActive = false,
   }) {
     return VideoControlButton(
       icon: icon,
       tooltip: tooltip,
       semanticLabel: semanticLabel,
+      semanticValue: semanticValue,
+      checked: checked,
       isActive: isActive,
       focusNode: focusNodes != null && focusNodes!.length > buttonIndex ? focusNodes![buttonIndex] : null,
       onKeyEvent: focusNodes != null
@@ -203,7 +209,9 @@ class TrackChapterControls extends StatelessWidget {
                 buttonIndex: 0,
                 icon: Symbols.tune_rounded,
                 isActive: isActive,
+                checked: isActive,
                 tooltip: t.videoControls.settingsButton,
+                semanticValue: _versionQualitySemanticValue(),
                 semanticLabel: t.videoControls.settingsButton,
                 isMobile: isMobile,
                 isDesktop: isDesktop,
@@ -250,28 +258,36 @@ class TrackChapterControls extends StatelessWidget {
         // Combined audio & subtitles button
         {
           final currentIndex = buttonIndex;
-          final hasSubtitleControls = trackControlsState.hasSubtitleControls(tracks);
-          final selectedSub = player.state.track.subtitle;
-          final hasActiveSubtitle = selectedSub != null && selectedSub.id != 'no';
-          final isHidden = hasSubtitleControls && hasActiveSubtitle && !subtitlesVisible;
-          final icon = hasSubtitleControls
-              ? (isHidden ? Symbols.subtitles_off_rounded : Symbols.subtitles_rounded)
-              : Symbols.audiotrack_rounded;
           buttons.add(
-            _buildTrackButton(
-              buttonIndex: currentIndex,
-              icon: icon,
-              tooltip: t.videoControls.tracksButton,
-              semanticLabel: t.videoControls.tracksButton,
-              isMobile: isMobile,
-              isDesktop: isDesktop,
-              onPressed: () {
-                onCancelAutoHide?.call();
-                OverlaySheetController.of(context)
-                    .show(
-                      builder: (_) => TrackSheet(player: player, trackControlsState: trackControlsState),
-                    )
-                    .whenComplete(() => onStartAutoHide?.call());
+            StreamBuilder<TrackSelection>(
+              stream: player.streams.track,
+              initialData: player.state.track,
+              builder: (context, selectionSnapshot) {
+                final selection = selectionSnapshot.data ?? player.state.track;
+                final hasSubtitleControls = trackControlsState.hasSubtitleControls(tracks);
+                final selectedSub = selection.subtitle;
+                final hasActiveSubtitle = selectedSub != null && selectedSub.id != SubtitleTrack.off.id;
+                final isHidden = hasSubtitleControls && hasActiveSubtitle && !subtitlesVisible;
+                final icon = hasSubtitleControls
+                    ? (isHidden ? Symbols.subtitles_off_rounded : Symbols.subtitles_rounded)
+                    : Symbols.audiotrack_rounded;
+                return _buildTrackButton(
+                  buttonIndex: currentIndex,
+                  icon: icon,
+                  tooltip: t.videoControls.tracksButton,
+                  semanticLabel: t.videoControls.tracksButton,
+                  semanticValue: _selectionSemanticValue(tracks, selection),
+                  isMobile: isMobile,
+                  isDesktop: isDesktop,
+                  onPressed: () {
+                    onCancelAutoHide?.call();
+                    OverlaySheetController.of(context)
+                        .show(
+                          builder: (_) => TrackSheet(player: player, trackControlsState: trackControlsState),
+                        )
+                        .whenComplete(() => onStartAutoHide?.call());
+                  },
+                );
               },
             ),
           );
@@ -358,6 +374,7 @@ class TrackChapterControls extends StatelessWidget {
               icon: _getBoxFitIcon(boxFitMode),
               tooltip: _getBoxFitTooltip(boxFitMode),
               semanticLabel: t.videoControls.aspectRatioButton,
+              semanticValue: _getBoxFitTooltip(boxFitMode),
               isMobile: isMobile,
               isDesktop: isDesktop,
               onPressed: onCycleBoxFitMode,
@@ -375,6 +392,7 @@ class TrackChapterControls extends StatelessWidget {
               icon: isRotationLocked ? Symbols.screen_lock_rotation_rounded : Symbols.screen_rotation_rounded,
               tooltip: isRotationLocked ? t.videoControls.unlockRotation : t.videoControls.lockRotation,
               semanticLabel: t.videoControls.rotationLockButton,
+              checked: isRotationLocked,
               isMobile: isMobile,
               isDesktop: isDesktop,
               onPressed: onToggleRotationLock,
@@ -410,6 +428,7 @@ class TrackChapterControls extends StatelessWidget {
               tooltip: t.videoControls.alwaysOnTopButton,
               semanticLabel: t.videoControls.alwaysOnTopButton,
               isActive: isAlwaysOnTop,
+              checked: isAlwaysOnTop,
               isMobile: isMobile,
               isDesktop: isDesktop,
               onPressed: onToggleAlwaysOnTop,
@@ -427,6 +446,7 @@ class TrackChapterControls extends StatelessWidget {
               icon: isFullscreen ? Symbols.fullscreen_exit_rounded : Symbols.fullscreen_rounded,
               tooltip: isFullscreen ? t.videoControls.exitFullscreenButton : t.videoControls.fullscreenButton,
               semanticLabel: isFullscreen ? t.videoControls.exitFullscreenButton : t.videoControls.fullscreenButton,
+              checked: isFullscreen,
               isMobile: isMobile,
               isDesktop: isDesktop,
               onPressed: onToggleFullscreen,
@@ -439,6 +459,62 @@ class TrackChapterControls extends StatelessWidget {
         );
       },
     );
+  }
+
+  String? _versionQualitySemanticValue() {
+    final values = <String>[];
+    if (availableVersions.length > 1) {
+      final index = selectedMediaIndex;
+      if (index >= 0 && index < availableVersions.length) {
+        values.add(availableVersions[index].displayLabel);
+      }
+    }
+    if (serverSupportsTranscoding) {
+      values.add(qualityPresetLabel(selectedQualityPreset));
+    }
+    return values.isEmpty ? null : values.join(' / ');
+  }
+
+  String? _selectionSemanticValue(Tracks? tracks, TrackSelection selection) {
+    final values = <String>[];
+    final audio = selection.audio;
+    if (audio != null && audio.id != AudioTrack.off.id) {
+      final index = tracks?.audio.indexWhere((track) => track.id == audio.id) ?? -1;
+      final visibleIndex = index < 0 ? 0 : index;
+      final label = TrackLabelBuilder.audioLabel(
+        title: audio.title,
+        language: audio.language,
+        codec: audio.codec,
+        channels: audio.channelsCount,
+        index: visibleIndex,
+      );
+      final fallback = 'Audio Track ${visibleIndex + 1}';
+      values.add(
+        label.primary == fallback
+            ? _joinTrackLabel(t.audioTracks.track(n: visibleIndex + 1), label.secondary)
+            : label.joined,
+      );
+    }
+
+    final subtitle = selection.subtitle;
+    if (subtitle != null && subtitle.id != SubtitleTrack.off.id) {
+      final index = tracks?.subtitle.indexWhere((track) => track.id == subtitle.id) ?? -1;
+      values.add(
+        TrackLabelBuilder.subtitleLabel(
+          title: subtitle.title,
+          language: subtitle.language,
+          codec: subtitle.codec,
+          forced: subtitle.isForced,
+          index: index < 0 ? 0 : index,
+        ).joined,
+      );
+    }
+
+    return values.isEmpty ? null : values.join(', ');
+  }
+
+  String _joinTrackLabel(String primary, String? secondary) {
+    return secondary == null ? primary : '$primary · $secondary';
   }
 
   /// Calculate total button count for navigation

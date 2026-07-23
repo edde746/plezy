@@ -43,6 +43,7 @@ class OptimizedMediaImage extends StatelessWidget {
   final IconData? fallbackIcon;
   final ImageType imageType;
   final String? localFilePath;
+  final bool cacheMissingLocalFile;
 
   const OptimizedMediaImage._({
     super.key,
@@ -61,6 +62,7 @@ class OptimizedMediaImage extends StatelessWidget {
     this.fallbackIcon,
     this.imageType = ImageType.poster,
     this.localFilePath,
+    this.cacheMissingLocalFile = false,
   });
 
   /// Generic constructor for optimized images.
@@ -81,6 +83,7 @@ class OptimizedMediaImage extends StatelessWidget {
     IconData? fallbackIcon,
     ImageType imageType,
     String? localFilePath,
+    bool cacheMissingLocalFile,
   }) = OptimizedMediaImage._;
 
   /// Named constructor for poster images with default fallback icon.
@@ -199,16 +202,27 @@ class OptimizedMediaImage extends StatelessWidget {
   Widget build(BuildContext context) {
     final path = localFilePath;
     if (path == null) {
-      return _buildResolved(context, _LocalFileResolution.missing, null);
+      return _buildResolved(context, LocalFileResolution.missing, null);
     }
-    return _ResolvedLocalFile(path: path, builder: _buildResolved);
+    return ResolvedLocalFile(path: path, cacheMissing: cacheMissingLocalFile, builder: _buildResolved);
   }
 
-  Widget _buildResolved(BuildContext context, _LocalFileResolution resolution, File? localFile) {
-    if (resolution == _LocalFileResolution.pending) return _surfacePlaceholder(context);
-    final hasLocal = resolution == _LocalFileResolution.present;
+  Widget _buildResolved(BuildContext context, LocalFileResolution resolution, File? localFile) {
+    if (resolution == LocalFileResolution.pending) {
+      return placeholder == null
+          ? _surfacePlaceholder(context)
+          : _buildPlaceholder(context, imagePath ?? localFilePath ?? '');
+    }
+    final hasLocal = resolution == LocalFileResolution.present;
 
     if (!hasLocal && (imagePath == null || imagePath!.isEmpty)) {
+      if (errorWidget != null) {
+        return errorWidget!(
+          context,
+          localFilePath ?? '',
+          FileSystemException('Local image file is unavailable', localFilePath),
+        );
+      }
       return _buildFallback(context);
     }
 
@@ -484,22 +498,43 @@ class _FadeInNetworkImageState extends State<_FadeInNetworkImage> with SingleTic
   }
 }
 
-enum _LocalFileResolution { pending, missing, present }
+enum LocalFileResolution { pending, missing, present }
 
-class _ResolvedLocalFile extends StatefulWidget {
-  const _ResolvedLocalFile({required this.path, required this.builder});
+typedef LocalFileResolutionBuilder = Widget Function(BuildContext context, LocalFileResolution resolution, File? file);
+
+Future<bool> _defaultLocalFileExists(File file) => file.exists();
+
+/// Resolves local file availability without blocking the build isolate.
+///
+/// Results are scoped to this widget state and keyed by [path]. Present files
+/// are always cached. Missing files are cached only when [cacheMissing] is set,
+/// allowing consumers that expect late file creation to retry on rebuild.
+class ResolvedLocalFile extends StatefulWidget {
+  const ResolvedLocalFile({
+    super.key,
+    required this.path,
+    required this.builder,
+    this.cacheMissing = false,
+    this.fileExists = _defaultLocalFileExists,
+  });
 
   final String path;
-  final Widget Function(BuildContext context, _LocalFileResolution resolution, File? file) builder;
+  final LocalFileResolutionBuilder builder;
+  final bool cacheMissing;
+
+  @visibleForTesting
+  final Future<bool> Function(File file) fileExists;
 
   @override
-  State<_ResolvedLocalFile> createState() => _ResolvedLocalFileState();
+  State<ResolvedLocalFile> createState() => _ResolvedLocalFileState();
 }
 
-class _ResolvedLocalFileState extends State<_ResolvedLocalFile> {
+class _ResolvedLocalFileState extends State<ResolvedLocalFile> {
+  final Map<String, File> _presentFiles = <String, File>{};
+  final Set<String> _missingFiles = <String>{};
+  final Set<String> _pendingPaths = <String>{};
   File? _file;
-  _LocalFileResolution _resolution = _LocalFileResolution.pending;
-  int _generation = 0;
+  LocalFileResolution _resolution = LocalFileResolution.pending;
 
   @override
   void initState() {
@@ -508,28 +543,74 @@ class _ResolvedLocalFileState extends State<_ResolvedLocalFile> {
   }
 
   @override
-  void didUpdateWidget(_ResolvedLocalFile oldWidget) {
+  void didUpdateWidget(ResolvedLocalFile oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.path != widget.path || _resolution == _LocalFileResolution.missing) _resolve();
+    if (oldWidget.fileExists != widget.fileExists) {
+      _presentFiles.clear();
+      _missingFiles.clear();
+      _pendingPaths.clear();
+    } else if (oldWidget.cacheMissing && !widget.cacheMissing) {
+      _missingFiles.clear();
+    }
+    if (oldWidget.path != widget.path ||
+        oldWidget.fileExists != widget.fileExists ||
+        _resolution == LocalFileResolution.missing) {
+      _resolve();
+    }
   }
 
   void _resolve() {
-    final generation = ++_generation;
+    final path = widget.path;
+    final present = _presentFiles[path];
+    if (present != null) {
+      _file = present;
+      _resolution = LocalFileResolution.present;
+      return;
+    }
+    if (widget.cacheMissing && _missingFiles.contains(path)) {
+      _file = null;
+      _resolution = LocalFileResolution.missing;
+      return;
+    }
+
     _file = null;
-    _resolution = _LocalFileResolution.pending;
-    final candidate = File(widget.path);
-    candidate.exists().then((exists) {
-      if (!mounted || generation != _generation) return;
-      setState(() {
-        _file = exists ? candidate : null;
-        _resolution = exists ? _LocalFileResolution.present : _LocalFileResolution.missing;
-      });
+    _resolution = LocalFileResolution.pending;
+    if (!_pendingPaths.add(path)) return;
+
+    final candidate = File(path);
+    try {
+      widget
+          .fileExists(candidate)
+          .then(
+            (exists) => _complete(path, candidate, exists),
+            onError: (Object _, StackTrace _) => _complete(path, candidate, false),
+          );
+    } catch (_) {
+      _complete(path, candidate, false);
+    }
+  }
+
+  void _complete(String path, File candidate, bool exists) {
+    if (!mounted) return;
+    _pendingPaths.remove(path);
+    if (exists) {
+      _presentFiles[path] = candidate;
+      _missingFiles.remove(path);
+    } else if (widget.cacheMissing) {
+      _missingFiles.add(path);
+    }
+    if (widget.path != path) return;
+    setState(() {
+      _file = exists ? candidate : null;
+      _resolution = exists ? LocalFileResolution.present : LocalFileResolution.missing;
     });
   }
 
   @override
   void dispose() {
-    ++_generation;
+    _presentFiles.clear();
+    _missingFiles.clear();
+    _pendingPaths.clear();
     super.dispose();
   }
 

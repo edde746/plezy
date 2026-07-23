@@ -52,6 +52,7 @@ class TranslationsNl extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _TranslationsRateSheetNl rateSheet = _TranslationsRateSheetNl._(_root);
 	@override late final _TranslationsAccessibilityNl accessibility = _TranslationsAccessibilityNl._(_root);
 	@override late final _TranslationsTooltipsNl tooltips = _TranslationsTooltipsNl._(_root);
+	@override late final _TranslationsAudioTracksNl audioTracks = _TranslationsAudioTracksNl._(_root);
 	@override late final _TranslationsVideoControlsNl videoControls = _TranslationsVideoControlsNl._(_root);
 	@override late final _TranslationsMessagesNl messages = _TranslationsMessagesNl._(_root);
 	@override late final _TranslationsSubtitlingStylingNl subtitlingStyling = _TranslationsSubtitlingStylingNl._(_root);
@@ -120,7 +121,7 @@ class _TranslationsAuthNl extends TranslationsAuthEn {
 	@override String get quickConnectWaiting => 'Wachten op goedkeuring…';
 	@override String get quickConnectCancel => 'Annuleren';
 	@override String get quickConnectExpired => 'Quick Connect is verlopen. Probeer opnieuw.';
-	@override String get localDataRecoveryRequired => '';
+	@override String get localDataRecoveryRequired => 'Plezy could not safely recover local sign-in and pending playback data. Please sign in again.';
 }
 
 // Path: common
@@ -240,8 +241,6 @@ class _TranslationsSettingsNl extends TranslationsSettingsEn {
 	@override String get libraryDensity => 'Bibliotheek dichtheid';
 	@override String get compact => 'Compact';
 	@override String get comfortable => 'Comfortabel';
-	@override String get tvCornerSpotlightBackdrop => '';
-	@override String get tvCornerSpotlightBackdropDescription => '';
 	@override String get viewMode => 'Weergavemodus';
 	@override String get gridView => 'Raster';
 	@override String get listView => 'Lijst';
@@ -311,7 +310,7 @@ class _TranslationsSettingsNl extends TranslationsSettingsEn {
 	@override String get watchTogetherRelay => 'Samen Kijken Relay';
 	@override String get watchTogetherRelayDescription => 'Stel een aangepaste relay in. Iedereen moet dezelfde server gebruiken.';
 	@override String get watchTogetherRelayHint => 'https://mijn-relay.voorbeeld.nl';
-	@override String get watchTogetherRelayInvalid => '';
+	@override String get watchTogetherRelayInvalid => 'Enter a valid HTTP or HTTPS relay base URL.';
 	@override String get crashReporting => 'Crashrapportage';
 	@override String get crashReportingDescription => 'Crashrapporten verzenden om de app te verbeteren';
 	@override String get debugLogging => 'Debug logging';
@@ -328,12 +327,10 @@ class _TranslationsSettingsNl extends TranslationsSettingsEn {
 	@override String get exportSettings => 'Instellingen exporteren';
 	@override String get exportSettingsDescription => 'Sla je voorkeuren op in een bestand';
 	@override String get exportSettingsSuccess => 'Instellingen geëxporteerd';
-	@override String get exportSettingsFailed => 'Kon instellingen niet exporteren';
 	@override String get importSettings => 'Instellingen importeren';
 	@override String get importSettingsDescription => 'Voorkeuren herstellen vanuit een bestand';
 	@override String get importSettingsConfirm => 'Hiermee worden je huidige instellingen vervangen. Doorgaan?';
 	@override String get importSettingsSuccess => 'Instellingen geïmporteerd';
-	@override String get importSettingsFailed => 'Kon instellingen niet importeren';
 	@override String get importSettingsInvalidFile => 'Dit bestand is geen geldige Plezy-export';
 	@override String get importSettingsNoUser => 'Meld je aan voordat je instellingen importeert';
 	@override String get shortcutsReset => 'Sneltoetsen gereset naar standaard';
@@ -348,6 +345,7 @@ class _TranslationsSettingsNl extends TranslationsSettingsEn {
 	@override String validationErrorDuration({required Object min, required Object max, required Object unit}) => 'Duur moet tussen ${min} en ${max} ${unit} zijn';
 	@override String shortcutAlreadyAssigned({required Object action}) => 'Sneltoets al toegewezen aan ${action}';
 	@override String shortcutUpdated({required Object action}) => 'Sneltoets bijgewerkt voor ${action}';
+	@override String get saveFailed => 'Could not save changes. Try again.';
 	@override String get autoSkip => 'Automatisch Overslaan';
 	@override String get autoSkipIntro => 'Intro Automatisch Overslaan';
 	@override String get autoSkipIntroDescription => 'Intro-markeringen na enkele seconden automatisch overslaan';
@@ -373,7 +371,7 @@ class _TranslationsSettingsNl extends TranslationsSettingsEn {
 	@override String get downloadLocationChanged => 'Downloadlocatie gewijzigd';
 	@override String get downloadLocationReset => 'Downloadlocatie hersteld naar standaard';
 	@override String get downloadLocationInvalid => 'Geselecteerde map is niet beschrijfbaar';
-	@override String get downloadLocationSelectError => 'Kan map niet selecteren';
+	@override String get downloadLocationPickerUnavailable => 'Mapselectie is niet beschikbaar op dit apparaat';
 	@override String get downloadOnWifiOnly => 'Alleen via WiFi downloaden';
 	@override String get downloadOnWifiOnlyDescription => 'Voorkom downloads bij gebruik van mobiele data';
 	@override String get autoRemoveWatchedDownloads => 'Bekeken downloads automatisch verwijderen';
@@ -591,6 +589,10 @@ class _TranslationsAccessibilityNl extends TranslationsAccessibilityEn {
 	@override String get hexColor => 'Hexkleur';
 	@override String get expandText => 'Tekst uitvouwen';
 	@override String get collapseText => 'Tekst samenvouwen';
+	@override String get alphabetNavigation => 'Alfabetische navigatie';
+	@override String get alphabetScrollHint => 'Veeg omhoog of omlaag om per letter te bewegen';
+	@override String rowColumnPosition({required Object row, required Object rowCount, required Object column, required Object columnCount}) => 'Rij ${row} van ${rowCount}, kolom ${column} van ${columnCount}';
+	@override String rowPosition({required Object row, required Object rowCount}) => 'Rij ${row} van ${rowCount}';
 }
 
 // Path: tooltips
@@ -604,6 +606,16 @@ class _TranslationsTooltipsNl extends TranslationsTooltipsEn {
 	@override String get playTrailer => 'Trailer afspelen';
 	@override String get markAsWatched => 'Markeer als gekeken';
 	@override String get markAsUnwatched => 'Markeer als ongekeken';
+}
+
+// Path: audioTracks
+class _TranslationsAudioTracksNl extends TranslationsAudioTracksEn {
+	_TranslationsAudioTracksNl._(TranslationsNl root) : this._root = root, super.internal(root);
+
+	final TranslationsNl _root; // ignore: unused_field
+
+	// Translations
+	@override String track({required Object n}) => 'Audiospoor ${n}';
 }
 
 // Path: videoControls
@@ -712,11 +724,11 @@ class _TranslationsMessagesNl extends TranslationsMessagesEn {
 	@override String get streamInterrupted => 'De stream is onderbroken. Druk op afspelen of spoel om het opnieuw te proberen.';
 	@override String get liveStreamInterrupted => 'De livestream is onderbroken. Druk op afspelen om het opnieuw te proberen.';
 	@override String get fileInfoNotAvailable => 'Bestand informatie niet beschikbaar';
-	@override String get playbackAuthenticationRequired => '';
-	@override String get playbackServerUnavailable => '';
-	@override String get playbackDataInvalid => '';
-	@override String get playbackCancelled => '';
-	@override String get playbackFailed => '';
+	@override String get playbackAuthenticationRequired => 'Sign in to the media server again to play this item.';
+	@override String get playbackServerUnavailable => 'The media server is unavailable. Try again later.';
+	@override String get playbackDataInvalid => 'The server returned invalid playback information.';
+	@override String get playbackCancelled => 'Playback was cancelled.';
+	@override String get playbackFailed => 'Playback could not be started.';
 	@override String errorLoadingFileInfo({required Object error}) => 'Fout bij laden bestand info: ${error}';
 	@override String get errorLoadingSeries => 'Fout bij laden serie';
 	@override String get musicNotSupported => 'Muziek afspelen wordt nog niet ondersteund';
@@ -867,6 +879,7 @@ class _TranslationsProfilesNl extends TranslationsProfilesEn {
 	@override String get borrowExplain => 'Leen de verbinding van een ander profiel. PIN-beveiligde profielen vereisen een PIN.';
 	@override String get borrowEmpty => 'Nog niets te lenen.';
 	@override String get borrowEmptySubtitle => 'Verbind Plex of Jellyfin eerst met een ander profiel.';
+	@override String get borrowLoadFailed => 'Available connections could not be loaded. Try again.';
 	@override String borrowFromProfile({required Object displayName}) => 'Van ${displayName}';
 	@override String get borrowConnectionBorrowed => 'Verbinding geleend.';
 	@override String get borrowFailed => 'Kan verbinding niet lenen.';
@@ -1150,7 +1163,7 @@ class _TranslationsLiveTvNl extends TranslationsLiveTvEn {
 	@override String get favorites => 'Favorieten';
 	@override String get reorderFavorites => 'Favorieten herordenen';
 	@override String get favoritesLoadFailed => 'Favorieten konden niet worden geladen. Controleer je verbinding en probeer het opnieuw.';
-	@override String get favoritesUpdateFailed => '';
+	@override String get favoritesUpdateFailed => 'Could not update favorites. Check your connection and try again.';
 	@override String get joinSession => 'Deelnemen aan lopende sessie';
 	@override String watchFromStart({required Object minutes}) => 'Kijk vanaf het begin (${minutes} min geleden)';
 	@override String get watchLive => 'Live kijken';
@@ -2149,7 +2162,7 @@ extension on TranslationsNl {
 			'auth.quickConnectWaiting' => 'Wachten op goedkeuring…',
 			'auth.quickConnectCancel' => 'Annuleren',
 			'auth.quickConnectExpired' => 'Quick Connect is verlopen. Probeer opnieuw.',
-			'auth.localDataRecoveryRequired' => '',
+			'auth.localDataRecoveryRequired' => 'Plezy could not safely recover local sign-in and pending playback data. Please sign in again.',
 			'common.cancel' => 'Annuleren',
 			'common.save' => 'Opslaan',
 			'common.close' => 'Sluiten',
@@ -2233,8 +2246,6 @@ extension on TranslationsNl {
 			'settings.libraryDensity' => 'Bibliotheek dichtheid',
 			'settings.compact' => 'Compact',
 			'settings.comfortable' => 'Comfortabel',
-			'settings.tvCornerSpotlightBackdrop' => '',
-			'settings.tvCornerSpotlightBackdropDescription' => '',
 			'settings.viewMode' => 'Weergavemodus',
 			'settings.gridView' => 'Raster',
 			'settings.listView' => 'Lijst',
@@ -2304,7 +2315,7 @@ extension on TranslationsNl {
 			'settings.watchTogetherRelay' => 'Samen Kijken Relay',
 			'settings.watchTogetherRelayDescription' => 'Stel een aangepaste relay in. Iedereen moet dezelfde server gebruiken.',
 			'settings.watchTogetherRelayHint' => 'https://mijn-relay.voorbeeld.nl',
-			'settings.watchTogetherRelayInvalid' => '',
+			'settings.watchTogetherRelayInvalid' => 'Enter a valid HTTP or HTTPS relay base URL.',
 			'settings.crashReporting' => 'Crashrapportage',
 			'settings.crashReportingDescription' => 'Crashrapporten verzenden om de app te verbeteren',
 			'settings.debugLogging' => 'Debug logging',
@@ -2321,12 +2332,10 @@ extension on TranslationsNl {
 			'settings.exportSettings' => 'Instellingen exporteren',
 			'settings.exportSettingsDescription' => 'Sla je voorkeuren op in een bestand',
 			'settings.exportSettingsSuccess' => 'Instellingen geëxporteerd',
-			'settings.exportSettingsFailed' => 'Kon instellingen niet exporteren',
 			'settings.importSettings' => 'Instellingen importeren',
 			'settings.importSettingsDescription' => 'Voorkeuren herstellen vanuit een bestand',
 			'settings.importSettingsConfirm' => 'Hiermee worden je huidige instellingen vervangen. Doorgaan?',
 			'settings.importSettingsSuccess' => 'Instellingen geïmporteerd',
-			'settings.importSettingsFailed' => 'Kon instellingen niet importeren',
 			'settings.importSettingsInvalidFile' => 'Dit bestand is geen geldige Plezy-export',
 			'settings.importSettingsNoUser' => 'Meld je aan voordat je instellingen importeert',
 			'settings.shortcutsReset' => 'Sneltoetsen gereset naar standaard',
@@ -2341,6 +2350,7 @@ extension on TranslationsNl {
 			'settings.validationErrorDuration' => ({required Object min, required Object max, required Object unit}) => 'Duur moet tussen ${min} en ${max} ${unit} zijn',
 			'settings.shortcutAlreadyAssigned' => ({required Object action}) => 'Sneltoets al toegewezen aan ${action}',
 			'settings.shortcutUpdated' => ({required Object action}) => 'Sneltoets bijgewerkt voor ${action}',
+			'settings.saveFailed' => 'Could not save changes. Try again.',
 			'settings.autoSkip' => 'Automatisch Overslaan',
 			'settings.autoSkipIntro' => 'Intro Automatisch Overslaan',
 			'settings.autoSkipIntroDescription' => 'Intro-markeringen na enkele seconden automatisch overslaan',
@@ -2366,7 +2376,7 @@ extension on TranslationsNl {
 			'settings.downloadLocationChanged' => 'Downloadlocatie gewijzigd',
 			'settings.downloadLocationReset' => 'Downloadlocatie hersteld naar standaard',
 			'settings.downloadLocationInvalid' => 'Geselecteerde map is niet beschrijfbaar',
-			'settings.downloadLocationSelectError' => 'Kan map niet selecteren',
+			'settings.downloadLocationPickerUnavailable' => 'Mapselectie is niet beschikbaar op dit apparaat',
 			'settings.downloadOnWifiOnly' => 'Alleen via WiFi downloaden',
 			'settings.downloadOnWifiOnlyDescription' => 'Voorkom downloads bij gebruik van mobiele data',
 			'settings.autoRemoveWatchedDownloads' => 'Bekeken downloads automatisch verwijderen',
@@ -2554,10 +2564,15 @@ extension on TranslationsNl {
 			'accessibility.hexColor' => 'Hexkleur',
 			'accessibility.expandText' => 'Tekst uitvouwen',
 			'accessibility.collapseText' => 'Tekst samenvouwen',
+			'accessibility.alphabetNavigation' => 'Alfabetische navigatie',
+			'accessibility.alphabetScrollHint' => 'Veeg omhoog of omlaag om per letter te bewegen',
+			'accessibility.rowColumnPosition' => ({required Object row, required Object rowCount, required Object column, required Object columnCount}) => 'Rij ${row} van ${rowCount}, kolom ${column} van ${columnCount}',
+			'accessibility.rowPosition' => ({required Object row, required Object rowCount}) => 'Rij ${row} van ${rowCount}',
 			'tooltips.shufflePlay' => 'Willekeurig afspelen',
 			'tooltips.playTrailer' => 'Trailer afspelen',
 			'tooltips.markAsWatched' => 'Markeer als gekeken',
 			'tooltips.markAsUnwatched' => 'Markeer als ongekeken',
+			'audioTracks.track' => ({required Object n}) => 'Audiospoor ${n}',
 			'videoControls.audioLabel' => 'Audio',
 			'videoControls.subtitlesLabel' => 'Ondertitels',
 			'videoControls.resetToZero' => 'Reset naar 0ms',
@@ -2644,20 +2659,20 @@ extension on TranslationsNl {
 			'messages.markedAsUnwatched' => 'Gemarkeerd als ongekeken',
 			'messages.markedAsWatchedOffline' => 'Gemarkeerd als gekeken (sync wanneer online)',
 			'messages.markedAsUnwatchedOffline' => 'Gemarkeerd als ongekeken (sync wanneer online)',
-			'messages.autoRemovedWatchedDownload' => ({required Object title}) => 'Automatisch verwijderd: ${title}',
-			'messages.autoRemovedWatchedDownloads' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('nl'))(n, one: 'Automatisch ${n} bekeken download verwijderd', other: 'Automatisch ${n} bekeken downloads verwijderd', ), 
 			_ => null,
 		} ?? switch (path) {
+			'messages.autoRemovedWatchedDownload' => ({required Object title}) => 'Automatisch verwijderd: ${title}',
+			'messages.autoRemovedWatchedDownloads' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('nl'))(n, one: 'Automatisch ${n} bekeken download verwijderd', other: 'Automatisch ${n} bekeken downloads verwijderd', ), 
 			'messages.removedFromContinueWatching' => 'Verwijderd uit Doorgaan met kijken',
 			'messages.errorLoading' => ({required Object error}) => 'Fout: ${error}',
 			'messages.streamInterrupted' => 'De stream is onderbroken. Druk op afspelen of spoel om het opnieuw te proberen.',
 			'messages.liveStreamInterrupted' => 'De livestream is onderbroken. Druk op afspelen om het opnieuw te proberen.',
 			'messages.fileInfoNotAvailable' => 'Bestand informatie niet beschikbaar',
-			'messages.playbackAuthenticationRequired' => '',
-			'messages.playbackServerUnavailable' => '',
-			'messages.playbackDataInvalid' => '',
-			'messages.playbackCancelled' => '',
-			'messages.playbackFailed' => '',
+			'messages.playbackAuthenticationRequired' => 'Sign in to the media server again to play this item.',
+			'messages.playbackServerUnavailable' => 'The media server is unavailable. Try again later.',
+			'messages.playbackDataInvalid' => 'The server returned invalid playback information.',
+			'messages.playbackCancelled' => 'Playback was cancelled.',
+			'messages.playbackFailed' => 'Playback could not be started.',
 			'messages.errorLoadingFileInfo' => ({required Object error}) => 'Fout bij laden bestand info: ${error}',
 			'messages.errorLoadingSeries' => 'Fout bij laden serie',
 			'messages.musicNotSupported' => 'Muziek afspelen wordt nog niet ondersteund',
@@ -2772,6 +2787,7 @@ extension on TranslationsNl {
 			'profiles.borrowExplain' => 'Leen de verbinding van een ander profiel. PIN-beveiligde profielen vereisen een PIN.',
 			'profiles.borrowEmpty' => 'Nog niets te lenen.',
 			'profiles.borrowEmptySubtitle' => 'Verbind Plex of Jellyfin eerst met een ander profiel.',
+			'profiles.borrowLoadFailed' => 'Available connections could not be loaded. Try again.',
 			'profiles.borrowFromProfile' => ({required Object displayName}) => 'Van ${displayName}',
 			'profiles.borrowConnectionBorrowed' => 'Verbinding geleend.',
 			'profiles.borrowFailed' => 'Kan verbinding niet lenen.',
@@ -2997,7 +3013,7 @@ extension on TranslationsNl {
 			'liveTv.favorites' => 'Favorieten',
 			'liveTv.reorderFavorites' => 'Favorieten herordenen',
 			'liveTv.favoritesLoadFailed' => 'Favorieten konden niet worden geladen. Controleer je verbinding en probeer het opnieuw.',
-			'liveTv.favoritesUpdateFailed' => '',
+			'liveTv.favoritesUpdateFailed' => 'Could not update favorites. Check your connection and try again.',
 			'liveTv.joinSession' => 'Deelnemen aan lopende sessie',
 			'liveTv.watchFromStart' => ({required Object minutes}) => 'Kijk vanaf het begin (${minutes} min geleden)',
 			'liveTv.watchLive' => 'Live kijken',
@@ -3157,11 +3173,11 @@ extension on TranslationsNl {
 			'watchTogether.participantLeft' => ({required Object name}) => '${name} heeft de sessie verlaten',
 			'watchTogether.participantPaused' => ({required Object name}) => '${name} heeft gepauzeerd',
 			'watchTogether.participantResumed' => ({required Object name}) => '${name} heeft hervat',
+			_ => null,
+		} ?? switch (path) {
 			'watchTogether.participantSeeked' => ({required Object name}) => '${name} heeft gespoeld',
 			'watchTogether.participantBuffering' => ({required Object name}) => '${name} is aan het bufferen',
 			'watchTogether.participantNeedsUpdate' => ({required Object name}) => '${name} gebruikt een oudere appversie — synchronisatie niet beschikbaar',
-			_ => null,
-		} ?? switch (path) {
 			'watchTogether.resumingWithout' => ({required Object name}) => 'Hervatten zonder ${name}',
 			'watchTogether.waitingForParticipants' => 'Wachten tot anderen geladen zijn...',
 			'watchTogether.waitingForName' => ({required Object name}) => 'Wachten op ${name}...',

@@ -81,6 +81,7 @@ dependencies:
   freezed_annotation: ^3.1.0
   xml: ^6.6.1
   string_similarity: ^2.2.0
+  unorm_dart: ^0.3.2
 
 dev_dependencies:
   flutter_test:

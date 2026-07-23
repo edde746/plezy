@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../focus/focusable_action_bar.dart';
 import '../focus/input_mode_tracker.dart';
 import '../focus/key_event_utils.dart';
+import '../i18n/strings.g.dart';
 import '../media/media_item.dart';
 import '../media/media_playlist.dart';
 import '../mixins/grid_focus_node_mixin.dart';
@@ -195,6 +196,7 @@ mixin FocusableDetailScreenMixin<T extends StatefulWidget> on State<T>, GridFocu
               key: Key(_idForItem(item)),
               item: item,
               focusNode: focusNode,
+              semanticValue: _semanticPosition(position),
               disableScale: position.disableScale,
               onRefresh: onRefresh,
               collectionId: collectionId,
@@ -233,7 +235,8 @@ mixin FocusableDetailScreenMixin<T extends StatefulWidget> on State<T>, GridFocu
         final fullCardLayout = PlatformDetector.isTV() && svc.read(SettingsService.tvFullCardLayout);
         final useFullCardLayout = fullCardLayout && shape != CardShape.square;
 
-        Widget buildTile(int index, {required bool inFirstRow, required bool disableScale}) {
+        Widget buildTile(MediaCardSliverPosition position) {
+          final index = position.index;
           final item = itemAt(index);
           if (item == null) {
             onSkeletonVisible?.call(index);
@@ -244,13 +247,14 @@ mixin FocusableDetailScreenMixin<T extends StatefulWidget> on State<T>, GridFocu
             key: Key(item.id),
             item: item,
             focusNode: focusNode,
-            disableScale: disableScale,
+            semanticValue: _semanticPosition(position),
+            disableScale: position.disableScale,
             onRefresh: onRefresh,
             collectionId: collectionId,
             onListRefresh: onListRefresh,
-            fullBleedImage: useFullCardLayout && !disableScale,
+            fullBleedImage: useFullCardLayout && position.isGrid,
             cardShapeOverride: shape,
-            onNavigateUp: inFirstRow ? navigateToAppBar : null,
+            onNavigateUp: position.isFirstRow ? navigateToAppBar : null,
             onBack: handleBackFromContent,
             onFocusChange: (hasFocus) => trackGridItemFocus(index, hasFocus),
           );
@@ -263,10 +267,23 @@ mixin FocusableDetailScreenMixin<T extends StatefulWidget> on State<T>, GridFocu
           padding: const EdgeInsets.all(8),
           fullBleedImage: useFullCardLayout,
           shape: shape,
-          itemBuilder: (context, position) =>
-              buildTile(position.index, inFirstRow: position.isFirstRow, disableScale: position.disableScale),
+          itemBuilder: (context, position) => buildTile(position),
         );
       },
+    );
+  }
+
+  String _semanticPosition(MediaCardSliverPosition position) {
+    if (!position.isGrid) {
+      return t.accessibility.rowPosition(row: position.index + 1, rowCount: position.itemCount);
+    }
+
+    final rowCount = (position.itemCount + position.columnCount - 1) ~/ position.columnCount;
+    return t.accessibility.rowColumnPosition(
+      row: position.index ~/ position.columnCount + 1,
+      rowCount: rowCount,
+      column: position.index % position.columnCount + 1,
+      columnCount: position.columnCount,
     );
   }
 }

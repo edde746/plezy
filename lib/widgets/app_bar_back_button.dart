@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:plezy/widgets/app_icon.dart';
+import 'package:flutter/services.dart';
 import 'package:material_symbols_icons/symbols.dart';
+
+import '../focus/focusable_wrapper.dart';
+import '../i18n/strings.g.dart';
+import 'app_icon.dart';
 
 /// Defines the visual style of the back button
 enum BackButtonStyle {
@@ -31,13 +35,15 @@ class AppBarBackButton extends StatefulWidget {
   /// [style] determines the visual appearance of the back button.
   /// [onPressed] is called when the button is tapped. If null, defaults to Navigator.pop.
   /// [color] overrides the default icon color. If null, uses white for circular/video, theme default for plain.
-  /// [semanticLabel] provides accessibility label for screen readers.
+  /// [focusNode] allows callers to connect this control to an explicit focus graph.
+  /// [semanticLabel] overrides the localized back-button label.
   const AppBarBackButton({
     super.key,
     this.style = BackButtonStyle.circular,
     this.onPressed,
     this.color,
     this.semanticLabel,
+    this.focusNode,
   });
 
   final BackButtonStyle style;
@@ -49,6 +55,7 @@ class AppBarBackButton extends StatefulWidget {
   final Color? color;
 
   final String? semanticLabel;
+  final FocusNode? focusNode;
 
   @override
   State<AppBarBackButton> createState() => _AppBarBackButtonState();
@@ -90,6 +97,12 @@ class _AppBarBackButtonState extends State<AppBarBackButton> with TickerProvider
     }
   }
 
+  KeyEventResult _handleKeyEvent(FocusNode _, KeyEvent event) {
+    if (event.logicalKey != LogicalKeyboardKey.space) return KeyEventResult.ignored;
+    if (event is KeyDownEvent) _handlePressed();
+    return KeyEventResult.handled;
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -123,32 +136,43 @@ class _AppBarBackButtonState extends State<AppBarBackButton> with TickerProvider
         break;
     }
 
-    final buttonWidget = MouseRegion(
-      cursor: SystemMouseCursors.click,
-      onEnter: (_) => _onHoverChange(true),
-      onExit: (_) => _onHoverChange(false),
-      child: GestureDetector(
-        onTap: _handlePressed,
-        child: AnimatedBuilder(
-          animation: _backgroundAnimation,
-          builder: (context, child) {
-            final currentColor = Color.lerp(baseColor, hoverColor, _backgroundAnimation.value);
+    final semanticLabel = widget.semanticLabel ?? t.common.back;
+    final button = FocusableWrapper(
+      focusNode: widget.focusNode,
+      semanticLabel: semanticLabel,
+      onSelect: _handlePressed,
+      onKeyEvent: _handleKeyEvent,
+      autoScroll: false,
+      disableScale: true,
+      descendantsAreFocusable: false,
+      borderRadius: 20,
+      child: Tooltip(
+        message: semanticLabel,
+        excludeFromSemantics: true,
+        child: MouseRegion(
+          onEnter: (_) => _onHoverChange(true),
+          onExit: (_) => _onHoverChange(false),
+          child: GestureDetector(
+            excludeFromSemantics: true,
+            onTap: _handlePressed,
+            child: AnimatedBuilder(
+              animation: _backgroundAnimation,
+              builder: (context, child) {
+                final currentColor = Color.lerp(baseColor, hoverColor, _backgroundAnimation.value);
 
-            return Container(
-              margin: const EdgeInsets.all(8),
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(color: currentColor, shape: BoxShape.circle),
-              child: AppIcon(Symbols.arrow_back_rounded, fill: 1, color: effectiveColor, size: 20),
-            );
-          },
+                return Container(
+                  margin: const EdgeInsets.all(8),
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(color: currentColor, shape: BoxShape.circle),
+                  child: AppIcon(Symbols.arrow_back_rounded, fill: 1, color: effectiveColor, size: 20),
+                );
+              },
+            ),
+          ),
         ),
       ),
     );
-
-    final button = widget.semanticLabel != null
-        ? Semantics(label: widget.semanticLabel, button: true, excludeSemantics: true, child: buttonWidget)
-        : buttonWidget;
 
     return widget.style == BackButtonStyle.circular ? SafeArea(child: button) : button;
   }

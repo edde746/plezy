@@ -49,8 +49,8 @@ class SettingSwitchTile extends StatelessWidget {
         title: Text(title, style: settingsOptionTitleStyle(context)),
         subtitle: subtitle != null ? Text(subtitle!) : null,
         value: value,
-        dense: settingsRowDense(),
-        visualDensity: settingsRowVisualDensity(),
+        dense: settingsRowDense(context),
+        visualDensity: settingsRowVisualDensity(context),
         onChanged: enabled
             ? (v) async {
                 await svc.write(pref, v);
@@ -93,8 +93,8 @@ class SettingNavigationTile extends StatelessWidget {
       subtitle: subtitle != null ? Text(subtitle!) : null,
       trailing: AppIcon(trailingIcon, fill: 1),
       onTap: onTap ?? () => Navigator.push(context, MaterialPageRoute(builder: destinationBuilder!)),
-      dense: settingsRowDense(),
-      visualDensity: settingsRowVisualDensity(),
+      dense: settingsRowDense(context),
+      visualDensity: settingsRowVisualDensity(context),
     );
   }
 }
@@ -134,8 +134,8 @@ class SettingNumberTile extends StatelessWidget {
         title: Text(title, style: settingsOptionTitleStyle(context)),
         subtitle: Text(subtitleBuilder(value)),
         trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
-        dense: settingsRowDense(),
-        visualDensity: settingsRowVisualDensity(),
+        dense: settingsRowDense(context),
+        visualDensity: settingsRowVisualDensity(context),
         onTap: () => showNumericInputDialog(
           context: context,
           title: title,
@@ -192,8 +192,8 @@ class SettingSelectionTile<T, S> extends StatelessWidget {
           title: Text(title, style: settingsOptionTitleStyle(context)),
           subtitle: Text(subtitleBuilder(value)),
           trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
-          dense: settingsRowDense(),
-          visualDensity: settingsRowVisualDensity(),
+          dense: settingsRowDense(context),
+          visualDensity: settingsRowVisualDensity(context),
           onTap: () async {
             final picked = await showSelectionDialog<T>(
               context: context,
@@ -241,8 +241,8 @@ class SettingRegexTile extends StatelessWidget {
         title: Text(title, style: settingsOptionTitleStyle(context)),
         subtitle: Text(subtitle),
         trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
-        dense: settingsRowDense(),
-        visualDensity: settingsRowVisualDensity(),
+        dense: settingsRowDense(context),
+        visualDensity: settingsRowVisualDensity(context),
         onTap: () => showRegexInputDialog(
           context: context,
           title: title,
@@ -341,8 +341,8 @@ class SettingColorTile extends StatelessWidget {
             border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
           ),
         ),
-        dense: settingsRowDense(),
-        visualDensity: settingsRowVisualDensity(),
+        dense: settingsRowDense(context),
+        visualDensity: settingsRowVisualDensity(context),
         onTap: () => showColorInputDialog(
           context: context,
           title: title,

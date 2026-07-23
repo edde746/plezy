@@ -52,6 +52,7 @@ class TranslationsKo extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _TranslationsRateSheetKo rateSheet = _TranslationsRateSheetKo._(_root);
 	@override late final _TranslationsAccessibilityKo accessibility = _TranslationsAccessibilityKo._(_root);
 	@override late final _TranslationsTooltipsKo tooltips = _TranslationsTooltipsKo._(_root);
+	@override late final _TranslationsAudioTracksKo audioTracks = _TranslationsAudioTracksKo._(_root);
 	@override late final _TranslationsVideoControlsKo videoControls = _TranslationsVideoControlsKo._(_root);
 	@override late final _TranslationsMessagesKo messages = _TranslationsMessagesKo._(_root);
 	@override late final _TranslationsSubtitlingStylingKo subtitlingStyling = _TranslationsSubtitlingStylingKo._(_root);
@@ -120,7 +121,7 @@ class _TranslationsAuthKo extends TranslationsAuthEn {
 	@override String get quickConnectWaiting => '승인 대기 중…';
 	@override String get quickConnectCancel => '취소';
 	@override String get quickConnectExpired => 'Quick Connect가 만료되었습니다. 다시 시도하세요.';
-	@override String get localDataRecoveryRequired => '';
+	@override String get localDataRecoveryRequired => 'Plezy could not safely recover local sign-in and pending playback data. Please sign in again.';
 }
 
 // Path: common
@@ -240,8 +241,6 @@ class _TranslationsSettingsKo extends TranslationsSettingsEn {
 	@override String get libraryDensity => '라이브러리 표시 밀도';
 	@override String get compact => '좁게';
 	@override String get comfortable => '넓게';
-	@override String get tvCornerSpotlightBackdrop => '';
-	@override String get tvCornerSpotlightBackdropDescription => '';
 	@override String get viewMode => '보기 모드';
 	@override String get gridView => '그리드 보기';
 	@override String get listView => '목록 보기';
@@ -311,7 +310,7 @@ class _TranslationsSettingsKo extends TranslationsSettingsEn {
 	@override String get watchTogetherRelay => '함께 보기 릴레이';
 	@override String get watchTogetherRelayDescription => '사용자 지정 릴레이를 설정합니다. 모두 같은 서버를 사용해야 합니다.';
 	@override String get watchTogetherRelayHint => 'https://my-relay.example.com';
-	@override String get watchTogetherRelayInvalid => '';
+	@override String get watchTogetherRelayInvalid => 'Enter a valid HTTP or HTTPS relay base URL.';
 	@override String get crashReporting => '충돌 보고';
 	@override String get crashReportingDescription => '앱 개선을 위해 충돌 보고서 전송';
 	@override String get debugLogging => '디버그 로깅';
@@ -328,12 +327,10 @@ class _TranslationsSettingsKo extends TranslationsSettingsEn {
 	@override String get exportSettings => '설정 내보내기';
 	@override String get exportSettingsDescription => '기본 설정을 파일로 저장';
 	@override String get exportSettingsSuccess => '설정 내보내기 완료';
-	@override String get exportSettingsFailed => '설정을 내보낼 수 없습니다';
 	@override String get importSettings => '설정 가져오기';
 	@override String get importSettingsDescription => '파일에서 기본 설정 복원';
 	@override String get importSettingsConfirm => '현재 설정을 대체합니다. 계속하시겠습니까?';
 	@override String get importSettingsSuccess => '설정 가져오기 완료';
-	@override String get importSettingsFailed => '설정을 가져올 수 없습니다';
 	@override String get importSettingsInvalidFile => '유효한 Plezy 설정 내보내기 파일이 아닙니다';
 	@override String get importSettingsNoUser => '설정을 가져오기 전에 로그인하세요';
 	@override String get shortcutsReset => '단축키가 기본값으로 재설정되었습니다';
@@ -348,6 +345,7 @@ class _TranslationsSettingsKo extends TranslationsSettingsEn {
 	@override String validationErrorDuration({required Object min, required Object max, required Object unit}) => '기간은 ${min}과 ${max} ${unit} 사이여야 합니다';
 	@override String shortcutAlreadyAssigned({required Object action}) => '단축키가 이미 ${action}에 할당 되었습니다';
 	@override String shortcutUpdated({required Object action}) => '단축키가 ${action}에 대해 업데이트 되었습니다';
+	@override String get saveFailed => 'Could not save changes. Try again.';
 	@override String get autoSkip => '자동 건너뛰기';
 	@override String get autoSkipIntro => '자동으로 오프닝 건너뛰기';
 	@override String get autoSkipIntroDescription => '몇 초 후 오프닝을 자동으로 건너뛰기';
@@ -373,7 +371,7 @@ class _TranslationsSettingsKo extends TranslationsSettingsEn {
 	@override String get downloadLocationChanged => '다운로드 위치가 변경 되었습니다';
 	@override String get downloadLocationReset => '다운로드 위치가 기본값으로 재설정 되었습니다';
 	@override String get downloadLocationInvalid => '선택한 폴더에 쓰기 권한이 없습니다';
-	@override String get downloadLocationSelectError => '폴더 선택 실패';
+	@override String get downloadLocationPickerUnavailable => '이 기기에서는 폴더를 선택할 수 없습니다';
 	@override String get downloadOnWifiOnly => 'WiFi 연결 시에만 다운로드';
 	@override String get downloadOnWifiOnlyDescription => '셀룰러 데이터 사용 시 다운로드 불가';
 	@override String get autoRemoveWatchedDownloads => '시청한 다운로드 자동 삭제';
@@ -591,6 +589,10 @@ class _TranslationsAccessibilityKo extends TranslationsAccessibilityEn {
 	@override String get hexColor => '16진수 색상';
 	@override String get expandText => '텍스트 펼치기';
 	@override String get collapseText => '텍스트 접기';
+	@override String get alphabetNavigation => '알파벳 탐색';
+	@override String get alphabetScrollHint => '위아래로 스와이프하여 글자별로 이동';
+	@override String rowColumnPosition({required Object rowCount, required Object row, required Object columnCount, required Object column}) => '${rowCount}행 중 ${row}행, ${columnCount}열 중 ${column}열';
+	@override String rowPosition({required Object rowCount, required Object row}) => '${rowCount}행 중 ${row}행';
 }
 
 // Path: tooltips
@@ -604,6 +606,16 @@ class _TranslationsTooltipsKo extends TranslationsTooltipsEn {
 	@override String get playTrailer => '예고편 재생';
 	@override String get markAsWatched => '시청 완료로 표시';
 	@override String get markAsUnwatched => '시청 안 함으로 표시';
+}
+
+// Path: audioTracks
+class _TranslationsAudioTracksKo extends TranslationsAudioTracksEn {
+	_TranslationsAudioTracksKo._(TranslationsKo root) : this._root = root, super.internal(root);
+
+	final TranslationsKo _root; // ignore: unused_field
+
+	// Translations
+	@override String track({required Object n}) => '오디오 트랙 ${n}';
 }
 
 // Path: videoControls
@@ -711,11 +723,11 @@ class _TranslationsMessagesKo extends TranslationsMessagesEn {
 	@override String get streamInterrupted => '스트림이 중단되었습니다. 재생을 누르거나 탐색하여 다시 시도하세요.';
 	@override String get liveStreamInterrupted => '라이브 스트림이 중단되었습니다. 재생을 눌러 다시 시도하세요.';
 	@override String get fileInfoNotAvailable => '파일 정보가 없습니다';
-	@override String get playbackAuthenticationRequired => '';
-	@override String get playbackServerUnavailable => '';
-	@override String get playbackDataInvalid => '';
-	@override String get playbackCancelled => '';
-	@override String get playbackFailed => '';
+	@override String get playbackAuthenticationRequired => 'Sign in to the media server again to play this item.';
+	@override String get playbackServerUnavailable => 'The media server is unavailable. Try again later.';
+	@override String get playbackDataInvalid => 'The server returned invalid playback information.';
+	@override String get playbackCancelled => 'Playback was cancelled.';
+	@override String get playbackFailed => 'Playback could not be started.';
 	@override String errorLoadingFileInfo({required Object error}) => '파일 정보 로딩 중 오류: ${error}';
 	@override String get errorLoadingSeries => '시리즈 로딩 중 오류';
 	@override String get musicNotSupported => '음악 재생 미지원';
@@ -866,6 +878,7 @@ class _TranslationsProfilesKo extends TranslationsProfilesEn {
 	@override String get borrowExplain => '다른 프로필의 연결을 빌립니다. PIN으로 보호된 프로필에는 PIN이 필요합니다.';
 	@override String get borrowEmpty => '아직 빌릴 것이 없습니다.';
 	@override String get borrowEmptySubtitle => '먼저 다른 프로필에 Plex 또는 Jellyfin을 연결하세요.';
+	@override String get borrowLoadFailed => 'Available connections could not be loaded. Try again.';
 	@override String borrowFromProfile({required Object displayName}) => '${displayName}에서';
 	@override String get borrowConnectionBorrowed => '연결을 빌렸습니다.';
 	@override String get borrowFailed => '연결을 빌리지 못했습니다.';
@@ -1148,7 +1161,7 @@ class _TranslationsLiveTvKo extends TranslationsLiveTvEn {
 	@override String get favorites => '즐겨찾기';
 	@override String get reorderFavorites => '즐겨찾기 순서 변경';
 	@override String get favoritesLoadFailed => '즐겨찾기를 불러올 수 없습니다. 연결을 확인하고 다시 시도하세요.';
-	@override String get favoritesUpdateFailed => '';
+	@override String get favoritesUpdateFailed => 'Could not update favorites. Check your connection and try again.';
 	@override String get joinSession => '진행 중인 세션 참여';
 	@override String watchFromStart({required Object minutes}) => '처음부터 시청 (${minutes}분 전 시작)';
 	@override String get watchLive => '실시간 시청';
@@ -2146,7 +2159,7 @@ extension on TranslationsKo {
 			'auth.quickConnectWaiting' => '승인 대기 중…',
 			'auth.quickConnectCancel' => '취소',
 			'auth.quickConnectExpired' => 'Quick Connect가 만료되었습니다. 다시 시도하세요.',
-			'auth.localDataRecoveryRequired' => '',
+			'auth.localDataRecoveryRequired' => 'Plezy could not safely recover local sign-in and pending playback data. Please sign in again.',
 			'common.cancel' => '취소',
 			'common.save' => '저장',
 			'common.close' => '닫기',
@@ -2230,8 +2243,6 @@ extension on TranslationsKo {
 			'settings.libraryDensity' => '라이브러리 표시 밀도',
 			'settings.compact' => '좁게',
 			'settings.comfortable' => '넓게',
-			'settings.tvCornerSpotlightBackdrop' => '',
-			'settings.tvCornerSpotlightBackdropDescription' => '',
 			'settings.viewMode' => '보기 모드',
 			'settings.gridView' => '그리드 보기',
 			'settings.listView' => '목록 보기',
@@ -2301,7 +2312,7 @@ extension on TranslationsKo {
 			'settings.watchTogetherRelay' => '함께 보기 릴레이',
 			'settings.watchTogetherRelayDescription' => '사용자 지정 릴레이를 설정합니다. 모두 같은 서버를 사용해야 합니다.',
 			'settings.watchTogetherRelayHint' => 'https://my-relay.example.com',
-			'settings.watchTogetherRelayInvalid' => '',
+			'settings.watchTogetherRelayInvalid' => 'Enter a valid HTTP or HTTPS relay base URL.',
 			'settings.crashReporting' => '충돌 보고',
 			'settings.crashReportingDescription' => '앱 개선을 위해 충돌 보고서 전송',
 			'settings.debugLogging' => '디버그 로깅',
@@ -2318,12 +2329,10 @@ extension on TranslationsKo {
 			'settings.exportSettings' => '설정 내보내기',
 			'settings.exportSettingsDescription' => '기본 설정을 파일로 저장',
 			'settings.exportSettingsSuccess' => '설정 내보내기 완료',
-			'settings.exportSettingsFailed' => '설정을 내보낼 수 없습니다',
 			'settings.importSettings' => '설정 가져오기',
 			'settings.importSettingsDescription' => '파일에서 기본 설정 복원',
 			'settings.importSettingsConfirm' => '현재 설정을 대체합니다. 계속하시겠습니까?',
 			'settings.importSettingsSuccess' => '설정 가져오기 완료',
-			'settings.importSettingsFailed' => '설정을 가져올 수 없습니다',
 			'settings.importSettingsInvalidFile' => '유효한 Plezy 설정 내보내기 파일이 아닙니다',
 			'settings.importSettingsNoUser' => '설정을 가져오기 전에 로그인하세요',
 			'settings.shortcutsReset' => '단축키가 기본값으로 재설정되었습니다',
@@ -2338,6 +2347,7 @@ extension on TranslationsKo {
 			'settings.validationErrorDuration' => ({required Object min, required Object max, required Object unit}) => '기간은 ${min}과 ${max} ${unit} 사이여야 합니다',
 			'settings.shortcutAlreadyAssigned' => ({required Object action}) => '단축키가 이미 ${action}에 할당 되었습니다',
 			'settings.shortcutUpdated' => ({required Object action}) => '단축키가 ${action}에 대해 업데이트 되었습니다',
+			'settings.saveFailed' => 'Could not save changes. Try again.',
 			'settings.autoSkip' => '자동 건너뛰기',
 			'settings.autoSkipIntro' => '자동으로 오프닝 건너뛰기',
 			'settings.autoSkipIntroDescription' => '몇 초 후 오프닝을 자동으로 건너뛰기',
@@ -2363,7 +2373,7 @@ extension on TranslationsKo {
 			'settings.downloadLocationChanged' => '다운로드 위치가 변경 되었습니다',
 			'settings.downloadLocationReset' => '다운로드 위치가 기본값으로 재설정 되었습니다',
 			'settings.downloadLocationInvalid' => '선택한 폴더에 쓰기 권한이 없습니다',
-			'settings.downloadLocationSelectError' => '폴더 선택 실패',
+			'settings.downloadLocationPickerUnavailable' => '이 기기에서는 폴더를 선택할 수 없습니다',
 			'settings.downloadOnWifiOnly' => 'WiFi 연결 시에만 다운로드',
 			'settings.downloadOnWifiOnlyDescription' => '셀룰러 데이터 사용 시 다운로드 불가',
 			'settings.autoRemoveWatchedDownloads' => '시청한 다운로드 자동 삭제',
@@ -2551,10 +2561,15 @@ extension on TranslationsKo {
 			'accessibility.hexColor' => '16진수 색상',
 			'accessibility.expandText' => '텍스트 펼치기',
 			'accessibility.collapseText' => '텍스트 접기',
+			'accessibility.alphabetNavigation' => '알파벳 탐색',
+			'accessibility.alphabetScrollHint' => '위아래로 스와이프하여 글자별로 이동',
+			'accessibility.rowColumnPosition' => ({required Object rowCount, required Object row, required Object columnCount, required Object column}) => '${rowCount}행 중 ${row}행, ${columnCount}열 중 ${column}열',
+			'accessibility.rowPosition' => ({required Object rowCount, required Object row}) => '${rowCount}행 중 ${row}행',
 			'tooltips.shufflePlay' => '무작위 재생',
 			'tooltips.playTrailer' => '예고편 재생',
 			'tooltips.markAsWatched' => '시청 완료로 표시',
 			'tooltips.markAsUnwatched' => '시청 안 함으로 표시',
+			'audioTracks.track' => ({required Object n}) => '오디오 트랙 ${n}',
 			'videoControls.audioLabel' => '오디오',
 			'videoControls.subtitlesLabel' => '자막',
 			'videoControls.resetToZero' => '0ms로 재설정',
@@ -2641,20 +2656,20 @@ extension on TranslationsKo {
 			'messages.markedAsUnwatched' => '시청 안 함으로 표시됨',
 			'messages.markedAsWatchedOffline' => '시청 완료로 표시됨 (연결 시 동기화됨)',
 			'messages.markedAsUnwatchedOffline' => '미시청으로 표시됨 (연결 시 동기화됨)',
-			'messages.autoRemovedWatchedDownload' => ({required Object title}) => '자동 삭제됨: ${title}',
-			'messages.autoRemovedWatchedDownloads' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('ko'))(n, other: '시청한 다운로드 ${n}개를 자동 삭제했습니다', ), 
 			_ => null,
 		} ?? switch (path) {
+			'messages.autoRemovedWatchedDownload' => ({required Object title}) => '자동 삭제됨: ${title}',
+			'messages.autoRemovedWatchedDownloads' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('ko'))(n, other: '시청한 다운로드 ${n}개를 자동 삭제했습니다', ), 
 			'messages.removedFromContinueWatching' => '계속 시청 목록에서 제거됨',
 			'messages.errorLoading' => ({required Object error}) => '오류: ${error}',
 			'messages.streamInterrupted' => '스트림이 중단되었습니다. 재생을 누르거나 탐색하여 다시 시도하세요.',
 			'messages.liveStreamInterrupted' => '라이브 스트림이 중단되었습니다. 재생을 눌러 다시 시도하세요.',
 			'messages.fileInfoNotAvailable' => '파일 정보가 없습니다',
-			'messages.playbackAuthenticationRequired' => '',
-			'messages.playbackServerUnavailable' => '',
-			'messages.playbackDataInvalid' => '',
-			'messages.playbackCancelled' => '',
-			'messages.playbackFailed' => '',
+			'messages.playbackAuthenticationRequired' => 'Sign in to the media server again to play this item.',
+			'messages.playbackServerUnavailable' => 'The media server is unavailable. Try again later.',
+			'messages.playbackDataInvalid' => 'The server returned invalid playback information.',
+			'messages.playbackCancelled' => 'Playback was cancelled.',
+			'messages.playbackFailed' => 'Playback could not be started.',
 			'messages.errorLoadingFileInfo' => ({required Object error}) => '파일 정보 로딩 중 오류: ${error}',
 			'messages.errorLoadingSeries' => '시리즈 로딩 중 오류',
 			'messages.musicNotSupported' => '음악 재생 미지원',
@@ -2769,6 +2784,7 @@ extension on TranslationsKo {
 			'profiles.borrowExplain' => '다른 프로필의 연결을 빌립니다. PIN으로 보호된 프로필에는 PIN이 필요합니다.',
 			'profiles.borrowEmpty' => '아직 빌릴 것이 없습니다.',
 			'profiles.borrowEmptySubtitle' => '먼저 다른 프로필에 Plex 또는 Jellyfin을 연결하세요.',
+			'profiles.borrowLoadFailed' => 'Available connections could not be loaded. Try again.',
 			'profiles.borrowFromProfile' => ({required Object displayName}) => '${displayName}에서',
 			'profiles.borrowConnectionBorrowed' => '연결을 빌렸습니다.',
 			'profiles.borrowFailed' => '연결을 빌리지 못했습니다.',
@@ -2994,7 +3010,7 @@ extension on TranslationsKo {
 			'liveTv.favorites' => '즐겨찾기',
 			'liveTv.reorderFavorites' => '즐겨찾기 순서 변경',
 			'liveTv.favoritesLoadFailed' => '즐겨찾기를 불러올 수 없습니다. 연결을 확인하고 다시 시도하세요.',
-			'liveTv.favoritesUpdateFailed' => '',
+			'liveTv.favoritesUpdateFailed' => 'Could not update favorites. Check your connection and try again.',
 			'liveTv.joinSession' => '진행 중인 세션 참여',
 			'liveTv.watchFromStart' => ({required Object minutes}) => '처음부터 시청 (${minutes}분 전 시작)',
 			'liveTv.watchLive' => '실시간 시청',
@@ -3154,11 +3170,11 @@ extension on TranslationsKo {
 			'watchTogether.participantLeft' => ({required Object name}) => '${name}님이 나갔습니다',
 			'watchTogether.participantPaused' => ({required Object name}) => '${name}님이 일시정지했습니다',
 			'watchTogether.participantResumed' => ({required Object name}) => '${name}님이 재생했습니다',
+			_ => null,
+		} ?? switch (path) {
 			'watchTogether.participantSeeked' => ({required Object name}) => '${name}님이 탐색했습니다',
 			'watchTogether.participantBuffering' => ({required Object name}) => '${name}님이 버퍼링 중입니다',
 			'watchTogether.participantNeedsUpdate' => ({required Object name}) => '${name}님이 이전 버전의 앱을 사용 중입니다 — 동기화를 사용할 수 없습니다',
-			_ => null,
-		} ?? switch (path) {
 			'watchTogether.resumingWithout' => ({required Object name}) => '${name}님 없이 재생을 재개합니다',
 			'watchTogether.waitingForParticipants' => '다른 참가자의 로딩을 기다리는 중...',
 			'watchTogether.waitingForName' => ({required Object name}) => '${name}님을 기다리는 중...',

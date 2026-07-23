@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -26,6 +28,13 @@ import '../test_helpers/prefs.dart';
 
 class _FakeCatalogSource implements CatalogSource {
   final WatchlistChangeNotifier _watchlistChanges = WatchlistChangeNotifier();
+  _FakeCatalogSource({bool watchlistLoading = false})
+    : _watchlistValue = watchlistLoading ? null : false,
+      _watchlistLoad = watchlistLoading ? Completer<void>() : null;
+
+  bool? _watchlistValue;
+  final Completer<void>? _watchlistLoad;
+  int addToWatchlistCalls = 0;
 
   @override
   CatalogSourceId get id => CatalogSourceId.trakt;
@@ -56,7 +65,26 @@ class _FakeCatalogSource implements CatalogSource {
   ];
 
   @override
-  bool? isOnWatchlist(MediaKind kind, CatalogItemIds ids) => false;
+  Future<void> ensureWatchlistLoaded() async {
+    final load = _watchlistLoad;
+    if (load != null) await load.future;
+  }
+
+  void completeWatchlistLoad() {
+    _watchlistValue = false;
+    _watchlistChanges.notify();
+    _watchlistLoad!.complete();
+  }
+
+  @override
+  Future<void> addToWatchlist(MediaKind kind, CatalogItemIds ids) async {
+    addToWatchlistCalls++;
+    _watchlistValue = true;
+    _watchlistChanges.notify();
+  }
+
+  @override
+  bool? isOnWatchlist(MediaKind kind, CatalogItemIds ids) => _watchlistValue;
 
   @override
   void dispose() => _watchlistChanges.dispose();
@@ -216,6 +244,35 @@ void main() {
     expect(FocusManager.instance.primaryFocus?.debugLabel, 'catalog_library_match_1');
   });
 
+  testWidgets('loading watchlist action cannot receive focus or activate', (tester) async {
+    final source = _FakeCatalogSource(watchlistLoading: true);
+    await _pumpDetail(tester, source);
+
+    final actionBar = tester.widget<FocusableActionBar>(find.byType(FocusableActionBar));
+    expect(actionBar.actions.single.onPressed, isNull);
+    final actionNode = tester
+        .widgetList<Focus>(find.descendant(of: find.byType(FocusableActionBar), matching: find.byType(Focus)))
+        .map((widget) => widget.focusNode)
+        .whereType<FocusNode>()
+        .singleWhere((node) => node.debugLabel == 'ActionBar[0]');
+    expect(actionNode.canRequestFocus, isFalse);
+
+    actionNode.requestFocus();
+    await tester.pump();
+    await tester.sendKeyEvent(LogicalKeyboardKey.select);
+    expect(actionNode.hasFocus, isFalse);
+    expect(source.addToWatchlistCalls, 0);
+
+    source.completeWatchlistLoad();
+    await tester.pump();
+    final loadedActionBar = tester.widget<FocusableActionBar>(find.byType(FocusableActionBar));
+    expect(loadedActionBar.actions.single.onPressed, isNotNull);
+    actionNode.requestFocus();
+    await tester.pump();
+    await tester.sendKeyEvent(LogicalKeyboardKey.select);
+    await tester.pump();
+    expect(source.addToWatchlistCalls, 1);
+  });
   testWidgets('TV Back closes a hosted sheet without popping the catalog route', (tester) async {
     await _pumpDetail(tester, _FakeCatalogSource(), pushedRoute: true);
 

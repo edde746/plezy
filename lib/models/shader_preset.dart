@@ -208,38 +208,36 @@ class ShaderPreset {
     return '';
   }
 
-  static List<ShaderPreset> get allPresets {
-    return [
-      none,
-      nvscalerDefault,
-      artcnnPreset(ArtCNNModel.c4f16, ArtCNNVariant.neutral),
-      artcnnPreset(ArtCNNModel.c4f16, ArtCNNVariant.denoise),
-      artcnnPreset(ArtCNNModel.c4f16, ArtCNNVariant.denoiseSharpen),
-      artcnnPreset(ArtCNNModel.c4f32, ArtCNNVariant.neutral),
-      artcnnPreset(ArtCNNModel.c4f32, ArtCNNVariant.denoise),
-      artcnnPreset(ArtCNNModel.c4f32, ArtCNNVariant.denoiseSharpen),
-      anime4kPreset(Anime4KQuality.fast, Anime4KMode.modeA),
-      anime4kPreset(Anime4KQuality.fast, Anime4KMode.modeB),
-      anime4kPreset(Anime4KQuality.fast, Anime4KMode.modeC),
-      anime4kPreset(Anime4KQuality.fast, Anime4KMode.modeAA),
-      anime4kPreset(Anime4KQuality.fast, Anime4KMode.modeBB),
-      anime4kPreset(Anime4KQuality.fast, Anime4KMode.modeCA),
-      anime4kPreset(Anime4KQuality.hq, Anime4KMode.modeA),
-      anime4kPreset(Anime4KQuality.hq, Anime4KMode.modeB),
-      anime4kPreset(Anime4KQuality.hq, Anime4KMode.modeC),
-      anime4kPreset(Anime4KQuality.hq, Anime4KMode.modeAA),
-      anime4kPreset(Anime4KQuality.hq, Anime4KMode.modeBB),
-      anime4kPreset(Anime4KQuality.hq, Anime4KMode.modeCA),
-    ];
-  }
+  static final List<ShaderPreset> _builtInPresets = List.unmodifiable([
+    none,
+    nvscalerDefault,
+    artcnnPreset(ArtCNNModel.c4f16, ArtCNNVariant.neutral),
+    artcnnPreset(ArtCNNModel.c4f16, ArtCNNVariant.denoise),
+    artcnnPreset(ArtCNNModel.c4f16, ArtCNNVariant.denoiseSharpen),
+    artcnnPreset(ArtCNNModel.c4f32, ArtCNNVariant.neutral),
+    artcnnPreset(ArtCNNModel.c4f32, ArtCNNVariant.denoise),
+    artcnnPreset(ArtCNNModel.c4f32, ArtCNNVariant.denoiseSharpen),
+    anime4kPreset(Anime4KQuality.fast, Anime4KMode.modeA),
+    anime4kPreset(Anime4KQuality.fast, Anime4KMode.modeB),
+    anime4kPreset(Anime4KQuality.fast, Anime4KMode.modeC),
+    anime4kPreset(Anime4KQuality.fast, Anime4KMode.modeAA),
+    anime4kPreset(Anime4KQuality.fast, Anime4KMode.modeBB),
+    anime4kPreset(Anime4KQuality.fast, Anime4KMode.modeCA),
+    anime4kPreset(Anime4KQuality.hq, Anime4KMode.modeA),
+    anime4kPreset(Anime4KQuality.hq, Anime4KMode.modeB),
+    anime4kPreset(Anime4KQuality.hq, Anime4KMode.modeC),
+    anime4kPreset(Anime4KQuality.hq, Anime4KMode.modeAA),
+    anime4kPreset(Anime4KQuality.hq, Anime4KMode.modeBB),
+    anime4kPreset(Anime4KQuality.hq, Anime4KMode.modeCA),
+  ]);
 
-  static ShaderPreset? fromId(String id) {
-    try {
-      return allPresets.firstWhere((p) => p.id == id);
-    } catch (_) {
-      return null;
-    }
-  }
+  static final Map<String, ShaderPreset> _builtInPresetsById = Map.unmodifiable({
+    for (final preset in _builtInPresets) preset.id: preset,
+  });
+
+  static List<ShaderPreset> get allPresets => _builtInPresets;
+
+  static ShaderPreset? fromId(String id) => _builtInPresetsById[id];
 
   bool get isEnabled => type != ShaderPresetType.none;
 

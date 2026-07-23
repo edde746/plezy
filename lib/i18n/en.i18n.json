@@ -197,12 +197,10 @@
     "exportSettings": "Export Settings",
     "exportSettingsDescription": "Save your preferences to a file",
     "exportSettingsSuccess": "Settings exported",
-    "exportSettingsFailed": "Could not export settings",
     "importSettings": "Import Settings",
     "importSettingsDescription": "Restore preferences from a file",
     "importSettingsConfirm": "This will replace your current settings. Continue?",
     "importSettingsSuccess": "Settings imported",
-    "importSettingsFailed": "Could not import settings",
     "importSettingsInvalidFile": "This file isn't a valid Plezy settings export",
     "importSettingsNoUser": "Sign in before importing settings",
     "shortcutsReset": "Shortcuts reset to defaults",
@@ -217,6 +215,7 @@
     "validationErrorDuration": "Duration must be between ${min} and ${max} ${unit}",
     "shortcutAlreadyAssigned": "Shortcut already assigned to ${action}",
     "shortcutUpdated": "Shortcut updated for ${action}",
+    "saveFailed": "Could not save changes. Try again.",
     "autoSkip": "Auto Skip",
     "autoSkipIntro": "Auto Skip Intro",
     "autoSkipIntroDescription": "Automatically skip intro markers after a few seconds",
@@ -242,7 +241,7 @@
     "downloadLocationChanged": "Download location changed",
     "downloadLocationReset": "Download location reset to default",
     "downloadLocationInvalid": "Selected folder is not writable",
-    "downloadLocationSelectError": "Failed to select folder",
+    "downloadLocationPickerUnavailable": "Folder selection is not available on this device",
     "downloadOnWifiOnly": "Download on WiFi only",
     "downloadOnWifiOnlyDescription": "Prevent downloads when on cellular data",
     "autoRemoveWatchedDownloads": "Auto-remove watched downloads",
@@ -443,13 +442,20 @@
     "brightness": "Brightness",
     "hexColor": "Hex color",
     "expandText": "Expand text",
-    "collapseText": "Collapse text"
+    "collapseText": "Collapse text",
+    "alphabetNavigation": "Alphabet navigation",
+    "alphabetScrollHint": "Swipe up or down to move by letter",
+    "rowColumnPosition": "Row ${row} of ${rowCount}, column ${column} of ${columnCount}",
+    "rowPosition": "Row ${row} of ${rowCount}"
   },
   "tooltips": {
     "shufflePlay": "Shuffle play",
     "playTrailer": "Play trailer",
     "markAsWatched": "Mark as watched",
     "markAsUnwatched": "Mark as unwatched"
+  },
+  "audioTracks": {
+    "track": "Audio Track ${n}"
   },
   "videoControls": {
     "audioLabel": "Audio",
@@ -478,6 +484,8 @@
     "playNext": "Play Next",
     "playButton": "Play",
     "pauseButton": "Pause",
+    "showPlaybackControls": "Show playback controls",
+    "hidePlaybackControls": "Hide playback controls",
     "seekBackwardButton": "Seek backward ${seconds} seconds",
     "seekForwardButton": "Seek forward ${seconds} seconds",
     "previousButton": "Previous episode",
@@ -680,6 +688,7 @@
     "borrowExplain": "Borrow another profile's connection. PIN-protected profiles require a PIN.",
     "borrowEmpty": "Nothing to borrow yet.",
     "borrowEmptySubtitle": "Connect Plex or Jellyfin to another profile first.",
+    "borrowLoadFailed": "Available connections could not be loaded. Try again.",
     "borrowFromProfile": "From ${displayName}",
     "borrowConnectionBorrowed": "Connection borrowed.",
     "borrowFailed": "Failed to borrow connection.",

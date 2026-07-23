@@ -398,7 +398,7 @@ class _TvVirtualKeyboardDialogState extends State<_TvVirtualKeyboardDialog> {
       }
     }
 
-    return KeyEventResult.handled;
+    return KeyEventResult.ignored;
   }
 
   bool _handlePhysicalKeyboardTextInput(KeyEvent event) {
@@ -564,22 +564,15 @@ class _TvVirtualKeyboardDialogState extends State<_TvVirtualKeyboardDialog> {
   void _backspace() {
     final value = widget.controller.value;
     final (:start, :end) = _selectionRangeForEdit(value);
+    if (start == end && start == 0) return;
 
-    if (start != end) {
-      _replace(
-        value.copyWith(
-          text: value.text.replaceRange(start, end, ''),
-          selection: TextSelection.collapsed(offset: start),
-        ),
-      );
-      return;
-    }
-    if (start == 0) return;
-
+    final codeUnitRange = start == end ? TextRange(start: start - 1, end: start) : TextRange(start: start, end: end);
+    final range = expandToGraphemeRange(value.text, codeUnitRange);
+    if (range.isCollapsed) return;
     _replace(
       value.copyWith(
-        text: value.text.replaceRange(start - 1, start, ''),
-        selection: TextSelection.collapsed(offset: start - 1),
+        text: value.text.replaceRange(range.start, range.end, ''),
+        selection: TextSelection.collapsed(offset: range.start),
         composing: TextRange.empty,
       ),
     );
@@ -588,23 +581,15 @@ class _TvVirtualKeyboardDialogState extends State<_TvVirtualKeyboardDialog> {
   void _deleteForward() {
     final value = widget.controller.value;
     final (:start, :end) = _selectionRangeForEdit(value);
+    if (start == end && start >= value.text.length) return;
 
-    if (start != end) {
-      _replace(
-        value.copyWith(
-          text: value.text.replaceRange(start, end, ''),
-          selection: TextSelection.collapsed(offset: start),
-          composing: TextRange.empty,
-        ),
-      );
-      return;
-    }
-    if (start >= value.text.length) return;
-
+    final codeUnitRange = start == end ? TextRange(start: start, end: start + 1) : TextRange(start: start, end: end);
+    final range = expandToGraphemeRange(value.text, codeUnitRange);
+    if (range.isCollapsed) return;
     _replace(
       value.copyWith(
-        text: value.text.replaceRange(start, start + 1, ''),
-        selection: TextSelection.collapsed(offset: start),
+        text: value.text.replaceRange(range.start, range.end, ''),
+        selection: TextSelection.collapsed(offset: range.start),
         composing: TextRange.empty,
       ),
     );

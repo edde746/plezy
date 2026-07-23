@@ -319,10 +319,12 @@ void main() {
     });
   });
 
+  late HubFocusMemory focusMemory;
+
   setUp(() async {
     resetSharedPreferencesForTest();
     SettingsService.resetForTesting();
-    HubFocusMemory.clear();
+    focusMemory = HubFocusMemory();
     await SettingsService.getInstance();
   });
 
@@ -352,6 +354,7 @@ void main() {
                 width: 1280,
                 height: 720,
                 child: TvBrowseRail(
+                  focusMemory: focusMemory,
                   hubs: [hub],
                   autofocus: true,
                   iconForHub: (_, _) => Icons.movie_rounded,
@@ -413,7 +416,7 @@ void main() {
             body: SizedBox(
               width: 1280,
               height: 720,
-              child: TvBrowseRail(hubs: [hub], iconForHub: (_, _) => Icons.tv_rounded),
+              child: TvBrowseRail(focusMemory: focusMemory, hubs: [hub], iconForHub: (_, _) => Icons.tv_rounded),
             ),
           ),
         ),
@@ -454,6 +457,7 @@ void main() {
               width: 1280,
               height: 720,
               child: TvBrowseRail(
+                focusMemory: focusMemory,
                 hubs: [hubFor('serverA'), hubFor('serverB')],
                 iconForHub: (_, _) => Icons.movie_rounded,
               ),
@@ -496,7 +500,7 @@ void main() {
             body: SizedBox(
               width: 1280,
               height: 720,
-              child: TvBrowseRail(hubs: [hub], iconForHub: (_, _) => Icons.movie_rounded),
+              child: TvBrowseRail(focusMemory: focusMemory, hubs: [hub], iconForHub: (_, _) => Icons.movie_rounded),
             ),
           ),
         ),
@@ -539,7 +543,12 @@ void main() {
               body: SizedBox(
                 width: 1280,
                 height: 720,
-                child: TvBrowseRail(hubs: [hub], autofocus: true, iconForHub: (_, _) => Icons.movie_rounded),
+                child: TvBrowseRail(
+                  focusMemory: focusMemory,
+                  hubs: [hub],
+                  autofocus: true,
+                  iconForHub: (_, _) => Icons.movie_rounded,
+                ),
               ),
             ),
           ),
@@ -625,6 +634,7 @@ void main() {
                 width: 1280,
                 height: 720,
                 child: TvBrowseRail(
+                  focusMemory: focusMemory,
                   hubs: [firstHub, secondHub],
                   autofocus: true,
                   iconForHub: (_, _) => Icons.movie_rounded,
@@ -696,7 +706,12 @@ void main() {
               body: SizedBox(
                 width: 1280,
                 height: 720,
-                child: TvBrowseRail(hubs: [hub], autofocus: true, iconForHub: (_, _) => Icons.movie_rounded),
+                child: TvBrowseRail(
+                  focusMemory: focusMemory,
+                  hubs: [hub],
+                  autofocus: true,
+                  iconForHub: (_, _) => Icons.movie_rounded,
+                ),
               ),
             ),
           ),
@@ -751,7 +766,12 @@ void main() {
               body: SizedBox(
                 width: 1280,
                 height: 720,
-                child: TvBrowseRail(hubs: [hub], autofocus: true, iconForHub: (_, _) => Icons.movie_rounded),
+                child: TvBrowseRail(
+                  focusMemory: focusMemory,
+                  hubs: [hub],
+                  autofocus: true,
+                  iconForHub: (_, _) => Icons.movie_rounded,
+                ),
               ),
             ),
           ),
@@ -808,6 +828,7 @@ void main() {
               width: 1280,
               height: 720,
               child: TvBrowseRail(
+                focusMemory: focusMemory,
                 hubs: [hub],
                 autofocus: true,
                 iconForHub: (_, _) => Icons.movie_rounded,
@@ -865,6 +886,7 @@ void main() {
                   width: 1280,
                   height: 720,
                   child: TvBrowseRail(
+                    focusMemory: focusMemory,
                     hubs: [hub],
                     autofocus: true,
                     iconForHub: (_, _) => Icons.movie_rounded,
@@ -922,7 +944,11 @@ void main() {
             body: SizedBox(
               width: 1280,
               height: 720,
-              child: TvBrowseRail(hubs: [firstHub, secondHub], iconForHub: (_, _) => Icons.movie_rounded),
+              child: TvBrowseRail(
+                focusMemory: focusMemory,
+                hubs: [firstHub, secondHub],
+                iconForHub: (_, _) => Icons.movie_rounded,
+              ),
             ),
           ),
         ),
@@ -957,6 +983,7 @@ void main() {
               width: 1280,
               height: 720,
               child: TvBrowseRail(
+                focusMemory: focusMemory,
                 key: const ValueKey('rail'),
                 hubs: hubs,
                 initialHubId: initialHubId,
@@ -998,6 +1025,7 @@ void main() {
               width: 1280,
               height: 720,
               child: TvBrowseRail(
+                focusMemory: focusMemory,
                 key: const ValueKey('rail'),
                 hubs: hubs,
                 initialHubId: initialHubId,
@@ -1040,6 +1068,7 @@ void main() {
               width: 1280,
               height: 720,
               child: TvBrowseRail(
+                focusMemory: focusMemory,
                 key: const ValueKey('rail'),
                 hubs: hubs,
                 initialItemId: initialItemId,
@@ -1107,7 +1136,7 @@ void main() {
     // Seed remembered focus under the rail's server-qualified hub key (mirrors
     // _TvBrowseRailState._hubKey: '<serverId>:<id>'), so the multi-server keying
     // resolves it the same way the rail does.
-    HubFocusMemory.setForHub('${episodeHub.serverId ?? ''}:${episodeHub.id}', 5);
+    focusMemory.setForHub('${episodeHub.serverId ?? ''}:${episodeHub.id}', 5);
 
     await tester.pumpWidget(
       ChangeNotifierProvider<MultiServerProvider>(
@@ -1121,6 +1150,7 @@ void main() {
                   width: 700,
                   height: 720,
                   child: TvBrowseRail(
+                    focusMemory: focusMemory,
                     hubs: [movieHub, episodeHub],
                     autofocus: true,
                     iconForHub: (_, _) => Icons.tv_rounded,
@@ -1232,6 +1262,7 @@ void main() {
               width: 1280,
               height: 720,
               child: TvBrowseRail(
+                focusMemory: focusMemory,
                 key: const ValueKey('rail'),
                 hubs: hubs,
                 autofocus: true,
@@ -1314,6 +1345,7 @@ void main() {
               width: 1280,
               height: 720,
               child: TvBrowseRail(
+                focusMemory: focusMemory,
                 key: const ValueKey('rail'),
                 hubs: [firstHub, activeHub, backgroundLoaded ? backgroundUpdatedHub : backgroundInitialHub],
                 autofocus: true,
@@ -1391,6 +1423,7 @@ void main() {
                   width: 1280,
                   height: 720,
                   child: TvBrowseRail(
+                    focusMemory: focusMemory,
                     hubs: [firstHub, middleLoaded ? middleUpdatedHub : middleInitialHub, lastHub],
                     autofocus: true,
                     iconForHub: (_, _) => Icons.tv_rounded,
@@ -1452,7 +1485,7 @@ void main() {
     expect(_verticalRailPosition(tester).pixels, closeTo(middleTargetOffset, 0.1));
   });
 
-  testWidgets('uses per-hub item focus instead of global column hint', (tester) async {
+  testWidgets('uses per-hub item focus instead of the owner last-column hint', (tester) async {
     List<MediaItem> movieItems() => List.generate(
       8,
       (index) =>
@@ -1492,6 +1525,7 @@ void main() {
                   width: 700,
                   height: 720,
                   child: TvBrowseRail(
+                    focusMemory: focusMemory,
                     hubs: [movieHub, episodeHub],
                     autofocus: true,
                     iconForHub: (_, _) => Icons.tv_rounded,
@@ -1520,6 +1554,97 @@ void main() {
 
     await press(LogicalKeyboardKey.arrowUp);
     expect(focused.last, 'movies:movie_5');
+  });
+
+  testWidgets('repeated detail hub ids restore only within their browse owner', (tester) async {
+    final episodeItems = [
+      for (var index = 0; index < 12; index++)
+        testMediaItem(
+          id: 'episode_$index',
+          backend: MediaBackend.plex,
+          kind: MediaKind.episode,
+          title: 'Episode $index',
+          thumbPath: '/episode_$index',
+        ),
+    ];
+    final extraItems = [
+      for (var index = 0; index < 3; index++)
+        testMediaItem(id: 'extra_$index', backend: MediaBackend.plex, kind: MediaKind.movie, title: 'Extra $index'),
+    ];
+    final episodeHub = MediaHub(
+      id: 'detail_episodes',
+      title: 'Episodes',
+      type: 'episode',
+      items: episodeItems,
+      size: episodeItems.length,
+    );
+    final extrasHub = MediaHub(
+      id: 'detail_extras',
+      title: 'Extras',
+      type: 'movie',
+      items: extraItems,
+      size: extraItems.length,
+    );
+    final focused = <String>[];
+
+    Future<void> mount(HubFocusMemory owner, List<MediaHub> hubs) async {
+      final serverManager = MultiServerManager();
+      await tester.pumpWidget(
+        ChangeNotifierProvider<MultiServerProvider>(
+          create: (_) => MultiServerProvider(serverManager, DataAggregationService(serverManager)),
+          child: MaterialApp(
+            theme: monoTheme(dark: true),
+            home: Scaffold(
+              body: SizedBox(
+                width: 700,
+                height: 720,
+                child: TvBrowseRail(
+                  focusMemory: owner,
+                  hubs: hubs,
+                  autofocus: true,
+                  iconForHub: (_, _) => Icons.tv_rounded,
+                  onFocusedHubItemChanged: (hub, item) => focused.add('${hub.id}:${item.id}'),
+                  episodePosterModeForHub: (_) => EpisodePosterMode.episodeThumbnail,
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+      tester.state<TvBrowseRailState>(find.byType(TvBrowseRail)).requestFocus();
+      await tester.pump();
+    }
+
+    Future<void> press(LogicalKeyboardKey key) async {
+      await tester.sendKeyDownEvent(key);
+      await tester.pump();
+      await tester.sendKeyUpEvent(key);
+      await tester.pumpAndSettle();
+    }
+
+    await mount(focusMemory, [episodeHub, extrasHub]);
+    for (var index = 0; index < 5; index++) {
+      await press(LogicalKeyboardKey.arrowRight);
+    }
+    expect(focused.last, 'detail_episodes:episode_5');
+    expect(_activeRailPosition(tester).pixels, greaterThan(0));
+
+    await press(LogicalKeyboardKey.arrowDown);
+    expect(focused.last, 'detail_extras:extra_0');
+    await press(LogicalKeyboardKey.arrowUp);
+    expect(focused.last, 'detail_episodes:episode_5');
+    expect(_activeRailPosition(tester).pixels, greaterThan(0));
+
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump();
+
+    final freshOwner = HubFocusMemory();
+    await mount(freshOwner, [extrasHub, episodeHub]);
+    await press(LogicalKeyboardKey.arrowDown);
+
+    expect(focused.last, 'detail_episodes:episode_0');
+    expect(_activeRailPosition(tester).pixels, 0);
   });
 
   testWidgets('keeps late episode thumbnails visible in long TV rows', (tester) async {
@@ -1563,6 +1688,7 @@ void main() {
               width: 1280,
               height: 720,
               child: TvBrowseRail(
+                focusMemory: focusMemory,
                 hubs: [hub],
                 autofocus: true,
                 iconForHub: (_, _) => Icons.tv_rounded,
@@ -1653,6 +1779,7 @@ void main() {
               width: 1280,
               height: 720,
               child: TvBrowseRail(
+                focusMemory: focusMemory,
                 hubs: [hub],
                 autofocus: true,
                 iconForHub: (_, _) => Icons.tv_rounded,
@@ -1726,6 +1853,7 @@ void main() {
                   width: 1280,
                   height: 720,
                   child: TvBrowseRail(
+                    focusMemory: focusMemory,
                     hubs: [hub],
                     iconForHub: (_, _) => Icons.person_rounded,
                     onActivateItem: (_, _) {
@@ -1788,6 +1916,7 @@ void main() {
               width: 1280,
               height: 720,
               child: TvBrowseRail(
+                focusMemory: focusMemory,
                 hubs: [hub],
                 iconForHub: (_, _) => Icons.person_rounded,
                 onActivateItem: (_, _) {
@@ -1838,6 +1967,7 @@ void main() {
               width: 1280,
               height: 720,
               child: TvBrowseRail(
+                focusMemory: focusMemory,
                 hubs: [hub],
                 iconForHub: (_, _) => Icons.person_rounded,
                 onActivateItem: (_, _) {
@@ -1885,6 +2015,7 @@ void main() {
               width: 1280,
               height: 720,
               child: TvBrowseRail(
+                focusMemory: focusMemory,
                 hubs: [hub],
                 iconForHub: (_, _) => Icons.person_rounded,
                 selectSuppressionGestureSignal: gesture,
@@ -1940,6 +2071,7 @@ void main() {
               width: 1280,
               height: 720,
               child: TvBrowseRail(
+                focusMemory: focusMemory,
                 hubs: [hub],
                 iconForHub: (_, _) => Icons.person_rounded,
                 selectSuppressionGestureSignal: gesture,
@@ -1989,7 +2121,12 @@ void main() {
             body: SizedBox(
               width: 1280,
               height: 720,
-              child: TvBrowseRail(hubs: [hub], autofocus: autofocus, iconForHub: (_, _) => Icons.tv_rounded),
+              child: TvBrowseRail(
+                focusMemory: focusMemory,
+                hubs: [hub],
+                autofocus: autofocus,
+                iconForHub: (_, _) => Icons.tv_rounded,
+              ),
             ),
           ),
         ),
@@ -2025,7 +2162,11 @@ void main() {
                     left: 0,
                     right: 0,
                     bottom: 0,
-                    child: TvBrowseRail(hubs: [hub], iconForHub: (_, _) => Icons.movie_rounded),
+                    child: TvBrowseRail(
+                      focusMemory: focusMemory,
+                      hubs: [hub],
+                      iconForHub: (_, _) => Icons.movie_rounded,
+                    ),
                   ),
                 ],
               ),
@@ -2061,6 +2202,7 @@ void main() {
               width: 1060,
               height: 720,
               child: TvBrowseRail(
+                focusMemory: focusMemory,
                 hubs: [hub],
                 iconForHub: (_, _) => Icons.movie_rounded,
                 backgroundBleedLeft: SideNavigationRailState.expandedWidth,
@@ -2101,6 +2243,7 @@ void main() {
               width: 1280,
               height: 720,
               child: TvBrowseRail(
+                focusMemory: focusMemory,
                 key: const ValueKey('rail'),
                 hubs: [hub],
                 iconForHub: (_, _) => Icons.movie_rounded,

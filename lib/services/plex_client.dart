@@ -296,6 +296,15 @@ class PlexClient
   @override
   ApiCache get cache => _cache;
 
+  /// Snapshot the profile identity used by a cache-first request before its
+  /// cache lookup can yield. [PlexConfig] is immutable, and [headers] returns a
+  /// fresh map, so both the token/client headers and cache namespace stay bound
+  /// to the same profile even if [applyProfileUpdate] runs on a cache miss.
+  ({ServerId cacheScope, Map<String, String> headers}) _captureCacheFirstRequestContext() {
+    final requestConfig = config;
+    return (cacheScope: profileScopeId.cacheServerId, headers: Map<String, String>.unmodifiable(requestConfig.headers));
+  }
+
   /// Whether to operate in offline mode (use cache only)
   bool _offlineMode = false;
 
@@ -886,9 +895,9 @@ class PlexClient
   Future<bool> isHealthy() async => (await checkHealth()) == HealthStatus.online;
 
   /// Get running background tasks (thumbnail generation, credit detection, etc.)
-  Future<List<PlexActivity>> getActivities() async {
+  Future<List<PlexActivity>> getActivities({AbortController? abort}) async {
     try {
-      final response = await _getWithFailover('/activities');
+      final response = await _getWithFailover('/activities', abort: abort);
       final container = _getMediaContainer(response);
       if (container == null) return [];
       final activityList = container['Activity'] as List?;
@@ -904,6 +913,10 @@ class PlexClient
         }
       }
       return activities;
+    } on MediaServerHttpException catch (e) {
+      if (e.isCancellation) rethrow;
+      appLogger.e('Failed to get activities', error: e);
+      return [];
     } catch (e) {
       appLogger.e('Failed to get activities', error: e);
       return [];
@@ -1557,14 +1570,29 @@ class PlexClient
     bool forceRefresh = false,
   }) async {
     try {
-      final fetch = forceRefresh ? fetchWithCacheFallback : fetchWithCacheFirst;
-      final data = await fetch<Map<String, dynamic>>(
-        cacheKey: '/library/metadata/$ratingKey',
-        networkCall: () =>
-            _http.get('/library/metadata/$ratingKey', queryParameters: {'includeChapters': 1, 'includeMarkers': 1}),
-        parseCache: (cached) => cached as Map<String, dynamic>?,
-        parseResponse: (response) => response.data as Map<String, dynamic>?,
+      final requestContext = _captureCacheFirstRequestContext();
+      final cacheKey = '/library/metadata/$ratingKey';
+      Future<MediaServerResponse> networkCall() => _http.get(
+        cacheKey,
+        queryParameters: {'includeChapters': 1, 'includeMarkers': 1},
+        headers: requestContext.headers,
       );
+      Map<String, dynamic>? parseCache(dynamic cached) => cached as Map<String, dynamic>?;
+      Map<String, dynamic>? parseResponse(MediaServerResponse response) => response.data as Map<String, dynamic>?;
+      final data = forceRefresh
+          ? await fetchWithCacheFallback<Map<String, dynamic>>(
+              cacheKey: cacheKey,
+              networkCall: networkCall,
+              parseCache: parseCache,
+              parseResponse: parseResponse,
+            )
+          : await fetchWithCacheFirst<Map<String, dynamic>>(
+              cacheScope: requestContext.cacheScope,
+              cacheKey: cacheKey,
+              networkCall: networkCall,
+              parseCache: parseCache,
+              parseResponse: parseResponse,
+            );
       final metadataJson = _getFirstMetadataJsonFromData(data);
       return _parsePlaybackExtrasFromMetadataJson(
         metadataJson,
@@ -1696,11 +1724,14 @@ class PlexClient
   /// for the cache-only readers ([fetchPlaybackExtrasFromCacheOnly],
   /// [fetchCachedMediaSourceInfo]).
   Future<Map<String, dynamic>?> _fetchRawMetadataJsonCacheFirst(String ratingKey) async {
+    final requestContext = _captureCacheFirstRequestContext();
     final data = await fetchWithCacheFirst<Map<String, dynamic>>(
+      cacheScope: requestContext.cacheScope,
       cacheKey: '/library/metadata/$ratingKey',
       networkCall: () => _http.get(
         '/library/metadata/$ratingKey',
         queryParameters: {'includeChapters': 1, 'includeMarkers': 1, 'checkFiles': 1, 'includeStreams': 1},
+        headers: requestContext.headers,
       ),
       parseCache: (cached) => cached as Map<String, dynamic>?,
       parseResponse: (response) => response.data as Map<String, dynamic>?,
@@ -3833,10 +3864,18 @@ class PlexClient
   }
 
   @override
-  Future<DownloadResolution> resolveDownload(MediaItem item, {int mediaIndex = 0}) async {
-    final playbackData = await getVideoPlaybackData(item.id, mediaIndex: mediaIndex);
+  Future<DownloadResolution> resolveDownload(MediaItem item, {int mediaIndex = 0, String? mediaSourceId}) async {
+    final playbackData = await getVideoPlaybackData(
+      item.id,
+      mediaIndex: mediaIndex,
+      selectedMediaSourceId: mediaSourceId,
+    );
     final subtitles = <DownloadSubtitleSpec>[];
     final mediaInfo = playbackData.mediaInfo;
+    final requestedSourceId = mediaSourceId?.trim();
+    if (requestedSourceId != null && requestedSourceId.isNotEmpty && mediaInfo?.mediaSourceId != requestedSourceId) {
+      throw StateError('Requested Plex download source is no longer available');
+    }
     if (mediaInfo != null) {
       for (final subtitle in mediaInfo.subtitleTracks) {
         if (!subtitle.isExternal || subtitle.key == null) continue;

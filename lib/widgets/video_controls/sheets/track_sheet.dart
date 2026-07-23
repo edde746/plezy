@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
@@ -135,7 +137,7 @@ class TrackSheet extends StatelessWidget {
 class _SourceAudioColumn extends StatefulWidget {
   final List<MediaAudioTrack> tracks;
   final int? selectedStreamId;
-  final ValueChanged<int> onSelected;
+  final Future<void> Function(int) onSelected;
   final bool showHeader;
 
   const _SourceAudioColumn({
@@ -151,11 +153,23 @@ class _SourceAudioColumn extends StatefulWidget {
 
 class _SourceAudioColumnState extends State<_SourceAudioColumn> {
   final _initialScroll = InitialItemScrollController();
+  bool _selectionPending = false;
 
   @override
   void dispose() {
     _initialScroll.dispose();
     super.dispose();
+  }
+
+  Future<void> _select(int streamId) async {
+    if (_selectionPending) return;
+    setState(() => _selectionPending = true);
+    try {
+      await widget.onSelected(streamId);
+      if (mounted) OverlaySheetController.of(context).close();
+    } finally {
+      if (mounted) setState(() => _selectionPending = false);
+    }
   }
 
   @override
@@ -167,6 +181,7 @@ class _SourceAudioColumnState extends State<_SourceAudioColumn> {
     return Column(
       children: [
         if (widget.showHeader) SheetColumnHeader(label: t.videoControls.audioLabel),
+        if (_selectionPending) const LinearProgressIndicator(minHeight: 2),
         Expanded(
           child: ListView.builder(
             controller: _initialScroll.controller,
@@ -179,10 +194,7 @@ class _SourceAudioColumnState extends State<_SourceAudioColumn> {
                 key: index == 0 ? _initialScroll.firstItemKey : null,
                 label: track.label,
                 isSelected: isSelected,
-                onTap: () {
-                  OverlaySheetController.of(context).close();
-                  widget.onSelected(track.id);
-                },
+                onTap: () => unawaited(_select(track.id)),
               );
             },
           ),
@@ -214,11 +226,23 @@ class _SourceSubtitleColumn extends StatefulWidget {
 
 class _SourceSubtitleColumnState extends State<_SourceSubtitleColumn> {
   final _initialScroll = InitialItemScrollController();
+  bool _selectionPending = false;
 
   @override
   void dispose() {
     _initialScroll.dispose();
     super.dispose();
+  }
+
+  Future<void> _select(PlaybackSourceSubtitleChoice choice) async {
+    if (_selectionPending) return;
+    setState(() => _selectionPending = true);
+    try {
+      await widget.trackControlsState.onSwitchSubtitle!(choice);
+      if (mounted) OverlaySheetController.of(context).close();
+    } finally {
+      if (mounted) setState(() => _selectionPending = false);
+    }
   }
 
   @override
@@ -231,6 +255,7 @@ class _SourceSubtitleColumnState extends State<_SourceSubtitleColumn> {
     return Column(
       children: [
         if (widget.showHeader) SheetColumnHeader(label: t.videoControls.subtitlesLabel),
+        if (_selectionPending) const LinearProgressIndicator(minHeight: 2),
         Expanded(
           child: ListView.builder(
             controller: _initialScroll.controller,
@@ -241,10 +266,7 @@ class _SourceSubtitleColumnState extends State<_SourceSubtitleColumn> {
                   context: context,
                   key: _initialScroll.firstItemKey,
                   isSelected: selectedChoice.isOff,
-                  onTap: () {
-                    OverlaySheetController.of(context).close();
-                    widget.trackControlsState.onSwitchSubtitle!(const PlaybackSourceSubtitleChoice.off());
-                  },
+                  onTap: () => unawaited(_select(const PlaybackSourceSubtitleChoice.off())),
                 );
               }
 
@@ -253,10 +275,7 @@ class _SourceSubtitleColumnState extends State<_SourceSubtitleColumn> {
                 context: context,
                 label: track.labelForIndex(index - 1),
                 isSelected: track.id == selectedId,
-                onTap: () {
-                  OverlaySheetController.of(context).close();
-                  widget.trackControlsState.onSwitchSubtitle!(PlaybackSourceSubtitleChoice.source(track.id));
-                },
+                onTap: () => unawaited(_select(PlaybackSourceSubtitleChoice.source(track.id))),
               );
             },
           ),
@@ -372,11 +391,23 @@ class _SubtitleColumn extends StatefulWidget {
 
 class _SubtitleColumnState extends State<_SubtitleColumn> {
   final _initialScroll = InitialItemScrollController();
+  bool _selectionPending = false;
 
   @override
   void dispose() {
     _initialScroll.dispose();
     super.dispose();
+  }
+
+  Future<void> _selectSourceSidecar(int streamId) async {
+    if (_selectionPending) return;
+    setState(() => _selectionPending = true);
+    try {
+      await widget.trackControlsState.onSwitchSubtitle!(PlaybackSourceSubtitleChoice.source(streamId));
+      if (mounted) OverlaySheetController.of(context).close();
+    } finally {
+      if (mounted) setState(() => _selectionPending = false);
+    }
   }
 
   @override
@@ -401,6 +432,7 @@ class _SubtitleColumnState extends State<_SubtitleColumn> {
     return Column(
       children: [
         if (widget.showHeader) SheetColumnHeader(label: t.videoControls.subtitlesLabel),
+        if (_selectionPending) const LinearProgressIndicator(minHeight: 2),
         Expanded(
           child: ListView.builder(
             controller: _initialScroll.controller,
@@ -444,10 +476,7 @@ class _SubtitleColumnState extends State<_SubtitleColumn> {
                   context: context,
                   label: sourceTrack.labelForIndex(trackIndex),
                   isSelected: false,
-                  onTap: () {
-                    OverlaySheetController.of(context).close();
-                    widget.trackControlsState.onSwitchSubtitle!(PlaybackSourceSubtitleChoice.source(sourceTrack.id));
-                  },
+                  onTap: () => unawaited(_selectSourceSidecar(sourceTrack.id)),
                 );
               }
 

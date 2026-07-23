@@ -49,6 +49,7 @@ class _HotKeyRecorderState extends State<HotKeyRecorder> {
 
   bool _handleKeyEvent(KeyEvent keyEvent) {
     if (!widget.enabled) return false;
+    if (keyEvent.logicalKey.isBackKey) return false;
     if (keyEvent is KeyUpEvent) return false;
 
     final physicalKeysPressed = HardwareKeyboard.instance.physicalKeysPressed;

@@ -104,6 +104,18 @@ class ContentStripState extends State<ContentStrip> {
     if (!identical(oldWidget.player, widget.player) || !identical(oldWidget.chapters, widget.chapters)) {
       _bindChapterIndexStream();
     }
+    _normalizeActiveTab();
+  }
+
+  void _normalizeActiveTab() {
+    if (_activeTab == _StripTab.chapters && !_hasChapters && _hasQueue) {
+      _activeTab = _StripTab.queue;
+      _lastAutoScrolledQueueItemID = null;
+      _lastAutoScrolledQueueIndex = null;
+    } else if (_activeTab == _StripTab.queue && !_hasQueue && _hasChapters) {
+      _activeTab = _StripTab.chapters;
+      _lastAutoScrolledChapterIndex = null;
+    }
   }
 
   void _bindChapterIndexStream() {

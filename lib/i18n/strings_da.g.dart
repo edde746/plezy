@@ -52,6 +52,7 @@ class TranslationsDa extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _TranslationsRateSheetDa rateSheet = _TranslationsRateSheetDa._(_root);
 	@override late final _TranslationsAccessibilityDa accessibility = _TranslationsAccessibilityDa._(_root);
 	@override late final _TranslationsTooltipsDa tooltips = _TranslationsTooltipsDa._(_root);
+	@override late final _TranslationsAudioTracksDa audioTracks = _TranslationsAudioTracksDa._(_root);
 	@override late final _TranslationsVideoControlsDa videoControls = _TranslationsVideoControlsDa._(_root);
 	@override late final _TranslationsMessagesDa messages = _TranslationsMessagesDa._(_root);
 	@override late final _TranslationsSubtitlingStylingDa subtitlingStyling = _TranslationsSubtitlingStylingDa._(_root);
@@ -120,7 +121,7 @@ class _TranslationsAuthDa extends TranslationsAuthEn {
 	@override String get quickConnectWaiting => 'Venter på godkendelse…';
 	@override String get quickConnectCancel => 'Annullér';
 	@override String get quickConnectExpired => 'Quick Connect er udløbet. Prøv igen.';
-	@override String get localDataRecoveryRequired => '';
+	@override String get localDataRecoveryRequired => 'Plezy could not safely recover local sign-in and pending playback data. Please sign in again.';
 }
 
 // Path: common
@@ -240,8 +241,6 @@ class _TranslationsSettingsDa extends TranslationsSettingsEn {
 	@override String get libraryDensity => 'Bibliotekstæthed';
 	@override String get compact => 'Kompakt';
 	@override String get comfortable => 'Komfortabel';
-	@override String get tvCornerSpotlightBackdrop => '';
-	@override String get tvCornerSpotlightBackdropDescription => '';
 	@override String get viewMode => 'Visningstilstand';
 	@override String get gridView => 'Gitter';
 	@override String get listView => 'Liste';
@@ -311,7 +310,7 @@ class _TranslationsSettingsDa extends TranslationsSettingsEn {
 	@override String get watchTogetherRelay => 'Watch Together-relay';
 	@override String get watchTogetherRelayDescription => 'Angiv en brugerdefineret relay. Alle skal bruge samme server.';
 	@override String get watchTogetherRelayHint => 'https://min-relay.eksempel.dk';
-	@override String get watchTogetherRelayInvalid => '';
+	@override String get watchTogetherRelayInvalid => 'Enter a valid HTTP or HTTPS relay base URL.';
 	@override String get crashReporting => 'Fejlrapportering';
 	@override String get crashReportingDescription => 'Send fejlrapporter for at hjælpe med at forbedre appen';
 	@override String get debugLogging => 'Fejlfindingslogning';
@@ -328,12 +327,10 @@ class _TranslationsSettingsDa extends TranslationsSettingsEn {
 	@override String get exportSettings => 'Eksportér indstillinger';
 	@override String get exportSettingsDescription => 'Gem dine præferencer i en fil';
 	@override String get exportSettingsSuccess => 'Indstillinger eksporteret';
-	@override String get exportSettingsFailed => 'Kunne ikke eksportere indstillinger';
 	@override String get importSettings => 'Importér indstillinger';
 	@override String get importSettingsDescription => 'Gendan præferencer fra en fil';
 	@override String get importSettingsConfirm => 'Dette vil erstatte dine nuværende indstillinger. Fortsæt?';
 	@override String get importSettingsSuccess => 'Indstillinger importeret';
-	@override String get importSettingsFailed => 'Kunne ikke importere indstillinger';
 	@override String get importSettingsInvalidFile => 'Denne fil er ikke en gyldig Plezy-indstillingseksport';
 	@override String get importSettingsNoUser => 'Log ind før import af indstillinger';
 	@override String get shortcutsReset => 'Genveje nulstillet til standard';
@@ -348,6 +345,7 @@ class _TranslationsSettingsDa extends TranslationsSettingsEn {
 	@override String validationErrorDuration({required Object min, required Object max, required Object unit}) => 'Varighed skal være mellem ${min} og ${max} ${unit}';
 	@override String shortcutAlreadyAssigned({required Object action}) => 'Genvej allerede tildelt til ${action}';
 	@override String shortcutUpdated({required Object action}) => 'Genvej opdateret for ${action}';
+	@override String get saveFailed => 'Could not save changes. Try again.';
 	@override String get autoSkip => 'Auto-spring';
 	@override String get autoSkipIntro => 'Auto-spring intro';
 	@override String get autoSkipIntroDescription => 'Spring automatisk intromarkører over efter få sekunder';
@@ -373,7 +371,7 @@ class _TranslationsSettingsDa extends TranslationsSettingsEn {
 	@override String get downloadLocationChanged => 'Downloadplacering ændret';
 	@override String get downloadLocationReset => 'Downloadplacering nulstillet';
 	@override String get downloadLocationInvalid => 'Valgt mappe er ikke skrivbar';
-	@override String get downloadLocationSelectError => 'Kunne ikke vælge mappe';
+	@override String get downloadLocationPickerUnavailable => 'Mappevalg er ikke tilgængeligt på denne enhed';
 	@override String get downloadOnWifiOnly => 'Download kun på WiFi';
 	@override String get downloadOnWifiOnlyDescription => 'Forhindre downloads på mobildata';
 	@override String get autoRemoveWatchedDownloads => 'Fjern sete downloads automatisk';
@@ -591,6 +589,10 @@ class _TranslationsAccessibilityDa extends TranslationsAccessibilityEn {
 	@override String get hexColor => 'Hexfarve';
 	@override String get expandText => 'Udvid tekst';
 	@override String get collapseText => 'Fold tekst sammen';
+	@override String get alphabetNavigation => 'Alfabetnavigation';
+	@override String get alphabetScrollHint => 'Stryg op eller ned for at flytte ét bogstav';
+	@override String rowColumnPosition({required Object row, required Object rowCount, required Object column, required Object columnCount}) => 'Række ${row} af ${rowCount}, kolonne ${column} af ${columnCount}';
+	@override String rowPosition({required Object row, required Object rowCount}) => 'Række ${row} af ${rowCount}';
 }
 
 // Path: tooltips
@@ -604,6 +606,16 @@ class _TranslationsTooltipsDa extends TranslationsTooltipsEn {
 	@override String get playTrailer => 'Afspil trailer';
 	@override String get markAsWatched => 'Markér som set';
 	@override String get markAsUnwatched => 'Markér som uset';
+}
+
+// Path: audioTracks
+class _TranslationsAudioTracksDa extends TranslationsAudioTracksEn {
+	_TranslationsAudioTracksDa._(TranslationsDa root) : this._root = root, super.internal(root);
+
+	final TranslationsDa _root; // ignore: unused_field
+
+	// Translations
+	@override String track({required Object n}) => 'Lydspor ${n}';
 }
 
 // Path: videoControls
@@ -712,11 +724,11 @@ class _TranslationsMessagesDa extends TranslationsMessagesEn {
 	@override String get streamInterrupted => 'Streamen blev afbrudt. Tryk på afspil, eller spol for at prøve igen.';
 	@override String get liveStreamInterrupted => 'Livestreamen blev afbrudt. Tryk på afspil for at prøve igen.';
 	@override String get fileInfoNotAvailable => 'Filinfo ikke tilgængelig';
-	@override String get playbackAuthenticationRequired => '';
-	@override String get playbackServerUnavailable => '';
-	@override String get playbackDataInvalid => '';
-	@override String get playbackCancelled => '';
-	@override String get playbackFailed => '';
+	@override String get playbackAuthenticationRequired => 'Sign in to the media server again to play this item.';
+	@override String get playbackServerUnavailable => 'The media server is unavailable. Try again later.';
+	@override String get playbackDataInvalid => 'The server returned invalid playback information.';
+	@override String get playbackCancelled => 'Playback was cancelled.';
+	@override String get playbackFailed => 'Playback could not be started.';
 	@override String errorLoadingFileInfo({required Object error}) => 'Fejl ved indlæsning af filinfo: ${error}';
 	@override String get errorLoadingSeries => 'Fejl ved indlæsning af serie';
 	@override String get musicNotSupported => 'Musikafspilning understøttes endnu ikke';
@@ -867,6 +879,7 @@ class _TranslationsProfilesDa extends TranslationsProfilesEn {
 	@override String get borrowExplain => 'Lån en anden profils forbindelse. PIN-beskyttede profiler kræver en PIN.';
 	@override String get borrowEmpty => 'Intet at låne endnu.';
 	@override String get borrowEmptySubtitle => 'Forbind Plex eller Jellyfin til en anden profil først.';
+	@override String get borrowLoadFailed => 'Available connections could not be loaded. Try again.';
 	@override String borrowFromProfile({required Object displayName}) => 'Fra ${displayName}';
 	@override String get borrowConnectionBorrowed => 'Forbindelse lånt.';
 	@override String get borrowFailed => 'Kunne ikke låne forbindelse.';
@@ -1150,7 +1163,7 @@ class _TranslationsLiveTvDa extends TranslationsLiveTvEn {
 	@override String get favorites => 'Favoritter';
 	@override String get reorderFavorites => 'Omarranger favoritter';
 	@override String get favoritesLoadFailed => 'Favoritter kunne ikke indlæses. Kontrollér forbindelsen, og prøv igen.';
-	@override String get favoritesUpdateFailed => '';
+	@override String get favoritesUpdateFailed => 'Could not update favorites. Check your connection and try again.';
 	@override String get joinSession => 'Deltag i igangværende session';
 	@override String watchFromStart({required Object minutes}) => 'Se fra start (${minutes} min siden)';
 	@override String get watchLive => 'Se live';
@@ -2149,7 +2162,7 @@ extension on TranslationsDa {
 			'auth.quickConnectWaiting' => 'Venter på godkendelse…',
 			'auth.quickConnectCancel' => 'Annullér',
 			'auth.quickConnectExpired' => 'Quick Connect er udløbet. Prøv igen.',
-			'auth.localDataRecoveryRequired' => '',
+			'auth.localDataRecoveryRequired' => 'Plezy could not safely recover local sign-in and pending playback data. Please sign in again.',
 			'common.cancel' => 'Annuller',
 			'common.save' => 'Gem',
 			'common.close' => 'Luk',
@@ -2233,8 +2246,6 @@ extension on TranslationsDa {
 			'settings.libraryDensity' => 'Bibliotekstæthed',
 			'settings.compact' => 'Kompakt',
 			'settings.comfortable' => 'Komfortabel',
-			'settings.tvCornerSpotlightBackdrop' => '',
-			'settings.tvCornerSpotlightBackdropDescription' => '',
 			'settings.viewMode' => 'Visningstilstand',
 			'settings.gridView' => 'Gitter',
 			'settings.listView' => 'Liste',
@@ -2304,7 +2315,7 @@ extension on TranslationsDa {
 			'settings.watchTogetherRelay' => 'Watch Together-relay',
 			'settings.watchTogetherRelayDescription' => 'Angiv en brugerdefineret relay. Alle skal bruge samme server.',
 			'settings.watchTogetherRelayHint' => 'https://min-relay.eksempel.dk',
-			'settings.watchTogetherRelayInvalid' => '',
+			'settings.watchTogetherRelayInvalid' => 'Enter a valid HTTP or HTTPS relay base URL.',
 			'settings.crashReporting' => 'Fejlrapportering',
 			'settings.crashReportingDescription' => 'Send fejlrapporter for at hjælpe med at forbedre appen',
 			'settings.debugLogging' => 'Fejlfindingslogning',
@@ -2321,12 +2332,10 @@ extension on TranslationsDa {
 			'settings.exportSettings' => 'Eksportér indstillinger',
 			'settings.exportSettingsDescription' => 'Gem dine præferencer i en fil',
 			'settings.exportSettingsSuccess' => 'Indstillinger eksporteret',
-			'settings.exportSettingsFailed' => 'Kunne ikke eksportere indstillinger',
 			'settings.importSettings' => 'Importér indstillinger',
 			'settings.importSettingsDescription' => 'Gendan præferencer fra en fil',
 			'settings.importSettingsConfirm' => 'Dette vil erstatte dine nuværende indstillinger. Fortsæt?',
 			'settings.importSettingsSuccess' => 'Indstillinger importeret',
-			'settings.importSettingsFailed' => 'Kunne ikke importere indstillinger',
 			'settings.importSettingsInvalidFile' => 'Denne fil er ikke en gyldig Plezy-indstillingseksport',
 			'settings.importSettingsNoUser' => 'Log ind før import af indstillinger',
 			'settings.shortcutsReset' => 'Genveje nulstillet til standard',
@@ -2341,6 +2350,7 @@ extension on TranslationsDa {
 			'settings.validationErrorDuration' => ({required Object min, required Object max, required Object unit}) => 'Varighed skal være mellem ${min} og ${max} ${unit}',
 			'settings.shortcutAlreadyAssigned' => ({required Object action}) => 'Genvej allerede tildelt til ${action}',
 			'settings.shortcutUpdated' => ({required Object action}) => 'Genvej opdateret for ${action}',
+			'settings.saveFailed' => 'Could not save changes. Try again.',
 			'settings.autoSkip' => 'Auto-spring',
 			'settings.autoSkipIntro' => 'Auto-spring intro',
 			'settings.autoSkipIntroDescription' => 'Spring automatisk intromarkører over efter få sekunder',
@@ -2366,7 +2376,7 @@ extension on TranslationsDa {
 			'settings.downloadLocationChanged' => 'Downloadplacering ændret',
 			'settings.downloadLocationReset' => 'Downloadplacering nulstillet',
 			'settings.downloadLocationInvalid' => 'Valgt mappe er ikke skrivbar',
-			'settings.downloadLocationSelectError' => 'Kunne ikke vælge mappe',
+			'settings.downloadLocationPickerUnavailable' => 'Mappevalg er ikke tilgængeligt på denne enhed',
 			'settings.downloadOnWifiOnly' => 'Download kun på WiFi',
 			'settings.downloadOnWifiOnlyDescription' => 'Forhindre downloads på mobildata',
 			'settings.autoRemoveWatchedDownloads' => 'Fjern sete downloads automatisk',
@@ -2554,10 +2564,15 @@ extension on TranslationsDa {
 			'accessibility.hexColor' => 'Hexfarve',
 			'accessibility.expandText' => 'Udvid tekst',
 			'accessibility.collapseText' => 'Fold tekst sammen',
+			'accessibility.alphabetNavigation' => 'Alfabetnavigation',
+			'accessibility.alphabetScrollHint' => 'Stryg op eller ned for at flytte ét bogstav',
+			'accessibility.rowColumnPosition' => ({required Object row, required Object rowCount, required Object column, required Object columnCount}) => 'Række ${row} af ${rowCount}, kolonne ${column} af ${columnCount}',
+			'accessibility.rowPosition' => ({required Object row, required Object rowCount}) => 'Række ${row} af ${rowCount}',
 			'tooltips.shufflePlay' => 'Afspil tilfældigt',
 			'tooltips.playTrailer' => 'Afspil trailer',
 			'tooltips.markAsWatched' => 'Markér som set',
 			'tooltips.markAsUnwatched' => 'Markér som uset',
+			'audioTracks.track' => ({required Object n}) => 'Lydspor ${n}',
 			'videoControls.audioLabel' => 'Lyd',
 			'videoControls.subtitlesLabel' => 'Undertekster',
 			'videoControls.resetToZero' => 'Nulstil til 0ms',
@@ -2644,20 +2659,20 @@ extension on TranslationsDa {
 			'messages.markedAsUnwatched' => 'Markeret som uset',
 			'messages.markedAsWatchedOffline' => 'Markeret som set (synkroniseres online)',
 			'messages.markedAsUnwatchedOffline' => 'Markeret som uset (synkroniseres online)',
-			'messages.autoRemovedWatchedDownload' => ({required Object title}) => 'Automatisk fjernet: ${title}',
-			'messages.autoRemovedWatchedDownloads' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('da'))(n, one: 'Fjernede automatisk ${n} set download', other: 'Fjernede automatisk ${n} sete downloads', ), 
 			_ => null,
 		} ?? switch (path) {
+			'messages.autoRemovedWatchedDownload' => ({required Object title}) => 'Automatisk fjernet: ${title}',
+			'messages.autoRemovedWatchedDownloads' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('da'))(n, one: 'Fjernede automatisk ${n} set download', other: 'Fjernede automatisk ${n} sete downloads', ), 
 			'messages.removedFromContinueWatching' => 'Fjernet fra Fortsæt med at se',
 			'messages.errorLoading' => ({required Object error}) => 'Fejl: ${error}',
 			'messages.streamInterrupted' => 'Streamen blev afbrudt. Tryk på afspil, eller spol for at prøve igen.',
 			'messages.liveStreamInterrupted' => 'Livestreamen blev afbrudt. Tryk på afspil for at prøve igen.',
 			'messages.fileInfoNotAvailable' => 'Filinfo ikke tilgængelig',
-			'messages.playbackAuthenticationRequired' => '',
-			'messages.playbackServerUnavailable' => '',
-			'messages.playbackDataInvalid' => '',
-			'messages.playbackCancelled' => '',
-			'messages.playbackFailed' => '',
+			'messages.playbackAuthenticationRequired' => 'Sign in to the media server again to play this item.',
+			'messages.playbackServerUnavailable' => 'The media server is unavailable. Try again later.',
+			'messages.playbackDataInvalid' => 'The server returned invalid playback information.',
+			'messages.playbackCancelled' => 'Playback was cancelled.',
+			'messages.playbackFailed' => 'Playback could not be started.',
 			'messages.errorLoadingFileInfo' => ({required Object error}) => 'Fejl ved indlæsning af filinfo: ${error}',
 			'messages.errorLoadingSeries' => 'Fejl ved indlæsning af serie',
 			'messages.musicNotSupported' => 'Musikafspilning understøttes endnu ikke',
@@ -2772,6 +2787,7 @@ extension on TranslationsDa {
 			'profiles.borrowExplain' => 'Lån en anden profils forbindelse. PIN-beskyttede profiler kræver en PIN.',
 			'profiles.borrowEmpty' => 'Intet at låne endnu.',
 			'profiles.borrowEmptySubtitle' => 'Forbind Plex eller Jellyfin til en anden profil først.',
+			'profiles.borrowLoadFailed' => 'Available connections could not be loaded. Try again.',
 			'profiles.borrowFromProfile' => ({required Object displayName}) => 'Fra ${displayName}',
 			'profiles.borrowConnectionBorrowed' => 'Forbindelse lånt.',
 			'profiles.borrowFailed' => 'Kunne ikke låne forbindelse.',
@@ -2997,7 +3013,7 @@ extension on TranslationsDa {
 			'liveTv.favorites' => 'Favoritter',
 			'liveTv.reorderFavorites' => 'Omarranger favoritter',
 			'liveTv.favoritesLoadFailed' => 'Favoritter kunne ikke indlæses. Kontrollér forbindelsen, og prøv igen.',
-			'liveTv.favoritesUpdateFailed' => '',
+			'liveTv.favoritesUpdateFailed' => 'Could not update favorites. Check your connection and try again.',
 			'liveTv.joinSession' => 'Deltag i igangværende session',
 			'liveTv.watchFromStart' => ({required Object minutes}) => 'Se fra start (${minutes} min siden)',
 			'liveTv.watchLive' => 'Se live',
@@ -3157,11 +3173,11 @@ extension on TranslationsDa {
 			'watchTogether.participantLeft' => ({required Object name}) => '${name} forlod',
 			'watchTogether.participantPaused' => ({required Object name}) => '${name} satte på pause',
 			'watchTogether.participantResumed' => ({required Object name}) => '${name} genoptog',
+			_ => null,
+		} ?? switch (path) {
 			'watchTogether.participantSeeked' => ({required Object name}) => '${name} spoled',
 			'watchTogether.participantBuffering' => ({required Object name}) => '${name} bufferer',
 			'watchTogether.participantNeedsUpdate' => ({required Object name}) => '${name} bruger en ældre appversion — synkronisering er ikke tilgængelig',
-			_ => null,
-		} ?? switch (path) {
 			'watchTogether.resumingWithout' => ({required Object name}) => 'Fortsætter uden ${name}',
 			'watchTogether.waitingForParticipants' => 'Venter på at andre indlæser...',
 			'watchTogether.waitingForName' => ({required Object name}) => 'Venter på ${name}...',

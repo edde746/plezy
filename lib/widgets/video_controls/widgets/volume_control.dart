@@ -128,6 +128,8 @@ class _VolumeControlState extends State<VolumeControl> {
             final muteButton = Semantics(
               label: isMuted ? t.videoControls.unmuteButton : t.videoControls.muteButton,
               button: true,
+              enabled: true,
+              onTap: widget.volumeController.toggleMute,
               excludeSemantics: true,
               child: IconButton(
                 icon: AppIcon(

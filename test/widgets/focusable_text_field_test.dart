@@ -674,6 +674,128 @@ void main() {
     expect(controller.selection, const TextSelection.collapsed(offset: 1));
   });
 
+  testWidgets('TV hardware caret and deletion stay on grapheme boundaries', (tester) async {
+    TvDetectionService.debugSetAppleTVOverride(null);
+    await TvDetectionService.getInstance(forceTv: true);
+    TvDetectionService.setForceTVSync(true);
+    final controller = TextEditingController();
+    final fieldFocusNode = FocusNode(debugLabel: 'grapheme_field');
+    addTearDown(controller.dispose);
+    addTearDown(fieldFocusNode.dispose);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: FocusableTextField(
+            controller: controller,
+            focusNode: fieldFocusNode,
+            tvKeyboardAutoOpenBehavior: TvKeyboardAutoOpenBehavior.never,
+          ),
+        ),
+      ),
+    );
+    fieldFocusNode.requestFocus();
+    await tester.pump();
+
+    for (final grapheme in ['😀', 'e\u0301', '🇯🇵', '👨‍👩‍👧‍👦']) {
+      final text = 'A${grapheme}B';
+      final graphemeEnd = 1 + grapheme.length;
+
+      controller.value = TextEditingValue(
+        text: text,
+        selection: TextSelection.collapsed(offset: graphemeEnd),
+      );
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowLeft);
+      expect(controller.selection, const TextSelection.collapsed(offset: 1));
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
+      expect(controller.selection, TextSelection.collapsed(offset: graphemeEnd));
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
+      expect(controller.selection, TextSelection.collapsed(offset: text.length));
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
+      expect(controller.selection, TextSelection.collapsed(offset: text.length));
+
+      controller.selection = const TextSelection.collapsed(offset: 2);
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowLeft);
+      expect(controller.selection, const TextSelection.collapsed(offset: 1));
+      controller.selection = const TextSelection.collapsed(offset: 2);
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
+      expect(controller.selection, TextSelection.collapsed(offset: graphemeEnd));
+
+      controller.value = TextEditingValue(text: text, selection: const TextSelection.collapsed(offset: 0));
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowLeft);
+      await tester.sendKeyEvent(LogicalKeyboardKey.backspace);
+      expect(controller.text, text);
+      expect(controller.selection, const TextSelection.collapsed(offset: 0));
+      await tester.sendKeyEvent(LogicalKeyboardKey.delete);
+      expect(controller.text, '${grapheme}B');
+      expect(controller.selection, const TextSelection.collapsed(offset: 0));
+
+      controller.value = TextEditingValue(
+        text: text,
+        selection: TextSelection.collapsed(offset: graphemeEnd),
+      );
+      await tester.sendKeyEvent(LogicalKeyboardKey.backspace);
+      expect(controller.text, 'AB');
+      expect(controller.selection, const TextSelection.collapsed(offset: 1));
+
+      controller.value = TextEditingValue(text: text, selection: const TextSelection.collapsed(offset: 1));
+      await tester.sendKeyEvent(LogicalKeyboardKey.delete);
+      expect(controller.text, 'AB');
+      expect(controller.selection, const TextSelection.collapsed(offset: 1));
+
+      controller.value = TextEditingValue(
+        text: text,
+        selection: TextSelection(baseOffset: graphemeEnd - 1, extentOffset: 1),
+      );
+      await tester.sendKeyEvent(LogicalKeyboardKey.backspace);
+      expect(controller.text, 'AB');
+      expect(controller.selection, const TextSelection.collapsed(offset: 1));
+    }
+  });
+
+  testWidgets('grapheme deletion preserves formatter and callback ordering', (tester) async {
+    TvDetectionService.debugSetAppleTVOverride(null);
+    await TvDetectionService.getInstance(forceTv: true);
+    TvDetectionService.setForceTVSync(true);
+    const grapheme = '👨‍👩‍👧‍👦';
+    final text = 'A${grapheme}B';
+    final controller = TextEditingController(text: text);
+    final fieldFocusNode = FocusNode(debugLabel: 'formatted_grapheme_field');
+    final formatterCandidates = <TextEditingValue>[];
+    final changes = <String>[];
+    addTearDown(controller.dispose);
+    addTearDown(fieldFocusNode.dispose);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: FocusableTextField(
+            controller: controller,
+            focusNode: fieldFocusNode,
+            tvKeyboardAutoOpenBehavior: TvKeyboardAutoOpenBehavior.never,
+            maxLength: 8,
+            inputFormatters: [
+              TextInputFormatter.withFunction((_, nextValue) {
+                formatterCandidates.add(nextValue);
+                return nextValue;
+              }),
+            ],
+            onChanged: changes.add,
+          ),
+        ),
+      ),
+    );
+    fieldFocusNode.requestFocus();
+    await tester.pump();
+    controller.selection = TextSelection.collapsed(offset: 1 + grapheme.length);
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.backspace);
+
+    expect(formatterCandidates.single.text, 'AB');
+    expect(controller.text, 'AB');
+    expect(controller.selection, const TextSelection.collapsed(offset: 1));
+    expect(changes, ['AB']);
+  });
   testWidgets('TV keyboard done resolves callbacks against the latest field widget', (tester) async {
     TvDetectionService.debugSetAppleTVOverride(null);
     await TvDetectionService.getInstance(forceTv: true);

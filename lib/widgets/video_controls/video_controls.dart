@@ -61,6 +61,7 @@ import '../../utils/player_utils.dart';
 import '../../theme/mono_tokens.dart';
 import '../../utils/provider_extensions.dart';
 import '../../utils/snackbar_helper.dart';
+import '../../utils/latest_async_write.dart';
 import 'icons.dart';
 import 'player_chrome_controller.dart';
 import 'playback_extras_loader.dart';
@@ -802,6 +803,9 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
   @override
   void didUpdateWidget(PlexVideoControls oldWidget) {
     super.didUpdateWidget(oldWidget);
+    if (oldWidget.player != widget.player) {
+      ++_subtitleVisibilityWriteGeneration;
+    }
     if (oldWidget.chromeController != widget.chromeController) {
       oldWidget.chromeController.removeListener(_onChromeChanged);
       _lastControlsVisible = widget.chromeController.controlsVisible;
@@ -827,6 +831,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
 
   @override
   void dispose() {
+    ++_subtitleVisibilityWriteGeneration;
     HardwareKeyboard.instance.removeHandler(_handleGlobalKeyEvent);
     widget.chromeController.removeListener(_onChromeChanged);
     widget.hasFirstFrame?.removeListener(_onFirstFrameReady);
@@ -977,13 +982,21 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
                     const Positioned(top: 0, left: 0, child: LinuxKeepAlive()),
                   // Also handles long-press for 2x speed.
                   Positioned.fill(
-                    child: GestureDetector(
-                      onTap: _handleOuterTap,
-                      onLongPressStart: (_) => _handleLongPressStart(),
-                      onLongPressEnd: (_) => _handleLongPressEnd(),
-                      onLongPressCancel: _handleLongPressCancel,
-                      behavior: HitTestBehavior.opaque,
-                      child: const ColoredBox(color: Colors.transparent),
+                    child: Semantics(
+                      button: true,
+                      label: _showControls
+                          ? t.videoControls.hidePlaybackControls
+                          : t.videoControls.showPlaybackControls,
+                      onTap: _toggleControlsFromSemantics,
+                      child: GestureDetector(
+                        excludeFromSemantics: true,
+                        onTap: _handleOuterTap,
+                        onLongPressStart: (_) => _handleLongPressStart(),
+                        onLongPressEnd: (_) => _handleLongPressEnd(),
+                        onLongPressCancel: _handleLongPressCancel,
+                        behavior: HitTestBehavior.opaque,
+                        child: const ColoredBox(color: Colors.transparent),
+                      ),
                     ),
                   ),
                   // Mobile double-tap zones for skip forward/backward

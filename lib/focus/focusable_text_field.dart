@@ -8,6 +8,7 @@ import '../utils/platform_detector.dart';
 import '../utils/text_input_diagnostics.dart';
 import '../widgets/tv_virtual_keyboard.dart';
 import 'dpad_navigator.dart';
+import 'key_event_utils.dart';
 import 'owned_focus_node_binding.dart';
 
 bool _usesTvKeyboard(bool enableTvKeyboard) => enableTvKeyboard && PlatformDetector.isTV();
@@ -360,16 +361,20 @@ KeyEventResult _moveCaretHorizontally(TextEditingController controller, int delt
   }
 
   if (!selection.isCollapsed) {
-    final offset = delta < 0
-        ? (selection.start < selection.end ? selection.start : selection.end)
-        : (selection.start > selection.end ? selection.start : selection.end);
-    controller.selection = TextSelection.collapsed(offset: offset);
+    final range = expandToGraphemeRange(value.text, selection);
+    controller.selection = TextSelection.collapsed(offset: delta < 0 ? range.start : range.end);
     return KeyEventResult.handled;
   }
 
-  final nextOffset = selection.extentOffset + delta;
-  if (nextOffset < 0 || nextOffset > value.text.length) return KeyEventResult.ignored;
-  controller.selection = TextSelection.collapsed(offset: nextOffset);
+  final offset = selection.extentOffset.clamp(0, value.text.length);
+  if ((delta < 0 && offset == 0) || (delta > 0 && offset == value.text.length)) {
+    return KeyEventResult.ignored;
+  }
+  final codeUnitRange = delta < 0
+      ? TextRange(start: offset - 1, end: offset)
+      : TextRange(start: offset, end: offset + 1);
+  final range = expandToGraphemeRange(value.text, codeUnitRange);
+  controller.selection = TextSelection.collapsed(offset: delta < 0 ? range.start : range.end);
   return KeyEventResult.handled;
 }
 
@@ -439,25 +444,18 @@ void _backspace({
   ValueChanged<String>? onChanged,
 }) {
   final value = controller.value;
-  final range = _normalizedSelectionRange(value);
-  final start = range.start;
-  final end = range.end;
-  if (start != end) {
-    _replaceTextRange(
-      controller,
-      start,
-      end,
-      inputFormatters: inputFormatters,
-      maxLength: maxLength,
-      onChanged: onChanged,
-    );
-    return;
-  }
-  if (start == 0) return;
+  final selectionRange = _normalizedSelectionRange(value);
+  final start = selectionRange.start;
+  final end = selectionRange.end;
+  if (start == end && start == 0) return;
+
+  final codeUnitRange = start == end ? TextRange(start: start - 1, end: start) : TextRange(start: start, end: end);
+  final range = expandToGraphemeRange(value.text, codeUnitRange);
+  if (range.isCollapsed) return;
   _replaceTextRange(
     controller,
-    start - 1,
-    start,
+    range.start,
+    range.end,
     inputFormatters: inputFormatters,
     maxLength: maxLength,
     onChanged: onChanged,
@@ -471,25 +469,18 @@ void _deleteForward({
   ValueChanged<String>? onChanged,
 }) {
   final value = controller.value;
-  final range = _normalizedSelectionRange(value);
-  final start = range.start;
-  final end = range.end;
-  if (start != end) {
-    _replaceTextRange(
-      controller,
-      start,
-      end,
-      inputFormatters: inputFormatters,
-      maxLength: maxLength,
-      onChanged: onChanged,
-    );
-    return;
-  }
-  if (start >= value.text.length) return;
+  final selectionRange = _normalizedSelectionRange(value);
+  final start = selectionRange.start;
+  final end = selectionRange.end;
+  if (start == end && start >= value.text.length) return;
+
+  final codeUnitRange = start == end ? TextRange(start: start, end: start + 1) : TextRange(start: start, end: end);
+  final range = expandToGraphemeRange(value.text, codeUnitRange);
+  if (range.isCollapsed) return;
   _replaceTextRange(
     controller,
-    start,
-    start + 1,
+    range.start,
+    range.end,
     inputFormatters: inputFormatters,
     maxLength: maxLength,
     onChanged: onChanged,

@@ -69,6 +69,7 @@ class _SyncOffsetControlState extends State<SyncOffsetControl> {
   late double _currentOffset;
   late double _confirmedOffset;
   int _writeGeneration = 0;
+  int _bindingGeneration = 0;
   Timer? _longPressTimer;
 
   @override
@@ -85,6 +86,7 @@ class _SyncOffsetControlState extends State<SyncOffsetControl> {
         widget.player != oldWidget.player ||
         widget.propertyName != oldWidget.propertyName) {
       ++_writeGeneration;
+      ++_bindingGeneration;
       _currentOffset = widget.initialOffset.toDouble();
       _confirmedOffset = _currentOffset;
     }
@@ -93,6 +95,7 @@ class _SyncOffsetControlState extends State<SyncOffsetControl> {
   @override
   void dispose() {
     ++_writeGeneration;
+    ++_bindingGeneration;
     _longPressTimer?.cancel();
     super.dispose();
   }
@@ -104,16 +107,26 @@ class _SyncOffsetControlState extends State<SyncOffsetControl> {
     final coordinator = _syncOffsetWrites[targetPlayer] ??= LatestAsyncWrite<String>();
     final writeToken = coordinator.begin(propertyName);
     final generation = ++_writeGeneration;
+    final bindingGeneration = _bindingGeneration;
     unawaited(() async {
       try {
-        // Convert milliseconds to seconds for mpv.
-        final offsetSeconds = offsetMs / 1000.0;
-        await targetPlayer.setProperty(propertyName, offsetSeconds.toString());
-        final committed = await coordinator.commitIfLatest(
-          propertyName,
-          writeToken,
-          () => persistOffset(offsetMs.round()),
-        );
+        final committed = await coordinator.commitIfLatest(propertyName, writeToken, () async {
+          // Convert milliseconds to seconds for mpv. Keep the native write and
+          // persistence on the same per-player/property queue so an older
+          // native write can never complete after a newer one.
+          final offsetSeconds = offsetMs / 1000.0;
+          await targetPlayer.setProperty(propertyName, offsetSeconds.toString());
+          await persistOffset(offsetMs.round());
+          if (mounted &&
+              bindingGeneration == _bindingGeneration &&
+              targetPlayer == widget.player &&
+              propertyName == widget.propertyName) {
+            // A write may finish successfully after a newer intent was queued.
+            // Keep it as the rollback baseline without replacing the newer
+            // optimistic value currently shown by the control.
+            _confirmedOffset = offsetMs;
+          }
+        });
         if (!committed ||
             !mounted ||
             generation != _writeGeneration ||
@@ -121,7 +134,6 @@ class _SyncOffsetControlState extends State<SyncOffsetControl> {
             propertyName != widget.propertyName) {
           return;
         }
-        _confirmedOffset = offsetMs;
       } catch (error, stackTrace) {
         appLogger.w('Failed to update playback sync offset', error: error, stackTrace: stackTrace);
         if (!mounted ||

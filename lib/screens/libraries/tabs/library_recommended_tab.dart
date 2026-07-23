@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
 import '../../../focus/hub_vertical_navigation.dart';
+import '../../../focus/locked_hub_controller.dart';
 import '../../../i18n/strings.g.dart';
 import '../../../media/media_hub.dart';
 import '../../../media/media_item.dart';
@@ -50,8 +51,17 @@ class _LibraryRecommendedTabState extends BaseLibraryTabState<MediaHub, LibraryR
   final List<GlobalKey<HubSectionState>> _hubKeys = [];
   final _tvBrowseRailKey = GlobalKey<TvBrowseRailState>();
   final TvSpotlightController _spotlight = TvSpotlightController();
+  HubFocusMemory _hubFocusMemory = HubFocusMemory();
 
   void _setSpotlightItem(MediaItem item) => _spotlight.select(item);
+
+  @override
+  void didUpdateWidget(LibraryRecommendedTab oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.library.globalKey != widget.library.globalKey) {
+      _hubFocusMemory = HubFocusMemory();
+    }
+  }
 
   @override
   void dispose() {
@@ -305,6 +315,7 @@ class _LibraryRecommendedTabState extends BaseLibraryTabState<MediaHub, LibraryR
               return HubSection(
                 key: index < _hubKeys.length ? _hubKeys[index] : null,
                 hub: hub,
+                focusMemory: _hubFocusMemory,
                 icon: _getHubIcon(hub),
                 isInContinueWatching: isContinueWatching,
                 usesContinueWatchingAction: usesContinueWatchingAction,
@@ -339,6 +350,7 @@ class _LibraryRecommendedTabState extends BaseLibraryTabState<MediaHub, LibraryR
               child: TvBrowseRail(
                 key: _tvBrowseRailKey,
                 hubs: tvHubs,
+                focusMemory: _hubFocusMemory,
                 iconForHub: (hub, _) => _getHubIcon(hub),
                 onFocusedItemChanged: _setSpotlightItem,
                 onRefresh: updateItem,

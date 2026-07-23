@@ -31,6 +31,7 @@ import '../../providers/trakt_account_provider.dart';
 import '../../services/keyboard_shortcuts_service.dart';
 import '../../services/settings_service.dart' as settings;
 import '../../services/update_service.dart';
+import '../../utils/app_logger.dart';
 import '../../utils/dialogs.dart';
 import '../../utils/snackbar_helper.dart';
 import '../../utils/platform_detector.dart';
@@ -57,10 +58,21 @@ import 'settings_utils.dart';
 import '../../widgets/loading_indicator_box.dart';
 
 class SettingsScreen extends StatefulWidget {
-  const SettingsScreen({super.key, this.downloadDirectoryWritableChecker});
+  const SettingsScreen({
+    super.key,
+    this.downloadDirectoryWritableChecker,
+    this.settingsExporter,
+    this.settingsImporter,
+  });
 
   @visibleForTesting
   final Future<bool> Function(Directory directory)? downloadDirectoryWritableChecker;
+
+  @visibleForTesting
+  final Future<String?> Function()? settingsExporter;
+
+  @visibleForTesting
+  final Future<ImportResult?> Function()? settingsImporter;
 
   @override
   State<SettingsScreen> createState() => _SettingsScreenState();
@@ -345,8 +357,8 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
                 subtitle: Text(currentPath, maxLines: 2, overflow: .ellipsis),
                 trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
                 onTap: () => _showDownloadLocationDialog(),
-                dense: settingsRowDense(),
-                visualDensity: settingsRowVisualDensity(),
+                dense: false,
+                visualDensity: VisualDensity.standard,
               );
             },
           ),
@@ -542,8 +554,8 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
                     _checkForUpdates();
                   }
                 },
-          dense: settingsRowDense(),
-          visualDensity: settingsRowVisualDensity(),
+          dense: false,
+          visualDensity: VisualDensity.standard,
         ),
         _buildAutoCheckUpdatesOnStartupTile(),
       ],
@@ -590,8 +602,8 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
           DialogActionButton(onPressed: () => Navigator.pop(dialogContext), label: t.common.cancel),
           DialogActionButton(
             onPressed: () async {
-              await _selectDownloadLocation();
-              if (dialogContext.mounted) Navigator.pop(dialogContext);
+              final changed = await _selectDownloadLocation();
+              if (changed && dialogContext.mounted) Navigator.pop(dialogContext);
             },
             label: t.settings.selectFolder,
             isPrimary: true,
@@ -601,55 +613,65 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
     );
   }
 
-  Future<void> _selectDownloadLocation() async {
+  Future<bool> _selectDownloadLocation() async {
     try {
       String? selectedPath;
       String pathType = 'file';
 
       if (Platform.isAndroid) {
-        final safService = SafStorageService.instance;
-        selectedPath = await safService.pickDirectory();
-        if (selectedPath != null) {
-          pathType = 'saf';
-        } else if (PlatformDetector.isTV()) {
-          if (mounted) {
-            showErrorSnackBar(context, t.settings.downloadLocationSelectError);
-          }
-          return;
+        final safStorage = SafStorageService.instance;
+        if (!safStorage.supportsDirectoryPicker) {
+          showErrorSnackBar(context, t.settings.downloadLocationPickerUnavailable);
+          return false;
         }
+        selectedPath = await safStorage.pickDirectory();
+        if (!mounted) return false;
+        if (selectedPath != null) pathType = 'saf';
       } else {
-        final result = await FilePickerService.instance.getDirectoryPath(dialogTitle: t.settings.selectFolder);
-        selectedPath = result;
+        selectedPath = await FilePickerService.instance.getDirectoryPath(dialogTitle: t.settings.selectFolder);
+        if (!mounted) return false;
       }
+      if (selectedPath == null) return false;
 
-      if (selectedPath != null) {
-        if (pathType == 'file') {
-          final dir = Directory(selectedPath);
-          final isWritable =
-              await (widget.downloadDirectoryWritableChecker ?? DownloadStorageService.instance.isDirectoryWritable)(
-                dir,
-              );
-          if (!isWritable) {
-            if (mounted) {
-              showErrorSnackBar(context, t.settings.downloadLocationInvalid);
-            }
-            return;
-          }
-        }
-
-        if (!mounted) return;
-        await context.read<DownloadProvider>().setDownloadLocation(path: selectedPath, pathType: pathType);
-
-        if (mounted) {
-          // ignore: no-empty-block - setState triggers rebuild to reflect new download path
-          setState(() {});
-          showSuccessSnackBar(context, t.settings.downloadLocationChanged);
+      if (pathType == 'file') {
+        final dir = Directory(selectedPath);
+        final isWritable =
+            await (widget.downloadDirectoryWritableChecker ?? DownloadStorageService.instance.isDirectoryWritable)(dir);
+        if (!mounted) return false;
+        if (!isWritable) {
+          showErrorSnackBar(context, t.settings.downloadLocationInvalid);
+          return false;
         }
       }
-    } catch (e) {
-      if (mounted) {
-        showErrorSnackBar(context, t.settings.downloadLocationSelectError);
+
+      await context.read<DownloadProvider>().setDownloadLocation(path: selectedPath, pathType: pathType);
+      if (!mounted) return false;
+
+      // ignore: no-empty-block - setState triggers rebuild to reflect new download path
+      setState(() {});
+      showSuccessSnackBar(context, t.settings.downloadLocationChanged);
+      return true;
+    } on DownloadStorageException catch (error, stackTrace) {
+      if (!mounted) {
+        appLogger.e('Download directory selection failed', error: error, stackTrace: stackTrace);
+        return false;
       }
+      showSettingsFailure(context, operation: 'Download directory selection', error: error, stackTrace: stackTrace);
+      return false;
+    } on PlatformException catch (error, stackTrace) {
+      if (!mounted) {
+        appLogger.e('Download directory selection failed', error: error, stackTrace: stackTrace);
+        return false;
+      }
+      showSettingsFailure(context, operation: 'Download directory selection', error: error, stackTrace: stackTrace);
+      return false;
+    } on FileSystemException catch (error, stackTrace) {
+      if (!mounted) {
+        appLogger.e('Download directory selection failed', error: error, stackTrace: stackTrace);
+        return false;
+      }
+      showSettingsFailure(context, operation: 'Download directory selection', error: error, stackTrace: stackTrace);
+      return false;
     }
   }
 
@@ -699,14 +721,27 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
 
   Future<void> _handleExportSettings() async {
     try {
-      final path = await SettingsExportService.exportToFile();
-      if (!mounted) return;
-      if (path == null) return; // user cancelled
+      final path = await (widget.settingsExporter ?? SettingsExportService.exportToFile)();
+      if (!mounted || path == null) return;
       showSuccessSnackBar(context, t.settings.exportSettingsSuccess);
-    } on SettingsExportException {
-      if (mounted) showErrorSnackBar(context, t.settings.exportSettingsFailed);
-    } catch (_) {
-      if (mounted) showErrorSnackBar(context, t.settings.exportSettingsFailed);
+    } on SettingsExportException catch (error, stackTrace) {
+      if (!mounted) {
+        appLogger.e('Settings export failed', error: error, stackTrace: stackTrace);
+        return;
+      }
+      showSettingsFailure(context, operation: 'Settings export', error: error, stackTrace: stackTrace);
+    } on PlatformException catch (error, stackTrace) {
+      if (!mounted) {
+        appLogger.e('Settings export failed', error: error, stackTrace: stackTrace);
+        return;
+      }
+      showSettingsFailure(context, operation: 'Settings export', error: error, stackTrace: stackTrace);
+    } on FileSystemException catch (error, stackTrace) {
+      if (!mounted) {
+        appLogger.e('Settings export failed', error: error, stackTrace: stackTrace);
+        return;
+      }
+      showSettingsFailure(context, operation: 'Settings export', error: error, stackTrace: stackTrace);
     }
   }
 
@@ -717,21 +752,19 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
       message: t.settings.importSettingsConfirm,
       confirmText: t.settings.importSettings,
     );
-    if (!confirmed) return;
+    if (!mounted || !confirmed) return;
     await _handleImportSettings();
   }
 
   Future<void> _handleImportSettings() async {
-    // Capture providers before any awaits so we don't reach through `context`
-    // after the widget may have been unmounted.
-    final themeProvider = context.read<ThemeProvider>();
-    final hiddenLibrariesProvider = context.read<HiddenLibrariesProvider>();
-    final librariesProvider = context.read<LibrariesProvider>();
-
     try {
-      final result = await SettingsExportService.importFromFile();
+      final result = await (widget.settingsImporter ?? SettingsExportService.importFromFile)();
       if (!mounted) return;
       if (result == null) return; // user cancelled file picker
+
+      final themeProvider = context.read<ThemeProvider>();
+      final hiddenLibrariesProvider = context.read<HiddenLibrariesProvider>();
+      final librariesProvider = context.read<LibrariesProvider>();
 
       // Import wrote directly to SharedPreferences, bypassing `write`. Push
       // fresh values into active listenables before providers re-read settings.
@@ -750,10 +783,24 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
       if (mounted) showErrorSnackBar(context, t.settings.importSettingsNoUser);
     } on InvalidExportFileException {
       if (mounted) showErrorSnackBar(context, t.settings.importSettingsInvalidFile);
-    } on SettingsExportException {
-      if (mounted) showErrorSnackBar(context, t.settings.importSettingsFailed);
-    } catch (_) {
-      if (mounted) showErrorSnackBar(context, t.settings.importSettingsFailed);
+    } on SettingsExportException catch (error, stackTrace) {
+      if (!mounted) {
+        appLogger.e('Settings import failed', error: error, stackTrace: stackTrace);
+        return;
+      }
+      showSettingsFailure(context, operation: 'Settings import', error: error, stackTrace: stackTrace);
+    } on PlatformException catch (error, stackTrace) {
+      if (!mounted) {
+        appLogger.e('Settings import failed', error: error, stackTrace: stackTrace);
+        return;
+      }
+      showSettingsFailure(context, operation: 'Settings import', error: error, stackTrace: stackTrace);
+    } on FileSystemException catch (error, stackTrace) {
+      if (!mounted) {
+        appLogger.e('Settings import failed', error: error, stackTrace: stackTrace);
+        return;
+      }
+      showSettingsFailure(context, operation: 'Settings import', error: error, stackTrace: stackTrace);
     }
   }
 

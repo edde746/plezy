@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:plezy/focus/focusable_wrapper.dart';
+import 'package:plezy/focus/input_mode_tracker.dart';
 import 'package:plezy/i18n/strings.g.dart';
 import 'package:plezy/media/media_backend.dart';
 import 'package:plezy/media/media_item.dart';
@@ -105,6 +107,139 @@ void main() {
     expect(thumbnails.map((thumbnail) => thumbnail.blurThumbnail), [true, false, false]);
   });
 
+  testWidgets('content strip falls back from chapters to a focusable queue', (tester) async {
+    final playback = _playbackWithQueue();
+    addTearDown(playback.dispose);
+    final player = _FakePlayer();
+    final stripKey = GlobalKey<ContentStripState>();
+    final chapter = MediaChapter(id: 1, startTimeOffset: 10000, title: 'Old Chapter');
+    MediaItem? selectedItem;
+
+    await tester.pumpWidget(
+      _queueHarness(
+        playback: playback,
+        child: ContentStrip(
+          key: stripKey,
+          player: player,
+          chapters: [chapter],
+          chaptersLoaded: true,
+          canControl: true,
+          showQueueTab: true,
+          onQueueItemSelected: (item) => selectedItem = item,
+          useFocusNavigation: true,
+        ),
+      ),
+    );
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+    await tester.pump();
+
+    expect(find.text(t.videoControls.chapters), findsOneWidget);
+    expect(find.text('Old Chapter'), findsOneWidget);
+    expect(find.text('Spoiler Episode'), findsNothing);
+
+    await tester.pumpWidget(
+      _queueHarness(
+        playback: playback,
+        child: ContentStrip(
+          key: stripKey,
+          player: player,
+          chapters: const [],
+          chaptersLoaded: true,
+          canControl: true,
+          showQueueTab: true,
+          onQueueItemSelected: (item) => selectedItem = item,
+          useFocusNavigation: true,
+        ),
+      ),
+    );
+    await tester.pump();
+
+    expect(find.text(t.videoControls.queue), findsOneWidget);
+    expect(find.text('Spoiler Episode'), findsOneWidget);
+    expect(find.text('Old Chapter'), findsNothing);
+
+    stripKey.currentState!.requestInitialFocus();
+    await tester.pump();
+    final firstQueueItem = tester.widget<FocusableWrapper>(
+      find.ancestor(of: find.text('Spoiler Episode'), matching: find.byType(FocusableWrapper)),
+    );
+    expect(firstQueueItem.focusNode!.hasPrimaryFocus, isTrue);
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+    await tester.pump();
+    expect(selectedItem?.id, 'spoiler-episode');
+  });
+
+  testWidgets('content strip preserves queue selection until only chapters remain', (tester) async {
+    final playback = _playbackWithQueue();
+    addTearDown(playback.dispose);
+    final player = _FakePlayer();
+    final stripKey = GlobalKey<ContentStripState>();
+    final initialChapter = MediaChapter(id: 1, startTimeOffset: 10000, title: 'Initial Chapter');
+    final replacementChapter = MediaChapter(id: 2, startTimeOffset: 20000, title: 'Replacement Chapter');
+
+    await tester.pumpWidget(
+      _queueHarness(
+        playback: playback,
+        child: ContentStrip(
+          key: stripKey,
+          player: player,
+          chapters: [initialChapter],
+          chaptersLoaded: true,
+          canControl: true,
+          showQueueTab: true,
+          onQueueItemSelected: (_) {},
+        ),
+      ),
+    );
+    await tester.pump();
+    await tester.tap(find.text(t.videoControls.queue));
+    await tester.pump();
+    expect(find.text('Spoiler Episode'), findsOneWidget);
+    expect(find.text('Initial Chapter'), findsNothing);
+
+    await tester.pumpWidget(
+      _queueHarness(
+        playback: playback,
+        child: ContentStrip(
+          key: stripKey,
+          player: player,
+          chapters: [replacementChapter],
+          chaptersLoaded: true,
+          canControl: true,
+          showQueueTab: true,
+          onQueueItemSelected: (_) {},
+        ),
+      ),
+    );
+    await tester.pump();
+
+    expect(find.text('Spoiler Episode'), findsOneWidget);
+    expect(find.text('Replacement Chapter'), findsNothing);
+
+    await tester.pumpWidget(
+      _queueHarness(
+        playback: playback,
+        child: ContentStrip(
+          key: stripKey,
+          player: player,
+          chapters: [replacementChapter],
+          chaptersLoaded: true,
+          canControl: true,
+          showQueueTab: false,
+          onQueueItemSelected: null,
+        ),
+      ),
+    );
+    await tester.pump();
+
+    expect(find.text('Replacement Chapter'), findsOneWidget);
+    expect(find.text('Spoiler Episode'), findsNothing);
+    await tester.tap(find.text('Replacement Chapter'));
+    await tester.pump();
+    expect(player.seeks, [const Duration(seconds: 20)]);
+  });
+
   testWidgets('denied chapter remains visible but touch and select do not seek', (tester) async {
     final playback = PlaybackStateProvider();
     addTearDown(playback.dispose);
@@ -197,9 +332,11 @@ void main() {
 Widget _queueHarness({required PlaybackStateProvider playback, required Widget child}) {
   return ChangeNotifierProvider<PlaybackStateProvider>.value(
     value: playback,
-    child: MaterialApp(
-      theme: ThemeData(extensions: const [_testTokens]),
-      home: Scaffold(body: SizedBox(width: 600, height: 400, child: child)),
+    child: InputModeTracker(
+      child: MaterialApp(
+        theme: ThemeData(extensions: const [_testTokens]),
+        home: Scaffold(body: SizedBox(width: 600, height: 400, child: child)),
+      ),
     ),
   );
 }

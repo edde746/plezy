@@ -7,6 +7,9 @@ import 'package:flutter/material.dart';
 import '../media/media_server_client.dart';
 import '../services/device_performance.dart';
 import '../utils/media_image_helper.dart';
+import 'optimized_media_image.dart';
+
+Future<bool> _defaultLocalFileExists(File file) => file.exists();
 
 /// Displays server artwork and rotates through multiple backdrops in order.
 ///
@@ -25,6 +28,7 @@ class CyclingMediaBackdrop extends StatefulWidget {
     this.localArtworkPathResolver,
     this.imageProviderResolver,
     this.allowNetwork = true,
+    this.localFileExists = _defaultLocalFileExists,
     this.active = true,
     this.fit = BoxFit.cover,
     this.alignment = Alignment.center,
@@ -41,6 +45,10 @@ class CyclingMediaBackdrop extends StatefulWidget {
   /// Overrides provider construction for deterministic widget tests.
   @visibleForTesting
   final ImageProvider? Function(String artworkPath)? imageProviderResolver;
+
+  /// Overrides local file checks for deterministic widget tests.
+  @visibleForTesting
+  final Future<bool> Function(File file) localFileExists;
   final bool allowNetwork;
   final bool active;
   final double width;
@@ -220,7 +228,7 @@ class _CyclingMediaBackdropState extends State<CyclingMediaBackdrop> with Widget
     _restartRotationTimer();
   }
 
-  ImageProvider? _providerFor(BuildContext context, String path) {
+  ImageProvider? _providerFor(BuildContext context, String path, File? localFile) {
     final providerOverride = widget.imageProviderResolver;
     if (providerOverride != null) return providerOverride(path);
 
@@ -234,12 +242,8 @@ class _CyclingMediaBackdropState extends State<CyclingMediaBackdrop> with Widget
       imageType: ImageType.art,
     );
 
-    final localPath = widget.localArtworkPathResolver?.call(path);
-    if (localPath != null) {
-      final file = File(localPath);
-      if (file.existsSync()) {
-        return MediaImageHelper.boundedDecode(FileImage(file), memWidth: memWidth, memHeight: memHeight);
-      }
+    if (localFile != null) {
+      return MediaImageHelper.boundedDecode(FileImage(localFile), memWidth: memWidth, memHeight: memHeight);
     }
     if (!widget.allowNetwork) return null;
 
@@ -262,22 +266,48 @@ class _CyclingMediaBackdropState extends State<CyclingMediaBackdrop> with Widget
     });
   }
 
-  @override
-  Widget build(BuildContext context) {
-    final path = _currentPath;
-    final provider = path == null ? null : _providerFor(context, path);
-    if (path != null && provider == null) _reportMissingProvider(path);
+  Widget _buildCrossfade(
+    BuildContext context,
+    String? path, {
+    required LocalFileResolution localResolution,
+    File? localFile,
+  }) {
+    final pending = localResolution == LocalFileResolution.pending;
+    final provider = path == null || pending ? null : _providerFor(context, path, localFile);
+    if (path != null && provider == null && !pending) _reportMissingProvider(path);
     final fadeDuration = _disableAnimations ? Duration.zero : DevicePerformance.reducedDuration(widget.fadeDuration);
 
     return _BackdropArtworkCrossfade(
       artworkKey: (widget.mediaKey, path),
       imageErrorKey: path,
       image: provider,
+      pending: pending,
       duration: fadeDuration,
       fit: widget.fit,
       alignment: widget.alignment,
       fallbackColor: widget.fallbackColor,
       onImageError: _handleImageError,
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final path = _currentPath;
+    if (path == null) {
+      return _buildCrossfade(context, null, localResolution: LocalFileResolution.missing);
+    }
+
+    final localPath = widget.localArtworkPathResolver?.call(path);
+    if (localPath == null) {
+      return _buildCrossfade(context, path, localResolution: LocalFileResolution.missing);
+    }
+
+    return ResolvedLocalFile(
+      path: localPath,
+      cacheMissing: true,
+      fileExists: widget.localFileExists,
+      builder: (context, resolution, file) =>
+          _buildCrossfade(context, path, localResolution: resolution, localFile: file),
     );
   }
 }
@@ -287,6 +317,7 @@ class _BackdropArtworkCrossfade extends StatefulWidget {
     required this.artworkKey,
     required this.imageErrorKey,
     required this.image,
+    required this.pending,
     required this.duration,
     required this.fit,
     required this.alignment,
@@ -297,6 +328,7 @@ class _BackdropArtworkCrossfade extends StatefulWidget {
   final Object? artworkKey;
   final Object? imageErrorKey;
   final ImageProvider? image;
+  final bool pending;
   final Duration duration;
   final BoxFit fit;
   final Alignment alignment;
@@ -310,7 +342,7 @@ class _BackdropArtworkCrossfade extends StatefulWidget {
 class _BackdropArtworkCrossfadeState extends State<_BackdropArtworkCrossfade> with SingleTickerProviderStateMixin {
   late final AnimationController _fade;
   late Object? _currentKey = widget.artworkKey;
-  late ImageProvider? _base = widget.image;
+  late ImageProvider? _base = widget.pending ? null : widget.image;
   late Object? _baseErrorKey = widget.imageErrorKey;
   ImageProvider? _incoming;
   Object? _incomingErrorKey;
@@ -328,6 +360,11 @@ class _BackdropArtworkCrossfadeState extends State<_BackdropArtworkCrossfade> wi
     super.didUpdateWidget(oldWidget);
     _fade.duration = widget.duration;
     if (widget.artworkKey == _currentKey) {
+      if (widget.pending) return;
+      if (oldWidget.pending) {
+        _transitionToIncoming();
+        return;
+      }
       if (widget.image != null && widget.image != _base && _incoming == null) {
         _base = widget.image;
         _baseErrorKey = widget.imageErrorKey;
@@ -336,12 +373,27 @@ class _BackdropArtworkCrossfadeState extends State<_BackdropArtworkCrossfade> wi
     }
 
     _currentKey = widget.artworkKey;
+    if (widget.pending) {
+      if (_base == null && _incoming != null && _fade.value == 1) {
+        _base = _incoming;
+        _baseErrorKey = _incomingErrorKey;
+      }
+      setState(() {
+        _fade.stop();
+        _dropIncoming();
+      });
+      return;
+    }
     if (widget.image != null && widget.image == _base) {
       _baseErrorKey = widget.imageErrorKey;
       _dropIncoming();
       return;
     }
 
+    _transitionToIncoming();
+  }
+
+  void _transitionToIncoming() {
     setState(() {
       _fade.stop();
       _fade.value = 0;

@@ -29,7 +29,7 @@ void main() {
     expect(backed, 1);
   });
 
-  testWidgets('nullable callback keeps its graph position while disabling activation', (tester) async {
+  testWidgets('nullable callback disables activation and removes the action from traversal', (tester) async {
     final focusNode = FocusNode(debugLabel: 'disabled dialog action');
     addTearDown(focusNode.dispose);
 
@@ -48,9 +48,11 @@ void main() {
     );
     await tester.pump();
 
-    expect(focusNode.hasFocus, isTrue);
+    expect(focusNode.canRequestFocus, isFalse);
+    expect(focusNode.hasFocus, isFalse);
     expect(tester.widget<FilledButton>(find.byType(FilledButton)).onPressed, isNull);
-    await tester.sendKeyEvent(LogicalKeyboardKey.enter);
-    expect(focusNode.hasFocus, isTrue);
+    focusNode.requestFocus();
+    await tester.pump();
+    expect(focusNode.hasFocus, isFalse);
   });
 }

@@ -10,6 +10,7 @@ import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 import '../focus/focusable_action_bar.dart';
 import '../focus/hub_vertical_navigation.dart';
+import '../focus/locked_hub_controller.dart';
 import '../focus/input_mode_tracker.dart';
 import '../focus/key_event_utils.dart';
 import 'package:cached_network_image_ce/cached_network_image.dart';
@@ -112,6 +113,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
   final Map<String, GlobalKey<HubSectionState>> _hubKeysByIdentity = {};
   List<GlobalKey<HubSectionState>> _orderedHubKeys = const [];
   final _tvBrowseRailKey = GlobalKey<TvBrowseRailState>();
+  final _hubFocusMemory = HubFocusMemory();
 
   // Hero and app bar focus
   late FocusNode _heroFocusNode;
@@ -1045,6 +1047,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                         more: _hasMoreContinueWatching,
                         items: _onDeck,
                       ),
+                      focusMemory: _hubFocusMemory,
                       icon: Symbols.play_circle_rounded,
                       onRefresh: _discover.updateItem,
                       onRemoveFromContinueWatching: _discover.refreshContinueWatching,
@@ -1062,6 +1065,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                     child: HubSection(
                       key: i < _orderedHubKeys.length ? _orderedHubKeys[i] : null,
                       hub: _hubs[i],
+                      focusMemory: _hubFocusMemory,
                       icon: _getHubIcon(_hubs[i].title),
                       showServerName: showServerNameOnHubs || hubsSpanMultipleServers,
                       onRefresh: _discover.updateItem,
@@ -1146,6 +1150,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     return _tvBrowseRailWidget = TvBrowseRail(
       key: _tvBrowseRailKey,
       hubs: browseHubs,
+      focusMemory: _hubFocusMemory,
       showServerName: showServerName,
       iconForHub: (hub, _) => hub.id == 'continue_watching' ? Symbols.play_circle_rounded : _getHubIcon(hub.title),
       onFocusedItemChanged: _setSpotlightItem,

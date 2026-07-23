@@ -10,6 +10,7 @@ import '../focus/focusable_action_bar.dart';
 import '../focus/dpad_navigator.dart';
 import '../focus/input_mode_tracker.dart';
 import '../focus/key_event_utils.dart';
+import '../focus/locked_hub_controller.dart';
 import '../i18n/strings.g.dart';
 import '../media/media_hub.dart';
 import '../media/media_item.dart';
@@ -52,9 +53,11 @@ class CatalogItemDetailScreen extends StatefulWidget {
 
 class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
   final _actionBarKey = GlobalKey<FocusableActionBarState>();
+  final _backButtonFocusNode = FocusNode(debugLabel: 'catalog_detail_back');
   final _castSectionKey = GlobalKey();
   final _castStripKey = GlobalKey<CastMemberStripState>();
   final _relatedSectionKey = GlobalKey<HubSectionState>();
+  final _hubFocusMemory = HubFocusMemory();
   final ScrollController _scrollController = ScrollController();
   List<FocusNode> _libraryMatchFocusNodes = const [];
   CatalogSource? _watchlistSource;
@@ -101,6 +104,7 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
 
   @override
   void dispose() {
+    _backButtonFocusNode.dispose();
     _watchlistSource?.watchlistChanges.removeListener(_onWatchlistChanged);
     for (final node in _libraryMatchFocusNodes) {
       node.dispose();
@@ -441,6 +445,7 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
         items: [for (final item in related) item.toMediaItem()],
         size: related.length,
       ),
+      focusMemory: _hubFocusMemory,
       icon: Symbols.recommend_rounded,
       inset: true,
       onNavigateUp: _focusSectionAboveRelated,
@@ -561,7 +566,7 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
                                                     ? t.explore.removeFromWatchlist
                                                     : t.explore.addToWatchlist,
                                                 onPressed: onWatchlist == null
-                                                    ? () {}
+                                                    ? null
                                                     : () => unawaited(_toggleWatchlist()),
                                               ),
                                             if (_requestSource case final SeerrCatalogSource seerr)
@@ -608,7 +613,7 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
                   top: 0,
                   left: 0,
                   child: DesktopAppBarHelper.buildAdjustedLeading(
-                    const AppBarBackButton(style: BackButtonStyle.circular),
+                    AppBarBackButton(style: BackButtonStyle.circular, focusNode: _backButtonFocusNode),
                     context: hostContext,
                   )!,
                 ),

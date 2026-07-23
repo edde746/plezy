@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
@@ -87,6 +88,102 @@ void main() {
     final placeholder = find.descendant(of: find.byType(OptimizedMediaImage), matching: find.byType(Container));
     expect(placeholder, findsOneWidget);
     expect(tester.getSize(placeholder), const Size(96, 96));
+  });
+
+  testWidgets('local resolver rejects stale path completions and disposal completions', (tester) async {
+    final checks = <String, Completer<bool>>{};
+    final probes = <String, int>{};
+    var path = '/artwork/a.png';
+    late StateSetter rebuild;
+    Future<bool> fileExists(File file) {
+      probes.update(file.path, (count) => count + 1, ifAbsent: () => 1);
+      return (checks[file.path] ??= Completer<bool>()).future;
+    }
+
+    Widget resolutionBuilder(BuildContext context, LocalFileResolution resolution, File? file) {
+      return Text('${resolution.name}:${file?.path ?? path}');
+    }
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: StatefulBuilder(
+          builder: (context, setState) {
+            rebuild = setState;
+            return ResolvedLocalFile(path: path, fileExists: fileExists, builder: resolutionBuilder);
+          },
+        ),
+      ),
+    );
+    expect(find.text('pending:/artwork/a.png'), findsOneWidget);
+
+    rebuild(() => path = '/artwork/b.png');
+    await tester.pump();
+    rebuild(() {});
+    await tester.pump();
+    expect(find.text('pending:/artwork/b.png'), findsOneWidget);
+    expect(probes['/artwork/b.png'], 1);
+
+    checks['/artwork/a.png']!.complete(true);
+    await tester.pump();
+    expect(find.text('pending:/artwork/b.png'), findsOneWidget);
+
+    checks['/artwork/b.png']!.complete(true);
+    await tester.pump();
+    await tester.pump();
+    expect(find.text('present:/artwork/b.png'), findsOneWidget);
+
+    rebuild(() => path = '/artwork/c.png');
+    await tester.pump();
+    await tester.pumpWidget(const SizedBox.shrink());
+    checks['/artwork/c.png']!.complete(true);
+    await tester.pump();
+    await tester.pump();
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('local resolver caches confirmed missing paths only when requested', (tester) async {
+    final probes = <String, int>{};
+    var path = '/artwork/missing-a.png';
+    late StateSetter rebuild;
+    Future<bool> fileExists(File file) {
+      probes.update(file.path, (count) => count + 1, ifAbsent: () => 1);
+      return Future<bool>.value(false);
+    }
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: StatefulBuilder(
+          builder: (context, setState) {
+            rebuild = setState;
+            return ResolvedLocalFile(
+              path: path,
+              cacheMissing: true,
+              fileExists: fileExists,
+              builder: (context, resolution, file) => Text('${resolution.name}:$path'),
+            );
+          },
+        ),
+      ),
+    );
+    await tester.pump();
+    expect(find.text('missing:/artwork/missing-a.png'), findsOneWidget);
+    expect(probes['/artwork/missing-a.png'], 1);
+
+    rebuild(() {});
+    await tester.pump();
+    rebuild(() {});
+    await tester.pump();
+    expect(probes['/artwork/missing-a.png'], 1);
+
+    rebuild(() => path = '/artwork/missing-b.png');
+    await tester.pump();
+    await tester.pump();
+    expect(probes['/artwork/missing-b.png'], 1);
+
+    rebuild(() => path = '/artwork/missing-a.png');
+    await tester.pump();
+    expect(find.text('missing:/artwork/missing-a.png'), findsOneWidget);
+    expect(probes['/artwork/missing-a.png'], 1);
   });
 
   testWidgets('same local artwork path re-resolves after the file appears', (tester) async {

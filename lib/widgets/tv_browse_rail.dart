@@ -306,6 +306,7 @@ enum TvRailTrailing { none, loading, error, viewAll }
 
 class TvBrowseRail extends StatefulWidget {
   final List<MediaHub> hubs;
+  final HubFocusMemory focusMemory;
   final IconData Function(MediaHub hub, int index) iconForHub;
 
   /// Whether to show each hub's originating server name in its header. Used when
@@ -354,6 +355,7 @@ class TvBrowseRail extends StatefulWidget {
   const TvBrowseRail({
     super.key,
     required this.hubs,
+    required this.focusMemory,
     required this.iconForHub,
     this.showServerName = false,
     this.onFocusedItemChanged,
@@ -774,7 +776,7 @@ class TvBrowseRailState extends State<TvBrowseRail> {
     final currentHub = _activeHub;
     if (currentHub != null) _rememberFocus(currentHub);
     final nextHub = widget.hubs[next];
-    final remembered = HubFocusMemory.getForHubOnly(_hubKey(nextHub), _totalItemCount(nextHub));
+    final remembered = widget.focusMemory.getForHubOnly(_hubKey(nextHub), _totalItemCount(nextHub));
     // No setState: the active-hub change is observed through _focusModel
     // selectors (cards, headers, row dim), so a hub move repaints only the
     // two affected rows instead of rebuilding every visible card. Section
@@ -857,7 +859,7 @@ class TvBrowseRailState extends State<TvBrowseRail> {
   }
 
   void _rememberFocus(MediaHub hub) {
-    HubFocusMemory.setForHub(_hubKey(hub), _itemIndex);
+    widget.focusMemory.setForHub(_hubKey(hub), _itemIndex);
   }
 
   void _scrollToItem({bool animate = true, Duration duration = _navigationScrollDuration}) {
@@ -1354,7 +1356,7 @@ class TvBrowseRailState extends State<TvBrowseRail> {
   }) {
     final isActiveHub = hubIndex == _hubIndex;
     final totalCount = _totalItemCount(hub);
-    final inactiveIndex = HubFocusMemory.getForHubOnly(_hubKey(hub), totalCount);
+    final inactiveIndex = widget.focusMemory.getForHubOnly(_hubKey(hub), totalCount);
     final focusedIndex = isActiveHub ? _itemIndex : inactiveIndex;
     final scrollController = _scrollControllerForHub(hub, metrics, railViewportWidth, scale, focusedIndex);
     _metricsByHub[_hubKey(hub)] = metrics;

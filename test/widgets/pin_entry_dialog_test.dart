@@ -65,6 +65,34 @@ void main() {
     expect(find.byType(PinEntryDialog), findsNothing);
   });
 
+  testWidgets('mobile PIN normalizes oversized input before submitting', (tester) async {
+    TvDetectionService.debugSetAppleTVOverride(false);
+    String? result;
+
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: ThemeData(platform: TargetPlatform.iOS),
+        home: Builder(
+          builder: (context) => Scaffold(
+            body: TextButton(
+              onPressed: () async {
+                result = await showPinEntryDialog(context, 'Protected Profile');
+              },
+              child: const Text('Open'),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.tap(find.text('Open'));
+    await tester.pumpAndSettle();
+
+    tester.widget<TextField>(find.byType(TextField)).onChanged!('12345');
+    await tester.pumpAndSettle();
+
+    expect(result, '1234');
+    expect(find.byType(PinEntryDialog), findsNothing);
+  });
   testWidgets('mobile duplicate submit does not pop route below PIN dialog', (tester) async {
     TvDetectionService.debugSetAppleTVOverride(false);
     String? pinResult;
@@ -304,6 +332,24 @@ void main() {
     expect(find.byType(PinEntryDialog), findsNothing);
   });
 
+  testWidgets('unowned keyboard keys remain available to ancestor handlers', (tester) async {
+    TvDetectionService.debugSetAppleTVOverride(true);
+
+    await _pumpPinDialogLauncher(tester, onResult: (_) {});
+    await tester.tap(find.text('Open'));
+    await tester.pumpAndSettle();
+
+    final result = _dispatchKey(
+      const KeyDownEvent(
+        physicalKey: PhysicalKeyboardKey.f12,
+        logicalKey: LogicalKeyboardKey.f12,
+        timeStamp: Duration.zero,
+      ),
+    );
+
+    expect(result, KeyEventResult.ignored);
+    expect(find.byType(PinEntryDialog), findsOneWidget);
+  });
   testWidgets('non-mobile PIN entry accepts physical keyboard digits', (tester) async {
     TvDetectionService.debugSetAppleTVOverride(true);
     String? result;

@@ -304,13 +304,19 @@ Map<String, HotKey> _defaultKeyboardHotkeys() => {
   'screenshot': const HotKey(key: PhysicalKeyboardKey.keyS, modifiers: [HotKeyModifier.control]),
 };
 
-Map<String, HotKey> _decodeKeyboardHotkeys(dynamic raw) {
-  final result = <String, HotKey>{};
+Map<String, HotKey?> _decodeKeyboardHotkeys(dynamic raw) {
+  final result = <String, HotKey?>{};
   for (final entry in (raw as Map<String, dynamic>).entries) {
-    final hk = SettingsService.deserializeHotKey(entry.value as Map<String, dynamic>);
-    if (hk != null) result[entry.key] = hk;
+    final value = entry.value;
+    if (value is! Map<String, dynamic>) continue;
+    if (value['disabled'] == true) {
+      result[entry.key] = null;
+      continue;
+    }
+    final hotkey = SettingsService.deserializeHotKey(value);
+    if (hotkey != null) result[entry.key] = hotkey;
   }
-  return {..._defaultKeyboardHotkeys(), ...result};
+  return <String, HotKey?>{..._defaultKeyboardHotkeys(), ...result};
 }
 
 class SettingsService extends BaseSharedPreferencesService {
@@ -500,10 +506,12 @@ class SettingsService extends BaseSharedPreferencesService {
   );
   static const mpvConfigText = _MpvConfigTextPref();
 
-  static final keyboardHotkeys = JsonPref<Map<String, HotKey>>(
+  static final keyboardHotkeys = JsonPref<Map<String, HotKey?>>(
     'keyboard_hotkeys',
-    defaultValue: _defaultKeyboardHotkeys(),
-    encode: (v) => json.encode(v.map((k, hk) => MapEntry(k, SettingsService.serializeHotKey(hk)))),
+    defaultValue: <String, HotKey?>{..._defaultKeyboardHotkeys()},
+    encode: (values) => json.encode(
+      values.map((key, hotkey) => MapEntry(key, hotkey == null ? const {'disabled': true} : serializeHotKey(hotkey))),
+    ),
     decode: _decodeKeyboardHotkeys,
   );
   static final mediaVersionPreferences = JsonPref<Map<String, MediaVersionPreference>>(
@@ -670,13 +678,6 @@ class SettingsService extends BaseSharedPreferencesService {
   Future<void> deleteMpvPreset(String name) async {
     final presets = read(mpvPresets).where((p) => p.name != name).toList();
     await write(mpvPresets, presets);
-  }
-
-  /// Load a preset (replaces current config text).
-  Future<void> loadMpvPreset(String name) async {
-    final presets = read(mpvPresets);
-    final preset = presets.firstWhere((p) => p.name == name, orElse: () => throw Exception('Preset not found: $name'));
-    await write(mpvConfigText, preset.text);
   }
 
   static const _modifierMap = <String, HotKeyModifier>{

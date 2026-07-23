@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/services.dart';
@@ -6,8 +7,12 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/models/hotkey_model.dart';
 import 'package:plezy/mpv/mpv.dart';
 import 'package:plezy/services/keyboard_shortcuts_service.dart';
+import 'package:plezy/services/base_shared_preferences_service.dart';
 import 'package:plezy/services/settings_service.dart';
 import 'package:plezy/services/video_filter_manager.dart';
+import 'package:shared_preferences_platform_interface/in_memory_shared_preferences_async.dart';
+import 'package:shared_preferences_platform_interface/shared_preferences_async_platform_interface.dart';
+import 'package:shared_preferences_platform_interface/types.dart';
 
 import '../test_helpers/prefs.dart';
 
@@ -86,6 +91,97 @@ void main() {
 
       expect(service.getHotkey('play_pause')?.key, PhysicalKeyboardKey.space);
       expect(SettingsService.instance.prefs.containsKey(SettingsService.keyboardHotkeys.key), isFalse);
+    });
+
+    test('explicit unassignment survives restart and reset restores dispatch', () async {
+      final service = await KeyboardShortcutsService.getInstance();
+      await service.setHotkey('play_pause', null);
+      await service.setHotkey('volume_up', const HotKey(key: PhysicalKeyboardKey.keyQ));
+
+      final stored =
+          json.decode(SettingsService.instance.prefs.getString(SettingsService.keyboardHotkeys.key)!)
+              as Map<String, dynamic>;
+      expect(stored['play_pause'], {'disabled': true});
+      expect(service.getHotkey('play_pause'), isNull);
+      expect(service.getActionForHotkey(const HotKey(key: PhysicalKeyboardKey.space)), isNull);
+
+      service.dispose();
+      SettingsService.resetForTesting();
+      BaseSharedPreferencesService.resetForTesting();
+
+      final reloaded = await KeyboardShortcutsService.getInstance();
+      addTearDown(reloaded.dispose);
+      expect(reloaded.getHotkey('play_pause'), isNull);
+      expect(reloaded.getHotkey('volume_up')?.key, PhysicalKeyboardKey.keyQ);
+      expect(reloaded.getHotkey('volume_down')?.key, PhysicalKeyboardKey.arrowDown);
+
+      var playPauseCalls = 0;
+      final player = _FakePlayer();
+      KeyEventResult dispatch() {
+        return reloaded.handleVideoPlayerKeyEvent(
+          const KeyDownEvent(
+            physicalKey: PhysicalKeyboardKey.space,
+            logicalKey: LogicalKeyboardKey.space,
+            timeStamp: Duration.zero,
+          ),
+          player,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          canControlPlayback: true,
+          canNavigateMediaItems: true,
+          onPlayPause: () => playPauseCalls++,
+        );
+      }
+
+      expect(dispatch(), KeyEventResult.ignored);
+      expect(playPauseCalls, 0);
+      await reloaded.resetToDefaults();
+      expect(dispatch(), KeyEventResult.handled);
+      expect(playPauseCalls, 1);
+
+      final resetStored =
+          json.decode(SettingsService.instance.prefs.getString(SettingsService.keyboardHotkeys.key)!)
+              as Map<String, dynamic>;
+      expect(resetStored['play_pause'], {'key': '0007002c', 'modifiers': <dynamic>[]});
+    });
+
+    test('serialized writes preserve rapid edits and recover after a failure', () async {
+      final preferences = _HotkeyPreferences(const {});
+      SharedPreferencesAsyncPlatform.instance = preferences;
+      SettingsService.resetForTesting();
+      BaseSharedPreferencesService.resetForTesting();
+      final service = await KeyboardShortcutsService.getInstance();
+      addTearDown(service.dispose);
+
+      preferences.blockNextHotkeyWrite();
+      final first = service.setHotkey('play_pause', const HotKey(key: PhysicalKeyboardKey.keyQ));
+      await preferences.blocked;
+      final second = service.setHotkey('volume_up', const HotKey(key: PhysicalKeyboardKey.keyW));
+      await Future<void>.delayed(Duration.zero);
+
+      expect(preferences.hotkeyWriteCount, 1);
+      expect(service.getHotkey('play_pause')?.key, PhysicalKeyboardKey.space);
+      preferences.release();
+      await Future.wait([first, second]);
+
+      expect(preferences.hotkeyWriteCount, 2);
+      expect(service.getHotkey('play_pause')?.key, PhysicalKeyboardKey.keyQ);
+      expect(service.getHotkey('volume_up')?.key, PhysicalKeyboardKey.keyW);
+
+      preferences.failNextHotkeyWrite = true;
+      await expectLater(
+        service.setHotkey('play_pause', const HotKey(key: PhysicalKeyboardKey.keyE)),
+        throwsA(isA<PlatformException>()),
+      );
+      expect(service.getHotkey('play_pause')?.key, PhysicalKeyboardKey.keyQ);
+
+      await service.setHotkey('volume_down', const HotKey(key: PhysicalKeyboardKey.keyR));
+      expect(service.getHotkey('play_pause')?.key, PhysicalKeyboardKey.keyQ);
+      expect(service.getHotkey('volume_down')?.key, PhysicalKeyboardKey.keyR);
     });
   });
 
@@ -596,4 +692,42 @@ class _FakePlayer implements Player {
 
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
+final class _HotkeyPreferences extends InMemorySharedPreferencesAsync {
+  _HotkeyPreferences(super.data) : super.withData();
+
+  Completer<void>? _entered;
+  Completer<void>? _release;
+  int hotkeyWriteCount = 0;
+  bool failNextHotkeyWrite = false;
+
+  Future<void> get blocked => _entered!.future;
+
+  void blockNextHotkeyWrite() {
+    _entered = Completer<void>();
+    _release = Completer<void>();
+  }
+
+  void release() {
+    final release = _release;
+    if (release != null && !release.isCompleted) release.complete();
+  }
+
+  @override
+  Future<bool> setString(String key, String value, SharedPreferencesOptions options) async {
+    if (key == SettingsService.keyboardHotkeys.key) {
+      hotkeyWriteCount++;
+      if (failNextHotkeyWrite) {
+        failNextHotkeyWrite = false;
+        throw PlatformException(code: 'write_failed');
+      }
+      final entered = _entered;
+      if (entered != null && !entered.isCompleted) {
+        entered.complete();
+        await _release!.future;
+      }
+    }
+    return super.setString(key, value, options);
+  }
 }

@@ -1,5 +1,7 @@
 part of '../video_controls.dart';
 
+final Expando<LatestAsyncWrite<String>> _subtitleVisibilityWrites = Expando<LatestAsyncWrite<String>>();
+
 extension _PlexVideoControlsTrackMethods on _PlexVideoControlsState {
   void _toggleSubtitles() {
     final currentTrack = widget.player.state.track.subtitle;
@@ -19,6 +21,8 @@ extension _PlexVideoControlsTrackMethods on _PlexVideoControlsState {
 
   void _setSubtitleVisibility(bool visible) {
     final targetPlayer = widget.player;
+    final coordinator = _subtitleVisibilityWrites[targetPlayer] ??= LatestAsyncWrite<String>();
+    final writeToken = coordinator.begin('sub-visibility');
     final generation = ++_subtitleVisibilityWriteGeneration;
     _setControlsState(() {
       _subtitlesVisible = visible;
@@ -26,12 +30,25 @@ extension _PlexVideoControlsTrackMethods on _PlexVideoControlsState {
 
     unawaited(() async {
       try {
-        await targetPlayer.setProperty('sub-visibility', visible ? 'yes' : 'no');
-        if (!mounted || generation != _subtitleVisibilityWriteGeneration || targetPlayer != widget.player) return;
-        _confirmedSubtitlesVisible = visible;
+        final committed = await coordinator.commitIfLatest('sub-visibility', writeToken, () async {
+          await targetPlayer.setProperty('sub-visibility', visible ? 'yes' : 'no');
+          if (mounted && targetPlayer == widget.player) {
+            // Preserve every successfully executed mutation as the rollback
+            // baseline, even when a newer optimistic toggle is queued.
+            _confirmedSubtitlesVisible = visible;
+          }
+        });
+        if (!committed ||
+            !mounted ||
+            generation != _subtitleVisibilityWriteGeneration ||
+            targetPlayer != widget.player) {
+          return;
+        }
       } catch (error, stackTrace) {
         appLogger.w('Failed to update subtitle visibility', error: error, stackTrace: stackTrace);
-        if (!mounted || generation != _subtitleVisibilityWriteGeneration || targetPlayer != widget.player) return;
+        if (!mounted || generation != _subtitleVisibilityWriteGeneration || targetPlayer != widget.player) {
+          return;
+        }
         _setControlsState(() {
           _subtitlesVisible = _confirmedSubtitlesVisible;
         });

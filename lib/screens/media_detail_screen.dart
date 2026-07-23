@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:math' as math;
 import '../media/ids.dart';
-import 'dart:io';
 
 import 'package:cached_network_image_ce/cached_network_image.dart';
 import 'package:flutter/material.dart';
@@ -23,6 +22,7 @@ import '../focus/dpad_select_long_press_controller.dart';
 import '../focus/focusable_action_bar.dart';
 import '../focus/focusable_wrapper.dart';
 import '../focus/hub_vertical_navigation.dart';
+import '../focus/locked_hub_controller.dart';
 import '../focus/key_event_utils.dart';
 import '../focus/input_mode_tracker.dart';
 import '../widgets/cast_member_strip.dart';
@@ -288,6 +288,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   bool _hasLoadedExtras = false;
   bool _hasLoadedRelatedHubs = false;
   final _tvDetailRailKey = GlobalKey<TvBrowseRailState>();
+  final _hubFocusMemory = HubFocusMemory();
   PageRoute<dynamic>? _route;
   RouteObserver<PageRoute<dynamic>>? _routeObserver;
   late final ScrollController _scrollController;
@@ -361,6 +362,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
 
   late final FocusNode _playButtonFocusNode;
   late final FocusNode _ratingChipFocusNode;
+  late final FocusNode _backButtonFocusNode;
   final _extrasSelectLongPress = DpadSelectLongPressController();
 
   // Context menu key for the three-dots button
@@ -687,6 +689,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     _extrasFocusNode.addListener(_handleExtrasFocusChange);
     _playButtonFocusNode = FocusNode(debugLabel: 'play_button');
     _ratingChipFocusNode = FocusNode(debugLabel: 'rating_chip');
+    _backButtonFocusNode = FocusNode(debugLabel: 'media_detail_back');
     _overviewFocusNode = FocusNode(debugLabel: 'overview');
     _infoRowsFocusNode = FocusNode(debugLabel: 'info_rows');
     _loadFullMetadata();
@@ -881,6 +884,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     _focusedExtraIndexNotifier.dispose();
     _playButtonFocusNode.dispose();
     _ratingChipFocusNode.dispose();
+    _backButtonFocusNode.dispose();
     _overviewFocusNode.dispose();
     _infoRowsFocusNode.dispose();
     _extrasSelectLongPress.dispose();
@@ -1190,20 +1194,23 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     required ImageType imageType,
     Alignment alignment = Alignment.center,
     Widget Function(BuildContext, String, dynamic)? errorWidget,
+    Widget Function(BuildContext, String)? placeholder,
   }) {
     if (!widget.isOffline || _metadata.serverId == null) return null;
 
     for (final artworkPath in artworkPaths) {
-      final localPath = _offlineArtworkLocalPath(context, artworkPath);
+      final localPath = _offlineArtworkCandidatePath(context, artworkPath);
       if (localPath == null) continue;
 
       return OptimizedMediaImage(
         client: null,
         imagePath: null,
         localFilePath: localPath,
+        cacheMissingLocalFile: true,
         fit: fit,
         alignment: alignment,
         imageType: imageType,
+        placeholder: placeholder,
         errorWidget: errorWidget,
       );
     }
@@ -1211,11 +1218,9 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     return null;
   }
 
-  String? _offlineArtworkLocalPath(BuildContext context, String? artworkPath) {
+  String? _offlineArtworkCandidatePath(BuildContext context, String? artworkPath) {
     if (!widget.isOffline || _metadata.serverId == null) return null;
-    final localPath = context.read<DownloadProvider>().getArtworkLocalPath(ServerId(_metadata.serverId!), artworkPath);
-    if (localPath == null || !File(localPath).existsSync()) return null;
-    return localPath;
+    return context.read<DownloadProvider>().getArtworkLocalPath(ServerId(_metadata.serverId!), artworkPath);
   }
 
   String _syncRuleKeyForMetadata(BuildContext context, DownloadProvider downloadProvider, MediaItem metadata) {
@@ -2235,6 +2240,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
                 artworkPaths: [posterPath],
                 fit: BoxFit.cover,
                 imageType: ImageType.poster,
+                placeholder: (context, url) => const PlaceholderContainer(),
                 errorWidget: (context, url, error) => const PlaceholderContainer(),
               );
               topImage = SizedBox(
@@ -3044,6 +3050,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
       final backButton = AppBarBackButton(
         style: BackButtonStyle.plain,
         onPressed: () => Navigator.pop(context, _watchStateChanged),
+        focusNode: _backButtonFocusNode,
       );
       final loading = ListenableBuilder(
         listenable: FullscreenStateManager(),
@@ -3219,6 +3226,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
                                 HubSection(
                                   key: _relatedHubKeys[i],
                                   hub: _relatedHubs[i],
+                                  focusMemory: _hubFocusMemory,
                                   icon: _getRelatedHubIcon(_relatedHubs[i]),
                                   inset: true,
                                   onVerticalNavigation: (isUp) => _handleRelatedHubNavigation(i, isUp),
@@ -3294,6 +3302,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
                       AppBarBackButton(
                         style: BackButtonStyle.circular,
                         onPressed: () => Navigator.pop(context, _watchStateChanged),
+                        focusNode: _backButtonFocusNode,
                       ),
                       context: context,
                     )!,
@@ -3353,6 +3362,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
             AppBarBackButton(
               style: BackButtonStyle.circular,
               onPressed: () => Navigator.pop(context, _watchStateChanged),
+              focusNode: _backButtonFocusNode,
             ),
             context: context,
           )!,
@@ -3365,6 +3375,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
             child: TvBrowseRail(
               key: _tvDetailRailKey,
               hubs: detailHubs,
+              focusMemory: _hubFocusMemory,
               iconForHub: _getTvDetailHubIcon,
               onFocusedHubItemChanged: _handleTvDetailFocusedRailItemChanged,
               onRefresh: (source) => unawaited(_refreshItemInPlace(source)),
@@ -3399,7 +3410,9 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
                 item: metadata,
                 client: _getArtworkMediaClient(context),
                 showInfo: false,
-                localArtworkPathResolver: widget.isOffline ? (path) => _offlineArtworkLocalPath(context, path) : null,
+                localArtworkPathResolver: widget.isOffline
+                    ? (path) => _offlineArtworkCandidatePath(context, path)
+                    : null,
                 allowNetwork: !widget.isOffline,
               ),
               _buildTvDetailRevealGate(revealContent, handleBack),
@@ -3642,6 +3655,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
             fit: BoxFit.contain,
             alignment: .centerLeft,
             imageType: ImageType.heroLogo,
+            placeholder: (context, url) => titleFallback(context),
             errorWidget: (context, url, error) => titleFallback(context),
           );
           if (localArtwork != null) return localArtwork;
@@ -4184,7 +4198,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
                         fallbackImagePaths: heroArtPaths,
                         client: _getArtworkMediaClient(context),
                         localArtworkPathResolver: widget.isOffline
-                            ? (path) => _offlineArtworkLocalPath(context, path)
+                            ? (path) => _offlineArtworkCandidatePath(context, path)
                             : null,
                         allowNetwork: !widget.isOffline,
                         width: size.width,

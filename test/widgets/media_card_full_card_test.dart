@@ -1,8 +1,11 @@
+import 'dart:ui' as ui;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/focus/focus_glow_overlay.dart';
 import 'package:plezy/focus/focus_theme.dart';
 import 'package:plezy/focus/input_mode_tracker.dart';
+import 'package:plezy/i18n/strings.g.dart';
 import 'package:plezy/media/media_backend.dart';
 
 import 'package:plezy/media/media_kind.dart';
@@ -208,6 +211,151 @@ void main() {
 
     expect(find.byType(CompositedTransformFollower), findsNothing);
   });
+  testWidgets('grid and list cards expose card and detail actions without decorative semantics', (tester) async {
+    final semantics = tester.ensureSemantics();
+    final item = testMediaItem(
+      id: 'semantic_episode',
+      backend: MediaBackend.plex,
+      kind: MediaKind.episode,
+      title: 'Decorative Episode Title',
+      summary: 'Decorative episode summary',
+      parentId: 'season_2',
+      parentIndex: 2,
+      index: 3,
+      grandparentId: 'show_1',
+      grandparentTitle: 'Semantic Series',
+    );
+
+    for (final forceGridMode in [true, false]) {
+      await tester.pumpWidget(
+        _TestApp(
+          child: SizedBox(
+            width: forceGridMode ? 200 : 420,
+            height: forceGridMode ? 330 : 180,
+            child: MediaCard(item: item, forceGridMode: forceGridMode, forceListMode: !forceGridMode, isOffline: true),
+          ),
+        ),
+      );
+
+      final cardData = tester.getSemantics(find.bySemanticsLabel(mediaCardSemanticLabel(item))).getSemanticsData();
+      expect(cardData.flagsCollection.isButton, isTrue);
+      expect(cardData.hasAction(ui.SemanticsAction.tap), isTrue);
+
+      for (final detailLabel in ['Semantic Series', 'S2']) {
+        final detailData = tester.getSemantics(find.bySemanticsLabel(detailLabel)).getSemanticsData();
+        expect(detailData.flagsCollection.isButton, isTrue);
+        expect(detailData.hasAction(ui.SemanticsAction.tap), isTrue);
+        expect(detailData.hint, t.mediaMenu.viewDetails);
+      }
+
+      expect(find.bySemanticsLabel(RegExp('Decorative Episode Title|Decorative episode summary')), findsNothing);
+    }
+
+    semantics.dispose();
+  });
+
+  testWidgets('movie and season title links remain distinct semantic actions', (tester) async {
+    final semantics = tester.ensureSemantics();
+    final scenarios = [
+      (
+        item: testMediaItem(
+          id: 'linked_movie',
+          kind: MediaKind.movie,
+          title: 'Linked Movie',
+          summary: 'Movie decorative summary',
+        ),
+        forceGridMode: true,
+        detailLabel: 'Linked Movie',
+        decorativeLabel: 'Movie decorative summary',
+      ),
+      (
+        item: testMediaItem(
+          id: 'linked_season',
+          kind: MediaKind.season,
+          title: 'Season Two',
+          parentId: 'linked_show',
+          parentTitle: 'Linked Series',
+          summary: 'Season decorative summary',
+        ),
+        forceGridMode: false,
+        detailLabel: 'Linked Series',
+        decorativeLabel: 'Season Two',
+      ),
+    ];
+
+    for (final scenario in scenarios) {
+      await tester.pumpWidget(
+        _TestApp(
+          child: SizedBox(
+            width: scenario.forceGridMode ? 200 : 420,
+            height: scenario.forceGridMode ? 330 : 180,
+            child: MediaCard(
+              item: scenario.item,
+              forceGridMode: scenario.forceGridMode,
+              forceListMode: !scenario.forceGridMode,
+              isOffline: true,
+            ),
+          ),
+        ),
+      );
+
+      expect(
+        tester
+            .getSemantics(find.bySemanticsLabel(mediaCardSemanticLabel(scenario.item)))
+            .getSemanticsData()
+            .hasAction(ui.SemanticsAction.tap),
+        isTrue,
+      );
+      final detail = tester.getSemantics(find.bySemanticsLabel(scenario.detailLabel)).getSemanticsData();
+      expect(detail.flagsCollection.isButton, isTrue);
+      expect(detail.hasAction(ui.SemanticsAction.tap), isTrue);
+      expect(detail.hint, t.mediaMenu.viewDetails);
+      expect(find.bySemanticsLabel(scenario.decorativeLabel), findsNothing);
+    }
+
+    semantics.dispose();
+  });
+
+  testWidgets('custom card actions keep detail-link semantics disabled in grid and list modes', (tester) async {
+    final semantics = tester.ensureSemantics();
+    final item = testMediaItem(
+      id: 'semantic_movie',
+      backend: MediaBackend.plex,
+      kind: MediaKind.movie,
+      title: 'Custom Semantic Movie',
+      summary: 'Decorative movie summary',
+    );
+    var tapCount = 0;
+
+    for (final forceGridMode in [true, false]) {
+      await tester.pumpWidget(
+        _TestApp(
+          child: SizedBox(
+            width: forceGridMode ? 200 : 420,
+            height: forceGridMode ? 330 : 180,
+            child: MediaCard(
+              item: item,
+              forceGridMode: forceGridMode,
+              forceListMode: !forceGridMode,
+              isOffline: true,
+              onTap: () => tapCount++,
+            ),
+          ),
+        ),
+      );
+
+      final card = tester.getSemantics(find.bySemanticsLabel(mediaCardSemanticLabel(item)));
+      expect(card.getSemanticsData().hasAction(ui.SemanticsAction.tap), isTrue);
+      expect(find.bySemanticsLabel('Custom Semantic Movie'), findsNothing);
+      expect(find.bySemanticsLabel(RegExp('Decorative movie summary')), findsNothing);
+
+      card.owner!.performAction(card.id, ui.SemanticsAction.tap);
+      expect(tapCount, forceGridMode ? 1 : 2);
+    }
+
+    semantics.dispose();
+  });
+
   testWidgets('custom tap owns pointer and programmatic activation', (tester) async {
     final item = testMediaItem(
       id: 'custom_tap',

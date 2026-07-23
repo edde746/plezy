@@ -106,7 +106,22 @@ class FocusableActionBarState extends State<FocusableActionBar> {
   FocusNode? getFocusNode(int index) => index >= 0 && index < _focusNodes.length ? _focusNodes[index] : null;
 
   void requestFocusOnFirst() {
-    if (_focusNodes.isNotEmpty) _focusNodes.first.requestFocus();
+    final index = _nextEnabledIndex(-1);
+    if (index != null) _focusNodes[index].requestFocus();
+  }
+
+  int? _previousEnabledIndex(int index) {
+    for (var candidate = index - 1; candidate >= 0; candidate--) {
+      if (widget.actions[candidate].onPressed != null) return candidate;
+    }
+    return null;
+  }
+
+  int? _nextEnabledIndex(int index) {
+    for (var candidate = index + 1; candidate < widget.actions.length; candidate++) {
+      if (widget.actions[candidate].onPressed != null) return candidate;
+    }
+    return null;
   }
 
   @override
@@ -202,10 +217,10 @@ class FocusableActionBarState extends State<FocusableActionBar> {
 
   Widget _buildButton(int index, bool isKeyboard, Duration duration) {
     final action = widget.actions[index];
+    final enabled = action.onPressed != null;
     final isFocused = _focusStates[index];
     final showFocus = isFocused && isKeyboard;
     final opacity = isKeyboard && _hasAnyFocus && !isFocused ? 0.6 : 1.0;
-
     final buildState = FocusableActionBuildState(
       focusNode: _focusNodes[index],
       isFocused: isFocused,
@@ -217,28 +232,29 @@ class FocusableActionBarState extends State<FocusableActionBar> {
 
     return Focus(
       focusNode: _focusNodes[index],
-      autofocus: action.autofocus,
+      canRequestFocus: enabled,
+      autofocus: action.autofocus && enabled,
       descendantsAreFocusable: false,
       onKeyEvent: (node, event) {
         if (widget.onBack != null) {
           final backResult = handleBackKeyAction(event, widget.onBack!);
           if (backResult != KeyEventResult.ignored) return backResult;
         }
+        final previousIndex = _previousEnabledIndex(index);
+        final nextIndex = _nextEnabledIndex(index);
         return dpadKeyHandler(
           onSelect: action.onPressed,
-          onLeft: index > 0 ? () => _focusNodes[index - 1].requestFocus() : widget.onNavigateLeft,
-          onRight: index < _focusNodes.length - 1
-              ? () => _focusNodes[index + 1].requestFocus()
-              : widget.onNavigateRight,
+          onLeft: previousIndex != null ? () => _focusNodes[previousIndex].requestFocus() : widget.onNavigateLeft,
+          onRight: nextIndex != null ? () => _focusNodes[nextIndex].requestFocus() : widget.onNavigateRight,
           onDown: widget.onNavigateDown,
           onUp: widget.onNavigateUp,
-          // Consume LEFT/RIGHT at the row's first/last button when no edge
-          // callback is wired, so focus can't fall off the row (#1181).
+          // Consume LEFT/RIGHT at the row's first/last enabled button when no
+          // edge callback is wired, so focus can't fall off the row (#1181).
           trapHorizontalEdges: true,
         )(node, event);
       },
       child: ClickableCursor(
-        enabled: action.onPressed != null || action.child != null || customChild != null,
+        enabled: enabled,
         child: AnimatedOpacity(
           opacity: showFocus ? 1.0 : opacity,
           duration: duration,

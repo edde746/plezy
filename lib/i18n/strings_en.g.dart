@@ -53,6 +53,7 @@ class Translations with BaseTranslations<AppLocale, Translations> {
 	late final TranslationsRateSheetEn rateSheet = TranslationsRateSheetEn.internal(_root);
 	late final TranslationsAccessibilityEn accessibility = TranslationsAccessibilityEn.internal(_root);
 	late final TranslationsTooltipsEn tooltips = TranslationsTooltipsEn.internal(_root);
+	late final TranslationsAudioTracksEn audioTracks = TranslationsAudioTracksEn.internal(_root);
 	late final TranslationsVideoControlsEn videoControls = TranslationsVideoControlsEn.internal(_root);
 	late final TranslationsMessagesEn messages = TranslationsMessagesEn.internal(_root);
 	late final TranslationsSubtitlingStylingEn subtitlingStyling = TranslationsSubtitlingStylingEn.internal(_root);
@@ -662,6 +663,9 @@ class TranslationsSettingsEn {
 	/// en: 'Send crash reports to help improve the app'
 	String get crashReportingDescription => 'Send crash reports to help improve the app';
 
+	/// en: 'After disabling, reports already accepted, queued, or being sent may finish. Enabling again takes effect when Plezy restarts.'
+	String get crashReportingRestartRequired => 'After disabling, reports already accepted, queued, or being sent may finish. Enabling again takes effect when Plezy restarts.';
+
 	/// en: 'Debug Logging'
 	String get debugLogging => 'Debug Logging';
 
@@ -704,9 +708,6 @@ class TranslationsSettingsEn {
 	/// en: 'Settings exported'
 	String get exportSettingsSuccess => 'Settings exported';
 
-	/// en: 'Could not export settings'
-	String get exportSettingsFailed => 'Could not export settings';
-
 	/// en: 'Import Settings'
 	String get importSettings => 'Import Settings';
 
@@ -718,9 +719,6 @@ class TranslationsSettingsEn {
 
 	/// en: 'Settings imported'
 	String get importSettingsSuccess => 'Settings imported';
-
-	/// en: 'Could not import settings'
-	String get importSettingsFailed => 'Could not import settings';
 
 	/// en: 'This file isn't a valid Plezy settings export'
 	String get importSettingsInvalidFile => 'This file isn\'t a valid Plezy settings export';
@@ -763,6 +761,9 @@ class TranslationsSettingsEn {
 
 	/// en: 'Shortcut updated for ${action}'
 	String shortcutUpdated({required Object action}) => 'Shortcut updated for ${action}';
+
+	/// en: 'Could not save changes. Try again.'
+	String get saveFailed => 'Could not save changes. Try again.';
 
 	/// en: 'Auto Skip'
 	String get autoSkip => 'Auto Skip';
@@ -839,8 +840,8 @@ class TranslationsSettingsEn {
 	/// en: 'Selected folder is not writable'
 	String get downloadLocationInvalid => 'Selected folder is not writable';
 
-	/// en: 'Failed to select folder'
-	String get downloadLocationSelectError => 'Failed to select folder';
+	/// en: 'Folder selection is not available on this device'
+	String get downloadLocationPickerUnavailable => 'Folder selection is not available on this device';
 
 	/// en: 'Download on WiFi only'
 	String get downloadOnWifiOnly => 'Download on WiFi only';
@@ -1383,6 +1384,18 @@ class TranslationsAccessibilityEn {
 
 	/// en: 'Collapse text'
 	String get collapseText => 'Collapse text';
+
+	/// en: 'Alphabet navigation'
+	String get alphabetNavigation => 'Alphabet navigation';
+
+	/// en: 'Swipe up or down to move by letter'
+	String get alphabetScrollHint => 'Swipe up or down to move by letter';
+
+	/// en: 'Row ${row} of ${rowCount}, column ${column} of ${columnCount}'
+	String rowColumnPosition({required Object row, required Object rowCount, required Object column, required Object columnCount}) => 'Row ${row} of ${rowCount}, column ${column} of ${columnCount}';
+
+	/// en: 'Row ${row} of ${rowCount}'
+	String rowPosition({required Object row, required Object rowCount}) => 'Row ${row} of ${rowCount}';
 }
 
 // Path: tooltips
@@ -1404,6 +1417,18 @@ class TranslationsTooltipsEn {
 
 	/// en: 'Mark as unwatched'
 	String get markAsUnwatched => 'Mark as unwatched';
+}
+
+// Path: audioTracks
+class TranslationsAudioTracksEn {
+	TranslationsAudioTracksEn.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// en: 'Audio Track ${n}'
+	String track({required Object n}) => 'Audio Track ${n}';
 }
 
 // Path: videoControls
@@ -1491,6 +1516,12 @@ class TranslationsVideoControlsEn {
 
 	/// en: 'Pause'
 	String get pauseButton => 'Pause';
+
+	/// en: 'Show playback controls'
+	String get showPlaybackControls => 'Show playback controls';
+
+	/// en: 'Hide playback controls'
+	String get hidePlaybackControls => 'Hide playback controls';
 
 	/// en: 'Seek backward ${seconds} seconds'
 	String seekBackwardButton({required Object seconds}) => 'Seek backward ${seconds} seconds';
@@ -2078,6 +2109,9 @@ class TranslationsProfilesEn {
 
 	/// en: 'Connect Plex or Jellyfin to another profile first.'
 	String get borrowEmptySubtitle => 'Connect Plex or Jellyfin to another profile first.';
+
+	/// en: 'Available connections could not be loaded. Try again.'
+	String get borrowLoadFailed => 'Available connections could not be loaded. Try again.';
 
 	/// en: 'From ${displayName}'
 	String borrowFromProfile({required Object displayName}) => 'From ${displayName}';
@@ -5186,6 +5220,7 @@ extension on Translations {
 			'settings.watchTogetherRelayInvalid' => 'Enter a valid HTTP or HTTPS relay base URL.',
 			'settings.crashReporting' => 'Crash Reporting',
 			'settings.crashReportingDescription' => 'Send crash reports to help improve the app',
+			'settings.crashReportingRestartRequired' => 'After disabling, reports already accepted, queued, or being sent may finish. Enabling again takes effect when Plezy restarts.',
 			'settings.debugLogging' => 'Debug Logging',
 			'settings.debugLoggingDescription' => 'Enable detailed logging for troubleshooting',
 			'settings.viewLogs' => 'View Logs',
@@ -5200,12 +5235,10 @@ extension on Translations {
 			'settings.exportSettings' => 'Export Settings',
 			'settings.exportSettingsDescription' => 'Save your preferences to a file',
 			'settings.exportSettingsSuccess' => 'Settings exported',
-			'settings.exportSettingsFailed' => 'Could not export settings',
 			'settings.importSettings' => 'Import Settings',
 			'settings.importSettingsDescription' => 'Restore preferences from a file',
 			'settings.importSettingsConfirm' => 'This will replace your current settings. Continue?',
 			'settings.importSettingsSuccess' => 'Settings imported',
-			'settings.importSettingsFailed' => 'Could not import settings',
 			'settings.importSettingsInvalidFile' => 'This file isn\'t a valid Plezy settings export',
 			'settings.importSettingsNoUser' => 'Sign in before importing settings',
 			'settings.shortcutsReset' => 'Shortcuts reset to defaults',
@@ -5220,6 +5253,7 @@ extension on Translations {
 			'settings.validationErrorDuration' => ({required Object min, required Object max, required Object unit}) => 'Duration must be between ${min} and ${max} ${unit}',
 			'settings.shortcutAlreadyAssigned' => ({required Object action}) => 'Shortcut already assigned to ${action}',
 			'settings.shortcutUpdated' => ({required Object action}) => 'Shortcut updated for ${action}',
+			'settings.saveFailed' => 'Could not save changes. Try again.',
 			'settings.autoSkip' => 'Auto Skip',
 			'settings.autoSkipIntro' => 'Auto Skip Intro',
 			'settings.autoSkipIntroDescription' => 'Automatically skip intro markers after a few seconds',
@@ -5245,7 +5279,7 @@ extension on Translations {
 			'settings.downloadLocationChanged' => 'Download location changed',
 			'settings.downloadLocationReset' => 'Download location reset to default',
 			'settings.downloadLocationInvalid' => 'Selected folder is not writable',
-			'settings.downloadLocationSelectError' => 'Failed to select folder',
+			'settings.downloadLocationPickerUnavailable' => 'Folder selection is not available on this device',
 			'settings.downloadOnWifiOnly' => 'Download on WiFi only',
 			'settings.downloadOnWifiOnlyDescription' => 'Prevent downloads when on cellular data',
 			'settings.autoRemoveWatchedDownloads' => 'Auto-remove watched downloads',
@@ -5433,10 +5467,15 @@ extension on Translations {
 			'accessibility.hexColor' => 'Hex color',
 			'accessibility.expandText' => 'Expand text',
 			'accessibility.collapseText' => 'Collapse text',
+			'accessibility.alphabetNavigation' => 'Alphabet navigation',
+			'accessibility.alphabetScrollHint' => 'Swipe up or down to move by letter',
+			'accessibility.rowColumnPosition' => ({required Object row, required Object rowCount, required Object column, required Object columnCount}) => 'Row ${row} of ${rowCount}, column ${column} of ${columnCount}',
+			'accessibility.rowPosition' => ({required Object row, required Object rowCount}) => 'Row ${row} of ${rowCount}',
 			'tooltips.shufflePlay' => 'Shuffle play',
 			'tooltips.playTrailer' => 'Play trailer',
 			'tooltips.markAsWatched' => 'Mark as watched',
 			'tooltips.markAsUnwatched' => 'Mark as unwatched',
+			'audioTracks.track' => ({required Object n}) => 'Audio Track ${n}',
 			'videoControls.audioLabel' => 'Audio',
 			'videoControls.subtitlesLabel' => 'Subtitles',
 			'videoControls.resetToZero' => 'Reset to 0ms',
@@ -5463,6 +5502,8 @@ extension on Translations {
 			'videoControls.playNext' => 'Play Next',
 			'videoControls.playButton' => 'Play',
 			'videoControls.pauseButton' => 'Pause',
+			'videoControls.showPlaybackControls' => 'Show playback controls',
+			'videoControls.hidePlaybackControls' => 'Hide playback controls',
 			'videoControls.seekBackwardButton' => ({required Object seconds}) => 'Seek backward ${seconds} seconds',
 			'videoControls.seekForwardButton' => ({required Object seconds}) => 'Seek forward ${seconds} seconds',
 			'videoControls.previousButton' => 'Previous episode',
@@ -5518,6 +5559,8 @@ extension on Translations {
 			'videoControls.subtitleDownloaded' => 'Subtitle downloaded',
 			'videoControls.subtitleDownloadedNotApplied' => 'Subtitle downloaded, but it could not be selected',
 			'videoControls.subtitleDownloadFailed' => 'Failed to download subtitle',
+			_ => null,
+		} ?? switch (path) {
 			'videoControls.searchLanguages' => 'Search languages...',
 
 			'messages.markedAsWatched' => 'Marked as watched',
@@ -5526,8 +5569,6 @@ extension on Translations {
 			'messages.markedAsUnwatchedOffline' => 'Marked as unwatched (will sync when online)',
 			'messages.autoRemovedWatchedDownload' => ({required Object title}) => 'Auto-removed: ${title}',
 			'messages.autoRemovedWatchedDownloads' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(n, one: 'Auto-removed ${n} watched download', other: 'Auto-removed ${n} watched downloads', ), 
-			_ => null,
-		} ?? switch (path) {
 			'messages.removedFromContinueWatching' => 'Removed from Continue Watching',
 			'messages.errorLoading' => ({required Object error}) => 'Error: ${error}',
 			'messages.streamInterrupted' => 'The stream was interrupted. Press play or seek to retry.',
@@ -5652,6 +5693,7 @@ extension on Translations {
 			'profiles.borrowExplain' => 'Borrow another profile\'s connection. PIN-protected profiles require a PIN.',
 			'profiles.borrowEmpty' => 'Nothing to borrow yet.',
 			'profiles.borrowEmptySubtitle' => 'Connect Plex or Jellyfin to another profile first.',
+			'profiles.borrowLoadFailed' => 'Available connections could not be loaded. Try again.',
 			'profiles.borrowFromProfile' => ({required Object displayName}) => 'From ${displayName}',
 			'profiles.borrowConnectionBorrowed' => 'Connection borrowed.',
 			'profiles.borrowFailed' => 'Failed to borrow connection.',
@@ -6032,6 +6074,8 @@ extension on Translations {
 			'watchTogether.currentPlayback' => 'Current Playback',
 			'watchTogether.joinCurrentPlayback' => 'Join Current Playback',
 			'watchTogether.joinCurrentPlaybackDescription' => 'Jump back into what the host is currently watching',
+			_ => null,
+		} ?? switch (path) {
 			'watchTogether.failedToOpenCurrentPlayback' => 'Failed to open current playback',
 
 			'watchTogether.participantJoined' => ({required Object name}) => '${name} joined',
@@ -6041,8 +6085,6 @@ extension on Translations {
 			'watchTogether.participantSeeked' => ({required Object name}) => '${name} seeked',
 			'watchTogether.participantBuffering' => ({required Object name}) => '${name} is buffering',
 			'watchTogether.participantNeedsUpdate' => ({required Object name}) => '${name} is on an older app version — sync unavailable',
-			_ => null,
-		} ?? switch (path) {
 			'watchTogether.resumingWithout' => ({required Object name}) => 'Resuming without ${name}',
 			'watchTogether.waitingForParticipants' => 'Waiting for others to load...',
 			'watchTogether.waitingForName' => ({required Object name}) => 'Waiting for ${name}...',

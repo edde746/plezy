@@ -38,6 +38,10 @@ void main() {
     expect(FocusManager.instance.primaryFocus?.debugLabel, 'TvVirtualKeyboard');
     expect(find.byKey(const Key('tv_virtual_keyboard_panel')), findsOneWidget);
 
+    await tester.sendKeyEvent(LogicalKeyboardKey.select);
+    await tester.pump();
+    expect(tester.widget<TextField>(find.byType(TextField)).controller!.text, isNotEmpty);
+
     await tester.sendKeyEvent(LogicalKeyboardKey.gameButtonB);
     await tester.pumpAndSettle();
 

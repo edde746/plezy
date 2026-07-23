@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 
 import '../focus/focusable_action_bar.dart';
 import '../focus/hub_vertical_navigation.dart';
+import '../focus/locked_hub_controller.dart';
 import '../i18n/strings.g.dart';
 import '../media/ids.dart';
 import '../media/media_hub.dart';
@@ -54,6 +55,7 @@ class ExploreScreenState extends State<ExploreScreen>
   final _sourceMenuKey = GlobalKey<AppMenuButtonState<CatalogSourceId>>();
 
   final _tvBrowseRailKey = GlobalKey<TvBrowseRailState>();
+  final _hubFocusMemory = HubFocusMemory();
   final TvSpotlightController _spotlight = TvSpotlightController();
 
   @override
@@ -302,6 +304,7 @@ class ExploreScreenState extends State<ExploreScreen>
               child: HubSection(
                 key: _orderedHubKeys[i],
                 hub: rowHubs[i].hub,
+                focusMemory: _hubFocusMemory,
                 icon: _rowIcon(rowHubs[i].row),
                 loadMoreItems: rowHubs[i].hub.more ? () => _explore.loadAllForHub(rowHubs[i]) : null,
                 onVerticalNavigation: (isUp) => _handleVerticalNavigation(i, isUp),
@@ -431,6 +434,7 @@ class ExploreScreenState extends State<ExploreScreen>
               child: TvBrowseRail(
                 key: _tvBrowseRailKey,
                 hubs: tvHubs,
+                focusMemory: _hubFocusMemory,
                 iconForHub: (hub, _) => _rowIcon(_rowForHub(hub)?.row),
                 onFocusedItemChanged: _setSpotlightItem,
                 loadMoreItems: (hub) {

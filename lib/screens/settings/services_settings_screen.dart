@@ -151,8 +151,8 @@ class _ServiceHubRow extends StatelessWidget {
       subtitle: Text(username != null ? t.services.connectedAs(username: username!) : t.services.notConnected),
       trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
       onTap: onTap,
-      dense: settingsRowDense(),
-      visualDensity: settingsRowVisualDensity(),
+      dense: settingsRowDense(context),
+      visualDensity: settingsRowVisualDensity(context),
     );
   }
 }

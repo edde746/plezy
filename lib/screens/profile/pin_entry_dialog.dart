@@ -421,12 +421,15 @@ class _TvPinInputState extends State<_TvPinInput> with ControllerDisposerMixin {
       }
     }
 
-    return KeyEventResult.handled;
+    return KeyEventResult.ignored;
   }
 
   void _onMobilePinChanged(String value) {
     final digitsOnly = value.replaceAll(RegExp(r'\D'), '');
-    final pin = digitsOnly.length > 4 ? digitsOnly.substring(0, 4) : digitsOnly;
+    final pin = switch (digitsOnly.length) {
+      <= 4 => digitsOnly,
+      _ => digitsOnly.substring(0, expandToGraphemeRange(digitsOnly, const TextRange(start: 0, end: 4)).end),
+    };
     if (pin != value) {
       _mobileController.value = TextEditingValue(
         text: pin,

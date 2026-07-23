@@ -60,7 +60,22 @@ class _BorrowConnectionScreenState extends State<BorrowConnectionScreen> {
     _candidatesFuture = _loadCandidates();
   }
 
+  void _retryCandidates() {
+    setState(() {
+      _candidatesFuture = _loadCandidates();
+    });
+  }
+
   Future<List<_BorrowCandidate>> _loadCandidates() async {
+    try {
+      return await _loadCandidatesUnchecked();
+    } catch (error, stackTrace) {
+      appLogger.w('Borrow candidate load failed', error: error, stackTrace: stackTrace);
+      Error.throwWithStackTrace(error, stackTrace);
+    }
+  }
+
+  Future<List<_BorrowCandidate>> _loadCandidatesUnchecked() async {
     final pcRegistry = context.read<ProfileConnectionRegistry>();
     final connRegistry = context.read<ConnectionRegistry>();
     final profileRegistry = context.read<ProfileRegistry>();
@@ -159,7 +174,59 @@ class _BorrowConnectionScreenState extends State<BorrowConnectionScreen> {
     return FutureBuilder<List<_BorrowCandidate>>(
       future: _candidatesFuture,
       builder: (context, snapshot) {
-        final candidates = snapshot.data ?? const <_BorrowCandidate>[];
+        late final Widget candidateSliver;
+        if (snapshot.connectionState != ConnectionState.done) {
+          candidateSliver = LoadingIndicatorBox.sliver;
+        } else if (snapshot.hasError) {
+          candidateSliver = SliverFillRemaining(
+            child: ErrorStateWidget(
+              message: t.profiles.borrowLoadFailed,
+              onRetry: _retryCandidates,
+              actionAutofocus: true,
+              actionUseBackgroundFocus: true,
+            ),
+          );
+        } else {
+          final candidates = snapshot.requireData;
+          if (candidates.isEmpty) {
+            candidateSliver = SliverFillRemaining(
+              child: EmptyStateWidget(
+                message: t.profiles.borrowEmpty,
+                subtitle: t.profiles.borrowEmptySubtitle,
+                icon: Symbols.share_rounded,
+                iconSize: 48,
+              ),
+            );
+          } else {
+            candidateSliver = SliverList(
+              delegate: SliverChildBuilderDelegate((context, index) {
+                final cand = candidates[index];
+                // M3E connected-group geometry: large outer corners, small
+                // inner corners, hairline gaps between tiles.
+                final tokensRef = tokens(context);
+                final tileRadii = BorderRadius.vertical(
+                  top: Radius.circular(index == 0 ? tokensRef.radiusLg : tokensRef.radiusXs),
+                  bottom: Radius.circular(index == candidates.length - 1 ? tokensRef.radiusLg : tokensRef.radiusXs),
+                );
+                return Padding(
+                  padding: EdgeInsets.fromLTRB(16, index == 0 ? 4 : tokensRef.groupGap, 16, 0),
+                  child: FocusableWrapper(
+                    autofocus: index == 0,
+                    disableScale: true,
+                    borderRadii: tileRadii,
+                    onSelect: _busy ? null : () => _borrow(cand),
+                    child: Card(
+                      shape: RoundedRectangleBorder(borderRadius: tileRadii),
+                      clipBehavior: Clip.antiAlias,
+                      child: _BorrowTile(candidate: cand, borderRadius: tileRadii, onTap: () => _borrow(cand)),
+                    ),
+                  ),
+                );
+              }, childCount: candidates.length),
+            );
+          }
+        }
+
         return FocusedScrollScaffold(
           title: Text(t.profiles.borrowAddTo(displayName: widget.targetProfile.displayName)),
           slivers: [
@@ -169,44 +236,7 @@ class _BorrowConnectionScreenState extends State<BorrowConnectionScreen> {
                 child: Text(t.profiles.borrowExplain, style: Theme.of(context).textTheme.bodySmall),
               ),
             ),
-            if (snapshot.connectionState != ConnectionState.done)
-              LoadingIndicatorBox.sliver
-            else if (candidates.isEmpty)
-              SliverFillRemaining(
-                child: EmptyStateWidget(
-                  message: t.profiles.borrowEmpty,
-                  subtitle: t.profiles.borrowEmptySubtitle,
-                  icon: Symbols.share_rounded,
-                  iconSize: 48,
-                ),
-              )
-            else
-              SliverList(
-                delegate: SliverChildBuilderDelegate((context, index) {
-                  final cand = candidates[index];
-                  // M3E connected-group geometry: large outer corners, small
-                  // inner corners, hairline gaps between tiles.
-                  final tokensRef = tokens(context);
-                  final tileRadii = BorderRadius.vertical(
-                    top: Radius.circular(index == 0 ? tokensRef.radiusLg : tokensRef.radiusXs),
-                    bottom: Radius.circular(index == candidates.length - 1 ? tokensRef.radiusLg : tokensRef.radiusXs),
-                  );
-                  return Padding(
-                    padding: EdgeInsets.fromLTRB(16, index == 0 ? 4 : tokensRef.groupGap, 16, 0),
-                    child: FocusableWrapper(
-                      autofocus: index == 0,
-                      disableScale: true,
-                      borderRadii: tileRadii,
-                      onSelect: _busy ? null : () => _borrow(cand),
-                      child: Card(
-                        shape: RoundedRectangleBorder(borderRadius: tileRadii),
-                        clipBehavior: Clip.antiAlias,
-                        child: _BorrowTile(candidate: cand, borderRadius: tileRadii, onTap: () => _borrow(cand)),
-                      ),
-                    ),
-                  );
-                }, childCount: candidates.length),
-              ),
+            candidateSliver,
           ],
         );
       },

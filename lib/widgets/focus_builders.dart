@@ -29,6 +29,8 @@ class FocusBuilders {
     required FocusNode focusNode,
     required KeyEventResult Function(FocusNode, KeyEvent) onKeyEvent,
     required VoidCallback onTap,
+    required String semanticLabel,
+    bool? selected,
     required EdgeInsetsGeometry padding,
     required Color backgroundColor,
     double borderRadius = 20,
@@ -39,15 +41,22 @@ class FocusBuilders {
     return Focus(
       focusNode: focusNode,
       onKeyEvent: onKeyEvent,
-      child: ClickableCursor(
-        child: GestureDetector(
-          onTap: onTap,
-          child: AnimatedContainer(
-            duration: duration,
-            curve: Curves.easeOutCubic,
-            padding: padding,
-            decoration: BoxDecoration(color: backgroundColor, borderRadius: BorderRadius.circular(borderRadius)),
-            child: child,
+      child: Semantics(
+        label: semanticLabel,
+        button: true,
+        selected: selected,
+        onTap: onTap,
+        excludeSemantics: true,
+        child: ClickableCursor(
+          child: GestureDetector(
+            onTap: onTap,
+            child: AnimatedContainer(
+              duration: duration,
+              curve: Curves.easeOutCubic,
+              padding: padding,
+              decoration: BoxDecoration(color: backgroundColor, borderRadius: BorderRadius.circular(borderRadius)),
+              child: child,
+            ),
           ),
         ),
       ),

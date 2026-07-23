@@ -1,8 +1,11 @@
+import 'dart:ui' show SemanticsAction, Tristate;
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/focus/dpad_navigator.dart';
 import 'package:plezy/focus/key_event_utils.dart';
+import 'package:plezy/i18n/strings.g.dart';
 import 'package:plezy/media/library_first_character.dart';
 import 'package:plezy/screens/libraries/alpha_jump_bar.dart';
 import 'package:plezy/utils/platform_detector.dart';
@@ -214,6 +217,43 @@ void main() {
     await tester.sendKeyEvent(LogicalKeyboardKey.enter);
 
     expect(jumpedTo, 2);
+  });
+  testWidgets('exposes operable letter buttons with selected state', (tester) async {
+    final semantics = tester.ensureSemantics();
+    final focusNode = FocusNode(debugLabel: 'test_alpha_jump_semantics');
+    addTearDown(focusNode.dispose);
+    int? jumpedTo;
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: SizedBox(
+            height: 300,
+            child: AlphaJumpBar(
+              firstCharacters: const [
+                LibraryFirstCharacter(key: 'A', title: 'A', size: 3),
+                LibraryFirstCharacter(key: 'B', title: 'B', size: 4),
+                LibraryFirstCharacter(key: 'C', title: 'C', size: 2),
+              ],
+              currentLetter: 'B',
+              focusNode: focusNode,
+              onJump: (index) => jumpedTo = index,
+            ),
+          ),
+        ),
+      ),
+    );
+
+    expect(find.bySemanticsLabel(t.accessibility.alphabetNavigation), findsOneWidget);
+    final selected = tester.getSemantics(find.bySemanticsLabel('B')).getSemanticsData();
+    expect(selected.flagsCollection.isButton, isTrue);
+    expect(selected.flagsCollection.isSelected, Tristate.isTrue);
+    expect(selected.hasAction(SemanticsAction.tap), isTrue);
+
+    final cNode = tester.getSemantics(find.bySemanticsLabel('C'));
+    cNode.owner!.performAction(cNode.id, SemanticsAction.tap);
+    expect(jumpedTo, 7);
+    semantics.dispose();
   });
 }
 
