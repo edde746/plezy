@@ -3,25 +3,34 @@
 package main
 
 const (
-	relayTypeCreate          = "create"
-	relayTypeJoin            = "join"
-	relayTypeBroadcast       = "broadcast"
-	relayTypeSendTo          = "sendTo"
-	relayTypePing            = "ping"
-	relayTypeCreated         = "created"
-	relayTypeJoined          = "joined"
-	relayTypePeerJoined      = "peerJoined"
-	relayTypePeerLeft        = "peerLeft"
-	relayTypeMessage         = "message"
-	relayTypeError           = "error"
-	relayTypePong            = "pong"
-	relayErrorRateLimited    = "rate_limited"
-	relayErrorInvalidMessage = "invalid_message"
-	relayErrorRoomExists     = "room_exists"
-	relayErrorRoomNotFound   = "room_not_found"
-	relayErrorRoomFull       = "room_full"
-	relayErrorNotInRoom      = "not_in_room"
-	relayErrorAlreadyInRoom  = "already_in_room"
+	relayProtocolVersion       = 2
+	legacyRelayProtocolVersion = 0
+
+	relayTypeCreate             = "create"
+	relayTypeJoin               = "join"
+	relayTypeBroadcast          = "broadcast"
+	relayTypeSendTo             = "sendTo"
+	relayTypePing               = "ping"
+	relayTypeLeave              = "leave"
+	relayTypeEndSession         = "endSession"
+	relayTypeCreated            = "created"
+	relayTypeJoined             = "joined"
+	relayTypePeerJoined         = "peerJoined"
+	relayTypePeerLeft           = "peerLeft"
+	relayTypeMessage            = "message"
+	relayTypeError              = "error"
+	relayTypePong               = "pong"
+	relayTypeLeft               = "left"
+	relayTypeEnded              = "ended"
+	relayErrorRateLimited       = "rate_limited"
+	relayErrorInvalidMessage    = "invalid_message"
+	relayErrorRoomExists        = "room_exists"
+	relayErrorRoomNotFound      = "room_not_found"
+	relayErrorRoomFull          = "room_full"
+	relayErrorNotInRoom         = "not_in_room"
+	relayErrorAlreadyInRoom     = "already_in_room"
+	relayErrorPeerIdUnavailable = "peer_id_unavailable"
+	relayErrorProtocolMismatch  = "protocol_mismatch"
 
 	maxRoomSize        = 8
 	maxMessageSize     = 65536

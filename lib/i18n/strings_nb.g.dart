@@ -311,6 +311,7 @@ class _TranslationsSettingsNb extends TranslationsSettingsEn {
 	@override String get watchTogetherRelay => 'Se Sammen-relay';
 	@override String get watchTogetherRelayDescription => 'Angi en egendefinert relay. Alle må bruke samme server.';
 	@override String get watchTogetherRelayHint => 'https://min-relay.eksempel.no';
+	@override String get watchTogetherRelayInvalid => '';
 	@override String get crashReporting => 'Krasjrapportering';
 	@override String get crashReportingDescription => 'Send krasjrapporter for å hjelpe med å forbedre appen';
 	@override String get debugLogging => 'Feilsøkingslogging';
@@ -2303,6 +2304,7 @@ extension on TranslationsNb {
 			'settings.watchTogetherRelay' => 'Se Sammen-relay',
 			'settings.watchTogetherRelayDescription' => 'Angi en egendefinert relay. Alle må bruke samme server.',
 			'settings.watchTogetherRelayHint' => 'https://min-relay.eksempel.no',
+			'settings.watchTogetherRelayInvalid' => '',
 			'settings.crashReporting' => 'Krasjrapportering',
 			'settings.crashReportingDescription' => 'Send krasjrapporter for å hjelpe med å forbedre appen',
 			'settings.debugLogging' => 'Feilsøkingslogging',
@@ -2644,9 +2646,9 @@ extension on TranslationsNb {
 			'messages.markedAsUnwatchedOffline' => 'Merket som usett (synkroniseres når tilkoblet)',
 			'messages.autoRemovedWatchedDownload' => ({required Object title}) => 'Automatisk fjernet: ${title}',
 			'messages.autoRemovedWatchedDownloads' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('nb'))(n, one: 'Fjernet automatisk ${n} sett nedlasting', other: 'Fjernet automatisk ${n} sette nedlastinger', ), 
-			'messages.removedFromContinueWatching' => 'Fjernet fra Fortsett å se',
 			_ => null,
 		} ?? switch (path) {
+			'messages.removedFromContinueWatching' => 'Fjernet fra Fortsett å se',
 			'messages.errorLoading' => ({required Object error}) => 'Feil: ${error}',
 			'messages.streamInterrupted' => 'Avspillingen ble avbrutt. Trykk på Spill av eller spol for å prøve på nytt.',
 			'messages.liveStreamInterrupted' => 'Direktesendingen ble avbrutt. Trykk på Spill av for å prøve på nytt.',
@@ -3158,9 +3160,9 @@ extension on TranslationsNb {
 			'watchTogether.participantSeeked' => ({required Object name}) => '${name} spolet',
 			'watchTogether.participantBuffering' => ({required Object name}) => '${name} buffrer',
 			'watchTogether.participantNeedsUpdate' => ({required Object name}) => '${name} bruker en eldre appversjon — synkronisering er ikke tilgjengelig',
-			'watchTogether.resumingWithout' => ({required Object name}) => 'Fortsetter uten ${name}',
 			_ => null,
 		} ?? switch (path) {
+			'watchTogether.resumingWithout' => ({required Object name}) => 'Fortsetter uten ${name}',
 			'watchTogether.waitingForParticipants' => 'Venter på at andre laster inn...',
 			'watchTogether.waitingForName' => ({required Object name}) => 'Venter på ${name}...',
 			'watchTogether.recentRooms' => 'Nylige rom',

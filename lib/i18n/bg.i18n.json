@@ -180,6 +180,7 @@
     "watchTogetherRelay": "Релей сървър за гледане заедно",
     "watchTogetherRelayDescription": "Задай собствен релей сървър. Всички трябва да използват същия сървър.",
     "watchTogetherRelayHint": "https://my-relay.example.com",
+    "watchTogetherRelayInvalid": "",
     "crashReporting": "Докладване на сривове",
     "crashReportingDescription": "Изпращай доклади за сривове, за да помогнеш за подобряване на приложението",
     "debugLogging": "Логове за отстраняване на грешки",

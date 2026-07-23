@@ -226,6 +226,39 @@ void main() {
     expect(materialUpdateTile.focusNode, isNotNull);
   });
 
+  testWidgets('relay dialog rejects invalid bases without persisting them', (tester) async {
+    final harness = await _pumpSettingsScreen(tester);
+    addTearDown(() => harness.dispose(tester));
+
+    await tester.tap(find.text(t.settings.watchTogetherRelay));
+    await _pumpUi(tester);
+    await tester.enterText(find.byType(TextField), 'ws://opaque-user@relay.example.test/path?wrong=route');
+    await tester.tap(find.text(t.common.save));
+    await _pumpUi(tester);
+
+    expect(find.byType(AlertDialog), findsOneWidget);
+    expect(find.text(t.settings.watchTogetherRelayInvalid), findsOneWidget);
+    expect(SettingsService.instance.read(SettingsService.customRelayUrl), isNull);
+  });
+
+  testWidgets('relay dialog saves and reopens the canonical base', (tester) async {
+    final harness = await _pumpSettingsScreen(tester);
+    addTearDown(() => harness.dispose(tester));
+
+    await tester.tap(find.text(t.settings.watchTogetherRelay));
+    await _pumpUi(tester);
+    await tester.enterText(find.byType(TextField), '  HTTP://Relay.Example.Test:8080/prefix///  ');
+    await tester.tap(find.text(t.common.save));
+    await _pumpUi(tester);
+
+    expect(find.byType(AlertDialog), findsNothing);
+    expect(SettingsService.instance.read(SettingsService.customRelayUrl), 'http://relay.example.test:8080/prefix');
+
+    await tester.tap(find.text(t.settings.watchTogetherRelay));
+    await _pumpUi(tester);
+    expect(find.widgetWithText(TextField, 'http://relay.example.test:8080/prefix'), findsOneWidget);
+  });
+
   testWidgets('folder replacement uses the provider coordinator', (tester) async {
     final selectedDirectory = Directory('${temporaryDirectory.path}/selected-downloads');
     directoryPicker.directoryPath = selectedDirectory.path;

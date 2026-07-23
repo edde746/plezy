@@ -8,7 +8,7 @@ import '../../utils/app_logger.dart';
 import '../../utils/platform_http_client_stub.dart'
     if (dart.library.io) '../../utils/platform_http_client_io.dart'
     as platform;
-import '../../watch_together/services/watch_together_peer_service.dart';
+import '../../watch_together/services/watch_together_relay_endpoint.dart';
 import 'tracker_constants.dart';
 
 /// Client for the Plezy relay's `/auth/*` OAuth proxy.
@@ -19,7 +19,7 @@ import 'tracker_constants.dart';
 /// scheme is required — works identically on TVs without a browser.
 class OAuthProxyClient {
   /// Public base URL of the Plezy relay; colocated with Watch Together.
-  static String get baseUrl => WatchTogetherPeerService.defaultBaseUrl;
+  static String get baseUrl => WatchTogetherRelayEndpoint.defaultEndpoint.canonicalBaseUrl;
 
   final http.Client _http;
 

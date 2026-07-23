@@ -26,7 +26,7 @@ import '../../widgets/overlay_sheet.dart';
 import '../models/watch_session.dart';
 import '../providers/watch_together_provider.dart';
 import '../services/recent_rooms_service.dart';
-import '../services/watch_together_peer_service.dart';
+import '../services/watch_together_relay_endpoint.dart';
 import '../widgets/join_session_dialog.dart';
 import '../../widgets/loading_indicator_box.dart';
 
@@ -88,14 +88,18 @@ class _NotInSessionViewState extends State<_NotInSessionView> with MountedSetSta
   bool _isJoining = false;
   String? _enteringRoomCode;
   bool? _healthOk;
-  String? _customRelayUrl;
+  String? _profileId;
+  late WatchTogetherRelayEndpoint _relayEndpoint;
   List<RecentRoom> _recentRooms = [];
 
   @override
   void initState() {
     super.initState();
-    _customRelayUrl = SettingsService.instanceOrNull?.read(SettingsService.customRelayUrl);
-    _recentRooms = RecentRoomsService.getRecentRooms();
+    _profileId = context.read<ActiveProfileProvider>().activeId;
+    _relayEndpoint = WatchTogetherRelayEndpoint.resolve(
+      SettingsService.instanceOrNull?.read(SettingsService.customRelayUrl),
+    );
+    _recentRooms = _loadRecentRooms();
     _checkHealth();
   }
 
@@ -103,11 +107,17 @@ class _NotInSessionViewState extends State<_NotInSessionView> with MountedSetSta
 
   String? get _plexDisplayName => context.read<ActiveProfileProvider>().active?.displayName;
 
+  List<RecentRoom> _loadRecentRooms() {
+    final profileId = _profileId;
+    if (profileId == null || profileId.isEmpty) return const [];
+    return RecentRoomsService.getRecentRooms(profileId: profileId, endpoint: _relayEndpoint);
+  }
+
   Future<void> _checkHealth() async {
     final client = HttpClient();
     try {
       client.connectionTimeout = const Duration(seconds: 5);
-      final request = await client.getUrl(Uri.parse(WatchTogetherPeerService.healthUrlFor(_customRelayUrl)));
+      final request = await client.getUrl(_relayEndpoint.healthUri);
       final response = await request.close().namedTimeout(
         const Duration(seconds: 5),
         operation: 'WatchTogether health check',
@@ -226,10 +236,19 @@ class _NotInSessionViewState extends State<_NotInSessionView> with MountedSetSta
     try {
       final sessionId = await widget.watchTogether.createSession(
         controlMode: controlMode,
+        relayEndpoint: _relayEndpoint,
         displayName: _plexDisplayName,
       );
-      await RecentRoomsService.addOrUpdateRoom(sessionId, controlMode: controlMode);
-      setStateIfMounted(() => _recentRooms = RecentRoomsService.getRecentRooms());
+      final profileId = _profileId;
+      if (profileId != null && profileId.isNotEmpty) {
+        await RecentRoomsService.addOrUpdateRoom(
+          sessionId,
+          profileId: profileId,
+          endpoint: _relayEndpoint,
+          controlMode: controlMode,
+        );
+        setStateIfMounted(() => _recentRooms = _loadRecentRooms());
+      }
     } catch (e) {
       appLogger.e('Failed to create session', error: e);
       if (mounted) {
@@ -271,9 +290,12 @@ class _NotInSessionViewState extends State<_NotInSessionView> with MountedSetSta
     setState(() => _isJoining = true);
 
     try {
-      await widget.watchTogether.joinSession(sessionId, displayName: _plexDisplayName);
-      await RecentRoomsService.addOrUpdateRoom(sessionId);
-      setStateIfMounted(() => _recentRooms = RecentRoomsService.getRecentRooms());
+      await widget.watchTogether.joinSession(sessionId, relayEndpoint: _relayEndpoint, displayName: _plexDisplayName);
+      final profileId = _profileId;
+      if (profileId != null && profileId.isNotEmpty) {
+        await RecentRoomsService.addOrUpdateRoom(sessionId, profileId: profileId, endpoint: _relayEndpoint);
+        setStateIfMounted(() => _recentRooms = _loadRecentRooms());
+      }
     } catch (e) {
       appLogger.e('Failed to join session', error: e);
       if (mounted) {
@@ -292,11 +314,15 @@ class _NotInSessionViewState extends State<_NotInSessionView> with MountedSetSta
     try {
       await widget.watchTogether.enterRoom(
         room.code,
+        relayEndpoint: _relayEndpoint,
         controlMode: room.controlMode ?? ControlMode.anyone,
         displayName: _plexDisplayName,
       );
-      await RecentRoomsService.addOrUpdateRoom(room.code);
-      setStateIfMounted(() => _recentRooms = RecentRoomsService.getRecentRooms());
+      final profileId = _profileId;
+      if (profileId != null && profileId.isNotEmpty) {
+        await RecentRoomsService.addOrUpdateRoom(room.code, profileId: profileId, endpoint: _relayEndpoint);
+        setStateIfMounted(() => _recentRooms = _loadRecentRooms());
+      }
     } catch (e) {
       appLogger.e('Failed to enter room', error: e);
       if (mounted) {
@@ -316,13 +342,22 @@ class _NotInSessionViewState extends State<_NotInSessionView> with MountedSetSta
     );
     if (name == null || !mounted) return;
 
-    await RecentRoomsService.renameRoom(room.code, name.isEmpty ? null : name);
-    setStateIfMounted(() => _recentRooms = RecentRoomsService.getRecentRooms());
+    final profileId = _profileId;
+    if (profileId == null || profileId.isEmpty) return;
+    await RecentRoomsService.renameRoom(
+      room.code,
+      name.isEmpty ? null : name,
+      profileId: profileId,
+      endpoint: _relayEndpoint,
+    );
+    setStateIfMounted(() => _recentRooms = _loadRecentRooms());
   }
 
   Future<void> _removeRoom(RecentRoom room) async {
-    await RecentRoomsService.removeRoom(room.code);
-    setStateIfMounted(() => _recentRooms = RecentRoomsService.getRecentRooms());
+    final profileId = _profileId;
+    if (profileId == null || profileId.isEmpty) return;
+    await RecentRoomsService.removeRoom(room.code, profileId: profileId, endpoint: _relayEndpoint);
+    setStateIfMounted(() => _recentRooms = _loadRecentRooms());
   }
 }
 
@@ -633,8 +668,11 @@ class _ActiveSessionContent extends StatelessWidget {
       isDestructive: true,
     );
 
-    if (confirmed) {
+    if (!confirmed) return;
+    try {
       await watchTogether.leaveSession();
+    } catch (error, stackTrace) {
+      appLogger.e('WatchTogether: Session leave failed', error: error, stackTrace: stackTrace);
     }
   }
 }

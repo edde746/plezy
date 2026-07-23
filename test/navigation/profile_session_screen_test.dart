@@ -11,6 +11,7 @@ import 'package:plezy/profiles/plex_home_service.dart';
 import 'package:plezy/profiles/profile.dart';
 import 'package:plezy/profiles/profile_connection_registry.dart';
 import 'package:plezy/profiles/profile_registry.dart';
+import 'package:plezy/providers/companion_remote_provider.dart';
 import 'package:plezy/providers/discover_provider.dart';
 import 'package:plezy/providers/hidden_libraries_provider.dart';
 import 'package:plezy/providers/multi_server_provider.dart';
@@ -57,11 +58,12 @@ void main() {
     final discoverProviders = <DiscoverProvider>[];
     final hiddenProviders = <HiddenLibrariesProvider>[];
     final trackerProviders = <TrackersProvider>[];
+    final companionProviders = <CompanionRemoteProvider>[];
     final disposedActiveIds = <String>[];
 
     addTearDown(() async {
       await tester.pumpWidget(const SizedBox.shrink());
-      await tester.pump();
+      await tester.pumpAndSettle();
       await activeProfile.resetForTesting();
       activeProfile.dispose();
       multiServer.dispose();
@@ -85,6 +87,9 @@ void main() {
         providers: [
           Provider<StorageService>.value(value: storage),
           Provider<AppDatabase>.value(value: db),
+          Provider<ConnectionRegistry>.value(value: connectionRegistry),
+          Provider<ProfileConnectionRegistry>.value(value: profileConnectionRegistry),
+          Provider<PlexHomeService>.value(value: plexHome),
           ChangeNotifierProvider<ActiveProfileProvider>.value(value: activeProfile),
           ChangeNotifierProvider<MultiServerProvider>.value(value: multiServer),
           ChangeNotifierProvider<OfflineWatchSyncService>.value(value: offlineWatch),
@@ -96,6 +101,7 @@ void main() {
               discoverProviders: discoverProviders,
               hiddenProviders: hiddenProviders,
               trackerProviders: trackerProviders,
+              companionProviders: companionProviders,
               disposedActiveIds: disposedActiveIds,
             ),
           ),
@@ -109,10 +115,12 @@ void main() {
     expect(discoverProviders.single.profileId, owner.id);
     expect(discoverProviders, hasLength(1));
     expect(hiddenProviders, hasLength(1));
+    expect(companionProviders, hasLength(1));
     final ownerNavigator = profileNavigationRegistry.navigator;
     final ownerDiscover = discoverProviders.single;
     final ownerHidden = hiddenProviders.single;
     final ownerTrackers = trackerProviders.single;
+    final ownerCompanion = companionProviders.single;
     await ownerHidden.ensureInitialized();
     expect(ownerHidden.profileId, owner.id);
     expect(ownerHidden.hiddenLibraryKeys, {'srv:owner'});
@@ -134,6 +142,9 @@ void main() {
     expect(trackerProviders, hasLength(2));
     expect(trackerProviders.last, isNot(same(ownerTrackers)));
     expect(ownerTrackers.isDisposed, isTrue);
+    expect(companionProviders, hasLength(2));
+    expect(companionProviders.last, isNot(same(ownerCompanion)));
+    expect(ownerCompanion.isDisposed, isTrue);
     await hiddenProviders.last.ensureInitialized();
     expect(hiddenProviders.last.profileId, kids.id);
     expect(hiddenProviders.last.hiddenLibraryKeys, {'srv:kids'});
@@ -145,17 +156,27 @@ void main() {
     await tester.pumpAndSettle();
     expect(SystemShelfService().debugActiveOwner, isNull);
     expect(discoverProviders.last.profileId, isNull);
+
+    // Companion provider disposal cancels Drift-backed profile watches. Give
+    // their asynchronous cancellation timers a frame before test invariants
+    // are checked.
+    await tester.pumpWidget(const SizedBox.shrink());
+    for (var i = 0; i < 3; i++) {
+      await tester.pump(const Duration(milliseconds: 1));
+    }
   });
 }
 
 class _ProfileProbeShell extends StatefulWidget {
   const _ProfileProbeShell({
     required this.discoverProviders,
+    required this.companionProviders,
     required this.hiddenProviders,
     required this.disposedActiveIds,
     required this.trackerProviders,
   });
 
+  final List<CompanionRemoteProvider> companionProviders;
   final List<DiscoverProvider> discoverProviders;
   final List<HiddenLibrariesProvider> hiddenProviders;
   final List<TrackersProvider> trackerProviders;
@@ -166,6 +187,7 @@ class _ProfileProbeShell extends StatefulWidget {
 }
 
 class _ProfileProbeShellState extends State<_ProfileProbeShell> {
+  CompanionRemoteProvider? _companionProvider;
   DiscoverProvider? _discoverProvider;
   HiddenLibrariesProvider? _hiddenProvider;
   TrackersProvider? _trackersProvider;
@@ -174,6 +196,7 @@ class _ProfileProbeShellState extends State<_ProfileProbeShell> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    _companionProvider = context.read<CompanionRemoteProvider>();
     _discoverProvider = context.read<DiscoverProvider>();
     _hiddenProvider = context.read<HiddenLibrariesProvider>();
     _trackersProvider = context.read<TrackersProvider>();
@@ -186,6 +209,9 @@ class _ProfileProbeShellState extends State<_ProfileProbeShell> {
     }
     if (widget.trackerProviders.isEmpty || !identical(widget.trackerProviders.last, _trackersProvider)) {
       widget.trackerProviders.add(_trackersProvider!);
+    }
+    if (widget.companionProviders.isEmpty || !identical(widget.companionProviders.last, _companionProvider)) {
+      widget.companionProviders.add(_companionProvider!);
     }
   }
 

@@ -44,6 +44,7 @@ import '../../widgets/settings_builder.dart';
 import '../../widgets/settings_section.dart';
 import '../../profiles/active_profile_provider.dart';
 import '../../profiles/profile.dart';
+import '../../watch_together/services/watch_together_relay_endpoint.dart';
 import 'about_screen.dart';
 import 'add_connection_screen.dart';
 import 'appearance_settings_screen.dart';
@@ -801,6 +802,7 @@ class _RelayUrlDialog extends StatefulWidget {
 class _RelayUrlDialogState extends State<_RelayUrlDialog> {
   late final TextEditingController _controller;
   final _saveFocusNode = FocusNode(debugLabel: 'WatchTogetherRelaySave');
+  bool _relayUrlInvalid = false;
 
   @override
   void initState() {
@@ -824,8 +826,19 @@ class _RelayUrlDialogState extends State<_RelayUrlDialog> {
   }
 
   Future<void> _save() async {
-    final trimmed = _controller.text.trim();
-    await widget.settingsService.write(settings.SettingsService.customRelayUrl, trimmed.isEmpty ? null : trimmed);
+    final value = _controller.text;
+    if (value.trim().isEmpty) {
+      await widget.settingsService.write(settings.SettingsService.customRelayUrl, null);
+      if (mounted) Navigator.pop(context);
+      return;
+    }
+
+    final endpoint = WatchTogetherRelayEndpoint.tryParseCustom(value);
+    if (endpoint == null) {
+      setState(() => _relayUrlInvalid = true);
+      return;
+    }
+    await widget.settingsService.write(settings.SettingsService.customRelayUrl, endpoint.canonicalBaseUrl);
     if (mounted) Navigator.pop(context);
   }
 
@@ -835,9 +848,18 @@ class _RelayUrlDialogState extends State<_RelayUrlDialog> {
       title: Text(t.settings.watchTogetherRelay),
       content: FocusableTextField(
         controller: _controller,
-        decoration: InputDecoration(labelText: 'URL', hintText: t.settings.watchTogetherRelayHint),
+        decoration: InputDecoration(
+          labelText: 'URL',
+          hintText: t.settings.watchTogetherRelayHint,
+          errorText: _relayUrlInvalid ? t.settings.watchTogetherRelayInvalid : null,
+        ),
         autofocus: true,
         textInputAction: TextInputAction.done,
+        onChanged: (_) {
+          if (_relayUrlInvalid) {
+            setState(() => _relayUrlInvalid = false);
+          }
+        },
         onEditingComplete: () => _saveFocusNode.requestFocus(),
       ),
       actions: [

@@ -58,7 +58,9 @@ String constrainLogUploadPayload({required String header, required String logs, 
 }
 
 class LogsScreen extends StatefulWidget {
-  const LogsScreen({super.key});
+  const LogsScreen({super.key, this.httpClient});
+
+  final MediaServerHttpClient? httpClient;
 
   @override
   State<LogsScreen> createState() => _LogsScreenState();
@@ -68,6 +70,8 @@ class _LogsScreenState extends State<LogsScreen> with MountedSetStateMixin {
   List<LogEntry> _logs = [];
   String _deviceInfo = '';
   final ScrollController _scrollController = ScrollController();
+
+  MediaServerHttpClient get _httpClient => widget.httpClient ?? httpClient;
 
   @override
   void initState() {
@@ -182,7 +186,7 @@ class _LogsScreenState extends State<LogsScreen> with MountedSetStateMixin {
     showLoadingDialog(context);
 
     try {
-      final response = await httpClient.post(
+      final response = await _httpClient.post(
         'https://ice.plezy.app/logs',
         body: logText,
         headers: {'Content-Type': 'text/plain'},
@@ -199,20 +203,29 @@ class _LogsScreenState extends State<LogsScreen> with MountedSetStateMixin {
           context: context,
           builder: (ctx) => AlertDialog(
             title: Text(t.messages.logsUploaded),
-            content: Row(
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('${t.messages.logId}: '),
-                SelectableText(
-                  id,
-                  style: const TextStyle(fontWeight: .bold, fontFamily: 'monospace', fontSize: 18),
-                ),
-                const SizedBox(width: 8),
-                IconButton(
-                  icon: const AppIcon(Symbols.content_copy_rounded, size: 20),
-                  onPressed: () {
-                    Clipboard.setData(ClipboardData(text: id));
-                    showSuccessSnackBar(context, t.messages.logsCopied);
-                  },
+                Text('${t.messages.logId}:'),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    Expanded(
+                      child: SelectableText(
+                        id,
+                        style: const TextStyle(fontWeight: .bold, fontFamily: 'monospace', fontSize: 18),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    IconButton(
+                      icon: const AppIcon(Symbols.content_copy_rounded, size: 20),
+                      onPressed: () {
+                        Clipboard.setData(ClipboardData(text: id));
+                        showSuccessSnackBar(context, t.messages.logsCopied);
+                      },
+                    ),
+                  ],
                 ),
               ],
             ),

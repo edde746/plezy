@@ -180,6 +180,7 @@
     "watchTogetherRelay": "함께 보기 릴레이",
     "watchTogetherRelayDescription": "사용자 지정 릴레이를 설정합니다. 모두 같은 서버를 사용해야 합니다.",
     "watchTogetherRelayHint": "https://my-relay.example.com",
+    "watchTogetherRelayInvalid": "",
     "crashReporting": "충돌 보고",
     "crashReportingDescription": "앱 개선을 위해 충돌 보고서 전송",
     "debugLogging": "디버그 로깅",

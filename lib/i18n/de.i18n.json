@@ -180,6 +180,7 @@
     "watchTogetherRelay": "Gemeinsam Schauen Relay",
     "watchTogetherRelayDescription": "Eigenes Relay festlegen. Alle müssen denselben Server verwenden.",
     "watchTogetherRelayHint": "https://mein-relay.beispiel.de",
+    "watchTogetherRelayInvalid": "",
     "crashReporting": "Absturzberichte",
     "crashReportingDescription": "Absturzberichte senden, um die App zu verbessern",
     "debugLogging": "Debug-Protokollierung",

@@ -311,6 +311,7 @@ class _TranslationsSettingsPl extends TranslationsSettingsEn {
 	@override String get watchTogetherRelay => 'Relay Oglądaj Razem';
 	@override String get watchTogetherRelayDescription => 'Ustaw własny relay. Wszyscy muszą używać tego samego serwera.';
 	@override String get watchTogetherRelayHint => 'https://moj-relay.przyklad.pl';
+	@override String get watchTogetherRelayInvalid => '';
 	@override String get crashReporting => 'Raportowanie błędów';
 	@override String get crashReportingDescription => 'Wysyłaj raporty o błędach, aby pomóc ulepszyć aplikację';
 	@override String get debugLogging => 'Logowanie debugowania';
@@ -2309,6 +2310,7 @@ extension on TranslationsPl {
 			'settings.watchTogetherRelay' => 'Relay Oglądaj Razem',
 			'settings.watchTogetherRelayDescription' => 'Ustaw własny relay. Wszyscy muszą używać tego samego serwera.',
 			'settings.watchTogetherRelayHint' => 'https://moj-relay.przyklad.pl',
+			'settings.watchTogetherRelayInvalid' => '',
 			'settings.crashReporting' => 'Raportowanie błędów',
 			'settings.crashReportingDescription' => 'Wysyłaj raporty o błędach, aby pomóc ulepszyć aplikację',
 			'settings.debugLogging' => 'Logowanie debugowania',
@@ -2650,9 +2652,9 @@ extension on TranslationsPl {
 			'messages.markedAsUnwatchedOffline' => 'Oznaczono jako nieobejrzane (zsynchronizuje się po połączeniu)',
 			'messages.autoRemovedWatchedDownload' => ({required Object title}) => 'Automatycznie usunięto: ${title}',
 			'messages.autoRemovedWatchedDownloads' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('pl'))(n, one: 'Automatycznie usunięto ${n} obejrzane pobranie', few: 'Automatycznie usunięto ${n} obejrzane pobrania', many: 'Automatycznie usunięto ${n} obejrzanych pobrań', other: 'Automatycznie usunięto ${n} obejrzanego pobrania', ), 
-			'messages.removedFromContinueWatching' => 'Usunięto z kontynuowania oglądania',
 			_ => null,
 		} ?? switch (path) {
+			'messages.removedFromContinueWatching' => 'Usunięto z kontynuowania oglądania',
 			'messages.errorLoading' => ({required Object error}) => 'Błąd: ${error}',
 			'messages.streamInterrupted' => 'Strumień został przerwany. Naciśnij odtwarzanie lub przewiń, aby spróbować ponownie.',
 			'messages.liveStreamInterrupted' => 'Transmisja na żywo została przerwana. Naciśnij odtwarzanie, aby spróbować ponownie.',
@@ -3164,9 +3166,9 @@ extension on TranslationsPl {
 			'watchTogether.participantSeeked' => ({required Object name}) => '${name} przewinął',
 			'watchTogether.participantBuffering' => ({required Object name}) => '${name} buforuje',
 			'watchTogether.participantNeedsUpdate' => ({required Object name}) => '${name} używa starszej wersji aplikacji — synchronizacja jest niedostępna',
-			'watchTogether.resumingWithout' => ({required Object name}) => 'Wznawianie bez ${name}',
 			_ => null,
 		} ?? switch (path) {
+			'watchTogether.resumingWithout' => ({required Object name}) => 'Wznawianie bez ${name}',
 			'watchTogether.waitingForParticipants' => 'Oczekiwanie na załadowanie u innych...',
 			'watchTogether.waitingForName' => ({required Object name}) => 'Oczekiwanie na ${name}...',
 			'watchTogether.recentRooms' => 'Ostatnie pokoje',

@@ -180,6 +180,7 @@
     "watchTogetherRelay": "一緒に視聴リレーサーバー",
     "watchTogetherRelayDescription": "カスタムリレーを設定します。全員が同じサーバーを使う必要があります。",
     "watchTogetherRelayHint": "https://my-relay.example.com",
+    "watchTogetherRelayInvalid": "",
     "crashReporting": "クラッシュレポート",
     "crashReportingDescription": "アプリの改善に役立つクラッシュレポートを送信",
     "debugLogging": "デバッグログ",

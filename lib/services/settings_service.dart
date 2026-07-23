@@ -20,6 +20,8 @@ import '../models/transcode_quality_preset.dart';
 import '../navigation/navigation_tabs.dart';
 import '../utils/platform_detector.dart';
 import 'trackers/tracker_constants.dart';
+import '../profiles/profile.dart';
+import '../watch_together/services/watch_together_relay_endpoint.dart';
 
 enum ThemeMode { system, light, dark, oled }
 
@@ -214,6 +216,15 @@ class _AudioPassthroughPref extends Pref<bool> {
 String? _trimEmptyAsNull(String? v) {
   final t = v?.trim();
   return (t == null || t.isEmpty) ? null : t;
+}
+
+String? _normalizeRelayBaseUrl(String? value) {
+  if (value == null || value.trim().isEmpty) return null;
+  final endpoint = WatchTogetherRelayEndpoint.tryParseCustom(value);
+  if (endpoint == null) {
+    throw FormatException('Invalid Watch Together relay base URL');
+  }
+  return endpoint.canonicalBaseUrl;
 }
 
 String _legacyMpvEntriesToText(List<dynamic> entries) {
@@ -431,8 +442,15 @@ class SettingsService extends BaseSharedPreferencesService {
   static const appLocale = _AppLocalePref();
   static const autoPip = _AutoPipPref();
   static const customDownloadPath = NullableStringPref('custom_download_path');
-  static final customRelayUrl = NullableStringPref('custom_relay_url', transform: _trimEmptyAsNull);
-  static const recentRooms = NullableStringPref('watch_together_recent_rooms');
+  static final customRelayUrl = NullableStringPref('custom_relay_url', transform: _normalizeRelayBaseUrl);
+
+  static NullableStringPref recentRoomsForProfile(String profileId) {
+    if (profileId.trim().isEmpty) {
+      throw ArgumentError.value(profileId, 'profileId', 'Must not be empty');
+    }
+    return NullableStringPref(profileScopedPrefsKey(profileId, 'watch_together_recent_rooms'));
+  }
+
   static final companionRemoteLastHostAddress = NullableStringPref(
     'companion_remote_last_host_address',
     transform: _trimEmptyAsNull,
@@ -574,6 +592,21 @@ class SettingsService extends BaseSharedPreferencesService {
   @visibleForTesting
   static void resetForTesting() {
     _cachedInstance = null;
+  }
+
+  @override
+  Future<void> onInit() async {
+    const legacyRecentRoomsKey = 'watch_together_recent_rooms';
+    await prefs.remove(legacyRecentRoomsKey);
+
+    final storedRelay = prefs.getString(customRelayUrl.key);
+    if (storedRelay == null) return;
+    final endpoint = WatchTogetherRelayEndpoint.tryParseCustom(storedRelay);
+    if (endpoint == null) {
+      await prefs.remove(customRelayUrl.key);
+    } else if (endpoint.canonicalBaseUrl != storedRelay) {
+      await prefs.setString(customRelayUrl.key, endpoint.canonicalBaseUrl);
+    }
   }
 
   /// Resolves a video mute toggle without replacing the saved volume with 0.

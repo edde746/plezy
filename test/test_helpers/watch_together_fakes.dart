@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:plezy/mpv/mpv.dart';
 import 'package:plezy/watch_together/models/sync_message.dart';
 import 'package:plezy/watch_together/services/watch_together_peer_service.dart';
+import 'package:plezy/watch_together/services/watch_together_relay_endpoint.dart';
 
 /// Rich fake [Player] for Watch Together sync tests.
 ///
@@ -196,6 +197,9 @@ class FakeRelayHub {
   final Map<String, HubPeerService> _peers = {};
 
   HubPeerService register(String peerId) {
+    if (_peers.containsKey(peerId)) {
+      throw StateError('Peer ID is already registered: $peerId');
+    }
     final service = HubPeerService._(peerId, this);
     for (final existing in _peers.values) {
       existing._peerConnected.add(peerId);
@@ -235,7 +239,7 @@ class FakeRelayHub {
 }
 
 class HubPeerService extends WatchTogetherPeerService {
-  HubPeerService._(this.peerId, this._hub) : super(customBaseUrl: 'http://localhost');
+  HubPeerService._(this.peerId, this._hub) : super(endpoint: WatchTogetherRelayEndpoint.resolve('http://localhost'));
 
   final String peerId;
   final FakeRelayHub _hub;

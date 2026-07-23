@@ -19,7 +19,7 @@ import 'watch_together_peer_service.dart';
 /// switches or other attach gaps — the player attachment is just an output
 /// binding the role engine reconciles against.
 ///
-/// Routes the v2 protocol between the relay and the role engine:
+/// Routes the v3 protocol between the relay and the role engine:
 /// host → [HostPlaybackCoordinator] (single writer of [PlaybackState]),
 /// guest → [GuestPlaybackReconciler] (+ [ClockSync] against the host).
 class WatchTogetherController {
@@ -165,7 +165,11 @@ class WatchTogetherController {
     _attachedPlayer = null;
     _coordinator?.detachPlayer(exiting: exiting);
     _reconciler?.detachPlayer();
-    unawaited(attached.dispose());
+    unawaited(
+      attached.dispose().catchError((Object error, StackTrace stackTrace) {
+        appLogger.e('WatchTogether: Failed to detach player subscriptions', error: error, stackTrace: stackTrace);
+      }),
+    );
     appLogger.d('WatchTogether: Player detached (exiting: $exiting)');
   }
 
@@ -231,7 +235,11 @@ class WatchTogetherController {
     _disposed = true;
     detachPlayer(exiting: true);
     for (final subscription in _subscriptions) {
-      unawaited(subscription.cancel());
+      unawaited(
+        subscription.cancel().catchError((Object error, StackTrace stackTrace) {
+          appLogger.e('WatchTogether: Failed to cancel controller subscription', error: error, stackTrace: stackTrace);
+        }),
+      );
     }
     _subscriptions.clear();
     _clockSync?.stop();

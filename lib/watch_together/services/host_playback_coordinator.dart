@@ -60,6 +60,8 @@ class HostPlaybackCoordinator {
   static const int seekDebounceMs = 200;
   static const int implicitJumpThresholdMs = 1500;
   static const int selfRecoveryMinBufferAheadMs = 2000;
+  static const double _minimumRemoteRate = 0.25;
+  static const double _maximumRemoteRate = 4.0;
 
   final String myPeerId;
   final void Function(PlaybackState state, {String? toPeerId}) _sendState;
@@ -496,7 +498,9 @@ class HostPlaybackCoordinator {
 
   void _applyRemoteSeek(int targetMs, {required String actor}) {
     final player = _player;
-    if (player == null) return;
+    if (player == null || !player.seekable) return;
+    final durationMs = player.duration.inMilliseconds;
+    if (durationMs <= 0 || targetMs < 0 || targetMs > durationMs) return;
     _callbacks.onRemoteAction?.call(actor, PlaybackActionHint.seek);
     unawaited(
       player.seek(Duration(milliseconds: targetMs)).then((didSeek) {
@@ -516,7 +520,7 @@ class HostPlaybackCoordinator {
 
   void _applyRemoteRate(double rate, {required String actor}) {
     final player = _player;
-    if (player == null) return;
+    if (player == null || !rate.isFinite || rate < _minimumRemoteRate || rate > _maximumRemoteRate) return;
     _callbacks.onRemoteAction?.call(actor, PlaybackActionHint.rate);
     unawaited(
       player.setRate(rate).then((didSet) {

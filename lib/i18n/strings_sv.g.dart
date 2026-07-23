@@ -311,6 +311,7 @@ class _TranslationsSettingsSv extends TranslationsSettingsEn {
 	@override String get watchTogetherRelay => 'Titta Tillsammans-relay';
 	@override String get watchTogetherRelayDescription => 'Ange en anpassad relay. Alla måste använda samma server.';
 	@override String get watchTogetherRelayHint => 'https://min-relay.exempel.se';
+	@override String get watchTogetherRelayInvalid => '';
 	@override String get crashReporting => 'Kraschrapportering';
 	@override String get crashReportingDescription => 'Skicka kraschrapporter för att förbättra appen';
 	@override String get debugLogging => 'Felsökningsloggning';
@@ -2303,6 +2304,7 @@ extension on TranslationsSv {
 			'settings.watchTogetherRelay' => 'Titta Tillsammans-relay',
 			'settings.watchTogetherRelayDescription' => 'Ange en anpassad relay. Alla måste använda samma server.',
 			'settings.watchTogetherRelayHint' => 'https://min-relay.exempel.se',
+			'settings.watchTogetherRelayInvalid' => '',
 			'settings.crashReporting' => 'Kraschrapportering',
 			'settings.crashReportingDescription' => 'Skicka kraschrapporter för att förbättra appen',
 			'settings.debugLogging' => 'Felsökningsloggning',
@@ -2644,9 +2646,9 @@ extension on TranslationsSv {
 			'messages.markedAsUnwatchedOffline' => 'Markerad som osedd (synkroniseras när online)',
 			'messages.autoRemovedWatchedDownload' => ({required Object title}) => 'Automatiskt borttagen: ${title}',
 			'messages.autoRemovedWatchedDownloads' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('sv'))(n, one: 'Tog automatiskt bort ${n} sedd nedladdning', other: 'Tog automatiskt bort ${n} sedda nedladdningar', ), 
-			'messages.removedFromContinueWatching' => 'Borttagen från Fortsätt titta',
 			_ => null,
 		} ?? switch (path) {
+			'messages.removedFromContinueWatching' => 'Borttagen från Fortsätt titta',
 			'messages.errorLoading' => ({required Object error}) => 'Fel: ${error}',
 			'messages.streamInterrupted' => 'Uppspelningen avbröts. Tryck på play eller spola för att försöka igen.',
 			'messages.liveStreamInterrupted' => 'Livestreamen avbröts. Tryck på play för att försöka igen.',
@@ -3158,9 +3160,9 @@ extension on TranslationsSv {
 			'watchTogether.participantSeeked' => ({required Object name}) => '${name} spolade',
 			'watchTogether.participantBuffering' => ({required Object name}) => '${name} buffrar',
 			'watchTogether.participantNeedsUpdate' => ({required Object name}) => '${name} använder en äldre appversion — synkronisering är inte tillgänglig',
-			'watchTogether.resumingWithout' => ({required Object name}) => 'Återupptar utan ${name}',
 			_ => null,
 		} ?? switch (path) {
+			'watchTogether.resumingWithout' => ({required Object name}) => 'Återupptar utan ${name}',
 			'watchTogether.waitingForParticipants' => 'Väntar på att andra laddar...',
 			'watchTogether.waitingForName' => ({required Object name}) => 'Väntar på ${name}...',
 			'watchTogether.recentRooms' => 'Senaste rum',

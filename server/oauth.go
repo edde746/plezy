@@ -9,6 +9,7 @@ package main
 import (
 	"context"
 	"crypto/rand"
+	"crypto/sha256"
 	"encoding/base64"
 	"encoding/json"
 	"errors"
@@ -30,7 +31,8 @@ const (
 	oauthMaxSessions        = 5000
 	oauthStartBurst         = 3
 	oauthStartRateSustained = 1
-	oauthSessionIDBytes     = 18 // 144 bits → 24 base64url chars
+	oauthBrowserStateBytes  = 18 // 144 bits → 24 base64url chars
+	oauthPollSecretBytes    = 18 // Independently generated device capability.
 	oauthPKCEVerifierLen    = 64
 	oauthUpstreamTimeout    = 15 * time.Second
 )
@@ -54,70 +56,88 @@ type oauthTokenResult struct {
 	Error        string `json:"error,omitempty"`
 }
 
-// oauthSession is created by /auth/start and lives until it's consumed by a
-// successful /auth/result (which deletes the map entry) or GC'd after
-// oauthSessionTTL. The `done` channel is closed exactly once (by complete) and
-// unblocks waiters.
+// oauthSession is created by /auth/start and lives until its result is claimed
+// or it is removed by cleanup. browserState crosses the browser/provider trust
+// boundary. Only the SHA-256 digest of the device-only poll secret is retained.
+// When both locks are needed, oauthProxy.mu must be acquired before s.mu.
 type oauthSession struct {
-	id           string
+	browserState string
+	pollDigest   [sha256.Size]byte
 	service      string
 	codeVerifier string // MAL PKCE; empty for AniList. Cleared after token exchange.
 	createdAt    time.Time
 	done         chan struct{}
 
-	mu     sync.Mutex
-	result *oauthTokenResult
+	mu        sync.Mutex
+	completed bool
+	result    *oauthTokenResult
+
+	// Test seam used to deterministically seat concurrent result waiters.
+	waitStarted func()
 }
 
-func (s *oauthSession) complete(r oauthTokenResult) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	if s.result != nil {
-		return
+// completeLocked publishes at most one terminal result. The caller holds s.mu.
+func (s *oauthSession) completeLocked(r oauthTokenResult) bool {
+	if s.completed {
+		return false
 	}
+	s.completed = true
 	s.result = &r
 	s.codeVerifier = "" // Secret, not needed after exchange.
 	close(s.done)
+	return true
 }
 
-// wait blocks until the session is completed or ctx is cancelled.
-func (s *oauthSession) wait(ctx context.Context) (*oauthTokenResult, error) {
+// wait blocks only until the session is ready or ctx is cancelled. Result
+// ownership is transferred separately by oauthProxy.claimResult.
+func (s *oauthSession) wait(ctx context.Context) error {
+	if s.waitStarted != nil {
+		s.waitStarted()
+	}
 	select {
 	case <-s.done:
-		s.mu.Lock()
-		defer s.mu.Unlock()
-		return s.result, nil
+		return nil
 	case <-ctx.Done():
-		return nil, ctx.Err()
+		return ctx.Err()
 	}
 }
 
-type oauthProxy struct {
-	baseURL  string // e.g. https://ice.plezy.app
-	services map[string]oauthServiceConfig
-	client   *http.Client
+func (s *oauthSession) pkceVerifier() string {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.codeVerifier
+}
 
-	mu       sync.Mutex
-	sessions map[string]*oauthSession
+type oauthProxy struct {
+	baseURL   string // e.g. https://ice.plezy.app
+	services  map[string]oauthServiceConfig
+	client    *http.Client
+	clientIPs clientIPResolver
+
+	mu            sync.Mutex
+	browserStates map[string]*oauthSession
+	pollDigests   map[[sha256.Size]byte]*oauthSession
 
 	ipMu   sync.Mutex
 	ipRate map[string]*rateLimiter
 }
 
-func newOAuthProxy(baseURL string, services map[string]oauthServiceConfig) *oauthProxy {
+func newOAuthProxy(baseURL string, services map[string]oauthServiceConfig, clientIPs clientIPResolver) *oauthProxy {
 	return &oauthProxy{
-		baseURL:  strings.TrimRight(baseURL, "/"),
-		services: services,
-		client:   &http.Client{Timeout: oauthUpstreamTimeout},
-		sessions: make(map[string]*oauthSession),
-		ipRate:   make(map[string]*rateLimiter),
+		baseURL:       strings.TrimRight(baseURL, "/"),
+		services:      services,
+		client:        &http.Client{Timeout: oauthUpstreamTimeout},
+		clientIPs:     clientIPs,
+		browserStates: make(map[string]*oauthSession),
+		pollDigests:   make(map[[sha256.Size]byte]*oauthSession),
+		ipRate:        make(map[string]*rateLimiter),
 	}
 }
 
 // oauthConfigFromEnv reads the public base URL and per-service creds from the
 // environment. Returns (nil, false) if OAUTH_BASE_URL is unset — the caller
 // wires this as "OAuth disabled, endpoints return 503".
-func oauthConfigFromEnv() (*oauthProxy, bool) {
+func oauthConfigFromEnv(clientIPs clientIPResolver) (*oauthProxy, bool) {
 	base := os.Getenv("OAUTH_BASE_URL")
 	if base == "" {
 		return nil, false
@@ -140,7 +160,7 @@ func oauthConfigFromEnv() (*oauthProxy, bool) {
 			TokenURL:     "https://anilist.co/api/v2/oauth/token",
 		}
 	}
-	return newOAuthProxy(base, services), true
+	return newOAuthProxy(base, services, clientIPs), true
 }
 
 // registerOAuthRoutes registers all /auth/* handlers. If p is nil (no env
@@ -180,13 +200,18 @@ func (p *oauthProxy) handleAuthRoot(w http.ResponseWriter, r *http.Request) {
 }
 
 // POST /auth/start  body={"service":"mal"|"anilist"}
-// Response: {"session":"...","url":"https://.../auth/:service?session=...","expiresIn":600}
+// Response: {"session":"device-only poll capability","url":"https://.../auth/:service?state=...","expiresIn":600}
 func (p *oauthProxy) handleStart(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Cache-Control", "no-store, private")
 	if r.Method != http.MethodPost {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
-	ip := clientIP(r)
+	ip, err := p.clientIPs.resolve(r)
+	if err != nil {
+		http.Error(w, "Invalid client address", http.StatusBadRequest)
+		return
+	}
 	if !p.ipAllow(ip) {
 		http.Error(w, "Rate limited", http.StatusTooManyRequests)
 		return
@@ -205,36 +230,47 @@ func (p *oauthProxy) handleStart(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Generate tokens outside the map lock — crypto/rand syscalls would
-	// otherwise serialize concurrent /auth/start calls.
-	sess := &oauthSession{
-		id:        randToken(oauthSessionIDBytes),
-		service:   body.Service,
-		createdAt: time.Now(),
-		done:      make(chan struct{}),
-	}
-	if cfg.UsePKCE {
-		sess.codeVerifier = randPKCEVerifier()
-	}
+	// Generate independent trust-domain values outside the map lock —
+	// crypto/rand syscalls must not serialize concurrent /auth/start calls.
+	var pollSecret string
+	var sess *oauthSession
+	for {
+		pollSecret = randToken(oauthPollSecretBytes)
+		sess = &oauthSession{
+			browserState: randToken(oauthBrowserStateBytes),
+			pollDigest:   digestPollSecret(pollSecret),
+			service:      body.Service,
+			createdAt:    time.Now(),
+			done:         make(chan struct{}),
+		}
+		if cfg.UsePKCE {
+			sess.codeVerifier = randPKCEVerifier()
+		}
 
-	p.mu.Lock()
-	if len(p.sessions) >= oauthMaxSessions {
+		p.mu.Lock()
+		if len(p.browserStates) >= oauthMaxSessions {
+			p.mu.Unlock()
+			http.Error(w, "Server busy", http.StatusServiceUnavailable)
+			return
+		}
+		if p.browserStates[sess.browserState] != nil || p.pollDigests[sess.pollDigest] != nil {
+			p.mu.Unlock()
+			continue
+		}
+		p.addSessionLocked(sess)
 		p.mu.Unlock()
-		http.Error(w, "Server busy", http.StatusServiceUnavailable)
-		return
+		break
 	}
-	p.sessions[sess.id] = sess
-	p.mu.Unlock()
 
 	resp := map[string]any{
-		"session":   sess.id,
-		"url":       fmt.Sprintf("%s/auth/%s?session=%s", p.baseURL, url.PathEscape(body.Service), url.QueryEscape(sess.id)),
+		"session":   pollSecret,
+		"url":       fmt.Sprintf("%s/auth/%s?state=%s", p.baseURL, url.PathEscape(body.Service), url.QueryEscape(sess.browserState)),
 		"expiresIn": int(oauthSessionTTL.Seconds()),
 	}
 	writeJSON(w, http.StatusOK, resp)
 }
 
-// GET /auth/:service?session=X → 302 upstream authorize URL
+// GET /auth/:service?state=X → 302 upstream authorize URL
 func (p *oauthProxy) handleAuthorize(w http.ResponseWriter, r *http.Request, service string) {
 	if r.Method != http.MethodGet {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
@@ -245,9 +281,9 @@ func (p *oauthProxy) handleAuthorize(w http.ResponseWriter, r *http.Request, ser
 		http.NotFound(w, r)
 		return
 	}
-	sessionID := r.URL.Query().Get("session")
+	browserState := r.URL.Query().Get("state")
 	p.mu.Lock()
-	sess := p.sessions[sessionID]
+	sess := p.browserStates[browserState]
 	p.mu.Unlock()
 	if sess == nil || sess.service != service {
 		renderErrorPage(w, http.StatusNotFound, "This sign-in link is no longer valid. Start again from Plezy.")
@@ -258,13 +294,13 @@ func (p *oauthProxy) handleAuthorize(w http.ResponseWriter, r *http.Request, ser
 		"response_type": {"code"},
 		"client_id":     {cfg.ClientID},
 		"redirect_uri":  {p.redirectURI(service)},
-		"state":         {sess.id},
+		"state":         {sess.browserState},
 	}
 	if cfg.Scopes != "" {
 		q.Set("scope", cfg.Scopes)
 	}
 	if cfg.UsePKCE {
-		q.Set("code_challenge", sess.codeVerifier) // plain method ⇒ challenge == verifier
+		q.Set("code_challenge", sess.pkceVerifier()) // plain method ⇒ challenge == verifier
 		q.Set("code_challenge_method", cfg.PKCEMethod)
 	}
 	http.Redirect(w, r, cfg.AuthorizeURL+"?"+q.Encode(), http.StatusFound)
@@ -284,7 +320,7 @@ func (p *oauthProxy) handleCallback(w http.ResponseWriter, r *http.Request, serv
 	q := r.URL.Query()
 	state := q.Get("state")
 	p.mu.Lock()
-	sess := p.sessions[state]
+	sess := p.browserStates[state]
 	p.mu.Unlock()
 	if sess == nil || sess.service != service {
 		renderErrorPage(w, http.StatusNotFound, "This sign-in link is no longer valid. Start again from Plezy.")
@@ -292,13 +328,25 @@ func (p *oauthProxy) handleCallback(w http.ResponseWriter, r *http.Request, serv
 	}
 
 	if upstreamErr := q.Get("error"); upstreamErr != "" {
-		sess.complete(oauthTokenResult{Error: upstreamErr})
-		renderErrorPage(w, http.StatusOK, "Sign-in was cancelled.")
+		publicError := "authorization_failed"
+		message := "Sign-in failed. Please try again."
+		if upstreamErr == "access_denied" {
+			publicError = "access_denied"
+			message = "Sign-in was cancelled."
+		}
+		if !p.completeSession(sess, oauthTokenResult{Error: publicError}) {
+			renderErrorPage(w, http.StatusNotFound, "This sign-in link is no longer valid. Start again from Plezy.")
+			return
+		}
+		renderErrorPage(w, http.StatusOK, message)
 		return
 	}
 	code := q.Get("code")
 	if code == "" {
-		sess.complete(oauthTokenResult{Error: "missing_code"})
+		if !p.completeSession(sess, oauthTokenResult{Error: "missing_code"}) {
+			renderErrorPage(w, http.StatusNotFound, "This sign-in link is no longer valid. Start again from Plezy.")
+			return
+		}
 		renderErrorPage(w, http.StatusBadRequest, "Sign-in response was incomplete. Please try again.")
 		return
 	}
@@ -306,23 +354,30 @@ func (p *oauthProxy) handleCallback(w http.ResponseWriter, r *http.Request, serv
 	tok, err := p.exchangeCode(r.Context(), cfg, service, sess, code)
 	if err != nil {
 		log.Printf("oauth: %s token exchange failed: %v", service, err)
-		sess.complete(oauthTokenResult{Error: "exchange_failed"})
+		if !p.completeSession(sess, oauthTokenResult{Error: "exchange_failed"}) {
+			renderErrorPage(w, http.StatusNotFound, "This sign-in link is no longer valid. Start again from Plezy.")
+			return
+		}
 		renderErrorPage(w, http.StatusBadGateway, "Couldn't complete sign-in. Please try again.")
 		return
 	}
-	sess.complete(tok)
+	if !p.completeSession(sess, tok) {
+		renderErrorPage(w, http.StatusNotFound, "This sign-in link is no longer valid. Start again from Plezy.")
+		return
+	}
 	renderSuccessPage(w)
 }
 
-// GET /auth/result?session=X → long-poll, returns tokens on success
+// GET /auth/result?session=X → long-poll, returns one terminal result.
 func (p *oauthProxy) handleResult(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Cache-Control", "no-store, private")
 	if r.Method != http.MethodGet {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
-	sessionID := r.URL.Query().Get("session")
+	pollDigest := digestPollSecret(r.URL.Query().Get("session"))
 	p.mu.Lock()
-	sess := p.sessions[sessionID]
+	sess := p.pollDigests[pollDigest]
 	p.mu.Unlock()
 	if sess == nil {
 		http.Error(w, "Session not found", http.StatusGone)
@@ -331,17 +386,16 @@ func (p *oauthProxy) handleResult(w http.ResponseWriter, r *http.Request) {
 
 	ctx, cancel := context.WithTimeout(r.Context(), oauthResultWait)
 	defer cancel()
-	result, err := sess.wait(ctx)
-	if err != nil {
+	if err := sess.wait(ctx); err != nil {
 		// Client should retry — session may still receive its callback.
 		w.WriteHeader(http.StatusNoContent)
 		return
 	}
-	// Session consumed — delete so a retry sees 410 instead of racing another wait.
-	p.mu.Lock()
-	delete(p.sessions, sess.id)
-	p.mu.Unlock()
-
+	result, ok := p.claimResult(pollDigest, sess)
+	if !ok {
+		http.Error(w, "Session not found", http.StatusGone)
+		return
+	}
 	if result.Error != "" {
 		writeJSON(w, http.StatusOK, map[string]any{"error": result.Error})
 		return
@@ -369,7 +423,7 @@ func (p *oauthProxy) exchangeCode(ctx context.Context, cfg oauthServiceConfig, s
 		form.Set("client_secret", cfg.ClientSecret)
 	}
 	if cfg.UsePKCE {
-		form.Set("code_verifier", sess.codeVerifier)
+		form.Set("code_verifier", sess.pkceVerifier())
 	}
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, cfg.TokenURL, strings.NewReader(form.Encode()))
@@ -410,13 +464,59 @@ func (p *oauthProxy) redirectURI(service string) string {
 	return fmt.Sprintf("%s/auth/%s/callback", p.baseURL, service)
 }
 
+// addSessionLocked installs both independently generated keys as one logical
+// session. The caller has already verified that neither key is live.
+func (p *oauthProxy) addSessionLocked(sess *oauthSession) {
+	p.browserStates[sess.browserState] = sess
+	p.pollDigests[sess.pollDigest] = sess
+}
+
+// removeSessionLocked removes only entries still owned by sess, so a stale
+// callback or waiter cannot remove a replacement.
+func (p *oauthProxy) removeSessionLocked(sess *oauthSession) {
+	if p.browserStates[sess.browserState] == sess {
+		delete(p.browserStates, sess.browserState)
+	}
+	if p.pollDigests[sess.pollDigest] == sess {
+		delete(p.pollDigests, sess.pollDigest)
+	}
+}
+
+func (p *oauthProxy) completeSession(sess *oauthSession, result oauthTokenResult) bool {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	if p.browserStates[sess.browserState] != sess || p.pollDigests[sess.pollDigest] != sess {
+		return false
+	}
+	sess.mu.Lock()
+	defer sess.mu.Unlock()
+	return sess.completeLocked(result)
+}
+
+func (p *oauthProxy) claimResult(digest [sha256.Size]byte, sess *oauthSession) (oauthTokenResult, bool) {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	if p.pollDigests[digest] != sess || p.browserStates[sess.browserState] != sess {
+		return oauthTokenResult{}, false
+	}
+	sess.mu.Lock()
+	defer sess.mu.Unlock()
+	if sess.result == nil {
+		return oauthTokenResult{}, false
+	}
+	result := *sess.result
+	sess.result = nil
+	p.removeSessionLocked(sess)
+	return result, true
+}
+
 // cleanup drops sessions past oauthSessionTTL. Called by the main cleanup loop.
 func (p *oauthProxy) cleanup() {
 	now := time.Now()
 	p.mu.Lock()
-	for id, sess := range p.sessions {
+	for _, sess := range p.browserStates {
 		if now.Sub(sess.createdAt) > oauthSessionTTL {
-			delete(p.sessions, id)
+			p.removeSessionLocked(sess)
 		}
 	}
 	p.mu.Unlock()
@@ -461,6 +561,10 @@ func writeJSON(w http.ResponseWriter, status int, v any) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
 	_ = json.NewEncoder(w).Encode(v)
+}
+
+func digestPollSecret(secret string) [sha256.Size]byte {
+	return sha256.Sum256([]byte(secret))
 }
 
 func randToken(numBytes int) string {

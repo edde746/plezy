@@ -311,6 +311,7 @@ class _TranslationsSettingsDe extends TranslationsSettingsEn {
 	@override String get watchTogetherRelay => 'Gemeinsam Schauen Relay';
 	@override String get watchTogetherRelayDescription => 'Eigenes Relay festlegen. Alle müssen denselben Server verwenden.';
 	@override String get watchTogetherRelayHint => 'https://mein-relay.beispiel.de';
+	@override String get watchTogetherRelayInvalid => '';
 	@override String get crashReporting => 'Absturzberichte';
 	@override String get crashReportingDescription => 'Absturzberichte senden, um die App zu verbessern';
 	@override String get debugLogging => 'Debug-Protokollierung';
@@ -2303,6 +2304,7 @@ extension on TranslationsDe {
 			'settings.watchTogetherRelay' => 'Gemeinsam Schauen Relay',
 			'settings.watchTogetherRelayDescription' => 'Eigenes Relay festlegen. Alle müssen denselben Server verwenden.',
 			'settings.watchTogetherRelayHint' => 'https://mein-relay.beispiel.de',
+			'settings.watchTogetherRelayInvalid' => '',
 			'settings.crashReporting' => 'Absturzberichte',
 			'settings.crashReportingDescription' => 'Absturzberichte senden, um die App zu verbessern',
 			'settings.debugLogging' => 'Debug-Protokollierung',
@@ -2644,9 +2646,9 @@ extension on TranslationsDe {
 			'messages.markedAsUnwatchedOffline' => 'Als ungesehen markiert (wird synchronisiert, wenn online)',
 			'messages.autoRemovedWatchedDownload' => ({required Object title}) => 'Automatisch entfernt: ${title}',
 			'messages.autoRemovedWatchedDownloads' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('de'))(n, one: 'Automatisch entfernt: ${n} angesehener Download', other: 'Automatisch entfernt: ${n} angesehene Downloads', ), 
-			'messages.removedFromContinueWatching' => 'Aus ‚Weiterschauen\' entfernt',
 			_ => null,
 		} ?? switch (path) {
+			'messages.removedFromContinueWatching' => 'Aus ‚Weiterschauen\' entfernt',
 			'messages.errorLoading' => ({required Object error}) => 'Fehler: ${error}',
 			'messages.streamInterrupted' => 'Der Stream wurde unterbrochen. Drücke auf Wiedergabe oder spule, um es erneut zu versuchen.',
 			'messages.liveStreamInterrupted' => 'Der Livestream wurde unterbrochen. Drücke auf Wiedergabe, um es erneut zu versuchen.',
@@ -3158,9 +3160,9 @@ extension on TranslationsDe {
 			'watchTogether.participantSeeked' => ({required Object name}) => '${name} hat gespult',
 			'watchTogether.participantBuffering' => ({required Object name}) => '${name} puffert',
 			'watchTogether.participantNeedsUpdate' => ({required Object name}) => '${name} verwendet eine ältere Appversion — Synchronisierung nicht verfügbar',
-			'watchTogether.resumingWithout' => ({required Object name}) => 'Fortfahren ohne ${name}',
 			_ => null,
 		} ?? switch (path) {
+			'watchTogether.resumingWithout' => ({required Object name}) => 'Fortfahren ohne ${name}',
 			'watchTogether.waitingForParticipants' => 'Warte auf andere zum Laden...',
 			'watchTogether.waitingForName' => ({required Object name}) => 'Warten auf ${name}...',
 			'watchTogether.recentRooms' => 'Letzte Räume',

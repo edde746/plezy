@@ -311,6 +311,7 @@ class _TranslationsSettingsNl extends TranslationsSettingsEn {
 	@override String get watchTogetherRelay => 'Samen Kijken Relay';
 	@override String get watchTogetherRelayDescription => 'Stel een aangepaste relay in. Iedereen moet dezelfde server gebruiken.';
 	@override String get watchTogetherRelayHint => 'https://mijn-relay.voorbeeld.nl';
+	@override String get watchTogetherRelayInvalid => '';
 	@override String get crashReporting => 'Crashrapportage';
 	@override String get crashReportingDescription => 'Crashrapporten verzenden om de app te verbeteren';
 	@override String get debugLogging => 'Debug logging';
@@ -2303,6 +2304,7 @@ extension on TranslationsNl {
 			'settings.watchTogetherRelay' => 'Samen Kijken Relay',
 			'settings.watchTogetherRelayDescription' => 'Stel een aangepaste relay in. Iedereen moet dezelfde server gebruiken.',
 			'settings.watchTogetherRelayHint' => 'https://mijn-relay.voorbeeld.nl',
+			'settings.watchTogetherRelayInvalid' => '',
 			'settings.crashReporting' => 'Crashrapportage',
 			'settings.crashReportingDescription' => 'Crashrapporten verzenden om de app te verbeteren',
 			'settings.debugLogging' => 'Debug logging',
@@ -2644,9 +2646,9 @@ extension on TranslationsNl {
 			'messages.markedAsUnwatchedOffline' => 'Gemarkeerd als ongekeken (sync wanneer online)',
 			'messages.autoRemovedWatchedDownload' => ({required Object title}) => 'Automatisch verwijderd: ${title}',
 			'messages.autoRemovedWatchedDownloads' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('nl'))(n, one: 'Automatisch ${n} bekeken download verwijderd', other: 'Automatisch ${n} bekeken downloads verwijderd', ), 
-			'messages.removedFromContinueWatching' => 'Verwijderd uit Doorgaan met kijken',
 			_ => null,
 		} ?? switch (path) {
+			'messages.removedFromContinueWatching' => 'Verwijderd uit Doorgaan met kijken',
 			'messages.errorLoading' => ({required Object error}) => 'Fout: ${error}',
 			'messages.streamInterrupted' => 'De stream is onderbroken. Druk op afspelen of spoel om het opnieuw te proberen.',
 			'messages.liveStreamInterrupted' => 'De livestream is onderbroken. Druk op afspelen om het opnieuw te proberen.',
@@ -3158,9 +3160,9 @@ extension on TranslationsNl {
 			'watchTogether.participantSeeked' => ({required Object name}) => '${name} heeft gespoeld',
 			'watchTogether.participantBuffering' => ({required Object name}) => '${name} is aan het bufferen',
 			'watchTogether.participantNeedsUpdate' => ({required Object name}) => '${name} gebruikt een oudere appversie — synchronisatie niet beschikbaar',
-			'watchTogether.resumingWithout' => ({required Object name}) => 'Hervatten zonder ${name}',
 			_ => null,
 		} ?? switch (path) {
+			'watchTogether.resumingWithout' => ({required Object name}) => 'Hervatten zonder ${name}',
 			'watchTogether.waitingForParticipants' => 'Wachten tot anderen geladen zijn...',
 			'watchTogether.waitingForName' => ({required Object name}) => 'Wachten op ${name}...',
 			'watchTogether.recentRooms' => 'Recente kamers',

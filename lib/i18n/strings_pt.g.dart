@@ -311,6 +311,7 @@ class _TranslationsSettingsPt extends TranslationsSettingsEn {
 	@override String get watchTogetherRelay => 'Relay do Assistir Juntos';
 	@override String get watchTogetherRelayDescription => 'Defina um relay personalizado. Todos devem usar o mesmo servidor.';
 	@override String get watchTogetherRelayHint => 'https://meu-relay.exemplo.com.br';
+	@override String get watchTogetherRelayInvalid => '';
 	@override String get crashReporting => 'Relatório de Erros';
 	@override String get crashReportingDescription => 'Enviar relatórios de erros para ajudar a melhorar o app';
 	@override String get debugLogging => 'Log de Depuração';
@@ -2303,6 +2304,7 @@ extension on TranslationsPt {
 			'settings.watchTogetherRelay' => 'Relay do Assistir Juntos',
 			'settings.watchTogetherRelayDescription' => 'Defina um relay personalizado. Todos devem usar o mesmo servidor.',
 			'settings.watchTogetherRelayHint' => 'https://meu-relay.exemplo.com.br',
+			'settings.watchTogetherRelayInvalid' => '',
 			'settings.crashReporting' => 'Relatório de Erros',
 			'settings.crashReportingDescription' => 'Enviar relatórios de erros para ajudar a melhorar o app',
 			'settings.debugLogging' => 'Log de Depuração',
@@ -2644,9 +2646,9 @@ extension on TranslationsPt {
 			'messages.markedAsUnwatchedOffline' => 'Marcado como não assistido (será sincronizado quando online)',
 			'messages.autoRemovedWatchedDownload' => ({required Object title}) => 'Removido automaticamente: ${title}',
 			'messages.autoRemovedWatchedDownloads' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('pt'))(n, one: 'Removido automaticamente ${n} download assistido', other: 'Removidos automaticamente ${n} downloads assistidos', ), 
-			'messages.removedFromContinueWatching' => 'Removido de Continuar Assistindo',
 			_ => null,
 		} ?? switch (path) {
+			'messages.removedFromContinueWatching' => 'Removido de Continuar Assistindo',
 			'messages.errorLoading' => ({required Object error}) => 'Erro: ${error}',
 			'messages.streamInterrupted' => 'A transmissão foi interrompida. Toque em reproduzir ou avance para tentar novamente.',
 			'messages.liveStreamInterrupted' => 'A transmissão ao vivo foi interrompida. Toque em reproduzir para tentar novamente.',
@@ -3158,9 +3160,9 @@ extension on TranslationsPt {
 			'watchTogether.participantSeeked' => ({required Object name}) => '${name} avançou',
 			'watchTogether.participantBuffering' => ({required Object name}) => '${name} está carregando',
 			'watchTogether.participantNeedsUpdate' => ({required Object name}) => '${name} está em uma versão mais antiga do aplicativo — sincronização indisponível',
-			'watchTogether.resumingWithout' => ({required Object name}) => 'Retomando sem ${name}',
 			_ => null,
 		} ?? switch (path) {
+			'watchTogether.resumingWithout' => ({required Object name}) => 'Retomando sem ${name}',
 			'watchTogether.waitingForParticipants' => 'Aguardando outros carregarem...',
 			'watchTogether.waitingForName' => ({required Object name}) => 'Aguardando ${name}...',
 			'watchTogether.recentRooms' => 'Salas recentes',

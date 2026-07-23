@@ -82,10 +82,17 @@ class _MobileRemoteScreenState extends State<MobileRemoteScreen> {
                     Row(
                       mainAxisAlignment: .center,
                       children: [
-                        OutlinedButton(onPressed: () => provider.cancelReconnect(), child: Text(t.common.cancel)),
+                        OutlinedButton(
+                          onPressed: () async {
+                            await provider.cancelReconnect();
+                          },
+                          child: Text(t.common.cancel),
+                        ),
                         const SizedBox(width: 16),
                         FilledButton(
-                          onPressed: () => provider.retryReconnectNow(),
+                          onPressed: () async {
+                            await provider.retryReconnectNow();
+                          },
                           child: Text(t.companionRemote.remote.retryNow),
                         ),
                       ],

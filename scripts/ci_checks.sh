@@ -90,6 +90,7 @@ if python3 scripts/check_build_workflow.py &&
    python3 scripts/check_workflow_action_pins.py &&
    python3 scripts/test_check_workflow_action_pins.py &&
    python3 scripts/test_check_codegen.py &&
+   python3 scripts/test_generate_relay_protocol.py &&
    python3 scripts/test_format_native.py &&
    python3 scripts/check_update_packages_workflow.py &&
    python3 scripts/test_pubspec_version.py &&

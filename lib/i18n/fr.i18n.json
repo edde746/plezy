@@ -180,6 +180,7 @@
     "watchTogetherRelay": "Relais Regarder Ensemble",
     "watchTogetherRelayDescription": "Définir un relay personnalisé. Tout le monde doit utiliser le même serveur.",
     "watchTogetherRelayHint": "https://mon-relais.exemple.fr",
+    "watchTogetherRelayInvalid": "",
     "crashReporting": "Rapports de plantage",
     "crashReportingDescription": "Envoyer des rapports de plantage pour améliorer l'application",
     "debugLogging": "Journalisation de débogage",

@@ -311,6 +311,7 @@ class _TranslationsSettingsJa extends TranslationsSettingsEn {
 	@override String get watchTogetherRelay => '一緒に視聴リレーサーバー';
 	@override String get watchTogetherRelayDescription => 'カスタムリレーを設定します。全員が同じサーバーを使う必要があります。';
 	@override String get watchTogetherRelayHint => 'https://my-relay.example.com';
+	@override String get watchTogetherRelayInvalid => '';
 	@override String get crashReporting => 'クラッシュレポート';
 	@override String get crashReportingDescription => 'アプリの改善に役立つクラッシュレポートを送信';
 	@override String get debugLogging => 'デバッグログ';
@@ -2300,6 +2301,7 @@ extension on TranslationsJa {
 			'settings.watchTogetherRelay' => '一緒に視聴リレーサーバー',
 			'settings.watchTogetherRelayDescription' => 'カスタムリレーを設定します。全員が同じサーバーを使う必要があります。',
 			'settings.watchTogetherRelayHint' => 'https://my-relay.example.com',
+			'settings.watchTogetherRelayInvalid' => '',
 			'settings.crashReporting' => 'クラッシュレポート',
 			'settings.crashReportingDescription' => 'アプリの改善に役立つクラッシュレポートを送信',
 			'settings.debugLogging' => 'デバッグログ',
@@ -2641,9 +2643,9 @@ extension on TranslationsJa {
 			'messages.markedAsUnwatchedOffline' => '未視聴にしました（オンライン時に同期）',
 			'messages.autoRemovedWatchedDownload' => ({required Object title}) => '自動削除: ${title}',
 			'messages.autoRemovedWatchedDownloads' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('ja'))(n, other: '視聴済みダウンロードを${n}件自動削除しました', ), 
-			'messages.removedFromContinueWatching' => '視聴中から削除しました',
 			_ => null,
 		} ?? switch (path) {
+			'messages.removedFromContinueWatching' => '視聴中から削除しました',
 			'messages.errorLoading' => ({required Object error}) => 'エラー: ${error}',
 			'messages.streamInterrupted' => 'ストリームが中断されました。再生を押すかシークして再試行してください。',
 			'messages.liveStreamInterrupted' => 'ライブストリームが中断されました。再生を押して再試行してください。',
@@ -3155,9 +3157,9 @@ extension on TranslationsJa {
 			'watchTogether.participantSeeked' => ({required Object name}) => '${name}がシークしました',
 			'watchTogether.participantBuffering' => ({required Object name}) => '${name}がバッファリング中',
 			'watchTogether.participantNeedsUpdate' => ({required Object name}) => '${name} は古いバージョンのアプリを使用しているため、同期できません',
-			'watchTogether.resumingWithout' => ({required Object name}) => '${name} なしで再開',
 			_ => null,
 		} ?? switch (path) {
+			'watchTogether.resumingWithout' => ({required Object name}) => '${name} なしで再開',
 			'watchTogether.waitingForParticipants' => '他の参加者の読み込みを待っています...',
 			'watchTogether.waitingForName' => ({required Object name}) => '${name}を待っています...',
 			'watchTogether.recentRooms' => '最近のルーム',

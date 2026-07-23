@@ -311,6 +311,7 @@ class _TranslationsSettingsZh extends TranslationsSettingsEn {
 	@override String get watchTogetherRelay => '一起看中继服务器';
 	@override String get watchTogetherRelayDescription => '设置自定义中继。所有人必须使用同一服务器。';
 	@override String get watchTogetherRelayHint => 'https://my-relay.example.com';
+	@override String get watchTogetherRelayInvalid => '';
 	@override String get crashReporting => '崩溃报告';
 	@override String get crashReportingDescription => '发送崩溃报告以帮助改进应用';
 	@override String get debugLogging => '调试日志';
@@ -2300,6 +2301,7 @@ extension on TranslationsZh {
 			'settings.watchTogetherRelay' => '一起看中继服务器',
 			'settings.watchTogetherRelayDescription' => '设置自定义中继。所有人必须使用同一服务器。',
 			'settings.watchTogetherRelayHint' => 'https://my-relay.example.com',
+			'settings.watchTogetherRelayInvalid' => '',
 			'settings.crashReporting' => '崩溃报告',
 			'settings.crashReportingDescription' => '发送崩溃报告以帮助改进应用',
 			'settings.debugLogging' => '调试日志',
@@ -2641,9 +2643,9 @@ extension on TranslationsZh {
 			'messages.markedAsUnwatchedOffline' => '已标记为未观看 (将在联网时同步)',
 			'messages.autoRemovedWatchedDownload' => ({required Object title}) => '已自动移除: ${title}',
 			'messages.autoRemovedWatchedDownloads' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('zh'))(n, other: '已自动移除 ${n} 个看过的下载', ), 
-			'messages.removedFromContinueWatching' => '已从继续观看中移除',
 			_ => null,
 		} ?? switch (path) {
+			'messages.removedFromContinueWatching' => '已从继续观看中移除',
 			'messages.errorLoading' => ({required Object error}) => '错误: ${error}',
 			'messages.streamInterrupted' => '视频流已中断。按播放键或拖动进度条重试。',
 			'messages.liveStreamInterrupted' => '直播流已中断。按播放键重试。',
@@ -3155,9 +3157,9 @@ extension on TranslationsZh {
 			'watchTogether.participantSeeked' => ({required Object name}) => '${name} 跳转了',
 			'watchTogether.participantBuffering' => ({required Object name}) => '${name} 正在缓冲',
 			'watchTogether.participantNeedsUpdate' => ({required Object name}) => '${name} 正在使用较旧版本的应用，无法同步',
-			'watchTogether.resumingWithout' => ({required Object name}) => '不等待 ${name}，继续播放',
 			_ => null,
 		} ?? switch (path) {
+			'watchTogether.resumingWithout' => ({required Object name}) => '不等待 ${name}，继续播放',
 			'watchTogether.waitingForParticipants' => '等待其他人加载...',
 			'watchTogether.waitingForName' => ({required Object name}) => '正在等待 ${name}...',
 			'watchTogether.recentRooms' => '最近的房间',

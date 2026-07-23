@@ -180,6 +180,7 @@
     "watchTogetherRelay": "Watch Together-relay",
     "watchTogetherRelayDescription": "Angiv en brugerdefineret relay. Alle skal bruge samme server.",
     "watchTogetherRelayHint": "https://min-relay.eksempel.dk",
+    "watchTogetherRelayInvalid": "",
     "crashReporting": "Fejlrapportering",
     "crashReportingDescription": "Send fejlrapporter for at hjælpe med at forbedre appen",
     "debugLogging": "Fejlfindingslogning",

@@ -311,6 +311,7 @@ class _TranslationsSettingsBg extends TranslationsSettingsEn {
 	@override String get watchTogetherRelay => 'Релей сървър за гледане заедно';
 	@override String get watchTogetherRelayDescription => 'Задай собствен релей сървър. Всички трябва да използват същия сървър.';
 	@override String get watchTogetherRelayHint => 'https://my-relay.example.com';
+	@override String get watchTogetherRelayInvalid => '';
 	@override String get crashReporting => 'Докладване на сривове';
 	@override String get crashReportingDescription => 'Изпращай доклади за сривове, за да помогнеш за подобряване на приложението';
 	@override String get debugLogging => 'Логове за отстраняване на грешки';
@@ -2303,6 +2304,7 @@ extension on TranslationsBg {
 			'settings.watchTogetherRelay' => 'Релей сървър за гледане заедно',
 			'settings.watchTogetherRelayDescription' => 'Задай собствен релей сървър. Всички трябва да използват същия сървър.',
 			'settings.watchTogetherRelayHint' => 'https://my-relay.example.com',
+			'settings.watchTogetherRelayInvalid' => '',
 			'settings.crashReporting' => 'Докладване на сривове',
 			'settings.crashReportingDescription' => 'Изпращай доклади за сривове, за да помогнеш за подобряване на приложението',
 			'settings.debugLogging' => 'Логове за отстраняване на грешки',
@@ -2644,9 +2646,9 @@ extension on TranslationsBg {
 			'messages.markedAsUnwatchedOffline' => 'Маркирано като негледано (ще се синхронизира, когато сте онлайн)',
 			'messages.autoRemovedWatchedDownload' => ({required Object title}) => 'Автоматично премахнато: ${title}',
 			'messages.autoRemovedWatchedDownloads' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('bg'))(n, one: 'Автоматично премахнато ${n} гледано изтегляне', other: 'Автоматично премахнати ${n} гледани изтегляния', ), 
-			'messages.removedFromContinueWatching' => 'Премахнато от продължаване на гледането',
 			_ => null,
 		} ?? switch (path) {
+			'messages.removedFromContinueWatching' => 'Премахнато от продължаване на гледането',
 			'messages.errorLoading' => ({required Object error}) => 'Грешка: ${error}',
 			'messages.streamInterrupted' => 'Потокът прекъсна. Натиснете „Пусни“ или превъртете, за да опитате отново.',
 			'messages.liveStreamInterrupted' => 'Потокът на живо прекъсна. Натиснете „Пусни“, за да опитате отново.',
@@ -3158,9 +3160,9 @@ extension on TranslationsBg {
 			'watchTogether.participantSeeked' => ({required Object name}) => '${name} превъртя',
 			'watchTogether.participantBuffering' => ({required Object name}) => '${name} буферира',
 			'watchTogether.participantNeedsUpdate' => ({required Object name}) => '${name} е с по-стара версия на приложението — синхронизирането не е налично',
-			'watchTogether.resumingWithout' => ({required Object name}) => 'Продължаване без ${name}',
 			_ => null,
 		} ?? switch (path) {
+			'watchTogether.resumingWithout' => ({required Object name}) => 'Продължаване без ${name}',
 			'watchTogether.waitingForParticipants' => 'Изчакване другите да заредят...',
 			'watchTogether.waitingForName' => ({required Object name}) => 'Изчакване на ${name}...',
 			'watchTogether.recentRooms' => 'Скорошни стаи',

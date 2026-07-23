@@ -180,6 +180,7 @@
     "watchTogetherRelay": "一起看中继服务器",
     "watchTogetherRelayDescription": "设置自定义中继。所有人必须使用同一服务器。",
     "watchTogetherRelayHint": "https://my-relay.example.com",
+    "watchTogetherRelayInvalid": "",
     "crashReporting": "崩溃报告",
     "crashReportingDescription": "发送崩溃报告以帮助改进应用",
     "debugLogging": "调试日志",

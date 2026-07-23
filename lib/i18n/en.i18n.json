@@ -180,6 +180,7 @@
     "watchTogetherRelay": "Watch Together Relay",
     "watchTogetherRelayDescription": "Set a custom relay. Everyone must use the same server.",
     "watchTogetherRelayHint": "https://my-relay.example.com",
+    "watchTogetherRelayInvalid": "Enter a valid HTTP or HTTPS relay base URL.",
     "crashReporting": "Crash Reporting",
     "crashReportingDescription": "Send crash reports to help improve the app",
     "debugLogging": "Debug Logging",

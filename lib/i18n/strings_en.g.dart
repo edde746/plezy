@@ -653,6 +653,9 @@ class TranslationsSettingsEn {
 	/// en: 'https://my-relay.example.com'
 	String get watchTogetherRelayHint => 'https://my-relay.example.com';
 
+	/// en: 'Enter a valid HTTP or HTTPS relay base URL.'
+	String get watchTogetherRelayInvalid => 'Enter a valid HTTP or HTTPS relay base URL.';
+
 	/// en: 'Crash Reporting'
 	String get crashReporting => 'Crash Reporting';
 
@@ -5180,6 +5183,7 @@ extension on Translations {
 			'settings.watchTogetherRelay' => 'Watch Together Relay',
 			'settings.watchTogetherRelayDescription' => 'Set a custom relay. Everyone must use the same server.',
 			'settings.watchTogetherRelayHint' => 'https://my-relay.example.com',
+			'settings.watchTogetherRelayInvalid' => 'Enter a valid HTTP or HTTPS relay base URL.',
 			'settings.crashReporting' => 'Crash Reporting',
 			'settings.crashReportingDescription' => 'Send crash reports to help improve the app',
 			'settings.debugLogging' => 'Debug Logging',
@@ -5522,9 +5526,9 @@ extension on Translations {
 			'messages.markedAsUnwatchedOffline' => 'Marked as unwatched (will sync when online)',
 			'messages.autoRemovedWatchedDownload' => ({required Object title}) => 'Auto-removed: ${title}',
 			'messages.autoRemovedWatchedDownloads' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(n, one: 'Auto-removed ${n} watched download', other: 'Auto-removed ${n} watched downloads', ), 
-			'messages.removedFromContinueWatching' => 'Removed from Continue Watching',
 			_ => null,
 		} ?? switch (path) {
+			'messages.removedFromContinueWatching' => 'Removed from Continue Watching',
 			'messages.errorLoading' => ({required Object error}) => 'Error: ${error}',
 			'messages.streamInterrupted' => 'The stream was interrupted. Press play or seek to retry.',
 			'messages.liveStreamInterrupted' => 'The live stream was interrupted. Press play to retry.',
@@ -6037,9 +6041,9 @@ extension on Translations {
 			'watchTogether.participantSeeked' => ({required Object name}) => '${name} seeked',
 			'watchTogether.participantBuffering' => ({required Object name}) => '${name} is buffering',
 			'watchTogether.participantNeedsUpdate' => ({required Object name}) => '${name} is on an older app version — sync unavailable',
-			'watchTogether.resumingWithout' => ({required Object name}) => 'Resuming without ${name}',
 			_ => null,
 		} ?? switch (path) {
+			'watchTogether.resumingWithout' => ({required Object name}) => 'Resuming without ${name}',
 			'watchTogether.waitingForParticipants' => 'Waiting for others to load...',
 			'watchTogether.waitingForName' => ({required Object name}) => 'Waiting for ${name}...',
 			'watchTogether.recentRooms' => 'Recent Rooms',

@@ -311,6 +311,7 @@ class _TranslationsSettingsKo extends TranslationsSettingsEn {
 	@override String get watchTogetherRelay => '함께 보기 릴레이';
 	@override String get watchTogetherRelayDescription => '사용자 지정 릴레이를 설정합니다. 모두 같은 서버를 사용해야 합니다.';
 	@override String get watchTogetherRelayHint => 'https://my-relay.example.com';
+	@override String get watchTogetherRelayInvalid => '';
 	@override String get crashReporting => '충돌 보고';
 	@override String get crashReportingDescription => '앱 개선을 위해 충돌 보고서 전송';
 	@override String get debugLogging => '디버그 로깅';
@@ -2300,6 +2301,7 @@ extension on TranslationsKo {
 			'settings.watchTogetherRelay' => '함께 보기 릴레이',
 			'settings.watchTogetherRelayDescription' => '사용자 지정 릴레이를 설정합니다. 모두 같은 서버를 사용해야 합니다.',
 			'settings.watchTogetherRelayHint' => 'https://my-relay.example.com',
+			'settings.watchTogetherRelayInvalid' => '',
 			'settings.crashReporting' => '충돌 보고',
 			'settings.crashReportingDescription' => '앱 개선을 위해 충돌 보고서 전송',
 			'settings.debugLogging' => '디버그 로깅',
@@ -2641,9 +2643,9 @@ extension on TranslationsKo {
 			'messages.markedAsUnwatchedOffline' => '미시청으로 표시됨 (연결 시 동기화됨)',
 			'messages.autoRemovedWatchedDownload' => ({required Object title}) => '자동 삭제됨: ${title}',
 			'messages.autoRemovedWatchedDownloads' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('ko'))(n, other: '시청한 다운로드 ${n}개를 자동 삭제했습니다', ), 
-			'messages.removedFromContinueWatching' => '계속 시청 목록에서 제거됨',
 			_ => null,
 		} ?? switch (path) {
+			'messages.removedFromContinueWatching' => '계속 시청 목록에서 제거됨',
 			'messages.errorLoading' => ({required Object error}) => '오류: ${error}',
 			'messages.streamInterrupted' => '스트림이 중단되었습니다. 재생을 누르거나 탐색하여 다시 시도하세요.',
 			'messages.liveStreamInterrupted' => '라이브 스트림이 중단되었습니다. 재생을 눌러 다시 시도하세요.',
@@ -3155,9 +3157,9 @@ extension on TranslationsKo {
 			'watchTogether.participantSeeked' => ({required Object name}) => '${name}님이 탐색했습니다',
 			'watchTogether.participantBuffering' => ({required Object name}) => '${name}님이 버퍼링 중입니다',
 			'watchTogether.participantNeedsUpdate' => ({required Object name}) => '${name}님이 이전 버전의 앱을 사용 중입니다 — 동기화를 사용할 수 없습니다',
-			'watchTogether.resumingWithout' => ({required Object name}) => '${name}님 없이 재생을 재개합니다',
 			_ => null,
 		} ?? switch (path) {
+			'watchTogether.resumingWithout' => ({required Object name}) => '${name}님 없이 재생을 재개합니다',
 			'watchTogether.waitingForParticipants' => '다른 참가자의 로딩을 기다리는 중...',
 			'watchTogether.waitingForName' => ({required Object name}) => '${name}님을 기다리는 중...',
 			'watchTogether.recentRooms' => '최근 방',

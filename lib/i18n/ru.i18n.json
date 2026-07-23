@@ -180,6 +180,7 @@
     "watchTogetherRelay": "Relay совместного просмотра",
     "watchTogetherRelayDescription": "Задайте свой relay. Все должны использовать один сервер.",
     "watchTogetherRelayHint": "https://my-relay.example.com",
+    "watchTogetherRelayInvalid": "",
     "crashReporting": "Отчёты об ошибках",
     "crashReportingDescription": "Отправлять отчёты об ошибках для улучшения приложения",
     "debugLogging": "Журнал отладки",

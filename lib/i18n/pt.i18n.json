@@ -180,6 +180,7 @@
     "watchTogetherRelay": "Relay do Assistir Juntos",
     "watchTogetherRelayDescription": "Defina um relay personalizado. Todos devem usar o mesmo servidor.",
     "watchTogetherRelayHint": "https://meu-relay.exemplo.com.br",
+    "watchTogetherRelayInvalid": "",
     "crashReporting": "Relatório de Erros",
     "crashReportingDescription": "Enviar relatórios de erros para ajudar a melhorar o app",
     "debugLogging": "Log de Depuração",

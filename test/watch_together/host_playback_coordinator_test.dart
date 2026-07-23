@@ -16,9 +16,11 @@ class _Harness {
     FakeAsync async, {
     ControlMode controlMode = ControlMode.hostOnly,
     HostCoordinatorCallbacks callbacks = const HostCoordinatorCallbacks(),
+    Duration duration = const Duration(minutes: 45),
+    bool seekable = true,
   }) {
     int nowMs() => _epochMs + async.elapsed.inMilliseconds;
-    player = FakeSyncPlayer(position: const Duration(minutes: 2));
+    player = FakeSyncPlayer(position: const Duration(minutes: 2), duration: duration, seekable: seekable);
     coordinator = HostPlaybackCoordinator(
       myPeerId: 'host',
       controlMode: controlMode,
@@ -443,6 +445,132 @@ void main() {
         async.flushMicrotasks();
         expect(h.last.phase, PlaybackPhase.playing);
         h.dispose();
+      });
+    });
+
+    test('invalid remote seeks and rates are rejected without side effects', () {
+      fakeAsync((async) {
+        final actions = <(String, PlaybackActionHint)>[];
+        final h = _Harness(
+          async,
+          controlMode: ControlMode.anyone,
+          callbacks: HostCoordinatorCallbacks(onRemoteAction: (peer, hint) => actions.add((peer, hint))),
+        );
+        h.attachForMedia(async);
+        h.hostBecomesReady(async);
+        final durationMs = h.player.state.duration.inMilliseconds;
+        final broadcastsBefore = h.broadcasts.length;
+        final seqBefore = h.last.seq;
+        final anchorBefore = h.last.anchorPositionMs;
+        final rateBefore = h.last.rate;
+        h.player.commandLog.clear();
+
+        for (final targetMs in [-1, durationMs + 1]) {
+          h.coordinator.onControlRequest('guest', ControlRequest(kind: ControlRequestKind.seek, positionMs: targetMs));
+        }
+        for (final rate in [0.25 - 0.000001, 4.0 + 0.000001, double.nan, double.infinity, double.negativeInfinity]) {
+          h.coordinator.onControlRequest('guest', ControlRequest(kind: ControlRequestKind.rate, rate: rate));
+        }
+        async.flushMicrotasks();
+
+        expect(h.player.commandLog, isEmpty);
+        expect(actions, isEmpty);
+        expect(h.broadcasts, hasLength(broadcastsBefore));
+        expect(h.last.seq, seqBefore);
+        expect(h.last.anchorPositionMs, anchorBefore);
+        expect(h.last.rate, rateBefore);
+        h.dispose();
+      });
+    });
+
+    test('inclusive remote seek and rate boundaries are applied exactly', () {
+      fakeAsync((async) {
+        final actions = <(String, PlaybackActionHint)>[];
+        final h = _Harness(
+          async,
+          controlMode: ControlMode.anyone,
+          callbacks: HostCoordinatorCallbacks(onRemoteAction: (peer, hint) => actions.add((peer, hint))),
+        );
+        h.attachForMedia(async);
+        h.hostBecomesReady(async);
+        final durationMs = h.player.state.duration.inMilliseconds;
+        final seqBefore = h.last.seq;
+        h.player.commandLog.clear();
+
+        for (final targetMs in [0, durationMs]) {
+          h.coordinator.onControlRequest('guest', ControlRequest(kind: ControlRequestKind.seek, positionMs: targetMs));
+          async.flushMicrotasks();
+          expect(h.last.anchorPositionMs, targetMs);
+          expect(h.last.actorPeerId, 'guest');
+          expect(h.last.actionHint, PlaybackActionHint.seek);
+        }
+        for (final rate in [0.25, 4.0]) {
+          h.coordinator.onControlRequest('guest', ControlRequest(kind: ControlRequestKind.rate, rate: rate));
+          async.flushMicrotasks();
+          expect(h.last.rate, rate);
+          expect(h.last.actorPeerId, 'guest');
+          expect(h.last.actionHint, PlaybackActionHint.rate);
+        }
+
+        expect(h.player.commandLog, ['seek:0', 'seek:$durationMs', 'rate:0.25', 'rate:4.0']);
+        expect(h.last.seq, seqBefore + 4);
+        expect(actions, [
+          ('guest', PlaybackActionHint.seek),
+          ('guest', PlaybackActionHint.seek),
+          ('guest', PlaybackActionHint.rate),
+          ('guest', PlaybackActionHint.rate),
+        ]);
+        h.dispose();
+      });
+    });
+
+    test('remote seeks require seekability and a positive known duration', () {
+      fakeAsync((async) {
+        for (final config in [
+          (seekable: false, duration: const Duration(minutes: 45)),
+          (seekable: true, duration: Duration.zero),
+        ]) {
+          final actions = <(String, PlaybackActionHint)>[];
+          final h = _Harness(
+            async,
+            controlMode: ControlMode.anyone,
+            duration: config.duration,
+            seekable: config.seekable,
+            callbacks: HostCoordinatorCallbacks(onRemoteAction: (peer, hint) => actions.add((peer, hint))),
+          );
+          h.attachForMedia(async);
+          h.hostBecomesReady(async);
+          async.elapse(Duration(milliseconds: h.last.anchorHostTimeMs - (_epochMs + async.elapsed.inMilliseconds)));
+          h.player.commandLog.clear();
+          actions.clear();
+          final broadcastsBefore = h.broadcasts.length;
+          final seqBefore = h.last.seq;
+
+          h.coordinator.onControlRequest(
+            'guest',
+            const ControlRequest(kind: ControlRequestKind.seek, positionMs: 1000),
+          );
+          async.flushMicrotasks();
+
+          expect(h.player.commandLog, isEmpty);
+          expect(actions, isEmpty);
+          expect(h.broadcasts, hasLength(broadcastsBefore));
+          expect(h.last.seq, seqBefore);
+
+          h.coordinator.onControlRequest('guest', const ControlRequest(kind: ControlRequestKind.rate, rate: 0.25));
+          h.coordinator.onControlRequest('guest', const ControlRequest(kind: ControlRequestKind.pause));
+          h.coordinator.onControlRequest('guest', const ControlRequest(kind: ControlRequestKind.play));
+          async.flushMicrotasks();
+          async.elapse(Duration(milliseconds: h.last.anchorHostTimeMs - (_epochMs + async.elapsed.inMilliseconds)));
+
+          expect(h.player.commandLog, ['rate:0.25', 'pause', 'play']);
+          expect(actions, [
+            ('guest', PlaybackActionHint.rate),
+            ('guest', PlaybackActionHint.pause),
+            ('guest', PlaybackActionHint.play),
+          ]);
+          h.dispose();
+        }
       });
     });
 

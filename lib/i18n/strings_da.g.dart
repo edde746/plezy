@@ -311,6 +311,7 @@ class _TranslationsSettingsDa extends TranslationsSettingsEn {
 	@override String get watchTogetherRelay => 'Watch Together-relay';
 	@override String get watchTogetherRelayDescription => 'Angiv en brugerdefineret relay. Alle skal bruge samme server.';
 	@override String get watchTogetherRelayHint => 'https://min-relay.eksempel.dk';
+	@override String get watchTogetherRelayInvalid => '';
 	@override String get crashReporting => 'Fejlrapportering';
 	@override String get crashReportingDescription => 'Send fejlrapporter for at hjælpe med at forbedre appen';
 	@override String get debugLogging => 'Fejlfindingslogning';
@@ -2303,6 +2304,7 @@ extension on TranslationsDa {
 			'settings.watchTogetherRelay' => 'Watch Together-relay',
 			'settings.watchTogetherRelayDescription' => 'Angiv en brugerdefineret relay. Alle skal bruge samme server.',
 			'settings.watchTogetherRelayHint' => 'https://min-relay.eksempel.dk',
+			'settings.watchTogetherRelayInvalid' => '',
 			'settings.crashReporting' => 'Fejlrapportering',
 			'settings.crashReportingDescription' => 'Send fejlrapporter for at hjælpe med at forbedre appen',
 			'settings.debugLogging' => 'Fejlfindingslogning',
@@ -2644,9 +2646,9 @@ extension on TranslationsDa {
 			'messages.markedAsUnwatchedOffline' => 'Markeret som uset (synkroniseres online)',
 			'messages.autoRemovedWatchedDownload' => ({required Object title}) => 'Automatisk fjernet: ${title}',
 			'messages.autoRemovedWatchedDownloads' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('da'))(n, one: 'Fjernede automatisk ${n} set download', other: 'Fjernede automatisk ${n} sete downloads', ), 
-			'messages.removedFromContinueWatching' => 'Fjernet fra Fortsæt med at se',
 			_ => null,
 		} ?? switch (path) {
+			'messages.removedFromContinueWatching' => 'Fjernet fra Fortsæt med at se',
 			'messages.errorLoading' => ({required Object error}) => 'Fejl: ${error}',
 			'messages.streamInterrupted' => 'Streamen blev afbrudt. Tryk på afspil, eller spol for at prøve igen.',
 			'messages.liveStreamInterrupted' => 'Livestreamen blev afbrudt. Tryk på afspil for at prøve igen.',
@@ -3158,9 +3160,9 @@ extension on TranslationsDa {
 			'watchTogether.participantSeeked' => ({required Object name}) => '${name} spoled',
 			'watchTogether.participantBuffering' => ({required Object name}) => '${name} bufferer',
 			'watchTogether.participantNeedsUpdate' => ({required Object name}) => '${name} bruger en ældre appversion — synkronisering er ikke tilgængelig',
-			'watchTogether.resumingWithout' => ({required Object name}) => 'Fortsætter uden ${name}',
 			_ => null,
 		} ?? switch (path) {
+			'watchTogether.resumingWithout' => ({required Object name}) => 'Fortsætter uden ${name}',
 			'watchTogether.waitingForParticipants' => 'Venter på at andre indlæser...',
 			'watchTogether.waitingForName' => ({required Object name}) => 'Venter på ${name}...',
 			'watchTogether.recentRooms' => 'Seneste rum',

@@ -311,6 +311,7 @@ class _TranslationsSettingsFr extends TranslationsSettingsEn {
 	@override String get watchTogetherRelay => 'Relais Regarder Ensemble';
 	@override String get watchTogetherRelayDescription => 'Définir un relay personnalisé. Tout le monde doit utiliser le même serveur.';
 	@override String get watchTogetherRelayHint => 'https://mon-relais.exemple.fr';
+	@override String get watchTogetherRelayInvalid => '';
 	@override String get crashReporting => 'Rapports de plantage';
 	@override String get crashReportingDescription => 'Envoyer des rapports de plantage pour améliorer l\'application';
 	@override String get debugLogging => 'Journalisation de débogage';
@@ -2303,6 +2304,7 @@ extension on TranslationsFr {
 			'settings.watchTogetherRelay' => 'Relais Regarder Ensemble',
 			'settings.watchTogetherRelayDescription' => 'Définir un relay personnalisé. Tout le monde doit utiliser le même serveur.',
 			'settings.watchTogetherRelayHint' => 'https://mon-relais.exemple.fr',
+			'settings.watchTogetherRelayInvalid' => '',
 			'settings.crashReporting' => 'Rapports de plantage',
 			'settings.crashReportingDescription' => 'Envoyer des rapports de plantage pour améliorer l\'application',
 			'settings.debugLogging' => 'Journalisation de débogage',
@@ -2644,9 +2646,9 @@ extension on TranslationsFr {
 			'messages.markedAsUnwatchedOffline' => 'Marqué comme non vu (sera synchronisé lorsque vous serez en ligne)',
 			'messages.autoRemovedWatchedDownload' => ({required Object title}) => 'Supprimé automatiquement : ${title}',
 			'messages.autoRemovedWatchedDownloads' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('fr'))(n, one: '${n} téléchargement vu supprimé automatiquement', other: '${n} téléchargements vus supprimés automatiquement', ), 
-			'messages.removedFromContinueWatching' => 'Supprimer de "Continuer à regarder"',
 			_ => null,
 		} ?? switch (path) {
+			'messages.removedFromContinueWatching' => 'Supprimer de "Continuer à regarder"',
 			'messages.errorLoading' => ({required Object error}) => 'Erreur: ${error}',
 			'messages.streamInterrupted' => 'La lecture a été interrompue. Appuyez sur Lecture ou avancez pour réessayer.',
 			'messages.liveStreamInterrupted' => 'Le direct a été interrompu. Appuyez sur Lecture pour réessayer.',
@@ -3158,9 +3160,9 @@ extension on TranslationsFr {
 			'watchTogether.participantSeeked' => ({required Object name}) => '${name} a avancé',
 			'watchTogether.participantBuffering' => ({required Object name}) => '${name} met en mémoire tampon',
 			'watchTogether.participantNeedsUpdate' => ({required Object name}) => '${name} utilise une ancienne version de l’app — synchronisation indisponible',
-			'watchTogether.resumingWithout' => ({required Object name}) => 'Reprise sans ${name}',
 			_ => null,
 		} ?? switch (path) {
+			'watchTogether.resumingWithout' => ({required Object name}) => 'Reprise sans ${name}',
 			'watchTogether.waitingForParticipants' => 'En attente du chargement des autres...',
 			'watchTogether.waitingForName' => ({required Object name}) => 'En attente de ${name}...',
 			'watchTogether.recentRooms' => 'Salons récents',

@@ -311,6 +311,7 @@ class _TranslationsSettingsIt extends TranslationsSettingsEn {
 	@override String get watchTogetherRelay => 'Relay Guarda Insieme';
 	@override String get watchTogetherRelayDescription => 'Imposta un relay personalizzato. Tutti devono usare lo stesso server.';
 	@override String get watchTogetherRelayHint => 'https://mio-relay.esempio.it';
+	@override String get watchTogetherRelayInvalid => '';
 	@override String get crashReporting => 'Segnalazione errori';
 	@override String get crashReportingDescription => 'Invia segnalazioni di errori per migliorare l\'app';
 	@override String get debugLogging => 'Log di debug';
@@ -2303,6 +2304,7 @@ extension on TranslationsIt {
 			'settings.watchTogetherRelay' => 'Relay Guarda Insieme',
 			'settings.watchTogetherRelayDescription' => 'Imposta un relay personalizzato. Tutti devono usare lo stesso server.',
 			'settings.watchTogetherRelayHint' => 'https://mio-relay.esempio.it',
+			'settings.watchTogetherRelayInvalid' => '',
 			'settings.crashReporting' => 'Segnalazione errori',
 			'settings.crashReportingDescription' => 'Invia segnalazioni di errori per migliorare l\'app',
 			'settings.debugLogging' => 'Log di debug',
@@ -2644,9 +2646,9 @@ extension on TranslationsIt {
 			'messages.markedAsUnwatchedOffline' => 'Segnato come non visto (sincronizzato online)',
 			'messages.autoRemovedWatchedDownload' => ({required Object title}) => 'Rimosso automaticamente: ${title}',
 			'messages.autoRemovedWatchedDownloads' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('it'))(n, one: 'Rimosso automaticamente ${n} download già visto', other: 'Rimossi automaticamente ${n} download già visti', ), 
-			'messages.removedFromContinueWatching' => 'Rimosso da Continua a guardare',
 			_ => null,
 		} ?? switch (path) {
+			'messages.removedFromContinueWatching' => 'Rimosso da Continua a guardare',
 			'messages.errorLoading' => ({required Object error}) => 'Errore: ${error}',
 			'messages.streamInterrupted' => 'La riproduzione si è interrotta. Premi Riproduci o scorri per riprovare.',
 			'messages.liveStreamInterrupted' => 'La diretta si è interrotta. Premi Riproduci per riprovare.',
@@ -3158,9 +3160,9 @@ extension on TranslationsIt {
 			'watchTogether.participantSeeked' => ({required Object name}) => '${name} ha cercato',
 			'watchTogether.participantBuffering' => ({required Object name}) => '${name} sta caricando',
 			'watchTogether.participantNeedsUpdate' => ({required Object name}) => '${name} usa una versione precedente dell\'app — sincronizzazione non disponibile',
-			'watchTogether.resumingWithout' => ({required Object name}) => 'Ripresa senza ${name}',
 			_ => null,
 		} ?? switch (path) {
+			'watchTogether.resumingWithout' => ({required Object name}) => 'Ripresa senza ${name}',
 			'watchTogether.waitingForParticipants' => 'In attesa che gli altri carichino...',
 			'watchTogether.waitingForName' => ({required Object name}) => 'In attesa di ${name}...',
 			'watchTogether.recentRooms' => 'Stanze recenti',

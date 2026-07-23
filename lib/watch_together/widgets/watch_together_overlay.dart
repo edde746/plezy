@@ -273,7 +273,11 @@ class _SessionMenuSheet extends StatelessWidget {
     if (context.mounted) {
       OverlaySheetController.closeAdaptive(context);
     }
-    unawaited(provider.leaveSession());
+    unawaited(
+      provider.leaveSession().catchError((Object error, StackTrace stackTrace) {
+        appLogger.e('WatchTogether: Overlay leave failed', error: error, stackTrace: stackTrace);
+      }),
+    );
     onLeaveSession?.call();
   }
 }

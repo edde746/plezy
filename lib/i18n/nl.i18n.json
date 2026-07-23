@@ -180,6 +180,7 @@
     "watchTogetherRelay": "Samen Kijken Relay",
     "watchTogetherRelayDescription": "Stel een aangepaste relay in. Iedereen moet dezelfde server gebruiken.",
     "watchTogetherRelayHint": "https://mijn-relay.voorbeeld.nl",
+    "watchTogetherRelayInvalid": "",
     "crashReporting": "Crashrapportage",
     "crashReportingDescription": "Crashrapporten verzenden om de app te verbeteren",
     "debugLogging": "Debug logging",

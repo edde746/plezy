@@ -180,6 +180,7 @@
     "watchTogetherRelay": "Titta Tillsammans-relay",
     "watchTogetherRelayDescription": "Ange en anpassad relay. Alla måste använda samma server.",
     "watchTogetherRelayHint": "https://min-relay.exempel.se",
+    "watchTogetherRelayInvalid": "",
     "crashReporting": "Kraschrapportering",
     "crashReportingDescription": "Skicka kraschrapporter för att förbättra appen",
     "debugLogging": "Felsökningsloggning",

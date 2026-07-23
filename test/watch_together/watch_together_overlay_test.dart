@@ -55,6 +55,20 @@ void main() {
       expect(harness.onLeaveSessionCalls, 0);
     });
   }
+
+  testWidgets('best-effort leave failure is handled by the overlay', (tester) async {
+    final harness = _OverlayHarness(isHost: false, leaveError: StateError('release failed'));
+    addTearDown(harness.dispose);
+    await tester.pumpWidget(harness.build());
+
+    await _openLeaveConfirmation(tester, harness);
+    await tester.tap(find.text(t.watchTogether.leave));
+    await tester.pumpAndSettle();
+
+    expect(harness.provider.leaveCalls, 1);
+    expect(harness.onLeaveSessionCalls, 1);
+    expect(tester.takeException(), isNull);
+  });
 }
 
 Future<void> _openLeaveConfirmation(WidgetTester tester, _OverlayHarness harness) async {
@@ -69,7 +83,8 @@ Future<void> _openLeaveConfirmation(WidgetTester tester, _OverlayHarness harness
 }
 
 class _OverlayHarness {
-  _OverlayHarness({required bool isHost}) : provider = _FakeWatchTogetherProvider(isHostValue: isHost);
+  _OverlayHarness({required bool isHost, Object? leaveError})
+    : provider = _FakeWatchTogetherProvider(isHostValue: isHost, leaveError: leaveError);
 
   static const indicatorKey = Key('watch-together-session-indicator');
 
@@ -101,9 +116,10 @@ class _OverlayHarness {
 }
 
 class _FakeWatchTogetherProvider extends WatchTogetherProvider {
-  _FakeWatchTogetherProvider({required this.isHostValue});
+  _FakeWatchTogetherProvider({required this.isHostValue, this.leaveError});
 
   final bool isHostValue;
+  final Object? leaveError;
   var leaveCalls = 0;
   var _isDisposing = false;
 
@@ -127,6 +143,8 @@ class _FakeWatchTogetherProvider extends WatchTogetherProvider {
   @override
   Future<void> leaveSession() async {
     if (!_isDisposing) leaveCalls++;
+    final error = leaveError;
+    if (error != null) throw error;
   }
 
   @override

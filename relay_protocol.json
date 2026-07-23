@@ -1,10 +1,14 @@
 {
+  "protocolVersion": 2,
+  "legacyProtocolVersion": 0,
   "clientMessageTypes": {
     "create": "create",
     "join": "join",
     "broadcast": "broadcast",
     "sendTo": "sendTo",
-    "ping": "ping"
+    "ping": "ping",
+    "leave": "leave",
+    "endSession": "endSession"
   },
   "serverMessageTypes": {
     "created": "created",
@@ -13,7 +17,9 @@
     "peerLeft": "peerLeft",
     "message": "message",
     "error": "error",
-    "pong": "pong"
+    "pong": "pong",
+    "left": "left",
+    "ended": "ended"
   },
   "errorCodes": {
     "rateLimited": "rate_limited",
@@ -22,7 +28,9 @@
     "roomNotFound": "room_not_found",
     "roomFull": "room_full",
     "notInRoom": "not_in_room",
-    "alreadyInRoom": "already_in_room"
+    "alreadyInRoom": "already_in_room",
+    "peerIdUnavailable": "peer_id_unavailable",
+    "protocolMismatch": "protocol_mismatch"
   },
   "limits": {
     "maxRoomSize": 8,

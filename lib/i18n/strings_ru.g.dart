@@ -311,6 +311,7 @@ class _TranslationsSettingsRu extends TranslationsSettingsEn {
 	@override String get watchTogetherRelay => 'Relay совместного просмотра';
 	@override String get watchTogetherRelayDescription => 'Задайте свой relay. Все должны использовать один сервер.';
 	@override String get watchTogetherRelayHint => 'https://my-relay.example.com';
+	@override String get watchTogetherRelayInvalid => '';
 	@override String get crashReporting => 'Отчёты об ошибках';
 	@override String get crashReportingDescription => 'Отправлять отчёты об ошибках для улучшения приложения';
 	@override String get debugLogging => 'Журнал отладки';
@@ -2309,6 +2310,7 @@ extension on TranslationsRu {
 			'settings.watchTogetherRelay' => 'Relay совместного просмотра',
 			'settings.watchTogetherRelayDescription' => 'Задайте свой relay. Все должны использовать один сервер.',
 			'settings.watchTogetherRelayHint' => 'https://my-relay.example.com',
+			'settings.watchTogetherRelayInvalid' => '',
 			'settings.crashReporting' => 'Отчёты об ошибках',
 			'settings.crashReportingDescription' => 'Отправлять отчёты об ошибках для улучшения приложения',
 			'settings.debugLogging' => 'Журнал отладки',
@@ -2650,9 +2652,9 @@ extension on TranslationsRu {
 			'messages.markedAsUnwatchedOffline' => 'Отмечено как непросмотренное (синхронизируется при подключении)',
 			'messages.autoRemovedWatchedDownload' => ({required Object title}) => 'Автоудалено: ${title}',
 			'messages.autoRemovedWatchedDownloads' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('ru'))(n, one: 'Автоматически удалена ${n} просмотренная загрузка', few: 'Автоматически удалены ${n} просмотренные загрузки', many: 'Автоматически удалено ${n} просмотренных загрузок', other: 'Автоматически удалено ${n} просмотренной загрузки', ), 
-			'messages.removedFromContinueWatching' => 'Удалено из «Продолжить просмотр»',
 			_ => null,
 		} ?? switch (path) {
+			'messages.removedFromContinueWatching' => 'Удалено из «Продолжить просмотр»',
 			'messages.errorLoading' => ({required Object error}) => 'Ошибка: ${error}',
 			'messages.streamInterrupted' => 'Поток прервался. Нажмите «Воспроизвести» или перемотайте, чтобы повторить попытку.',
 			'messages.liveStreamInterrupted' => 'Прямая трансляция прервалась. Нажмите «Воспроизвести», чтобы повторить попытку.',
@@ -3164,9 +3166,9 @@ extension on TranslationsRu {
 			'watchTogether.participantSeeked' => ({required Object name}) => '${name} перемотал',
 			'watchTogether.participantBuffering' => ({required Object name}) => '${name} буферизует',
 			'watchTogether.participantNeedsUpdate' => ({required Object name}) => '${name} использует старую версию приложения — синхронизация недоступна',
-			'watchTogether.resumingWithout' => ({required Object name}) => 'Возобновление без ${name}',
 			_ => null,
 		} ?? switch (path) {
+			'watchTogether.resumingWithout' => ({required Object name}) => 'Возобновление без ${name}',
 			'watchTogether.waitingForParticipants' => 'Ожидание загрузки у других...',
 			'watchTogether.waitingForName' => ({required Object name}) => 'Ожидание ${name}...',
 			'watchTogether.recentRooms' => 'Недавние комнаты',

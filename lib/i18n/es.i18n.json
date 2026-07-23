@@ -180,6 +180,7 @@
     "watchTogetherRelay": "Relay de Ver Juntos",
     "watchTogetherRelayDescription": "Define un relay personalizado. Todos deben usar el mismo servidor.",
     "watchTogetherRelayHint": "https://mi-relay.ejemplo.com",
+    "watchTogetherRelayInvalid": "",
     "crashReporting": "Informes de Errores",
     "crashReportingDescription": "Enviar informes de errores para mejorar la aplicación",
     "debugLogging": "Registro de Depuración",
