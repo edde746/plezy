@@ -22,6 +22,28 @@ void main() {
     SettingsService.resetForTesting();
   });
 
+  test('concurrent callers wait for settings binding', () async {
+    final preferences = _BlockingReadPreferences(const {});
+    SharedPreferencesAsyncPlatform.instance = preferences;
+    BaseSharedPreferencesService.resetForTesting();
+    SettingsService.resetForTesting();
+    addTearDown(preferences.release);
+
+    final first = KeyboardShortcutsService.getInstance();
+    await preferences.entered;
+    var secondCompleted = false;
+    final second = KeyboardShortcutsService.getInstance();
+    unawaited(second.then((_) => secondCompleted = true));
+    await Future<void>.delayed(Duration.zero);
+
+    expect(secondCompleted, isFalse);
+    preferences.release();
+
+    final instances = await Future.wait([first, second]);
+    expect(identical(instances.first, instances.last), isTrue);
+    addTearDown(instances.first.dispose);
+  });
+
   group('HotKey persistence', () {
     test('loads shortcuts saved with the shipped pre-HID key format', () async {
       resetSharedPreferencesForTest(
@@ -692,6 +714,29 @@ class _FakePlayer implements Player {
 
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
+final class _BlockingReadPreferences extends InMemorySharedPreferencesAsync {
+  _BlockingReadPreferences(super.data) : super.withData();
+
+  final _entered = Completer<void>();
+  final _release = Completer<void>();
+
+  Future<void> get entered => _entered.future;
+
+  void release() {
+    if (!_release.isCompleted) _release.complete();
+  }
+
+  @override
+  Future<Map<String, Object>> getPreferences(
+    GetPreferencesParameters parameters,
+    SharedPreferencesOptions options,
+  ) async {
+    if (!_entered.isCompleted) _entered.complete();
+    await _release.future;
+    return super.getPreferences(parameters, options);
+  }
 }
 
 final class _HotkeyPreferences extends InMemorySharedPreferencesAsync {

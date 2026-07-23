@@ -205,7 +205,6 @@ class SystemShelfService {
     final result = await _enqueueMutation<bool>(() async {
       if (!_owns(profileId, generation)) return false;
       try {
-        if (!_owns(profileId, generation)) return false;
         return await channel.invokeMethod<bool>('sync', {
               'schemaVersion': schemaVersion,
               'ownerId': profileId,

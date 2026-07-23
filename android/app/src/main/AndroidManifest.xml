@@ -28,6 +28,7 @@
     <uses-feature android:name="android.software.leanback" android:required="false" />
     <!-- Android TV Watch Next integration -->
     <uses-permission android:name="com.android.providers.tv.permission.WRITE_EPG_DATA"/>
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
     <!-- Touchscreen not required for TV -->
     <uses-feature android:name="android.hardware.touchscreen" android:required="false" />
 
@@ -91,13 +92,14 @@
         <provider
             android:name=".watchnext.SystemShelfArtworkProvider"
             android:authorities="com.edde746.plezy.systemshelf.artwork"
-            android:exported="false"
+            android:exported="true"
             android:grantUriPermissions="true" />
         <receiver
             android:name=".watchnext.SystemShelfUpdateReceiver"
             android:exported="false">
             <intent-filter>
                 <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
             </intent-filter>
         </receiver>
         <!-- Don't delete the meta-data below.
@@ -129,6 +131,11 @@
         <intent>
             <action android:name="android.intent.action.VIEW" />
             <data android:mimeType="video/*" />
+        </intent>
+        <!-- Required to identify only the active HOME launcher as a shelf artwork consumer. -->
+        <intent>
+            <action android:name="android.intent.action.MAIN" />
+            <category android:name="android.intent.category.HOME" />
         </intent>
     </queries>
 </manifest>

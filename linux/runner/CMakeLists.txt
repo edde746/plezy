@@ -10,6 +10,7 @@ add_executable(${BINARY_NAME}
   "main.cc"
   "my_application.cc"
   "mpv/mpv_player.cc"
+  "mpv/mpv_gpu_bootstrap.cc"
   "mpv/mpv_plugin.cc"
   "mpv/mpv_texture.cc"
   "${FLUTTER_MANAGED_DIR}/generated_plugin_registrant.cc"
@@ -31,7 +32,7 @@ pkg_check_modules(EPOXY REQUIRED IMPORTED_TARGET epoxy)
 # Build simdutf as a static library from the single-header amalgamation.
 add_library(simdutf STATIC "${simdutf_SOURCE_DIR}/simdutf.cpp")
 target_include_directories(simdutf PUBLIC "${simdutf_SOURCE_DIR}")
-target_compile_features(simdutf PUBLIC cxx_std_17)
+target_compile_features(simdutf PUBLIC cxx_std_14)
 # Suppress warnings in third-party code
 target_compile_options(simdutf PRIVATE -w)
 
@@ -45,17 +46,30 @@ target_link_libraries(${BINARY_NAME} PRIVATE simdutf)
 target_include_directories(${BINARY_NAME} PRIVATE "${CMAKE_SOURCE_DIR}")
 target_include_directories(${BINARY_NAME} PRIVATE "${CMAKE_SOURCE_DIR}/../shared/cpp")
 
+function(check_mpv_sanitizer_support SANITIZER_FLAG RESULT_VARIABLE)
+  include(CheckCXXSourceCompiles)
+  # Force an executable try-compile: sanitizer availability depends on the
+  # runtime being linkable, not just on the compiler accepting the flag.
+  set(CMAKE_TRY_COMPILE_TARGET_TYPE EXECUTABLE)
+  set(CMAKE_REQUIRED_FLAGS "${SANITIZER_FLAG}")
+  set(CMAKE_REQUIRED_LIBRARIES "${SANITIZER_FLAG}")
+  check_cxx_source_compiles("int main() { return 0; }" ${RESULT_VARIABLE})
+  set(${RESULT_VARIABLE} "${${RESULT_VARIABLE}}" PARENT_SCOPE)
+endfunction()
+
 option(PLEZY_BUILD_MPV_PLAYER_LIFECYCLE_TESTS
   "Build the focused Linux mpv callback lifecycle test" OFF)
 if(PLEZY_BUILD_MPV_PLAYER_LIFECYCLE_TESTS)
-  enable_testing()
   find_package(Threads REQUIRED)
 
   add_executable(mpv_player_lifecycle_test
     "mpv/mpv_player.cc"
+    "mpv/mpv_gpu_bootstrap.cc"
+    "mpv/mpv_texture.cc"
     "mpv/mpv_player_lifecycle_test.cc"
   )
   apply_standard_settings(mpv_player_lifecycle_test)
+  target_compile_definitions(mpv_player_lifecycle_test PRIVATE PLEZY_MPV_PLAYER_LIFECYCLE_TEST=1)
   target_link_libraries(mpv_player_lifecycle_test PRIVATE flutter)
   target_link_libraries(mpv_player_lifecycle_test PRIVATE PkgConfig::GTK)
   target_link_libraries(mpv_player_lifecycle_test PRIVATE PkgConfig::MPV)
@@ -68,8 +82,8 @@ if(PLEZY_BUILD_MPV_PLAYER_LIFECYCLE_TESTS)
   option(PLEZY_MPV_LIFECYCLE_SANITIZERS
     "Enable ASan and UBSan for the focused mpv lifecycle test" ON)
   if(PLEZY_MPV_LIFECYCLE_SANITIZERS AND CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
-    include(CheckCXXCompilerFlag)
-    check_cxx_compiler_flag("-fsanitize=address,undefined" MPV_LIFECYCLE_SANITIZERS_SUPPORTED)
+    check_mpv_sanitizer_support(
+      "-fsanitize=address,undefined" MPV_LIFECYCLE_SANITIZERS_SUPPORTED)
     if(MPV_LIFECYCLE_SANITIZERS_SUPPORTED)
       target_compile_options(mpv_player_lifecycle_test PRIVATE -fno-omit-frame-pointer -fsanitize=address,undefined)
       target_link_options(mpv_player_lifecycle_test PRIVATE -fsanitize=address,undefined)
@@ -77,20 +91,63 @@ if(PLEZY_BUILD_MPV_PLAYER_LIFECYCLE_TESTS)
   endif()
 
   add_test(NAME mpv_player_lifecycle_test COMMAND mpv_player_lifecycle_test)
+  set_tests_properties(mpv_player_lifecycle_test PROPERTIES TIMEOUT 30)
 endif()
 
 option(PLEZY_BUILD_MPV_PROPERTY_CONTRACT_TESTS
   "Build the focused desktop mpv property-result contract test" OFF)
-if(PLEZY_BUILD_MPV_PROPERTY_CONTRACT_TESTS)
-  enable_testing()
-  find_package(Threads REQUIRED)
+option(PLEZY_BUILD_MPV_RELIABILITY_TESTS
+  "Build focused Linux mpv registry and GPU bootstrap tests" OFF)
+set(PLEZY_MPV_RELIABILITY_SANITIZER "none" CACHE STRING
+  "Sanitizer for focused mpv reliability tests: none, address, or thread")
+set_property(CACHE PLEZY_MPV_RELIABILITY_SANITIZER PROPERTY STRINGS none address thread)
 
+function(apply_mpv_reliability_sanitizer TARGET)
+  if(NOT CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU" OR
+     PLEZY_MPV_RELIABILITY_SANITIZER STREQUAL "none")
+    return()
+  endif()
+  if(PLEZY_MPV_RELIABILITY_SANITIZER STREQUAL "address")
+    set(SANITIZER_FLAG "-fsanitize=address,undefined")
+    set(SANITIZER_SUPPORT_VARIABLE MPV_RELIABILITY_ADDRESS_SANITIZER_SUPPORTED)
+  elseif(PLEZY_MPV_RELIABILITY_SANITIZER STREQUAL "thread")
+    set(SANITIZER_FLAG "-fsanitize=thread")
+    set(SANITIZER_SUPPORT_VARIABLE MPV_RELIABILITY_THREAD_SANITIZER_SUPPORTED)
+  else()
+    message(FATAL_ERROR "Unknown PLEZY_MPV_RELIABILITY_SANITIZER value")
+  endif()
+  check_mpv_sanitizer_support("${SANITIZER_FLAG}" ${SANITIZER_SUPPORT_VARIABLE})
+  if(NOT ${SANITIZER_SUPPORT_VARIABLE})
+    message(WARNING
+      "${PLEZY_MPV_RELIABILITY_SANITIZER} sanitizer is unavailable; focused tests will be unsanitized")
+    return()
+  endif()
+  target_compile_options(${TARGET} PRIVATE -fno-omit-frame-pointer ${SANITIZER_FLAG})
+  target_link_options(${TARGET} PRIVATE ${SANITIZER_FLAG})
+endfunction()
+
+if(PLEZY_BUILD_MPV_PROPERTY_CONTRACT_TESTS OR PLEZY_BUILD_MPV_RELIABILITY_TESTS)
+  find_package(Threads REQUIRED)
   add_executable(mpv_property_result_contract_test
     "../../shared/mpv/mpv_player_common_test.cpp"
   )
   apply_standard_settings(mpv_property_result_contract_test)
+  target_compile_features(mpv_property_result_contract_test PRIVATE cxx_std_14)
   target_link_libraries(mpv_property_result_contract_test PRIVATE PkgConfig::MPV Threads::Threads)
   target_include_directories(mpv_property_result_contract_test PRIVATE "../../shared/mpv")
-
+  apply_mpv_reliability_sanitizer(mpv_property_result_contract_test)
   add_test(NAME mpv_property_result_contract_test COMMAND mpv_property_result_contract_test)
+endif()
+
+if(PLEZY_BUILD_MPV_RELIABILITY_TESTS)
+  add_executable(mpv_gpu_bootstrap_test
+    "mpv/mpv_gpu_bootstrap.cc"
+    "mpv/mpv_gpu_bootstrap_test.cc"
+  )
+  apply_standard_settings(mpv_gpu_bootstrap_test)
+  target_compile_features(mpv_gpu_bootstrap_test PRIVATE cxx_std_14)
+  target_link_libraries(mpv_gpu_bootstrap_test PRIVATE PkgConfig::EPOXY)
+  target_include_directories(mpv_gpu_bootstrap_test PRIVATE "mpv")
+  apply_mpv_reliability_sanitizer(mpv_gpu_bootstrap_test)
+  add_test(NAME mpv_gpu_bootstrap_test COMMAND mpv_gpu_bootstrap_test)
 endif()

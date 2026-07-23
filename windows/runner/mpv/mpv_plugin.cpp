@@ -22,8 +22,8 @@ void MpvAudioPlayerPluginRegisterWithRegistrar(FlutterDesktopPluginRegistrarRef 
 namespace mpv {
 
 namespace {
-constexpr UINT kPlatformTaskMessage = WM_APP + 0x4D50;
-constexpr UINT kAudioPlatformTaskMessage = WM_APP + 0x4D51;
+constexpr UINT kPlatformTaskMessage = WM_APP + 0x04D0;
+constexpr UINT kAudioPlatformTaskMessage = WM_APP + 0x04D1;
 }  // namespace
 
 void MpvPlayerPlugin::RegisterWithRegistrar(
@@ -67,6 +67,7 @@ MpvPlayerPlugin::MpvPlayerPlugin(
 }
 
 MpvPlayerPlugin::~MpvPlayerPlugin() {
+  player_generation_.fetch_add(1, std::memory_order_acq_rel);
   // Join the mpv event thread before draining: it enqueues platform tasks,
   // and platform_tasks_/platform_tasks_mutex_ are destroyed before player_
   // (reverse declaration order).
@@ -180,12 +181,14 @@ void MpvPlayerPlugin::HandleMethodCall(
     // core is windowless, so it gets no view at all.
     HWND view = audio_only_ ? nullptr : GetChildWindow();
 
+    const uint64_t generation = player_generation_.fetch_add(1, std::memory_order_acq_rel) + 1;
     player_ = std::make_unique<MpvPlayer>(audio_only_);
     bool success = player_->Initialize(view);
 
     if (success) {
       // Set up event callback.
-      player_->SetEventCallback([this](const flutter::EncodableValue& event) { SendEvent(event); });
+      player_->SetEventCallback(
+          [this, generation](const flutter::EncodableValue& event) { SendEvent(generation, event); });
 
       if (!audio_only_) {
         // Start hidden.
@@ -197,6 +200,7 @@ void MpvPlayerPlugin::HandleMethodCall(
       result->Error("INIT_FAILED", "Failed to initialize MPV player");
     }
   } else if (method == "dispose") {
+    player_generation_.fetch_add(1, std::memory_order_acq_rel);
     if (player_) {
       player_->Dispose();
       player_.reset();
@@ -524,12 +528,13 @@ void MpvPlayerPlugin::HandleMethodCall(
   }
 }
 
-void MpvPlayerPlugin::SendEvent(const flutter::EncodableValue& event) {
+void MpvPlayerPlugin::SendEvent(uint64_t player_generation, const flutter::EncodableValue& event) {
   // mpv events arrive on the mpv event thread; Flutter channel APIs are
-  // platform-thread-only, so marshal onto the platform thread (the sink
-  // null-check then also runs on the same thread as onListen/onCancel).
-  PostToPlatformThread([this, event]() {
-    if (event_sink_) {
+  // platform-thread-only. Capture the player generation at receipt so queued
+  // property/event callbacks from a disposed player cannot publish into its
+  // replacement's stream.
+  PostToPlatformThread([this, player_generation, event]() {
+    if (player_generation_.load(std::memory_order_acquire) == player_generation && event_sink_) {
       event_sink_->Success(event);
     }
   });

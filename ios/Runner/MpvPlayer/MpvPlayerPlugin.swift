@@ -48,7 +48,13 @@ class MpvPlayerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler, MpvPluginS
 
     registrar.addMethodCallDelegate(instance, channel: methodChannel)
     eventChannel.setStreamHandler(instance)
-    pipChannel.setMethodCallHandler(instance.handlePipCall)
+    pipChannel.setMethodCallHandler { [weak instance] call, result in
+      guard let instance else {
+        result(nil)
+        return
+      }
+      instance.handlePipCall(call, result: result)
+    }
   }
 
   // MARK: - FlutterStreamHandler
@@ -210,6 +216,13 @@ class MpvPlayerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler, MpvPluginS
       ])
       return
     }
+    if manual && isManualPipRequest {
+      result?([
+        "success": false, "errorCode": "failed",
+        "errorMessage": "A PiP start request is already pending",
+      ])
+      return
+    }
     guard let pip = preparePip() else {
       result?([
         "success": false, "errorCode": "pip_prepare_failed",
@@ -220,10 +233,18 @@ class MpvPlayerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler, MpvPluginS
 
     isManualPipRequest = manual
     pip.startPip(waitForFrame: manual) { [weak self] started in
+      guard let self else {
+        result?([
+          "success": false, "errorCode": "failed", "errorMessage": "Player disposed",
+        ])
+        return
+      }
       if started {
         result?(["success": true])
       } else {
-        self?.cleanupPip(notify: false)
+        if self.playerCore?.isPipStarting == true {
+          self.cleanupPip(notify: false)
+        }
         result?([
           "success": false, "errorCode": "failed", "errorMessage": "PiP failed to start",
         ])
@@ -309,6 +330,14 @@ class MpvPlayerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler, MpvPluginS
             code: "NO_WINDOW", message: "Could not find key window", details: nil))
         return
       }
+
+      // A partially torn-down core must not survive a rapid route replacement.
+      self.pipController?.teardown()
+      self.pipController = nil
+      self.pendingInlineRestoreAfterPip = false
+      self.stopPipTimebaseSync()
+      self.playerCore?.dispose()
+      self.playerCore = nil
 
       let core = MpvPlayerCore()
       core.delegate = self

@@ -71,6 +71,9 @@ var NoSleep = (function () {
       this._nativeRequested = false
       this._wakeLock = null
       this._wakeLockRequest = null
+      this._wakeLockRelease = null
+      this._wakeLockReleaseSentinel = null
+      this._wakeLockReplacement = null
       var handleVisibilityChange = function handleVisibilityChange() {
         if (_this._nativeRequested && document.visibilityState === 'visible') {
           _this._requestNativeWakeLock().catch(function () {})
@@ -115,15 +118,74 @@ var NoSleep = (function () {
       },
     },
     {
-      key: '_requestNativeWakeLock',
-      value: function _requestNativeWakeLock() {
+      key: '_releaseNativeWakeLock',
+      value: function _releaseNativeWakeLock(wakeLock) {
         var _this2 = this
+
+        if (this._wakeLockRelease !== null) {
+          if (this._wakeLockReleaseSentinel === wakeLock) {
+            return this._wakeLockRelease
+          }
+          return this._wakeLockRelease
+            .catch(function () {})
+            .then(function () {
+              return _this2._releaseNativeWakeLock(wakeLock)
+            })
+        }
+
+        var release = Promise.resolve()
+          .then(function () {
+            return wakeLock.release()
+          })
+          .then(function () {
+            if (_this2._wakeLock === wakeLock) {
+              _this2._wakeLock = null
+              _this2.nativeEnabled = false
+            }
+          })
+          .finally(function () {
+            if (_this2._wakeLockRelease === release) {
+              _this2._wakeLockRelease = null
+              _this2._wakeLockReleaseSentinel = null
+            }
+          })
+        this._wakeLockReleaseSentinel = wakeLock
+        this._wakeLockRelease = release
+        return release
+      },
+    },
+    {
+      key: '_requestNativeWakeLock',
+      value: function _requestNativeWakeLock(afterRelease) {
+        var _this3 = this
 
         if (
           !this._nativeRequested ||
-          document.visibilityState !== 'visible' ||
-          this._wakeLock !== null
+          document.visibilityState !== 'visible'
         ) {
+          return Promise.resolve()
+        }
+        if (!afterRelease && this._wakeLockReplacement !== null) {
+          return this._wakeLockReplacement
+        }
+        if (this._wakeLock !== null) {
+          if (
+            this._wakeLockRelease !== null &&
+            this._wakeLockReleaseSentinel === this._wakeLock
+          ) {
+            var replacement
+            replacement = this._wakeLockRelease
+              .then(function () {
+                return _this3._requestNativeWakeLock(true)
+              })
+              .finally(function () {
+                if (_this3._wakeLockReplacement === replacement) {
+                  _this3._wakeLockReplacement = null
+                }
+              })
+            this._wakeLockReplacement = replacement
+            return replacement
+          }
           return Promise.resolve()
         }
         if (this._wakeLockRequest !== null) {
@@ -135,31 +197,33 @@ var NoSleep = (function () {
           .request('screen')
           .then(function (wakeLock) {
             wakeLock.addEventListener('release', function () {
-              if (_this2._wakeLock === wakeLock) {
-                _this2._wakeLock = null
-                _this2.nativeEnabled = false
+              if (_this3._wakeLock === wakeLock) {
+                _this3._wakeLock = null
+                _this3.nativeEnabled = false
                 if (
-                  _this2._nativeRequested &&
+                  _this3._nativeRequested &&
                   document.visibilityState === 'visible'
                 ) {
-                  _this2._requestNativeWakeLock().catch(function () {})
+                  _this3._requestNativeWakeLock().catch(function () {})
                 }
               }
             })
 
-            if (!_this2._nativeRequested || _this2._wakeLock !== null) {
-              return wakeLock.release()
+            if (!_this3._nativeRequested) {
+              _this3._wakeLock = wakeLock
+              _this3.nativeEnabled = true
+              return _this3._releaseNativeWakeLock(wakeLock)
             }
 
-            _this2._wakeLock = wakeLock
-            _this2.nativeEnabled = true
+            _this3._wakeLock = wakeLock
+            _this3.nativeEnabled = true
           })
           .catch(function (err) {
             throw err.name + ', ' + err.message
           })
           .finally(function () {
-            if (_this2._wakeLockRequest === acquisition) {
-              _this2._wakeLockRequest = null
+            if (_this3._wakeLockRequest === acquisition) {
+              _this3._wakeLockRequest = null
             }
           })
         this._wakeLockRequest = acquisition
@@ -206,11 +270,7 @@ var NoSleep = (function () {
 
           var wakeLock = this._wakeLock
           if (wakeLock !== null) {
-            await wakeLock.release()
-            if (this._wakeLock === wakeLock) {
-              this._wakeLock = null
-              this.nativeEnabled = false
-            }
+            await this._releaseNativeWakeLock(wakeLock)
           }
 
           if (this._nativeRequested) {

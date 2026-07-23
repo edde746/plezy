@@ -20,9 +20,9 @@ namespace mpv_common {
 using StatusCallback = std::function<void(int error)>;
 using GetPropertyCallback = std::function<void(int error, const std::string& value)>;
 
-inline constexpr char kSetPropertyFailedCode[] = "SET_PROPERTY_FAILED";
-inline constexpr char kSetPropertyNotInitializedCode[] = "NOT_INITIALIZED";
-inline constexpr size_t kSetPropertyErrorDescriptionLimit = 160;
+static constexpr char kSetPropertyFailedCode[] = "SET_PROPERTY_FAILED";
+static constexpr char kSetPropertyNotInitializedCode[] = "NOT_INITIALIZED";
+static constexpr size_t kSetPropertyErrorDescriptionLimit = 160;
 
 inline bool SetPropertyStatusSucceeded(int status) { return status >= 0; }
 
@@ -123,16 +123,19 @@ struct ObservationRequest {
 class PropertyObservationRegistry {
  public:
   ObservationRequest Register(const std::string& name, const std::string& format, int id) {
+    const mpv_format parsed_format = ParsePropertyFormat(format);
+    std::lock_guard<std::mutex> lock(mutex_);
     if (userdata_by_name_.find(name) != userdata_by_name_.end()) {
       return {false, 0, MPV_FORMAT_NONE};
     }
     const uint64_t userdata = next_userdata_++;
     userdata_by_name_[name] = userdata;
     id_by_name_[name] = id;
-    return {true, userdata, ParsePropertyFormat(format)};
+    return {true, userdata, parsed_format};
   }
 
   bool LookupId(const std::string& name, int* id) const {
+    std::lock_guard<std::mutex> lock(mutex_);
     const auto it = id_by_name_.find(name);
     if (it == id_by_name_.end()) return false;
     *id = it->second;
@@ -140,6 +143,7 @@ class PropertyObservationRegistry {
   }
 
   void Clear() {
+    std::lock_guard<std::mutex> lock(mutex_);
     userdata_by_name_.clear();
     id_by_name_.clear();
   }
@@ -148,6 +152,7 @@ class PropertyObservationRegistry {
   uint64_t next_userdata_ = 1;
   std::map<std::string, uint64_t> userdata_by_name_;
   std::map<std::string, int> id_by_name_;
+  mutable std::mutex mutex_;
 };
 
 inline bool ParseEnabledFlag(const std::string& value) { return value == "yes" || value == "true" || value == "1"; }
@@ -160,6 +165,7 @@ struct AudioReloadAction {
   AudioReloadReason reason = AudioReloadReason::kNone;
   int attempt = 0;
   bool exhausted = false;
+  uint64_t request_generation = 0;
 };
 
 enum class AudioOutputTransition { kNone, kFellBackToNull, kRecovered };
@@ -168,23 +174,45 @@ class AudioRecoveryState {
  public:
   using Clock = std::chrono::steady_clock;
 
-  void SetFileLoaded(bool loaded) {
+  void SetFileLoaded(bool loaded, Clock::time_point now = Clock::now()) {
+    std::lock_guard<std::mutex> lock(mutex_);
+    const bool was_loaded = file_loaded_;
     file_loaded_ = loaded;
     if (!loaded) {
+      resume_requested_ = false;
       resume_attempts_left_ = 0;
       null_attempts_left_ = 0;
+      reload_pending_ = false;
+      pending_request_generation_ = 0;
+      return;
     }
-  }
-
-  void RequestResume() { resume_requested_.store(true); }
-
-  AudioOutputTransition SetCurrentAudioOutputNull(bool is_null, Clock::time_point now) {
-    if (is_null == current_ao_is_null_) return AudioOutputTransition::kNone;
-    current_ao_is_null_ = is_null;
-    if (is_null) {
+    if (!was_loaded && current_ao_is_null_) {
       null_attempts_left_ = kNullRetryBudget;
       null_backoff_ = NullFirstDelay();
       null_next_attempt_ = now + NullFirstDelay();
+    }
+  }
+
+  void RequestResume() {
+    std::lock_guard<std::mutex> lock(mutex_);
+    if (!file_loaded_) {
+      resume_requested_ = false;
+      resume_attempts_left_ = 0;
+      return;
+    }
+    resume_requested_ = true;
+  }
+
+  AudioOutputTransition SetCurrentAudioOutputNull(bool is_null, Clock::time_point now) {
+    std::lock_guard<std::mutex> lock(mutex_);
+    if (is_null == current_ao_is_null_) return AudioOutputTransition::kNone;
+    current_ao_is_null_ = is_null;
+    if (is_null) {
+      if (file_loaded_) {
+        null_attempts_left_ = kNullRetryBudget;
+        null_backoff_ = NullFirstDelay();
+        null_next_attempt_ = now + NullFirstDelay();
+      }
       return AudioOutputTransition::kFellBackToNull;
     }
     null_attempts_left_ = 0;
@@ -192,7 +220,8 @@ class AudioRecoveryState {
   }
 
   bool OnAudioDeviceListChanged(Clock::time_point now) {
-    if (!current_ao_is_null_) return false;
+    std::lock_guard<std::mutex> lock(mutex_);
+    if (!file_loaded_ || !current_ao_is_null_) return false;
     const auto candidate = now + DeviceListDebounce();
     if (null_attempts_left_ <= 0 || candidate < null_next_attempt_) {
       null_next_attempt_ = candidate;
@@ -203,7 +232,9 @@ class AudioRecoveryState {
   }
 
   AudioReloadAction NextReload(Clock::time_point now) {
-    if (resume_requested_.exchange(false) && file_loaded_) {
+    std::lock_guard<std::mutex> lock(mutex_);
+    if (resume_requested_ && file_loaded_) {
+      resume_requested_ = false;
       resume_attempts_left_ = kResumeReloadAttempts;
       resume_next_attempt_ = now + ResumeFirstDelay();
     }
@@ -214,7 +245,8 @@ class AudioRecoveryState {
       --resume_attempts_left_;
       resume_next_attempt_ = now + ResumeRetryDelay();
       reload_pending_ = true;
-      return {AudioReloadReason::kResume, attempt, false};
+      pending_request_generation_ = ++next_request_generation_;
+      return {AudioReloadReason::kResume, attempt, false, pending_request_generation_};
     }
 
     if (null_attempts_left_ > 0 && now >= null_next_attempt_) {
@@ -227,20 +259,27 @@ class AudioRecoveryState {
       null_next_attempt_ = now + null_backoff_;
       null_backoff_ = std::min(null_backoff_ * 2, NullBackoffCap());
       reload_pending_ = true;
-      return {AudioReloadReason::kNullFallback, attempt, null_attempts_left_ == 0};
+      pending_request_generation_ = ++next_request_generation_;
+      return {AudioReloadReason::kNullFallback, attempt, null_attempts_left_ == 0, pending_request_generation_};
     }
     return {};
   }
 
-  void CompleteReload() { reload_pending_ = false; }
-
-  bool HasPendingWork() const {
-    return resume_requested_.load() || resume_attempts_left_ > 0 || null_attempts_left_ > 0 || reload_pending_;
+  bool CompleteReload(uint64_t request_generation) {
+    std::lock_guard<std::mutex> lock(mutex_);
+    if (!reload_pending_ || pending_request_generation_ != request_generation) {
+      return false;
+    }
+    reload_pending_ = false;
+    pending_request_generation_ = 0;
+    return true;
   }
 
-  bool current_audio_output_is_null() const { return current_ao_is_null_; }
-
-  static int NullRetryBudget() { return kNullRetryBudget; }
+  bool HasPendingWork() const {
+    std::lock_guard<std::mutex> lock(mutex_);
+    return file_loaded_ &&
+           (resume_requested_ || resume_attempts_left_ > 0 || null_attempts_left_ > 0 || reload_pending_);
+  }
 
  private:
   static constexpr int kResumeReloadAttempts = 2;
@@ -252,15 +291,18 @@ class AudioRecoveryState {
   static std::chrono::milliseconds NullBackoffCap() { return std::chrono::milliseconds(8000); }
   static std::chrono::milliseconds DeviceListDebounce() { return std::chrono::milliseconds(250); }
 
-  std::atomic<bool> resume_requested_{false};
+  bool resume_requested_ = false;
   bool file_loaded_ = false;
   bool current_ao_is_null_ = false;
   bool reload_pending_ = false;
+  uint64_t next_request_generation_ = 0;
+  uint64_t pending_request_generation_ = 0;
   int resume_attempts_left_ = 0;
   Clock::time_point resume_next_attempt_{};
   int null_attempts_left_ = 0;
   Clock::time_point null_next_attempt_{};
   std::chrono::milliseconds null_backoff_{0};
+  mutable std::mutex mutex_;
 };
 
 }  // namespace mpv_common

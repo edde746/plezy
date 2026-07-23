@@ -3,10 +3,10 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:plezy/focus/focusable_button.dart';
 import 'package:plezy/providers/playback_state_provider.dart';
 import 'package:plezy/screens/video_player_screen.dart';
 import 'package:plezy/services/settings_service.dart';
-import 'package:plezy/focus/focusable_button.dart';
 import 'package:provider/provider.dart';
 
 import '../../test_helpers/media_items.dart';
@@ -20,6 +20,25 @@ void main() {
     resetSharedPreferencesForTest();
     SettingsService.resetForTesting();
     await SettingsService.getInstance();
+  });
+
+  test('in-place reload preserves the current playback intent', () {
+    expect(
+      shouldAutoStartReloadedMedia(wasPlayingBeforeReload: false, watchTogetherOwnsStart: false, startPaused: false),
+      isFalse,
+    );
+    expect(
+      shouldAutoStartReloadedMedia(wasPlayingBeforeReload: true, watchTogetherOwnsStart: false, startPaused: false),
+      isTrue,
+    );
+    expect(
+      shouldAutoStartReloadedMedia(wasPlayingBeforeReload: true, watchTogetherOwnsStart: true, startPaused: false),
+      isFalse,
+    );
+    expect(
+      shouldAutoStartReloadedMedia(wasPlayingBeforeReload: true, watchTogetherOwnsStart: false, startPaused: true),
+      isFalse,
+    );
   });
 
   testWidgets('initialization ownership serializes rollback, retry, and route removal', (tester) async {

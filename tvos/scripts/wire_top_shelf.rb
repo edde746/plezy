@@ -84,6 +84,8 @@ project.files.select { |file| file.display_name == 'Foundation.framework' }.each
 end
 runner_test_sources = %w[
   TvosEventDeliveryCoordinatorTests.swift
+  ConnectivityPlusPluginTests.swift
+  SystemShelfPluginTests.swift
 ]
 test_target.source_build_phase.files.delete_if do |build_file|
   file_ref = build_file.file_ref

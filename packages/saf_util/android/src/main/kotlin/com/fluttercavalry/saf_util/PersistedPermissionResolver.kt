@@ -49,7 +49,16 @@ internal object PersistedPermissionResolver {
     }
     if (flags == 0) return
 
-    contentResolver.releasePersistableUriPermission(permission.uri, flags)
+    try {
+      contentResolver.releasePersistableUriPermission(permission.uri, flags)
+    } catch (failure: SecurityException) {
+      val remainingPermission = resolve(contentResolver, requestedUri) ?: return
+      val requestedModeRemains =
+        (read && remainingPermission.isReadPermission) ||
+          (write && remainingPermission.isWritePermission)
+      if (!requestedModeRemains) return
+      throw failure
+    }
   }
 
   fun resolveUri(

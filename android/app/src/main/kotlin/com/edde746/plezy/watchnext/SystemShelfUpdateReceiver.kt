@@ -7,7 +7,7 @@ import java.util.concurrent.Executor
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 
-/** Scrubs unversioned rows that may contain legacy authenticated poster URLs. */
+/** Migrates versioned shelf state after updates and restores volatile launcher grants after boot. */
 class SystemShelfUpdateReceiver private constructor(
   private val executor: Executor,
   private val ownsExecutor: Boolean
@@ -16,11 +16,17 @@ class SystemShelfUpdateReceiver private constructor(
   internal constructor(executor: Executor) : this(executor, false)
 
   override fun onReceive(context: Context, intent: Intent) {
-    if (intent.action != Intent.ACTION_MY_PACKAGE_REPLACED) return
+    val action = intent.action
+    if (action != Intent.ACTION_MY_PACKAGE_REPLACED && action != Intent.ACTION_BOOT_COMPLETED) return
     val pending = goAsync()
     executor.execute {
       try {
-        WatchNextProvider(context.applicationContext).clearLegacyOnPackageUpdate()
+        val provider = WatchNextProvider.forMaintenance(context.applicationContext)
+        if (action == Intent.ACTION_MY_PACKAGE_REPLACED) {
+          provider.migrateShelfSchema()
+        } else {
+          provider.restoreReadGrants()
+        }
       } finally {
         pending?.finish()
         if (ownsExecutor) (executor as ExecutorService).shutdown()

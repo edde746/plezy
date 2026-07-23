@@ -128,8 +128,6 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
     private val hwAudioDecoderCache = HashMap<String, Boolean>()
     private val tunneledPlaybackCache = HashMap<String, Boolean>()
 
-    private var assGlCrashHandlerInstalled = false
-
     @Volatile private var cronetEngine: CronetEngine? = null
 
     @Volatile private var cronetUnavailable = false
@@ -712,24 +710,6 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
       // only keeps one listener). Skip AssHandler's wiring and invoke
       // assView.requestRender directly from the listener below.
       handler.init(exoPlayer!!)
-
-      // Suppress ass-media GL thread crash when EGL init partially fails (e.g. Tegra).
-      // AssRender.onSurfaceDestroyed() accesses uninitialized glProgram lateinit property
-      // during error cleanup, which is a bug in the library. The render thread dying only
-      // affects ASS subtitle GPU rendering; non-ASS subtitles are unaffected.
-      if (!assGlCrashHandlerInstalled) {
-        assGlCrashHandlerInstalled = true
-        val previousHandler = Thread.getDefaultUncaughtExceptionHandler()
-        Thread.setDefaultUncaughtExceptionHandler { thread, throwable ->
-          if (thread.name.contains("AssTexRenderThread") &&
-            throwable is UninitializedPropertyAccessException
-          ) {
-            Log.e(TAG, "ASS GL thread crash suppressed (EGL init failure)", throwable)
-          } else {
-            previousHandler?.uncaughtException(thread, throwable)
-          }
-        }
-      }
 
       exoPlayer!!.addListener(this)
       exoPlayer!!.addAnalyticsListener(decoderHangListener)

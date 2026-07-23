@@ -3,7 +3,6 @@
 
 #include <Windows.h>
 
-#include <map>
 #include <optional>
 #include <string>
 #include <vector>
@@ -20,6 +19,24 @@ struct DisplayMode {
 struct DisplayConfigId {
   LUID adapter_id;
   UINT32 id;
+};
+
+// Windows-runner-internal boundary for deterministic crash-recovery tests.
+// Production uses the Win32/registry implementation in display_mode_manager.cpp.
+class DisplayRecoveryBackend {
+ public:
+  virtual ~DisplayRecoveryBackend() = default;
+
+  virtual bool RecordExists() const = 0;
+  virtual bool ReadDWORD(const wchar_t* value_name, DWORD& value) = 0;
+  virtual bool ReadString(const wchar_t* value_name, std::wstring& value) = 0;
+  virtual bool WriteDWORD(const wchar_t* value_name, DWORD value) = 0;
+  virtual bool WriteString(const wchar_t* value_name, const std::wstring& value) = 0;
+  virtual bool IsDevicePresent(const std::wstring& device_name) const = 0;
+  virtual bool RestoreMode(const std::wstring& device_name, DWORD width, DWORD height, DWORD refresh_rate) = 0;
+  virtual bool RestoreHDR(const std::wstring& device_name, bool enabled) = 0;
+  virtual bool ClearMarker(const wchar_t* value_name) = 0;
+  virtual bool DeleteRecord() = 0;
 };
 
 // Manages Windows display mode switching (refresh rate, HDR) for video playback.
@@ -88,17 +105,27 @@ class DisplayModeManager {
 
   // --- Crash recovery ---
 
-  // Write current override state to registry for crash recovery.
-  void WriteRecoveryState();
+  // Persist a complete original followed by its operation marker. These
+  // runner-internal seams make the crash ordering deterministic in tests.
+  static bool PrepareModeRecovery(
+      DisplayRecoveryBackend& backend, const std::wstring& device_name, DWORD width, DWORD height, DWORD refresh_rate);
+  static bool PrepareHDRRecovery(DisplayRecoveryBackend& backend, const std::wstring& device_name, bool enabled);
 
-  // Clear the recovery state from registry.
-  void ClearRecoveryState();
-
-  // Check for and recover from a prior crash that left display settings changed.
-  // Should be called early in app startup. Returns true if recovery was performed.
-  static bool RecoverIfNeeded(HWND window);
+  // Check for and recover from a prior crash that left display settings
+  // changed. Successful operation markers are cleared independently. Failed
+  // operations remain for the next startup or display-topology notification.
+  static bool RecoverIfNeeded();
+  static bool RecoverIfNeeded(DisplayRecoveryBackend& backend);
+#if defined(PLEZY_DISPLAY_MODE_MANAGER_TESTING)
+  // Exercise persisted lifecycle exits and per-operation live ownership without
+  // touching a real display or registry.
+  static bool CompleteRecoveryOperationForTesting(DisplayRecoveryBackend& backend, bool mode);
+  static bool RecoverIfNeededForTesting(DisplayRecoveryBackend& backend, bool mode_is_live, bool hdr_is_live);
+#endif
 
  private:
+  friend class Win32DisplayRecoveryBackend;
+
   // Get the GDI device name for the monitor containing the window.
   static std::wstring GetMonitorDeviceName(HWND window);
 
@@ -114,13 +141,6 @@ class DisplayModeManager {
 
   // Toggle HDR via DisplayConfig (version-dispatched).
   static LONG SetHDRStateForTarget(const DisplayConfigId& target, bool enabled);
-
-  // Registry helpers for crash recovery.
-  static bool WriteRegistryDWORD(const wchar_t* value_name, DWORD value);
-  static bool WriteRegistryString(const wchar_t* value_name, const std::wstring& value);
-  static bool ReadRegistryDWORD(const wchar_t* value_name, DWORD& value);
-  static bool ReadRegistryString(const wchar_t* value_name, std::wstring& value);
-  static bool DeleteRegistryValue(const wchar_t* value_name);
 
   // Stored original mode for restoration.
   std::wstring original_device_name_;

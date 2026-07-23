@@ -3,6 +3,7 @@ package com.edde746.plezy.exoplayer
 import androidx.media3.common.C
 import androidx.media3.common.DataReader
 import androidx.media3.common.Format
+import androidx.media3.common.ParserException
 import androidx.media3.common.util.ParsableByteArray
 import androidx.media3.extractor.TrackOutput
 import java.io.ByteArrayOutputStream
@@ -43,7 +44,39 @@ class BufferedTransformingTrackOutputTest {
     )
   }
 
-  private class IncrementingTrackOutput(delegate: TrackOutput) : BufferedTransformingTrackOutput(delegate, initialBufferSize = 2) {
+  @Test
+  fun activeTransformRejectsParsableDataBeyondConfiguredBound() {
+    val output = IncrementingTrackOutput(RecordingTrackOutput(), maxBufferedSampleBytes = 4)
+
+    output.sampleData(ParsableByteArray(byteArrayOf(1, 2, 3)), 3, TrackOutput.SAMPLE_DATA_PART_MAIN)
+
+    assertThrows(ParserException::class.java) {
+      output.sampleData(ParsableByteArray(byteArrayOf(4, 5)), 2, TrackOutput.SAMPLE_DATA_PART_MAIN)
+    }
+  }
+
+  @Test
+  fun dataReaderRequestIsChunkedWithoutAllocatingTheDeclaredLength() {
+    val requestedLengths = mutableListOf<Int>()
+    val reader = DataReader { buffer, offset, length ->
+      requestedLengths += length
+      repeat(length) { buffer[offset + it] = it.toByte() }
+      length
+    }
+    val output = IncrementingTrackOutput(RecordingTrackOutput(), maxBufferedSampleBytes = 4)
+
+    assertEquals(2, output.sampleData(reader, Int.MAX_VALUE, false, TrackOutput.SAMPLE_DATA_PART_MAIN))
+    assertEquals(listOf(2), requestedLengths)
+  }
+
+  private class IncrementingTrackOutput(
+    delegate: TrackOutput,
+    maxBufferedSampleBytes: Int = Int.MAX_VALUE
+  ) : BufferedTransformingTrackOutput(
+    delegate,
+    initialBufferSize = 2,
+    maxBufferedSampleBytes = maxBufferedSampleBytes
+  ) {
     private var transformed = ByteArray(2)
 
     override val transformEnabled = true

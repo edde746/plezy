@@ -20,6 +20,9 @@ class DevicePerformance {
   DevicePerformance._();
 
   static DevicePerformance? _instance;
+  static Future<void>? _initialization;
+  @visibleForTesting
+  static Future<void>? debugDetectionGate;
   static const MethodChannel _deviceChannel = MethodChannel('com.plezy/device');
 
   /// ~2.2 GiB: above what 2 GB boxes report (≤ ~1.95 GiB after kernel
@@ -37,15 +40,31 @@ class DevicePerformance {
   /// Get the singleton, detecting hardware signals on first call.
   /// [override] is the persisted SettingsService.visualEffects value.
   static Future<DevicePerformance> getInstance({VisualEffectsSetting override = VisualEffectsSetting.auto}) async {
-    if (_instance == null) {
-      _instance = DevicePerformance._();
-      _instance!._override = override;
-      await _instance!._detect();
+    final existing = _instance;
+    if (existing != null) {
+      final initialization = _initialization;
+      if (initialization != null) await initialization;
+      return existing;
     }
-    return _instance!;
+
+    final instance = DevicePerformance._().._override = override;
+    _instance = instance;
+    final initialization = instance._detect();
+    _initialization = initialization;
+    try {
+      await initialization;
+    } catch (_) {
+      if (identical(_instance, instance)) _instance = null;
+      rethrow;
+    } finally {
+      if (identical(_initialization, initialization)) _initialization = null;
+    }
+    return instance;
   }
 
   Future<void> _detect() async {
+    final gate = debugDetectionGate;
+    if (gate != null) await gate;
     if (!Platform.isAndroid) return; // tvOS/iOS/desktop: always full tier
     try {
       final result = await _deviceChannel.invokeMapMethod<dynamic, dynamic>('getPerformanceSignals');
@@ -139,6 +158,8 @@ class DevicePerformance {
 
   @visibleForTesting
   static void debugReset({bool? autoReduced, VisualEffectsSetting? override}) {
+    _initialization = null;
+    debugDetectionGate = null;
     if (autoReduced == null && override == null) {
       _instance = null;
       return;

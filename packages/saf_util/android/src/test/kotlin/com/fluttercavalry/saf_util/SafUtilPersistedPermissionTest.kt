@@ -7,6 +7,10 @@ import android.content.UriPermission
 import android.net.Uri
 import android.provider.DocumentsContract
 import androidx.documentfile.provider.DocumentFile
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
@@ -18,6 +22,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.ArgumentMatchers.any
 import org.mockito.ArgumentMatchers.anyInt
+import org.mockito.Mockito.doAnswer
 import org.mockito.Mockito.doThrow
 import org.mockito.Mockito.mock
 import org.mockito.Mockito.never
@@ -204,6 +209,53 @@ internal class SafUtilPersistedPermissionTest {
     )
 
     verify(resolver, times(1)).releasePersistableUriPermission(
+      treeUri,
+      Intent.FLAG_GRANT_READ_URI_PERMISSION
+    )
+  }
+
+  @Test
+  fun concurrentReleaseRaceIsIdempotent() {
+    val treeUri = DocumentsContract.buildTreeDocumentUri(AUTHORITY_A, ROOT_ID)
+    val requested = DocumentFile.fromTreeUri(context, treeUri)!!.uri
+    val permission = permission(treeUri, read = true, write = false)
+    val released = AtomicBoolean(false)
+    val concurrentPlatformCalls = CountDownLatch(2)
+    val resolver = mock(ContentResolver::class.java)
+    `when`(resolver.persistedUriPermissions).thenAnswer {
+      if (released.get()) emptyList<UriPermission>() else listOf(permission)
+    }
+    doAnswer {
+      concurrentPlatformCalls.countDown()
+      assertTrue(concurrentPlatformCalls.await(5, TimeUnit.SECONDS))
+      if (!released.compareAndSet(false, true)) {
+        throw SecurityException("grant was already released")
+      }
+      null
+    }.`when`(resolver).releasePersistableUriPermission(
+      treeUri,
+      Intent.FLAG_GRANT_READ_URI_PERMISSION
+    )
+    val executor = Executors.newFixedThreadPool(2)
+
+    try {
+      val releases =
+        List(2) {
+          executor.submit {
+            PersistedPermissionResolver.release(
+              resolver,
+              requested,
+              read = true,
+              write = false
+            )
+          }
+        }
+      releases.forEach { it.get(5, TimeUnit.SECONDS) }
+    } finally {
+      executor.shutdownNow()
+    }
+
+    verify(resolver, times(2)).releasePersistableUriPermission(
       treeUri,
       Intent.FLAG_GRANT_READ_URI_PERMISSION
     )

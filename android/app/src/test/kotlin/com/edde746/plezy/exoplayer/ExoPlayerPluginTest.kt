@@ -2,15 +2,22 @@ package com.edde746.plezy.exoplayer
 
 import android.app.Activity
 import android.os.Looper
+import android.view.ViewGroup
+import android.view.ViewTreeObserver
+import android.widget.FrameLayout
 import com.edde746.plezy.mpv.MpvPlayerCore
+import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.plugin.common.EventChannel
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
 import java.util.concurrent.CancellationException
+import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -78,7 +85,7 @@ class ExoPlayerPluginTest {
       assertEquals(1, writes.get())
       assertEquals(1, result.completionCount)
       assertEquals("SET_PROPERTY_FAILED", result.errorCode)
-      assertEquals("MPV property write was rejected or cancelled", result.errorMessage)
+      assertEquals("MPV property write was rejected", result.errorMessage)
       assertTrue(result.errorMessage?.contains("secret-fallback-value") == false)
       assertEquals(null, result.successValue)
       assertEquals(null, result.errorDetails)
@@ -86,7 +93,7 @@ class ExoPlayerPluginTest {
   }
 
   @Test
-  fun fallbackCancellationReturnsSetPropertyFailedOnce() {
+  fun fallbackCancellationReturnsNotInitializedOnce() {
     val plugin = fallbackPlugin { _, _ ->
       throw CancellationException("secret-cancellation")
     }
@@ -99,7 +106,7 @@ class ExoPlayerPluginTest {
     awaitCompletion(result)
 
     assertEquals(1, result.completionCount)
-    assertEquals("SET_PROPERTY_FAILED", result.errorCode)
+    assertEquals("NOT_INITIALIZED", result.errorCode)
     assertTrue(result.errorMessage?.contains("secret") == false)
     assertEquals(null, result.successValue)
   }
@@ -159,6 +166,207 @@ class ExoPlayerPluginTest {
   }
 
   @Test
+  fun initialHeldFallbackSynchronouslyBlocksFocusAndSurfaceResumeWithoutPausePropertyWrite() {
+    val activity = Robolectric.buildActivity(Activity::class.java).setup().get()
+    val writes = ConcurrentLinkedQueue<Pair<String, String>>()
+    val core = MpvPlayerCore(activity, true) { name, value -> writes += name to value }
+    core.setPrivateField("desiredPaused", false)
+    core.setPrivateField("cachedPaused", false)
+    core.setPrivateField("resumeBlockedByPublicPause", false)
+    core.setPrivateField("pausedForSurfaceLoss", true)
+    core.setPrivateField("pausedForAudioFocusLoss", true)
+    core.setPrivateField("deferredResumeRequested", true)
+    val plugin = initialFallbackPlugin(activity, core)
+
+    invokeSetupMpvFallback(plugin, core, activity, playWhenReady = false)
+    invokeAutoResume(core, "audio focus gain")
+    invokeAutoResume(core, "surface attached")
+
+    assertEquals(true, core.getPrivateField("desiredPaused"))
+    assertEquals(true, core.getPrivateField("cachedPaused"))
+    assertEquals(true, core.getPrivateField("resumeBlockedByPublicPause"))
+    assertEquals(false, core.getPrivateField("pausedForSurfaceLoss"))
+    assertEquals(false, core.getPrivateField("pausedForAudioFocusLoss"))
+    assertEquals(false, core.getPrivateField("deferredResumeRequested"))
+    assertTrue(awaitQueueEntry(writes, "ao" to "audiotrack"))
+    assertFalse(awaitPauseWriteCount(writes, 1))
+    core.dispose()
+  }
+
+  @Test
+  fun initialAutoplayFallbackClearsPublicPauseBlockWithoutPausePropertyWrite() {
+    val activity = Robolectric.buildActivity(Activity::class.java).setup().get()
+    val writes = ConcurrentLinkedQueue<Pair<String, String>>()
+    val core = MpvPlayerCore(activity, true) { name, value -> writes += name to value }
+    core.setPrivateField("desiredPaused", true)
+    core.setPrivateField("cachedPaused", true)
+    core.setPrivateField("resumeBlockedByPublicPause", true)
+    val plugin = initialFallbackPlugin(activity, core)
+
+    invokeSetupMpvFallback(plugin, core, activity, playWhenReady = true)
+
+    assertEquals(false, core.getPrivateField("desiredPaused"))
+    assertEquals(false, core.getPrivateField("cachedPaused"))
+    assertEquals(false, core.getPrivateField("resumeBlockedByPublicPause"))
+    assertTrue(awaitQueueEntry(writes, "ao" to "audiotrack"))
+    assertFalse(awaitPauseWriteCount(writes, 1))
+    core.dispose()
+  }
+
+  @Test
+  fun reusedHeldFallbackSynchronouslyBlocksAutoResumeWithoutPausePropertyWrite() {
+    val activity = Robolectric.buildActivity(Activity::class.java).setup().get()
+    val writes = ConcurrentLinkedQueue<Pair<String, String>>()
+    val core = MpvPlayerCore(activity, true) { name, value -> writes += name to value }
+    core.setPrivateField("desiredPaused", false)
+    core.setPrivateField("cachedPaused", false)
+    core.setPrivateField("resumeBlockedByPublicPause", false)
+    core.setPrivateField("pausedForSurfaceLoss", true)
+    core.setPrivateField("deferredResumeRequested", true)
+    val plugin = reusedFallbackPlugin(activity, core)
+    val result = RecordingResult()
+
+    plugin.onMethodCall(
+      MethodCall(
+        "open",
+        mapOf("uri" to "https://example.test/video.mkv", "autoPlay" to false)
+      ),
+      result
+    )
+    invokeAutoResume(core, "surface attached")
+
+    assertEquals(1, result.completionCount)
+    assertNull(result.errorCode)
+    assertEquals(true, core.getPrivateField("desiredPaused"))
+    assertEquals(true, core.getPrivateField("cachedPaused"))
+    assertEquals(true, core.getPrivateField("resumeBlockedByPublicPause"))
+    assertEquals(false, core.getPrivateField("pausedForSurfaceLoss"))
+    assertEquals(false, core.getPrivateField("deferredResumeRequested"))
+    assertFalse(awaitPauseWriteCount(writes, 1))
+    core.dispose()
+  }
+
+  @Test
+  fun reusedAutoplayFallbackClearsIntentBeforeLoadAndClearsPersistedNativePauseAfterSuccess() {
+    val activity = Robolectric.buildActivity(Activity::class.java).setup().get()
+    val writes = ConcurrentLinkedQueue<Pair<String, String>>()
+    val core = MpvPlayerCore(activity, true) { name, value -> writes += name to value }
+    core.setPrivateField("desiredPaused", true)
+    core.setPrivateField("cachedPaused", true)
+    core.setPrivateField("resumeBlockedByPublicPause", true)
+    val plugin = reusedFallbackPlugin(activity, core)
+    val result = RecordingResult()
+
+    plugin.onMethodCall(
+      MethodCall(
+        "open",
+        mapOf("uri" to "https://example.test/video.mkv", "autoPlay" to true)
+      ),
+      result
+    )
+
+    assertEquals(1, result.completionCount)
+    assertNull(result.errorCode)
+    assertEquals(false, core.getPrivateField("desiredPaused"))
+    assertEquals(false, core.getPrivateField("cachedPaused"))
+    assertEquals(false, core.getPrivateField("resumeBlockedByPublicPause"))
+    assertTrue(awaitQueueEntry(writes, "pause" to "no"))
+    assertFalse(awaitPauseWriteCount(writes, 2))
+    assertEquals(listOf("pause" to "no"), writes.filter { it.first == "pause" })
+    core.dispose()
+  }
+
+  @Test
+  fun configDetachAndEngineDetachReleaseExoActivityOwnershipExactlyOnce() {
+    val activity = Robolectric.buildActivity(Activity::class.java).setup().get()
+    activity.setContentView(FrameLayout(activity))
+    val content = activity.findViewById<ViewGroup>(android.R.id.content)
+    val container = FrameLayout(activity)
+    content.addView(container)
+    var layoutCallbacks = 0
+    val listener = ViewTreeObserver.OnGlobalLayoutListener { layoutCallbacks++ }
+    content.viewTreeObserver.addOnGlobalLayoutListener(listener)
+    val core = ExoPlayerCore(activity)
+    core.setPrivateField("surfaceContainer", container)
+    core.setPrivateField("overlayLayoutListener", listener)
+    val plugin = ExoPlayerPlugin()
+    setField(plugin, "activity", activity)
+    setField(plugin, "playerCore", core)
+    setField(plugin, "usingMpvFallback", true)
+    setField(plugin, "fallbackInProgress", true)
+    setField(plugin, "currentExternalSubtitles", listOf(mapOf("uri" to "content://subtitle")))
+    @Suppress("UNCHECKED_CAST")
+    (getField(plugin, "pendingMpvProperties") as MutableMap<String, String>)["pause"] = "yes"
+
+    plugin.onDetachedFromActivityForConfigChanges()
+    content.viewTreeObserver.dispatchOnGlobalLayout()
+    shadowOf(Looper.getMainLooper()).idle()
+    plugin.onDetachedFromEngine(pluginBinding(activity))
+
+    assertEquals(0, layoutCallbacks)
+    assertNull(container.parent)
+    assertNull(getField(plugin, "playerCore"))
+    assertNull(getField(plugin, "mpvCore"))
+    assertFalse(getField(plugin, "usingMpvFallback") as Boolean)
+    assertFalse(getField(plugin, "fallbackInProgress") as Boolean)
+    assertNull(getField(plugin, "currentExternalSubtitles"))
+    assertTrue((getField(plugin, "pendingMpvProperties") as Map<*, *>).isEmpty())
+    assertNull(getField(plugin, "activity"))
+  }
+
+  @Test
+  fun engineDetachReleasesPublishedMpvFallbackActivityOwnership() {
+    val activity = Robolectric.buildActivity(Activity::class.java).setup().get()
+    activity.setContentView(FrameLayout(activity))
+    val content = activity.findViewById<ViewGroup>(android.R.id.content)
+    val container = FrameLayout(activity)
+    content.addView(container)
+    var layoutCallbacks = 0
+    val listener = ViewTreeObserver.OnGlobalLayoutListener { layoutCallbacks++ }
+    content.viewTreeObserver.addOnGlobalLayoutListener(listener)
+    val core = MpvPlayerCore(activity)
+    core.setPrivateField("surfaceContainer", container)
+    core.setPrivateField("overlayLayoutListener", listener)
+    val plugin = ExoPlayerPlugin()
+    setField(plugin, "activity", activity)
+    setField(plugin, "mpvCore", core)
+    setField(plugin, "usingMpvFallback", true)
+
+    plugin.onDetachedFromEngine(pluginBinding(activity))
+    shadowOf(Looper.getMainLooper()).idle()
+    content.viewTreeObserver.dispatchOnGlobalLayout()
+
+    assertEquals(0, layoutCallbacks)
+    assertNull(container.parent)
+    assertNull(getField(plugin, "mpvCore"))
+    assertFalse(getField(plugin, "usingMpvFallback") as Boolean)
+    assertTrue(core.getPrivateField("disposing") as Boolean)
+  }
+
+  @Test
+  fun configDetachRejectsQueuedInitializationFromOldActivityGeneration() {
+    val activity = Robolectric.buildActivity(Activity::class.java).setup().get()
+    activity.setContentView(FrameLayout(activity))
+    val plugin = ExoPlayerPlugin()
+    setField(plugin, "activity", activity)
+    val result = RecordingResult()
+
+    Thread {
+      plugin.onMethodCall(MethodCall("initialize", emptyMap<String, Any?>()), result)
+    }.apply {
+      start()
+      join()
+    }
+    plugin.onDetachedFromActivityForConfigChanges()
+    shadowOf(Looper.getMainLooper()).idle()
+
+    assertEquals(false, result.successValue)
+    assertEquals(1, result.completionCount)
+    assertNull(getField(plugin, "playerCore"))
+    assertNull(getField(plugin, "activity"))
+  }
+
+  @Test
   fun eventCallbacksKeepTheSharedPlayerEnvelope() {
     val plugin = ExoPlayerPlugin()
     val sink = RecordingEventSink()
@@ -215,6 +423,87 @@ class ExoPlayerPluginTest {
     }
   }
 
+  private fun initialFallbackPlugin(
+    activity: Activity,
+    core: MpvPlayerCore
+  ): ExoPlayerPlugin = ExoPlayerPlugin().also { plugin ->
+    setField(plugin, "activity", activity)
+    setField(plugin, "mpvCore", core)
+    setField(plugin, "usingMpvFallback", true)
+  }
+
+  private fun reusedFallbackPlugin(
+    activity: Activity,
+    core: MpvPlayerCore
+  ): ExoPlayerPlugin = ExoPlayerPlugin().also { plugin ->
+    setField(plugin, "activity", activity)
+    setField(plugin, "mpvCore", core)
+    setField(plugin, "usingMpvFallback", true)
+  }
+
+  private fun invokeSetupMpvFallback(
+    plugin: ExoPlayerPlugin,
+    core: MpvPlayerCore,
+    activity: Activity,
+    playWhenReady: Boolean
+  ) {
+    ExoPlayerPlugin::class.java.getDeclaredMethod(
+      "setupMpvFallback",
+      MpvPlayerCore::class.java,
+      Activity::class.java,
+      String::class.java,
+      Map::class.java,
+      java.lang.Long.TYPE,
+      List::class.java,
+      java.lang.Boolean.TYPE,
+      java.lang.Integer.TYPE
+    ).apply {
+      isAccessible = true
+      invoke(
+        plugin,
+        core,
+        activity,
+        "https://example.test/video.mkv",
+        null,
+        0L,
+        null,
+        playWhenReady,
+        0
+      )
+    }
+  }
+
+  private fun invokeAutoResume(core: MpvPlayerCore, reason: String) {
+    MpvPlayerCore::class.java.getDeclaredMethod("requestAutoResume", String::class.java).apply {
+      isAccessible = true
+      invoke(core, reason)
+    }
+  }
+
+  private fun awaitQueueEntry(
+    queue: ConcurrentLinkedQueue<Pair<String, String>>,
+    expected: Pair<String, String>
+  ): Boolean {
+    repeat(100) {
+      shadowOf(Looper.getMainLooper()).idle()
+      if (queue.contains(expected)) return true
+      Thread.sleep(10)
+    }
+    return false
+  }
+
+  private fun awaitPauseWriteCount(
+    queue: ConcurrentLinkedQueue<Pair<String, String>>,
+    expectedCount: Int
+  ): Boolean {
+    repeat(100) {
+      shadowOf(Looper.getMainLooper()).idle()
+      if (queue.count { it.first == "pause" } >= expectedCount) return true
+      Thread.sleep(10)
+    }
+    return false
+  }
+
   private fun setField(plugin: ExoPlayerPlugin, name: String, value: Any?) {
     plugin.javaClass.getDeclaredField(name).apply {
       isAccessible = true
@@ -225,6 +514,23 @@ class ExoPlayerPluginTest {
   private fun getField(plugin: ExoPlayerPlugin, name: String): Any? = plugin.javaClass.getDeclaredField(name).run {
     isAccessible = true
     get(plugin)
+  }
+
+  private fun Any.setPrivateField(name: String, value: Any?) {
+    javaClass.getDeclaredField(name).apply {
+      isAccessible = true
+      set(this@setPrivateField, value)
+    }
+  }
+
+  private fun Any.getPrivateField(name: String): Any? = javaClass.getDeclaredField(name).run {
+    isAccessible = true
+    get(this@getPrivateField)
+  }
+
+  private fun pluginBinding(activity: Activity): FlutterPlugin.FlutterPluginBinding {
+    val constructor = FlutterPlugin.FlutterPluginBinding::class.java.constructors.single()
+    return constructor.newInstance(activity, null, null, null, null, null, null) as FlutterPlugin.FlutterPluginBinding
   }
 
   private fun awaitCompletion(result: RecordingResult) {

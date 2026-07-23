@@ -257,8 +257,8 @@ class MpvPlayerCore: MpvPlayerCoreBase {
       guard let window = containerView?.window ?? self.window else { return false }
       let displayManager = window.avDisplayManager
 
-      if width <= 0 || height <= 0 {
-        clearDisplayCriteria(displayManager, reason: "no video dimensions")
+      if !self.validateSideDataDimensions(width: Int64(width), height: Int64(height)) {
+        clearDisplayCriteria(displayManager, reason: "invalid video dimensions")
         return false
       }
 

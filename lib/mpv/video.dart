@@ -108,7 +108,17 @@ class _VideoState extends State<Video> {
   }
 
   Widget _buildVideoSurface() {
-    final textureId = widget.player.textureId;
+    final player = widget.player;
+    if (player is PlayerBase) {
+      return ValueListenableBuilder<int?>(
+        valueListenable: player.textureIdListenable,
+        builder: (context, textureId, _) => _buildVideoSurfaceForId(textureId),
+      );
+    }
+    return _buildVideoSurfaceForId(player.textureId);
+  }
+
+  Widget _buildVideoSurfaceForId(int? textureId) {
     if (textureId != null) {
       return Texture(textureId: textureId);
     }

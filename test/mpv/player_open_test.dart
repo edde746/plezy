@@ -46,6 +46,91 @@ void main() {
       );
     });
 
+    test('ExoPlayer applies audio settings queued before initialization', () async {
+      final calls = <MethodCall>[];
+      await withMockPlayerChannels(
+        methodChannelName: 'com.plezy/exo_player',
+        eventChannelName: 'com.plezy/exo_player/events',
+        methodHandler: (call) async {
+          calls.add(call);
+          if (call.method == 'initialize') return true;
+          if (call.method == 'requestAudioFocus') return true;
+          return null;
+        },
+        testBody: () async {
+          final player = PlayerAndroid();
+          try {
+            await player.setAudioNormalization(true);
+            await player.setAudioDownmix(enabled: true, centerBoostDb: 4, normalize: false);
+
+            expect(calls.where((call) => call.method == 'setAudioNormalization'), isEmpty);
+            expect(calls.where((call) => call.method == 'setAudioDownmix'), isEmpty);
+
+            expect(await player.requestAudioFocus(), isTrue);
+
+            final normalization = calls.singleWhere((call) => call.method == 'setAudioNormalization');
+            expect((normalization.arguments as Map)['enabled'], isTrue);
+            final downmix = calls.singleWhere((call) => call.method == 'setAudioDownmix');
+            expect(downmix.arguments, {'enabled': true, 'centerBoostDb': 4, 'normalize': false});
+          } finally {
+            await player.dispose();
+          }
+        },
+      );
+    });
+
+    test('ExoPlayer retries initialization after a recoverable native failure', () async {
+      var initializeAttempts = 0;
+      await withMockPlayerChannels(
+        methodChannelName: 'com.plezy/exo_player',
+        eventChannelName: 'com.plezy/exo_player/events',
+        methodHandler: (call) async {
+          if (call.method == 'initialize') return ++initializeAttempts > 1;
+          if (call.method == 'requestAudioFocus') return true;
+          return null;
+        },
+        testBody: () async {
+          final player = PlayerAndroid();
+          try {
+            await expectLater(player.requestAudioFocus(), throwsA(isA<Exception>()));
+            expect(await player.requestAudioFocus(), isTrue);
+            expect(initializeAttempts, 2);
+          } finally {
+            await player.dispose();
+          }
+        },
+      );
+    });
+
+    test('ExoPlayer initialization cannot commit after disposal starts', () async {
+      final initialize = Completer<bool>();
+      final calls = <MethodCall>[];
+      await withMockPlayerChannels(
+        methodChannelName: 'com.plezy/exo_player',
+        eventChannelName: 'com.plezy/exo_player/events',
+        methodHandler: (call) {
+          calls.add(call);
+          if (call.method == 'initialize') return initialize.future;
+          return Future.value(null);
+        },
+        testBody: () async {
+          final player = PlayerAndroid();
+          final initialization = player.requestAudioFocus();
+          final initializationFailure = expectLater(initialization, throwsA(isA<StateError>()));
+          await Future<void>.delayed(Duration.zero);
+
+          final disposal = player.dispose();
+          initialize.complete(true);
+          await initializationFailure;
+          await disposal;
+
+          expect(calls.where((call) => call.method == 'observeProperty'), isEmpty);
+          expect(calls.where((call) => call.method == 'requestAudioFocus'), isEmpty);
+          expect(calls.where((call) => call.method == 'dispose'), hasLength(1));
+        },
+      );
+    });
+
     test('ExoPlayer forwards external subtitle metadata at open', () async {
       final calls = <MethodCall>[];
 

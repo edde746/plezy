@@ -31,6 +31,7 @@ class ExoPlayerPlugin :
 
   private val channels = PlayerChannelBinding(METHOD_CHANNEL, this, this, TAG)
   private val mainHandler get() = channels.mainHandler
+  private fun runOnMain(block: () -> Unit) = channels.runOnMain(block)
   private var playerCore: ExoPlayerCore? = null
   private var mpvCore: MpvPlayerCore? = null // MPV fallback player
   private var usingMpvFallback: Boolean = false
@@ -65,7 +66,26 @@ class ExoPlayerPlugin :
   }
 
   override fun onDetachedFromEngine(binding: FlutterPlugin.FlutterPluginBinding) {
+    teardownSession(clearActivity = true)
     channels.detach()
+  }
+
+  private fun teardownSession(clearActivity: Boolean) {
+    ++sessionGeneration
+    val exoCore = playerCore
+    val fallbackCore = mpvCore
+    playerCore = null
+    mpvCore = null
+    usingMpvFallback = false
+    fallbackInProgress = false
+    currentExternalSubtitles = null
+    pendingMpvProperties.clear()
+    if (clearActivity) {
+      activity = null
+      activityBinding = null
+    }
+    exoCore?.dispose()
+    fallbackCore?.dispose()
   }
 
   // ActivityAware
@@ -77,17 +97,7 @@ class ExoPlayerPlugin :
   }
 
   override fun onDetachedFromActivity() {
-    sessionGeneration++
-    playerCore?.dispose()
-    playerCore = null
-    mpvCore?.dispose()
-    mpvCore = null
-    usingMpvFallback = false
-    fallbackInProgress = false
-    currentExternalSubtitles = null
-    pendingMpvProperties.clear()
-    activity = null
-    activityBinding = null
+    teardownSession(clearActivity = true)
     Log.d(TAG, "Detached from activity")
   }
 
@@ -98,10 +108,10 @@ class ExoPlayerPlugin :
   }
 
   override fun onDetachedFromActivityForConfigChanges() {
-    sessionGeneration++
-    fallbackInProgress = false
-    activity = null
-    activityBinding = null
+    // MainActivity owns a self-created engine which is destroyed with the old
+    // Activity. There is no cached-engine transfer contract, so retaining an
+    // Activity-bound core here would orphan its views and native resources.
+    teardownSession(clearActivity = true)
     Log.d(TAG, "Detached from activity for config changes")
   }
 
@@ -180,6 +190,7 @@ class ExoPlayerPlugin :
       return
     }
 
+    val requestGeneration = sessionGeneration
     if (playerCore?.isInitialized == true) {
       Log.d(TAG, "Already initialized")
       result.success(true)
@@ -198,7 +209,11 @@ class ExoPlayerPlugin :
     AssHandler.setRenderScale(subtitleRenderScale)
 
     currentActivity.runOnUiThread {
-      sessionGeneration++
+      if (requestGeneration != sessionGeneration || activity !== currentActivity) {
+        result.success(false)
+        return@runOnUiThread
+      }
+      ++sessionGeneration
       // Do NOT clear pendingMpvProperties here: Dart queues its startup
       // properties (sub-ass, subtitle fonts, ...) before initialize, and the
       // fallback replay in setupMpvFallback needs them. Dispose/detach clear.
@@ -245,19 +260,11 @@ class ExoPlayerPlugin :
   }
 
   private fun handleDispose(result: MethodChannel.Result) {
-    activity?.runOnUiThread {
-      sessionGeneration++
-      playerCore?.dispose()
-      playerCore = null
-      mpvCore?.dispose()
-      mpvCore = null
-      usingMpvFallback = false
-      fallbackInProgress = false
-      currentExternalSubtitles = null
-      pendingMpvProperties.clear()
+    runOnMain {
+      teardownSession(clearActivity = false)
       Log.d(TAG, "Disposed")
       result.success(null)
-    } ?: result.success(null)
+    }
   }
 
   @Suppress("UNCHECKED_CAST")
@@ -331,9 +338,11 @@ class ExoPlayerPlugin :
     appendExternalSubtitleOptions(options, externalSubtitles)
     appendHttpHeaderOptions(options, headers)
     val optionsStr = options.joinToString(",")
-    mpvCore?.command(arrayOf("loadfile", uri, "replace", "-1", optionsStr)) { success ->
+    val core = mpvCore ?: return
+    core.setPauseIntentForLoad(paused = !autoPlay)
+    core.command(arrayOf("loadfile", uri, "replace", "-1", optionsStr)) { success ->
       if (success && autoPlay) {
-        mpvCore?.setProperty("pause", "no")
+        core.setProperty("pause", "no")
       }
     }
   }
@@ -931,6 +940,7 @@ class ExoPlayerPlugin :
       appendExternalSubtitleOptions(options, externalSubtitles)
       appendHttpHeaderOptions(options, headers)
       val optionsStr = options.joinToString(",")
+      core.setPauseIntentForLoad(paused = !playWhenReady)
       notifyBackendSwitched()
       core.command(arrayOf("loadfile", source.value, "replace", "-1", optionsStr))
 

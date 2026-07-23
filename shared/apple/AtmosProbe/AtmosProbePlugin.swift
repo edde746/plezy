@@ -140,8 +140,15 @@ public class AtmosProbePlugin: NSObject, FlutterPlugin {
       }.joined(separator: ", ")
     }
     if let loader = loader {
-      out["fedBytes"] = loader.bytesReceived
-      out["loaderRequests"] = loader.requestLog
+      let snapshot = loader.statusSnapshot()
+      out["fedBytes"] = snapshot.bytesReceived
+      out["loaderRequests"] = snapshot.requestLog
+      out["loaderRetainedBytes"] = snapshot.retainedBytes
+      out["loaderPendingRequests"] = snapshot.pendingRequestCount
+      out["loaderMaximumBytes"] = snapshot.maximumBufferedBytes
+      if let errorCode = snapshot.errorCode {
+        out["loaderError"] = errorCode
+      }
     }
     return out
   }
@@ -157,59 +164,205 @@ public class AtmosProbePlugin: NSObject, FlutterPlugin {
 
 /// Streams an HTTP source into memory and serves it to AVPlayer through an
 /// AVAssetResourceLoader on a custom scheme, mirroring the mpv sink's model.
-private final class RawEc3Loader: NSObject, AVAssetResourceLoaderDelegate, URLSessionDataDelegate {
+final class RawEc3Loader: NSObject, AVAssetResourceLoaderDelegate, URLSessionDataDelegate {
+  static let defaultMaximumBufferedBytes = 64 * 1_024 * 1_024
+  private static let maximumPendingRequests = 256
+
+  struct StatusSnapshot {
+    let bytesReceived: Int
+    let requestLog: String
+    let retainedBytes: Int
+    let pendingRequestCount: Int
+    let maximumBufferedBytes: Int
+    let errorCode: String?
+    let isFinished: Bool
+  }
+
+  private enum State {
+    case active
+    case finished
+    case failed(code: String, error: Error)
+    case cancelled
+
+    var terminalError: Error? {
+      switch self {
+      case .failed(_, let error):
+        return error
+      case .cancelled:
+        return URLError(.cancelled)
+      case .active, .finished:
+        return nil
+      }
+    }
+
+    var errorCode: String? {
+      if case .failed(let code, _) = self { return code }
+      return nil
+    }
+
+    var isFinished: Bool {
+      if case .finished = self { return true }
+      return false
+    }
+  }
+
   let asset: AVURLAsset
+  let maximumBufferedBytes: Int
   private let source: URL
   private let finiteLength: Bool
+  private let sessionConfiguration: URLSessionConfiguration
   private let queue = DispatchQueue(label: "plezy.atmos.probe.loader")
-  private var session: URLSession!
+  private var terminalHandlerForTesting: (() -> Void)?
+  private let queueKey = DispatchSpecificKey<Void>()
+  private var session: URLSession?
   private var buffer = Data()
   private var contentLength: Int64 = -1
-  private var finished = false
+  private var state: State = .active
   private var pending: [AVAssetResourceLoadingRequest] = []
-  private(set) var bytesReceived: Int = 0
-  private(set) var requestLog: String = ""
+  private var bytesReceived = 0
+  private var requestLog = ""
+  private var hasBegun = false
 
-  init(source: URL, finiteLength: Bool) {
+  init(
+    source: URL,
+    finiteLength: Bool,
+    maximumBufferedBytes: Int = RawEc3Loader.defaultMaximumBufferedBytes,
+    sessionConfiguration: URLSessionConfiguration = .default,
+    terminalHandlerForTesting: (() -> Void)? = nil
+  ) {
+    precondition(maximumBufferedBytes > 0)
     self.source = source
     self.finiteLength = finiteLength
+    self.maximumBufferedBytes = maximumBufferedBytes
+    self.sessionConfiguration = sessionConfiguration
+    self.terminalHandlerForTesting = terminalHandlerForTesting
     self.asset = AVURLAsset(url: URL(string: "plezy-ec3-probe://stream/audio.ec3")!)
     super.init()
+    queue.setSpecific(key: queueKey, value: ())
     asset.resourceLoader.setDelegate(self, queue: queue)
   }
 
   func begin() {
-    let config = URLSessionConfiguration.default
-    session = URLSession(configuration: config, delegate: self, delegateQueue: nil)
-    session.dataTask(with: source).resume()
+    queue.async { [weak self] in
+      guard let self, !self.hasBegun else { return }
+      guard case .active = self.state else { return }
+      self.hasBegun = true
+      let session = URLSession(
+        configuration: self.sessionConfiguration,
+        delegate: self,
+        delegateQueue: nil
+      )
+      self.session = session
+      session.dataTask(with: self.source).resume()
+    }
   }
 
   func cancel() {
-    session?.invalidateAndCancel()
-    queue.async {
-      for request in self.pending where !request.isFinished {
-        request.finishLoading(with: NSError(domain: NSURLErrorDomain, code: NSURLErrorCancelled))
-      }
-      self.pending.removeAll()
+    queue.async { [weak self] in
+      self?.cancelOnQueue()
     }
+  }
+
+  /// Called only from the method-channel/main path, never from the loader queue.
+  func statusSnapshot() -> StatusSnapshot {
+    syncOnQueue {
+      StatusSnapshot(
+        bytesReceived: bytesReceived,
+        requestLog: requestLog,
+        retainedBytes: buffer.count,
+        pendingRequestCount: pending.count,
+        maximumBufferedBytes: maximumBufferedBytes,
+        errorCode: state.errorCode,
+        isFinished: state.isFinished
+      )
+    }
+  }
+
+  private func syncOnQueue<T>(_ body: () -> T) -> T {
+    if DispatchQueue.getSpecific(key: queueKey) != nil {
+      return body()
+    }
+    return queue.sync(execute: body)
+  }
+
+  private func notifyTerminalForTesting() {
+    let handler = terminalHandlerForTesting
+    terminalHandlerForTesting = nil
+    handler?()
+  }
+
+  private func cancelOnQueue() {
+    guard case .active = state else {
+      if case .finished = state {
+        state = .cancelled
+        finishPending(with: URLError(.cancelled))
+        releaseRetainedBytes()
+      }
+      return
+    }
+    state = .cancelled
+    session?.invalidateAndCancel()
+    session = nil
+    finishPending(with: URLError(.cancelled))
+    releaseRetainedBytes()
+    notifyTerminalForTesting()
+  }
+
+  private func failOnQueue(code: String, error: Error) {
+    guard case .active = state else { return }
+    state = .failed(code: code, error: error)
+    session?.invalidateAndCancel()
+    session = nil
+    finishPending(with: error)
+    releaseRetainedBytes()
+    notifyTerminalForTesting()
+  }
+
+  private func finishPending(with error: Error) {
+    let requests = pending
+    pending.removeAll(keepingCapacity: false)
+    for request in requests where !request.isFinished {
+      request.finishLoading(with: error)
+    }
+  }
+
+  private func releaseRetainedBytes() {
+    buffer.removeAll(keepingCapacity: false)
   }
 
   // MARK: URLSessionDataDelegate (background queue -> hop to `queue`)
 
   func urlSession(
-    _ session: URLSession, dataTask: URLSessionDataTask,
+    _ session: URLSession,
+    dataTask: URLSessionDataTask,
     didReceive response: URLResponse,
     completionHandler: @escaping (URLSession.ResponseDisposition) -> Void
   ) {
-    queue.async {
+    queue.async { [weak self] in
+      guard let self, case .active = self.state else { return }
       self.contentLength = response.expectedContentLength
-      self.serve()
+      if response.expectedContentLength > Int64(self.maximumBufferedBytes) {
+        self.failOnQueue(
+          code: "response_too_large",
+          error: URLError(.dataLengthExceedsMaximum)
+        )
+      } else {
+        self.serve()
+      }
     }
     completionHandler(.allow)
   }
 
   func urlSession(_ session: URLSession, dataTask: URLSessionDataTask, didReceive data: Data) {
-    queue.async {
+    queue.async { [weak self] in
+      guard let self, case .active = self.state else { return }
+      guard data.count <= self.maximumBufferedBytes - self.buffer.count else {
+        self.failOnQueue(
+          code: "response_too_large",
+          error: URLError(.dataLengthExceedsMaximum)
+        )
+        return
+      }
       self.buffer.append(data)
       self.bytesReceived += data.count
       self.serve()
@@ -217,9 +370,19 @@ private final class RawEc3Loader: NSObject, AVAssetResourceLoaderDelegate, URLSe
   }
 
   func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError error: Error?) {
-    queue.async {
-      self.finished = true
-      self.serve()
+    queue.async { [weak self] in
+      guard let self, case .active = self.state else { return }
+      self.session = nil
+      if let error {
+        self.state = .failed(code: "network_error", error: error)
+        self.finishPending(with: error)
+        self.releaseRetainedBytes()
+      } else {
+        self.state = .finished
+        self.serve()
+      }
+      self.notifyTerminalForTesting()
+      session.finishTasksAndInvalidate()
     }
   }
 
@@ -229,6 +392,14 @@ private final class RawEc3Loader: NSObject, AVAssetResourceLoaderDelegate, URLSe
     _ resourceLoader: AVAssetResourceLoader,
     shouldWaitForLoadingOfRequestedResource loadingRequest: AVAssetResourceLoadingRequest
   ) -> Bool {
+    if let terminalError = state.terminalError {
+      loadingRequest.finishLoading(with: terminalError)
+      return true
+    }
+    guard pending.count < Self.maximumPendingRequests else {
+      loadingRequest.finishLoading(with: URLError(.resourceUnavailable))
+      return true
+    }
     if let dataRequest = loadingRequest.dataRequest {
       requestLog += "[\(dataRequest.requestedOffset)+\(dataRequest.requestedLength)]"
       if requestLog.count > 300 { requestLog = String(requestLog.suffix(300)) }
@@ -246,11 +417,21 @@ private final class RawEc3Loader: NSObject, AVAssetResourceLoaderDelegate, URLSe
   }
 
   private func serve() {
-    // content info: unbounded mirrors the mpv sink; finite passes the real
-    // length through once the HTTP response reveals it
+    let isFinished: Bool
+    switch state {
+    case .active:
+      isFinished = false
+    case .finished:
+      isFinished = true
+    case .failed, .cancelled:
+      return
+    }
+
+    // The logical 1-TiB length remains the raw probe contract. Retained bytes
+    // are independently bounded by maximumBufferedBytes.
     let knownLength: Int64? =
       finiteLength
-      ? (contentLength >= 0 ? contentLength : (finished ? Int64(buffer.count) : nil))
+      ? (contentLength >= 0 ? contentLength : (isFinished ? Int64(buffer.count) : nil))
       : Int64(1) << 40
 
     var index = 0
@@ -259,7 +440,7 @@ private final class RawEc3Loader: NSObject, AVAssetResourceLoaderDelegate, URLSe
       if let info = request.contentInformationRequest {
         guard let length = knownLength else {
           index += 1
-          continue  // wait for the HTTP response before answering
+          continue
         }
         info.contentType = "public.enhanced-ac3-audio"
         info.contentLength = length
@@ -274,13 +455,33 @@ private final class RawEc3Loader: NSObject, AVAssetResourceLoaderDelegate, URLSe
         index += 1
         continue
       }
-      let offset = dataRequest.currentOffset
-      let end = dataRequest.requestedOffset + Int64(dataRequest.requestedLength)
-      if offset < Int64(buffer.count) {
-        let chunkEnd = min(Int64(buffer.count), end)
-        dataRequest.respond(with: buffer.subdata(in: Int(offset)..<Int(chunkEnd)))
+
+      let requestedOffset = dataRequest.requestedOffset
+      let currentOffset = dataRequest.currentOffset
+      let requestedLength = Int64(dataRequest.requestedLength)
+      let (end, overflow) = requestedOffset.addingReportingOverflow(requestedLength)
+      guard requestedOffset >= 0, currentOffset >= requestedOffset, requestedLength >= 0, !overflow else {
+        request.finishLoading(with: URLError(.badServerResponse))
+        pending.remove(at: index)
+        continue
       }
-      if dataRequest.currentOffset >= end || (finished && dataRequest.currentOffset >= Int64(buffer.count)) {
+
+      let bufferedCount = Int64(buffer.count)
+      if currentOffset < bufferedCount {
+        let chunkEnd = min(bufferedCount, end)
+        guard currentOffset <= chunkEnd,
+          let start = Int(exactly: currentOffset),
+          let finish = Int(exactly: chunkEnd)
+        else {
+          request.finishLoading(with: URLError(.badServerResponse))
+          pending.remove(at: index)
+          continue
+        }
+        dataRequest.respond(with: buffer.subdata(in: start..<finish))
+      }
+      if dataRequest.currentOffset >= end
+        || (isFinished && dataRequest.currentOffset >= bufferedCount)
+      {
         request.finishLoading()
         pending.remove(at: index)
         continue

@@ -1,6 +1,7 @@
 @TestOn('browser')
 library;
 
+import 'dart:async';
 import 'dart:js_interop';
 
 import 'package:flutter_test/flutter_test.dart';
@@ -23,6 +24,8 @@ external void delayNextWakeLockRequest();
 
 @JS('wakeLockTest.resolvePendingRequest')
 external void resolvePendingWakeLockRequest();
+@JS('wakeLockTest.rejectPendingRequest')
+external void rejectPendingWakeLockRequest();
 
 @JS('wakeLockTest.failNextRequest')
 external void failNextWakeLockRequest();
@@ -35,6 +38,8 @@ external void resolvePendingWakeLockRelease();
 
 @JS('wakeLockTest.failNextRelease')
 external void failNextWakeLockRelease();
+@JS('wakeLockTest.settleForCleanup')
+external void settleFakeWakeLockForCleanup();
 
 @JS('wakeLockTest.requestCount')
 external int get wakeLockRequestCount;
@@ -54,6 +59,7 @@ void installFakeWakeLock() {
       let rejectRequest = false;
       let rejectRelease = false;
       let pendingRequest = null;
+      let pendingRequestReject = null;
       let pendingRelease = null;
       let sentinels = [];
 
@@ -108,10 +114,16 @@ void installFakeWakeLock() {
               return Promise.resolve(sentinel);
             }
             delayRequest = false;
-            return new Promise((resolve) => {
+            return new Promise((resolve, reject) => {
               pendingRequest = () => {
                 pendingRequest = null;
+                pendingRequestReject = null;
                 resolve(sentinel);
+              };
+              pendingRequestReject = () => {
+                pendingRequest = null;
+                pendingRequestReject = null;
+                reject(new Error('request failed'));
               };
             });
           },
@@ -128,6 +140,7 @@ void installFakeWakeLock() {
           rejectRequest = false;
           rejectRelease = false;
           pendingRequest = null;
+          pendingRequestReject = null;
           pendingRelease = null;
           sentinels = [];
         },
@@ -151,6 +164,12 @@ void installFakeWakeLock() {
           }
           pendingRequest();
         },
+        rejectPendingRequest() {
+          if (pendingRequestReject === null) {
+            throw new Error('no pending wake lock request');
+          }
+          pendingRequestReject();
+        },
         failNextRequest() {
           rejectRequest = true;
         },
@@ -165,6 +184,18 @@ void installFakeWakeLock() {
         },
         failNextRelease() {
           rejectRelease = true;
+        },
+        settleForCleanup() {
+          delayRequest = false;
+          delayRelease = false;
+          rejectRequest = false;
+          rejectRelease = false;
+          if (pendingRequest !== null) {
+            pendingRequest();
+          }
+          if (pendingRelease !== null) {
+            pendingRelease();
+          }
         },
         get requestCount() {
           return requests;
@@ -183,6 +214,24 @@ Future<void> flushBrowserTasks() async {
   await Future<void>.delayed(Duration.zero);
 }
 
+Completer<void> settlementOf(Future<void> future) {
+  final settlement = Completer<void>();
+  unawaited(
+    future.then<void>((_) => settlement.complete(), onError: (Object _, StackTrace _) => settlement.complete()),
+  );
+  return settlement;
+}
+
+Future<void> cleanUpFakeWakeLock() async {
+  settleFakeWakeLockForCleanup();
+  await flushBrowserTasks();
+  try {
+    await WakelockPlus.disable();
+  } finally {
+    resetWakeLockTest();
+  }
+}
+
 void main() {
   group('$WakelockPlusWebPlugin', () {
     setUpAll(() {
@@ -190,10 +239,7 @@ void main() {
       WakelockPlusPlatformInterface.instance = WakelockPlusWebPlugin();
     });
 
-    tearDown(() async {
-      await WakelockPlus.disable();
-      resetWakeLockTest();
-    });
+    tearDown(cleanUpFakeWakeLock);
 
     test('$WakelockPlusWebPlugin is the platform instance', () {
       expect(WakelockPlusPlatformInterface.instance, isA<WakelockPlusWebPlugin>());
@@ -214,22 +260,93 @@ void main() {
       expect(await WakelockPlus.enabled, isFalse);
     });
 
-    test('disable then enable reacquires after the release completes', () async {
+    test('concurrent enables share a pending acquisition', () async {
+      delayNextWakeLockRequest();
+
+      final firstEnable = WakelockPlus.enable();
+      final secondEnable = WakelockPlus.enable();
+      await flushBrowserTasks();
+
+      expect(wakeLockRequestCount, 1);
+      resolvePendingWakeLockRequest();
+      await Future.wait([firstEnable, secondEnable]);
+      expect(await WakelockPlus.enabled, isTrue);
+    });
+
+    test('concurrent toggles await one replacement after a delayed release', () async {
       await WakelockPlus.enable();
       delayNextWakeLockRelease();
+      delayNextWakeLockRequest();
+
+      final disabling = WakelockPlus.disable();
+      await flushBrowserTasks();
+      final firstEnable = WakelockPlus.enable();
+      final secondEnable = WakelockPlus.enable();
+      final firstSettlement = settlementOf(firstEnable);
+      final secondSettlement = settlementOf(secondEnable);
+      await flushBrowserTasks();
+
+      expect(wakeLockReleaseCount, 1);
+      expect(wakeLockRequestCount, 1);
+      expect(firstSettlement.isCompleted, isFalse);
+      expect(secondSettlement.isCompleted, isFalse);
+
+      resolvePendingWakeLockRelease();
+      await flushBrowserTasks();
+
+      expect(wakeLockRequestCount, 2);
+      expect(firstSettlement.isCompleted, isFalse);
+      expect(secondSettlement.isCompleted, isFalse);
+
+      resolvePendingWakeLockRequest();
+      await Future.wait([disabling, firstEnable, secondEnable]);
+
+      expect(wakeLockRequestCount, 2);
+      expect(firstSettlement.isCompleted, isTrue);
+      expect(secondSettlement.isCompleted, isTrue);
+      expect(await WakelockPlus.enabled, isTrue);
+    });
+
+    test('replacement rejection reaches enable and leaves wake lock disabled', () async {
+      await WakelockPlus.enable();
+      delayNextWakeLockRelease();
+      delayNextWakeLockRequest();
 
       final disabling = WakelockPlus.disable();
       await flushBrowserTasks();
       final enabling = WakelockPlus.enable();
+      final enableSettlement = settlementOf(enabling);
       await flushBrowserTasks();
-      expect(wakeLockRequestCount, 1);
 
+      expect(enableSettlement.isCompleted, isFalse);
       resolvePendingWakeLockRelease();
-      await Future.wait([disabling, enabling]);
       await flushBrowserTasks();
 
       expect(wakeLockRequestCount, 2);
-      expect(await WakelockPlus.enabled, isTrue);
+      expect(enableSettlement.isCompleted, isFalse);
+      final failedDisable = expectLater(disabling, throwsA(contains('request failed')));
+      final failedEnable = expectLater(enabling, throwsA(contains('request failed')));
+
+      rejectPendingWakeLockRequest();
+      await Future.wait([failedDisable, failedEnable]);
+
+      expect(enableSettlement.isCompleted, isTrue);
+      expect(wakeLockRequestCount, 2);
+      expect(await WakelockPlus.enabled, isFalse);
+    });
+
+    test('concurrent disables share a pending release', () async {
+      await WakelockPlus.enable();
+      delayNextWakeLockRelease();
+
+      final firstDisable = WakelockPlus.disable();
+      final secondDisable = WakelockPlus.disable();
+      await flushBrowserTasks();
+
+      expect(wakeLockReleaseCount, 1);
+      resolvePendingWakeLockRelease();
+      await Future.wait([firstDisable, secondDisable]);
+      expect(await WakelockPlus.enabled, isFalse);
     });
 
     test('acquisition failure remains retryable', () async {
@@ -251,6 +368,21 @@ void main() {
       expect(await WakelockPlus.enabled, isTrue);
 
       await WakelockPlus.disable();
+      expect(wakeLockReleaseCount, 2);
+      expect(await WakelockPlus.enabled, isFalse);
+    });
+
+    test('failed acquisition rollback retains the sentinel for retry', () async {
+      delayNextWakeLockRequest();
+      final enabling = WakelockPlus.enable();
+      await flushBrowserTasks();
+      final disabling = WakelockPlus.disable();
+      failNextWakeLockRelease();
+
+      final failedEnable = expectLater(enabling, throwsA(anything));
+      resolvePendingWakeLockRequest();
+      await Future.wait([failedEnable, disabling]);
+
       expect(wakeLockReleaseCount, 2);
       expect(await WakelockPlus.enabled, isFalse);
     });

@@ -27,7 +27,7 @@ class IsEnabledMessage {
         'android/src/main/kotlin/dev/fluttercommunity/plus/wakelock/WakelockPlusMessages.g.kt',
   ),
 )
-@HostApi(dartHostTestHandler: 'TestWakelockPlusApi')
+@HostApi()
 abstract class WakelockPlusApi {
   void toggle(ToggleMessage msg);
 

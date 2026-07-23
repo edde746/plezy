@@ -4,9 +4,12 @@
 #undef NDEBUG
 #endif
 
+#include <atomic>
 #include <cassert>
 #include <chrono>
 #include <string>
+#include <thread>
+#include <vector>
 
 namespace {
 
@@ -39,6 +42,35 @@ void TestRequestRegistry() {
   auto cancelled = registry.CancelAll();
   assert(cancelled.status.size() == 1);
   assert(cancelled.properties.size() == 1);
+}
+
+void TestConcurrentRequestCompletion() {
+  for (int iteration = 0; iteration < 200; ++iteration) {
+    plezy::mpv_common::AsyncRequestRegistry registry;
+    std::atomic<int> completions{0};
+    const auto id = registry.RegisterStatus([&](int) { completions.fetch_add(1); });
+    std::atomic<bool> start{false};
+
+    std::thread taker([&]() {
+      while (!start.load(std::memory_order_acquire)) {
+      }
+      auto callback = registry.TakeStatus(id);
+      if (callback) callback(0);
+    });
+    std::thread canceller([&]() {
+      while (!start.load(std::memory_order_acquire)) {
+      }
+      auto cancelled = registry.CancelAll();
+      for (auto& callback : cancelled.status) {
+        callback(MPV_ERROR_UNINITIALIZED);
+      }
+    });
+
+    start.store(true, std::memory_order_release);
+    taker.join();
+    canceller.join();
+    assert(completions.load() == 1);
+  }
 }
 
 void TestSetPropertyResultContract() {
@@ -84,6 +116,66 @@ void TestPropertyObservationRegistry() {
   assert(!registry.LookupId("pause", &id));
 }
 
+void TestConcurrentPropertyObservationRegistry() {
+  constexpr int kPropertyCount = 512;
+  constexpr int kClearRounds = 32;
+  plezy::mpv_common::PropertyObservationRegistry registry;
+  std::vector<std::string> names;
+  names.reserve(kPropertyCount);
+  for (int i = 0; i < kPropertyCount; ++i) {
+    names.push_back("property-" + std::to_string(i));
+  }
+
+  std::atomic<bool> start{false};
+  std::atomic<bool> writer_done{false};
+  std::thread writer([&]() {
+    while (!start.load(std::memory_order_acquire)) {
+    }
+    for (int round = 0; round < kClearRounds; ++round) {
+      for (int i = 0; i < kPropertyCount; ++i) {
+        registry.Register(names[i], "int64", 1000 + i);
+      }
+    }
+    writer_done.store(true, std::memory_order_release);
+  });
+  std::thread reader([&]() {
+    while (!start.load(std::memory_order_acquire)) {
+    }
+    while (!writer_done.load(std::memory_order_acquire)) {
+      for (int i = 0; i < kPropertyCount; ++i) {
+        int id = 0;
+        if (registry.LookupId(names[i], &id)) {
+          assert(id == 1000 + i);
+        }
+      }
+    }
+  });
+  std::thread clearer([&]() {
+    while (!start.load(std::memory_order_acquire)) {
+    }
+    for (int round = 0; round < kClearRounds; ++round) {
+      registry.Clear();
+      std::this_thread::yield();
+    }
+  });
+
+  start.store(true, std::memory_order_release);
+  writer.join();
+  reader.join();
+  clearer.join();
+
+  registry.Clear();
+  for (int i = 0; i < kPropertyCount; ++i) {
+    const auto request = registry.Register(names[i], "int64", 1000 + i);
+    assert(request.added);
+  }
+  for (int i = 0; i < kPropertyCount; ++i) {
+    int id = 0;
+    assert(registry.LookupId(names[i], &id));
+    assert(id == 1000 + i);
+  }
+}
+
 void TestResumeRecoverySchedule() {
   AudioRecoveryState state;
   const auto start = AudioRecoveryState::Clock::time_point{};
@@ -98,13 +190,70 @@ void TestResumeRecoverySchedule() {
   assert(first.reason == AudioReloadReason::kResume);
   assert(first.attempt == 1);
   assert(!first.exhausted);
-  state.CompleteReload();
+  assert(state.CompleteReload(first.request_generation));
 
   const auto second = state.NextReload(start + std::chrono::milliseconds(6000));
   assert(second.reason == AudioReloadReason::kResume);
   assert(second.attempt == 2);
-  state.CompleteReload();
+  assert(state.CompleteReload(second.request_generation));
   assert(!state.HasPendingWork());
+}
+
+void TestConcurrentAudioRecoveryState() {
+  AudioRecoveryState state;
+  const auto start = AudioRecoveryState::Clock::time_point{};
+  state.SetFileLoaded(true);
+  std::atomic<bool> begin{false};
+
+  std::thread resume([&]() {
+    while (!begin.load(std::memory_order_acquire)) {
+    }
+    for (int i = 0; i < 1000; ++i) state.RequestResume();
+  });
+  std::thread device([&]() {
+    while (!begin.load(std::memory_order_acquire)) {
+    }
+    for (int i = 0; i < 1000; ++i) {
+      state.SetCurrentAudioOutputNull(true, start);
+      state.OnAudioDeviceListChanged(start);
+    }
+  });
+  std::thread timer([&]() {
+    while (!begin.load(std::memory_order_acquire)) {
+    }
+    for (int i = 0; i < 1000; ++i) {
+      const auto action = state.NextReload(start + std::chrono::hours(1));
+      if (action.reason != AudioReloadReason::kNone) {
+        state.CompleteReload(action.request_generation);
+      }
+    }
+  });
+
+  begin.store(true, std::memory_order_release);
+  resume.join();
+  device.join();
+  timer.join();
+  state.SetFileLoaded(false);
+  assert(!state.HasPendingWork());
+}
+
+void TestFileBoundaryRestartsNullRecoveryOnlyAfterLoad() {
+  AudioRecoveryState state;
+  const auto start = AudioRecoveryState::Clock::time_point{};
+  state.SetFileLoaded(true, start);
+  assert(state.SetCurrentAudioOutputNull(true, start) == AudioOutputTransition::kFellBackToNull);
+  assert(state.HasPendingWork());
+
+  state.SetFileLoaded(false, start + std::chrono::milliseconds(100));
+  assert(!state.HasPendingWork());
+  assert(!state.OnAudioDeviceListChanged(start + std::chrono::milliseconds(200)));
+
+  state.SetFileLoaded(true, start + std::chrono::milliseconds(300));
+  assert(state.HasPendingWork());
+  assert(state.NextReload(start + std::chrono::milliseconds(799)).reason == AudioReloadReason::kNone);
+  const auto retry = state.NextReload(start + std::chrono::milliseconds(800));
+  assert(retry.reason == AudioReloadReason::kNullFallback);
+  assert(retry.attempt == 1);
 }
 
 void TestNullFallbackRecoverySchedule() {
@@ -116,40 +265,71 @@ void TestNullFallbackRecoverySchedule() {
   auto action = state.NextReload(start + std::chrono::milliseconds(500));
   assert(action.reason == AudioReloadReason::kNullFallback);
   assert(action.attempt == 1);
-  state.CompleteReload();
+  assert(state.CompleteReload(action.request_generation));
 
   action = state.NextReload(start + std::chrono::milliseconds(1000));
   assert(action.reason == AudioReloadReason::kNullFallback);
   assert(action.attempt == 2);
-  state.CompleteReload();
+  assert(state.CompleteReload(action.request_generation));
 
   action = state.NextReload(start + std::chrono::milliseconds(2000));
   assert(action.reason == AudioReloadReason::kNullFallback);
   assert(action.attempt == 3);
-  state.CompleteReload();
+  assert(state.CompleteReload(action.request_generation));
 
   action = state.NextReload(start + std::chrono::milliseconds(4000));
   assert(action.reason == AudioReloadReason::kNullFallback);
   assert(action.attempt == 4);
-  state.CompleteReload();
+  assert(state.CompleteReload(action.request_generation));
 
   action = state.NextReload(start + std::chrono::milliseconds(8000));
   assert(action.reason == AudioReloadReason::kNullFallback);
   assert(action.attempt == 5);
   assert(action.exhausted);
-  state.CompleteReload();
+  assert(state.CompleteReload(action.request_generation));
   assert(!state.HasPendingWork());
 
   assert(state.OnAudioDeviceListChanged(start + std::chrono::milliseconds(9000)));
   action = state.NextReload(start + std::chrono::milliseconds(9250));
   assert(action.reason == AudioReloadReason::kNullFallback);
   assert(action.attempt == 1);
-  state.CompleteReload();
+  assert(state.CompleteReload(action.request_generation));
 
   assert(
       state.SetCurrentAudioOutputNull(false, start + std::chrono::milliseconds(9300)) ==
       AudioOutputTransition::kRecovered);
   assert(!state.HasPendingWork());
+}
+
+void TestUnloadedResumeIsConsumed() {
+  AudioRecoveryState state;
+  const auto start = AudioRecoveryState::Clock::time_point{};
+
+  state.RequestResume();
+  assert(!state.HasPendingWork());
+  assert(state.NextReload(start + std::chrono::hours(1)).reason == AudioReloadReason::kNone);
+
+  state.SetFileLoaded(true, start);
+  assert(!state.HasPendingWork());
+}
+
+void TestStaleReloadCompletionCannotClearCurrentRequest() {
+  AudioRecoveryState state;
+  const auto start = AudioRecoveryState::Clock::time_point{};
+  state.SetFileLoaded(true, start);
+  assert(state.SetCurrentAudioOutputNull(true, start) == AudioOutputTransition::kFellBackToNull);
+  const auto old_request = state.NextReload(start + std::chrono::milliseconds(500));
+  assert(old_request.reason == AudioReloadReason::kNullFallback);
+
+  state.SetFileLoaded(false, start + std::chrono::milliseconds(600));
+  state.SetFileLoaded(true, start + std::chrono::milliseconds(700));
+  const auto current_request = state.NextReload(start + std::chrono::milliseconds(1200));
+  assert(current_request.reason == AudioReloadReason::kNullFallback);
+  assert(current_request.request_generation != old_request.request_generation);
+
+  assert(!state.CompleteReload(old_request.request_generation));
+  assert(state.NextReload(start + std::chrono::hours(1)).reason == AudioReloadReason::kNone);
+  assert(state.CompleteReload(current_request.request_generation));
 }
 
 void TestHdrHelpers() {
@@ -165,10 +345,16 @@ void TestHdrHelpers() {
 
 int main() {
   TestRequestRegistry();
+  TestConcurrentRequestCompletion();
   TestSetPropertyResultContract();
   TestPropertyObservationRegistry();
+  TestConcurrentPropertyObservationRegistry();
   TestResumeRecoverySchedule();
+  TestConcurrentAudioRecoveryState();
   TestNullFallbackRecoverySchedule();
+  TestFileBoundaryRestartsNullRecoveryOnlyAfterLoad();
+  TestUnloadedResumeIsConsumed();
+  TestStaleReloadCompletionCannotClearCurrentRequest();
   TestHdrHelpers();
   return 0;
 }

@@ -2,6 +2,10 @@
 cmake_minimum_required(VERSION 3.13)
 project(runner LANGUAGES CXX)
 
+# Testing must be enabled at the project root so CTest can discover tests
+# registered by the runner subdirectory.
+include(CTest)
+
 # The name of the executable created for the application. Change this to change
 # the on-disk name of your application.
 set(BINARY_NAME "plezy")
@@ -32,6 +36,19 @@ if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
     STRING "Flutter build mode" FORCE)
   set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS
     "Debug" "Profile" "Release")
+endif()
+
+# Direct CMake configurations (used by the native reliability tests) do not
+# receive Flutter's target-platform argument. Derive the two supported Linux
+# target names so flutter_assemble still receives both required arguments.
+if(NOT FLUTTER_TARGET_PLATFORM)
+  if(CMAKE_SYSTEM_PROCESSOR MATCHES "^(aarch64|arm64)$")
+    set(FLUTTER_TARGET_PLATFORM "linux-arm64")
+  elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "^(x86_64|AMD64)$")
+    set(FLUTTER_TARGET_PLATFORM "linux-x64")
+  else()
+    message(FATAL_ERROR "Unsupported Linux architecture: ${CMAKE_SYSTEM_PROCESSOR}")
+  endif()
 endif()
 
 # Compilation settings that should be applied to most targets.

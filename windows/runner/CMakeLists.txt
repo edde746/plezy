@@ -77,7 +77,7 @@ if(PLEZY_BUILD_MPV_PROPERTY_CONTRACT_TESTS)
   target_compile_definitions(mpv_player_property_contract_test PRIVATE "NOMINMAX")
   target_link_libraries(
     mpv_player_property_contract_test
-    PRIVATE flutter "${MPV_LIB_DIR}/libmpv.dll.a" simdutf "user32.lib"
+    PRIVATE flutter_wrapper_plugin "${MPV_LIB_DIR}/libmpv.dll.a" simdutf "comctl32.lib" "user32.lib"
   )
   target_include_directories(
     mpv_player_property_contract_test
@@ -100,4 +100,22 @@ if(PLEZY_BUILD_MPV_PROPERTY_CONTRACT_TESTS)
 
   add_test(NAME mpv_property_result_contract_test COMMAND mpv_property_result_contract_test)
   add_test(NAME mpv_player_property_contract_test COMMAND mpv_player_property_contract_test)
+endif()
+
+option(PLEZY_BUILD_DISPLAY_RECOVERY_TESTS
+  "Build the focused Windows display recovery transaction tests" OFF)
+if(PLEZY_BUILD_DISPLAY_RECOVERY_TESTS)
+  enable_testing()
+
+  add_executable(display_mode_manager_test
+    "mpv/display_mode_manager.cpp"
+    "mpv/display_mode_manager_test.cpp"
+  )
+  apply_standard_settings(display_mode_manager_test)
+  target_compile_definitions(
+    display_mode_manager_test PRIVATE "NOMINMAX" "PLEZY_DISPLAY_MODE_MANAGER_TESTING"
+  )
+  target_link_libraries(display_mode_manager_test PRIVATE "advapi32.lib" "user32.lib")
+
+  add_test(NAME display_mode_manager_test COMMAND display_mode_manager_test)
 endif()

@@ -12,12 +12,13 @@ import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
 import io.flutter.plugin.common.PluginRegistry
 import java.io.IOException
-import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
+import org.junit.Test
+import org.junit.runner.RunWith
 import org.mockito.ArgumentCaptor
 import org.mockito.Mockito.doThrow
 import org.mockito.Mockito.mock
@@ -26,7 +27,11 @@ import org.mockito.Mockito.verify
 import org.mockito.Mockito.verifyNoInteractions
 import org.mockito.Mockito.verifyNoMoreInteractions
 import org.mockito.Mockito.`when`
+import org.robolectric.RobolectricTestRunner
+import org.robolectric.annotation.Config
 
+@RunWith(RobolectricTestRunner::class)
+@Config(sdk = [34])
 internal class SafUtilPluginTest {
   @Test
   fun onMethodCall_unknownMethod_returnsNotImplemented() {
@@ -120,12 +125,25 @@ internal class SafUtilPluginTest {
     val uri = mock(Uri::class.java)
     val frame = mock(Bitmap::class.java)
     val retriever = mock(MediaMetadataRetriever::class.java)
-    `when`(retriever.frameAtTime).thenReturn(frame)
+    `when`(
+      retriever.getScaledFrameAtTime(
+        -1,
+        MediaMetadataRetriever.OPTION_CLOSEST_SYNC,
+        320,
+        180
+      )
+    ).thenReturn(frame)
 
     val extracted = extractVideoFrame(context, uri, 320, 180, retriever)
 
     assertEquals(frame, extracted)
     verify(retriever).setDataSource(context, uri)
+    verify(retriever).getScaledFrameAtTime(
+      -1,
+      MediaMetadataRetriever.OPTION_CLOSEST_SYNC,
+      320,
+      180
+    )
     verify(retriever).release()
   }
 
@@ -152,7 +170,14 @@ internal class SafUtilPluginTest {
     val uri = mock(Uri::class.java)
     val retriever = mock(MediaMetadataRetriever::class.java)
     val failure = IllegalStateException("extract failed")
-    `when`(retriever.frameAtTime).thenThrow(failure)
+    `when`(
+      retriever.getScaledFrameAtTime(
+        -1,
+        MediaMetadataRetriever.OPTION_CLOSEST_SYNC,
+        320,
+        180
+      )
+    ).thenThrow(failure)
 
     val thrown =
       assertFailsWith<IllegalStateException> {
@@ -168,7 +193,14 @@ internal class SafUtilPluginTest {
     val context = mock(Context::class.java)
     val uri = mock(Uri::class.java)
     val retriever = mock(MediaMetadataRetriever::class.java)
-    `when`(retriever.frameAtTime).thenReturn(null)
+    `when`(
+      retriever.getScaledFrameAtTime(
+        -1,
+        MediaMetadataRetriever.OPTION_CLOSEST_SYNC,
+        320,
+        180
+      )
+    ).thenReturn(null)
 
     assertNull(extractVideoFrame(context, uri, 320, 180, retriever))
 

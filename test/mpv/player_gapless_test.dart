@@ -237,7 +237,7 @@ void main() {
       });
     });
 
-    test('dispose() settles an unconsumed armed fd', () async {
+    test('dispose() raw cleanup settles an unconsumed armed fd after admission closes', () async {
       final core = _AudioCoreMock();
       await run(core, (player, transitions) async {
         await openFirst(player);
@@ -247,6 +247,9 @@ void main() {
         await player.dispose();
 
         expect(core.closedFds, [7]);
+        expect(core.commands('playlist-remove'), [
+          ['playlist-remove', '1'],
+        ]);
       });
     });
 

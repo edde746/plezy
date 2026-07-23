@@ -1,3 +1,4 @@
+import Libmpv
 import FlutterMacOS
 import XCTest
 
@@ -45,6 +46,14 @@ final class RecordingMpvPlugin: MpvPluginShared {
   func didSetPauseProperty(value: String) {
     pauseHookValues.append(value)
   }
+}
+
+final class RecordingLifecycleDelegate: MpvPlayerDelegate {
+  private(set) var events: [String] = []
+  private(set) var properties: [String] = []
+
+  func onPropertyChange(name: String, value: Any?) { properties.append(name) }
+  func onEvent(name: String, data: [String: Any]?) { events.append(name) }
 }
 
 final class MpvPlayerContractTests: XCTestCase {
@@ -108,6 +117,35 @@ final class MpvPlayerContractTests: XCTestCase {
     XCTAssertFalse(core.isPaused, "The accepted pause write must commit before completion")
   }
 
+  func testPauseIntentUpdatesCacheBeforeAsyncWriteCompletes() {
+    let core = MpvAudioPlayerCore()
+    XCTAssertTrue(core.initialize())
+    defer {
+      core.dispose()
+      core.queue.sync {}
+    }
+
+    let queueEntered = expectation(description: "mpv queue blocked")
+    let releaseQueue = DispatchSemaphore(value: 0)
+    core.queue.async {
+      queueEntered.fulfill()
+      releaseQueue.wait()
+    }
+    wait(for: [queueEntered], timeout: 2)
+
+    let completion = expectation(description: "pause write completed")
+    core.setPropertyAsync("pause", value: "no") { result in
+      if case .failure(let error) = result {
+        XCTFail("Pause write failed: \(error)")
+      }
+      completion.fulfill()
+    }
+
+    XCTAssertFalse(core.isPaused, "The public pause intent must be visible before the native write completes")
+    releaseQueue.signal()
+    wait(for: [completion], timeout: 2)
+  }
+
   func testPendingSetPropertyIsCancelledExactlyOnceOnDispose() {
     let core = MpvAudioPlayerCore()
     XCTAssertTrue(core.initialize())
@@ -150,6 +188,94 @@ final class MpvPlayerContractTests: XCTestCase {
         XCTAssertFalse(core.hasActiveMpv)
       }
     }
+  }
+
+  func testQueuedDelegateDeliveryIsDroppedAfterTerminalTransition() {
+    let core = MpvPlayerCoreBase()
+    let delegate = RecordingLifecycleDelegate()
+    core.delegate = delegate
+    core.dispatchDelegateEvent(name: "file-loaded", data: nil)
+    core.dispatchDelegateProperty(name: "time-pos", value: 1.0)
+    XCTAssertTrue(core.beginDisposal())
+
+    let drained = expectation(description: "main delivery drained")
+    DispatchQueue.main.async { drained.fulfill() }
+    wait(for: [drained], timeout: 2)
+    XCTAssertTrue(delegate.events.isEmpty)
+    XCTAssertTrue(delegate.properties.isEmpty)
+  }
+
+  func testUnavailablePropertyCompletionRunsExactlyOnceOnMainThread() {
+    let core = MpvAudioPlayerCore()
+    XCTAssertTrue(core.initialize())
+    core.dispose()
+    core.queue.sync {}
+
+    let completed = expectation(description: "unavailable property completed")
+    completed.assertForOverFulfill = true
+    var completionCount = 0
+    DispatchQueue.global().async {
+      core.getPropertyAsync("volume") { result in
+        XCTAssertTrue(Thread.isMainThread)
+        if case .success = result { XCTFail("Expected unavailable property failure") }
+        completionCount += 1
+        completed.fulfill()
+      }
+    }
+    wait(for: [completed], timeout: 2)
+    XCTAssertEqual(completionCount, 1)
+  }
+
+  func testNormalizedPlaybackDelayStringsPassThroughUnchanged() {
+    let core = ControllablePropertyCore()
+    let plugin = RecordingMpvPlugin(core: core)
+    let values = ["0.25", "-0.5", "0", "0.25"]
+
+    for value in values {
+      core.nextResult = .success(())
+      let result = invokeSetProperty(plugin, name: "audio-delay", value: value)
+      XCTAssertEqual(result.count, 1)
+      XCTAssertNil(result[0])
+    }
+    XCTAssertEqual(core.propertyCalls.map(\.1), values)
+  }
+
+  func testNodeConversionBoundsAndDiscardsMalformedSiblings() {
+    let core = MpvPlayerCoreBase()
+    var valid = mpv_node()
+    valid.format = MPV_FORMAT_INT64
+    valid.u.int64 = 7
+    var malformed = mpv_node()
+    malformed.format = MPV_FORMAT_NONE
+    var values = [valid, malformed, valid]
+    var decoded: Any?
+
+    let valueCount = values.count
+    values.withUnsafeMutableBufferPointer { valuesPointer in
+      var list = mpv_node_list()
+      list.num = Int32(valueCount)
+      list.values = valuesPointer.baseAddress
+      withUnsafeMutablePointer(to: &list) { listPointer in
+        var root = mpv_node()
+        root.format = MPV_FORMAT_NODE_ARRAY
+        root.u.list = listPointer
+        decoded = core.convertNode(root)
+      }
+    }
+    XCTAssertEqual(decoded as? [Int64], [7, 7])
+
+    var oversizedBytes = mpv_byte_array()
+    oversizedBytes.size = 16 * 1_024 * 1_024 + 1
+    withUnsafeMutablePointer(to: &oversizedBytes) { bytePointer in
+      var root = mpv_node()
+      root.format = MPV_FORMAT_BYTE_ARRAY
+      root.u.ba = bytePointer
+      XCTAssertNil(core.convertNode(root))
+    }
+    XCTAssertTrue(core.validateSideDataDimensions(width: 3_840, height: 2_160))
+    XCTAssertFalse(core.validateSideDataDimensions(width: 0, height: 2_160))
+    XCTAssertFalse(core.validateSideDataDimensions(width: 65_536, height: 2_160))
+    XCTAssertFalse(core.validateSideDataDimensions(width: 16_384, height: 16_384))
   }
 
   private func invokeSetProperty(

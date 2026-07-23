@@ -1,10 +1,25 @@
 #include "mpv_player.h"
 
+#include <commctrl.h>
 #include <windowsx.h>
+
+#include <unordered_map>
 
 #include "sanitize_utf8.h"
 
 namespace mpv {
+
+struct InnerWindowSubclassState {
+  HWND hwnd = nullptr;
+  std::atomic<HWND> forward_target{nullptr};
+  std::atomic<bool> active{false};
+  UINT_PTR subclass_id = 0;
+  // Guarded by g_inner_subclasses_mutex.
+  bool installed = false;
+  // While true, the window thread may still remove this generation, so a
+  // replacement must not adopt it.
+  bool removal_pending = false;
+};
 
 namespace {
 
@@ -51,8 +66,8 @@ flutter::EncodableValue NodeToEncodableValue(const mpv_node* node) {
 // DComp-mode input forwarding. mpv's inner window lives on mpv's own thread
 // and consumes input over the video (WS_EX_TRANSPARENT hit-test skipping is
 // same-thread-only, and disabling the subtree makes the system drop the input
-// entirely instead of routing it to a sibling). Subclass the inner window
-// (legal within one process, even across threads) and forward mouse and pointer
+// entirely instead of routing it to a sibling). Use the common-controls
+// subclass chain with per-window reference data, and forward mouse/pointer
 // input to the Flutter view. Pointer messages must be sent synchronously:
 // Flutter calls GetPointerInfo while handling them, and Windows only retains
 // that data for the current or forwarded message.
@@ -74,24 +89,37 @@ static_assert(IsFlutterPointerMessage(WM_POINTERUP));
 static_assert(IsFlutterPointerMessage(WM_POINTERLEAVE));
 static_assert(!IsFlutterPointerMessage(WM_MOUSEMOVE));
 
-WNDPROC g_mpv_inner_original_proc = nullptr;
-HWND g_mpv_inner_hwnd = nullptr;
-HWND g_forward_target_view = nullptr;
+std::mutex g_inner_subclasses_mutex;
+std::unordered_map<HWND, std::shared_ptr<InnerWindowSubclassState>> g_inner_subclasses;
+std::atomic<uint64_t> g_next_inner_subclass_generation{1};
 
-LRESULT CALLBACK MpvInnerSubclassProc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam) {
-  if (IsFlutterPointerMessage(message)) {
-    HWND view = g_forward_target_view;
-    if (view) {
-      // WM_POINTER coordinates are already in screen space. SendMessage also
-      // preserves the message association required by GetPointerInfo in the
-      // Flutter view's window procedure.
-      ::SendMessageW(view, message, wparam, lparam);
-    }
+std::shared_ptr<InnerWindowSubclassState> FindInnerSubclassState(HWND hwnd, DWORD_PTR reference_data) {
+  std::lock_guard<std::mutex> lock(g_inner_subclasses_mutex);
+  const auto it = g_inner_subclasses.find(hwnd);
+  if (it == g_inner_subclasses.end() || reinterpret_cast<DWORD_PTR>(it->second.get()) != reference_data) {
+    return nullptr;
+  }
+  return it->second;
+}
+
+LRESULT CALLBACK MpvInnerSubclassProc(
+    HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam, UINT_PTR subclass_id, DWORD_PTR reference_data) {
+  const auto state = FindInnerSubclassState(hwnd, reference_data);
+  if (!state) {
+    return ::DefSubclassProc(hwnd, message, wparam, lparam);
+  }
+
+  const bool active = state->active.load(std::memory_order_acquire);
+  HWND view = active ? state->forward_target.load(std::memory_order_acquire) : nullptr;
+  if (active && view && IsFlutterPointerMessage(message)) {
+    // WM_POINTER coordinates are already in screen space. SendMessage also
+    // preserves the message association required by GetPointerInfo in the
+    // Flutter view's window procedure.
+    ::SendMessageW(view, message, wparam, lparam);
     return 0;
   }
 
-  if (message >= WM_MOUSEFIRST && message <= WM_MOUSELAST) {
-    HWND view = g_forward_target_view;
+  if (active && message >= WM_MOUSEFIRST && message <= WM_MOUSELAST) {
     if (view) {
       LPARAM forwarded = lparam;
       if (message != WM_MOUSEWHEEL && message != WM_MOUSEHWHEEL) {
@@ -101,25 +129,287 @@ LRESULT CALLBACK MpvInnerSubclassProc(HWND hwnd, UINT message, WPARAM wparam, LP
         ::MapWindowPoints(hwnd, view, &pt, 1);
         forwarded = MAKELPARAM(pt.x, pt.y);
       }
-      ::PostMessage(view, message, wparam, forwarded);
+      ::PostMessageW(view, message, wparam, forwarded);
     }
     return 0;
   }
-  return ::CallWindowProc(g_mpv_inner_original_proc, hwnd, message, wparam, lparam);
+
+  if (message == WM_NCDESTROY) {
+    state->active.store(false, std::memory_order_release);
+    state->forward_target.store(nullptr, std::memory_order_release);
+    ::RemoveWindowSubclass(hwnd, MpvInnerSubclassProc, subclass_id);
+    std::lock_guard<std::mutex> lock(g_inner_subclasses_mutex);
+    const auto it = g_inner_subclasses.find(hwnd);
+    if (it != g_inner_subclasses.end() && it->second.get() == state.get()) {
+      g_inner_subclasses.erase(it);
+    }
+  }
+  return ::DefSubclassProc(hwnd, message, wparam, lparam);
 }
 
-// Subclass mpv's lazily-created inner window if it exists and isn't yet
-// subclassed (or was recreated). Idempotent; callable from any thread in
-// this process.
-void EnsureMpvInnerSubclassed(HWND host) {
-  if (!host) {
+constexpr UINT kSubclassOwnershipMessage = WM_APP + 0x0504;
+
+enum class SubclassOwnershipActionPhase {
+  kPending,
+  kRunning,
+  kCompleted,
+};
+
+struct SubclassOwnershipAction {
+  std::shared_ptr<InnerWindowSubclassState> state;
+  bool install;
+  std::mutex mutex;
+  SubclassOwnershipActionPhase phase = SubclassOwnershipActionPhase::kPending;
+  bool cancelled = false;
+  bool success = false;
+};
+
+std::mutex g_subclass_actions_mutex;
+std::unordered_map<UINT_PTR, std::shared_ptr<SubclassOwnershipAction>> g_subclass_actions;
+std::atomic<UINT_PTR> g_next_subclass_action{1};
+
+void ForgetInnerSubclassState(const std::shared_ptr<InnerWindowSubclassState>& state) {
+  std::lock_guard<std::mutex> lock(g_inner_subclasses_mutex);
+  const auto it = g_inner_subclasses.find(state->hwnd);
+  if (it != g_inner_subclasses.end() && it->second.get() == state.get()) {
+    g_inner_subclasses.erase(it);
+  }
+}
+
+bool ApplySubclassOwnershipAction(const SubclassOwnershipAction& action) {
+  if (action.install) {
+    return ::SetWindowSubclass(
+               action.state->hwnd, MpvInnerSubclassProc, action.state->subclass_id,
+               reinterpret_cast<DWORD_PTR>(action.state.get())) != FALSE;
+  }
+  std::lock_guard<std::mutex> lock(g_inner_subclasses_mutex);
+  const auto it = g_inner_subclasses.find(action.state->hwnd);
+  if (it == g_inner_subclasses.end() || it->second.get() != action.state.get()) {
+    return false;
+  }
+
+  const bool removed =
+      ::RemoveWindowSubclass(action.state->hwnd, MpvInnerSubclassProc, action.state->subclass_id) != FALSE;
+  if (removed) {
+    g_inner_subclasses.erase(it);
+  } else {
+    action.state->removal_pending = false;
+  }
+  return removed;
+}
+
+void ExecuteSubclassOwnershipAction(const std::shared_ptr<SubclassOwnershipAction>& action) {
+  {
+    std::lock_guard<std::mutex> lock(action->mutex);
+    if (action->phase != SubclassOwnershipActionPhase::kPending) return;
+    if (action->cancelled) {
+      action->phase = SubclassOwnershipActionPhase::kCompleted;
+      if (action->install) {
+        ForgetInnerSubclassState(action->state);
+      }
+      return;
+    }
+    action->phase = SubclassOwnershipActionPhase::kRunning;
+  }
+
+  const bool applied = ApplySubclassOwnershipAction(*action);
+  bool cancelled_install = false;
+  {
+    std::lock_guard<std::mutex> lock(action->mutex);
+    cancelled_install = action->install && action->cancelled;
+    if (!cancelled_install) {
+      action->success = applied;
+      action->phase = SubclassOwnershipActionPhase::kCompleted;
+    }
+  }
+
+  if (!cancelled_install) {
+    if (action->install && !applied) {
+      ForgetInnerSubclassState(action->state);
+    }
     return;
   }
-  HWND inner = ::FindWindowExW(host, nullptr, nullptr, nullptr);
-  if (inner && inner != g_mpv_inner_hwnd) {
-    g_mpv_inner_hwnd = inner;
-    g_mpv_inner_original_proc = reinterpret_cast<WNDPROC>(
-        ::SetWindowLongPtrW(inner, GWLP_WNDPROC, reinterpret_cast<LONG_PTR>(MpvInnerSubclassProc)));
+
+  // A timeout can race an action that the window thread has already begun.
+  // Remove a late install on that same thread before releasing the action's
+  // shared ownership of the reference data used by the subclass callback.
+  const bool detached = !applied || ::RemoveWindowSubclass(
+                                        action->state->hwnd, MpvInnerSubclassProc, action->state->subclass_id) != FALSE;
+  if (detached) {
+    ForgetInnerSubclassState(action->state);
+  }
+  std::lock_guard<std::mutex> lock(action->mutex);
+  action->success = false;
+  action->phase = SubclassOwnershipActionPhase::kCompleted;
+}
+
+LRESULT CALLBACK SubclassOwnershipHook(int code, WPARAM wparam, LPARAM lparam) {
+  if (code >= 0) {
+    const auto* message = reinterpret_cast<const CWPSTRUCT*>(lparam);
+    if (message && message->message == kSubclassOwnershipMessage) {
+      std::shared_ptr<SubclassOwnershipAction> action;
+      {
+        std::lock_guard<std::mutex> lock(g_subclass_actions_mutex);
+        const auto it = g_subclass_actions.find(static_cast<UINT_PTR>(message->wParam));
+        if (it != g_subclass_actions.end() && it->second->state->hwnd == message->hwnd) {
+          action = it->second;
+        }
+      }
+      if (action) {
+        ExecuteSubclassOwnershipAction(action);
+      }
+    }
+  }
+  return ::CallNextHookEx(nullptr, code, wparam, lparam);
+}
+
+bool RunSubclassOwnershipActionOnWindowThread(const std::shared_ptr<SubclassOwnershipAction>& action) {
+  DWORD window_thread = ::GetWindowThreadProcessId(action->state->hwnd, nullptr);
+  if (!window_thread) return false;
+  if (window_thread == ::GetCurrentThreadId()) {
+    ExecuteSubclassOwnershipAction(action);
+    std::lock_guard<std::mutex> lock(action->mutex);
+    return action->success;
+  }
+
+  HHOOK hook = ::SetWindowsHookExW(WH_CALLWNDPROC, SubclassOwnershipHook, nullptr, window_thread);
+  if (!hook) return false;
+
+  const UINT_PTR action_id = g_next_subclass_action.fetch_add(1, std::memory_order_relaxed);
+  {
+    std::lock_guard<std::mutex> lock(g_subclass_actions_mutex);
+    g_subclass_actions[action_id] = action;
+  }
+
+  DWORD_PTR message_result = 0;
+  ::SendMessageTimeoutW(
+      action->state->hwnd, kSubclassOwnershipMessage, action_id, 0, SMTO_ABORTIFHUNG, 1000, &message_result);
+
+  bool success = false;
+  {
+    // Completion and cancellation use the same lock. If the callback won the
+    // race, its acknowledged result is authoritative. Otherwise it observes
+    // cancellation and cannot leave a late install referencing released data.
+    std::lock_guard<std::mutex> lock(action->mutex);
+    if (action->phase == SubclassOwnershipActionPhase::kCompleted) {
+      success = action->success;
+    } else {
+      action->cancelled = true;
+    }
+  }
+  {
+    std::lock_guard<std::mutex> lock(g_subclass_actions_mutex);
+    const auto it = g_subclass_actions.find(action_id);
+    if (it != g_subclass_actions.end() && it->second == action) {
+      g_subclass_actions.erase(it);
+    }
+  }
+  ::UnhookWindowsHookEx(hook);
+  return success;
+}
+
+std::shared_ptr<InnerWindowSubclassState> InstallMpvInnerSubclass(HWND inner, HWND forward_target) {
+  if (!inner || !forward_target) return nullptr;
+
+  std::shared_ptr<InnerWindowSubclassState> state;
+
+  {
+    std::lock_guard<std::mutex> lock(g_inner_subclasses_mutex);
+    const auto existing = g_inner_subclasses.find(inner);
+    if (existing != g_inner_subclasses.end()) {
+      const auto& retained = existing->second;
+      if (!retained->installed || retained->active.load(std::memory_order_acquire) || retained->removal_pending) {
+        return nullptr;
+      }
+
+      // A timed-out detach that never reached the window thread leaves the
+      // helper-chain entry installed. Adopt that exact generation rather than
+      // stacking a duplicate subclass or retaining a permanently inert entry.
+      retained->forward_target.store(forward_target, std::memory_order_release);
+      retained->active.store(true, std::memory_order_release);
+      return retained;
+    }
+    state = std::make_shared<InnerWindowSubclassState>();
+    state->hwnd = inner;
+    state->forward_target.store(forward_target, std::memory_order_relaxed);
+    state->subclass_id = g_next_inner_subclass_generation.fetch_add(1, std::memory_order_relaxed);
+
+    // Publish the state before installing the helper-chain entry. The
+    // callback's reference data identifies this exact generation, so an old
+    // callback can never resolve a replacement generation that reuses HWND.
+    g_inner_subclasses[inner] = state;
+  }
+
+  auto action = std::make_shared<SubclassOwnershipAction>();
+  action->state = state;
+  action->install = true;
+  if (!RunSubclassOwnershipActionOnWindowThread(action)) {
+    bool action_never_started = false;
+    {
+      std::lock_guard<std::mutex> lock(action->mutex);
+      action_never_started = action->phase == SubclassOwnershipActionPhase::kPending;
+    }
+    if (action_never_started) {
+      ForgetInnerSubclassState(state);
+    }
+    return nullptr;
+  }
+  {
+    std::lock_guard<std::mutex> lock(g_inner_subclasses_mutex);
+    const auto it = g_inner_subclasses.find(inner);
+    if (it == g_inner_subclasses.end() || it->second.get() != state.get()) {
+      return nullptr;
+    }
+    state->installed = true;
+    state->active.store(true, std::memory_order_release);
+  }
+  return state;
+}
+
+void DetachMpvInnerSubclassState(const std::shared_ptr<InnerWindowSubclassState>& state) {
+  if (!state) return;
+
+  // Invalidate forwarding before removing the helper-chain entry. A callback
+  // already holding this generation can still call DefSubclassProc, but can
+  // no longer target a replacement Flutter/player generation.
+
+  {
+    std::lock_guard<std::mutex> lock(g_inner_subclasses_mutex);
+    const auto it = g_inner_subclasses.find(state->hwnd);
+    if (it == g_inner_subclasses.end() || it->second.get() != state.get()) {
+      return;
+    }
+    state->active.store(false, std::memory_order_release);
+    state->forward_target.store(nullptr, std::memory_order_release);
+    state->removal_pending = true;
+  }
+
+  auto action = std::make_shared<SubclassOwnershipAction>();
+  action->state = state;
+  action->install = false;
+  const bool detached = RunSubclassOwnershipActionOnWindowThread(action);
+  if (!detached) {
+    bool removal_not_applied = false;
+    {
+      std::lock_guard<std::mutex> lock(action->mutex);
+      removal_not_applied = action->phase == SubclassOwnershipActionPhase::kPending ||
+                            (action->phase == SubclassOwnershipActionPhase::kCompleted && !action->success);
+    }
+    if (removal_not_applied) {
+      std::lock_guard<std::mutex> lock(g_inner_subclasses_mutex);
+      const auto it = g_inner_subclasses.find(state->hwnd);
+      if (it != g_inner_subclasses.end() && it->second.get() == state.get()) {
+        // RunSubclassOwnershipActionOnWindowThread has already unregistered
+        // the cancelled action and hook. The installed entry is now stable
+        // and can be reactivated by a replacement owner.
+        state->removal_pending = false;
+      }
+    }
+  }
+  if (!detached && !::IsWindow(state->hwnd)) {
+    // A destroyed HWND has already discarded its subclass chain, so no
+    // callback can retain the reference data even if dispatch was unavailable.
+    ForgetInnerSubclassState(state);
   }
 }
 
@@ -128,6 +418,29 @@ void EnsureMpvInnerSubclassed(HWND host) {
 MpvPlayer::MpvPlayer(bool audio_only) : audio_only_(audio_only) {}
 
 MpvPlayer::~MpvPlayer() { Dispose(); }
+
+void MpvPlayer::EnsureMpvInnerSubclassed() {
+  if (!hwnd_ || !forward_target_view_) return;
+
+  HWND inner = ::FindWindowExW(hwnd_, nullptr, nullptr, nullptr);
+  if (!inner) return;
+
+  std::lock_guard<std::mutex> lock(inner_subclass_mutex_);
+  if (inner_subclass_ && inner_subclass_->hwnd == inner && inner_subclass_->active.load(std::memory_order_acquire)) {
+    inner_subclass_->forward_target.store(forward_target_view_, std::memory_order_release);
+    return;
+  }
+
+  DetachMpvInnerSubclassState(inner_subclass_);
+  inner_subclass_.reset();
+  inner_subclass_ = InstallMpvInnerSubclass(inner, forward_target_view_);
+}
+
+void MpvPlayer::DetachMpvInnerSubclass() {
+  std::lock_guard<std::mutex> lock(inner_subclass_mutex_);
+  DetachMpvInnerSubclassState(inner_subclass_);
+  inner_subclass_.reset();
+}
 
 bool MpvPlayer::Initialize(HWND view) {
   if (mpv_) {
@@ -166,7 +479,7 @@ bool MpvPlayer::Initialize(HWND view) {
       mpv_ = nullptr;
       return false;
     }
-    g_forward_target_view = view;
+    forward_target_view_ = view;
 
     // Set the wid option to embed mpv in our window.
     int64_t wid = reinterpret_cast<int64_t>(hwnd_);
@@ -208,6 +521,8 @@ bool MpvPlayer::Initialize(HWND view) {
   int err = mpv_initialize(mpv_);
   if (err < 0) {
     if (hwnd_) {
+      DetachMpvInnerSubclass();
+      forward_target_view_ = nullptr;
       ::DestroyWindow(hwnd_);
       hwnd_ = nullptr;
     }
@@ -244,17 +559,15 @@ void MpvPlayer::Dispose() {
   auto* handle = mpv_;
   mpv_ = nullptr;
 
+  // The input subclass must stop referencing this player generation before
+  // either the host HWND or the player object can be destroyed.
+  DetachMpvInnerSubclass();
+  forward_target_view_ = nullptr;
+
   if (hwnd_) {
     ::ShowWindow(hwnd_, SW_HIDE);
     ::DestroyWindow(hwnd_);
     hwnd_ = nullptr;
-
-    // The subclassed inner window died with hwnd_; clear the forwarding
-    // state. Only the owner of the window may do this: the audio-only core
-    // (which never has an hwnd_) must not wipe the video instance's state.
-    g_mpv_inner_hwnd = nullptr;
-    g_mpv_inner_original_proc = nullptr;
-    g_forward_target_view = nullptr;
   }
 
   if (handle) {
@@ -351,7 +664,7 @@ void MpvPlayer::SetRect(RECT rect, double device_pixel_ratio) {
   // mpv creates its inner window lazily on its own thread; subclass it (and
   // re-subclass if mpv ever recreates it) so mouse and pointer input over the
   // video is forwarded to the Flutter view.
-  EnsureMpvInnerSubclassed(hwnd_);
+  EnsureMpvInnerSubclassed();
 }
 
 void MpvPlayer::SetVisible(bool visible) {
@@ -388,11 +701,11 @@ void MpvPlayer::LogRecovery(const std::string& text) {
   SendEvent("log-message", data);
 }
 
-void MpvPlayer::TryAudioReload(const char* reason, int attempt) {
+void MpvPlayer::TryAudioReload(const char* reason, int attempt, uint64_t request_generation) {
   LogRecovery("issuing ao-reload (reason=" + std::string(reason) + ", attempt " + std::to_string(attempt) + ")");
   const std::string reason_copy = reason;
-  CommandAsync({"ao-reload"}, [this, reason_copy, attempt](int error) {
-    audio_recovery_.CompleteReload();
+  CommandAsync({"ao-reload"}, [this, reason_copy, attempt, request_generation](int error) {
+    audio_recovery_.CompleteReload(request_generation);
     LogRecovery(
         "ao-reload completed (reason=" + reason_copy + ", attempt " + std::to_string(attempt) +
         ", error=" + std::to_string(error) + ")");
@@ -405,7 +718,7 @@ void MpvPlayer::MaybeRunAudioRecovery() {
     return;
   }
   const char* reason = action.reason == plezy::mpv_common::AudioReloadReason::kResume ? "resume" : "null-fallback";
-  TryAudioReload(reason, action.attempt);
+  TryAudioReload(reason, action.attempt, action.request_generation);
   if (action.exhausted) {
     LogRecovery("audio recovery budget exhausted; waiting for device list change");
   }
@@ -557,7 +870,7 @@ void MpvPlayer::HandleMpvEvent(mpv_event* event) {
       // mpv's inner window exists by now (vo is configured); make sure the
       // DComp-mode input forwarding subclass is installed. SetRect alone can
       // miss it: the rect often settles before mpv creates the window.
-      EnsureMpvInnerSubclassed(hwnd_);
+      EnsureMpvInnerSubclassed();
       SendEvent("playback-restart");
       break;
     }

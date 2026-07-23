@@ -10,9 +10,24 @@
 #ifdef GDK_WINDOWING_WAYLAND
 #include <gdk/gdkwayland.h>
 #endif
-#include <clocale>
+#include <locale.h>
+
+#include <chrono>
+#include <cstring>
 
 #include "sanitize_utf8.h"
+
+namespace {
+
+bool EnsureProcessNumericLocale() {
+  // libmpv parses numeric options on worker threads, so a thread-local locale
+  // is insufficient. This process-wide setting intentionally remains in force
+  // for the rest of the process after the first player starts.
+  static const bool configured = setlocale(LC_NUMERIC, "C") != nullptr;
+  return configured;
+}
+
+}  // namespace
 
 // Flutter on Linux uses EGL (OpenGL ES) for both X11 and Wayland.
 static void* get_opengl_proc_address(void* ctx, const char* name) {
@@ -21,6 +36,171 @@ static void* get_opengl_proc_address(void* ctx, const char* name) {
 }
 
 namespace mpv {
+namespace {
+
+NativeRenderTeardownOperations ProductionTeardownOperations() {
+  return {
+      [](EGLDisplay display, EGLContext context) {
+        if (!eglBindAPI(EGL_OPENGL_ES_API) || !eglMakeCurrent(display, EGL_NO_SURFACE, EGL_NO_SURFACE, context)) {
+          g_warning("MPV: Failed to activate EGL context for teardown: 0x%x", eglGetError());
+          return false;
+        }
+        return true;
+      },
+      [](EGLDisplay display) {
+        if (!eglMakeCurrent(display, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT)) {
+          g_warning("MPV: Failed to release EGL context during teardown: 0x%x", eglGetError());
+          return false;
+        }
+        return true;
+      },
+      [](EGLDisplay display, EGLContext context) {
+        if (!eglDestroyContext(display, context)) {
+          g_warning("MPV: Failed to destroy EGL context during teardown: 0x%x", eglGetError());
+          return false;
+        }
+        return true;
+      },
+      [](mpv_render_context* render) { mpv_render_context_free(render); },
+      [](mpv_handle* handle) { mpv_terminate_destroy(handle); },
+  };
+}
+
+#ifdef PLEZY_MPV_PLAYER_LIFECYCLE_TEST
+NativeRenderTeardownOperations*& TestTeardownOperationsOverride() {
+  static NativeRenderTeardownOperations* operations = nullptr;
+  return operations;
+}
+#endif
+
+class NativeRenderTeardownQueue {
+ public:
+  static NativeRenderTeardownQueue& Instance() {
+    // Native driver/libmpv teardown can block indefinitely. Keep both the
+    // queue and its worker state alive until the OS ends the process so static
+    // destruction never joins the worker or invalidates state it may access.
+    static NativeRenderTeardownQueue* const queue = new NativeRenderTeardownQueue();
+    return *queue;
+  }
+
+  void Enqueue(NativeRenderTeardownBatch batch) {
+    if (batch.resources.empty() && !batch.handle) return;
+    {
+      std::lock_guard<std::mutex> lock(mutex_);
+      batches_.push_back(std::move(batch));
+      ++generation_;
+    }
+    condition_.notify_one();
+  }
+
+  void Retry() {
+    {
+      std::lock_guard<std::mutex> lock(mutex_);
+      ++generation_;
+    }
+    condition_.notify_one();
+  }
+
+ private:
+  NativeRenderTeardownQueue() : worker_([this]() { Run(); }) {}
+
+  void Run() {
+#ifdef PLEZY_MPV_PLAYER_LIFECYCLE_TEST
+    const NativeRenderTeardownOperations operations =
+        TestTeardownOperationsOverride() ? *TestTeardownOperationsOverride() : ProductionTeardownOperations();
+#else
+    const NativeRenderTeardownOperations operations = ProductionTeardownOperations();
+#endif
+    std::unique_lock<std::mutex> lock(mutex_);
+    for (;;) {
+      condition_.wait(lock, [this]() { return !batches_.empty(); });
+      const uint64_t observed_generation = generation_;
+      std::vector<NativeRenderTeardownBatch> work = std::move(batches_);
+      batches_.clear();
+
+      // EGL activation and mpv shutdown can block in a driver. Keep queue
+      // admission independent so replacement initialization and disposal only
+      // pay the short ownership-transfer critical section.
+      lock.unlock();
+      std::vector<NativeRenderTeardownBatch> retry;
+      for (auto& batch : work) {
+        if (!TryReleaseNativeRenderTeardown(batch, operations)) retry.push_back(std::move(batch));
+      }
+      lock.lock();
+      for (auto& batch : retry) batches_.push_back(std::move(batch));
+
+      if (batches_.empty()) continue;
+
+      condition_.wait_for(lock, std::chrono::milliseconds(100), [this, observed_generation]() {
+        return generation_ != observed_generation;
+      });
+    }
+  }
+
+  std::mutex mutex_;
+  std::condition_variable condition_;
+  std::vector<NativeRenderTeardownBatch> batches_;
+  uint64_t generation_ = 0;
+  std::thread worker_;
+};
+
+}  // namespace
+
+#ifdef PLEZY_MPV_PLAYER_LIFECYCLE_TEST
+void ConfigureNativeRenderTeardownQueueForTesting(NativeRenderTeardownOperations operations) {
+  auto*& configured = TestTeardownOperationsOverride();
+  if (configured) {
+    *configured = std::move(operations);
+  } else {
+    configured = new NativeRenderTeardownOperations(std::move(operations));
+  }
+}
+
+void EnqueueNativeRenderTeardownForTesting(NativeRenderTeardownBatch batch) {
+  NativeRenderTeardownQueue::Instance().Enqueue(std::move(batch));
+}
+#endif
+
+bool TryReleaseNativeRenderTeardown(
+    NativeRenderTeardownBatch& batch, const NativeRenderTeardownOperations& operations) {
+  for (auto it = batch.resources.begin(); it != batch.resources.end();) {
+    if (it->context == EGL_NO_CONTEXT || !operations.make_current(it->display, it->context)) {
+      ++it;
+      continue;
+    }
+
+    if (it->render) {
+      operations.free_render(it->render);
+      it->render = nullptr;
+    }
+    if (!operations.release_current(it->display)) {
+      ++it;
+      continue;
+    }
+    if (!operations.destroy_context(it->display, it->context)) {
+      ++it;
+      continue;
+    }
+    it = batch.resources.erase(it);
+  }
+
+  if (!batch.resources.empty()) return false;
+  if (batch.handle) {
+    operations.terminate_handle(batch.handle);
+    batch.handle = nullptr;
+  }
+  batch.callback_keep_alive.reset();
+  return true;
+}
+
+bool TryReleaseRetainedNativeRenderContexts(
+    std::vector<NativeRenderTeardownResource>& resources, const NativeRenderTeardownOperations& operations) {
+  NativeRenderTeardownBatch batch;
+  batch.resources = std::move(resources);
+  const bool complete = TryReleaseNativeRenderTeardown(batch, operations);
+  resources = std::move(batch.resources);
+  return complete;
+}
 
 MpvPlayer::CallbackContext::Lease::Lease(CallbackContext* context, MpvPlayer* player)
     : context_(context), player_(player) {}
@@ -62,9 +242,14 @@ MpvPlayer::CallbackContext::Lease MpvPlayer::CallbackContext::Acquire() {
   return Lease(this, player_);
 }
 
+void MpvPlayer::CallbackContext::WaitUntilDetached() {
+  std::unique_lock<std::mutex> lock(mutex_);
+  quiescent_.wait(lock, [this]() { return player_ == nullptr; });
+}
 void MpvPlayer::CallbackContext::DetachAndWait() {
   std::unique_lock<std::mutex> lock(mutex_);
   player_ = nullptr;
+  quiescent_.notify_all();
   quiescent_.wait(lock, [this]() { return in_flight_ == 0; });
 }
 
@@ -87,13 +272,45 @@ MpvPlayer::MpvPlayer(bool audio_only)
 
 MpvPlayer::~MpvPlayer() { Dispose(); }
 
+bool MpvPlayer::HasRenderContext() const {
+  std::lock_guard<std::mutex> lock(native_mutex_);
+  return mpv_gl_ != nullptr;
+}
+
+EGLDisplay MpvPlayer::GetEglDisplay() const {
+  std::lock_guard<std::mutex> lock(native_mutex_);
+  return egl_display_;
+}
+
+EGLContext MpvPlayer::GetEglContext() const {
+  std::lock_guard<std::mutex> lock(native_mutex_);
+  return egl_context_;
+}
+
+bool MpvPlayer::IsInitialized() const {
+  std::lock_guard<std::mutex> lock(native_mutex_);
+  return mpv_ != nullptr && (audio_only_ || mpv_gl_ != nullptr);
+}
+
+bool MpvPlayer::HasMpvHandle() const {
+  std::lock_guard<std::mutex> lock(native_mutex_);
+  return mpv_ != nullptr;
+}
+
 bool MpvPlayer::Initialize() {
+  std::lock_guard<std::mutex> lock(native_mutex_);
+  if (disposed_) {
+    g_warning("MPV: initialization requested after disposal");
+    return false;
+  }
   if (mpv_) {
     return true;  // Already initialized.
   }
 
-  // MPV requires C locale for numeric formatting
-  std::setlocale(LC_NUMERIC, "C");
+  if (!EnsureProcessNumericLocale()) {
+    g_warning("MPV: Failed to establish the process-wide C numeric locale");
+    return false;
+  }
 
   // Create mpv instance.
   mpv_ = mpv_create();
@@ -151,84 +368,115 @@ bool MpvPlayer::Initialize() {
   return true;
 }
 
+void MpvPlayer::RetryPendingNativeTeardown() { NativeRenderTeardownQueue::Instance().Retry(); }
+
 bool MpvPlayer::InitRenderContext() {
-  if (audio_only_) {
-    g_warning("MPV: InitRenderContext called on an audio-only player");
+  RetryPendingNativeTeardown();
+
+  std::lock_guard<std::mutex> lock(native_mutex_);
+  if (audio_only_ || disposed_) {
+    g_warning("MPV: Render context requested for an unavailable player");
     return false;
   }
-
-  if (mpv_gl_) {
-    return true;  // Already created.
-  }
-
+  if (mpv_gl_) return true;
   if (!mpv_) {
     g_warning("MPV: Cannot create render context - mpv not initialized");
     return false;
   }
 
-  // Capture Flutter's EGL display and create an isolated EGL context.
-  // Flutter on Linux uses EGL for both X11 and Wayland.  Running mpv in
-  // an isolated context prevents OpenGL state pollution between mpv and
-  // Flutter, which caused corrupted/blank video on some drivers.
-  EGLDisplay flutter_display = eglGetCurrentDisplay();
-  EGLContext flutter_context = eglGetCurrentContext();
-
-  if (flutter_display == EGL_NO_DISPLAY || flutter_context == EGL_NO_CONTEXT) {
+  const EGLDisplay flutter_display = eglGetCurrentDisplay();
+  const EGLContext flutter_context = eglGetCurrentContext();
+  const EGLSurface flutter_draw = eglGetCurrentSurface(EGL_DRAW);
+  const EGLSurface flutter_read = eglGetCurrentSurface(EGL_READ);
+  const EGLenum previous_api = eglQueryAPI();
+  if (flutter_display == EGL_NO_DISPLAY || flutter_context == EGL_NO_CONTEXT || previous_api == EGL_NONE) {
     g_warning("MPV: No EGL context available");
     return false;
   }
 
-  egl_display_ = flutter_display;
+  auto restore_flutter = [&]() {
+    const EGLBoolean api_restored = previous_api == EGL_NONE ? EGL_TRUE : eglBindAPI(previous_api);
+    const EGLBoolean restored = api_restored == EGL_TRUE
+                                    ? eglMakeCurrent(flutter_display, flutter_draw, flutter_read, flutter_context)
+                                    : EGL_FALSE;
+    return restored == EGL_TRUE && api_restored == EGL_TRUE;
+  };
+  if (!retained_render_contexts_.empty()) {
+    const bool released =
+        TryReleaseRetainedNativeRenderContexts(retained_render_contexts_, ProductionTeardownOperations());
+    const bool flutter_restored = restore_flutter();
+    if (!released) {
+      g_warning("MPV: Retained render context still requires a later EGL teardown retry");
+    }
+    if (!flutter_restored) {
+      g_warning("MPV: Failed to restore Flutter EGL state after retained teardown: 0x%x", eglGetError());
+    }
+    if (!released || !flutter_restored) return false;
+  }
 
-  // Query Flutter's EGL config and reuse it for compatibility
-  EGLConfig config = nullptr;
   EGLint config_id = 0;
-
-  if (!eglQueryContext(egl_display_, flutter_context, EGL_CONFIG_ID, &config_id)) {
-    g_warning("MPV: Failed to query Flutter's EGL config ID");
+  if (!eglQueryContext(flutter_display, flutter_context, EGL_CONFIG_ID, &config_id)) {
+    g_warning("MPV: Failed to query Flutter EGL config: 0x%x", eglGetError());
     return false;
   }
-
+  EGLConfig config = nullptr;
   EGLint num_configs = 0;
-  EGLint config_attribs[] = {EGL_CONFIG_ID, config_id, EGL_NONE};
-  if (!eglChooseConfig(egl_display_, config_attribs, &config, 1, &num_configs) || num_configs == 0) {
-    g_warning("MPV: Failed to get Flutter's EGL config");
+  const EGLint config_attribs[] = {EGL_CONFIG_ID, config_id, EGL_NONE};
+  if (!eglChooseConfig(flutter_display, config_attribs, &config, 1, &num_configs) || num_configs != 1) {
+    g_warning("MPV: Failed to select Flutter EGL config: 0x%x", eglGetError());
+    return false;
+  }
+  if (!eglBindAPI(EGL_OPENGL_ES_API)) {
+    g_warning("MPV: Failed to bind OpenGL ES API: 0x%x", eglGetError());
     return false;
   }
 
-  // Create isolated EGL context (NOT shared with Flutter) to prevent
-  // GL state pollution
-  eglBindAPI(EGL_OPENGL_ES_API);
-  EGLint context_attribs[] = {
-      EGL_CONTEXT_CLIENT_VERSION,
-      2,
-      EGL_NONE,
-  };
-  egl_context_ = eglCreateContext(egl_display_, config, EGL_NO_CONTEXT, context_attribs);
-  if (egl_context_ == EGL_NO_CONTEXT) {
+  const EGLint context_attribs[] = {EGL_CONTEXT_CLIENT_VERSION, 2, EGL_NONE};
+  EGLContext candidate_context = eglCreateContext(flutter_display, config, EGL_NO_CONTEXT, context_attribs);
+  if (candidate_context == EGL_NO_CONTEXT) {
     g_warning("MPV: Failed to create isolated EGL context: 0x%x", eglGetError());
+    if (previous_api != EGL_NONE && !eglBindAPI(previous_api)) {
+      g_warning("MPV: Failed to restore EGL client API: 0x%x", eglGetError());
+    }
     return false;
   }
 
-  // Make the isolated context current for mpv render context creation
-  EGLSurface flutter_draw = eglGetCurrentSurface(EGL_DRAW);
-  EGLSurface flutter_read = eglGetCurrentSurface(EGL_READ);
-  eglMakeCurrent(egl_display_, EGL_NO_SURFACE, EGL_NO_SURFACE, egl_context_);
-
-  // Set up OpenGL parameters for mpv.
-  mpv_opengl_init_params gl_init_params{
-      .get_proc_address = get_opengl_proc_address,
-      .get_proc_address_ctx = nullptr,
+  auto destroy_candidate_context = [&]() {
+    const EGLenum api_before_cleanup = eglQueryAPI();
+    if (eglGetCurrentContext() == candidate_context) {
+      if (!eglBindAPI(EGL_OPENGL_ES_API) ||
+          !eglMakeCurrent(flutter_display, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT)) {
+        g_warning("MPV: Failed to release rejected EGL context: 0x%x", eglGetError());
+        return;
+      }
+    }
+    if (!eglDestroyContext(flutter_display, candidate_context)) {
+      g_warning("MPV: Failed to destroy rejected EGL context: 0x%x", eglGetError());
+    }
+    if (api_before_cleanup != EGL_NONE && !eglBindAPI(api_before_cleanup)) {
+      g_warning("MPV: Failed to restore EGL API after context cleanup: 0x%x", eglGetError());
+    }
   };
 
+  if (!eglMakeCurrent(flutter_display, EGL_NO_SURFACE, EGL_NO_SURFACE, candidate_context)) {
+    g_warning("MPV: Failed to activate isolated EGL context: 0x%x", eglGetError());
+    destroy_candidate_context();
+    if (previous_api != EGL_NONE && !eglBindAPI(previous_api)) {
+      g_warning("MPV: Failed to restore EGL client API: 0x%x", eglGetError());
+    }
+    return false;
+  }
+
+  mpv_opengl_init_params gl_init_params{};
+  gl_init_params.get_proc_address = get_opengl_proc_address;
+  gl_init_params.get_proc_address_ctx = nullptr;
   mpv_render_param params[] = {
       {MPV_RENDER_PARAM_API_TYPE, const_cast<char*>(MPV_RENDER_API_TYPE_OPENGL)},
       {MPV_RENDER_PARAM_OPENGL_INIT_PARAMS, &gl_init_params},
-      {MPV_RENDER_PARAM_INVALID, nullptr},  // slot for X11/Wayland display
+      {MPV_RENDER_PARAM_INVALID, nullptr},
       {MPV_RENDER_PARAM_INVALID, nullptr},
   };
 
-  // Pass X11/Wayland display for VAAPI hardware acceleration
   GdkDisplay* gdk_display = gdk_display_get_default();
 #ifdef GDK_WINDOWING_WAYLAND
   if (GDK_IS_WAYLAND_DISPLAY(gdk_display)) {
@@ -243,21 +491,38 @@ bool MpvPlayer::InitRenderContext() {
   }
 #endif
 
-  int err = mpv_render_context_create(&mpv_gl_, mpv_, params);
-
-  // Restore Flutter's context
-  eglMakeCurrent(egl_display_, flutter_draw, flutter_read, flutter_context);
-
-  if (err < 0) {
-    g_warning("MPV: mpv_render_context_create() failed: %s", mpv_error_string(err));
-    eglDestroyContext(egl_display_, egl_context_);
-    egl_context_ = EGL_NO_CONTEXT;
+  mpv_render_context* candidate_gl = nullptr;
+  const int error = mpv_render_context_create(&candidate_gl, mpv_, params);
+  const bool restored = restore_flutter();
+  if (error < 0 || candidate_gl == nullptr || !restored) {
+    if (error < 0) {
+      g_warning("MPV: mpv_render_context_create() failed: %s", mpv_error_string(error));
+    } else if (!restored) {
+      g_warning("MPV: Failed to restore Flutter EGL state: 0x%x", eglGetError());
+    } else {
+      g_warning("MPV: mpv returned a null render context");
+    }
+    bool retained_candidate = false;
+    if (candidate_gl) {
+      if (eglMakeCurrent(flutter_display, EGL_NO_SURFACE, EGL_NO_SURFACE, candidate_context)) {
+        mpv_render_context_free(candidate_gl);
+      } else {
+        g_warning("MPV: Failed to reactivate rejected EGL context: 0x%x; retaining it for teardown", eglGetError());
+        retained_render_contexts_.push_back({candidate_gl, flutter_display, candidate_context});
+        retained_candidate = true;
+      }
+      if (!restore_flutter()) {
+        g_warning("MPV: Failed final Flutter EGL restoration: 0x%x", eglGetError());
+      }
+    }
+    if (!retained_candidate) destroy_candidate_context();
     return false;
   }
 
-  // Set up render update callback.
+  egl_display_ = flutter_display;
+  egl_context_ = candidate_context;
+  mpv_gl_ = candidate_gl;
   mpv_render_context_set_update_callback(mpv_gl_, OnMpvRenderUpdate, callback_context_.get());
-
   g_message("MPV: Render context created with isolated EGL context");
   return true;
 }
@@ -269,11 +534,21 @@ void MpvPlayer::Dispose() {
 
   // Stop native producers before revoking access to the player. A callback
   // already entered on an mpv thread owns a lease and is allowed to finish.
-  if (mpv_gl_) {
-    mpv_render_context_set_update_callback(mpv_gl_, nullptr, nullptr);
-  }
-  if (mpv_) {
-    mpv_set_wakeup_callback(mpv_, nullptr, nullptr);
+  {
+    std::lock_guard<std::mutex> lock(native_mutex_);
+    if (mpv_) {
+      const char* stop_command[] = {"stop", nullptr};
+      const int stop_result = mpv_command_async(mpv_, 0, stop_command);
+      if (stop_result < 0) {
+        g_warning("MPV: Failed to enqueue stop during disposal: %s", mpv_error_string(stop_result));
+      }
+    }
+    if (mpv_gl_) {
+      mpv_render_context_set_update_callback(mpv_gl_, nullptr, nullptr);
+    }
+    if (mpv_) {
+      mpv_set_wakeup_callback(mpv_, nullptr, nullptr);
+    }
   }
   callback_context_->DetachAndWait();
 
@@ -293,59 +568,44 @@ void MpvPlayer::Dispose() {
 
   RemoveTrackedSources();
 
-  // Native destruction remains off the main thread. Keeping the detached
-  // callback context alive until both mpv objects are gone makes even a late
-  // invocation through mpv's old context pointer harmless.
-  auto* gl = mpv_gl_;
-  auto* handle = mpv_;
-  auto egl_display = egl_display_;
-  auto egl_context = egl_context_;
-  auto callback_context = callback_context_;
-  mpv_gl_ = nullptr;
-  mpv_ = nullptr;
-  egl_display_ = EGL_NO_DISPLAY;
-  egl_context_ = EGL_NO_CONTEXT;
-
-  if (gl || handle || egl_context != EGL_NO_CONTEXT) {
-    std::thread([gl, handle, egl_display, egl_context, callback_context]() {
-      (void)callback_context;
-      if (gl) {
-        if (egl_context != EGL_NO_CONTEXT) {
-          eglMakeCurrent(egl_display, EGL_NO_SURFACE, EGL_NO_SURFACE, egl_context);
-        }
-        mpv_render_context_free(gl);
-      }
-      if (handle) {
-        mpv_terminate_destroy(handle);
-      }
-      if (egl_context != EGL_NO_CONTEXT) {
-        eglMakeCurrent(egl_display, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
-        eglDestroyContext(egl_display, egl_context);
-      }
-    }).detach();
+  // Transfer every render/context pair and the shared mpv handle to the
+  // managed teardown thread. A failed EGL bind leaves the complete pair in
+  // the queue; the handle cannot be terminated until every pair is gone.
+  NativeRenderTeardownBatch teardown;
+  {
+    std::lock_guard<std::mutex> lock(native_mutex_);
+    teardown.resources = std::move(retained_render_contexts_);
+    if (mpv_gl_ || egl_context_ != EGL_NO_CONTEXT) {
+      teardown.resources.push_back({mpv_gl_, egl_display_, egl_context_});
+    }
+    teardown.handle = mpv_;
+    teardown.callback_keep_alive = callback_context_;
+    mpv_gl_ = nullptr;
+    mpv_ = nullptr;
+    egl_display_ = EGL_NO_DISPLAY;
+    egl_context_ = EGL_NO_CONTEXT;
   }
+  NativeRenderTeardownQueue::Instance().Enqueue(std::move(teardown));
 
   observed_properties_.Clear();
 }
 
 void MpvPlayer::Render(int width, int height, int fbo) {
+  std::lock_guard<std::mutex> lock(native_mutex_);
   if (disposed_ || !mpv_gl_) return;
 
-  mpv_opengl_fbo mpv_fbo{
-      .fbo = fbo,
-      .w = width,
-      .h = height,
-      .internal_format = 0,
-  };
+  mpv_opengl_fbo mpv_fbo{};
+  mpv_fbo.fbo = fbo;
+  mpv_fbo.w = width;
+  mpv_fbo.h = height;
+  mpv_fbo.internal_format = 0;
 
   int flip_y = 0;
-
   mpv_render_param params[] = {
       {MPV_RENDER_PARAM_OPENGL_FBO, &mpv_fbo},
       {MPV_RENDER_PARAM_FLIP_Y, &flip_y},
       {MPV_RENDER_PARAM_INVALID, nullptr},
   };
-
   mpv_render_context_render(mpv_gl_, params);
 }
 
@@ -353,7 +613,7 @@ void MpvPlayer::Command(const std::vector<std::string>& args) { CommandAsync(arg
 
 void MpvPlayer::CommandAsync(const std::vector<std::string>& args, CommandCallback callback) {
   if (disposed_ || !mpv_) {
-    if (callback) callback(0);
+    if (callback) callback(MPV_ERROR_UNINITIALIZED);
     return;
   }
 
@@ -388,6 +648,16 @@ void MpvPlayer::SetPropertyAsync(const std::string& name, const std::string& val
     return;
   }
 
+  if (name == "pause" && !plezy::mpv_common::ParseEnabledFlag(value)) {
+    auto completion = std::move(callback);
+    callback = [this, completion = std::move(completion)](int error) {
+      if (error >= 0 && !disposed_) {
+        audio_recovery_.RequestResume();
+        EnsureAudioRecoveryTimer();
+      }
+      if (completion) completion(error);
+    };
+  }
   uint64_t request_id = callback ? pending_requests_.RegisterStatus(std::move(callback)) : 0;
 
   char* property_value = const_cast<char*>(value.c_str());
@@ -400,7 +670,7 @@ void MpvPlayer::SetPropertyAsync(const std::string& name, const std::string& val
 
 void MpvPlayer::GetPropertyAsync(const std::string& name, GetPropertyCallback callback) {
   if (disposed_ || !mpv_) {
-    if (callback) callback(-1, "");
+    if (callback) callback(MPV_ERROR_UNINITIALIZED, "");
     return;
   }
 
@@ -617,12 +887,16 @@ void MpvPlayer::LogRecovery(const std::string& text) {
   fl_value_unref(data);
 }
 
-void MpvPlayer::TryAudioReload(const char* reason, int attempt) {
+void MpvPlayer::TryAudioReload(const char* reason, int attempt, uint64_t request_generation) {
   LogRecovery("issuing ao-reload (reason=" + std::string(reason) + ", attempt " + std::to_string(attempt) + ")");
   const std::string reason_copy = reason;
-  CommandAsync({"ao-reload"}, [this, reason_copy, attempt](int error) {
-    audio_recovery_.CompleteReload();
-    LogRecovery(
+  auto callback_context = callback_context_;
+  CommandAsync({"ao-reload"}, [callback_context, reason_copy, attempt, request_generation](int error) {
+    auto lease = callback_context->Acquire();
+    if (!lease) return;
+    MpvPlayer* player = lease.player();
+    player->audio_recovery_.CompleteReload(request_generation);
+    player->LogRecovery(
         "ao-reload completed (reason=" + reason_copy + ", attempt " + std::to_string(attempt) +
         ", error=" + std::to_string(error) + ")");
   });
@@ -634,7 +908,7 @@ void MpvPlayer::MaybeRunAudioRecovery() {
     return;
   }
   const char* reason = action.reason == plezy::mpv_common::AudioReloadReason::kResume ? "resume" : "null-fallback";
-  TryAudioReload(reason, action.attempt);
+  TryAudioReload(reason, action.attempt, action.request_generation);
   if (action.exhausted) {
     LogRecovery("audio recovery budget exhausted; waiting for device list change");
   }
@@ -652,15 +926,7 @@ void MpvPlayer::HandleMpvEvent(mpv_event* event) {
       uint64_t request_id = event->reply_userdata;
       StatusCallback callback = pending_requests_.TakeStatus(request_id);
       if (callback) {
-        int error = event->error;
-        g_idle_add(
-            [](gpointer data) -> gboolean {
-              auto* pair = static_cast<std::pair<CommandCallback, int>*>(data);
-              if (pair->first) pair->first(pair->second);
-              delete pair;
-              return G_SOURCE_REMOVE;
-            },
-            new std::pair<CommandCallback, int>(std::move(callback), error));
+        callback(event->error);
       }
       break;
     }
@@ -677,20 +943,13 @@ void MpvPlayer::HandleMpvEvent(mpv_event* event) {
             if (c_value) value = SanitizeUtf8(c_value);
           }
         }
-        g_idle_add(
-            [](gpointer data) -> gboolean {
-              auto* tuple = static_cast<std::tuple<GetPropertyCallback, int, std::string>*>(data);
-              const auto& callback = std::get<0>(*tuple);
-              if (callback) callback(std::get<1>(*tuple), std::get<2>(*tuple));
-              delete tuple;
-              return G_SOURCE_REMOVE;
-            },
-            new std::tuple<GetPropertyCallback, int, std::string>(std::move(callback), error, std::move(value)));
+        callback(error, value);
       }
       break;
     }
     case MPV_EVENT_LOG_MESSAGE: {
       auto* msg = static_cast<mpv_event_log_message*>(event->data);
+      if (!msg) break;
       g_message("MPV [%s] %s: %s", msg->level, msg->prefix, msg->text);
 
       FlValue* data = fl_value_new_map();
@@ -703,6 +962,7 @@ void MpvPlayer::HandleMpvEvent(mpv_event* event) {
     }
     case MPV_EVENT_PROPERTY_CHANGE: {
       auto* prop = static_cast<mpv_event_property*>(event->data);
+      if (!prop || !prop->name) break;
       mpv_node node;
       node.format = prop->format;
 
@@ -722,6 +982,8 @@ void MpvPlayer::HandleMpvEvent(mpv_event* event) {
         case MPV_FORMAT_NODE:
           if (prop->data) {
             node = *static_cast<mpv_node*>(prop->data);
+          } else {
+            node.format = MPV_FORMAT_NONE;
           }
           break;
         default:
@@ -756,6 +1018,7 @@ void MpvPlayer::HandleMpvEvent(mpv_event* event) {
     case MPV_EVENT_END_FILE: {
       audio_recovery_.SetFileLoaded(false);
       auto* end = static_cast<mpv_event_end_file*>(event->data);
+      if (!end) break;
       FlValue* data = fl_value_new_map();
       fl_value_set_string_take(data, "reason", fl_value_new_int(static_cast<int>(end->reason)));
       if (end->reason == MPV_END_FILE_REASON_ERROR) {
@@ -773,6 +1036,7 @@ void MpvPlayer::HandleMpvEvent(mpv_event* event) {
     }
     case MPV_EVENT_FILE_LOADED: {
       audio_recovery_.SetFileLoaded(true);
+      EnsureAudioRecoveryTimer();
       SendEvent("file-loaded");
       break;
     }
@@ -784,13 +1048,37 @@ void MpvPlayer::HandleMpvEvent(mpv_event* event) {
       break;
   }
 }
-
 FlValue* MpvPlayer::NodeToFlValue(mpv_node* node) {
-  if (!node) return fl_value_new_null();
+  NodeConversionBudget budget{
+      /*remaining_entries=*/16384,
+      /*remaining_bytes=*/16 * 1024 * 1024,
+  };
+  return NodeToFlValue(node, 0, &budget);
+}
+
+bool MpvPlayer::ConvertNodeString(const char* input, NodeConversionBudget* budget, std::string* result) {
+  if (!input || !budget || !result) return false;
+  const size_t length = strnlen(input, budget->remaining_bytes + 1);
+  if (length > budget->remaining_bytes) return false;
+  budget->remaining_bytes -= length;
+  *result = SanitizeUtf8(input, length);
+  return true;
+}
+
+FlValue* MpvPlayer::NodeToFlValue(mpv_node* node, size_t depth, NodeConversionBudget* budget) {
+  constexpr size_t kMaxNodeDepth = 32;
+  constexpr int kMaxNodeEntries = 16384;
+  if (!node || !budget || depth >= kMaxNodeDepth || budget->remaining_entries == 0) {
+    return fl_value_new_null();
+  }
+  --budget->remaining_entries;
 
   switch (node->format) {
-    case MPV_FORMAT_STRING:
-      return fl_value_new_string(SanitizeUtf8(node->u.string).c_str());
+    case MPV_FORMAT_STRING: {
+      std::string value;
+      if (!ConvertNodeString(node->u.string, budget, &value)) return fl_value_new_null();
+      return fl_value_new_string(value.c_str());
+    }
     case MPV_FORMAT_FLAG:
       return fl_value_new_bool(node->u.flag != 0);
     case MPV_FORMAT_INT64:
@@ -798,18 +1086,35 @@ FlValue* MpvPlayer::NodeToFlValue(mpv_node* node) {
     case MPV_FORMAT_DOUBLE:
       return fl_value_new_float(node->u.double_);
     case MPV_FORMAT_NODE_ARRAY: {
-      FlValue* list = fl_value_new_list();
-      for (int i = 0; i < node->u.list->num; i++) {
-        fl_value_append_take(list, NodeToFlValue(&node->u.list->values[i]));
+      const mpv_node_list* list = node->u.list;
+      if (!list || list->num < 0 || list->num > kMaxNodeEntries || (list->num > 0 && !list->values)) {
+        return fl_value_new_null();
       }
-      return list;
+      FlValue* result = fl_value_new_list();
+      for (int i = 0; i < list->num; i++) {
+        fl_value_append_take(result, NodeToFlValue(&list->values[i], depth + 1, budget));
+      }
+      return result;
     }
     case MPV_FORMAT_NODE_MAP: {
-      FlValue* map = fl_value_new_map();
-      for (int i = 0; i < node->u.list->num; i++) {
-        fl_value_set_string_take(map, node->u.list->keys[i], NodeToFlValue(&node->u.list->values[i]));
+      const mpv_node_list* map = node->u.list;
+      if (!map || map->num < 0 || map->num > kMaxNodeEntries || (map->num > 0 && (!map->keys || !map->values))) {
+        return fl_value_new_null();
       }
-      return map;
+      FlValue* result = fl_value_new_map();
+      for (int i = 0; i < map->num; i++) {
+        if (!map->keys[i]) {
+          fl_value_unref(result);
+          return fl_value_new_null();
+        }
+        std::string key;
+        if (!ConvertNodeString(map->keys[i], budget, &key)) {
+          fl_value_unref(result);
+          return fl_value_new_null();
+        }
+        fl_value_set_string_take(result, key.c_str(), NodeToFlValue(&map->values[i], depth + 1, budget));
+      }
+      return result;
     }
     default:
       return fl_value_new_null();
@@ -830,10 +1135,12 @@ void MpvPlayer::SendPropertyChange(const char* name, mpv_node* data) {
     fl_value_append_take(list, fl_value_new_null());
   }
 
-  std::lock_guard<std::mutex> lock(callback_mutex_);
-  if (event_callback_) {
-    event_callback_(list);
+  EventCallback callback;
+  {
+    std::lock_guard<std::mutex> lock(callback_mutex_);
+    callback = event_callback_;
   }
+  if (callback) callback(list);
   fl_value_unref(list);
 }
 
@@ -845,19 +1152,23 @@ void MpvPlayer::SendEvent(const std::string& name, FlValue* data) {
     fl_value_set_string_take(event_map, "data", fl_value_ref(data));
   }
 
-  std::lock_guard<std::mutex> lock(callback_mutex_);
-  if (event_callback_) {
-    event_callback_(event_map);
+  EventCallback callback;
+  {
+    std::lock_guard<std::mutex> lock(callback_mutex_);
+    callback = event_callback_;
   }
+  if (callback) callback(event_map);
   fl_value_unref(event_map);
 }
 
 void MpvPlayer::SetHDREnabled(bool enabled, StatusCallback callback) {
-  hdr_enabled_ = enabled;
-  if (!mpv_) {
-    if (callback) callback(0);
-    return;
-  }
-  SetPropertyAsync("target-colorspace-hint", plezy::mpv_common::TargetColorspaceHint(enabled), std::move(callback));
+  SetPropertyAsync(
+      "target-colorspace-hint", plezy::mpv_common::TargetColorspaceHint(enabled),
+      [this, enabled, callback = std::move(callback)](int error) mutable {
+        if (plezy::mpv_common::SetPropertyStatusSucceeded(error) && !disposed_) {
+          hdr_enabled_ = enabled;
+        }
+        if (callback) callback(error);
+      });
 }
 }  // namespace mpv

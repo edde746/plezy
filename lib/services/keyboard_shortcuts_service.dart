@@ -15,11 +15,13 @@ class KeyboardShortcutsService extends ChangeNotifier {
   static const Set<String> _repeatableVideoActions = {'zoom_in', 'zoom_out'};
 
   static KeyboardShortcutsService? _instance;
+  static Future<void>? _initialization;
   late final SettingsBindingOwner _settingsBinding;
   Map<String, HotKey?> _hotkeys = {};
   Future<void> _shortcutMutationTail = Future.value();
   int _seekTimeSmall = 10; // Default, loaded from settings
   int _seekTimeLarge = 30; // Default, loaded from settings
+  bool _disposed = false;
   bool _settingsInitialized = false;
 
   KeyboardShortcutsService._() {
@@ -32,11 +34,31 @@ class KeyboardShortcutsService extends ChangeNotifier {
   SettingsService get _settingsService => _settingsBinding.settings!;
 
   static Future<KeyboardShortcutsService> getInstance() async {
-    if (_instance == null) {
-      _instance = KeyboardShortcutsService._();
-      await _instance!._init();
+    var instance = _instance;
+    if (instance == null) {
+      instance = KeyboardShortcutsService._();
+      _instance = instance;
+      final initialization = instance._init();
+      _initialization = initialization;
     }
-    return _instance!;
+
+    final initialization = _initialization;
+    if (initialization != null) {
+      try {
+        await initialization;
+      } catch (_) {
+        if (identical(_instance, instance)) {
+          instance._settingsBinding.dispose();
+          instance._disposed = true;
+          _instance = null;
+        }
+        rethrow;
+      } finally {
+        if (identical(_initialization, initialization)) _initialization = null;
+      }
+    }
+    if (instance._disposed) throw StateError('KeyboardShortcutsService was disposed during initialization');
+    return instance;
   }
 
   /// Keyboard shortcut customization is only supported on desktop platforms.
@@ -112,8 +134,13 @@ class KeyboardShortcutsService extends ChangeNotifier {
 
   @override
   void dispose() {
+    if (_disposed) return;
+    _disposed = true;
     _settingsBinding.dispose();
-    if (identical(_instance, this)) _instance = null;
+    if (identical(_instance, this)) {
+      _instance = null;
+      _initialization = null;
+    }
     super.dispose();
   }
 

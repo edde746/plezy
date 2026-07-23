@@ -12,6 +12,8 @@ import 'package:shared_preferences/util/legacy_to_async_migration_util.dart';
 /// 3. Optionally override onInit() for post-initialization setup
 abstract class BaseSharedPreferencesService {
   static final Map<Type, BaseSharedPreferencesService> _instances = {};
+  static final Map<Type, Future<BaseSharedPreferencesService>> _initializations = {};
+  static int _resetGeneration = 0;
   // Single shared cache across all subclasses so writes from one service are
   // visible to reads from another without per-instance cache divergence.
   static Future<SharedPreferencesWithCache>? _cacheFuture;
@@ -29,14 +31,30 @@ abstract class BaseSharedPreferencesService {
   /// - One-time migration from the legacy SharedPreferences API to the
   ///   SharedPreferencesAsync-backed cache (idempotent across launches)
   /// - Calling onInit() hook for subclass-specific setup
-  static Future<T> initializeInstance<T extends BaseSharedPreferencesService>(T Function() constructor) async {
-    if (_instances[T] == null) {
+  static Future<T> initializeInstance<T extends BaseSharedPreferencesService>(T Function() constructor) {
+    final initialized = _instances[T];
+    if (initialized != null) return Future<T>.value(initialized as T);
+
+    final inFlight = _initializations[T];
+    if (inFlight != null) return inFlight.then((instance) => instance as T);
+
+    final generation = _resetGeneration;
+    final initialization = () async {
       final instance = constructor();
-      _instances[T] = instance;
       instance._cache = await sharedCache();
       await instance.onInit();
-    }
-    return _instances[T] as T;
+      if (generation != _resetGeneration) {
+        return initializeInstance<T>(constructor);
+      }
+      _instances[T] = instance;
+      return instance;
+    }();
+    _initializations[T] = initialization;
+    return initialization.whenComplete(() {
+      if (identical(_initializations[T], initialization)) {
+        _initializations.remove(T);
+      }
+    });
   }
 
   /// Shared preferences cache used app-wide. Runs the legacy → async
@@ -59,6 +77,8 @@ abstract class BaseSharedPreferencesService {
   /// `SharedPreferences.setMockInitialValues(...)`. Test-only.
   @visibleForTesting
   static void resetForTesting() {
+    _resetGeneration++;
+    _initializations.clear();
     _instances.clear();
     _cacheFuture = null;
   }

@@ -114,6 +114,7 @@ class PlayerAndroid extends PlayerBase {
             .read(SettingsService.subtitleRenderResolution)
             .androidRenderScale,
       });
+      if (disposed) throw StateError('Player was disposed during initialization');
       if (result != true) {
         throw Exception('Failed to initialize ExoPlayer');
       }
@@ -123,11 +124,23 @@ class PlayerAndroid extends PlayerBase {
       // future would falsely treat as ready.
       await observeCoreProperties(trackListFormat: 'string');
       await observeProperty('demuxer-cache-time', 'double');
+      if (disposed) throw StateError('Player was disposed during initialization');
+
+      // These settings can be queued before any operation initializes the
+      // native core. Apply the latest requested values now so ExoPlayer and
+      // the already-queued mpv fallback properties start in the same state.
+      await invoke('setAudioNormalization', {'enabled': _audioNormalizationEnabled});
+      await invoke('setAudioDownmix', {
+        'enabled': _downmixEnabled,
+        'centerBoostDb': _downmixCenterBoostDb,
+        'normalize': _downmixNormalize,
+      });
+      if (disposed) throw StateError('Player was disposed during initialization');
 
       initialized = true;
     } catch (e) {
       _initFuture = null;
-      errorController.add(PlayerError('Initialization failed: $e'));
+      if (!disposed) errorController.add(PlayerError('Initialization failed: $e'));
       rethrow;
     }
   }

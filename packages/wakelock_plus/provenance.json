@@ -26,7 +26,7 @@
     "host-only Pigeon schema with an external Dart-client boundary"
   ],
   "artifacts": {
-    "pigeons/messages.dart": "a562715ba7ce115c6f6096fb0c70e591be24c53c127eb4974bdb05dc25f202d6",
+    "pigeons/messages.dart": "37c48310b98b434673409270dc1272ce01fc1c9655b1eb2f662063529ff54eaf",
     "android/src/main/kotlin/dev/fluttercommunity/plus/wakelock/WakelockPlusMessages.g.kt": "7dae2bb2ff5e0c0e5e5c4c3d39500bcfb803e0e34fcaf5ba0dae47db4bd17c67",
     "ios/wakelock_plus/Sources/wakelock_plus/include/wakelock_plus/messages.g.h": "c658260df4ecebbf28ce32022e17ef620104b0c4ee400684aa6af1af86400d0a",
     "ios/wakelock_plus/Sources/wakelock_plus/messages.g.m": "0f2f741586d2d1298f1b9ba4c19f02c3fde9bac91bec7c5a71cfc5bccf854d7d"

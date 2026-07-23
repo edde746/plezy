@@ -31,6 +31,9 @@ AndroidTvFeatureDetection detectAndroidTvFromSystemFeatures(Iterable<String> fea
 /// Service for detecting if the app is running on Android TV or Apple TV.
 class TvDetectionService {
   static TvDetectionService? _instance;
+  static Future<void>? _initialization;
+  @visibleForTesting
+  static Future<void>? debugDetectionGate;
   static bool? _debugAppleTVOverride;
   bool _detected = false;
   bool _forceTv = false;
@@ -44,17 +47,34 @@ class TvDetectionService {
   /// Get the singleton instance, initializing if needed.
   /// Pass [forceTv] to combine a user override with the system-feature check.
   static Future<TvDetectionService> getInstance({bool forceTv = false}) async {
-    if (_instance == null) {
-      _instance = TvDetectionService._();
-      await _instance!._detect(forceTv);
+    final existing = _instance;
+    if (existing != null) {
+      final initialization = _initialization;
+      if (initialization != null) await initialization;
+      return existing;
     }
-    return _instance!;
+
+    final instance = TvDetectionService._();
+    _instance = instance;
+    final initialization = instance._detect(forceTv);
+    _initialization = initialization;
+    try {
+      await initialization;
+    } catch (_) {
+      if (identical(_instance, instance)) _instance = null;
+      rethrow;
+    } finally {
+      if (identical(_initialization, initialization)) _initialization = null;
+    }
+    return instance;
   }
 
   static const bool _tvosBuild = bool.fromEnvironment('TVOS_BUILD');
   static const MethodChannel _deviceChannel = MethodChannel('com.plezy/device');
 
   Future<void> _detect(bool forceTv) async {
+    final gate = debugDetectionGate;
+    if (gate != null) await gate;
     if (_initialized) return;
 
     final deviceInfo = DeviceInfoPlugin();
@@ -145,6 +165,14 @@ class TvDetectionService {
   @visibleForTesting
   static void debugSetAppleTVOverride(bool? value) {
     _debugAppleTVOverride = value;
+  }
+
+  @visibleForTesting
+  static void debugReset() {
+    _instance = null;
+    _initialization = null;
+    debugDetectionGate = null;
+    _debugAppleTVOverride = null;
   }
 
   static List<String> tvDetectionReasonsSync() => _instance?._effectiveDetectionReasons ?? const [];

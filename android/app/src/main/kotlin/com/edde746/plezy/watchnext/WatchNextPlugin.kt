@@ -10,12 +10,17 @@ import androidx.tvprovider.media.tv.TvContractCompat
 import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
+import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
+import java.util.concurrent.atomic.AtomicBoolean
 
-/** Flutter bridge for profile-owned Android TV Watch Next mutations. */
-class WatchNextPlugin :
+class WatchNextPlugin() :
   FlutterPlugin,
   MethodChannel.MethodCallHandler {
+  internal constructor(executorFactory: () -> ExecutorService) : this() {
+    this.executorFactory = executorFactory
+  }
+
   companion object {
     private const val TAG = "WatchNextPlugin"
     private const val METHOD_CHANNEL = "com.plezy/watch_next"
@@ -32,24 +37,64 @@ class WatchNextPlugin :
     }
   }
 
+  private var executorFactory: () -> ExecutorService = { Executors.newSingleThreadExecutor() }
+
+  private class EngineSession(val context: Context) {
+    private val closed = AtomicBoolean(false)
+    var lease: SystemShelfLifecycle.Lease? = null
+    var provider: WatchNextProvider? = null
+
+    fun close() {
+      closed.set(true)
+    }
+
+    fun isOpen(): Boolean = !closed.get()
+  }
+
   private lateinit var methodChannel: MethodChannel
   private var applicationContext: Context? = null
-  private var watchNextProvider: WatchNextProvider? = null
-  private val ioExecutor by lazy { Executors.newSingleThreadExecutor() }
+  private var engineSession: EngineSession? = null
+  private var ioExecutor: ExecutorService? = null
   private val mainHandler = Handler(Looper.getMainLooper())
 
   override fun onAttachedToEngine(binding: FlutterPlugin.FlutterPluginBinding) {
+    val executor = executorFactory()
+    val session = EngineSession(binding.applicationContext)
+    ioExecutor = executor
+    engineSession = session
     applicationContext = binding.applicationContext
-    watchNextProvider = WatchNextProvider(binding.applicationContext)
     methodChannel = MethodChannel(binding.binaryMessenger, METHOD_CHANNEL)
     methodChannel.setMethodCallHandler(this)
+    executor.execute {
+      val lease = SystemShelfLifecycle.acquireIf(session::isOpen) ?: return@execute
+      session.lease = lease
+      if (session.isOpen()) {
+        session.provider = WatchNextProvider(session.context, lease)
+      }
+    }
   }
 
   override fun onDetachedFromEngine(binding: FlutterPlugin.FlutterPluginBinding) {
     methodChannel.setMethodCallHandler(null)
+    val session = engineSession
+    val executor = ioExecutor
+    session?.close()
+    engineSession = null
+    ioExecutor = null
     applicationContext = null
-    watchNextProvider = null
-    ioExecutor.shutdown()
+    if (session != null && executor != null) {
+      try {
+        executor.execute {
+          session.lease?.let(SystemShelfLifecycle::invalidate)
+          session.lease = null
+          session.provider = null
+        }
+      } catch (_: java.util.concurrent.RejectedExecutionException) {
+        Log.e(TAG, "System shelf lifecycle executor rejected detach")
+      } finally {
+        executor.shutdown()
+      }
+    }
   }
 
   override fun onMethodCall(call: MethodCall, result: MethodChannel.Result) {
@@ -76,7 +121,8 @@ class WatchNextPlugin :
   }
 
   private fun handleSync(call: MethodCall, result: MethodChannel.Result) {
-    val provider = watchNextProvider ?: return result.error("NOT_INITIALIZED", "Provider unavailable", null)
+    val session = engineSession ?: return result.error("NOT_INITIALIZED", "Provider unavailable", null)
+    val executor = ioExecutor ?: return result.error("NOT_INITIALIZED", "Provider unavailable", null)
     val (owner, generation) = ownerArguments(call)
       ?: return result.error("INVALID_ARGS", "Invalid shelf envelope", null)
     val itemsData = call.argument<List<Map<String, Any?>>>("items")
@@ -85,28 +131,48 @@ class WatchNextPlugin :
       return result.error("INVALID_ARGS", "Too many items", null)
     }
     val items = itemsData.mapNotNull(::parseWatchNextItem)
-    executeOnIo(result) { provider.syncWatchNextPrograms(owner, generation, items) }
+    executeOnIo(executor, result) {
+      if (!session.isOpen()) return@executeOnIo false
+      val provider = session.provider ?: return@executeOnIo false
+      val ownership = provider.claimOwnership(owner, generation) ?: return@executeOnIo false
+      if (!session.isOpen()) return@executeOnIo false
+      provider.syncWatchNextPrograms(owner, generation, items, ownership, session::isOpen)
+    }
   }
 
   private fun handleClear(call: MethodCall, result: MethodChannel.Result) {
-    val provider = watchNextProvider ?: return result.error("NOT_INITIALIZED", "Provider unavailable", null)
+    val session = engineSession ?: return result.error("NOT_INITIALIZED", "Provider unavailable", null)
+    val executor = ioExecutor ?: return result.error("NOT_INITIALIZED", "Provider unavailable", null)
     val (owner, generation) = ownerArguments(call)
       ?: return result.error("INVALID_ARGS", "Invalid shelf envelope", null)
-    executeOnIo(result) { provider.clearAll(owner, generation) }
+    executeOnIo(executor, result) {
+      if (!session.isOpen()) return@executeOnIo false
+      val provider = session.provider ?: return@executeOnIo false
+      val ownership = provider.claimOwnership(owner, generation) ?: return@executeOnIo false
+      if (!session.isOpen()) return@executeOnIo false
+      provider.clearAll(owner, generation, ownership, session::isOpen)
+    }
   }
 
   private fun handleRemove(call: MethodCall, result: MethodChannel.Result) {
-    val provider = watchNextProvider ?: return result.error("NOT_INITIALIZED", "Provider unavailable", null)
+    val session = engineSession ?: return result.error("NOT_INITIALIZED", "Provider unavailable", null)
+    val executor = ioExecutor ?: return result.error("NOT_INITIALIZED", "Provider unavailable", null)
     val (owner, generation) = ownerArguments(call)
       ?: return result.error("INVALID_ARGS", "Invalid shelf envelope", null)
     val contentId = call.argument<String>("contentId")
       ?: return result.error("INVALID_ARGS", "Missing contentId", null)
-    executeOnIo(result) { provider.removeItem(owner, generation, contentId) }
+    executeOnIo(executor, result) {
+      if (!session.isOpen()) return@executeOnIo false
+      val provider = session.provider ?: return@executeOnIo false
+      val ownership = provider.claimOwnership(owner, generation) ?: return@executeOnIo false
+      if (!session.isOpen()) return@executeOnIo false
+      provider.removeItem(owner, generation, contentId, ownership, session::isOpen)
+    }
   }
 
-  private fun executeOnIo(result: MethodChannel.Result, block: () -> Any?) {
+  private fun executeOnIo(executor: ExecutorService, result: MethodChannel.Result, block: () -> Any?) {
     try {
-      ioExecutor.execute {
+      executor.execute {
         try {
           val value = block()
           mainHandler.post { result.success(value) }

@@ -1,20 +1,29 @@
 package com.edde746.plezy.mpv
 
 import android.app.Activity
+import android.media.AudioManager
+import android.os.Handler
 import android.os.Looper
+import android.view.ViewGroup
+import android.view.ViewTreeObserver
+import android.widget.FrameLayout
+import com.edde746.plezy.shared.AudioFocusManager
 import dev.jdtech.mpv.EndFileReason
 import dev.jdtech.mpv.LogLevel
 import dev.jdtech.mpv.LogMessage
 import dev.jdtech.mpv.MpvEvent
+import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.plugin.common.EventChannel
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
 import java.util.concurrent.CancellationException
+import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
 import kotlinx.coroutines.suspendCancellableCoroutine
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -70,7 +79,7 @@ class MpvPlayerPluginTest {
   }
 
   @Test
-  fun rejectedSetPropertyFailsOnceForVideoAndAudioWithoutLeakingPayload() {
+  fun rejectedSetPropertyReportsBoundedErrorForVideoAndAudio() {
     for (plugin in listOf(MpvPlayerPlugin(), MpvAudioPlayerPlugin())) {
       installCore(plugin, testCore { _, _ -> error("secret-property-value") })
       val result = RecordingResult()
@@ -80,15 +89,15 @@ class MpvPlayerPluginTest {
 
       assertEquals(1, result.completionCount)
       assertEquals("SET_PROPERTY_FAILED", result.errorCode)
-      assertEquals("MPV property write was rejected or cancelled", result.errorMessage)
+      assertEquals("MPV property write was rejected", result.errorMessage)
       assertTrue(result.errorMessage?.contains("secret-property-value") == false)
-      assertNull(result.successValue)
       assertNull(result.errorDetails)
+      assertNull(result.successValue)
     }
   }
 
   @Test
-  fun cancelledSetPropertyFailsOnceForVideoAndAudio() {
+  fun cancelledSetPropertyReportsNotInitializedOnceForVideoAndAudio() {
     for (plugin in listOf(MpvPlayerPlugin(), MpvAudioPlayerPlugin())) {
       installCore(plugin, testCore { _, _ -> throw CancellationException("secret-cancellation") })
       val result = RecordingResult()
@@ -97,8 +106,9 @@ class MpvPlayerPluginTest {
       awaitCompletion(result)
 
       assertEquals(1, result.completionCount)
-      assertEquals("SET_PROPERTY_FAILED", result.errorCode)
+      assertEquals("NOT_INITIALIZED", result.errorCode)
       assertTrue(result.errorMessage?.contains("secret-cancellation") == false)
+      assertEquals("Player not initialized", result.errorMessage)
       assertNull(result.successValue)
     }
   }
@@ -112,6 +122,7 @@ class MpvPlayerPluginTest {
     awaitCondition { outcome != null }
 
     assertTrue(outcome?.isFailure == true)
+    assertTrue(outcome?.exceptionOrNull() is CancellationException)
   }
 
   @Test
@@ -134,6 +145,7 @@ class MpvPlayerPluginTest {
 
     assertEquals(2, outcomes.size)
     assertTrue(outcomes.all { it.isFailure })
+    assertTrue(outcomes.all { it.exceptionOrNull() is CancellationException })
   }
 
   @Test
@@ -153,6 +165,175 @@ class MpvPlayerPluginTest {
     assertEquals(true, getBoolean(core, "pausedForSurfaceLoss"))
     assertEquals(false, getBoolean(core, "resumeBlockedByPublicPause"))
     assertEquals(true, getBoolean(core, "deferredResumeRequested"))
+  }
+
+  @Test
+  fun failedResumeRestoresThePreviousPublicPauseIntent() {
+    val core = testCore { _, _ -> error("rejected") }
+    setBoolean(core, "cachedPaused", true)
+    setBoolean(core, "resumeBlockedByPublicPause", true)
+    var outcome: Result<Unit>? = null
+
+    core.setProperty("pause", "no") { outcome = it }
+    awaitCondition { outcome != null }
+
+    assertTrue(outcome?.isFailure == true)
+    assertEquals(true, getBoolean(core, "cachedPaused"))
+    assertEquals(true, getBoolean(core, "resumeBlockedByPublicPause"))
+  }
+
+  @Test
+  fun failedOlderPauseWriteDoesNotRollbackANewerResumeIntent() {
+    val firstStarted = CountDownLatch(1)
+    val releaseFirst = CountDownLatch(1)
+    val writes = AtomicInteger()
+    val core = testCore { _, _ ->
+      if (writes.incrementAndGet() == 1) {
+        firstStarted.countDown()
+        releaseFirst.await(1, TimeUnit.SECONDS)
+        error("rejected")
+      }
+    }
+    var firstOutcome: Result<Unit>? = null
+    var secondOutcome: Result<Unit>? = null
+
+    core.setProperty("pause", "yes") { firstOutcome = it }
+    assertTrue(firstStarted.await(1, TimeUnit.SECONDS))
+    core.setProperty("pause", "no") { secondOutcome = it }
+    releaseFirst.countDown()
+    awaitCondition { firstOutcome != null && secondOutcome != null }
+
+    assertTrue(firstOutcome?.isFailure == true)
+    assertTrue(secondOutcome?.isSuccess == true)
+    assertEquals(2, writes.get())
+    assertEquals(false, getBoolean(core, "cachedPaused"))
+    assertEquals(false, getBoolean(core, "resumeBlockedByPublicPause"))
+  }
+
+  @Test
+  fun pauseIntentBlocksAudioFocusAutoResumeBeforeNativeWriteCompletes() {
+    val writeStarted = CountDownLatch(1)
+    val releaseWrite = CountDownLatch(1)
+    val writes = AtomicInteger()
+    val unexpectedResumeWrite = CountDownLatch(1)
+    val core = testCore { name, value ->
+      if (writes.incrementAndGet() > 1) unexpectedResumeWrite.countDown()
+      if (name == "pause" && value == "yes") {
+        writeStarted.countDown()
+        releaseWrite.await(1, TimeUnit.SECONDS)
+      }
+    }
+    setBoolean(core, "resumeBlockedByPublicPause", false)
+    var outcome: Result<Unit>? = null
+
+    core.setProperty("pause", "yes") { outcome = it }
+    assertTrue(writeStarted.await(1, TimeUnit.SECONDS))
+    invokeAutoResume(core, "audio focus gain")
+
+    assertEquals(true, getBoolean(core, "resumeBlockedByPublicPause"))
+    assertNull(outcome)
+    assertEquals(1, writes.get())
+
+    releaseWrite.countDown()
+    awaitCondition { outcome != null }
+    assertFalse(unexpectedResumeWrite.await(100, TimeUnit.MILLISECONDS))
+    assertTrue(outcome?.isSuccess == true)
+    assertEquals(1, writes.get())
+    assertEquals(true, getBoolean(core, "resumeBlockedByPublicPause"))
+  }
+
+  @Test
+  fun heldLoadPauseIntentSynchronouslyBlocksFocusAndSurfaceAutoResumeWithoutNativeWrite() {
+    val writes = ConcurrentLinkedQueue<Pair<String, String>>()
+    val core = testVideoCore { name, value -> writes += name to value }
+    setBoolean(core, "desiredPaused", false)
+    setBoolean(core, "cachedPaused", false)
+    setBoolean(core, "resumeBlockedByPublicPause", false)
+    setBoolean(core, "pausedForSurfaceLoss", true)
+    setBoolean(core, "pausedForAudioFocusLoss", true)
+    setBoolean(core, "deferredResumeRequested", true)
+
+    core.setPauseIntentForLoad(paused = true)
+    invokeAutoResume(core, "audio focus gain")
+    invokeAutoResume(core, "surface attached")
+
+    assertEquals(true, getBoolean(core, "desiredPaused"))
+    assertEquals(true, getBoolean(core, "cachedPaused"))
+    assertEquals(true, getBoolean(core, "resumeBlockedByPublicPause"))
+    assertEquals(false, getBoolean(core, "pausedForSurfaceLoss"))
+    assertEquals(false, getBoolean(core, "pausedForAudioFocusLoss"))
+    assertEquals(false, getBoolean(core, "deferredResumeRequested"))
+    assertFalse(awaitQueueEntry(writes, "pause" to "no"))
+    assertTrue(writes.isEmpty())
+  }
+
+  @Test
+  fun autoplayLoadIntentClearsPublicPauseBlockWithoutPrematureNativeResumeWrite() {
+    val writes = ConcurrentLinkedQueue<Pair<String, String>>()
+    val core = testCore { name, value -> writes += name to value }
+    setBoolean(core, "desiredPaused", true)
+    setBoolean(core, "cachedPaused", true)
+    setBoolean(core, "resumeBlockedByPublicPause", true)
+
+    core.setPauseIntentForLoad(paused = false)
+
+    assertEquals(false, getBoolean(core, "desiredPaused"))
+    assertEquals(false, getBoolean(core, "cachedPaused"))
+    assertEquals(false, getBoolean(core, "resumeBlockedByPublicPause"))
+    assertFalse(awaitQueueEntry(writes, "pause" to "no"))
+
+    invokeAudioFocusPause(core)
+    assertTrue(awaitQueueEntry(writes, "pause" to "yes"))
+    assertEquals(listOf("pause" to "yes"), writes.toList())
+  }
+
+  @Test
+  fun pausedFocusLossAndGainWithoutResumeCallbackAllowsOneExplicitResume() {
+    val writes = ConcurrentLinkedQueue<Pair<String, String>>()
+    val focusResumeCallbacks = AtomicInteger()
+    val core = testCore { name, value -> writes += name to value }
+    val focusManager = testAudioFocusManager(core, focusResumeCallbacks)
+    var pauseOutcome: Result<Unit>? = null
+    var resumeOutcome: Result<Unit>? = null
+
+    core.setProperty("pause", "yes") { pauseOutcome = it }
+    awaitCondition { pauseOutcome != null }
+
+    dispatchAudioFocusChange(focusManager, AudioManager.AUDIOFOCUS_LOSS_TRANSIENT)
+    assertEquals(false, getBoolean(core, "pausedForAudioFocusLoss"))
+    dispatchAudioFocusChange(focusManager, AudioManager.AUDIOFOCUS_GAIN)
+    assertEquals(0, focusResumeCallbacks.get())
+
+    core.setProperty("pause", "no") { resumeOutcome = it }
+    awaitCondition { resumeOutcome != null }
+
+    assertTrue(pauseOutcome?.isSuccess == true)
+    assertTrue(resumeOutcome?.isSuccess == true)
+    assertEquals(listOf("pause" to "yes", "pause" to "no"), writes.toList())
+    assertEquals(1, writes.count { it == "pause" to "no" })
+    assertEquals(false, getBoolean(core, "pausedForAudioFocusLoss"))
+  }
+
+  @Test
+  fun synchronousFocusReacquisitionClearsLossMarkerAndResumesOnce() {
+    val writes = ConcurrentLinkedQueue<Pair<String, String>>()
+    val focusResumeCallbacks = AtomicInteger()
+    val core = testCore { name, value -> writes += name to value }
+    val focusManager = testAudioFocusManager(core, focusResumeCallbacks)
+    setCoreField(core, "audioFocusManager", focusManager)
+    setBoolean(core, "desiredPaused", false)
+    setBoolean(core, "cachedPaused", false)
+
+    dispatchAudioFocusChange(focusManager, AudioManager.AUDIOFOCUS_LOSS)
+    awaitCondition { writes.contains("pause" to "yes") }
+    assertEquals(true, getBoolean(core, "pausedForAudioFocusLoss"))
+
+    assertTrue(core.requestAudioFocus())
+    awaitCondition { writes.count { it == "pause" to "no" } == 1 }
+
+    assertEquals(0, focusResumeCallbacks.get())
+    assertEquals(listOf("pause" to "yes", "pause" to "no"), writes.toList())
+    assertEquals(false, getBoolean(core, "pausedForAudioFocusLoss"))
   }
 
   @Test
@@ -199,6 +380,83 @@ class MpvPlayerPluginTest {
     assertEquals(1, second.completionCount)
     assertEquals(1, dispose.completionCount)
     assertEquals(0, pending.size)
+  }
+
+  @Test
+  fun configDetachThenEngineDetachTearsDownVideoCoreAndPendingInitOnce() {
+    val activity = Robolectric.buildActivity(Activity::class.java).setup().get()
+    activity.setContentView(FrameLayout(activity))
+    val content = activity.findViewById<ViewGroup>(android.R.id.content)
+    val container = FrameLayout(activity)
+    content.addView(container)
+    var layoutCallbacks = 0
+    val listener = ViewTreeObserver.OnGlobalLayoutListener { layoutCallbacks++ }
+    content.viewTreeObserver.addOnGlobalLayoutListener(listener)
+    val core = MpvPlayerCore(activity)
+    setCoreField(core, "surfaceContainer", container)
+    setCoreField(core, "overlayLayoutListener", listener)
+    val plugin = MpvPlayerPlugin()
+    installCore(plugin, core)
+    setPluginField(plugin, "activity", activity)
+    val pendingResult = RecordingResult()
+    pendingInitResults(plugin) += pendingResult
+    setPluginField(plugin, "isInitializing", true)
+    setPluginField(plugin, "activeInitAttempt", 7)
+    setPluginField(plugin, "initAttemptCounter", 7)
+
+    plugin.onDetachedFromActivityForConfigChanges()
+    shadowOf(Looper.getMainLooper()).idle()
+    plugin.onDetachedFromEngine(pluginBinding(activity))
+    content.viewTreeObserver.dispatchOnGlobalLayout()
+
+    assertEquals(false, pendingResult.successValue)
+    assertEquals(1, pendingResult.completionCount)
+    assertEquals(0, layoutCallbacks)
+    assertNull(container.parent)
+    assertNull(getPluginField(plugin, "playerCore"))
+    assertNull(getPluginField(plugin, "activity"))
+    assertTrue(getCoreField(core, "disposing") as Boolean)
+    assertFalse(getPluginField(plugin, "isInitializing") as Boolean)
+  }
+
+  @Test
+  fun staleInitCompletionCannotConsumeReplacementAttemptResults() {
+    val plugin = MpvPlayerPlugin()
+    val stale = RecordingResult()
+    pendingInitResults(plugin) += stale
+    setPluginField(plugin, "isInitializing", true)
+    setPluginField(plugin, "activeInitAttempt", 1)
+    setPluginField(plugin, "initAttemptCounter", 1)
+
+    plugin.onDetachedFromActivityForConfigChanges()
+    assertEquals(false, stale.successValue)
+    assertEquals(1, stale.completionCount)
+
+    val replacement = RecordingResult()
+    pendingInitResults(plugin) += replacement
+    setPluginField(plugin, "isInitializing", true)
+    setPluginField(plugin, "activeInitAttempt", 3)
+    setPluginField(plugin, "initAttemptCounter", 3)
+
+    plugin.completePendingInits(1, success = true)
+    assertEquals(0, replacement.completionCount)
+
+    plugin.completePendingInits(3, success = true)
+    assertEquals(true, replacement.successValue)
+    assertEquals(1, replacement.completionCount)
+  }
+
+  @Test
+  fun engineDetachAlsoTerminatesApplicationContextAudioCore() {
+    val activity = Robolectric.buildActivity(Activity::class.java).setup().get()
+    val plugin = MpvAudioPlayerPlugin()
+    val core = testCore { _, _ -> Unit }
+    installCore(plugin, core)
+
+    plugin.onDetachedFromEngine(pluginBinding(activity))
+
+    assertNull(getPluginField(plugin, "playerCore"))
+    assertTrue(getCoreField(core, "disposing") as Boolean)
   }
 
   @Test
@@ -295,6 +553,84 @@ class MpvPlayerPluginTest {
     }
   }
 
+  @Suppress("UNCHECKED_CAST")
+  private fun pendingInitResults(plugin: MpvPlayerPlugin): MutableList<MethodChannel.Result> = getPluginField(plugin, "pendingInitResults") as MutableList<MethodChannel.Result>
+
+  private fun setPluginField(plugin: MpvPlayerPlugin, name: String, value: Any?) {
+    MpvPlayerPlugin::class.java.getDeclaredField(name).apply {
+      isAccessible = true
+      set(plugin, value)
+    }
+  }
+
+  private fun getPluginField(plugin: MpvPlayerPlugin, name: String): Any? = MpvPlayerPlugin::class.java.getDeclaredField(name).run {
+    isAccessible = true
+    get(plugin)
+  }
+
+  private fun setCoreField(core: MpvPlayerCore, name: String, value: Any?) {
+    MpvPlayerCore::class.java.getDeclaredField(name).apply {
+      isAccessible = true
+      set(core, value)
+    }
+  }
+
+  private fun getCoreField(core: MpvPlayerCore, name: String): Any? = MpvPlayerCore::class.java.getDeclaredField(name).run {
+    isAccessible = true
+    get(core)
+  }
+
+  private fun pluginBinding(activity: Activity): FlutterPlugin.FlutterPluginBinding {
+    val constructor = FlutterPlugin.FlutterPluginBinding::class.java.constructors.single()
+    return constructor.newInstance(activity, null, null, null, null, null, null) as FlutterPlugin.FlutterPluginBinding
+  }
+
+  private fun testAudioFocusManager(
+    core: MpvPlayerCore,
+    resumeCallbacks: AtomicInteger
+  ): AudioFocusManager = AudioFocusManager(
+    context = Robolectric.buildActivity(Activity::class.java).setup().get(),
+    handler = Handler(Looper.getMainLooper()),
+    onPause = { invokeAudioFocusPause(core) },
+    onResume = {
+      resumeCallbacks.incrementAndGet()
+      invokeAudioFocusResume(core, "audio focus gain")
+    },
+    isPaused = { getBoolean(core, "desiredPaused") }
+  )
+
+  private fun invokeAudioFocusPause(core: MpvPlayerCore) {
+    MpvPlayerCore::class.java.getDeclaredMethod("pauseForAudioFocusLoss").apply {
+      isAccessible = true
+      invoke(core)
+    }
+  }
+
+  private fun invokeAudioFocusResume(core: MpvPlayerCore, reason: String) {
+    MpvPlayerCore::class.java.getDeclaredMethod(
+      "resumeAfterAudioFocusGain",
+      String::class.java
+    ).apply {
+      isAccessible = true
+      invoke(core, reason)
+    }
+  }
+
+  private fun dispatchAudioFocusChange(manager: AudioFocusManager, focusChange: Int) {
+    val listener = AudioFocusManager::class.java.getDeclaredField("audioFocusChangeListener").run {
+      isAccessible = true
+      get(manager) as AudioManager.OnAudioFocusChangeListener
+    }
+    listener.onAudioFocusChange(focusChange)
+  }
+
+  private fun invokeAutoResume(core: MpvPlayerCore, reason: String) {
+    MpvPlayerCore::class.java.getDeclaredMethod("requestAutoResume", String::class.java).apply {
+      isAccessible = true
+      invoke(core, reason)
+    }
+  }
+
   private fun setBoolean(core: MpvPlayerCore, name: String, value: Boolean) {
     MpvPlayerCore::class.java.getDeclaredField(name).apply {
       isAccessible = true
@@ -305,6 +641,18 @@ class MpvPlayerPluginTest {
   private fun getBoolean(core: MpvPlayerCore, name: String): Boolean = MpvPlayerCore::class.java.getDeclaredField(name).run {
     isAccessible = true
     getBoolean(core)
+  }
+
+  private fun awaitQueueEntry(
+    queue: ConcurrentLinkedQueue<Pair<String, String>>,
+    expected: Pair<String, String>
+  ): Boolean {
+    repeat(10) {
+      shadowOf(Looper.getMainLooper()).idle()
+      if (queue.contains(expected)) return true
+      Thread.sleep(10)
+    }
+    return false
   }
 
   private fun awaitCompletion(result: RecordingResult) {
