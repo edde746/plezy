@@ -83,8 +83,14 @@ fi
 # 4. Workflow and script regression guards
 section "workflow and script guards"
 if python3 scripts/check_build_workflow.py &&
+   python3 scripts/check_apple_spm_locks.py &&
+   python3 scripts/test_check_apple_spm_locks.py &&
    python3 scripts/check_workflow_security.py &&
    python3 scripts/test_check_workflow_security.py &&
+   python3 scripts/check_workflow_action_pins.py &&
+   python3 scripts/test_check_workflow_action_pins.py &&
+   python3 scripts/test_check_codegen.py &&
+   python3 scripts/test_format_native.py &&
    python3 scripts/check_update_packages_workflow.py &&
    python3 scripts/test_pubspec_version.py &&
    python3 scripts/test_clean_translations.py &&
@@ -111,7 +117,7 @@ out="$(mktemp)"
 if scripts/format_native.sh --check >"$out" 2>&1; then
   ok "native files correctly formatted"
 else
-  fail "native formatting issues"
+  fail "native formatting check failed"
   sed 's/^/    /' "$out"
   FAILED=1
 fi
