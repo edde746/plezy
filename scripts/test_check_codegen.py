@@ -193,6 +193,25 @@ esac
         self.assertEqual(incorrect.read_text(encoding="utf-8"), "incorrect staged output\n")
         self.assertEqual(self.git_status(), status_before)
 
+    def test_rename_overlay_removes_source_before_running_generators(self) -> None:
+        renamed = self.root / "renamed-source.txt"
+        subprocess.run(["git", "mv", "source.txt", renamed.name], cwd=self.root, check=True)
+        for command in (self.bin / "python3", self.bin / "dart"):
+            contents = command.read_text(encoding="utf-8").replace(
+                "source.txt", renamed.name
+            )
+            contents = contents.replace(
+                "\n", "\nif [ -e source.txt ]; then exit 23; fi\n", 1
+            )
+            executable(command, contents)
+
+        result = self.run_codegen("--check")
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertFalse((self.root / "source.txt").exists())
+        self.assertEqual(renamed.read_text(encoding="utf-8"), "version one\n")
+        self.assert_isolation_cleaned_up()
+
     def test_deleted_and_untracked_outputs_are_reported_without_repair(self) -> None:
         deleted = self.root / "lib" / "models" / "model.g.dart"
         deleted.unlink()

@@ -81,7 +81,9 @@ def _copy_dependency_state(source_root: Path, target_root: Path) -> None:
 
 def _create_isolated_checkout(root: Path, destination: Path) -> None:
     _run(root, "git", "worktree", "add", "--detach", "--quiet", str(destination), "HEAD")
-    changed = _nul_paths(_run(root, "git", "diff", "--name-only", "-z", "HEAD", "--").stdout)
+    changed = _nul_paths(
+        _run(root, "git", "diff", "--no-renames", "--name-only", "-z", "HEAD", "--").stdout
+    )
     untracked = _nul_paths(_run(root, "git", "ls-files", "--others", "--exclude-standard", "-z").stdout)
     for relative in sorted(set(changed + untracked)):
         _copy_overlay_path(root, destination, relative)

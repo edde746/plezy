@@ -1,21 +1,24 @@
 <script lang="ts">
-  import { browser } from "$app/environment";
+  import { onMount } from "svelte";
   import Logo from "$lib/components/Logo.svelte";
   import AppleIcon from "~icons/simple-icons/apple";
   import GooglePlayIcon from "~icons/simple-icons/googleplay";
+  import {
+    detectMobileStorePlatform,
+    storeOptionsForPlatform,
+    type MobileStorePlatform,
+  } from "$lib/content/downloads";
 
-  type Platform = "ios" | "android" | "unknown";
+  let platform: MobileStorePlatform = $state("unknown");
+  let availableStores = $derived(storeOptionsForPlatform(platform));
 
-  let platform: Platform = $state("unknown");
-
-  if (browser) {
-    const ua = navigator.userAgent.toLowerCase();
-    if (/iphone|ipad|ipod/.test(ua)) {
-      platform = "ios";
-    } else if (/android/.test(ua)) {
-      platform = "android";
-    }
-  }
+  onMount(() => {
+    platform = detectMobileStorePlatform({
+      userAgent: navigator.userAgent,
+      platform: navigator.platform,
+      maxTouchPoints: navigator.maxTouchPoints,
+    });
+  });
 </script>
 
 <svelte:head>
@@ -44,30 +47,22 @@
     <h1 class="scan-heading">Scan in Plezy</h1>
     <p class="scan-description">To use this feature, scan this QR code with the Plezy app.</p>
 
-    <div class="store-buttons">
-      {#if platform !== "android"}
+    <div class="store-buttons" aria-label="Download Plezy">
+      {#each availableStores as store}
         <a
-          href="https://apps.apple.com/us/app/id6754315964"
+          href={store.url}
           target="_blank"
           rel="noopener noreferrer"
           class="store-button"
         >
-          <AppleIcon />
-          App Store
+          {#if store.id === "app-store"}
+            <AppleIcon />
+          {:else}
+            <GooglePlayIcon />
+          {/if}
+          {store.label}
         </a>
-      {/if}
-
-      {#if platform !== "ios"}
-        <a
-          href="https://play.google.com/store/apps/details?id=com.edde746.plezy"
-          target="_blank"
-          rel="noopener noreferrer"
-          class="store-button"
-        >
-          <GooglePlayIcon />
-          Google Play
-        </a>
-      {/if}
+      {/each}
     </div>
   </div>
 </div>
@@ -103,7 +98,7 @@
     background: var(--color-surface-highest);
   }
 
-  .scan-logo :global(svg) {
+  .scan-logo :global(img) {
     width: 2.5rem;
     height: 2.5rem;
   }

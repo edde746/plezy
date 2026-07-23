@@ -74,14 +74,19 @@ class SystemShelfService {
   }
 
   Future<dynamic> _handleMethodCall(MethodCall call) async {
-    if (call.method == 'onWatchNextTap' || call.method == 'onShelfItemTap') {
-      final args = call.arguments;
-      final contentId = args is Map ? args['contentId'] as String? : null;
-      if (contentId != null) {
-        onShelfItemTap?.call(contentId);
-      }
+    if (call.method != 'onWatchNextTap' && call.method != 'onShelfItemTap') {
+      return null;
     }
+    final args = call.arguments;
+    final contentId = args is Map ? args['contentId'] as String? : null;
+    final callback = onShelfItemTap;
+    if (contentId == null || callback == null) return false;
+    callback(contentId);
+    return true;
   }
+
+  @visibleForTesting
+  Future<dynamic> handleMethodCallForTesting(MethodCall call) => _handleMethodCall(call);
 
   /// Establishes the only owner allowed to publish launcher shelf state.
   ///

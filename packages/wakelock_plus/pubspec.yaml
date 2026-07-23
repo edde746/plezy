@@ -1,9 +1,14 @@
-# Vendored from fluttercommunity/wakelock_plus at
-# 4f4be85aafe1f8216c2fdd3376263d6f40529684. Local changes are the tvOS
-# deployment target, explicit unawaited wrappers required by the root lint
-# policy, serialized Linux portal lifecycle, and web requested/effective
-# wake-lock state. Refresh from the newest upstream release compatible with
-# win32 5.x, reapply all changes, then run pub get and the tvOS pod build.
+# Vendored from fluttercommunity/wakelock_plus at immutable commit
+# 4f4be85aafe1f8216c2fdd3376263d6f40529684. Plezy retains the tvOS
+# deployment target, root-lint unawaited wrappers, serialized Linux portal
+# lifecycle, web requested/effective wake-lock state, and a host-only Pigeon
+# schema. The Dart client remains owned by wakelock_plus_platform_interface
+# 1.4.0; never generate a sibling platform-interface package.
+#
+# Refresh atomically: audit a new upstream commit, reapply every delta above,
+# update provenance.json, run `flutter pub get --enforce-lockfile`, run
+# `dart run pigeon --input pigeons/messages.dart`, then run
+# `python3 ../../scripts/verify_runtime_inputs.py` and the platform smoke tests.
 name: wakelock_plus
 description: >-2
   Plugin that allows you to keep the device screen awake, i.e. prevent the screen from sleeping on
@@ -21,7 +26,7 @@ dependencies:
   flutter_web_plugins:
     sdk: flutter
   meta: ^1.17.0
-  wakelock_plus_platform_interface: ^1.4.0
+  wakelock_plus_platform_interface: 1.4.0
 
   # Windows dependencies
   # win32 is compatible across v5 for Win32 only (not COM)
@@ -38,9 +43,10 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^6.0.0
-  pigeon: ^26.2.3 # dart run pigeon --input "pigeons/messages.dart"
+  # Regenerate only the three host outputs declared by pigeons/messages.dart.
+  pigeon: 26.2.3
   mocktail: ^1.0.4
-  
+
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
 

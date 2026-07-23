@@ -55,7 +55,7 @@
     background: var(--color-surface-highest);
   }
 
-  .error-logo :global(svg) {
+  .error-logo :global(img) {
     width: 2.5rem;
     height: 2.5rem;
   }

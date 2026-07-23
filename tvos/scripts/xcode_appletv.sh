@@ -307,6 +307,55 @@ ResolveEngineOutput() {
   return 1
 }
 
+ResolveDartAotRuntime() {
+  local host_tools="$1"
+  local packaged_runtime="$host_tools/dart-sdk/bin/dartaotruntime"
+  if [[ -x "$packaged_runtime" ]] && "$packaged_runtime" --version >/dev/null 2>&1; then
+    printf '%s\n' "$packaged_runtime"
+    return 0
+  fi
+
+  local flutter_runtime="${FLUTTER_ROOT:-}/bin/cache/dart-sdk/bin/dartaotruntime"
+  local packaged_version_file="$host_tools/dart-sdk/version"
+  local flutter_version_file="${FLUTTER_ROOT:-}/bin/cache/dart-sdk/version"
+  if [[ ! -x "$flutter_runtime" || ! -f "$packaged_version_file" || ! -f "$flutter_version_file" ]]; then
+    echo " └─ERROR: the packaged Dart runtime cannot execute on this host and no compatible Flutter runtime was found" >&2
+    return 1
+  fi
+
+  local packaged_version
+  local flutter_version
+  packaged_version="$(tr -d '[:space:]' < "$packaged_version_file")"
+  flutter_version="$(tr -d '[:space:]' < "$flutter_version_file")"
+  if [[ "$packaged_version" != "$flutter_version" ]]; then
+    echo " └─ERROR: the packaged Dart runtime cannot execute on this host and Flutter's Dart version does not match ($flutter_version != $packaged_version)" >&2
+    return 1
+  fi
+  if ! "$flutter_runtime" --version >/dev/null 2>&1; then
+    echo " └─ERROR: Flutter's Dart runtime cannot execute on this host" >&2
+    return 1
+  fi
+
+  printf '%s\n' "$flutter_runtime"
+}
+
+ResolveFrontendServer() {
+  local host_tools="$1"
+  local dart_aot_runtime="$2"
+  local frontend_server="$host_tools/dart-sdk/bin/snapshots/frontend_server_aot.dart.snapshot"
+  if [[ "$dart_aot_runtime" != "$host_tools/dart-sdk/bin/dartaotruntime" ]]; then
+    frontend_server="$FLUTTER_ROOT/bin/cache/dart-sdk/bin/snapshots/frontend_server_aot.dart.snapshot"
+  elif [[ ! -f "$frontend_server" ]]; then
+    frontend_server="$host_tools/gen/frontend_server_aot.dart.snapshot"
+  fi
+
+  if [[ ! -f "$frontend_server" ]]; then
+    echo " └─ERROR: compatible frontend_server snapshot was not found" >&2
+    return 1
+  fi
+  printf '%s\n' "$frontend_server"
+}
+
 BuildAppDebug() {
   # Host tools (frontend_server, patched SDK, dartaotruntime) ship in
   # host_release for both debug and release consumers — the frontend_server
@@ -353,6 +402,8 @@ BuildAppDebug() {
     return 1
   fi
 
+  DART_AOT_RUNTIME=$(ResolveDartAotRuntime "$HOST_TOOLS") || return 1
+
   # flutter build bundle produces: AssetManifest, FontManifest, NOTICES,
   # shaders, fonts, assets, packages, plus a kernel_blob.bin and
   # isolate_snapshot_data compiled against the stock flutter engine. We
@@ -369,12 +420,9 @@ BuildAppDebug() {
     return 1
   }
 
-  echo " └─Compiling tvOS kernel via local engine frontend_server"
-  FRONTEND_SERVER="$HOST_TOOLS/dart-sdk/bin/snapshots/frontend_server_aot.dart.snapshot"
-  if [ ! -f "$FRONTEND_SERVER" ]; then
-    FRONTEND_SERVER="$HOST_TOOLS/gen/frontend_server_aot.dart.snapshot"
-  fi
-  "$HOST_TOOLS/dart-sdk/bin/dartaotruntime" \
+  echo " └─Compiling tvOS kernel via compatible frontend_server"
+  FRONTEND_SERVER=$(ResolveFrontendServer "$HOST_TOOLS" "$DART_AOT_RUNTIME") || return 1
+  "$DART_AOT_RUNTIME" \
     "$FRONTEND_SERVER" \
     --sdk-root "$HOST_TOOLS/flutter_patched_sdk" \
     --tfa --target=flutter \
@@ -515,6 +563,8 @@ BuildAppRelease() {
     return 1
   fi
 
+  DART_AOT_RUNTIME=$(ResolveDartAotRuntime "$HOST_TOOLS") || return 1
+
   echo " └─Generate flutter_assets via flutter build bundle (release)"
   mkdir -p "$OUTDIR/App.framework/flutter_assets"
   (
@@ -535,11 +585,8 @@ BuildAppRelease() {
   echo " └─Compiling AOT kernel via local engine frontend_server"
   # The snapshot under dart-sdk/bin/snapshots/ is the actual AOT-compiled one;
   # the one under gen/ is a stale/placeholder kernel.
-  FRONTEND_SERVER="$HOST_TOOLS/dart-sdk/bin/snapshots/frontend_server_aot.dart.snapshot"
-  if [ ! -f "$FRONTEND_SERVER" ]; then
-    FRONTEND_SERVER="$HOST_TOOLS/gen/frontend_server_aot.dart.snapshot"
-  fi
-  "$HOST_TOOLS/dart-sdk/bin/dartaotruntime" \
+  FRONTEND_SERVER=$(ResolveFrontendServer "$HOST_TOOLS" "$DART_AOT_RUNTIME") || return 1
+  "$DART_AOT_RUNTIME" \
     "$FRONTEND_SERVER" \
     --sdk-root "$HOST_TOOLS/flutter_patched_sdk" \
     --aot --tfa --target=flutter \

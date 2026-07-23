@@ -1,0 +1,318 @@
+{
+  "schemaVersion": 1,
+  "reviewedOn": "2026-07-21",
+  "accepted": [
+    {
+      "id": 1113317,
+      "package": "@sveltejs/kit",
+      "severity": "moderate",
+      "vulnerableRange": ">=2.49.0 <=2.52.1",
+      "expiresOn": "2026-10-19",
+      "rationale": "GHSA-88qp-p4qg-rqm6: Static adapter/prerender site has no remote functions or forms, query.batch, hooks/redirects, or adapter-node body handling."
+    },
+    {
+      "id": 1113318,
+      "package": "@sveltejs/kit",
+      "severity": "moderate",
+      "vulnerableRange": ">=2.49.0 <=2.52.1",
+      "expiresOn": "2026-10-19",
+      "rationale": "GHSA-vrhm-gvg7-fpcf: Static adapter/prerender site has no remote functions or forms, query.batch, hooks/redirects, or adapter-node body handling."
+    },
+    {
+      "id": 1113631,
+      "package": "@sveltejs/kit",
+      "severity": "low",
+      "vulnerableRange": ">=2.49.0 <=2.53.2",
+      "expiresOn": "2026-10-19",
+      "rationale": "GHSA-fpg4-jhqr-589c: Static adapter/prerender site has no remote functions or forms, query.batch, hooks/redirects, or adapter-node body handling."
+    },
+    {
+      "id": 1116432,
+      "package": "@sveltejs/kit",
+      "severity": "moderate",
+      "vulnerableRange": "<=2.57.0",
+      "expiresOn": "2026-10-19",
+      "rationale": "GHSA-3f6h-2hrp-w5wx: Static adapter/prerender site has no remote functions or forms, query.batch, hooks/redirects, or adapter-node body handling."
+    },
+    {
+      "id": 1116433,
+      "package": "@sveltejs/kit",
+      "severity": "high",
+      "vulnerableRange": "<=2.57.0",
+      "expiresOn": "2026-10-19",
+      "rationale": "GHSA-2crg-3p73-43xp: Static adapter/prerender site has no remote functions or forms, query.batch, hooks/redirects, or adapter-node body handling."
+    },
+    {
+      "id": 1122155,
+      "package": "@sveltejs/kit",
+      "severity": "moderate",
+      "vulnerableRange": ">=2.38.0 <=2.60.0",
+      "expiresOn": "2026-10-19",
+      "rationale": "GHSA-hgv7-v322-mmgr: Static adapter/prerender site has no remote functions or forms, query.batch, hooks/redirects, or adapter-node body handling."
+    },
+    {
+      "id": 1103907,
+      "package": "cookie",
+      "severity": "low",
+      "vulnerableRange": "<0.7.0",
+      "expiresOn": "2026-10-19",
+      "rationale": "GHSA-pxg6-pf52-xh8x: Static site has no cookies, hooks, actions, or forms; cookie serialization is not exercised."
+    },
+    {
+      "id": 1113319,
+      "package": "devalue",
+      "severity": "low",
+      "vulnerableRange": "<=5.6.2",
+      "expiresOn": "2026-10-19",
+      "rationale": "GHSA-33hq-fvwr-56pm: Prerender serialization receives fixed price/rating/count data; the site does not call parse, unflatten, or uneval."
+    },
+    {
+      "id": 1113320,
+      "package": "devalue",
+      "severity": "low",
+      "vulnerableRange": "<=5.6.2",
+      "expiresOn": "2026-10-19",
+      "rationale": "GHSA-8qm3-746x-r74r: Prerender serialization receives fixed price/rating/count data; the site does not call parse, unflatten, or uneval."
+    },
+    {
+      "id": 1114438,
+      "package": "devalue",
+      "severity": "moderate",
+      "vulnerableRange": "<5.6.4",
+      "expiresOn": "2026-10-19",
+      "rationale": "GHSA-cfw5-2vxh-hr84: Prerender serialization receives fixed price/rating/count data; the site does not call parse, unflatten, or uneval."
+    },
+    {
+      "id": 1121800,
+      "package": "devalue",
+      "severity": "low",
+      "vulnerableRange": ">=4.0.0 <5.6.4",
+      "expiresOn": "2026-10-19",
+      "rationale": "GHSA-mwv9-gp5h-frr4: Prerender serialization receives fixed price/rating/count data; the site does not call parse, unflatten, or uneval."
+    },
+    {
+      "id": 1115551,
+      "package": "picomatch",
+      "severity": "moderate",
+      "vulnerableRange": ">=4.0.0 <4.0.4",
+      "expiresOn": "2026-10-19",
+      "rationale": "GHSA-3v7f-55p6-f55p: Build-only glob tooling consumes repository-controlled patterns; no deployed runtime or untrusted glob input exists."
+    },
+    {
+      "id": 1115554,
+      "package": "picomatch",
+      "severity": "high",
+      "vulnerableRange": ">=4.0.0 <4.0.4",
+      "expiresOn": "2026-10-19",
+      "rationale": "GHSA-c2c7-rcm5-vvqj: Build-only glob tooling consumes repository-controlled patterns; no deployed runtime or untrusted glob input exists."
+    },
+    {
+      "id": 1117015,
+      "package": "postcss",
+      "severity": "moderate",
+      "vulnerableRange": "<8.5.10",
+      "expiresOn": "2026-10-19",
+      "rationale": "GHSA-qx2v-qp2m-jg93: Build-only CSS tooling consumes checked-in CSS; no untrusted CSS reaches stringify and the tooling is not deployed."
+    },
+    {
+      "id": 1113515,
+      "package": "rollup",
+      "severity": "high",
+      "vulnerableRange": ">=4.0.0 <4.59.0",
+      "expiresOn": "2026-10-19",
+      "rationale": "GHSA-mw96-cpmx-2vgc: Build-only bundling processes repository-controlled paths and is absent from the deployed static output."
+    },
+    {
+      "id": 1113416,
+      "package": "svelte",
+      "severity": "moderate",
+      "vulnerableRange": "<=5.51.4",
+      "expiresOn": "2026-10-19",
+      "rationale": "GHSA-crpf-4hrx-3jrp: Source trace found none of the affected SSR constructs; the only HTML input is a checked-in constant."
+    },
+    {
+      "id": 1113418,
+      "package": "svelte",
+      "severity": "moderate",
+      "vulnerableRange": "<=5.51.4",
+      "expiresOn": "2026-10-19",
+      "rationale": "GHSA-m56q-vw4c-c2cp: Source trace found none of the affected SSR constructs; the only HTML input is a checked-in constant."
+    },
+    {
+      "id": 1113419,
+      "package": "svelte",
+      "severity": "moderate",
+      "vulnerableRange": "<=5.51.4",
+      "expiresOn": "2026-10-19",
+      "rationale": "GHSA-f7gr-6p89-r883: Source trace found none of the affected SSR constructs; the only HTML input is a checked-in constant."
+    },
+    {
+      "id": 1113420,
+      "package": "svelte",
+      "severity": "moderate",
+      "vulnerableRange": ">=5.39.3 <5.51.5",
+      "expiresOn": "2026-10-19",
+      "rationale": "GHSA-h7h7-mm68-gmrc: Source trace found none of the affected SSR constructs; the only HTML input is a checked-in constant."
+    },
+    {
+      "id": 1114402,
+      "package": "svelte",
+      "severity": "moderate",
+      "vulnerableRange": "<=5.53.4",
+      "expiresOn": "2026-10-19",
+      "rationale": "GHSA-phwv-c562-gvmh: Source trace found none of the affected SSR constructs; the only HTML input is a checked-in constant."
+    },
+    {
+      "id": 1118900,
+      "package": "svelte",
+      "severity": "moderate",
+      "vulnerableRange": ">=5.46.0 <=5.55.6",
+      "expiresOn": "2026-10-19",
+      "rationale": "GHSA-f3cj-j4f6-wq85: Source trace found none of the affected SSR constructs; the only HTML input is a checked-in constant."
+    },
+    {
+      "id": 1120446,
+      "package": "svelte",
+      "severity": "moderate",
+      "vulnerableRange": "<=5.55.6",
+      "expiresOn": "2026-10-19",
+      "rationale": "GHSA-rcqx-6q8c-2c42: Source trace found none of the affected SSR constructs; the only HTML input is a checked-in constant."
+    },
+    {
+      "id": 1120449,
+      "package": "svelte",
+      "severity": "moderate",
+      "vulnerableRange": "<=5.55.6",
+      "expiresOn": "2026-10-19",
+      "rationale": "GHSA-pr6f-5x2q-rwfp: Source trace found none of the affected SSR constructs; the only HTML input is a checked-in constant."
+    },
+    {
+      "id": 1114591,
+      "package": "undici",
+      "severity": "high",
+      "vulnerableRange": ">=7.0.0 <7.24.0",
+      "expiresOn": "2026-10-19",
+      "rationale": "GHSA-f269-vfmq-vjvj: Build-only scraper calls a fixed Google endpoint; no WebSockets, upgrades, shared cache, cookie parsing, or attacker-selected endpoint."
+    },
+    {
+      "id": 1114593,
+      "package": "undici",
+      "severity": "moderate",
+      "vulnerableRange": ">=7.0.0 <7.24.0",
+      "expiresOn": "2026-10-19",
+      "rationale": "GHSA-2mjp-6q6p-2qxm: Build-only scraper calls a fixed Google endpoint; no WebSockets, upgrades, shared cache, cookie parsing, or attacker-selected endpoint."
+    },
+    {
+      "id": 1114637,
+      "package": "undici",
+      "severity": "high",
+      "vulnerableRange": ">=7.0.0 <7.24.0",
+      "expiresOn": "2026-10-19",
+      "rationale": "GHSA-vrm6-8vpv-qv8q: Build-only scraper calls a fixed Google endpoint; no WebSockets, upgrades, shared cache, cookie parsing, or attacker-selected endpoint."
+    },
+    {
+      "id": 1114639,
+      "package": "undici",
+      "severity": "high",
+      "vulnerableRange": ">=7.0.0 <7.24.0",
+      "expiresOn": "2026-10-19",
+      "rationale": "GHSA-v9p9-hfj2-hcw8: Build-only scraper calls a fixed Google endpoint; no WebSockets, upgrades, shared cache, cookie parsing, or attacker-selected endpoint."
+    },
+    {
+      "id": 1114641,
+      "package": "undici",
+      "severity": "moderate",
+      "vulnerableRange": ">=7.0.0 <7.24.0",
+      "expiresOn": "2026-10-19",
+      "rationale": "GHSA-4992-7rv2-5pvq: Build-only scraper calls a fixed Google endpoint; no WebSockets, upgrades, shared cache, cookie parsing, or attacker-selected endpoint."
+    },
+    {
+      "id": 1114643,
+      "package": "undici",
+      "severity": "moderate",
+      "vulnerableRange": ">=7.17.0 <7.24.0",
+      "expiresOn": "2026-10-19",
+      "rationale": "GHSA-phc3-fgpg-7m6h: Build-only scraper calls a fixed Google endpoint; no WebSockets, upgrades, shared cache, cookie parsing, or attacker-selected endpoint."
+    },
+    {
+      "id": 1121241,
+      "package": "undici",
+      "severity": "moderate",
+      "vulnerableRange": ">=7.0.0 <7.28.0",
+      "expiresOn": "2026-10-19",
+      "rationale": "GHSA-p88m-4jfj-68fv: Build-only scraper calls a fixed Google endpoint; no WebSockets, upgrades, shared cache, cookie parsing, or attacker-selected endpoint."
+    },
+    {
+      "id": 1121244,
+      "package": "undici",
+      "severity": "high",
+      "vulnerableRange": ">=7.0.0 <7.28.0",
+      "expiresOn": "2026-10-19",
+      "rationale": "GHSA-vxpw-j846-p89q: Build-only scraper calls a fixed Google endpoint; no WebSockets, upgrades, shared cache, cookie parsing, or attacker-selected endpoint."
+    },
+    {
+      "id": 1121249,
+      "package": "undici",
+      "severity": "low",
+      "vulnerableRange": ">=7.0.0 <7.28.0",
+      "expiresOn": "2026-10-19",
+      "rationale": "GHSA-35p6-xmwp-9g52: Build-only scraper calls a fixed Google endpoint; no WebSockets, upgrades, shared cache, cookie parsing, or attacker-selected endpoint."
+    },
+    {
+      "id": 1121254,
+      "package": "undici",
+      "severity": "low",
+      "vulnerableRange": ">=7.0.0 <7.28.0",
+      "expiresOn": "2026-10-19",
+      "rationale": "GHSA-g8m3-5g58-fq7m: Build-only scraper calls a fixed Google endpoint; no WebSockets, upgrades, shared cache, cookie parsing, or attacker-selected endpoint."
+    },
+    {
+      "id": 1121428,
+      "package": "undici",
+      "severity": "moderate",
+      "vulnerableRange": ">=7.0.0 <7.28.0",
+      "expiresOn": "2026-10-19",
+      "rationale": "GHSA-pr7r-676h-xcf6: Build-only scraper calls a fixed Google endpoint; no WebSockets, upgrades, shared cache, cookie parsing, or attacker-selected endpoint."
+    },
+    {
+      "id": 1116230,
+      "package": "vite",
+      "severity": "moderate",
+      "vulnerableRange": ">=7.0.0 <=7.3.1",
+      "expiresOn": "2026-10-19",
+      "rationale": "GHSA-4w7w-66w2-5vf9: Development/build tooling is not deployed; its servers are not exposed and inputs are repository-controlled."
+    },
+    {
+      "id": 1116232,
+      "package": "vite",
+      "severity": "high",
+      "vulnerableRange": ">=7.1.0 <=7.3.1",
+      "expiresOn": "2026-10-19",
+      "rationale": "GHSA-v2wj-q39q-566r: Development/build tooling is not deployed; its servers are not exposed and inputs are repository-controlled."
+    },
+    {
+      "id": 1116235,
+      "package": "vite",
+      "severity": "high",
+      "vulnerableRange": ">=7.0.0 <=7.3.1",
+      "expiresOn": "2026-10-19",
+      "rationale": "GHSA-p9ff-h696-f583: Development/build tooling is not deployed; its servers are not exposed and inputs are repository-controlled."
+    },
+    {
+      "id": 1120785,
+      "package": "vite",
+      "severity": "moderate",
+      "vulnerableRange": ">=7.0.0 <=7.3.4",
+      "expiresOn": "2026-10-19",
+      "rationale": "GHSA-v6wh-96g9-6wx3: Development/build tooling is not deployed; its servers are not exposed and inputs are repository-controlled."
+    },
+    {
+      "id": 1123526,
+      "package": "vite",
+      "severity": "high",
+      "vulnerableRange": ">=7.0.0 <=7.3.4",
+      "expiresOn": "2026-10-19",
+      "rationale": "GHSA-fx2h-pf6j-xcff: Development/build tooling is not deployed; its servers are not exposed and inputs are repository-controlled."
+    }
+  ]
+}

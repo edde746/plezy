@@ -83,12 +83,18 @@ fi
 # 4. Workflow and script regression guards
 section "workflow and script guards"
 if python3 scripts/check_build_workflow.py &&
+   python3 scripts/test_check_build_workflow.py &&
    python3 scripts/check_apple_spm_locks.py &&
    python3 scripts/test_check_apple_spm_locks.py &&
    python3 scripts/check_workflow_security.py &&
    python3 scripts/test_check_workflow_security.py &&
    python3 scripts/check_workflow_action_pins.py &&
    python3 scripts/test_check_workflow_action_pins.py &&
+   python3 scripts/check_container_image_pins.py &&
+   python3 scripts/test_check_container_image_pins.py &&
+   python3 scripts/verify_runtime_inputs.py &&
+   python3 scripts/test_verify_runtime_inputs.py &&
+   python3 scripts/test_fetch_tvos_engine.py &&
    python3 scripts/test_check_codegen.py &&
    python3 scripts/test_generate_relay_protocol.py &&
    python3 scripts/test_format_native.py &&
@@ -96,6 +102,8 @@ if python3 scripts/check_build_workflow.py &&
    python3 scripts/test_pubspec_version.py &&
    python3 scripts/test_clean_translations.py &&
    python3 scripts/test_run_maestro.py &&
+   python3 scripts/test_maestro_flow_contracts.py &&
+   python3 scripts/test_maestro_jellyfin_proxy.py &&
    python3 scripts/test_check_icon_consistency.py; then
   ok "workflow and script guards passed"
 else

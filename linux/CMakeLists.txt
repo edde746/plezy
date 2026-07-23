@@ -57,6 +57,7 @@ include(FetchContent)
 FetchContent_Declare(
   simdutf
   URL https://github.com/simdutf/simdutf/releases/download/v6.4.2/singleheader.zip
+  URL_HASH SHA256=9fe4d6f515724a55c8de88fee4463e0890a1abe2267cda13c4b5d245d58039e6
   DOWNLOAD_EXTRACT_TIMESTAMP TRUE
 )
 FetchContent_MakeAvailable(simdutf)

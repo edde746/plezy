@@ -66,6 +66,32 @@ Top-level flows live in `.maestro/flows/`, shared setup in `.maestro/subflows/`,
 `.maestro/regression_flows/`. CI runs the same suites from `.github/workflows/e2e.yml` and uploads diagnostics on
 failure.
 
+### Production container image updates
+
+Production images in `server/Dockerfile` and `server/docker-compose.yml` use a readable version or source-revision tag
+plus an authoritative multi-platform index digest. The adjacent `Platforms` declaration records the supported
+`linux/amd64` and `linux/arm64` variants. Never replace these references with a mutable tag or a single-platform child
+manifest.
+
+Update a production image only through a reviewed change:
+
+1. For the Bugs service, first record the running container's image ID, repository digest, platform, and OCI source
+   revision without printing its environment. Prefer that reviewed running identity; selecting anything else is a
+   service upgrade, not a routine pin refresh.
+2. Review the upstream source revision and changelog, provenance, vulnerability results, and manifest contents. Resolve
+   the readable tag and digest-qualified reference independently and confirm they identify the same OCI index in two
+   clean caches. The index must contain both declared platforms; provenance/attestation descriptors do not count as
+   runnable platforms.
+3. Change the readable tag, full `sha256` index digest, and adjacent platform declaration together. Include the old and
+   new identities, manifest/platform evidence, review findings, smoke results, and rollback notes in the change.
+4. Before changing the Bugs digest, exercise it with non-production configuration and a disposable volume. Review
+   migrations, take a restorable `bugs_data` backup, then validate a cloned volume. A forward-only migration rolls back
+   with the prior digest and pre-change backup, not by changing the image reference alone.
+5. Run `python3 scripts/check_container_image_pins.py`, `python3 scripts/test_check_container_image_pins.py`, and
+   `(cd server && go test ./...)`. Inspect the rendered Compose configuration and rebuilt images locally without
+   exposing configuration values. Do not publish or deploy from a review checkout, and never fall back to `latest` when
+   a digest is unavailable.
+
 ## Internationalization (i18n)
 
 This project uses `slang` for internationalization with JSON files.

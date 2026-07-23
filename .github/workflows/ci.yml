@@ -51,16 +51,24 @@ jobs:
       - name: Verify workflow and script guards
         run: |
           python3 scripts/check_build_workflow.py
+          python3 scripts/test_check_build_workflow.py
           python3 scripts/check_apple_spm_locks.py
           python3 scripts/test_check_apple_spm_locks.py
+          python3 scripts/verify_runtime_inputs.py
+          python3 scripts/test_verify_runtime_inputs.py
           python3 scripts/check_workflow_security.py
           python3 scripts/test_check_workflow_security.py
           python3 scripts/check_workflow_action_pins.py
           python3 scripts/test_check_workflow_action_pins.py
+          python3 scripts/check_container_image_pins.py
+          python3 scripts/test_check_container_image_pins.py
+          python3 scripts/test_fetch_tvos_engine.py
           python3 scripts/test_check_codegen.py
           python3 scripts/test_generate_relay_protocol.py
           python3 scripts/test_format_native.py
           python3 scripts/test_run_maestro.py
+          python3 scripts/test_maestro_flow_contracts.py
+          python3 scripts/test_maestro_jellyfin_proxy.py
           python3 scripts/check_update_packages_workflow.py
           python3 scripts/test_pubspec_version.py
           python3 scripts/test_clean_translations.py
@@ -142,8 +150,20 @@ jobs:
             echo "No tests found, skipping test execution"
           fi
 
+      - name: Install wakelock_plus test dependencies
+        working-directory: packages/wakelock_plus
+        run: flutter pub get --enforce-lockfile
+
+      - name: Run wakelock_plus VM tests
+        working-directory: packages/wakelock_plus
+        run: flutter test test/wakelock_plus_linux_plugin_test.dart
+
+      - name: Run wakelock_plus Chrome tests
+        working-directory: packages/wakelock_plus
+        run: flutter test --platform chrome --dart-define=WEB_PLUGIN_TESTS=true test/wakelock_plus_web_plugin_test.dart
+
   android-test:
-    name: Android JVM Unit Tests
+    name: Android JVM and Native Tests
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -190,6 +210,19 @@ jobs:
       - name: Configure Android local properties
         run: printf 'flutter.sdk=%s\nsdk.dir=%s\n' "$FLUTTER_ROOT" "$ANDROID_HOME" > android/local.properties
 
+      - name: Configure Android host native tests
+        run: |
+          cmake -S android/app/src/test/cpp -B build/android-host-tests \
+            -DCMAKE_BUILD_TYPE=Debug
+
+      - name: Build Android host native tests
+        run: cmake --build build/android-host-tests --parallel 2
+
+      - name: Run Android host native tests
+        run: |
+          ctest --test-dir build/android-host-tests \
+            --output-on-failure --no-tests=error
+
       - name: Run Android JVM unit tests
         working-directory: android
         run: ./gradlew :app:testDebugUnitTest :saf_util:testDebugUnitTest :libass:testDebugUnitTest -x :app:compileFlutterBuildDebug --continue
@@ -217,6 +250,282 @@ jobs:
 
       - name: Verify native formatting
         run: scripts/format_native.sh --check
+
+      - name: Verify Linux native acquisition integrity
+        run: bash linux/packaging/build-libmpv_test.sh
+
+  linux-native-test:
+    name: Linux native reliability (${{ matrix.sanitizer }})
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - sanitizer: address
+            lifecycle_sanitizers: ON
+          - sanitizer: thread
+            lifecycle_sanitizers: OFF
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+        with:
+          persist-credentials: false
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
+        with:
+          channel: "stable"
+          flutter-version: "3.44.0"
+          cache: true
+          pub-cache: false
+
+      - name: Install Linux native test dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            clang cmake ninja-build pkg-config libgtk-3-dev liblzma-dev \
+            libstdc++-12-dev libmpv-dev libepoxy-dev
+
+      - name: Prepare Flutter Linux configuration
+        run: |
+          flutter pub get --enforce-lockfile --no-example
+          flutter build linux --debug --config-only --no-pub
+
+      - name: Configure Linux native reliability tests
+        run: |
+          cmake -S linux -B build/linux-native-${{ matrix.sanitizer }} -G Ninja \
+            -DCMAKE_BUILD_TYPE=Debug \
+            -DPLEZY_BUILD_MPV_PLAYER_LIFECYCLE_TESTS=ON \
+            -DPLEZY_MPV_LIFECYCLE_SANITIZERS=${{ matrix.lifecycle_sanitizers }} \
+            -DPLEZY_BUILD_MPV_RELIABILITY_TESTS=ON \
+            -DPLEZY_MPV_RELIABILITY_SANITIZER=${{ matrix.sanitizer }}
+
+      - name: Build Linux native reliability tests
+        run: |
+          cmake --build build/linux-native-${{ matrix.sanitizer }} --parallel 2 --target \
+            mpv_player_lifecycle_test \
+            mpv_property_result_contract_test \
+            mpv_gpu_bootstrap_test
+
+      - name: Run Linux native reliability tests
+        run: |
+          ctest --test-dir build/linux-native-${{ matrix.sanitizer }} \
+            --output-on-failure --no-tests=error
+
+  apple-native-test:
+    name: Apple native reliability (${{ matrix.platform }})
+    runs-on: macos-26
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: iOS
+            project_directory: ios
+            workspace: ios/Runner.xcworkspace
+            simulator_runtime: iOS
+            simulator_platform: iOS
+            static_destination: ""
+          - platform: macOS
+            project_directory: macos
+            workspace: macos/Runner.xcworkspace
+            simulator_runtime: ""
+            simulator_platform: ""
+            static_destination: platform=macOS
+          - platform: tvOS
+            project_directory: tvos
+            workspace: tvos/Runner.xcworkspace
+            simulator_runtime: tvOS
+            simulator_platform: tvOS
+            static_destination: ""
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+        with:
+          persist-credentials: false
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
+        with:
+          channel: "stable"
+          flutter-version: "3.44.0"
+          cache: true
+          pub-cache: false
+
+      - name: Install locked Dart dependencies
+        run: flutter pub get --enforce-lockfile --no-example
+
+      - name: Record committed CocoaPods lockfile
+        if: matrix.platform != 'tvOS'
+        env:
+          PODFILE_LOCK: ${{ matrix.project_directory }}/Podfile.lock
+        run: |
+          test -f "$PODFILE_LOCK"
+          shasum -a 256 "$PODFILE_LOCK" > "$RUNNER_TEMP/plezy-podfile-lock.sha256"
+
+      - name: Prepare iOS Flutter build settings
+        if: matrix.platform == 'iOS'
+        run: flutter build ios --config-only --simulator --debug --no-pub
+
+      - name: Prepare macOS Flutter build settings
+        if: matrix.platform == 'macOS'
+        run: flutter build macos --config-only --debug --no-pub
+
+      - name: Prepare tvOS Flutter engine
+        if: matrix.platform == 'tvOS'
+        run: tvos/scripts/fetch_engine.sh
+
+      - name: Verify Flutter configuration preserved CocoaPods lockfile
+        if: matrix.platform != 'tvOS'
+        run: shasum -a 256 --check "$RUNNER_TEMP/plezy-podfile-lock.sha256"
+
+      - name: Install locked CocoaPods dependencies
+        if: matrix.platform != 'tvOS'
+        working-directory: ${{ matrix.project_directory }}
+        run: pod install --deployment
+
+      - name: Install tvOS CocoaPods dependencies
+        if: matrix.platform == 'tvOS'
+        run: tvos/scripts/pod_install.sh
+
+      - name: Verify tvOS project wiring
+        if: matrix.platform == 'tvOS'
+        run: ruby tvos/scripts/test_wire_mpv.rb
+
+      - name: Select Apple test destination
+        env:
+          SIMULATOR_RUNTIME: ${{ matrix.simulator_runtime }}
+          SIMULATOR_PLATFORM: ${{ matrix.simulator_platform }}
+          STATIC_DESTINATION: ${{ matrix.static_destination }}
+        run: |
+          python3 - <<'PY'
+          import json
+          import os
+          import subprocess
+
+          destination = os.environ["STATIC_DESTINATION"]
+          if not destination:
+              runtime_name = os.environ["SIMULATOR_RUNTIME"]
+              payload = json.loads(
+                  subprocess.check_output(
+                      ["xcrun", "simctl", "list", "devices", "available", "-j"],
+                      text=True,
+                  )
+              )
+              devices = [
+                  device
+                  for runtime, candidates in payload["devices"].items()
+                  if f".{runtime_name}-" in runtime
+                  for device in candidates
+                  if device.get("isAvailable", False)
+              ]
+              if not devices:
+                  raise SystemExit(f"no available {runtime_name} simulator")
+              destination = (
+                  f"platform={os.environ['SIMULATOR_PLATFORM']} Simulator,"
+                  f"id={devices[0]['udid']}"
+              )
+          with open(os.environ["GITHUB_ENV"], "a", encoding="utf-8") as output:
+              output.write(f"APPLE_TEST_DESTINATION={destination}\n")
+          PY
+
+      - name: Run Apple native reliability tests
+        run: |
+          xcodebuild test \
+            -workspace "${{ matrix.workspace }}" \
+            -scheme Runner \
+            -configuration Debug \
+            -destination "$APPLE_TEST_DESTINATION" \
+            -disableAutomaticPackageResolution \
+            CODE_SIGNING_ALLOWED=NO \
+            COMPILER_INDEX_STORE_ENABLE=NO
+
+  windows-native-test:
+    name: Windows native reliability (${{ matrix.arch }})
+    runs-on: ${{ matrix.runner }}
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: x64
+            runner: windows-latest
+            flutter_setup: action
+          - arch: arm64
+            runner: windows-11-arm
+            flutter_setup: git
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+        with:
+          persist-credentials: false
+
+      - name: Install 7-Zip
+        if: matrix.arch == 'arm64'
+        shell: pwsh
+        run: choco install 7zip -y
+
+      - name: Setup Flutter
+        if: matrix.flutter_setup == 'action'
+        uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
+        with:
+          channel: "stable"
+          flutter-version: "3.44.0"
+          cache: true
+          pub-cache: false
+
+      - name: Setup Flutter 3.44.0 from its immutable commit
+        if: matrix.flutter_setup == 'git'
+        shell: pwsh
+        run: |
+          $root = "$env:RUNNER_TEMP\flutter"
+          git init $root
+          git -C $root remote add origin https://github.com/flutter/flutter.git
+          git -C $root fetch --depth 1 origin 559ffa3f75e7402d65a8def9c28389a9b2e6fe42
+          git -C $root checkout --detach FETCH_HEAD
+          "$root\bin" | Out-File -FilePath $env:GITHUB_PATH -Append -Encoding utf8
+          & "$root\bin\flutter.bat" --version
+
+      - name: Install locked Dart dependencies
+        shell: pwsh
+        run: flutter pub get --enforce-lockfile --no-example
+
+      - name: Install patched Flutter engine
+        shell: pwsh
+        run: |
+          flutter precache --windows
+          .\windows\tool\install-patched-engine.ps1
+
+      - name: Prepare Flutter Windows configuration
+        shell: pwsh
+        run: flutter build windows --debug --config-only --no-pub
+
+      - name: Configure Windows native reliability tests
+        shell: pwsh
+        run: |
+          $buildDir = "build/windows/${{ matrix.arch }}"
+          cmake -S windows -B $buildDir `
+            -DPLEZY_BUILD_MPV_PROPERTY_CONTRACT_TESTS=ON `
+            -DPLEZY_BUILD_DISPLAY_RECOVERY_TESTS=ON
+
+      - name: Build Windows native reliability tests
+        shell: pwsh
+        run: |
+          $buildDir = "build/windows/${{ matrix.arch }}"
+          cmake --build $buildDir --config Debug --parallel 2 --target `
+            mpv_property_result_contract_test `
+            mpv_player_property_contract_test `
+            display_mode_manager_test
+
+      - name: Run Windows native reliability tests
+        shell: pwsh
+        run: |
+          $buildDir = "build/windows/${{ matrix.arch }}"
+          ctest --test-dir "$buildDir/runner" -C Debug --output-on-failure --no-tests=error
 
   dependency-check:
     name: Dependency Validation
@@ -249,3 +558,43 @@ jobs:
           flutter clean
           flutter pub get
           flutter pub outdated
+
+  server:
+    name: Server checks
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+        with:
+          persist-credentials: false
+
+      - name: Setup Go
+        uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6
+        with:
+          go-version-file: server/go.mod
+          cache-dependency-path: server/go.sum
+
+      - name: Run server checks
+        run: scripts/ci_server_checks.sh
+
+
+  website:
+    name: Website checks
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+        with:
+          persist-credentials: false
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
+        with:
+          bun-version: "1.3.14"
+
+      - name: Run website checks
+        run: scripts/ci_website_checks.sh

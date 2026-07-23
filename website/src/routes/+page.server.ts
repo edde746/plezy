@@ -1,4 +1,5 @@
 import type { PageServerLoad } from './$types';
+import { normalizeUsdStorePrice } from '$lib/content/software_app_offers';
 
 export const load: PageServerLoad = async ({ fetch }) => {
 	let appStoreRating: { score: number; count: number } | null = null;
@@ -8,6 +9,7 @@ export const load: PageServerLoad = async ({ fetch }) => {
 
 	try {
 		const res = await fetch('https://itunes.apple.com/lookup?id=6754315964');
+		if (!res.ok) throw new Error(`App Store lookup failed: HTTP ${res.status}`);
 		const data = await res.json();
 		const app = data.results?.[0];
 		if (app?.averageUserRating && app?.userRatingCount) {
@@ -16,25 +18,27 @@ export const load: PageServerLoad = async ({ fetch }) => {
 				count: app.userRatingCount
 			};
 		}
-		if (app?.price != null) {
-			appStorePrice = String(app.price);
-		}
+		appStorePrice = normalizeUsdStorePrice(app?.price, app?.currency);
 	} catch {
 		// App Store fetch failed, continue without it
 	}
 
 	try {
-		const gplay = await import('google-play-scraper');
-		const app = await gplay.default.app({ appId: 'com.edde746.plezy' });
+		// Module initialization is optional external data and must stay inside this failure boundary.
+		const { default: gplay } = await import('google-play-scraper');
+		const app = await gplay.app({
+			appId: 'com.edde746.plezy',
+			country: 'us',
+			lang: 'en'
+		});
+		if (app.available === false) throw new Error('Google Play listing unavailable');
 		if (app.score && app.ratings) {
 			playStoreRating = {
 				score: app.score,
 				count: app.ratings
 			};
 		}
-		if (app.price != null) {
-			playStorePrice = String(app.price);
-		}
+		playStorePrice = normalizeUsdStorePrice(app.price, app.currency);
 	} catch {
 		// Play Store fetch failed, continue without it
 	}

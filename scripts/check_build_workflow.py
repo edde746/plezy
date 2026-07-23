@@ -6,7 +6,10 @@ import re
 import sys
 
 
-WORKFLOW = Path(__file__).resolve().parents[1] / ".github/workflows/build.yml"
+DEFAULT_WORKFLOW = Path(__file__).resolve().parents[1] / ".github/workflows/build.yml"
+if len(sys.argv) > 2:
+    raise SystemExit(f"Usage: {Path(sys.argv[0]).name} [workflow-path]")
+WORKFLOW = Path(sys.argv[1]).resolve() if len(sys.argv) == 2 else DEFAULT_WORKFLOW
 text = WORKFLOW.read_text(encoding="utf-8")
 errors: list[str] = []
 
@@ -22,6 +25,60 @@ def job(name: str) -> str:
     )
     require(match is not None, f"missing {name} job")
     return match.group(0) if match else ""
+
+
+def named_step(block: str, name: str) -> str:
+    match = re.search(
+        rf"(?ms)^      - name: {re.escape(name)}\n.*?(?=^      - |\Z)",
+        block,
+    )
+    require(match is not None, f"missing '{name}' step")
+    return match.group(0) if match else ""
+
+
+def validate_windows_signing(block: str) -> None:
+    install = named_step(block, "Install dependencies")
+    signing = named_step(block, "Sign installer for WinSparkle (EdDSA)")
+    require(
+        block.find("      - name: Install dependencies")
+        < block.find("      - name: Sign installer for WinSparkle (EdDSA)"),
+        "locked root dependencies must be installed before Windows signing",
+    )
+    require(
+        "flutter pub get --enforce-lockfile --no-example" in install,
+        "Windows signing must use the enforced root dependency lock",
+    )
+    require(
+        "dart run auto_updater:sign_update plezy-windows-installer.exe $keyPath"
+        in signing,
+        "Windows signing must execute the locked auto_updater package",
+    )
+    require(
+        "$env:RUNNER_TEMP" in signing,
+        "Windows signing key must live under RUNNER_TEMP",
+    )
+    require(
+        "try {" in signing and "} finally {" in signing,
+        "Windows signing key cleanup must run from a finally block",
+    )
+    require(
+        "Remove-Item -Path $keyPath -Force -ErrorAction SilentlyContinue"
+        in signing,
+        "Windows signing must remove its temporary key",
+    )
+    lowered = signing.lower()
+    for forbidden in (
+        "raw.githubusercontent.com",
+        "invoke-webrequest",
+        "git clone",
+        "_signer",
+        "pubspec.yaml",
+        "dart pub get",
+    ):
+        require(
+            forbidden not in lowered,
+            f"Windows signing step contains mutable or ad-hoc input: {forbidden}",
+        )
 
 
 def require_explicit_shells(name: str, block: str, shell: str) -> None:
@@ -147,8 +204,16 @@ require(
     "Linux build attestation permissions changed",
 )
 require_explicit_shells("build-linux", linux, "bash")
+libmpv_cache = named_step(linux, "Cache libmpv build")
+require(
+    "hashFiles('linux/packaging/build-libmpv.sh', 'linux/packaging/native-inputs.json')"
+    in libmpv_cache,
+    "libmpv cache identity must include its build script and native input manifest",
+)
+
 
 package_windows = job("package-windows")
+validate_windows_signing(package_windows)
 require("needs: build-windows" in package_windows, "Windows packaging must fan in the matrix")
 for artifact in (
     "windows-x64-build",
@@ -250,15 +315,6 @@ checkout_count = sum(action == "actions/checkout" for action, _ in action_refs)
 require(
     text.count("persist-credentials: false") == checkout_count,
     "every build checkout must discard GitHub credentials",
-)
-require(
-    "raw.githubusercontent.com/edde746/auto_updater/9e150f71e17495b7361aedbe6df22e89ad52c254/"
-    in text,
-    "Windows signing helper must remain pinned to the locked auto_updater commit",
-)
-require(
-    'dependencies=@{cryptography="2.9.0"}' in text,
-    "Windows signing dependency must remain exact",
 )
 
 if errors:

@@ -98,11 +98,21 @@
   };
 
   let active: DeviceType = $state('phone');
+  let loaded: Record<DeviceType, boolean> = $state({
+    phone: true,
+    tablet: false,
+    desktop: false,
+    tv: false,
+  });
   let scrollContainer: HTMLElement | undefined = $state();
   let canScrollLeft = $state(false);
   let canScrollRight = $state(false);
   let intendedScrollLeft: number | undefined;
 
+  function selectDevice(device: DeviceType) {
+    loaded[device] = true;
+    active = device;
+  }
   function updateScrollState() {
     if (!scrollContainer) return;
     if (intendedScrollLeft !== undefined && Math.abs(scrollContainer.scrollLeft - intendedScrollLeft) < 2) {
@@ -174,7 +184,7 @@
             {@const DeviceIcon = device.icon}
             <button
               type="button"
-              onclick={() => active = device.id}
+              onclick={() => selectDevice(device.id)}
               aria-pressed={active === device.id}
               aria-controls={`screenshots-${device.id}-panel`}
               aria-label={`Show ${device.label} screenshots`}
@@ -228,19 +238,21 @@
           if (active === device.id) updateScrollState();
         }}
       >
-        {#each screenshot.shots as shot}
-          <div class="screenshot-item">
-            <div class={`screenshot-frame ${screenshot.frameClass}`}>
-              <enhanced:img
-                src={shot.image}
-                alt={shot.alt}
-                loading="eager"
-                class="screenshot-image"
-                sizes={screenshot.sizes}
-              />
+        {#if loaded[device.id]}
+          {#each screenshot.shots as shot}
+            <div class="screenshot-item">
+              <div class={`screenshot-frame ${screenshot.frameClass}`}>
+                <enhanced:img
+                  src={shot.image}
+                  alt={shot.alt}
+                  loading="lazy"
+                  class="screenshot-image"
+                  sizes={screenshot.sizes}
+                />
+              </div>
             </div>
-          </div>
-        {/each}
+          {/each}
+        {/if}
       </div>
     {/each}
   </div>

@@ -48,6 +48,18 @@ void main() {
     messenger.setMockMethodCallHandler(channel, null);
   });
 
+  test('live shelf tap acknowledges only an attached consumer', () async {
+    final service = SystemShelfService.forTesting(channel: channel);
+    const call = MethodCall('onShelfItemTap', {'contentId': 'server:item'});
+
+    expect(await service.handleMethodCallForTesting(call), isFalse);
+
+    final received = <String>[];
+    service.onShelfItemTap = received.add;
+    expect(await service.handleMethodCallForTesting(call), isTrue);
+    expect(received, ['server:item']);
+  });
+
   test('delayed support result is dropped after synchronous owner invalidation', () async {
     final support = Completer<bool>();
     final calls = <MethodCall>[];

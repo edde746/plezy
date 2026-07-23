@@ -40,7 +40,7 @@
     font-weight: 700;
   }
 
-  .footer-logo :global(svg) {
+  .footer-logo :global(img) {
     width: 1.5rem;
     height: 1.5rem;
   }
