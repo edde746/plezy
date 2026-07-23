@@ -12,7 +12,6 @@ class MpvPlayerCore: MpvPlayerCoreBase {
   private weak var window: UIWindow?
   private var mainBlankView: UIView?
   private var isVisible = false
-  private var isDisposed = false
   private static var activeDisplayCriteriaKey: String?
   private var lastDisplayCriteriaMutation: DisplayCriteriaMutation = .skipped
   #if os(tvOS)
@@ -777,11 +776,7 @@ class MpvPlayerCore: MpvPlayerCoreBase {
   #endif
 
   func dispose(preserveDisplayCriteria: Bool = false) {
-    // Guard double-dispose: the plugin calls dispose() then drops the
-    // strong ref, which fires deinit → dispose() again. The second call
-    // would re-enter and crash on weak-ref formation during dealloc.
-    guard !isDisposed else { return }
-    isDisposed = true
+    guard beginDisposal() else { return }
 
     #if os(tvOS)
       if preserveDisplayCriteria {
@@ -867,7 +862,7 @@ class MpvPlayerCore: MpvPlayerCoreBase {
   }
 
   @objc private func enterBackground() {
-    isBackgrounded = true
+    setBackgrounded(true)
     if isPipActive || isPipStarting {
       print("[MpvPlayerCore] Entering background - PiP active/starting, keeping video")
       return
@@ -878,7 +873,7 @@ class MpvPlayerCore: MpvPlayerCoreBase {
   }
 
   @objc private func enterForeground() {
-    isBackgrounded = false
+    setBackgrounded(false)
     if isPipActive {
       print("[MpvPlayerCore] Entering foreground - PiP active, skipping vid restore")
       return
@@ -890,7 +885,7 @@ class MpvPlayerCore: MpvPlayerCoreBase {
 
   #if os(iOS)
     @objc private func sceneDidActivate() {
-      isBackgrounded = false
+      setBackgrounded(false)
       if isPipActive {
         return
       }

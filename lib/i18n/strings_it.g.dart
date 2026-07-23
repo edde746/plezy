@@ -120,6 +120,7 @@ class _TranslationsAuthIt extends TranslationsAuthEn {
 	@override String get quickConnectWaiting => 'In attesa di approvazione…';
 	@override String get quickConnectCancel => 'Annulla';
 	@override String get quickConnectExpired => 'Quick Connect scaduto. Riprova.';
+	@override String get localDataRecoveryRequired => '';
 }
 
 // Path: common
@@ -710,6 +711,11 @@ class _TranslationsMessagesIt extends TranslationsMessagesEn {
 	@override String get streamInterrupted => 'La riproduzione si è interrotta. Premi Riproduci o scorri per riprovare.';
 	@override String get liveStreamInterrupted => 'La diretta si è interrotta. Premi Riproduci per riprovare.';
 	@override String get fileInfoNotAvailable => 'Informazioni sul file non disponibili';
+	@override String get playbackAuthenticationRequired => '';
+	@override String get playbackServerUnavailable => '';
+	@override String get playbackDataInvalid => '';
+	@override String get playbackCancelled => '';
+	@override String get playbackFailed => '';
 	@override String errorLoadingFileInfo({required Object error}) => 'Errore caricamento informazioni sul file: ${error}';
 	@override String get errorLoadingSeries => 'Errore caricamento serie';
 	@override String get musicNotSupported => 'La riproduzione musicale non è ancora supportata';
@@ -1143,6 +1149,7 @@ class _TranslationsLiveTvIt extends TranslationsLiveTvEn {
 	@override String get favorites => 'Preferiti';
 	@override String get reorderFavorites => 'Riordina preferiti';
 	@override String get favoritesLoadFailed => 'Impossibile caricare i preferiti. Controlla la connessione e riprova.';
+	@override String get favoritesUpdateFailed => '';
 	@override String get joinSession => 'Partecipa alla sessione in corso';
 	@override String watchFromStart({required Object minutes}) => 'Guarda dall\'inizio (${minutes} min fa)';
 	@override String get watchLive => 'Guarda in diretta';
@@ -2141,6 +2148,7 @@ extension on TranslationsIt {
 			'auth.quickConnectWaiting' => 'In attesa di approvazione…',
 			'auth.quickConnectCancel' => 'Annulla',
 			'auth.quickConnectExpired' => 'Quick Connect scaduto. Riprova.',
+			'auth.localDataRecoveryRequired' => '',
 			'common.cancel' => 'Cancella',
 			'common.save' => 'Salva',
 			'common.close' => 'Chiudi',
@@ -2637,12 +2645,17 @@ extension on TranslationsIt {
 			'messages.autoRemovedWatchedDownload' => ({required Object title}) => 'Rimosso automaticamente: ${title}',
 			'messages.autoRemovedWatchedDownloads' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('it'))(n, one: 'Rimosso automaticamente ${n} download già visto', other: 'Rimossi automaticamente ${n} download già visti', ), 
 			'messages.removedFromContinueWatching' => 'Rimosso da Continua a guardare',
-			'messages.errorLoading' => ({required Object error}) => 'Errore: ${error}',
 			_ => null,
 		} ?? switch (path) {
+			'messages.errorLoading' => ({required Object error}) => 'Errore: ${error}',
 			'messages.streamInterrupted' => 'La riproduzione si è interrotta. Premi Riproduci o scorri per riprovare.',
 			'messages.liveStreamInterrupted' => 'La diretta si è interrotta. Premi Riproduci per riprovare.',
 			'messages.fileInfoNotAvailable' => 'Informazioni sul file non disponibili',
+			'messages.playbackAuthenticationRequired' => '',
+			'messages.playbackServerUnavailable' => '',
+			'messages.playbackDataInvalid' => '',
+			'messages.playbackCancelled' => '',
+			'messages.playbackFailed' => '',
 			'messages.errorLoadingFileInfo' => ({required Object error}) => 'Errore caricamento informazioni sul file: ${error}',
 			'messages.errorLoadingSeries' => 'Errore caricamento serie',
 			'messages.musicNotSupported' => 'La riproduzione musicale non è ancora supportata',
@@ -2982,6 +2995,7 @@ extension on TranslationsIt {
 			'liveTv.favorites' => 'Preferiti',
 			'liveTv.reorderFavorites' => 'Riordina preferiti',
 			'liveTv.favoritesLoadFailed' => 'Impossibile caricare i preferiti. Controlla la connessione e riprova.',
+			'liveTv.favoritesUpdateFailed' => '',
 			'liveTv.joinSession' => 'Partecipa alla sessione in corso',
 			'liveTv.watchFromStart' => ({required Object minutes}) => 'Guarda dall\'inizio (${minutes} min fa)',
 			'liveTv.watchLive' => 'Guarda in diretta',
@@ -3145,6 +3159,8 @@ extension on TranslationsIt {
 			'watchTogether.participantBuffering' => ({required Object name}) => '${name} sta caricando',
 			'watchTogether.participantNeedsUpdate' => ({required Object name}) => '${name} usa una versione precedente dell\'app — sincronizzazione non disponibile',
 			'watchTogether.resumingWithout' => ({required Object name}) => 'Ripresa senza ${name}',
+			_ => null,
+		} ?? switch (path) {
 			'watchTogether.waitingForParticipants' => 'In attesa che gli altri carichino...',
 			'watchTogether.waitingForName' => ({required Object name}) => 'In attesa di ${name}...',
 			'watchTogether.recentRooms' => 'Stanze recenti',
@@ -3152,8 +3168,6 @@ extension on TranslationsIt {
 			'watchTogether.removeRoom' => 'Rimuovi',
 			'watchTogether.guestSwitchUnavailable' => 'Impossibile cambiare — server non disponibile per la sincronizzazione',
 			'watchTogether.guestSwitchFailed' => 'Impossibile cambiare — contenuto non trovato su questo server',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.title' => 'Download',
 			'downloads.manage' => 'Gestisci',
 			'downloads.tvShows' => 'Serie TV',

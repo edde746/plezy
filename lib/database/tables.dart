@@ -53,6 +53,7 @@ class DownloadedMedia extends Table {
   IntColumn get totalBytes => integer().nullable()();
   IntColumn get downloadedBytes => integer().withDefault(const Constant(0))();
   TextColumn get videoFilePath => text().nullable()();
+  TextColumn get safRootUri => text().nullable()();
   TextColumn get thumbPath => text().nullable()();
   IntColumn get downloadedAt => integer().nullable()();
   TextColumn get errorMessage => text().nullable()();
@@ -73,6 +74,8 @@ class DownloadedMedia extends Table {
 class DownloadOwners extends Table {
   TextColumn get profileId => text()();
   TextColumn get globalKey => text()();
+  TextColumn get backend => text().nullable()();
+  TextColumn get clientScopeId => text().nullable()();
   IntColumn get createdAt => integer()();
 
   @override

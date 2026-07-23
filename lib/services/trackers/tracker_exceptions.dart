@@ -1,14 +1,19 @@
 import 'tracker_constants.dart';
 
+enum TrackerApiFailureCategory { graphqlErrors }
+
 class TrackerApiException implements Exception {
   final TrackerService service;
   final int statusCode;
-  final String body;
+  final TrackerApiFailureCategory? category;
 
-  const TrackerApiException({required this.service, required this.statusCode, required this.body});
+  const TrackerApiException({required this.service, required this.statusCode, this.category});
 
   @override
-  String toString() => 'TrackerApiException(${service.name}, HTTP $statusCode): $body';
+  String toString() {
+    final categorySuffix = category == null ? '' : ', ${category!.name}';
+    return 'TrackerApiException(${service.name}, HTTP $statusCode$categorySuffix)';
+  }
 }
 
 class TrackerAuthException implements Exception {

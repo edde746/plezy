@@ -20,6 +20,25 @@ namespace mpv_common {
 using StatusCallback = std::function<void(int error)>;
 using GetPropertyCallback = std::function<void(int error, const std::string& value)>;
 
+inline constexpr char kSetPropertyFailedCode[] = "SET_PROPERTY_FAILED";
+inline constexpr char kSetPropertyNotInitializedCode[] = "NOT_INITIALIZED";
+inline constexpr size_t kSetPropertyErrorDescriptionLimit = 160;
+
+inline bool SetPropertyStatusSucceeded(int status) { return status >= 0; }
+
+inline std::string SetPropertyErrorDescription(int status) {
+  const char* description = mpv_error_string(status);
+  if (!description || description[0] == '\0') {
+    return "MPV property write failed";
+  }
+
+  size_t length = 0;
+  while (length < kSetPropertyErrorDescriptionLimit && description[length] != '\0') {
+    ++length;
+  }
+  return std::string(description, length);
+}
+
 struct CancelledRequests {
   std::vector<StatusCallback> status;
   std::vector<GetPropertyCallback> properties;

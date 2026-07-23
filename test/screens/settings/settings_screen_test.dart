@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:file_picker/file_picker.dart';
 import 'package:drift/native.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -14,6 +15,7 @@ import 'package:plezy/profiles/plex_home_service.dart';
 import 'package:plezy/profiles/profile_connection_registry.dart';
 import 'package:plezy/profiles/profile_registry.dart';
 import 'package:plezy/providers/libraries_provider.dart';
+import 'package:plezy/providers/download_provider.dart';
 import 'package:plezy/providers/seerr_account_provider.dart';
 import 'package:plezy/providers/theme_provider.dart';
 import 'package:plezy/providers/trackers_provider.dart';
@@ -21,6 +23,7 @@ import 'package:plezy/providers/trakt_account_provider.dart';
 import 'package:plezy/screens/settings/settings_screen.dart';
 import 'package:plezy/services/donation_service.dart';
 import 'package:plezy/services/download_storage_service.dart';
+import 'package:plezy/services/download_manager_service.dart';
 import 'package:plezy/services/settings_service.dart';
 import 'package:plezy/services/update_service.dart';
 import 'package:plezy/theme/mono_theme.dart';
@@ -38,6 +41,7 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   late PathProviderPlatform originalPathProvider;
+  late _FakeDirectoryPicker directoryPicker;
   late Directory temporaryDirectory;
 
   setUpAll(() {
@@ -53,6 +57,8 @@ void main() {
     PathProviderPlatform.instance = FakePathProvider(temporaryDirectory);
     TvDetectionService.debugSetAppleTVOverride(false);
     PlatformDetector.debugSetIsDesktopOSOverride(false);
+    directoryPicker = _FakeDirectoryPicker();
+    FilePicker.platform = directoryPicker;
     await SettingsService.getInstance();
   });
 
@@ -144,14 +150,14 @@ void main() {
     await tester.pump();
     expect(relayMaterialTile.focusNode!.hasFocus, isTrue);
     await tester.sendKeyEvent(LogicalKeyboardKey.enter);
-    await tester.pumpAndSettle();
+    await _pumpUi(tester);
     expect(find.byType(AlertDialog), findsOneWidget);
     expect(find.text(t.settings.watchTogetherRelay), findsWidgets);
     Navigator.of(tester.element(find.byType(AlertDialog))).pop();
-    await tester.pumpAndSettle();
+    await _pumpUi(tester);
 
     await tester.tap(find.text(t.settings.clearCache));
-    await tester.pumpAndSettle();
+    await _pumpUi(tester);
     expect(find.byType(AlertDialog), findsOneWidget);
     expect(find.text(t.settings.clearCache), findsWidgets);
   });
@@ -182,11 +188,11 @@ void main() {
       expect(downloadTile.onTap, isNotNull);
 
       await tester.tap(find.text(t.settings.downloadLocationDefault));
-      await tester.pumpAndSettle();
+      await _pumpUi(tester);
       expect(find.byType(AlertDialog), findsOneWidget);
       expect(find.text(t.settings.downloadLocationDescription), findsOneWidget);
       Navigator.of(tester.element(find.byType(AlertDialog))).pop();
-      await tester.pumpAndSettle();
+      await _pumpUi(tester);
     }
 
     if (!UpdateService.isUpdateCheckEnabled) {
@@ -219,12 +225,68 @@ void main() {
     // indicator and its callback disabled while a request is in flight.
     expect(materialUpdateTile.focusNode, isNotNull);
   });
+
+  testWidgets('folder replacement uses the provider coordinator', (tester) async {
+    final selectedDirectory = Directory('${temporaryDirectory.path}/selected-downloads');
+    directoryPicker.directoryPath = selectedDirectory.path;
+    final harness = await _pumpSettingsScreen(tester);
+    addTearDown(() => harness.dispose(tester));
+
+    await tester.tap(find.text(t.settings.downloadLocationDefault));
+    await _pumpUi(tester);
+    await tester.tap(find.text(t.settings.selectFolder));
+    await _pumpUi(tester);
+
+    expect(harness.locationEvents, ['path:${selectedDirectory.path}', 'type:file', 'refresh']);
+    expect(SettingsService.instance.read(SettingsService.customDownloadPath), selectedDirectory.path);
+  });
+
+  testWidgets('download location reset uses the provider coordinator', (tester) async {
+    await SettingsService.instance.write(
+      SettingsService.customDownloadPath,
+      '${temporaryDirectory.path}/old-downloads',
+    );
+    await SettingsService.instance.write(SettingsService.customDownloadPathType, 'file');
+    final harness = await _pumpSettingsScreen(tester);
+    addTearDown(() => harness.dispose(tester));
+
+    await tester.tap(find.text(t.settings.downloadLocationCustom));
+    await _pumpUi(tester);
+    await tester.tap(find.text(t.settings.resetToDefault));
+    await _pumpUi(tester);
+
+    expect(harness.locationEvents, ['path:null', 'type:null', 'refresh']);
+    expect(SettingsService.instance.read(SettingsService.customDownloadPath), isNull);
+  });
+
+  testWidgets('Reset All resets download location through the provider first', (tester) async {
+    await SettingsService.instance.write(
+      SettingsService.customDownloadPath,
+      '${temporaryDirectory.path}/old-downloads',
+    );
+    await SettingsService.instance.write(SettingsService.customDownloadPathType, 'file');
+    final harness = await _pumpSettingsScreen(tester);
+    addTearDown(() => harness.dispose(tester));
+
+    await tester.tap(find.text(t.settings.resetSettings));
+    await _pumpUi(tester);
+    await tester.tap(find.text(t.common.reset));
+    await _pumpUi(tester);
+
+    expect(harness.locationEvents.take(3), ['path:null', 'type:null', 'refresh']);
+    expect(SettingsService.instance.read(SettingsService.customDownloadPath), isNull);
+    expect(find.text(t.settings.resetSettingsSuccess), findsOneWidget);
+  });
 }
 
 Finder _navigationTileFor(String title) =>
     find.ancestor(of: find.text(title), matching: find.byType(SettingNavigationTile));
 
 Finder _focusableTileFor(String title) => find.ancestor(of: find.text(title), matching: find.byType(FocusableListTile));
+Future<void> _pumpUi(WidgetTester tester) async {
+  await tester.pump();
+  await tester.pump(const Duration(milliseconds: 300));
+}
 
 Finder _focusableTileWithin(Finder navigationTile) =>
     find.descendant(of: navigationTile, matching: find.byType(FocusableListTile));
@@ -248,6 +310,9 @@ class _SettingsHarness {
     required this.trakt,
     required this.trackers,
     required this.seerr,
+    required this.downloadManager,
+    required this.downloadProvider,
+    required this.locationEvents,
   });
 
   final AppDatabase database;
@@ -258,10 +323,15 @@ class _SettingsHarness {
   final TraktAccountProvider trakt;
   final TrackersProvider trackers;
   final SeerrAccountProvider seerr;
+  final DownloadManagerService downloadManager;
+  final DownloadProvider downloadProvider;
+  final List<String> locationEvents;
 
   Future<void> dispose(WidgetTester tester) async {
     await tester.pumpWidget(const SizedBox.shrink());
     await tester.pump();
+    downloadProvider.dispose();
+    downloadManager.dispose();
     libraries.dispose();
     theme.dispose();
     trakt.dispose();
@@ -294,6 +364,32 @@ Future<_SettingsHarness> _pumpSettingsScreen(WidgetTester tester) async {
   final trakt = TraktAccountProvider();
   final trackers = TrackersProvider();
   final seerr = SeerrAccountProvider();
+  final settingsService = SettingsService.instance;
+  final storageService = DownloadStorageService.instance;
+  await tester.runAsync(() => storageService.initialize(settingsService));
+  final locationEvents = <String>[];
+  final downloadManager = DownloadManagerService(
+    database: database,
+    storageService: storageService,
+    clientResolver: (_, {clientScopeId}) => null,
+    downloadsSupportedOverride: false,
+    downloadLocationReader: () => (
+      path: settingsService.read(SettingsService.customDownloadPath),
+      type: settingsService.read(SettingsService.customDownloadPathType),
+    ),
+    downloadPathWriter: (value) async {
+      locationEvents.add('path:$value');
+      await settingsService.write(SettingsService.customDownloadPath, value);
+    },
+    downloadPathTypeWriter: (value) async {
+      locationEvents.add('type:$value');
+      await settingsService.write(SettingsService.customDownloadPathType, value);
+    },
+    downloadStorageRefresher: () async {
+      locationEvents.add('refresh');
+    },
+  )..recoveryFuture = Future<void>.value();
+  final downloadProvider = DownloadProvider.forTesting(downloadManager: downloadManager, database: database);
   final harness = _SettingsHarness(
     database: database,
     plexHome: plexHome,
@@ -303,6 +399,9 @@ Future<_SettingsHarness> _pumpSettingsScreen(WidgetTester tester) async {
     trakt: trakt,
     trackers: trackers,
     seerr: seerr,
+    downloadManager: downloadManager,
+    downloadProvider: downloadProvider,
+    locationEvents: locationEvents,
   );
 
   await tester.pumpWidget(
@@ -315,14 +414,29 @@ Future<_SettingsHarness> _pumpSettingsScreen(WidgetTester tester) async {
           ChangeNotifierProvider<TraktAccountProvider>.value(value: trakt),
           ChangeNotifierProvider<TrackersProvider>.value(value: trackers),
           ChangeNotifierProvider<SeerrAccountProvider>.value(value: seerr),
+          ChangeNotifierProvider<DownloadProvider>.value(value: downloadProvider),
         ],
         child: MaterialApp(
           theme: monoTheme(dark: true).copyWith(platform: TargetPlatform.android),
-          home: const SettingsScreen(),
+          home: SettingsScreen(downloadDirectoryWritableChecker: (_) async => true),
         ),
       ),
     ),
   );
-  await tester.pumpAndSettle();
+  await tester.pump();
+  await tester.pump(const Duration(milliseconds: 300));
   return harness;
+}
+
+class _FakeDirectoryPicker extends FilePicker {
+  String? directoryPath;
+
+  @override
+  Future<String?> getDirectoryPath({
+    String? dialogTitle,
+    String? initialDirectory,
+    bool lockParentWindow = false,
+  }) async {
+    return directoryPath;
+  }
 }

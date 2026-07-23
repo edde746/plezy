@@ -30,6 +30,7 @@ import '../services/music/music_playback_service.dart';
 import '../services/music/music_playback_service_impl.dart';
 import '../services/offline_watch_sync_service.dart';
 import '../services/storage_service.dart';
+import '../services/system_shelf_service.dart';
 import '../utils/app_logger.dart';
 import '../watch_together/providers/watch_together_provider.dart';
 import '../widgets/music/mini_player.dart';
@@ -101,13 +102,22 @@ class _ProfileSessionScreenState extends State<ProfileSessionScreen> {
   /// doing it from inside MainScreen can't work, the remount unmounts it
   /// before any settle-await completes.
   void _onSessionProfileChanged(String? activeId) {
+    final shelf = SystemShelfService();
     if (!_seenFirstActiveId) {
       _seenFirstActiveId = true;
       _lastSessionActiveId = activeId;
+      if (activeId != null) shelf.beginProfileSession(activeId);
       return;
     }
-    if (_lastSessionActiveId == activeId) return;
+    final oldOwner = _lastSessionActiveId;
+    if (oldOwner == activeId) return;
+    if (oldOwner != null) {
+      // endProfileSession invalidates synchronously and queues its clear before
+      // the new owner is admitted below.
+      unawaited(shelf.endProfileSession(oldOwner));
+    }
     _lastSessionActiveId = activeId;
+    if (activeId != null) shelf.beginProfileSession(activeId);
     unawaited(ApiCache.clearRegisteredVolatile());
   }
 
@@ -225,6 +235,7 @@ class _ProfileSessionScreenState extends State<ProfileSessionScreen> {
                     context.read<HiddenLibrariesProvider>(),
                     context.read<LibrariesProvider>(),
                     isProfileBinding: () => activeProfile.isBinding,
+                    profileId: activeId,
                   );
                 },
               ),

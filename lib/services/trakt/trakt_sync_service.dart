@@ -56,7 +56,7 @@ class TraktSyncService {
   static const int _maxInMemoryFallback = 100;
   final Map<String, Queue<TraktSyncQueueItem>> _inMemoryFallbackByUser = {};
 
-  bool _isFlushing = false;
+  Future<void>? _flushFuture;
   bool _flushRequested = false;
 
   Future<void> initialize({required MultiServerManager serverManager}) async {
@@ -306,45 +306,65 @@ class TraktSyncService {
 
   /// Drain the persisted queue. Called on init, on app foreground, and when
   /// `OfflineModeProvider.isOffline` flips false.
-  Future<void> flushQueue() async {
-    if (_isFlushing) {
+  Future<void> flushQueue() {
+    final active = _flushFuture;
+    if (active != null) {
       _flushRequested = true;
-      return;
+      return active;
     }
+    if (_client == null) return Future<void>.value();
+
+    final future = _runFlushLoop();
+    _flushFuture = future;
+    return future;
+  }
+
+  Future<void> _runFlushLoop() async {
+    try {
+      do {
+        _flushRequested = false;
+        await _flushQueueOnce();
+      } while (_flushRequested && _client != null);
+    } finally {
+      _flushFuture = null;
+      if (_flushRequested && _client != null) {
+        scheduleMicrotask(() {
+          unawaited(
+            flushQueue().catchError((Object error, StackTrace stackTrace) {
+              appLogger.w('Trakt sync: requested follow-up flush failed', error: error, stackTrace: stackTrace);
+            }),
+          );
+        });
+      }
+    }
+  }
+
+  Future<void> _flushQueueOnce() async {
     final client = _client;
     if (client == null) return;
     final userUuid = _activeUserUuid;
-    _isFlushing = true;
-    try {
-      await _recoverInMemoryFallback(userUuid);
+    await _recoverInMemoryFallback(userUuid);
 
-      await _queue.drainWith(userUuid, (item) async {
-        if (!_isLibraryAllowed(item.libraryGlobalKey)) {
-          appLogger.d('Trakt sync: queued library filtered out for ${item.ratingKey}');
-          return null;
-        }
-        if (item.attempts >= TraktSyncQueue.maxAttempts) {
-          appLogger.w('Trakt sync: dropping ${item.op.name} ${item.ratingKey} after ${item.attempts} attempts');
-          return null;
-        }
-        try {
-          await _dispatch(client, item, _bodyFor(item));
-          appLogger.d('Trakt sync: drained ${item.op.name} ${item.ratingKey}');
-          await Future<void>.delayed(_queueRequestSpacing);
-          return null;
-        } catch (e) {
-          appLogger.d('Trakt sync: drain failed for ${item.ratingKey}, will retry', error: e);
-          await Future<void>.delayed(_queueRequestSpacing);
-          return item.incrementAttempts();
-        }
-      });
-    } finally {
-      _isFlushing = false;
-      if (_flushRequested) {
-        _flushRequested = false;
-        if (_client != null) unawaited(flushQueue());
+    await _queue.drainWith(userUuid, (item) async {
+      if (!_isLibraryAllowed(item.libraryGlobalKey)) {
+        appLogger.d('Trakt sync: queued library filtered out for ${item.ratingKey}');
+        return null;
       }
-    }
+      if (item.attempts >= TraktSyncQueue.maxAttempts) {
+        appLogger.w('Trakt sync: dropping ${item.op.name} ${item.ratingKey} after ${item.attempts} attempts');
+        return null;
+      }
+      try {
+        await _dispatch(client, item, _bodyFor(item));
+        appLogger.d('Trakt sync: drained ${item.op.name} ${item.ratingKey}');
+        await Future<void>.delayed(_queueRequestSpacing);
+        return null;
+      } catch (e) {
+        appLogger.d('Trakt sync: drain failed for ${item.ratingKey}, will retry', error: e);
+        await Future<void>.delayed(_queueRequestSpacing);
+        return item.incrementAttempts();
+      }
+    });
   }
 
   /// Try to move items buffered in memory (because prior disk writes failed)

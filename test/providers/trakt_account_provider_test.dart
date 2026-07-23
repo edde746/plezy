@@ -4,6 +4,7 @@ import 'package:plezy/services/base_shared_preferences_service.dart';
 import 'package:plezy/services/trackers/tracker_account_store.dart';
 import 'package:plezy/services/trackers/tracker_constants.dart';
 import 'package:plezy/services/trackers/tracker_session.dart';
+import 'package:plezy/services/trakt/trakt_sync_service.dart';
 
 import '../test_helpers/prefs.dart';
 
@@ -46,6 +47,7 @@ void main() {
       p.addListener(() => notified++);
 
       await p.onActiveProfileChanged(uuid);
+      await TraktSyncService.instance.flushQueue();
       expect(p.isConnected, isTrue);
       expect(p.username, 'alice');
       expect(p.session?.accessToken, 'at');
@@ -66,6 +68,7 @@ void main() {
 
       // Switch to a profile with no stored session.
       await p.onActiveProfileChanged('other-profile');
+      await TraktSyncService.instance.flushQueue();
       expect(p.isConnected, isFalse);
       expect(p.username, isNull);
 
@@ -103,6 +106,7 @@ void main() {
       final staleGeneration = p.debugBindingGenerationForTesting;
 
       await p.disconnect();
+      await TraktSyncService.instance.flushQueue();
       expect(p.isConnected, isFalse);
       expect(await _store.load(uuid), isNull);
 

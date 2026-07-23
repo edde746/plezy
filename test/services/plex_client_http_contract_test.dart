@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:async';
 
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -6,9 +7,12 @@ import 'package:http/http.dart' as http;
 import 'package:plezy/database/app_database.dart';
 import 'package:plezy/exceptions/media_server_exceptions.dart';
 import 'package:plezy/media/ids.dart';
+import 'package:plezy/media/media_backend.dart';
+import 'package:plezy/media/media_item.dart';
 import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/services/plex_api_cache.dart';
 import 'package:plezy/services/plex_client.dart';
+import 'package:plezy/utils/active_client_scope.dart';
 
 import '../test_helpers/backend_client_fixtures.dart';
 import '../test_helpers/media_items.dart';
@@ -23,28 +27,175 @@ void main() {
 
   tearDown(() => db.close());
 
+  final publicServerId = ServerId('server-id');
+  final defaultProfileScopeId = buildPlexProfileScopeId(serverId: publicServerId, profileId: 'test-profile');
+
   PlexClient makeClient(Future<http.Response> Function(http.Request request) handler) =>
-      testPlexClient(serverId: ServerId('server-id'), handler: handler);
+      testPlexClient(serverId: publicServerId, profileScopeId: defaultProfileScopeId, handler: handler);
 
-  test('void mutations surface non-success responses', () async {
-    final client = makeClient((_) async => http.Response('rejected', 500));
-    addTearDown(client.close);
+  group('Plex mutation result families', () {
+    test('void mutation completes on success and preserves status/transport failures', () async {
+      final item = testMediaItem(
+        id: 'item-id',
+        backend: MediaBackend.plex,
+        kind: MediaKind.movie,
+        serverId: 'server-id',
+      );
+      final success = makeClient((_) async => http.Response('', 200));
+      addTearDown(success.close);
+      await success.markWatched(item);
 
-    for (final mutation in <Future<void> Function()>[
-      () => client.cancelActivity('activity-id'),
-      () => client.removeFromOnDeck('item-id'),
-      () => client.emptyLibraryTrash('library-id'),
-    ]) {
-      await expectLater(mutation(), throwsA(isA<MediaServerHttpException>()));
-    }
-  });
+      for (final status in [400, 500]) {
+        final failing = makeClient((_) async => http.Response('{}', status));
+        addTearDown(failing.close);
+        await expectLater(
+          failing.markWatched(item),
+          throwsA(isA<MediaServerHttpException>().having((error) => error.statusCode, 'statusCode', status)),
+        );
+      }
 
-  test('nullable creation APIs reject non-success response bodies', () async {
-    final client = makeClient((_) async => http.Response('rejected', 500));
-    addTearDown(client.close);
+      final timeout = makeClient((_) async => throw TimeoutException('timed out'));
+      addTearDown(timeout.close);
+      await expectLater(
+        timeout.markWatched(item),
+        throwsA(
+          isA<MediaServerHttpException>().having(
+            (error) => error.type,
+            'type',
+            MediaServerHttpErrorType.connectionTimeout,
+          ),
+        ),
+      );
+    });
 
-    expect(await client.createCollectionFromUri(sectionId: '1', title: 'Collection', uri: 'server://items'), isNull);
-    expect(await client.createPlayQueue(uri: 'server://items', type: 'video'), isNull);
+    test('nullable collection creation throws request failures and reserves null for unusable metadata', () async {
+      for (final status in [400, 500]) {
+        final failing = makeClient((_) async => http.Response('{}', status));
+        addTearDown(failing.close);
+        await expectLater(
+          failing.createCollection(libraryId: '1', title: 'Collection', items: const []),
+          throwsA(isA<MediaServerHttpException>().having((error) => error.statusCode, 'statusCode', status)),
+        );
+      }
+
+      final timeout = makeClient((_) async => throw TimeoutException('timed out'));
+      addTearDown(timeout.close);
+      await expectLater(
+        timeout.createCollection(libraryId: '1', title: 'Collection', items: const []),
+        throwsA(isA<MediaServerHttpException>()),
+      );
+
+      final unusable = makeClient(
+        (_) async => http.Response(
+          jsonEncode({
+            'MediaContainer': {'Metadata': []},
+          }),
+          200,
+          headers: {'content-type': 'application/json'},
+        ),
+      );
+      addTearDown(unusable.close);
+      expect(await unusable.createCollection(libraryId: '1', title: 'Collection', items: const []), isNull);
+
+      final valid = makeClient(
+        (_) async => http.Response(
+          jsonEncode({
+            'MediaContainer': {
+              'Metadata': [
+                {'ratingKey': 'collection-1'},
+              ],
+            },
+          }),
+          200,
+          headers: {'content-type': 'application/json'},
+        ),
+      );
+      addTearDown(valid.close);
+      expect(await valid.createCollection(libraryId: '1', title: 'Collection', items: const []), 'collection-1');
+    });
+
+    test('nullable playlist creation shares the request and accepted-null contract', () async {
+      final valid = makeClient(
+        (_) async => http.Response(
+          jsonEncode({
+            'MediaContainer': {
+              'Metadata': [
+                {
+                  'ratingKey': 'playlist-1',
+                  'type': 'playlist',
+                  'playlistType': 'video',
+                  'title': 'Playlist',
+                  'smart': false,
+                },
+              ],
+            },
+          }),
+          200,
+          headers: {'content-type': 'application/json'},
+        ),
+      );
+      addTearDown(valid.close);
+      expect((await valid.createPlaylist(title: 'Playlist', items: const []))?.id, 'playlist-1');
+
+      final unusable = makeClient(
+        (_) async => http.Response(
+          jsonEncode({
+            'MediaContainer': {'Metadata': []},
+          }),
+          200,
+          headers: {'content-type': 'application/json'},
+        ),
+      );
+      addTearDown(unusable.close);
+      expect(await unusable.createPlaylist(title: 'Playlist', items: const []), isNull);
+
+      final failing = makeClient((_) async => http.Response('{}', 500));
+      addTearDown(failing.close);
+      await expectLater(
+        failing.createPlaylist(title: 'Playlist', items: const []),
+        throwsA(isA<MediaServerHttpException>()),
+      );
+    });
+
+    test('playlist move returns false only for local preconditions and throws request failures', () async {
+      var requests = 0;
+      final localOnly = makeClient((_) async {
+        requests++;
+        return http.Response('', 200);
+      });
+      addTearDown(localOnly.close);
+      final generic = testMediaItem(
+        id: 'item',
+        backend: MediaBackend.plex,
+        kind: MediaKind.movie,
+        serverId: 'server-id',
+      );
+      const missingEntry = PlexMediaItem(id: 'item', kind: MediaKind.movie);
+      expect(
+        await localOnly.movePlaylistItem(playlistId: 'playlist', item: generic, newIndex: 0, afterItem: null),
+        isFalse,
+      );
+      expect(
+        await localOnly.movePlaylistItem(playlistId: 'playlist', item: missingEntry, newIndex: 0, afterItem: null),
+        isFalse,
+      );
+      expect(requests, 0);
+
+      const validEntry = PlexMediaItem(id: 'item', kind: MediaKind.movie, playlistItemId: 7);
+      final success = makeClient((_) async => http.Response('', 200));
+      addTearDown(success.close);
+      expect(
+        await success.movePlaylistItem(playlistId: 'playlist', item: validEntry, newIndex: 0, afterItem: null),
+        isTrue,
+      );
+
+      final failing = makeClient((_) async => http.Response('{}', 500));
+      addTearDown(failing.close);
+      await expectLater(
+        failing.movePlaylistItem(playlistId: 'playlist', item: validEntry, newIndex: 0, afterItem: null),
+        throwsA(isA<MediaServerHttpException>()),
+      );
+    });
   });
 
   test('play queue accepts numeric strings from Plex', () async {
@@ -214,7 +365,7 @@ void main() {
 
   test('lyrics refresh incomplete cached metadata and prefer LRC streams', () async {
     const metadataEndpoint = '/library/metadata/track-1';
-    await PlexApiCache.instance.put(ServerId('server-id'), metadataEndpoint, {
+    await PlexApiCache.instance.put(defaultProfileScopeId.cacheServerId, metadataEndpoint, {
       'MediaContainer': {
         'Metadata': [
           {'ratingKey': 'track-1', 'type': 'track'},
@@ -300,7 +451,7 @@ void main() {
       );
 
       expect(requestCount, 1);
-      expect(await PlexApiCache.instance.get(ServerId('server-id'), endpoint), isNull);
+      expect(await PlexApiCache.instance.get(defaultProfileScopeId.cacheServerId, endpoint), isNull);
     }
   });
 
@@ -316,7 +467,7 @@ void main() {
         ],
       },
     };
-    await PlexApiCache.instance.put(ServerId('server-id'), endpoint, cachedResponse);
+    await PlexApiCache.instance.put(defaultProfileScopeId.cacheServerId, endpoint, cachedResponse);
     var requestCount = 0;
     final client = makeClient((request) async {
       requestCount++;
@@ -341,7 +492,7 @@ void main() {
     expect(requestCount, 1);
     expect(children.map((child) => child.id), ['cached-child']);
     expect(children.single.title, 'Cached Season');
-    expect(await PlexApiCache.instance.get(ServerId('server-id'), endpoint), cachedResponse);
+    expect(await PlexApiCache.instance.get(defaultProfileScopeId.cacheServerId, endpoint), cachedResponse);
   });
 
   test('successful child fetch parses and caches the response', () async {
@@ -368,7 +519,7 @@ void main() {
     expect(requestCount, 1);
     expect(children.map((child) => child.id), ['fresh-child']);
     expect(children.single.title, 'Fresh Season');
-    expect(await PlexApiCache.instance.get(ServerId('server-id'), endpoint), responseData);
+    expect(await PlexApiCache.instance.get(defaultProfileScopeId.cacheServerId, endpoint), responseData);
   });
 
   test('child retrieval walks every page and caches the combined result', () async {
@@ -397,7 +548,7 @@ void main() {
     addTearDown(client.close);
 
     final children = await client.fetchChildren(parentId);
-    final cached = await PlexApiCache.instance.get(ServerId('server-id'), endpoint);
+    final cached = await PlexApiCache.instance.get(defaultProfileScopeId.cacheServerId, endpoint);
     final cachedContainer = cached!['MediaContainer'] as Map<String, dynamic>;
     final cachedMetadata = cachedContainer['Metadata'] as List<dynamic>;
 
@@ -442,7 +593,7 @@ void main() {
     final albums = await client.fetchArtistAlbums(
       testMediaItem(id: 'artist-1', kind: MediaKind.artist, libraryId: '7'),
     );
-    final cached = await PlexApiCache.instance.get(ServerId('server-id'), cacheKey);
+    final cached = await PlexApiCache.instance.get(defaultProfileScopeId.cacheServerId, cacheKey);
     final cachedContainer = cached!['MediaContainer'] as Map<String, dynamic>;
     final cachedMetadata = cachedContainer['Metadata'] as List<dynamic>;
 
@@ -503,4 +654,257 @@ void main() {
     expect(requestedPaths, ['/library/metadata/artist-1', '/library/sections/7/all']);
     expect(albums.map((album) => album.id), ['album-1']);
   });
+
+  test('profile transition isolates metadata and every direct cache-only bypass', () async {
+    final scopeA = buildPlexProfileScopeId(serverId: publicServerId, profileId: 'profile-a');
+    final scopeB = buildPlexProfileScopeId(serverId: publicServerId, profileId: 'profile-b');
+    const metadataEndpoint = '/library/metadata/42';
+    const bypassEndpoint = '/library/metadata/bypass';
+    const tokenA = 'synthetic-token-a';
+    const tokenB = 'synthetic-token-b';
+    final requests = <({String path, String? token})>[];
+
+    String? tokenFor(http.Request request) {
+      for (final entry in request.headers.entries) {
+        if (entry.key.toLowerCase() == 'x-plex-token') return entry.value;
+      }
+      return null;
+    }
+
+    Map<String, dynamic> metadataPayload(
+      String ratingKey,
+      String title, {
+      required int markerId,
+      required int audioTrackId,
+    }) {
+      return {
+        'MediaContainer': {
+          'Metadata': [
+            {
+              'ratingKey': ratingKey,
+              'type': 'movie',
+              'title': title,
+              'duration': 120000,
+              'Marker': [
+                {'id': markerId, 'type': 'intro', 'startTimeOffset': 1000, 'endTimeOffset': 2000},
+              ],
+              'Media': [
+                {
+                  'id': 1,
+                  'videoResolution': '1080',
+                  'Part': [
+                    {
+                      'id': 10,
+                      'key': '/library/parts/10/file.mkv',
+                      'Stream': [
+                        {'id': audioTrackId, 'streamType': 2, 'codec': 'aac'},
+                      ],
+                    },
+                  ],
+                },
+              ],
+            },
+          ],
+        },
+      };
+    }
+
+    final client = testPlexClient(
+      token: tokenA,
+      serverId: publicServerId,
+      profileScopeId: scopeA,
+      handler: (request) async {
+        final token = tokenFor(request);
+        requests.add((path: request.url.path, token: token));
+        if (request.url.path == '/') {
+          return http.Response(
+            jsonEncode({
+              'MediaContainer': {'machineIdentifier': publicServerId.value},
+            }),
+            200,
+            headers: const {'content-type': 'application/json'},
+          );
+        }
+        if (request.url.path == '/media/providers') {
+          return http.Response(
+            jsonEncode({
+              'MediaContainer': {'MediaProvider': <Object>[]},
+            }),
+            200,
+            headers: const {'content-type': 'application/json'},
+          );
+        }
+        if (request.url.path == metadataEndpoint) {
+          final payload = token == tokenA
+              ? metadataPayload('42', 'Profile A network', markerId: 101, audioTrackId: 11)
+              : metadataPayload('42', 'Profile B network', markerId: 202, audioTrackId: 22);
+          return http.Response(jsonEncode(payload), 200, headers: const {'content-type': 'application/json'});
+        }
+        return http.Response('', 200);
+      },
+    );
+    addTearDown(client.close);
+
+    final itemA = await client.fetchItem('42');
+    expect(itemA, isNotNull);
+    expect(itemA!.title, 'Profile A network');
+    expect(itemA.serverId, 'server-id');
+    expect(itemA.globalKey, 'server-id:42');
+
+    await client.applyProfileUpdate(newToken: tokenB, newProfileScopeId: scopeB);
+    final itemB = await client.fetchItem('42');
+    expect(itemB, isNotNull);
+    expect(itemB!.title, 'Profile B network');
+    expect(itemB.serverId, 'server-id');
+    expect(itemB.globalKey, 'server-id:42');
+
+    final cachedA = await PlexApiCache.instance.getMetadata(scopeA.cacheServerId, '42');
+    final cachedB = await PlexApiCache.instance.getMetadata(scopeB.cacheServerId, '42');
+    expect(cachedA?.title, 'Profile A network');
+    expect(cachedB?.title, 'Profile B network');
+    expect(requests.where((request) => request.path == metadataEndpoint).map((request) => request.token), [
+      tokenA,
+      tokenB,
+    ]);
+    expect(requests.where((request) => request.path == '/media/providers').map((request) => request.token), [tokenB]);
+
+    await PlexApiCache.instance.put(
+      scopeA.cacheServerId,
+      bypassEndpoint,
+      metadataPayload('bypass', 'Profile A bypass', markerId: 101, audioTrackId: 11),
+    );
+    await PlexApiCache.instance.put(
+      scopeB.cacheServerId,
+      bypassEndpoint,
+      metadataPayload('bypass', 'Profile B bypass', markerId: 202, audioTrackId: 22),
+    );
+
+    final extras = await client.fetchPlaybackExtrasFromCacheOnly('bypass');
+    final mediaSource = await client.fetchCachedMediaSourceInfo('bypass');
+    expect(extras, isNotNull);
+    expect(extras!.markers.single.id, 202);
+    expect(mediaSource, isNotNull);
+    expect(mediaSource!.audioTracks.single.id, 22);
+
+    expect(
+      await client.updateMetadata(sectionId: 1, ratingKey: 'bypass', typeNumber: 1, title: 'Profile B renamed'),
+      isTrue,
+    );
+    expect(await PlexApiCache.instance.get(scopeB.cacheServerId, bypassEndpoint), isNull);
+    expect(await PlexApiCache.instance.get(scopeA.cacheServerId, bypassEndpoint), isNotNull);
+  });
+
+  test('cache-first miss keeps the sending profile identity and cache scope together', () async {
+    final scopeA = buildPlexProfileScopeId(serverId: publicServerId, profileId: 'profile-a');
+    final scopeB = buildPlexProfileScopeId(serverId: publicServerId, profileId: 'profile-b');
+    const tokenA = 'synthetic-token-a';
+    const tokenB = 'synthetic-token-b';
+    const endpoint = '/library/metadata/gated';
+    final requests = <({String path, String? token})>[];
+
+    String? tokenFor(http.Request request) {
+      for (final entry in request.headers.entries) {
+        if (entry.key.toLowerCase() == 'x-plex-token') return entry.value;
+      }
+      return null;
+    }
+
+    Map<String, dynamic> payload(String owner, int markerId) => {
+      'MediaContainer': {
+        'Metadata': [
+          {
+            'ratingKey': 'gated',
+            'type': 'movie',
+            'title': owner,
+            'Marker': [
+              {'id': markerId, 'type': 'intro', 'startTimeOffset': 1000, 'endTimeOffset': 2000},
+            ],
+          },
+        ],
+      },
+    };
+
+    final client = testPlexClient(
+      token: tokenA,
+      serverId: publicServerId,
+      profileScopeId: scopeA,
+      handler: (request) async {
+        final token = tokenFor(request);
+        requests.add((path: request.url.path, token: token));
+        if (request.url.path == '/') {
+          return http.Response(
+            jsonEncode({
+              'MediaContainer': {'machineIdentifier': publicServerId.value},
+            }),
+            200,
+            headers: const {'content-type': 'application/json'},
+          );
+        }
+        if (request.url.path == '/media/providers') {
+          return http.Response(
+            jsonEncode({
+              'MediaContainer': {'MediaProvider': <Object>[]},
+            }),
+            200,
+            headers: const {'content-type': 'application/json'},
+          );
+        }
+        if (request.url.path == endpoint) {
+          final response = token == tokenA ? payload('Profile A response', 101) : payload('Profile B response', 202);
+          return http.Response(jsonEncode(response), 200, headers: const {'content-type': 'application/json'});
+        }
+        return http.Response('not found', 404);
+      },
+    );
+    addTearDown(client.close);
+
+    final releaseCacheRead = Completer<void>();
+    final transactionStarted = Completer<void>();
+    final heldTransaction = db.transaction(() async {
+      transactionStarted.complete();
+      await releaseCacheRead.future;
+    });
+    await transactionStarted.future;
+
+    final extrasFuture = client.getPlaybackExtras('gated');
+    try {
+      await client.applyProfileUpdate(newToken: tokenB, newProfileScopeId: scopeB);
+    } finally {
+      releaseCacheRead.complete();
+    }
+    await heldTransaction;
+
+    final extras = await extrasFuture;
+    expect(extras.markers.single.id, 101);
+    expect(requests.where((request) => request.path == endpoint).map((request) => request.token), [tokenA]);
+    expect(await PlexApiCache.instance.get(scopeA.cacheServerId, endpoint), payload('Profile A response', 101));
+    expect(await PlexApiCache.instance.get(scopeB.cacheServerId, endpoint), isNull);
+  });
+}
+
+class _AbortAwareActivitiesClient extends http.BaseClient {
+  final requestStarted = Completer<void>();
+  final abortObserved = Completer<void>();
+  final _response = Completer<http.StreamedResponse>();
+  var requestCount = 0;
+
+  @override
+  Future<http.StreamedResponse> send(http.BaseRequest request) {
+    requestCount++;
+    if (!requestStarted.isCompleted) {
+      requestStarted.complete();
+    }
+    final abortTrigger = (request as http.Abortable).abortTrigger!;
+    unawaited(
+      abortTrigger.then((_) {
+        if (!abortObserved.isCompleted) {
+          abortObserved.complete();
+        }
+        if (!_response.isCompleted) {
+          _response.completeError(http.RequestAbortedException(request.url));
+        }
+      }),
+    );
+    return _response.future;
+  }
 }

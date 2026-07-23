@@ -22,7 +22,68 @@ static void* get_opengl_proc_address(void* ctx, const char* name) {
 
 namespace mpv {
 
-MpvPlayer::MpvPlayer(bool audio_only) : audio_only_(audio_only) {}
+MpvPlayer::CallbackContext::Lease::Lease(CallbackContext* context, MpvPlayer* player)
+    : context_(context), player_(player) {}
+
+MpvPlayer::CallbackContext::Lease::Lease(Lease&& other) noexcept : context_(other.context_), player_(other.player_) {
+  other.context_ = nullptr;
+  other.player_ = nullptr;
+}
+
+MpvPlayer::CallbackContext::Lease& MpvPlayer::CallbackContext::Lease::operator=(Lease&& other) noexcept {
+  if (this != &other) {
+    Release();
+    context_ = other.context_;
+    player_ = other.player_;
+    other.context_ = nullptr;
+    other.player_ = nullptr;
+  }
+  return *this;
+}
+
+MpvPlayer::CallbackContext::Lease::~Lease() { Release(); }
+
+void MpvPlayer::CallbackContext::Lease::Release() {
+  if (!context_) return;
+  context_->ReleaseLease();
+  context_ = nullptr;
+  player_ = nullptr;
+}
+
+MpvPlayer::CallbackContext::CallbackContext(MpvPlayer* player)
+    : player_(player), main_context_(g_main_context_ref_thread_default()) {}
+
+MpvPlayer::CallbackContext::~CallbackContext() { g_main_context_unref(main_context_); }
+
+MpvPlayer::CallbackContext::Lease MpvPlayer::CallbackContext::Acquire() {
+  std::lock_guard<std::mutex> lock(mutex_);
+  if (!player_) return Lease();
+  ++in_flight_;
+  return Lease(this, player_);
+}
+
+void MpvPlayer::CallbackContext::DetachAndWait() {
+  std::unique_lock<std::mutex> lock(mutex_);
+  player_ = nullptr;
+  quiescent_.wait(lock, [this]() { return in_flight_ == 0; });
+}
+
+void MpvPlayer::CallbackContext::ReleaseLease() {
+  std::lock_guard<std::mutex> lock(mutex_);
+  --in_flight_;
+  if (in_flight_ == 0) quiescent_.notify_all();
+}
+
+struct MpvPlayer::SourceCallbackData {
+  explicit SourceCallbackData(std::shared_ptr<CallbackContext> callback_context)
+      : context(std::move(callback_context)) {}
+
+  std::shared_ptr<CallbackContext> context;
+  guint source_id = 0;
+};
+
+MpvPlayer::MpvPlayer(bool audio_only)
+    : audio_only_(audio_only), callback_context_(std::make_shared<CallbackContext>(this)) {}
 
 MpvPlayer::~MpvPlayer() { Dispose(); }
 
@@ -82,7 +143,7 @@ bool MpvPlayer::Initialize() {
   }
 
   // Set up event wakeup callback.
-  mpv_set_wakeup_callback(mpv_, OnMpvWakeup, this);
+  mpv_set_wakeup_callback(mpv_, OnMpvWakeup, callback_context_.get());
   mpv_observe_property(mpv_, 0, "current-ao", MPV_FORMAT_STRING);
   mpv_observe_property(mpv_, 0, "audio-device-list", MPV_FORMAT_NONE);
 
@@ -195,34 +256,33 @@ bool MpvPlayer::InitRenderContext() {
   }
 
   // Set up render update callback.
-  mpv_render_context_set_update_callback(mpv_gl_, OnMpvRenderUpdate, this);
+  mpv_render_context_set_update_callback(mpv_gl_, OnMpvRenderUpdate, callback_context_.get());
 
   g_message("MPV: Render context created with isolated EGL context");
   return true;
 }
 
 void MpvPlayer::Dispose() {
-  // 1. Set disposed flag atomically FIRST — all callback paths check this
   if (disposed_.exchange(true)) {
     return;
   }
 
-  // 2. Clear mpv's native callbacks to prevent new ones from firing
+  // Stop native producers before revoking access to the player. A callback
+  // already entered on an mpv thread owns a lease and is allowed to finish.
   if (mpv_gl_) {
     mpv_render_context_set_update_callback(mpv_gl_, nullptr, nullptr);
   }
   if (mpv_) {
     mpv_set_wakeup_callback(mpv_, nullptr, nullptr);
   }
+  callback_context_->DetachAndWait();
 
-  // 3. Briefly hold mutex to null our callbacks
   {
     std::lock_guard<std::mutex> lock(callback_mutex_);
     redraw_callback_ = nullptr;
     event_callback_ = nullptr;
   }
 
-  // 4. Cancel pending async requests.
   auto cancelled = pending_requests_.CancelAll();
   for (auto& callback : cancelled.status) {
     callback(-1);
@@ -231,45 +291,39 @@ void MpvPlayer::Dispose() {
     callback(-1, "");
   }
 
-  // 5. Remove pending idle callbacks
-  if (event_source_id_ != 0) {
-    g_source_remove(event_source_id_);
-    event_source_id_ = 0;
-  }
-  if (recovery_source_id_ != 0) {
-    g_source_remove(recovery_source_id_);
-    recovery_source_id_ = 0;
-  }
+  RemoveTrackedSources();
 
-  // 6. Free render context and mpv handle in a background thread.
-  //    mpv_render_context_free() can block waiting for mpv's render/VO thread,
-  //    and mpv_terminate_destroy() can block on demuxer/network I/O.
-  //    Running these off the main thread prevents stalling the GLib main loop.
+  // Native destruction remains off the main thread. Keeping the detached
+  // callback context alive until both mpv objects are gone makes even a late
+  // invocation through mpv's old context pointer harmless.
   auto* gl = mpv_gl_;
   auto* handle = mpv_;
   auto egl_display = egl_display_;
   auto egl_context = egl_context_;
+  auto callback_context = callback_context_;
   mpv_gl_ = nullptr;
   mpv_ = nullptr;
   egl_display_ = EGL_NO_DISPLAY;
   egl_context_ = EGL_NO_CONTEXT;
 
-  std::thread([gl, handle, egl_display, egl_context]() {
-    if (gl) {
-      // mpv render context must be freed with its EGL context current
-      if (egl_context != EGL_NO_CONTEXT) {
-        eglMakeCurrent(egl_display, EGL_NO_SURFACE, EGL_NO_SURFACE, egl_context);
+  if (gl || handle || egl_context != EGL_NO_CONTEXT) {
+    std::thread([gl, handle, egl_display, egl_context, callback_context]() {
+      (void)callback_context;
+      if (gl) {
+        if (egl_context != EGL_NO_CONTEXT) {
+          eglMakeCurrent(egl_display, EGL_NO_SURFACE, EGL_NO_SURFACE, egl_context);
+        }
+        mpv_render_context_free(gl);
       }
-      mpv_render_context_free(gl);
-    }
-    if (handle) {
-      mpv_terminate_destroy(handle);
-    }
-    if (egl_context != EGL_NO_CONTEXT) {
-      eglMakeCurrent(egl_display, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
-      eglDestroyContext(egl_display, egl_context);
-    }
-  }).detach();
+      if (handle) {
+        mpv_terminate_destroy(handle);
+      }
+      if (egl_context != EGL_NO_CONTEXT) {
+        eglMakeCurrent(egl_display, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
+        eglDestroyContext(egl_display, egl_context);
+      }
+    }).detach();
+  }
 
   observed_properties_.Clear();
 }
@@ -325,7 +379,7 @@ void MpvPlayer::SetProperty(const std::string& name, const std::string& value) {
 
 void MpvPlayer::SetPropertyAsync(const std::string& name, const std::string& value, StatusCallback callback) {
   if (disposed_ || !mpv_) {
-    if (callback) callback(0);
+    if (callback) callback(MPV_ERROR_UNINITIALIZED);
     return;
   }
 
@@ -391,25 +445,22 @@ void MpvPlayer::SetLogLevel(const std::string& level) {
 }
 
 void MpvPlayer::OnMpvWakeup(void* ctx) {
-  auto* player = static_cast<MpvPlayer*>(ctx);
+  auto* context = static_cast<CallbackContext*>(ctx);
+  auto lease = context->Acquire();
+  if (!lease) return;
 
-  if (player->disposed_) return;
-
-  g_idle_add_full(
-      G_PRIORITY_HIGH_IDLE,
-      [](gpointer data) -> gboolean {
-        auto* player = static_cast<MpvPlayer*>(data);
-
-        if (!player->disposed_ && player->mpv_) {
-          player->ProcessEvents();
-        }
-        return G_SOURCE_REMOVE;
-      },
-      player, nullptr);
+  MpvPlayer* player = lease.player();
+  if (!player->disposed_) {
+    player->ScheduleWakeupSource();
+  }
 }
 
 void MpvPlayer::OnMpvRenderUpdate(void* ctx) {
-  auto* player = static_cast<MpvPlayer*>(ctx);
+  auto* context = static_cast<CallbackContext*>(ctx);
+  auto lease = context->Acquire();
+  if (!lease) return;
+
+  MpvPlayer* player = lease.player();
   if (player->disposed_) return;
 
   bool expected = false;
@@ -417,23 +468,127 @@ void MpvPlayer::OnMpvRenderUpdate(void* ctx) {
     return;
   }
 
-  // Schedule redraw on main thread. Calling Flutter's
-  // fl_texture_registrar_mark_texture_frame_available directly from mpv's
-  // render/VO thread can deadlock during disposal on Wayland: the main thread
-  // blocks in mpv_render_context_free() waiting for the VO thread, while the
-  // VO thread blocks in the Flutter registrar waiting for the main thread.
-  g_idle_add(
-      [](gpointer data) -> gboolean {
-        auto* player = static_cast<MpvPlayer*>(data);
-        if (player->disposed_) return G_SOURCE_REMOVE;
+  // Flutter texture notification must run on the player's owning GLib
+  // context, never on mpv's render/VO thread.
+  player->ScheduleRedrawSource();
+}
 
-        std::lock_guard<std::mutex> lock(player->callback_mutex_);
-        if (player->redraw_callback_) {
-          player->redraw_callback_();
-        }
-        return G_SOURCE_REMOVE;
-      },
-      player);
+void MpvPlayer::DestroySourceCallbackData(gpointer data) { delete static_cast<SourceCallbackData*>(data); }
+
+void MpvPlayer::ScheduleWakeupSource() {
+  std::lock_guard<std::mutex> lock(source_mutex_);
+  if (disposed_ || wakeup_source_id_ != 0) return;
+
+  GSource* source = g_idle_source_new();
+  g_source_set_priority(source, G_PRIORITY_HIGH_IDLE);
+  auto* data = new SourceCallbackData(callback_context_);
+  g_source_set_callback(source, DispatchWakeupSource, data, DestroySourceCallbackData);
+  data->source_id = g_source_attach(source, callback_context_->main_context());
+  wakeup_source_id_ = data->source_id;
+  g_source_unref(source);
+}
+
+void MpvPlayer::ScheduleRedrawSource() {
+  std::lock_guard<std::mutex> lock(source_mutex_);
+  if (disposed_ || redraw_source_id_ != 0) return;
+
+  GSource* source = g_idle_source_new();
+  auto* data = new SourceCallbackData(callback_context_);
+  g_source_set_callback(source, DispatchRedrawSource, data, DestroySourceCallbackData);
+  data->source_id = g_source_attach(source, callback_context_->main_context());
+  redraw_source_id_ = data->source_id;
+  g_source_unref(source);
+
+  if (redraw_source_id_ == 0) {
+    needs_redraw_ = false;
+  }
+}
+
+void MpvPlayer::ScheduleRecoverySource() {
+  std::lock_guard<std::mutex> lock(source_mutex_);
+  if (disposed_ || recovery_source_id_ != 0) return;
+
+  GSource* source = g_timeout_source_new(100);
+  auto* data = new SourceCallbackData(callback_context_);
+  g_source_set_callback(source, DispatchRecoverySource, data, DestroySourceCallbackData);
+  data->source_id = g_source_attach(source, callback_context_->main_context());
+  recovery_source_id_ = data->source_id;
+  g_source_unref(source);
+}
+
+gboolean MpvPlayer::DispatchWakeupSource(gpointer data) {
+  auto* source_data = static_cast<SourceCallbackData*>(data);
+  auto lease = source_data->context->Acquire();
+  if (!lease) return G_SOURCE_REMOVE;
+
+  MpvPlayer* player = lease.player();
+  {
+    std::lock_guard<std::mutex> lock(player->source_mutex_);
+    if (player->wakeup_source_id_ == source_data->source_id) {
+      player->wakeup_source_id_ = 0;
+    }
+  }
+  if (!player->disposed_ && player->mpv_) {
+    player->ProcessEvents();
+  }
+  return G_SOURCE_REMOVE;
+}
+
+gboolean MpvPlayer::DispatchRedrawSource(gpointer data) {
+  auto* source_data = static_cast<SourceCallbackData*>(data);
+  auto lease = source_data->context->Acquire();
+  if (!lease) return G_SOURCE_REMOVE;
+
+  MpvPlayer* player = lease.player();
+  {
+    std::lock_guard<std::mutex> lock(player->source_mutex_);
+    if (player->redraw_source_id_ == source_data->source_id) {
+      player->redraw_source_id_ = 0;
+    }
+  }
+  if (player->disposed_) return G_SOURCE_REMOVE;
+
+  RedrawCallback callback;
+  {
+    std::lock_guard<std::mutex> lock(player->callback_mutex_);
+    callback = player->redraw_callback_;
+  }
+  if (callback) callback();
+  return G_SOURCE_REMOVE;
+}
+
+gboolean MpvPlayer::DispatchRecoverySource(gpointer data) {
+  auto* source_data = static_cast<SourceCallbackData*>(data);
+  auto lease = source_data->context->Acquire();
+  if (!lease) return G_SOURCE_REMOVE;
+
+  MpvPlayer* player = lease.player();
+  if (player->disposed_) return G_SOURCE_REMOVE;
+
+  player->MaybeRunAudioRecovery();
+  if (player->audio_recovery_.HasPendingWork()) {
+    return G_SOURCE_CONTINUE;
+  }
+
+  std::lock_guard<std::mutex> lock(player->source_mutex_);
+  if (player->recovery_source_id_ == source_data->source_id) {
+    player->recovery_source_id_ = 0;
+  }
+  return G_SOURCE_REMOVE;
+}
+
+void MpvPlayer::RemoveTrackedSources() {
+  std::lock_guard<std::mutex> lock(source_mutex_);
+  GMainContext* context = callback_context_->main_context();
+  auto remove = [context](guint& source_id) {
+    if (source_id == 0) return;
+    GSource* source = g_main_context_find_source_by_id(context, source_id);
+    if (source) g_source_destroy(source);
+    source_id = 0;
+  };
+  remove(wakeup_source_id_);
+  remove(redraw_source_id_);
+  remove(recovery_source_id_);
 }
 
 bool MpvPlayer::ProcessEvents() {
@@ -486,23 +641,8 @@ void MpvPlayer::MaybeRunAudioRecovery() {
 }
 
 void MpvPlayer::EnsureAudioRecoveryTimer() {
-  if (recovery_source_id_ != 0 || !audio_recovery_.HasPendingWork()) return;
-  recovery_source_id_ = g_timeout_add(
-      100,
-      [](gpointer data) -> gboolean {
-        auto* player = static_cast<MpvPlayer*>(data);
-        if (player->disposed_) {
-          player->recovery_source_id_ = 0;
-          return G_SOURCE_REMOVE;
-        }
-        player->MaybeRunAudioRecovery();
-        if (!player->audio_recovery_.HasPendingWork()) {
-          player->recovery_source_id_ = 0;
-          return G_SOURCE_REMOVE;
-        }
-        return G_SOURCE_CONTINUE;
-      },
-      this);
+  if (!audio_recovery_.HasPendingWork()) return;
+  ScheduleRecoverySource();
 }
 
 void MpvPlayer::HandleMpvEvent(mpv_event* event) {

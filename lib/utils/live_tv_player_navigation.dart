@@ -75,16 +75,18 @@ Future<void> navigateToLiveTv(
   unawaited(navigator.push<bool>(route));
 }
 
+/// Resolves the Live TV backend without weakening explicit channel ownership.
+///
+/// A channel scoped to a server and DVR must match that exact pair. A channel
+/// scoped only to a server may use any DVR on that server. Only an unscoped
+/// channel may retain the first-server fallback.
 LiveTvServerInfo? liveTvServerInfoForChannel(MultiServerProvider multiServer, LiveTvChannel channel) {
   final serverId = channel.serverId;
+  if (serverId == null) return multiServer.liveTvServers.firstOrNull;
+
   final dvrKey = channel.liveDvrKey;
-  if (serverId != null && dvrKey != null) {
-    final exact = multiServer.liveTvServers.where((s) => s.serverId == serverId && s.dvrKey == dvrKey).firstOrNull;
-    if (exact != null) return exact;
+  if (dvrKey != null) {
+    return multiServer.liveTvServers.where((s) => s.serverId == serverId && s.dvrKey == dvrKey).firstOrNull;
   }
-  if (serverId != null) {
-    final serverMatch = multiServer.liveTvServers.where((s) => s.serverId == serverId).firstOrNull;
-    if (serverMatch != null) return serverMatch;
-  }
-  return multiServer.liveTvServers.firstOrNull;
+  return multiServer.liveTvServers.where((s) => s.serverId == serverId).firstOrNull;
 }

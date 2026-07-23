@@ -10,6 +10,7 @@ import '../../i18n/strings.g.dart';
 import '../../mixins/controller_disposer_mixin.dart';
 import '../../models/plex/plex_home_user.dart';
 import '../../profiles/active_profile_binder.dart';
+import '../../profiles/active_profile_provider.dart';
 import '../../profiles/plex_home_service.dart';
 import '../../profiles/profile.dart';
 import '../../profiles/profile_avatar.dart';
@@ -19,9 +20,11 @@ import '../../profiles/profile_connection_registry.dart';
 import '../../profiles/profile_registry.dart';
 import '../../profiles/profiles_view.dart';
 import '../../providers/download_provider.dart';
+import '../../providers/discover_provider.dart';
 import '../../providers/hidden_libraries_provider.dart';
 import '../../providers/multi_server_provider.dart';
 import '../../services/storage_service.dart';
+import '../../services/system_shelf_service.dart';
 import '../../utils/snackbar_helper.dart';
 import '../../focus/focusable_button.dart';
 import '../../widgets/app_icon.dart';
@@ -168,32 +171,59 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> with Controll
     final pcRegistry = context.read<ProfileConnectionRegistry>();
     final connRegistry = context.read<ConnectionRegistry>();
     final storage = context.read<StorageService>();
-    final serverManager = context.read<MultiServerProvider>().serverManager;
+    final multiServer = context.read<MultiServerProvider>();
     final hiddenLibraries = context.read<HiddenLibrariesProvider?>();
+    final discover = context.read<DiscoverProvider?>();
     final binder = context.read<ActiveProfileBinder>();
+    final active = context.read<ActiveProfileProvider>();
+    final shelf = SystemShelfService();
+    final endedOwner = active.activeId == _profile.id ? _profile.id : null;
 
-    // Release downloads only for servers the profile actually loses — the
-    // same server can stay reachable through another connection (a second
-    // Plex account sharing the server, another Jellyfin user).
-    final retainedServerIds = await _retainedServerIds(
-      excludingConnectionId: conn.id,
-      profileConnections: pcRegistry,
-      connections: connRegistry,
-    );
-    await downloads.releaseDownloadsForProfileServers(
-      _profile.id,
-      _serverIdsForConnection(conn).difference(retainedServerIds),
-    );
-    await removeProfileConnectionAndCleanup(
-      profileId: _profile.id,
-      connection: conn,
-      profileConnections: pcRegistry,
-      connections: connRegistry,
-      storage: storage,
-      serverManager: serverManager,
-    );
-    await hiddenLibraries?.refresh();
-    unawaited(binder.rebindIfActive(_profile.id));
+    if (endedOwner != null) {
+      await shelf.endProfileSession(endedOwner);
+    }
+
+    try {
+      // Release downloads only for servers the profile actually loses — the
+      // same server can stay reachable through another connection (a second
+      // Plex account sharing the server, another Jellyfin user).
+      final retainedServerIds = await _retainedServerIds(
+        excludingConnectionId: conn.id,
+        profileConnections: pcRegistry,
+        connections: connRegistry,
+      );
+      await downloads.releaseDownloadsForProfileServers(
+        _profile.id,
+        _serverIdsForConnection(conn).difference(retainedServerIds),
+      );
+      await removeProfileConnectionAndCleanup(
+        profileId: _profile.id,
+        connection: conn,
+        profileConnections: pcRegistry,
+        connections: connRegistry,
+        storage: storage,
+        serverManager: multiServer.serverManager,
+      );
+      await hiddenLibraries?.refresh();
+      await binder.rebindIfActive(_profile.id);
+      if (endedOwner != null && active.activeId == endedOwner) {
+        shelf.beginProfileSession(endedOwner);
+        if (multiServer.hasConnectedServers) await discover?.load();
+      }
+    } catch (_) {
+      if (endedOwner != null && active.activeId == endedOwner) {
+        try {
+          await binder.rebindIfActive(endedOwner);
+          if (active.activeId == endedOwner) {
+            shelf.beginProfileSession(endedOwner);
+            if (multiServer.hasConnectedServers) await discover?.load();
+          }
+        } catch (_) {
+          // Keep the shelf empty when the surviving profile cannot be rebound.
+        }
+      }
+      rethrow;
+    }
   }
 
   /// Server ids the profile keeps after removing [excludingConnectionId]:

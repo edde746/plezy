@@ -295,7 +295,7 @@ void MpvPlayer::SetProperty(const std::string& name, const std::string& value) {
 
 void MpvPlayer::SetPropertyAsync(const std::string& name, const std::string& value, StatusCallback callback) {
   if (!mpv_) {
-    if (callback) callback(0);
+    if (callback) callback(MPV_ERROR_UNINITIALIZED);
     return;
   }
 

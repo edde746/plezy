@@ -39,59 +39,82 @@ PageRouteBuilder<bool> buildVideoPlayerRoute({required WidgetBuilder builder}) {
   );
 }
 
+enum VideoPlayerRouteKind { vod, liveTv }
+
+@immutable
+final class VideoPlayerLaunchIdentity {
+  VideoPlayerLaunchIdentity({
+    required MediaItem metadata,
+    required this.mediaIndex,
+    required String? selectedMediaSourceId,
+    required this.selectedQualityPreset,
+    required this.isOffline,
+    required this.routeKind,
+  }) : globalKey = metadata.globalKey,
+       mediaSourceId = _normalizeMediaSourceId(selectedMediaSourceId);
+
+  final String globalKey;
+  final int mediaIndex;
+  final String? mediaSourceId;
+  final TranscodeQualityPreset? selectedQualityPreset;
+  final bool isOffline;
+  final VideoPlayerRouteKind routeKind;
+
+  static String? _normalizeMediaSourceId(String? mediaSourceId) {
+    if (mediaSourceId == null || mediaSourceId.trim().isEmpty) return null;
+    return mediaSourceId;
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return identical(this, other) ||
+        other is VideoPlayerLaunchIdentity &&
+            other.globalKey == globalKey &&
+            other.mediaIndex == mediaIndex &&
+            other.mediaSourceId == mediaSourceId &&
+            other.selectedQualityPreset == selectedQualityPreset &&
+            other.isOffline == isOffline &&
+            other.routeKind == routeKind;
+  }
+
+  @override
+  int get hashCode => Object.hash(globalKey, mediaIndex, mediaSourceId, selectedQualityPreset, isOffline, routeKind);
+}
+
 class VideoPlayerNavigationInFlightGuard {
-  final Set<String> _keys = <String>{};
+  final Set<VideoPlayerLaunchIdentity> _identities = <VideoPlayerLaunchIdentity>{};
 
-  bool tryStart(
-    MediaItem metadata, {
-    required int mediaIndex,
-    required String? selectedMediaSourceId,
-    required TranscodeQualityPreset? selectedQualityPreset,
-    required bool isOffline,
-  }) {
-    return _keys.add(
-      _keyFor(
-        metadata,
-        mediaIndex: mediaIndex,
-        selectedMediaSourceId: selectedMediaSourceId,
-        selectedQualityPreset: selectedQualityPreset,
-        isOffline: isOffline,
-      ),
-    );
+  bool tryStart(VideoPlayerLaunchIdentity identity) => _identities.add(identity);
+
+  void finish(VideoPlayerLaunchIdentity identity) => _identities.remove(identity);
+}
+
+class VideoPlayerActiveRouteGuard {
+  Object? _owner;
+  VideoPlayerLaunchIdentity? _identity;
+
+  String? get activeGlobalKey => _identity?.globalKey;
+
+  VideoPlayerLaunchIdentity? identityFor(Object owner) => identical(_owner, owner) ? _identity : null;
+
+  bool blocks(VideoPlayerLaunchIdentity identity) => _identity == identity;
+
+  void activate(Object owner, VideoPlayerLaunchIdentity identity) {
+    _owner = owner;
+    _identity = identity;
   }
 
-  void finish(
-    MediaItem metadata, {
-    required int mediaIndex,
-    required String? selectedMediaSourceId,
-    required TranscodeQualityPreset? selectedQualityPreset,
-    required bool isOffline,
-  }) {
-    _keys.remove(
-      _keyFor(
-        metadata,
-        mediaIndex: mediaIndex,
-        selectedMediaSourceId: selectedMediaSourceId,
-        selectedQualityPreset: selectedQualityPreset,
-        isOffline: isOffline,
-      ),
-    );
+  bool update(Object owner, VideoPlayerLaunchIdentity identity) {
+    if (!identical(_owner, owner)) return false;
+    _identity = identity;
+    return true;
   }
 
-  String _keyFor(
-    MediaItem metadata, {
-    required int mediaIndex,
-    required String? selectedMediaSourceId,
-    required TranscodeQualityPreset? selectedQualityPreset,
-    required bool isOffline,
-  }) {
-    return [
-      metadata.globalKey,
-      mediaIndex,
-      selectedMediaSourceId ?? '',
-      selectedQualityPreset?.name ?? 'auto',
-      isOffline,
-    ].join('|');
+  bool clear(Object owner) {
+    if (!identical(_owner, owner)) return false;
+    _owner = null;
+    _identity = null;
+    return true;
   }
 }
 
@@ -262,15 +285,17 @@ Future<bool?> navigateToVideoPlayer(
   final mediaIndex = selectedMediaIndex ?? downloadedMediaIndex ?? savedVersion?.index ?? 0;
   final mediaSourceId = selectedMediaSourceId ?? downloadedMediaSourceId ?? savedVersion?.sourceId;
 
+  final launchIdentity = VideoPlayerLaunchIdentity(
+    metadata: metadata,
+    mediaIndex: mediaIndex,
+    selectedMediaSourceId: mediaSourceId,
+    selectedQualityPreset: selectedQualityPreset,
+    isOffline: isOffline,
+    routeKind: VideoPlayerRouteKind.vod,
+  );
   var markedInFlight = false;
   if (!usePushReplacement) {
-    markedInFlight = _videoPlayerNavigationInFlightGuard.tryStart(
-      metadata,
-      mediaIndex: mediaIndex,
-      selectedMediaSourceId: mediaSourceId,
-      selectedQualityPreset: selectedQualityPreset,
-      isOffline: isOffline,
-    );
+    markedInFlight = _videoPlayerNavigationInFlightGuard.tryStart(launchIdentity);
     if (!markedInFlight) {
       appLogger.d(
         'Video player navigation already in flight for ${metadata.id} (mediaIndex=$mediaIndex), '
@@ -328,12 +353,10 @@ Future<bool?> navigateToVideoPlayer(
       appLogger.w('External player launch failed, falling back to built-in player', error: e);
     }
 
-    // Prevent stacking an identical video player when already active
-    if (!usePushReplacement &&
-        VideoPlayerScreenState.activeId == metadata.id &&
-        VideoPlayerScreenState.activeMediaIndex == mediaIndex) {
+    // Prevent stacking an identical video player when already active.
+    if (!usePushReplacement && VideoPlayerScreenState.isNavigationActive(launchIdentity)) {
       appLogger.d(
-        'Video player already active for ${metadata.id} (mediaIndex=$mediaIndex), skipping duplicate navigation',
+        'Video player already active for ${metadata.globalKey} (mediaIndex=$mediaIndex), skipping duplicate navigation',
       );
       return null;
     }
@@ -355,13 +378,7 @@ Future<bool?> navigateToVideoPlayer(
     return usePushReplacement ? navigator.pushReplacement<bool, bool>(route) : navigator.push<bool>(route);
   } finally {
     if (markedInFlight) {
-      _videoPlayerNavigationInFlightGuard.finish(
-        metadata,
-        mediaIndex: mediaIndex,
-        selectedMediaSourceId: mediaSourceId,
-        selectedQualityPreset: selectedQualityPreset,
-        isOffline: isOffline,
-      );
+      _videoPlayerNavigationInFlightGuard.finish(launchIdentity);
     }
   }
 }

@@ -297,6 +297,7 @@ class TrackChapterControls extends StatelessWidget {
                         player: player,
                         chapters: chapters,
                         chaptersLoaded: chaptersLoaded,
+                        canControl: canControl,
                         serverId: serverId,
                         onSeekRequested: onSeekRequested,
                         onSeekCompleted: onSeekCompleted,

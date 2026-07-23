@@ -40,7 +40,7 @@ class OAuthProxyClient {
       operation: 'OAuth proxy start',
     );
     if (res.statusCode != 200) {
-      throw OAuthProxyException('start failed: HTTP ${res.statusCode}: ${res.body}');
+      throw OAuthProxyException('OAuth proxy start failed: HTTP ${res.statusCode}');
     }
     final body = json.decode(res.body) as Map<String, dynamic>;
     return OAuthProxyStart(
@@ -94,13 +94,18 @@ class OAuthProxyClient {
         throw const OAuthProxyException('Session expired or already used');
       }
       if (res.statusCode != 200) {
-        throw OAuthProxyException('poll failed: HTTP ${res.statusCode}: ${res.body}');
+        throw OAuthProxyException('OAuth proxy poll failed: HTTP ${res.statusCode}');
       }
       final body = json.decode(res.body) as Map<String, dynamic>;
       if (body['error'] != null) {
-        final err = body['error'] as String;
+        final err = body['error'];
         if (err == 'access_denied') return null; // user cancelled in browser
-        throw OAuthProxyException('Upstream auth failed: $err');
+        final category = switch (err) {
+          'missing_code' => 'missing authorization code',
+          'exchange_failed' => 'token exchange failed',
+          _ => 'upstream authorization failed',
+        };
+        throw OAuthProxyException('OAuth proxy failed: $category');
       }
       return OAuthProxyResult(
         accessToken: body['accessToken'] as String,

@@ -12,10 +12,17 @@ import 'package:plezy/services/external_player_service.dart';
 import 'package:plezy/services/jellyfin_api_cache.dart';
 import 'package:plezy/services/multi_server_manager.dart';
 import 'package:plezy/services/offline_watch_sync_service.dart';
+import 'package:plezy/utils/active_client_scope.dart';
+import 'package:plezy/utils/watch_state_notifier.dart';
 import '../test_helpers/media_items.dart';
 
-class _RecordingClient implements MediaServerClient {
-  _RecordingClient({this.backend = MediaBackend.plex});
+class _RecordingClient implements MediaServerClient, ScopedMediaServerClient {
+  _RecordingClient({this.backend = MediaBackend.plex, String? scopedServerId})
+    : scopedServerId =
+          scopedServerId ??
+          (backend == MediaBackend.plex
+              ? buildPlexProfileScopeId(serverId: ServerId('srv'), profileId: 'profile-a')
+              : 'srv/user-a');
 
   bool failStart = false;
   bool failStop = false;
@@ -28,6 +35,8 @@ class _RecordingClient implements MediaServerClient {
 
   @override
   final MediaBackend backend;
+  @override
+  final String scopedServerId;
 
   @override
   double get watchedThreshold => 0.9;
@@ -136,6 +145,28 @@ void main() {
     expect(action!.viewOffset, 5000);
     expect(action.duration, isNull);
     expect(action.shouldMarkWatched, isFalse);
+  });
+
+  test('Android external progress emits the exact client cache scope', () async {
+    final scope = buildPlexProfileScopeId(serverId: ServerId('srv'), profileId: 'profile-a');
+    final client = _RecordingClient(scopedServerId: scope);
+    final events = <WatchStateEvent>[];
+    final subscription = WatchStateNotifier()
+        .forItem('item-1')
+        .where((event) => event.changeType == WatchStateChangeType.progressUpdate)
+        .listen(events.add);
+    addTearDown(subscription.cancel);
+
+    await ExternalPlayerService.reportAndroidExternalProgressForTesting(
+      positionMs: 5000,
+      durationMs: 100000,
+      metadata: _item(durationMs: 100000),
+      client: client,
+    );
+    await Future<void>.delayed(Duration.zero);
+
+    expect(events, hasLength(1));
+    expect(events.single.cacheServerId, scope);
   });
 
   test('Android external progress ignores missing position without explicit completion', () async {

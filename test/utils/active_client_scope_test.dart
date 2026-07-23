@@ -28,4 +28,39 @@ void main() {
       expect(resolveActiveClientScopeId(serverId: serverId, cacheServerId: 'jf-machine/user-b'), 'jf-machine/user-b');
     });
   });
+  group('Plex profile scopes', () {
+    final plexServerId = ServerId('plex-machine');
+
+    test('are typed, deterministic, profile-specific, and publicly projected', () {
+      final profileA = buildPlexProfileScopeId(serverId: plexServerId, profileId: 'profile-a');
+      final profileB = buildPlexProfileScopeId(serverId: plexServerId, profileId: 'profile-b');
+
+      expect(profileA, buildPlexProfileScopeId(serverId: plexServerId, profileId: 'profile-a'));
+      expect(profileA, isNot(profileB));
+      expect(profileA.publicServerId, plexServerId);
+      expect(profileA.profileId, 'profile-a');
+      expect(profileA.cacheServerId, ServerId(profileA));
+      expect(publicPlexServerIdFromScope(profileA), plexServerId);
+      expect(resolveActiveClientScopeId(serverId: plexServerId, cacheServerId: profileA), profileA);
+    });
+
+    test('encodes profile ids and cannot be interpreted as Jellyfin scope', () {
+      final scope = buildPlexProfileScopeId(serverId: plexServerId, profileId: 'profile/a');
+
+      expect(scope.profileId, 'profile/a');
+      expect(isPlexProfileScopeId(scope), isTrue);
+      expect(isJellyfinUserScopeId(serverId: plexServerId, cacheServerId: scope), isFalse);
+      expect(publicPlexServerIdFromScope('plex-machine/user-a'), isNull);
+    });
+
+    test('rejects malformed persisted server prefixes before getters can throw', () {
+      const malformed = '   /~plex-profile/profile-a';
+
+      final scope = PlexProfileScopeId.tryParse(malformed);
+
+      expect(scope, isNull);
+      expect(publicPlexServerIdFromScope(malformed), isNull);
+      expect(isPlexProfileScopeId(malformed), isFalse);
+    });
+  });
 }

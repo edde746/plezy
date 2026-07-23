@@ -425,12 +425,16 @@ class AnilistClient implements DisposableTrackerClient {
       );
     }
     if (res.statusCode != 200) {
-      throw TrackerApiException(service: TrackerService.anilist, statusCode: res.statusCode, body: res.body);
+      throw TrackerApiException(service: TrackerService.anilist, statusCode: res.statusCode);
     }
     final decoded = json.decode(res.body) as Map<String, dynamic>;
     final errors = decoded['errors'];
     if (errors is List && errors.isNotEmpty) {
-      throw TrackerApiException(service: TrackerService.anilist, statusCode: res.statusCode, body: json.encode(errors));
+      throw TrackerApiException(
+        service: TrackerService.anilist,
+        statusCode: res.statusCode,
+        category: TrackerApiFailureCategory.graphqlErrors,
+      );
     }
     final data = decoded['data'];
     return data is Map ? data.cast<String, dynamic>() : <String, dynamic>{};

@@ -36,15 +36,26 @@ extension MpvPluginShared {
     }
 
     guard let core = coreBase else {
-      result(nil)
+      result(
+        FlutterError(
+          code: "NOT_INITIALIZED", message: "MPV player is not initialized", details: nil))
       return
     }
 
-    core.setPropertyAsync(name, value: value) { [weak self] _ in
-      if name == "pause" {
-        self?.didSetPauseProperty(value: value)
+    core.setPropertyAsync(name, value: value) { [weak self] propertyResult in
+      switch propertyResult {
+      case .success:
+        if name == "pause" {
+          self?.didSetPauseProperty(value: value)
+        }
+        result(nil)
+      case .failure:
+        result(
+          FlutterError(
+            code: "SET_PROPERTY_FAILED",
+            message: "MPV rejected or cancelled the property write",
+            details: nil))
       }
-      result(nil)
     }
   }
 

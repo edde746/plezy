@@ -17,7 +17,6 @@ import 'package:plezy/services/data_aggregation_service.dart';
 import 'package:plezy/services/jellyfin_client.dart';
 import 'package:plezy/services/multi_server_manager.dart';
 import 'package:plezy/services/plex_api_cache.dart';
-import 'package:plezy/services/plex_client.dart';
 import 'package:plezy/services/settings_service.dart';
 
 import '../test_helpers/backend_client_fixtures.dart';
@@ -133,7 +132,7 @@ void main() {
       final plexRequests = <Uri>[];
       final jellyfinRequests = <Uri>[];
 
-      final plexClient = PlexClient.forTesting(
+      final plexClient = testPlexClient(
         config: PlexConfig(
           baseUrl: 'https://plex.example.com',
           token: 'token',
@@ -196,7 +195,7 @@ void main() {
     test('getOnDeckFromAllServers forwards preview limit to clients', () async {
       final captured = <Uri>[];
 
-      final client = PlexClient.forTesting(
+      final client = testPlexClient(
         config: PlexConfig(
           baseUrl: 'https://plex.example.com',
           token: 'token',
@@ -241,7 +240,7 @@ void main() {
     });
 
     test('getOnDeckFromAllServers filters hidden Plex continue-watching libraries', () async {
-      final client = PlexClient.forTesting(
+      final client = testPlexClient(
         config: PlexConfig(
           baseUrl: 'https://plex.example.com',
           token: 'token',
@@ -296,7 +295,7 @@ void main() {
     });
 
     test('getOnDeckFromAllServers hides duplicate show entries by stable show ids', () async {
-      final client = PlexClient.forTesting(
+      final client = testPlexClient(
         config: PlexConfig(
           baseUrl: 'https://plex.example.com',
           token: 'token',
@@ -378,7 +377,7 @@ void main() {
       // reliably. The locally recorded play must decide the surviving card —
       // and it must keep the winner in the group's original shelf slot,
       // ahead of the unrelated movie sorted between the two episodes (#1492).
-      final client = PlexClient.forTesting(
+      final client = testPlexClient(
         config: PlexConfig(
           baseUrl: 'https://plex.example.com',
           token: 'token',
@@ -462,7 +461,7 @@ void main() {
     });
 
     test('getOnDeckFromAllServers prefers a duplicate recorded by item key', () async {
-      final client = PlexClient.forTesting(
+      final client = testPlexClient(
         config: PlexConfig(
           baseUrl: 'https://plex.example.com',
           token: 'token',
@@ -537,7 +536,7 @@ void main() {
     });
 
     test('getOnDeckFromAllServers keeps duplicate titles without stable ids', () async {
-      final client = PlexClient.forTesting(
+      final client = testPlexClient(
         config: PlexConfig(
           baseUrl: 'https://plex.example.com',
           token: 'token',
@@ -868,7 +867,7 @@ void main() {
     test('Plex home layout keeps promoted hubs instead of splitting by preview libraries', () async {
       final captured = <Uri>[];
 
-      final client = PlexClient.forTesting(
+      final client = testPlexClient(
         config: PlexConfig(
           baseUrl: 'https://plex.example.com',
           token: 'token',
@@ -943,7 +942,7 @@ void main() {
     test('Plex home layout appends music library hubs the promoted endpoint excludes', () async {
       final captured = <Uri>[];
 
-      final client = PlexClient.forTesting(
+      final client = testPlexClient(
         config: PlexConfig(
           baseUrl: 'https://plex.example.com',
           token: 'token',

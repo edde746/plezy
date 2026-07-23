@@ -120,6 +120,7 @@ class _TranslationsAuthJa extends TranslationsAuthEn {
 	@override String get quickConnectWaiting => '承認を待っています…';
 	@override String get quickConnectCancel => 'キャンセル';
 	@override String get quickConnectExpired => 'Quick Connectの有効期限が切れました。もう一度お試しください。';
+	@override String get localDataRecoveryRequired => '';
 }
 
 // Path: common
@@ -709,6 +710,11 @@ class _TranslationsMessagesJa extends TranslationsMessagesEn {
 	@override String get streamInterrupted => 'ストリームが中断されました。再生を押すかシークして再試行してください。';
 	@override String get liveStreamInterrupted => 'ライブストリームが中断されました。再生を押して再試行してください。';
 	@override String get fileInfoNotAvailable => 'ファイル情報が利用できません';
+	@override String get playbackAuthenticationRequired => '';
+	@override String get playbackServerUnavailable => '';
+	@override String get playbackDataInvalid => '';
+	@override String get playbackCancelled => '';
+	@override String get playbackFailed => '';
 	@override String errorLoadingFileInfo({required Object error}) => 'ファイル情報の読み込みエラー: ${error}';
 	@override String get errorLoadingSeries => 'シリーズの読み込みエラー';
 	@override String get musicNotSupported => '音楽の再生はまだサポートされていません';
@@ -1141,6 +1147,7 @@ class _TranslationsLiveTvJa extends TranslationsLiveTvEn {
 	@override String get favorites => 'お気に入り';
 	@override String get reorderFavorites => 'お気に入りを並べ替え';
 	@override String get favoritesLoadFailed => 'お気に入りを読み込めませんでした。接続を確認してもう一度お試しください。';
+	@override String get favoritesUpdateFailed => '';
 	@override String get joinSession => '進行中のセッションに参加';
 	@override String watchFromStart({required Object minutes}) => '最初から視聴（${minutes}分前に開始）';
 	@override String get watchLive => 'ライブで視聴';
@@ -2138,6 +2145,7 @@ extension on TranslationsJa {
 			'auth.quickConnectWaiting' => '承認を待っています…',
 			'auth.quickConnectCancel' => 'キャンセル',
 			'auth.quickConnectExpired' => 'Quick Connectの有効期限が切れました。もう一度お試しください。',
+			'auth.localDataRecoveryRequired' => '',
 			'common.cancel' => 'キャンセル',
 			'common.save' => '保存',
 			'common.close' => '閉じる',
@@ -2634,12 +2642,17 @@ extension on TranslationsJa {
 			'messages.autoRemovedWatchedDownload' => ({required Object title}) => '自動削除: ${title}',
 			'messages.autoRemovedWatchedDownloads' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('ja'))(n, other: '視聴済みダウンロードを${n}件自動削除しました', ), 
 			'messages.removedFromContinueWatching' => '視聴中から削除しました',
-			'messages.errorLoading' => ({required Object error}) => 'エラー: ${error}',
 			_ => null,
 		} ?? switch (path) {
+			'messages.errorLoading' => ({required Object error}) => 'エラー: ${error}',
 			'messages.streamInterrupted' => 'ストリームが中断されました。再生を押すかシークして再試行してください。',
 			'messages.liveStreamInterrupted' => 'ライブストリームが中断されました。再生を押して再試行してください。',
 			'messages.fileInfoNotAvailable' => 'ファイル情報が利用できません',
+			'messages.playbackAuthenticationRequired' => '',
+			'messages.playbackServerUnavailable' => '',
+			'messages.playbackDataInvalid' => '',
+			'messages.playbackCancelled' => '',
+			'messages.playbackFailed' => '',
 			'messages.errorLoadingFileInfo' => ({required Object error}) => 'ファイル情報の読み込みエラー: ${error}',
 			'messages.errorLoadingSeries' => 'シリーズの読み込みエラー',
 			'messages.musicNotSupported' => '音楽の再生はまだサポートされていません',
@@ -2979,6 +2992,7 @@ extension on TranslationsJa {
 			'liveTv.favorites' => 'お気に入り',
 			'liveTv.reorderFavorites' => 'お気に入りを並べ替え',
 			'liveTv.favoritesLoadFailed' => 'お気に入りを読み込めませんでした。接続を確認してもう一度お試しください。',
+			'liveTv.favoritesUpdateFailed' => '',
 			'liveTv.joinSession' => '進行中のセッションに参加',
 			'liveTv.watchFromStart' => ({required Object minutes}) => '最初から視聴（${minutes}分前に開始）',
 			'liveTv.watchLive' => 'ライブで視聴',
@@ -3142,6 +3156,8 @@ extension on TranslationsJa {
 			'watchTogether.participantBuffering' => ({required Object name}) => '${name}がバッファリング中',
 			'watchTogether.participantNeedsUpdate' => ({required Object name}) => '${name} は古いバージョンのアプリを使用しているため、同期できません',
 			'watchTogether.resumingWithout' => ({required Object name}) => '${name} なしで再開',
+			_ => null,
+		} ?? switch (path) {
 			'watchTogether.waitingForParticipants' => '他の参加者の読み込みを待っています...',
 			'watchTogether.waitingForName' => ({required Object name}) => '${name}を待っています...',
 			'watchTogether.recentRooms' => '最近のルーム',
@@ -3149,8 +3165,6 @@ extension on TranslationsJa {
 			'watchTogether.removeRoom' => '削除',
 			'watchTogether.guestSwitchUnavailable' => '切り替えできません — サーバーが同期できません',
 			'watchTogether.guestSwitchFailed' => '切り替えできません — このサーバーにコンテンツが見つかりません',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.title' => 'ダウンロード',
 			'downloads.manage' => '管理',
 			'downloads.tvShows' => 'テレビ番組',

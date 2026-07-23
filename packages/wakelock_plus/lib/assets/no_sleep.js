@@ -59,7 +59,6 @@ function _classCallCheck(instance, Constructor) {
 var nativeWakeLock = 'wakeLock' in navigator
 
 var NoSleep = (function () {
-  var _nativeEnabledCompleter;
   var _playVideoCompleter;
 
   function NoSleep() {
@@ -69,10 +68,12 @@ var NoSleep = (function () {
 
     this.nativeEnabled = false
     if (nativeWakeLock) {
+      this._nativeRequested = false
       this._wakeLock = null
+      this._wakeLockRequest = null
       var handleVisibilityChange = function handleVisibilityChange() {
-        if (_this._wakeLock !== null && document.visibilityState === 'visible') {
-          _this.enable()
+        if (_this._nativeRequested && document.visibilityState === 'visible') {
+          _this._requestNativeWakeLock().catch(function () {})
         }
       }
       document.addEventListener('visibilitychange', handleVisibilityChange)
@@ -114,39 +115,63 @@ var NoSleep = (function () {
       },
     },
     {
-      key: 'enable',
-      value: async function enable() {
+      key: '_requestNativeWakeLock',
+      value: function _requestNativeWakeLock() {
         var _this2 = this
 
-        if (nativeWakeLock) {
-          // Disable any previously held wakelocks.
-          await this.disable()
-          if (_nativeEnabledCompleter == null) {
-            _nativeEnabledCompleter = new PromiseCompleter()
-          }
-          navigator.wakeLock
-            .request('screen')
-            .then(function (wakeLock) {
-              _this2._wakeLock = wakeLock
-              _this2.nativeEnabled = true
+        if (
+          !this._nativeRequested ||
+          document.visibilityState !== 'visible' ||
+          this._wakeLock !== null
+        ) {
+          return Promise.resolve()
+        }
+        if (this._wakeLockRequest !== null) {
+          return this._wakeLockRequest
+        }
 
-              // We now have a wakelock. Notify all of the existing callers.
-              _this2._wakeLock.addEventListener('release', function () {
-                _this2.nativeEnabled = false
+        var acquisition
+        acquisition = navigator.wakeLock
+          .request('screen')
+          .then(function (wakeLock) {
+            wakeLock.addEventListener('release', function () {
+              if (_this2._wakeLock === wakeLock) {
                 _this2._wakeLock = null
-              })
+                _this2.nativeEnabled = false
+                if (
+                  _this2._nativeRequested &&
+                  document.visibilityState === 'visible'
+                ) {
+                  _this2._requestNativeWakeLock().catch(function () {})
+                }
+              }
+            })
 
-              _nativeEnabledCompleter.complete()
-              _nativeEnabledCompleter = null
-            })
-            .catch(function (err) {
-              _this2.nativeEnabled = false
-              var errorMessage = err.name + ', ' + err.message
-              _nativeEnabledCompleter.completeError(errorMessage)
-              _nativeEnabledCompleter = null
-            })
-          // We then wait for screen to be made available.
-          return _nativeEnabledCompleter.future
+            if (!_this2._nativeRequested || _this2._wakeLock !== null) {
+              return wakeLock.release()
+            }
+
+            _this2._wakeLock = wakeLock
+            _this2.nativeEnabled = true
+          })
+          .catch(function (err) {
+            throw err.name + ', ' + err.message
+          })
+          .finally(function () {
+            if (_this2._wakeLockRequest === acquisition) {
+              _this2._wakeLockRequest = null
+            }
+          })
+        this._wakeLockRequest = acquisition
+        return acquisition
+      },
+    },
+    {
+      key: 'enable',
+      value: async function enable() {
+        if (nativeWakeLock) {
+          this._nativeRequested = true
+          return this._requestNativeWakeLock()
         } else {
           if (_playVideoCompleter == null) {
             _playVideoCompleter = new PromiseCompleter()
@@ -168,16 +193,29 @@ var NoSleep = (function () {
       key: 'disable',
       value: async function disable() {
         if (nativeWakeLock) {
-          // If we're still trying to enable the wakelock, wait for it to be enabled
-          if (_nativeEnabledCompleter != null) {
-            await _nativeEnabledCompleter.future
-          }
-          if (this._wakeLock != null) {
-            this.nativeEnabled = false
-            this._wakeLock.release()
+          this._nativeRequested = false
+
+          var acquisition = this._wakeLockRequest
+          if (acquisition !== null) {
+            try {
+              await acquisition
+            } catch (_) {
+              // A disable supersedes any failed acquisition.
+            }
           }
 
-          this._wakeLock = null
+          var wakeLock = this._wakeLock
+          if (wakeLock !== null) {
+            await wakeLock.release()
+            if (this._wakeLock === wakeLock) {
+              this._wakeLock = null
+              this.nativeEnabled = false
+            }
+          }
+
+          if (this._nativeRequested) {
+            await this._requestNativeWakeLock()
+          }
         } else {
           if (_playVideoCompleter != null) {
             await _playVideoCompleter.future
@@ -191,11 +229,14 @@ var NoSleep = (function () {
       key: 'isEnabled',
       value: async function isEnabled() {
         if (nativeWakeLock) {
-          // If we're still trying to enable the wakelock, wait for it to be enabled
-          if (_nativeEnabledCompleter != null) {
-            await _nativeEnabledCompleter.future
+          var acquisition = this._wakeLockRequest
+          if (acquisition !== null) {
+            try {
+              await acquisition
+            } catch (_) {
+              return false
+            }
           }
-
           return this.nativeEnabled
         } else {
           if (_playVideoCompleter != null) {

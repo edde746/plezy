@@ -124,6 +124,7 @@ class WatchStateNotifier extends BaseNotifier<WatchStateEvent> {
     required MediaItem item,
     required int viewOffset,
     required int duration,
+    String? cacheServerId,
     double watchedThreshold = 0.9,
   }) {
     final serverId = serverIdOrNull(item.serverId);
@@ -137,6 +138,7 @@ class WatchStateNotifier extends BaseNotifier<WatchStateEvent> {
       WatchStateEvent(
         itemId: item.id,
         serverId: serverId,
+        cacheServerId: cacheServerId,
         changeType: WatchStateChangeType.progressUpdate,
         parentChain: item.parentChain,
         mediaType: item.kind.id,

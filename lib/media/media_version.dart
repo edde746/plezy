@@ -114,25 +114,33 @@ class MediaVersion {
   String get _codecPart => (videoCodec ?? '').toLowerCase();
 
   /// Find the best matching version index from a set of accepted signatures.
-  /// Tier 1: exact match. Tier 2: resolution+codec. Tier 3: resolution only.
-  /// Returns null if no accepted signature matches.
+  ///
+  /// Matching runs globally by tier: exact signature, resolution+codec, then
+  /// resolution only. Within a tier, accepted-signature iteration order wins
+  /// first, followed by candidate-list order. Malformed signatures are skipped.
   static int? findMatchingIndex(List<MediaVersion> versions, Set<String> acceptedSignatures) {
     if (versions.isEmpty || acceptedSignatures.isEmpty) return null;
 
-    for (final sig in acceptedSignatures) {
-      final parts = sig.split(':');
+    final accepted = <({String signature, String resolution, String codec})>[];
+    for (final signature in acceptedSignatures) {
+      final parts = signature.split(':');
       if (parts.length != 3) continue;
-      final targetRes = parts.first;
-      final targetCodec = parts[1];
+      accepted.add((signature: signature, resolution: parts[0], codec: parts[1]));
+    }
 
-      for (int i = 0; i < versions.length; i++) {
-        if (versions[i].signature == sig) return i;
+    for (final target in accepted) {
+      for (var i = 0; i < versions.length; i++) {
+        if (versions[i].signature == target.signature) return i;
       }
-      for (int i = 0; i < versions.length; i++) {
-        if (versions[i]._resolutionPart == targetRes && versions[i]._codecPart == targetCodec) return i;
+    }
+    for (final target in accepted) {
+      for (var i = 0; i < versions.length; i++) {
+        if (versions[i]._resolutionPart == target.resolution && versions[i]._codecPart == target.codec) return i;
       }
-      for (int i = 0; i < versions.length; i++) {
-        if (versions[i]._resolutionPart == targetRes) return i;
+    }
+    for (final target in accepted) {
+      for (var i = 0; i < versions.length; i++) {
+        if (versions[i]._resolutionPart == target.resolution) return i;
       }
     }
 

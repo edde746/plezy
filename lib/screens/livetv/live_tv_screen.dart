@@ -78,10 +78,12 @@ class _LiveTvScreenState extends State<LiveTvScreen>
   Future<void>? _favoritesLoadFuture;
   final SerialFutureQueue _favoritesMutationQueue = SerialFutureQueue();
   bool _favoritesLoaded = false;
+  bool _favoritesWritable = false;
 
   List<LiveTvChannel> get _filteredChannels => filterLiveTvChannelsForFavorites(
     channels: _channels,
     favoritesOnly: _showFavoritesOnly,
+    favoritesLoaded: _favoritesLoaded,
     favorites: _favoriteChannels,
     sourceForChannel: _sourceForChannel,
   );
@@ -434,55 +436,78 @@ class _LiveTvScreenState extends State<LiveTvScreen>
   Future<void> _loadFavorites(MultiServerProvider multiServer) async {
     final loadGeneration = ++_favoritesLoadGeneration;
     _favoritesLoaded = false;
-    try {
-      final sourceByLiveServer = Map<String, String>.of(_favoriteSourceByLiveServer);
-      final storeByLiveServer = Map<String, String>.of(_favoriteStoreByLiveServer);
-      final storeBySource = Map<String, String>.of(_favoriteStoreBySource);
-      final modeByStore = Map<String, FavoriteChannelPersistenceMode>.of(_favoriteModeByStore);
-      final merged = <FavoriteChannel>[];
-      final fetchedStores = <String>{};
-      final seenFavorites = <String>{};
-      for (final serverInfo in multiServer.liveTvServers) {
-        final client = multiServer.getClientForServer(ServerId(serverInfo.serverId));
-        if (client == null) continue;
-        final liveTv = client.liveTv;
+    _favoritesWritable = false;
+    final previousStoreBySource = Map<String, String>.of(_favoriteStoreBySource);
+    final sourceByLiveServer = Map<String, String>.of(_favoriteSourceByLiveServer);
+    final storeByLiveServer = Map<String, String>.of(_favoriteStoreByLiveServer);
+    final storeBySource = Map<String, String>.of(_favoriteStoreBySource);
+    final modeByStore = Map<String, FavoriteChannelPersistenceMode>.of(_favoriteModeByStore);
+    final merged = <FavoriteChannel>[];
+    final successfulStores = <String>{};
+    final failedStores = <String>{};
+    final seenFavorites = <String>{};
+
+    for (final serverInfo in multiServer.liveTvServers) {
+      final client = multiServer.getClientForServer(ServerId(serverInfo.serverId));
+      if (client == null) continue;
+      final liveTv = client.liveTv;
+      final storeKey = liveTv.favoriteStoreKey;
+      final liveServerKey = _liveServerScopeKey(serverInfo);
+      storeByLiveServer[liveServerKey] = storeKey;
+      modeByStore[storeKey] = liveTv.favoritePersistenceMode;
+
+      try {
         final source = await liveTv.buildFavoriteChannelSource(lineup: serverInfo.lineup);
-        final storeKey = liveTv.favoriteStoreKey;
-        final liveServerKey = _liveServerScopeKey(serverInfo);
         sourceByLiveServer[liveServerKey] = source;
-        storeByLiveServer[liveServerKey] = storeKey;
         storeBySource[source] = storeKey;
-        modeByStore[storeKey] = liveTv.favoritePersistenceMode;
-        if (!fetchedStores.add(storeKey)) continue;
+        if (successfulStores.contains(storeKey)) continue;
+
         final serverFavorites = await liveTv.fetchFavoriteChannels();
+        successfulStores.add(storeKey);
+        failedStores.remove(storeKey);
         for (final favorite in serverFavorites) {
           storeBySource[favorite.source] = storeKey;
           if (seenFavorites.add(favorite.stableKey)) merged.add(favorite);
         }
+      } catch (error, stackTrace) {
+        if (!successfulStores.contains(storeKey)) failedStores.add(storeKey);
+        appLogger.e('Failed to load favorite channels for $storeKey', error: error, stackTrace: stackTrace);
       }
-
-      if (!mounted || loadGeneration != _favoritesLoadGeneration) return;
-      setState(() {
-        _favoriteSourceByLiveServer
-          ..clear()
-          ..addAll(sourceByLiveServer);
-        _favoriteStoreByLiveServer
-          ..clear()
-          ..addAll(storeByLiveServer);
-        _favoriteStoreBySource
-          ..clear()
-          ..addAll(storeBySource);
-        _favoriteModeByStore
-          ..clear()
-          ..addAll(modeByStore);
-        _favoriteChannels = merged;
-        _refreshFavoriteKeys();
-      });
-      _favoritesLoaded = true;
-      appLogger.d('Live TV: loaded ${merged.length} favorite channels');
-    } catch (e) {
-      appLogger.e('Failed to load favorite channels', error: e);
     }
+
+    // A failed store keeps its last committed in-memory slice. Healthy stores
+    // still refresh, but mutations stay disabled until every store has loaded
+    // so a later persist cannot replace the failed store with an empty list.
+    for (final favorite in _favoriteChannels) {
+      final storeKey = previousStoreBySource[favorite.source];
+      if (storeKey != null && failedStores.contains(storeKey) && seenFavorites.add(favorite.stableKey)) {
+        merged.add(favorite);
+      }
+    }
+
+    if (!mounted || loadGeneration != _favoritesLoadGeneration) return;
+    setState(() {
+      _favoriteSourceByLiveServer
+        ..clear()
+        ..addAll(sourceByLiveServer);
+      _favoriteStoreByLiveServer
+        ..clear()
+        ..addAll(storeByLiveServer);
+      _favoriteStoreBySource
+        ..clear()
+        ..addAll(storeBySource);
+      _favoriteModeByStore
+        ..clear()
+        ..addAll(modeByStore);
+      _favoriteChannels = merged;
+      _refreshFavoriteKeys();
+      _favoritesLoaded = failedStores.isEmpty || successfulStores.isNotEmpty || merged.isNotEmpty;
+      _favoritesWritable = failedStores.isEmpty;
+    });
+    appLogger.d(
+      'Live TV: loaded ${merged.length} favorite channels'
+      '${failedStores.isEmpty ? '' : ' (${failedStores.length} store(s) deferred)'}',
+    );
   }
 
   void _toggleFavoritesFilter() {
@@ -517,7 +542,7 @@ class _LiveTvScreenState extends State<LiveTvScreen>
           .run(() async {
             if (pendingLoad != null) await pendingLoad;
             if (!mounted) return;
-            if (!_favoritesLoaded) {
+            if (!_favoritesWritable) {
               showErrorSnackBar(context, t.liveTv.favoritesLoadFailed);
               return;
             }
@@ -526,6 +551,9 @@ class _LiveTvScreenState extends State<LiveTvScreen>
           })
           .catchError((Object error, StackTrace stackTrace) {
             appLogger.e('Failed to mutate favorite channels', error: error, stackTrace: stackTrace);
+            if (mounted) {
+              showErrorSnackBar(context, t.liveTv.favoritesUpdateFailed);
+            }
           }),
     );
   }

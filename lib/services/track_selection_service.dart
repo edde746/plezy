@@ -800,18 +800,23 @@ class TrackSelectionService {
   }
 
   /// Select and apply audio and subtitle tracks based on preferences
-  Future<void> selectAndApplyTracks({
+  Future<bool> selectAndApplyTracks({
     AudioTrack? preferredAudioTrack,
     SubtitleTrack? preferredSubtitleTrack,
     SubtitleTrack? preferredSecondarySubtitleTrack,
     double? defaultPlaybackSpeed,
     Function(AudioTrack)? onAudioTrackChanged,
     Function(SubtitleTrack)? onSubtitleTrackChanged,
+    bool Function()? isActive,
+    void Function(Future<void> mutation)? onPlayerMutationDispatched,
   }) async {
     final player = this.player;
     if (player == null) {
       throw StateError('A player is required to apply track selections');
     }
+    bool canMutatePlayer() => !player.disposed && (isActive == null || isActive());
+
+    if (!canMutatePlayer()) return false;
 
     // Wait for tracks to be loaded
     if (player.state.tracks.audio.isEmpty && player.state.tracks.subtitle.isEmpty) {
@@ -825,7 +830,7 @@ class TrackSelectionService {
       }
     }
 
-    if (player.disposed) return;
+    if (!canMutatePlayer()) return false;
 
     // Get real tracks (excluding auto and no)
     final realAudioTracks = player.state.tracks.audio.where((t) => t.id != 'auto' && t.id != 'no').toList();
@@ -839,7 +844,11 @@ class TrackSelectionService {
       appLogger.d(
         'Audio: ${selectedAudioTrack.title ?? selectedAudioTrack.language ?? "Track ${selectedAudioTrack.id}"} [${audioResult.priority.name}]',
       );
-      unawaited(player.selectAudioTrack(selectedAudioTrack));
+      if (!canMutatePlayer()) return false;
+      final audioMutation = player.selectAudioTrack(selectedAudioTrack);
+      onPlayerMutationDispatched?.call(audioMutation);
+      await audioMutation;
+      if (!canMutatePlayer()) return false;
 
       // Save to Plex if this was user's navigation preference (Priority 1)
       if (audioResult.priority == TrackSelectionPriority.navigation && onAudioTrackChanged != null) {
@@ -854,7 +863,11 @@ class TrackSelectionService {
         ? 'OFF'
         : (selectedSubtitleTrack.title ?? selectedSubtitleTrack.language ?? 'Track ${selectedSubtitleTrack.id}');
     appLogger.d('Subtitle: $subtitleName [${subtitleResult.priority.name}]');
-    unawaited(player.selectSubtitleTrack(selectedSubtitleTrack));
+    if (!canMutatePlayer()) return false;
+    final subtitleMutation = player.selectSubtitleTrack(selectedSubtitleTrack);
+    onPlayerMutationDispatched?.call(subtitleMutation);
+    await subtitleMutation;
+    if (!canMutatePlayer()) return false;
 
     // Save to Plex if this was user's navigation preference (Priority 1)
     if (subtitleResult.priority == TrackSelectionPriority.navigation && onSubtitleTrackChanged != null) {
@@ -871,13 +884,23 @@ class TrackSelectionService {
         appLogger.d(
           'Secondary subtitle: ${secondaryMatch.title ?? secondaryMatch.language ?? "Track ${secondaryMatch.id}"}',
         );
-        unawaited(player.selectSecondarySubtitleTrack(secondaryMatch));
+        if (!canMutatePlayer()) return false;
+        final secondarySubtitleMutation = player.selectSecondarySubtitleTrack(secondaryMatch);
+        onPlayerMutationDispatched?.call(secondarySubtitleMutation);
+        await secondarySubtitleMutation;
+        if (!canMutatePlayer()) return false;
       }
     }
 
     // Apply default playback speed from settings
     if (defaultPlaybackSpeed != null && defaultPlaybackSpeed != 1.0) {
-      unawaited(player.setRate(defaultPlaybackSpeed));
+      if (!canMutatePlayer()) return false;
+      final rateMutation = player.setRate(defaultPlaybackSpeed);
+      onPlayerMutationDispatched?.call(rateMutation);
+      await rateMutation;
+      if (!canMutatePlayer()) return false;
     }
+
+    return true;
   }
 }

@@ -22,7 +22,6 @@ import 'package:plezy/services/jellyfin_api_cache.dart';
 import 'package:plezy/services/jellyfin_client.dart';
 import 'package:plezy/services/multi_server_manager.dart';
 import 'package:plezy/services/plex_api_cache.dart';
-import 'package:plezy/services/plex_client.dart';
 import 'package:plezy/services/settings_service.dart';
 import 'package:plezy/theme/mono_theme.dart';
 import 'package:plezy/utils/platform_detector.dart';
@@ -144,7 +143,7 @@ class _CollectionHarness {
   factory _CollectionHarness.plex() {
     final database = AppDatabase.forTesting(NativeDatabase.memory());
     PlexApiCache.initialize(database);
-    final client = PlexClient.forTesting(
+    final client = testPlexClient(
       config: PlexConfig(
         baseUrl: 'https://plex.example.com',
         token: 'token',

@@ -193,7 +193,7 @@ class MalClient implements DisposableTrackerClient {
       try {
         await _refresh();
       } catch (_) {
-        throw TrackerApiException(service: TrackerService.mal, statusCode: 401, body: res.body);
+        throw const TrackerApiException(service: TrackerService.mal, statusCode: 401);
       }
       res = await _send(method, path, body: body, formBody: formBody);
     }
@@ -201,7 +201,7 @@ class MalClient implements DisposableTrackerClient {
     if (res.statusCode >= 200 && res.statusCode < 300) {
       return TrackerHttpClient.decodeJson(res.body);
     }
-    throw TrackerApiException(service: TrackerService.mal, statusCode: res.statusCode, body: res.body);
+    throw TrackerApiException(service: TrackerService.mal, statusCode: res.statusCode);
   }
 
   Future<http.Response> _send(

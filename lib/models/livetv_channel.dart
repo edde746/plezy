@@ -35,11 +35,12 @@ String liveTvChannelScopeKey(LiveTvChannel channel) =>
 List<LiveTvChannel> filterLiveTvChannelsForFavorites({
   required List<LiveTvChannel> channels,
   required bool favoritesOnly,
+  required bool favoritesLoaded,
   required Iterable<FavoriteChannel> favorites,
   required String Function(LiveTvChannel channel) sourceForChannel,
 }) {
-  if (!favoritesOnly || favorites.isEmpty) return channels;
-
+  if (!favoritesOnly || !favoritesLoaded) return channels;
+  if (favorites.isEmpty) return const [];
   final channelMap = {
     for (final channel in channels) favoriteChannelKey(sourceForChannel(channel), channel.key): channel,
   };

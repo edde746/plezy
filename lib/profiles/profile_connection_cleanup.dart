@@ -68,9 +68,9 @@ Future<void> removeAllProfileConnectionsAndCleanup({
   }
 }
 
-/// Profile ids affected by a Plex account removal, so the caller can sweep
-/// per-profile data (downloads, sync rules, queued watch actions) that this
-/// layer doesn't own.
+/// Profile ids affected by a Plex account removal. Planning is read-only so
+/// callers can finish failure-prone cleanup before committing join/account
+/// deletion.
 typedef PlexAccountRemoval = ({
   /// The account's virtual Plex Home profiles — they cease to exist.
   Set<String> removedVirtualProfileIds,
@@ -80,20 +80,9 @@ typedef PlexAccountRemoval = ({
   Set<String> borrowerProfileIds,
 });
 
-/// Sign out of a Plex account: remove the account [Connection], every join
-/// row referencing it, and everything owned by its virtual Plex Home
-/// profiles — including borrowed Jellyfin connections left unreferenced,
-/// which previously survived as orphans and wedged the session (#1423).
-///
-/// All cleanup is explicit and completes before this returns; correctness
-/// must not depend on [PlexHomeService]'s stream-driven `_onChange`, which
-/// runs later and no-ops.
-Future<PlexAccountRemoval> removePlexAccountConnectionAndCleanup({
+Future<PlexAccountRemoval> planPlexAccountConnectionRemoval({
   required PlexAccountConnection account,
   required ProfileConnectionRegistry profileConnections,
-  required ConnectionRegistry connections,
-  required StorageService storage,
-  MultiServerManager? serverManager,
 }) async {
   final rows = await profileConnections.listAll();
   final removedVirtualProfileIds = <String>{
@@ -104,7 +93,36 @@ Future<PlexAccountRemoval> removePlexAccountConnectionAndCleanup({
     for (final row in rows)
       if (row.connectionId == account.id && !removedVirtualProfileIds.contains(row.profileId)) row.profileId,
   };
+  return (removedVirtualProfileIds: removedVirtualProfileIds, borrowerProfileIds: borrowerProfileIds);
+}
 
+/// Sign out of a Plex account: remove the account [Connection], every join
+/// row referencing it, and everything owned by its virtual Plex Home
+/// profiles — including borrowed Jellyfin connections left unreferenced,
+/// which previously survived as orphans and wedged the session (#1423).
+///
+/// Pass a read-only [plannedRemoval] from
+/// [planPlexAccountConnectionRemoval] when failure-prone caller-owned cleanup
+/// must finish before this destructive commit. Omitting it preserves the
+/// atomic add/cancel-account cleanup path.
+///
+/// All cleanup is explicit and completes before this returns; correctness
+/// must not depend on [PlexHomeService]'s stream-driven `_onChange`, which
+/// runs later and no-ops.
+Future<PlexAccountRemoval> removePlexAccountConnectionAndCleanup({
+  required PlexAccountConnection account,
+  required ProfileConnectionRegistry profileConnections,
+  required ConnectionRegistry connections,
+  required StorageService storage,
+  MultiServerManager? serverManager,
+  PlexAccountRemoval? plannedRemoval,
+}) async {
+  final removal =
+      plannedRemoval ??
+      await planPlexAccountConnectionRemoval(account: account, profileConnections: profileConnections);
+  final removedVirtualProfileIds = removal.removedVirtualProfileIds;
+  final borrowerProfileIds = removal.borrowerProfileIds;
+  final rows = await profileConnections.listAll();
   // Remove direct join rows first so per-profile pref cleanup observes each
   // row going away; the FK cascade from the connection delete is then a no-op.
   for (final row in rows.where((r) => r.connectionId == account.id)) {

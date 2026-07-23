@@ -44,3 +44,53 @@ target_link_libraries(${BINARY_NAME} PRIVATE simdutf)
 
 target_include_directories(${BINARY_NAME} PRIVATE "${CMAKE_SOURCE_DIR}")
 target_include_directories(${BINARY_NAME} PRIVATE "${CMAKE_SOURCE_DIR}/../shared/cpp")
+
+option(PLEZY_BUILD_MPV_PLAYER_LIFECYCLE_TESTS
+  "Build the focused Linux mpv callback lifecycle test" OFF)
+if(PLEZY_BUILD_MPV_PLAYER_LIFECYCLE_TESTS)
+  enable_testing()
+  find_package(Threads REQUIRED)
+
+  add_executable(mpv_player_lifecycle_test
+    "mpv/mpv_player.cc"
+    "mpv/mpv_player_lifecycle_test.cc"
+  )
+  apply_standard_settings(mpv_player_lifecycle_test)
+  target_link_libraries(mpv_player_lifecycle_test PRIVATE flutter)
+  target_link_libraries(mpv_player_lifecycle_test PRIVATE PkgConfig::GTK)
+  target_link_libraries(mpv_player_lifecycle_test PRIVATE PkgConfig::MPV)
+  target_link_libraries(mpv_player_lifecycle_test PRIVATE PkgConfig::EPOXY)
+  target_link_libraries(mpv_player_lifecycle_test PRIVATE simdutf)
+  target_link_libraries(mpv_player_lifecycle_test PRIVATE Threads::Threads)
+  target_include_directories(mpv_player_lifecycle_test PRIVATE "${CMAKE_SOURCE_DIR}")
+  target_include_directories(mpv_player_lifecycle_test PRIVATE "${CMAKE_SOURCE_DIR}/../shared/cpp")
+
+  option(PLEZY_MPV_LIFECYCLE_SANITIZERS
+    "Enable ASan and UBSan for the focused mpv lifecycle test" ON)
+  if(PLEZY_MPV_LIFECYCLE_SANITIZERS AND CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
+    include(CheckCXXCompilerFlag)
+    check_cxx_compiler_flag("-fsanitize=address,undefined" MPV_LIFECYCLE_SANITIZERS_SUPPORTED)
+    if(MPV_LIFECYCLE_SANITIZERS_SUPPORTED)
+      target_compile_options(mpv_player_lifecycle_test PRIVATE -fno-omit-frame-pointer -fsanitize=address,undefined)
+      target_link_options(mpv_player_lifecycle_test PRIVATE -fsanitize=address,undefined)
+    endif()
+  endif()
+
+  add_test(NAME mpv_player_lifecycle_test COMMAND mpv_player_lifecycle_test)
+endif()
+
+option(PLEZY_BUILD_MPV_PROPERTY_CONTRACT_TESTS
+  "Build the focused desktop mpv property-result contract test" OFF)
+if(PLEZY_BUILD_MPV_PROPERTY_CONTRACT_TESTS)
+  enable_testing()
+  find_package(Threads REQUIRED)
+
+  add_executable(mpv_property_result_contract_test
+    "../../shared/mpv/mpv_player_common_test.cpp"
+  )
+  apply_standard_settings(mpv_property_result_contract_test)
+  target_link_libraries(mpv_property_result_contract_test PRIVATE PkgConfig::MPV Threads::Threads)
+  target_include_directories(mpv_property_result_contract_test PRIVATE "../../shared/mpv")
+
+  add_test(NAME mpv_property_result_contract_test COMMAND mpv_property_result_contract_test)
+endif()

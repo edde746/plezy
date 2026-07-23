@@ -56,10 +56,31 @@ class TrackManager {
   bool waitingForExternalSubsTrackSelection = false;
   bool _externalSubtitleAddsInFlight = false;
   bool _isApplyingTrackSelection = false;
+  int? _applyingSelectionGeneration;
+  Completer<void>? _selectionIdleCompleter;
+  Future<void>? _activePlayerMutationDrain;
   List<SubtitleTrack> _lastExternalSubtitles = const [];
   StreamSubscription<Tracks>? _trackLoadingSubscription;
   Timer? _subtitleFallbackTimer;
   Timer? _trackSelectionFallbackTimer;
+  bool _disposed = false;
+  int _selectionGeneration = 0;
+
+  bool get _managerIsActive => !_disposed && isActive();
+
+  bool _isSelectionCurrent(int generation) => _managerIsActive && generation == _selectionGeneration;
+
+  void _trackDispatchedPlayerMutation(Future<void> mutation) {
+    final drain = mutation.then<void>((_) {}, onError: (Object _, StackTrace _) {});
+    _activePlayerMutationDrain = drain;
+    unawaited(
+      drain.then((_) {
+        if (identical(_activePlayerMutationDrain, drain)) {
+          _activePlayerMutationDrain = null;
+        }
+      }),
+    );
+  }
 
   /// Cached external subtitles for re-use after backend fallback.
   List<SubtitleTrack> get lastExternalSubtitles => _lastExternalSubtitles;
@@ -155,6 +176,26 @@ class TrackManager {
     });
   }
 
+  /// Invalidates every pending automatic selection before the player is
+  /// reused for another media generation and returns a bounded drain for the
+  /// native player mutation already in flight at invalidation time.
+  ///
+  /// The returned future does not wait for profile/track readiness or include
+  /// mutations started by a later generation. Reload callers can await it
+  /// immediately before replacement media is opened, ensuring an
+  /// already-dispatched native audio, subtitle, or rate mutation cannot land
+  /// on that replacement. Disposal deliberately ignores the drain so teardown
+  /// is never held by a native command.
+  Future<void> invalidatePendingSelection() {
+    final activePlayerMutationDrain = _activePlayerMutationDrain;
+    _selectionGeneration++;
+    _trackLoadingSubscription?.cancel();
+    _trackLoadingSubscription = null;
+    _trackSelectionFallbackTimer?.cancel();
+    _trackSelectionFallbackTimer = null;
+    return activePlayerMutationDrain ?? Future<void>.value();
+  }
+
   // ── Track selection ────────────────────────────────────────────────
 
   /// Apply track selection once tracks are available.
@@ -200,18 +241,36 @@ class TrackManager {
     return info.subtitleTracks.isEmpty;
   }
 
-  /// Core track selection: delegates to [TrackSelectionService].
-  Future<void> applyTrackSelection() async {
-    if (!isActive() || _isApplyingTrackSelection) return;
+  /// Core track selection: delegates to [TrackSelectionService]. Returns
+  /// whether every player mutation completed for this still-active owner.
+  Future<bool> applyTrackSelection() async {
+    final selectionGeneration = _selectionGeneration;
+    bool selectionIsActive() => _isSelectionCurrent(selectionGeneration);
+    if (!selectionIsActive()) return false;
+
+    if (_isApplyingTrackSelection) {
+      // Calls from the active generation are already represented by the
+      // in-flight selection. A replacement generation, however, must wait for
+      // stale work to unwind rather than losing its only selection request.
+      if (_applyingSelectionGeneration == selectionGeneration) return false;
+      final activeSelectionDone = _selectionIdleCompleter?.future;
+      if (activeSelectionDone == null) return false;
+      await activeSelectionDone;
+      if (!selectionIsActive()) return false;
+      return applyTrackSelection();
+    }
 
     _isApplyingTrackSelection = true;
+    _applyingSelectionGeneration = selectionGeneration;
+    final idleCompleter = Completer<void>();
+    _selectionIdleCompleter = idleCompleter;
     try {
       await waitForProfileSettings();
-      if (!isActive()) return;
+      if (!selectionIsActive()) return false;
 
       final profileSettings = getProfileSettings();
       final settingsService = await SettingsService.getInstance();
-      if (!isActive()) return;
+      if (!selectionIsActive()) return false;
 
       final trackService = TrackSelectionService(
         player: player,
@@ -220,18 +279,26 @@ class TrackManager {
         plexMediaInfo: mediaInfo,
       );
 
-      await trackService.selectAndApplyTracks(
+      return await trackService.selectAndApplyTracks(
         preferredAudioTrack: preferredAudioTrack,
         preferredSubtitleTrack: preferredSubtitleTrack,
         preferredSecondarySubtitleTrack: preferredSecondarySubtitleTrack,
         defaultPlaybackSpeed: settingsService.read(SettingsService.defaultPlaybackSpeed),
         onAudioTrackChanged: onAudioTrackChanged,
         onSubtitleTrackChanged: onSubtitleTrackChanged,
+        isActive: selectionIsActive,
+        onPlayerMutationDispatched: _trackDispatchedPlayerMutation,
       );
     } catch (e) {
       appLogger.w('Failed to apply track selection', error: e);
+      return false;
     } finally {
       _isApplyingTrackSelection = false;
+      _applyingSelectionGeneration = null;
+      if (identical(_selectionIdleCompleter, idleCompleter)) {
+        _selectionIdleCompleter = null;
+        idleCompleter.complete();
+      }
     }
   }
 
@@ -248,8 +315,13 @@ class TrackManager {
 
   /// Handle ExoPlayer → MPV backend switch: re-add external subs and reapply selection.
   Future<void> onBackendSwitched() async {
-    appLogger.i('Player backend switched from ExoPlayer to MPV (native fallback)');
+    final pendingSelection = _selectionIdleCompleter?.future;
+    final playerMutationDrain = invalidatePendingSelection();
+    if (pendingSelection != null) await pendingSelection;
+    await playerMutationDrain;
+    if (!_managerIsActive) return;
 
+    appLogger.i('Player backend switched from ExoPlayer to MPV (native fallback)');
     if (_lastExternalSubtitles.isNotEmpty && !player.attachesExternalSubtitlesAtOpen) {
       try {
         await addExternalSubtitles(_lastExternalSubtitles);
@@ -258,7 +330,7 @@ class TrackManager {
       }
     }
 
-    if (!isActive()) return;
+    if (!_managerIsActive) return;
 
     applyTrackSelectionWhenReady();
   }
@@ -398,12 +470,11 @@ class TrackManager {
 
   /// Clean up subscriptions.
   void dispose() {
+    if (_disposed) return;
+    _disposed = true;
+    invalidatePendingSelection();
     _externalSubtitleAddsInFlight = false;
-    _trackLoadingSubscription?.cancel();
-    _trackLoadingSubscription = null;
     _subtitleFallbackTimer?.cancel();
     _subtitleFallbackTimer = null;
-    _trackSelectionFallbackTimer?.cancel();
-    _trackSelectionFallbackTimer = null;
   }
 }

@@ -32,6 +32,9 @@ class EndpointRaceSelection<C, R> {
 /// candidates and emits the selector's best endpoint, letting callers promote
 /// a lower-latency URL in the background without blocking initial connection
 /// setup.
+///
+/// Diagnostic events intentionally omit candidate URLs. Backends register
+/// endpoints separately for unavoidable network-layer diagnostics.
 Stream<EndpointRaceSelection<C, R>> raceEndpointCandidates<C, R>({
   required String label,
   required List<C> candidates,
@@ -66,14 +69,14 @@ Stream<EndpointRaceSelection<C, R>> raceEndpointCandidates<C, R>({
   }
   if (cachedCandidate != null) {
     final cached = cachedCandidate;
-    appLogger.d('Testing cached $label endpoint with a head start on the race', error: {'uri': preferredUrl});
+    appLogger.d('Testing cached $label endpoint with a head start on the race');
     final cachedProbe = probe(cached, preferredTimeout);
     final headStartResult = await Future.any<R?>([cachedProbe, Future<R?>.delayed(preferredHeadStart, () => null)]);
 
     if (headStartResult != null && isSuccess(headStartResult)) {
       appLogger.i(
         'Cached $label endpoint succeeded, using immediately',
-        error: {'uri': preferredUrl, 'elapsedMs': stopwatch.elapsedMilliseconds},
+        error: {'elapsedMs': stopwatch.elapsedMilliseconds},
       );
       firstCandidate = cached;
       firstResult = headStartResult;
@@ -85,13 +88,10 @@ Stream<EndpointRaceSelection<C, R>> raceEndpointCandidates<C, R>({
       // probe like any other.
       appLogger.w(
         'Cached $label endpoint failed, falling back to candidate race',
-        error: {'uri': preferredUrl, 'elapsedMs': stopwatch.elapsedMilliseconds},
+        error: {'elapsedMs': stopwatch.elapsedMilliseconds},
       );
     } else {
-      appLogger.d(
-        'Cached $label endpoint still pending after head start, racing all candidates',
-        error: {'uri': preferredUrl},
-      );
+      appLogger.d('Cached $label endpoint still pending after head start, racing all candidates');
       pendingCachedProbe = cachedProbe;
     }
   }
@@ -128,7 +128,6 @@ Stream<EndpointRaceSelection<C, R>> raceEndpointCandidates<C, R>({
     appLogger.i(
       '$label race found first working endpoint',
       error: {
-        'uri': urlOf(first.candidate),
         'type': displayTypeOf?.call(first.candidate),
         'fromPreferred': fromPreferred,
         'elapsedMs': stopwatch.elapsedMilliseconds,
@@ -214,12 +213,12 @@ Future<({C candidate, R result})?> _raceFirstSuccess<C, R>({
             completedTests++;
 
             if (!isSuccess(result)) {
+              final failureFields = failureLogFields?.call(candidate, result);
               appLogger.w(
                 '$label endpoint candidate failed',
                 error: {
-                  'url': urlOf(candidate),
                   'type': displayTypeOf?.call(candidate),
-                  ...?failureLogFields?.call(candidate, result),
+                  if (failureFields != null) ..._sanitizeEndpointFields(failureFields, urlOf(candidate)),
                 },
               );
             }
@@ -237,7 +236,7 @@ Future<({C candidate, R result})?> _raceFirstSuccess<C, R>({
             completedTests++;
             appLogger.w(
               '$label endpoint candidate threw during race',
-              error: {'url': urlOf(candidate), 'error': error.toString()},
+              error: {'errorType': error.runtimeType.toString()},
               stackTrace: stackTrace,
             );
             if (completedTests == candidates.length && !completer.isCompleted) {
@@ -248,4 +247,21 @@ Future<({C candidate, R result})?> _raceFirstSuccess<C, R>({
   }
 
   return completer.future;
+}
+
+Map<String, Object?> _sanitizeEndpointFields(Map<String, Object?> fields, String endpoint) {
+  final uri = Uri.tryParse(endpoint);
+  final literals = <String>{
+    if (endpoint.isNotEmpty) endpoint,
+    if (uri != null && uri.host.isNotEmpty) uri.host,
+    if (uri != null && uri.path.length > 1) uri.path,
+  };
+  return {
+    for (final entry in fields.entries)
+      entry.key: switch (entry.value) {
+        final String value => literals.fold<String>(value, (safe, literal) => safe.replaceAll(literal, '[endpoint]')),
+        null || num() || bool() => entry.value,
+        final value => value.runtimeType.toString(),
+      },
+  };
 }

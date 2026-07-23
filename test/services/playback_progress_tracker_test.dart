@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:plezy/media/ids.dart';
 
 import 'package:drift/native.dart';
+import 'package:fake_async/fake_async.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/database/app_database.dart';
 import 'package:plezy/media/media_backend.dart';
@@ -15,32 +16,14 @@ import 'package:plezy/services/offline_watch_sync_service.dart';
 import 'package:plezy/services/playback_progress_tracker.dart';
 import 'package:plezy/services/plex_client.dart';
 import 'package:plezy/utils/watch_state_notifier.dart';
+import 'package:plezy/utils/active_client_scope.dart';
 
 import '../test_helpers/prefs.dart';
 import '../test_helpers/media_items.dart';
 
-// NOTE on coverage scope:
-// `PlaybackProgressTracker` periodically samples the player's position and
-// reports it to either an online [PlexClient] or the offline queue. The
-// periodic [Timer] is purely a wall-clock concern — instead of trying to
-// virtualize it, we exercise the routing/threshold/scrobble logic directly
-// through the public [PlaybackProgressTracker.sendProgress].
-//
-// Coverage:
-//   - Constructor invariants (offline ↔ offlineWatchService, online ↔ client).
-//   - Online routing: 'stopped' awaits, 'playing'/'paused' fire-and-forget.
-//   - Threshold gating: scrobbles once when percent >= server threshold.
-//   - Scrobble idempotency: a second sendProgress past threshold is a no-op.
-//   - Offline routing: queues a progress update via the database.
-//   - Offline progress with null serverId is a no-op (no queue write).
-//   - 'stopped' event emits a WatchStateNotifier.notifyProgress.
-//   - dispose() / stopTracking() are idempotent.
-//
-// What is NOT covered (by design):
-//   - The periodic [Timer.periodic] tick itself — we'd need to either drive
-//     real time (flaky) or inject a clock dependency (out of scope).
-//   - The exponential-backoff state — observable only across multiple ticks
-//     under wall time.
+// Periodic behavior is virtualized with fake_async and the tracker's existing
+// updateInterval seam. Routing, threshold, scrobble, cadence, coalescing,
+// backoff, resume, and disposal are asserted through observable calls.
 
 /// Fake Player whose state is mutable from the test.
 class _FakePlayer implements Player {
@@ -118,6 +101,11 @@ class _FakePlexClient implements PlexClient {
   /// [serverId] after the transport call.
   @override
   ServerId get serverId => ServerId('scrobbler');
+  @override
+  PlexProfileScopeId profileScopeId = buildPlexProfileScopeId(serverId: ServerId('scrobbler'), profileId: 'profile-a');
+
+  @override
+  String get scopedServerId => profileScopeId;
 
   @override
   double get watchedThreshold => thresholdPercent / 100.0;
@@ -269,6 +257,81 @@ class _DelayedStartClient extends _FakePlexClient {
       itemId: itemId,
       position: position,
       duration: duration,
+      playSessionId: playSessionId,
+      playMethod: playMethod,
+      liveStreamId: liveStreamId,
+      mediaSourceId: mediaSourceId,
+      audioStreamIndex: audioStreamIndex,
+      subtitleStreamIndex: subtitleStreamIndex,
+    );
+  }
+}
+
+class _DelayedProgressClient extends _FakePlexClient {
+  final List<int> progressAttempts = [];
+  final List<Completer<void>> progressGates = [];
+
+  @override
+  Future<void> reportPlaybackProgress({
+    required String itemId,
+    required Duration position,
+    required Duration duration,
+    bool isPaused = false,
+    String? playSessionId,
+    String? playMethod,
+    String? liveStreamId,
+    String? mediaSourceId,
+    int? audioStreamIndex,
+    int? subtitleStreamIndex,
+  }) async {
+    progressAttempts.add(position.inMilliseconds);
+    final gate = Completer<void>();
+    progressGates.add(gate);
+    await gate.future;
+    await super.reportPlaybackProgress(
+      itemId: itemId,
+      position: position,
+      duration: duration,
+      isPaused: isPaused,
+      playSessionId: playSessionId,
+      playMethod: playMethod,
+      liveStreamId: liveStreamId,
+      mediaSourceId: mediaSourceId,
+      audioStreamIndex: audioStreamIndex,
+      subtitleStreamIndex: subtitleStreamIndex,
+    );
+  }
+}
+
+class _FailingProgressClient extends _FakePlexClient {
+  _FailingProgressClient({required this.failuresRemaining});
+
+  int failuresRemaining;
+  int progressAttempts = 0;
+
+  @override
+  Future<void> reportPlaybackProgress({
+    required String itemId,
+    required Duration position,
+    required Duration duration,
+    bool isPaused = false,
+    String? playSessionId,
+    String? playMethod,
+    String? liveStreamId,
+    String? mediaSourceId,
+    int? audioStreamIndex,
+    int? subtitleStreamIndex,
+  }) async {
+    progressAttempts++;
+    if (failuresRemaining > 0) {
+      failuresRemaining--;
+      throw StateError('planned progress failure');
+    }
+    await super.reportPlaybackProgress(
+      itemId: itemId,
+      position: position,
+      duration: duration,
+      isPaused: isPaused,
       playSessionId: playSessionId,
       playMethod: playMethod,
       liveStreamId: liveStreamId,
@@ -979,6 +1042,7 @@ void main() {
       final progressEvents = events.where((e) => e.changeType == WatchStateChangeType.progressUpdate).toList();
       expect(progressEvents, isNotEmpty);
       expect(progressEvents.first.viewOffset, 30000);
+      expect(progressEvents.first.cacheServerId, client.profileScopeId);
     });
 
     test('does NOT emit on "stopped" if position is 0 (no real watch)', () async {
@@ -1029,6 +1093,178 @@ void main() {
       expect(watched, hasLength(1));
       expect(progress, isEmpty);
     });
+  });
+
+  group('periodic tracking', () {
+    test('reports immediately, follows cadence, and resumes playing after pause', () {
+      fakeAsync((async) {
+        final client = _FakePlexClient();
+        final player = _FakePlayer(position: const Duration(seconds: 5), duration: const Duration(seconds: 100));
+        var pausedKeepalives = 0;
+        final tracker = PlaybackProgressTracker(
+          client: client,
+          metadata: _meta(),
+          player: player,
+          isOffline: false,
+          updateInterval: const Duration(seconds: 1),
+          onPausedKeepalive: () async => pausedKeepalives++,
+        );
+
+        tracker.startTracking();
+        async.flushMicrotasks();
+        expect(client.updateProgressCalls.map((call) => call.state), ['playing']);
+
+        async.elapse(const Duration(milliseconds: 999));
+        async.flushMicrotasks();
+        expect(client.updateProgressCalls, hasLength(1));
+
+        async.elapse(const Duration(milliseconds: 1));
+        async.flushMicrotasks();
+        expect(client.updateProgressCalls.map((call) => call.state), ['playing', 'playing']);
+
+        player.playing = false;
+        async.elapse(const Duration(seconds: 1));
+        async.flushMicrotasks();
+        expect(client.updateProgressCalls.map((call) => call.state), ['playing', 'playing', 'paused']);
+        expect(pausedKeepalives, 1);
+
+        player.playing = true;
+        async.elapse(const Duration(seconds: 1));
+        async.flushMicrotasks();
+        expect(client.updateProgressCalls.map((call) => call.state), ['playing', 'playing', 'paused', 'playing']);
+        expect(pausedKeepalives, 1);
+
+        tracker.dispose();
+      });
+    });
+
+    test('coalesces timer ticks while a progress report is in flight', () {
+      fakeAsync((async) {
+        final client = _DelayedProgressClient();
+        final player = _FakePlayer(position: const Duration(seconds: 5), duration: const Duration(seconds: 100));
+        final tracker = PlaybackProgressTracker(
+          client: client,
+          metadata: _meta(),
+          player: player,
+          isOffline: false,
+          updateInterval: const Duration(seconds: 1),
+        );
+
+        tracker.startTracking();
+        async.flushMicrotasks();
+        expect(client.updateProgressCalls, hasLength(1));
+
+        player.position = const Duration(seconds: 10);
+        async.elapse(const Duration(seconds: 1));
+        async.flushMicrotasks();
+        expect(client.progressAttempts, [10000]);
+
+        player.position = const Duration(seconds: 20);
+        async.elapse(const Duration(seconds: 1));
+        async.flushMicrotasks();
+        player.position = const Duration(seconds: 30);
+        async.elapse(const Duration(seconds: 1));
+        async.flushMicrotasks();
+        expect(client.progressAttempts, [10000]);
+
+        client.progressGates.first.complete();
+        async.flushMicrotasks();
+        expect(client.progressAttempts, [10000, 30000]);
+
+        client.progressGates.last.complete();
+        async.flushMicrotasks();
+        expect(client.updateProgressCalls.map((call) => call.time), [5000, 10000, 30000]);
+
+        tracker.dispose();
+      });
+    });
+
+    test('backs off by one then two ticks and resumes after success', () {
+      fakeAsync((async) {
+        final client = _FailingProgressClient(failuresRemaining: 2);
+        final player = _FakePlayer(position: const Duration(seconds: 5), duration: const Duration(seconds: 100));
+        final tracker = PlaybackProgressTracker(
+          client: client,
+          metadata: _meta(),
+          player: player,
+          isOffline: false,
+          updateInterval: const Duration(seconds: 1),
+        );
+
+        tracker.startTracking();
+        async.flushMicrotasks();
+        expect(client.updateProgressCalls, hasLength(1));
+
+        async.elapse(const Duration(seconds: 1));
+        async.flushMicrotasks();
+        expect(client.progressAttempts, 1);
+
+        async.elapse(const Duration(seconds: 1));
+        async.flushMicrotasks();
+        expect(client.progressAttempts, 1);
+
+        async.elapse(const Duration(seconds: 1));
+        async.flushMicrotasks();
+        expect(client.progressAttempts, 2);
+
+        async.elapse(const Duration(seconds: 2));
+        async.flushMicrotasks();
+        expect(client.progressAttempts, 2);
+
+        async.elapse(const Duration(seconds: 1));
+        async.flushMicrotasks();
+        expect(client.progressAttempts, 3);
+        expect(client.updateProgressCalls, hasLength(2));
+
+        async.elapse(const Duration(seconds: 1));
+        async.flushMicrotasks();
+        expect(client.progressAttempts, 4);
+        expect(client.updateProgressCalls, hasLength(3));
+
+        tracker.dispose();
+      });
+    });
+
+    test('dispose cancels future periodic reports', () {
+      fakeAsync((async) {
+        final client = _FakePlexClient();
+        final player = _FakePlayer(position: const Duration(seconds: 5), duration: const Duration(seconds: 100));
+        final tracker = PlaybackProgressTracker(
+          client: client,
+          metadata: _meta(),
+          player: player,
+          isOffline: false,
+          updateInterval: const Duration(seconds: 1),
+        );
+
+        tracker.startTracking();
+        async.flushMicrotasks();
+        expect(client.updateProgressCalls, hasLength(1));
+
+        tracker.dispose();
+        async.elapse(const Duration(minutes: 1));
+        async.flushMicrotasks();
+        expect(client.updateProgressCalls, hasLength(1));
+      });
+    });
+  });
+
+  test('resumeAfterStoppedReport opens a fresh reporting session', () async {
+    final client = _FakePlexClient();
+    final player = _FakePlayer(position: const Duration(seconds: 5), duration: const Duration(seconds: 100));
+    final tracker = PlaybackProgressTracker(client: client, metadata: _meta(), player: player, isOffline: false);
+    addTearDown(tracker.dispose);
+
+    await tracker.sendStoppedProgressOnce();
+    await tracker.sendStoppedProgressOnce();
+    expect(client.updateProgressCalls.map((call) => call.state), ['stopped']);
+
+    tracker.resumeAfterStoppedReport();
+    await tracker.sendProgress('playing');
+    await Future<void>.delayed(Duration.zero);
+    await tracker.sendStoppedProgressOnce();
+
+    expect(client.updateProgressCalls.map((call) => call.state), ['stopped', 'playing', 'stopped']);
   });
 
   // ============================================================
@@ -1097,6 +1333,11 @@ class _ScrobblePreciseClient implements PlexClient {
   /// still registers as a failed scrobble.
   @override
   ServerId get serverId => ServerId('scrobbler');
+  @override
+  PlexProfileScopeId profileScopeId = buildPlexProfileScopeId(serverId: ServerId('scrobbler'), profileId: 'profile-a');
+
+  @override
+  String get scopedServerId => profileScopeId;
 
   @override
   int get watchedThresholdPercent => thresholdPercent;

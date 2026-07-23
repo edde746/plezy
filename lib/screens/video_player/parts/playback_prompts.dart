@@ -12,7 +12,7 @@ extension _VideoPlayerPlaybackPromptMethods on VideoPlayerScreenState {
 
     // mpv does not flip the `pause` property on EOF, so _onPlayingStateChanged
     // never fires false.  Normalize all playback-dependent state.
-    unawaited(_setWakelock(false));
+    unawaited(_wakelockController.setEnabled(false));
     final duration = player?.state.duration;
     unawaited(
       duration != null && duration.inMilliseconds > 0
@@ -32,6 +32,10 @@ extension _VideoPlayerPlaybackPromptMethods on VideoPlayerScreenState {
     if (sleepTimerService.isEndOfVideoMode && !_completionLatch.triggered) {
       _completionLatch.latch();
       sleepTimerService.notifyVideoCompleted();
+      return;
+    }
+    if (!_canNavigateMediaItems()) {
+      if (!_completionLatch.triggered) _completionLatch.latch();
       return;
     }
 
@@ -80,6 +84,7 @@ extension _VideoPlayerPlaybackPromptMethods on VideoPlayerScreenState {
   }
 
   void _startAutoPlayTimer() {
+    if (!_canNavigateMediaItems()) return;
     _autoPlayTimer?.cancel();
     _autoPlayTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
       if (!mounted) {

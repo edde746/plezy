@@ -109,6 +109,8 @@ void main() {
       null,
       null,
       null,
+      canControlPlayback: true,
+      canNavigateMediaItems: true,
       onScreenshot: () => feedbackCount++,
     );
     final repeatResult = service.handleVideoPlayerKeyEvent(
@@ -124,6 +126,8 @@ void main() {
       null,
       null,
       null,
+      canControlPlayback: true,
+      canNavigateMediaItems: true,
       onScreenshot: () => feedbackCount++,
     );
     await tester.sendKeyUpEvent(LogicalKeyboardKey.controlLeft);
@@ -157,6 +161,8 @@ void main() {
       null,
       null,
       null,
+      canControlPlayback: true,
+      canNavigateMediaItems: true,
       onZoomIn: () => zoomInCount++,
     );
     await tester.sendKeyUpEvent(LogicalKeyboardKey.altLeft);
@@ -185,6 +191,8 @@ void main() {
       null,
       null,
       null,
+      canControlPlayback: true,
+      canNavigateMediaItems: true,
       onZoomIn: () => zoomInCount++,
     );
     final repeatResult = service.handleVideoPlayerKeyEvent(
@@ -200,6 +208,8 @@ void main() {
       null,
       null,
       null,
+      canControlPlayback: true,
+      canNavigateMediaItems: true,
       onZoomIn: () => zoomInCount++,
     );
     await tester.sendKeyUpEvent(LogicalKeyboardKey.altLeft);
@@ -229,6 +239,8 @@ void main() {
       null,
       null,
       null,
+      canControlPlayback: true,
+      canNavigateMediaItems: true,
       onZoomOut: () => zoomOutCount++,
     );
     final repeatResult = service.handleVideoPlayerKeyEvent(
@@ -244,6 +256,8 @@ void main() {
       null,
       null,
       null,
+      canControlPlayback: true,
+      canNavigateMediaItems: true,
       onZoomOut: () => zoomOutCount++,
     );
     await tester.sendKeyUpEvent(LogicalKeyboardKey.altLeft);
@@ -273,6 +287,8 @@ void main() {
       null,
       null,
       null,
+      canControlPlayback: true,
+      canNavigateMediaItems: true,
       onZoomReset: () => resetCount++,
     );
     final repeatResult = service.handleVideoPlayerKeyEvent(
@@ -288,6 +304,8 @@ void main() {
       null,
       null,
       null,
+      canControlPlayback: true,
+      canNavigateMediaItems: true,
       onZoomReset: () => resetCount++,
     );
     await tester.sendKeyUpEvent(LogicalKeyboardKey.altLeft);
@@ -317,6 +335,8 @@ void main() {
       null,
       null,
       null,
+      canControlPlayback: true,
+      canNavigateMediaItems: true,
     );
     final commandQResult = service.handleVideoPlayerKeyEvent(
       const KeyDownEvent(
@@ -331,6 +351,8 @@ void main() {
       null,
       null,
       null,
+      canControlPlayback: true,
+      canNavigateMediaItems: true,
     );
     final commandCommaResult = service.handleVideoPlayerKeyEvent(
       const KeyDownEvent(
@@ -345,6 +367,8 @@ void main() {
       null,
       null,
       null,
+      canControlPlayback: true,
+      canNavigateMediaItems: true,
     );
 
     await tester.sendKeyUpEvent(LogicalKeyboardKey.metaLeft);
@@ -354,32 +378,192 @@ void main() {
     expect(commandCommaResult, KeyEventResult.ignored);
   });
 
-  testWidgets('mute shortcut matches the button restoration behavior', (tester) async {
+  testWidgets('volume shortcuts delegate without mutating player or settings', (tester) async {
     final service = await KeyboardShortcutsService.getInstance();
     addTearDown(service.dispose);
     final settings = SettingsService.instance;
     await settings.write(SettingsService.volume, 37.0);
     final player = _FakePlayer(volume: 37);
-    const muteKey = KeyDownEvent(
-      physicalKey: PhysicalKeyboardKey.keyM,
-      logicalKey: LogicalKeyboardKey.keyM,
+    var upCalls = 0;
+    var downCalls = 0;
+    var muteCalls = 0;
+    const bindings = [
+      (action: 'volume_up', physical: PhysicalKeyboardKey.f10, logical: LogicalKeyboardKey.f10),
+      (action: 'volume_down', physical: PhysicalKeyboardKey.f11, logical: LogicalKeyboardKey.f11),
+      (action: 'mute_toggle', physical: PhysicalKeyboardKey.f12, logical: LogicalKeyboardKey.f12),
+    ];
+
+    for (final binding in bindings) {
+      await service.setHotkey(binding.action, HotKey(key: binding.physical));
+      final result = service.handleVideoPlayerKeyEvent(
+        KeyDownEvent(physicalKey: binding.physical, logicalKey: binding.logical, timeStamp: Duration.zero),
+        player,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        canControlPlayback: true,
+        canNavigateMediaItems: true,
+        onVolumeUp: () => upCalls++,
+        onVolumeDown: () => downCalls++,
+        onToggleMute: () => muteCalls++,
+      );
+      expect(result, KeyEventResult.handled);
+    }
+
+    expect(upCalls, 1);
+    expect(downCalls, 1);
+    expect(muteCalls, 1);
+    expect(player.volume, 37);
+    expect(player.volumeChanges, isEmpty);
+    expect(settings.read(SettingsService.volume), 37);
+
+    await service.setHotkey('volume_up', const HotKey(key: PhysicalKeyboardKey.f12));
+    final repeatResult = service.handleVideoPlayerKeyEvent(
+      const KeyRepeatEvent(
+        physicalKey: PhysicalKeyboardKey.f12,
+        logicalKey: LogicalKeyboardKey.f12,
+        timeStamp: Duration(milliseconds: 1),
+      ),
+      player,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      canControlPlayback: true,
+      canNavigateMediaItems: true,
+      onVolumeUp: () => upCalls++,
+    );
+    expect(repeatResult, KeyEventResult.handled);
+    expect(upCalls, 1);
+  });
+
+  test('denied playback shortcuts are consumed before any mutation', () async {
+    final service = await KeyboardShortcutsService.getInstance();
+    addTearDown(service.dispose);
+    final player = _FakePlayer();
+    final settings = SettingsService.instance;
+    final initialRate = settings.read(SettingsService.defaultPlaybackSpeed);
+    var callbacks = 0;
+    var seekCalls = 0;
+    const event = KeyDownEvent(
+      physicalKey: PhysicalKeyboardKey.f12,
+      logicalKey: LogicalKeyboardKey.f12,
+      timeStamp: Duration.zero,
+    );
+    const controlledActions = <String>[
+      'play_pause',
+      'seek_forward',
+      'seek_backward_large',
+      'audio_track_next',
+      'subtitle_track_next',
+      'chapter_next',
+      'chapter_previous',
+      'speed_increase',
+      'speed_decrease',
+      'speed_reset',
+      'sub_seek_next',
+      'sub_seek_prev',
+      'skip_marker',
+    ];
+
+    for (final action in controlledActions) {
+      await service.setHotkey(action, const HotKey(key: PhysicalKeyboardKey.f12));
+      final result = service.handleVideoPlayerKeyEvent(
+        event,
+        player,
+        null,
+        null,
+        () => callbacks++,
+        () => callbacks++,
+        () => callbacks++,
+        () => callbacks++,
+        canControlPlayback: false,
+        canNavigateMediaItems: true,
+        onPlayPause: () => callbacks++,
+        onSkipMarker: () => callbacks++,
+        onSeekRequested: (_) async => seekCalls++,
+      );
+      expect(result, KeyEventResult.handled, reason: action);
+    }
+
+    expect(callbacks, 0);
+    expect(seekCalls, 0);
+    expect(player.commands, isEmpty);
+    expect(settings.read(SettingsService.defaultPlaybackSpeed), initialRate);
+  });
+
+  test('media-item authority is separate and local presentation remains available', () async {
+    final service = await KeyboardShortcutsService.getInstance();
+    addTearDown(service.dispose);
+    final player = _FakePlayer();
+    var nextCalls = 0;
+    var localCalls = 0;
+    const event = KeyDownEvent(
+      physicalKey: PhysicalKeyboardKey.f12,
+      logicalKey: LogicalKeyboardKey.f12,
       timeStamp: Duration.zero,
     );
 
-    final muteResult = service.handleVideoPlayerKeyEvent(muteKey, player, null, null, null, null, null, null);
-    await tester.pumpAndSettle();
+    for (final action in const ['episode_next', 'episode_previous']) {
+      await service.setHotkey(action, const HotKey(key: PhysicalKeyboardKey.f12));
+      expect(
+        service.handleVideoPlayerKeyEvent(
+          event,
+          player,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          canControlPlayback: true,
+          canNavigateMediaItems: false,
+          onNextEpisode: () => nextCalls++,
+          onPreviousEpisode: () => nextCalls++,
+        ),
+        KeyEventResult.handled,
+      );
+    }
+    expect(nextCalls, 0);
 
-    expect(muteResult, KeyEventResult.handled);
-    expect(player.volume, 0);
-    expect(settings.read(SettingsService.volume), 37);
-
-    final unmuteResult = service.handleVideoPlayerKeyEvent(muteKey, player, null, null, null, null, null, null);
-    await tester.pumpAndSettle();
-
-    expect(unmuteResult, KeyEventResult.handled);
-    expect(player.volume, 37);
-    expect(settings.read(SettingsService.volume), 37);
-    expect(player.volumeChanges, [0, 37]);
+    for (final action in const [
+      'fullscreen_toggle',
+      'subtitle_toggle',
+      'shader_toggle',
+      'screenshot',
+      'zoom_in',
+      'zoom_out',
+      'zoom_reset',
+    ]) {
+      await service.setHotkey(action, const HotKey(key: PhysicalKeyboardKey.f12));
+      expect(
+        service.handleVideoPlayerKeyEvent(
+          event,
+          player,
+          () => localCalls++,
+          () => localCalls++,
+          null,
+          null,
+          null,
+          null,
+          canControlPlayback: false,
+          canNavigateMediaItems: false,
+          onToggleShader: () => localCalls++,
+          onScreenshot: () => localCalls++,
+          onZoomIn: () => localCalls++,
+          onZoomOut: () => localCalls++,
+          onZoomReset: () => localCalls++,
+        ),
+        KeyEventResult.handled,
+      );
+      await Future<void>.delayed(Duration.zero);
+    }
+    expect(localCalls, 7);
   });
 
   test('video zoom scale maps to mpv logarithmic property', () {

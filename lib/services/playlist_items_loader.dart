@@ -1,5 +1,6 @@
 import '../media/media_item.dart';
 import '../media/media_server_client.dart';
+import '../utils/media_server_http_client.dart';
 
 const int playlistItemsPageSize = 200;
 
@@ -8,11 +9,14 @@ Future<List<MediaItem>> fetchAllPlaylistItems(
   MediaServerClient client,
   String playlistId, {
   int pageSize = playlistItemsPageSize,
+  AbortController? abort,
 }) async {
   final all = <MediaItem>[];
   var offset = 0;
   while (true) {
-    final page = await client.fetchPlaylistPage(playlistId, start: offset, size: pageSize);
+    abort?.throwIfAborted();
+    final page = await client.fetchPlaylistPage(playlistId, start: offset, size: pageSize, abort: abort);
+    abort?.throwIfAborted();
     if (page.items.isEmpty) break;
     all.addAll(page.items);
     if (all.length >= page.totalCount) break;

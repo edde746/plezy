@@ -1,4 +1,4 @@
-import 'dart:io' show Platform;
+import 'package:flutter/foundation.dart' show TargetPlatform, defaultTargetPlatform;
 
 import 'package:os_media_controls/os_media_controls.dart';
 import 'package:rate_limiter/rate_limiter.dart';
@@ -24,6 +24,7 @@ class MediaControlsManager {
   late final Throttle _throttledUpdate;
 
   /// Cached control enabled state to avoid redundant platform calls
+  bool? _lastCanPlayPause;
   bool? _lastCanGoNext;
   bool? _lastCanGoPrevious;
   bool? _lastCanSeek;
@@ -129,6 +130,7 @@ class MediaControlsManager {
   /// primary transport there. Android's fast-forward/rewind actions are
   /// independent of next/previous, so skip is safe to advertise.
   Future<void> setControlsEnabled({
+    bool canPlayPause = false,
     bool canGoNext = false,
     bool canGoPrevious = false,
     bool canSeek = false,
@@ -138,12 +140,18 @@ class MediaControlsManager {
   }) async {
     if (_updatesSuspended) return;
 
-    final effectiveCanSkip = canSkip && !Platform.isIOS && !Platform.isMacOS;
+    final effectiveCanSkip =
+        canSkip && defaultTargetPlatform != TargetPlatform.iOS && defaultTargetPlatform != TargetPlatform.macOS;
 
     try {
       final controlsToEnable = <MediaControl>[];
       final controlsToDisable = <MediaControl>[];
 
+      if (canPlayPause != _lastCanPlayPause) {
+        (canPlayPause ? controlsToEnable : controlsToDisable)
+          ..add(MediaControl.play)
+          ..add(MediaControl.pause);
+      }
       if (canGoPrevious != _lastCanGoPrevious) {
         (canGoPrevious ? controlsToEnable : controlsToDisable).add(MediaControl.previous);
       }
@@ -174,6 +182,7 @@ class MediaControlsManager {
         await OsMediaControls.disableControls(controlsToDisable);
       }
 
+      _lastCanPlayPause = canPlayPause;
       _lastCanGoNext = canGoNext;
       _lastCanGoPrevious = canGoPrevious;
       _lastCanSeek = canSeek;
@@ -181,8 +190,9 @@ class MediaControlsManager {
       _lastCanSkip = effectiveCanSkip;
       _lastCanSetSpeed = canSetSpeed;
       appLogger.d(
-        'Media controls updated - Previous: $canGoPrevious, Next: $canGoNext, Seek: $canSeek, '
-        'Stop: $canStop, Skip: $effectiveCanSkip, Speed: $canSetSpeed',
+        'Media controls updated - Play/Pause: $canPlayPause, Previous: $canGoPrevious, '
+        'Next: $canGoNext, Seek: $canSeek, Stop: $canStop, Skip: $effectiveCanSkip, '
+        'Speed: $canSetSpeed',
       );
     } catch (e) {
       appLogger.w('Failed to set media controls enabled state', error: e);
@@ -208,6 +218,7 @@ class MediaControlsManager {
     try {
       await OsMediaControls.clear();
       _throttledUpdate.cancel();
+      _lastCanPlayPause = null;
       _lastCanGoNext = null;
       _lastCanGoPrevious = null;
       _lastCanSeek = null;

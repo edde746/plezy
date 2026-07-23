@@ -3,6 +3,8 @@ import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:intl/date_symbol_data_local.dart';
+import 'package:provider/provider.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/focus/key_event_utils.dart';
 import 'package:plezy/i18n/strings.g.dart';
@@ -11,7 +13,12 @@ import 'package:plezy/media/media_version.dart';
 import 'package:plezy/models/shader_preset.dart';
 import 'package:plezy/mpv/mpv.dart';
 import 'package:plezy/services/playback_subtitle_resolver.dart';
+import 'package:plezy/services/settings_service.dart';
+import 'package:plezy/services/video_volume_controller.dart';
 import 'package:plezy/theme/mono_tokens.dart';
+import 'package:plezy/widgets/video_controls/desktop_video_controls.dart';
+import 'package:plezy/widgets/video_controls/mobile_video_controls.dart';
+import 'package:plezy/watch_together/providers/watch_together_provider.dart';
 import 'package:plezy/widgets/video_controls/video_controls.dart';
 import 'package:plezy/widgets/video_controls/models/track_controls_state.dart';
 import 'package:plezy/widgets/video_controls/player_chrome_controller.dart';
@@ -23,6 +30,8 @@ import 'package:plezy/widgets/video_controls/widgets/timeline_slider.dart';
 import 'package:plezy/widgets/video_controls/widgets/video_timeline_bar.dart';
 
 import '../test_helpers/watch_together_fakes.dart';
+import '../test_helpers/media_items.dart';
+import '../test_helpers/prefs.dart';
 
 const _testTokens = MonoTokens(
   radiusSm: 8,
@@ -933,6 +942,117 @@ void main() {
     });
   });
 
+  group('play/pause callback routing', () {
+    testWidgets('desktop button delegates without issuing a player command', (tester) async {
+      LocaleSettings.setLocaleSync(AppLocale.en);
+      await initializeDateFormatting('en');
+      tester.view.physicalSize = const Size(1200, 800);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      resetSharedPreferencesForTest();
+      SettingsService.resetForTesting();
+      final settings = await SettingsService.getInstance();
+      final player = FakeSyncPlayer();
+      addTearDown(player.dispose);
+      final volume = VideoVolumeController(player: player, settings: settings, initialVolume: 100);
+      addTearDown(volume.dispose);
+      var requests = 0;
+
+      final watchTogether = WatchTogetherProvider();
+      addTearDown(watchTogether.dispose);
+      await tester.pumpWidget(
+        ChangeNotifierProvider<WatchTogetherProvider>.value(
+          value: watchTogether,
+          child: MaterialApp(
+            theme: ThemeData(extensions: const [_testTokens]),
+            home: Scaffold(
+              body: SizedBox(
+                width: 1000,
+                height: 700,
+                child: DesktopVideoControls(
+                  player: player,
+                  volumeController: volume,
+                  metadata: testMediaItem(id: 'desktop'),
+                  onPlayPause: () => requests++,
+                  chapters: const [],
+                  chaptersLoaded: true,
+                  seekTimeSmall: 10,
+                  onSeekToPreviousChapter: () {},
+                  onSeekToNextChapter: () {},
+                  onSeek: (_) {},
+                  onSeekEnd: (_) {},
+                  getReplayIcon: (_) => Icons.replay,
+                  getForwardIcon: (_) => Icons.forward_10,
+                  trackControlsState: const TrackControlsState(canControl: true),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+      await tester.tap(find.bySemanticsLabel(t.videoControls.playButton).last);
+      await tester.pump();
+
+      expect(requests, 1);
+      expect(player.commandLog.where((entry) => entry == 'play' || entry == 'pause'), isEmpty);
+    });
+
+    testWidgets('mobile button delegates and preserves chrome timer behavior', (tester) async {
+      LocaleSettings.setLocaleSync(AppLocale.en);
+      await initializeDateFormatting('en');
+      tester.view.physicalSize = const Size(800, 1000);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      resetSharedPreferencesForTest();
+      SettingsService.resetForTesting();
+      await SettingsService.getInstance();
+      final player = FakeSyncPlayer();
+      addTearDown(player.dispose);
+      var requests = 0;
+      var startAutoHide = 0;
+      var cancelAutoHide = 0;
+
+      final watchTogether = WatchTogetherProvider();
+      addTearDown(watchTogether.dispose);
+      await tester.pumpWidget(
+        ChangeNotifierProvider<WatchTogetherProvider>.value(
+          value: watchTogether,
+          child: MaterialApp(
+            theme: ThemeData(extensions: const [_testTokens]),
+            home: Scaffold(
+              body: SizedBox(
+                width: 500,
+                height: 800,
+                child: MobileVideoControls(
+                  player: player,
+                  metadata: testMediaItem(id: 'mobile'),
+                  chapters: const [],
+                  chaptersLoaded: true,
+                  seekTimeSmall: 10,
+                  trackChapterControls: const SizedBox.shrink(),
+                  onSeek: (_) {},
+                  onSeekEnd: (_) {},
+                  onPlayPause: () => requests++,
+                  onStartAutoHide: () => startAutoHide++,
+                  onCancelAutoHide: () => cancelAutoHide++,
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+      await tester.tap(find.bySemanticsLabel(t.videoControls.playButton).last);
+      await tester.pump();
+
+      expect(requests, 1);
+      expect(startAutoHide, 1);
+      expect(cancelAutoHide, 0);
+      expect(player.commandLog.where((entry) => entry == 'play' || entry == 'pause'), isEmpty);
+    });
+  });
+
   group('TimelineSlider', () {
     testWidgets('routes keyboard input through the custom focus handler', (tester) async {
       final focusNode = FocusNode();
@@ -1393,6 +1513,97 @@ void main() {
       expect((slider.max - slider.min) / slider.divisions!, 100);
       expect(sliderTheme.data.tickMarkShape, same(SliderTickMarkShape.noTickMark));
     });
+
+    testWidgets('reconciles a failed current write without persisting it', (tester) async {
+      final propertyWrite = Completer<void>();
+      final persistedOffsets = <int>[];
+      final player = _FakeSyncPlayer(onSetProperty: (_, _) => propertyWrite.future);
+
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: ThemeData(extensions: const [_testTokens]),
+          home: Scaffold(
+            body: SizedBox(
+              width: 700,
+              child: SyncOffsetControl(
+                player: player,
+                propertyName: 'sub-delay',
+                initialOffset: 500,
+                labelText: 'Subtitles',
+                onOffsetChanged: (offset) async => persistedOffsets.add(offset),
+                compact: true,
+              ),
+            ),
+          ),
+        ),
+      );
+
+      tester.widget<Slider>(find.byType(Slider)).onChanged!(600);
+      await tester.pump();
+      tester.widget<Slider>(find.byType(Slider)).onChangeEnd!(600);
+      await tester.pump();
+      expect(tester.widget<Slider>(find.byType(Slider)).value, 600);
+      expect(persistedOffsets, isEmpty);
+
+      propertyWrite.completeError(PlatformException(code: 'SET_PROPERTY_FAILED'));
+      await tester.pump();
+      await tester.pump();
+
+      expect(tester.takeException(), isNull);
+      expect(tester.widget<Slider>(find.byType(Slider)).value, 500);
+      expect(persistedOffsets, isEmpty);
+    });
+
+    testWidgets('ignores stale failure and persists the latest accepted offset once', (tester) async {
+      final staleWrite = Completer<void>();
+      final persistedOffsets = <int>[];
+      var writeCount = 0;
+      final player = _FakeSyncPlayer(
+        onSetProperty: (_, _) {
+          writeCount++;
+          return writeCount == 1 ? staleWrite.future : Future<void>.value();
+        },
+      );
+
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: ThemeData(extensions: const [_testTokens]),
+          home: Scaffold(
+            body: SizedBox(
+              width: 700,
+              child: SyncOffsetControl(
+                player: player,
+                propertyName: 'audio-delay',
+                initialOffset: 0,
+                labelText: 'Audio',
+                onOffsetChanged: (offset) async => persistedOffsets.add(offset),
+                compact: true,
+              ),
+            ),
+          ),
+        ),
+      );
+
+      tester.widget<Slider>(find.byType(Slider)).onChanged!(100);
+      await tester.pump();
+      tester.widget<Slider>(find.byType(Slider)).onChangeEnd!(100);
+      await tester.pump();
+
+      tester.widget<Slider>(find.byType(Slider)).onChanged!(200);
+      await tester.pump();
+      tester.widget<Slider>(find.byType(Slider)).onChangeEnd!(200);
+      await tester.pump();
+      await tester.pump();
+      expect(persistedOffsets, [200]);
+
+      staleWrite.completeError(PlatformException(code: 'SET_PROPERTY_FAILED'));
+      await tester.pump();
+      await tester.pump();
+
+      expect(tester.takeException(), isNull);
+      expect(tester.widget<Slider>(find.byType(Slider)).value, 200);
+      expect(persistedOffsets, [200]);
+    });
   });
 }
 
@@ -1444,11 +1655,17 @@ Future<void> _pumpSkipMarkerButton(
 }
 
 class _FakeSyncPlayer implements Player {
+  _FakeSyncPlayer({this.onSetProperty});
+
+  final Future<void> Function(String name, String value)? onSetProperty;
+
   @override
   PlayerState get state => PlayerState();
 
   @override
-  Future<void> setProperty(String name, String value) async {}
+  Future<void> setProperty(String name, String value) {
+    return onSetProperty?.call(name, value) ?? Future<void>.value();
+  }
 
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);

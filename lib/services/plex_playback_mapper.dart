@@ -135,6 +135,7 @@ PlexVideoPlaybackData parsePlexVideoPlaybackDataFromJson(
             subtitleTracks: streams.subtitleTracks,
             chapters: chapters,
             partId: flexibleInt(part['id']),
+            mediaSourceId: availableVersions[mediaIndex].id,
             displayCriteria: PlexMappers.displayCriteriaFromJson(Map<String, dynamic>.from(media), streams.videoStream),
             videoAspectRatio: flexibleDouble(media['aspectRatio']),
           );

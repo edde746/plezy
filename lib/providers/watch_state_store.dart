@@ -113,18 +113,14 @@ class WatchStateStore extends ChangeNotifier with DisposableChangeNotifierMixin 
   }
 
   _WatchStatePatchEntry? _entryFor(String globalKey) {
-    _WatchStatePatchEntry? scopedEntry;
     final parsed = parseGlobalKey(globalKey);
     if (parsed != null) {
       final scoped = _activeClientScopesByServer[parsed.serverId];
       if (scoped != null && scoped.isNotEmpty) {
-        scopedEntry = _exactEntryFor(buildGlobalKey(ServerId(scoped), parsed.ratingKey));
+        return _exactEntryFor(buildGlobalKey(ServerId(scoped), parsed.ratingKey)) ?? _exactEntryFor(globalKey);
       }
     }
-    final unscopedEntry = _exactEntryFor(globalKey);
-    if (scopedEntry == null) return unscopedEntry;
-    if (unscopedEntry == null) return scopedEntry;
-    return scopedEntry.isNewerThan(unscopedEntry) ? scopedEntry : unscopedEntry;
+    return _exactEntryFor(globalKey);
   }
 
   WatchStatePatch? patchForGlobalKey(String globalKey) => _entryFor(globalKey)?.patch;
@@ -205,14 +201,22 @@ class WatchStateStore extends ChangeNotifier with DisposableChangeNotifierMixin 
   void _onWatchStateEvent(WatchStateEvent event) {
     final snapshot = WatchStateResolver.fromEvent(event);
     if (snapshot.isEmpty) return;
-    final patch = WatchStatePatch.fromSnapshot(snapshot);
-
-    final cacheServerId = event.cacheServerId;
-    final key = cacheServerId != null && cacheServerId.isNotEmpty && cacheServerId != event.serverId
-        ? buildGlobalKey(ServerId(cacheServerId), event.itemId)
+    final activeScope = _activeClientScopesByServer[event.serverId];
+    final eventScope = event.cacheServerId;
+    if (activeScope != null &&
+        activeScope.isNotEmpty &&
+        eventScope != null &&
+        eventScope.isNotEmpty &&
+        eventScope != event.serverId &&
+        eventScope != activeScope) {
+      return;
+    }
+    final resolvedScope = activeScope != null && activeScope.isNotEmpty ? activeScope : eventScope;
+    final key = resolvedScope != null && resolvedScope.isNotEmpty && resolvedScope != event.serverId
+        ? buildGlobalKey(ServerId(resolvedScope), event.itemId)
         : event.globalKey;
     _patches[key] = _WatchStatePatchEntry(
-      patch,
+      WatchStatePatch.fromSnapshot(snapshot),
       updatedAt: DateTime.now().millisecondsSinceEpoch,
       sequence: ++_sequence,
       isSessionEvent: true,

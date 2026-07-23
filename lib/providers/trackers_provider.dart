@@ -21,10 +21,27 @@ import '../services/trackers/tracker_session.dart';
 import '../services/trackers/tracker_username_enricher.dart';
 import '../mixins/disposable_change_notifier_mixin.dart';
 
+typedef TrackerSessionConnectPipeline =
+    Future<bool> Function({
+      required String logLabel,
+      required Future<TrackerSession?> Function() authorize,
+      required Future<TrackerSession> Function(TrackerSession raw) enrich,
+      required Future<void> Function(TrackerSession enriched) save,
+      required void Function(TrackerSession enriched) assign,
+    });
+
 /// Owns the active MAL / AniList / Simkl sessions for the currently-selected
 /// Plex profile. Single rebind seam: [onActiveProfileChanged] loads all three
 /// sessions from their stores and pushes them to their trackers.
 class TrackersProvider extends ChangeNotifier with DisposableChangeNotifierMixin {
+  TrackersProvider() : this._(runConnectPipeline<TrackerSession>);
+
+  @visibleForTesting
+  TrackersProvider.forTesting({required TrackerSessionConnectPipeline connectPipeline}) : this._(connectPipeline);
+
+  TrackersProvider._(this._connectPipeline);
+
+  final TrackerSessionConnectPipeline _connectPipeline;
   final MalAuthService _malAuth = MalAuthService();
   final AnilistAuthService _anilistAuth = AnilistAuthService();
   final SimklAuthService _simklAuth = SimklAuthService();
@@ -40,6 +57,7 @@ class TrackersProvider extends ChangeNotifier with DisposableChangeNotifierMixin
   int _profileBindingGeneration = 0;
   TrackerService? _connecting;
   Completer<void>? _cancelCompleter;
+  int _connectGeneration = 0;
 
   // Bumped on every rebind so a late callback from a disposed client (e.g. an
   // in-flight MAL token refresh that resolves after a profile switch) can't
@@ -81,11 +99,11 @@ class TrackersProvider extends ChangeNotifier with DisposableChangeNotifierMixin
   /// Cancel an in-flight connect. Completing the completer both wakes the
   /// blocking `Future.any` race and flips `isCompleted` for the next sync check.
   void cancelConnect() {
-    final c = _cancelCompleter;
-    if (c != null && !c.isCompleted) c.complete();
+    _invalidateConnect();
   }
 
   Future<void> onActiveProfileChanged(String? newUserUuid) async {
+    _invalidateConnect();
     // Drop any in-flight scrobble state and release the resolver (which
     // holds a PlexClient + session cache) before binding to the new profile.
     TrackerCoordinator.instance.cancelInFlight();
@@ -139,7 +157,7 @@ class TrackersProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     },
   );
 
-  Future<void> disconnectMal() => _clearAndRebind(_malStore, () {
+  Future<void> disconnectMal() => _clearAndRebind(TrackerService.mal, _malStore, () {
     _mal = null;
     _rebindMal();
   });
@@ -160,7 +178,7 @@ class TrackersProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     },
   );
 
-  Future<void> disconnectAnilist() => _clearAndRebind(_anilistStore, () {
+  Future<void> disconnectAnilist() => _clearAndRebind(TrackerService.anilist, _anilistStore, () {
     _anilist = null;
     _rebindAnilist();
   });
@@ -181,7 +199,7 @@ class TrackersProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     },
   );
 
-  Future<void> disconnectSimkl() => _clearAndRebind(_simklStore, () {
+  Future<void> disconnectSimkl() => _clearAndRebind(TrackerService.simkl, _simklStore, () {
     _simkl = null;
     _rebindSimkl();
   });
@@ -194,18 +212,35 @@ class TrackersProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     required TrackerAccountStore store,
     required void Function(TrackerSession session) assign,
   }) async {
-    if (_connecting != null || alreadyConnected) return false;
+    if (isDisposed || _connecting != null || alreadyConnected) return false;
+
+    final userUuid = _activeUserUuid;
+    final generation = ++_connectGeneration;
     _connecting = service;
     _cancelCompleter = Completer<void>();
     safeNotifyListeners();
+
+    var assigned = false;
     try {
-      return await runConnectPipeline<TrackerSession>(
+      final completed = await _connectPipeline(
         logLabel: service.name,
-        authorize: authorize,
+        authorize: () async {
+          final session = await authorize();
+          return _isCurrentConnect(service, userUuid, generation) ? session : null;
+        },
         enrich: enrich,
-        save: (s) => store.save(_activeUserUuid, s),
-        assign: assign,
+        save: (session) async {
+          if (!_isCurrentConnect(service, userUuid, generation)) return;
+          await store.save(userUuid, session);
+        },
+        assign: (session) {
+          if (!_isCurrentConnect(service, userUuid, generation)) return;
+          assign(session);
+          TrackerCoordinator.instance.invalidateResolverCache();
+          assigned = true;
+        },
       );
+      return completed && assigned;
     } finally {
       final c = _cancelCompleter;
       if (c != null && !c.isCompleted) c.complete();
@@ -215,7 +250,12 @@ class TrackersProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     }
   }
 
-  Future<void> _clearAndRebind(TrackerAccountStore store, void Function() clearAndRebind) async {
+  Future<void> _clearAndRebind(
+    TrackerService service,
+    TrackerAccountStore store,
+    void Function() clearAndRebind,
+  ) async {
+    _invalidateConnect(service);
     final userUuid = _activeUserUuid;
     // `clearAndRebind` bumps the affected service's rebind generation, which is
     // what stops an in-flight profile load from resurrecting the cleared
@@ -224,6 +264,17 @@ class TrackersProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     clearAndRebind();
     safeNotifyListeners();
     await store.clear(userUuid);
+  }
+
+  void _invalidateConnect([TrackerService? service]) {
+    if (service != null && _connecting != service) return;
+    ++_connectGeneration;
+    final c = _cancelCompleter;
+    if (c != null && !c.isCompleted) c.complete();
+  }
+
+  bool _isCurrentConnect(TrackerService service, String userUuid, int generation) {
+    return !isDisposed && _connecting == service && userUuid == _activeUserUuid && generation == _connectGeneration;
   }
 
   bool _isCurrentProfileBinding(String userUuid, int generation) {
@@ -266,6 +317,7 @@ class TrackersProvider extends ChangeNotifier with DisposableChangeNotifierMixin
   }
 
   void _rebindMal() {
+    if (isDisposed) return;
     final (boundUuid, isCurrent) = _beginRebind(_malRebind);
     MalTracker.instance.rebindSession(
       _mal,
@@ -282,6 +334,7 @@ class TrackersProvider extends ChangeNotifier with DisposableChangeNotifierMixin
   }
 
   void _rebindAnilist() {
+    if (isDisposed) return;
     final (boundUuid, isCurrent) = _beginRebind(_anilistRebind);
     AnilistTracker.instance.rebindSession(
       _anilist,
@@ -292,6 +345,7 @@ class TrackersProvider extends ChangeNotifier with DisposableChangeNotifierMixin
   }
 
   void _rebindSimkl() {
+    if (isDisposed) return;
     final (boundUuid, isCurrent) = _beginRebind(_simklRebind);
     SimklTracker.instance.rebindSession(
       _simkl,
@@ -315,6 +369,7 @@ class TrackersProvider extends ChangeNotifier with DisposableChangeNotifierMixin
 
   @override
   void dispose() {
+    _invalidateConnect();
     _malAuth.dispose();
     _anilistAuth.dispose();
     _simklAuth.dispose();

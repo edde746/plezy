@@ -27,6 +27,8 @@ import '../test_helpers/media_items.dart';
 //     fewer than 2 real tracks (early-return paths).
 //   - `applyTrackSelectionWhenReady` waits for subtitle tracks when server
 //     metadata says they exist.
+//   - `applyTrackSelection` awaits one audio/subtitle application on its
+//     captured player and reports failure or stale-owner cancellation.
 //   - `dispose` is idempotent (timers/subscriptions cleared).
 //
 // What's NOT covered:
@@ -62,8 +64,10 @@ class _FakePlayer with PlayerStreamControllersMixin implements Player {
   @override
   final bool attachesExternalSubtitlesAtOpen;
 
+  bool isDisposed = false;
+
   @override
-  bool get disposed => false;
+  bool get disposed => isDisposed;
 
   set tracks(Tracks t) {
     _state = _state.copyWith(tracks: t);
@@ -78,10 +82,28 @@ class _FakePlayer with PlayerStreamControllersMixin implements Player {
   final List<({String uri, String? title, String? language, bool select})> addSubtitleCalls = [];
   final List<AudioTrack> selectedAudio = [];
   final List<SubtitleTrack> selectedSubtitle = [];
+  final List<double> rates = [];
+
+  final List<Media> openedMedia = [];
 
   /// If non-null and >0, fail this many addSubtitleTrack calls before succeeding.
   int failAddSubtitleTimes = 0;
   Future<void> Function(String uri)? onAddSubtitleTrack;
+  Object? selectAudioError;
+  Object? selectSubtitleError;
+  Future<void> Function(AudioTrack track)? onSelectAudioTrack;
+  Future<void> Function(SubtitleTrack track)? onSelectSubtitleTrack;
+
+  @override
+  Future<void> open(
+    Media media, {
+    bool play = true,
+    bool isLive = false,
+    List<SubtitleTrack>? externalSubtitles,
+    Duration? timelineDuration,
+  }) async {
+    openedMedia.add(media);
+  }
 
   @override
   Future<void> addSubtitleTrack({required String uri, String? title, String? language, bool select = false}) async {
@@ -94,10 +116,23 @@ class _FakePlayer with PlayerStreamControllersMixin implements Player {
   }
 
   @override
-  Future<void> selectAudioTrack(AudioTrack t) async => selectedAudio.add(t);
+  Future<void> selectAudioTrack(AudioTrack t) async {
+    selectedAudio.add(t);
+    await onSelectAudioTrack?.call(t);
+    if (selectAudioError case final error?) throw error;
+  }
 
   @override
-  Future<void> selectSubtitleTrack(SubtitleTrack t) async => selectedSubtitle.add(t);
+  Future<void> selectSubtitleTrack(SubtitleTrack t) async {
+    selectedSubtitle.add(t);
+    await onSelectSubtitleTrack?.call(t);
+    if (selectSubtitleError case final error?) throw error;
+  }
+
+  @override
+  Future<void> setRate(double rate) async {
+    rates.add(rate);
+  }
 
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
@@ -108,17 +143,23 @@ TrackManager _make({
   MediaItem? metadata,
   MediaSourceInfo? mediaInfo,
   bool active = true,
+  bool Function()? isActive,
+  Future<void> Function()? waitForProfileSettings,
+  AudioTrack? preferredAudioTrack,
+  SubtitleTrack? preferredSubtitleTrack,
   void Function(String, {Duration? duration})? showMessage,
   TrackPreferencePersister? persister,
 }) {
   return TrackManager(
     player: player,
-    isActive: () => active,
+    isActive: isActive ?? () => active,
     persistTrackPreference: persister ?? _noopPersister,
     getProfileSettings: () => null,
-    waitForProfileSettings: () async {},
+    waitForProfileSettings: waitForProfileSettings ?? () async {},
     metadata: metadata ?? _meta(),
     mediaInfo: mediaInfo,
+    preferredAudioTrack: preferredAudioTrack,
+    preferredSubtitleTrack: preferredSubtitleTrack,
     showMessage: showMessage,
   );
 }
@@ -327,6 +368,215 @@ void main() {
 
       expect(player.selectedSubtitle, hasLength(1));
       expect(player.selectedSubtitle.single.id, 'no');
+    });
+  });
+
+  group('applyTrackSelection ownership', () {
+    const audioTracks = [AudioTrack(id: 'audio-en', language: 'eng'), AudioTrack(id: 'audio-ja', language: 'jpn')];
+    const subtitleTracks = [SubtitleTrack(id: 'sub-en', language: 'eng'), SubtitleTrack(id: 'sub-es', language: 'spa')];
+    const availableTracks = Tracks(audio: audioTracks, subtitle: subtitleTracks);
+
+    test('awaits preferred audio and subtitle exactly once on the intended player', () async {
+      await SettingsService.getInstance();
+      final intendedPlayer = _FakePlayer(tracks: availableTracks);
+      final otherPlayer = _FakePlayer(tracks: availableTracks);
+      final mgr = _make(
+        player: intendedPlayer,
+        preferredAudioTrack: audioTracks[1],
+        preferredSubtitleTrack: subtitleTracks[1],
+      );
+      addTearDown(mgr.dispose);
+
+      final applied = await mgr.applyTrackSelection();
+
+      expect(applied, isTrue);
+      expect(intendedPlayer.selectedAudio.map((track) => track.id), ['audio-ja']);
+      expect(intendedPlayer.selectedSubtitle.map((track) => track.id), ['sub-es']);
+      expect(otherPlayer.selectedAudio, isEmpty);
+      expect(otherPlayer.selectedSubtitle, isEmpty);
+    });
+
+    test('reports player selection failure and does not continue to subtitles', () async {
+      await SettingsService.getInstance();
+      final player = _FakePlayer(tracks: availableTracks)..selectAudioError = StateError('audio selection failed');
+      final mgr = _make(player: player, preferredAudioTrack: audioTracks[1], preferredSubtitleTrack: subtitleTracks[1]);
+      addTearDown(mgr.dispose);
+
+      final applied = await mgr.applyTrackSelection();
+
+      expect(applied, isFalse);
+      expect(player.selectedAudio.map((track) => track.id), ['audio-ja']);
+      expect(player.selectedSubtitle, isEmpty);
+    });
+
+    test('cancels between selections when ownership moves to another player', () async {
+      await SettingsService.getInstance();
+      final audioSelectionStarted = Completer<void>();
+      final releaseAudioSelection = Completer<void>();
+      final intendedPlayer = _FakePlayer(tracks: availableTracks)
+        ..onSelectAudioTrack = (_) async {
+          audioSelectionStarted.complete();
+          await releaseAudioSelection.future;
+        };
+      final replacementPlayer = _FakePlayer(tracks: availableTracks);
+      Player activePlayer = intendedPlayer;
+      final mgr = _make(
+        player: intendedPlayer,
+        isActive: () => identical(activePlayer, intendedPlayer),
+        preferredAudioTrack: audioTracks[1],
+        preferredSubtitleTrack: subtitleTracks[1],
+      );
+      addTearDown(mgr.dispose);
+
+      final application = mgr.applyTrackSelection();
+      await audioSelectionStarted.future;
+      activePlayer = replacementPlayer;
+      releaseAudioSelection.complete();
+
+      expect(await application, isFalse);
+      expect(intendedPlayer.selectedAudio.map((track) => track.id), ['audio-ja']);
+      expect(intendedPlayer.selectedSubtitle, isEmpty);
+      expect(replacementPlayer.selectedAudio, isEmpty);
+      expect(replacementPlayer.selectedSubtitle, isEmpty);
+    });
+
+    test('media generation invalidation ignores a late completion before any player mutation', () async {
+      final settings = await SettingsService.getInstance();
+      await settings.write(SettingsService.defaultPlaybackSpeed, 1.5);
+      final profileWaitStarted = Completer<void>();
+      final releaseProfileWait = Completer<void>();
+      final player = _FakePlayer(tracks: availableTracks);
+      final mgr = _make(
+        player: player,
+        waitForProfileSettings: () async {
+          profileWaitStarted.complete();
+          await releaseProfileWait.future;
+        },
+        preferredAudioTrack: audioTracks[1],
+        preferredSubtitleTrack: subtitleTracks[1],
+      );
+      addTearDown(mgr.dispose);
+
+      final application = mgr.applyTrackSelection();
+      await profileWaitStarted.future;
+      await mgr.invalidatePendingSelection();
+      releaseProfileWait.complete();
+
+      expect(await application, isFalse);
+      expect(player.selectedAudio, isEmpty);
+      expect(player.selectedSubtitle, isEmpty);
+      expect(player.rates, isEmpty);
+    });
+
+    test('replacement generation selection waits for stale selection unwind', () async {
+      final settings = await SettingsService.getInstance();
+      await settings.write(SettingsService.defaultPlaybackSpeed, 1.5);
+      final staleProfileWaitStarted = Completer<void>();
+      final releaseStaleProfileWait = Completer<void>();
+      var profileWaitCount = 0;
+      final player = _FakePlayer(tracks: availableTracks);
+      final mgr = _make(
+        player: player,
+        waitForProfileSettings: () {
+          profileWaitCount++;
+          if (profileWaitCount == 1) {
+            staleProfileWaitStarted.complete();
+            return releaseStaleProfileWait.future;
+          }
+          return Future<void>.value();
+        },
+        preferredAudioTrack: audioTracks[0],
+        preferredSubtitleTrack: subtitleTracks[0],
+      );
+      addTearDown(mgr.dispose);
+      addTearDown(() {
+        if (!releaseStaleProfileWait.isCompleted) releaseStaleProfileWait.complete();
+      });
+
+      final staleApplication = mgr.applyTrackSelection();
+      await staleProfileWaitStarted.future;
+      await mgr.invalidatePendingSelection();
+
+      mgr.preferredAudioTrack = audioTracks[1];
+      mgr.preferredSubtitleTrack = subtitleTracks[1];
+      final replacementApplication = mgr.applyTrackSelection();
+      await _drainAsync();
+
+      expect(player.selectedAudio, isEmpty);
+      expect(player.selectedSubtitle, isEmpty);
+      expect(player.rates, isEmpty);
+
+      releaseStaleProfileWait.complete();
+
+      expect(await staleApplication, isFalse);
+      expect(await replacementApplication, isTrue);
+      expect(profileWaitCount, 2);
+      expect(player.selectedAudio.map((track) => track.id), ['audio-ja']);
+      expect(player.selectedSubtitle.map((track) => track.id), ['sub-es']);
+      expect(player.rates, [1.5]);
+    });
+
+    test('replacement open waits for an already-dispatched selection mutation to drain', () async {
+      await SettingsService.getInstance();
+      final audioSelectionStarted = Completer<void>();
+      final releaseAudioSelection = Completer<void>();
+      final player = _FakePlayer(tracks: availableTracks)
+        ..onSelectAudioTrack = (_) async {
+          audioSelectionStarted.complete();
+          await releaseAudioSelection.future;
+        };
+      final mgr = _make(player: player, preferredAudioTrack: audioTracks[1], preferredSubtitleTrack: subtitleTracks[1]);
+      addTearDown(mgr.dispose);
+      addTearDown(() {
+        if (!releaseAudioSelection.isCompleted) releaseAudioSelection.complete();
+      });
+
+      final application = mgr.applyTrackSelection();
+      await audioSelectionStarted.future;
+
+      final dispatchedMutationDrain = mgr.invalidatePendingSelection();
+      var reloadCompleted = false;
+      final reload = () async {
+        await dispatchedMutationDrain;
+        await player.open(Media('https://example.com/replacement.mkv'));
+        reloadCompleted = true;
+      }();
+      await _drainAsync();
+
+      expect(player.openedMedia, isEmpty, reason: 'replacement media must not open across the native mutation');
+      expect(reloadCompleted, isFalse);
+
+      releaseAudioSelection.complete();
+      await reload;
+
+      expect(await application, isFalse);
+      expect(player.openedMedia, hasLength(1));
+      expect(reloadCompleted, isTrue);
+      expect(player.selectedSubtitle, isEmpty);
+      expect(player.rates, isEmpty);
+    });
+
+    test('disposing during an audio selection prevents later subtitle and rate writes', () async {
+      final settings = await SettingsService.getInstance();
+      await settings.write(SettingsService.defaultPlaybackSpeed, 1.5);
+      final audioSelectionStarted = Completer<void>();
+      final releaseAudioSelection = Completer<void>();
+      final player = _FakePlayer(tracks: availableTracks)
+        ..onSelectAudioTrack = (_) async {
+          audioSelectionStarted.complete();
+          await releaseAudioSelection.future;
+        };
+      final mgr = _make(player: player, preferredAudioTrack: audioTracks[1], preferredSubtitleTrack: subtitleTracks[1]);
+
+      final application = mgr.applyTrackSelection();
+      await audioSelectionStarted.future;
+      mgr.dispose();
+      releaseAudioSelection.complete();
+
+      expect(await application, isFalse);
+      expect(player.selectedAudio.map((track) => track.id), ['audio-ja']);
+      expect(player.selectedSubtitle, isEmpty);
+      expect(player.rates, isEmpty);
     });
   });
 

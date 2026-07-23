@@ -415,6 +415,7 @@ void main() {
       expect(prepared.manager.refreshCalls, 1);
       expect(prepared.manager.lastConnection?.servers.single.accessToken, 'home-user-token');
       expect(prepared.manager.lastConnection?.servers.single.clientIdentifier, 'srv-1');
+      expect(prepared.manager.lastProfileId, prepared.profileId);
     });
 
     test('binds from cache when plex.tv rejects the token, then flags re-auth from the reconcile', () async {
@@ -433,6 +434,7 @@ void main() {
       expect(activeProfile.lastBindingSucceeded, isTrue);
       expect(prepared.manager.refreshCalls, 1);
       expect(prepared.manager.lastConnection?.servers.single.accessToken, 'home-user-token');
+      expect(prepared.manager.lastProfileId, prepared.profileId);
 
       // The background reconcile sees the 401: wipes the cached token and
       // flags the account for re-auth — no silent /switch re-mint that
@@ -470,6 +472,7 @@ void main() {
       // per-server tokens in place.
       await pumpUntil(() async => prepared.manager.refreshCalls == 2);
       expect(prepared.manager.lastConnection?.servers.single.accessToken, 'server-token');
+      expect(prepared.manager.lastProfileId, prepared.profileId);
 
       // And the refreshed metadata was persisted onto the stored account row.
       final account = await connections.getPlexAccount('plex.account');
@@ -1095,14 +1098,17 @@ class _CountingFailingJellyfinManager extends MultiServerManager {
 class _CapturingMultiServerManager extends MultiServerManager {
   int refreshCalls = 0;
   PlexAccountConnection? lastConnection;
+  String? lastProfileId;
 
   @override
   Future<Set<String>> refreshTokensForProfile(
     PlexAccountConnection connection, {
+    required String profileId,
     Duration timeout = MediaServerTimeouts.perServerConnect,
   }) async {
     refreshCalls++;
     lastConnection = connection;
+    lastProfileId = profileId;
     return connection.servers.map((server) => server.clientIdentifier).toSet();
   }
 }
@@ -1113,6 +1119,7 @@ class _FailingPlexMultiServerManager extends MultiServerManager {
   @override
   Future<Set<String>> refreshTokensForProfile(
     PlexAccountConnection connection, {
+    required String profileId,
     Duration timeout = MediaServerTimeouts.perServerConnect,
   }) async {
     refreshCalls++;
@@ -1129,6 +1136,7 @@ class _RecordingPlexManager extends MultiServerManager {
   @override
   Future<Set<String>> refreshTokensForProfile(
     PlexAccountConnection connection, {
+    required String profileId,
     Duration timeout = MediaServerTimeouts.perServerConnect,
   }) async {
     calls++;
@@ -1148,6 +1156,7 @@ class _BlockingMixedMultiServerManager extends MultiServerManager {
   @override
   Future<Set<String>> refreshTokensForProfile(
     PlexAccountConnection connection, {
+    required String profileId,
     Duration timeout = MediaServerTimeouts.perServerConnect,
   }) async {
     if (!plexStarted.isCompleted) plexStarted.complete();

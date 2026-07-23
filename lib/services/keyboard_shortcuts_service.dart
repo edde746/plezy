@@ -19,17 +19,11 @@ class KeyboardShortcutsService extends ChangeNotifier {
   Map<String, HotKey> _hotkeys = {};
   int _seekTimeSmall = 10; // Default, loaded from settings
   int _seekTimeLarge = 30; // Default, loaded from settings
-  int _maxVolume = 100; // Default, loaded from settings (100-300%)
   bool _settingsInitialized = false;
 
   KeyboardShortcutsService._() {
     _settingsBinding = SettingsBindingOwner(
-      prefs: [
-        SettingsService.keyboardHotkeys,
-        SettingsService.seekTimeSmall,
-        SettingsService.seekTimeLarge,
-        SettingsService.maxVolume,
-      ],
+      prefs: [SettingsService.keyboardHotkeys, SettingsService.seekTimeSmall, SettingsService.seekTimeLarge],
       onRefresh: _syncFromSettings,
     );
   }
@@ -57,18 +51,13 @@ class KeyboardShortcutsService extends ChangeNotifier {
     final hotkeys = service.read(SettingsService.keyboardHotkeys);
     final seekTimeSmall = service.read(SettingsService.seekTimeSmall);
     final seekTimeLarge = service.read(SettingsService.seekTimeLarge);
-    final maxVolume = service.read(SettingsService.maxVolume);
 
     final changed =
-        !_hotkeyMapsEqual(_hotkeys, hotkeys) ||
-        _seekTimeSmall != seekTimeSmall ||
-        _seekTimeLarge != seekTimeLarge ||
-        _maxVolume != maxVolume;
+        !_hotkeyMapsEqual(_hotkeys, hotkeys) || _seekTimeSmall != seekTimeSmall || _seekTimeLarge != seekTimeLarge;
 
     _hotkeys = Map<String, HotKey>.from(hotkeys);
     _seekTimeSmall = seekTimeSmall;
     _seekTimeLarge = seekTimeLarge;
-    _maxVolume = maxVolume;
 
     final notify = _settingsInitialized;
     _settingsInitialized = true;
@@ -85,7 +74,6 @@ class KeyboardShortcutsService extends ChangeNotifier {
   }
 
   Map<String, HotKey> get hotkeys => Map.from(_hotkeys);
-  int get maxVolume => _maxVolume;
 
   HotKey? getHotkey(String action) {
     return _hotkeys[action];
@@ -156,6 +144,9 @@ class KeyboardShortcutsService extends ChangeNotifier {
     VoidCallback? onNextSubtitleTrack,
     VoidCallback? onNextChapter,
     VoidCallback? onPreviousChapter, {
+    required bool canControlPlayback,
+    required bool canNavigateMediaItems,
+    VoidCallback? onPlayPause,
     VoidCallback? onToggleShader,
     VoidCallback? onSkipMarker,
     VoidCallback? onNextEpisode,
@@ -164,6 +155,9 @@ class KeyboardShortcutsService extends ChangeNotifier {
     VoidCallback? onZoomIn,
     VoidCallback? onZoomOut,
     VoidCallback? onZoomReset,
+    VoidCallback? onVolumeUp,
+    VoidCallback? onVolumeDown,
+    VoidCallback? onToggleMute,
     int? currentPositionEpoch,
     ValueChanged<int>? onLiveSeek,
     ValueChanged<int>? onLiveSeekBy,
@@ -229,6 +223,29 @@ class KeyboardShortcutsService extends ChangeNotifier {
           return KeyEventResult.handled;
         }
 
+        const playbackControlledActions = <String>{
+          'play_pause',
+          'seek_forward',
+          'seek_backward',
+          'seek_forward_large',
+          'seek_backward_large',
+          'audio_track_next',
+          'subtitle_track_next',
+          'chapter_next',
+          'chapter_previous',
+          'speed_increase',
+          'speed_decrease',
+          'speed_reset',
+          'sub_seek_next',
+          'sub_seek_prev',
+          'skip_marker',
+        };
+        const mediaItemActions = <String>{'episode_next', 'episode_previous'};
+        if ((playbackControlledActions.contains(action) && !canControlPlayback) ||
+            (mediaItemActions.contains(action) && !canNavigateMediaItems)) {
+          return KeyEventResult.handled;
+        }
+
         _executeAction(
           action,
           player,
@@ -238,6 +255,7 @@ class KeyboardShortcutsService extends ChangeNotifier {
           onNextSubtitleTrack,
           onNextChapter,
           onPreviousChapter,
+          onPlayPause: onPlayPause,
           onToggleShader: onToggleShader,
           onSkipMarker: onSkipMarker,
           onNextEpisode: onNextEpisode,
@@ -246,6 +264,9 @@ class KeyboardShortcutsService extends ChangeNotifier {
           onZoomIn: onZoomIn,
           onZoomOut: onZoomOut,
           onZoomReset: onZoomReset,
+          onVolumeUp: onVolumeUp,
+          onVolumeDown: onVolumeDown,
+          onToggleMute: onToggleMute,
           currentPositionEpoch: currentPositionEpoch,
           onLiveSeek: onLiveSeek,
           onLiveSeekBy: onLiveSeekBy,
@@ -267,6 +288,7 @@ class KeyboardShortcutsService extends ChangeNotifier {
     VoidCallback? onNextSubtitleTrack,
     VoidCallback? onNextChapter,
     VoidCallback? onPreviousChapter, {
+    VoidCallback? onPlayPause,
     VoidCallback? onToggleShader,
     VoidCallback? onSkipMarker,
     VoidCallback? onNextEpisode,
@@ -275,6 +297,9 @@ class KeyboardShortcutsService extends ChangeNotifier {
     VoidCallback? onZoomIn,
     VoidCallback? onZoomOut,
     VoidCallback? onZoomReset,
+    VoidCallback? onVolumeUp,
+    VoidCallback? onVolumeDown,
+    VoidCallback? onToggleMute,
     int? currentPositionEpoch,
     ValueChanged<int>? onLiveSeek,
     ValueChanged<int>? onLiveSeekBy,
@@ -293,17 +318,13 @@ class KeyboardShortcutsService extends ChangeNotifier {
 
     switch (action) {
       case 'play_pause':
-        player.playOrPause();
+        (onPlayPause ?? player.playOrPause).call();
         break;
       case 'volume_up':
-        final newVolume = (player.state.volume + 10).clamp(0.0, _maxVolume.toDouble());
-        player.setVolume(newVolume);
-        _settingsService.write(SettingsService.volume, newVolume);
+        onVolumeUp?.call();
         break;
       case 'volume_down':
-        final newVolume = (player.state.volume - 10).clamp(0.0, _maxVolume.toDouble());
-        player.setVolume(newVolume);
-        _settingsService.write(SettingsService.volume, newVolume);
+        onVolumeDown?.call();
         break;
       case 'seek_forward':
         performSeek(_seekTimeSmall);
@@ -321,9 +342,7 @@ class KeyboardShortcutsService extends ChangeNotifier {
         onToggleFullscreen?.call();
         break;
       case 'mute_toggle':
-        final transition = _settingsService.resolveMuteToggle(player.state.volume);
-        player.setVolume(transition.playerVolume);
-        _settingsService.write(SettingsService.volume, transition.persistedVolume);
+        onToggleMute?.call();
         break;
       case 'subtitle_toggle':
         onToggleSubtitles?.call();

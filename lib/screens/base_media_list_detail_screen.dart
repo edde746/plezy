@@ -9,6 +9,7 @@ import '../media/media_server_client.dart';
 import '../providers/multi_server_provider.dart';
 import '../utils/provider_extensions.dart';
 import '../services/media_list_playback_launcher.dart';
+import '../services/jellyfin_sequential_launcher.dart';
 import '../widgets/loading_indicator_box.dart';
 import '../utils/app_logger.dart';
 import '../utils/error_message_utils.dart';
@@ -95,7 +96,11 @@ abstract class BaseMediaListDetailScreen<T extends StatefulWidget> extends State
 
     final item = mediaItem;
     final launcher = MediaListPlaybackLauncher.forItem(context, item);
-    await launcher.launchFromCollectionOrPlaylist(item: item, shuffle: shuffle, showLoadingIndicator: false);
+    await launcher.launchFromCollectionOrPlaylist(
+      item: item,
+      shuffle: shuffle,
+      showLoadingIndicator: launcher is JellyfinSequentialLauncher,
+    );
   }
 
   @override

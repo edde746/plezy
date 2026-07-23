@@ -22,6 +22,7 @@ extension _VideoPlayerEpisodeNavigationMethods on VideoPlayerScreenState {
   }
 
   Future<void> _playNext() async {
+    if (!_canNavigateMediaItems()) return;
     if (!mounted) return;
     if (_nextEpisode == null || _isLoadingNext) return;
 
@@ -40,6 +41,7 @@ extension _VideoPlayerEpisodeNavigationMethods on VideoPlayerScreenState {
   }
 
   Future<void> _playPrevious() async {
+    if (!_canNavigateMediaItems()) return;
     if (_previousEpisode == null || _isLoadingPrevious) return;
 
     _notifyWatchTogetherMediaChange(metadata: _previousEpisode);
@@ -52,6 +54,7 @@ extension _VideoPlayerEpisodeNavigationMethods on VideoPlayerScreenState {
   }
 
   Future<void> _restartOrPlayPrevious() async {
+    if (!_canNavigateMediaItems()) return;
     final currentPlayer = player;
     if (!mounted || currentPlayer == null || _isLoadingPrevious) return;
 
@@ -401,7 +404,7 @@ extension _VideoPlayerEpisodeNavigationMethods on VideoPlayerScreenState {
       // rollback state is the eagerly-set identity (shown by the loading UI)
       // and the first-frame flag.
       final previousMetadata = _currentMetadata;
-      final previousMediaIndex = _effectiveSelectedMediaIndex;
+      final previousLaunchIdentity = VideoPlayerScreenState._activeRouteGuard.identityFor(this);
       final previousPartId = _currentMediaInfo?.partId;
       final previousHasFirstFrame = _hasFirstFrame.value;
       final isItemChange = previousMetadata.globalKey != metadata.globalKey;
@@ -456,6 +459,12 @@ extension _VideoPlayerEpisodeNavigationMethods on VideoPlayerScreenState {
         return _MediaReloadOutcome.failed;
       }
 
+      final shouldAutoStart = shouldAutoStartReloadedMedia(
+        wasPlayingBeforeReload: wasPlayingBeforeReload,
+        watchTogetherOwnsStart: wtOwnsStart,
+        startPaused: startPaused,
+      );
+
       if (!isCurrentReload()) return _MediaReloadOutcome.superseded;
 
       final targetMediaIndex = selectedMediaIndex ?? _effectiveSelectedMediaIndex;
@@ -463,13 +472,20 @@ extension _VideoPlayerEpisodeNavigationMethods on VideoPlayerScreenState {
       final targetAudioStreamId = useCurrentAudioStreamSelection
           ? selectedAudioStreamId ?? _selectedAudioStreamId
           : selectedAudioStreamId;
+      final targetLaunchIdentity = VideoPlayerLaunchIdentity(
+        metadata: metadata,
+        mediaIndex: targetMediaIndex,
+        selectedMediaSourceId: selectedMediaSourceId,
+        selectedQualityPreset: targetQualityPreset,
+        isOffline: _offlineLibraryMode,
+        routeKind: VideoPlayerRouteKind.vod,
+      );
       try {
         // Eager identity-only: the loading UI shows the new title immediately,
         // while the selection/source state flips with the session commit at
         // the open boundary. Keep these writes inside the rollback boundary.
         _currentMetadata = metadata;
-        VideoPlayerScreenState._activeId = metadata.id;
-        VideoPlayerScreenState._activeMediaIndex = targetMediaIndex;
+        VideoPlayerScreenState._activeRouteGuard.update(this, targetLaunchIdentity);
         _unfocusPlayNextPrompt();
         _showPlayNextDialog = false;
         _autoPlayTimer?.cancel();
@@ -587,6 +603,14 @@ extension _VideoPlayerEpisodeNavigationMethods on VideoPlayerScreenState {
         unawaited(TrackerCoordinator.instance.stopPlayback());
         if (!isCurrentReload()) return _MediaReloadOutcome.superseded;
 
+        // Generation invalidation prevents follow-on selection calls, but a
+        // native audio/subtitle/rate mutation may already have been
+        // dispatched. Drain exactly that captured operation before reusing
+        // the player for replacement media, otherwise its late completion can
+        // mutate the replacement item's tracks.
+        await attempt.trackMutationDrain;
+        if (!isCurrentReload()) return _MediaReloadOutcome.superseded;
+
         frameRatePlan.armStartupRefreshGate(currentPlayer);
         final externalSubtitlePlan = _prepareExternalSubtitleOpenPlan(
           player: currentPlayer,
@@ -604,11 +628,7 @@ extension _VideoPlayerEpisodeNavigationMethods on VideoPlayerScreenState {
           selectedVersion: result.selectedVersion,
           timing: openTiming,
           headers: result.usesLocalMedia ? null : streamHeaders,
-          play:
-              !frameRatePlan.holdPlaybackStart &&
-              !wtOwnsStart &&
-              !startPaused &&
-              externalSubtitlePlan.canStartBeforeTrackSetup,
+          play: shouldAutoStart && !frameRatePlan.holdPlaybackStart && externalSubtitlePlan.canStartBeforeTrackSetup,
           externalSubtitlesAtOpen: externalSubtitlePlan.subtitlesAtOpen,
           shouldContinue: isCurrentReload,
           onOpened: () {
@@ -669,10 +689,7 @@ extension _VideoPlayerEpisodeNavigationMethods on VideoPlayerScreenState {
         trackManager.cacheExternalSubtitles(subtitleSelection.sidecarsAtOpen);
 
         final resumeForStartupFrame =
-            frameRatePlan.needsStartupRefresh &&
-            effectiveExternalSubtitlePlan.requiresPostOpenAdd &&
-            !wtOwnsStart &&
-            !startPaused;
+            shouldAutoStart && frameRatePlan.needsStartupRefresh && effectiveExternalSubtitlePlan.requiresPostOpenAdd;
         await _applyTracksAfterOpen(
           trackManager: trackManager,
           externalSubtitlePlan: effectiveExternalSubtitlePlan,
@@ -681,12 +698,11 @@ extension _VideoPlayerEpisodeNavigationMethods on VideoPlayerScreenState {
           // start) own the resume instead. Post-open external-subtitle paths
           // resume once here so the startup refresh gate can observe a frame.
           shouldResumeAfterSubtitleLoad: () =>
+              shouldAutoStart &&
               (!frameRatePlan.holdPlaybackStart || resumeForStartupFrame) &&
-              !wtOwnsStart &&
-              !startPaused &&
               mounted &&
               player == currentPlayer,
-          applySelectionWhenResumeSkipped: (wtOwnsStart || startPaused) && !frameRatePlan.holdPlaybackStart,
+          applySelectionWhenResumeSkipped: !shouldAutoStart && !frameRatePlan.holdPlaybackStart,
         );
         if (!isCurrentReload()) return _MediaReloadOutcome.superseded;
 
@@ -694,13 +710,15 @@ extension _VideoPlayerEpisodeNavigationMethods on VideoPlayerScreenState {
           currentPlayer: currentPlayer,
           settingsService: settingsService,
           plan: frameRatePlan,
-          // startPaused rides the Watch Together yield path: the gate release
-          // arms track selection but leaves the player paused for the caller.
-          resumeAfterStartupGate: (reason) => _resumeAfterStartupGateOrYieldToWatchTogether(
+          // Paused reloads use the same no-resume branch as an externally
+          // coordinated start: track selection is armed without manufacturing
+          // a new play intent.
+          resumeAfterStartupGate: (reason) => _finishPlaybackAfterStartupGate(
             currentPlayer: currentPlayer,
             externalSubtitlePlan: effectiveExternalSubtitlePlan,
             reason: reason,
-            wtOwnsStart: wtOwnsStart || startPaused,
+            shouldResume: shouldAutoStart,
+            watchTogetherOwnsStart: wtOwnsStart,
           ),
           playbackResumedForStartupFrame: resumeForStartupFrame,
         );
@@ -737,8 +755,9 @@ extension _VideoPlayerEpisodeNavigationMethods on VideoPlayerScreenState {
           // Nothing was opened: the previous session is still committed, so
           // only the eagerly-set identity needs restoring before resuming.
           _currentMetadata = previousMetadata;
-          VideoPlayerScreenState._activeId = previousMetadata.id;
-          VideoPlayerScreenState._activeMediaIndex = previousMediaIndex;
+          if (previousLaunchIdentity != null) {
+            VideoPlayerScreenState._activeRouteGuard.update(this, previousLaunchIdentity);
+          }
           _hasFirstFrame.value = previousHasFirstFrame;
           // If the stop report already went out, un-latch the tracker so the
           // resumed session keeps reporting (and its eventual real stop sends).

@@ -1,14 +1,22 @@
+import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 import '../media/ids.dart';
 import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
 import 'package:flutter/foundation.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
 
 import 'tables.dart';
+import 'plex_metadata_recovery.dart';
+import 'tvos_database_recovery_store.dart';
 import '../models/download_models.dart';
+import '../services/base_shared_preferences_service.dart';
+import '../services/credential_vault.dart';
 import '../utils/app_logger.dart';
+import '../utils/serial_future_queue.dart';
 import '../utils/global_key_utils.dart';
 
 part 'app_database.g.dart';
@@ -39,6 +47,13 @@ enum OfflineActionType {
   };
 }
 
+final class AppDatabaseBootstrap {
+  const AppDatabaseBootstrap({required this.database, required this.recoveryOutcome});
+
+  final AppDatabase database;
+  final TvosDatabaseRecoveryOutcome recoveryOutcome;
+}
+
 @DriftDatabase(
   tables: [
     DownloadedMedia,
@@ -53,15 +68,426 @@ enum OfflineActionType {
   ],
 )
 class AppDatabase extends _$AppDatabase {
-  AppDatabase() : super(_openConnection());
+  AppDatabase._(QueryExecutor executor, {TvosDatabaseRecoveryStore? recoveryStore})
+    : this._withRecovery(executor, recoveryStore);
 
   /// Test-only constructor — inject an in-memory [QueryExecutor]
   /// (e.g. `NativeDatabase.memory()`) so tests don't touch real disk.
   @visibleForTesting
-  AppDatabase.forTesting(super.e);
+  AppDatabase.forTesting(QueryExecutor executor, {TvosDatabaseRecoveryStore? recoveryStore})
+    : this._withRecovery(executor, recoveryStore);
+  AppDatabase._withRecovery(super.e, this._recoveryStore);
+
+  final TvosDatabaseRecoveryStore? _recoveryStore;
+  final SerialFutureQueue _durabilityQueue = SerialFutureQueue();
+  static final Object _durabilityZoneKey = Object();
+  static final SerialFutureQueue _tvosRecoveryQueue = SerialFutureQueue();
+
+  /// Resolves and opens the production database, then reconciles tvOS
+  /// recovery before returning it to startup consumers.
+  static Future<AppDatabaseBootstrap> open({
+    bool isTvos = const bool.fromEnvironment('TVOS_BUILD'),
+    File? databaseFile,
+    SharedPreferencesWithCache? preferences,
+    QueryExecutor Function(File file)? executorFactory,
+    TvosDatabaseRecoveryStore? recoveryStore,
+    TvosDatabaseRecoveryPriorInstallEvidence? priorInstallEvidence,
+  }) async {
+    final file = databaseFile ?? await _resolveProductionDatabaseFile();
+    if (!await file.parent.exists()) {
+      await file.parent.create(recursive: true);
+    }
+    if (databaseFile == null && !Platform.isAndroid && !Platform.isIOS && !await file.exists()) {
+      await migrateLegacyDesktopDatabase(target: file);
+    }
+
+    final databaseExisted = await file.exists();
+    if (isTvos && !databaseExisted) {
+      await _removeOrphanedDatabaseSidecars(file);
+    }
+
+    final prefs = preferences ?? await BaseSharedPreferencesService.sharedCache();
+    final store = recoveryStore ?? TvosDatabaseRecoveryStore(prefs, isTvos: isTvos);
+    final database = AppDatabase._((executorFactory ?? _createNativeDatabase)(file), recoveryStore: store);
+    try {
+      final outcome = await _tvosRecoveryQueue.run(
+        () => store.reconcile(
+          databaseExisted: databaseExisted,
+          readIdentity: database._readProtectedIdentityRecoveryRows,
+          readPending: database._readPendingRecoveryRows,
+          restore: database._restoreRecoverySnapshot,
+          hasPriorInstallEvidence:
+              priorInstallEvidence ??
+              () async {
+                return (prefs.getString('active_app_profile_id')?.isNotEmpty ?? false) ||
+                    (prefs.getBool('profile_migration_v1_done') ?? false) ||
+                    (prefs.getString('credential_vault_key_v1')?.isNotEmpty ?? false);
+              },
+        ),
+      );
+      return AppDatabaseBootstrap(database: database, recoveryOutcome: outcome);
+    } catch (_) {
+      await database.close();
+      rethrow;
+    }
+  }
+
+  /// Wraps one complete registry identity mutation. Nested registry helpers
+  /// share the outer commit and all identity/pending commits are serialized.
+  Future<T> runIdentityMutation<T>(Future<T> Function() mutation) {
+    return _runDurableMutation(TvosDatabaseRecoveryGroup.identity, mutation);
+  }
+
+  /// Establishes a fresh committed recovery generation only after a user has
+  /// acknowledged [TvosDatabaseRecoveryOutcome.recoveryRequired] by starting
+  /// a new sign-in. This keeps invalid evidence blocking automatic bootstrap
+  /// while allowing the explicit recovery path to persist new identity rows.
+  Future<void> acknowledgeTvosDatabaseRecoveryRequired() {
+    final store = _recoveryStore;
+    if (store == null || !store.isTvos) return Future<void>.value();
+
+    return _durabilityQueue.run(
+      () => _tvosRecoveryQueue.run(
+        () => store.acknowledgeRecoveryRequired(
+          readIdentity: _readProtectedIdentityRecoveryRows,
+          readPending: _readPendingRecoveryRows,
+        ),
+      ),
+    );
+  }
+
+  Future<T> _runPendingMutation<T>(Future<T> Function() mutation) {
+    return _runDurableMutation(TvosDatabaseRecoveryGroup.pending, mutation);
+  }
+
+  Future<T> _runDurableMutation<T>(TvosDatabaseRecoveryGroup group, Future<T> Function() mutation) {
+    final store = _recoveryStore;
+    if (store == null || !store.isTvos) return mutation();
+    if (Zone.current[_durabilityZoneKey] == this) return mutation();
+
+    return _durabilityQueue.run(
+      () => _tvosRecoveryQueue.run(
+        () => runZoned(
+          () => store.runDurableMutation(
+            group: group,
+            mutation: mutation,
+            readIdentity: _readProtectedIdentityRecoveryRows,
+            readPending: _readPendingRecoveryRows,
+          ),
+          zoneValues: {_durabilityZoneKey: this},
+        ),
+      ),
+    );
+  }
+
+  /// Recovery preferences are a second persisted copy of identity rows. Run
+  /// the same credential-vault cutover before reading those rows so a legacy
+  /// plaintext database can never become an authoritative plaintext image.
+  Future<Map<String, Object?>> _readProtectedIdentityRecoveryRows() async {
+    await _migrateLegacyCredentialsBeforeRecoverySnapshot();
+    return _readIdentityRecoveryRows();
+  }
+
+  Future<void> _migrateLegacyCredentialsBeforeRecoverySnapshot() async {
+    final connectionUpdates = <(String, String)>[];
+    for (final row in await select(connections).get()) {
+      final decoded = jsonDecode(row.configJson);
+      if (decoded is! Map<String, dynamic>) {
+        throw const FormatException('Invalid connection configuration');
+      }
+      if (!_containsPlaintextConnectionCredential(row.kind, decoded)) continue;
+      final protected = await CredentialVault.protectConnectionConfig(row.kind, decoded);
+      connectionUpdates.add((row.id, jsonEncode(protected)));
+    }
+
+    final tokenUpdates = <(String, String, String)>[];
+    for (final row in await select(profileConnections).get()) {
+      if (row.userToken.isEmpty || CredentialVault.isProtected(row.userToken)) continue;
+      tokenUpdates.add((row.profileId, row.connectionId, await CredentialVault.protect(row.userToken)));
+    }
+    if (connectionUpdates.isEmpty && tokenUpdates.isEmpty) return;
+
+    await transaction(() async {
+      for (final (id, configJson) in connectionUpdates) {
+        await (update(
+          connections,
+        )..where((table) => table.id.equals(id))).write(ConnectionsCompanion(configJson: Value(configJson)));
+      }
+      for (final (profileId, connectionId, token) in tokenUpdates) {
+        await (update(profileConnections)
+              ..where((table) => table.profileId.equals(profileId) & table.connectionId.equals(connectionId)))
+            .write(ProfileConnectionsCompanion(userToken: Value(token)));
+      }
+    });
+  }
+
+  static bool _containsPlaintextConnectionCredential(String kind, Map<String, dynamic> config) {
+    bool isPlaintext(Object? value) => value is String && value.isNotEmpty && !CredentialVault.isProtected(value);
+
+    if (kind == 'jellyfin') return isPlaintext(config['accessToken']);
+    if (kind != 'plex') return false;
+    if (isPlaintext(config['accountToken'])) return true;
+    final servers = config['servers'];
+    return servers is List && servers.any((server) => server is Map && isPlaintext(server['accessToken']));
+  }
+
+  Future<Map<String, Object?>> _readIdentityRecoveryRows() async {
+    final connectionRows = await (select(connections)..orderBy([(t) => OrderingTerm.asc(t.id)])).get();
+    final profileRows = await (select(profiles)..orderBy([(t) => OrderingTerm.asc(t.id)])).get();
+    final joinRows = await (select(
+      profileConnections,
+    )..orderBy([(t) => OrderingTerm.asc(t.profileId), (t) => OrderingTerm.asc(t.connectionId)])).get();
+    return {
+      'connections': [
+        for (final row in connectionRows)
+          {
+            'id': row.id,
+            'kind': row.kind,
+            'displayName': row.displayName,
+            'configJson': row.configJson,
+            'isDefault': row.isDefault,
+            'createdAt': row.createdAt,
+            'lastAuthenticatedAt': row.lastAuthenticatedAt,
+          },
+      ],
+      'profiles': [
+        for (final row in profileRows)
+          {
+            'id': row.id,
+            'kind': row.kind,
+            'displayName': row.displayName,
+            'avatarThumbUrl': row.avatarThumbUrl,
+            'configJson': row.configJson,
+            'sortOrder': row.sortOrder,
+            'createdAt': row.createdAt,
+            'lastUsedAt': row.lastUsedAt,
+          },
+      ],
+      'profileConnections': [
+        for (final row in joinRows)
+          {
+            'profileId': row.profileId,
+            'connectionId': row.connectionId,
+            'userToken': row.userToken,
+            'userIdentifier': row.userIdentifier,
+            'isDefault': row.isDefault,
+            'tokenAcquiredAt': row.tokenAcquiredAt,
+            'lastUsedAt': row.lastUsedAt,
+          },
+      ],
+    };
+  }
+
+  Future<Map<String, Object?>> _readPendingRecoveryRows() async {
+    final rows = await (select(offlineWatchProgress)..orderBy([(t) => OrderingTerm.asc(t.id)])).get();
+    return {
+      'offlineWatchProgress': [
+        for (final row in rows)
+          {
+            'id': row.id,
+            'profileId': row.profileId,
+            'serverId': row.serverId,
+            'clientScopeId': row.clientScopeId,
+            'ratingKey': row.ratingKey,
+            'globalKey': row.globalKey,
+            'actionType': row.actionType,
+            'viewOffset': row.viewOffset,
+            'duration': row.duration,
+            'shouldMarkWatched': row.shouldMarkWatched,
+            'createdAt': row.createdAt,
+            'updatedAt': row.updatedAt,
+            'syncAttempts': row.syncAttempts,
+            'lastError': row.lastError,
+          },
+      ],
+    };
+  }
+
+  Future<void> _restoreRecoverySnapshot(TvosDatabaseRecoverySnapshot snapshot) async {
+    final connectionRows = _decodeRecoveryRows(snapshot.identity, 'connections', const {
+      'id',
+      'kind',
+      'displayName',
+      'configJson',
+      'isDefault',
+      'createdAt',
+      'lastAuthenticatedAt',
+    });
+    final profileRows = _decodeRecoveryRows(snapshot.identity, 'profiles', const {
+      'id',
+      'kind',
+      'displayName',
+      'avatarThumbUrl',
+      'configJson',
+      'sortOrder',
+      'createdAt',
+      'lastUsedAt',
+    });
+    final joinRows = _decodeRecoveryRows(snapshot.identity, 'profileConnections', const {
+      'profileId',
+      'connectionId',
+      'userToken',
+      'userIdentifier',
+      'isDefault',
+      'tokenAcquiredAt',
+      'lastUsedAt',
+    });
+    final pendingRows = _decodeRecoveryRows(snapshot.pending, 'offlineWatchProgress', const {
+      'id',
+      'profileId',
+      'serverId',
+      'clientScopeId',
+      'ratingKey',
+      'globalKey',
+      'actionType',
+      'viewOffset',
+      'duration',
+      'shouldMarkWatched',
+      'createdAt',
+      'updatedAt',
+      'syncAttempts',
+      'lastError',
+    });
+
+    // Recovery images from releases before the credential vault may contain
+    // plaintext secrets. Protect them before they cross into Drift; already
+    // protected values remain byte-identical because vault protection is
+    // idempotent.
+    for (final row in connectionRows) {
+      final kind = _requiredRecoveryValue<String>(row, 'kind');
+      final configJson = _requiredRecoveryValue<String>(row, 'configJson');
+      final decoded = jsonDecode(configJson);
+      if (decoded is! Map<String, dynamic>) {
+        throw const FormatException('Invalid connection configuration');
+      }
+      if (_containsPlaintextConnectionCredential(kind, decoded)) {
+        row['configJson'] = jsonEncode(await CredentialVault.protectConnectionConfig(kind, decoded));
+      }
+    }
+    for (final row in joinRows) {
+      final token = _requiredRecoveryValue<String>(row, 'userToken');
+      if (token.isNotEmpty && !CredentialVault.isProtected(token)) {
+        row['userToken'] = await CredentialVault.protect(token);
+      }
+    }
+
+    final connectionCompanions = [
+      for (final row in connectionRows)
+        ConnectionsCompanion(
+          id: Value(_requiredRecoveryValue<String>(row, 'id')),
+          kind: Value(_requiredRecoveryValue<String>(row, 'kind')),
+          displayName: Value(_requiredRecoveryValue<String>(row, 'displayName')),
+          configJson: Value(_requiredRecoveryValue<String>(row, 'configJson')),
+          isDefault: Value(_requiredRecoveryValue<bool>(row, 'isDefault')),
+          createdAt: Value(_requiredRecoveryValue<int>(row, 'createdAt')),
+          lastAuthenticatedAt: Value(_nullableRecoveryValue<int>(row, 'lastAuthenticatedAt')),
+        ),
+    ];
+    final profileCompanions = [
+      for (final row in profileRows)
+        ProfilesCompanion(
+          id: Value(_requiredRecoveryValue<String>(row, 'id')),
+          kind: Value(_requiredRecoveryValue<String>(row, 'kind')),
+          displayName: Value(_requiredRecoveryValue<String>(row, 'displayName')),
+          avatarThumbUrl: Value(_nullableRecoveryValue<String>(row, 'avatarThumbUrl')),
+          configJson: Value(_requiredRecoveryValue<String>(row, 'configJson')),
+          sortOrder: Value(_requiredRecoveryValue<int>(row, 'sortOrder')),
+          createdAt: Value(_requiredRecoveryValue<int>(row, 'createdAt')),
+          lastUsedAt: Value(_nullableRecoveryValue<int>(row, 'lastUsedAt')),
+        ),
+    ];
+    final joinCompanions = [
+      for (final row in joinRows)
+        ProfileConnectionsCompanion(
+          profileId: Value(_requiredRecoveryValue<String>(row, 'profileId')),
+          connectionId: Value(_requiredRecoveryValue<String>(row, 'connectionId')),
+          userToken: Value(_requiredRecoveryValue<String>(row, 'userToken')),
+          userIdentifier: Value(_requiredRecoveryValue<String>(row, 'userIdentifier')),
+          isDefault: Value(_requiredRecoveryValue<bool>(row, 'isDefault')),
+          tokenAcquiredAt: Value(_nullableRecoveryValue<int>(row, 'tokenAcquiredAt')),
+          lastUsedAt: Value(_nullableRecoveryValue<int>(row, 'lastUsedAt')),
+        ),
+    ];
+    final pendingCompanions = [
+      for (final row in pendingRows)
+        OfflineWatchProgressCompanion(
+          id: Value(_requiredRecoveryValue<int>(row, 'id')),
+          profileId: Value(_nullableRecoveryValue<String>(row, 'profileId')),
+          serverId: Value(_requiredRecoveryValue<String>(row, 'serverId')),
+          clientScopeId: Value(_nullableRecoveryValue<String>(row, 'clientScopeId')),
+          ratingKey: Value(_requiredRecoveryValue<String>(row, 'ratingKey')),
+          globalKey: Value(_requiredRecoveryValue<String>(row, 'globalKey')),
+          actionType: Value(_requiredRecoveryValue<String>(row, 'actionType')),
+          viewOffset: Value(_nullableRecoveryValue<int>(row, 'viewOffset')),
+          duration: Value(_nullableRecoveryValue<int>(row, 'duration')),
+          shouldMarkWatched: Value(_requiredRecoveryValue<bool>(row, 'shouldMarkWatched')),
+          createdAt: Value(_requiredRecoveryValue<int>(row, 'createdAt')),
+          updatedAt: Value(_requiredRecoveryValue<int>(row, 'updatedAt')),
+          syncAttempts: Value(_requiredRecoveryValue<int>(row, 'syncAttempts')),
+          lastError: Value(_nullableRecoveryValue<String>(row, 'lastError')),
+        ),
+    ];
+
+    await transaction(() async {
+      // Recovery completion (the durable marker removal) is deliberately
+      // separate from this transaction. Replace the snapshot-owned rows so a
+      // restart can replay the same committed image after a crash or marker
+      // removal failure without hitting primary-key conflicts.
+      await delete(profileConnections).go();
+      await delete(profiles).go();
+      await delete(connections).go();
+      await delete(offlineWatchProgress).go();
+      for (final row in connectionCompanions) {
+        await into(connections).insert(row);
+      }
+      for (final row in profileCompanions) {
+        await into(profiles).insert(row);
+      }
+      for (final row in joinCompanions) {
+        await into(profileConnections).insert(row);
+      }
+      for (final row in pendingCompanions) {
+        await into(offlineWatchProgress).insert(row);
+      }
+    });
+  }
+
+  static List<Map<String, Object?>> _decodeRecoveryRows(
+    Map<String, Object?> group,
+    String key,
+    Set<String> expectedKeys,
+  ) {
+    final value = group[key];
+    if (value is! List) throw const FormatException('Invalid tvOS database recovery image');
+    return [
+      for (final value in value)
+        if (value is Map<String, Object?> &&
+            value.keys.toSet().containsAll(expectedKeys) &&
+            value.length == expectedKeys.length)
+          value
+        else
+          throw const FormatException('Invalid tvOS database recovery image'),
+    ];
+  }
+
+  static T _requiredRecoveryValue<T>(Map<String, Object?> row, String key) {
+    final value = row[key];
+    if (!row.containsKey(key) || value is! T) {
+      throw const FormatException('Invalid tvOS database recovery image');
+    }
+    return value;
+  }
+
+  static T? _nullableRecoveryValue<T>(Map<String, Object?> row, String key) {
+    if (!row.containsKey(key)) throw const FormatException('Invalid tvOS database recovery image');
+    final value = row[key];
+    if (value == null) return null;
+    if (value is! T) throw const FormatException('Invalid tvOS database recovery image');
+    return value as T;
+  }
 
   @override
-  int get schemaVersion => 16;
+  int get schemaVersion => 19;
 
   @override
   MigrationStrategy get migration {
@@ -221,6 +647,262 @@ class AppDatabase extends _$AppDatabase {
             () => m.addColumn(syncRules, syncRules.includeSpecials),
           );
         }
+        if (from < 17) {
+          appLogger.i('Scoping pinned legacy Plex metadata before removing bare cache rows (v17 migration)');
+          await customStatement('''
+            WITH download_metadata_ids AS (
+              SELECT global_key, server_id, rating_key AS metadata_id
+              FROM downloaded_media
+              UNION
+              SELECT global_key, server_id, parent_rating_key AS metadata_id
+              FROM downloaded_media
+              WHERE parent_rating_key IS NOT NULL
+                AND parent_rating_key != ''
+              UNION
+              SELECT global_key, server_id, grandparent_rating_key AS metadata_id
+              FROM downloaded_media
+              WHERE grandparent_rating_key IS NOT NULL
+                AND grandparent_rating_key != ''
+            )
+            INSERT INTO api_cache (cache_key, data, pinned, cached_at)
+            SELECT DISTINCT
+              metadata.server_id
+                || '/~plex-profile/'
+                || owner.profile_id
+                || ':'
+                || substr(source.cache_key, length(metadata.server_id) + 2),
+              source.data,
+              source.pinned,
+              source.cached_at
+            FROM download_metadata_ids AS metadata
+            JOIN download_owners AS owner
+              ON owner.global_key = metadata.global_key
+            JOIN api_cache AS source
+              ON source.cache_key =
+                  metadata.server_id || ':/library/metadata/' || metadata.metadata_id
+                OR source.cache_key =
+                  metadata.server_id || ':/library/metadata/' || metadata.metadata_id || '/children'
+            WHERE source.pinned = 1
+            ON CONFLICT(cache_key) DO UPDATE SET
+              data = excluded.data,
+              pinned = excluded.pinned,
+              cached_at = excluded.cached_at
+          ''');
+          // A direct pre-v14 upgrade has no owners yet: profiles and owner
+          // adoption are bootstrapped only after the database opens. Preserve
+          // those downloads in the neutral Plex transfer namespace so the
+          // first profile can adopt them without inheriting legacy watch data.
+          await customStatement('''
+            WITH download_metadata_ids AS (
+              SELECT global_key, server_id, rating_key AS metadata_id
+              FROM downloaded_media
+              UNION
+              SELECT global_key, server_id, parent_rating_key AS metadata_id
+              FROM downloaded_media
+              WHERE parent_rating_key IS NOT NULL
+                AND parent_rating_key != ''
+              UNION
+              SELECT global_key, server_id, grandparent_rating_key AS metadata_id
+              FROM downloaded_media
+              WHERE grandparent_rating_key IS NOT NULL
+                AND grandparent_rating_key != ''
+            )
+            INSERT INTO api_cache (cache_key, data, pinned, cached_at)
+            SELECT DISTINCT
+              metadata.server_id
+                || '/~plex-transfer:'
+                || substr(source.cache_key, length(metadata.server_id) + 2),
+              source.data,
+              source.pinned,
+              source.cached_at
+            FROM download_metadata_ids AS metadata
+            JOIN api_cache AS source
+              ON source.cache_key =
+                  metadata.server_id || ':/library/metadata/' || metadata.metadata_id
+                OR source.cache_key =
+                  metadata.server_id || ':/library/metadata/' || metadata.metadata_id || '/children'
+            WHERE source.pinned = 1
+              AND NOT EXISTS (
+                SELECT 1
+                FROM download_owners AS owner
+                WHERE owner.global_key = metadata.global_key
+              )
+            ON CONFLICT(cache_key) DO UPDATE SET
+              data = excluded.data,
+              pinned = excluded.pinned,
+              cached_at = excluded.cached_at
+          ''');
+
+          final transferRows = await customSelect('''
+            SELECT cache_key, data
+            FROM api_cache
+            WHERE instr(
+              substr(cache_key, 1, instr(cache_key, ':') - 1),
+              '/~plex-transfer'
+            ) > 0
+              AND instr(cache_key, ':/library/metadata/') > 0
+          ''').get();
+          for (final row in transferRows) {
+            final cacheKey = row.read<String>('cache_key');
+            try {
+              final sanitized = sanitizePlexMetadataForOwnerlessTransfer(row.read<String>('data'));
+              await customStatement('UPDATE api_cache SET data = ? WHERE cache_key = ?', [sanitized, cacheKey]);
+            } on FormatException catch (error, stackTrace) {
+              appLogger.w(
+                'Discarding invalid legacy Plex transfer metadata for $cacheKey',
+                error: error,
+                stackTrace: stackTrace,
+              );
+              await customStatement('DELETE FROM api_cache WHERE cache_key = ?', [cacheKey]);
+            }
+          }
+
+          // Only mark a physical row as transferable when its sanitized leaf
+          // exists. Parent-only cache remnants cannot hydrate an offline item.
+          await customStatement('''
+            UPDATE downloaded_media
+            SET client_scope_id = server_id || '/~plex-transfer'
+            WHERE NOT EXISTS (
+                SELECT 1
+                FROM download_owners AS owner
+                WHERE owner.global_key = downloaded_media.global_key
+              )
+              AND EXISTS (
+                SELECT 1
+                FROM api_cache AS transfer
+                WHERE transfer.cache_key =
+                    downloaded_media.server_id
+                      || '/~plex-transfer:/library/metadata/'
+                      || downloaded_media.rating_key
+                  AND transfer.pinned = 1
+              )
+          ''');
+          await customStatement('''
+            WITH legacy_plex_metadata AS (
+              SELECT
+                cache_key,
+                substr(cache_key, instr(cache_key, ':') + 1) AS endpoint
+              FROM api_cache
+              WHERE instr(cache_key, ':/library/metadata/') > 0
+                AND instr(
+                  substr(cache_key, 1, instr(cache_key, ':') - 1),
+                  '/~plex-profile/'
+                ) = 0
+                AND instr(
+                  substr(cache_key, 1, instr(cache_key, ':') - 1),
+                  '/~plex-transfer'
+                ) = 0
+            )
+            DELETE FROM api_cache
+            WHERE cache_key IN (
+              SELECT cache_key
+              FROM legacy_plex_metadata
+              WHERE (
+                endpoint GLOB '/library/metadata/?*'
+                AND endpoint NOT GLOB '/library/metadata/*/*'
+              ) OR (
+                endpoint GLOB '/library/metadata/?*/children'
+                AND endpoint NOT GLOB '/library/metadata/*/*/*'
+              )
+            )
+          ''');
+        }
+        if (from < 18) {
+          appLogger.i('Adding safRootUri column to DownloadedMedia (v18 migration)');
+          await _ignoreAlreadyExists(
+            'DownloadedMedia.safRootUri column',
+            () => m.addColumn(downloadedMedia, downloadedMedia.safRootUri),
+          );
+        }
+        if (from < 19) {
+          appLogger.i('Adding backend metadata scope columns to DownloadOwners (v19 migration)');
+          await _ignoreAlreadyExists(
+            'DownloadOwners.backend column',
+            () => m.addColumn(downloadOwners, downloadOwners.backend),
+          );
+          await _ignoreAlreadyExists(
+            'DownloadOwners.clientScopeId column',
+            () => m.addColumn(downloadOwners, downloadOwners.clientScopeId),
+          );
+          await customStatement('''
+            UPDATE download_owners
+            SET client_scope_id = CASE
+              WHEN EXISTS (
+                SELECT 1
+                FROM downloaded_media
+                WHERE downloaded_media.global_key = download_owners.global_key
+                  AND downloaded_media.client_scope_id LIKE '%/~plex-profile/%'
+              ) THEN (
+                SELECT downloaded_media.server_id || '/~plex-profile/' || download_owners.profile_id
+                FROM downloaded_media
+                WHERE downloaded_media.global_key = download_owners.global_key
+              )
+              WHEN EXISTS (
+                SELECT 1
+                FROM downloaded_media
+                JOIN profile_connections
+                  ON profile_connections.profile_id = download_owners.profile_id
+                JOIN connections
+                  ON connections.id = profile_connections.connection_id
+                WHERE downloaded_media.global_key = download_owners.global_key
+                  AND connections.kind = 'jellyfin'
+                  AND profile_connections.user_identifier != ''
+                  AND (
+                    connections.id = downloaded_media.server_id
+                    OR substr(connections.id, 1, length(downloaded_media.server_id) + 1)
+                      = downloaded_media.server_id || '/'
+                  )
+              ) THEN (
+                SELECT CASE
+                  WHEN connections.id = downloaded_media.server_id
+                    THEN downloaded_media.server_id || '/' || profile_connections.user_identifier
+                  ELSE connections.id
+                END
+                FROM downloaded_media
+                JOIN profile_connections
+                  ON profile_connections.profile_id = download_owners.profile_id
+                JOIN connections
+                  ON connections.id = profile_connections.connection_id
+                WHERE downloaded_media.global_key = download_owners.global_key
+                  AND connections.kind = 'jellyfin'
+                  AND profile_connections.user_identifier != ''
+                  AND (
+                    connections.id = downloaded_media.server_id
+                    OR substr(connections.id, 1, length(downloaded_media.server_id) + 1)
+                      = downloaded_media.server_id || '/'
+                  )
+                ORDER BY profile_connections.is_default DESC,
+                  profile_connections.last_used_at DESC,
+                  connections.id
+                LIMIT 1
+              )
+              ELSE NULL
+            END
+            WHERE client_scope_id IS NULL
+          ''');
+          await customStatement('''
+            UPDATE download_owners
+            SET backend = CASE
+              WHEN client_scope_id LIKE '%/~plex-profile/%' THEN 'plex'
+              WHEN client_scope_id IS NOT NULL AND EXISTS (
+                SELECT 1
+                FROM downloaded_media
+                JOIN profile_connections
+                  ON profile_connections.profile_id = download_owners.profile_id
+                JOIN connections
+                  ON connections.id = profile_connections.connection_id
+                WHERE downloaded_media.global_key = download_owners.global_key
+                  AND connections.kind = 'jellyfin'
+                  AND (
+                    connections.id = downloaded_media.server_id
+                    OR substr(connections.id, 1, length(downloaded_media.server_id) + 1)
+                      = downloaded_media.server_id || '/'
+                  )
+              ) THEN 'jellyfin'
+            END
+            WHERE backend IS NULL
+          ''');
+        }
       },
     );
   }
@@ -260,9 +942,11 @@ class AppDatabase extends _$AppDatabase {
   /// inherits them so already-watched offline progress is not stranded.
   Future<void> adoptLegacyOfflineWatchActionsForProfile(String profileId) async {
     if (profileId.isEmpty) return;
-    await (update(
-      offlineWatchProgress,
-    )..where((t) => t.profileId.isNull())).write(OfflineWatchProgressCompanion(profileId: Value(profileId)));
+    await _runPendingMutation(
+      () => (update(
+        offlineWatchProgress,
+      )..where((t) => t.profileId.isNull())).write(OfflineWatchProgressCompanion(profileId: Value(profileId))),
+    );
   }
 
   /// Get pending watch actions for a specific server
@@ -386,55 +1070,57 @@ class AppDatabase extends _$AppDatabase {
     required int? duration,
     required bool shouldMarkWatched,
   }) async {
-    final globalKey = buildGlobalKey(ServerId(serverId), ratingKey);
-    final now = DateTime.now().millisecondsSinceEpoch;
+    return _runPendingMutation(() async {
+      final globalKey = buildGlobalKey(ServerId(serverId), ratingKey);
+      final now = DateTime.now().millisecondsSinceEpoch;
 
-    await transaction(() async {
-      final existing =
-          await (select(offlineWatchProgress)
-                ..where(
-                  (t) =>
-                      t.globalKey.equals(globalKey) &
-                      _nullableTextPredicate(t.profileId, profileId) &
-                      _clientScopePredicate(t.clientScopeId, clientScopeId) &
-                      t.actionType.equals(OfflineActionType.progress.id),
-                )
-                ..orderBy([(t) => OrderingTerm.asc(t.id)]))
-              .get();
+      await transaction(() async {
+        final existing =
+            await (select(offlineWatchProgress)
+                  ..where(
+                    (t) =>
+                        t.globalKey.equals(globalKey) &
+                        _nullableTextPredicate(t.profileId, profileId) &
+                        _clientScopePredicate(t.clientScopeId, clientScopeId) &
+                        t.actionType.equals(OfflineActionType.progress.id),
+                  )
+                  ..orderBy([(t) => OrderingTerm.asc(t.id)]))
+                .get();
 
-      final keep = existing.isEmpty ? null : existing.first;
-      if (keep != null) {
-        await (update(offlineWatchProgress)..where((t) => t.id.equals(keep.id))).write(
-          OfflineWatchProgressCompanion(
-            viewOffset: Value(viewOffset),
-            duration: Value(duration),
-            shouldMarkWatched: Value(shouldMarkWatched),
-            profileId: Value(profileId),
-            clientScopeId: Value(clientScopeId),
-            updatedAt: Value(now),
-          ),
-        );
-        final duplicateIds = existing.skip(1).map((row) => row.id).toList(growable: false);
-        if (duplicateIds.isNotEmpty) {
-          await (delete(offlineWatchProgress)..where((t) => t.id.isIn(duplicateIds))).go();
+        final keep = existing.isEmpty ? null : existing.first;
+        if (keep != null) {
+          await (update(offlineWatchProgress)..where((t) => t.id.equals(keep.id))).write(
+            OfflineWatchProgressCompanion(
+              viewOffset: Value(viewOffset),
+              duration: Value(duration),
+              shouldMarkWatched: Value(shouldMarkWatched),
+              profileId: Value(profileId),
+              clientScopeId: Value(clientScopeId),
+              updatedAt: Value(now),
+            ),
+          );
+          final duplicateIds = existing.skip(1).map((row) => row.id).toList(growable: false);
+          if (duplicateIds.isNotEmpty) {
+            await (delete(offlineWatchProgress)..where((t) => t.id.isIn(duplicateIds))).go();
+          }
+        } else {
+          await into(offlineWatchProgress).insert(
+            OfflineWatchProgressCompanion.insert(
+              serverId: serverId,
+              profileId: Value(profileId),
+              clientScopeId: Value(clientScopeId),
+              ratingKey: ratingKey,
+              globalKey: globalKey,
+              actionType: OfflineActionType.progress.id,
+              viewOffset: Value(viewOffset),
+              duration: Value(duration),
+              shouldMarkWatched: Value(shouldMarkWatched),
+              createdAt: now,
+              updatedAt: now,
+            ),
+          );
         }
-      } else {
-        await into(offlineWatchProgress).insert(
-          OfflineWatchProgressCompanion.insert(
-            serverId: serverId,
-            profileId: Value(profileId),
-            clientScopeId: Value(clientScopeId),
-            ratingKey: ratingKey,
-            globalKey: globalKey,
-            actionType: OfflineActionType.progress.id,
-            viewOffset: Value(viewOffset),
-            duration: Value(duration),
-            shouldMarkWatched: Value(shouldMarkWatched),
-            createdAt: now,
-            updatedAt: now,
-          ),
-        );
-      }
+      });
     });
   }
 
@@ -447,47 +1133,54 @@ class AppDatabase extends _$AppDatabase {
     required String ratingKey,
     required String actionType, // 'watched' or 'unwatched'
   }) async {
-    final globalKey = buildGlobalKey(ServerId(serverId), ratingKey);
-    final now = DateTime.now().millisecondsSinceEpoch;
+    return _runPendingMutation(() async {
+      final globalKey = buildGlobalKey(ServerId(serverId), ratingKey);
+      final now = DateTime.now().millisecondsSinceEpoch;
 
-    // Remove conflicting actions (opposite action type and progress)
-    await (delete(offlineWatchProgress)..where(
-          (t) =>
-              t.globalKey.equals(globalKey) &
-              _nullableTextPredicate(t.profileId, profileId) &
-              _clientScopePredicate(t.clientScopeId, clientScopeId),
-        ))
-        .go();
+      await transaction(() async {
+        // Remove conflicting actions (opposite action type and progress).
+        await (delete(offlineWatchProgress)..where(
+              (t) =>
+                  t.globalKey.equals(globalKey) &
+                  _nullableTextPredicate(t.profileId, profileId) &
+                  _clientScopePredicate(t.clientScopeId, clientScopeId),
+            ))
+            .go();
 
-    // Insert the new action
-    await into(offlineWatchProgress).insert(
-      OfflineWatchProgressCompanion.insert(
-        serverId: serverId,
-        profileId: Value(profileId),
-        clientScopeId: Value(clientScopeId),
-        ratingKey: ratingKey,
-        globalKey: globalKey,
-        actionType: actionType,
-        createdAt: now,
-        updatedAt: now,
-      ),
-    );
+        await into(offlineWatchProgress).insert(
+          OfflineWatchProgressCompanion.insert(
+            serverId: serverId,
+            profileId: Value(profileId),
+            clientScopeId: Value(clientScopeId),
+            ratingKey: ratingKey,
+            globalKey: globalKey,
+            actionType: actionType,
+            createdAt: now,
+            updatedAt: now,
+          ),
+        );
+      });
+    });
   }
 
   /// Delete a specific watch action after successful sync
   Future<void> deleteWatchAction(int id) {
-    return (delete(offlineWatchProgress)..where((t) => t.id.equals(id))).go();
+    return _runPendingMutation(() async {
+      await (delete(offlineWatchProgress)..where((t) => t.id.equals(id))).go();
+    });
   }
 
   /// Update sync attempt count and error message
   Future<void> updateSyncAttempt(int id, String? errorMessage) async {
-    final existing = await (select(offlineWatchProgress)..where((t) => t.id.equals(id))).getSingleOrNull();
+    return _runPendingMutation(() async {
+      final existing = await (select(offlineWatchProgress)..where((t) => t.id.equals(id))).getSingleOrNull();
 
-    if (existing != null) {
-      await (update(offlineWatchProgress)..where((t) => t.id.equals(id))).write(
-        OfflineWatchProgressCompanion(syncAttempts: Value(existing.syncAttempts + 1), lastError: Value(errorMessage)),
-      );
-    }
+      if (existing != null) {
+        await (update(offlineWatchProgress)..where((t) => t.id.equals(id))).write(
+          OfflineWatchProgressCompanion(syncAttempts: Value(existing.syncAttempts + 1), lastError: Value(errorMessage)),
+        );
+      }
+    });
   }
 
   /// Get count of pending sync items
@@ -505,12 +1198,16 @@ class AppDatabase extends _$AppDatabase {
 
   /// Clear all pending watch actions (e.g., after logout)
   Future<void> clearAllWatchActions() {
-    return delete(offlineWatchProgress).go();
+    return _runPendingMutation(() async {
+      await delete(offlineWatchProgress).go();
+    });
   }
 
   /// Drop a removed profile's queued watch actions (profile teardown).
   Future<void> deleteWatchActionsForProfile(String profileId) async {
-    await (delete(offlineWatchProgress)..where((t) => t.profileId.equals(profileId))).go();
+    await _runPendingMutation(() async {
+      await (delete(offlineWatchProgress)..where((t) => t.profileId.equals(profileId))).go();
+    });
   }
 
   Future<List<SyncRuleItem>> getSyncRules({String? profileId}) {
@@ -632,34 +1329,31 @@ class AppDatabase extends _$AppDatabase {
   }
 }
 
-LazyDatabase _openConnection() {
-  return LazyDatabase(() async {
-    final dbFolder = (Platform.isAndroid || Platform.isIOS)
-        ? await getApplicationDocumentsDirectory()
-        : await getApplicationSupportDirectory();
+Future<File> _resolveProductionDatabaseFile() async {
+  final dbFolder = (Platform.isAndroid || Platform.isIOS)
+      ? await getApplicationDocumentsDirectory()
+      : await getApplicationSupportDirectory();
+  return File(p.join(dbFolder.path, 'plezy_downloads.db'));
+}
 
-    final file = File(p.join(dbFolder.path, 'plezy_downloads.db'));
+Future<void> _removeOrphanedDatabaseSidecars(File databaseFile) async {
+  for (final suffix in const ['-wal', '-shm']) {
+    final sidecar = File('${databaseFile.path}$suffix');
+    if (await sidecar.exists()) await sidecar.delete();
+  }
+}
 
-    if (!await file.parent.exists()) {
-      await file.parent.create(recursive: true);
-    }
-
-    // Migrate from old location on desktop (was in Documents subfolder)
-    if (!Platform.isAndroid && !Platform.isIOS && !await file.exists()) {
-      await migrateLegacyDesktopDatabase(target: file);
-    }
-
-    return NativeDatabase.createInBackground(
-      file,
-      setup: (db) {
-        db.execute('PRAGMA journal_mode=WAL');
-        db.execute('PRAGMA synchronous=NORMAL');
-        // Enforce ProfileConnections → Profiles/Connections cascades.
-        // SQLite requires this on every connection — it's not persisted.
-        db.execute('PRAGMA foreign_keys = ON');
-      },
-    );
-  });
+QueryExecutor _createNativeDatabase(File file) {
+  return NativeDatabase.createInBackground(
+    file,
+    setup: (db) {
+      db.execute('PRAGMA journal_mode=WAL');
+      db.execute('PRAGMA synchronous=NORMAL');
+      // Enforce ProfileConnections → Connections cascades.
+      // SQLite requires this on every connection — it is not persisted.
+      db.execute('PRAGMA foreign_keys = ON');
+    },
+  );
 }
 
 /// Move the legacy desktop DB from `Documents/` to `ApplicationSupport/`.
@@ -667,15 +1361,20 @@ LazyDatabase _openConnection() {
 /// OneDrive-redirected Documents (or any cross-drive setup) hit
 /// `ERROR_NOT_SAME_DEVICE` (errno 17), and the uncaught throw used to
 /// strand the splash on "Loading servers..." forever (#1022). Falls back
-/// to copy + delete on any [FileSystemException] and swallows all errors
-/// so a failed migration never propagates fatally.
+/// to a synced sibling temporary copy followed by an atomic rename on any
+/// [FileSystemException], and swallows all errors so a failed migration
+/// never propagates fatally. The canonical-path lock file is intentionally
+/// retained: deleting it could let a new process lock a different inode while
+/// an existing waiter still holds the old one.
 ///
-/// [sourceOverride] and [renameOverride] are test seams — production
-/// callers leave them null.
+/// [sourceOverride], [renameOverride], [copyOverride], and [publishOverride]
+/// are test seams — production callers leave them null.
 Future<void> migrateLegacyDesktopDatabase({
   required File target,
   File? sourceOverride,
   Future<void> Function(File source, String targetPath)? renameOverride,
+  Future<void> Function(File source, File temporary)? copyOverride,
+  Future<void> Function(File temporary, File target)? publishOverride,
 }) async {
   final File oldFile;
   try {
@@ -692,19 +1391,57 @@ Future<void> migrateLegacyDesktopDatabase({
   }
 
   try {
-    if (renameOverride != null) {
-      await renameOverride(oldFile, target.path);
-    } else {
-      await oldFile.rename(target.path);
-    }
+    final moved = await _withLegacyDatabasePublishLock(target, () async {
+      if (await target.exists()) {
+        appLogger.w('Legacy DB migration skipped because ${target.path} now exists');
+        return false;
+      }
+      if (renameOverride != null) {
+        await renameOverride(oldFile, target.path);
+      } else {
+        await oldFile.rename(target.path);
+      }
+      return true;
+    });
+    if (!moved) return;
     appLogger.i('Moved legacy DB from ${oldFile.path} → ${target.path}');
     return;
   } on FileSystemException catch (e) {
     appLogger.w('Legacy DB rename failed (osError=${e.osError?.errorCode}); falling back to copy', error: e);
   }
 
+  final temporary = File(
+    p.join(
+      target.parent.path,
+      '.${p.basename(target.path)}.legacy-migration-$pid-${DateTime.now().microsecondsSinceEpoch}.tmp',
+    ),
+  );
   try {
-    await oldFile.copy(target.path);
+    if (copyOverride != null) {
+      await copyOverride(oldFile, temporary);
+    } else {
+      await _copyFileAndSync(oldFile, temporary);
+    }
+
+    final published = await _withLegacyDatabasePublishLock(target, () async {
+      // Recheck only while holding the inter-process lock. On POSIX, rename
+      // replaces an existing destination, so an unlocked check can race a
+      // concurrent publisher and overwrite its now-canonical database.
+      if (await target.exists()) {
+        appLogger.w('Legacy DB migration skipped because ${target.path} now exists');
+        return false;
+      }
+
+      // The temporary file is a sibling, so this rename stays on one volume
+      // and publishes the complete, synced copy atomically.
+      if (publishOverride != null) {
+        await publishOverride(temporary, target);
+      } else {
+        await temporary.rename(target.path);
+      }
+      return true;
+    });
+    if (!published) return;
     try {
       await oldFile.delete();
     } catch (e) {
@@ -713,9 +1450,51 @@ Future<void> migrateLegacyDesktopDatabase({
     }
     appLogger.i('Copied legacy DB from ${oldFile.path} → ${target.path}');
   } catch (e, st) {
-    // Copy itself failed (disk full, source locked by OneDrive sync,
-    // permissions). Leave both files alone — drift will create a fresh
-    // empty DB at the new location, and a future relaunch can retry.
+    // A failed copy or final rename never touches the canonical path. Keep
+    // the legacy source so a future launch can retry.
     appLogger.e('Legacy DB migration failed entirely', error: e, stackTrace: st);
+  } finally {
+    try {
+      if (await temporary.exists()) await temporary.delete();
+    } catch (e, st) {
+      appLogger.w('Failed to clean legacy DB migration temporary file', error: e, stackTrace: st);
+    }
+  }
+}
+
+Future<T> _withLegacyDatabasePublishLock<T>(File target, Future<T> Function() action) async {
+  final lockFile = File(p.join(target.parent.path, '.${p.basename(target.path)}.legacy-migration.lock'));
+  final handle = await lockFile.open(mode: FileMode.append);
+  var locked = false;
+  try {
+    await handle.lock(FileLock.blockingExclusive);
+    locked = true;
+    return await action();
+  } finally {
+    try {
+      if (locked) await handle.unlock();
+    } finally {
+      await handle.close();
+    }
+  }
+}
+
+Future<void> _copyFileAndSync(File source, File destination) async {
+  final input = await source.open();
+  try {
+    final output = await destination.open(mode: FileMode.writeOnly);
+    try {
+      final buffer = Uint8List(64 * 1024);
+      while (true) {
+        final bytesRead = await input.readInto(buffer);
+        if (bytesRead == 0) break;
+        await output.writeFrom(buffer, 0, bytesRead);
+      }
+      await output.flush();
+    } finally {
+      await output.close();
+    }
+  } finally {
+    await input.close();
   }
 }

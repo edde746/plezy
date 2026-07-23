@@ -10,7 +10,7 @@ import 'download_artwork_helpers.dart';
 import 'download_storage_service.dart';
 
 class _ArtworkDownloadOperation {
-  final Future<void> future;
+  final Future<bool> future;
 
   const _ArtworkDownloadOperation(this.future);
 }
@@ -51,39 +51,38 @@ class DownloadArtworkService {
     return false;
   }
 
-  Future<void> ensureArtworkForMetadata(MediaItem metadata, MediaServerClient client) async {
+  Future<bool> ensureArtworkForMetadata(MediaItem metadata, MediaServerClient client) async {
     final serverId = metadata.serverId;
-    if (serverId == null) return;
-    await ensureArtworkSpecs(ServerId(serverId), client.resolveDownloadArtwork(metadata));
+    if (serverId == null) return false;
+    return ensureArtworkSpecs(ServerId(serverId), client.resolveDownloadArtwork(metadata));
   }
 
-  Future<void> ensureArtworkSpecs(ServerId serverId, Iterable<DownloadArtworkSpec> specs) async {
+  Future<bool> ensureArtworkSpecs(ServerId serverId, Iterable<DownloadArtworkSpec> specs) async {
+    var allSettled = true;
     for (final spec in specs) {
-      await downloadSingleArtwork(serverId, spec);
+      if (!await downloadSingleArtwork(serverId, spec)) allSettled = false;
     }
+    return allSettled;
   }
 
   /// Download one artwork blob if it is missing or unusable.
   ///
   /// The HTTP helper writes atomically. This method validates the final file so
   /// HTML/JSON error bodies do not poison future existence checks.
-  Future<void> downloadSingleArtwork(ServerId serverId, DownloadArtworkSpec spec) async {
+  Future<bool> downloadSingleArtwork(ServerId serverId, DownloadArtworkSpec spec) async {
     if (spec.url.isEmpty) {
       appLogger.w('Empty artwork URL for: ${spec.localKey}');
-      return;
+      return false;
     }
 
     final filePath = await localPath(serverId, spec.localKey);
     final inFlight = _downloadsByPath[filePath];
-    if (inFlight != null) {
-      await inFlight.future;
-      return;
-    }
+    if (inFlight != null) return inFlight.future;
 
     final operation = _ArtworkDownloadOperation(_downloadSingleArtworkToPath(serverId, spec, filePath));
     _downloadsByPath[filePath] = operation;
     try {
-      await operation.future;
+      return await operation.future;
     } finally {
       if (identical(_downloadsByPath[filePath], operation)) {
         _downloadsByPath.remove(filePath);
@@ -91,11 +90,11 @@ class DownloadArtworkService {
     }
   }
 
-  Future<void> _downloadSingleArtworkToPath(ServerId serverId, DownloadArtworkSpec spec, String filePath) async {
+  Future<bool> _downloadSingleArtworkToPath(ServerId serverId, DownloadArtworkSpec spec, String filePath) async {
     try {
       if (await existsUsable(serverId, spec.localKey)) {
         appLogger.d('Artwork already exists: ${spec.localKey}');
-        return;
+        return true;
       }
 
       final file = File(filePath);
@@ -110,12 +109,14 @@ class DownloadArtworkService {
       if (!await isUsableArtworkFile(file)) {
         if (await file.exists()) await file.delete();
         appLogger.w('Downloaded artwork was not a usable image: ${spec.localKey}');
-        return;
+        return false;
       }
 
       appLogger.i('Downloaded artwork: ${spec.localKey} -> $filePath');
+      return true;
     } catch (e, stack) {
       appLogger.w('Failed to download artwork: ${spec.localKey}', error: e, stackTrace: stack);
+      return false;
     }
   }
 

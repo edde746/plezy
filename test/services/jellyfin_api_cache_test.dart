@@ -218,6 +218,31 @@ void main() {
       expect(pinned['$machineId:item-1']!.serverName, 'Shared JF');
     });
 
+    test('compound scope filtering selects only that user from legacy bare-scope rows', () async {
+      const machineId = 'jf-machine';
+      await insertJellyfinConnection(machineId: machineId, userId: 'user-a', serverName: 'Shared JF');
+      await insertJellyfinConnection(machineId: machineId, userId: 'user-b', serverName: 'Shared JF');
+      await putItemRow(
+        serverId: ServerId(machineId),
+        userId: 'user-a',
+        itemId: 'item-a',
+        data: jellyfinItem(id: 'item-a', name: 'For A'),
+        pinned: true,
+      );
+      await putItemRow(
+        serverId: ServerId(machineId),
+        userId: 'user-b',
+        itemId: 'item-b',
+        data: jellyfinItem(id: 'item-b', name: 'For B'),
+        pinned: true,
+      );
+
+      final pinned = await cache.getAllPinnedMetadata(cacheServerIds: {ServerId('$machineId/user-b')});
+
+      expect(pinned.keys, ['$machineId:item-b']);
+      expect(pinned.values.single.title, 'For B');
+    });
+
     test('skips pinned rows whose serverId has no matching connection', () async {
       await putItemRow(serverId: ServerId('orphan-machine'), userId: 'u', itemId: 'lost', pinned: true);
       expect(await cache.getAllPinnedMetadata(), isEmpty);

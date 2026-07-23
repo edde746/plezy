@@ -5,6 +5,7 @@ import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:plezy/database/app_database.dart';
+import 'package:plezy/exceptions/media_server_exceptions.dart';
 import 'package:plezy/media/media_backend.dart';
 
 import 'package:plezy/media/media_kind.dart';
@@ -14,6 +15,7 @@ import 'package:plezy/models/transcode_quality_preset.dart';
 import 'package:plezy/services/playback_initialization_types.dart';
 import 'package:plezy/services/plex_api_cache.dart';
 import 'package:plezy/services/plex_client.dart';
+import 'package:plezy/utils/active_client_scope.dart';
 
 import '../test_helpers/backend_client_fixtures.dart';
 import '../test_helpers/media_items.dart';
@@ -236,32 +238,36 @@ void main() {
     expect(part.containsKey('Stream'), isFalse);
   });
 
-  test('network failure falls back to lean cached playback metadata', () async {
-    await PlexApiCache.instance.put(ServerId('server-id'), '/library/metadata/42', {
-      'MediaContainer': {
-        'Metadata': [
-          {
-            'ratingKey': '42',
-            'type': 'movie',
-            'title': 'Movie',
-            'Media': [
-              {
-                'id': 7,
-                'Part': [
-                  {'id': 10, 'key': '/library/parts/10/stale.mkv'},
-                ],
-              },
-              {
-                'id': 8,
-                'Part': [
-                  {'id': 20, 'key': '/library/parts/20/current.mkv'},
-                ],
-              },
-            ],
-          },
-        ],
+  test('network failure falls back to profile-scoped lean cached playback metadata', () async {
+    await PlexApiCache.instance.put(
+      buildPlexProfileScopeId(serverId: ServerId('server-id'), profileId: 'test-profile').cacheServerId,
+      '/library/metadata/42',
+      {
+        'MediaContainer': {
+          'Metadata': [
+            {
+              'ratingKey': '42',
+              'type': 'movie',
+              'title': 'Movie',
+              'Media': [
+                {
+                  'id': 7,
+                  'Part': [
+                    {'id': 10, 'key': '/library/parts/10/stale.mkv'},
+                  ],
+                },
+                {
+                  'id': 8,
+                  'Part': [
+                    {'id': 20, 'key': '/library/parts/20/current.mkv'},
+                  ],
+                },
+              ],
+            },
+          ],
+        },
       },
-    });
+    );
     final requests = <http.Request>[];
     final client = makeClient((request) async {
       requests.add(request);
@@ -526,5 +532,320 @@ void main() {
     ]);
 
     expect(subtitles, isEmpty);
+  });
+
+  group('playback metadata failure contract', () {
+    Map<String, dynamic> playableBody() => {
+      'MediaContainer': {
+        'Metadata': [
+          {
+            'ratingKey': '42',
+            'type': 'movie',
+            'Media': [
+              {
+                'id': 7,
+                'Part': [
+                  {'id': 10, 'key': '/library/parts/10/file.mkv'},
+                ],
+              },
+            ],
+          },
+        ],
+      },
+    };
+
+    Map<String, dynamic> noPartBody() => {
+      'MediaContainer': {
+        'Metadata': [
+          {
+            'ratingKey': '42',
+            'type': 'movie',
+            'Media': [
+              {'id': 7, 'Part': []},
+            ],
+          },
+        ],
+      },
+    };
+
+    PlaybackInitializationOptions options() => PlaybackInitializationOptions(
+      metadata: testMediaItem(id: '42', backend: MediaBackend.plex, kind: MediaKind.movie, serverId: 'server-id'),
+      selectedMediaIndex: 0,
+    );
+
+    test('raw helper preserves 401 while initialization classifies authentication', () async {
+      final client = makeClient(
+        (_) async =>
+            http.Response(jsonEncode({'error': 'body-canary'}), 401, headers: {'content-type': 'application/json'}),
+      );
+      addTearDown(client.close);
+
+      await expectLater(
+        client.getVideoPlaybackData('42'),
+        throwsA(isA<MediaServerHttpException>().having((error) => error.statusCode, 'statusCode', 401)),
+      );
+      await expectLater(
+        client.getPlaybackInitialization(options()),
+        throwsA(
+          isA<PlaybackException>()
+              .having((error) => error.reason, 'reason', PlaybackFailureReason.authenticationRequired)
+              .having((error) => error.message, 'message', isNot(contains('body-canary'))),
+        ),
+      );
+    });
+
+    test('raw timeout survives and initialization classifies server unavailable', () async {
+      final client = makeClient(
+        (_) async => throw MediaServerHttpException(
+          type: MediaServerHttpErrorType.receiveTimeout,
+          message: 'timeout-canary',
+          requestUri: Uri.parse('https://private.invalid/library/metadata/42?secret=uri-canary'),
+        ),
+      );
+      addTearDown(client.close);
+
+      await expectLater(
+        client.getVideoPlaybackData('42'),
+        throwsA(
+          isA<MediaServerHttpException>().having(
+            (error) => error.type,
+            'type',
+            MediaServerHttpErrorType.receiveTimeout,
+          ),
+        ),
+      );
+      try {
+        await client.getPlaybackInitialization(options());
+        fail('Timeout must throw');
+      } on PlaybackException catch (error) {
+        expect(error.reason, PlaybackFailureReason.serverUnavailable);
+        expect(error.message, isNot(contains('timeout-canary')));
+        expect(error.toString(), isNot(anyOf(contains('private.invalid'), contains('uri-canary'))));
+      }
+    });
+
+    test('successful malformed envelope, Media, and Part collections are invalid data', () async {
+      final malformedBodies = <Map<String, dynamic>>[
+        {'notMediaContainer': true},
+        {
+          'MediaContainer': {
+            'Metadata': [
+              {'Media': 'payload-canary'},
+            ],
+          },
+        },
+        {
+          'MediaContainer': {
+            'Metadata': [
+              {
+                'Media': [
+                  {'Part': 'payload-canary'},
+                ],
+              },
+            ],
+          },
+        },
+      ];
+
+      for (final body in malformedBodies) {
+        final client = makeClient(
+          (_) async => http.Response(jsonEncode(body), 200, headers: {'content-type': 'application/json'}),
+        );
+        addTearDown(client.close);
+        await expectLater(client.getVideoPlaybackData('42'), throwsA(isA<FormatException>()));
+        await expectLater(
+          client.getPlaybackInitialization(options()),
+          throwsA(
+            isA<PlaybackException>()
+                .having((error) => error.reason, 'reason', PlaybackFailureReason.invalidPlaybackData)
+                .having((error) => error.toString(), 'safe text', isNot(contains('payload-canary'))),
+          ),
+        );
+      }
+    });
+
+    test('playback validation preserves singleton and mixed valid Media/Part shapes', () async {
+      final bodies = <Map<String, dynamic>>[
+        {
+          'MediaContainer': {
+            'Metadata': [
+              {
+                'Media': {
+                  'id': 7,
+                  'Part': {'id': 10, 'key': '/library/parts/10/singleton.mkv'},
+                },
+              },
+            ],
+          },
+        },
+        {
+          'MediaContainer': {
+            'Metadata': [
+              {
+                'Media': [
+                  'ignored',
+                  {
+                    'id': 7,
+                    'Part': [
+                      'ignored',
+                      {'id': 10, 'key': '/library/parts/10/mixed.mkv'},
+                    ],
+                  },
+                ],
+              },
+            ],
+          },
+        },
+      ];
+
+      for (final body in bodies) {
+        final client = makeClient(
+          (_) async => http.Response(jsonEncode(body), 200, headers: {'content-type': 'application/json'}),
+        );
+        addTearDown(client.close);
+
+        final data = await client.getVideoPlaybackData('42');
+
+        expect(data.hasValidVideoUrl, isTrue);
+        expect(data.videoUrl, contains('/library/parts/10/'));
+      }
+    });
+
+    test('invalid JSON and non-map top-level data classify as invalid playback data', () async {
+      final responses = [
+        http.Response('{', 200, headers: {'content-type': 'application/json'}),
+        http.Response(jsonEncode([]), 200, headers: {'content-type': 'application/json'}),
+      ];
+
+      for (final response in responses) {
+        final client = makeClient((_) async => response);
+        addTearDown(client.close);
+        await expectLater(
+          client.getPlaybackInitialization(options()),
+          throwsA(
+            isA<PlaybackException>().having(
+              (error) => error.reason,
+              'reason',
+              PlaybackFailureReason.invalidPlaybackData,
+            ),
+          ),
+        );
+      }
+    });
+
+    test('valid metadata without a part remains noPlayableSource', () async {
+      final client = makeClient(
+        (_) async => http.Response(jsonEncode(noPartBody()), 200, headers: {'content-type': 'application/json'}),
+      );
+      addTearDown(client.close);
+
+      final raw = await client.getVideoPlaybackData('42');
+      expect(raw.hasValidVideoUrl, isFalse);
+      await expectLater(
+        client.getPlaybackInitialization(options()),
+        throwsA(
+          isA<PlaybackException>().having((error) => error.reason, 'reason', PlaybackFailureReason.noPlayableSource),
+        ),
+      );
+    });
+
+    test('auth, server, malformed, and no-source failures expose distinct reasons and messages', () async {
+      Future<PlaybackException> capture(PlexClient client) async {
+        try {
+          await client.getPlaybackInitialization(options());
+          fail('Initialization must throw');
+        } on PlaybackException catch (error) {
+          return error;
+        }
+      }
+
+      final auth = makeClient((_) async => http.Response('{}', 401, headers: {'content-type': 'application/json'}));
+      final server = makeClient((_) async => http.Response('{}', 500, headers: {'content-type': 'application/json'}));
+      final malformed = makeClient(
+        (_) async => http.Response(
+          jsonEncode({'MediaContainer': 'invalid'}),
+          200,
+          headers: {'content-type': 'application/json'},
+        ),
+      );
+      final noSource = makeClient(
+        (_) async => http.Response(jsonEncode(noPartBody()), 200, headers: {'content-type': 'application/json'}),
+      );
+      addTearDown(auth.close);
+      addTearDown(server.close);
+      addTearDown(malformed.close);
+      addTearDown(noSource.close);
+
+      final failures = [await capture(auth), await capture(server), await capture(malformed), await capture(noSource)];
+      expect(failures.map((failure) => failure.reason).toSet(), {
+        PlaybackFailureReason.authenticationRequired,
+        PlaybackFailureReason.serverUnavailable,
+        PlaybackFailureReason.invalidPlaybackData,
+        PlaybackFailureReason.noPlayableSource,
+      });
+      expect(failures.map((failure) => failure.message).toSet(), hasLength(4));
+    });
+
+    test('500, connection failure, and cancellation never become no-source', () async {
+      final cases = <(PlaybackFailureReason, Future<http.Response> Function(http.Request))>[
+        (
+          PlaybackFailureReason.serverUnavailable,
+          (_) async => http.Response('{}', 500, headers: {'content-type': 'application/json'}),
+        ),
+        (
+          PlaybackFailureReason.serverUnavailable,
+          (_) async =>
+              throw MediaServerHttpException(type: MediaServerHttpErrorType.connectionError, message: 'unavailable'),
+        ),
+        (PlaybackFailureReason.cancelled, (request) async => throw http.RequestAbortedException(request.url)),
+      ];
+
+      for (final (reason, handler) in cases) {
+        final client = makeClient(handler);
+        addTearDown(client.close);
+        await expectLater(
+          client.getPlaybackInitialization(options()),
+          throwsA(isA<PlaybackException>().having((error) => error.reason, 'reason', reason)),
+        );
+      }
+    });
+
+    test('unclassified failures use the safe unknown reason and message', () async {
+      final client = makeClient((_) async => throw StateError('unknown-cause-canary'));
+      addTearDown(client.close);
+
+      await expectLater(
+        client.getPlaybackInitialization(options()),
+        throwsA(
+          isA<PlaybackException>()
+              .having((error) => error.reason, 'reason', PlaybackFailureReason.unknown)
+              .having((error) => error.message, 'safe message', isNot(contains('unknown-cause-canary'))),
+        ),
+      );
+    });
+
+    test('status failure still serves a valid cached playable row', () async {
+      await PlexApiCache.instance.put(
+        buildPlexProfileScopeId(serverId: ServerId('server-id'), profileId: 'test-profile').cacheServerId,
+        '/library/metadata/42',
+        playableBody(),
+      );
+      final client = makeClient((_) async => http.Response('{}', 500, headers: {'content-type': 'application/json'}));
+      addTearDown(client.close);
+
+      final data = await client.getVideoPlaybackData('42');
+
+      expect(data.hasValidVideoUrl, isTrue);
+      expect(data.videoUrl, contains('/library/parts/10/file.mkv'));
+    });
+
+    test('external URL and download resolution propagate typed request failures', () async {
+      final client = makeClient((_) async => http.Response('{}', 401, headers: {'content-type': 'application/json'}));
+      addTearDown(client.close);
+      final item = testMediaItem(id: '42', backend: MediaBackend.plex, kind: MediaKind.movie, serverId: 'server-id');
+
+      await expectLater(client.resolveExternalPlaybackUrl(item), throwsA(isA<MediaServerHttpException>()));
+      await expectLater(client.resolveDownload(item), throwsA(isA<MediaServerHttpException>()));
+    });
   });
 }

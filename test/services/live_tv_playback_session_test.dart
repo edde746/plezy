@@ -13,6 +13,8 @@ import 'package:plezy/models/plex/plex_config.dart';
 import 'package:plezy/services/jellyfin_client.dart';
 import 'package:plezy/services/plex_api_cache.dart';
 import 'package:plezy/services/plex_client.dart';
+import 'package:plezy/services/playback_initialization_types.dart';
+import '../test_helpers/backend_client_fixtures.dart';
 
 /// Pins the [LiveTvPlaybackSession] lifecycle on both backends — the
 /// per-backend protocol that used to be hand-rolled (3×) inside the player's
@@ -63,7 +65,7 @@ void main() {
     PlexClient makeClient(
       Future<http.Response> Function(http.Request request) handler, {
       List<String>? prioritizedEndpoints,
-    }) => PlexClient.forTesting(
+    }) => testPlexClient(
       config: PlexConfig(
         baseUrl: 'https://plex.example.com',
         token: 'tok',
@@ -279,6 +281,66 @@ void main() {
 
       // Recovery re-opens the negotiated HLS URL.
       expect(await session.recover(directStream: false, directStreamAudio: false), same(session));
+    });
+
+    test('startPlayback propagates status and cancellation failures', () async {
+      final handlers = <(String, Future<http.Response> Function(http.Request))>[
+        ('401', (_) async => http.Response('{}', 401, headers: {'content-type': 'application/json'})),
+        ('500', (_) async => http.Response('{}', 500, headers: {'content-type': 'application/json'})),
+        ('cancelled', (request) async => throw http.RequestAbortedException(request.url)),
+      ];
+
+      for (final (name, handler) in handlers) {
+        final client = JellyfinClient.forTesting(connection: conn(), httpClient: MockClient(handler));
+        addTearDown(client.close);
+        await expectLater(
+          client.liveTv.startPlayback('channel-1'),
+          throwsA(isA<MediaServerHttpException>()),
+          reason: name,
+        );
+      }
+    });
+
+    test('malformed successful playback data throws distinctly', () async {
+      final missingSources = JellyfinClient.forTesting(
+        connection: conn(),
+        httpClient: MockClient((_) async => jsonResponse({'PlaySessionId': 'play-1'})),
+      );
+      addTearDown(missingSources.close);
+      await expectLater(
+        missingSources.liveTv.startPlayback('channel-1'),
+        throwsA(
+          isA<MediaServerHttpException>()
+              .having((error) => error.statusCode, 'statusCode', 200)
+              .having((error) => error.responseData, 'responseData', isNull),
+        ),
+      );
+
+      final malformedSource = JellyfinClient.forTesting(
+        connection: conn(),
+        httpClient: MockClient(
+          (_) async => jsonResponse({
+            'MediaSources': ['invalid'],
+          }),
+        ),
+      );
+      addTearDown(malformedSource.close);
+      await expectLater(
+        malformedSource.liveTv.startPlayback('channel-1'),
+        throwsA(
+          isA<PlaybackException>().having((error) => error.reason, 'reason', PlaybackFailureReason.invalidPlaybackData),
+        ),
+      );
+    });
+
+    test('only a valid empty source list returns no live stream', () async {
+      final client = JellyfinClient.forTesting(
+        connection: conn(),
+        httpClient: MockClient((_) async => jsonResponse({'MediaSources': []})),
+      );
+      addTearDown(client.close);
+
+      expect(await client.liveTv.startPlayback('channel-1'), isNull);
     });
   });
 }

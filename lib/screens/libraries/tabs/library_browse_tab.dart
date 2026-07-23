@@ -536,10 +536,10 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
     // `/sorts`; Jellyfin maps `/Items/Filters` into the same shape with
     // values pre-cached and a hardcoded client-side sort list. Both flow
     // through the unified [MediaServerClient.fetchLibraryFiltersWithValues].
-    final client = context.getMediaClientForLibrary(widget.library);
-    final loader = LibraryFilterSortLoader(clientFor: (_) => client);
 
     try {
+      final client = context.getMediaClientForLibrary(widget.library);
+      final loader = LibraryFilterSortLoader(clientFor: (_) => client);
       final storage = await StorageService.getInstance();
       final savedFilters = storage.getLibraryFilters(sectionId: widget.library.globalKey);
       final savedSort = storage.getLibrarySort(widget.library.globalKey);
@@ -605,7 +605,8 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
   }
 
   void _loadJellyfinFiltersInBackground(int generation) {
-    final client = context.getMediaClientForLibrary(widget.library);
+    final client = context.tryGetMediaClientForServer(serverIdOrNull(widget.library.serverId));
+    if (client == null) return;
     unawaited(
       client
           .fetchLibraryFiltersWithValues(widget.library.id, libraryKind: widget.library.kind)
@@ -1612,7 +1613,8 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
     // Prefetch 2 rows beyond visible area
     final prefetchEnd = visibleEnd + 2 * _scrollMetrics.columnCount;
 
-    final client = getMediaClientForLibrary();
+    final client = context.tryGetMediaClientForServer(serverIdOrNull(widget.library.serverId));
+    if (client == null) return;
     final devicePixelRatio = MediaImageHelper.effectiveDevicePixelRatio(context);
     final episodePosterMode = context.settingsRead(SettingsService.episodePosterMode);
 

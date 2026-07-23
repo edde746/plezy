@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/i18n/strings.g.dart';
 import 'package:plezy/media/media_backend.dart';
@@ -6,6 +7,7 @@ import 'package:plezy/media/media_item.dart';
 import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/media/play_queue.dart';
 import 'package:plezy/mpv/mpv.dart';
+import 'package:plezy/media/media_source_info.dart';
 import 'package:plezy/providers/playback_state_provider.dart';
 import 'package:plezy/services/settings_service.dart';
 import 'package:plezy/theme/mono_tokens.dart';
@@ -90,6 +92,7 @@ void main() {
           player: _FakePlayer(),
           chapters: const [],
           chaptersLoaded: true,
+          canControl: true,
           showQueueTab: true,
           onQueueItemSelected: (_) {},
         ),
@@ -100,6 +103,76 @@ void main() {
     final thumbnails = tester.widgetList<MediaSelectorThumbnail>(find.byType(MediaSelectorThumbnail)).toList();
 
     expect(thumbnails.map((thumbnail) => thumbnail.blurThumbnail), [true, false, false]);
+  });
+
+  testWidgets('denied chapter remains visible but touch and select do not seek', (tester) async {
+    final playback = PlaybackStateProvider();
+    addTearDown(playback.dispose);
+    final player = _FakePlayer();
+    final stripKey = GlobalKey<ContentStripState>();
+    final chapter = MediaChapter(id: 1, startTimeOffset: 10000, title: 'Chapter One');
+
+    await tester.pumpWidget(
+      _queueHarness(
+        playback: playback,
+        child: ContentStrip(
+          key: stripKey,
+          player: player,
+          chapters: [chapter],
+          chaptersLoaded: true,
+          canControl: false,
+          useFocusNavigation: true,
+        ),
+      ),
+    );
+    await tester.pump();
+
+    expect(find.text('Chapter One'), findsOneWidget);
+    await tester.tap(find.text('Chapter One'));
+    stripKey.currentState!.requestInitialFocus();
+    await tester.pump();
+    await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+    await tester.pump();
+    expect(player.seeks, isEmpty);
+  });
+
+  testWidgets('authorized chapter touch seeks exactly once', (tester) async {
+    final playback = PlaybackStateProvider();
+    addTearDown(playback.dispose);
+    final player = _FakePlayer();
+    final chapter = MediaChapter(id: 1, startTimeOffset: 10000, title: 'Chapter One');
+
+    await tester.pumpWidget(
+      _queueHarness(
+        playback: playback,
+        child: ContentStrip(player: player, chapters: [chapter], chaptersLoaded: true, canControl: true),
+      ),
+    );
+    await tester.pump();
+    await tester.tap(find.text('Chapter One'));
+    await tester.pump();
+    expect(player.seeks, [const Duration(seconds: 10)]);
+  });
+
+  testWidgets('missing authorized queue callback keeps queue items non-interactive', (tester) async {
+    final playback = _playbackWithQueue();
+    addTearDown(playback.dispose);
+
+    await tester.pumpWidget(
+      _queueHarness(
+        playback: playback,
+        child: ContentStrip(
+          player: _FakePlayer(),
+          chapters: const [],
+          chaptersLoaded: true,
+          canControl: true,
+          showQueueTab: true,
+          onQueueItemSelected: null,
+        ),
+      ),
+    );
+    await tester.pump();
+    expect(find.text('Spoiler Episode'), findsNothing);
   });
 
   testWidgets('queue sheet blurs spoiler episode thumbnails', (tester) async {
@@ -169,8 +242,37 @@ MediaItem _episode(String id, {required String title, int? viewCount}) {
 }
 
 class _FakePlayer implements Player {
+  final List<Duration> seeks = [];
+
   @override
-  PlayerState get state => PlayerState();
+  PlayerState get state => PlayerState(duration: const Duration(minutes: 30));
+
+  @override
+  PlayerStreams get streams => const PlayerStreams(
+    playing: Stream<bool>.empty(),
+    completed: Stream<bool>.empty(),
+    buffering: Stream<bool>.empty(),
+    position: Stream<Duration>.empty(),
+    duration: Stream<Duration>.empty(),
+    seekable: Stream<bool>.empty(),
+    buffer: Stream<Duration>.empty(),
+    volume: Stream<double>.empty(),
+    rate: Stream<double>.empty(),
+    tracks: Stream<Tracks>.empty(),
+    track: Stream<TrackSelection>.empty(),
+    log: Stream<PlayerLog>.empty(),
+    error: Stream<PlayerError>.empty(),
+    audioDevice: Stream<AudioDevice>.empty(),
+    audioDevices: Stream<List<AudioDevice>>.empty(),
+    bufferRanges: Stream<List<BufferRange>>.empty(),
+    playbackRestart: Stream<void>.empty(),
+    backendSwitched: Stream<void>.empty(),
+  );
+
+  @override
+  Future<void> seek(Duration position) async {
+    seeks.add(position);
+  }
 
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);

@@ -56,3 +56,48 @@ target_include_directories(${BINARY_NAME} PRIVATE "${CMAKE_SOURCE_DIR}/../shared
 
 # Run the Flutter tool portions of the build. This must not be removed.
 add_dependencies(${BINARY_NAME} flutter_assemble)
+
+option(PLEZY_BUILD_MPV_PROPERTY_CONTRACT_TESTS
+  "Build the focused Windows mpv property-result contract tests" OFF)
+if(PLEZY_BUILD_MPV_PROPERTY_CONTRACT_TESTS)
+  enable_testing()
+
+  add_executable(mpv_property_result_contract_test
+    "../../shared/mpv/mpv_player_common_test.cpp"
+  )
+  apply_standard_settings(mpv_property_result_contract_test)
+  target_link_libraries(mpv_property_result_contract_test PRIVATE "${MPV_LIB_DIR}/libmpv.dll.a")
+  target_include_directories(mpv_property_result_contract_test PRIVATE "${MPV_INCLUDE_DIR}")
+
+  add_executable(mpv_player_property_contract_test
+    "mpv/mpv_player.cpp"
+    "mpv/mpv_player_property_contract_test.cpp"
+  )
+  apply_standard_settings(mpv_player_property_contract_test)
+  target_compile_definitions(mpv_player_property_contract_test PRIVATE "NOMINMAX")
+  target_link_libraries(
+    mpv_player_property_contract_test
+    PRIVATE flutter "${MPV_LIB_DIR}/libmpv.dll.a" simdutf "user32.lib"
+  )
+  target_include_directories(
+    mpv_player_property_contract_test
+    PRIVATE
+      "${CMAKE_SOURCE_DIR}"
+      "${CMAKE_CURRENT_SOURCE_DIR}"
+      "${MPV_INCLUDE_DIR}"
+      "${CMAKE_SOURCE_DIR}/../shared/cpp"
+  )
+
+  foreach(test_target IN ITEMS mpv_property_result_contract_test mpv_player_property_contract_test)
+    add_custom_command(
+      TARGET ${test_target}
+      POST_BUILD
+      COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        "${MPV_LIB_DIR}/libmpv-2.dll"
+        "$<TARGET_FILE_DIR:${test_target}>"
+    )
+  endforeach()
+
+  add_test(NAME mpv_property_result_contract_test COMMAND mpv_property_result_contract_test)
+  add_test(NAME mpv_player_property_contract_test COMMAND mpv_player_property_contract_test)
+endif()

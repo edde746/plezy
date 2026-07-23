@@ -160,7 +160,7 @@ void main() {
   late HiddenLibrariesProvider hiddenLibraries;
   late LibrariesProvider libraries;
   late DiscoverProvider provider;
-  late List<List<MediaItem>> shelfSyncs;
+  late List<(String, List<MediaItem>)> shelfSyncs;
   bool isBinding = false;
 
   setUp(() async {
@@ -180,8 +180,9 @@ void main() {
       multiServer,
       hiddenLibraries,
       libraries,
+      profileId: 'profile-a',
       isProfileBinding: () => isBinding,
-      syncSystemShelf: (items) async => shelfSyncs.add(List<MediaItem>.of(items)),
+      syncSystemShelf: (owner, items) async => shelfSyncs.add((owner, List<MediaItem>.of(items))),
     );
   });
 
@@ -232,7 +233,13 @@ void main() {
   });
 
   test('dispose during an in-flight coalesced load prevents trailing work and commits', () async {
-    final scoped = DiscoverProvider(multiServer, hiddenLibraries, libraries, isProfileBinding: () => isBinding);
+    final scoped = DiscoverProvider(
+      multiServer,
+      hiddenLibraries,
+      libraries,
+      profileId: 'profile-a',
+      isProfileBinding: () => isBinding,
+    );
     final gate = Completer<void>();
     aggregation.onDeckGate = gate.future;
     aggregation.hubGate = gate.future;
@@ -302,6 +309,50 @@ void main() {
     expect(aggregation.hubCalls, hubCallsBefore);
   });
 
+  test('full, background, and delta publication forward the profile owner', () async {
+    aggregation.onDeckResult = () => [_item('full')];
+    aggregation.hubsResult = () => [_hub('hub')];
+    await provider.load();
+    await pumpEventQueue();
+    expect(shelfSyncs, isNotEmpty);
+    expect(shelfSyncs.every((sync) => sync.$1 == 'profile-a'), isTrue);
+
+    shelfSyncs.clear();
+    aggregation.onDeckResult = () => [_item('refresh')];
+    await provider.refreshContinueWatching();
+    await pumpEventQueue();
+    expect(shelfSyncs.map((sync) => sync.$1), ['profile-a']);
+
+    shelfSyncs.clear();
+    aggregation.onDeckSucceededServerIds = {'server_2'};
+    aggregation.hubSucceededServerIds = {'server_2'};
+    aggregation.onDeckResult = () => [_item('delta', serverId: 'server_2')];
+    aggregation.hubsResult = () => [_hub('delta-hub', serverId: 'server_2')];
+    await provider.syncToOnlineServers({'server_1', 'server_2'});
+    await pumpEventQueue();
+    expect(shelfSyncs.map((sync) => sync.$1), ['profile-a']);
+  });
+
+  test('null profile owner never publishes to the system shelf', () async {
+    final calls = <String>[];
+    final ownerless = DiscoverProvider(
+      multiServer,
+      hiddenLibraries,
+      libraries,
+      profileId: null,
+      isProfileBinding: () => isBinding,
+      syncSystemShelf: (owner, items) async => calls.add(owner),
+    );
+    addTearDown(ownerless.dispose);
+    aggregation.onDeckResult = () => [_item('private')];
+    aggregation.hubsResult = () => [_hub('hub')];
+
+    await ownerless.load();
+    await pumpEventQueue();
+
+    expect(calls, isEmpty);
+  });
+
   test('sub-threshold progress patches the row without refetching', () async {
     final playing = _item('ep-1').copyWith(durationMs: 100000, viewOffsetMs: 10000, viewCount: 0);
     aggregation.onDeckResult = () => [playing, for (var i = 2; i <= 21; i++) _item('ep-$i')];
@@ -322,7 +373,8 @@ void main() {
     expect(aggregation.onDeckCalls, onDeckCallsBefore);
     expect(aggregation.hubCalls, hubCallsBefore);
     expect(shelfSyncs, hasLength(1));
-    expect(shelfSyncs.single.first.viewOffsetMs, 30000);
+    expect(shelfSyncs.single.$1, 'profile-a');
+    expect(shelfSyncs.single.$2.first.viewOffsetMs, 30000);
   });
 
   test('watched-threshold progress refreshes continue watching only', () async {
@@ -476,6 +528,7 @@ void main() {
       emptyMultiServer,
       hiddenLibraries,
       libraries,
+      profileId: 'profile-a',
       isProfileBinding: () => isBinding,
     );
     addTearDown(binderProvider.dispose);
@@ -770,7 +823,13 @@ void main() {
 
   test('dispose unregisters the online-servers listener', () {
     final before = multiServer.onlineServersListenerCount;
-    final extra = DiscoverProvider(multiServer, hiddenLibraries, libraries, isProfileBinding: () => isBinding);
+    final extra = DiscoverProvider(
+      multiServer,
+      hiddenLibraries,
+      libraries,
+      profileId: 'profile-a',
+      isProfileBinding: () => isBinding,
+    );
     expect(multiServer.onlineServersListenerCount, before + 1);
 
     extra.dispose();

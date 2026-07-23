@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -15,6 +17,7 @@ import 'package:plezy/media/media_server_client.dart';
 import 'package:plezy/media/server_capabilities.dart';
 import 'package:plezy/providers/download_provider.dart';
 import 'package:plezy/providers/multi_server_provider.dart';
+import 'package:plezy/providers/playback_state_provider.dart';
 import 'package:plezy/screens/playlist/playlist_detail_screen.dart';
 import 'package:plezy/screens/playlist/playlist_item_card.dart';
 import 'package:plezy/services/data_aggregation_service.dart';
@@ -421,6 +424,38 @@ void main() {
     expect(find.byType(MediaCard), findsOneWidget);
     expect(reloads, 0);
   });
+  testWidgets('Jellyfin playlist Play shows cancellable loading and commits no queue on cancel', (tester) async {
+    final items = [
+      testMediaItem(
+        id: 'jf-movie',
+        backend: MediaBackend.jellyfin,
+        kind: MediaKind.movie,
+        title: 'Jellyfin Movie',
+        serverId: 'server_1',
+      ),
+    ];
+    final harness = await _createHarness(items, backend: MediaBackend.jellyfin);
+    await tester.pumpWidget(
+      harness.wrap(const SizedBox(width: 1280, height: 720, child: PlaylistDetailScreen(playlist: _jellyfinPlaylist))),
+    );
+    await tester.pumpAndSettle();
+    harness.client.blockRequests = true;
+
+    await tester.tap(find.byTooltip(t.common.play).first);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+
+    expect(find.byType(AlertDialog), findsOneWidget);
+    expect(find.text(t.common.cancel), findsOneWidget);
+    expect(harness.client.activeAbort, isNotNull);
+    await tester.tap(find.text(t.common.cancel));
+    await tester.pumpAndSettle();
+
+    expect(harness.client.activeAbort!.isAborted, isTrue);
+    expect(harness.playbackState.isQueueActive, isFalse);
+    expect(find.byType(PlaylistDetailScreen), findsOneWidget);
+    expect(find.byType(SnackBar), findsNothing);
+  });
 }
 
 Future<void> _pushPlaylistRoute(WidgetTester tester, _PlaylistHarness harness) async {
@@ -463,6 +498,15 @@ const _playlist = MediaPlaylist(
   serverName: 'Server',
 );
 
+const _jellyfinPlaylist = MediaPlaylist(
+  id: 'playlist_jf',
+  backend: MediaBackend.jellyfin,
+  title: 'Jellyfin Playlist',
+  playlistType: 'video',
+  serverId: 'server_1',
+  serverName: 'Server',
+);
+
 const _audioPlaylist = MediaPlaylist(
   id: 'audio_playlist_1',
   backend: MediaBackend.plex,
@@ -496,7 +540,12 @@ List<MediaItem> _mediaItems(int count) {
   );
 }
 
-Future<_PlaylistHarness> _createHarness(List<MediaItem> items, {int? failOnceAt, bool deleteResult = false}) async {
+Future<_PlaylistHarness> _createHarness(
+  List<MediaItem> items, {
+  int? failOnceAt,
+  bool deleteResult = false,
+  MediaBackend backend = MediaBackend.plex,
+}) async {
   await SettingsService.getInstance();
 
   final db = AppDatabase.forTesting(NativeDatabase.memory());
@@ -512,26 +561,39 @@ Future<_PlaylistHarness> _createHarness(List<MediaItem> items, {int? failOnceAt,
   final downloadProvider = DownloadProvider.forTesting(downloadManager: downloadManager, database: db);
   await downloadProvider.ensureInitialized();
 
-  final client = _PagedPlaylistClient(items, failOnceAt: failOnceAt, deleteResult: deleteResult);
+  final client = _PagedPlaylistClient(items, failOnceAt: failOnceAt, deleteResult: deleteResult, backend: backend);
   final manager = MultiServerManager()..debugRegisterClientForTesting(client);
   final multiServerProvider = MultiServerProvider(manager, DataAggregationService(manager));
+  final playbackState = PlaybackStateProvider();
 
   addTearDown(() async {
     downloadProvider.dispose();
     downloadManager.dispose();
     multiServerProvider.dispose();
+    playbackState.dispose();
     await db.close();
   });
 
-  return _PlaylistHarness(client: client, multiServerProvider: multiServerProvider, downloadProvider: downloadProvider);
+  return _PlaylistHarness(
+    client: client,
+    multiServerProvider: multiServerProvider,
+    downloadProvider: downloadProvider,
+    playbackState: playbackState,
+  );
 }
 
 class _PlaylistHarness {
   final _PagedPlaylistClient client;
   final MultiServerProvider multiServerProvider;
   final DownloadProvider downloadProvider;
+  final PlaybackStateProvider playbackState;
 
-  const _PlaylistHarness({required this.client, required this.multiServerProvider, required this.downloadProvider});
+  const _PlaylistHarness({
+    required this.client,
+    required this.multiServerProvider,
+    required this.downloadProvider,
+    required this.playbackState,
+  });
 
   Widget wrap(Widget child, {TargetPlatform platform = TargetPlatform.android}) {
     return TranslationProvider(
@@ -539,6 +601,7 @@ class _PlaylistHarness {
         providers: [
           ChangeNotifierProvider<MultiServerProvider>.value(value: multiServerProvider),
           ChangeNotifierProvider<DownloadProvider>.value(value: downloadProvider),
+          ChangeNotifierProvider<PlaybackStateProvider>.value(value: playbackState),
         ],
         child: MaterialApp(
           theme: monoTheme(dark: true).copyWith(platform: platform),
@@ -553,12 +616,22 @@ class _PagedPlaylistClient implements MediaServerClient {
   final List<MediaItem> items;
   final int? failOnceAt;
   final bool deleteResult;
+  final MediaBackend _backend;
+  bool blockRequests = false;
+  AbortController? activeAbort;
   final List<int?> requestedStarts = [];
   final List<int?> requestedSizes = [];
   int deleteCalls = 0;
   bool _hasFailed = false;
 
-  _PagedPlaylistClient(this.items, {this.failOnceAt, this.deleteResult = false});
+  factory _PagedPlaylistClient(
+    List<MediaItem> items, {
+    int? failOnceAt,
+    bool deleteResult = false,
+    MediaBackend backend = MediaBackend.plex,
+  }) => _PagedPlaylistClient._(items, failOnceAt, deleteResult, backend);
+
+  _PagedPlaylistClient._(this.items, this.failOnceAt, this.deleteResult, this._backend);
 
   @override
   ServerId get serverId => ServerId('server_1');
@@ -567,15 +640,25 @@ class _PagedPlaylistClient implements MediaServerClient {
   String? get serverName => 'Server';
 
   @override
-  MediaBackend get backend => MediaBackend.plex;
+  MediaBackend get backend => _backend;
 
   @override
-  ServerCapabilities get capabilities => ServerCapabilities.plex;
+  ServerCapabilities get capabilities =>
+      _backend == MediaBackend.jellyfin ? ServerCapabilities.jellyfin : ServerCapabilities.plex;
 
   @override
   Future<LibraryPage<MediaItem>> fetchPlaylistPage(String id, {int? start, int? size, AbortController? abort}) async {
     requestedStarts.add(start);
     requestedSizes.add(size);
+    if (blockRequests) {
+      activeAbort = abort;
+      if (abort == null) {
+        await Completer<void>().future;
+      } else {
+        await abort.trigger;
+        abort.throwIfAborted();
+      }
+    }
 
     final offset = start ?? 0;
     if (!_hasFailed && offset == failOnceAt) {

@@ -287,4 +287,114 @@ void main() {
       },
     );
   });
+
+  for (final channel in [
+    (label: 'video', method: 'com.plezy/mpv_player', events: 'com.plezy/mpv_player/events', audio: false),
+    (label: 'audio', method: 'com.plezy/mpv_audio_player', events: 'com.plezy/mpv_audio_player/events', audio: true),
+  ]) {
+    group('${channel.label} property bridge', () {
+      test('propagates SET_PROPERTY_FAILED', () async {
+        final calls = <MethodCall>[];
+        await withMockPlayerChannels(
+          methodChannelName: channel.method,
+          eventChannelName: channel.events,
+          methodHandler: (call) async {
+            calls.add(call);
+            if (call.method == 'initialize') return true;
+            if (call.method == 'setProperty') {
+              final arguments = call.arguments as Map;
+              if (arguments['name'] == 'unsupported-property') {
+                throw PlatformException(code: 'SET_PROPERTY_FAILED', message: 'Property write rejected');
+              }
+            }
+            return null;
+          },
+          testBody: () async {
+            final player = channel.audio ? PlayerNative.audio() : PlayerNative();
+            try {
+              await expectLater(
+                player.setProperty('unsupported-property', 'invalid'),
+                throwsA(isA<PlatformException>().having((error) => error.code, 'code', 'SET_PROPERTY_FAILED')),
+              );
+
+              final initializeIndex = calls.indexWhere((call) => call.method == 'initialize');
+              final propertyIndex = calls.indexWhere(
+                (call) => call.method == 'setProperty' && (call.arguments as Map)['name'] == 'unsupported-property',
+              );
+              expect(initializeIndex, isNonNegative);
+              expect(propertyIndex, greaterThan(initializeIndex));
+            } finally {
+              await player.dispose();
+            }
+          },
+        );
+      });
+
+      test('failed setVolume leaves published volume unchanged', () async {
+        await withMockPlayerChannels(
+          methodChannelName: channel.method,
+          eventChannelName: channel.events,
+          methodHandler: (call) async {
+            if (call.method == 'initialize') return true;
+            if (call.method == 'setProperty') {
+              final arguments = call.arguments as Map;
+              if (arguments['name'] == 'volume') {
+                throw PlatformException(code: 'SET_PROPERTY_FAILED', message: 'Property write rejected');
+              }
+            }
+            return null;
+          },
+          testBody: () async {
+            final player = channel.audio ? PlayerNative.audio() : PlayerNative();
+            try {
+              final initialVolume = player.state.volume;
+              await expectLater(
+                player.setVolume(37),
+                throwsA(isA<PlatformException>().having((error) => error.code, 'code', 'SET_PROPERTY_FAILED')),
+              );
+              expect(player.state.volume, initialVolume);
+            } finally {
+              await player.dispose();
+            }
+          },
+        );
+      });
+
+      test('successful setVolume publishes only after the accepted write', () async {
+        final volumeWriteStarted = Completer<void>();
+        final acceptVolumeWrite = Completer<void>();
+        await withMockPlayerChannels(
+          methodChannelName: channel.method,
+          eventChannelName: channel.events,
+          methodHandler: (call) async {
+            if (call.method == 'initialize') return true;
+            if (call.method == 'setProperty') {
+              final arguments = call.arguments as Map;
+              if (arguments['name'] == 'volume') {
+                volumeWriteStarted.complete();
+                await acceptVolumeWrite.future;
+              }
+            }
+            return null;
+          },
+          testBody: () async {
+            final player = channel.audio ? PlayerNative.audio() : PlayerNative();
+            try {
+              final initialVolume = player.state.volume;
+              final write = player.setVolume(42);
+              await volumeWriteStarted.future;
+              expect(player.state.volume, initialVolume);
+
+              acceptVolumeWrite.complete();
+              await write;
+              expect(player.state.volume, 42);
+            } finally {
+              if (!acceptVolumeWrite.isCompleted) acceptVolumeWrite.complete();
+              await player.dispose();
+            }
+          },
+        );
+      });
+    });
+  }
 }

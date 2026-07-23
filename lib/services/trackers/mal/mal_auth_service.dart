@@ -56,7 +56,7 @@ class MalAuthService extends OAuthProxyAuthServiceBase {
     );
 
     if (res.statusCode != 200) {
-      appLogger.w('MAL: refresh failed (${res.statusCode}): ${res.body}');
+      appLogger.w('MAL: refresh failed (HTTP ${res.statusCode})');
       throw TrackerAuthException(
         service: TrackerService.mal,
         message: 'Refresh failed: HTTP ${res.statusCode}',

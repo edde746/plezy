@@ -206,6 +206,7 @@ class ExternalPlayerService {
 
     WatchStateNotifier().notifyProgress(
       item: metadata,
+      cacheServerId: client.cacheServerId,
       viewOffset: position.inMilliseconds,
       duration: duration.inMilliseconds,
       watchedThreshold: client.watchedThreshold,

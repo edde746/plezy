@@ -6,17 +6,36 @@ import 'package:flutter/foundation.dart';
 
 import '../connection/connection.dart';
 import '../media/media_server_client.dart';
+import '../exceptions/media_server_exceptions.dart';
+
 import 'jellyfin_client.dart';
 import 'jellyfin_endpoint_discovery.dart';
 import 'plex_client.dart';
 import '../models/plex/plex_config.dart';
 import '../utils/app_logger.dart';
 import '../utils/media_server_timeouts.dart';
+import '../utils/active_client_scope.dart';
 import '../utils/future_extensions.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 import 'plex_auth_service.dart';
 import 'settings_service.dart';
 import 'storage_service.dart';
+
+typedef PlexClientFactory =
+    Future<PlexClient> Function(
+      PlexConfig config, {
+      required ServerId serverId,
+      required PlexProfileScopeId profileScopeId,
+      String? serverName,
+      List<String>? prioritizedEndpoints,
+      Future<void> Function(String newBaseUrl)? onEndpointChanged,
+      VoidCallback? onAllEndpointsExhausted,
+      bool? seedTranscoderVideoSupport,
+    });
+
+bool _isMediaServerAuthFailure(Object error) =>
+    error is MediaServerAuthException ||
+    error is MediaServerHttpException && (error.statusCode == 401 || error.statusCode == 403);
 
 /// Manages multiple media-server connections simultaneously.
 ///
@@ -25,6 +44,19 @@ import 'storage_service.dart';
 /// backend. Onboarding helpers branch on backend (Plex `PlexServer`,
 /// Jellyfin `JellyfinConnection`) and instantiate the matching client.
 class MultiServerManager {
+  MultiServerManager({
+    PlexClientFactory plexClientFactory = PlexClient.create,
+    Stream<List<ConnectivityResult>> Function()? connectivityChanges,
+    Duration connectivityDebounceDuration = const Duration(seconds: 2),
+  }) : this._(plexClientFactory, connectivityChanges ?? _defaultConnectivityChanges, connectivityDebounceDuration);
+
+  MultiServerManager._(this._plexClientFactory, this._connectivityChanges, this._connectivityDebounceDuration);
+
+  static Stream<List<ConnectivityResult>> _defaultConnectivityChanges() => Connectivity().onConnectivityChanged;
+
+  final PlexClientFactory _plexClientFactory;
+  final Stream<List<ConnectivityResult>> Function() _connectivityChanges;
+  final Duration _connectivityDebounceDuration;
   FutureOr<void> Function(JellyfinConnection connection)? onJellyfinConnectionUpdated;
 
   final Map<String, MediaServerClient> _clients = {};
@@ -69,6 +101,7 @@ class MultiServerManager {
   /// endpoint optimization use the right identity (each account has its own
   /// device row on plex.tv).
   final Map<String, String> _clientIdByServer = {};
+  final Map<String, PlexProfileScopeId> _plexScopeByServer = {};
 
   String? _resolveClientIdentifier(ServerId serverId) => _clientIdByServer[serverId];
 
@@ -119,6 +152,17 @@ class MultiServerManager {
   /// Get client for specific server.
   MediaServerClient? getClient(ServerId serverId) => _clients[serverId];
 
+  /// Resolve an exact private client namespace without falling back to a
+  /// different active user on the same public server.
+  MediaServerClient? getClientByScope(String clientScopeId) {
+    final jellyfin = getJellyfinClientByCompoundId(clientScopeId);
+    if (jellyfin != null) return jellyfin;
+    final plexScope = PlexProfileScopeId.tryParse(clientScopeId);
+    if (plexScope == null || _plexScopeByServer[plexScope.publicServerId] != plexScope) return null;
+    final client = _clients[plexScope.publicServerId];
+    return client is PlexClient && client.profileScopeId == plexScope ? client : null;
+  }
+
   /// Server ids visible to the active profile; `null` means no restriction.
   /// Owned here rather than on `MultiServerProvider` so non-UI consumers
   /// (the download client resolver) apply the same filter the UI does —
@@ -131,14 +175,14 @@ class MultiServerManager {
 
   bool isServerVisible(ServerId serverId) => _visibleServerIds?.contains(serverId) ?? true;
 
-  /// Resolve the client for a queued download: scope-aware (Jellyfin compound
-  /// connection ids) and restricted to servers visible to the active profile,
-  /// so background downloads never run against another profile's server
-  /// during or after a profile switch.
+  /// Resolve the client for a queued download. A supplied private namespace
+  /// must match exactly; falling back to another active user would run work
+  /// under the wrong authenticated identity.
   MediaServerClient? resolveDownloadClient(ServerId serverId, {String? clientScopeId}) {
     if (!isServerVisible(serverId)) return null;
     if (clientScopeId != null && clientScopeId.isNotEmpty) {
-      return getJellyfinClientByCompoundId(clientScopeId) ?? getClient(serverId);
+      final scoped = getClientByScope(clientScopeId);
+      return scoped?.serverId == serverId ? scoped : null;
     }
     return getClient(serverId);
   }
@@ -178,6 +222,7 @@ class MultiServerManager {
   void debugRegisterClientForTesting(MediaServerClient client, {bool online = true}) {
     _clients[client.serverId] = client;
     _serverStatus[client.serverId] = online;
+    if (client is PlexClient) _plexScopeByServer[client.serverId] = client.profileScopeId;
   }
 
   @visibleForTesting
@@ -250,10 +295,14 @@ class MultiServerManager {
   /// Check if a server is online
   bool isServerOnline(ServerId serverId) => _serverStatus[serverId] ?? false;
 
-  /// Check whether the active or scoped client for [serverId] is online.
+  /// Check whether the active or exact scoped client for [serverId] is online.
   bool isClientOnline(ServerId serverId, {String? clientScopeId}) {
     if (clientScopeId != null && clientScopeId.isNotEmpty) {
-      return _jellyfinHealthByCompoundId[clientScopeId] == HealthStatus.online;
+      final client = getClientByScope(clientScopeId);
+      if (client == null || client.serverId != serverId) return false;
+      if (client is JellyfinClient) {
+        return _jellyfinHealthByCompoundId[clientScopeId] == HealthStatus.online;
+      }
     }
     return isServerOnline(serverId);
   }
@@ -262,7 +311,11 @@ class MultiServerManager {
   ///
   /// Handles finding working connection, loading cached endpoint,
   /// creating config, and building client with failover support.
-  Future<PlexClient> _createClientForServer({required PlexServer server, required String clientIdentifier}) async {
+  Future<PlexClient> _createClientForServer({
+    required PlexServer server,
+    required String clientIdentifier,
+    required PlexProfileScopeId profileScopeId,
+  }) async {
     final serverId = server.clientIdentifier;
     final stopwatch = Stopwatch()..start();
 
@@ -301,9 +354,10 @@ class MultiServerManager {
       languageCode: _currentPlexLanguageCode,
     );
 
-    final client = await PlexClient.create(
+    final client = await _plexClientFactory(
       config,
       serverId: ServerId(serverId),
+      profileScopeId: profileScopeId,
       serverName: server.name,
       prioritizedEndpoints: prioritizedEndpoints,
       onEndpointChanged: (newUrl) async {
@@ -417,6 +471,7 @@ class MultiServerManager {
       if (client != null) _closeClient(client);
     }
     _plexServers.remove(serverId);
+    _plexScopeByServer.remove(serverId);
     _serverStatus.remove(serverId);
     _authErrorServers.remove(serverId);
     _statusController.add(Map.from(_serverStatus));
@@ -449,6 +504,7 @@ class MultiServerManager {
   /// race connections from the right identity.
   Future<int> addPlexAccount(
     PlexAccountConnection connection, {
+    required String profileId,
     Duration timeout = MediaServerTimeouts.perServerConnect,
     Function(ServerId serverId, bool success)? onServerStatus,
   }) async {
@@ -461,12 +517,15 @@ class MultiServerManager {
     int connected = 0;
     final futures = connection.servers.map((server) async {
       final serverId = server.clientIdentifier;
+      final profileScopeId = buildPlexProfileScopeId(serverId: ServerId(serverId), profileId: profileId);
       _clientIdByServer[serverId] = connection.clientIdentifier;
       _plexServers[serverId] = server;
+      _plexScopeByServer[serverId] = profileScopeId;
       try {
         final client = await _createClientForServer(
           server: server,
           clientIdentifier: connection.clientIdentifier,
+          profileScopeId: profileScopeId,
         ).namedTimeout(timeout, operation: 'connect to ${server.name}');
         final oldClient = _clients[serverId];
         if (oldClient != null) _closeClient(oldClient);
@@ -504,6 +563,7 @@ class MultiServerManager {
   /// caller's visibility filter doesn't surface unreachable servers.
   Future<Set<String>> refreshTokensForProfile(
     PlexAccountConnection connection, {
+    required String profileId,
     Duration timeout = MediaServerTimeouts.perServerConnect,
   }) async {
     final accountId = connection.id;
@@ -518,24 +578,41 @@ class MultiServerManager {
     final bound = <String>{};
     final futures = connection.servers.map((server) async {
       final serverId = server.clientIdentifier;
-      _clientIdByServer[serverId] = connection.clientIdentifier;
-      _plexServers[serverId] = server;
+      final profileScopeId = buildPlexProfileScopeId(serverId: ServerId(serverId), profileId: profileId);
       final existing = _clients[serverId];
       if (existing is PlexClient && ((_serverStatus[serverId] ?? false) || _authErrorServers.contains(serverId))) {
-        await existing.applyTokenUpdate(server.accessToken);
-        if (isStale() || !identical(_plexServers[serverId], server) || !identical(_clients[serverId], existing)) {
-          return;
+        try {
+          final applied = await existing.applyProfileUpdate(
+            newToken: server.accessToken,
+            newProfileScopeId: profileScopeId,
+          );
+          if (!applied || isStale() || !identical(_clients[serverId], existing)) return;
+
+          _clientIdByServer[serverId] = connection.clientIdentifier;
+          _plexServers[serverId] = server;
+          _plexScopeByServer[serverId] = profileScopeId;
+          _authErrorServers.remove(serverId);
+          _serverStatus[serverId] = true;
+          bound.add(serverId);
+          _connectProgressController.add((serverId: serverId, online: true));
+        } catch (e, stackTrace) {
+          if (isStale() || !identical(_clients[serverId], existing)) return;
+          appLogger.e('refreshTokensForProfile: failed to refresh ${server.name}', error: e, stackTrace: stackTrace);
+          _serverStatus[serverId] = false;
+          if (_isMediaServerAuthFailure(e)) _authErrorServers.add(serverId);
+          _connectProgressController.add((serverId: serverId, online: false));
         }
-        _authErrorServers.remove(serverId);
-        _serverStatus[serverId] = true;
-        bound.add(serverId);
-        _connectProgressController.add((serverId: serverId, online: true));
         return;
       }
+
+      _clientIdByServer[serverId] = connection.clientIdentifier;
+      _plexServers[serverId] = server;
+      _plexScopeByServer[serverId] = profileScopeId;
       try {
         final client = await _createClientForServer(
           server: server,
           clientIdentifier: connection.clientIdentifier,
+          profileScopeId: profileScopeId,
         ).namedTimeout(timeout, operation: 'connect to ${server.name}');
         if (isStale() || !identical(_plexServers[serverId], server)) {
           _closeClient(client);
@@ -552,6 +629,7 @@ class MultiServerManager {
         if (isStale() || !identical(_plexServers[serverId], server)) return;
         appLogger.e('refreshTokensForProfile: failed to connect ${server.name}', error: e, stackTrace: stackTrace);
         _serverStatus[serverId] = false;
+        if (_isMediaServerAuthFailure(e)) _authErrorServers.add(serverId);
         _connectProgressController.add((serverId: serverId, online: false));
       }
     });
@@ -595,20 +673,31 @@ class MultiServerManager {
       }
 
       var resolvedConnection = connection;
+      var endpointSelectionValidated = false;
       if (connection.baseUrls.length > 1) {
         try {
           final endpoint = await JellyfinEndpointDiscovery().raceEndpoints(
             connection.baseUrls,
             preferredUrl: connection.baseUrl,
             expectedMachineId: connection.serverMachineId,
+            // Historic alternates are independent retry candidates, not one
+            // atomic user-entered group. Reconcile each probe outcome below
+            // instead of rejecting the whole stored connection.
+            baseUrlsToValidate: const [],
           );
           resolvedConnection = connection.copyWith(
             baseUrl: endpoint.activeBaseUrl,
-            baseUrls: endpoint.baseUrls,
+            baseUrls: endpoint.reconcilePreviouslyStoredBaseUrls(connection.baseUrls),
             serverName: endpoint.serverInfo.serverName,
           );
+          endpointSelectionValidated = true;
         } catch (e, st) {
-          appLogger.w('Jellyfin endpoint race failed; using stored active URL', error: e, stackTrace: st);
+          appLogger.w(
+            'Jellyfin endpoint race failed; using only the stored active endpoint',
+            error: e.runtimeType,
+            stackTrace: st,
+          );
+          resolvedConnection = connection.copyWith(baseUrl: connection.baseUrl, baseUrls: [connection.baseUrl]);
         }
       }
 
@@ -620,10 +709,20 @@ class MultiServerManager {
       );
       // Admin status can change server-side; re-broadcast and persist so
       // admin-gated UI survives app restarts without requiring re-auth.
-      _wireJellyfinConnectionUpdates(client);
-      if (resolvedConnection.baseUrl != connection.baseUrl ||
-          !listEquals(resolvedConnection.baseUrls, connection.baseUrls)) {
-        await onJellyfinConnectionUpdated?.call(resolvedConnection);
+      _wireJellyfinConnectionUpdates(
+        client,
+        baseUrlsForPersistence: endpointSelectionValidated ? null : connection.baseUrls,
+      );
+      if (endpointSelectionValidated &&
+          (resolvedConnection.baseUrl != connection.baseUrl ||
+              !listEquals(resolvedConnection.baseUrls, connection.baseUrls))) {
+        try {
+          await onJellyfinConnectionUpdated?.call(resolvedConnection);
+        } catch (e, st) {
+          // Persistence failure does not alter the already-reconciled
+          // in-memory client.
+          appLogger.w('Failed to persist reconciled Jellyfin endpoints', error: e.runtimeType, stackTrace: st);
+        }
       }
       final compoundId = resolvedConnection.id;
       final machineId = resolvedConnection.serverMachineId;
@@ -717,7 +816,7 @@ class MultiServerManager {
     return healthy;
   }
 
-  void _wireJellyfinConnectionUpdates(JellyfinClient client) {
+  void _wireJellyfinConnectionUpdates(JellyfinClient client, {List<String>? baseUrlsForPersistence}) {
     client.onConnectionUpdated = (updated) async {
       if (_jellyfinByCompoundId[updated.id] != client) {
         appLogger.d('Ignoring stale Jellyfin connection update for ${updated.serverName}');
@@ -726,7 +825,10 @@ class MultiServerManager {
       final persist = onJellyfinConnectionUpdated;
       if (persist != null) {
         try {
-          await Future.sync(() => persist(updated));
+          final connectionToPersist = baseUrlsForPersistence == null
+              ? updated
+              : updated.copyWith(baseUrls: baseUrlsForPersistence);
+          await Future.sync(() => persist(connectionToPersist));
         } catch (e, st) {
           appLogger.w('Failed to persist Jellyfin connection update', error: e, stackTrace: st);
         }
@@ -850,8 +952,7 @@ class MultiServerManager {
 
     appLogger.i('Starting network monitoring for all servers');
     try {
-      final connectivity = Connectivity();
-      _connectivitySubscription = connectivity.onConnectivityChanged.listen(
+      _connectivitySubscription = _connectivityChanges().listen(
         (results) {
           final status = results.isNotEmpty ? results.first : ConnectivityResult.none;
 
@@ -862,7 +963,7 @@ class MultiServerManager {
 
           // Debounce rapid connectivity events (e.g. WiFi flapping) into a single trigger
           _connectivityDebounce?.cancel();
-          _connectivityDebounce = Timer(const Duration(seconds: 2), () {
+          _connectivityDebounce = Timer(_connectivityDebounceDuration, () {
             _connectivityDebounce = null;
 
             appLogger.d(
@@ -996,11 +1097,22 @@ class MultiServerManager {
       appLogger.w('Cannot reconnect ${server.name}: no client identifier cached');
       return;
     }
+    final profileScopeId = _plexScopeByServer[serverId];
+    if (profileScopeId == null) {
+      appLogger.w('Cannot reconnect ${server.name}: no Plex profile scope cached');
+      return;
+    }
 
     try {
       appLogger.d('Attempting reconnection for ${server.name}');
-      final client = await _createClientForServer(server: server, clientIdentifier: clientId);
-      if (!identical(_plexServers[serverId], server) || _resolveClientIdentifier(serverId) != clientId) {
+      final client = await _createClientForServer(
+        server: server,
+        clientIdentifier: clientId,
+        profileScopeId: profileScopeId,
+      );
+      if (!identical(_plexServers[serverId], server) ||
+          _resolveClientIdentifier(serverId) != clientId ||
+          _plexScopeByServer[serverId] != profileScopeId) {
         _closeClient(client);
         appLogger.d('Ignoring stale reconnection result for ${server.name}');
         return;
@@ -1238,6 +1350,7 @@ class MultiServerManager {
     _serverStatus.clear();
     _authErrorServers.clear();
     _clientIdByServer.clear();
+    _plexScopeByServer.clear();
     _activeOptimizations.clear();
     if (!_statusController.isClosed) {
       _statusController.add({});

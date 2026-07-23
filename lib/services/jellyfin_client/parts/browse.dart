@@ -897,44 +897,54 @@ mixin _JellyfinBrowseMethods on MediaServerCacheMixin {
   /// since those preserve the container shape (Series rows, PlaylistItemId).
   ///
   @override
-  Future<List<MediaItem>> fetchPlayableDescendants(String parentId) async {
-    final items = await _fetchAllPlayableDescendants(parentId, includeItemTypes: _playableDescendantTypes);
+  Future<List<MediaItem>> fetchPlayableDescendants(String parentId, {AbortController? abort}) async {
+    final items = await _fetchAllPlayableDescendants(
+      parentId,
+      includeItemTypes: _playableDescendantTypes,
+      abort: abort,
+    );
+    abort?.throwIfAborted();
     if (items.isNotEmpty) return items;
     // Jellyfin links music to artists via *tags*, not the folder tree — a
     // MusicArtist is usually not its tracks' ancestor, so the recursive
     // `ParentId` query above comes back empty for tag-only artists (folder-
     // backed artists resolve on the first query and never reach this).
     // Retry once by album-artist credit, tracks only.
-    return _fetchAllPlayableDescendants(parentId, includeItemTypes: 'Audio', byAlbumArtist: true);
+    return _fetchAllPlayableDescendants(parentId, includeItemTypes: 'Audio', byAlbumArtist: true, abort: abort);
   }
 
   /// Playable video descendants for a folder browse row. This includes
   /// Jellyfin's generic `Video` / `MusicVideo` kinds for home-video libraries,
   /// but deliberately excludes `Audio` so folder playback never starts music.
-  Future<List<MediaItem>> fetchPlayableFolderDescendants(String parentId) {
-    return _fetchAllPlayableDescendants(parentId, includeItemTypes: _playableFolderDescendantTypes);
+  Future<List<MediaItem>> fetchPlayableFolderDescendants(String parentId, {AbortController? abort}) {
+    return _fetchAllPlayableDescendants(parentId, includeItemTypes: _playableFolderDescendantTypes, abort: abort);
   }
 
   Future<List<MediaItem>> _fetchAllPlayableDescendants(
     String parentId, {
     required String includeItemTypes,
     bool byAlbumArtist = false,
+    AbortController? abort,
   }) async {
     final all = <MediaItem>[];
     var start = 0;
     while (true) {
+      abort?.throwIfAborted();
       final page = await _fetchPlayableDescendantsPage(
         parentId,
         start: start,
         size: _pagedListPageSize,
+        abort: abort,
         includeItemTypes: includeItemTypes,
         byAlbumArtist: byAlbumArtist,
       );
+      abort?.throwIfAborted();
       if (page.items.isEmpty) break;
       all.addAll(page.items);
       start += page.items.length;
       if (start >= page.totalCount) break;
     }
+    abort?.throwIfAborted();
     return all;
   }
 
@@ -999,12 +1009,13 @@ mixin _JellyfinBrowseMethods on MediaServerCacheMixin {
   /// Paged in [_episodeQueuePageSize] chunks so long-running shows still get
   /// a complete client-side next/previous queue without one huge response.
   @override
-  Future<List<MediaItem>?> fetchClientSideEpisodeQueue(String seriesId) async {
+  Future<List<MediaItem>?> fetchClientSideEpisodeQueue(String seriesId, {AbortController? abort}) async {
     final all = <MediaItem>[];
     var startIndex = 0;
     int? totalRecordCount;
 
     while (totalRecordCount == null || startIndex < totalRecordCount) {
+      abort?.throwIfAborted();
       final response = await _http.get(
         '/Shows/${_segment(seriesId)}/Episodes',
         queryParameters: {
@@ -1017,10 +1028,13 @@ mixin _JellyfinBrowseMethods on MediaServerCacheMixin {
           ..._episodeOrderQueryParameters,
           ...jellyfinImageQueryParameters,
         },
+        abort: abort,
       );
+      abort?.throwIfAborted();
       throwIfHttpError(response);
       final data = response.data;
       final page = _mapItems(_itemsArray(data));
+      abort?.throwIfAborted();
       all.addAll(page);
       if (data is Map<String, dynamic>) {
         final rawTotal = data['TotalRecordCount'];
@@ -1030,6 +1044,7 @@ mixin _JellyfinBrowseMethods on MediaServerCacheMixin {
       startIndex += page.length;
     }
 
+    abort?.throwIfAborted();
     // Server lists Specials first (ParentIndexNumber asc); reorder into the
     // shared aired watch order so online next/prev matches offline + downloads.
     sortEpisodesByWatchOrder(all);

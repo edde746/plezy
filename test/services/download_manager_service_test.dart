@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'dart:convert';
 import 'package:plezy/media/ids.dart';
 import 'dart:io';
@@ -7,9 +9,11 @@ import 'package:drift/drift.dart' show Value;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:path/path.dart' as p;
+import 'package:http/http.dart' as http;
 import 'package:path_provider_platform_interface/path_provider_platform_interface.dart';
 import 'package:plezy/database/app_database.dart';
 import 'package:plezy/database/download_operations.dart';
+import 'package:plezy/exceptions/media_server_exceptions.dart';
 import 'package:plezy/media/download_resolution.dart';
 import 'package:plezy/media/media_backend.dart';
 import 'package:plezy/media/media_item.dart';
@@ -25,6 +29,7 @@ import 'package:plezy/services/plex_api_cache.dart';
 import 'package:plezy/services/saf_storage_service.dart';
 import 'package:plezy/services/settings_service.dart';
 import 'package:plezy/utils/media_server_http_client.dart';
+import 'package:plezy/utils/active_client_scope.dart';
 import 'package:saf_util/saf_util_platform_interface.dart';
 
 import '../test_helpers/io_fakes.dart';
@@ -81,7 +86,7 @@ void main() {
   });
 
   group('lookupMetadata', () {
-    test('falls back from active Jellyfin scope to the download row scope', () async {
+    test('active Jellyfin lookup does not fall back to the downloaded foreign user scope', () async {
       final db = AppDatabase.forTesting(NativeDatabase.memory());
       PlexApiCache.initialize(db);
       JellyfinApiCache.initialize(db);
@@ -141,8 +146,178 @@ void main() {
 
       final item = await manager.lookupMetadata(ServerId('jf-machine'), 'item-1', preferActiveScope: true);
 
-      expect(item?.title, 'Cached for User A');
-      expect(item?.serverId, 'jf-machine');
+      expect(item, isNull);
+    });
+
+    test('cold Jellyfin hydration resolves the active profile binding instead of the shared download scope', () async {
+      final db = AppDatabase.forTesting(NativeDatabase.memory());
+      PlexApiCache.initialize(db);
+      JellyfinApiCache.initialize(db);
+      addTearDown(db.close);
+
+      for (final userId in ['user-a', 'user-b']) {
+        final profileId = 'profile-${userId.substring(userId.length - 1)}';
+        await db
+            .into(db.connections)
+            .insert(
+              ConnectionsCompanion.insert(
+                id: 'jf-machine/$userId',
+                kind: 'jellyfin',
+                displayName: userId,
+                configJson: jsonEncode({
+                  'baseUrl': 'https://jf.example',
+                  'serverName': 'Jellyfin',
+                  'serverMachineId': 'jf-machine',
+                  'userId': userId,
+                  'userName': userId,
+                  'accessToken': 'token-$userId',
+                  'deviceId': 'device',
+                }),
+                createdAt: 0,
+              ),
+            );
+        await db
+            .into(db.profileConnections)
+            .insert(
+              ProfileConnectionsCompanion.insert(
+                profileId: profileId,
+                connectionId: 'jf-machine/$userId',
+                userIdentifier: userId,
+              ),
+            );
+        await JellyfinApiCache.instance.put(ServerId('jf-machine/$userId'), '/Users/$userId/Items/item-1', {
+          'Id': 'item-1',
+          'Type': 'Movie',
+          'Name': 'Cached for $userId',
+        });
+        await JellyfinApiCache.instance.pinForOffline(ServerId('jf-machine/$userId'), 'item-1');
+      }
+      await db.insertDownload(
+        serverId: ServerId('jf-machine'),
+        clientScopeId: 'jf-machine/user-a',
+        ratingKey: 'item-1',
+        globalKey: 'jf-machine:item-1',
+        type: 'movie',
+        status: DownloadStatus.completed.index,
+      );
+      await db.addDownloadOwner(profileId: 'profile-a', globalKey: 'jf-machine:item-1');
+      await db.addDownloadOwner(profileId: 'profile-b', globalKey: 'jf-machine:item-1');
+      final manager = DownloadManagerService(
+        database: db,
+        storageService: DownloadStorageService.instance,
+        clientResolver: (_, {clientScopeId}) => null,
+      );
+
+      final all = await manager.getAllPinnedMetadata(preferActiveScope: true, activeProfileId: 'profile-b');
+      final item = await manager.lookupMetadata(
+        ServerId('jf-machine'),
+        'item-1',
+        preferActiveScope: true,
+        activeProfileId: 'profile-b',
+      );
+
+      expect(all.keys, ['jf-machine/user-b:item-1']);
+      expect(all.values.single.title, 'Cached for user-b');
+      expect(item?.title, 'Cached for user-b');
+    });
+
+    test('cold Plex hydration finds a server inside its persisted account configuration', () async {
+      final db = AppDatabase.forTesting(NativeDatabase.memory());
+      PlexApiCache.initialize(db);
+      JellyfinApiCache.initialize(db);
+      addTearDown(db.close);
+      final serverId = ServerId('plex-machine');
+      final scope = buildPlexProfileScopeId(serverId: serverId, profileId: 'profile-b');
+      await db
+          .into(db.connections)
+          .insert(
+            ConnectionsCompanion.insert(
+              id: 'plex-account-uuid',
+              kind: 'plex',
+              displayName: 'Plex account',
+              configJson: jsonEncode({
+                'servers': [
+                  {'clientIdentifier': serverId},
+                ],
+              }),
+              createdAt: 0,
+            ),
+          );
+      await db.insertDownload(
+        serverId: serverId,
+        clientScopeId: serverId,
+        ratingKey: 'item-1',
+        globalKey: 'plex-machine:item-1',
+        type: 'movie',
+        status: DownloadStatus.completed.index,
+      );
+      await db.addDownloadOwner(profileId: 'profile-b', globalKey: 'plex-machine:item-1');
+      await PlexApiCache.instance.put(scope.cacheServerId, '/library/metadata/item-1', {
+        'MediaContainer': {
+          'Metadata': [
+            {'ratingKey': 'item-1', 'type': 'movie', 'title': 'Offline Plex'},
+          ],
+        },
+      });
+      await PlexApiCache.instance.pinForOffline(scope.cacheServerId, 'item-1');
+      final manager = DownloadManagerService(
+        database: db,
+        storageService: DownloadStorageService.instance,
+        clientResolver: (_, {clientScopeId}) => null,
+      );
+
+      final all = await manager.getAllPinnedMetadata(preferActiveScope: true, activeProfileId: 'profile-b');
+      final item = await manager.lookupMetadata(
+        serverId,
+        'item-1',
+        preferActiveScope: true,
+        activeProfileId: 'profile-b',
+      );
+
+      expect(all['plex-machine:item-1']?.title, 'Offline Plex');
+      expect(item?.title, 'Offline Plex');
+    });
+
+    test('active Plex lookup selects the exact profile namespace without bare fallback', () async {
+      final db = AppDatabase.forTesting(NativeDatabase.memory());
+      PlexApiCache.initialize(db);
+      JellyfinApiCache.initialize(db);
+      addTearDown(db.close);
+      final serverId = ServerId('plex-machine');
+      final scopeA = buildPlexProfileScopeId(serverId: serverId, profileId: 'profile-a');
+      final scopeB = buildPlexProfileScopeId(serverId: serverId, profileId: 'profile-b');
+      Map<String, Object?> metadata(String title) => {
+        'MediaContainer': {
+          'Metadata': [
+            {'ratingKey': 'item-1', 'type': 'movie', 'title': title},
+          ],
+        },
+      };
+      await PlexApiCache.instance.put(scopeA.cacheServerId, '/library/metadata/item-1', metadata('Profile A'));
+      await PlexApiCache.instance.put(scopeB.cacheServerId, '/library/metadata/item-1', metadata('Profile B'));
+      await PlexApiCache.instance.put(serverId, '/library/metadata/item-1', metadata('Legacy bare'));
+      final manager = DownloadManagerService(
+        database: db,
+        storageService: DownloadStorageService.instance,
+        clientResolver: (resolvedServerId, {clientScopeId}) =>
+            _ArtworkRepairClient(serverId: ServerId(resolvedServerId), items: const {}),
+      );
+
+      final item = await manager.lookupMetadata(
+        serverId,
+        'item-1',
+        preferActiveScope: true,
+        activeProfileId: 'profile-a',
+      );
+      final missing = await manager.lookupMetadata(
+        serverId,
+        'item-1',
+        preferActiveScope: true,
+        activeProfileId: 'profile-missing',
+      );
+
+      expect(item?.title, 'Profile A');
+      expect(missing, isNull);
     });
 
     test('SAF recovery resolves show year from cached show metadata', () async {
@@ -182,6 +357,191 @@ void main() {
       expect(year, 2008);
     });
 
+    test('interrupted Plex logout transfer recovers from the physical row transfer scope', () async {
+      final db = AppDatabase.forTesting(NativeDatabase.memory());
+      PlexApiCache.initialize(db);
+      JellyfinApiCache.initialize(db);
+      addTearDown(db.close);
+      final serverId = ServerId('plex-machine');
+      final profileScope = buildPlexProfileScopeId(serverId: serverId, profileId: 'profile-a');
+      final transferScope = buildPlexTransferScopeId(serverId);
+      await db.insertDownload(
+        serverId: serverId,
+        clientScopeId: profileScope,
+        ratingKey: 'item-1',
+        globalKey: 'plex-machine:item-1',
+        type: 'movie',
+        status: DownloadStatus.completed.index,
+      );
+      await db.addDownloadOwner(
+        profileId: 'profile-a',
+        globalKey: 'plex-machine:item-1',
+        backendId: MediaBackend.plex.id,
+        clientScopeId: profileScope,
+      );
+      await PlexApiCache.instance.put(profileScope.cacheServerId, '/library/metadata/item-1', {
+        'MediaContainer': {
+          'Metadata': [
+            {'ratingKey': 'item-1', 'type': 'movie', 'title': 'Recovered transfer'},
+          ],
+        },
+      });
+      await PlexApiCache.instance.pinForOffline(profileScope.cacheServerId, 'item-1');
+      final manager = DownloadManagerService(
+        database: db,
+        storageService: DownloadStorageService.instance,
+        clientResolver: (_, {clientScopeId}) => null,
+      );
+
+      await manager.preparePlexMetadataForLogoutTransfer();
+
+      expect((await db.getDownloadedMedia('plex-machine:item-1'))?.clientScopeId, transferScope);
+      expect(
+        (await db.getDownloadOwner(profileId: 'profile-a', globalKey: 'plex-machine:item-1'))?.clientScopeId,
+        profileScope,
+      );
+      expect(
+        (await PlexApiCache.instance.getMetadata(transferScope.cacheServerId, 'item-1'))?.title,
+        'Recovered transfer',
+      );
+
+      await manager.adoptTransferredPlexMetadataForProfile('profile-a');
+
+      final recoveredOwner = await db.getDownloadOwner(profileId: 'profile-a', globalKey: 'plex-machine:item-1');
+      expect((await db.getDownloadedMedia('plex-machine:item-1'))?.clientScopeId, profileScope);
+      expect(recoveredOwner?.backend, MediaBackend.plex.id);
+      expect(recoveredOwner?.clientScopeId, profileScope);
+      expect(await PlexApiCache.instance.getMetadata(transferScope.cacheServerId, 'item-1'), isNull);
+      expect(
+        (await PlexApiCache.instance.getMetadata(profileScope.cacheServerId, 'item-1'))?.title,
+        'Recovered transfer',
+      );
+    });
+
+    test('missing Plex leaf survives full logout and rehydrates after replacement adoption', () async {
+      final db = AppDatabase.forTesting(NativeDatabase.memory());
+      PlexApiCache.initialize(db);
+      JellyfinApiCache.initialize(db);
+      addTearDown(db.close);
+      final serverId = ServerId('plex-machine');
+      const globalKey = 'plex-machine:item-1';
+      final originalScope = buildPlexProfileScopeId(serverId: serverId, profileId: 'profile-a');
+      final transferScope = buildPlexTransferScopeId(serverId);
+      final destinationScope = buildPlexProfileScopeId(serverId: serverId, profileId: 'profile-b');
+      for (final profileId in const ['profile-a', 'profile-b']) {
+        await db
+            .into(db.profiles)
+            .insert(
+              ProfilesCompanion.insert(
+                id: profileId,
+                kind: 'local',
+                displayName: profileId,
+                configJson: '{}',
+                createdAt: 0,
+              ),
+            );
+      }
+      await db.insertDownload(
+        serverId: serverId,
+        clientScopeId: originalScope,
+        ratingKey: 'item-1',
+        globalKey: globalKey,
+        type: 'movie',
+        status: DownloadStatus.completed.index,
+        mediaIndex: 2,
+        mediaSourceId: 'source-a',
+      );
+      await db.updateDownloadProgress(globalKey, 100, 900, 900);
+      await db.updateVideoFilePath(globalKey, 'downloads/plex-machine/item-1/video.mp4');
+      await db.addToQueue(mediaGlobalKey: globalKey, priority: 7, downloadSubtitles: false, downloadArtwork: true);
+      await db.addDownloadOwner(
+        profileId: 'profile-a',
+        globalKey: globalKey,
+        backendId: MediaBackend.plex.id,
+        clientScopeId: originalScope,
+      );
+      final before = (await db.getDownloadedMedia(globalKey))!;
+      final queueBefore = (await db.select(db.downloadQueue).get()).single;
+      expect(await PlexApiCache.instance.getMetadata(originalScope.cacheServerId, 'item-1'), isNull);
+
+      final transferManager = DownloadManagerService(
+        database: db,
+        storageService: DownloadStorageService.instance,
+        clientResolver: (_, {clientScopeId}) => null,
+      );
+      await transferManager.preparePlexMetadataForLogoutTransfer();
+
+      expect((await db.getDownloadedMedia(globalKey))?.clientScopeId, transferScope);
+      expect((await db.getDownloadOwner(profileId: 'profile-a', globalKey: globalKey))?.clientScopeId, originalScope);
+      expect(await PlexApiCache.instance.getMetadata(transferScope.cacheServerId, 'item-1'), isNull);
+
+      await db.clearAllDownloadOwners();
+      expect(await db.getDownloadOwnerCount(globalKey), 0);
+      await db.adoptLegacyDownloadsForProfile('profile-b');
+      await transferManager.adoptTransferredPlexMetadataForProfile('profile-b');
+
+      final adopted = (await db.getDownloadedMedia(globalKey))!;
+      final adoptedOwner = await db.getDownloadOwner(profileId: 'profile-b', globalKey: globalKey);
+      final queueAfter = (await db.select(db.downloadQueue).get()).single;
+      expect(adopted.clientScopeId, destinationScope);
+      expect(adoptedOwner?.backend, MediaBackend.plex.id);
+      expect(adoptedOwner?.clientScopeId, destinationScope);
+      expect(adopted.status, before.status);
+      expect(adopted.progress, before.progress);
+      expect(adopted.downloadedBytes, before.downloadedBytes);
+      expect(adopted.totalBytes, before.totalBytes);
+      expect(adopted.videoFilePath, before.videoFilePath);
+      expect(adopted.downloadedAt, before.downloadedAt);
+      expect(adopted.mediaIndex, before.mediaIndex);
+      expect(adopted.mediaSourceId, before.mediaSourceId);
+      expect(queueAfter.mediaGlobalKey, queueBefore.mediaGlobalKey);
+      expect(queueAfter.priority, queueBefore.priority);
+      expect(queueAfter.addedAt, queueBefore.addedAt);
+      expect(queueAfter.downloadSubtitles, queueBefore.downloadSubtitles);
+      expect(queueAfter.downloadArtwork, queueBefore.downloadArtwork);
+      expect(await PlexApiCache.instance.getMetadata(destinationScope.cacheServerId, 'item-1'), isNull);
+
+      final hydratedMetadata = testMediaItem(
+        id: 'item-1',
+        backend: MediaBackend.plex,
+        kind: MediaKind.movie,
+        serverId: serverId,
+        title: 'Rehydrated for profile B',
+      );
+      final client = _DirectCachePlexClient(
+        serverId: serverId,
+        scopedServerId: destinationScope,
+        metadata: hydratedMetadata,
+      );
+      final hydrationManager = DownloadManagerService(
+        database: db,
+        storageService: DownloadStorageService.instance,
+        clientResolver: (resolvedServerId, {clientScopeId}) {
+          if (resolvedServerId != serverId.toString()) return null;
+          if (clientScopeId != null && clientScopeId != destinationScope) return null;
+          return client;
+        },
+      );
+
+      final hydrated = await hydrationManager.fetchAndPinMetadata(
+        serverId,
+        'item-1',
+        preferActiveScope: true,
+        activeProfileId: 'profile-b',
+      );
+
+      expect(hydrated?.title, 'Rehydrated for profile B');
+      expect(
+        (await PlexApiCache.instance.getMetadata(destinationScope.cacheServerId, 'item-1'))?.title,
+        'Rehydrated for profile B',
+      );
+      expect(
+        (await PlexApiCache.instance.getAllPinnedMetadata(cacheServerIds: {destinationScope.cacheServerId})).keys,
+        [globalKey],
+      );
+      expect(await PlexApiCache.instance.getMetadata(transferScope.cacheServerId, 'item-1'), isNull);
+    });
+
     test('Jellyfin offline pinning keeps media segment cache rows with metadata', () async {
       final db = AppDatabase.forTesting(NativeDatabase.memory());
       PlexApiCache.initialize(db);
@@ -207,6 +567,87 @@ void main() {
 
       expect(await JellyfinApiCache.instance.get(ServerId('jf-machine/user-a'), '/Users/user-a/Items/item-1'), isNull);
       expect(await JellyfinApiCache.instance.get(ServerId('jf-machine/user-a'), '/MediaSegments/item-1'), isNull);
+    });
+
+    test('adopted Jellyfin ownership cleans only the adopting user cache scope', () async {
+      final db = AppDatabase.forTesting(NativeDatabase.memory());
+      PlexApiCache.initialize(db);
+      JellyfinApiCache.initialize(db);
+      addTearDown(db.close);
+      final now = DateTime.now().millisecondsSinceEpoch;
+      await db
+          .into(db.profiles)
+          .insert(
+            ProfilesCompanion.insert(
+              id: 'profile-b',
+              kind: 'local',
+              displayName: 'Profile B',
+              configJson: '{}',
+              createdAt: now,
+            ),
+          );
+      await db
+          .into(db.connections)
+          .insert(
+            ConnectionsCompanion.insert(
+              id: 'jf-machine/user-b',
+              kind: 'jellyfin',
+              displayName: 'User B',
+              configJson: jsonEncode({'serverMachineId': 'jf-machine', 'userId': 'user-b'}),
+              createdAt: now,
+            ),
+          );
+      await db
+          .into(db.profileConnections)
+          .insert(
+            ProfileConnectionsCompanion.insert(
+              profileId: 'profile-b',
+              connectionId: 'jf-machine/user-b',
+              userIdentifier: 'user-b',
+            ),
+          );
+      await db.insertDownload(
+        serverId: ServerId('jf-machine'),
+        clientScopeId: 'jf-machine/user-a',
+        ratingKey: 'item-1',
+        globalKey: 'jf-machine:item-1',
+        type: 'movie',
+        status: DownloadStatus.completed.index,
+      );
+      for (final userId in const ['user-a', 'user-b']) {
+        await JellyfinApiCache.instance.put(ServerId('jf-machine/$userId'), '/Users/$userId/Items/item-1', {
+          'Id': 'item-1',
+          'Type': 'Movie',
+          'Name': userId,
+        });
+      }
+      final manager = DownloadManagerService(
+        database: db,
+        storageService: DownloadStorageService.instance,
+        clientResolver: (_, {clientScopeId}) => null,
+      );
+
+      await db.adoptLegacyDownloadsForProfile('profile-b');
+      final owner = await db.getDownloadOwner(profileId: 'profile-b', globalKey: 'jf-machine:item-1');
+      expect((await db.getDownloadedMedia('jf-machine:item-1'))?.clientScopeId, 'jf-machine/user-b');
+      expect(owner?.backend, MediaBackend.jellyfin.id);
+      expect(owner?.clientScopeId, 'jf-machine/user-b');
+
+      await db.removeDownloadOwner(profileId: 'profile-b', globalKey: 'jf-machine:item-1');
+      await manager.deleteMetadataForOwner(
+        globalKey: 'jf-machine:item-1',
+        serverId: ServerId('jf-machine'),
+        itemId: 'item-1',
+        profileId: 'profile-b',
+        backendId: owner?.backend,
+        clientScopeId: owner?.clientScopeId,
+      );
+
+      expect(await JellyfinApiCache.instance.get(ServerId('jf-machine/user-b'), '/Users/user-b/Items/item-1'), isNull);
+      expect(
+        await JellyfinApiCache.instance.get(ServerId('jf-machine/user-a'), '/Users/user-a/Items/item-1'),
+        isNotNull,
+      );
     });
 
     test('artwork repair fetches full parent metadata and backfills thumb path', () async {
@@ -302,6 +743,446 @@ void main() {
       expect(File(logoPath!).existsSync(), isTrue);
       final row = await db.getDownloadedMedia('srv:ep-1');
       expect(row?.thumbPath, artworkStorageKey('/ep-thumb'));
+    });
+  });
+
+  group('download durability', () {
+    test('pin failure occurs after durable queue creation and still starts processing', () async {
+      final fixture = await _createSupplementaryFixture();
+      final client = _SupplementaryClient(
+        metadata: fixture.metadata,
+        resolution: () => const DownloadResolution(videoUrl: 'https://example.test/video'),
+      );
+      await fixture.db.customStatement('''
+        CREATE TRIGGER reject_cache_pin
+        BEFORE UPDATE OF pinned ON api_cache
+        BEGIN
+          SELECT RAISE(ABORT, 'cache pin rejected');
+        END
+      ''');
+      var processingAttempts = 0;
+      var observedDurablePair = false;
+      final processingStarted = Completer<void>();
+      final manager = DownloadManagerService(
+        database: fixture.db,
+        storageService: fixture.storage,
+        clientResolver: (serverId, {clientScopeId}) => client,
+        downloadsSupportedOverride: true,
+        queueProcessorOverride: (_) async {
+          processingAttempts++;
+          final media = await fixture.db.getDownloadedMedia(fixture.metadata.globalKey);
+          final queue = await fixture.db.select(fixture.db.downloadQueue).get();
+          observedDurablePair = media?.status == DownloadStatus.queued.index && queue.length == 1;
+          if (!processingStarted.isCompleted) processingStarted.complete();
+        },
+      );
+      addTearDown(manager.dispose);
+
+      await manager.queueDownload(metadata: fixture.metadata, client: client);
+      await processingStarted.future;
+
+      expect(processingAttempts, 1);
+      expect(observedDurablePair, isTrue);
+      expect(await fixture.db.getDownloadedMedia(fixture.metadata.globalKey), isNotNull);
+      expect(await fixture.db.select(fixture.db.downloadQueue).get(), hasLength(1));
+    });
+
+    test('an already queued request refreshes policy and restarts processing', () async {
+      final fixture = await _createSupplementaryFixture();
+      await fixture.db.insertDownload(
+        serverId: ServerId('srv'),
+        ratingKey: fixture.metadata.id,
+        globalKey: fixture.metadata.globalKey,
+        type: 'movie',
+        status: DownloadStatus.queued.index,
+      );
+      await fixture.db.addToQueue(mediaGlobalKey: fixture.metadata.globalKey, priority: 1);
+      final client = _SupplementaryClient(
+        metadata: fixture.metadata,
+        resolution: () => const DownloadResolution(videoUrl: 'https://example.test/video'),
+      );
+      var processingAttempts = 0;
+      var progressEvents = 0;
+      final processingStarted = Completer<void>();
+      final manager = DownloadManagerService(
+        database: fixture.db,
+        storageService: fixture.storage,
+        clientResolver: (serverId, {clientScopeId}) => client,
+        downloadsSupportedOverride: true,
+        queueProcessorOverride: (_) async {
+          processingAttempts++;
+          if (!processingStarted.isCompleted) processingStarted.complete();
+        },
+      );
+      final progressSubscription = manager.progressStream.listen((_) => progressEvents++);
+      addTearDown(progressSubscription.cancel);
+      addTearDown(manager.dispose);
+
+      await manager.queueDownload(
+        metadata: fixture.metadata,
+        client: client,
+        priority: 8,
+        downloadSubtitles: false,
+        downloadArtwork: false,
+      );
+      await processingStarted.future;
+
+      final queue = (await fixture.db.select(fixture.db.downloadQueue).get()).single;
+      expect(queue.priority, 8);
+      expect(queue.downloadSubtitles, isFalse);
+      expect(queue.downloadArtwork, isFalse);
+      expect(processingAttempts, 1);
+      expect(progressEvents, 1);
+    });
+
+    test('an active or completed request emits and starts no duplicate work', () async {
+      final fixture = await _createSupplementaryFixture();
+      final client = _SupplementaryClient(
+        metadata: fixture.metadata,
+        resolution: () => const DownloadResolution(videoUrl: 'https://example.test/video'),
+      );
+      for (final status in [DownloadStatus.downloading, DownloadStatus.paused, DownloadStatus.completed]) {
+        await fixture.db.insertDownload(
+          serverId: ServerId('srv'),
+          ratingKey: fixture.metadata.id,
+          globalKey: fixture.metadata.globalKey,
+          type: 'movie',
+          status: status.index,
+        );
+        var processingAttempts = 0;
+        var progressEvents = 0;
+        final manager = DownloadManagerService(
+          database: fixture.db,
+          storageService: fixture.storage,
+          clientResolver: (serverId, {clientScopeId}) => client,
+          downloadsSupportedOverride: true,
+          queueProcessorOverride: (_) async {
+            processingAttempts++;
+          },
+        );
+        final progressSubscription = manager.progressStream.listen((_) => progressEvents++);
+
+        await manager.queueDownload(metadata: fixture.metadata, client: client);
+        await Future<void>.delayed(Duration.zero);
+
+        expect((await fixture.db.getDownloadedMedia(fixture.metadata.globalKey))?.status, status.index);
+        expect(await fixture.db.select(fixture.db.downloadQueue).get(), isEmpty);
+        expect(processingAttempts, 0);
+        expect(progressEvents, 0);
+        await progressSubscription.cancel();
+        manager.dispose();
+        await fixture.db.deleteDownload(fixture.metadata.globalKey);
+      }
+    });
+
+    test('transient preparation failure remains queued and starts an automatic retry', () async {
+      final fixture = await _createSupplementaryFixture();
+      var attempts = 0;
+      final retryStarted = Completer<void>();
+      final retryGate = Completer<DownloadResolution>();
+      final client = _SupplementaryClient(
+        metadata: fixture.metadata,
+        resolution: () {
+          attempts++;
+          if (attempts == 1) {
+            throw MediaServerHttpException(
+              type: MediaServerHttpErrorType.unknown,
+              statusCode: 500,
+              message: 'temporary PlaybackInfo failure',
+            );
+          }
+          if (!retryStarted.isCompleted) retryStarted.complete();
+          return retryGate.future;
+        },
+      );
+      final manager = DownloadManagerService(
+        database: fixture.db,
+        storageService: fixture.storage,
+        clientResolver: (serverId, {clientScopeId}) => client,
+        downloadsSupportedOverride: true,
+        fileDownloaderInitializerOverride: () async {},
+        autoRetryDelay: Duration.zero,
+      );
+      addTearDown(manager.dispose);
+
+      await manager.queueDownload(metadata: fixture.metadata, client: client);
+      await retryStarted.future;
+
+      final stored = await fixture.db.getDownloadedMedia(fixture.metadata.globalKey);
+      expect(attempts, 2);
+      expect(stored?.retryCount, 1);
+      expect(await fixture.db.select(fixture.db.downloadQueue).get(), hasLength(1));
+
+      await fixture.db.updateDownloadStatus(fixture.metadata.globalKey, DownloadStatus.cancelled.index);
+      retryGate.complete(const DownloadResolution(videoUrl: 'https://example.test/video'));
+      await Future<void>.delayed(Duration.zero);
+      await Future<void>.delayed(Duration.zero);
+    });
+
+    test('preparation retries exhaust the configured app retry budget', () async {
+      final fixture = await _createSupplementaryFixture();
+      var attempts = 0;
+      final client = _SupplementaryClient(
+        metadata: fixture.metadata,
+        resolution: () {
+          attempts++;
+          throw MediaServerHttpException(
+            type: MediaServerHttpErrorType.unknown,
+            statusCode: 500,
+            message: 'temporary PlaybackInfo failure',
+          );
+        },
+      );
+      final manager = DownloadManagerService(
+        database: fixture.db,
+        storageService: fixture.storage,
+        clientResolver: (serverId, {clientScopeId}) => client,
+        downloadsSupportedOverride: true,
+        fileDownloaderInitializerOverride: () async {},
+        autoRetryDelay: Duration.zero,
+      );
+      addTearDown(manager.dispose);
+      final exhausted = manager.progressStream.firstWhere(
+        (event) => event.status == DownloadStatus.failed && attempts == 4,
+      );
+
+      await manager.queueDownload(metadata: fixture.metadata, client: client);
+      await exhausted;
+
+      final stored = await fixture.db.getDownloadedMedia(fixture.metadata.globalKey);
+      expect(attempts, 4);
+      expect(stored?.status, DownloadStatus.failed.index);
+      expect(stored?.retryCount, 4);
+    });
+
+    test('cold recovery repairs a legacy queue gap once before native recovery', () async {
+      final fixture = await _createSupplementaryFixture();
+      await fixture.db.insertDownload(
+        serverId: ServerId('srv'),
+        ratingKey: fixture.metadata.id,
+        globalKey: fixture.metadata.globalKey,
+        type: 'movie',
+        status: DownloadStatus.queued.index,
+      );
+      await fixture.reopenDatabase();
+
+      final client = _SupplementaryClient(
+        metadata: fixture.metadata,
+        resolution: () => const DownloadResolution(videoUrl: 'https://example.test/video'),
+      );
+      var nativeRecoveryCalls = 0;
+      var queueProcessingCalls = 0;
+      final processingStarted = Completer<void>();
+      final firstManager = DownloadManagerService(
+        database: fixture.db,
+        storageService: fixture.storage,
+        clientResolver: (serverId, {clientScopeId}) => client,
+        downloadsSupportedOverride: true,
+        nativeRecoveryOverride: () async {
+          nativeRecoveryCalls++;
+        },
+        queueProcessorOverride: (_) async {
+          queueProcessingCalls++;
+          await fixture.db.updateDownloadStatus(fixture.metadata.globalKey, DownloadStatus.downloading.index);
+          if (!processingStarted.isCompleted) processingStarted.complete();
+        },
+      );
+
+      await firstManager.recoverInterruptedDownloads();
+      expect(nativeRecoveryCalls, 1);
+      expect(await fixture.db.select(fixture.db.downloadQueue).get(), hasLength(1));
+      firstManager.resumeQueuedDownloads(client);
+      await processingStarted.future;
+      expect(queueProcessingCalls, 1);
+      firstManager.dispose();
+
+      final secondManager = DownloadManagerService(
+        database: fixture.db,
+        storageService: fixture.storage,
+        clientResolver: (serverId, {clientScopeId}) => client,
+        downloadsSupportedOverride: true,
+        nativeRecoveryOverride: () async {
+          nativeRecoveryCalls++;
+        },
+        queueProcessorOverride: (_) async {
+          queueProcessingCalls++;
+        },
+      );
+      addTearDown(secondManager.dispose);
+      await secondManager.recoverInterruptedDownloads();
+      secondManager.resumeQueuedDownloads(client);
+      await Future<void>.delayed(Duration.zero);
+      await Future<void>.delayed(Duration.zero);
+
+      expect(nativeRecoveryCalls, 2);
+      expect(queueProcessingCalls, 1);
+      expect(await fixture.db.select(fixture.db.downloadQueue).get(), hasLength(1));
+      expect(
+        (await fixture.db.getDownloadedMedia(fixture.metadata.globalKey))?.status,
+        DownloadStatus.downloading.index,
+      );
+    });
+
+    test('isolates subtitle failures and repairs only missing tracks after restart', () async {
+      final fixture = await _createSupplementaryFixture();
+      final httpClient = _ScriptedSubtitleClient(failuresRemaining: {1: 1});
+      final subtitles = [
+        const DownloadSubtitleSpec(id: 1, url: 'https://example.test/subtitle/1', codec: 'srt'),
+        const DownloadSubtitleSpec(id: 2, url: 'https://example.test/subtitle/2', codec: 'srt'),
+      ];
+      final client = _SupplementaryClient(
+        metadata: fixture.metadata,
+        resolution: () => DownloadResolution(videoUrl: 'https://example.test/video', externalSubtitles: subtitles),
+      );
+      await _seedCompletingDownload(fixture, downloadSubtitles: true);
+      final firstManager = DownloadManagerService(
+        database: fixture.db,
+        storageService: fixture.storage,
+        clientResolver: (serverId, {clientScopeId}) => client,
+        http: MediaServerHttpClient(client: httpClient),
+        downloadsSupportedOverride: false,
+      );
+
+      await firstManager.debugHandleTaskStatus(
+        TaskStatusUpdate(_downloadTask('current-task', fixture.metadata.globalKey), TaskStatus.complete),
+      );
+      final firstPath = await fixture.storage.getMovieSubtitlePath(fixture.metadata, 1, 'srt');
+      final secondPath = await fixture.storage.getMovieSubtitlePath(fixture.metadata, 2, 'srt');
+      expect(httpClient.trackRequests, [1, 2]);
+      expect(File(firstPath).existsSync(), isFalse);
+      expect(File(secondPath).existsSync(), isTrue);
+      expect((await fixture.db.getDownloadedMedia(fixture.metadata.globalKey))?.status, DownloadStatus.completed.index);
+      expect(await fixture.db.getPendingSupplementaryQueueItems(), hasLength(1));
+      firstManager.dispose();
+
+      final storedVideoPath = (await fixture.db.getDownloadedMedia(fixture.metadata.globalKey))?.videoFilePath;
+      final restartedManager = DownloadManagerService(
+        database: fixture.db,
+        storageService: fixture.storage,
+        clientResolver: (serverId, {clientScopeId}) => client,
+        http: MediaServerHttpClient(client: httpClient),
+        downloadsSupportedOverride: false,
+      );
+      addTearDown(restartedManager.dispose);
+      await restartedManager.repairPendingSupplementaryDownloads();
+
+      expect(httpClient.trackRequests, [1, 2, 1]);
+      expect(File(firstPath).existsSync(), isTrue);
+      expect(File(secondPath).existsSync(), isTrue);
+      expect(await fixture.db.getPendingSupplementaryQueueItems(), isEmpty);
+      final completed = await fixture.db.getDownloadedMedia(fixture.metadata.globalKey);
+      expect(completed?.status, DownloadStatus.completed.index);
+      expect(completed?.videoFilePath, storedVideoPath);
+      expect(await fixture.db.getNextQueueItem(), isNull);
+    });
+
+    test('retains unresolved subtitle enrichment and settles a later authoritative empty list', () async {
+      final fixture = await _createSupplementaryFixture();
+      var enrichmentResolved = false;
+      final client = _SupplementaryClient(
+        metadata: fixture.metadata,
+        resolution: () =>
+            DownloadResolution(videoUrl: 'https://example.test/video', externalSubtitlesResolved: enrichmentResolved),
+      );
+      await _seedCompletedPendingDownload(fixture, downloadSubtitles: true);
+      final manager = DownloadManagerService(
+        database: fixture.db,
+        storageService: fixture.storage,
+        clientResolver: (serverId, {clientScopeId}) => client,
+        downloadsSupportedOverride: false,
+      );
+      addTearDown(manager.dispose);
+
+      await manager.repairPendingSupplementaryDownloads();
+      expect(await fixture.db.getPendingSupplementaryQueueItems(), hasLength(1));
+
+      enrichmentResolved = true;
+      await manager.repairPendingSupplementaryDownloads();
+      expect(await fixture.db.getPendingSupplementaryQueueItems(), isEmpty);
+    });
+
+    test('supplementary repair reuses the persisted media source', () async {
+      final fixture = await _createSupplementaryFixture();
+      final client = _SupplementaryClient(
+        metadata: fixture.metadata,
+        resolution: () =>
+            const DownloadResolution(videoUrl: 'https://example.test/video', externalSubtitlesResolved: true),
+      );
+      await _seedCompletedPendingDownload(fixture, downloadSubtitles: true);
+      await fixture.db.updateDownloadMediaSource(fixture.metadata.globalKey, 'source-2');
+      final manager = DownloadManagerService(
+        database: fixture.db,
+        storageService: fixture.storage,
+        clientResolver: (serverId, {clientScopeId}) => client,
+        downloadsSupportedOverride: false,
+      );
+      addTearDown(manager.dispose);
+
+      await manager.repairPendingSupplementaryDownloads();
+
+      expect(client.lastMediaSourceId, 'source-2');
+      expect(await fixture.db.getPendingSupplementaryQueueItems(), isEmpty);
+    });
+
+    test('subtitle-disabled completion issues no sidecar request or retry marker', () async {
+      final fixture = await _createSupplementaryFixture();
+      final httpClient = _ScriptedSubtitleClient();
+      final client = _SupplementaryClient(
+        metadata: fixture.metadata,
+        resolution: () => DownloadResolution(
+          videoUrl: 'https://example.test/video',
+          externalSubtitles: const [DownloadSubtitleSpec(id: 1, url: 'https://example.test/subtitle/1', codec: 'srt')],
+        ),
+      );
+      await _seedCompletingDownload(fixture, downloadSubtitles: false);
+      final manager = DownloadManagerService(
+        database: fixture.db,
+        storageService: fixture.storage,
+        clientResolver: (serverId, {clientScopeId}) => client,
+        http: MediaServerHttpClient(client: httpClient),
+        downloadsSupportedOverride: false,
+      );
+      addTearDown(manager.dispose);
+
+      await manager.debugHandleTaskStatus(
+        TaskStatusUpdate(_downloadTask('current-task', fixture.metadata.globalKey), TaskStatus.complete),
+      );
+
+      expect(httpClient.trackRequests, isEmpty);
+      expect(await fixture.db.getPendingSupplementaryQueueItems(), isEmpty);
+      expect(await fixture.db.select(fixture.db.downloadQueue).get(), isEmpty);
+    });
+
+    test('coalesces concurrent persisted supplementary repairs', () async {
+      final fixture = await _createSupplementaryFixture();
+      final gate = Completer<void>();
+      final requestStarted = Completer<void>();
+      final httpClient = _ScriptedSubtitleClient(gate: gate, requestStarted: requestStarted);
+      final client = _SupplementaryClient(
+        metadata: fixture.metadata,
+        resolution: () => const DownloadResolution(
+          videoUrl: 'https://example.test/video',
+          externalSubtitles: [DownloadSubtitleSpec(id: 1, url: 'https://example.test/subtitle/1', codec: 'srt')],
+        ),
+      );
+      await _seedCompletedPendingDownload(fixture, downloadSubtitles: true);
+      final manager = DownloadManagerService(
+        database: fixture.db,
+        storageService: fixture.storage,
+        clientResolver: (serverId, {clientScopeId}) => client,
+        http: MediaServerHttpClient(client: httpClient),
+        downloadsSupportedOverride: false,
+      );
+      addTearDown(manager.dispose);
+
+      final firstRepair = manager.repairPendingSupplementaryDownloads();
+      await requestStarted.future;
+      final secondRepair = manager.repairPendingSupplementaryDownloads();
+      gate.complete();
+      await Future.wait([firstRepair, secondRepair]);
+
+      expect(httpClient.trackRequests, [1]);
+      expect(await fixture.db.getPendingSupplementaryQueueItems(), isEmpty);
     });
   });
 
@@ -516,6 +1397,8 @@ void main() {
         status: DownloadStatus.downloading.index,
       );
       await db.updateBgTaskId(globalKey, 'current-task');
+      await db.updateDownloadSafRoot(globalKey, 'content://downloads');
+      await db.updateDownloadError(globalKey, 'transient failure');
 
       final manager = DownloadManagerService(
         database: db,
@@ -532,6 +1415,9 @@ void main() {
       final row = await db.getDownloadedMedia(globalKey);
       expect(row?.status, DownloadStatus.queued.index);
       expect(row?.bgTaskId, isNull);
+      expect(row?.safRootUri, 'content://downloads');
+      expect(row?.errorMessage, 'transient failure');
+      expect(row?.retryCount, 1);
       expect((await db.getNextQueueItem())?.mediaGlobalKey, globalKey);
     });
   });
@@ -605,6 +1491,468 @@ void main() {
       expect(row?.bgTaskId, 'current-task');
     });
   });
+
+  group('SAF grant ownership', () {
+    Future<void> seedRow(
+      AppDatabase db,
+      String key, {
+      String? videoFilePath,
+      String? taskId,
+      DownloadStatus status = DownloadStatus.queued,
+    }) async {
+      final parts = key.split(':');
+      await db.insertDownload(
+        serverId: ServerId(parts.first),
+        ratingKey: parts.last,
+        globalKey: key,
+        type: 'movie',
+        status: status.index,
+      );
+      if (videoFilePath != null) {
+        await db.updateVideoFilePath(key, videoFilePath);
+      }
+      if (taskId != null) await db.updateBgTaskId(key, taskId);
+    }
+
+    test('root switches retain references and release only the final owner', () async {
+      final db = AppDatabase.forTesting(NativeDatabase.memory());
+      addTearDown(db.close);
+      await seedRow(db, 'srv:first');
+      await seedRow(db, 'srv:second');
+      DownloadLocationSnapshot location = (path: 'content://picked-a', type: 'saf');
+      final saf = _FakeSafStorage(
+        canonicalRoots: const {
+          'content://picked-a': 'content://root-a',
+          'content://picked-b': 'content://root-b',
+          'content://picked-b-alias': 'content://root-b',
+          'content://root-a': 'content://root-a',
+          'content://root-b': 'content://root-b',
+        },
+        persistedRoots: const {'content://root-a', 'content://root-b'},
+      );
+      final manager = DownloadManagerService(
+        database: db,
+        storageService: DownloadStorageService.instance,
+        clientResolver: (_, {clientScopeId}) => null,
+        safStorage: saf,
+        downloadsSupportedOverride: false,
+        downloadLocationReader: () => location,
+        downloadPathWriter: (value) async {
+          location = (path: value, type: location.type);
+        },
+        downloadPathTypeWriter: (value) async {
+          location = (path: location.path, type: value);
+        },
+        downloadStorageRefresher: () async {},
+      );
+      addTearDown(manager.dispose);
+
+      await manager.debugClaimDownloadSafRoot('srv:first', 'content://picked-a');
+      await manager.debugClaimDownloadSafRoot('srv:second', 'content://picked-a');
+      await manager.setDownloadLocation(path: 'content://picked-b', pathType: 'saf');
+      expect(saf.releaseCalls, isEmpty);
+
+      await manager.debugDeleteDownloadRowAndRelease('srv:first');
+      expect(saf.releaseCalls, isEmpty);
+      await manager.debugDeleteDownloadRowAndRelease('srv:second');
+      expect(saf.releaseCalls, ['content://root-a']);
+
+      await manager.setDownloadLocation(path: 'content://picked-b-alias', pathType: 'saf');
+      expect(saf.releaseCalls, ['content://root-a']);
+      await manager.resetDownloadLocation();
+      expect(saf.releaseCalls, ['content://root-a', 'content://root-b']);
+    });
+
+    test('a paused claim serializes ahead of a root switch and retry move', () async {
+      final db = AppDatabase.forTesting(NativeDatabase.memory());
+      addTearDown(db.close);
+      await seedRow(db, 'srv:item');
+      DownloadLocationSnapshot location = (path: 'content://picked-a', type: 'saf');
+      final claimEntered = Completer<void>();
+      final allowClaim = Completer<void>();
+      final saf = _FakeSafStorage(
+        persistedRoots: const {'content://root-a', 'content://root-b'},
+        resolveOverride: (uri) async {
+          if (uri == 'content://task-a') {
+            claimEntered.complete();
+            await allowClaim.future;
+            return 'content://root-a';
+          }
+          return switch (uri) {
+            'content://picked-a' || 'content://root-a' => 'content://root-a',
+            'content://picked-b' || 'content://root-b' => 'content://root-b',
+            _ => null,
+          };
+        },
+      );
+      final manager = DownloadManagerService(
+        database: db,
+        storageService: DownloadStorageService.instance,
+        clientResolver: (_, {clientScopeId}) => null,
+        safStorage: saf,
+        downloadsSupportedOverride: false,
+        downloadLocationReader: () => location,
+        downloadPathWriter: (value) async {
+          location = (path: value, type: location.type);
+        },
+        downloadPathTypeWriter: (value) async {
+          location = (path: location.path, type: value);
+        },
+        downloadStorageRefresher: () async {},
+      );
+      addTearDown(manager.dispose);
+
+      final claim = manager.debugClaimDownloadSafRoot('srv:item', 'content://task-a');
+      await claimEntered.future;
+      var switchCompleted = false;
+      final rootSwitch = manager
+          .setDownloadLocation(path: 'content://picked-b', pathType: 'saf')
+          .whenComplete(() => switchCompleted = true);
+      await Future<void>.delayed(Duration.zero);
+      expect(switchCompleted, isFalse);
+      expect(saf.releaseCalls, isEmpty);
+
+      allowClaim.complete();
+      await claim;
+      await rootSwitch;
+      expect((await db.getDownloadedMedia('srv:item'))?.safRootUri, 'content://root-a');
+      expect(saf.releaseCalls, isEmpty);
+
+      await manager.debugClaimDownloadSafRoot('srv:item', 'content://picked-b');
+      expect((await db.getDownloadedMedia('srv:item'))?.safRootUri, 'content://root-b');
+      expect(saf.releaseCalls, ['content://root-a']);
+    });
+
+    test('startup backfills legacy row and task roots then releases only orphans', () async {
+      final db = AppDatabase.forTesting(NativeDatabase.memory());
+      addTearDown(db.close);
+      await seedRow(db, 'srv:legacy', videoFilePath: 'content://child-a', status: DownloadStatus.completed);
+      await seedRow(db, 'srv:task', taskId: 'task-d', status: DownloadStatus.downloading);
+      final saf = _FakeSafStorage(
+        canonicalRoots: const {
+          'content://picked-b': 'content://root-b',
+          'content://child-a': 'content://root-a',
+          'content://dir-d': 'content://root-d',
+          'content://root-a': 'content://root-a',
+          'content://root-b': 'content://root-b',
+          'content://root-c': 'content://root-c',
+          'content://root-d': 'content://root-d',
+        },
+        persistedRoots: const {'content://root-a', 'content://root-b', 'content://root-c', 'content://root-d'},
+      );
+      final manager = DownloadManagerService(
+        database: db,
+        storageService: DownloadStorageService.instance,
+        clientResolver: (_, {clientScopeId}) => null,
+        safStorage: saf,
+        downloadsSupportedOverride: false,
+        downloadLocationReader: () => (path: 'content://picked-b', type: 'saf'),
+      );
+      addTearDown(manager.dispose);
+      final task = UriDownloadTask(
+        taskId: 'task-d',
+        url: 'https://example.test/video.mp4',
+        filename: 'video.mp4',
+        directoryUri: Uri.parse('content://dir-d'),
+        metaData: 'srv:task',
+      );
+
+      await manager.debugReconcileSafGrantOwnership(nativeTasks: [task]);
+      expect((await db.getDownloadedMedia('srv:legacy'))?.safRootUri, 'content://root-a');
+      expect((await db.getDownloadedMedia('srv:task'))?.safRootUri, 'content://root-d');
+      expect(saf.persistedRoots, {'content://root-a', 'content://root-b', 'content://root-d'});
+      expect(saf.releaseCalls, ['content://root-c']);
+
+      await manager.debugReconcileSafGrantOwnership(nativeTasks: [task]);
+      expect(saf.releaseCalls, ['content://root-c']);
+    });
+
+    test('a failed legacy root resolution defers every orphan release', () async {
+      final db = AppDatabase.forTesting(NativeDatabase.memory());
+      addTearDown(db.close);
+      await seedRow(db, 'srv:legacy', videoFilePath: 'content://unresolved-child', status: DownloadStatus.completed);
+      final saf = _FakeSafStorage(
+        canonicalRoots: const {
+          'content://picked-b': 'content://root-b',
+          'content://root-b': 'content://root-b',
+          'content://root-c': 'content://root-c',
+        },
+        persistedRoots: const {'content://root-b', 'content://root-c'},
+      );
+      final manager = DownloadManagerService(
+        database: db,
+        storageService: DownloadStorageService.instance,
+        clientResolver: (_, {clientScopeId}) => null,
+        safStorage: saf,
+        downloadsSupportedOverride: false,
+        downloadLocationReader: () => (path: 'content://picked-b', type: 'saf'),
+      );
+      addTearDown(manager.dispose);
+
+      await manager.debugReconcileSafGrantOwnership();
+      expect(saf.releaseCalls, isEmpty);
+      expect(saf.persistedRoots, {'content://root-b', 'content://root-c'});
+    });
+
+    for (final failurePoint in ['second preference write', 'storage refresh']) {
+      test('$failurePoint restores the old location without discarding a usable grant', () async {
+        final db = AppDatabase.forTesting(NativeDatabase.memory());
+        addTearDown(db.close);
+        DownloadLocationSnapshot location = (path: 'content://picked-a', type: 'saf');
+        var typeWrites = 0;
+        var refreshes = 0;
+        final saf = _FakeSafStorage(
+          canonicalRoots: const {
+            'content://picked-a': 'content://root-a',
+            'content://picked-b': 'content://root-b',
+            'content://root-a': 'content://root-a',
+            'content://root-b': 'content://root-b',
+          },
+          persistedRoots: const {'content://root-a', 'content://root-b'},
+        );
+        final manager = DownloadManagerService(
+          database: db,
+          storageService: DownloadStorageService.instance,
+          clientResolver: (_, {clientScopeId}) => null,
+          safStorage: saf,
+          downloadsSupportedOverride: false,
+          downloadLocationReader: () => location,
+          downloadPathWriter: (value) async {
+            location = (path: value, type: location.type);
+          },
+          downloadPathTypeWriter: (value) async {
+            typeWrites++;
+            if (failurePoint == 'second preference write' && typeWrites == 1) {
+              throw StateError('injected type write failure');
+            }
+            location = (path: location.path, type: value);
+          },
+          downloadStorageRefresher: () async {
+            refreshes++;
+            if (failurePoint == 'storage refresh' && refreshes == 1) {
+              throw StateError('injected refresh failure');
+            }
+          },
+        );
+        addTearDown(manager.dispose);
+
+        await expectLater(manager.setDownloadLocation(path: 'content://picked-b', pathType: 'saf'), throwsStateError);
+        expect(location, (path: 'content://picked-a', type: 'saf'));
+        if (failurePoint == 'second preference write') {
+          expect(saf.releaseCalls, ['content://root-b']);
+        } else {
+          expect(saf.releaseCalls, isEmpty);
+          expect(saf.persistedRoots, contains('content://root-b'));
+        }
+      });
+    }
+
+    test('rollback retains a newly selected root already claimed by a row', () async {
+      final db = AppDatabase.forTesting(NativeDatabase.memory());
+      addTearDown(db.close);
+      await seedRow(db, 'srv:item');
+      await db.updateDownloadSafRoot('srv:item', 'content://root-b');
+      DownloadLocationSnapshot location = (path: 'content://picked-a', type: 'saf');
+      final saf = _FakeSafStorage(
+        canonicalRoots: const {
+          'content://picked-a': 'content://root-a',
+          'content://picked-b': 'content://root-b',
+          'content://root-a': 'content://root-a',
+          'content://root-b': 'content://root-b',
+        },
+        persistedRoots: const {'content://root-a', 'content://root-b'},
+      );
+      var refreshes = 0;
+      final manager = DownloadManagerService(
+        database: db,
+        storageService: DownloadStorageService.instance,
+        clientResolver: (_, {clientScopeId}) => null,
+        safStorage: saf,
+        downloadsSupportedOverride: false,
+        downloadLocationReader: () => location,
+        downloadPathWriter: (value) async {
+          location = (path: value, type: location.type);
+        },
+        downloadPathTypeWriter: (value) async {
+          location = (path: location.path, type: value);
+        },
+        downloadStorageRefresher: () async {
+          refreshes++;
+          if (refreshes == 1) throw StateError('injected refresh failure');
+        },
+      );
+      addTearDown(manager.dispose);
+
+      await expectLater(manager.setDownloadLocation(path: 'content://picked-b', pathType: 'saf'), throwsStateError);
+      expect(location, (path: 'content://picked-a', type: 'saf'));
+      expect(saf.releaseCalls, isEmpty);
+      expect(saf.persistedRoots, contains('content://root-b'));
+    });
+  });
+}
+
+Future<_SupplementaryFixture> _createSupplementaryFixture() async {
+  resetSharedPreferencesForTest();
+  SettingsService.resetForTesting();
+  DownloadStorageService.resetForTesting();
+  final tempDir = await Directory.systemTemp.createTemp('download_manager_supplementary_test_');
+  final previousPathProvider = PathProviderPlatform.instance;
+  PathProviderPlatform.instance = FakePathProvider(tempDir);
+  final storage = DownloadStorageService.instance;
+  await storage.initialize(await SettingsService.getInstance());
+  final databaseFile = File(p.join(tempDir.path, 'downloads.sqlite'));
+  final fixture = _SupplementaryFixture(
+    tempDir: tempDir,
+    previousPathProvider: previousPathProvider,
+    databaseFile: databaseFile,
+    db: AppDatabase.forTesting(NativeDatabase(databaseFile)),
+    storage: storage,
+    metadata: testMediaItem(
+      id: 'item-1',
+      backend: MediaBackend.plex,
+      kind: MediaKind.movie,
+      serverId: ServerId('srv'),
+      title: 'Movie',
+    ),
+  );
+  fixture.initializeCaches();
+  await PlexApiCache.instance.put(ServerId('srv'), '/library/metadata/item-1', {
+    'MediaContainer': {
+      'Metadata': [
+        {'ratingKey': 'item-1', 'type': 'movie', 'title': 'Movie'},
+      ],
+    },
+  });
+  addTearDown(fixture.dispose);
+  return fixture;
+}
+
+Future<void> _seedCompletingDownload(_SupplementaryFixture fixture, {required bool downloadSubtitles}) async {
+  await fixture.db.insertDownload(
+    serverId: ServerId('srv'),
+    ratingKey: fixture.metadata.id,
+    globalKey: fixture.metadata.globalKey,
+    type: 'movie',
+    status: DownloadStatus.downloading.index,
+  );
+  await fixture.db.updateBgTaskId(fixture.metadata.globalKey, 'current-task');
+  await fixture.db.addToQueue(
+    mediaGlobalKey: fixture.metadata.globalKey,
+    downloadSubtitles: downloadSubtitles,
+    downloadArtwork: false,
+  );
+}
+
+Future<void> _seedCompletedPendingDownload(_SupplementaryFixture fixture, {required bool downloadSubtitles}) async {
+  await fixture.db.insertDownload(
+    serverId: ServerId('srv'),
+    ratingKey: fixture.metadata.id,
+    globalKey: fixture.metadata.globalKey,
+    type: 'movie',
+    status: DownloadStatus.completed.index,
+  );
+  await fixture.db.updateVideoFilePath(fixture.metadata.globalKey, 'downloads/srv/item-1/video.mp4');
+  await fixture.db.addToQueue(
+    mediaGlobalKey: fixture.metadata.globalKey,
+    downloadSubtitles: downloadSubtitles,
+    downloadArtwork: false,
+  );
+}
+
+class _SupplementaryFixture {
+  _SupplementaryFixture({
+    required this.tempDir,
+    required this.previousPathProvider,
+    required this.databaseFile,
+    required this.db,
+    required this.storage,
+    required this.metadata,
+  });
+
+  final Directory tempDir;
+  final PathProviderPlatform previousPathProvider;
+  final File databaseFile;
+  AppDatabase db;
+  final DownloadStorageService storage;
+  final MediaItem metadata;
+
+  void initializeCaches() {
+    PlexApiCache.initialize(db);
+    JellyfinApiCache.initialize(db);
+  }
+
+  Future<void> reopenDatabase() async {
+    await db.close();
+    db = AppDatabase.forTesting(NativeDatabase(databaseFile));
+    initializeCaches();
+  }
+
+  Future<void> dispose() async {
+    await db.close();
+    DownloadStorageService.resetForTesting();
+    SettingsService.resetForTesting();
+    PathProviderPlatform.instance = previousPathProvider;
+    expect(PathProviderPlatform.instance, same(previousPathProvider));
+    if (await tempDir.exists()) await tempDir.delete(recursive: true);
+  }
+}
+
+class _SupplementaryClient implements MediaServerClient {
+  _SupplementaryClient({required this.metadata, required this.resolution});
+
+  final MediaItem metadata;
+  final FutureOr<DownloadResolution> Function() resolution;
+  String? lastMediaSourceId;
+
+  @override
+  ServerId get serverId => ServerId('srv');
+
+  @override
+  String? get serverName => 'Server';
+
+  @override
+  MediaBackend get backend => MediaBackend.plex;
+
+  @override
+  Future<MediaItem?> fetchItem(String id) async => id == metadata.id ? metadata : null;
+
+  @override
+  Future<DownloadResolution> resolveDownload(MediaItem item, {int mediaIndex = 0, String? mediaSourceId}) async {
+    lastMediaSourceId = mediaSourceId;
+    return resolution();
+  }
+
+  @override
+  List<DownloadArtworkSpec> resolveDownloadArtwork(MediaItem item) => const [];
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
+class _ScriptedSubtitleClient extends http.BaseClient {
+  _ScriptedSubtitleClient({Map<int, int>? failuresRemaining, this.gate, this.requestStarted})
+    : failuresRemaining = {...?failuresRemaining};
+
+  final Map<int, int> failuresRemaining;
+  final Completer<void>? gate;
+  final Completer<void>? requestStarted;
+  final List<int> trackRequests = [];
+
+  @override
+  Future<http.StreamedResponse> send(http.BaseRequest request) async {
+    final trackId = int.parse(request.url.pathSegments.last);
+    trackRequests.add(trackId);
+    if (requestStarted != null && !requestStarted!.isCompleted) requestStarted!.complete();
+    if (gate != null) await gate!.future;
+    final remainingFailures = failuresRemaining[trackId] ?? 0;
+    final statusCode = remainingFailures > 0 ? 500 : 200;
+    if (remainingFailures > 0) failuresRemaining[trackId] = remainingFailures - 1;
+    return http.StreamedResponse(
+      Stream<List<int>>.value(utf8.encode(statusCode == 200 ? 'subtitle' : 'failed')),
+      statusCode,
+      request: request,
+    );
+  }
 }
 
 Future<_DeletionResult> _runEpisodeDeletion({required bool saf, bool failVideoDeletion = false}) async {
@@ -881,9 +2229,19 @@ bool _listEquals(List<int> left, List<int> right) {
 }
 
 class _FakeSafStorage implements SafStorageOperations {
-  _FakeSafStorage({this.failDeletes = const {}});
+  _FakeSafStorage({
+    this.failDeletes = const {},
+    Map<String, String> canonicalRoots = const {},
+    Set<String> persistedRoots = const {},
+    this.resolveOverride,
+  }) : canonicalRoots = Map<String, String>.from(canonicalRoots),
+       persistedRoots = Set<String>.from(persistedRoots);
 
   final Set<String> failDeletes;
+  final Map<String, String> canonicalRoots;
+  final Set<String> persistedRoots;
+  final Future<String?> Function(String uri)? resolveOverride;
+  final List<String> releaseCalls = [];
   final Map<String, SafDocumentFile> _childrenByPath = {};
   final Map<String, List<SafDocumentFile>> _childrenByUri = {};
   final Set<String> _existing = {};
@@ -941,6 +2299,11 @@ class _FakeSafStorage implements SafStorageOperations {
   bool existsSync(String uri) => _existing.contains(uri);
 
   @override
+  Future<String?> createNestedDirectories(String parentUri, List<String> pathComponents) async {
+    return _childrenByPath[_pathKey(parentUri, pathComponents)]?.uri;
+  }
+
+  @override
   Future<SafDocumentFile?> getChild(String parentUri, List<String> names) async {
     return _childrenByPath[_pathKey(parentUri, names)];
   }
@@ -948,6 +2311,25 @@ class _FakeSafStorage implements SafStorageOperations {
   @override
   Future<List<SafDocumentFile>?> list(String uri) async {
     return List<SafDocumentFile>.from(_childrenByUri[uri] ?? const []);
+  }
+
+  @override
+  Future<String?> resolvePersistedPermissionUri(String uri) async {
+    final override = resolveOverride;
+    if (override != null) return override(uri);
+    return canonicalRoots[uri] ?? (_existing.contains(uri) ? uri : null);
+  }
+
+  @override
+  Future<List<String>?> getPersistedPermissionUris() async {
+    return persistedRoots.toList(growable: false);
+  }
+
+  @override
+  Future<bool> releasePersistedPermission(String uri) async {
+    releaseCalls.add(uri);
+    persistedRoots.remove(uri);
+    return true;
   }
 
   @override
@@ -1030,6 +2412,40 @@ class _ArtworkRepairClient implements MediaServerClient {
   @override
   List<DownloadArtworkSpec> resolveDownloadArtwork(MediaItem item) {
     return buildArtworkSpecs(item, (path) => 'https://example.test$path');
+  }
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
+class _DirectCachePlexClient implements MediaServerClient, ScopedMediaServerClient {
+  _DirectCachePlexClient({required this.serverId, required this.scopedServerId, required this.metadata});
+
+  @override
+  final ServerId serverId;
+
+  @override
+  final String scopedServerId;
+
+  final MediaItem metadata;
+
+  @override
+  String? get serverName => 'Server';
+
+  @override
+  MediaBackend get backend => MediaBackend.plex;
+
+  @override
+  Future<MediaItem?> fetchItem(String id) async {
+    if (id != metadata.id) return null;
+    await PlexApiCache.instance.put(ServerId(scopedServerId), '/library/metadata/$id', {
+      'MediaContainer': {
+        'Metadata': [
+          {'ratingKey': metadata.id, 'type': metadata.kind.id, 'title': metadata.title},
+        ],
+      },
+    });
+    return metadata;
   }
 
   @override

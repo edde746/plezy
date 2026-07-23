@@ -153,6 +153,17 @@ class $DownloadedMediaTable extends DownloadedMedia
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _safRootUriMeta = const VerificationMeta(
+    'safRootUri',
+  );
+  @override
+  late final GeneratedColumn<String> safRootUri = GeneratedColumn<String>(
+    'saf_root_uri',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _thumbPathMeta = const VerificationMeta(
     'thumbPath',
   );
@@ -247,6 +258,7 @@ class $DownloadedMediaTable extends DownloadedMedia
     totalBytes,
     downloadedBytes,
     videoFilePath,
+    safRootUri,
     thumbPath,
     downloadedAt,
     errorMessage,
@@ -367,6 +379,15 @@ class $DownloadedMediaTable extends DownloadedMedia
         ),
       );
     }
+    if (data.containsKey('saf_root_uri')) {
+      context.handle(
+        _safRootUriMeta,
+        safRootUri.isAcceptableOrUnknown(
+          data['saf_root_uri']!,
+          _safRootUriMeta,
+        ),
+      );
+    }
     if (data.containsKey('thumb_path')) {
       context.handle(
         _thumbPathMeta,
@@ -479,6 +500,10 @@ class $DownloadedMediaTable extends DownloadedMedia
         DriftSqlType.string,
         data['${effectivePrefix}video_file_path'],
       ),
+      safRootUri: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}saf_root_uri'],
+      ),
       thumbPath: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}thumb_path'],
@@ -531,6 +556,7 @@ class DownloadedMediaItem extends DataClass
   final int? totalBytes;
   final int downloadedBytes;
   final String? videoFilePath;
+  final String? safRootUri;
   final String? thumbPath;
   final int? downloadedAt;
   final String? errorMessage;
@@ -552,6 +578,7 @@ class DownloadedMediaItem extends DataClass
     this.totalBytes,
     required this.downloadedBytes,
     this.videoFilePath,
+    this.safRootUri,
     this.thumbPath,
     this.downloadedAt,
     this.errorMessage,
@@ -585,6 +612,9 @@ class DownloadedMediaItem extends DataClass
     map['downloaded_bytes'] = Variable<int>(downloadedBytes);
     if (!nullToAbsent || videoFilePath != null) {
       map['video_file_path'] = Variable<String>(videoFilePath);
+    }
+    if (!nullToAbsent || safRootUri != null) {
+      map['saf_root_uri'] = Variable<String>(safRootUri);
     }
     if (!nullToAbsent || thumbPath != null) {
       map['thumb_path'] = Variable<String>(thumbPath);
@@ -631,6 +661,9 @@ class DownloadedMediaItem extends DataClass
       videoFilePath: videoFilePath == null && nullToAbsent
           ? const Value.absent()
           : Value(videoFilePath),
+      safRootUri: safRootUri == null && nullToAbsent
+          ? const Value.absent()
+          : Value(safRootUri),
       thumbPath: thumbPath == null && nullToAbsent
           ? const Value.absent()
           : Value(thumbPath),
@@ -672,6 +705,7 @@ class DownloadedMediaItem extends DataClass
       totalBytes: serializer.fromJson<int?>(json['totalBytes']),
       downloadedBytes: serializer.fromJson<int>(json['downloadedBytes']),
       videoFilePath: serializer.fromJson<String?>(json['videoFilePath']),
+      safRootUri: serializer.fromJson<String?>(json['safRootUri']),
       thumbPath: serializer.fromJson<String?>(json['thumbPath']),
       downloadedAt: serializer.fromJson<int?>(json['downloadedAt']),
       errorMessage: serializer.fromJson<String?>(json['errorMessage']),
@@ -698,6 +732,7 @@ class DownloadedMediaItem extends DataClass
       'totalBytes': serializer.toJson<int?>(totalBytes),
       'downloadedBytes': serializer.toJson<int>(downloadedBytes),
       'videoFilePath': serializer.toJson<String?>(videoFilePath),
+      'safRootUri': serializer.toJson<String?>(safRootUri),
       'thumbPath': serializer.toJson<String?>(thumbPath),
       'downloadedAt': serializer.toJson<int?>(downloadedAt),
       'errorMessage': serializer.toJson<String?>(errorMessage),
@@ -722,6 +757,7 @@ class DownloadedMediaItem extends DataClass
     Value<int?> totalBytes = const Value.absent(),
     int? downloadedBytes,
     Value<String?> videoFilePath = const Value.absent(),
+    Value<String?> safRootUri = const Value.absent(),
     Value<String?> thumbPath = const Value.absent(),
     Value<int?> downloadedAt = const Value.absent(),
     Value<String?> errorMessage = const Value.absent(),
@@ -751,6 +787,7 @@ class DownloadedMediaItem extends DataClass
     videoFilePath: videoFilePath.present
         ? videoFilePath.value
         : this.videoFilePath,
+    safRootUri: safRootUri.present ? safRootUri.value : this.safRootUri,
     thumbPath: thumbPath.present ? thumbPath.value : this.thumbPath,
     downloadedAt: downloadedAt.present ? downloadedAt.value : this.downloadedAt,
     errorMessage: errorMessage.present ? errorMessage.value : this.errorMessage,
@@ -788,6 +825,9 @@ class DownloadedMediaItem extends DataClass
       videoFilePath: data.videoFilePath.present
           ? data.videoFilePath.value
           : this.videoFilePath,
+      safRootUri: data.safRootUri.present
+          ? data.safRootUri.value
+          : this.safRootUri,
       thumbPath: data.thumbPath.present ? data.thumbPath.value : this.thumbPath,
       downloadedAt: data.downloadedAt.present
           ? data.downloadedAt.value
@@ -824,6 +864,7 @@ class DownloadedMediaItem extends DataClass
           ..write('totalBytes: $totalBytes, ')
           ..write('downloadedBytes: $downloadedBytes, ')
           ..write('videoFilePath: $videoFilePath, ')
+          ..write('safRootUri: $safRootUri, ')
           ..write('thumbPath: $thumbPath, ')
           ..write('downloadedAt: $downloadedAt, ')
           ..write('errorMessage: $errorMessage, ')
@@ -836,7 +877,7 @@ class DownloadedMediaItem extends DataClass
   }
 
   @override
-  int get hashCode => Object.hash(
+  int get hashCode => Object.hashAll([
     id,
     serverId,
     clientScopeId,
@@ -850,6 +891,7 @@ class DownloadedMediaItem extends DataClass
     totalBytes,
     downloadedBytes,
     videoFilePath,
+    safRootUri,
     thumbPath,
     downloadedAt,
     errorMessage,
@@ -857,7 +899,7 @@ class DownloadedMediaItem extends DataClass
     bgTaskId,
     mediaIndex,
     mediaSourceId,
-  );
+  ]);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -875,6 +917,7 @@ class DownloadedMediaItem extends DataClass
           other.totalBytes == this.totalBytes &&
           other.downloadedBytes == this.downloadedBytes &&
           other.videoFilePath == this.videoFilePath &&
+          other.safRootUri == this.safRootUri &&
           other.thumbPath == this.thumbPath &&
           other.downloadedAt == this.downloadedAt &&
           other.errorMessage == this.errorMessage &&
@@ -898,6 +941,7 @@ class DownloadedMediaCompanion extends UpdateCompanion<DownloadedMediaItem> {
   final Value<int?> totalBytes;
   final Value<int> downloadedBytes;
   final Value<String?> videoFilePath;
+  final Value<String?> safRootUri;
   final Value<String?> thumbPath;
   final Value<int?> downloadedAt;
   final Value<String?> errorMessage;
@@ -919,6 +963,7 @@ class DownloadedMediaCompanion extends UpdateCompanion<DownloadedMediaItem> {
     this.totalBytes = const Value.absent(),
     this.downloadedBytes = const Value.absent(),
     this.videoFilePath = const Value.absent(),
+    this.safRootUri = const Value.absent(),
     this.thumbPath = const Value.absent(),
     this.downloadedAt = const Value.absent(),
     this.errorMessage = const Value.absent(),
@@ -941,6 +986,7 @@ class DownloadedMediaCompanion extends UpdateCompanion<DownloadedMediaItem> {
     this.totalBytes = const Value.absent(),
     this.downloadedBytes = const Value.absent(),
     this.videoFilePath = const Value.absent(),
+    this.safRootUri = const Value.absent(),
     this.thumbPath = const Value.absent(),
     this.downloadedAt = const Value.absent(),
     this.errorMessage = const Value.absent(),
@@ -967,6 +1013,7 @@ class DownloadedMediaCompanion extends UpdateCompanion<DownloadedMediaItem> {
     Expression<int>? totalBytes,
     Expression<int>? downloadedBytes,
     Expression<String>? videoFilePath,
+    Expression<String>? safRootUri,
     Expression<String>? thumbPath,
     Expression<int>? downloadedAt,
     Expression<String>? errorMessage,
@@ -990,6 +1037,7 @@ class DownloadedMediaCompanion extends UpdateCompanion<DownloadedMediaItem> {
       if (totalBytes != null) 'total_bytes': totalBytes,
       if (downloadedBytes != null) 'downloaded_bytes': downloadedBytes,
       if (videoFilePath != null) 'video_file_path': videoFilePath,
+      if (safRootUri != null) 'saf_root_uri': safRootUri,
       if (thumbPath != null) 'thumb_path': thumbPath,
       if (downloadedAt != null) 'downloaded_at': downloadedAt,
       if (errorMessage != null) 'error_message': errorMessage,
@@ -1014,6 +1062,7 @@ class DownloadedMediaCompanion extends UpdateCompanion<DownloadedMediaItem> {
     Value<int?>? totalBytes,
     Value<int>? downloadedBytes,
     Value<String?>? videoFilePath,
+    Value<String?>? safRootUri,
     Value<String?>? thumbPath,
     Value<int?>? downloadedAt,
     Value<String?>? errorMessage,
@@ -1036,6 +1085,7 @@ class DownloadedMediaCompanion extends UpdateCompanion<DownloadedMediaItem> {
       totalBytes: totalBytes ?? this.totalBytes,
       downloadedBytes: downloadedBytes ?? this.downloadedBytes,
       videoFilePath: videoFilePath ?? this.videoFilePath,
+      safRootUri: safRootUri ?? this.safRootUri,
       thumbPath: thumbPath ?? this.thumbPath,
       downloadedAt: downloadedAt ?? this.downloadedAt,
       errorMessage: errorMessage ?? this.errorMessage,
@@ -1090,6 +1140,9 @@ class DownloadedMediaCompanion extends UpdateCompanion<DownloadedMediaItem> {
     if (videoFilePath.present) {
       map['video_file_path'] = Variable<String>(videoFilePath.value);
     }
+    if (safRootUri.present) {
+      map['saf_root_uri'] = Variable<String>(safRootUri.value);
+    }
     if (thumbPath.present) {
       map['thumb_path'] = Variable<String>(thumbPath.value);
     }
@@ -1130,6 +1183,7 @@ class DownloadedMediaCompanion extends UpdateCompanion<DownloadedMediaItem> {
           ..write('totalBytes: $totalBytes, ')
           ..write('downloadedBytes: $downloadedBytes, ')
           ..write('videoFilePath: $videoFilePath, ')
+          ..write('safRootUri: $safRootUri, ')
           ..write('thumbPath: $thumbPath, ')
           ..write('downloadedAt: $downloadedAt, ')
           ..write('errorMessage: $errorMessage, ')
@@ -1170,6 +1224,28 @@ class $DownloadOwnersTable extends DownloadOwners
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _backendMeta = const VerificationMeta(
+    'backend',
+  );
+  @override
+  late final GeneratedColumn<String> backend = GeneratedColumn<String>(
+    'backend',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _clientScopeIdMeta = const VerificationMeta(
+    'clientScopeId',
+  );
+  @override
+  late final GeneratedColumn<String> clientScopeId = GeneratedColumn<String>(
+    'client_scope_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _createdAtMeta = const VerificationMeta(
     'createdAt',
   );
@@ -1182,7 +1258,13 @@ class $DownloadOwnersTable extends DownloadOwners
     requiredDuringInsert: true,
   );
   @override
-  List<GeneratedColumn> get $columns => [profileId, globalKey, createdAt];
+  List<GeneratedColumn> get $columns => [
+    profileId,
+    globalKey,
+    backend,
+    clientScopeId,
+    createdAt,
+  ];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
@@ -1211,6 +1293,21 @@ class $DownloadOwnersTable extends DownloadOwners
     } else if (isInserting) {
       context.missing(_globalKeyMeta);
     }
+    if (data.containsKey('backend')) {
+      context.handle(
+        _backendMeta,
+        backend.isAcceptableOrUnknown(data['backend']!, _backendMeta),
+      );
+    }
+    if (data.containsKey('client_scope_id')) {
+      context.handle(
+        _clientScopeIdMeta,
+        clientScopeId.isAcceptableOrUnknown(
+          data['client_scope_id']!,
+          _clientScopeIdMeta,
+        ),
+      );
+    }
     if (data.containsKey('created_at')) {
       context.handle(
         _createdAtMeta,
@@ -1236,6 +1333,14 @@ class $DownloadOwnersTable extends DownloadOwners
         DriftSqlType.string,
         data['${effectivePrefix}global_key'],
       )!,
+      backend: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}backend'],
+      ),
+      clientScopeId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}client_scope_id'],
+      ),
       createdAt: attachedDatabase.typeMapping.read(
         DriftSqlType.int,
         data['${effectivePrefix}created_at'],
@@ -1253,10 +1358,14 @@ class DownloadOwnerItem extends DataClass
     implements Insertable<DownloadOwnerItem> {
   final String profileId;
   final String globalKey;
+  final String? backend;
+  final String? clientScopeId;
   final int createdAt;
   const DownloadOwnerItem({
     required this.profileId,
     required this.globalKey,
+    this.backend,
+    this.clientScopeId,
     required this.createdAt,
   });
   @override
@@ -1264,6 +1373,12 @@ class DownloadOwnerItem extends DataClass
     final map = <String, Expression>{};
     map['profile_id'] = Variable<String>(profileId);
     map['global_key'] = Variable<String>(globalKey);
+    if (!nullToAbsent || backend != null) {
+      map['backend'] = Variable<String>(backend);
+    }
+    if (!nullToAbsent || clientScopeId != null) {
+      map['client_scope_id'] = Variable<String>(clientScopeId);
+    }
     map['created_at'] = Variable<int>(createdAt);
     return map;
   }
@@ -1272,6 +1387,12 @@ class DownloadOwnerItem extends DataClass
     return DownloadOwnersCompanion(
       profileId: Value(profileId),
       globalKey: Value(globalKey),
+      backend: backend == null && nullToAbsent
+          ? const Value.absent()
+          : Value(backend),
+      clientScopeId: clientScopeId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(clientScopeId),
       createdAt: Value(createdAt),
     );
   }
@@ -1284,6 +1405,8 @@ class DownloadOwnerItem extends DataClass
     return DownloadOwnerItem(
       profileId: serializer.fromJson<String>(json['profileId']),
       globalKey: serializer.fromJson<String>(json['globalKey']),
+      backend: serializer.fromJson<String?>(json['backend']),
+      clientScopeId: serializer.fromJson<String?>(json['clientScopeId']),
       createdAt: serializer.fromJson<int>(json['createdAt']),
     );
   }
@@ -1293,6 +1416,8 @@ class DownloadOwnerItem extends DataClass
     return <String, dynamic>{
       'profileId': serializer.toJson<String>(profileId),
       'globalKey': serializer.toJson<String>(globalKey),
+      'backend': serializer.toJson<String?>(backend),
+      'clientScopeId': serializer.toJson<String?>(clientScopeId),
       'createdAt': serializer.toJson<int>(createdAt),
     };
   }
@@ -1300,16 +1425,26 @@ class DownloadOwnerItem extends DataClass
   DownloadOwnerItem copyWith({
     String? profileId,
     String? globalKey,
+    Value<String?> backend = const Value.absent(),
+    Value<String?> clientScopeId = const Value.absent(),
     int? createdAt,
   }) => DownloadOwnerItem(
     profileId: profileId ?? this.profileId,
     globalKey: globalKey ?? this.globalKey,
+    backend: backend.present ? backend.value : this.backend,
+    clientScopeId: clientScopeId.present
+        ? clientScopeId.value
+        : this.clientScopeId,
     createdAt: createdAt ?? this.createdAt,
   );
   DownloadOwnerItem copyWithCompanion(DownloadOwnersCompanion data) {
     return DownloadOwnerItem(
       profileId: data.profileId.present ? data.profileId.value : this.profileId,
       globalKey: data.globalKey.present ? data.globalKey.value : this.globalKey,
+      backend: data.backend.present ? data.backend.value : this.backend,
+      clientScopeId: data.clientScopeId.present
+          ? data.clientScopeId.value
+          : this.clientScopeId,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
     );
   }
@@ -1319,36 +1454,47 @@ class DownloadOwnerItem extends DataClass
     return (StringBuffer('DownloadOwnerItem(')
           ..write('profileId: $profileId, ')
           ..write('globalKey: $globalKey, ')
+          ..write('backend: $backend, ')
+          ..write('clientScopeId: $clientScopeId, ')
           ..write('createdAt: $createdAt')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(profileId, globalKey, createdAt);
+  int get hashCode =>
+      Object.hash(profileId, globalKey, backend, clientScopeId, createdAt);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
       (other is DownloadOwnerItem &&
           other.profileId == this.profileId &&
           other.globalKey == this.globalKey &&
+          other.backend == this.backend &&
+          other.clientScopeId == this.clientScopeId &&
           other.createdAt == this.createdAt);
 }
 
 class DownloadOwnersCompanion extends UpdateCompanion<DownloadOwnerItem> {
   final Value<String> profileId;
   final Value<String> globalKey;
+  final Value<String?> backend;
+  final Value<String?> clientScopeId;
   final Value<int> createdAt;
   final Value<int> rowid;
   const DownloadOwnersCompanion({
     this.profileId = const Value.absent(),
     this.globalKey = const Value.absent(),
+    this.backend = const Value.absent(),
+    this.clientScopeId = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   DownloadOwnersCompanion.insert({
     required String profileId,
     required String globalKey,
+    this.backend = const Value.absent(),
+    this.clientScopeId = const Value.absent(),
     required int createdAt,
     this.rowid = const Value.absent(),
   }) : profileId = Value(profileId),
@@ -1357,12 +1503,16 @@ class DownloadOwnersCompanion extends UpdateCompanion<DownloadOwnerItem> {
   static Insertable<DownloadOwnerItem> custom({
     Expression<String>? profileId,
     Expression<String>? globalKey,
+    Expression<String>? backend,
+    Expression<String>? clientScopeId,
     Expression<int>? createdAt,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
       if (profileId != null) 'profile_id': profileId,
       if (globalKey != null) 'global_key': globalKey,
+      if (backend != null) 'backend': backend,
+      if (clientScopeId != null) 'client_scope_id': clientScopeId,
       if (createdAt != null) 'created_at': createdAt,
       if (rowid != null) 'rowid': rowid,
     });
@@ -1371,12 +1521,16 @@ class DownloadOwnersCompanion extends UpdateCompanion<DownloadOwnerItem> {
   DownloadOwnersCompanion copyWith({
     Value<String>? profileId,
     Value<String>? globalKey,
+    Value<String?>? backend,
+    Value<String?>? clientScopeId,
     Value<int>? createdAt,
     Value<int>? rowid,
   }) {
     return DownloadOwnersCompanion(
       profileId: profileId ?? this.profileId,
       globalKey: globalKey ?? this.globalKey,
+      backend: backend ?? this.backend,
+      clientScopeId: clientScopeId ?? this.clientScopeId,
       createdAt: createdAt ?? this.createdAt,
       rowid: rowid ?? this.rowid,
     );
@@ -1390,6 +1544,12 @@ class DownloadOwnersCompanion extends UpdateCompanion<DownloadOwnerItem> {
     }
     if (globalKey.present) {
       map['global_key'] = Variable<String>(globalKey.value);
+    }
+    if (backend.present) {
+      map['backend'] = Variable<String>(backend.value);
+    }
+    if (clientScopeId.present) {
+      map['client_scope_id'] = Variable<String>(clientScopeId.value);
     }
     if (createdAt.present) {
       map['created_at'] = Variable<int>(createdAt.value);
@@ -1405,6 +1565,8 @@ class DownloadOwnersCompanion extends UpdateCompanion<DownloadOwnerItem> {
     return (StringBuffer('DownloadOwnersCompanion(')
           ..write('profileId: $profileId, ')
           ..write('globalKey: $globalKey, ')
+          ..write('backend: $backend, ')
+          ..write('clientScopeId: $clientScopeId, ')
           ..write('createdAt: $createdAt, ')
           ..write('rowid: $rowid')
           ..write(')'))
@@ -5423,6 +5585,7 @@ typedef $$DownloadedMediaTableCreateCompanionBuilder =
       Value<int?> totalBytes,
       Value<int> downloadedBytes,
       Value<String?> videoFilePath,
+      Value<String?> safRootUri,
       Value<String?> thumbPath,
       Value<int?> downloadedAt,
       Value<String?> errorMessage,
@@ -5446,6 +5609,7 @@ typedef $$DownloadedMediaTableUpdateCompanionBuilder =
       Value<int?> totalBytes,
       Value<int> downloadedBytes,
       Value<String?> videoFilePath,
+      Value<String?> safRootUri,
       Value<String?> thumbPath,
       Value<int?> downloadedAt,
       Value<String?> errorMessage,
@@ -5526,6 +5690,11 @@ class $$DownloadedMediaTableFilterComposer
 
   ColumnFilters<String> get videoFilePath => $composableBuilder(
     column: $table.videoFilePath,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get safRootUri => $composableBuilder(
+    column: $table.safRootUri,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -5639,6 +5808,11 @@ class $$DownloadedMediaTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get safRootUri => $composableBuilder(
+    column: $table.safRootUri,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get thumbPath => $composableBuilder(
     column: $table.thumbPath,
     builder: (column) => ColumnOrderings(column),
@@ -5735,6 +5909,11 @@ class $$DownloadedMediaTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<String> get safRootUri => $composableBuilder(
+    column: $table.safRootUri,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<String> get thumbPath =>
       $composableBuilder(column: $table.thumbPath, builder: (column) => column);
 
@@ -5817,6 +5996,7 @@ class $$DownloadedMediaTableTableManager
                 Value<int?> totalBytes = const Value.absent(),
                 Value<int> downloadedBytes = const Value.absent(),
                 Value<String?> videoFilePath = const Value.absent(),
+                Value<String?> safRootUri = const Value.absent(),
                 Value<String?> thumbPath = const Value.absent(),
                 Value<int?> downloadedAt = const Value.absent(),
                 Value<String?> errorMessage = const Value.absent(),
@@ -5838,6 +6018,7 @@ class $$DownloadedMediaTableTableManager
                 totalBytes: totalBytes,
                 downloadedBytes: downloadedBytes,
                 videoFilePath: videoFilePath,
+                safRootUri: safRootUri,
                 thumbPath: thumbPath,
                 downloadedAt: downloadedAt,
                 errorMessage: errorMessage,
@@ -5861,6 +6042,7 @@ class $$DownloadedMediaTableTableManager
                 Value<int?> totalBytes = const Value.absent(),
                 Value<int> downloadedBytes = const Value.absent(),
                 Value<String?> videoFilePath = const Value.absent(),
+                Value<String?> safRootUri = const Value.absent(),
                 Value<String?> thumbPath = const Value.absent(),
                 Value<int?> downloadedAt = const Value.absent(),
                 Value<String?> errorMessage = const Value.absent(),
@@ -5882,6 +6064,7 @@ class $$DownloadedMediaTableTableManager
                 totalBytes: totalBytes,
                 downloadedBytes: downloadedBytes,
                 videoFilePath: videoFilePath,
+                safRootUri: safRootUri,
                 thumbPath: thumbPath,
                 downloadedAt: downloadedAt,
                 errorMessage: errorMessage,
@@ -5923,6 +6106,8 @@ typedef $$DownloadOwnersTableCreateCompanionBuilder =
     DownloadOwnersCompanion Function({
       required String profileId,
       required String globalKey,
+      Value<String?> backend,
+      Value<String?> clientScopeId,
       required int createdAt,
       Value<int> rowid,
     });
@@ -5930,6 +6115,8 @@ typedef $$DownloadOwnersTableUpdateCompanionBuilder =
     DownloadOwnersCompanion Function({
       Value<String> profileId,
       Value<String> globalKey,
+      Value<String?> backend,
+      Value<String?> clientScopeId,
       Value<int> createdAt,
       Value<int> rowid,
     });
@@ -5950,6 +6137,16 @@ class $$DownloadOwnersTableFilterComposer
 
   ColumnFilters<String> get globalKey => $composableBuilder(
     column: $table.globalKey,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get backend => $composableBuilder(
+    column: $table.backend,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get clientScopeId => $composableBuilder(
+    column: $table.clientScopeId,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -5978,6 +6175,16 @@ class $$DownloadOwnersTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get backend => $composableBuilder(
+    column: $table.backend,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get clientScopeId => $composableBuilder(
+    column: $table.clientScopeId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<int> get createdAt => $composableBuilder(
     column: $table.createdAt,
     builder: (column) => ColumnOrderings(column),
@@ -5998,6 +6205,14 @@ class $$DownloadOwnersTableAnnotationComposer
 
   GeneratedColumn<String> get globalKey =>
       $composableBuilder(column: $table.globalKey, builder: (column) => column);
+
+  GeneratedColumn<String> get backend =>
+      $composableBuilder(column: $table.backend, builder: (column) => column);
+
+  GeneratedColumn<String> get clientScopeId => $composableBuilder(
+    column: $table.clientScopeId,
+    builder: (column) => column,
+  );
 
   GeneratedColumn<int> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
@@ -6042,11 +6257,15 @@ class $$DownloadOwnersTableTableManager
               ({
                 Value<String> profileId = const Value.absent(),
                 Value<String> globalKey = const Value.absent(),
+                Value<String?> backend = const Value.absent(),
+                Value<String?> clientScopeId = const Value.absent(),
                 Value<int> createdAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => DownloadOwnersCompanion(
                 profileId: profileId,
                 globalKey: globalKey,
+                backend: backend,
+                clientScopeId: clientScopeId,
                 createdAt: createdAt,
                 rowid: rowid,
               ),
@@ -6054,11 +6273,15 @@ class $$DownloadOwnersTableTableManager
               ({
                 required String profileId,
                 required String globalKey,
+                Value<String?> backend = const Value.absent(),
+                Value<String?> clientScopeId = const Value.absent(),
                 required int createdAt,
                 Value<int> rowid = const Value.absent(),
               }) => DownloadOwnersCompanion.insert(
                 profileId: profileId,
                 globalKey: globalKey,
+                backend: backend,
+                clientScopeId: clientScopeId,
                 createdAt: createdAt,
                 rowid: rowid,
               ),

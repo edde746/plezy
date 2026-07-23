@@ -33,6 +33,7 @@ class ContentStrip extends StatefulWidget {
   final Player player;
   final List<MediaChapter> chapters;
   final bool chaptersLoaded;
+  final bool canControl;
   final String? serverId;
   final bool showQueueTab;
   final Function(MediaItem)? onQueueItemSelected;
@@ -54,6 +55,7 @@ class ContentStrip extends StatefulWidget {
     required this.player,
     required this.chapters,
     required this.chaptersLoaded,
+    required this.canControl,
     this.serverId,
     this.showQueueTab = false,
     this.onQueueItemSelected,
@@ -144,6 +146,7 @@ class ContentStripState extends State<ContentStrip> {
   }
 
   Future<void> _handleChapterTap(Duration position) async {
+    if (!widget.canControl) return;
     final clamped = clampSeekPosition(widget.player, position);
     await (widget.onSeekRequested ?? widget.player.seek)(clamped);
     if (mounted) {
@@ -321,6 +324,8 @@ class ContentStripState extends State<ContentStrip> {
 
   @override
   Widget build(BuildContext context) {
+    if (!_hasChapters && !_hasQueue) return const SizedBox.shrink();
+
     final isTablet = MediaQuery.sizeOf(context).shortestSide >= 600;
     final stripHeight = isTablet ? 170.0 : 106.0;
     // Add extra height for focus decoration when in focus navigation mode
@@ -430,7 +435,9 @@ class ContentStripState extends State<ContentStrip> {
                 ? DownloadStorageService.instance.getArtworkPathSync(ServerId(widget.serverId!), chapter.thumb!)
                 : null;
 
-            void onTap() => unawaited(_handleChapterTap(chapter.startTime));
+            final VoidCallback? onTap = widget.canControl
+                ? () => unawaited(_handleChapterTap(chapter.startTime))
+                : null;
 
             final itemKey = _itemKeyFor(_chapterItemKeys, index);
             final item = _buildStripItem(
@@ -584,7 +591,7 @@ class ContentStripState extends State<ContentStrip> {
     required Widget? thumbnail,
     required String title,
     required String subtitle,
-    required VoidCallback onTap,
+    required VoidCallback? onTap,
     bool blurThumbnail = false,
     bool isTablet = false,
   }) {

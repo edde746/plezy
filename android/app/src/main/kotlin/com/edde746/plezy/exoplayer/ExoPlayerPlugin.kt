@@ -6,6 +6,8 @@ import android.content.Context
 import android.util.Log
 import com.edde746.plezy.libass.media.AssHandler
 import com.edde746.plezy.mpv.MpvPlayerCore
+import com.edde746.plezy.mpv.completeMpvPropertyNotInitialized
+import com.edde746.plezy.mpv.completeMpvPropertyResult
 import com.edde746.plezy.shared.MpvContentUriResolver
 import com.edde746.plezy.shared.PlayerChannelBinding
 import io.flutter.embedding.engine.plugins.FlutterPlugin
@@ -336,24 +338,64 @@ class ExoPlayerPlugin :
     }
   }
 
-  private fun handlePlay(result: MethodChannel.Result) {
-    activity?.runOnUiThread {
-      if (usingMpvFallback) {
-        mpvCore?.setProperty("pause", "no")
-      } else {
-        playerCore?.play()
+  private fun handleFallbackMpvProperty(
+    name: String,
+    value: String,
+    result: MethodChannel.Result,
+    successValue: Any? = null
+  ) {
+    val currentActivity = activity
+    val core = mpvCore
+    if (currentActivity == null || core?.isInitialized != true) {
+      completeMpvPropertyNotInitialized(result)
+      return
+    }
+    val generation = sessionGeneration
+    currentActivity.runOnUiThread {
+      if (
+        !usingMpvFallback ||
+        generation != sessionGeneration ||
+        activity !== currentActivity ||
+        mpvCore !== core ||
+        !core.isInitialized
+      ) {
+        completeMpvPropertyNotInitialized(result)
+        return@runOnUiThread
       }
+      core.setProperty(name, value) { outcome ->
+        val currentOutcome = if (
+          usingMpvFallback &&
+          generation == sessionGeneration &&
+          activity === currentActivity &&
+          mpvCore === core
+        ) {
+          outcome
+        } else {
+          Result.failure(IllegalStateException("MPV fallback unavailable"))
+        }
+        completeMpvPropertyResult(result, currentOutcome, successValue)
+      }
+    }
+  }
+
+  private fun handlePlay(result: MethodChannel.Result) {
+    if (usingMpvFallback) {
+      handleFallbackMpvProperty("pause", "no", result)
+      return
+    }
+    activity?.runOnUiThread {
+      playerCore?.play()
       result.success(null)
     } ?: result.success(null)
   }
 
   private fun handlePause(result: MethodChannel.Result) {
+    if (usingMpvFallback) {
+      handleFallbackMpvProperty("pause", "yes", result)
+      return
+    }
     activity?.runOnUiThread {
-      if (usingMpvFallback) {
-        mpvCore?.setProperty("pause", "yes")
-      } else {
-        playerCore?.pause()
-      }
+      playerCore?.pause()
       result.success(null)
     } ?: result.success(null)
   }
@@ -397,12 +439,12 @@ class ExoPlayerPlugin :
       return
     }
 
+    if (usingMpvFallback) {
+      handleFallbackMpvProperty("volume", volume.toString(), result)
+      return
+    }
     activity?.runOnUiThread {
-      if (usingMpvFallback) {
-        mpvCore?.setProperty("volume", volume.toString())
-      } else {
-        playerCore?.setVolume(volume / 100f) // Convert 0-100 to 0-1
-      }
+      playerCore?.setVolume(volume / 100f) // Convert 0-100 to 0-1
       result.success(null)
     } ?: result.success(null)
   }
@@ -415,12 +457,12 @@ class ExoPlayerPlugin :
       return
     }
 
+    if (usingMpvFallback) {
+      handleFallbackMpvProperty("speed", rate.toString(), result)
+      return
+    }
     activity?.runOnUiThread {
-      if (usingMpvFallback) {
-        mpvCore?.setProperty("speed", rate.toString())
-      } else {
-        playerCore?.setPlaybackSpeed(rate)
-      }
+      playerCore?.setPlaybackSpeed(rate)
       result.success(null)
     } ?: result.success(null)
   }
@@ -433,13 +475,13 @@ class ExoPlayerPlugin :
       return
     }
 
+    if (usingMpvFallback) {
+      // After fallback, track IDs come from mpv's track-list (already 1-indexed)
+      handleFallbackMpvProperty("aid", trackId, result)
+      return
+    }
     activity?.runOnUiThread {
-      if (usingMpvFallback) {
-        // After fallback, track IDs come from mpv's track-list (already 1-indexed)
-        mpvCore?.setProperty("aid", trackId)
-      } else {
-        playerCore?.selectAudioTrack(trackId)
-      }
+      playerCore?.selectAudioTrack(trackId)
       result.success(null)
     } ?: result.success(null)
   }
@@ -448,12 +490,12 @@ class ExoPlayerPlugin :
     val trackId = call.argument<String>("trackId")
 
     // trackId can be null or "no" to disable subtitles
+    if (usingMpvFallback) {
+      handleFallbackMpvProperty("sid", trackId ?: "no", result)
+      return
+    }
     activity?.runOnUiThread {
-      if (usingMpvFallback) {
-        mpvCore?.setProperty("sid", trackId ?: "no")
-      } else {
-        playerCore?.selectSubtitleTrack(trackId)
-      }
+      playerCore?.selectSubtitleTrack(trackId)
       result.success(null)
     } ?: result.success(null)
   }
@@ -705,8 +747,7 @@ class ExoPlayerPlugin :
     val audioSpdif = if (enabled) "ac3,eac3,dts,dts-hd,truehd" else ""
     pendingMpvProperties["audio-spdif"] = audioSpdif
     if (usingMpvFallback) {
-      mpvCore?.setProperty("audio-spdif", audioSpdif)
-      result.success(true)
+      handleFallbackMpvProperty("audio-spdif", audioSpdif, result, true)
       return
     }
     activity?.runOnUiThread {
@@ -724,24 +765,23 @@ class ExoPlayerPlugin :
       return
     }
 
-    // Apply sync offsets to ExoPlayer when active
-    if (!usingMpvFallback) {
-      when (name) {
-        "audio-delay" -> playerCore?.setAudioDelay(value.toDoubleOrNull() ?: 0.0)
-        "sub-delay" -> playerCore?.setSubtitleDelay(value.toDoubleOrNull() ?: 0.0)
-        // mpv semantics mirrored on the libass overlay: anchor non-positioned ASS
-        // events to the visible screen (Dart sets 'yes' for cover mode / zoom > 1)
-        "sub-ass-force-margins" -> playerCore?.setAssForceMargins(value == "yes")
-        "force-seekable" -> playerCore?.setForceSeekable(value == "yes")
-      }
+    if (usingMpvFallback) {
+      handleFallbackMpvProperty(name, value, result)
+      return
     }
 
-    if (usingMpvFallback) {
-      mpvCore?.setProperty(name, value)
-    } else {
-      // Store for later application if ExoPlayer falls back to MPV
-      pendingMpvProperties[name] = value
+    // Apply sync offsets to ExoPlayer when active
+    when (name) {
+      "audio-delay" -> playerCore?.setAudioDelay(value.toDoubleOrNull() ?: 0.0)
+      "sub-delay" -> playerCore?.setSubtitleDelay(value.toDoubleOrNull() ?: 0.0)
+      // mpv semantics mirrored on the libass overlay: anchor non-positioned ASS
+      // events to the visible screen (Dart sets 'yes' for cover mode / zoom > 1)
+      "sub-ass-force-margins" -> playerCore?.setAssForceMargins(value == "yes")
+      "force-seekable" -> playerCore?.setForceSeekable(value == "yes")
     }
+
+    // Before fallback this is queue acceptance, not a completed MPV write.
+    pendingMpvProperties[name] = value
     result.success(null)
   }
 
@@ -867,7 +907,11 @@ class ExoPlayerPlugin :
       }
 
       for ((propName, propValue) in pendingProps) {
-        core.setProperty(propName, propValue)
+        core.setProperty(propName, propValue) { outcome ->
+          if (outcome.isFailure) {
+            Log.w(TAG, "Failed to replay queued MPV property")
+          }
+        }
       }
 
       // Re-observe exactly what Dart registered via observeProperty, so the

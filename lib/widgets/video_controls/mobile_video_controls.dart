@@ -313,6 +313,7 @@ class _MobileVideoControlsState extends State<MobileVideoControls> with SingleTi
                                     player: widget.player,
                                     chapters: widget.chapters,
                                     chaptersLoaded: widget.chaptersLoaded,
+                                    canControl: widget.canControl,
                                     serverId: widget.serverId,
                                     showQueueTab: widget.showQueueTab,
                                     onQueueItemSelected: widget.onQueueItemSelected,
@@ -390,12 +391,11 @@ class _MobileVideoControlsState extends State<MobileVideoControls> with SingleTi
               icon: isPlaying ? Symbols.pause_rounded : Symbols.play_arrow_rounded,
               iconSize: 72,
               onPressed: () {
+                widget.onPlayPause();
                 if (isPlaying) {
-                  widget.player.pause();
-                  widget.onCancelAutoHide?.call(); // Cancel auto-hide when paused
+                  widget.onCancelAutoHide?.call();
                 } else {
-                  widget.player.play();
-                  widget.onStartAutoHide?.call(); // Start auto-hide when playing
+                  widget.onStartAutoHide?.call();
                 }
               },
             ),

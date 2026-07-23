@@ -23,9 +23,11 @@ import '../../../services/sleep_timer_service.dart';
 import '../../../services/video_filter_manager.dart';
 import '../../../focus/focusable_wrapper.dart';
 import '../../../utils/dialogs.dart';
+import '../../../utils/app_logger.dart';
 import '../../../utils/formatters.dart';
 import '../../../utils/platform_detector.dart';
 import '../../../utils/quality_preset_labels.dart';
+import '../../../utils/latest_async_write.dart';
 import '../../../utils/snackbar_helper.dart';
 import '../../../theme/mono_tokens.dart';
 import '../../../widgets/focusable_list_tile.dart';
@@ -91,7 +93,7 @@ class _SettingsMenuItem extends StatelessWidget {
   }
 }
 
-class _SettingsToggleItem extends StatelessWidget {
+class _SettingsToggleItem extends StatefulWidget {
   final Pref<bool> pref;
   final IconData icon;
   final String title;
@@ -100,22 +102,79 @@ class _SettingsToggleItem extends StatelessWidget {
   const _SettingsToggleItem({required this.pref, required this.icon, required this.title, this.onAfterWrite});
 
   @override
+  State<_SettingsToggleItem> createState() => _SettingsToggleItemState();
+}
+
+class _SettingsToggleItemState extends State<_SettingsToggleItem> {
+  static final LatestAsyncWrite<String> _writes = LatestAsyncWrite<String>();
+
+  bool? _pendingValue;
+  int _writeGeneration = 0;
+
+  @override
+  void didUpdateWidget(covariant _SettingsToggleItem oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.pref != widget.pref) {
+      ++_writeGeneration;
+      _pendingValue = null;
+    }
+  }
+
+  @override
+  void dispose() {
+    ++_writeGeneration;
+    super.dispose();
+  }
+
+  void _write(bool next) {
+    final pref = widget.pref;
+    final callback = widget.onAfterWrite;
+    final generation = ++_writeGeneration;
+    final writeToken = _writes.begin(pref.key);
+    setState(() {
+      _pendingValue = next;
+    });
+    unawaited(_commitWrite(pref, callback, next, generation, writeToken));
+  }
+
+  Future<void> _commitWrite(
+    Pref<bool> pref,
+    FutureOr<void> Function(bool value)? callback,
+    bool next,
+    int generation,
+    int writeToken,
+  ) async {
+    try {
+      final committed = await _writes.commitIfLatest(pref.key, writeToken, () async {
+        if (callback != null) await callback(next);
+        await SettingsService.instance.write(pref, next);
+      });
+      if (!committed || !mounted || generation != _writeGeneration) return;
+      setState(() {
+        _pendingValue = null;
+      });
+    } catch (error, stackTrace) {
+      appLogger.w('Failed to update playback setting', error: error, stackTrace: stackTrace);
+      if (!mounted || generation != _writeGeneration) return;
+      setState(() {
+        _pendingValue = null;
+      });
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     final settings = SettingsService.instance;
     return ValueListenableBuilder<bool>(
-      valueListenable: settings.listenable(pref),
+      valueListenable: settings.listenable(widget.pref),
       builder: (context, value, _) {
-        Future<void> write(bool next) async {
-          await settings.write(pref, next);
-          final callback = onAfterWrite;
-          if (callback != null) await callback(next);
-        }
-
+        final displayedValue = _pendingValue ?? value;
+        final isPending = _pendingValue != null;
         return FocusableListTile(
-          leading: AppIcon(icon, fill: 1, color: value ? Colors.amber : tokens(context).textMuted),
-          title: Text(title),
-          trailing: Switch(value: value, onChanged: write, activeThumbColor: Colors.amber),
-          onTap: () => write(!value),
+          leading: AppIcon(widget.icon, fill: 1, color: displayedValue ? Colors.amber : tokens(context).textMuted),
+          title: Text(widget.title),
+          trailing: Switch(value: displayedValue, onChanged: isPending ? null : _write, activeThumbColor: Colors.amber),
+          onTap: isPending ? null : () => _write(!displayedValue),
         );
       },
     );
@@ -125,6 +184,12 @@ class _SettingsToggleItem extends StatelessWidget {
 /// Unified settings sheet for playback adjustments with in-sheet navigation
 class VideoSettingsSheet extends StatefulWidget {
   final Player player;
+
+  /// Whether this player surface supports Plezy's HDR control.
+  ///
+  /// Defaults to the native platform capability, but can be supplied by
+  /// embedders whose capability is known independently of the host platform.
+  final bool? supportsHdrControl;
   final int audioSyncOffset;
   final int subtitleSyncOffset;
   final double videoZoomScale;
@@ -170,6 +235,7 @@ class VideoSettingsSheet extends StatefulWidget {
   const VideoSettingsSheet({
     super.key,
     required this.player,
+    this.supportsHdrControl,
     required this.audioSyncOffset,
     required this.subtitleSyncOffset,
     this.videoZoomScale = 1.0,
@@ -203,6 +269,10 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
   late int _subtitleSyncOffset;
   late double _zoomScale;
   String _dvConversionMode = 'auto';
+  int _dvConversionWriteGeneration = 0;
+
+  bool get _supportsHdrControl =>
+      widget.supportsHdrControl ?? (Platform.isIOS || Platform.isMacOS || Platform.isWindows);
 
   bool get _showDebugDvConversionMode {
     if (!kDebugMode) return false;
@@ -237,13 +307,21 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
     });
   }
 
-  Future<void> _setDebugDvConversionMode(String mode) async {
-    await widget.player.setProperty('dv-conversion-mode', mode);
-    if (!mounted) return;
-    setState(() {
-      _dvConversionMode = mode;
-    });
-    OverlaySheetController.of(context).close();
+  void _setDebugDvConversionMode(String mode) {
+    final targetPlayer = widget.player;
+    final generation = ++_dvConversionWriteGeneration;
+    unawaited(() async {
+      try {
+        await targetPlayer.setProperty('dv-conversion-mode', mode);
+        if (!mounted || generation != _dvConversionWriteGeneration || targetPlayer != widget.player) return;
+        setState(() {
+          _dvConversionMode = mode;
+        });
+        OverlaySheetController.of(context).close();
+      } catch (error, stackTrace) {
+        appLogger.w('Failed to update Dolby Vision conversion mode', error: error, stackTrace: stackTrace);
+      }
+    }());
   }
 
   void _navigateTo(_SettingsView view) {
@@ -513,8 +591,8 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
           onTap: () => _navigateTo(_SettingsView.subtitleSync),
         ),
 
-        // HDR Toggle (iOS, macOS, and Windows)
-        if (Platform.isIOS || Platform.isMacOS || Platform.isWindows)
+        // HDR Toggle
+        if (_supportsHdrControl)
           _SettingsToggleItem(
             pref: SettingsService.enableHDR,
             icon: Symbols.hdr_strong_rounded,

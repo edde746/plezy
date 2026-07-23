@@ -31,6 +31,7 @@ import 'package:plezy/profiles/profile_connection_registry.dart';
 import 'package:plezy/profiles/profile_registry.dart';
 import 'package:plezy/providers/download_provider.dart';
 import 'package:plezy/providers/multi_server_provider.dart';
+import 'package:plezy/providers/playback_state_provider.dart';
 import 'package:plezy/screens/music/album_detail_screen.dart';
 import 'package:plezy/screens/music/artist_detail_screen.dart';
 import 'package:plezy/services/data_aggregation_service.dart';
@@ -42,12 +43,12 @@ import 'package:plezy/services/music/music_playback_service.dart';
 import 'package:plezy/services/multi_server_manager.dart';
 import 'package:plezy/services/plex_api_cache.dart';
 import 'package:plezy/services/settings_service.dart';
-import 'package:plezy/services/plex_client.dart';
 import 'package:plezy/theme/mono_theme.dart';
 import 'package:plezy/utils/media_server_http_client.dart';
 import 'package:plezy/utils/platform_detector.dart';
 import 'package:plezy/widgets/media_context_menu.dart';
 import 'package:provider/provider.dart';
+import '../test_helpers/backend_client_fixtures.dart';
 import '../test_helpers/media_items.dart';
 import '../test_helpers/prefs.dart';
 
@@ -226,6 +227,95 @@ void main() {
       expect(music.callCount, 3, reason: 'the stale playlist fetch must not start a fourth queue');
       expect(music.playedTracks, [newerTrack]);
       expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('Jellyfin video playlist context Play exposes cancellable loading', (tester) async {
+      LocaleSettings.setLocaleSync(AppLocale.en);
+      TvDetectionService.debugSetAppleTVOverride(true);
+      addTearDown(() => TvDetectionService.debugSetAppleTVOverride(null));
+
+      final client = _AudioPlaylistClient([
+        testMediaItem(
+          id: 'movie-1',
+          backend: MediaBackend.jellyfin,
+          kind: MediaKind.movie,
+          title: 'Movie',
+          serverId: 'srv-1',
+        ),
+      ])..blockWithAbort = true;
+      final playback = PlaybackStateProvider();
+      final db = AppDatabase.forTesting(NativeDatabase.memory());
+      final manager = MultiServerManager()..debugRegisterClientForTesting(client);
+      final multiServerProvider = MultiServerProvider(manager, DataAggregationService(manager));
+      final connections = ConnectionRegistry(db);
+      final profileConnections = ProfileConnectionRegistry(db);
+      final plexHome = PlexHomeService(
+        connections: connections,
+        profileConnections: profileConnections,
+        plexHomeUserFetcher: (_) async => const [],
+      );
+      final activeProfileProvider = ActiveProfileProvider(
+        registry: ProfileRegistry(db),
+        plexHome: plexHome,
+        connections: connections,
+      );
+      addTearDown(() async {
+        playback.dispose();
+        activeProfileProvider.dispose();
+        await plexHome.dispose();
+        multiServerProvider.dispose();
+        manager.dispose();
+        await db.close();
+      });
+
+      final menuKey = GlobalKey<MediaContextMenuState>();
+      const playlist = MediaPlaylist(
+        id: 'playlist-video',
+        backend: MediaBackend.jellyfin,
+        title: 'Video Playlist',
+        playlistType: 'video',
+        serverId: 'srv-1',
+      );
+      await tester.pumpWidget(
+        TranslationProvider(
+          child: MultiProvider(
+            providers: [
+              ChangeNotifierProvider<MultiServerProvider>.value(value: multiServerProvider),
+              ChangeNotifierProvider<ActiveProfileProvider>.value(value: activeProfileProvider),
+              ChangeNotifierProvider<PlaybackStateProvider>.value(value: playback),
+            ],
+            child: MaterialApp(
+              theme: monoTheme(dark: true),
+              home: Scaffold(
+                body: Center(
+                  child: MediaContextMenu(
+                    key: menuKey,
+                    item: playlist,
+                    child: const SizedBox(width: 120, height: 80, child: Text('video target')),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+
+      menuKey.currentState!.showContextMenu(tester.element(find.text('video target')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text(t.common.play));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+
+      expect(find.byType(AlertDialog), findsOneWidget);
+      expect(find.text(t.common.cancel), findsOneWidget);
+      expect(client.activeAbort, isNotNull);
+      await tester.tap(find.text(t.common.cancel));
+      await tester.pumpAndSettle();
+
+      expect(client.activeAbort!.isAborted, isTrue);
+      expect(playback.isQueueActive, isFalse);
+      expect(find.text('video target'), findsOneWidget);
+      expect(find.byType(SnackBar), findsNothing);
     });
 
     testWidgets('file info client resolution failure shows an error without popping another route', (tester) async {
@@ -489,7 +579,7 @@ Future<GlobalKey<MediaContextMenuState>> _pumpPlexMovieMenu(
 
   final db = AppDatabase.forTesting(NativeDatabase.memory());
   PlexApiCache.initialize(db);
-  final client = PlexClient.forTesting(
+  final client = testPlexClient(
     config: PlexConfig(
       baseUrl: 'https://plex.example.com',
       token: 'token',
@@ -591,6 +681,8 @@ Future<void> _openPlaylistPicker(WidgetTester tester, GlobalKey<MediaContextMenu
 class _AudioPlaylistClient implements MediaServerClient {
   final List<MediaItem> tracks;
   Completer<void>? fetchGate;
+  bool blockWithAbort = false;
+  AbortController? activeAbort;
 
   _AudioPlaylistClient(this.tracks);
 
@@ -608,6 +700,15 @@ class _AudioPlaylistClient implements MediaServerClient {
 
   @override
   Future<LibraryPage<MediaItem>> fetchPlaylistPage(String id, {int? start, int? size, AbortController? abort}) async {
+    if (blockWithAbort) {
+      activeAbort = abort;
+      if (abort == null) {
+        await Completer<void>().future;
+      } else {
+        await abort.trigger;
+        abort.throwIfAborted();
+      }
+    }
     await fetchGate?.future;
     return fakeLibraryPage(tracks, start: start, size: size);
   }

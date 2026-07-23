@@ -1,426 +1,258 @@
 import 'dart:convert';
+import 'dart:io';
 
+import 'package:file_picker/file_picker.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:plezy/services/base_shared_preferences_service.dart';
 import 'package:plezy/services/settings_export_service.dart';
 
 import '../test_helpers/prefs.dart';
 
-// NOTE on coverage scope:
-// `SettingsExportService.exportToFile` and `importFromFile` both call into
-// platform plumbing (FilePicker, PackageInfo, path_provider, dart:io.File).
-// Per the task brief we only round-trip through the *pure* helpers
-// `buildExportMap` and `applyImportMap` against an in-memory
-// SharedPreferencesWithCache. That covers the user-prefix re-scoping, the
-// allow/deny filtering, and the typed value (de)serialization — which is
-// where the format-stability risk lives.
-
 void main() {
-  setUp(resetSharedPreferencesForTest);
+  TestWidgetsFlutterBinding.ensureInitialized();
 
-  // ============================================================
-  // buildExportMap — header fields
-  // ============================================================
+  late _FakeFilePicker picker;
 
-  group('buildExportMap header', () {
-    test('emits the documented format version, an ISO8601 timestamp, and the platform', () async {
+  setUp(() {
+    resetSharedPreferencesForTest();
+    SettingsExportService.debugBeforeImportWrite = null;
+    picker = _FakeFilePicker();
+    FilePicker.platform = picker;
+    PackageInfo.setMockInitialValues(
+      appName: 'Plezy',
+      packageName: 'com.example.plezy',
+      version: '1.2.3',
+      buildNumber: '4',
+      buildSignature: '',
+    );
+  });
+
+  tearDown(() {
+    SettingsExportService.debugBeforeImportWrite = null;
+  });
+
+  group('portable settings registry', () {
+    test('exports every supported storage type and strips only active-user library scope', () async {
       final prefs = await BaseSharedPreferencesService.sharedCache();
-      final out = SettingsExportService.buildExportMap(prefs);
+      await prefs.setBool('enable_hardware_decoding', true);
+      await prefs.setInt('seek_time_small', 42);
+      await prefs.setDouble('volume', 75.5);
+      await prefs.setString('preferred_video_codec', 'h264');
+      await prefs.setStringList('user_alice_library_order', const ['movies', 'shows']);
+      await prefs.setStringList('user_bob_library_order', const ['private']);
+
+      final out = SettingsExportService.buildExportMap(prefs, currentUserUuid: 'alice', appVersion: '1.2.3');
+      final exported = out['prefs'] as Map<String, dynamic>;
 
       expect(out['formatVersion'], SettingsExportService.formatVersion);
-      expect(out['appVersion'], '');
-      expect(out['exportedAt'], isA<String>());
-      // Sanity: the timestamp parses as an ISO-8601 instant.
-      expect(() => DateTime.parse(out['exportedAt'] as String), returnsNormally);
-      expect(out['platform'], isA<String>());
-      expect(out['prefs'], isA<Map>());
-    });
-
-    test('honors the supplied appVersion', () async {
-      final prefs = await BaseSharedPreferencesService.sharedCache();
-      final out = SettingsExportService.buildExportMap(prefs, appVersion: '1.2.3');
       expect(out['appVersion'], '1.2.3');
-    });
-  });
-
-  // ============================================================
-  // buildExportMap — type encoding round-trip
-  // ============================================================
-
-  group('buildExportMap type encoding', () {
-    test('encodes bool / int / double / string / stringList with type markers', () async {
-      final prefs = await BaseSharedPreferencesService.sharedCache();
-      await prefs.setBool('flag_a', true);
-      await prefs.setInt('count_a', 42);
-      await prefs.setDouble('volume', 0.75);
-      await prefs.setString('name', 'plezy');
-      await prefs.setStringList('list_a', const ['x', 'y']);
-
-      final out = SettingsExportService.buildExportMap(prefs);
-      final p = out['prefs'] as Map<String, dynamic>;
-
-      expect(p['flag_a'], {'type': 'bool', 'value': true});
-      expect(p['count_a'], {'type': 'int', 'value': 42});
-      expect(p['volume'], {'type': 'double', 'value': 0.75});
-      expect(p['name'], {'type': 'string', 'value': 'plezy'});
-      expect(p['list_a'], {
+      expect(DateTime.tryParse(out['exportedAt'] as String), isNotNull);
+      expect(exported['enable_hardware_decoding'], {'type': 'bool', 'value': true});
+      expect(exported['seek_time_small'], {'type': 'int', 'value': 42});
+      expect(exported['volume'], {'type': 'double', 'value': 75.5});
+      expect(exported['preferred_video_codec'], {'type': 'string', 'value': 'h264'});
+      expect(exported['library_order'], {
         'type': 'stringList',
-        'value': ['x', 'y'],
+        'value': ['movies', 'shows'],
       });
-    });
-  });
-
-  // ============================================================
-  // buildExportMap — denylist filtering
-  // ============================================================
-
-  group('buildExportMap denylist', () {
-    test('drops exact-deny credential keys', () async {
-      final prefs = await BaseSharedPreferencesService.sharedCache();
-      // Sample of the credential bucket — should never leak.
-      await prefs.setString('plex_token', 'abc');
-      await prefs.setString('client_identifier', 'xyz');
-      await prefs.setString('current_user_uuid', 'user-1');
-      await prefs.setString('active_app_profile_id', 'profile-1');
-      await prefs.setString('user_profile', '{}');
-      await prefs.setString('credential_vault_key_v1', 'base64-key');
-      // Plus a good-faith key that should stay.
-      await prefs.setBool('keep_me', true);
-
-      final out = SettingsExportService.buildExportMap(prefs);
-      final p = out['prefs'] as Map<String, dynamic>;
-
-      expect(p, isNot(contains('plex_token')));
-      expect(p, isNot(contains('client_identifier')));
-      expect(p, isNot(contains('current_user_uuid')));
-      expect(p, isNot(contains('active_app_profile_id')));
-      expect(p, isNot(contains('user_profile')));
-      expect(p, isNot(contains('credential_vault_key_v1')));
-      expect(p, contains('keep_me'));
+      expect(jsonEncode(out), isNot(contains('private')));
     });
 
-    test('drops prefix-deny keys', () async {
+    test('excludes device-local download roots while preserving portable download controls', () async {
+      const sourcePath = '/source-device/downloads';
       final prefs = await BaseSharedPreferencesService.sharedCache();
-      await prefs.setString('server_endpoint_srv1', 'http://x');
-      await prefs.setInt('episode_count_show42', 24);
-      await prefs.setInt('watched_threshold_srv1', 95);
-      await prefs.setString('trakt_access_token', 'secret');
-      await prefs.setString('plex_home_users_conn-1', '[{"title":"Kid"}]');
-      await prefs.setInt('profile_last_used_profile-1', 123);
-      // The trakt feature flag uses a different prefix and SHOULD survive.
+      await prefs.setString('custom_download_path', sourcePath);
+      await prefs.setString('custom_download_path_type', 'saf');
+      await prefs.setBool('download_on_wifi_only', false);
+
+      final out = SettingsExportService.buildExportMap(prefs, currentUserUuid: 'alice');
+      final exported = out['prefs'] as Map<String, dynamic>;
+      final encoded = jsonEncode(out);
+
+      expect(out['formatVersion'], 1);
+      expect(exported['download_on_wifi_only'], {'type': 'bool', 'value': false});
+      expect(exported, isNot(contains('custom_download_path')));
+      expect(exported, isNot(contains('custom_download_path_type')));
+      expect(encoded, isNot(contains(sourcePath)));
+    });
+
+    test('fails closed for unknown, credential, account, path, history, and runtime keys', () async {
+      const canaries = ['SEERR-BEARER-CANARY', 'ACCOUNT-ID-CANARY', 'DEVICE-PATH-CANARY', 'RUNTIME-TIME-CANARY'];
+      final prefs = await BaseSharedPreferencesService.sharedCache();
       await prefs.setBool('enable_trakt_scrobble', true);
-
-      final out = SettingsExportService.buildExportMap(prefs);
-      final p = out['prefs'] as Map<String, dynamic>;
-
-      expect(p, isNot(contains('server_endpoint_srv1')));
-      expect(p, isNot(contains('episode_count_show42')));
-      expect(p, isNot(contains('watched_threshold_srv1')));
-      expect(p, isNot(contains('trakt_access_token')));
-      expect(p, isNot(contains('plex_home_users_conn-1')));
-      expect(p, isNot(contains('profile_last_used_profile-1')));
-      expect(p, contains('enable_trakt_scrobble'));
-    });
-
-    test('drops MAL / AniList / SIMKL session keys but keeps their feature toggles', () async {
-      final prefs = await BaseSharedPreferencesService.sharedCache();
-      // Stripped tracker session tokens — these would carry access_token /
-      // refresh_token JSON if they leaked into the export.
-      await prefs.setString('mal_session', '{"access_token":"a","refresh_token":"r"}');
-      await prefs.setString('anilist_session', '{"access_token":"a"}');
-      await prefs.setString('simkl_session', '{"access_token":"a"}');
-      // Feature toggles use the `enable_` prefix and SHOULD survive.
-      await prefs.setBool('enable_mal_scrobble', true);
-      await prefs.setBool('enable_anilist_scrobble', true);
-      await prefs.setBool('enable_simkl_scrobble', true);
-
-      final out = SettingsExportService.buildExportMap(prefs);
-      final p = out['prefs'] as Map<String, dynamic>;
-
-      expect(p, isNot(contains('mal_session')));
-      expect(p, isNot(contains('anilist_session')));
-      expect(p, isNot(contains('simkl_session')));
-      expect(p, contains('enable_mal_scrobble'));
-      expect(p, contains('enable_anilist_scrobble'));
-      expect(p, contains('enable_simkl_scrobble'));
-    });
-
-    test('user-scoped tracker sessions are dropped after the user prefix is stripped', () async {
-      final prefs = await BaseSharedPreferencesService.sharedCache();
-      // TrackerAccountStore writes under user_{uuid}_{baseKey}. After the
-      // active-user prefix is stripped on export, the key falls under the
-      // tracker prefix denylist.
-      await prefs.setString('user_alice_mal_session', '{"access_token":"a"}');
-      await prefs.setString('user_alice_anilist_session', '{"access_token":"a"}');
-      await prefs.setString('user_alice_simkl_session', '{"access_token":"a"}');
-      await prefs.setString('user_alice_trakt_session', '{"access_token":"a"}');
+      await prefs.setString('user_alice_seerr_session', '{"cookie":"${canaries[0]}","account":"${canaries[1]}"}');
+      await prefs.setString('current_user_uuid', canaries[1]);
+      await prefs.setString('custom_download_path', canaries[2]);
+      await prefs.setString('custom_download_path_type', 'saf');
+      await prefs.setBool('crash_reporting', true);
+      await prefs.setString('custom_relay_url', 'https://${canaries[2]}.invalid');
+      await prefs.setString('update_last_check_time', canaries[3]);
+      await prefs.setString('watch_together_recent_rooms', canaries[1]);
+      await prefs.setString('future_runtime_key', 'unknown');
 
       final out = SettingsExportService.buildExportMap(prefs, currentUserUuid: 'alice');
-      final p = out['prefs'] as Map<String, dynamic>;
+      final encoded = jsonEncode(out);
+      final exported = out['prefs'] as Map<String, dynamic>;
 
-      expect(p, isNot(contains('mal_session')));
-      expect(p, isNot(contains('anilist_session')));
-      expect(p, isNot(contains('simkl_session')));
-      expect(p, isNot(contains('trakt_session')));
+      expect(exported.keys, contains('enable_trakt_scrobble'));
+      expect(exported.keys, isNot(contains('seerr_session')));
+      expect(exported.keys, isNot(contains('current_user_uuid')));
+      expect(exported.keys, isNot(contains('custom_download_path')));
+      expect(exported.keys, isNot(contains('custom_download_path_type')));
+      expect(exported.keys, isNot(contains('crash_reporting')));
+      expect(exported.keys, isNot(contains('custom_relay_url')));
+      expect(exported.keys, isNot(contains('update_last_check_time')));
+      expect(exported.keys, isNot(contains('watch_together_recent_rooms')));
+      expect(exported.keys, isNot(contains('future_runtime_key')));
+      for (final canary in canaries) {
+        expect(encoded, isNot(contains(canary)));
+      }
     });
 
-    test('drops the internal migration flag', () async {
+    test('does not export any user-scoped value without an active user', () async {
       final prefs = await BaseSharedPreferencesService.sharedCache();
-      await prefs.setBool('buffer_size_migrated_to_auto', true);
-      final out = SettingsExportService.buildExportMap(prefs);
-      expect((out['prefs'] as Map), isNot(contains('buffer_size_migrated_to_auto')));
-    });
-  });
+      await prefs.setStringList('user_alice_library_order', const ['movies']);
+      await prefs.setBool('enable_hdr', true);
 
-  // ============================================================
-  // buildExportMap — user-prefix scoping
-  // ============================================================
+      final exported = SettingsExportService.buildExportMap(prefs)['prefs'] as Map<String, dynamic>;
 
-  group('buildExportMap user-scoping', () {
-    test('strips the active user prefix on export', () async {
-      final prefs = await BaseSharedPreferencesService.sharedCache();
-      await prefs.setStringList('user_alice_library_order', const ['a', 'b']);
-      await prefs.setBool('user_alice_hidden_libraries_does_not_exist', true);
-
-      final out = SettingsExportService.buildExportMap(prefs, currentUserUuid: 'alice');
-      final p = out['prefs'] as Map<String, dynamic>;
-
-      // Active user's keys land under their *base* names.
-      expect(p, contains('library_order'));
-      expect(p['library_order'], {
-        'type': 'stringList',
-        'value': ['a', 'b'],
-      });
-      // Anything else under user_ that *isn't* the active user is excluded —
-      // the synthetic key above lives under "alice" and so it goes through.
-      expect(p, contains('hidden_libraries_does_not_exist'));
+      expect(exported, contains('enable_hdr'));
+      expect(exported, isNot(contains('library_order')));
     });
 
-    test('skips other users\' scoped keys entirely', () async {
+    test('never exports tvOS database recovery generations or payloads', () async {
+      const canary = 'PROTECTED-RECOVERY-PAYLOAD-CANARY';
       final prefs = await BaseSharedPreferencesService.sharedCache();
-      await prefs.setStringList('user_alice_library_order', const ['a']);
-      await prefs.setStringList('user_bob_library_order', const ['b']);
+      await prefs.setString('tvos_db_recovery_manifest_v1', '{"state":"committed"}');
+      await prefs.setString('tvos_db_recovery_identity_v1', canary);
+      await prefs.setString('tvos_db_recovery_pending_v1', canary);
+      await prefs.setBool('enable_hdr', true);
 
-      final out = SettingsExportService.buildExportMap(prefs, currentUserUuid: 'alice');
-      final p = out['prefs'] as Map<String, dynamic>;
+      final export = SettingsExportService.buildExportMap(prefs, currentUserUuid: 'alice');
+      final encoded = jsonEncode(export);
+      final exported = export['prefs'] as Map<String, dynamic>;
 
-      // alice's value made it through (stripped to base key).
-      expect(p['library_order'], {
-        'type': 'stringList',
-        'value': ['a'],
-      });
-      // bob's was filtered out — there's no second pref with that name.
-      expect(p.values.where((v) => (v as Map)['value'] is List && (v['value'] as List).contains('b')), isEmpty);
-    });
-
-    test('without currentUserUuid: every user_-prefixed key is skipped', () async {
-      final prefs = await BaseSharedPreferencesService.sharedCache();
-      await prefs.setStringList('user_alice_library_order', const ['a']);
-      await prefs.setBool('global_flag', true);
-
-      final out = SettingsExportService.buildExportMap(prefs); // no UUID
-      final p = out['prefs'] as Map<String, dynamic>;
-
-      expect(p, contains('global_flag'));
-      // Every user_-scoped key is skipped because we have no active user.
-      expect(p.keys.where((k) => k.startsWith('user_')), isEmpty);
-      expect(p, isNot(contains('library_order')));
+      expect(exported, contains('enable_hdr'));
+      expect(exported.keys.where((key) => key.startsWith('tvos_db_recovery_')), isEmpty);
+      expect(encoded, isNot(contains(canary)));
     });
   });
 
-  // ============================================================
-  // applyImportMap — version + structure validation
-  // ============================================================
-
-  group('applyImportMap validation', () {
-    test('throws when formatVersion is missing or wrong type', () async {
+  group('transactional import', () {
+    test('validates version and structure before writing', () async {
       final prefs = await BaseSharedPreferencesService.sharedCache();
-      // Missing
-      expect(
-        () => SettingsExportService.applyImportMap({'prefs': const <String, dynamic>{}}, prefs, currentUserUuid: 'u'),
+
+      await expectLater(
+        SettingsExportService.applyImportMap({'prefs': const {}}, prefs, currentUserUuid: 'alice'),
         throwsA(isA<InvalidExportFileException>()),
       );
-      // Wrong type
-      expect(
-        () => SettingsExportService.applyImportMap(
-          {'formatVersion': 'one', 'prefs': const <String, dynamic>{}},
+      await expectLater(
+        SettingsExportService.applyImportMap(
+          {'formatVersion': SettingsExportService.formatVersion + 1, 'prefs': const {}},
           prefs,
-          currentUserUuid: 'u',
+          currentUserUuid: 'alice',
         ),
         throwsA(isA<InvalidExportFileException>()),
       );
-    });
-
-    test('throws when formatVersion is newer than the supported one', () async {
-      final prefs = await BaseSharedPreferencesService.sharedCache();
-      expect(
-        () => SettingsExportService.applyImportMap(
-          {'formatVersion': SettingsExportService.formatVersion + 1, 'prefs': const <String, dynamic>{}},
+      await expectLater(
+        SettingsExportService.applyImportMap(
+          {'formatVersion': SettingsExportService.formatVersion, 'prefs': 'invalid'},
           prefs,
-          currentUserUuid: 'u',
+          currentUserUuid: 'alice',
         ),
         throwsA(isA<InvalidExportFileException>()),
       );
+      expect(prefs.getBool('enable_hdr'), isNull);
     });
 
-    test('throws when prefs is missing or not a map', () async {
+    test('imports allowlisted values, re-scopes library settings, and skips unsafe entries', () async {
+      const seerrCanary = 'SEERR-IMPORT-CANARY';
       final prefs = await BaseSharedPreferencesService.sharedCache();
-      expect(
-        () => SettingsExportService.applyImportMap(
-          {'formatVersion': SettingsExportService.formatVersion},
-          prefs,
-          currentUserUuid: 'u',
-        ),
-        throwsA(isA<InvalidExportFileException>()),
-      );
-      expect(
-        () => SettingsExportService.applyImportMap(
-          {'formatVersion': SettingsExportService.formatVersion, 'prefs': 'not-a-map'},
-          prefs,
-          currentUserUuid: 'u',
-        ),
-        throwsA(isA<InvalidExportFileException>()),
-      );
-    });
-  });
+      await prefs.setString('update_last_check_time', 'local-valid-value');
+      await prefs.setString('custom_download_path', '/target/device/downloads');
+      await prefs.setString('custom_download_path_type', 'file');
+      await prefs.setBool('crash_reporting', false);
 
-  // ============================================================
-  // applyImportMap — typed writes
-  // ============================================================
-
-  group('applyImportMap typed writes', () {
-    test('writes bool / int / double / string / stringList back into prefs', () async {
-      final prefs = await BaseSharedPreferencesService.sharedCache();
       final result = await SettingsExportService.applyImportMap(
         {
           'formatVersion': SettingsExportService.formatVersion,
           'prefs': {
-            'a_flag': {'type': 'bool', 'value': true},
-            'a_int': {'type': 'int', 'value': 7},
-            'a_double': {'type': 'double', 'value': 1.5},
-            'a_string': {'type': 'string', 'value': 'hi'},
-            'a_list': {
-              'type': 'stringList',
-              'value': ['x', 'y'],
-            },
-          },
-        },
-        prefs,
-        currentUserUuid: 'alice',
-      );
-
-      expect(result.keysImported, 5);
-      expect(result.keysSkipped, 0);
-
-      expect(prefs.getBool('a_flag'), isTrue);
-      expect(prefs.getInt('a_int'), 7);
-      expect(prefs.getDouble('a_double'), 1.5);
-      expect(prefs.getString('a_string'), 'hi');
-      expect(prefs.getStringList('a_list'), ['x', 'y']);
-    });
-
-    test('double accepts num input (importing an int as double)', () async {
-      final prefs = await BaseSharedPreferencesService.sharedCache();
-      final result = await SettingsExportService.applyImportMap(
-        {
-          'formatVersion': SettingsExportService.formatVersion,
-          'prefs': {
-            // Value is encoded as int but typed as double — should still write.
-            'speed': {'type': 'double', 'value': 2},
-          },
-        },
-        prefs,
-        currentUserUuid: 'alice',
-      );
-
-      expect(result.keysImported, 1);
-      expect(prefs.getDouble('speed'), 2.0);
-    });
-
-    test('skips entries with mismatched type/value pairs without throwing', () async {
-      final prefs = await BaseSharedPreferencesService.sharedCache();
-      final result = await SettingsExportService.applyImportMap(
-        {
-          'formatVersion': SettingsExportService.formatVersion,
-          'prefs': {
-            // bool with non-bool value
-            'bad_bool': {'type': 'bool', 'value': 'yes'},
-            // unknown type tag
-            'bad_type': {'type': 'enum', 'value': 'foo'},
-            // not a map at all
-            'not_map': 'whatever',
-            // missing type key
-            'no_type': {'value': 1},
-            // type isn't a string
-            'type_not_str': {'type': 1, 'value': 1},
-          },
-        },
-        prefs,
-        currentUserUuid: 'alice',
-      );
-
-      expect(result.keysImported, 0);
-      expect(result.keysSkipped, 5);
-      // None of the bad keys ended up in prefs.
-      expect(prefs.getBool('bad_bool'), isNull);
-      expect(prefs.getString('bad_type'), isNull);
-      expect(prefs.getString('not_map'), isNull);
-    });
-
-    test('skips deny-listed keys even if present in the import payload', () async {
-      final prefs = await BaseSharedPreferencesService.sharedCache();
-      final result = await SettingsExportService.applyImportMap(
-        {
-          'formatVersion': SettingsExportService.formatVersion,
-          'prefs': {
-            'plex_token': {'type': 'string', 'value': 'malicious'},
-            'credential_vault_key_v1': {'type': 'string', 'value': 'attacker-key'},
-            'active_app_profile_id': {'type': 'string', 'value': 'stale-profile'},
-            'server_endpoint_srv': {'type': 'string', 'value': 'http://attacker.test'},
-            'plex_home_users_conn': {'type': 'string', 'value': '[]'},
-            'profile_last_used_stale': {'type': 'int', 'value': 1},
-            'good_key': {'type': 'bool', 'value': true},
-          },
-        },
-        prefs,
-        currentUserUuid: 'alice',
-      );
-
-      expect(result.keysImported, 1);
-      expect(result.keysSkipped, 6);
-      expect(prefs.getString('plex_token'), isNull);
-      expect(prefs.getString('credential_vault_key_v1'), isNull);
-      expect(prefs.getString('active_app_profile_id'), isNull);
-      expect(prefs.getString('server_endpoint_srv'), isNull);
-      expect(prefs.getString('plex_home_users_conn'), isNull);
-      expect(prefs.getInt('profile_last_used_stale'), isNull);
-      expect(prefs.getBool('good_key'), isTrue);
-    });
-  });
-
-  // ============================================================
-  // applyImportMap — user-scoped re-scoping
-  // ============================================================
-
-  group('applyImportMap user-scoping', () {
-    test('re-applies the active user prefix to scoped base keys', () async {
-      final prefs = await BaseSharedPreferencesService.sharedCache();
-      final result = await SettingsExportService.applyImportMap(
-        {
-          'formatVersion': SettingsExportService.formatVersion,
-          'prefs': {
-            // exact-match scoped base keys
+            'enable_hardware_decoding': {'type': 'bool', 'value': true},
+            'default_playback_speed': {'type': 'double', 'value': 1},
             'library_order': {
               'type': 'stringList',
-              'value': ['a', 'b'],
+              'value': ['movies'],
             },
-            'hidden_libraries': {'type': 'string', 'value': '["lib1"]'},
-            // prefix-match scoped base keys
-            'library_filters_section1': {'type': 'string', 'value': '{}'},
-            'library_sort_section1': {'type': 'string', 'value': 'titleSort'},
-            'library_grouping_section1': {'type': 'string', 'value': 'shows'},
-            'library_tab_section1': {'type': 'string', 'value': 'recommended'},
-            // global key — must NOT be scoped
+            'library_sort_movies': {'type': 'string', 'value': '{"key":"titleSort"}'},
+            'seerr_session': {'type': 'string', 'value': seerrCanary},
+            'update_last_check_time': {'type': 'string', 'value': 'crafted-invalid'},
+            'custom_download_path': {'type': 'string', 'value': '/source/device/downloads'},
+            'custom_download_path_type': {'type': 'string', 'value': 'saf'},
+            'crash_reporting': {'type': 'bool', 'value': true},
+            'unknown_future_key': {'type': 'bool', 'value': true},
+          },
+        },
+        prefs,
+        currentUserUuid: 'alice',
+      );
+
+      expect(result.keysImported, 4);
+      expect(result.keysSkipped, 6);
+      expect(prefs.getBool('enable_hardware_decoding'), isTrue);
+      expect(prefs.getDouble('default_playback_speed'), 1.0);
+      expect(prefs.getStringList('user_alice_library_order'), ['movies']);
+      expect(prefs.getString('user_alice_library_sort_movies'), '{"key":"titleSort"}');
+      expect(prefs.getString('seerr_session'), isNull);
+      expect(prefs.getString('user_alice_seerr_session'), isNull);
+      expect(prefs.getString('update_last_check_time'), 'local-valid-value');
+      expect(prefs.getString('custom_download_path'), '/target/device/downloads');
+      expect(prefs.getString('custom_download_path_type'), 'file');
+      expect(prefs.getBool('crash_reporting'), isFalse);
+      expect(prefs.getBool('unknown_future_key'), isNull);
+    });
+
+    test('skips source download roots and preserves the target device root', () async {
+      const targetPath = '/target-device/downloads';
+      const sourcePath = '/source-device/downloads';
+      final prefs = await BaseSharedPreferencesService.sharedCache();
+      await prefs.setString('custom_download_path', targetPath);
+      await prefs.setString('custom_download_path_type', 'file');
+      await prefs.setBool('download_on_wifi_only', true);
+
+      final result = await SettingsExportService.applyImportMap(
+        {
+          'formatVersion': 1,
+          'prefs': {
+            'custom_download_path': {'type': 'string', 'value': sourcePath},
+            'custom_download_path_type': {'type': 'string', 'value': 'saf'},
+            'download_on_wifi_only': {'type': 'bool', 'value': false},
+          },
+        },
+        prefs,
+        currentUserUuid: 'alice',
+      );
+
+      expect(result.keysImported, 1);
+      expect(result.keysSkipped, 2);
+      expect(prefs.getBool('download_on_wifi_only'), isFalse);
+      expect(prefs.getString('custom_download_path'), targetPath);
+      expect(prefs.getString('custom_download_path_type'), 'file');
+      expect(prefs.getString('custom_download_path'), isNot(contains(sourcePath)));
+    });
+
+    test('skips malformed or mismatched entries before applying valid mutations', () async {
+      final prefs = await BaseSharedPreferencesService.sharedCache();
+
+      final result = await SettingsExportService.applyImportMap(
+        {
+          'formatVersion': SettingsExportService.formatVersion,
+          'prefs': {
+            'enable_hdr': {'type': 'bool', 'value': 'yes'},
+            'seek_time_small': {'type': 'string', 'value': '10'},
+            'volume': {'value': 50},
+            'preferred_video_codec': 'not-an-entry',
             'enable_hardware_decoding': {'type': 'bool', 'value': true},
           },
         },
@@ -428,109 +260,234 @@ void main() {
         currentUserUuid: 'alice',
       );
 
-      expect(result.keysImported, 7);
-
-      // Scoped keys land under user_alice_*
-      expect(prefs.getStringList('user_alice_library_order'), ['a', 'b']);
-      expect(prefs.getString('user_alice_hidden_libraries'), '["lib1"]');
-      expect(prefs.getString('user_alice_library_filters_section1'), '{}');
-      expect(prefs.getString('user_alice_library_sort_section1'), 'titleSort');
-      expect(prefs.getString('user_alice_library_grouping_section1'), 'shows');
-      expect(prefs.getString('user_alice_library_tab_section1'), 'recommended');
-
-      // Global key stays unscoped.
+      expect(result.keysImported, 1);
+      expect(result.keysSkipped, 4);
       expect(prefs.getBool('enable_hardware_decoding'), isTrue);
-      expect(prefs.getBool('user_alice_enable_hardware_decoding'), isNull);
-    });
-  });
-
-  // ============================================================
-  // Round-trip
-  // ============================================================
-
-  group('round-trip', () {
-    test('build → JSON → parse → apply produces the same key/value/type', () async {
-      final prefs = await BaseSharedPreferencesService.sharedCache();
-
-      // Seed a representative mix.
-      await prefs.setBool('enable_hardware_decoding', true);
-      await prefs.setInt('seek_time_small', 15);
-      await prefs.setDouble('volume', 0.75);
-      await prefs.setString('preferred_video_codec', 'h264');
-      await prefs.setStringList('shader_list', const ['a', 'b', 'c']);
-      // User-scoped data for "alice".
-      await prefs.setStringList('user_alice_library_order', const ['lib-1', 'lib-2']);
-      // Credential we expect to be stripped.
-      await prefs.setString('plex_token', 'never-this');
-
-      // Export.
-      final exportMap = SettingsExportService.buildExportMap(prefs, currentUserUuid: 'alice', appVersion: '9.9.9');
-      final encoded = json.encode(exportMap);
-
-      // Wipe prefs to simulate a fresh device.
-      await prefs.clear();
-      // Confirm wipe.
+      expect(prefs.getBool('enable_hdr'), isNull);
       expect(prefs.getInt('seek_time_small'), isNull);
-      expect(prefs.getStringList('user_alice_library_order'), isNull);
-
-      // Parse back and import — same alice, so scoped keys round-trip cleanly.
-      final decoded = json.decode(encoded) as Map<String, dynamic>;
-      final result = await SettingsExportService.applyImportMap(decoded, prefs, currentUserUuid: 'alice');
-
-      // 6 expected keys round-trip; the count includes the unrelated
-      // `plezy_legacy_prefs_migrated_v1` flag the cache plants. We only assert
-      // it is at LEAST our expected six keys, not an exact count.
-      expect(result.keysImported, greaterThanOrEqualTo(6));
-      expect(result.keysSkipped, 0);
-
-      // Values restored under their original keys (with re-applied scoping).
-      expect(prefs.getBool('enable_hardware_decoding'), isTrue);
-      expect(prefs.getInt('seek_time_small'), 15);
-      expect(prefs.getDouble('volume'), 0.75);
-      expect(prefs.getString('preferred_video_codec'), 'h264');
-      expect(prefs.getStringList('shader_list'), ['a', 'b', 'c']);
-      expect(prefs.getStringList('user_alice_library_order'), ['lib-1', 'lib-2']);
-
-      // Credential never came back.
-      expect(prefs.getString('plex_token'), isNull);
     });
 
-    test('cross-user round-trip: alice exports → bob imports → keys land under bob', () async {
+    test('rolls every mutation back when a later preference write fails', () async {
       final prefs = await BaseSharedPreferencesService.sharedCache();
-      await prefs.setStringList('user_alice_library_order', const ['lib-a', 'lib-b']);
+      await prefs.setBool('enable_hdr', false);
+      var writes = 0;
+      SettingsExportService.debugBeforeImportWrite = (_) {
+        writes++;
+        if (writes == 2) throw StateError('synthetic write failure');
+      };
 
-      final exportMap = SettingsExportService.buildExportMap(prefs, currentUserUuid: 'alice');
-      // Wipe alice's data.
+      await expectLater(
+        SettingsExportService.applyImportMap(
+          {
+            'formatVersion': SettingsExportService.formatVersion,
+            'prefs': {
+              'enable_hdr': {'type': 'bool', 'value': true},
+              'seek_time_small': {'type': 'int', 'value': 15},
+            },
+          },
+          prefs,
+          currentUserUuid: 'alice',
+        ),
+        throwsA(isA<SettingsExportException>()),
+      );
+
+      expect(prefs.getBool('enable_hdr'), isFalse);
+      expect(prefs.getInt('seek_time_small'), isNull);
+    });
+
+    test('round-trips portable values across user scopes without account identifiers', () async {
+      final prefs = await BaseSharedPreferencesService.sharedCache();
+      await prefs.setBool('enable_hardware_decoding', true);
+      await prefs.setStringList('user_alice_library_order', const ['movies']);
+
+      final export = SettingsExportService.buildExportMap(prefs, currentUserUuid: 'alice');
+      expect(jsonEncode(export), isNot(contains('alice')));
       await prefs.clear();
 
-      // Bob imports. Scoped base key gets re-applied with bob's prefix.
-      final result = await SettingsExportService.applyImportMap(exportMap, prefs, currentUserUuid: 'bob');
-      // The cache plants `plezy_legacy_prefs_migrated_v1` on first init, so
-      // the export count includes that flag too. Just confirm the scoped
-      // value made it through.
-      expect(result.keysImported, greaterThanOrEqualTo(1));
+      final result = await SettingsExportService.applyImportMap(export, prefs, currentUserUuid: 'bob');
 
-      // Alice's data is now under bob's namespace.
-      expect(prefs.getStringList('user_bob_library_order'), ['lib-a', 'lib-b']);
+      expect(result.keysImported, 2);
+      expect(result.keysSkipped, 0);
+      expect(prefs.getBool('enable_hardware_decoding'), isTrue);
+      expect(prefs.getStringList('user_bob_library_order'), ['movies']);
       expect(prefs.getStringList('user_alice_library_order'), isNull);
     });
+
+    test('malicious import cannot replace any tvOS database recovery key', () async {
+      const originalManifest = 'LOCAL-MANIFEST';
+      const originalIdentity = 'LOCAL-IDENTITY';
+      const originalPending = 'LOCAL-PENDING';
+      final prefs = await BaseSharedPreferencesService.sharedCache();
+      await prefs.setString('tvos_db_recovery_manifest_v1', originalManifest);
+      await prefs.setString('tvos_db_recovery_identity_v1', originalIdentity);
+      await prefs.setString('tvos_db_recovery_pending_v1', originalPending);
+
+      final result = await SettingsExportService.applyImportMap(
+        {
+          'formatVersion': SettingsExportService.formatVersion,
+          'prefs': {
+            'tvos_db_recovery_manifest_v1': {'type': 'string', 'value': 'MALICIOUS-MANIFEST'},
+            'tvos_db_recovery_identity_v1': {'type': 'string', 'value': 'MALICIOUS-IDENTITY'},
+            'tvos_db_recovery_pending_v1': {'type': 'string', 'value': 'MALICIOUS-PENDING'},
+          },
+        },
+        prefs,
+        currentUserUuid: 'alice',
+      );
+
+      expect(result.keysImported, 0);
+      expect(result.keysSkipped, 3);
+      expect(prefs.getString('tvos_db_recovery_manifest_v1'), originalManifest);
+      expect(prefs.getString('tvos_db_recovery_identity_v1'), originalIdentity);
+      expect(prefs.getString('tvos_db_recovery_pending_v1'), originalPending);
+    });
   });
 
-  // ============================================================
-  // Exception types
-  // ============================================================
+  group('file orchestration', () {
+    Future<void> seedActiveProfile() async {
+      final prefs = await BaseSharedPreferencesService.sharedCache();
+      await prefs.setString('active_app_profile_id', 'profile-a');
+      await prefs.setBool('enable_hdr', true);
+    }
 
-  group('exception types', () {
-    test('NoUserSignedInException is a SettingsExportException', () {
-      const ex = NoUserSignedInException();
-      expect(ex, isA<SettingsExportException>());
-      expect(ex.toString(), contains('No user is signed in'));
+    Uint8List importBytes({bool enableHdr = false}) {
+      return Uint8List.fromList(
+        utf8.encode(
+          jsonEncode({
+            'formatVersion': SettingsExportService.formatVersion,
+            'prefs': {
+              'enable_hdr': {'type': 'bool', 'value': enableHdr},
+            },
+          }),
+        ),
+      );
+    }
+
+    test('exports captured JSON bytes with package version and requested file contract', () async {
+      await seedActiveProfile();
+      picker.saveResult = '/tmp/plezy-settings.json';
+
+      final path = await SettingsExportService.exportToFile();
+
+      expect(path, '/tmp/plezy-settings.json');
+      expect(picker.lastSaveName, matches(RegExp(r'^plezy-settings-\d{8}\.json$')));
+      expect(picker.lastSaveExtensions, ['json']);
+      final decoded = jsonDecode(utf8.decode(picker.lastSaveBytes!)) as Map<String, dynamic>;
+      expect(decoded['appVersion'], '1.2.3');
+      expect((decoded['prefs'] as Map)['enable_hdr'], {'type': 'bool', 'value': true});
     });
 
-    test('InvalidExportFileException is a SettingsExportException with message', () {
-      const ex = InvalidExportFileException('bad shape');
-      expect(ex, isA<SettingsExportException>());
-      expect(ex.toString(), contains('bad shape'));
+    test('save cancellation and failure release the picker guard for a later operation', () async {
+      await seedActiveProfile();
+      picker.saveResult = null;
+      expect(await SettingsExportService.exportToFile(), isNull);
+
+      picker.saveError = PlatformException(code: 'save_failed');
+      await expectLater(SettingsExportService.exportToFile(), throwsA(isA<SettingsExportException>()));
+
+      picker.saveError = null;
+      picker.saveResult = '/tmp/recovered.json';
+      expect(await SettingsExportService.exportToFile(), '/tmp/recovered.json');
+      expect(picker.saveCalls, 3);
+    });
+
+    test('imports in-memory bytes and path-backed files', () async {
+      await seedActiveProfile();
+      final prefs = await BaseSharedPreferencesService.sharedCache();
+      picker.pickResult = FilePickerResult([PlatformFile(name: 'settings.json', size: 1, bytes: importBytes())]);
+
+      final memoryResult = await SettingsExportService.importFromFile();
+      expect(memoryResult?.keysImported, 1);
+      expect(prefs.getBool('enable_hdr'), isFalse);
+
+      final directory = await Directory.systemTemp.createTemp('plezy-settings-import-');
+      addTearDown(() => directory.delete(recursive: true));
+      final file = File('${directory.path}/settings.json');
+      await file.writeAsBytes(importBytes(enableHdr: true));
+      picker.pickResult = FilePickerResult([
+        PlatformFile(name: 'settings.json', size: await file.length(), path: file.path),
+      ]);
+
+      final pathResult = await SettingsExportService.importFromFile();
+      expect(pathResult?.keysImported, 1);
+      expect(prefs.getBool('enable_hdr'), isTrue);
+    });
+
+    test('picker cancellation, malformed input, and unreadable path release the guard', () async {
+      await seedActiveProfile();
+      picker.pickResult = null;
+      expect(await SettingsExportService.importFromFile(), isNull);
+
+      picker.pickResult = FilePickerResult([
+        PlatformFile(name: 'bad.json', size: 1, bytes: Uint8List.fromList(utf8.encode('{bad'))),
+      ]);
+      await expectLater(SettingsExportService.importFromFile(), throwsA(isA<InvalidExportFileException>()));
+
+      picker.pickResult = FilePickerResult([
+        PlatformFile(name: 'missing.json', size: 1, path: '/path/that/does/not/exist.json'),
+      ]);
+      await expectLater(SettingsExportService.importFromFile(), throwsA(isA<InvalidExportFileException>()));
+
+      picker.pickResult = FilePickerResult([PlatformFile(name: 'settings.json', size: 1, bytes: importBytes())]);
+      expect((await SettingsExportService.importFromFile())?.keysImported, 1);
+      expect(picker.pickCalls, 4);
+    });
+
+    test('missing active profile rejects before opening the picker', () async {
+      await expectLater(SettingsExportService.importFromFile(), throwsA(isA<NoUserSignedInException>()));
+      expect(picker.pickCalls, 0);
     });
   });
+}
+
+class _FakeFilePicker extends FilePicker {
+  FilePickerResult? pickResult;
+  String? saveResult;
+  Object? pickError;
+  Object? saveError;
+  int pickCalls = 0;
+  int saveCalls = 0;
+  String? lastSaveName;
+  List<String>? lastSaveExtensions;
+  Uint8List? lastSaveBytes;
+
+  @override
+  Future<FilePickerResult?> pickFiles({
+    String? dialogTitle,
+    String? initialDirectory,
+    FileType type = FileType.any,
+    List<String>? allowedExtensions,
+    Function(FilePickerStatus)? onFileLoading,
+    bool allowCompression = false,
+    int compressionQuality = 0,
+    bool allowMultiple = false,
+    bool withData = false,
+    bool withReadStream = false,
+    bool lockParentWindow = false,
+    bool readSequential = false,
+  }) async {
+    pickCalls++;
+    final error = pickError;
+    if (error != null) throw error;
+    return pickResult;
+  }
+
+  @override
+  Future<String?> saveFile({
+    String? dialogTitle,
+    String? fileName,
+    String? initialDirectory,
+    FileType type = FileType.any,
+    List<String>? allowedExtensions,
+    Uint8List? bytes,
+    bool lockParentWindow = false,
+  }) async {
+    saveCalls++;
+    lastSaveName = fileName;
+    lastSaveExtensions = allowedExtensions;
+    lastSaveBytes = bytes;
+    final error = saveError;
+    if (error != null) throw error;
+    return saveResult;
+  }
 }

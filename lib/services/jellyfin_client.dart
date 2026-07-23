@@ -50,6 +50,7 @@ import '../i18n/strings.g.dart';
 import '../utils/json_utils.dart';
 import '../utils/jellyfin_time.dart';
 import 'jellyfin_auth_header.dart';
+import 'jellyfin_endpoint_discovery.dart';
 import '../media/download_resolution.dart';
 import 'api_cache.dart';
 import 'download_artwork_helpers.dart';
@@ -112,11 +113,11 @@ class JellyfinClient
     FavoriteChannelsRepository? favoritesRepository,
     void Function()? onAllEndpointsExhausted,
   }) async {
-    // Register before any HTTP traffic so the very first probe URL doesn't
-    // leak the token verbatim. `LogRedactionManager.redact()` also has
-    // pattern-based fallbacks for `api_key=`, `X-Emby-Token`, and the
-    // `Authorization: MediaBrowser ... Token="..."` header.
-    LogRedactionManager.registerServer(connection.baseUrl, connection.accessToken);
+    // Register every normalized connection endpoint and the token before any
+    // HTTP traffic. Orchestration logs contain no literals; this additionally
+    // protects unavoidable network-layer diagnostics.
+    _registerConnectionDiagnostics(connection);
+    final endpointDiscovery = JellyfinEndpointDiscovery();
     String version = '1.0';
     try {
       final pkg = await PackageInfo.fromPlatform();
@@ -154,20 +155,25 @@ class JellyfinClient
       prioritizedEndpoints: connection.baseUrls,
       onEndpointSwitch: (newBaseUrl, {required persist}) => client._handleEndpointSwitch(newBaseUrl, persist: persist),
       onAllEndpointsExhausted: onAllEndpointsExhausted,
+      validateCandidate: (candidateBaseUrl, abort) async =>
+          (await endpointDiscovery.probe(candidateBaseUrl, abort: abort)).machineId == connection.serverMachineId,
     );
     client = JellyfinClient._(connection: connection, http: http, favoritesRepository: favoritesRepository);
     return client;
   }
 
-  /// Test-only factory that injects an [http.Client] so URL-builder tests
-  /// can capture the request URI without spinning up a real Jellyfin server.
+  /// Test-only factory that injects independent authenticated-application and
+  /// unauthenticated public-probe clients.
   @visibleForTesting
   static JellyfinClient forTesting({
     required JellyfinConnection connection,
     required http.Client httpClient,
+    http.Client Function()? endpointProbeHttpClientFactory,
     FavoriteChannelsRepository? favoritesRepository,
     void Function()? onAllEndpointsExhausted,
   }) {
+    _registerConnectionDiagnostics(connection);
+    final endpointDiscovery = JellyfinEndpointDiscovery(testHttpClientFactory: endpointProbeHttpClientFactory);
     late JellyfinClient client;
     final mediaHttp = FailoverHttpClient(
       baseUrl: connection.baseUrl,
@@ -176,6 +182,8 @@ class JellyfinClient
       prioritizedEndpoints: connection.baseUrls,
       onEndpointSwitch: (newBaseUrl, {required persist}) => client._handleEndpointSwitch(newBaseUrl, persist: persist),
       onAllEndpointsExhausted: onAllEndpointsExhausted,
+      validateCandidate: (candidateBaseUrl, abort) async =>
+          (await endpointDiscovery.probe(candidateBaseUrl, abort: abort)).machineId == connection.serverMachineId,
       client: httpClient,
     );
     client = JellyfinClient._(connection: connection, http: mediaHttp, favoritesRepository: favoritesRepository);
@@ -198,13 +206,20 @@ class JellyfinClient
   /// to re-broadcast status so admin-gated UI rebuilds.
   FutureOr<void> Function(JellyfinConnection connection)? onConnectionUpdated;
 
+  static void _registerConnectionDiagnostics(JellyfinConnection connection) {
+    LogRedactionManager.registerToken(connection.accessToken);
+    for (final baseUrl in connection.baseUrls) {
+      LogRedactionManager.registerServerUrl(baseUrl);
+    }
+  }
+
   Future<void> _handleEndpointSwitch(String newBaseUrl, {required bool persist}) async {
+    LogRedactionManager.registerServerUrl(newBaseUrl);
     final changed = connection.baseUrl != newBaseUrl;
     if (changed) {
-      appLogger.i('Applying Jellyfin endpoint switch', error: newBaseUrl);
+      appLogger.i('Applying Jellyfin endpoint switch');
       _http.baseUrl = newBaseUrl;
       _connection = _connection.copyWith(baseUrl: newBaseUrl);
-      LogRedactionManager.registerServer(newBaseUrl, connection.accessToken);
     }
 
     if (persist) {

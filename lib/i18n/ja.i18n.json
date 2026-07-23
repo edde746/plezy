@@ -16,7 +16,8 @@
     "quickConnectInstructions": "JellyfinでQuick Connectを開き、このコードを入力してください。",
     "quickConnectWaiting": "承認を待っています…",
     "quickConnectCancel": "キャンセル",
-    "quickConnectExpired": "Quick Connectの有効期限が切れました。もう一度お試しください。"
+    "quickConnectExpired": "Quick Connectの有効期限が切れました。もう一度お試しください。",
+    "localDataRecoveryRequired": ""
   },
   "common": {
     "cancel": "キャンセル",
@@ -550,6 +551,11 @@
     "streamInterrupted": "ストリームが中断されました。再生を押すかシークして再試行してください。",
     "liveStreamInterrupted": "ライブストリームが中断されました。再生を押して再試行してください。",
     "fileInfoNotAvailable": "ファイル情報が利用できません",
+    "playbackAuthenticationRequired": "",
+    "playbackServerUnavailable": "",
+    "playbackDataInvalid": "",
+    "playbackCancelled": "",
+    "playbackFailed": "",
     "errorLoadingFileInfo": "ファイル情報の読み込みエラー: ${error}",
     "errorLoadingSeries": "シリーズの読み込みエラー",
     "musicNotSupported": "音楽の再生はまだサポートされていません",
@@ -935,6 +941,7 @@
     "favorites": "お気に入り",
     "reorderFavorites": "お気に入りを並べ替え",
     "favoritesLoadFailed": "お気に入りを読み込めませんでした。接続を確認してもう一度お試しください。",
+    "favoritesUpdateFailed": "",
     "joinSession": "進行中のセッションに参加",
     "watchFromStart": "最初から視聴（${minutes}分前に開始）",
     "watchLive": "ライブで視聴",

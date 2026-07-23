@@ -1,8 +1,9 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
-import 'dart:typed_data';
 
 import 'package:file_picker/file_picker.dart';
+import 'package:flutter/foundation.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
@@ -39,6 +40,28 @@ class InvalidExportFileException extends SettingsExportException {
   const InvalidExportFileException(super.message);
 }
 
+class _PreferencePolicy {
+  final String type;
+  final bool userScoped;
+
+  const _PreferencePolicy(this.type, {this.userScoped = false});
+}
+
+class _PendingImport {
+  final String targetKey;
+  final String type;
+  final Object? value;
+
+  const _PendingImport({required this.targetKey, required this.type, required this.value});
+}
+
+class _StoredPreferenceValue {
+  final bool existed;
+  final Object? value;
+
+  const _StoredPreferenceValue({required this.existed, required this.value});
+}
+
 /// Serializes / restores user-facing SharedPreferences to a JSON file.
 ///
 /// Strategy is allow-by-default: every key is exported unless it matches an
@@ -56,59 +79,163 @@ class SettingsExportService {
   static const String _typeDouble = 'double';
   static const String _typeString = 'string';
   static const String _typeStringList = 'stringList';
+  static const String _userPrefixRoot = 'user_';
+  // Device-local storage state must never cross installations. Keep these as
+  // exact keys so portable download behavior settings remain transferable.
+  static const Set<String> _nonPortableDeviceStorageKeys = {'custom_download_path', 'custom_download_path_type'};
+  static const String _tvosDatabaseRecoveryPrefix = 'tvos_db_recovery_';
 
-  /// Exact keys never included in the export. Matches the auth/account state
-  /// tracked by [StorageService] plus multi-server and view-state keys.
-  static const Set<String> _denyKeys = {
-    // Credentials (from StorageService._credentialKeys)
-    'server_url',
-    'token',
-    'plex_token',
-    'server_data',
-    'client_identifier',
-    'user_profile',
-    'current_user_uuid',
-    'home_users_cache',
-    'home_users_cache_expiry',
-    'active_app_profile_id',
-    // Multi-server routing
-    'servers_list',
-    'server_order',
-    // CredentialVault encryption key for DB-stored connection tokens
-    'credential_vault_key_v1',
-    // View state, not settings
-    'selected_library_index',
-    'selected_library_key',
-    // Internal migration flags
-    'buffer_size_migrated_to_auto',
+  /// Closed registry of portable, user-facing settings. The [Pref] declarations
+  /// are the source of truth for both keys and stored types; credentials,
+  /// runtime state, device paths, history, endpoints, and user-authored player
+  /// configuration are intentionally absent.
+  static final Map<String, _PreferencePolicy> _portablePreferences = {
+    for (final pref in <Pref<Object?>>[
+      SettingsService.enableDebugLogging,
+      SettingsService.enableHardwareDecoding,
+      SettingsService.enableHDR,
+      SettingsService.preferredVideoCodec,
+      SettingsService.preferredAudioCodec,
+      SettingsService.viewMode,
+      SettingsService.seekTimeSmall,
+      SettingsService.seekTimeLarge,
+      SettingsService.rewindOnResume,
+      SettingsService.showHeroSection,
+      SettingsService.tvFullCardLayout,
+      SettingsService.focusGlow,
+      SettingsService.useGlobalHubs,
+      SettingsService.showServerNameOnHubs,
+      SettingsService.groupLibrariesByServer,
+      SettingsService.sleepTimerDuration,
+      SettingsService.audioSyncOffset,
+      SettingsService.subtitleSyncOffset,
+      SettingsService.subtitleSearchLanguage,
+      SettingsService.volume,
+      SettingsService.rotationLocked,
+      SettingsService.subtitleFontSize,
+      SettingsService.subtitleTextColor,
+      SettingsService.subtitleBorderSize,
+      SettingsService.subtitleBorderColor,
+      SettingsService.subtitleBackgroundColor,
+      SettingsService.subtitleBackgroundOpacity,
+      SettingsService.subAssOverride,
+      SettingsService.subtitleRenderResolution,
+      SettingsService.subtitleBold,
+      SettingsService.subtitleItalic,
+      SettingsService.rememberTrackSelections,
+      SettingsService.showChapterMarkersOnTimeline,
+      SettingsService.clickVideoTogglesPlayback,
+      SettingsService.autoSkipIntro,
+      SettingsService.autoSkipCredits,
+      SettingsService.forceSkipMarkerFallback,
+      SettingsService.autoSkipDelay,
+      SettingsService.introPattern,
+      SettingsService.creditsPattern,
+      SettingsService.downloadOnWifiOnly,
+      SettingsService.autoRemoveWatchedDownloads,
+      SettingsService.downloadIncludeSpecials,
+      SettingsService.autoCheckUpdatesOnStartup,
+      SettingsService.showPerformanceOverlay,
+      SettingsService.autoHidePerformanceOverlay,
+      SettingsService.enableDiscordRPC,
+      SettingsService.enableTraktScrobble,
+      SettingsService.enableTraktWatchedSync,
+      SettingsService.enableMalScrobble,
+      SettingsService.enableAnilistScrobble,
+      SettingsService.enableSimklScrobble,
+      SettingsService.matchContentFrameRate,
+      SettingsService.tunneledPlayback,
+      SettingsService.dvConversionMode,
+      SettingsService.defaultQualityPreset,
+      SettingsService.musicQualityPreset,
+      SettingsService.musicVolume,
+      SettingsService.autoPlayNextEpisode,
+      SettingsService.useExoPlayer,
+      SettingsService.startupSection,
+      SettingsService.alwaysKeepSidebarOpen,
+      SettingsService.showUnwatchedCount,
+      SettingsService.showEpisodeNumberOnCards,
+      SettingsService.showSeasonPostersOnTabs,
+      SettingsService.hideSpoilers,
+      SettingsService.showNavBarLabels,
+      SettingsService.globalShaderPreset,
+      SettingsService.requireProfileSelectionOnOpen,
+      SettingsService.useExternalPlayer,
+      SettingsService.forceTvMode,
+      SettingsService.visualEffects,
+      SettingsService.ambientLighting,
+      SettingsService.audioPassthrough,
+      SettingsService.audioNormalization,
+      SettingsService.audioDownmix,
+      SettingsService.audioDownmixNormalize,
+      SettingsService.liveTvDefaultFavorites,
+      SettingsService.matchRefreshRate,
+      SettingsService.matchDynamicRange,
+      SettingsService.appLocale,
+      SettingsService.autoPip,
+      SettingsService.maxVolume,
+      SettingsService.downmixCenterBoost,
+      SettingsService.subtitlePosition,
+      SettingsService.defaultPlaybackSpeed,
+      SettingsService.defaultBoxFitMode,
+      SettingsService.displaySwitchDelay,
+      SettingsService.themeMode,
+      SettingsService.videoPlayerNavigationEnabled,
+      SettingsService.enableCompanionRemoteServer,
+      SettingsService.startInFullscreen,
+      SettingsService.exitFullscreenOnPlayerClose,
+      SettingsService.bufferSize,
+      SettingsService.libraryDensity,
+      SettingsService.tvCornerSpotlightBackdrop,
+      SettingsService.episodePosterMode,
+      SettingsService.continueWatchingAction,
+      SettingsService.episodeAction,
+      SettingsService.keyboardHotkeys,
+    ])
+      pref.key: _PreferencePolicy(_storageTypeFor(pref)),
   };
 
-  /// Prefix denylist. A key is excluded if it starts with any of these.
-  /// The tracker prefixes (`trakt_`, `mal_`, `anilist_`, `simkl_`) cover
-  /// OAuth session tokens and runtime sync queues. The `enable_*` feature
-  /// toggles use a different prefix and stay exportable. Profile runtime
-  /// caches are also excluded because they belong to local connection state.
-  static const List<String> _denyPrefixes = [
-    'server_endpoint_',
-    'episode_count_',
-    'watched_threshold_',
-    'trakt_',
-    'mal_',
-    'anilist_',
-    'simkl_',
-    'plex_home_users_',
-    'profile_last_used_',
+  static const Map<String, _PreferencePolicy> _userScopedPreferences = {
+    'hidden_libraries': _PreferencePolicy(_typeStringList, userScoped: true),
+    'library_filters': _PreferencePolicy(_typeString, userScoped: true),
+    'library_order': _PreferencePolicy(_typeStringList, userScoped: true),
+  };
+
+  static final List<(RegExp, _PreferencePolicy)> _dynamicUserScopedPreferences = [
+    (RegExp(r'^library_(?:filters|sort|grouping|tab)_.+$'), const _PreferencePolicy(_typeString, userScoped: true)),
   ];
 
-  /// Literal prefix used by [StorageService._userPrefix] for any scoped key.
-  static const String _userPrefixRoot = 'user_';
+  @visibleForTesting
+  static FutureOr<void> Function(String key)? debugBeforeImportWrite;
 
-  static bool _isExportable(String strippedKey) {
-    if (_denyKeys.contains(strippedKey)) return false;
-    for (final prefix in _denyPrefixes) {
-      if (strippedKey.startsWith(prefix)) return false;
+  static String _storageTypeFor(Pref<Object?> pref) {
+    if (pref is BoolPref) return _typeBool;
+    if (pref is IntPref) return _typeInt;
+    if (pref is DoublePref) return _typeDouble;
+    if (pref is StringPref || pref is NullableStringPref || pref is EnumPref || pref is JsonPref) {
+      return _typeString;
     }
-    return true;
+    if (pref is StringListPref) return _typeStringList;
+
+    if (pref.key == SettingsService.appLocale.key) return _typeString;
+    if (pref.key == SettingsService.libraryDensity.key) return _typeInt;
+    if (pref.key == SettingsService.autoPip.key ||
+        pref.key == SettingsService.useExternalPlayer.key ||
+        pref.key == SettingsService.audioPassthrough.key) {
+      return _typeBool;
+    }
+    throw StateError('Portable preference ${pref.key} has no storage type');
+  }
+
+  static _PreferencePolicy? _policyFor(String baseKey) {
+    if (baseKey.startsWith(_tvosDatabaseRecoveryPrefix)) return null;
+    if (_nonPortableDeviceStorageKeys.contains(baseKey)) return null;
+    final exact = _portablePreferences[baseKey] ?? _userScopedPreferences[baseKey];
+    if (exact != null) return exact;
+    for (final (pattern, policy) in _dynamicUserScopedPreferences) {
+      if (pattern.hasMatch(baseKey)) return policy;
+    }
+    return null;
   }
 
   /// Builds the export map from the given prefs. Pure and testable.
@@ -127,22 +254,23 @@ class SettingsExportService {
         : null;
 
     for (final fullKey in prefs.keys) {
-      String baseKey;
+      final bool sourceIsUserScoped;
+      final String baseKey;
       if (currentUserPrefix != null && fullKey.startsWith(currentUserPrefix)) {
+        sourceIsUserScoped = true;
         baseKey = fullKey.substring(currentUserPrefix.length);
       } else if (fullKey.startsWith(_userPrefixRoot)) {
-        // Scoped to some other user — skip so we only export the active user.
         continue;
       } else {
+        sourceIsUserScoped = false;
         baseKey = fullKey;
       }
 
-      if (!_isExportable(baseKey)) continue;
+      final policy = _policyFor(baseKey);
+      if (policy == null || policy.userScoped != sourceIsUserScoped) continue;
 
-      final value = prefs.get(fullKey);
-      final entry = _encodeValue(value);
-      if (entry == null) continue;
-      prefsOut[baseKey] = entry;
+      final entry = _encodeValue(prefs.get(fullKey), policy.type);
+      if (entry != null) prefsOut[baseKey] = entry;
     }
 
     return {
@@ -154,16 +282,15 @@ class SettingsExportService {
     };
   }
 
-  static Map<String, dynamic>? _encodeValue(Object? value) {
-    if (value is bool) return {'type': _typeBool, 'value': value};
-    if (value is int) return {'type': _typeInt, 'value': value};
-    if (value is double) return {'type': _typeDouble, 'value': value};
-    if (value is String) return {'type': _typeString, 'value': value};
-    if (value is List) {
-      // SharedPreferences only supports List<String>.
-      return {'type': _typeStringList, 'value': value.map((e) => e.toString()).toList()};
-    }
-    return null;
+  static Map<String, dynamic>? _encodeValue(Object? value, String expectedType) {
+    return switch (expectedType) {
+      _typeBool when value is bool => {'type': _typeBool, 'value': value},
+      _typeInt when value is int => {'type': _typeInt, 'value': value},
+      _typeDouble when value is double => {'type': _typeDouble, 'value': value},
+      _typeString when value is String => {'type': _typeString, 'value': value},
+      _typeStringList when value is List<String> => {'type': _typeStringList, 'value': value},
+      _ => null,
+    };
   }
 
   /// Applies a parsed export map to [prefs]. Pure and testable.
@@ -192,82 +319,109 @@ class SettingsExportService {
     }
 
     final userPrefix = 'user_${currentUserUuid}_';
-    int imported = 0;
+    final pending = <_PendingImport>[];
     int skipped = 0;
 
     for (final entry in rawPrefs.entries) {
       final baseKey = entry.key.toString();
-      if (!_isExportable(baseKey)) {
-        skipped++;
-        continue;
-      }
-
+      final policy = _policyFor(baseKey);
       final rawEntry = entry.value;
-      if (rawEntry is! Map) {
+      if (policy == null || rawEntry is! Map) {
         skipped++;
         continue;
       }
 
       final type = rawEntry['type'];
       final value = rawEntry['value'];
-      if (type is! String) {
+      if (type is! String || type != policy.type || !_isValidValue(type, value)) {
         skipped++;
         continue;
       }
 
-      final targetKey = _isUserScopedBaseKey(baseKey) ? '$userPrefix$baseKey' : baseKey;
-
-      final ok = await _writeTyped(prefs, targetKey, type, value);
-      if (ok) {
-        imported++;
-      } else {
-        skipped++;
-        appLogger.w('Skipped import of $targetKey (type=$type)');
-      }
+      pending.add(
+        _PendingImport(targetKey: policy.userScoped ? '$userPrefix$baseKey' : baseKey, type: type, value: value),
+      );
     }
 
-    return ImportResult(keysImported: imported, keysSkipped: skipped);
-  }
+    final snapshots = <String, _StoredPreferenceValue>{
+      for (final mutation in pending)
+        mutation.targetKey: _StoredPreferenceValue(
+          existed: prefs.keys.contains(mutation.targetKey),
+          value: prefs.get(mutation.targetKey),
+        ),
+    };
 
-  /// Base keys that [StorageService] persists under the user prefix. These need
-  /// to be re-scoped to the current user on import.
-  static bool _isUserScopedBaseKey(String baseKey) {
-    const exact = {'hidden_libraries', 'library_filters', 'library_order'};
-    if (exact.contains(baseKey)) return true;
-    const prefixes = ['library_filters_', 'library_sort_', 'library_grouping_', 'library_tab_'];
-    return prefixes.any(baseKey.startsWith);
-  }
-
-  static Future<bool> _writeTyped(SharedPreferencesWithCache prefs, String key, String type, Object? value) async {
     try {
-      switch (type) {
-        case _typeBool:
-          if (value is! bool) return false;
-          await prefs.setBool(key, value);
-          return true;
-        case _typeInt:
-          if (value is! int) return false;
-          await prefs.setInt(key, value);
-          return true;
-        case _typeDouble:
-          if (value is num) {
-            await prefs.setDouble(key, value.toDouble());
-            return true;
-          }
-          return false;
-        case _typeString:
-          if (value is! String) return false;
-          await prefs.setString(key, value);
-          return true;
-        case _typeStringList:
-          if (value is! List) return false;
-          await prefs.setStringList(key, value.map((e) => e.toString()).toList());
-          return true;
+      for (final mutation in pending) {
+        await debugBeforeImportWrite?.call(mutation.targetKey);
+        await _writeTyped(prefs, mutation.targetKey, mutation.type, mutation.value);
       }
-    } catch (e, st) {
-      appLogger.e('Failed to import key $key', error: e, stackTrace: st);
+    } catch (error, stackTrace) {
+      try {
+        await _restoreSnapshots(prefs, snapshots);
+      } catch (rollbackError, rollbackStackTrace) {
+        appLogger.e('Settings import rollback failed', error: rollbackError, stackTrace: rollbackStackTrace);
+      }
+      appLogger.e('Settings import failed', error: error, stackTrace: stackTrace);
+      throw const SettingsExportException('Could not apply settings import');
     }
-    return false;
+
+    return ImportResult(keysImported: pending.length, keysSkipped: skipped);
+  }
+
+  static bool _isValidValue(String type, Object? value) {
+    return switch (type) {
+      _typeBool => value is bool,
+      _typeInt => value is int,
+      _typeDouble => value is num,
+      _typeString => value is String,
+      _typeStringList => value is List && value.every((element) => element is String),
+      _ => false,
+    };
+  }
+
+  static Future<void> _writeTyped(SharedPreferencesWithCache prefs, String key, String type, Object? value) async {
+    switch (type) {
+      case _typeBool:
+        await prefs.setBool(key, value! as bool);
+      case _typeInt:
+        await prefs.setInt(key, value! as int);
+      case _typeDouble:
+        await prefs.setDouble(key, (value! as num).toDouble());
+      case _typeString:
+        await prefs.setString(key, value! as String);
+      case _typeStringList:
+        await prefs.setStringList(key, (value! as List).cast<String>());
+      default:
+        throw StateError('Unsupported portable preference type');
+    }
+  }
+
+  static Future<void> _restoreSnapshots(
+    SharedPreferencesWithCache prefs,
+    Map<String, _StoredPreferenceValue> snapshots,
+  ) async {
+    for (final entry in snapshots.entries) {
+      final snapshot = entry.value;
+      if (!snapshot.existed) {
+        await prefs.remove(entry.key);
+        continue;
+      }
+      switch (snapshot.value) {
+        case final bool value:
+          await prefs.setBool(entry.key, value);
+        case final int value:
+          await prefs.setInt(entry.key, value);
+        case final double value:
+          await prefs.setDouble(entry.key, value);
+        case final String value:
+          await prefs.setString(entry.key, value);
+        case final List<Object?> value:
+          await prefs.setStringList(entry.key, value.cast<String>());
+        default:
+          throw StateError('Unsupported stored preference type');
+      }
+    }
   }
 
   static Future<String> _defaultFileName() async {

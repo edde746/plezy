@@ -109,6 +109,7 @@ void main() {
       multiServerProvider,
       hiddenLibrariesProvider,
       librariesProvider,
+      profileId: null,
       isProfileBinding: () => activeProfileProvider.isBinding,
     );
     final discoverKey = GlobalKey<State<DiscoverScreen>>();
@@ -288,6 +289,7 @@ void main() {
       multiServerProvider,
       hiddenLibrariesProvider,
       librariesProvider,
+      profileId: null,
       isProfileBinding: () => activeProfileProvider.isBinding,
     );
 

@@ -115,10 +115,9 @@ List<ContextMenuItem> _getLibraryMenuItems(MediaLibrary library) {
     confirmationMessage: t.libraries.refreshMetadataConfirm(title: library.title),
     isDestructive: true,
   );
-  // Scan / analyze / empty trash hit Plex-only endpoints. Gating them keeps
-  // [getPlexClientForLibrary] from falling back through `_resolveClient` to
-  // the first online Plex server and firing the action against the wrong
-  // backend.
+  // Scan / analyze / empty trash hit Plex-only endpoints, so backend
+  // capability gating keeps them out of Jellyfin menus. The library-qualified
+  // resolver independently requires the exact owning Plex server.
   if (library.backend != MediaBackend.plex) return [refresh];
   return [
     ContextMenuItem(
@@ -213,8 +212,8 @@ Future<void> _performLibraryAction(
 
 /// Backend-neutral counterpart to [_performLibraryAction] for ops that exist
 /// on the [MediaServerClient] interface (currently just refresh metadata).
-/// Resolves the client through `getMediaClientForLibrary` so a Jellyfin
-/// library is routed to its own server, not a fallback Plex one.
+/// Resolves the client through `getMediaClientForLibrary` so the action requires
+/// the library's exact owning server.
 Future<void> _performMediaLibraryAction(
   BuildContext context, {
   required MediaLibrary library,

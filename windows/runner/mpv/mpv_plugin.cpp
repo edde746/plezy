@@ -247,7 +247,7 @@ void MpvPlayerPlugin::HandleMethodCall(
     return;  // Response will be sent asynchronously
   } else if (method == "setProperty") {
     if (!player_ || !player_->IsInitialized()) {
-      result->Error("NOT_INITIALIZED", "Player not initialized");
+      result->Error(plezy::mpv_common::kSetPropertyNotInitializedCode, "Player not initialized");
       return;
     }
 
@@ -273,8 +273,17 @@ void MpvPlayerPlugin::HandleMethodCall(
     auto result_ptr =
         std::make_shared<std::unique_ptr<flutter::MethodResult<flutter::EncodableValue>>>(std::move(result));
     player_->SetPropertyAsync(
-        std::get<std::string>(name_it->second), std::get<std::string>(value_it->second),
-        [this, result_ptr](int error) { PostToPlatformThread([result_ptr]() { (*result_ptr)->Success(); }); });
+        std::get<std::string>(name_it->second), std::get<std::string>(value_it->second), [this, result_ptr](int error) {
+          PostToPlatformThread([result_ptr, error]() {
+            if (plezy::mpv_common::SetPropertyStatusSucceeded(error)) {
+              (*result_ptr)->Success();
+            } else {
+              (*result_ptr)
+                  ->Error(
+                      plezy::mpv_common::kSetPropertyFailedCode, plezy::mpv_common::SetPropertyErrorDescription(error));
+            }
+          });
+        });
     return;
   } else if (method == "setLogLevel") {
     if (!player_ || !player_->IsInitialized()) {

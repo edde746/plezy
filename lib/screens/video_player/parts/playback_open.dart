@@ -357,32 +357,35 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
     }
   }
 
-  /// Gate-release resume that yields to Watch Together when a session owns
-  /// the playback start: track selection is still armed, but instead of
-  /// playing, the sync readiness hold (if any) is released — the
-  /// coordinated group start unpauses later. Shared by the start and reload
-  /// flows.
-  Future<void> _resumeAfterStartupGateOrYieldToWatchTogether({
+  /// Resolves the post-gate playback decision without inventing a play
+  /// intent. Track selection is still armed when playback must remain paused;
+  /// a Watch Together owner also receives its readiness release.
+  Future<void> _finishPlaybackAfterStartupGate({
     required Player currentPlayer,
     required _ExternalSubtitleOpenPlan externalSubtitlePlan,
     required String reason,
-    required bool wtOwnsStart,
+    required bool shouldResume,
+    required bool watchTogetherOwnsStart,
     Completer<void>? wtStartupHold,
   }) async {
-    if (!wtOwnsStart) {
+    if (shouldResume) {
       return _resumeAfterFrameRateStartupGate(
         currentPlayer: currentPlayer,
         externalSubtitlePlan: externalSubtitlePlan,
         reason: reason,
       );
     }
-    appLogger.d('Frame rate matching: yielding post-gate resume to Watch Together ($reason)');
+    appLogger.d(
+      watchTogetherOwnsStart
+          ? 'Frame rate matching: yielding post-gate resume to Watch Together ($reason)'
+          : 'Frame rate matching: preserving paused playback after $reason',
+    );
     final trackManager = _trackManager;
     if (trackManager != null && externalSubtitlePlan.requiresPostOpenAdd) {
       trackManager.waitingForExternalSubsTrackSelection = false;
       trackManager.applyTrackSelectionWhenReady();
     }
-    if (wtStartupHold != null && !wtStartupHold.isCompleted) {
+    if (watchTogetherOwnsStart && wtStartupHold != null && !wtStartupHold.isCompleted) {
       wtStartupHold.complete();
     }
   }

@@ -56,7 +56,7 @@ void main() {
     expect(patch?.viewOffsetMs, 0);
   });
 
-  test('newer unscoped patch wins over older active scoped patch', () async {
+  test('known active scope resolves a newer legacy bare event into that scope', () async {
     final provider = WatchStateStore();
     addTearDown(provider.dispose);
     provider.setActiveClientScopesByServer({'jf-machine': 'jf-machine/user-a'});
@@ -69,6 +69,16 @@ void main() {
     expect(provider.patchForGlobalKey('jf-machine:item-1')?.isWatched, isFalse);
   });
 
+  test('unscoped patch remains visible when the active client scope arrives later', () async {
+    final provider = WatchStateStore();
+    addTearDown(provider.dispose);
+
+    await _emit(_event(changeType: WatchStateChangeType.watched, isNowWatched: true));
+    provider.setActiveClientScopesByServer({'jf-machine': 'jf-machine/user-a'});
+
+    expect(provider.patchForGlobalKey('jf-machine:item-1')?.isWatched, isTrue);
+  });
+
   test('newer active scoped patch wins over older unscoped patch', () async {
     final provider = WatchStateStore();
     addTearDown(provider.dispose);
@@ -77,6 +87,21 @@ void main() {
     await _emit(_event(changeType: WatchStateChangeType.unwatched, isNowWatched: false));
     await _emit(
       _event(changeType: WatchStateChangeType.watched, isNowWatched: true, cacheServerId: 'jf-machine/user-a'),
+    );
+
+    expect(provider.patchForGlobalKey('jf-machine:item-1')?.isWatched, isTrue);
+  });
+
+  test('explicit foreign scope is ignored when resolving the active scope', () async {
+    final provider = WatchStateStore();
+    addTearDown(provider.dispose);
+    provider.setActiveClientScopesByServer({'jf-machine': 'jf-machine/user-a'});
+
+    await _emit(
+      _event(changeType: WatchStateChangeType.watched, isNowWatched: true, cacheServerId: 'jf-machine/user-a'),
+    );
+    await _emit(
+      _event(changeType: WatchStateChangeType.unwatched, isNowWatched: false, cacheServerId: 'jf-machine/user-b'),
     );
 
     expect(provider.patchForGlobalKey('jf-machine:item-1')?.isWatched, isTrue);

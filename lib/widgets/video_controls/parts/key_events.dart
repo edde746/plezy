@@ -62,6 +62,10 @@ extension _PlexVideoControlsKeyEventMethods on _PlexVideoControlsState {
   }
 
   void _activateHiddenControlsPrimaryAction() {
+    if (!widget.canControl) {
+      _showControlsWithFocus();
+      return;
+    }
     if (_isSkipMarkerButtonVisible) {
       _activateSkipMarker();
       return;
@@ -145,6 +149,9 @@ extension _PlexVideoControlsKeyEventMethods on _PlexVideoControlsState {
         _nextSubtitleTrack,
         _nextChapter,
         _previousChapter,
+        canControlPlayback: widget.canControl,
+        canNavigateMediaItems: widget.canNavigateMediaItems,
+        onPlayPause: () => unawaited(_playOrPause()),
         onToggleShader: _toggleShader,
         onNextEpisode: widget.onNext,
         onPreviousEpisode: widget.onPrevious,
@@ -152,9 +159,13 @@ extension _PlexVideoControlsKeyEventMethods on _PlexVideoControlsState {
         onZoomIn: widget.onZoomIn,
         onZoomOut: widget.onZoomOut,
         onZoomReset: widget.onResetVideoZoom,
+        onVolumeUp: () => widget.volumeController.adjust(10),
+        onVolumeDown: () => widget.volumeController.adjust(-10),
+        onToggleMute: widget.volumeController.toggleMute,
         currentPositionEpoch: widget.currentPositionEpoch,
         onLiveSeek: widget.onLiveSeek,
         onLiveSeekBy: widget.onLiveSeekBy,
+        onSeekRequested: widget.onSeekRequested,
       );
       if (result == KeyEventResult.handled) {
         _focusNode.requestFocus(); // self-heal focus
@@ -268,6 +279,9 @@ extension _PlexVideoControlsKeyEventMethods on _PlexVideoControlsState {
       _nextSubtitleTrack,
       _nextChapter,
       _previousChapter,
+      canControlPlayback: widget.canControl,
+      canNavigateMediaItems: widget.canNavigateMediaItems,
+      onPlayPause: () => unawaited(_playOrPause()),
       onToggleShader: _toggleShader,
       onSkipMarker: _performAutoSkip,
       onNextEpisode: widget.onNext,
@@ -276,6 +290,9 @@ extension _PlexVideoControlsKeyEventMethods on _PlexVideoControlsState {
       onZoomIn: widget.onZoomIn,
       onZoomOut: widget.onZoomOut,
       onZoomReset: widget.onResetVideoZoom,
+      onVolumeUp: () => widget.volumeController.adjust(10),
+      onVolumeDown: () => widget.volumeController.adjust(-10),
+      onToggleMute: widget.volumeController.toggleMute,
       currentPositionEpoch: widget.currentPositionEpoch,
       onLiveSeek: widget.onLiveSeek,
       onLiveSeekBy: widget.onLiveSeekBy,

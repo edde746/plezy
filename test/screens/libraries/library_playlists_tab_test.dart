@@ -30,6 +30,7 @@ import 'package:plezy/widgets/focusable_media_card.dart';
 import 'package:plezy/widgets/media_card_sliver_layout.dart';
 import 'package:provider/provider.dart';
 
+import '../../test_helpers/backend_client_fixtures.dart';
 import '../../test_helpers/prefs.dart';
 
 final _serverId = ServerId('playlist-server');
@@ -241,7 +242,7 @@ class _PlaylistHarness {
   _PlaylistHarness({this.playlistType = 'video'}) {
     database = AppDatabase.forTesting(NativeDatabase.memory());
     PlexApiCache.initialize(database);
-    client = PlexClient.forTesting(
+    client = testPlexClient(
       config: PlexConfig(
         baseUrl: 'https://plex.example.com',
         token: 'token',

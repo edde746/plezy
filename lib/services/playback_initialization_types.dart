@@ -154,11 +154,25 @@ class PlaybackInitializationResult {
   });
 }
 
+/// Stable, payload-free reason for a playback initialization failure.
+///
+/// Display exceptions intentionally retain no transport cause, request URI,
+/// response body, or authentication metadata.
+enum PlaybackFailureReason {
+  authenticationRequired,
+  serverUnavailable,
+  cancelled,
+  invalidPlaybackData,
+  noPlayableSource,
+  unknown,
+}
+
 /// Exception thrown when playback initialization fails
 class PlaybackException implements Exception {
   final String message;
+  final PlaybackFailureReason reason;
 
-  PlaybackException(this.message);
+  const PlaybackException(this.message, {this.reason = PlaybackFailureReason.unknown});
 
   @override
   String toString() => message;

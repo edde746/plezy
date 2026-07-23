@@ -768,6 +768,7 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingO
   void _syncControlsAvailability() {
     unawaited(
       _mediaControls?.setControlsEnabled(
+        canPlayPause: true,
         canGoNext: _queue.nextIndex(manual: true) != null,
         // Previous always restarts the track even at queue head.
         canGoPrevious: true,

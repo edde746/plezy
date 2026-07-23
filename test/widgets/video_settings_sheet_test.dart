@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/i18n/strings.g.dart';
@@ -94,9 +96,67 @@ void main() {
       expect(find.descendant(of: dialog, matching: find.text(label)), findsOneWidget);
     }
   });
+
+  testWidgets('failed HDR write restores the toggle without persisting', (tester) async {
+    final propertyWrite = Completer<void>();
+    var writeCount = 0;
+    final player = _FakeSettingsPlayer(
+      onSetProperty: (_, _) {
+        writeCount++;
+        return propertyWrite.future;
+      },
+    );
+    await _pumpSheet(tester, player: player, supportsHdrControl: true);
+    await tester.scrollUntilVisible(find.text('HDR'), 500, scrollable: find.byType(Scrollable).first);
+
+    final tile = find.ancestor(of: find.text('HDR'), matching: find.byType(ListTile)).first;
+    final toggle = find.descendant(of: tile, matching: find.byType(Switch));
+    expect(tester.widget<Switch>(toggle).value, isTrue);
+
+    await tester.tap(toggle);
+    await tester.pump();
+    expect(tester.widget<Switch>(toggle).value, isFalse);
+    expect(SettingsService.instance.read(SettingsService.enableHDR), isTrue);
+
+    propertyWrite.completeError(StateError('rejected'));
+    await tester.pump();
+    await tester.pump();
+    await tester.runAsync(() => Future<void>.delayed(Duration.zero));
+
+    expect(tester.takeException(), isNull);
+    expect(tester.widget<Switch>(toggle).value, isTrue);
+    expect(SettingsService.instance.read(SettingsService.enableHDR), isTrue);
+    expect(writeCount, 1);
+  });
+
+  testWidgets('accepted HDR write persists once', (tester) async {
+    var writeCount = 0;
+    final player = _FakeSettingsPlayer(
+      onSetProperty: (_, _) async {
+        writeCount++;
+      },
+    );
+    await _pumpSheet(tester, player: player, supportsHdrControl: true);
+    await tester.scrollUntilVisible(find.text('HDR'), 500, scrollable: find.byType(Scrollable).first);
+
+    final tile = find.ancestor(of: find.text('HDR'), matching: find.byType(ListTile)).first;
+    final toggle = find.descendant(of: tile, matching: find.byType(Switch));
+    await tester.tap(toggle);
+    await tester.pumpAndSettle();
+
+    expect(tester.takeException(), isNull);
+    expect(writeCount, 1);
+    expect(tester.widget<Switch>(toggle).value, isFalse);
+    expect(SettingsService.instance.read(SettingsService.enableHDR), isFalse);
+  });
 }
 
-Future<void> _pumpSheet(WidgetTester tester, {bool canControl = false}) async {
+Future<void> _pumpSheet(
+  WidgetTester tester, {
+  bool canControl = false,
+  Player? player,
+  bool supportsHdrControl = false,
+}) async {
   await tester.pumpWidget(
     MaterialApp(
       theme: ThemeData(extensions: const [_testTokens]),
@@ -105,10 +165,11 @@ Future<void> _pumpSheet(WidgetTester tester, {bool canControl = false}) async {
           width: 900,
           height: 700,
           child: VideoSettingsSheet(
-            player: _FakeSettingsPlayer(),
+            player: player ?? _FakeSettingsPlayer(),
             audioSyncOffset: 0,
             subtitleSyncOffset: 0,
             canControl: canControl,
+            supportsHdrControl: supportsHdrControl,
           ),
         ),
       ),
@@ -118,7 +179,7 @@ Future<void> _pumpSheet(WidgetTester tester, {bool canControl = false}) async {
 }
 
 class _FakeSettingsPlayer implements Player {
-  _FakeSettingsPlayer()
+  _FakeSettingsPlayer({this.onSetProperty})
     : _streams = PlayerStreams(
         playing: const Stream<bool>.empty(),
         completed: const Stream<bool>.empty(),
@@ -141,6 +202,7 @@ class _FakeSettingsPlayer implements Player {
       );
 
   final PlayerStreams _streams;
+  final Future<void> Function(String name, String value)? onSetProperty;
 
   @override
   PlayerState get state => const PlayerState();
@@ -153,6 +215,11 @@ class _FakeSettingsPlayer implements Player {
 
   @override
   Future<void> setAudioPassthrough(bool enabled) async {}
+
+  @override
+  Future<void> setProperty(String name, String value) {
+    return onSetProperty?.call(name, value) ?? Future<void>.value();
+  }
 
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);

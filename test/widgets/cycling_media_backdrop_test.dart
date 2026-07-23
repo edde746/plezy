@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
@@ -98,9 +99,31 @@ void main() {
   }
 
   Future<void> finishImageTransition(WidgetTester tester, {Duration fadeDuration = _fadeDuration}) async {
-    await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 200)));
+    final incoming = find.byType(Image).last;
+    final image = tester.widget<Image>(incoming);
+    if (image.image is MemoryImage) {
+      final configuration = createLocalImageConfiguration(tester.element(incoming));
+      await tester.runAsync(() {
+        final frame = Completer<void>();
+        final stream = image.image.resolve(configuration);
+        late final ImageStreamListener listener;
+        listener = ImageStreamListener(
+          (_, _) {
+            stream.removeListener(listener);
+            frame.complete();
+          },
+          onError: (Object error, StackTrace? stackTrace) {
+            stream.removeListener(listener);
+            frame.completeError(error, stackTrace);
+          },
+        );
+        stream.addListener(listener);
+        return frame.future;
+      });
+    } else {
+      await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 200)));
+    }
     await tester.pump();
-    await tester.pump(fadeDuration);
     await tester.pump(fadeDuration);
     await tester.pump();
   }

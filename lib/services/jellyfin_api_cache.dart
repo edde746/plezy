@@ -198,8 +198,17 @@ class JellyfinApiCache extends ApiCache {
   /// lookups, mirroring [PlexApiCache.getAllPinnedMetadata] so callers can
   /// spread-merge the two results.
   @override
-  Future<Map<String, MediaItem>> getAllPinnedMetadata() async {
-    final entries = await _resolver.findPinnedItems();
+  Future<Map<String, MediaItem>> getAllPinnedMetadata({Set<ServerId>? cacheServerIds}) async {
+    final allEntries = await _resolver.findPinnedItems();
+    final entries = cacheServerIds == null
+        ? allEntries
+        : allEntries
+              .where(
+                (entry) =>
+                    cacheServerIds.contains(ServerId(entry.key.scopeId)) ||
+                    cacheServerIds.contains(ServerId('${entry.key.machineId}/${entry.key.userId}')),
+              )
+              .toList(growable: false);
     if (entries.isEmpty) return {};
 
     // Resolve the connection context per serverId once on the main thread

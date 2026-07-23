@@ -16,7 +16,8 @@
     "quickConnectInstructions": "Otwórz Quick Connect w Jellyfin i wpisz ten kod.",
     "quickConnectWaiting": "Oczekiwanie na zatwierdzenie…",
     "quickConnectCancel": "Anuluj",
-    "quickConnectExpired": "Quick Connect wygasł. Spróbuj ponownie."
+    "quickConnectExpired": "Quick Connect wygasł. Spróbuj ponownie.",
+    "localDataRecoveryRequired": ""
   },
   "common": {
     "cancel": "Anuluj",
@@ -553,6 +554,11 @@
     "streamInterrupted": "Strumień został przerwany. Naciśnij odtwarzanie lub przewiń, aby spróbować ponownie.",
     "liveStreamInterrupted": "Transmisja na żywo została przerwana. Naciśnij odtwarzanie, aby spróbować ponownie.",
     "fileInfoNotAvailable": "Informacje o pliku niedostępne",
+    "playbackAuthenticationRequired": "",
+    "playbackServerUnavailable": "",
+    "playbackDataInvalid": "",
+    "playbackCancelled": "",
+    "playbackFailed": "",
     "errorLoadingFileInfo": "Błąd ładowania informacji o pliku: ${error}",
     "errorLoadingSeries": "Błąd ładowania serialu",
     "musicNotSupported": "Odtwarzanie muzyki nie jest jeszcze obsługiwane",
@@ -941,6 +947,7 @@
     "favorites": "Ulubione",
     "reorderFavorites": "Zmień kolejność ulubionych",
     "favoritesLoadFailed": "Nie udało się wczytać ulubionych. Sprawdź połączenie i spróbuj ponownie.",
+    "favoritesUpdateFailed": "",
     "joinSession": "Dołącz do trwającej sesji",
     "watchFromStart": "Oglądaj od początku (${minutes} min temu)",
     "watchLive": "Oglądaj na żywo",

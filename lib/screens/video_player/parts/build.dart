@@ -112,29 +112,8 @@ extension _VideoPlayerBuildMethods on VideoPlayerScreenState {
                   children: [
                     FocusableButton(
                       autofocus: true,
-                      onPressed: () {
-                        final playerToDispose = player;
-                        player = null;
-                        if (playerToDispose != null) unawaited(playerToDispose.dispose());
-                        _setPlayerState(() {
-                          _playerInitializationError = null;
-                          _isPlayerInitialized = false;
-                        });
-                        unawaited(_initializePlayer());
-                      },
-                      child: FilledButton(
-                        onPressed: () {
-                          final playerToDispose = player;
-                          player = null;
-                          if (playerToDispose != null) unawaited(playerToDispose.dispose());
-                          _setPlayerState(() {
-                            _playerInitializationError = null;
-                            _isPlayerInitialized = false;
-                          });
-                          unawaited(_initializePlayer());
-                        },
-                        child: Text(t.common.retry),
-                      ),
+                      onPressed: _retryPlayerInitialization,
+                      child: FilledButton(onPressed: _retryPlayerInitialization, child: Text(t.common.retry)),
                     ),
                     const SizedBox(width: 12),
                     FocusableButton(
@@ -240,21 +219,30 @@ extension _VideoPlayerBuildMethods on VideoPlayerScreenState {
                     final newSize = Size(constraints.maxWidth, constraints.maxHeight);
                     _scheduleVideoLayoutUpdate(newSize);
 
-                    // Compute canControl from Watch Together provider (reactive)
-                    bool canControl = true;
+                    var authority = (canControlPlayback: true, canNavigateMediaItems: true);
                     try {
-                      canControl = context.select<WatchTogetherProvider, bool>(
-                        (wt) => wt.isInSession ? wt.canControl() : true,
-                      );
-                    } catch (e) {
-                      // Watch Together not available, default to can control
+                      authority = context
+                          .select<WatchTogetherProvider, ({bool canControlPlayback, bool canNavigateMediaItems})>(
+                            (wt) => (
+                              canControlPlayback: !wt.isInSession || wt.canControl(),
+                              canNavigateMediaItems: !wt.isInSession || wt.isHost,
+                            ),
+                          );
+                    } catch (_) {
+                      // Watch Together is optional outside the main app shell.
+                    }
+                    if (_lastMediaControlAuthority != authority) {
+                      _lastMediaControlAuthority = authority;
+                      WidgetsBinding.instance.addPostFrameCallback((_) {
+                        if (mounted) unawaited(_syncMediaControlsAvailability());
+                      });
                     }
 
                     VoidCallback? onNext;
                     if (widget.isLive) {
                       onNext = _hasNextChannel ? () => _switchLiveChannel(1) : null;
                     } else {
-                      onNext = (_nextEpisode != null && _canNavigateEpisodes()) ? _playNext : null;
+                      onNext = (_nextEpisode != null && authority.canNavigateMediaItems) ? _playNext : null;
                     }
 
                     VoidCallback? onPrevious;
@@ -262,7 +250,9 @@ extension _VideoPlayerBuildMethods on VideoPlayerScreenState {
                       onPrevious = _hasPreviousChannel ? () => _switchLiveChannel(-1) : null;
                     } else {
                       final canRestartOrPrevious = _currentMetadata.isEpisode || _previousEpisode != null;
-                      onPrevious = (canRestartOrPrevious && _canNavigateEpisodes()) ? _restartOrPlayPrevious : null;
+                      onPrevious = (canRestartOrPrevious && authority.canNavigateMediaItems)
+                          ? _restartOrPlayPrevious
+                          : null;
                     }
 
                     final sourceAudioTracks = _currentMediaInfo?.audioTracks ?? const <MediaAudioTrack>[];
@@ -274,6 +264,7 @@ extension _VideoPlayerBuildMethods on VideoPlayerScreenState {
                       hasFirstFrame: _hasFirstFrame,
                       controls: (context) => PlexVideoControls(
                         player: player!,
+                        volumeController: _volumeController!,
                         metadata: _currentMetadata,
                         onNext: onNext,
                         onPrevious: onPrevious,
@@ -310,7 +301,8 @@ extension _VideoPlayerBuildMethods on VideoPlayerScreenState {
                         onBack: _handleBackButton,
                         onReachedEnd: ({skipAutoPlayCountdown = false}) =>
                             _onVideoCompleted(true, skipAutoPlayCountdown: skipAutoPlayCountdown),
-                        canControl: canControl,
+                        canControl: authority.canControlPlayback,
+                        canNavigateMediaItems: authority.canNavigateMediaItems,
                         hasFirstFrame: _hasFirstFrame,
                         playNextFocusNode: _showPlayNextDialog ? _playNextConfirmFocusNode : null,
                         chromeController: _chromeController,

@@ -261,8 +261,8 @@ abstract class ApiCache {
     int? viewedLeafCount,
   });
 
-  /// Bulk-load every pinned metadata row into a [MediaItem] map keyed by
-  /// `buildGlobalKey(ServerId(serverId), itemId)`. Used by [DownloadManagerService] on
-  /// cold start to hydrate offline state in a single query per backend.
-  Future<Map<String, MediaItem>> getAllPinnedMetadata();
+  /// Bulk-load pinned metadata whose private cache namespace is included in
+  /// [cacheServerIds]. A null set retains the backend's complete diagnostic
+  /// view; profile-visible hydration must always pass exact allowed scopes.
+  Future<Map<String, MediaItem>> getAllPinnedMetadata({Set<ServerId>? cacheServerIds});
 }

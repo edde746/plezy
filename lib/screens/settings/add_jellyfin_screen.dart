@@ -19,7 +19,6 @@ import '../../profiles/active_profile_binder.dart';
 import '../../profiles/active_profile_provider.dart';
 import '../../profiles/profile.dart';
 import '../../profiles/profile_connection.dart';
-import '../../profiles/profile_registry.dart';
 import '../../services/jellyfin_auth_service.dart';
 import '../../services/jellyfin_endpoint_discovery.dart';
 import '../../services/jellyfin_lan_discovery_service.dart';
@@ -352,14 +351,10 @@ class _AddJellyfinScreenState extends State<AddJellyfinScreen> with AsyncFormSta
   }
 
   /// Shared persistence path for both username/password and Quick Connect:
-  /// upsert the connection, attach a ProfileConnection to the bound profile,
-  /// register with the live manager when binding to the active profile, and
-  /// pop with success.
+  /// atomically provision the optional first-run profile, connection, and
+  /// ownership row, then bind and pop only after durable success.
   Future<void> _persistAndExit(JellyfinConnection connection) async {
     if (!mounted) return;
-    // Bind to the target profile (caller's choice) or the active one. On a
-    // first-run Jellyfin-only sign-in there is no profile yet, so create and
-    // activate a local profile before registering the server.
     final activeProvider = context.read<ActiveProfileProvider>();
     await activeProvider.initialize();
     if (!mounted) return;
@@ -381,29 +376,28 @@ class _AddJellyfinScreenState extends State<AddJellyfinScreen> with AsyncFormSta
         return;
       }
     }
+
+    Profile? firstRunProfile;
     if (shouldCreateLocalJellyfinProfile(
       targetProfile: targetProfile,
       activeProfile: boundProfile,
       hasProfiles: activeProvider.profiles.isNotEmpty,
     )) {
       final now = DateTime.now();
-      final profile = Profile.local(
+      firstRunProfile = Profile.local(
         id: 'local-${const Uuid().v4()}',
         displayName: connection.userName.isNotEmpty ? connection.userName : connection.serverName,
         sortOrder: now.millisecondsSinceEpoch,
         createdAt: now,
       );
-      await context.read<ProfileRegistry>().upsert(profile);
-      await activeProvider.activate(profile);
-      if (!mounted) return;
-      boundProfile = activeProvider.active ?? profile;
+      boundProfile = firstRunProfile;
     }
+
     final bindProfile = boundProfile;
     if (bindProfile == null) {
       setErrorText(t.messages.noProfilesAvailable);
       return;
     }
-    final boundToActive = bindProfile.id == activeProvider.activeId;
 
     await persistAndBindConnection(
       context: context,
@@ -416,8 +410,10 @@ class _AddJellyfinScreenState extends State<AddJellyfinScreen> with AsyncFormSta
         tokenAcquiredAt: DateTime.now(),
       ),
       addToManager: null,
+      firstRunProfile: firstRunProfile,
     );
 
+    final boundToActive = bindProfile.id == activeProvider.activeId;
     if (!mounted) return;
     if (boundToActive) {
       await context.read<ActiveProfileBinder>().rebindIfActive(bindProfile.id);

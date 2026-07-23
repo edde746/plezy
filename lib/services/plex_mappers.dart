@@ -734,7 +734,11 @@ class PlexMetadataDto {
         e,
         stackTrace: st,
         withScope: (scope) {
-          scope.setContexts('json', json);
+          scope.setContexts('plex_mapper', {
+            'backend': 'plex',
+            'dto': 'PlexMetadataDto',
+            'topLevelFieldCount': json.length,
+          });
         },
       );
       rethrow;

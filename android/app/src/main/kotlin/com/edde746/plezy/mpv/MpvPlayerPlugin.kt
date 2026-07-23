@@ -13,6 +13,26 @@ import io.flutter.plugin.common.EventChannel
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
 
+internal fun completeMpvPropertyResult(
+  result: MethodChannel.Result,
+  outcome: Result<Unit>,
+  successValue: Any? = null
+) {
+  if (outcome.isSuccess) {
+    result.success(successValue)
+  } else {
+    result.error(
+      "SET_PROPERTY_FAILED",
+      "MPV property write was rejected or cancelled",
+      null
+    )
+  }
+}
+
+internal fun completeMpvPropertyNotInitialized(result: MethodChannel.Result) {
+  result.error("NOT_INITIALIZED", "Player not initialized", null)
+}
+
 /**
  * Channel plumbing for [MpvPlayerCore]. The default instance is the video
  * player; the [audioOnly] instance (see [MpvAudioPlayerPlugin]) drives the
@@ -261,13 +281,13 @@ open class MpvPlayerPlugin(
     }
 
     val core = playerCore
-    if (core == null) {
-      result.success(null)
+    if (core?.isInitialized != true) {
+      completeMpvPropertyNotInitialized(result)
       return
     }
 
-    core.setProperty(name, value) {
-      result.success(null)
+    core.setProperty(name, value) { outcome ->
+      completeMpvPropertyResult(result, outcome)
     }
   }
 

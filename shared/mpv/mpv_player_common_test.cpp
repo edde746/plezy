@@ -1,5 +1,9 @@
 #include "mpv_player_common.h"
 
+#ifdef NDEBUG
+#undef NDEBUG
+#endif
+
 #include <cassert>
 #include <chrono>
 #include <string>
@@ -35,6 +39,29 @@ void TestRequestRegistry() {
   auto cancelled = registry.CancelAll();
   assert(cancelled.status.size() == 1);
   assert(cancelled.properties.size() == 1);
+}
+
+void TestSetPropertyResultContract() {
+  using namespace plezy::mpv_common;
+
+  assert(std::string(kSetPropertyFailedCode) == "SET_PROPERTY_FAILED");
+  assert(std::string(kSetPropertyNotInitializedCode) == "NOT_INITIALIZED");
+  assert(SetPropertyStatusSucceeded(MPV_ERROR_SUCCESS));
+  assert(SetPropertyStatusSucceeded(1));
+
+  constexpr int kFailureStatuses[] = {
+      MPV_ERROR_INVALID_PARAMETER,
+      MPV_ERROR_PROPERTY_ERROR,
+      -1,
+      MPV_ERROR_UNINITIALIZED,
+  };
+  for (const int status : kFailureStatuses) {
+    assert(!SetPropertyStatusSucceeded(status));
+    const std::string description = SetPropertyErrorDescription(status);
+    assert(!description.empty());
+    assert(description.size() <= kSetPropertyErrorDescriptionLimit);
+    assert(description.find("caller-secret") == std::string::npos);
+  }
 }
 
 void TestPropertyObservationRegistry() {
@@ -138,6 +165,7 @@ void TestHdrHelpers() {
 
 int main() {
   TestRequestRegistry();
+  TestSetPropertyResultContract();
   TestPropertyObservationRegistry();
   TestResumeRecoverySchedule();
   TestNullFallbackRecoverySchedule();

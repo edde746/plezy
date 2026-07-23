@@ -14,10 +14,12 @@ import 'package:plezy/profiles/profile_registry.dart';
 import 'package:plezy/providers/discover_provider.dart';
 import 'package:plezy/providers/hidden_libraries_provider.dart';
 import 'package:plezy/providers/multi_server_provider.dart';
+import 'package:plezy/providers/trackers_provider.dart';
 import 'package:plezy/services/data_aggregation_service.dart';
 import 'package:plezy/services/multi_server_manager.dart';
 import 'package:plezy/services/offline_watch_sync_service.dart';
 import 'package:plezy/services/storage_service.dart';
+import 'package:plezy/services/system_shelf_service.dart';
 import 'package:provider/provider.dart';
 
 import '../test_helpers/prefs.dart';
@@ -25,8 +27,9 @@ import '../test_helpers/prefs.dart';
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  setUp(() {
+  setUp(() async {
     resetSharedPreferencesForTest();
+    await SystemShelfService().debugReset();
   });
 
   testWidgets('profile switch disposes the profile navigator, routes, and providers', (tester) async {
@@ -53,6 +56,7 @@ void main() {
     final offlineWatch = OfflineWatchSyncService(database: db, serverManager: serverManager);
     final discoverProviders = <DiscoverProvider>[];
     final hiddenProviders = <HiddenLibrariesProvider>[];
+    final trackerProviders = <TrackersProvider>[];
     final disposedActiveIds = <String>[];
 
     addTearDown(() async {
@@ -91,6 +95,7 @@ void main() {
             profileShellBuilder: (context) => _ProfileProbeShell(
               discoverProviders: discoverProviders,
               hiddenProviders: hiddenProviders,
+              trackerProviders: trackerProviders,
               disposedActiveIds: disposedActiveIds,
             ),
           ),
@@ -100,11 +105,14 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('active:local-owner'), findsOneWidget);
+    expect(SystemShelfService().debugActiveOwner, owner.id);
+    expect(discoverProviders.single.profileId, owner.id);
     expect(discoverProviders, hasLength(1));
     expect(hiddenProviders, hasLength(1));
     final ownerNavigator = profileNavigationRegistry.navigator;
     final ownerDiscover = discoverProviders.single;
     final ownerHidden = hiddenProviders.single;
+    final ownerTrackers = trackerProviders.single;
     await ownerHidden.ensureInitialized();
     expect(ownerHidden.profileId, owner.id);
     expect(ownerHidden.hiddenLibraryKeys, {'srv:owner'});
@@ -123,10 +131,20 @@ void main() {
     expect(discoverProviders.last, isNot(same(ownerDiscover)));
     expect(hiddenProviders, hasLength(2));
     expect(hiddenProviders.last, isNot(same(ownerHidden)));
+    expect(trackerProviders, hasLength(2));
+    expect(trackerProviders.last, isNot(same(ownerTrackers)));
+    expect(ownerTrackers.isDisposed, isTrue);
     await hiddenProviders.last.ensureInitialized();
     expect(hiddenProviders.last.profileId, kids.id);
     expect(hiddenProviders.last.hiddenLibraryKeys, {'srv:kids'});
     expect(profileNavigationRegistry.navigator, isNot(same(ownerNavigator)));
+    expect(SystemShelfService().debugActiveOwner, kids.id);
+    expect(discoverProviders.last.profileId, kids.id);
+
+    await activeProfile.clearActiveProfile();
+    await tester.pumpAndSettle();
+    expect(SystemShelfService().debugActiveOwner, isNull);
+    expect(discoverProviders.last.profileId, isNull);
   });
 }
 
@@ -135,10 +153,12 @@ class _ProfileProbeShell extends StatefulWidget {
     required this.discoverProviders,
     required this.hiddenProviders,
     required this.disposedActiveIds,
+    required this.trackerProviders,
   });
 
   final List<DiscoverProvider> discoverProviders;
   final List<HiddenLibrariesProvider> hiddenProviders;
+  final List<TrackersProvider> trackerProviders;
   final List<String> disposedActiveIds;
 
   @override
@@ -148,6 +168,7 @@ class _ProfileProbeShell extends StatefulWidget {
 class _ProfileProbeShellState extends State<_ProfileProbeShell> {
   DiscoverProvider? _discoverProvider;
   HiddenLibrariesProvider? _hiddenProvider;
+  TrackersProvider? _trackersProvider;
   String _activeId = 'none';
 
   @override
@@ -155,12 +176,16 @@ class _ProfileProbeShellState extends State<_ProfileProbeShell> {
     super.didChangeDependencies();
     _discoverProvider = context.read<DiscoverProvider>();
     _hiddenProvider = context.read<HiddenLibrariesProvider>();
+    _trackersProvider = context.read<TrackersProvider>();
     _activeId = context.read<ActiveProfileProvider>().activeId ?? 'none';
     if (widget.discoverProviders.isEmpty || !identical(widget.discoverProviders.last, _discoverProvider)) {
       widget.discoverProviders.add(_discoverProvider!);
     }
     if (widget.hiddenProviders.isEmpty || !identical(widget.hiddenProviders.last, _hiddenProvider)) {
       widget.hiddenProviders.add(_hiddenProvider!);
+    }
+    if (widget.trackerProviders.isEmpty || !identical(widget.trackerProviders.last, _trackersProvider)) {
+      widget.trackerProviders.add(_trackersProvider!);
     }
   }
 

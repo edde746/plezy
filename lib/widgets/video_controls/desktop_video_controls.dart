@@ -13,6 +13,7 @@ import '../../mpv/mpv.dart';
 import '../../media/media_source_info.dart';
 import '../../services/fullscreen_state_manager.dart';
 import '../../services/scrub_preview_source.dart';
+import '../../services/video_volume_controller.dart';
 import '../../utils/desktop_window_padding.dart';
 import '../../utils/platform_detector.dart';
 import '../../utils/formatters.dart';
@@ -33,9 +34,11 @@ import 'widgets/track_chapter_controls.dart';
 /// Desktop-specific video controls layout with top bar and bottom controls
 class DesktopVideoControls extends StatefulWidget {
   final Player player;
+  final VideoVolumeController volumeController;
   final MediaItem metadata;
   final VoidCallback? onNext;
   final VoidCallback? onPrevious;
+  final VoidCallback onPlayPause;
   final List<MediaChapter> chapters;
   final bool chaptersLoaded;
   final bool showChapterMarkersOnTimeline;
@@ -114,9 +117,11 @@ class DesktopVideoControls extends StatefulWidget {
   const DesktopVideoControls({
     super.key,
     required this.player,
+    required this.volumeController,
     required this.metadata,
     this.onNext,
     this.onPrevious,
+    required this.onPlayPause,
     required this.chapters,
     required this.chaptersLoaded,
     this.showChapterMarkersOnTimeline = true,
@@ -644,6 +649,7 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
                           chapters: widget.chapters,
                           chaptersLoaded: widget.chaptersLoaded,
                           serverId: widget.serverId,
+                          canControl: _canControl,
                           showQueueTab: widget.showQueueTab,
                           onQueueItemSelected: widget.onQueueItemSelected,
                           onSeekRequested: widget.onSeekRequested,
@@ -819,15 +825,7 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
                         index: 3,
                         icon: isPlaying ? Symbols.pause_rounded : Symbols.play_arrow_rounded,
                         iconSize: 32,
-                        onPressed: _canControl
-                            ? () {
-                                if (isPlaying) {
-                                  widget.player.pause();
-                                } else {
-                                  widget.player.play();
-                                }
-                              }
-                            : null,
+                        onPressed: _canControl ? widget.onPlayPause : null,
                         semanticLabel: isPlaying ? t.videoControls.pauseButton : t.videoControls.playButton,
                       );
                     },
@@ -937,7 +935,7 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
                 // Volume control (hidden on TV — hardware handles volume)
                 if (!PlatformDetector.isTV()) ...[
                   VolumeControl(
-                    player: widget.player,
+                    volumeController: widget.volumeController,
                     focusNode: _volumeFocusNode,
                     onKeyEvent: _handleVolumeKeyEvent,
                     onFocusChange: _onFocusChange,

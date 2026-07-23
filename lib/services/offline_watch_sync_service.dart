@@ -430,13 +430,18 @@ class OfflineWatchSyncService extends ChangeNotifier {
   Future<String?> _clientScopeIdForItem(ServerId serverId, String itemId) async {
     // A downloaded row's clientScopeId is a cache/source hint, not an owner.
     // Offline watch actions are user-owned, so a new local action follows the
-    // currently active scoped Jellyfin client. Once queued, _clientForAction
-    // replays that exact scope even if the active user changes later.
+    // currently active scoped client. Once queued, _clientForAction replays
+    // that exact scope even if the active user changes later.
     final client = _serverManager.getClient(serverId);
     final activeScopeId = resolveActiveClientScopeId(serverId: serverId, cacheServerId: client?.cacheServerId);
     if (activeScopeId != null) return activeScopeId;
     final download = await _database.getDownloadedMedia(buildGlobalKey(ServerId(serverId), itemId));
-    return resolveActiveClientScopeId(serverId: serverId, cacheServerId: download?.clientScopeId);
+    final downloadedScope = resolveActiveClientScopeId(serverId: serverId, cacheServerId: download?.clientScopeId);
+    final profileId = _activeProfileId;
+    if (downloadedScope != null && isPlexProfileScopeId(downloadedScope) && profileId != null && profileId.isNotEmpty) {
+      return buildPlexProfileScopeId(serverId: serverId, profileId: profileId);
+    }
+    return downloadedScope;
   }
 
   Future<({MediaServerClient client, String? clientScopeId})?> _clientForAction(OfflineWatchProgressItem action) async {
@@ -445,8 +450,8 @@ class OfflineWatchSyncService extends ChangeNotifier {
       cacheServerId: action.clientScopeId,
     );
     if (scopeId != null) {
-      final scoped = _serverManager.getJellyfinClientByCompoundId(scopeId);
-      if (scoped != null) return (client: scoped, clientScopeId: scopeId);
+      final scoped = _serverManager.getClientByScope(scopeId);
+      return scoped == null ? null : (client: scoped, clientScopeId: scopeId);
     }
     final client = _serverManager.getClient(ServerId(action.serverId));
     if (client == null) return null;
@@ -501,8 +506,7 @@ class OfflineWatchSyncService extends ChangeNotifier {
 
   Future<MediaServerClient?> _clientForDownloadScope(ServerId serverId, String? clientScopeId) async {
     if (clientScopeId != null && clientScopeId.isNotEmpty) {
-      final scoped = _serverManager.getJellyfinClientByCompoundId(clientScopeId);
-      if (scoped != null) return scoped;
+      return _serverManager.getClientByScope(clientScopeId);
     }
     return _serverManager.getClient(serverId);
   }

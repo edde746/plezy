@@ -1164,19 +1164,18 @@ mixin _PlexLiveTvClientMethods on MediaServerCacheMixin implements LiveTvSupport
   /// Get favorite channels from the Plex cloud.
   @override
   Future<List<FavoriteChannel>> fetchFavoriteChannels() async {
-    try {
-      final response = await _http.get(_favoriteChannelsUrl, headers: _providerVersionHeader);
-      final container = _getMediaContainer(response);
-      if (container != null && container['FavoriteChannel'] != null) {
-        return (container['FavoriteChannel'] as List)
-            .map((json) => FavoriteChannel.fromJson(json as Map<String, dynamic>))
-            .toList();
-      }
-      return [];
-    } catch (e) {
-      appLogger.e('Failed to get favorite channels', error: e);
-      return [];
+    final response = await _http.get(_favoriteChannelsUrl, headers: _providerVersionHeader);
+    _throwIfFailed(response);
+    final container = _getMediaContainer(response);
+    if (container == null) {
+      throw const FormatException('Plex favorite-channel response is missing MediaContainer');
     }
+    final rows = container['FavoriteChannel'];
+    if (rows == null) return const [];
+    if (rows is! List) {
+      throw const FormatException('Plex FavoriteChannel must be a list');
+    }
+    return rows.map((json) => FavoriteChannel.fromJson(json as Map<String, dynamic>)).toList();
   }
 
   /// Update favorite channels on the Plex cloud.
@@ -1190,8 +1189,9 @@ mixin _PlexLiveTvClientMethods on MediaServerCacheMixin implements LiveTvSupport
           headers: _providerVersionHeader,
         ),
       );
-    } catch (e) {
-      appLogger.e('Failed to update favorite channels', error: e);
+    } catch (e, stackTrace) {
+      appLogger.e('Failed to update favorite channels', error: e, stackTrace: stackTrace);
+      rethrow;
     }
   }
 

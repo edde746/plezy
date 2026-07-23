@@ -28,8 +28,9 @@ extension _VideoPlayerLiveTvMethods on VideoPlayerScreenState {
   }
 
   Future<void> _sendLiveTimeline(String state) async {
-    final session = _live.session;
-    if (session == null) return;
+    final requestSession = _live.session;
+    if (requestSession == null) return;
+    final requestGeneration = _live.timelineGeneration;
     // For live TV, player position/duration are unreliable (often 0). Use
     // elapsed wall-clock as the position and the program duration from tune
     // metadata; the per-backend session owns the wire mapping.
@@ -38,19 +39,23 @@ extension _VideoPlayerLiveTvMethods on VideoPlayerScreenState {
         : 0;
 
     try {
-      final updatedBuffer = await session.reportTimeline(
+      await runLiveTimelineReport(
+        requestSession: requestSession,
+        requestGeneration: requestGeneration,
         state: state,
         positionMs: playbackTime,
-        durationMs: session.program.durationMs ?? 0,
+        currentSession: () => _live.session,
+        currentGeneration: () => _live.timelineGeneration,
+        isMounted: () => mounted,
+        commit: (updatedBuffer) {
+          _setPlayerState(() {
+            _live.captureBuffer = updatedBuffer;
+            _live.atLiveEdge =
+                (_currentPositionEpoch >=
+                updatedBuffer.seekableEndEpoch - VideoPlayerScreenState._liveEdgeThresholdSeconds);
+          });
+        },
       );
-      if (updatedBuffer != null && mounted) {
-        _setPlayerState(() {
-          _live.captureBuffer = updatedBuffer;
-          _live.atLiveEdge =
-              (_currentPositionEpoch >=
-              updatedBuffer.seekableEndEpoch - VideoPlayerScreenState._liveEdgeThresholdSeconds);
-        });
-      }
     } catch (e) {
       appLogger.d('Live timeline update failed', error: e);
     }

@@ -87,6 +87,8 @@ class MpvPlayer {
   void NotifyPowerResume();
 
  private:
+  friend class MpvPlayerPropertyContractTestPeer;
+
   void StartEventLoop();
   void StopEventLoop();
   void EventLoop();

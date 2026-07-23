@@ -16,7 +16,8 @@ import 'media_list_playback_launcher.dart';
 import 'plex_client.dart';
 
 // Re-export the result types so existing imports of this file keep working.
-export 'media_list_playback_launcher.dart' show PlayQueueResult, PlayQueueSuccess, PlayQueueEmpty, PlayQueueError;
+export 'media_list_playback_launcher.dart'
+    show PlayQueueResult, PlayQueueSuccess, PlayQueueEmpty, PlayQueueCancelled, PlayQueueError;
 
 /// Plex-specific play queue launcher.
 ///
@@ -36,7 +37,19 @@ class PlexPlayQueueLauncher extends MediaListPlaybackLauncher {
   final String? serverId;
   final String? serverName;
 
-  PlexPlayQueueLauncher({required this.context, required this.client, this.serverId, this.serverName});
+  /// Narrow test seam for asserting queue publication without building the
+  /// full player route dependency tree.
+  final PlaybackStateProvider? playbackStateForTesting;
+  final Future<void> Function(MediaItem item)? navigateForTesting;
+
+  PlexPlayQueueLauncher({
+    required this.context,
+    required this.client,
+    this.serverId,
+    this.serverName,
+    this.playbackStateForTesting,
+    this.navigateForTesting,
+  });
 
   /// Resolve the right [PlexClient] for [item]'s server and build a launcher.
   /// Falls back to the first available Plex client when [item] doesn't carry
@@ -314,9 +327,11 @@ class PlexPlayQueueLauncher extends MediaListPlaybackLauncher {
       return const PlayQueueEmpty();
     }
 
-    if (!context.mounted) return const PlayQueueError('Context not mounted');
+    if (!context.mounted && navigateForTesting == null) {
+      return const PlayQueueError('Context not mounted');
+    }
 
-    final playbackState = context.read<PlaybackStateProvider>();
+    final playbackState = playbackStateForTesting ?? context.read<PlaybackStateProvider>();
     playbackState.setPlayQueueWindowFetcher(
       libraryId == null
           ? (id, {center, window = 50}) => client.getPlayQueue(id, center: center, window: window)
@@ -330,7 +345,9 @@ class PlexPlayQueueLauncher extends MediaListPlaybackLauncher {
     );
     await playbackState.setPlaybackFromPlayQueue(playQueue, ratingKey);
 
-    if (!context.mounted) return const PlayQueueError('Context not mounted');
+    if (!context.mounted && navigateForTesting == null) {
+      return const PlayQueueError('Context not mounted');
+    }
 
     var itemToPlay = selectedItem ?? playQueue.items!.first;
 
@@ -343,7 +360,11 @@ class PlexPlayQueueLauncher extends MediaListPlaybackLauncher {
       );
     }
 
-    await navigateToVideoPlayer(context, metadata: itemToPlay);
+    if (navigateForTesting != null) {
+      await navigateForTesting!(itemToPlay);
+    } else {
+      await navigateToVideoPlayer(context, metadata: itemToPlay);
+    }
 
     return const PlayQueueSuccess();
   }

@@ -233,11 +233,20 @@ void main() {
         await storage.setActiveProfileId(vProfile);
         await storage.saveHiddenLibraries({'jf-machine:movies'});
 
+        final plannedRemoval = await planPlexAccountConnectionRemoval(
+          account: acct,
+          profileConnections: profileConnections,
+        );
+        expect(plannedRemoval.removedVirtualProfileIds, {vProfile});
+        expect(await connections.get(acct.id), isNotNull);
+        expect(await profileConnections.listAll(), hasLength(2));
+
         final removal = await removePlexAccountConnectionAndCleanup(
           account: acct,
           profileConnections: profileConnections,
           connections: connections,
           storage: storage,
+          plannedRemoval: plannedRemoval,
         );
 
         expect(removal.removedVirtualProfileIds, {vProfile});

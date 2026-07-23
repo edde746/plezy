@@ -164,7 +164,7 @@ class SimklClient implements DisposableTrackerClient {
       );
     }
     if (response.statusCode < 200 || response.statusCode >= 300) {
-      throw TrackerApiException(service: TrackerService.simkl, statusCode: response.statusCode, body: response.body);
+      throw TrackerApiException(service: TrackerService.simkl, statusCode: response.statusCode);
     }
     return response;
   }

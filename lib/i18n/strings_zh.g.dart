@@ -120,6 +120,7 @@ class _TranslationsAuthZh extends TranslationsAuthEn {
 	@override String get quickConnectWaiting => '等待批准…';
 	@override String get quickConnectCancel => '取消';
 	@override String get quickConnectExpired => 'Quick Connect 已过期。请重试。';
+	@override String get localDataRecoveryRequired => '';
 }
 
 // Path: common
@@ -709,6 +710,11 @@ class _TranslationsMessagesZh extends TranslationsMessagesEn {
 	@override String get streamInterrupted => '视频流已中断。按播放键或拖动进度条重试。';
 	@override String get liveStreamInterrupted => '直播流已中断。按播放键重试。';
 	@override String get fileInfoNotAvailable => '文件信息不可用';
+	@override String get playbackAuthenticationRequired => '';
+	@override String get playbackServerUnavailable => '';
+	@override String get playbackDataInvalid => '';
+	@override String get playbackCancelled => '';
+	@override String get playbackFailed => '';
 	@override String errorLoadingFileInfo({required Object error}) => '加载文件信息时出错: ${error}';
 	@override String get errorLoadingSeries => '加载系列时出错';
 	@override String get musicNotSupported => '尚不支持播放音乐';
@@ -1141,6 +1147,7 @@ class _TranslationsLiveTvZh extends TranslationsLiveTvEn {
 	@override String get favorites => '收藏';
 	@override String get reorderFavorites => '重新排序收藏';
 	@override String get favoritesLoadFailed => '无法加载收藏。请检查网络连接后重试。';
+	@override String get favoritesUpdateFailed => '';
 	@override String get joinSession => '加入正在进行的会话';
 	@override String watchFromStart({required Object minutes}) => '从头观看（${minutes}分钟前开始）';
 	@override String get watchLive => '观看直播';
@@ -2138,6 +2145,7 @@ extension on TranslationsZh {
 			'auth.quickConnectWaiting' => '等待批准…',
 			'auth.quickConnectCancel' => '取消',
 			'auth.quickConnectExpired' => 'Quick Connect 已过期。请重试。',
+			'auth.localDataRecoveryRequired' => '',
 			'common.cancel' => '取消',
 			'common.save' => '保存',
 			'common.close' => '关闭',
@@ -2634,12 +2642,17 @@ extension on TranslationsZh {
 			'messages.autoRemovedWatchedDownload' => ({required Object title}) => '已自动移除: ${title}',
 			'messages.autoRemovedWatchedDownloads' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('zh'))(n, other: '已自动移除 ${n} 个看过的下载', ), 
 			'messages.removedFromContinueWatching' => '已从继续观看中移除',
-			'messages.errorLoading' => ({required Object error}) => '错误: ${error}',
 			_ => null,
 		} ?? switch (path) {
+			'messages.errorLoading' => ({required Object error}) => '错误: ${error}',
 			'messages.streamInterrupted' => '视频流已中断。按播放键或拖动进度条重试。',
 			'messages.liveStreamInterrupted' => '直播流已中断。按播放键重试。',
 			'messages.fileInfoNotAvailable' => '文件信息不可用',
+			'messages.playbackAuthenticationRequired' => '',
+			'messages.playbackServerUnavailable' => '',
+			'messages.playbackDataInvalid' => '',
+			'messages.playbackCancelled' => '',
+			'messages.playbackFailed' => '',
 			'messages.errorLoadingFileInfo' => ({required Object error}) => '加载文件信息时出错: ${error}',
 			'messages.errorLoadingSeries' => '加载系列时出错',
 			'messages.musicNotSupported' => '尚不支持播放音乐',
@@ -2979,6 +2992,7 @@ extension on TranslationsZh {
 			'liveTv.favorites' => '收藏',
 			'liveTv.reorderFavorites' => '重新排序收藏',
 			'liveTv.favoritesLoadFailed' => '无法加载收藏。请检查网络连接后重试。',
+			'liveTv.favoritesUpdateFailed' => '',
 			'liveTv.joinSession' => '加入正在进行的会话',
 			'liveTv.watchFromStart' => ({required Object minutes}) => '从头观看（${minutes}分钟前开始）',
 			'liveTv.watchLive' => '观看直播',
@@ -3142,6 +3156,8 @@ extension on TranslationsZh {
 			'watchTogether.participantBuffering' => ({required Object name}) => '${name} 正在缓冲',
 			'watchTogether.participantNeedsUpdate' => ({required Object name}) => '${name} 正在使用较旧版本的应用，无法同步',
 			'watchTogether.resumingWithout' => ({required Object name}) => '不等待 ${name}，继续播放',
+			_ => null,
+		} ?? switch (path) {
 			'watchTogether.waitingForParticipants' => '等待其他人加载...',
 			'watchTogether.waitingForName' => ({required Object name}) => '正在等待 ${name}...',
 			'watchTogether.recentRooms' => '最近的房间',
@@ -3149,8 +3165,6 @@ extension on TranslationsZh {
 			'watchTogether.removeRoom' => '移除',
 			'watchTogether.guestSwitchUnavailable' => '无法切换 — 服务器无法同步',
 			'watchTogether.guestSwitchFailed' => '无法切换 — 在此服务器上未找到内容',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.title' => '下载',
 			'downloads.manage' => '管理',
 			'downloads.tvShows' => '电视剧',

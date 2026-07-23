@@ -5,6 +5,7 @@ import 'package:plezy/media/ids.dart';
 import 'package:plezy/models/plex/plex_config.dart';
 import 'package:plezy/services/jellyfin_client.dart';
 import 'package:plezy/services/plex_client.dart';
+import 'package:plezy/utils/active_client_scope.dart';
 
 JellyfinConnection testJellyfinConnection({
   String machineId = 'srv-1',
@@ -85,6 +86,7 @@ PlexClient testPlexClient({
   String baseUrl = 'https://plex.example.com',
   String? token = 'token',
   ServerId? serverId,
+  PlexProfileScopeId? profileScopeId,
   String? serverName = 'Server',
   http.Client? httpClient,
   Future<http.Response> Function(http.Request request)? handler,
@@ -95,9 +97,11 @@ PlexClient testPlexClient({
   String? continueWatchingHubKey,
 }) {
   assert(httpClient == null || handler == null, 'Provide either httpClient or handler, not both');
+  final resolvedServerId = serverId ?? ServerId('server-1');
   return PlexClient.forTesting(
     config: config ?? testPlexConfig(baseUrl: baseUrl, token: token),
-    serverId: serverId ?? ServerId('server-1'),
+    serverId: resolvedServerId,
+    profileScopeId: profileScopeId ?? buildPlexProfileScopeId(serverId: resolvedServerId, profileId: 'test-profile'),
     serverName: serverName,
     httpClient: httpClient ?? MockClient(handler ?? _defaultResponse),
     prioritizedEndpoints: prioritizedEndpoints,

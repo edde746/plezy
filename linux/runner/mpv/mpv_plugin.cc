@@ -186,8 +186,7 @@ static void mpv_plugin_handle_method_call(FlMethodChannel* channel, FlMethodCall
     }
     if (self->player) {
       self->player->Dispose();
-      // Don't reset player here — stray g_idle callbacks still reference it.
-      // It will be replaced on next initialize() call.
+      self->player.reset();
     }
     self->initialized = FALSE;
     self->visible = FALSE;
@@ -225,7 +224,8 @@ static void mpv_plugin_handle_method_call(FlMethodChannel* channel, FlMethodCall
     }
   } else if (strcmp(method, "setProperty") == 0) {
     if (!self->player || !self->initialized) {
-      response = FL_METHOD_RESPONSE(fl_method_error_response_new("NOT_INITIALIZED", "Player not initialized", nullptr));
+      response = FL_METHOD_RESPONSE(fl_method_error_response_new(
+          plezy::mpv_common::kSetPropertyNotInitializedCode, "Player not initialized", nullptr));
     } else {
       FlValue* name_value = fl_value_lookup_string(args, "name");
       FlValue* value_value = fl_value_lookup_string(args, "value");
@@ -238,7 +238,14 @@ static void mpv_plugin_handle_method_call(FlMethodChannel* channel, FlMethodCall
         g_object_ref(method_call);
         self->player->SetPropertyAsync(
             fl_value_get_string(name_value), fl_value_get_string(value_value), [method_call](int error) {
-              g_autoptr(FlMethodResponse) async_response = FL_METHOD_RESPONSE(fl_method_success_response_new(nullptr));
+              g_autoptr(FlMethodResponse) async_response = nullptr;
+              if (plezy::mpv_common::SetPropertyStatusSucceeded(error)) {
+                async_response = FL_METHOD_RESPONSE(fl_method_success_response_new(nullptr));
+              } else {
+                const std::string description = plezy::mpv_common::SetPropertyErrorDescription(error);
+                async_response = FL_METHOD_RESPONSE(fl_method_error_response_new(
+                    plezy::mpv_common::kSetPropertyFailedCode, description.c_str(), nullptr));
+              }
               fl_method_call_respond(method_call, async_response, nullptr);
               g_object_unref(method_call);
             });

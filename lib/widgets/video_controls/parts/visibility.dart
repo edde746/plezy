@@ -67,16 +67,10 @@ extension _PlexVideoControlsVisibilityMethods on _PlexVideoControlsState {
   void _restartHideTimerForCurrentPlaybackState() => widget.chromeController.restartAutoHideForCurrentPlaybackState();
 
   void _handlePointerSignal(PointerSignalEvent event) {
-    if (event is PointerScrollEvent && _keyboardService != null) {
-      _cancelAutoSkipFromUserInteraction();
-      final delta = event.scrollDelta.dy;
-      final volume = widget.player.state.volume;
-      final maxVol = _keyboardService!.maxVolume.toDouble();
-      final newVolume = (volume - delta / 20).clamp(0.0, maxVol);
-      widget.player.setVolume(newVolume);
-      unawaited(SettingsService.getInstance().then((s) => s.write(SettingsService.volume, newVolume)));
-      _showControlsFromPointerActivity();
-    }
+    if (event is! PointerScrollEvent) return;
+    _cancelAutoSkipFromUserInteraction();
+    widget.volumeController.adjust(-event.scrollDelta.dy / 20);
+    _showControlsFromPointerActivity();
   }
 
   /// Show controls in response to pointer activity (mouse/trackpad movement).

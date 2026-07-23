@@ -53,6 +53,7 @@ import '../../services/keyboard_shortcuts_service.dart';
 import '../../services/device_adjustment_service.dart';
 import '../../services/scrub_preview_source.dart';
 import '../../services/settings_service.dart';
+import '../../services/video_volume_controller.dart';
 import '../../utils/codec_utils.dart';
 import '../../utils/formatters.dart';
 import '../../utils/platform_detector.dart';
@@ -405,6 +406,7 @@ typedef _EdgeAdjustmentIndicatorState = ({bool visible, MobileEdgeAdjustmentSide
 
 class PlexVideoControls extends StatefulWidget {
   final Player player;
+  final VideoVolumeController volumeController;
   final MediaItem metadata;
   final VoidCallback? onNext;
   final VoidCallback? onPrevious;
@@ -457,6 +459,10 @@ class PlexVideoControls extends StatefulWidget {
 
   /// Whether the user can control playback (false in host-only mode for non-host).
   final bool canControl;
+
+  /// Whether the user may choose another queue item or episode. Watch
+  /// Together guests never own this capability, even in anyone-control mode.
+  final bool canNavigateMediaItems;
 
   /// Notifier for whether first video frame has rendered (shows loading state when false).
   final ValueNotifier<bool>? hasFirstFrame;
@@ -517,6 +523,7 @@ class PlexVideoControls extends StatefulWidget {
   const PlexVideoControls({
     super.key,
     required this.player,
+    required this.volumeController,
     required this.metadata,
     required this.toastController,
     this.onNext,
@@ -554,6 +561,7 @@ class PlexVideoControls extends StatefulWidget {
     this.onBack,
     this.onReachedEnd,
     this.canControl = true,
+    required this.canNavigateMediaItems,
     this.hasFirstFrame,
     this.playNextFocusNode,
     required this.chromeController,
@@ -681,6 +689,8 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
   bool _isLongPressing = false;
   // Subtitle visibility toggle state
   bool _subtitlesVisible = true;
+  bool _confirmedSubtitlesVisible = true;
+  int _subtitleVisibilityWriteGeneration = 0;
   // Skip marker button focus node (for TV D-pad navigation)
   late final FocusNode _skipMarkerFocusNode;
   final ValueNotifier<bool> _fallbackHasFirstFrame = ValueNotifier<bool>(true);
@@ -1049,8 +1059,9 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
                                                 child: Builder(
                                                   builder: (context) {
                                                     final playbackState = context.watch<PlaybackStateProvider>();
-                                                    final hasStripContent =
-                                                        _chapters.isNotEmpty || playbackState.isQueueActive;
+                                                    final canShowQueue =
+                                                        playbackState.isQueueActive && widget.canNavigateMediaItems;
+                                                    final hasStripContent = _chapters.isNotEmpty || canShowQueue;
                                                     return MobileVideoControls(
                                                       player: widget.player,
                                                       metadata: widget.metadata,
@@ -1067,8 +1078,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
                                                       onScrubEnd: _releaseTimelineScrub,
                                                       onSeekRequested: widget.onSeekRequested,
                                                       onSeekCompleted: widget.onSeekCompleted,
-                                                      // ignore: no-empty-block - play/pause handled by parent VideoControlsState
-                                                      onPlayPause: () {},
+                                                      onPlayPause: () => unawaited(_playOrPause()),
                                                       onCancelAutoHide: widget.chromeController.cancelAutoHide,
                                                       onStartAutoHide: widget.chromeController.startAutoHide,
                                                       onBack: widget.onBack,
@@ -1084,10 +1094,8 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
                                                       streamStartEpoch: widget.streamStartEpoch,
                                                       onLiveSeek: widget.onLiveSeek,
                                                       serverId: widget.metadata.serverId,
-                                                      showQueueTab: playbackState.isQueueActive,
-                                                      onQueueItemSelected: playbackState.isQueueActive
-                                                          ? _onQueueItemSelected
-                                                          : null,
+                                                      showQueueTab: canShowQueue,
+                                                      onQueueItemSelected: canShowQueue ? _onQueueItemSelected : null,
                                                       chromeController: widget.chromeController,
                                                       onStripVisibilityChanged: (visible) {
                                                         if (visible) {

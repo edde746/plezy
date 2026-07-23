@@ -6,22 +6,37 @@ extension _PlexVideoControlsTrackMethods on _PlexVideoControlsState {
     // No-op if no subtitle track is selected
     if (currentTrack == null || currentTrack.id == 'no') return;
 
-    final newVisible = !_subtitlesVisible;
-    widget.player.setProperty('sub-visibility', newVisible ? 'yes' : 'no');
-    _setControlsState(() {
-      _subtitlesVisible = newVisible;
-    });
+    _setSubtitleVisibility(!_subtitlesVisible);
   }
 
   void _onSubtitleTrackChanged(SubtitleTrack track) {
     // Reset visibility when user explicitly picks a new subtitle track
     if (track.id != 'no' && !_subtitlesVisible) {
-      widget.player.setProperty('sub-visibility', 'yes');
-      _setControlsState(() {
-        _subtitlesVisible = true;
-      });
+      _setSubtitleVisibility(true);
     }
     widget.onSubtitleTrackChanged?.call(track);
+  }
+
+  void _setSubtitleVisibility(bool visible) {
+    final targetPlayer = widget.player;
+    final generation = ++_subtitleVisibilityWriteGeneration;
+    _setControlsState(() {
+      _subtitlesVisible = visible;
+    });
+
+    unawaited(() async {
+      try {
+        await targetPlayer.setProperty('sub-visibility', visible ? 'yes' : 'no');
+        if (!mounted || generation != _subtitleVisibilityWriteGeneration || targetPlayer != widget.player) return;
+        _confirmedSubtitlesVisible = visible;
+      } catch (error, stackTrace) {
+        appLogger.w('Failed to update subtitle visibility', error: error, stackTrace: stackTrace);
+        if (!mounted || generation != _subtitleVisibilityWriteGeneration || targetPlayer != widget.player) return;
+        _setControlsState(() {
+          _subtitlesVisible = _confirmedSubtitlesVisible;
+        });
+      }
+    }());
   }
 
   void _toggleShader() {
@@ -145,8 +160,8 @@ extension _PlexVideoControlsTrackMethods on _PlexVideoControlsState {
       canControl: widget.canControl,
       isLive: widget.isLive,
       subtitlesVisible: _subtitlesVisible,
-      showQueueButton: playbackState.isQueueActive,
-      onQueueItemSelected: playbackState.isQueueActive ? _onQueueItemSelected : null,
+      showQueueButton: playbackState.isQueueActive && widget.canNavigateMediaItems,
+      onQueueItemSelected: playbackState.isQueueActive && widget.canNavigateMediaItems ? _onQueueItemSelected : null,
       ratingKey: widget.metadata.id,
       mediaTitle: widget.metadata.title,
       onSubtitleDownloaded: _onSubtitleDownloaded,

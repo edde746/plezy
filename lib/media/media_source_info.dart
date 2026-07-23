@@ -10,9 +10,9 @@ class MediaSourceInfo {
   final int? partId;
   final MediaDisplayCriteria? displayCriteria;
 
-  /// Jellyfin source id for the *selected* version (null on Plex). Lets the
-  /// trickplay loader request the right tile sheet when an item has multiple
-  /// `MediaSources`.
+  /// Backend-opaque source id for the selected version. Plex uses the
+  /// authoritative `MediaVersion.id`; Jellyfin uses the selected
+  /// `MediaSources` id.
   final String? mediaSourceId;
 
   /// Jellyfin default stream indexes for this source. A subtitle index of -1

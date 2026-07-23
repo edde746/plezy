@@ -183,8 +183,9 @@ abstract class LiveTvSupport {
   FavoriteChannelPersistenceMode get favoritePersistenceMode;
 
   /// Read the user's favorite channels for this server. Plex pulls from the
-  /// cloud-synced list; Jellyfin queries `IsFavorite=true` with locally
-  /// stored ordering.
+  /// cloud-synced list; Jellyfin reads its locally stored ordering. A
+  /// successful read returns the complete list, including `[]` when no
+  /// favorites are stored. Unavailable or invalid reads complete with an error.
   Future<List<FavoriteChannel>> fetchFavoriteChannels();
 
   /// Persist the favorites list (and order, where supported). Plex pushes

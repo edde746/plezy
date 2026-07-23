@@ -182,7 +182,7 @@ mixin _PlexMetadataEditMethods on MediaServerCacheMixin {
 
   Future<void> _deleteMetadataEditCache(String ratingKey) async {
     try {
-      await _cache.deleteForItem(serverId, ratingKey);
+      await _cache.deleteForItem(ServerId(cacheServerId), ratingKey);
     } catch (e, st) {
       appLogger.w('Plex metadata edit cache invalidation failed', error: e, stackTrace: st);
     }

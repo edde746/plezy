@@ -32,20 +32,23 @@ extension _VideoPlayerMediaControlsMethods on VideoPlayerScreenState {
     if (!mounted || manager == null || currentPlayer == null) return;
 
     final playbackState = context.read<PlaybackStateProvider>();
-    final canNavigateEpisodes = _currentMetadata.isEpisode || playbackState.isPlaylistActive;
-    final canSeek = !widget.isLive && currentPlayer.state.seekable;
+    final hasNavigableItems = _currentMetadata.isEpisode || playbackState.isPlaylistActive;
+    final contentCanSeek = !widget.isLive && currentPlayer.state.seekable;
+    final canControlPlayback = _canControlPlayback();
+    final canNavigateMediaItems = _canNavigateMediaItems();
 
     if (!mounted || currentPlayer != player || manager != _mediaControlsManager) return;
 
     await manager.setControlsEnabled(
-      canGoNext: canNavigateEpisodes,
-      canGoPrevious: canNavigateEpisodes,
-      canSeek: canSeek,
+      canPlayPause: canControlPlayback,
+      canGoNext: hasNavigableItems && canNavigateMediaItems,
+      canGoPrevious: hasNavigableItems && canNavigateMediaItems,
+      canSeek: contentCanSeek && canControlPlayback,
       canStop: true,
       // In-track skips work on live TV too through the capture buffer.
-      canSkip: true,
+      canSkip: canControlPlayback,
       // Rate changes don't apply to a live stream.
-      canSetSpeed: !widget.isLive,
+      canSetSpeed: !widget.isLive && canControlPlayback,
     );
   }
 
@@ -58,7 +61,7 @@ extension _VideoPlayerMediaControlsMethods on VideoPlayerScreenState {
   Future<void> _restoreMediaControlsAfterResume() async {
     if (!_isPlayerInitialized || !mounted) return;
 
-    unawaited(_setWakelock(player?.state.isActive ?? false));
+    unawaited(_wakelockController.setEnabled(player?.state.isActive ?? false));
 
     final manager = _mediaControlsManager;
     final currentPlayer = player;

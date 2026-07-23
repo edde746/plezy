@@ -62,6 +62,7 @@ import 'package:connectivity_plus/connectivity_plus.dart';
 import 'services/jellyfin_api_cache.dart';
 import 'services/plex_api_cache.dart';
 import 'database/app_database.dart';
+import 'database/tvos_database_recovery_store.dart';
 import 'screens/video_player_screen.dart';
 import 'utils/app_logger.dart';
 import 'utils/managed_http_client.dart';
@@ -78,6 +79,7 @@ import 'utils/log_redaction_manager.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
 const bool _enableSentry = bool.fromEnvironment('ENABLE_SENTRY', defaultValue: false);
+const String _sentryDsn = 'https://6a1a6ef8c72140099b2798973c1bfb2f@bugs.plezy.app/1';
 const String gitCommit = String.fromEnvironment('GIT_COMMIT');
 const String _sentryEnvironment = String.fromEnvironment('SENTRY_ENVIRONMENT');
 const String _sentryDist = String.fromEnvironment('SENTRY_DIST');
@@ -126,7 +128,7 @@ Future<void> main() async {
     final packageInfo = await PackageInfo.fromPlatform();
 
     await SentryFlutter.init((options) {
-      options.dsn = 'https://6a1a6ef8c72140099b2798973c1bfb2f@bugs.plezy.app/1';
+      options.dsn = _sentryDsn;
       options.release = gitCommit.isNotEmpty
           ? 'plezy@${gitCommit.substring(0, 7)}'
           : 'plezy@${packageInfo.version}+${packageInfo.buildNumber}';
@@ -211,6 +213,8 @@ Future<void> _bootstrapApp() async {
   await Future.wait(futures);
   final storage = await storageFuture;
   markStartupPhase('platform-services');
+  final databaseBootstrap = await AppDatabase.open(isTvos: PlatformDetector.isAppleTV());
+  markStartupPhase('database-recovery');
 
   // Configure image cache — keep budget modest to leave headroom for Skia
   // decode buffers. Runs after the futures so the effects tier is resolved.
@@ -219,7 +223,6 @@ Future<void> _bootstrapApp() async {
   // The PLEX_TOKEN dart-define (screenshot automation) is consumed by
   // [ConnectionBootstrap.seedFromDevTokenDefine] later, when the registry
   // is available — keeps the deprecated legacy slots out of runtime paths.
-
   final debugEnabled = settings.read(SettingsService.enableDebugLogging);
   setLoggerLevel(debugEnabled);
 
@@ -280,8 +283,17 @@ Future<void> _bootstrapApp() async {
     return const ColoredBox(color: Color(0xFF000000));
   };
 
+  final appDatabase = databaseBootstrap.database;
+
   markStartupPhase('pre-runApp');
-  runApp(MainApp(settings: settings, storage: storage));
+  runApp(
+    MainApp(
+      settings: settings,
+      storage: storage,
+      appDatabase: appDatabase,
+      databaseRecoveryOutcome: databaseBootstrap.recoveryOutcome,
+    ),
+  );
 }
 
 Breadcrumb? _beforeBreadcrumb(Breadcrumb? breadcrumb, Hint _) {
@@ -297,7 +309,7 @@ Breadcrumb? _beforeBreadcrumb(Breadcrumb? breadcrumb, Hint _) {
 }
 
 FutureOr<SentryEvent?> _beforeSend(SentryEvent event, Hint _) {
-  // Drop event if user opted out of crash reporting
+  // Drop event if user opted out of crash reporting.
   final instance = SettingsService.instanceOrNull;
   if (instance != null && !instance.read(SettingsService.crashReporting)) return null;
 
@@ -459,8 +471,16 @@ Future<String?> _rootPinPrompt(Profile profile, {String? errorMessage}) {
 class MainApp extends StatefulWidget {
   final SettingsService settings;
   final StorageService storage;
+  final AppDatabase appDatabase;
+  final TvosDatabaseRecoveryOutcome databaseRecoveryOutcome;
 
-  const MainApp({super.key, required this.settings, required this.storage});
+  const MainApp({
+    super.key,
+    required this.settings,
+    required this.storage,
+    required this.appDatabase,
+    required this.databaseRecoveryOutcome,
+  });
 
   @override
   State<MainApp> createState() => _MainAppState();
@@ -505,7 +525,7 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
 
     _serverManager = MultiServerManager();
     _aggregationService = DataAggregationService(_serverManager);
-    _appDatabase = AppDatabase();
+    _appDatabase = widget.appDatabase;
 
     PlexApiCache.initialize(_appDatabase);
     JellyfinApiCache.initialize(_appDatabase);
@@ -673,10 +693,10 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
     _isAutoDeleteRunning = true;
     try {
       await downloadProvider.refreshMetadataFromCache();
-      final activeKey = VideoPlayerScreenState.activeId;
+      final activeGlobalKey = VideoPlayerScreenState.activeGlobalKey;
       final settings = SettingsService.instanceOrNull;
       if (settings != null && settings.read(SettingsService.autoRemoveWatchedDownloads)) {
-        final deleted = await downloadProvider.autoDeleteWatchedDownloads(activeId: activeKey);
+        final deleted = await downloadProvider.autoDeleteWatchedDownloads(activeGlobalKey: activeGlobalKey);
         if (deleted.isNotEmpty) {
           final msg = deleted.length == 1
               ? t.messages.autoRemovedWatchedDownload(title: deleted.first)
@@ -886,7 +906,7 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
             // binge-watching coalesces into one pass.
             _watchStateSubscription = WatchStateNotifier().stream.listen((event) {
               if (event.changeType != WatchStateChangeType.watched) return;
-              if (VideoPlayerScreenState.activeId == event.itemId) return;
+              if (VideoPlayerScreenState.activeGlobalKey == event.globalKey) return;
 
               _pendingSyncKeys.addAll(downloadProvider.syncRuleKeysForWatchEvent(event));
 
@@ -943,7 +963,7 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
         // profile-scoped session in ProfileSessionScreen.
         ChangeNotifierProvider(create: (context) => ShaderProvider()),
       ],
-      child: const _AppShell(),
+      child: _AppShell(databaseRecoveryOutcome: widget.databaseRecoveryOutcome),
     );
   }
 }
@@ -953,7 +973,9 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
 /// [ProfileSessionScreen], not here, so root auth/PIN/global dialogs survive a
 /// profile switch.
 class _AppShell extends StatelessWidget {
-  const _AppShell();
+  const _AppShell({required this.databaseRecoveryOutcome});
+
+  final TvosDatabaseRecoveryOutcome databaseRecoveryOutcome;
 
   @override
   Widget build(BuildContext context) {
@@ -985,7 +1007,7 @@ class _AppShell extends StatelessWidget {
                     themeMode: themeProvider.materialThemeMode,
                     navigatorKey: rootNavigatorKey,
                     navigatorObservers: [BackKeySuppressorObserver()],
-                    home: const OrientationAwareSetup(),
+                    home: OrientationAwareSetup(databaseRecoveryOutcome: databaseRecoveryOutcome),
                     // Siri Remote select + gamepad A report as
                     // LogicalKeyboardKey.{select,gameButtonA} which aren't
                     // in Flutter's default shortcut set — Material-level
@@ -1067,8 +1089,15 @@ class _AppleTvScale extends StatelessWidget {
   }
 }
 
+@visibleForTesting
+bool shouldBypassSetupForDatabaseRecovery(TvosDatabaseRecoveryOutcome outcome) {
+  return outcome == TvosDatabaseRecoveryOutcome.recoveryRequired;
+}
+
 class OrientationAwareSetup extends StatefulWidget {
-  const OrientationAwareSetup({super.key});
+  const OrientationAwareSetup({super.key, required this.databaseRecoveryOutcome});
+
+  final TvosDatabaseRecoveryOutcome databaseRecoveryOutcome;
 
   @override
   State<OrientationAwareSetup> createState() => _OrientationAwareSetupState();
@@ -1087,12 +1116,22 @@ class _OrientationAwareSetupState extends State<OrientationAwareSetup> {
 
   @override
   Widget build(BuildContext context) {
-    return const SetupScreen();
+    return SetupScreen(databaseRecoveryOutcome: widget.databaseRecoveryOutcome);
   }
 }
 
 class SetupScreen extends StatefulWidget {
-  const SetupScreen({super.key});
+  const SetupScreen({
+    super.key,
+    required this.databaseRecoveryOutcome,
+    this.initializeAuthServices = true,
+    this.debugRecoveryRequiredRouter,
+  });
+
+  final TvosDatabaseRecoveryOutcome databaseRecoveryOutcome;
+  final bool initializeAuthServices;
+  @visibleForTesting
+  final FutureOr<void> Function(BuildContext context, String message)? debugRecoveryRequiredRouter;
 
   @override
   State<SetupScreen> createState() => _SetupScreenState();
@@ -1125,6 +1164,31 @@ class _SetupScreenState extends State<SetupScreen> with MountedSetStateMixin {
   }
 
   Future<void> _loadSavedCredentials() async {
+    if (shouldBypassSetupForDatabaseRecovery(widget.databaseRecoveryOutcome)) {
+      final message = t.auth.localDataRecoveryRequired;
+      final debugRouter = widget.debugRecoveryRequiredRouter;
+      if (debugRouter != null) {
+        await Future.sync(() => debugRouter(context, message));
+        return;
+      }
+      await Future<void>.delayed(Duration.zero);
+      if (mounted) {
+        unawaited(
+          Navigator.pushReplacement(
+            context,
+            fadeRoute(
+              AuthScreen(
+                initialErrorMessage: message,
+                initializeServices: widget.initializeAuthServices,
+                databaseRecoveryRequired: true,
+              ),
+            ),
+          ),
+        );
+      }
+      return;
+    }
+
     _setStatus(t.common.checkingNetwork);
 
     final storage = await StorageService.getInstance();

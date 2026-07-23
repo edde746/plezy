@@ -212,26 +212,20 @@ mixin _PlexCollectionMethods on MediaServerCacheMixin {
     required String uri,
     int? type,
   }) async {
-    try {
-      appLogger.d('Creating collection: sectionId=$sectionId, title=$title, type=$type');
-      final response = await _http.post(
-        '/library/collections',
-        queryParameters: {'type': ?type, 'title': title, 'smart': 0, 'sectionId': sectionId, 'uri': uri},
-      );
-      throwIfHttpError(response);
-      appLogger.d('Create collection response: ${response.statusCode}');
+    appLogger.d('Creating collection: sectionId=$sectionId, title=$title, type=$type');
+    final response = await _http.post(
+      '/library/collections',
+      queryParameters: {'type': ?type, 'title': title, 'smart': 0, 'sectionId': sectionId, 'uri': uri},
+    );
+    throwIfHttpError(response);
+    appLogger.d('Create collection response: ${response.statusCode}');
 
-      final metadata = _getMediaContainer(response)?['Metadata'];
-      if (metadata is List && metadata.isNotEmpty) {
-        final collectionId = metadata.first['ratingKey']?.toString();
-        appLogger.d('Created collection with ID: $collectionId');
-        return collectionId;
-      }
-      return null;
-    } catch (e) {
-      appLogger.e('Failed to create collection', error: e);
-      return null;
-    }
+    final metadata = _getMediaContainer(response)?['Metadata'];
+    if (metadata is! List || metadata.isEmpty || metadata.first is! Map) return null;
+    final collectionId = (metadata.first as Map)['ratingKey']?.toString().trim();
+    if (collectionId == null || collectionId.isEmpty) return null;
+    appLogger.d('Created collection with ID: $collectionId');
+    return collectionId;
   }
 
   @override

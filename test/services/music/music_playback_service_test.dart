@@ -479,10 +479,11 @@ class FakeMediaControlsManager extends MediaControlsManager {
     bool force = false,
   }) async {}
 
-  final List<({bool canGoNext, bool canStop, bool canSkip, bool canSetSpeed})> controlSyncs = [];
+  final List<({bool canPlayPause, bool canGoNext, bool canStop, bool canSkip, bool canSetSpeed})> controlSyncs = [];
 
   @override
   Future<void> setControlsEnabled({
+    bool canPlayPause = false,
     bool canGoNext = false,
     bool canGoPrevious = false,
     bool canSeek = false,
@@ -490,7 +491,13 @@ class FakeMediaControlsManager extends MediaControlsManager {
     bool canSkip = false,
     bool canSetSpeed = false,
   }) async {
-    controlSyncs.add((canGoNext: canGoNext, canStop: canStop, canSkip: canSkip, canSetSpeed: canSetSpeed));
+    controlSyncs.add((
+      canPlayPause: canPlayPause,
+      canGoNext: canGoNext,
+      canStop: canStop,
+      canSkip: canSkip,
+      canSetSpeed: canSetSpeed,
+    ));
   }
 
   @override
@@ -1007,11 +1014,12 @@ void main() {
     expect(h.player.seeks.last, Duration.zero);
   });
 
-  test('music advertises stop and skip but never a speed control', () async {
+  test('music advertises play, pause, stop, and skip but never a speed control', () async {
     await h.playTracks([t1, t2]);
 
     expect(h.controls.controlSyncs, isNotEmpty);
     final last = h.controls.controlSyncs.last;
+    expect(last.canPlayPause, isTrue);
     expect(last.canStop, isTrue);
     expect(last.canSkip, isTrue);
     expect(last.canSetSpeed, isFalse);

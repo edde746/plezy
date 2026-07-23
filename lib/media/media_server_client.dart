@@ -1,3 +1,4 @@
+import '../exceptions/media_server_exceptions.dart';
 import '../media/media_source_info.dart';
 import '../media/media_sort.dart';
 import '../services/api_cache.dart';
@@ -41,27 +42,24 @@ const int defaultHubPreviewLimit = 20;
 /// fit the neutral browsing/playback surface (DVR tuning, match, rich metadata
 /// edit adapters) live on concrete clients or feature modules.
 ///
-/// ## Error contract (write methods)
+/// ## Mutation error and result contracts
 ///
-/// All write methods (`markWatched`, `markUnwatched`, `removeFromContinueWatching`,
-/// `rate`, `createPlaylist`, `addToPlaylist`, `deletePlaylist`,
-/// `movePlaylistItem`, `removeFromPlaylist`, `createCollection`,
-/// `addToCollection`, `removeFromCollection`, `deleteCollection`,
-/// `deleteMediaItem`) follow the same contract:
+/// HTTP status, timeout, connection, decode, and cancellation failures from
+/// the shared transport surface as [MediaServerHttpException]. Calls for an
+/// unsupported advertised capability may throw [UnsupportedError] where the
+/// method documents that boundary.
 ///
-///   - HTTP 4xx/5xx → throw [MediaServerHttpException].
-///   - Network/IO failure → throw the underlying exception.
-///   - Business "not applicable" (e.g. wrong-backend item handed to a
-///     write call) → return `false` without throwing.
-///   - Success → return the created entity / `true`.
+/// Result semantics follow each method's declared family. Completion of a
+/// `Future<void>` mutation is success and carries no business-result value.
+/// Nullable creation methods return `null` only after an accepted request
+/// produced no usable created entity or id; request failures throw. Boolean
+/// mutations return `true` on their accepted success path, and return `false`
+/// only for local preconditions explicitly documented by that method rather
+/// than as a substitute for request failure.
 ///
 /// `fetchItem` returns `null` on a real 404 (item gone) and on a 200 that
 /// can't be parsed; auth/server errors throw rather than silently dropping
 /// to `null`.
-///
-/// Callers that need to differentiate "operation impossible" from "server
-/// error" should `try`/`catch` the result and inspect the exception's
-/// `statusCode`.
 
 /// Outcome of a health probe. Distinguishes "session expired" (token was
 /// rejected) from a generic transport failure, so the manager can route the
@@ -369,9 +367,11 @@ abstract class MediaServerClient {
   /// per-playlist item ids where the server exposes them.
   Future<LibraryPage<MediaItem>> fetchPlaylistPage(String id, {int? start, int? size, AbortController? abort});
 
-  /// Create a new playlist seeded with [items]. Returns the created
-  /// playlist on success, `null` on failure. Plex builds a metadata URI
-  /// from the item ids; Jellyfin posts `Ids=<comma-joined>`.
+  /// Create a new playlist seeded with [items]. Returns the created playlist
+  /// when it can be recovered from an accepted response, or `null` when that
+  /// response contains no usable created playlist. Request failures throw.
+  /// Plex builds a metadata URI from the item ids; Jellyfin posts
+  /// `Ids=<comma-joined>`.
   Future<MediaPlaylist?> createPlaylist({required String title, required List<MediaItem> items});
 
   /// Append [items] to an existing playlist. Returns `true` on success.
@@ -432,9 +432,10 @@ abstract class MediaServerClient {
   });
 
   /// Create a new collection in [libraryId] seeded with [items]. Returns the
-  /// created collection's id on success, `null` on failure. [itemKind] is
-  /// only used by Plex (it disambiguates the section type — movie/show/
-  /// season/episode); Jellyfin ignores it.
+  /// created collection id when it can be recovered from an accepted response,
+  /// or `null` when that response contains no usable id. Request failures
+  /// throw. [itemKind] is only used by Plex (it disambiguates the section type
+  /// — movie/show/season/episode); Jellyfin ignores it.
   Future<String?> createCollection({
     required String libraryId,
     required String title,
@@ -609,11 +610,11 @@ abstract class MediaServerClient {
 
   /// Resolve the video URL, media info, and external subtitle list for
   /// playback. Backends own the per-backend particulars: Plex runs the
-  /// transcode-decision flow when [PlaybackInitializationOptions.qualityPreset]
-  /// is non-original; Jellyfin asks PlaybackInfo for a matching stream when a
-  /// non-original preset is selected. Throws
-  /// [PlaybackException] when the item can't be resolved (no MediaSources,
-  /// no playable URL, transcode decision unavailable).
+  /// transcode-decision flow for non-original quality; Jellyfin negotiates
+  /// both original and non-original playback through PlaybackInfo. Typed
+  /// request, cancellation, and malformed-payload failures propagate. Only an
+  /// applicable successful decision may select a direct-play fallback.
+  /// Unusable successful playback metadata throws [PlaybackException].
   ///
   /// Offline-file substitution is handled centrally in
   /// `PlaybackInitializationService` — backends always produce online
@@ -630,7 +631,11 @@ abstract class MediaServerClient {
   /// any external subtitle tracks that should be saved alongside it.
   ///
   /// [mediaIndex] selects among multiple media versions when an item has them.
-  Future<DownloadResolution> resolveDownload(MediaItem item, {int mediaIndex = 0});
+  ///
+  /// A successful applicable response may contain no URL. Request,
+  /// cancellation, and malformed-payload failures throw rather than returning
+  /// a partial resolution.
+  Future<DownloadResolution> resolveDownload(MediaItem item, {int mediaIndex = 0, String? mediaSourceId});
 
   /// The artwork files the download pipeline should persist for [item] so
   /// the offline UI can render its poster, clear logo, and background art.
@@ -641,8 +646,9 @@ abstract class MediaServerClient {
   /// Resolve a fully-qualified URL the OS-level external player (VLC, Infuse,
   /// MX Player, etc.) can fetch directly. Plex builds this from the chosen
   /// media version's part path; Jellyfin returns its `/Videos/{id}/stream`
-  /// endpoint with `Static=true` so transcoding is bypassed. Returns null
-  /// when the backend can't resolve a playable URL for the item.
+  /// endpoint with `Static=true` so transcoding is bypassed. Returns null only
+  /// when a successful response has no playable URL for the item. Request,
+  /// cancellation, and malformed-payload failures throw.
   ///
   /// Deliberately separate from the in-app playback funnel
   /// (`PlaybackSourceResolver`): external players can't send custom headers,
@@ -726,8 +732,9 @@ mixin MediaServerCacheMixin implements MediaServerClient {
     required T? Function(MediaServerResponse response) parseResponse,
     bool cacheResponse = true,
   }) async {
+    final cacheScope = ServerId(cacheServerId);
     if (isOfflineMode) {
-      final cached = await cache.get(ServerId(cacheServerId), cacheKey);
+      final cached = await cache.get(cacheScope, cacheKey);
       if (cached != null) return parseCache(cached);
       return null;
     }
@@ -735,12 +742,12 @@ mixin MediaServerCacheMixin implements MediaServerClient {
       final response = await networkCall();
       throwIfHttpError(response);
       if (cacheResponse) {
-        await _putCacheResponse(cacheKey, response.data);
+        await _putCacheResponse(cacheScope, cacheKey, response.data);
       }
       return parseResponse(response);
     } catch (e) {
       appLogger.w('Network request failed for $cacheKey, trying cache', error: e);
-      final cached = await cache.get(ServerId(cacheServerId), cacheKey);
+      final cached = await cache.get(cacheScope, cacheKey);
       if (cached != null) return parseCache(cached);
       rethrow;
     }
@@ -750,27 +757,33 @@ mixin MediaServerCacheMixin implements MediaServerClient {
   /// only on miss. Use when freshness is non-critical and prior fetches are
   /// likely to have populated the cache (e.g. playback after the detail
   /// screen pre-warmed the row).
+  ///
+  /// [cacheScope] must be captured from the same request context as
+  /// [networkCall]. The cache lookup may yield before a miss is known, so
+  /// sampling a live profile inside [networkCall] can cross profile identities.
   Future<T?> fetchWithCacheFirst<T>({
+    required ServerId cacheScope,
     required String cacheKey,
     required Future<MediaServerResponse> Function() networkCall,
     required T? Function(dynamic cachedData) parseCache,
     required T? Function(MediaServerResponse response) parseResponse,
     bool cacheResponse = true,
   }) async {
-    final cached = await cache.get(ServerId(cacheServerId), cacheKey);
+    final cached = await cache.get(cacheScope, cacheKey);
     if (cached != null) return parseCache(cached);
     if (isOfflineMode) return null;
     final response = await networkCall();
+    throwIfHttpError(response);
     if (cacheResponse) {
-      await _putCacheResponse(cacheKey, response.data);
+      await _putCacheResponse(cacheScope, cacheKey, response.data);
     }
     return parseResponse(response);
   }
 
-  Future<void> _putCacheResponse(String cacheKey, dynamic data) async {
+  Future<void> _putCacheResponse(ServerId cacheScope, String cacheKey, dynamic data) async {
     try {
       if (data is Map<String, dynamic>) {
-        await cache.put(ServerId(cacheServerId), cacheKey, data);
+        await cache.put(cacheScope, cacheKey, data);
       } else if (data != null) {
         appLogger.w('Unexpected response type for $cacheKey: ${data.runtimeType}');
       }

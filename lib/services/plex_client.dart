@@ -60,6 +60,7 @@ import '../utils/failover_http_client.dart';
 import '../utils/app_logger.dart';
 import '../utils/media_server_retry.dart';
 import '../utils/media_server_timeouts.dart';
+import '../utils/active_client_scope.dart';
 import '../utils/log_redaction_manager.dart';
 import '../utils/plex_cache_parser.dart';
 import '../utils/plex_library_section_utils.dart';
@@ -237,6 +238,24 @@ bool? _parsePlexTranscoderVideoCapability(Object? value) {
   };
 }
 
+class _PlexMediaProviderState {
+  const _PlexMediaProviderState({
+    required this.libraries,
+    required this.epg,
+    this.homeHubKey,
+    this.promotedHubKey,
+    this.continueWatchingHubKey,
+  });
+
+  static const empty = _PlexMediaProviderState(libraries: [], epg: []);
+
+  final List<PlexLibraryDto> libraries;
+  final List<({String identifier, String gridEndpoint})> epg;
+  final String? homeHubKey;
+  final String? promotedHubKey;
+  final String? continueWatchingHubKey;
+}
+
 class PlexClient
     with
         MediaServerCacheMixin,
@@ -245,7 +264,7 @@ class PlexClient
         _PlexCollectionMethods,
         _PlexPlayQueueMethods,
         _PlexMetadataEditMethods
-    implements MediaServerClient, SeasonEpisodePagingClient, GracefullyCloseable {
+    implements MediaServerClient, SeasonEpisodePagingClient, ScopedMediaServerClient, GracefullyCloseable {
   @override
   PlexConfig config;
 
@@ -257,6 +276,10 @@ class PlexClient
   /// Server identifier - all PlexMetadataDto items created by this client are tagged with this
   @override
   final ServerId serverId;
+  PlexProfileScopeId profileScopeId;
+
+  @override
+  String get scopedServerId => profileScopeId;
 
   /// Server name - all PlexMetadataDto items created by this client are tagged with this
   @override
@@ -298,6 +321,7 @@ class PlexClient
   /// EPG providers parsed from /media/providers
   @override
   List<({String identifier, String gridEndpoint})> _providerEpg = const [];
+  int _profileUpdateGeneration = 0;
 
   /// Server-level preferences fetched from /:/prefs
   Map<String, dynamic> _serverPrefs = {};
@@ -328,6 +352,7 @@ class PlexClient
   static Future<PlexClient> create(
     PlexConfig config, {
     required ServerId serverId,
+    required PlexProfileScopeId profileScopeId,
     String? serverName,
     List<String>? prioritizedEndpoints,
     Future<void> Function(String newBaseUrl)? onEndpointChanged,
@@ -338,6 +363,7 @@ class PlexClient
     final client = PlexClient._(
       config,
       serverId: ServerId(serverId),
+      profileScopeId: profileScopeId,
       serverName: serverName,
       prioritizedEndpoints: prioritizedEndpoints,
       onEndpointChanged: onEndpointChanged,
@@ -360,6 +386,7 @@ class PlexClient
   PlexClient._(
     this.config, {
     required this.serverId,
+    required this.profileScopeId,
     this.serverName,
     List<String>? prioritizedEndpoints,
     this._onEndpointChanged,
@@ -391,6 +418,7 @@ class PlexClient
   static PlexClient forTesting({
     required PlexConfig config,
     required ServerId serverId,
+    required PlexProfileScopeId profileScopeId,
     String? serverName,
     required http.Client httpClient,
     List<String>? prioritizedEndpoints,
@@ -402,6 +430,7 @@ class PlexClient
     final client = PlexClient._(
       config,
       serverId: ServerId(serverId),
+      profileScopeId: profileScopeId,
       serverName: serverName,
       httpClient: httpClient,
       prioritizedEndpoints: prioritizedEndpoints,
@@ -452,124 +481,120 @@ class PlexClient
 
   /// Fetch /media/providers and parse libraries + EPG providers from the response.
   /// This discovers individually shared items that don't appear in /library/sections.
+  Future<_PlexMediaProviderState> _fetchMediaProviders({Map<String, String>? headers}) async {
+    final response = await _getWithFailover('/media/providers', headers: headers);
+    final container = _getMediaContainer(response);
+    if (container == null) return _PlexMediaProviderState.empty;
+
+    final providers = container['MediaProvider'] as List?;
+    if (providers == null) return _PlexMediaProviderState.empty;
+
+    final libraries = <PlexLibraryDto>[];
+    final epg = <({String identifier, String gridEndpoint})>[];
+    String? homeHubKey;
+    String? promotedHubKey;
+    String? continueWatchingHubKey;
+
+    for (final provider in providers) {
+      if (provider is! Map) continue;
+      final identifier = provider['identifier'] as String?;
+      if (identifier == null) continue;
+
+      final features = provider['Feature'] as List?;
+      if (features == null) continue;
+
+      // Library provider — extract directories as libraries
+      if (identifier == 'com.plexapp.plugins.library') {
+        for (final feature in features) {
+          if (feature is! Map) continue;
+
+          if (feature['type'] == 'promoted') {
+            promotedHubKey ??= feature['key'] as String?;
+          }
+
+          if (feature['type'] == 'continuewatching') {
+            continueWatchingHubKey ??= feature['key'] as String?;
+          }
+
+          if (feature['type'] != 'content') continue;
+
+          final directories = feature['Directory'] as List?;
+          if (directories == null) continue;
+
+          for (final dir in directories) {
+            try {
+              if (dir is! Map<String, dynamic>) continue;
+
+              // Skip entries without id (Home hub) and playlists
+              final id = dir['id']?.toString();
+              if (id == null) {
+                homeHubKey ??= dir['hubKey'] as String?;
+                continue;
+              }
+              if (dir['type'] == 'playlist') continue;
+
+              final isNumericId = int.tryParse(id) != null;
+              final isSharedLibrary = !isNumericId && dir['key']?.toString().startsWith('/library/shared') == true;
+
+              // Skip non-numeric IDs unless it's a shared library
+              if (!isNumericId && !isSharedLibrary) continue;
+
+              // Set key = id so downstream code gets a plain section ID (e.g. "1" or "shared")
+              final json = Map<String, dynamic>.from(dir);
+              json['key'] = id;
+
+              libraries.add(
+                PlexLibraryDto.fromJson(
+                  json,
+                ).copyWith(serverId: serverId, serverName: serverName, isShared: isSharedLibrary),
+              );
+            } catch (e) {
+              appLogger.w('Failed to parse media provider directory entry', error: e);
+            }
+          }
+        }
+      }
+
+      // EPG provider — extract grid endpoints
+      final protocols = provider['protocols'] as String?;
+      if (protocols != null && protocols.contains('livetv')) {
+        for (final feature in features) {
+          if (feature is! Map) continue;
+          if (feature['type'] == 'grid') {
+            final gridEndpoint = feature['key'] as String?;
+            if (gridEndpoint != null) {
+              epg.add((identifier: identifier, gridEndpoint: gridEndpoint));
+              appLogger.d('Discovered EPG provider: $identifier (grid: $gridEndpoint)');
+            }
+          }
+        }
+      }
+    }
+
+    return _PlexMediaProviderState(
+      libraries: libraries,
+      epg: epg,
+      homeHubKey: homeHubKey,
+      promotedHubKey: promotedHubKey,
+      continueWatchingHubKey: continueWatchingHubKey,
+    );
+  }
+
+  void _commitMediaProviders(_PlexMediaProviderState providers) {
+    _providerLibraries = providers.libraries;
+    _providerEpg = providers.epg;
+    _providerHomeHubKey = providers.homeHubKey;
+    _providerPromotedHubKey = providers.promotedHubKey;
+    _providerContinueWatchingHubKey = providers.continueWatchingHubKey;
+    appLogger.d('Media providers: ${providers.libraries.length} libraries, ${providers.epg.length} EPG provider(s)');
+  }
+
   Future<void> _initMediaProviders() async {
     try {
-      final response = await _getWithFailover('/media/providers');
-      final container = _getMediaContainer(response);
-      if (container == null) {
-        _providerLibraries = [];
-        _providerEpg = [];
-        _providerHomeHubKey = null;
-        _providerPromotedHubKey = null;
-        _providerContinueWatchingHubKey = null;
-        return;
-      }
-
-      final providers = container['MediaProvider'] as List?;
-      if (providers == null) {
-        _providerLibraries = [];
-        _providerEpg = [];
-        _providerHomeHubKey = null;
-        _providerPromotedHubKey = null;
-        _providerContinueWatchingHubKey = null;
-        return;
-      }
-
-      final libraries = <PlexLibraryDto>[];
-      final epg = <({String identifier, String gridEndpoint})>[];
-      String? homeHubKey;
-      String? promotedHubKey;
-      String? continueWatchingHubKey;
-
-      for (final provider in providers) {
-        if (provider is! Map) continue;
-        final identifier = provider['identifier'] as String?;
-        if (identifier == null) continue;
-
-        final features = provider['Feature'] as List?;
-        if (features == null) continue;
-
-        // Library provider — extract directories as libraries
-        if (identifier == 'com.plexapp.plugins.library') {
-          for (final feature in features) {
-            if (feature is! Map) continue;
-
-            if (feature['type'] == 'promoted') {
-              promotedHubKey ??= feature['key'] as String?;
-            }
-
-            if (feature['type'] == 'continuewatching') {
-              continueWatchingHubKey ??= feature['key'] as String?;
-            }
-
-            if (feature['type'] != 'content') continue;
-
-            final directories = feature['Directory'] as List?;
-            if (directories == null) continue;
-
-            for (final dir in directories) {
-              try {
-                if (dir is! Map<String, dynamic>) continue;
-
-                // Skip entries without id (Home hub) and playlists
-                final id = dir['id']?.toString();
-                if (id == null) {
-                  homeHubKey ??= dir['hubKey'] as String?;
-                  continue;
-                }
-                if (dir['type'] == 'playlist') continue;
-
-                final isNumericId = int.tryParse(id) != null;
-                final isSharedLibrary = !isNumericId && dir['key']?.toString().startsWith('/library/shared') == true;
-
-                // Skip non-numeric IDs unless it's a shared library
-                if (!isNumericId && !isSharedLibrary) continue;
-
-                // Set key = id so downstream code gets a plain section ID (e.g. "1" or "shared")
-                final json = Map<String, dynamic>.from(dir);
-                json['key'] = id;
-
-                libraries.add(
-                  PlexLibraryDto.fromJson(
-                    json,
-                  ).copyWith(serverId: serverId, serverName: serverName, isShared: isSharedLibrary),
-                );
-              } catch (e) {
-                appLogger.w('Failed to parse media provider directory entry', error: e);
-              }
-            }
-          }
-        }
-
-        // EPG provider — extract grid endpoints
-        final protocols = provider['protocols'] as String?;
-        if (protocols != null && protocols.contains('livetv')) {
-          for (final feature in features) {
-            if (feature is! Map) continue;
-            if (feature['type'] == 'grid') {
-              final gridEndpoint = feature['key'] as String?;
-              if (gridEndpoint != null) {
-                epg.add((identifier: identifier, gridEndpoint: gridEndpoint));
-                appLogger.d('Discovered EPG provider: $identifier (grid: $gridEndpoint)');
-              }
-            }
-          }
-        }
-      }
-
-      _providerLibraries = libraries;
-      _providerEpg = epg;
-      _providerHomeHubKey = homeHubKey;
-      _providerPromotedHubKey = promotedHubKey;
-      _providerContinueWatchingHubKey = continueWatchingHubKey;
-      appLogger.d('Media providers: ${libraries.length} libraries, ${epg.length} EPG provider(s)');
+      _commitMediaProviders(await _fetchMediaProviders());
     } catch (e) {
       appLogger.w('Failed to fetch /media/providers, will fall back to /library/sections', error: e);
-      _providerLibraries = [];
-      _providerEpg = [];
-      _providerHomeHubKey = null;
-      _providerPromotedHubKey = null;
-      _providerContinueWatchingHubKey = null;
+      _commitMediaProviders(_PlexMediaProviderState.empty);
     }
   }
 
@@ -1587,32 +1612,57 @@ class PlexClient
     );
   }
 
-  /// Get consolidated video playback data (URL, media info, versions, and markers) in a single API call.
-  /// This is the primary method for playback initialization.
-  /// Uses cache for offline mode support and network fallback.
+  static const _invalidPlaybackMetadataMessage = 'Malformed Plex playback metadata';
+
+  Map<String, dynamic>? _validatedPlaybackMetadataJson(Map<String, dynamic>? data) {
+    if (data == null) return null;
+    final container = data['MediaContainer'];
+    if (container is! Map<String, dynamic>) {
+      throw const FormatException(_invalidPlaybackMetadataMessage);
+    }
+
+    final metadata = _playbackMapCollection(container['Metadata'], allowSingleton: false);
+    if (metadata.isEmpty) return null;
+    final selectedMetadata = metadata.first;
+    final media = _playbackMapCollection(selectedMetadata['Media']);
+    for (final mediaEntry in media) {
+      _playbackMapCollection(mediaEntry['Part']);
+    }
+    return selectedMetadata;
+  }
+
+  List<Map<String, dynamic>> _playbackMapCollection(Object? value, {bool allowSingleton = true}) {
+    if (value == null) return const [];
+    if (allowSingleton && value is Map<String, dynamic>) return [value];
+    if (value is List) {
+      if (value.isEmpty) return const [];
+      final maps = value.whereType<Map<String, dynamic>>().toList(growable: false);
+      if (maps.isNotEmpty) return maps;
+    }
+    throw const FormatException(_invalidPlaybackMetadataMessage);
+  }
+
+  /// Get consolidated video playback data in one cache-aware API call.
+  /// Request/decode failures throw. Only a valid absent metadata/media/part
+  /// shape returns an aggregate without a playable URL.
   Future<PlexVideoPlaybackData> getVideoPlaybackData(
     String ratingKey, {
     int mediaIndex = 0,
     String? selectedMediaSourceId,
     String? preferredVersionSignature,
   }) async {
-    Map<String, dynamic>? data;
-    try {
-      data = await fetchWithCacheFallback<Map<String, dynamic>>(
-        cacheKey: '/library/metadata/$ratingKey',
-        // checkFiles=1 populates Part.accessible/exists so we can skip
-        // deleted-but-still-indexed versions before play.
-        networkCall: () => _http.get(
-          '/library/metadata/$ratingKey',
-          queryParameters: {'includeMarkers': 1, 'includeChapters': 1, 'checkFiles': 1, 'includeStreams': 1},
-        ),
-        parseCache: (cached) => cached as Map<String, dynamic>?,
-        parseResponse: (response) => response.data as Map<String, dynamic>?,
-      );
-    } catch (_) {
-      // Gracefully degrade: return empty playback data on total failure
-    }
-    final metadataJson = _getFirstMetadataJsonFromData(data);
+    final data = await fetchWithCacheFallback<Map<String, dynamic>>(
+      cacheKey: '/library/metadata/$ratingKey',
+      // checkFiles=1 populates Part.accessible/exists so we can skip
+      // deleted-but-still-indexed versions before play.
+      networkCall: () => _http.get(
+        '/library/metadata/$ratingKey',
+        queryParameters: {'includeMarkers': 1, 'includeChapters': 1, 'checkFiles': 1, 'includeStreams': 1},
+      ),
+      parseCache: (cached) => cached as Map<String, dynamic>?,
+      parseResponse: (response) => response.data as Map<String, dynamic>?,
+    );
+    final metadataJson = _validatedPlaybackMetadataJson(data);
     return parseVideoPlaybackDataFromJson(
       metadataJson,
       mediaIndex: mediaIndex,
@@ -2694,11 +2744,11 @@ class PlexClient
   /// `persist: false` first, then re-calls with `persist: true` after the
   /// retry succeeds — by which point the URL is already current.
   Future<void> _handleEndpointSwitch(String newBaseUrl, {bool persist = true}) async {
+    LogRedactionManager.registerServerUrl(newBaseUrl);
     if (config.baseUrl != newBaseUrl) {
-      appLogger.i('Applying Plex endpoint switch', error: newBaseUrl);
+      appLogger.i('Applying Plex endpoint switch');
       _http.baseUrl = newBaseUrl;
       config = config.copyWith(baseUrl: newBaseUrl);
-      LogRedactionManager.registerServerUrl(newBaseUrl);
     }
 
     if (persist && _onEndpointChanged != null) {
@@ -2706,21 +2756,46 @@ class PlexClient
     }
   }
 
-  /// Apply a fresh per-server access token to this client *in place*. Used
-  /// by [MultiServerManager.refreshTokensForProfile] when switching the
-  /// active profile so the existing client picks up the new user's
-  /// identity without a teardown / reconnect.
-  ///
-  /// Updates both `config.token` and `_http.defaultHeaders` — without the
-  /// header refresh the next request still sends the previous user's
-  /// `X-Plex-Token`, so the server returns the *previous* user's view of
-  /// On Deck / hubs / watch state.
-  Future<void> applyTokenUpdate(String newToken) async {
-    if (config.token == newToken) return;
-    config = config.copyWith(token: newToken);
-    _http.defaultHeaders = Map.of(config.headers);
-    LogRedactionManager.registerToken(newToken);
-    await _initMediaProviders();
+  /// Validate and apply a Plex Home identity in place. The candidate token is
+  /// first checked against the authenticated root endpoint, whose
+  /// `machineIdentifier` must still identify this client’s server. Provider
+  /// discovery is optional: a failed discovery commits empty provider state so
+  /// data scoped to the previous profile cannot leak into the new one. Token
+  /// headers, cache scope, and provider state are committed together, and a
+  /// newer overlapping update invalidates an older completion.
+  Future<bool> applyProfileUpdate({required String newToken, required PlexProfileScopeId newProfileScopeId}) async {
+    final generation = ++_profileUpdateGeneration;
+    final candidateHeaders = Map<String, String>.unmodifiable(config.copyWith(token: newToken).headers);
+    try {
+      final identityResponse = await _getWithFailover(
+        '/',
+        headers: candidateHeaders,
+        timeout: MediaServerTimeouts.plexProbe,
+      );
+      final machineIdentifier = _getMediaContainer(identityResponse)?['machineIdentifier']?.toString();
+      if (machineIdentifier != serverId) {
+        throw MediaServerUrlException('Plex profile token resolved to an unexpected server identity');
+      }
+      if (generation != _profileUpdateGeneration) return false;
+
+      var providers = _PlexMediaProviderState.empty;
+      try {
+        providers = await _fetchMediaProviders(headers: candidateHeaders);
+      } catch (e) {
+        appLogger.w('Profile provider discovery failed; clearing profile-scoped provider state', error: e);
+      }
+      if (generation != _profileUpdateGeneration) return false;
+
+      config = config.copyWith(token: newToken);
+      profileScopeId = newProfileScopeId;
+      _http.defaultHeaders = Map.of(config.headers);
+      LogRedactionManager.registerToken(newToken);
+      _commitMediaProviders(providers);
+      return true;
+    } catch (_) {
+      if (generation != _profileUpdateGeneration) return false;
+      rethrow;
+    }
   }
 
   /// Apply the app locale to future Plex API requests. PMS localizes standard
@@ -2985,7 +3060,7 @@ class PlexClient
       );
 
       if (!data.hasValidVideoUrl) {
-        throw PlaybackException(t.messages.fileInfoNotAvailable);
+        throw PlaybackException(t.messages.fileInfoNotAvailable, reason: PlaybackFailureReason.noPlayableSource);
       }
 
       // Tracks consult the music preset — [qualityPreset] is video-shaped
@@ -3064,10 +3139,36 @@ class PlexClient
         playSessionId: options.sessionIdentifier,
         selectedMediaIndex: data.selectedMediaIndex,
       );
-    } catch (e) {
-      if (e is PlaybackException) rethrow;
-      throw PlaybackException(t.messages.errorLoading(error: e.toString()));
+    } catch (error, stackTrace) {
+      if (error is PlaybackException) rethrow;
+      Error.throwWithStackTrace(_classifyPlaybackFailure(error), stackTrace);
     }
+  }
+
+  PlaybackException _classifyPlaybackFailure(Object error) {
+    if (error is MediaServerAuthException ||
+        error is MediaServerHttpException && (error.statusCode == 401 || error.statusCode == 403)) {
+      return PlaybackException(
+        t.messages.playbackAuthenticationRequired,
+        reason: PlaybackFailureReason.authenticationRequired,
+      );
+    }
+    if (error is MediaServerHttpException) {
+      if (error.isCancellation) {
+        return PlaybackException(t.messages.playbackCancelled, reason: PlaybackFailureReason.cancelled);
+      }
+      final status = error.statusCode;
+      if (error.isTransient || status != null && status >= 500) {
+        return PlaybackException(t.messages.playbackServerUnavailable, reason: PlaybackFailureReason.serverUnavailable);
+      }
+      if (error.type == MediaServerHttpErrorType.unknown && status != null && status < 400) {
+        return PlaybackException(t.messages.playbackDataInvalid, reason: PlaybackFailureReason.invalidPlaybackData);
+      }
+    }
+    if (error is FormatException || error is TypeError) {
+      return PlaybackException(t.messages.playbackDataInvalid, reason: PlaybackFailureReason.invalidPlaybackData);
+    }
+    return PlaybackException(t.messages.playbackFailed);
   }
 
   /// Direct-play result for a transcode decision that fell back (failed or
@@ -3297,7 +3398,7 @@ class PlexClient
     String? creditsPattern,
     bool forceChapterFallback = false,
   }) async {
-    final cached = await cache.get(serverId, '/library/metadata/$itemId');
+    final cached = await cache.get(profileScopeId.cacheServerId, '/library/metadata/$itemId');
     if (cached == null) return null;
     final metadataJson = _getFirstMetadataJsonFromData(cached);
     if (metadataJson == null) return null;
@@ -3311,7 +3412,7 @@ class PlexClient
 
   @override
   Future<MediaSourceInfo?> fetchCachedMediaSourceInfo(String itemId) async {
-    final cached = await cache.get(serverId, '/library/metadata/$itemId');
+    final cached = await cache.get(profileScopeId.cacheServerId, '/library/metadata/$itemId');
     if (cached == null) return null;
     final metadataJson = _getFirstMetadataJsonFromData(cached);
     if (metadataJson == null) return null;

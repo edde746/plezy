@@ -239,7 +239,8 @@ class MpvPlayerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler, MpvPluginS
     isManualPipRequest = false
     stopPipTimebaseSync()
     if pause {
-      playerCore?.setPropertyAsync("pause", value: "yes") { [weak self] _ in
+      playerCore?.setPropertyAsync("pause", value: "yes") { [weak self] propertyResult in
+        guard case .success = propertyResult else { return }
         self?.pipController?.invalidatePlaybackState()
         self?.syncPipTimebase()
       }
@@ -485,7 +486,8 @@ extension MpvPlayerPlugin: MpvPipDelegate {
   }
 
   func pipSetPlaying(_ playing: Bool) {
-    playerCore?.setPropertyAsync("pause", value: playing ? "no" : "yes") { [weak self] _ in
+    playerCore?.setPropertyAsync("pause", value: playing ? "no" : "yes") { [weak self] propertyResult in
+      guard case .success = propertyResult else { return }
       self?.pipController?.invalidatePlaybackState()
       self?.syncPipTimebase()
     }

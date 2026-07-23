@@ -9,6 +9,7 @@
 #include <mpv/render_gl.h>
 
 #include <atomic>
+#include <condition_variable>
 #include <functional>
 #include <memory>
 #include <mutex>
@@ -120,11 +121,65 @@ class MpvPlayer {
   void SetLogLevel(const std::string& level);
 
  private:
+  class CallbackContext {
+   public:
+    class Lease {
+     public:
+      Lease() = default;
+      Lease(const Lease&) = delete;
+      Lease& operator=(const Lease&) = delete;
+      Lease(Lease&& other) noexcept;
+      Lease& operator=(Lease&& other) noexcept;
+      ~Lease();
+
+      explicit operator bool() const { return player_ != nullptr; }
+      MpvPlayer* player() const { return player_; }
+
+     private:
+      friend class CallbackContext;
+      Lease(CallbackContext* context, MpvPlayer* player);
+      void Release();
+
+      CallbackContext* context_ = nullptr;
+      MpvPlayer* player_ = nullptr;
+    };
+
+    explicit CallbackContext(MpvPlayer* player);
+    ~CallbackContext();
+
+    Lease Acquire();
+    void DetachAndWait();
+    GMainContext* main_context() const { return main_context_; }
+
+   private:
+    void ReleaseLease();
+
+    std::mutex mutex_;
+    std::condition_variable quiescent_;
+    MpvPlayer* player_;
+    size_t in_flight_ = 0;
+    GMainContext* main_context_;
+  };
+
+  struct SourceCallbackData;
+
+  friend class MpvPlayerLifecycleTestPeer;
+
   /// MPV event wakeup callback (called from mpv thread).
   static void OnMpvWakeup(void* ctx);
 
   /// MPV render update callback (called when frame is ready).
   static void OnMpvRenderUpdate(void* ctx);
+
+  static gboolean DispatchWakeupSource(gpointer data);
+  static gboolean DispatchRedrawSource(gpointer data);
+  static gboolean DispatchRecoverySource(gpointer data);
+  static void DestroySourceCallbackData(gpointer data);
+
+  void ScheduleWakeupSource();
+  void ScheduleRedrawSource();
+  void ScheduleRecoverySource();
+  void RemoveTrackedSources();
 
   /// Processes pending mpv events.
   bool ProcessEvents();
@@ -164,8 +219,12 @@ class MpvPlayer {
   plezy::mpv_common::PropertyObservationRegistry observed_properties_;
   bool hdr_enabled_ = true;
 
-  // GLib sources for event delivery and scheduled audio recovery.
-  guint event_source_id_ = 0;
+  // All player-carrying sources are attached to CallbackContext::main_context()
+  // and protected by source_mutex_.
+  std::shared_ptr<CallbackContext> callback_context_;
+  std::mutex source_mutex_;
+  guint wakeup_source_id_ = 0;
+  guint redraw_source_id_ = 0;
   guint recovery_source_id_ = 0;
 };
 

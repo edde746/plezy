@@ -358,11 +358,12 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
           currentPlayer: currentPlayer,
           settingsService: settingsService,
           plan: frameRatePlan,
-          resumeAfterStartupGate: (reason) => _resumeAfterStartupGateOrYieldToWatchTogether(
+          resumeAfterStartupGate: (reason) => _finishPlaybackAfterStartupGate(
             currentPlayer: currentPlayer,
             externalSubtitlePlan: externalSubtitlePlan,
             reason: reason,
-            wtOwnsStart: wtOwnsStart,
+            shouldResume: !wtOwnsStart,
+            watchTogetherOwnsStart: wtOwnsStart,
             wtStartupHold: wtStartupHold,
           ),
           playbackResumedForStartupFrame: resumeForStartupFrame,

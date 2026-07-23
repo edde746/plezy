@@ -94,9 +94,27 @@ void main() {
     expect(find.byType(ErrorStateWidget), findsNothing);
     expect(find.text('Artist One'), findsOneWidget);
   });
+
+  testWidgets('missing library owner shows an error without querying another online server', (tester) async {
+    final harness = _MusicBrowseHarness();
+    addTearDown(harness.dispose);
+    final missingOwnerLibrary = MediaLibrary(
+      id: _musicLibrary.id,
+      backend: _musicLibrary.backend,
+      title: _musicLibrary.title,
+      kind: _musicLibrary.kind,
+      serverId: 'missing-server',
+    );
+
+    await _pumpBrowseTab(tester, harness, library: missingOwnerLibrary);
+
+    expect(find.byType(ErrorStateWidget), findsOneWidget);
+    expect(harness.requestCount, 0);
+    expect(tester.takeException(), isNull);
+  });
 }
 
-Future<void> _pumpBrowseTab(WidgetTester tester, _MusicBrowseHarness harness) async {
+Future<void> _pumpBrowseTab(WidgetTester tester, _MusicBrowseHarness harness, {MediaLibrary? library}) async {
   tester.view.devicePixelRatio = 1;
   tester.view.physicalSize = const Size(1280, 720);
   addTearDown(() {
@@ -124,7 +142,7 @@ Future<void> _pumpBrowseTab(WidgetTester tester, _MusicBrowseHarness harness) as
                   ),
                 ],
                 body: LibraryBrowseTab(
-                  library: _musicLibrary,
+                  library: library ?? _musicLibrary,
                   canGroupByFolders: true,
                   suppressAutoFocus: true,
                   onBack: () {},
@@ -148,6 +166,7 @@ Future<void> _pumpRequestFrames(WidgetTester tester) async {
 class _MusicBrowseHarness {
   final bool failFirstBrowse;
   var browseRequestCount = 0;
+  var requestCount = 0;
   late final JellyfinClient client;
   late final MultiServerManager manager;
   late final MultiServerProvider provider;
@@ -156,6 +175,7 @@ class _MusicBrowseHarness {
     client = JellyfinClient.forTesting(
       connection: testJellyfinConnection(machineId: 'music-server'),
       httpClient: MockClient((request) async {
+        requestCount++;
         if (request.url.path == '/Items/Filters') {
           return http.Response(
             jsonEncode({'Genres': const [], 'OfficialRatings': const [], 'Tags': const [], 'Years': const []}),

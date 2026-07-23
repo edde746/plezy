@@ -115,16 +115,27 @@ void main() {
       expect(display, customDir.path);
     });
 
+    test('falls back to default when custom path is non-writable', () async {
+      final settings = await SettingsService.getInstance();
+      final regularFile = File(p.join(tmpRoot.path, 'not-a-directory'))..writeAsStringSync('blocking ancestor');
+      final blocked = p.join(regularFile.path, 'downloads');
+      await settings.write(SettingsService.customDownloadPathType, 'file');
+      await settings.write(SettingsService.customDownloadPath, blocked);
+
+      final dss = DownloadStorageService.instance;
+      await dss.initialize(settings);
+
+      final dir = await dss.getDownloadsDirectory();
+      expect(dir.existsSync(), isTrue);
+      expect(dir.path, p.join(tmpRoot.path, 'support', 'downloads'));
+    });
+
     test(
-      'falls back to default when custom path is non-writable',
+      'resolves under POSIX chmod restrictions (environment-dependent smoke)',
       () async {
         final settings = await SettingsService.getInstance();
-
-        // Point the custom path to a path inside a read-only parent.
         final readOnlyParent = Directory(p.join(tmpRoot.path, 'readonly'))..createSync(recursive: true);
         try {
-          // Make parent unwritable so writing inside fails. Skip if the OS
-          // ignores the chmod (e.g. when running as root).
           await Process.run('chmod', ['000', readOnlyParent.path]);
           final blocked = p.join(readOnlyParent.path, 'forbidden');
           await settings.write(SettingsService.customDownloadPathType, 'file');
@@ -134,16 +145,10 @@ void main() {
           await dss.initialize(settings);
 
           final dir = await dss.getDownloadsDirectory();
-          // Either the chmod worked → we fall back to default,
-          // or it didn't → we used the custom path. Both are valid; the
-          // important contract is that the call doesn't throw.
+          // The host may honor or ignore mode bits; either resolved root is
+          // valid for this smoke test as long as it exists.
           expect(dir.existsSync(), isTrue);
-          if (dir.path == blocked) {
-            // chmod was a no-op (root or a filesystem that ignores it). Skip the
-            // strict assertion — the fallback branch only runs when writes fail.
-            return;
-          }
-          expect(dir.path, p.join(p.join(tmpRoot.path, 'support'), 'downloads'));
+          expect(dir.path, anyOf(blocked, p.join(tmpRoot.path, 'support', 'downloads')));
         } finally {
           await Process.run('chmod', ['755', readOnlyParent.path]);
         }

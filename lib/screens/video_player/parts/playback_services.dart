@@ -185,6 +185,129 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
     });
   }
 
+  Future<void> _tearDownFailedPlayerAttempt(Player attemptPlayer) async {
+    final activePlayer = player;
+    if (activePlayer != null && !identical(activePlayer, attemptPlayer)) return;
+
+    final cancellationFutures = <Future<void>>[
+      if (_playingSubscription != null) _playingSubscription!.cancel(),
+      if (_completedSubscription != null) _completedSubscription!.cancel(),
+      if (_errorSubscription != null) _errorSubscription!.cancel(),
+      if (_logSubscription != null) _logSubscription!.cancel(),
+      if (_backendSwitchedSubscription != null) _backendSwitchedSubscription!.cancel(),
+      if (_bufferingSubscription != null) _bufferingSubscription!.cancel(),
+      if (_serverStatusSubscription != null) _serverStatusSubscription!.cancel(),
+      if (_playbackRestartSubscription != null) _playbackRestartSubscription!.cancel(),
+      if (_positionSubscription != null) _positionSubscription!.cancel(),
+      if (_mediaControlSubscription != null) _mediaControlSubscription!.cancel(),
+      if (_mediaControlsPlayingSubscription != null) _mediaControlsPlayingSubscription!.cancel(),
+      if (_mediaControlsPositionSubscription != null) _mediaControlsPositionSubscription!.cancel(),
+      if (_mediaControlsRateSubscription != null) _mediaControlsRateSubscription!.cancel(),
+      if (_mediaControlsSeekableSubscription != null) _mediaControlsSeekableSubscription!.cancel(),
+    ];
+    _playingSubscription = null;
+    _completedSubscription = null;
+    _errorSubscription = null;
+    _logSubscription = null;
+    _backendSwitchedSubscription = null;
+    _bufferingSubscription = null;
+    _serverStatusSubscription = null;
+    _playbackRestartSubscription = null;
+    _positionSubscription = null;
+    _mediaControlSubscription = null;
+    _mediaControlsPlayingSubscription = null;
+    _mediaControlsPositionSubscription = null;
+    _mediaControlsRateSubscription = null;
+    _mediaControlsSeekableSubscription = null;
+    try {
+      await Future.wait(cancellationFutures);
+    } catch (e, st) {
+      appLogger.w('Failed to cancel player subscriptions during initialization rollback', error: e, stackTrace: st);
+    }
+
+    final progressTracker = _progressTracker;
+    _progressTracker = null;
+    progressTracker?.stopTracking();
+    progressTracker?.dispose();
+
+    final trackManager = _trackManager;
+    _trackManager = null;
+    trackManager?.dispose();
+
+    final mediaControlsManager = _mediaControlsManager;
+    _mediaControlsManager = null;
+    if (mediaControlsManager != null) {
+      try {
+        await mediaControlsManager.clear();
+      } catch (e, st) {
+        appLogger.w('Failed to clear media controls during initialization rollback', error: e, stackTrace: st);
+      }
+      mediaControlsManager.dispose();
+    }
+
+    _stopLiveTimelineUpdates();
+    _detachPipStateListener();
+    _clearAutoPipEnteringCallback();
+    final videoPipManager = _videoPIPManager;
+    _videoPIPManager = null;
+    if (videoPipManager != null) {
+      videoPipManager.onBeforeEnterPip = null;
+      try {
+        await videoPipManager.disableAutoPip();
+      } catch (e, st) {
+        appLogger.w('Failed to disable auto-PiP during initialization rollback', error: e, stackTrace: st);
+      }
+    }
+
+    final ambientLightingService = _ambientLightingService;
+    _ambientLightingService = null;
+    if (ambientLightingService != null) {
+      try {
+        await ambientLightingService.disable();
+      } catch (e, st) {
+        appLogger.w('Failed to disable ambient lighting during initialization rollback', error: e, stackTrace: st);
+      }
+    }
+    _shaderService?.ambientLightingService = null;
+    _shaderService = null;
+    _videoFilterManager?.ambientLightingService = null;
+    _videoFilterManager?.dispose();
+    _videoFilterManager = null;
+    _pipFiltersPrepared = false;
+
+    final scrubPreviewSource = _scrubPreviewSource;
+    _scrubPreviewSource = null;
+    scrubPreviewSource?.dispose();
+
+    if (identical(_lastVideoLayoutPlayer, attemptPlayer)) {
+      _lastVideoLayoutPlayer = null;
+      _lastVideoLayoutSize = null;
+      _pendingVideoLayoutSize = null;
+    }
+    _audioFocusFuture = null;
+    _playbackDataFuture = null;
+    _playbackSession = null;
+    _mediaControlsSuspendedForTvBackground = false;
+
+    if (progressTracker != null) {
+      try {
+        await Future.wait<void>([
+          DiscordRPCService.instance.stopPlayback(),
+          TraktScrobbleService.instance.stopPlayback(),
+          TrackerCoordinator.instance.stopPlayback(),
+        ]);
+      } catch (e, st) {
+        appLogger.w('Failed to stop scrobblers during initialization rollback', error: e, stackTrace: st);
+      }
+    }
+    await _wakelockController.setEnabled(false);
+
+    if (mounted) {
+      _isBuffering.value = false;
+      _hasFirstFrame.value = false;
+    }
+  }
+
   /// Wire the per-item playback services that need to (re)bind whenever
   /// the active media item changes: [PlaybackProgressTracker],
   /// [MediaControlsManager.updateMetadata], and the
@@ -317,9 +440,60 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
     final mediaControlsManager = MediaControlsManager();
     _mediaControlsManager = mediaControlsManager;
 
+    final mediaControlRouter = VideoPlayerMediaControlRouter(
+      canControlPlayback: _canControlPlayback,
+      canNavigateMediaItems: _canNavigateMediaItems,
+      onPlay: () {
+        final currentPlayer = player;
+        if (currentPlayer == null) return;
+        unawaited(_seekBackForRewind(currentPlayer));
+        unawaited(_playWithPlaybackIntent(currentPlayer));
+        _wasPlayingBeforeInactive = false;
+        _updateMediaControlsPlaybackState();
+      },
+      onPause: () {
+        final currentPlayer = player;
+        if (currentPlayer == null) return;
+        if (_frameRate.suppressesMediaPause) {
+          appLogger.d('Media control: Pause event suppressed (frame rate switch in progress)');
+          return;
+        }
+        unawaited(_pauseWithPlaybackIntent(currentPlayer));
+        _updateMediaControlsPlaybackState();
+      },
+      onTogglePlayPause: () {
+        final currentPlayer = player;
+        if (currentPlayer == null) return;
+        if (currentPlayer.state.isActive) {
+          unawaited(_pauseWithPlaybackIntent(currentPlayer));
+        } else {
+          unawaited(_seekBackForRewind(currentPlayer));
+          unawaited(_playWithPlaybackIntent(currentPlayer));
+          _wasPlayingBeforeInactive = false;
+        }
+        _updateMediaControlsPlaybackState();
+      },
+      onSeek: (position) {
+        final currentPlayer = player;
+        if (currentPlayer != null) {
+          unawaited(_seekPlayback(clampSeekPosition(currentPlayer, position)));
+        }
+      },
+      onNext: () {
+        if (_nextEpisode != null) unawaited(_playNext());
+      },
+      onPrevious: () => unawaited(_restartOrPlayPrevious()),
+      onStop: () => unawaited(_handleBackButton()),
+      onSkipForward: (interval) => unawaited(_seekRelative(interval ?? _defaultMediaControlSkip)),
+      onSkipBackward: (interval) => unawaited(_seekRelative(-(interval ?? _defaultMediaControlSkip))),
+      onSetSpeed: (speed) {
+        final currentPlayer = player;
+        if (currentPlayer != null) unawaited(currentPlayer.setRate(speed));
+      },
+    );
+
     // Set up media control event handling
     _mediaControlSubscription = mediaControlsManager.controlEvents.listen((event) {
-      final activePlayer = player;
       if (_mediaControlsSuspendedForTvBackground) {
         appLogger.d('Media control: ${event.runtimeType} ignored while Android TV background-suspended');
         return;
@@ -335,59 +509,7 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
         return;
       }
 
-      if (activePlayer == null && event is! NextTrackEvent && event is! PreviousTrackEvent) return;
-
-      if (event is PlayEvent) {
-        final currentPlayer = activePlayer!;
-        appLogger.d('Media control: Play event received');
-        unawaited(_seekBackForRewind(currentPlayer));
-        unawaited(_playWithPlaybackIntent(currentPlayer));
-        _wasPlayingBeforeInactive = false;
-        _updateMediaControlsPlaybackState();
-      } else if (event is PauseEvent) {
-        if (_frameRate.suppressesMediaPause) {
-          appLogger.d('Media control: Pause event suppressed (frame rate switch in progress)');
-          return;
-        }
-        appLogger.d('Media control: Pause event received');
-        unawaited(_pauseWithPlaybackIntent(activePlayer!));
-        _updateMediaControlsPlaybackState();
-      } else if (event is TogglePlayPauseEvent) {
-        final currentPlayer = activePlayer!;
-        appLogger.d('Media control: Toggle play/pause event received');
-        if (currentPlayer.state.isActive) {
-          unawaited(_pauseWithPlaybackIntent(currentPlayer));
-        } else {
-          unawaited(_seekBackForRewind(currentPlayer));
-          unawaited(_playWithPlaybackIntent(currentPlayer));
-          _wasPlayingBeforeInactive = false;
-        }
-        _updateMediaControlsPlaybackState();
-      } else if (event is SeekEvent) {
-        appLogger.d('Media control: Seek event received to ${event.position}');
-        unawaited(_seekPlayback(clampSeekPosition(activePlayer!, event.position)));
-      } else if (event is NextTrackEvent) {
-        appLogger.d('Media control: Next track event received');
-        if (_nextEpisode != null) _playNext();
-      } else if (event is PreviousTrackEvent) {
-        appLogger.d('Media control: Previous track event received');
-        unawaited(_restartOrPlayPrevious());
-      } else if (event is StopEvent) {
-        // Same semantics as the companion remote's stop: exit the player.
-        appLogger.d('Media control: Stop event received');
-        unawaited(_handleBackButton());
-      } else if (event is SkipForwardEvent) {
-        appLogger.d('Media control: Skip forward event received (${event.interval})');
-        unawaited(_seekRelative(event.interval ?? _defaultMediaControlSkip));
-      } else if (event is SkipBackwardEvent) {
-        appLogger.d('Media control: Skip backward event received (${event.interval})');
-        unawaited(_seekRelative(-(event.interval ?? _defaultMediaControlSkip)));
-      } else if (event is SetSpeedEvent) {
-        // UI, Discord, and the media-session state all follow reactively
-        // via streams.rate — same unguarded path as keyboard shortcuts.
-        appLogger.d('Media control: Set speed event received (${event.speed}x)');
-        unawaited(activePlayer!.setRate(event.speed));
-      }
+      mediaControlRouter.route(event);
     });
 
     // Wire progress tracker, media-controls metadata, and the
@@ -452,11 +574,11 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
       if (currentPlayer != null) {
         unawaited(_pauseWithPlaybackIntent(currentPlayer));
       }
-      unawaited(_setWakelock(false));
+      unawaited(_wakelockController.setEnabled(false));
       return;
     }
 
-    unawaited(_setWakelock(isPlaying));
+    unawaited(_wakelockController.setEnabled(isPlaying));
 
     if (isPlaying) {
       // Force a texture refresh on resume to unstick stale frames
@@ -625,7 +747,7 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
   /// stream (play/seek route to [_retrySpuriousEofRecovery] while parked).
   void _parkAfterFailedRecovery() {
     _spuriousEofRecoveryParked = true;
-    unawaited(_setWakelock(false));
+    unawaited(_wakelockController.setEnabled(false));
     showGlobalErrorSnackBar(t.messages.streamInterrupted);
   }
 

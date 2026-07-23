@@ -17,6 +17,7 @@ import '../main_screen.dart';
 import '../../mixins/mounted_set_state_mixin.dart';
 import '../../mixins/refreshable.dart';
 import '../../providers/hidden_libraries_provider.dart';
+import '../../providers/download_provider.dart';
 import '../../providers/libraries_provider.dart';
 import '../../services/donation_service.dart';
 import '../../services/download_storage_service.dart';
@@ -55,7 +56,10 @@ import 'settings_utils.dart';
 import '../../widgets/loading_indicator_box.dart';
 
 class SettingsScreen extends StatefulWidget {
-  const SettingsScreen({super.key});
+  const SettingsScreen({super.key, this.downloadDirectoryWritableChecker});
+
+  @visibleForTesting
+  final Future<bool> Function(Directory directory)? downloadDirectoryWritableChecker;
 
   @override
   State<SettingsScreen> createState() => _SettingsScreenState();
@@ -620,7 +624,10 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
       if (selectedPath != null) {
         if (pathType == 'file') {
           final dir = Directory(selectedPath);
-          final isWritable = await DownloadStorageService.instance.isDirectoryWritable(dir);
+          final isWritable =
+              await (widget.downloadDirectoryWritableChecker ?? DownloadStorageService.instance.isDirectoryWritable)(
+                dir,
+              );
           if (!isWritable) {
             if (mounted) {
               showErrorSnackBar(context, t.settings.downloadLocationInvalid);
@@ -629,9 +636,8 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
           }
         }
 
-        await _settingsService.write(settings.SettingsService.customDownloadPath, selectedPath);
-        await _settingsService.write(settings.SettingsService.customDownloadPathType, pathType);
-        await DownloadStorageService.instance.refreshCustomPath();
+        if (!mounted) return;
+        await context.read<DownloadProvider>().setDownloadLocation(path: selectedPath, pathType: pathType);
 
         if (mounted) {
           // ignore: no-empty-block - setState triggers rebuild to reflect new download path
@@ -647,9 +653,7 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
   }
 
   Future<void> _resetDownloadLocation() async {
-    await _settingsService.write(settings.SettingsService.customDownloadPath, null);
-    await _settingsService.write(settings.SettingsService.customDownloadPathType, null);
-    await DownloadStorageService.instance.refreshCustomPath();
+    await context.read<DownloadProvider>().resetDownloadLocation();
 
     if (mounted) {
       // ignore: no-empty-block - setState triggers rebuild to reflect reset path
@@ -685,7 +689,8 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
       confirmText: t.common.reset,
       isDestructive: true,
     );
-    if (!confirmed) return;
+    if (!mounted || !confirmed) return;
+    await context.read<DownloadProvider>().resetDownloadLocation();
     await _settingsService.resetAllSettings();
     await _keyboardService?.resetToDefaults();
     if (mounted) showSuccessSnackBar(context, t.settings.resetSettingsSuccess);

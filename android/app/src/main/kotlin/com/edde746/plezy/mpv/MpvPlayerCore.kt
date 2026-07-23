@@ -35,10 +35,19 @@ import kotlinx.coroutines.sync.withLock
  *   configured before init to never open a video output (`vid=no`,
  *   `force-window=no`, `audio-display=no`, plus `gapless-audio=weak`).
  */
-class MpvPlayerCore(
+class MpvPlayerCore private constructor(
   private val context: Context,
-  private val audioOnly: Boolean = false
+  private val audioOnly: Boolean,
+  private val propertyWriterOverride: (suspend (String, String) -> Unit)?,
+  initializedForTesting: Boolean
 ) : SurfaceHolder.Callback {
+  constructor(context: Context, audioOnly: Boolean = false) : this(context, audioOnly, null, false)
+
+  internal constructor(
+    context: Context,
+    audioOnly: Boolean,
+    propertyWriter: (suspend (String, String) -> Unit)?
+  ) : this(context, audioOnly, propertyWriter, true)
 
   companion object {
     private const val TAG = "MpvPlayerCore"
@@ -70,6 +79,10 @@ class MpvPlayerCore(
   var delegate: PlayerDelegate? = null
   var isInitialized: Boolean = false
     private set
+
+  init {
+    if (initializedForTesting) isInitialized = true
+  }
 
   @Volatile private var player: MpvPlayer? = null
   private var scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
@@ -691,43 +704,66 @@ class MpvPlayerCore(
 
   // Public API
 
-  fun setProperty(name: String, value: String, onComplete: ((Boolean) -> Unit)? = null) {
+  fun setProperty(name: String, value: String, onComplete: ((Result<Unit>) -> Unit)? = null) {
     if (!isInitialized || disposing || !scope.isActive) {
-      onComplete?.invoke(false)
+      onComplete?.invoke(Result.failure(IllegalStateException("MPV core unavailable")))
       return
     }
-    if (name == "pause") {
-      val paused = normalizePauseValue(value)
-      if (paused == true) {
-        cachedPaused = true
-        pausedForSurfaceLoss = false
-        resumeBlockedByPublicPause = true
-        deferredResumeRequested = false
-        Log.d(TAG, "Public pause state updated: paused=true")
-      } else if (paused == false) {
+
+    val paused = if (name == "pause") normalizePauseValue(value) else null
+    if (paused == false && !hasReadyVideoOutput()) {
+      runOnMain {
+        if (!isInitialized || disposing || !scope.isActive) {
+          onComplete?.invoke(Result.failure(CancellationException("MPV core unavailable")))
+          return@runOnMain
+        }
         resumeBlockedByPublicPause = false
-        if (!hasReadyVideoOutput()) {
-          deferredResumeRequested = true
-          Log.d(TAG, "Deferring public resume until video output is ready")
-          onComplete?.invoke(true)
-          return
-        }
-        cachedPaused = false
-        pausedForSurfaceLoss = false
-        Log.d(TAG, "Public pause state updated: paused=false")
+        deferredResumeRequested = true
+        Log.d(TAG, "Deferring public resume until video output is ready")
+        onComplete?.invoke(Result.success(Unit))
       }
+      return
     }
-    scope.launch(mpvWriteDispatcher) {
-      var success = false
-      try {
-        player?.setProperty(name, value)
-        success = true
-      } catch (e: Exception) {
-        Log.w(TAG, "setProperty($name) failed", e)
-      } finally {
-        withContext(NonCancellable + Dispatchers.Main) {
-          onComplete?.invoke(success)
+
+    scope.launch(mpvWriteDispatcher, start = CoroutineStart.ATOMIC) {
+      val writeResult = try {
+        val writer = propertyWriterOverride
+        if (writer != null) {
+          writer(name, value)
+        } else {
+          val currentPlayer = player ?: throw IllegalStateException("MPV player unavailable")
+          currentPlayer.setProperty(name, value)
         }
+        Result.success(Unit)
+      } catch (error: CancellationException) {
+        Result.failure(error)
+      } catch (error: Exception) {
+        Log.w(TAG, "MPV property write failed")
+        Result.failure(error)
+      }
+
+      withContext(NonCancellable + Dispatchers.Main) {
+        val completion = if (disposing || !isInitialized) {
+          Result.failure(CancellationException("MPV core unavailable"))
+        } else {
+          writeResult
+        }
+        if (completion.isSuccess) {
+          if (paused == true) {
+            cachedPaused = true
+            pausedForSurfaceLoss = false
+            resumeBlockedByPublicPause = true
+            deferredResumeRequested = false
+            Log.d(TAG, "Public pause state updated: paused=true")
+          } else if (paused == false) {
+            cachedPaused = false
+            pausedForSurfaceLoss = false
+            resumeBlockedByPublicPause = false
+            deferredResumeRequested = false
+            Log.d(TAG, "Public pause state updated: paused=false")
+          }
+        }
+        onComplete?.invoke(completion)
       }
     }
   }

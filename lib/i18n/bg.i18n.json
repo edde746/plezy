@@ -16,7 +16,8 @@
     "quickConnectInstructions": "Отворете Quick Connect в Jellyfin и въведете този код.",
     "quickConnectWaiting": "Изчакване на одобрение…",
     "quickConnectCancel": "Отказ",
-    "quickConnectExpired": "Quick Connect изтече. Опитайте отново."
+    "quickConnectExpired": "Quick Connect изтече. Опитайте отново.",
+    "localDataRecoveryRequired": ""
   },
   "common": {
     "cancel": "Отказ",
@@ -551,6 +552,11 @@
     "streamInterrupted": "Потокът прекъсна. Натиснете „Пусни“ или превъртете, за да опитате отново.",
     "liveStreamInterrupted": "Потокът на живо прекъсна. Натиснете „Пусни“, за да опитате отново.",
     "fileInfoNotAvailable": "Информацията за файла не е налична",
+    "playbackAuthenticationRequired": "",
+    "playbackServerUnavailable": "",
+    "playbackDataInvalid": "",
+    "playbackCancelled": "",
+    "playbackFailed": "",
     "errorLoadingFileInfo": "Грешка при зареждане на информация за файла: ${error}",
     "errorLoadingSeries": "Грешка при зареждане на сериала",
     "musicNotSupported": "Възпроизвеждането на музика все още не се поддържа",
@@ -937,6 +943,7 @@
     "favorites": "Любими",
     "reorderFavorites": "Пренареди любимите",
     "favoritesLoadFailed": "Любимите не можаха да се заредят. Проверете връзката си и опитайте отново.",
+    "favoritesUpdateFailed": "",
     "joinSession": "Присъедини се към текуща сесия",
     "watchFromStart": "Гледай от началото (преди ${minutes} мин)",
     "watchLive": "Гледай на живо",

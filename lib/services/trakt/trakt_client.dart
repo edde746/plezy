@@ -320,7 +320,7 @@ class TraktClient implements DisposableTrackerClient {
       );
     }
 
-    throw TrackerApiException(service: TrackerService.trakt, statusCode: res.statusCode, body: res.body);
+    throw TrackerApiException(service: TrackerService.trakt, statusCode: res.statusCode);
   }
 
   Future<http.Response> _send(String method, String path, {Map<String, dynamic>? body}) async {

@@ -33,7 +33,7 @@ import '../utils/app_logger.dart';
 /// account-owner's token would silently return the *owner's* settings —
 /// wrong defaults for kid profiles, parental restrictions, etc.
 class UserProfileProvider extends ChangeNotifier with DisposableChangeNotifierMixin {
-  UserProfileProvider({this._storageService});
+  UserProfileProvider({this._storageService, this._authService});
 
   MediaServerUserProfile? _profileSettings;
   bool _isInitialized = false;
@@ -209,17 +209,15 @@ class UserProfileProvider extends ChangeNotifier with DisposableChangeNotifierMi
     return client is JellyfinClient ? client : null;
   }
 
-  /// Resolve the *active Home user's* plex.tv token, in priority order:
-  ///   1. The [ProfileConnection]'s `userToken`. For Plex Home profiles
-  ///      this is the parent connection's row (written by
-  ///      `_bindPlexHome`); for local profiles bound to a Plex account
-  ///      it's the default join row (`listForProfile` orders default
-  ///      first).
-  ///   2. The parent / first plex account's token as a last resort —
-  ///      wrong user identity, but at least keeps the call from
-  ///      no-op'ing for fresh installs that haven't completed a bind yet.
-  /// Returns `null` only when the device has no Plex account at all
-  /// (Jellyfin-only setup) or no profile is active.
+  /// Resolve the Plex credential for the active profile without crossing
+  /// identity boundaries.
+  ///
+  /// A Plex Home profile may use only the switched token stored on its exact
+  /// parent [ProfileConnection]. A missing or empty switched token returns
+  /// `null`; the parent account token represents a different user.
+  ///
+  /// Local Plezy profiles keep their explicitly selected Plex account fallback
+  /// because that account is the identity selected by the local profile.
   Future<String?> _resolveActivePlexUserToken({
     ({ProfileConnection profileConnection, Connection connection})? preferred,
   }) async {
@@ -230,28 +228,22 @@ class UserProfileProvider extends ChangeNotifier with DisposableChangeNotifierMi
     final profile = activeProfile.active;
     if (profile == null) return null;
 
-    final plexAccounts = (await connections.list()).whereType<PlexAccountConnection>().toList();
-    if (plexAccounts.isEmpty) return null;
-
+    final connectionList = await connections.list();
     final pcRegistry = _profileConnectionRegistry;
 
     if (profile.kind == ProfileKind.plexHome) {
       final parentId = profile.parentConnectionId;
       final uuid = profile.plexHomeUserUuid;
       if (parentId == null || uuid == null) return null;
-      if (pcRegistry != null) {
-        final pc = await pcRegistry.get(profile.id, parentId);
-        if (pc?.hasToken == true) return pc!.userToken;
+      if (!connectionList.whereType<PlexAccountConnection>().any((account) => account.id == parentId)) {
+        return null;
       }
-      // Pre-bind fallback: the binder hasn't run yet (or it failed), so
-      // there's no user-scoped token. Return the parent account token —
-      // it'll fetch the *owner's* settings, but that's still better than
-      // no settings at all on first launch.
-      for (final acc in plexAccounts) {
-        if (acc.id == parentId) return acc.accountToken;
-      }
-      return null;
+      final pc = await pcRegistry?.get(profile.id, parentId);
+      return pc?.hasToken == true ? pc!.userToken : null;
     }
+
+    final plexAccounts = connectionList.whereType<PlexAccountConnection>().toList();
+    if (plexAccounts.isEmpty) return null;
 
     // Local profile — read the user-token off the default ProfileConnection
     // (listForProfile orders default first). Each connection persists its

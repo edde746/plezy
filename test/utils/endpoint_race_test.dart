@@ -2,12 +2,23 @@ import 'dart:async';
 import 'package:fake_async/fake_async.dart';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:plezy/utils/app_logger.dart';
 import 'package:plezy/utils/endpoint_race.dart';
+import 'package:plezy/utils/log_redaction_manager.dart';
 
 typedef _Result = ({String url, bool ok});
 
 void main() {
   const headStart = Duration(milliseconds: 60);
+  setUp(() {
+    MemoryLogOutput.clearLogs();
+    LogRedactionManager.clearTrackedValues();
+    setLoggerLevel(true);
+  });
+  tearDown(() {
+    MemoryLogOutput.clearLogs();
+    LogRedactionManager.clearTrackedValues();
+  });
 
   Stream<EndpointRaceSelection<String, _Result>> race({
     required List<String> candidates,
@@ -15,12 +26,14 @@ void main() {
     required Future<_Result> Function(String url) probe,
     Future<_Result> Function(String url)? measure,
     String? Function(Map<String, _Result> results)? selectBest,
+    Map<String, Object?> Function(String candidate, _Result result)? failureLogFields,
   }) {
     return raceEndpointCandidates<String, _Result>(
       label: 'test',
       candidates: candidates,
       urlOf: (c) => c,
       preferredUrl: preferred,
+      failureLogFields: failureLogFields,
       probe: (c, _) => probe(c),
       measure: measure ?? (c) async => (url: c, ok: false),
       isSuccess: (r) => r.ok,
@@ -30,6 +43,47 @@ void main() {
       raceTimeout: const Duration(milliseconds: 500),
     );
   }
+
+  test('preferred endpoint diagnostics contain no candidate literals', () async {
+    const canary = 'https://preferred-race-canary.invalid/private-race-path';
+
+    final selections = await race(
+      candidates: const [canary],
+      preferred: canary,
+      probe: (url) async => (url: url, ok: true),
+      measure: (url) async => (url: url, ok: true),
+    ).toList();
+    final storedFields = MemoryLogOutput.getLogs().expand<String>(
+      (entry) => [entry.message, if (entry.error != null) entry.error.toString()],
+    );
+
+    expect(selections.map((selection) => selection.candidate), everyElement(canary));
+    for (final field in storedFields) {
+      expect(field, isNot(contains('preferred-race-canary.invalid')));
+      expect(field, isNot(contains('private-race-path')));
+    }
+  });
+
+  test('candidate failure diagnostics sanitize endpoint-bearing fields', () async {
+    const canary = 'https://failure-race-canary.invalid/private-failure-path';
+
+    final selections = await race(
+      candidates: const [canary],
+      probe: (url) async => (url: url, ok: false),
+      failureLogFields: (candidate, _) => {
+        'error': 'probe failed at $candidate on failure-race-canary.invalid path /private-failure-path',
+      },
+    ).toList();
+    final storedFields = MemoryLogOutput.getLogs().expand<String>(
+      (entry) => [entry.message, if (entry.error != null) entry.error.toString()],
+    );
+
+    expect(selections, isEmpty);
+    for (final field in storedFields) {
+      expect(field, isNot(contains('failure-race-canary.invalid')));
+      expect(field, isNot(contains('private-failure-path')));
+    }
+  });
 
   test('healthy cached endpoint wins within the head start without racing', () {
     fakeAsync((async) {

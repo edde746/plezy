@@ -17,7 +17,7 @@ mixin _JellyfinImageDownloadMethods on MediaServerCacheMixin {
     int? audioStreamIndex,
   });
   String buildAudioDirectStreamUrl(String itemId, {String? container, String? mediaSourceId});
-  Future<Map<String, dynamic>?> getPlaybackInfo(
+  Future<Map<String, dynamic>> getPlaybackInfo(
     String itemId, {
     int? maxStreamingBitrate = 100_000_000,
     String? mediaSourceId,
@@ -72,9 +72,15 @@ mixin _JellyfinImageDownloadMethods on MediaServerCacheMixin {
   }
 
   @override
-  Future<DownloadResolution> resolveDownload(MediaItem item, {int mediaIndex = 0}) async {
-    final bundle = await fetchPlaybackBundle(item.id, sourceIndex: mediaIndex);
+  Future<DownloadResolution> resolveDownload(MediaItem item, {int mediaIndex = 0, String? mediaSourceId}) async {
+    final bundle = await fetchPlaybackBundle(item.id, sourceIndex: mediaIndex, sourceId: mediaSourceId);
     final selectedSourceId = bundle?.selectedSourceId;
+    final requestedSourceId = mediaSourceId?.trim();
+    if (requestedSourceId != null &&
+        requestedSourceId.isNotEmpty &&
+        selectedSourceId?.toLowerCase() != requestedSourceId.toLowerCase()) {
+      throw StateError('Requested Jellyfin download source is no longer available');
+    }
 
     // Tracks download from the audio static-stream endpoint and have no
     // subtitle sidecars to enumerate.
@@ -98,64 +104,85 @@ mixin _JellyfinImageDownloadMethods on MediaServerCacheMixin {
     // External subtitle sidecars are listed in the per-source MediaStreams.
     // PlaybackInfo gives us the canonical view including DeliveryUrl when
     // the server has pre-computed one; fall back to the documented stream
-    // URL pattern otherwise.
+    // URL pattern otherwise. Negotiation is enrichment only: the static
+    // stream URL above remains valid without it.
     final subtitles = <DownloadSubtitleSpec>[];
-    final pbInfo = await getPlaybackInfo(item.id, mediaSourceId: selectedSourceId);
-    if (pbInfo != null) {
-      final sources = pbInfo['MediaSources'];
-      if (sources is List && sources.isNotEmpty) {
-        final source = _selectDownloadMediaSource(sources, selectedSourceId, mediaIndex);
-        if (source != null) {
-          final mediaSourceId = (source['Id'] as String?) ?? item.id;
-          final streams = source['MediaStreams'];
-          if (streams is List) {
-            for (final raw in streams) {
-              if (raw is! Map<String, dynamic>) continue;
-              if (raw['Type'] != 'Subtitle') continue;
-              final fields = parseJellyfinStreamFields(raw);
-              if (!fields.isExternalFile) continue;
-              final index = raw['Index'];
-              if (index is! int) continue;
-              final codec = fields.codec?.toLowerCase();
-              final delivery = fields.deliveryUrl;
-              final url = _withApiKey(
-                delivery != null && delivery.isNotEmpty
-                    ? delivery
-                    : '/Videos/${_segment(item.id)}/${_segment(mediaSourceId)}/Subtitles/$index/${_segment('Stream.${codec ?? 'srt'}')}',
-              );
-              subtitles.add(
-                DownloadSubtitleSpec(
-                  id: index,
-                  url: url,
-                  codec: codec,
-                  language: fields.language,
-                  languageCode: fields.languageCode,
-                  forced: fields.isForced,
-                  displayTitle: fields.displayTitle,
-                ),
-              );
-            }
-          }
-        }
-      }
+    Map<String, dynamic> playbackInfo;
+    try {
+      playbackInfo = await getPlaybackInfo(item.id, mediaSourceId: selectedSourceId);
+    } catch (error, stackTrace) {
+      if (!_canUseJellyfinStaticStreamFallback(error)) rethrow;
+      appLogger.w(
+        'Jellyfin download subtitle enrichment unavailable; using the static stream',
+        error: error,
+        stackTrace: stackTrace,
+      );
+      return DownloadResolution(videoUrl: videoUrl, mediaSourceId: selectedSourceId, externalSubtitlesResolved: false);
+    }
+
+    final source = _selectDownloadMediaSource(playbackInfo['MediaSources'] as List, selectedSourceId, mediaIndex);
+    if (source == null) {
+      appLogger.w('Jellyfin download subtitle enrichment returned no usable source; using the static stream');
+      return DownloadResolution(videoUrl: videoUrl, mediaSourceId: selectedSourceId, externalSubtitlesResolved: false);
+    }
+    if (source['MediaStreams'] is! List) {
+      appLogger.w('Jellyfin download subtitle enrichment returned malformed streams; using the static stream');
+      return DownloadResolution(videoUrl: videoUrl, mediaSourceId: selectedSourceId, externalSubtitlesResolved: false);
+    }
+
+    final streams = source['MediaStreams'] as List;
+    final rawMediaSourceId = source['Id'];
+    if (rawMediaSourceId != null && rawMediaSourceId is! String) {
+      appLogger.w('Jellyfin download subtitle enrichment returned an invalid source id; using the static stream');
+      return DownloadResolution(videoUrl: videoUrl, mediaSourceId: selectedSourceId, externalSubtitlesResolved: false);
+    }
+    final subtitleMediaSourceId = rawMediaSourceId as String? ?? item.id;
+    for (final raw in streams) {
+      if (raw is! Map<String, dynamic>) continue;
+      if (raw['Type'] != 'Subtitle') continue;
+      final fields = parseJellyfinStreamFields(raw);
+      if (!fields.isExternalFile) continue;
+      final index = raw['Index'];
+      if (index is! int) continue;
+      final codec = fields.codec?.toLowerCase();
+      final delivery = fields.deliveryUrl;
+      final url = _withApiKey(
+        delivery != null && delivery.isNotEmpty
+            ? delivery
+            : '/Videos/${_segment(item.id)}/${_segment(subtitleMediaSourceId)}/Subtitles/$index/${_segment('Stream.${codec ?? 'srt'}')}',
+      );
+      subtitles.add(
+        DownloadSubtitleSpec(
+          id: index,
+          url: url,
+          codec: codec,
+          language: fields.language,
+          languageCode: fields.languageCode,
+          forced: fields.isForced,
+          displayTitle: fields.displayTitle,
+        ),
+      );
     }
 
     return DownloadResolution(videoUrl: videoUrl, mediaSourceId: selectedSourceId, externalSubtitles: subtitles);
   }
 
   Map<String, dynamic>? _selectDownloadMediaSource(List<dynamic> sources, String? selectedSourceId, int mediaIndex) {
+    if (sources.isEmpty) return null;
     final requestedSourceId = selectedSourceId?.trim();
     if (requestedSourceId != null && requestedSourceId.isNotEmpty) {
       for (final source in sources) {
-        if (source is Map<String, dynamic> &&
-            (source['Id'] as String?)?.toLowerCase() == requestedSourceId.toLowerCase()) {
+        if (source is! Map<String, dynamic>) continue;
+        final sourceId = source['Id'];
+        if (sourceId is String && sourceId.toLowerCase() == requestedSourceId.toLowerCase()) {
           return source;
         }
       }
       return null;
     }
     final source = mediaIndex >= 0 && mediaIndex < sources.length ? sources[mediaIndex] : sources.first;
-    return source is Map<String, dynamic> ? source : null;
+    if (source is! Map<String, dynamic>) return null;
+    return source;
   }
 
   @override

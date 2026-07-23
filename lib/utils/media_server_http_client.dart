@@ -63,6 +63,15 @@ class AbortController {
   void abort() {
     if (!_completer.isCompleted) _completer.complete();
   }
+
+  /// Stop a paged operation before it starts or commits more work.
+  ///
+  /// The exception deliberately carries no request URI or response payload.
+  void throwIfAborted() {
+    if (isAborted) {
+      throw MediaServerHttpException(type: MediaServerHttpErrorType.cancelled, message: 'Operation cancelled');
+    }
+  }
 }
 
 /// HTTP client wrapper providing base URL, default headers, JSON parsing,

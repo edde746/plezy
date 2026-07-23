@@ -16,7 +16,8 @@
     "quickConnectInstructions": "在 Jellyfin 中打开 Quick Connect 并输入此代码。",
     "quickConnectWaiting": "等待批准…",
     "quickConnectCancel": "取消",
-    "quickConnectExpired": "Quick Connect 已过期。请重试。"
+    "quickConnectExpired": "Quick Connect 已过期。请重试。",
+    "localDataRecoveryRequired": ""
   },
   "common": {
     "cancel": "取消",
@@ -550,6 +551,11 @@
     "streamInterrupted": "视频流已中断。按播放键或拖动进度条重试。",
     "liveStreamInterrupted": "直播流已中断。按播放键重试。",
     "fileInfoNotAvailable": "文件信息不可用",
+    "playbackAuthenticationRequired": "",
+    "playbackServerUnavailable": "",
+    "playbackDataInvalid": "",
+    "playbackCancelled": "",
+    "playbackFailed": "",
     "errorLoadingFileInfo": "加载文件信息时出错: ${error}",
     "errorLoadingSeries": "加载系列时出错",
     "musicNotSupported": "尚不支持播放音乐",
@@ -935,6 +941,7 @@
     "favorites": "收藏",
     "reorderFavorites": "重新排序收藏",
     "favoritesLoadFailed": "无法加载收藏。请检查网络连接后重试。",
+    "favoritesUpdateFailed": "",
     "joinSession": "加入正在进行的会话",
     "watchFromStart": "从头观看（${minutes}分钟前开始）",
     "watchLive": "观看直播",

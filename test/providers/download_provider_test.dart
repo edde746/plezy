@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'package:drift/drift.dart' show ApplyInterceptor, QueryExecutor, QueryInterceptor;
 import 'package:plezy/media/ids.dart';
 
 import 'package:drift/native.dart';
@@ -13,16 +14,21 @@ import 'package:plezy/media/media_server_client.dart';
 import 'package:plezy/models/download_models.dart';
 import 'package:plezy/providers/download_provider.dart';
 import 'package:plezy/services/download_manager_service.dart';
+import 'package:plezy/services/api_cache.dart';
 import 'package:plezy/services/download_storage_service.dart';
 import 'package:plezy/services/jellyfin_api_cache.dart';
 import 'package:plezy/services/plex_api_cache.dart';
 import 'package:plezy/utils/deletion_notifier.dart';
 import 'package:plezy/utils/watch_state_notifier.dart';
+import 'package:plezy/utils/active_client_scope.dart';
 import '../test_helpers/media_items.dart';
 
 /// Implements only [fetchPlayableDescendants], the surface [collectEpisodes]
 /// uses. Every other call reaches [noSuchMethod] and throws.
 class _ThrowingClient implements MediaServerClient {
+  @override
+  ServerId get serverId => ServerId('srv');
+
   @override
   Future<List<MediaItem>> fetchPlayableDescendants(String parentId) async {
     throw StateError('test: fetchPlayableDescendants intentionally fails');
@@ -64,7 +70,12 @@ class _MusicExpansionClient implements MediaServerClient {
 }
 
 class _ScopedTestClient implements MediaServerClient, ScopedMediaServerClient {
-  _ScopedTestClient({required this.serverId, required this.scopedServerId, this.fetchItemHandler});
+  _ScopedTestClient({
+    required this.serverId,
+    required this.scopedServerId,
+    this.fetchItemHandler,
+    this.clientBackend = MediaBackend.jellyfin,
+  });
 
   @override
   final ServerId serverId;
@@ -72,15 +83,112 @@ class _ScopedTestClient implements MediaServerClient, ScopedMediaServerClient {
   @override
   final String scopedServerId;
   final Future<MediaItem?> Function(String id)? fetchItemHandler;
+  final MediaBackend clientBackend;
 
   @override
-  MediaBackend get backend => MediaBackend.jellyfin;
+  MediaBackend get backend => clientBackend;
+
+  @override
+  ApiCache get cache => ApiCache.forBackend(clientBackend);
 
   @override
   Future<MediaItem?> fetchItem(String id, {bool useCache = true}) async => fetchItemHandler?.call(id);
 
   @override
+  void close() {}
+
+  @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
+class _DownloadOwnerSelectGate extends QueryInterceptor {
+  Completer<void>? _started;
+  Completer<void>? _release;
+  String? _globalKey;
+
+  Future<void> get started => _started!.future;
+
+  void arm(String globalKey) {
+    _globalKey = globalKey;
+    _started = Completer<void>();
+    _release = Completer<void>();
+  }
+
+  void release() => _release!.complete();
+
+  @override
+  Future<List<Map<String, Object?>>> runSelect(QueryExecutor executor, String statement, List<Object?> args) async {
+    final started = _started;
+    final release = _release;
+    if (started != null && !started.isCompleted && statement.contains('download_owners') && args.contains(_globalKey)) {
+      started.complete();
+      await release!.future;
+    }
+    return executor.runSelect(statement, args);
+  }
+}
+
+class _GatedPhysicalDeletionManager extends DownloadManagerService {
+  _GatedPhysicalDeletionManager(AppDatabase database)
+    : super(
+        database: database,
+        storageService: DownloadStorageService.instance,
+        clientResolver: (serverId, {clientScopeId}) => null,
+      ) {
+    recoveryFuture = Future<void>.value();
+  }
+
+  final started = Completer<void>();
+  final release = Completer<void>();
+
+  Future<void> _completePhysicalDeletion() async {
+    if (!started.isCompleted) started.complete();
+    await release.future;
+  }
+
+  @override
+  Future<void> cancelAndRemoveDownload(String globalKey) => _completePhysicalDeletion();
+
+  @override
+  Future<void> deleteDownload(String globalKey) => _completePhysicalDeletion();
+}
+
+Future<void> _insertProfile(AppDatabase db, String id) => db
+    .into(db.profiles)
+    .insert(ProfilesCompanion.insert(id: id, kind: 'local', displayName: id, configJson: '{}', createdAt: 0));
+
+Future<void> _insertPlexConnection(AppDatabase db, ServerId serverId) => db
+    .into(db.connections)
+    .insert(
+      ConnectionsCompanion.insert(id: serverId, kind: 'plex', displayName: serverId, configJson: '{}', createdAt: 0),
+    );
+
+Map<String, dynamic> _plexMetadata({
+  required String id,
+  required String title,
+  required int viewCount,
+  required int viewOffset,
+}) => {
+  'MediaContainer': {
+    'Metadata': [
+      {'ratingKey': id, 'title': title, 'type': 'movie', 'viewCount': viewCount, 'viewOffset': viewOffset},
+    ],
+  },
+};
+
+Future<void> _putPinnedPlexMetadata(
+  PlexProfileScopeId scope, {
+  required String id,
+  required String title,
+  required int viewCount,
+  required int viewOffset,
+}) async {
+  await PlexApiCache.instance.put(
+    scope.cacheServerId,
+    '/library/metadata/$id',
+    _plexMetadata(id: id, title: title, viewCount: viewCount, viewOffset: viewOffset),
+  );
+  await PlexApiCache.instance.pinForOffline(scope.cacheServerId, id);
 }
 
 void main() {
@@ -88,11 +196,13 @@ void main() {
 
   late AppDatabase db;
   late DownloadManagerService downloadManager;
+  late _DownloadOwnerSelectGate downloadOwnerSelectGate;
   // Swappable per-test resolver behind the constructor-injected closure.
   MediaClientResolver? testClientResolver;
 
   setUp(() {
-    db = AppDatabase.forTesting(NativeDatabase.memory());
+    downloadOwnerSelectGate = _DownloadOwnerSelectGate();
+    db = AppDatabase.forTesting(NativeDatabase.memory().interceptWith(downloadOwnerSelectGate));
     // PlexApiCache is a singleton accessed eagerly inside DownloadManagerService's
     // constructor; reinitialize per test so each test sees the fresh in-memory DB.
     PlexApiCache.initialize(db);
@@ -131,6 +241,41 @@ void main() {
       await unsupportedManager.recoverInterruptedDownloads();
 
       unsupportedManager.dispose();
+    });
+  });
+
+  group('DownloadProvider — download location coordinator', () {
+    test('set and reset delegate to the manager-owned ordered transition', () async {
+      DownloadLocationSnapshot location = (path: null, type: null);
+      final events = <String>[];
+      final coordinator = DownloadManagerService(
+        database: db,
+        storageService: DownloadStorageService.instance,
+        clientResolver: (_, {clientScopeId}) => null,
+        downloadsSupportedOverride: false,
+        downloadLocationReader: () => location,
+        downloadPathWriter: (value) async {
+          events.add('path:$value');
+          location = (path: value, type: location.type);
+        },
+        downloadPathTypeWriter: (value) async {
+          events.add('type:$value');
+          location = (path: location.path, type: value);
+        },
+        downloadStorageRefresher: () async {
+          events.add('refresh');
+        },
+      )..recoveryFuture = Future<void>.value();
+      final provider = DownloadProvider.forTesting(downloadManager: coordinator, database: db);
+      await provider.ensureInitialized();
+
+      await provider.setDownloadLocation(path: '/downloads', pathType: 'file');
+      await provider.resetDownloadLocation();
+
+      expect(events, ['path:/downloads', 'type:file', 'refresh', 'path:null', 'type:null', 'refresh']);
+      expect(location, (path: null, type: null));
+      provider.dispose();
+      coordinator.dispose();
     });
   });
 
@@ -193,6 +338,42 @@ void main() {
       expect(p.downloads, isEmpty);
 
       p.dispose();
+    });
+
+    test('profile switch clears visible ownership and rules before starting the reload', () async {
+      const globalKey = 'srv:owned-a';
+      await db.insertDownload(
+        serverId: ServerId('srv'),
+        ratingKey: 'owned-a',
+        globalKey: globalKey,
+        type: 'movie',
+        status: DownloadStatus.completed.index,
+      );
+      await db.addDownloadOwner(profileId: 'test-profile', globalKey: globalKey);
+      await db.insertSyncRule(
+        profileId: 'test-profile',
+        serverId: ServerId('srv'),
+        ratingKey: 'show-a',
+        globalKey: 'test-profile|srv:show-a',
+        targetType: 'show',
+        episodeCount: 1,
+      );
+      final provider = DownloadProvider.forTesting(downloadManager: downloadManager, database: db);
+      await provider.ensureInitialized();
+      provider.debugSeedState(
+        downloads: {globalKey: const DownloadProgress(globalKey: globalKey, status: DownloadStatus.completed)},
+        ownedDownloadKeys: {globalKey},
+      );
+      var notifications = 0;
+      provider.addListener(() => notifications++);
+
+      provider.setActiveProfileId('profile-b');
+
+      expect(provider.downloads, isEmpty);
+      expect(provider.syncRules, isEmpty);
+      expect(notifications, 1);
+      await provider.debugWaitForProfileScopedReload();
+      provider.dispose();
     });
   });
 
@@ -674,6 +855,101 @@ void main() {
       provider.dispose();
     });
 
+    test('profile switch invalidates container expansion before it can claim the new profile', () async {
+      final album = testMediaItem(
+        id: 'album-1',
+        backend: MediaBackend.plex,
+        kind: MediaKind.album,
+        title: 'Profile A Album',
+        serverId: ServerId('srv'),
+      );
+      final track = testMediaItem(
+        id: 'track-1',
+        backend: MediaBackend.plex,
+        kind: MediaKind.track,
+        title: 'Profile A Track',
+        parentId: album.id,
+        serverId: ServerId('srv'),
+      );
+      final provider = DownloadProvider.forTesting(
+        downloadManager: downloadManager,
+        database: db,
+        activeProfileId: 'profile-a',
+      );
+      addTearDown(provider.dispose);
+      await provider.ensureInitialized();
+      provider.debugSeedState(
+        downloads: {track.globalKey: DownloadProgress(globalKey: track.globalKey, status: DownloadStatus.completed)},
+        metadata: {track.globalKey: track},
+        ownedDownloadKeys: const {},
+      );
+
+      final expansionStarted = Completer<void>();
+      final releaseExpansion = Completer<void>();
+      final queueFuture = provider.queueDownload(
+        album,
+        _MusicExpansionClient([track], gate: releaseExpansion.future, started: expansionStarted),
+      );
+      await expansionStarted.future;
+
+      provider.setActiveProfileId('profile-b');
+      expect(provider.isQueueing(album.globalKey), isFalse);
+      releaseExpansion.complete();
+
+      expect(await queueFuture, 0);
+      expect(await db.getDownloadOwnerKeysForProfile('profile-a'), isEmpty);
+      expect(await db.getDownloadOwnerKeysForProfile('profile-b'), isEmpty);
+      expect(await db.getAllDownloadedMetadata(), isEmpty);
+      expect(provider.getMetadata(album.globalKey), isNull);
+      expect(provider.getMetadata(track.globalKey), isNull);
+      expect(provider.downloads, isEmpty);
+      expect(provider.isQueueing(album.globalKey), isFalse);
+      expect(await db.getSyncRules(profileId: 'profile-b'), isEmpty);
+    });
+
+    test('stale queue cleanup does not remove the new profile generation key', () async {
+      final album = testMediaItem(
+        id: 'album-1',
+        backend: MediaBackend.plex,
+        kind: MediaKind.album,
+        title: 'Album',
+        serverId: ServerId('srv'),
+      );
+      final provider = DownloadProvider.forTesting(
+        downloadManager: downloadManager,
+        database: db,
+        activeProfileId: 'profile-a',
+      );
+      addTearDown(provider.dispose);
+      await provider.ensureInitialized();
+
+      final firstStarted = Completer<void>();
+      final releaseFirst = Completer<void>();
+      final firstQueue = provider.queueDownload(
+        album,
+        _MusicExpansionClient(const [], gate: releaseFirst.future, started: firstStarted),
+      );
+      await firstStarted.future;
+
+      provider.setActiveProfileId('profile-b');
+      final secondStarted = Completer<void>();
+      final releaseSecond = Completer<void>();
+      final secondQueue = provider.queueDownload(
+        album,
+        _MusicExpansionClient(const [], gate: releaseSecond.future, started: secondStarted),
+      );
+      await secondStarted.future;
+      expect(provider.isQueueing(album.globalKey), isTrue);
+
+      releaseFirst.complete();
+      expect(await firstQueue, 0);
+      expect(provider.isQueueing(album.globalKey), isTrue);
+
+      releaseSecond.complete();
+      expect(await secondQueue, 0);
+      expect(provider.isQueueing(album.globalKey), isFalse);
+    });
+
     test('deleting an album emits one provider notification for all tracks', () async {
       MediaItem track(String id) => testMediaItem(
         id: id,
@@ -807,6 +1083,146 @@ void main() {
       p.dispose();
     });
 
+    void registerProfileSwitchSharedOwnerTest(
+      String operationName,
+      Future<void> Function(DownloadProvider provider, String globalKey) operation,
+      DownloadStatus status,
+    ) {
+      test(
+        '$operationName releases the initiating owner when the active profile switches during owner lookup',
+        () async {
+          const globalKey = 'srv:profile-switch';
+          const itemId = 'profile-switch';
+          final serverId = ServerId('srv');
+          final scopeA = buildPlexProfileScopeId(serverId: serverId, profileId: 'profile-a');
+          final scopeB = buildPlexProfileScopeId(serverId: serverId, profileId: 'profile-b');
+          await _insertPlexConnection(db, serverId);
+          await _insertProfile(db, 'profile-a');
+          await _insertProfile(db, 'profile-b');
+          await db.insertDownload(
+            serverId: serverId,
+            clientScopeId: scopeA,
+            ratingKey: itemId,
+            globalKey: globalKey,
+            type: 'movie',
+            status: status.index,
+          );
+          await db.addDownloadOwner(
+            profileId: 'profile-a',
+            globalKey: globalKey,
+            backendId: MediaBackend.plex.id,
+            clientScopeId: scopeA,
+          );
+          await db.addDownloadOwner(
+            profileId: 'profile-b',
+            globalKey: globalKey,
+            backendId: MediaBackend.plex.id,
+            clientScopeId: scopeB,
+          );
+          await _putPinnedPlexMetadata(scopeA, id: itemId, title: 'Profile A cache', viewCount: 0, viewOffset: 1000);
+          await _putPinnedPlexMetadata(scopeB, id: itemId, title: 'Profile B cache', viewCount: 1, viewOffset: 0);
+          final provider = DownloadProvider.forTesting(
+            downloadManager: downloadManager,
+            database: db,
+            activeProfileId: 'profile-a',
+          );
+          addTearDown(provider.dispose);
+          await provider.ensureInitialized();
+          provider.debugSeedState(
+            downloads: {globalKey: DownloadProgress(globalKey: globalKey, status: status)},
+            metadata: {globalKey: movie.copyWith(id: itemId, title: 'Profile A cache')},
+          );
+
+          downloadOwnerSelectGate.arm(globalKey);
+          final deletion = operation(provider, globalKey);
+          await downloadOwnerSelectGate.started;
+
+          provider.setActiveProfileId('profile-b');
+          await provider.debugWaitForProfileScopedReload();
+          downloadOwnerSelectGate.release();
+          await deletion;
+
+          expect(await db.getDownloadOwnerKeysForProfile('profile-a'), isEmpty);
+          expect(await db.getDownloadOwnerKeysForProfile('profile-b'), {globalKey});
+          expect(provider.downloads.keys, [globalKey]);
+          expect(provider.getMetadata(globalKey)?.title, 'Profile B cache');
+          expect((await PlexApiCache.instance.getMetadata(scopeB.cacheServerId, itemId))?.title, 'Profile B cache');
+          expect(await PlexApiCache.instance.isPinnedRatingKey(scopeB.cacheServerId, itemId), isTrue);
+        },
+      );
+    }
+
+    registerProfileSwitchSharedOwnerTest(
+      'deleteDownload',
+      (provider, globalKey) => provider.deleteDownload(globalKey),
+      DownloadStatus.completed,
+    );
+    registerProfileSwitchSharedOwnerTest(
+      'cancelDownload',
+      (provider, globalKey) => provider.cancelDownload(globalKey),
+      DownloadStatus.queued,
+    );
+
+    void registerProfileSwitchFinalOwnerTest(
+      String operationName,
+      Future<void> Function(DownloadProvider provider, String globalKey) operation,
+      DownloadStatus status,
+    ) {
+      test('$operationName releases its final owner after a profile switch during physical deletion', () async {
+        const deletingKey = 'srv:final-owner';
+        const profileBKey = 'srv:profile-b';
+        await db.addDownloadOwner(profileId: 'profile-a', globalKey: deletingKey);
+        await db.addDownloadOwner(profileId: 'profile-b', globalKey: profileBKey);
+        final gatedManager = _GatedPhysicalDeletionManager(db);
+        addTearDown(gatedManager.dispose);
+        final provider = DownloadProvider.forTesting(
+          downloadManager: gatedManager,
+          database: db,
+          activeProfileId: 'profile-a',
+        );
+        addTearDown(provider.dispose);
+        await provider.ensureInitialized();
+        provider.debugSeedState(
+          downloads: {
+            deletingKey: DownloadProgress(globalKey: deletingKey, status: status),
+            profileBKey: const DownloadProgress(globalKey: profileBKey, status: DownloadStatus.completed),
+          },
+          metadata: {
+            deletingKey: movie.copyWith(id: 'final-owner', title: 'Profile A cache'),
+            profileBKey: movie.copyWith(id: 'profile-b', title: 'Profile B cache'),
+          },
+          ownedDownloadKeys: {deletingKey},
+        );
+
+        final deletion = operation(provider, deletingKey);
+        await gatedManager.started.future;
+
+        provider.setActiveProfileId('profile-b');
+        await provider.debugWaitForProfileScopedReload();
+        provider.debugSeedState(
+          metadata: {profileBKey: movie.copyWith(id: 'profile-b', title: 'Profile B cache')},
+        );
+        gatedManager.release.complete();
+        await deletion;
+
+        expect(await db.getDownloadOwnerKeysForProfile('profile-a'), isEmpty);
+        expect(await db.getDownloadOwnerKeysForProfile('profile-b'), {profileBKey});
+        expect(provider.downloads.keys, [profileBKey]);
+        expect(provider.getMetadata(profileBKey)?.title, 'Profile B cache');
+      });
+    }
+
+    registerProfileSwitchFinalOwnerTest(
+      'deleteDownload',
+      (provider, globalKey) => provider.deleteDownload(globalKey),
+      DownloadStatus.completed,
+    );
+    registerProfileSwitchFinalOwnerTest(
+      'cancelDownload',
+      (provider, globalKey) => provider.cancelDownload(globalKey),
+      DownloadStatus.queued,
+    );
+
     test('deleteDownload is a no-op for unowned physical rows', () async {
       await db.insertDownload(
         serverId: ServerId('srv'),
@@ -855,6 +1271,152 @@ void main() {
       expect(p.getProgress('srv:1'), isNull);
 
       p.dispose();
+    });
+
+    test(
+      'releasing a queued shared owner rebinds the physical row and preserves its queue intent for the survivor',
+      () async {
+        const globalKey = 'srv:shared-queued';
+        const itemId = 'shared-queued';
+        final serverId = ServerId('srv');
+        final scopeA = buildPlexProfileScopeId(serverId: serverId, profileId: 'profile-a');
+        final scopeB = buildPlexProfileScopeId(serverId: serverId, profileId: 'profile-b');
+        await _insertPlexConnection(db, serverId);
+        await _insertProfile(db, 'profile-a');
+        await _insertProfile(db, 'profile-b');
+        await db.insertDownload(
+          serverId: serverId,
+          clientScopeId: scopeA,
+          ratingKey: itemId,
+          globalKey: globalKey,
+          type: 'movie',
+          status: DownloadStatus.queued.index,
+        );
+        await db.addToQueue(mediaGlobalKey: globalKey, priority: 37);
+        await db.addDownloadOwner(
+          profileId: 'profile-a',
+          globalKey: globalKey,
+          backendId: MediaBackend.plex.id,
+          clientScopeId: scopeA,
+        );
+        await db.addDownloadOwner(
+          profileId: 'profile-b',
+          globalKey: globalKey,
+          backendId: MediaBackend.plex.id,
+          clientScopeId: scopeB,
+        );
+        await _putPinnedPlexMetadata(scopeB, id: itemId, title: 'Profile B snapshot', viewCount: 0, viewOffset: 0);
+
+        final itemB = movie.copyWith(id: itemId, title: 'Profile B snapshot');
+        final clientB = _ScopedTestClient(
+          serverId: serverId,
+          scopedServerId: scopeB,
+          clientBackend: MediaBackend.plex,
+          fetchItemHandler: (_) async => itemB,
+        );
+        final resolvedScopes = <String?>[];
+        final queueResumed = Completer<MediaServerClient>();
+        final scopedManager = DownloadManagerService(
+          database: db,
+          storageService: DownloadStorageService.instance,
+          clientResolver: (resolvedServerId, {clientScopeId}) {
+            resolvedScopes.add(clientScopeId);
+            return resolvedServerId == serverId && clientScopeId == scopeB ? clientB : null;
+          },
+          downloadsSupportedOverride: true,
+          queueProcessorOverride: (client) async {
+            if (!queueResumed.isCompleted) queueResumed.complete(client);
+          },
+        )..recoveryFuture = Future<void>.value();
+        addTearDown(scopedManager.dispose);
+        final provider = DownloadProvider.forTesting(
+          downloadManager: scopedManager,
+          database: db,
+          activeProfileId: 'profile-b',
+        );
+        addTearDown(provider.dispose);
+        await provider.ensureInitialized();
+        provider.debugSeedState(
+          downloads: {globalKey: const DownloadProgress(globalKey: globalKey, status: DownloadStatus.queued)},
+          metadata: {globalKey: itemB},
+          ownedDownloadKeys: {globalKey},
+        );
+
+        await provider.releaseDownloadsForProfileServers('profile-a', {'srv'});
+
+        final rebound = await db.getDownloadedMedia(globalKey);
+        expect(rebound?.clientScopeId, scopeB);
+        expect(await db.getDownloadOwnerKeysForProfile('profile-a'), isEmpty);
+        expect(await db.getDownloadOwnerKeysForProfile('profile-b'), {globalKey});
+        expect(provider.isQueued(globalKey), isTrue);
+
+        resolvedScopes.clear();
+        expect((await scopedManager.lookupMetadata(serverId, itemId))?.title, 'Profile B snapshot');
+        expect(resolvedScopes, contains(scopeB));
+        expect(resolvedScopes, isNot(contains(scopeA)));
+
+        expect(
+          await provider.queueDownload(itemB, clientB),
+          0,
+          reason: 'the surviving owner must not duplicate the row',
+        );
+        var queueRows = await db.select(db.downloadQueue).get();
+        expect(queueRows, hasLength(1));
+        expect(queueRows.single.mediaGlobalKey, globalKey);
+        expect(queueRows.single.priority, 37);
+        expect((await db.getNextQueueItem())?.mediaGlobalKey, globalKey);
+
+        scopedManager.resumeQueuedDownloads(clientB);
+        expect(await queueResumed.future.timeout(const Duration(seconds: 2)), same(clientB));
+        queueRows = await db.select(db.downloadQueue).get();
+        expect(queueRows, hasLength(1));
+        expect(queueRows.single.priority, 37);
+      },
+    );
+
+    test('deleting one owner does not migrate a completed shared physical row', () async {
+      const globalKey = 'srv:shared-completed';
+      final serverId = ServerId('srv');
+      final scopeA = buildPlexProfileScopeId(serverId: serverId, profileId: 'profile-a');
+      final scopeB = buildPlexProfileScopeId(serverId: serverId, profileId: 'profile-b');
+      await _insertPlexConnection(db, serverId);
+      await _insertProfile(db, 'profile-a');
+      await _insertProfile(db, 'profile-b');
+      await db.insertDownload(
+        serverId: serverId,
+        clientScopeId: scopeA,
+        ratingKey: 'shared-completed',
+        globalKey: globalKey,
+        type: 'movie',
+        status: DownloadStatus.completed.index,
+      );
+      await db.addDownloadOwner(
+        profileId: 'profile-a',
+        globalKey: globalKey,
+        backendId: MediaBackend.plex.id,
+        clientScopeId: scopeA,
+      );
+      await db.addDownloadOwner(
+        profileId: 'profile-b',
+        globalKey: globalKey,
+        backendId: MediaBackend.plex.id,
+        clientScopeId: scopeB,
+      );
+      final provider = DownloadProvider.forTesting(
+        downloadManager: downloadManager,
+        database: db,
+        activeProfileId: 'profile-b',
+      );
+      addTearDown(provider.dispose);
+      await provider.ensureInitialized();
+
+      await provider.deleteDownloadsForProfile('profile-a');
+
+      final completed = await db.getDownloadedMedia(globalKey);
+      expect(completed, isNotNull);
+      expect(completed?.clientScopeId, scopeA);
+      expect(await db.getDownloadOwnerKeysForProfile('profile-a'), isEmpty);
+      expect(await db.getDownloadOwnerKeysForProfile('profile-b'), {globalKey});
     });
 
     test('releaseDownloadsForProfileServers removes only downloads from the removed connection', () async {
@@ -912,7 +1474,7 @@ void main() {
       await JellyfinApiCache.instance.pinForOffline(ServerId(scopeId), itemId);
     }
 
-    test('loads parent metadata from the downloaded Jellyfin user scope', () async {
+    test('loads parent metadata from the exact active Jellyfin user scope', () async {
       await insertJellyfinConnection('user-a');
       await insertJellyfinConnection('user-b');
 
@@ -959,6 +1521,10 @@ void main() {
         grandparentRatingKey: 'show-1',
         status: DownloadStatus.completed.index,
       );
+      await db.addDownloadOwner(profileId: 'test-profile', globalKey: 'jf-machine:ep-1');
+      testClientResolver = (serverId, {clientScopeId}) => serverId == 'jf-machine'
+          ? _ScopedTestClient(serverId: ServerId('jf-machine'), scopedServerId: 'jf-machine/user-a')
+          : null;
 
       final p = DownloadProvider.forTesting(downloadManager: downloadManager, database: db);
       await p.ensureInitialized();
@@ -1079,6 +1645,58 @@ void main() {
       p.dispose();
     });
 
+    test('cold Jellyfin profile restores its persisted scoped queued watch action', () async {
+      await insertJellyfinConnection('user-a');
+      await insertJellyfinConnection('user-b');
+      await db
+          .into(db.profileConnections)
+          .insert(
+            ProfileConnectionsCompanion.insert(
+              profileId: 'test-profile',
+              connectionId: 'jf-machine/user-b',
+              userIdentifier: 'user-b',
+            ),
+          );
+      await putPinnedItem('jf-machine/user-b', 'user-b', 'ep-1', {
+        'Id': 'ep-1',
+        'Type': 'Episode',
+        'Name': 'Offline User B Episode',
+        'SeriesId': 'show-1',
+        'SeasonId': 'season-1',
+        'UserData': {'PlayCount': 0},
+      });
+      await db.insertDownload(
+        serverId: ServerId('jf-machine'),
+        clientScopeId: 'jf-machine/user-a',
+        ratingKey: 'ep-1',
+        globalKey: 'jf-machine:ep-1',
+        type: 'episode',
+        parentRatingKey: 'season-1',
+        grandparentRatingKey: 'show-1',
+        status: DownloadStatus.completed.index,
+      );
+      await db.addDownloadOwner(profileId: 'test-profile', globalKey: 'jf-machine:ep-1');
+      await db.insertWatchAction(
+        profileId: 'test-profile',
+        serverId: ServerId('jf-machine'),
+        clientScopeId: 'jf-machine/user-b',
+        ratingKey: 'ep-1',
+        actionType: 'watched',
+      );
+
+      final provider = DownloadProvider.forTesting(downloadManager: downloadManager, database: db);
+      await provider.ensureInitialized();
+      provider.debugSeedState(
+        downloads: {
+          'jf-machine:ep-1': const DownloadProgress(globalKey: 'jf-machine:ep-1', status: DownloadStatus.completed),
+        },
+      );
+      await provider.refreshMetadataFromCache();
+
+      expect(provider.getMetadata('jf-machine:ep-1')?.title, 'Offline User B Episode');
+      expect(provider.getMetadata('jf-machine:ep-1')?.isWatched, isTrue);
+      provider.dispose();
+    });
     test('offline watch hydration snapshots downloads before database awaits', () async {
       final provider = DownloadProvider.forTesting(downloadManager: downloadManager, database: db);
       await provider.ensureInitialized();
@@ -1125,6 +1743,8 @@ void main() {
         type: 'movie',
         status: DownloadStatus.completed.index,
       );
+      await db.addDownloadOwner(profileId: 'profile-a', globalKey: 'jf-machine:movie-1');
+      await db.addDownloadOwner(profileId: 'profile-b', globalKey: 'jf-machine:movie-1');
 
       final fetchStarted = Completer<void>();
       final releaseFetch = Completer<void>();
@@ -1179,10 +1799,510 @@ void main() {
 
       expect(p.getMetadata('jf-machine:movie-1'), isNull);
 
-      await p.refreshMetadataFromCache();
+      if (p.getMetadata('jf-machine:movie-1')?.title != 'Profile B') {
+        final reloaded = Completer<void>();
+        void onReload() {
+          if (p.getMetadata('jf-machine:movie-1')?.title == 'Profile B' && !reloaded.isCompleted) {
+            reloaded.complete();
+          }
+        }
+
+        p.addListener(onReload);
+        await reloaded.future.timeout(const Duration(seconds: 2));
+        p.removeListener(onReload);
+      }
       expect(p.getMetadata('jf-machine:movie-1')?.title, 'Profile B');
 
       p.dispose();
+    });
+
+    test('shared Jellyfin cache scope survives until its final download owner is released', () async {
+      const globalKey = 'jf-machine:movie-1';
+      const scopeId = 'jf-machine/user-a';
+      await insertJellyfinConnection('user-a');
+      await _insertProfile(db, 'profile-a');
+      await _insertProfile(db, 'profile-b');
+      await db.insertDownload(
+        serverId: ServerId('jf-machine'),
+        clientScopeId: scopeId,
+        ratingKey: 'movie-1',
+        globalKey: globalKey,
+        type: 'movie',
+        status: DownloadStatus.completed.index,
+      );
+      for (final profileId in ['profile-a', 'profile-b']) {
+        await db.addDownloadOwner(
+          profileId: profileId,
+          globalKey: globalKey,
+          backendId: MediaBackend.jellyfin.id,
+          clientScopeId: scopeId,
+        );
+      }
+      await putPinnedItem(scopeId, 'user-a', 'movie-1', {
+        'Id': 'movie-1',
+        'Type': 'Movie',
+        'Name': 'Shared offline movie',
+      });
+      final segmentsEndpoint = JellyfinApiCache.mediaSegmentsEndpoint('movie-1');
+      await JellyfinApiCache.instance.put(ServerId(scopeId), segmentsEndpoint, {'Items': <Object?>[]});
+      await JellyfinApiCache.instance.pinForOffline(ServerId(scopeId), 'movie-1');
+
+      final provider = DownloadProvider.forTesting(
+        downloadManager: downloadManager,
+        database: db,
+        activeProfileId: 'profile-a',
+      );
+      addTearDown(provider.dispose);
+      await provider.ensureInitialized();
+
+      await provider.deleteDownloadsForProfile('profile-a');
+
+      expect(await db.getDownloadOwnerKeysForProfile('profile-b'), {globalKey});
+      expect(
+        (await JellyfinApiCache.instance.getMetadata(ServerId(scopeId), 'movie-1'))?.title,
+        'Shared offline movie',
+      );
+      expect(await JellyfinApiCache.instance.get(ServerId(scopeId), segmentsEndpoint), isNotNull);
+
+      await provider.deleteDownloadsForProfile('profile-b');
+
+      expect(await JellyfinApiCache.instance.getMetadata(ServerId(scopeId), 'movie-1'), isNull);
+      expect(await JellyfinApiCache.instance.get(ServerId(scopeId), segmentsEndpoint), isNull);
+    });
+  });
+
+  group('DownloadProvider — scoped Plex metadata ownership', () {
+    const key = 'srv:123';
+    final serverId = ServerId('srv');
+
+    Future<void> seedPhysicalDownload({required Iterable<String> owners}) async {
+      await _insertPlexConnection(db, serverId);
+      for (final owner in owners) {
+        await _insertProfile(db, owner);
+      }
+      await db.insertDownload(
+        serverId: serverId,
+        clientScopeId: buildPlexProfileScopeId(serverId: serverId, profileId: owners.first),
+        ratingKey: '123',
+        globalKey: key,
+        type: 'movie',
+        status: DownloadStatus.completed.index,
+      );
+      for (final owner in owners) {
+        await db.addDownloadOwner(profileId: owner, globalKey: key);
+      }
+    }
+
+    Future<void> waitForProfileReload(DownloadProvider provider, String profileId, bool Function() isSettled) async {
+      final settled = Completer<void>();
+      void listener() {
+        if (isSettled() && !settled.isCompleted) settled.complete();
+      }
+
+      provider.addListener(listener);
+      provider.setActiveProfileId(profileId);
+      await settled.future.timeout(const Duration(seconds: 2));
+      provider.removeListener(listener);
+    }
+
+    test('offline profile switches select only exact Plex owner snapshots and preserve one physical row', () async {
+      await seedPhysicalDownload(owners: const ['profile-a', 'profile-b']);
+      final scopeA = buildPlexProfileScopeId(serverId: serverId, profileId: 'profile-a');
+      final scopeB = buildPlexProfileScopeId(serverId: serverId, profileId: 'profile-b');
+      await _putPinnedPlexMetadata(scopeA, id: '123', title: 'Profile A snapshot', viewCount: 0, viewOffset: 12000);
+      await _putPinnedPlexMetadata(scopeB, id: '123', title: 'Profile B snapshot', viewCount: 1, viewOffset: 0);
+
+      final provider = DownloadProvider.forTesting(
+        downloadManager: downloadManager,
+        database: db,
+        activeProfileId: 'profile-a',
+      );
+      addTearDown(provider.dispose);
+      await provider.ensureInitialized();
+      provider.debugSeedState(
+        downloads: {key: const DownloadProgress(globalKey: key, status: DownloadStatus.completed)},
+        ownedDownloadKeys: {key},
+      );
+      await provider.refreshMetadataFromCache();
+
+      expect(provider.getMetadata(key)?.title, 'Profile A snapshot');
+      expect(provider.getMetadata(key)?.viewOffsetMs, 12000);
+
+      await waitForProfileReload(provider, 'profile-b', () => provider.getMetadata(key)?.title == 'Profile B snapshot');
+      expect(provider.getMetadata(key)?.isWatched, isTrue);
+
+      await waitForProfileReload(provider, 'profile-a', () => provider.getMetadata(key)?.title == 'Profile A snapshot');
+      expect(provider.getMetadata(key)?.isWatched, isFalse);
+      expect(await db.getDownloadedMedia(key), isNotNull);
+      expect(await db.getDownloadOwnerCount(key), 2);
+      expect(await PlexApiCache.instance.isPinnedRatingKey(scopeA.cacheServerId, '123'), isTrue);
+      expect(await PlexApiCache.instance.isPinnedRatingKey(scopeB.cacheServerId, '123'), isTrue);
+      expect((await PlexApiCache.instance.getMetadata(scopeA.cacheServerId, '123'))?.title, 'Profile A snapshot');
+      expect((await PlexApiCache.instance.getMetadata(scopeB.cacheServerId, '123'))?.title, 'Profile B snapshot');
+    });
+
+    test('full logout transfers Plex metadata to the next profile without carrying private state', () async {
+      await seedPhysicalDownload(owners: const ['profile-a', 'profile-old-co-owner']);
+      final scopeA = buildPlexProfileScopeId(serverId: serverId, profileId: 'profile-a');
+      final transferScope = buildPlexTransferScopeId(serverId);
+      final scopeB = buildPlexProfileScopeId(serverId: serverId, profileId: 'profile-b');
+      final oldCoOwnerScope = buildPlexProfileScopeId(serverId: serverId, profileId: 'profile-old-co-owner');
+      await _putPinnedPlexMetadata(
+        oldCoOwnerScope,
+        id: '123',
+        title: 'Preserved download',
+        viewCount: 1,
+        viewOffset: 12000,
+      );
+
+      final provider = DownloadProvider.forTesting(
+        downloadManager: downloadManager,
+        database: db,
+        activeProfileId: 'profile-a',
+      );
+      addTearDown(provider.dispose);
+      await provider.ensureInitialized();
+
+      await provider.detachDownloadsForLogout();
+
+      expect((await db.getDownloadedMedia(key))?.clientScopeId, transferScope);
+      expect(await db.hasDownloadOwner(key), isFalse);
+      expect(await PlexApiCache.instance.getMetadata(scopeA.cacheServerId, '123'), isNull);
+      expect(await PlexApiCache.instance.getMetadata(oldCoOwnerScope.cacheServerId, '123'), isNull);
+      final transferred = await PlexApiCache.instance.getMetadata(transferScope.cacheServerId, '123');
+      expect(transferred?.title, 'Preserved download');
+      expect(transferred?.viewCount, isNull);
+      expect(transferred?.viewOffsetMs, isNull);
+
+      await db.delete(db.profiles).go();
+      await db.delete(db.connections).go();
+      await _insertProfile(db, 'profile-b');
+      await _insertPlexConnection(db, serverId);
+
+      final adoptedProvider = DownloadProvider.forTesting(
+        downloadManager: downloadManager,
+        database: db,
+        activeProfileId: 'profile-b',
+      );
+      addTearDown(adoptedProvider.dispose);
+      await adoptedProvider.ensureInitialized();
+
+      final adoptedRow = await db.getDownloadedMedia(key);
+      final adoptedOwner = await db.getDownloadOwner(profileId: 'profile-b', globalKey: key);
+      expect(adoptedRow?.clientScopeId, scopeB);
+      expect(adoptedOwner?.clientScopeId, scopeB);
+      expect(adoptedOwner?.backend, MediaBackend.plex.id);
+      expect(await PlexApiCache.instance.getMetadata(transferScope.cacheServerId, '123'), isNull);
+      expect((await PlexApiCache.instance.getMetadata(scopeB.cacheServerId, '123'))?.title, 'Preserved download');
+      expect(adoptedProvider.getMetadata(key)?.viewCount, isNull);
+      expect(adoptedProvider.getMetadata(key)?.viewOffsetMs, isNull);
+    });
+
+    test('logout recovers legacy Plex ownership when row and owner scopes are absent', () async {
+      await seedPhysicalDownload(owners: const ['profile-a', 'profile-b']);
+      await db.updateDownloadedMediaClientScope(key, null);
+      final scopeB = buildPlexProfileScopeId(serverId: serverId, profileId: 'profile-b');
+      final transferScope = buildPlexTransferScopeId(serverId);
+      await _putPinnedPlexMetadata(scopeB, id: '123', title: 'Legacy owner snapshot', viewCount: 1, viewOffset: 4000);
+
+      await downloadManager.preparePlexMetadataForLogoutTransfer();
+      expect(await db.hasDownloadOwner(key), isTrue);
+      expect((await db.getDownloadedMedia(key))?.clientScopeId, transferScope);
+      final transferred = await PlexApiCache.instance.getMetadata(transferScope.cacheServerId, '123');
+      expect(transferred?.title, 'Legacy owner snapshot');
+      expect(transferred?.viewCount, isNull);
+      expect(transferred?.viewOffsetMs, isNull);
+    });
+
+    test('missing active Plex owner scope clears the prior profile snapshot without bare fallback', () async {
+      await seedPhysicalDownload(owners: const ['profile-a', 'profile-b']);
+      final scopeA = buildPlexProfileScopeId(serverId: serverId, profileId: 'profile-a');
+      await _putPinnedPlexMetadata(scopeA, id: '123', title: 'Profile A snapshot', viewCount: 0, viewOffset: 12000);
+      await PlexApiCache.instance.put(
+        serverId,
+        '/library/metadata/123',
+        _plexMetadata(id: '123', title: 'Legacy bare snapshot', viewCount: 1, viewOffset: 0),
+      );
+      await PlexApiCache.instance.pinForOffline(serverId, '123');
+
+      final provider = DownloadProvider.forTesting(
+        downloadManager: downloadManager,
+        database: db,
+        activeProfileId: 'profile-a',
+      );
+      addTearDown(provider.dispose);
+      await provider.ensureInitialized();
+      provider.debugSeedState(
+        downloads: {key: const DownloadProgress(globalKey: key, status: DownloadStatus.completed)},
+        ownedDownloadKeys: {key},
+      );
+      await provider.refreshMetadataFromCache();
+      expect(provider.getMetadata(key)?.title, 'Profile A snapshot');
+
+      await waitForProfileReload(provider, 'profile-b', () => provider.getMetadata(key) == null);
+      await provider.refreshMetadataFromCache();
+
+      expect(provider.getMetadata(key), isNull);
+      expect(await db.getDownloadedMedia(key), isNotNull);
+    });
+
+    test('a missing episode leaf does not evict parents loaded for a downloaded sibling', () async {
+      await _insertPlexConnection(db, serverId);
+      await _insertProfile(db, 'profile-a');
+      final scope = buildPlexProfileScopeId(serverId: serverId, profileId: 'profile-a');
+      for (final id in ['ep-1', 'ep-2']) {
+        await db.insertDownload(
+          serverId: serverId,
+          clientScopeId: scope,
+          ratingKey: id,
+          globalKey: 'srv:$id',
+          type: 'episode',
+          parentRatingKey: 'season-1',
+          grandparentRatingKey: 'show-1',
+          status: DownloadStatus.completed.index,
+        );
+        await db.addDownloadOwner(profileId: 'profile-a', globalKey: 'srv:$id');
+      }
+
+      Future<void> putPinned(String id, Map<String, Object?> metadata) async {
+        await PlexApiCache.instance.put(scope.cacheServerId, '/library/metadata/$id', {
+          'MediaContainer': {
+            'Metadata': [metadata],
+          },
+        });
+        await PlexApiCache.instance.pinForOffline(scope.cacheServerId, id);
+      }
+
+      await putPinned('show-1', {'ratingKey': 'show-1', 'type': 'show', 'title': 'Shared Show'});
+      await putPinned('season-1', {
+        'ratingKey': 'season-1',
+        'type': 'season',
+        'title': 'Season 1',
+        'parentRatingKey': 'show-1',
+      });
+      await putPinned('ep-1', {
+        'ratingKey': 'ep-1',
+        'type': 'episode',
+        'title': 'Available Episode',
+        'parentRatingKey': 'season-1',
+        'grandparentRatingKey': 'show-1',
+      });
+      final missingEpisode = testMediaItem(
+        id: 'ep-2',
+        backend: MediaBackend.plex,
+        kind: MediaKind.episode,
+        title: 'Missing Episode',
+        serverId: serverId,
+        parentId: 'season-1',
+        grandparentId: 'show-1',
+      );
+      final provider = DownloadProvider.forTesting(
+        downloadManager: downloadManager,
+        database: db,
+        activeProfileId: 'profile-a',
+      );
+      addTearDown(provider.dispose);
+      await provider.ensureInitialized();
+      provider.debugSeedState(
+        downloads: {
+          'srv:ep-1': const DownloadProgress(globalKey: 'srv:ep-1', status: DownloadStatus.completed),
+          'srv:ep-2': const DownloadProgress(globalKey: 'srv:ep-2', status: DownloadStatus.completed),
+        },
+        metadata: {'srv:ep-2': missingEpisode},
+        ownedDownloadKeys: {'srv:ep-1', 'srv:ep-2'},
+      );
+
+      await provider.refreshMetadataFromCache();
+
+      expect(provider.getMetadata('srv:ep-1')?.title, 'Available Episode');
+      expect(provider.getMetadata('srv:ep-2'), isNull);
+      expect(provider.getMetadata('srv:show-1')?.title, 'Shared Show');
+      expect(provider.getMetadata('srv:season-1')?.title, 'Season 1');
+    });
+    test('scoped watch writeback mutates only the active Plex owner row despite co-ownership', () async {
+      await seedPhysicalDownload(owners: const ['profile-a', 'profile-b']);
+      final scopeA = buildPlexProfileScopeId(serverId: serverId, profileId: 'profile-a');
+      final scopeB = buildPlexProfileScopeId(serverId: serverId, profileId: 'profile-b');
+      await _putPinnedPlexMetadata(scopeA, id: '123', title: 'Profile A snapshot', viewCount: 0, viewOffset: 12000);
+      await _putPinnedPlexMetadata(scopeB, id: '123', title: 'Profile B snapshot', viewCount: 0, viewOffset: 34000);
+      final activeClient = _ScopedTestClient(
+        serverId: serverId,
+        scopedServerId: scopeA,
+        clientBackend: MediaBackend.plex,
+      );
+      testClientResolver = (resolvedServerId, {clientScopeId}) => resolvedServerId == serverId ? activeClient : null;
+
+      final provider = DownloadProvider.forTesting(
+        downloadManager: downloadManager,
+        database: db,
+        activeProfileId: 'profile-a',
+      );
+      addTearDown(provider.dispose);
+      await provider.ensureInitialized();
+      provider.debugSeedState(
+        downloads: {key: const DownloadProgress(globalKey: key, status: DownloadStatus.completed)},
+        ownedDownloadKeys: {key},
+      );
+      await provider.refreshMetadataFromCache();
+      final item = provider.getMetadata(key)!;
+
+      WatchStateNotifier().notifyWatched(item: item, cacheServerId: scopeA);
+      await provider.debugWaitForWatchStateWrites();
+
+      expect((await PlexApiCache.instance.getMetadata(scopeA.cacheServerId, '123'))?.isWatched, isTrue);
+      expect((await PlexApiCache.instance.getMetadata(scopeB.cacheServerId, '123'))?.isWatched, isFalse);
+
+      WatchStateNotifier().notifyWatched(item: item, cacheServerId: scopeB);
+      await provider.debugWaitForWatchStateWrites();
+
+      expect((await PlexApiCache.instance.getMetadata(scopeA.cacheServerId, '123'))?.isWatched, isTrue);
+      expect((await PlexApiCache.instance.getMetadata(scopeB.cacheServerId, '123'))?.isWatched, isFalse);
+    });
+
+    test('claim and owner release pin and delete metadata per Plex owner reference', () async {
+      await seedPhysicalDownload(owners: const ['profile-a', 'profile-b']);
+      await db.removeDownloadOwner(profileId: 'profile-b', globalKey: key);
+      final scopeA = buildPlexProfileScopeId(serverId: serverId, profileId: 'profile-a');
+      final scopeB = buildPlexProfileScopeId(serverId: serverId, profileId: 'profile-b');
+      await _putPinnedPlexMetadata(scopeA, id: '123', title: 'Profile A snapshot', viewCount: 0, viewOffset: 12000);
+      final profileBItem = testMediaItem(
+        id: '123',
+        backend: MediaBackend.plex,
+        kind: MediaKind.movie,
+        title: 'Profile B snapshot',
+        serverId: serverId,
+        viewCount: 1,
+      );
+      final clientB = _ScopedTestClient(
+        serverId: serverId,
+        scopedServerId: scopeB,
+        clientBackend: MediaBackend.plex,
+        fetchItemHandler: (id) async {
+          await PlexApiCache.instance.put(
+            scopeB.cacheServerId,
+            '/library/metadata/$id',
+            _plexMetadata(id: id, title: 'Profile B snapshot', viewCount: 1, viewOffset: 0),
+          );
+          return profileBItem;
+        },
+      );
+      testClientResolver = (resolvedServerId, {clientScopeId}) =>
+          resolvedServerId == serverId && (clientScopeId == null || clientScopeId == scopeB) ? clientB : null;
+
+      final provider = DownloadProvider.forTesting(
+        downloadManager: downloadManager,
+        database: db,
+        activeProfileId: 'profile-b',
+      );
+      addTearDown(provider.dispose);
+      await provider.ensureInitialized();
+      provider.debugSeedState(
+        downloads: {key: const DownloadProgress(globalKey: key, status: DownloadStatus.completed)},
+        ownedDownloadKeys: const {},
+      );
+
+      expect(await provider.queueDownload(profileBItem, clientB), 1);
+      expect(await db.getDownloadOwnerCount(key), 2);
+      expect(await db.getAllDownloadedMetadata(), hasLength(1));
+      expect(await PlexApiCache.instance.isPinnedRatingKey(scopeA.cacheServerId, '123'), isTrue);
+      expect(await PlexApiCache.instance.isPinnedRatingKey(scopeB.cacheServerId, '123'), isTrue);
+
+      await provider.deleteDownloadsForProfile('profile-a');
+      expect(await db.getDownloadOwnerCount(key), 1);
+      expect(await db.getDownloadedMedia(key), isNotNull);
+      expect(await PlexApiCache.instance.getMetadata(scopeA.cacheServerId, '123'), isNull);
+      expect((await PlexApiCache.instance.getMetadata(scopeB.cacheServerId, '123'))?.title, 'Profile B snapshot');
+
+      await provider.deleteDownload(key);
+      expect(await db.getDownloadOwnerCount(key), 0);
+      expect(await db.getDownloadedMedia(key), isNull);
+      expect(await PlexApiCache.instance.getMetadata(scopeB.cacheServerId, '123'), isNull);
+    });
+
+    test('auto-delete protects only the exact active global key', () async {
+      await _insertProfile(db, 'profile-a');
+      for (final server in ['A', 'B']) {
+        await db.insertDownload(
+          serverId: ServerId(server),
+          ratingKey: '123',
+          globalKey: '$server:123',
+          type: 'movie',
+          status: DownloadStatus.completed.index,
+        );
+        await db.addDownloadOwner(profileId: 'profile-a', globalKey: '$server:123');
+      }
+      final itemA = testMediaItem(
+        id: '123',
+        backend: MediaBackend.plex,
+        kind: MediaKind.movie,
+        title: 'A watched',
+        serverId: 'A',
+        viewCount: 1,
+      );
+      final itemB = itemA.copyWith(serverId: 'B', title: 'B watched');
+      final provider = DownloadProvider.forTesting(
+        downloadManager: downloadManager,
+        database: db,
+        activeProfileId: 'profile-a',
+      );
+      addTearDown(provider.dispose);
+      await provider.ensureInitialized();
+      provider.debugSeedState(
+        downloads: {
+          itemA.globalKey: DownloadProgress(globalKey: itemA.globalKey, status: DownloadStatus.completed),
+          itemB.globalKey: DownloadProgress(globalKey: itemB.globalKey, status: DownloadStatus.completed),
+        },
+        metadata: {itemA.globalKey: itemA, itemB.globalKey: itemB},
+        ownedDownloadKeys: {itemA.globalKey, itemB.globalKey},
+      );
+
+      expect(await provider.autoDeleteWatchedDownloads(activeGlobalKey: itemA.globalKey), ['B watched']);
+      expect(provider.downloads.keys, [itemA.globalKey]);
+      expect(await db.getDownloadedMedia(itemA.globalKey), isNotNull);
+      expect(await db.getDownloadedMedia(itemB.globalKey), isNull);
+    });
+
+    test('auto-delete removes both same-id downloads when there is no active key', () async {
+      await _insertProfile(db, 'profile-a');
+      for (final server in ['A', 'B']) {
+        await db.insertDownload(
+          serverId: ServerId(server),
+          ratingKey: '123',
+          globalKey: '$server:123',
+          type: 'movie',
+          status: DownloadStatus.completed.index,
+        );
+        await db.addDownloadOwner(profileId: 'profile-a', globalKey: '$server:123');
+      }
+      final itemA = testMediaItem(
+        id: '123',
+        backend: MediaBackend.plex,
+        kind: MediaKind.movie,
+        title: 'A watched',
+        serverId: 'A',
+        viewCount: 1,
+      );
+      final itemB = itemA.copyWith(serverId: 'B', title: 'B watched');
+      final provider = DownloadProvider.forTesting(
+        downloadManager: downloadManager,
+        database: db,
+        activeProfileId: 'profile-a',
+      );
+      addTearDown(provider.dispose);
+      await provider.ensureInitialized();
+      provider.debugSeedState(
+        downloads: {
+          itemA.globalKey: DownloadProgress(globalKey: itemA.globalKey, status: DownloadStatus.completed),
+          itemB.globalKey: DownloadProgress(globalKey: itemB.globalKey, status: DownloadStatus.completed),
+        },
+        metadata: {itemA.globalKey: itemA, itemB.globalKey: itemB},
+        ownedDownloadKeys: {itemA.globalKey, itemB.globalKey},
+      );
+
+      expect((await provider.autoDeleteWatchedDownloads()).toSet(), {'A watched', 'B watched'});
+      expect(provider.downloads, isEmpty);
+      expect(await db.getDownloadedMedia(itemA.globalKey), isNull);
+      expect(await db.getDownloadedMedia(itemB.globalKey), isNull);
     });
   });
 
@@ -1402,7 +2522,7 @@ void main() {
 
       p.setActiveProfileId('profile-b');
       await p.refreshMetadataFromCache();
-      expect(p.getMetadata(episode.globalKey)?.isWatched, isFalse);
+      expect(p.getMetadata(episode.globalKey), isNull);
 
       p.dispose();
     });

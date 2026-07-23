@@ -16,7 +16,8 @@
     "quickConnectInstructions": "Open Quick Connect in Jellyfin and enter this code.",
     "quickConnectWaiting": "Waiting for approval…",
     "quickConnectCancel": "Cancel",
-    "quickConnectExpired": "Quick Connect expired. Try again."
+    "quickConnectExpired": "Quick Connect expired. Try again.",
+    "localDataRecoveryRequired": "Plezy could not safely recover local sign-in and pending playback data. Please sign in again."
   },
   "common": {
     "cancel": "Cancel",
@@ -551,6 +552,11 @@
     "streamInterrupted": "The stream was interrupted. Press play or seek to retry.",
     "liveStreamInterrupted": "The live stream was interrupted. Press play to retry.",
     "fileInfoNotAvailable": "File information not available",
+    "playbackAuthenticationRequired": "Sign in to the media server again to play this item.",
+    "playbackServerUnavailable": "The media server is unavailable. Try again later.",
+    "playbackDataInvalid": "The server returned invalid playback information.",
+    "playbackCancelled": "Playback was cancelled.",
+    "playbackFailed": "Playback could not be started.",
     "errorLoadingFileInfo": "Error loading file info: ${error}",
     "errorLoadingSeries": "Error loading series",
     "musicNotSupported": "Music playback is not yet supported",
@@ -937,6 +943,7 @@
     "favorites": "Favorites",
     "reorderFavorites": "Reorder Favorites",
     "favoritesLoadFailed": "Could not load favorites. Check your connection and try again.",
+    "favoritesUpdateFailed": "Could not update favorites. Check your connection and try again.",
     "joinSession": "Join Session in Progress",
     "watchFromStart": "Watch from start (${minutes} min ago)",
     "watchLive": "Watch Live",
