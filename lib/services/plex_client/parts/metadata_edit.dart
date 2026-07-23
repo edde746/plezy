@@ -167,6 +167,14 @@ mixin _PlexMetadataEditMethods on MediaServerCacheMixin {
     return result;
   }
 
+  Future<Map<String, String>> getMetadataPrefs(String ratingKey) async {
+    final response = await _getWithFailover(
+      '/library/metadata/$ratingKey',
+      queryParameters: const {'includePreferences': 1},
+    );
+    return PlexMetadataPreferences.fromMediaContainer(_getMediaContainer(response)).values;
+  }
+
   Future<bool> updateMetadataPrefs(String ratingKey, Map<String, String> prefs) async {
     final result = await _wrapBoolApiCall(
       () => _http.put('/library/metadata/$ratingKey/prefs', queryParameters: prefs),

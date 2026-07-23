@@ -53,7 +53,7 @@ class CompanionRemotePeerService with KeepaliveMixin {
     int maxPreAuthMessageBytes = _productionMaxPreAuthMessageBytes,
     Duration authTimeout = _productionAuthTimeout,
     int maxFailedAuthAttempts = _productionMaxFailedAuthAttempts,
-    Duration authLockoutDuration = _productionAuthLockoutDuration,
+    this._authLockoutDuration = _productionAuthLockoutDuration,
     Future<List<int>> Function(List<int> homeSecret, List<int> hostNonce, List<int> clientNonce)? deriveSessionEncKey,
     ({Future<void> Function() close, Future<void> ready, Stream<dynamic> stream}) Function(Uri uri)? raceProbeFactory,
     this._afterHostUpgrade,
@@ -67,7 +67,6 @@ class CompanionRemotePeerService with KeepaliveMixin {
        _maxPreAuthMessageBytes = maxPreAuthMessageBytes,
        _authTimeout = authTimeout,
        _maxFailedAuthAttempts = maxFailedAuthAttempts,
-       _authLockoutDuration = authLockoutDuration,
        _deriveSessionEncKey =
            deriveSessionEncKey ??
            ((homeSecret, hostNonce, clientNonce) {
@@ -98,6 +97,8 @@ class CompanionRemotePeerService with KeepaliveMixin {
 
   // Server-side (host) fields
   HttpServer? _server;
+  // The socket is closed through its owning admission during disconnect/dispose.
+  // ignore: close_sinks
   WebSocket? _clientSocket;
   _HostAdmission? _currentHostAdmission;
   final Set<_HostAdmission> _hostAdmissions = {};
@@ -287,6 +288,8 @@ class CompanionRemotePeerService with KeepaliveMixin {
     }
 
     try {
+      // Ownership transfers to the admission immediately after upgrade.
+      // ignore: close_sinks
       final socket = await WebSocketTransformer.upgrade(request, compression: CompressionOptions.compressionOff);
       admission.socket = socket;
       admission.completeUpgrade();
@@ -338,6 +341,8 @@ class CompanionRemotePeerService with KeepaliveMixin {
   }
 
   bool _isHostAdmissionLive(_HostAdmission admission, {required _HostAdmissionPhase phase, int? commitGeneration}) {
+    // The admission owns and closes this socket.
+    // ignore: close_sinks
     final socket = admission.socket;
     return !admission.released &&
         admission.phase == phase &&
@@ -354,6 +359,8 @@ class CompanionRemotePeerService with KeepaliveMixin {
     String hostPlatform,
     List<RemoteAuthContext> authContexts,
   ) {
+    // The admission owns and closes this socket.
+    // ignore: close_sinks
     final socket = admission.socket!;
     final auth = RemoteAuthService.instance;
     final hostNonce = auth.generateNonce();
@@ -387,6 +394,8 @@ class CompanionRemotePeerService with KeepaliveMixin {
       }
     });
 
+    // The subscription is assigned to and cancelled through the admission.
+    // ignore: cancel_subscriptions
     late final StreamSubscription<dynamic> socketSubscription;
     socketSubscription = socket.listen(
       (data) {
@@ -642,6 +651,8 @@ class CompanionRemotePeerService with KeepaliveMixin {
     admission.authTimer = null;
     _recordFailedAuth(admission.sourceIp);
 
+    // The admission owns and closes this socket.
+    // ignore: close_sinks
     final socket = admission.socket;
     if (socket != null && socket.readyState == WebSocket.open) {
       try {

@@ -456,6 +456,114 @@ void main() {
     expect(find.byType(PlaylistDetailScreen), findsOneWidget);
     expect(find.byType(SnackBar), findsNothing);
   });
+
+  testWidgets('pending D-pad move disables playlist mutations and restores the exact order on rejection', (
+    tester,
+  ) async {
+    final harness = await _createHarness(_mediaItems(3));
+    await _pushPlaylistRoute(tester, harness);
+
+    await _startFirstItemMoveDown(tester);
+    await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+    await tester.pump();
+
+    expect(_visiblePlaylistItemIds(tester), ['item_1', 'item_0', 'item_2']);
+    expect(harness.client.moveRequests, hasLength(1));
+    expect(harness.client.activeMutationCount, 1);
+    expect(
+      tester.widgetList<PlaylistItemCard>(find.byType(PlaylistItemCard)),
+      everyElement(
+        isA<PlaylistItemCard>()
+            .having((card) => card.canReorder, 'canReorder', isFalse)
+            .having((card) => card.onRemove, 'onRemove', isNull),
+      ),
+    );
+    expect(find.byType(ReorderableDragStartListener), findsNothing);
+
+    harness.client.completeMove(0, false);
+    await tester.pumpAndSettle();
+
+    expect(_visiblePlaylistItemIds(tester), ['item_0', 'item_1', 'item_2']);
+    expect(harness.client.activeMutationCount, 0);
+    expect(
+      tester.widgetList<PlaylistItemCard>(find.byType(PlaylistItemCard)),
+      everyElement(
+        isA<PlaylistItemCard>()
+            .having((card) => card.canReorder, 'canReorder', isTrue)
+            .having((card) => card.onRemove, 'onRemove', isNotNull),
+      ),
+    );
+
+    await _startFirstItemMoveDown(tester);
+    await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+    await tester.pump();
+    harness.client.completeMove(1, true, applyToServer: true);
+    await tester.pumpAndSettle();
+
+    expect(_visiblePlaylistItemIds(tester), ['item_1', 'item_0', 'item_2']);
+    expect(harness.client.authoritativeItemIds, ['item_1', 'item_0', 'item_2']);
+    expect(harness.client.peakMutationCount, 1);
+  });
+
+  testWidgets('ambiguous playlist move failure refetches authoritative order before reopening edits', (tester) async {
+    final harness = await _createHarness(_mediaItems(3));
+    await _pushPlaylistRoute(tester, harness);
+
+    await _startFirstItemMoveDown(tester);
+    await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+    await tester.pump();
+    expect(harness.client.moveRequests, hasLength(1));
+
+    harness.client.failMove(0, applyToServer: true);
+    await tester.pumpAndSettle();
+
+    expect(harness.client.requestedStarts, [0, 0]);
+    expect(harness.client.authoritativeItemIds, ['item_1', 'item_0', 'item_2']);
+    expect(_visiblePlaylistItemIds(tester), ['item_1', 'item_0', 'item_2']);
+    expect(harness.client.activeMutationCount, 0);
+    expect(tester.widgetList<PlaylistItemCard>(find.byType(PlaylistItemCard)).every((card) => card.canReorder), isTrue);
+  });
+
+  testWidgets('playlist remove rejection restores its snapshot and ambiguous failure refetches', (tester) async {
+    final harness = await _createHarness(_mediaItems(3));
+    await _pushPlaylistRoute(tester, harness);
+
+    await tester.tap(find.byTooltip(t.playlists.removeItem).first);
+    await tester.pump();
+    expect(_visiblePlaylistItemIds(tester), ['item_1', 'item_2']);
+    expect(harness.client.removeRequests, hasLength(1));
+    expect(
+      tester.widgetList<PlaylistItemCard>(find.byType(PlaylistItemCard)).every((card) => card.onRemove == null),
+      isTrue,
+    );
+
+    harness.client.completeRemove(0, false);
+    await tester.pumpAndSettle();
+    expect(_visiblePlaylistItemIds(tester), ['item_0', 'item_1', 'item_2']);
+
+    await tester.tap(find.byTooltip(t.playlists.removeItem).first);
+    await tester.pump();
+    harness.client.failRemove(1, applyToServer: true);
+    await tester.pumpAndSettle();
+
+    expect(harness.client.requestedStarts, [0, 0]);
+    expect(harness.client.authoritativeItemIds, ['item_1', 'item_2']);
+    expect(_visiblePlaylistItemIds(tester), ['item_1', 'item_2']);
+    expect(harness.client.activeMutationCount, 0);
+    expect(harness.client.peakMutationCount, 1);
+  });
+}
+
+Future<void> _startFirstItemMoveDown(WidgetTester tester) async {
+  final listFocus = find.byWidgetPredicate(
+    (widget) => widget is Focus && widget.focusNode?.debugLabel == 'playlist_list',
+  );
+  tester.widget<Focus>(listFocus).focusNode!.requestFocus();
+  await tester.pump();
+  await tester.sendKeyEvent(LogicalKeyboardKey.arrowLeft);
+  await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+  await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+  await tester.pump();
 }
 
 Future<void> _pushPlaylistRoute(WidgetTester tester, _PlaylistHarness harness) async {
@@ -621,6 +729,10 @@ class _PagedPlaylistClient implements MediaServerClient {
   AbortController? activeAbort;
   final List<int?> requestedStarts = [];
   final List<int?> requestedSizes = [];
+  final List<_MoveRequest> moveRequests = [];
+  final List<_RemoveRequest> removeRequests = [];
+  int activeMutationCount = 0;
+  int peakMutationCount = 0;
   int deleteCalls = 0;
   bool _hasFailed = false;
 
@@ -632,6 +744,8 @@ class _PagedPlaylistClient implements MediaServerClient {
   }) => _PagedPlaylistClient._(items, failOnceAt, deleteResult, backend);
 
   _PagedPlaylistClient._(this.items, this.failOnceAt, this.deleteResult, this._backend);
+
+  List<String> get authoritativeItemIds => items.map((item) => item.id).toList();
 
   @override
   ServerId get serverId => ServerId('server_1');
@@ -669,6 +783,72 @@ class _PagedPlaylistClient implements MediaServerClient {
   }
 
   @override
+  Future<bool> movePlaylistItem({
+    required String playlistId,
+    required MediaItem item,
+    required int newIndex,
+    required MediaItem? afterItem,
+  }) async {
+    final request = _MoveRequest(item: item, newIndex: newIndex);
+    moveRequests.add(request);
+    activeMutationCount++;
+    peakMutationCount = activeMutationCount > peakMutationCount ? activeMutationCount : peakMutationCount;
+    try {
+      return await request.result.future;
+    } finally {
+      activeMutationCount--;
+    }
+  }
+
+  void completeMove(int index, bool result, {bool applyToServer = false}) {
+    final request = moveRequests[index];
+    if (applyToServer) _applyMove(request);
+    request.result.complete(result);
+  }
+
+  void failMove(int index, {bool applyToServer = false}) {
+    final request = moveRequests[index];
+    if (applyToServer) _applyMove(request);
+    request.result.completeError(StateError('connection closed after playlist move'), StackTrace.current);
+  }
+
+  void _applyMove(_MoveRequest request) {
+    final oldIndex = items.indexWhere((item) => item.id == request.item.id);
+    if (oldIndex < 0) return;
+    final item = items.removeAt(oldIndex);
+    items.insert(request.newIndex.clamp(0, items.length), item);
+  }
+
+  @override
+  Future<bool> removeFromPlaylist({required String playlistId, required MediaItem item}) async {
+    final request = _RemoveRequest(item);
+    removeRequests.add(request);
+    activeMutationCount++;
+    peakMutationCount = activeMutationCount > peakMutationCount ? activeMutationCount : peakMutationCount;
+    try {
+      return await request.result.future;
+    } finally {
+      activeMutationCount--;
+    }
+  }
+
+  void completeRemove(int index, bool result, {bool applyToServer = false}) {
+    final request = removeRequests[index];
+    if (applyToServer) _applyRemove(request);
+    request.result.complete(result);
+  }
+
+  void failRemove(int index, {bool applyToServer = false}) {
+    final request = removeRequests[index];
+    if (applyToServer) _applyRemove(request);
+    request.result.completeError(StateError('connection closed after playlist removal'), StackTrace.current);
+  }
+
+  void _applyRemove(_RemoveRequest request) {
+    items.removeWhere((item) => item.id == request.item.id);
+  }
+
+  @override
   Future<bool> deletePlaylist(MediaPlaylist playlist) async {
     deleteCalls++;
     return deleteResult;
@@ -679,4 +859,19 @@ class _PagedPlaylistClient implements MediaServerClient {
 
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
+class _MoveRequest {
+  final MediaItem item;
+  final int newIndex;
+  final Completer<bool> result = Completer<bool>();
+
+  _MoveRequest({required this.item, required this.newIndex});
+}
+
+class _RemoveRequest {
+  final MediaItem item;
+  final Completer<bool> result = Completer<bool>();
+
+  _RemoveRequest(this.item);
 }

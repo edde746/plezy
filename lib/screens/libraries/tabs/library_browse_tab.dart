@@ -9,6 +9,7 @@ import '../../../media/library_query.dart';
 import '../../../media/media_backend.dart';
 import '../../../media/media_item.dart';
 import '../../../media/media_kind.dart';
+import '../../../media/media_library.dart';
 import '../../../providers/multi_server_provider.dart';
 import '../../../utils/media_server_http_client.dart';
 import '../../../focus/dpad_navigator.dart';
@@ -279,10 +280,6 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
   DateTime? _lastAlphaUpdate;
   Timer? _alphaUpdateTimer;
 
-  /// Generation counter for the filter/sort loading phase of [_loadContent].
-  /// Separate from the mixin's pagination generation so a filter reload can
-  /// invalidate in-flight filter/sort fetches without touching item pagination.
-  int _contentRequestId = 0;
   int _firstCharactersRequestId = 0;
   static const int _fetchSize = 200;
   static const int _jellyfinFetchSize = 72;
@@ -323,8 +320,10 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
       final normalized = _normalizeGrouping(_selectedGrouping);
       if (normalized != _selectedGrouping) {
         _selectedGrouping = normalized;
+        final loadGeneration = libraryLoadGeneration;
+        final libraryGlobalKey = widget.library.globalKey;
         WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (!mounted) return;
+          if (!isCurrentLibraryLoad(loadGeneration, libraryGlobalKey)) return;
           unawaited(_loadItems());
           unawaited(_loadFirstCharacters());
         });
@@ -385,9 +384,13 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
     // from interfering with TabBarView page animations
     if (!InputModeTracker.isKeyboardMode(context)) return;
     if (widget.isActive && hasLoadedData && !hasFocused) {
+      final loadGeneration = libraryLoadGeneration;
+      final libraryGlobalKey = widget.library.globalKey;
       hasFocused = true;
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) focusContentOrChrome();
+        if (isCurrentLibraryLoad(loadGeneration, libraryGlobalKey)) {
+          focusContentOrChrome();
+        }
       });
     }
   }
@@ -426,10 +429,13 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
   /// Focus the first item in the grid/list/folder tree (for tab activation)
   @override
   void focusFirstItem() {
+    final loadGeneration = libraryLoadGeneration;
+    final libraryGlobalKey = widget.library.globalKey;
+
     // In folder mode, items list is empty — focus the first folder tree item directly
     if (_selectedGrouping == 'folders') {
       void request() {
-        if (mounted && !firstItemFocusNode.hasFocus) {
+        if (isCurrentLibraryLoad(loadGeneration, libraryGlobalKey) && !firstItemFocusNode.hasFocus) {
           firstItemFocusNode.requestFocus();
         }
       }
@@ -443,7 +449,9 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
       // Request immediately, then once more on the next frame to handle cases
       // where the grid/list attaches after the initial focus attempt.
       void request() {
-        if (mounted && (loadedItems.isNotEmpty || _hasFocusableStateAction) && !firstItemFocusNode.hasFocus) {
+        if (isCurrentLibraryLoad(loadGeneration, libraryGlobalKey) &&
+            (loadedItems.isNotEmpty || _hasFocusableStateAction) &&
+            !firstItemFocusNode.hasFocus) {
           firstItemFocusNode.requestFocus();
         }
       }
@@ -524,11 +532,13 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
   }
 
   Future<void> _loadContent() async {
-    final generation = ++_contentRequestId;
+    if (!mounted) return;
+    final library = widget.library;
+    final libraryGlobalKey = library.globalKey;
+    final generation = beginLibraryLoad();
     final firstCharactersGeneration = ++_firstCharactersRequestId;
 
     _resetForFullReload();
-
     _resetTopOfPageState();
     _currentFirstVisibleIndex.value = 0;
 
@@ -536,34 +546,35 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
     // `/sorts`; Jellyfin maps `/Items/Filters` into the same shape with
     // values pre-cached and a hardcoded client-side sort list. Both flow
     // through the unified [MediaServerClient.fetchLibraryFiltersWithValues].
-
     try {
-      final client = context.getMediaClientForLibrary(widget.library);
+      final client = context.getMediaClientForLibrary(library);
       final loader = LibraryFilterSortLoader(clientFor: (_) => client);
       final storage = await StorageService.getInstance();
-      final savedFilters = storage.getLibraryFilters(sectionId: widget.library.globalKey);
-      final savedSort = storage.getLibrarySort(widget.library.globalKey);
-      final savedGrouping = storage.getLibraryGrouping(widget.library.globalKey);
+      if (!isCurrentLibraryLoad(generation, libraryGlobalKey)) return;
+
+      final savedFilters = storage.getLibraryFilters(sectionId: libraryGlobalKey);
+      final savedSort = storage.getLibrarySort(libraryGlobalKey);
+      final savedGrouping = storage.getLibraryGrouping(libraryGlobalKey);
       // Resolve the restored grouping before the sort fetch — music groupings
       // (albums/tracks) request their own per-type sort list.
       final restoredGrouping = _normalizeGrouping(savedGrouping);
       final sortLibraryType = _sortOptionsLibraryType(restoredGrouping);
 
       final LoadedFiltersAndSorts loaded;
-      if (_isJellyfinLibrary) {
+      if (library.backend == MediaBackend.jellyfin) {
         // `/Items/Filters` can be much slower than the paged `/Items` browse
         // request on large Jellyfin libraries. Load only the local sort list
         // before page 1, then fill filter values in the background.
-        final sorts = await client.fetchSortOptions(widget.library.id, libraryType: sortLibraryType);
+        final sorts = await client.fetchSortOptions(library.id, libraryType: sortLibraryType);
         loaded = LoadedFiltersAndSorts(filters: const [], sorts: sorts);
       } else {
         // Plex filters+sorts must resolve before items so saved-sort restoration
         // can match a saved key against the just-loaded sort list, and so the
         // first item fetch already includes the restored sort param.
-        loaded = await loader.load(widget.library, sortLibraryType: sortLibraryType);
+        loaded = await loader.load(library, sortLibraryType: sortLibraryType);
       }
 
-      if (generation != _contentRequestId || !mounted) return;
+      if (!isCurrentLibraryLoad(generation, libraryGlobalKey)) return;
       setState(() {
         _filters = loaded.filters;
         _sortOptions = loaded.sorts;
@@ -587,16 +598,19 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
       });
       _notifyFiltersActive();
 
-      if (_isJellyfinLibrary) {
-        _loadJellyfinFiltersInBackground(generation);
+      if (library.backend == MediaBackend.jellyfin) {
+        _loadJellyfinFiltersInBackground(generation, libraryGlobalKey, library);
       }
 
-      // Load items and first characters in parallel
-      // _loadItems manages its own requestId internally
-      await Future.wait([_loadItems(), _loadFirstCharacters(requestId: firstCharactersGeneration)]);
+      // Load items and first characters in parallel.
+      await Future.wait([
+        _loadItems(loadGeneration: generation, libraryGlobalKey: libraryGlobalKey),
+        _loadFirstCharacters(requestId: firstCharactersGeneration),
+      ]);
     } catch (e, stackTrace) {
-      if (!mounted) return;
+      if (!isCurrentLibraryLoad(generation, libraryGlobalKey)) return;
       final message = localizedLoadErrorMessage(e, stackTrace, context: t.libraries.content);
+      if (!isCurrentLibraryLoad(generation, libraryGlobalKey)) return;
       setState(() {
         errorMessage = message;
         isLoading = false;
@@ -604,20 +618,21 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
     }
   }
 
-  void _loadJellyfinFiltersInBackground(int generation) {
-    final client = context.tryGetMediaClientForServer(serverIdOrNull(widget.library.serverId));
+  void _loadJellyfinFiltersInBackground(int generation, String libraryGlobalKey, MediaLibrary library) {
+    final client = context.tryGetMediaClientForServer(serverIdOrNull(library.serverId));
     if (client == null) return;
     unawaited(
       client
-          .fetchLibraryFiltersWithValues(widget.library.id, libraryKind: widget.library.kind)
+          .fetchLibraryFiltersWithValues(library.id, libraryKind: library.kind)
           .then((result) {
-            if (generation != _contentRequestId || !mounted) return;
+            if (!isCurrentLibraryLoad(generation, libraryGlobalKey)) return;
             setState(() {
               _filters = result.filters;
               _jellyfinFilterValues = result.cachedValues;
             });
           })
           .catchError((Object e, StackTrace st) {
+            if (!isCurrentLibraryLoad(generation, libraryGlobalKey)) return;
             appLogger.w('Jellyfin library filters failed; browse content remains available', error: e, stackTrace: st);
           }),
     );
@@ -630,8 +645,10 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
     final cb = widget.onFiltersActiveChanged;
     if (cb == null) return;
     final active = _selectedFilters.isNotEmpty;
+    final loadGeneration = libraryLoadGeneration;
+    final libraryGlobalKey = widget.library.globalKey;
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) cb(active);
+      if (isCurrentLibraryLoad(loadGeneration, libraryGlobalKey)) cb(active);
     });
   }
 
@@ -690,8 +707,10 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
     return filterParams;
   }
 
-  Future<void> _loadItems({bool preserveFocus = false}) async {
-    final generation = _contentRequestId;
+  Future<void> _loadItems({bool preserveFocus = false, int? loadGeneration, String? libraryGlobalKey}) async {
+    final generation = loadGeneration ?? libraryLoadGeneration;
+    final acceptedLibraryGlobalKey = libraryGlobalKey ?? widget.library.globalKey;
+    if (!isCurrentLibraryLoad(generation, acceptedLibraryGlobalKey)) return;
     setState(() {
       isLoading = true;
       items = [];
@@ -707,7 +726,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
     try {
       final initialPage = await loadInitialPageWithStatus(_calculateInitialFetchSize());
 
-      if (!initialPage.applied || generation != _contentRequestId || !mounted) return;
+      if (!initialPage.applied || !isCurrentLibraryLoad(generation, acceptedLibraryGlobalKey)) return;
       setState(() {
         isLoading = false;
       });
@@ -717,15 +736,19 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
         tryFocus();
       }
 
-      // Notify parent
-      if (!preserveFocus && widget.onDataLoaded != null) {
+      // Notify parent after the accepted library remains current for a frame.
+      final onDataLoaded = widget.onDataLoaded;
+      if (!preserveFocus && onDataLoaded != null) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
-          widget.onDataLoaded!();
+          if (isCurrentLibraryLoad(generation, acceptedLibraryGlobalKey)) {
+            onDataLoaded();
+          }
         });
       }
     } catch (e, stackTrace) {
-      if (generation != _contentRequestId || !mounted) return;
+      if (!isCurrentLibraryLoad(generation, acceptedLibraryGlobalKey)) return;
       final message = localizedLoadErrorMessage(e, stackTrace, context: t.libraries.content);
+      if (!isCurrentLibraryLoad(generation, acceptedLibraryGlobalKey)) return;
       setState(() {
         errorMessage = message;
         isLoading = false;
@@ -961,16 +984,19 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
   /// load items. Only called when the grouping switch changed the sort type
   /// (artist/album/track on music libraries).
   Future<void> _reloadSortOptionsForGrouping() async {
-    final generation = _contentRequestId;
+    final generation = libraryLoadGeneration;
+    final library = widget.library;
+    final libraryGlobalKey = library.globalKey;
     final grouping = _selectedGrouping;
     var sorts = const <MediaSort>[];
     try {
-      final client = context.getMediaClientForLibrary(widget.library);
-      sorts = await client.fetchSortOptions(widget.library.id, libraryType: _sortOptionsLibraryType(grouping));
+      final client = context.getMediaClientForLibrary(library);
+      sorts = await client.fetchSortOptions(library.id, libraryType: _sortOptionsLibraryType(grouping));
     } catch (e, st) {
+      if (!isCurrentLibraryLoad(generation, libraryGlobalKey)) return;
       appLogger.w('Failed to load sort options for grouping $grouping', error: e, stackTrace: st);
     }
-    if (!mounted || generation != _contentRequestId || grouping != _selectedGrouping) return;
+    if (!isCurrentLibraryLoad(generation, libraryGlobalKey) || grouping != _selectedGrouping) return;
     setState(() {
       _sortOptions = sorts;
       if (_selectedSort != null && sorts.every((s) => s.key != _selectedSort!.key)) {

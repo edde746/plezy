@@ -670,6 +670,8 @@ class _RawWebSocketClient {
   }
 
   static Future<_RawWebSocketClient> connect(int port) async {
+    // Ownership transfers to the returned helper.
+    // ignore: close_sinks
     final socket = await WebSocket.connect('ws://127.0.0.1:$port/ws').timeout(_ioTimeout);
     final client = _RawWebSocketClient._(socket);
     try {

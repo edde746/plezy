@@ -113,6 +113,7 @@ class GuideTabState extends State<GuideTab> with MountedSetStateMixin, WidgetsBi
   List<LiveTvProgram> _programs = [];
   Set<String> _scheduledRecordingKeys = const {};
   bool _isLoading = true;
+  int _programLoadGeneration = 0;
 
   late DateTime _gridStart;
   late DateTime _gridEnd;
@@ -238,6 +239,7 @@ class GuideTabState extends State<GuideTab> with MountedSetStateMixin, WidgetsBi
 
   @override
   void dispose() {
+    _programLoadGeneration++;
     WidgetsBinding.instance.removeObserver(this);
     _programSelectController.dispose();
     _guideFocusNode.dispose();
@@ -327,13 +329,22 @@ class GuideTabState extends State<GuideTab> with MountedSetStateMixin, WidgetsBi
     }
   }
 
+  bool _isCurrentProgramLoad(int generation) => mounted && generation == _programLoadGeneration;
+
   Future<void> _loadPrograms() async {
     if (!mounted) return;
+    final loadGeneration = ++_programLoadGeneration;
+    final requestGridStart = _gridStart;
+    final requestGridEnd = _gridEnd;
+    final startEpoch = requestGridStart.millisecondsSinceEpoch ~/ 1000;
+    final endEpoch = requestGridEnd.millisecondsSinceEpoch ~/ 1000;
+    final from = DateTime.fromMillisecondsSinceEpoch(startEpoch * 1000, isUtc: true);
+    final to = DateTime.fromMillisecondsSinceEpoch(endEpoch * 1000, isUtc: true);
     setState(() => _isLoading = true);
 
     try {
       final multiServer = context.read<MultiServerProvider>();
-      final liveTvServers = multiServer.liveTvServers;
+      final liveTvServers = List<LiveTvServerInfo>.of(multiServer.liveTvServers);
       final allPrograms = <LiveTvProgram>[];
       final scheduledRecordingKeys = <String>{};
       final queriedServers = <String>{};
@@ -344,25 +355,23 @@ class GuideTabState extends State<GuideTab> with MountedSetStateMixin, WidgetsBi
           final genericClient = multiServer.getClientForServer(ServerId(serverInfo.serverId));
           if (genericClient == null) continue;
 
-          final startEpoch = _gridStart.millisecondsSinceEpoch ~/ 1000;
-          final endEpoch = _gridEnd.millisecondsSinceEpoch ~/ 1000;
-
-          final fromDt = DateTime.fromMillisecondsSinceEpoch(startEpoch * 1000, isUtc: true);
-          final toDt = DateTime.fromMillisecondsSinceEpoch(endEpoch * 1000, isUtc: true);
-          final programs = await genericClient.liveTv.fetchSchedule(from: fromDt, to: toDt);
+          final programs = await genericClient.liveTv.fetchSchedule(from: from, to: to);
+          if (!_isCurrentProgramLoad(loadGeneration)) return;
           allPrograms.addAll(programs);
           await _addScheduledRecordingKeysForServer(
             client: genericClient,
             serverId: ServerId(serverInfo.serverId),
             keys: scheduledRecordingKeys,
+            isCurrent: () => _isCurrentProgramLoad(loadGeneration),
           );
+          if (!_isCurrentProgramLoad(loadGeneration)) return;
         } catch (e) {
+          if (!_isCurrentProgramLoad(loadGeneration)) return;
           appLogger.e('Failed to load programs from server ${serverInfo.serverId}', error: e);
         }
       }
 
-      if (!mounted) return;
-
+      if (!_isCurrentProgramLoad(loadGeneration)) return;
       final shouldFocus = _pendingFocus;
 
       setState(() {
@@ -379,18 +388,17 @@ class GuideTabState extends State<GuideTab> with MountedSetStateMixin, WidgetsBi
         }
       });
 
-      _scrollToNow();
+      _scrollToNow(loadGeneration: loadGeneration);
 
       if (shouldFocus) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (mounted) focusContent();
+          if (_isCurrentProgramLoad(loadGeneration)) focusContent();
         });
       }
     } catch (e) {
+      if (!_isCurrentProgramLoad(loadGeneration)) return;
       appLogger.e('Failed to load guide programs', error: e);
-      if (mounted) {
-        setState(() => _isLoading = false);
-      }
+      setState(() => _isLoading = false);
     }
   }
 
@@ -419,26 +427,31 @@ class GuideTabState extends State<GuideTab> with MountedSetStateMixin, WidgetsBi
     required MediaServerClient client,
     required ServerId serverId,
     required Set<String> keys,
+    bool Function()? isCurrent,
   }) async {
     final dvr = client.liveTvDvr;
     if (dvr == null) return;
     try {
       final grabs = await dvr.fetchScheduledRecordings();
+      if (isCurrent?.call() == false) return;
       for (final grab in grabs) {
         _addRecordingKeysForGrab(grab, serverId: ServerId(serverId), keys: keys);
       }
     } catch (e) {
+      if (isCurrent?.call() == false) return;
       appLogger.d('Failed to load scheduled recordings for $serverId', error: e);
     }
 
     try {
       final rules = await dvr.fetchRecordingRules(includeGrabs: true, includeStorage: false);
+      if (isCurrent?.call() == false) return;
       for (final rule in rules) {
         for (final grab in rule.grabOperations) {
           _addRecordingKeysForGrab(grab, serverId: ServerId(serverId), keys: keys);
         }
       }
     } catch (e) {
+      if (isCurrent?.call() == false) return;
       appLogger.d('Failed to load active recording grabs for $serverId', error: e);
     }
   }
@@ -552,8 +565,9 @@ class GuideTabState extends State<GuideTab> with MountedSetStateMixin, WidgetsBi
     return channelIndex * _rowHeight;
   }
 
-  void _scrollToNow() {
+  void _scrollToNow({int? loadGeneration}) {
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || (loadGeneration != null && !_isCurrentProgramLoad(loadGeneration))) return;
       final now = DateTime.now();
       final minutesSinceStart = now.difference(_gridStart).inMinutes;
       final offset = (minutesSinceStart / _minutesPerSlot) * _slotWidth;

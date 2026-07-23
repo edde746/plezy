@@ -20,7 +20,7 @@ import '../../widgets/optimized_media_image.dart';
 class PlaylistItemCard extends StatefulWidget {
   final MediaItem item;
   final int index;
-  final VoidCallback onRemove;
+  final VoidCallback? onRemove;
   final VoidCallback? onTap;
   final void Function(MediaItem source)? onRefresh;
   final bool canReorder; // Whether drag handle should be shown

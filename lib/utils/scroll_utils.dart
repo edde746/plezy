@@ -26,9 +26,14 @@ void scrollContextToCenter(BuildContext? context) {
 /// then scrolls to `currentIndex * itemHeight`, clamped to max extent.
 /// Call once after the first build; the callback is a no-op if the key or
 /// controller aren't ready yet.
-void scrollToCurrentItem(ScrollController controller, GlobalKey firstItemKey, int currentIndex) {
+void scrollToCurrentItem(
+  ScrollController controller,
+  GlobalKey firstItemKey,
+  int currentIndex, {
+  bool Function()? isCurrent,
+}) {
   WidgetsBinding.instance.addPostFrameCallback((_) {
-    if (!controller.hasClients) return;
+    if (isCurrent?.call() == false || !controller.hasClients) return;
     final itemHeight = (firstItemKey.currentContext?.findRenderObject() as RenderBox?)?.size.height;
     if (itemHeight == null) return;
     final maxExtent = controller.position.maxScrollExtent;

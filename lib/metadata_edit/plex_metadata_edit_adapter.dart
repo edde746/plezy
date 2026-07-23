@@ -1,9 +1,11 @@
+import '../exceptions/media_server_exceptions.dart';
 import '../i18n/strings.g.dart';
 import '../media/media_backend.dart';
 import '../media/media_item.dart';
 import '../media/media_kind.dart';
 import '../media/media_server_client.dart';
 import '../services/plex_client.dart';
+import '../utils/app_logger.dart';
 import '../utils/language_codes.dart';
 import '../utils/media_image_helper.dart';
 import 'metadata_edit_models.dart';
@@ -30,10 +32,26 @@ class PlexMetadataEditAdapter extends MetadataEditAdapter {
       fullItem = await client.fetchItem(item.id) ?? item;
     }
 
+    late final Map<String, String> preferences;
+    if (fullItem.kind == MediaKind.episode) {
+      preferences = const {};
+    } else {
+      try {
+        preferences = await client.getMetadataPrefs(fullItem.id);
+      } catch (error, stackTrace) {
+        if (error is MediaServerHttpException && error.isCancellation) rethrow;
+        appLogger.w(
+          'Failed to load Plex metadata preferences; continuing without advanced values',
+          error: error,
+          stackTrace: stackTrace,
+        );
+        preferences = const {};
+      }
+    }
     final values = <String, Object?>{};
     _writeCommonValues(values, fullItem);
     _writeArtworkValues(values, fullItem);
-    _writePrefValues(values, fullItem);
+    _writeAdvancedValues(values, fullItem.kind, preferences);
 
     return MetadataEditDraft(sourceItem: item, currentItem: fullItem, values: values);
   }
@@ -172,17 +190,27 @@ class PlexMetadataEditAdapter extends MetadataEditAdapter {
     values['artwork:squareArts'] = item.backgroundSquarePath;
   }
 
-  void _writePrefValues(Map<String, Object?> values, MediaItem item) {
-    values['pref:episodeSort'] = '-1';
-    values['pref:autoDeletionItemPolicyUnwatchedLibrary'] = '0';
-    values['pref:autoDeletionItemPolicyWatchedLibrary'] = '0';
-    values['pref:flattenSeasons'] = '-1';
-    values['pref:showOrdering'] = '';
-    values['pref:languageOverride'] = '';
-    values['pref:useOriginalTitle'] = '-1';
-    values['pref:audioLanguage'] = item.audioLanguage ?? '';
-    values['pref:subtitleLanguage'] = item is PlexMediaItem ? item.subtitleLanguage ?? '' : '';
-    values['pref:subtitleMode'] = item is PlexMediaItem ? (item.subtitleMode?.toString() ?? '-1') : '-1';
+  void _writeAdvancedValues(Map<String, Object?> values, MediaKind kind, Map<String, String> preferences) {
+    void addPreference(String key) {
+      values['pref:$key'] = preferences[key];
+    }
+
+    if (kind == MediaKind.show) {
+      addPreference('episodeSort');
+      addPreference('autoDeletionItemPolicyUnwatchedLibrary');
+      addPreference('autoDeletionItemPolicyWatchedLibrary');
+      addPreference('flattenSeasons');
+      addPreference('showOrdering');
+    }
+    if (kind == MediaKind.show || kind == MediaKind.movie) {
+      addPreference('languageOverride');
+      addPreference('useOriginalTitle');
+    }
+    if (kind == MediaKind.show || kind == MediaKind.season) {
+      addPreference('audioLanguage');
+      addPreference('subtitleLanguage');
+      addPreference('subtitleMode');
+    }
   }
 
   List<MetadataEditField> _basicFields(MediaKind kind) {

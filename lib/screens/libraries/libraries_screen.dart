@@ -485,14 +485,15 @@ class _LibrariesScreenState extends State<LibrariesScreen>
 
     // Save selected library key and restore saved tab (async — safe after state is consistent)
     final storage = await StorageService.getInstance();
-    if (!mounted) return;
+    if (!mounted || _selectedLibraryGlobalKey != libraryGlobalKey) return;
     await storage.saveSelectedLibraryKey(libraryGlobalKey);
+    if (!mounted || _selectedLibraryGlobalKey != libraryGlobalKey) return;
 
     // Restore saved tab by name
     final savedTabName = storage.getLibraryTab(libraryGlobalKey);
     final savedType = LibraryTabType.values.where((t) => t.name == savedTabName).firstOrNull;
     final targetTabIndex = savedType != null ? _visibleTabs.indexOf(savedType) : -1;
-    if (targetTabIndex > 0) {
+    if (targetTabIndex >= 0 && targetTabIndex != tabController.index) {
       // Set flag to prevent _onTabChanged from triggering focus
       _isRestoringTab = true;
       // Use animateTo with zero duration for instant switch without animation race conditions

@@ -1,0 +1,300 @@
+import 'dart:async';
+import 'dart:collection';
+
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:plezy/focus/input_mode_tracker.dart';
+import 'package:plezy/media/ids.dart';
+import 'package:plezy/media/library_filter_result.dart';
+import 'package:plezy/media/library_query.dart';
+import 'package:plezy/media/media_backend.dart';
+import 'package:plezy/media/media_item.dart';
+import 'package:plezy/media/media_kind.dart';
+import 'package:plezy/media/media_library.dart';
+import 'package:plezy/media/media_server_client.dart';
+import 'package:plezy/media/media_sort.dart';
+import 'package:plezy/media/server_capabilities.dart';
+import 'package:plezy/navigation/main_screen_scope.dart';
+import 'package:plezy/providers/multi_server_provider.dart';
+import 'package:plezy/screens/libraries/state_messages.dart';
+import 'package:plezy/screens/libraries/tabs/library_browse_tab.dart';
+import 'package:plezy/services/data_aggregation_service.dart';
+import 'package:plezy/services/multi_server_manager.dart';
+import 'package:plezy/services/settings_service.dart';
+import 'package:plezy/services/storage_service.dart';
+import 'package:plezy/theme/mono_theme.dart';
+import 'package:plezy/utils/media_server_http_client.dart';
+import 'package:plezy/utils/platform_detector.dart';
+import 'package:plezy/widgets/focusable_filter_chip.dart';
+import 'package:provider/provider.dart';
+
+import '../../test_helpers/media_items.dart';
+import '../../test_helpers/prefs.dart';
+
+void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+
+  setUp(() async {
+    resetSharedPreferencesForTest();
+    SettingsService.resetForTesting();
+    await SettingsService.getInstance();
+    await StorageService.getInstance();
+  });
+
+  testWidgets('switching libraries retires the old filter phase before it can start a page load', (tester) async {
+    final sortA = Completer<List<MediaSort>>();
+    final harness = _BrowseHarness(clientA: _BrowseClient('server-a', 'Library A', sortResponse: sortA.future));
+    addTearDown(harness.dispose);
+
+    await _pumpHarness(tester, harness);
+    expect(harness.clientA.sortRequestCount, 1);
+    expect(harness.clientA.pageRequestCount, 0);
+
+    harness.selectedLibrary.value = harness.libraryB;
+    await _pumpRequestFrames(tester);
+    expect(find.text('Library B'), findsOneWidget);
+    expect(harness.loadedLibraries, [harness.libraryB.globalKey]);
+
+    sortA.complete(const []);
+    await _pumpRequestFrames(tester);
+
+    expect(find.text('Library A'), findsNothing);
+    expect(find.text('Library B'), findsOneWidget);
+    expect(harness.clientA.pageRequestCount, 0);
+    expect(harness.loadedLibraries, [harness.libraryB.globalKey]);
+  });
+
+  testWidgets('accepted page post-frame effects are rejected after a library replacement', (tester) async {
+    final pageA = Completer<LibraryPage<MediaItem>>();
+    final clientA = _BrowseClient('server-a', 'Library A')..pageResponses.add(() => pageA.future);
+    final harness = _BrowseHarness(clientA: clientA);
+    addTearDown(harness.dispose);
+
+    await _pumpHarness(tester, harness, settle: false);
+    await _pumpUntil(tester, () => clientA.pageRequestCount == 1);
+
+    pageA.complete(_pageFor(clientA, 'Library A'));
+    await tester.idle();
+    expect(harness.loadedLibraries, isEmpty);
+
+    harness.selectedLibrary.value = harness.libraryB;
+    await _pumpRequestFrames(tester);
+
+    expect(find.text('Library A'), findsNothing);
+    expect(find.text('Library B'), findsOneWidget);
+    expect(harness.loadedLibraries, [harness.libraryB.globalKey]);
+  });
+
+  testWidgets('unmounting retires pending browse data and callbacks', (tester) async {
+    final pageA = Completer<LibraryPage<MediaItem>>();
+    final clientA = _BrowseClient('server-a', 'Library A')..pageResponses.add(() => pageA.future);
+    final harness = _BrowseHarness(clientA: clientA);
+    addTearDown(harness.dispose);
+
+    await _pumpHarness(tester, harness, settle: false);
+    await _pumpUntil(tester, () => clientA.pageRequestCount == 1);
+    await tester.pumpWidget(const SizedBox());
+
+    pageA.complete(_pageFor(clientA, 'Library A'));
+    await tester.pump();
+
+    expect(harness.loadedLibraries, isEmpty);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('retry accepts an empty current page and returns keyboard focus to library chrome', (tester) async {
+    TvDetectionService.debugSetAppleTVOverride(true);
+    addTearDown(() => TvDetectionService.debugSetAppleTVOverride(null));
+    final emptyPage = Completer<LibraryPage<MediaItem>>();
+    final clientA = _BrowseClient('server-a', 'Library A')
+      ..pageResponses.add(() => Future<LibraryPage<MediaItem>>.error(StateError('temporary browse failure')))
+      ..pageResponses.add(() => emptyPage.future);
+    final harness = _BrowseHarness(clientA: clientA);
+    addTearDown(harness.dispose);
+
+    await _pumpHarness(tester, harness);
+    expect(find.byType(ErrorStateWidget), findsOneWidget);
+
+    final groupingChip = tester.widget<FocusableFilterChip>(find.byType(FocusableFilterChip).first);
+    groupingChip.focusNode!.requestFocus();
+    await tester.pump();
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+    await tester.pump();
+    await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+    await _pumpUntil(tester, () => clientA.pageRequestCount == 2);
+
+    emptyPage.complete(const LibraryPage<MediaItem>(items: [], totalCount: 0));
+    await _pumpRequestFrames(tester);
+
+    expect(find.byType(ErrorStateWidget), findsNothing);
+    expect(find.byType(EmptyStateWidget), findsOneWidget);
+    expect(harness.loadedLibraries, [harness.libraryA.globalKey]);
+    expect(groupingChip.focusNode!.hasFocus, isTrue);
+  });
+}
+
+Future<void> _pumpHarness(WidgetTester tester, _BrowseHarness harness, {bool settle = true}) async {
+  tester.view.devicePixelRatio = 1;
+  tester.view.physicalSize = const Size(1280, 720);
+  addTearDown(() {
+    tester.view.resetDevicePixelRatio();
+    tester.view.resetPhysicalSize();
+  });
+
+  await tester.pumpWidget(
+    ChangeNotifierProvider<MultiServerProvider>.value(
+      value: harness.provider,
+      child: InputModeTracker(
+        child: MaterialApp(
+          theme: monoTheme(dark: true),
+          home: MainScreenFocusScope(
+            focusSidebar: () {},
+            focusContent: () {},
+            isSidebarFocused: false,
+            sideNavigationWidth: 0,
+            child: Scaffold(
+              body: NestedScrollView(
+                headerSliverBuilder: (context, _) => [
+                  SliverOverlapAbsorber(
+                    handle: NestedScrollView.sliverOverlapAbsorberHandleFor(context),
+                    sliver: const SliverToBoxAdapter(child: SizedBox(height: 1)),
+                  ),
+                ],
+                body: ValueListenableBuilder<MediaLibrary>(
+                  valueListenable: harness.selectedLibrary,
+                  builder: (context, library, _) => LibraryBrowseTab(
+                    library: library,
+                    canGroupByFolders: true,
+                    isActive: true,
+                    onDataLoaded: () => harness.loadedLibraries.add(library.globalKey),
+                    onBack: () => harness.chromeFocusRequests++,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    ),
+  );
+  if (settle) await _pumpRequestFrames(tester);
+}
+
+Future<void> _pumpRequestFrames(WidgetTester tester) async {
+  await tester.pump();
+  await tester.pump(const Duration(milliseconds: 100));
+  await tester.pump(const Duration(milliseconds: 500));
+}
+
+Future<void> _pumpUntil(WidgetTester tester, bool Function() condition) async {
+  for (var i = 0; i < 20 && !condition(); i++) {
+    await tester.pump(const Duration(milliseconds: 10));
+  }
+  expect(condition(), isTrue);
+}
+
+LibraryPage<MediaItem> _pageFor(_BrowseClient client, String title) {
+  return LibraryPage<MediaItem>(
+    items: [
+      testMediaItem(
+        id: '${client.serverId.value}-item',
+        backend: MediaBackend.jellyfin,
+        kind: MediaKind.artist,
+        title: title,
+        serverId: client.serverId.value,
+        serverName: client.serverName,
+      ),
+    ],
+    totalCount: 1,
+  );
+}
+
+class _BrowseHarness {
+  final _BrowseClient clientA;
+  late final _BrowseClient clientB;
+  late final MediaLibrary libraryA;
+  late final MediaLibrary libraryB;
+  late final ValueNotifier<MediaLibrary> selectedLibrary;
+  late final MultiServerManager manager;
+  late final MultiServerProvider provider;
+  final List<String> loadedLibraries = [];
+  var chromeFocusRequests = 0;
+
+  _BrowseHarness({required this.clientA}) {
+    clientB = _BrowseClient('server-b', 'Library B');
+    libraryA = _libraryFor(clientA);
+    libraryB = _libraryFor(clientB);
+    selectedLibrary = ValueNotifier<MediaLibrary>(libraryA);
+    manager = MultiServerManager()
+      ..debugRegisterClientForTesting(clientA)
+      ..debugRegisterClientForTesting(clientB);
+    provider = MultiServerProvider(manager, DataAggregationService(manager));
+  }
+
+  MediaLibrary _libraryFor(_BrowseClient client) {
+    return MediaLibrary(
+      id: '${client.serverId.value}-library',
+      backend: MediaBackend.jellyfin,
+      title: client.itemTitle,
+      kind: MediaKind.artist,
+      serverId: client.serverId,
+    );
+  }
+
+  void dispose() {
+    selectedLibrary.dispose();
+    provider.dispose();
+    manager.dispose();
+  }
+}
+
+class _BrowseClient implements MediaServerClient {
+  @override
+  final ServerId serverId;
+  final String itemTitle;
+  final Future<List<MediaSort>>? sortResponse;
+  final Queue<Future<LibraryPage<MediaItem>> Function()> pageResponses = Queue();
+  var sortRequestCount = 0;
+  var pageRequestCount = 0;
+
+  _BrowseClient(String serverId, this.itemTitle, {this.sortResponse}) : serverId = ServerId(serverId);
+
+  @override
+  String get serverName => itemTitle;
+
+  @override
+  MediaBackend get backend => MediaBackend.jellyfin;
+
+  @override
+  ServerCapabilities get capabilities => ServerCapabilities.jellyfin;
+
+  @override
+  Future<List<MediaSort>> fetchSortOptions(String libraryId, {String? libraryType}) {
+    sortRequestCount++;
+    return sortResponse ?? Future.value(const []);
+  }
+
+  @override
+  Future<LibraryFilterResult> fetchLibraryFiltersWithValues(String libraryId, {MediaKind? libraryKind}) async {
+    return LibraryFilterResult.empty;
+  }
+
+  @override
+  Future<LibraryPage<MediaItem>> fetchLibraryPagedContent(
+    String libraryId, {
+    required LibraryQuery query,
+    MediaKind? libraryKind,
+    AbortController? abort,
+  }) {
+    pageRequestCount++;
+    if (pageResponses.isNotEmpty) return pageResponses.removeFirst()();
+    return Future.value(_pageFor(this, itemTitle));
+  }
+
+  @override
+  void close() {}
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}

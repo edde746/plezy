@@ -36,11 +36,15 @@ class DiscoveredHost {
 /// Hosts broadcast authenticated beacons; clients listen and filter
 /// by matching Plex home membership.
 class LanDiscoveryService {
-  static const int discoveryPort = 48633;
+  static const int defaultDiscoveryPort = 48633;
   static const int _broadcastIntervalSeconds = 3;
   static const int _staleTimeoutSeconds = 10;
   static const int _beaconVersion = 1;
 
+  /// UDP port used for both beacon targets and listener binding.
+  final int discoveryPort;
+
+  LanDiscoveryService({this.discoveryPort = defaultDiscoveryPort});
   // Broadcaster state (host)
   UdpBroadcastSocketSet? _broadcastSockets;
   Timer? _broadcastTimer;
@@ -81,27 +85,18 @@ class LanDiscoveryService {
       for (final context in contexts) {
         _sendBeacon(context, deviceName, platform, wsPort, ips);
       }
-      _broadcastTimer = Timer.periodic(
-        const Duration(seconds: _broadcastIntervalSeconds),
-        (_) {
-          for (final context in contexts) {
-            _sendBeacon(context, deviceName, platform, wsPort, ips);
-          }
-        },
-      );
+      _broadcastTimer = Timer.periodic(const Duration(seconds: _broadcastIntervalSeconds), (_) {
+        for (final context in contexts) {
+          _sendBeacon(context, deviceName, platform, wsPort, ips);
+        }
+      });
     } catch (e) {
       appLogger.e('LanDiscovery: Failed to start broadcasting', error: e);
       await stopBroadcasting();
     }
   }
 
-  void _sendBeacon(
-    RemoteAuthContext context,
-    String deviceName,
-    String platform,
-    int wsPort,
-    List<String> ips,
-  ) {
+  void _sendBeacon(RemoteAuthContext context, String deviceName, String platform, int wsPort, List<String> ips) {
     final broadcastSockets = _broadcastSockets;
     if (broadcastSockets == null || broadcastSockets.isEmpty) return;
 
@@ -135,11 +130,7 @@ class LanDiscoveryService {
       });
 
       final data = utf8.encode(packet);
-      broadcastSockets.send(
-        data,
-        UdpBroadcastSockets.limitedBroadcastAddress,
-        discoveryPort,
-      );
+      broadcastSockets.send(data, UdpBroadcastSockets.limitedBroadcastAddress, discoveryPort);
     } catch (e) {
       appLogger.e('LanDiscovery: Failed to send beacon', error: e);
     }
@@ -155,9 +146,7 @@ class LanDiscoveryService {
 
   // ── Client: Listening ──
 
-  Stream<List<DiscoveredHost>> startListeningForContexts(
-    List<RemoteAuthContext> contexts,
-  ) {
+  Stream<List<DiscoveredHost>> startListeningForContexts(List<RemoteAuthContext> contexts) {
     _stopListeningInternal();
     _discoveredHosts.clear();
     final generation = _listenGeneration;
@@ -168,8 +157,7 @@ class LanDiscoveryService {
       final now = DateTime.now();
       final staleIds = <String>[];
       for (final entry in _discoveredHosts.entries) {
-        if (now.difference(entry.value.lastSeen).inSeconds >
-            _staleTimeoutSeconds) {
+        if (now.difference(entry.value.lastSeen).inSeconds > _staleTimeoutSeconds) {
           staleIds.add(entry.key);
         }
       }
@@ -184,10 +172,7 @@ class LanDiscoveryService {
     return _hostsController.stream;
   }
 
-  Future<void> _bindListener(
-    List<RemoteAuthContext> contexts,
-    int generation,
-  ) async {
+  Future<void> _bindListener(List<RemoteAuthContext> contexts, int generation) async {
     try {
       final socket = await RawDatagramSocket.bind(
         InternetAddress.anyIPv4,
@@ -292,9 +277,7 @@ class LanDiscoveryService {
           ips: normalizedIps,
           lastSeen: lastSeen,
         );
-        appLogger.d(
-          'LanDiscovery: Discovered host: $name ($platform) at ${normalizedIps.join(", ")}:$port',
-        );
+        appLogger.d('LanDiscovery: Discovered host: $name ($platform) at ${normalizedIps.join(", ")}:$port');
         _emitHosts();
       }
     } catch (e) {

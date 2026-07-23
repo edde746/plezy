@@ -43,6 +43,7 @@ import '../models/media_provider_info.dart';
 import '../models/media_subscription.dart';
 import '../models/plex/plex_activity.dart';
 import '../models/plex/plex_config.dart';
+import '../models/plex/plex_metadata_preferences.dart';
 import '../models/plex/play_queue_response.dart';
 import '../media/media_file_info.dart';
 import '../media/media_filter.dart';
