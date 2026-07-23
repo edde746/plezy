@@ -30,11 +30,13 @@ appId: com.edde746.plezy
 - inputText: "maestro"
 - tapOn: "Password"
 - inputText: "maestro"
-- hideKeyboard:
-    optional: true
-- tapOn:
-    text: "Sign in"
-    optional: true
-- extendedWaitUntil:
-    visible: "Discover"
-    timeout: 30000
+- pressKey: ENTER
+- retry:
+    maxRetries: 1
+    commands:
+      - tapOn:
+          text: "Sign in"
+          optional: true
+      - extendedWaitUntil:
+          visible: "Discover"
+          timeout: 30000

@@ -472,6 +472,34 @@ func (c *testConn) recvNothing(within time.Duration) {
 	}
 }
 
+// recvUntilClosed consumes any frames already queued on the wire and requires
+// a permanent terminal read error before the absolute deadline.
+func (c *testConn) recvUntilClosed(within time.Duration) ([]serverMsg, error) {
+	c.t.Helper()
+	if err := c.conn.SetReadDeadline(time.Now().Add(within)); err != nil {
+		return nil, fmt.Errorf("set close-read deadline: %w", err)
+	}
+
+	var messages []serverMsg
+	for {
+		messageType, data, err := c.conn.ReadMessage()
+		if err != nil {
+			if ne, ok := err.(net.Error); ok && ne.Timeout() {
+				return messages, fmt.Errorf("terminal closure not observed within %v: %w", within, err)
+			}
+			return messages, nil
+		}
+		if messageType != websocket.TextMessage {
+			return messages, fmt.Errorf("unexpected websocket message type %d before closure", messageType)
+		}
+		var message serverMsg
+		if err := json.Unmarshal(data, &message); err != nil {
+			return messages, fmt.Errorf("decode frame before closure %q: %w", data, err)
+		}
+		messages = append(messages, message)
+	}
+}
+
 // ======================================================================
 // Unit tests — pure logic
 // ======================================================================
@@ -1261,9 +1289,8 @@ func TestCleanupDisconnectsPeersBeforeRemovingExpiredOccupiedRoom(t *testing.T) 
 	}
 
 	for name, connection := range map[string]*testConn{"host": host, "guest": guest} {
-		connection.conn.SetReadDeadline(time.Now().Add(2 * time.Second))
-		if _, _, err := connection.conn.ReadMessage(); err == nil {
-			t.Errorf("%s remained connected after occupied room removal", name)
+		if _, err := connection.recvUntilClosed(2 * time.Second); err != nil {
+			t.Errorf("%s did not reach terminal closure: %v", name, err)
 		}
 	}
 }

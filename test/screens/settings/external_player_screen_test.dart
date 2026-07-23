@@ -22,7 +22,6 @@ void main() {
 
   tearDown(() {
     SettingsService.resetForTesting();
-    resetSharedPreferencesForTest();
   });
 
   testWidgets('only custom players expose a focusable delete action', (tester) async {

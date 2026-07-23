@@ -1,23 +1,19 @@
 appId: com.edde746.plezy
 ---
-- runFlow:
-    file: show_codec_track_sheet.yaml
-    env:
-      SHEET_MARKER: "${AUDIO_TRACK}"
 - assertVisible: "${AUDIO_TRACK}"
 - tapOn:
-    point: "30%,70%"
-- runFlow:
-    file: show_codec_track_sheet.yaml
-    env:
-      SHEET_MARKER: "${AUDIO_TRACK}"
+    text: "${AUDIO_TRACK}"
+- extendedWaitUntil:
+    visible: "(?s)^.*Audio & Subtitles$"
+    timeout: 30000
+- tapOn: "(?s)^.*Audio & Subtitles$"
 - assertVisible: "${SUBTITLE_TRACK}"
 - tapOn:
     text: "${SUBTITLE_TRACK}"
-- runFlow:
-    file: show_codec_track_sheet.yaml
-    env:
-      SHEET_MARKER: "${AUDIO_TRACK}"
+- extendedWaitUntil:
+    visible: "(?s)^.*Audio & Subtitles$"
+    timeout: 30000
+- tapOn: "(?s)^.*Audio & Subtitles$"
 - assertVisible:
     text: "${AUDIO_TRACK}"
     selected: true

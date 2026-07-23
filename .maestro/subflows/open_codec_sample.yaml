@@ -7,11 +7,20 @@ appId: com.edde746.plezy
     timeout: 10000
 - tapOn: "Search movies, shows, music..."
 - inputText: "${SAMPLE_TITLE}"
+- runFlow:
+    when:
+      platform: iOS
+    commands:
+      - pressKey: ENTER
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - hideKeyboard
 - extendedWaitUntil:
-    visible: "(?s).*${SAMPLE_TITLE}$"
+    visible: "(?s)^${SAMPLE_TITLE}, movie, (?:watched|unwatched)$"
     timeout: 15000
-- tapOn:
-    point: "50%,24%"
+- tapOn: "(?s)^${SAMPLE_TITLE}, movie, (?:watched|unwatched)$"
 - extendedWaitUntil:
     visible: "Overview"
     timeout: 15000
@@ -22,4 +31,14 @@ appId: com.edde746.plezy
 - extendedWaitUntil:
     notVisible: "Overview"
     timeout: 15000
-- pressKey: "Remote Media Play Pause"
+- extendedWaitUntil:
+    visible: "Pause"
+    timeout: 30000
+- tapOn: "Pause"
+- extendedWaitUntil:
+    visible: "Play"
+    timeout: 5000
+- extendedWaitUntil:
+    visible: "(?s)^.*Audio & Subtitles$"
+    timeout: 30000
+- tapOn: "(?s)^.*Audio & Subtitles$"

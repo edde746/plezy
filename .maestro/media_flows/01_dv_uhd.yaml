@@ -13,11 +13,13 @@ tags:
 - runFlow:
     file: ../subflows/switch_codec_tracks.yaml
     env:
-      AUDIO_TRACK: "(?is)^English.*(?:AC3|TrueHD|Surround|5\\.1|7\\.1).*"
-      SUBTITLE_TRACK: "(?is)^Spanish.*PGS.*"
-- repeat:
-    times: 2
-    while:
+      AUDIO_TRACK: "(?is)^English\\s+[^,]*(?:AC3|TrueHD|Surround|5\\.1|7\\.1)[^,]*$"
+      SUBTITLE_TRACK: "(?is)^Spanish\\s+[^,]*(?:PGS|APPLICATION/PGS)[^,]*$"
+- back
+- waitForAnimationToEnd:
+    timeout: 3000
+- runFlow:
+    when:
       notVisible: "Overview"
     commands:
       - back

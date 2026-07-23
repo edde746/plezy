@@ -77,7 +77,7 @@ jobs:
         run: flutter pub get
 
       - name: Build debug APK
-        run: flutter build apk --debug
+        run: flutter build apk --debug --dart-define=PLEZY_MAESTRO_E2E=true
 
       - name: Cache Maestro CLI
         id: maestro-cache
@@ -272,6 +272,7 @@ jobs:
           name: maestro-android-diagnostics
           path: |
             build/maestro
+            build/maestro-offline
             build/maestro-real-jellyfin
             build/maestro-media
             build/maestro-tv

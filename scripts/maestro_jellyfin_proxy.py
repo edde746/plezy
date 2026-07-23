@@ -18,6 +18,7 @@ import urllib.request
 _FAULT_PATHS = {
     "music-failure": lambda path: path.startswith("/Artists/AlbumArtists"),
     "recovery": lambda path: path.startswith("/Videos/") and "/stream" in path,
+    "offline": lambda _path: False,
 }
 _FORWARD_HEADERS = {
     "accept",
@@ -50,6 +51,7 @@ class ProxyState:
         self.journal = journal
         self._fault_injected = False
         self._sequence = 0
+        self._offline_enabled = False
         self._lock = threading.Lock()
         if journal is not None:
             journal.parent.mkdir(parents=True, exist_ok=True)
@@ -64,6 +66,14 @@ class ProxyState:
                 return False
             self._fault_injected = True
             return True
+
+    def set_offline(self, enabled: bool) -> None:
+        with self._lock:
+            self._offline_enabled = enabled
+
+    def is_offline(self) -> bool:
+        with self._lock:
+            return self.fault == "offline" and self._offline_enabled
 
     def record(self, *, method: str, path: str, status: int, kind: str) -> None:
         if self.journal is None:
@@ -111,15 +121,28 @@ class JellyfinProxyHandler(BaseHTTPRequestHandler):
         self._proxy()
 
     def _proxy(self) -> None:
-        if self.state.should_fault(self.path):
-            payload = json.dumps({"error": "temporary Maestro fault"}).encode("utf-8")
+        if urllib.parse.urlsplit(self.path).path == "/__maestro/offline":
+            self._set_offline()
+            return
+        if self.state.is_offline():
+            payload = json.dumps({"error": "Maestro offline mode"}).encode("utf-8")
+            self.state.record(method=self.command, path=self.path, status=503, kind="offline")
             self.send_response(HTTPStatus.SERVICE_UNAVAILABLE)
             self.send_header("Content-Type", "application/json")
             self.send_header("Content-Length", str(len(payload)))
             self.end_headers()
             if self.command != "HEAD":
                 self.wfile.write(payload)
+            return
+        if self.state.should_fault(self.path):
+            payload = json.dumps({"error": "temporary Maestro fault"}).encode("utf-8")
             self.state.record(method=self.command, path=self.path, status=503, kind="fault")
+            self.send_response(HTTPStatus.SERVICE_UNAVAILABLE)
+            self.send_header("Content-Type", "application/json")
+            self.send_header("Content-Length", str(len(payload)))
+            self.end_headers()
+            if self.command != "HEAD":
+                self.wfile.write(payload)
             return
 
         content_length = int(self.headers.get("Content-Length", "0"))
@@ -149,6 +172,7 @@ class JellyfinProxyHandler(BaseHTTPRequestHandler):
             status = HTTPStatus.BAD_GATEWAY
             response_headers = {"Content-Type": "application/json"}
 
+        self.state.record(method=self.command, path=self.path, status=int(status), kind="request")
         self.send_response(status)
         for name, value in response_headers.items():
             if name.lower() in _RESPONSE_HEADERS:
@@ -160,7 +184,19 @@ class JellyfinProxyHandler(BaseHTTPRequestHandler):
                 self.wfile.write(payload)
             except (BrokenPipeError, ConnectionResetError):
                 pass
-        self.state.record(method=self.command, path=self.path, status=int(status), kind="request")
+
+    def _set_offline(self) -> None:
+        content_length = int(self.headers.get("Content-Length", "0"))
+        body = self.rfile.read(content_length) if content_length else b"{}"
+        try:
+            enabled = bool(json.loads(body).get("enabled", True))
+        except (AttributeError, json.JSONDecodeError):
+            self.send_error(HTTPStatus.BAD_REQUEST)
+            return
+        self.state.set_offline(enabled)
+        self.state.record(method=self.command, path=self.path, status=204, kind="control")
+        self.send_response(HTTPStatus.NO_CONTENT)
+        self.end_headers()
 
     def log_message(self, format: str, *args: Any) -> None:
         print(f"jellyfin-proxy: {format % args}")

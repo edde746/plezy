@@ -14,9 +14,9 @@ tags:
 - inputText: "Codec DV UHD"
 - hideKeyboard
 - extendedWaitUntil:
-    visible: "(?s).*Codec DV UHD TrueHD PGS$"
+    visible: "(?s).*Codec DV UHD TrueHD PGS.*"
     timeout: 15000
-- tapOn: "(?s).*Codec DV UHD TrueHD PGS$"
+- tapOn: "(?s).*Codec DV UHD TrueHD PGS.*"
 - extendedWaitUntil:
     visible: "Overview"
     timeout: 15000

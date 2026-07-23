@@ -1,12 +1,23 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/services/base_shared_preferences_service.dart';
+import 'package:plezy/services/settings_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shared_preferences_platform_interface/in_memory_shared_preferences_async.dart';
 import 'package:shared_preferences_platform_interface/shared_preferences_async_platform_interface.dart';
+import 'package:shared_preferences_platform_interface/shared_preferences_platform_interface.dart';
 
 /// Reset shared-prefs platform mocks AND the cached singleton instances.
 /// Call from `setUp` so each test starts with a clean slate.
 void resetSharedPreferencesForTest({Map<String, Object> initialAsync = const {}}) {
+  final previousLegacyPlatform = SharedPreferencesStorePlatform.instance;
+  final previousAsyncPlatform = SharedPreferencesAsyncPlatform.instance;
+  addTearDown(() {
+    SharedPreferencesStorePlatform.instance = previousLegacyPlatform;
+    SharedPreferencesAsyncPlatform.instance = previousAsyncPlatform;
+    SharedPreferences.resetStatic();
+    SettingsService.resetForTesting();
+    BaseSharedPreferencesService.resetForTesting();
+  });
   TestWidgetsFlutterBinding.ensureInitialized();
   SharedPreferences.setMockInitialValues({});
   SharedPreferencesAsyncPlatform.instance = initialAsync.isEmpty

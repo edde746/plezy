@@ -13,12 +13,14 @@ tags:
 - runFlow:
     file: ../subflows/switch_codec_tracks_deep.yaml
     env:
-      AUDIO_TRACK: "(?is)^English.*(?:Dolby Digital Plus|E-AC3|Surround|5\\.1).*"
-      SUBTITLE_TRACK: "(?is)^English.*(?:SRT|APPLICATION/X-SUBRIP).*"
-      SHEET_MARKER: "(?is)^Japanese.*(?:Dolby Digital Plus|E-AC3|Surround|5\\.1).*"
-- repeat:
-    times: 2
-    while:
+      AUDIO_TRACK: "(?is)^English\\s+[^,]*(?:Dolby Digital Plus|E-AC3|Surround|5\\.1)[^,]*$"
+      SUBTITLE_TRACK: "(?is)^English\\s+[^,]*(?:SRT|APPLICATION/X-SUBRIP)[^,]*$"
+      SHEET_MARKER: "(?is)^Japanese\\s+[^,]*(?:Dolby Digital Plus|E-AC3|Surround|5\\.1)[^,]*$"
+- back
+- waitForAnimationToEnd:
+    timeout: 3000
+- runFlow:
+    when:
       notVisible: "Overview"
     commands:
       - back

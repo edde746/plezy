@@ -214,10 +214,13 @@ void main() {
       SettingsService.resetForTesting();
       DownloadStorageService.resetForTesting();
       final tmpRoot = await Directory.systemTemp.createTemp('download_manager_artwork_repair_test_');
+      final previousPathProvider = PathProviderPlatform.instance;
       PathProviderPlatform.instance = FakePathProvider(tmpRoot);
       addTearDown(() async {
         DownloadStorageService.resetForTesting();
         SettingsService.resetForTesting();
+        PathProviderPlatform.instance = previousPathProvider;
+        expect(PathProviderPlatform.instance, same(previousPathProvider));
         if (await tmpRoot.exists()) await tmpRoot.delete(recursive: true);
       });
 
@@ -308,10 +311,13 @@ void main() {
       SettingsService.resetForTesting();
       DownloadStorageService.resetForTesting();
       final tmpRoot = await Directory.systemTemp.createTemp('download_manager_delete_test_');
+      final previousPathProvider = PathProviderPlatform.instance;
       PathProviderPlatform.instance = FakePathProvider(tmpRoot);
       addTearDown(() async {
         DownloadStorageService.resetForTesting();
         SettingsService.resetForTesting();
+        PathProviderPlatform.instance = previousPathProvider;
+        expect(PathProviderPlatform.instance, same(previousPathProvider));
         if (await tmpRoot.exists()) await tmpRoot.delete(recursive: true);
       });
 
@@ -606,6 +612,7 @@ Future<_DeletionResult> _runEpisodeDeletion({required bool saf, bool failVideoDe
   SettingsService.resetForTesting();
   DownloadStorageService.resetForTesting();
   final tmpRoot = await Directory.systemTemp.createTemp('download_manager_backend_delete_test_');
+  final previousPathProvider = PathProviderPlatform.instance;
   PathProviderPlatform.instance = FakePathProvider(tmpRoot);
 
   final storage = saf ? DownloadStorageService.forTestingSaf('content://downloads') : DownloadStorageService.instance;
@@ -710,6 +717,8 @@ Future<_DeletionResult> _runEpisodeDeletion({required bool saf, bool failVideoDe
     await db.close();
     DownloadStorageService.resetForTesting();
     SettingsService.resetForTesting();
+    PathProviderPlatform.instance = previousPathProvider;
+    expect(PathProviderPlatform.instance, same(previousPathProvider));
     if (await tmpRoot.exists()) await tmpRoot.delete(recursive: true);
   }
 }
@@ -719,6 +728,7 @@ Future<_ContainerDeletionResult> _runContainerDeletion({required MediaKind kind,
   SettingsService.resetForTesting();
   DownloadStorageService.resetForTesting();
   final tmpRoot = await Directory.systemTemp.createTemp('download_manager_container_delete_test_');
+  final previousPathProvider = PathProviderPlatform.instance;
   PathProviderPlatform.instance = FakePathProvider(tmpRoot);
 
   final storage = saf ? DownloadStorageService.forTestingSaf('content://downloads') : DownloadStorageService.instance;
@@ -796,6 +806,8 @@ Future<_ContainerDeletionResult> _runContainerDeletion({required MediaKind kind,
     await db.close();
     DownloadStorageService.resetForTesting();
     SettingsService.resetForTesting();
+    PathProviderPlatform.instance = previousPathProvider;
+    expect(PathProviderPlatform.instance, same(previousPathProvider));
     if (await tmpRoot.exists()) await tmpRoot.delete(recursive: true);
   }
 }

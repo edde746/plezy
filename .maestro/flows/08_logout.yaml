@@ -5,7 +5,7 @@ tags:
   - auth
 ---
 - runFlow: ../subflows/onboard_jellyfin.yaml
-- tapOn: "M"
+- tapOn: "(?s)^M(?:.*Profiles.*)?$"
 - tapOn:
     text: "Logout"
     below:

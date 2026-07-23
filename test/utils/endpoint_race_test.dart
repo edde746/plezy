@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:fake_async/fake_async.dart';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/utils/endpoint_race.dart';
@@ -30,145 +31,220 @@ void main() {
     );
   }
 
-  Future<_Result> resultAfter(String url, Duration delay, {required bool ok}) async {
-    await Future<void>.delayed(delay);
-    return (url: url, ok: ok);
-  }
+  test('healthy cached endpoint wins within the head start without racing', () {
+    fakeAsync((async) {
+      final probeCounts = <String, int>{};
+      final selections = <EndpointRaceSelection<String, _Result>>[];
+      late Completer<_Result> cachedGate;
 
-  test('healthy cached endpoint wins within the head start without racing', () async {
-    final probeCounts = <String, int>{};
-    final selections = await race(
-      candidates: ['a', 'cached'],
-      preferred: 'cached',
-      probe: (url) {
-        probeCounts[url] = (probeCounts[url] ?? 0) + 1;
-        return resultAfter(url, const Duration(milliseconds: 10), ok: true);
-      },
-    ).toList();
+      race(
+        candidates: ['a', 'cached'],
+        preferred: 'cached',
+        probe: (url) {
+          probeCounts[url] = (probeCounts[url] ?? 0) + 1;
+          final gate = Completer<_Result>();
+          if (url == 'cached') cachedGate = gate;
+          return gate.future;
+        },
+      ).listen(selections.add);
+      async.flushMicrotasks();
 
-    expect(selections.first.phase, EndpointRacePhase.first);
-    expect(selections.first.candidate, 'cached');
-    expect(selections.first.fromPreferred, isTrue);
-    expect(probeCounts['cached'], 1);
-    // The race never started; only the phase-2 measure touches other URLs.
-    expect(probeCounts.containsKey('a'), isFalse);
+      expect(probeCounts, {'cached': 1});
+      cachedGate.complete((url: 'cached', ok: true));
+      async.flushMicrotasks();
+
+      expect(selections.first.phase, EndpointRacePhase.first);
+      expect(selections.first.candidate, 'cached');
+      expect(selections.first.fromPreferred, isTrue);
+      expect(probeCounts.containsKey('a'), isFalse);
+
+      async.elapse(headStart);
+      async.flushMicrotasks();
+    });
   });
 
-  test('stale-slow cached endpoint overlaps the race instead of serially blocking it', () async {
-    final probeCounts = <String, int>{};
-    final stopwatch = Stopwatch()..start();
-    final firstTimes = <int>[];
-    final selections = <EndpointRaceSelection<String, _Result>>[];
-    await for (final selection in race(
-      candidates: ['fast', 'cached'],
-      preferred: 'cached',
-      probe: (url) {
-        probeCounts[url] = (probeCounts[url] ?? 0) + 1;
-        return resultAfter(
-          url,
-          url == 'cached' ? const Duration(milliseconds: 250) : const Duration(milliseconds: 10),
-          ok: url != 'cached',
-        );
-      },
-    )) {
-      selections.add(selection);
-      firstTimes.add(stopwatch.elapsedMilliseconds);
-    }
+  test('stale-slow cached endpoint overlaps the race instead of serially blocking it', () {
+    fakeAsync((async) {
+      final probeCounts = <String, int>{};
+      final selections = <EndpointRaceSelection<String, _Result>>[];
+      late Completer<_Result> cachedGate;
+      late Completer<_Result> fastGate;
 
-    expect(selections.first.candidate, 'fast');
-    expect(selections.first.fromPreferred, isFalse);
-    // Emitted shortly after the head start — not after the cached probe's
-    // full budget (the pre-change serial behavior).
-    expect(firstTimes.first, lessThan(200));
-    // The pending cached probe was merged into the race, not re-fired.
-    expect(probeCounts['cached'], 1);
+      race(
+        candidates: ['fast', 'cached'],
+        preferred: 'cached',
+        probe: (url) {
+          probeCounts[url] = (probeCounts[url] ?? 0) + 1;
+          final gate = Completer<_Result>();
+          if (url == 'cached') {
+            cachedGate = gate;
+          } else {
+            fastGate = gate;
+          }
+          return gate.future;
+        },
+      ).listen(selections.add);
+      async.flushMicrotasks();
 
-    // Let the still-pending cached probe finish inside the test body.
-    await Future<void>.delayed(const Duration(milliseconds: 300));
+      expect(probeCounts, {'cached': 1});
+      async.elapse(headStart - const Duration(milliseconds: 1));
+      async.flushMicrotasks();
+      expect(probeCounts, {'cached': 1});
+
+      async.elapse(const Duration(milliseconds: 1));
+      async.flushMicrotasks();
+      expect(probeCounts, {'cached': 1, 'fast': 1});
+
+      fastGate.complete((url: 'fast', ok: true));
+      async.flushMicrotasks();
+      expect(selections.first.phase, EndpointRacePhase.first);
+      expect(selections.first.candidate, 'fast');
+      expect(selections.first.fromPreferred, isFalse);
+      expect(probeCounts['cached'], 1);
+
+      cachedGate.complete((url: 'cached', ok: false));
+      async.flushMicrotasks();
+    });
   });
 
-  test('cached endpoint that answers after the head start still wins when first', () async {
-    final probeCounts = <String, int>{};
-    final selections = await race(
-      candidates: ['slow', 'cached'],
-      preferred: 'cached',
-      probe: (url) {
-        probeCounts[url] = (probeCounts[url] ?? 0) + 1;
-        return resultAfter(
-          url,
-          url == 'cached' ? const Duration(milliseconds: 120) : const Duration(milliseconds: 350),
-          ok: true,
-        );
-      },
-    ).toList();
+  test('cached endpoint that answers after the head start still wins when first', () {
+    fakeAsync((async) {
+      final probeCounts = <String, int>{};
+      final selections = <EndpointRaceSelection<String, _Result>>[];
+      late Completer<_Result> cachedGate;
+      late Completer<_Result> slowGate;
 
-    expect(selections.first.candidate, 'cached');
-    expect(selections.first.fromPreferred, isTrue);
-    expect(probeCounts['cached'], 1);
+      race(
+        candidates: ['slow', 'cached'],
+        preferred: 'cached',
+        probe: (url) {
+          probeCounts[url] = (probeCounts[url] ?? 0) + 1;
+          final gate = Completer<_Result>();
+          if (url == 'cached') {
+            cachedGate = gate;
+          } else {
+            slowGate = gate;
+          }
+          return gate.future;
+        },
+      ).listen(selections.add);
+      async.flushMicrotasks();
 
-    await Future<void>.delayed(const Duration(milliseconds: 400));
+      expect(probeCounts, {'cached': 1});
+      async.elapse(headStart);
+      async.flushMicrotasks();
+      expect(probeCounts, {'cached': 1, 'slow': 1});
+
+      cachedGate.complete((url: 'cached', ok: true));
+      async.flushMicrotasks();
+      expect(selections.first.candidate, 'cached');
+      expect(selections.first.fromPreferred, isTrue);
+      expect(probeCounts['cached'], 1);
+
+      slowGate.complete((url: 'slow', ok: true));
+      async.flushMicrotasks();
+    });
   });
 
-  test('cached endpoint failing within the head start falls back to a fresh race', () async {
-    final probeCounts = <String, int>{};
-    final selections = await race(
-      candidates: ['cached', 'alt'],
-      preferred: 'cached',
-      probe: (url) {
-        probeCounts[url] = (probeCounts[url] ?? 0) + 1;
-        return resultAfter(url, const Duration(milliseconds: 10), ok: url == 'alt');
-      },
-    ).toList();
+  test('cached endpoint failing within the head start falls back to a fresh race', () {
+    fakeAsync((async) {
+      final probeCounts = <String, int>{};
+      final selections = <EndpointRaceSelection<String, _Result>>[];
+      final cachedGates = <Completer<_Result>>[];
+      late Completer<_Result> altGate;
 
-    expect(selections.first.candidate, 'alt');
-    expect(selections.first.fromPreferred, isFalse);
-    // Fast-fail keeps today's semantics: the cached URL re-races as a
-    // normal candidate (one probe up front, one inside the race).
-    expect(probeCounts['cached'], 2);
+      race(
+        candidates: ['cached', 'alt'],
+        preferred: 'cached',
+        probe: (url) {
+          probeCounts[url] = (probeCounts[url] ?? 0) + 1;
+          final gate = Completer<_Result>();
+          if (url == 'cached') {
+            cachedGates.add(gate);
+          } else {
+            altGate = gate;
+          }
+          return gate.future;
+        },
+      ).listen(selections.add);
+      async.flushMicrotasks();
+
+      cachedGates.single.complete((url: 'cached', ok: false));
+      async.flushMicrotasks();
+      expect(probeCounts, {'cached': 2, 'alt': 1});
+
+      cachedGates.last.complete((url: 'cached', ok: false));
+      altGate.complete((url: 'alt', ok: true));
+      async.flushMicrotasks();
+
+      expect(selections.first.candidate, 'alt');
+      expect(selections.first.fromPreferred, isFalse);
+      expect(probeCounts['cached'], 2);
+
+      async.elapse(headStart);
+      async.flushMicrotasks();
+    });
   });
 
-  test('preferred URL not among candidates skips the cached probe entirely', () async {
-    final probeCounts = <String, int>{};
-    final selections = await race(
-      candidates: ['a', 'b'],
-      preferred: 'custom-url',
-      probe: (url) {
-        probeCounts[url] = (probeCounts[url] ?? 0) + 1;
-        return resultAfter(url, const Duration(milliseconds: 10), ok: url == 'a');
-      },
-    ).toList();
+  test('preferred URL not among candidates skips the cached probe entirely', () {
+    fakeAsync((async) {
+      final probeCounts = <String, int>{};
+      final selections = <EndpointRaceSelection<String, _Result>>[];
+      final gates = <String, Completer<_Result>>{};
 
-    expect(selections.first.candidate, 'a');
-    expect(selections.first.fromPreferred, isFalse);
-    expect(probeCounts.containsKey('custom-url'), isFalse);
+      race(
+        candidates: ['a', 'b'],
+        preferred: 'custom-url',
+        probe: (url) {
+          probeCounts[url] = (probeCounts[url] ?? 0) + 1;
+          return (gates[url] = Completer<_Result>()).future;
+        },
+      ).listen(selections.add);
+      async.flushMicrotasks();
+
+      expect(probeCounts.containsKey('custom-url'), isFalse);
+      gates['a']!.complete((url: 'a', ok: true));
+      gates['b']!.complete((url: 'b', ok: false));
+      async.flushMicrotasks();
+
+      expect(selections.first.candidate, 'a');
+      expect(selections.first.fromPreferred, isFalse);
+    });
   });
 
   test('emits nothing when every candidate fails', () async {
     final selections = await race(
       candidates: ['a', 'b'],
       preferred: 'a',
-      probe: (url) => resultAfter(url, const Duration(milliseconds: 10), ok: false),
+      probe: (url) async => (url: url, ok: false),
     ).toList();
 
     expect(selections, isEmpty);
   });
 
-  test('phase 2 still promotes the selector-best endpoint', () async {
-    final selections = await race(
-      candidates: ['quick', 'better'],
-      probe: (url) => resultAfter(
-        url,
-        url == 'quick' ? const Duration(milliseconds: 10) : const Duration(milliseconds: 80),
-        ok: true,
-      ),
-      measure: (url) async => (url: url, ok: true),
-      selectBest: (results) => 'better',
-    ).toList();
+  test('phase 2 still promotes the selector-best endpoint', () {
+    fakeAsync((async) {
+      final selections = <EndpointRaceSelection<String, _Result>>[];
+      final gates = <String, Completer<_Result>>{};
 
-    expect(selections, hasLength(2));
-    expect(selections.first.phase, EndpointRacePhase.first);
-    expect(selections.first.candidate, 'quick');
-    expect(selections.last.phase, EndpointRacePhase.best);
-    expect(selections.last.candidate, 'better');
+      race(
+        candidates: ['quick', 'better'],
+        probe: (url) => (gates[url] = Completer<_Result>()).future,
+        measure: (url) async => (url: url, ok: true),
+        selectBest: (results) => 'better',
+      ).listen(selections.add);
+      async.flushMicrotasks();
+
+      gates['quick']!.complete((url: 'quick', ok: true));
+      async.flushMicrotasks();
+      gates['better']!.complete((url: 'better', ok: true));
+      async.flushMicrotasks();
+
+      expect(selections, hasLength(2));
+      expect(selections.first.phase, EndpointRacePhase.first);
+      expect(selections.first.candidate, 'quick');
+      expect(selections.last.phase, EndpointRacePhase.best);
+      expect(selections.last.candidate, 'better');
+    });
   });
 }

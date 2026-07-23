@@ -30,12 +30,14 @@ void main() {
 
   late AppDatabase db;
   late Directory tmpRoot;
+  late PathProviderPlatform previousPathProvider;
 
   setUp(() async {
     resetSharedPreferencesForTest();
     SettingsService.resetForTesting();
     DownloadStorageService.resetForTesting();
     tmpRoot = await Directory.systemTemp.createTemp('playback_init_test_');
+    previousPathProvider = PathProviderPlatform.instance;
     PathProviderPlatform.instance = FakePathProvider(tmpRoot);
     db = AppDatabase.forTesting(NativeDatabase.memory());
     PlexApiCache.initialize(db);
@@ -46,6 +48,8 @@ void main() {
     await db.close();
     DownloadStorageService.resetForTesting();
     SettingsService.resetForTesting();
+    PathProviderPlatform.instance = previousPathProvider;
+    expect(PathProviderPlatform.instance, same(previousPathProvider));
     if (await tmpRoot.exists()) {
       await tmpRoot.delete(recursive: true);
     }

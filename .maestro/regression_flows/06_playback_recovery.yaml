@@ -9,9 +9,9 @@ tags:
 - runFlow: ../subflows/onboard_jellyfin.yaml
 - tapOn: "(?s)^Libraries.*"
 - extendedWaitUntil:
-    visible: "(?s).*Zulu Zone 4$"
+    visible: "(?s).*Zulu Zone.*"
     timeout: 15000
-- tapOn: "(?s).*Zulu Zone 4$"
+- tapOn: "(?s).*Zulu Zone.*"
 - extendedWaitUntil:
     visible: "Play"
     timeout: 15000

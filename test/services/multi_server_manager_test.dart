@@ -30,30 +30,13 @@ JellyfinConnection _jellyfinConnection(String userId) => testJellyfinConnection(
 
 JellyfinClient _jellyfinClient(String userId) => testJellyfinClient(connection: _jellyfinConnection(userId));
 
-// NOTE on coverage scope:
-// [MultiServerManager.addServer] / `connectToAllServers` / `_createClientForServer`
-// all instantiate a real `PlexClient` via `findBestWorkingConnection`, which
-// performs live HTTP calls to a Plex Media Server. The manager does NOT expose
-// a fake `PlexClient` factory, so per the task brief we don't fake the network
-// here.
-//
-// The tests below cover the orchestration logic that DOESN'T require a network:
-//   - construction & initial state
-//   - `removeServer` (pure local-map mutation)
-//   - `updateServerStatus` + status-stream emissions
-//   - `disconnectAll` / `dispose` lifecycle (no connectivity sub started, so
-//     this verifies the no-op path for the subscription cancel)
-//
-// The Jellyfin exhaustion path IS covered ('endpoint exhaustion verification'
-// group): the health-probe confirmation, offline flip + reconnection, and the
-// debounce-driven retry loop, via the registered fake Jellyfin client.
-//
-// What is NOT covered here (would need a fake PlexClient factory):
-//   - `addServer` success path
-//   - `connectToAllServers` outcome map
-//   - `checkServerHealth` health-probe sweep
-//   - `_reoptimizeServer` endpoint promotion
-//   - `startNetworkMonitoring` connectivity-listener path
+// Coverage includes status and lifecycle changes, endpoint exhaustion,
+// in-place Plex token refresh, Jellyfin reuse/update, and selected
+// registered-Jellyfin `checkServerHealth` outcomes. First-time
+// `addPlexAccount` and `refreshTokensForProfile` fallback construction through
+// `_createClientForServer`, Plex and mixed-client health/coalescing,
+// `_reoptimizeServer`, and `_startNetworkMonitoring` subscription/debounce
+// behavior remain outside this suite.
 
 void main() {
   setUp(resetSharedPreferencesForTest);

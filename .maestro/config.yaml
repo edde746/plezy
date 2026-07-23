@@ -12,3 +12,4 @@ executionOrder:
     - Open empty downloads state
     - Manage profiles and open settings
     - Logout returns to authentication
+    - Download and play a movie from Downloads

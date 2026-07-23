@@ -9,7 +9,7 @@ from pathlib import Path
 import subprocess
 import sys
 import unittest
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
@@ -94,6 +94,30 @@ class CommandTests(unittest.TestCase):
             ],
         )
 
+    def test_offline_fault_exposes_host_proxy_control_url(self) -> None:
+        config = run_maestro.parse_config(["basic", "--fault", "offline", "--adb-reverse"], {})
+        runner = run_maestro.MaestroRunner(config)
+        runner.host_jellyfin_url = "http://127.0.0.1:8097"
+        runner.device_service_port = 8097
+
+        command = runner.maestro_command()
+
+        self.assertIn("JELLYFIN_URL=http://127.0.0.1:8097", command)
+        self.assertIn("JELLYFIN_CONTROL_URL=http://127.0.0.1:8097", command)
+
+    def test_flutter_build_enables_stable_physical_device_controls(self) -> None:
+        self.assertEqual(
+            run_maestro.flutter_build_command(),
+            (
+                "flutter",
+                "build",
+                "apk",
+                "--debug",
+                "--dart-define=PLEZY_MAESTRO_E2E=true",
+            ),
+        )
+
+
     def test_explicit_device_url_wins_over_network_mode(self) -> None:
         config = run_maestro.parse_config(
             ["basic", "--adb-reverse", "--jellyfin-url", "http://device.test:9000"],
@@ -134,6 +158,21 @@ class LifecycleTests(unittest.TestCase):
         self.assertEqual(run_command.call_count, 2)
         sleep.assert_called_once_with(5)
 
+    def test_health_wait_rejects_degraded_until_healthy(self) -> None:
+        runner = run_maestro.MaestroRunner(run_maestro.parse_config([], {}))
+        degraded = MagicMock()
+        degraded.__enter__.return_value.read.return_value = b"Degraded"
+        healthy = MagicMock()
+        healthy.__enter__.return_value.read.return_value = b" Healthy\n"
+
+        with (
+            patch.object(run_maestro.urllib.request, "urlopen", side_effect=[degraded, healthy]),
+            patch.object(run_maestro.time, "sleep") as sleep,
+        ):
+            runner._wait_for_health("http://jellyfin.test", attempts=2, interval=0.25, service="Jellyfin")
+
+        sleep.assert_called_once_with(0.25)
+
 
 class CiGroupTests(unittest.TestCase):
     def test_android_15_group_runs_every_suite_after_failure(self) -> None:
@@ -142,12 +181,14 @@ class CiGroupTests(unittest.TestCase):
 
         with (
             patch.object(run_maestro_ci.run_maestro, "main", side_effect=statuses) as run,
+            patch.object(run_maestro_ci, "run_android_15_instrumentation") as instrumentation,
             redirect_stdout(io.StringIO()),
         ):
             exit_status = run_maestro_ci.run_group("android-15")
 
         self.assertEqual(exit_status, 1)
         self.assertEqual(run.call_count, expected_runs)
+        instrumentation.assert_called_once_with()
 
     def test_group_recipes_are_valid_runner_invocations(self) -> None:
         for recipes in run_maestro_ci.GROUPS.values():
@@ -158,12 +199,14 @@ class CiGroupTests(unittest.TestCase):
     def test_group_stops_after_interruption(self) -> None:
         with (
             patch.object(run_maestro_ci.run_maestro, "main", return_value=143) as run,
+            patch.object(run_maestro_ci, "run_android_15_instrumentation") as instrumentation,
             redirect_stdout(io.StringIO()),
         ):
             exit_status = run_maestro_ci.run_group("android-15")
 
         self.assertEqual(exit_status, 143)
         run.assert_called_once_with(("basic",))
+        instrumentation.assert_called_once_with()
 
 
 if __name__ == "__main__":

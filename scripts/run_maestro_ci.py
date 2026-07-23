@@ -9,6 +9,12 @@ from collections.abc import Sequence
 import run_maestro
 
 
+ANDROID_15_INSTRUMENTATION_CLASSES = (
+    "androidx.media3.decoder.ffmpeg.PlezyFfmpegPlaybackTest,"
+    "com.edde746.plezy.exoplayer.PlezyAudioModePlaybackTest"
+)
+
+
 GROUPS: dict[str, tuple[tuple[str, ...], ...]] = {
     "android-15": (
         ("basic",),
@@ -57,6 +63,21 @@ GROUPS: dict[str, tuple[tuple[str, ...], ...]] = {
         (
             "basic",
             "--fault",
+            "offline",
+            "--flow",
+            ".maestro/flows/09_download_offline_playback.yaml",
+            "--jellyfin-log",
+            "build/maestro-offline/jellyfin.log",
+            "--proxy-log",
+            "build/maestro-offline/jellyfin-proxy.log",
+            "--proxy-journal",
+            "build/maestro-offline/proxy-journal.jsonl",
+            "--diagnostics-dir",
+            "build/maestro-offline/diagnostics",
+        ),
+        (
+            "basic",
+            "--fault",
             "recovery",
             "--flow",
             ".maestro/regression_flows/06_playback_recovery.yaml",
@@ -82,7 +103,24 @@ GROUPS: dict[str, tuple[tuple[str, ...], ...]] = {
 }
 
 
+def run_android_15_instrumentation() -> None:
+    print("==> Android 15 filtered instrumentation", flush=True)
+    run_maestro._run_checked(
+        (
+            "android/gradlew",
+            "-p",
+            "android",
+            ":app:connectedDebugAndroidTest",
+            "-x",
+            ":app:compileFlutterBuildDebug",
+            f"-Pandroid.testInstrumentationRunnerArguments.class={ANDROID_15_INSTRUMENTATION_CLASSES}",
+        )
+    )
+
+
 def run_group(name: str) -> int:
+    if name == "android-15":
+        run_android_15_instrumentation()
     failed = False
     for arguments in GROUPS[name]:
         print(f"==> Maestro {' '.join(arguments)}", flush=True)

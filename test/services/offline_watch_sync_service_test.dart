@@ -23,27 +23,13 @@ import '../test_helpers/backend_client_fixtures.dart';
 import '../test_helpers/prefs.dart';
 import '../test_helpers/media_items.dart';
 
-// NOTE on coverage scope:
-// The actual sync-to-server path (`syncPendingItems`, `syncWatchStatesFromServer`,
-// `_performBidirectionalSync`) all reach into a real `PlexClient` via the
-// injected `MultiServerManager`. Per the task brief we do NOT exercise those
-// paths here — they require either a fake `PlexClient` factory or live HTTP.
-//
-// What IS covered:
-//   - Initial state on a fresh service.
-//   - `queueMarkWatched` / `queueMarkUnwatched` — local DB persistence.
-//   - `getLocalWatchStatus` / `getLocalViewOffset` — local resolution.
-//   - `getPendingSyncCount` — DB-side count.
-//   - `clearAll` — local wipe.
-//   - `dispose` — listener cleanup on the offline-mode source.
-//   - Connectivity listener attachment via `startConnectivityMonitoring`.
-//
-// What is NOT covered (would need a fake PlexClient factory):
-//   - `_performBidirectionalSync` (online path)
-//   - `syncPendingItems` outcome map
-//   - `syncWatchStatesFromServer` cache-write logic
-//   - `getWatchedThreshold`'s "online client preference" branch — only the
-//     SettingsService cached + default branches are testable here.
+// Direct `syncPendingItems` coverage exercises retry retention, Plex/Jellyfin
+// progress replay, profile interruption, and scoped Jellyfin routing. Direct
+// `syncWatchStatesFromServer` coverage exercises active-profile and
+// active-scope routing plus selected watched outcomes. Trigger coalescing and
+// throttle sequencing inside `_performBidirectionalSync`, direct cache-row and
+// refresh-callback assertions, and non-default watched-threshold sources remain
+// outside this suite.
 
 /// Minimal [OfflineModeSource] that lets tests flip the offline flag and
 /// observe `addListener`/`removeListener` traffic via the protected

@@ -47,6 +47,16 @@ class _UpstreamHandler(BaseHTTPRequestHandler):
     def log_message(self, format: str, *args: object) -> None:
         pass
 
+class _ResponseFailureHandler:
+    def __init__(self, state: ProxyState, path: str) -> None:
+        self.state = state
+        self.path = path
+        self.command = "GET"
+        self.headers: dict[str, str] = {}
+
+    def send_response(self, status: int) -> None:
+        raise BrokenPipeError(f"client disconnected before status {status}")
+
 
 class JellyfinProxyTests(unittest.TestCase):
     def setUp(self) -> None:
@@ -121,6 +131,40 @@ class JellyfinProxyTests(unittest.TestCase):
         finally:
             self._stop_proxy(proxy, thread)
 
+    def test_offline_control_blocks_requests_until_reenabled(self) -> None:
+        proxy, thread, base_url, journal = self._start_proxy("offline")
+        try:
+            enable = urllib.request.Request(
+                base_url + "/__maestro/offline",
+                data=b'{"enabled":true}',
+                method="POST",
+                headers={"Content-Type": "application/json"},
+            )
+            with urllib.request.urlopen(enable) as response:
+                self.assertEqual(response.status, 204)
+
+            with self.assertRaises(urllib.error.HTTPError) as failure:
+                urllib.request.urlopen(base_url + "/Items")
+            self.assertEqual(failure.exception.code, 503)
+            failure.exception.close()
+            self.assertEqual(_UpstreamHandler.requests, [])
+
+            disable = urllib.request.Request(
+                base_url + "/__maestro/offline",
+                data=b'{"enabled":false}',
+                method="POST",
+                headers={"Content-Type": "application/json"},
+            )
+            with urllib.request.urlopen(disable) as response:
+                self.assertEqual(response.status, 204)
+            with urllib.request.urlopen(base_url + "/Items") as response:
+                self.assertEqual(response.status, 200)
+
+            events = [json.loads(line) for line in journal.read_text(encoding="utf-8").splitlines()]
+            self.assertEqual([event["kind"] for event in events], ["control", "offline", "control", "request"])
+        finally:
+            self._stop_proxy(proxy, thread)
+
     def test_music_fault_does_not_affect_other_requests(self) -> None:
         proxy, thread, base_url, _ = self._start_proxy("music-failure")
         try:
@@ -134,6 +178,27 @@ class JellyfinProxyTests(unittest.TestCase):
                 self.assertEqual(recovered.status, 200)
         finally:
             self._stop_proxy(proxy, thread)
+
+    def test_records_events_before_response_write(self) -> None:
+        upstream_url = f"http://127.0.0.1:{self.upstream.server_port}"
+        cases = [
+            ("fault", "recovery", "/Videos/movie/stream.mp4?Static=true", "fault", 503),
+            ("request", None, "/Items", "request", 200),
+        ]
+
+        for name, fault, path, expected_kind, expected_status in cases:
+            with self.subTest(name=name):
+                journal = Path(self.temp_dir.name) / f"{name}.jsonl"
+                state = ProxyState(upstream_url, fault, journal)
+                handler = _ResponseFailureHandler(state, path)
+
+                with self.assertRaises(BrokenPipeError):
+                    JellyfinProxyHandler._proxy(handler)
+
+                events = [json.loads(line) for line in journal.read_text(encoding="utf-8").splitlines()]
+                self.assertEqual(len(events), 1)
+                self.assertEqual(events[0]["kind"], expected_kind)
+                self.assertEqual(events[0]["status"], expected_status)
 
 
 if __name__ == "__main__":

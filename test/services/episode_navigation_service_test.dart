@@ -14,23 +14,6 @@ import 'package:plezy/services/multi_server_manager.dart';
 import 'package:provider/provider.dart';
 import '../test_helpers/media_items.dart';
 
-// NOTE on coverage scope:
-// `EpisodeNavigationService` has two methods:
-//
-//   1. `loadAdjacentEpisodes` — pure-ish: reads PlaybackStateProvider, asks for
-//      next/prev episode, wraps the result. The interesting branch is the
-//      "no queue active" short-circuit, which we exercise without any client
-//      or network because PlaybackStateProvider can be constructed bare.
-//
-//   2. `navigateToEpisode` — performs full navigation through
-//      [navigateToVideoPlayer], which depends on a Navigator, a
-//      DownloadProvider, a MultiServerProvider, and the [SettingsService]
-//      singleton. Skipped: not unit-testable without recreating the entire
-//      app shell.
-//
-// We also cover the [AdjacentEpisodes] data class invariants since that's
-// the public surface callers depend on.
-
 MediaItem _meta(String id, {String? title}) =>
     testMediaItem(id: id, backend: MediaBackend.plex, kind: MediaKind.episode, title: title ?? 'Episode $id');
 

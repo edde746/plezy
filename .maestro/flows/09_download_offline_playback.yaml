@@ -1,7 +1,9 @@
 appId: com.edde746.plezy
-name: Start and exit video playback
+name: Download and play a movie from Downloads
+
 tags:
   - e2e
+  - downloads
   - playback
 ---
 - runFlow: ../subflows/onboard_jellyfin.yaml
@@ -12,28 +14,46 @@ tags:
     timeout: 15000
 - tapOn: "(?s).*Alpha Archive.*"
 - extendedWaitUntil:
-    visible: "Play"
+    visible: "Overview"
     timeout: 15000
-- tapOn:
-    text: "Play"
-    waitToSettleTimeoutMs: 1000
+- tapOn: "Download"
 - runFlow:
     when:
       platform: iOS
     commands:
-      - extendedWaitUntil:
-          visible: "Video timeline"
-          timeout: 20000
-      - extendedWaitUntil:
-          visible: "(?s).*Alpha Archive.*\\n0min\\n0:(?:0[1-9]|[1-5][0-9])\\n-.*"
-          timeout: 10000
+      - tapOn:
+          point: "6%, 9%"
 - runFlow:
     when:
       platform: Android
     commands:
-      - extendedWaitUntil:
-          visible: "Pause"
-          timeout: 20000
+      - back
+- extendedWaitUntil:
+    visible: "Maestro Movies"
+    timeout: 10000
+- tapOn: "(?s)^Downloads.*"
+- tapOn:
+    text: "Movies"
+    waitToSettleTimeoutMs: 3000
+- extendedWaitUntil:
+    visible: "(?s).*Alpha Archive.*"
+    timeout: 60000
+- runScript:
+    file: ../scripts/set_jellyfin_offline.js
+    env:
+      JELLYFIN_CONTROL_URL: ${JELLYFIN_CONTROL_URL}
+- waitForAnimationToEnd:
+    timeout: 3000
+- tapOn: "(?s).*Alpha Archive.*"
+- extendedWaitUntil:
+    visible: "Overview"
+    timeout: 15000
+- tapOn:
+    text: "Play"
+    waitToSettleTimeoutMs: 1000
+- extendedWaitUntil:
+    visible: "Pause"
+    timeout: 30000
 - runFlow:
     when:
       platform: iOS
