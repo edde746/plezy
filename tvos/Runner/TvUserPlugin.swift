@@ -47,10 +47,15 @@ import TVServices
     }
 
     @objc private func currentUserDidChange() {
-      Self.methodChannel?.invokeMethod(
-        "onUserChanged",
-        arguments: ["userId": currentUserId() as Any]
-      )
+      // The notification may arrive on an arbitrary thread, but Flutter
+      // requires channel calls to happen on the main thread.
+      let userId = currentUserId()
+      DispatchQueue.main.async {
+        Self.methodChannel?.invokeMethod(
+          "onUserChanged",
+          arguments: ["userId": userId as Any]
+        )
+      }
     }
 
     /// The active Apple TV system user identifier, or nil when unavailable
