@@ -17,6 +17,7 @@ abstract class BaseSharedPreferencesService {
   // Single shared cache across all subclasses so writes from one service are
   // visible to reads from another without per-instance cache divergence.
   static Future<SharedPreferencesWithCache>? _cacheFuture;
+  static Future<SharedPreferencesWithCache> Function() _cacheLoader = _loadSharedCache;
 
   late SharedPreferencesWithCache _cache;
 
@@ -61,15 +62,38 @@ abstract class BaseSharedPreferencesService {
   /// migration on first call; subsequent calls return the same future.
   /// Use this from services that don't extend [BaseSharedPreferencesService].
   static Future<SharedPreferencesWithCache> sharedCache() {
-    return _cacheFuture ??= () async {
-      final legacy = await SharedPreferences.getInstance();
-      await migrateLegacySharedPreferencesToSharedPreferencesAsyncIfNecessary(
-        legacySharedPreferencesInstance: legacy,
-        sharedPreferencesAsyncOptions: const SharedPreferencesOptions(),
-        migrationCompletedKey: 'plezy_legacy_prefs_migrated_v1',
-      );
-      return SharedPreferencesWithCache.create(cacheOptions: const SharedPreferencesWithCacheOptions());
-    }();
+    final cached = _cacheFuture;
+    if (cached != null) return cached;
+
+    late final Future<SharedPreferencesWithCache> loading;
+    loading = _cacheLoader().then(
+      (cache) => cache,
+      onError: (Object error, StackTrace stackTrace) {
+        // Do not poison every later startup with one transient plugin/storage
+        // failure. Identity keeps a superseding/reset load intact while all
+        // concurrent callers continue to share this attempt.
+        if (identical(_cacheFuture, loading)) _cacheFuture = null;
+        Error.throwWithStackTrace(error, stackTrace);
+      },
+    );
+    _cacheFuture = loading;
+    return loading;
+  }
+
+  static Future<SharedPreferencesWithCache> _loadSharedCache() async {
+    final legacy = await SharedPreferences.getInstance();
+    await migrateLegacySharedPreferencesToSharedPreferencesAsyncIfNecessary(
+      legacySharedPreferencesInstance: legacy,
+      sharedPreferencesAsyncOptions: const SharedPreferencesOptions(),
+      migrationCompletedKey: 'plezy_legacy_prefs_migrated_v1',
+    );
+    return SharedPreferencesWithCache.create(cacheOptions: const SharedPreferencesWithCacheOptions());
+  }
+
+  @visibleForTesting
+  static void setCacheLoaderForTesting(Future<SharedPreferencesWithCache> Function() loader) {
+    _cacheFuture = null;
+    _cacheLoader = loader;
   }
 
   /// Drop all cached singleton instances and the shared cache future so the
@@ -81,6 +105,7 @@ abstract class BaseSharedPreferencesService {
     _initializations.clear();
     _instances.clear();
     _cacheFuture = null;
+    _cacheLoader = _loadSharedCache;
   }
 
   /// Typed read helpers — return the stored value or [defaultValue] when missing.

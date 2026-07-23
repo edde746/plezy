@@ -63,6 +63,7 @@ import androidx.media3.extractor.ts.TsExtractor
 import androidx.media3.ui.AspectRatioFrameLayout
 import androidx.media3.ui.CaptionStyleCompat
 import androidx.media3.ui.SubtitleView
+import com.edde746.plezy.AndroidRuntimeDiagnostics
 import com.edde746.plezy.libass.media.AssHandler
 import com.edde746.plezy.libass.media.parser.AssSubtitleParserFactory
 import com.edde746.plezy.libass.media.widget.AssSubtitleSurfaceView
@@ -2327,9 +2328,21 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
     parts.add("channels=${format.channelCount}")
     parts.add("sampleRate=${format.sampleRate}")
     format.id?.let { parts.add("id=$it") }
-    format.label?.let { parts.add("label=$it") }
-    format.language?.let { parts.add("lang=$it") }
     return parts.joinToString(", ")
+  }
+
+  private fun persistRuntimePlaybackDiagnostics(format: Format? = selectedAudioFormat(), decoderName: String? = null) {
+    AndroidRuntimeDiagnostics.update(
+      context = activity,
+      codecContext = AndroidRuntimeDiagnostics.codecContextForMime(format?.sampleMimeType),
+      channelCount = format?.channelCount,
+      sampleRate = format?.sampleRate,
+      selectedDecoder = decoderName,
+      passthroughEnabled = audioPassthroughEnabled,
+      downmixEnabled = audioDownmixEnabled,
+      normalizationEnabled = audioNormalizationEnabled,
+      uiState = AndroidRuntimeDiagnostics.UI_PLAYER
+    )
   }
 
   private fun describeAudioTrackConfig(config: AudioSink.AudioTrackConfig?): String {
@@ -2351,6 +2364,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
       initializationDurationMs: Long
     ) {
       decoderInitName = decoderName
+      persistRuntimePlaybackDiagnostics(currentVideoFormat ?: exoPlayer?.videoFormat, decoderName)
       firstFrameRendered = false
       emitLog("debug", "decoder-hang", "Decoder initialized: $decoderName (${initializationDurationMs}ms)")
       logDolbyVisionPlaybackPathIfNeeded(decoderName)
@@ -2363,6 +2377,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
       initializationDurationMs: Long
     ) {
       audioDecoderInitName = decoderName
+      persistRuntimePlaybackDiagnostics(decoderName = decoderName)
       emitLog("info", "audio", "Decoder initialized: $decoderName (${initializationDurationMs}ms)")
     }
 
@@ -2371,6 +2386,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
       format: Format,
       decoderReuseEvaluation: DecoderReuseEvaluation?
     ) {
+      persistRuntimePlaybackDiagnostics(format, audioDecoderInitName)
       emitLog("info", "audio", "Input format: ${formatAudioSummary(format)}")
       if (format.sampleMimeType == MimeTypes.AUDIO_TRUEHD) {
         updateAudioDecoderPolicy("input format", format)
@@ -2412,6 +2428,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
     ) {
       lastAudioTrackConfig = audioTrackConfig
       val audioFormat = selectedAudioFormat()
+      persistRuntimePlaybackDiagnostics(audioFormat, audioDecoderInitName ?: "direct")
       emitLog(
         "info",
         "audio",
@@ -2802,6 +2819,8 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
     // audioNormalizationEnabled persists across opens (user-level state, like
     // tunnelingUserEnabled); only the in-flight bounce is abandoned.
     pendingAudioRendererBounce = false
+    AndroidRuntimeDiagnostics.clearPlayback(activity)
+    persistRuntimePlaybackDiagnostics()
     handler.removeCallbacks(audioBounceTimeout)
     pendingStartPositionMs = startPositionMs
     pendingPlayWhenReady = autoPlay
@@ -2834,6 +2853,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
   fun setAudioNormalization(enabled: Boolean) {
     if (audioNormalizationEnabled == enabled) return
     audioNormalizationEnabled = enabled
+    persistRuntimePlaybackDiagnostics(decoderName = audioDecoderInitName)
     emitLog("info", "audio-normalization", "Loudness normalization ${if (enabled) "enabled" else "disabled"}")
     if (enabled) attachNormalizationEffect() else audioNormalization.release()
 
@@ -2862,6 +2882,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
   fun setAudioPassthrough(enabled: Boolean) {
     if (audioPassthroughEnabled == enabled) return
     audioPassthroughEnabled = enabled
+    persistRuntimePlaybackDiagnostics(decoderName = audioDecoderInitName)
     emitLog("info", "audio", "Audio passthrough ${if (enabled) "enabled" else "disabled"}")
 
     if (exoPlayer == null) return
@@ -2887,6 +2908,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
     audioDownmixEnabled = enabled
     audioDownmixCenterBoostDb = boost
     audioDownmixNormalize = normalize
+    persistRuntimePlaybackDiagnostics(decoderName = audioDecoderInitName)
     emitLog(
       "info",
       "audio-downmix",
@@ -2916,7 +2938,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
         if (coefficients != null) {
           ChannelMixingMatrix(count, 2, coefficients)
         } else {
-          ChannelMixingMatrix.create(count, count)
+          renderersFactory?.identityChannelMixingMatrix(count) ?: return
         }
       )
     }
@@ -3652,6 +3674,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
       }
     }
 
+    AndroidRuntimeDiagnostics.clearPlayback(activity)
     Log.d(TAG, "Disposed")
   }
 }

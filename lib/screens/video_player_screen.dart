@@ -82,6 +82,7 @@ import '../utils/provider_extensions.dart';
 import '../utils/snackbar_helper.dart';
 import '../utils/stream_buffer_sizing.dart';
 import '../utils/video_player_navigation.dart';
+import '../utils/android_exit_diagnostics.dart';
 import 'video_player/completion_latch.dart';
 import 'video_player/frame_rate_matcher.dart';
 import 'video_player/live_stream_retry.dart';
@@ -684,6 +685,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   @override
   void initState() {
     super.initState();
+    unawaited(AndroidExitDiagnostics.markUiState(AndroidUiState.player));
 
     _playerNavigationCoordinator = PlayerNavigationCoordinator(
       chromeController: _chromeController,
@@ -1428,6 +1430,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
 
   @override
   void dispose() {
+    unawaited(AndroidExitDiagnostics.markUiState(AndroidUiState.mainScreen));
     _playerInitializationGeneration++;
     _frameRate.dispose();
     WidgetsBinding.instance.removeObserver(this);

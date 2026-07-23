@@ -35,6 +35,9 @@ import io.flutter.embedding.android.TransparencyMode
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.embedding.engine.FlutterShellArgs
 import io.flutter.plugin.common.MethodChannel
+import java.util.concurrent.Executors
+import java.util.concurrent.RejectedExecutionException
+import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.math.roundToInt
 
 class MainActivity : FlutterActivity() {
@@ -42,6 +45,21 @@ class MainActivity : FlutterActivity() {
   companion object {
     private const val TAG = "MainActivity"
     private const val TEXT_INPUT_DIAGNOSTICS_ENABLED = false
+    private const val EXIT_DIAGNOSTICS_PREFS = "plezy_exit_diagnostics"
+    private const val LAST_EXIT_DEDUPE_KEY = "last_reported_exit"
+    private const val LAST_STARTUP_PHASE_KEY = "last_startup_phase"
+    private val startupPhaseLock = Any()
+
+    @Volatile private var startupPhaseInitializationAttempted = false
+
+    @Volatile private var startupPhaseStore: StartupPhaseStore? = null
+
+    @Volatile private var previousRuntimeDiagnostics = RuntimeDiagnosticSnapshot()
+    private val exitDiagnosticsExecutor by lazy {
+      Executors.newSingleThreadExecutor { runnable ->
+        Thread(runnable, "plezy-exit-diagnostics").apply { isDaemon = true }
+      }
+    }
 
     // Mirrors DevicePerformance._lowMemThresholdBytes (2252 MiB): nominal
     // "2GB" devices report totalMem slightly above 2 GiB after carve-outs.
@@ -63,6 +81,7 @@ class MainActivity : FlutterActivity() {
   private var flutterSurfaceReconnectPending = false
   private var activityStarted = false
   private val externalPlayerChannel = ExternalPlayerChannel(this)
+  private val exitDiagnosticsRequested = AtomicBoolean(false)
 
   private inline fun logTextInputDiag(message: () -> String) {
     if (TEXT_INPUT_DIAGNOSTICS_ENABLED) {
@@ -184,6 +203,135 @@ class MainActivity : FlutterActivity() {
     )
   }
 
+  private fun initializeStartupPhaseStore() {
+    var shouldMarkNativeOnCreate = false
+    synchronized(startupPhaseLock) {
+      if (startupPhaseInitializationAttempted) return
+      startupPhaseInitializationAttempted = true
+      try {
+        previousRuntimeDiagnostics = AndroidRuntimeDiagnostics.read(this)
+        val preferences = getSharedPreferences(EXIT_DIAGNOSTICS_PREFS, Context.MODE_PRIVATE)
+        startupPhaseStore = StartupPhaseStore(
+          readPhase = { preferences.getString(LAST_STARTUP_PHASE_KEY, null) },
+          persistPhase = { phase ->
+            preferences.edit().putString(LAST_STARTUP_PHASE_KEY, phase).commit()
+          }
+        )
+        shouldMarkNativeOnCreate = true
+      } catch (_: Throwable) {
+        Log.w(TAG, "Startup phase persistence unavailable")
+      }
+    }
+    if (shouldMarkNativeOnCreate) {
+      queueStartupPhase(AndroidStartupPhases.NATIVE_ON_CREATE)
+    }
+  }
+
+  private fun queueStartupPhase(raw: String?, result: MethodChannel.Result? = null) {
+    val phase = AndroidStartupPhases.sanitize(raw)
+    if (phase == null) {
+      result?.let { completeStartupPhase(it, false) }
+      return
+    }
+    AndroidRuntimeDiagnostics.update(this, uiState = uiStateForStartupPhase(phase))
+    try {
+      exitDiagnosticsExecutor.execute {
+        val persisted = try {
+          startupPhaseStore?.mark(phase) == true
+        } catch (_: Throwable) {
+          Log.w(TAG, "Startup phase update failed")
+          false
+        }
+        result?.let { reply ->
+          runOnUiThread { completeStartupPhase(reply, persisted) }
+        }
+      }
+    } catch (_: Throwable) {
+      Log.w(TAG, "Startup phase update could not start")
+      result?.let { completeStartupPhase(it, false) }
+    }
+  }
+
+  private fun uiStateForStartupPhase(phase: String): String = when (phase) {
+    "credentials_loaded", "binding_started", "binding_settled" -> AndroidRuntimeDiagnostics.UI_AUTHENTICATION
+    "main_screen" -> AndroidRuntimeDiagnostics.UI_MAIN_SCREEN
+    else -> AndroidRuntimeDiagnostics.UI_STARTUP
+  }
+
+  private fun completeStartupPhase(result: MethodChannel.Result, persisted: Boolean) {
+    try {
+      result.success(persisted)
+    } catch (_: Throwable) {
+      Log.w(TAG, "Startup phase reply failed")
+    }
+  }
+
+  private fun handlePreviousExit(result: MethodChannel.Result) {
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {
+      completePreviousExit(result, null)
+      return
+    }
+    if (!exitDiagnosticsRequested.compareAndSet(false, true)) {
+      completePreviousExit(result, null)
+      return
+    }
+
+    try {
+      exitDiagnosticsExecutor.execute {
+        val report = try {
+          readPreviousExit()
+        } catch (_: Throwable) {
+          Log.w(TAG, "Previous exit diagnostics failed")
+          null
+        }
+        runOnUiThread { completePreviousExit(result, report) }
+      }
+    } catch (_: RejectedExecutionException) {
+      completePreviousExit(result, null)
+    } catch (_: Throwable) {
+      Log.w(TAG, "Previous exit diagnostics could not start")
+      completePreviousExit(result, null)
+    }
+  }
+
+  private fun completePreviousExit(result: MethodChannel.Result, report: Map<String, Any>?) {
+    try {
+      result.success(report)
+    } catch (_: Throwable) {
+      Log.w(TAG, "Previous exit diagnostics reply failed")
+    }
+  }
+
+  @RequiresApi(Build.VERSION_CODES.R)
+  private fun readPreviousExit(): Map<String, Any>? {
+    val activityManager = getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
+    val exitInfo = activityManager
+      .getHistoricalProcessExitReasons(packageName, 0, 1)
+      .firstOrNull()
+      ?: return null
+    val report = AndroidExitReportMapper.map(
+      record = HistoricalExitRecord(
+        reason = exitInfo.reason,
+        status = exitInfo.status,
+        importance = exitInfo.importance,
+        timestamp = exitInfo.timestamp
+      ),
+      deviceModel = Build.MODEL,
+      apiLevel = Build.VERSION.SDK_INT,
+      abi = Build.SUPPORTED_ABIS.firstOrNull() ?: "unknown",
+      lowRam = activityManager.isLowRamDevice,
+      startupPhase = startupPhaseStore?.previousPhase,
+      runtime = previousRuntimeDiagnostics
+    )
+    val preferences = getSharedPreferences(EXIT_DIAGNOSTICS_PREFS, Context.MODE_PRIVATE)
+    return PreviousExitReportStore(
+      readDedupeKey = { preferences.getString(LAST_EXIT_DEDUPE_KEY, null) },
+      persistDedupeKey = { key ->
+        preferences.edit().putString(LAST_EXIT_DEDUPE_KEY, key).commit()
+      }
+    ).takeIfNew(report)
+  }
+
   /**
    * Same triple DevicePerformance uses for the reduced tier on the Dart
    * side — keep the two in sync. Evaluated here too because engine shell
@@ -208,6 +356,8 @@ class MainActivity : FlutterActivity() {
   }
 
   override fun onCreate(savedInstanceState: Bundle?) {
+    // Snapshot the previous process phase before this launch can overwrite it.
+    initializeStartupPhaseStore()
     // Apply persisted theme color to the window background before anything
     // else renders.  This prevents a white flash between the native splash
     // screen and Flutter's first frame for non-default themes (e.g. OLED).
@@ -428,6 +578,17 @@ class MainActivity : FlutterActivity() {
         "getTvDetection" -> result.success(getAndroidTvDetection())
         "getDeviceName" -> result.success(getDeviceName())
         "getPerformanceSignals" -> result.success(getPerformanceSignals())
+        "getPreviousExit" -> handlePreviousExit(result)
+        "setStartupPhase" -> queueStartupPhase(call.arguments as? String, result)
+        "setRuntimeUiState" -> {
+          val uiState = AndroidRuntimeDiagnostics.sanitizeUiState(call.arguments as? String)
+          if (uiState == null) {
+            result.success(false)
+          } else {
+            AndroidRuntimeDiagnostics.update(this, uiState = uiState)
+            result.success(true)
+          }
+        }
         else -> result.notImplemented()
       }
     }

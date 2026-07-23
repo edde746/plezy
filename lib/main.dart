@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 // ignore: depend_on_referenced_packages
 import 'package:shared_preferences_foundation/shared_preferences_foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' as material show ThemeMode;
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/services.dart';
@@ -24,6 +25,7 @@ import 'profiles/profile_connection_cleanup.dart';
 import 'profiles/profile_connection_registry.dart';
 import 'profiles/profile_registry.dart';
 import 'mixins/mounted_set_state_mixin.dart';
+import 'theme/mono_theme.dart';
 import 'profiles/plex_home_service.dart';
 import 'screens/auth_screen.dart';
 import 'screens/profile/pin_entry_dialog.dart';
@@ -72,11 +74,13 @@ import 'utils/watch_state_notifier.dart';
 import 'i18n/strings.g.dart';
 import 'widgets/app_icon.dart';
 import 'focus/input_mode_tracker.dart';
+import 'focus/focusable_button.dart';
 import 'focus/key_event_utils.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'utils/navigation_transitions.dart';
 import 'utils/log_redaction_manager.dart';
 import 'package:package_info_plus/package_info_plus.dart';
+import 'utils/android_exit_diagnostics.dart';
 
 const bool _enableSentry = bool.fromEnvironment('ENABLE_SENTRY', defaultValue: false);
 const String _sentryDsn = 'https://6a1a6ef8c72140099b2798973c1bfb2f@bugs.plezy.app/1';
@@ -112,8 +116,9 @@ void _registerTvosPlatformPlugins() {
   SharedPreferencesFoundation.registerWith();
 }
 
-Future<void> main() async {
+void main() {
   final binding = WidgetsFlutterBinding.ensureInitialized();
+  AndroidExitDiagnostics.markStartupPhase(AndroidStartupPhase.dartMain);
   // Keep the accessibility tree available to Maestro and other UI automation
   // without adding release-build overhead.
   if (kDebugMode) binding.ensureSemantics();
@@ -123,10 +128,47 @@ Future<void> main() async {
   // target in Flutter's tool), so register platform stores manually for
   // the plugins we use.
   _registerTvosPlatformPlugins();
+  _bootstrapApp();
+}
+
+void _bootstrapApp() {
+  // In release mode, show a colored placeholder instead of a blank/white screen
+  // when a widget build() throws an unhandled exception.
+  ErrorWidget.builder = (FlutterErrorDetails details) {
+    if (kDebugMode) return ErrorWidget(details.exception);
+    return const ColoredBox(color: Color(0xFF000000));
+  };
+
+  AndroidExitDiagnostics.markStartupPhase(AndroidStartupPhase.runApp);
+  runApp(
+    StartupBootstrap<_StartupDependencies>(
+      initialize: _initializeApplication,
+      buildApp: (context, dependencies) => MainApp(
+        settings: dependencies.settings,
+        storage: dependencies.storage,
+        appDatabase: dependencies.appDatabase,
+        databaseRecoveryOutcome: dependencies.databaseRecoveryOutcome,
+      ),
+      discard: (dependencies) => dependencies.appDatabase.close(),
+      onCommitted: (dependencies) => _startNonessentialInitialization(dependencies.settings),
+      lightTheme: monoTheme(dark: false),
+      darkTheme: monoTheme(dark: true),
+    ),
+  );
+}
+
+Future<_StartupDependencies> _initializeApplication() async {
+  final settings = await SettingsService.getInstance();
+  setLoggerLevel(settings.read(SettingsService.enableDebugLogging));
+
+  _StartupDependencies? dependencies;
+  Future<void> initializeStartup() async {
+    AndroidExitDiagnostics.markTelemetryReady();
+    dependencies = await _initializeStartup(settings);
+  }
 
   if (_enableSentry) {
     final packageInfo = await PackageInfo.fromPlatform();
-
     await SentryFlutter.init((options) {
       options.dsn = _sentryDsn;
       options.release = gitCommit.isNotEmpty
@@ -143,14 +185,170 @@ Future<void> main() async {
       options.appHangTimeoutInterval = const Duration(seconds: 3);
       options.beforeSend = _beforeSend;
       options.beforeBreadcrumb = _beforeBreadcrumb;
-    }, appRunner: _bootstrapApp);
-    return;
+    }, appRunner: initializeStartup);
+  } else {
+    await initializeStartup();
   }
-
-  await _bootstrapApp();
+  return dependencies!;
 }
 
-Future<void> _bootstrapApp() async {
+const startupBootstrapProgressKey = Key('startup-bootstrap-progress');
+const startupBootstrapFailureKey = Key('startup-bootstrap-failure');
+const startupBootstrapRetryKey = Key('startup-bootstrap-retry');
+
+/// Mounts a Flutter-owned startup frame before invoking the asynchronous
+/// initialization gate. The generic seam keeps frame ordering, failure, and
+/// retry behavior testable without constructing platform services.
+@visibleForTesting
+class StartupBootstrap<T> extends StatefulWidget {
+  const StartupBootstrap({
+    super.key,
+    required this.initialize,
+    required this.buildApp,
+    this.discard,
+    this.onCommitted,
+    this.lightTheme,
+    this.darkTheme,
+    this.themeMode = material.ThemeMode.system,
+  });
+
+  final Future<T> Function() initialize;
+  final Widget Function(BuildContext context, T value) buildApp;
+  final FutureOr<void> Function(T value)? discard;
+  final FutureOr<void> Function(T value)? onCommitted;
+  final ThemeData? lightTheme;
+  final ThemeData? darkTheme;
+  final material.ThemeMode themeMode;
+
+  @override
+  State<StartupBootstrap<T>> createState() => _StartupBootstrapState<T>();
+}
+
+class _StartupBootstrapState<T> extends State<StartupBootstrap<T>> {
+  T? _value;
+  Object? _error;
+  bool _completed = false;
+  bool _initializing = false;
+  int _generation = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      AndroidExitDiagnostics.markStartupPhase(AndroidStartupPhase.firstFrame);
+      if (mounted) unawaited(_initialize());
+    });
+  }
+
+  Future<void> _initialize() async {
+    if (_initializing) return;
+
+    final generation = ++_generation;
+    setState(() {
+      _error = null;
+      _initializing = true;
+    });
+
+    try {
+      final value = await widget.initialize();
+      if (!mounted || generation != _generation) {
+        await _discard(value);
+        return;
+      }
+
+      setState(() {
+        _value = value;
+        _completed = true;
+        _initializing = false;
+      });
+      unawaited(Future.sync(() => widget.onCommitted?.call(value)));
+    } catch (error, stackTrace) {
+      if (!mounted || generation != _generation) return;
+      appLogger.e('Startup initialization failed (${error.runtimeType})', stackTrace: stackTrace);
+      setState(() {
+        _error = error;
+        _initializing = false;
+      });
+    }
+  }
+
+  Future<void> _discard(T value) async {
+    try {
+      await widget.discard?.call(value);
+    } catch (error, stackTrace) {
+      appLogger.e('Failed to dispose an uncommitted startup result (${error.runtimeType})', stackTrace: stackTrace);
+    }
+  }
+
+  @override
+  void dispose() {
+    _generation++;
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_completed) return widget.buildApp(context, _value as T);
+
+    return TranslationProvider(
+      child: Builder(
+        builder: (context) => InputModeTracker(
+          child: MaterialApp(
+            debugShowCheckedModeBanner: false,
+            theme: widget.lightTheme,
+            darkTheme: widget.darkTheme,
+            themeMode: widget.themeMode,
+            home: Builder(builder: _buildBootstrapHome),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBootstrapHome(BuildContext context) {
+    return Scaffold(
+      body: Center(
+        child: _error == null
+            ? const CircularProgressIndicator(key: startupBootstrapProgressKey)
+            : Column(
+                key: startupBootstrapFailureKey,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const AppIcon(Symbols.error_rounded, size: 48),
+                  const SizedBox(height: 16),
+                  Text(t.common.error, style: Theme.of(context).textTheme.titleLarge),
+                  const SizedBox(height: 16),
+                  FocusableButton(
+                    autofocus: true,
+                    onPressed: _initializing ? null : () => unawaited(_initialize()),
+                    child: FilledButton(
+                      key: startupBootstrapRetryKey,
+                      onPressed: _initializing ? null : () => unawaited(_initialize()),
+                      child: Text(t.common.retry),
+                    ),
+                  ),
+                ],
+              ),
+      ),
+    );
+  }
+}
+
+class _StartupDependencies {
+  const _StartupDependencies({
+    required this.settings,
+    required this.storage,
+    required this.appDatabase,
+    required this.databaseRecoveryOutcome,
+  });
+
+  final SettingsService settings;
+  final StorageService storage;
+  final AppDatabase appDatabase;
+  final TvosDatabaseRecoveryOutcome databaseRecoveryOutcome;
+}
+
+Future<_StartupDependencies> _initializeStartup(SettingsService settings) async {
   final startupWatch = Stopwatch()..start();
   var lastStartupMarkMs = 0;
   void markStartupPhase(String phase) {
@@ -160,140 +358,123 @@ Future<void> _bootstrapApp() async {
     lastStartupMarkMs = elapsedMs;
   }
 
-  final settings = await SettingsService.getInstance();
-  markStartupPhase('settings');
-  final savedLocale = settings.read(SettingsService.appLocale);
+  AppDatabase? openedDatabase;
+  try {
+    final savedLocale = settings.read(SettingsService.appLocale);
+    await LocaleSettings.setLocale(savedLocale);
+    await initializeDateFormatting(savedLocale.languageCode, null);
+    markStartupPhase('locale');
 
-  unawaited(LocaleSettings.setLocale(savedLocale));
+    final futures = <Future<void>>[];
+    if (PlatformDetector.isDesktopOS()) {
+      if (Platform.isMacOS) {
+        futures.add(windowManager.ensureInitialized().then((_) => MacOSWindowService.setupCustomTitlebar()));
+      } else {
+        futures.add(windowManager.ensureInitialized());
+      }
+    }
 
-  await initializeDateFormatting(savedLocale.languageCode, null);
-  markStartupPhase('locale');
+    // MainApp reads both synchronous facades during its first build.
+    futures.add(TvDetectionService.getInstance(forceTv: settings.read(SettingsService.forceTvMode)));
+    futures.add(DevicePerformance.getInstance(override: settings.read(SettingsService.visualEffects)));
 
-  // One-time cleanup of the old flutter_cache_manager image cache directory
-  // (replaced by cached_network_image_ce in a prior refactor).
-  if (!settings.read(SettingsService.cleanedOldImageCache)) {
+    final storageFuture = StorageService.getInstance();
+    futures.add(storageFuture);
+    await Future.wait(futures);
+    final storage = await storageFuture;
+    markStartupPhase('platform-services');
+
+    AndroidExitDiagnostics.markStartupPhase(AndroidStartupPhase.databaseOpenStarted);
+    final databaseBootstrap = await AppDatabase.open(isTvos: PlatformDetector.isAppleTV());
+    openedDatabase = databaseBootstrap.database;
+    AndroidExitDiagnostics.markStartupPhase(AndroidStartupPhase.databaseReady);
+    markStartupPhase('database-recovery');
+
+    DevicePerformance.applyImageCacheBudget();
+
+    // DownloadManagerService reads this singleton synchronously in MainApp's
+    // initState, so its recoverable storage check remains in the explicit gate.
+    await DownloadStorageService.instance.initialize(settings);
+    markStartupPhase('download-storage');
+
+    return _StartupDependencies(
+      settings: settings,
+      storage: storage,
+      appDatabase: databaseBootstrap.database,
+      databaseRecoveryOutcome: databaseBootstrap.recoveryOutcome,
+    );
+  } catch (_) {
+    await openedDatabase?.close();
+    rethrow;
+  }
+}
+
+void _startNonessentialInitialization(SettingsService settings) {
+  void bestEffort(String name, FutureOr<void> Function() action) {
+    unawaited(
+      Future.sync(action).catchError((Object error, StackTrace stackTrace) {
+        appLogger.e('$name startup task failed (${error.runtimeType})', stackTrace: stackTrace);
+      }),
+    );
+  }
+
+  bestEffort('Legacy image cache cleanup', () async {
+    if (settings.read(SettingsService.cleanedOldImageCache)) return;
     try {
       final tempDir = await getTemporaryDirectory();
       final oldCacheDir = Directory('${tempDir.path}/plexImageCache');
-      if (await oldCacheDir.exists()) {
-        await oldCacheDir.delete(recursive: true);
-      }
-    } catch (_) {
-      // Best-effort; the directory may be locked or already partial.
+      if (await oldCacheDir.exists()) await oldCacheDir.delete(recursive: true);
+    } finally {
+      await settings.write(SettingsService.cleanedOldImageCache, true);
     }
-    await settings.write(SettingsService.cleanedOldImageCache, true);
-  }
+  });
 
-  final futures = <Future<void>>[];
+  bestEffort('Native window', () {
+    if (Platform.isAndroid) PipService();
+    NativeWindowService.initialize();
+  });
+
+  bestEffort('Fullscreen monitor', () async {
+    FullscreenStateManager().startMonitoring();
+    if (PlatformDetector.isDesktopOS() && settings.read(SettingsService.startInFullscreen)) {
+      await FullscreenStateManager().enterFullscreen();
+    }
+  });
+
+  bestEffort('Gamepad', () {
+    GamepadService.instance.start();
+    if (PlatformDetector.isAppleTV()) AppleTvRemoteTouchService.instance.start();
+  });
 
   if (PlatformDetector.isDesktopOS()) {
-    if (Platform.isMacOS) {
-      futures.add(windowManager.ensureInitialized().then((_) => MacOSWindowService.setupCustomTitlebar()));
-    } else {
-      futures.add(windowManager.ensureInitialized());
-    }
+    bestEffort('Discord RPC', DiscordRPCService.instance.initialize);
   }
 
-  // Initialize TV detection on every platform: auto-detect covers Android
-  // leanback and Apple TV; the force-TV setting applies anywhere, including
-  // desktop home-theater setups.
-  futures.add(TvDetectionService.getInstance(forceTv: settings.read(SettingsService.forceTvMode)));
-  // Visual-effects tier (auto-detects low-end Android; full elsewhere).
-  futures.add(DevicePerformance.getInstance(override: settings.read(SettingsService.visualEffects)));
-  if (Platform.isAndroid) {
-    PipService();
+  if (settings.read(SettingsService.crashReporting)) {
+    unawaited(AndroidExitDiagnostics.logPreviousExit());
   }
 
-  // Hook Windows native fullscreen callback (no-op elsewhere).
-  NativeWindowService.initialize();
+  bestEffort('Trakt scrobble', TraktScrobbleService.instance.initialize);
+  bestEffort('Shader licenses', _registerShaderLicenses);
+  bestEffort('Environment diagnostics', _logEnvironmentDiagnostics);
+}
 
-  final storageFuture = StorageService.getInstance();
-  futures.add(storageFuture);
-
-  await Future.wait(futures);
-  final storage = await storageFuture;
-  markStartupPhase('platform-services');
-  final databaseBootstrap = await AppDatabase.open(isTvos: PlatformDetector.isAppleTV());
-  markStartupPhase('database-recovery');
-
-  // Configure image cache — keep budget modest to leave headroom for Skia
-  // decode buffers. Runs after the futures so the effects tier is resolved.
-  DevicePerformance.applyImageCacheBudget();
-
-  // The PLEX_TOKEN dart-define (screenshot automation) is consumed by
-  // [ConnectionBootstrap.seedFromDevTokenDefine] later, when the registry
-  // is available — keeps the deprecated legacy slots out of runtime paths.
-  final debugEnabled = settings.read(SettingsService.enableDebugLogging);
-  setLoggerLevel(debugEnabled);
-
+Future<void> _logEnvironmentDiagnostics() async {
   final packageInfo = await PackageInfo.fromPlatform();
   final commitSuffix = gitCommit.isNotEmpty ? ' (${gitCommit.substring(0, 7)})' : '';
   String renderer = '';
   if (Platform.isAndroid) {
     final rendererName = await const MethodChannel('com.plezy/theme').invokeMethod<String>('getRenderer');
     renderer = ' [$rendererName]';
-    // Tag crash reports with the active renderer while Impeller rolls back
-    // out to Android TV, so device-specific regressions are attributable.
-    // configureScope returns FutureOr<void>; Future.sync flattens it for unawaited.
-    unawaited(Future.sync(() => Sentry.configureScope((scope) => scope.setTag('renderer', rendererName ?? 'unknown'))));
+    await Future.sync(() => Sentry.configureScope((scope) => scope.setTag('renderer', rendererName ?? 'unknown')));
   }
   appLogger.i(
     'Plezy v${packageInfo.version}+${packageInfo.buildNumber}$commitSuffix$renderer'
     ' [effects: ${DevicePerformance.describeSync()}]',
   );
   if (Platform.isAndroid) {
-    // Baseline for the RSS watchdog thresholds and a sanity anchor against
-    // `adb shell dumpsys meminfo` when tuning them.
     appLogger.i('Startup RSS: ${ProcessInfo.currentRss >> 20}MB');
   }
-  markStartupPhase('environment');
-
-  await DownloadStorageService.instance.initialize(settings);
-  markStartupPhase('download-storage');
-
-  FullscreenStateManager().startMonitoring();
-
-  // Apply "start in fullscreen" preference on desktop. macOS does not restore
-  // fullscreen state on its own (frame autosave only persists windowed geometry),
-  // so it needs the same explicit handling as Windows/Linux.
-  if (PlatformDetector.isDesktopOS() && settings.read(SettingsService.startInFullscreen)) {
-    unawaited(FullscreenStateManager().enterFullscreen());
-  }
-
-  // Initialize gamepad service (all platforms — universal_gamepad auto-registers
-  // and intercepts input events, so we must listen to re-dispatch them)
-  GamepadService.instance.start();
-  if (PlatformDetector.isAppleTV()) {
-    AppleTvRemoteTouchService.instance.start();
-  }
-
-  if (PlatformDetector.isDesktopOS()) {
-    unawaited(DiscordRPCService.instance.initialize());
-  }
-
-  await TraktScrobbleService.instance.initialize();
-  markStartupPhase('trakt-scrobble');
-
-  _registerShaderLicenses();
-
-  // In release mode, show a colored placeholder instead of a blank/white screen
-  // when a widget build() throws an unhandled exception.
-  ErrorWidget.builder = (FlutterErrorDetails details) {
-    if (kDebugMode) return ErrorWidget(details.exception);
-    return const ColoredBox(color: Color(0xFF000000));
-  };
-
-  final appDatabase = databaseBootstrap.database;
-
-  markStartupPhase('pre-runApp');
-  runApp(
-    MainApp(
-      settings: settings,
-      storage: storage,
-      appDatabase: appDatabase,
-      databaseRecoveryOutcome: databaseBootstrap.recoveryOutcome,
-    ),
-  );
 }
 
 Breadcrumb? _beforeBreadcrumb(Breadcrumb? breadcrumb, Hint _) {
@@ -1160,6 +1341,7 @@ class _SetupScreenState extends State<SetupScreen> with MountedSetStateMixin {
     _setStatus(t.common.startingOfflineMode);
     await context.read<DownloadProvider>().ensureInitialized();
     if (!mounted) return;
+    AndroidExitDiagnostics.markStartupPhase(AndroidStartupPhase.mainScreen);
     unawaited(Navigator.pushReplacement(context, fadeRoute(const ProfileSessionScreen(isOfflineMode: true))));
   }
 
@@ -1260,6 +1442,7 @@ class _SetupScreenState extends State<SetupScreen> with MountedSetStateMixin {
     final List<Connection> allConnections;
     try {
       allConnections = await connectionRegistry.list();
+      AndroidExitDiagnostics.markStartupPhase(AndroidStartupPhase.credentialsLoaded);
     } catch (e, st) {
       // Defence-in-depth: a DB-open failure here used to propagate
       // uncaught and strand the splash forever (#1022). Route to auth so
@@ -1341,6 +1524,7 @@ class _SetupScreenState extends State<SetupScreen> with MountedSetStateMixin {
     // Start only after network/offline startup has been decided and the
     // active profile snapshot is hydrated. This prevents an eager binder
     // microtask from racing the no-network/manual-offline fast path.
+    AndroidExitDiagnostics.markStartupPhase(AndroidStartupPhase.bindingStarted);
     binder.start();
 
     // If "prompt for profile on launch" is on (or no profile is selected
@@ -1372,6 +1556,7 @@ class _SetupScreenState extends State<SetupScreen> with MountedSetStateMixin {
       bindingSucceeded = await activeProfile.awaitBindingSettle();
       if (!mounted) return;
     }
+    AndroidExitDiagnostics.markStartupPhase(AndroidStartupPhase.bindingSettled);
 
     if (shouldEnterOfflineModeAfterStartupBind(
       bindingSucceeded: bindingSucceeded,
@@ -1389,6 +1574,7 @@ class _SetupScreenState extends State<SetupScreen> with MountedSetStateMixin {
     await downloadProvider.refreshMetadataFromCache();
     if (!mounted) return;
 
+    AndroidExitDiagnostics.markStartupPhase(AndroidStartupPhase.mainScreen);
     unawaited(Navigator.pushReplacement(context, fadeRoute(ProfileSessionScreen(initialPromptHandled: shouldPrompt))));
   }
 
