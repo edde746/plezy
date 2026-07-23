@@ -51,9 +51,20 @@ class PlezyRenderersFactory(context: Context) : DefaultRenderersFactory(context)
    * "No mixing matrix for input channel count". ExoPlayerCore swaps in
    * downmix matrices via [DownmixMatrices] when the setting is enabled.
    */
-  val channelMixProcessor = ChannelMixingAudioProcessor().apply {
-    for (count in 1..12) putChannelMixingMatrix(ChannelMixingMatrix.create(count, count))
+  private val identityChannelMixingMatrices = Array(DownmixMatrices.MAX_MIXING_CHANNELS) { index ->
+    val channelCount = index + 1
+    ChannelMixingMatrix(
+      channelCount,
+      channelCount,
+      DownmixMatrices.identityCoefficients(channelCount)
+    )
   }
+
+  val channelMixProcessor = ChannelMixingAudioProcessor().apply {
+    for (matrix in identityChannelMixingMatrices) putChannelMixingMatrix(matrix)
+  }
+
+  fun identityChannelMixingMatrix(channelCount: Int): ChannelMixingMatrix = identityChannelMixingMatrices[channelCount - 1]
 
   /** Returns whether direct encoded output should be hidden so decoded PCM output can be selected. */
   var shouldBlockDirectAudioOutput: ((Format) -> Boolean)? = null
@@ -75,9 +86,9 @@ class PlezyRenderersFactory(context: Context) : DefaultRenderersFactory(context)
     allowedVideoJoiningTimeMs: Long,
     out: ArrayList<Renderer>
   ) {
-    // Let super build the full list (it also appends extension renderers reflectively,
-    // e.g. the jellyfin ffmpeg artifact's video renderer), then swap the stock
-    // MediaCodecVideoRenderer for the DV-sanitizing variant at the same index.
+    // Let super build the full list (including optional extension renderers),
+    // then swap the stock MediaCodecVideoRenderer for the DV-sanitizing variant
+    // at the same index.
     super.buildVideoRenderers(
       context,
       extensionRendererMode,

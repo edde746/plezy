@@ -4,6 +4,7 @@ import java.nio.file.StandardCopyOption
 import java.security.MessageDigest
 import java.util.Properties
 import java.util.UUID
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 fun verifySha256(file: File, expected: String, identity: String) {
   val digest = MessageDigest.getInstance("SHA-256")
@@ -63,7 +64,13 @@ val mpvDir = layout.buildDirectory.dir("libmpv").get().asFile
 val mpvAar = "libmpv-release.aar"
 val mpvUrl = "https://github.com/edde746/libmpv-android/releases/download/$mpvVersion/$mpvAar"
 
-val downloadLibmpv by tasks.registering {
+val media3Version = "1.10.1"
+val mpvFfmpegVersion = "8.0.1"
+val mpvFfmpegSourceSha256 = "05ee0b03119b45c0bdb4df654b96802e909e0a752f72e4fe3794f487229e5a41"
+val mpvFfmpegSourceUrl = "https://ffmpeg.org/releases/ffmpeg-$mpvFfmpegVersion.tar.xz"
+val mpvFfmpegDevelopmentDir = File(mpvDir, "ffmpeg-development")
+
+val downloadLibmpv = tasks.register("downloadLibmpv") {
   val aar = File(mpvDir, mpvAar)
   val manifest = File(mpvDir, ".manifest")
   inputs.property("version", mpvVersion)
@@ -77,7 +84,9 @@ val downloadLibmpv by tasks.registering {
       staging.mkdirs()
       val stagedAar = File(staging, mpvAar)
       try {
-        exec { commandLine("curl", "-sfL", mpvUrl, "-o", stagedAar.absolutePath) }
+        providers.exec {
+          commandLine("curl", "-sfL", mpvUrl, "-o", stagedAar.absolutePath)
+        }.result.get().assertNormalExitValue()
       } catch (error: Exception) {
         throw GradleException("Failed to download $mpvAar $mpvVersion", error)
       }
@@ -92,7 +101,7 @@ val downloadLibmpv by tasks.registering {
 
 // Extract libc++_shared.so from the libmpv AAR so the app source set can package
 // it with top merge priority (see packaging { jniLibs } and sourceSets below).
-val extractMpvLibcxx by tasks.registering {
+val extractMpvLibcxx = tasks.register("extractMpvLibcxx") {
   dependsOn(downloadLibmpv)
   val aar = File(mpvDir, mpvAar)
   val outDir = File(mpvDir, "libcxx")
@@ -101,7 +110,7 @@ val extractMpvLibcxx by tasks.registering {
   doLast {
     outDir.deleteRecursively() // drop stale ABIs from a previous AAR version
     outDir.mkdirs()
-    exec {
+    providers.exec {
       commandLine(
         "unzip",
         "-q",
@@ -111,6 +120,119 @@ val extractMpvLibcxx by tasks.registering {
         "-d",
         outDir.absolutePath
       )
+    }.result.get().assertNormalExitValue()
+  }
+}
+
+// Build the Media3 JNI adapter against the same shared FFmpeg libraries that
+// libmpv packages. Headers are pinned to libmpv's FFmpeg version and remain
+// build-only; the APK contains one FFmpeg implementation for both players.
+val prepareMpvFfmpegDevelopment = tasks.register("prepareMpvFfmpegDevelopment") {
+  dependsOn(downloadLibmpv)
+  val aar = File(mpvDir, mpvAar)
+  val manifest = File(mpvFfmpegDevelopmentDir, ".manifest")
+  val abis = listOf("arm64-v8a", "armeabi-v7a", "x86", "x86_64")
+  val libraries = listOf("avcodec", "avutil", "swresample")
+  inputs.file(aar)
+  inputs.property("ffmpegVersion", mpvFfmpegVersion)
+  inputs.property("sourceUrl", mpvFfmpegSourceUrl)
+  inputs.property("sourceSha256", mpvFfmpegSourceSha256)
+  outputs.files(
+    abis.flatMap { abi ->
+      libraries.map { library -> File(mpvFfmpegDevelopmentDir, "native/$abi/lib$library.so") }
+    }
+  )
+  outputs.files(
+    File(mpvFfmpegDevelopmentDir, "include/libavcodec/avcodec.h"),
+    File(mpvFfmpegDevelopmentDir, "include/libavutil/avconfig.h"),
+    File(mpvFfmpegDevelopmentDir, "include/libswresample/swresample.h"),
+    manifest
+  )
+  doLast {
+    val staging = File(
+      mpvFfmpegDevelopmentDir.parentFile,
+      "${mpvFfmpegDevelopmentDir.name}.staging-${UUID.randomUUID()}"
+    )
+    try {
+      val sourceArchive = File(staging, "ffmpeg-$mpvFfmpegVersion.tar.xz")
+      val includeDir = File(staging, "include")
+      val nativeDir = File(staging, "native")
+      staging.mkdirs()
+      try {
+        providers.exec {
+          commandLine("curl", "-sfL", mpvFfmpegSourceUrl, "-o", sourceArchive.absolutePath)
+        }.result.get().assertNormalExitValue()
+      } catch (error: Exception) {
+        throw GradleException("Failed to download FFmpeg $mpvFfmpegVersion headers", error)
+      }
+      verifySha256(sourceArchive, mpvFfmpegSourceSha256, "FFmpeg $mpvFfmpegVersion source")
+
+      val extractedSource = File(staging, "source").apply { mkdirs() }
+      try {
+        providers.exec {
+          commandLine(
+            "tar",
+            "-xJf",
+            sourceArchive.absolutePath,
+            "--strip-components=1",
+            "-C",
+            extractedSource.absolutePath
+          )
+        }.result.get().assertNormalExitValue()
+      } catch (error: Exception) {
+        throw GradleException("Failed to extract FFmpeg $mpvFfmpegVersion headers", error)
+      }
+      listOf("libavcodec", "libavutil", "libswresample").forEach { library ->
+        project.copy {
+          from(File(extractedSource, library)) {
+            include("*.h")
+          }
+          into(File(includeDir, library))
+        }
+      }
+      File(includeDir, "libavutil/avconfig.h").writeText(
+        """
+        |/* Generated for Plezy's little-endian Android ABIs. */
+        |#ifndef AVUTIL_AVCONFIG_H
+        |#define AVUTIL_AVCONFIG_H
+        |#define AV_HAVE_BIGENDIAN 0
+        |#define AV_HAVE_FAST_UNALIGNED 0
+        |#endif /* AVUTIL_AVCONFIG_H */
+        |
+        """.trimMargin()
+      )
+
+      project.copy {
+        from(zipTree(aar)) {
+          include(
+            "jni/*/libavcodec.so",
+            "jni/*/libavutil.so",
+            "jni/*/libswresample.so"
+          )
+          eachFile {
+            path = path.removePrefix("jni/")
+          }
+        }
+        includeEmptyDirs = false
+        into(nativeDir)
+      }
+
+      val missing = abis.flatMap { abi ->
+        libraries.map { library -> File(nativeDir, "$abi/lib$library.so") }
+      }.filterNot(File::isFile)
+      if (missing.isNotEmpty()) {
+        throw GradleException(
+          "libmpv $mpvVersion is missing FFmpeg libraries: ${missing.joinToString { it.relativeTo(staging).path }}"
+        )
+      }
+      File(staging, ".manifest").writeText(
+        "mpv=$mpvVersion\nffmpeg=$mpvFfmpegVersion\nsourceSha256=$mpvFfmpegSourceSha256\n"
+      )
+      sourceArchive.delete()
+      extractedSource.deleteRecursively()
+      promoteDirectory(staging, mpvFfmpegDevelopmentDir)
+    } finally {
+      staging.deleteRecursively()
     }
   }
 }
@@ -137,7 +259,7 @@ val doviArtifacts = mapOf(
 )
 val doviBaseUrl = "https://github.com/edde746/libdovi-builds/releases/download/v$doviVersion"
 
-val downloadLibdovi by tasks.registering {
+val downloadLibdovi = tasks.register("downloadLibdovi") {
   val manifest = File(doviDir, ".manifest")
   inputs.property("version", doviVersion)
   inputs.property("baseUrl", doviBaseUrl)
@@ -159,7 +281,9 @@ val downloadLibdovi by tasks.registering {
         val archive = File(downloads, archiveName)
         val sourceUrl = "$doviBaseUrl/$archiveName"
         try {
-          exec { commandLine("curl", "-sfL", sourceUrl, "-o", archive.absolutePath) }
+          providers.exec {
+            commandLine("curl", "-sfL", sourceUrl, "-o", archive.absolutePath)
+          }.result.get().assertNormalExitValue()
         } catch (error: Exception) {
           throw GradleException("Failed to download $archiveName v$doviVersion", error)
         }
@@ -167,7 +291,9 @@ val downloadLibdovi by tasks.registering {
 
         val outDir = File(staging, "$abi/lib").apply { mkdirs() }
         try {
-          exec { commandLine("tar", "-xzf", archive.absolutePath, "-C", outDir.absolutePath) }
+          providers.exec {
+            commandLine("tar", "-xzf", archive.absolutePath, "-C", outDir.absolutePath)
+          }.result.get().assertNormalExitValue()
         } catch (error: Exception) {
           throw GradleException("Failed to extract $archiveName", error)
         }
@@ -195,15 +321,12 @@ val downloadLibdovi by tasks.registering {
 android {
   namespace = "com.edde746.plezy"
   compileSdk = flutter.compileSdkVersion
-  ndkVersion = flutter.ndkVersion
+  buildToolsVersion = "36.1.0"
+  ndkVersion = "29.0.14206865"
 
   compileOptions {
-    sourceCompatibility = JavaVersion.VERSION_11
-    targetCompatibility = JavaVersion.VERSION_11
-  }
-
-  kotlinOptions {
-    jvmTarget = JavaVersion.VERSION_11.toString()
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
   }
 
   defaultConfig {
@@ -214,12 +337,14 @@ android {
     targetSdk = flutter.targetSdkVersion
     versionCode = flutter.versionCode
     versionName = flutter.versionName
+    testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
     externalNativeBuild {
       cmake {
         arguments += listOf(
           "-DDOVI_ENABLE_LIBDOVI=ON",
-          "-DDOVI_LIBDOVI_PREBUILT_ROOT=${doviDir.absolutePath}"
+          "-DDOVI_LIBDOVI_PREBUILT_ROOT=${doviDir.absolutePath}",
+          "-DMPV_FFMPEG_ROOT=${mpvFfmpegDevelopmentDir.absolutePath}"
         )
       }
     }
@@ -235,6 +360,7 @@ android {
   externalNativeBuild {
     cmake {
       path = file("src/main/cpp/CMakeLists.txt")
+      version = "4.1.2"
     }
   }
 
@@ -291,16 +417,22 @@ android {
   }
 }
 
+kotlin {
+  compilerOptions {
+    jvmTarget.set(JvmTarget.JVM_17)
+  }
+}
+
 flutter {
   source = "../.."
 }
 
 tasks.matching { it.name.contains("CMake") || it.name.contains("externalNative") }.configureEach {
-  dependsOn(downloadLibdovi)
+  dependsOn(downloadLibdovi, prepareMpvFfmpegDevelopment)
 }
 
 tasks.matching { it.name.startsWith("pre") && it.name.endsWith("Build") }.configureEach {
-  dependsOn(downloadLibmpv, extractMpvLibcxx)
+  dependsOn(downloadLibmpv, extractMpvLibcxx, prepareMpvFfmpegDevelopment)
 }
 // Gradle snapshots jniLibs source dirs before task execution; this keeps the
 // extracted libmpv libc++ directory present during input discovery.
@@ -310,23 +442,21 @@ tasks.matching { it.name.startsWith("merge") && it.name.endsWith("JniLibFolders"
 
 dependencies {
   implementation(files(File(mpvDir, mpvAar)))
-  implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.9.0")
+  implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.11.0")
 
   // Android TV Watch Next integration
-  implementation("androidx.tvprovider:tvprovider:1.0.0")
+  implementation("androidx.tvprovider:tvprovider:1.1.0")
 
   // Media3 ExoPlayer for Android
-  implementation("androidx.media3:media3-exoplayer:1.9.2")
-  implementation("androidx.media3:media3-exoplayer-hls:1.9.2")
-  implementation("androidx.media3:media3-ui:1.9.2")
-  implementation("androidx.media3:media3-common:1.9.2")
+  implementation("androidx.media3:media3-decoder:$media3Version")
+  implementation("androidx.media3:media3-exoplayer:$media3Version")
+  implementation("androidx.media3:media3-exoplayer-hls:$media3Version")
+  implementation("androidx.media3:media3-ui:$media3Version")
+  implementation("androidx.media3:media3-common:$media3Version")
 
   // Cronet for HTTP/2 multiplexing + better connection management
-  implementation("androidx.media3:media3-datasource-cronet:1.9.2")
+  implementation("androidx.media3:media3-datasource-cronet:$media3Version")
   implementation("org.chromium.net:cronet-embedded:143.7445.0")
-
-  // FFmpeg audio decoder for unsupported codecs (ALAC, DTS, TrueHD, etc.)
-  implementation("org.jellyfin.media3:media3-ffmpeg-decoder:1.9.0+1")
 
   // Keeping libass in-project lets its static core share the app's native
   // packaging rules.
@@ -335,5 +465,7 @@ dependencies {
   testImplementation("junit:junit:4.13.2")
   // Real android.util.* implementations for tests exercising media3 classes
   // (MatroskaExtractor uses SparseArray, which is a no-op stub on plain JVM)
-  testImplementation("org.robolectric:robolectric:4.15.1")
+  testImplementation("org.robolectric:robolectric:4.16.1")
+  androidTestImplementation("androidx.test:runner:1.7.0")
+  androidTestImplementation("androidx.test.ext:junit:1.3.0")
 }
