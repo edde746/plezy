@@ -7497,10 +7497,7 @@ final class $$ConnectionsTableReferences
   _profileConnectionsRefsTable(_$AppDatabase db) =>
       MultiTypedResultKey.fromTable(
         db.profileConnections,
-        aliasName: $_aliasNameGenerator(
-          db.connections.id,
-          db.profileConnections.connectionId,
-        ),
+        aliasName: 'connections__id__profile_connections__connection_id',
       );
 
   $$ProfileConnectionsTableProcessedTableManager get profileConnectionsRefs {
@@ -8120,13 +8117,9 @@ final class $$ProfileConnectionsTableReferences
     super.$_typedResult,
   );
 
-  static $ConnectionsTable _connectionIdTable(_$AppDatabase db) =>
-      db.connections.createAlias(
-        $_aliasNameGenerator(
-          db.profileConnections.connectionId,
-          db.connections.id,
-        ),
-      );
+  static $ConnectionsTable _connectionIdTable(_$AppDatabase db) => db
+      .connections
+      .createAlias('profile_connections__connection_id__connections__id');
 
   $$ConnectionsTableProcessedTableManager get connectionId {
     final $_column = $_itemColumn<String>('connection_id')!;

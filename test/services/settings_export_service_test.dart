@@ -7,6 +7,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:plezy/models/shader_preset.dart';
 import 'package:plezy/services/base_shared_preferences_service.dart';
+import 'package:plezy/services/file_picker_service.dart';
 import 'package:plezy/services/settings_export_service.dart';
 import 'package:plezy/services/settings_service.dart';
 import 'package:plezy/services/trackers/tracker_constants.dart';
@@ -22,7 +23,7 @@ void main() {
     resetSharedPreferencesForTest();
     SettingsExportService.debugBeforeImportWrite = null;
     picker = _FakeFilePicker();
-    FilePicker.platform = picker;
+    FilePickerService.setDelegateForTesting(picker);
     PackageInfo.setMockInitialValues(
       appName: 'Plezy',
       packageName: 'com.example.plezy',
@@ -34,6 +35,7 @@ void main() {
 
   tearDown(() {
     SettingsExportService.debugBeforeImportWrite = null;
+    FilePickerService.setDelegateForTesting(null);
   });
 
   group('portable settings registry', () {
@@ -632,7 +634,10 @@ void main() {
   });
 }
 
-class _FakeFilePicker extends FilePicker {
+class _FakeFilePicker implements FilePickerDelegate {
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+
   FilePickerResult? pickResult;
   String? saveResult;
   Object? pickError;

@@ -21,6 +21,7 @@ import 'package:plezy/metadata_edit/metadata_edit_models.dart';
 import 'package:plezy/providers/multi_server_provider.dart';
 import 'package:plezy/screens/metadata_edit_screen.dart';
 import 'package:plezy/services/data_aggregation_service.dart';
+import 'package:plezy/services/file_picker_service.dart';
 import 'package:plezy/services/multi_server_manager.dart';
 import 'package:plezy/services/plex_api_cache.dart';
 import 'package:plezy/theme/mono_theme.dart';
@@ -209,8 +210,8 @@ void main() {
           PlatformFile(name: 'poster.png', size: 3, bytes: Uint8List.fromList([1, 2, 3])),
         ]),
       );
-    FilePicker.platform = picker;
-    addTearDown(() => FilePicker.platform = _FakeFilePicker());
+    FilePickerService.setDelegateForTesting(picker);
+    addTearDown(() => FilePickerService.setDelegateForTesting(null));
 
     final adapter = _ArtworkAdapter()..uploadResult = Future<bool>.value(false);
     final result = _DialogResult();
@@ -232,8 +233,8 @@ void main() {
 
   testWidgets('picker cancellation and stale picker completion never start an upload', (tester) async {
     final picker = _FakeFilePicker()..queueResult(null);
-    FilePicker.platform = picker;
-    addTearDown(() => FilePicker.platform = _FakeFilePicker());
+    FilePickerService.setDelegateForTesting(picker);
+    addTearDown(() => FilePickerService.setDelegateForTesting(null));
 
     final adapter = _ArtworkAdapter();
     final firstResult = _DialogResult();
@@ -610,7 +611,10 @@ class _NoopMediaClient implements MediaServerClient {
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
-class _FakeFilePicker extends FilePicker {
+class _FakeFilePicker implements FilePickerDelegate {
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+
   final Queue<Future<FilePickerResult?>> _results = Queue();
 
   void queueResult(FilePickerResult? result) {

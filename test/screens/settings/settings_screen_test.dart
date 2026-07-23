@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:io';
 
-import 'package:file_picker/file_picker.dart';
 import 'package:drift/native.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -25,6 +24,7 @@ import 'package:plezy/screens/settings/settings_screen.dart';
 import 'package:plezy/services/donation_service.dart';
 import 'package:plezy/services/download_storage_service.dart';
 import 'package:plezy/services/download_manager_service.dart';
+import 'package:plezy/services/file_picker_service.dart';
 import 'package:plezy/services/settings_export_service.dart';
 import 'package:plezy/services/settings_service.dart';
 import 'package:plezy/services/update_service.dart';
@@ -61,7 +61,7 @@ void main() {
     TvDetectionService.debugSetAppleTVOverride(false);
     PlatformDetector.debugSetIsDesktopOSOverride(false);
     directoryPicker = _FakeDirectoryPicker();
-    FilePicker.platform = directoryPicker;
+    FilePickerService.setDelegateForTesting(directoryPicker);
     await SettingsService.getInstance();
   });
 
@@ -69,6 +69,7 @@ void main() {
     TvDetectionService.debugSetAppleTVOverride(null);
     PlatformDetector.debugSetIsDesktopOSOverride(null);
     DownloadStorageService.resetForTesting();
+    FilePickerService.setDelegateForTesting(null);
     SettingsService.resetForTesting();
     PathProviderPlatform.instance = originalPathProvider;
     if (temporaryDirectory.existsSync()) {
@@ -615,7 +616,10 @@ Future<_SettingsHarness> _pumpSettingsScreen(
   return harness;
 }
 
-class _FakeDirectoryPicker extends FilePicker {
+class _FakeDirectoryPicker implements FilePickerDelegate {
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+
   String? directoryPath;
   Object? directoryError;
   Completer<String?>? directoryGate;

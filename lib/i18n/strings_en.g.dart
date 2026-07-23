@@ -40,60 +40,60 @@ class Translations with BaseTranslations<AppLocale, Translations> {
 	Translations $copyWith({TranslationMetadata<AppLocale, Translations>? meta}) => Translations(meta: meta ?? this.$meta);
 
 	// Translations
-	late final TranslationsAppEn app = TranslationsAppEn.internal(_root);
-	late final TranslationsAuthEn auth = TranslationsAuthEn.internal(_root);
-	late final TranslationsCommonEn common = TranslationsCommonEn.internal(_root);
-	late final TranslationsScreensEn screens = TranslationsScreensEn.internal(_root);
-	late final TranslationsUpdateEn update = TranslationsUpdateEn.internal(_root);
-	late final TranslationsSettingsEn settings = TranslationsSettingsEn.internal(_root);
-	late final TranslationsSearchEn search = TranslationsSearchEn.internal(_root);
-	late final TranslationsHotkeysEn hotkeys = TranslationsHotkeysEn.internal(_root);
-	late final TranslationsFileInfoEn fileInfo = TranslationsFileInfoEn.internal(_root);
-	late final TranslationsMediaMenuEn mediaMenu = TranslationsMediaMenuEn.internal(_root);
-	late final TranslationsRateSheetEn rateSheet = TranslationsRateSheetEn.internal(_root);
-	late final TranslationsAccessibilityEn accessibility = TranslationsAccessibilityEn.internal(_root);
-	late final TranslationsTooltipsEn tooltips = TranslationsTooltipsEn.internal(_root);
-	late final TranslationsAudioTracksEn audioTracks = TranslationsAudioTracksEn.internal(_root);
-	late final TranslationsVideoControlsEn videoControls = TranslationsVideoControlsEn.internal(_root);
-	late final TranslationsMessagesEn messages = TranslationsMessagesEn.internal(_root);
-	late final TranslationsSubtitlingStylingEn subtitlingStyling = TranslationsSubtitlingStylingEn.internal(_root);
-	late final TranslationsMpvConfigEn mpvConfig = TranslationsMpvConfigEn.internal(_root);
-	late final TranslationsDialogEn dialog = TranslationsDialogEn.internal(_root);
-	late final TranslationsProfilesEn profiles = TranslationsProfilesEn.internal(_root);
-	late final TranslationsConnectionsEn connections = TranslationsConnectionsEn.internal(_root);
-	late final TranslationsDiscoverEn discover = TranslationsDiscoverEn.internal(_root);
-	late final TranslationsErrorsEn errors = TranslationsErrorsEn.internal(_root);
-	late final TranslationsLibrariesEn libraries = TranslationsLibrariesEn.internal(_root);
-	late final TranslationsAboutEn about = TranslationsAboutEn.internal(_root);
-	late final TranslationsServerSelectionEn serverSelection = TranslationsServerSelectionEn.internal(_root);
-	late final TranslationsHubDetailEn hubDetail = TranslationsHubDetailEn.internal(_root);
-	late final TranslationsLogsEn logs = TranslationsLogsEn.internal(_root);
-	late final TranslationsLicensesEn licenses = TranslationsLicensesEn.internal(_root);
-	late final TranslationsNavigationEn navigation = TranslationsNavigationEn.internal(_root);
-	late final TranslationsExploreEn explore = TranslationsExploreEn.internal(_root);
-	late final TranslationsLiveTvEn liveTv = TranslationsLiveTvEn.internal(_root);
-	late final TranslationsCollectionsEn collections = TranslationsCollectionsEn.internal(_root);
-	late final TranslationsPlaylistsEn playlists = TranslationsPlaylistsEn.internal(_root);
-	late final TranslationsMusicEn music = TranslationsMusicEn.internal(_root);
-	late final TranslationsWatchTogetherEn watchTogether = TranslationsWatchTogetherEn.internal(_root);
-	late final TranslationsDownloadsEn downloads = TranslationsDownloadsEn.internal(_root);
-	late final TranslationsShadersEn shaders = TranslationsShadersEn.internal(_root);
-	late final TranslationsCompanionRemoteEn companionRemote = TranslationsCompanionRemoteEn.internal(_root);
-	late final TranslationsVideoSettingsEn videoSettings = TranslationsVideoSettingsEn.internal(_root);
-	late final TranslationsPerformanceOverlayEn performanceOverlay = TranslationsPerformanceOverlayEn.internal(_root);
-	late final TranslationsExternalPlayerEn externalPlayer = TranslationsExternalPlayerEn.internal(_root);
-	late final TranslationsMetadataEditEn metadataEdit = TranslationsMetadataEditEn.internal(_root);
-	late final TranslationsMatchScreenEn matchScreen = TranslationsMatchScreenEn.internal(_root);
-	late final TranslationsServerTasksEn serverTasks = TranslationsServerTasksEn.internal(_root);
-	late final TranslationsTraktEn trakt = TranslationsTraktEn.internal(_root);
-	late final TranslationsSeerrEn seerr = TranslationsSeerrEn.internal(_root);
-	late final TranslationsServicesEn services = TranslationsServicesEn.internal(_root);
-	late final TranslationsAddServerEn addServer = TranslationsAddServerEn.internal(_root);
+	late final Translations$app$en app = Translations$app$en.internal(_root);
+	late final Translations$auth$en auth = Translations$auth$en.internal(_root);
+	late final Translations$common$en common = Translations$common$en.internal(_root);
+	late final Translations$screens$en screens = Translations$screens$en.internal(_root);
+	late final Translations$update$en update = Translations$update$en.internal(_root);
+	late final Translations$settings$en settings = Translations$settings$en.internal(_root);
+	late final Translations$search$en search = Translations$search$en.internal(_root);
+	late final Translations$hotkeys$en hotkeys = Translations$hotkeys$en.internal(_root);
+	late final Translations$fileInfo$en fileInfo = Translations$fileInfo$en.internal(_root);
+	late final Translations$mediaMenu$en mediaMenu = Translations$mediaMenu$en.internal(_root);
+	late final Translations$rateSheet$en rateSheet = Translations$rateSheet$en.internal(_root);
+	late final Translations$accessibility$en accessibility = Translations$accessibility$en.internal(_root);
+	late final Translations$tooltips$en tooltips = Translations$tooltips$en.internal(_root);
+	late final Translations$audioTracks$en audioTracks = Translations$audioTracks$en.internal(_root);
+	late final Translations$videoControls$en videoControls = Translations$videoControls$en.internal(_root);
+	late final Translations$messages$en messages = Translations$messages$en.internal(_root);
+	late final Translations$subtitlingStyling$en subtitlingStyling = Translations$subtitlingStyling$en.internal(_root);
+	late final Translations$mpvConfig$en mpvConfig = Translations$mpvConfig$en.internal(_root);
+	late final Translations$dialog$en dialog = Translations$dialog$en.internal(_root);
+	late final Translations$profiles$en profiles = Translations$profiles$en.internal(_root);
+	late final Translations$connections$en connections = Translations$connections$en.internal(_root);
+	late final Translations$discover$en discover = Translations$discover$en.internal(_root);
+	late final Translations$errors$en errors = Translations$errors$en.internal(_root);
+	late final Translations$libraries$en libraries = Translations$libraries$en.internal(_root);
+	late final Translations$about$en about = Translations$about$en.internal(_root);
+	late final Translations$serverSelection$en serverSelection = Translations$serverSelection$en.internal(_root);
+	late final Translations$hubDetail$en hubDetail = Translations$hubDetail$en.internal(_root);
+	late final Translations$logs$en logs = Translations$logs$en.internal(_root);
+	late final Translations$licenses$en licenses = Translations$licenses$en.internal(_root);
+	late final Translations$navigation$en navigation = Translations$navigation$en.internal(_root);
+	late final Translations$explore$en explore = Translations$explore$en.internal(_root);
+	late final Translations$liveTv$en liveTv = Translations$liveTv$en.internal(_root);
+	late final Translations$collections$en collections = Translations$collections$en.internal(_root);
+	late final Translations$playlists$en playlists = Translations$playlists$en.internal(_root);
+	late final Translations$music$en music = Translations$music$en.internal(_root);
+	late final Translations$watchTogether$en watchTogether = Translations$watchTogether$en.internal(_root);
+	late final Translations$downloads$en downloads = Translations$downloads$en.internal(_root);
+	late final Translations$shaders$en shaders = Translations$shaders$en.internal(_root);
+	late final Translations$companionRemote$en companionRemote = Translations$companionRemote$en.internal(_root);
+	late final Translations$videoSettings$en videoSettings = Translations$videoSettings$en.internal(_root);
+	late final Translations$performanceOverlay$en performanceOverlay = Translations$performanceOverlay$en.internal(_root);
+	late final Translations$externalPlayer$en externalPlayer = Translations$externalPlayer$en.internal(_root);
+	late final Translations$metadataEdit$en metadataEdit = Translations$metadataEdit$en.internal(_root);
+	late final Translations$matchScreen$en matchScreen = Translations$matchScreen$en.internal(_root);
+	late final Translations$serverTasks$en serverTasks = Translations$serverTasks$en.internal(_root);
+	late final Translations$trakt$en trakt = Translations$trakt$en.internal(_root);
+	late final Translations$seerr$en seerr = Translations$seerr$en.internal(_root);
+	late final Translations$services$en services = Translations$services$en.internal(_root);
+	late final Translations$addServer$en addServer = Translations$addServer$en.internal(_root);
 }
 
 // Path: app
-class TranslationsAppEn {
-	TranslationsAppEn.internal(this._root);
+class Translations$app$en {
+	Translations$app$en.internal(this._root);
 
 	final Translations _root; // ignore: unused_field
 
@@ -104,8 +104,8 @@ class TranslationsAppEn {
 }
 
 // Path: auth
-class TranslationsAuthEn {
-	TranslationsAuthEn.internal(this._root);
+class Translations$auth$en {
+	Translations$auth$en.internal(this._root);
 
 	final Translations _root; // ignore: unused_field
 
@@ -158,8 +158,8 @@ class TranslationsAuthEn {
 }
 
 // Path: common
-class TranslationsCommonEn {
-	TranslationsCommonEn.internal(this._root);
+class Translations$common$en {
+	Translations$common$en.internal(this._root);
 
 	final Translations _root; // ignore: unused_field
 
@@ -302,8 +302,8 @@ class TranslationsCommonEn {
 }
 
 // Path: screens
-class TranslationsScreensEn {
-	TranslationsScreensEn.internal(this._root);
+class Translations$screens$en {
+	Translations$screens$en.internal(this._root);
 
 	final Translations _root; // ignore: unused_field
 
@@ -326,8 +326,8 @@ class TranslationsScreensEn {
 }
 
 // Path: update
-class TranslationsUpdateEn {
-	TranslationsUpdateEn.internal(this._root);
+class Translations$update$en {
+	Translations$update$en.internal(this._root);
 
 	final Translations _root; // ignore: unused_field
 
@@ -356,8 +356,8 @@ class TranslationsUpdateEn {
 }
 
 // Path: settings
-class TranslationsSettingsEn {
-	TranslationsSettingsEn.internal(this._root);
+class Translations$settings$en {
+	Translations$settings$en.internal(this._root);
 
 	final Translations _root; // ignore: unused_field
 
@@ -662,9 +662,6 @@ class TranslationsSettingsEn {
 
 	/// en: 'Send crash reports to help improve the app'
 	String get crashReportingDescription => 'Send crash reports to help improve the app';
-
-	/// en: 'After disabling, reports already accepted, queued, or being sent may finish. Enabling again takes effect when Plezy restarts.'
-	String get crashReportingRestartRequired => 'After disabling, reports already accepted, queued, or being sent may finish. Enabling again takes effect when Plezy restarts.';
 
 	/// en: 'Debug Logging'
 	String get debugLogging => 'Debug Logging';
@@ -1103,8 +1100,8 @@ class TranslationsSettingsEn {
 }
 
 // Path: search
-class TranslationsSearchEn {
-	TranslationsSearchEn.internal(this._root);
+class Translations$search$en {
+	Translations$search$en.internal(this._root);
 
 	final Translations _root; // ignore: unused_field
 
@@ -1124,8 +1121,8 @@ class TranslationsSearchEn {
 }
 
 // Path: hotkeys
-class TranslationsHotkeysEn {
-	TranslationsHotkeysEn.internal(this._root);
+class Translations$hotkeys$en {
+	Translations$hotkeys$en.internal(this._root);
 
 	final Translations _root; // ignore: unused_field
 
@@ -1149,12 +1146,12 @@ class TranslationsHotkeysEn {
 	/// en: 'Press the shortcut now'
 	String get recordingShortcut => 'Press the shortcut now';
 
-	late final TranslationsHotkeysActionsEn actions = TranslationsHotkeysActionsEn.internal(_root);
+	late final Translations$hotkeys$actions$en actions = Translations$hotkeys$actions$en.internal(_root);
 }
 
 // Path: fileInfo
-class TranslationsFileInfoEn {
-	TranslationsFileInfoEn.internal(this._root);
+class Translations$fileInfo$en {
+	Translations$fileInfo$en.internal(this._root);
 
 	final Translations _root; // ignore: unused_field
 
@@ -1237,8 +1234,8 @@ class TranslationsFileInfoEn {
 }
 
 // Path: mediaMenu
-class TranslationsMediaMenuEn {
-	TranslationsMediaMenuEn.internal(this._root);
+class Translations$mediaMenu$en {
+	Translations$mediaMenu$en.internal(this._root);
 
 	final Translations _root; // ignore: unused_field
 
@@ -1294,8 +1291,8 @@ class TranslationsMediaMenuEn {
 }
 
 // Path: rateSheet
-class TranslationsRateSheetEn {
-	TranslationsRateSheetEn.internal(this._root);
+class Translations$rateSheet$en {
+	Translations$rateSheet$en.internal(this._root);
 
 	final Translations _root; // ignore: unused_field
 
@@ -1324,8 +1321,8 @@ class TranslationsRateSheetEn {
 }
 
 // Path: accessibility
-class TranslationsAccessibilityEn {
-	TranslationsAccessibilityEn.internal(this._root);
+class Translations$accessibility$en {
+	Translations$accessibility$en.internal(this._root);
 
 	final Translations _root; // ignore: unused_field
 
@@ -1399,8 +1396,8 @@ class TranslationsAccessibilityEn {
 }
 
 // Path: tooltips
-class TranslationsTooltipsEn {
-	TranslationsTooltipsEn.internal(this._root);
+class Translations$tooltips$en {
+	Translations$tooltips$en.internal(this._root);
 
 	final Translations _root; // ignore: unused_field
 
@@ -1420,8 +1417,8 @@ class TranslationsTooltipsEn {
 }
 
 // Path: audioTracks
-class TranslationsAudioTracksEn {
-	TranslationsAudioTracksEn.internal(this._root);
+class Translations$audioTracks$en {
+	Translations$audioTracks$en.internal(this._root);
 
 	final Translations _root; // ignore: unused_field
 
@@ -1432,8 +1429,8 @@ class TranslationsAudioTracksEn {
 }
 
 // Path: videoControls
-class TranslationsVideoControlsEn {
-	TranslationsVideoControlsEn.internal(this._root);
+class Translations$videoControls$en {
+	Translations$videoControls$en.internal(this._root);
 
 	final Translations _root; // ignore: unused_field
 
@@ -1628,7 +1625,7 @@ class TranslationsVideoControlsEn {
 	/// en: 'Zoom ${percent}%'
 	String zoomPercent({required Object percent}) => 'Zoom ${percent}%';
 
-	late final TranslationsVideoControlsPipErrorsEn pipErrors = TranslationsVideoControlsPipErrorsEn.internal(_root);
+	late final Translations$videoControls$pipErrors$en pipErrors = Translations$videoControls$pipErrors$en.internal(_root);
 
 	/// en: 'Chapters'
 	String get chapters => 'Chapters';
@@ -1674,8 +1671,8 @@ class TranslationsVideoControlsEn {
 }
 
 // Path: messages
-class TranslationsMessagesEn {
-	TranslationsMessagesEn.internal(this._root);
+class Translations$messages$en {
+	Translations$messages$en.internal(this._root);
 
 	final Translations _root; // ignore: unused_field
 
@@ -1833,8 +1830,8 @@ class TranslationsMessagesEn {
 }
 
 // Path: subtitlingStyling
-class TranslationsSubtitlingStylingEn {
-	TranslationsSubtitlingStylingEn.internal(this._root);
+class Translations$subtitlingStyling$en {
+	Translations$subtitlingStyling$en.internal(this._root);
 
 	final Translations _root; // ignore: unused_field
 
@@ -1905,8 +1902,8 @@ class TranslationsSubtitlingStylingEn {
 }
 
 // Path: mpvConfig
-class TranslationsMpvConfigEn {
-	TranslationsMpvConfigEn.internal(this._root);
+class Translations$mpvConfig$en {
+	Translations$mpvConfig$en.internal(this._root);
 
 	final Translations _root; // ignore: unused_field
 
@@ -1956,8 +1953,8 @@ class TranslationsMpvConfigEn {
 }
 
 // Path: dialog
-class TranslationsDialogEn {
-	TranslationsDialogEn.internal(this._root);
+class Translations$dialog$en {
+	Translations$dialog$en.internal(this._root);
 
 	final Translations _root; // ignore: unused_field
 
@@ -1968,8 +1965,8 @@ class TranslationsDialogEn {
 }
 
 // Path: profiles
-class TranslationsProfilesEn {
-	TranslationsProfilesEn.internal(this._root);
+class Translations$profiles$en {
+	Translations$profiles$en.internal(this._root);
 
 	final Translations _root; // ignore: unused_field
 
@@ -2157,8 +2154,8 @@ class TranslationsProfilesEn {
 }
 
 // Path: connections
-class TranslationsConnectionsEn {
-	TranslationsConnectionsEn.internal(this._root);
+class Translations$connections$en {
+	Translations$connections$en.internal(this._root);
 
 	final Translations _root; // ignore: unused_field
 
@@ -2193,8 +2190,8 @@ class TranslationsConnectionsEn {
 }
 
 // Path: discover
-class TranslationsDiscoverEn {
-	TranslationsDiscoverEn.internal(this._root);
+class Translations$discover$en {
+	Translations$discover$en.internal(this._root);
 
 	final Translations _root; // ignore: unused_field
 
@@ -2268,8 +2265,8 @@ class TranslationsDiscoverEn {
 }
 
 // Path: errors
-class TranslationsErrorsEn {
-	TranslationsErrorsEn.internal(this._root);
+class Translations$errors$en {
+	Translations$errors$en.internal(this._root);
 
 	final Translations _root; // ignore: unused_field
 
@@ -2310,8 +2307,8 @@ class TranslationsErrorsEn {
 }
 
 // Path: libraries
-class TranslationsLibrariesEn {
-	TranslationsLibrariesEn.internal(this._root);
+class Translations$libraries$en {
+	Translations$libraries$en.internal(this._root);
 
 	final Translations _root; // ignore: unused_field
 
@@ -2440,15 +2437,15 @@ class TranslationsLibrariesEn {
 	/// en: 'folders'
 	String get folders => 'folders';
 
-	late final TranslationsLibrariesTabsEn tabs = TranslationsLibrariesTabsEn.internal(_root);
-	late final TranslationsLibrariesGroupingsEn groupings = TranslationsLibrariesGroupingsEn.internal(_root);
-	late final TranslationsLibrariesFilterCategoriesEn filterCategories = TranslationsLibrariesFilterCategoriesEn.internal(_root);
-	late final TranslationsLibrariesSortLabelsEn sortLabels = TranslationsLibrariesSortLabelsEn.internal(_root);
+	late final Translations$libraries$tabs$en tabs = Translations$libraries$tabs$en.internal(_root);
+	late final Translations$libraries$groupings$en groupings = Translations$libraries$groupings$en.internal(_root);
+	late final Translations$libraries$filterCategories$en filterCategories = Translations$libraries$filterCategories$en.internal(_root);
+	late final Translations$libraries$sortLabels$en sortLabels = Translations$libraries$sortLabels$en.internal(_root);
 }
 
 // Path: about
-class TranslationsAboutEn {
-	TranslationsAboutEn.internal(this._root);
+class Translations$about$en {
+	Translations$about$en.internal(this._root);
 
 	final Translations _root; // ignore: unused_field
 
@@ -2471,8 +2468,8 @@ class TranslationsAboutEn {
 }
 
 // Path: serverSelection
-class TranslationsServerSelectionEn {
-	TranslationsServerSelectionEn.internal(this._root);
+class Translations$serverSelection$en {
+	Translations$serverSelection$en.internal(this._root);
 
 	final Translations _root; // ignore: unused_field
 
@@ -2486,8 +2483,8 @@ class TranslationsServerSelectionEn {
 }
 
 // Path: hubDetail
-class TranslationsHubDetailEn {
-	TranslationsHubDetailEn.internal(this._root);
+class Translations$hubDetail$en {
+	Translations$hubDetail$en.internal(this._root);
 
 	final Translations _root; // ignore: unused_field
 
@@ -2510,8 +2507,8 @@ class TranslationsHubDetailEn {
 }
 
 // Path: logs
-class TranslationsLogsEn {
-	TranslationsLogsEn.internal(this._root);
+class Translations$logs$en {
+	Translations$logs$en.internal(this._root);
 
 	final Translations _root; // ignore: unused_field
 
@@ -2528,8 +2525,8 @@ class TranslationsLogsEn {
 }
 
 // Path: licenses
-class TranslationsLicensesEn {
-	TranslationsLicensesEn.internal(this._root);
+class Translations$licenses$en {
+	Translations$licenses$en.internal(this._root);
 
 	final Translations _root; // ignore: unused_field
 
@@ -2549,8 +2546,8 @@ class TranslationsLicensesEn {
 }
 
 // Path: navigation
-class TranslationsNavigationEn {
-	TranslationsNavigationEn.internal(this._root);
+class Translations$navigation$en {
+	Translations$navigation$en.internal(this._root);
 
 	final Translations _root; // ignore: unused_field
 
@@ -2570,8 +2567,8 @@ class TranslationsNavigationEn {
 }
 
 // Path: explore
-class TranslationsExploreEn {
-	TranslationsExploreEn.internal(this._root);
+class Translations$explore$en {
+	Translations$explore$en.internal(this._root);
 
 	final Translations _root; // ignore: unused_field
 
@@ -2583,8 +2580,8 @@ class TranslationsExploreEn {
 	/// en: 'Select source'
 	String get selectSource => 'Select source';
 
-	late final TranslationsExploreRowsEn rows = TranslationsExploreRowsEn.internal(_root);
-	late final TranslationsExploreStatusEn status = TranslationsExploreStatusEn.internal(_root);
+	late final Translations$explore$rows$en rows = Translations$explore$rows$en.internal(_root);
+	late final Translations$explore$status$en status = Translations$explore$status$en.internal(_root);
 
 	/// en: '(one) {${n} episode} (other) {${n} episodes}'
 	String episodeCount({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(n,
@@ -2636,8 +2633,8 @@ class TranslationsExploreEn {
 }
 
 // Path: liveTv
-class TranslationsLiveTvEn {
-	TranslationsLiveTvEn.internal(this._root);
+class Translations$liveTv$en {
+	Translations$liveTv$en.internal(this._root);
 
 	final Translations _root; // ignore: unused_field
 
@@ -2846,8 +2843,8 @@ class TranslationsLiveTvEn {
 }
 
 // Path: collections
-class TranslationsCollectionsEn {
-	TranslationsCollectionsEn.internal(this._root);
+class Translations$collections$en {
+	Translations$collections$en.internal(this._root);
 
 	final Translations _root; // ignore: unused_field
 
@@ -2915,8 +2912,8 @@ class TranslationsCollectionsEn {
 }
 
 // Path: playlists
-class TranslationsPlaylistsEn {
-	TranslationsPlaylistsEn.internal(this._root);
+class Translations$playlists$en {
+	Translations$playlists$en.internal(this._root);
 
 	final Translations _root; // ignore: unused_field
 
@@ -3002,8 +2999,8 @@ class TranslationsPlaylistsEn {
 }
 
 // Path: music
-class TranslationsMusicEn {
-	TranslationsMusicEn.internal(this._root);
+class Translations$music$en {
+	Translations$music$en.internal(this._root);
 
 	final Translations _root; // ignore: unused_field
 
@@ -3080,8 +3077,8 @@ class TranslationsMusicEn {
 }
 
 // Path: watchTogether
-class TranslationsWatchTogetherEn {
-	TranslationsWatchTogetherEn.internal(this._root);
+class Translations$watchTogether$en {
+	Translations$watchTogether$en.internal(this._root);
 
 	final Translations _root; // ignore: unused_field
 
@@ -3284,8 +3281,8 @@ class TranslationsWatchTogetherEn {
 }
 
 // Path: downloads
-class TranslationsDownloadsEn {
-	TranslationsDownloadsEn.internal(this._root);
+class Translations$downloads$en {
+	Translations$downloads$en.internal(this._root);
 
 	final Translations _root; // ignore: unused_field
 
@@ -3494,8 +3491,8 @@ class TranslationsDownloadsEn {
 }
 
 // Path: shaders
-class TranslationsShadersEn {
-	TranslationsShadersEn.internal(this._root);
+class Translations$shaders$en {
+	Translations$shaders$en.internal(this._root);
 
 	final Translations _root; // ignore: unused_field
 
@@ -3548,8 +3545,8 @@ class TranslationsShadersEn {
 }
 
 // Path: companionRemote
-class TranslationsCompanionRemoteEn {
-	TranslationsCompanionRemoteEn.internal(this._root);
+class Translations$companionRemote$en {
+	Translations$companionRemote$en.internal(this._root);
 
 	final Translations _root; // ignore: unused_field
 
@@ -3564,15 +3561,15 @@ class TranslationsCompanionRemoteEn {
 	/// en: 'Unknown Device'
 	String get unknownDevice => 'Unknown Device';
 
-	late final TranslationsCompanionRemoteSessionEn session = TranslationsCompanionRemoteSessionEn.internal(_root);
-	late final TranslationsCompanionRemotePairingEn pairing = TranslationsCompanionRemotePairingEn.internal(_root);
-	late final TranslationsCompanionRemoteRemoteEn remote = TranslationsCompanionRemoteRemoteEn.internal(_root);
-	late final TranslationsCompanionRemoteErrorsEn errors = TranslationsCompanionRemoteErrorsEn.internal(_root);
+	late final Translations$companionRemote$session$en session = Translations$companionRemote$session$en.internal(_root);
+	late final Translations$companionRemote$pairing$en pairing = Translations$companionRemote$pairing$en.internal(_root);
+	late final Translations$companionRemote$remote$en remote = Translations$companionRemote$remote$en.internal(_root);
+	late final Translations$companionRemote$errors$en errors = Translations$companionRemote$errors$en.internal(_root);
 }
 
 // Path: videoSettings
-class TranslationsVideoSettingsEn {
-	TranslationsVideoSettingsEn.internal(this._root);
+class Translations$videoSettings$en {
+	Translations$videoSettings$en.internal(this._root);
 
 	final Translations _root; // ignore: unused_field
 
@@ -3619,8 +3616,8 @@ class TranslationsVideoSettingsEn {
 }
 
 // Path: performanceOverlay
-class TranslationsPerformanceOverlayEn {
-	TranslationsPerformanceOverlayEn.internal(this._root);
+class Translations$performanceOverlay$en {
+	Translations$performanceOverlay$en.internal(this._root);
 
 	final Translations _root; // ignore: unused_field
 
@@ -3733,8 +3730,8 @@ class TranslationsPerformanceOverlayEn {
 }
 
 // Path: externalPlayer
-class TranslationsExternalPlayerEn {
-	TranslationsExternalPlayerEn.internal(this._root);
+class Translations$externalPlayer$en {
+	Translations$externalPlayer$en.internal(this._root);
 
 	final Translations _root; // ignore: unused_field
 
@@ -3790,8 +3787,8 @@ class TranslationsExternalPlayerEn {
 }
 
 // Path: metadataEdit
-class TranslationsMetadataEditEn {
-	TranslationsMetadataEditEn.internal(this._root);
+class Translations$metadataEdit$en {
+	Translations$metadataEdit$en.internal(this._root);
 
 	final Translations _root; // ignore: unused_field
 
@@ -4027,8 +4024,8 @@ class TranslationsMetadataEditEn {
 }
 
 // Path: matchScreen
-class TranslationsMatchScreenEn {
-	TranslationsMatchScreenEn.internal(this._root);
+class Translations$matchScreen$en {
+	Translations$matchScreen$en.internal(this._root);
 
 	final Translations _root; // ignore: unused_field
 
@@ -4072,8 +4069,8 @@ class TranslationsMatchScreenEn {
 }
 
 // Path: serverTasks
-class TranslationsServerTasksEn {
-	TranslationsServerTasksEn.internal(this._root);
+class Translations$serverTasks$en {
+	Translations$serverTasks$en.internal(this._root);
 
 	final Translations _root; // ignore: unused_field
 
@@ -4090,8 +4087,8 @@ class TranslationsServerTasksEn {
 }
 
 // Path: trakt
-class TranslationsTraktEn {
-	TranslationsTraktEn.internal(this._root);
+class Translations$trakt$en {
+	Translations$trakt$en.internal(this._root);
 
 	final Translations _root; // ignore: unused_field
 
@@ -4126,8 +4123,8 @@ class TranslationsTraktEn {
 }
 
 // Path: seerr
-class TranslationsSeerrEn {
-	TranslationsSeerrEn.internal(this._root);
+class Translations$seerr$en {
+	Translations$seerr$en.internal(this._root);
 
 	final Translations _root; // ignore: unused_field
 
@@ -4225,8 +4222,8 @@ class TranslationsSeerrEn {
 }
 
 // Path: services
-class TranslationsServicesEn {
-	TranslationsServicesEn.internal(this._root);
+class Translations$services$en {
+	Translations$services$en.internal(this._root);
 
 	final Translations _root; // ignore: unused_field
 
@@ -4259,15 +4256,15 @@ class TranslationsServicesEn {
 	/// en: 'Couldn't connect to ${service}. Try again.'
 	String connectFailed({required Object service}) => 'Couldn\'t connect to ${service}. Try again.';
 
-	late final TranslationsServicesNamesEn names = TranslationsServicesNamesEn.internal(_root);
-	late final TranslationsServicesDeviceCodeEn deviceCode = TranslationsServicesDeviceCodeEn.internal(_root);
-	late final TranslationsServicesOauthProxyEn oauthProxy = TranslationsServicesOauthProxyEn.internal(_root);
-	late final TranslationsServicesLibraryFilterEn libraryFilter = TranslationsServicesLibraryFilterEn.internal(_root);
+	late final Translations$services$names$en names = Translations$services$names$en.internal(_root);
+	late final Translations$services$deviceCode$en deviceCode = Translations$services$deviceCode$en.internal(_root);
+	late final Translations$services$oauthProxy$en oauthProxy = Translations$services$oauthProxy$en.internal(_root);
+	late final Translations$services$libraryFilter$en libraryFilter = Translations$services$libraryFilter$en.internal(_root);
 }
 
 // Path: addServer
-class TranslationsAddServerEn {
-	TranslationsAddServerEn.internal(this._root);
+class Translations$addServer$en {
+	Translations$addServer$en.internal(this._root);
 
 	final Translations _root; // ignore: unused_field
 
@@ -4359,8 +4356,8 @@ class TranslationsAddServerEn {
 }
 
 // Path: hotkeys.actions
-class TranslationsHotkeysActionsEn {
-	TranslationsHotkeysActionsEn.internal(this._root);
+class Translations$hotkeys$actions$en {
+	Translations$hotkeys$actions$en.internal(this._root);
 
 	final Translations _root; // ignore: unused_field
 
@@ -4443,8 +4440,8 @@ class TranslationsHotkeysActionsEn {
 }
 
 // Path: videoControls.pipErrors
-class TranslationsVideoControlsPipErrorsEn {
-	TranslationsVideoControlsPipErrorsEn.internal(this._root);
+class Translations$videoControls$pipErrors$en {
+	Translations$videoControls$pipErrors$en.internal(this._root);
 
 	final Translations _root; // ignore: unused_field
 
@@ -4473,8 +4470,8 @@ class TranslationsVideoControlsPipErrorsEn {
 }
 
 // Path: libraries.tabs
-class TranslationsLibrariesTabsEn {
-	TranslationsLibrariesTabsEn.internal(this._root);
+class Translations$libraries$tabs$en {
+	Translations$libraries$tabs$en.internal(this._root);
 
 	final Translations _root; // ignore: unused_field
 
@@ -4494,8 +4491,8 @@ class TranslationsLibrariesTabsEn {
 }
 
 // Path: libraries.groupings
-class TranslationsLibrariesGroupingsEn {
-	TranslationsLibrariesGroupingsEn.internal(this._root);
+class Translations$libraries$groupings$en {
+	Translations$libraries$groupings$en.internal(this._root);
 
 	final Translations _root; // ignore: unused_field
 
@@ -4533,8 +4530,8 @@ class TranslationsLibrariesGroupingsEn {
 }
 
 // Path: libraries.filterCategories
-class TranslationsLibrariesFilterCategoriesEn {
-	TranslationsLibrariesFilterCategoriesEn.internal(this._root);
+class Translations$libraries$filterCategories$en {
+	Translations$libraries$filterCategories$en.internal(this._root);
 
 	final Translations _root; // ignore: unused_field
 
@@ -4563,8 +4560,8 @@ class TranslationsLibrariesFilterCategoriesEn {
 }
 
 // Path: libraries.sortLabels
-class TranslationsLibrariesSortLabelsEn {
-	TranslationsLibrariesSortLabelsEn.internal(this._root);
+class Translations$libraries$sortLabels$en {
+	Translations$libraries$sortLabels$en.internal(this._root);
 
 	final Translations _root; // ignore: unused_field
 
@@ -4632,8 +4629,8 @@ class TranslationsLibrariesSortLabelsEn {
 }
 
 // Path: explore.rows
-class TranslationsExploreRowsEn {
-	TranslationsExploreRowsEn.internal(this._root);
+class Translations$explore$rows$en {
+	Translations$explore$rows$en.internal(this._root);
 
 	final Translations _root; // ignore: unused_field
 
@@ -4683,8 +4680,8 @@ class TranslationsExploreRowsEn {
 }
 
 // Path: explore.status
-class TranslationsExploreStatusEn {
-	TranslationsExploreStatusEn.internal(this._root);
+class Translations$explore$status$en {
+	Translations$explore$status$en.internal(this._root);
 
 	final Translations _root; // ignore: unused_field
 
@@ -4704,8 +4701,8 @@ class TranslationsExploreStatusEn {
 }
 
 // Path: companionRemote.session
-class TranslationsCompanionRemoteSessionEn {
-	TranslationsCompanionRemoteSessionEn.internal(this._root);
+class Translations$companionRemote$session$en {
+	Translations$companionRemote$session$en.internal(this._root);
 
 	final Translations _root; // ignore: unused_field
 
@@ -4746,8 +4743,8 @@ class TranslationsCompanionRemoteSessionEn {
 }
 
 // Path: companionRemote.pairing
-class TranslationsCompanionRemotePairingEn {
-	TranslationsCompanionRemotePairingEn.internal(this._root);
+class Translations$companionRemote$pairing$en {
+	Translations$companionRemote$pairing$en.internal(this._root);
 
 	final Translations _root; // ignore: unused_field
 
@@ -4800,8 +4797,8 @@ class TranslationsCompanionRemotePairingEn {
 }
 
 // Path: companionRemote.remote
-class TranslationsCompanionRemoteRemoteEn {
-	TranslationsCompanionRemoteRemoteEn.internal(this._root);
+class Translations$companionRemote$remote$en {
+	Translations$companionRemote$remote$en.internal(this._root);
 
 	final Translations _root; // ignore: unused_field
 
@@ -4890,8 +4887,8 @@ class TranslationsCompanionRemoteRemoteEn {
 }
 
 // Path: companionRemote.errors
-class TranslationsCompanionRemoteErrorsEn {
-	TranslationsCompanionRemoteErrorsEn.internal(this._root);
+class Translations$companionRemote$errors$en {
+	Translations$companionRemote$errors$en.internal(this._root);
 
 	final Translations _root; // ignore: unused_field
 
@@ -4923,8 +4920,8 @@ class TranslationsCompanionRemoteErrorsEn {
 }
 
 // Path: services.names
-class TranslationsServicesNamesEn {
-	TranslationsServicesNamesEn.internal(this._root);
+class Translations$services$names$en {
+	Translations$services$names$en.internal(this._root);
 
 	final Translations _root; // ignore: unused_field
 
@@ -4944,8 +4941,8 @@ class TranslationsServicesNamesEn {
 }
 
 // Path: services.deviceCode
-class TranslationsServicesDeviceCodeEn {
-	TranslationsServicesDeviceCodeEn.internal(this._root);
+class Translations$services$deviceCode$en {
+	Translations$services$deviceCode$en.internal(this._root);
 
 	final Translations _root; // ignore: unused_field
 
@@ -4971,8 +4968,8 @@ class TranslationsServicesDeviceCodeEn {
 }
 
 // Path: services.oauthProxy
-class TranslationsServicesOauthProxyEn {
-	TranslationsServicesOauthProxyEn.internal(this._root);
+class Translations$services$oauthProxy$en {
+	Translations$services$oauthProxy$en.internal(this._root);
 
 	final Translations _root; // ignore: unused_field
 
@@ -4995,8 +4992,8 @@ class TranslationsServicesOauthProxyEn {
 }
 
 // Path: services.libraryFilter
-class TranslationsServicesLibraryFilterEn {
-	TranslationsServicesLibraryFilterEn.internal(this._root);
+class Translations$services$libraryFilter$en {
+	Translations$services$libraryFilter$en.internal(this._root);
 
 	final Translations _root; // ignore: unused_field
 
@@ -5220,7 +5217,6 @@ extension on Translations {
 			'settings.watchTogetherRelayInvalid' => 'Enter a valid HTTP or HTTPS relay base URL.',
 			'settings.crashReporting' => 'Crash Reporting',
 			'settings.crashReportingDescription' => 'Send crash reports to help improve the app',
-			'settings.crashReportingRestartRequired' => 'After disabling, reports already accepted, queued, or being sent may finish. Enabling again takes effect when Plezy restarts.',
 			'settings.debugLogging' => 'Debug Logging',
 			'settings.debugLoggingDescription' => 'Enable detailed logging for troubleshooting',
 			'settings.viewLogs' => 'View Logs',
@@ -5559,10 +5555,9 @@ extension on Translations {
 			'videoControls.subtitleDownloaded' => 'Subtitle downloaded',
 			'videoControls.subtitleDownloadedNotApplied' => 'Subtitle downloaded, but it could not be selected',
 			'videoControls.subtitleDownloadFailed' => 'Failed to download subtitle',
+			'videoControls.searchLanguages' => 'Search languages...',
 			_ => null,
 		} ?? switch (path) {
-			'videoControls.searchLanguages' => 'Search languages...',
-
 			'messages.markedAsWatched' => 'Marked as watched',
 			'messages.markedAsUnwatched' => 'Marked as unwatched',
 			'messages.markedAsWatchedOffline' => 'Marked as watched (will sync when online)',
@@ -6074,10 +6069,9 @@ extension on Translations {
 			'watchTogether.currentPlayback' => 'Current Playback',
 			'watchTogether.joinCurrentPlayback' => 'Join Current Playback',
 			'watchTogether.joinCurrentPlaybackDescription' => 'Jump back into what the host is currently watching',
+			'watchTogether.failedToOpenCurrentPlayback' => 'Failed to open current playback',
 			_ => null,
 		} ?? switch (path) {
-			'watchTogether.failedToOpenCurrentPlayback' => 'Failed to open current playback',
-
 			'watchTogether.participantJoined' => ({required Object name}) => '${name} joined',
 			'watchTogether.participantLeft' => ({required Object name}) => '${name} left',
 			'watchTogether.participantPaused' => ({required Object name}) => '${name} paused',

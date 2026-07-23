@@ -250,7 +250,7 @@ esac
             self.assertEqual((self.root / relative).read_text(encoding="utf-8"), "version two\n")
         self.assertEqual(
             (self.root / "build-runner-args.txt").read_text(encoding="utf-8"),
-            "run build_runner build --delete-conflicting-outputs --build-filter=lib/models/**\n",
+            "run build_runner build --build-filter=lib/models/**\n",
         )
 
 

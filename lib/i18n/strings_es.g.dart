@@ -39,60 +39,60 @@ class TranslationsEs extends Translations with BaseTranslations<AppLocale, Trans
 	TranslationsEs $copyWith({TranslationMetadata<AppLocale, Translations>? meta}) => TranslationsEs(meta: meta ?? this.$meta);
 
 	// Translations
-	@override late final _TranslationsAppEs app = _TranslationsAppEs._(_root);
-	@override late final _TranslationsAuthEs auth = _TranslationsAuthEs._(_root);
-	@override late final _TranslationsCommonEs common = _TranslationsCommonEs._(_root);
-	@override late final _TranslationsScreensEs screens = _TranslationsScreensEs._(_root);
-	@override late final _TranslationsUpdateEs update = _TranslationsUpdateEs._(_root);
-	@override late final _TranslationsSettingsEs settings = _TranslationsSettingsEs._(_root);
-	@override late final _TranslationsSearchEs search = _TranslationsSearchEs._(_root);
-	@override late final _TranslationsHotkeysEs hotkeys = _TranslationsHotkeysEs._(_root);
-	@override late final _TranslationsFileInfoEs fileInfo = _TranslationsFileInfoEs._(_root);
-	@override late final _TranslationsMediaMenuEs mediaMenu = _TranslationsMediaMenuEs._(_root);
-	@override late final _TranslationsRateSheetEs rateSheet = _TranslationsRateSheetEs._(_root);
-	@override late final _TranslationsAccessibilityEs accessibility = _TranslationsAccessibilityEs._(_root);
-	@override late final _TranslationsTooltipsEs tooltips = _TranslationsTooltipsEs._(_root);
-	@override late final _TranslationsAudioTracksEs audioTracks = _TranslationsAudioTracksEs._(_root);
-	@override late final _TranslationsVideoControlsEs videoControls = _TranslationsVideoControlsEs._(_root);
-	@override late final _TranslationsMessagesEs messages = _TranslationsMessagesEs._(_root);
-	@override late final _TranslationsSubtitlingStylingEs subtitlingStyling = _TranslationsSubtitlingStylingEs._(_root);
-	@override late final _TranslationsMpvConfigEs mpvConfig = _TranslationsMpvConfigEs._(_root);
-	@override late final _TranslationsDialogEs dialog = _TranslationsDialogEs._(_root);
-	@override late final _TranslationsProfilesEs profiles = _TranslationsProfilesEs._(_root);
-	@override late final _TranslationsConnectionsEs connections = _TranslationsConnectionsEs._(_root);
-	@override late final _TranslationsDiscoverEs discover = _TranslationsDiscoverEs._(_root);
-	@override late final _TranslationsErrorsEs errors = _TranslationsErrorsEs._(_root);
-	@override late final _TranslationsLibrariesEs libraries = _TranslationsLibrariesEs._(_root);
-	@override late final _TranslationsAboutEs about = _TranslationsAboutEs._(_root);
-	@override late final _TranslationsServerSelectionEs serverSelection = _TranslationsServerSelectionEs._(_root);
-	@override late final _TranslationsHubDetailEs hubDetail = _TranslationsHubDetailEs._(_root);
-	@override late final _TranslationsLogsEs logs = _TranslationsLogsEs._(_root);
-	@override late final _TranslationsLicensesEs licenses = _TranslationsLicensesEs._(_root);
-	@override late final _TranslationsNavigationEs navigation = _TranslationsNavigationEs._(_root);
-	@override late final _TranslationsExploreEs explore = _TranslationsExploreEs._(_root);
-	@override late final _TranslationsLiveTvEs liveTv = _TranslationsLiveTvEs._(_root);
-	@override late final _TranslationsCollectionsEs collections = _TranslationsCollectionsEs._(_root);
-	@override late final _TranslationsPlaylistsEs playlists = _TranslationsPlaylistsEs._(_root);
-	@override late final _TranslationsMusicEs music = _TranslationsMusicEs._(_root);
-	@override late final _TranslationsWatchTogetherEs watchTogether = _TranslationsWatchTogetherEs._(_root);
-	@override late final _TranslationsDownloadsEs downloads = _TranslationsDownloadsEs._(_root);
-	@override late final _TranslationsShadersEs shaders = _TranslationsShadersEs._(_root);
-	@override late final _TranslationsCompanionRemoteEs companionRemote = _TranslationsCompanionRemoteEs._(_root);
-	@override late final _TranslationsVideoSettingsEs videoSettings = _TranslationsVideoSettingsEs._(_root);
-	@override late final _TranslationsPerformanceOverlayEs performanceOverlay = _TranslationsPerformanceOverlayEs._(_root);
-	@override late final _TranslationsExternalPlayerEs externalPlayer = _TranslationsExternalPlayerEs._(_root);
-	@override late final _TranslationsMetadataEditEs metadataEdit = _TranslationsMetadataEditEs._(_root);
-	@override late final _TranslationsMatchScreenEs matchScreen = _TranslationsMatchScreenEs._(_root);
-	@override late final _TranslationsServerTasksEs serverTasks = _TranslationsServerTasksEs._(_root);
-	@override late final _TranslationsTraktEs trakt = _TranslationsTraktEs._(_root);
-	@override late final _TranslationsSeerrEs seerr = _TranslationsSeerrEs._(_root);
-	@override late final _TranslationsServicesEs services = _TranslationsServicesEs._(_root);
-	@override late final _TranslationsAddServerEs addServer = _TranslationsAddServerEs._(_root);
+	@override late final _Translations$app$es app = _Translations$app$es._(_root);
+	@override late final _Translations$auth$es auth = _Translations$auth$es._(_root);
+	@override late final _Translations$common$es common = _Translations$common$es._(_root);
+	@override late final _Translations$screens$es screens = _Translations$screens$es._(_root);
+	@override late final _Translations$update$es update = _Translations$update$es._(_root);
+	@override late final _Translations$settings$es settings = _Translations$settings$es._(_root);
+	@override late final _Translations$search$es search = _Translations$search$es._(_root);
+	@override late final _Translations$hotkeys$es hotkeys = _Translations$hotkeys$es._(_root);
+	@override late final _Translations$fileInfo$es fileInfo = _Translations$fileInfo$es._(_root);
+	@override late final _Translations$mediaMenu$es mediaMenu = _Translations$mediaMenu$es._(_root);
+	@override late final _Translations$rateSheet$es rateSheet = _Translations$rateSheet$es._(_root);
+	@override late final _Translations$accessibility$es accessibility = _Translations$accessibility$es._(_root);
+	@override late final _Translations$tooltips$es tooltips = _Translations$tooltips$es._(_root);
+	@override late final _Translations$audioTracks$es audioTracks = _Translations$audioTracks$es._(_root);
+	@override late final _Translations$videoControls$es videoControls = _Translations$videoControls$es._(_root);
+	@override late final _Translations$messages$es messages = _Translations$messages$es._(_root);
+	@override late final _Translations$subtitlingStyling$es subtitlingStyling = _Translations$subtitlingStyling$es._(_root);
+	@override late final _Translations$mpvConfig$es mpvConfig = _Translations$mpvConfig$es._(_root);
+	@override late final _Translations$dialog$es dialog = _Translations$dialog$es._(_root);
+	@override late final _Translations$profiles$es profiles = _Translations$profiles$es._(_root);
+	@override late final _Translations$connections$es connections = _Translations$connections$es._(_root);
+	@override late final _Translations$discover$es discover = _Translations$discover$es._(_root);
+	@override late final _Translations$errors$es errors = _Translations$errors$es._(_root);
+	@override late final _Translations$libraries$es libraries = _Translations$libraries$es._(_root);
+	@override late final _Translations$about$es about = _Translations$about$es._(_root);
+	@override late final _Translations$serverSelection$es serverSelection = _Translations$serverSelection$es._(_root);
+	@override late final _Translations$hubDetail$es hubDetail = _Translations$hubDetail$es._(_root);
+	@override late final _Translations$logs$es logs = _Translations$logs$es._(_root);
+	@override late final _Translations$licenses$es licenses = _Translations$licenses$es._(_root);
+	@override late final _Translations$navigation$es navigation = _Translations$navigation$es._(_root);
+	@override late final _Translations$explore$es explore = _Translations$explore$es._(_root);
+	@override late final _Translations$liveTv$es liveTv = _Translations$liveTv$es._(_root);
+	@override late final _Translations$collections$es collections = _Translations$collections$es._(_root);
+	@override late final _Translations$playlists$es playlists = _Translations$playlists$es._(_root);
+	@override late final _Translations$music$es music = _Translations$music$es._(_root);
+	@override late final _Translations$watchTogether$es watchTogether = _Translations$watchTogether$es._(_root);
+	@override late final _Translations$downloads$es downloads = _Translations$downloads$es._(_root);
+	@override late final _Translations$shaders$es shaders = _Translations$shaders$es._(_root);
+	@override late final _Translations$companionRemote$es companionRemote = _Translations$companionRemote$es._(_root);
+	@override late final _Translations$videoSettings$es videoSettings = _Translations$videoSettings$es._(_root);
+	@override late final _Translations$performanceOverlay$es performanceOverlay = _Translations$performanceOverlay$es._(_root);
+	@override late final _Translations$externalPlayer$es externalPlayer = _Translations$externalPlayer$es._(_root);
+	@override late final _Translations$metadataEdit$es metadataEdit = _Translations$metadataEdit$es._(_root);
+	@override late final _Translations$matchScreen$es matchScreen = _Translations$matchScreen$es._(_root);
+	@override late final _Translations$serverTasks$es serverTasks = _Translations$serverTasks$es._(_root);
+	@override late final _Translations$trakt$es trakt = _Translations$trakt$es._(_root);
+	@override late final _Translations$seerr$es seerr = _Translations$seerr$es._(_root);
+	@override late final _Translations$services$es services = _Translations$services$es._(_root);
+	@override late final _Translations$addServer$es addServer = _Translations$addServer$es._(_root);
 }
 
 // Path: app
-class _TranslationsAppEs extends TranslationsAppEn {
-	_TranslationsAppEs._(TranslationsEs root) : this._root = root, super.internal(root);
+class _Translations$app$es extends Translations$app$en {
+	_Translations$app$es._(TranslationsEs root) : this._root = root, super.internal(root);
 
 	final TranslationsEs _root; // ignore: unused_field
 
@@ -101,8 +101,8 @@ class _TranslationsAppEs extends TranslationsAppEn {
 }
 
 // Path: auth
-class _TranslationsAuthEs extends TranslationsAuthEn {
-	_TranslationsAuthEs._(TranslationsEs root) : this._root = root, super.internal(root);
+class _Translations$auth$es extends Translations$auth$en {
+	_Translations$auth$es._(TranslationsEs root) : this._root = root, super.internal(root);
 
 	final TranslationsEs _root; // ignore: unused_field
 
@@ -125,8 +125,8 @@ class _TranslationsAuthEs extends TranslationsAuthEn {
 }
 
 // Path: common
-class _TranslationsCommonEs extends TranslationsCommonEn {
-	_TranslationsCommonEs._(TranslationsEs root) : this._root = root, super.internal(root);
+class _Translations$common$es extends Translations$common$en {
+	_Translations$common$es._(TranslationsEs root) : this._root = root, super.internal(root);
 
 	final TranslationsEs _root; // ignore: unused_field
 
@@ -179,8 +179,8 @@ class _TranslationsCommonEs extends TranslationsCommonEn {
 }
 
 // Path: screens
-class _TranslationsScreensEs extends TranslationsScreensEn {
-	_TranslationsScreensEs._(TranslationsEs root) : this._root = root, super.internal(root);
+class _Translations$screens$es extends Translations$screens$en {
+	_Translations$screens$es._(TranslationsEs root) : this._root = root, super.internal(root);
 
 	final TranslationsEs _root; // ignore: unused_field
 
@@ -193,8 +193,8 @@ class _TranslationsScreensEs extends TranslationsScreensEn {
 }
 
 // Path: update
-class _TranslationsUpdateEs extends TranslationsUpdateEn {
-	_TranslationsUpdateEs._(TranslationsEs root) : this._root = root, super.internal(root);
+class _Translations$update$es extends Translations$update$en {
+	_Translations$update$es._(TranslationsEs root) : this._root = root, super.internal(root);
 
 	final TranslationsEs _root; // ignore: unused_field
 
@@ -209,8 +209,8 @@ class _TranslationsUpdateEs extends TranslationsUpdateEn {
 }
 
 // Path: settings
-class _TranslationsSettingsEs extends TranslationsSettingsEn {
-	_TranslationsSettingsEs._(TranslationsEs root) : this._root = root, super.internal(root);
+class _Translations$settings$es extends Translations$settings$en {
+	_Translations$settings$es._(TranslationsEs root) : this._root = root, super.internal(root);
 
 	final TranslationsEs _root; // ignore: unused_field
 
@@ -461,8 +461,8 @@ class _TranslationsSettingsEs extends TranslationsSettingsEn {
 }
 
 // Path: search
-class _TranslationsSearchEs extends TranslationsSearchEn {
-	_TranslationsSearchEs._(TranslationsEs root) : this._root = root, super.internal(root);
+class _Translations$search$es extends Translations$search$en {
+	_Translations$search$es._(TranslationsEs root) : this._root = root, super.internal(root);
 
 	final TranslationsEs _root; // ignore: unused_field
 
@@ -474,8 +474,8 @@ class _TranslationsSearchEs extends TranslationsSearchEn {
 }
 
 // Path: hotkeys
-class _TranslationsHotkeysEs extends TranslationsHotkeysEn {
-	_TranslationsHotkeysEs._(TranslationsEs root) : this._root = root, super.internal(root);
+class _Translations$hotkeys$es extends Translations$hotkeys$en {
+	_Translations$hotkeys$es._(TranslationsEs root) : this._root = root, super.internal(root);
 
 	final TranslationsEs _root; // ignore: unused_field
 
@@ -486,12 +486,12 @@ class _TranslationsHotkeysEs extends TranslationsHotkeysEn {
 	@override String get currentShortcut => 'Atajo actual:';
 	@override String get pressToRecord => 'Seleccionar para grabar un atajo';
 	@override String get recordingShortcut => 'Presiona el atajo ahora';
-	@override late final _TranslationsHotkeysActionsEs actions = _TranslationsHotkeysActionsEs._(_root);
+	@override late final _Translations$hotkeys$actions$es actions = _Translations$hotkeys$actions$es._(_root);
 }
 
 // Path: fileInfo
-class _TranslationsFileInfoEs extends TranslationsFileInfoEn {
-	_TranslationsFileInfoEs._(TranslationsEs root) : this._root = root, super.internal(root);
+class _Translations$fileInfo$es extends Translations$fileInfo$en {
+	_Translations$fileInfo$es._(TranslationsEs root) : this._root = root, super.internal(root);
 
 	final TranslationsEs _root; // ignore: unused_field
 
@@ -524,8 +524,8 @@ class _TranslationsFileInfoEs extends TranslationsFileInfoEn {
 }
 
 // Path: mediaMenu
-class _TranslationsMediaMenuEs extends TranslationsMediaMenuEn {
-	_TranslationsMediaMenuEs._(TranslationsEs root) : this._root = root, super.internal(root);
+class _Translations$mediaMenu$es extends Translations$mediaMenu$en {
+	_Translations$mediaMenu$es._(TranslationsEs root) : this._root = root, super.internal(root);
 
 	final TranslationsEs _root; // ignore: unused_field
 
@@ -549,8 +549,8 @@ class _TranslationsMediaMenuEs extends TranslationsMediaMenuEn {
 }
 
 // Path: rateSheet
-class _TranslationsRateSheetEs extends TranslationsRateSheetEn {
-	_TranslationsRateSheetEs._(TranslationsEs root) : this._root = root, super.internal(root);
+class _Translations$rateSheet$es extends Translations$rateSheet$en {
+	_Translations$rateSheet$es._(TranslationsEs root) : this._root = root, super.internal(root);
 
 	final TranslationsEs _root; // ignore: unused_field
 
@@ -565,8 +565,8 @@ class _TranslationsRateSheetEs extends TranslationsRateSheetEn {
 }
 
 // Path: accessibility
-class _TranslationsAccessibilityEs extends TranslationsAccessibilityEn {
-	_TranslationsAccessibilityEs._(TranslationsEs root) : this._root = root, super.internal(root);
+class _Translations$accessibility$es extends Translations$accessibility$en {
+	_Translations$accessibility$es._(TranslationsEs root) : this._root = root, super.internal(root);
 
 	final TranslationsEs _root; // ignore: unused_field
 
@@ -596,8 +596,8 @@ class _TranslationsAccessibilityEs extends TranslationsAccessibilityEn {
 }
 
 // Path: tooltips
-class _TranslationsTooltipsEs extends TranslationsTooltipsEn {
-	_TranslationsTooltipsEs._(TranslationsEs root) : this._root = root, super.internal(root);
+class _Translations$tooltips$es extends Translations$tooltips$en {
+	_Translations$tooltips$es._(TranslationsEs root) : this._root = root, super.internal(root);
 
 	final TranslationsEs _root; // ignore: unused_field
 
@@ -609,8 +609,8 @@ class _TranslationsTooltipsEs extends TranslationsTooltipsEn {
 }
 
 // Path: audioTracks
-class _TranslationsAudioTracksEs extends TranslationsAudioTracksEn {
-	_TranslationsAudioTracksEs._(TranslationsEs root) : this._root = root, super.internal(root);
+class _Translations$audioTracks$es extends Translations$audioTracks$en {
+	_Translations$audioTracks$es._(TranslationsEs root) : this._root = root, super.internal(root);
 
 	final TranslationsEs _root; // ignore: unused_field
 
@@ -619,8 +619,8 @@ class _TranslationsAudioTracksEs extends TranslationsAudioTracksEn {
 }
 
 // Path: videoControls
-class _TranslationsVideoControlsEs extends TranslationsVideoControlsEn {
-	_TranslationsVideoControlsEs._(TranslationsEs root) : this._root = root, super.internal(root);
+class _Translations$videoControls$es extends Translations$videoControls$en {
+	_Translations$videoControls$es._(TranslationsEs root) : this._root = root, super.internal(root);
 
 	final TranslationsEs _root; // ignore: unused_field
 
@@ -686,7 +686,7 @@ class _TranslationsVideoControlsEs extends TranslationsVideoControlsEn {
 	@override String get pipFailed => 'Error al iniciar Imagen en Imagen';
 	@override String get screenshotSaved => 'Captura de pantalla guardada';
 	@override String zoomPercent({required Object percent}) => 'Zoom ${percent}%';
-	@override late final _TranslationsVideoControlsPipErrorsEs pipErrors = _TranslationsVideoControlsPipErrorsEs._(_root);
+	@override late final _Translations$videoControls$pipErrors$es pipErrors = _Translations$videoControls$pipErrors$es._(_root);
 	@override String get chapters => 'Capítulos';
 	@override String get noChaptersAvailable => 'No hay capítulos disponibles';
 	@override String get queue => 'Cola';
@@ -704,8 +704,8 @@ class _TranslationsVideoControlsEs extends TranslationsVideoControlsEn {
 }
 
 // Path: messages
-class _TranslationsMessagesEs extends TranslationsMessagesEn {
-	_TranslationsMessagesEs._(TranslationsEs root) : this._root = root, super.internal(root);
+class _Translations$messages$es extends Translations$messages$en {
+	_Translations$messages$es._(TranslationsEs root) : this._root = root, super.internal(root);
 
 	final TranslationsEs _root; // ignore: unused_field
 
@@ -765,8 +765,8 @@ class _TranslationsMessagesEs extends TranslationsMessagesEn {
 }
 
 // Path: subtitlingStyling
-class _TranslationsSubtitlingStylingEs extends TranslationsSubtitlingStylingEn {
-	_TranslationsSubtitlingStylingEs._(TranslationsEs root) : this._root = root, super.internal(root);
+class _Translations$subtitlingStyling$es extends Translations$subtitlingStyling$en {
+	_Translations$subtitlingStyling$es._(TranslationsEs root) : this._root = root, super.internal(root);
 
 	final TranslationsEs _root; // ignore: unused_field
 
@@ -795,8 +795,8 @@ class _TranslationsSubtitlingStylingEs extends TranslationsSubtitlingStylingEn {
 }
 
 // Path: mpvConfig
-class _TranslationsMpvConfigEs extends TranslationsMpvConfigEn {
-	_TranslationsMpvConfigEs._(TranslationsEs root) : this._root = root, super.internal(root);
+class _Translations$mpvConfig$es extends Translations$mpvConfig$en {
+	_Translations$mpvConfig$es._(TranslationsEs root) : this._root = root, super.internal(root);
 
 	final TranslationsEs _root; // ignore: unused_field
 
@@ -818,8 +818,8 @@ class _TranslationsMpvConfigEs extends TranslationsMpvConfigEn {
 }
 
 // Path: dialog
-class _TranslationsDialogEs extends TranslationsDialogEn {
-	_TranslationsDialogEs._(TranslationsEs root) : this._root = root, super.internal(root);
+class _Translations$dialog$es extends Translations$dialog$en {
+	_Translations$dialog$es._(TranslationsEs root) : this._root = root, super.internal(root);
 
 	final TranslationsEs _root; // ignore: unused_field
 
@@ -828,8 +828,8 @@ class _TranslationsDialogEs extends TranslationsDialogEn {
 }
 
 // Path: profiles
-class _TranslationsProfilesEs extends TranslationsProfilesEn {
-	_TranslationsProfilesEs._(TranslationsEs root) : this._root = root, super.internal(root);
+class _Translations$profiles$es extends Translations$profiles$en {
+	_Translations$profiles$es._(TranslationsEs root) : this._root = root, super.internal(root);
 
 	final TranslationsEs _root; // ignore: unused_field
 
@@ -897,8 +897,8 @@ class _TranslationsProfilesEs extends TranslationsProfilesEn {
 }
 
 // Path: connections
-class _TranslationsConnectionsEs extends TranslationsConnectionsEn {
-	_TranslationsConnectionsEs._(TranslationsEs root) : this._root = root, super.internal(root);
+class _Translations$connections$es extends Translations$connections$en {
+	_Translations$connections$es._(TranslationsEs root) : this._root = root, super.internal(root);
 
 	final TranslationsEs _root; // ignore: unused_field
 
@@ -915,8 +915,8 @@ class _TranslationsConnectionsEs extends TranslationsConnectionsEn {
 }
 
 // Path: discover
-class _TranslationsDiscoverEs extends TranslationsDiscoverEn {
-	_TranslationsDiscoverEs._(TranslationsEs root) : this._root = root, super.internal(root);
+class _Translations$discover$es extends Translations$discover$en {
+	_Translations$discover$es._(TranslationsEs root) : this._root = root, super.internal(root);
 
 	final TranslationsEs _root; // ignore: unused_field
 
@@ -946,8 +946,8 @@ class _TranslationsDiscoverEs extends TranslationsDiscoverEn {
 }
 
 // Path: errors
-class _TranslationsErrorsEs extends TranslationsErrorsEn {
-	_TranslationsErrorsEs._(TranslationsEs root) : this._root = root, super.internal(root);
+class _Translations$errors$es extends Translations$errors$en {
+	_Translations$errors$es._(TranslationsEs root) : this._root = root, super.internal(root);
 
 	final TranslationsEs _root; // ignore: unused_field
 
@@ -966,8 +966,8 @@ class _TranslationsErrorsEs extends TranslationsErrorsEn {
 }
 
 // Path: libraries
-class _TranslationsLibrariesEs extends TranslationsLibrariesEn {
-	_TranslationsLibrariesEs._(TranslationsEs root) : this._root = root, super.internal(root);
+class _Translations$libraries$es extends Translations$libraries$en {
+	_Translations$libraries$es._(TranslationsEs root) : this._root = root, super.internal(root);
 
 	final TranslationsEs _root; // ignore: unused_field
 
@@ -1013,15 +1013,15 @@ class _TranslationsLibrariesEs extends TranslationsLibrariesEn {
 	@override String get noCollections => 'No hay colecciones en esta biblioteca';
 	@override String get noFoldersFound => 'No se encontraron carpetas';
 	@override String get folders => 'carpetas';
-	@override late final _TranslationsLibrariesTabsEs tabs = _TranslationsLibrariesTabsEs._(_root);
-	@override late final _TranslationsLibrariesGroupingsEs groupings = _TranslationsLibrariesGroupingsEs._(_root);
-	@override late final _TranslationsLibrariesFilterCategoriesEs filterCategories = _TranslationsLibrariesFilterCategoriesEs._(_root);
-	@override late final _TranslationsLibrariesSortLabelsEs sortLabels = _TranslationsLibrariesSortLabelsEs._(_root);
+	@override late final _Translations$libraries$tabs$es tabs = _Translations$libraries$tabs$es._(_root);
+	@override late final _Translations$libraries$groupings$es groupings = _Translations$libraries$groupings$es._(_root);
+	@override late final _Translations$libraries$filterCategories$es filterCategories = _Translations$libraries$filterCategories$es._(_root);
+	@override late final _Translations$libraries$sortLabels$es sortLabels = _Translations$libraries$sortLabels$es._(_root);
 }
 
 // Path: about
-class _TranslationsAboutEs extends TranslationsAboutEn {
-	_TranslationsAboutEs._(TranslationsEs root) : this._root = root, super.internal(root);
+class _Translations$about$es extends Translations$about$en {
+	_Translations$about$es._(TranslationsEs root) : this._root = root, super.internal(root);
 
 	final TranslationsEs _root; // ignore: unused_field
 
@@ -1034,8 +1034,8 @@ class _TranslationsAboutEs extends TranslationsAboutEn {
 }
 
 // Path: serverSelection
-class _TranslationsServerSelectionEs extends TranslationsServerSelectionEn {
-	_TranslationsServerSelectionEs._(TranslationsEs root) : this._root = root, super.internal(root);
+class _Translations$serverSelection$es extends Translations$serverSelection$en {
+	_Translations$serverSelection$es._(TranslationsEs root) : this._root = root, super.internal(root);
 
 	final TranslationsEs _root; // ignore: unused_field
 
@@ -1045,8 +1045,8 @@ class _TranslationsServerSelectionEs extends TranslationsServerSelectionEn {
 }
 
 // Path: hubDetail
-class _TranslationsHubDetailEs extends TranslationsHubDetailEn {
-	_TranslationsHubDetailEs._(TranslationsEs root) : this._root = root, super.internal(root);
+class _Translations$hubDetail$es extends Translations$hubDetail$en {
+	_Translations$hubDetail$es._(TranslationsEs root) : this._root = root, super.internal(root);
 
 	final TranslationsEs _root; // ignore: unused_field
 
@@ -1059,8 +1059,8 @@ class _TranslationsHubDetailEs extends TranslationsHubDetailEn {
 }
 
 // Path: logs
-class _TranslationsLogsEs extends TranslationsLogsEn {
-	_TranslationsLogsEs._(TranslationsEs root) : this._root = root, super.internal(root);
+class _Translations$logs$es extends Translations$logs$en {
+	_Translations$logs$es._(TranslationsEs root) : this._root = root, super.internal(root);
 
 	final TranslationsEs _root; // ignore: unused_field
 
@@ -1071,8 +1071,8 @@ class _TranslationsLogsEs extends TranslationsLogsEn {
 }
 
 // Path: licenses
-class _TranslationsLicensesEs extends TranslationsLicensesEn {
-	_TranslationsLicensesEs._(TranslationsEs root) : this._root = root, super.internal(root);
+class _Translations$licenses$es extends Translations$licenses$en {
+	_Translations$licenses$es._(TranslationsEs root) : this._root = root, super.internal(root);
 
 	final TranslationsEs _root; // ignore: unused_field
 
@@ -1084,8 +1084,8 @@ class _TranslationsLicensesEs extends TranslationsLicensesEn {
 }
 
 // Path: navigation
-class _TranslationsNavigationEs extends TranslationsNavigationEn {
-	_TranslationsNavigationEs._(TranslationsEs root) : this._root = root, super.internal(root);
+class _Translations$navigation$es extends Translations$navigation$en {
+	_Translations$navigation$es._(TranslationsEs root) : this._root = root, super.internal(root);
 
 	final TranslationsEs _root; // ignore: unused_field
 
@@ -1097,16 +1097,16 @@ class _TranslationsNavigationEs extends TranslationsNavigationEn {
 }
 
 // Path: explore
-class _TranslationsExploreEs extends TranslationsExploreEn {
-	_TranslationsExploreEs._(TranslationsEs root) : this._root = root, super.internal(root);
+class _Translations$explore$es extends Translations$explore$en {
+	_Translations$explore$es._(TranslationsEs root) : this._root = root, super.internal(root);
 
 	final TranslationsEs _root; // ignore: unused_field
 
 	// Translations
 	@override String get title => 'Explorar';
 	@override String get selectSource => 'Seleccionar fuente';
-	@override late final _TranslationsExploreRowsEs rows = _TranslationsExploreRowsEs._(_root);
-	@override late final _TranslationsExploreStatusEs status = _TranslationsExploreStatusEs._(_root);
+	@override late final _Translations$explore$rows$es rows = _Translations$explore$rows$es._(_root);
+	@override late final _Translations$explore$status$es status = _Translations$explore$status$es._(_root);
 	@override String episodeCount({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('es'))(n,
 		one: '${n} episodio',
 		other: '${n} episodios',
@@ -1128,8 +1128,8 @@ class _TranslationsExploreEs extends TranslationsExploreEn {
 }
 
 // Path: liveTv
-class _TranslationsLiveTvEs extends TranslationsLiveTvEn {
-	_TranslationsLiveTvEs._(TranslationsEs root) : this._root = root, super.internal(root);
+class _Translations$liveTv$es extends Translations$liveTv$en {
+	_Translations$liveTv$es._(TranslationsEs root) : this._root = root, super.internal(root);
 
 	final TranslationsEs _root; // ignore: unused_field
 
@@ -1204,8 +1204,8 @@ class _TranslationsLiveTvEs extends TranslationsLiveTvEn {
 }
 
 // Path: collections
-class _TranslationsCollectionsEs extends TranslationsCollectionsEn {
-	_TranslationsCollectionsEs._(TranslationsEs root) : this._root = root, super.internal(root);
+class _Translations$collections$es extends Translations$collections$en {
+	_Translations$collections$es._(TranslationsEs root) : this._root = root, super.internal(root);
 
 	final TranslationsEs _root; // ignore: unused_field
 
@@ -1233,8 +1233,8 @@ class _TranslationsCollectionsEs extends TranslationsCollectionsEn {
 }
 
 // Path: playlists
-class _TranslationsPlaylistsEs extends TranslationsPlaylistsEn {
-	_TranslationsPlaylistsEs._(TranslationsEs root) : this._root = root, super.internal(root);
+class _Translations$playlists$es extends Translations$playlists$en {
+	_Translations$playlists$es._(TranslationsEs root) : this._root = root, super.internal(root);
 
 	final TranslationsEs _root; // ignore: unused_field
 
@@ -1268,8 +1268,8 @@ class _TranslationsPlaylistsEs extends TranslationsPlaylistsEn {
 }
 
 // Path: music
-class _TranslationsMusicEs extends TranslationsMusicEn {
-	_TranslationsMusicEs._(TranslationsEs root) : this._root = root, super.internal(root);
+class _Translations$music$es extends Translations$music$en {
+	_Translations$music$es._(TranslationsEs root) : this._root = root, super.internal(root);
 
 	final TranslationsEs _root; // ignore: unused_field
 
@@ -1302,8 +1302,8 @@ class _TranslationsMusicEs extends TranslationsMusicEn {
 }
 
 // Path: watchTogether
-class _TranslationsWatchTogetherEs extends TranslationsWatchTogetherEn {
-	_TranslationsWatchTogetherEs._(TranslationsEs root) : this._root = root, super.internal(root);
+class _Translations$watchTogether$es extends Translations$watchTogether$en {
+	_Translations$watchTogether$es._(TranslationsEs root) : this._root = root, super.internal(root);
 
 	final TranslationsEs _root; // ignore: unused_field
 
@@ -1376,8 +1376,8 @@ class _TranslationsWatchTogetherEs extends TranslationsWatchTogetherEn {
 }
 
 // Path: downloads
-class _TranslationsDownloadsEs extends TranslationsDownloadsEn {
-	_TranslationsDownloadsEs._(TranslationsEs root) : this._root = root, super.internal(root);
+class _Translations$downloads$es extends Translations$downloads$en {
+	_Translations$downloads$es._(TranslationsEs root) : this._root = root, super.internal(root);
 
 	final TranslationsEs _root; // ignore: unused_field
 
@@ -1452,8 +1452,8 @@ class _TranslationsDownloadsEs extends TranslationsDownloadsEn {
 }
 
 // Path: shaders
-class _TranslationsShadersEs extends TranslationsShadersEn {
-	_TranslationsShadersEs._(TranslationsEs root) : this._root = root, super.internal(root);
+class _Translations$shaders$es extends Translations$shaders$en {
+	_Translations$shaders$es._(TranslationsEs root) : this._root = root, super.internal(root);
 
 	final TranslationsEs _root; // ignore: unused_field
 
@@ -1476,8 +1476,8 @@ class _TranslationsShadersEs extends TranslationsShadersEn {
 }
 
 // Path: companionRemote
-class _TranslationsCompanionRemoteEs extends TranslationsCompanionRemoteEn {
-	_TranslationsCompanionRemoteEs._(TranslationsEs root) : this._root = root, super.internal(root);
+class _Translations$companionRemote$es extends Translations$companionRemote$en {
+	_Translations$companionRemote$es._(TranslationsEs root) : this._root = root, super.internal(root);
 
 	final TranslationsEs _root; // ignore: unused_field
 
@@ -1485,15 +1485,15 @@ class _TranslationsCompanionRemoteEs extends TranslationsCompanionRemoteEn {
 	@override String get title => 'Control remoto';
 	@override String connectedTo({required Object name}) => 'Conectado a ${name}';
 	@override String get unknownDevice => 'Dispositivo desconocido';
-	@override late final _TranslationsCompanionRemoteSessionEs session = _TranslationsCompanionRemoteSessionEs._(_root);
-	@override late final _TranslationsCompanionRemotePairingEs pairing = _TranslationsCompanionRemotePairingEs._(_root);
-	@override late final _TranslationsCompanionRemoteRemoteEs remote = _TranslationsCompanionRemoteRemoteEs._(_root);
-	@override late final _TranslationsCompanionRemoteErrorsEs errors = _TranslationsCompanionRemoteErrorsEs._(_root);
+	@override late final _Translations$companionRemote$session$es session = _Translations$companionRemote$session$es._(_root);
+	@override late final _Translations$companionRemote$pairing$es pairing = _Translations$companionRemote$pairing$es._(_root);
+	@override late final _Translations$companionRemote$remote$es remote = _Translations$companionRemote$remote$es._(_root);
+	@override late final _Translations$companionRemote$errors$es errors = _Translations$companionRemote$errors$es._(_root);
 }
 
 // Path: videoSettings
-class _TranslationsVideoSettingsEs extends TranslationsVideoSettingsEn {
-	_TranslationsVideoSettingsEs._(TranslationsEs root) : this._root = root, super.internal(root);
+class _Translations$videoSettings$es extends Translations$videoSettings$en {
+	_Translations$videoSettings$es._(TranslationsEs root) : this._root = root, super.internal(root);
 
 	final TranslationsEs _root; // ignore: unused_field
 
@@ -1514,8 +1514,8 @@ class _TranslationsVideoSettingsEs extends TranslationsVideoSettingsEn {
 }
 
 // Path: performanceOverlay
-class _TranslationsPerformanceOverlayEs extends TranslationsPerformanceOverlayEn {
-	_TranslationsPerformanceOverlayEs._(TranslationsEs root) : this._root = root, super.internal(root);
+class _Translations$performanceOverlay$es extends Translations$performanceOverlay$en {
+	_Translations$performanceOverlay$es._(TranslationsEs root) : this._root = root, super.internal(root);
 
 	final TranslationsEs _root; // ignore: unused_field
 
@@ -1558,8 +1558,8 @@ class _TranslationsPerformanceOverlayEs extends TranslationsPerformanceOverlayEn
 }
 
 // Path: externalPlayer
-class _TranslationsExternalPlayerEs extends TranslationsExternalPlayerEn {
-	_TranslationsExternalPlayerEs._(TranslationsEs root) : this._root = root, super.internal(root);
+class _Translations$externalPlayer$es extends Translations$externalPlayer$en {
+	_Translations$externalPlayer$es._(TranslationsEs root) : this._root = root, super.internal(root);
 
 	final TranslationsEs _root; // ignore: unused_field
 
@@ -1583,8 +1583,8 @@ class _TranslationsExternalPlayerEs extends TranslationsExternalPlayerEn {
 }
 
 // Path: metadataEdit
-class _TranslationsMetadataEditEs extends TranslationsMetadataEditEn {
-	_TranslationsMetadataEditEs._(TranslationsEs root) : this._root = root, super.internal(root);
+class _Translations$metadataEdit$es extends Translations$metadataEdit$en {
+	_Translations$metadataEdit$es._(TranslationsEs root) : this._root = root, super.internal(root);
 
 	final TranslationsEs _root; // ignore: unused_field
 
@@ -1668,8 +1668,8 @@ class _TranslationsMetadataEditEs extends TranslationsMetadataEditEn {
 }
 
 // Path: matchScreen
-class _TranslationsMatchScreenEs extends TranslationsMatchScreenEn {
-	_TranslationsMatchScreenEs._(TranslationsEs root) : this._root = root, super.internal(root);
+class _Translations$matchScreen$es extends Translations$matchScreen$en {
+	_Translations$matchScreen$es._(TranslationsEs root) : this._root = root, super.internal(root);
 
 	final TranslationsEs _root; // ignore: unused_field
 
@@ -1689,8 +1689,8 @@ class _TranslationsMatchScreenEs extends TranslationsMatchScreenEn {
 }
 
 // Path: serverTasks
-class _TranslationsServerTasksEs extends TranslationsServerTasksEn {
-	_TranslationsServerTasksEs._(TranslationsEs root) : this._root = root, super.internal(root);
+class _Translations$serverTasks$es extends Translations$serverTasks$en {
+	_Translations$serverTasks$es._(TranslationsEs root) : this._root = root, super.internal(root);
 
 	final TranslationsEs _root; // ignore: unused_field
 
@@ -1701,8 +1701,8 @@ class _TranslationsServerTasksEs extends TranslationsServerTasksEn {
 }
 
 // Path: trakt
-class _TranslationsTraktEs extends TranslationsTraktEn {
-	_TranslationsTraktEs._(TranslationsEs root) : this._root = root, super.internal(root);
+class _Translations$trakt$es extends Translations$trakt$en {
+	_Translations$trakt$es._(TranslationsEs root) : this._root = root, super.internal(root);
 
 	final TranslationsEs _root; // ignore: unused_field
 
@@ -1719,8 +1719,8 @@ class _TranslationsTraktEs extends TranslationsTraktEn {
 }
 
 // Path: seerr
-class _TranslationsSeerrEs extends TranslationsSeerrEn {
-	_TranslationsSeerrEs._(TranslationsEs root) : this._root = root, super.internal(root);
+class _Translations$seerr$es extends Translations$seerr$en {
+	_Translations$seerr$es._(TranslationsEs root) : this._root = root, super.internal(root);
 
 	final TranslationsEs _root; // ignore: unused_field
 
@@ -1758,8 +1758,8 @@ class _TranslationsSeerrEs extends TranslationsSeerrEn {
 }
 
 // Path: services
-class _TranslationsServicesEs extends TranslationsServicesEn {
-	_TranslationsServicesEs._(TranslationsEs root) : this._root = root, super.internal(root);
+class _Translations$services$es extends Translations$services$en {
+	_Translations$services$es._(TranslationsEs root) : this._root = root, super.internal(root);
 
 	final TranslationsEs _root; // ignore: unused_field
 
@@ -1773,15 +1773,15 @@ class _TranslationsServicesEs extends TranslationsServicesEn {
 	@override String disconnectConfirm({required Object service}) => '¿Desconectar ${service}?';
 	@override String disconnectConfirmBody({required Object service}) => 'Plezy dejará de actualizar ${service}. Reconecta cuando quieras.';
 	@override String connectFailed({required Object service}) => 'No se pudo conectar a ${service}. Inténtalo de nuevo.';
-	@override late final _TranslationsServicesNamesEs names = _TranslationsServicesNamesEs._(_root);
-	@override late final _TranslationsServicesDeviceCodeEs deviceCode = _TranslationsServicesDeviceCodeEs._(_root);
-	@override late final _TranslationsServicesOauthProxyEs oauthProxy = _TranslationsServicesOauthProxyEs._(_root);
-	@override late final _TranslationsServicesLibraryFilterEs libraryFilter = _TranslationsServicesLibraryFilterEs._(_root);
+	@override late final _Translations$services$names$es names = _Translations$services$names$es._(_root);
+	@override late final _Translations$services$deviceCode$es deviceCode = _Translations$services$deviceCode$es._(_root);
+	@override late final _Translations$services$oauthProxy$es oauthProxy = _Translations$services$oauthProxy$es._(_root);
+	@override late final _Translations$services$libraryFilter$es libraryFilter = _Translations$services$libraryFilter$es._(_root);
 }
 
 // Path: addServer
-class _TranslationsAddServerEs extends TranslationsAddServerEn {
-	_TranslationsAddServerEs._(TranslationsEs root) : this._root = root, super.internal(root);
+class _Translations$addServer$es extends Translations$addServer$en {
+	_Translations$addServer$es._(TranslationsEs root) : this._root = root, super.internal(root);
 
 	final TranslationsEs _root; // ignore: unused_field
 
@@ -1817,8 +1817,8 @@ class _TranslationsAddServerEs extends TranslationsAddServerEn {
 }
 
 // Path: hotkeys.actions
-class _TranslationsHotkeysActionsEs extends TranslationsHotkeysActionsEn {
-	_TranslationsHotkeysActionsEs._(TranslationsEs root) : this._root = root, super.internal(root);
+class _Translations$hotkeys$actions$es extends Translations$hotkeys$actions$en {
+	_Translations$hotkeys$actions$es._(TranslationsEs root) : this._root = root, super.internal(root);
 
 	final TranslationsEs _root; // ignore: unused_field
 
@@ -1851,8 +1851,8 @@ class _TranslationsHotkeysActionsEs extends TranslationsHotkeysActionsEn {
 }
 
 // Path: videoControls.pipErrors
-class _TranslationsVideoControlsPipErrorsEs extends TranslationsVideoControlsPipErrorsEn {
-	_TranslationsVideoControlsPipErrorsEs._(TranslationsEs root) : this._root = root, super.internal(root);
+class _Translations$videoControls$pipErrors$es extends Translations$videoControls$pipErrors$en {
+	_Translations$videoControls$pipErrors$es._(TranslationsEs root) : this._root = root, super.internal(root);
 
 	final TranslationsEs _root; // ignore: unused_field
 
@@ -1867,8 +1867,8 @@ class _TranslationsVideoControlsPipErrorsEs extends TranslationsVideoControlsPip
 }
 
 // Path: libraries.tabs
-class _TranslationsLibrariesTabsEs extends TranslationsLibrariesTabsEn {
-	_TranslationsLibrariesTabsEs._(TranslationsEs root) : this._root = root, super.internal(root);
+class _Translations$libraries$tabs$es extends Translations$libraries$tabs$en {
+	_Translations$libraries$tabs$es._(TranslationsEs root) : this._root = root, super.internal(root);
 
 	final TranslationsEs _root; // ignore: unused_field
 
@@ -1880,8 +1880,8 @@ class _TranslationsLibrariesTabsEs extends TranslationsLibrariesTabsEn {
 }
 
 // Path: libraries.groupings
-class _TranslationsLibrariesGroupingsEs extends TranslationsLibrariesGroupingsEn {
-	_TranslationsLibrariesGroupingsEs._(TranslationsEs root) : this._root = root, super.internal(root);
+class _Translations$libraries$groupings$es extends Translations$libraries$groupings$en {
+	_Translations$libraries$groupings$es._(TranslationsEs root) : this._root = root, super.internal(root);
 
 	final TranslationsEs _root; // ignore: unused_field
 
@@ -1899,8 +1899,8 @@ class _TranslationsLibrariesGroupingsEs extends TranslationsLibrariesGroupingsEn
 }
 
 // Path: libraries.filterCategories
-class _TranslationsLibrariesFilterCategoriesEs extends TranslationsLibrariesFilterCategoriesEn {
-	_TranslationsLibrariesFilterCategoriesEs._(TranslationsEs root) : this._root = root, super.internal(root);
+class _Translations$libraries$filterCategories$es extends Translations$libraries$filterCategories$en {
+	_Translations$libraries$filterCategories$es._(TranslationsEs root) : this._root = root, super.internal(root);
 
 	final TranslationsEs _root; // ignore: unused_field
 
@@ -1915,8 +1915,8 @@ class _TranslationsLibrariesFilterCategoriesEs extends TranslationsLibrariesFilt
 }
 
 // Path: libraries.sortLabels
-class _TranslationsLibrariesSortLabelsEs extends TranslationsLibrariesSortLabelsEn {
-	_TranslationsLibrariesSortLabelsEs._(TranslationsEs root) : this._root = root, super.internal(root);
+class _Translations$libraries$sortLabels$es extends Translations$libraries$sortLabels$en {
+	_Translations$libraries$sortLabels$es._(TranslationsEs root) : this._root = root, super.internal(root);
 
 	final TranslationsEs _root; // ignore: unused_field
 
@@ -1944,8 +1944,8 @@ class _TranslationsLibrariesSortLabelsEs extends TranslationsLibrariesSortLabels
 }
 
 // Path: explore.rows
-class _TranslationsExploreRowsEs extends TranslationsExploreRowsEn {
-	_TranslationsExploreRowsEs._(TranslationsEs root) : this._root = root, super.internal(root);
+class _Translations$explore$rows$es extends Translations$explore$rows$en {
+	_Translations$explore$rows$es._(TranslationsEs root) : this._root = root, super.internal(root);
 
 	final TranslationsEs _root; // ignore: unused_field
 
@@ -1967,8 +1967,8 @@ class _TranslationsExploreRowsEs extends TranslationsExploreRowsEn {
 }
 
 // Path: explore.status
-class _TranslationsExploreStatusEs extends TranslationsExploreStatusEn {
-	_TranslationsExploreStatusEs._(TranslationsEs root) : this._root = root, super.internal(root);
+class _Translations$explore$status$es extends Translations$explore$status$en {
+	_Translations$explore$status$es._(TranslationsEs root) : this._root = root, super.internal(root);
 
 	final TranslationsEs _root; // ignore: unused_field
 
@@ -1980,8 +1980,8 @@ class _TranslationsExploreStatusEs extends TranslationsExploreStatusEn {
 }
 
 // Path: companionRemote.session
-class _TranslationsCompanionRemoteSessionEs extends TranslationsCompanionRemoteSessionEn {
-	_TranslationsCompanionRemoteSessionEs._(TranslationsEs root) : this._root = root, super.internal(root);
+class _Translations$companionRemote$session$es extends Translations$companionRemote$session$en {
+	_Translations$companionRemote$session$es._(TranslationsEs root) : this._root = root, super.internal(root);
 
 	final TranslationsEs _root; // ignore: unused_field
 
@@ -2000,8 +2000,8 @@ class _TranslationsCompanionRemoteSessionEs extends TranslationsCompanionRemoteS
 }
 
 // Path: companionRemote.pairing
-class _TranslationsCompanionRemotePairingEs extends TranslationsCompanionRemotePairingEn {
-	_TranslationsCompanionRemotePairingEs._(TranslationsEs root) : this._root = root, super.internal(root);
+class _Translations$companionRemote$pairing$es extends Translations$companionRemote$pairing$en {
+	_Translations$companionRemote$pairing$es._(TranslationsEs root) : this._root = root, super.internal(root);
 
 	final TranslationsEs _root; // ignore: unused_field
 
@@ -2024,8 +2024,8 @@ class _TranslationsCompanionRemotePairingEs extends TranslationsCompanionRemoteP
 }
 
 // Path: companionRemote.remote
-class _TranslationsCompanionRemoteRemoteEs extends TranslationsCompanionRemoteRemoteEn {
-	_TranslationsCompanionRemoteRemoteEs._(TranslationsEs root) : this._root = root, super.internal(root);
+class _Translations$companionRemote$remote$es extends Translations$companionRemote$remote$en {
+	_Translations$companionRemote$remote$es._(TranslationsEs root) : this._root = root, super.internal(root);
 
 	final TranslationsEs _root; // ignore: unused_field
 
@@ -2060,8 +2060,8 @@ class _TranslationsCompanionRemoteRemoteEs extends TranslationsCompanionRemoteRe
 }
 
 // Path: companionRemote.errors
-class _TranslationsCompanionRemoteErrorsEs extends TranslationsCompanionRemoteErrorsEn {
-	_TranslationsCompanionRemoteErrorsEs._(TranslationsEs root) : this._root = root, super.internal(root);
+class _Translations$companionRemote$errors$es extends Translations$companionRemote$errors$en {
+	_Translations$companionRemote$errors$es._(TranslationsEs root) : this._root = root, super.internal(root);
 
 	final TranslationsEs _root; // ignore: unused_field
 
@@ -2077,8 +2077,8 @@ class _TranslationsCompanionRemoteErrorsEs extends TranslationsCompanionRemoteEr
 }
 
 // Path: services.names
-class _TranslationsServicesNamesEs extends TranslationsServicesNamesEn {
-	_TranslationsServicesNamesEs._(TranslationsEs root) : this._root = root, super.internal(root);
+class _Translations$services$names$es extends Translations$services$names$en {
+	_Translations$services$names$es._(TranslationsEs root) : this._root = root, super.internal(root);
 
 	final TranslationsEs _root; // ignore: unused_field
 
@@ -2090,8 +2090,8 @@ class _TranslationsServicesNamesEs extends TranslationsServicesNamesEn {
 }
 
 // Path: services.deviceCode
-class _TranslationsServicesDeviceCodeEs extends TranslationsServicesDeviceCodeEn {
-	_TranslationsServicesDeviceCodeEs._(TranslationsEs root) : this._root = root, super.internal(root);
+class _Translations$services$deviceCode$es extends Translations$services$deviceCode$en {
+	_Translations$services$deviceCode$es._(TranslationsEs root) : this._root = root, super.internal(root);
 
 	final TranslationsEs _root; // ignore: unused_field
 
@@ -2105,8 +2105,8 @@ class _TranslationsServicesDeviceCodeEs extends TranslationsServicesDeviceCodeEn
 }
 
 // Path: services.oauthProxy
-class _TranslationsServicesOauthProxyEs extends TranslationsServicesOauthProxyEn {
-	_TranslationsServicesOauthProxyEs._(TranslationsEs root) : this._root = root, super.internal(root);
+class _Translations$services$oauthProxy$es extends Translations$services$oauthProxy$en {
+	_Translations$services$oauthProxy$es._(TranslationsEs root) : this._root = root, super.internal(root);
 
 	final TranslationsEs _root; // ignore: unused_field
 
@@ -2119,8 +2119,8 @@ class _TranslationsServicesOauthProxyEs extends TranslationsServicesOauthProxyEn
 }
 
 // Path: services.libraryFilter
-class _TranslationsServicesLibraryFilterEs extends TranslationsServicesLibraryFilterEn {
-	_TranslationsServicesLibraryFilterEs._(TranslationsEs root) : this._root = root, super.internal(root);
+class _Translations$services$libraryFilter$es extends Translations$services$libraryFilter$en {
+	_Translations$services$libraryFilter$es._(TranslationsEs root) : this._root = root, super.internal(root);
 
 	final TranslationsEs _root; // ignore: unused_field
 

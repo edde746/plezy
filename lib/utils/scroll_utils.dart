@@ -8,9 +8,33 @@ import 'package:flutter/widgets.dart';
 /// Uses [Scrollable.ensureVisible] with alignment 0.5 (center).
 /// Runs in a post-frame callback to ensure layout is complete.
 void scrollContextToCenter(BuildContext? context) {
-  if (context == null) return;
+  if (context == null || !context.mounted) return;
+
+  final selectedRenderObject = context.findRenderObject();
+  if (selectedRenderObject == null || !selectedRenderObject.attached) return;
+
+  final selectedScrollables = _scrollableAncestorsOf(context);
+  if (selectedScrollables.isEmpty) return;
+
+  final selectedRelationships = _captureScrollableRelationships(selectedRenderObject, selectedScrollables);
+  if (selectedRelationships == null) return;
+
   WidgetsBinding.instance.addPostFrameCallback((_) {
     if (!context.mounted) return;
+
+    final renderObject = context.findRenderObject();
+    if (renderObject == null || !renderObject.attached || !identical(renderObject, selectedRenderObject)) {
+      return;
+    }
+
+    final currentScrollables = _scrollableAncestorsOf(context);
+    if (!_sameScrollables(selectedScrollables, currentScrollables)) return;
+
+    final currentRelationships = _captureScrollableRelationships(renderObject, currentScrollables);
+    if (currentRelationships == null || !_sameRenderRelationships(selectedRelationships, currentRelationships)) {
+      return;
+    }
+
     Scrollable.ensureVisible(
       context,
       alignment: 0.5,
@@ -18,6 +42,130 @@ void scrollContextToCenter(BuildContext? context) {
       curve: Curves.easeOut,
     );
   });
+}
+
+List<ScrollableState> _scrollableAncestorsOf(BuildContext context) {
+  final scrollables = <ScrollableState>[];
+  var currentContext = context;
+  ScrollableState? scrollable;
+  while ((scrollable = Scrollable.maybeOf(currentContext)) != null) {
+    scrollables.add(scrollable!);
+    currentContext = scrollable.context;
+  }
+  return scrollables;
+}
+
+bool _sameScrollables(List<ScrollableState> selected, List<ScrollableState> current) {
+  if (selected.length != current.length) return false;
+  for (var index = 0; index < selected.length; index++) {
+    if (!identical(selected[index], current[index])) return false;
+  }
+  return true;
+}
+
+class _ScrollableRenderRelationship {
+  const _ScrollableRenderRelationship({
+    required this.revealTarget,
+    required this.viewport,
+    required this.scrollableRenderObject,
+    required this.ancestorsToViewport,
+  });
+
+  final RenderObject revealTarget;
+  final RenderAbstractViewport viewport;
+  final RenderObject scrollableRenderObject;
+  final List<RenderObject> ancestorsToViewport;
+}
+
+List<_ScrollableRenderRelationship>? _captureScrollableRelationships(
+  RenderObject target,
+  List<ScrollableState> scrollables,
+) {
+  final relationships = <_ScrollableRenderRelationship>[];
+  var revealTarget = target;
+  for (var index = 0; index < scrollables.length; index++) {
+    final scrollable = scrollables[index];
+    if (!scrollable.mounted) return null;
+
+    final viewport = RenderAbstractViewport.maybeOf(revealTarget);
+    if (viewport == null || !viewport.attached || viewport.parent == null) return null;
+
+    final ancestorsToViewport = <RenderObject>[];
+    RenderObject? ancestor = revealTarget.parent;
+    while (ancestor != null) {
+      ancestorsToViewport.add(ancestor);
+      if (identical(ancestor, viewport)) break;
+      ancestor = ancestor.parent;
+    }
+    if (ancestorsToViewport.isEmpty || !identical(ancestorsToViewport.last, viewport)) return null;
+
+    final position = scrollable.position;
+    final notificationContext = scrollable.notificationContext;
+    if (!position.hasPixels ||
+        !position.hasContentDimensions ||
+        notificationContext == null ||
+        !notificationContext.mounted) {
+      return null;
+    }
+
+    final scrollableRenderObject = notificationContext.findRenderObject();
+    if (scrollableRenderObject == null ||
+        !scrollableRenderObject.attached ||
+        !_isAncestorOf(scrollableRenderObject, revealTarget)) {
+      return null;
+    }
+
+    relationships.add(
+      _ScrollableRenderRelationship(
+        revealTarget: revealTarget,
+        viewport: viewport,
+        scrollableRenderObject: scrollableRenderObject,
+        ancestorsToViewport: ancestorsToViewport,
+      ),
+    );
+
+    if (index + 1 < scrollables.length) {
+      final nextTarget = scrollable.context.findRenderObject();
+      if (nextTarget == null || !nextTarget.attached) return null;
+      revealTarget = nextTarget;
+    }
+  }
+  return relationships;
+}
+
+bool _sameRenderRelationships(
+  List<_ScrollableRenderRelationship> selected,
+  List<_ScrollableRenderRelationship> current,
+) {
+  if (selected.length != current.length) return false;
+  for (var index = 0; index < selected.length; index++) {
+    final selectedRelationship = selected[index];
+    final currentRelationship = current[index];
+    if (!identical(selectedRelationship.revealTarget, currentRelationship.revealTarget) ||
+        !identical(selectedRelationship.viewport, currentRelationship.viewport) ||
+        !identical(selectedRelationship.scrollableRenderObject, currentRelationship.scrollableRenderObject) ||
+        selectedRelationship.ancestorsToViewport.length != currentRelationship.ancestorsToViewport.length) {
+      return false;
+    }
+    for (var ancestorIndex = 0; ancestorIndex < selectedRelationship.ancestorsToViewport.length; ancestorIndex++) {
+      if (!identical(
+        selectedRelationship.ancestorsToViewport[ancestorIndex],
+        currentRelationship.ancestorsToViewport[ancestorIndex],
+      )) {
+        return false;
+      }
+    }
+  }
+  return true;
+}
+
+bool _isAncestorOf(RenderObject ancestor, RenderObject descendant) {
+  RenderObject? current = descendant;
+  while (current != null) {
+    if (identical(current, ancestor)) return true;
+    current = current.parent;
+  }
+  return false;
 }
 
 /// Jump a vertical [ListView] so that [currentIndex] is visible.
@@ -112,13 +260,20 @@ void scrollKeyedChildToHorizontalCenter(
 }
 
 bool _scrollContextToHorizontalCenterNow(ScrollController controller, BuildContext context, {required bool animate}) {
-  if (!context.mounted || controller.positions.length != 1) return true;
+  if (!context.mounted || controller.positions.length != 1) return false;
 
   final position = controller.position;
   if (position.axis != Axis.horizontal) return true;
 
+  final scrollable = Scrollable.maybeOf(context);
+  if (scrollable == null || !identical(scrollable.position, position)) return false;
+
   final renderObject = context.findRenderObject();
-  if (renderObject == null || !renderObject.attached) return false;
+  if (renderObject == null ||
+      !renderObject.attached ||
+      _captureScrollableRelationships(renderObject, <ScrollableState>[scrollable]) == null) {
+    return false;
+  }
 
   final viewport = RenderAbstractViewport.maybeOf(renderObject);
   if (viewport == null) return false;

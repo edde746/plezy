@@ -11,9 +11,9 @@ dependencies:
   flutter:
     sdk: flutter
   intl: ^0.20.2
-  json_annotation: ^4.9.0
+  json_annotation: ^4.12.0
   shared_preferences: ^2.5.4
-  cached_network_image_ce: 4.6.4
+  cached_network_image_ce: ^4.9.0
   http: ^1.2.0
   url_launcher: ^6.3.0
   uuid: ^4.4.0
@@ -43,15 +43,14 @@ dependencies:
   path: ^1.9.0
   universal_gamepad: ^1.5.7
   drift: ^2.31.0
-  sqlite3_flutter_libs: ^0.5.42
   crypto: ^3.0.7
   cryptography: ^2.9.0
-  file_picker: ^10.3.10
+  file_picker: ^11.0.2
   saf_util:
     # Vendored upstream 3.1.0 with a pending Result lifecycle fix (CHANGELOG) —
     # upstream still double-replies MethodChannel results and crashes the Activity.
     path: packages/saf_util
-  saf_stream: ^2.0.0
+  saf_stream: ^3.1.0
   material_symbols_icons: ^4.2951.0
   web_socket_channel: ^3.0.1
   dart_discord_presence: ^1.2.0
@@ -68,18 +67,18 @@ dependencies:
     git:
       url: https://github.com/edde746/background_downloader
       ref: 021e2075260e324b7440a5c81b57bf0242d35020
-  sentry_flutter: ^9.24.0
+  sentry_flutter: ^9.25.0
   auto_updater:
     git:
       url: https://github.com/edde746/auto_updater
       path: packages/auto_updater
       ref: 9e150f7
-  cupertino_http: ^2.4.0
+  cupertino_http: ^3.0.2
   cronet_http: ^1.6.0
   win_http: ^0.2.2
   collection: ^1.18.0
   freezed_annotation: ^3.1.0
-  xml: ^6.6.1
+  xml: ^7.0.1
   string_similarity: ^2.2.0
   unorm_dart: ^0.3.2
 
@@ -90,18 +89,19 @@ dev_dependencies:
   # Root analysis traverses packages/saf_util and consumes its lint profile.
   mgenware_dart_lints: ^8.0.0
   fake_async: ^1.3.3
+  stream_channel: ^2.1.4
   build_runner: ^2.13.0
   json_serializable: ^6.7.1
   slang_build_runner: ^4.14.0
   sentry_dart_plugin: ^3.3.0
   # Used by the explicit check-unused-* CI steps; its analyzer plugin is disabled.
-  dart_code_linter: 4.0.2
+  dart_code_linter: ^4.1.8
   drift_dev: ^2.28.3
   shared_preferences_platform_interface: ^2.4.0
   path_provider_platform_interface: ^2.1.0
   plugin_platform_interface: ^2.1.0
   freezed: ^3.2.5
-  analyzer: 10.0.1
+  analyzer: 10.2.0
 
 dependency_overrides:
   auto_updater_platform_interface:
