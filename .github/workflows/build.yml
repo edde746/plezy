@@ -636,7 +636,7 @@ jobs:
           key: ${{ env.TRUSTED_BUILD_CACHE_VERSION }}-${{ runner.os }}-${{ runner.arch }}-pub-${{ hashFiles('pubspec.yaml', 'pubspec.lock') }}
 
       - name: Cache APT packages
-        uses: awalsh128/cache-apt-pkgs-action@2153a1bf62a0ad7830c24ccdf1d588bedc2834a7 # latest
+        uses: awalsh128/cache-apt-pkgs-action@553a35bb8ebd9fcabcb1c9451aa4c98e1b4ca8a9 # latest
         with:
           packages: ${{ env.LINUX_APT_PACKAGES }}
           version: trusted-build-v1.1
