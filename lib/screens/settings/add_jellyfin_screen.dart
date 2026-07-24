@@ -8,6 +8,7 @@ import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../connection/connection.dart';
+import '../../connection/connection_registry.dart';
 import '../../exceptions/media_server_exceptions.dart';
 import '../../focus/card_focus_scope.dart';
 import '../../focus/focusable_button.dart';
@@ -136,11 +137,21 @@ class _AddJellyfinScreenState extends State<AddJellyfinScreen> with AsyncFormSta
   Future<void> _discoverLocalServers() async {
     final attemptId = ++_localDiscoveryAttemptId;
     try {
+      final existingConnections = await context.read<ConnectionRegistry>().list();
+      final existing = existingConnections
+          .whereType<JellyfinConnection>()
+          .map((c) => DiscoveredJellyfinServer(address: c.baseUrl, id: c.serverMachineId, name: c.serverName));
+
       final factory = widget._localDiscoveryFactory;
-      final servers = factory != null
+      final lanServers = factory != null
           ? await factory()
           : await JellyfinLanDiscoveryService().discover(responseWindow: const Duration(milliseconds: 1300));
       if (!mounted || attemptId != _localDiscoveryAttemptId) return;
+
+      // Deduplicate by machine ID
+      final combined = [...existing, ...lanServers];
+      final seen = <String>{};
+      final servers = combined.where((s) => seen.add(s.id)).toList();
       setState(() {
         _localServers = servers;
         _isDiscoveringLocalServers = false;
