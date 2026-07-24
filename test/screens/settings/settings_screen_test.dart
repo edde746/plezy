@@ -88,7 +88,7 @@ void main() {
         isVisible: DonationService.isEnabled,
       ),
       _MigratedRow(title: t.settings.watchTogetherRelay, focusLabel: 'settings_watch_together_relay'),
-      _MigratedRow(title: t.settings.clearCache, focusLabel: 'settings_clear_cache'),
+      _MigratedRow(title: t.settings.clearImageCache, focusLabel: 'settings_clear_image_cache'),
       _MigratedRow(title: t.settings.resetSettings, focusLabel: 'settings_reset_settings'),
       const _MigratedRow(title: 'Test Sentry', isVisible: kDebugMode),
       const _MigratedRow(title: 'Test ANR', isVisible: kDebugMode),
@@ -160,10 +160,10 @@ void main() {
     Navigator.of(tester.element(find.byType(AlertDialog))).pop();
     await _pumpUi(tester);
 
-    await tester.tap(find.text(t.settings.clearCache));
+    await tester.tap(find.text(t.settings.clearImageCache));
     await _pumpUi(tester);
     expect(find.byType(AlertDialog), findsOneWidget);
-    expect(find.text(t.settings.clearCache), findsWidgets);
+    expect(find.text(t.settings.clearImageCache), findsWidgets);
   });
 
   testWidgets('special download and generic update rows retain rich content at standard density', (tester) async {

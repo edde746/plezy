@@ -95,7 +95,7 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
   static const _kCrashReporting = 'crash_reporting';
   static const _kDebugLogging = 'debug_logging';
   static const _kViewLogs = 'view_logs';
-  static const _kClearCache = 'clear_cache';
+  static const _kClearImageCache = 'clear_image_cache';
   static const _kResetSettings = 'reset_settings';
   static const _kCheckForUpdates = 'check_for_updates';
   static const _kAutoCheckUpdatesOnStartup = 'auto_check_updates_on_startup';
@@ -442,11 +442,11 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
           destinationBuilder: (context) => const LogsScreen(),
         ),
         SettingNavigationTile(
-          focusNode: _focusTracker.get(_kClearCache),
+          focusNode: _focusTracker.get(_kClearImageCache),
           icon: Symbols.cleaning_services_rounded,
-          title: t.settings.clearCache,
-          subtitle: t.settings.clearCacheDescription,
-          onTap: () => _showClearCacheDialog(),
+          title: t.settings.clearImageCache,
+          subtitle: t.settings.clearImageCacheDescription,
+          onTap: () => _showClearImageCacheDialog(),
         ),
         SettingNavigationTile(
           focusNode: _focusTracker.get(_kResetSettings),
@@ -692,16 +692,16 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
     );
   }
 
-  Future<void> _showClearCacheDialog() async {
+  Future<void> _showClearImageCacheDialog() async {
     final confirmed = await showConfirmDialog(
       context,
-      title: t.settings.clearCache,
-      message: t.settings.clearCacheDescription,
+      title: t.settings.clearImageCache,
+      message: t.settings.clearImageCacheDescription,
       confirmText: t.common.clear,
     );
     if (!confirmed) return;
-    await _settingsService.clearCache();
-    if (mounted) showSuccessSnackBar(context, t.settings.clearCacheSuccess);
+    await _settingsService.clearImageCache();
+    if (mounted) showSuccessSnackBar(context, t.settings.clearImageCacheSuccess);
   }
 
   Future<void> _showResetSettingsDialog() async {

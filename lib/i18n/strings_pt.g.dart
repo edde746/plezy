@@ -319,9 +319,6 @@ class _Translations$settings$pt extends Translations$settings$en {
 	@override String get debugLoggingDescription => 'Ativar log detalhado para solução de problemas';
 	@override String get viewLogs => 'Ver Logs';
 	@override String get viewLogsDescription => 'Ver logs do app';
-	@override String get clearCache => 'Limpar Cache';
-	@override String get clearCacheDescription => 'Limpar imagens e dados em cache. O conteúdo pode carregar mais devagar.';
-	@override String get clearCacheSuccess => 'Cache limpo com sucesso';
 	@override String get resetSettings => 'Redefinir Configurações';
 	@override String get resetSettingsDescription => 'Restaurar configurações padrão. Não pode ser desfeito.';
 	@override String get resetSettingsSuccess => 'Configurações redefinidas com sucesso';
@@ -2329,9 +2326,6 @@ extension on TranslationsPt {
 			'settings.debugLoggingDescription' => 'Ativar log detalhado para solução de problemas',
 			'settings.viewLogs' => 'Ver Logs',
 			'settings.viewLogsDescription' => 'Ver logs do app',
-			'settings.clearCache' => 'Limpar Cache',
-			'settings.clearCacheDescription' => 'Limpar imagens e dados em cache. O conteúdo pode carregar mais devagar.',
-			'settings.clearCacheSuccess' => 'Cache limpo com sucesso',
 			'settings.resetSettings' => 'Redefinir Configurações',
 			'settings.resetSettingsDescription' => 'Restaurar configurações padrão. Não pode ser desfeito.',
 			'settings.resetSettingsSuccess' => 'Configurações redefinidas com sucesso',
@@ -2664,11 +2658,11 @@ extension on TranslationsPt {
 			'videoControls.subtitleDownloadedNotApplied' => 'A legenda foi baixada, mas não foi possível selecioná-la',
 			'videoControls.subtitleDownloadFailed' => 'Falha ao baixar legenda',
 			'videoControls.searchLanguages' => 'Pesquisar idiomas...',
-			_ => null,
-		} ?? switch (path) {
 			'messages.markedAsWatched' => 'Marcado como assistido',
 			'messages.markedAsUnwatched' => 'Marcado como não assistido',
 			'messages.markedAsWatchedOffline' => 'Marcado como assistido (será sincronizado quando online)',
+			_ => null,
+		} ?? switch (path) {
 			'messages.markedAsUnwatchedOffline' => 'Marcado como não assistido (será sincronizado quando online)',
 			'messages.autoRemovedWatchedDownload' => ({required Object title}) => 'Removido automaticamente: ${title}',
 			'messages.autoRemovedWatchedDownloads' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('pt'))(n, one: 'Removido automaticamente ${n} download assistido', other: 'Removidos automaticamente ${n} downloads assistidos', ), 
@@ -3178,11 +3172,11 @@ extension on TranslationsPt {
 			'watchTogether.joinCurrentPlayback' => 'Entrar na reprodução atual',
 			'watchTogether.joinCurrentPlaybackDescription' => 'Voltar ao conteúdo que o anfitrião está assistindo agora',
 			'watchTogether.failedToOpenCurrentPlayback' => 'Falha ao abrir a reprodução atual',
-			_ => null,
-		} ?? switch (path) {
 			'watchTogether.participantJoined' => ({required Object name}) => '${name} entrou',
 			'watchTogether.participantLeft' => ({required Object name}) => '${name} saiu',
 			'watchTogether.participantPaused' => ({required Object name}) => '${name} pausou',
+			_ => null,
+		} ?? switch (path) {
 			'watchTogether.participantResumed' => ({required Object name}) => '${name} retomou',
 			'watchTogether.participantSeeked' => ({required Object name}) => '${name} mudou a posição da reprodução',
 			'watchTogether.participantBuffering' => ({required Object name}) => '${name} está aguardando o carregamento',

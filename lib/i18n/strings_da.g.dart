@@ -319,9 +319,6 @@ class _Translations$settings$da extends Translations$settings$en {
 	@override String get debugLoggingDescription => 'Aktiver detaljeret logning til fejlfinding';
 	@override String get viewLogs => 'Vis logfiler';
 	@override String get viewLogsDescription => 'Vis programmets logfiler';
-	@override String get clearCache => 'Ryd cache';
-	@override String get clearCacheDescription => 'Ryd cachelagrede billeder og data. Indhold kan indlæses langsommere.';
-	@override String get clearCacheSuccess => 'Cache ryddet';
 	@override String get resetSettings => 'Nulstil indstillinger';
 	@override String get resetSettingsDescription => 'Gendan standardindstillinger. Dette kan ikke fortrydes.';
 	@override String get resetSettingsSuccess => 'Indstillinger nulstillet';
@@ -2329,9 +2326,6 @@ extension on TranslationsDa {
 			'settings.debugLoggingDescription' => 'Aktiver detaljeret logning til fejlfinding',
 			'settings.viewLogs' => 'Vis logfiler',
 			'settings.viewLogsDescription' => 'Vis programmets logfiler',
-			'settings.clearCache' => 'Ryd cache',
-			'settings.clearCacheDescription' => 'Ryd cachelagrede billeder og data. Indhold kan indlæses langsommere.',
-			'settings.clearCacheSuccess' => 'Cache ryddet',
 			'settings.resetSettings' => 'Nulstil indstillinger',
 			'settings.resetSettingsDescription' => 'Gendan standardindstillinger. Dette kan ikke fortrydes.',
 			'settings.resetSettingsSuccess' => 'Indstillinger nulstillet',
@@ -2664,11 +2658,11 @@ extension on TranslationsDa {
 			'videoControls.subtitleDownloadedNotApplied' => 'Underteksten blev downloadet, men kunne ikke vælges',
 			'videoControls.subtitleDownloadFailed' => 'Kunne ikke downloade undertekst',
 			'videoControls.searchLanguages' => 'Søg sprog...',
-			_ => null,
-		} ?? switch (path) {
 			'messages.markedAsWatched' => 'Markeret som set',
 			'messages.markedAsUnwatched' => 'Markeret som uset',
 			'messages.markedAsWatchedOffline' => 'Markeret som set (synkroniseres online)',
+			_ => null,
+		} ?? switch (path) {
 			'messages.markedAsUnwatchedOffline' => 'Markeret som uset (synkroniseres online)',
 			'messages.autoRemovedWatchedDownload' => ({required Object title}) => 'Automatisk fjernet: ${title}',
 			'messages.autoRemovedWatchedDownloads' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('da'))(n, one: 'Fjernede automatisk ${n} set download', other: 'Fjernede automatisk ${n} sete downloads', ), 
@@ -3178,11 +3172,11 @@ extension on TranslationsDa {
 			'watchTogether.joinCurrentPlayback' => 'Deltag i nuværende afspilning',
 			'watchTogether.joinCurrentPlaybackDescription' => 'Hop tilbage til det værten ser nu',
 			'watchTogether.failedToOpenCurrentPlayback' => 'Kunne ikke åbne nuværende afspilning',
-			_ => null,
-		} ?? switch (path) {
 			'watchTogether.participantJoined' => ({required Object name}) => '${name} deltog',
 			'watchTogether.participantLeft' => ({required Object name}) => '${name} forlod',
 			'watchTogether.participantPaused' => ({required Object name}) => '${name} satte på pause',
+			_ => null,
+		} ?? switch (path) {
 			'watchTogether.participantResumed' => ({required Object name}) => '${name} genoptog',
 			'watchTogether.participantSeeked' => ({required Object name}) => '${name} ændrede afspilningspositionen',
 			'watchTogether.participantBuffering' => ({required Object name}) => '${name} bufferer',

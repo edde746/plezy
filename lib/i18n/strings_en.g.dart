@@ -675,14 +675,14 @@ class Translations$settings$en {
 	/// en: 'View application logs'
 	String get viewLogsDescription => 'View application logs';
 
-	/// en: 'Clear Cache'
-	String get clearCache => 'Clear Cache';
+	/// en: 'Clear Image Cache'
+	String get clearImageCache => 'Clear Image Cache';
 
-	/// en: 'Clear cached images and data. Content may load slower.'
-	String get clearCacheDescription => 'Clear cached images and data. Content may load slower.';
+	/// en: 'Clear cached artwork and thumbnails. Images may load slower until downloaded again.'
+	String get clearImageCacheDescription => 'Clear cached artwork and thumbnails. Images may load slower until downloaded again.';
 
-	/// en: 'Cache cleared successfully'
-	String get clearCacheSuccess => 'Cache cleared successfully';
+	/// en: 'Image cache cleared successfully'
+	String get clearImageCacheSuccess => 'Image cache cleared successfully';
 
 	/// en: 'Reset Settings'
 	String get resetSettings => 'Reset Settings';
@@ -5224,9 +5224,9 @@ extension on Translations {
 			'settings.debugLoggingDescription' => 'Enable detailed logging for troubleshooting',
 			'settings.viewLogs' => 'View Logs',
 			'settings.viewLogsDescription' => 'View application logs',
-			'settings.clearCache' => 'Clear Cache',
-			'settings.clearCacheDescription' => 'Clear cached images and data. Content may load slower.',
-			'settings.clearCacheSuccess' => 'Cache cleared successfully',
+			'settings.clearImageCache' => 'Clear Image Cache',
+			'settings.clearImageCacheDescription' => 'Clear cached artwork and thumbnails. Images may load slower until downloaded again.',
+			'settings.clearImageCacheSuccess' => 'Image cache cleared successfully',
 			'settings.resetSettings' => 'Reset Settings',
 			'settings.resetSettingsDescription' => 'Restore default settings. This can\'t be undone.',
 			'settings.resetSettingsSuccess' => 'Settings reset successfully',

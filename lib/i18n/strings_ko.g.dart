@@ -319,9 +319,6 @@ class _Translations$settings$ko extends Translations$settings$en {
 	@override String get debugLoggingDescription => '문제 해결을 위해 상세 로깅 활성화';
 	@override String get viewLogs => '로그 보기';
 	@override String get viewLogsDescription => '애플리케이션 로그 확인';
-	@override String get clearCache => '캐시 삭제';
-	@override String get clearCacheDescription => '캐시된 이미지와 데이터를 지웁니다. 콘텐츠 로드가 느려질 수 있습니다.';
-	@override String get clearCacheSuccess => '캐시 삭제 성공';
 	@override String get resetSettings => '설정 재설정';
 	@override String get resetSettingsDescription => '기본 설정으로 복원합니다. 되돌릴 수 없습니다.';
 	@override String get resetSettingsSuccess => '설정 재설정 성공';
@@ -2326,9 +2323,6 @@ extension on TranslationsKo {
 			'settings.debugLoggingDescription' => '문제 해결을 위해 상세 로깅 활성화',
 			'settings.viewLogs' => '로그 보기',
 			'settings.viewLogsDescription' => '애플리케이션 로그 확인',
-			'settings.clearCache' => '캐시 삭제',
-			'settings.clearCacheDescription' => '캐시된 이미지와 데이터를 지웁니다. 콘텐츠 로드가 느려질 수 있습니다.',
-			'settings.clearCacheSuccess' => '캐시 삭제 성공',
 			'settings.resetSettings' => '설정 재설정',
 			'settings.resetSettingsDescription' => '기본 설정으로 복원합니다. 되돌릴 수 없습니다.',
 			'settings.resetSettingsSuccess' => '설정 재설정 성공',
@@ -2661,11 +2655,11 @@ extension on TranslationsKo {
 			'videoControls.subtitleDownloadedNotApplied' => '자막을 다운로드했지만 선택할 수 없습니다',
 			'videoControls.subtitleDownloadFailed' => '자막 다운로드에 실패했습니다',
 			'videoControls.searchLanguages' => '언어 검색...',
-			_ => null,
-		} ?? switch (path) {
 			'messages.markedAsWatched' => '시청 완료로 표시됨',
 			'messages.markedAsUnwatched' => '미시청으로 표시됨',
 			'messages.markedAsWatchedOffline' => '시청 완료로 표시됨 (연결 시 동기화됨)',
+			_ => null,
+		} ?? switch (path) {
 			'messages.markedAsUnwatchedOffline' => '미시청으로 표시됨 (연결 시 동기화됨)',
 			'messages.autoRemovedWatchedDownload' => ({required Object title}) => '자동 삭제됨: ${title}',
 			'messages.autoRemovedWatchedDownloads' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('ko'))(n, other: '시청한 다운로드 ${n}개를 자동 삭제했습니다', ), 
@@ -3175,11 +3169,11 @@ extension on TranslationsKo {
 			'watchTogether.joinCurrentPlayback' => '현재 재생 참여',
 			'watchTogether.joinCurrentPlaybackDescription' => '호스트가 현재 시청 중인 콘텐츠로 이동합니다',
 			'watchTogether.failedToOpenCurrentPlayback' => '현재 재생을 열 수 없습니다',
-			_ => null,
-		} ?? switch (path) {
 			'watchTogether.participantJoined' => ({required Object name}) => '${name}님이 참여했습니다',
 			'watchTogether.participantLeft' => ({required Object name}) => '${name}님이 나갔습니다',
 			'watchTogether.participantPaused' => ({required Object name}) => '${name}님이 일시정지했습니다',
+			_ => null,
+		} ?? switch (path) {
 			'watchTogether.participantResumed' => ({required Object name}) => '${name}님이 재생했습니다',
 			'watchTogether.participantSeeked' => ({required Object name}) => '${name}님이 재생 위치를 변경했습니다',
 			'watchTogether.participantBuffering' => ({required Object name}) => '${name}님이 버퍼링 중입니다',

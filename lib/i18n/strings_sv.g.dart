@@ -319,9 +319,6 @@ class _Translations$settings$sv extends Translations$settings$en {
 	@override String get debugLoggingDescription => 'Aktivera detaljerad loggning för felsökning';
 	@override String get viewLogs => 'Visa loggar';
 	@override String get viewLogsDescription => 'Visa appens loggar';
-	@override String get clearCache => 'Rensa cachen';
-	@override String get clearCacheDescription => 'Rensa cachade bilder och data. Innehåll kan läsas in långsammare.';
-	@override String get clearCacheSuccess => 'Cachen har rensats';
 	@override String get resetSettings => 'Återställ inställningarna';
 	@override String get resetSettingsDescription => 'Återställ standardinställningarna. Det går inte att ångra.';
 	@override String get resetSettingsSuccess => 'Inställningarna har återställts';
@@ -2329,9 +2326,6 @@ extension on TranslationsSv {
 			'settings.debugLoggingDescription' => 'Aktivera detaljerad loggning för felsökning',
 			'settings.viewLogs' => 'Visa loggar',
 			'settings.viewLogsDescription' => 'Visa appens loggar',
-			'settings.clearCache' => 'Rensa cachen',
-			'settings.clearCacheDescription' => 'Rensa cachade bilder och data. Innehåll kan läsas in långsammare.',
-			'settings.clearCacheSuccess' => 'Cachen har rensats',
 			'settings.resetSettings' => 'Återställ inställningarna',
 			'settings.resetSettingsDescription' => 'Återställ standardinställningarna. Det går inte att ångra.',
 			'settings.resetSettingsSuccess' => 'Inställningarna har återställts',
@@ -2664,11 +2658,11 @@ extension on TranslationsSv {
 			'videoControls.subtitleDownloadedNotApplied' => 'Undertexten laddades ned men kunde inte väljas',
 			'videoControls.subtitleDownloadFailed' => 'Det gick inte att ladda ned undertexten',
 			'videoControls.searchLanguages' => 'Sök språk...',
-			_ => null,
-		} ?? switch (path) {
 			'messages.markedAsWatched' => 'Markerad som sedd',
 			'messages.markedAsUnwatched' => 'Markerad som osedd',
 			'messages.markedAsWatchedOffline' => 'Markerad som sedd (synkroniseras när online)',
+			_ => null,
+		} ?? switch (path) {
 			'messages.markedAsUnwatchedOffline' => 'Markerad som osedd (synkroniseras när online)',
 			'messages.autoRemovedWatchedDownload' => ({required Object title}) => 'Automatiskt borttagen: ${title}',
 			'messages.autoRemovedWatchedDownloads' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('sv'))(n, one: 'Tog automatiskt bort ${n} sedd nedladdning', other: 'Tog automatiskt bort ${n} sedda nedladdningar', ), 
@@ -3178,11 +3172,11 @@ extension on TranslationsSv {
 			'watchTogether.joinCurrentPlayback' => 'Gå med i aktuell uppspelning',
 			'watchTogether.joinCurrentPlaybackDescription' => 'Hoppa tillbaka till det värden tittar på just nu',
 			'watchTogether.failedToOpenCurrentPlayback' => 'Kunde inte öppna aktuell uppspelning',
-			_ => null,
-		} ?? switch (path) {
 			'watchTogether.participantJoined' => ({required Object name}) => '${name} gick med',
 			'watchTogether.participantLeft' => ({required Object name}) => '${name} lämnade',
 			'watchTogether.participantPaused' => ({required Object name}) => '${name} pausade',
+			_ => null,
+		} ?? switch (path) {
 			'watchTogether.participantResumed' => ({required Object name}) => '${name} återupptog',
 			'watchTogether.participantSeeked' => ({required Object name}) => '${name} ändrade uppspelningspositionen',
 			'watchTogether.participantBuffering' => ({required Object name}) => '${name} buffrar',

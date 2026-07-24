@@ -319,9 +319,6 @@ class _Translations$settings$bg extends Translations$settings$en {
 	@override String get debugLoggingDescription => 'Включи подробни логове за диагностика';
 	@override String get viewLogs => 'Виж логовете';
 	@override String get viewLogsDescription => 'Преглед на логовете на приложението';
-	@override String get clearCache => 'Изчисти кеша';
-	@override String get clearCacheDescription => 'Изчисти кешираните изображения и данни. Съдържанието може да се зарежда по-бавно.';
-	@override String get clearCacheSuccess => 'Кешът е изчистен успешно';
 	@override String get resetSettings => 'Нулирай настройките';
 	@override String get resetSettingsDescription => 'Възстанови настройките по подразбиране. Това не може да бъде отменено.';
 	@override String get resetSettingsSuccess => 'Настройките са нулирани успешно';
@@ -2329,9 +2326,6 @@ extension on TranslationsBg {
 			'settings.debugLoggingDescription' => 'Включи подробни логове за диагностика',
 			'settings.viewLogs' => 'Виж логовете',
 			'settings.viewLogsDescription' => 'Преглед на логовете на приложението',
-			'settings.clearCache' => 'Изчисти кеша',
-			'settings.clearCacheDescription' => 'Изчисти кешираните изображения и данни. Съдържанието може да се зарежда по-бавно.',
-			'settings.clearCacheSuccess' => 'Кешът е изчистен успешно',
 			'settings.resetSettings' => 'Нулирай настройките',
 			'settings.resetSettingsDescription' => 'Възстанови настройките по подразбиране. Това не може да бъде отменено.',
 			'settings.resetSettingsSuccess' => 'Настройките са нулирани успешно',
@@ -2664,11 +2658,11 @@ extension on TranslationsBg {
 			'videoControls.subtitleDownloadedNotApplied' => 'Субтитрите са изтеглени, но не можаха да бъдат избрани',
 			'videoControls.subtitleDownloadFailed' => 'Неуспешно изтегляне на субтитър',
 			'videoControls.searchLanguages' => 'Търсене на езици...',
-			_ => null,
-		} ?? switch (path) {
 			'messages.markedAsWatched' => 'Маркирано като гледано',
 			'messages.markedAsUnwatched' => 'Маркирано като негледано',
 			'messages.markedAsWatchedOffline' => 'Маркирано като гледано (ще се синхронизира, когато сте онлайн)',
+			_ => null,
+		} ?? switch (path) {
 			'messages.markedAsUnwatchedOffline' => 'Маркирано като негледано (ще се синхронизира, когато сте онлайн)',
 			'messages.autoRemovedWatchedDownload' => ({required Object title}) => 'Автоматично премахнато: ${title}',
 			'messages.autoRemovedWatchedDownloads' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('bg'))(n, one: 'Автоматично премахнато ${n} гледано изтегляне', other: 'Автоматично премахнати ${n} гледани изтегляния', ), 
@@ -3178,11 +3172,11 @@ extension on TranslationsBg {
 			'watchTogether.joinCurrentPlayback' => 'Присъедини се към текущото възпроизвеждане',
 			'watchTogether.joinCurrentPlaybackDescription' => 'Върнете се към това, което организаторът гледа в момента',
 			'watchTogether.failedToOpenCurrentPlayback' => 'Неуспешно отваряне на текущото възпроизвеждане',
-			_ => null,
-		} ?? switch (path) {
 			'watchTogether.participantJoined' => ({required Object name}) => '${name} се присъедини',
 			'watchTogether.participantLeft' => ({required Object name}) => '${name} напусна',
 			'watchTogether.participantPaused' => ({required Object name}) => '${name} постави на пауза',
+			_ => null,
+		} ?? switch (path) {
 			'watchTogether.participantResumed' => ({required Object name}) => '${name} продължи',
 			'watchTogether.participantSeeked' => ({required Object name}) => '${name} промени позицията на възпроизвеждане',
 			'watchTogether.participantBuffering' => ({required Object name}) => '${name} буферира',

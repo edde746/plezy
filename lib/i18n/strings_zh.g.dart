@@ -319,9 +319,6 @@ class Translations$settings$zh extends Translations$settings$en {
 	@override String get debugLoggingDescription => '启用详细日志记录以便故障排除';
 	@override String get viewLogs => '查看日志';
 	@override String get viewLogsDescription => '查看应用日志';
-	@override String get clearCache => '清除缓存';
-	@override String get clearCacheDescription => '清除缓存的图片和数据。内容加载可能变慢。';
-	@override String get clearCacheSuccess => '缓存已清除';
 	@override String get resetSettings => '重置设置';
 	@override String get resetSettingsDescription => '恢复默认设置。此操作无法撤销。';
 	@override String get resetSettingsSuccess => '设置重置成功';
@@ -2326,9 +2323,6 @@ extension on TranslationsZh {
 			'settings.debugLoggingDescription' => '启用详细日志记录以便故障排除',
 			'settings.viewLogs' => '查看日志',
 			'settings.viewLogsDescription' => '查看应用日志',
-			'settings.clearCache' => '清除缓存',
-			'settings.clearCacheDescription' => '清除缓存的图片和数据。内容加载可能变慢。',
-			'settings.clearCacheSuccess' => '缓存已清除',
 			'settings.resetSettings' => '重置设置',
 			'settings.resetSettingsDescription' => '恢复默认设置。此操作无法撤销。',
 			'settings.resetSettingsSuccess' => '设置重置成功',
@@ -2661,11 +2655,11 @@ extension on TranslationsZh {
 			'videoControls.subtitleDownloadedNotApplied' => '字幕已下载，但无法选择',
 			'videoControls.subtitleDownloadFailed' => '字幕下载失败',
 			'videoControls.searchLanguages' => '搜索语言…',
-			_ => null,
-		} ?? switch (path) {
 			'messages.markedAsWatched' => '已标记为已观看',
 			'messages.markedAsUnwatched' => '已标记为未观看',
 			'messages.markedAsWatchedOffline' => '已标记为已观看（将在联网时同步）',
+			_ => null,
+		} ?? switch (path) {
 			'messages.markedAsUnwatchedOffline' => '已标记为未观看（将在联网时同步）',
 			'messages.autoRemovedWatchedDownload' => ({required Object title}) => '已自动移除：${title}',
 			'messages.autoRemovedWatchedDownloads' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('zh'))(n, other: '已自动移除 ${n} 个看过的下载', ), 
@@ -3175,11 +3169,11 @@ extension on TranslationsZh {
 			'watchTogether.joinCurrentPlayback' => '加入当前播放',
 			'watchTogether.joinCurrentPlaybackDescription' => '加入主持人当前正在观看的内容',
 			'watchTogether.failedToOpenCurrentPlayback' => '无法打开当前播放',
-			_ => null,
-		} ?? switch (path) {
 			'watchTogether.participantJoined' => ({required Object name}) => '${name} 已加入',
 			'watchTogether.participantLeft' => ({required Object name}) => '${name} 已离开',
 			'watchTogether.participantPaused' => ({required Object name}) => '${name} 暂停了播放',
+			_ => null,
+		} ?? switch (path) {
 			'watchTogether.participantResumed' => ({required Object name}) => '${name} 恢复了播放',
 			'watchTogether.participantSeeked' => ({required Object name}) => '${name} 更改了播放位置',
 			'watchTogether.participantBuffering' => ({required Object name}) => '${name} 正在缓冲',

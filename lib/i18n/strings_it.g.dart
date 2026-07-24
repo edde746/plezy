@@ -319,9 +319,6 @@ class _Translations$settings$it extends Translations$settings$en {
 	@override String get debugLoggingDescription => 'Abilita una registrazione dettagliata per la risoluzione dei problemi';
 	@override String get viewLogs => 'Visualizza i log';
 	@override String get viewLogsDescription => 'Visualizza i log dell\'applicazione';
-	@override String get clearCache => 'Svuota la cache';
-	@override String get clearCacheDescription => 'Cancella le immagini e i dati memorizzati nella cache. I contenuti potrebbero caricarsi più lentamente.';
-	@override String get clearCacheSuccess => 'Cache cancellata correttamente';
 	@override String get resetSettings => 'Ripristina impostazioni';
 	@override String get resetSettingsDescription => 'Ripristina le impostazioni predefinite. Questa operazione non può essere annullata.';
 	@override String get resetSettingsSuccess => 'Impostazioni ripristinate correttamente';
@@ -2329,9 +2326,6 @@ extension on TranslationsIt {
 			'settings.debugLoggingDescription' => 'Abilita una registrazione dettagliata per la risoluzione dei problemi',
 			'settings.viewLogs' => 'Visualizza i log',
 			'settings.viewLogsDescription' => 'Visualizza i log dell\'applicazione',
-			'settings.clearCache' => 'Svuota la cache',
-			'settings.clearCacheDescription' => 'Cancella le immagini e i dati memorizzati nella cache. I contenuti potrebbero caricarsi più lentamente.',
-			'settings.clearCacheSuccess' => 'Cache cancellata correttamente',
 			'settings.resetSettings' => 'Ripristina impostazioni',
 			'settings.resetSettingsDescription' => 'Ripristina le impostazioni predefinite. Questa operazione non può essere annullata.',
 			'settings.resetSettingsSuccess' => 'Impostazioni ripristinate correttamente',
@@ -2664,11 +2658,11 @@ extension on TranslationsIt {
 			'videoControls.subtitleDownloadedNotApplied' => 'Il sottotitolo è stato scaricato, ma non è stato possibile selezionarlo',
 			'videoControls.subtitleDownloadFailed' => 'Impossibile scaricare il sottotitolo',
 			'videoControls.searchLanguages' => 'Cerca lingue...',
-			_ => null,
-		} ?? switch (path) {
 			'messages.markedAsWatched' => 'Segnato come visto',
 			'messages.markedAsUnwatched' => 'Segnato come non visto',
 			'messages.markedAsWatchedOffline' => 'Segnato come visto (verrà sincronizzato quando torni online)',
+			_ => null,
+		} ?? switch (path) {
 			'messages.markedAsUnwatchedOffline' => 'Segnato come non visto (verrà sincronizzato quando torni online)',
 			'messages.autoRemovedWatchedDownload' => ({required Object title}) => 'Rimosso automaticamente: ${title}',
 			'messages.autoRemovedWatchedDownloads' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('it'))(n, one: 'Rimosso automaticamente ${n} download già visto', other: 'Rimossi automaticamente ${n} download già visti', ), 
@@ -3178,11 +3172,11 @@ extension on TranslationsIt {
 			'watchTogether.joinCurrentPlayback' => 'Unisciti alla riproduzione corrente',
 			'watchTogether.joinCurrentPlaybackDescription' => 'Torna a ciò che l\'host sta guardando in questo momento',
 			'watchTogether.failedToOpenCurrentPlayback' => 'Impossibile aprire la riproduzione corrente',
-			_ => null,
-		} ?? switch (path) {
 			'watchTogether.participantJoined' => ({required Object name}) => '${name} si è unito',
 			'watchTogether.participantLeft' => ({required Object name}) => '${name} se ne è andato',
 			'watchTogether.participantPaused' => ({required Object name}) => '${name} ha messo in pausa',
+			_ => null,
+		} ?? switch (path) {
 			'watchTogether.participantResumed' => ({required Object name}) => '${name} ha ripreso',
 			'watchTogether.participantSeeked' => ({required Object name}) => '${name} ha cambiato la posizione di riproduzione',
 			'watchTogether.participantBuffering' => ({required Object name}) => '${name} è in buffering',

@@ -319,9 +319,6 @@ class _Translations$settings$ja extends Translations$settings$en {
 	@override String get debugLoggingDescription => 'トラブルシューティング用の詳細なログを有効化';
 	@override String get viewLogs => 'ログを表示';
 	@override String get viewLogsDescription => 'アプリケーションログを表示';
-	@override String get clearCache => 'キャッシュをクリア';
-	@override String get clearCacheDescription => 'キャッシュ済みの画像とデータを削除します。コンテンツの読み込みが遅くなる場合があります。';
-	@override String get clearCacheSuccess => 'キャッシュを正常にクリアしました';
 	@override String get resetSettings => '設定をリセット';
 	@override String get resetSettingsDescription => '設定を既定に戻します。元に戻せません。';
 	@override String get resetSettingsSuccess => '設定を正常にリセットしました';
@@ -2326,9 +2323,6 @@ extension on TranslationsJa {
 			'settings.debugLoggingDescription' => 'トラブルシューティング用の詳細なログを有効化',
 			'settings.viewLogs' => 'ログを表示',
 			'settings.viewLogsDescription' => 'アプリケーションログを表示',
-			'settings.clearCache' => 'キャッシュをクリア',
-			'settings.clearCacheDescription' => 'キャッシュ済みの画像とデータを削除します。コンテンツの読み込みが遅くなる場合があります。',
-			'settings.clearCacheSuccess' => 'キャッシュを正常にクリアしました',
 			'settings.resetSettings' => '設定をリセット',
 			'settings.resetSettingsDescription' => '設定を既定に戻します。元に戻せません。',
 			'settings.resetSettingsSuccess' => '設定を正常にリセットしました',
@@ -2661,11 +2655,11 @@ extension on TranslationsJa {
 			'videoControls.subtitleDownloadedNotApplied' => '字幕はダウンロードされましたが、選択できませんでした',
 			'videoControls.subtitleDownloadFailed' => '字幕のダウンロードに失敗しました',
 			'videoControls.searchLanguages' => '言語を検索…',
-			_ => null,
-		} ?? switch (path) {
 			'messages.markedAsWatched' => '視聴済みにしました',
 			'messages.markedAsUnwatched' => '未視聴にしました',
 			'messages.markedAsWatchedOffline' => '視聴済みにしました（オンライン時に同期）',
+			_ => null,
+		} ?? switch (path) {
 			'messages.markedAsUnwatchedOffline' => '未視聴にしました（オンライン時に同期）',
 			'messages.autoRemovedWatchedDownload' => ({required Object title}) => '自動削除: ${title}',
 			'messages.autoRemovedWatchedDownloads' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('ja'))(n, other: '視聴済みダウンロードを${n}件自動削除しました', ), 
@@ -3175,11 +3169,11 @@ extension on TranslationsJa {
 			'watchTogether.joinCurrentPlayback' => '現在の再生に参加',
 			'watchTogether.joinCurrentPlaybackDescription' => 'ホストが現在視聴中のコンテンツに戻る',
 			'watchTogether.failedToOpenCurrentPlayback' => '現在の再生を開けませんでした',
-			_ => null,
-		} ?? switch (path) {
 			'watchTogether.participantJoined' => ({required Object name}) => '${name}が参加しました',
 			'watchTogether.participantLeft' => ({required Object name}) => '${name}が退出しました',
 			'watchTogether.participantPaused' => ({required Object name}) => '${name}が一時停止しました',
+			_ => null,
+		} ?? switch (path) {
 			'watchTogether.participantResumed' => ({required Object name}) => '${name}が再開しました',
 			'watchTogether.participantSeeked' => ({required Object name}) => '${name}が再生位置を変更しました',
 			'watchTogether.participantBuffering' => ({required Object name}) => '${name}がバッファリング中',

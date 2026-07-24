@@ -319,9 +319,6 @@ class _Translations$settings$hu extends Translations$settings$en {
 	@override String get debugLoggingDescription => 'Részletes naplózás engedélyezése a hibaelhárításhoz';
 	@override String get viewLogs => 'Naplók megtekintése';
 	@override String get viewLogsDescription => 'Alkalmazásnaplók megtekintése';
-	@override String get clearCache => 'Gyorsítótár törlése';
-	@override String get clearCacheDescription => 'A gyorsítótárazott képek és adatok törlése. A tartalom lassabban töltődhet be.';
-	@override String get clearCacheSuccess => 'A gyorsítótár sikeresen törölve';
 	@override String get resetSettings => 'Beállítások visszaállítása';
 	@override String get resetSettingsDescription => 'Az alapértelmezett beállítások visszaállítása. Ez a művelet nem vonható vissza.';
 	@override String get resetSettingsSuccess => 'A beállítások sikeresen visszaállítva';
@@ -2329,9 +2326,6 @@ extension on TranslationsHu {
 			'settings.debugLoggingDescription' => 'Részletes naplózás engedélyezése a hibaelhárításhoz',
 			'settings.viewLogs' => 'Naplók megtekintése',
 			'settings.viewLogsDescription' => 'Alkalmazásnaplók megtekintése',
-			'settings.clearCache' => 'Gyorsítótár törlése',
-			'settings.clearCacheDescription' => 'A gyorsítótárazott képek és adatok törlése. A tartalom lassabban töltődhet be.',
-			'settings.clearCacheSuccess' => 'A gyorsítótár sikeresen törölve',
 			'settings.resetSettings' => 'Beállítások visszaállítása',
 			'settings.resetSettingsDescription' => 'Az alapértelmezett beállítások visszaállítása. Ez a művelet nem vonható vissza.',
 			'settings.resetSettingsSuccess' => 'A beállítások sikeresen visszaállítva',
@@ -2664,11 +2658,11 @@ extension on TranslationsHu {
 			'videoControls.subtitleDownloadedNotApplied' => 'Felirat letöltve, de nem sikerült kiválasztani',
 			'videoControls.subtitleDownloadFailed' => 'Nem sikerült a felirat letöltése',
 			'videoControls.searchLanguages' => 'Nyelvek keresése...',
-			_ => null,
-		} ?? switch (path) {
 			'messages.markedAsWatched' => 'Megjelölve megtekintettként',
 			'messages.markedAsUnwatched' => 'Megjelölve nem megtekintettként',
 			'messages.markedAsWatchedOffline' => 'Megjelölve megtekintettként (szinkronizálás online állapotban)',
+			_ => null,
+		} ?? switch (path) {
 			'messages.markedAsUnwatchedOffline' => 'Megjelölve nem megtekintettként (szinkronizálás online állapotban)',
 			'messages.autoRemovedWatchedDownload' => ({required Object title}) => 'Automatikusan eltávolítva: ${title}',
 			'messages.autoRemovedWatchedDownloads' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('hu'))(n, one: '${n} megtekintett letöltés automatikusan eltávolítva', other: '${n} megtekintett letöltés automatikusan eltávolítva', ), 
@@ -3178,11 +3172,11 @@ extension on TranslationsHu {
 			'watchTogether.joinCurrentPlayback' => 'Csatlakozás a jelenlegi lejátszáshoz',
 			'watchTogether.joinCurrentPlaybackDescription' => 'Visszatérés ahhoz, amit a házigazda éppen néz',
 			'watchTogether.failedToOpenCurrentPlayback' => 'Nem sikerült megnyitni a jelenlegi lejátszást',
-			_ => null,
-		} ?? switch (path) {
 			'watchTogether.participantJoined' => ({required Object name}) => '${name} csatlakozott',
 			'watchTogether.participantLeft' => ({required Object name}) => '${name} kilépett',
 			'watchTogether.participantPaused' => ({required Object name}) => '${name} szüneteltette a lejátszást',
+			_ => null,
+		} ?? switch (path) {
 			'watchTogether.participantResumed' => ({required Object name}) => '${name} folytatta a lejátszást',
 			'watchTogether.participantSeeked' => ({required Object name}) => '${name} módosította a lejátszási pozíciót',
 			'watchTogether.participantBuffering' => ({required Object name}) => '${name} pufferel',
