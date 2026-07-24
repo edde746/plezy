@@ -42,7 +42,7 @@ void main() {
       harness.wrap(
         HubDetailScreen(
           hub: MediaHub(
-            id: 'home.recent',
+            id: 'home.continue',
             title: 'Recent',
             type: 'movie',
             items: items.take(5).toList(),
@@ -64,6 +64,39 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Item 204'), findsOneWidget);
     expect(find.text('Item 203'), findsNothing);
+  });
+
+  testWidgets('Jellyfin Recently Added fetches every page only as the user reaches the end', (tester) async {
+    final items = List.generate(450, (index) => _item(index, backend: MediaBackend.jellyfin));
+    final harness = await _createHarness(items, backend: MediaBackend.jellyfin);
+
+    await tester.pumpWidget(
+      harness.wrap(
+        HubDetailScreen(
+          hub: MediaHub(
+            id: 'home.recent',
+            title: 'Recently Added',
+            type: 'mixed',
+            items: items.take(20).toList(),
+            size: items.length,
+            more: true,
+            serverId: 'server_1',
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(harness.client.requestedStarts, [0]);
+    expect(harness.client.requestedSizes, [200]);
+
+    await tester.drag(find.byType(CustomScrollView), const Offset(0, -50000));
+    await tester.pumpAndSettle();
+    expect(harness.client.requestedStarts, [0, 200, 400]);
+    expect(harness.client.requestedSizes, [200, 200, 50]);
+    await tester.drag(find.byType(CustomScrollView), const Offset(0, -50000));
+    await tester.pumpAndSettle();
+    expect(find.text('Item 449'), findsOneWidget);
   });
 
   testWidgets('Plex hub replaces its preview with the full-hub response', (tester) async {
@@ -138,6 +171,7 @@ class _PagedHubClient implements MediaServerClient {
 
   final List<MediaItem> items;
   final List<int?> requestedStarts = [];
+  final List<int?> requestedSizes = [];
   int fullHubRequests = 0;
 
   @override
@@ -161,6 +195,7 @@ class _PagedHubClient implements MediaServerClient {
     AbortController? abort,
   }) async {
     requestedStarts.add(start);
+    requestedSizes.add(size);
     return fakeLibraryPage(items, start: start, size: size);
   }
 

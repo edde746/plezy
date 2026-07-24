@@ -16,6 +16,7 @@ import '../utils/app_logger.dart';
 import '../utils/continuation_pagination_coordinator.dart';
 import '../utils/error_message_utils.dart';
 import '../utils/platform_detector.dart';
+import '../utils/media_server_http_client.dart';
 import '../utils/plex_library_section_utils.dart';
 import '../utils/provider_extensions.dart';
 import '../widgets/focusable_media_card.dart';
@@ -28,6 +29,7 @@ import '../focus/focusable_action_bar.dart';
 import '../focus/focusable_button.dart';
 import '../focus/key_event_utils.dart';
 import '../mixins/grid_focus_node_mixin.dart';
+import '../mixins/paginated_item_loader.dart';
 import 'libraries/sort_bottom_sheet.dart';
 import 'libraries/content_state_builder.dart';
 import '../mixins/refreshable.dart';
@@ -56,7 +58,7 @@ class HubDetailScreen extends StatefulWidget {
 }
 
 class _HubDetailScreenState extends State<HubDetailScreen>
-    with Refreshable, GridFocusNodeMixin, FocusableDetailScreenMixin {
+    with Refreshable, GridFocusNodeMixin, FocusableDetailScreenMixin, PaginatedItemLoader<MediaItem, HubDetailScreen> {
   static const int _pageSize = 200;
 
   List<MediaItem> _items = [];
@@ -67,6 +69,7 @@ class _HubDetailScreenState extends State<HubDetailScreen>
   bool _isLoading = false;
   String? _errorMessage;
   bool _replaceContinuationItems = false;
+  bool _usesPaginatedLoader = false;
 
   late final ContinuationPaginationCoordinator<MediaItem> _continuation = ContinuationPaginationCoordinator<MediaItem>(
     loadPage: _fetchContinuationPage,
@@ -111,6 +114,7 @@ class _HubDetailScreenState extends State<HubDetailScreen>
   @override
   void initState() {
     super.initState();
+    scrollController.addListener(_maybeLoadNextHubPage);
     _items = widget.hub.items;
     _filteredItems = widget.hub.items;
     if (widget.hub.more) {
@@ -122,6 +126,8 @@ class _HubDetailScreenState extends State<HubDetailScreen>
 
   @override
   void dispose() {
+    scrollController.removeListener(_maybeLoadNextHubPage);
+    disposePagination();
     _continuation.dispose();
     _continuationRetryFocusNode.dispose();
     disposeFocusResources();
@@ -269,34 +275,70 @@ class _HubDetailScreenState extends State<HubDetailScreen>
         });
   }
 
+  bool _shouldUsePaginatedLoader(MediaServerClient client) =>
+      client.backend == MediaBackend.jellyfin && widget.hub.id.endsWith('.recent');
+
+  @override
+  Future<LibraryPage<MediaItem>> fetchPage(int start, int size, AbortController? abort) async {
+    final serverId = widget.hub.serverId;
+    final client = serverId == null ? null : context.tryGetMediaClientForServer(ServerId(serverId));
+    if (client == null) throw StateError('No media client available for paginated hub');
+    return client.fetchMoreHubItemsPage(widget.hub.id, start: start, size: size, abort: abort);
+  }
+
+  @override
+  void onPageLoaded(int start, List<MediaItem> items) {
+    if (!_usesPaginatedLoader || start == 0 || !mounted) return;
+    setState(() {
+      _items = List.of(_items)..addAll(items);
+      _filteredItems = List.of(_items);
+    });
+    _applySort();
+    _scheduleNextHubPageCheck();
+  }
+
+  @override
+  void onPaginationStateChanged() {
+    if (mounted) setState(() {});
+  }
+
   Future<void> _loadMoreItems() async {
     if (_isLoading) return;
 
     final serverId = widget.hub.serverId;
-    if (widget.loadItems == null && serverId == null) {
+    final loader = widget.loadItems;
+    if (loader == null && serverId == null) {
       appLogger.w('Hub has no serverId; cannot load more items for ${widget.hub.id}');
       return;
     }
 
+    final client = serverId == null ? null : context.tryGetMediaClientForServer(ServerId(serverId));
+    final usesCustomLoader = loader != null;
+    _usesPaginatedLoader = !usesCustomLoader && client != null && _shouldUsePaginatedLoader(client);
+
     setState(() {
       _isLoading = true;
       _errorMessage = null;
+      if (_usesPaginatedLoader) resetPaginationState();
     });
 
     try {
       List<MediaItem> items = const [];
       var totalCount = 0;
       var loadedCount = 0;
-      var usesCustomLoader = false;
-      MediaServerClient? client;
+      var initialPageApplied = true;
       final applied = await _continuation.runNewGeneration(() async {
-        final loader = widget.loadItems;
-        usesCustomLoader = loader != null;
-        client = serverId == null ? null : context.tryGetMediaClientForServer(ServerId(serverId));
-        if (loader == null) {
+        if (_usesPaginatedLoader) {
+          final result = await loadInitialPageWithStatus(_pageSize);
+          initialPageApplied = result.applied;
+          if (!result.applied) return;
+          items = result.page.items;
+          totalCount = result.page.totalCount;
+          loadedCount = result.page.items.length;
+        } else if (loader == null) {
           final page = client == null
               ? const LibraryPage<MediaItem>(items: [], totalCount: 0)
-              : await client!.fetchMoreHubItemsPage(widget.hub.id, start: 0, size: _pageSize);
+              : await client.fetchMoreHubItemsPage(widget.hub.id, start: 0, size: _pageSize);
           items = _applySectionFilter(page.items);
           totalCount = page.totalCount;
           loadedCount = page.items.length;
@@ -307,7 +349,7 @@ class _HubDetailScreenState extends State<HubDetailScreen>
         }
       });
 
-      if (!mounted || !applied) return;
+      if (!mounted || !applied || !initialPageApplied) return;
       setState(() {
         _items = List.of(items);
         _filteredItems = List.of(items);
@@ -315,14 +357,16 @@ class _HubDetailScreenState extends State<HubDetailScreen>
       });
 
       _applySort();
-      if (!usesCustomLoader && client != null && loadedCount < totalCount) {
-        _replaceContinuationItems = client!.backend == MediaBackend.plex;
+      if (!usesCustomLoader && !_usesPaginatedLoader && client != null && loadedCount < totalCount) {
+        _replaceContinuationItems = client.backend == MediaBackend.plex;
         if (_replaceContinuationItems) {
           _continuation.setContinuation(startIndex: 0, totalCount: 1);
         } else {
           _continuation.setContinuation(startIndex: loadedCount, totalCount: totalCount);
         }
         unawaited(_continuation.loadRemaining());
+      } else if (_usesPaginatedLoader && loadedCount < totalCount) {
+        _scheduleNextHubPageCheck();
       }
 
       appLogger.d('Loaded ${items.length} items for hub: ${widget.hub.title}');
@@ -370,13 +414,51 @@ class _HubDetailScreenState extends State<HubDetailScreen>
     _applySort();
   }
 
+  void _scheduleNextHubPageCheck() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _maybeLoadNextHubPage();
+    });
+  }
+
+  void _maybeLoadNextHubPage() {
+    if (!_usesPaginatedLoader ||
+        loadedItems.length >= totalSize ||
+        isPaginationLoading ||
+        paginationError != null ||
+        !scrollController.hasClients) {
+      return;
+    }
+    final position = scrollController.position;
+    if (position.extentAfter <= position.viewportDimension) {
+      _requestNextHubPage();
+    }
+  }
+
+  void _requestNextHubPage() {
+    if (!_usesPaginatedLoader || loadedItems.length >= totalSize || isPaginationLoading || paginationError != null) {
+      return;
+    }
+    ensureIndexLoaded(loadedItems.length, pageSize: _pageSize);
+  }
+
+  void _handleGridItemFocusChange(int index, bool hasFocus, {required bool isLastRow}) {
+    trackGridItemFocus(index, hasFocus);
+    if (hasFocus && isLastRow) _requestNextHubPage();
+  }
+
   void _handleContinuationStateChanged() {
     if (mounted) {
       setState(() {});
     }
   }
 
-  void _retryHubContinuation() => unawaited(_continuation.retry());
+  void _retryHubContinuation() {
+    if (_usesPaginatedLoader) {
+      ensureIndexLoaded(loadedItems.length, pageSize: _pageSize);
+    } else {
+      unawaited(_continuation.retry());
+    }
+  }
 
   List<MediaItem> _applySectionFilter(List<MediaItem> items) {
     final sectionFilter = int.tryParse(widget.hub.libraryId ?? '');
@@ -408,8 +490,11 @@ class _HubDetailScreenState extends State<HubDetailScreen>
     unawaited(_loadMoreItems());
   }
 
+  Object? get _pageLoadError => _usesPaginatedLoader ? paginationError : _continuation.error;
+  bool get _isLoadingPage => _usesPaginatedLoader ? isPaginationLoading : _continuation.isLoading;
+
   Widget _buildContinuationStatusSliver() {
-    final exception = _continuation.error;
+    final exception = _pageLoadError;
     final error = exception == null ? null : t.messages.errorLoading(error: exception.toString());
     return SliverToBoxAdapter(
       child: Padding(
@@ -530,13 +615,16 @@ class _HubDetailScreenState extends State<HubDetailScreen>
                             usesContinueWatchingAction: widget.usesContinueWatchingAction,
                             onNavigateUp: position.isFirstRow ? navigateToAppBar : null,
                             onNavigateDown:
-                                _continuation.error != null &&
-                                    position.index >= position.itemCount - position.columnCount
+                                _pageLoadError != null && position.index >= position.itemCount - position.columnCount
                                 ? _continuationRetryFocusNode.requestFocus
                                 : null,
                             onNavigateLeft: position.isGrid && position.isFirstColumn ? () {} : null,
                             onBack: handleBackFromContent,
-                            onFocusChange: (hasFocus) => trackGridItemFocus(index, hasFocus),
+                            onFocusChange: (hasFocus) => _handleGridItemFocusChange(
+                              index,
+                              hasFocus,
+                              isLastRow: position.index >= position.itemCount - position.columnCount,
+                            ),
                             mixedHubContext: isMixedHub,
                             fullBleedImage: fullCardLayout && position.isGrid,
                           );
@@ -544,7 +632,7 @@ class _HubDetailScreenState extends State<HubDetailScreen>
                       );
                     },
                   ),
-                if (_filteredItems.isNotEmpty && (_continuation.isLoading || _continuation.error != null))
+                if (_filteredItems.isNotEmpty && (_isLoadingPage || _pageLoadError != null))
                   _buildContinuationStatusSliver(),
               ],
             ),

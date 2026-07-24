@@ -272,9 +272,13 @@ void main() {
       // Drain the failed Future, then advance past the retry timer's 1s delay
       // so the timer fires and re-invokes ensureIndexLoaded.
       await tester.pump();
+      expect(state.paginationError, isA<MediaServerHttpException>());
+      expect(state.isPaginationLoading, isFalse);
       await tester.pump(const Duration(milliseconds: 1100));
       // Drain the retry's Future.
       await tester.pump();
+      expect(state.paginationError, isNull);
+      expect(state.isPaginationLoading, isFalse);
 
       expect(state.loadedItems.containsKey(220), isTrue);
       expect(rangeAttempt, greaterThanOrEqualTo(2)); // failed + retry

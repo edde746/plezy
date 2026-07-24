@@ -3142,14 +3142,20 @@ void main() {
       return JellyfinClient.forTesting(connection: _conn(), httpClient: mock);
     }
 
-    test('global "home.recent" hits /Users/{userId}/Items/Latest with provided limit', () async {
+    test('global "home.recent" uses the pageable Items catalogue with the provided limit', () async {
       final client = buildClient();
       await client.fetchMoreHubItems('home.recent', limit: 80);
 
       expect(captured, isNotNull);
-      expect(captured!.path, '/Users/user-1/Items/Latest');
+      expect(captured!.path, '/Items');
+      expect(captured!.queryParameters['userId'], 'user-1');
+      expect(captured!.queryParameters['StartIndex'], '0');
       expect(captured!.queryParameters['Limit'], '80');
-      expect(captured!.queryParameters['IncludeItemTypes'], 'Movie,Series,Episode');
+      expect(captured!.queryParameters['Recursive'], 'true');
+      expect(captured!.queryParameters['EnableTotalRecordCount'], 'true');
+      expect(captured!.queryParameters['IncludeItemTypes'], 'Movie,Series,Episode,Video,MusicVideo,Photo');
+      expect(captured!.queryParameters['SortBy'], 'DateCreated,SortName,ProductionYear');
+      expect(captured!.queryParameters['SortOrder'], 'Descending,Descending,Descending');
       expect(captured!.queryParameters['EnableImageTypes'], 'Primary,Backdrop,Thumb,Logo');
       expect(captured!.queryParameters['ImageTypeLimit'], '3');
       expect(captured!.queryParameters.containsKey('ParentId'), isFalse);
@@ -3192,19 +3198,21 @@ void main() {
       client.close();
     });
 
-    test('library-scoped "library.{id}.recent" forwards ParentId to Latest', () async {
+    test('library-scoped "library.{id}.recent" pages Items within its parent', () async {
       final client = buildClient();
       await client.fetchMoreHubItems('library.lib-99.recent', limit: 30);
 
       expect(captured, isNotNull);
-      expect(captured!.path, '/Users/user-1/Items/Latest');
+      expect(captured!.path, '/Items');
+      expect(captured!.queryParameters['userId'], 'user-1');
       expect(captured!.queryParameters['ParentId'], 'lib-99');
+      expect(captured!.queryParameters['StartIndex'], '0');
       expect(captured!.queryParameters['Limit'], '30');
+      expect(captured!.queryParameters['Recursive'], 'true');
+      expect(captured!.queryParameters['EnableTotalRecordCount'], 'true');
+      expect(captured!.queryParameters['IncludeItemTypes'], 'Movie,Series,Episode,Video,MusicVideo,Photo');
       expect(captured!.queryParameters['EnableImageTypes'], 'Primary,Backdrop,Thumb,Logo');
       expect(captured!.queryParameters['ImageTypeLimit'], '3');
-      // ParentId-scoped Latest should NOT also pin IncludeItemTypes (the
-      // library already constrains the kinds returned).
-      expect(captured!.queryParameters.containsKey('IncludeItemTypes'), isFalse);
       client.close();
     });
 
@@ -3313,23 +3321,37 @@ void main() {
       expect(requestUri!.queryParameters['EnableTotalRecordCount'], 'true');
     });
 
-    test('Latest hub is treated as a single page when offset is requested', () async {
-      var requestCount = 0;
+    test('paged Recently Added sends the requested offset and parses total count', () async {
+      Uri? requestUri;
       final client = JellyfinClient.forTesting(
         connection: _conn(),
         httpClient: MockClient((req) async {
-          requestCount++;
-          return http.Response('[]', 200, headers: {'content-type': 'application/json'});
+          requestUri = req.url;
+          return http.Response(
+            jsonEncode({
+              'TotalRecordCount': 321,
+              'Items': [
+                {'Id': 'recent-20', 'Name': 'Recent', 'Type': 'Movie'},
+              ],
+            }),
+            200,
+            headers: {'content-type': 'application/json'},
+          );
         }),
       );
       addTearDown(client.close);
 
       final page = await client.fetchMoreHubItemsPage('home.recent', start: 20, size: 10);
 
-      expect(page.items, isEmpty);
-      expect(page.totalCount, 20);
+      expect(page.items.single.id, 'recent-20');
+      expect(page.totalCount, 321);
       expect(page.offset, 20);
-      expect(requestCount, 0);
+      expect(requestUri, isNotNull);
+      expect(requestUri!.path, '/Items');
+      expect(requestUri!.queryParameters['StartIndex'], '20');
+      expect(requestUri!.queryParameters['Limit'], '10');
+      expect(requestUri!.queryParameters['EnableTotalRecordCount'], 'true');
+      expect(requestUri!.queryParameters.containsKey('ParentId'), isFalse);
     });
 
     test('paged hub first-page errors throw while list helper keeps empty fallback', () async {

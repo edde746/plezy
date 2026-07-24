@@ -1511,13 +1511,12 @@ mixin _JellyfinBrowseMethods on MediaServerCacheMixin {
     ].where((h) => h.items.isNotEmpty).toList();
   }
 
-  /// Re-run the synthetic hub query without the preview limit so the
-  /// hub-detail screen can render the full list. Branches on the
-  /// identifier emitted by [fetchGlobalHubs] / [fetchLibraryHubs]:
-  /// `home.recent` / `library.{id}.recent` → Latest, `*.latestalbums` →
-  /// Latest with the slim music album fields, `*.continue` → Resume,
-  /// `*.nextup` → NextUp, `*.recentlyplayed` / `*.mostplayed` → the music
-  /// played-track queries. Unknown ids return an empty list.
+  /// Expand a synthetic hub so the detail screen can render beyond its
+  /// preview. Recently Added uses the pageable Items endpoint with the same
+  /// date-created ordering and media types as Jellyfin's Latest query.
+  /// Latest Albums retains the grouped, single-page Latest endpoint.
+  /// Continue Watching, Next Up, Recently Played, and Most Played use their
+  /// native pageable endpoints. Unknown ids return an empty list.
   @override
   Future<List<MediaItem>> fetchMoreHubItems(String hubId, {int? limit}) async {
     try {
@@ -1551,19 +1550,35 @@ mixin _JellyfinBrowseMethods on MediaServerCacheMixin {
     final tail = hubId.split('.').last;
     switch (tail) {
       case 'recent':
+        return _safeFetchMediaPage(
+          '/Items',
+          {
+            'userId': connection.userId,
+            'ParentId': ?parentId,
+            'Recursive': 'true',
+            'StartIndex': offset.toString(),
+            'Limit': effectiveLimit,
+            'EnableTotalRecordCount': 'true',
+            'IncludeItemTypes': 'Movie,Series,Episode,Video,MusicVideo,Photo',
+            'SortBy': 'DateCreated,SortName,ProductionYear',
+            'SortOrder': 'Descending,Descending,Descending',
+            'Fields': _browseFields,
+            ...jellyfinImageQueryParameters,
+          },
+          offset: offset,
+          requestedSize: pageSize,
+          abort: abort,
+        );
       case 'latestalbums':
-        // Jellyfin's Latest endpoint has a Limit but no StartIndex. Expose it
-        // as one bounded page so callers don't infer endless fake pages.
-        // Music album rows keep the slim fields their preview row used
-        // (see [_musicAlbumRowFields]).
+        // Latest groups music into albums but does not expose StartIndex.
         if (offset > 0) return LibraryPage<MediaItem>(items: const [], totalCount: offset, offset: offset);
         return _safeFetchMediaPage(
           '/Users/${_segment(connection.userId)}/Items/Latest',
           {
             'Limit': effectiveLimit,
-            'Fields': tail == 'latestalbums' ? _musicAlbumRowFields : _browseFields,
-            if (tail == 'latestalbums') 'EnableUserData': 'false',
-            if (parentId != null) 'ParentId': parentId else 'IncludeItemTypes': 'Movie,Series,Episode',
+            'Fields': _musicAlbumRowFields,
+            'EnableUserData': 'false',
+            'ParentId': ?parentId,
             ...jellyfinImageQueryParameters,
           },
           offset: offset,
