@@ -1,55 +1,7 @@
 {
   "schemaVersion": 1,
-  "reviewedOn": "2026-07-21",
+  "reviewedOn": "2026-07-24",
   "accepted": [
-    {
-      "id": 1113317,
-      "package": "@sveltejs/kit",
-      "severity": "moderate",
-      "vulnerableRange": ">=2.49.0 <=2.52.1",
-      "expiresOn": "2026-10-19",
-      "rationale": "GHSA-88qp-p4qg-rqm6: Static adapter/prerender site has no remote functions or forms, query.batch, hooks/redirects, or adapter-node body handling."
-    },
-    {
-      "id": 1113318,
-      "package": "@sveltejs/kit",
-      "severity": "moderate",
-      "vulnerableRange": ">=2.49.0 <=2.52.1",
-      "expiresOn": "2026-10-19",
-      "rationale": "GHSA-vrhm-gvg7-fpcf: Static adapter/prerender site has no remote functions or forms, query.batch, hooks/redirects, or adapter-node body handling."
-    },
-    {
-      "id": 1113631,
-      "package": "@sveltejs/kit",
-      "severity": "low",
-      "vulnerableRange": ">=2.49.0 <=2.53.2",
-      "expiresOn": "2026-10-19",
-      "rationale": "GHSA-fpg4-jhqr-589c: Static adapter/prerender site has no remote functions or forms, query.batch, hooks/redirects, or adapter-node body handling."
-    },
-    {
-      "id": 1116432,
-      "package": "@sveltejs/kit",
-      "severity": "moderate",
-      "vulnerableRange": "<=2.57.0",
-      "expiresOn": "2026-10-19",
-      "rationale": "GHSA-3f6h-2hrp-w5wx: Static adapter/prerender site has no remote functions or forms, query.batch, hooks/redirects, or adapter-node body handling."
-    },
-    {
-      "id": 1116433,
-      "package": "@sveltejs/kit",
-      "severity": "high",
-      "vulnerableRange": "<=2.57.0",
-      "expiresOn": "2026-10-19",
-      "rationale": "GHSA-2crg-3p73-43xp: Static adapter/prerender site has no remote functions or forms, query.batch, hooks/redirects, or adapter-node body handling."
-    },
-    {
-      "id": 1122155,
-      "package": "@sveltejs/kit",
-      "severity": "moderate",
-      "vulnerableRange": ">=2.38.0 <=2.60.0",
-      "expiresOn": "2026-10-19",
-      "rationale": "GHSA-hgv7-v322-mmgr: Static adapter/prerender site has no remote functions or forms, query.batch, hooks/redirects, or adapter-node body handling."
-    },
     {
       "id": 1103907,
       "package": "cookie",
