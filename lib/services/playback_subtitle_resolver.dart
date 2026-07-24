@@ -76,6 +76,25 @@ class PlaybackSubtitleSelection {
 class PlaybackSubtitleResolver {
   const PlaybackSubtitleResolver._();
 
+  static SubtitleTrack? _sourceBackedPreference(
+    SubtitleTrack? preferred,
+    MediaSourceInfo? mediaInfo,
+    List<_SubtitleCandidate> candidates,
+  ) {
+    if (preferred == null || preferred.id == SubtitleTrack.off.id) return preferred;
+
+    final sourceMatch = findPlexTrackForMpvSubtitle(
+      preferred,
+      mediaInfo?.subtitleTracks ?? const <MediaSubtitleTrack>[],
+    );
+    if (sourceMatch == null) return preferred;
+
+    for (final candidate in candidates) {
+      if (candidate.sourceStreamId == sourceMatch.id) return candidate.track;
+    }
+    return preferred;
+  }
+
   static PlaybackSubtitleSelection resolve({
     required MediaItem metadata,
     required MediaSourceInfo? mediaInfo,
@@ -116,7 +135,8 @@ class PlaybackSubtitleResolver {
       plexMediaInfo: mediaInfo,
     );
     final selectedAudio = service.selectAudioTrack(_audioTracksForSource(mediaInfo), preferredAudioTrack)?.track;
-    final primaryResult = service.selectSubtitleTrack(availableTracks, preferredSubtitleTrack, selectedAudio);
+    final primaryPreference = _sourceBackedPreference(preferredSubtitleTrack, mediaInfo, candidates);
+    final primaryResult = service.selectSubtitleTrack(availableTracks, primaryPreference, selectedAudio);
     final primary = primaryResult.track;
     if (primary.id == SubtitleTrack.off.id) return const PlaybackSubtitleSelection.off();
 
@@ -124,8 +144,9 @@ class PlaybackSubtitleResolver {
     if (primaryCandidate == null) return const PlaybackSubtitleSelection.off();
 
     _SubtitleCandidate? secondaryCandidate;
-    if (preferredSecondarySubtitleTrack != null && preferredSecondarySubtitleTrack.id != SubtitleTrack.off.id) {
-      final secondary = service.findBestSubtitleMatch(availableTracks, preferredSecondarySubtitleTrack);
+    final secondaryPreference = _sourceBackedPreference(preferredSecondarySubtitleTrack, mediaInfo, candidates);
+    if (secondaryPreference != null && secondaryPreference.id != SubtitleTrack.off.id) {
+      final secondary = service.findBestSubtitleMatch(availableTracks, secondaryPreference);
       secondaryCandidate = candidates
           .where((candidate) => candidate.track.id == secondary?.id && candidate.track.id != primary.id)
           .firstOrNull;

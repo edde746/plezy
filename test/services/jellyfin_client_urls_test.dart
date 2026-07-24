@@ -924,7 +924,7 @@ void main() {
       expect(subtitleUri.queryParameters['api_key'], 'tok-abc');
     });
 
-    test('getPlaybackInitialization negotiates the requested DirectStream subtitle and exposes delivery', () async {
+    test('getPlaybackInitialization maps semantic subtitle preferences to current source rows', () async {
       Uri? playbackInfoUri;
       String? playbackInfoBody;
       final scoped = JellyfinClient.forTesting(
@@ -944,6 +944,7 @@ void main() {
                       {'Index': 0, 'Type': 'Video'},
                       {'Index': 3, 'Type': 'Subtitle', 'Codec': 'srt', 'Language': 'eng'},
                       {'Index': 4, 'Type': 'Subtitle', 'Codec': 'srt', 'Language': 'fra'},
+                      {'Index': 5, 'Type': 'Subtitle', 'Codec': 'srt', 'Language': 'eng', 'IsForced': true},
                     ],
                   },
                 ],
@@ -984,6 +985,16 @@ void main() {
                         'DeliveryMethod': 'External',
                         'DeliveryUrl': '/Videos/item-1/src-1/Subtitles/4/Stream.srt',
                       },
+                      {
+                        'Index': 5,
+                        'Type': 'Subtitle',
+                        'Codec': 'srt',
+                        'Language': 'eng',
+                        'DisplayTitle': 'English Forced - SRT',
+                        'IsForced': true,
+                        'DeliveryMethod': 'External',
+                        'DeliveryUrl': '/Videos/item-1/src-1/Subtitles/5/Stream.srt',
+                      },
                     ],
                   },
                 ],
@@ -997,34 +1008,64 @@ void main() {
       );
       addTearDown(scoped.close);
 
-      final result = await scoped.getPlaybackInitialization(
-        PlaybackInitializationOptions(
-          metadata: testMediaItem(
-            id: 'item-1',
-            backend: MediaBackend.jellyfin,
-            kind: MediaKind.movie,
-            serverId: 'srv-1',
+      Future<PlaybackInitializationResult> initialize(SubtitleTrack preference) {
+        return scoped.getPlaybackInitialization(
+          PlaybackInitializationOptions(
+            metadata: testMediaItem(
+              id: 'item-1',
+              backend: MediaBackend.jellyfin,
+              kind: MediaKind.movie,
+              serverId: 'srv-1',
+            ),
+            selectedMediaIndex: 0,
+            preferredSubtitleTrack: preference,
           ),
-          selectedMediaIndex: 0,
-          preferredSubtitleTrack: const SubtitleTrack(
-            id: 'source:4',
-            title: 'French - SRT',
-            language: 'fra',
-            codec: 'srt',
-          ),
+        );
+      }
+
+      void expectRequestedSubtitleIndex(int? expected) {
+        expect(playbackInfoUri!.queryParameters['SubtitleStreamIndex'], expected?.toString());
+        final playbackInfoJson = jsonDecode(playbackInfoBody!) as Map<String, dynamic>;
+        expect(playbackInfoJson['SubtitleStreamIndex'], expected);
+      }
+
+      final result = await initialize(
+        const SubtitleTrack(id: 'source:4', title: 'French - SRT', language: 'fra', codec: 'srt'),
+      );
+      expectRequestedSubtitleIndex(4);
+
+      await initialize(const SubtitleTrack(id: 'navigation', title: 'English - SRT', language: 'eng', codec: 'srt'));
+      expectRequestedSubtitleIndex(3);
+
+      await initialize(const SubtitleTrack(id: 'source:3', title: 'French - SRT', language: 'fra', codec: 'srt'));
+      expectRequestedSubtitleIndex(4);
+
+      await initialize(
+        const SubtitleTrack(
+          id: 'source:3',
+          title: 'English Forced - SRT',
+          language: 'eng',
+          codec: 'srt',
+          isForced: true,
         ),
       );
+      expectRequestedSubtitleIndex(5);
 
-      expect(playbackInfoUri!.queryParameters['SubtitleStreamIndex'], '4');
-      final playbackInfoJson = jsonDecode(playbackInfoBody!) as Map<String, dynamic>;
-      expect(playbackInfoJson['SubtitleStreamIndex'], 4);
+      await initialize(SubtitleTrack.off);
+      expectRequestedSubtitleIndex(-1);
+
+      await initialize(const SubtitleTrack(id: 'navigation', title: 'Japanese - SRT', language: 'jpn', codec: 'srt'));
+      expectRequestedSubtitleIndex(null);
+
       expect(result.playMethod, 'DirectStream');
-      expect(result.mediaInfo!.subtitleTracks, hasLength(2));
+      expect(result.mediaInfo!.subtitleTracks, hasLength(3));
       expect(result.mediaInfo!.subtitleTracks.every((track) => track.usesExternalDelivery), isTrue);
-      expect(result.subtitleSidecars.map((sidecar) => sidecar.sourceStreamId), [3, 4]);
-      expect(result.externalSubtitles, hasLength(2));
-      expect(Uri.parse(result.externalSubtitles.first.uri!).path, '/Videos/item-1/src-1/Subtitles/3/Stream.srt');
-      expect(Uri.parse(result.externalSubtitles.last.uri!).path, '/Videos/item-1/src-1/Subtitles/4/Stream.srt');
+      expect(result.subtitleSidecars.map((sidecar) => sidecar.sourceStreamId), [3, 4, 5]);
+      expect(result.externalSubtitles.map((subtitle) => Uri.parse(subtitle.uri!).path), [
+        '/Videos/item-1/src-1/Subtitles/3/Stream.srt',
+        '/Videos/item-1/src-1/Subtitles/4/Stream.srt',
+        '/Videos/item-1/src-1/Subtitles/5/Stream.srt',
+      ]);
     });
 
     test('getPlaybackInitialization ignores TranscodingUrl for original playback static fallback', () async {

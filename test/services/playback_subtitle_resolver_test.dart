@@ -11,6 +11,7 @@ import '../test_helpers/media_items.dart';
 MediaSubtitleTrack _sourceSubtitle(
   int id, {
   String language = 'eng',
+  bool forced = false,
   bool selected = false,
   bool external = false,
   bool usesExternalDelivery = false,
@@ -21,7 +22,7 @@ MediaSubtitleTrack _sourceSubtitle(
     languageCode: language,
     title: 'Subtitle $id',
     selected: selected,
-    forced: false,
+    forced: forced,
     external: external,
     usesExternalDelivery: usesExternalDelivery,
   );
@@ -176,6 +177,54 @@ void main() {
 
     expect(result.primarySourceStreamId, 3);
     expect(result.sidecarsAtOpen.single.uri, 'https://example.test/subtitles/3.srt');
+  });
+
+  test('item-change semantic preference selects the matching new sidecar', () {
+    final result = PlaybackSubtitleResolver.resolve(
+      metadata: metadata,
+      mediaInfo: _mediaInfo([
+        _sourceSubtitle(7, language: 'eng', usesExternalDelivery: true),
+        _sourceSubtitle(9, language: 'fra', usesExternalDelivery: true),
+      ]),
+      sidecars: [
+        _sidecar(7),
+        _sidecar(9, language: 'fra'),
+      ],
+      preferredSubtitleTrack: const SubtitleTrack(
+        id: 'navigation',
+        title: 'English from the previous episode',
+        language: 'eng',
+        codec: 'srt',
+        isExternal: true,
+      ),
+    );
+
+    expect(result.primarySourceStreamId, 7);
+    expect(result.primarySidecar?.track.uri, 'https://example.test/subtitles/7.srt');
+    expect(result.sidecarsAtOpen, hasLength(1));
+  });
+
+  test('item-change semantic preference distinguishes forced and full subtitles in one language', () {
+    final result = PlaybackSubtitleResolver.resolve(
+      metadata: metadata,
+      mediaInfo: _mediaInfo([
+        _sourceSubtitle(7, language: 'eng', usesExternalDelivery: true),
+        _sourceSubtitle(8, language: 'eng', forced: true, usesExternalDelivery: true),
+      ]),
+      sidecars: [_sidecar(7), _sidecar(8)],
+      preferredSubtitleTrack: const SubtitleTrack(
+        id: 'navigation',
+        title: 'English forced from the previous episode',
+        language: 'eng',
+        codec: 'srt',
+        isForced: true,
+        isExternal: true,
+      ),
+    );
+
+    expect(result.primarySourceStreamId, 8);
+    expect(result.primaryTrack.isForced, isTrue);
+    expect(result.primarySidecar?.track.uri, 'https://example.test/subtitles/8.srt');
   });
 
   test('selected embedded subtitle keeps sidecars out of the open', () {

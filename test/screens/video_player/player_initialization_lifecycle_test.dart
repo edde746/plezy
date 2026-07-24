@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/focus/focusable_button.dart';
 import 'package:plezy/providers/playback_state_provider.dart';
+import 'package:plezy/mpv/mpv.dart';
 import 'package:plezy/screens/video_player_screen.dart';
 import 'package:plezy/services/settings_service.dart';
 import 'package:provider/provider.dart';
@@ -39,6 +40,69 @@ void main() {
       shouldAutoStartReloadedMedia(wasPlayingBeforeReload: true, watchTogetherOwnsStart: false, startPaused: true),
       isFalse,
     );
+  });
+
+  test('item-change subtitle preference carries committed semantics without item identity', () {
+    const committed = SubtitleTrack(
+      id: 'source:4',
+      title: 'French - SRT',
+      language: 'fra',
+      codec: 'srt',
+      isForced: true,
+      isExternal: true,
+      uri: 'https://example.test/old-episode/subtitle.srt',
+    );
+
+    final result = subtitlePreferenceForItemChange(
+      hasCommittedSelection: true,
+      committedTrack: committed,
+      nativeTrack: SubtitleTrack.off,
+    );
+
+    expect(result, isNotNull);
+    expect(result!.id, 'navigation');
+    expect(result.title, committed.title);
+    expect(result.language, committed.language);
+    expect(result.codec, committed.codec);
+    expect(result.isForced, isTrue);
+    expect(result.isExternal, isTrue);
+    expect(result.uri, isNull);
+  });
+
+  test('item-change subtitle preference preserves committed off and empty secondary slots', () {
+    expect(
+      subtitlePreferenceForItemChange(
+        hasCommittedSelection: true,
+        committedTrack: SubtitleTrack.off,
+        nativeTrack: const SubtitleTrack(id: '7', language: 'eng'),
+      ),
+      same(SubtitleTrack.off),
+    );
+    expect(
+      subtitlePreferenceForItemChange(
+        hasCommittedSelection: true,
+        committedTrack: null,
+        nativeTrack: const SubtitleTrack(id: '8', language: 'swe'),
+      ),
+      same(SubtitleTrack.off),
+    );
+  });
+
+  test('item-change subtitle preference uses native metadata only without a committed selection', () {
+    final result = subtitlePreferenceForItemChange(
+      hasCommittedSelection: false,
+      committedTrack: null,
+      nativeTrack: const SubtitleTrack(
+        id: '9',
+        title: 'English',
+        language: 'eng',
+        uri: 'https://example.test/old-episode/native.srt',
+      ),
+    );
+
+    expect(result?.id, 'navigation');
+    expect(result?.language, 'eng');
+    expect(result?.uri, isNull);
   });
 
   testWidgets('initialization ownership serializes rollback, retry, and route removal', (tester) async {

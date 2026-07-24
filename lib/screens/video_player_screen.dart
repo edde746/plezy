@@ -134,6 +134,48 @@ bool shouldAutoStartReloadedMedia({
   required bool startPaused,
 }) => wasPlayingBeforeReload && !watchTogetherOwnsStart && !startPaused;
 
+/// Builds an item-agnostic subtitle preference for an episode replacement.
+///
+/// Source ids and sidecar URIs belong to the current media item. Only the
+/// committed semantic choice may cross the item boundary; native state is a
+/// fallback for sessions created before source-backed selection was recorded.
+SubtitleTrack? subtitlePreferenceForItemChange({
+  required bool hasCommittedSelection,
+  required SubtitleTrack? committedTrack,
+  required SubtitleTrack? nativeTrack,
+}) {
+  SubtitleTrack? normalize(SubtitleTrack? track, {required bool preserveOff}) {
+    if (track == null) return null;
+    if (track.id == SubtitleTrack.off.id) return preserveOff ? SubtitleTrack.off : null;
+
+    final hasSemanticMetadata =
+        (track.title?.isNotEmpty ?? false) ||
+        (track.language?.isNotEmpty ?? false) ||
+        (track.codec?.isNotEmpty ?? false);
+    if (!hasSemanticMetadata) return null;
+
+    return SubtitleTrack(
+      id: 'navigation',
+      title: track.title,
+      language: track.language,
+      codec: track.codec,
+      isDefault: track.isDefault,
+      isForced: track.isForced,
+      isExternal: track.isExternal,
+    );
+  }
+
+  if (!hasCommittedSelection) {
+    return normalize(nativeTrack, preserveOff: true);
+  }
+
+  if (committedTrack == null) return SubtitleTrack.off;
+
+  final committedPreference = normalize(committedTrack, preserveOff: true);
+  if (committedPreference != null) return committedPreference;
+  return normalize(nativeTrack, preserveOff: false);
+}
+
 /// The in-place media-source transitions a [VideoPlayerScreenState] can run.
 /// They are mutually exclusive by construction — entry points bail while a
 /// transition is in flight.

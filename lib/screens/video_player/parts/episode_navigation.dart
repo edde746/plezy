@@ -106,7 +106,8 @@ extension _VideoPlayerEpisodeNavigationMethods on VideoPlayerScreenState {
 
   /// Navigates to a new episode by reusing the current player whenever possible.
   Future<void> _navigateToEpisode(MediaItem episodeMetadata) async {
-    if (player == null) {
+    final currentPlayer = player;
+    if (currentPlayer == null) {
       if (mounted) unawaited(_replaceScreenWithPlayer(episodeMetadata));
       return;
     }
@@ -118,6 +119,17 @@ extension _VideoPlayerEpisodeNavigationMethods on VideoPlayerScreenState {
         _effectiveSelectedMediaIndex >= 0 && _effectiveSelectedMediaIndex < _availableVersions.length
         ? _availableVersions[_effectiveSelectedMediaIndex].signature
         : null;
+    final committedSubtitleSelection = _playbackSession?.subtitleSelection;
+    final primarySubtitlePreference = subtitlePreferenceForItemChange(
+      hasCommittedSelection: committedSubtitleSelection != null,
+      committedTrack: committedSubtitleSelection?.primaryTrack,
+      nativeTrack: currentPlayer.state.track.subtitle,
+    );
+    final secondarySubtitlePreference = subtitlePreferenceForItemChange(
+      hasCommittedSelection: committedSubtitleSelection != null,
+      committedTrack: committedSubtitleSelection?.secondaryTrack,
+      nativeTrack: currentPlayer.state.track.secondarySubtitle,
+    );
     await _reloadMediaInPlace(
       metadata: episodeMetadata,
       selectedMediaIndex: _effectiveSelectedMediaIndex,
@@ -128,6 +140,8 @@ extension _VideoPlayerEpisodeNavigationMethods on VideoPlayerScreenState {
       // meaningless on the new item, so let preferences pick the track.
       useCurrentAudioStreamSelection: false,
       preserveCurrentTrackSelection: true,
+      preservedSubtitleTrack: primarySubtitlePreference,
+      preservedSecondarySubtitleTrack: secondarySubtitlePreference,
       reason: 'episode navigation',
     );
   }

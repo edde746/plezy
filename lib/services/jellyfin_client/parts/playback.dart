@@ -329,11 +329,25 @@ mixin _JellyfinPlaybackMethods on MediaServerCacheMixin {
   int? _validJellyfinSubtitleStreamId(SubtitleTrack? preferred, MediaSourceInfo mediaInfo) {
     if (preferred == null) return null;
     if (preferred.id == SubtitleTrack.off.id) return -1;
+
     const sourcePrefix = 'source:';
-    if (!preferred.id.startsWith(sourcePrefix)) return null;
-    final explicit = int.tryParse(preferred.id.substring(sourcePrefix.length));
-    if (explicit == null) return null;
-    return mediaInfo.subtitleTracks.any((track) => track.id == explicit) ? explicit : null;
+    if (preferred.id.startsWith(sourcePrefix)) {
+      final explicit = int.tryParse(preferred.id.substring(sourcePrefix.length));
+      if (explicit != null) {
+        final exactSource = mediaInfo.subtitleTracks.where((track) => track.id == explicit).firstOrNull;
+        if (exactSource != null) {
+          // A source id is authoritative only within one item. When semantic
+          // metadata is available, reject a coincidentally reused episode id.
+          final exactMatch = findPlexTrackForMpvSubtitle(preferred, [exactSource]);
+          final hasLanguage = preferred.language?.isNotEmpty ?? false;
+          if (!hasLanguage || (exactMatch != null && preferred.isForced == exactSource.forced)) {
+            return explicit;
+          }
+        }
+      }
+    }
+
+    return findPlexTrackForMpvSubtitle(preferred, mediaInfo.subtitleTracks)?.id;
   }
 
   Map<String, dynamic>? _selectNegotiatedMediaSource(Object? sources, String? selectedSourceId) {
