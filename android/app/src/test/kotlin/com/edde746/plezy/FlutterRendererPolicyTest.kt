@@ -1,0 +1,60 @@
+package com.edde746.plezy
+
+import org.junit.Assert.assertEquals
+import org.junit.Test
+
+class FlutterRendererPolicyTest {
+
+  @Test
+  fun affected32BitTclTvUsesImpellerOpenGles() {
+    val renderer = select(manufacturer = "TCL", is64Bit = false)
+
+    assertEquals(FlutterRenderer.IMPELLER_OPEN_GLES, renderer)
+    assertEquals("--impeller-backend=opengles", renderer.shellArgument)
+    assertEquals("Impeller (OpenGLES)", renderer.diagnosticName)
+  }
+
+  @Test
+  fun capable64BitTclTvKeepsAutomaticImpellerBackend() {
+    assertEquals(FlutterRenderer.IMPELLER, select(manufacturer = "TCL", is64Bit = true))
+  }
+
+  @Test
+  fun unsupportedTvsStayOnSkia() {
+    assertEquals(FlutterRenderer.SKIA, select(sdkInt = 30))
+    assertEquals(FlutterRenderer.SKIA, select(supportsVulkan11 = false))
+    assertEquals(FlutterRenderer.SKIA, select(manufacturer = "Amazon"))
+  }
+
+  @Test
+  fun existingDeviceDenylistStillTakesPrecedence() {
+    assertEquals(FlutterRenderer.SKIA, select(isEWaste = true, isAndroidTv = false))
+    assertEquals(FlutterRenderer.SKIA, select(manufacturer = "NVIDIA", isAndroidTv = false))
+    assertEquals(FlutterRenderer.SKIA, select(manufacturer = "Huawei", isAndroidTv = false))
+    assertEquals(FlutterRenderer.SKIA, select(manufacturer = "HONOR", isAndroidTv = false))
+  }
+
+  @Test
+  fun ordinaryAndroidDevicesKeepAutomaticImpellerBackend() {
+    assertEquals(
+      FlutterRenderer.IMPELLER,
+      select(manufacturer = "Samsung", isAndroidTv = false, sdkInt = 28, supportsVulkan11 = false)
+    )
+  }
+
+  private fun select(
+    isEWaste: Boolean = false,
+    manufacturer: String = "Google",
+    isAndroidTv: Boolean = true,
+    sdkInt: Int = 31,
+    supportsVulkan11: Boolean = true,
+    is64Bit: Boolean = true
+  ): FlutterRenderer = FlutterRendererPolicy.select(
+    isEWaste = isEWaste,
+    manufacturer = manufacturer,
+    isAndroidTv = isAndroidTv,
+    sdkInt = sdkInt,
+    supportsVulkan11 = supportsVulkan11,
+    is64Bit = is64Bit
+  )
+}

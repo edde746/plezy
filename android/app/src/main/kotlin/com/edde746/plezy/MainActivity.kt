@@ -65,7 +65,7 @@ class MainActivity : FlutterActivity() {
     // "2GB" devices report totalMem slightly above 2 GiB after carve-outs.
     private const val LOW_MEM_THRESHOLD_BYTES = 2252L shl 20
 
-    var usingSkia = false
+    private var selectedFlutterRenderer = FlutterRenderer.IMPELLER
   }
 
   private val PIP_CHANNEL = "com.plezy/pip"
@@ -469,43 +469,38 @@ class MainActivity : FlutterActivity() {
 
   override fun getFlutterShellArgs(): FlutterShellArgs {
     val args = super.getFlutterShellArgs()
-    usingSkia = shouldDisableImpeller()
-    if (usingSkia) args.add("--enable-impeller=false")
+    selectedFlutterRenderer = selectFlutterRenderer()
+    selectedFlutterRenderer.shellArgument?.let { args.add(it) }
     if (isLowRamClass()) {
       // Bound the memory pools Dart can't reach: Skia's GPU resource cache
       // is sized from the surface area (hundreds of MB on a 4K-composited
       // TV) and the Dart old gen defaults to a large fraction of physical
       // RAM. Both drive LMK kills on 2GB boxes (#1349).
-      if (usingSkia) args.add("--resource-cache-max-bytes-threshold=50331648")
+      if (selectedFlutterRenderer == FlutterRenderer.SKIA) {
+        args.add("--resource-cache-max-bytes-threshold=50331648")
+      }
       args.add("--old-gen-heap-size=256")
-      Log.i(TAG, "Low-RAM device: capped engine caches (skia=$usingSkia, oldGen=256MB)")
+      Log.i(
+        TAG,
+        "Low-RAM device: capped engine caches " +
+          "(renderer=${selectedFlutterRenderer.diagnosticName}, oldGen=256MB)"
+      )
     }
     return args
   }
 
-  private fun shouldDisableImpeller(): Boolean {
-    if (DeviceQuirks.isEWaste) return true
-    // NVIDIA Tegra (Shield TV)
-    if (Build.MANUFACTURER.equals("NVIDIA", ignoreCase = true)) return true
-    // Huawei/HONOR Kirin SoCs use Mali GPUs
-    if (Build.MANUFACTURER.equals("Huawei", ignoreCase = true) ||
-      Build.MANUFACTURER.equals("HONOR", ignoreCase = true)
-    ) {
-      return true
-    }
-    if (isAndroidTvDevice()) return !tvSupportsImpeller()
-    return false
-  }
-
-  // Impeller froze API 30 Fire TV hardware (#749) and Flutter's Vulkan → GLES
-  // fallback still miscompiles gradients/SVGs, so only TV devices on Android 12+
-  // with a Vulkan 1.1 driver leave the Skia path.
-  private fun tvSupportsImpeller(): Boolean {
-    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) return false
-    // Fire OS reports modern API levels on GPUs whose drivers can't back it up
-    if (Build.MANUFACTURER.equals("Amazon", ignoreCase = true)) return false
+  private fun selectFlutterRenderer(): FlutterRenderer {
+    val isAndroidTv = isAndroidTvDevice()
     val vulkan11 = 0x401000 // FEATURE_VULKAN_HARDWARE_VERSION encodes 1.1.0 as 0x401000
-    return packageManager.hasSystemFeature(PackageManager.FEATURE_VULKAN_HARDWARE_VERSION, vulkan11)
+    return FlutterRendererPolicy.select(
+      isEWaste = DeviceQuirks.isEWaste,
+      manufacturer = Build.MANUFACTURER,
+      isAndroidTv = isAndroidTv,
+      sdkInt = Build.VERSION.SDK_INT,
+      supportsVulkan11 = isAndroidTv &&
+        packageManager.hasSystemFeature(PackageManager.FEATURE_VULKAN_HARDWARE_VERSION, vulkan11),
+      is64Bit = Process.is64Bit()
+    )
   }
 
   override fun getRenderMode(): RenderMode {
@@ -628,7 +623,7 @@ class MainActivity : FlutterActivity() {
     // Splash screen theme: persist user's chosen theme for next launch (API 31+)
     MethodChannel(flutterEngine.dartExecutor.binaryMessenger, THEME_CHANNEL).setMethodCallHandler { call, result ->
       when (call.method) {
-        "getRenderer" -> result.success(if (usingSkia) "Skia" else "Impeller")
+        "getRenderer" -> result.success(selectedFlutterRenderer.diagnosticName)
         "setSplashTheme" -> {
           val mode = call.argument<String>("mode")
 
