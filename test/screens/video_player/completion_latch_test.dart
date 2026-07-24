@@ -77,6 +77,26 @@ void main() {
     expect(l.triggered, isFalse);
   });
 
+  group('completionNavigationAction', () {
+    test('presents a resolved next episode', () {
+      expect(
+        completionNavigationAction(hasNext: true, adjacentLoadFailed: false),
+        CompletionNavigationAction.presentNext,
+      );
+    });
+
+    test('retries adjacency instead of exiting after a load failure', () {
+      expect(
+        completionNavigationAction(hasNext: false, adjacentLoadFailed: true),
+        CompletionNavigationAction.retryAdjacent,
+      );
+    });
+
+    test('exits only after the queue boundary was resolved', () {
+      expect(completionNavigationAction(hasNext: false, adjacentLoadFailed: false), CompletionNavigationAction.exit);
+    });
+  });
+
   group('classifyEofSignal', () {
     EofSignalClass classify(int positionMs, {int playerDurationMs = 0, int? metadataDurationMs}) => classifyEofSignal(
       positionMs: positionMs,

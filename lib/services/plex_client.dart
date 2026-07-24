@@ -6,6 +6,7 @@ import 'package:http/http.dart' as http;
 import 'package:uuid/uuid.dart';
 
 import '../media/download_resolution.dart';
+import '../media/episode_collection.dart';
 import '../media/library_filter_result.dart';
 import '../media/library_first_character.dart';
 import '../media/library_query.dart';
@@ -2960,11 +2961,16 @@ class PlexClient
     );
   }
 
-  /// Plex maintains episode queues server-side via `/playQueues`, so the
-  /// client-side window EpisodeNavigationService builds for Jellyfin isn't
-  /// needed here.
+  /// Full-series fallback for episode navigation when Plex `/playQueues`
+  /// creation is unavailable. Grandchildren includes watched episodes; sort
+  /// locally so the fallback uses the same interleaved-specials watch order
+  /// as the server queue.
   @override
-  Future<List<MediaItem>?> fetchClientSideEpisodeQueue(String seriesId) async => null;
+  Future<List<MediaItem>?> fetchClientSideEpisodeQueue(String seriesId) async {
+    final episodes = await fetchPlayableDescendants(seriesId);
+    sortEpisodesByWatchOrder(episodes);
+    return episodes;
+  }
 
   /// Plex's artist `/children` response only contains the primary album
   /// bucket. Filter album rows in the artist's music section to include every

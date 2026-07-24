@@ -585,6 +585,62 @@ void main() {
     expect(requestUri!.queryParameters['X-Plex-Container-Size'], '10');
   });
 
+  test('client-side episode fallback retains watched rows and sorts by watch order', () async {
+    Uri? requestUri;
+    final client = makeClient((request) async {
+      if (request.url.path == '/library/metadata/show-1/grandchildren') {
+        requestUri = request.url;
+        return http.Response(
+          jsonEncode({
+            'MediaContainer': {
+              'size': 3,
+              'totalSize': 3,
+              'Metadata': [
+                {
+                  'ratingKey': 'special',
+                  'type': 'episode',
+                  'title': 'Special',
+                  'parentIndex': 0,
+                  'index': 1,
+                  'originallyAvailableAt': '2024-01-02',
+                  'viewCount': 1,
+                },
+                {
+                  'ratingKey': 'ep-2',
+                  'type': 'episode',
+                  'title': 'Episode 2',
+                  'parentIndex': 1,
+                  'index': 2,
+                  'originallyAvailableAt': '2024-01-03',
+                  'viewCount': 1,
+                },
+                {
+                  'ratingKey': 'ep-1',
+                  'type': 'episode',
+                  'title': 'Episode 1',
+                  'parentIndex': 1,
+                  'index': 1,
+                  'originallyAvailableAt': '2024-01-01',
+                  'viewCount': 1,
+                },
+              ],
+            },
+          }),
+          200,
+          headers: {'content-type': 'application/json'},
+        );
+      }
+      return http.Response('not found', 404);
+    });
+    addTearDown(client.close);
+
+    final episodes = await client.fetchClientSideEpisodeQueue('show-1');
+
+    expect(requestUri!.path, '/library/metadata/show-1/grandchildren');
+    expect(episodes!.map((episode) => episode.id), ['ep-1', 'special', 'ep-2']);
+    expect(episodes.every((episode) => episode.isWatched), isTrue);
+  });
+
   test('hub content pages by filtered video item offset', () async {
     final requests = <Uri>[];
     final client = makeClient((request) async {

@@ -735,6 +735,12 @@ extension _VideoPlayerEpisodeNavigationMethods on VideoPlayerScreenState {
           mediaInfo: _currentMediaInfo,
         );
 
+        _setPlayerState(() {
+          _nextEpisode = null;
+          _previousEpisode = null;
+          _nextEpisodeStatus = QueueNavigationStatus.failed;
+        });
+
         try {
           playbackState.setCurrentItem(metadata);
         } catch (e) {

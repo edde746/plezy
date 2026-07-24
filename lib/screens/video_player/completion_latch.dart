@@ -13,6 +13,15 @@ const int spuriousEofToleranceMs = 10000;
 /// How a player EOF signal should be interpreted.
 enum EofSignalClass { genuine, spurious, unknown }
 
+/// End-of-media action after considering adjacent-episode discovery.
+enum CompletionNavigationAction { presentNext, retryAdjacent, exit }
+
+CompletionNavigationAction completionNavigationAction({required bool hasNext, required bool adjacentLoadFailed}) {
+  if (hasNext) return CompletionNavigationAction.presentNext;
+  if (adjacentLoadFailed) return CompletionNavigationAction.retryAdjacent;
+  return CompletionNavigationAction.exit;
+}
+
 /// Classify a player EOF signal against the best-known media duration.
 ///
 /// mpv reports a clean EOF when a network stream dies mid-file (a reaped

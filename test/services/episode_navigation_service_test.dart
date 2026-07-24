@@ -26,6 +26,16 @@ MediaItem _jfEpisode(String id, {required String seriesId, ServerId? serverId}) 
   grandparentId: seriesId,
 );
 
+MediaItem _plexEpisode(String id, {required String seriesId, int? viewCount}) => testMediaItem(
+  id: id,
+  backend: MediaBackend.plex,
+  kind: MediaKind.episode,
+  title: 'Episode $id',
+  serverId: 'srv-plex',
+  grandparentId: seriesId,
+  viewCount: viewCount,
+);
+
 /// MultiServerManager subclass that returns a pre-supplied client without
 /// going through the production add-connection flow. The base class doesn't
 /// expose a way to inject clients into its private `_clients` map, so we
@@ -40,18 +50,22 @@ class _StubManager extends MultiServerManager {
 /// Recording client whose `fetchClientSideEpisodeQueue` is observable —
 /// callers can assert it was (or wasn't) hit.
 class _RecordingClient implements MediaServerClient {
-  _RecordingClient({required this.seriesEpisodes});
+  _RecordingClient({required this.seriesEpisodes, this.clientBackend = MediaBackend.jellyfin, this.fetchError});
   final List<MediaItem> seriesEpisodes;
+  final MediaBackend clientBackend;
+  final Object? fetchError;
   final List<String> seriesQueueCalls = [];
 
   @override
   Future<List<MediaItem>?> fetchClientSideEpisodeQueue(String seriesId) async {
     seriesQueueCalls.add(seriesId);
+    final error = fetchError;
+    if (error != null) throw error;
     return seriesEpisodes;
   }
 
   @override
-  MediaBackend get backend => MediaBackend.jellyfin;
+  MediaBackend get backend => clientBackend;
 
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
@@ -88,31 +102,36 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   group('loadAdjacentEpisodes', () {
-    testWidgets('returns empty AdjacentEpisodes when no play queue is active', (tester) async {
-      // Bare provider — no setPlaybackFromPlayQueue() call → isQueueActive = false.
+    testWidgets('returns unavailable when no play queue is active for non-series media', (tester) async {
       final playback = PlaybackStateProvider();
       addTearDown(playback.dispose);
+      final manager = _StubManager(null);
+      final serverProvider = MultiServerProvider(manager, DataAggregationService(manager));
+      addTearDown(serverProvider.dispose);
 
       AdjacentEpisodes? result;
       await tester.pumpWidget(
-        ChangeNotifierProvider<PlaybackStateProvider>.value(
-          value: playback,
+        MultiProvider(
+          providers: [
+            ChangeNotifierProvider<PlaybackStateProvider>.value(value: playback),
+            ChangeNotifierProvider<MultiServerProvider>.value(value: serverProvider),
+          ],
           child: _ProbeWidget(metadata: _meta('42'), onResult: (r) => result = r),
         ),
       );
-      // Drain the post-frame callback and the awaited service call.
       await tester.pump();
       await tester.pump();
 
       expect(result, isNotNull);
+      expect(result!.nextStatus, QueueNavigationStatus.unavailable);
       expect(result!.hasNext, isFalse);
       expect(result!.hasPrevious, isFalse);
+      expect(playback.isQueueActive, isFalse);
     });
 
-    testWidgets('catches downstream exceptions and returns empty AdjacentEpisodes', (tester) async {
-      // PlaybackStateProvider not provided → context.read throws. The service
-      // wraps the entire body in try/catch and returns AdjacentEpisodes() so
-      // the UI never crashes when the queue subsystem is unavailable.
+    testWidgets('catches downstream exceptions and reports failed adjacency', (tester) async {
+      // Required providers are absent, so context.read throws. The service
+      // converts the exception into an explicit failed result.
       AdjacentEpisodes? result;
       await tester.pumpWidget(_ProbeWidget(metadata: _meta('42'), onResult: (r) => result = r));
       await tester.pump();
@@ -121,6 +140,7 @@ void main() {
       expect(result, isNotNull);
       expect(result!.hasNext, isFalse);
       expect(result!.hasPrevious, isFalse);
+      expect(result!.nextStatus, QueueNavigationStatus.failed);
     });
 
     testWidgets('preserves an active playlist/collection queue against series rebuild', (tester) async {
@@ -181,6 +201,96 @@ void main() {
       expect(result, isNotNull);
       expect(result!.next?.id, 'ep3');
       expect(result!.previous?.id, 'ep1');
+    });
+
+    testWidgets('builds a Plex local fallback queue with watched episodes', (tester) async {
+      final ep1 = _plexEpisode('ep1', seriesId: 'series-P', viewCount: 1);
+      final ep2 = _plexEpisode('ep2', seriesId: 'series-P', viewCount: 1);
+      final ep3 = _plexEpisode('ep3', seriesId: 'series-P', viewCount: 1);
+      final playback = PlaybackStateProvider();
+      addTearDown(playback.dispose);
+      final client = _RecordingClient(seriesEpisodes: [ep1, ep2, ep3], clientBackend: MediaBackend.plex);
+      final manager = _StubManager(client);
+      final serverProvider = MultiServerProvider(manager, DataAggregationService(manager));
+      addTearDown(serverProvider.dispose);
+
+      AdjacentEpisodes? result;
+      await tester.pumpWidget(
+        MultiProvider(
+          providers: [
+            ChangeNotifierProvider<PlaybackStateProvider>.value(value: playback),
+            ChangeNotifierProvider<MultiServerProvider>.value(value: serverProvider),
+          ],
+          child: _ProbeWidget(metadata: ep2, onResult: (r) => result = r),
+        ),
+      );
+      await tester.pump();
+      await tester.pump();
+
+      expect(client.seriesQueueCalls, ['series-P']);
+      expect(playback.loadedItems.map((item) => item.id), ['ep1', 'ep2', 'ep3']);
+      expect(result!.nextStatus, QueueNavigationStatus.found);
+      expect(result!.next?.id, 'ep3');
+      expect(result!.previous?.id, 'ep1');
+    });
+
+    testWidgets('distinguishes a fallback fetch failure from the end of a series', (tester) async {
+      final current = _plexEpisode('ep2', seriesId: 'series-P');
+      final playback = PlaybackStateProvider();
+      addTearDown(playback.dispose);
+      final client = _RecordingClient(
+        seriesEpisodes: const [],
+        clientBackend: MediaBackend.plex,
+        fetchError: StateError('network unavailable'),
+      );
+      final manager = _StubManager(client);
+      final serverProvider = MultiServerProvider(manager, DataAggregationService(manager));
+      addTearDown(serverProvider.dispose);
+
+      AdjacentEpisodes? result;
+      await tester.pumpWidget(
+        MultiProvider(
+          providers: [
+            ChangeNotifierProvider<PlaybackStateProvider>.value(value: playback),
+            ChangeNotifierProvider<MultiServerProvider>.value(value: serverProvider),
+          ],
+          child: _ProbeWidget(metadata: current, onResult: (r) => result = r),
+        ),
+      );
+      await tester.pump();
+      await tester.pump();
+
+      expect(result!.nextStatus, QueueNavigationStatus.failed);
+      expect(result!.isEndConfirmed, isFalse);
+      expect(playback.isQueueActive, isFalse);
+    });
+
+    testWidgets('confirms the end only after loading a queue containing the current episode', (tester) async {
+      final ep1 = _plexEpisode('ep1', seriesId: 'series-P', viewCount: 1);
+      final ep2 = _plexEpisode('ep2', seriesId: 'series-P', viewCount: 1);
+      final playback = PlaybackStateProvider();
+      addTearDown(playback.dispose);
+      final client = _RecordingClient(seriesEpisodes: [ep1, ep2], clientBackend: MediaBackend.plex);
+      final manager = _StubManager(client);
+      final serverProvider = MultiServerProvider(manager, DataAggregationService(manager));
+      addTearDown(serverProvider.dispose);
+
+      AdjacentEpisodes? result;
+      await tester.pumpWidget(
+        MultiProvider(
+          providers: [
+            ChangeNotifierProvider<PlaybackStateProvider>.value(value: playback),
+            ChangeNotifierProvider<MultiServerProvider>.value(value: serverProvider),
+          ],
+          child: _ProbeWidget(metadata: ep2, onResult: (r) => result = r),
+        ),
+      );
+      await tester.pump();
+      await tester.pump();
+
+      expect(result!.nextStatus, QueueNavigationStatus.boundary);
+      expect(result!.isEndConfirmed, isTrue);
+      expect(result!.next, isNull);
     });
   });
 

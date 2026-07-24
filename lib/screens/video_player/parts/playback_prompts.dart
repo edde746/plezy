@@ -9,6 +9,7 @@ extension _VideoPlayerPlaybackPromptMethods on VideoPlayerScreenState {
     // Ignore spurious EOF from the old file during an in-place media-source
     // transition (episode swap, transcode restart, channel switch).
     if (_playbackTransition != _PlaybackTransition.idle) return;
+    if (_isResolvingCompletionAdjacency) return;
 
     // mpv does not flip the `pause` property on EOF, so _onPlayingStateChanged
     // never fires false.  Normalize all playback-dependent state.
@@ -39,7 +40,33 @@ extension _VideoPlayerPlaybackPromptMethods on VideoPlayerScreenState {
       return;
     }
 
-    if (_nextEpisode != null && !_showPlayNextDialog && !_showStillWatchingPrompt && !_completionLatch.triggered) {
+    var navigationAction = completionNavigationAction(
+      hasNext: _nextEpisode != null,
+      adjacentLoadFailed: _currentMetadata.isEpisode && _nextEpisodeStatus == QueueNavigationStatus.failed,
+    );
+    if (navigationAction == CompletionNavigationAction.retryAdjacent) {
+      _isResolvingCompletionAdjacency = true;
+      try {
+        await _loadAdjacentEpisodes();
+      } finally {
+        _isResolvingCompletionAdjacency = false;
+      }
+      if (!mounted) return;
+      navigationAction = completionNavigationAction(
+        hasNext: _nextEpisode != null,
+        adjacentLoadFailed: _currentMetadata.isEpisode && _nextEpisodeStatus == QueueNavigationStatus.failed,
+      );
+      if (navigationAction == CompletionNavigationAction.retryAdjacent) {
+        _completionLatch.latch();
+        showGlobalErrorSnackBar(t.messages.errorLoadingSeries);
+        return;
+      }
+    }
+
+    if (navigationAction == CompletionNavigationAction.presentNext &&
+        !_showPlayNextDialog &&
+        !_showStillWatchingPrompt &&
+        !_completionLatch.triggered) {
       _completionLatch.latch();
 
       // PiP: skip dialog (user can't interact), auto-play immediately
@@ -77,7 +104,7 @@ extension _VideoPlayerPlaybackPromptMethods on VideoPlayerScreenState {
       if (autoPlayEnabled) {
         _startAutoPlayTimer();
       }
-    } else if (_nextEpisode == null && !_completionLatch.triggered) {
+    } else if (navigationAction == CompletionNavigationAction.exit && !_completionLatch.triggered) {
       _completionLatch.latch();
       unawaited(_handleBackButton());
     }

@@ -133,31 +133,30 @@ void main() {
       p.dispose();
     });
 
-    test('setCurrentItem updates id only when in queue mode', () async {
+    test('setCurrentItem updates the cursor only for validated queue members', () async {
       final p = PlaybackStateProvider();
 
-      // Not in queue mode → no-op
       var notified = 0;
       p.addListener(() => notified++);
-      p.setCurrentItem(_miItem('a', 5));
+      p.setCurrentItem(_miItem('a', 1001));
       expect(p.currentPlayQueueItemID, isNull);
       expect(notified, 0);
 
-      // Enter queue mode
       await p.setPlaybackFromPlayQueue(
-        _queue(playQueueID: 1, selectedItemID: 1001, totalCount: 1, items: [_item('a', 1001)]),
+        _queue(playQueueID: 1, selectedItemID: 1001, totalCount: 2, items: [_item('a', 1001), _item('b', 1002)]),
         null,
       );
-      // setPlaybackFromPlayQueue notifies once
       final preNotify = notified;
 
-      p.setCurrentItem(_miItem('b', 2002));
-      expect(p.currentPlayQueueItemID, 2002);
+      // A fresh copy of a real loaded member is accepted.
+      p.setCurrentItem(_miItem('b', 1002));
+      expect(p.currentPlayQueueItemID, 1002);
       expect(notified, preNotify + 1);
 
-      // Item without playQueueItemId → no update, no notify
-      p.setCurrentItem(testMediaItem(id: 'd', backend: MediaBackend.plex, kind: MediaKind.episode));
-      expect(p.currentPlayQueueItemID, 2002);
+      // A stamped item outside this queue cannot poison the cursor.
+      p.setCurrentItem(_miItem('outsider', 2002));
+      expect(p.currentPlayQueueItemID, 1002);
+      expect(notified, preNotify + 1);
 
       p.dispose();
     });
@@ -168,9 +167,9 @@ void main() {
       await p.setPlaybackFromPlayQueue(_queue(playQueueID: 1, selectedItemID: 1002, totalCount: 3, items: items), null);
 
       final next = await p.getNextEpisode('b');
-      expect(next, isNotNull);
-      expect(next!.id, 'c');
-      expect((next as PlexMediaItem).playQueueItemId, 1003);
+      expect(next.status, QueueNavigationStatus.found);
+      expect(next.item!.id, 'c');
+      expect((next.item as PlexMediaItem).playQueueItemId, 1003);
 
       // currentPlayQueueItemID is NOT updated by getNextEpisode (setCurrentItem does that).
       expect(p.currentPlayQueueItemID, 1002);
@@ -178,15 +177,72 @@ void main() {
       p.dispose();
     });
 
-    test('getNextEpisode returns null at end of queue without loop', () async {
+    test('getNextEpisode reports the queue boundary at the end', () async {
       final p = PlaybackStateProvider();
       final items = [_item('a', 1001), _item('b', 1002)];
       await p.setPlaybackFromPlayQueue(_queue(playQueueID: 1, selectedItemID: 1002, totalCount: 2, items: items), null);
 
       final next = await p.getNextEpisode('b');
-      expect(next, isNull);
+      expect(next.status, QueueNavigationStatus.boundary);
+      expect(next.item, isNull);
 
       p.dispose();
+    });
+
+    test('getNextEpisode anchors on the supplied media key instead of a stale cursor', () async {
+      final p = PlaybackStateProvider();
+      addTearDown(p.dispose);
+      final items = [_item('a', 1001), _item('b', 1002), _item('c', 1003)];
+      await p.setPlaybackFromPlayQueue(_queue(playQueueID: 1, selectedItemID: 1001, totalCount: 3, items: items), null);
+
+      final next = await p.getNextEpisode('b');
+
+      expect(next.status, QueueNavigationStatus.found);
+      expect(next.item!.id, 'c');
+      expect(p.currentPlayQueueItemID, 1001, reason: 'read-only lookup must not move the playback cursor');
+    });
+
+    test('server window extension uses opaque queue ids and the real anchor', () async {
+      final p = PlaybackStateProvider();
+      addTearDown(p.dispose);
+      final first = _item('a', 1001);
+      final nextItem = _item('b', 9007);
+      await p.setPlaybackFromPlayQueue(
+        _queue(playQueueID: 1, selectedItemID: 1001, totalCount: 2, items: [first]),
+        null,
+      );
+      String? requestedCenter;
+      p.setPlayQueueWindowFetcher((playQueueId, {center, window = 50}) async {
+        requestedCenter = center;
+        return _queue(playQueueID: playQueueId, selectedItemID: 1001, totalCount: 2, items: [first, nextItem]);
+      });
+
+      final next = await p.getNextEpisode('a');
+
+      expect(requestedCenter, '1001');
+      expect(next.status, QueueNavigationStatus.found);
+      expect(next.item!.id, 'b');
+    });
+
+    test('windowed queue confirms its global end with a centered fetch', () async {
+      final p = PlaybackStateProvider();
+      addTearDown(p.dispose);
+      final items = [_item('y', 5001), _item('z', 9007)];
+      await p.setPlaybackFromPlayQueue(
+        _queue(playQueueID: 1, selectedItemID: 9007, totalCount: 100, items: items),
+        null,
+      );
+      var fetchCount = 0;
+      p.setPlayQueueWindowFetcher((playQueueId, {center, window = 50}) async {
+        fetchCount++;
+        expect(center, '9007');
+        return _queue(playQueueID: playQueueId, selectedItemID: 9007, totalCount: 100, items: items);
+      });
+
+      final next = await p.getNextEpisode('z');
+
+      expect(next.status, QueueNavigationStatus.boundary);
+      expect(fetchCount, 1);
     });
 
     test('getNextEpisode does not retry recursively when loaded window misses target', () async {
@@ -201,14 +257,15 @@ void main() {
         return _queue(playQueueID: playQueueId, selectedItemID: 1002, totalCount: 3, items: items);
       });
 
-      expect(await p.getNextEpisode('b'), isNull);
+      expect((await p.getNextEpisode('b')).status, QueueNavigationStatus.boundary);
       expect(fetchCount, 1);
     });
 
-    test('getNextEpisode with no queue returns null (sequential mode)', () async {
+    test('getNextEpisode reports unavailable with no active queue', () async {
       final p = PlaybackStateProvider();
       final next = await p.getNextEpisode('any-key');
-      expect(next, isNull);
+      expect(next.status, QueueNavigationStatus.unavailable);
+      expect(next.item, isNull);
       p.dispose();
     });
 
@@ -217,10 +274,10 @@ void main() {
       final items = [_item('a', 1001), _item('b', 1002), _item('c', 1003)];
       await p.setPlaybackFromPlayQueue(_queue(playQueueID: 1, selectedItemID: 1002, totalCount: 3, items: items), null);
 
-      final prev = await p.getPreviousEpisode('b');
-      expect(prev, isNotNull);
-      expect(prev!.id, 'a');
-      expect((prev as PlexMediaItem).playQueueItemId, 1001);
+      final previous = await p.getPreviousEpisode('b');
+      expect(previous.status, QueueNavigationStatus.found);
+      expect(previous.item!.id, 'a');
+      expect((previous.item as PlexMediaItem).playQueueItemId, 1001);
 
       p.dispose();
     });
@@ -230,16 +287,18 @@ void main() {
       final items = [_item('a', 1001), _item('b', 1002)];
       await p.setPlaybackFromPlayQueue(_queue(playQueueID: 1, selectedItemID: 1001, totalCount: 2, items: items), null);
 
-      final prev = await p.getPreviousEpisode('a');
-      expect(prev, isNull);
+      final previous = await p.getPreviousEpisode('a');
+      expect(previous.status, QueueNavigationStatus.boundary);
+      expect(previous.item, isNull);
 
       p.dispose();
     });
 
     test('getPreviousEpisode without queue mode returns null', () async {
       final p = PlaybackStateProvider();
-      final prev = await p.getPreviousEpisode('any-key');
-      expect(prev, isNull);
+      final previous = await p.getPreviousEpisode('any-key');
+      expect(previous.status, QueueNavigationStatus.unavailable);
+      expect(previous.item, isNull);
       p.dispose();
     });
 
@@ -316,6 +375,20 @@ void main() {
       expect(p.isItemInActiveQueue(outsider), isFalse);
     });
 
+    test('isItemInActiveQueue rejects foreign server-stamped queue items', () async {
+      final p = PlaybackStateProvider();
+      addTearDown(p.dispose);
+      final member = _item('ep-in-queue', 5001);
+      await p.setPlaybackFromPlayQueue(
+        _queue(playQueueID: 77, selectedItemID: 5001, totalCount: 1, items: [member]),
+        'playlist-Z',
+      );
+
+      expect(p.isItemInActiveQueue(_item('ep-in-queue', 5001)), isTrue);
+      expect(p.isItemInActiveQueue(_item('foreign', 9001)), isFalse);
+      expect(p.isItemInActiveQueue(_item('foreign', 5001)), isFalse);
+    });
+
     test('isItemInActiveQueue is false when no queue is active', () {
       final p = PlaybackStateProvider();
       addTearDown(p.dispose);
@@ -351,7 +424,8 @@ void main() {
       addTearDown(p.dispose);
 
       final next = await p.getNextEpisode('e24', playedPartId: 'part-e24');
-      expect(next!.id, 'e26');
+      expect(next.status, QueueNavigationStatus.found);
+      expect(next.item!.id, 'e26');
     });
 
     test('getNextEpisode skips the same-file sibling via file intersection without playedPartId', () async {
@@ -359,7 +433,8 @@ void main() {
       addTearDown(p.dispose);
 
       final next = await p.getNextEpisode('e24');
-      expect(next!.id, 'e26');
+      expect(next.status, QueueNavigationStatus.found);
+      expect(next.item!.id, 'e26');
     });
 
     test('getNextEpisode skips multiple siblings of a triple-episode file', () async {
@@ -381,7 +456,8 @@ void main() {
       );
 
       final next = await p.getNextEpisode('e1', playedPartId: 'part-e1');
-      expect(next!.id, 'e4');
+      expect(next.status, QueueNavigationStatus.found);
+      expect(next.item!.id, 'e4');
     });
 
     test('getNextEpisode returns null when only same-file siblings remain', () async {
@@ -397,7 +473,7 @@ void main() {
         null,
       );
 
-      expect(await p.getNextEpisode('e24', playedPartId: 'part-e24'), isNull);
+      expect((await p.getNextEpisode('e24', playedPartId: 'part-e24')).status, QueueNavigationStatus.boundary);
     });
 
     test('items without file data keep positional behavior even with playedPartId', () async {
@@ -407,7 +483,8 @@ void main() {
       await p.setPlaybackFromPlayQueue(_queue(playQueueID: 1, selectedItemID: 1001, totalCount: 2, items: items), null);
 
       final next = await p.getNextEpisode('a', playedPartId: 'part-a');
-      expect(next!.id, 'b');
+      expect(next.status, QueueNavigationStatus.found);
+      expect(next.item!.id, 'b');
     });
 
     test('skip past the loaded window extends it and lands on the next distinct file', () async {
@@ -432,7 +509,8 @@ void main() {
       });
 
       final next = await p.getNextEpisode('e24', playedPartId: 'part-e24');
-      expect(next!.id, 'e26');
+      expect(next.status, QueueNavigationStatus.found);
+      expect(next.item!.id, 'e26');
       expect(fetchCount, 1);
     });
 
@@ -441,8 +519,9 @@ void main() {
       addTearDown(p.dispose);
 
       // From e26, previous is the e24-e25 file, entered at e24 (not e25).
-      final prev = await p.getPreviousEpisode('e26', playedPartId: 'part-e26');
-      expect(prev!.id, 'e24');
+      final previous = await p.getPreviousEpisode('e26', playedPartId: 'part-e26');
+      expect(previous.status, QueueNavigationStatus.found);
+      expect(previous.item!.id, 'e24');
     });
 
     test('getPreviousEpisode skips same-file siblings of the playing item', () async {
@@ -450,8 +529,9 @@ void main() {
       addTearDown(p.dispose);
 
       // Playing the file as e25: previous must not land inside the same file.
-      final prev = await p.getPreviousEpisode('e25', playedPartId: 'part-e25');
-      expect(prev!.id, 'e23');
+      final previous = await p.getPreviousEpisode('e25', playedPartId: 'part-e25');
+      expect(previous.status, QueueNavigationStatus.found);
+      expect(previous.item!.id, 'e23');
     });
 
     test('sameFileSiblings returns the other episodes of the playing file', () async {

@@ -227,13 +227,11 @@ abstract class MediaServerClient {
   /// branch if/when one does.
   Future<List<MediaItem>> fetchPlayableDescendants(String parentId);
 
-  /// All episodes of a series across every season, ordered by air date —
-  /// used to build a centred 21-item navigation window when no server-side
-  /// play queue is available. Returns `null` for backends that maintain
-  /// queues server-side (Plex's `/playQueues`); returns the list (possibly
-  /// empty for an empty series) for backends without that capability
-  /// (Jellyfin). Callers distinguish "no client-side queue" from "empty
-  /// series" via the null vs `[]` distinction.
+  /// All episodes of a series across every season in playback order. Used
+  /// to build a local navigation queue for backends without server-side
+  /// queues and as a fallback when a server-side queue could not be created.
+  /// Returns null only when a backend cannot supply a client-side queue;
+  /// an empty list means the series itself was empty.
   Future<List<MediaItem>?> fetchClientSideEpisodeQueue(String seriesId);
 
   /// Albums credited to [artist], newest first. Plex filters album rows in

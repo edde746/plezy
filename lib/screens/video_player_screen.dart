@@ -300,6 +300,8 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   late MediaItem _currentMetadata;
   MediaItem? _nextEpisode;
   MediaItem? _previousEpisode;
+  QueueNavigationStatus _nextEpisodeStatus = QueueNavigationStatus.failed;
+  bool _isResolvingCompletionAdjacency = false;
   bool _isLoadingNext = false;
   bool _isLoadingPrevious = false;
 
