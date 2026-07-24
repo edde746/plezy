@@ -44,7 +44,7 @@ jobs:
         uses: actions/setup-java@03ad4de0992f5dab5e18fcb136590ce7c4a0ac95 # v5
         with:
           distribution: temurin
-          java-version: "17"
+          java-version: "21"
 
       - name: Setup Flutter
         uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
@@ -181,6 +181,22 @@ jobs:
             -no-boot-anim -camera-back none
           script: echo "Generated Android 9 AVD snapshot."
 
+      - name: Run Android 15 instrumentation
+        id: api35-instrumentation
+        continue-on-error: true
+        uses: reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # v2
+        with:
+          api-level: 35
+          arch: x86_64
+          profile: pixel_6
+          avd-name: maestro-api35-instrumentation
+          force-avd-creation: false
+          disable-animations: true
+          emulator-options: >-
+            -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio
+            -no-boot-anim -camera-back none
+          script: python3 scripts/run_maestro_ci.py android-15-instrumentation
+
       - name: Run Android 15 suites
         id: api35
         continue-on-error: true
@@ -283,8 +299,9 @@ jobs:
           retention-days: 7
 
       - name: Report suite failures
-        if: ${{ always() && (steps.api35.outcome != 'success' || steps.api28.outcome != 'success') }}
+        if: ${{ always() && (steps.api35-instrumentation.outcome != 'success' || steps.api35.outcome != 'success' || steps.api28.outcome != 'success') }}
         run: |
+          echo "Android 15 instrumentation outcome: ${{ steps.api35-instrumentation.outcome }}"
           echo "Android 15 outcome: ${{ steps.api35.outcome }}"
           echo "Android 9 outcome: ${{ steps.api28.outcome }}"
           exit 1

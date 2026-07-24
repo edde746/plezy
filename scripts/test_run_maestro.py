@@ -181,13 +181,21 @@ class CiGroupTests(unittest.TestCase):
 
         with (
             patch.object(run_maestro_ci.run_maestro, "main", side_effect=statuses) as run,
-            patch.object(run_maestro_ci, "run_android_15_instrumentation") as instrumentation,
             redirect_stdout(io.StringIO()),
         ):
             exit_status = run_maestro_ci.run_group("android-15")
 
         self.assertEqual(exit_status, 1)
         self.assertEqual(run.call_count, expected_runs)
+
+    def test_android_15_instrumentation_has_an_isolated_target(self) -> None:
+        with (
+            patch.object(run_maestro_ci, "run_android_15_instrumentation") as instrumentation,
+            redirect_stdout(io.StringIO()),
+        ):
+            exit_status = run_maestro_ci.run_target(run_maestro_ci.ANDROID_15_INSTRUMENTATION_TARGET)
+
+        self.assertEqual(exit_status, 0)
         instrumentation.assert_called_once_with()
 
     def test_group_recipes_are_valid_runner_invocations(self) -> None:
@@ -199,14 +207,12 @@ class CiGroupTests(unittest.TestCase):
     def test_group_stops_after_interruption(self) -> None:
         with (
             patch.object(run_maestro_ci.run_maestro, "main", return_value=143) as run,
-            patch.object(run_maestro_ci, "run_android_15_instrumentation") as instrumentation,
             redirect_stdout(io.StringIO()),
         ):
             exit_status = run_maestro_ci.run_group("android-15")
 
         self.assertEqual(exit_status, 143)
         run.assert_called_once_with(("basic",))
-        instrumentation.assert_called_once_with()
 
 
 if __name__ == "__main__":

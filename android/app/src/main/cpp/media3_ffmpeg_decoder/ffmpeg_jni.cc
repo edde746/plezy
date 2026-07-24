@@ -37,21 +37,24 @@ extern "C" {
 #define LOGE(...) ((void)__android_log_print(ANDROID_LOG_ERROR, LOG_TAG, __VA_ARGS__))
 #define LOGD(...) ((void)__android_log_print(ANDROID_LOG_DEBUG, LOG_TAG, __VA_ARGS__))
 
-#define LIBRARY_FUNC(RETURN_TYPE, NAME, ...)                                                          \
-  extern "C" {                                                                                        \
-  JNIEXPORT RETURN_TYPE                                                                               \
-  Java_androidx_media3_decoder_ffmpeg_FfmpegLibrary_##NAME(JNIEnv* env, jobject thiz, ##__VA_ARGS__); \
-  }                                                                                                   \
-  JNIEXPORT RETURN_TYPE Java_androidx_media3_decoder_ffmpeg_FfmpegLibrary_##NAME(                     \
+// clang-format 18 and 21 disagree on escaped-newline alignment in these JNI macros.
+// clang-format off
+#define LIBRARY_FUNC(RETURN_TYPE, NAME, ...)                                                              \
+  extern "C" {                                                                                            \
+  JNIEXPORT RETURN_TYPE                                                                                   \
+      Java_androidx_media3_decoder_ffmpeg_FfmpegLibrary_##NAME(JNIEnv* env, jobject thiz, ##__VA_ARGS__); \
+  }                                                                                                       \
+  JNIEXPORT RETURN_TYPE Java_androidx_media3_decoder_ffmpeg_FfmpegLibrary_##NAME(                         \
       JNIEnv* env, jobject thiz, ##__VA_ARGS__)
 
-#define AUDIO_DECODER_FUNC(RETURN_TYPE, NAME, ...)                                                         \
-  extern "C" {                                                                                             \
-  JNIEXPORT RETURN_TYPE                                                                                    \
-  Java_androidx_media3_decoder_ffmpeg_FfmpegAudioDecoder_##NAME(JNIEnv* env, jobject thiz, ##__VA_ARGS__); \
-  }                                                                                                        \
-  JNIEXPORT RETURN_TYPE Java_androidx_media3_decoder_ffmpeg_FfmpegAudioDecoder_##NAME(                     \
+#define AUDIO_DECODER_FUNC(RETURN_TYPE, NAME, ...)                                                             \
+  extern "C" {                                                                                                 \
+  JNIEXPORT RETURN_TYPE                                                                                        \
+      Java_androidx_media3_decoder_ffmpeg_FfmpegAudioDecoder_##NAME(JNIEnv* env, jobject thiz, ##__VA_ARGS__); \
+  }                                                                                                            \
+  JNIEXPORT RETURN_TYPE Java_androidx_media3_decoder_ffmpeg_FfmpegAudioDecoder_##NAME(                         \
       JNIEnv* env, jobject thiz, ##__VA_ARGS__)
+// clang-format on
 
 #define ERROR_STRING_BUFFER_LENGTH 256
 

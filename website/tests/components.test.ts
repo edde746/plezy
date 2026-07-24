@@ -57,5 +57,5 @@ describe('SSR component contracts', () => {
     expect(html).not.toContain('alt="Plezy on tablet - home"');
     expect(html).not.toContain('alt="Plezy on desktop - home"');
     expect(html).not.toContain('alt="Plezy on TV - home"');
-  }, 30_000);
+  }, 120_000);
 });

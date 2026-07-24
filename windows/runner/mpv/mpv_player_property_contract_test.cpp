@@ -49,14 +49,17 @@ std::atomic<int> g_forwarded_pointer_messages{0};
 constexpr UINT kBlockWindowThreadMessage = WM_APP + 0x0505;
 std::atomic<HANDLE> g_block_entered{nullptr};
 std::atomic<HANDLE> g_block_release{nullptr};
+std::atomic<HANDLE> g_block_exited{nullptr};
 
 LRESULT CALLBACK CountingWindowProc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam) {
   if (message == kBlockWindowThreadMessage) {
     const HANDLE entered = g_block_entered.load(std::memory_order_acquire);
     const HANDLE release = g_block_release.load(std::memory_order_acquire);
-    if (entered && release) {
+    const HANDLE exited = g_block_exited.load(std::memory_order_acquire);
+    if (entered && release && exited) {
       ::SetEvent(entered);
       ::WaitForSingleObject(release, INFINITE);
+      ::SetEvent(exited);
     }
     return 0;
   }
@@ -245,9 +248,11 @@ void TestTimedOutSubclassDetachCanBeAdopted() {
   Check(windows.target && windows.host && windows.inner, "detach-timeout test windows must be created");
   const HANDLE block_entered = ::CreateEventW(nullptr, TRUE, FALSE, nullptr);
   const HANDLE block_release = ::CreateEventW(nullptr, TRUE, FALSE, nullptr);
-  Check(block_entered && block_release, "detach-timeout synchronization events must be created");
+  const HANDLE block_exited = ::CreateEventW(nullptr, TRUE, FALSE, nullptr);
+  Check(block_entered && block_release && block_exited, "detach-timeout synchronization events must be created");
   g_block_entered.store(block_entered, std::memory_order_release);
   g_block_release.store(block_release, std::memory_order_release);
+  g_block_exited.store(block_exited, std::memory_order_release);
   g_forwarded_pointer_messages.store(0, std::memory_order_relaxed);
 
   {
@@ -280,6 +285,10 @@ void TestTimedOutSubclassDetachCanBeAdopted() {
         "replacement must adopt the retained installed generation without duplicate subclassing");
 
     ::SetEvent(block_release);
+    Check(
+        ::WaitForSingleObject(block_exited, 1000) == WAIT_OBJECT_0,
+        "the owner thread must leave the deterministic blocking message");
+    ::SendMessageW(windows.inner, WM_NULL, 0, 0);
     ::SendMessageW(windows.inner, WM_POINTERUPDATE, 0, MAKELPARAM(12, 13));
     Check(
         g_forwarded_pointer_messages.load(std::memory_order_relaxed) == 1,
@@ -293,8 +302,10 @@ void TestTimedOutSubclassDetachCanBeAdopted() {
 
   g_block_entered.store(nullptr, std::memory_order_release);
   g_block_release.store(nullptr, std::memory_order_release);
+  g_block_exited.store(nullptr, std::memory_order_release);
   ::CloseHandle(block_entered);
   ::CloseHandle(block_release);
+  ::CloseHandle(block_exited);
   ::PostThreadMessageW(windows.owner_thread, WM_QUIT, 0, 0);
   window_owner.join();
   g_forwarded_pointer_messages.store(0, std::memory_order_relaxed);

@@ -13,6 +13,7 @@ ANDROID_15_INSTRUMENTATION_CLASSES = (
     "androidx.media3.decoder.ffmpeg.PlezyFfmpegPlaybackTest,"
     "com.edde746.plezy.exoplayer.PlezyAudioModePlaybackTest"
 )
+ANDROID_15_INSTRUMENTATION_TARGET = "android-15-instrumentation"
 
 
 GROUPS: dict[str, tuple[tuple[str, ...], ...]] = {
@@ -119,8 +120,6 @@ def run_android_15_instrumentation() -> None:
 
 
 def run_group(name: str) -> int:
-    if name == "android-15":
-        run_android_15_instrumentation()
     failed = False
     for arguments in GROUPS[name]:
         print(f"==> Maestro {' '.join(arguments)}", flush=True)
@@ -131,11 +130,18 @@ def run_group(name: str) -> int:
     return 1 if failed else 0
 
 
+def run_target(name: str) -> int:
+    if name == ANDROID_15_INSTRUMENTATION_TARGET:
+        run_android_15_instrumentation()
+        return 0
+    return run_group(name)
+
+
 def main(argv: Sequence[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("group", choices=GROUPS)
+    parser.add_argument("target", choices=(*GROUPS, ANDROID_15_INSTRUMENTATION_TARGET))
     args = parser.parse_args(argv)
-    return run_group(args.group)
+    return run_target(args.target)
 
 
 if __name__ == "__main__":

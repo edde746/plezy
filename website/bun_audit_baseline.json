@@ -107,14 +107,6 @@
       "rationale": "GHSA-c2c7-rcm5-vvqj: Build-only glob tooling consumes repository-controlled patterns; no deployed runtime or untrusted glob input exists."
     },
     {
-      "id": 1117015,
-      "package": "postcss",
-      "severity": "moderate",
-      "vulnerableRange": "<8.5.10",
-      "expiresOn": "2026-10-19",
-      "rationale": "GHSA-qx2v-qp2m-jg93: Build-only CSS tooling consumes checked-in CSS; no untrusted CSS reaches stringify and the tooling is not deployed."
-    },
-    {
       "id": 1113515,
       "package": "rollup",
       "severity": "high",
@@ -273,46 +265,6 @@
       "vulnerableRange": ">=7.0.0 <7.28.0",
       "expiresOn": "2026-10-19",
       "rationale": "GHSA-pr7r-676h-xcf6: Build-only scraper calls a fixed Google endpoint; no WebSockets, upgrades, shared cache, cookie parsing, or attacker-selected endpoint."
-    },
-    {
-      "id": 1116230,
-      "package": "vite",
-      "severity": "moderate",
-      "vulnerableRange": ">=7.0.0 <=7.3.1",
-      "expiresOn": "2026-10-19",
-      "rationale": "GHSA-4w7w-66w2-5vf9: Development/build tooling is not deployed; its servers are not exposed and inputs are repository-controlled."
-    },
-    {
-      "id": 1116232,
-      "package": "vite",
-      "severity": "high",
-      "vulnerableRange": ">=7.1.0 <=7.3.1",
-      "expiresOn": "2026-10-19",
-      "rationale": "GHSA-v2wj-q39q-566r: Development/build tooling is not deployed; its servers are not exposed and inputs are repository-controlled."
-    },
-    {
-      "id": 1116235,
-      "package": "vite",
-      "severity": "high",
-      "vulnerableRange": ">=7.0.0 <=7.3.1",
-      "expiresOn": "2026-10-19",
-      "rationale": "GHSA-p9ff-h696-f583: Development/build tooling is not deployed; its servers are not exposed and inputs are repository-controlled."
-    },
-    {
-      "id": 1120785,
-      "package": "vite",
-      "severity": "moderate",
-      "vulnerableRange": ">=7.0.0 <=7.3.4",
-      "expiresOn": "2026-10-19",
-      "rationale": "GHSA-v6wh-96g9-6wx3: Development/build tooling is not deployed; its servers are not exposed and inputs are repository-controlled."
-    },
-    {
-      "id": 1123526,
-      "package": "vite",
-      "severity": "high",
-      "vulnerableRange": ">=7.0.0 <=7.3.4",
-      "expiresOn": "2026-10-19",
-      "rationale": "GHSA-fx2h-pf6j-xcff: Development/build tooling is not deployed; its servers are not exposed and inputs are repository-controlled."
     }
   ]
 }

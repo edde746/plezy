@@ -194,9 +194,16 @@ final class MpvPlayerContractTests: XCTestCase {
     let core = MpvPlayerCoreBase()
     let delegate = RecordingLifecycleDelegate()
     core.delegate = delegate
-    core.dispatchDelegateEvent(name: "file-loaded", data: nil)
-    core.dispatchDelegateProperty(name: "time-pos", value: 1.0)
-    XCTAssertTrue(core.beginDisposal())
+    let enqueueAndDispose = {
+      core.dispatchDelegateEvent(name: "file-loaded", data: nil)
+      core.dispatchDelegateProperty(name: "time-pos", value: 1.0)
+      XCTAssertTrue(core.beginDisposal())
+    }
+    if Thread.isMainThread {
+      enqueueAndDispose()
+    } else {
+      DispatchQueue.main.sync(execute: enqueueAndDispose)
+    }
 
     let drained = expectation(description: "main delivery drained")
     DispatchQueue.main.async { drained.fulfill() }

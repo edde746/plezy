@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -56,6 +57,14 @@ void main() {
       buildNumber: '45',
       buildSignature: '',
     );
+    final deviceInfo = DeviceInfoPlugin.setMockInitialValues(
+      linuxDeviceInfo: LinuxDeviceInfo(
+        name: 'Test Linux',
+        id: 'test-linux',
+        prettyName: 'Test Linux',
+        machineId: 'test-machine',
+      ),
+    );
     const deviceInfoChannel = MethodChannel('dev.fluttercommunity.plus/device_info');
     final messenger = TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
     messenger.setMockMethodCallHandler(deviceInfoChannel, (call) async {
@@ -109,7 +118,9 @@ void main() {
     await tester.pumpWidget(
       TranslationProvider(
         child: InputModeTracker(
-          child: MaterialApp(home: LogsScreen(httpClient: client)),
+          child: MaterialApp(
+            home: LogsScreen(httpClient: client, deviceInfoPlugin: deviceInfo),
+          ),
         ),
       ),
     );

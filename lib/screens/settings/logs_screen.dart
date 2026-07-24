@@ -58,9 +58,10 @@ String constrainLogUploadPayload({required String header, required String logs, 
 }
 
 class LogsScreen extends StatefulWidget {
-  const LogsScreen({super.key, this.httpClient});
+  const LogsScreen({super.key, this.httpClient, this.deviceInfoPlugin});
 
   final MediaServerHttpClient? httpClient;
+  final DeviceInfoPlugin? deviceInfoPlugin;
 
   @override
   State<LogsScreen> createState() => _LogsScreenState();
@@ -82,7 +83,7 @@ class _LogsScreenState extends State<LogsScreen> with MountedSetStateMixin {
 
   Future<void> _loadDeviceInfo() async {
     final packageInfo = await PackageInfo.fromPlatform();
-    final deviceInfo = DeviceInfoPlugin();
+    final deviceInfo = widget.deviceInfoPlugin ?? DeviceInfoPlugin();
     final buffer = StringBuffer();
     final commitSuffix = gitCommit.isNotEmpty ? ' ${gitCommit.substring(0, 7)}' : '';
     buffer.writeln('${t.app.title} v${packageInfo.version} (${packageInfo.buildNumber})$commitSuffix');
