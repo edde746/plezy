@@ -143,7 +143,7 @@ jobs:
 
       - name: Generate Android 15 AVD snapshot
         if: steps.api35-avd-cache.outputs.cache-hit != 'true'
-        uses: reactivecircus/android-emulator-runner@4c44018e59b437e86cdfc41da381398f93ed8808 # v2
+        uses: reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # v2
         with:
           api-level: 35
           arch: x86_64
@@ -167,7 +167,7 @@ jobs:
 
       - name: Generate Android 9 AVD snapshot
         if: steps.api28-avd-cache.outputs.cache-hit != 'true'
-        uses: reactivecircus/android-emulator-runner@4c44018e59b437e86cdfc41da381398f93ed8808 # v2
+        uses: reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # v2
         with:
           api-level: 28
           target: google_apis_playstore
@@ -184,7 +184,7 @@ jobs:
       - name: Run Android 15 suites
         id: api35
         continue-on-error: true
-        uses: reactivecircus/android-emulator-runner@4c44018e59b437e86cdfc41da381398f93ed8808 # v2
+        uses: reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # v2
         env:
           MAESTRO_SKIP_BUILD: "1"
           MAESTRO_SKIP_JELLYFIN_BUILD: "1"
@@ -204,7 +204,7 @@ jobs:
       - name: Run Android 9 legacy playback
         id: api28
         continue-on-error: true
-        uses: reactivecircus/android-emulator-runner@4c44018e59b437e86cdfc41da381398f93ed8808 # v2
+        uses: reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # v2
         env:
           MAESTRO_SKIP_BUILD: "1"
           MAESTRO_SKIP_JELLYFIN_BUILD: "1"
