@@ -12,6 +12,7 @@ import '../../../focus/dpad_select_long_press_controller.dart';
 import '../../../focus/focus_theme.dart';
 import '../../../focus/input_mode_tracker.dart';
 import '../../../focus/key_event_utils.dart';
+import '../../../i18n/app_locale_utils.dart';
 import '../../../i18n/strings.g.dart';
 import '../../../mixins/mounted_set_state_mixin.dart';
 import '../../../models/livetv_channel.dart';
@@ -1040,7 +1041,7 @@ class GuideTabState extends State<GuideTab> with MountedSetStateMixin, WidgetsBi
 
     if (target == today) return t.liveTv.today;
 
-    return DateFormat('EEEE', LocaleSettings.currentLocale.languageCode).format(target);
+    return DateFormat('EEEE', LocaleSettings.currentLocale.intlLocaleName).format(target);
   }
 
   List<(String, int)> get _timeSlots => [

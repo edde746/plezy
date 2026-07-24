@@ -3,8 +3,8 @@
 /// Source: lib/i18n
 /// To regenerate, run: `dart run slang`
 ///
-/// Locales: 16
-/// Strings: 23081 (1442 per locale)
+/// Locales: 18
+/// Strings: 26028 (1446 per locale)
 
 // coverage:ignore-file
 // ignore_for_file: type=lint, unused_import
@@ -21,6 +21,7 @@ import 'strings_da.g.dart' deferred as l_da;
 import 'strings_de.g.dart' deferred as l_de;
 import 'strings_es.g.dart' deferred as l_es;
 import 'strings_fr.g.dart' deferred as l_fr;
+import 'strings_hu.g.dart' deferred as l_hu;
 import 'strings_it.g.dart' deferred as l_it;
 import 'strings_ja.g.dart' deferred as l_ja;
 import 'strings_ko.g.dart' deferred as l_ko;
@@ -31,6 +32,7 @@ import 'strings_pt.g.dart' deferred as l_pt;
 import 'strings_ru.g.dart' deferred as l_ru;
 import 'strings_sv.g.dart' deferred as l_sv;
 import 'strings_zh.g.dart' deferred as l_zh;
+import 'strings_zh_Hant.g.dart' deferred as l_zh_Hant;
 part 'strings_en.g.dart';
 
 /// Supported locales.
@@ -46,6 +48,7 @@ enum AppLocale with BaseAppLocale<AppLocale, Translations> {
 	de(languageCode: 'de'),
 	es(languageCode: 'es'),
 	fr(languageCode: 'fr'),
+	hu(languageCode: 'hu'),
 	it(languageCode: 'it'),
 	ja(languageCode: 'ja'),
 	ko(languageCode: 'ko'),
@@ -55,7 +58,8 @@ enum AppLocale with BaseAppLocale<AppLocale, Translations> {
 	pt(languageCode: 'pt'),
 	ru(languageCode: 'ru'),
 	sv(languageCode: 'sv'),
-	zh(languageCode: 'zh');
+	zh(languageCode: 'zh'),
+	zhHant(languageCode: 'zh', scriptCode: 'Hant');
 
 	const AppLocale({
 		required this.languageCode,
@@ -111,6 +115,13 @@ enum AppLocale with BaseAppLocale<AppLocale, Translations> {
 			case AppLocale.fr:
 				await l_fr.loadLibrary();
 				return l_fr.TranslationsFr(
+					overrides: overrides,
+					cardinalResolver: cardinalResolver,
+					ordinalResolver: ordinalResolver,
+				);
+			case AppLocale.hu:
+				await l_hu.loadLibrary();
+				return l_hu.TranslationsHu(
 					overrides: overrides,
 					cardinalResolver: cardinalResolver,
 					ordinalResolver: ordinalResolver,
@@ -185,6 +196,13 @@ enum AppLocale with BaseAppLocale<AppLocale, Translations> {
 					cardinalResolver: cardinalResolver,
 					ordinalResolver: ordinalResolver,
 				);
+			case AppLocale.zhHant:
+				await l_zh_Hant.loadLibrary();
+				return l_zh_Hant.TranslationsZhHant(
+					overrides: overrides,
+					cardinalResolver: cardinalResolver,
+					ordinalResolver: ordinalResolver,
+				);
 		}
 	}
 
@@ -227,6 +245,12 @@ enum AppLocale with BaseAppLocale<AppLocale, Translations> {
 				);
 			case AppLocale.fr:
 				return l_fr.TranslationsFr(
+					overrides: overrides,
+					cardinalResolver: cardinalResolver,
+					ordinalResolver: ordinalResolver,
+				);
+			case AppLocale.hu:
+				return l_hu.TranslationsHu(
 					overrides: overrides,
 					cardinalResolver: cardinalResolver,
 					ordinalResolver: ordinalResolver,
@@ -287,6 +311,12 @@ enum AppLocale with BaseAppLocale<AppLocale, Translations> {
 				);
 			case AppLocale.zh:
 				return l_zh.TranslationsZh(
+					overrides: overrides,
+					cardinalResolver: cardinalResolver,
+					ordinalResolver: ordinalResolver,
+				);
+			case AppLocale.zhHant:
+				return l_zh_Hant.TranslationsZhHant(
 					overrides: overrides,
 					cardinalResolver: cardinalResolver,
 					ordinalResolver: ordinalResolver,

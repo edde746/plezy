@@ -71,6 +71,7 @@ import 'utils/managed_http_client.dart';
 import 'utils/media_server_http_client.dart';
 import 'utils/orientation_helper.dart';
 import 'utils/watch_state_notifier.dart';
+import 'i18n/app_locale_utils.dart';
 import 'i18n/strings.g.dart';
 import 'widgets/app_icon.dart';
 import 'focus/input_mode_tracker.dart';
@@ -362,7 +363,7 @@ Future<_StartupDependencies> _initializeStartup(SettingsService settings) async 
   try {
     final savedLocale = settings.read(SettingsService.appLocale);
     await LocaleSettings.setLocale(savedLocale);
-    await initializeDateFormatting(savedLocale.languageCode, null);
+    await initializeDateFormatting(savedLocale.intlLocaleName, null);
     markStartupPhase('locale');
 
     final futures = <Future<void>>[];

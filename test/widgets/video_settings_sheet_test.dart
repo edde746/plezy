@@ -92,7 +92,7 @@ void main() {
     await tester.pumpAndSettle();
 
     final dialog = find.byType(AlertDialog);
-    for (final label in ['Нет', 'Да', 'Масштабировать', 'Принудительно', 'Удалить стили']) {
+    for (final label in ['Нет', 'Да', 'Масштаб', 'Принудительно', 'Удалить стили']) {
       expect(find.descendant(of: dialog, matching: find.text(label)), findsOneWidget);
     }
   });

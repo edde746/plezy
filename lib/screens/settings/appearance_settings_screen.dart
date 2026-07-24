@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 
+import '../../i18n/app_locale_utils.dart';
 import '../../i18n/strings.g.dart';
 import '../../providers/multi_server_provider.dart';
 import '../../providers/theme_provider.dart';
@@ -243,7 +244,7 @@ class AppearanceSettingsScreen extends StatelessWidget {
           await SettingsService.instance.write(SettingsService.appLocale, value);
           unawaited(LocaleSettings.setLocale(value));
           if (context.mounted) {
-            context.read<MultiServerProvider>().serverManager.updatePlexLanguage(value.languageCode);
+            context.read<MultiServerProvider>().serverManager.updatePlexLanguage(value.plexLanguageCode);
           }
           if (context.mounted) _restartApp(context);
         }
@@ -409,8 +410,12 @@ class AppearanceSettingsScreen extends StatelessWidget {
         return 'Nederlands';
       case AppLocale.de:
         return 'Deutsch';
+      case AppLocale.hu:
+        return 'Magyar';
       case AppLocale.zh:
-        return '中文';
+        return '简体中文';
+      case AppLocale.zhHant:
+        return '繁體中文';
       case AppLocale.ko:
         return '한국어';
       case AppLocale.es:

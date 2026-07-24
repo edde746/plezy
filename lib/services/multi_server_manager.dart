@@ -5,6 +5,7 @@ import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/foundation.dart';
 
 import '../connection/connection.dart';
+import '../i18n/app_locale_utils.dart';
 import '../media/media_server_client.dart';
 import '../exceptions/media_server_exceptions.dart';
 
@@ -204,7 +205,8 @@ class MultiServerManager {
     }
   }
 
-  String? get _currentPlexLanguageCode => SettingsService.instanceOrNull?.read(SettingsService.appLocale).languageCode;
+  String? get _currentPlexLanguageCode =>
+      SettingsService.instanceOrNull?.read(SettingsService.appLocale).plexLanguageCode;
 
   @visibleForTesting
   void debugRegisterJellyfinClientForTesting(JellyfinClient client, {bool online = true}) {

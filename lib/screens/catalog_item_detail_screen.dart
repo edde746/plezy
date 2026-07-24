@@ -11,6 +11,7 @@ import '../focus/dpad_navigator.dart';
 import '../focus/input_mode_tracker.dart';
 import '../focus/key_event_utils.dart';
 import '../focus/locked_hub_controller.dart';
+import '../i18n/app_locale_utils.dart';
 import '../i18n/strings.g.dart';
 import '../media/media_hub.dart';
 import '../media/media_item.dart';
@@ -389,7 +390,7 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
     if (item.rating != null) {
       score = item.rating!.toStringAsFixed(1);
       if (item.votes != null && item.votes! > 0) {
-        final compactVotes = NumberFormat.compact(locale: LocaleSettings.currentLocale.languageCode);
+        final compactVotes = NumberFormat.compact(locale: LocaleSettings.currentLocale.intlLocaleName);
         score = '$score (${compactVotes.format(item.votes)})';
       }
     }

@@ -8,6 +8,7 @@ import 'package:flutter/services.dart';
 import '../models/hotkey_model.dart';
 import 'image_cache_service.dart';
 import 'package:plezy/utils/app_logger.dart';
+import '../i18n/app_locale_utils.dart';
 import '../i18n/strings.g.dart';
 import '../models/mpv_config_models.dart';
 import '../models/external_player_models.dart';
@@ -149,19 +150,21 @@ class _EpisodePosterModePref extends EnumPref<EpisodePosterMode> {
   }
 }
 
-/// Stored as the language code; null/empty falls back to the device locale.
+/// Stored as the locale enum name; null/empty falls back to the device locale.
 class _AppLocalePref extends Pref<AppLocale> {
   const _AppLocalePref() : super('app_locale');
 
   @override
   AppLocale readFrom(BaseSharedPreferencesService svc) {
     final code = svc.prefs.getString(key);
-    if (code == null || code.isEmpty) return AppLocaleUtils.findDeviceLocale();
+    if (code == null || code.isEmpty) {
+      return resolvePreferredAppLocale(PlatformDispatcher.instance.locales);
+    }
     return AppLocale.values.asNameMap()[code] ?? AppLocale.en;
   }
 
   @override
-  Future<void> writeTo(BaseSharedPreferencesService svc, AppLocale value) => svc.writeString(key, value.languageCode);
+  Future<void> writeTo(BaseSharedPreferencesService svc, AppLocale value) => svc.writeString(key, value.name);
 }
 
 /// Mobile-only with a macOS-disabled-by-default rule; forced off on TV and non-mobile platforms.

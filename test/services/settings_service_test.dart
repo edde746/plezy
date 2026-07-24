@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:plezy/i18n/strings.g.dart';
 import 'package:plezy/models/audio_quality_preset.dart';
 import 'package:plezy/models/hotkey_model.dart';
 import 'package:plezy/services/base_shared_preferences_service.dart';
@@ -161,6 +162,32 @@ void main() {
       settings = await SettingsService.getInstance();
 
       expect(settings.read(SettingsService.musicQualityPreset), AudioQualityPreset.medium);
+    });
+  });
+
+  group('SettingsService app locale', () {
+    test('persists script-specific locales by enum name', () async {
+      var settings = await SettingsService.getInstance();
+
+      await settings.write(SettingsService.appLocale, AppLocale.zhHant);
+      expect(settings.prefs.getString(SettingsService.appLocale.key), 'zhHant');
+
+      BaseSharedPreferencesService.resetForTesting();
+      SettingsService.resetForTesting();
+      settings = await SettingsService.getInstance();
+
+      expect(settings.read(SettingsService.appLocale), AppLocale.zhHant);
+    });
+
+    test('continues to read legacy language-code values', () async {
+      var settings = await SettingsService.getInstance();
+      await settings.prefs.setString(SettingsService.appLocale.key, 'zh');
+
+      BaseSharedPreferencesService.resetForTesting();
+      SettingsService.resetForTesting();
+      settings = await SettingsService.getInstance();
+
+      expect(settings.read(SettingsService.appLocale), AppLocale.zh);
     });
   });
 

@@ -2,72 +2,33 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/i18n/strings.g.dart';
 
 void main() {
-  test('empty overrides fall back in every affected locale', () async {
+  test('completed locale entries override the English fallback', () async {
     final english = await AppLocale.en.build();
-    final commonEnglishValues = <String>[
+    final englishValues = <String>[
       english.videoControls.showPlaybackControls,
       english.videoControls.hidePlaybackControls,
-    ];
-    final spotlightEnglishValues = <String>[
       english.settings.tvCornerSpotlightBackdrop,
       english.settings.tvCornerSpotlightBackdropDescription,
     ];
 
-    expect([...commonEnglishValues, ...spotlightEnglishValues], everyElement(isNotEmpty));
+    expect(englishValues, everyElement(isNotEmpty));
 
-    const commonFallbackLocales = <AppLocale>[
-      AppLocale.bg,
-      AppLocale.da,
-      AppLocale.de,
-      AppLocale.es,
-      AppLocale.fr,
-      AppLocale.it,
-      AppLocale.ja,
-      AppLocale.ko,
-      AppLocale.nb,
-      AppLocale.nl,
-      AppLocale.pl,
-      AppLocale.pt,
-      AppLocale.ru,
-      AppLocale.sv,
-      AppLocale.zh,
-    ];
-    const spotlightFallbackLocales = <AppLocale>[
-      AppLocale.bg,
-      AppLocale.da,
-      AppLocale.es,
-      AppLocale.fr,
-      AppLocale.it,
-      AppLocale.ja,
-      AppLocale.ko,
-      AppLocale.nb,
-      AppLocale.nl,
-      AppLocale.pl,
-      AppLocale.pt,
-      AppLocale.ru,
-      AppLocale.sv,
-      AppLocale.zh,
-    ];
-
-    for (final locale in commonFallbackLocales) {
+    for (final locale in AppLocale.values.where((locale) => locale != AppLocale.en)) {
       final translations = await locale.build();
-      expect(
-        <String>[translations.videoControls.showPlaybackControls, translations.videoControls.hidePlaybackControls],
-        commonEnglishValues,
-        reason: '${locale.languageCode} must inherit the common English values',
-      );
-    }
+      final localizedValues = <String>[
+        translations.videoControls.showPlaybackControls,
+        translations.videoControls.hidePlaybackControls,
+        translations.settings.tvCornerSpotlightBackdrop,
+        translations.settings.tvCornerSpotlightBackdropDescription,
+      ];
 
-    for (final locale in spotlightFallbackLocales) {
-      final translations = await locale.build();
-      expect(
-        <String>[
-          translations.settings.tvCornerSpotlightBackdrop,
-          translations.settings.tvCornerSpotlightBackdropDescription,
-        ],
-        spotlightEnglishValues,
-        reason: '${locale.languageCode} must inherit the English spotlight values',
-      );
+      for (var index = 0; index < localizedValues.length; index++) {
+        expect(
+          localizedValues[index],
+          isNot(englishValues[index]),
+          reason: '${locale.name} must provide its own completed translation at index $index',
+        );
+      }
     }
   });
 }

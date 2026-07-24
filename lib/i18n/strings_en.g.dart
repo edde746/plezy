@@ -192,8 +192,8 @@ class Translations$common$en {
 	/// en: 'Retry'
 	String get retry => 'Retry';
 
-	/// en: 'Logout'
-	String get logout => 'Logout';
+	/// en: 'Log out'
+	String get logout => 'Log out';
 
 	/// en: 'Unknown'
 	String get unknown => 'Unknown';
@@ -840,8 +840,8 @@ class Translations$settings$en {
 	/// en: 'Folder selection is not available on this device'
 	String get downloadLocationPickerUnavailable => 'Folder selection is not available on this device';
 
-	/// en: 'Download on WiFi only'
-	String get downloadOnWifiOnly => 'Download on WiFi only';
+	/// en: 'Download on Wi-Fi only'
+	String get downloadOnWifiOnly => 'Download on Wi-Fi only';
 
 	/// en: 'Prevent downloads when on cellular data'
 	String get downloadOnWifiOnlyDescription => 'Prevent downloads when on cellular data';
@@ -852,8 +852,8 @@ class Translations$settings$en {
 	/// en: 'Delete watched downloads automatically'
 	String get autoRemoveWatchedDownloadsDescription => 'Delete watched downloads automatically';
 
-	/// en: 'Downloads are blocked on cellular. Use WiFi or change the setting.'
-	String get cellularDownloadBlocked => 'Downloads are blocked on cellular. Use WiFi or change the setting.';
+	/// en: 'Downloads are blocked on cellular. Use Wi-Fi or change the setting.'
+	String get cellularDownloadBlocked => 'Downloads are blocked on cellular. Use Wi-Fi or change the setting.';
 
 	/// en: 'Maximum Volume'
 	String get maxVolume => 'Maximum Volume';
@@ -888,8 +888,8 @@ class Translations$settings$en {
 	/// en: 'Auto Picture-in-Picture'
 	String get autoPip => 'Auto Picture-in-Picture';
 
-	/// en: 'Enter picture-in-picture when leaving during playback'
-	String get autoPipDescription => 'Enter picture-in-picture when leaving during playback';
+	/// en: 'Automatically enter picture-in-picture when you leave the app during playback'
+	String get autoPipDescription => 'Automatically enter picture-in-picture when you leave the app during playback';
 
 	/// en: 'Match Content Frame Rate'
 	String get matchContentFrameRate => 'Match Content Frame Rate';
@@ -1723,8 +1723,8 @@ class Translations$messages$en {
 	/// en: 'The server returned invalid playback information.'
 	String get playbackDataInvalid => 'The server returned invalid playback information.';
 
-	/// en: 'Playback was cancelled.'
-	String get playbackCancelled => 'Playback was cancelled.';
+	/// en: 'Playback was canceled.'
+	String get playbackCancelled => 'Playback was canceled.';
 
 	/// en: 'Playback could not be started.'
 	String get playbackFailed => 'Playback could not be started.';
@@ -1777,8 +1777,8 @@ class Translations$messages$en {
 	/// en: 'Failed to refresh metadata: ${error}'
 	String metadataRefreshFailed({required Object error}) => 'Failed to refresh metadata: ${error}';
 
-	/// en: 'Are you sure you want to logout?'
-	String get logoutConfirm => 'Are you sure you want to logout?';
+	/// en: 'Are you sure you want to log out?'
+	String get logoutConfirm => 'Are you sure you want to log out?';
 
 	/// en: 'No seasons found'
 	String get noSeasonsFound => 'No seasons found';
@@ -1804,8 +1804,8 @@ class Translations$messages$en {
 	/// en: 'No items available'
 	String get noItemsAvailable => 'No items available';
 
-	/// en: 'Failed to create play queue - no items'
-	String get failedToCreatePlayQueueNoItems => 'Failed to create play queue - no items';
+	/// en: 'Failed to create a play queue — no items'
+	String get failedToCreatePlayQueueNoItems => 'Failed to create a play queue — no items';
 
 	/// en: 'Failed to ${action}: ${error}'
 	String failedPlayback({required Object action, required Object error}) => 'Failed to ${action}: ${error}';
@@ -2808,8 +2808,8 @@ class Translations$liveTv$en {
 	/// en: 'Recording not available for this program'
 	String get recordNotAvailable => 'Recording not available for this program';
 
-	/// en: 'Recording cancelled'
-	String get recordingCancelled => 'Recording cancelled';
+	/// en: 'Recording canceled'
+	String get recordingCancelled => 'Recording canceled';
 
 	/// en: 'Recording rule deleted'
 	String get recordingRuleDeleted => 'Recording rule deleted';
@@ -3246,8 +3246,8 @@ class Translations$watchTogether$en {
 	/// en: '${name} resumed'
 	String participantResumed({required Object name}) => '${name} resumed';
 
-	/// en: '${name} seeked'
-	String participantSeeked({required Object name}) => '${name} seeked';
+	/// en: '${name} changed the playback position'
+	String participantSeeked({required Object name}) => '${name} changed the playback position';
 
 	/// en: '${name} is buffering'
 	String participantBuffering({required Object name}) => '${name} is buffering';
@@ -3339,11 +3339,11 @@ class Translations$downloads$en {
 	/// en: 'Delete "${title}" from this device?'
 	String deleteConfirm({required Object title}) => 'Delete "${title}" from this device?';
 
-	/// en: 'Cancelled Download'
-	String get cancelledDownloadTitle => 'Cancelled Download';
+	/// en: 'Canceled Download'
+	String get cancelledDownloadTitle => 'Canceled Download';
 
-	/// en: 'This download was cancelled. What would you like to do?'
-	String get cancelledDownloadMessage => 'This download was cancelled. What would you like to do?';
+	/// en: 'This download was canceled. What would you like to do?'
+	String get cancelledDownloadMessage => 'This download was canceled. What would you like to do?';
 
 	/// en: 'All episodes already downloaded'
 	String get allEpisodesAlreadyDownloaded => 'All episodes already downloaded';
@@ -3351,8 +3351,8 @@ class Translations$downloads$en {
 	/// en: 'Resume download'
 	String get resumeDownload => 'Resume download';
 
-	/// en: 'Cancelled download'
-	String get cancelledDownload => 'Cancelled download';
+	/// en: 'Canceled download'
+	String get cancelledDownload => 'Canceled download';
 
 	/// en: '${file} (syncing ${status})'
 	String syncingFile({required Object file, required Object status}) => '${file} (syncing ${status})';
@@ -4118,8 +4118,8 @@ class Translations$trakt$en {
 	/// en: 'Sync watched status'
 	String get watchedSync => 'Sync watched status';
 
-	/// en: 'When you mark items watched in Plezy, mark them on Trakt.'
-	String get watchedSyncDescription => 'When you mark items watched in Plezy, mark them on Trakt.';
+	/// en: 'When you mark items as watched in Plezy, they are also marked as watched on Trakt.'
+	String get watchedSyncDescription => 'When you mark items as watched in Plezy, they are also marked as watched on Trakt.';
 }
 
 // Path: seerr
@@ -4765,8 +4765,8 @@ class Translations$companionRemote$pairing$en {
 	/// en: 'No devices found on your network'
 	String get noDevicesFound => 'No devices found on your network';
 
-	/// en: 'Open Plezy on desktop and use the same WiFi'
-	String get noDevicesHint => 'Open Plezy on desktop and use the same WiFi';
+	/// en: 'Open Plezy on desktop and use the same Wi-Fi'
+	String get noDevicesHint => 'Open Plezy on desktop and use the same Wi-Fi';
 
 	/// en: 'Available Devices'
 	String get availableDevices => 'Available Devices';
@@ -5069,7 +5069,7 @@ extension on Translations {
 			'common.submit' => 'Submit',
 			'common.confirm' => 'Confirm',
 			'common.retry' => 'Retry',
-			'common.logout' => 'Logout',
+			'common.logout' => 'Log out',
 			'common.unknown' => 'Unknown',
 			'common.refresh' => 'Refresh',
 			'common.yes' => 'Yes',
@@ -5276,11 +5276,11 @@ extension on Translations {
 			'settings.downloadLocationReset' => 'Download location reset to default',
 			'settings.downloadLocationInvalid' => 'Selected folder is not writable',
 			'settings.downloadLocationPickerUnavailable' => 'Folder selection is not available on this device',
-			'settings.downloadOnWifiOnly' => 'Download on WiFi only',
+			'settings.downloadOnWifiOnly' => 'Download on Wi-Fi only',
 			'settings.downloadOnWifiOnlyDescription' => 'Prevent downloads when on cellular data',
 			'settings.autoRemoveWatchedDownloads' => 'Auto-remove watched downloads',
 			'settings.autoRemoveWatchedDownloadsDescription' => 'Delete watched downloads automatically',
-			'settings.cellularDownloadBlocked' => 'Downloads are blocked on cellular. Use WiFi or change the setting.',
+			'settings.cellularDownloadBlocked' => 'Downloads are blocked on cellular. Use Wi-Fi or change the setting.',
 			'settings.maxVolume' => 'Maximum Volume',
 			'settings.maxVolumeDescription' => 'Allow volume boost above 100% for quiet media',
 			'settings.maxVolumePercent' => ({required Object percent}) => '${percent}%',
@@ -5292,7 +5292,7 @@ extension on Translations {
 			'settings.companionRemoteServer' => 'Companion Remote Server',
 			'settings.companionRemoteServerDescription' => 'Allow mobile devices on your network to control this app',
 			'settings.autoPip' => 'Auto Picture-in-Picture',
-			'settings.autoPipDescription' => 'Enter picture-in-picture when leaving during playback',
+			'settings.autoPipDescription' => 'Automatically enter picture-in-picture when you leave the app during playback',
 			'settings.matchContentFrameRate' => 'Match Content Frame Rate',
 			'settings.matchContentFrameRateDescription' => 'Match display refresh rate to video content',
 			'settings.matchRefreshRate' => 'Match Refresh Rate',
@@ -5572,7 +5572,7 @@ extension on Translations {
 			'messages.playbackAuthenticationRequired' => 'Sign in to the media server again to play this item.',
 			'messages.playbackServerUnavailable' => 'The media server is unavailable. Try again later.',
 			'messages.playbackDataInvalid' => 'The server returned invalid playback information.',
-			'messages.playbackCancelled' => 'Playback was cancelled.',
+			'messages.playbackCancelled' => 'Playback was canceled.',
 			'messages.playbackFailed' => 'Playback could not be started.',
 			'messages.errorLoadingFileInfo' => ({required Object error}) => 'Error loading file info: ${error}',
 			'messages.errorLoadingSeries' => 'Error loading series',
@@ -5590,7 +5590,7 @@ extension on Translations {
 			'messages.metadataRefreshing' => ({required Object title}) => 'Refreshing metadata for "${title}"...',
 			'messages.metadataRefreshStarted' => ({required Object title}) => 'Metadata refresh started for "${title}"',
 			'messages.metadataRefreshFailed' => ({required Object error}) => 'Failed to refresh metadata: ${error}',
-			'messages.logoutConfirm' => 'Are you sure you want to logout?',
+			'messages.logoutConfirm' => 'Are you sure you want to log out?',
 			'messages.noSeasonsFound' => 'No seasons found',
 			'messages.seasonsLoadFailed' => 'Couldn\'t load seasons',
 			'messages.noEpisodesFound' => 'No episodes found in first season',
@@ -5599,7 +5599,7 @@ extension on Translations {
 			'messages.noResultsFound' => 'No results found',
 			'messages.sleepTimerSet' => ({required Object label}) => 'Sleep timer set for ${label}',
 			'messages.noItemsAvailable' => 'No items available',
-			'messages.failedToCreatePlayQueueNoItems' => 'Failed to create play queue - no items',
+			'messages.failedToCreatePlayQueueNoItems' => 'Failed to create a play queue — no items',
 			'messages.failedPlayback' => ({required Object action, required Object error}) => 'Failed to ${action}: ${error}',
 			'messages.switchingToCompatiblePlayer' => 'Switching to compatible player...',
 			'messages.serverLimitTitle' => 'Playback failed',
@@ -5941,7 +5941,7 @@ extension on Translations {
 			'liveTv.recordingFailed' => 'Couldn\'t schedule recording',
 			'liveTv.recordingTargetMissing' => 'Couldn\'t determine recording library',
 			'liveTv.recordNotAvailable' => 'Recording not available for this program',
-			'liveTv.recordingCancelled' => 'Recording cancelled',
+			'liveTv.recordingCancelled' => 'Recording canceled',
 			'liveTv.recordingRuleDeleted' => 'Recording rule deleted',
 			'liveTv.processRecordingRules' => 'Re-evaluate rules',
 			'liveTv.recordingInProgress' => 'Recording now',
@@ -6076,7 +6076,7 @@ extension on Translations {
 			'watchTogether.participantLeft' => ({required Object name}) => '${name} left',
 			'watchTogether.participantPaused' => ({required Object name}) => '${name} paused',
 			'watchTogether.participantResumed' => ({required Object name}) => '${name} resumed',
-			'watchTogether.participantSeeked' => ({required Object name}) => '${name} seeked',
+			'watchTogether.participantSeeked' => ({required Object name}) => '${name} changed the playback position',
 			'watchTogether.participantBuffering' => ({required Object name}) => '${name} is buffering',
 			'watchTogether.participantNeedsUpdate' => ({required Object name}) => '${name} is on an older app version — sync unavailable',
 			'watchTogether.resumingWithout' => ({required Object name}) => 'Resuming without ${name}',
@@ -6104,11 +6104,11 @@ extension on Translations {
 			'downloads.episodesQueued' => ({required Object count}) => '${count} episodes queued for download',
 			'downloads.downloadDeleted' => 'Download deleted',
 			'downloads.deleteConfirm' => ({required Object title}) => 'Delete "${title}" from this device?',
-			'downloads.cancelledDownloadTitle' => 'Cancelled Download',
-			'downloads.cancelledDownloadMessage' => 'This download was cancelled. What would you like to do?',
+			'downloads.cancelledDownloadTitle' => 'Canceled Download',
+			'downloads.cancelledDownloadMessage' => 'This download was canceled. What would you like to do?',
 			'downloads.allEpisodesAlreadyDownloaded' => 'All episodes already downloaded',
 			'downloads.resumeDownload' => 'Resume download',
-			'downloads.cancelledDownload' => 'Cancelled download',
+			'downloads.cancelledDownload' => 'Canceled download',
 			'downloads.syncingFile' => ({required Object file, required Object status}) => '${file} (syncing ${status})',
 			'downloads.downloadedFileClickToComplete' => ({required Object file}) => 'Downloaded ${file} - Click to complete',
 			'downloads.partialDownloadClickToComplete' => 'Partially downloaded - Click to complete',
@@ -6188,7 +6188,7 @@ extension on Translations {
 			'companionRemote.pairing.connecting' => 'Connecting...',
 			'companionRemote.pairing.searchingForDevices' => 'Looking for devices...',
 			'companionRemote.pairing.noDevicesFound' => 'No devices found on your network',
-			'companionRemote.pairing.noDevicesHint' => 'Open Plezy on desktop and use the same WiFi',
+			'companionRemote.pairing.noDevicesHint' => 'Open Plezy on desktop and use the same Wi-Fi',
 			'companionRemote.pairing.availableDevices' => 'Available Devices',
 			'companionRemote.pairing.manualConnection' => 'Manual Connection',
 			'companionRemote.pairing.cryptoInitFailed' => 'Couldn\'t start secure connection. Sign in to Plex first.',
@@ -6396,7 +6396,7 @@ extension on Translations {
 			'trakt.scrobble' => 'Real-time scrobbling',
 			'trakt.scrobbleDescription' => 'Send play, pause, and stop events to Trakt during playback.',
 			'trakt.watchedSync' => 'Sync watched status',
-			'trakt.watchedSyncDescription' => 'When you mark items watched in Plezy, mark them on Trakt.',
+			'trakt.watchedSyncDescription' => 'When you mark items as watched in Plezy, they are also marked as watched on Trakt.',
 			'seerr.title' => 'Seerr',
 			'seerr.connectTitle' => 'Connect Seerr',
 			'seerr.serverUrl' => 'Server URL',
