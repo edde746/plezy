@@ -289,7 +289,8 @@ void TestTimedOutSubclassDetachCanBeAdopted() {
         ::WaitForSingleObject(block_exited, 1000) == WAIT_OBJECT_0,
         "the owner thread must leave the deterministic blocking message");
     ::SendMessageW(windows.inner, WM_NULL, 0, 0);
-    ::SendMessageW(windows.inner, WM_POINTERUPDATE, 0, MAKELPARAM(12, 13));
+    ::SendMessageW(
+        windows.inner, WM_POINTERUPDATE, MAKEWPARAM(1, POINTER_FLAG_UPDATE | POINTER_FLAG_INRANGE), MAKELPARAM(12, 13));
     Check(
         g_forwarded_pointer_messages.load(std::memory_order_relaxed) == 1,
         "the adopted generation must resume pointer forwarding");

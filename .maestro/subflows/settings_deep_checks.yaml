@@ -41,7 +41,7 @@ appId: com.edde746.plezy
     timeout: 10000
 - tapOn: "(?s)^Manage Libraries.*"
 - extendedWaitUntil:
-    visible: "(?s)^Manage Libraries.*"
+    visible: "Maestro Movies"
     timeout: 10000
 - back
 - extendedWaitUntil:
