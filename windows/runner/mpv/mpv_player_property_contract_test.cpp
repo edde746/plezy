@@ -45,7 +45,6 @@ void Check(bool condition, const char* message) {
 }
 
 std::atomic<int> g_forwarded_mouse_messages{0};
-std::atomic<int> g_forwarded_pointer_messages{0};
 constexpr UINT kBlockWindowThreadMessage = WM_APP + 0x0505;
 std::atomic<HANDLE> g_block_entered{nullptr};
 std::atomic<HANDLE> g_block_release{nullptr};
@@ -61,10 +60,6 @@ LRESULT CALLBACK CountingWindowProc(HWND hwnd, UINT message, WPARAM wparam, LPAR
       ::WaitForSingleObject(release, INFINITE);
       ::SetEvent(exited);
     }
-    return 0;
-  }
-  if (message == WM_POINTERUPDATE) {
-    g_forwarded_pointer_messages.fetch_add(1, std::memory_order_relaxed);
     return 0;
   }
   if (message == WM_MOUSEMOVE) {
@@ -253,7 +248,7 @@ void TestTimedOutSubclassDetachCanBeAdopted() {
   g_block_entered.store(block_entered, std::memory_order_release);
   g_block_release.store(block_release, std::memory_order_release);
   g_block_exited.store(block_exited, std::memory_order_release);
-  g_forwarded_pointer_messages.store(0, std::memory_order_relaxed);
+  g_forwarded_mouse_messages.store(0, std::memory_order_relaxed);
 
   {
     MpvPlayer original;
@@ -289,11 +284,13 @@ void TestTimedOutSubclassDetachCanBeAdopted() {
         ::WaitForSingleObject(block_exited, 1000) == WAIT_OBJECT_0,
         "the owner thread must leave the deterministic blocking message");
     ::SendMessageW(windows.inner, WM_NULL, 0, 0);
-    ::SendMessageW(
-        windows.inner, WM_POINTERUPDATE, MAKEWPARAM(1, POINTER_FLAG_UPDATE | POINTER_FLAG_INRANGE), MAKELPARAM(12, 13));
+    ::SendMessageW(windows.inner, WM_MOUSEMOVE, 0, MAKELPARAM(12, 13));
+    for (int attempt = 0; attempt < 100 && g_forwarded_mouse_messages.load(std::memory_order_relaxed) < 1; ++attempt) {
+      ::Sleep(10);
+    }
     Check(
-        g_forwarded_pointer_messages.load(std::memory_order_relaxed) == 1,
-        "the adopted generation must resume pointer forwarding");
+        g_forwarded_mouse_messages.load(std::memory_order_relaxed) == 1,
+        "the adopted generation must resume input forwarding");
 
     MpvPlayerPropertyContractTestPeer::ReleaseTestWindows(replacement);
     Check(
@@ -309,7 +306,7 @@ void TestTimedOutSubclassDetachCanBeAdopted() {
   ::CloseHandle(block_exited);
   ::PostThreadMessageW(windows.owner_thread, WM_QUIT, 0, 0);
   window_owner.join();
-  g_forwarded_pointer_messages.store(0, std::memory_order_relaxed);
+  g_forwarded_mouse_messages.store(0, std::memory_order_relaxed);
 }
 
 void TestTimedOutSubclassInstallCannotOutliveItsState() {

@@ -505,8 +505,8 @@ jobs:
           if ($LASTEXITCODE -ne 0) {
             throw "Unable to resolve the Flutter SDK version"
           }
-          $versionJson = $versionOutput | Where-Object { $_ -match '^\s*\{' } | Select-Object -Last 1
-          if (-not $versionJson) {
+          $versionJson = $versionOutput -join "`n"
+          if ([string]::IsNullOrWhiteSpace($versionJson)) {
             throw "Flutter did not report machine-readable version JSON"
           }
           $version = $versionJson | ConvertFrom-Json
