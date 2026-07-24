@@ -1157,6 +1157,7 @@
     "downloadQueued": "Pobranie w kolejce",
     "downloadResumed": "Pobieranie wznowione",
     "serverErrorBitrate": "Błąd serwera: plik może przekraczać zdalny limit bitrate",
+    "storageFull": "Pobieranie zostało zatrzymane, ponieważ pamięć urządzenia jest pełna. Zwolnij miejsce i spróbuj ponownie.",
     "episodesQueued": "${count} odcinków w kolejce pobierania",
     "downloadDeleted": "Pobranie usunięte",
     "deleteConfirm": "Usunąć \"${title}\" z tego urządzenia?",

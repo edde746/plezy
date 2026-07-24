@@ -1151,6 +1151,7 @@
     "downloadQueued": "Download na fila",
     "downloadResumed": "Download retomado",
     "serverErrorBitrate": "Erro do servidor: o arquivo pode exceder o limite remoto de taxa de bits",
+    "storageFull": "Os downloads foram interrompidos porque o armazenamento do dispositivo está cheio. Libere espaço e tente novamente.",
     "episodesQueued": "${count} episódios na fila de download",
     "downloadDeleted": "Download excluído",
     "deleteConfirm": "Excluir \"${title}\" deste dispositivo?",

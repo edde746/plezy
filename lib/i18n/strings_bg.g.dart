@@ -1400,6 +1400,7 @@ class _Translations$downloads$bg extends Translations$downloads$en {
 	@override String get downloadQueued => 'Изтеглянето е добавено в опашката';
 	@override String get downloadResumed => 'Изтеглянето е възобновено';
 	@override String get serverErrorBitrate => 'Грешка на сървъра: файлът може да надвишава лимита за отдалечен битрейт';
+	@override String get storageFull => 'Изтеглянията бяха спрени, защото паметта на устройството е пълна. Освободете място и опитайте отново.';
 	@override String episodesQueued({required Object count}) => '${count} епизода са добавени в опашката за изтегляне';
 	@override String get downloadDeleted => 'Изтеглянето е изтрито';
 	@override String deleteConfirm({required Object title}) => 'Да се изтрие ли "${title}" от това устройство?';
@@ -3208,6 +3209,7 @@ extension on TranslationsBg {
 			'downloads.downloadQueued' => 'Изтеглянето е добавено в опашката',
 			'downloads.downloadResumed' => 'Изтеглянето е възобновено',
 			'downloads.serverErrorBitrate' => 'Грешка на сървъра: файлът може да надвишава лимита за отдалечен битрейт',
+			'downloads.storageFull' => 'Изтеглянията бяха спрени, защото паметта на устройството е пълна. Освободете място и опитайте отново.',
 			'downloads.episodesQueued' => ({required Object count}) => '${count} епизода са добавени в опашката за изтегляне',
 			'downloads.downloadDeleted' => 'Изтеглянето е изтрито',
 			'downloads.deleteConfirm' => ({required Object title}) => 'Да се изтрие ли "${title}" от това устройство?',

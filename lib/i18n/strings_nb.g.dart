@@ -1400,6 +1400,7 @@ class _Translations$downloads$nb extends Translations$downloads$en {
 	@override String get downloadQueued => 'Nedlasting i kø';
 	@override String get downloadResumed => 'Nedlasting gjenopptatt';
 	@override String get serverErrorBitrate => 'Serverfeil: filen kan overskride grensen for ekstern bitrate';
+	@override String get storageFull => 'Nedlastingene ble stoppet fordi lagringsplassen på enheten er full. Frigjør plass, og prøv igjen.';
 	@override String episodesQueued({required Object count}) => '${count} episoder i nedlastingskø';
 	@override String get downloadDeleted => 'Nedlasting slettet';
 	@override String deleteConfirm({required Object title}) => 'Slette "${title}" fra denne enheten?';
@@ -3208,6 +3209,7 @@ extension on TranslationsNb {
 			'downloads.downloadQueued' => 'Nedlasting i kø',
 			'downloads.downloadResumed' => 'Nedlasting gjenopptatt',
 			'downloads.serverErrorBitrate' => 'Serverfeil: filen kan overskride grensen for ekstern bitrate',
+			'downloads.storageFull' => 'Nedlastingene ble stoppet fordi lagringsplassen på enheten er full. Frigjør plass, og prøv igjen.',
 			'downloads.episodesQueued' => ({required Object count}) => '${count} episoder i nedlastingskø',
 			'downloads.downloadDeleted' => 'Nedlasting slettet',
 			'downloads.deleteConfirm' => ({required Object title}) => 'Slette "${title}" fra denne enheten?',

@@ -1148,6 +1148,7 @@
     "downloadQueued": "下载已排队",
     "downloadResumed": "下载已继续",
     "serverErrorBitrate": "服务器错误：文件可能超过远程比特率限制",
+    "storageFull": "设备存储空间已满，因此下载已停止。请释放空间后重试。",
     "episodesQueued": "${count} 集已加入下载队列",
     "downloadDeleted": "下载已删除",
     "deleteConfirm": "要从此设备删除“${title}”吗？",

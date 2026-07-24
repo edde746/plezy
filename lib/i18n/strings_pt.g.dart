@@ -1400,6 +1400,7 @@ class _Translations$downloads$pt extends Translations$downloads$en {
 	@override String get downloadQueued => 'Download na fila';
 	@override String get downloadResumed => 'Download retomado';
 	@override String get serverErrorBitrate => 'Erro do servidor: o arquivo pode exceder o limite remoto de taxa de bits';
+	@override String get storageFull => 'Os downloads foram interrompidos porque o armazenamento do dispositivo está cheio. Libere espaço e tente novamente.';
 	@override String episodesQueued({required Object count}) => '${count} episódios na fila de download';
 	@override String get downloadDeleted => 'Download excluído';
 	@override String deleteConfirm({required Object title}) => 'Excluir "${title}" deste dispositivo?';
@@ -3208,6 +3209,7 @@ extension on TranslationsPt {
 			'downloads.downloadQueued' => 'Download na fila',
 			'downloads.downloadResumed' => 'Download retomado',
 			'downloads.serverErrorBitrate' => 'Erro do servidor: o arquivo pode exceder o limite remoto de taxa de bits',
+			'downloads.storageFull' => 'Os downloads foram interrompidos porque o armazenamento do dispositivo está cheio. Libere espaço e tente novamente.',
 			'downloads.episodesQueued' => ({required Object count}) => '${count} episódios na fila de download',
 			'downloads.downloadDeleted' => 'Download excluído',
 			'downloads.deleteConfirm' => ({required Object title}) => 'Excluir "${title}" deste dispositivo?',

@@ -1151,6 +1151,7 @@
     "downloadQueued": "Download in coda",
     "downloadResumed": "Download ripreso",
     "serverErrorBitrate": "Errore server: il file può superare il limite di bitrate remoto",
+    "storageFull": "I download sono stati interrotti perché lo spazio di archiviazione del dispositivo è esaurito. Libera spazio e riprova.",
     "episodesQueued": "${count} episodi in coda per il download",
     "downloadDeleted": "Download eliminato",
     "deleteConfirm": "Eliminare \"${title}\" da questo dispositivo?",

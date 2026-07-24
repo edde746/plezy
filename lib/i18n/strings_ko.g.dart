@@ -1397,6 +1397,7 @@ class _Translations$downloads$ko extends Translations$downloads$en {
 	@override String get downloadQueued => '다운로드 대기 중';
 	@override String get downloadResumed => '다운로드를 재개했습니다';
 	@override String get serverErrorBitrate => '서버 오류: 파일이 원격 비트레이트 제한을 초과할 수 있습니다';
+	@override String get storageFull => '기기 저장 공간이 가득 차서 다운로드를 중지했습니다. 공간을 확보한 후 다시 시도하세요.';
 	@override String episodesQueued({required Object count}) => '에피소드 ${count}개가 다운로드 대기열에 추가되었습니다';
 	@override String get downloadDeleted => '다운로드 삭제됨';
 	@override String deleteConfirm({required Object title}) => '이 기기에서 "${title}"을(를) 삭제할까요?';
@@ -3205,6 +3206,7 @@ extension on TranslationsKo {
 			'downloads.downloadQueued' => '다운로드 대기 중',
 			'downloads.downloadResumed' => '다운로드를 재개했습니다',
 			'downloads.serverErrorBitrate' => '서버 오류: 파일이 원격 비트레이트 제한을 초과할 수 있습니다',
+			'downloads.storageFull' => '기기 저장 공간이 가득 차서 다운로드를 중지했습니다. 공간을 확보한 후 다시 시도하세요.',
 			'downloads.episodesQueued' => ({required Object count}) => '에피소드 ${count}개가 다운로드 대기열에 추가되었습니다',
 			'downloads.downloadDeleted' => '다운로드 삭제됨',
 			'downloads.deleteConfirm' => ({required Object title}) => '이 기기에서 "${title}"을(를) 삭제할까요?',

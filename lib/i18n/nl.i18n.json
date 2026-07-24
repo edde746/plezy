@@ -1151,6 +1151,7 @@
     "downloadQueued": "Download in wachtrij",
     "downloadResumed": "Download hervat",
     "serverErrorBitrate": "Serverfout: bestand overschrijdt mogelijk de externe bitrate-limiet",
+    "storageFull": "Downloads zijn gestopt omdat de opslag van het apparaat vol is. Maak ruimte vrij en probeer het opnieuw.",
     "episodesQueued": "${count} afleveringen in wachtrij voor download",
     "downloadDeleted": "Download verwijderd",
     "deleteConfirm": "\"${title}\" van dit apparaat verwijderen?",

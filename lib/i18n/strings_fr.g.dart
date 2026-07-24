@@ -1400,6 +1400,7 @@ class _Translations$downloads$fr extends Translations$downloads$en {
 	@override String get downloadQueued => 'Téléchargement en attente';
 	@override String get downloadResumed => 'Téléchargement repris';
 	@override String get serverErrorBitrate => 'Erreur du serveur : le fichier peut dépasser la limite de débit distant';
+	@override String get storageFull => 'Les téléchargements ont été arrêtés car le stockage de l’appareil est plein. Libérez de l’espace, puis réessayez.';
 	@override String episodesQueued({required Object count}) => '${count} épisodes en attente de téléchargement';
 	@override String get downloadDeleted => 'Téléchargement supprimé';
 	@override String deleteConfirm({required Object title}) => 'Supprimer « ${title} » de cet appareil ?';
@@ -3208,6 +3209,7 @@ extension on TranslationsFr {
 			'downloads.downloadQueued' => 'Téléchargement en attente',
 			'downloads.downloadResumed' => 'Téléchargement repris',
 			'downloads.serverErrorBitrate' => 'Erreur du serveur : le fichier peut dépasser la limite de débit distant',
+			'downloads.storageFull' => 'Les téléchargements ont été arrêtés car le stockage de l’appareil est plein. Libérez de l’espace, puis réessayez.',
 			'downloads.episodesQueued' => ({required Object count}) => '${count} épisodes en attente de téléchargement',
 			'downloads.downloadDeleted' => 'Téléchargement supprimé',
 			'downloads.deleteConfirm' => ({required Object title}) => 'Supprimer « ${title} » de cet appareil ?',

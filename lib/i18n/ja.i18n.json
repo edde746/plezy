@@ -1148,6 +1148,7 @@
     "downloadQueued": "ダウンロードをキューに追加しました",
     "downloadResumed": "ダウンロードを再開しました",
     "serverErrorBitrate": "サーバーエラー: ファイルがリモートビットレート制限を超えている可能性があります",
+    "storageFull": "デバイスのストレージがいっぱいのため、ダウンロードを停止しました。空き容量を確保してから、もう一度お試しください。",
     "episodesQueued": "${count}エピソードをダウンロードキューに追加しました",
     "downloadDeleted": "ダウンロードを削除しました",
     "deleteConfirm": "このデバイスから「${title}」を削除しますか？",

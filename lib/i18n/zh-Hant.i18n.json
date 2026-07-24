@@ -1148,6 +1148,7 @@
     "downloadQueued": "下載已排隊",
     "downloadResumed": "下載已繼續",
     "serverErrorBitrate": "伺服器錯誤：檔案位元率可能超過遠端位元率限制",
+    "storageFull": "裝置儲存空間已滿，因此下載已停止。請釋出空間後再試一次。",
     "episodesQueued": "已將 ${count} 集影片加入下載佇列",
     "downloadDeleted": "下載內容已刪除",
     "deleteConfirm": "確定要從此裝置刪除「${title}」嗎？",

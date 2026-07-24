@@ -1148,6 +1148,7 @@
     "downloadQueued": "다운로드 대기 중",
     "downloadResumed": "다운로드를 재개했습니다",
     "serverErrorBitrate": "서버 오류: 파일이 원격 비트레이트 제한을 초과할 수 있습니다",
+    "storageFull": "기기 저장 공간이 가득 차서 다운로드를 중지했습니다. 공간을 확보한 후 다시 시도하세요.",
     "episodesQueued": "에피소드 ${count}개가 다운로드 대기열에 추가되었습니다",
     "downloadDeleted": "다운로드 삭제됨",
     "deleteConfirm": "이 기기에서 \"${title}\"을(를) 삭제할까요?",

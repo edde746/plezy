@@ -1151,6 +1151,7 @@
     "downloadQueued": "Download queued",
     "downloadResumed": "Download resumed",
     "serverErrorBitrate": "Server error: file may exceed the remote bitrate limit",
+    "storageFull": "Downloads stopped because device storage is full. Free some space, then retry.",
     "episodesQueued": "${count} episodes queued for download",
     "downloadDeleted": "Download deleted",
     "deleteConfirm": "Delete \"${title}\" from this device?",

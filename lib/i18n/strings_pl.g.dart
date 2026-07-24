@@ -1406,6 +1406,7 @@ class _Translations$downloads$pl extends Translations$downloads$en {
 	@override String get downloadQueued => 'Pobranie w kolejce';
 	@override String get downloadResumed => 'Pobieranie wznowione';
 	@override String get serverErrorBitrate => 'Błąd serwera: plik może przekraczać zdalny limit bitrate';
+	@override String get storageFull => 'Pobieranie zostało zatrzymane, ponieważ pamięć urządzenia jest pełna. Zwolnij miejsce i spróbuj ponownie.';
 	@override String episodesQueued({required Object count}) => '${count} odcinków w kolejce pobierania';
 	@override String get downloadDeleted => 'Pobranie usunięte';
 	@override String deleteConfirm({required Object title}) => 'Usunąć "${title}" z tego urządzenia?';
@@ -3214,6 +3215,7 @@ extension on TranslationsPl {
 			'downloads.downloadQueued' => 'Pobranie w kolejce',
 			'downloads.downloadResumed' => 'Pobieranie wznowione',
 			'downloads.serverErrorBitrate' => 'Błąd serwera: plik może przekraczać zdalny limit bitrate',
+			'downloads.storageFull' => 'Pobieranie zostało zatrzymane, ponieważ pamięć urządzenia jest pełna. Zwolnij miejsce i spróbuj ponownie.',
 			'downloads.episodesQueued' => ({required Object count}) => '${count} odcinków w kolejce pobierania',
 			'downloads.downloadDeleted' => 'Pobranie usunięte',
 			'downloads.deleteConfirm' => ({required Object title}) => 'Usunąć "${title}" z tego urządzenia?',

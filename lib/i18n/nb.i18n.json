@@ -1151,6 +1151,7 @@
     "downloadQueued": "Nedlasting i kø",
     "downloadResumed": "Nedlasting gjenopptatt",
     "serverErrorBitrate": "Serverfeil: filen kan overskride grensen for ekstern bitrate",
+    "storageFull": "Nedlastingene ble stoppet fordi lagringsplassen på enheten er full. Frigjør plass, og prøv igjen.",
     "episodesQueued": "${count} episoder i nedlastingskø",
     "downloadDeleted": "Nedlasting slettet",
     "deleteConfirm": "Slette \"${title}\" fra denne enheten?",

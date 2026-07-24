@@ -1400,6 +1400,7 @@ class _Translations$downloads$sv extends Translations$downloads$en {
 	@override String get downloadQueued => 'Nedladdning köad';
 	@override String get downloadResumed => 'Nedladdning återupptagen';
 	@override String get serverErrorBitrate => 'Serverfel: filen kan överskrida serverns bithastighetsgräns';
+	@override String get storageFull => 'Nedladdningarna stoppades eftersom enhetens lagringsutrymme är fullt. Frigör utrymme och försök igen.';
 	@override String episodesQueued({required Object count}) => '${count} avsnitt köade för nedladdning';
 	@override String get downloadDeleted => 'Nedladdning borttagen';
 	@override String deleteConfirm({required Object title}) => 'Ta bort "${title}" från den här enheten?';
@@ -3208,6 +3209,7 @@ extension on TranslationsSv {
 			'downloads.downloadQueued' => 'Nedladdning köad',
 			'downloads.downloadResumed' => 'Nedladdning återupptagen',
 			'downloads.serverErrorBitrate' => 'Serverfel: filen kan överskrida serverns bithastighetsgräns',
+			'downloads.storageFull' => 'Nedladdningarna stoppades eftersom enhetens lagringsutrymme är fullt. Frigör utrymme och försök igen.',
 			'downloads.episodesQueued' => ({required Object count}) => '${count} avsnitt köade för nedladdning',
 			'downloads.downloadDeleted' => 'Nedladdning borttagen',
 			'downloads.deleteConfirm' => ({required Object title}) => 'Ta bort "${title}" från den här enheten?',

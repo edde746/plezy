@@ -1400,6 +1400,7 @@ class _Translations$downloads$nl extends Translations$downloads$en {
 	@override String get downloadQueued => 'Download in wachtrij';
 	@override String get downloadResumed => 'Download hervat';
 	@override String get serverErrorBitrate => 'Serverfout: bestand overschrijdt mogelijk de externe bitrate-limiet';
+	@override String get storageFull => 'Downloads zijn gestopt omdat de opslag van het apparaat vol is. Maak ruimte vrij en probeer het opnieuw.';
 	@override String episodesQueued({required Object count}) => '${count} afleveringen in wachtrij voor download';
 	@override String get downloadDeleted => 'Download verwijderd';
 	@override String deleteConfirm({required Object title}) => '"${title}" van dit apparaat verwijderen?';
@@ -3208,6 +3209,7 @@ extension on TranslationsNl {
 			'downloads.downloadQueued' => 'Download in wachtrij',
 			'downloads.downloadResumed' => 'Download hervat',
 			'downloads.serverErrorBitrate' => 'Serverfout: bestand overschrijdt mogelijk de externe bitrate-limiet',
+			'downloads.storageFull' => 'Downloads zijn gestopt omdat de opslag van het apparaat vol is. Maak ruimte vrij en probeer het opnieuw.',
 			'downloads.episodesQueued' => ({required Object count}) => '${count} afleveringen in wachtrij voor download',
 			'downloads.downloadDeleted' => 'Download verwijderd',
 			'downloads.deleteConfirm' => ({required Object title}) => '"${title}" van dit apparaat verwijderen?',

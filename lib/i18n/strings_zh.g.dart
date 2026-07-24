@@ -1397,6 +1397,7 @@ class Translations$downloads$zh extends Translations$downloads$en {
 	@override String get downloadQueued => '下载已排队';
 	@override String get downloadResumed => '下载已继续';
 	@override String get serverErrorBitrate => '服务器错误：文件可能超过远程比特率限制';
+	@override String get storageFull => '设备存储空间已满，因此下载已停止。请释放空间后重试。';
 	@override String episodesQueued({required Object count}) => '${count} 集已加入下载队列';
 	@override String get downloadDeleted => '下载已删除';
 	@override String deleteConfirm({required Object title}) => '要从此设备删除“${title}”吗？';
@@ -3205,6 +3206,7 @@ extension on TranslationsZh {
 			'downloads.downloadQueued' => '下载已排队',
 			'downloads.downloadResumed' => '下载已继续',
 			'downloads.serverErrorBitrate' => '服务器错误：文件可能超过远程比特率限制',
+			'downloads.storageFull' => '设备存储空间已满，因此下载已停止。请释放空间后重试。',
 			'downloads.episodesQueued' => ({required Object count}) => '${count} 集已加入下载队列',
 			'downloads.downloadDeleted' => '下载已删除',
 			'downloads.deleteConfirm' => ({required Object title}) => '要从此设备删除“${title}”吗？',

@@ -1151,6 +1151,7 @@
     "downloadQueued": "Téléchargement en attente",
     "downloadResumed": "Téléchargement repris",
     "serverErrorBitrate": "Erreur du serveur : le fichier peut dépasser la limite de débit distant",
+    "storageFull": "Les téléchargements ont été arrêtés car le stockage de l’appareil est plein. Libérez de l’espace, puis réessayez.",
     "episodesQueued": "${count} épisodes en attente de téléchargement",
     "downloadDeleted": "Téléchargement supprimé",
     "deleteConfirm": "Supprimer « ${title} » de cet appareil ?",

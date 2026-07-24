@@ -1400,6 +1400,7 @@ class _Translations$downloads$hu extends Translations$downloads$en {
 	@override String get downloadQueued => 'Letöltés sorba állítva';
 	@override String get downloadResumed => 'Letöltés folytatva';
 	@override String get serverErrorBitrate => 'Szerverhiba: a fájl meghaladhatja a távoli bitrátakorlátot';
+	@override String get storageFull => 'A letöltések leálltak, mert az eszköz tárhelye megtelt. Szabadíts fel helyet, majd próbáld újra.';
 	@override String episodesQueued({required Object count}) => '${count} epizód letöltésre sorba állítva';
 	@override String get downloadDeleted => 'Letöltés törölve';
 	@override String deleteConfirm({required Object title}) => 'Törlöd a következőt: "${title}" erről az eszközről?';
@@ -3208,6 +3209,7 @@ extension on TranslationsHu {
 			'downloads.downloadQueued' => 'Letöltés sorba állítva',
 			'downloads.downloadResumed' => 'Letöltés folytatva',
 			'downloads.serverErrorBitrate' => 'Szerverhiba: a fájl meghaladhatja a távoli bitrátakorlátot',
+			'downloads.storageFull' => 'A letöltések leálltak, mert az eszköz tárhelye megtelt. Szabadíts fel helyet, majd próbáld újra.',
 			'downloads.episodesQueued' => ({required Object count}) => '${count} epizód letöltésre sorba állítva',
 			'downloads.downloadDeleted' => 'Letöltés törölve',
 			'downloads.deleteConfirm' => ({required Object title}) => 'Törlöd a következőt: "${title}" erről az eszközről?',

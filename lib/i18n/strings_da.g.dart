@@ -1400,6 +1400,7 @@ class _Translations$downloads$da extends Translations$downloads$en {
 	@override String get downloadQueued => 'Download i kø';
 	@override String get downloadResumed => 'Download genoptaget';
 	@override String get serverErrorBitrate => 'Serverfejl: filen overskrider muligvis grænsen for ekstern bitrate';
+	@override String get storageFull => 'Downloads blev stoppet, fordi enhedens lagerplads er fuld. Frigør plads, og prøv igen.';
 	@override String episodesQueued({required Object count}) => '${count} episoder i downloadkø';
 	@override String get downloadDeleted => 'Download slettet';
 	@override String deleteConfirm({required Object title}) => 'Slet "${title}" fra denne enhed?';
@@ -3208,6 +3209,7 @@ extension on TranslationsDa {
 			'downloads.downloadQueued' => 'Download i kø',
 			'downloads.downloadResumed' => 'Download genoptaget',
 			'downloads.serverErrorBitrate' => 'Serverfejl: filen overskrider muligvis grænsen for ekstern bitrate',
+			'downloads.storageFull' => 'Downloads blev stoppet, fordi enhedens lagerplads er fuld. Frigør plads, og prøv igen.',
 			'downloads.episodesQueued' => ({required Object count}) => '${count} episoder i downloadkø',
 			'downloads.downloadDeleted' => 'Download slettet',
 			'downloads.deleteConfirm' => ({required Object title}) => 'Slet "${title}" fra denne enhed?',

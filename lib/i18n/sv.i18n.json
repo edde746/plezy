@@ -1151,6 +1151,7 @@
     "downloadQueued": "Nedladdning köad",
     "downloadResumed": "Nedladdning återupptagen",
     "serverErrorBitrate": "Serverfel: filen kan överskrida serverns bithastighetsgräns",
+    "storageFull": "Nedladdningarna stoppades eftersom enhetens lagringsutrymme är fullt. Frigör utrymme och försök igen.",
     "episodesQueued": "${count} avsnitt köade för nedladdning",
     "downloadDeleted": "Nedladdning borttagen",
     "deleteConfirm": "Ta bort \"${title}\" från den här enheten?",

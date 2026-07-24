@@ -14,6 +14,7 @@ import 'package:path_provider_platform_interface/path_provider_platform_interfac
 import 'package:plezy/database/app_database.dart';
 import 'package:plezy/database/download_operations.dart';
 import 'package:plezy/exceptions/media_server_exceptions.dart';
+import 'package:plezy/i18n/strings.g.dart';
 import 'package:plezy/media/download_resolution.dart';
 import 'package:plezy/media/media_backend.dart';
 import 'package:plezy/media/media_item.dart';
@@ -1285,6 +1286,60 @@ void main() {
           const _ContainerDeletionResult(rowDeleted: true, cacheDeleted: true, directoryDeleted: true),
         );
       }
+    });
+  });
+
+  group('storage exhaustion', () {
+    test('filesystem-full failure stops every active download and clears the queue', () async {
+      final db = AppDatabase.forTesting(NativeDatabase.memory());
+      addTearDown(db.close);
+      const currentKey = 'srv:item-1';
+      const queuedKey = 'srv:item-2';
+
+      await db.insertDownload(
+        serverId: ServerId('srv'),
+        ratingKey: 'item-1',
+        globalKey: currentKey,
+        type: 'movie',
+        status: DownloadStatus.downloading.index,
+      );
+      await db.updateBgTaskId(currentKey, 'current-task');
+      await db.addToQueue(mediaGlobalKey: currentKey);
+      await db.insertDownload(
+        serverId: ServerId('srv'),
+        ratingKey: 'item-2',
+        globalKey: queuedKey,
+        type: 'movie',
+        status: DownloadStatus.queued.index,
+      );
+      await db.updateBgTaskId(queuedKey, 'queued-task');
+      await db.addToQueue(mediaGlobalKey: queuedKey);
+
+      final manager = DownloadManagerService(
+        database: db,
+        storageService: DownloadStorageService.instance,
+        clientResolver: (serverId, {clientScopeId}) => null,
+        downloadsSupportedOverride: false,
+      );
+      addTearDown(manager.dispose);
+
+      await manager.debugHandleTaskStatus(
+        TaskStatusUpdate(
+          _downloadTask('current-task', currentKey),
+          TaskStatus.failed,
+          TaskFileSystemException('write failed: ENOSPC (No space left on device)'),
+        ),
+      );
+
+      final current = await db.getDownloadedMedia(currentKey);
+      final queued = await db.getDownloadedMedia(queuedKey);
+      expect(current?.status, DownloadStatus.failed.index);
+      expect(queued?.status, DownloadStatus.failed.index);
+      expect(current?.bgTaskId, isNull);
+      expect(queued?.bgTaskId, isNull);
+      expect(current?.errorMessage, t.downloads.storageFull);
+      expect(queued?.errorMessage, t.downloads.storageFull);
+      expect(await db.select(db.downloadQueue).get(), isEmpty);
     });
   });
 

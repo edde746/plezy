@@ -1151,6 +1151,7 @@
     "downloadQueued": "Descarga en cola",
     "downloadResumed": "Descarga reanudada",
     "serverErrorBitrate": "Error del servidor: el archivo puede superar el límite remoto de tasa de bits",
+    "storageFull": "Las descargas se detuvieron porque el almacenamiento del dispositivo está lleno. Libera espacio e inténtalo de nuevo.",
     "episodesQueued": "${count} episodios en cola para descargar",
     "downloadDeleted": "Descarga eliminada",
     "deleteConfirm": "¿Eliminar \"${title}\" de este dispositivo?",

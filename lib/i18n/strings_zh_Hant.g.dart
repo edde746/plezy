@@ -1398,6 +1398,7 @@ class _Translations$downloads$zh_Hant extends Translations$downloads$zh {
 	@override String get downloadQueued => '下載已排隊';
 	@override String get downloadResumed => '下載已繼續';
 	@override String get serverErrorBitrate => '伺服器錯誤：檔案位元率可能超過遠端位元率限制';
+	@override String get storageFull => '裝置儲存空間已滿，因此下載已停止。請釋出空間後再試一次。';
 	@override String episodesQueued({required Object count}) => '已將 ${count} 集影片加入下載佇列';
 	@override String get downloadDeleted => '下載內容已刪除';
 	@override String deleteConfirm({required Object title}) => '確定要從此裝置刪除「${title}」嗎？';
@@ -3206,6 +3207,7 @@ extension on TranslationsZhHant {
 			'downloads.downloadQueued' => '下載已排隊',
 			'downloads.downloadResumed' => '下載已繼續',
 			'downloads.serverErrorBitrate' => '伺服器錯誤：檔案位元率可能超過遠端位元率限制',
+			'downloads.storageFull' => '裝置儲存空間已滿，因此下載已停止。請釋出空間後再試一次。',
 			'downloads.episodesQueued' => ({required Object count}) => '已將 ${count} 集影片加入下載佇列',
 			'downloads.downloadDeleted' => '下載內容已刪除',
 			'downloads.deleteConfirm' => ({required Object title}) => '確定要從此裝置刪除「${title}」嗎？',

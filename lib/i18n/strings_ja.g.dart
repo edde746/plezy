@@ -1397,6 +1397,7 @@ class _Translations$downloads$ja extends Translations$downloads$en {
 	@override String get downloadQueued => 'ダウンロードをキューに追加しました';
 	@override String get downloadResumed => 'ダウンロードを再開しました';
 	@override String get serverErrorBitrate => 'サーバーエラー: ファイルがリモートビットレート制限を超えている可能性があります';
+	@override String get storageFull => 'デバイスのストレージがいっぱいのため、ダウンロードを停止しました。空き容量を確保してから、もう一度お試しください。';
 	@override String episodesQueued({required Object count}) => '${count}エピソードをダウンロードキューに追加しました';
 	@override String get downloadDeleted => 'ダウンロードを削除しました';
 	@override String deleteConfirm({required Object title}) => 'このデバイスから「${title}」を削除しますか？';
@@ -3205,6 +3206,7 @@ extension on TranslationsJa {
 			'downloads.downloadQueued' => 'ダウンロードをキューに追加しました',
 			'downloads.downloadResumed' => 'ダウンロードを再開しました',
 			'downloads.serverErrorBitrate' => 'サーバーエラー: ファイルがリモートビットレート制限を超えている可能性があります',
+			'downloads.storageFull' => 'デバイスのストレージがいっぱいのため、ダウンロードを停止しました。空き容量を確保してから、もう一度お試しください。',
 			'downloads.episodesQueued' => ({required Object count}) => '${count}エピソードをダウンロードキューに追加しました',
 			'downloads.downloadDeleted' => 'ダウンロードを削除しました',
 			'downloads.deleteConfirm' => ({required Object title}) => 'このデバイスから「${title}」を削除しますか？',

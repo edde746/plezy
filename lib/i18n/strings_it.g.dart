@@ -1400,6 +1400,7 @@ class _Translations$downloads$it extends Translations$downloads$en {
 	@override String get downloadQueued => 'Download in coda';
 	@override String get downloadResumed => 'Download ripreso';
 	@override String get serverErrorBitrate => 'Errore server: il file può superare il limite di bitrate remoto';
+	@override String get storageFull => 'I download sono stati interrotti perché lo spazio di archiviazione del dispositivo è esaurito. Libera spazio e riprova.';
 	@override String episodesQueued({required Object count}) => '${count} episodi in coda per il download';
 	@override String get downloadDeleted => 'Download eliminato';
 	@override String deleteConfirm({required Object title}) => 'Eliminare "${title}" da questo dispositivo?';
@@ -3208,6 +3209,7 @@ extension on TranslationsIt {
 			'downloads.downloadQueued' => 'Download in coda',
 			'downloads.downloadResumed' => 'Download ripreso',
 			'downloads.serverErrorBitrate' => 'Errore server: il file può superare il limite di bitrate remoto',
+			'downloads.storageFull' => 'I download sono stati interrotti perché lo spazio di archiviazione del dispositivo è esaurito. Libera spazio e riprova.',
 			'downloads.episodesQueued' => ({required Object count}) => '${count} episodi in coda per il download',
 			'downloads.downloadDeleted' => 'Download eliminato',
 			'downloads.deleteConfirm' => ({required Object title}) => 'Eliminare "${title}" da questo dispositivo?',

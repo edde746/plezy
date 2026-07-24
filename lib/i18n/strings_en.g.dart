@@ -3330,6 +3330,9 @@ class Translations$downloads$en {
 	/// en: 'Server error: file may exceed the remote bitrate limit'
 	String get serverErrorBitrate => 'Server error: file may exceed the remote bitrate limit';
 
+	/// en: 'Downloads stopped because device storage is full. Free some space, then retry.'
+	String get storageFull => 'Downloads stopped because device storage is full. Free some space, then retry.';
+
 	/// en: '${count} episodes queued for download'
 	String episodesQueued({required Object count}) => '${count} episodes queued for download';
 
@@ -6101,6 +6104,7 @@ extension on Translations {
 			'downloads.downloadQueued' => 'Download queued',
 			'downloads.downloadResumed' => 'Download resumed',
 			'downloads.serverErrorBitrate' => 'Server error: file may exceed the remote bitrate limit',
+			'downloads.storageFull' => 'Downloads stopped because device storage is full. Free some space, then retry.',
 			'downloads.episodesQueued' => ({required Object count}) => '${count} episodes queued for download',
 			'downloads.downloadDeleted' => 'Download deleted',
 			'downloads.deleteConfirm' => ({required Object title}) => 'Delete "${title}" from this device?',

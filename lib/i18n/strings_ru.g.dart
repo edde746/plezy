@@ -1406,6 +1406,7 @@ class _Translations$downloads$ru extends Translations$downloads$en {
 	@override String get downloadQueued => 'Загрузка поставлена в очередь';
 	@override String get downloadResumed => 'Загрузка возобновлена';
 	@override String get serverErrorBitrate => 'Ошибка сервера: файл может превышать установленное на сервере ограничение битрейта';
+	@override String get storageFull => 'Загрузки остановлены, так как хранилище устройства заполнено. Освободите место и повторите попытку.';
 	@override String episodesQueued({required Object count}) => '${count} эпизодов поставлено в очередь загрузки';
 	@override String get downloadDeleted => 'Загрузка удалена';
 	@override String deleteConfirm({required Object title}) => 'Удалить "${title}" с этого устройства?';
@@ -3214,6 +3215,7 @@ extension on TranslationsRu {
 			'downloads.downloadQueued' => 'Загрузка поставлена в очередь',
 			'downloads.downloadResumed' => 'Загрузка возобновлена',
 			'downloads.serverErrorBitrate' => 'Ошибка сервера: файл может превышать установленное на сервере ограничение битрейта',
+			'downloads.storageFull' => 'Загрузки остановлены, так как хранилище устройства заполнено. Освободите место и повторите попытку.',
 			'downloads.episodesQueued' => ({required Object count}) => '${count} эпизодов поставлено в очередь загрузки',
 			'downloads.downloadDeleted' => 'Загрузка удалена',
 			'downloads.deleteConfirm' => ({required Object title}) => 'Удалить "${title}" с этого устройства?',

@@ -1,8 +1,15 @@
 import 'dart:async';
+import 'dart:io';
 
+import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:plezy/database/app_database.dart';
+import 'package:plezy/database/download_operations.dart';
+import 'package:plezy/database/tvos_database_recovery_store.dart';
 import 'package:plezy/main.dart';
+import 'package:plezy/media/ids.dart';
+import 'package:plezy/models/download_models.dart';
 
 void main() {
   testWidgets('renders a Flutter frame before starting the initialization gate', (tester) async {
@@ -103,5 +110,58 @@ void main() {
 
     expect(discarded, [9]);
     expect(find.text('ready 9'), findsNothing);
+  });
+
+  test('storage-full database open discards native work before retrying', () async {
+    final database = AppDatabase.forTesting(NativeDatabase.memory());
+    addTearDown(database.close);
+    await database.insertDownload(
+      serverId: ServerId('srv'),
+      ratingKey: 'active',
+      globalKey: 'srv:active',
+      type: 'movie',
+      status: DownloadStatus.downloading.index,
+    );
+    await database.updateBgTaskId('srv:active', 'native-task');
+    await database.addToQueue(mediaGlobalKey: 'srv:active');
+    await database.insertDownload(
+      serverId: ServerId('srv'),
+      ratingKey: 'complete',
+      globalKey: 'srv:complete',
+      type: 'movie',
+      status: DownloadStatus.completed.index,
+    );
+
+    var openAttempts = 0;
+    var recoveries = 0;
+    final bootstrap = AppDatabaseBootstrap(
+      database: database,
+      recoveryOutcome: TvosDatabaseRecoveryOutcome.notApplicable,
+    );
+
+    final result = await openAppDatabaseWithDownloadRecovery(
+      openDatabase: () async {
+        openAttempts++;
+        if (openAttempts == 1) {
+          throw const FileSystemException('write failed: No space left on device');
+        }
+        return bootstrap;
+      },
+      recoverNativeDownloads: () async {
+        recoveries++;
+      },
+      storageFullMessage: 'Storage full',
+    );
+
+    final active = await database.getDownloadedMedia('srv:active');
+    final complete = await database.getDownloadedMedia('srv:complete');
+    expect(result, same(bootstrap));
+    expect(openAttempts, 2);
+    expect(recoveries, 1);
+    expect(active?.status, DownloadStatus.failed.index);
+    expect(active?.bgTaskId, isNull);
+    expect(active?.errorMessage, 'Storage full');
+    expect(complete?.status, DownloadStatus.completed.index);
+    expect(await database.select(database.downloadQueue).get(), isEmpty);
   });
 }

@@ -64,6 +64,7 @@ import 'package:connectivity_plus/connectivity_plus.dart';
 import 'services/jellyfin_api_cache.dart';
 import 'services/plex_api_cache.dart';
 import 'database/app_database.dart';
+import 'database/download_operations.dart';
 import 'database/tvos_database_recovery_store.dart';
 import 'screens/video_player_screen.dart';
 import 'utils/app_logger.dart';
@@ -82,6 +83,7 @@ import 'utils/navigation_transitions.dart';
 import 'utils/log_redaction_manager.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'utils/android_exit_diagnostics.dart';
+import 'utils/storage_failure.dart';
 
 const bool _enableSentry = bool.fromEnvironment('ENABLE_SENTRY', defaultValue: false);
 const String _sentryDsn = 'https://6a1a6ef8c72140099b2798973c1bfb2f@bugs.plezy.app/1';
@@ -349,6 +351,30 @@ class _StartupDependencies {
   final TvosDatabaseRecoveryOutcome databaseRecoveryOutcome;
 }
 
+@visibleForTesting
+Future<AppDatabaseBootstrap> openAppDatabaseWithDownloadRecovery({
+  required Future<AppDatabaseBootstrap> Function() openDatabase,
+  required Future<void> Function() recoverNativeDownloads,
+  required String storageFullMessage,
+}) async {
+  try {
+    return await openDatabase();
+  } catch (error, stackTrace) {
+    if (!isStorageFullError(error)) rethrow;
+    appLogger.w(
+      'Application database could not open because storage is full; discarding interrupted downloads',
+      error: error,
+      stackTrace: stackTrace,
+    );
+  }
+
+  await recoverNativeDownloads();
+  final bootstrap = await openDatabase();
+  final failedCount = await bootstrap.database.failActiveDownloadsForStorageFull(storageFullMessage);
+  appLogger.w('Recovered startup after storage exhaustion; stopped $failedCount active download(s)');
+  return bootstrap;
+}
+
 Future<_StartupDependencies> _initializeStartup(SettingsService settings) async {
   final startupWatch = Stopwatch()..start();
   var lastStartupMarkMs = 0;
@@ -386,7 +412,11 @@ Future<_StartupDependencies> _initializeStartup(SettingsService settings) async 
     markStartupPhase('platform-services');
 
     AndroidExitDiagnostics.markStartupPhase(AndroidStartupPhase.databaseOpenStarted);
-    final databaseBootstrap = await AppDatabase.open(isTvos: PlatformDetector.isAppleTV());
+    final databaseBootstrap = await openAppDatabaseWithDownloadRecovery(
+      openDatabase: () => AppDatabase.open(isTvos: PlatformDetector.isAppleTV()),
+      recoverNativeDownloads: DownloadManagerService.discardInterruptedNativeDownloadsAfterStorageFailure,
+      storageFullMessage: t.downloads.storageFull,
+    );
     openedDatabase = databaseBootstrap.database;
     AndroidExitDiagnostics.markStartupPhase(AndroidStartupPhase.databaseReady);
     markStartupPhase('database-recovery');
@@ -516,13 +546,7 @@ FutureOr<SentryEvent?> _beforeSend(SentryEvent event, Hint _) {
         return true;
       }
       // Device out of disk space
-      if (v != null &&
-          (v.contains('SQLITE_FULL') ||
-              v.contains('No space left on device') ||
-              v.contains('errno = 112') ||
-              v.contains('database or disk is full'))) {
-        return true;
-      }
+      if (isStorageFullMessage(v)) return true;
       // Native HTTP errors from CFNetwork (server errors, not actionable)
       if (e.type == 'HTTPClientError') return true;
       // Benign EventChannel teardown race: the engine replies this when a

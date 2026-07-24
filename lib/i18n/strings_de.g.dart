@@ -1400,6 +1400,7 @@ class _Translations$downloads$de extends Translations$downloads$en {
 	@override String get downloadQueued => 'Download in Warteschlange';
 	@override String get downloadResumed => 'Download fortgesetzt';
 	@override String get serverErrorBitrate => 'Serverfehler: Datei überschreitet möglicherweise das Remote-Bitrate-Limit';
+	@override String get storageFull => 'Die Downloads wurden angehalten, weil der Gerätespeicher voll ist. Gib Speicherplatz frei und versuche es erneut.';
 	@override String episodesQueued({required Object count}) => '${count} Episoden zum Download hinzugefügt';
 	@override String get downloadDeleted => 'Download gelöscht';
 	@override String deleteConfirm({required Object title}) => '"${title}" von diesem Gerät löschen?';
@@ -3208,6 +3209,7 @@ extension on TranslationsDe {
 			'downloads.downloadQueued' => 'Download in Warteschlange',
 			'downloads.downloadResumed' => 'Download fortgesetzt',
 			'downloads.serverErrorBitrate' => 'Serverfehler: Datei überschreitet möglicherweise das Remote-Bitrate-Limit',
+			'downloads.storageFull' => 'Die Downloads wurden angehalten, weil der Gerätespeicher voll ist. Gib Speicherplatz frei und versuche es erneut.',
 			'downloads.episodesQueued' => ({required Object count}) => '${count} Episoden zum Download hinzugefügt',
 			'downloads.downloadDeleted' => 'Download gelöscht',
 			'downloads.deleteConfirm' => ({required Object title}) => '"${title}" von diesem Gerät löschen?',

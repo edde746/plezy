@@ -35,6 +35,7 @@ import '../utils/serial_future_queue.dart';
 import '../utils/active_client_scope.dart';
 import '../utils/codec_utils.dart';
 import '../utils/global_key_utils.dart';
+import '../utils/storage_failure.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 
 typedef MediaClientResolver = MediaServerClient? Function(ServerId serverId, {String? clientScopeId});
@@ -142,6 +143,7 @@ class DownloadManagerService {
   bool _isProcessingQueue = false;
   bool _isRepairingArtwork = false;
   bool _disposed = false;
+  bool _queueBlockedByStorageFailure = false;
   bool _loggedDownloadsUnsupported = false;
 
   // Debounce timers for DB progress writes (keyed by globalKey).
@@ -162,6 +164,22 @@ class DownloadManagerService {
 
   @visibleForTesting
   static bool downloadsSupportedFor({required bool tvosBuild}) => !tvosBuild;
+
+  /// Cancels native work and discards resumable partial files so startup can
+  /// recover enough space to reopen the application database.
+  static Future<void> discardInterruptedNativeDownloadsAfterStorageFailure() async {
+    final downloader = FileDownloader();
+    try {
+      await downloader.reset(group: _downloadGroup);
+    } catch (error, stackTrace) {
+      appLogger.w('Failed to cancel native downloads during storage recovery', error: error, stackTrace: stackTrace);
+    }
+    try {
+      await downloader.database.deleteAllRecords(group: _downloadGroup);
+    } catch (error, stackTrace) {
+      appLogger.w('Failed to discard partial downloads during storage recovery', error: error, stackTrace: stackTrace);
+    }
+  }
 
   static Future<bool> shouldBlockDownloadOnCellular() async {
     final List<ConnectivityResult> connectivity;
@@ -1465,6 +1483,7 @@ class DownloadManagerService {
     int mediaIndex = 0,
   }) async {
     if (_skipDownloadsUnsupported('queue download')) return;
+    _resumeQueueAfterStorageFailure('new download');
 
     final globalKey = metadata.globalKey;
 
@@ -1511,7 +1530,7 @@ class DownloadManagerService {
   /// Process the download queue — prepares and enqueues items with background_downloader.
   /// Non-blocking: returns after all queued items are enqueued (downloads run natively).
   Future<void> _processQueue(MediaServerClient client) async {
-    if (_skipDownloadsUnsupported('download queue processing')) return;
+    if (_skipDownloadsUnsupported('download queue processing') || _queueBlockedByStorageFailure) return;
     final queueProcessorOverride = _queueProcessorOverride;
     if (queueProcessorOverride != null) {
       _fallbackClient = client;
@@ -1525,7 +1544,7 @@ class DownloadManagerService {
     try {
       await (_fileDownloaderInitializerOverride?.call() ?? _initializeFileDownloader());
 
-      while (true) {
+      while (!_queueBlockedByStorageFailure) {
         if (_consecutiveQueueFailures >= _maxConsecutiveFailures) {
           appLogger.w('Circuit breaker: $_consecutiveQueueFailures consecutive failures, pausing queue');
           break;
@@ -1677,6 +1696,7 @@ class DownloadManagerService {
   ) async {
     if (_skipDownloadsUnsupported('download enqueue')) return false;
     if (_cancellingKeys.contains(globalKey)) return true;
+    if (_queueBlockedByStorageFailure) return true;
 
     try {
       // Guard: don't re-enqueue an item that's already completed or was deleted
@@ -1697,6 +1717,7 @@ class DownloadManagerService {
         await _database.removeFromQueue(globalKey);
         return true;
       }
+      if (_queueBlockedByStorageFailure) return true;
       await _transitionStatus(globalKey, DownloadStatus.downloading);
 
       final parsed = parseGlobalKey(globalKey);
@@ -1770,6 +1791,7 @@ class DownloadManagerService {
       final MediaItem resolvedMetadata = metadata;
 
       final becameInactive = await _serializeSafOwnership(() async {
+        if (_queueBlockedByStorageFailure) return true;
         final metadata = resolvedMetadata;
         final safBaseUri = _storageService.safBaseUri;
         if (_storageService.isUsingSaf && safBaseUri != null) {
@@ -2026,7 +2048,7 @@ class DownloadManagerService {
         case TaskStatus.complete:
           await _onDownloadComplete(globalKey, update.task);
         case TaskStatus.failed:
-          await _onDownloadFailed(globalKey, update.task.taskId, update.exception?.description ?? 'Download failed');
+          await _onDownloadFailed(globalKey, update.task.taskId, update.exception);
         case TaskStatus.notFound:
           await _onDownloadPermanentlyFailed(globalKey, update.task.taskId, 'File not found (404)');
         case TaskStatus.canceled:
@@ -2072,6 +2094,43 @@ class DownloadManagerService {
     await _requeueDownload(globalKey);
   }
 
+  void _resumeQueueAfterStorageFailure(String operation) {
+    if (!_queueBlockedByStorageFailure) return;
+    appLogger.i('Resuming download queue after storage failure: $operation');
+    _queueBlockedByStorageFailure = false;
+    _consecutiveQueueFailures = 0;
+  }
+
+  Future<void> _handleStorageFullFailure(String globalKey, String taskId) async {
+    _queueBlockedByStorageFailure = true;
+    for (final timer in _autoRetryTimers.values) {
+      timer.cancel();
+    }
+    _autoRetryTimers.clear();
+
+    if (downloadsSupported) {
+      try {
+        await FileDownloader().database.deleteRecordWithId(taskId);
+      } catch (error, stackTrace) {
+        appLogger.w('Failed to discard partial download for $globalKey', error: error, stackTrace: stackTrace);
+      }
+      try {
+        await FileDownloader().reset(group: _downloadGroup);
+      } catch (error, stackTrace) {
+        appLogger.w(
+          'Failed to stop native download queue after storage exhaustion',
+          error: error,
+          stackTrace: stackTrace,
+        );
+      }
+    }
+
+    final errorMessage = t.downloads.storageFull;
+    final failedCount = await _database.failActiveDownloadsForStorageFull(errorMessage);
+    _emitProgress(globalKey, DownloadStatus.failed, 0, errorMessage: errorMessage);
+    appLogger.e('Device storage exhausted; stopped $failedCount active download(s)');
+  }
+
   bool _isRetryablePrepareFailure(Object error) {
     if (error is! MediaServerHttpException || error.isCancellation) return false;
     final status = error.statusCode;
@@ -2101,9 +2160,13 @@ class DownloadManagerService {
     if (processQueueAfterProgress) unawaited(_processQueue(client));
   }
 
-  /// Handle a failed download — auto-retry if retries remain, otherwise permanently fail.
-  /// Native retries (Range-based resume) are already exhausted at this point.
-  Future<void> _onDownloadFailed(String globalKey, String taskId, String errorMessage) async {
+  bool _isStorageFullDownloadFailure(TaskException? exception) {
+    return exception != null && isStorageFullMessage(exception.description);
+  }
+
+  /// Handle a failed download — stop the queue on storage exhaustion,
+  /// otherwise auto-retry if retries remain.
+  Future<void> _onDownloadFailed(String globalKey, String taskId, TaskException? exception) async {
     if (_cancellingKeys.contains(globalKey)) {
       appLogger.d('Ignoring failure for $globalKey: cancellation in progress');
       return;
@@ -2122,6 +2185,11 @@ class DownloadManagerService {
     if (existing == null) return;
     _cancelDownloadTimers(globalKey);
     _pendingDownloadContext.remove(globalKey);
+    if (_isStorageFullDownloadFailure(exception)) {
+      await _handleStorageFullFailure(globalKey, taskId);
+      return;
+    }
+    final errorMessage = exception?.description ?? 'Download failed';
     final retryCount = existing.retryCount;
 
     // DNS/connection errors fail instantly and exhaust native retries in milliseconds,
@@ -2663,6 +2731,7 @@ class DownloadManagerService {
   /// Resume a paused download
   Future<void> resumeDownload(String globalKey, MediaServerClient client) async {
     if (_skipDownloadsUnsupported('download resume')) return;
+    _resumeQueueAfterStorageFailure('manual resume');
 
     final bgTaskId = await _database.getBgTaskId(globalKey);
 
@@ -2714,6 +2783,7 @@ class DownloadManagerService {
   /// Retry a failed download
   Future<void> retryDownload(String globalKey, MediaServerClient client) async {
     if (_skipDownloadsUnsupported('download retry')) return;
+    _resumeQueueAfterStorageFailure('manual retry');
 
     _autoRetryTimers.remove(globalKey)?.cancel();
     await _cleanupStaleDownload(globalKey);

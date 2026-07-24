@@ -504,6 +504,30 @@ extension DownloadDatabaseOperations on AppDatabase {
     return rows.map((row) => row.readTable(downloadQueue)).toList(growable: false);
   }
 
+  /// Fails every queued or active download after the target filesystem fills.
+  ///
+  /// Clearing native task ids and queue rows prevents startup recovery from
+  /// immediately re-enqueueing work after partial files have been discarded.
+  Future<int> failActiveDownloadsForStorageFull(String errorMessage) {
+    return transaction(() async {
+      final active = await (select(
+        downloadedMedia,
+      )..where((row) => row.status.isIn([DownloadStatus.queued.index, DownloadStatus.downloading.index]))).get();
+      if (active.isEmpty) return 0;
+
+      final globalKeys = active.map((item) => item.globalKey).toList(growable: false);
+      await (update(downloadedMedia)..where((row) => row.globalKey.isIn(globalKeys))).write(
+        DownloadedMediaCompanion(
+          status: Value(DownloadStatus.failed.index),
+          bgTaskId: const Value(null),
+          errorMessage: Value(errorMessage),
+        ),
+      );
+      await (delete(downloadQueue)..where((row) => row.mediaGlobalKey.isIn(globalKeys))).go();
+      return globalKeys.length;
+    });
+  }
+
   Future<void> updateDownloadStatus(String globalKey, int status) async {
     await (update(
       downloadedMedia,
