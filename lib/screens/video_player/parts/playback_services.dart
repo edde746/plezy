@@ -390,6 +390,18 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
         playMethod: effectivePlayMethod,
         playSessionId: playSessionId,
         mediaInfo: mediaInfo,
+        resolveSourceSubtitleChoice: metadata.backend == MediaBackend.jellyfin
+            ? () {
+                final session = _playbackSession;
+                if (session == null || session.metadata.globalKey != metadata.globalKey) return null;
+                if (session.mediaInfo?.mediaSourceId != mediaInfo?.mediaSourceId) return null;
+
+                final selection = session.subtitleSelection;
+                if (selection.isOff) return const PlaybackSourceSubtitleChoice.off();
+                final sourceStreamId = selection.primarySourceStreamId;
+                return sourceStreamId == null ? null : PlaybackSourceSubtitleChoice.source(sourceStreamId);
+              }
+            : null,
         onPausedKeepalive: mediaClient is PlexClient && effectivePlayMethod == 'Transcode'
             ? () => mediaClient.pingTranscodeSession(_playbackTranscodeSessionId)
             : null,
