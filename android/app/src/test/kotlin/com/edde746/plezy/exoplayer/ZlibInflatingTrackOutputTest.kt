@@ -35,7 +35,7 @@ class ZlibInflatingTrackOutputTest {
       compressed.size - split,
       TrackOutput.SAMPLE_DATA_PART_MAIN
     )
-    output.sampleMetadata(42L, C.BUFFER_FLAG_KEY_FRAME, compressed.size, 7, null)
+    output.sampleMetadata(42L, C.BUFFER_FLAG_KEY_FRAME, compressed.size, 0, null)
 
     assertArrayEquals(original, delegate.retained.toByteArray())
     assertEquals(42L, delegate.timeUs)
@@ -43,6 +43,24 @@ class ZlibInflatingTrackOutputTest {
     assertEquals(original.size, delegate.sampleSize)
     assertEquals(0, delegate.offset)
     assertEquals(1, delegate.metadataCount)
+  }
+
+  @Test
+  fun activeTransformUsesMetadataBoundariesForBufferedSamples() {
+    val first = ByteArray(4096) { (it % 19).toByte() }
+    val second = ByteArray(2048) { (it % 23).toByte() }
+    val firstCompressed = deflate(first)
+    val secondCompressed = deflate(second)
+    val combined = firstCompressed + secondCompressed
+    val delegate = RecordingTrackOutput(retainBytes = true)
+    val output = ZlibInflatingTrackOutput(delegate).apply { active = true }
+
+    output.sampleData(ParsableByteArray(combined), combined.size, TrackOutput.SAMPLE_DATA_PART_MAIN)
+    output.sampleMetadata(1, 0, firstCompressed.size, secondCompressed.size, null)
+    output.sampleMetadata(2, 0, secondCompressed.size, 0, null)
+
+    assertArrayEquals(first + second, delegate.retained.toByteArray())
+    assertEquals(2, delegate.metadataCount)
   }
 
   @Test
@@ -120,15 +138,17 @@ class ZlibInflatingTrackOutputTest {
   @Test
   fun inactiveWrapperDelegatesBytesAndMetadataUnchanged() {
     val bytes = byteArrayOf(9, 8, 7, 6)
+    val trailing = byteArrayOf(5, 4)
+    val allBytes = bytes + trailing
     val delegate = RecordingTrackOutput(retainBytes = true)
     val output = ZlibInflatingTrackOutput(delegate)
 
-    output.sampleData(ParsableByteArray(bytes), bytes.size, TrackOutput.SAMPLE_DATA_PART_MAIN)
-    output.sampleMetadata(99L, 3, bytes.size, 2, null)
+    output.sampleData(ParsableByteArray(allBytes), allBytes.size, TrackOutput.SAMPLE_DATA_PART_MAIN)
+    output.sampleMetadata(99L, 3, bytes.size, trailing.size, null)
 
-    assertArrayEquals(bytes, delegate.retained.toByteArray())
+    assertArrayEquals(allBytes, delegate.retained.toByteArray())
     assertEquals(bytes.size, delegate.sampleSize)
-    assertEquals(2, delegate.offset)
+    assertEquals(trailing.size, delegate.offset)
     assertEquals(99L, delegate.timeUs)
   }
 

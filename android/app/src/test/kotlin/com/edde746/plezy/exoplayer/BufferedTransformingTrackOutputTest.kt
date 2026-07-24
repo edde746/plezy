@@ -22,12 +22,71 @@ class BufferedTransformingTrackOutputTest {
 
     output.sampleData(ParsableByteArray(byteArrayOf(1, 2)), 2, TrackOutput.SAMPLE_DATA_PART_MAIN)
     output.sampleData(ParsableByteArray(byteArrayOf(3)), 1, TrackOutput.SAMPLE_DATA_PART_MAIN)
-    output.sampleMetadata(42, C.BUFFER_FLAG_KEY_FRAME, 3, 7, null)
+    output.sampleMetadata(42, C.BUFFER_FLAG_KEY_FRAME, 3, 0, null)
 
     assertArrayEquals(byteArrayOf(2, 3, 4), delegate.bytes.toByteArray())
     assertEquals(42, delegate.timeUs)
     assertEquals(3, delegate.sampleSize)
     assertEquals(0, delegate.sampleOffset)
+  }
+
+  @Test
+  fun metadataBoundsDiscardAbandonedBytesAndPreserveTrailingSample() {
+    val delegate = RecordingTrackOutput()
+    val output = IncrementingTrackOutput(delegate)
+
+    output.sampleData(ParsableByteArray(byteArrayOf(9, 9)), 2, TrackOutput.SAMPLE_DATA_PART_MAIN)
+    output.sampleData(ParsableByteArray(byteArrayOf(1, 2)), 2, TrackOutput.SAMPLE_DATA_PART_MAIN)
+    output.sampleData(ParsableByteArray(byteArrayOf(3, 4, 5)), 3, TrackOutput.SAMPLE_DATA_PART_MAIN)
+
+    output.sampleMetadata(1, C.BUFFER_FLAG_KEY_FRAME, 2, 3, null)
+    output.sampleMetadata(2, 0, 3, 0, null)
+
+    assertArrayEquals(byteArrayOf(2, 3, 4, 5, 6), delegate.bytes.toByteArray())
+    assertEquals(2, delegate.metadataCount)
+    assertEquals(2, delegate.timeUs)
+  }
+
+  @Test
+  fun droppedSamplePreservesTrailingSample() {
+    val delegate = RecordingTrackOutput()
+    val output = IncrementingTrackOutput(delegate)
+    output.sampleData(ParsableByteArray(byteArrayOf(1, 2, 3)), 3, TrackOutput.SAMPLE_DATA_PART_MAIN)
+
+    output.dropNext = true
+    output.sampleMetadata(1, 0, 1, 2, null)
+    output.sampleMetadata(2, 0, 2, 0, null)
+
+    assertArrayEquals(byteArrayOf(3, 4), delegate.bytes.toByteArray())
+    assertEquals(1, delegate.metadataCount)
+  }
+
+  @Test
+  fun resetDiscardsPendingBytesWithoutReleasingCapacity() {
+    val delegate = RecordingTrackOutput()
+    val output = IncrementingTrackOutput(delegate, maxBufferedSampleBytes = 4)
+    output.sampleData(ParsableByteArray(byteArrayOf(9, 9, 9, 9)), 4, TrackOutput.SAMPLE_DATA_PART_MAIN)
+
+    output.resetBufferedData()
+    output.sampleData(ParsableByteArray(byteArrayOf(1, 2, 3, 4)), 4, TrackOutput.SAMPLE_DATA_PART_MAIN)
+    output.sampleMetadata(1, 0, 4, 0, null)
+
+    assertArrayEquals(byteArrayOf(2, 3, 4, 5), delegate.bytes.toByteArray())
+    assertEquals(1, delegate.metadataCount)
+  }
+
+  @Test
+  fun invalidMetadataDropsBufferedBytesAndRecovers() {
+    val delegate = RecordingTrackOutput()
+    val output = IncrementingTrackOutput(delegate)
+    output.sampleData(ParsableByteArray(byteArrayOf(1, 2)), 2, TrackOutput.SAMPLE_DATA_PART_MAIN)
+
+    output.sampleMetadata(1, 0, 3, 0, null)
+    output.sampleData(ParsableByteArray(byteArrayOf(4)), 1, TrackOutput.SAMPLE_DATA_PART_MAIN)
+    output.sampleMetadata(2, 0, 1, 0, null)
+
+    assertArrayEquals(byteArrayOf(5), delegate.bytes.toByteArray())
+    assertEquals(1, delegate.metadataCount)
   }
 
   @Test
@@ -77,6 +136,7 @@ class BufferedTransformingTrackOutputTest {
     initialBufferSize = 2,
     maxBufferedSampleBytes = maxBufferedSampleBytes
   ) {
+    var dropNext = false
     private var transformed = ByteArray(2)
 
     override val transformEnabled = true
@@ -84,6 +144,10 @@ class BufferedTransformingTrackOutputTest {
       get() = transformed
 
     override fun transformSample(inputLength: Int, flags: Int): Int {
+      if (dropNext) {
+        dropNext = false
+        return -1
+      }
       if (transformed.size < inputLength) transformed = ByteArray(inputLength)
       for (index in 0 until inputLength) {
         transformed[index] = (inputBuffer[index] + 1).toByte()
@@ -97,6 +161,7 @@ class BufferedTransformingTrackOutputTest {
     var timeUs = C.TIME_UNSET
     var sampleSize = -1
     var sampleOffset = -1
+    var metadataCount = 0
 
     override fun format(format: Format) = Unit
 
@@ -125,6 +190,7 @@ class BufferedTransformingTrackOutputTest {
       offset: Int,
       cryptoData: TrackOutput.CryptoData?
     ) {
+      metadataCount++
       this.timeUs = timeUs
       sampleSize = size
       sampleOffset = offset
