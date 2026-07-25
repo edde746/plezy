@@ -59,12 +59,6 @@ enum TraktMediaKind {
   movie,
   episode;
 
-  static TraktMediaKind? tryFromMediaKindId(String type) => switch (type) {
-    'movie' => movie,
-    'episode' => episode,
-    _ => null,
-  };
-
   static TraktMediaKind fromName(String name) =>
       values.firstWhere((v) => v.name == name, orElse: () => throw ArgumentError('Unknown TraktMediaKind: $name'));
 }

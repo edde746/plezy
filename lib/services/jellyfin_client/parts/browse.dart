@@ -1190,27 +1190,6 @@ mixin _JellyfinBrowseMethods on MediaServerCacheMixin {
   }
 
   @override
-  Future<List<MediaItem>> fetchRecentlyAdded({int limit = 50}) async {
-    // Matches userLibraryApi.getLatestMedia in the Jellyfin SDK.
-    final response = await _http.get(
-      '/Users/${_segment(connection.userId)}/Items/Latest',
-      queryParameters: {
-        'Limit': limit.toString(),
-        'Fields': _browseFields,
-        'IncludeItemTypes': 'Movie,Series,Episode',
-        ...jellyfinImageQueryParameters,
-      },
-    );
-    throwIfHttpError(response);
-    final data = response.data;
-    // Latest returns a bare array, not an Items wrapper.
-    if (data is List) {
-      return _mapItems(data.whereType<Map<String, dynamic>>());
-    }
-    return _mapItems(_itemsArray(data));
-  }
-
-  @override
   Future<List<MediaItem>> fetchContinueWatching({int? count = 20}) async {
     final results = await Future.wait([
       _fetchItemsArray('/UserItems/Resume', {

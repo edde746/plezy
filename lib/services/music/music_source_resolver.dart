@@ -24,9 +24,6 @@ class MusicSource {
   /// `DirectPlay` / `Transcode` for progress reports.
   final String? playMethod;
 
-  final int selectedMediaIndex;
-  final String? selectedMediaSourceId;
-
   /// True when [url] points at a downloaded/local copy.
   final bool isOffline;
 
@@ -41,8 +38,6 @@ class MusicSource {
     this.headers,
     this.playSessionId,
     this.playMethod,
-    this.selectedMediaIndex = 0,
-    this.selectedMediaSourceId,
     this.isOffline = false,
     this.mediaInfo,
     this.reportingClient,
@@ -93,8 +88,6 @@ class ServerMusicSourceResolver implements MusicSourceResolver {
       headers: context.streamHeaders,
       playSessionId: result.playSessionId,
       playMethod: result.playMethod ?? (result.isTranscoding ? 'Transcode' : 'DirectPlay'),
-      selectedMediaIndex: result.selectedMediaIndex,
-      selectedMediaSourceId: result.selectedMediaSourceId,
       isOffline: result.isOffline,
       mediaInfo: result.mediaInfo,
       reportingClient: context.reportingClient,

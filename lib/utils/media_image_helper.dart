@@ -334,31 +334,4 @@ class MediaImageHelper {
 
     return true;
   }
-
-  /// Optimized URL for clear-logo overlays ([ImageType.logo]).
-  static String logoUrl({
-    required MediaServerClient? client,
-    required String? thumbPath,
-    required BuildContext context,
-    required double containerWidth,
-    required double containerHeight,
-  }) => _typedUrl(client, thumbPath, context, containerWidth, containerHeight, ImageType.logo);
-
-  static String _typedUrl(
-    MediaServerClient? client,
-    String? thumbPath,
-    BuildContext context,
-    double containerWidth,
-    double containerHeight,
-    ImageType type,
-  ) {
-    return getOptimizedImageUrl(
-      client: client,
-      thumbPath: thumbPath,
-      maxWidth: containerWidth,
-      maxHeight: containerHeight,
-      devicePixelRatio: effectiveDevicePixelRatio(context),
-      imageType: type,
-    );
-  }
 }

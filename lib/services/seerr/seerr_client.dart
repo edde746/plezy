@@ -145,10 +145,6 @@ class SeerrClient {
     return SeerrRequest.fromJson(data as Map<String, dynamic>);
   }
 
-  Future<void> deleteRequest(int requestId) async {
-    await _request('DELETE', '/request/$requestId');
-  }
-
   // ---------- Sonarr / Radarr options (request sheet advanced pickers) ----------
 
   Future<List<SeerrServiceInstance>> getRadarrServices() => _serviceList('/service/radarr');

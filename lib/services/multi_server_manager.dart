@@ -97,10 +97,10 @@ class MultiServerManager {
   /// Map of serverId to active optimization futures
   final Map<String, Future<void>> _activeOptimizations = {};
 
-  /// Per-server clientIdentifier. Plex servers added via [addPlexAccount]
-  /// register their owning account's clientIdentifier here so reconnects +
-  /// endpoint optimization use the right identity (each account has its own
-  /// device row on plex.tv).
+  /// Per-server clientIdentifier. Plex servers added via
+  /// [refreshTokensForProfile] register their owning account's
+  /// clientIdentifier here so reconnects + endpoint optimization use the
+  /// right identity (each account has its own device row on plex.tv).
   final Map<String, String> _clientIdByServer = {};
   final Map<String, PlexProfileScopeId> _plexScopeByServer = {};
 
@@ -497,57 +497,6 @@ class MultiServerManager {
     } else {
       client.close();
     }
-  }
-
-  /// Connect every server attached to a Plex account in parallel. Each
-  /// account has its own `clientIdentifier` (registered as a separate
-  /// device on plex.tv), and we keep that mapping per-server in
-  /// [_clientIdByServer] so subsequent reconnects + endpoint optimization
-  /// race connections from the right identity.
-  Future<int> addPlexAccount(
-    PlexAccountConnection connection, {
-    required String profileId,
-    Duration timeout = MediaServerTimeouts.perServerConnect,
-    Function(ServerId serverId, bool success)? onServerStatus,
-  }) async {
-    if (connection.servers.isEmpty) return 0;
-    appLogger.i(
-      'Connecting Plex account ${connection.accountLabel} '
-      '(${connection.servers.length} server${connection.servers.length == 1 ? '' : 's'})',
-    );
-
-    int connected = 0;
-    final futures = connection.servers.map((server) async {
-      final serverId = server.clientIdentifier;
-      final profileScopeId = buildPlexProfileScopeId(serverId: ServerId(serverId), profileId: profileId);
-      _clientIdByServer[serverId] = connection.clientIdentifier;
-      _plexServers[serverId] = server;
-      _plexScopeByServer[serverId] = profileScopeId;
-      try {
-        final client = await _createClientForServer(
-          server: server,
-          clientIdentifier: connection.clientIdentifier,
-          profileScopeId: profileScopeId,
-        ).namedTimeout(timeout, operation: 'connect to ${server.name}');
-        final oldClient = _clients[serverId];
-        if (oldClient != null) _closeClient(oldClient);
-        _clients[serverId] = client;
-        _serverStatus[serverId] = true;
-        onServerStatus?.call(ServerId(serverId), true);
-        connected++;
-      } catch (e, stackTrace) {
-        appLogger.e('Failed to connect ${server.name}', error: e, stackTrace: stackTrace);
-        _serverStatus[serverId] = false;
-        onServerStatus?.call(ServerId(serverId), false);
-      }
-    });
-
-    await Future.wait(futures);
-    _statusController.add(Map.from(_serverStatus));
-    if (connected > 0 && _connectivitySubscription == null) {
-      _startNetworkMonitoring();
-    }
-    return connected;
   }
 
   /// Apply a freshly-fetched [PlexAccountConnection] to the manager,

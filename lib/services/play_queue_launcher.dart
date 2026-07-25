@@ -28,9 +28,8 @@ export 'media_list_playback_launcher.dart'
 /// 4. Handling errors with appropriate feedback
 ///
 /// Implements [MediaListPlaybackLauncher.launchFromCollectionOrPlaylist] for
-/// the backend-neutral entry point. Plex-only flows such as
-/// [launchFromPlaylistItem] live directly on this class because they have no
-/// Jellyfin equivalent.
+/// the backend-neutral entry point. Flows outside that abstraction, such as
+/// [launchFromFolder], live directly on this class.
 class PlexPlayQueueLauncher extends MediaListPlaybackLauncher {
   final BuildContext context;
   final PlexClient client;
@@ -153,17 +152,7 @@ class PlexPlayQueueLauncher extends MediaListPlaybackLauncher {
           );
         }
 
-        // If the queue is empty, try fetching it again with getPlayQueue
-        if (playQueue != null && (playQueue.items == null || playQueue.items!.isEmpty)) {
-          final fetchedQueue = await client.getPlayQueue(
-            playQueue.playQueueID,
-            librarySectionID: sourceLibraryId,
-            librarySectionTitle: sourceLibraryTitle,
-          );
-          if (fetchedQueue != null && fetchedQueue.items != null && fetchedQueue.items!.isNotEmpty) {
-            playQueue = fetchedQueue;
-          }
-        }
+        playQueue = await _refetchIfEmpty(playQueue, libraryId: sourceLibraryId, libraryTitle: sourceLibraryTitle);
 
         // Close loading dialog before navigating to the player
         await dismissLoading();
@@ -176,40 +165,6 @@ class PlexPlayQueueLauncher extends MediaListPlaybackLauncher {
           libraryId: sourceLibraryId,
           libraryTitle: sourceLibraryTitle,
           selectedItem: selectedKey != null ? _resolveSelectedMediaItem(playQueue) : null,
-        );
-      },
-    );
-  }
-
-  /// Launch playback from a playlist starting at a specific item.
-  Future<PlayQueueResult> launchFromPlaylistItem({
-    required MediaPlaylist playlist,
-    required MediaItem selectedItem,
-    bool showLoadingIndicator = true,
-  }) async {
-    return executeWithLoading(
-      context: context,
-      showLoading: showLoadingIndicator,
-      actionLabel: t.common.play,
-      execute: (dismissLoading) async {
-        // Plex's createPlayQueue takes the metadata `key` (`/library/metadata/{id}`),
-        // not the bare ratingKey. Construct it from the MediaItem id.
-        final selectedKey = '/library/metadata/${selectedItem.id}';
-        final playQueue = await client.createPlayQueue(
-          playlistID: int.parse(playlist.id),
-          type: 'video',
-          key: selectedKey,
-        );
-
-        // Close loading dialog before navigating to the player
-        await dismissLoading();
-
-        return _launchFromQueue(
-          playQueue: playQueue,
-          ratingKey: playlist.id,
-          serverId: serverIdOrNull(serverId),
-          serverName: serverName,
-          selectedItem: _resolveSelectedMediaItem(playQueue),
         );
       },
     );
@@ -287,16 +242,7 @@ class PlexPlayQueueLauncher extends MediaListPlaybackLauncher {
           librarySectionTitle: libraryTitle,
         );
 
-        if (playQueue != null && (playQueue.items == null || playQueue.items!.isEmpty)) {
-          final fetchedQueue = await client.getPlayQueue(
-            playQueue.playQueueID,
-            librarySectionID: libraryId,
-            librarySectionTitle: libraryTitle,
-          );
-          if (fetchedQueue != null && fetchedQueue.items != null && fetchedQueue.items!.isNotEmpty) {
-            playQueue = fetchedQueue;
-          }
-        }
+        playQueue = await _refetchIfEmpty(playQueue, libraryId: libraryId, libraryTitle: libraryTitle);
 
         await dismissLoading();
 
@@ -310,6 +256,27 @@ class PlexPlayQueueLauncher extends MediaListPlaybackLauncher {
         );
       },
     );
+  }
+
+  /// Creation sometimes returns a queue without its items; re-read it by ID
+  /// and keep the refetched copy only when it actually carries items.
+  Future<PlayQueueResponse?> _refetchIfEmpty(
+    PlayQueueResponse? playQueue, {
+    String? libraryId,
+    String? libraryTitle,
+  }) async {
+    if (playQueue == null || (playQueue.items != null && playQueue.items!.isNotEmpty)) {
+      return playQueue;
+    }
+    final fetchedQueue = await client.getPlayQueue(
+      playQueue.playQueueID,
+      librarySectionID: libraryId,
+      librarySectionTitle: libraryTitle,
+    );
+    if (fetchedQueue != null && fetchedQueue.items != null && fetchedQueue.items!.isNotEmpty) {
+      return fetchedQueue;
+    }
+    return playQueue;
   }
 
   /// Core method to launch playback from a play queue.

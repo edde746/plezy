@@ -117,44 +117,4 @@ class UserSwitchResponse {
       attributionPartner: optString('attributionPartner'),
     );
   }
-
-  Map<String, dynamic> toJson() {
-    return {
-      'id': id,
-      'uuid': uuid,
-      'username': username,
-      'title': title,
-      'email': email,
-      'friendlyName': friendlyName,
-      'locale': locale,
-      'confirmed': confirmed,
-      'joinedAt': joinedAt,
-      'emailOnlyAuth': emailOnlyAuth,
-      'hasPassword': hasPassword,
-      'protected': protected,
-      'thumb': thumb,
-      'authToken': authToken,
-      'mailingListActive': mailingListActive,
-      'scrobbleTypes': scrobbleTypes,
-      'country': country,
-      'restricted': restricted,
-      'anonymous': anonymous,
-      'home': home,
-      'guest': guest,
-      'homeSize': homeSize,
-      'homeAdmin': homeAdmin,
-      'maxHomeSize': maxHomeSize,
-      'profile': profile.toJson()['profile'],
-      'twoFactorEnabled': twoFactorEnabled,
-      'backupCodesCreated': backupCodesCreated,
-      'attributionPartner': attributionPartner,
-    };
-  }
-
-  String get displayName => friendlyName ?? title;
-
-  bool get isAdminUser => homeAdmin;
-  bool get isRestrictedUser => restricted;
-  bool get isGuestUser => guest;
-  bool get requiresPassword => hasPassword;
 }

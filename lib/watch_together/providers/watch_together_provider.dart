@@ -155,11 +155,6 @@ class WatchTogetherProvider with ChangeNotifier {
   bool get hasCurrentPlayback =>
       currentMediaRatingKey != null && currentMediaServerId != null && currentMediaTitle != null;
 
-  /// Set the display name for this user
-  void setDisplayName(String name) {
-    _displayName = name;
-  }
-
   String? _buildPlaybackKey(String? ratingKey, ServerId? serverId) {
     if (ratingKey == null || serverId == null) return null;
     return '$serverId:$ratingKey';

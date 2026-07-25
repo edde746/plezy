@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:drift/drift.dart';
+import 'package:flutter/foundation.dart';
 import '../media/ids.dart';
 
 import 'app_database.dart';
@@ -138,6 +139,7 @@ extension DownloadDatabaseOperations on AppDatabase {
     return (await _validDownloadOwnerRows(globalKey)).length;
   }
 
+  @visibleForTesting
   Future<bool> hasDownloadOwner(String globalKey, {String? excludingProfileId}) async {
     final rows = await _validDownloadOwnerRows(globalKey, excludingProfileId: excludingProfileId);
     return rows.isNotEmpty;
@@ -573,6 +575,7 @@ extension DownloadDatabaseOperations on AppDatabase {
     return (await query.map((row) => row.read(count) ?? 0).getSingle());
   }
 
+  @visibleForTesting
   Future<Set<String>> getReferencedDownloadSafRoots() async {
     final rows =
         await (selectOnly(downloadedMedia)

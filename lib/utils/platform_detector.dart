@@ -112,8 +112,6 @@ class TvDetectionService {
 
   bool get isTV => _isTV;
 
-  List<String> get tvDetectionReasons => _effectiveDetectionReasons;
-
   List<String> get _effectiveDetectionReasons {
     final reasons = <String>[..._detectionReasons];
     if (_forceTv && !reasons.contains('force_tv')) reasons.add('force_tv');

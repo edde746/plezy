@@ -36,7 +36,6 @@ class AdjacentEpisodes {
   bool get hasNext => next != null;
   bool get hasPrevious => previous != null;
   bool get isEndConfirmed => nextStatus == QueueNavigationStatus.boundary;
-  bool get nextLoadFailed => nextStatus == QueueNavigationStatus.failed;
 }
 
 enum _EpisodeQueueAvailability { active, unavailable, failed }

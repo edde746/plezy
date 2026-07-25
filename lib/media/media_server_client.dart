@@ -266,9 +266,6 @@ abstract class MediaServerClient {
   /// Free-text search across the user's libraries.
   Future<List<MediaItem>> searchItems(String query, {int limit = 100});
 
-  /// Recently-added items across all libraries.
-  Future<List<MediaItem>> fetchRecentlyAdded({int limit = 50});
-
   /// Items the user has started but not finished. Plex calls this "On Deck"
   /// internally; the neutral name matches the Continue Watching UI surface.
   Future<List<MediaItem>> fetchContinueWatching({int? count = 20});

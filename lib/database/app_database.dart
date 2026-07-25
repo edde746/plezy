@@ -950,6 +950,7 @@ class AppDatabase extends _$AppDatabase {
   }
 
   /// Get pending watch actions for a specific server
+  @visibleForTesting
   Future<List<OfflineWatchProgressItem>> getPendingWatchActionsForServer(ServerId serverId, {String? profileId}) {
     return (select(offlineWatchProgress)
           ..where(
@@ -979,6 +980,7 @@ class AppDatabase extends _$AppDatabase {
   }
 
   /// Get the latest action for a specific item
+  @visibleForTesting
   Future<OfflineWatchProgressItem?> getLatestWatchAction(
     String globalKey, {
     String? profileId,

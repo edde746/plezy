@@ -51,10 +51,6 @@ class MemoryLogOutput extends LogOutput {
     _currentSize = 0;
   }
 
-  static int getCurrentSize() => _currentSize;
-
-  static double getCurrentSizeMB() => _currentSize / (1024 * 1024);
-
   @override
   void output(OutputEvent event) {
     // Only print to console — storage is done in MemoryAwareLogPrinter.log()

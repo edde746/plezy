@@ -43,13 +43,6 @@ mixin _JellyfinMetadataEditMethods on MediaServerCacheMixin {
     return data is Map<String, dynamic> ? data : const <String, dynamic>{};
   }
 
-  Future<List<Map<String, dynamic>>> getItemImageInfos(String itemId) async {
-    final response = await _http.get('/Items/${_segment(itemId)}/Images');
-    throwIfHttpError(response);
-    final data = response.data;
-    return data is List ? data.whereType<Map<String, dynamic>>().toList() : const <Map<String, dynamic>>[];
-  }
-
   Future<bool> downloadRemoteImage(String itemId, {required String imageType, required String imageUrl}) async {
     final response = await _http.post(
       '/Items/${_segment(itemId)}/RemoteImages/Download',

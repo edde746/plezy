@@ -44,13 +44,6 @@ class DownloadArtworkService {
     return isUsableArtworkFile(file);
   }
 
-  Future<bool> hasMissingArtwork(ServerId serverId, Iterable<DownloadArtworkSpec> specs) async {
-    for (final spec in specs) {
-      if (!await existsUsable(serverId, spec.localKey)) return true;
-    }
-    return false;
-  }
-
   Future<bool> ensureArtworkForMetadata(MediaItem metadata, MediaServerClient client) async {
     final serverId = metadata.serverId;
     if (serverId == null) return false;

@@ -50,8 +50,6 @@ class SyncRuleExecutor {
 
   SyncRuleExecutor({required this._database});
 
-  bool get isExecuting => _isExecuting;
-
   /// Execute every enabled sync rule.
   ///
   /// The adaptive cooldown (30 min on WiFi/Ethernet, 3 h on cellular) only

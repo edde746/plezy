@@ -117,7 +117,6 @@ class HostPlaybackCoordinator {
   bool _disposed = false;
 
   PlaybackPhase get phase => _phase;
-  Set<String> get incompatiblePeers => Set.unmodifiable(_incompatiblePeers);
 
   // ---------------------------------------------------------------------
   // Public inputs

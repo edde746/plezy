@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 import '../media/ids.dart';
-import 'package:plezy/widgets/app_icon.dart';
-import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 import '../media/media_item.dart';
 import '../media/media_playlist.dart';
@@ -132,40 +130,6 @@ abstract class BaseMediaListDetailScreen<T extends StatefulWidget> extends State
     }
 
     return [];
-  }
-
-  /// Build standard app bar actions (play, shuffle, delete)
-  /// Subclasses can override to customize actions
-  List<Widget> buildAppBarActions({
-    VoidCallback? onDelete,
-    String? deleteTooltip,
-    Color? deleteColor,
-    bool showDelete = true,
-  }) {
-    return [
-      // Play button
-      if (items.isNotEmpty)
-        IconButton(
-          icon: const AppIcon(Symbols.play_arrow_rounded, fill: 1),
-          tooltip: t.common.play,
-          onPressed: playItems,
-        ),
-      // Shuffle button
-      if (items.isNotEmpty)
-        IconButton(
-          icon: const AppIcon(Symbols.shuffle_rounded, fill: 1),
-          tooltip: t.common.shuffle,
-          onPressed: shufflePlayItems,
-        ),
-      // Delete button
-      if (showDelete && onDelete != null)
-        IconButton(
-          icon: const AppIcon(Symbols.delete_rounded, fill: 1),
-          tooltip: deleteTooltip ?? t.common.delete,
-          onPressed: onDelete,
-          color: deleteColor ?? Colors.red,
-        ),
-    ];
   }
 }
 

@@ -113,8 +113,6 @@ class ActiveProfileBinder {
   final Set<String> _plexHomePreVerified = {};
   final Set<String> _userInitiatedActivations = {};
 
-  bool get isSwitching => _isSwitching;
-
   @visibleForTesting
   String? get debugLastBoundProfileId => _lastBoundProfileId;
 

@@ -120,7 +120,6 @@ class GuestPlaybackReconciler {
   Timer? _statusRefreshTimer;
 
   PlaybackState? get latestState => _latestState;
-  bool get isCorrecting => _correcting;
 
   // ---------------------------------------------------------------------
   // Public inputs

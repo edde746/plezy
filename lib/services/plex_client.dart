@@ -34,13 +34,8 @@ import '../models/livetv_capture_buffer.dart';
 import '../models/livetv_channel.dart';
 import '../models/livetv_dvr.dart';
 import '../models/livetv_hub_result.dart';
-import '../models/livetv_lineup.dart';
 import '../models/livetv_program.dart';
-import '../models/livetv_server_status.dart';
-import '../models/livetv_session.dart';
 import '../models/media_grab_operation.dart';
-import '../models/media_grabber_device.dart';
-import '../models/media_provider_info.dart';
 import '../models/media_subscription.dart';
 import '../models/plex/plex_activity.dart';
 import '../models/plex/plex_config.dart';
@@ -1418,18 +1413,6 @@ class PlexClient
     }
 
     return results;
-  }
-
-  /// Get recently added media (filtered to video content only)
-  Future<List<PlexMetadataDto>> _getRecentlyAdded({int limit = 50}) async {
-    final response = await _getWithFailover(
-      '/library/recentlyAdded',
-      queryParameters: {'X-Plex-Container-Size': limit, 'includeGuids': 1},
-    );
-    final allItems = _extractMetadataList(response);
-
-    // Filter out music content (artists, albums, tracks)
-    return allItems.where((item) => !ContentTypes.musicTypes.contains(item.type?.toLowerCase())).toList();
   }
 
   /// Get continue watching items via the hubs system.
@@ -3461,12 +3444,6 @@ class PlexClient
   Future<List<MediaItem>> searchItems(String query, {int limit = 100}) async {
     final results = await _search(query, limit: limit);
     return results.map((m) => PlexMappers.mediaItem(m)).toList();
-  }
-
-  @override
-  Future<List<MediaItem>> fetchRecentlyAdded({int limit = 50}) async {
-    final items = await _getRecentlyAdded(limit: limit);
-    return items.map((m) => PlexMappers.mediaItem(m)).toList();
   }
 
   @override

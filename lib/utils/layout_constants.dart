@@ -31,7 +31,6 @@ class ScreenBreakpoints {
 
 /// Animation and notification durations.
 class AppDurations {
-  static const Duration animFast = Duration(milliseconds: 200);
   static const Duration animMedium = Duration(milliseconds: 300);
   static const Duration animSlow = Duration(milliseconds: 500);
   static const Duration snackBarDefault = Duration(seconds: 3);

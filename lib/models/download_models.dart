@@ -34,8 +34,6 @@ sealed class DownloadProgress with _$DownloadProgress {
   double get progressPercent => progress / 100.0;
 
   String get speedFormatted => ByteFormatter.formatSpeed(speed);
-  String get downloadedFormatted => ByteFormatter.formatBytes(downloadedBytes);
-  String get totalFormatted => ByteFormatter.formatBytes(totalBytes);
 
   bool get hasArtworkPaths => thumbPath != null;
 }

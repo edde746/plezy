@@ -110,10 +110,6 @@ class MacOSWindowService {
     }
   }
 
-  static void removeWindowDelegate(MacOSWindowDelegate delegate) {
-    _delegates.remove(delegate);
-  }
-
   static Future<void> setTrafficLightsVisible(bool visible) => _invoke('setTrafficLightsVisible', {'visible': visible});
 
   static Future<void> syncWindowChrome() => _invoke('syncWindowChrome');

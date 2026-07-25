@@ -17,7 +17,6 @@ class ContentTypes {
 
   static const Set<String> musicTypes = {artist, album, track};
   static const Set<String> videoTypes = {movie, show, season, episode};
-  static const Set<String> playableTypes = {movie, episode, clip, track};
 }
 
 class ContentTypeHelper {

@@ -48,10 +48,7 @@ class PlaylistDetailScreen extends StatefulWidget {
 }
 
 class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetailScreen>
-    with
-        StandardItemLoader<PlaylistDetailScreen>,
-        GridFocusNodeMixin<PlaylistDetailScreen>,
-        FocusableDetailScreenMixin<PlaylistDetailScreen> {
+    with GridFocusNodeMixin<PlaylistDetailScreen>, FocusableDetailScreenMixin<PlaylistDetailScreen> {
   static const int _pageSize = playlistItemsPageSize;
 
   @override
@@ -232,11 +229,6 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
   }
 
   @override
-  Future<List<MediaItem>> fetchItems() async {
-    return fetchAllPlaylistItems(mediaClient, widget.playlist.id);
-  }
-
-  @override
   Future<void> loadItems() async {
     if (mounted) {
       setState(() {
@@ -321,11 +313,6 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
         }
       });
     }
-  }
-
-  @override
-  String getLoadSuccessMessage(int itemCount) {
-    return 'Loaded $itemCount items for playlist: ${widget.playlist.title}';
   }
 
   /// Navigate from app bar down to content - overridden to handle both grid and list

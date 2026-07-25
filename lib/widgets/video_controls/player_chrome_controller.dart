@@ -34,7 +34,6 @@ class PlayerChromeController extends ChangeNotifier implements ValueListenable<b
   /// Whether controls may still be visibly rendered during their fade-out.
   bool get controlsPresented => _controlsPresented;
   bool get contentStripVisible => _contentStripVisible;
-  bool get hasVisibleHold => _holds.isNotEmpty;
   bool isHeld(PlayerChromeHold hold) => _holds.contains(hold);
   PlayerChromeFocusTarget? get pendingFocusTarget => _pendingFocusTarget;
 

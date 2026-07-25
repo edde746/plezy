@@ -1043,7 +1043,7 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
             return provider;
           },
           update: (_, multiServerProvider, previous) {
-            final provider = previous ?? OfflineModeProvider(_serverManager, multiServerProvider: multiServerProvider);
+            final provider = previous!;
             provider.updateMultiServerProvider(multiServerProvider);
             provider.initialize(); // Idempotent - safe to call again
             return provider;
@@ -1081,7 +1081,7 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
         ChangeNotifierProxyProvider<ActiveProfileProvider, DownloadProvider>(
           create: (context) => DownloadProvider(downloadManager: _downloadManager, database: _appDatabase),
           update: (context, activeProfile, previous) {
-            final provider = previous ?? DownloadProvider(downloadManager: _downloadManager, database: _appDatabase);
+            final provider = previous!;
             provider.setActiveProfileId(activeProfile.activeId);
             return provider;
           },
@@ -1134,7 +1134,7 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
             return _offlineWatchSyncService;
           },
           update: (_, activeProfile, previous) {
-            final provider = previous ?? _offlineWatchSyncService;
+            final provider = previous!;
             provider.setActiveProfileId(
               activeProfile.activeId,
               availableProfileCount: activeProfile.isInitialized ? activeProfile.profiles.length : null,
@@ -1147,14 +1147,12 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
             syncService: context.read<OfflineWatchSyncService>(),
             downloadProvider: context.read<DownloadProvider>(),
           ),
-          update: (_, syncService, downloadProvider, previous) {
-            return previous ?? OfflineWatchProvider(syncService: syncService, downloadProvider: downloadProvider);
-          },
+          update: (_, syncService, downloadProvider, previous) => previous!,
         ),
         ChangeNotifierProxyProvider2<ActiveProfileProvider, ConnectionRegistry, UserProfileProvider>(
           create: (context) => UserProfileProvider(storageService: context.read<StorageService>()),
           update: (context, activeProfile, connections, previous) {
-            final provider = previous ?? UserProfileProvider(storageService: context.read<StorageService>());
+            final provider = previous!;
             provider.attach(
               connections: connections,
               activeProfile: activeProfile,
