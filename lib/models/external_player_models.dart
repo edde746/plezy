@@ -204,6 +204,19 @@ class KnownPlayers {
     return _androidPackageMap[id] ?? const [];
   }
 
+  static bool _isLinuxCommandAvailable(String command) {
+    if (!Platform.isLinux) {
+      return false;
+    }
+
+    try {
+      final result = Process.runSync('sh', ['-c', r'command -v "$1" >/dev/null 2>&1', 'plezy-command-probe', command]);
+      return result.exitCode == 0;
+    } on ProcessException {
+      return false;
+    }
+  }
+
   static List<String> androidPackageCandidates(ExternalPlayer player) {
     final knownPackages = _androidPackageCandidatesForId(player.id);
     if (knownPackages.isNotEmpty) return knownPackages;
@@ -220,7 +233,12 @@ class KnownPlayers {
       id: 'vlc',
       name: 'VLC',
       iconAsset: 'assets/player_icons/vlc.svg',
-      isAvailable: Platform.isAndroid || Platform.isIOS || Platform.isMacOS || Platform.isLinux || Platform.isWindows,
+      isAvailable:
+          Platform.isAndroid ||
+          Platform.isIOS ||
+          Platform.isMacOS ||
+          _isLinuxCommandAvailable('vlc') ||
+          Platform.isWindows,
       launch: (url) {
         if (Platform.isAndroid) return _launchAndroidIntentCandidates(url, _androidPackageCandidatesForId('vlc'));
         if (Platform.isIOS) return _launchUrlScheme('vlc://', url);
@@ -233,7 +251,7 @@ class KnownPlayers {
       id: 'mpv',
       name: 'mpv',
       iconAsset: 'assets/player_icons/mpv.svg',
-      isAvailable: Platform.isAndroid || Platform.isMacOS || Platform.isLinux || Platform.isWindows,
+      isAvailable: Platform.isAndroid || Platform.isMacOS || _isLinuxCommandAvailable('mpv') || Platform.isWindows,
       launch: (url) {
         if (Platform.isAndroid) return _launchAndroidIntentCandidates(url, _androidPackageCandidatesForId('mpv'));
         return _launchCommand('mpv', url);
@@ -281,7 +299,7 @@ class KnownPlayers {
       id: 'celluloid',
       name: 'Celluloid',
       iconAsset: 'assets/player_icons/celluloid.svg',
-      isAvailable: Platform.isLinux,
+      isAvailable: _isLinuxCommandAvailable('celluloid'),
       launch: (url) => _launchCommand('celluloid', url),
     ),
   ];
