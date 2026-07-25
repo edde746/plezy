@@ -1034,10 +1034,11 @@ mixin _PlexLiveTvClientMethods on MediaServerCacheMixin implements LiveTvSupport
         'addDebugOverlay': '0',
         'autoAdjustQuality': '0',
         'directStreamAudio': directStreamAudio ? '1' : '0',
-        'advancedSubtitles': 'text',
         'mediaBufferSize': '157286',
         'session': transcodeSessionId,
-        'subtitles': 'auto',
+        // Prevent Plex from auto-selecting and burning tuner captions into the video.
+        // Captions that survive direct stream remain player-selectable text tracks.
+        'subtitles': 'none',
         'copyts': '0',
         'Accept-Language': 'en',
         'X-Plex-Session-Identifier': sessionIdentifier,

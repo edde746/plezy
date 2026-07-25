@@ -135,6 +135,9 @@ void main() {
       expect(liveEdgeUri.queryParameters['X-Plex-Incomplete-Segments'], '1');
       expect(liveEdgeUri.queryParameters.containsKey('X-Plex-Chunked'), isFalse);
       expect(liveEdgeUri.queryParameters['X-Plex-Client-Profile-Extra'], contains('protocol=hls&container=mpegts'));
+      expect(liveEdgeUri.queryParameters['subtitles'], 'none');
+      expect(liveEdgeUri.queryParameters.containsKey('subtitleStreamID'), isFalse);
+      expect(liveEdgeUri.queryParameters.containsKey('advancedSubtitles'), isFalse);
       expect(liveEdgeUri.queryParameters['X-Plex-Token'], 'tok');
       expect(liveEdgeUri.queryParameters.containsKey('offset'), isFalse);
 
