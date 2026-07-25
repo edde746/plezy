@@ -13,6 +13,7 @@ import 'package:provider/provider.dart';
 
 import '../../../models/shader_preset.dart';
 import '../../../models/transcode_quality_preset.dart';
+import '../../../media/playback_rate.dart';
 import '../../../media/media_version.dart';
 import '../../../mpv/mpv.dart';
 import '../../../providers/shader_provider.dart';
@@ -765,7 +766,26 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
       initialData: widget.player.state.rate,
       builder: (context, snapshot) {
         final currentRate = snapshot.data ?? 1.0;
-        final speeds = [0.5, 0.75, 1.0, 1.25, 1.5, 1.75, 2.0, 2.25, 2.5, 2.75, 3.0];
+        const speeds = <double>[
+          0.5,
+          0.75,
+          1.0,
+          1.25,
+          1.5,
+          1.75,
+          2.0,
+          2.25,
+          2.5,
+          2.75,
+          3.0,
+          3.5,
+          4.0,
+          4.5,
+          5.0,
+          6.0,
+          7.0,
+          maximumPlaybackRate,
+        ];
 
         return ListView.builder(
           itemCount: speeds.length,

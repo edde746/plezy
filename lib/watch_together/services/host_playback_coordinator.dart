@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:math';
 
+import '../../media/playback_rate.dart';
 import '../../utils/app_logger.dart';
 import '../models/playback_state.dart';
 import '../models/watch_session.dart';
@@ -60,8 +61,8 @@ class HostPlaybackCoordinator {
   static const int seekDebounceMs = 200;
   static const int implicitJumpThresholdMs = 1500;
   static const int selfRecoveryMinBufferAheadMs = 2000;
-  static const double _minimumRemoteRate = 0.25;
-  static const double _maximumRemoteRate = 4.0;
+  static const double _minimumRemoteRate = minimumPlaybackRate;
+  static const double _maximumRemoteRate = maximumPlaybackRate;
 
   final String myPeerId;
   final void Function(PlaybackState state, {String? toPeerId}) _sendState;

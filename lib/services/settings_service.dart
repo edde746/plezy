@@ -1,5 +1,6 @@
 import 'dart:convert';
 import '../media/ids.dart';
+import '../media/playback_rate.dart';
 import '../media/media_version_preference.dart';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
@@ -476,7 +477,7 @@ class SettingsService extends BaseSharedPreferencesService {
   static final defaultPlaybackSpeed = DoublePref(
     'default_playback_speed',
     defaultValue: 1.0,
-    transform: (v) => v.clamp(0.5, 3.0),
+    transform: (v) => v.clamp(minimumPlaybackRate, maximumPlaybackRate),
   );
   static final defaultBoxFitMode = IntPref('default_box_fit_mode', transform: (v) => v.clamp(0, 2));
   static final displaySwitchDelay = IntPref('display_switch_delay', transform: (v) => v.clamp(0, 10));

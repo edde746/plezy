@@ -111,6 +111,8 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
     private const val WATCHDOG_TIMEOUT_MS = 8000L
     private const val DECODER_HANG_TIMEOUT_MS = 5000L
     private const val MAX_AUDIO_RECOVERY_ATTEMPTS = 2
+    private const val MIN_PLAYBACK_SPEED = 0.25f
+    private const val MAX_PLAYBACK_SPEED = 8f
     private const val FPS_SAMPLE_COUNT = 8
     private const val AUDIO_BOUNCE_TIMEOUT_MS = 1000L
 
@@ -3270,10 +3272,10 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
   }
 
   fun setPlaybackSpeed(speed: Float) {
-    val clampedSpeed = speed.coerceIn(0.25f, 4f)
+    val clampedSpeed = speed.coerceIn(MIN_PLAYBACK_SPEED, MAX_PLAYBACK_SPEED)
     exoPlayer?.setPlaybackSpeed(clampedSpeed)
     updateTunnelingState("speed changed")
-    delegate?.onPropertyChange("speed", speed.toDouble())
+    delegate?.onPropertyChange("speed", clampedSpeed.toDouble())
   }
 
   fun selectAudioTrack(trackId: String) {

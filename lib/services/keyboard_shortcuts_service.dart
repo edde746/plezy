@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import '../media/playback_rate.dart';
 import '../models/hotkey_model.dart';
 import '../i18n/strings.g.dart';
 import '../mpv/mpv.dart';
@@ -412,12 +413,12 @@ class KeyboardShortcutsService extends ChangeNotifier {
         onPreviousEpisode?.call();
         break;
       case 'speed_increase':
-        final newRateUp = (player.state.rate + 0.25).clamp(0.25, 3.0);
+        final newRateUp = (player.state.rate + 0.25).clamp(minimumPlaybackRate, maximumPlaybackRate);
         player.setRate(newRateUp);
         _settingsService.write(SettingsService.defaultPlaybackSpeed, newRateUp);
         break;
       case 'speed_decrease':
-        final newRateDown = (player.state.rate - 0.25).clamp(0.25, 3.0);
+        final newRateDown = (player.state.rate - 0.25).clamp(minimumPlaybackRate, maximumPlaybackRate);
         player.setRate(newRateDown);
         _settingsService.write(SettingsService.defaultPlaybackSpeed, newRateDown);
         break;

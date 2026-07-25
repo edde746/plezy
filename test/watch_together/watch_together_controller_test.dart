@@ -237,7 +237,7 @@ void main() {
       );
       room.guestService.sendTo(
         'host',
-        wireControl(const ControlRequest(kind: ControlRequestKind.rate, rate: 4.000001)),
+        wireControl(const ControlRequest(kind: ControlRequestKind.rate, rate: 8.000001)),
       );
       async.flushMicrotasks();
 

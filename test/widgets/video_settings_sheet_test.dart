@@ -11,6 +11,7 @@ import 'package:plezy/screens/settings/subtitle_styling_screen.dart';
 import 'package:plezy/services/sleep_timer_service.dart';
 import 'package:plezy/services/settings_service.dart';
 import 'package:plezy/theme/mono_tokens.dart';
+import 'package:plezy/widgets/overlay_sheet.dart';
 import 'package:plezy/widgets/video_controls/sheets/video_settings_sheet.dart';
 
 import '../test_helpers/prefs.dart';
@@ -76,6 +77,31 @@ void main() {
     } finally {
       sleepTimer.cancelTimer();
     }
+  });
+
+  testWidgets('offers requested playback speeds through 8x and persists the selection', (tester) async {
+    final appliedRates = <double>[];
+    final player = _FakeSettingsPlayer(
+      onSetRate: (rate) async {
+        appliedRates.add(rate);
+      },
+    );
+    await _pumpHostedSheet(tester, player);
+
+    await tester.tap(find.text('Playback Speed'));
+    await tester.pumpAndSettle();
+
+    final scrollable = find.byType(Scrollable).last;
+    for (final label in ['3.5x', '4x', '4.5x', '5x', '6x', '7x', '8x']) {
+      await tester.scrollUntilVisible(find.text(label), 200, scrollable: scrollable);
+      expect(find.text(label), findsOneWidget);
+    }
+
+    await tester.tap(find.text('8x'));
+    await tester.pumpAndSettle();
+
+    expect(appliedRates, [8.0]);
+    expect(SettingsService.instance.read(SettingsService.defaultPlaybackSpeed), 8.0);
   });
 
   testWidgets('localizes every ASS subtitle override enum label', (tester) async {
@@ -178,8 +204,33 @@ Future<void> _pumpSheet(
   await tester.pumpAndSettle();
 }
 
+Future<void> _pumpHostedSheet(WidgetTester tester, Player player) async {
+  await tester.pumpWidget(
+    MaterialApp(
+      theme: ThemeData(extensions: const [_testTokens]),
+      home: OverlaySheetHost(
+        child: Scaffold(
+          body: Builder(
+            builder: (context) => TextButton(
+              onPressed: () => unawaited(
+                OverlaySheetController.of(context).show<void>(
+                  builder: (_) =>
+                      VideoSettingsSheet(player: player, audioSyncOffset: 0, subtitleSyncOffset: 0, canControl: true),
+                ),
+              ),
+              child: const Text('Open settings'),
+            ),
+          ),
+        ),
+      ),
+    ),
+  );
+  await tester.tap(find.text('Open settings'));
+  await tester.pumpAndSettle();
+}
+
 class _FakeSettingsPlayer implements Player {
-  _FakeSettingsPlayer({this.onSetProperty})
+  _FakeSettingsPlayer({this.onSetProperty, this.onSetRate})
     : _streams = PlayerStreams(
         playing: const Stream<bool>.empty(),
         completed: const Stream<bool>.empty(),
@@ -203,6 +254,7 @@ class _FakeSettingsPlayer implements Player {
 
   final PlayerStreams _streams;
   final Future<void> Function(String name, String value)? onSetProperty;
+  final Future<void> Function(double rate)? onSetRate;
 
   @override
   PlayerState get state => const PlayerState();
@@ -219,6 +271,11 @@ class _FakeSettingsPlayer implements Player {
   @override
   Future<void> setProperty(String name, String value) {
     return onSetProperty?.call(name, value) ?? Future<void>.value();
+  }
+
+  @override
+  Future<void> setRate(double rate) {
+    return onSetRate?.call(rate) ?? Future<void>.value();
   }
 
   @override

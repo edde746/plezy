@@ -468,7 +468,7 @@ void main() {
         for (final targetMs in [-1, durationMs + 1]) {
           h.coordinator.onControlRequest('guest', ControlRequest(kind: ControlRequestKind.seek, positionMs: targetMs));
         }
-        for (final rate in [0.25 - 0.000001, 4.0 + 0.000001, double.nan, double.infinity, double.negativeInfinity]) {
+        for (final rate in [0.25 - 0.000001, 8.0 + 0.000001, double.nan, double.infinity, double.negativeInfinity]) {
           h.coordinator.onControlRequest('guest', ControlRequest(kind: ControlRequestKind.rate, rate: rate));
         }
         async.flushMicrotasks();
@@ -504,7 +504,7 @@ void main() {
           expect(h.last.actorPeerId, 'guest');
           expect(h.last.actionHint, PlaybackActionHint.seek);
         }
-        for (final rate in [0.25, 4.0]) {
+        for (final rate in [0.25, 8.0]) {
           h.coordinator.onControlRequest('guest', ControlRequest(kind: ControlRequestKind.rate, rate: rate));
           async.flushMicrotasks();
           expect(h.last.rate, rate);
@@ -512,7 +512,7 @@ void main() {
           expect(h.last.actionHint, PlaybackActionHint.rate);
         }
 
-        expect(h.player.commandLog, ['seek:0', 'seek:$durationMs', 'rate:0.25', 'rate:4.0']);
+        expect(h.player.commandLog, ['seek:0', 'seek:$durationMs', 'rate:0.25', 'rate:8.0']);
         expect(h.last.seq, seqBefore + 4);
         expect(actions, [
           ('guest', PlaybackActionHint.seek),

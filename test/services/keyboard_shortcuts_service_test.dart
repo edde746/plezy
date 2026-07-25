@@ -207,6 +207,35 @@ void main() {
     });
   });
 
+  testWidgets('speed increase reaches the supported 8x boundary', (tester) async {
+    final service = await KeyboardShortcutsService.getInstance();
+    addTearDown(service.dispose);
+    await service.setHotkey('speed_increase', const HotKey(key: PhysicalKeyboardKey.f12));
+    final player = _FakePlayer(rate: 7.75);
+
+    final result = service.handleVideoPlayerKeyEvent(
+      const KeyDownEvent(
+        physicalKey: PhysicalKeyboardKey.f12,
+        logicalKey: LogicalKeyboardKey.f12,
+        timeStamp: Duration.zero,
+      ),
+      player,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      canControlPlayback: true,
+      canNavigateMediaItems: true,
+    );
+    await tester.pump();
+
+    expect(result, KeyEventResult.handled);
+    expect(player.rateChanges, [8.0]);
+    expect(SettingsService.instance.read(SettingsService.defaultPlaybackSpeed), 8.0);
+  });
+
   testWidgets('Ctrl+S takes a screenshot once while held', (tester) async {
     final service = await KeyboardShortcutsService.getInstance();
     addTearDown(service.dispose);
@@ -692,11 +721,13 @@ void main() {
 }
 
 class _FakePlayer implements Player {
-  _FakePlayer({this.volume = 100});
+  _FakePlayer({this.volume = 100, this.rate = 1});
 
   final commands = <List<String>>[];
   final volumeChanges = <double>[];
+  final rateChanges = <double>[];
   double volume;
+  double rate;
 
   @override
   Future<void> command(List<String> args) async {
@@ -704,12 +735,18 @@ class _FakePlayer implements Player {
   }
 
   @override
-  PlayerState get state => PlayerState(volume: volume);
+  PlayerState get state => PlayerState(volume: volume, rate: rate);
 
   @override
   Future<void> setVolume(double volume) async {
     this.volume = volume;
     volumeChanges.add(volume);
+  }
+
+  @override
+  Future<void> setRate(double rate) async {
+    this.rate = rate;
+    rateChanges.add(rate);
   }
 
   @override

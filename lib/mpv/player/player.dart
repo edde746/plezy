@@ -1,6 +1,7 @@
 import 'dart:io' show Platform;
 
 import '../../media/media_display_criteria.dart';
+import '../../media/playback_rate.dart';
 import '../models.dart';
 import 'platform/player_android.dart';
 import 'player_native.dart';
@@ -159,7 +160,7 @@ abstract class Player {
 
   /// Set the playback rate/speed.
   ///
-  /// [rate] - Playback rate from 0.25 to 4.0 (1.0 = normal speed).
+  /// [rate] - Playback rate from [minimumPlaybackRate] to [maximumPlaybackRate] (1.0 = normal speed).
   Future<void> setRate(double rate);
 
   /// Set the audio output device.
