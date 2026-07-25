@@ -183,6 +183,37 @@ void main() {
     expect(find.text('Current'), findsOneWidget);
     expect(find.text('Obsolete'), findsNothing);
   });
+
+  testWidgets('horizontal guide virtualization keeps the D-pad focus target rendered', (tester) async {
+    final harness = _GuideHarness.oneServer();
+    addTearDown(harness.dispose);
+    await harness.pump(tester);
+
+    harness.serverA.schedule.completeSlots(0, 12);
+    await tester.pumpAndSettle();
+    expect(find.text('Slot 12'), findsNothing);
+
+    final guideFocus = tester.widget<Focus>(
+      find.byWidgetPredicate((widget) => widget is Focus && widget.focusNode?.debugLabel == 'guide_tab'),
+    );
+    guideFocus.focusNode!.requestFocus();
+    await tester.pump();
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+    await tester.pump();
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
+    await tester.pump();
+
+    for (var index = 0; index < 12; index++) {
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
+      await tester.pump();
+    }
+
+    final primary = Theme.of(tester.element(find.byType(GuideTab))).colorScheme.primary;
+    final focusedMaterial = find.byWidgetPredicate((widget) => widget is Material && widget.color == primary);
+    expect(find.text('Slot 1'), findsNothing);
+    expect(find.text('Slot 12'), findsOneWidget);
+    expect(find.ancestor(of: find.text('Slot 12'), matching: focusedMaterial), findsOneWidget);
+  });
 }
 
 Finder _rightTimeButton() {
@@ -326,6 +357,22 @@ final class _ControllableLiveTvSupport implements LiveTvSupport {
         channelIdentifier: stationId,
         serverId: serverId,
       ),
+    ]);
+  }
+
+  void completeSlots(int index, int count) {
+    final request = requests[index];
+    final startEpoch = request.from.millisecondsSinceEpoch ~/ 1000;
+    request.completer.complete([
+      for (var slot = 0; slot < count; slot++)
+        LiveTvProgram(
+          ratingKey: '$serverId-$index-$slot',
+          title: 'Slot ${slot + 1}',
+          beginsAt: startEpoch + slot * 30 * 60,
+          endsAt: startEpoch + (slot + 1) * 30 * 60,
+          channelIdentifier: stationId,
+          serverId: serverId,
+        ),
     ]);
   }
 
