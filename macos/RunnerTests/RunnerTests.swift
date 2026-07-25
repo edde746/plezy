@@ -94,6 +94,17 @@ final class MpvPlayerContractTests: XCTestCase {
     XCTAssertEqual((invalidResults[0] as? FlutterError)?.code, "INVALID_ARGS")
   }
 
+  func testSharedSetPropertyMapsLifecycleCancellationAsNotInitialized() {
+    let core = ControllablePropertyCore()
+    let plugin = RecordingMpvPlugin(core: core)
+    core.nextResult = .failure(MpvLifecycleUnavailableError("controlled cancellation"))
+
+    let cancelled = invokeSetProperty(plugin, name: "volume", value: "50")
+
+    XCTAssertEqual(cancelled.count, 1)
+    XCTAssertEqual((cancelled[0] as? FlutterError)?.code, "NOT_INITIALIZED")
+  }
+
   func testRealSetPropertyValidInvalidNonexistentAndPauseCache() {
     let core = MpvAudioPlayerCore()
     XCTAssertTrue(core.initialize())
@@ -161,10 +172,14 @@ final class MpvPlayerContractTests: XCTestCase {
     let completion = expectation(description: "cancelled property completion")
     completion.assertForOverFulfill = true
     var completionCount = 0
+    var completionError: Error?
     core.setPropertyAsync("volume", value: "51") { result in
       completionCount += 1
-      if case .success = result {
+      switch result {
+      case .success:
         XCTFail("Disposal must fail an accepted-but-pending property request")
+      case .failure(let error):
+        completionError = error
       }
       completion.fulfill()
     }
@@ -174,7 +189,12 @@ final class MpvPlayerContractTests: XCTestCase {
     wait(for: [completion], timeout: 2)
     core.queue.sync {}
     XCTAssertEqual(completionCount, 1)
-    XCTAssertFailure(awaitProperty(core, name: "volume", value: "52"))
+    XCTAssertTrue(completionError is MpvLifecycleUnavailableError)
+    let unavailableResult = awaitProperty(core, name: "volume", value: "52")
+    XCTAssertFailure(unavailableResult)
+    if case .failure(let error) = unavailableResult {
+      XCTAssertTrue(error is MpvLifecycleUnavailableError)
+    }
   }
 
   func testRapidAudioCoreReplacementOwnsLifecycleOnce() {

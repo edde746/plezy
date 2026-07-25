@@ -10,6 +10,14 @@ import QuartzCore
   import Metal
 #endif
 
+struct MpvLifecycleUnavailableError: LocalizedError {
+  let errorDescription: String?
+
+  init(_ description: String) {
+    errorDescription = description
+  }
+}
+
 protocol MpvPlayerDelegate: AnyObject {
   func onPropertyChange(name: String, value: Any?)
   func onEvent(name: String, data: [String: Any]?)
@@ -944,11 +952,7 @@ class MpvPlayerCoreBase: NSObject {
     pendingRequests.removeAll()
     pendingRequestsLock.unlock()
 
-    let error = NSError(
-      domain: "mpv",
-      code: -1,
-      userInfo: [NSLocalizedDescriptionKey: "Player disposed"]
-    )
+    let error = MpvLifecycleUnavailableError("Player disposed")
     for (_, request) in pending {
       DispatchQueue.main.async {
         switch request {
@@ -977,12 +981,8 @@ class MpvPlayerCoreBase: NSObject {
     return pendingRequests.removeValue(forKey: requestId)
   }
 
-  private func lifecycleUnavailableError() -> NSError {
-    NSError(
-      domain: "mpv",
-      code: -1,
-      userInfo: [NSLocalizedDescriptionKey: "Player is not initialized or has been disposed"]
-    )
+  private func lifecycleUnavailableError() -> MpvLifecycleUnavailableError {
+    MpvLifecycleUnavailableError("Player is not initialized or has been disposed")
   }
 
   private func mpvError(_ status: CInt) -> NSError {

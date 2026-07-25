@@ -700,8 +700,15 @@ class MpvPlayerCore private constructor(
   }
 
   private fun resumeAfterAudioFocusGain(reason: String) {
-    pausedForAudioFocusLoss = false
-    requestAutoResume(reason)
+    val shouldResume = synchronized(publicPauseIntentLock) {
+      if (!pausedForAudioFocusLoss) {
+        false
+      } else {
+        pausedForAudioFocusLoss = false
+        true
+      }
+    }
+    if (shouldResume) requestAutoResume(reason)
   }
 
   private fun rollbackFailedPublicPauseIntent(intent: PublicPauseIntent) {
@@ -710,6 +717,22 @@ class MpvPlayerCore private constructor(
         resumeBlockedByPublicPause = intent.previousBlocked
         desiredPaused = intent.previousDesiredPaused
       }
+    }
+  }
+
+  private fun completeFailedPublicResume(
+    intent: PublicPauseIntent,
+    failure: Throwable,
+    onComplete: ((Result<Unit>) -> Unit)?
+  ) {
+    rollbackFailedPublicPauseIntent(intent)
+    runOnMain {
+      val completion: Result<Unit> = if (disposing || !isInitialized || !scope.isActive) {
+        Result.failure(CancellationException("MPV core unavailable"))
+      } else {
+        Result.failure(failure)
+      }
+      onComplete?.invoke(completion)
     }
   }
 
@@ -847,44 +870,89 @@ class MpvPlayerCore private constructor(
       }
     }
 
-    if (paused == false && (pausedForAudioFocusLoss || !hasReadyVideoOutput())) {
+    if (paused == false && pauseIntent != null) {
+      val shouldReclaimAudioFocus = synchronized(publicPauseIntentLock) {
+        publicPauseIntentGeneration == pauseIntent.generation && pausedForAudioFocusLoss
+      }
+      if (shouldReclaimAudioFocus) {
+        val focusGranted = audioFocusManager?.requestAudioFocus() == true
+        if (!focusGranted) {
+          Log.w(TAG, "Audio focus request denied for public resume")
+          completeFailedPublicResume(
+            pauseIntent,
+            IllegalStateException("Audio focus unavailable for resume"),
+            onComplete
+          )
+          return
+        }
+
+        synchronized(publicPauseIntentLock) {
+          if (publicPauseIntentGeneration == pauseIntent.generation && pausedForAudioFocusLoss) {
+            pausedForAudioFocusLoss = false
+          }
+        }
+      }
+    }
+
+    if (paused == false && pauseIntent != null && !hasReadyVideoOutput()) {
       runOnMain {
         if (!isInitialized || disposing || !scope.isActive) {
           onComplete?.invoke(Result.failure(CancellationException("MPV core unavailable")))
           return@runOnMain
         }
-        val isCurrent = synchronized(publicPauseIntentLock) {
-          pauseIntent != null && publicPauseIntentGeneration == pauseIntent.generation
+        var deferredForSurface = false
+        val interruptedAgain = synchronized(publicPauseIntentLock) {
+          if (publicPauseIntentGeneration != pauseIntent.generation) {
+            false
+          } else if (pausedForAudioFocusLoss) {
+            true
+          } else {
+            deferredResumeRequested = true
+            deferredForSurface = true
+            false
+          }
         }
-        if (isCurrent) {
-          deferredResumeRequested = true
-          Log.d(
-            TAG,
-            if (pausedForAudioFocusLoss) {
-              "Deferring public resume until audio focus returns"
-            } else {
-              "Deferring public resume until video output is ready"
-            }
+        if (interruptedAgain) {
+          Log.d(TAG, "Public resume interrupted by a newer audio-focus loss")
+          completeFailedPublicResume(
+            pauseIntent,
+            IllegalStateException("Audio focus unavailable for resume"),
+            onComplete
           )
+        } else {
+          if (deferredForSurface) {
+            Log.d(TAG, "Deferring public resume until video output is ready")
+          }
+          onComplete?.invoke(Result.success(Unit))
         }
-        onComplete?.invoke(Result.success(Unit))
       }
       return
     }
 
     scope.launch(mpvWriteDispatcher, start = CoroutineStart.ATOMIC) {
+      var interruptedBeforeWrite = false
       val writeResult = try {
         if (pauseIntent == null) {
           writeProperty(name, value)
         } else {
           publicPauseWriteMutex.withLock {
             val shouldWrite = synchronized(publicPauseIntentLock) {
-              publicPauseIntentGeneration == pauseIntent.generation
+              val isCurrent = publicPauseIntentGeneration == pauseIntent.generation
+              if (isCurrent && paused == false && pausedForAudioFocusLoss) {
+                interruptedBeforeWrite = true
+                false
+              } else {
+                isCurrent
+              }
             }
             if (shouldWrite) writeProperty(name, value)
           }
         }
-        Result.success(Unit)
+        if (interruptedBeforeWrite) {
+          Result.failure(IllegalStateException("Audio focus unavailable for resume"))
+        } else {
+          Result.success(Unit)
+        }
       } catch (error: CancellationException) {
         Result.failure(error)
       } catch (error: Exception) {

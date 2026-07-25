@@ -23,6 +23,20 @@ constexpr wchar_t kRegOriginalHeight[] = L"OriginalHeight";
 constexpr wchar_t kRegOriginalHDR[] = L"OriginalHDREnabled";
 constexpr wchar_t kRegModeChanged[] = L"ModeChanged";
 constexpr wchar_t kRegHDRChanged[] = L"HDRChanged";
+constexpr wchar_t kRegModeTakeoverEligible[] = L"ModeTakeoverEligible";
+constexpr wchar_t kRegHDRTakeoverEligible[] = L"HDRTakeoverEligible";
+constexpr wchar_t kRegModeRecoverySlot[] = L"ModeRecoverySlot";
+constexpr wchar_t kRegHDRRecoverySlot[] = L"HDRRecoverySlot";
+constexpr wchar_t kRegModeDeviceNameAlternate[] = L"ModeDeviceNameAlternate";
+constexpr wchar_t kRegHDRDeviceNameAlternate[] = L"HDRDeviceNameAlternate";
+constexpr wchar_t kRegOriginalRefreshRateAlternate[] = L"OriginalRefreshRateAlternate";
+constexpr wchar_t kRegOriginalWidthAlternate[] = L"OriginalWidthAlternate";
+constexpr wchar_t kRegOriginalHeightAlternate[] = L"OriginalHeightAlternate";
+constexpr wchar_t kRegOriginalHDRAlternate[] = L"OriginalHDREnabledAlternate";
+constexpr wchar_t kRegModeHandoffPending[] = L"ModeHandoffPending";
+constexpr wchar_t kRegHDRHandoffPending[] = L"HDRHandoffPending";
+constexpr wchar_t kRegModePreviousRecoverySlot[] = L"ModePreviousRecoverySlot";
+constexpr wchar_t kRegHDRPreviousRecoverySlot[] = L"HDRPreviousRecoverySlot";
 
 std::recursive_mutex g_display_override_mutex;
 bool g_live_mode_recovery_record = false;
@@ -46,7 +60,11 @@ class RecoveryRunGuard {
 
 bool PrepareModeRecoveryAtRegistry(const std::wstring& device_name, DWORD width, DWORD height, DWORD refresh_rate);
 bool PrepareHDRRecoveryAtRegistry(const std::wstring& device_name, bool enabled);
-bool CompleteRecoveryOperationAtRegistry(const wchar_t* marker);
+bool CompleteRecoveryOperationAtRegistry(
+    const wchar_t* marker, const wchar_t* takeover_disposition, const wchar_t* handoff_pending);
+bool FinalizeModeRecoveryAtRegistry(bool os_apply_succeeded);
+bool FinalizeHDRRecoveryAtRegistry(bool os_apply_succeeded);
+bool MarkTakeoverEligibleAtRegistry(const wchar_t* takeover_disposition);
 
 }  // namespace
 
@@ -240,12 +258,14 @@ bool DisplayModeManager::SetDisplayMode(HWND window, DWORD width, DWORD height, 
   }
 
   if (changed) {
+    FinalizeModeRecoveryAtRegistry(true);
     mode_changed_ = true;
   } else if (!mode_was_changed) {
-    // Do not discard an independently persisted HDR operation owned by
-    // another manager or retained from startup recovery.
-    CompleteRecoveryOperationAtRegistry(kRegModeChanged);
+    // A failed takeover rolls back to its prior marked original. A fresh
+    // failed operation still clears only its own marker.
+    const bool recovery_completed = FinalizeModeRecoveryAtRegistry(false);
     g_live_mode_recovery_record = false;
+    if (!recovery_completed) MarkTakeoverEligibleAtRegistry(kRegModeTakeoverEligible);
   }
 
   return changed;
@@ -256,6 +276,7 @@ bool DisplayModeManager::RestoreOriginalMode(HWND) {
   if (!mode_changed_) return false;
   if (original_device_name_.empty()) {
     g_live_mode_recovery_record = false;
+    MarkTakeoverEligibleAtRegistry(kRegModeTakeoverEligible);
     return false;
   }
 
@@ -269,14 +290,18 @@ bool DisplayModeManager::RestoreOriginalMode(HWND) {
   }
   if (rc != DISP_CHANGE_SUCCESSFUL) {
     // The explicit owner has given up. Keep the durable marker, but release it
-    // so a later topology notification can restore a reconnected target.
+    // so a later topology notification can restore a reconnected target or a
+    // conflicting mode request can consume the failed recovery disposition.
     g_live_mode_recovery_record = false;
+    MarkTakeoverEligibleAtRegistry(kRegModeTakeoverEligible);
     return false;
   }
 
   mode_changed_ = false;
-  CompleteRecoveryOperationAtRegistry(kRegModeChanged);
+  const bool recovery_completed =
+      CompleteRecoveryOperationAtRegistry(kRegModeChanged, kRegModeTakeoverEligible, kRegModeHandoffPending);
   g_live_mode_recovery_record = false;
+  if (!recovery_completed) MarkTakeoverEligibleAtRegistry(kRegModeTakeoverEligible);
   return true;
 }
 
@@ -385,8 +410,9 @@ bool DisplayModeManager::SetHDREnabled(HWND window, bool enabled) {
   const LONG result = SetHDRStateForTarget(*target_id, enabled);
   if (result != ERROR_SUCCESS) {
     if (!hdr_was_changed) {
-      CompleteRecoveryOperationAtRegistry(kRegHDRChanged);
+      const bool recovery_completed = FinalizeHDRRecoveryAtRegistry(false);
       g_live_hdr_recovery_record = false;
+      if (!recovery_completed) MarkTakeoverEligibleAtRegistry(kRegHDRTakeoverEligible);
     }
     return false;
   }
@@ -398,6 +424,7 @@ bool DisplayModeManager::SetHDREnabled(HWND window, bool enabled) {
     ChangeDisplaySettingsExW(device_name.c_str(), &pre_toggle_dm, nullptr, CDS_FULLSCREEN, nullptr);
   }
 
+  FinalizeHDRRecoveryAtRegistry(true);
   hdr_changed_ = true;
   return true;
 }
@@ -407,12 +434,14 @@ bool DisplayModeManager::RestoreOriginalHDRState(HWND window) {
   if (!hdr_changed_) return false;
   if (original_hdr_device_name_.empty()) {
     g_live_hdr_recovery_record = false;
+    MarkTakeoverEligibleAtRegistry(kRegHDRTakeoverEligible);
     return false;
   }
 
   const auto target_id = GetDisplayTargetId(original_hdr_device_name_);
   if (!target_id) {
     g_live_hdr_recovery_record = false;
+    MarkTakeoverEligibleAtRegistry(kRegHDRTakeoverEligible);
     return false;
   }
 
@@ -428,6 +457,7 @@ bool DisplayModeManager::RestoreOriginalHDRState(HWND window) {
 
     if (SetHDRStateForTarget(*target_id, original_hdr_enabled_) != ERROR_SUCCESS) {
       g_live_hdr_recovery_record = false;
+      MarkTakeoverEligibleAtRegistry(kRegHDRTakeoverEligible);
       return false;
     }
 
@@ -439,8 +469,10 @@ bool DisplayModeManager::RestoreOriginalHDRState(HWND window) {
   }
 
   hdr_changed_ = false;
-  CompleteRecoveryOperationAtRegistry(kRegHDRChanged);
+  const bool recovery_completed =
+      CompleteRecoveryOperationAtRegistry(kRegHDRChanged, kRegHDRTakeoverEligible, kRegHDRHandoffPending);
   g_live_hdr_recovery_record = false;
+  if (!recovery_completed) MarkTakeoverEligibleAtRegistry(kRegHDRTakeoverEligible);
   return true;
 }
 
@@ -528,8 +560,30 @@ bool RecoveryRecordExists() {
   }
   bool exists = false;
   for (const wchar_t* value_name :
-       {kRegVersion, kRegModeDeviceName, kRegLegacyDeviceName, kRegHDRDeviceName, kRegOriginalRefreshRate,
-        kRegOriginalWidth, kRegOriginalHeight, kRegOriginalHDR, kRegModeChanged, kRegHDRChanged}) {
+       {kRegVersion,
+        kRegModeDeviceName,
+        kRegLegacyDeviceName,
+        kRegHDRDeviceName,
+        kRegOriginalRefreshRate,
+        kRegOriginalWidth,
+        kRegOriginalHeight,
+        kRegOriginalHDR,
+        kRegModeChanged,
+        kRegHDRChanged,
+        kRegModeTakeoverEligible,
+        kRegHDRTakeoverEligible,
+        kRegModeRecoverySlot,
+        kRegHDRRecoverySlot,
+        kRegModeDeviceNameAlternate,
+        kRegHDRDeviceNameAlternate,
+        kRegOriginalRefreshRateAlternate,
+        kRegOriginalWidthAlternate,
+        kRegOriginalHeightAlternate,
+        kRegOriginalHDRAlternate,
+        kRegModeHandoffPending,
+        kRegHDRHandoffPending,
+        kRegModePreviousRecoverySlot,
+        kRegHDRPreviousRecoverySlot}) {
     DWORD size = 0;
     const LONG result = RegQueryValueExW(key, value_name, nullptr, nullptr, nullptr, &size);
     if (result == ERROR_SUCCESS || result == ERROR_MORE_DATA) {
@@ -606,8 +660,30 @@ class Win32DisplayRecoveryBackend final : public DisplayRecoveryBackend {
 
     bool deleted = true;
     for (const wchar_t* value_name :
-         {kRegVersion, kRegModeDeviceName, kRegLegacyDeviceName, kRegHDRDeviceName, kRegOriginalRefreshRate,
-          kRegOriginalWidth, kRegOriginalHeight, kRegOriginalHDR, kRegModeChanged, kRegHDRChanged}) {
+         {kRegVersion,
+          kRegModeDeviceName,
+          kRegLegacyDeviceName,
+          kRegHDRDeviceName,
+          kRegOriginalRefreshRate,
+          kRegOriginalWidth,
+          kRegOriginalHeight,
+          kRegOriginalHDR,
+          kRegModeChanged,
+          kRegHDRChanged,
+          kRegModeTakeoverEligible,
+          kRegHDRTakeoverEligible,
+          kRegModeRecoverySlot,
+          kRegHDRRecoverySlot,
+          kRegModeDeviceNameAlternate,
+          kRegHDRDeviceNameAlternate,
+          kRegOriginalRefreshRateAlternate,
+          kRegOriginalWidthAlternate,
+          kRegOriginalHeightAlternate,
+          kRegOriginalHDRAlternate,
+          kRegModeHandoffPending,
+          kRegHDRHandoffPending,
+          kRegModePreviousRecoverySlot,
+          kRegHDRPreviousRecoverySlot}) {
       const LONG result = RegDeleteValueW(key, value_name);
       deleted = deleted && (result == ERROR_SUCCESS || result == ERROR_FILE_NOT_FOUND);
     }
@@ -620,33 +696,78 @@ namespace {
 
 bool ReadValidModeValues(
     DisplayRecoveryBackend& backend, const wchar_t* device_value_name, std::wstring& device_name, DWORD& width,
-    DWORD& height, DWORD& refresh_rate) {
-  return backend.ReadString(device_value_name, device_name) && backend.ReadDWORD(kRegOriginalWidth, width) &&
-         width > 0 && backend.ReadDWORD(kRegOriginalHeight, height) && height > 0 &&
-         backend.ReadDWORD(kRegOriginalRefreshRate, refresh_rate) && refresh_rate > 0;
+    DWORD& height, DWORD& refresh_rate, bool alternate = false) {
+  const wchar_t* width_value_name = alternate ? kRegOriginalWidthAlternate : kRegOriginalWidth;
+  const wchar_t* height_value_name = alternate ? kRegOriginalHeightAlternate : kRegOriginalHeight;
+  const wchar_t* refresh_value_name = alternate ? kRegOriginalRefreshRateAlternate : kRegOriginalRefreshRate;
+  return backend.ReadString(device_value_name, device_name) && backend.ReadDWORD(width_value_name, width) &&
+         width > 0 && backend.ReadDWORD(height_value_name, height) && height > 0 &&
+         backend.ReadDWORD(refresh_value_name, refresh_rate) && refresh_rate > 0;
 }
 
 bool ReadValidHDRValues(
-    DisplayRecoveryBackend& backend, const wchar_t* device_value_name, std::wstring& device_name, DWORD& original_hdr) {
-  return backend.ReadString(device_value_name, device_name) && backend.ReadDWORD(kRegOriginalHDR, original_hdr) &&
+    DisplayRecoveryBackend& backend, const wchar_t* device_value_name, std::wstring& device_name, DWORD& original_hdr,
+    bool alternate = false) {
+  const wchar_t* original_value_name = alternate ? kRegOriginalHDRAlternate : kRegOriginalHDR;
+  return backend.ReadString(device_value_name, device_name) && backend.ReadDWORD(original_value_name, original_hdr) &&
          original_hdr <= 1;
 }
 
-bool ReadValidMarkedMode(
-    DisplayRecoveryBackend& backend, std::wstring& device_name, DWORD& width, DWORD& height, DWORD& refresh_rate) {
-  DWORD version = 0;
-  DWORD marker = 0;
-  return backend.ReadDWORD(kRegVersion, version) && version == kRecoveryVersion &&
-         backend.ReadDWORD(kRegModeChanged, marker) && marker == 1 &&
-         ReadValidModeValues(backend, kRegModeDeviceName, device_name, width, height, refresh_rate);
+bool ReadRecoverySlot(DisplayRecoveryBackend& backend, const wchar_t* slot_value_name, bool& alternate) {
+  DWORD slot = 0;
+  if (!backend.ReadDWORD(slot_value_name, slot)) {
+    // Version-1 records created before alternate slots implicitly use the
+    // original value set.
+    alternate = false;
+    return true;
+  }
+  if (slot > 1) return false;
+  alternate = slot == 1;
+  return true;
 }
 
-bool ReadValidMarkedHDR(DisplayRecoveryBackend& backend, std::wstring& device_name, DWORD& original_hdr) {
+bool ReadValidModeSlot(
+    DisplayRecoveryBackend& backend, bool alternate, std::wstring& device_name, DWORD& width, DWORD& height,
+    DWORD& refresh_rate) {
+  return ReadValidModeValues(
+      backend, alternate ? kRegModeDeviceNameAlternate : kRegModeDeviceName, device_name, width, height, refresh_rate,
+      alternate);
+}
+
+bool ReadValidHDRSlot(DisplayRecoveryBackend& backend, bool alternate, std::wstring& device_name, DWORD& original_hdr) {
+  return ReadValidHDRValues(
+      backend, alternate ? kRegHDRDeviceNameAlternate : kRegHDRDeviceName, device_name, original_hdr, alternate);
+}
+
+bool ReadValidMarkedMode(
+    DisplayRecoveryBackend& backend, std::wstring& device_name, DWORD& width, DWORD& height, DWORD& refresh_rate,
+    bool* alternate_slot = nullptr) {
   DWORD version = 0;
   DWORD marker = 0;
-  return backend.ReadDWORD(kRegVersion, version) && version == kRecoveryVersion &&
-         backend.ReadDWORD(kRegHDRChanged, marker) && marker == 1 &&
-         ReadValidHDRValues(backend, kRegHDRDeviceName, device_name, original_hdr);
+  bool alternate = false;
+  if (!backend.ReadDWORD(kRegVersion, version) || version != kRecoveryVersion ||
+      !backend.ReadDWORD(kRegModeChanged, marker) || marker != 1 ||
+      !ReadRecoverySlot(backend, kRegModeRecoverySlot, alternate) ||
+      !ReadValidModeSlot(backend, alternate, device_name, width, height, refresh_rate)) {
+    return false;
+  }
+  if (alternate_slot) *alternate_slot = alternate;
+  return true;
+}
+
+bool ReadValidMarkedHDR(
+    DisplayRecoveryBackend& backend, std::wstring& device_name, DWORD& original_hdr, bool* alternate_slot = nullptr) {
+  DWORD version = 0;
+  DWORD marker = 0;
+  bool alternate = false;
+  if (!backend.ReadDWORD(kRegVersion, version) || version != kRecoveryVersion ||
+      !backend.ReadDWORD(kRegHDRChanged, marker) || marker != 1 ||
+      !ReadRecoverySlot(backend, kRegHDRRecoverySlot, alternate) ||
+      !ReadValidHDRSlot(backend, alternate, device_name, original_hdr)) {
+    return false;
+  }
+  if (alternate_slot) *alternate_slot = alternate;
+  return true;
 }
 
 bool DeleteRecordIfNoMarkedOperations(DisplayRecoveryBackend& backend) {
@@ -662,10 +783,80 @@ bool DeleteRecordIfNoMarkedOperations(DisplayRecoveryBackend& backend) {
   return true;
 }
 
-bool CompleteRecoveryOperation(DisplayRecoveryBackend& backend, const wchar_t* marker) {
-  if (!backend.ClearMarker(marker)) return false;
+bool IsTakeoverEligible(DisplayRecoveryBackend& backend, const wchar_t* takeover_disposition) {
+  DWORD value = 0;
+  return backend.ReadDWORD(takeover_disposition, value) && value == 1;
+}
+
+bool MarkTakeoverEligible(DisplayRecoveryBackend& backend, const wchar_t* takeover_disposition) {
+  return backend.WriteDWORD(takeover_disposition, 1);
+}
+
+bool ResetTakeoverEligibility(DisplayRecoveryBackend& backend, const wchar_t* takeover_disposition) {
+  return backend.WriteDWORD(takeover_disposition, 0);
+}
+
+bool ReadHandoffPending(DisplayRecoveryBackend& backend, const wchar_t* handoff_value_name, bool& pending) {
+  DWORD value = 0;
+  if (!backend.ReadDWORD(handoff_value_name, value)) {
+    pending = false;
+    return true;
+  }
+  if (value > 1) return false;
+  pending = value == 1;
+  return true;
+}
+
+bool ReadStoredRecoverySlot(DisplayRecoveryBackend& backend, const wchar_t* slot_value_name, bool& alternate) {
+  DWORD value = 0;
+  if (!backend.ReadDWORD(slot_value_name, value) || value > 1) return false;
+  alternate = value == 1;
+  return true;
+}
+
+bool CompleteRecoveryOperation(
+    DisplayRecoveryBackend& backend, const wchar_t* marker, const wchar_t* takeover_disposition,
+    const wchar_t* handoff_pending) {
+  // Handoff metadata must be inactive before its shared marker disappears.
+  if (!backend.WriteDWORD(handoff_pending, 0) || !ResetTakeoverEligibility(backend, takeover_disposition) ||
+      !backend.ClearMarker(marker)) {
+    return false;
+  }
   DeleteRecordIfNoMarkedOperations(backend);
   return true;
+}
+
+bool ConfirmPreparedRecovery(DisplayRecoveryBackend& backend, const wchar_t* handoff_pending) {
+  bool pending = false;
+  if (!ReadHandoffPending(backend, handoff_pending, pending)) return false;
+  return !pending || backend.WriteDWORD(handoff_pending, 0);
+}
+
+bool RollbackRecoveryHandoff(
+    DisplayRecoveryBackend& backend, const wchar_t* takeover_disposition, const wchar_t* recovery_slot,
+    const wchar_t* previous_recovery_slot, const wchar_t* handoff_pending) {
+  bool previous_alternate = false;
+  if (!ReadStoredRecoverySlot(backend, previous_recovery_slot, previous_alternate) ||
+      !backend.WriteDWORD(recovery_slot, previous_alternate ? 1 : 0) ||
+      !MarkTakeoverEligible(backend, takeover_disposition) || !backend.WriteDWORD(handoff_pending, 0)) {
+    return false;
+  }
+  return true;
+}
+
+bool FinalizePreparedRecovery(
+    DisplayRecoveryBackend& backend, bool os_apply_succeeded, const wchar_t* marker,
+    const wchar_t* takeover_disposition, const wchar_t* recovery_slot, const wchar_t* previous_recovery_slot,
+    const wchar_t* handoff_pending) {
+  if (os_apply_succeeded) return ConfirmPreparedRecovery(backend, handoff_pending);
+
+  bool pending = false;
+  if (!ReadHandoffPending(backend, handoff_pending, pending)) return false;
+  if (pending) {
+    return RollbackRecoveryHandoff(
+        backend, takeover_disposition, recovery_slot, previous_recovery_slot, handoff_pending);
+  }
+  return CompleteRecoveryOperation(backend, marker, takeover_disposition, handoff_pending);
 }
 
 bool PreserveValidModeSiblingOrClear(DisplayRecoveryBackend& backend) {
@@ -711,22 +902,59 @@ bool DisplayModeManager::PrepareModeRecovery(
   DWORD existing_height = 0;
   DWORD existing_refresh_rate = 0;
   std::wstring existing_device_name;
-  if (ReadValidMarkedMode(backend, existing_device_name, existing_width, existing_height, existing_refresh_rate)) {
-    // A valid marked original is already protecting a live or failed
-    // operation. Reuse it only when this manager has the same original;
-    // replacing it would lose the only restoration point.
-    return existing_device_name == device_name && existing_width == width && existing_height == height &&
-           existing_refresh_rate == refresh_rate;
+  bool existing_alternate = false;
+  if (ReadValidMarkedMode(
+          backend, existing_device_name, existing_width, existing_height, existing_refresh_rate, &existing_alternate)) {
+    bool handoff_pending = false;
+    if (!ReadHandoffPending(backend, kRegModeHandoffPending, handoff_pending) || handoff_pending) return false;
+
+    const bool same_original = existing_device_name == device_name && existing_width == width &&
+                               existing_height == height && existing_refresh_rate == refresh_rate;
+    if (same_original) {
+      // Reusing the restoration point makes it live again, so stale takeover
+      // permission must be durably revoked before the Windows mutation.
+      return ResetTakeoverEligibility(backend, kRegModeTakeoverEligible);
+    }
+    if (!IsTakeoverEligible(backend, kRegModeTakeoverEligible)) return false;
+
+    // Stage the replacement in the inactive slot. Handoff metadata keeps both
+    // originals recoverable from the selector switch until the OS apply is
+    // confirmed.
+    const bool replacement_alternate = !existing_alternate;
+    const wchar_t* replacement_device_name = replacement_alternate ? kRegModeDeviceNameAlternate : kRegModeDeviceName;
+    const wchar_t* replacement_width = replacement_alternate ? kRegOriginalWidthAlternate : kRegOriginalWidth;
+    const wchar_t* replacement_height = replacement_alternate ? kRegOriginalHeightAlternate : kRegOriginalHeight;
+    const wchar_t* replacement_refresh =
+        replacement_alternate ? kRegOriginalRefreshRateAlternate : kRegOriginalRefreshRate;
+    if (!backend.WriteDWORD(kRegVersion, kRecoveryVersion) ||
+        !backend.WriteString(replacement_device_name, device_name) || !backend.WriteDWORD(replacement_width, width) ||
+        !backend.WriteDWORD(replacement_height, height) || !backend.WriteDWORD(replacement_refresh, refresh_rate) ||
+        !backend.WriteDWORD(kRegModePreviousRecoverySlot, existing_alternate ? 1 : 0) ||
+        !ResetTakeoverEligibility(backend, kRegModeTakeoverEligible)) {
+      return false;
+    }
+    if (!backend.WriteDWORD(kRegModeHandoffPending, 1)) {
+      MarkTakeoverEligible(backend, kRegModeTakeoverEligible);
+      return false;
+    }
+    if (!backend.WriteDWORD(kRegModeRecoverySlot, replacement_alternate ? 1 : 0)) {
+      RollbackRecoveryHandoff(
+          backend, kRegModeTakeoverEligible, kRegModeRecoverySlot, kRegModePreviousRecoverySlot,
+          kRegModeHandoffPending);
+      return false;
+    }
+    return true;
   }
 
-  // Deactivate an incomplete old mode operation before replacing any
-  // originals. A crash anywhere before the final write is therefore a
-  // harmless pre-mutation prefix.
+  // An incomplete operation has no authoritative original to preserve. Keep
+  // the existing marker-last preparation sequence and select the primary slot
+  // before publishing the new operation.
   if (!backend.ClearMarker(kRegModeChanged)) return false;
-
   return backend.WriteDWORD(kRegVersion, kRecoveryVersion) && backend.WriteString(kRegModeDeviceName, device_name) &&
          backend.WriteDWORD(kRegOriginalWidth, width) && backend.WriteDWORD(kRegOriginalHeight, height) &&
-         backend.WriteDWORD(kRegOriginalRefreshRate, refresh_rate) && backend.WriteDWORD(kRegModeChanged, 1);
+         backend.WriteDWORD(kRegOriginalRefreshRate, refresh_rate) && backend.WriteDWORD(kRegModeHandoffPending, 0) &&
+         ResetTakeoverEligibility(backend, kRegModeTakeoverEligible) && backend.WriteDWORD(kRegModeRecoverySlot, 0) &&
+         backend.WriteDWORD(kRegModeChanged, 1);
 }
 
 bool DisplayModeManager::PrepareHDRRecovery(
@@ -736,14 +964,42 @@ bool DisplayModeManager::PrepareHDRRecovery(
 
   DWORD existing_original = 0;
   std::wstring existing_device_name;
-  if (ReadValidMarkedHDR(backend, existing_device_name, existing_original)) {
-    return existing_device_name == device_name && existing_original == (enabled ? 1u : 0u);
+  bool existing_alternate = false;
+  if (ReadValidMarkedHDR(backend, existing_device_name, existing_original, &existing_alternate)) {
+    bool handoff_pending = false;
+    if (!ReadHandoffPending(backend, kRegHDRHandoffPending, handoff_pending) || handoff_pending) return false;
+
+    const bool same_original = existing_device_name == device_name && existing_original == (enabled ? 1u : 0u);
+    if (same_original) return ResetTakeoverEligibility(backend, kRegHDRTakeoverEligible);
+    if (!IsTakeoverEligible(backend, kRegHDRTakeoverEligible)) return false;
+
+    const bool replacement_alternate = !existing_alternate;
+    const wchar_t* replacement_device_name = replacement_alternate ? kRegHDRDeviceNameAlternate : kRegHDRDeviceName;
+    const wchar_t* replacement_original = replacement_alternate ? kRegOriginalHDRAlternate : kRegOriginalHDR;
+    if (!backend.WriteDWORD(kRegVersion, kRecoveryVersion) ||
+        !backend.WriteString(replacement_device_name, device_name) ||
+        !backend.WriteDWORD(replacement_original, enabled ? 1 : 0) ||
+        !backend.WriteDWORD(kRegHDRPreviousRecoverySlot, existing_alternate ? 1 : 0) ||
+        !ResetTakeoverEligibility(backend, kRegHDRTakeoverEligible)) {
+      return false;
+    }
+    if (!backend.WriteDWORD(kRegHDRHandoffPending, 1)) {
+      MarkTakeoverEligible(backend, kRegHDRTakeoverEligible);
+      return false;
+    }
+    if (!backend.WriteDWORD(kRegHDRRecoverySlot, replacement_alternate ? 1 : 0)) {
+      RollbackRecoveryHandoff(
+          backend, kRegHDRTakeoverEligible, kRegHDRRecoverySlot, kRegHDRPreviousRecoverySlot, kRegHDRHandoffPending);
+      return false;
+    }
+    return true;
   }
 
   if (!backend.ClearMarker(kRegHDRChanged)) return false;
-
   return backend.WriteDWORD(kRegVersion, kRecoveryVersion) && backend.WriteString(kRegHDRDeviceName, device_name) &&
-         backend.WriteDWORD(kRegOriginalHDR, enabled ? 1 : 0) && backend.WriteDWORD(kRegHDRChanged, 1);
+         backend.WriteDWORD(kRegOriginalHDR, enabled ? 1 : 0) && backend.WriteDWORD(kRegHDRHandoffPending, 0) &&
+         ResetTakeoverEligibility(backend, kRegHDRTakeoverEligible) && backend.WriteDWORD(kRegHDRRecoverySlot, 0) &&
+         backend.WriteDWORD(kRegHDRChanged, 1);
 }
 
 namespace {
@@ -758,9 +1014,29 @@ bool PrepareHDRRecoveryAtRegistry(const std::wstring& device_name, bool enabled)
   return DisplayModeManager::PrepareHDRRecovery(backend, device_name, enabled);
 }
 
-bool CompleteRecoveryOperationAtRegistry(const wchar_t* marker) {
+bool CompleteRecoveryOperationAtRegistry(
+    const wchar_t* marker, const wchar_t* takeover_disposition, const wchar_t* handoff_pending) {
   Win32DisplayRecoveryBackend backend;
-  return CompleteRecoveryOperation(backend, marker);
+  return CompleteRecoveryOperation(backend, marker, takeover_disposition, handoff_pending);
+}
+
+bool FinalizeModeRecoveryAtRegistry(bool os_apply_succeeded) {
+  Win32DisplayRecoveryBackend backend;
+  return FinalizePreparedRecovery(
+      backend, os_apply_succeeded, kRegModeChanged, kRegModeTakeoverEligible, kRegModeRecoverySlot,
+      kRegModePreviousRecoverySlot, kRegModeHandoffPending);
+}
+
+bool FinalizeHDRRecoveryAtRegistry(bool os_apply_succeeded) {
+  Win32DisplayRecoveryBackend backend;
+  return FinalizePreparedRecovery(
+      backend, os_apply_succeeded, kRegHDRChanged, kRegHDRTakeoverEligible, kRegHDRRecoverySlot,
+      kRegHDRPreviousRecoverySlot, kRegHDRHandoffPending);
+}
+
+bool MarkTakeoverEligibleAtRegistry(const wchar_t* takeover_disposition) {
+  Win32DisplayRecoveryBackend backend;
+  return MarkTakeoverEligible(backend, takeover_disposition);
 }
 
 bool RecoverRecord(DisplayRecoveryBackend& backend, bool mode_is_live, bool hdr_is_live) {
@@ -794,9 +1070,32 @@ bool RecoverRecord(DisplayRecoveryBackend& backend, bool mode_is_live, bool hdr_
   DWORD width = 0;
   DWORD height = 0;
   DWORD refresh_rate = 0;
-  const bool mode_requested =
-      mode_marker_read && mode_marker == 1 &&
-      ReadValidModeValues(backend, mode_device_value_name, mode_device_name, width, height, refresh_rate);
+  bool mode_handoff_pending = false;
+  std::wstring previous_mode_device_name;
+  DWORD previous_width = 0;
+  DWORD previous_height = 0;
+  DWORD previous_refresh_rate = 0;
+  bool mode_requested = false;
+  if (mode_marker_read && mode_marker == 1) {
+    if (has_version) {
+      bool handoff_state_valid = ReadHandoffPending(backend, kRegModeHandoffPending, mode_handoff_pending);
+      if (handoff_state_valid && mode_handoff_pending) {
+        bool previous_alternate = false;
+        handoff_state_valid =
+            ReadStoredRecoverySlot(backend, kRegModePreviousRecoverySlot, previous_alternate) &&
+            ReadValidModeSlot(backend, !previous_alternate, mode_device_name, width, height, refresh_rate) &&
+            ReadValidModeSlot(
+                backend, previous_alternate, previous_mode_device_name, previous_width, previous_height,
+                previous_refresh_rate);
+      } else if (handoff_state_valid) {
+        handoff_state_valid = ReadValidMarkedMode(backend, mode_device_name, width, height, refresh_rate);
+      }
+      mode_requested = handoff_state_valid;
+    } else {
+      mode_requested =
+          ReadValidModeValues(backend, mode_device_value_name, mode_device_name, width, height, refresh_rate);
+    }
+  }
   if (!mode_is_live && (!mode_marker_read || mode_marker > 1 || (mode_marker == 1 && !mode_requested))) {
     // Malformation in one operation does not erase a valid or live sibling.
     backend.ClearMarker(kRegModeChanged);
@@ -806,8 +1105,27 @@ bool RecoverRecord(DisplayRecoveryBackend& backend, bool mode_is_live, bool hdr_
   const bool hdr_marker_read = backend.ReadDWORD(kRegHDRChanged, hdr_marker);
   std::wstring hdr_device_name;
   DWORD original_hdr = 0;
-  const bool hdr_requested = hdr_marker_read && hdr_marker == 1 &&
-                             ReadValidHDRValues(backend, hdr_device_value_name, hdr_device_name, original_hdr);
+  bool hdr_handoff_pending = false;
+  std::wstring previous_hdr_device_name;
+  DWORD previous_original_hdr = 0;
+  bool hdr_requested = false;
+  if (hdr_marker_read && hdr_marker == 1) {
+    if (has_version) {
+      bool handoff_state_valid = ReadHandoffPending(backend, kRegHDRHandoffPending, hdr_handoff_pending);
+      if (handoff_state_valid && hdr_handoff_pending) {
+        bool previous_alternate = false;
+        handoff_state_valid =
+            ReadStoredRecoverySlot(backend, kRegHDRPreviousRecoverySlot, previous_alternate) &&
+            ReadValidHDRSlot(backend, !previous_alternate, hdr_device_name, original_hdr) &&
+            ReadValidHDRSlot(backend, previous_alternate, previous_hdr_device_name, previous_original_hdr);
+      } else if (handoff_state_valid) {
+        handoff_state_valid = ReadValidMarkedHDR(backend, hdr_device_name, original_hdr);
+      }
+      hdr_requested = handoff_state_valid;
+    } else {
+      hdr_requested = ReadValidHDRValues(backend, hdr_device_value_name, hdr_device_name, original_hdr);
+    }
+  }
   if (!hdr_is_live && (!hdr_marker_read || hdr_marker > 1 || (hdr_marker == 1 && !hdr_requested))) {
     backend.ClearMarker(kRegHDRChanged);
   }
@@ -821,19 +1139,43 @@ bool RecoverRecord(DisplayRecoveryBackend& backend, bool mode_is_live, bool hdr_
 
   bool completed = true;
   if (recover_mode) {
-    if (backend.IsDevicePresent(mode_device_name) &&
-        backend.RestoreMode(mode_device_name, width, height, refresh_rate)) {
-      // A failed marker clear leaves an idempotent restoration for a later pass.
-      completed = CompleteRecoveryOperation(backend, kRegModeChanged) && completed;
-    } else {
+    const bool restored =
+        backend.IsDevicePresent(mode_device_name) && backend.RestoreMode(mode_device_name, width, height, refresh_rate);
+    if (mode_handoff_pending) {
+      // Restore the replacement first and the pre-handoff original last. Both
+      // remain marked until both idempotent restores and cleanup succeed.
+      const bool previous_restored =
+          backend.IsDevicePresent(previous_mode_device_name) &&
+          backend.RestoreMode(previous_mode_device_name, previous_width, previous_height, previous_refresh_rate);
+      if (!restored || !previous_restored ||
+          !CompleteRecoveryOperation(backend, kRegModeChanged, kRegModeTakeoverEligible, kRegModeHandoffPending)) {
+        completed = false;
+      }
+    } else if (
+        !restored ||
+        !CompleteRecoveryOperation(backend, kRegModeChanged, kRegModeTakeoverEligible, kRegModeHandoffPending)) {
+      // Retain the restoration point for topology retries, but remember that
+      // one real non-live recovery attempt failed so a later conflicting mode
+      // request may deliberately replace it.
+      MarkTakeoverEligible(backend, kRegModeTakeoverEligible);
       completed = false;
     }
   }
 
   if (recover_hdr) {
-    if (backend.IsDevicePresent(hdr_device_name) && backend.RestoreHDR(hdr_device_name, original_hdr != 0)) {
-      completed = CompleteRecoveryOperation(backend, kRegHDRChanged) && completed;
-    } else {
+    const bool restored =
+        backend.IsDevicePresent(hdr_device_name) && backend.RestoreHDR(hdr_device_name, original_hdr != 0);
+    if (hdr_handoff_pending) {
+      const bool previous_restored = backend.IsDevicePresent(previous_hdr_device_name) &&
+                                     backend.RestoreHDR(previous_hdr_device_name, previous_original_hdr != 0);
+      if (!restored || !previous_restored ||
+          !CompleteRecoveryOperation(backend, kRegHDRChanged, kRegHDRTakeoverEligible, kRegHDRHandoffPending)) {
+        completed = false;
+      }
+    } else if (
+        !restored ||
+        !CompleteRecoveryOperation(backend, kRegHDRChanged, kRegHDRTakeoverEligible, kRegHDRHandoffPending)) {
+      MarkTakeoverEligible(backend, kRegHDRTakeoverEligible);
       completed = false;
     }
   }
@@ -860,7 +1202,19 @@ bool DisplayModeManager::RecoverIfNeeded(DisplayRecoveryBackend& backend) {
 #if defined(PLEZY_DISPLAY_MODE_MANAGER_TESTING)
 bool DisplayModeManager::CompleteRecoveryOperationForTesting(DisplayRecoveryBackend& backend, bool mode) {
   std::lock_guard<std::recursive_mutex> transaction_lock(g_display_override_mutex);
-  return CompleteRecoveryOperation(backend, mode ? kRegModeChanged : kRegHDRChanged);
+  return CompleteRecoveryOperation(
+      backend, mode ? kRegModeChanged : kRegHDRChanged, mode ? kRegModeTakeoverEligible : kRegHDRTakeoverEligible,
+      mode ? kRegModeHandoffPending : kRegHDRHandoffPending);
+}
+
+bool DisplayModeManager::FinalizePreparedRecoveryForTesting(
+    DisplayRecoveryBackend& backend, bool mode, bool os_apply_succeeded) {
+  std::lock_guard<std::recursive_mutex> transaction_lock(g_display_override_mutex);
+  return FinalizePreparedRecovery(
+      backend, os_apply_succeeded, mode ? kRegModeChanged : kRegHDRChanged,
+      mode ? kRegModeTakeoverEligible : kRegHDRTakeoverEligible, mode ? kRegModeRecoverySlot : kRegHDRRecoverySlot,
+      mode ? kRegModePreviousRecoverySlot : kRegHDRPreviousRecoverySlot,
+      mode ? kRegModeHandoffPending : kRegHDRHandoffPending);
 }
 
 bool DisplayModeManager::RecoverIfNeededForTesting(

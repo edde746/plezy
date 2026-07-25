@@ -561,18 +561,15 @@ import TVServices
       else { return nil }
       let data = download.data
       let key = UUID().uuidString.lowercased().replacingOccurrences(of: "-", with: "") + ".art"
-      let staged = directory.appendingPathComponent(".\(key).tmp")
       let destination = directory.appendingPathComponent(key)
       do {
-        try data.write(to: staged, options: [.atomic, .completeFileProtectionUntilFirstUserAuthentication])
-        if FileManager.default.fileExists(atPath: destination.path) {
-          try FileManager.default.removeItem(at: destination)
-        }
-        try FileManager.default.moveItem(at: staged, to: destination)
+        try data.write(
+          to: destination,
+          options: [.atomic, .completeFileProtectionUntilFirstUserAuthentication]
+        )
         remaining -= data.count
         return key
       } catch {
-        try? FileManager.default.removeItem(at: staged)
         return nil
       }
     }

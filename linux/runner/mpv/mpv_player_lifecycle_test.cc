@@ -446,7 +446,7 @@ void TestPendingPropertyWriteFailsOnDispose() {
 
   player.Dispose();
   Check(callback_count == 1, "dispose must complete a pending property write exactly once");
-  Check(status < 0, "dispose must fail a pending property write");
+  Check(status == MPV_ERROR_UNINITIALIZED, "dispose must cancel a pending property write as uninitialized");
 
   player.Dispose();
   Check(callback_count == 1, "repeated dispose must not complete a property write twice");

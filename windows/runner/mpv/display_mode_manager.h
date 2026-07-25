@@ -105,21 +105,29 @@ class DisplayModeManager {
 
   // --- Crash recovery ---
 
-  // Persist a complete original followed by its operation marker. These
-  // runner-internal seams make the crash ordering deterministic in tests.
+  // Persist a complete original followed by its operation marker. A failed
+  // non-live recovery remains retryable, but durably permits a later
+  // conflicting request of the same kind to replace it. Conflicting originals
+  // are staged in an inactive slot. A persisted handoff keeps both originals
+  // recoverable across the selector switch and OS call; success confirms the
+  // new slot, while OS failure rolls back the prior selector and eligibility.
+  // Reusing the same original revokes permission before it becomes live.
+  // These runner-internal seams make the crash ordering deterministic in tests.
   static bool PrepareModeRecovery(
       DisplayRecoveryBackend& backend, const std::wstring& device_name, DWORD width, DWORD height, DWORD refresh_rate);
   static bool PrepareHDRRecovery(DisplayRecoveryBackend& backend, const std::wstring& device_name, bool enabled);
 
   // Check for and recover from a prior crash that left display settings
-  // changed. Successful operation markers are cleared independently. Failed
-  // operations remain for the next startup or display-topology notification.
+  // changed. Successful operation markers and their takeover dispositions are
+  // cleared independently. Failed operations remain recovery-first until a
+  // conflicting same-kind preparation consumes their persisted disposition.
   static bool RecoverIfNeeded();
   static bool RecoverIfNeeded(DisplayRecoveryBackend& backend);
 #if defined(PLEZY_DISPLAY_MODE_MANAGER_TESTING)
   // Exercise persisted lifecycle exits and per-operation live ownership without
   // touching a real display or registry.
   static bool CompleteRecoveryOperationForTesting(DisplayRecoveryBackend& backend, bool mode);
+  static bool FinalizePreparedRecoveryForTesting(DisplayRecoveryBackend& backend, bool mode, bool os_apply_succeeded);
   static bool RecoverIfNeededForTesting(DisplayRecoveryBackend& backend, bool mode_is_live, bool hdr_is_live);
 #endif
 

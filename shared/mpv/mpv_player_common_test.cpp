@@ -81,14 +81,27 @@ void TestSetPropertyResultContract() {
   assert(SetPropertyStatusSucceeded(MPV_ERROR_SUCCESS));
   assert(SetPropertyStatusSucceeded(1));
 
-  constexpr int kFailureStatuses[] = {
+  assert(!SetPropertyStatusSucceeded(MPV_ERROR_UNINITIALIZED));
+
+  assert(std::string(SetPropertyErrorCode(MPV_ERROR_UNINITIALIZED)) == kSetPropertyNotInitializedCode);
+
+  constexpr int kRejectedStatuses[] = {
+      MPV_ERROR_INVALID_PARAMETER,
+      MPV_ERROR_PROPERTY_ERROR,
+      -1,
+  };
+  for (const int status : kRejectedStatuses) {
+    assert(!SetPropertyStatusSucceeded(status));
+    assert(std::string(SetPropertyErrorCode(status)) == kSetPropertyFailedCode);
+  }
+
+  constexpr int kDescribedStatuses[] = {
       MPV_ERROR_INVALID_PARAMETER,
       MPV_ERROR_PROPERTY_ERROR,
       -1,
       MPV_ERROR_UNINITIALIZED,
   };
-  for (const int status : kFailureStatuses) {
-    assert(!SetPropertyStatusSucceeded(status));
+  for (const int status : kDescribedStatuses) {
     const std::string description = SetPropertyErrorDescription(status);
     assert(!description.empty());
     assert(description.size() <= kSetPropertyErrorDescriptionLimit);

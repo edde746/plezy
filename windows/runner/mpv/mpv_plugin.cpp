@@ -282,9 +282,11 @@ void MpvPlayerPlugin::HandleMethodCall(
             if (plezy::mpv_common::SetPropertyStatusSucceeded(error)) {
               (*result_ptr)->Success();
             } else {
-              (*result_ptr)
-                  ->Error(
-                      plezy::mpv_common::kSetPropertyFailedCode, plezy::mpv_common::SetPropertyErrorDescription(error));
+              const auto* error_code = plezy::mpv_common::SetPropertyErrorCode(error);
+              const auto description = error == MPV_ERROR_UNINITIALIZED
+                                           ? std::string("Player not initialized")
+                                           : plezy::mpv_common::SetPropertyErrorDescription(error);
+              (*result_ptr)->Error(error_code, description);
             }
           });
         });

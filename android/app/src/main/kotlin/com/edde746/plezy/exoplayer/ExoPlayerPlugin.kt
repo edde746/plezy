@@ -18,6 +18,7 @@ import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding
 import io.flutter.plugin.common.EventChannel
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
+import java.util.concurrent.CancellationException
 import java.util.concurrent.atomic.AtomicBoolean
 
 class ExoPlayerPlugin :
@@ -774,16 +775,17 @@ class ExoPlayerPlugin :
       }
       pendingMpvProperties[name] = value
       core.setProperty(name, value) { outcome ->
-        val currentOutcome = if (
+        val fallbackIsCurrent =
           usingMpvFallback &&
-          generation == sessionGeneration &&
-          activity === currentActivity &&
-          mpvCore === core
-        ) {
-          outcome
-        } else {
-          Result.failure(IllegalStateException("MPV fallback unavailable"))
-        }
+            generation == sessionGeneration &&
+            activity === currentActivity &&
+            mpvCore === core
+        val currentOutcome =
+          if (fallbackIsCurrent || outcome.isFailure) {
+            outcome
+          } else {
+            Result.failure(CancellationException("MPV fallback unavailable"))
+          }
         completeMpvPropertyResult(result, currentOutcome, successValue)
       }
     }

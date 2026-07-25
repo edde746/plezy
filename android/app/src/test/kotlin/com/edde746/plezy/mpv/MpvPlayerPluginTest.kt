@@ -288,6 +288,221 @@ class MpvPlayerPluginTest {
   }
 
   @Test
+  fun activeFocusLossExplicitResumeReacquiresFocusAndWritesOnce() {
+    val writes = ConcurrentLinkedQueue<Pair<String, String>>()
+    val focusResumeCallbacks = AtomicInteger()
+    val completionCount = AtomicInteger()
+    val core = testCore { name, value -> writes += name to value }
+    val focusManager = testAudioFocusManager(core, focusResumeCallbacks)
+    setCoreField(core, "audioFocusManager", focusManager)
+    setBoolean(core, "desiredPaused", false)
+    setBoolean(core, "cachedPaused", false)
+
+    dispatchAudioFocusChange(focusManager, AudioManager.AUDIOFOCUS_LOSS)
+    awaitCondition { writes.count { it == "pause" to "yes" } == 1 }
+    assertEquals(true, getBoolean(core, "pausedForAudioFocusLoss"))
+    setNextAudioFocusRequestResponse(focusManager, AudioManager.AUDIOFOCUS_REQUEST_GRANTED)
+
+    var outcome: Result<Unit>? = null
+    core.setProperty("pause", "no") {
+      completionCount.incrementAndGet()
+      outcome = it
+    }
+    awaitCondition { outcome != null }
+
+    assertTrue(outcome?.isSuccess == true)
+    assertEquals(1, completionCount.get())
+    assertEquals(listOf("pause" to "yes", "pause" to "no"), writes.toList())
+    assertEquals(1, writes.count { it == "pause" to "no" })
+    assertEquals(false, getBoolean(core, "pausedForAudioFocusLoss"))
+    assertEquals(false, getBoolean(core, "deferredResumeRequested"))
+    assertEquals(false, getBoolean(core, "cachedPaused"))
+  }
+
+  @Test
+  fun deniedExplicitResumeFocusRequestFailsWithoutWriting() {
+    val writes = ConcurrentLinkedQueue<Pair<String, String>>()
+    val focusResumeCallbacks = AtomicInteger()
+    val core = testCore { name, value -> writes += name to value }
+    val focusManager = testAudioFocusManager(core, focusResumeCallbacks)
+    val plugin = MpvAudioPlayerPlugin()
+    setCoreField(core, "audioFocusManager", focusManager)
+    installCore(plugin, core)
+    setBoolean(core, "desiredPaused", false)
+    setBoolean(core, "cachedPaused", false)
+
+    dispatchAudioFocusChange(focusManager, AudioManager.AUDIOFOCUS_LOSS_TRANSIENT)
+    awaitCondition { writes.contains("pause" to "yes") }
+    assertEquals(true, getBoolean(core, "pausedForAudioFocusLoss"))
+
+    val coreCompletionCount = AtomicInteger()
+    var coreOutcome: Result<Unit>? = null
+    setNextAudioFocusRequestResponse(focusManager, AudioManager.AUDIOFOCUS_REQUEST_FAILED)
+    core.setProperty("pause", "no") {
+      coreCompletionCount.incrementAndGet()
+      coreOutcome = it
+    }
+    awaitCondition { coreOutcome != null }
+
+    assertTrue(coreOutcome?.isFailure == true)
+    assertFalse(coreOutcome?.exceptionOrNull() is CancellationException)
+    assertEquals(1, coreCompletionCount.get())
+    assertEquals(0, writes.count { it == "pause" to "no" })
+    assertEquals(true, getBoolean(core, "pausedForAudioFocusLoss"))
+    assertEquals(true, getBoolean(core, "cachedPaused"))
+
+    setNextAudioFocusRequestResponse(focusManager, AudioManager.AUDIOFOCUS_REQUEST_FAILED)
+    val denied = RecordingResult()
+    plugin.onMethodCall(
+      MethodCall("setProperty", mapOf("name" to "pause", "value" to "no")),
+      denied
+    )
+    awaitCompletion(denied)
+
+    assertEquals(1, denied.completionCount)
+    assertEquals("SET_PROPERTY_FAILED", denied.errorCode)
+    assertEquals(0, writes.count { it == "pause" to "no" })
+    assertEquals(true, getBoolean(core, "pausedForAudioFocusLoss"))
+
+    setNextAudioFocusRequestResponse(focusManager, AudioManager.AUDIOFOCUS_REQUEST_GRANTED)
+    val retry = RecordingResult()
+    plugin.onMethodCall(
+      MethodCall("setProperty", mapOf("name" to "pause", "value" to "no")),
+      retry
+    )
+    awaitCompletion(retry)
+
+    assertEquals(1, retry.completionCount)
+    assertNull(retry.errorCode)
+    assertEquals(1, writes.count { it == "pause" to "no" })
+    assertEquals(false, getBoolean(core, "pausedForAudioFocusLoss"))
+    assertEquals(false, getBoolean(core, "cachedPaused"))
+  }
+
+  @Test
+  fun delayedFocusGainAfterExplicitResumeDoesNotWriteAgain() {
+    val writes = ConcurrentLinkedQueue<Pair<String, String>>()
+    val explicitResumeStarted = CountDownLatch(1)
+    val releaseExplicitResume = CountDownLatch(1)
+    val duplicateResume = CountDownLatch(1)
+    val resumeWrites = AtomicInteger()
+    val focusResumeCallbacks = AtomicInteger()
+    val core = testCore { name, value ->
+      writes += name to value
+      if (name == "pause" && value == "no") {
+        if (resumeWrites.incrementAndGet() == 1) {
+          explicitResumeStarted.countDown()
+          releaseExplicitResume.await(1, TimeUnit.SECONDS)
+        } else {
+          duplicateResume.countDown()
+        }
+      }
+    }
+    val focusManager = testAudioFocusManager(core, focusResumeCallbacks)
+    setCoreField(core, "audioFocusManager", focusManager)
+    setBoolean(core, "desiredPaused", false)
+    setBoolean(core, "cachedPaused", false)
+
+    dispatchAudioFocusChange(focusManager, AudioManager.AUDIOFOCUS_LOSS)
+    awaitCondition { writes.contains("pause" to "yes") }
+    setNextAudioFocusRequestResponse(focusManager, AudioManager.AUDIOFOCUS_REQUEST_GRANTED)
+    var outcome: Result<Unit>? = null
+    core.setProperty("pause", "no") { outcome = it }
+    assertTrue(explicitResumeStarted.await(1, TimeUnit.SECONDS))
+    assertEquals(false, getBoolean(core, "pausedForAudioFocusLoss"))
+
+    dispatchAudioFocusChange(focusManager, AudioManager.AUDIOFOCUS_GAIN)
+    assertEquals(1, focusResumeCallbacks.get())
+    releaseExplicitResume.countDown()
+    awaitCondition { outcome != null }
+
+    shadowOf(Looper.getMainLooper()).idle()
+    assertFalse(duplicateResume.await(100, TimeUnit.MILLISECONDS))
+    assertTrue(outcome?.isSuccess == true)
+    assertEquals(1, resumeWrites.get())
+    assertEquals(listOf("pause" to "yes", "pause" to "no"), writes.toList())
+  }
+
+  @Test
+  fun freshFocusLossAfterExplicitClaimPreventsThePendingResumeWrite() {
+    val writes = ConcurrentLinkedQueue<Pair<String, String>>()
+    val blockerStarted = CountDownLatch(1)
+    val releaseBlocker = CountDownLatch(1)
+    val focusResumeCallbacks = AtomicInteger()
+    val core = testCore { name, value ->
+      writes += name to value
+      if (name == "block") {
+        blockerStarted.countDown()
+        releaseBlocker.await(1, TimeUnit.SECONDS)
+      }
+    }
+    val focusManager = testAudioFocusManager(core, focusResumeCallbacks)
+    setCoreField(core, "audioFocusManager", focusManager)
+    setBoolean(core, "desiredPaused", false)
+    setBoolean(core, "cachedPaused", false)
+
+    dispatchAudioFocusChange(focusManager, AudioManager.AUDIOFOCUS_LOSS)
+    awaitCondition { writes.count { it == "pause" to "yes" } == 1 }
+    var blockerOutcome: Result<Unit>? = null
+    core.setProperty("block", "value") { blockerOutcome = it }
+    assertTrue(blockerStarted.await(1, TimeUnit.SECONDS))
+
+    setNextAudioFocusRequestResponse(focusManager, AudioManager.AUDIOFOCUS_REQUEST_GRANTED)
+    val resumeCompletionCount = AtomicInteger()
+    var resumeOutcome: Result<Unit>? = null
+    core.setProperty("pause", "no") {
+      resumeCompletionCount.incrementAndGet()
+      resumeOutcome = it
+    }
+    assertEquals(false, getBoolean(core, "pausedForAudioFocusLoss"))
+
+    dispatchAudioFocusChange(focusManager, AudioManager.AUDIOFOCUS_LOSS_TRANSIENT)
+    assertEquals(true, getBoolean(core, "pausedForAudioFocusLoss"))
+    releaseBlocker.countDown()
+    awaitCondition {
+      blockerOutcome != null &&
+        resumeOutcome != null &&
+        writes.count { it == "pause" to "yes" } == 2
+    }
+
+    assertTrue(blockerOutcome?.isSuccess == true)
+    assertTrue(resumeOutcome?.isFailure == true)
+    assertEquals(1, resumeCompletionCount.get())
+    assertEquals(0, writes.count { it == "pause" to "no" })
+    assertEquals(true, getBoolean(core, "pausedForAudioFocusLoss"))
+    assertEquals(true, getBoolean(core, "cachedPaused"))
+  }
+
+  @Test
+  fun explicitVideoResumeAfterFocusLossRemainsDeferredOnlyForSurface() {
+    val writes = ConcurrentLinkedQueue<Pair<String, String>>()
+    val focusResumeCallbacks = AtomicInteger()
+    val completionCount = AtomicInteger()
+    val core = testVideoCore { name, value -> writes += name to value }
+    val focusManager = testAudioFocusManager(core, focusResumeCallbacks)
+    setCoreField(core, "audioFocusManager", focusManager)
+    setBoolean(core, "desiredPaused", false)
+    setBoolean(core, "cachedPaused", false)
+
+    dispatchAudioFocusChange(focusManager, AudioManager.AUDIOFOCUS_LOSS)
+    awaitCondition { writes.contains("pause" to "yes") }
+    setNextAudioFocusRequestResponse(focusManager, AudioManager.AUDIOFOCUS_REQUEST_GRANTED)
+    var outcome: Result<Unit>? = null
+    core.setProperty("pause", "no") {
+      completionCount.incrementAndGet()
+      outcome = it
+    }
+    awaitCondition { outcome != null }
+
+    assertTrue(outcome?.isSuccess == true)
+    assertEquals(1, completionCount.get())
+    assertEquals(listOf("pause" to "yes"), writes.toList())
+    assertEquals(false, getBoolean(core, "pausedForAudioFocusLoss"))
+    assertEquals(true, getBoolean(core, "deferredResumeRequested"))
+    assertEquals(true, getBoolean(core, "cachedPaused"))
+  }
+
+  @Test
   fun pausedFocusLossAndGainWithoutResumeCallbackAllowsOneExplicitResume() {
     val writes = ConcurrentLinkedQueue<Pair<String, String>>()
     val focusResumeCallbacks = AtomicInteger()
@@ -622,6 +837,14 @@ class MpvPlayerPluginTest {
       get(manager) as AudioManager.OnAudioFocusChangeListener
     }
     listener.onAudioFocusChange(focusChange)
+  }
+
+  private fun setNextAudioFocusRequestResponse(manager: AudioFocusManager, response: Int) {
+    val audioManager = AudioFocusManager::class.java.getDeclaredField("audioManager").run {
+      isAccessible = true
+      get(manager) as AudioManager
+    }
+    shadowOf(audioManager).setNextFocusRequestResponse(response)
   }
 
   private fun invokeAutoResume(core: MpvPlayerCore, reason: String) {

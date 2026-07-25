@@ -560,7 +560,7 @@ void MpvPlayer::Dispose() {
 
   auto cancelled = pending_requests_.CancelAll();
   for (auto& callback : cancelled.status) {
-    callback(-1);
+    callback(MPV_ERROR_UNINITIALIZED);
   }
   for (auto& callback : cancelled.properties) {
     callback(-1, "");

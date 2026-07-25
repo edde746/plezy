@@ -1,11 +1,14 @@
 package com.edde746.plezy.exoplayer
 
 import android.app.Activity
+import android.media.AudioManager
+import android.os.Handler
 import android.os.Looper
 import android.view.ViewGroup
 import android.view.ViewTreeObserver
 import android.widget.FrameLayout
 import com.edde746.plezy.mpv.MpvPlayerCore
+import com.edde746.plezy.shared.AudioFocusManager
 import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.plugin.common.EventChannel
 import io.flutter.plugin.common.MethodCall
@@ -109,6 +112,54 @@ class ExoPlayerPluginTest {
     assertEquals("NOT_INITIALIZED", result.errorCode)
     assertTrue(result.errorMessage?.contains("secret") == false)
     assertEquals(null, result.successValue)
+  }
+
+  @Test
+  fun fallbackPropertyCancelledByTeardownReturnsNotInitializedOnce() {
+    val writerEntered = CountDownLatch(1)
+    val releaseWriter = CountDownLatch(1)
+    val plugin = fallbackPlugin { _, _ ->
+      writerEntered.countDown()
+      releaseWriter.await(2, TimeUnit.SECONDS)
+    }
+    val property = RecordingResult()
+
+    plugin.onMethodCall(MethodCall("setRate", mapOf("rate" to 1.5)), property)
+    assertTrue("fallback property writer never started", writerEntered.await(2, TimeUnit.SECONDS))
+
+    val dispose = RecordingResult()
+    plugin.onMethodCall(MethodCall("dispose", null), dispose)
+    awaitCompletion(dispose)
+    releaseWriter.countDown()
+
+    awaitCompletion(property)
+    assertEquals(1, property.completionCount)
+    assertEquals("NOT_INITIALIZED", property.errorCode)
+    assertEquals(null, property.successValue)
+  }
+
+  @Test
+  fun staleSuccessfulFallbackPropertyReturnsNotInitializedOnce() {
+    val writerEntered = CountDownLatch(1)
+    val releaseWriter = CountDownLatch(1)
+    val plugin = fallbackPlugin { _, _ ->
+      writerEntered.countDown()
+      releaseWriter.await(2, TimeUnit.SECONDS)
+    }
+    val core = getField(plugin, "mpvCore") as MpvPlayerCore
+    val result = RecordingResult()
+
+    plugin.onMethodCall(MethodCall("setRate", mapOf("rate" to 1.5)), result)
+    assertTrue("fallback property writer never started", writerEntered.await(2, TimeUnit.SECONDS))
+
+    setField(plugin, "usingMpvFallback", false)
+    releaseWriter.countDown()
+
+    awaitCompletion(result)
+    assertEquals(1, result.completionCount)
+    assertEquals("NOT_INITIALIZED", result.errorCode)
+    assertEquals(null, result.successValue)
+    core.dispose()
   }
 
   @Test
@@ -474,6 +525,35 @@ class ExoPlayerPluginTest {
   }
 
   @Test
+  fun fallbackPlayAfterFocusLossUsesExplicitResumeContract() {
+    val activity = Robolectric.buildActivity(Activity::class.java).setup().get()
+    val writes = ConcurrentLinkedQueue<Pair<String, String>>()
+    val core = MpvPlayerCore(activity, true) { name, value -> writes += name to value }
+    val focusManager = testAudioFocusManager(activity, core)
+    core.setPrivateField("audioFocusManager", focusManager)
+    core.setPrivateField("desiredPaused", false)
+    core.setPrivateField("cachedPaused", false)
+    val plugin = reusedFallbackPlugin(activity, core)
+
+    dispatchAudioFocusChange(focusManager, AudioManager.AUDIOFOCUS_LOSS)
+    assertTrue(awaitQueueEntry(writes, "pause" to "yes"))
+    assertEquals(true, core.getPrivateField("pausedForAudioFocusLoss"))
+    setNextAudioFocusRequestResponse(focusManager, AudioManager.AUDIOFOCUS_REQUEST_GRANTED)
+
+    val result = RecordingResult()
+    plugin.onMethodCall(MethodCall("play", null), result)
+    awaitCompletion(result)
+
+    assertEquals(1, result.completionCount)
+    assertNull(result.errorCode)
+    assertEquals(listOf("pause" to "yes", "pause" to "no"), writes.toList())
+    assertEquals(1, writes.count { it == "pause" to "no" })
+    assertEquals(false, core.getPrivateField("pausedForAudioFocusLoss"))
+    assertEquals(false, core.getPrivateField("deferredResumeRequested"))
+    core.dispose()
+  }
+
+  @Test
   fun initialHeldFallbackSynchronouslyBlocksFocusAndSurfaceResumeWithoutPausePropertyWrite() {
     val activity = Robolectric.buildActivity(Activity::class.java).setup().get()
     val writes = ConcurrentLinkedQueue<Pair<String, String>>()
@@ -788,6 +868,46 @@ class ExoPlayerPluginTest {
       isAccessible = true
       invoke(plugin, core)
     }
+  }
+
+  private fun testAudioFocusManager(
+    activity: Activity,
+    core: MpvPlayerCore
+  ): AudioFocusManager = AudioFocusManager(
+    context = activity,
+    handler = Handler(Looper.getMainLooper()),
+    onPause = {
+      MpvPlayerCore::class.java.getDeclaredMethod("pauseForAudioFocusLoss").apply {
+        isAccessible = true
+        invoke(core)
+      }
+    },
+    onResume = {
+      MpvPlayerCore::class.java.getDeclaredMethod(
+        "resumeAfterAudioFocusGain",
+        String::class.java
+      ).apply {
+        isAccessible = true
+        invoke(core, "audio focus gain")
+      }
+    },
+    isPaused = { core.getPrivateField("desiredPaused") as Boolean }
+  )
+
+  private fun dispatchAudioFocusChange(manager: AudioFocusManager, focusChange: Int) {
+    val listener = AudioFocusManager::class.java.getDeclaredField("audioFocusChangeListener").run {
+      isAccessible = true
+      get(manager) as AudioManager.OnAudioFocusChangeListener
+    }
+    listener.onAudioFocusChange(focusChange)
+  }
+
+  private fun setNextAudioFocusRequestResponse(manager: AudioFocusManager, response: Int) {
+    val audioManager = AudioFocusManager::class.java.getDeclaredField("audioManager").run {
+      isAccessible = true
+      get(manager) as AudioManager
+    }
+    shadowOf(audioManager).setNextFocusRequestResponse(response)
   }
 
   private fun invokeAutoResume(core: MpvPlayerCore, reason: String) {

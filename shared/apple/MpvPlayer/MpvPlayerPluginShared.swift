@@ -49,11 +49,15 @@ extension MpvPluginShared {
           self?.didSetPauseProperty(value: value)
         }
         result(nil)
-      case .failure:
+      case .failure(let error):
+        let lifecycleUnavailable = error is MpvLifecycleUnavailableError
         result(
           FlutterError(
-            code: "SET_PROPERTY_FAILED",
-            message: "MPV rejected or cancelled the property write",
+            code: lifecycleUnavailable ? "NOT_INITIALIZED" : "SET_PROPERTY_FAILED",
+            message:
+              lifecycleUnavailable
+              ? "MPV player is not initialized"
+              : "MPV rejected or cancelled the property write",
             details: nil))
       }
     }

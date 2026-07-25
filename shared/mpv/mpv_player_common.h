@@ -26,6 +26,10 @@ static constexpr size_t kSetPropertyErrorDescriptionLimit = 160;
 
 inline bool SetPropertyStatusSucceeded(int status) { return status >= 0; }
 
+inline const char* SetPropertyErrorCode(int status) {
+  return status == MPV_ERROR_UNINITIALIZED ? kSetPropertyNotInitializedCode : kSetPropertyFailedCode;
+}
+
 inline std::string SetPropertyErrorDescription(int status) {
   const char* description = mpv_error_string(status);
   if (!description || description[0] == '\0') {

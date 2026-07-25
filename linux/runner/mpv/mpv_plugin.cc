@@ -379,9 +379,12 @@ static void mpv_plugin_handle_method_call(FlMethodChannel* channel, FlMethodCall
               if (plezy::mpv_common::SetPropertyStatusSucceeded(error)) {
                 async_response = FL_METHOD_RESPONSE(fl_method_success_response_new(nullptr));
               } else {
-                const std::string description = plezy::mpv_common::SetPropertyErrorDescription(error);
-                async_response = FL_METHOD_RESPONSE(fl_method_error_response_new(
-                    plezy::mpv_common::kSetPropertyFailedCode, description.c_str(), nullptr));
+                const char* error_code = plezy::mpv_common::SetPropertyErrorCode(error);
+                const std::string description = error == MPV_ERROR_UNINITIALIZED
+                                                    ? std::string("Player not initialized")
+                                                    : plezy::mpv_common::SetPropertyErrorDescription(error);
+                async_response =
+                    FL_METHOD_RESPONSE(fl_method_error_response_new(error_code, description.c_str(), nullptr));
               }
               fl_method_call_respond(method_call, async_response, nullptr);
               g_object_unref(method_call);

@@ -191,8 +191,7 @@ class ExoPlayerFallbackTerminalTest {
     }
   }
 
-  private fun getField(target: Any, name: String): Any? =
-    target.javaClass.getDeclaredField(name).apply { isAccessible = true }.get(target)
+  private fun getField(target: Any, name: String): Any? = target.javaClass.getDeclaredField(name).apply { isAccessible = true }.get(target)
 
   private fun requestFallback(core: ExoPlayerCore, mediaGeneration: Int): Boolean {
     val method = ExoPlayerCore::class.java.getDeclaredMethod(

@@ -10,6 +10,7 @@
 		055E465F9095D0B6E9B91D46 /* PathProviderPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = D41AA251EF365516E2AC5287 /* PathProviderPlugin.swift */; };
 		1C6B234E223CDFFE5BF3FC0B /* TVServices.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 25B7925EFD8A2C1C7EB667D5 /* TVServices.framework */; };
 		28DB4404B17342F46BC2B0A1 /* TopShelfProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2F829B3F190657106F66379 /* TopShelfProvider.swift */; };
+		2A7C0B1D9E5F4A6381027C12 /* MpvPlayerContractTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A7C0B1D9E5F4A6381027C11 /* MpvPlayerContractTests.swift */; };
 		35DB0C8FEF635A3BCA0B722A /* PackageInfoPlusPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = F9426EFA282CDA8E0E98EEE9 /* PackageInfoPlusPlugin.swift */; };
 		3B3967161E833CAA004F5970 /* AppFrameworkInfo.plist in Resources */ = {isa = PBXBuildFile; fileRef = 3B3967151E833CAA004F5970 /* AppFrameworkInfo.plist */; };
 		5C71F5F7B33075F2B007825B /* MpvPlayerPluginShared.swift in Sources */ = {isa = PBXBuildFile; fileRef = 73645904F226A24585A092CE /* MpvPlayerPluginShared.swift */; };
@@ -117,6 +118,7 @@
 		97C147021CF9000F007C117D /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		9D7A998830EDC8F77BF521D1 /* MpvPlayerPlugin.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = MpvPlayerPlugin.swift; path = ../ios/Runner/MpvPlayer/MpvPlayerPlugin.swift; sourceTree = "<source_root>"; };
 		A12B8610AE5D580077264851 /* MpvPlayerCore.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = MpvPlayerCore.swift; path = ../ios/Runner/MpvPlayer/MpvPlayerCore.swift; sourceTree = "<source_root>"; };
+		2A7C0B1D9E5F4A6381027C11 /* MpvPlayerContractTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MpvPlayerContractTests.swift; sourceTree = "<group>"; };
 		A2484B9C94406BF0A99EB64A /* Pods-RunnerTests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-RunnerTests.debug.xcconfig"; path = "Target Support Files/Pods-RunnerTests/Pods-RunnerTests.debug.xcconfig"; sourceTree = "<group>"; };
 		A2635E12EB9322B151EE5127 /* MpvPipController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = MpvPipController.swift; path = ../ios/Runner/MpvPlayer/MpvPipController.swift; sourceTree = "<source_root>"; };
 		A5E1F001234567890ABCDE01 /* SystemShelfPluginTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SystemShelfPluginTests.swift; sourceTree = "<group>"; };
@@ -335,6 +337,7 @@
 		F9BDF6E09E3B9347861D2A50 /* RunnerTests */ = {
 			isa = PBXGroup;
 			children = (
+				2A7C0B1D9E5F4A6381027C11 /* MpvPlayerContractTests.swift */,
 				FE6C8125B201A8BC3261AE2B /* TvosEventDeliveryCoordinatorTests.swift */,
 				934BC4E316D2AC788C954766 /* ConnectivityPlusPluginTests.swift */,
 				A5E1F001234567890ABCDE01 /* SystemShelfPluginTests.swift */,
@@ -587,6 +590,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				2A7C0B1D9E5F4A6381027C12 /* MpvPlayerContractTests.swift in Sources */,
 				D2004D7BB4A40340AB7A01E0 /* TvosEventDeliveryCoordinatorTests.swift in Sources */,
 				65AC2C222043B3E6723E2076 /* ConnectivityPlusPluginTests.swift in Sources */,
 				A5E1F001234567890ABCDE02 /* SystemShelfPluginTests.swift in Sources */,

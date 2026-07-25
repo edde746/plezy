@@ -5,6 +5,7 @@ import android.content.ContentUris
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.database.Cursor
 import android.net.Uri
 import android.os.Build
 import android.util.Log
@@ -118,6 +119,12 @@ class WatchNextProvider internal constructor(
 
   internal data class PreparedWatchNextItem(val metadata: WatchNextItem, val localPosterUri: Uri?)
 
+  private data class CommittedRow(
+    val id: Long,
+    val contentId: String,
+    val posterUri: Uri?
+  )
+
   private val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
   private val artwork = SystemShelfArtworkStore(context.cacheDir)
 
@@ -133,34 +140,71 @@ class WatchNextProvider internal constructor(
     if (items.size > SystemShelfArtworkStore.MAX_ITEMS) return false
     val operationOwnership = ownership ?: claimOwnership(ownerId, generation) ?: return false
     if (!isOperationActive()) return false
-
-    val oldUris = prefs.getStringSet(GRANTED_URIS, emptySet()).orEmpty().mapNotNull(Uri::parse).toSet()
-    val oldPackages = storedPackages()
-    val oldSchemaVersion = prefs.getInt(SHELF_SCHEMA_VERSION_KEY, 0)
     val session = SystemShelfSyncSession(
       operationOwnership,
       syncDurationMillis
     )
-    val materializedFiles = LinkedHashSet<java.io.File>()
-    var committed = false
+
+    val previousArtwork = snapshotCommittedArtwork(ownerId) ?: return false
+    if (!isOperationActive() || !session.isActive()) return false
+    val oldUris = prefs.getStringSet(GRANTED_URIS, emptySet()).orEmpty().mapNotNull(Uri::parse).toSet()
+    val oldPackages = storedPackages()
+    val oldSchemaVersion = prefs.getInt(SHELF_SCHEMA_VERSION_KEY, 0)
+    val preparedArtwork = LinkedHashSet<SystemShelfArtworkStore.Prepared>()
+    val preparedBySource = HashMap<String, SystemShelfArtworkStore.Prepared?>()
     try {
-      val prepared = items.map { item ->
-        if (!isOperationActive() || !session.isActive()) {
-          PreparedWatchNextItem(item, null)
+      val preparedItems = items.map { item ->
+        val source = item.posterSourceUri
+        val localArtwork = if (source == null) {
+          null
         } else {
-          val materialized = item.posterSourceUri?.let { artwork.materialize(ownerId, it, session) }
-          materialized?.file?.let(materializedFiles::add)
-          PreparedWatchNextItem(item, materialized?.uri)
+          val candidate = if (preparedBySource.containsKey(source)) {
+            preparedBySource[source]
+          } else {
+            artwork.prepare(ownerId, source, session).also { prepared ->
+              preparedBySource[source] = prepared
+              prepared?.let(preparedArtwork::add)
+            }
+          }
+          candidate?.materialized ?: previousArtwork[item.contentId]
         }
+        PreparedWatchNextItem(item, localArtwork?.uri)
       }
-      val newUris = prepared.mapNotNullTo(LinkedHashSet()) { it.localPosterUri }
+      val newUris = preparedItems.mapNotNullTo(LinkedHashSet()) { it.localPosterUri }
       val newPackages = consumerPackages()
       if (!isOperationActive() || !session.isActive()) return false
-      committed = SystemShelfLifecycle.whileCurrent(session.ownership) {
+
+      return SystemShelfLifecycle.whileCurrent(session.ownership) {
         if (!isOperationActive() || session.isExpired()) return@whileCurrent false
-        reconcileReadAccess(oldUris, oldPackages, newUris, newPackages)
+        val publishedFiles = LinkedHashSet<java.io.File>()
+        preparedArtwork.forEach { candidate ->
+          val publication = artwork.publish(candidate)
+          if (publication == null) {
+            artwork.delete(publishedFiles)
+            return@whileCurrent false
+          }
+          if (publication.newlyPublished) publishedFiles += publication.materialized.file
+        }
+
+        val referencedFiles = LinkedHashSet<java.io.File>()
+        preparedItems.forEach { item ->
+          val posterUri = item.localPosterUri ?: return@forEach
+          val file = artwork.resolveOwned(ownerId, posterUri)
+          if (file == null) {
+            artwork.delete(publishedFiles)
+            return@whileCurrent false
+          }
+          referencedFiles += file
+        }
+        if (session.isExpired()) {
+          artwork.delete(publishedFiles)
+          return@whileCurrent false
+        }
+
+        grantReadAccess(newUris, newPackages)
         if (session.isExpired()) {
           reconcileReadAccess(newUris, newPackages, oldUris, oldPackages)
+          artwork.delete(publishedFiles)
           return@whileCurrent false
         }
         val preferencesCommitted = prefs.edit()
@@ -170,9 +214,10 @@ class WatchNextProvider internal constructor(
           .commit()
         if (!preferencesCommitted) {
           reconcileReadAccess(newUris, newPackages, oldUris, oldPackages)
+          artwork.delete(publishedFiles)
           return@whileCurrent false
         }
-        if (session.isExpired() || !replaceRows(prepared)) {
+        if (session.isExpired() || !replaceRows(preparedItems)) {
           val rollback = prefs.edit()
             .putStringSet(GRANTED_URIS, oldUris.mapTo(LinkedHashSet(), Uri::toString))
             .putStringSet(GRANTED_PACKAGES, oldPackages)
@@ -183,17 +228,16 @@ class WatchNextProvider internal constructor(
           }
           rollback.commit()
           reconcileReadAccess(newUris, newPackages, oldUris, oldPackages)
+          artwork.delete(publishedFiles)
           return@whileCurrent false
         }
 
-        artwork.deleteExcept(materializedFiles)
+        reconcileReadAccess(oldUris, oldPackages, newUris, newPackages)
+        artwork.deleteExcept(referencedFiles)
         true
       } ?: false
-      return committed
     } finally {
-      if (!committed) {
-        materializedFiles.forEach { it.delete() }
-      }
+      artwork.discard(preparedArtwork)
     }
   }
 
@@ -256,6 +300,95 @@ class WatchNextProvider internal constructor(
       .commit()
   }
 
+  private fun snapshotCommittedArtwork(
+    ownerId: String
+  ): Map<String, SystemShelfArtworkStore.Materialized>? {
+    val rows = queryCommittedRows() ?: return null
+    val snapshot = LinkedHashMap<String, SystemShelfArtworkStore.Materialized>()
+    rows.forEach { row ->
+      val uri = row.posterUri ?: return@forEach
+      val file = artwork.resolveOwned(ownerId, uri) ?: return@forEach
+      if (row.contentId !in snapshot) {
+        snapshot[row.contentId] = SystemShelfArtworkStore.Materialized(uri, file)
+      }
+    }
+    return snapshot
+  }
+
+  private fun queryCommittedRows(): List<CommittedRow>? {
+    return try {
+      val cursor = context.contentResolver.query(
+        TvContractCompat.WatchNextPrograms.CONTENT_URI,
+        arrayOf(
+          TvContractCompat.WatchNextPrograms._ID,
+          TvContractCompat.WatchNextPrograms.COLUMN_INTERNAL_PROVIDER_ID,
+          TvContractCompat.WatchNextPrograms.COLUMN_INTERNAL_PROVIDER_DATA,
+          TvContractCompat.WatchNextPrograms.COLUMN_INTENT_URI,
+          TvContractCompat.PreviewPrograms.COLUMN_POSTER_ART_URI
+        ),
+        null,
+        null,
+        null
+      ) ?: return null
+      cursor.use {
+        val idIndex = it.getColumnIndex(TvContractCompat.WatchNextPrograms._ID)
+        val providerIdIndex = it.getColumnIndex(
+          TvContractCompat.WatchNextPrograms.COLUMN_INTERNAL_PROVIDER_ID
+        )
+        val providerDataIndex = it.getColumnIndex(
+          TvContractCompat.WatchNextPrograms.COLUMN_INTERNAL_PROVIDER_DATA
+        )
+        val intentIndex = it.getColumnIndex(
+          TvContractCompat.WatchNextPrograms.COLUMN_INTENT_URI
+        )
+        val posterIndex = it.getColumnIndex(TvContractCompat.PreviewPrograms.COLUMN_POSTER_ART_URI)
+        if (
+          idIndex < 0 ||
+          posterIndex < 0 ||
+          providerIdIndex < 0 &&
+          providerDataIndex < 0 &&
+          intentIndex < 0
+        ) {
+          return null
+        }
+        val rows = ArrayList<CommittedRow>(it.count)
+        while (it.moveToNext()) {
+          val providerId = cursorString(it, providerIdIndex)
+            ?.takeIf(String::isNotBlank)
+          val providerData = cursorString(it, providerDataIndex)
+            ?.takeIf(String::isNotBlank)
+          val contentId = providerId
+            ?: providerData
+            ?: contentIdFromIntent(cursorString(it, intentIndex))
+            ?: continue
+          val posterUri = it.getString(posterIndex)
+            ?.takeIf(String::isNotBlank)
+            ?.let(Uri::parse)
+          rows += CommittedRow(it.getLong(idIndex), contentId, posterUri)
+        }
+        rows
+      }
+    } catch (_: Exception) {
+      Log.e(TAG, "Failed to query committed Watch Next programs")
+      null
+    }
+  }
+
+  private fun cursorString(cursor: Cursor, index: Int): String? {
+    if (index < 0 || cursor.isNull(index)) return null
+    return if (cursor.getType(index) == Cursor.FIELD_TYPE_BLOB) {
+      cursor.getBlob(index)?.toString(Charsets.UTF_8)
+    } else {
+      cursor.getString(index)
+    }
+  }
+
+  private fun contentIdFromIntent(value: String?): String? {
+    val uri = value?.let { runCatching { Uri.parse(it) }.getOrNull() } ?: return null
+    if (uri.scheme != "plezy" || uri.authority != "play") return null
+    return uri.getQueryParameter("content_id")?.takeIf(String::isNotBlank)
+  }
+
   internal fun removeItem(
     ownerId: String,
     generation: Long,
@@ -266,46 +399,27 @@ class WatchNextProvider internal constructor(
     val operationOwnership = ownership ?: claimOwnership(ownerId, generation) ?: return false
     return SystemShelfLifecycle.whileCurrent(operationOwnership) {
       if (!isOperationActive()) return@whileCurrent false
-      removeItemOwned(contentId)
+      removeItemOwned(ownerId, contentId)
     } ?: false
   }
 
-  private fun removeItemOwned(contentId: String): Boolean {
+  private fun removeItemOwned(ownerId: String, contentId: String): Boolean {
     return try {
-      val cursor = context.contentResolver.query(
+      val rows = queryCommittedRows() ?: return false
+      val target = rows.firstOrNull { it.contentId == contentId } ?: return false
+      val deleteUri = ContentUris.withAppendedId(
         TvContractCompat.WatchNextPrograms.CONTENT_URI,
-        arrayOf(
-          TvContractCompat.WatchNextPrograms._ID,
-          TvContractCompat.WatchNextPrograms.COLUMN_INTERNAL_PROVIDER_ID,
-          TvContractCompat.PreviewPrograms.COLUMN_POSTER_ART_URI
-        ),
-        null,
-        null,
-        null
+        target.id
       )
-      cursor?.use {
-        val idIndex = it.getColumnIndex(TvContractCompat.WatchNextPrograms._ID)
-        val providerIdIndex = it.getColumnIndex(TvContractCompat.WatchNextPrograms.COLUMN_INTERNAL_PROVIDER_ID)
-        val posterIndex = it.getColumnIndex(TvContractCompat.PreviewPrograms.COLUMN_POSTER_ART_URI)
-        if (idIndex < 0 || providerIdIndex < 0) return false
-        while (it.moveToNext()) {
-          if (it.getString(providerIdIndex) == contentId) {
-            val deleteUri = ContentUris.withAppendedId(TvContractCompat.WatchNextPrograms.CONTENT_URI, it.getLong(idIndex))
-            context.contentResolver.delete(deleteUri, null, null)
-            if (posterIndex >= 0) {
-              val poster = it.getString(posterIndex)?.let(Uri::parse)
-              if (poster != null) {
-                revokeReadAccess(setOf(poster))
-                artwork.resolve(poster)?.delete()
-                val remaining = prefs.getStringSet(GRANTED_URIS, emptySet()).orEmpty() - poster.toString()
-                prefs.edit().putStringSet(GRANTED_URIS, remaining).commit()
-              }
-            }
-            return true
-          }
-        }
-      }
-      false
+      if (context.contentResolver.delete(deleteUri, null, null) <= 0) return false
+
+      val poster = target.posterUri ?: return true
+      if (rows.any { it.id != target.id && it.posterUri == poster }) return true
+      revokeReadAccess(setOf(poster))
+      val remaining = prefs.getStringSet(GRANTED_URIS, emptySet()).orEmpty() - poster.toString()
+      prefs.edit().putStringSet(GRANTED_URIS, remaining).commit()
+      artwork.resolveOwned(ownerId, poster)?.let { artwork.delete(setOf(it)) }
+      true
     } catch (_: Exception) {
       Log.e(TAG, "Failed to remove Watch Next item")
       false
@@ -316,8 +430,14 @@ class WatchNextProvider internal constructor(
     val operations = ArrayList<ContentProviderOperation>(items.size + 1)
     operations += ContentProviderOperation.newDelete(TvContractCompat.WatchNextPrograms.CONTENT_URI).build()
     items.forEach { item ->
+      val values = buildProgram(item).toContentValues().apply {
+        put(
+          TvContractCompat.WatchNextPrograms.COLUMN_INTERNAL_PROVIDER_DATA,
+          item.metadata.contentId.toByteArray(Charsets.UTF_8)
+        )
+      }
       operations += ContentProviderOperation.newInsert(TvContractCompat.WatchNextPrograms.CONTENT_URI)
-        .withValues(buildProgram(item).toContentValues())
+        .withValues(values)
         .build()
     }
     context.contentResolver.applyBatch(TvContractCompat.AUTHORITY, operations)
@@ -366,8 +486,13 @@ class WatchNextProvider internal constructor(
         }
       }
     }
-    currentPackages.forEach { packageName ->
-      currentUris.forEach { uri ->
+    grantReadAccess(currentUris, currentPackages)
+  }
+
+  private fun grantReadAccess(uris: Set<Uri>, packages: Set<String>) {
+    val flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
+    packages.forEach { packageName ->
+      uris.forEach { uri ->
         runCatching { context.grantUriPermission(packageName, uri, flags) }
       }
     }

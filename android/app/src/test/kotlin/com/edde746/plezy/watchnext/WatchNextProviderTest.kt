@@ -13,6 +13,7 @@ import android.content.pm.ActivityInfo
 import android.content.pm.ApplicationInfo
 import android.content.pm.ResolveInfo
 import android.database.Cursor
+import android.database.MatrixCursor
 import android.net.Uri
 import android.os.ParcelFileDescriptor.AutoCloseInputStream
 import androidx.tvprovider.media.tv.TvContractCompat
@@ -20,6 +21,7 @@ import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.plugin.common.BinaryMessenger
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
+import java.io.Closeable
 import java.lang.reflect.Proxy
 import java.net.InetAddress
 import java.net.ServerSocket
@@ -31,6 +33,7 @@ import java.util.concurrent.Executor
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.RejectedExecutionException
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicReference
 import kotlin.concurrent.thread
 import org.junit.After
@@ -222,6 +225,7 @@ class WatchNextProviderTest {
     try {
       assertTrue(secondRequestReceived.await(2, TimeUnit.SECONDS))
       assertEquals(1, artworkFiles().size)
+      assertTrue(artworkFiles().single().name.endsWith(".tmp"))
       SystemShelfLifecycle.acquire()
       releaseSecondResponse.countDown()
       worker.join(2_000)
@@ -440,7 +444,7 @@ class WatchNextProviderTest {
       val ownership = SystemShelfLifecycle.claim(SystemShelfLifecycle.acquire(), "owner", 1)!!
       val session = SystemShelfSyncSession(ownership, 2_000, budget = budget)
 
-      assertNull(SystemShelfArtworkStore(context.cacheDir).materialize("owner", source, session))
+      assertNull(SystemShelfArtworkStore(context.cacheDir).prepare("owner", source, session))
       assertEquals(malformed.size.toLong(), budget.consumed)
       assertEquals(100 - malformed.size, budget.remaining)
     }
@@ -452,7 +456,7 @@ class WatchNextProviderTest {
       val ownership = SystemShelfLifecycle.claim(SystemShelfLifecycle.acquire(), "owner", 1)!!
       val session = SystemShelfSyncSession(ownership, 2_000, budget = budget)
 
-      assertNull(SystemShelfArtworkStore(context.cacheDir).materialize("owner", source, session))
+      assertNull(SystemShelfArtworkStore(context.cacheDir).prepare("owner", source, session))
       assertEquals(imageBytes.size.toLong(), budget.consumed)
       assertEquals(100 - imageBytes.size, budget.remaining)
     }
@@ -480,13 +484,30 @@ class WatchNextProviderTest {
     val inactive = registerHandler(homeIntent, "inactive.home.launcher")
     selectDefaultHome(selected, selected, inactive)
     val owner = "a".repeat(64)
-    val key = "${"b".repeat(32)}.art"
-    context.cacheDir.resolve("system_shelf_artwork/$owner").mkdirs()
-    context.cacheDir.resolve("system_shelf_artwork/$owner/$key").writeBytes(imageBytes)
-    val valid = SystemShelfArtworkStore(context.cacheDir).contentUri(owner, key)
-    val invalid = Uri.parse("content://${SystemShelfArtworkProvider.AUTHORITY}/art/not/confined.art")
+    val legacyKey = "${"b".repeat(32)}.art"
+    val contentKey = "${"c".repeat(64)}.art"
+    val corruptKey = "${"d".repeat(64)}.art"
+    val directory = context.cacheDir.resolve("system_shelf_artwork/$owner").apply { mkdirs() }
+    directory.resolve(legacyKey).writeBytes(imageBytes)
+    directory.resolve(contentKey).writeBytes(imageBytes)
+    directory.resolve(corruptKey).writeText("corrupt")
+    val store = SystemShelfArtworkStore(context.cacheDir)
+    val legacy = store.contentUri(owner, legacyKey)
+    val contentAddressed = store.contentUri(owner, contentKey)
+    val corrupt = store.contentUri(owner, corruptKey)
+    val malformed = Uri.parse(
+      "content://${SystemShelfArtworkProvider.AUTHORITY}/art/$owner/${"e".repeat(48)}.art"
+    )
     context.getSharedPreferences("system_shelf_state", 0).edit()
-      .putStringSet("granted_uris", setOf(valid.toString(), invalid.toString()))
+      .putStringSet(
+        "granted_uris",
+        setOf(
+          legacy.toString(),
+          contentAddressed.toString(),
+          corrupt.toString(),
+          malformed.toString()
+        )
+      )
       .putInt("shelf_schema_version", WatchNextProvider.SHELF_SCHEMA_VERSION)
       .commit()
     val recordingContext = RecordingGrantContext(context)
@@ -495,12 +516,24 @@ class WatchNextProviderTest {
       .onReceive(recordingContext, Intent(Intent.ACTION_BOOT_COMPLETED))
 
     assertEquals(
-      listOf(Grant("selected.home.launcher", valid, Intent.FLAG_GRANT_READ_URI_PERMISSION)),
-      recordingContext.grants
+      setOf(
+        Grant("selected.home.launcher", legacy, Intent.FLAG_GRANT_READ_URI_PERMISSION),
+        Grant("selected.home.launcher", contentAddressed, Intent.FLAG_GRANT_READ_URI_PERMISSION)
+      ),
+      recordingContext.grants.toSet()
     )
     assertEquals(
-      setOf(valid.toString()),
-      context.getSharedPreferences("system_shelf_state", 0).getStringSet("granted_uris", emptySet())
+      setOf(legacy.toString(), contentAddressed.toString()),
+      context.getSharedPreferences("system_shelf_state", 0)
+        .getStringSet("granted_uris", emptySet())
+    )
+    assertArrayEquals(imageBytes, openArtwork(legacy))
+    assertArrayEquals(imageBytes, openArtwork(contentAddressed))
+    assertNull(store.resolve(corrupt))
+    assertEquals(
+      WatchNextProvider.SHELF_SCHEMA_VERSION,
+      context.getSharedPreferences("system_shelf_state", 0)
+        .getInt("shelf_schema_version", 0)
     )
   }
 
@@ -538,9 +571,12 @@ class WatchNextProviderTest {
 
   @Test
   fun packageUpdatePreservesRowsAndArtworkAtCurrentShelfSchema() {
-    val file = context.cacheDir.resolve("system_shelf_artwork/${"a".repeat(64)}/${"b".repeat(32)}.art")
-    file.parentFile?.mkdirs()
-    file.writeBytes(imageBytes)
+    val directory = context.cacheDir.resolve("system_shelf_artwork/${"a".repeat(64)}")
+      .apply { mkdirs() }
+    val legacyFile = directory.resolve("${"b".repeat(32)}.art")
+    val contentAddressedFile = directory.resolve("${"c".repeat(64)}.art")
+    legacyFile.writeBytes(imageBytes)
+    contentAddressedFile.writeBytes(imageBytes)
     context.getSharedPreferences("system_shelf_state", 0).edit()
       .putInt("shelf_schema_version", WatchNextProvider.SHELF_SCHEMA_VERSION)
       .commit()
@@ -549,7 +585,9 @@ class WatchNextProviderTest {
     receiver.onReceive(context, Intent(Intent.ACTION_MY_PACKAGE_REPLACED))
 
     assertEquals(0, tvProvider.deleteCount)
-    assertTrue(file.isFile)
+    assertTrue(legacyFile.isFile)
+    assertTrue(contentAddressedFile.isFile)
+    assertEquals(1, WatchNextProvider.SHELF_SCHEMA_VERSION)
   }
 
   @Test
@@ -564,18 +602,525 @@ class WatchNextProviderTest {
 
   @Test
   fun providerFailureDeletesNewArtworkAndPreservesCommittedArtwork() {
-    val provider = WatchNextProvider(context)
-    withServer("image/png", imageBytes) { source ->
+    ScriptedHttpServer(
+      listOf(
+        ScriptedResponse(body = imageBytes),
+        ScriptedResponse(body = imageBytes)
+      )
+    ).use { server ->
+      val homeIntent = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME)
+      val selectedHome = registerHandler(homeIntent, "selected.home.launcher")
+      selectDefaultHome(selectedHome, selectedHome)
+      val grantContext = RecordingGrantContext(context)
+      val provider = WatchNextProvider(grantContext)
+      val sourceA = "${server.baseUrl}/a"
+      val sourceB = "${server.baseUrl}/b"
+      assertTrue(provider.syncWatchNextPrograms("owner-a", 1, listOf(item(sourceA))))
+      val committedPoster = committedPoster()!!
+      val committedArtwork = SystemShelfArtworkStore(context.cacheDir)
+        .resolveOwned("owner-a", committedPoster)!!
+        .canonicalFile
+      tvProvider.failBatch = true
+
+      assertFalse(provider.syncWatchNextPrograms("owner-a", 2, listOf(item(sourceB))))
+
+      assertEquals(2, server.requestCount.get())
+      assertEquals(committedPoster, committedPoster())
+      assertEquals(setOf(committedArtwork), artworkFiles().mapTo(HashSet()) { it.canonicalFile })
+      assertArrayEquals(imageBytes, openArtwork(committedPoster))
+      assertFalse(artworkFiles().any { it.name.endsWith(".tmp") })
+      val uncommittedPoster = grantContext.grants
+        .map(Grant::uri)
+        .first { it != committedPoster }
+      val revokedUris = grantContext.packageRevocations.map(PackageRevocation::uri) +
+        grantContext.uriWideRevocations
+      assertFalse(committedPoster in revokedUris)
+      assertTrue(uncommittedPoster in revokedUris)
+      assertEquals(
+        setOf(committedPoster.toString()),
+        context.getSharedPreferences("system_shelf_state", 0)
+          .getStringSet("granted_uris", emptySet())
+      )
+    }
+  }
+
+  @Test
+  fun repeatedSameSourceSyncReusesValidatedArtwork() {
+    ScriptedHttpServer(
+      listOf(
+        ScriptedResponse(body = imageBytes),
+        ScriptedResponse(body = imageBytes)
+      )
+    ).use { server ->
+      val homeIntent = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME)
+      val selectedHome = registerHandler(homeIntent, "selected.home.launcher")
+      selectDefaultHome(selectedHome, selectedHome)
+      val grantContext = RecordingGrantContext(context)
+      val provider = WatchNextProvider(grantContext)
+      val store = SystemShelfArtworkStore(context.cacheDir)
+      val stableSource = "${server.baseUrl}/stable"
+      assertTrue(provider.syncWatchNextPrograms("owner-a", 1, listOf(item(stableSource))))
+      val firstPoster = committedPoster()!!
+      val firstFile = store.resolveOwned("owner-a", firstPoster)!!.canonicalFile
+      val stableTimestamp = 1_600_000_000_000L
+      assertTrue(firstFile.setLastModified(stableTimestamp))
+      assertTrue(Regex("[a-f0-9]{64}\\.art").matches(firstPoster.lastPathSegment.orEmpty()))
+
+      assertTrue(
+        provider.syncWatchNextPrograms(
+          "owner-a",
+          2,
+          listOf(item(stableSource).copy(title = "Updated title", lastPlaybackPosition = 20))
+        )
+      )
+
+      assertEquals(1, server.requestCount.get())
+      assertEquals(firstPoster, committedPoster())
+      assertEquals(setOf(firstFile), artworkFiles().mapTo(HashSet()) { it.canonicalFile })
+      assertEquals(stableTimestamp, firstFile.lastModified())
+      assertFalse(artworkFiles().any { it.name.endsWith(".tmp") })
+      assertTrue(grantContext.uriWideRevocations.isEmpty())
+      assertTrue(grantContext.packageRevocations.isEmpty())
+      val zeroBudget = SystemShelfArtworkStore.Budget(0)
+      val cachedOwnership = provider.claimOwnership("owner-a", 3)!!
+      val cached = store.prepare(
+        "owner-a",
+        stableSource,
+        SystemShelfSyncSession(cachedOwnership, 2_000, budget = zeroBudget)
+      )
+      assertTrue(cached is SystemShelfArtworkStore.Prepared.Existing)
+      assertEquals(0L, zeroBudget.consumed)
+      assertEquals(0, zeroBudget.remaining)
+
+      val sharedSource = "${server.baseUrl}/shared"
+      assertTrue(
+        provider.syncWatchNextPrograms(
+          "owner-a",
+          4,
+          listOf(
+            item(sharedSource).copy(contentId = "first"),
+            item(sharedSource).copy(contentId = "second")
+          )
+        )
+      )
+      assertEquals(2, server.requestCount.get())
+      val sharedPosters = tvProvider.inserted.map {
+        it.getAsString(TvContractCompat.PreviewPrograms.COLUMN_POSTER_ART_URI)
+      }.toSet()
+      assertEquals(1, sharedPosters.size)
+      val sharedPoster = Uri.parse(sharedPosters.single())
+      assertEquals(1, artworkFiles().size)
+      assertArrayEquals(imageBytes, openArtwork(sharedPoster))
+      grantContext.uriWideRevocations.clear()
+      grantContext.packageRevocations.clear()
+
+      val firstRemoved = provider.removeItem("owner-a", 5, "first")
+      assertEquals(listOf("first", "second"), tvProvider.lastQueryContentIds)
+      assertEquals(
+        listOf(
+          TvContractCompat.WatchNextPrograms._ID,
+          TvContractCompat.WatchNextPrograms.COLUMN_INTERNAL_PROVIDER_ID,
+          TvContractCompat.WatchNextPrograms.COLUMN_INTERNAL_PROVIDER_DATA,
+          TvContractCompat.WatchNextPrograms.COLUMN_INTENT_URI,
+          TvContractCompat.PreviewPrograms.COLUMN_POSTER_ART_URI
+        ),
+        tvProvider.lastQueryProjection
+      )
+      assertEquals(
+        listOf(sharedPoster.toString(), sharedPoster.toString()),
+        tvProvider.lastQueryPosters
+      )
+      assertTrue(firstRemoved)
+      assertTrue(grantContext.uriWideRevocations.isEmpty())
+      assertTrue(grantContext.packageRevocations.isEmpty())
+      assertEquals(listOf("second"), tvProvider.contentIds())
+      assertArrayEquals(imageBytes, openArtwork(sharedPoster))
+      assertEquals(
+        setOf(sharedPoster.toString()),
+        context.getSharedPreferences("system_shelf_state", 0)
+          .getStringSet("granted_uris", emptySet())
+      )
+
+      assertTrue(provider.removeItem("owner-a", 6, "second"))
+      val finalReferenceRevocations =
+        grantContext.packageRevocations.map(PackageRevocation::uri) +
+          grantContext.uriWideRevocations
+      assertEquals(listOf(sharedPoster), finalReferenceRevocations)
+      assertTrue(artworkFiles().isEmpty())
+      assertTrue(
+        runCatching {
+          Robolectric.buildContentProvider(SystemShelfArtworkProvider::class.java)
+            .create()
+            .get()
+            .openFile(sharedPoster, "r")
+            .close()
+        }.isFailure
+      )
+    }
+  }
+
+  @Test
+  fun changedSourceFetchFailureRetainsLastKnownGoodArtwork() {
+    ScriptedHttpServer(
+      listOf(
+        ScriptedResponse(body = imageBytes),
+        ScriptedResponse(status = 503, contentType = "text/plain", body = "retry".toByteArray()),
+        ScriptedResponse(body = imageBytes)
+      )
+    ).use { server ->
+      val homeIntent = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME)
+      val selectedHome = registerHandler(homeIntent, "selected.home.launcher")
+      selectDefaultHome(selectedHome, selectedHome)
+      val grantContext = RecordingGrantContext(context)
+      val provider = WatchNextProvider(grantContext)
+      val sourceA = "${server.baseUrl}/a"
+      val sourceB = "${server.baseUrl}/b"
+      assertTrue(provider.syncWatchNextPrograms("owner-a", 1, listOf(item(sourceA))))
+      val originalPoster = committedPoster()!!
+      val originalFile = SystemShelfArtworkStore(context.cacheDir)
+        .resolveOwned("owner-a", originalPoster)!!
+        .canonicalFile
+
+      assertTrue(
+        provider.syncWatchNextPrograms(
+          "owner-a",
+          2,
+          listOf(item(sourceB).copy(title = "Progress update", lastPlaybackPosition = 40))
+        )
+      )
+      assertEquals(2, server.requestCount.get())
+      assertEquals(listOf("plezy_server_item"), tvProvider.lastQueryContentIds)
+      assertEquals(listOf(originalPoster.toString()), tvProvider.lastQueryPosters)
+      assertEquals(originalPoster, committedPoster())
+      assertEquals(
+        "Progress update",
+        tvProvider.inserted.single()
+          .getAsString(TvContractCompat.WatchNextPrograms.COLUMN_TITLE)
+      )
+      assertTrue(originalFile.isFile)
+      assertArrayEquals(imageBytes, openArtwork(originalPoster))
+
+      tvProvider.blockNextBatch = true
+      val retryResult = AtomicReference<Boolean>()
+      val retry = thread(start = true, name = "system-shelf-source-retry") {
+        retryResult.set(
+          provider.syncWatchNextPrograms(
+            "owner-a",
+            3,
+            listOf(item(sourceB).copy(title = "Replacement ready"))
+          )
+        )
+      }
+      try {
+        assertTrue(tvProvider.batchStarted.await(2, TimeUnit.SECONDS))
+        assertTrue(originalFile.isFile)
+        assertArrayEquals(imageBytes, openArtwork(originalPoster))
+        assertEquals(2, artworkFiles().count { it.name.endsWith(".art") })
+        assertFalse(artworkFiles().any { it.name.endsWith(".tmp") })
+        val revokedBeforeCommit =
+          grantContext.packageRevocations.map(PackageRevocation::uri) +
+            grantContext.uriWideRevocations
+        assertFalse(originalPoster in revokedBeforeCommit)
+      } finally {
+        tvProvider.releaseBatch.countDown()
+        retry.join(2_000)
+      }
+      assertEquals(true, retryResult.get())
+      assertEquals(3, server.requestCount.get())
+      val replacementPoster = committedPoster()!!
+      assertFalse(replacementPoster == originalPoster)
+      assertFalse(originalFile.exists())
+      assertArrayEquals(imageBytes, openArtwork(replacementPoster))
+      val revokedAfterCommit =
+        grantContext.packageRevocations.map(PackageRevocation::uri) +
+          grantContext.uriWideRevocations
+      assertTrue(originalPoster in revokedAfterCommit)
+
+      assertTrue(
+        provider.syncWatchNextPrograms(
+          "owner-a",
+          4,
+          listOf(item(sourceB).copy(posterSourceUri = null))
+        )
+      )
+      assertNull(committedPoster())
+      assertTrue(artworkFiles().isEmpty())
+      assertEquals(3, server.requestCount.get())
+    }
+  }
+
+  @Test
+  fun malformedReplacementRetainsLastKnownGoodArtwork() {
+    ScriptedHttpServer(
+      listOf(
+        ScriptedResponse(body = imageBytes),
+        ScriptedResponse(body = "not an image".toByteArray())
+      )
+    ).use { server ->
+      val provider = WatchNextProvider(context)
+      val sourceA = "${server.baseUrl}/valid"
+      val sourceB = "${server.baseUrl}/malformed"
+      assertTrue(provider.syncWatchNextPrograms("owner-a", 1, listOf(item(sourceA))))
+      val originalPoster = committedPoster()!!
+      val originalFile = artworkFiles().single().canonicalFile
+
+      assertTrue(
+        provider.syncWatchNextPrograms(
+          "owner-a",
+          2,
+          listOf(item(sourceB).copy(lastPlaybackPosition = 50))
+        )
+      )
+
+      assertEquals(2, server.requestCount.get())
+      assertEquals(listOf("plezy_server_item"), tvProvider.lastQueryContentIds)
+      assertEquals(listOf(originalPoster.toString()), tvProvider.lastQueryPosters)
+      assertEquals(originalPoster, committedPoster())
+      assertEquals(setOf(originalFile), artworkFiles().mapTo(HashSet()) { it.canonicalFile })
+      assertArrayEquals(imageBytes, openArtwork(originalPoster))
+      assertFalse(artworkFiles().any { it.name.endsWith(".tmp") })
+    }
+  }
+
+  @Test
+  fun corruptContentAddressIsRefetchedWithoutPartialPublish() {
+    val replacementRequested = CountDownLatch(1)
+    val releaseReplacement = CountDownLatch(1)
+    ScriptedHttpServer(
+      listOf(
+        ScriptedResponse(body = imageBytes),
+        ScriptedResponse(
+          body = imageBytes,
+          beforeResponse = {
+            replacementRequested.countDown()
+            releaseReplacement.await(2, TimeUnit.SECONDS)
+          }
+        ),
+        ScriptedResponse(status = 503, contentType = "text/plain"),
+        ScriptedResponse(body = imageBytes),
+        ScriptedResponse(status = 503, contentType = "text/plain")
+      )
+    ).use { server ->
+      val provider = WatchNextProvider(context)
+      val store = SystemShelfArtworkStore(context.cacheDir)
+      val source = "${server.baseUrl}/stable"
       assertTrue(provider.syncWatchNextPrograms("owner-a", 1, listOf(item(source))))
-    }
-    val committedArtwork = artworkFiles().single().canonicalFile
-    tvProvider.failBatch = true
+      val stablePoster = committedPoster()!!
+      val deterministicFile = store.resolveOwned("owner-a", stablePoster)!!
+      val corruptBytes = "corrupt-cache".toByteArray()
+      deterministicFile.writeBytes(corruptBytes)
+      assertNull(store.resolveOwned("owner-a", stablePoster))
+      assertTrue(runCatching { openArtwork(stablePoster) }.isFailure)
 
-    withServer("image/png", imageBytes) { source ->
-      assertFalse(provider.syncWatchNextPrograms("owner-a", 2, listOf(item(source))))
-    }
+      val refetchResult = AtomicReference<Boolean>()
+      val refetch = thread(start = true, name = "system-shelf-corrupt-refetch") {
+        refetchResult.set(
+          provider.syncWatchNextPrograms("owner-a", 2, listOf(item(source)))
+        )
+      }
+      try {
+        assertTrue(replacementRequested.await(2, TimeUnit.SECONDS))
+        assertArrayEquals(corruptBytes, deterministicFile.readBytes())
+        assertEquals(1, artworkFiles().size)
+        assertFalse(artworkFiles().any { it.name.endsWith(".tmp") })
+      } finally {
+        releaseReplacement.countDown()
+        refetch.join(2_000)
+      }
 
-    assertEquals(setOf(committedArtwork), artworkFiles().mapTo(HashSet()) { it.canonicalFile })
+      assertEquals(true, refetchResult.get())
+      assertEquals(stablePoster, committedPoster())
+      assertArrayEquals(imageBytes, deterministicFile.readBytes())
+      assertArrayEquals(imageBytes, openArtwork(stablePoster))
+      assertFalse(artworkFiles().any { it.name.endsWith(".tmp") })
+
+      deterministicFile.writeBytes(corruptBytes)
+      assertTrue(provider.syncWatchNextPrograms("owner-a", 3, listOf(item(source))))
+      assertEquals(3, server.requestCount.get())
+      assertNull(committedPoster())
+      assertTrue(artworkFiles().isEmpty())
+
+      assertTrue(provider.syncWatchNextPrograms("owner-a", 4, listOf(item(source))))
+      assertEquals(stablePoster, committedPoster())
+      assertTrue(deterministicFile.delete())
+      assertTrue(provider.syncWatchNextPrograms("owner-a", 5, listOf(item(source))))
+      assertEquals(5, server.requestCount.get())
+      assertNull(committedPoster())
+      assertTrue(artworkFiles().isEmpty())
+    }
+  }
+
+  @Test
+  fun committedRowQueryFailureAbortsBeforeArtworkOrShelfMutation() {
+    ScriptedHttpServer(
+      listOf(
+        ScriptedResponse(body = imageBytes),
+        ScriptedResponse(body = imageBytes)
+      )
+    ).use { server ->
+      val provider = WatchNextProvider(context)
+      val sourceA = "${server.baseUrl}/a"
+      val sourceB = "${server.baseUrl}/b"
+      assertTrue(provider.syncWatchNextPrograms("owner-a", 1, listOf(item(sourceA))))
+      val originalPoster = committedPoster()!!
+      val originalFile = artworkFiles().single().canonicalFile
+      val preferences = context.getSharedPreferences("system_shelf_state", 0)
+      val grantedBefore = preferences.getStringSet("granted_uris", emptySet())!!.toSet()
+      val packagesBefore = preferences.getStringSet("granted_packages", emptySet())!!.toSet()
+
+      tvProvider.failQuery = true
+      assertFalse(provider.syncWatchNextPrograms("owner-a", 2, listOf(item(sourceB))))
+      tvProvider.failQuery = false
+      tvProvider.returnNullQuery = true
+      assertFalse(provider.syncWatchNextPrograms("owner-a", 3, listOf(item(sourceB))))
+      tvProvider.returnNullQuery = false
+
+      assertEquals(1, server.requestCount.get())
+      assertEquals(3, tvProvider.queryCount)
+      assertEquals(originalPoster, committedPoster())
+      assertEquals(setOf(originalFile), artworkFiles().mapTo(HashSet()) { it.canonicalFile })
+      assertEquals(grantedBefore, preferences.getStringSet("granted_uris", emptySet()))
+      assertEquals(packagesBefore, preferences.getStringSet("granted_packages", emptySet()))
+      assertArrayEquals(imageBytes, openArtwork(originalPoster))
+    }
+  }
+
+  @Test
+  fun interruptedPublishLeavesCommittedArtworkAndUniqueStagesUntouched() {
+    ScriptedHttpServer(
+      listOf(
+        ScriptedResponse(body = imageBytes),
+        ScriptedResponse(body = imageBytes),
+        ScriptedResponse(body = imageBytes)
+      )
+    ).use { server ->
+      val provider = WatchNextProvider(context)
+      val store = SystemShelfArtworkStore(context.cacheDir)
+      val sourceA = "${server.baseUrl}/a"
+      val sourceB = "${server.baseUrl}/b"
+      assertTrue(provider.syncWatchNextPrograms("owner-a", 1, listOf(item(sourceA))))
+      val originalPoster = committedPoster()!!
+      val originalFile = store.resolveOwned("owner-a", originalPoster)!!.canonicalFile
+
+      val firstOwnership = provider.claimOwnership("owner-a", 2)!!
+      val firstStage = store.prepare(
+        "owner-a",
+        sourceB,
+        SystemShelfSyncSession(firstOwnership, 2_000)
+      ) as SystemShelfArtworkStore.Prepared.Staged
+      val secondOwnership = provider.claimOwnership("owner-a", 3)!!
+      val secondStage = store.prepare(
+        "owner-a",
+        sourceB,
+        SystemShelfSyncSession(secondOwnership, 2_000)
+      ) as SystemShelfArtworkStore.Prepared.Staged
+      assertFalse(firstStage.stagingFile.canonicalFile == secondStage.stagingFile.canonicalFile)
+      assertFalse(firstStage.materialized.file.exists())
+
+      assertTrue(secondStage.stagingFile.delete())
+      val publication = SystemShelfLifecycle.whileCurrent(secondOwnership) {
+        store.publish(secondStage)
+      }
+      assertNull(publication)
+      store.discard(listOf(firstStage, secondStage))
+
+      assertEquals(3, server.requestCount.get())
+      assertEquals(originalPoster, committedPoster())
+      assertTrue(originalFile.isFile)
+      assertFalse(firstStage.materialized.file.exists())
+      assertEquals(setOf(originalFile), artworkFiles().mapTo(HashSet()) { it.canonicalFile })
+      assertArrayEquals(imageBytes, openArtwork(originalPoster))
+    }
+  }
+
+  @Test
+  fun contentAddressesAndFallbackAreOwnerIsolated() {
+    ScriptedHttpServer(
+      listOf(
+        ScriptedResponse(body = imageBytes),
+        ScriptedResponse(body = imageBytes),
+        ScriptedResponse(status = 503, contentType = "text/plain")
+      )
+    ).use { server ->
+      val provider = WatchNextProvider(context)
+      val source = "${server.baseUrl}/shared"
+      assertTrue(provider.syncWatchNextPrograms("owner-a", 1, listOf(item(source))))
+      val ownerAPoster = committedPoster()!!
+
+      assertTrue(provider.syncWatchNextPrograms("owner-b", 2, listOf(item(source))))
+      val ownerBPoster = committedPoster()!!
+      assertFalse(ownerAPoster == ownerBPoster)
+      assertFalse(ownerAPoster.pathSegments[1] == ownerBPoster.pathSegments[1])
+      assertEquals(2, server.requestCount.get())
+      assertArrayEquals(imageBytes, openArtwork(ownerBPoster))
+
+      assertTrue(
+        provider.syncWatchNextPrograms(
+          "owner-c",
+          3,
+          listOf(item(source).copy(title = "Owner C metadata"))
+        )
+      )
+      assertEquals(3, server.requestCount.get())
+      assertNull(committedPoster())
+      assertTrue(artworkFiles().isEmpty())
+    }
+  }
+
+  @Test
+  fun staleOperationCannotPublishOrPruneCommittedArtwork() {
+    val replacementRequest = CountDownLatch(1)
+    val releaseReplacement = CountDownLatch(1)
+    ScriptedHttpServer(
+      listOf(
+        ScriptedResponse(body = imageBytes),
+        ScriptedResponse(
+          body = imageBytes,
+          beforeResponse = {
+            replacementRequest.countDown()
+            releaseReplacement.await(2, TimeUnit.SECONDS)
+          }
+        )
+      )
+    ).use { server ->
+      val provider = WatchNextProvider(context)
+      val sourceA = "${server.baseUrl}/a"
+      val sourceB = "${server.baseUrl}/b"
+      assertTrue(provider.syncWatchNextPrograms("owner-a", 1, listOf(item(sourceA))))
+      val originalPoster = committedPoster()!!
+      val originalFile = artworkFiles().single().canonicalFile
+      val staleResult = AtomicReference<Boolean>()
+      val staleWorker = thread(start = true, name = "system-shelf-stale-artwork") {
+        staleResult.set(
+          provider.syncWatchNextPrograms("owner-a", 2, listOf(item(sourceB)))
+        )
+      }
+      try {
+        assertTrue(replacementRequest.await(2, TimeUnit.SECONDS))
+        assertTrue(provider.claimOwnership("owner-a", 3) != null)
+      } finally {
+        releaseReplacement.countDown()
+        staleWorker.join(2_000)
+      }
+
+      assertFalse(staleWorker.isAlive)
+      assertEquals(false, staleResult.get())
+      assertEquals(originalPoster, committedPoster())
+      assertEquals(setOf(originalFile), artworkFiles().mapTo(HashSet()) { it.canonicalFile })
+      assertFalse(artworkFiles().any { it.name.endsWith(".tmp") })
+      assertArrayEquals(imageBytes, openArtwork(originalPoster))
+    }
+  }
+
+  private fun committedPoster(): Uri? = tvProvider.inserted.singleOrNull()
+    ?.getAsString(TvContractCompat.PreviewPrograms.COLUMN_POSTER_ART_URI)
+    ?.let(Uri::parse)
+
+  private fun openArtwork(uri: Uri): ByteArray {
+    val provider = Robolectric.buildContentProvider(SystemShelfArtworkProvider::class.java)
+      .create()
+      .get()
+    return AutoCloseInputStream(provider.openFile(uri, "r")).use { it.readBytes() }
   }
 
   private fun registerHandler(intent: Intent, packageName: String): ComponentName {
@@ -687,6 +1232,59 @@ class WatchNextProviderTest {
   }
 }
 
+private data class ScriptedResponse(
+  val status: Int = 200,
+  val contentType: String = "image/png",
+  val body: ByteArray = ByteArray(0),
+  val beforeResponse: (() -> Unit)? = null
+)
+
+private class ScriptedHttpServer(responses: List<ScriptedResponse>) : Closeable {
+  private val server = ServerSocket(0, 8, InetAddress.getByName("127.0.0.1"))
+  private val scriptedResponses = ArrayDeque<ScriptedResponse>().apply { addAll(responses) }
+  val requestCount = AtomicInteger()
+  val baseUrl = "http://127.0.0.1:${server.localPort}"
+  private val responder = thread(start = true, name = "system-shelf-scripted-http") {
+    while (!server.isClosed) {
+      val socket = runCatching { server.accept() }.getOrNull() ?: break
+      runCatching {
+        socket.use {
+          val reader = it.getInputStream().bufferedReader()
+          while (reader.readLine()?.isNotEmpty() == true) {
+            // Consume request headers.
+          }
+          requestCount.incrementAndGet()
+          val response = synchronized(scriptedResponses) {
+            if (scriptedResponses.isEmpty()) {
+              ScriptedResponse(status = 500, contentType = "text/plain")
+            } else {
+              scriptedResponses.removeFirst()
+            }
+          }
+          response.beforeResponse?.invoke()
+          val reason = if (response.status in 200..299) "OK" else "Injected"
+          val headers = (
+            "HTTP/1.1 ${response.status} $reason\r\n" +
+              "Content-Type: ${response.contentType}\r\n" +
+              "Content-Length: ${response.body.size}\r\n" +
+              "Connection: close\r\n\r\n"
+            ).toByteArray()
+          it.getOutputStream().use { output ->
+            output.write(headers)
+            output.write(response.body)
+            output.flush()
+          }
+        }
+      }
+    }
+  }
+
+  override fun close() {
+    server.close()
+    responder.join(2_000)
+  }
+}
+
 private data class Grant(val packageName: String, val uri: Uri, val modeFlags: Int)
 
 private data class PackageRevocation(val packageName: String, val uri: Uri, val modeFlags: Int)
@@ -715,22 +1313,60 @@ private class RecordingGrantContext(base: Context) : ContextWrapper(base) {
 
 private class CapturingTvProvider : ContentProvider() {
   val inserted = mutableListOf<ContentValues>()
+  fun contentIds(): List<String?> = inserted.map { values ->
+    valueAsString(values, TvContractCompat.WatchNextPrograms.COLUMN_INTERNAL_PROVIDER_ID)
+      ?.takeIf(String::isNotBlank)
+      ?: valueAsString(
+        values,
+        TvContractCompat.WatchNextPrograms.COLUMN_INTERNAL_PROVIDER_DATA
+      )?.takeIf(String::isNotBlank)
+      ?: valueAsString(values, TvContractCompat.WatchNextPrograms.COLUMN_INTENT_URI)
+        ?.let(Uri::parse)
+        ?.takeIf { uri -> uri.scheme == "plezy" && uri.authority == "play" }
+        ?.getQueryParameter("content_id")
+  }
+  private val rowIds = mutableListOf<Long>()
+  private var nextRowId = 1L
   var deleteCount = 0
+  var queryCount = 0
+  var lastQueryContentIds: List<String?> = emptyList()
+  var lastQueryPosters: List<String?> = emptyList()
+  var lastQueryProjection: List<String> = emptyList()
+  var failQuery = false
+  var returnNullQuery = false
   var failBatch = false
   var blockNextBatch = false
   val batchStarted = CountDownLatch(1)
   val releaseBatch = CountDownLatch(1)
+
   override fun onCreate(): Boolean = true
+
   override fun insert(uri: Uri, values: ContentValues?): Uri {
+    val id = nextRowId++
     inserted += ContentValues(values)
-    return uri.buildUpon().appendPath(inserted.size.toString()).build()
+    rowIds += id
+    return uri.buildUpon().appendPath(id.toString()).build()
   }
+
   override fun delete(uri: Uri, selection: String?, selectionArgs: Array<out String>?): Int {
     deleteCount++
-    inserted.clear()
+    if (uri == TvContractCompat.WatchNextPrograms.CONTENT_URI) {
+      val deleted = inserted.size
+      inserted.clear()
+      rowIds.clear()
+      return deleted
+    }
+    val id = uri.lastPathSegment?.toLongOrNull() ?: return 0
+    val index = rowIds.indexOf(id)
+    if (index < 0) return 0
+    rowIds.removeAt(index)
+    inserted.removeAt(index)
     return 1
   }
-  override fun applyBatch(operations: ArrayList<ContentProviderOperation>): Array<ContentProviderResult> {
+
+  override fun applyBatch(
+    operations: ArrayList<ContentProviderOperation>
+  ): Array<ContentProviderResult> {
     if (failBatch) throw IllegalStateException("Injected provider failure")
     if (blockNextBatch) {
       blockNextBatch = false
@@ -739,9 +1375,61 @@ private class CapturingTvProvider : ContentProvider() {
     }
     return super.applyBatch(operations)
   }
+
+  override fun query(
+    uri: Uri,
+    projection: Array<out String>?,
+    selection: String?,
+    selectionArgs: Array<out String>?,
+    sortOrder: String?
+  ): Cursor? {
+    queryCount++
+    if (failQuery) throw IllegalStateException("Injected query failure")
+    if (returnNullQuery) return null
+    val columns = projection ?: arrayOf(
+      TvContractCompat.WatchNextPrograms._ID,
+      TvContractCompat.WatchNextPrograms.COLUMN_INTERNAL_PROVIDER_ID,
+      TvContractCompat.WatchNextPrograms.COLUMN_INTERNAL_PROVIDER_DATA,
+      TvContractCompat.WatchNextPrograms.COLUMN_INTENT_URI,
+      TvContractCompat.PreviewPrograms.COLUMN_POSTER_ART_URI
+    )
+    lastQueryProjection = columns.toList()
+    lastQueryContentIds = contentIds()
+    lastQueryPosters = inserted.map { values ->
+      valueAsString(values, TvContractCompat.PreviewPrograms.COLUMN_POSTER_ART_URI)
+    }
+    return MatrixCursor(columns).apply {
+      inserted.indices.forEach { index ->
+        addRow(
+          columns.map { column ->
+            when (column) {
+              TvContractCompat.WatchNextPrograms._ID -> rowIds[index]
+              TvContractCompat.WatchNextPrograms.COLUMN_INTERNAL_PROVIDER_DATA ->
+                inserted[index].get(column)
+              TvContractCompat.WatchNextPrograms.COLUMN_INTERNAL_PROVIDER_ID,
+              TvContractCompat.WatchNextPrograms.COLUMN_INTENT_URI,
+              TvContractCompat.PreviewPrograms.COLUMN_POSTER_ART_URI ->
+                valueAsString(inserted[index], column)
+              else -> inserted[index].get(column)
+            }
+          }.toTypedArray()
+        )
+      }
+    }
+  }
+
+  private fun valueAsString(values: ContentValues, column: String): String? = when (val value = values.get(column)) {
+    is ByteArray -> value.toString(Charsets.UTF_8)
+    else -> values.getAsString(column)
+  }
+
   override fun getType(uri: Uri): String? = null
-  override fun query(uri: Uri, projection: Array<out String>?, selection: String?, selectionArgs: Array<out String>?, sortOrder: String?): Cursor? = null
-  override fun update(uri: Uri, values: ContentValues?, selection: String?, selectionArgs: Array<out String>?): Int = 0
+  override fun update(
+    uri: Uri,
+    values: ContentValues?,
+    selection: String?,
+    selectionArgs: Array<out String>?
+  ): Int = 0
 }
 
 private class RecordingResult : MethodChannel.Result {
