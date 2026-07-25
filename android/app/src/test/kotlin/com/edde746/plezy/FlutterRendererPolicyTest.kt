@@ -6,12 +6,12 @@ import org.junit.Test
 class FlutterRendererPolicyTest {
 
   @Test
-  fun affected32BitTclTvUsesImpellerOpenGles() {
+  fun affected32BitTclTvUsesSkia() {
     val renderer = select(manufacturer = "TCL", is64Bit = false)
 
-    assertEquals(FlutterRenderer.IMPELLER_OPEN_GLES, renderer)
-    assertEquals("--impeller-backend=opengles", renderer.shellArgument)
-    assertEquals("Impeller (OpenGLES)", renderer.diagnosticName)
+    assertEquals(FlutterRenderer.SKIA, renderer)
+    assertEquals("--enable-impeller=false", renderer.shellArgument)
+    assertEquals("Skia", renderer.diagnosticName)
   }
 
   @Test

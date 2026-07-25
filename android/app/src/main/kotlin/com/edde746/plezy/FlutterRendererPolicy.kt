@@ -5,8 +5,7 @@ internal enum class FlutterRenderer(
   val shellArgument: String?
 ) {
   SKIA("Skia", "--enable-impeller=false"),
-  IMPELLER("Impeller", null),
-  IMPELLER_OPEN_GLES("Impeller (OpenGLES)", "--impeller-backend=opengles")
+  IMPELLER("Impeller", null)
 }
 
 /** Selects the Flutter UI renderer before the engine starts. */
@@ -33,11 +32,11 @@ internal object FlutterRendererPolicy {
       return FlutterRenderer.SKIA
     }
 
-    // PowerVR BXE-4-32 drivers in TCL's 32-bit Android 12 TV platform leave
-    // stale Vulkan frames on screen while scrolling (#1658, flutter/flutter#189767).
-    // Impeller's OpenGLES backend renders correctly on the same hardware.
+    // Impeller's Vulkan and OpenGLES backends both leave stale frames on the
+    // affected 32-bit TCL TV when Plezy uses its transparent TextureView
+    // composition (#1658). Restore the pre-2.9.0 Skia path for this hardware.
     if (!is64Bit && manufacturer.equals("TCL", ignoreCase = true)) {
-      return FlutterRenderer.IMPELLER_OPEN_GLES
+      return FlutterRenderer.SKIA
     }
 
     return FlutterRenderer.IMPELLER
