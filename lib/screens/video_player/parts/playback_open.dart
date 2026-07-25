@@ -85,6 +85,7 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
     AudioTrack? preferredAudioTrack,
     SubtitleTrack? preferredSubtitleTrack,
     SubtitleTrack? preferredSecondarySubtitleTrack,
+    bool preserveSubtitleSourceIdentity = true,
   }) async {
     await _waitForProfileSettingsIfNeeded();
     if (!mounted) return const PlaybackSubtitleSelection.off();
@@ -97,6 +98,7 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
       preferredAudioTrack: preferredAudioTrack,
       preferredSubtitleTrack: preferredSubtitleTrack,
       preferredSecondarySubtitleTrack: preferredSecondarySubtitleTrack,
+      preserveSourceIdentity: preserveSubtitleSourceIdentity,
     );
   }
 

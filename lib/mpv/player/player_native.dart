@@ -124,6 +124,7 @@ class PlayerNative extends PlayerBase {
         ?.map((subtitle) => subtitle.uri)
         .whereType<String>()
         .where((uri) => uri.isNotEmpty)
+        .toSet()
         .map((uri) => _escapePathListEntry(uri, separator))
         .toList();
     if (escapedUris == null || escapedUris.isEmpty) return null;

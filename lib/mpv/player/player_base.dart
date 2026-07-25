@@ -72,7 +72,7 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
   Duration? _timelineDuration;
   int _nextPropId = 0;
   final Map<int, String> _propIdToName = {};
-  Map<String, SubtitleTrack> _externalSubtitleMetadataByUri = const {};
+  Map<String, List<SubtitleTrack>> _externalSubtitleMetadataByUri = const {};
   bool _primaryMediaLoadStarted = false;
   bool _primaryMediaReadyEmitted = false;
 
@@ -499,6 +499,7 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
     final subtitleTracks = <SubtitleTrack>[];
     String? selectedAudioId;
     String? selectedSubtitleId;
+    final containerMetadataIndexes = <String, int>{};
 
     for (final track in trackList) {
       if (track is! Map) continue;
@@ -511,6 +512,13 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
       final selected = track['selected'] == true;
 
       if (type == 'audio') {
+        final rawExternalFilename = track['external-filename'];
+        final externalFilename = rawExternalFilename is String ? rawExternalFilename : null;
+        final externalMetadata = externalFilename == null ? null : _externalSubtitleMetadataByUri[externalFilename];
+        // Container sidecars are opened only to expose their subtitle tracks.
+        // Do not let their audio streams participate in normal track matching.
+        if (externalMetadata?.any((metadata) => metadata.isContainer) == true) continue;
+
         if (selected) selectedAudioId = id;
         audioTracks.add(
           AudioTrack(
@@ -527,20 +535,43 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
         if (selected) selectedSubtitleId = id;
         final rawCodec = track['codec'];
         final codec = rawCodec is String ? rawCodec : null;
+        final rawTitle = track['title'];
+        final rawLanguage = track['lang'];
         final rawExternalFilename = track['external-filename'];
         final externalFilename = rawExternalFilename is String ? rawExternalFilename : null;
         final externalMetadata = externalFilename == null ? null : _externalSubtitleMetadataByUri[externalFilename];
-        final rawTitle = track['title'];
-        final rawLanguage = track['lang'];
+        final isContainer =
+            track['container'] == true || externalMetadata?.any((metadata) => metadata.isContainer) == true;
+        SubtitleTrack? matchedMetadata;
+        if (externalMetadata != null && externalMetadata.isNotEmpty) {
+          if (isContainer && externalFilename != null) {
+            final metadataIndex = containerMetadataIndexes[externalFilename] ?? 0;
+            containerMetadataIndexes[externalFilename] = metadataIndex + 1;
+            if (metadataIndex < externalMetadata.length && externalMetadata[metadataIndex].isContainer) {
+              matchedMetadata = externalMetadata[metadataIndex];
+            }
+          } else {
+            matchedMetadata = externalMetadata.first;
+          }
+        }
         subtitleTracks.add(
           SubtitleTrack(
             id: id,
-            title: externalMetadata?.title ?? cleanSubtitleTitle(rawTitle is String ? rawTitle : null, codec: codec),
-            language: externalMetadata?.language ?? cleanTrackMetadataValue(rawLanguage is String ? rawLanguage : null),
-            codec: externalMetadata?.codec ?? codec,
-            isDefault: externalMetadata?.isDefault ?? (track['default'] == true),
-            isForced: externalMetadata?.isForced ?? (track['forced'] == true),
+            // mpv may synthesize a container track title from the signed
+            // source filename. Source-catalog metadata is both safer and more
+            // accurate there, including on builds that drop disposition flags.
+            // Ordinary sidecars still fall back to metadata reported by mpv.
+            title: isContainer
+                ? matchedMetadata?.title
+                : matchedMetadata?.title ?? cleanSubtitleTitle(rawTitle is String ? rawTitle : null, codec: codec),
+            language: isContainer
+                ? matchedMetadata?.language
+                : matchedMetadata?.language ?? cleanTrackMetadataValue(rawLanguage is String ? rawLanguage : null),
+            codec: matchedMetadata?.codec ?? codec,
+            isDefault: matchedMetadata?.isDefault ?? (track['default'] == true),
+            isForced: matchedMetadata?.isForced ?? (track['forced'] == true),
             isExternal: track['external'] == true,
+            isContainer: isContainer,
             uri: externalFilename,
           ),
         );
@@ -599,23 +630,23 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
 
   @protected
   void setExternalSubtitleMetadata(List<SubtitleTrack>? externalSubtitles) {
-    final metadataByUri = <String, SubtitleTrack>{};
+    final metadataByUri = <String, List<SubtitleTrack>>{};
     for (final subtitle in externalSubtitles ?? const <SubtitleTrack>[]) {
       final uri = subtitle.uri;
       if (uri != null && uri.isNotEmpty) {
-        metadataByUri[uri] = subtitle;
+        (metadataByUri[uri] ??= <SubtitleTrack>[]).add(subtitle);
       }
     }
     _externalSubtitleMetadataByUri = metadataByUri;
   }
 
   @protected
-  Map<String, SubtitleTrack> snapshotExternalSubtitleMetadata() =>
-      Map<String, SubtitleTrack>.of(_externalSubtitleMetadataByUri);
+  Map<String, List<SubtitleTrack>> snapshotExternalSubtitleMetadata() =>
+      Map<String, List<SubtitleTrack>>.of(_externalSubtitleMetadataByUri);
 
   @protected
-  void restoreExternalSubtitleMetadata(Map<String, SubtitleTrack> snapshot) {
-    _externalSubtitleMetadataByUri = Map<String, SubtitleTrack>.of(snapshot);
+  void restoreExternalSubtitleMetadata(Map<String, List<SubtitleTrack>> snapshot) {
+    _externalSubtitleMetadataByUri = Map<String, List<SubtitleTrack>>.of(snapshot);
   }
 
   @protected

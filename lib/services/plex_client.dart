@@ -77,7 +77,6 @@ import 'plex_lyrics_parser.dart';
 import 'plex_mappers.dart';
 import 'plex_playback_mapper.dart';
 import 'playback_initialization_types.dart';
-import 'track_selection_service.dart';
 
 part 'plex_client/parts/live_tv.dart';
 part 'plex_client/parts/playlists.dart';
@@ -2437,9 +2436,9 @@ class PlexClient
 
   /// Build an HLS VOD transcode stream URL (decision + start path).
   ///
-  /// Text subtitles selected on the Plex part are segmented as WebVTT,
-  /// image subtitles are burned because HLS has no bitmap subtitle rendition,
-  /// and real external sidecars are still attached separately by callers.
+  /// Subtitle delivery stays outside the HLS video stream. Callers attach
+  /// Plex subtitle sources independently, so changing subtitle tracks never
+  /// restarts the video transcode.
   ///
   /// [transcodeSessionId] and [sessionIdentifier] should be reused across
   /// seeks + quality/version/audio switches within one playback so the
@@ -2452,7 +2451,6 @@ class PlexClient
     required String sessionIdentifier,
     required String transcodeSessionId,
     int? audioStreamId,
-    MediaSubtitleTrack? selectedSubtitleTrack,
   }) async {
     try {
       final allParams = _buildTranscodeParams(
@@ -2463,7 +2461,6 @@ class PlexClient
         sessionIdentifier: sessionIdentifier,
         transcodeSessionId: transcodeSessionId,
         audioStreamId: audioStreamId,
-        selectedSubtitleTrack: selectedSubtitleTrack,
       );
       return await _runTranscodeDecision(
         startEndpoint: _plexVideoHlsStartEndpoint,
@@ -2521,38 +2518,31 @@ class PlexClient
     required Map<String, String> allParams,
     required bool isOriginal,
   }) async {
-    final queryString = allParams.entries.map((e) => '${_plexEncode(e.key)}=${_plexEncode(e.value)}').join('&');
     final decisionEndpoint = '${startEndpoint.substring(0, startEndpoint.lastIndexOf('/'))}/decision';
 
-    final decisionClient = MediaServerHttpClient(
-      connectTimeout: MediaServerTimeouts.connect,
-      receiveTimeout: MediaServerTimeouts.receive,
-      defaultHeaders: const {'Accept-Language': 'en', 'Accept': 'application/json'},
+    final decisionResponse = await _http.get(
+      decisionEndpoint,
+      queryParameters: allParams,
+      headers: const {'Accept-Language': 'en', 'Accept': 'application/json'},
     );
-    try {
-      final decisionUrl = '${config.baseUrl}$decisionEndpoint?$queryString';
-      final decisionResponse = await decisionClient.get(decisionUrl);
 
-      final decisionBody = decisionResponse.data?.toString() ?? '<empty>';
-      appLogger.i(
-        'Transcode decision [${decisionResponse.statusCode}] body: '
-        '${decisionBody.length > 2000 ? '${decisionBody.substring(0, 2000)}…' : decisionBody}',
-      );
+    final decisionBody = decisionResponse.data?.toString() ?? '<empty>';
+    appLogger.i(
+      'Transcode decision [${decisionResponse.statusCode}] body: '
+      '${decisionBody.length > 2000 ? '${decisionBody.substring(0, 2000)}…' : decisionBody}',
+    );
 
-      if (decisionResponse.statusCode != 200) {
-        appLogger.w('Transcode decision returned ${decisionResponse.statusCode}');
-        return (startPath: null, outcome: TranscodeDecisionOutcome.failed);
-      }
-
-      final outcome = _parseTranscodeDecisionOutcome(decisionResponse.data, isOriginal: isOriginal);
-      if (outcome == TranscodeDecisionOutcome.failed) {
-        return (startPath: null, outcome: outcome);
-      }
-
-      return (startPath: _buildTranscodeStartPathFromParams(allParams, endpoint: startEndpoint), outcome: outcome);
-    } finally {
-      decisionClient.close();
+    if (decisionResponse.statusCode != 200) {
+      appLogger.w('Transcode decision returned ${decisionResponse.statusCode}');
+      return (startPath: null, outcome: TranscodeDecisionOutcome.failed);
     }
+
+    final outcome = _parseTranscodeDecisionOutcome(decisionResponse.data, isOriginal: isOriginal);
+    if (outcome == TranscodeDecisionOutcome.failed) {
+      return (startPath: null, outcome: outcome);
+    }
+
+    return (startPath: _buildTranscodeStartPathFromParams(allParams, endpoint: startEndpoint), outcome: outcome);
   }
 
   String _buildTranscodeStartPathFromParams(
@@ -2580,13 +2570,8 @@ class PlexClient
     required String sessionIdentifier,
     required String transcodeSessionId,
     int? audioStreamId,
-    MediaSubtitleTrack? selectedSubtitleTrack,
   }) {
     final isOriginal = preset.isOriginal;
-    final selectedInternalSubtitle = _selectedInternalSubtitleForHls(selectedSubtitleTrack);
-    final segmentSubtitle = selectedInternalSubtitle != null && _canTranscodeSubtitleAsText(selectedInternalSubtitle);
-    final burnSubtitle =
-        selectedInternalSubtitle != null && CodecUtils.isImageSubtitleCodec(selectedInternalSubtitle.codec);
     final clientProfileExtra = _buildPlexHlsClientProfileExtra(
       maxVideoBitrateKbps: !isOriginal ? preset.videoBitrateKbps : null,
     );
@@ -2609,13 +2594,7 @@ class PlexClient
       'directStreamAudio': '0',
       'mediaBufferSize': '102400',
       'session': transcodeSessionId,
-      'subtitles': segmentSubtitle
-          ? 'segmented'
-          : burnSubtitle
-          ? 'burn'
-          : 'none',
-      if (selectedInternalSubtitle != null) 'subtitleStreamID': selectedInternalSubtitle.id.toString(),
-      if (segmentSubtitle) 'advancedSubtitles': 'text',
+      'subtitles': 'none',
       if (audioStreamId != null) 'audioStreamID': audioStreamId.toString(),
       'Accept-Language': 'en',
       'X-Plex-Session-Identifier': sessionIdentifier,
@@ -2644,7 +2623,6 @@ class PlexClient
     required String sessionIdentifier,
     required String transcodeSessionId,
     int? audioStreamId,
-    MediaSubtitleTrack? selectedSubtitleTrack,
   }) {
     return _buildTranscodeParams(
       ratingKey: ratingKey,
@@ -2654,7 +2632,6 @@ class PlexClient
       sessionIdentifier: sessionIdentifier,
       transcodeSessionId: transcodeSessionId,
       audioStreamId: audioStreamId,
-      selectedSubtitleTrack: selectedSubtitleTrack,
     );
   }
 
@@ -3084,9 +3061,8 @@ class PlexClient
 
   /// Plex playback resolution. Reuses [getVideoPlaybackData] for metadata,
   /// then either runs the transcode-decision flow or returns the direct-play
-  /// URL. Keyed subtitle tracks remain external sidecars; selected internal
-  /// text tracks become segmented WebVTT and image tracks are burned into the
-  /// HLS rendition.
+  /// URL. Transcoded video stays subtitle-free; every Plex subtitle remains
+  /// independently selectable through the returned sidecar catalog.
   @override
   Future<PlaybackInitializationResult> getPlaybackInitialization(PlaybackInitializationOptions options) async {
     try {
@@ -3135,7 +3111,6 @@ class PlexClient
         }
 
         final resolvedAudioId = _resolveAudioStreamId(options.selectedAudioStreamId, data.mediaInfo);
-        final selectedSubtitleTrack = _resolveTranscodeSubtitleTrack(data.mediaInfo, options.preferredSubtitleTrack);
         final result = await buildTranscodeStartPath(
           ratingKey: options.metadata.id,
           mediaIndex: data.selectedMediaIndex,
@@ -3144,12 +3119,11 @@ class PlexClient
           sessionIdentifier: options.sessionIdentifier!,
           transcodeSessionId: options.transcodeSessionId!,
           audioStreamId: resolvedAudioId,
-          selectedSubtitleTrack: selectedSubtitleTrack,
         );
 
         if (result.outcome == TranscodeDecisionOutcome.transcodeOk && result.startPath != null) {
           final transcodeUrl = '${config.baseUrl}${result.startPath}'.withPlexToken(config.token);
-          final subtitleSidecars = _buildTranscodeSidecarSubtitles(data.mediaInfo);
+          final subtitleSidecars = _buildTranscodeSidecarSubtitles(data.mediaInfo, data.videoUrl!);
           return PlaybackInitializationResult(
             availableVersions: data.availableVersions,
             videoUrl: transcodeUrl,
@@ -3249,41 +3223,6 @@ class PlexClient
     return tracks.first.id;
   }
 
-  MediaSubtitleTrack? _selectedSubtitleTrack(MediaSourceInfo? info) {
-    if (info == null) return null;
-    for (final track in info.subtitleTracks) {
-      if (track.selected) return track;
-    }
-    return null;
-  }
-
-  MediaSubtitleTrack? _resolveTranscodeSubtitleTrack(MediaSourceInfo? info, SubtitleTrack? preferred) {
-    if (info == null) return null;
-    if (preferred == null) return _selectedSubtitleTrack(info);
-    if (preferred.id == SubtitleTrack.off.id) return null;
-
-    MediaSubtitleTrack? matched;
-    if (preferred.id.startsWith('source:')) {
-      final sourceId = int.tryParse(preferred.id.substring('source:'.length));
-      if (sourceId != null) {
-        for (final track in info.subtitleTracks) {
-          if (track.id == sourceId) {
-            matched = track;
-            break;
-          }
-        }
-      }
-    }
-
-    matched ??= findPlexTrackForMpvSubtitle(preferred, info.subtitleTracks);
-    return matched ?? _selectedSubtitleTrack(info);
-  }
-
-  @visibleForTesting
-  MediaSubtitleTrack? resolveTranscodeSubtitleTrackForTesting(MediaSourceInfo? info, SubtitleTrack? preferred) {
-    return _resolveTranscodeSubtitleTrack(info, preferred);
-  }
-
   /// Build the absolute URL for an external subtitle track on this Plex
   /// server. Returns `null` for tracks that aren't external (no `/library/
   /// streams/{id}` key) or when the server has no auth token.
@@ -3305,20 +3244,10 @@ class PlexClient
   /// `Stream.key` is required here.
   String? _buildSidecarSubtitleUrl(MediaSubtitleTrack track) {
     if (track.key == null || track.key!.isEmpty) return null;
-    final token = config.token;
-    if (token == null) return null;
     final ext = CodecUtils.getSubtitleExtension(track.codec);
-    return '${config.baseUrl}${track.key}.$ext?encoding=utf-8&X-Plex-Token=$token';
-  }
-
-  bool _canTranscodeSubtitleAsText(MediaSubtitleTrack track) {
-    return CodecUtils.isTextSubtitleCodec(track.codec);
-  }
-
-  MediaSubtitleTrack? _selectedInternalSubtitleForHls(MediaSubtitleTrack? track) {
-    if (track == null) return null;
-    if (track.key != null && track.key!.isNotEmpty) return null;
-    return CodecUtils.isTranscodableSubtitleCodec(track.codec) ? track : null;
+    final url = '${config.baseUrl}${track.key}.$ext?encoding=utf-8';
+    final token = config.token;
+    return token == null ? url : '$url&X-Plex-Token=$token';
   }
 
   SubtitleTrack _subtitleTrackFromMediaTrack(MediaSubtitleTrack track, String url) {
@@ -3334,21 +3263,42 @@ class PlexClient
     );
   }
 
-  /// Build subtitle sidecars for Plex transcode playback. Keyed tracks remain
-  /// external; the selected internal track is delivered by the HLS rendition.
-  List<PlaybackSubtitleSidecar> _buildTranscodeSidecarSubtitles(MediaSourceInfo? mediaInfo) {
+  SubtitleTrack _containerSubtitleTrackFromMediaTrack(MediaSubtitleTrack track, String url) {
+    return SubtitleTrack(
+      id: 'container:${track.id}',
+      title: track.displayTitle ?? track.title ?? track.language ?? 'Track ${track.id}',
+      language: track.languageCode,
+      codec: track.codec,
+      isDefault: track.selected,
+      isForced: track.forced,
+      isExternal: true,
+      isContainer: true,
+      uri: url,
+    );
+  }
+
+  /// Build the complete subtitle catalog for Plex transcode playback.
+  ///
+  /// Real sidecar files keep their direct stream URL. Embedded subtitle
+  /// streams share the original media container as a subtitle-only source;
+  /// player backends filter that source to text tracks. Every entry is
+  /// preloaded so changing subtitles is a local track selection.
+  List<PlaybackSubtitleSidecar> _buildTranscodeSidecarSubtitles(MediaSourceInfo? mediaInfo, String sourceUrl) {
     if (mediaInfo == null) return const [];
-    if (config.token == null) {
-      appLogger.w('No auth token available for transcode sidecar subtitles');
-      return const [];
-    }
 
     final tracks = <PlaybackSubtitleSidecar>[];
     for (final sub in mediaInfo.subtitleTracks) {
       try {
-        final url = _buildSidecarSubtitleUrl(sub);
-        if (url == null) continue;
-        tracks.add(PlaybackSubtitleSidecar(sourceStreamId: sub.id, track: _subtitleTrackFromMediaTrack(sub, url)));
+        final directUrl = _buildSidecarSubtitleUrl(sub);
+        tracks.add(
+          PlaybackSubtitleSidecar(
+            sourceStreamId: sub.id,
+            track: directUrl == null
+                ? _containerSubtitleTrackFromMediaTrack(sub, sourceUrl)
+                : _subtitleTrackFromMediaTrack(sub, directUrl),
+            preload: true,
+          ),
+        );
       } catch (e) {
         appLogger.w('Failed to build sidecar subtitle for stream ${sub.id}', error: e);
       }
@@ -3357,8 +3307,8 @@ class PlexClient
   }
 
   @visibleForTesting
-  List<SubtitleTrack> buildTranscodeSidecarSubtitlesForTesting(MediaSourceInfo? mediaInfo) {
-    return _buildTranscodeSidecarSubtitles(mediaInfo).map((sidecar) => sidecar.track).toList(growable: false);
+  List<PlaybackSubtitleSidecar> buildTranscodeSidecarSubtitlesForTesting(MediaSourceInfo? mediaInfo, String sourceUrl) {
+    return _buildTranscodeSidecarSubtitles(mediaInfo, sourceUrl);
   }
 
   /// Build list of external subtitle tracks from media info

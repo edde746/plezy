@@ -330,24 +330,37 @@ mixin _JellyfinPlaybackMethods on MediaServerCacheMixin {
     if (preferred == null) return null;
     if (preferred.id == SubtitleTrack.off.id) return -1;
 
+    var semanticPreference = preferred;
     const sourcePrefix = 'source:';
     if (preferred.id.startsWith(sourcePrefix)) {
+      semanticPreference = SubtitleTrack(
+        id: 'navigation',
+        title: preferred.title,
+        language: preferred.language,
+        codec: preferred.codec,
+        isDefault: preferred.isDefault,
+        isForced: preferred.isForced,
+        isExternal: preferred.isExternal,
+        isContainer: preferred.isContainer,
+      );
       final explicit = int.tryParse(preferred.id.substring(sourcePrefix.length));
       if (explicit != null) {
         final exactSource = mediaInfo.subtitleTracks.where((track) => track.id == explicit).firstOrNull;
         if (exactSource != null) {
           // A source id is authoritative only within one item. When semantic
-          // metadata is available, reject a coincidentally reused episode id.
-          final exactMatch = findPlexTrackForMpvSubtitle(preferred, [exactSource]);
+          // metadata is available, prefer the best current-source row so a
+          // reused stream index cannot override a better title/codec match.
+          final semanticMatch = findPlexTrackForMpvSubtitle(semanticPreference, mediaInfo.subtitleTracks);
           final hasLanguage = preferred.language?.isNotEmpty ?? false;
-          if (!hasLanguage || (exactMatch != null && preferred.isForced == exactSource.forced)) {
+          if (!hasLanguage || (semanticMatch?.id == explicit && preferred.isForced == exactSource.forced)) {
             return explicit;
           }
+          return semanticMatch?.id;
         }
       }
     }
 
-    return findPlexTrackForMpvSubtitle(preferred, mediaInfo.subtitleTracks)?.id;
+    return findPlexTrackForMpvSubtitle(semanticPreference, mediaInfo.subtitleTracks)?.id;
   }
 
   Map<String, dynamic>? _selectNegotiatedMediaSource(Object? sources, String? selectedSourceId) {

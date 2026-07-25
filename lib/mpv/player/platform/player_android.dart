@@ -180,7 +180,7 @@ class PlayerAndroid extends PlayerBase {
         'isLive': isLive,
         if (externalSubtitles != null && externalSubtitles.isNotEmpty)
           'externalSubtitles': externalSubtitles
-              .where((s) => s.uri != null)
+              .where((s) => s.uri?.isNotEmpty == true)
               .map(
                 (s) => {
                   'uri': s.uri,
@@ -189,6 +189,7 @@ class PlayerAndroid extends PlayerBase {
                   'codec': s.codec,
                   'isDefault': s.isDefault,
                   'isForced': s.isForced,
+                  'isContainer': s.isContainer,
                 },
               )
               .toList(),

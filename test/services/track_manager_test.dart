@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:fake_async/fake_async.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/media/media_backend.dart';
 import 'package:plezy/media/media_item.dart';
@@ -7,6 +8,8 @@ import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/media/media_source_info.dart';
 import 'package:plezy/mpv/mpv.dart';
 import 'package:plezy/mpv/player/player_stream_controllers.dart';
+import 'package:plezy/screens/video_player_screen.dart';
+import 'package:plezy/services/playback_initialization_types.dart';
 import 'package:plezy/services/settings_service.dart';
 import 'package:plezy/services/track_manager.dart';
 
@@ -368,6 +371,361 @@ void main() {
 
       expect(player.selectedSubtitle, hasLength(1));
       expect(player.selectedSubtitle.single.id, 'no');
+    });
+
+    test('waits through a partial catalog until the selected Plex subtitle arrives', () async {
+      await SettingsService.getInstance();
+      final player = _FakePlayer(
+        tracks: const Tracks(
+          audio: [AudioTrack(id: '1', language: 'eng')],
+        ),
+      );
+      final mgr = _make(player: player, mediaInfo: _mediaInfoWithSubtitles(selected: true));
+      addTearDown(mgr.dispose);
+
+      mgr.applyTrackSelectionWhenReady();
+      player.emitTracks(
+        const Tracks(
+          audio: [AudioTrack(id: '1', language: 'eng')],
+          subtitle: [SubtitleTrack(id: '11', language: 'fre')],
+        ),
+      );
+      await _drainAsync();
+      expect(player.selectedSubtitle, isEmpty);
+
+      player.emitTracks(
+        const Tracks(
+          audio: [AudioTrack(id: '1', language: 'eng')],
+          subtitle: [
+            SubtitleTrack(id: '11', language: 'fre'),
+            SubtitleTrack(id: '10', language: 'eng'),
+          ],
+        ),
+      );
+      await _drainAsync();
+
+      expect(player.selectedSubtitle.map((track) => track.id), ['10']);
+    });
+
+    test('waits for a preferred subtitle even when the server-selected track arrives first', () async {
+      await SettingsService.getInstance();
+      final player = _FakePlayer(
+        tracks: const Tracks(
+          audio: [AudioTrack(id: '1', language: 'eng')],
+        ),
+      );
+      final mgr = _make(
+        player: player,
+        mediaInfo: _mediaInfoWithSubtitles(selected: true),
+        preferredSubtitleTrack: const SubtitleTrack(id: 'previous', language: 'fre'),
+      );
+      addTearDown(mgr.dispose);
+
+      mgr.applyTrackSelectionWhenReady();
+      player.emitTracks(
+        const Tracks(
+          audio: [AudioTrack(id: '1', language: 'eng')],
+          subtitle: [SubtitleTrack(id: '10', language: 'eng')],
+        ),
+      );
+      await _drainAsync();
+      expect(player.selectedSubtitle, isEmpty);
+
+      player.emitTracks(
+        const Tracks(
+          audio: [AudioTrack(id: '1', language: 'eng')],
+          subtitle: [
+            SubtitleTrack(id: '10', language: 'eng'),
+            SubtitleTrack(id: '11', language: 'fre'),
+          ],
+        ),
+      );
+      await _drainAsync();
+
+      expect(player.selectedSubtitle.map((track) => track.id), ['11']);
+    });
+
+    test('source identity waits for the intended identical container track', () async {
+      await SettingsService.getInstance();
+      final mediaInfo = MediaSourceInfo(
+        videoUrl: 'https://example.com/transcode.m3u8',
+        partId: 99,
+        audioTracks: [MediaAudioTrack(id: 1, languageCode: 'eng', selected: true)],
+        subtitleTracks: [
+          MediaSubtitleTrack(
+            id: 30,
+            index: 0,
+            languageCode: 'eng',
+            title: 'English',
+            codec: 'ass',
+            selected: false,
+            forced: false,
+          ),
+          MediaSubtitleTrack(
+            id: 31,
+            index: 1,
+            languageCode: 'eng',
+            title: 'English',
+            codec: 'ass',
+            selected: true,
+            forced: false,
+          ),
+        ],
+        chapters: const [],
+      );
+      const firstNativeTrack = SubtitleTrack(
+        id: 'native-0',
+        language: 'eng',
+        title: 'English',
+        codec: 'ass',
+        isExternal: true,
+        isContainer: true,
+        uri: 'https://example.com/video.mkv',
+      );
+      const secondNativeTrack = SubtitleTrack(
+        id: 'native-1',
+        language: 'eng',
+        title: 'English',
+        codec: 'ass',
+        isExternal: true,
+        isContainer: true,
+        uri: 'https://example.com/video.mkv',
+      );
+      final player = _FakePlayer(
+        tracks: const Tracks(
+          audio: [AudioTrack(id: 'audio', language: 'eng')],
+          subtitle: [firstNativeTrack],
+        ),
+      );
+      final mgr = _make(
+        player: player,
+        mediaInfo: mediaInfo,
+        preferredSubtitleTrack: const SubtitleTrack(
+          id: 'source:31',
+          language: 'eng',
+          title: 'English',
+          codec: 'ass',
+          isExternal: true,
+          isContainer: true,
+          uri: 'https://example.com/video.mkv',
+        ),
+      );
+      addTearDown(mgr.dispose);
+
+      mgr.applyTrackSelectionWhenReady();
+      await _drainAsync();
+      expect(player.selectedSubtitle, isEmpty);
+
+      player.emitTracks(
+        const Tracks(
+          audio: [AudioTrack(id: 'audio', language: 'eng')],
+          subtitle: [firstNativeTrack, secondNativeTrack],
+        ),
+      );
+      await _drainAsync();
+
+      expect(player.selectedSubtitle.map((track) => track.id), ['native-1']);
+    });
+
+    test('deferred transcode source choice applies after native discovery without requesting a reload', () async {
+      await SettingsService.getInstance();
+      final sourceTrack = MediaSubtitleTrack(
+        id: 31,
+        index: 0,
+        languageCode: 'eng',
+        title: 'English',
+        codec: 'ass',
+        selected: false,
+        forced: false,
+      );
+      final mediaInfo = MediaSourceInfo(
+        videoUrl: 'https://example.com/transcode.m3u8',
+        partId: 99,
+        audioTracks: [MediaAudioTrack(id: 1, languageCode: 'eng', selected: true)],
+        subtitleTracks: [sourceTrack],
+        chapters: const [],
+      );
+      final player = _FakePlayer(
+        tracks: const Tracks(
+          audio: [AudioTrack(id: 'audio', language: 'eng')],
+        ),
+      );
+      final mgr = _make(player: player, mediaInfo: mediaInfo);
+      addTearDown(mgr.dispose);
+      SubtitleTrack? persistedTrack;
+      int? persistedSourceStreamId;
+
+      final handledLocally = await deferTranscodeSubtitleSelection(
+        trackManager: mgr,
+        sourceTrack: sourceTrack,
+        sourceSidecar: const PlaybackSubtitleSidecar(
+          sourceStreamId: 31,
+          preload: true,
+          track: SubtitleTrack(
+            id: 'container:31',
+            language: 'eng',
+            title: 'English',
+            codec: 'ass',
+            isExternal: true,
+            isContainer: true,
+            uri: 'https://example.com/video.mkv',
+          ),
+        ),
+        sourceStreamId: 31,
+        onSubtitleTrackChanged: (track, {sourceStreamId}) async {
+          persistedTrack = track;
+          persistedSourceStreamId = sourceStreamId;
+        },
+        shouldContinue: () => true,
+      );
+
+      expect(handledLocally, isTrue);
+      expect(mgr.preferredSubtitleTrack?.id, 'source:31');
+      expect(persistedTrack?.id, 'source:31');
+      expect(persistedSourceStreamId, 31);
+      expect(player.selectedSubtitle, isEmpty);
+
+      player.emitTracks(
+        const Tracks(
+          audio: [AudioTrack(id: 'audio', language: 'eng')],
+          subtitle: [
+            SubtitleTrack(
+              id: 'native-0',
+              language: 'eng',
+              title: 'English',
+              codec: 'ass',
+              isExternal: true,
+              isContainer: true,
+              uri: 'https://example.com/video.mkv',
+            ),
+          ],
+        ),
+      );
+      await _drainAsync();
+
+      expect(player.selectedSubtitle.map((track) => track.id), ['native-0']);
+    });
+
+    test('five-second fallback keeps listening and applies a late advertised subtitle', () async {
+      await SettingsService.getInstance();
+
+      fakeAsync((async) {
+        final player = _FakePlayer(
+          tracks: const Tracks(
+            audio: [AudioTrack(id: '1', language: 'eng')],
+          ),
+        );
+        final mgr = _make(player: player, mediaInfo: _mediaInfoWithSubtitles(selected: true));
+
+        mgr.applyTrackSelectionWhenReady();
+        async.elapse(const Duration(seconds: 5));
+        async.flushMicrotasks();
+
+        expect(player.selectedAudio, hasLength(1));
+        expect(player.selectedSubtitle, isEmpty);
+
+        player.emitTracks(
+          const Tracks(
+            audio: [AudioTrack(id: '1', language: 'eng')],
+            subtitle: [SubtitleTrack(id: '10', language: 'eng')],
+          ),
+        );
+        async.flushMicrotasks();
+
+        expect(player.selectedSubtitle.map((track) => track.id), ['10']);
+        expect(async.nonPeriodicTimerCount, 0);
+        mgr.dispose();
+      });
+    });
+
+    test('five-second fallback keeps listening through a partial subtitle catalog', () async {
+      await SettingsService.getInstance();
+
+      fakeAsync((async) {
+        final mediaInfo = MediaSourceInfo(
+          videoUrl: 'https://example.com/transcode.m3u8',
+          audioTracks: [MediaAudioTrack(id: 1, languageCode: 'eng', selected: true)],
+          subtitleTracks: [
+            MediaSubtitleTrack(id: 10, languageCode: 'eng', selected: false, forced: false),
+            MediaSubtitleTrack(id: 11, languageCode: 'fre', selected: true, forced: false),
+          ],
+          chapters: const [],
+        );
+        final player = _FakePlayer(
+          tracks: const Tracks(
+            audio: [AudioTrack(id: '1', language: 'eng')],
+            subtitle: [SubtitleTrack(id: '10', language: 'eng')],
+          ),
+        );
+        final mgr = _make(
+          player: player,
+          mediaInfo: mediaInfo,
+          preferredSubtitleTrack: const SubtitleTrack(id: 'source:11', language: 'fre'),
+        );
+
+        mgr.applyTrackSelectionWhenReady();
+        async.elapse(const Duration(seconds: 5));
+        async.flushMicrotasks();
+
+        expect(player.selectedAudio, hasLength(1));
+        expect(player.selectedSubtitle, isEmpty);
+
+        player.emitTracks(
+          const Tracks(
+            audio: [AudioTrack(id: '1', language: 'eng')],
+            subtitle: [
+              SubtitleTrack(id: '10', language: 'eng'),
+              SubtitleTrack(id: '11', language: 'fre'),
+            ],
+          ),
+        );
+        async.flushMicrotasks();
+
+        expect(player.selectedSubtitle.map((track) => track.id), ['11']);
+        expect(async.nonPeriodicTimerCount, 0);
+        mgr.dispose();
+      });
+    });
+
+    test('late subtitle arrival queues behind an in-flight fallback selection', () async {
+      await SettingsService.getInstance();
+
+      fakeAsync((async) {
+        final audioSelection = Completer<void>();
+        final player = _FakePlayer(
+          tracks: const Tracks(
+            audio: [AudioTrack(id: '1', language: 'eng')],
+          ),
+        );
+        var blockFirstAudioSelection = true;
+        player.onSelectAudioTrack = (_) {
+          if (!blockFirstAudioSelection) return Future<void>.value();
+          blockFirstAudioSelection = false;
+          return audioSelection.future;
+        };
+        final mgr = _make(player: player, mediaInfo: _mediaInfoWithSubtitles(selected: true));
+
+        mgr.applyTrackSelectionWhenReady();
+        async.elapse(const Duration(seconds: 5));
+        async.flushMicrotasks();
+        expect(player.selectedAudio, hasLength(1));
+
+        player.emitTracks(
+          const Tracks(
+            audio: [AudioTrack(id: '1', language: 'eng')],
+            subtitle: [SubtitleTrack(id: '10', language: 'eng')],
+          ),
+        );
+        async.flushMicrotasks();
+        expect(player.selectedSubtitle, isEmpty);
+
+        audioSelection.complete();
+        async.flushMicrotasks();
+
+        expect(player.selectedSubtitle.map((track) => track.id), ['10']);
+        expect(async.nonPeriodicTimerCount, 0);
+        mgr.dispose();
+      });
     });
   });
 

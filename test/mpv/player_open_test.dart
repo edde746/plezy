@@ -244,7 +244,7 @@ void main() {
       );
     });
 
-    test('ExoPlayer forwards external subtitle metadata at open', () async {
+    test('ExoPlayer forwards complete container metadata and rejects empty sidecar URIs', () async {
       final calls = <MethodCall>[];
 
       await withMockPlayerChannels(
@@ -252,18 +252,14 @@ void main() {
         eventChannelName: 'com.plezy/exo_player/events',
         methodHandler: (call) {
           calls.add(call);
-          switch (call.method) {
-            case 'initialize':
-              return Future.value(true);
-            default:
-              return Future.value(null);
-          }
+          return call.method == 'initialize' ? Future.value(true) : Future.value(null);
         },
         testBody: () async {
           final player = PlayerAndroid();
           try {
+            const containerUri = 'https://example.test/movie.mkv';
             await player.open(
-              Media('https://example.test/movie.mkv'),
+              Media('https://example.test/transcode.m3u8'),
               externalSubtitles: const [
                 SubtitleTrack(
                   id: 'external-sub',
@@ -275,20 +271,44 @@ void main() {
                   isExternal: true,
                   uri: 'https://example.test/sub.srt',
                 ),
+                SubtitleTrack(
+                  id: 'container:1',
+                  title: 'English Dialogue',
+                  language: 'eng',
+                  codec: 'ass',
+                  isDefault: true,
+                  isExternal: true,
+                  isContainer: true,
+                  uri: containerUri,
+                ),
+                SubtitleTrack(
+                  id: 'container:2',
+                  title: 'English Signs',
+                  language: 'eng',
+                  codec: 'ass',
+                  isForced: true,
+                  isExternal: true,
+                  isContainer: true,
+                  uri: containerUri,
+                ),
+                SubtitleTrack(id: 'invalid', uri: '', isExternal: true, isContainer: true),
               ],
             );
 
             final openCall = calls.singleWhere((call) => call.method == 'open');
             final args = Map<Object?, Object?>.from(openCall.arguments as Map);
-            final external = args['externalSubtitles'] as List;
-            final subtitle = Map<Object?, Object?>.from(external.single as Map);
+            final external = (args['externalSubtitles'] as List)
+                .map((entry) => Map<Object?, Object?>.from(entry as Map))
+                .toList();
 
-            expect(subtitle['uri'], 'https://example.test/sub.srt');
-            expect(subtitle['title'], 'English Forced');
-            expect(subtitle['language'], 'eng');
-            expect(subtitle['codec'], 'srt');
-            expect(subtitle['isDefault'], isTrue);
-            expect(subtitle['isForced'], isTrue);
+            expect(external, hasLength(3));
+            expect(external.first['uri'], 'https://example.test/sub.srt');
+            expect(external.first['title'], 'English Forced');
+            expect(external.first['isDefault'], isTrue);
+            expect(external.first['isForced'], isTrue);
+            expect(external.skip(1).map((entry) => entry['uri']).toSet(), {containerUri});
+            expect(external.skip(1).map((entry) => entry['title']), ['English Dialogue', 'English Signs']);
+            expect(external.skip(1).every((entry) => entry['isContainer'] == true), isTrue);
           } finally {
             await player.dispose();
           }
@@ -612,41 +632,119 @@ void main() {
       );
     });
 
-    test('MPV preserves external subtitle metadata for loadfile sidecars', () async {
+    test('MPV restores per-stream metadata while loading a shared container once', () async {
+      final calls = <MethodCall>[];
       await withMockPlayerChannels(
         methodChannelName: 'com.plezy/mpv_player',
         eventChannelName: 'com.plezy/mpv_player/events',
+        methodHandler: (call) {
+          calls.add(call);
+          return call.method == 'initialize' ? Future.value(true) : Future.value(null);
+        },
         testBody: () async {
           final player = PlayerNative();
           try {
-            const subtitleUri = 'https://example.test/subtitles/en-forced.srt';
+            const subtitleUri = 'https://example.test/movie.mkv?X-Plex-Token=secret';
             await player.open(
-              Media('https://example.test/movie.mkv'),
+              Media('https://example.test/transcode.m3u8'),
               externalSubtitles: const [
                 SubtitleTrack(
-                  id: 'server-subtitle',
+                  id: 'container:1',
                   uri: subtitleUri,
-                  title: 'English Forced',
+                  title: 'English Dialogue',
                   language: 'eng',
-                  codec: 'srt',
+                  codec: 'ass',
                   isDefault: true,
+                  isExternal: true,
+                  isContainer: true,
+                ),
+                SubtitleTrack(
+                  id: 'container:2',
+                  uri: subtitleUri,
+                  title: 'English Signs',
+                  language: 'eng',
+                  codec: 'ass',
                   isForced: true,
                   isExternal: true,
+                  isContainer: true,
                 ),
               ],
             );
-
-            player.handlePropertyChange('track-list', const [
-              {'type': 'sub', 'id': '1', 'codec': 'subrip', 'external': true, 'external-filename': subtitleUri},
+            expect(_loadfileArgs(calls), [
+              'loadfile',
+              'https://example.test/transcode.m3u8',
+              'replace',
+              '-1',
+              'sub-files=${_fixedLengthPathList([subtitleUri])}',
             ]);
 
-            final subtitle = player.state.tracks.subtitle.single;
-            expect(subtitle.title, 'English Forced');
-            expect(subtitle.language, 'eng');
-            expect(subtitle.codec, 'srt');
-            expect(subtitle.isDefault, isTrue);
-            expect(subtitle.isForced, isTrue);
-            expect(subtitle.uri, subtitleUri);
+            player.handlePropertyChange('track-list', const [
+              {'type': 'audio', 'id': 'sidecar-audio', 'external': true, 'external-filename': subtitleUri},
+              {
+                'type': 'sub',
+                'id': '1',
+                'title': 'movie.mkv?X-Plex-Token=secret',
+                'default': false,
+                'forced': false,
+                'external': true,
+                'external-filename': subtitleUri,
+              },
+              {
+                'type': 'sub',
+                'id': '2',
+                'title': 'movie.mkv?X-Plex-Token=secret',
+                'default': false,
+                'forced': false,
+                'external': true,
+                'external-filename': subtitleUri,
+              },
+            ]);
+
+            expect(player.state.tracks.audio, isEmpty);
+            final subtitles = player.state.tracks.subtitle;
+            expect(subtitles, hasLength(2));
+            expect(subtitles.map((track) => track.title), ['English Dialogue', 'English Signs']);
+            expect(subtitles.map((track) => track.language), ['eng', 'eng']);
+            expect(subtitles.map((track) => track.codec), ['ass', 'ass']);
+            expect(subtitles.map((track) => track.isDefault), [true, false]);
+            expect(subtitles.map((track) => track.isForced), [false, true]);
+            expect(subtitles.every((track) => track.uri == subtitleUri && track.isContainer), isTrue);
+          } finally {
+            await player.dispose();
+          }
+        },
+      );
+    });
+
+    test('MPV keeps native metadata fallbacks for non-container subtitles', () async {
+      await withMockPlayerChannels(
+        methodChannelName: 'com.plezy/mpv_player',
+        eventChannelName: 'com.plezy/mpv_player/events',
+        methodHandler: (call) => call.method == 'initialize' ? Future.value(true) : Future.value(null),
+        testBody: () async {
+          final player = PlayerNative();
+          try {
+            const sidecarUri = 'https://example.test/subtitle.srt';
+            await player.open(
+              Media('https://example.test/movie.mkv'),
+              externalSubtitles: const [SubtitleTrack(id: 'external', uri: sidecarUri, isExternal: true)],
+            );
+
+            player.handlePropertyChange('track-list', const [
+              {
+                'type': 'sub',
+                'id': 'external',
+                'title': 'English Dialogue - SRT',
+                'lang': 'eng',
+                'codec': 'subrip',
+                'external': true,
+                'external-filename': sidecarUri,
+              },
+              {'type': 'sub', 'id': 'embedded', 'title': 'French Dialogue - ASS', 'lang': 'fre', 'codec': 'ass'},
+            ]);
+
+            expect(player.state.tracks.subtitle.map((track) => track.title), ['English Dialogue', 'French Dialogue']);
+            expect(player.state.tracks.subtitle.map((track) => track.language), ['eng', 'fre']);
           } finally {
             await player.dispose();
           }

@@ -1,5 +1,25 @@
 part of '../../video_player_screen.dart';
 
+/// Keeps an explicit transcode subtitle choice pending while the native
+/// player finishes discovering sidecars that were attached during open.
+///
+/// Returning true tells the source-switch caller that no media reload is
+/// needed. [TrackManager] owns the generation-scoped late-track listener.
+Future<bool> deferTranscodeSubtitleSelection({
+  required TrackManager trackManager,
+  required MediaSubtitleTrack sourceTrack,
+  required PlaybackSubtitleSidecar sourceSidecar,
+  required int sourceStreamId,
+  required Future<void> Function(SubtitleTrack track, {int? sourceStreamId}) onSubtitleTrackChanged,
+  required bool Function() shouldContinue,
+}) async {
+  final deferredTrack = PlaybackSubtitleResolver.subtitleTrackForSource(sourceTrack, sidecar: sourceSidecar);
+  trackManager.preferredSubtitleTrack = deferredTrack;
+  trackManager.applyTrackSelectionWhenReady();
+  await onSubtitleTrackChanged(deferredTrack, sourceStreamId: sourceStreamId);
+  return shouldContinue();
+}
+
 extension _VideoPlayerEpisodeNavigationMethods on VideoPlayerScreenState {
   void _clearEpisodeLoadingFlags() {
     if (!_isLoadingNext && !_isLoadingPrevious) return;
@@ -198,7 +218,7 @@ extension _VideoPlayerEpisodeNavigationMethods on VideoPlayerScreenState {
 
     if (newSubtitleChoice != null && newMediaIndex == null && newPreset == null && newAudioStreamId == null) {
       try {
-        final selected = await _selectDirectPlaySourceSubtitleLocally(
+        final selected = await _selectSourceSubtitleLocally(
           currentPlayer,
           newSubtitleChoice,
           shouldContinue: isCurrentSourceSwitch,
@@ -302,12 +322,11 @@ extension _VideoPlayerEpisodeNavigationMethods on VideoPlayerScreenState {
     }
   }
 
-  Future<bool> _selectDirectPlaySourceSubtitleLocally(
+  Future<bool> _selectSourceSubtitleLocally(
     Player currentPlayer,
     PlaybackSourceSubtitleChoice choice, {
     required bool Function() shouldContinue,
   }) async {
-    if (_isTranscoding) return false;
     if (choice.isOff) {
       await currentPlayer.selectSecondarySubtitleTrack(SubtitleTrack.off);
       if (!shouldContinue()) return false;
@@ -331,15 +350,30 @@ extension _VideoPlayerEpisodeNavigationMethods on VideoPlayerScreenState {
     if (sourceTrack == null) return false;
 
     final nativeTracks = currentPlayer.state.tracks.subtitle;
-    final nativeTrack = PlaybackSubtitleResolver.nativeTrackForDirectPlaySource(
+    final session = _playbackSession;
+    final sourceSidecar = session == null ? null : _sidecarForSourceStreamId(session, sourceStreamId);
+    final nativeTrack = PlaybackSubtitleResolver.nativeTrackForSource(
       sourceTrack: sourceTrack,
       nativeTracks: nativeTracks,
       allSourceTracks: info.subtitleTracks,
-      isResolvedSidecar: _sourceSubtitleSidecarIdsForControls().contains(sourceStreamId),
-      currentSourceStreamId: _playbackSession?.subtitleSelection.primarySourceStreamId,
+      isResolvedSidecar: sourceSidecar != null,
+      isContainerSidecar: sourceSidecar?.track.isContainer == true,
+      currentSourceStreamId: session?.subtitleSelection.primarySourceStreamId,
       selectedNativeTrack: currentPlayer.state.track.subtitle,
     );
-    if (nativeTrack == null) return false;
+    if (nativeTrack == null) {
+      final trackManager = _trackManager;
+      if (!_isTranscoding || sourceSidecar == null || trackManager == null) return false;
+
+      return deferTranscodeSubtitleSelection(
+        trackManager: trackManager,
+        sourceTrack: sourceTrack,
+        sourceSidecar: sourceSidecar,
+        sourceStreamId: sourceStreamId,
+        onSubtitleTrackChanged: _onSubtitleTrackChanged,
+        shouldContinue: shouldContinue,
+      );
+    }
 
     await currentPlayer.selectSubtitleTrack(nativeTrack);
     if (!shouldContinue()) return false;
@@ -420,6 +454,7 @@ extension _VideoPlayerEpisodeNavigationMethods on VideoPlayerScreenState {
       final previousMetadata = _currentMetadata;
       final previousLaunchIdentity = VideoPlayerScreenState._activeRouteGuard.identityFor(this);
       final previousPartId = _currentMediaInfo?.partId;
+      final previousMediaSourceId = _currentMediaInfo?.mediaSourceId;
       final previousHasFirstFrame = _hasFirstFrame.value;
       final previousHasRenderedFirstFrame = _hasRenderedFirstFrame;
       final previousHasFatalPlaybackError = _hasFatalPlaybackError;
@@ -497,6 +532,13 @@ extension _VideoPlayerEpisodeNavigationMethods on VideoPlayerScreenState {
         isOffline: _offlineLibraryMode,
         routeKind: VideoPlayerRouteKind.vod,
       );
+      final preservesRequestedSubtitleSource =
+          !isItemChange &&
+          targetMediaIndex == _effectiveSelectedMediaIndex &&
+          (selectedMediaSourceId == null || selectedMediaSourceId == previousMediaSourceId);
+      final initializationSubtitleTrack = preservesRequestedSubtitleSource
+          ? currentSubtitleTrack
+          : PlaybackSubtitleResolver.preferenceWithoutSourceIdentity(currentSubtitleTrack);
       try {
         // Eager identity-only: the loading UI shows the new title immediately,
         // while the selection/source state flips with the session commit at
@@ -533,7 +575,7 @@ extension _VideoPlayerEpisodeNavigationMethods on VideoPlayerScreenState {
           offlineLibraryMode: _offlineLibraryMode,
           qualityPreset: targetQualityPreset,
           selectedAudioStreamId: targetAudioStreamId,
-          preferredSubtitleTrack: currentSubtitleTrack,
+          preferredSubtitleTrack: initializationSubtitleTrack,
           sessionIdentifier: _playbackSessionIdentifier,
           transcodeSessionId: _playbackTranscodeSessionId,
         );
@@ -553,6 +595,10 @@ extension _VideoPlayerEpisodeNavigationMethods on VideoPlayerScreenState {
           preferredAudioTrack: currentAudioTrack,
           preferredSubtitleTrack: currentSubtitleTrack,
           preferredSecondarySubtitleTrack: currentSecondarySubtitleTrack,
+          preserveSubtitleSourceIdentity:
+              result.mediaInfo != null &&
+              ((previousMediaSourceId != null && previousMediaSourceId == result.mediaInfo!.mediaSourceId) ||
+                  (previousPartId != null && previousPartId == result.mediaInfo!.partId)),
         );
         if (!isCurrentReload()) return _MediaReloadOutcome.superseded;
 

@@ -85,46 +85,62 @@ SubtitleTrack? findMpvTrackForPlexSubtitle(
   List<MediaSubtitleTrack>? allPlexTracks,
 }) {
   if (mpvTracks.isEmpty) return null;
+  final sourceId = int.tryParse(plexTrack.id.toString());
+  if (sourceId != null) {
+    final exactSourceTrack = mpvTracks.where((track) => track.id == 'source:$sourceId').firstOrNull;
+    if (exactSourceTrack != null) return exactSourceTrack;
+  }
 
-  // For external subtitles, match by URI containing the Plex key
-  if (plexTrack.isExternal && plexTrack.key != null) {
+  // Keyed subtitles have a stable identity. Do not let a sidecar that has not
+  // arrived yet fall through to fuzzy language/title scoring.
+  final plexKey = plexTrack.key;
+  if (plexKey != null && plexKey.isNotEmpty) {
     for (final mpvTrack in mpvTracks) {
-      if (mpvTrack.isExternal && mpvTrack.uri != null) {
-        // Check if the MPV URI contains the Plex key path
-        if (mpvTrack.uri!.contains(plexTrack.key!)) {
-          return mpvTrack;
-        }
+      if (mpvTrack.isExternal && mpvTrack.uri?.contains(plexKey) == true) {
+        return mpvTrack;
       }
     }
+    return null;
   }
 
   // For internal subtitles, use scoring based on properties
   SubtitleTrack? bestMatch;
   int bestScore = 0;
+  bool bestMatchUsesContainerOrdinal = false;
 
-  // Ordinal tiebreaker: precompute position of plexTrack among internal tracks
-  final internalMpvTracks = allPlexTracks != null ? mpvTracks.where((t) => !t.isExternal).toList() : null;
-  final plexOrdinal = allPlexTracks != null
-      ? allPlexTracks.where((t) => !t.isExternal).toList().indexOf(plexTrack)
-      : -1;
+  // Ordinal identity: container sidecars expose embedded subtitle tracks as
+  // external media, but retain the source container's subtitle ordering.
+  final containerPlexTracks = allPlexTracks
+      ?.where((track) => track.key == null || track.key!.isEmpty)
+      .toList(growable: false);
+  final internalMpvTracks = allPlexTracks == null
+      ? null
+      : mpvTracks.where((track) => !track.isExternal || track.isContainer).toList(growable: false);
+  final plexOrdinal = containerPlexTracks?.indexOf(plexTrack) ?? -1;
 
   for (final mpvTrack in mpvTracks) {
-    // Skip external tracks when matching internal Plex tracks
-    if (!plexTrack.isExternal && mpvTrack.isExternal) continue;
+    // A container sidecar's subtitle tracks map to internal Plex streams.
+    if (!plexTrack.isExternal && mpvTrack.isExternal && !mpvTrack.isContainer) continue;
 
     final ordinalMatches =
         internalMpvTracks != null && plexOrdinal >= 0 && internalMpvTracks.indexOf(mpvTrack) == plexOrdinal;
+
+    // A container track has no stable native ID. Its source-container ordinal
+    // is authoritative; a metadata-identical earlier track is not a match.
+    if (mpvTrack.isContainer && plexOrdinal >= 0 && !ordinalMatches) continue;
 
     final score = _scoreSubtitleMatch(mpvTrack, plexTrack, ordinalMatches: ordinalMatches);
 
     if (score > bestScore) {
       bestScore = score;
       bestMatch = mpvTrack;
+      bestMatchUsesContainerOrdinal = mpvTrack.isContainer && ordinalMatches;
     }
   }
 
-  // Require at least language match for a valid match
-  return bestScore >= 10 ? bestMatch : null;
+  // Prefer metadata matches. Container sidecars may expose no language/title/
+  // codec at all, so their stable subtitle order is the last-resort identity.
+  return bestScore >= 10 || bestMatchUsesContainerOrdinal ? bestMatch : null;
 }
 
 /// Find the Plex subtitle track that matches an MPV subtitle track
@@ -134,43 +150,61 @@ MediaSubtitleTrack? findPlexTrackForMpvSubtitle(
   List<SubtitleTrack>? allMpvTracks,
 }) {
   if (plexTracks.isEmpty) return null;
+  if (mpvTrack.id.startsWith('source:')) {
+    final sourceId = int.tryParse(mpvTrack.id.substring('source:'.length));
+    if (sourceId != null) {
+      final exactSourceTrack = plexTracks.where((track) => track.id == sourceId).firstOrNull;
+      if (exactSourceTrack != null) return exactSourceTrack;
+    }
+  }
 
-  // For external subtitles, match by URI containing the Plex key
+  // A standalone keyed subtitle maps back only by its stable Plex key.
+  // Container sidecars may continue to the source-container matcher below.
   if (mpvTrack.isExternal && mpvTrack.uri != null) {
     for (final plexTrack in plexTracks) {
-      if (plexTrack.isExternal && plexTrack.key != null) {
-        if (mpvTrack.uri!.contains(plexTrack.key!)) {
-          return plexTrack;
-        }
+      final plexKey = plexTrack.key;
+      if (plexKey != null && plexKey.isNotEmpty && mpvTrack.uri!.contains(plexKey)) {
+        return plexTrack;
       }
     }
+    if (!mpvTrack.isContainer) return null;
   }
 
   // For internal subtitles, use scoring based on properties
   MediaSubtitleTrack? bestMatch;
   int bestScore = 0;
+  bool bestMatchUsesContainerOrdinal = false;
 
-  // Ordinal tiebreaker: precompute position of mpvTrack among internal tracks
-  final internalPlexTracks = allMpvTracks != null ? plexTracks.where((t) => !t.isExternal).toList() : null;
-  final mpvOrdinal = allMpvTracks != null ? allMpvTracks.where((t) => !t.isExternal).toList().indexOf(mpvTrack) : -1;
+  // Ordinal identity: container-sidecar tracks map back to source-container
+  // streams even though the native player marks their source as external.
+  final mpvIsInternal = !mpvTrack.isExternal || mpvTrack.isContainer;
+  final containerPlexTracks = allMpvTracks == null
+      ? null
+      : plexTracks.where((track) => track.key == null || track.key!.isEmpty).toList(growable: false);
+  final mpvOrdinal = allMpvTracks == null
+      ? -1
+      : allMpvTracks.where((track) => !track.isExternal || track.isContainer).toList().indexOf(mpvTrack);
 
   for (final plexTrack in plexTracks) {
-    // Skip external Plex tracks when matching internal MPV tracks
-    if (!mpvTrack.isExternal && plexTrack.isExternal) continue;
+    if (mpvIsInternal && plexTrack.isExternal) continue;
 
     final ordinalMatches =
-        internalPlexTracks != null && mpvOrdinal >= 0 && internalPlexTracks.indexOf(plexTrack) == mpvOrdinal;
+        containerPlexTracks != null && mpvOrdinal >= 0 && containerPlexTracks.indexOf(plexTrack) == mpvOrdinal;
+
+    if (mpvTrack.isContainer && containerPlexTracks != null && !ordinalMatches) continue;
 
     final score = _scoreSubtitleMatch(mpvTrack, plexTrack, ordinalMatches: ordinalMatches);
 
     if (score > bestScore) {
       bestScore = score;
       bestMatch = plexTrack;
+      bestMatchUsesContainerOrdinal = mpvTrack.isContainer && ordinalMatches;
     }
   }
 
-  // Require at least language match for a valid match
-  return bestScore >= 10 ? bestMatch : null;
+  // Prefer metadata matches, with container order as the symmetric fallback
+  // needed to persist a metadata-free native track back to its Plex stream.
+  return bestScore >= 10 || bestMatchUsesContainerOrdinal ? bestMatch : null;
 }
 
 /// Find the MPV audio track that matches a Plex audio track
@@ -568,11 +602,19 @@ class TrackSelectionService {
       return SubtitleTrack.off;
     }
 
+    if (preferred.id.startsWith('source:')) {
+      final sourceId = int.tryParse(preferred.id.substring('source:'.length));
+      final sourceTrack = sourceId == null
+          ? null
+          : plexMediaInfo?.subtitleTracks.where((track) => track.id == sourceId).firstOrNull;
+      if (sourceTrack == null) return null;
+      return findMpvTrackForPlexSubtitle(sourceTrack, availableTracks, allPlexTracks: plexMediaInfo?.subtitleTracks);
+    }
+
     final preferredUri = preferred.uri;
     if (preferredUri != null) {
-      for (final track in availableTracks) {
-        if (track.uri == preferredUri) return track;
-      }
+      final uriMatches = availableTracks.where((track) => track.uri == preferredUri).toList(growable: false);
+      if (uriMatches.length == 1) return uriMatches.single;
     }
 
     return findBestTrackMatch<SubtitleTrack>(
@@ -720,7 +762,11 @@ class TrackSelectionService {
   /// Priority 3: User profile subtitle mode
   /// Priority 4: Default track
   /// Priority 5: Off
-  TrackSelectionResult<SubtitleTrack> selectSubtitleTrack(
+  ///
+  /// Returns null while the source catalog advertises subtitles but the
+  /// native player has not exposed any of them yet. That transient state is
+  /// not equivalent to an explicit server decision to turn subtitles off.
+  TrackSelectionResult<SubtitleTrack>? selectSubtitleTrack(
     List<SubtitleTrack> availableTracks,
     SubtitleTrack? preferredSubtitleTrack,
     AudioTrack? selectedAudioTrack,
@@ -735,15 +781,14 @@ class TrackSelectionService {
           return TrackSelectionResult(subtitleToSelect, TrackSelectionPriority.navigation);
         }
       }
+      if (preferredSubtitleTrack.id.startsWith('source:')) return null;
     }
 
     // Priority 2: Trust the server's selected track. Plex computes this from
     // account/show/per-item prefs; Jellyfin exposes DefaultSubtitleStreamIndex.
     final info = plexMediaInfo;
     if (info != null) {
-      final serverSelectedTrack = availableTracks.isNotEmpty
-          ? info.subtitleTracks.where((track) => track.selected).firstOrNull
-          : null;
+      final serverSelectedTrack = info.subtitleTracks.where((track) => track.selected).firstOrNull;
 
       if (serverSelectedTrack != null) {
         final matchedMpvTrack = findMpvTrackForPlexSubtitle(
@@ -755,6 +800,7 @@ class TrackSelectionService {
         if (matchedMpvTrack != null) {
           return TrackSelectionResult(matchedMpvTrack, TrackSelectionPriority.serverSelected);
         }
+        if (metadata.backend == MediaBackend.plex) return null;
       } else if (metadata.backend == MediaBackend.jellyfin) {
         final defaultStreamIndex = info.defaultSubtitleStreamIndex;
         if (defaultStreamIndex == -1) {
@@ -779,9 +825,11 @@ class TrackSelectionService {
           }
         }
       } else if (metadata.backend == MediaBackend.plex && info.subtitleTracks.isNotEmpty) {
-        // Server has subtitle tracks but none selected — trust that decision
+        if (availableTracks.isEmpty) return null;
+        // Native tracks exist and none maps to a server-selected stream.
         return TrackSelectionResult(SubtitleTrack.off, TrackSelectionPriority.serverSelected);
       }
+      if (availableTracks.isEmpty && info.subtitleTracks.isNotEmpty) return null;
     }
 
     // Priority 3: Apply server profile subtitle mode when the backend exposes
@@ -856,22 +904,27 @@ class TrackSelectionService {
       }
     }
 
-    // Select and apply subtitle track
+    // Select and apply subtitle track. A null result means source metadata
+    // advertises subtitles that the native player has not exposed yet.
     final subtitleResult = selectSubtitleTrack(realSubtitleTracks, preferredSubtitleTrack, selectedAudioTrack);
-    final selectedSubtitleTrack = subtitleResult.track;
-    final subtitleName = selectedSubtitleTrack.id == 'no'
-        ? 'OFF'
-        : (selectedSubtitleTrack.title ?? selectedSubtitleTrack.language ?? 'Track ${selectedSubtitleTrack.id}');
-    appLogger.d('Subtitle: $subtitleName [${subtitleResult.priority.name}]');
-    if (!canMutatePlayer()) return false;
-    final subtitleMutation = player.selectSubtitleTrack(selectedSubtitleTrack);
-    onPlayerMutationDispatched?.call(subtitleMutation);
-    await subtitleMutation;
-    if (!canMutatePlayer()) return false;
+    if (subtitleResult != null) {
+      final selectedSubtitleTrack = subtitleResult.track;
+      final subtitleName = selectedSubtitleTrack.id == 'no'
+          ? 'OFF'
+          : (selectedSubtitleTrack.title ?? selectedSubtitleTrack.language ?? 'Track ${selectedSubtitleTrack.id}');
+      appLogger.d('Subtitle: $subtitleName [${subtitleResult.priority.name}]');
+      if (!canMutatePlayer()) return false;
+      final subtitleMutation = player.selectSubtitleTrack(selectedSubtitleTrack);
+      onPlayerMutationDispatched?.call(subtitleMutation);
+      await subtitleMutation;
+      if (!canMutatePlayer()) return false;
 
-    // Save to Plex if this was user's navigation preference (Priority 1)
-    if (subtitleResult.priority == TrackSelectionPriority.navigation && onSubtitleTrackChanged != null) {
-      onSubtitleTrackChanged(selectedSubtitleTrack);
+      // Save to Plex if this was user's navigation preference (Priority 1)
+      if (subtitleResult.priority == TrackSelectionPriority.navigation && onSubtitleTrackChanged != null) {
+        onSubtitleTrackChanged(selectedSubtitleTrack);
+      }
+    } else {
+      appLogger.d('Subtitle selection pending: native tracks have not arrived');
     }
 
     // Apply preferred secondary subtitle track if provided (mpv-only)

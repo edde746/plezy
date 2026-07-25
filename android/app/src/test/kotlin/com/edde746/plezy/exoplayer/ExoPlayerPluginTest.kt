@@ -586,6 +586,31 @@ class ExoPlayerPluginTest {
   }
 
   @Test
+  fun mpvFallbackLoadsSharedSubtitleContainerOnce() {
+    val plugin = ExoPlayerPlugin()
+    val options = mutableListOf<String>()
+    val appendOptions = plugin.javaClass.getDeclaredMethod(
+      "appendExternalSubtitleOptions",
+      MutableList::class.java,
+      List::class.java
+    ).apply {
+      isAccessible = true
+    }
+
+    appendOptions.invoke(
+      plugin,
+      options,
+      listOf(
+        mapOf("uri" to "shared.mkv", "isContainer" to true),
+        mapOf("uri" to "shared.mkv", "isContainer" to true),
+        mapOf("uri" to "")
+      )
+    )
+
+    assertEquals(listOf("sub-files=%10%shared.mkv"), options)
+  }
+
+  @Test
   fun configDetachAndEngineDetachReleaseExoActivityOwnershipExactlyOnce() {
     val activity = Robolectric.buildActivity(Activity::class.java).setup().get()
     activity.setContentView(FrameLayout(activity))

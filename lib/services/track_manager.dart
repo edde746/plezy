@@ -56,7 +56,6 @@ class TrackManager {
   bool waitingForExternalSubsTrackSelection = false;
   bool _externalSubtitleAddsInFlight = false;
   bool _isApplyingTrackSelection = false;
-  int? _applyingSelectionGeneration;
   Completer<void>? _selectionIdleCompleter;
   Future<void>? _activePlayerMutationDrain;
   List<SubtitleTrack> _lastExternalSubtitles = const [];
@@ -199,31 +198,61 @@ class TrackManager {
   // ── Track selection ────────────────────────────────────────────────
 
   /// Apply track selection once tracks are available.
-  /// If tracks are not yet loaded, subscribes to the stream.
+  ///
+  /// The five-second fallback applies any ready audio/rate settings, but a
+  /// source that advertises subtitles keeps listening for their late native
+  /// track-list update. The listener has a separate hard deadline and every
+  /// callback is scoped to the current media generation.
   void applyTrackSelectionWhenReady() {
+    final selectionGeneration = _selectionGeneration;
+    bool selectionIsCurrent() => _isSelectionCurrent(selectionGeneration);
     final currentTracks = player.state.tracks;
     if (_tracksReadyForSelection(currentTracks)) {
-      applyTrackSelection();
-    } else {
-      _trackLoadingSubscription?.cancel();
-      _trackLoadingSubscription = player.streams.tracks.listen((tracks) {
-        if (!_tracksReadyForSelection(tracks)) return;
-
-        _trackLoadingSubscription?.cancel();
-        _trackLoadingSubscription = null;
-        _trackSelectionFallbackTimer?.cancel();
-        _trackSelectionFallbackTimer = null;
-        applyTrackSelection();
-      });
-
-      _trackSelectionFallbackTimer?.cancel();
-      _trackSelectionFallbackTimer = Timer(const Duration(seconds: 5), () {
-        if (!isActive()) return;
-        _trackLoadingSubscription?.cancel();
-        _trackLoadingSubscription = null;
-        applyTrackSelection();
-      });
+      unawaited(applyTrackSelection());
+      return;
     }
+
+    _trackLoadingSubscription?.cancel();
+    _trackLoadingSubscription = player.streams.tracks.listen((tracks) {
+      if (!selectionIsCurrent() || !_tracksReadyForSelection(tracks)) return;
+
+      _trackLoadingSubscription?.cancel();
+      _trackLoadingSubscription = null;
+      _trackSelectionFallbackTimer?.cancel();
+      _trackSelectionFallbackTimer = null;
+      unawaited(applyTrackSelection());
+    });
+
+    _trackSelectionFallbackTimer?.cancel();
+    _trackSelectionFallbackTimer = Timer(const Duration(seconds: 5), () {
+      if (!selectionIsCurrent()) return;
+
+      final tracks = player.state.tracks;
+      final waitingForAdvertisedSubtitles =
+          mediaInfo?.subtitleTracks.isNotEmpty == true && !_tracksReadyForSelection(tracks);
+      if (!waitingForAdvertisedSubtitles) {
+        _trackLoadingSubscription?.cancel();
+        _trackLoadingSubscription = null;
+        _trackSelectionFallbackTimer = null;
+        unawaited(applyTrackSelection());
+        return;
+      }
+
+      appLogger.w(
+        'Native subtitle tracks are still pending after 5 seconds; applying ready track settings and continuing to wait',
+      );
+      unawaited(applyTrackSelection());
+      _trackSelectionFallbackTimer = Timer(const Duration(seconds: 25), () {
+        if (!selectionIsCurrent()) return;
+        _trackLoadingSubscription?.cancel();
+        _trackLoadingSubscription = null;
+        _trackSelectionFallbackTimer = null;
+        if (!_tracksReadyForSelection(player.state.tracks)) {
+          appLogger.w('Advertised native subtitle selection did not resolve before the 30-second deadline');
+        }
+        unawaited(applyTrackSelection());
+      });
+    });
   }
 
   bool _tracksReadyForSelection(Tracks tracks) {
@@ -231,14 +260,29 @@ class TrackManager {
     if (!hasAnyTracks) return false;
 
     final info = mediaInfo;
-    if (info == null || tracks.subtitle.isNotEmpty) return true;
+    if (info == null || info.subtitleTracks.isEmpty) return true;
+    if (tracks.subtitle.isEmpty) return false;
 
-    // Plex can legitimately report subtitles without selecting one. During an
-    // in-place item reload Android clears the old track list before the new
-    // demuxed subtitles arrive; applying selection at the first audio-only
-    // update would treat that temporary empty subtitle list as an explicit
-    // server "off" decision and leave the next episode without selectable subs.
-    return info.subtitleTracks.isEmpty;
+    final nativeSubtitleTracks = tracks.subtitle
+        .where((track) => track.id != SubtitleTrack.auto.id && track.id != SubtitleTrack.off.id)
+        .toList(growable: false);
+    final preferred = preferredSubtitleTrack;
+    final preferredHasSemanticIdentity =
+        preferred != null &&
+        preferred.id != SubtitleTrack.off.id &&
+        (preferred.id.startsWith('source:') ||
+            preferred.uri != null ||
+            preferred.title != null ||
+            preferred.language != null);
+    if (preferredHasSemanticIdentity) {
+      final service = TrackSelectionService(metadata: metadata, plexMediaInfo: info);
+      return service.findBestSubtitleMatch(nativeSubtitleTracks, preferred) != null;
+    }
+
+    final serverSelectedTrack = info.subtitleTracks.where((track) => track.selected).firstOrNull;
+    if (serverSelectedTrack == null) return true;
+    return findMpvTrackForPlexSubtitle(serverSelectedTrack, nativeSubtitleTracks, allPlexTracks: info.subtitleTracks) !=
+        null;
   }
 
   /// Core track selection: delegates to [TrackSelectionService]. Returns
@@ -249,10 +293,10 @@ class TrackManager {
     if (!selectionIsActive()) return false;
 
     if (_isApplyingTrackSelection) {
-      // Calls from the active generation are already represented by the
-      // in-flight selection. A replacement generation, however, must wait for
-      // stale work to unwind rather than losing its only selection request.
-      if (_applyingSelectionGeneration == selectionGeneration) return false;
+      // A later track-list event can make a same-generation selection materially
+      // different (notably when subtitles arrive while the five-second audio/rate
+      // fallback is still applying). Queue one pass after the current mutation
+      // chain rather than dropping that event.
       final activeSelectionDone = _selectionIdleCompleter?.future;
       if (activeSelectionDone == null) return false;
       await activeSelectionDone;
@@ -261,7 +305,6 @@ class TrackManager {
     }
 
     _isApplyingTrackSelection = true;
-    _applyingSelectionGeneration = selectionGeneration;
     final idleCompleter = Completer<void>();
     _selectionIdleCompleter = idleCompleter;
     try {
@@ -294,7 +337,6 @@ class TrackManager {
       return false;
     } finally {
       _isApplyingTrackSelection = false;
-      _applyingSelectionGeneration = null;
       if (identical(_selectionIdleCompleter, idleCompleter)) {
         _selectionIdleCompleter = null;
         idleCompleter.complete();

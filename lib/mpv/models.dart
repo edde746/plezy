@@ -61,6 +61,7 @@ sealed class SubtitleTrack with _$SubtitleTrack {
     @Default(false) bool isDefault,
     @Default(false) bool isForced,
     @Default(false) bool isExternal,
+    @Default(false) bool isContainer,
     String? uri,
   }) = _SubtitleTrack;
 
@@ -71,6 +72,7 @@ sealed class SubtitleTrack with _$SubtitleTrack {
     String? codec,
     bool isDefault = false,
     bool isForced = false,
+    bool isContainer = false,
   }) => SubtitleTrack(
     id: 'external:$uri',
     title: title,
@@ -79,6 +81,7 @@ sealed class SubtitleTrack with _$SubtitleTrack {
     isDefault: isDefault,
     isForced: isForced,
     isExternal: true,
+    isContainer: isContainer,
     uri: uri,
   );
 

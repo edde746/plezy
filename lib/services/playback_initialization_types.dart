@@ -70,12 +70,15 @@ class PlaybackInitializationOptions {
 ///
 /// [sourceStreamId] links the playable URI back to the authoritative server
 /// subtitle catalog. It is nullable for legacy/offline files whose filename
-/// cannot be mapped to cached stream metadata.
+/// cannot be mapped to cached stream metadata. [preload] makes the sidecar
+/// available before it is selected, allowing local track switches without a
+/// media reload.
 class PlaybackSubtitleSidecar {
   final int? sourceStreamId;
   final SubtitleTrack track;
+  final bool preload;
 
-  const PlaybackSubtitleSidecar({required this.sourceStreamId, required this.track});
+  const PlaybackSubtitleSidecar({required this.sourceStreamId, required this.track, this.preload = false});
 }
 
 /// Reason the transcode branch fell back to direct play.
@@ -93,8 +96,8 @@ class PlaybackInitializationResult {
   final String? videoUrl;
   final MediaSourceInfo? mediaInfo;
 
-  /// Complete sidecar catalog for this source. Callers must resolve the active
-  /// subtitle choice and attach only the selected sidecar(s) at open time.
+  /// Complete sidecar catalog for this source. Callers resolve the active
+  /// subtitle choice and also attach sidecars marked for preloading.
   final List<PlaybackSubtitleSidecar> subtitleSidecars;
   final bool isOffline;
 

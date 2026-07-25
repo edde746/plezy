@@ -55,6 +55,9 @@ import androidx.media3.exoplayer.audio.AudioCapabilities
 import androidx.media3.exoplayer.audio.AudioSink
 import androidx.media3.exoplayer.mediacodec.MediaCodecSelector
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
+import androidx.media3.exoplayer.source.FilteringMediaSource
+import androidx.media3.exoplayer.source.MediaSource
+import androidx.media3.exoplayer.source.MergingMediaSource
 import androidx.media3.exoplayer.trackselection.DefaultTrackSelector
 import androidx.media3.extractor.DefaultExtractorsFactory
 import androidx.media3.extractor.mkv.MatroskaExtractor
@@ -308,6 +311,8 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
   // External subtitles added dynamically
   private val externalSubtitles = mutableListOf<MediaItem.SubtitleConfiguration>()
   private val externalSubtitleUris = mutableListOf<String>()
+  private val externalSubtitleContainerUris = mutableListOf<String>()
+  private var playbackMediaSourceFactory: DefaultMediaSourceFactory? = null
   private var currentMediaUri: String? = null
   private var currentHeaders: Map<String, String>? = null
   private var currentMediaIsLive: Boolean = false
@@ -660,6 +665,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
 
       val mediaSourceFactory = DefaultMediaSourceFactory(dataSourceFactory!!, wrappedExtractorsFactory)
         .setSubtitleParserFactory(assParserFactory)
+      playbackMediaSourceFactory = mediaSourceFactory
 
       // Wrap text renderers with subtitle delay support
       val wrappedRenderersFactory = RenderersFactory { eventHandler, videoListener, audioListener, textOutput, metadataOutput ->
@@ -1215,7 +1221,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
         "lastOutput=${describeAudioTrackConfig(previousAudioTrackConfig)}, actions=$lastAudioRecoveryAction"
     )
 
-    player.setMediaItem(buildMediaItem(uri), savedPosition)
+    setCurrentMediaSource(player, uri, savedPosition)
     player.prepare()
     player.playWhenReady = savedPlayWhenReady
     return true
@@ -1626,6 +1632,8 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
       val isExternal = format.id?.startsWith("external_") == true
       val externalIndex = if (isExternal) format.id?.removePrefix("external_")?.toIntOrNull() else null
       val externalUri = externalIndex?.takeIf { it in externalSubtitleUris.indices }?.let { externalSubtitleUris[it] }
+      val isContainer = !isExternal && externalSubtitleContainerUris.isNotEmpty()
+      val containerUri = if (isContainer) externalSubtitleContainerUris.first() else null
 
       Log.d(TAG, "Subtitle track $groupIndex: codec=${format.codecs}, lang=${format.language}, selected=$isSelected, external=$isExternal")
 
@@ -1638,8 +1646,9 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
         "default" to (format.selectionFlags and C.SELECTION_FLAG_DEFAULT != 0),
         "forced" to (format.selectionFlags and C.SELECTION_FLAG_FORCED != 0),
         "selected" to isSelected,
-        "external" to isExternal,
-        "external-filename" to externalUri
+        "external" to (isExternal || isContainer),
+        "container" to isContainer,
+        "external-filename" to (externalUri ?: containerUri)
       )
       trackList.add(track)
 
@@ -2337,6 +2346,34 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
     return mediaItemBuilder.build()
   }
 
+  private fun buildPlaybackMediaSource(uri: String): MediaSource? {
+    val factory = playbackMediaSourceFactory ?: return null
+    val primarySource = factory.createMediaSource(buildMediaItem(uri))
+    if (externalSubtitleContainerUris.isEmpty()) return primarySource
+
+    val sources = mutableListOf<MediaSource>(primarySource)
+    externalSubtitleContainerUris.forEach { containerUri ->
+      val containerSource = factory.createMediaSource(MediaItem.fromUri(containerUri))
+      sources.add(FilteringMediaSource(containerSource, C.TRACK_TYPE_TEXT))
+    }
+    return MergingMediaSource(
+      /* adjustPeriodTimeOffsets = */
+      true,
+      /* clipDurations = */
+      false,
+      *sources.toTypedArray()
+    )
+  }
+
+  private fun setCurrentMediaSource(player: ExoPlayer, uri: String, positionMs: Long) {
+    val mediaSource = buildPlaybackMediaSource(uri)
+    if (mediaSource == null) {
+      player.setMediaItem(buildMediaItem(uri), positionMs)
+    } else {
+      player.setMediaSource(mediaSource, positionMs)
+    }
+  }
+
   private fun selectedAudioFormat(): Format? {
     val player = exoPlayer ?: return null
     val selectedAudioGroup = player.currentTracks.groups.firstOrNull {
@@ -2887,6 +2924,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
 
     externalSubtitles.clear()
     externalSubtitleUris.clear()
+    externalSubtitleContainerUris.clear()
     lastSubtitleCues = emptyList()
     hadSelectedTextTrack = false
     audioTrackGroupMap.clear()
@@ -2895,9 +2933,20 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
     selectedSubtitleTrackId = null
     pendingDvTrackRestore = null
 
-    // Build external subtitle configurations (attached to MediaItem before prepare)
-    externalSubtitleList?.forEachIndexed { index, sub ->
-      val subUri = sub["uri"] as? String ?: return@forEachIndexed
+    // Build external subtitle sources before prepare. Container sidecars are
+    // filtered to text tracks and merged with the primary source; standalone
+    // subtitle files continue to use MediaItem subtitle configurations.
+    externalSubtitleList?.forEach { sub ->
+      val subUri = sub["uri"] as? String ?: return@forEach
+      if (subUri.isBlank()) return@forEach
+      if (sub["isContainer"] as? Boolean == true) {
+        if (!externalSubtitleContainerUris.contains(subUri)) {
+          externalSubtitleContainerUris.add(subUri)
+        }
+        return@forEach
+      }
+
+      val index = externalSubtitles.size
       val title = sub["title"] as? String
       val language = sub["language"] as? String
       val codec = sub["codec"] as? String
@@ -2940,10 +2989,8 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
     )
     emitSeekable(false, force = true)
 
-    val mediaItem = buildMediaItem(uri)
-
     exoPlayer?.apply {
-      setMediaItem(mediaItem, startPositionMs)
+      setCurrentMediaSource(this, uri, startPositionMs)
       prepare()
       playWhenReady = autoPlay
     }
@@ -3174,8 +3221,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
       clearTextOverrides = true
     )
 
-    val mediaItem = buildMediaItem(uri)
-    player.setMediaItem(mediaItem, savedPosition)
+    setCurrentMediaSource(player, uri, savedPosition)
     player.prepare()
     player.playWhenReady = savedPlayWhenReady
     emitLog("info", "dv-debug", "Reloaded media for DV mode $dvMode at ${savedPosition}ms")
@@ -3317,8 +3363,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
         )
         selectedSubtitleTrackId = null
 
-        val mediaItem = buildMediaItem(mediaUri)
-        player.setMediaItem(mediaItem, savedPosition)
+        setCurrentMediaSource(player, mediaUri, savedPosition)
         player.prepare()
         player.playWhenReady = savedPlayWhenReady
       } else {
@@ -3748,6 +3793,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
     trackSelector = null
     httpDataSourceFactory = null
     dataSourceFactory = null
+    playbackMediaSourceFactory = null
     assHandler?.release()
     assHandler = null
 

@@ -1258,6 +1258,7 @@ class ExoPlayerPlugin :
     val escapedUris = externalSubtitles.orEmpty()
       .mapNotNull { it["uri"] as? String }
       .filter { it.isNotEmpty() }
+      .distinct()
       .map(::escapeMpvPathListEntry)
       .toList()
 
