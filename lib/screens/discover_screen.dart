@@ -1150,6 +1150,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     return _tvBrowseRailWidget = TvBrowseRail(
       key: _tvBrowseRailKey,
       hubs: browseHubs,
+      initialHubId: 'continue_watching',
       focusMemory: _hubFocusMemory,
       showServerName: showServerName,
       iconForHub: (hub, _) => hub.id == 'continue_watching' ? Symbols.play_circle_rounded : _getHubIcon(hub.title),

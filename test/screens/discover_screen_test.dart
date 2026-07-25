@@ -239,6 +239,128 @@ void main() {
     expect(FocusManager.instance.primaryFocus?.debugLabel, 'tv_browse_rail');
   });
 
+  testWidgets('TV selects Continue Watching when it arrives after recommendation hubs', (tester) async {
+    await SettingsService.getInstance();
+    tester.view.devicePixelRatio = 1.0;
+    tester.view.physicalSize = const Size(1280, 720);
+    addTearDown(() {
+      tester.view.resetDevicePixelRatio();
+      tester.view.resetPhysicalSize();
+    });
+
+    final recommendedItem = testMediaItem(
+      id: 'recommended',
+      backend: MediaBackend.plex,
+      kind: MediaKind.movie,
+      title: 'Recommended',
+      serverId: 'server_1',
+      serverName: 'Server',
+    );
+    final continueItem = testMediaItem(
+      id: 'continue',
+      backend: MediaBackend.plex,
+      kind: MediaKind.movie,
+      title: 'Continue Watching',
+      serverId: 'server_1',
+      serverName: 'Server',
+    );
+    final recommendedHub = MediaHub(
+      id: 'recommended_hub',
+      title: 'Recommended',
+      type: 'movie',
+      items: [recommendedItem],
+      size: 1,
+    );
+    final client = _FakeMediaServerClient(hubs: [recommendedHub]);
+    final manager = MultiServerManager()..debugRegisterClientForTesting(client);
+    final multiServerProvider = MultiServerProvider(manager, DataAggregationService(manager));
+    final hiddenLibrariesProvider = HiddenLibrariesProvider();
+    final librariesProvider = LibrariesProvider();
+    final watchTogetherProvider = WatchTogetherProvider();
+    final companionRemoteProvider = CompanionRemoteProvider();
+
+    final db = AppDatabase.forTesting(NativeDatabase.memory());
+    final profileRegistry = _FakeProfileRegistry(db);
+    final connectionRegistry = _FakeConnectionRegistry(db);
+    final profileConnectionRegistry = _FakeProfileConnectionRegistry(db);
+    final storage = await StorageService.getInstance();
+    final plexHome = PlexHomeService(
+      connections: connectionRegistry,
+      profileConnections: profileConnectionRegistry,
+      storage: storage,
+      plexHomeUserFetcher: (_) async => const [],
+    );
+    final activeProfileProvider = ActiveProfileProvider(
+      registry: profileRegistry,
+      plexHome: plexHome,
+      connections: connectionRegistry,
+      storage: storage,
+    );
+    final discoverProvider = DiscoverProvider(
+      multiServerProvider,
+      hiddenLibrariesProvider,
+      librariesProvider,
+      profileId: null,
+      isProfileBinding: () => activeProfileProvider.isBinding,
+    );
+    const foregroundWidth = 1280 - SideNavigationRailState.tvCollapsedWidth;
+
+    addTearDown(() async {
+      discoverProvider.dispose();
+      activeProfileProvider.dispose();
+      companionRemoteProvider.dispose();
+      watchTogetherProvider.dispose();
+      librariesProvider.dispose();
+      hiddenLibrariesProvider.dispose();
+      multiServerProvider.dispose();
+      await plexHome.dispose();
+      await db.close();
+    });
+
+    await tester.pumpWidget(
+      TranslationProvider(
+        child: MultiProvider(
+          providers: [
+            ChangeNotifierProvider<MultiServerProvider>.value(value: multiServerProvider),
+            ChangeNotifierProvider<HiddenLibrariesProvider>.value(value: hiddenLibrariesProvider),
+            ChangeNotifierProvider<LibrariesProvider>.value(value: librariesProvider),
+            ChangeNotifierProvider<WatchTogetherProvider>.value(value: watchTogetherProvider),
+            ChangeNotifierProvider<CompanionRemoteProvider>.value(value: companionRemoteProvider),
+            ChangeNotifierProvider<ActiveProfileProvider>.value(value: activeProfileProvider),
+            ChangeNotifierProvider<DiscoverProvider>.value(value: discoverProvider),
+          ],
+          child: MaterialApp(
+            theme: monoTheme(dark: true),
+            home: MainScreenFocusScope(
+              focusSidebar: () {},
+              focusContent: () {},
+              isSidebarFocused: false,
+              sideNavigationWidth: SideNavigationRailState.expandedWidth,
+              reservedSideNavigationWidth: SideNavigationRailState.tvCollapsedWidth,
+              foregroundLeft: 0,
+              foregroundWidth: foregroundWidth,
+              viewportWidth: 1280,
+              child: const SizedBox(width: foregroundWidth, height: 720, child: DiscoverScreen()),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+    expect(FocusManager.instance.primaryFocus?.debugLabel, 'tv_browse_rail');
+    expect(tester.widget<TvSpotlightBackground>(find.byType(TvSpotlightBackground)).item?.id, recommendedItem.id);
+
+    client.continueWatching = [continueItem];
+    await discoverProvider.load();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
+    await tester.pump();
+
+    expect(FocusManager.instance.primaryFocus?.debugLabel, 'tv_browse_rail');
+    expect(tester.widget<TvSpotlightBackground>(find.byType(TvSpotlightBackground)).item?.id, continueItem.id);
+  });
+
   testWidgets('non-TV hero keeps indicators visible in keyboard mode and fades to solid bg', (tester) async {
     TvDetectionService.debugSetAppleTVOverride(false);
     await SettingsService.getInstance();
@@ -387,7 +509,7 @@ void main() {
 
 class _FakeMediaServerClient implements MediaServerClient {
   final List<MediaHub> hubs;
-  final List<MediaItem> continueWatching;
+  List<MediaItem> continueWatching;
 
   _FakeMediaServerClient({required this.hubs, this.continueWatching = const []});
 

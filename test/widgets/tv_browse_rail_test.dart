@@ -1118,6 +1118,83 @@ void main() {
     expect(activeHubIds.last, 'detail_episodes');
   });
 
+  testWidgets('keeps the user selection when a preferred hub arrives after item navigation', (tester) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(1280, 720);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.view.resetPhysicalSize);
+
+    final serverManager = MultiServerManager();
+    final multiServerProvider = MultiServerProvider(serverManager, DataAggregationService(serverManager));
+    addTearDown(multiServerProvider.dispose);
+
+    final recentItems = [
+      testMediaItem(id: 'recent_1', backend: MediaBackend.plex, kind: MediaKind.movie, title: 'Recently Added 1'),
+      testMediaItem(id: 'recent_2', backend: MediaBackend.plex, kind: MediaKind.movie, title: 'Recently Added 2'),
+    ];
+    final continueItem = testMediaItem(
+      id: 'continue_1',
+      backend: MediaBackend.plex,
+      kind: MediaKind.movie,
+      title: 'Continue Watching',
+    );
+    final recentHub = MediaHub(
+      id: 'recently_added',
+      title: 'Recently Added',
+      type: 'movie',
+      items: recentItems,
+      size: recentItems.length,
+    );
+    final continueHub = MediaHub(
+      id: 'continue_watching',
+      title: 'Continue Watching',
+      type: 'mixed',
+      items: [continueItem],
+      size: 1,
+    );
+    final focusedSelections = <(String, String)>[];
+
+    Widget buildRail(List<MediaHub> hubs) {
+      return ChangeNotifierProvider<MultiServerProvider>.value(
+        value: multiServerProvider,
+        child: InputModeTracker(
+          child: MaterialApp(
+            theme: monoTheme(dark: true),
+            home: Scaffold(
+              body: SizedBox(
+                width: 1280,
+                height: 720,
+                child: TvBrowseRail(
+                  focusMemory: focusMemory,
+                  key: const ValueKey('rail'),
+                  hubs: hubs,
+                  initialHubId: continueHub.id,
+                  autofocus: true,
+                  iconForHub: (_, _) => Icons.tv_rounded,
+                  onFocusedHubItemChanged: (hub, item) => focusedSelections.add((hub.id, item.id)),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+
+    await tester.pumpWidget(buildRail([recentHub]));
+    await tester.pump();
+    expect(focusedSelections.last, (recentHub.id, recentItems.first.id));
+
+    await tester.sendKeyDownEvent(LogicalKeyboardKey.arrowRight);
+    await tester.sendKeyUpEvent(LogicalKeyboardKey.arrowRight);
+    await tester.pumpAndSettle();
+    expect(focusedSelections.last, (recentHub.id, recentItems.last.id));
+
+    await tester.pumpWidget(buildRail([continueHub, recentHub]));
+    await tester.pumpAndSettle();
+
+    expect(focusedSelections.last, (recentHub.id, recentItems.last.id));
+  });
+
   testWidgets('selects preferred item when active hub items are populated asynchronously', (tester) async {
     final focusedItemIds = <String>[];
 

@@ -430,6 +430,7 @@ class TvBrowseRailState extends State<TvBrowseRail> {
   Timer? _selectSuppressionMaxTimer;
   VoidCallback? _gestureSignalListener;
   bool _suppressSelectUntilKeyUp = false;
+  bool _hasUserInteracted = false;
   bool _hasUserChangedHub = false;
   int _verticalScrollGeneration = 0;
   bool _hasUserChangedItem = false;
@@ -670,7 +671,13 @@ class TvBrowseRailState extends State<TvBrowseRail> {
 
   bool _selectInitialHubIfPossible() {
     final initialHubId = widget.initialHubId;
-    if (_hasUserChangedHub || initialHubId == null || widget.hubs.isEmpty) return false;
+    if (_hasUserInteracted ||
+        _hasUserChangedHub ||
+        _hasUserChangedItem ||
+        initialHubId == null ||
+        widget.hubs.isEmpty) {
+      return false;
+    }
     // External contract: `initialHubId` is a bare `hub.id` supplied by the
     // single-server media-detail caller, so match on `hub.id` (not `_hubKey`).
     final initialIndex = widget.hubs.indexWhere((hub) => hub.id == initialHubId);
@@ -685,7 +692,9 @@ class TvBrowseRailState extends State<TvBrowseRail> {
   bool _selectInitialItemIfPossible() {
     final initialItemId = widget.initialItemId;
     final hub = _activeHub;
-    if (_hasUserChangedHub || _hasUserChangedItem || initialItemId == null || hub == null) return false;
+    if (_hasUserInteracted || _hasUserChangedHub || _hasUserChangedItem || initialItemId == null || hub == null) {
+      return false;
+    }
     final initialIndex = hub.items.indexWhere((item) => item.id == initialItemId);
     if (initialIndex == -1) return false;
     if (initialIndex != _itemIndex) _itemIndex = initialIndex;
@@ -700,6 +709,7 @@ class TvBrowseRailState extends State<TvBrowseRail> {
         if (event is KeyUpEvent) _clearSelectSuppression();
         return KeyEventResult.handled;
       }
+      _hasUserInteracted = true;
 
       return _selectLongPress.handleKeyEvent(
         event,
@@ -711,7 +721,10 @@ class TvBrowseRailState extends State<TvBrowseRail> {
 
     if (widget.onBack != null) {
       final backResult = handleBackKeyAction(event, widget.onBack!);
-      if (backResult != KeyEventResult.ignored) return backResult;
+      if (backResult != KeyEventResult.ignored) {
+        _hasUserInteracted = true;
+        return backResult;
+      }
     }
 
     if (key.isDpadDirection && event is KeyUpEvent) return KeyEventResult.handled;
@@ -719,6 +732,7 @@ class TvBrowseRailState extends State<TvBrowseRail> {
     if (!event.isActionable) return KeyEventResult.ignored;
     final hub = _activeHub;
     if (hub == null) return KeyEventResult.ignored;
+    if (key.isDpadDirection || key.isContextMenuKey) _hasUserInteracted = true;
 
     if (key.isLeftKey) {
       if (_itemIndex > 0) {
@@ -761,6 +775,7 @@ class TvBrowseRailState extends State<TvBrowseRail> {
   void _moveItem(int delta, {Duration duration = _navigationScrollDuration}) {
     final hub = _activeHub;
     if (hub == null) return;
+    _hasUserInteracted = true;
     final next = (_itemIndex + delta).clamp(0, _totalItemCount(hub) - 1);
     if (next == _itemIndex) return;
 
@@ -776,6 +791,7 @@ class TvBrowseRailState extends State<TvBrowseRail> {
 
   void _moveHub(int delta) {
     if (widget.hubs.isEmpty) return;
+    _hasUserInteracted = true;
     final next = (_hubIndex + delta).clamp(0, widget.hubs.length - 1);
     if (next == _hubIndex) return;
     final currentHub = _activeHub;
@@ -858,6 +874,7 @@ class TvBrowseRailState extends State<TvBrowseRail> {
     if (active == null || _hubKey(active) != _hubKey(hub) || index >= hub.items.length || _itemIndex == index) {
       return;
     }
+    _hasUserInteracted = true;
     _itemIndex = index;
     _hasUserChangedItem = true;
     _focusModel.set(_hubIndex, _itemIndex);
@@ -868,6 +885,7 @@ class TvBrowseRailState extends State<TvBrowseRail> {
   void _selectHubItem(MediaHub hub, int hubIndex, int itemIndex) {
     final totalCount = _totalItemCount(hub);
     if (totalCount == 0) return;
+    _hasUserInteracted = true;
 
     final clampedItemIndex = itemIndex.clamp(0, totalCount - 1).toInt();
     final hubChanged = _hubIndex != hubIndex;
