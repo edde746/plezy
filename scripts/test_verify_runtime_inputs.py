@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import hashlib
 import importlib.util
 import json
 import shutil
@@ -34,12 +35,35 @@ FIXTURES = (
 class RuntimeInputVerifierTest(unittest.TestCase):
     def setUp(self) -> None:
         self.temporary = tempfile.TemporaryDirectory()
-        self.root = Path(self.temporary.name)
-        for relative in FIXTURES:
+        temporary_root = Path(self.temporary.name)
+        repository = temporary_root / "repository"
+        repository.mkdir()
+        for relative in (".gitattributes", *FIXTURES):
             source = REPOSITORY / relative
-            destination = self.root / relative
+            destination = repository / relative
             destination.parent.mkdir(parents=True, exist_ok=True)
             shutil.copy2(source, destination)
+        (repository / "crlf-control.txt").write_bytes(b"control\n")
+        subprocess.run(["git", "init", "-q"], cwd=repository, check=True)
+        subprocess.run(["git", "config", "user.email", "fixture@example.invalid"], cwd=repository, check=True)
+        subprocess.run(["git", "config", "user.name", "Fixture"], cwd=repository, check=True)
+        subprocess.run(["git", "config", "core.autocrlf", "false"], cwd=repository, check=True)
+        subprocess.run(["git", "add", "."], cwd=repository, check=True)
+        subprocess.run(["git", "commit", "-qm", "fixture"], cwd=repository, check=True)
+
+        self.root = temporary_root / "worktree"
+        subprocess.run(
+            [
+                "git",
+                "clone",
+                "-q",
+                "-c",
+                "core.autocrlf=true",
+                str(repository),
+                str(self.root),
+            ],
+            check=True,
+        )
 
     def tearDown(self) -> None:
         self.temporary.cleanup()
@@ -60,6 +84,33 @@ class RuntimeInputVerifierTest(unittest.TestCase):
         )
         self.assertEqual(0, completed.returncode, completed.stdout + completed.stderr)
         self.assertIn("verified offline", completed.stdout)
+
+    def test_crlf_worktree_preserves_canonical_lf_provenance_inputs(self) -> None:
+        self.assertIn(b"\r\n", (self.root / "crlf-control.txt").read_bytes())
+        provenance = self._json("packages/wakelock_plus/provenance.json")
+
+        for relative, expected in provenance["artifacts"].items():
+            contents = (self.root / "packages/wakelock_plus" / relative).read_bytes()
+            self.assertNotIn(b"\r\n", contents, relative)
+            self.assertEqual(expected, hashlib.sha256(contents).hexdigest(), relative)
+
+        self.assertEqual([], CHECKER.validate(self.root))
+
+    def test_crlf_artifact_drift_is_not_normalized_before_hashing(self) -> None:
+        relative = "pigeons/messages.dart"
+        path = self.root / "packages/wakelock_plus" / relative
+        canonical = path.read_bytes()
+        self.assertIn(b"\n", canonical)
+        path.write_bytes(canonical.replace(b"\n", b"\r\n"))
+
+        errors = CHECKER.validate(self.root)
+
+        self.assertTrue(any(str(path) in error and "SHA-256 drift" in error for error in errors))
+        provenance = self._json("packages/wakelock_plus/provenance.json")
+        self.assertNotEqual(
+            provenance["artifacts"][relative],
+            hashlib.sha256(path.read_bytes()).hexdigest(),
+        )
 
     def test_rejects_linux_cmake_checksum_drift(self) -> None:
         path = self.root / "linux/CMakeLists.txt"

@@ -29,70 +29,96 @@ def executable(path: Path, contents: str) -> None:
 class CodegenCheckTest(unittest.TestCase):
     def setUp(self) -> None:
         self.temp = tempfile.TemporaryDirectory()
-        self.root = Path(self.temp.name)
+        temporary_root = Path(self.temp.name)
+        repository = temporary_root / "repository"
+        repository.mkdir()
         self.codegen_temp = Path(tempfile.mkdtemp(prefix="plezy-codegen-test-temp-"))
-        subprocess.run(["git", "init", "-q", str(self.root)], check=True)
-        subprocess.run(["git", "config", "user.email", "fixture@example.invalid"], cwd=self.root, check=True)
-        subprocess.run(["git", "config", "user.name", "Fixture"], cwd=self.root, check=True)
+        subprocess.run(["git", "init", "-q"], cwd=repository, check=True)
+        subprocess.run(["git", "config", "user.email", "fixture@example.invalid"], cwd=repository, check=True)
+        subprocess.run(["git", "config", "user.name", "Fixture"], cwd=repository, check=True)
+        subprocess.run(["git", "config", "core.autocrlf", "false"], cwd=repository, check=True)
 
-        (self.root / "scripts").mkdir()
-        shutil.copy2(SCRIPT_DIR / "codegen.sh", self.root / "scripts" / "codegen.sh")
-        shutil.copy2(SCRIPT_DIR / "check_codegen.py", self.root / "scripts" / "check_codegen.py")
-        (self.root / "scripts" / "generate_relay_protocol.py").write_text("fixture\n", encoding="utf-8")
-        (self.root / "source.txt").write_text("version one\n", encoding="utf-8")
+        shutil.copy2(SCRIPT_DIR.parent / ".gitattributes", repository / ".gitattributes")
+
+        (repository / "scripts").mkdir()
+        shutil.copy2(SCRIPT_DIR / "codegen.sh", repository / "scripts" / "codegen.sh")
+        shutil.copy2(SCRIPT_DIR / "check_codegen.py", repository / "scripts" / "check_codegen.py")
+        (repository / "scripts" / "generate_relay_protocol.py").write_text("fixture\n", encoding="utf-8")
+        (repository / "source.txt").write_text("version one\n", encoding="utf-8")
         for relative in GENERATED_PATHS:
-            path = self.root / relative
+            path = repository / relative
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_text("version one\n", encoding="utf-8")
 
-        self.bin = self.root / "fake-bin"
+        self.bin = temporary_root / "fake-bin"
         self.bin.mkdir()
         executable(
             self.bin / "python3",
             """#!/usr/bin/env bash
+write_lf() { tr -d '\\r' < source.txt > "$1"; }
 if [[ "$1" == *check_codegen.py ]]; then exec "$REAL_PYTHON" "$@"; fi
 mkdir -p lib/watch_together/services server
-cp source.txt lib/watch_together/services/relay_protocol.g.dart
+write_lf lib/watch_together/services/relay_protocol.g.dart
 cp source.txt server/relay_protocol_gen.go
 """,
         )
         executable(
             self.bin / "dart",
             """#!/usr/bin/env bash
+write_lf() { tr -d '\\r' < source.txt > "$1"; }
 if [ "${FAIL_DART:-0}" -ne 0 ]; then exit "$FAIL_DART"; fi
 case "$*" in
   *"generate_ducet_ranks.dart")
     mkdir -p lib/data
-    cp source.txt lib/data/ducet_order.dart
+    write_lf lib/data/ducet_order.dart
     ;;
   *"generate_hid_key_labels.dart")
     mkdir -p lib/data
-    cp source.txt lib/data/hid_key_labels.dart
+    write_lf lib/data/hid_key_labels.dart
     ;;
   *"generate_iso_639_data.dart")
     mkdir -p lib/data
-    cp source.txt lib/data/iso_639_data.dart
+    write_lf lib/data/iso_639_data.dart
     ;;
   "run slang")
     mkdir -p lib/i18n
-    cp source.txt lib/i18n/strings.g.dart
+    write_lf lib/i18n/strings.g.dart
     ;;
   *"build_runner"*)
     mkdir -p lib/models
-    cp source.txt lib/models/model.g.dart
-    cp source.txt lib/models/model.freezed.dart
+    write_lf lib/models/model.g.dart
+    write_lf lib/models/model.freezed.dart
     printf '%s\n' "$*" > build-runner-args.txt
     ;;
 esac
 """,
         )
-        subprocess.run(["git", "add", "."], cwd=self.root, check=True)
-        subprocess.run(["git", "commit", "-qm", "fixture"], cwd=self.root, check=True)
+        subprocess.run(
+            ["git", "add", ".gitattributes", "scripts", "source.txt", "lib", "server"],
+            cwd=repository,
+            check=True,
+        )
+        subprocess.run(["git", "commit", "-qm", "fixture"], cwd=repository, check=True)
+
+        self.root = temporary_root / "worktree"
+        subprocess.run(
+            [
+                "git",
+                "clone",
+                "-q",
+                "-c",
+                "core.autocrlf=true",
+                str(repository),
+                str(self.root),
+            ],
+            check=True,
+        )
         self.env = os.environ | {
             "PATH": f"{self.bin}:{os.environ['PATH']}",
             "REAL_PYTHON": sys.executable,
             "TMPDIR": str(self.codegen_temp),
         }
+
 
     def tearDown(self) -> None:
         self.temp.cleanup()
@@ -138,6 +164,25 @@ esac
         ).stdout
         self.assertEqual(worktrees.count("worktree "), 1)
         self.assertEqual(list(self.codegen_temp.glob("plezy-codegen-check-*")), [])
+
+    def test_crlf_worktree_keeps_generated_dart_lf_and_comparisons_byte_exact(self) -> None:
+        self.assertIn(b"\r\n", (self.root / "source.txt").read_bytes())
+        dart_outputs = [
+            self.root / relative
+            for relative in GENERATED_PATHS
+            if relative.endswith(".dart")
+        ]
+        self.assertTrue(dart_outputs)
+        self.assertTrue(all(b"\r\n" not in path.read_bytes() for path in dart_outputs))
+        self.assertEqual(self.run_codegen("--check").returncode, 0)
+
+        drifted = self.root / "lib/models/model.g.dart"
+        drifted.write_bytes(drifted.read_bytes().replace(b"\n", b"\r\n"))
+        result = self.run_codegen("--check")
+
+        self.assertEqual(result.returncode, 1)
+        self.assertIn("lib/models/model.g.dart", result.stderr)
+        self.assertIn(b"\r\n", drifted.read_bytes())
 
     def test_stale_check_reports_sorted_paths_without_changing_caller(self) -> None:
         (self.root / "source.txt").write_text("version two\n", encoding="utf-8")
@@ -252,7 +297,6 @@ esac
             (self.root / "build-runner-args.txt").read_text(encoding="utf-8"),
             "run build_runner build --build-filter=lib/models/**\n",
         )
-
 
 if __name__ == "__main__":
     unittest.main()

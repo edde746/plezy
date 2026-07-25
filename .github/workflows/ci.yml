@@ -73,6 +73,7 @@ jobs:
           python3 scripts/test_run_maestro.py
           python3 scripts/test_maestro_flow_contracts.py
           python3 scripts/test_maestro_jellyfin_proxy.py
+          python3 scripts/test_maestro_real_jellyfin.py
           python3 scripts/check_update_packages_workflow.py
           python3 scripts/test_pubspec_version.py
           python3 scripts/test_clean_translations.py

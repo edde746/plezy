@@ -8,6 +8,7 @@ import json
 import re
 from pathlib import Path
 from urllib.parse import unquote, urlparse
+from urllib.request import url2pathname
 
 LOCK_PAIRS = {
     "iOS": (
@@ -75,7 +76,7 @@ def _resolved_sentry_root(root: Path, errors: list[str]) -> Path | None:
     uri = package["rootUri"]
     parsed = urlparse(uri)
     if parsed.scheme == "file":
-        return Path(unquote(parsed.path))
+        return Path(url2pathname(parsed.path))
     if parsed.scheme:
         errors.append(f"{config_path}: unsupported sentry_flutter root URI {uri!r}")
         return None

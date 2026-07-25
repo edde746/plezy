@@ -22,6 +22,25 @@ class RelayProtocolGeneratorTest(unittest.TestCase):
         )
         self.assertIn("func validRelayID(value string, maxLength int) bool", go_output)
 
+    def test_main_writes_canonical_lf_dart_output(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            root = Path(temporary_directory)
+            spec_path = root / "relay_protocol.json"
+            dart_path = root / "relay_protocol.g.dart"
+            go_path = root / "relay_protocol_gen.go"
+            spec_path.write_text(json.dumps(self.spec), encoding="utf-8")
+
+            with (
+                mock.patch.object(generator, "SPEC_PATH", spec_path),
+                mock.patch.object(generator, "DART_PATH", dart_path),
+                mock.patch.object(generator, "GO_PATH", go_path),
+            ):
+                generator.main()
+
+            dart_bytes = dart_path.read_bytes()
+            self.assertIn(b"\n", dart_bytes)
+            self.assertNotIn(b"\r\n", dart_bytes)
+
     def test_changed_pattern_fails_before_writing_either_target(self) -> None:
         changed_spec = copy.deepcopy(self.spec)
         changed_spec["idPattern"] = r"^[A-Za-z0-9_.-]+$"

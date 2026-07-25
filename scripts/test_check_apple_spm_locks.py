@@ -29,14 +29,14 @@ class AppleSpmLockCheckerTest(unittest.TestCase):
     def tearDown(self) -> None:
         self.temporary.cleanup()
 
-    def _write_package_config(self) -> None:
+    def _write_package_config(self, root_uri: str = "../packages/sentry_flutter") -> None:
         path = self.root / ".dart_tool/package_config.json"
-        path.parent.mkdir(parents=True)
+        path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(
             json.dumps(
                 {
                     "configVersion": 2,
-                    "packages": [{"name": "sentry_flutter", "rootUri": "../packages/sentry_flutter"}],
+                    "packages": [{"name": "sentry_flutter", "rootUri": root_uri}],
                 }
             ),
             encoding="utf-8",
@@ -83,6 +83,11 @@ class AppleSpmLockCheckerTest(unittest.TestCase):
         )
         self.assertEqual(0, completed.returncode, completed.stdout + completed.stderr)
         self.assertIn("Apple SwiftPM locks match", completed.stdout)
+
+    def test_absolute_file_uri_resolves_sentry_manifests(self) -> None:
+        self._write_package_config((self.root / "packages/sentry_flutter").resolve().as_uri())
+
+        self.assertEqual([], CHECKER.validate(self.root))
 
     def test_reports_project_workspace_version_mismatch(self) -> None:
         workspace = CHECKER.LOCK_PAIRS["iOS"][1]

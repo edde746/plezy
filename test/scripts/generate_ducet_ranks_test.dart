@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:crypto/crypto.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:path/path.dart' as path;
 
 import '../../scripts/generate_ducet_ranks.dart';
 
@@ -187,9 +188,9 @@ void main() {
   test('a rejected second download preserves the first cache and output', () async {
     const allKeysText = '0041 ; [.0100.0020.0002]\n';
     const fractionalText = '[radical 1=⼀一:一]\n';
-    final cache = Directory('${temporaryDirectory.path}/cache')..createSync();
-    final marker = File('${cache.path}/marker')..writeAsStringSync('keep');
-    final output = File('${temporaryDirectory.path}/ducet_order.dart')..writeAsStringSync('old output');
+    final cache = Directory(path.join(temporaryDirectory.path, 'cache'))..createSync();
+    final marker = File(path.join(cache.path, 'marker'))..writeAsStringSync('keep');
+    final output = File(path.join(temporaryDirectory.path, 'ducet_order.dart'))..writeAsStringSync('old output');
     var request = 0;
 
     await expectLater(
@@ -208,7 +209,7 @@ void main() {
     );
 
     expect(request, 2);
-    expect(cache.listSync().map((entity) => entity.path).toList(), [marker.path]);
+    expect(cache.listSync().map((entity) => path.basename(entity.path)).toList(), ['marker']);
     expect(marker.readAsStringSync(), 'keep');
     expect(output.readAsStringSync(), 'old output');
   });
@@ -219,11 +220,12 @@ void main() {
 0041 ; [.0101.0020.0002]
 ''';
     const fractionalText = '[radical 1=⼀一:一]\n';
-    final allKeysFile = File('${temporaryDirectory.path}/allkeys.txt')..writeAsStringSync(duplicateAllKeys);
-    final fractionalFile = File('${temporaryDirectory.path}/FractionalUCA.txt')..writeAsStringSync(fractionalText);
-    final cache = Directory('${temporaryDirectory.path}/cache')..createSync();
-    final marker = File('${cache.path}/marker')..writeAsStringSync('keep');
-    final output = File('${temporaryDirectory.path}/ducet_order.dart')..writeAsStringSync('old output');
+    final allKeysFile = File(path.join(temporaryDirectory.path, 'allkeys.txt'))..writeAsStringSync(duplicateAllKeys);
+    final fractionalFile = File(path.join(temporaryDirectory.path, 'FractionalUCA.txt'))
+      ..writeAsStringSync(fractionalText);
+    final cache = Directory(path.join(temporaryDirectory.path, 'cache'))..createSync();
+    final marker = File(path.join(cache.path, 'marker'))..writeAsStringSync('keep');
+    final output = File(path.join(temporaryDirectory.path, 'ducet_order.dart'))..writeAsStringSync('old output');
 
     await expectLater(
       generateDucetRanks(
@@ -240,7 +242,8 @@ void main() {
 
     expect(allKeysFile.readAsStringSync(), duplicateAllKeys);
     expect(fractionalFile.readAsStringSync(), fractionalText);
-    expect(cache.listSync().map((entity) => entity.path).toList(), [marker.path]);
+    expect(cache.listSync().map((entity) => path.basename(entity.path)).toList(), ['marker']);
+    expect(marker.readAsStringSync(), 'keep');
     expect(output.readAsStringSync(), 'old output');
   });
 

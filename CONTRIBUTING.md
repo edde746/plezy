@@ -63,8 +63,21 @@ Use `--skip-build` to reuse the debug APK and `--skip-jellyfin-build` to reuse t
 `--device <adb-serial>` when multiple devices are connected; physical devices also require `--adb-reverse`.
 
 Top-level flows live in `.maestro/flows/`, shared setup in `.maestro/subflows/`, and focused regressions in
-`.maestro/regression_flows/`. CI runs the same suites from `.github/workflows/e2e.yml` and uploads diagnostics on
-failure.
+`.maestro/regression_flows/`. Automatic PR groups are declared in `scripts/run_maestro_ci.py::GROUPS`. Every top-level
+regression flow must be registered either there or in `DESTRUCTIVE_MANUAL_TARGETS`; reusable subflows are not
+independent tests. A manual-only classification must state why the flow cannot run automatically and must not be
+described as CI coverage. `.github/workflows/e2e.yml` runs only automatic targets and uploads diagnostics on failure.
+
+The profile-isolation and profile-teardown regressions create and remove profile connections, so they are a destructive
+manual target rather than automatic PR coverage. Run them only against the pre-seeded Jellyfin fixture and a disposable
+emulator, using the required opt-in:
+
+```bash
+python3 scripts/run_maestro_ci.py profile-regressions --disposable-emulator
+```
+
+The target refuses to start without `--disposable-emulator`. Each profile flow writes to its own Jellyfin log and
+diagnostics directory under `build/maestro-profile-regressions/`.
 
 ### Production container image updates
 

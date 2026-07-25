@@ -143,7 +143,7 @@ def main() -> None:
     spec = json.loads(SPEC_PATH.read_text(encoding="utf-8"))
     dart_output = dart_source(spec)
     go_output = go_source(spec)
-    DART_PATH.write_text(dart_output, encoding="utf-8")
+    DART_PATH.write_text(dart_output, encoding="utf-8", newline="\n")
     GO_PATH.write_text(go_output, encoding="utf-8")
 
 

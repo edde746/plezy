@@ -104,6 +104,7 @@ if python3 scripts/check_build_workflow.py &&
    python3 scripts/test_run_maestro.py &&
    python3 scripts/test_maestro_flow_contracts.py &&
    python3 scripts/test_maestro_jellyfin_proxy.py &&
+   python3 scripts/test_maestro_real_jellyfin.py &&
    python3 scripts/test_check_icon_consistency.py; then
   ok "workflow and script guards passed"
 else

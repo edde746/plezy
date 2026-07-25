@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
-"""Run the Maestro groups assigned to each CI emulator."""
+"""Run automatic Maestro groups and guarded destructive manual targets."""
 
 from __future__ import annotations
 
 import argparse
+import sys
 from collections.abc import Sequence
 
 import run_maestro
@@ -104,6 +105,30 @@ GROUPS: dict[str, tuple[tuple[str, ...], ...]] = {
 }
 
 
+DESTRUCTIVE_MANUAL_TARGETS: dict[str, tuple[tuple[str, ...], ...]] = {
+    "profile-regressions": (
+        (
+            "basic",
+            "--flow",
+            ".maestro/regression_flows/01_profile_switch_isolation.yaml",
+            "--jellyfin-log",
+            "build/maestro-profile-regressions/profile-switch-isolation-jellyfin.log",
+            "--diagnostics-dir",
+            "build/maestro-profile-regressions/profile-switch-isolation-diagnostics",
+        ),
+        (
+            "basic",
+            "--flow",
+            ".maestro/regression_flows/02_profile_teardown.yaml",
+            "--jellyfin-log",
+            "build/maestro-profile-regressions/profile-teardown-jellyfin.log",
+            "--diagnostics-dir",
+            "build/maestro-profile-regressions/profile-teardown-diagnostics",
+        ),
+    ),
+}
+
+
 def run_android_15_instrumentation() -> None:
     print("==> Android 15 filtered instrumentation", flush=True)
     run_maestro._run_checked(
@@ -119,9 +144,9 @@ def run_android_15_instrumentation() -> None:
     )
 
 
-def run_group(name: str) -> int:
+def run_recipes(recipes: tuple[tuple[str, ...], ...]) -> int:
     failed = False
-    for arguments in GROUPS[name]:
+    for arguments in recipes:
         print(f"==> Maestro {' '.join(arguments)}", flush=True)
         exit_status = run_maestro.main(arguments)
         if exit_status >= 128:
@@ -130,7 +155,21 @@ def run_group(name: str) -> int:
     return 1 if failed else 0
 
 
-def run_target(name: str) -> int:
+def run_group(name: str) -> int:
+    return run_recipes(GROUPS[name])
+
+
+def run_target(name: str, *, disposable_emulator: bool = False) -> int:
+    if name in DESTRUCTIVE_MANUAL_TARGETS:
+        if not disposable_emulator:
+            print(
+                f"Refusing destructive manual target {name!r}: "
+                "re-run with --disposable-emulator only on a disposable emulator.",
+                file=sys.stderr,
+            )
+            return 2
+        print(f"==> DESTRUCTIVE manual Maestro target: {name}", flush=True)
+        return run_recipes(DESTRUCTIVE_MANUAL_TARGETS[name])
     if name == ANDROID_15_INSTRUMENTATION_TARGET:
         run_android_15_instrumentation()
         return 0
@@ -139,9 +178,21 @@ def run_target(name: str) -> int:
 
 def main(argv: Sequence[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("target", choices=(*GROUPS, ANDROID_15_INSTRUMENTATION_TARGET))
+    parser.add_argument(
+        "target",
+        choices=(
+            *GROUPS,
+            ANDROID_15_INSTRUMENTATION_TARGET,
+            *DESTRUCTIVE_MANUAL_TARGETS,
+        ),
+    )
+    parser.add_argument(
+        "--disposable-emulator",
+        action="store_true",
+        help="opt in to a destructive manual target on a disposable emulator",
+    )
     args = parser.parse_args(argv)
-    return run_target(args.target)
+    return run_target(args.target, disposable_emulator=args.disposable_emulator)
 
 
 if __name__ == "__main__":
