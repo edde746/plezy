@@ -699,6 +699,64 @@ void TestCrashDuringTakeoverHandoffRecoversBothOriginals() {
       "HDR handoff recovery must restore replacement then prior and preserve its sibling");
 }
 
+void TestFailedHandoffRecoveryRollsBackForTakeover() {
+  FakeRecoveryBackend mode;
+  mode.SeedBoth();
+  mode.dwords[kModeTakeoverEligible] = 1;
+  mode.dwords[kHDRTakeoverEligible] = 1;
+  Check(
+      DisplayModeManager::PrepareModeRecovery(mode, kReplacementModeDevice, 2560, 1440, 120),
+      "mode takeover preparation must reach its pre-apply handoff");
+  mode.expected_mode_restores = {{kReplacementModeDevice, 2560, 1440, 120}};
+  mode.device_present[kModeDevice] = false;
+  Check(
+      !DisplayModeManager::RecoverIfNeededForTesting(mode, false, true),
+      "a missing prior mode display must leave handoff recovery incomplete");
+  Check(
+      mode.mode_restore_attempts == 1 && mode.dwords[kModeChanged] == 1 && mode.dwords[kModeRecoverySlot] == 0 &&
+          mode.dwords[kModeTakeoverEligible] == 1 && mode.dwords[kModeHandoffPending] == 0,
+      "failed mode handoff recovery must roll authority back to a takeover-eligible prior slot");
+
+  mode.events.clear();
+  Check(
+      !DisplayModeManager::RecoverIfNeededForTesting(mode, false, true),
+      "the absent prior mode display must remain retryable after handoff rollback");
+  Check(
+      EventIndex(mode.events, L"restore:mode") == mode.events.size(),
+      "topology retries must not keep restoring the surviving replacement display");
+  Check(
+      ApplyModeAfterPreparing(mode, kReplacementModeDevice, 2560, 1440, 120),
+      "a later mode request must be able to consume the rolled-back handoff");
+
+  FakeRecoveryBackend hdr;
+  hdr.SeedBoth();
+  hdr.dwords[kModeTakeoverEligible] = 1;
+  hdr.dwords[kHDRTakeoverEligible] = 1;
+  Check(
+      DisplayModeManager::PrepareHDRRecovery(hdr, kReplacementHDRDevice, true),
+      "HDR takeover preparation must reach its pre-apply handoff");
+  hdr.expected_hdr_restores = {{kReplacementHDRDevice, true}};
+  hdr.device_present[kHDRDevice] = false;
+  Check(
+      !DisplayModeManager::RecoverIfNeededForTesting(hdr, true, false),
+      "a missing prior HDR display must leave handoff recovery incomplete");
+  Check(
+      hdr.hdr_restore_attempts == 1 && hdr.dwords[kHDRChanged] == 1 && hdr.dwords[kHDRRecoverySlot] == 0 &&
+          hdr.dwords[kHDRTakeoverEligible] == 1 && hdr.dwords[kHDRHandoffPending] == 0,
+      "failed HDR handoff recovery must roll authority back to a takeover-eligible prior slot");
+
+  hdr.events.clear();
+  Check(
+      !DisplayModeManager::RecoverIfNeededForTesting(hdr, true, false),
+      "the absent prior HDR display must remain retryable after handoff rollback");
+  Check(
+      EventIndex(hdr.events, L"restore:hdr") == hdr.events.size(),
+      "topology retries must not keep restoring the surviving replacement HDR state");
+  Check(
+      ApplyHDRAfterPreparing(hdr, kReplacementHDRDevice, true),
+      "a later HDR request must be able to consume the rolled-back handoff");
+}
+
 void TestHDRReconnectRecoversBeforeTakeover() {
   FakeRecoveryBackend backend;
   backend.SeedBoth();
@@ -1051,6 +1109,7 @@ int main() {
   mpv::TestBadModeHDRRestoreAllowsSameKindTakeover();
   mpv::TestFailedOSApplyRollsBackTakeover();
   mpv::TestCrashDuringTakeoverHandoffRecoversBothOriginals();
+  mpv::TestFailedHandoffRecoveryRollsBackForTakeover();
   mpv::TestHDRReconnectRecoversBeforeTakeover();
   mpv::TestEligibleSameOriginalReuseResetsDisposition();
   mpv::TestRepeatedModeTakeoverStagesOnlyTheInactiveSlot();

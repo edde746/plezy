@@ -1142,13 +1142,17 @@ bool RecoverRecord(DisplayRecoveryBackend& backend, bool mode_is_live, bool hdr_
     const bool restored =
         backend.IsDevicePresent(mode_device_name) && backend.RestoreMode(mode_device_name, width, height, refresh_rate);
     if (mode_handoff_pending) {
-      // Restore the replacement first and the pre-handoff original last. Both
-      // remain marked until both idempotent restores and cleanup succeed.
+      // Restore the replacement first and the pre-handoff original last. If
+      // either restore or cleanup fails, collapse authority back to the prior
+      // slot so topology retries do not keep forcing the surviving replacement.
       const bool previous_restored =
           backend.IsDevicePresent(previous_mode_device_name) &&
           backend.RestoreMode(previous_mode_device_name, previous_width, previous_height, previous_refresh_rate);
       if (!restored || !previous_restored ||
           !CompleteRecoveryOperation(backend, kRegModeChanged, kRegModeTakeoverEligible, kRegModeHandoffPending)) {
+        RollbackRecoveryHandoff(
+            backend, kRegModeTakeoverEligible, kRegModeRecoverySlot, kRegModePreviousRecoverySlot,
+            kRegModeHandoffPending);
         completed = false;
       }
     } else if (
@@ -1170,6 +1174,8 @@ bool RecoverRecord(DisplayRecoveryBackend& backend, bool mode_is_live, bool hdr_
                                      backend.RestoreHDR(previous_hdr_device_name, previous_original_hdr != 0);
       if (!restored || !previous_restored ||
           !CompleteRecoveryOperation(backend, kRegHDRChanged, kRegHDRTakeoverEligible, kRegHDRHandoffPending)) {
+        RollbackRecoveryHandoff(
+            backend, kRegHDRTakeoverEligible, kRegHDRRecoverySlot, kRegHDRPreviousRecoverySlot, kRegHDRHandoffPending);
         completed = false;
       }
     } else if (
