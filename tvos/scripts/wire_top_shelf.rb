@@ -83,6 +83,7 @@ project.files.select { |file| file.display_name == 'Foundation.framework' }.each
   file_ref.remove_from_project unless still_used
 end
 runner_test_sources = %w[
+  MpvPlayerContractTests.swift
   TvosEventDeliveryCoordinatorTests.swift
   ConnectivityPlusPluginTests.swift
   SystemShelfPluginTests.swift
