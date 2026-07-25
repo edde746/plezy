@@ -50,10 +50,9 @@ func TestGeneratedRelayProtocolVersionsMatchSpec(t *testing.T) {
 	}
 }
 
-// newTestServer builds a Server wired for tests: no goroutines, no network,
-// logs scratched to a per-test temp dir. The snapshotter is constructed but
-// its goroutine is NOT started — tests drive it synchronously via write()
-// or call schedule() and then call write() themselves.
+// newTestServer builds a Server wired for tests: no goroutines and no network.
+// Its snapshotter is not started; storage tests drive the narrow synchronous
+// write entry directly.
 func newTestServer(t *testing.T, stateFile string) *Server {
 	t.Helper()
 	s := &Server{
@@ -107,23 +106,23 @@ func TestSnapshotRoundTrip(t *testing.T) {
 	_, verifier1 := mustReconnectToken(t)
 	_, verifier2 := mustReconnectToken(t)
 	s.rooms["ABC12"] = &Room{
-		SessionID:      "ABC12",
-		HostPeerID:     "host-1",
-		hostVerifier:   verifier1,
-		peerVerifiers:  make(map[string]reconnectVerifier),
-		Peers:          map[string]*Client{},
-		CreatedAt:      now.Add(-time.Minute),
-		LastActivityAt: now,
-		quotaOwnerKey:  "203.0.113.44",
+		SessionID:        "ABC12",
+		HostPeerID:       "host-1",
+		hostVerifier:     verifier1,
+		peerReservations: make(map[string]peerReservation),
+		Peers:            map[string]*Client{},
+		CreatedAt:        now.Add(-time.Minute),
+		LastActivityAt:   now,
+		quotaOwnerKey:    "203.0.113.44",
 	}
 	s.rooms["XYZ99"] = &Room{
-		SessionID:      "XYZ99",
-		HostPeerID:     "host-2",
-		hostVerifier:   verifier2,
-		peerVerifiers:  make(map[string]reconnectVerifier),
-		Peers:          map[string]*Client{},
-		CreatedAt:      now.Add(-time.Hour),
-		LastActivityAt: now.Add(-time.Second),
+		SessionID:        "XYZ99",
+		HostPeerID:       "host-2",
+		hostVerifier:     verifier2,
+		peerReservations: make(map[string]peerReservation),
+		Peers:            map[string]*Client{},
+		CreatedAt:        now.Add(-time.Hour),
+		LastActivityAt:   now.Add(-time.Second),
 	}
 
 	if err := s.snap.write(); err != nil {
@@ -139,7 +138,7 @@ func TestSnapshotRoundTrip(t *testing.T) {
 
 	// Reconstruct into a fresh Server and verify identity.
 	s2 := newTestServer(t, path)
-	if err := s2.loadSnapshot(path); err != nil {
+	if _, err := s2.loadSnapshot(path); err != nil {
 		t.Fatalf("loadSnapshot: %v", err)
 	}
 	if got := len(s2.rooms); got != 2 {
@@ -207,7 +206,7 @@ func TestLoadSkipsExpired(t *testing.T) {
 	}
 
 	s := newTestServer(t, path)
-	if err := s.loadSnapshot(path); err != nil {
+	if _, err := s.loadSnapshot(path); err != nil {
 		t.Fatalf("loadSnapshot: %v", err)
 	}
 	if len(s.rooms) != 1 {
@@ -225,7 +224,7 @@ func TestLoadHandlesCorrupt(t *testing.T) {
 		t.Fatalf("write: %v", err)
 	}
 	s := newTestServer(t, path)
-	if err := s.loadSnapshot(path); err != nil {
+	if _, err := s.loadSnapshot(path); err != nil {
 		t.Fatalf("loadSnapshot returned error: %v", err)
 	}
 	if len(s.rooms) != 0 {
@@ -241,7 +240,7 @@ func TestLoadHandlesMissing(t *testing.T) {
 	dir := t.TempDir()
 	path := filepath.Join(dir, "does-not-exist.json")
 	s := newTestServer(t, path)
-	if err := s.loadSnapshot(path); err != nil {
+	if _, err := s.loadSnapshot(path); err != nil {
 		t.Fatalf("loadSnapshot: %v", err)
 	}
 	if len(s.rooms) != 0 {
@@ -258,7 +257,7 @@ func TestLoadRejectsSnapshotsWithoutHostAuthority(t *testing.T) {
 				t.Fatalf("write: %v", err)
 			}
 			s := newTestServer(t, path)
-			if err := s.loadSnapshot(path); err != nil {
+			if _, err := s.loadSnapshot(path); err != nil {
 				t.Fatalf("loadSnapshot: %v", err)
 			}
 			if len(s.rooms) != 0 {
@@ -370,13 +369,11 @@ func TestSnapshotAtomicWriteSurvivesRenameFailure(t *testing.T) {
 		t.Fatalf("read orig: %v", err)
 	}
 
-	// Force a second write to fail at the tmp-file create step by making the
-	// snapshot directory unwritable. The rename therefore never runs, so the
-	// existing file must be untouched.
-	if err := os.Chmod(dir, 0555); err != nil {
-		t.Fatalf("chmod: %v", err)
+	// Block the temporary-file open with a directory at the same path. This
+	// deterministically fails before rename on every supported platform.
+	if err := os.Mkdir(path+".tmp", 0755); err != nil {
+		t.Fatalf("create blocking temporary directory: %v", err)
 	}
-	t.Cleanup(func() { os.Chmod(dir, 0755) })
 
 	delete(s.rooms, "ORIG")
 	s.rooms["NEW"] = &Room{
@@ -387,17 +384,54 @@ func TestSnapshotAtomicWriteSurvivesRenameFailure(t *testing.T) {
 		LastActivityAt: time.Now(),
 	}
 	if err := s.snap.write(); err == nil {
-		t.Fatalf("expected write to fail with dir read-only")
+		t.Fatal("expected pre-rename snapshot write failure")
 	}
 
-	// Restore permissions so we can read the file back.
-	os.Chmod(dir, 0755)
 	nowBytes, err := os.ReadFile(path)
 	if err != nil {
 		t.Fatalf("read after failed write: %v", err)
 	}
 	if string(origBytes) != string(nowBytes) {
 		t.Fatalf("snapshot file was corrupted after failed write:\nbefore: %s\nafter:  %s", origBytes, nowBytes)
+	}
+}
+
+func TestSnapshotRenameFailureIsPreCommit(t *testing.T) {
+	root := t.TempDir()
+	path := filepath.Join(root, "rooms.json")
+	if err := os.Mkdir(path, 0755); err != nil {
+		t.Fatalf("create conflicting snapshot directory: %v", err)
+	}
+	markerPath := filepath.Join(path, "marker")
+	if err := os.WriteFile(markerPath, []byte("preserved"), 0644); err != nil {
+		t.Fatalf("write destination marker: %v", err)
+	}
+
+	snapshot := stateSnapshot{
+		Version: snapshotFormatVersion,
+		SavedAt: time.Now(),
+	}
+	sn := newSnapshotter(path, func() stateSnapshot { return snapshot })
+	syncCalled := false
+	sn.syncDir = func(string) error {
+		syncCalled = true
+		return nil
+	}
+	if err := sn.write(); err == nil {
+		t.Fatal("snapshot rename over a directory succeeded")
+	}
+	if syncCalled {
+		t.Fatal("directory sync ran after failed rename")
+	}
+	marker, err := os.ReadFile(markerPath)
+	if err != nil {
+		t.Fatalf("read destination marker after failed rename: %v", err)
+	}
+	if string(marker) != "preserved" {
+		t.Fatalf("rename failure changed destination marker: %q", marker)
+	}
+	if _, err := os.Stat(path + ".tmp"); !errors.Is(err, fs.ErrNotExist) {
+		t.Fatalf("temporary snapshot remains after failed rename: %v", err)
 	}
 }
 
@@ -444,7 +478,7 @@ func TestSnapshotWriteRejectsOversizeAndPreservesLastValidFile(t *testing.T) {
 	}
 
 	reloaded := newTestServer(t, path)
-	if err := reloaded.loadSnapshot(path); err != nil {
+	if _, err := reloaded.loadSnapshot(path); err != nil {
 		t.Fatalf("load preserved snapshot: %v", err)
 	}
 	if _, ok := reloaded.rooms["ORIG"]; !ok {
@@ -457,12 +491,23 @@ func TestSnapshotAtRetainedRoomCapFitsAndReloads(t *testing.T) {
 	s := newTestServer(t, path)
 	now := time.Now().UTC()
 	for _, room := range makeRoomSnapshots(maxRetainedRooms, true, now) {
+		reservations := make(map[string]peerReservation, maxRoomSize-1)
+		for index := range maxRoomSize - 1 {
+			prefix := fmt.Sprintf("G%d", index)
+			peerID := prefix + strings.Repeat("G", maxPeerIDLength-len(prefix))
+			reservations[peerID] = peerReservation{
+				verifier:    reconnectVerifier{byte(index + 1)},
+				absentSince: now.Add(-time.Minute),
+			}
+		}
 		s.rooms[room.SessionID] = &Room{
-			SessionID:      room.SessionID,
-			HostPeerID:     room.HostPeerID,
-			Peers:          map[string]*Client{},
-			CreatedAt:      room.CreatedAt,
-			LastActivityAt: room.LastActivityAt,
+			SessionID:        room.SessionID,
+			HostPeerID:       room.HostPeerID,
+			ProtocolVersion:  relayProtocolVersion,
+			peerReservations: reservations,
+			Peers:            map[string]*Client{},
+			CreatedAt:        room.CreatedAt,
+			LastActivityAt:   room.LastActivityAt,
 		}
 	}
 
@@ -479,7 +524,7 @@ func TestSnapshotAtRetainedRoomCapFitsAndReloads(t *testing.T) {
 	}
 
 	reloaded := newTestServer(t, path)
-	if err := reloaded.loadSnapshot(path); err != nil {
+	if _, err := reloaded.loadSnapshot(path); err != nil {
 		t.Fatalf("load maximum snapshot: %v", err)
 	}
 	if got := len(reloaded.rooms); got != maxRetainedRooms {
@@ -489,6 +534,9 @@ func TestSnapshotAtRetainedRoomCapFitsAndReloads(t *testing.T) {
 		room := reloaded.rooms[expected.SessionID]
 		if room == nil || room.Peers == nil {
 			t.Fatalf("room %q is not available for joins after reload", expected.SessionID)
+		}
+		if len(room.peerReservations) != maxRoomSize-1 {
+			t.Fatalf("room %q reloaded %d reservations, want %d", expected.SessionID, len(room.peerReservations), maxRoomSize-1)
 		}
 	}
 }
@@ -513,7 +561,7 @@ func TestLoadRejectsSnapshotOverRetainedRoomCapWithoutPartialState(t *testing.T)
 	}
 
 	s := newTestServer(t, path)
-	if err := s.loadSnapshot(path); err != nil {
+	if _, err := s.loadSnapshot(path); err != nil {
 		t.Fatalf("loadSnapshot: %v", err)
 	}
 	if len(s.rooms) != 0 {
@@ -553,7 +601,7 @@ func TestSnapshotDebounceCoalesces(t *testing.T) {
 
 	// Fire a burst — should collapse into one write due to debounce.
 	for i := 0; i < 20; i++ {
-		sn.schedule()
+		sn.recordMutation()
 	}
 	select {
 	case <-built:
@@ -573,6 +621,461 @@ func TestSnapshotDebounceCoalesces(t *testing.T) {
 	countMu.Unlock()
 	if got != 1 {
 		t.Fatalf("expected 1 build from burst, got %d", got)
+	}
+}
+
+func newRunningSnapshotterForTest(
+	t *testing.T,
+	persist func([]byte) error,
+) *snapshotter {
+	t.Helper()
+	sn := newSnapshotter(filepath.Join(t.TempDir(), "rooms.json"), func() stateSnapshot {
+		return stateSnapshot{Version: snapshotFormatVersion, SavedAt: time.Now()}
+	})
+	sn.persist = persist
+	go sn.run()
+	t.Cleanup(func() { _ = sn.flushAndStop(time.Second) })
+	return sn
+}
+
+func awaitTerminalOutcome(t *testing.T, sn *snapshotter, ticket *terminalMutationTicket) terminalMutationOutcome {
+	t.Helper()
+	outcome := make(chan terminalMutationOutcome, 1)
+	go func() {
+		outcome <- sn.waitForDurable(ticket)
+	}()
+	select {
+	case result := <-outcome:
+		return result
+	case <-time.After(2 * time.Second):
+		t.Fatal("timed out waiting for terminal snapshot outcome")
+		return terminalMutationOutcome{}
+	}
+}
+
+func TestSnapshotDurableWaitersCoalesce(t *testing.T) {
+	started := make(chan struct{})
+	release := make(chan struct{})
+	var startOnce sync.Once
+	var persistCalls atomic.Int64
+	sn := newRunningSnapshotterForTest(t, func([]byte) error {
+		persistCalls.Add(1)
+		startOnce.Do(func() { close(started) })
+		<-release
+		return nil
+	})
+	captureReady := make(chan struct{})
+	releaseCapture := make(chan struct{})
+	t.Cleanup(func() {
+		select {
+		case <-releaseCapture:
+		default:
+			close(releaseCapture)
+		}
+	})
+	var captureOnce sync.Once
+	sn.stateMu.Lock()
+	sn.beforeCapture = func() {
+		captureOnce.Do(func() { close(captureReady) })
+		<-releaseCapture
+	}
+	sn.stateMu.Unlock()
+
+	tickets := make([]*terminalMutationTicket, 0, 4)
+	tickets = append(tickets, sn.recordTerminalMutation(nil))
+	select {
+	case <-captureReady:
+	case <-time.After(2 * time.Second):
+		t.Fatal("writer did not reach the coalescing capture barrier")
+	}
+	for range 3 {
+		tickets = append(tickets, sn.recordTerminalMutation(nil))
+	}
+	close(releaseCapture)
+	select {
+	case <-started:
+	case <-time.After(2 * time.Second):
+		t.Fatal("coalesced snapshot did not begin persistence")
+	}
+	for _, ticket := range tickets {
+		select {
+		case <-ticket.result:
+			t.Fatal("terminal waiter completed before persistence returned")
+		default:
+		}
+	}
+	close(release)
+	for _, ticket := range tickets {
+		outcome := awaitTerminalOutcome(t, sn, ticket)
+		if outcome.err != nil || !outcome.deliver {
+			t.Fatalf("coalesced terminal outcome=%+v", outcome)
+		}
+	}
+	if got := persistCalls.Load(); got != 1 {
+		t.Fatalf("coalesced persist calls=%d, want 1", got)
+	}
+}
+
+func TestSnapshotMutationAfterCaptureRequiresFollowUp(t *testing.T) {
+	firstStarted := make(chan struct{})
+	releaseFirst := make(chan struct{})
+	secondStarted := make(chan struct{})
+	releaseSecond := make(chan struct{})
+	var calls atomic.Int64
+	sn := newRunningSnapshotterForTest(t, func([]byte) error {
+		switch calls.Add(1) {
+		case 1:
+			close(firstStarted)
+			<-releaseFirst
+		case 2:
+			close(secondStarted)
+			<-releaseSecond
+		default:
+			return errors.New("unexpected extra snapshot persistence")
+		}
+		return nil
+	})
+
+	first := sn.recordTerminalMutation(nil)
+	select {
+	case <-firstStarted:
+	case <-time.After(2 * time.Second):
+		t.Fatal("first generation did not reach persistence")
+	}
+	second := sn.recordTerminalMutation(nil)
+	close(releaseFirst)
+	if outcome := awaitTerminalOutcome(t, sn, first); outcome.err != nil {
+		t.Fatalf("first generation outcome=%+v", outcome)
+	}
+	select {
+	case <-second.result:
+		t.Fatal("later generation was acknowledged by the earlier capture")
+	default:
+	}
+	select {
+	case <-secondStarted:
+	case <-time.After(2 * time.Second):
+		t.Fatal("later generation did not require a follow-up persistence")
+	}
+	select {
+	case <-second.result:
+		t.Fatal("later generation completed before its persistence returned")
+	default:
+	}
+	close(releaseSecond)
+	if outcome := awaitTerminalOutcome(t, sn, second); outcome.err != nil {
+		t.Fatalf("second generation outcome=%+v", outcome)
+	}
+}
+
+func TestSnapshotFailureCompletesOnlyCoveredWaiters(t *testing.T) {
+	injectedErr := errors.New("covered generation failed")
+	firstStarted := make(chan struct{})
+	failFirst := make(chan struct{})
+	secondStarted := make(chan struct{})
+	releaseSecond := make(chan struct{})
+	var calls atomic.Int64
+	sn := newRunningSnapshotterForTest(t, func([]byte) error {
+		switch calls.Add(1) {
+		case 1:
+			close(firstStarted)
+			<-failFirst
+			return injectedErr
+		case 2:
+			close(secondStarted)
+			<-releaseSecond
+			return nil
+		default:
+			return errors.New("unexpected extra snapshot persistence")
+		}
+	})
+	captureReady := make(chan struct{})
+	releaseCapture := make(chan struct{})
+	t.Cleanup(func() {
+		select {
+		case <-releaseCapture:
+		default:
+			close(releaseCapture)
+		}
+	})
+	var captureOnce sync.Once
+	sn.stateMu.Lock()
+	sn.beforeCapture = func() {
+		captureOnce.Do(func() { close(captureReady) })
+		<-releaseCapture
+	}
+	sn.stateMu.Unlock()
+
+	covered := sn.recordTerminalMutation(nil)
+	select {
+	case <-captureReady:
+	case <-time.After(2 * time.Second):
+		t.Fatal("writer did not reach the failure fan-out capture barrier")
+	}
+	coveredTwo := sn.recordTerminalMutation(nil)
+	close(releaseCapture)
+	select {
+	case <-firstStarted:
+	case <-time.After(2 * time.Second):
+		t.Fatal("covered generation did not reach persistence")
+	}
+	later := sn.recordTerminalMutation(nil)
+	close(failFirst)
+	if outcome := awaitTerminalOutcome(t, sn, covered); !errors.Is(outcome.err, injectedErr) {
+		t.Fatalf("covered waiter outcome=%+v, want injected error", outcome)
+	}
+	if outcome := awaitTerminalOutcome(t, sn, coveredTwo); !errors.Is(outcome.err, injectedErr) {
+		t.Fatalf("second covered waiter outcome=%+v, want injected error", outcome)
+	}
+	select {
+	case <-later.result:
+		t.Fatal("later waiter received the covered generation's failure")
+	default:
+	}
+	select {
+	case <-secondStarted:
+	case <-time.After(2 * time.Second):
+		t.Fatal("later generation did not remain retryable")
+	}
+	close(releaseSecond)
+	if outcome := awaitTerminalOutcome(t, sn, later); outcome.err != nil {
+		t.Fatalf("later waiter outcome=%+v", outcome)
+	}
+}
+
+func TestSnapshotFailureBeforeWaitRetainsOutcome(t *testing.T) {
+	injectedErr := errors.New("failed before handler waited")
+	completed := make(chan struct{})
+	sn := newRunningSnapshotterForTest(t, func([]byte) error {
+		return injectedErr
+	})
+	ticket := sn.recordTerminalMutation(func(err error) terminalMutationOutcome {
+		close(completed)
+		return terminalMutationOutcome{err: err, deliver: true}
+	})
+	select {
+	case <-completed:
+	case <-time.After(2 * time.Second):
+		t.Fatal("writer did not complete failure before waiter registration point")
+	}
+	if outcome := awaitTerminalOutcome(t, sn, ticket); !errors.Is(outcome.err, injectedErr) {
+		t.Fatalf("late waiter outcome=%+v, want retained failure", outcome)
+	}
+}
+
+func TestSnapshotCoveredTriggerDoesNotWriteAgain(t *testing.T) {
+	var persistCalls atomic.Int64
+	persisted := make(chan struct{}, 1)
+	sn := newRunningSnapshotterForTest(t, func([]byte) error {
+		persistCalls.Add(1)
+		persisted <- struct{}{}
+		return nil
+	})
+	sn.recordMutation()
+	ticket := sn.recordTerminalMutation(nil)
+	if outcome := awaitTerminalOutcome(t, sn, ticket); outcome.err != nil {
+		t.Fatalf("terminal outcome=%+v", outcome)
+	}
+	select {
+	case <-persisted:
+	default:
+		t.Fatal("covering persistence was not observed")
+	}
+	quiet := time.NewTimer(5 * snapshotDebounce)
+	defer quiet.Stop()
+	select {
+	case <-persisted:
+		t.Fatal("covered trigger caused a trailing persistence")
+	case <-quiet.C:
+	}
+	if got := persistCalls.Load(); got != 1 {
+		t.Fatalf("covered trigger persist calls=%d, want 1", got)
+	}
+}
+
+func TestSnapshotFlushAndStopIncludesMutationDuringWrite(t *testing.T) {
+	firstStarted := make(chan struct{})
+	releaseFirst := make(chan struct{})
+	secondPersisted := make(chan struct{})
+	var calls atomic.Int64
+	sn := newSnapshotter(filepath.Join(t.TempDir(), "rooms.json"), func() stateSnapshot {
+		return stateSnapshot{Version: snapshotFormatVersion, SavedAt: time.Now()}
+	})
+	sn.persist = func([]byte) error {
+		switch calls.Add(1) {
+		case 1:
+			close(firstStarted)
+			<-releaseFirst
+		case 2:
+			close(secondPersisted)
+		default:
+			return errors.New("shutdown performed an unexpected extra persistence")
+		}
+		return nil
+	}
+	go sn.run()
+	sn.recordMutation()
+	result := make(chan error, 1)
+	go func() {
+		result <- sn.flushAndStop(2 * time.Second)
+	}()
+	select {
+	case <-firstStarted:
+	case <-time.After(2 * time.Second):
+		t.Fatal("shutdown write did not begin")
+	}
+	sn.recordMutation()
+	close(releaseFirst)
+	select {
+	case <-secondPersisted:
+	case <-time.After(2 * time.Second):
+		t.Fatal("mutation accepted during shutdown write was not persisted")
+	}
+	select {
+	case err := <-result:
+		if err != nil {
+			t.Fatalf("flushAndStop: %v", err)
+		}
+	case <-time.After(2 * time.Second):
+		t.Fatal("flushAndStop did not finish")
+	}
+}
+
+func TestSnapshotFlushAndStopFailureResolvesWaiter(t *testing.T) {
+	injectedErr := errors.New("shutdown persistence failed")
+	started := make(chan struct{})
+	release := make(chan struct{})
+	var startOnce sync.Once
+	sn := newSnapshotter(filepath.Join(t.TempDir(), "rooms.json"), func() stateSnapshot {
+		return stateSnapshot{Version: snapshotFormatVersion, SavedAt: time.Now()}
+	})
+	sn.persist = func([]byte) error {
+		startOnce.Do(func() { close(started) })
+		<-release
+		return injectedErr
+	}
+	go sn.run()
+	ticket := sn.recordTerminalMutation(nil)
+	select {
+	case <-started:
+	case <-time.After(2 * time.Second):
+		t.Fatal("terminal write did not begin")
+	}
+	flushResult := make(chan error, 1)
+	go func() {
+		flushResult <- sn.flushAndStop(2 * time.Second)
+	}()
+	close(release)
+	if outcome := awaitTerminalOutcome(t, sn, ticket); !errors.Is(outcome.err, injectedErr) {
+		t.Fatalf("shutdown waiter outcome=%+v", outcome)
+	}
+	select {
+	case err := <-flushResult:
+		if !errors.Is(err, injectedErr) {
+			t.Fatalf("flushAndStop error=%v, want %v", err, injectedErr)
+		}
+	case <-time.After(2 * time.Second):
+		t.Fatal("failed flushAndStop did not return")
+	}
+}
+
+func TestSnapshotDirectorySyncFailureIsBestEffort(t *testing.T) {
+	for _, failure := range []struct {
+		name string
+		err  error
+	}{
+		{name: "open", err: &os.PathError{Op: "open", Path: "snapshot-dir", Err: errors.New("permission denied")}},
+		{name: "sync", err: &os.PathError{Op: "sync", Path: "snapshot-dir", Err: errors.New("unsupported")}},
+		{name: "close", err: &os.PathError{Op: "close", Path: "snapshot-dir", Err: errors.New("close failed")}},
+	} {
+		t.Run(failure.name, func(t *testing.T) {
+			path := filepath.Join(t.TempDir(), "rooms.json")
+			now := time.Now().UTC()
+			snapshot := stateSnapshot{
+				Version: snapshotFormatVersion,
+				SavedAt: now,
+				Rooms: []roomSnapshot{{
+					SessionID:             "DIRSYNC",
+					HostPeerID:            "H",
+					HostReconnectVerifier: encodeReconnectVerifier(reconnectVerifier{1}),
+					CreatedAt:             now,
+					LastActivityAt:        now,
+				}},
+			}
+			data, err := json.Marshal(snapshot)
+			if err != nil {
+				t.Fatalf("marshal snapshot: %v", err)
+			}
+			sn := newSnapshotter(path, func() stateSnapshot { return snapshot })
+			sn.syncDir = func(string) error { return failure.err }
+			if err := sn.persistAtomic(data); err != nil {
+				t.Fatalf("post-rename directory sync was reported as uncommitted: %v", err)
+			}
+			replacement, err := os.ReadFile(path)
+			if err != nil {
+				t.Fatalf("read committed replacement: %v", err)
+			}
+			if !bytes.Equal(replacement, data) {
+				t.Fatal("committed replacement bytes changed")
+			}
+			if _, err := os.Stat(path + ".tmp"); !errors.Is(err, fs.ErrNotExist) {
+				t.Fatalf("temporary snapshot remains after commit: %v", err)
+			}
+			reloaded := newTestServer(t, path)
+			if _, err := reloaded.loadSnapshot(path); err != nil {
+				t.Fatalf("reload committed replacement: %v", err)
+			}
+			if reloaded.rooms["DIRSYNC"] == nil {
+				t.Fatal("committed replacement was not reloadable")
+			}
+		})
+	}
+}
+
+func TestSnapshotDirectorySyncWarningIsThrottled(t *testing.T) {
+	var output bytes.Buffer
+	previousOutput := log.Writer()
+	previousFlags := log.Flags()
+	previousPrefix := log.Prefix()
+	log.SetOutput(&output)
+	log.SetFlags(0)
+	log.SetPrefix("")
+	t.Cleanup(func() {
+		log.SetOutput(previousOutput)
+		log.SetFlags(previousFlags)
+		log.SetPrefix(previousPrefix)
+	})
+
+	path := filepath.Join(t.TempDir(), "rooms.json")
+	snapshot := stateSnapshot{Version: snapshotFormatVersion, SavedAt: time.Now()}
+	data, err := json.Marshal(snapshot)
+	if err != nil {
+		t.Fatalf("marshal snapshot: %v", err)
+	}
+	sn := newSnapshotter(path, func() stateSnapshot { return snapshot })
+	dirErr := errors.New("directory sync unsupported")
+	sn.syncDir = func(string) error { return dirErr }
+	if err := sn.persistAtomic(data); err != nil {
+		t.Fatalf("first committed replacement: %v", err)
+	}
+	if err := sn.persistAtomic(data); err != nil {
+		t.Fatalf("second committed replacement: %v", err)
+	}
+	preCommitErr := errors.New("temporary file write failed")
+	sn.persist = func([]byte) error { return preCommitErr }
+	go sn.run()
+	ticket := sn.recordTerminalMutation(nil)
+	if outcome := awaitTerminalOutcome(t, sn, ticket); !errors.Is(outcome.err, preCommitErr) {
+		t.Fatalf("pre-commit outcome=%+v", outcome)
+	}
+	_ = sn.flushAndStop(time.Second)
+
+	logs := output.String()
+	if got := strings.Count(logs, "parent directory sync failed after rename commit"); got != 1 {
+		t.Fatalf("directory-sync warning count=%d, want 1; logs=%q", got, logs)
+	}
+	if !strings.Contains(logs, "write failed before rename commit") {
+		t.Fatalf("pre-commit write failure was suppressed: %q", logs)
 	}
 }
 
@@ -718,11 +1221,11 @@ func copySnapshotForRestart(t *testing.T, source string) string {
 	t.Helper()
 	data, err := os.ReadFile(source)
 	if err != nil {
-		t.Fatalf("read crash-window snapshot: %v", err)
+		t.Fatalf("read committed restart snapshot: %v", err)
 	}
 	path := filepath.Join(t.TempDir(), "rooms.json")
 	if err := os.WriteFile(path, data, 0644); err != nil {
-		t.Fatalf("copy crash-window snapshot: %v", err)
+		t.Fatalf("copy committed restart snapshot: %v", err)
 	}
 	return path
 }
@@ -1726,13 +2229,13 @@ func TestCreateCannotReclaimReservedEmptyRoom(t *testing.T) {
 	h := newRelayHarness(t)
 	hostToken, hostVerifier := mustReconnectToken(t)
 	original := &Room{
-		SessionID:      "STALE",
-		HostPeerID:     "old-host",
-		hostVerifier:   hostVerifier,
-		peerVerifiers:  make(map[string]reconnectVerifier),
-		Peers:          map[string]*Client{},
-		CreatedAt:      time.Now().Add(-time.Minute),
-		LastActivityAt: time.Now(),
+		SessionID:        "STALE",
+		HostPeerID:       "old-host",
+		hostVerifier:     hostVerifier,
+		peerReservations: make(map[string]peerReservation),
+		Peers:            map[string]*Client{},
+		CreatedAt:        time.Now().Add(-time.Minute),
+		LastActivityAt:   time.Now(),
 	}
 	h.srv.mu.Lock()
 	h.srv.rooms["STALE"] = original
@@ -1772,14 +2275,14 @@ func TestCreateReclaimsOwnedEmptyRoomWithoutDoubleCharging(t *testing.T) {
 	for i := range maxRoomsPerIP {
 		sessionID := fmt.Sprintf("OWNED%d", i)
 		h.srv.rooms[sessionID] = &Room{
-			SessionID:      sessionID,
-			HostPeerID:     "old-host",
-			hostVerifier:   replacementVerifier,
-			peerVerifiers:  make(map[string]reconnectVerifier),
-			Peers:          map[string]*Client{},
-			quotaOwnerKey:  ownerKey,
-			CreatedAt:      now.Add(-time.Hour),
-			LastActivityAt: now,
+			SessionID:        sessionID,
+			HostPeerID:       "old-host",
+			hostVerifier:     replacementVerifier,
+			peerReservations: make(map[string]peerReservation),
+			Peers:            map[string]*Client{},
+			quotaOwnerKey:    ownerKey,
+			CreatedAt:        now.Add(-time.Hour),
+			LastActivityAt:   now,
 		}
 		if !h.srv.conns.tryCreateRoom(ownerKey) {
 			h.srv.mu.Unlock()
@@ -2322,7 +2825,7 @@ func TestReleasedGuestProbesDoNotConsumeDurableCapacity(t *testing.T) {
 	room := h.srv.rooms["PROBE_CAPACITY"]
 	h.srv.mu.RUnlock()
 	room.mu.RLock()
-	reservations := len(room.peerVerifiers)
+	reservations := len(room.peerReservations)
 	room.mu.RUnlock()
 	if reservations != 0 {
 		t.Fatalf("released probes retained %d durable reservations", reservations)
@@ -2603,13 +3106,13 @@ func TestJoinAdmissionIsAtomicWithEmptyRoomCleanup(t *testing.T) {
 	_, hostVerifier := mustReconnectToken(t)
 	now := time.Now()
 	room := &Room{
-		SessionID:      "ATOMIC_CLEANUP",
-		HostPeerID:     "H",
-		hostVerifier:   hostVerifier,
-		peerVerifiers:  make(map[string]reconnectVerifier),
-		Peers:          make(map[string]*Client),
-		CreatedAt:      now.Add(-time.Hour),
-		LastActivityAt: now.Add(-emptyRoomMaxAge - time.Second),
+		SessionID:        "ATOMIC_CLEANUP",
+		HostPeerID:       "H",
+		hostVerifier:     hostVerifier,
+		peerReservations: make(map[string]peerReservation),
+		Peers:            make(map[string]*Client),
+		CreatedAt:        now.Add(-time.Hour),
+		LastActivityAt:   now.Add(-emptyRoomMaxAge - time.Second),
 	}
 	h.srv.mu.Lock()
 	h.srv.rooms[room.SessionID] = room
@@ -2672,13 +3175,13 @@ func TestJoinAdmissionIsAtomicWithReservedRoomCreate(t *testing.T) {
 	_, hostVerifier := mustReconnectToken(t)
 	now := time.Now()
 	room := &Room{
-		SessionID:      "ATOMIC_CREATE",
-		HostPeerID:     "H",
-		hostVerifier:   hostVerifier,
-		peerVerifiers:  make(map[string]reconnectVerifier),
-		Peers:          make(map[string]*Client),
-		CreatedAt:      now,
-		LastActivityAt: now,
+		SessionID:        "ATOMIC_CREATE",
+		HostPeerID:       "H",
+		hostVerifier:     hostVerifier,
+		peerReservations: make(map[string]peerReservation),
+		Peers:            make(map[string]*Client),
+		CreatedAt:        now,
+		LastActivityAt:   now,
 	}
 	h.srv.mu.Lock()
 	h.srv.rooms[room.SessionID] = room
@@ -2995,6 +3498,15 @@ func TestStalePeerSkipsCleanupBroadcast(t *testing.T) {
 	if messages, err := g1.recvUntilClosed(2 * time.Second); err != nil {
 		t.Fatalf("displaced guest did not close: %v (frames=%v)", err, messages)
 	}
+	h.srv.mu.RLock()
+	room := h.srv.rooms["D2"]
+	room.mu.RLock()
+	reservation := room.peerReservations["G"]
+	room.mu.RUnlock()
+	h.srv.mu.RUnlock()
+	if !reservation.absentSince.IsZero() {
+		t.Fatalf("stale displaced client stamped live replacement absent at %v", reservation.absentSince)
+	}
 	host.send(clientMsg{Type: relayTypeBroadcast, Payload: json.RawMessage(`{"after":"replacement"}`)})
 	message := g2.expect(relayTypeMessage)
 	if message.From != "H" {
@@ -3015,7 +3527,7 @@ func TestDisconnectedModernGuestIdentityRejectsTheftAndAcceptsRightfulReconnect(
 	})
 	host.expectAuthority(relayTypeCreated, "H")
 
-	guestToken, _ := mustReconnectToken(t)
+	guestToken, guestVerifier := mustReconnectToken(t)
 	guest := h.dial(t, "6.1.0.11")
 	guest.send(clientMsg{
 		Type:            relayTypeJoin,
@@ -3033,6 +3545,18 @@ func TestDisconnectedModernGuestIdentityRejectsTheftAndAcceptsRightfulReconnect(
 	left := host.expect(relayTypePeerLeft)
 	if left.PeerID != "G" {
 		t.Fatalf("disconnected peerId=%q, want G", left.PeerID)
+	}
+	h.srv.mu.RLock()
+	room := h.srv.rooms["GUEST_RECONNECT"]
+	room.mu.RLock()
+	disconnectedReservation, reserved := room.peerReservations["G"]
+	room.mu.RUnlock()
+	h.srv.mu.RUnlock()
+	if !reserved || disconnectedReservation.absentSince.IsZero() {
+		t.Fatalf("authoritative disconnect reservation=%+v present=%v, want stamped absence", disconnectedReservation, reserved)
+	}
+	if !reconnectVerifierMatches(disconnectedReservation.verifier, guestVerifier) {
+		t.Fatal("authoritative disconnect changed the retained guest verifier")
 	}
 
 	thiefToken, _ := mustReconnectToken(t)
@@ -3064,9 +3588,479 @@ func TestDisconnectedModernGuestIdentityRejectsTheftAndAcceptsRightfulReconnect(
 	if rejoined.PeerID != "G" {
 		t.Fatalf("rightful reconnect event peerId=%q, want G", rejoined.PeerID)
 	}
+	h.srv.mu.RLock()
+	room = h.srv.rooms["GUEST_RECONNECT"]
+	room.mu.RLock()
+	reconnectedReservation := room.peerReservations["G"]
+	room.mu.RUnlock()
+	h.srv.mu.RUnlock()
+	if !reconnectedReservation.absentSince.IsZero() {
+		t.Fatalf("rightful reconnect retained absence timestamp %v", reconnectedReservation.absentSince)
+	}
+	if !reconnectVerifierMatches(reconnectedReservation.verifier, guestVerifier) {
+		t.Fatal("rightful reconnect changed the retained guest verifier")
+	}
 }
 
-func TestTerminalSuccessFramesFollowCrashDurableSnapshot(t *testing.T) {
+func fillDisconnectedGuestReservations(
+	t *testing.T,
+	h *relayHarness,
+	sessionID string,
+) (*testConn, *Room) {
+	t.Helper()
+	hostToken, _ := mustReconnectToken(t)
+	host := h.dial(t, "6.2.0.1")
+	host.send(clientMsg{
+		Type:            relayTypeCreate,
+		SessionID:       sessionID,
+		PeerID:          "H",
+		ReconnectToken:  hostToken,
+		ProtocolVersion: relayProtocolVersion,
+	})
+	host.expectAuthority(relayTypeCreated, "H")
+	for index := range maxRoomSize - 1 {
+		guestToken, _ := mustReconnectToken(t)
+		guest := h.dial(t, fmt.Sprintf("6.2.1.%d", index+1))
+		peerID := fmt.Sprintf("G%d", index)
+		guest.send(clientMsg{
+			Type:            relayTypeJoin,
+			SessionID:       sessionID,
+			PeerID:          peerID,
+			ReconnectToken:  guestToken,
+			ProtocolVersion: relayProtocolVersion,
+		})
+		guest.expectAuthority(relayTypeJoined, "H")
+		host.expect(relayTypePeerJoined)
+		if err := guest.conn.Close(); err != nil {
+			t.Fatalf("close guest %s: %v", peerID, err)
+		}
+		left := host.expect(relayTypePeerLeft)
+		if left.PeerID != peerID {
+			t.Fatalf("disconnect event peerId=%q, want %q", left.PeerID, peerID)
+		}
+	}
+	h.srv.mu.RLock()
+	room := h.srv.rooms[sessionID]
+	h.srv.mu.RUnlock()
+	return host, room
+}
+
+func expireDisconnectedReservations(room *Room, now time.Time) {
+	room.mu.Lock()
+	for peerID, reservation := range room.peerReservations {
+		reservation.absentSince = now.Add(-peerReservationGrace - time.Second)
+		room.peerReservations[peerID] = reservation
+	}
+	room.mu.Unlock()
+}
+
+func TestDisconnectedModernGuestReservationsExpireAndRestoreCapacity(t *testing.T) {
+	t.Run("admission prunes without cleanup tick", func(t *testing.T) {
+		h := newRelayHarness(t)
+		host, room := fillDisconnectedGuestReservations(t, h, "RESERVATION_ADMISSION")
+		freshToken, _ := mustReconnectToken(t)
+		fresh := h.dial(t, "6.2.2.1")
+		join := clientMsg{
+			Type:            relayTypeJoin,
+			SessionID:       "RESERVATION_ADMISSION",
+			PeerID:          "FRESH",
+			ReconnectToken:  freshToken,
+			ProtocolVersion: relayProtocolVersion,
+		}
+		fresh.send(join)
+		fresh.expectError(relayErrorRoomFull)
+
+		expireDisconnectedReservations(room, time.Now())
+		fresh.send(join)
+		joined := fresh.expectAuthority(relayTypeJoined, "H")
+		if joined.ReconnectToken != freshToken {
+			t.Fatal("fresh admission changed its reconnect capability")
+		}
+		host.expect(relayTypePeerJoined)
+		room.mu.RLock()
+		if len(room.peerReservations) != 1 {
+			t.Fatalf("admission-time prune retained %d reservations, want only fresh peer", len(room.peerReservations))
+		}
+		_, freshReserved := room.peerReservations["FRESH"]
+		room.mu.RUnlock()
+		if !freshReserved {
+			t.Fatal("fresh admission was not reserved")
+		}
+	})
+
+	t.Run("cleanup persists pruning and keeps active guest", func(t *testing.T) {
+		root := t.TempDir()
+		statePath := filepath.Join(root, "rooms.json")
+		h := newRelayHarnessAt(t, filepath.Join(root, "logs"), statePath)
+		host, room := fillDisconnectedGuestReservations(t, h, "RESERVATION_CLEANUP")
+		expireDisconnectedReservations(room, time.Now())
+		h.srv.runCleanupStep(time.Now())
+		room.mu.RLock()
+		if len(room.peerReservations) != 0 {
+			t.Fatalf("cleanup retained %d expired reservations", len(room.peerReservations))
+		}
+		room.mu.RUnlock()
+
+		freshToken, _ := mustReconnectToken(t)
+		fresh := h.dial(t, "6.2.2.2")
+		fresh.send(clientMsg{
+			Type:            relayTypeJoin,
+			SessionID:       "RESERVATION_CLEANUP",
+			PeerID:          "ACTIVE",
+			ReconnectToken:  freshToken,
+			ProtocolVersion: relayProtocolVersion,
+		})
+		fresh.expectAuthority(relayTypeJoined, "H")
+		host.expect(relayTypePeerJoined)
+		room.mu.Lock()
+		active := room.peerReservations["ACTIVE"]
+		active.absentSince = time.Now().Add(-peerReservationGrace - time.Second)
+		room.peerReservations["ACTIVE"] = active
+		room.mu.Unlock()
+		h.srv.runCleanupStep(time.Now())
+		room.mu.RLock()
+		_, activeReserved := room.peerReservations["ACTIVE"]
+		room.mu.RUnlock()
+		if !activeReserved {
+			t.Fatal("cleanup pruned an authoritative connected guest")
+		}
+		room.mu.Lock()
+		active = room.peerReservations["ACTIVE"]
+		active.absentSince = time.Time{}
+		room.peerReservations["ACTIVE"] = active
+		h.srv.snap.recordMutation()
+		room.mu.Unlock()
+
+		if err := h.srv.snap.flushAndStop(2 * time.Second); err != nil {
+			t.Fatalf("flush cleanup mutation: %v", err)
+		}
+		data, err := os.ReadFile(statePath)
+		if err != nil {
+			t.Fatalf("read cleanup snapshot: %v", err)
+		}
+		var snapshot stateSnapshot
+		if err := json.Unmarshal(data, &snapshot); err != nil {
+			t.Fatalf("decode cleanup snapshot: %v", err)
+		}
+		for _, persistedRoom := range snapshot.Rooms {
+			if persistedRoom.SessionID != "RESERVATION_CLEANUP" {
+				continue
+			}
+			for index := range maxRoomSize - 1 {
+				if _, retained := persistedRoom.PeerReservations[fmt.Sprintf("G%d", index)]; retained {
+					t.Fatalf("cleanup snapshot retained expired reservation G%d", index)
+				}
+			}
+		}
+	})
+}
+
+func TestAdmissionPrunePersistsWhenJoinRejected(t *testing.T) {
+	root := t.TempDir()
+	statePath := filepath.Join(root, "rooms.json")
+	h := newRelayHarnessAt(t, filepath.Join(root, "logs"), statePath)
+	_, room := fillDisconnectedGuestReservations(t, h, "REJECTED_AFTER_PRUNE")
+	expireDisconnectedReservations(room, time.Now())
+
+	wrongHostToken, _ := mustReconnectToken(t)
+	rejected := h.dial(t, "6.2.2.3")
+	rejected.send(clientMsg{
+		Type:            relayTypeJoin,
+		SessionID:       "REJECTED_AFTER_PRUNE",
+		PeerID:          "H",
+		ReconnectToken:  wrongHostToken,
+		ProtocolVersion: relayProtocolVersion,
+	})
+	rejected.expectError(relayErrorPeerIdUnavailable)
+	room.mu.RLock()
+	if len(room.peerReservations) != 0 {
+		t.Fatalf("rejected admission retained %d expired reservations", len(room.peerReservations))
+	}
+	room.mu.RUnlock()
+
+	if err := h.srv.snap.flushAndStop(2 * time.Second); err != nil {
+		t.Fatalf("flush rejected-admission prune: %v", err)
+	}
+	data, err := os.ReadFile(statePath)
+	if err != nil {
+		t.Fatalf("read rejected-admission snapshot: %v", err)
+	}
+	var snapshot stateSnapshot
+	if err := json.Unmarshal(data, &snapshot); err != nil {
+		t.Fatalf("decode rejected-admission snapshot: %v", err)
+	}
+	if len(snapshot.Rooms) != 1 || len(snapshot.Rooms[0].PeerReservations) != 0 {
+		t.Fatalf("rejected-admission snapshot retained reservations: %+v", snapshot.Rooms)
+	}
+}
+
+func TestExpiredGuestReservationLosesExclusiveClaim(t *testing.T) {
+	h := newRelayHarness(t)
+	host, room := fillDisconnectedGuestReservations(t, h, "EXPIRED_CLAIM")
+	expireDisconnectedReservations(room, time.Now())
+	room.mu.Lock()
+	if !pruneExpiredPeerReservationsLocked(room, time.Now()) {
+		room.mu.Unlock()
+		t.Fatal("expired reservations were not physically pruned")
+	}
+	h.srv.snap.recordMutation()
+	if _, retained := room.peerReservations["G0"]; retained {
+		room.mu.Unlock()
+		t.Fatal("expired peer ID remained exclusively reserved")
+	}
+	room.mu.Unlock()
+
+	freshToken, _ := mustReconnectToken(t)
+	fresh := h.dial(t, "6.2.3.1")
+	fresh.send(clientMsg{
+		Type:            relayTypeJoin,
+		SessionID:       "EXPIRED_CLAIM",
+		PeerID:          "G0",
+		ReconnectToken:  freshToken,
+		ProtocolVersion: relayProtocolVersion,
+	})
+	joined := fresh.expectAuthority(relayTypeJoined, "H")
+	if joined.ReconnectToken != freshToken {
+		t.Fatal("expired peer ID was treated as a privileged reconnect")
+	}
+	host.expect(relayTypePeerJoined)
+}
+
+func TestGuestReservationSnapshotV4Migration(t *testing.T) {
+	statePath := filepath.Join(t.TempDir(), "rooms.json")
+	now := time.Now().UTC()
+	_, hostVerifier := mustReconnectToken(t)
+	_, guestVerifier := mustReconnectToken(t)
+	legacy := stateSnapshot{
+		Version: 3,
+		SavedAt: now,
+		Rooms: []roomSnapshot{{
+			SessionID:              "V3_MIGRATION",
+			HostPeerID:             "H",
+			ProtocolVersion:        relayProtocolVersion,
+			HostReconnectVerifier:  encodeReconnectVerifier(hostVerifier),
+			PeerReconnectVerifiers: map[string]string{"G": encodeReconnectVerifier(guestVerifier)},
+			CreatedAt:              now.Add(-time.Minute),
+			LastActivityAt:         now,
+		}},
+	}
+	data, err := json.Marshal(legacy)
+	if err != nil {
+		t.Fatalf("marshal v3 fixture: %v", err)
+	}
+	if err := os.WriteFile(statePath, data, 0644); err != nil {
+		t.Fatalf("write v3 fixture: %v", err)
+	}
+
+	h := newRelayHarnessAt(t, t.TempDir(), statePath)
+	rewritten, err := os.ReadFile(statePath)
+	if err != nil {
+		t.Fatalf("read synchronous v4 rewrite: %v", err)
+	}
+	var snapshot stateSnapshot
+	if err := json.Unmarshal(rewritten, &snapshot); err != nil {
+		t.Fatalf("decode v4 rewrite: %v", err)
+	}
+	if snapshot.Version != snapshotFormatVersion {
+		t.Fatalf("rewritten version=%d, want %d", snapshot.Version, snapshotFormatVersion)
+	}
+	reservation := snapshot.Rooms[0].PeerReservations["G"]
+	if reservation.AbsentSinceUnixNano == 0 ||
+		reservation.Verifier != encodeReconnectVerifier(guestVerifier) ||
+		len(snapshot.Rooms[0].PeerReconnectVerifiers) != 0 {
+		t.Fatalf("migrated reservation=%+v legacy=%v", reservation, snapshot.Rooms[0].PeerReconnectVerifiers)
+	}
+	h.srv.mu.RLock()
+	room := h.srv.rooms["V3_MIGRATION"]
+	if room == nil {
+		h.srv.mu.RUnlock()
+		t.Fatal("migrated room was not restored")
+	}
+	room.mu.RLock()
+	runtimeReservation := room.peerReservations["G"]
+	room.mu.RUnlock()
+	h.srv.mu.RUnlock()
+	if runtimeReservation.absentSince.IsZero() {
+		t.Fatal("legacy reservation was restored as connected")
+	}
+}
+
+func TestSnapshotV2LoadsAndRewritesV4(t *testing.T) {
+	statePath := filepath.Join(t.TempDir(), "rooms.json")
+	now := time.Now().UTC()
+	_, hostVerifier := mustReconnectToken(t)
+	legacy := stateSnapshot{
+		Version: 2,
+		SavedAt: now,
+		Rooms: []roomSnapshot{{
+			SessionID:             "V2_MIGRATION",
+			HostPeerID:            "H",
+			HostReconnectVerifier: encodeReconnectVerifier(hostVerifier),
+			CreatedAt:             now.Add(-time.Minute),
+			LastActivityAt:        now,
+		}},
+	}
+	data, err := json.Marshal(legacy)
+	if err != nil {
+		t.Fatalf("marshal v2 fixture: %v", err)
+	}
+	if err := os.WriteFile(statePath, data, 0644); err != nil {
+		t.Fatalf("write v2 fixture: %v", err)
+	}
+	h := newRelayHarnessAt(t, t.TempDir(), statePath)
+	h.srv.mu.RLock()
+	room := h.srv.rooms["V2_MIGRATION"]
+	h.srv.mu.RUnlock()
+	if room == nil || !reconnectVerifierMatches(room.hostVerifier, hostVerifier) {
+		t.Fatal("v2 host authority did not load")
+	}
+	rewritten, err := os.ReadFile(statePath)
+	if err != nil {
+		t.Fatalf("read v2 rewrite: %v", err)
+	}
+	var snapshot stateSnapshot
+	if err := json.Unmarshal(rewritten, &snapshot); err != nil {
+		t.Fatalf("decode v2 rewrite: %v", err)
+	}
+	if snapshot.Version != snapshotFormatVersion {
+		t.Fatalf("v2 rewrite version=%d, want %d", snapshot.Version, snapshotFormatVersion)
+	}
+}
+
+func TestSnapshotV4RetainsGuestAbsenceAcrossRestart(t *testing.T) {
+	statePath := filepath.Join(t.TempDir(), "rooms.json")
+	now := time.Now().UTC().Truncate(time.Millisecond)
+	absentSince := now.Add(-time.Minute)
+	_, hostVerifier := mustReconnectToken(t)
+	_, guestVerifier := mustReconnectToken(t)
+	snapshot := stateSnapshot{
+		Version: snapshotFormatVersion,
+		SavedAt: now,
+		Rooms: []roomSnapshot{{
+			SessionID:             "V4_ABSENCE",
+			HostPeerID:            "H",
+			ProtocolVersion:       relayProtocolVersion,
+			HostReconnectVerifier: encodeReconnectVerifier(hostVerifier),
+			PeerReservations: map[string]peerReservationSnapshot{
+				"G": {
+					Verifier:            encodeReconnectVerifier(guestVerifier),
+					AbsentSinceUnixNano: absentSince.UnixNano(),
+				},
+			},
+			CreatedAt:      now.Add(-time.Minute),
+			LastActivityAt: now,
+		}},
+	}
+	data, err := json.Marshal(snapshot)
+	if err != nil {
+		t.Fatalf("marshal v4 fixture: %v", err)
+	}
+	if err := os.WriteFile(statePath, data, 0644); err != nil {
+		t.Fatalf("write v4 fixture: %v", err)
+	}
+
+	first := newRelayHarnessAt(t, t.TempDir(), statePath)
+	first.srv.mu.RLock()
+	room := first.srv.rooms["V4_ABSENCE"]
+	if room == nil {
+		first.srv.mu.RUnlock()
+		t.Fatal("v4 room missing after first restart")
+	}
+	room.mu.RLock()
+	firstAbsence := room.peerReservations["G"].absentSince
+	room.mu.RUnlock()
+	first.srv.mu.RUnlock()
+	if !firstAbsence.Equal(absentSince) {
+		t.Fatalf("first restart absence=%v, want %v", firstAbsence, absentSince)
+	}
+	if err := first.srv.snap.flushAndStop(2 * time.Second); err != nil {
+		t.Fatalf("flush first restart: %v", err)
+	}
+
+	second := newRelayHarnessAt(t, t.TempDir(), statePath)
+	second.srv.mu.RLock()
+	room = second.srv.rooms["V4_ABSENCE"]
+	if room == nil {
+		second.srv.mu.RUnlock()
+		t.Fatal("v4 room missing after second restart")
+	}
+	room.mu.RLock()
+	secondAbsence := room.peerReservations["G"].absentSince
+	room.mu.RUnlock()
+	second.srv.mu.RUnlock()
+	if !secondAbsence.Equal(absentSince) {
+		t.Fatalf("second restart refreshed absence=%v, want %v", secondAbsence, absentSince)
+	}
+}
+
+func TestSnapshotV4InitializesAndPrunesReservationsBeforeServing(t *testing.T) {
+	now := time.Now().UTC()
+	_, hostVerifier := mustReconnectToken(t)
+	_, connectedVerifier := mustReconnectToken(t)
+	_, expiredVerifier := mustReconnectToken(t)
+	statePath := filepath.Join(t.TempDir(), "rooms.json")
+	snapshot := stateSnapshot{
+		Version: snapshotFormatVersion,
+		SavedAt: now,
+		Rooms: []roomSnapshot{{
+			SessionID:             "V4_STARTUP",
+			HostPeerID:            "H",
+			ProtocolVersion:       relayProtocolVersion,
+			HostReconnectVerifier: encodeReconnectVerifier(hostVerifier),
+			PeerReservations: map[string]peerReservationSnapshot{
+				"CONNECTED": {Verifier: encodeReconnectVerifier(connectedVerifier)},
+				"EXPIRED": {
+					Verifier:            encodeReconnectVerifier(expiredVerifier),
+					AbsentSinceUnixNano: now.Add(-peerReservationGrace - time.Second).UnixNano(),
+				},
+			},
+			CreatedAt:      now.Add(-time.Minute),
+			LastActivityAt: now,
+		}},
+	}
+	data, err := json.Marshal(snapshot)
+	if err != nil {
+		t.Fatalf("marshal startup fixture: %v", err)
+	}
+	if err := os.WriteFile(statePath, data, 0644); err != nil {
+		t.Fatalf("write startup fixture: %v", err)
+	}
+
+	h := newRelayHarnessAt(t, t.TempDir(), statePath)
+	h.srv.mu.RLock()
+	room := h.srv.rooms["V4_STARTUP"]
+	if room == nil {
+		h.srv.mu.RUnlock()
+		t.Fatal("v4 startup room was not restored")
+	}
+	room.mu.RLock()
+	connected := room.peerReservations["CONNECTED"]
+	_, expired := room.peerReservations["EXPIRED"]
+	room.mu.RUnlock()
+	h.srv.mu.RUnlock()
+	if connected.absentSince.IsZero() {
+		t.Fatal("connected-at-capture reservation was not marked absent at startup")
+	}
+	if expired {
+		t.Fatal("already-expired reservation survived startup pruning")
+	}
+	rewritten, err := os.ReadFile(statePath)
+	if err != nil {
+		t.Fatalf("read startup rewrite: %v", err)
+	}
+	var persisted stateSnapshot
+	if err := json.Unmarshal(rewritten, &persisted); err != nil {
+		t.Fatalf("decode startup rewrite: %v", err)
+	}
+	if persisted.Rooms[0].PeerReservations["CONNECTED"].AbsentSinceUnixNano == 0 {
+		t.Fatal("startup rewrite did not persist initialized absence")
+	}
+	if _, retained := persisted.Rooms[0].PeerReservations["EXPIRED"]; retained {
+		t.Fatal("startup rewrite retained expired reservation")
+	}
+}
+
+func TestTerminalSuccessFramesFollowCommittedSnapshot(t *testing.T) {
 	t.Run("guest leave releases persisted reservation", func(t *testing.T) {
 		root := t.TempDir()
 		statePath := filepath.Join(root, "rooms.json")
@@ -3074,7 +4068,16 @@ func TestTerminalSuccessFramesFollowCrashDurableSnapshot(t *testing.T) {
 		terminalReady := make(chan struct{})
 		releaseTerminal := make(chan struct{})
 		var releaseOnce sync.Once
+		var syncCalls atomic.Int64
+		var terminalSyncBaseline atomic.Int64
+		h.srv.snap.syncDir = func(string) error {
+			syncCalls.Add(1)
+			return nil
+		}
 		h.srv.beforeTerminalDelivery = func() {
+			if syncCalls.Load() <= terminalSyncBaseline.Load() {
+				t.Error("terminal delivery preceded the covering directory-sync attempt")
+			}
 			close(terminalReady)
 			<-releaseTerminal
 		}
@@ -3089,6 +4092,7 @@ func TestTerminalSuccessFramesFollowCrashDurableSnapshot(t *testing.T) {
 			"6.1.0.20",
 			"6.1.0.21",
 		)
+		terminalSyncBaseline.Store(syncCalls.Load())
 		guest.send(clientMsg{
 			Type:            relayTypeLeave,
 			ReconnectToken:  guestToken,
@@ -3128,7 +4132,16 @@ func TestTerminalSuccessFramesFollowCrashDurableSnapshot(t *testing.T) {
 		terminalReady := make(chan struct{})
 		releaseTerminal := make(chan struct{})
 		var releaseOnce sync.Once
+		var syncCalls atomic.Int64
+		var terminalSyncBaseline atomic.Int64
+		h.srv.snap.syncDir = func(string) error {
+			syncCalls.Add(1)
+			return nil
+		}
 		h.srv.beforeTerminalDelivery = func() {
+			if syncCalls.Load() <= terminalSyncBaseline.Load() {
+				t.Error("terminal delivery preceded the covering directory-sync attempt")
+			}
 			close(terminalReady)
 			<-releaseTerminal
 		}
@@ -3143,6 +4156,7 @@ func TestTerminalSuccessFramesFollowCrashDurableSnapshot(t *testing.T) {
 			"6.1.0.23",
 			"6.1.0.24",
 		)
+		terminalSyncBaseline.Store(syncCalls.Load())
 		host.send(clientMsg{
 			Type:            relayTypeEndSession,
 			ReconnectToken:  hostToken,
@@ -3185,7 +4199,7 @@ func TestTerminalPersistenceFailureSuppressesSuccess(t *testing.T) {
 		root := t.TempDir()
 		statePath := filepath.Join(root, "rooms.json")
 		h := newRelayHarnessAt(t, filepath.Join(root, "logs"), statePath)
-		_, guest, _, guestToken := createModernRoomWithGuest(
+		host, guest, _, guestToken := createModernRoomWithGuest(
 			t,
 			h,
 			"FAILED_LEAVE",
@@ -3202,6 +4216,21 @@ func TestTerminalPersistenceFailureSuppressesSuccess(t *testing.T) {
 		failure := guest.expectError(relayErrorInvalidMessage)
 		if !strings.Contains(failure.Message, "persist") {
 			t.Fatalf("leave persistence error message=%q", failure.Message)
+		}
+		h.srv.mu.RLock()
+		room := h.srv.rooms["FAILED_LEAVE"]
+		room.mu.RLock()
+		liveClient := room.Peers["G"]
+		reservation, reserved := room.peerReservations["G"]
+		room.mu.RUnlock()
+		h.srv.mu.RUnlock()
+		if liveClient == nil || !reserved || reservation.releasePending || !reservation.absentSince.IsZero() {
+			t.Fatalf("failed leave live state client=%p reservation=%+v present=%v", liveClient, reservation, reserved)
+		}
+		guest.send(clientMsg{Type: relayTypeBroadcast, Payload: json.RawMessage(`{"after":"failed-leave"}`)})
+		message := host.expect(relayTypeMessage)
+		if message.From != "G" {
+			t.Fatalf("post-failure broadcast sender=%q, want G", message.From)
 		}
 
 		restartPath := copySnapshotForRestart(t, statePath)
@@ -3260,6 +4289,776 @@ func TestTerminalPersistenceFailureSuppressesSuccess(t *testing.T) {
 		})
 		reconnected.expectAuthority(relayTypeJoined, "H")
 	})
+}
+
+func waitForPendingReservation(t *testing.T, room *Room, peerID string) {
+	t.Helper()
+	deadline := time.Now().Add(2 * time.Second)
+	for {
+		room.mu.RLock()
+		pending := room.peerReservations[peerID].releasePending
+		room.mu.RUnlock()
+		if pending {
+			return
+		}
+		if time.Now().After(deadline) {
+			t.Fatalf("reservation %s did not enter pending release", peerID)
+		}
+		time.Sleep(time.Millisecond)
+	}
+}
+
+func makeCurrentSnapshotDurable(t *testing.T, sn *snapshotter) {
+	t.Helper()
+	ticket := sn.recordTerminalMutation(nil)
+	if outcome := awaitTerminalOutcome(t, sn, ticket); outcome.err != nil {
+		t.Fatalf("persist baseline generation: %v", outcome.err)
+	}
+}
+
+func TestLeavePersistenceFailureKeepsMembershipAuthoritative(t *testing.T) {
+	injectedErr := errors.New("leave commit failed")
+	h := newRelayHarness(t)
+	host, guest, _, guestToken := createModernRoomWithGuest(
+		t,
+		h,
+		"LEAVE_AUTHORITATIVE",
+		"6.3.0.1",
+		"6.3.0.2",
+	)
+	h.srv.mu.RLock()
+	room := h.srv.rooms["LEAVE_AUTHORITATIVE"]
+	room.mu.RLock()
+	expectedClient := room.Peers["G"]
+	expectedReservation := room.peerReservations["G"]
+	room.mu.RUnlock()
+	h.srv.mu.RUnlock()
+	makeCurrentSnapshotDurable(t, h.srv.snap)
+	h.srv.snap.writeMu.Lock()
+	originalPersist := h.srv.snap.persist
+	var calls atomic.Int64
+	h.srv.snap.persist = func(data []byte) error {
+		if calls.Add(1) == 1 {
+			return injectedErr
+		}
+		return originalPersist(data)
+	}
+	h.srv.snap.writeMu.Unlock()
+
+	guest.send(clientMsg{
+		Type:            relayTypeLeave,
+		ReconnectToken:  guestToken,
+		ProtocolVersion: relayProtocolVersion,
+	})
+	guest.expectError(relayErrorInvalidMessage)
+	h.srv.mu.RLock()
+	room = h.srv.rooms["LEAVE_AUTHORITATIVE"]
+	room.mu.RLock()
+	live := room.Peers["G"]
+	reservation := room.peerReservations["G"]
+	room.mu.RUnlock()
+	h.srv.mu.RUnlock()
+	if live != expectedClient ||
+		reservation.releasePending ||
+		!reservation.absentSince.Equal(expectedReservation.absentSince) ||
+		!reconnectVerifierMatches(reservation.verifier, expectedReservation.verifier) {
+		t.Fatalf("failed leave live client=%p want=%p reservation=%+v want=%+v", live, expectedClient, reservation, expectedReservation)
+	}
+	guest.send(clientMsg{Type: relayTypeBroadcast, Payload: json.RawMessage(`{"after":"rollback"}`)})
+	message := host.expect(relayTypeMessage)
+	if message.From != "G" {
+		t.Fatalf("post-rollback sender=%q, want G", message.From)
+	}
+}
+
+func TestSnapshotCaptureBoundaryExcludesLaterLeave(t *testing.T) {
+	injectedErr := errors.New("later leave persistence failed")
+	root := t.TempDir()
+	statePath := filepath.Join(root, "rooms.json")
+	h := newRelayHarnessAt(t, filepath.Join(root, "logs"), statePath)
+	_, guest, _, guestToken := createModernRoomWithGuest(
+		t,
+		h,
+		"CAPTURE_BOUNDARY",
+		"6.3.0.3",
+		"6.3.0.4",
+	)
+	makeCurrentSnapshotDurable(t, h.srv.snap)
+
+	h.srv.mu.RLock()
+	room := h.srv.rooms["CAPTURE_BOUNDARY"]
+	room.mu.RLock()
+	expectedClient := room.Peers["G"]
+	room.mu.RUnlock()
+	h.srv.mu.RUnlock()
+
+	captureReady := make(chan struct{})
+	releaseCapture := make(chan struct{})
+	var captureOnce sync.Once
+	h.srv.snap.stateMu.Lock()
+	h.srv.snap.afterSequenceCapture = func() {
+		captureOnce.Do(func() {
+			close(captureReady)
+			<-releaseCapture
+		})
+	}
+	h.srv.snap.stateMu.Unlock()
+	t.Cleanup(func() {
+		select {
+		case <-releaseCapture:
+		default:
+			close(releaseCapture)
+		}
+	})
+
+	leaveReachedLock := make(chan struct{})
+	var leaveOnce sync.Once
+	h.srv.beforeLeaveRoomLock = func() {
+		leaveOnce.Do(func() { close(leaveReachedLock) })
+	}
+
+	firstPayload := make(chan []byte, 1)
+	var persistCalls atomic.Int64
+	h.srv.snap.writeMu.Lock()
+	originalPersist := h.srv.snap.persist
+	h.srv.snap.persist = func(data []byte) error {
+		switch persistCalls.Add(1) {
+		case 1:
+			firstPayload <- append([]byte(nil), data...)
+			return originalPersist(data)
+		case 2:
+			return injectedErr
+		default:
+			return originalPersist(data)
+		}
+	}
+	h.srv.snap.writeMu.Unlock()
+
+	coveringTicket := h.srv.snap.recordTerminalMutation(nil)
+	select {
+	case <-captureReady:
+	case <-time.After(2 * time.Second):
+		t.Fatal("covering generation did not reach sequence boundary")
+	}
+	guest.send(clientMsg{
+		Type:            relayTypeLeave,
+		ReconnectToken:  guestToken,
+		ProtocolVersion: relayProtocolVersion,
+	})
+	select {
+	case <-leaveReachedLock:
+	case <-time.After(2 * time.Second):
+		t.Fatal("later leave did not reach the protected room mutation")
+	}
+	close(releaseCapture)
+
+	if outcome := awaitTerminalOutcome(t, h.srv.snap, coveringTicket); outcome.err != nil {
+		t.Fatalf("covering generation outcome=%+v", outcome)
+	}
+	guest.expectError(relayErrorInvalidMessage)
+
+	assertReservation := func(label string, data []byte) {
+		t.Helper()
+		var snapshot stateSnapshot
+		if err := json.Unmarshal(data, &snapshot); err != nil {
+			t.Fatalf("decode %s snapshot: %v", label, err)
+		}
+		for _, persistedRoom := range snapshot.Rooms {
+			if persistedRoom.SessionID == "CAPTURE_BOUNDARY" {
+				if _, ok := persistedRoom.PeerReservations["G"]; !ok {
+					t.Fatalf("%s snapshot omitted the later failed leave", label)
+				}
+				return
+			}
+		}
+		t.Fatalf("%s snapshot omitted the room", label)
+	}
+	select {
+	case data := <-firstPayload:
+		assertReservation("covering", data)
+	case <-time.After(2 * time.Second):
+		t.Fatal("covering persistence payload was not captured")
+	}
+	diskData, err := os.ReadFile(statePath)
+	if err != nil {
+		t.Fatalf("read snapshot after failed follow-up: %v", err)
+	}
+	assertReservation("disk", diskData)
+
+	h.srv.mu.RLock()
+	room = h.srv.rooms["CAPTURE_BOUNDARY"]
+	room.mu.RLock()
+	liveClient := room.Peers["G"]
+	reservation := room.peerReservations["G"]
+	room.mu.RUnlock()
+	h.srv.mu.RUnlock()
+	if liveClient != expectedClient || reservation.releasePending {
+		t.Fatalf("failed later leave live client=%p want=%p reservation=%+v", liveClient, expectedClient, reservation)
+	}
+}
+
+func TestLeavePendingReservationRejectsReplacement(t *testing.T) {
+	injectedErr := errors.New("first leave persistence failed")
+	root := t.TempDir()
+	statePath := filepath.Join(root, "rooms.json")
+	h := newRelayHarnessAt(t, filepath.Join(root, "logs"), statePath)
+	host, guest, _, guestToken := createModernRoomWithGuest(
+		t,
+		h,
+		"PENDING_RELEASE",
+		"6.3.1.1",
+		"6.3.1.2",
+	)
+	makeCurrentSnapshotDurable(t, h.srv.snap)
+	h.srv.mu.RLock()
+	room := h.srv.rooms["PENDING_RELEASE"]
+	h.srv.mu.RUnlock()
+
+	firstStarted := make(chan struct{})
+	failFirst := make(chan struct{})
+	secondPayload := make(chan []byte, 1)
+	releaseSecond := make(chan struct{})
+	secondCommitted := make(chan struct{})
+	var calls atomic.Int64
+	h.srv.snap.writeMu.Lock()
+	originalPersist := h.srv.snap.persist
+	h.srv.snap.persist = func(data []byte) error {
+		switch calls.Add(1) {
+		case 1:
+			close(firstStarted)
+			<-failFirst
+			return injectedErr
+		case 2:
+			secondPayload <- append([]byte(nil), data...)
+			<-releaseSecond
+			err := originalPersist(data)
+			close(secondCommitted)
+			return err
+		default:
+			return originalPersist(data)
+		}
+	}
+	h.srv.snap.writeMu.Unlock()
+	t.Cleanup(func() {
+		select {
+		case <-failFirst:
+		default:
+			close(failFirst)
+		}
+		select {
+		case <-releaseSecond:
+		default:
+			close(releaseSecond)
+		}
+	})
+
+	guest.send(clientMsg{
+		Type:            relayTypeLeave,
+		ReconnectToken:  guestToken,
+		ProtocolVersion: relayProtocolVersion,
+	})
+	select {
+	case <-firstStarted:
+	case <-time.After(2 * time.Second):
+		t.Fatal("pending leave did not reach persistence")
+	}
+	waitForPendingReservation(t, room, "G")
+
+	matching := h.dial(t, "6.3.1.3")
+	matching.send(clientMsg{
+		Type:            relayTypeJoin,
+		SessionID:       "PENDING_RELEASE",
+		PeerID:          "G",
+		ReconnectToken:  guestToken,
+		ProtocolVersion: relayProtocolVersion,
+	})
+	matching.expectError(relayErrorPeerIdUnavailable)
+	wrongToken, _ := mustReconnectToken(t)
+	wrong := h.dial(t, "6.3.1.4")
+	wrong.send(clientMsg{
+		Type:            relayTypeJoin,
+		SessionID:       "PENDING_RELEASE",
+		PeerID:          "G",
+		ReconnectToken:  wrongToken,
+		ProtocolVersion: relayProtocolVersion,
+	})
+	wrong.expectError(relayErrorPeerIdUnavailable)
+
+	laterToken, _ := mustReconnectToken(t)
+	later := h.dial(t, "6.3.1.5")
+	later.send(clientMsg{
+		Type:            relayTypeJoin,
+		SessionID:       "PENDING_RELEASE",
+		PeerID:          "LATER",
+		ReconnectToken:  laterToken,
+		ProtocolVersion: relayProtocolVersion,
+	})
+	later.expectAuthority(relayTypeJoined, "H")
+	host.expect(relayTypePeerJoined)
+	if joined := guest.expect(relayTypePeerJoined); joined.PeerID != "LATER" {
+		t.Fatalf("pending guest join notification peerId=%q, want LATER", joined.PeerID)
+	}
+
+	close(failFirst)
+	guest.expectError(relayErrorInvalidMessage)
+	var corrected []byte
+	select {
+	case corrected = <-secondPayload:
+	case <-time.After(2 * time.Second):
+		t.Fatal("queued generation did not capture after leave rollback")
+	}
+	var correctedSnapshot stateSnapshot
+	if err := json.Unmarshal(corrected, &correctedSnapshot); err != nil {
+		t.Fatalf("decode corrected snapshot: %v", err)
+	}
+	foundRestored := false
+	for _, persistedRoom := range correctedSnapshot.Rooms {
+		if persistedRoom.SessionID == "PENDING_RELEASE" {
+			_, foundRestored = persistedRoom.PeerReservations["G"]
+		}
+	}
+	if !foundRestored {
+		t.Fatal("queued generation captured pending omission before rollback")
+	}
+	close(releaseSecond)
+	select {
+	case <-secondCommitted:
+	case <-time.After(2 * time.Second):
+		t.Fatal("corrected follow-up snapshot did not commit")
+	}
+
+	h.srv.snap.writeMu.Lock()
+	h.srv.snap.persist = originalPersist
+	h.srv.snap.writeMu.Unlock()
+	guest.send(clientMsg{
+		Type:            relayTypeLeave,
+		ReconnectToken:  guestToken,
+		ProtocolVersion: relayProtocolVersion,
+	})
+	guest.expect(relayTypeLeft)
+	left := host.expect(relayTypePeerLeft)
+	if left.PeerID != "G" {
+		t.Fatalf("retry peerLeft=%q, want G", left.PeerID)
+	}
+	if err := h.srv.snap.flushAndStop(2 * time.Second); err != nil {
+		t.Fatalf("flush retry result: %v", err)
+	}
+	restarted := newRelayHarnessAt(t, t.TempDir(), statePath)
+	freshToken, _ := mustReconnectToken(t)
+	fresh := restarted.dial(t, "6.3.1.6")
+	fresh.send(clientMsg{
+		Type:            relayTypeJoin,
+		SessionID:       "PENDING_RELEASE",
+		PeerID:          "G",
+		ReconnectToken:  freshToken,
+		ProtocolVersion: relayProtocolVersion,
+	})
+	joined := fresh.expectAuthority(relayTypeJoined, "H")
+	if joined.ReconnectToken != freshToken {
+		t.Fatal("restart restored the released reservation")
+	}
+}
+
+func TestLeaveRetryAfterPersistenceFailure(t *testing.T) {
+	injectedErr := errors.New("retryable leave failure")
+	h := newRelayHarness(t)
+	host, guest, _, guestToken := createModernRoomWithGuest(
+		t,
+		h,
+		"LEAVE_RETRY",
+		"6.3.2.1",
+		"6.3.2.2",
+	)
+	makeCurrentSnapshotDurable(t, h.srv.snap)
+	h.srv.snap.writeMu.Lock()
+	originalPersist := h.srv.snap.persist
+	var failed atomic.Bool
+	h.srv.snap.persist = func(data []byte) error {
+		if failed.CompareAndSwap(false, true) {
+			return injectedErr
+		}
+		return originalPersist(data)
+	}
+	h.srv.snap.writeMu.Unlock()
+
+	leave := clientMsg{
+		Type:            relayTypeLeave,
+		ReconnectToken:  guestToken,
+		ProtocolVersion: relayProtocolVersion,
+	}
+	guest.send(leave)
+	guest.expectError(relayErrorInvalidMessage)
+	guest.send(leave)
+	guest.expect(relayTypeLeft)
+	left := host.expect(relayTypePeerLeft)
+	if left.PeerID != "G" {
+		t.Fatalf("retry peerLeft=%q, want G", left.PeerID)
+	}
+}
+
+func TestLeaveFailurePreservesNewerActivity(t *testing.T) {
+	injectedErr := errors.New("activity-preserving leave failure")
+	h := newRelayHarness(t)
+	host, guest, _, guestToken := createModernRoomWithGuest(
+		t,
+		h,
+		"LEAVE_ACTIVITY",
+		"6.3.3.1",
+		"6.3.3.2",
+	)
+	otherToken, _ := mustReconnectToken(t)
+	other := h.dial(t, "6.3.3.3")
+	other.send(clientMsg{
+		Type:            relayTypeJoin,
+		SessionID:       "LEAVE_ACTIVITY",
+		PeerID:          "OTHER",
+		ReconnectToken:  otherToken,
+		ProtocolVersion: relayProtocolVersion,
+	})
+	other.expectAuthority(relayTypeJoined, "H")
+	host.expect(relayTypePeerJoined)
+	if joined := guest.expect(relayTypePeerJoined); joined.PeerID != "OTHER" {
+		t.Fatalf("leave guest join notification peerId=%q, want OTHER", joined.PeerID)
+	}
+	makeCurrentSnapshotDurable(t, h.srv.snap)
+	h.srv.mu.RLock()
+	room := h.srv.rooms["LEAVE_ACTIVITY"]
+	h.srv.mu.RUnlock()
+
+	started := make(chan struct{})
+	fail := make(chan struct{})
+	var first atomic.Bool
+	h.srv.snap.writeMu.Lock()
+	originalPersist := h.srv.snap.persist
+	h.srv.snap.persist = func(data []byte) error {
+		if first.CompareAndSwap(false, true) {
+			close(started)
+			<-fail
+			return injectedErr
+		}
+		return originalPersist(data)
+	}
+	h.srv.snap.writeMu.Unlock()
+	t.Cleanup(func() {
+		select {
+		case <-fail:
+		default:
+			close(fail)
+		}
+	})
+
+	guest.send(clientMsg{
+		Type:            relayTypeLeave,
+		ReconnectToken:  guestToken,
+		ProtocolVersion: relayProtocolVersion,
+	})
+	select {
+	case <-started:
+	case <-time.After(2 * time.Second):
+		t.Fatal("leave did not reach blocked persistence")
+	}
+	time.Sleep(time.Millisecond)
+	host.send(clientMsg{
+		Type:    relayTypeSendTo,
+		To:      "OTHER",
+		Payload: json.RawMessage(`{"during":"leave"}`),
+	})
+	other.expect(relayTypeMessage)
+	room.mu.RLock()
+	newerActivity := room.LastActivityAt
+	room.mu.RUnlock()
+	close(fail)
+	guest.expectError(relayErrorInvalidMessage)
+	room.mu.RLock()
+	afterFailure := room.LastActivityAt
+	room.mu.RUnlock()
+	if !afterFailure.Equal(newerActivity) {
+		t.Fatalf("leave rollback activity=%v, want concurrent activity %v", afterFailure, newerActivity)
+	}
+}
+
+func TestLeaveEndSessionRaceDoesNotResurrectRoom(t *testing.T) {
+	injectedErr := errors.New("leave attempt failed before room end")
+	root := t.TempDir()
+	statePath := filepath.Join(root, "rooms.json")
+	h := newRelayHarnessAt(t, filepath.Join(root, "logs"), statePath)
+	host, guest, hostToken, guestToken := createModernRoomWithGuest(
+		t,
+		h,
+		"LEAVE_END_RACE",
+		"6.3.4.1",
+		"6.3.4.2",
+	)
+	makeCurrentSnapshotDurable(t, h.srv.snap)
+	started := make(chan struct{})
+	fail := make(chan struct{})
+	var first atomic.Bool
+	h.srv.snap.writeMu.Lock()
+	originalPersist := h.srv.snap.persist
+	h.srv.snap.persist = func(data []byte) error {
+		if first.CompareAndSwap(false, true) {
+			close(started)
+			<-fail
+			return injectedErr
+		}
+		return originalPersist(data)
+	}
+	h.srv.snap.writeMu.Unlock()
+	t.Cleanup(func() {
+		select {
+		case <-fail:
+		default:
+			close(fail)
+		}
+	})
+
+	guest.send(clientMsg{
+		Type:            relayTypeLeave,
+		ReconnectToken:  guestToken,
+		ProtocolVersion: relayProtocolVersion,
+	})
+	select {
+	case <-started:
+	case <-time.After(2 * time.Second):
+		t.Fatal("leave did not reach blocked persistence")
+	}
+	host.send(clientMsg{
+		Type:            relayTypeEndSession,
+		ReconnectToken:  hostToken,
+		ProtocolVersion: relayProtocolVersion,
+	})
+	deadline := time.Now().Add(2 * time.Second)
+	for {
+		h.srv.mu.RLock()
+		_, discoverable := h.srv.rooms["LEAVE_END_RACE"]
+		h.srv.mu.RUnlock()
+		if !discoverable {
+			break
+		}
+		if time.Now().After(deadline) {
+			t.Fatal("endSession did not win room authority")
+		}
+		time.Sleep(time.Millisecond)
+	}
+	close(fail)
+	host.expect(relayTypeEnded)
+	messages, err := guest.recvUntilClosed(2 * time.Second)
+	if err != nil {
+		t.Fatalf("guest remained connected after endSession won: %v (frames=%v)", err, messages)
+	}
+	if len(messages) != 1 || messages[0].Type != relayTypeEnded {
+		t.Fatalf("leave/end race terminal frames=%+v, want only ended", messages)
+	}
+	h.srv.mu.RLock()
+	_, resurrected := h.srv.rooms["LEAVE_END_RACE"]
+	h.srv.mu.RUnlock()
+	if resurrected {
+		t.Fatal("leave rollback resurrected ended room")
+	}
+	restarted := newRelayHarnessAt(t, t.TempDir(), statePath)
+	probe := restarted.dial(t, "6.3.4.3")
+	probe.send(clientMsg{
+		Type:            relayTypeJoin,
+		SessionID:       "LEAVE_END_RACE",
+		PeerID:          "H",
+		ReconnectToken:  hostToken,
+		ProtocolVersion: relayProtocolVersion,
+	})
+	probe.expectError(relayErrorRoomNotFound)
+}
+
+func TestConcurrentTerminalMutationsShareCommittedSnapshot(t *testing.T) {
+	h := newRelayHarness(t)
+	hostOne, guestOne, _, guestOneToken := createModernRoomWithGuest(
+		t,
+		h,
+		"TERMINAL_ONE",
+		"6.3.5.1",
+		"6.3.5.2",
+	)
+	hostTwo, guestTwo, hostTwoToken, _ := createModernRoomWithGuest(
+		t,
+		h,
+		"TERMINAL_TWO",
+		"6.3.5.3",
+		"6.3.5.4",
+	)
+	makeCurrentSnapshotDurable(t, h.srv.snap)
+
+	captureReady := make(chan struct{})
+	releaseCapture := make(chan struct{})
+	var captureOnce sync.Once
+	h.srv.snap.stateMu.Lock()
+	h.srv.snap.beforeCapture = func() {
+		captureOnce.Do(func() { close(captureReady) })
+		<-releaseCapture
+	}
+	h.srv.snap.stateMu.Unlock()
+	persistedPayloads := make(chan []byte, 2)
+	var persistCalls atomic.Int64
+	h.srv.snap.writeMu.Lock()
+	originalPersist := h.srv.snap.persist
+	h.srv.snap.persist = func(data []byte) error {
+		persistCalls.Add(1)
+		persistedPayloads <- append([]byte(nil), data...)
+		return originalPersist(data)
+	}
+	h.srv.snap.writeMu.Unlock()
+	t.Cleanup(func() {
+		select {
+		case <-releaseCapture:
+		default:
+			close(releaseCapture)
+		}
+	})
+
+	guestOne.send(clientMsg{
+		Type:            relayTypeLeave,
+		ReconnectToken:  guestOneToken,
+		ProtocolVersion: relayProtocolVersion,
+	})
+	select {
+	case <-captureReady:
+	case <-time.After(2 * time.Second):
+		t.Fatal("first terminal mutation did not reach capture barrier")
+	}
+	hostTwo.send(clientMsg{
+		Type:            relayTypeEndSession,
+		ReconnectToken:  hostTwoToken,
+		ProtocolVersion: relayProtocolVersion,
+	})
+	deadline := time.Now().Add(2 * time.Second)
+	for {
+		h.srv.mu.RLock()
+		_, secondDiscoverable := h.srv.rooms["TERMINAL_TWO"]
+		h.srv.mu.RUnlock()
+		if !secondDiscoverable {
+			break
+		}
+		if time.Now().After(deadline) {
+			t.Fatal("second terminal mutation did not stage before capture")
+		}
+		time.Sleep(time.Millisecond)
+	}
+	close(releaseCapture)
+
+	guestOne.expect(relayTypeLeft)
+	if left := hostOne.expect(relayTypePeerLeft); left.PeerID != "G" {
+		t.Fatalf("coalesced leave peerId=%q, want G", left.PeerID)
+	}
+	hostTwo.expect(relayTypeEnded)
+	messages, err := guestTwo.recvUntilClosed(2 * time.Second)
+	if err != nil {
+		t.Fatalf("coalesced end did not close guest: %v (frames=%v)", err, messages)
+	}
+	if len(messages) != 1 || messages[0].Type != relayTypeEnded {
+		t.Fatalf("coalesced end frames=%+v", messages)
+	}
+	if got := persistCalls.Load(); got != 1 {
+		t.Fatalf("coalesced terminal persist calls=%d, want 1", got)
+	}
+	var persisted stateSnapshot
+	select {
+	case data := <-persistedPayloads:
+		if err := json.Unmarshal(data, &persisted); err != nil {
+			t.Fatalf("decode coalesced terminal snapshot: %v", err)
+		}
+	default:
+		t.Fatal("coalesced terminal persistence did not expose its payload")
+	}
+	foundFirst := false
+	for _, persistedRoom := range persisted.Rooms {
+		switch persistedRoom.SessionID {
+		case "TERMINAL_ONE":
+			foundFirst = true
+			if _, retained := persistedRoom.PeerReservations["G"]; retained {
+				t.Fatal("coalesced leave snapshot retained released reservation")
+			}
+		case "TERMINAL_TWO":
+			t.Fatal("coalesced end snapshot retained ended room")
+		}
+	}
+	if !foundFirst {
+		t.Fatal("coalesced snapshot omitted surviving first room")
+	}
+}
+
+func TestRelayTrafficDoesNotScheduleSnapshots(t *testing.T) {
+	h := newRelayHarness(t)
+	host, guest, _, _ := createModernRoomWithGuest(
+		t,
+		h,
+		"TRAFFIC_NO_CHURN",
+		"6.3.6.1",
+		"6.3.6.2",
+	)
+	makeCurrentSnapshotDurable(t, h.srv.snap)
+	var persistCalls atomic.Int64
+	h.srv.snap.writeMu.Lock()
+	originalPersist := h.srv.snap.persist
+	h.srv.snap.persist = func(data []byte) error {
+		persistCalls.Add(1)
+		return originalPersist(data)
+	}
+	h.srv.snap.writeMu.Unlock()
+
+	for index := range 20 {
+		host.send(clientMsg{
+			Type:    relayTypeBroadcast,
+			Payload: json.RawMessage(fmt.Sprintf(`{"index":%d}`, index)),
+		})
+		message := guest.expect(relayTypeMessage)
+		if message.From != "H" {
+			t.Fatalf("traffic sender=%q, want H", message.From)
+		}
+	}
+	time.Sleep(5 * snapshotDebounce)
+	if got := persistCalls.Load(); got != 0 {
+		t.Fatalf("high-frequency relay traffic scheduled %d snapshot writes", got)
+	}
+}
+
+func TestLeaveDirectorySyncFailureCommitsRelease(t *testing.T) {
+	root := t.TempDir()
+	statePath := filepath.Join(root, "rooms.json")
+	h := newRelayHarnessAt(t, filepath.Join(root, "logs"), statePath)
+	host, guest, _, guestToken := createModernRoomWithGuest(
+		t,
+		h,
+		"DIRSYNC_LEAVE",
+		"6.3.7.1",
+		"6.3.7.2",
+	)
+	makeCurrentSnapshotDurable(t, h.srv.snap)
+	h.srv.snap.syncDir = func(string) error {
+		return errors.New("directory sync unsupported")
+	}
+	guest.send(clientMsg{
+		Type:            relayTypeLeave,
+		ReconnectToken:  guestToken,
+		ProtocolVersion: relayProtocolVersion,
+	})
+	guest.expect(relayTypeLeft)
+	if left := host.expect(relayTypePeerLeft); left.PeerID != "G" {
+		t.Fatalf("directory-sync degraded leave peerId=%q, want G", left.PeerID)
+	}
+	if err := h.srv.snap.flushAndStop(2 * time.Second); err != nil {
+		t.Fatalf("post-rename directory-sync warning failed committed leave: %v", err)
+	}
+	restarted := newRelayHarnessAt(t, t.TempDir(), statePath)
+	freshToken, _ := mustReconnectToken(t)
+	fresh := restarted.dial(t, "6.3.7.3")
+	fresh.send(clientMsg{
+		Type:            relayTypeJoin,
+		SessionID:       "DIRSYNC_LEAVE",
+		PeerID:          "G",
+		ReconnectToken:  freshToken,
+		ProtocolVersion: relayProtocolVersion,
+	})
+	joined := fresh.expectAuthority(relayTypeJoined, "H")
+	if joined.ReconnectToken != freshToken {
+		t.Fatal("restart restored a release committed before directory-sync warning")
+	}
 }
 
 func TestAuthenticatedModernGuestLeaveReleasesIdentity(t *testing.T) {
@@ -3846,12 +5645,277 @@ func TestLogResponseTransmissionReleasesLookupSlotAndUsesDeadline(t *testing.T) 
 	case <-time.After(time.Second):
 		t.Fatal("log handler did not finish after writer release")
 	}
+	writer.mu.Lock()
+	deadlines = append(deadlines[:0], writer.deadlines...)
+	writer.mu.Unlock()
+	if len(deadlines) != 1 || deadlines[0].IsZero() {
+		t.Fatalf("handler changed response deadline after writing: %v", deadlines)
+	}
 	if !strings.Contains(output.String(), "logs: response write failed") {
 		t.Fatalf("write failure was not observed: %q", output.String())
 	}
 	if strings.Contains(output.String(), id) {
 		t.Fatalf("write failure leaked log capability %q", id)
 	}
+}
+
+type logDeadlineObservation struct {
+	sequence uint64
+	deadline time.Time
+}
+
+type logResponseWriteObservation struct {
+	handlerReturned  bool
+	deadline         time.Time
+	deadlineSequence uint64
+}
+
+type logDeadlineConn struct {
+	net.Conn
+	handlerReturned  <-chan struct{}
+	writeStarted     chan logResponseWriteObservation
+	releaseWrite     <-chan struct{}
+	blockFirstWrite  sync.Once
+	mu               sync.Mutex
+	deadline         time.Time
+	deadlineSequence uint64
+	deadlineChanged  chan logDeadlineObservation
+}
+
+func (c *logDeadlineConn) SetWriteDeadline(deadline time.Time) error {
+	if err := c.Conn.SetWriteDeadline(deadline); err != nil {
+		return err
+	}
+	c.mu.Lock()
+	c.deadline = deadline
+	c.deadlineSequence++
+	observation := logDeadlineObservation{
+		sequence: c.deadlineSequence,
+		deadline: deadline,
+	}
+	c.mu.Unlock()
+	c.deadlineChanged <- observation
+	return nil
+}
+
+func (c *logDeadlineConn) Write(p []byte) (int, error) {
+	c.blockFirstWrite.Do(func() {
+		c.mu.Lock()
+		observation := logResponseWriteObservation{
+			deadline:         c.deadline,
+			deadlineSequence: c.deadlineSequence,
+		}
+		c.mu.Unlock()
+		select {
+		case <-c.handlerReturned:
+			observation.handlerReturned = true
+		default:
+		}
+		c.writeStarted <- observation
+		<-c.releaseWrite
+	})
+	return c.Conn.Write(p)
+}
+
+type logDeadlineListener struct {
+	net.Listener
+	handlerReturned <-chan struct{}
+	accepted        chan *logDeadlineConn
+	releaseWrite    <-chan struct{}
+}
+
+func (l *logDeadlineListener) Accept() (net.Conn, error) {
+	conn, err := l.Listener.Accept()
+	if err != nil {
+		return nil, err
+	}
+	wrapped := &logDeadlineConn{
+		Conn:            conn,
+		handlerReturned: l.handlerReturned,
+		writeStarted:    make(chan logResponseWriteObservation, 1),
+		releaseWrite:    l.releaseWrite,
+		deadlineChanged: make(chan logDeadlineObservation, 16),
+	}
+	l.accepted <- wrapped
+	return wrapped, nil
+}
+
+func assertLogResponseDeadlineLifecycle(
+	t *testing.T,
+	present bool,
+	wantStatus int,
+	wantBody string,
+) {
+	t.Helper()
+	logs := newLogStore(t.TempDir())
+	id := strings.Repeat("a", logIDLength)
+	if present {
+		var err error
+		id, _, err = logs.store([]byte(wantBody), time.Now())
+		if err != nil {
+			t.Fatalf("store log: %v", err)
+		}
+	}
+	srv := &Server{
+		logs:       logs,
+		logLookups: make(chan struct{}, 1),
+		clientIPs:  newClientIPResolver(nil),
+	}
+
+	handlerReturned := make(chan struct{})
+	mux := http.NewServeMux()
+	mux.HandleFunc("/logs/", func(w http.ResponseWriter, r *http.Request) {
+		srv.handleGetLogs(w, r)
+		close(handlerReturned)
+	})
+	mux.HandleFunc("/health", func(w http.ResponseWriter, _ *http.Request) {
+		_, _ = io.WriteString(w, "ok")
+	})
+
+	baseListener, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatalf("listen: %v", err)
+	}
+	releaseFirstWrite := make(chan struct{})
+	listener := &logDeadlineListener{
+		Listener:        baseListener,
+		handlerReturned: handlerReturned,
+		accepted:        make(chan *logDeadlineConn, 1),
+		releaseWrite:    releaseFirstWrite,
+	}
+	httpServer := newHTTPServer(listener.Addr().String(), mux)
+	serveDone := make(chan error, 1)
+	go func() {
+		serveDone <- httpServer.Serve(listener)
+	}()
+
+	var releaseWrite sync.Once
+	release := func() {
+		releaseWrite.Do(func() { close(releaseFirstWrite) })
+	}
+	t.Cleanup(func() {
+		release()
+		_ = httpServer.Close()
+		_ = listener.Close()
+		<-serveDone
+	})
+
+	clientConn, err := net.Dial("tcp", listener.Addr().String())
+	if err != nil {
+		t.Fatalf("dial: %v", err)
+	}
+	defer clientConn.Close()
+
+	var trackedConn *logDeadlineConn
+	select {
+	case trackedConn = <-listener.accepted:
+	case <-time.After(time.Second):
+		t.Fatal("server did not accept HTTP connection")
+	}
+
+	request, err := http.NewRequest(
+		http.MethodGet,
+		"http://"+listener.Addr().String()+"/logs/"+id,
+		nil,
+	)
+	if err != nil {
+		t.Fatalf("new log request: %v", err)
+	}
+	if err := request.Write(clientConn); err != nil {
+		t.Fatalf("write log request: %v", err)
+	}
+
+	var writeObservation logResponseWriteObservation
+	select {
+	case writeObservation = <-trackedConn.writeStarted:
+	case <-time.After(time.Second):
+		t.Fatal("response did not reach blocked final flush")
+	}
+	if !writeObservation.handlerReturned {
+		t.Fatal("response reached network before log handler returned")
+	}
+	if writeObservation.deadline.IsZero() {
+		t.Fatal("final response flush had no write deadline")
+	}
+	remaining := time.Until(writeObservation.deadline)
+	if remaining <= 0 || remaining > httpResponseWriteTimeout {
+		t.Fatalf(
+			"final flush deadline remaining=%v, want within (0, %v]",
+			remaining,
+			httpResponseWriteTimeout,
+		)
+	}
+	release()
+
+	reader := bufio.NewReader(clientConn)
+	response, err := http.ReadResponse(reader, request)
+	if err != nil {
+		t.Fatalf("read log response: %v", err)
+	}
+	body, err := io.ReadAll(response.Body)
+	response.Body.Close()
+	if err != nil {
+		t.Fatalf("read log response body: %v", err)
+	}
+	if response.StatusCode != wantStatus || string(body) != wantBody {
+		t.Fatalf(
+			"log response=(status=%d, body=%q), want (%d, %q)",
+			response.StatusCode,
+			body,
+			wantStatus,
+			wantBody,
+		)
+	}
+
+	cleared := false
+	timer := time.NewTimer(time.Second)
+	defer timer.Stop()
+	for !cleared {
+		select {
+		case observation := <-trackedConn.deadlineChanged:
+			cleared = observation.sequence > writeObservation.deadlineSequence &&
+				observation.deadline.IsZero()
+		case <-timer.C:
+			t.Fatal("net/http did not clear the response write deadline after final flush")
+		}
+	}
+
+	healthRequest, err := http.NewRequest(
+		http.MethodGet,
+		"http://"+listener.Addr().String()+"/health",
+		nil,
+	)
+	if err != nil {
+		t.Fatalf("new keep-alive request: %v", err)
+	}
+	if err := healthRequest.Write(clientConn); err != nil {
+		t.Fatalf("write keep-alive request: %v", err)
+	}
+	healthResponse, err := http.ReadResponse(reader, healthRequest)
+	if err != nil {
+		t.Fatalf("read keep-alive response: %v", err)
+	}
+	healthBody, err := io.ReadAll(healthResponse.Body)
+	healthResponse.Body.Close()
+	if err != nil {
+		t.Fatalf("read keep-alive response body: %v", err)
+	}
+	if healthResponse.StatusCode != http.StatusOK || string(healthBody) != "ok" {
+		t.Fatalf(
+			"keep-alive response=(status=%d, body=%q), want (200, %q)",
+			healthResponse.StatusCode,
+			healthBody,
+			"ok",
+		)
+	}
+}
+
+func TestLogResponseDeadlineSurvivesFinalFlush(t *testing.T) {
+	assertLogResponseDeadlineLifecycle(t, true, http.StatusOK, "diagnostic")
+}
+
+func TestLogResponseDeadlineCoversBufferedErrorResponse(t *testing.T) {
+	assertLogResponseDeadlineLifecycle(t, false, http.StatusNotFound, "Not found\n")
 }
 
 func TestHTTPServerWriteTimeoutCoversOAuthResultLongPoll(t *testing.T) {
@@ -5272,10 +7336,14 @@ func TestPosterStoreUnknownCleanupDebtDoesNotBlockUploadAndRecovers(t *testing.T
 		t.Fatalf("failed cleanup error=%v, want permission error", err)
 	}
 	ps.mu.RLock()
-	unknownPending := ps.unknownPending
+	pending, exists := ps.pendingRemovals[filepath.Base(unknownPath)]
+	pendingBytes := ps.pendingBytes
 	ps.mu.RUnlock()
-	if unknownPending != 1 {
-		t.Fatalf("unknown debt count=%d, want 1", unknownPending)
+	if !exists || pending.sizeKnown {
+		t.Fatalf("unknown debt entry=(%+v, exists=%v), want present with unknown size", pending, exists)
+	}
+	if pendingBytes != 0 {
+		t.Fatalf("unknown debt consumed %d known pending bytes", pendingBytes)
 	}
 
 	remover.recover(unknownPath)
@@ -5283,11 +7351,11 @@ func TestPosterStoreUnknownCleanupDebtDoesNotBlockUploadAndRecovers(t *testing.T
 		t.Fatalf("cleanup after recovery: %v", err)
 	}
 	ps.mu.RLock()
-	unknownPending = ps.unknownPending
 	pendingCount := len(ps.pendingRemovals)
+	pendingBytes = ps.pendingBytes
 	ps.mu.RUnlock()
-	if unknownPending != 0 || pendingCount != 0 {
-		t.Fatalf("recovered debt remains: unknown=%d pending=%d", unknownPending, pendingCount)
+	if pendingCount != 0 || pendingBytes != 0 {
+		t.Fatalf("recovered debt remains: pending=%d bytes=%d", pendingCount, pendingBytes)
 	}
 	if _, err := os.Stat(unknownPath); !errors.Is(err, fs.ErrNotExist) {
 		t.Fatalf("unknown artifact remains after recovery: %v", err)
@@ -5572,7 +7640,7 @@ func TestSnapshotSurvivesRestartWithHostAuthority(t *testing.T) {
 	duplicateCreate.expectError(relayErrorRoomExists)
 }
 
-func TestSnapshotV3RetainsModernHostAndGuestVerifiersAcrossRestart(t *testing.T) {
+func TestSnapshotV4RetainsModernHostAndGuestReservationsAcrossRestart(t *testing.T) {
 	stateFile := filepath.Join(t.TempDir(), "rooms.json")
 	hA := newRelayHarnessAt(t, t.TempDir(), stateFile)
 
@@ -5607,15 +7675,15 @@ func TestSnapshotV3RetainsModernHostAndGuestVerifiersAcrossRestart(t *testing.T)
 		t.Fatalf("pre-snapshot disconnect peerId=%q, want G", left.PeerID)
 	}
 	if err := hA.srv.snap.flushAndStop(2 * time.Second); err != nil {
-		t.Fatalf("flush snapshot v3: %v", err)
+		t.Fatalf("flush snapshot v4: %v", err)
 	}
 	snapshotBytes, err := os.ReadFile(stateFile)
 	if err != nil {
-		t.Fatalf("read snapshot v3: %v", err)
+		t.Fatalf("read snapshot v4: %v", err)
 	}
-	if !bytes.Contains(snapshotBytes, []byte(`"version":3`)) ||
-		!bytes.Contains(snapshotBytes, []byte(`"peerReconnectVerifiers"`)) {
-		t.Fatalf("snapshot omitted v3 guest verifier state: %s", snapshotBytes)
+	if !bytes.Contains(snapshotBytes, []byte(`"version":4`)) ||
+		!bytes.Contains(snapshotBytes, []byte(`"peerReservations"`)) {
+		t.Fatalf("snapshot omitted v4 guest reservation state: %s", snapshotBytes)
 	}
 	if bytes.Contains(snapshotBytes, []byte(hostToken)) || bytes.Contains(snapshotBytes, []byte(guestToken)) {
 		t.Fatal("snapshot persisted a raw reconnect capability")

@@ -33,6 +33,7 @@ const (
 	rateSustained              = 10
 	cleanupInterval            = 5 * time.Minute
 	emptyRoomMaxAge            = 5 * time.Minute
+	peerReservationGrace       = emptyRoomMaxAge
 	roomMaxAge                 = 24 * time.Hour
 	writeWait                  = 10 * time.Second
 	httpResponseWriteMargin    = 10 * time.Second
@@ -66,7 +67,7 @@ const (
 	connRateBurst              = 5
 	connRateSustained          = 1
 	reconnectTokenSize         = 32
-	snapshotFormatVersion      = 3
+	snapshotFormatVersion      = 4
 	snapshotDebounce           = 100 * time.Millisecond
 	snapshotFlushTimeout       = 5 * time.Second
 	snapshotMaxFileSize        = 4 * 1024 * 1024
@@ -220,30 +221,46 @@ func (c *Client) close() {
 
 type reconnectVerifier [sha256.Size]byte
 
+type peerReservation struct {
+	verifier       reconnectVerifier
+	absentSince    time.Time
+	releasePending bool    // runtime-only: pending releases are omitted from snapshots
+	releaseClient  *Client // runtime-only: identifies the client that staged the release
+}
+
 type Room struct {
-	SessionID       string
-	HostPeerID      string
-	ProtocolVersion int
-	hostVerifier    reconnectVerifier
-	peerVerifiers   map[string]reconnectVerifier
-	Peers           map[string]*Client `json:"-"`
-	quotaOwnerKey   string             `json:"-"`
-	mu              sync.RWMutex       `json:"-"`
-	closing         bool               `json:"-"`
-	CreatedAt       time.Time
-	LastActivityAt  time.Time
+	SessionID        string
+	HostPeerID       string
+	ProtocolVersion  int
+	hostVerifier     reconnectVerifier
+	peerReservations map[string]peerReservation
+	Peers            map[string]*Client `json:"-"`
+	quotaOwnerKey    string             `json:"-"`
+	mu               sync.RWMutex       `json:"-"`
+	closing          bool               `json:"-"`
+	CreatedAt        time.Time
+	LastActivityAt   time.Time
 }
 
 // --- Snapshot types (on-disk JSON format) ---
 
+// Nanosecond timestamps preserve exact absence state without the expansion of
+// RFC3339 strings at the maximum admitted reservation count. Zero means the
+// peer was connected when the snapshot was captured.
+type peerReservationSnapshot struct {
+	Verifier            string `json:"verifier"`
+	AbsentSinceUnixNano int64  `json:"absentSince,omitempty"`
+}
+
 type roomSnapshot struct {
-	SessionID              string            `json:"sessionId"`
-	HostPeerID             string            `json:"hostPeerId"`
-	ProtocolVersion        int               `json:"protocolVersion,omitempty"`
-	HostReconnectVerifier  string            `json:"hostReconnectVerifier"`
-	PeerReconnectVerifiers map[string]string `json:"peerReconnectVerifiers,omitempty"`
-	CreatedAt              time.Time         `json:"createdAt"`
-	LastActivityAt         time.Time         `json:"lastActivityAt"`
+	SessionID              string                             `json:"sessionId"`
+	HostPeerID             string                             `json:"hostPeerId"`
+	ProtocolVersion        int                                `json:"protocolVersion,omitempty"`
+	HostReconnectVerifier  string                             `json:"hostReconnectVerifier"`
+	PeerReservations       map[string]peerReservationSnapshot `json:"peerReservations,omitempty"`
+	PeerReconnectVerifiers map[string]string                  `json:"peerReconnectVerifiers,omitempty"` // v2/v3 decode only
+	CreatedAt              time.Time                          `json:"createdAt"`
+	LastActivityAt         time.Time                          `json:"lastActivityAt"`
 }
 
 type stateSnapshot struct {
@@ -287,6 +304,25 @@ func encodeReconnectVerifier(verifier reconnectVerifier) string {
 
 func reconnectVerifierMatches(expected, presented reconnectVerifier) bool {
 	return subtle.ConstantTimeCompare(expected[:], presented[:]) == 1
+}
+
+// pruneExpiredPeerReservationsLocked removes only expired, disconnected guest
+// reservations. The caller must hold room.mu.
+func pruneExpiredPeerReservationsLocked(room *Room, now time.Time) bool {
+	changed := false
+	for peerID, reservation := range room.peerReservations {
+		if reservation.releasePending ||
+			reservation.absentSince.IsZero() ||
+			now.Before(reservation.absentSince.Add(peerReservationGrace)) {
+			continue
+		}
+		if _, connected := room.Peers[peerID]; connected {
+			continue
+		}
+		delete(room.peerReservations, peerID)
+		changed = true
+	}
+	return changed
 }
 
 func (r *Room) peerIDs() []string {
@@ -750,7 +786,6 @@ type posterStore struct {
 	maxAge          time.Duration
 	totalBytes      int64
 	pendingBytes    int64
-	unknownPending  int
 	removeFile      func(string) error
 	startupErr      error
 	mu              sync.RWMutex
@@ -922,8 +957,6 @@ func (ps *posterStore) addPendingLocked(filename string, size int64, known bool)
 	ps.pendingRemovals[filename] = pendingRemoval{size: size, sizeKnown: known}
 	if known {
 		ps.pendingBytes += size
-	} else {
-		ps.unknownPending++
 	}
 }
 
@@ -948,8 +981,6 @@ func (ps *posterStore) retryPendingLocked(knownOnly bool) error {
 		delete(ps.pendingRemovals, filename)
 		if pending.sizeKnown {
 			ps.pendingBytes -= pending.size
-		} else {
-			ps.unknownPending--
 		}
 	}
 	return removalErr
@@ -1113,20 +1144,52 @@ func (ps *posterStore) deleteEntryLocked(id string) error {
 
 // --- Snapshotter (single-writer, debounced, atomic disk persistence) ---
 
+var errSnapshotterStopped = errors.New("snapshot writer is stopped")
+
+type terminalMutationOutcome struct {
+	err     error
+	deliver bool
+}
+
+type terminalMutationTicket struct {
+	seq    uint64
+	result <-chan terminalMutationOutcome
+}
+
+type registeredTerminalMutation struct {
+	seq      uint64
+	complete func(error) terminalMutationOutcome
+	result   chan terminalMutationOutcome
+}
+
 type snapshotter struct {
-	path     string
-	dir      string
-	trigger  chan struct{}
-	flush    chan chan error
-	done     chan struct{}
-	exited   chan struct{}
-	build    func() stateSnapshot
-	persist  func([]byte) error
-	writeMu  sync.Mutex
+	path                 string
+	dir                  string
+	trigger              chan struct{}
+	flush                chan chan error
+	exited               chan struct{}
+	build                func() stateSnapshot
+	capture              func(func() uint64) (stateSnapshot, uint64)
+	persist              func([]byte) error
+	syncDir              func(string) error
+	writeMu              sync.Mutex
+	beforeCapture        func() // test-only barrier immediately before generation capture
+	afterSequenceCapture func() // test-only barrier inside the protected capture boundary
+
+	stateMu    sync.Mutex
+	dirtySeq   uint64
+	durableSeq uint64
+	terminals  []*registeredTerminalMutation
+	stopped    bool
+
 	stopOnce sync.Once
+	stopErr  error
 
 	errMu      sync.Mutex
 	lastErrLog time.Time
+
+	dirErrMu      sync.Mutex
+	lastDirErrLog time.Time
 }
 
 func newSnapshotter(path string, build func() stateSnapshot) *snapshotter {
@@ -1139,18 +1202,104 @@ func newSnapshotter(path string, build func() stateSnapshot) *snapshotter {
 		dir:     dir,
 		trigger: make(chan struct{}, 1),
 		flush:   make(chan chan error),
-		done:    make(chan struct{}),
 		exited:  make(chan struct{}),
 		build:   build,
+		syncDir: syncSnapshotDirectory,
+	}
+	sn.capture = func(captureSequence func() uint64) (stateSnapshot, uint64) {
+		targetSeq := captureSequence()
+		return sn.build(), targetSeq
 	}
 	sn.persist = sn.persistAtomic
 	return sn
 }
 
-func (sn *snapshotter) schedule() {
+// recordMutation publishes a protected identity, membership, or reservation
+// mutation to the single writer. Callers record after changing state and before
+// releasing the lock that made the mutation visible.
+func (sn *snapshotter) recordMutation() uint64 {
+	sn.stateMu.Lock()
+	if sn.stopped {
+		sn.stateMu.Unlock()
+		return 0
+	}
+	sn.dirtySeq++
+	seq := sn.dirtySeq
+	sn.signalLocked()
+	sn.stateMu.Unlock()
+	return seq
+}
+
+// recordTerminalMutation atomically publishes a protected mutation together
+// with its outcome channel. A buffered result retains even an immediate write
+// failure until the handler begins waiting.
+func (sn *snapshotter) recordTerminalMutation(
+	complete func(error) terminalMutationOutcome,
+) *terminalMutationTicket {
+	result := make(chan terminalMutationOutcome, 1)
+	sn.stateMu.Lock()
+	if sn.stopped {
+		sn.stateMu.Unlock()
+		if complete == nil {
+			result <- terminalMutationOutcome{err: errSnapshotterStopped, deliver: true}
+		} else {
+			// The caller still holds the protected state lock. Run the
+			// rollback continuation asynchronously so it can acquire the
+			// normal s.mu -> room.mu order after the caller unlocks.
+			go func() {
+				result <- complete(errSnapshotterStopped)
+			}()
+		}
+		return &terminalMutationTicket{result: result}
+	}
+	sn.dirtySeq++
+	seq := sn.dirtySeq
+	sn.terminals = append(sn.terminals, &registeredTerminalMutation{
+		seq:      seq,
+		complete: complete,
+		result:   result,
+	})
+	sn.signalLocked()
+	sn.stateMu.Unlock()
+	return &terminalMutationTicket{seq: seq, result: result}
+}
+
+func (sn *snapshotter) signalLocked() {
 	select {
 	case sn.trigger <- struct{}{}:
 	default:
+	}
+}
+
+func (sn *snapshotter) captureSequence() uint64 {
+	sn.stateMu.Lock()
+	targetSeq := sn.dirtySeq
+	afterCapture := sn.afterSequenceCapture
+	sn.stateMu.Unlock()
+	if afterCapture != nil {
+		afterCapture()
+	}
+	return targetSeq
+}
+
+func (sn *snapshotter) waitForDurable(ticket *terminalMutationTicket) terminalMutationOutcome {
+	return <-ticket.result
+}
+
+func (sn *snapshotter) waitForDurableWithin(
+	ticket *terminalMutationTicket,
+	timeout time.Duration,
+) terminalMutationOutcome {
+	timer := time.NewTimer(timeout)
+	defer timer.Stop()
+	select {
+	case outcome := <-ticket.result:
+		return outcome
+	case <-timer.C:
+		return terminalMutationOutcome{
+			err:     errors.New("snapshot rewrite: timed out waiting for persistence"),
+			deliver: true,
+		}
 	}
 }
 
@@ -1160,41 +1309,132 @@ func (sn *snapshotter) run() {
 		select {
 		case <-sn.trigger:
 			time.Sleep(snapshotDebounce)
-			// Drain triggers that piled up during the sleep window.
+			// Drain a token queued before capture. A mutation recorded after
+			// capture re-arms the channel and therefore requires a later write.
 			select {
 			case <-sn.trigger:
 			default:
 			}
-			sn.writeAndLog()
+			_, err := sn.writeNextGeneration()
+			if err != nil {
+				sn.logWriteErr(err)
+			}
 		case reply := <-sn.flush:
-			reply <- sn.writeAndLog()
-		case <-sn.done:
-			// flushAndStop is the expected caller and has already written.
+			err := sn.flushLatestAndStop()
+			reply <- err
 			return
 		}
 	}
 }
 
-func (sn *snapshotter) writeAndLog() error {
-	err := sn.write()
-	if err != nil {
-		sn.logWriteErr(err)
-	}
-	return err
-}
-
+// write is the narrowly serialized storage entry retained for atomic-storage
+// tests. Production mutations use writeNextGeneration so generation outcomes
+// cannot bypass the single writer.
 func (sn *snapshotter) write() error {
 	sn.writeMu.Lock()
 	defer sn.writeMu.Unlock()
+	_, err := sn.captureAndPersist()
+	return err
+}
 
-	data, err := json.Marshal(sn.build())
+func (sn *snapshotter) captureAndPersist() (uint64, error) {
+	snapshot, targetSeq := sn.capture(sn.captureSequence)
+	data, err := json.Marshal(snapshot)
+	if err != nil {
+		return targetSeq, err
+	}
+	if len(data) > snapshotMaxFileSize {
+		return targetSeq, fmt.Errorf("snapshot exceeds maximum size: %d > %d bytes", len(data), snapshotMaxFileSize)
+	}
+	return targetSeq, sn.persist(data)
+}
+
+func (sn *snapshotter) writeNextGeneration() (bool, error) {
+	sn.stateMu.Lock()
+	if sn.dirtySeq <= sn.durableSeq {
+		sn.stateMu.Unlock()
+		return false, nil
+	}
+	beforeCapture := sn.beforeCapture
+	sn.stateMu.Unlock()
+	if beforeCapture != nil {
+		beforeCapture()
+	}
+	sn.writeMu.Lock()
+	targetSeq, err := sn.captureAndPersist()
+	sn.writeMu.Unlock()
+
+	sn.stateMu.Lock()
+	if err == nil && targetSeq > sn.durableSeq {
+		sn.durableSeq = targetSeq
+	}
+	coveredCount := 0
+	for coveredCount < len(sn.terminals) && sn.terminals[coveredCount].seq <= targetSeq {
+		coveredCount++
+	}
+	covered := sn.terminals[:coveredCount:coveredCount]
+	sn.terminals = sn.terminals[coveredCount:]
+	if len(sn.terminals) == 0 {
+		sn.terminals = nil
+	}
+	sn.stateMu.Unlock()
+
+	// Continuations are part of the writer barrier. In particular, a failed
+	// staged release rolls back and records its corrective generation before
+	// this writer can capture any queued later mutation.
+	for _, terminal := range covered {
+		outcome := terminalMutationOutcome{err: err, deliver: true}
+		if terminal.complete != nil {
+			outcome = terminal.complete(err)
+		}
+		terminal.result <- outcome
+	}
+	return true, err
+}
+
+func (sn *snapshotter) flushLatestAndStop() error {
+	for {
+		sn.stateMu.Lock()
+		if sn.dirtySeq <= sn.durableSeq {
+			sn.stopped = true
+			sn.stateMu.Unlock()
+			return nil
+		}
+		sn.stateMu.Unlock()
+
+		_, err := sn.writeNextGeneration()
+		if err == nil {
+			continue
+		}
+		sn.logWriteErr(err)
+		sn.failPendingAndStop(err)
+		return err
+	}
+}
+
+func (sn *snapshotter) failPendingAndStop(err error) {
+	sn.stateMu.Lock()
+	sn.stopped = true
+	pending := sn.terminals
+	sn.terminals = nil
+	sn.stateMu.Unlock()
+	for _, terminal := range pending {
+		outcome := terminalMutationOutcome{err: err, deliver: true}
+		if terminal.complete != nil {
+			outcome = terminal.complete(err)
+		}
+		terminal.result <- outcome
+	}
+}
+
+func syncSnapshotDirectory(dir string) error {
+	d, err := os.Open(dir)
 	if err != nil {
 		return err
 	}
-	if len(data) > snapshotMaxFileSize {
-		return fmt.Errorf("snapshot exceeds maximum size: %d > %d bytes", len(data), snapshotMaxFileSize)
-	}
-	return sn.persist(data)
+	syncErr := d.Sync()
+	closeErr := d.Close()
+	return errors.Join(syncErr, closeErr)
 }
 
 func (sn *snapshotter) persistAtomic(data []byte) error {
@@ -1221,21 +1461,16 @@ func (sn *snapshotter) persistAtomic(data []byte) error {
 		os.Remove(tmpPath)
 		return err
 	}
-	// The directory entry must reach stable storage before a terminal
-	// acknowledgement can rely on the rename surviving a host crash.
-	d, err := os.Open(sn.dir)
-	if err != nil {
-		return err
+	// Rename is the commit boundary: the replacement is file-synced and
+	// non-torn. Parent-directory sync adds crash durability where supported,
+	// but its post-commit failure must not report the mutation as uncommitted.
+	if err := sn.syncDir(sn.dir); err != nil {
+		sn.logDirSyncErr(err)
 	}
-	if err := d.Sync(); err != nil {
-		d.Close()
-		return err
-	}
-	return d.Close()
+	return nil
 }
 
 func (sn *snapshotter) flushAndStop(timeout time.Duration) error {
-	var result error
 	sn.stopOnce.Do(func() {
 		ctx, cancel := context.WithTimeout(context.Background(), timeout)
 		defer cancel()
@@ -1243,25 +1478,24 @@ func (sn *snapshotter) flushAndStop(timeout time.Duration) error {
 		select {
 		case sn.flush <- reply:
 		case <-ctx.Done():
-			result = errors.New("snapshot flush: timed out sending flush signal")
+			sn.stopErr = errors.New("snapshot flush: timed out sending flush signal")
 			return
 		}
 		select {
-		case result = <-reply:
+		case sn.stopErr = <-reply:
 		case <-ctx.Done():
-			result = errors.New("snapshot flush: timed out waiting for write")
+			sn.stopErr = errors.New("snapshot flush: timed out waiting for write")
 			return
 		}
-		close(sn.done)
 		select {
 		case <-sn.exited:
 		case <-ctx.Done():
 		}
 	})
-	return result
+	return sn.stopErr
 }
 
-// logWriteErr throttles snapshot-write error spam to at most once per hour.
+// logWriteErr throttles pre-commit snapshot-write error spam to once per hour.
 func (sn *snapshotter) logWriteErr(err error) {
 	sn.errMu.Lock()
 	defer sn.errMu.Unlock()
@@ -1269,7 +1503,19 @@ func (sn *snapshotter) logWriteErr(err error) {
 		return
 	}
 	sn.lastErrLog = time.Now()
-	log.Printf("snapshot: write failed: %v", err)
+	log.Printf("snapshot: write failed before rename commit: %v", err)
+}
+
+// logDirSyncErr has an independent throttle so a degraded post-rename warning
+// cannot suppress a later pre-commit persistence error.
+func (sn *snapshotter) logDirSyncErr(err error) {
+	sn.dirErrMu.Lock()
+	defer sn.dirErrMu.Unlock()
+	if time.Since(sn.lastDirErrLog) < time.Hour {
+		return
+	}
+	sn.lastDirErrLog = time.Now()
+	log.Printf("snapshot: parent directory sync failed after rename commit: %v", err)
 }
 
 // --- Server ---
@@ -1313,20 +1559,21 @@ func (s *Server) logRemovalError(store, operation string, err error) {
 }
 
 type Server struct {
-	rooms                 map[string]*Room
-	logs                  *logStore
-	posters               *posterStore
-	posterUploads         *posterUploadLimiter
-	logLookups            chan struct{}
-	posterBodyReadTimeout time.Duration
-	conns                 *connTracker
-	clientIPs             clientIPResolver
-	snap                  *snapshotter
-	oauth                 *oauthProxy // nil when OAUTH_BASE_URL is unset
-	removalErrors         removalErrorThrottle
+	rooms                  map[string]*Room
+	logs                   *logStore
+	posters                *posterStore
+	posterUploads          *posterUploadLimiter
+	logLookups             chan struct{}
+	posterBodyReadTimeout  time.Duration
+	conns                  *connTracker
+	clientIPs              clientIPResolver
+	snap                   *snapshotter
+	oauth                  *oauthProxy // nil when OAUTH_BASE_URL is unset
+	removalErrors          removalErrorThrottle
 	beforeJoinRoomLock     func() // test-only deterministic admission barrier
+	beforeLeaveRoomLock    func() // test-only mutation/capture ordering barrier
 	beforeTerminalDelivery func() // test-only post-persistence, pre-delivery barrier
-	mu                    sync.RWMutex
+	mu                     sync.RWMutex
 }
 
 func newServer(logDir, stateFile, posterDir string, clientIPs clientIPResolver) *Server {
@@ -1351,10 +1598,18 @@ func newServer(logDir, stateFile, posterDir string, clientIPs clientIPResolver) 
 		log.Printf("oauth: proxy enabled (base=%s, services=%d)", p.baseURL, len(p.services))
 	}
 	s.snap = newSnapshotter(stateFile, s.buildSnapshot)
-	if err := s.loadSnapshot(stateFile); err != nil {
+	s.snap.capture = s.captureSnapshot
+	rewriteReservations, err := s.loadSnapshot(stateFile)
+	if err != nil {
 		log.Printf("snapshot: load error: %v", err)
 	}
 	go s.snap.run()
+	if rewriteReservations {
+		ticket := s.snap.recordTerminalMutation(nil)
+		if outcome := s.snap.waitForDurableWithin(ticket, snapshotFlushTimeout); outcome.err != nil {
+			log.Printf("snapshot: v4 reservation rewrite failed: %v", outcome.err)
+		}
+	}
 	go s.cleanupLoop()
 	return s
 }
@@ -1373,65 +1628,98 @@ func (s *Server) removeRoomLocked(sessionID string, room *Room) bool {
 	return true
 }
 
-// buildSnapshot copies room identity into a serializable value with no locks held during marshal.
-// Lock order: s.mu before room.mu, matching cleanupLoop.
+// buildSnapshot is the synchronous storage-test entry. Production capture uses
+// captureSnapshot so the copied state and its covered generation share one
+// ordering boundary.
 func (s *Server) buildSnapshot() stateSnapshot {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
-	snap := stateSnapshot{
-		Version: snapshotFormatVersion,
-		SavedAt: time.Now(),
-		Rooms:   make([]roomSnapshot, 0, len(s.rooms)),
-	}
-	for _, room := range s.rooms {
-		room.mu.RLock()
-		var peerVerifiers map[string]string
-		if len(room.peerVerifiers) != 0 {
-			peerVerifiers = make(map[string]string, len(room.peerVerifiers))
-			for peerID, verifier := range room.peerVerifiers {
-				peerVerifiers[peerID] = encodeReconnectVerifier(verifier)
-			}
-		}
-		snap.Rooms = append(snap.Rooms, roomSnapshot{
-			SessionID:              room.SessionID,
-			HostPeerID:             room.HostPeerID,
-			ProtocolVersion:        room.ProtocolVersion,
-			HostReconnectVerifier:  encodeReconnectVerifier(room.hostVerifier),
-			PeerReconnectVerifiers: peerVerifiers,
-			CreatedAt:              room.CreatedAt,
-			LastActivityAt:         room.LastActivityAt,
-		})
-		room.mu.RUnlock()
-	}
-	return snap
+	snapshot, _ := s.captureSnapshot(func() uint64 { return 0 })
+	return snapshot
 }
 
-// loadSnapshot restores rooms from disk on startup. Missing/corrupt files log
-// and return nil so the server always starts; only unexpected I/O paths bubble up.
-func (s *Server) loadSnapshot(path string) error {
+// captureSnapshot freezes every durable room mutation under the established
+// s.mu -> room.mu order, then captures the covered sequence while those locks
+// remain held. A mutation is therefore either both present and covered, or
+// neither present nor covered. Locks are released before marshal or disk I/O.
+func (s *Server) captureSnapshot(captureSequence func() uint64) (stateSnapshot, uint64) {
+	s.mu.RLock()
+	rooms := make([]*Room, 0, len(s.rooms))
+	for _, room := range s.rooms {
+		room.mu.RLock()
+		rooms = append(rooms, room)
+	}
+
+	targetSeq := captureSequence()
+	snapshot := stateSnapshot{
+		Version: snapshotFormatVersion,
+		SavedAt: time.Now(),
+		Rooms:   make([]roomSnapshot, 0, len(rooms)),
+	}
+	for _, room := range rooms {
+		var reservations map[string]peerReservationSnapshot
+		if len(room.peerReservations) != 0 {
+			for peerID, reservation := range room.peerReservations {
+				if reservation.releasePending {
+					continue
+				}
+				if reservations == nil {
+					reservations = make(map[string]peerReservationSnapshot, len(room.peerReservations))
+				}
+				var absentSinceUnixNano int64
+				if !reservation.absentSince.IsZero() {
+					absentSinceUnixNano = reservation.absentSince.UnixNano()
+				}
+				reservations[peerID] = peerReservationSnapshot{
+					Verifier:            encodeReconnectVerifier(reservation.verifier),
+					AbsentSinceUnixNano: absentSinceUnixNano,
+				}
+			}
+		}
+		snapshot.Rooms = append(snapshot.Rooms, roomSnapshot{
+			SessionID:             room.SessionID,
+			HostPeerID:            room.HostPeerID,
+			ProtocolVersion:       room.ProtocolVersion,
+			HostReconnectVerifier: encodeReconnectVerifier(room.hostVerifier),
+			PeerReservations:      reservations,
+			CreatedAt:             room.CreatedAt,
+			LastActivityAt:        room.LastActivityAt,
+		})
+	}
+
+	for index := len(rooms) - 1; index >= 0; index-- {
+		rooms[index].mu.RUnlock()
+	}
+	s.mu.RUnlock()
+	return snapshot, targetSeq
+}
+
+// loadSnapshot restores rooms from disk on startup. The returned rewrite flag
+// reports reservation migration, initialization, or pruning that must be
+// persisted before serving. Missing/corrupt files still allow startup.
+func (s *Server) loadSnapshot(path string) (bool, error) {
 	data, err := os.ReadFile(path)
 	if err != nil {
 		if errors.Is(err, fs.ErrNotExist) {
 			log.Printf("snapshot: no file at %s, starting fresh", path)
-			return nil
+			return false, nil
 		}
 		log.Printf("snapshot: read error, starting fresh: %v", err)
-		return nil
+		return false, nil
 	}
 	if len(data) > snapshotMaxFileSize {
 		log.Printf("snapshot: file too large (%d bytes), starting fresh", len(data))
-		return nil
+		return false, nil
 	}
 	var snap stateSnapshot
 	if err := json.Unmarshal(data, &snap); err != nil {
 		log.Printf("snapshot: corrupt file at %s, starting fresh: %v", path, err)
-		return nil
+		return false, nil
 	}
-	if snap.Version != 2 && snap.Version != snapshotFormatVersion {
+	if snap.Version != 2 && snap.Version != 3 && snap.Version != snapshotFormatVersion {
 		log.Printf("snapshot: unknown version %d, starting fresh", snap.Version)
-		return nil
+		return false, nil
 	}
 	now := time.Now()
+	rewriteReservations := snap.Version != snapshotFormatVersion
 	restored := make(map[string]*Room, min(len(snap.Rooms), maxRetainedRooms))
 	skipped := 0
 	for _, r := range snap.Rooms {
@@ -1448,30 +1736,6 @@ func (s *Server) loadSnapshot(path string) error {
 			skipped++
 			continue
 		}
-		var peerVerifiers map[string]reconnectVerifier
-		if len(r.PeerReconnectVerifiers) != 0 {
-			if r.ProtocolVersion == legacyRelayProtocolVersion {
-				skipped++
-				continue
-			}
-			peerVerifiers = make(map[string]reconnectVerifier, len(r.PeerReconnectVerifiers))
-			validPeerVerifiers := true
-			for peerID, encodedVerifier := range r.PeerReconnectVerifiers {
-				verifier, verifierOK := reconnectVerifierFromSnapshot(encodedVerifier)
-				if !validRelayID(peerID, maxPeerIDLength) ||
-					peerID == r.HostPeerID ||
-					!verifierOK ||
-					len(peerVerifiers) >= maxRoomSize-1 {
-					validPeerVerifiers = false
-					break
-				}
-				peerVerifiers[peerID] = verifier
-			}
-			if !validPeerVerifiers {
-				skipped++
-				continue
-			}
-		}
 		if now.Sub(r.CreatedAt) > roomMaxAge || now.Sub(r.LastActivityAt) > emptyRoomMaxAge {
 			skipped++
 			continue
@@ -1482,24 +1746,94 @@ func (s *Server) loadSnapshot(path string) error {
 		}
 		if len(restored) >= maxRetainedRooms {
 			log.Printf("snapshot: too many retained rooms, starting fresh")
-			return nil
+			return false, nil
 		}
+
+		var reservations map[string]peerReservation
+		validReservations := true
+		switch {
+		case r.ProtocolVersion == legacyRelayProtocolVersion &&
+			(len(r.PeerReservations) != 0 || len(r.PeerReconnectVerifiers) != 0):
+			validReservations = false
+		case snap.Version == snapshotFormatVersion && len(r.PeerReconnectVerifiers) != 0:
+			validReservations = false
+		case snap.Version == snapshotFormatVersion:
+			if len(r.PeerReservations) > maxRoomSize-1 {
+				validReservations = false
+				break
+			}
+			if len(r.PeerReservations) != 0 {
+				reservations = make(map[string]peerReservation, len(r.PeerReservations))
+			}
+			for peerID, encoded := range r.PeerReservations {
+				verifier, verifierOK := reconnectVerifierFromSnapshot(encoded.Verifier)
+				if !validRelayID(peerID, maxPeerIDLength) ||
+					peerID == r.HostPeerID ||
+					!verifierOK {
+					validReservations = false
+					break
+				}
+				absentSince := now
+				if encoded.AbsentSinceUnixNano == 0 {
+					rewriteReservations = true
+				} else {
+					absentSince = time.Unix(0, encoded.AbsentSinceUnixNano)
+					if absentSince.After(now) {
+						absentSince = now
+						rewriteReservations = true
+					} else if !now.Before(absentSince.Add(peerReservationGrace)) {
+						rewriteReservations = true
+						continue
+					}
+				}
+				reservations[peerID] = peerReservation{
+					verifier:    verifier,
+					absentSince: absentSince,
+				}
+			}
+		default:
+			if len(r.PeerReconnectVerifiers) > maxRoomSize-1 {
+				validReservations = false
+				break
+			}
+			if len(r.PeerReconnectVerifiers) != 0 {
+				reservations = make(map[string]peerReservation, len(r.PeerReconnectVerifiers))
+			}
+			for peerID, encodedVerifier := range r.PeerReconnectVerifiers {
+				verifier, verifierOK := reconnectVerifierFromSnapshot(encodedVerifier)
+				if !validRelayID(peerID, maxPeerIDLength) ||
+					peerID == r.HostPeerID ||
+					!verifierOK {
+					validReservations = false
+					break
+				}
+				reservations[peerID] = peerReservation{
+					verifier:    verifier,
+					absentSince: now,
+				}
+			}
+		}
+		if !validReservations {
+			skipped++
+			continue
+		}
+
 		restored[r.SessionID] = &Room{
-			SessionID:       r.SessionID,
-			HostPeerID:      r.HostPeerID,
-			ProtocolVersion: r.ProtocolVersion,
-			hostVerifier:    hostVerifier,
-			peerVerifiers:   peerVerifiers,
-			Peers:           make(map[string]*Client),
-			CreatedAt:       r.CreatedAt,
-			LastActivityAt:  r.LastActivityAt,
+			SessionID:        r.SessionID,
+			HostPeerID:       r.HostPeerID,
+			ProtocolVersion:  r.ProtocolVersion,
+			hostVerifier:     hostVerifier,
+			peerReservations: reservations,
+			Peers:            make(map[string]*Client),
+			CreatedAt:        r.CreatedAt,
+			LastActivityAt:   r.LastActivityAt,
 		}
 	}
 	s.mu.Lock()
 	s.rooms = restored
 	s.mu.Unlock()
 	log.Printf("snapshot: loaded %d rooms, skipped %d invalid or expired rooms", len(restored), skipped)
-	return nil
+	return rewriteReservations, nil
 }
 
 func (s *Server) cleanupLoop() {
@@ -1512,10 +1846,10 @@ func (s *Server) cleanupLoop() {
 
 func (s *Server) runCleanupStep(now time.Time) {
 	s.mu.Lock()
-	changed := false
 	var expiredClients []*Client
 	for id, room := range s.rooms {
 		room.mu.Lock()
+		roomChanged := pruneExpiredPeerReservationsLocked(room, now)
 		empty := len(room.Peers) == 0
 		age := now.Sub(room.CreatedAt)
 		idle := now.Sub(room.LastActivityAt)
@@ -1531,7 +1865,10 @@ func (s *Server) runCleanupStep(now time.Time) {
 			}
 			log.Printf("cleanup: removing room %s (empty=%v, idle=%v, age=%v)", id, empty, idle, age)
 			s.removeRoomLocked(id, room)
-			changed = true
+			roomChanged = true
+		}
+		if roomChanged {
+			s.snap.recordMutation()
 		}
 		room.mu.Unlock()
 	}
@@ -1540,9 +1877,6 @@ func (s *Server) runCleanupStep(now time.Time) {
 
 	for _, client := range expiredClients {
 		client.close()
-	}
-	if changed {
-		s.snap.schedule()
 	}
 	if err := s.logs.cleanup(now); err != nil {
 		s.logRemovalError("logs", "cleanup", err)
@@ -1676,9 +2010,8 @@ func (s *Server) handleGetLogs(w http.ResponseWriter, r *http.Request) {
 	}()
 
 	controller := http.NewResponseController(w)
-	if err := controller.SetWriteDeadline(time.Now().Add(httpResponseWriteTimeout)); err == nil {
-		defer controller.SetWriteDeadline(time.Time{})
-	} else if !errors.Is(err, http.ErrNotSupported) {
+	if err := controller.SetWriteDeadline(time.Now().Add(httpResponseWriteTimeout)); err != nil &&
+		!errors.Is(err, http.ErrNotSupported) {
 		log.Printf("logs: failed to set response write deadline")
 	}
 
@@ -1864,21 +2197,26 @@ func (s *Server) handleWS(w http.ResponseWriter, r *http.Request) {
 		return true
 	}
 
-	// Cleanup on disconnect — only if our Client is still the one in the room.
-	// A reconnecting peer reuses the same peerId, so the map entry may have
-	// been overwritten by a newer Client before this defer runs.
+	// Cleanup on disconnect only when this client is still authoritative. A
+	// displaced client's defer must neither remove the replacement nor start
+	// its reservation's absence clock.
 	defer func() {
 		if currentRoom != nil && currentPeerID != "" {
 			currentRoom.mu.Lock()
 			closing := currentRoom.closing
 			stale := currentRoom.Peers[currentPeerID] != client
 			if !closing && !stale {
+				now := time.Now()
 				delete(currentRoom.Peers, currentPeerID)
-				if currentRoom.ProtocolVersion == legacyRelayProtocolVersion &&
+				if currentRoom.ProtocolVersion == relayProtocolVersion &&
 					currentPeerID != currentRoom.HostPeerID {
-					delete(currentRoom.peerVerifiers, currentPeerID)
+					if reservation, ok := currentRoom.peerReservations[currentPeerID]; ok {
+						reservation.absentSince = now
+						currentRoom.peerReservations[currentPeerID] = reservation
+					}
 				}
-				currentRoom.LastActivityAt = time.Now()
+				currentRoom.LastActivityAt = now
+				s.snap.recordMutation()
 			}
 			currentRoom.mu.Unlock()
 			if !closing && !stale {
@@ -1886,7 +2224,6 @@ func (s *Server) handleWS(w http.ResponseWriter, r *http.Request) {
 					Type:   relayTypePeerLeft,
 					PeerID: currentPeerID,
 				})
-				s.snap.schedule()
 			}
 			log.Printf("peer %s left room %s (closing=%v, stale=%v)", currentPeerID, currentRoom.SessionID, closing, stale)
 		}
@@ -1972,6 +2309,7 @@ func (s *Server) handleWS(w http.ResponseWriter, r *http.Request) {
 					existing.Peers[msg.PeerID] = client
 					existing.LastActivityAt = time.Now()
 					peers := existing.peerIDs()
+					s.snap.recordMutation()
 					existing.mu.Unlock()
 					s.mu.Unlock()
 
@@ -2000,7 +2338,6 @@ func (s *Server) handleWS(w http.ResponseWriter, r *http.Request) {
 							PeerID: msg.PeerID,
 						})
 					}
-					s.snap.schedule()
 					continue
 				}
 				authorizedLegacyReplacement :=
@@ -2050,6 +2387,7 @@ func (s *Server) handleWS(w http.ResponseWriter, r *http.Request) {
 			}
 
 			s.rooms[msg.SessionID] = room
+			s.snap.recordMutation()
 			s.mu.Unlock()
 
 			currentRoom = room
@@ -2062,7 +2400,6 @@ func (s *Server) handleWS(w http.ResponseWriter, r *http.Request) {
 				ReconnectToken:  reconnectToken,
 				ProtocolVersion: msg.ProtocolVersion,
 			})
-			s.snap.schedule()
 
 		case relayTypeJoin:
 			if !validRelayID(msg.SessionID, maxSessionIDLength) || !validRelayID(msg.PeerID, maxPeerIDLength) {
@@ -2123,8 +2460,12 @@ func (s *Server) handleWS(w http.ResponseWriter, r *http.Request) {
 				continue
 			}
 
+			if room.ProtocolVersion == relayProtocolVersion &&
+				pruneExpiredPeerReservationsLocked(room, time.Now()) {
+				s.snap.recordMutation()
+			}
 			existingClient, occupied := room.Peers[msg.PeerID]
-			expectedVerifier, identityReserved := room.peerVerifiers[msg.PeerID]
+			reservation, identityReserved := room.peerReservations[msg.PeerID]
 			responseToken := newToken
 			responseVerifier := newVerifier
 			authorized := false
@@ -2135,9 +2476,11 @@ func (s *Server) handleWS(w http.ResponseWriter, r *http.Request) {
 					responseToken = msg.ReconnectToken
 					responseVerifier = room.hostVerifier
 				case identityReserved:
-					authorized = tokenValid && reconnectVerifierMatches(expectedVerifier, presentedVerifier)
+					authorized = !reservation.releasePending &&
+						tokenValid &&
+						reconnectVerifierMatches(reservation.verifier, presentedVerifier)
 					responseToken = msg.ReconnectToken
-					responseVerifier = expectedVerifier
+					responseVerifier = reservation.verifier
 				case occupied:
 					authorized = false
 				default:
@@ -2176,7 +2519,7 @@ func (s *Server) handleWS(w http.ResponseWriter, r *http.Request) {
 				roomFull := false
 				if room.ProtocolVersion == relayProtocolVersion {
 					if msg.PeerID != room.HostPeerID && !identityReserved {
-						roomFull = len(room.peerVerifiers) >= maxRoomSize-1
+						roomFull = len(room.peerReservations) >= maxRoomSize-1
 					}
 				} else {
 					admissionLimit := maxRoomSize
@@ -2193,17 +2536,26 @@ func (s *Server) handleWS(w http.ResponseWriter, r *http.Request) {
 				}
 			}
 
-			if room.peerVerifiers == nil {
-				room.peerVerifiers = make(map[string]reconnectVerifier)
-			}
 			room.Peers[msg.PeerID] = client
 			if room.ProtocolVersion == relayProtocolVersion && msg.PeerID != room.HostPeerID {
-				room.peerVerifiers[msg.PeerID] = responseVerifier
+				if identityReserved {
+					reservation.absentSince = time.Time{}
+					reservation.releasePending = false
+					reservation.releaseClient = nil
+					reservation.verifier = responseVerifier
+				} else {
+					reservation = peerReservation{verifier: responseVerifier}
+				}
+				if room.peerReservations == nil {
+					room.peerReservations = make(map[string]peerReservation)
+				}
+				room.peerReservations[msg.PeerID] = reservation
 			}
 			room.LastActivityAt = time.Now()
 			peers := room.peerIDs()
 			hostPeerID := room.HostPeerID
 			roomProtocolVersion := room.ProtocolVersion
+			s.snap.recordMutation()
 			room.mu.Unlock()
 
 			currentRoom = room
@@ -2228,7 +2580,6 @@ func (s *Server) handleWS(w http.ResponseWriter, r *http.Request) {
 				Peers:           existingPeers,
 			})
 			room.broadcastExcept(msg.PeerID, serverMsg{Type: relayTypePeerJoined, PeerID: msg.PeerID})
-			s.snap.schedule()
 
 		case relayTypeLeave:
 			if currentRoom == nil {
@@ -2237,36 +2588,89 @@ func (s *Server) handleWS(w http.ResponseWriter, r *http.Request) {
 			}
 			room := currentRoom
 			presentedVerifier, tokenValid := reconnectVerifierFromToken(msg.ReconnectToken)
+			if s.beforeLeaveRoomLock != nil {
+				s.beforeLeaveRoomLock()
+			}
 			room.mu.Lock()
 			currentClient := room.Peers[currentPeerID] == client
 			isGuest := currentPeerID != room.HostPeerID
 			authorized := currentClient && isGuest && !room.closing && msg.ProtocolVersion == room.ProtocolVersion
+			reservation, reservationOK := room.peerReservations[currentPeerID]
 			if authorized && room.ProtocolVersion == relayProtocolVersion {
-				expectedVerifier, ok := room.peerVerifiers[currentPeerID]
-				authorized = ok && tokenValid && reconnectVerifierMatches(expectedVerifier, presentedVerifier)
+				authorized = reservationOK &&
+					!reservation.releasePending &&
+					tokenValid &&
+					reconnectVerifierMatches(reservation.verifier, presentedVerifier)
 			}
 			if !authorized {
 				room.mu.Unlock()
 				client.sendJSON(serverMsg{Type: relayTypeError, Code: relayErrorPeerIdUnavailable, Message: "Unable to release peer identity"})
 				continue
 			}
-			releasedPeerID := currentPeerID
-			persistedMembershipChanged := room.ProtocolVersion == relayProtocolVersion
-			delete(room.Peers, releasedPeerID)
-			delete(room.peerVerifiers, releasedPeerID)
-			room.LastActivityAt = time.Now()
-			room.mu.Unlock()
 
-			currentRoom = nil
-			currentPeerID = ""
-			if persistedMembershipChanged {
-				if err := s.snap.writeAndLog(); err != nil {
+			releasedPeerID := currentPeerID
+			if room.ProtocolVersion == legacyRelayProtocolVersion {
+				delete(room.Peers, releasedPeerID)
+				room.LastActivityAt = time.Now()
+				s.snap.recordMutation()
+				room.mu.Unlock()
+				currentRoom = nil
+				currentPeerID = ""
+			} else {
+				previousActivity := room.LastActivityAt
+				leaveActivity := time.Now()
+				reservation.releasePending = true
+				reservation.releaseClient = client
+				room.peerReservations[releasedPeerID] = reservation
+				room.LastActivityAt = leaveActivity
+				ticket := s.snap.recordTerminalMutation(func(persistErr error) terminalMutationOutcome {
+					s.mu.RLock()
+					authoritativeRoom := s.rooms[room.SessionID] == room
+					room.mu.Lock()
+					currentReservation, stillReserved := room.peerReservations[releasedPeerID]
+					ownsRelease := authoritativeRoom &&
+						!room.closing &&
+						stillReserved &&
+						currentReservation.releasePending &&
+						currentReservation.releaseClient == client &&
+						room.Peers[releasedPeerID] == client
+					if !ownsRelease {
+						room.mu.Unlock()
+						s.mu.RUnlock()
+						return terminalMutationOutcome{err: persistErr, deliver: false}
+					}
+					if persistErr == nil {
+						delete(room.Peers, releasedPeerID)
+						delete(room.peerReservations, releasedPeerID)
+					} else {
+						currentReservation.releasePending = false
+						currentReservation.releaseClient = nil
+						room.peerReservations[releasedPeerID] = currentReservation
+						if room.LastActivityAt.Equal(leaveActivity) {
+							room.LastActivityAt = previousActivity
+						}
+						// The failed attempt captured the pending omission. Record
+						// the restored reservation before a queued later capture.
+						s.snap.recordMutation()
+					}
+					room.mu.Unlock()
+					s.mu.RUnlock()
+					return terminalMutationOutcome{err: persistErr, deliver: true}
+				})
+				room.mu.Unlock()
+
+				outcome := s.snap.waitForDurable(ticket)
+				if !outcome.deliver {
+					continue
+				}
+				if outcome.err != nil {
 					client.sendJSON(serverMsg{Type: relayTypeError, Code: relayErrorInvalidMessage, Message: "Unable to persist released peer identity"})
 					continue
 				}
-			} else {
-				s.snap.schedule()
+				currentRoom = nil
+				currentPeerID = ""
 			}
+
 			if s.beforeTerminalDelivery != nil {
 				s.beforeTerminalDelivery()
 			}
@@ -2310,17 +2714,19 @@ func (s *Server) handleWS(w http.ResponseWriter, r *http.Request) {
 				}
 			}
 			s.removeRoomLocked(room.SessionID, room)
+			ticket := s.snap.recordTerminalMutation(nil)
 			room.mu.Unlock()
 			s.mu.Unlock()
 
-			// Persist after releasing both locks and before any success frame.
-			// The room remains undiscoverable while existing membership stays
-			// authoritative for orderly terminal delivery.
-			if err := s.snap.writeAndLog(); err != nil {
+			// A successful outcome means the file-synced atomic rename committed.
+			// Supported filesystems also complete parent-directory sync before
+			// this barrier; post-rename sync degradation is warning-only.
+			outcome := s.snap.waitForDurable(ticket)
+			if outcome.err != nil {
 				client.sendJSON(serverMsg{Type: relayTypeError, Code: relayErrorInvalidMessage, Message: "Unable to persist ended room"})
 				room.mu.Lock()
 				clear(room.Peers)
-				clear(room.peerVerifiers)
+				clear(room.peerReservations)
 				room.mu.Unlock()
 				currentRoom = nil
 				currentPeerID = ""
@@ -2344,7 +2750,7 @@ func (s *Server) handleWS(w http.ResponseWriter, r *http.Request) {
 
 			room.mu.Lock()
 			clear(room.Peers)
-			clear(room.peerVerifiers)
+			clear(room.peerReservations)
 			room.mu.Unlock()
 			currentRoom = nil
 			currentPeerID = ""

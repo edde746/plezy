@@ -80,7 +80,6 @@ func (r clientIPResolver) resolve(req *http.Request) (string, error) {
 
 	selected := peer
 	useForwardedHop := true
-	parsedHops := 0
 	for valueIndex := len(values) - 1; valueIndex >= 0; valueIndex-- {
 		value := values[valueIndex]
 		end := len(value)
@@ -94,7 +93,6 @@ func (r clientIPResolver) resolve(req *http.Request) (string, error) {
 			if parseErr != nil || addr.Zone() != "" {
 				return "", errInvalidClientAddress
 			}
-			parsedHops++
 			if useForwardedHop {
 				if r.trusted(selected) {
 					selected = addr.Unmap()
@@ -107,9 +105,6 @@ func (r clientIPResolver) resolve(req *http.Request) (string, error) {
 			}
 			end = separator
 		}
-	}
-	if parsedHops == 0 {
-		return normalizeClientAddress(peer), nil
 	}
 	return normalizeClientAddress(selected), nil
 }
