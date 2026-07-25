@@ -750,10 +750,11 @@ mixin MediaServerCacheMixin implements MediaServerClient {
     try {
       final response = await networkCall();
       throwIfHttpError(response);
+      final parsed = parseResponse(response);
       if (cacheResponse) {
         await _putCacheResponse(cacheScope, cacheKey, response.data);
       }
-      return parseResponse(response);
+      return parsed;
     } catch (e) {
       if (shouldFallback != null && !shouldFallback(e)) rethrow;
       appLogger.w('Network request failed for $cacheKey, trying cache', error: e);
@@ -784,10 +785,11 @@ mixin MediaServerCacheMixin implements MediaServerClient {
     if (isOfflineMode) return null;
     final response = await networkCall();
     throwIfHttpError(response);
+    final parsed = parseResponse(response);
     if (cacheResponse) {
       await _putCacheResponse(cacheScope, cacheKey, response.data);
     }
-    return parseResponse(response);
+    return parsed;
   }
 
   Future<void> _putCacheResponse(ServerId cacheScope, String cacheKey, dynamic data) async {

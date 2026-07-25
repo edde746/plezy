@@ -111,6 +111,25 @@ void main() {
     expect(await cache.get(client.serverId, '/metadata/no-cache'), isNull);
   });
 
+  test('cache-first leaves a rejected response uncached', () async {
+    const key = '/metadata/rejected-response';
+    const body = {'value': 'invalid'};
+    final parseError = FormatException('invalid metadata');
+
+    await expectLater(
+      client.fetchWithCacheFirst<String>(
+        cacheScope: client.serverId,
+        cacheKey: key,
+        networkCall: () async => MediaServerResponse(statusCode: 200, data: body, headers: const {}),
+        parseCache: (_) => 'cached',
+        parseResponse: (_) => throw parseError,
+      ),
+      throwsA(same(parseError)),
+    );
+
+    expect(await cache.get(client.serverId, key), isNull);
+  });
+
   test('successful miss is parsed and cached exactly once', () async {
     var networkCalls = 0;
     var parserCalls = 0;
@@ -212,6 +231,27 @@ void main() {
       expect(value, 'cached');
       expect(cacheParserCalls, 1);
       expect(responseParserCalls, 0);
+    });
+
+    test('omitted selector serves the previous cache after response parsing fails', () async {
+      const key = '/metadata/parser-fallback';
+      await cache.put(client.serverId, key, cachedBody);
+      var cacheParserCalls = 0;
+
+      final value = await client.fetchWithCacheFallback<String>(
+        cacheKey: key,
+        networkCall: () async =>
+            MediaServerResponse(statusCode: 200, data: const {'value': 'invalid'}, headers: const {}),
+        parseCache: (cached) {
+          cacheParserCalls++;
+          return (cached as Map<String, dynamic>)['value'] as String;
+        },
+        parseResponse: (_) => throw const FormatException('invalid metadata'),
+      );
+
+      expect(value, 'cached');
+      expect(cacheParserCalls, 1);
+      expect(await cache.get(client.serverId, key), cachedBody);
     });
 
     test('rejecting selector rethrows an HTTP status without reading cached data', () async {

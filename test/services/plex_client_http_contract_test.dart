@@ -219,7 +219,7 @@ void main() {
 
       test('${api.name} propagates a valid JSON payload rejected by the item DTO', () async {
         final id = '${api.name}-cached-unmappable';
-        await seedItem(id);
+        final seededResponse = await seedItem(id);
         var requestCount = 0;
         final client = makeClient((_) async {
           requestCount++;
@@ -235,6 +235,13 @@ void main() {
 
         await expectLater(lookup(client, id, includeOnDeck: api.includeOnDeck), throwsA(isA<TypeError>()));
 
+        expect(requestCount, 1);
+        expect(await PlexApiCache.instance.get(defaultProfileScopeId.cacheServerId, endpointFor(id)), seededResponse);
+
+        client.setOfflineMode(true);
+        final offlineResult = await lookup(client, id, includeOnDeck: api.includeOnDeck);
+        expect(offlineResult.item?.id, id);
+        expect(offlineResult.item?.title, 'Cached item');
         expect(requestCount, 1);
       });
 
