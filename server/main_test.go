@@ -653,6 +653,60 @@ func awaitTerminalOutcome(t *testing.T, sn *snapshotter, ticket *terminalMutatio
 	}
 }
 
+func TestSnapshotTerminalMutationBypassesDebounce(t *testing.T) {
+	var persistCalls atomic.Int64
+	sn := newSnapshotter(filepath.Join(t.TempDir(), "rooms.json"), func() stateSnapshot {
+		return stateSnapshot{Version: snapshotFormatVersion, SavedAt: time.Now()}
+	})
+	sn.debounce = time.Hour
+	sn.persist = func([]byte) error {
+		persistCalls.Add(1)
+		return nil
+	}
+	go sn.run()
+	t.Cleanup(func() { _ = sn.flushAndStop(time.Second) })
+
+	ticket := sn.recordTerminalMutation(nil)
+	if outcome := awaitTerminalOutcome(t, sn, ticket); outcome.err != nil || !outcome.deliver {
+		t.Fatalf("terminal outcome=%+v", outcome)
+	}
+	if got := persistCalls.Load(); got != 1 {
+		t.Fatalf("terminal persist calls=%d, want 1", got)
+	}
+}
+
+func TestSnapshotFlushInterruptsDebounce(t *testing.T) {
+	debounceStarted := make(chan struct{})
+	var debounceOnce sync.Once
+	var persistCalls atomic.Int64
+	sn := newSnapshotter(filepath.Join(t.TempDir(), "rooms.json"), func() stateSnapshot {
+		return stateSnapshot{Version: snapshotFormatVersion, SavedAt: time.Now()}
+	})
+	sn.debounce = time.Hour
+	sn.beforeDebounceWait = func() {
+		debounceOnce.Do(func() { close(debounceStarted) })
+	}
+	sn.persist = func([]byte) error {
+		persistCalls.Add(1)
+		return nil
+	}
+	go sn.run()
+	t.Cleanup(func() { _ = sn.flushAndStop(time.Second) })
+
+	sn.recordMutation()
+	select {
+	case <-debounceStarted:
+	case <-time.After(2 * time.Second):
+		t.Fatal("snapshot writer did not enter its debounce window")
+	}
+	if err := sn.flushAndStop(time.Second); err != nil {
+		t.Fatalf("flush during debounce: %v", err)
+	}
+	if got := persistCalls.Load(); got != 1 {
+		t.Fatalf("flush persist calls=%d, want 1", got)
+	}
+}
+
 func TestSnapshotDurableWaitersCoalesce(t *testing.T) {
 	started := make(chan struct{})
 	release := make(chan struct{})

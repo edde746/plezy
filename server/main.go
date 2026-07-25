@@ -1166,13 +1166,16 @@ type snapshotter struct {
 	path                 string
 	dir                  string
 	trigger              chan struct{}
+	urgent               chan struct{}
 	flush                chan chan error
 	exited               chan struct{}
 	build                func() stateSnapshot
 	capture              func(func() uint64) (stateSnapshot, uint64)
 	persist              func([]byte) error
 	syncDir              func(string) error
+	debounce             time.Duration
 	writeMu              sync.Mutex
+	beforeDebounceWait   func() // test-only signal after a trigger enters its debounce window
 	beforeCapture        func() // test-only barrier immediately before generation capture
 	afterSequenceCapture func() // test-only barrier inside the protected capture boundary
 
@@ -1198,13 +1201,15 @@ func newSnapshotter(path string, build func() stateSnapshot) *snapshotter {
 		log.Printf("snapshot: mkdir %s: %v", dir, err)
 	}
 	sn := &snapshotter{
-		path:    path,
-		dir:     dir,
-		trigger: make(chan struct{}, 1),
-		flush:   make(chan chan error),
-		exited:  make(chan struct{}),
-		build:   build,
-		syncDir: syncSnapshotDirectory,
+		path:     path,
+		dir:      dir,
+		trigger:  make(chan struct{}, 1),
+		urgent:   make(chan struct{}, 1),
+		flush:    make(chan chan error),
+		exited:   make(chan struct{}),
+		build:    build,
+		syncDir:  syncSnapshotDirectory,
+		debounce: snapshotDebounce,
 	}
 	sn.capture = func(captureSequence func() uint64) (stateSnapshot, uint64) {
 		targetSeq := captureSequence()
@@ -1260,6 +1265,10 @@ func (sn *snapshotter) recordTerminalMutation(
 		result:   result,
 	})
 	sn.signalLocked()
+	select {
+	case sn.urgent <- struct{}{}:
+	default:
+	}
 	sn.stateMu.Unlock()
 	return &terminalMutationTicket{seq: seq, result: result}
 }
@@ -1308,11 +1317,38 @@ func (sn *snapshotter) run() {
 	for {
 		select {
 		case <-sn.trigger:
-			time.Sleep(snapshotDebounce)
-			// Drain a token queued before capture. A mutation recorded after
-			// capture re-arms the channel and therefore requires a later write.
+			if sn.beforeDebounceWait != nil {
+				sn.beforeDebounceWait()
+			}
+			timer := time.NewTimer(sn.debounce)
+			select {
+			case <-timer.C:
+			case <-sn.urgent:
+			case reply := <-sn.flush:
+				if !timer.Stop() {
+					select {
+					case <-timer.C:
+					default:
+					}
+				}
+				err := sn.flushLatestAndStop()
+				reply <- err
+				return
+			}
+			if !timer.Stop() {
+				select {
+				case <-timer.C:
+				default:
+				}
+			}
+			// Drain tokens queued before capture. A mutation recorded after
+			// capture re-arms the channels and therefore requires a later write.
 			select {
 			case <-sn.trigger:
+			default:
+			}
+			select {
+			case <-sn.urgent:
 			default:
 			}
 			_, err := sn.writeNextGeneration()
