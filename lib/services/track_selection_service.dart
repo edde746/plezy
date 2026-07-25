@@ -127,6 +127,8 @@ SubtitleTrack? findMpvTrackForPlexSubtitle(
 
     // A container track has no stable native ID. Its source-container ordinal
     // is authoritative; a metadata-identical earlier track is not a match.
+    // Narrower than the guard in [findPlexTrackForMpvSubtitle]: a Plex stream
+    // carrying no container ordinal still falls back to metadata scoring.
     if (mpvTrack.isContainer && plexOrdinal >= 0 && !ordinalMatches) continue;
 
     final score = _scoreSubtitleMatch(mpvTrack, plexTrack, ordinalMatches: ordinalMatches);
@@ -191,6 +193,8 @@ MediaSubtitleTrack? findPlexTrackForMpvSubtitle(
     final ordinalMatches =
         containerPlexTracks != null && mpvOrdinal >= 0 && containerPlexTracks.indexOf(plexTrack) == mpvOrdinal;
 
+    // The probe fixes isContainer here, so once a container ordinal list exists
+    // a container track matches at its own ordinal or not at all.
     if (mpvTrack.isContainer && containerPlexTracks != null && !ordinalMatches) continue;
 
     final score = _scoreSubtitleMatch(mpvTrack, plexTrack, ordinalMatches: ordinalMatches);
@@ -217,6 +221,8 @@ AudioTrack? findMpvTrackForPlexAudio(
 
   AudioTrack? bestMatch;
   int bestScore = 0;
+  // Ordinal identity is cross-side: the probe's index in the Plex list against
+  // the candidate's index in the MPV list.
   final plexOrdinal = allPlexTracks?.indexOf(plexTrack) ?? -1;
 
   for (final mpvTrack in mpvTracks) {
@@ -244,6 +250,8 @@ MediaAudioTrack? findPlexTrackForMpvAudio(
 
   MediaAudioTrack? bestMatch;
   int bestScore = 0;
+  // Same cross-side ordinal rule as [findMpvTrackForPlexAudio] with the two
+  // lists swapped; the score arguments stay MPV-first either way.
   final mpvOrdinal = allMpvTracks?.indexOf(mpvTrack) ?? -1;
 
   for (final plexTrack in plexTracks) {

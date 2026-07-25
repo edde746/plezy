@@ -410,6 +410,11 @@ class _FocusableWrapperState extends State<FocusableWrapper> with SingleTickerPr
     });
   }
 
+  // Runs the same activation sequence as FocusableChipStateMixin.handleChipKeyEvent
+  // but is deliberately kept separate: a wrapper always consumes the context-menu
+  // key (even with no onLongPress, so a card never leaks it upward) and passes
+  // every unmapped arrow through to framework traversal, where a chip does the
+  // opposite on both counts.
   KeyEventResult _handleKeyEvent(FocusNode node, KeyEvent event) {
     final key = event.logicalKey;
     final diagnosticsEnabled = TextInputDiagnostics.enabled;

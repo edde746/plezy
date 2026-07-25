@@ -125,6 +125,9 @@ class RecordingsTabState extends State<RecordingsTab> with WidgetsBindingObserve
     }
   }
 
+  // Same three gates as WhatsOnTab (tab selected, subtree visible, app
+  // foregrounded), but resume also reloads: a recording scheduled from the
+  // guide has to show up on arrival, not on the next 30s tick.
   void pauseRefresh() {
     _refreshRequested = false;
     _syncRefreshTimer();

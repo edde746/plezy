@@ -228,7 +228,10 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> with Controll
 
   /// Server ids the profile keeps after removing [excludingConnectionId]:
   /// its other join rows plus, for Plex Home profiles, the implicit parent
-  /// account.
+  /// account. Raw ids, matching the download keys this is differenced
+  /// against; `_serverIdsForProfile` in profile_connection_cleanup.dart is
+  /// ServerId-typed and ignores the parent, so the two are not the same
+  /// projection.
   Future<Set<String>> _retainedServerIds({
     required String excludingConnectionId,
     required ProfileConnectionRegistry profileConnections,
@@ -260,6 +263,9 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> with Controll
     unawaited(context.read<ActiveProfileBinder>().rebindIfActive(_profile.id));
   }
 
+  // Raw machine ids rather than the ServerId-typed twin in
+  // profile_connection_cleanup.dart: these are differenced against retained
+  // ids and matched to download global keys, which carry the unparsed id.
   Set<String> _serverIdsForConnection(Connection conn) {
     return switch (conn) {
       PlexAccountConnection(:final servers) => servers.map((s) => s.clientIdentifier).toSet(),

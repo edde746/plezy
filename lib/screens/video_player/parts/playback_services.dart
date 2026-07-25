@@ -61,6 +61,9 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
     required SettingsService settingsService,
     required bool useExoPlayer,
   }) async {
+    // Re-wire scope: exactly the nine subscriptions re-created below. The
+    // media-controls listeners belong to _setupMediaControls and the
+    // sleep-timer/Apple TV ones to initState; both outlive a re-wire.
     await Future.wait<void>([
       if (_playingSubscription != null) _playingSubscription!.cancel(),
       if (_completedSubscription != null) _completedSubscription!.cancel(),
@@ -190,10 +193,21 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
     });
   }
 
+  /// Roll the screen back to a re-runnable state after a failed player
+  /// attempt. The player is gone but the screen stays mounted and
+  /// [_retryPlayerInitialization] may run again, so every collaborator is
+  /// released *and* nulled so it can be built once more. Kept separate from
+  /// `dispose()`, which instead destroys the notifiers, focus nodes and
+  /// player, and cannot await any of this.
   Future<void> _tearDownFailedPlayerAttempt(Player attemptPlayer) async {
     final activePlayer = player;
     if (activePlayer != null && !identical(activePlayer, attemptPlayer)) return;
 
+    // Rollback scope: the nine player streams plus the five media-controls
+    // ones. _sleepTimerSubscription and _appleTvPlayPauseSubscription are
+    // initState-owned and never re-created — cancelling them here would kill
+    // the sleep-timer prompt and the Apple TV remote for the rest of the
+    // screen's life.
     final cancellationFutures = <Future<void>>[
       if (_playingSubscription != null) _playingSubscription!.cancel(),
       if (_completedSubscription != null) _completedSubscription!.cancel(),

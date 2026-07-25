@@ -154,6 +154,8 @@ class SimklClient implements DisposableTrackerClient {
       allowedMethods: const {'GET', 'POST'},
     );
 
+    // Only the authenticated host may invalidate: the data host is called
+    // without a token, so its 401s say nothing about the session.
     if (mainApiHost && response.statusCode == 401) {
       onSessionInvalidated();
       throw const TrackerAuthException(

@@ -78,7 +78,16 @@ class AbortController {
 /// timeouts, logging, and optional endpoint failover.
 class MediaServerHttpClient {
   final http.Client _client;
+
+  /// Requests owned by this client, aborted at the transport on shutdown so an
+  /// in-flight body raises [http.RequestAbortedException] instead of truncating.
   final Set<AbortController> _activeAborts = <AbortController>{};
+
+  /// Not delegated to [ManagedHttpClient]'s own closing guard: that reports
+  /// shutdown as an [http.ClientException], which maps to
+  /// [MediaServerHttpErrorType.connectionError] and so reads as transient.
+  /// Failover, pagination and download retry all branch on
+  /// [MediaServerHttpException.isCancellation].
   bool _closing = false;
 
   MediaServerHttpClient({

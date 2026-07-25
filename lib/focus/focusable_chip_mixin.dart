@@ -102,6 +102,12 @@ mixin FocusableChipStateMixin<T extends StatefulWidget> on State<T> {
   ///
   /// Returns [KeyEventResult.handled] if the event was consumed,
   /// [KeyEventResult.ignored] otherwise.
+  ///
+  /// Runs the same activation sequence as `_FocusableWrapperState._handleKeyEvent`
+  /// but is deliberately kept separate: a chip leaves the context-menu key
+  /// unconsumed when [ChipKeyCallbacks.onLongPress] is null and traps RIGHT/DOWN
+  /// so focus cannot escape the strip, where a wrapper does the opposite on both
+  /// counts.
   KeyEventResult handleChipKeyEvent(FocusNode _, KeyEvent event, ChipKeyCallbacks callbacks) {
     final key = event.logicalKey;
 

@@ -372,6 +372,11 @@ class ActiveProfileBinder {
     return success;
   }
 
+  /// Server ids the profile should reach once bound: its join rows plus the
+  /// implicit Plex Home parent, which normally has no row. Not shared with
+  /// `_serverIdsForProfile` (profile_connection_cleanup.dart) — that one is
+  /// join-rows-only and [ServerId]-typed, while this set keeps growing with
+  /// bind results and is compared against the manager's raw string ids.
   Set<String> _expectedServerIdsForProfile(
     Profile profile, {
     required List<ProfileConnection> joinRows,

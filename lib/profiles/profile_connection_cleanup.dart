@@ -283,6 +283,10 @@ Future<void> _clearProfileServerPrefsNoLongerReferenced({
   }
 }
 
+/// Server ids reachable through this profile's join rows. Narrower than
+/// `ActiveProfileBinder._expectedServerIdsForProfile`: an implicit Plex Home
+/// parent is not counted here, so folding the two together would change which
+/// per-profile prefs survive an unlink.
 Future<Set<ServerId>> _serverIdsForProfile(
   String profileId, {
   required ProfileConnectionRegistry profileConnections,
@@ -316,6 +320,9 @@ Future<bool> _isServerReferenced(
   return false;
 }
 
+// [ServerId]-typed for the preference APIs, which drops ids that fail to
+// parse; the twin in profile_detail_screen.dart stays raw so it can be
+// differenced against download keys.
 Set<ServerId> _serverIdsForConnection(Connection connection) {
   return switch (connection) {
     PlexAccountConnection(:final servers) => {

@@ -193,6 +193,8 @@ class MalClient implements DisposableTrackerClient {
       try {
         await _refresh();
       } catch (_) {
+        // Reported as an API 401, not as the TrackerAuthException Trakt
+        // propagates from the same path.
         throw const TrackerApiException(service: TrackerService.mal, statusCode: 401);
       }
       res = await _send(method, path, body: body, formBody: formBody);

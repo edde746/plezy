@@ -1509,6 +1509,11 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     _chromeController.dispose();
     _toastController.dispose();
 
+    // The release sequence below mirrors _tearDownFailedPlayerAttempt but is
+    // deliberately separate: dispose() cannot await, and it destroys the
+    // notifiers, focus nodes and player that the rollback path keeps alive
+    // for a retry on a still-mounted screen.
+    //
     // Stop progress tracking and send final state. Normal back navigation
     // awaits this before popping; dispose keeps a fallback for externally
     // removed routes where dispose() cannot await.
@@ -1531,6 +1536,9 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       SleepTimerService().markNeedsRestart();
     }
 
+    // Teardown scope: every subscription the screen ever owns, including the
+    // initState-owned sleep-timer and Apple TV ones that the rollback path
+    // must leave alive.
     _playingSubscription?.cancel();
     _completedSubscription?.cancel();
     _errorSubscription?.cancel();
@@ -1577,6 +1585,9 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       FullscreenStateManager().removeListener(_onFullscreenChanged);
       _fullscreenListenerAttached = false;
     }
+    // Not _restoreWindowsDisplayMode(): that helper waits 200ms after clearing
+    // the HDR hint before restoring, which dispose() cannot do. Fire the hint
+    // clear at the still-live player and restore immediately.
     if (!isReplacingWithVideo &&
         Platform.isWindows &&
         _displayModeService != null &&

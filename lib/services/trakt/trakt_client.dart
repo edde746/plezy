@@ -307,6 +307,8 @@ class TraktClient implements DisposableTrackerClient {
     var res = await _send(method, path, body: body);
 
     if (res.statusCode == 401) {
+      // A failed refresh propagates its TrackerAuthException; MAL's equivalent
+      // path flattens the same failure into TrackerApiException(401).
       await refresh();
       res = await _send(method, path, body: body);
     }

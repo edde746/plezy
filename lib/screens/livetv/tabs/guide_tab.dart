@@ -192,6 +192,9 @@ class GuideTabState extends State<GuideTab> with MountedSetStateMixin, WidgetsBi
     });
   }
 
+  // Not the gated data-refresh timer the other tabs run: pause/resume drive the
+  // per-minute UI ticker, and pause has to stamp _hiddenSince on both a section
+  // hide and an app background so _catchUpIfStale can measure the absence.
   void pauseRefresh() {
     _hiddenSince ??= DateTime.now();
     _timeIndicatorTimer?.cancel();
