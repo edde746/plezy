@@ -1453,6 +1453,7 @@ class _Translations$downloads$hu extends Translations$downloads$en {
 	@override String get syncRuleNotAvailableForProfile => 'Nem érhető el a jelenlegi profilhoz';
 	@override String get syncRuleUnknownServer => 'Ismeretlen szerver';
 	@override String get syncRuleListCreated => 'Szinkronizálási szabály létrehozva';
+	@override late final _Translations$downloads$backgroundWarning$hu backgroundWarning = _Translations$downloads$backgroundWarning$hu._(_root);
 }
 
 // Path: shaders
@@ -1981,6 +1982,41 @@ class _Translations$explore$status$hu extends Translations$explore$status$en {
 	@override String get ended => 'Befejeződött';
 	@override String get canceled => 'Törölve';
 	@override String get upcoming => 'Közelgő';
+}
+
+// Path: downloads.backgroundWarning
+class _Translations$downloads$backgroundWarning$hu extends Translations$downloads$backgroundWarning$en {
+	_Translations$downloads$backgroundWarning$hu._(TranslationsHu root) : this._root = root, super.internal(root);
+
+	final TranslationsHu _root; // ignore: unused_field
+
+	// Translations
+	@override String get bannerBlocked => 'A letöltések leállnak, ha kilépsz az alkalmazásból';
+	@override String get bannerDegraded => 'A háttérbeli letöltések korlátozottak lehetnek';
+	@override String get bannerAction => 'Részletek';
+	@override String get sheetTitle => 'A háttérbeli letöltések le vannak tiltva';
+	@override String get sheetTitleDegraded => 'A háttérbeli letöltések korlátozottak lehetnek';
+	@override String get sheetIntro => 'Az Android megakadályozza, hogy a Plezy megbízhatóan töltsön le a háttérben.';
+	@override String get sheetIntroDegraded => 'Az eszközöd korlátozza, hogy a Plezy mikor tölthet le a háttérben.';
+	@override String get reasonBackgroundRestricted => 'A Plezy háttérbeli használata korlátozva van. Állítsd az akkumulátor- vagy háttérhasználatát „Korlátlan” értékre.';
+	@override String get reasonStandbyRestricted => 'Az Android korlátozott készenléti állapotba helyezte a Plezyt. Állítsd az akkumulátorhasználatát „Korlátlan” értékre.';
+	@override String get reasonDownloadChannelBlocked => 'A letöltési értesítések ki vannak kapcsolva, ezért előfordulhat, hogy a folyamatjelzés és a vezérlők nem érhetők el.';
+	@override String get reasonNotificationsDisabled => 'Az értesítések ki vannak kapcsolva. Android 13 vagy újabb rendszeren szükségesek a hosszú háttérbeli letöltésekhez.';
+	@override String get reasonDataSaver => 'Az Adatforgalom-csökkentő be van kapcsolva, ezért mobiladat-kapcsolaton nem működnek a háttérbeli letöltések. Wi-Fi-n továbbra is működniük kell.';
+	@override String get reasonOemUnknown => 'A letöltések többször leálltak, miközben a Plezy a háttérben futott. Ellenőrizd a Plezy akkumulátor- vagy háttérhasználati beállításait.';
+	@override String get openSettings => 'Beállítások megnyitása';
+	@override String get stillNotWorking => 'Eszközspecifikus segítség';
+	@override String get stillNotWorkingDescription => 'Nézd meg az eszközödhöz tartozó lépéseket, vagy ha a probléma továbbra is fennáll, küldj naplót a Beállítások › Naplók megtekintése menüből.';
+	@override String get dialogTitle => 'A letöltések nem biztos, hogy befejeződnek';
+	@override String get dialogDownloadAnyway => 'Letöltés mégis';
+	@override String get dialogFixFirst => 'Előbb javítom';
+	@override String get statusTile => 'Háttérbeli letöltések';
+	@override String get statusOk => 'Futhat a háttérben';
+	@override String get statusBlocked => 'A rendszerbeállítások blokkolják';
+	@override String get statusDegraded => 'A rendszerbeállítások korlátozzák';
+	@override String get statusUnknown => 'Még nincs ellenőrizve';
+	@override String get settingsUnavailable => 'Ezen az eszközön nem sikerült megnyitni a rendszerbeállításokat';
+	@override String get linkUnavailable => 'Ezen az eszközön nem sikerült megnyitni a dontkillmyapp.com webhelyet';
 }
 
 // Path: companionRemote.session
@@ -3261,6 +3297,32 @@ extension on TranslationsHu {
 			'downloads.syncRuleNotAvailableForProfile' => 'Nem érhető el a jelenlegi profilhoz',
 			'downloads.syncRuleUnknownServer' => 'Ismeretlen szerver',
 			'downloads.syncRuleListCreated' => 'Szinkronizálási szabály létrehozva',
+			'downloads.backgroundWarning.bannerBlocked' => 'A letöltések leállnak, ha kilépsz az alkalmazásból',
+			'downloads.backgroundWarning.bannerDegraded' => 'A háttérbeli letöltések korlátozottak lehetnek',
+			'downloads.backgroundWarning.bannerAction' => 'Részletek',
+			'downloads.backgroundWarning.sheetTitle' => 'A háttérbeli letöltések le vannak tiltva',
+			'downloads.backgroundWarning.sheetTitleDegraded' => 'A háttérbeli letöltések korlátozottak lehetnek',
+			'downloads.backgroundWarning.sheetIntro' => 'Az Android megakadályozza, hogy a Plezy megbízhatóan töltsön le a háttérben.',
+			'downloads.backgroundWarning.sheetIntroDegraded' => 'Az eszközöd korlátozza, hogy a Plezy mikor tölthet le a háttérben.',
+			'downloads.backgroundWarning.reasonBackgroundRestricted' => 'A Plezy háttérbeli használata korlátozva van. Állítsd az akkumulátor- vagy háttérhasználatát „Korlátlan” értékre.',
+			'downloads.backgroundWarning.reasonStandbyRestricted' => 'Az Android korlátozott készenléti állapotba helyezte a Plezyt. Állítsd az akkumulátorhasználatát „Korlátlan” értékre.',
+			'downloads.backgroundWarning.reasonDownloadChannelBlocked' => 'A letöltési értesítések ki vannak kapcsolva, ezért előfordulhat, hogy a folyamatjelzés és a vezérlők nem érhetők el.',
+			'downloads.backgroundWarning.reasonNotificationsDisabled' => 'Az értesítések ki vannak kapcsolva. Android 13 vagy újabb rendszeren szükségesek a hosszú háttérbeli letöltésekhez.',
+			'downloads.backgroundWarning.reasonDataSaver' => 'Az Adatforgalom-csökkentő be van kapcsolva, ezért mobiladat-kapcsolaton nem működnek a háttérbeli letöltések. Wi-Fi-n továbbra is működniük kell.',
+			'downloads.backgroundWarning.reasonOemUnknown' => 'A letöltések többször leálltak, miközben a Plezy a háttérben futott. Ellenőrizd a Plezy akkumulátor- vagy háttérhasználati beállításait.',
+			'downloads.backgroundWarning.openSettings' => 'Beállítások megnyitása',
+			'downloads.backgroundWarning.stillNotWorking' => 'Eszközspecifikus segítség',
+			'downloads.backgroundWarning.stillNotWorkingDescription' => 'Nézd meg az eszközödhöz tartozó lépéseket, vagy ha a probléma továbbra is fennáll, küldj naplót a Beállítások › Naplók megtekintése menüből.',
+			'downloads.backgroundWarning.dialogTitle' => 'A letöltések nem biztos, hogy befejeződnek',
+			'downloads.backgroundWarning.dialogDownloadAnyway' => 'Letöltés mégis',
+			'downloads.backgroundWarning.dialogFixFirst' => 'Előbb javítom',
+			'downloads.backgroundWarning.statusTile' => 'Háttérbeli letöltések',
+			'downloads.backgroundWarning.statusOk' => 'Futhat a háttérben',
+			'downloads.backgroundWarning.statusBlocked' => 'A rendszerbeállítások blokkolják',
+			'downloads.backgroundWarning.statusDegraded' => 'A rendszerbeállítások korlátozzák',
+			'downloads.backgroundWarning.statusUnknown' => 'Még nincs ellenőrizve',
+			'downloads.backgroundWarning.settingsUnavailable' => 'Ezen az eszközön nem sikerült megnyitni a rendszerbeállításokat',
+			'downloads.backgroundWarning.linkUnavailable' => 'Ezen az eszközön nem sikerült megnyitni a dontkillmyapp.com webhelyet',
 			'shaders.title' => 'Shaderek',
 			'shaders.noShaderDescription' => 'Nincs videójavítás',
 			'shaders.nvscalerDescription' => 'NVIDIA képskálázás az élesebb videóért',

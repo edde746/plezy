@@ -1453,6 +1453,7 @@ class _Translations$downloads$nl extends Translations$downloads$en {
 	@override String get syncRuleNotAvailableForProfile => 'Niet beschikbaar voor huidig profiel';
 	@override String get syncRuleUnknownServer => 'Onbekende server';
 	@override String get syncRuleListCreated => 'Synchronisatieregel aangemaakt';
+	@override late final _Translations$downloads$backgroundWarning$nl backgroundWarning = _Translations$downloads$backgroundWarning$nl._(_root);
 }
 
 // Path: shaders
@@ -1981,6 +1982,41 @@ class _Translations$explore$status$nl extends Translations$explore$status$en {
 	@override String get ended => 'Afgelopen';
 	@override String get canceled => 'Geannuleerd';
 	@override String get upcoming => 'Binnenkort';
+}
+
+// Path: downloads.backgroundWarning
+class _Translations$downloads$backgroundWarning$nl extends Translations$downloads$backgroundWarning$en {
+	_Translations$downloads$backgroundWarning$nl._(TranslationsNl root) : this._root = root, super.internal(root);
+
+	final TranslationsNl _root; // ignore: unused_field
+
+	// Translations
+	@override String get bannerBlocked => 'Downloads stoppen zodra je de app verlaat';
+	@override String get bannerDegraded => 'Downloads op de achtergrond kunnen beperkt zijn';
+	@override String get bannerAction => 'Details';
+	@override String get sheetTitle => 'Downloads op de achtergrond zijn geblokkeerd';
+	@override String get sheetTitleDegraded => 'Downloads op de achtergrond kunnen beperkt zijn';
+	@override String get sheetIntro => 'Android verhindert dat Plezy betrouwbaar op de achtergrond downloadt.';
+	@override String get sheetIntroDegraded => 'Je apparaat beperkt wanneer Plezy op de achtergrond kan downloaden.';
+	@override String get reasonBackgroundRestricted => 'Het achtergrondgebruik van Plezy is beperkt. Stel het batterij- of achtergrondgebruik in op "Onbeperkt".';
+	@override String get reasonStandbyRestricted => 'Android heeft Plezy in een beperkte stand-bymodus geplaatst. Stel het batterijgebruik in op "Onbeperkt".';
+	@override String get reasonDownloadChannelBlocked => 'Downloadmeldingen zijn uitgeschakeld, waardoor voortgang en bediening mogelijk niet beschikbaar zijn.';
+	@override String get reasonNotificationsDisabled => 'Meldingen zijn uitgeschakeld. Op Android 13 of nieuwer zijn ze vereist voor langdurige downloads op de achtergrond.';
+	@override String get reasonDataSaver => 'Databesparing is ingeschakeld en blokkeert downloads op de achtergrond via mobiele data. Via Wi-Fi zouden downloads nog wel moeten werken.';
+	@override String get reasonOemUnknown => 'Downloads zijn herhaaldelijk gestopt terwijl Plezy op de achtergrond draaide. Controleer de instellingen voor het batterij- of achtergrondgebruik van Plezy.';
+	@override String get openSettings => 'Instellingen openen';
+	@override String get stillNotWorking => 'Apparaatspecifieke hulp';
+	@override String get stillNotWorkingDescription => 'Bekijk de stappen voor je apparaat of stuur een logbestand vanuit Instellingen › Logbestanden bekijken als het probleem aanhoudt.';
+	@override String get dialogTitle => 'Downloads worden mogelijk niet voltooid';
+	@override String get dialogDownloadAnyway => 'Toch downloaden';
+	@override String get dialogFixFirst => 'Dit eerst oplossen';
+	@override String get statusTile => 'Downloads op de achtergrond';
+	@override String get statusOk => 'Mag op de achtergrond worden uitgevoerd';
+	@override String get statusBlocked => 'Geblokkeerd door systeeminstellingen';
+	@override String get statusDegraded => 'Beperkt door systeeminstellingen';
+	@override String get statusUnknown => 'Nog niet gecontroleerd';
+	@override String get settingsUnavailable => 'Kan de systeeminstellingen niet openen op dit apparaat';
+	@override String get linkUnavailable => 'Kan dontkillmyapp.com niet openen op dit apparaat';
 }
 
 // Path: companionRemote.session
@@ -3261,6 +3297,32 @@ extension on TranslationsNl {
 			'downloads.syncRuleNotAvailableForProfile' => 'Niet beschikbaar voor huidig profiel',
 			'downloads.syncRuleUnknownServer' => 'Onbekende server',
 			'downloads.syncRuleListCreated' => 'Synchronisatieregel aangemaakt',
+			'downloads.backgroundWarning.bannerBlocked' => 'Downloads stoppen zodra je de app verlaat',
+			'downloads.backgroundWarning.bannerDegraded' => 'Downloads op de achtergrond kunnen beperkt zijn',
+			'downloads.backgroundWarning.bannerAction' => 'Details',
+			'downloads.backgroundWarning.sheetTitle' => 'Downloads op de achtergrond zijn geblokkeerd',
+			'downloads.backgroundWarning.sheetTitleDegraded' => 'Downloads op de achtergrond kunnen beperkt zijn',
+			'downloads.backgroundWarning.sheetIntro' => 'Android verhindert dat Plezy betrouwbaar op de achtergrond downloadt.',
+			'downloads.backgroundWarning.sheetIntroDegraded' => 'Je apparaat beperkt wanneer Plezy op de achtergrond kan downloaden.',
+			'downloads.backgroundWarning.reasonBackgroundRestricted' => 'Het achtergrondgebruik van Plezy is beperkt. Stel het batterij- of achtergrondgebruik in op "Onbeperkt".',
+			'downloads.backgroundWarning.reasonStandbyRestricted' => 'Android heeft Plezy in een beperkte stand-bymodus geplaatst. Stel het batterijgebruik in op "Onbeperkt".',
+			'downloads.backgroundWarning.reasonDownloadChannelBlocked' => 'Downloadmeldingen zijn uitgeschakeld, waardoor voortgang en bediening mogelijk niet beschikbaar zijn.',
+			'downloads.backgroundWarning.reasonNotificationsDisabled' => 'Meldingen zijn uitgeschakeld. Op Android 13 of nieuwer zijn ze vereist voor langdurige downloads op de achtergrond.',
+			'downloads.backgroundWarning.reasonDataSaver' => 'Databesparing is ingeschakeld en blokkeert downloads op de achtergrond via mobiele data. Via Wi-Fi zouden downloads nog wel moeten werken.',
+			'downloads.backgroundWarning.reasonOemUnknown' => 'Downloads zijn herhaaldelijk gestopt terwijl Plezy op de achtergrond draaide. Controleer de instellingen voor het batterij- of achtergrondgebruik van Plezy.',
+			'downloads.backgroundWarning.openSettings' => 'Instellingen openen',
+			'downloads.backgroundWarning.stillNotWorking' => 'Apparaatspecifieke hulp',
+			'downloads.backgroundWarning.stillNotWorkingDescription' => 'Bekijk de stappen voor je apparaat of stuur een logbestand vanuit Instellingen › Logbestanden bekijken als het probleem aanhoudt.',
+			'downloads.backgroundWarning.dialogTitle' => 'Downloads worden mogelijk niet voltooid',
+			'downloads.backgroundWarning.dialogDownloadAnyway' => 'Toch downloaden',
+			'downloads.backgroundWarning.dialogFixFirst' => 'Dit eerst oplossen',
+			'downloads.backgroundWarning.statusTile' => 'Downloads op de achtergrond',
+			'downloads.backgroundWarning.statusOk' => 'Mag op de achtergrond worden uitgevoerd',
+			'downloads.backgroundWarning.statusBlocked' => 'Geblokkeerd door systeeminstellingen',
+			'downloads.backgroundWarning.statusDegraded' => 'Beperkt door systeeminstellingen',
+			'downloads.backgroundWarning.statusUnknown' => 'Nog niet gecontroleerd',
+			'downloads.backgroundWarning.settingsUnavailable' => 'Kan de systeeminstellingen niet openen op dit apparaat',
+			'downloads.backgroundWarning.linkUnavailable' => 'Kan dontkillmyapp.com niet openen op dit apparaat',
 			'shaders.title' => 'Shaders',
 			'shaders.noShaderDescription' => 'Geen videoverbetering',
 			'shaders.nvscalerDescription' => 'NVIDIA-beeldschaling voor scherpere video',

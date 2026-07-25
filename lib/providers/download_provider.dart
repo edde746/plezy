@@ -13,6 +13,7 @@ import '../models/download_models.dart';
 import '../utils/download_version_utils.dart';
 import '../database/app_database.dart';
 import '../database/download_operations.dart';
+import '../services/background_work_diagnostics_service.dart';
 import '../services/download_manager_service.dart';
 import '../services/api_cache.dart';
 import '../services/download_artwork_service.dart';
@@ -28,6 +29,7 @@ import '../utils/deletion_notifier.dart';
 import '../utils/downloaded_version_match.dart';
 import '../media/episode_collection.dart';
 import '../utils/global_key_utils.dart';
+import '../utils/notification_permission.dart';
 import '../utils/watch_state_notifier.dart';
 import '../mixins/disposable_change_notifier_mixin.dart';
 
@@ -105,6 +107,7 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
       _activeProfileId == ownership.profileId && _profileGeneration == ownership.generation;
 
   OfflineModeSource? _offlineSource;
+  int _networkStateGeneration = 0;
 
   DownloadProvider({required this._downloadManager, required this._database})
     : _syncRuleExecutor = SyncRuleExecutor(database: _database) {
@@ -117,6 +120,10 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
 
     // Load persisted downloads from database
     _initFuture = _loadPersistedDownloads();
+
+    // Lets the diagnostics service score whether downloads actually advance
+    // while the app is backgrounded, without it reaching into providers.
+    BackgroundWorkDiagnosticsService.instance.bindActivitySource(downloadActivitySnapshot);
   }
 
   /// Test-only constructor that skips the heavy initial load (artwork dir,
@@ -141,7 +148,12 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
   /// the device has no Plex connectivity. Sync-rule execution receives a
   /// snapshot of this state when invoked, keeping this provider as the owner.
   void setOfflineSource(OfflineModeSource? source) {
-    _offlineSource = source;
+    if (!identical(_offlineSource, source)) {
+      _offlineSource?.removeListener(_onOfflineSourceChanged);
+      _offlineSource = source;
+      _offlineSource?.addListener(_onOfflineSourceChanged);
+      _networkStateGeneration++;
+    }
     _downloadManager.setOfflineSource(source);
   }
 
@@ -498,11 +510,32 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
   void _onProgressUpdate(DownloadProgress progress) {
     appLogger.d('Progress update received: ${progress.globalKey} - ${progress.status} - ${progress.progress}%');
     final ownedByActiveProfile = _ownsDownloadKey(progress.globalKey);
-    _downloads[progress.globalKey] = progress;
+    final previous = _downloads[progress.globalKey];
+    final terminalUpdateOmittedBytes =
+        previous != null &&
+        progress.downloadedBytes == 0 &&
+        previous.downloadedBytes > 0 &&
+        switch (progress.status) {
+          DownloadStatus.completed ||
+          DownloadStatus.failed ||
+          DownloadStatus.cancelled ||
+          DownloadStatus.partial => true,
+          DownloadStatus.queued || DownloadStatus.downloading || DownloadStatus.paused => false,
+        };
+    // Terminal status-only events omit byte fields. Preserve only those omitted
+    // counters; live progress and explicit retry resets must remain authoritative.
+    final merged = terminalUpdateOmittedBytes
+        ? progress.copyWith(
+            progress: progress.progress == 0 ? previous.progress : progress.progress,
+            downloadedBytes: previous.downloadedBytes,
+            totalBytes: progress.totalBytes == 0 ? previous.totalBytes : progress.totalBytes,
+          )
+        : progress;
+    _downloads[progress.globalKey] = merged;
 
     // Sync artwork paths when they are available.
-    if (progress.hasArtworkPaths) {
-      _artworkPaths[progress.globalKey] = DownloadedArtwork(thumbPath: progress.thumbPath);
+    if (merged.hasArtworkPaths) {
+      _artworkPaths[merged.globalKey] = DownloadedArtwork(thumbPath: merged.thumbPath);
     }
 
     if (ownedByActiveProfile) safeNotifyListeners();
@@ -510,6 +543,8 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
 
   @override
   void dispose() {
+    BackgroundWorkDiagnosticsService.instance.unbindActivitySource(downloadActivitySnapshot);
+    _offlineSource?.removeListener(_onOfflineSourceChanged);
     _progressSubscription?.cancel();
     _deletionProgressSubscription?.cancel();
     _metadataStore
@@ -519,6 +554,7 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
   }
 
   void _onMetadataStoreChanged() => safeNotifyListeners();
+  void _onOfflineSourceChanged() => _networkStateGeneration++;
 
   /// Ensure metadata has a serverId, falling back to a parent's serverId.
   MediaItem _ensureServerId(MediaItem metadata, String? fallbackServerId) =>
@@ -527,6 +563,49 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
   /// All current download progress entries
   Map<String, DownloadProgress> get downloads =>
       Map.unmodifiable(Map.fromEntries(_downloads.entries.where(_ownsProgressEntry)));
+
+  /// Aggregate transfer activity for [BackgroundWorkDiagnosticsService].
+  ///
+  /// Deliberately unfiltered by profile: the OS restricts the process, not a
+  /// profile. Byte and percentage totals are merged monotonically per row;
+  /// status counters distinguish a drained queue from a killed task.
+  ///
+  /// A method rather than a getter so the tear-off handed to
+  /// [BackgroundWorkDiagnosticsService.bindActivitySource] compares equal at
+  /// unbind time.
+  DownloadActivitySnapshot downloadActivitySnapshot() {
+    var activeTasks = 0;
+    var completedTasks = 0;
+    var failedTasks = 0;
+    var downloadedBytes = 0;
+    var progressUnits = 0;
+    for (final progress in _downloads.values) {
+      switch (progress.status) {
+        case DownloadStatus.downloading:
+          activeTasks++;
+        case DownloadStatus.completed:
+          completedTasks++;
+        case DownloadStatus.failed:
+          failedTasks++;
+        case DownloadStatus.queued:
+        case DownloadStatus.paused:
+        case DownloadStatus.cancelled:
+        case DownloadStatus.partial:
+          break;
+      }
+      downloadedBytes += progress.downloadedBytes;
+      progressUnits += progress.progress;
+    }
+    return (
+      activeTasks: activeTasks,
+      completedTasks: completedTasks,
+      failedTasks: failedTasks,
+      downloadedBytes: downloadedBytes,
+      progressUnits: progressUnits,
+      networkAvailable: _offlineSource == null ? null : !_offlineSource!.isOffline,
+      networkStateGeneration: _networkStateGeneration,
+    );
+  }
 
   /// All metadata for downloads
   Map<String, MediaItem> get metadata => _metadataStore.resolvedItems;
@@ -995,6 +1074,10 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
       if (await DownloadManagerService.shouldBlockDownloadOnCellular()) {
         throw CellularDownloadBlockedException();
       }
+      if (!_isQueueOwnershipCurrent(ownership)) return 0;
+      // The queueing claim above remains held while Android's permission
+      // dialog is open, so a second tap cannot launch duplicate expansion.
+      await NotificationPermission.ensure();
       if (!_isQueueOwnershipCurrent(ownership)) return 0;
 
       if (metadata.isMovie || metadata.isEpisode || metadata.kind == MediaKind.track) {

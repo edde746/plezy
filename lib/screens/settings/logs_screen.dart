@@ -17,6 +17,7 @@ import '../../i18n/strings.g.dart';
 import '../../mixins/mounted_set_state_mixin.dart';
 import '../../utils/dialogs.dart';
 import '../../main.dart' show gitCommit;
+import '../../services/background_work_diagnostics_service.dart';
 import '../../services/device_performance.dart';
 import '../../utils/app_logger.dart';
 import '../../utils/formatters.dart';
@@ -106,6 +107,12 @@ class _LogsScreenState extends State<LogsScreen> with MountedSetStateMixin {
         renderer = 'unknown';
       }
       buffer.writeln('Renderer: $renderer');
+      // "Are downloads allowed to run in the background" is the single most
+      // asked support question; answering it from the uploaded log turns a
+      // four-message thread into one reply.
+      final backgroundWork = BackgroundWorkDiagnosticsService.instance;
+      await backgroundWork.refresh();
+      buffer.writeln('Background: ${backgroundWork.describeSync()}');
     } else if (Platform.isIOS) {
       final info = await deviceInfo.iosInfo;
       buffer.writeln('iOS ${info.systemVersion}');

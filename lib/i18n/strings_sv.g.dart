@@ -1453,6 +1453,7 @@ class _Translations$downloads$sv extends Translations$downloads$en {
 	@override String get syncRuleNotAvailableForProfile => 'Inte tillgänglig för aktuell profil';
 	@override String get syncRuleUnknownServer => 'Okänd server';
 	@override String get syncRuleListCreated => 'Synkroniseringsregel skapad';
+	@override late final _Translations$downloads$backgroundWarning$sv backgroundWarning = _Translations$downloads$backgroundWarning$sv._(_root);
 }
 
 // Path: shaders
@@ -1981,6 +1982,41 @@ class _Translations$explore$status$sv extends Translations$explore$status$en {
 	@override String get ended => 'Avslutad';
 	@override String get canceled => 'Nedlagd';
 	@override String get upcoming => 'Kommande';
+}
+
+// Path: downloads.backgroundWarning
+class _Translations$downloads$backgroundWarning$sv extends Translations$downloads$backgroundWarning$en {
+	_Translations$downloads$backgroundWarning$sv._(TranslationsSv root) : this._root = root, super.internal(root);
+
+	final TranslationsSv _root; // ignore: unused_field
+
+	// Translations
+	@override String get bannerBlocked => 'Nedladdningar stoppas när du lämnar appen';
+	@override String get bannerDegraded => 'Bakgrundsnedladdningar kan begränsas';
+	@override String get bannerAction => 'Detaljer';
+	@override String get sheetTitle => 'Bakgrundsnedladdningar är blockerade';
+	@override String get sheetTitleDegraded => 'Bakgrundsnedladdningar kan begränsas';
+	@override String get sheetIntro => 'Android hindrar Plezy från att ladda ned tillförlitligt i bakgrunden.';
+	@override String get sheetIntroDegraded => 'Din enhet begränsar när Plezy kan ladda ned i bakgrunden.';
+	@override String get reasonBackgroundRestricted => 'Plezys bakgrundsanvändning är begränsad. Ställ in batteri- eller bakgrundsanvändningen på "Obegränsad".';
+	@override String get reasonStandbyRestricted => 'Android har satt Plezy i ett begränsat vänteläge. Ställ in batterianvändningen på "Obegränsad".';
+	@override String get reasonDownloadChannelBlocked => 'Aviseringar om nedladdningar är avstängda, så förlopp och kontroller kanske inte är tillgängliga.';
+	@override String get reasonNotificationsDisabled => 'Aviseringar är avstängda. På Android 13 eller senare krävs de för långa bakgrundsnedladdningar.';
+	@override String get reasonDataSaver => 'Databesparing är aktiverad, vilket blockerar bakgrundsnedladdningar via mobildata. Nedladdningar bör fortfarande fungera via Wi-Fi.';
+	@override String get reasonOemUnknown => 'Nedladdningar stoppades upprepade gånger när Plezy kördes i bakgrunden. Kontrollera Plezys inställningar för batteri- eller bakgrundsanvändning.';
+	@override String get openSettings => 'Öppna inställningar';
+	@override String get stillNotWorking => 'Enhetsspecifik hjälp';
+	@override String get stillNotWorkingDescription => 'Se anvisningar för din enhet eller skicka en logg från Inställningar › Visa loggar om problemet kvarstår.';
+	@override String get dialogTitle => 'Nedladdningar kanske inte slutförs';
+	@override String get dialogDownloadAnyway => 'Ladda ned ändå';
+	@override String get dialogFixFirst => 'Åtgärda först';
+	@override String get statusTile => 'Bakgrundsnedladdningar';
+	@override String get statusOk => 'Får köras i bakgrunden';
+	@override String get statusBlocked => 'Blockeras av systeminställningar';
+	@override String get statusDegraded => 'Begränsas av systeminställningar';
+	@override String get statusUnknown => 'Inte kontrollerat än';
+	@override String get settingsUnavailable => 'Det gick inte att öppna systeminställningarna på den här enheten';
+	@override String get linkUnavailable => 'Det gick inte att öppna dontkillmyapp.com på den här enheten';
 }
 
 // Path: companionRemote.session
@@ -3261,6 +3297,32 @@ extension on TranslationsSv {
 			'downloads.syncRuleNotAvailableForProfile' => 'Inte tillgänglig för aktuell profil',
 			'downloads.syncRuleUnknownServer' => 'Okänd server',
 			'downloads.syncRuleListCreated' => 'Synkroniseringsregel skapad',
+			'downloads.backgroundWarning.bannerBlocked' => 'Nedladdningar stoppas när du lämnar appen',
+			'downloads.backgroundWarning.bannerDegraded' => 'Bakgrundsnedladdningar kan begränsas',
+			'downloads.backgroundWarning.bannerAction' => 'Detaljer',
+			'downloads.backgroundWarning.sheetTitle' => 'Bakgrundsnedladdningar är blockerade',
+			'downloads.backgroundWarning.sheetTitleDegraded' => 'Bakgrundsnedladdningar kan begränsas',
+			'downloads.backgroundWarning.sheetIntro' => 'Android hindrar Plezy från att ladda ned tillförlitligt i bakgrunden.',
+			'downloads.backgroundWarning.sheetIntroDegraded' => 'Din enhet begränsar när Plezy kan ladda ned i bakgrunden.',
+			'downloads.backgroundWarning.reasonBackgroundRestricted' => 'Plezys bakgrundsanvändning är begränsad. Ställ in batteri- eller bakgrundsanvändningen på "Obegränsad".',
+			'downloads.backgroundWarning.reasonStandbyRestricted' => 'Android har satt Plezy i ett begränsat vänteläge. Ställ in batterianvändningen på "Obegränsad".',
+			'downloads.backgroundWarning.reasonDownloadChannelBlocked' => 'Aviseringar om nedladdningar är avstängda, så förlopp och kontroller kanske inte är tillgängliga.',
+			'downloads.backgroundWarning.reasonNotificationsDisabled' => 'Aviseringar är avstängda. På Android 13 eller senare krävs de för långa bakgrundsnedladdningar.',
+			'downloads.backgroundWarning.reasonDataSaver' => 'Databesparing är aktiverad, vilket blockerar bakgrundsnedladdningar via mobildata. Nedladdningar bör fortfarande fungera via Wi-Fi.',
+			'downloads.backgroundWarning.reasonOemUnknown' => 'Nedladdningar stoppades upprepade gånger när Plezy kördes i bakgrunden. Kontrollera Plezys inställningar för batteri- eller bakgrundsanvändning.',
+			'downloads.backgroundWarning.openSettings' => 'Öppna inställningar',
+			'downloads.backgroundWarning.stillNotWorking' => 'Enhetsspecifik hjälp',
+			'downloads.backgroundWarning.stillNotWorkingDescription' => 'Se anvisningar för din enhet eller skicka en logg från Inställningar › Visa loggar om problemet kvarstår.',
+			'downloads.backgroundWarning.dialogTitle' => 'Nedladdningar kanske inte slutförs',
+			'downloads.backgroundWarning.dialogDownloadAnyway' => 'Ladda ned ändå',
+			'downloads.backgroundWarning.dialogFixFirst' => 'Åtgärda först',
+			'downloads.backgroundWarning.statusTile' => 'Bakgrundsnedladdningar',
+			'downloads.backgroundWarning.statusOk' => 'Får köras i bakgrunden',
+			'downloads.backgroundWarning.statusBlocked' => 'Blockeras av systeminställningar',
+			'downloads.backgroundWarning.statusDegraded' => 'Begränsas av systeminställningar',
+			'downloads.backgroundWarning.statusUnknown' => 'Inte kontrollerat än',
+			'downloads.backgroundWarning.settingsUnavailable' => 'Det gick inte att öppna systeminställningarna på den här enheten',
+			'downloads.backgroundWarning.linkUnavailable' => 'Det gick inte att öppna dontkillmyapp.com på den här enheten',
 			'shaders.title' => 'Shaders',
 			'shaders.noShaderDescription' => 'Ingen videoförbättring',
 			'shaders.nvscalerDescription' => 'NVIDIA-bildskalning för skarpare video',

@@ -33,9 +33,35 @@ void main() {
       }
     }
   });
+  test('background warning requires complete translations in every locale', () {
+    final sourceDirectory = Directory('lib/i18n');
+    final english = _decodeLocale(File('${sourceDirectory.path}/en.i18n.json'));
+    final englishWarning = _backgroundWarning(english);
+    final localeFiles = sourceDirectory.listSync().whereType<File>().where(
+      (file) => file.path.endsWith('.i18n.json') && !file.path.endsWith('en.i18n.json'),
+    );
+
+    expect(englishWarning.values, everyElement(isNotEmpty), reason: 'English warning copy must be usable');
+    for (final localeFile in localeFiles) {
+      final localizedWarning = _backgroundWarning(_decodeLocale(localeFile));
+      expect(
+        localizedWarning.keys,
+        unorderedEquals(englishWarning.keys),
+        reason: '${localeFile.path} must contain every background warning key',
+      );
+      expect(
+        localizedWarning.values,
+        everyElement(isNotEmpty),
+        reason: '${localeFile.path} must translate every background warning',
+      );
+    }
+  });
 }
 
 Map<String, dynamic> _decodeLocale(File file) => jsonDecode(file.readAsStringSync()) as Map<String, dynamic>;
+
+Map<String, dynamic> _backgroundWarning(Map<String, dynamic> locale) =>
+    (locale['downloads'] as Map<String, dynamic>)['backgroundWarning'] as Map<String, dynamic>;
 
 String? _valueAt(Map<String, dynamic> locale, List<String> path) {
   Object? value = locale;

@@ -3497,6 +3497,8 @@ class Translations$downloads$en {
 
 	/// en: 'Sync rule created'
 	String get syncRuleListCreated => 'Sync rule created';
+
+	late final Translations$downloads$backgroundWarning$en backgroundWarning = Translations$downloads$backgroundWarning$en.internal(_root);
 }
 
 // Path: shaders
@@ -4707,6 +4709,93 @@ class Translations$explore$status$en {
 
 	/// en: 'Upcoming'
 	String get upcoming => 'Upcoming';
+}
+
+// Path: downloads.backgroundWarning
+class Translations$downloads$backgroundWarning$en {
+	Translations$downloads$backgroundWarning$en.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// en: 'Downloads will stop when you leave the app'
+	String get bannerBlocked => 'Downloads will stop when you leave the app';
+
+	/// en: 'Background downloads may be limited'
+	String get bannerDegraded => 'Background downloads may be limited';
+
+	/// en: 'Details'
+	String get bannerAction => 'Details';
+
+	/// en: 'Background downloads are blocked'
+	String get sheetTitle => 'Background downloads are blocked';
+
+	/// en: 'Background downloads may be limited'
+	String get sheetTitleDegraded => 'Background downloads may be limited';
+
+	/// en: 'Android is preventing Plezy from downloading reliably in the background.'
+	String get sheetIntro => 'Android is preventing Plezy from downloading reliably in the background.';
+
+	/// en: 'Your device is limiting when Plezy can download in the background.'
+	String get sheetIntroDegraded => 'Your device is limiting when Plezy can download in the background.';
+
+	/// en: 'Plezy's background usage is restricted. Set its battery or background usage to "Unrestricted".'
+	String get reasonBackgroundRestricted => 'Plezy\'s background usage is restricted. Set its battery or background usage to "Unrestricted".';
+
+	/// en: 'Android has put Plezy in a restricted standby state. Set its battery usage to "Unrestricted".'
+	String get reasonStandbyRestricted => 'Android has put Plezy in a restricted standby state. Set its battery usage to "Unrestricted".';
+
+	/// en: 'Download notifications are turned off, so progress and controls may be unavailable.'
+	String get reasonDownloadChannelBlocked => 'Download notifications are turned off, so progress and controls may be unavailable.';
+
+	/// en: 'Notifications are turned off. On Android 13 or newer, they are required for long background downloads.'
+	String get reasonNotificationsDisabled => 'Notifications are turned off. On Android 13 or newer, they are required for long background downloads.';
+
+	/// en: 'Data Saver is on, which blocks background downloads on mobile data. Downloads should still run on Wi-Fi.'
+	String get reasonDataSaver => 'Data Saver is on, which blocks background downloads on mobile data. Downloads should still run on Wi-Fi.';
+
+	/// en: 'Downloads repeatedly stopped while Plezy was in the background. Check Plezy's battery or background usage settings.'
+	String get reasonOemUnknown => 'Downloads repeatedly stopped while Plezy was in the background. Check Plezy\'s battery or background usage settings.';
+
+	/// en: 'Open settings'
+	String get openSettings => 'Open settings';
+
+	/// en: 'Device-specific help'
+	String get stillNotWorking => 'Device-specific help';
+
+	/// en: 'See steps for your device, or send a log from Settings › View Logs if the issue continues.'
+	String get stillNotWorkingDescription => 'See steps for your device, or send a log from Settings › View Logs if the issue continues.';
+
+	/// en: 'Downloads may not finish'
+	String get dialogTitle => 'Downloads may not finish';
+
+	/// en: 'Download anyway'
+	String get dialogDownloadAnyway => 'Download anyway';
+
+	/// en: 'Fix this first'
+	String get dialogFixFirst => 'Fix this first';
+
+	/// en: 'Background downloads'
+	String get statusTile => 'Background downloads';
+
+	/// en: 'Allowed to run in the background'
+	String get statusOk => 'Allowed to run in the background';
+
+	/// en: 'Blocked by system settings'
+	String get statusBlocked => 'Blocked by system settings';
+
+	/// en: 'Limited by system settings'
+	String get statusDegraded => 'Limited by system settings';
+
+	/// en: 'Not checked yet'
+	String get statusUnknown => 'Not checked yet';
+
+	/// en: 'Couldn't open system settings on this device'
+	String get settingsUnavailable => 'Couldn\'t open system settings on this device';
+
+	/// en: 'Couldn't open dontkillmyapp.com on this device'
+	String get linkUnavailable => 'Couldn\'t open dontkillmyapp.com on this device';
 }
 
 // Path: companionRemote.session
@@ -6166,6 +6255,32 @@ extension on Translations {
 			'downloads.syncRuleNotAvailableForProfile' => 'Not available for current profile',
 			'downloads.syncRuleUnknownServer' => 'Unknown server',
 			'downloads.syncRuleListCreated' => 'Sync rule created',
+			'downloads.backgroundWarning.bannerBlocked' => 'Downloads will stop when you leave the app',
+			'downloads.backgroundWarning.bannerDegraded' => 'Background downloads may be limited',
+			'downloads.backgroundWarning.bannerAction' => 'Details',
+			'downloads.backgroundWarning.sheetTitle' => 'Background downloads are blocked',
+			'downloads.backgroundWarning.sheetTitleDegraded' => 'Background downloads may be limited',
+			'downloads.backgroundWarning.sheetIntro' => 'Android is preventing Plezy from downloading reliably in the background.',
+			'downloads.backgroundWarning.sheetIntroDegraded' => 'Your device is limiting when Plezy can download in the background.',
+			'downloads.backgroundWarning.reasonBackgroundRestricted' => 'Plezy\'s background usage is restricted. Set its battery or background usage to "Unrestricted".',
+			'downloads.backgroundWarning.reasonStandbyRestricted' => 'Android has put Plezy in a restricted standby state. Set its battery usage to "Unrestricted".',
+			'downloads.backgroundWarning.reasonDownloadChannelBlocked' => 'Download notifications are turned off, so progress and controls may be unavailable.',
+			'downloads.backgroundWarning.reasonNotificationsDisabled' => 'Notifications are turned off. On Android 13 or newer, they are required for long background downloads.',
+			'downloads.backgroundWarning.reasonDataSaver' => 'Data Saver is on, which blocks background downloads on mobile data. Downloads should still run on Wi-Fi.',
+			'downloads.backgroundWarning.reasonOemUnknown' => 'Downloads repeatedly stopped while Plezy was in the background. Check Plezy\'s battery or background usage settings.',
+			'downloads.backgroundWarning.openSettings' => 'Open settings',
+			'downloads.backgroundWarning.stillNotWorking' => 'Device-specific help',
+			'downloads.backgroundWarning.stillNotWorkingDescription' => 'See steps for your device, or send a log from Settings › View Logs if the issue continues.',
+			'downloads.backgroundWarning.dialogTitle' => 'Downloads may not finish',
+			'downloads.backgroundWarning.dialogDownloadAnyway' => 'Download anyway',
+			'downloads.backgroundWarning.dialogFixFirst' => 'Fix this first',
+			'downloads.backgroundWarning.statusTile' => 'Background downloads',
+			'downloads.backgroundWarning.statusOk' => 'Allowed to run in the background',
+			'downloads.backgroundWarning.statusBlocked' => 'Blocked by system settings',
+			'downloads.backgroundWarning.statusDegraded' => 'Limited by system settings',
+			'downloads.backgroundWarning.statusUnknown' => 'Not checked yet',
+			'downloads.backgroundWarning.settingsUnavailable' => 'Couldn\'t open system settings on this device',
+			'downloads.backgroundWarning.linkUnavailable' => 'Couldn\'t open dontkillmyapp.com on this device',
 			'shaders.title' => 'Shaders',
 			'shaders.noShaderDescription' => 'No video enhancement',
 			'shaders.nvscalerDescription' => 'NVIDIA image scaling for sharper video',

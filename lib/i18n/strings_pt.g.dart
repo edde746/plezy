@@ -1453,6 +1453,7 @@ class _Translations$downloads$pt extends Translations$downloads$en {
 	@override String get syncRuleNotAvailableForProfile => 'Indisponível para o perfil atual';
 	@override String get syncRuleUnknownServer => 'Servidor desconhecido';
 	@override String get syncRuleListCreated => 'Regra de sincronização criada';
+	@override late final _Translations$downloads$backgroundWarning$pt backgroundWarning = _Translations$downloads$backgroundWarning$pt._(_root);
 }
 
 // Path: shaders
@@ -1981,6 +1982,41 @@ class _Translations$explore$status$pt extends Translations$explore$status$en {
 	@override String get ended => 'Finalizada';
 	@override String get canceled => 'Cancelada';
 	@override String get upcoming => 'Em breve';
+}
+
+// Path: downloads.backgroundWarning
+class _Translations$downloads$backgroundWarning$pt extends Translations$downloads$backgroundWarning$en {
+	_Translations$downloads$backgroundWarning$pt._(TranslationsPt root) : this._root = root, super.internal(root);
+
+	final TranslationsPt _root; // ignore: unused_field
+
+	// Translations
+	@override String get bannerBlocked => 'Os downloads serão interrompidos ao sair do app';
+	@override String get bannerDegraded => 'Os downloads em segundo plano podem ser limitados';
+	@override String get bannerAction => 'Detalhes';
+	@override String get sheetTitle => 'Os downloads em segundo plano estão bloqueados';
+	@override String get sheetTitleDegraded => 'Os downloads em segundo plano podem ser limitados';
+	@override String get sheetIntro => 'O Android está impedindo que o Plezy faça downloads de forma confiável em segundo plano.';
+	@override String get sheetIntroDegraded => 'Seu dispositivo está limitando quando o Plezy pode fazer downloads em segundo plano.';
+	@override String get reasonBackgroundRestricted => 'O uso em segundo plano do Plezy está restrito. Defina o uso da bateria ou o uso em segundo plano como "Sem restrições".';
+	@override String get reasonStandbyRestricted => 'O Android colocou o Plezy em um modo de espera restrito. Defina o uso da bateria como "Sem restrições".';
+	@override String get reasonDownloadChannelBlocked => 'As notificações de download estão desativadas; por isso, o progresso e os controles podem ficar indisponíveis.';
+	@override String get reasonNotificationsDisabled => 'As notificações estão desativadas. No Android 13 ou mais recente, elas são necessárias para downloads longos em segundo plano.';
+	@override String get reasonDataSaver => 'A Economia de dados está ativada e bloqueia downloads em segundo plano usando dados móveis. Os downloads ainda devem funcionar no Wi-Fi.';
+	@override String get reasonOemUnknown => 'Os downloads foram interrompidos várias vezes enquanto o Plezy estava em segundo plano. Verifique as configurações de bateria ou uso em segundo plano do Plezy.';
+	@override String get openSettings => 'Abrir configurações';
+	@override String get stillNotWorking => 'Ajuda específica para o dispositivo';
+	@override String get stillNotWorkingDescription => 'Veja as instruções para seu dispositivo ou, se o problema persistir, envie um log em Configurações › Ver Logs.';
+	@override String get dialogTitle => 'Os downloads podem não ser concluídos';
+	@override String get dialogDownloadAnyway => 'Baixar mesmo assim';
+	@override String get dialogFixFirst => 'Corrigir primeiro';
+	@override String get statusTile => 'Downloads em segundo plano';
+	@override String get statusOk => 'Execução em segundo plano permitida';
+	@override String get statusBlocked => 'Bloqueado pelas configurações do sistema';
+	@override String get statusDegraded => 'Limitado pelas configurações do sistema';
+	@override String get statusUnknown => 'Ainda não verificado';
+	@override String get settingsUnavailable => 'Não foi possível abrir as configurações do sistema neste dispositivo';
+	@override String get linkUnavailable => 'Não foi possível abrir dontkillmyapp.com neste dispositivo';
 }
 
 // Path: companionRemote.session
@@ -3261,6 +3297,32 @@ extension on TranslationsPt {
 			'downloads.syncRuleNotAvailableForProfile' => 'Indisponível para o perfil atual',
 			'downloads.syncRuleUnknownServer' => 'Servidor desconhecido',
 			'downloads.syncRuleListCreated' => 'Regra de sincronização criada',
+			'downloads.backgroundWarning.bannerBlocked' => 'Os downloads serão interrompidos ao sair do app',
+			'downloads.backgroundWarning.bannerDegraded' => 'Os downloads em segundo plano podem ser limitados',
+			'downloads.backgroundWarning.bannerAction' => 'Detalhes',
+			'downloads.backgroundWarning.sheetTitle' => 'Os downloads em segundo plano estão bloqueados',
+			'downloads.backgroundWarning.sheetTitleDegraded' => 'Os downloads em segundo plano podem ser limitados',
+			'downloads.backgroundWarning.sheetIntro' => 'O Android está impedindo que o Plezy faça downloads de forma confiável em segundo plano.',
+			'downloads.backgroundWarning.sheetIntroDegraded' => 'Seu dispositivo está limitando quando o Plezy pode fazer downloads em segundo plano.',
+			'downloads.backgroundWarning.reasonBackgroundRestricted' => 'O uso em segundo plano do Plezy está restrito. Defina o uso da bateria ou o uso em segundo plano como "Sem restrições".',
+			'downloads.backgroundWarning.reasonStandbyRestricted' => 'O Android colocou o Plezy em um modo de espera restrito. Defina o uso da bateria como "Sem restrições".',
+			'downloads.backgroundWarning.reasonDownloadChannelBlocked' => 'As notificações de download estão desativadas; por isso, o progresso e os controles podem ficar indisponíveis.',
+			'downloads.backgroundWarning.reasonNotificationsDisabled' => 'As notificações estão desativadas. No Android 13 ou mais recente, elas são necessárias para downloads longos em segundo plano.',
+			'downloads.backgroundWarning.reasonDataSaver' => 'A Economia de dados está ativada e bloqueia downloads em segundo plano usando dados móveis. Os downloads ainda devem funcionar no Wi-Fi.',
+			'downloads.backgroundWarning.reasonOemUnknown' => 'Os downloads foram interrompidos várias vezes enquanto o Plezy estava em segundo plano. Verifique as configurações de bateria ou uso em segundo plano do Plezy.',
+			'downloads.backgroundWarning.openSettings' => 'Abrir configurações',
+			'downloads.backgroundWarning.stillNotWorking' => 'Ajuda específica para o dispositivo',
+			'downloads.backgroundWarning.stillNotWorkingDescription' => 'Veja as instruções para seu dispositivo ou, se o problema persistir, envie um log em Configurações › Ver Logs.',
+			'downloads.backgroundWarning.dialogTitle' => 'Os downloads podem não ser concluídos',
+			'downloads.backgroundWarning.dialogDownloadAnyway' => 'Baixar mesmo assim',
+			'downloads.backgroundWarning.dialogFixFirst' => 'Corrigir primeiro',
+			'downloads.backgroundWarning.statusTile' => 'Downloads em segundo plano',
+			'downloads.backgroundWarning.statusOk' => 'Execução em segundo plano permitida',
+			'downloads.backgroundWarning.statusBlocked' => 'Bloqueado pelas configurações do sistema',
+			'downloads.backgroundWarning.statusDegraded' => 'Limitado pelas configurações do sistema',
+			'downloads.backgroundWarning.statusUnknown' => 'Ainda não verificado',
+			'downloads.backgroundWarning.settingsUnavailable' => 'Não foi possível abrir as configurações do sistema neste dispositivo',
+			'downloads.backgroundWarning.linkUnavailable' => 'Não foi possível abrir dontkillmyapp.com neste dispositivo',
 			'shaders.title' => 'Shaders',
 			'shaders.noShaderDescription' => 'Sem aprimoramento de vídeo',
 			'shaders.nvscalerDescription' => 'Dimensionamento de imagem da NVIDIA para vídeos mais nítidos',

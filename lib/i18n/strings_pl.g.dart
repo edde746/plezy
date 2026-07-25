@@ -1459,6 +1459,7 @@ class _Translations$downloads$pl extends Translations$downloads$en {
 	@override String get syncRuleNotAvailableForProfile => 'Niedostępne dla bieżącego profilu';
 	@override String get syncRuleUnknownServer => 'Nieznany serwer';
 	@override String get syncRuleListCreated => 'Utworzono regułę synchronizacji';
+	@override late final _Translations$downloads$backgroundWarning$pl backgroundWarning = _Translations$downloads$backgroundWarning$pl._(_root);
 }
 
 // Path: shaders
@@ -1987,6 +1988,41 @@ class _Translations$explore$status$pl extends Translations$explore$status$en {
 	@override String get ended => 'Zakończony';
 	@override String get canceled => 'Anulowany';
 	@override String get upcoming => 'Nadchodzący';
+}
+
+// Path: downloads.backgroundWarning
+class _Translations$downloads$backgroundWarning$pl extends Translations$downloads$backgroundWarning$en {
+	_Translations$downloads$backgroundWarning$pl._(TranslationsPl root) : this._root = root, super.internal(root);
+
+	final TranslationsPl _root; // ignore: unused_field
+
+	// Translations
+	@override String get bannerBlocked => 'Po opuszczeniu aplikacji pobieranie zostanie zatrzymane';
+	@override String get bannerDegraded => 'Pobieranie w tle może być ograniczone';
+	@override String get bannerAction => 'Szczegóły';
+	@override String get sheetTitle => 'Pobieranie w tle jest zablokowane';
+	@override String get sheetTitleDegraded => 'Pobieranie w tle może być ograniczone';
+	@override String get sheetIntro => 'Android uniemożliwia Plezy niezawodne pobieranie plików w tle.';
+	@override String get sheetIntroDegraded => 'Twoje urządzenie ogranicza możliwość pobierania w tle przez Plezy.';
+	@override String get reasonBackgroundRestricted => 'Działanie Plezy w tle jest ograniczone. Ustaw użycie baterii lub działanie w tle na „Bez ograniczeń”.';
+	@override String get reasonStandbyRestricted => 'Android umieścił Plezy w ograniczonym trybie gotowości. Ustaw użycie baterii na „Bez ograniczeń”.';
+	@override String get reasonDownloadChannelBlocked => 'Powiadomienia o pobieraniu są wyłączone, więc postęp i opcje sterowania mogą być niedostępne.';
+	@override String get reasonNotificationsDisabled => 'Powiadomienia są wyłączone. W Android 13 lub nowszym są wymagane przy długim pobieraniu w tle.';
+	@override String get reasonDataSaver => 'Oszczędzanie danych jest włączone, co blokuje pobieranie w tle przez mobilną transmisję danych. Pobieranie powinno nadal działać przez Wi-Fi.';
+	@override String get reasonOemUnknown => 'Pobieranie wielokrotnie przerywało się, gdy Plezy działało w tle. Sprawdź ustawienia baterii lub działania w tle dla Plezy.';
+	@override String get openSettings => 'Otwórz ustawienia';
+	@override String get stillNotWorking => 'Pomoc dla Twojego urządzenia';
+	@override String get stillNotWorkingDescription => 'Zobacz instrukcje dla swojego urządzenia lub, jeśli problem nadal występuje, wyślij log przez Ustawienia › Pokaż logi.';
+	@override String get dialogTitle => 'Pobieranie może się nie zakończyć';
+	@override String get dialogDownloadAnyway => 'Pobierz mimo to';
+	@override String get dialogFixFirst => 'Najpierw rozwiąż problem';
+	@override String get statusTile => 'Pobieranie w tle';
+	@override String get statusOk => 'Działanie w tle jest dozwolone';
+	@override String get statusBlocked => 'Zablokowane przez ustawienia systemu';
+	@override String get statusDegraded => 'Ograniczone przez ustawienia systemu';
+	@override String get statusUnknown => 'Jeszcze nie sprawdzono';
+	@override String get settingsUnavailable => 'Nie udało się otworzyć ustawień systemowych na tym urządzeniu';
+	@override String get linkUnavailable => 'Nie udało się otworzyć dontkillmyapp.com na tym urządzeniu';
 }
 
 // Path: companionRemote.session
@@ -3267,6 +3303,32 @@ extension on TranslationsPl {
 			'downloads.syncRuleNotAvailableForProfile' => 'Niedostępne dla bieżącego profilu',
 			'downloads.syncRuleUnknownServer' => 'Nieznany serwer',
 			'downloads.syncRuleListCreated' => 'Utworzono regułę synchronizacji',
+			'downloads.backgroundWarning.bannerBlocked' => 'Po opuszczeniu aplikacji pobieranie zostanie zatrzymane',
+			'downloads.backgroundWarning.bannerDegraded' => 'Pobieranie w tle może być ograniczone',
+			'downloads.backgroundWarning.bannerAction' => 'Szczegóły',
+			'downloads.backgroundWarning.sheetTitle' => 'Pobieranie w tle jest zablokowane',
+			'downloads.backgroundWarning.sheetTitleDegraded' => 'Pobieranie w tle może być ograniczone',
+			'downloads.backgroundWarning.sheetIntro' => 'Android uniemożliwia Plezy niezawodne pobieranie plików w tle.',
+			'downloads.backgroundWarning.sheetIntroDegraded' => 'Twoje urządzenie ogranicza możliwość pobierania w tle przez Plezy.',
+			'downloads.backgroundWarning.reasonBackgroundRestricted' => 'Działanie Plezy w tle jest ograniczone. Ustaw użycie baterii lub działanie w tle na „Bez ograniczeń”.',
+			'downloads.backgroundWarning.reasonStandbyRestricted' => 'Android umieścił Plezy w ograniczonym trybie gotowości. Ustaw użycie baterii na „Bez ograniczeń”.',
+			'downloads.backgroundWarning.reasonDownloadChannelBlocked' => 'Powiadomienia o pobieraniu są wyłączone, więc postęp i opcje sterowania mogą być niedostępne.',
+			'downloads.backgroundWarning.reasonNotificationsDisabled' => 'Powiadomienia są wyłączone. W Android 13 lub nowszym są wymagane przy długim pobieraniu w tle.',
+			'downloads.backgroundWarning.reasonDataSaver' => 'Oszczędzanie danych jest włączone, co blokuje pobieranie w tle przez mobilną transmisję danych. Pobieranie powinno nadal działać przez Wi-Fi.',
+			'downloads.backgroundWarning.reasonOemUnknown' => 'Pobieranie wielokrotnie przerywało się, gdy Plezy działało w tle. Sprawdź ustawienia baterii lub działania w tle dla Plezy.',
+			'downloads.backgroundWarning.openSettings' => 'Otwórz ustawienia',
+			'downloads.backgroundWarning.stillNotWorking' => 'Pomoc dla Twojego urządzenia',
+			'downloads.backgroundWarning.stillNotWorkingDescription' => 'Zobacz instrukcje dla swojego urządzenia lub, jeśli problem nadal występuje, wyślij log przez Ustawienia › Pokaż logi.',
+			'downloads.backgroundWarning.dialogTitle' => 'Pobieranie może się nie zakończyć',
+			'downloads.backgroundWarning.dialogDownloadAnyway' => 'Pobierz mimo to',
+			'downloads.backgroundWarning.dialogFixFirst' => 'Najpierw rozwiąż problem',
+			'downloads.backgroundWarning.statusTile' => 'Pobieranie w tle',
+			'downloads.backgroundWarning.statusOk' => 'Działanie w tle jest dozwolone',
+			'downloads.backgroundWarning.statusBlocked' => 'Zablokowane przez ustawienia systemu',
+			'downloads.backgroundWarning.statusDegraded' => 'Ograniczone przez ustawienia systemu',
+			'downloads.backgroundWarning.statusUnknown' => 'Jeszcze nie sprawdzono',
+			'downloads.backgroundWarning.settingsUnavailable' => 'Nie udało się otworzyć ustawień systemowych na tym urządzeniu',
+			'downloads.backgroundWarning.linkUnavailable' => 'Nie udało się otworzyć dontkillmyapp.com na tym urządzeniu',
 			'shaders.title' => 'Shadery',
 			'shaders.noShaderDescription' => 'Bez ulepszenia wideo',
 			'shaders.nvscalerDescription' => 'Skalowanie obrazu NVIDIA dla ostrzejszego wideo',

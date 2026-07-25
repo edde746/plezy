@@ -29,7 +29,9 @@ import '../../providers/seerr_account_provider.dart';
 import '../../providers/trackers_provider.dart';
 import '../../providers/trakt_account_provider.dart';
 import '../../services/keyboard_shortcuts_service.dart';
+import '../../services/background_work_diagnostics_service.dart';
 import '../../services/settings_service.dart' as settings;
+import '../../widgets/background_download_warning_banner.dart';
 import '../../services/update_service.dart';
 import '../../utils/app_logger.dart';
 import '../../utils/dialogs.dart';
@@ -63,6 +65,7 @@ class SettingsScreen extends StatefulWidget {
     this.downloadDirectoryWritableChecker,
     this.settingsExporter,
     this.settingsImporter,
+    this.backgroundWorkDiagnosticsService,
   });
 
   @visibleForTesting
@@ -73,12 +76,16 @@ class SettingsScreen extends StatefulWidget {
 
   @visibleForTesting
   final Future<ImportResult?> Function()? settingsImporter;
+  @visibleForTesting
+  final BackgroundWorkDiagnosticsService? backgroundWorkDiagnosticsService;
 
   @override
   State<SettingsScreen> createState() => _SettingsScreenState();
 }
 
 class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, MountedSetStateMixin {
+  BackgroundWorkDiagnosticsService get _backgroundWorkDiagnostics =>
+      widget.backgroundWorkDiagnosticsService ?? BackgroundWorkDiagnosticsService.instance;
   late final FocusMemoryTracker _focusTracker;
 
   // Focus tracking keys
@@ -90,6 +97,7 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
   static const _kDownloadLocation = 'download_location';
   static const _kDownloadOnWifiOnly = 'download_on_wifi_only';
   static const _kAutoRemoveWatchedDownloads = 'auto_remove_watched_downloads';
+  static const _kBackgroundDownloads = 'background_downloads';
   static const _kVideoPlayerControls = 'video_player_controls';
   static const _kVideoPlayerNavigation = 'video_player_navigation';
   static const _kCrashReporting = 'crash_reporting';
@@ -376,7 +384,53 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
           title: t.settings.autoRemoveWatchedDownloads,
           subtitle: t.settings.autoRemoveWatchedDownloadsDescription,
         ),
+        if (_backgroundWorkDiagnostics.isSupported) _buildBackgroundDownloadsTile(),
       ],
+    );
+  }
+
+  /// Standing answer to "why do my downloads stop when I leave the app" — also
+  /// what support can ask a user to read out without needing a log upload.
+  Widget _buildBackgroundDownloadsTile() {
+    final diagnostics = _backgroundWorkDiagnostics;
+    return ListenableBuilder(
+      listenable: diagnostics,
+      builder: (context, _) {
+        final status = diagnostics.status;
+        final scheme = Theme.of(context).colorScheme;
+        final (icon, color, summary) = switch (status) {
+          _ when !status.probed => (Symbols.help_rounded, null, t.downloads.backgroundWarning.statusUnknown),
+          _ when status.isBlocked => (
+            Symbols.battery_alert_rounded,
+            scheme.error,
+            t.downloads.backgroundWarning.statusBlocked,
+          ),
+          _ when !status.isHealthy => (
+            Symbols.info_rounded,
+            scheme.tertiary,
+            t.downloads.backgroundWarning.statusDegraded,
+          ),
+          _ => (Symbols.check_circle_rounded, null, t.downloads.backgroundWarning.statusOk),
+        };
+        return FocusableListTile(
+          focusNode: _focusTracker.get(_kBackgroundDownloads),
+          leading: AppIcon(icon, fill: 1, color: color),
+          title: Text(t.downloads.backgroundWarning.statusTile, style: settingsOptionTitleStyle(context)),
+          subtitle: Text(summary),
+          trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
+          onTap: () async {
+            await diagnostics.refresh();
+            if (!context.mounted) return;
+            if (diagnostics.status.isHealthy) {
+              showAppSnackBar(context, t.downloads.backgroundWarning.statusOk);
+              return;
+            }
+            await showBackgroundDownloadWarningDialog(context, service: diagnostics);
+          },
+          dense: false,
+          visualDensity: VisualDensity.standard,
+        );
+      },
     );
   }
 

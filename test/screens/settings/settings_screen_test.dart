@@ -21,6 +21,7 @@ import 'package:plezy/providers/theme_provider.dart';
 import 'package:plezy/providers/trackers_provider.dart';
 import 'package:plezy/providers/trakt_account_provider.dart';
 import 'package:plezy/screens/settings/settings_screen.dart';
+import 'package:plezy/services/background_work_diagnostics_service.dart';
 import 'package:plezy/services/donation_service.dart';
 import 'package:plezy/services/download_storage_service.dart';
 import 'package:plezy/services/download_manager_service.dart';
@@ -228,6 +229,59 @@ void main() {
     // SettingNavigationTile, its trailing slot can be replaced by the progress
     // indicator and its callback disabled while a request is in flight.
     expect(materialUpdateTile.focusNode, isNotNull);
+  });
+
+  testWidgets('background downloads tile renders and opens the injected blocked status', (tester) async {
+    const channel = MethodChannel('com.plezy/device.settings-background-test');
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(channel, (call) async {
+      return switch (call.method) {
+        'getBackgroundWorkSignals' => {
+          'verdict': 'blocked',
+          'reasons': ['background_restricted'],
+        },
+        'openBackgroundSettings' => true,
+        _ => null,
+      };
+    });
+    final diagnostics = BackgroundWorkDiagnosticsService.forTesting(channel: channel);
+    await diagnostics.refresh();
+    final harness = await _pumpSettingsScreen(tester, backgroundWorkDiagnosticsService: diagnostics);
+    addTearDown(() async {
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(channel, null);
+      await harness.dispose(tester);
+      diagnostics.dispose();
+    });
+
+    expect(find.text(t.downloads.backgroundWarning.statusTile), findsOneWidget);
+    expect(find.text(t.downloads.backgroundWarning.statusBlocked), findsOneWidget);
+
+    await tester.tap(find.text(t.downloads.backgroundWarning.statusTile));
+    await _pumpUi(tester);
+
+    expect(find.text(t.downloads.backgroundWarning.sheetTitle), findsOneWidget);
+  });
+
+  testWidgets('unprobed background diagnostics stay unknown instead of claiming success', (tester) async {
+    final diagnostics = BackgroundWorkDiagnosticsService.forTesting();
+    final harness = await _pumpSettingsScreen(tester, backgroundWorkDiagnosticsService: diagnostics);
+    addTearDown(() async {
+      await harness.dispose(tester);
+      diagnostics.dispose();
+    });
+
+    expect(find.text(t.downloads.backgroundWarning.statusUnknown), findsOneWidget);
+    expect(find.text(t.downloads.backgroundWarning.statusOk), findsNothing);
+  });
+
+  testWidgets('background downloads tile is absent when diagnostics are unsupported', (tester) async {
+    final diagnostics = BackgroundWorkDiagnosticsService.forTesting(supported: false);
+    final harness = await _pumpSettingsScreen(tester, backgroundWorkDiagnosticsService: diagnostics);
+    addTearDown(() async {
+      await harness.dispose(tester);
+      diagnostics.dispose();
+    });
+
+    expect(find.text(t.downloads.backgroundWarning.statusTile), findsNothing);
   });
 
   testWidgets('relay dialog rejects invalid bases without persisting them', (tester) async {
@@ -534,6 +588,7 @@ Future<_SettingsHarness> _pumpSettingsScreen(
   Future<bool> Function(Directory directory)? writableChecker,
   Future<String?> Function()? settingsExporter,
   Future<ImportResult?> Function()? settingsImporter,
+  BackgroundWorkDiagnosticsService? backgroundWorkDiagnosticsService,
 }) async {
   tester.view.physicalSize = const Size(1800, 3200);
   tester.view.devicePixelRatio = 1;
@@ -621,6 +676,7 @@ Future<_SettingsHarness> _pumpSettingsScreen(
             downloadDirectoryWritableChecker: writableChecker ?? (_) async => true,
             settingsExporter: settingsExporter,
             settingsImporter: settingsImporter,
+            backgroundWorkDiagnosticsService: backgroundWorkDiagnosticsService,
           ),
         ),
       ),

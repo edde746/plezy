@@ -383,6 +383,11 @@ class SettingsService extends BaseSharedPreferencesService {
   static const downloadOnWifiOnly = BoolPref('download_on_wifi_only');
   static const autoRemoveWatchedDownloads = BoolPref('auto_remove_watched_downloads');
 
+  /// Set once the user has seen the pre-flight "background downloads are
+  /// blocked" dialog. The persistent Downloads-screen banner covers repeat
+  /// offenders, so the interrupting dialog is shown exactly once.
+  static const backgroundDownloadWarningAcknowledged = BoolPref('background_download_warning_ack');
+
   /// Remembered state of the "Include Specials" toggle on the show download
   /// dialog. Defaults to true (include) so existing behavior is unchanged;
   /// turning it off persists so the next download keeps the choice.
@@ -858,6 +863,7 @@ class SettingsService extends BaseSharedPreferencesService {
     rememberTrackSelections,
     customDownloadPathType,
     downloadOnWifiOnly,
+    backgroundDownloadWarningAcknowledged,
     downloadIncludeSpecials,
     autoCheckUpdatesOnStartup,
     showPerformanceOverlay,

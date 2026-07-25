@@ -1453,6 +1453,7 @@ class _Translations$downloads$de extends Translations$downloads$en {
 	@override String get syncRuleNotAvailableForProfile => 'Für das aktuelle Profil nicht verfügbar';
 	@override String get syncRuleUnknownServer => 'Unbekannter Server';
 	@override String get syncRuleListCreated => 'Synchronisierungsregel erstellt';
+	@override late final _Translations$downloads$backgroundWarning$de backgroundWarning = _Translations$downloads$backgroundWarning$de._(_root);
 }
 
 // Path: shaders
@@ -1981,6 +1982,41 @@ class _Translations$explore$status$de extends Translations$explore$status$en {
 	@override String get ended => 'Beendet';
 	@override String get canceled => 'Abgesetzt';
 	@override String get upcoming => 'Demnächst';
+}
+
+// Path: downloads.backgroundWarning
+class _Translations$downloads$backgroundWarning$de extends Translations$downloads$backgroundWarning$en {
+	_Translations$downloads$backgroundWarning$de._(TranslationsDe root) : this._root = root, super.internal(root);
+
+	final TranslationsDe _root; // ignore: unused_field
+
+	// Translations
+	@override String get bannerBlocked => 'Downloads werden gestoppt, wenn du die App verlässt';
+	@override String get bannerDegraded => 'Downloads im Hintergrund sind möglicherweise eingeschränkt';
+	@override String get bannerAction => 'Details';
+	@override String get sheetTitle => 'Downloads im Hintergrund sind blockiert';
+	@override String get sheetTitleDegraded => 'Downloads im Hintergrund sind möglicherweise eingeschränkt';
+	@override String get sheetIntro => 'Android verhindert, dass Plezy zuverlässig im Hintergrund herunterlädt.';
+	@override String get sheetIntroDegraded => 'Dein Gerät schränkt ein, wann Plezy im Hintergrund herunterladen kann.';
+	@override String get reasonBackgroundRestricted => 'Die Hintergrundnutzung von Plezy ist eingeschränkt. Stelle die Akku- oder Hintergrundnutzung auf „Uneingeschränkt“.';
+	@override String get reasonStandbyRestricted => 'Android hat Plezy in einen eingeschränkten Standby-Modus versetzt. Stelle die Akkunutzung auf „Uneingeschränkt“.';
+	@override String get reasonDownloadChannelBlocked => 'Download-Benachrichtigungen sind deaktiviert. Fortschritt und Steuerelemente sind daher möglicherweise nicht verfügbar.';
+	@override String get reasonNotificationsDisabled => 'Benachrichtigungen sind deaktiviert. Ab Android 13 sind sie für lange Downloads im Hintergrund erforderlich.';
+	@override String get reasonDataSaver => 'Der Datensparmodus ist aktiviert und blockiert Downloads im Hintergrund über mobile Daten. Über Wi-Fi sollten Downloads weiterhin funktionieren.';
+	@override String get reasonOemUnknown => 'Downloads wurden wiederholt gestoppt, während Plezy im Hintergrund war. Prüfe die Einstellungen zur Akku- oder Hintergrundnutzung von Plezy.';
+	@override String get openSettings => 'Einstellungen öffnen';
+	@override String get stillNotWorking => 'Gerätespezifische Hilfe';
+	@override String get stillNotWorkingDescription => 'Sieh dir die Schritte für dein Gerät an oder sende bei anhaltendem Problem ein Protokoll über Einstellungen › Protokolle anzeigen.';
+	@override String get dialogTitle => 'Downloads werden möglicherweise nicht abgeschlossen';
+	@override String get dialogDownloadAnyway => 'Trotzdem herunterladen';
+	@override String get dialogFixFirst => 'Zuerst beheben';
+	@override String get statusTile => 'Downloads im Hintergrund';
+	@override String get statusOk => 'Ausführung im Hintergrund erlaubt';
+	@override String get statusBlocked => 'Durch Systemeinstellungen blockiert';
+	@override String get statusDegraded => 'Durch Systemeinstellungen eingeschränkt';
+	@override String get statusUnknown => 'Noch nicht geprüft';
+	@override String get settingsUnavailable => 'Die Systemeinstellungen konnten auf diesem Gerät nicht geöffnet werden';
+	@override String get linkUnavailable => 'dontkillmyapp.com konnte auf diesem Gerät nicht geöffnet werden';
 }
 
 // Path: companionRemote.session
@@ -3261,6 +3297,32 @@ extension on TranslationsDe {
 			'downloads.syncRuleNotAvailableForProfile' => 'Für das aktuelle Profil nicht verfügbar',
 			'downloads.syncRuleUnknownServer' => 'Unbekannter Server',
 			'downloads.syncRuleListCreated' => 'Synchronisierungsregel erstellt',
+			'downloads.backgroundWarning.bannerBlocked' => 'Downloads werden gestoppt, wenn du die App verlässt',
+			'downloads.backgroundWarning.bannerDegraded' => 'Downloads im Hintergrund sind möglicherweise eingeschränkt',
+			'downloads.backgroundWarning.bannerAction' => 'Details',
+			'downloads.backgroundWarning.sheetTitle' => 'Downloads im Hintergrund sind blockiert',
+			'downloads.backgroundWarning.sheetTitleDegraded' => 'Downloads im Hintergrund sind möglicherweise eingeschränkt',
+			'downloads.backgroundWarning.sheetIntro' => 'Android verhindert, dass Plezy zuverlässig im Hintergrund herunterlädt.',
+			'downloads.backgroundWarning.sheetIntroDegraded' => 'Dein Gerät schränkt ein, wann Plezy im Hintergrund herunterladen kann.',
+			'downloads.backgroundWarning.reasonBackgroundRestricted' => 'Die Hintergrundnutzung von Plezy ist eingeschränkt. Stelle die Akku- oder Hintergrundnutzung auf „Uneingeschränkt“.',
+			'downloads.backgroundWarning.reasonStandbyRestricted' => 'Android hat Plezy in einen eingeschränkten Standby-Modus versetzt. Stelle die Akkunutzung auf „Uneingeschränkt“.',
+			'downloads.backgroundWarning.reasonDownloadChannelBlocked' => 'Download-Benachrichtigungen sind deaktiviert. Fortschritt und Steuerelemente sind daher möglicherweise nicht verfügbar.',
+			'downloads.backgroundWarning.reasonNotificationsDisabled' => 'Benachrichtigungen sind deaktiviert. Ab Android 13 sind sie für lange Downloads im Hintergrund erforderlich.',
+			'downloads.backgroundWarning.reasonDataSaver' => 'Der Datensparmodus ist aktiviert und blockiert Downloads im Hintergrund über mobile Daten. Über Wi-Fi sollten Downloads weiterhin funktionieren.',
+			'downloads.backgroundWarning.reasonOemUnknown' => 'Downloads wurden wiederholt gestoppt, während Plezy im Hintergrund war. Prüfe die Einstellungen zur Akku- oder Hintergrundnutzung von Plezy.',
+			'downloads.backgroundWarning.openSettings' => 'Einstellungen öffnen',
+			'downloads.backgroundWarning.stillNotWorking' => 'Gerätespezifische Hilfe',
+			'downloads.backgroundWarning.stillNotWorkingDescription' => 'Sieh dir die Schritte für dein Gerät an oder sende bei anhaltendem Problem ein Protokoll über Einstellungen › Protokolle anzeigen.',
+			'downloads.backgroundWarning.dialogTitle' => 'Downloads werden möglicherweise nicht abgeschlossen',
+			'downloads.backgroundWarning.dialogDownloadAnyway' => 'Trotzdem herunterladen',
+			'downloads.backgroundWarning.dialogFixFirst' => 'Zuerst beheben',
+			'downloads.backgroundWarning.statusTile' => 'Downloads im Hintergrund',
+			'downloads.backgroundWarning.statusOk' => 'Ausführung im Hintergrund erlaubt',
+			'downloads.backgroundWarning.statusBlocked' => 'Durch Systemeinstellungen blockiert',
+			'downloads.backgroundWarning.statusDegraded' => 'Durch Systemeinstellungen eingeschränkt',
+			'downloads.backgroundWarning.statusUnknown' => 'Noch nicht geprüft',
+			'downloads.backgroundWarning.settingsUnavailable' => 'Die Systemeinstellungen konnten auf diesem Gerät nicht geöffnet werden',
+			'downloads.backgroundWarning.linkUnavailable' => 'dontkillmyapp.com konnte auf diesem Gerät nicht geöffnet werden',
 			'shaders.title' => 'Shader',
 			'shaders.noShaderDescription' => 'Keine Videoverbesserung',
 			'shaders.nvscalerDescription' => 'NVIDIA-Bildskalierung für schärferes Video',

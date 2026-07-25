@@ -11,7 +11,9 @@ import '../../providers/multi_server_provider.dart';
 import '../../services/music/music_playback_service.dart';
 import '../../theme/mono_tokens.dart';
 import '../../utils/music_navigation.dart';
+import '../../models/download_models.dart';
 import '../../widgets/app_icon.dart';
+import '../../widgets/background_download_warning_banner.dart';
 import '../../widgets/focusable_tab_chip.dart';
 import '../../widgets/music/mini_player.dart';
 import '../../widgets/music/track_row.dart';
@@ -165,6 +167,16 @@ class DownloadsScreenState extends State<DownloadsScreen>
           SliverFillRemaining(
             child: Column(
               children: [
+                // Only while something is actually queued or transferring —
+                // an idle Downloads screen has nothing to warn about.
+                Selector<DownloadProvider, bool>(
+                  selector: (_, provider) => provider.downloads.values.any(
+                    (progress) =>
+                        progress.status == DownloadStatus.downloading || progress.status == DownloadStatus.queued,
+                  ),
+                  builder: (context, hasPendingDownloads, _) =>
+                      BackgroundDownloadWarningBanner(hasPendingDownloads: hasPendingDownloads),
+                ),
                 // Tab selector chips (only on mobile - desktop has them in app bar)
                 if (!PlatformDetector.shouldUseSideNavigation(context))
                   Container(

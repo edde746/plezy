@@ -1450,6 +1450,7 @@ class Translations$downloads$zh extends Translations$downloads$en {
 	@override String get syncRuleNotAvailableForProfile => '当前用户资料不可用';
 	@override String get syncRuleUnknownServer => '未知服务器';
 	@override String get syncRuleListCreated => '同步规则已创建';
+	@override late final Translations$downloads$backgroundWarning$zh backgroundWarning = Translations$downloads$backgroundWarning$zh.internal(_root);
 }
 
 // Path: shaders
@@ -1978,6 +1979,41 @@ class Translations$explore$status$zh extends Translations$explore$status$en {
 	@override String get ended => '已完结';
 	@override String get canceled => '已取消';
 	@override String get upcoming => '即将上线';
+}
+
+// Path: downloads.backgroundWarning
+class Translations$downloads$backgroundWarning$zh extends Translations$downloads$backgroundWarning$en {
+	Translations$downloads$backgroundWarning$zh.internal(TranslationsZh root) : this._root = root, super.internal(root);
+
+	final TranslationsZh _root; // ignore: unused_field
+
+	// Translations
+	@override String get bannerBlocked => '离开应用后，下载将停止';
+	@override String get bannerDegraded => '后台下载可能受限';
+	@override String get bannerAction => '详情';
+	@override String get sheetTitle => '后台下载已被阻止';
+	@override String get sheetTitleDegraded => '后台下载可能受限';
+	@override String get sheetIntro => 'Android 正在阻止 Plezy 在后台稳定下载。';
+	@override String get sheetIntroDegraded => '你的设备限制了 Plezy 在后台下载的时机。';
+	@override String get reasonBackgroundRestricted => 'Plezy 的后台使用受到限制。请将其电池用量或后台使用设置为“不受限制”。';
+	@override String get reasonStandbyRestricted => 'Android 已将 Plezy 置于受限待机状态。请将其电池用量设为“不受限制”。';
+	@override String get reasonDownloadChannelBlocked => '下载通知已关闭，因此可能无法查看进度或进行控制。';
+	@override String get reasonNotificationsDisabled => '通知已关闭。在 Android 13 或更高版本中，长时间后台下载需要开启通知。';
+	@override String get reasonDataSaver => '流量节省程序已开启，会阻止使用移动数据进行后台下载。使用 Wi-Fi 时下载应仍可进行。';
+	@override String get reasonOemUnknown => 'Plezy 在后台时，下载曾多次停止。请检查 Plezy 的电池用量或后台使用设置。';
+	@override String get openSettings => '打开设置';
+	@override String get stillNotWorking => '设备专属帮助';
+	@override String get stillNotWorkingDescription => '查看适用于你设备的操作步骤；如果问题仍然存在，请通过设置 › 查看日志发送日志。';
+	@override String get dialogTitle => '下载可能无法完成';
+	@override String get dialogDownloadAnyway => '仍要下载';
+	@override String get dialogFixFirst => '先解决此问题';
+	@override String get statusTile => '后台下载';
+	@override String get statusOk => '允许在后台运行';
+	@override String get statusBlocked => '已被系统设置阻止';
+	@override String get statusDegraded => '受系统设置限制';
+	@override String get statusUnknown => '尚未检查';
+	@override String get settingsUnavailable => '无法在此设备上打开系统设置';
+	@override String get linkUnavailable => '无法在此设备上打开 dontkillmyapp.com';
 }
 
 // Path: companionRemote.session
@@ -3258,6 +3294,32 @@ extension on TranslationsZh {
 			'downloads.syncRuleNotAvailableForProfile' => '当前用户资料不可用',
 			'downloads.syncRuleUnknownServer' => '未知服务器',
 			'downloads.syncRuleListCreated' => '同步规则已创建',
+			'downloads.backgroundWarning.bannerBlocked' => '离开应用后，下载将停止',
+			'downloads.backgroundWarning.bannerDegraded' => '后台下载可能受限',
+			'downloads.backgroundWarning.bannerAction' => '详情',
+			'downloads.backgroundWarning.sheetTitle' => '后台下载已被阻止',
+			'downloads.backgroundWarning.sheetTitleDegraded' => '后台下载可能受限',
+			'downloads.backgroundWarning.sheetIntro' => 'Android 正在阻止 Plezy 在后台稳定下载。',
+			'downloads.backgroundWarning.sheetIntroDegraded' => '你的设备限制了 Plezy 在后台下载的时机。',
+			'downloads.backgroundWarning.reasonBackgroundRestricted' => 'Plezy 的后台使用受到限制。请将其电池用量或后台使用设置为“不受限制”。',
+			'downloads.backgroundWarning.reasonStandbyRestricted' => 'Android 已将 Plezy 置于受限待机状态。请将其电池用量设为“不受限制”。',
+			'downloads.backgroundWarning.reasonDownloadChannelBlocked' => '下载通知已关闭，因此可能无法查看进度或进行控制。',
+			'downloads.backgroundWarning.reasonNotificationsDisabled' => '通知已关闭。在 Android 13 或更高版本中，长时间后台下载需要开启通知。',
+			'downloads.backgroundWarning.reasonDataSaver' => '流量节省程序已开启，会阻止使用移动数据进行后台下载。使用 Wi-Fi 时下载应仍可进行。',
+			'downloads.backgroundWarning.reasonOemUnknown' => 'Plezy 在后台时，下载曾多次停止。请检查 Plezy 的电池用量或后台使用设置。',
+			'downloads.backgroundWarning.openSettings' => '打开设置',
+			'downloads.backgroundWarning.stillNotWorking' => '设备专属帮助',
+			'downloads.backgroundWarning.stillNotWorkingDescription' => '查看适用于你设备的操作步骤；如果问题仍然存在，请通过设置 › 查看日志发送日志。',
+			'downloads.backgroundWarning.dialogTitle' => '下载可能无法完成',
+			'downloads.backgroundWarning.dialogDownloadAnyway' => '仍要下载',
+			'downloads.backgroundWarning.dialogFixFirst' => '先解决此问题',
+			'downloads.backgroundWarning.statusTile' => '后台下载',
+			'downloads.backgroundWarning.statusOk' => '允许在后台运行',
+			'downloads.backgroundWarning.statusBlocked' => '已被系统设置阻止',
+			'downloads.backgroundWarning.statusDegraded' => '受系统设置限制',
+			'downloads.backgroundWarning.statusUnknown' => '尚未检查',
+			'downloads.backgroundWarning.settingsUnavailable' => '无法在此设备上打开系统设置',
+			'downloads.backgroundWarning.linkUnavailable' => '无法在此设备上打开 dontkillmyapp.com',
 			'shaders.title' => '着色器',
 			'shaders.noShaderDescription' => '无视频增强',
 			'shaders.nvscalerDescription' => 'NVIDIA 图像缩放，使视频更清晰',

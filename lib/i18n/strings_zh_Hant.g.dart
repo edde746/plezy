@@ -1451,6 +1451,7 @@ class _Translations$downloads$zh_Hant extends Translations$downloads$zh {
 	@override String get syncRuleNotAvailableForProfile => '目前使用者設定檔無法使用';
 	@override String get syncRuleUnknownServer => '未知伺服器';
 	@override String get syncRuleListCreated => '同步規則已建立';
+	@override late final _Translations$downloads$backgroundWarning$zh_Hant backgroundWarning = _Translations$downloads$backgroundWarning$zh_Hant._(_root);
 }
 
 // Path: shaders
@@ -1979,6 +1980,41 @@ class _Translations$explore$status$zh_Hant extends Translations$explore$status$z
 	@override String get ended => '已完結';
 	@override String get canceled => '已取消';
 	@override String get upcoming => '即將上線';
+}
+
+// Path: downloads.backgroundWarning
+class _Translations$downloads$backgroundWarning$zh_Hant extends Translations$downloads$backgroundWarning$zh {
+	_Translations$downloads$backgroundWarning$zh_Hant._(TranslationsZhHant root) : this._root = root, super.internal(root);
+
+	final TranslationsZhHant _root; // ignore: unused_field
+
+	// Translations
+	@override String get bannerBlocked => '離開應用程式後，下載將會停止';
+	@override String get bannerDegraded => '背景下載可能受限';
+	@override String get bannerAction => '詳細資料';
+	@override String get sheetTitle => '背景下載遭到封鎖';
+	@override String get sheetTitleDegraded => '背景下載可能受限';
+	@override String get sheetIntro => 'Android 正在阻止 Plezy 在背景穩定下載。';
+	@override String get sheetIntroDegraded => '你的裝置限制了 Plezy 可在背景下載的時機。';
+	@override String get reasonBackgroundRestricted => 'Plezy 的背景使用受限。請將其電池用量或背景使用設定為「無限制」。';
+	@override String get reasonStandbyRestricted => 'Android 已將 Plezy 設為受限待命狀態。請將電池用量設為「無限制」。';
+	@override String get reasonDownloadChannelBlocked => '下載通知已關閉，因此可能無法查看進度或使用控制項。';
+	@override String get reasonNotificationsDisabled => '通知已關閉。在 Android 13 或更新版本中，長時間背景下載需要啟用通知。';
+	@override String get reasonDataSaver => '已開啟數據節省模式，因此系統會封鎖使用行動數據的背景下載。透過 Wi-Fi 下載應仍可正常執行。';
+	@override String get reasonOemUnknown => 'Plezy 在背景執行時，下載屢次停止。請檢查 Plezy 的電池用量或背景使用設定。';
+	@override String get openSettings => '開啟設定';
+	@override String get stillNotWorking => '裝置專屬說明';
+	@override String get stillNotWorkingDescription => '查看適用於你裝置的步驟；若問題持續發生，也可從設定 › 查看日誌傳送日誌。';
+	@override String get dialogTitle => '下載可能無法完成';
+	@override String get dialogDownloadAnyway => '仍要下載';
+	@override String get dialogFixFirst => '先修正設定';
+	@override String get statusTile => '背景下載';
+	@override String get statusOk => '可在背景執行';
+	@override String get statusBlocked => '遭系統設定封鎖';
+	@override String get statusDegraded => '受系統設定限制';
+	@override String get statusUnknown => '尚未檢查';
+	@override String get settingsUnavailable => '無法在這部裝置上開啟系統設定';
+	@override String get linkUnavailable => '無法在這部裝置上開啟 dontkillmyapp.com';
 }
 
 // Path: companionRemote.session
@@ -3259,6 +3295,32 @@ extension on TranslationsZhHant {
 			'downloads.syncRuleNotAvailableForProfile' => '目前使用者設定檔無法使用',
 			'downloads.syncRuleUnknownServer' => '未知伺服器',
 			'downloads.syncRuleListCreated' => '同步規則已建立',
+			'downloads.backgroundWarning.bannerBlocked' => '離開應用程式後，下載將會停止',
+			'downloads.backgroundWarning.bannerDegraded' => '背景下載可能受限',
+			'downloads.backgroundWarning.bannerAction' => '詳細資料',
+			'downloads.backgroundWarning.sheetTitle' => '背景下載遭到封鎖',
+			'downloads.backgroundWarning.sheetTitleDegraded' => '背景下載可能受限',
+			'downloads.backgroundWarning.sheetIntro' => 'Android 正在阻止 Plezy 在背景穩定下載。',
+			'downloads.backgroundWarning.sheetIntroDegraded' => '你的裝置限制了 Plezy 可在背景下載的時機。',
+			'downloads.backgroundWarning.reasonBackgroundRestricted' => 'Plezy 的背景使用受限。請將其電池用量或背景使用設定為「無限制」。',
+			'downloads.backgroundWarning.reasonStandbyRestricted' => 'Android 已將 Plezy 設為受限待命狀態。請將電池用量設為「無限制」。',
+			'downloads.backgroundWarning.reasonDownloadChannelBlocked' => '下載通知已關閉，因此可能無法查看進度或使用控制項。',
+			'downloads.backgroundWarning.reasonNotificationsDisabled' => '通知已關閉。在 Android 13 或更新版本中，長時間背景下載需要啟用通知。',
+			'downloads.backgroundWarning.reasonDataSaver' => '已開啟數據節省模式，因此系統會封鎖使用行動數據的背景下載。透過 Wi-Fi 下載應仍可正常執行。',
+			'downloads.backgroundWarning.reasonOemUnknown' => 'Plezy 在背景執行時，下載屢次停止。請檢查 Plezy 的電池用量或背景使用設定。',
+			'downloads.backgroundWarning.openSettings' => '開啟設定',
+			'downloads.backgroundWarning.stillNotWorking' => '裝置專屬說明',
+			'downloads.backgroundWarning.stillNotWorkingDescription' => '查看適用於你裝置的步驟；若問題持續發生，也可從設定 › 查看日誌傳送日誌。',
+			'downloads.backgroundWarning.dialogTitle' => '下載可能無法完成',
+			'downloads.backgroundWarning.dialogDownloadAnyway' => '仍要下載',
+			'downloads.backgroundWarning.dialogFixFirst' => '先修正設定',
+			'downloads.backgroundWarning.statusTile' => '背景下載',
+			'downloads.backgroundWarning.statusOk' => '可在背景執行',
+			'downloads.backgroundWarning.statusBlocked' => '遭系統設定封鎖',
+			'downloads.backgroundWarning.statusDegraded' => '受系統設定限制',
+			'downloads.backgroundWarning.statusUnknown' => '尚未檢查',
+			'downloads.backgroundWarning.settingsUnavailable' => '無法在這部裝置上開啟系統設定',
+			'downloads.backgroundWarning.linkUnavailable' => '無法在這部裝置上開啟 dontkillmyapp.com',
 			'shaders.title' => '著色器',
 			'shaders.noShaderDescription' => '無影片增強效果',
 			'shaders.nvscalerDescription' => 'NVIDIA 圖像縮放技術，使影片邊緣更清晰',

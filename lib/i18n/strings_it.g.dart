@@ -1453,6 +1453,7 @@ class _Translations$downloads$it extends Translations$downloads$en {
 	@override String get syncRuleNotAvailableForProfile => 'Non disponibile per il profilo attuale';
 	@override String get syncRuleUnknownServer => 'Server sconosciuto';
 	@override String get syncRuleListCreated => 'Regola di sincronizzazione creata';
+	@override late final _Translations$downloads$backgroundWarning$it backgroundWarning = _Translations$downloads$backgroundWarning$it._(_root);
 }
 
 // Path: shaders
@@ -1981,6 +1982,41 @@ class _Translations$explore$status$it extends Translations$explore$status$en {
 	@override String get ended => 'Conclusa';
 	@override String get canceled => 'Cancellata';
 	@override String get upcoming => 'In arrivo';
+}
+
+// Path: downloads.backgroundWarning
+class _Translations$downloads$backgroundWarning$it extends Translations$downloads$backgroundWarning$en {
+	_Translations$downloads$backgroundWarning$it._(TranslationsIt root) : this._root = root, super.internal(root);
+
+	final TranslationsIt _root; // ignore: unused_field
+
+	// Translations
+	@override String get bannerBlocked => 'I download si interromperanno quando esci dall’app';
+	@override String get bannerDegraded => 'I download in background potrebbero essere limitati';
+	@override String get bannerAction => 'Dettagli';
+	@override String get sheetTitle => 'I download in background sono bloccati';
+	@override String get sheetTitleDegraded => 'I download in background potrebbero essere limitati';
+	@override String get sheetIntro => 'Android impedisce a Plezy di scaricare in modo affidabile in background.';
+	@override String get sheetIntroDegraded => 'Il dispositivo limita i momenti in cui Plezy può scaricare in background.';
+	@override String get reasonBackgroundRestricted => 'L’uso in background di Plezy è limitato. Nelle impostazioni della batteria o dell’uso in background, seleziona «Senza restrizioni».';
+	@override String get reasonStandbyRestricted => 'Android ha messo Plezy in uno stato di standby con restrizioni. Imposta l’uso della batteria su «Senza restrizioni».';
+	@override String get reasonDownloadChannelBlocked => 'Le notifiche dei download sono disattivate, quindi l’avanzamento e i controlli potrebbero non essere disponibili.';
+	@override String get reasonNotificationsDisabled => 'Le notifiche sono disattivate. Su Android 13 o versioni successive sono necessarie per i download prolungati in background.';
+	@override String get reasonDataSaver => 'Il Risparmio dati è attivo e blocca i download in background tramite dati mobili. I download dovrebbero comunque funzionare su Wi-Fi.';
+	@override String get reasonOemUnknown => 'I download si sono interrotti più volte mentre Plezy era in background. Controlla le impostazioni della batteria o dell’uso in background di Plezy.';
+	@override String get openSettings => 'Apri le impostazioni';
+	@override String get stillNotWorking => 'Guida specifica per il dispositivo';
+	@override String get stillNotWorkingDescription => 'Consulta la procedura per il tuo dispositivo oppure invia un log da Impostazioni › Visualizza i log se il problema persiste.';
+	@override String get dialogTitle => 'I download potrebbero non terminare';
+	@override String get dialogDownloadAnyway => 'Scarica comunque';
+	@override String get dialogFixFirst => 'Risolvi prima';
+	@override String get statusTile => 'Download in background';
+	@override String get statusOk => 'Esecuzione in background consentita';
+	@override String get statusBlocked => 'Bloccati dalle impostazioni di sistema';
+	@override String get statusDegraded => 'Limitati dalle impostazioni di sistema';
+	@override String get statusUnknown => 'Non ancora verificato';
+	@override String get settingsUnavailable => 'Impossibile aprire le impostazioni di sistema su questo dispositivo';
+	@override String get linkUnavailable => 'Impossibile aprire dontkillmyapp.com su questo dispositivo';
 }
 
 // Path: companionRemote.session
@@ -3261,6 +3297,32 @@ extension on TranslationsIt {
 			'downloads.syncRuleNotAvailableForProfile' => 'Non disponibile per il profilo attuale',
 			'downloads.syncRuleUnknownServer' => 'Server sconosciuto',
 			'downloads.syncRuleListCreated' => 'Regola di sincronizzazione creata',
+			'downloads.backgroundWarning.bannerBlocked' => 'I download si interromperanno quando esci dall’app',
+			'downloads.backgroundWarning.bannerDegraded' => 'I download in background potrebbero essere limitati',
+			'downloads.backgroundWarning.bannerAction' => 'Dettagli',
+			'downloads.backgroundWarning.sheetTitle' => 'I download in background sono bloccati',
+			'downloads.backgroundWarning.sheetTitleDegraded' => 'I download in background potrebbero essere limitati',
+			'downloads.backgroundWarning.sheetIntro' => 'Android impedisce a Plezy di scaricare in modo affidabile in background.',
+			'downloads.backgroundWarning.sheetIntroDegraded' => 'Il dispositivo limita i momenti in cui Plezy può scaricare in background.',
+			'downloads.backgroundWarning.reasonBackgroundRestricted' => 'L’uso in background di Plezy è limitato. Nelle impostazioni della batteria o dell’uso in background, seleziona «Senza restrizioni».',
+			'downloads.backgroundWarning.reasonStandbyRestricted' => 'Android ha messo Plezy in uno stato di standby con restrizioni. Imposta l’uso della batteria su «Senza restrizioni».',
+			'downloads.backgroundWarning.reasonDownloadChannelBlocked' => 'Le notifiche dei download sono disattivate, quindi l’avanzamento e i controlli potrebbero non essere disponibili.',
+			'downloads.backgroundWarning.reasonNotificationsDisabled' => 'Le notifiche sono disattivate. Su Android 13 o versioni successive sono necessarie per i download prolungati in background.',
+			'downloads.backgroundWarning.reasonDataSaver' => 'Il Risparmio dati è attivo e blocca i download in background tramite dati mobili. I download dovrebbero comunque funzionare su Wi-Fi.',
+			'downloads.backgroundWarning.reasonOemUnknown' => 'I download si sono interrotti più volte mentre Plezy era in background. Controlla le impostazioni della batteria o dell’uso in background di Plezy.',
+			'downloads.backgroundWarning.openSettings' => 'Apri le impostazioni',
+			'downloads.backgroundWarning.stillNotWorking' => 'Guida specifica per il dispositivo',
+			'downloads.backgroundWarning.stillNotWorkingDescription' => 'Consulta la procedura per il tuo dispositivo oppure invia un log da Impostazioni › Visualizza i log se il problema persiste.',
+			'downloads.backgroundWarning.dialogTitle' => 'I download potrebbero non terminare',
+			'downloads.backgroundWarning.dialogDownloadAnyway' => 'Scarica comunque',
+			'downloads.backgroundWarning.dialogFixFirst' => 'Risolvi prima',
+			'downloads.backgroundWarning.statusTile' => 'Download in background',
+			'downloads.backgroundWarning.statusOk' => 'Esecuzione in background consentita',
+			'downloads.backgroundWarning.statusBlocked' => 'Bloccati dalle impostazioni di sistema',
+			'downloads.backgroundWarning.statusDegraded' => 'Limitati dalle impostazioni di sistema',
+			'downloads.backgroundWarning.statusUnknown' => 'Non ancora verificato',
+			'downloads.backgroundWarning.settingsUnavailable' => 'Impossibile aprire le impostazioni di sistema su questo dispositivo',
+			'downloads.backgroundWarning.linkUnavailable' => 'Impossibile aprire dontkillmyapp.com su questo dispositivo',
 			'shaders.title' => 'Shader',
 			'shaders.noShaderDescription' => 'Nessun miglioramento video',
 			'shaders.nvscalerDescription' => 'Ridimensionamento NVIDIA per video più nitido',

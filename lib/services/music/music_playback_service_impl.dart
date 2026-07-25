@@ -289,7 +289,7 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingO
     // Android 13+: the background playback notification needs
     // POST_NOTIFICATIONS. Fire-and-forget — playback and the foreground
     // service run regardless; a denial only hides the notification.
-    unawaited(ensureNotificationPermission());
+    unawaited(NotificationPermission.ensure());
     final generation = ++_generation;
     _invalidateArmRequests();
     _finalizeCurrentTrack();

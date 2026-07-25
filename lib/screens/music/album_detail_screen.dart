@@ -25,6 +25,7 @@ import '../../utils/platform_detector.dart';
 import '../../utils/provider_extensions.dart';
 import '../../utils/snackbar_helper.dart';
 import '../../widgets/app_icon.dart';
+import '../../widgets/background_download_warning_banner.dart';
 import '../../widgets/desktop_app_bar.dart';
 import '../../widgets/download_status_icon.dart';
 import '../../widgets/ios_status_bar_tap_scroll_to_top.dart';
@@ -177,6 +178,8 @@ class _AlbumDetailScreenState extends BaseMediaListDetailScreen<AlbumDetailScree
       if (mounted) showSuccessSnackBar(context, t.downloads.downloadDeleted);
       return;
     }
+
+    if (!await confirmBackgroundDownloadRestrictions(context) || !mounted) return;
 
     // Not downloaded (or partial/failed): queue the album — already-active
     // tracks are skipped inside the provider, so this also fills gaps.

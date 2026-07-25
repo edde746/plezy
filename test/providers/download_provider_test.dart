@@ -4,6 +4,7 @@ import 'package:drift/drift.dart' show ApplyInterceptor, QueryExecutor, QueryInt
 import 'package:plezy/media/ids.dart';
 
 import 'package:drift/native.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/database/app_database.dart';
 import 'package:plezy/database/download_operations.dart';
@@ -18,7 +19,9 @@ import 'package:plezy/services/api_cache.dart';
 import 'package:plezy/services/download_storage_service.dart';
 import 'package:plezy/services/jellyfin_api_cache.dart';
 import 'package:plezy/services/plex_api_cache.dart';
+import 'package:plezy/services/offline_mode_source.dart';
 import 'package:plezy/utils/deletion_notifier.dart';
+import 'package:plezy/utils/notification_permission.dart';
 import 'package:plezy/utils/watch_state_notifier.dart';
 import 'package:plezy/utils/active_client_scope.dart';
 import '../test_helpers/media_items.dart';
@@ -189,6 +192,21 @@ Future<void> _putPinnedPlexMetadata(
     _plexMetadata(id: id, title: title, viewCount: viewCount, viewOffset: viewOffset),
   );
   await PlexApiCache.instance.pinForOffline(scope.cacheServerId, id);
+}
+
+class _FakeOfflineModeSource extends ChangeNotifier implements OfflineModeSource {
+  _FakeOfflineModeSource(this._isOffline);
+
+  bool _isOffline;
+
+  @override
+  bool get isOffline => _isOffline;
+
+  void setOffline(bool value) {
+    if (_isOffline == value) return;
+    _isOffline = value;
+    notifyListeners();
+  }
 }
 
 void main() {
@@ -2709,6 +2727,178 @@ void main() {
         reason: 'queue rollback must restore the previous value, not leave the temporary stash',
       );
 
+      p.dispose();
+    });
+  });
+
+  group('DownloadProvider — background download prerequisites', () {
+    final movie = testMediaItem(
+      id: '1',
+      backend: MediaBackend.plex,
+      kind: MediaKind.movie,
+      title: 'Queued Movie',
+      serverId: ServerId('srv'),
+    );
+
+    setUp(NotificationPermission.debugReset);
+
+    tearDown(() {
+      NotificationPermission.debugRequestOverride = null;
+      NotificationPermission.debugReset();
+    });
+
+    test('queueDownload asks for the notification permission that anchors the transfer', () async {
+      // Regression guard: music playback used to be the only caller, so a user
+      // whose first action was a download was never asked, and Android killed
+      // the transfer the moment the screen went off.
+      var requests = 0;
+      NotificationPermission.debugRequestOverride = () async => requests++;
+      final p = DownloadProvider.forTesting(downloadManager: downloadManager, database: db);
+      await p.ensureInitialized();
+      // Already downloaded, so the queue short-circuits before touching the
+      // manager — the permission request is the only thing under test.
+      p.debugSeedState(
+        downloads: {'srv:1': const DownloadProgress(globalKey: 'srv:1', status: DownloadStatus.completed)},
+        metadata: {'srv:1': movie},
+        ownedDownloadKeys: const {},
+      );
+
+      await p.queueDownload(movie, _ThrowingClient());
+
+      expect(requests, 1);
+      p.dispose();
+    });
+
+    test('the permission is requested once, not on every queued item', () async {
+      var requests = 0;
+      NotificationPermission.debugRequestOverride = () async => requests++;
+      final second = movie.copyWith(id: '2');
+      final p = DownloadProvider.forTesting(downloadManager: downloadManager, database: db);
+      await p.ensureInitialized();
+      p.debugSeedState(
+        downloads: {
+          'srv:1': const DownloadProgress(globalKey: 'srv:1', status: DownloadStatus.completed),
+          'srv:2': const DownloadProgress(globalKey: 'srv:2', status: DownloadStatus.completed),
+        },
+        metadata: {'srv:1': movie, 'srv:2': second},
+        ownedDownloadKeys: const {},
+      );
+
+      await p.queueDownload(movie, _ThrowingClient());
+      await p.queueDownload(second, _ThrowingClient());
+
+      expect(requests, 1);
+      p.dispose();
+    });
+
+    test('holds the duplicate queue claim while permission is pending', () async {
+      final requestStarted = Completer<void>();
+      final releaseRequest = Completer<void>();
+      var requests = 0;
+      NotificationPermission.debugRequestOverride = () async {
+        requests++;
+        requestStarted.complete();
+        await releaseRequest.future;
+      };
+      final p = DownloadProvider.forTesting(downloadManager: downloadManager, database: db);
+      await p.ensureInitialized();
+      p.debugSeedState(
+        downloads: {'srv:1': const DownloadProgress(globalKey: 'srv:1', status: DownloadStatus.completed)},
+        metadata: {'srv:1': movie},
+        ownedDownloadKeys: const {},
+      );
+
+      final firstQueue = p.queueDownload(movie, _ThrowingClient());
+      await requestStarted.future;
+
+      expect(p.isQueueing(movie.globalKey), isTrue);
+      expect(await p.queueDownload(movie, _ThrowingClient()), 0);
+
+      releaseRequest.complete();
+      await firstQueue;
+
+      expect(requests, 1);
+      p.dispose();
+    });
+
+    test('the activity snapshot counts in-flight work and every downloaded byte', () async {
+      final p = DownloadProvider.forTesting(downloadManager: downloadManager, database: db);
+      await p.ensureInitialized();
+      p.debugSeedState(
+        downloads: {
+          'srv:1': const DownloadProgress(globalKey: 'srv:1', status: DownloadStatus.downloading, downloadedBytes: 100),
+          'srv:2': const DownloadProgress(globalKey: 'srv:2', status: DownloadStatus.queued, downloadedBytes: 0),
+          'srv:3': const DownloadProgress(globalKey: 'srv:3', status: DownloadStatus.completed, downloadedBytes: 900),
+          'srv:4': const DownloadProgress(globalKey: 'srv:4', status: DownloadStatus.failed, downloadedBytes: 5),
+        },
+        metadata: const {},
+        ownedDownloadKeys: const {},
+      );
+
+      final snapshot = p.downloadActivitySnapshot();
+
+      expect(snapshot.activeTasks, 1, reason: 'only actively downloading tasks arm the stall detector');
+      expect(snapshot.completedTasks, 1);
+      expect(snapshot.failedTasks, 1);
+      expect(snapshot.downloadedBytes, 1005, reason: 'every download, regardless of profile ownership');
+      p.dispose();
+    });
+
+    test('terminal status-only events preserve bytes but a retry resets progress', () async {
+      final p = DownloadProvider.forTesting(downloadManager: downloadManager, database: db);
+      await p.ensureInitialized();
+      p.debugSeedState(ownedDownloadKeys: const {'srv:1'});
+
+      downloadManager.debugEmitProgress(
+        const DownloadProgress(
+          globalKey: 'srv:1',
+          status: DownloadStatus.downloading,
+          progress: 47,
+          downloadedBytes: 500,
+          totalBytes: 1000,
+        ),
+      );
+      await Future<void>.delayed(Duration.zero);
+      downloadManager.debugEmitProgress(
+        const DownloadProgress(globalKey: 'srv:1', status: DownloadStatus.completed, progress: 100),
+      );
+      await Future<void>.delayed(Duration.zero);
+
+      expect(p.downloads['srv:1']?.progress, 100);
+      expect(p.downloads['srv:1']?.downloadedBytes, 500);
+      expect(p.downloads['srv:1']?.totalBytes, 1000);
+
+      downloadManager.debugEmitProgress(const DownloadProgress(globalKey: 'srv:1', status: DownloadStatus.queued));
+      await Future<void>.delayed(Duration.zero);
+
+      expect(p.downloads['srv:1']?.progress, 0);
+      expect(p.downloads['srv:1']?.downloadedBytes, 0);
+      expect(p.downloads['srv:1']?.totalBytes, 0);
+      p.dispose();
+    });
+
+    test('activity snapshots record offline-source transitions', () async {
+      final source = _FakeOfflineModeSource(false);
+      final p = DownloadProvider.forTesting(downloadManager: downloadManager, database: db);
+      await p.ensureInitialized();
+      p.setOfflineSource(source);
+      final online = p.downloadActivitySnapshot();
+
+      source.setOffline(true);
+      final offline = p.downloadActivitySnapshot();
+
+      expect(online.networkAvailable, isTrue);
+      expect(offline.networkAvailable, isFalse);
+      expect(offline.networkStateGeneration, greaterThan(online.networkStateGeneration));
+      p.dispose();
+      source.dispose();
+    });
+
+    test('the activity snapshot tear-off is stable enough to unbind', () async {
+      final p = DownloadProvider.forTesting(downloadManager: downloadManager, database: db);
+      await p.ensureInitialized();
+
+      expect(p.downloadActivitySnapshot, equals(p.downloadActivitySnapshot));
       p.dispose();
     });
   });

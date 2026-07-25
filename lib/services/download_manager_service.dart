@@ -107,6 +107,11 @@ class DownloadManagerService {
   final _progressController = StreamController<DownloadProgress>.broadcast();
   Stream<DownloadProgress> get progressStream => _progressController.stream;
 
+  @visibleForTesting
+  void debugEmitProgress(DownloadProgress progress) {
+    if (!_disposed) _progressController.add(progress);
+  }
+
   final _deletionProgressController = StreamController<DeletionProgress>.broadcast();
   Stream<DeletionProgress> get deletionProgressStream => _deletionProgressController.stream;
 

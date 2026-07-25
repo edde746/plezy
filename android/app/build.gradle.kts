@@ -417,6 +417,36 @@ android {
   }
 }
 
+// BackgroundWorkDiagnostics routes users to background_downloader's private
+// notification channel. Fail the build if an upstream ref changes that ID.
+val verifyBackgroundDownloaderNotificationChannel = tasks.register("verifyBackgroundDownloaderNotificationChannel") {
+  val expectedChannelId = "background_downloader"
+  val downloaderProject = rootProject.findProject(":background_downloader")
+  val notificationsSource = downloaderProject?.projectDir?.resolve(
+    "src/main/kotlin/com/bbflight/background_downloader/Notifications.kt"
+  )
+  notificationsSource?.let(inputs::file)
+  doLast {
+    if (notificationsSource == null) {
+      logger.lifecycle("Skipping downloader channel verification: Flutter plugin project is not configured")
+      return@doLast
+    }
+    val actualChannelId = Regex(
+      """private const val notificationChannelId\s*=\s*"([^"]+)""""
+    ).find(notificationsSource.readText())?.groupValues?.get(1)
+      ?: throw GradleException("Could not locate background_downloader's notification channel ID")
+    if (actualChannelId != expectedChannelId) {
+      throw GradleException(
+        "background_downloader channel ID changed from $expectedChannelId to $actualChannelId; " +
+          "update BackgroundWorkDiagnostics and its tests"
+      )
+    }
+  }
+}
+tasks.named("preBuild").configure {
+  dependsOn(verifyBackgroundDownloaderNotificationChannel)
+}
+
 kotlin {
   compilerOptions {
     jvmTarget.set(JvmTarget.JVM_17)

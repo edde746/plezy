@@ -1450,6 +1450,7 @@ class _Translations$downloads$ko extends Translations$downloads$en {
 	@override String get syncRuleNotAvailableForProfile => '현재 프로필에서 사용할 수 없음';
 	@override String get syncRuleUnknownServer => '알 수 없는 서버';
 	@override String get syncRuleListCreated => '동기화 규칙이 생성되었습니다';
+	@override late final _Translations$downloads$backgroundWarning$ko backgroundWarning = _Translations$downloads$backgroundWarning$ko._(_root);
 }
 
 // Path: shaders
@@ -1978,6 +1979,41 @@ class _Translations$explore$status$ko extends Translations$explore$status$en {
 	@override String get ended => '종영';
 	@override String get canceled => '취소됨';
 	@override String get upcoming => '방영 예정';
+}
+
+// Path: downloads.backgroundWarning
+class _Translations$downloads$backgroundWarning$ko extends Translations$downloads$backgroundWarning$en {
+	_Translations$downloads$backgroundWarning$ko._(TranslationsKo root) : this._root = root, super.internal(root);
+
+	final TranslationsKo _root; // ignore: unused_field
+
+	// Translations
+	@override String get bannerBlocked => '앱에서 나가면 다운로드가 중지됩니다';
+	@override String get bannerDegraded => '백그라운드 다운로드가 제한될 수 있습니다';
+	@override String get bannerAction => '세부정보';
+	@override String get sheetTitle => '백그라운드 다운로드가 차단됨';
+	@override String get sheetTitleDegraded => '백그라운드 다운로드가 제한될 수 있음';
+	@override String get sheetIntro => 'Android가 Plezy의 안정적인 백그라운드 다운로드를 차단하고 있습니다.';
+	@override String get sheetIntroDegraded => '기기에서 Plezy가 백그라운드로 다운로드할 수 있는 시점을 제한하고 있습니다.';
+	@override String get reasonBackgroundRestricted => 'Plezy의 백그라운드 사용이 제한되어 있습니다. 배터리 또는 백그라운드 사용을 "제한 없음"으로 설정하세요.';
+	@override String get reasonStandbyRestricted => 'Android가 Plezy를 제한된 대기 상태로 전환했습니다. 배터리 사용량을 "제한 없음"으로 설정하세요.';
+	@override String get reasonDownloadChannelBlocked => '다운로드 알림이 꺼져 있어 진행 상황과 제어 기능을 사용하지 못할 수 있습니다.';
+	@override String get reasonNotificationsDisabled => '알림이 꺼져 있습니다. Android 13 이상에서는 장시간 백그라운드 다운로드에 알림이 필요합니다.';
+	@override String get reasonDataSaver => '데이터 절약 모드가 켜져 있어 모바일 데이터로 백그라운드 다운로드를 할 수 없습니다. Wi-Fi에서는 계속 다운로드할 수 있습니다.';
+	@override String get reasonOemUnknown => 'Plezy가 백그라운드에 있을 때 다운로드가 반복해서 중지되었습니다. Plezy의 배터리 또는 백그라운드 사용 설정을 확인하세요.';
+	@override String get openSettings => '설정 열기';
+	@override String get stillNotWorking => '기기별 도움말';
+	@override String get stillNotWorkingDescription => '기기에 맞는 단계를 확인하세요. 문제가 계속되면 설정 › 로그 보기에서 로그를 보내 주세요.';
+	@override String get dialogTitle => '다운로드가 완료되지 않을 수 있음';
+	@override String get dialogDownloadAnyway => '그래도 다운로드';
+	@override String get dialogFixFirst => '먼저 문제 해결';
+	@override String get statusTile => '백그라운드 다운로드';
+	@override String get statusOk => '백그라운드 실행 허용됨';
+	@override String get statusBlocked => '시스템 설정에 의해 차단됨';
+	@override String get statusDegraded => '시스템 설정에 의해 제한됨';
+	@override String get statusUnknown => '아직 확인하지 않음';
+	@override String get settingsUnavailable => '이 기기에서 시스템 설정을 열 수 없습니다';
+	@override String get linkUnavailable => '이 기기에서 dontkillmyapp.com을 열 수 없습니다';
 }
 
 // Path: companionRemote.session
@@ -3258,6 +3294,32 @@ extension on TranslationsKo {
 			'downloads.syncRuleNotAvailableForProfile' => '현재 프로필에서 사용할 수 없음',
 			'downloads.syncRuleUnknownServer' => '알 수 없는 서버',
 			'downloads.syncRuleListCreated' => '동기화 규칙이 생성되었습니다',
+			'downloads.backgroundWarning.bannerBlocked' => '앱에서 나가면 다운로드가 중지됩니다',
+			'downloads.backgroundWarning.bannerDegraded' => '백그라운드 다운로드가 제한될 수 있습니다',
+			'downloads.backgroundWarning.bannerAction' => '세부정보',
+			'downloads.backgroundWarning.sheetTitle' => '백그라운드 다운로드가 차단됨',
+			'downloads.backgroundWarning.sheetTitleDegraded' => '백그라운드 다운로드가 제한될 수 있음',
+			'downloads.backgroundWarning.sheetIntro' => 'Android가 Plezy의 안정적인 백그라운드 다운로드를 차단하고 있습니다.',
+			'downloads.backgroundWarning.sheetIntroDegraded' => '기기에서 Plezy가 백그라운드로 다운로드할 수 있는 시점을 제한하고 있습니다.',
+			'downloads.backgroundWarning.reasonBackgroundRestricted' => 'Plezy의 백그라운드 사용이 제한되어 있습니다. 배터리 또는 백그라운드 사용을 "제한 없음"으로 설정하세요.',
+			'downloads.backgroundWarning.reasonStandbyRestricted' => 'Android가 Plezy를 제한된 대기 상태로 전환했습니다. 배터리 사용량을 "제한 없음"으로 설정하세요.',
+			'downloads.backgroundWarning.reasonDownloadChannelBlocked' => '다운로드 알림이 꺼져 있어 진행 상황과 제어 기능을 사용하지 못할 수 있습니다.',
+			'downloads.backgroundWarning.reasonNotificationsDisabled' => '알림이 꺼져 있습니다. Android 13 이상에서는 장시간 백그라운드 다운로드에 알림이 필요합니다.',
+			'downloads.backgroundWarning.reasonDataSaver' => '데이터 절약 모드가 켜져 있어 모바일 데이터로 백그라운드 다운로드를 할 수 없습니다. Wi-Fi에서는 계속 다운로드할 수 있습니다.',
+			'downloads.backgroundWarning.reasonOemUnknown' => 'Plezy가 백그라운드에 있을 때 다운로드가 반복해서 중지되었습니다. Plezy의 배터리 또는 백그라운드 사용 설정을 확인하세요.',
+			'downloads.backgroundWarning.openSettings' => '설정 열기',
+			'downloads.backgroundWarning.stillNotWorking' => '기기별 도움말',
+			'downloads.backgroundWarning.stillNotWorkingDescription' => '기기에 맞는 단계를 확인하세요. 문제가 계속되면 설정 › 로그 보기에서 로그를 보내 주세요.',
+			'downloads.backgroundWarning.dialogTitle' => '다운로드가 완료되지 않을 수 있음',
+			'downloads.backgroundWarning.dialogDownloadAnyway' => '그래도 다운로드',
+			'downloads.backgroundWarning.dialogFixFirst' => '먼저 문제 해결',
+			'downloads.backgroundWarning.statusTile' => '백그라운드 다운로드',
+			'downloads.backgroundWarning.statusOk' => '백그라운드 실행 허용됨',
+			'downloads.backgroundWarning.statusBlocked' => '시스템 설정에 의해 차단됨',
+			'downloads.backgroundWarning.statusDegraded' => '시스템 설정에 의해 제한됨',
+			'downloads.backgroundWarning.statusUnknown' => '아직 확인하지 않음',
+			'downloads.backgroundWarning.settingsUnavailable' => '이 기기에서 시스템 설정을 열 수 없습니다',
+			'downloads.backgroundWarning.linkUnavailable' => '이 기기에서 dontkillmyapp.com을 열 수 없습니다',
 			'shaders.title' => '셰이더',
 			'shaders.noShaderDescription' => '비디오 향상 없음',
 			'shaders.nvscalerDescription' => '더 선명한 비디오를 위한 NVIDIA 이미지 스케일링',

@@ -573,6 +573,13 @@ class MainActivity : FlutterActivity() {
         "getTvDetection" -> result.success(getAndroidTvDetection())
         "getDeviceName" -> result.success(getDeviceName())
         "getPerformanceSignals" -> result.success(getPerformanceSignals())
+        "getBackgroundWorkSignals" -> result.success(
+          BackgroundWorkClassifier.toMap(BackgroundWorkDiagnostics.read(this))
+        )
+        "openBackgroundSettings" -> {
+          val target = BackgroundSettingsTarget.fromId(call.arguments as? String)
+          result.success(target != null && BackgroundWorkDiagnostics.openSettings(this, target))
+        }
         "getPreviousExit" -> handlePreviousExit(result)
         "setStartupPhase" -> queueStartupPhase(call.arguments as? String, result)
         "setRuntimeUiState" -> {

@@ -1459,6 +1459,7 @@ class _Translations$downloads$ru extends Translations$downloads$en {
 	@override String get syncRuleNotAvailableForProfile => 'Недоступно для текущего профиля';
 	@override String get syncRuleUnknownServer => 'Неизвестный сервер';
 	@override String get syncRuleListCreated => 'Правило синхронизации создано';
+	@override late final _Translations$downloads$backgroundWarning$ru backgroundWarning = _Translations$downloads$backgroundWarning$ru._(_root);
 }
 
 // Path: shaders
@@ -1987,6 +1988,41 @@ class _Translations$explore$status$ru extends Translations$explore$status$en {
 	@override String get ended => 'Завершён';
 	@override String get canceled => 'Отменён';
 	@override String get upcoming => 'Скоро';
+}
+
+// Path: downloads.backgroundWarning
+class _Translations$downloads$backgroundWarning$ru extends Translations$downloads$backgroundWarning$en {
+	_Translations$downloads$backgroundWarning$ru._(TranslationsRu root) : this._root = root, super.internal(root);
+
+	final TranslationsRu _root; // ignore: unused_field
+
+	// Translations
+	@override String get bannerBlocked => 'Загрузки остановятся, когда вы выйдете из приложения';
+	@override String get bannerDegraded => 'Фоновые загрузки могут быть ограничены';
+	@override String get bannerAction => 'Подробнее';
+	@override String get sheetTitle => 'Фоновые загрузки заблокированы';
+	@override String get sheetTitleDegraded => 'Фоновые загрузки могут быть ограничены';
+	@override String get sheetIntro => 'Android не позволяет Plezy стабильно выполнять загрузки в фоновом режиме.';
+	@override String get sheetIntroDegraded => 'Ваше устройство ограничивает время, когда Plezy может выполнять загрузки в фоновом режиме.';
+	@override String get reasonBackgroundRestricted => 'Фоновая работа Plezy ограничена. В настройках расхода заряда батареи или фоновой работы выберите «Без ограничений».';
+	@override String get reasonStandbyRestricted => 'Android перевёл Plezy в режим ожидания с ограничениями. Для расхода заряда батареи выберите «Без ограничений».';
+	@override String get reasonDownloadChannelBlocked => 'Уведомления о загрузках отключены, поэтому ход загрузок и элементы управления могут быть недоступны.';
+	@override String get reasonNotificationsDisabled => 'Уведомления отключены. В Android 13 и более новых версиях они необходимы для длительных фоновых загрузок.';
+	@override String get reasonDataSaver => 'Экономия трафика включена, поэтому фоновые загрузки через мобильную сеть заблокированы. Загрузки по Wi-Fi должны работать.';
+	@override String get reasonOemUnknown => 'Загрузки неоднократно останавливались, пока Plezy работал в фоне. Проверьте настройки расхода заряда батареи или фоновой работы для Plezy.';
+	@override String get openSettings => 'Открыть настройки';
+	@override String get stillNotWorking => 'Помощь для вашего устройства';
+	@override String get stillNotWorkingDescription => 'Посмотрите инструкции для своего устройства. Если проблема не исчезнет, отправьте лог через Настройки › Просмотр логов.';
+	@override String get dialogTitle => 'Загрузки могут не завершиться';
+	@override String get dialogDownloadAnyway => 'Всё равно скачать';
+	@override String get dialogFixFirst => 'Сначала исправить';
+	@override String get statusTile => 'Фоновые загрузки';
+	@override String get statusOk => 'Работа в фоне разрешена';
+	@override String get statusBlocked => 'Заблокировано настройками системы';
+	@override String get statusDegraded => 'Ограничено настройками системы';
+	@override String get statusUnknown => 'Ещё не проверено';
+	@override String get settingsUnavailable => 'Не удалось открыть системные настройки на этом устройстве';
+	@override String get linkUnavailable => 'Не удалось открыть dontkillmyapp.com на этом устройстве';
 }
 
 // Path: companionRemote.session
@@ -3267,6 +3303,32 @@ extension on TranslationsRu {
 			'downloads.syncRuleNotAvailableForProfile' => 'Недоступно для текущего профиля',
 			'downloads.syncRuleUnknownServer' => 'Неизвестный сервер',
 			'downloads.syncRuleListCreated' => 'Правило синхронизации создано',
+			'downloads.backgroundWarning.bannerBlocked' => 'Загрузки остановятся, когда вы выйдете из приложения',
+			'downloads.backgroundWarning.bannerDegraded' => 'Фоновые загрузки могут быть ограничены',
+			'downloads.backgroundWarning.bannerAction' => 'Подробнее',
+			'downloads.backgroundWarning.sheetTitle' => 'Фоновые загрузки заблокированы',
+			'downloads.backgroundWarning.sheetTitleDegraded' => 'Фоновые загрузки могут быть ограничены',
+			'downloads.backgroundWarning.sheetIntro' => 'Android не позволяет Plezy стабильно выполнять загрузки в фоновом режиме.',
+			'downloads.backgroundWarning.sheetIntroDegraded' => 'Ваше устройство ограничивает время, когда Plezy может выполнять загрузки в фоновом режиме.',
+			'downloads.backgroundWarning.reasonBackgroundRestricted' => 'Фоновая работа Plezy ограничена. В настройках расхода заряда батареи или фоновой работы выберите «Без ограничений».',
+			'downloads.backgroundWarning.reasonStandbyRestricted' => 'Android перевёл Plezy в режим ожидания с ограничениями. Для расхода заряда батареи выберите «Без ограничений».',
+			'downloads.backgroundWarning.reasonDownloadChannelBlocked' => 'Уведомления о загрузках отключены, поэтому ход загрузок и элементы управления могут быть недоступны.',
+			'downloads.backgroundWarning.reasonNotificationsDisabled' => 'Уведомления отключены. В Android 13 и более новых версиях они необходимы для длительных фоновых загрузок.',
+			'downloads.backgroundWarning.reasonDataSaver' => 'Экономия трафика включена, поэтому фоновые загрузки через мобильную сеть заблокированы. Загрузки по Wi-Fi должны работать.',
+			'downloads.backgroundWarning.reasonOemUnknown' => 'Загрузки неоднократно останавливались, пока Plezy работал в фоне. Проверьте настройки расхода заряда батареи или фоновой работы для Plezy.',
+			'downloads.backgroundWarning.openSettings' => 'Открыть настройки',
+			'downloads.backgroundWarning.stillNotWorking' => 'Помощь для вашего устройства',
+			'downloads.backgroundWarning.stillNotWorkingDescription' => 'Посмотрите инструкции для своего устройства. Если проблема не исчезнет, отправьте лог через Настройки › Просмотр логов.',
+			'downloads.backgroundWarning.dialogTitle' => 'Загрузки могут не завершиться',
+			'downloads.backgroundWarning.dialogDownloadAnyway' => 'Всё равно скачать',
+			'downloads.backgroundWarning.dialogFixFirst' => 'Сначала исправить',
+			'downloads.backgroundWarning.statusTile' => 'Фоновые загрузки',
+			'downloads.backgroundWarning.statusOk' => 'Работа в фоне разрешена',
+			'downloads.backgroundWarning.statusBlocked' => 'Заблокировано настройками системы',
+			'downloads.backgroundWarning.statusDegraded' => 'Ограничено настройками системы',
+			'downloads.backgroundWarning.statusUnknown' => 'Ещё не проверено',
+			'downloads.backgroundWarning.settingsUnavailable' => 'Не удалось открыть системные настройки на этом устройстве',
+			'downloads.backgroundWarning.linkUnavailable' => 'Не удалось открыть dontkillmyapp.com на этом устройстве',
 			'shaders.title' => 'Шейдеры',
 			'shaders.noShaderDescription' => 'Без улучшения видео',
 			'shaders.nvscalerDescription' => 'Масштабирование NVIDIA для более чёткого видео',

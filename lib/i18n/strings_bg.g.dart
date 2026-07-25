@@ -1453,6 +1453,7 @@ class _Translations$downloads$bg extends Translations$downloads$en {
 	@override String get syncRuleNotAvailableForProfile => 'Не е налично за текущия профил';
 	@override String get syncRuleUnknownServer => 'Неизвестен сървър';
 	@override String get syncRuleListCreated => 'Правилото за синхронизация е създадено';
+	@override late final _Translations$downloads$backgroundWarning$bg backgroundWarning = _Translations$downloads$backgroundWarning$bg._(_root);
 }
 
 // Path: shaders
@@ -1981,6 +1982,41 @@ class _Translations$explore$status$bg extends Translations$explore$status$en {
 	@override String get ended => 'Приключил';
 	@override String get canceled => 'Отменен';
 	@override String get upcoming => 'Предстоящ';
+}
+
+// Path: downloads.backgroundWarning
+class _Translations$downloads$backgroundWarning$bg extends Translations$downloads$backgroundWarning$en {
+	_Translations$downloads$backgroundWarning$bg._(TranslationsBg root) : this._root = root, super.internal(root);
+
+	final TranslationsBg _root; // ignore: unused_field
+
+	// Translations
+	@override String get bannerBlocked => 'Изтеглянията ще спрат, когато излезете от приложението';
+	@override String get bannerDegraded => 'Изтеглянията във фонов режим може да бъдат ограничени';
+	@override String get bannerAction => 'Подробности';
+	@override String get sheetTitle => 'Изтеглянията във фонов режим са блокирани';
+	@override String get sheetTitleDegraded => 'Изтеглянията във фонов режим може да бъдат ограничени';
+	@override String get sheetIntro => 'Android не позволява на Plezy да изтегля надеждно във фонов режим.';
+	@override String get sheetIntroDegraded => 'Устройството ви ограничава кога Plezy може да изтегля във фонов режим.';
+	@override String get reasonBackgroundRestricted => 'Работата на Plezy във фонов режим е ограничена. Задайте използването на батерията или работата във фонов режим на „Без ограничения“.';
+	@override String get reasonStandbyRestricted => 'Android е поставил Plezy в ограничено състояние на готовност. Задайте използването на батерията на „Без ограничения“.';
+	@override String get reasonDownloadChannelBlocked => 'Известията за изтегляния са изключени, затова напредъкът и контролите може да не са достъпни.';
+	@override String get reasonNotificationsDisabled => 'Известията са изключени. В Android 13 или по-нова версия те са необходими за продължителни изтегляния във фонов режим.';
+	@override String get reasonDataSaver => '„Икономия на данни“ е включена и блокира изтеглянията във фонов режим през мобилни данни. Изтеглянията би трябвало да продължат през Wi-Fi.';
+	@override String get reasonOemUnknown => 'Изтеглянията спираха многократно, докато Plezy беше във фонов режим. Проверете настройките за батерията или работата на Plezy във фонов режим.';
+	@override String get openSettings => 'Отвори настройките';
+	@override String get stillNotWorking => 'Помощ за конкретното устройство';
+	@override String get stillNotWorkingDescription => 'Вижте стъпките за устройството си или изпратете лог от Настройки › Виж логовете, ако проблемът продължи.';
+	@override String get dialogTitle => 'Изтеглянията може да не завършат';
+	@override String get dialogDownloadAnyway => 'Изтегли въпреки това';
+	@override String get dialogFixFirst => 'Първо отстрани проблема';
+	@override String get statusTile => 'Изтегляния във фонов режим';
+	@override String get statusOk => 'Разрешена е работа във фонов режим';
+	@override String get statusBlocked => 'Блокирани от системните настройки';
+	@override String get statusDegraded => 'Ограничени от системните настройки';
+	@override String get statusUnknown => 'Все още не е проверено';
+	@override String get settingsUnavailable => 'Системните настройки не можаха да се отворят на това устройство';
+	@override String get linkUnavailable => 'dontkillmyapp.com не можа да се отвори на това устройство';
 }
 
 // Path: companionRemote.session
@@ -3261,6 +3297,32 @@ extension on TranslationsBg {
 			'downloads.syncRuleNotAvailableForProfile' => 'Не е налично за текущия профил',
 			'downloads.syncRuleUnknownServer' => 'Неизвестен сървър',
 			'downloads.syncRuleListCreated' => 'Правилото за синхронизация е създадено',
+			'downloads.backgroundWarning.bannerBlocked' => 'Изтеглянията ще спрат, когато излезете от приложението',
+			'downloads.backgroundWarning.bannerDegraded' => 'Изтеглянията във фонов режим може да бъдат ограничени',
+			'downloads.backgroundWarning.bannerAction' => 'Подробности',
+			'downloads.backgroundWarning.sheetTitle' => 'Изтеглянията във фонов режим са блокирани',
+			'downloads.backgroundWarning.sheetTitleDegraded' => 'Изтеглянията във фонов режим може да бъдат ограничени',
+			'downloads.backgroundWarning.sheetIntro' => 'Android не позволява на Plezy да изтегля надеждно във фонов режим.',
+			'downloads.backgroundWarning.sheetIntroDegraded' => 'Устройството ви ограничава кога Plezy може да изтегля във фонов режим.',
+			'downloads.backgroundWarning.reasonBackgroundRestricted' => 'Работата на Plezy във фонов режим е ограничена. Задайте използването на батерията или работата във фонов режим на „Без ограничения“.',
+			'downloads.backgroundWarning.reasonStandbyRestricted' => 'Android е поставил Plezy в ограничено състояние на готовност. Задайте използването на батерията на „Без ограничения“.',
+			'downloads.backgroundWarning.reasonDownloadChannelBlocked' => 'Известията за изтегляния са изключени, затова напредъкът и контролите може да не са достъпни.',
+			'downloads.backgroundWarning.reasonNotificationsDisabled' => 'Известията са изключени. В Android 13 или по-нова версия те са необходими за продължителни изтегляния във фонов режим.',
+			'downloads.backgroundWarning.reasonDataSaver' => '„Икономия на данни“ е включена и блокира изтеглянията във фонов режим през мобилни данни. Изтеглянията би трябвало да продължат през Wi-Fi.',
+			'downloads.backgroundWarning.reasonOemUnknown' => 'Изтеглянията спираха многократно, докато Plezy беше във фонов режим. Проверете настройките за батерията или работата на Plezy във фонов режим.',
+			'downloads.backgroundWarning.openSettings' => 'Отвори настройките',
+			'downloads.backgroundWarning.stillNotWorking' => 'Помощ за конкретното устройство',
+			'downloads.backgroundWarning.stillNotWorkingDescription' => 'Вижте стъпките за устройството си или изпратете лог от Настройки › Виж логовете, ако проблемът продължи.',
+			'downloads.backgroundWarning.dialogTitle' => 'Изтеглянията може да не завършат',
+			'downloads.backgroundWarning.dialogDownloadAnyway' => 'Изтегли въпреки това',
+			'downloads.backgroundWarning.dialogFixFirst' => 'Първо отстрани проблема',
+			'downloads.backgroundWarning.statusTile' => 'Изтегляния във фонов режим',
+			'downloads.backgroundWarning.statusOk' => 'Разрешена е работа във фонов режим',
+			'downloads.backgroundWarning.statusBlocked' => 'Блокирани от системните настройки',
+			'downloads.backgroundWarning.statusDegraded' => 'Ограничени от системните настройки',
+			'downloads.backgroundWarning.statusUnknown' => 'Все още не е проверено',
+			'downloads.backgroundWarning.settingsUnavailable' => 'Системните настройки не можаха да се отворят на това устройство',
+			'downloads.backgroundWarning.linkUnavailable' => 'dontkillmyapp.com не можа да се отвори на това устройство',
 			'shaders.title' => 'Шейдъри',
 			'shaders.noShaderDescription' => 'Без видео подобрение',
 			'shaders.nvscalerDescription' => 'Мащабиране на изображението чрез NVIDIA за по-рязко видео',

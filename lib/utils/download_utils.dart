@@ -10,6 +10,7 @@ import '../database/app_database.dart';
 import '../providers/download_provider.dart';
 import '../services/settings_service.dart';
 import '../services/sync_rule_executor.dart';
+import '../widgets/background_download_warning_banner.dart';
 import 'content_utils.dart';
 import 'dialogs.dart';
 import 'download_version_utils.dart';
@@ -77,6 +78,8 @@ Future<DownloadResult?> showDownloadOptionsAndQueue(
   required DownloadProvider downloadProvider,
   Future<void> Function()? onDelete,
 }) async {
+  if (!await confirmBackgroundDownloadRestrictions(context) || !context.mounted) return null;
+
   final kind = metadata.kind;
 
   var filter = DownloadFilter.all;
@@ -219,6 +222,8 @@ Future<DownloadResult?> showListDownloadOptionsAndQueue(
   required DownloadProvider downloadProvider,
 }) async {
   assert(targetType == ContentTypes.collection || targetType == ContentTypes.playlist);
+
+  if (!await confirmBackgroundDownloadRestrictions(context) || !context.mounted) return null;
 
   final selectedFilter = await showOptionPickerDialog<DownloadFilter>(
     context,

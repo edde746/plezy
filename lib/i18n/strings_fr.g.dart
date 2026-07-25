@@ -1453,6 +1453,7 @@ class _Translations$downloads$fr extends Translations$downloads$en {
 	@override String get syncRuleNotAvailableForProfile => 'Non disponible pour le profil actuel';
 	@override String get syncRuleUnknownServer => 'Serveur inconnu';
 	@override String get syncRuleListCreated => 'Règle de synchronisation créée';
+	@override late final _Translations$downloads$backgroundWarning$fr backgroundWarning = _Translations$downloads$backgroundWarning$fr._(_root);
 }
 
 // Path: shaders
@@ -1981,6 +1982,41 @@ class _Translations$explore$status$fr extends Translations$explore$status$en {
 	@override String get ended => 'Terminé';
 	@override String get canceled => 'Annulé';
 	@override String get upcoming => 'À venir';
+}
+
+// Path: downloads.backgroundWarning
+class _Translations$downloads$backgroundWarning$fr extends Translations$downloads$backgroundWarning$en {
+	_Translations$downloads$backgroundWarning$fr._(TranslationsFr root) : this._root = root, super.internal(root);
+
+	final TranslationsFr _root; // ignore: unused_field
+
+	// Translations
+	@override String get bannerBlocked => 'Les téléchargements s’arrêteront lorsque vous quitterez l’application';
+	@override String get bannerDegraded => 'Les téléchargements en arrière-plan peuvent être limités';
+	@override String get bannerAction => 'Détails';
+	@override String get sheetTitle => 'Les téléchargements en arrière-plan sont bloqués';
+	@override String get sheetTitleDegraded => 'Les téléchargements en arrière-plan peuvent être limités';
+	@override String get sheetIntro => 'Android empêche Plezy de télécharger de façon fiable en arrière-plan.';
+	@override String get sheetIntroDegraded => 'Votre appareil limite les moments où Plezy peut télécharger en arrière-plan.';
+	@override String get reasonBackgroundRestricted => 'L’utilisation de Plezy en arrière-plan est restreinte. Dans les paramètres de batterie ou d’utilisation en arrière-plan, sélectionnez « Sans restriction ».';
+	@override String get reasonStandbyRestricted => 'Android a placé Plezy en veille restreinte. Réglez l’utilisation de la batterie sur « Sans restriction ».';
+	@override String get reasonDownloadChannelBlocked => 'Les notifications de téléchargement sont désactivées. La progression et les commandes peuvent donc être indisponibles.';
+	@override String get reasonNotificationsDisabled => 'Les notifications sont désactivées. Sur Android 13 ou version ultérieure, elles sont nécessaires pour les longs téléchargements en arrière-plan.';
+	@override String get reasonDataSaver => 'L’Économiseur de données est activé et bloque les téléchargements en arrière-plan via les données mobiles. Ils devraient toujours fonctionner en Wi-Fi.';
+	@override String get reasonOemUnknown => 'Les téléchargements se sont arrêtés plusieurs fois lorsque Plezy était en arrière-plan. Vérifiez les paramètres de batterie ou d’utilisation en arrière-plan de Plezy.';
+	@override String get openSettings => 'Ouvrir les paramètres';
+	@override String get stillNotWorking => 'Aide spécifique à l’appareil';
+	@override String get stillNotWorkingDescription => 'Consultez les étapes adaptées à votre appareil ou, si le problème persiste, envoyez un journal depuis Paramètres › Voir les journaux.';
+	@override String get dialogTitle => 'Les téléchargements risquent de ne pas aboutir';
+	@override String get dialogDownloadAnyway => 'Télécharger quand même';
+	@override String get dialogFixFirst => 'Corriger d’abord';
+	@override String get statusTile => 'Téléchargements en arrière-plan';
+	@override String get statusOk => 'Exécution en arrière-plan autorisée';
+	@override String get statusBlocked => 'Bloqués par les paramètres système';
+	@override String get statusDegraded => 'Limités par les paramètres système';
+	@override String get statusUnknown => 'Pas encore vérifié';
+	@override String get settingsUnavailable => 'Impossible d’ouvrir les paramètres système sur cet appareil';
+	@override String get linkUnavailable => 'Impossible d’ouvrir dontkillmyapp.com sur cet appareil';
 }
 
 // Path: companionRemote.session
@@ -3261,6 +3297,32 @@ extension on TranslationsFr {
 			'downloads.syncRuleNotAvailableForProfile' => 'Non disponible pour le profil actuel',
 			'downloads.syncRuleUnknownServer' => 'Serveur inconnu',
 			'downloads.syncRuleListCreated' => 'Règle de synchronisation créée',
+			'downloads.backgroundWarning.bannerBlocked' => 'Les téléchargements s’arrêteront lorsque vous quitterez l’application',
+			'downloads.backgroundWarning.bannerDegraded' => 'Les téléchargements en arrière-plan peuvent être limités',
+			'downloads.backgroundWarning.bannerAction' => 'Détails',
+			'downloads.backgroundWarning.sheetTitle' => 'Les téléchargements en arrière-plan sont bloqués',
+			'downloads.backgroundWarning.sheetTitleDegraded' => 'Les téléchargements en arrière-plan peuvent être limités',
+			'downloads.backgroundWarning.sheetIntro' => 'Android empêche Plezy de télécharger de façon fiable en arrière-plan.',
+			'downloads.backgroundWarning.sheetIntroDegraded' => 'Votre appareil limite les moments où Plezy peut télécharger en arrière-plan.',
+			'downloads.backgroundWarning.reasonBackgroundRestricted' => 'L’utilisation de Plezy en arrière-plan est restreinte. Dans les paramètres de batterie ou d’utilisation en arrière-plan, sélectionnez « Sans restriction ».',
+			'downloads.backgroundWarning.reasonStandbyRestricted' => 'Android a placé Plezy en veille restreinte. Réglez l’utilisation de la batterie sur « Sans restriction ».',
+			'downloads.backgroundWarning.reasonDownloadChannelBlocked' => 'Les notifications de téléchargement sont désactivées. La progression et les commandes peuvent donc être indisponibles.',
+			'downloads.backgroundWarning.reasonNotificationsDisabled' => 'Les notifications sont désactivées. Sur Android 13 ou version ultérieure, elles sont nécessaires pour les longs téléchargements en arrière-plan.',
+			'downloads.backgroundWarning.reasonDataSaver' => 'L’Économiseur de données est activé et bloque les téléchargements en arrière-plan via les données mobiles. Ils devraient toujours fonctionner en Wi-Fi.',
+			'downloads.backgroundWarning.reasonOemUnknown' => 'Les téléchargements se sont arrêtés plusieurs fois lorsque Plezy était en arrière-plan. Vérifiez les paramètres de batterie ou d’utilisation en arrière-plan de Plezy.',
+			'downloads.backgroundWarning.openSettings' => 'Ouvrir les paramètres',
+			'downloads.backgroundWarning.stillNotWorking' => 'Aide spécifique à l’appareil',
+			'downloads.backgroundWarning.stillNotWorkingDescription' => 'Consultez les étapes adaptées à votre appareil ou, si le problème persiste, envoyez un journal depuis Paramètres › Voir les journaux.',
+			'downloads.backgroundWarning.dialogTitle' => 'Les téléchargements risquent de ne pas aboutir',
+			'downloads.backgroundWarning.dialogDownloadAnyway' => 'Télécharger quand même',
+			'downloads.backgroundWarning.dialogFixFirst' => 'Corriger d’abord',
+			'downloads.backgroundWarning.statusTile' => 'Téléchargements en arrière-plan',
+			'downloads.backgroundWarning.statusOk' => 'Exécution en arrière-plan autorisée',
+			'downloads.backgroundWarning.statusBlocked' => 'Bloqués par les paramètres système',
+			'downloads.backgroundWarning.statusDegraded' => 'Limités par les paramètres système',
+			'downloads.backgroundWarning.statusUnknown' => 'Pas encore vérifié',
+			'downloads.backgroundWarning.settingsUnavailable' => 'Impossible d’ouvrir les paramètres système sur cet appareil',
+			'downloads.backgroundWarning.linkUnavailable' => 'Impossible d’ouvrir dontkillmyapp.com sur cet appareil',
 			'shaders.title' => 'Shaders',
 			'shaders.noShaderDescription' => 'Aucune amélioration vidéo',
 			'shaders.nvscalerDescription' => 'Mise à l\'échelle NVIDIA pour une vidéo plus nette',
