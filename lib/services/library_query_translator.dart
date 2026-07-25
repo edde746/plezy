@@ -276,7 +276,15 @@ class JellyfinLibraryQueryTranslator implements LibraryQueryTranslator {
       MediaKind.playlist => 'Playlist',
       MediaKind.clip => 'Video,MusicVideo',
       MediaKind.photo => 'Photo',
-      _ => 'Movie,Series,Episode,Audio',
+      // Kind-less browse is a mixed library (CollectionType `mixed` maps to
+      // [MediaKind.unknown], which [libraryQueryFromPlexMap] folds to a null
+      // kind). Ask for the top-level rows Jellyfin's own client shows there —
+      // one entry per series, not its episodes. `Recursive=true` would
+      // otherwise expand every episode into the grid, and because Jellyfin
+      // sorts episodes by index their sort names all land before "A" and
+      // swamp the alpha bar's `#` bucket (#1675). Episodes stay reachable by
+      // opening the series, and global search queries their type directly.
+      _ => 'Movie,Series,Audio',
     };
   }
 

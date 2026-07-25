@@ -111,9 +111,35 @@ void main() {
       expect(translator.toQueryParameters(const LibraryQuery(kind: MediaKind.photo))['IncludeItemTypes'], 'Photo');
     });
 
-    test('null kind falls back to multi-type include', () {
+    test('null kind falls back to top-level types without Episode', () {
       final params = translator.toQueryParameters(const LibraryQuery());
-      expect(params['IncludeItemTypes'], 'Movie,Series,Episode,Audio');
+      expect(params['IncludeItemTypes'], 'Movie,Series,Audio');
+    });
+
+    test('mixed-library browse never expands episodes into the grid', () {
+      // A mixed library reaches the translator with a null kind. Recursive
+      // browse must still return one row per series rather than every
+      // episode (#1675).
+      final params = translator.toQueryParameters(const LibraryQuery());
+      expect(params['Recursive'], 'true');
+      expect((params['IncludeItemTypes'] as String).split(','), isNot(contains('Episode')));
+    });
+
+    test('# alpha bucket on a mixed library asks for non-alphabetic top-level rows', () {
+      // Jellyfin sorts episodes by index, so their sort names all precede "A".
+      // With Episode in the type set, NameLessThan=A returned every episode of
+      // every series instead of just numerically-titled movies/series (#1675).
+      final params = translator.toQueryParameters(const LibraryQuery(nameStartsWith: '#'));
+      expect(params['NameLessThan'], 'A');
+      expect(params['NameStartsWith'], isNull);
+      expect((params['IncludeItemTypes'] as String).split(','), isNot(contains('Episode')));
+    });
+
+    test('explicit episode grouping still requests episodes', () {
+      // Dropping Episode from the fallback must not affect a Shows library
+      // browsed with the Episodes grouping, which pins the kind explicitly.
+      final params = translator.toQueryParameters(const LibraryQuery(kind: MediaKind.episode));
+      expect(params['IncludeItemTypes'], 'Episode');
     });
 
     test('genres joined with pipe separator', () {
