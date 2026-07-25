@@ -412,7 +412,7 @@ extension _VideoPlayerEpisodeNavigationMethods on VideoPlayerScreenState {
     try {
       final currentPlayer = existingPlayer;
       final attempt = _beginPlaybackAttempt(currentPlayer, isMediaReload: true);
-      bool isCurrentReload() => attempt.isCurrent;
+      bool isCurrentReload() => attempt.isCurrent && !_hasFatalPlaybackError && !_isExiting.value;
 
       // The session itself swaps atomically at the open boundary, so the only
       // rollback state is the eagerly-set identity (shown by the loading UI)
@@ -421,6 +421,9 @@ extension _VideoPlayerEpisodeNavigationMethods on VideoPlayerScreenState {
       final previousLaunchIdentity = VideoPlayerScreenState._activeRouteGuard.identityFor(this);
       final previousPartId = _currentMediaInfo?.partId;
       final previousHasFirstFrame = _hasFirstFrame.value;
+      final previousHasRenderedFirstFrame = _hasRenderedFirstFrame;
+      final previousHasFatalPlaybackError = _hasFatalPlaybackError;
+      _hasFatalPlaybackError = false;
       final isItemChange = previousMetadata.globalKey != metadata.globalKey;
 
       final currentAudioTrack = preserveCurrentTrackSelection
@@ -645,6 +648,9 @@ extension _VideoPlayerEpisodeNavigationMethods on VideoPlayerScreenState {
           play: shouldAutoStart && !frameRatePlan.holdPlaybackStart && externalSubtitlePlan.canStartBeforeTrackSetup,
           externalSubtitlesAtOpen: externalSubtitlePlan.subtitlesAtOpen,
           shouldContinue: isCurrentReload,
+          onOpening: () {
+            _hasRenderedFirstFrame = false;
+          },
           onOpened: () {
             // The player now owns the new file — publish the session at the
             // same boundary so identity and source state flip together.
@@ -779,6 +785,8 @@ extension _VideoPlayerEpisodeNavigationMethods on VideoPlayerScreenState {
             VideoPlayerScreenState._activeRouteGuard.update(this, previousLaunchIdentity);
           }
           _hasFirstFrame.value = previousHasFirstFrame;
+          _hasRenderedFirstFrame = previousHasRenderedFirstFrame;
+          _hasFatalPlaybackError = previousHasFatalPlaybackError;
           // If the stop report already went out, un-latch the tracker so the
           // resumed session keeps reporting (and its eventual real stop sends).
           _progressTracker?.resumeAfterStoppedReport();

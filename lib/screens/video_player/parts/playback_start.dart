@@ -5,6 +5,8 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
     final currentPlayer = player;
     if (!mounted || currentPlayer == null) return;
     final attempt = _beginPlaybackAttempt(currentPlayer);
+    _hasRenderedFirstFrame = false;
+    _hasFatalPlaybackError = false;
 
     // Live TV mode: bypass standard playback initialization
     if (widget.isLive) {
@@ -97,6 +99,7 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
 
     // Capture providers before async gaps
     final offlineWatchService = context.read<OfflineWatchSyncService>();
+    var primaryMediaOpened = false;
 
     try {
       PlaybackContext playbackContext;
@@ -255,6 +258,7 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
           play: shouldAutoPlay,
           externalSubtitlesAtOpen: externalSubtitlePlan.subtitlesAtOpen,
           shouldContinue: () => attempt.isCurrent,
+          onMediaAvailabilityChanged: (available) => primaryMediaOpened = available,
         );
         if (!openResult.didOpen || !attempt.isCurrent) return;
         if (openResult.sidecarFallbackUsed) {
@@ -376,14 +380,20 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
       }
     } on PlaybackException catch (e, st) {
       appLogger.w('Playback initialization failed', error: e, stackTrace: st);
-      if (mounted) {
-        _hasFirstFrame.value = true; // Hide spinner on error
+      if (attempt.isCurrent && mounted) {
+        if (!primaryMediaOpened) {
+          _hasFatalPlaybackError = true;
+        }
+        _hasFirstFrame.value = true; // Hide spinner on every current startup failure
         showErrorSnackBar(context, e.message);
       }
     } catch (e, st) {
       appLogger.e('Failed to start playback', error: e, stackTrace: st);
-      if (mounted) {
-        _hasFirstFrame.value = true; // Hide spinner on error
+      if (attempt.isCurrent && mounted) {
+        if (!primaryMediaOpened) {
+          _hasFatalPlaybackError = true;
+        }
+        _hasFirstFrame.value = true; // Hide spinner on every current startup failure
         showErrorSnackBar(context, t.messages.errorLoading(error: e.toString()));
       }
     }

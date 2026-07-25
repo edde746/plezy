@@ -166,6 +166,314 @@ class ExoPlayerPluginTest {
   }
 
   @Test
+  fun openDuringFallbackDispatchesOnlyTheNewestMediaGeneration() {
+    val activity = Robolectric.buildActivity(Activity::class.java).setup().get()
+    val exoCore = ExoPlayerCore(activity)
+    val mpvCore = MpvPlayerCore(activity, true) { _, _ -> Unit }
+    val plugin = ExoPlayerPlugin()
+    val sink = RecordingEventSink()
+    plugin.onListen(null, sink)
+    var initializeCallback: ((Boolean) -> Unit)? = null
+    setField(plugin, "activity", activity)
+    setField(plugin, "playerCore", exoCore)
+    plugin.createMpvCore = { mpvCore }
+    plugin.initializeMpvCore = { _, callback -> initializeCallback = callback }
+
+    assertTrue(
+      plugin.onFormatUnsupported(
+        mediaGeneration = 0,
+        uri = "https://example.test/failed.mkv",
+        headers = null,
+        positionMs = 1234L,
+        playWhenReady = true,
+        errorMessage = "unsupported"
+      )
+    )
+    shadowOf(Looper.getMainLooper()).idle()
+    assertTrue(initializeCallback != null)
+
+    val superseded = RecordingResult()
+    val active = RecordingResult()
+    plugin.onMethodCall(
+      MethodCall("open", mapOf("uri" to "https://example.test/episode-2.mkv", "autoPlay" to true)),
+      superseded
+    )
+    plugin.onMethodCall(
+      MethodCall("open", mapOf("uri" to "https://example.test/episode-3.mkv", "autoPlay" to true)),
+      active
+    )
+
+    assertEquals(1, superseded.completionCount)
+    assertEquals("OPEN_SUPERSEDED", superseded.errorCode)
+    assertEquals(0, active.completionCount)
+
+    initializeCallback!!(true)
+    mpvCore.delegate?.onEvent("file-loaded", null)
+    awaitCompletion(active)
+
+    assertEquals(null, active.errorCode)
+    assertEquals(true, getField(plugin, "usingMpvFallback"))
+    assertEquals(false, getField(plugin, "fallbackInProgress"))
+    assertNull(getField(plugin, "pendingOpen"))
+    assertEquals(listOf("backend-switched", "file-loaded"), sink.eventNames)
+
+    val disposeResult = RecordingResult()
+    plugin.onMethodCall(MethodCall("dispose", null), disposeResult)
+    awaitCompletion(disposeResult)
+  }
+
+  @Test
+  fun repeatedInitializeDuringFallbackKeepsTheQueuedOpenOwnedByThatSession() {
+    val activity = Robolectric.buildActivity(Activity::class.java).setup().get()
+    val exoCore = ExoPlayerCore(activity)
+    val mpvCore = MpvPlayerCore(activity, true) { _, _ -> Unit }
+    val plugin = ExoPlayerPlugin()
+    var initializeCallback: ((Boolean) -> Unit)? = null
+    setField(plugin, "activity", activity)
+    setField(plugin, "playerCore", exoCore)
+    plugin.createMpvCore = { mpvCore }
+    plugin.initializeMpvCore = { _, callback -> initializeCallback = callback }
+
+    assertTrue(
+      plugin.onFormatUnsupported(
+        mediaGeneration = 0,
+        uri = "https://example.test/failed.mkv",
+        headers = null,
+        positionMs = 0L,
+        playWhenReady = true,
+        errorMessage = "unsupported"
+      )
+    )
+    shadowOf(Looper.getMainLooper()).idle()
+
+    val open = RecordingResult()
+    plugin.onMethodCall(
+      MethodCall("open", mapOf("uri" to "https://example.test/episode-2.mkv", "autoPlay" to true)),
+      open
+    )
+    val repeatedInitialize = RecordingResult()
+    plugin.onMethodCall(MethodCall("initialize", emptyMap<String, Any?>()), repeatedInitialize)
+    awaitCompletion(repeatedInitialize)
+
+    assertEquals(true, repeatedInitialize.successValue)
+    assertEquals(0, open.completionCount)
+    assertTrue(getField(plugin, "pendingOpen") != null)
+    assertEquals(true, getField(plugin, "fallbackInProgress"))
+
+    initializeCallback!!(false)
+    awaitCompletion(open)
+    assertEquals("FALLBACK_FAILED", open.errorCode)
+  }
+
+  @Test
+  fun fallbackInitializationFailureTerminatesTheActiveQueuedOpenOnce() {
+    val activity = Robolectric.buildActivity(Activity::class.java).setup().get()
+    val exoCore = ExoPlayerCore(activity)
+    val mpvCore = MpvPlayerCore(activity, true) { _, _ -> Unit }
+    val plugin = ExoPlayerPlugin()
+    val sink = RecordingEventSink()
+    plugin.onListen(null, sink)
+    var initializeCallback: ((Boolean) -> Unit)? = null
+    setField(plugin, "activity", activity)
+    setField(plugin, "playerCore", exoCore)
+    plugin.createMpvCore = { mpvCore }
+    plugin.initializeMpvCore = { _, callback -> initializeCallback = callback }
+
+    assertTrue(
+      plugin.onFormatUnsupported(
+        mediaGeneration = 0,
+        uri = "https://example.test/failed.mkv",
+        headers = null,
+        positionMs = 0L,
+        playWhenReady = true,
+        errorMessage = "unsupported"
+      )
+    )
+    shadowOf(Looper.getMainLooper()).idle()
+
+    val active = RecordingResult()
+    plugin.onMethodCall(
+      MethodCall("open", mapOf("uri" to "https://example.test/episode-2.mkv", "autoPlay" to true)),
+      active
+    )
+
+    initializeCallback!!(false)
+    awaitCompletion(active)
+    initializeCallback!!(false)
+    shadowOf(Looper.getMainLooper()).idle()
+
+    assertEquals(1, active.completionCount)
+    assertEquals("FALLBACK_FAILED", active.errorCode)
+    assertEquals(1, getField(plugin, "terminalEventGeneration"))
+    assertEquals(false, getField(plugin, "fallbackInProgress"))
+    assertNull(getField(plugin, "pendingOpen"))
+    assertEquals(listOf("end-file"), sink.eventNames)
+  }
+
+  @Test
+  fun fallbackInitializationTimeoutTerminatesTheActiveQueuedOpen() {
+    val activity = Robolectric.buildActivity(Activity::class.java).setup().get()
+    val exoCore = ExoPlayerCore(activity)
+    val mpvCore = MpvPlayerCore(activity, true) { _, _ -> Unit }
+    val plugin = ExoPlayerPlugin()
+    setField(plugin, "activity", activity)
+    setField(plugin, "playerCore", exoCore)
+    plugin.createMpvCore = { mpvCore }
+    plugin.initializeMpvCore = { _, _ -> Unit }
+
+    assertTrue(
+      plugin.onFormatUnsupported(
+        mediaGeneration = 0,
+        uri = "https://example.test/failed.mkv",
+        headers = null,
+        positionMs = 0L,
+        playWhenReady = true,
+        errorMessage = "unsupported"
+      )
+    )
+    shadowOf(Looper.getMainLooper()).idle()
+
+    val active = RecordingResult()
+    plugin.onMethodCall(
+      MethodCall("open", mapOf("uri" to "https://example.test/episode-2.mkv", "autoPlay" to true)),
+      active
+    )
+
+    shadowOf(Looper.getMainLooper()).idleFor(10, TimeUnit.SECONDS)
+    awaitCompletion(active)
+
+    assertEquals(1, active.completionCount)
+    assertEquals("FALLBACK_FAILED", active.errorCode)
+    assertEquals(1, getField(plugin, "terminalEventGeneration"))
+    assertEquals(false, getField(plugin, "fallbackInProgress"))
+    assertNull(getField(plugin, "pendingOpen"))
+  }
+
+  @Test
+  fun fallbackMediaResolutionTimeoutTerminatesTheOpenAndPlayback() {
+    val activity = Robolectric.buildActivity(Activity::class.java).setup().get()
+    val mpvCore = MpvPlayerCore(activity, true) { _, _ -> Unit }
+    val plugin = ExoPlayerPlugin()
+    val sink = RecordingEventSink()
+    plugin.onListen(null, sink)
+    setField(plugin, "activity", activity)
+    setField(plugin, "mpvCore", mpvCore)
+    setField(plugin, "usingMpvFallback", true)
+    plugin.resolveMpvUri = { _, _, _ -> Unit }
+
+    val open = RecordingResult()
+    plugin.onMethodCall(
+      MethodCall("open", mapOf("uri" to "content://example.test/blocked", "autoPlay" to true)),
+      open
+    )
+
+    shadowOf(Looper.getMainLooper()).idleFor(10, TimeUnit.SECONDS)
+    awaitCompletion(open)
+
+    assertEquals("OPEN_TIMEOUT", open.errorCode)
+    assertEquals(false, getField(plugin, "usingMpvFallback"))
+    assertNull(getField(plugin, "inFlightOpen"))
+    assertEquals(listOf("end-file"), sink.eventNames)
+  }
+
+  @Test
+  fun supersededActiveOpenRecreatesMpvAndDispatchesOnlyTheLatestQueuedRequest() {
+    val activity = Robolectric.buildActivity(Activity::class.java).setup().get()
+    val originalCore = MpvPlayerCore(activity, true) { _, _ -> Unit }
+    val replacementCore = MpvPlayerCore(activity, true) { _, _ -> Unit }
+    val plugin = reusedFallbackPlugin(activity, originalCore)
+    var replacementInitialize: ((Boolean) -> Unit)? = null
+    var replacementCount = 0
+    plugin.createMpvCore = {
+      replacementCount++
+      replacementCore
+    }
+    plugin.initializeMpvCore = { _, callback -> replacementInitialize = callback }
+    plugin.resolveMpvUri = { _, _, _ -> Unit }
+
+    val first = RecordingResult()
+    val supersededPending = RecordingResult()
+    val latest = RecordingResult()
+    plugin.onMethodCall(
+      MethodCall("open", mapOf("uri" to "content://example.test/first", "autoPlay" to true)),
+      first
+    )
+    plugin.onMethodCall(
+      MethodCall("open", mapOf("uri" to "content://example.test/second", "autoPlay" to true)),
+      supersededPending
+    )
+    assertEquals("OPEN_SUPERSEDED", first.errorCode)
+
+    shadowOf(Looper.getMainLooper()).idleFor(10, TimeUnit.SECONDS)
+    assertEquals(1, replacementCount)
+    assertTrue(replacementInitialize != null)
+    assertEquals(0, supersededPending.completionCount)
+
+    plugin.onMethodCall(
+      MethodCall("open", mapOf("uri" to "content://example.test/latest", "autoPlay" to true)),
+      latest
+    )
+    assertEquals("OPEN_SUPERSEDED", supersededPending.errorCode)
+
+    replacementInitialize!!(true)
+    shadowOf(Looper.getMainLooper()).idle()
+
+    assertEquals(0, latest.completionCount)
+    assertNull(getField(plugin, "pendingOpen"))
+    assertTrue(getField(plugin, "inFlightOpen") != null)
+    assertEquals(replacementCore, getField(plugin, "mpvCore"))
+
+    val dispose = RecordingResult()
+    plugin.onMethodCall(MethodCall("dispose", null), dispose)
+    awaitCompletion(dispose)
+    assertEquals("NOT_INITIALIZED", latest.errorCode)
+  }
+
+  @Test
+  fun fallbackLoadFailureReturnsAnErrorAndTerminatesTheActiveMedia() {
+    val activity = Robolectric.buildActivity(Activity::class.java).setup().get()
+    val exoCore = ExoPlayerCore(activity)
+    val mpvCore = MpvPlayerCore(activity, true) { _, _ -> Unit }
+    val plugin = ExoPlayerPlugin()
+    val sink = RecordingEventSink()
+    plugin.onListen(null, sink)
+    var initializeCallback: ((Boolean) -> Unit)? = null
+    setField(plugin, "activity", activity)
+    setField(plugin, "playerCore", exoCore)
+    plugin.createMpvCore = { mpvCore }
+    plugin.initializeMpvCore = { _, callback -> initializeCallback = callback }
+
+    assertTrue(
+      plugin.onFormatUnsupported(
+        mediaGeneration = 0,
+        uri = "https://example.test/failed.mkv",
+        headers = null,
+        positionMs = 0L,
+        playWhenReady = true,
+        errorMessage = "unsupported"
+      )
+    )
+    shadowOf(Looper.getMainLooper()).idle()
+
+    val active = RecordingResult()
+    plugin.onMethodCall(
+      MethodCall("open", mapOf("uri" to "https://example.test/episode-2.mkv", "autoPlay" to true)),
+      active
+    )
+
+    mpvCore.dispose()
+    initializeCallback!!(true)
+    awaitCompletion(active)
+
+    assertEquals(1, active.completionCount)
+    assertEquals("OPEN_FAILED", active.errorCode)
+    assertEquals(1, getField(plugin, "terminalEventGeneration"))
+    assertEquals(false, getField(plugin, "usingMpvFallback"))
+    assertNull(getField(plugin, "inFlightOpen"))
+    assertEquals(listOf("end-file"), sink.eventNames)
+  }
+
+  @Test
   fun initialHeldFallbackSynchronouslyBlocksFocusAndSurfaceResumeWithoutPausePropertyWrite() {
     val activity = Robolectric.buildActivity(Activity::class.java).setup().get()
     val writes = ConcurrentLinkedQueue<Pair<String, String>>()
@@ -178,7 +486,7 @@ class ExoPlayerPluginTest {
     core.setPrivateField("deferredResumeRequested", true)
     val plugin = initialFallbackPlugin(activity, core)
 
-    invokeSetupMpvFallback(plugin, core, activity, playWhenReady = false)
+    invokeSetupMpvFallback(plugin, core, playWhenReady = false)
     invokeAutoResume(core, "audio focus gain")
     invokeAutoResume(core, "surface attached")
 
@@ -203,7 +511,7 @@ class ExoPlayerPluginTest {
     core.setPrivateField("resumeBlockedByPublicPause", true)
     val plugin = initialFallbackPlugin(activity, core)
 
-    invokeSetupMpvFallback(plugin, core, activity, playWhenReady = true)
+    invokeSetupMpvFallback(plugin, core, playWhenReady = true)
 
     assertEquals(false, core.getPrivateField("desiredPaused"))
     assertEquals(false, core.getPrivateField("cachedPaused"))
@@ -234,6 +542,7 @@ class ExoPlayerPluginTest {
       result
     )
     invokeAutoResume(core, "surface attached")
+    awaitCompletion(result)
 
     assertEquals(1, result.completionCount)
     assertNull(result.errorCode)
@@ -247,7 +556,7 @@ class ExoPlayerPluginTest {
   }
 
   @Test
-  fun reusedAutoplayFallbackClearsIntentBeforeLoadAndClearsPersistedNativePauseAfterSuccess() {
+  fun reusedAutoplayFallbackClearsIntentBeforeLoadWithoutLatePausePropertyWrite() {
     val activity = Robolectric.buildActivity(Activity::class.java).setup().get()
     val writes = ConcurrentLinkedQueue<Pair<String, String>>()
     val core = MpvPlayerCore(activity, true) { name, value -> writes += name to value }
@@ -264,15 +573,15 @@ class ExoPlayerPluginTest {
       ),
       result
     )
+    awaitCompletion(result)
 
     assertEquals(1, result.completionCount)
     assertNull(result.errorCode)
     assertEquals(false, core.getPrivateField("desiredPaused"))
     assertEquals(false, core.getPrivateField("cachedPaused"))
     assertEquals(false, core.getPrivateField("resumeBlockedByPublicPause"))
-    assertTrue(awaitQueueEntry(writes, "pause" to "no"))
-    assertFalse(awaitPauseWriteCount(writes, 2))
-    assertEquals(listOf("pause" to "no"), writes.filter { it.first == "pause" })
+    assertFalse(awaitPauseWriteCount(writes, 1))
+    assertEquals(emptyList<Pair<String, String>>(), writes.filter { it.first == "pause" })
     core.dispose()
   }
 
@@ -444,32 +753,15 @@ class ExoPlayerPluginTest {
   private fun invokeSetupMpvFallback(
     plugin: ExoPlayerPlugin,
     core: MpvPlayerCore,
-    activity: Activity,
     playWhenReady: Boolean
   ) {
+    core.setPauseIntentForLoad(paused = !playWhenReady)
     ExoPlayerPlugin::class.java.getDeclaredMethod(
-      "setupMpvFallback",
-      MpvPlayerCore::class.java,
-      Activity::class.java,
-      String::class.java,
-      Map::class.java,
-      java.lang.Long.TYPE,
-      List::class.java,
-      java.lang.Boolean.TYPE,
-      java.lang.Integer.TYPE
+      "prepareMpvFallback",
+      MpvPlayerCore::class.java
     ).apply {
       isAccessible = true
-      invoke(
-        plugin,
-        core,
-        activity,
-        "https://example.test/video.mkv",
-        null,
-        0L,
-        null,
-        playWhenReady,
-        0
-      )
+      invoke(plugin, core)
     }
   }
 
@@ -577,9 +869,16 @@ class ExoPlayerPluginTest {
 
   private class RecordingEventSink : EventChannel.EventSink {
     var successValue: Any? = null
+    val successValues = mutableListOf<Any?>()
+    val eventNames: List<String>
+      get() = successValues.mapNotNull { event ->
+        val envelope = event as? Map<*, *> ?: return@mapNotNull null
+        if (envelope["type"] == "event") envelope["name"] as? String else null
+      }
 
     override fun success(event: Any?) {
       successValue = event
+      successValues += event
     }
 
     override fun error(errorCode: String, errorMessage: String?, errorDetails: Any?) = Unit

@@ -610,6 +610,15 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
   }
 
   @protected
+  Map<String, SubtitleTrack> snapshotExternalSubtitleMetadata() =>
+      Map<String, SubtitleTrack>.of(_externalSubtitleMetadataByUri);
+
+  @protected
+  void restoreExternalSubtitleMetadata(Map<String, SubtitleTrack> snapshot) {
+    _externalSubtitleMetadataByUri = Map<String, SubtitleTrack>.of(snapshot);
+  }
+
+  @protected
   void setVolumeState(double volume) {
     if (_state.volume == volume) return;
     _state = _state.copyWith(volume: volume);
@@ -629,6 +638,9 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
   }
 
   @protected
+  Duration? get configuredTimelineDuration => _timelineDuration;
+
+  @protected
   void resetPlaybackProgress(Duration sourcePosition) {
     final position = sourcePosition;
     _positionMs = position.inMilliseconds;
@@ -644,6 +656,31 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
     durationController.add(_timelineDuration ?? Duration.zero);
     bufferController.add(Duration.zero);
     bufferRangesController.add(const []);
+  }
+
+  @protected
+  void restoreTracks(PlayerState snapshot) {
+    _state = _state.copyWith(tracks: snapshot.tracks, track: snapshot.track);
+    tracksController.add(snapshot.tracks);
+    trackController.add(snapshot.track);
+  }
+
+  @protected
+  void restorePlaybackProgress(PlayerState snapshot, {Duration? position}) {
+    final restoredPosition = position ?? snapshot.position;
+    _positionMs = restoredPosition.inMilliseconds;
+    _state = _state.copyWith(
+      completed: snapshot.completed,
+      position: restoredPosition,
+      duration: snapshot.duration,
+      buffer: snapshot.buffer,
+      bufferRanges: snapshot.bufferRanges,
+    );
+    completedController.add(snapshot.completed);
+    positionController.add(restoredPosition);
+    durationController.add(snapshot.duration);
+    bufferController.add(snapshot.buffer);
+    bufferRangesController.add(snapshot.bufferRanges);
   }
 
   @protected

@@ -37,10 +37,15 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
   }
 
   Future<void> _markFirstFrameReady(Player currentPlayer, SettingsService settingsService) async {
-    if (!mounted || player != currentPlayer || _hasFirstFrame.value) return;
+    if (!mounted || player != currentPlayer || _hasRenderedFirstFrame || _hasFatalPlaybackError) return;
 
+    _hasRenderedFirstFrame = true;
     _hasFirstFrame.value = true;
     unawaited(Sentry.addBreadcrumb(Breadcrumb(message: 'First frame ready', category: 'player')));
+    final progressTracker = _progressTracker;
+    if (progressTracker != null && currentPlayer.state.isActive) {
+      unawaited(progressTracker.sendProgress('playing'));
+    }
 
     if (Platform.isAndroid && settingsService.read(SettingsService.matchContentFrameRate)) {
       await _applyFrameRateMatching();
@@ -68,6 +73,7 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
       if (_positionSubscription != null) _positionSubscription!.cancel(),
     ]);
     if (!mounted || player != currentPlayer) return;
+    int? lastObservedPositionMs;
 
     _playingSubscription = currentPlayer.streams.playing.listen(_onPlayingStateChanged);
 
@@ -78,6 +84,7 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
       // completed=false while parked at EOF must NOT re-arm, or the position
       // listener would immediately re-fire the Play Next prompt.
       if (!done) {
+        lastObservedPositionMs = null;
         final durMs = currentPlayer.state.duration.inMilliseconds;
         final posMs = currentPlayer.state.position.inMilliseconds;
         if (durMs <= 0 || posMs < durMs - _completionLatch.rearmWindowMs) {
@@ -145,18 +152,16 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
       await markFirstFrameReady;
     });
 
-    int? lastObservedPositionMs;
     _positionSubscription = currentPlayer.streams.position.listen((position) {
       final activePlayer = player;
       if (activePlayer == null || activePlayer != currentPlayer) return;
 
-      // Fallback for cases where playbackRestart doesn't fire (observed on
-      // some offline Android playback flows). Prevents a permanent loading
-      // spinner. Checking `position > 0` was broken for resume playback —
-      // the native layer sets position to the resume offset before the first
-      // frame renders, so the fallback tripped immediately. Requiring a
-      // position *change* ensures we only fire when playback is advancing.
-      if (!_hasFirstFrame.value) {
+      // Fallback for MPV backends whose playbackRestart event is unavailable.
+      // Android ExoPlayer position can advance on its standalone clock without
+      // a renderer, so it may infer readiness only after switching to MPV.
+      final canInferRenderedFrameFromPosition =
+          !(Platform.isAndroid && useExoPlayer) || (currentPlayer is PlayerAndroid && currentPlayer.usingMpvFallback);
+      if (canInferRenderedFrameFromPosition && !_hasRenderedFirstFrame) {
         if (lastObservedPositionMs != null && position.inMilliseconds != lastObservedPositionMs) {
           unawaited(_markFirstFrameReady(currentPlayer, settingsService));
         }
@@ -305,6 +310,7 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
     if (mounted) {
       _isBuffering.value = false;
       _hasFirstFrame.value = false;
+      _hasRenderedFirstFrame = false;
     }
   }
 
@@ -326,6 +332,8 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
     MediaSourceInfo? mediaInfo,
   }) {
     final currentPlayer = player;
+    if (_hasFatalPlaybackError) return;
+
     if (currentPlayer == null) return;
 
     _rebindProgressTracker(
@@ -371,6 +379,8 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
     MediaSourceInfo? mediaInfo,
   }) {
     final currentPlayer = player;
+    if (_hasFatalPlaybackError) return;
+
     if (currentPlayer == null) return;
 
     // Local media still reports live when its server is online; only queue
@@ -390,6 +400,8 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
         playMethod: effectivePlayMethod,
         playSessionId: playSessionId,
         mediaInfo: mediaInfo,
+        canReportPlayback: () => _hasRenderedFirstFrame && !_hasFatalPlaybackError,
+        hasRenderedPlayback: () => _hasRenderedFirstFrame,
         onPausedKeepalive: mediaClient is PlexClient && effectivePlayMethod == 'Transcode'
             ? () => mediaClient.pingTranscodeSession(_playbackTranscodeSessionId)
             : null,
@@ -414,6 +426,8 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
         player: currentPlayer,
         isOffline: true,
         offlineWatchService: offlineWatchService,
+        canReportPlayback: () => _hasRenderedFirstFrame && !_hasFatalPlaybackError,
+        hasRenderedPlayback: () => _hasRenderedFirstFrame,
       );
       _progressTracker!.startTracking();
     }
@@ -422,7 +436,7 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
   /// Initialize the service layer
   Future<void> _initializeServices() async {
     final currentPlayer = player;
-    if (!mounted || currentPlayer == null) return;
+    if (!mounted || currentPlayer == null || _hasFatalPlaybackError) return;
 
     // Live TV: send timeline heartbeats to keep transcode session alive
     if (widget.isLive) {

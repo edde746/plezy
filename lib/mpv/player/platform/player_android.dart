@@ -157,37 +157,52 @@ class PlayerAndroid extends PlayerBase {
     await _ensureInitialized();
     final startPosition = media.start ?? Duration.zero;
     final hasStartPosition = media.start != null && startPosition > Duration.zero;
+    final previousState = state;
+    final previousPosition = currentPosition;
+    final previousTimelineDuration = configuredTimelineDuration;
+    final previousExternalSubtitleMetadata = snapshotExternalSubtitleMetadata();
     configureTimeline(duration: timelineDuration);
     clearTracks();
     setExternalSubtitleMetadata(externalSubtitles);
+    resetPlaybackProgress(startPosition);
     setSeekable(false);
 
-    // Show the video layer
-    await setVisible(true);
+    try {
+      // Show the video layer
+      await setVisible(true);
 
-    await invoke('open', {
-      'uri': media.uri,
-      'headers': media.headers,
-      'startPositionMs': startPosition.inMilliseconds,
-      'hasStartPosition': hasStartPosition,
-      'autoPlay': play,
-      'isLive': isLive,
-      if (externalSubtitles != null && externalSubtitles.isNotEmpty)
-        'externalSubtitles': externalSubtitles
-            .where((s) => s.uri != null)
-            .map(
-              (s) => {
-                'uri': s.uri,
-                'title': s.title,
-                'language': s.language,
-                'codec': s.codec,
-                'isDefault': s.isDefault,
-                'isForced': s.isForced,
-              },
-            )
-            .toList(),
-    });
-    resetPlaybackProgress(media.start ?? Duration.zero);
+      await invoke('open', {
+        'uri': media.uri,
+        'headers': media.headers,
+        'startPositionMs': startPosition.inMilliseconds,
+        'hasStartPosition': hasStartPosition,
+        'autoPlay': play,
+        'isLive': isLive,
+        if (externalSubtitles != null && externalSubtitles.isNotEmpty)
+          'externalSubtitles': externalSubtitles
+              .where((s) => s.uri != null)
+              .map(
+                (s) => {
+                  'uri': s.uri,
+                  'title': s.title,
+                  'language': s.language,
+                  'codec': s.codec,
+                  'isDefault': s.isDefault,
+                  'isForced': s.isForced,
+                },
+              )
+              .toList(),
+      });
+    } catch (_) {
+      if (!disposed) {
+        configureTimeline(duration: previousTimelineDuration);
+        restorePlaybackProgress(previousState, position: previousPosition);
+        restoreTracks(previousState);
+        restoreExternalSubtitleMetadata(previousExternalSubtitleMetadata);
+        setSeekable(previousState.seekable);
+      }
+      rethrow;
+    }
   }
 
   @override

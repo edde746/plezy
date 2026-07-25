@@ -722,6 +722,12 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
 
   final ValueNotifier<bool> _isBuffering = ValueNotifier<bool>(false);
   final ValueNotifier<bool> _hasFirstFrame = ValueNotifier<bool>(false);
+  // UI readiness may be forced true to hide the loading spinner after a
+  // startup failure. Reporting readiness is stricter: only a renderer event
+  // (or the established non-ExoPlayer position fallback) sets this latch.
+  bool _hasRenderedFirstFrame = false;
+  bool _hasFatalPlaybackError = false;
+
   final ValueNotifier<bool> _isExiting = ValueNotifier<bool>(false);
   final PlayerChromeController _chromeController = PlayerChromeController();
   late final PlayerNavigationCoordinator _playerNavigationCoordinator;

@@ -16,7 +16,9 @@ extension _VideoPlayerErrorMethods on VideoPlayerScreenState {
 
     // Fatal, unrecoverable until server-side fix — show modal instead of a snackbar.
     if (err.cause == PlayerError.serverHttp500 || _sawServer500) {
-      _showServerLimitDialog();
+      _hasFatalPlaybackError = true;
+      _progressTracker?.stopTracking();
+      unawaited(_showServerLimitDialog());
       return;
     }
 
@@ -39,8 +41,10 @@ extension _VideoPlayerErrorMethods on VideoPlayerScreenState {
       }
     }
 
+    _hasFatalPlaybackError = true;
+    _progressTracker?.stopTracking();
     showGlobalErrorSnackBar(_redactPlayerError(_lastLogError ?? err.message));
-    _handleBackButton();
+    unawaited(_handleBackButton());
   }
 
   void _onPlayerLog(PlayerLog log) {

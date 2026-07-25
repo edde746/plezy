@@ -593,7 +593,9 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
     required bool play,
     List<SubtitleTrack>? externalSubtitlesAtOpen,
     bool Function()? shouldContinue,
+    void Function()? onOpening,
     void Function()? onOpened,
+    void Function(bool available)? onMediaAvailabilityChanged,
   }) async {
     await _applyNetworkStreamTuning(
       player: player,
@@ -606,6 +608,7 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
     final media = Media(videoUrl, start: timing.mediaStart, headers: headers);
     final sidecarOpenGuard = MpvSidecarOpenGuard.armIfNeeded(player: player, subtitles: externalSubtitlesAtOpen);
     Future<void> openMedia({required bool shouldPlay, List<SubtitleTrack>? externalSubtitles}) {
+      onOpening?.call();
       return player.open(
         media,
         play: shouldPlay,
@@ -617,6 +620,7 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
     try {
       await openMedia(shouldPlay: play, externalSubtitles: externalSubtitlesAtOpen);
       onOpened?.call();
+      onMediaAvailabilityChanged?.call(true);
     } catch (_) {
       await sidecarOpenGuard?.dispose();
       rethrow;
@@ -633,10 +637,12 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
         return const _MediaOpenResult(didOpen: true);
       }
       await player.stop();
+      onMediaAvailabilityChanged?.call(false);
       if (shouldContinue != null && !shouldContinue()) return const _MediaOpenResult(didOpen: true);
       // Respect a pause requested while mpv was waiting on the sidecar. A
       // startup gate encoded by [play] remains authoritative when it is false.
       await openMedia(shouldPlay: play && _playbackIntentShouldPlay);
+      onMediaAvailabilityChanged?.call(true);
       sidecarFallbackUsed = true;
       if (mounted && (shouldContinue == null || shouldContinue())) {
         showErrorSnackBar(context, t.videoControls.subtitleUnavailableFallback);

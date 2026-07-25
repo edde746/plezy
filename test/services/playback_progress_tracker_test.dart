@@ -355,14 +355,19 @@ class _StopMarksWatchedClient extends _FakePlexClient {
 
 const Object _defaultServerId = Object();
 
-MediaItem _meta({String ratingKey = '42', Object? serverId = _defaultServerId, String? type = 'movie'}) =>
-    testMediaItem(
-      id: ratingKey,
-      backend: MediaBackend.plex,
-      kind: MediaKind.fromString(type),
-      title: 'Test Item',
-      serverId: identical(serverId, _defaultServerId) ? ServerId('srv') : serverId as ServerId?,
-    );
+MediaItem _meta({
+  String ratingKey = '42',
+  Object? serverId = _defaultServerId,
+  String? type = 'movie',
+  int? viewOffsetMs,
+}) => testMediaItem(
+  id: ratingKey,
+  backend: MediaBackend.plex,
+  kind: MediaKind.fromString(type),
+  title: 'Test Item',
+  serverId: identical(serverId, _defaultServerId) ? ServerId('srv') : serverId as ServerId?,
+  viewOffsetMs: viewOffsetMs,
+);
 
 void main() {
   setUp(resetSharedPreferencesForTest);
@@ -400,6 +405,82 @@ void main() {
 
       await tracker.sendProgress('stopped');
       expect(client.updateProgressCalls, isEmpty);
+      expect(client.markWatchedCalls, isEmpty);
+    });
+  });
+
+  group('sendProgress: playback readiness', () {
+    test('blocks non-terminal reports until playback output is ready', () async {
+      final client = _FakePlexClient();
+      final player = _FakePlayer(position: const Duration(seconds: 5), duration: const Duration(seconds: 100));
+      var ready = false;
+      final tracker = PlaybackProgressTracker(
+        client: client,
+        metadata: _meta(),
+        player: player,
+        isOffline: false,
+        canReportPlayback: () => ready,
+      );
+      addTearDown(tracker.dispose);
+
+      await tracker.sendProgress('playing');
+      await Future<void>.delayed(Duration.zero);
+      expect(client.updateProgressCalls, isEmpty);
+      await tracker.sendProgress('paused');
+      await Future<void>.delayed(Duration.zero);
+      expect(client.updateProgressCalls, isEmpty);
+
+      ready = true;
+      await tracker.sendProgress('playing');
+      await Future<void>.delayed(Duration.zero);
+      expect(client.updateProgressCalls.map((call) => call.state), ['playing']);
+    });
+
+    test('stopped before rendered output terminates at known progress without scrobbling', () async {
+      final client = _FakePlexClient();
+      final player = _FakePlayer(position: const Duration(seconds: 99), duration: const Duration(seconds: 100));
+      final tracker = PlaybackProgressTracker(
+        client: client,
+        metadata: _meta(viewOffsetMs: 12000),
+        player: player,
+        isOffline: false,
+        canReportPlayback: () => false,
+        hasRenderedPlayback: () => false,
+      );
+      addTearDown(tracker.dispose);
+
+      await tracker.sendProgress('stopped', positionOverride: player.state.duration);
+
+      expect(client.updateProgressCalls, hasLength(1));
+      expect(client.updateProgressCalls.single.state, 'stopped');
+      expect(client.updateProgressCalls.single.time, 12000);
+      expect(client.markWatchedCalls, isEmpty);
+    });
+
+    test('fatal stop uses the last reportable position instead of the advancing native clock', () async {
+      final client = _FakePlexClient();
+      final player = _FakePlayer(position: const Duration(seconds: 50), duration: const Duration(seconds: 100));
+      var canReport = true;
+      final tracker = PlaybackProgressTracker(
+        client: client,
+        metadata: _meta(),
+        player: player,
+        isOffline: false,
+        canReportPlayback: () => canReport,
+        hasRenderedPlayback: () => true,
+      );
+      addTearDown(tracker.dispose);
+
+      await tracker.sendProgress('playing');
+      await Future<void>.delayed(Duration.zero);
+      canReport = false;
+      player.position = const Duration(seconds: 95);
+      await tracker.sendProgress('stopped');
+
+      expect(client.updateProgressCalls.map((call) => (call.time, call.state)), [
+        (50000, 'playing'),
+        (50000, 'stopped'),
+      ]);
       expect(client.markWatchedCalls, isEmpty);
     });
   });
@@ -960,6 +1041,34 @@ void main() {
       expect(action!.actionType, 'progress');
       expect(action.viewOffset, 12000); // 12s in ms
       expect(action.duration, 60000);
+    });
+
+    test('does not queue offline playing progress before playback output is ready', () async {
+      final (svc: svc, db: db, mgr: mgr) = await makeOfflineService();
+      addTearDown(() async {
+        svc.dispose();
+        mgr.dispose();
+        await db.close();
+      });
+
+      final player = _FakePlayer(position: const Duration(seconds: 12), duration: const Duration(seconds: 60));
+      var ready = false;
+      final tracker = PlaybackProgressTracker(
+        client: null,
+        metadata: _meta(ratingKey: '42', serverId: ServerId('srv')),
+        player: player,
+        isOffline: true,
+        offlineWatchService: svc,
+        canReportPlayback: () => ready,
+      );
+      addTearDown(tracker.dispose);
+
+      await tracker.sendProgress('playing');
+      expect(await db.getLatestWatchAction('srv:42'), isNull);
+
+      ready = true;
+      await tracker.sendProgress('playing');
+      expect(await db.getLatestWatchAction('srv:42'), isNotNull);
     });
 
     test('offline + null serverId is a no-op (does NOT throw, does NOT queue)', () async {
