@@ -268,12 +268,13 @@ class JellyfinMappers {
     final id = view['Id'] as String?;
     if (id == null || id.isEmpty) return null;
     final collectionType = view['CollectionType'] as String?;
+    final type = view['Type'] as String?;
     return MediaLibrary(
       id: id,
       backend: MediaBackend.jellyfin,
       title: view['Name'] as String? ?? t.libraries.fallbackTitle,
-      kind: _libraryKindFromCollectionType(collectionType, view['Type'] as String?),
-      defaultBrowseKinds: _defaultBrowseKindsFromCollectionType(collectionType),
+      kind: _libraryKindFromCollectionType(collectionType, type),
+      defaultBrowseKinds: _defaultBrowseKindsFromCollectionType(collectionType, type),
       updatedAt: jellyfinIsoToEpochSeconds(view['DateLastSaved'] as String? ?? view['DateModified'] as String?),
       createdAt: jellyfinIsoToEpochSeconds(view['DateCreated'] as String?),
       hidden: false,
@@ -317,8 +318,8 @@ class JellyfinMappers {
   }
 
   static MediaKind _libraryKindFromCollectionType(String? collectionType, String? type) {
-    final ct = collectionType?.toLowerCase();
-    if (ct != null) {
+    final ct = collectionType?.trim().toLowerCase();
+    if (ct != null && ct.isNotEmpty) {
       return switch (ct) {
         'movies' => MediaKind.movie,
         'tvshows' => MediaKind.show,
@@ -328,15 +329,17 @@ class JellyfinMappers {
         'photos' => MediaKind.photo,
         'boxsets' => MediaKind.collection,
         'playlists' => MediaKind.playlist,
-        'mixed' => MediaKind.unknown,
         _ => MediaKind.unknown,
       };
     }
     return MediaKind.fromString(type);
   }
 
-  static List<MediaKind> _defaultBrowseKindsFromCollectionType(String? collectionType) {
-    return collectionType?.toLowerCase() == 'mixed' ? const [MediaKind.movie, MediaKind.show] : const <MediaKind>[];
+  static List<MediaKind> _defaultBrowseKindsFromCollectionType(String? collectionType, String? type) {
+    final ct = collectionType?.trim();
+    return (ct == null || ct.isEmpty) && type?.toLowerCase() == 'collectionfolder'
+        ? const [MediaKind.movie, MediaKind.show]
+        : const <MediaKind>[];
   }
 
   static Map<String, dynamic>? _userData(Map<String, dynamic> item) {

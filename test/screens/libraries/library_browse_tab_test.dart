@@ -20,6 +20,7 @@ import 'package:plezy/providers/multi_server_provider.dart';
 import 'package:plezy/screens/libraries/state_messages.dart';
 import 'package:plezy/screens/libraries/tabs/library_browse_tab.dart';
 import 'package:plezy/services/data_aggregation_service.dart';
+import 'package:plezy/services/jellyfin_mappers.dart';
 import 'package:plezy/services/multi_server_manager.dart';
 import 'package:plezy/services/settings_service.dart';
 import 'package:plezy/services/storage_service.dart';
@@ -137,20 +138,19 @@ void main() {
     final client = _BrowseClient('server-a', 'Mixed');
     final harness = _BrowseHarness(clientA: client);
     addTearDown(harness.dispose);
-    harness.selectedLibrary.value = MediaLibrary(
-      id: 'mixed-library',
-      backend: MediaBackend.jellyfin,
-      title: 'Mixed',
-      defaultBrowseKinds: const [MediaKind.movie, MediaKind.show],
-      serverId: client.serverId,
-    );
+    harness.selectedLibrary.value = JellyfinMappers.library({
+      'Id': 'mixed-library',
+      'Name': 'Mixed',
+      'Type': 'CollectionFolder',
+      'IsFolder': true,
+    }, serverId: client.serverId)!;
 
     await _pumpHarness(tester, harness);
 
     expect(client.pageQueries, hasLength(1));
-    expect(client.pageQueries.single.kind, isNull);
+    expect(client.pageQueries.single.kind, MediaKind.folder);
     expect(client.pageQueries.single.includeKinds, const [MediaKind.movie, MediaKind.show]);
-    expect(client.pageLibraryKinds.single, MediaKind.unknown);
+    expect(client.pageLibraryKinds.single, MediaKind.folder);
   });
 }
 

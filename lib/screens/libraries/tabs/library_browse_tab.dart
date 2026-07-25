@@ -767,7 +767,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
       limit: size,
     );
     final query =
-        baseQuery.kind == null &&
+        (baseQuery.kind == null || baseQuery.kind == MediaKind.folder) &&
             baseQuery.includeKinds.isEmpty &&
             _selectedGrouping == browseGroupingAll &&
             widget.library.defaultBrowseKinds.isNotEmpty
