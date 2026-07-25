@@ -163,7 +163,6 @@
   .store-button:focus-visible {
     border-radius: var(--radius-md);
     background: #fff;
-    outline: none;
   }
 
   .store-button :global(svg) {
@@ -181,7 +180,6 @@
   .linux-button.active {
     color: var(--color-text);
     background: var(--color-surface-hover);
-    outline: none;
   }
 
   .desktop-button:hover,
@@ -271,7 +269,6 @@
   .linux-menu-item:focus-visible {
     color: var(--color-text);
     background: rgb(237 237 237 / 0.12);
-    outline: none;
   }
 
   @media (max-width: 460px) {

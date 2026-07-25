@@ -146,7 +146,6 @@
   .store-button:focus-visible {
     border-radius: var(--radius-md);
     background: #fff;
-    outline: none;
   }
 
   .store-button :global(svg) {

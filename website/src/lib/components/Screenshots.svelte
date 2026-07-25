@@ -346,7 +346,6 @@
   .device-button:not(.active):focus-visible {
     color: var(--color-text);
     background: rgb(237 237 237 / 0.12);
-    outline: none;
   }
 
   .device-button.active {
@@ -358,7 +357,6 @@
   .device-button.active:focus-visible {
     border-radius: var(--radius-md);
     background: #fff;
-    outline: none;
   }
 
   .device-button :global(svg),
@@ -401,7 +399,6 @@
   .scroll-arrow.enabled:focus-visible {
     border-radius: var(--radius-md);
     background: var(--color-surface-highest);
-    outline: none;
   }
 
   .screenshot-panels {

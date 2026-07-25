@@ -93,6 +93,5 @@
   .home-link:focus-visible {
     border-radius: var(--radius-md);
     background: #fff;
-    outline: none;
   }
 </style>

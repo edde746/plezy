@@ -67,7 +67,6 @@
   .footer-nav a:focus-visible {
     color: var(--color-text);
     background: rgb(237 237 237 / 0.12);
-    outline: none;
   }
 
   @media (min-width: 640px) {

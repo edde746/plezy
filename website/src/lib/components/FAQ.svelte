@@ -152,7 +152,7 @@
 
   .faq-toggle:focus-visible {
     background: rgb(237 237 237 / 0.14);
-    outline: none;
+    outline-offset: -2px;
   }
 
   .faq-question {
@@ -220,6 +220,5 @@
   .faq-answer-content :global(a:hover),
   .faq-answer-content :global(a:focus-visible) {
     text-decoration-color: var(--color-text);
-    outline: none;
   }
 </style>

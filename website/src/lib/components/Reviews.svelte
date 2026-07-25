@@ -406,7 +406,6 @@
   .carousel-dot:focus-visible {
     color: var(--color-text);
     background: rgb(237 237 237 / 0.18);
-    outline: none;
   }
 
   .carousel-dot:focus-visible {

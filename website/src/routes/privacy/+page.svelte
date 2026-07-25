@@ -164,7 +164,6 @@
   .back-link:focus-visible {
     color: var(--color-text);
     background: var(--color-surface-highest);
-    outline: none;
   }
 
   .back-logo :global(img) {
@@ -222,6 +221,5 @@
   .prose a:hover,
   .prose a:focus-visible {
     text-decoration-color: var(--color-text);
-    outline: none;
   }
 </style>
