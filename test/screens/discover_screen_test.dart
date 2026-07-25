@@ -1,6 +1,7 @@
 import 'package:drift/native.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:plezy/media/ids.dart';
+import 'package:flutter/gestures.dart' show PointerDeviceKind;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -39,6 +40,7 @@ import 'package:plezy/theme/mono_theme.dart';
 import 'package:plezy/utils/layout_constants.dart';
 import 'package:plezy/utils/platform_detector.dart';
 import 'package:plezy/watch_together/watch_together.dart';
+import 'package:plezy/widgets/app_refresh_indicator.dart';
 import 'package:plezy/widgets/side_navigation_rail.dart';
 import 'package:plezy/widgets/tv_browse_rail.dart';
 import 'package:plezy/widgets/tv_spotlight_background.dart';
@@ -343,6 +345,25 @@ void main() {
     await tester.pump(const Duration(milliseconds: 100));
     await tester.pump(const Duration(milliseconds: 100));
 
+    expect(find.byType(RefreshIndicator), findsOneWidget);
+    final scrollViewFinder = find.descendant(
+      of: find.byType(AppRefreshIndicator),
+      matching: find.byType(CustomScrollView),
+    );
+    expect(scrollViewFinder, findsOneWidget);
+    final scrollView = tester.widget<CustomScrollView>(scrollViewFinder);
+    expect(scrollView.physics, isA<AlwaysScrollableScrollPhysics>());
+    expect(client.globalHubsFetchCount, 1);
+
+    final trackpadGesture = await tester.createGesture(kind: PointerDeviceKind.trackpad);
+    final scrollViewCenter = tester.getCenter(scrollViewFinder);
+    await trackpadGesture.panZoomStart(scrollViewCenter);
+    await trackpadGesture.panZoomUpdate(scrollViewCenter, pan: const Offset(0, 300));
+    await trackpadGesture.panZoomEnd();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(client.globalHubsFetchCount, 2, reason: 'one pull gesture performs one Discover load');
+
     expect(find.byType(PageView), findsOneWidget);
     expect(find.byIcon(Symbols.pause_rounded), findsOneWidget, reason: 'hero indicators render in pointer mode');
 
@@ -388,6 +409,7 @@ void main() {
 class _FakeMediaServerClient implements MediaServerClient {
   final List<MediaHub> hubs;
   final List<MediaItem> continueWatching;
+  int globalHubsFetchCount = 0;
 
   _FakeMediaServerClient({required this.hubs, this.continueWatching = const []});
 
@@ -407,8 +429,10 @@ class _FakeMediaServerClient implements MediaServerClient {
   Future<List<MediaItem>> fetchContinueWatching({int? count = 20}) async => continueWatching;
 
   @override
-  Future<List<MediaHub>> fetchGlobalHubs({int limit = defaultHubPreviewLimit, bool includePlaybackHubs = true}) async =>
-      hubs;
+  Future<List<MediaHub>> fetchGlobalHubs({int limit = defaultHubPreviewLimit, bool includePlaybackHubs = true}) async {
+    globalHubsFetchCount++;
+    return hubs;
+  }
 
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
