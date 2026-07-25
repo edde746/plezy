@@ -35,6 +35,10 @@ sealed class LibraryQuery with _$LibraryQuery {
     /// Restrict to a single kind (e.g. `MediaKind.movie`). Null = library default.
     MediaKind? kind,
 
+    /// Restrict to multiple kinds when no single [kind] represents the browse
+    /// surface. When non-empty, translators prefer this over [kind].
+    @Default(<MediaKind>[]) List<MediaKind> includeKinds,
+
     /// Pagination — zero-based offset.
     @Default(0) int offset,
     @Default(50) int limit,

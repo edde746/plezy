@@ -21,6 +21,11 @@ void main() {
       expect(params['type'], '2');
     });
 
+    test('multiple kinds map to a comma-delimited type filter', () {
+      final params = translator.toQueryParameters(const LibraryQuery(includeKinds: [MediaKind.movie, MediaKind.show]));
+      expect(params['type'], '1,2');
+    });
+
     test('collection kind has no Plex type number (filtered separately)', () {
       final params = translator.toQueryParameters(const LibraryQuery(kind: MediaKind.collection));
       expect(params, isNot(contains('type')));
@@ -96,6 +101,13 @@ void main() {
     test('show kind maps to IncludeItemTypes=Series', () {
       final params = translator.toQueryParameters(const LibraryQuery(kind: MediaKind.show));
       expect(params['IncludeItemTypes'], 'Series');
+    });
+
+    test('multiple kinds map to combined IncludeItemTypes', () {
+      final params = translator.toQueryParameters(
+        const LibraryQuery(kind: MediaKind.episode, includeKinds: [MediaKind.movie, MediaKind.show]),
+      );
+      expect(params['IncludeItemTypes'], 'Movie,Series');
     });
 
     test('collection kind maps to IncludeItemTypes=BoxSet', () {

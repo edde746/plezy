@@ -428,7 +428,8 @@ mixin _JellyfinBrowseMethods on MediaServerCacheMixin {
   }) async {
     // [libraryKind] is only a fallback for library-default browsing. Explicit
     // grouping types on [query] (seasons/episodes) must keep priority.
-    final effective = (query.kind == null && libraryKind != null && libraryKind != MediaKind.unknown)
+    final effective =
+        (query.kind == null && query.includeKinds.isEmpty && libraryKind != null && libraryKind != MediaKind.unknown)
         ? query.copyWith(kind: libraryKind)
         : query;
     return fetchLibraryContent(libraryId, effective, abort: abort);

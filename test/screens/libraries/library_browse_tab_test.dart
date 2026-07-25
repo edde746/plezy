@@ -132,6 +132,26 @@ void main() {
     expect(harness.loadedLibraries, [harness.libraryA.globalKey]);
     expect(groupingChip.focusNode!.hasFocus, isTrue);
   });
+
+  testWidgets('mixed library all grouping applies its explicit root kinds', (tester) async {
+    final client = _BrowseClient('server-a', 'Mixed');
+    final harness = _BrowseHarness(clientA: client);
+    addTearDown(harness.dispose);
+    harness.selectedLibrary.value = MediaLibrary(
+      id: 'mixed-library',
+      backend: MediaBackend.jellyfin,
+      title: 'Mixed',
+      defaultBrowseKinds: const [MediaKind.movie, MediaKind.show],
+      serverId: client.serverId,
+    );
+
+    await _pumpHarness(tester, harness);
+
+    expect(client.pageQueries, hasLength(1));
+    expect(client.pageQueries.single.kind, isNull);
+    expect(client.pageQueries.single.includeKinds, const [MediaKind.movie, MediaKind.show]);
+    expect(client.pageLibraryKinds.single, MediaKind.unknown);
+  });
 }
 
 Future<void> _pumpHarness(WidgetTester tester, _BrowseHarness harness, {bool settle = true}) async {
@@ -257,6 +277,8 @@ class _BrowseClient implements MediaServerClient {
   final Queue<Future<LibraryPage<MediaItem>> Function()> pageResponses = Queue();
   var sortRequestCount = 0;
   var pageRequestCount = 0;
+  final List<LibraryQuery> pageQueries = [];
+  final List<MediaKind?> pageLibraryKinds = [];
 
   _BrowseClient(String serverId, this.itemTitle, {this.sortResponse}) : serverId = ServerId(serverId);
 
@@ -288,6 +310,8 @@ class _BrowseClient implements MediaServerClient {
     AbortController? abort,
   }) {
     pageRequestCount++;
+    pageQueries.add(query);
+    pageLibraryKinds.add(libraryKind);
     if (pageResponses.isNotEmpty) return pageResponses.removeFirst()();
     return Future.value(_pageFor(this, itemTitle));
   }

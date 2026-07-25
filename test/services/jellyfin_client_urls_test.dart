@@ -2342,6 +2342,8 @@ void main() {
       expect(albumBrowse['Fields'], 'PremiereDate,OriginalTitle,SortName');
       expect(albumBrowse['EnableUserData'], 'false');
       expect(trackBrowse['Fields'], 'UserData,PremiereDate,OriginalTitle,SortName');
+      expect(albumBrowse['IncludeItemTypes'], 'MusicAlbum');
+      expect(trackBrowse['IncludeItemTypes'], 'Audio');
       expect(trackBrowse.containsKey('EnableUserData'), isFalse);
       expect(artistAlbums['Fields'], 'PremiereDate,OriginalTitle,SortName');
       expect(artistAlbums['EnableUserData'], 'false');

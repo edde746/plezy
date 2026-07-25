@@ -474,13 +474,22 @@ void main() {
       }
     });
 
-    test('falls back to MediaKind.unknown for unrecognised collections', () {
-      final lib = JellyfinMappers.library({
-        'Id': 'view-x',
+    test('maps mixed collections to a movie and show root browse', () {
+      final mixed = JellyfinMappers.library({
+        'Id': 'view-mixed',
         'Name': 'Mixed',
         'CollectionType': 'mixed',
       }, serverId: ServerId(_serverId))!;
-      expect(lib.kind, MediaKind.unknown);
+      expect(mixed.kind, MediaKind.unknown);
+      expect(mixed.defaultBrowseKinds, const [MediaKind.movie, MediaKind.show]);
+
+      final unrecognised = JellyfinMappers.library({
+        'Id': 'view-books',
+        'Name': 'Books',
+        'CollectionType': 'books',
+      }, serverId: ServerId(_serverId))!;
+      expect(unrecognised.kind, MediaKind.unknown);
+      expect(unrecognised.defaultBrowseKinds, isEmpty);
     });
   });
 

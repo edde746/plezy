@@ -760,12 +760,19 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
   Future<LibraryPage<MediaItem>> fetchPage(int start, int size, AbortController? abort) async {
     final client = context.getMediaClientForLibrary(widget.library);
     final filterParams = _buildFilterParams();
-    final query = libraryQueryFromPlexMap(
+    final baseQuery = libraryQueryFromPlexMap(
       map: filterParams,
       libraryKind: filterParams.containsKey('type') ? null : widget.library.kind,
       offset: start,
       limit: size,
     );
+    final query =
+        baseQuery.kind == null &&
+            baseQuery.includeKinds.isEmpty &&
+            _selectedGrouping == browseGroupingAll &&
+            widget.library.defaultBrowseKinds.isNotEmpty
+        ? baseQuery.copyWith(includeKinds: widget.library.defaultBrowseKinds)
+        : baseQuery;
     return client.fetchLibraryPagedContent(
       widget.library.id,
       query: query,

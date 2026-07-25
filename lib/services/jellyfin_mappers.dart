@@ -273,6 +273,7 @@ class JellyfinMappers {
       backend: MediaBackend.jellyfin,
       title: view['Name'] as String? ?? t.libraries.fallbackTitle,
       kind: _libraryKindFromCollectionType(collectionType, view['Type'] as String?),
+      defaultBrowseKinds: _defaultBrowseKindsFromCollectionType(collectionType),
       updatedAt: jellyfinIsoToEpochSeconds(view['DateLastSaved'] as String? ?? view['DateModified'] as String?),
       createdAt: jellyfinIsoToEpochSeconds(view['DateCreated'] as String?),
       hidden: false,
@@ -332,6 +333,10 @@ class JellyfinMappers {
       };
     }
     return MediaKind.fromString(type);
+  }
+
+  static List<MediaKind> _defaultBrowseKindsFromCollectionType(String? collectionType) {
+    return collectionType?.toLowerCase() == 'mixed' ? const [MediaKind.movie, MediaKind.show] : const <MediaKind>[];
   }
 
   static Map<String, dynamic>? _userData(Map<String, dynamic> item) {
