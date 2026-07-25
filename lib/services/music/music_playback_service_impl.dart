@@ -144,12 +144,16 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingO
   /// Identifies the queue session that asynchronous enqueue work belongs to.
   int _queueSessionRevision = 0;
 
-  /// Gapless arm work is serialized, and each requested recomputation gets
-  /// a revision. This prevents an older resolve/setNext continuation from
-  /// landing after a queue edit, repeat change, or sleep-timer change.
+  /// Gapless arm work is serialized into one latest-request slot. The
+  /// generation stales continuations while the pending flag distinguishes
+  /// an explicit recomputation request from cancellation-only invalidation.
   int _armRequestGeneration = 0;
-  int _processedArmRequestGeneration = 0;
+  bool _armRequestPending = false;
   Future<void>? _armDrain;
+
+  /// The generation whose replacement [Player.open] has not committed yet.
+  /// Requests remain pending while an open owns the native playlist.
+  int? _openingGeneration;
 
   int _consecutiveFailures = 0;
   bool _resumeAfterInterruption = false;
@@ -309,62 +313,80 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingO
   Future<void> _openCurrent(int generation, {bool play = true}) async {
     final track = _queue.current;
     if (track == null) return;
-    _currentTrack = track;
-    _currentSource = null;
-    _armed = null;
-    _staleArm = null;
-    _setStatus(MusicPlaybackStatus.loading, forceNotify: true);
-
-    await _coordinator.claimMusic();
-    if (generation != _generation) return;
-    final player = _ensurePlayer();
-    _ensureMediaControls();
-    // Re-asserted per open (cheap, idempotent): the native side drops the
-    // background-mode opt-in when the user swipes the task away, so a
-    // session that survives task removal heals itself here.
-    unawaited(_mediaControls?.setBackgroundMode(true));
-
-    // Clear any native arm left over from the previous item before the open
-    // replaces it, so a stray transition can't fire mid-switch.
+    _openingGeneration = generation;
+    Player? committedPlayer;
     try {
-      await player.setNext(null);
-    } catch (e) {
-      appLogger.d('setNext(null) before open failed', error: e);
-    }
+      _currentTrack = track;
+      _currentSource = null;
+      _armed = null;
+      _staleArm = null;
+      _setStatus(MusicPlaybackStatus.loading, forceNotify: true);
 
-    MusicSource source;
-    try {
-      source = await _resolver.resolve(track);
-    } catch (e, st) {
-      appLogger.w('Music source resolve failed for ${track.id}', error: e, stackTrace: st);
-      if (generation == _generation) _handlePlaybackFailure(e);
-      return;
-    }
-    if (generation != _generation || _player != player) return;
-    _currentSource = source;
+      await _coordinator.claimMusic();
+      if (generation != _generation) return;
+      final player = _ensurePlayer();
+      _ensureMediaControls();
+      // Re-asserted per open (cheap, idempotent): the native side drops the
+      // background-mode opt-in when the user swipes the task away, so a
+      // session that survives task removal heals itself here.
+      unawaited(_mediaControls?.setBackgroundMode(true));
 
-    // Claim audio focus before audio starts so other media apps pause (mpv
-    // has no built-in focus handling; harmless no-op off Android). Result is
-    // ignored — mirrors the video screen, playback proceeds either way.
-    try {
-      await player.requestAudioFocus();
-    } catch (e) {
-      appLogger.d('Audio focus request failed', error: e);
-    }
-    if (generation != _generation || _player != player) return;
+      // Clear any native arm left over from the previous item before the open
+      // replaces it, so a stray transition can't fire mid-switch.
+      try {
+        await player.setNext(null);
+      } catch (e) {
+        appLogger.d('setNext(null) before open failed', error: e);
+      }
 
-    try {
-      await player.open(Media(source.url, headers: source.headers), play: play);
-    } catch (e, st) {
-      appLogger.w('Music open failed for ${track.id}', error: e, stackTrace: st);
-      if (generation == _generation) _handlePlaybackFailure(e);
-      return;
-    }
-    if (generation != _generation || _player != player) return;
+      MusicSource source;
+      try {
+        source = await _resolver.resolve(track);
+      } catch (e, st) {
+        appLogger.w('Music source resolve failed for ${track.id}', error: e, stackTrace: st);
+        if (generation == _generation) _handlePlaybackFailure(e);
+        return;
+      }
+      if (generation != _generation || _player != player) return;
+      _currentSource = source;
 
-    _setStatus(play ? MusicPlaybackStatus.playing : MusicPlaybackStatus.paused);
-    _bindTrackServices(track, source);
-    _requestArmNext();
+      // Claim audio focus before audio starts so other media apps pause (mpv
+      // has no built-in focus handling; harmless no-op off Android). Result is
+      // ignored — mirrors the video screen, playback proceeds either way.
+      try {
+        await player.requestAudioFocus();
+      } catch (e) {
+        appLogger.d('Audio focus request failed', error: e);
+      }
+      if (generation != _generation || _player != player) return;
+
+      try {
+        await player.open(Media(source.url, headers: source.headers), play: play);
+      } catch (e, st) {
+        appLogger.w('Music open failed for ${track.id}', error: e, stackTrace: st);
+        if (generation == _generation) _handlePlaybackFailure(e);
+        return;
+      }
+      if (generation != _generation || _player != player) return;
+
+      committedPlayer = player;
+      _setStatus(play ? MusicPlaybackStatus.playing : MusicPlaybackStatus.paused);
+      _bindTrackServices(track, source);
+    } finally {
+      // A stale open must never release a newer open's ownership. Only a
+      // committed current open schedules its successor; an unsuccessful
+      // current open cancels requests collected while it was unresolved.
+      if (_openingGeneration == generation) {
+        _openingGeneration = null;
+        if (committedPlayer != null && !_disposed && generation == _generation && _player == committedPlayer) {
+          _requestArmNext();
+        } else if (generation == _generation) {
+          _invalidateArmRequests();
+        } else {
+          _ensureArmDrain();
+        }
+      }
+    }
   }
 
   /// Manual advance: finalize the current tracker at its current position and
@@ -428,28 +450,34 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingO
   }
 
   bool _isCurrentArmRequest(Player player, int generation, int armRequest) {
-    return !_disposed && generation == _generation && armRequest == _armRequestGeneration && _player == player;
+    return !_disposed &&
+        _openingGeneration == null &&
+        generation == _generation &&
+        armRequest == _armRequestGeneration &&
+        _player == player;
   }
 
   void _requestArmNext() {
     if (_disposed) return;
     _armRequestGeneration++;
+    _armRequestPending = true;
     _ensureArmDrain();
   }
 
   void _invalidateArmRequests() {
     _armRequestGeneration++;
+    _armRequestPending = false;
   }
 
   void _ensureArmDrain() {
-    if (_disposed || _armDrain != null) return;
+    if (_disposed || !_armRequestPending || _openingGeneration != null || _armDrain != null) return;
     final drain = _drainArmRequests();
     _armDrain = drain;
     unawaited(
       drain.whenComplete(() {
         if (_armDrain != drain) return;
         _armDrain = null;
-        if (!_disposed && _processedArmRequestGeneration != _armRequestGeneration) {
+        if (!_disposed && _armRequestPending && _openingGeneration == null) {
           _ensureArmDrain();
         }
       }),
@@ -457,12 +485,11 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingO
   }
 
   Future<void> _drainArmRequests() async {
-    while (!_disposed) {
+    while (!_disposed && _armRequestPending && _openingGeneration == null) {
       final armRequest = _armRequestGeneration;
       final generation = _generation;
+      _armRequestPending = false;
       await _applyArmNext(generation, armRequest);
-      _processedArmRequestGeneration = armRequest;
-      if (armRequest == _armRequestGeneration) return;
     }
   }
 

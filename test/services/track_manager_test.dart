@@ -178,6 +178,15 @@ MediaSourceInfo _mediaInfoWithSubtitles({bool selected = false}) {
   );
 }
 
+MediaSourceInfo _metadataFreeDirectMediaInfo({bool selected = true}) {
+  return MediaSourceInfo(
+    videoUrl: 'https://example.com/video.mp4',
+    audioTracks: [MediaAudioTrack(id: 1, languageCode: 'eng', selected: true)],
+    subtitleTracks: [MediaSubtitleTrack(id: 20, codec: 'ass', selected: selected, forced: false)],
+    chapters: const [],
+  );
+}
+
 Future<void> _drainAsync() async {
   for (var i = 0; i < 5; i++) {
     await Future<void>.delayed(Duration.zero);
@@ -373,6 +382,58 @@ void main() {
       expect(player.selectedSubtitle.single.id, 'no');
     });
 
+    test('complete metadata-free direct catalog applies tracks without the five-second fallback', () async {
+      final settings = await SettingsService.getInstance();
+      await settings.write(SettingsService.defaultPlaybackSpeed, 1.5);
+
+      fakeAsync((async) {
+        final player = _FakePlayer(
+          tracks: const Tracks(
+            audio: [AudioTrack(id: 'native-audio', language: 'eng')],
+            subtitle: [SubtitleTrack(id: 'native-ass', codec: 'ass')],
+          ),
+        );
+        final mgr = _make(
+          player: player,
+          mediaInfo: _metadataFreeDirectMediaInfo(),
+          preferredSubtitleTrack: const SubtitleTrack(id: 'source:20', codec: 'ass'),
+        );
+
+        mgr.applyTrackSelectionWhenReady();
+        async.flushMicrotasks();
+
+        expect(player.selectedAudio.map((track) => track.id), ['native-audio']);
+        expect(player.selectedSubtitle.map((track) => track.id), ['native-ass']);
+        expect(player.rates, [1.5]);
+        expect(async.nonPeriodicTimerCount, 0);
+        mgr.dispose();
+      });
+    });
+
+    test('server-selected metadata-free direct catalog applies without the five-second fallback', () async {
+      final settings = await SettingsService.getInstance();
+      await settings.write(SettingsService.defaultPlaybackSpeed, 1.25);
+
+      fakeAsync((async) {
+        final player = _FakePlayer(
+          tracks: const Tracks(
+            audio: [AudioTrack(id: 'native-audio', language: 'eng')],
+            subtitle: [SubtitleTrack(id: 'native-ass', codec: 'ass')],
+          ),
+        );
+        final mgr = _make(player: player, mediaInfo: _metadataFreeDirectMediaInfo());
+
+        mgr.applyTrackSelectionWhenReady();
+        async.flushMicrotasks();
+
+        expect(player.selectedAudio.map((track) => track.id), ['native-audio']);
+        expect(player.selectedSubtitle.map((track) => track.id), ['native-ass']);
+        expect(player.rates, [1.25]);
+        expect(async.nonPeriodicTimerCount, 0);
+        mgr.dispose();
+      });
+    });
+
     test('waits through a partial catalog until the selected Plex subtitle arrives', () async {
       await SettingsService.getInstance();
       final player = _FakePlayer(
@@ -380,7 +441,16 @@ void main() {
           audio: [AudioTrack(id: '1', language: 'eng')],
         ),
       );
-      final mgr = _make(player: player, mediaInfo: _mediaInfoWithSubtitles(selected: true));
+      final mediaInfo = MediaSourceInfo(
+        videoUrl: 'https://example.com/video.mp4',
+        audioTracks: [MediaAudioTrack(id: 1, languageCode: 'eng', selected: true)],
+        subtitleTracks: [
+          MediaSubtitleTrack(id: 10, languageCode: 'eng', selected: true, forced: false),
+          MediaSubtitleTrack(id: 11, languageCode: 'fre', selected: false, forced: false),
+        ],
+        chapters: const [],
+      );
+      final mgr = _make(player: player, mediaInfo: mediaInfo);
       addTearDown(mgr.dispose);
 
       mgr.applyTrackSelectionWhenReady();
@@ -414,10 +484,19 @@ void main() {
           audio: [AudioTrack(id: '1', language: 'eng')],
         ),
       );
+      final mediaInfo = MediaSourceInfo(
+        videoUrl: 'https://example.com/video.mp4',
+        audioTracks: [MediaAudioTrack(id: 1, languageCode: 'eng', selected: true)],
+        subtitleTracks: [
+          MediaSubtitleTrack(id: 10, languageCode: 'eng', selected: true, forced: false),
+          MediaSubtitleTrack(id: 11, languageCode: 'fre', selected: false, forced: false),
+        ],
+        chapters: const [],
+      );
       final mgr = _make(
         player: player,
-        mediaInfo: _mediaInfoWithSubtitles(selected: true),
-        preferredSubtitleTrack: const SubtitleTrack(id: 'previous', language: 'fre'),
+        mediaInfo: mediaInfo,
+        preferredSubtitleTrack: const SubtitleTrack(id: 'source:11', language: 'fre'),
       );
       addTearDown(mgr.dispose);
 

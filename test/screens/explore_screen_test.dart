@@ -1,3 +1,5 @@
+import 'dart:ui' show SemanticsAction;
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -200,6 +202,33 @@ void main() {
     await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
     await tester.pump();
     expect(FocusManager.instance.primaryFocus?.debugLabel, 'tv_browse_rail');
+  });
+
+  testWidgets('source switcher announces the active source as its value', (tester) async {
+    TvDetectionService.debugSetAppleTVOverride(false);
+    final semantics = tester.ensureSemantics();
+    final sources = await _pumpExplore(tester);
+
+    var finder = find.bySemanticsLabel(t.explore.selectSource);
+    expect(finder, findsOneWidget);
+    final node = tester.getSemantics(finder);
+    var data = node.getSemanticsData();
+    expect(data.value, 'Trakt');
+    expect(data.flagsCollection.isButton, isTrue);
+    expect(data.hasAction(SemanticsAction.tap), isTrue);
+
+    node.owner!.performAction(node.id, SemanticsAction.tap);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('MyAnimeList'));
+    await tester.pumpAndSettle();
+
+    expect(sources.activeSource?.id, CatalogSourceId.mal);
+    finder = find.bySemanticsLabel(t.explore.selectSource);
+    expect(finder, findsOneWidget);
+    data = tester.getSemantics(finder).getSemanticsData();
+    expect(data.value, 'MyAnimeList');
+    expect(data.hasAction(SemanticsAction.tap), isTrue);
+    semantics.dispose();
   });
 
   testWidgets('source switcher exposes every catalog source with its brand logo', (tester) async {

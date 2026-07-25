@@ -83,8 +83,9 @@ class AppDatabase extends _$AppDatabase {
   static final Object _durabilityZoneKey = Object();
   static final SerialFutureQueue _tvosRecoveryQueue = SerialFutureQueue();
 
-  /// Resolves and opens the production database, then reconciles tvOS
-  /// recovery before returning it to startup consumers.
+  /// Resolves and opens the production database, eagerly completing Drift
+  /// setup and migrations on non-tvOS before returning. tvOS recovery retains
+  /// ownership of database access ordering.
   static Future<AppDatabaseBootstrap> open({
     bool isTvos = const bool.fromEnvironment('TVOS_BUILD'),
     File? databaseFile,
@@ -110,6 +111,13 @@ class AppDatabase extends _$AppDatabase {
     final store = recoveryStore ?? TvosDatabaseRecoveryStore(prefs, isTvos: isTvos);
     final database = AppDatabase._((executorFactory ?? _createNativeDatabase)(file), recoveryStore: store);
     try {
+      if (!isTvos) {
+        // Drift executors open lazily. Force the connection through setup and
+        // migrations while failures are still covered by this close/rethrow
+        // boundary and the caller's startup download-recovery decision.
+        await database.customSelect('SELECT 1').get();
+        // It deliberately does not claim capacity for a later write.
+      }
       final outcome = await _tvosRecoveryQueue.run(
         () => store.reconcile(
           databaseExisted: databaseExisted,

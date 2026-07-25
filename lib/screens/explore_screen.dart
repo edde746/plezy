@@ -188,6 +188,7 @@ class ExploreScreenState extends State<ExploreScreen>
       menuKey: _sourceMenuKey,
       tooltip: t.explore.selectSource,
       semanticLabel: t.explore.selectSource,
+      semanticValue: active.displayName,
       anchorAlignment: anchorAlignment,
       onSelected: (id) => unawaited(sources.setActiveSource(id)),
       itemBuilder: (context) => _sourceMenuEntries(sources, active),

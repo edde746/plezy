@@ -169,6 +169,42 @@ void main() {
     expect(saved.single!.modifiers, [HotKeyModifier.control]);
   });
 
+  testWidgets('record control announces and updates its displayed chord', (tester) async {
+    final semantics = tester.ensureSemantics();
+    const initial = HotKey(key: PhysicalKeyboardKey.keyP, modifiers: [HotKeyModifier.control]);
+    final initialValue = [
+      physicalKeyLabel(PhysicalKeyboardKey.controlLeft),
+      physicalKeyLabel(PhysicalKeyboardKey.keyP),
+    ].join(' + ');
+    expect(formatHotKeyDisplay(initial), initialValue);
+    await _pumpRecorder(tester, saved: <HotKey?>[], currentHotKey: initial);
+
+    Finder annotation(String label) =>
+        find.byWidgetPredicate((widget) => widget is Semantics && widget.properties.label == label);
+
+    var finder = annotation(t.hotkeys.pressToRecord);
+    expect(finder, findsOneWidget);
+    expect(tester.getSemantics(finder).getSemanticsData().value, initialValue);
+
+    await tester.tap(find.byType(HotKeyRecorder));
+    await tester.pump();
+    finder = annotation(t.hotkeys.recordingShortcut);
+    expect(finder, findsOneWidget);
+    expect(tester.getSemantics(finder).getSemanticsData().value, initialValue);
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.keyK, physicalKey: PhysicalKeyboardKey.keyK);
+    await _pumpFocusChange(tester);
+
+    const updated = HotKey(key: PhysicalKeyboardKey.keyK);
+    final updatedValue = physicalKeyLabel(PhysicalKeyboardKey.keyK);
+    expect(formatHotKeyDisplay(updated), updatedValue);
+    finder = annotation(t.hotkeys.pressToRecord);
+    expect(finder, findsOneWidget);
+    expect(tester.getSemantics(finder).getSemanticsData().value, updatedValue);
+    expect(find.bySemanticsLabel(updatedValue), findsNothing);
+    semantics.dispose();
+  });
+
   for (final entry in <(String, LogicalKeyboardKey, PhysicalKeyboardKey)>[
     ('Enter', LogicalKeyboardKey.enter, PhysicalKeyboardKey.enter),
     ('select', LogicalKeyboardKey.select, PhysicalKeyboardKey.select),

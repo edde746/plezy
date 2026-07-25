@@ -299,6 +299,7 @@ class _MiniPlayerCardState extends State<_MiniPlayerCard> with ContextMenuTapMix
                         onLongPress: showContextMenu,
                         onNavigateRight: () => _transportKey.currentState?.requestFocusOnFirst(),
                         semanticLabel: widget.track.title,
+                        semanticValue: artist,
                         descendantsAreFocusable: false,
                         disableScale: true,
                         useBackgroundFocus: true,

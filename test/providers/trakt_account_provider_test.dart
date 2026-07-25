@@ -6,6 +6,7 @@ import 'package:plezy/services/trackers/tracker_constants.dart';
 import 'package:plezy/services/trackers/tracker_session.dart';
 import 'package:plezy/services/trakt/trakt_sync_service.dart';
 
+import '../test_helpers/io_fakes.dart';
 import '../test_helpers/prefs.dart';
 
 final _store = trackerAccountStore(TrackerService.trakt);
@@ -32,6 +33,25 @@ void main() {
       expect(p.username, isNull);
       expect(p.isConnecting, isFalse);
       p.dispose();
+    });
+
+    test('owns the injected auth client until disposal', () {
+      final clients = <FakeHttpClient>[];
+      final p = TraktAccountProvider(
+        httpClientFactory: () {
+          final client = FakeHttpClient(200, const <int>[]);
+          clients.add(client);
+          return client;
+        },
+      );
+
+      expect(clients, hasLength(1));
+      expect(clients.single.closeCount, 0);
+
+      p.dispose();
+
+      expect(clients.single.closeCount, 1);
+      expect(clients.single.isClosed, isTrue);
     });
 
     test('onActiveProfileChanged loads stored session and notifies', () async {

@@ -342,6 +342,8 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   late MediaItem _currentMetadata;
   MediaItem? _nextEpisode;
   MediaItem? _previousEpisode;
+  // Retryable sentinel until the fire-and-forget initial adjacency load
+  // commits found, boundary, or unavailable.
   QueueNavigationStatus _nextEpisodeStatus = QueueNavigationStatus.failed;
   bool _isResolvingCompletionAdjacency = false;
   bool _isLoadingNext = false;

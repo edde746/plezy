@@ -4,6 +4,7 @@ import 'package:drift/drift.dart' hide isNull, isNotNull;
 import 'package:plezy/media/ids.dart';
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:path/path.dart' as path;
 import 'package:plezy/database/app_database.dart';
 import 'package:plezy/database/download_operations.dart';
 import 'package:plezy/models/download_models.dart';
@@ -130,45 +131,50 @@ void main() {
 
   group('insertQueuedDownload', () {
     test('atomically persists media identity, scope, policy, and queue state', () async {
+      await db.close();
       final tempDir = await Directory.systemTemp.createTemp('plezy_atomic_queue_');
-      final databaseFile = File('${tempDir.path}/downloads.sqlite');
-      addTearDown(() async {
-        if (await tempDir.exists()) await tempDir.delete(recursive: true);
-      });
-      await db.close();
-      db = AppDatabase.forTesting(NativeDatabase(databaseFile));
-      final outcome = await db.insertQueuedDownload(
-        serverId: ServerId('srv'),
-        clientScopeId: 'srv/user-a',
-        ratingKey: 'episode-1',
-        globalKey: 'srv:episode-1',
-        type: 'episode',
-        parentRatingKey: 'season-1',
-        grandparentRatingKey: 'show-1',
-        mediaIndex: 3,
-        mediaSourceId: 'source-3',
-        priority: 7,
-        downloadSubtitles: false,
-        downloadArtwork: true,
-      );
-      expect(outcome, QueueDownloadOutcome.admitted);
-      await db.close();
-      db = AppDatabase.forTesting(NativeDatabase(databaseFile));
+      final databaseFile = File(path.join(tempDir.path, 'downloads.sqlite'));
+      try {
+        db = AppDatabase.forTesting(NativeDatabase(databaseFile));
+        final outcome = await db.insertQueuedDownload(
+          serverId: ServerId('srv'),
+          clientScopeId: 'srv/user-a',
+          ratingKey: 'episode-1',
+          globalKey: 'srv:episode-1',
+          type: 'episode',
+          parentRatingKey: 'season-1',
+          grandparentRatingKey: 'show-1',
+          mediaIndex: 3,
+          mediaSourceId: 'source-3',
+          priority: 7,
+          downloadSubtitles: false,
+          downloadArtwork: true,
+        );
+        expect(outcome, QueueDownloadOutcome.admitted);
+        await db.close();
+        db = AppDatabase.forTesting(NativeDatabase(databaseFile));
 
-      final media = (await db.select(db.downloadedMedia).get()).single;
-      final queued = (await db.select(db.downloadQueue).get()).single;
-      expect(media.serverId, 'srv');
-      expect(media.clientScopeId, 'srv/user-a');
-      expect(media.ratingKey, 'episode-1');
-      expect(media.parentRatingKey, 'season-1');
-      expect(media.grandparentRatingKey, 'show-1');
-      expect(media.status, DownloadStatus.queued.index);
-      expect(media.mediaIndex, 3);
-      expect(media.mediaSourceId, 'source-3');
-      expect(queued.mediaGlobalKey, media.globalKey);
-      expect(queued.priority, 7);
-      expect(queued.downloadSubtitles, isFalse);
-      expect(queued.downloadArtwork, isTrue);
+        final media = (await db.select(db.downloadedMedia).get()).single;
+        final queued = (await db.select(db.downloadQueue).get()).single;
+        expect(media.serverId, 'srv');
+        expect(media.clientScopeId, 'srv/user-a');
+        expect(media.ratingKey, 'episode-1');
+        expect(media.parentRatingKey, 'season-1');
+        expect(media.grandparentRatingKey, 'show-1');
+        expect(media.status, DownloadStatus.queued.index);
+        expect(media.mediaIndex, 3);
+        expect(media.mediaSourceId, 'source-3');
+        expect(queued.mediaGlobalKey, media.globalKey);
+        expect(queued.priority, 7);
+        expect(queued.downloadSubtitles, isFalse);
+        expect(queued.downloadArtwork, isTrue);
+      } finally {
+        await db.close();
+        db = AppDatabase.forTesting(NativeDatabase.memory());
+        if (await tempDir.exists()) {
+          await tempDir.delete(recursive: true);
+        }
+      }
     });
 
     test('requeues retryable rows without replacing identity or physical fields', () async {
@@ -369,57 +375,68 @@ void main() {
     });
 
     test('rolls back both new and replacement media rows when queue insertion fails', () async {
-      final tempDir = await Directory.systemTemp.createTemp('plezy_atomic_rollback_');
-      final databaseFile = File('${tempDir.path}/downloads.sqlite');
-      addTearDown(() async {
-        if (await tempDir.exists()) await tempDir.delete(recursive: true);
-      });
       await db.close();
-      db = AppDatabase.forTesting(NativeDatabase(databaseFile));
-      await db.insertDownload(
-        serverId: ServerId('srv'),
-        ratingKey: 'existing',
-        globalKey: 'srv:existing',
-        type: 'movie',
-        status: DownloadStatus.failed.index,
-      );
-      await db.updateDownloadProgress('srv:existing', 41, 410, 1000);
-      await db.customStatement('''
-        CREATE TRIGGER reject_download_queue_insert
-        BEFORE INSERT ON download_queue
-        BEGIN
-          SELECT RAISE(ABORT, 'queue insert rejected');
-        END
-      ''');
-
-      await expectLater(
-        db.insertQueuedDownload(serverId: ServerId('srv'), ratingKey: 'new', globalKey: 'srv:new', type: 'movie'),
-        throwsA(anything),
-      );
-      expect(await db.getDownloadedMedia('srv:new'), isNull);
-      expect(await (db.select(db.downloadQueue)..where((row) => row.mediaGlobalKey.equals('srv:new'))).get(), isEmpty);
-
-      await expectLater(
-        db.insertQueuedDownload(
+      final tempDir = await Directory.systemTemp.createTemp('plezy_atomic_rollback_');
+      final databaseFile = File(path.join(tempDir.path, 'downloads.sqlite'));
+      try {
+        db = AppDatabase.forTesting(NativeDatabase(databaseFile));
+        await db.insertDownload(
           serverId: ServerId('srv'),
           ratingKey: 'existing',
           globalKey: 'srv:existing',
           type: 'movie',
-        ),
-        throwsA(anything),
-      );
-      await db.close();
-      db = AppDatabase.forTesting(NativeDatabase(databaseFile));
-      expect(await db.getDownloadedMedia('srv:new'), isNull);
-      expect(await (db.select(db.downloadQueue)..where((row) => row.mediaGlobalKey.equals('srv:new'))).get(), isEmpty);
-      final preserved = await db.getDownloadedMedia('srv:existing');
-      expect(preserved?.status, DownloadStatus.failed.index);
-      expect(preserved?.progress, 41);
-      expect(preserved?.downloadedBytes, 410);
-      expect(
-        await (db.select(db.downloadQueue)..where((row) => row.mediaGlobalKey.equals('srv:existing'))).get(),
-        isEmpty,
-      );
+          status: DownloadStatus.failed.index,
+        );
+        await db.updateDownloadProgress('srv:existing', 41, 410, 1000);
+        await db.customStatement('''
+          CREATE TRIGGER reject_download_queue_insert
+          BEFORE INSERT ON download_queue
+          BEGIN
+            SELECT RAISE(ABORT, 'queue insert rejected');
+          END
+        ''');
+
+        await expectLater(
+          db.insertQueuedDownload(serverId: ServerId('srv'), ratingKey: 'new', globalKey: 'srv:new', type: 'movie'),
+          throwsA(anything),
+        );
+        expect(await db.getDownloadedMedia('srv:new'), isNull);
+        expect(
+          await (db.select(db.downloadQueue)..where((row) => row.mediaGlobalKey.equals('srv:new'))).get(),
+          isEmpty,
+        );
+
+        await expectLater(
+          db.insertQueuedDownload(
+            serverId: ServerId('srv'),
+            ratingKey: 'existing',
+            globalKey: 'srv:existing',
+            type: 'movie',
+          ),
+          throwsA(anything),
+        );
+        await db.close();
+        db = AppDatabase.forTesting(NativeDatabase(databaseFile));
+        expect(await db.getDownloadedMedia('srv:new'), isNull);
+        expect(
+          await (db.select(db.downloadQueue)..where((row) => row.mediaGlobalKey.equals('srv:new'))).get(),
+          isEmpty,
+        );
+        final preserved = await db.getDownloadedMedia('srv:existing');
+        expect(preserved?.status, DownloadStatus.failed.index);
+        expect(preserved?.progress, 41);
+        expect(preserved?.downloadedBytes, 410);
+        expect(
+          await (db.select(db.downloadQueue)..where((row) => row.mediaGlobalKey.equals('srv:existing'))).get(),
+          isEmpty,
+        );
+      } finally {
+        await db.close();
+        db = AppDatabase.forTesting(NativeDatabase.memory());
+        if (await tempDir.exists()) {
+          await tempDir.delete(recursive: true);
+        }
+      }
     });
   });
 

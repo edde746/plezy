@@ -159,12 +159,17 @@ abstract class MediaServerClient {
   /// children).
   Future<void> refreshLibraryMetadata(String libraryId);
 
-  /// Fetch a single item by its backend-opaque id. Returns `null` when the
-  /// item no longer exists or the user can't see it.
+  /// Fetch a single item by its backend-opaque id. An online HTTP 404 returns
+  /// `null`; every other HTTP status remains an error. Implementations may use
+  /// cached metadata while explicitly offline or after a classified transient
+  /// transport failure, but must not turn other online failures into stale
+  /// success.
   Future<MediaItem?> fetchItem(String id);
 
   /// Fetch a single item *and* its on-deck episode (the next unwatched /
   /// in-progress episode) in one round-trip when the backend supports it.
+  /// The item follows [fetchItem]'s error contract: an online HTTP 404 returns
+  /// both nullable fields as `null`, while every other HTTP status throws.
   /// Plex bundles both via `/library/metadata/{id}?includeOnDeck=1`;
   /// Jellyfin has no equivalent endpoint and returns `onDeckEpisode: null`,
   /// leaving callers to fetch on-deck separately if they need it.
@@ -719,7 +724,12 @@ abstract interface class SeasonEpisodePagingClient {
 /// shared base class isn't an option, but a `mixin on MediaServerClient` is.
 mixin MediaServerCacheMixin implements MediaServerClient {
   /// Fetch with cache fallback: offline → cached only; online → try network,
-  /// cache the result, fall back to cached on any error.
+  /// cache the result, then fall back to cached data on an accepted error.
+  ///
+  /// When [shouldFallback] is omitted, every error remains eligible for cache
+  /// fallback. A supplied selector narrows that policy; rejected errors are
+  /// rethrown unchanged before the fallback cache is read. Response-parser
+  /// failures can therefore be propagated instead of hidden by stale data.
   ///
   /// Returns `null` when offline mode is on and no cached row exists, or
   /// when both network and cache come up empty.
@@ -728,6 +738,7 @@ mixin MediaServerCacheMixin implements MediaServerClient {
     required Future<MediaServerResponse> Function() networkCall,
     required T? Function(dynamic cachedData) parseCache,
     required T? Function(MediaServerResponse response) parseResponse,
+    bool Function(Object error)? shouldFallback,
     bool cacheResponse = true,
   }) async {
     final cacheScope = ServerId(cacheServerId);
@@ -744,6 +755,7 @@ mixin MediaServerCacheMixin implements MediaServerClient {
       }
       return parseResponse(response);
     } catch (e) {
+      if (shouldFallback != null && !shouldFallback(e)) rethrow;
       appLogger.w('Network request failed for $cacheKey, trying cache', error: e);
       final cached = await cache.get(cacheScope, cacheKey);
       if (cached != null) return parseCache(cached);

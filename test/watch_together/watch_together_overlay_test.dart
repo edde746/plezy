@@ -1,4 +1,7 @@
+import 'dart:ui' show SemanticsAction, Tristate;
+
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart' show SemanticsNode;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/i18n/strings.g.dart';
 import 'package:plezy/watch_together/models/watch_session.dart';
@@ -69,6 +72,48 @@ void main() {
     expect(harness.onLeaveSessionCalls, 1);
     expect(tester.takeException(), isNull);
   });
+
+  testWidgets('session controls announce live state and the copyable room code', (tester) async {
+    final semantics = tester.ensureSemantics();
+    final harness = _OverlayHarness(isHost: false);
+    addTearDown(harness.dispose);
+    await tester.pumpWidget(harness.build());
+
+    var finder = find.bySemanticsLabel(t.watchTogether.openSessionControls);
+    expect(finder, findsOneWidget);
+    var data = tester.getSemantics(finder).getSemanticsData();
+    expect(data.value, '${t.watchTogether.participants}: 1');
+    expect(data.flagsCollection.isButton, isTrue);
+    expect(data.flagsCollection.isEnabled, Tristate.isTrue);
+    expect(data.hasAction(SemanticsAction.tap), isTrue);
+    expect(_semanticTapNodeCount(tester), 1);
+
+    harness.provider.updateStatus(isHost: true, isSyncing: true);
+    await tester.pump();
+
+    finder = find.bySemanticsLabel(t.watchTogether.openSessionControls);
+    data = tester.getSemantics(finder).getSemanticsData();
+    expect(
+      data.value,
+      ['${t.watchTogether.participants}: 1', t.watchTogether.youAreHost, t.watchTogether.syncing].join(', '),
+    );
+
+    await tester.tap(find.byKey(_OverlayHarness.indicatorKey));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 250));
+
+    final codeFinder = find.bySemanticsLabel(t.watchTogether.copySessionCode);
+    expect(codeFinder, findsOneWidget);
+    data = tester.getSemantics(codeFinder).getSemanticsData();
+    expect(data.value, 'ROOM42');
+    expect(data.flagsCollection.isButton, isTrue);
+    expect(data.flagsCollection.isEnabled, Tristate.isTrue);
+    expect(data.hasAction(SemanticsAction.tap), isTrue);
+    expect(find.bySemanticsLabel('ROOM42'), findsNothing);
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump();
+    semantics.dispose();
+  });
 }
 
 Future<void> _openLeaveConfirmation(WidgetTester tester, _OverlayHarness harness) async {
@@ -118,13 +163,17 @@ class _OverlayHarness {
 class _FakeWatchTogetherProvider extends WatchTogetherProvider {
   _FakeWatchTogetherProvider({required this.isHostValue, this.leaveError});
 
-  final bool isHostValue;
+  bool isHostValue;
+  bool isSyncingValue = false;
   final Object? leaveError;
   var leaveCalls = 0;
   var _isDisposing = false;
 
   @override
   bool get isHost => isHostValue;
+
+  @override
+  bool get isSyncing => isSyncingValue;
 
   @override
   String? get sessionId => 'ROOM42';
@@ -140,6 +189,12 @@ class _FakeWatchTogetherProvider extends WatchTogetherProvider {
   @override
   int get participantCount => participants.length;
 
+  void updateStatus({required bool isHost, required bool isSyncing}) {
+    isHostValue = isHost;
+    isSyncingValue = isSyncing;
+    notifyListeners();
+  }
+
   @override
   Future<void> leaveSession() async {
     if (!_isDisposing) leaveCalls++;
@@ -152,4 +207,18 @@ class _FakeWatchTogetherProvider extends WatchTogetherProvider {
     _isDisposing = true;
     super.dispose();
   }
+}
+
+int _semanticTapNodeCount(WidgetTester tester) {
+  var count = 0;
+  void visit(SemanticsNode node) {
+    if (node.getSemanticsData().hasAction(SemanticsAction.tap)) count++;
+    node.visitChildren((child) {
+      visit(child);
+      return true;
+    });
+  }
+
+  visit(tester.binding.renderViews.single.owner!.semanticsOwner!.rootSemanticsNode!);
+  return count;
 }

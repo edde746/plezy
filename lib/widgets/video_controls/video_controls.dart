@@ -30,6 +30,7 @@ import 'package:flutter/services.dart'
 import '../../services/fullscreen_state_manager.dart';
 import '../../services/macos_window_service.dart';
 import '../../services/pip_service.dart';
+import '../../services/playback_initialization_types.dart';
 import '../../services/playback_subtitle_resolver.dart';
 import 'package:window_manager/window_manager.dart';
 
@@ -422,7 +423,7 @@ class PlexVideoControls extends StatefulWidget {
   final List<MediaSubtitleTrack> sourceSubtitleTracks;
   final PlaybackSourceSubtitleChoice? selectedSubtitleChoice;
   final int? selectedSecondarySubtitleStreamId;
-  final Set<int> sourceSubtitleSidecarIds;
+  final List<PlaybackSubtitleSidecar> sourceSubtitleSidecars;
   final int? sourcePartId;
   final PlaybackSourceChangeCallback? onPlaybackSourceChanged;
   final int boxFitMode;
@@ -540,7 +541,7 @@ class PlexVideoControls extends StatefulWidget {
     this.sourceSubtitleTracks = const [],
     this.selectedSubtitleChoice,
     this.selectedSecondarySubtitleStreamId,
-    this.sourceSubtitleSidecarIds = const <int>{},
+    this.sourceSubtitleSidecars = const <PlaybackSubtitleSidecar>[],
     this.sourcePartId,
     this.onPlaybackSourceChanged,
     this.boxFitMode = 0,

@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
+import 'package:http/http.dart' as http;
 
 import '../models/trackers/device_code.dart';
 import '../services/trackers/anilist/anilist_auth_service.dart';
@@ -34,17 +35,33 @@ typedef TrackerSessionConnectPipeline =
 /// Plex profile. Single rebind seam: [onActiveProfileChanged] loads all three
 /// sessions from their stores and pushes them to their trackers.
 class TrackersProvider extends ChangeNotifier with DisposableChangeNotifierMixin {
-  TrackersProvider() : this._(runConnectPipeline<TrackerSession>);
+  /// [httpClientFactory] must return a fresh client for each eager auth owner.
+  /// Every returned client is closed when this provider is disposed.
+  TrackersProvider({http.Client Function()? httpClientFactory})
+    : this._(runConnectPipeline<TrackerSession>, httpClientFactory);
 
   @visibleForTesting
-  TrackersProvider.forTesting({required TrackerSessionConnectPipeline connectPipeline}) : this._(connectPipeline);
+  TrackersProvider.forTesting({
+    required TrackerSessionConnectPipeline connectPipeline,
+    http.Client Function()? httpClientFactory,
+  }) : this._(connectPipeline, httpClientFactory);
 
-  TrackersProvider._(this._connectPipeline);
+  TrackersProvider._(this._connectPipeline, http.Client Function()? httpClientFactory)
+    : _malAuth = httpClientFactory == null
+          ? MalAuthService()
+          : MalAuthService(
+              proxy: OAuthProxyClient(httpClient: httpClientFactory()),
+              httpClient: httpClientFactory(),
+            ),
+      _anilistAuth = httpClientFactory == null
+          ? AnilistAuthService()
+          : AnilistAuthService(proxy: OAuthProxyClient(httpClient: httpClientFactory())),
+      _simklAuth = httpClientFactory == null ? SimklAuthService() : SimklAuthService(httpClient: httpClientFactory());
 
   final TrackerSessionConnectPipeline _connectPipeline;
-  final MalAuthService _malAuth = MalAuthService();
-  final AnilistAuthService _anilistAuth = AnilistAuthService();
-  final SimklAuthService _simklAuth = SimklAuthService();
+  final MalAuthService _malAuth;
+  final AnilistAuthService _anilistAuth;
+  final SimklAuthService _simklAuth;
   final TrackerAccountStore _malStore = trackerAccountStore(TrackerService.mal);
   final TrackerAccountStore _anilistStore = trackerAccountStore(TrackerService.anilist);
   final TrackerAccountStore _simklStore = trackerAccountStore(TrackerService.simkl);

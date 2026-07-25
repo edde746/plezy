@@ -51,6 +51,7 @@ class DeviceCodeDialog extends StatelessWidget {
             child: FocusableWrapper(
               onSelect: () => _copy(context),
               semanticLabel: t.services.deviceCode.copyCode,
+              semanticValue: code.userCode,
               descendantsAreFocusable: false,
               useBackgroundFocus: true,
               borderRadius: 8,

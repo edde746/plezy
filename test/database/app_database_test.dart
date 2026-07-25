@@ -22,6 +22,19 @@ import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 
 import '../test_helpers/prefs.dart';
 
+final class _EnsureOpenTrackingInterceptor extends QueryInterceptor {
+  var calls = 0;
+  var completed = false;
+
+  @override
+  Future<bool> ensureOpen(QueryExecutor executor, QueryExecutorUser user) async {
+    calls++;
+    final result = await executor.ensureOpen(user);
+    completed = true;
+    return result;
+  }
+}
+
 void main() {
   final suite = _AppDatabaseTestSuite();
   suite.registerTests();
@@ -731,7 +744,18 @@ class _AppDatabaseTestSuite {
           await seeded.close();
           seeded = null;
 
-          reopened = AppDatabase.forTesting(NativeDatabase(file));
+          resetSharedPreferencesForTest();
+          final prefs = await BaseSharedPreferencesService.sharedCache();
+          final openTracker = _EnsureOpenTrackingInterceptor();
+          final bootstrap = await AppDatabase.open(
+            isTvos: false,
+            databaseFile: file,
+            preferences: prefs,
+            executorFactory: (databaseFile) => NativeDatabase(databaseFile).interceptWith(openTracker),
+          );
+          reopened = bootstrap.database;
+          expect(openTracker.calls, greaterThanOrEqualTo(1));
+          expect(openTracker.completed, isTrue);
           final owners = await reopened.select(reopened.downloadOwners).get();
           DownloadOwnerItem owner(String profileId, String globalKey) =>
               owners.singleWhere((row) => row.profileId == profileId && row.globalKey == globalKey);

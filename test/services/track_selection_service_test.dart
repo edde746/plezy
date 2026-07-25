@@ -31,10 +31,10 @@ import '../test_helpers/media_items.dart';
 //       Plex-selected, Plex-server-explicit-no-subtitles, default fallback,
 //       and the off-by-default branch.
 //
-// Top-level matching helpers (`findMpvTrackForPlexAudio`,
-// `findPlexTrackForMpvAudio`, `findMpvTrackForPlexSubtitle`,
-// `findPlexTrackForMpvSubtitle`) are exercised indirectly through
-// `selectAudioTrack` (Priority 2) and `selectSubtitleTrack` (Priority 2).
+// Top-level subtitle matching helpers are exercised directly for complete,
+// partial, unique, ambiguous, and container catalogs. Audio helpers are
+// exercised through `selectAudioTrack` (Priority 2) and their focused
+// disambiguation tests below.
 //
 // What's NOT covered:
 //   - `selectAndApplyTracks` — depends on a real Player + SettingsService
@@ -476,6 +476,86 @@ void main() {
       final result = _svc(info: info).selectSubtitleTrack(tracks, null, null)!;
       expect(result.priority, TrackSelectionPriority.serverSelected);
       expect(result.track.language, 'fre');
+    });
+
+    test('complete metadata-free direct catalog selects its unique native subtitle', () {
+      final sourceTrack = _plexSub(20, codec: 'ass', selected: true);
+      final info = _info(subs: [sourceTrack]);
+      final nativeTrack = _sub('native-ass', codec: 'ass');
+      final service = _svc(info: info);
+
+      final preferredResult = service.selectSubtitleTrack(
+        [nativeTrack],
+        const SubtitleTrack(id: 'source:20', codec: 'ass'),
+        null,
+      )!;
+      final serverResult = service.selectSubtitleTrack([nativeTrack], null, null)!;
+
+      expect(preferredResult.priority, TrackSelectionPriority.navigation);
+      expect(preferredResult.track, same(nativeTrack));
+      expect(serverResult.priority, TrackSelectionPriority.serverSelected);
+      expect(serverResult.track, same(nativeTrack));
+      expect(findMpvTrackForPlexSubtitle(sourceTrack, [nativeTrack], allPlexTracks: [sourceTrack]), same(nativeTrack));
+      expect(findPlexTrackForMpvSubtitle(nativeTrack, [sourceTrack], allMpvTracks: [nativeTrack]), same(sourceTrack));
+    });
+
+    test('complete low-metadata direct catalog uses facts instead of ordinal order', () {
+      final sourceAss = _plexSub(30, codec: 'ass', selected: true);
+      final sourceSrt = _plexSub(31, codec: 'srt');
+      final plexTracks = [sourceAss, sourceSrt];
+      final nativeSrt = _sub('native-srt', codec: 'srt');
+      final nativeAss = _sub('native-ass', codec: 'ass');
+      final nativeTracks = [nativeSrt, nativeAss];
+
+      expect(findMpvTrackForPlexSubtitle(sourceAss, nativeTracks, allPlexTracks: plexTracks), same(nativeAss));
+      expect(findPlexTrackForMpvSubtitle(nativeAss, plexTracks, allMpvTracks: nativeTracks), same(sourceAss));
+    });
+
+    test('ambiguous metadata-free direct catalog does not use ordinal fallback', () {
+      final selectedSource = _plexSub(40, codec: 'ass', selected: true);
+      final otherSource = _plexSub(41, codec: 'ass');
+      final plexTracks = [selectedSource, otherSource];
+      final nativeTracks = [_sub('native-second', codec: 'ass'), _sub('native-first', codec: 'ass')];
+      final service = _svc(info: _info(subs: plexTracks));
+
+      expect(findMpvTrackForPlexSubtitle(selectedSource, nativeTracks, allPlexTracks: plexTracks), isNull);
+      expect(findPlexTrackForMpvSubtitle(nativeTracks.first, plexTracks, allMpvTracks: nativeTracks), isNull);
+
+      final preferredResult = service.selectSubtitleTrack(
+        nativeTracks,
+        const SubtitleTrack(id: 'source:40', codec: 'ass'),
+        null,
+      )!;
+      final serverResult = service.selectSubtitleTrack(nativeTracks, null, null)!;
+
+      expect(preferredResult.priority, TrackSelectionPriority.off);
+      expect(preferredResult.track.id, SubtitleTrack.off.id);
+      expect(serverResult.priority, TrackSelectionPriority.off);
+      expect(serverResult.track.id, SubtitleTrack.off.id);
+    });
+
+    test('ambiguous complete direct catalog falls through to native default', () {
+      final plexTracks = [_plexSub(50, codec: 'ass', selected: true), _plexSub(51, codec: 'ass')];
+      final nativeTracks = [_sub('native-first', codec: 'ass'), _sub('native-default', codec: 'ass', isDefault: true)];
+
+      final result = _svc(
+        info: _info(subs: plexTracks),
+      ).selectSubtitleTrack(nativeTracks, const SubtitleTrack(id: 'source:50', codec: 'ass'), null)!;
+
+      expect(result.priority, TrackSelectionPriority.defaultTrack);
+      expect(result.track.id, 'native-default');
+    });
+
+    test('partial metadata-free direct catalog remains pending', () {
+      final plexTracks = [_plexSub(60, codec: 'ass', selected: true), _plexSub(61, codec: 'ass')];
+      final nativeTracks = [_sub('native-only', codec: 'ass', isDefault: true)];
+      final service = _svc(info: _info(subs: plexTracks));
+
+      expect(
+        service.selectSubtitleTrack(nativeTracks, const SubtitleTrack(id: 'source:60', codec: 'ass'), null),
+        isNull,
+      );
+      expect(service.selectSubtitleTrack(nativeTracks, null, null), isNull);
     });
 
     test('partial native catalog stays undetermined until the selected Plex track arrives', () {

@@ -34,6 +34,232 @@ void main() {
   PlexClient makeClient(Future<http.Response> Function(http.Request request) handler) =>
       testPlexClient(serverId: publicServerId, profileScopeId: defaultProfileScopeId, handler: handler);
 
+  group('Plex item lookup HTTP/cache contract', () {
+    const jsonHeaders = {'content-type': 'application/json'};
+    final apis = [(name: 'fetchItem', includeOnDeck: false), (name: 'fetchItemWithOnDeck', includeOnDeck: true)];
+
+    String endpointFor(String id) => '/library/metadata/$id';
+
+    Map<String, dynamic> itemResponse(String id, {String title = 'Cached item'}) => {
+      'MediaContainer': {
+        'librarySectionID': 7,
+        'librarySectionTitle': 'Movies',
+        'Metadata': [
+          {'ratingKey': id, 'type': 'movie', 'title': title, 'summary': 'Cached summary'},
+        ],
+      },
+    };
+
+    http.Response jsonResponse(Object? body, int statusCode) =>
+        http.Response(jsonEncode(body), statusCode, headers: jsonHeaders);
+
+    Future<Map<String, dynamic>> seedItem(String id, {String title = 'Cached item'}) async {
+      final response = itemResponse(id, title: title);
+      await PlexApiCache.instance.put(defaultProfileScopeId.cacheServerId, endpointFor(id), response);
+      return response;
+    }
+
+    Future<({MediaItem? item, MediaItem? onDeckEpisode})> lookup(
+      PlexClient client,
+      String id, {
+      required bool includeOnDeck,
+    }) async {
+      if (includeOnDeck) {
+        final result = await client.fetchItemWithOnDeck(id);
+        return result;
+      }
+      return (item: await client.fetchItem(id), onDeckEpisode: null);
+    }
+
+    for (final api in apis) {
+      for (final cacheState in [(name: 'uncached', seed: false), (name: 'cached', seed: true)]) {
+        test('${api.name} maps a ${cacheState.name} HTTP 404 to no item', () async {
+          final id = '${api.name}-${cacheState.name}-404';
+          Map<String, dynamic>? seededResponse;
+          if (cacheState.seed) {
+            seededResponse = await seedItem(id);
+          }
+          var requestCount = 0;
+          final client = makeClient((_) async {
+            requestCount++;
+            return jsonResponse({
+              'MediaContainer': {
+                'Metadata': [
+                  {'ratingKey': 'must-not-parse', 'type': 'movie', 'title': 'Must Not Parse'},
+                ],
+              },
+            }, 404);
+          });
+          addTearDown(client.close);
+
+          final result = await lookup(client, id, includeOnDeck: api.includeOnDeck);
+
+          expect(result.item, isNull);
+          expect(result.onDeckEpisode, isNull);
+          expect(requestCount, 1);
+          final cached = await PlexApiCache.instance.get(defaultProfileScopeId.cacheServerId, endpointFor(id));
+          if (cacheState.seed) {
+            expect(cached, seededResponse);
+          } else {
+            expect(cached, isNull);
+          }
+        });
+      }
+
+      for (final statusCode in [401, 403, 500]) {
+        test('${api.name} propagates cached HTTP $statusCode instead of serving stale metadata', () async {
+          final id = '${api.name}-cached-$statusCode';
+          final seededResponse = await seedItem(id);
+          var requestCount = 0;
+          final client = makeClient((_) async {
+            requestCount++;
+            return jsonResponse(itemResponse('must-not-parse', title: 'Must Not Parse'), statusCode);
+          });
+          addTearDown(client.close);
+
+          await expectLater(
+            lookup(client, id, includeOnDeck: api.includeOnDeck),
+            throwsA(
+              isA<MediaServerHttpException>()
+                  .having((error) => error.statusCode, 'statusCode', statusCode)
+                  .having((error) => error.requestUri?.path, 'request path', endpointFor(id)),
+            ),
+          );
+
+          expect(requestCount, 1);
+          expect(await PlexApiCache.instance.get(defaultProfileScopeId.cacheServerId, endpointFor(id)), seededResponse);
+        });
+      }
+
+      test('${api.name} serves cached metadata after a transient timeout', () async {
+        final id = '${api.name}-cached-timeout';
+        await seedItem(id);
+        var requestCount = 0;
+        final client = makeClient((_) {
+          requestCount++;
+          return Future<http.Response>.error(TimeoutException('item lookup timed out'));
+        });
+        addTearDown(client.close);
+
+        final result = await lookup(client, id, includeOnDeck: api.includeOnDeck);
+
+        expect(result.item, isNotNull);
+        expect(result.item!.id, id);
+        expect(result.item!.title, 'Cached item');
+        expect(result.onDeckEpisode, isNull);
+        expect(requestCount, 1);
+      });
+
+      test('${api.name} propagates a transient timeout when no cache row exists', () async {
+        final id = '${api.name}-uncached-timeout';
+        var requestCount = 0;
+        final client = makeClient((_) {
+          requestCount++;
+          return Future<http.Response>.error(TimeoutException('item lookup timed out'));
+        });
+        addTearDown(client.close);
+
+        await expectLater(
+          lookup(client, id, includeOnDeck: api.includeOnDeck),
+          throwsA(
+            isA<MediaServerHttpException>()
+                .having((error) => error.type, 'type', MediaServerHttpErrorType.connectionTimeout)
+                .having((error) => error.isTransient, 'isTransient', isTrue),
+          ),
+        );
+
+        expect(requestCount, 1);
+      });
+
+      test('${api.name} propagates cancellation despite cached metadata', () async {
+        final id = '${api.name}-cached-cancelled';
+        final seededResponse = await seedItem(id);
+        var requestCount = 0;
+        final client = makeClient((request) {
+          requestCount++;
+          return Future<http.Response>.error(http.RequestAbortedException(request.url));
+        });
+        addTearDown(client.close);
+
+        await expectLater(
+          lookup(client, id, includeOnDeck: api.includeOnDeck),
+          throwsA(
+            isA<MediaServerHttpException>()
+                .having((error) => error.isCancellation, 'isCancellation', isTrue)
+                .having((error) => error.requestUri?.path, 'request path', endpointFor(id)),
+          ),
+        );
+
+        expect(requestCount, 1);
+        expect(await PlexApiCache.instance.get(defaultProfileScopeId.cacheServerId, endpointFor(id)), seededResponse);
+      });
+
+      test('${api.name} propagates malformed JSON despite cached metadata', () async {
+        final id = '${api.name}-cached-malformed-json';
+        final seededResponse = await seedItem(id);
+        var requestCount = 0;
+        final client = makeClient((_) async {
+          requestCount++;
+          return http.Response('{', 200, headers: jsonHeaders);
+        });
+        addTearDown(client.close);
+
+        await expectLater(
+          lookup(client, id, includeOnDeck: api.includeOnDeck),
+          throwsA(
+            isA<MediaServerHttpException>()
+                .having((error) => error.type, 'type', MediaServerHttpErrorType.unknown)
+                .having((error) => error.statusCode, 'statusCode', 200),
+          ),
+        );
+
+        expect(requestCount, 1);
+        expect(await PlexApiCache.instance.get(defaultProfileScopeId.cacheServerId, endpointFor(id)), seededResponse);
+      });
+
+      test('${api.name} propagates a valid JSON payload rejected by the item DTO', () async {
+        final id = '${api.name}-cached-unmappable';
+        await seedItem(id);
+        var requestCount = 0;
+        final client = makeClient((_) async {
+          requestCount++;
+          return jsonResponse({
+            'MediaContainer': {
+              'Metadata': [
+                {'ratingKey': id, 'type': 'movie', 'title': 7},
+              ],
+            },
+          }, 200);
+        });
+        addTearDown(client.close);
+
+        await expectLater(lookup(client, id, includeOnDeck: api.includeOnDeck), throwsA(isA<TypeError>()));
+
+        expect(requestCount, 1);
+      });
+
+      test('${api.name} uses profile-scoped cache without HTTP while explicitly offline', () async {
+        final id = '${api.name}-offline';
+        await seedItem(id);
+        var requestCount = 0;
+        final client = makeClient((_) async {
+          requestCount++;
+          return jsonResponse(const {'mustNotReachNetwork': true}, 500);
+        });
+        addTearDown(client.close);
+        client.setOfflineMode(true);
+
+        final result = await lookup(client, id, includeOnDeck: api.includeOnDeck);
+
+        expect(result.item, isNotNull);
+        expect(result.item!.id, id);
+        expect(result.item!.title, 'Cached item');
+        expect(result.onDeckEpisode, isNull);
+        expect(requestCount, 0);
+      });
+    }
+  });
+
   group('Plex mutation result families', () {
     test('void mutation completes on success and preserves status/transport failures', () async {
       final item = testMediaItem(

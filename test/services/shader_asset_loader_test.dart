@@ -171,7 +171,7 @@ void main() {
 
     final shaders = await ShaderAssetLoader.getShadersForPreset(customPreset(storedName));
     expect(shaders, hasLength(1));
-    expect(path.dirname(shaders.single), path.join(supportDirectory.path, 'custom_shaders'));
+    expect(path.equals(path.dirname(shaders.single), path.join(supportDirectory.path, 'custom_shaders')), isTrue);
     expect(await File(shaders.single).readAsString(), 'shader');
 
     await ShaderAssetLoader.deleteCustomShader(storedName);
@@ -185,7 +185,9 @@ void main() {
     final managedFile = File(path.join(customDirectory.path, storedName))..writeAsStringSync('legacy');
 
     expect(ShaderAssetLoader.isValidCustomShaderFileName(storedName), isTrue);
-    expect(await ShaderAssetLoader.getShadersForPreset(customPreset(storedName)), [managedFile.path]);
+    final shaders = await ShaderAssetLoader.getShadersForPreset(customPreset(storedName));
+    expect(shaders, hasLength(1));
+    expect(path.equals(shaders.single, managedFile.path), isTrue);
 
     await ShaderAssetLoader.deleteCustomShader(storedName);
     expect(managedFile.existsSync(), isFalse);

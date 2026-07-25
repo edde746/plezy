@@ -42,7 +42,7 @@ extension _VideoPlayerPlaybackPromptMethods on VideoPlayerScreenState {
 
     var navigationAction = completionNavigationAction(
       hasNext: _nextEpisode != null,
-      adjacentLoadFailed: _currentMetadata.isEpisode && _nextEpisodeStatus == QueueNavigationStatus.failed,
+      adjacentStatus: _nextEpisodeStatus,
     );
     if (navigationAction == CompletionNavigationAction.retryAdjacent) {
       _isResolvingCompletionAdjacency = true;
@@ -52,10 +52,7 @@ extension _VideoPlayerPlaybackPromptMethods on VideoPlayerScreenState {
         _isResolvingCompletionAdjacency = false;
       }
       if (!mounted) return;
-      navigationAction = completionNavigationAction(
-        hasNext: _nextEpisode != null,
-        adjacentLoadFailed: _currentMetadata.isEpisode && _nextEpisodeStatus == QueueNavigationStatus.failed,
-      );
+      navigationAction = completionNavigationAction(hasNext: _nextEpisode != null, adjacentStatus: _nextEpisodeStatus);
       if (navigationAction == CompletionNavigationAction.retryAdjacent) {
         _completionLatch.latch();
         showGlobalErrorSnackBar(t.messages.errorLoadingSeries);

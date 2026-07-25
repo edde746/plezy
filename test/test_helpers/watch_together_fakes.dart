@@ -34,6 +34,9 @@ class FakeSyncPlayer implements Player {
   /// When set, the next command throws this and clears the field.
   Object? nextCommandError;
 
+  /// When set, the next command waits for this future and clears the field.
+  Future<void>? nextCommandFuture;
+
   /// Simulates bitstream audio ignoring rate changes: setRate succeeds but
   /// neither state nor the rate stream reflect it.
   bool ignoreRateChanges = false;
@@ -92,6 +95,9 @@ class FakeSyncPlayer implements Player {
   Future<void> play() async {
     commandLog.add('play');
     _maybeThrow();
+    final pending = nextCommandFuture;
+    nextCommandFuture = null;
+    if (pending != null) await pending;
     if (_state.playing) return;
     _state = _state.copyWith(playing: true);
     _playingController.add(true);
@@ -101,6 +107,9 @@ class FakeSyncPlayer implements Player {
   Future<void> pause() async {
     commandLog.add('pause');
     _maybeThrow();
+    final pending = nextCommandFuture;
+    nextCommandFuture = null;
+    if (pending != null) await pending;
     if (!_state.playing) return;
     _state = _state.copyWith(playing: false);
     _playingController.add(false);
@@ -110,6 +119,9 @@ class FakeSyncPlayer implements Player {
   Future<void> seek(Duration position) async {
     commandLog.add('seek:${position.inMilliseconds}');
     _maybeThrow();
+    final pending = nextCommandFuture;
+    nextCommandFuture = null;
+    if (pending != null) await pending;
     _state = _state.copyWith(position: position);
     if (emitRestartOnSeek) _playbackRestartController.add(null);
   }
@@ -118,6 +130,9 @@ class FakeSyncPlayer implements Player {
   Future<void> setRate(double rate) async {
     commandLog.add('rate:$rate');
     _maybeThrow();
+    final pending = nextCommandFuture;
+    nextCommandFuture = null;
+    if (pending != null) await pending;
     if (ignoreRateChanges || _state.rate == rate) return;
     _state = _state.copyWith(rate: rate);
     _rateController.add(rate);

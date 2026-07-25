@@ -64,21 +64,17 @@ extension _VideoPlayerBuildMethods on VideoPlayerScreenState {
     return const PlaybackSourceSubtitleChoice.off();
   }
 
+  List<PlaybackSubtitleSidecar> _sourceSubtitleSidecarsForControls() =>
+      _playbackSession?.context.result.subtitleSidecars ?? const <PlaybackSubtitleSidecar>[];
+
   List<MediaSubtitleTrack> _sourceSubtitleTracksForControls() {
-    final sidecarSourceIds = _sourceSubtitleSidecarIdsForControls();
+    final sidecarSourceIds = {for (final sidecar in _sourceSubtitleSidecarsForControls()) ?sidecar.sourceStreamId};
     return selectableSourceSubtitleTracks(
       _currentMediaInfo?.subtitleTracks ?? const <MediaSubtitleTrack>[],
       isTranscoding: _isTranscoding,
       sidecarSourceIds: sidecarSourceIds,
       supportsEmbeddedTranscodeSelection: _currentMetadata.backend == MediaBackend.plex,
     );
-  }
-
-  Set<int> _sourceSubtitleSidecarIdsForControls() {
-    return {
-      for (final sidecar in _playbackSession?.context.result.subtitleSidecars ?? const <PlaybackSubtitleSidecar>[])
-        ?sidecar.sourceStreamId,
-    };
   }
 
   Widget _buildLoadingSpinner() {
@@ -273,8 +269,8 @@ extension _VideoPlayerBuildMethods on VideoPlayerScreenState {
                     }
 
                     final sourceAudioTracks = _currentMediaInfo?.audioTracks ?? const <MediaAudioTrack>[];
+                    final sourceSubtitleSidecars = _sourceSubtitleSidecarsForControls();
                     final sourceSubtitleTracks = _sourceSubtitleTracksForControls();
-                    final sourceSubtitleSidecarIds = _sourceSubtitleSidecarIdsForControls();
 
                     return Video(
                       player: player!,
@@ -296,7 +292,7 @@ extension _VideoPlayerBuildMethods on VideoPlayerScreenState {
                         sourceSubtitleTracks: sourceSubtitleTracks,
                         selectedSubtitleChoice: _selectedSourceSubtitleChoiceForControls(sourceSubtitleTracks),
                         selectedSecondarySubtitleStreamId: _playbackSession?.subtitleSelection.secondarySourceStreamId,
-                        sourceSubtitleSidecarIds: sourceSubtitleSidecarIds,
+                        sourceSubtitleSidecars: sourceSubtitleSidecars,
                         sourcePartId: _currentMediaInfo?.partId,
                         onPlaybackSourceChanged: _switchPlaybackSource,
                         onTogglePIPMode: _togglePIPMode,

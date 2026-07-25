@@ -41,17 +41,18 @@ class AdjacentEpisodes {
 
 enum _EpisodeQueueAvailability { active, unavailable, failed }
 
-/// Manages episode navigation for TV show playback.
+/// Manages queue-based adjacency for video playback.
 ///
 /// Handles:
-/// - Loading next/previous episodes from play queues
+/// - Loading next/previous items from verified play queues
+/// - Building episode-series fallback queues when needed
 /// - Navigating between episodes while preserving track selections
 /// - Supporting both sequential and shuffle playback modes
 ///
 /// Plex normally enters with its server-side `/playQueues` queue. If that
-/// setup failed, the same client-side full-series path used by Jellyfin is
-/// used as a fallback. Both paths publish into [PlaybackStateProvider] so
-/// the player reads previous/next from one source.
+/// setup failed for an episode, the same client-side full-series path used by
+/// Jellyfin is used as a fallback. Playlist and collection queues may contain
+/// movies; once membership is verified, they use the same adjacency path.
 class EpisodeNavigationService {
   /// Cached client-side episode lists, keyed by `seriesId`. Populated for
   /// Jellyfin and when Plex's server-side queue is unavailable. Fetched once
@@ -69,12 +70,11 @@ class EpisodeNavigationService {
   /// holding ~5–10 MB of metadata when the user wanders the library.
   static const int _seriesCacheCapacity = 5;
 
-  /// Load the next and previous episodes for the current episode
+  /// Load the next and previous items for the current video.
   ///
-  /// Returns null for episodes if:
-  /// - Not applicable (e.g., movie content)
-  /// - Next episode doesn't exist (end of season/series)
-  /// - Previous episode doesn't exist (first episode)
+  /// Series queue construction is episode-only. Movies can still resolve
+  /// adjacency when they are proven members of the active playlist or
+  /// collection queue.
   ///
   /// [playedPartId] is the backend part id actually being played, when
   /// known — it lets the queue skip sibling entries of a Plex
@@ -131,19 +131,19 @@ class EpisodeNavigationService {
 
   /// Ensure [PlaybackStateProvider] holds a queue covering the current item.
   /// A queue the item already belongs to (launcher-seeded shuffle, playlist,
-  /// collection, or an earlier series build) is preserved. Otherwise the
-  /// backend's full series episode list is published, anchored at the current
-  /// episode. For Plex this is the fallback when `/playQueues` was
-  /// unavailable; for Jellyfin it is the normal queue path.
+  /// collection, or an earlier series build) is preserved for both movies and
+  /// episodes. Otherwise an episode's full backend series list is published,
+  /// anchored at the current episode. For Plex this series build is the
+  /// fallback when `/playQueues` was unavailable; for Jellyfin it is the
+  /// normal episode path.
   Future<_EpisodeQueueAvailability> _ensureLocalEpisodeQueue(
     MultiServerManager serverManager,
     PlaybackStateProvider playbackState,
     MediaItem metadata,
   ) async {
-    if (metadata.serverId == null || !metadata.isEpisode || metadata.grandparentId == null) {
-      return _EpisodeQueueAvailability.unavailable;
-    }
-    final seriesId = metadata.grandparentId!;
+    // Queue membership and current-cursor identity are media-kind agnostic.
+    // Prove them before applying the episode-only series-build prerequisites
+    // so playlist and collection movies retain their launcher-seeded queue.
     // Preserve any queue this item already belongs to — a launcher-seeded
     // shuffled show queue (contextKey == seriesId), a playlist/collection
     // queue, or a series queue this method built earlier. setCurrentItem
@@ -154,14 +154,18 @@ class EpisodeNavigationService {
       playbackState.setCurrentItem(metadata);
       return _EpisodeQueueAvailability.active;
     }
-    // Same-episode reload with a fresh object: a source/quality switch hands
+    // Same-item reload with a fresh object: a source/quality switch hands
     // _reloadMediaInPlace a copyWith clone of the playing item, and MediaItem
     // compares by identity, so the membership gate above misses. The cursor
-    // already points at this episode — the queue (and any shuffled order)
-    // must survive.
+    // already points at this item — the queue (and any shuffled order) must
+    // survive.
     if (playbackState.isQueueActive && playbackState.currentQueueItem?.globalKey == metadata.globalKey) {
       return _EpisodeQueueAvailability.active;
     }
+    if (metadata.serverId == null || !metadata.isEpisode || metadata.grandparentId == null) {
+      return playbackState.isQueueActive ? _EpisodeQueueAvailability.failed : _EpisodeQueueAvailability.unavailable;
+    }
+    final seriesId = metadata.grandparentId!;
     // The playing item isn't in the active queue. Still don't replace a
     // playlist/collection queue with a series queue: the launcher (e.g.
     // [JellyfinSequentialLauncher]) sets contextKey to the playlist or

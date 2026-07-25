@@ -418,12 +418,26 @@ class _SubtitleColumnState extends State<_SubtitleColumn> {
     final hasSecondary = widget.supportsSecondary && secondarySub != null;
     final selectedSourceId = widget.trackControlsState.selectedSubtitleChoice?.sourceStreamId;
     final selectedSecondarySourceId = widget.trackControlsState.selectedSecondarySubtitleStreamId;
+    final attachedSourceSidecarIds = <int>{};
+    for (final sidecar in widget.trackControlsState.sourceSubtitleSidecars) {
+      final sourceStreamId = sidecar.sourceStreamId;
+      final uri = sidecar.track.uri;
+      if (sourceStreamId == null || uri == null) continue;
+      if (widget.tracks.any((track) => track.isExternal && track.uri == uri)) {
+        attachedSourceSidecarIds.add(sourceStreamId);
+      }
+    }
     final unloadedSourceSidecars = widget.sourceSidecars
-        .where((track) => track.id != selectedSourceId && track.id != selectedSecondarySourceId)
+        .where(
+          (track) =>
+              !attachedSourceSidecarIds.contains(track.id) &&
+              track.id != selectedSourceId &&
+              track.id != selectedSecondarySourceId,
+        )
         .toList(growable: false);
 
-    // +1 for "Off" row. The selected direct-play sidecar is already present
-    // in [tracks], so only the other server sidecars are appended.
+    // +1 for "Off". Source sidecars represented by native external tracks,
+    // plus active source IDs awaiting native discovery, are not appended.
     final itemCount = widget.tracks.length + unloadedSourceSidecars.length + 1;
 
     final selectedIndex = isOffSelected ? null : widget.tracks.indexWhere((t) => t.id == selectedSub.id) + 1;

@@ -23,6 +23,7 @@ import 'package:plezy/services/storage_service.dart';
 import 'package:plezy/services/system_shelf_service.dart';
 import 'package:provider/provider.dart';
 
+import '../test_helpers/io_fakes.dart';
 import '../test_helpers/prefs.dart';
 
 void main() {
@@ -60,6 +61,15 @@ void main() {
     final trackerProviders = <TrackersProvider>[];
     final companionProviders = <CompanionRemoteProvider>[];
     final disposedActiveIds = <String>[];
+    final trackerHttpClients = <FakeHttpClient>[];
+    // The probe instantiates TrackersProvider (four eager auth owners); the
+    // separate Trakt provider remains lazy in this reduced shell.
+    const trackerAuthClientsPerProfile = 4;
+    FakeHttpClient trackerHttpClientFactory() {
+      final client = FakeHttpClient(200, const <int>[]);
+      trackerHttpClients.add(client);
+      return client;
+    }
 
     addTearDown(() async {
       await tester.pumpWidget(const SizedBox.shrink());
@@ -97,6 +107,7 @@ void main() {
         child: MaterialApp(
           home: ProfileSessionScreen.forTesting(
             initialPromptHandled: true,
+            httpClientFactory: trackerHttpClientFactory,
             profileShellBuilder: (context) => _ProfileProbeShell(
               discoverProviders: discoverProviders,
               hiddenProviders: hiddenProviders,
@@ -109,6 +120,9 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
+    expect(trackerHttpClients, hasLength(trackerAuthClientsPerProfile));
+    final ownerHttpClients = List<FakeHttpClient>.of(trackerHttpClients);
+    _expectCloseCount(ownerHttpClients, 0);
 
     expect(find.text('active:local-owner'), findsOneWidget);
     expect(SystemShelfService().debugActiveOwner, owner.id);
@@ -131,6 +145,10 @@ void main() {
 
     expect(await activeProfile.activate(kids), isTrue);
     await tester.pumpAndSettle();
+    expect(trackerHttpClients, hasLength(trackerAuthClientsPerProfile * 2));
+    final kidsHttpClients = trackerHttpClients.sublist(ownerHttpClients.length);
+    _expectCloseCount(ownerHttpClients, 1);
+    _expectCloseCount(kidsHttpClients, 0);
 
     expect(find.text('old profile route'), findsNothing);
     expect(find.text('active:local-kids'), findsOneWidget);
@@ -154,17 +172,25 @@ void main() {
 
     await activeProfile.clearActiveProfile();
     await tester.pumpAndSettle();
+    expect(trackerHttpClients, hasLength(trackerAuthClientsPerProfile * 3));
+    final signedOutHttpClients = trackerHttpClients.sublist(ownerHttpClients.length + kidsHttpClients.length);
+    _expectCloseCount(ownerHttpClients, 1);
+    _expectCloseCount(kidsHttpClients, 1);
+    _expectCloseCount(signedOutHttpClients, 0);
     expect(SystemShelfService().debugActiveOwner, isNull);
     expect(discoverProviders.last.profileId, isNull);
 
-    // Companion provider disposal cancels Drift-backed profile watches. Give
-    // their asynchronous cancellation timers a frame before test invariants
-    // are checked.
     await tester.pumpWidget(const SizedBox.shrink());
-    for (var i = 0; i < 3; i++) {
-      await tester.pump(const Duration(milliseconds: 1));
-    }
+    await tester.pumpAndSettle();
+    expect(trackerHttpClients.toSet(), hasLength(trackerAuthClientsPerProfile * 3));
+    _expectCloseCount(trackerHttpClients, 1);
   });
+}
+
+void _expectCloseCount(Iterable<FakeHttpClient> clients, int expected) {
+  for (final client in clients) {
+    expect(client.closeCount, expected);
+  }
 }
 
 class _ProfileProbeShell extends StatefulWidget {

@@ -239,6 +239,8 @@ bool? _parsePlexTranscoderVideoCapability(Object? value) {
   };
 }
 
+bool _shouldFallbackPlexItemLookup(Object error) => error is MediaServerHttpException && error.isTransient;
+
 class _PlexMediaProviderState {
   const _PlexMediaProviderState({
     required this.libraries,
@@ -1071,7 +1073,10 @@ class PlexClient
   /// Uses cache when offline or as fallback on network error
   /// Note: OnDeck data is not relevant for offline mode
   /// Always fetches with chapters/markers but caches at base endpoint
-  Future<Map<String, dynamic>> getMetadataWithImagesAndOnDeck(String ratingKey) async {
+  Future<Map<String, dynamic>> getMetadataWithImagesAndOnDeck(
+    String ratingKey, {
+    bool Function(Object error)? shouldFallback,
+  }) async {
     // Cache key is always the base endpoint (no query params)
     final cacheKey = '/library/metadata/$ratingKey';
 
@@ -1079,6 +1084,7 @@ class PlexClient
     // because OnDeck is only available from network response, not cache
     return await fetchWithCacheFallback<Map<String, dynamic>>(
           cacheKey: cacheKey,
+          shouldFallback: shouldFallback,
           networkCall: () => _http.get(
             '/library/metadata/$ratingKey',
             queryParameters: {
@@ -1136,12 +1142,16 @@ class PlexClient
   /// Get metadata by rating key with images (includes clearLogo)
   /// Uses cache when offline or as fallback on network error
   /// Always fetches with chapters/markers but caches at base endpoint
-  Future<PlexMetadataDto?> _getMetadataWithImages(String ratingKey) async {
+  Future<PlexMetadataDto?> _getMetadataWithImages(
+    String ratingKey, {
+    bool Function(Object error)? shouldFallback,
+  }) async {
     // Cache key is always the base endpoint (no query params)
     final cacheKey = '/library/metadata/$ratingKey';
 
     return fetchWithCacheFallback<PlexMetadataDto>(
       cacheKey: cacheKey,
+      shouldFallback: shouldFallback,
       networkCall: () => _http.get(
         '/library/metadata/$ratingKey',
         queryParameters: {'includeChapters': 1, 'includeMarkers': 1, 'checkFiles': 1, 'includeStreams': 1},
@@ -2857,8 +2867,13 @@ class PlexClient
 
   @override
   Future<MediaItem?> fetchItem(String id) async {
-    final metadata = await _getMetadataWithImages(id);
-    return metadata == null ? null : PlexMappers.mediaItem(metadata);
+    try {
+      final metadata = await _getMetadataWithImages(id, shouldFallback: _shouldFallbackPlexItemLookup);
+      return metadata == null ? null : PlexMappers.mediaItem(metadata);
+    } on MediaServerHttpException catch (error) {
+      if (error.statusCode == 404) return null;
+      rethrow;
+    }
   }
 
   @override
@@ -3621,13 +3636,20 @@ class PlexClient
   /// Jellyfin has no analogous endpoint and returns onDeck=null there.
   @override
   Future<({MediaItem? item, MediaItem? onDeckEpisode})> fetchItemWithOnDeck(String id) async {
-    final result = await getMetadataWithImagesAndOnDeck(id);
-    final itemDto = result['metadata'] as PlexMetadataDto?;
-    final onDeckDto = result['onDeckEpisode'] as PlexMetadataDto?;
-    return (
-      item: itemDto == null ? null : PlexMappers.mediaItem(itemDto),
-      onDeckEpisode: onDeckDto == null ? null : PlexMappers.mediaItem(onDeckDto),
-    );
+    try {
+      final result = await getMetadataWithImagesAndOnDeck(id, shouldFallback: _shouldFallbackPlexItemLookup);
+      final itemDto = result['metadata'] as PlexMetadataDto?;
+      final onDeckDto = result['onDeckEpisode'] as PlexMetadataDto?;
+      return (
+        item: itemDto == null ? null : PlexMappers.mediaItem(itemDto),
+        onDeckEpisode: onDeckDto == null ? null : PlexMappers.mediaItem(onDeckDto),
+      );
+    } on MediaServerHttpException catch (error) {
+      if (error.statusCode == 404) {
+        return (item: null, onDeckEpisode: null);
+      }
+      rethrow;
+    }
   }
 
   @override

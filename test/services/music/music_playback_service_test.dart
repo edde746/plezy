@@ -36,6 +36,22 @@ MediaItem _track(String id) => testMediaItem(
 
 String _urlFor(MediaItem track) => 'fake://${track.id}';
 
+class _CallGate {
+  final Completer<void> _entered = Completer<void>();
+  final Completer<void> _released = Completer<void>();
+
+  Future<void> get entered => _entered.future;
+
+  Future<void> block() {
+    if (!_entered.isCompleted) _entered.complete();
+    return _released.future;
+  }
+
+  void release() {
+    if (!_released.isCompleted) _released.complete();
+  }
+}
+
 /// In-memory audio player: records calls, exposes manual stream controllers
 /// so tests drive transitions/completion/errors deterministically.
 class FakePlayer implements Player {
@@ -91,6 +107,7 @@ class FakePlayer implements Player {
   final List<double> volumes = [];
   Completer<void>? playGate;
   Completer<void>? pauseGate;
+  final List<_CallGate> _openGates = [];
 
   /// Arming these URIs throws, simulating a native setNext failure.
   final Set<String> failingSetNextUris = {};
@@ -104,15 +121,31 @@ class FakePlayer implements Player {
   /// consumed by an auto-advance ([emitTransition]).
   Media? get armed => _armedMedia;
 
+  _CallGate _gateNextOpen() {
+    final gate = _CallGate();
+    _openGates.add(gate);
+    return gate;
+  }
+
   void emitTransition(String uri) {
     _armedMedia = null; // the backend advanced into the armed entry
-    _state = _state.copyWith(position: Duration.zero, duration: _trackDuration);
+    _state = _state.copyWith(completed: false, position: Duration.zero, duration: _trackDuration);
     trackTransitionCtrl.add(uri);
   }
 
   void emitCompleted() {
     _state = _state.copyWith(completed: true, position: _trackDuration);
     completedCtrl.add(true);
+  }
+
+  /// Emits the real boundary contract: completed always pulses, but a
+  /// transition can follow only when the native playlist still has an arm.
+  bool emitNaturalBoundary() {
+    final armed = _armedMedia;
+    emitCompleted();
+    if (armed == null) return false;
+    emitTransition(armed.uri);
+    return true;
   }
 
   void emitError(String message) => errorCtrl.add(PlayerError(message));
@@ -171,6 +204,11 @@ class FakePlayer implements Player {
     List<SubtitleTrack>? externalSubtitles,
     Duration? timelineDuration,
   }) async {
+    final gate = _openGates.isEmpty ? null : _openGates.removeAt(0);
+    if (gate != null) await gate.block();
+    // PlayerNative.open uses loadfile replace, which drops any armed entry.
+    // Clear before recording the committed replacement open.
+    _armedMedia = null;
     openedUris.add(media.uri);
     _state = _state.copyWith(playing: play, completed: false, position: Duration.zero, duration: _trackDuration);
     if (play) playingCtrl.add(true);
@@ -431,15 +469,24 @@ class FakeMusicSourceResolver implements MusicSourceResolver {
   final MediaServerClient? client;
   final Set<String> failingIds = {};
   final Map<String, int> resolveCounts = {};
-  final Map<String, Completer<void>> resolveGates = {};
+  final Map<String, List<_CallGate>> _resolveGates = {};
 
   /// Per-track URL overrides (e.g. content:// shapes for offline tracks).
   final Map<String, String> urlOverrides = {};
 
+  _CallGate _gateNextResolve(String trackId) {
+    final gate = _CallGate();
+    (_resolveGates[trackId] ??= []).add(gate);
+    return gate;
+  }
+
   @override
   Future<MusicSource> resolve(MediaItem track) async {
     resolveCounts[track.id] = (resolveCounts[track.id] ?? 0) + 1;
-    await resolveGates[track.id]?.future;
+    final gates = _resolveGates[track.id];
+    final gate = gates == null || gates.isEmpty ? null : gates.removeAt(0);
+    if (gates?.isEmpty ?? false) _resolveGates.remove(track.id);
+    if (gate != null) await gate.block();
     if (failingIds.contains(track.id)) {
       throw StateError('resolve failed for ${track.id}');
     }
@@ -712,30 +759,135 @@ void main() {
   });
 
   test('a superseded slow gapless resolve cannot overwrite the newly requested arm', () async {
-    final oldArmGate = Completer<void>();
-    h.resolver.resolveGates[t2.id] = oldArmGate;
+    final oldArmGate = h.resolver._gateNextResolve(t2.id);
 
     await h.playTracks([t1, t2]);
+    await oldArmGate.entered;
     expect(h.player.armed, isNull);
 
     h.service.addNext([t3]);
-    oldArmGate.complete();
+    oldArmGate.release();
     await pumpEventQueue();
 
     expect(h.player.armed?.uri, _urlFor(t3));
   });
 
   test('end-of-track sleep invalidates a slow gapless resolve', () async {
-    final armGate = Completer<void>();
-    h.resolver.resolveGates[t2.id] = armGate;
+    final armGate = h.resolver._gateNextResolve(t2.id);
 
     await h.playTracks([t1, t2]);
+    await armGate.entered;
     h.service.setSleepTimer(null, endOfTrack: true);
-    armGate.complete();
+    armGate.release();
     await pumpEventQueue();
 
     expect(h.service.sleepTimerEndOfTrack, isTrue);
     expect(h.player.armed, isNull);
+  });
+
+  test('manual advance cancels a blocked arm until replacement open commits', () async {
+    final staleArmGate = h.resolver._gateNextResolve(t2.id);
+    final replacementResolveGate = h.resolver._gateNextResolve(t2.id);
+
+    await h.playTracks([t1, t2, t3]);
+    await staleArmGate.entered;
+
+    final replacementOpenGate = h.player._gateNextOpen();
+    final advance = h.service.next();
+    await replacementResolveGate.entered;
+    replacementResolveGate.release();
+    await replacementOpenGate.entered;
+
+    staleArmGate.release();
+    await pumpEventQueue();
+
+    expect(h.resolver.resolveCounts[t3.id], isNull);
+    expect(h.player.armed, isNull);
+    expect(h.player.openedUris, [_urlFor(t1)]);
+
+    replacementOpenGate.release();
+    await advance;
+    await pumpEventQueue();
+
+    expect(h.service.currentTrack?.id, t2.id);
+    expect(h.player.openedUris, [_urlFor(t1), _urlFor(t2)]);
+    expect(h.resolver.resolveCounts[t3.id], 1);
+    expect(h.player.armed?.uri, _urlFor(t3));
+
+    expect(h.player.emitNaturalBoundary(), isTrue);
+    await pumpEventQueue();
+
+    expect(h.service.currentTrack?.id, t3.id);
+    expect(h.service.currentIndex, 2);
+    expect(h.player.openedUris, [_urlFor(t1), _urlFor(t2)], reason: 'C must advance from the native arm');
+  });
+
+  test('queue edits during a replacement open coalesce into the latest post-open arm', () async {
+    final t4 = _track('t4');
+    final t5 = _track('t5');
+    await h.playTracks([t1, t2, t3]);
+
+    final replacementOpenGate = h.player._gateNextOpen();
+    final advance = h.service.next();
+    await replacementOpenGate.entered;
+    final latestArmGate = h.resolver._gateNextResolve(t5.id);
+
+    h.service.addNext([t4]);
+    h.service.addNext([t5]);
+    await pumpEventQueue();
+
+    expect(h.resolver.resolveCounts[t4.id], isNull);
+    expect(h.resolver.resolveCounts[t5.id], isNull);
+    expect(h.player.armed, isNull);
+
+    replacementOpenGate.release();
+    await advance;
+    await latestArmGate.entered;
+
+    expect(h.resolver.resolveCounts[t4.id], isNull);
+    expect(h.resolver.resolveCounts[t5.id], 1);
+    expect(h.player.armed, isNull);
+
+    latestArmGate.release();
+    await pumpEventQueue();
+
+    expect(h.service.queue.map((track) => track.id), [t1.id, t2.id, t5.id, t4.id, t3.id]);
+    expect(h.player.armed?.uri, _urlFor(t5));
+    expect(h.player.emitNaturalBoundary(), isTrue);
+    await pumpEventQueue();
+    expect(h.service.currentTrack?.id, t5.id);
+    expect(h.player.openedUris, [_urlFor(t1), _urlFor(t2)]);
+  });
+
+  test('completed fallback cancels a blocked arm until replacement open commits', () async {
+    final staleArmGate = h.resolver._gateNextResolve(t2.id);
+    final replacementResolveGate = h.resolver._gateNextResolve(t2.id);
+
+    await h.playTracks([t1, t2, t3]);
+    await staleArmGate.entered;
+    final replacementOpenGate = h.player._gateNextOpen();
+
+    h.player.emitCompleted();
+    await replacementResolveGate.entered;
+    replacementResolveGate.release();
+    await replacementOpenGate.entered;
+
+    staleArmGate.release();
+    await pumpEventQueue();
+
+    expect(h.resolver.resolveCounts[t3.id], isNull);
+    expect(h.player.armed, isNull);
+
+    replacementOpenGate.release();
+    await pumpEventQueue();
+
+    expect(h.service.currentTrack?.id, t2.id);
+    expect(h.player.openedUris, [_urlFor(t1), _urlFor(t2)]);
+    expect(h.player.armed?.uri, _urlFor(t3));
+    expect(h.player.emitNaturalBoundary(), isTrue);
+    await pumpEventQueue();
+    expect(h.service.currentTrack?.id, t3.id);
+    expect(h.player.openedUris, [_urlFor(t1), _urlFor(t2)]);
   });
 
   test('a slow instant mix cannot replace a newer explicit queue', () async {
@@ -939,6 +1091,23 @@ void main() {
     expect(h.player.disposed, isTrue);
     expect(h.controls.cleared, isTrue);
     expect(h.client.reportsFor('stopped').map((r) => r.itemId), ['t1']);
+  });
+
+  test('failed explicit resume does not publish playing status', () async {
+    await h.playTracks([t1]);
+    await h.service.pause();
+    final gate = Completer<void>();
+    final denied = StateError('audio focus denied');
+    h.player.playGate = gate;
+
+    final resume = h.service.play();
+    expect(h.service.status, MusicPlaybackStatus.paused);
+    final failureExpectation = expectLater(resume, throwsA(same(denied)));
+    gate.completeError(denied, StackTrace.current);
+    await failureExpectation;
+
+    expect(h.player.playCalls, 1);
+    expect(h.service.status, MusicPlaybackStatus.paused);
   });
 
   test('a late play completion cannot revive a stopped session', () async {

@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 
 import '../connection/connection_registry.dart';
@@ -58,7 +59,8 @@ CatalogSourcesProvider _createCatalogSourcesProvider(BuildContext context) {
 /// on the root navigator so they survive this subtree being replaced.
 class ProfileSessionScreen extends StatefulWidget {
   const ProfileSessionScreen({super.key, this.isOfflineMode = false, this.initialPromptHandled = false})
-    : profileShellBuilder = null;
+    : profileShellBuilder = null,
+      trackerHttpClientFactory = null;
 
   @visibleForTesting
   const ProfileSessionScreen.forTesting({
@@ -66,11 +68,13 @@ class ProfileSessionScreen extends StatefulWidget {
     this.isOfflineMode = false,
     this.initialPromptHandled = false,
     required this.profileShellBuilder,
-  });
+    required http.Client Function() httpClientFactory,
+  }) : trackerHttpClientFactory = httpClientFactory;
 
   final bool isOfflineMode;
   final bool initialPromptHandled;
   final WidgetBuilder? profileShellBuilder;
+  final http.Client Function()? trackerHttpClientFactory;
 
   @override
   State<ProfileSessionScreen> createState() => _ProfileSessionScreenState();
@@ -146,7 +150,7 @@ class _ProfileSessionScreenState extends State<ProfileSessionScreen> {
               ),
               ChangeNotifierProvider(
                 create: (context) {
-                  final provider = TraktAccountProvider();
+                  final provider = TraktAccountProvider(httpClientFactory: widget.trackerHttpClientFactory);
                   unawaited(
                     provider.onActiveProfileChanged(activeId).catchError((Object e, StackTrace s) {
                       appLogger.w('Trakt profile hydrate failed', error: e, stackTrace: s);
@@ -157,7 +161,7 @@ class _ProfileSessionScreenState extends State<ProfileSessionScreen> {
               ),
               ChangeNotifierProvider(
                 create: (context) {
-                  final provider = TrackersProvider();
+                  final provider = TrackersProvider(httpClientFactory: widget.trackerHttpClientFactory);
                   unawaited(
                     provider.onActiveProfileChanged(activeId).catchError((Object e, StackTrace s) {
                       appLogger.w('Trackers profile hydrate failed', error: e, stackTrace: s);

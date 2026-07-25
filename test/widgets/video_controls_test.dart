@@ -1099,6 +1099,55 @@ void main() {
       expect(seekEvents, 0);
     });
 
+    testWidgets('focused slider owns one adjustable semantics node', (tester) async {
+      LocaleSettings.setLocaleSync(AppLocale.en);
+      final semantics = tester.ensureSemantics();
+      final focusNode = FocusNode(debugLabel: 'semantic_timeline');
+      addTearDown(focusNode.dispose);
+      final seekEnds = <Duration>[];
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: SizedBox(
+              width: 400,
+              child: TimelineSlider(
+                position: const Duration(minutes: 1),
+                duration: const Duration(minutes: 10),
+                chapters: const [],
+                chaptersLoaded: true,
+                focusNode: focusNode,
+                onSeek: (_) {},
+                onSeekEnd: seekEnds.add,
+              ),
+            ),
+          ),
+        ),
+      );
+      focusNode.requestFocus();
+      await tester.pump();
+
+      final finder = find.bySemanticsLabel(t.videoControls.timelineSlider);
+      expect(finder, findsOneWidget);
+      final node = tester.getSemantics(finder);
+      final data = node.getSemanticsData();
+      expect(data.label, t.videoControls.timelineSlider);
+      expect(data.value, '1:00');
+      expect(data.increasedValue, '1:10');
+      expect(data.decreasedValue, '0:50');
+      expect(data.flagsCollection.isSlider, isTrue);
+      expect(data.flagsCollection.isEnabled, ui.Tristate.isTrue);
+      expect(data.flagsCollection.isButton, isFalse);
+      expect(data.hasAction(ui.SemanticsAction.tap), isFalse);
+      expect(data.hasAction(ui.SemanticsAction.increase), isTrue);
+      expect(data.hasAction(ui.SemanticsAction.decrease), isTrue);
+
+      node.owner!.performAction(node.id, ui.SemanticsAction.increase);
+      node.owner!.performAction(node.id, ui.SemanticsAction.decrease);
+      expect(seekEnds, const [Duration(minutes: 1, seconds: 10), Duration(seconds: 50)]);
+      semantics.dispose();
+    });
+
     testWidgets('does not pass chapters to painter when timeline markers are hidden', (tester) async {
       await tester.pumpWidget(
         MaterialApp(

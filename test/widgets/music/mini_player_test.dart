@@ -210,6 +210,40 @@ void main() {
     expect(find.byType(IconButton), findsNWidgets(2)); // play/pause + next (mobile layout)
   });
 
+  testWidgets('details control announces the current title and artist exactly once', (tester) async {
+    final semantics = tester.ensureSemantics();
+    final service = _FakeMusicService(track: _track);
+    final observer = MusicUiRouteObserver();
+
+    await tester.pumpWidget(wrap(service: service, observer: observer));
+    await tester.pumpAndSettle();
+
+    var finder = find.bySemanticsLabel('Dawn');
+    expect(finder, findsOneWidget);
+    expect(tester.getSemantics(finder).getSemanticsData().value, 'Test Artist');
+    expect(find.bySemanticsLabel('Test Artist'), findsNothing);
+
+    service.advanceTo(
+      testMediaItem(
+        id: 'track_2',
+        backend: MediaBackend.plex,
+        kind: MediaKind.track,
+        title: 'Noon',
+        grandparentId: 'artist_2',
+        grandparentTitle: 'Second Artist',
+        durationMs: 180000,
+        serverId: 'server_1',
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    finder = find.bySemanticsLabel('Noon');
+    expect(finder, findsOneWidget);
+    expect(tester.getSemantics(finder).getSemanticsData().value, 'Second Artist');
+    expect(find.bySemanticsLabel('Second Artist'), findsNothing);
+    semantics.dispose();
+  });
+
   testWidgets('progress resets immediately when the current track changes', (tester) async {
     final nextTrack = testMediaItem(
       id: 'track_2',

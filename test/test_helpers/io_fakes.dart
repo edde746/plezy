@@ -36,9 +36,17 @@ class FakeHttpClient extends http.BaseClient {
 
   final int statusCode;
   final List<int> body;
+  int closeCount = 0;
+  bool get isClosed => closeCount != 0;
 
   @override
   Future<http.StreamedResponse> send(http.BaseRequest request) async {
     return http.StreamedResponse(Stream<List<int>>.value(body), statusCode, request: request);
+  }
+
+  @override
+  void close() {
+    closeCount++;
+    super.close();
   }
 }

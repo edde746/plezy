@@ -145,6 +145,14 @@ class FocusableWrapper extends StatefulWidget {
   /// Optional current value announced after [semanticLabel].
   final String? semanticValue;
 
+  /// Whether this wrapper replaces semantics contributed by [child].
+  ///
+  /// The default (`true`) replacement mode produces one operable control node for
+  /// labeled wrappers. Set this to `false` only to supplement non-interactive
+  /// child content; a child that already owns a role or actions would conflict
+  /// with this wrapper's button and activation semantics.
+  final bool excludeChildSemantics;
+
   /// Optional checked state for toggle-style controls.
   final bool? checked;
 
@@ -211,6 +219,7 @@ class FocusableWrapper extends StatefulWidget {
     this.useComfortableZone = false,
     this.semanticLabel,
     this.semanticValue,
+    this.excludeChildSemantics = true,
     this.checked,
     this.canRequestFocus = true,
     this.onKeyEvent,
@@ -594,7 +603,7 @@ class _FocusableWrapperState extends State<FocusableWrapper> with SingleTickerPr
         checked: widget.checked,
         onTap: widget.onSelect,
         onLongPress: widget.onLongPress,
-        excludeSemantics: true,
+        excludeSemantics: widget.excludeChildSemantics,
         child: result,
       );
     }

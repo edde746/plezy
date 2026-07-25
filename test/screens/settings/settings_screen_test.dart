@@ -488,6 +488,7 @@ class _SettingsHarness {
     required this.theme,
     required this.trakt,
     required this.trackers,
+    required this.trackerHttpClients,
     required this.seerr,
     required this.downloadManager,
     required this.downloadProvider,
@@ -501,6 +502,7 @@ class _SettingsHarness {
   final ThemeProvider theme;
   final TraktAccountProvider trakt;
   final TrackersProvider trackers;
+  final List<FakeHttpClient> trackerHttpClients;
   final SeerrAccountProvider seerr;
   final DownloadManagerService downloadManager;
   final DownloadProvider downloadProvider;
@@ -519,6 +521,11 @@ class _SettingsHarness {
     activeProfile.dispose();
     await plexHome.dispose();
     await database.close();
+    expect(trackerHttpClients, hasLength(5));
+    expect(trackerHttpClients.toSet(), hasLength(5));
+    for (final client in trackerHttpClients) {
+      expect(client.closeCount, 1);
+    }
   }
 }
 
@@ -545,8 +552,15 @@ Future<_SettingsHarness> _pumpSettingsScreen(
   final activeProfile = ActiveProfileProvider(registry: profiles, plexHome: plexHome, connections: connections);
   final libraries = LibrariesProvider();
   final theme = ThemeProvider();
-  final trakt = TraktAccountProvider();
-  final trackers = TrackersProvider();
+  final trackerHttpClients = <FakeHttpClient>[];
+  FakeHttpClient trackerHttpClientFactory() {
+    final client = FakeHttpClient(HttpStatus.ok, const <int>[]);
+    trackerHttpClients.add(client);
+    return client;
+  }
+
+  final trakt = TraktAccountProvider(httpClientFactory: trackerHttpClientFactory);
+  final trackers = TrackersProvider(httpClientFactory: trackerHttpClientFactory);
   final seerr = SeerrAccountProvider();
   final settingsService = SettingsService.instance;
   final storageService = DownloadStorageService.instance;
@@ -582,6 +596,7 @@ Future<_SettingsHarness> _pumpSettingsScreen(
     theme: theme,
     trakt: trakt,
     trackers: trackers,
+    trackerHttpClients: trackerHttpClients,
     seerr: seerr,
     downloadManager: downloadManager,
     downloadProvider: downloadProvider,

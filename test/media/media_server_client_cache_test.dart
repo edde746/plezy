@@ -185,4 +185,96 @@ void main() {
     expect(cacheParserCalls, 0);
     expect(responseParserCalls, 0);
   });
+
+  group('fetchWithCacheFallback error selection', () {
+    const cachedBody = {'value': 'cached'};
+
+    test('omitted selector preserves fallback on an HTTP 500', () async {
+      const key = '/metadata/default-fallback';
+      await cache.put(client.serverId, key, cachedBody);
+      var cacheParserCalls = 0;
+      var responseParserCalls = 0;
+
+      final value = await client.fetchWithCacheFallback<String>(
+        cacheKey: key,
+        networkCall: () async =>
+            MediaServerResponse(statusCode: 500, data: const {'value': 'server error'}, headers: const {}),
+        parseCache: (cached) {
+          cacheParserCalls++;
+          return (cached as Map<String, dynamic>)['value'] as String;
+        },
+        parseResponse: (_) {
+          responseParserCalls++;
+          return 'network';
+        },
+      );
+
+      expect(value, 'cached');
+      expect(cacheParserCalls, 1);
+      expect(responseParserCalls, 0);
+    });
+
+    test('rejecting selector rethrows an HTTP status without reading cached data', () async {
+      const key = '/metadata/rejected-fallback';
+      await cache.put(client.serverId, key, cachedBody);
+      var cacheParserCalls = 0;
+      var responseParserCalls = 0;
+
+      await expectLater(
+        client.fetchWithCacheFallback<String>(
+          cacheKey: key,
+          networkCall: () async =>
+              MediaServerResponse(statusCode: 500, data: const {'value': 'server error'}, headers: const {}),
+          shouldFallback: (error) => error is MediaServerHttpException && error.isTransient,
+          parseCache: (_) {
+            cacheParserCalls++;
+            return 'cached';
+          },
+          parseResponse: (_) {
+            responseParserCalls++;
+            return 'network';
+          },
+        ),
+        throwsA(isA<MediaServerHttpException>().having((error) => error.statusCode, 'statusCode', 500)),
+      );
+
+      expect(cacheParserCalls, 0);
+      expect(responseParserCalls, 0);
+      expect(await cache.get(client.serverId, key), cachedBody);
+    });
+
+    test('accepting selector serves cache after a transient transport failure', () async {
+      const key = '/metadata/transient-fallback';
+      await cache.put(client.serverId, key, cachedBody);
+      final transient = MediaServerHttpException(
+        type: MediaServerHttpErrorType.connectionTimeout,
+        message: 'timed out',
+      );
+      Object? selectedError;
+      var cacheParserCalls = 0;
+      var responseParserCalls = 0;
+
+      final value = await client.fetchWithCacheFallback<String>(
+        cacheKey: key,
+        networkCall: () => Future<MediaServerResponse>.error(transient),
+        shouldFallback: (error) {
+          selectedError = error;
+          return error is MediaServerHttpException && error.isTransient;
+        },
+        parseCache: (cached) {
+          cacheParserCalls++;
+          return (cached as Map<String, dynamic>)['value'] as String;
+        },
+        parseResponse: (_) {
+          responseParserCalls++;
+          return 'network';
+        },
+      );
+
+      expect(value, 'cached');
+      expect(identical(selectedError, transient), isTrue);
+      expect(cacheParserCalls, 1);
+      expect(responseParserCalls, 0);
+    });
+  });
 }

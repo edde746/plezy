@@ -131,6 +131,7 @@ class _HotKeyRecorderWidgetState extends State<HotKeyRecorderWidget> {
                         onNavigateRight: canEdit && hasShortcut ? _clearFocusNode.requestFocus : null,
                         onNavigateDown: (canSave ? _saveFocusNode : _cancelFocusNode).requestFocus,
                         semanticLabel: recordLabel,
+                        semanticValue: _recordedHotKey == null ? null : formatHotKeyDisplay(_recordedHotKey!),
                         descendantsAreFocusable: false,
                         useBackgroundFocus: true,
                         child: GestureDetector(

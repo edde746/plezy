@@ -61,6 +61,7 @@ class OAuthProxyDialog extends StatelessWidget {
           FocusableWrapper(
             onSelect: () => _copyUrl(context),
             semanticLabel: t.services.oauthProxy.copyUrl,
+            semanticValue: start.url,
             descendantsAreFocusable: false,
             borderRadius: 8,
             useBackgroundFocus: true,

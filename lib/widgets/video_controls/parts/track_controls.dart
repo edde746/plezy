@@ -134,7 +134,9 @@ extension _PlexVideoControlsTrackMethods on _PlexVideoControlsState {
           : const <MediaSubtitleTrack>[],
       selectedSubtitleChoice: canSwitchSourceSubtitles ? versionQuality.selectedSubtitleChoice : null,
       selectedSecondarySubtitleStreamId: canSwitchSourceSubtitles ? widget.selectedSecondarySubtitleStreamId : null,
-      sourceSubtitleSidecarIds: canSwitchSourceSubtitles ? widget.sourceSubtitleSidecarIds : const <int>{},
+      sourceSubtitleSidecars: canSwitchSourceSubtitles
+          ? widget.sourceSubtitleSidecars
+          : const <PlaybackSubtitleSidecar>[],
       sourcePartId: canSwitchSourceSubtitles ? widget.sourcePartId : null,
       sourceDurationMs: widget.metadata.durationMs,
       boxFitMode: widget.boxFitMode,

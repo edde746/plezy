@@ -10,6 +10,7 @@ import 'package:plezy/services/trackers/tracker_session.dart';
 import 'package:plezy/services/trackers/mal/mal_tracker.dart';
 import 'package:plezy/services/trackers/simkl/simkl_tracker.dart';
 
+import '../test_helpers/io_fakes.dart';
 import '../test_helpers/prefs.dart';
 
 final _malStore = trackerAccountStore(TrackerService.mal);
@@ -60,6 +61,31 @@ void main() {
       expect(p.isConnecting(TrackerService.anilist), isFalse);
       expect(p.isConnecting(TrackerService.simkl), isFalse);
       p.dispose();
+    });
+
+    test('forTesting owns one fresh client per eager auth owner', () {
+      final clients = <FakeHttpClient>[];
+      final p = TrackersProvider.forTesting(
+        connectPipeline: _ControlledConnectPipeline(_mal()).call,
+        httpClientFactory: () {
+          final client = FakeHttpClient(200, const <int>[]);
+          clients.add(client);
+          return client;
+        },
+      );
+
+      expect(clients, hasLength(4));
+      expect(clients.toSet(), hasLength(4));
+      for (final client in clients) {
+        expect(client.closeCount, 0);
+      }
+
+      p.dispose();
+
+      for (final client in clients) {
+        expect(client.closeCount, 1);
+        expect(client.isClosed, isTrue);
+      }
     });
 
     test('onActiveProfileChanged loads sessions from per-profile stores', () async {

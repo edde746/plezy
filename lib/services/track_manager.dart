@@ -259,30 +259,18 @@ class TrackManager {
     final hasAnyTracks = tracks.audio.isNotEmpty || tracks.subtitle.isNotEmpty;
     if (!hasAnyTracks) return false;
 
-    final info = mediaInfo;
-    if (info == null || info.subtitleTracks.isEmpty) return true;
-    if (tracks.subtitle.isEmpty) return false;
-
-    final nativeSubtitleTracks = tracks.subtitle
+    final realAudioTracks = tracks.audio
+        .where((track) => track.id != AudioTrack.auto.id && track.id != AudioTrack.off.id)
+        .toList(growable: false);
+    final realSubtitleTracks = tracks.subtitle
         .where((track) => track.id != SubtitleTrack.auto.id && track.id != SubtitleTrack.off.id)
         .toList(growable: false);
-    final preferred = preferredSubtitleTrack;
-    final preferredHasSemanticIdentity =
-        preferred != null &&
-        preferred.id != SubtitleTrack.off.id &&
-        (preferred.id.startsWith('source:') ||
-            preferred.uri != null ||
-            preferred.title != null ||
-            preferred.language != null);
-    if (preferredHasSemanticIdentity) {
-      final service = TrackSelectionService(metadata: metadata, plexMediaInfo: info);
-      return service.findBestSubtitleMatch(nativeSubtitleTracks, preferred) != null;
-    }
+    final service = TrackSelectionService(metadata: metadata, plexMediaInfo: mediaInfo);
+    final selectedAudioTrack = service.selectAudioTrack(realAudioTracks, preferredAudioTrack)?.track;
 
-    final serverSelectedTrack = info.subtitleTracks.where((track) => track.selected).firstOrNull;
-    if (serverSelectedTrack == null) return true;
-    return findMpvTrackForPlexSubtitle(serverSelectedTrack, nativeSubtitleTracks, allPlexTracks: info.subtitleTracks) !=
-        null;
+    // Selection owns the catalog-completeness decision. A null subtitle result
+    // is the only state in which a requested source track can still arrive.
+    return service.selectSubtitleTrack(realSubtitleTracks, preferredSubtitleTrack, selectedAudioTrack) != null;
   }
 
   /// Core track selection: delegates to [TrackSelectionService]. Returns
