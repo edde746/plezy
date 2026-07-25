@@ -18,6 +18,7 @@ import '../navigation/main_screen_scope.dart';
 import '../media/media_hub.dart';
 import '../media/media_item.dart';
 import '../screens/hub_detail_screen.dart';
+import '../services/device_performance.dart';
 import '../services/settings_service.dart';
 import '../theme/mono_tokens.dart';
 import '../utils/media_image_helper.dart';
@@ -407,6 +408,7 @@ class TvBrowseRailState extends State<TvBrowseRail> {
   final FocusNode _focusNode = FocusNode(debugLabel: 'tv_browse_rail');
   final Map<String, ScrollController> _scrollControllers = {};
   final ScrollController _verticalController = ScrollController();
+  final SnapshotController _verticalScrollSnapshotController = SnapshotController();
   final Map<int, GlobalKey> _hubSectionKeys = {};
   final Map<String, GlobalKey<MediaCardState>> _mediaCardKeys = {};
   final Map<String, TvBrowseRailLayoutMetrics> _metricsByHub = {};
@@ -429,6 +431,7 @@ class TvBrowseRailState extends State<TvBrowseRail> {
   VoidCallback? _gestureSignalListener;
   bool _suppressSelectUntilKeyUp = false;
   bool _hasUserChangedHub = false;
+  int _verticalScrollGeneration = 0;
   bool _hasUserChangedItem = false;
 
   MediaHub? get _activeHub => widget.hubs.isEmpty ? null : widget.hubs[_hubIndex.clamp(0, widget.hubs.length - 1)];
@@ -610,6 +613,8 @@ class TvBrowseRailState extends State<TvBrowseRail> {
       controller.dispose();
     }
     _verticalController.dispose();
+    _verticalScrollGeneration++;
+    _verticalScrollSnapshotController.dispose();
     super.dispose();
   }
 
@@ -797,14 +802,16 @@ class TvBrowseRailState extends State<TvBrowseRail> {
       if (_verticalController.hasClients && _hubIndex >= 0 && _hubIndex < _sectionOffsets.length) {
         final target = _sectionOffsets[_hubIndex].clamp(0.0, _sectionMaxScrollExtent).toDouble();
         if (animate) {
-          unawaited(
-            _verticalController.animateTo(
+          _startVerticalScrollAnimation(
+            () => _verticalController.animateTo(
               target,
               duration: const Duration(milliseconds: 250),
               curve: Curves.easeOutCubic,
             ),
           );
         } else {
+          _verticalScrollGeneration++;
+          _verticalScrollSnapshotController.allowSnapshotting = false;
           _verticalController.jumpTo(target);
         }
         return;
@@ -813,16 +820,37 @@ class TvBrowseRailState extends State<TvBrowseRail> {
       final key = _hubSectionKeys[_hubIndex];
       final context = key?.currentContext;
       if (context == null) return;
-
-      unawaited(
-        Scrollable.ensureVisible(
-          context,
-          alignment: 0,
-          duration: animate ? const Duration(milliseconds: 250) : Duration.zero,
-          curve: Curves.easeOutCubic,
-        ),
-      );
+      if (animate) {
+        _startVerticalScrollAnimation(
+          () => Scrollable.ensureVisible(
+            context,
+            alignment: 0,
+            duration: const Duration(milliseconds: 250),
+            curve: Curves.easeOutCubic,
+          ),
+        );
+      } else {
+        _verticalScrollGeneration++;
+        _verticalScrollSnapshotController.allowSnapshotting = false;
+        unawaited(Scrollable.ensureVisible(context, alignment: 0, duration: Duration.zero));
+      }
     });
+  }
+
+  void _startVerticalScrollAnimation(Future<void> Function() animate) {
+    final generation = ++_verticalScrollGeneration;
+    // Full-tier row effects must stay live. The reduced tier has already
+    // resolved those short effects to their final state before this snapshot.
+    final useSnapshots = DevicePerformance.isReduced;
+    if (useSnapshots) {
+      _verticalScrollSnapshotController.allowSnapshotting = true;
+    }
+    unawaited(
+      animate().whenComplete(() {
+        if (!mounted || generation != _verticalScrollGeneration) return;
+        _verticalScrollSnapshotController.allowSnapshotting = false;
+      }),
+    );
   }
 
   void _setHoveredItem(MediaHub hub, int index) {
@@ -1195,31 +1223,36 @@ class TvBrowseRailState extends State<TvBrowseRail> {
         // below is passed through as a stable child.
         bool isActiveHub() => _focusModel.hubIndex == hubIndex;
 
-        return SizedBox(
-          key: _hubSectionKeys.putIfAbsent(hubIndex, () => GlobalKey()),
-          height: sectionHeight,
-          child: Column(
-            crossAxisAlignment: .stretch,
-            children: [
-              ListenableSelector<bool>(
-                listenable: _focusModel,
-                selector: isActiveHub,
-                builder: (context, isActive, _) =>
-                    _buildHubHeader(context, hub: hub, hubIndex: hubIndex, isActive: isActive, scale: scale),
-              ),
-              SizedBox(height: TvBrowseRailLayout.hubStripGapForScale(scale)),
-              _buildHubRail(
-                hub: hub,
-                hubIndex: hubIndex,
-                episodePosterMode: modes[hubIndex],
-                metrics: metrics,
-                scale: scale,
-                fullCardLayout: fullCardLayout,
-                leftOverflow: leftOverflow,
-                interactionExpansion: interactionExpansion,
-                railViewportWidth: railViewportWidth,
-              ),
-            ],
+        return SnapshotWidget(
+          controller: _verticalScrollSnapshotController,
+          mode: SnapshotMode.permissive,
+          autoresize: true,
+          child: SizedBox(
+            key: _hubSectionKeys.putIfAbsent(hubIndex, () => GlobalKey()),
+            height: sectionHeight,
+            child: Column(
+              crossAxisAlignment: .stretch,
+              children: [
+                ListenableSelector<bool>(
+                  listenable: _focusModel,
+                  selector: isActiveHub,
+                  builder: (context, isActive, _) =>
+                      _buildHubHeader(context, hub: hub, hubIndex: hubIndex, isActive: isActive, scale: scale),
+                ),
+                SizedBox(height: TvBrowseRailLayout.hubStripGapForScale(scale)),
+                _buildHubRail(
+                  hub: hub,
+                  hubIndex: hubIndex,
+                  episodePosterMode: modes[hubIndex],
+                  metrics: metrics,
+                  scale: scale,
+                  fullCardLayout: fullCardLayout,
+                  leftOverflow: leftOverflow,
+                  interactionExpansion: interactionExpansion,
+                  railViewportWidth: railViewportWidth,
+                ),
+              ],
+            ),
           ),
         );
       },

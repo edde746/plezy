@@ -316,6 +316,50 @@ void main() {
     semantics.dispose();
   });
 
+  testWidgets('TV cards collapse pointer-only detail semantics without a screen reader', (tester) async {
+    final semantics = tester.ensureSemantics();
+    TvDetectionService.debugSetAppleTVOverride(true);
+    final item = testMediaItem(
+      id: 'tv_semantic_movie',
+      kind: MediaKind.movie,
+      title: 'TV Semantic Movie',
+      summary: 'TV decorative summary',
+    );
+
+    await tester.pumpWidget(
+      _TestApp(
+        child: SizedBox(width: 200, height: 330, child: MediaCard(item: item, forceGridMode: true, isOffline: true)),
+      ),
+    );
+
+    final card = tester.getSemantics(find.bySemanticsLabel(mediaCardSemanticLabel(item))).getSemanticsData();
+    expect(card.flagsCollection.isButton, isTrue);
+    expect(card.hasAction(ui.SemanticsAction.tap), isTrue);
+    expect(find.bySemanticsLabel('TV Semantic Movie'), findsNothing);
+    expect(find.bySemanticsLabel(RegExp('TV decorative summary')), findsNothing);
+    semantics.dispose();
+  });
+
+  testWidgets('TV cards preserve detail semantics for accessible navigation', (tester) async {
+    final semantics = tester.ensureSemantics();
+    TvDetectionService.debugSetAppleTVOverride(true);
+    final item = testMediaItem(id: 'tv_accessible_movie', kind: MediaKind.movie, title: 'Accessible TV Movie');
+
+    await tester.pumpWidget(
+      _TestApp(
+        child: MediaQuery(
+          data: const MediaQueryData(accessibleNavigation: true),
+          child: SizedBox(width: 200, height: 330, child: MediaCard(item: item, forceGridMode: true, isOffline: true)),
+        ),
+      ),
+    );
+
+    final detail = tester.getSemantics(find.bySemanticsLabel('Accessible TV Movie')).getSemanticsData();
+    expect(detail.flagsCollection.isButton, isTrue);
+    expect(detail.hasAction(ui.SemanticsAction.tap), isTrue);
+    semantics.dispose();
+  });
+
   testWidgets('custom card actions keep detail-link semantics disabled in grid and list modes', (tester) async {
     final semantics = tester.ensureSemantics();
     final item = testMediaItem(

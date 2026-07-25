@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter/rendering.dart';
 
 import '../widgets/clickable_cursor.dart';
 import '../utils/text_input_diagnostics.dart';
@@ -19,6 +20,62 @@ String _describeFocusableKey(KeyEvent event) {
 
 void _logFocusableWrapper(String message) {
   TextInputDiagnostics.log('FocusableWrapper', message);
+}
+
+/// Applies a visual scale without changing hit-test or semantics geometry.
+///
+/// Focus scale is paint-only: animating a [Transform] marks the transformed
+/// subtree's semantics dirty on every frame, which is costly for dense TV
+/// grids. Keeping layout and semantics static preserves the same visible
+/// motion without rebuilding the accessibility tree.
+class _PaintScale extends SingleChildRenderObjectWidget {
+  const _PaintScale({required this.scale, required super.child});
+
+  final double scale;
+
+  @override
+  RenderObject createRenderObject(BuildContext context) => _RenderPaintScale(scale);
+
+  @override
+  void updateRenderObject(BuildContext context, _RenderPaintScale renderObject) {
+    renderObject.scale = scale;
+  }
+}
+
+class _RenderPaintScale extends RenderProxyBox {
+  _RenderPaintScale(double scale) : _scale = scale;
+
+  final Matrix4 _transform = Matrix4.identity();
+  double _scale;
+
+  set scale(double value) {
+    if (_scale == value) return;
+    _scale = value;
+    markNeedsPaint();
+  }
+
+  @override
+  void paint(PaintingContext context, Offset offset) {
+    if (child == null) return;
+    if (_scale == 1) {
+      layer = null;
+      super.paint(context, offset);
+      return;
+    }
+
+    _transform
+      ..setIdentity()
+      ..setEntry(0, 0, _scale)
+      ..setEntry(1, 1, _scale)
+      ..setTranslationRaw((1 - _scale) * size.width / 2, (1 - _scale) * size.height / 2, 0);
+    layer = context.pushTransform(
+      needsCompositing,
+      offset,
+      _transform,
+      super.paint,
+      oldLayer: layer is TransformLayer ? layer as TransformLayer? : null,
+    );
+  }
 }
 
 /// A wrapper widget that makes its child focusable with D-pad navigation support.
@@ -475,46 +532,46 @@ class _FocusableWrapperState extends State<FocusableWrapper> with SingleTickerPr
         controller.duration = duration;
       }
 
+      final shouldScale = showFocus && !widget.disableScale;
+      // Keep the card subtree outside the scale builder. Rebuilding media-card
+      // semantics on every animation tick is substantially more expensive than
+      // changing the paint transform alone on dense TV grids.
+      Widget card;
+      if (widget.delegateFocusBorder) {
+        card = CardFocusScope(showFocus: showFocus, child: widget.child);
+      } else {
+        final focusDecoration = widget.useBackgroundFocus
+            ? FocusTheme.focusBackgroundDecoration(
+                isFocused: showFocus,
+                borderRadius: widget.borderRadius,
+                radii: widget.borderRadii,
+              )
+            : FocusTheme.focusDecoration(
+                context,
+                isFocused: showFocus,
+                borderRadius: widget.borderRadius,
+                radii: widget.borderRadii,
+                color: widget.focusColor,
+              );
+        card = AnimatedContainer(
+          duration: duration,
+          curve: Curves.easeOutCubic,
+          decoration: focusDecoration,
+          child: widget.child,
+        );
+      }
+      if (widget.useFocusGlow) {
+        card = FocusGlowOverlay(
+          isFocused: showFocus,
+          borderRadius: widget.borderRadius,
+          color: widget.focusColor ?? FocusTheme.getFocusBorderColor(context),
+          child: card,
+        );
+      }
       inner = AnimatedBuilder(
         animation: _scaleAnimation!,
-        builder: (context, child) {
-          final shouldScale = showFocus && !widget.disableScale;
-          // The glow (full-bleed cards) is drawn in an overlay above siblings so
-          // it stays symmetric; the in-card decoration only carries the border.
-          Widget card;
-          if (widget.delegateFocusBorder) {
-            card = CardFocusScope(showFocus: showFocus, child: widget.child);
-          } else {
-            final focusDecoration = widget.useBackgroundFocus
-                ? FocusTheme.focusBackgroundDecoration(
-                    isFocused: showFocus,
-                    borderRadius: widget.borderRadius,
-                    radii: widget.borderRadii,
-                  )
-                : FocusTheme.focusDecoration(
-                    context,
-                    isFocused: showFocus,
-                    borderRadius: widget.borderRadius,
-                    radii: widget.borderRadii,
-                    color: widget.focusColor,
-                  );
-            card = AnimatedContainer(
-              duration: duration,
-              curve: Curves.easeOutCubic,
-              decoration: focusDecoration,
-              child: widget.child,
-            );
-          }
-          if (widget.useFocusGlow) {
-            card = FocusGlowOverlay(
-              isFocused: showFocus,
-              borderRadius: widget.borderRadius,
-              color: widget.focusColor ?? FocusTheme.getFocusBorderColor(context),
-              child: card,
-            );
-          }
-          return Transform.scale(scale: shouldScale ? _scaleAnimation!.value : 1.0, child: card);
-        },
+        child: card,
+        builder: (context, child) => _PaintScale(scale: shouldScale ? _scaleAnimation!.value : 1.0, child: child!),
       );
     }
 

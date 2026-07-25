@@ -11,6 +11,7 @@ import 'package:plezy/media/media_item.dart';
 import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/providers/multi_server_provider.dart';
 import 'package:plezy/services/data_aggregation_service.dart';
+import 'package:plezy/services/device_performance.dart';
 import 'package:plezy/services/multi_server_manager.dart';
 import 'package:plezy/services/settings_service.dart';
 import 'package:plezy/theme/mono_theme.dart';
@@ -394,6 +395,69 @@ void main() {
 
     await tester.sendKeyUpEvent(LogicalKeyboardKey.arrowRight);
     semantics.dispose();
+  });
+
+  testWidgets('low-end snapshot optimization preserves vertical scroll animation', (tester) async {
+    DevicePerformance.debugReset(autoReduced: true);
+    addTearDown(DevicePerformance.debugReset);
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(1280, 720);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.view.resetPhysicalSize);
+
+    final serverManager = MultiServerManager();
+    final hubs = List.generate(6, (hubIndex) {
+      final item = testMediaItem(
+        id: 'movie_$hubIndex',
+        backend: MediaBackend.plex,
+        kind: MediaKind.movie,
+        title: 'Movie $hubIndex',
+      );
+      return MediaHub(id: 'hub_$hubIndex', title: 'Hub $hubIndex', type: 'movie', items: [item], size: 1);
+    });
+
+    await tester.pumpWidget(
+      ChangeNotifierProvider<MultiServerProvider>(
+        create: (_) => MultiServerProvider(serverManager, DataAggregationService(serverManager)),
+        child: InputModeTracker(
+          child: MaterialApp(
+            theme: monoTheme(dark: true),
+            home: Scaffold(
+              body: SizedBox(
+                width: 1280,
+                height: 720,
+                child: TvBrowseRail(
+                  focusMemory: focusMemory,
+                  hubs: hubs,
+                  autofocus: true,
+                  iconForHub: (_, _) => Icons.movie_rounded,
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+    tester.state<TvBrowseRailState>(find.byType(TvBrowseRail)).requestFocus();
+    await tester.pump();
+
+    final position = _verticalRailPosition(tester);
+    final initialOffset = position.pixels;
+    tester.widget<Semantics>(find.byKey(const ValueKey('tv_browse_rail_semantic_proxy'))).properties.onScrollDown!();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 80));
+    await tester.pump(const Duration(milliseconds: 80));
+    final animatedOffset = position.pixels;
+    expect(animatedOffset, greaterThan(initialOffset));
+    expect(tester.hasRunningAnimations, isTrue);
+
+    final snapshots = tester.widgetList<SnapshotWidget>(find.byType(SnapshotWidget));
+    expect(snapshots, isNotEmpty);
+    expect(snapshots.every((widget) => widget.controller.allowSnapshotting), isTrue);
+    await tester.pumpAndSettle();
+    expect(position.pixels, greaterThan(animatedOffset));
+    expect(snapshots.every((widget) => widget.controller.allowSnapshotting), isFalse);
   });
 
   testWidgets('active hub header uses theme foreground in light mode', (tester) async {

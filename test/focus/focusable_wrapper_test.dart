@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:plezy/focus/card_focus_scope.dart';
 import 'package:plezy/focus/focusable_wrapper.dart';
 import 'package:plezy/focus/input_mode_tracker.dart';
 
@@ -25,7 +26,7 @@ void main() {
     await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
     await tester.pump();
 
-    expect(chromeIn(Transform), findsOneWidget);
+    expect(chromeIn(AnimatedBuilder), findsOneWidget);
     expect(chromeIn(AnimatedContainer), findsOneWidget);
   });
 
@@ -77,5 +78,47 @@ void main() {
 
     expect(longPressed, 1);
     expect(selected, 1);
+  });
+
+  testWidgets('focus scale animation keeps child semantics geometry stable', (tester) async {
+    final semantics = tester.ensureSemantics();
+    final node = FocusNode(debugLabel: 'card');
+    addTearDown(node.dispose);
+
+    await tester.pumpWidget(
+      InputModeTracker(
+        child: MaterialApp(
+          home: Scaffold(
+            body: Center(
+              child: FocusableWrapper(
+                focusNode: node,
+                focusScale: 1.2,
+                delegateFocusBorder: true,
+                child: CardFocusBorder(
+                  child: Semantics(label: 'card content', child: SizedBox(width: 100, height: 100)),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+    node.unfocus();
+    await tester.pumpAndSettle();
+    node.requestFocus();
+    await tester.pump();
+    final semanticsOwner = tester.binding.rootPipelineOwner.semanticsOwner!;
+    var semanticsUpdates = 0;
+    void countSemanticsUpdate() => semanticsUpdates++;
+    semanticsOwner.addListener(countSemanticsUpdate);
+
+    await tester.pump(const Duration(milliseconds: 16));
+    semanticsUpdates = 0;
+    await tester.pump(const Duration(milliseconds: 16));
+
+    expect(semanticsUpdates, 0);
+    semanticsOwner.removeListener(countSemanticsUpdate);
+    semantics.dispose();
   });
 }

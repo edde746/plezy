@@ -303,7 +303,9 @@ class MediaCardState extends State<MediaCard> with ContextMenuTapMixin<MediaCard
 
     final semanticLabel = mediaCardSemanticLabel(item);
     final enableDetailLinks = widget.onTap == null;
-    final preserveDetailSemantics = enableDetailLinks && item is MediaItem && _hasPointerDetailLinks(item);
+    final preservePointerDetailSemantics = !PlatformDetector.isTV() || MediaQuery.accessibleNavigationOf(context);
+    final preserveDetailSemantics =
+        preservePointerDetailSemantics && enableDetailLinks && item is MediaItem && _hasPointerDetailLinks(item);
     final localPosterPath = _getLocalPosterPath(context, item);
 
     Widget cardWidget = viewMode == ViewMode.grid
