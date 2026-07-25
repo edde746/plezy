@@ -720,17 +720,12 @@ class MpvPlayerCore private constructor(
     }
   }
 
-  private fun completeFailedPublicResume(
-    intent: PublicPauseIntent,
-    failure: Throwable,
-    onComplete: ((Result<Unit>) -> Unit)?
-  ) {
-    rollbackFailedPublicPauseIntent(intent)
+  private fun completePublicResumeNoOp(onComplete: ((Result<Unit>) -> Unit)?) {
     runOnMain {
       val completion: Result<Unit> = if (disposing || !isInitialized || !scope.isActive) {
         Result.failure(CancellationException("MPV core unavailable"))
       } else {
-        Result.failure(failure)
+        Result.success(Unit)
       }
       onComplete?.invoke(completion)
     }
@@ -877,12 +872,8 @@ class MpvPlayerCore private constructor(
       if (shouldReclaimAudioFocus) {
         val focusGranted = audioFocusManager?.requestAudioFocus() == true
         if (!focusGranted) {
-          Log.w(TAG, "Audio focus request denied for public resume")
-          completeFailedPublicResume(
-            pauseIntent,
-            IllegalStateException("Audio focus unavailable for resume"),
-            onComplete
-          )
+          Log.w(TAG, "Audio focus request denied; keeping public resume pending")
+          completePublicResumeNoOp(onComplete)
           return
         }
 
@@ -913,12 +904,8 @@ class MpvPlayerCore private constructor(
           }
         }
         if (interruptedAgain) {
-          Log.d(TAG, "Public resume interrupted by a newer audio-focus loss")
-          completeFailedPublicResume(
-            pauseIntent,
-            IllegalStateException("Audio focus unavailable for resume"),
-            onComplete
-          )
+          Log.d(TAG, "Public resume deferred by a newer audio-focus loss")
+          onComplete?.invoke(Result.success(Unit))
         } else {
           if (deferredForSurface) {
             Log.d(TAG, "Deferring public resume until video output is ready")
@@ -949,10 +936,9 @@ class MpvPlayerCore private constructor(
           }
         }
         if (interruptedBeforeWrite) {
-          Result.failure(IllegalStateException("Audio focus unavailable for resume"))
-        } else {
-          Result.success(Unit)
+          Log.d(TAG, "Public resume write skipped after a newer audio-focus loss")
         }
+        Result.success(Unit)
       } catch (error: CancellationException) {
         Result.failure(error)
       } catch (error: Exception) {
@@ -974,7 +960,7 @@ class MpvPlayerCore private constructor(
           synchronized(publicPauseIntentLock) {
             publicPauseIntentGeneration == pauseIntent.generation
           }
-        if (isCurrent && completion.isSuccess) {
+        if (isCurrent && completion.isSuccess && !interruptedBeforeWrite) {
           if (paused == true) {
             cachedPaused = true
             pausedForSurfaceLoss = false

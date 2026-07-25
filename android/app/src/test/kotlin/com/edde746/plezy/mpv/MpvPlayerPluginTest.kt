@@ -320,7 +320,7 @@ class MpvPlayerPluginTest {
   }
 
   @Test
-  fun deniedExplicitResumeFocusRequestFailsWithoutWriting() {
+  fun deniedExplicitResumeFocusRequestCompletesWithoutWriting() {
     val writes = ConcurrentLinkedQueue<Pair<String, String>>()
     val focusResumeCallbacks = AtomicInteger()
     val core = testCore { name, value -> writes += name to value }
@@ -344,12 +344,13 @@ class MpvPlayerPluginTest {
     }
     awaitCondition { coreOutcome != null }
 
-    assertTrue(coreOutcome?.isFailure == true)
-    assertFalse(coreOutcome?.exceptionOrNull() is CancellationException)
+    assertTrue(coreOutcome?.isSuccess == true)
     assertEquals(1, coreCompletionCount.get())
     assertEquals(0, writes.count { it == "pause" to "no" })
     assertEquals(true, getBoolean(core, "pausedForAudioFocusLoss"))
     assertEquals(true, getBoolean(core, "cachedPaused"))
+    assertEquals(false, getBoolean(core, "desiredPaused"))
+    assertEquals(false, getBoolean(core, "resumeBlockedByPublicPause"))
 
     setNextAudioFocusRequestResponse(focusManager, AudioManager.AUDIOFOCUS_REQUEST_FAILED)
     val denied = RecordingResult()
@@ -360,7 +361,7 @@ class MpvPlayerPluginTest {
     awaitCompletion(denied)
 
     assertEquals(1, denied.completionCount)
-    assertEquals("SET_PROPERTY_FAILED", denied.errorCode)
+    assertNull(denied.errorCode)
     assertEquals(0, writes.count { it == "pause" to "no" })
     assertEquals(true, getBoolean(core, "pausedForAudioFocusLoss"))
 
@@ -466,7 +467,7 @@ class MpvPlayerPluginTest {
     }
 
     assertTrue(blockerOutcome?.isSuccess == true)
-    assertTrue(resumeOutcome?.isFailure == true)
+    assertTrue(resumeOutcome?.isSuccess == true)
     assertEquals(1, resumeCompletionCount.get())
     assertEquals(0, writes.count { it == "pause" to "no" })
     assertEquals(true, getBoolean(core, "pausedForAudioFocusLoss"))
