@@ -1,6 +1,7 @@
 import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/focus/focus_glow_overlay.dart';
 import 'package:plezy/focus/focus_theme.dart';
@@ -313,6 +314,54 @@ void main() {
       expect(find.bySemanticsLabel(scenario.decorativeLabel), findsNothing);
     }
 
+    semantics.dispose();
+  });
+
+  testWidgets('TV cards keep focus semantics only for accessible navigation', (tester) async {
+    final semantics = tester.ensureSemantics();
+    TvDetectionService.debugSetAppleTVOverride(true);
+    final focusNode = FocusNode(debugLabel: 'semantic_card');
+    addTearDown(focusNode.dispose);
+    final item = testMediaItem(id: 'focus_semantic_movie', kind: MediaKind.movie, title: 'Focus Semantic Movie');
+
+    Widget card({required bool accessibleNavigation}) => _TestApp(
+      child: MediaQuery(
+        data: MediaQueryData(accessibleNavigation: accessibleNavigation),
+        child: SizedBox(
+          width: 200,
+          height: 330,
+          child: FocusableMediaCard(item: item, forceGridMode: true, focusNode: focusNode, isOffline: true),
+        ),
+      ),
+    );
+    bool hasFocusedSemantics() {
+      final nodes = <SemanticsNode>[];
+      void collect(SemanticsNode node) {
+        nodes.add(node);
+        node.visitChildren((child) {
+          collect(child);
+          return true;
+        });
+      }
+
+      collect(tester.binding.renderViews.single.owner!.semanticsOwner!.rootSemanticsNode!);
+      return nodes.any((node) => node.getSemanticsData().flagsCollection.isFocused == ui.Tristate.isTrue);
+    }
+
+    await tester.pumpWidget(card(accessibleNavigation: false));
+    focusNode.requestFocus();
+    await tester.pump();
+
+    final cardData = tester.getSemantics(find.bySemanticsLabel(mediaCardSemanticLabel(item))).getSemanticsData();
+    expect(cardData.flagsCollection.isButton, isTrue);
+    expect(cardData.hasAction(ui.SemanticsAction.tap), isTrue);
+    expect(hasFocusedSemantics(), isFalse);
+
+    await tester.pumpWidget(card(accessibleNavigation: true));
+    focusNode.requestFocus();
+    await tester.pump();
+
+    expect(hasFocusedSemantics(), isTrue);
     semantics.dispose();
   });
 

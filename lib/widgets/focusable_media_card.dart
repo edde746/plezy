@@ -118,6 +118,10 @@ class _FocusableMediaCardState extends State<FocusableMediaCard> {
   Widget build(BuildContext context) {
     return FocusableWrapper(
       focusNode: widget.focusNode,
+      // The MediaCard already exposes the complete static button semantics.
+      // Avoid invalidating a dense TV grid's semantics tree on every D-pad
+      // focus change unless an accessibility service needs focused state.
+      includeFocusSemantics: !PlatformDetector.isTV() || MediaQuery.accessibleNavigationOf(context),
       onSelect: () => _mediaCardKey.currentState?.handleTap(),
       onLongPress: () => _mediaCardKey.currentState?.showContextMenu(),
       onNavigateUp: widget.onNavigateUp,

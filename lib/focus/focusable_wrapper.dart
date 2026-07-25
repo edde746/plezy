@@ -199,6 +199,12 @@ class FocusableWrapper extends StatefulWidget {
   /// that would compete with this wrapper's focus handling.
   final bool descendantsAreFocusable;
 
+  /// Whether the [Focus] node contributes focusable/focused semantics.
+  ///
+  /// Keep this enabled unless an equivalent child semantic action remains and
+  /// accessibility navigation is known to be inactive.
+  final bool includeFocusSemantics;
+
   const FocusableWrapper({
     super.key,
     required this.child,
@@ -232,6 +238,7 @@ class FocusableWrapper extends StatefulWidget {
     this.useFocusGlow = false,
     this.delegateFocusBorder = false,
     this.descendantsAreFocusable = true,
+    this.includeFocusSemantics = true,
   });
 
   @override
@@ -587,6 +594,7 @@ class _FocusableWrapperState extends State<FocusableWrapper> with SingleTickerPr
     Widget result = Focus(
       focusNode: _focusNode,
       autofocus: widget.autofocus,
+      includeSemantics: widget.includeFocusSemantics,
       descendantsAreFocusable: widget.descendantsAreFocusable,
       onFocusChange: _handleFocusChange,
       onKeyEvent: _handleKeyEvent,
