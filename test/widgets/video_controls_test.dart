@@ -17,7 +17,6 @@ import 'package:plezy/services/playback_subtitle_resolver.dart';
 import 'package:plezy/providers/playback_state_provider.dart';
 import 'package:plezy/services/settings_service.dart';
 import 'package:plezy/services/video_volume_controller.dart';
-import 'package:plezy/theme/mono_tokens.dart';
 import 'package:plezy/widgets/video_controls/widgets/player_toast_indicator.dart';
 import 'package:plezy/widgets/video_controls/desktop_video_controls.dart';
 import 'package:plezy/widgets/video_controls/mobile_video_controls.dart';
@@ -36,25 +35,7 @@ import 'package:plezy/widgets/video_controls/widgets/video_timeline_bar.dart';
 import '../test_helpers/watch_together_fakes.dart';
 import '../test_helpers/media_items.dart';
 import '../test_helpers/prefs.dart';
-
-const _testTokens = MonoTokens(
-  radiusSm: 8,
-  radiusMd: 12,
-  radiusLg: 20,
-  radiusXs: 5,
-  groupGap: 2,
-  space: 8,
-  fast: Duration(milliseconds: 1),
-  normal: Duration(milliseconds: 1),
-  slow: Duration(milliseconds: 1),
-  expressive: Duration(milliseconds: 1),
-  bg: Colors.black,
-  surface: Colors.black,
-  outline: Colors.white24,
-  text: Colors.white,
-  textMuted: Colors.white70,
-  splashFactory: NoSplash.splashFactory,
-);
+import '../test_helpers/theme.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -968,7 +949,7 @@ void main() {
         ChangeNotifierProvider<WatchTogetherProvider>.value(
           value: watchTogether,
           child: MaterialApp(
-            theme: ThemeData(extensions: const [_testTokens]),
+            theme: ThemeData(extensions: const [testMonoTokens]),
             home: Scaffold(
               body: SizedBox(
                 width: 1000,
@@ -1023,7 +1004,7 @@ void main() {
         ChangeNotifierProvider<WatchTogetherProvider>.value(
           value: watchTogether,
           child: MaterialApp(
-            theme: ThemeData(extensions: const [_testTokens]),
+            theme: ThemeData(extensions: const [testMonoTokens]),
             home: Scaffold(
               body: SizedBox(
                 width: 500,
@@ -1514,7 +1495,7 @@ void main() {
             ChangeNotifierProvider<WatchTogetherProvider>.value(value: watchTogether),
           ],
           child: MaterialApp(
-            theme: ThemeData(platform: TargetPlatform.macOS, extensions: const [_testTokens]),
+            theme: ThemeData(platform: TargetPlatform.macOS, extensions: const [testMonoTokens]),
             home: Scaffold(
               body: SizedBox(
                 width: 1200,
@@ -1568,7 +1549,7 @@ void main() {
 
       await tester.pumpWidget(
         MaterialApp(
-          theme: ThemeData(extensions: const [_testTokens]),
+          theme: ThemeData(extensions: const [testMonoTokens]),
           home: Scaffold(
             body: SizedBox(
               width: 700,
@@ -1604,7 +1585,7 @@ void main() {
 
       await tester.pumpWidget(
         MaterialApp(
-          theme: ThemeData(extensions: const [_testTokens]),
+          theme: ThemeData(extensions: const [testMonoTokens]),
           home: Scaffold(
             body: SizedBox(
               width: 700,
@@ -1650,7 +1631,7 @@ void main() {
 
       await tester.pumpWidget(
         MaterialApp(
-          theme: ThemeData(extensions: const [_testTokens]),
+          theme: ThemeData(extensions: const [testMonoTokens]),
           home: Scaffold(
             body: SizedBox(
               width: 700,
@@ -1703,7 +1684,7 @@ void main() {
 
       await tester.pumpWidget(
         MaterialApp(
-          theme: ThemeData(extensions: const [_testTokens]),
+          theme: ThemeData(extensions: const [testMonoTokens]),
           home: Scaffold(
             body: SizedBox(
               width: 700,
@@ -1755,7 +1736,7 @@ void main() {
 
       await tester.pumpWidget(
         MaterialApp(
-          theme: ThemeData(extensions: const [_testTokens]),
+          theme: ThemeData(extensions: const [testMonoTokens]),
           home: Scaffold(
             body: SizedBox(
               width: 700,
@@ -1865,7 +1846,7 @@ Future<void> _pumpSkipMarkerButton(
 }) {
   return tester.pumpWidget(
     MaterialApp(
-      theme: ThemeData(extensions: const [_testTokens]),
+      theme: ThemeData(extensions: const [testMonoTokens]),
       home: Scaffold(
         body: Center(
           child: SkipMarkerButton(

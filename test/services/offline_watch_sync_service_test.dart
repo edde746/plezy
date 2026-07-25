@@ -22,6 +22,7 @@ import 'package:plezy/utils/active_client_scope.dart';
 import 'package:plezy/utils/watch_state_notifier.dart';
 
 import '../test_helpers/backend_client_fixtures.dart';
+import '../test_helpers/playback_report_fakes.dart';
 import '../test_helpers/prefs.dart';
 import '../test_helpers/media_items.dart';
 
@@ -55,7 +56,7 @@ class _FakeOfflineModeSource extends ChangeNotifier implements OfflineModeSource
   bool get hasListeners => super.hasListeners;
 }
 
-class _RecordingMediaClient implements MediaServerClient {
+class _RecordingMediaClient with PlaybackReportRecorder implements MediaServerClient {
   _RecordingMediaClient({required this.serverId, required this.backend});
 
   @override
@@ -85,36 +86,24 @@ class _RecordingMediaClient implements MediaServerClient {
       testMediaItem(id: id, backend: backend, kind: MediaKind.movie, serverId: serverId);
 
   @override
-  Future<void> reportPlaybackStarted({
-    required String itemId,
-    required Duration position,
-    Duration? duration,
-    String? playSessionId,
-    String? playMethod,
-    String? liveStreamId,
-    String? mediaSourceId,
-    int? audioStreamIndex,
-    int? subtitleStreamIndex,
-  }) async {
-    started.add((itemId: itemId, positionMs: position.inMilliseconds, durationMs: duration?.inMilliseconds));
-  }
-
-  @override
-  Future<void> reportPlaybackStopped({
-    required String itemId,
-    required Duration position,
-    Duration? duration,
-    String? playSessionId,
-    String? liveStreamId,
-    String? mediaSourceId,
-    PlaybackReportMetadata report = const PlaybackReportMetadata.live(),
-  }) async {
-    stopped.add((
-      itemId: itemId,
-      positionMs: position.inMilliseconds,
-      durationMs: duration?.inMilliseconds,
-      report: report,
-    ));
+  Future<void> onPlaybackReport(PlaybackReportCall call) async {
+    switch (call.kind) {
+      case PlaybackReportKind.started:
+        started.add((
+          itemId: call.itemId,
+          positionMs: call.position.inMilliseconds,
+          durationMs: call.duration?.inMilliseconds,
+        ));
+      case PlaybackReportKind.progress:
+        throw UnimplementedError();
+      case PlaybackReportKind.stopped:
+        stopped.add((
+          itemId: call.itemId,
+          positionMs: call.position.inMilliseconds,
+          durationMs: call.duration?.inMilliseconds,
+          report: call.report,
+        ));
+    }
   }
 
   @override

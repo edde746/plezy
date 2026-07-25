@@ -18,13 +18,13 @@ import 'package:plezy/profiles/profile_connection.dart';
 import 'package:plezy/profiles/profile_connection_registry.dart';
 import 'package:plezy/profiles/profile_registry.dart';
 import 'package:plezy/providers/multi_server_provider.dart';
-import 'package:plezy/services/data_aggregation_service.dart';
 import 'package:plezy/services/multi_server_manager.dart';
 import 'package:plezy/services/plex_auth_service.dart';
 import 'package:plezy/services/storage_service.dart';
 import 'package:plezy/utils/media_server_http_client.dart';
 import 'package:plezy/utils/media_server_timeouts.dart';
 
+import '../test_helpers/multi_server_fixtures.dart';
 import '../test_helpers/prefs.dart';
 
 /// Poll [condition] until it holds, failing after [timeout]. Used to observe
@@ -74,7 +74,7 @@ void main() {
       storage: storage,
     );
     manager = MultiServerManager();
-    multiServerProvider = MultiServerProvider(manager, DataAggregationService(manager));
+    multiServerProvider = testMultiServerProvider(manager);
     shouldDeferInitialBind = false;
     binder = ActiveProfileBinder(
       activeProfile: activeProfile,
@@ -193,7 +193,7 @@ void main() {
 
     final failingManager = _FailingPlexMultiServerManager();
     manager = failingManager;
-    multiServerProvider = MultiServerProvider(manager, DataAggregationService(manager));
+    multiServerProvider = testMultiServerProvider(manager);
     binder = ActiveProfileBinder(
       activeProfile: activeProfile,
       connections: connections,
@@ -247,7 +247,7 @@ void main() {
 
     final mixedManager = _BlockingMixedMultiServerManager();
     manager = mixedManager;
-    multiServerProvider = MultiServerProvider(manager, DataAggregationService(manager));
+    multiServerProvider = testMultiServerProvider(manager);
     binder = ActiveProfileBinder(
       activeProfile: activeProfile,
       connections: connections,
@@ -349,7 +349,7 @@ void main() {
 
       final capturingManager = _CapturingMultiServerManager();
       manager = capturingManager;
-      multiServerProvider = MultiServerProvider(manager, DataAggregationService(manager));
+      multiServerProvider = testMultiServerProvider(manager);
       binder = ActiveProfileBinder(
         activeProfile: activeProfile,
         connections: connections,
@@ -591,7 +591,7 @@ void main() {
 
     final recoveringManager = _RecordingPlexManager();
     manager = recoveringManager;
-    multiServerProvider = MultiServerProvider(manager, DataAggregationService(manager));
+    multiServerProvider = testMultiServerProvider(manager);
     binder = ActiveProfileBinder(
       activeProfile: activeProfile,
       connections: connections,
@@ -644,7 +644,7 @@ void main() {
       multiServerProvider.dispose();
 
       manager = testManager ?? _CapturingMultiServerManager();
-      multiServerProvider = MultiServerProvider(manager, DataAggregationService(manager));
+      multiServerProvider = testMultiServerProvider(manager);
       binder = ActiveProfileBinder(
         activeProfile: activeProfile,
         connections: connections,
@@ -809,7 +809,7 @@ void main() {
 
       final gated = _GatedJellyfinManager();
       manager = gated;
-      multiServerProvider = MultiServerProvider(manager, DataAggregationService(manager));
+      multiServerProvider = testMultiServerProvider(manager);
       binder = ActiveProfileBinder(
         activeProfile: activeProfile,
         connections: connections,
@@ -849,7 +849,7 @@ void main() {
 
       final gated = _GatedJellyfinManager();
       manager = gated;
-      multiServerProvider = MultiServerProvider(manager, DataAggregationService(manager));
+      multiServerProvider = testMultiServerProvider(manager);
       binder = ActiveProfileBinder(
         activeProfile: activeProfile,
         connections: connections,
@@ -890,7 +890,7 @@ void main() {
 
       final failing = _CountingFailingJellyfinManager();
       manager = failing;
-      multiServerProvider = MultiServerProvider(manager, DataAggregationService(manager));
+      multiServerProvider = testMultiServerProvider(manager);
       binder = ActiveProfileBinder(
         activeProfile: activeProfile,
         connections: connections,
@@ -929,7 +929,7 @@ void main() {
 
       var pinPrompts = 0;
       manager = _CapturingMultiServerManager();
-      multiServerProvider = MultiServerProvider(manager, DataAggregationService(manager));
+      multiServerProvider = testMultiServerProvider(manager);
       binder = ActiveProfileBinder(
         activeProfile: activeProfile,
         connections: connections,

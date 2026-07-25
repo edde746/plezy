@@ -20,6 +20,7 @@ import 'package:plezy/utils/active_client_scope.dart';
 
 import '../test_helpers/prefs.dart';
 import '../test_helpers/media_items.dart';
+import '../test_helpers/playback_report_fakes.dart';
 
 // Periodic behavior is virtualized with fake_async and the tracker's existing
 // updateInterval seam. Routing, threshold, scrobble, cadence, coalescing,
@@ -85,7 +86,7 @@ class _FakePlayer implements Player {
 
 /// Recording fake [PlexClient] that captures every progress / scrobble call
 /// without touching the network.
-class _FakePlexClient implements PlexClient {
+class _FakePlexClient with PlaybackReportRecorder implements PlexClient {
   _FakePlexClient({this.thresholdPercent = 90});
 
   /// Watched-threshold percentage to report. Defaults to 90 (matches
@@ -149,66 +150,23 @@ class _FakePlexClient implements PlexClient {
   // The interface report* methods delegate to updateProgress so existing
   // assertions on `updateProgressCalls` keep working.
   @override
-  Future<void> reportPlaybackStarted({
-    required String itemId,
-    required Duration position,
-    Duration? duration,
-    String? playSessionId,
-    String? playMethod,
-    String? liveStreamId,
-    String? mediaSourceId,
-    int? audioStreamIndex,
-    int? subtitleStreamIndex,
-  }) {
-    playbackSessionIds.add(playSessionId);
+  Future<void> onPlaybackReport(PlaybackReportCall call) {
+    playbackSessionIds.add(call.playSessionId);
     playbackStreamSelections.add((
-      mediaSourceId: mediaSourceId,
-      audioStreamIndex: audioStreamIndex,
-      subtitleStreamIndex: subtitleStreamIndex,
-    ));
-    return updateProgress(itemId, time: position.inMilliseconds, state: 'playing', duration: duration?.inMilliseconds);
-  }
-
-  @override
-  Future<void> reportPlaybackProgress({
-    required String itemId,
-    required Duration position,
-    required Duration duration,
-    bool isPaused = false,
-    String? playSessionId,
-    String? playMethod,
-    String? liveStreamId,
-    String? mediaSourceId,
-    int? audioStreamIndex,
-    int? subtitleStreamIndex,
-  }) {
-    playbackSessionIds.add(playSessionId);
-    playbackStreamSelections.add((
-      mediaSourceId: mediaSourceId,
-      audioStreamIndex: audioStreamIndex,
-      subtitleStreamIndex: subtitleStreamIndex,
+      mediaSourceId: call.mediaSourceId,
+      audioStreamIndex: call.audioStreamIndex,
+      subtitleStreamIndex: call.subtitleStreamIndex,
     ));
     return updateProgress(
-      itemId,
-      time: position.inMilliseconds,
-      state: isPaused ? 'paused' : 'playing',
-      duration: duration.inMilliseconds,
+      call.itemId,
+      time: call.position.inMilliseconds,
+      state: switch (call.kind) {
+        PlaybackReportKind.started => 'playing',
+        PlaybackReportKind.progress => call.isPaused ? 'paused' : 'playing',
+        PlaybackReportKind.stopped => 'stopped',
+      },
+      duration: call.duration?.inMilliseconds,
     );
-  }
-
-  @override
-  Future<void> reportPlaybackStopped({
-    required String itemId,
-    required Duration position,
-    Duration? duration,
-    String? playSessionId,
-    String? liveStreamId,
-    String? mediaSourceId,
-    PlaybackReportMetadata report = const PlaybackReportMetadata.live(),
-  }) {
-    playbackSessionIds.add(playSessionId);
-    playbackStreamSelections.add((mediaSourceId: mediaSourceId, audioStreamIndex: null, subtitleStreamIndex: null));
-    return updateProgress(itemId, time: position.inMilliseconds, state: 'stopped', duration: duration?.inMilliseconds);
   }
 
   // Transport-only, like production: the single watch event for the stop
@@ -1431,7 +1389,7 @@ void main() {
 
 /// A more precise fake than [_FakePlexClient]: lets the test independently
 /// fail the scrobble (markWatched) without touching the progress signals.
-class _ScrobblePreciseClient implements PlexClient {
+class _ScrobblePreciseClient with PlaybackReportRecorder implements PlexClient {
   _ScrobblePreciseClient({this.thresholdPercent = 90, this.failScrobbleFirstTime = false});
 
   final int thresholdPercent;
@@ -1472,42 +1430,7 @@ class _ScrobblePreciseClient implements PlexClient {
   }) async {}
 
   @override
-  Future<void> reportPlaybackStarted({
-    required String itemId,
-    required Duration position,
-    Duration? duration,
-    String? playSessionId,
-    String? playMethod,
-    String? liveStreamId,
-    String? mediaSourceId,
-    int? audioStreamIndex,
-    int? subtitleStreamIndex,
-  }) async {}
-
-  @override
-  Future<void> reportPlaybackProgress({
-    required String itemId,
-    required Duration position,
-    required Duration duration,
-    bool isPaused = false,
-    String? playSessionId,
-    String? playMethod,
-    String? liveStreamId,
-    String? mediaSourceId,
-    int? audioStreamIndex,
-    int? subtitleStreamIndex,
-  }) async {}
-
-  @override
-  Future<void> reportPlaybackStopped({
-    required String itemId,
-    required Duration position,
-    Duration? duration,
-    String? playSessionId,
-    String? liveStreamId,
-    String? mediaSourceId,
-    PlaybackReportMetadata report = const PlaybackReportMetadata.live(),
-  }) async {}
+  Future<void> onPlaybackReport(PlaybackReportCall call) async {}
 
   @override
   Future<void> markWatched(MediaItem item) async {

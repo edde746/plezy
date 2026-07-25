@@ -8,13 +8,12 @@ import 'package:plezy/media/media_backend.dart';
 import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/media/media_library.dart';
 import 'package:plezy/providers/multi_server_provider.dart';
-import 'package:plezy/services/data_aggregation_service.dart';
-import 'package:plezy/services/multi_server_manager.dart';
 import 'package:plezy/services/plex_api_cache.dart';
 import 'package:plezy/utils/provider_extensions.dart';
 import 'package:provider/provider.dart';
 
 import '../test_helpers/backend_client_fixtures.dart';
+import '../test_helpers/multi_server_fixtures.dart';
 
 const _missingOwnerLibrary = MediaLibrary(
   id: '1',
@@ -59,13 +58,7 @@ void main() {
     tester,
   ) async {
     final replacement = testPlexClient(serverId: ServerId('server-b'));
-    final manager = MultiServerManager()..debugRegisterClientForTesting(replacement);
-    final provider = MultiServerProvider(manager, DataAggregationService(manager));
-    addTearDown(() {
-      provider.dispose();
-      manager.dispose();
-    });
-    final context = await _pumpContext(tester, provider);
+    final context = await _pumpContext(tester, testMultiServer(clients: [replacement]).provider);
 
     expect(() => context.getPlexClientForLibrary(_missingOwnerLibrary), _throwsNoClientAvailable);
     expect(() => context.getMediaClientForLibrary(_missingOwnerLibrary), _throwsNoClientAvailable);
@@ -75,13 +68,7 @@ void main() {
     tester,
   ) async {
     final replacement = testPlexClient(serverId: ServerId('server-b'));
-    final manager = MultiServerManager()..debugRegisterClientForTesting(replacement);
-    final provider = MultiServerProvider(manager, DataAggregationService(manager));
-    addTearDown(() {
-      provider.dispose();
-      manager.dispose();
-    });
-    final context = await _pumpContext(tester, provider);
+    final context = await _pumpContext(tester, testMultiServer(clients: [replacement]).provider);
 
     for (final serverId in <String?>[null, '   ']) {
       final library = MediaLibrary(
@@ -103,15 +90,10 @@ void main() {
   testWidgets('library-qualified helpers return their registered owner even when it is marked offline', (tester) async {
     final owner = testPlexClient(serverId: ServerId('server-a'));
     final replacement = testPlexClient(serverId: ServerId('server-b'));
-    final manager = MultiServerManager()
-      ..debugRegisterClientForTesting(owner, online: false)
-      ..debugRegisterClientForTesting(replacement);
-    final provider = MultiServerProvider(manager, DataAggregationService(manager));
-    addTearDown(() {
-      provider.dispose();
-      manager.dispose();
-    });
-    final context = await _pumpContext(tester, provider);
+    final context = await _pumpContext(
+      tester,
+      testMultiServer(clients: [owner, replacement], offline: [owner]).provider,
+    );
 
     expect(context.getPlexClientForLibrary(_missingOwnerLibrary), same(owner));
     expect(context.getMediaClientForLibrary(_missingOwnerLibrary), same(owner));

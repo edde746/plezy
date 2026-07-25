@@ -4,7 +4,6 @@ import 'dart:collection';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:plezy/focus/input_mode_tracker.dart';
 import 'package:plezy/media/ids.dart';
 import 'package:plezy/media/library_filter_result.dart';
 import 'package:plezy/media/library_query.dart';
@@ -15,7 +14,6 @@ import 'package:plezy/media/media_library.dart';
 import 'package:plezy/media/media_server_client.dart';
 import 'package:plezy/media/media_sort.dart';
 import 'package:plezy/media/server_capabilities.dart';
-import 'package:plezy/navigation/main_screen_scope.dart';
 import 'package:plezy/providers/multi_server_provider.dart';
 import 'package:plezy/screens/libraries/state_messages.dart';
 import 'package:plezy/screens/libraries/tabs/library_browse_tab.dart';
@@ -23,12 +21,11 @@ import 'package:plezy/services/data_aggregation_service.dart';
 import 'package:plezy/services/multi_server_manager.dart';
 import 'package:plezy/services/settings_service.dart';
 import 'package:plezy/services/storage_service.dart';
-import 'package:plezy/theme/mono_theme.dart';
 import 'package:plezy/utils/media_server_http_client.dart';
 import 'package:plezy/utils/platform_detector.dart';
 import 'package:plezy/widgets/focusable_filter_chip.dart';
-import 'package:provider/provider.dart';
 
+import '../../test_helpers/library_tab_scaffold.dart';
 import '../../test_helpers/media_items.dart';
 import '../../test_helpers/prefs.dart';
 
@@ -52,12 +49,12 @@ void main() {
     expect(harness.clientA.pageRequestCount, 0);
 
     harness.selectedLibrary.value = harness.libraryB;
-    await _pumpRequestFrames(tester);
+    await pumpRequestFrames(tester);
     expect(find.text('Library B'), findsOneWidget);
     expect(harness.loadedLibraries, [harness.libraryB.globalKey]);
 
     sortA.complete(const []);
-    await _pumpRequestFrames(tester);
+    await pumpRequestFrames(tester);
 
     expect(find.text('Library A'), findsNothing);
     expect(find.text('Library B'), findsOneWidget);
@@ -79,7 +76,7 @@ void main() {
     expect(harness.loadedLibraries, isEmpty);
 
     harness.selectedLibrary.value = harness.libraryB;
-    await _pumpRequestFrames(tester);
+    await pumpRequestFrames(tester);
 
     expect(find.text('Library A'), findsNothing);
     expect(find.text('Library B'), findsOneWidget);
@@ -125,7 +122,7 @@ void main() {
     await _pumpUntil(tester, () => clientA.pageRequestCount == 2);
 
     emptyPage.complete(const LibraryPage<MediaItem>(items: [], totalCount: 0));
-    await _pumpRequestFrames(tester);
+    await pumpRequestFrames(tester);
 
     expect(find.byType(ErrorStateWidget), findsNothing);
     expect(find.byType(EmptyStateWidget), findsOneWidget);
@@ -135,56 +132,21 @@ void main() {
 }
 
 Future<void> _pumpHarness(WidgetTester tester, _BrowseHarness harness, {bool settle = true}) async {
-  tester.view.devicePixelRatio = 1;
-  tester.view.physicalSize = const Size(1280, 720);
-  addTearDown(() {
-    tester.view.resetDevicePixelRatio();
-    tester.view.resetPhysicalSize();
-  });
-
-  await tester.pumpWidget(
-    ChangeNotifierProvider<MultiServerProvider>.value(
-      value: harness.provider,
-      child: InputModeTracker(
-        child: MaterialApp(
-          theme: monoTheme(dark: true),
-          home: MainScreenFocusScope(
-            focusSidebar: () {},
-            focusContent: () {},
-            isSidebarFocused: false,
-            sideNavigationWidth: 0,
-            child: Scaffold(
-              body: NestedScrollView(
-                headerSliverBuilder: (context, _) => [
-                  SliverOverlapAbsorber(
-                    handle: NestedScrollView.sliverOverlapAbsorberHandleFor(context),
-                    sliver: const SliverToBoxAdapter(child: SizedBox(height: 1)),
-                  ),
-                ],
-                body: ValueListenableBuilder<MediaLibrary>(
-                  valueListenable: harness.selectedLibrary,
-                  builder: (context, library, _) => LibraryBrowseTab(
-                    library: library,
-                    canGroupByFolders: true,
-                    isActive: true,
-                    onDataLoaded: () => harness.loadedLibraries.add(library.globalKey),
-                    onBack: () => harness.chromeFocusRequests++,
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ),
+  await pumpLibraryTab(
+    tester,
+    provider: harness.provider,
+    tab: ValueListenableBuilder<MediaLibrary>(
+      valueListenable: harness.selectedLibrary,
+      builder: (context, library, _) => LibraryBrowseTab(
+        library: library,
+        canGroupByFolders: true,
+        isActive: true,
+        onDataLoaded: () => harness.loadedLibraries.add(library.globalKey),
+        onBack: () => harness.chromeFocusRequests++,
       ),
     ),
   );
-  if (settle) await _pumpRequestFrames(tester);
-}
-
-Future<void> _pumpRequestFrames(WidgetTester tester) async {
-  await tester.pump();
-  await tester.pump(const Duration(milliseconds: 100));
-  await tester.pump(const Duration(milliseconds: 500));
+  if (settle) await pumpRequestFrames(tester);
 }
 
 Future<void> _pumpUntil(WidgetTester tester, bool Function() condition) async {

@@ -10,29 +10,10 @@ import 'package:plezy/mpv/player/player_streams.dart';
 import 'package:plezy/screens/settings/subtitle_styling_screen.dart';
 import 'package:plezy/services/sleep_timer_service.dart';
 import 'package:plezy/services/settings_service.dart';
-import 'package:plezy/theme/mono_tokens.dart';
 import 'package:plezy/widgets/video_controls/sheets/video_settings_sheet.dart';
 
 import '../test_helpers/prefs.dart';
-
-const _testTokens = MonoTokens(
-  radiusSm: 4,
-  radiusMd: 8,
-  radiusLg: 20,
-  radiusXs: 5,
-  groupGap: 2,
-  space: 8,
-  fast: Duration(milliseconds: 100),
-  normal: Duration(milliseconds: 200),
-  slow: Duration(milliseconds: 300),
-  expressive: Duration(milliseconds: 300),
-  bg: Colors.black,
-  surface: Color(0xFF111111),
-  outline: Color(0xFF333333),
-  text: Colors.white,
-  textMuted: Color(0xFFAAAAAA),
-  splashFactory: NoSplash.splashFactory,
-);
+import '../test_helpers/theme.dart';
 
 void main() {
   setUpAll(() async {
@@ -82,7 +63,7 @@ void main() {
     LocaleSettings.setLocaleSync(AppLocale.ru);
     await tester.pumpWidget(
       MaterialApp(
-        theme: ThemeData(extensions: const [_testTokens]),
+        theme: ThemeData(extensions: const [testMonoTokensAnimated]),
         home: const SubtitleStylingScreen(),
       ),
     );
@@ -159,7 +140,7 @@ Future<void> _pumpSheet(
 }) async {
   await tester.pumpWidget(
     MaterialApp(
-      theme: ThemeData(extensions: const [_testTokens]),
+      theme: ThemeData(extensions: const [testMonoTokensAnimated]),
       home: Scaffold(
         body: SizedBox(
           width: 900,

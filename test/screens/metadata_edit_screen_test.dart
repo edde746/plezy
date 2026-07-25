@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:collection';
-import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:drift/native.dart';
@@ -31,6 +30,7 @@ import 'package:plezy/widgets/loading_indicator_box.dart';
 import 'package:provider/provider.dart';
 
 import '../test_helpers/backend_client_fixtures.dart';
+import '../test_helpers/http_fixtures.dart';
 import '../test_helpers/media_items.dart';
 
 void main() {
@@ -448,7 +448,7 @@ class _PlexMetadataRequests {
         path.startsWith('/library/metadata/') &&
         request.url.queryParameters['includePreferences'] == '1') {
       final id = path.split('/').last;
-      return _jsonResponse({
+      return jsonResponse({
         'MediaContainer': {
           'Metadata': [
             {
@@ -642,10 +642,6 @@ class _FakeFilePicker implements FilePickerDelegate {
   }) {
     return _results.removeFirst();
   }
-}
-
-http.Response _jsonResponse(Object body) {
-  return http.Response(jsonEncode(body), 200, headers: const {'content-type': 'application/json'});
 }
 
 http.Response _ok() => _response(200);
