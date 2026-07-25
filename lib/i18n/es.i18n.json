@@ -734,6 +734,8 @@
     "extras": "Tráilers y extras",
     "studio": "Estudio",
     "rating": "Valoración",
+    "director": "Director",
+    "directors": "Directores",
     "movie": "Película",
     "tvShow": "Serie de TV",
     "minutesLeft": "quedan ${minutes} min",

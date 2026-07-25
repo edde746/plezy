@@ -764,7 +764,7 @@ void main() {
     expect(observer.pushedRouteNames, contains(kVideoPlayerRouteName));
   });
 
-  group('watch state freshness (phone layout)', () {
+  group('phone layout', () {
     MediaItem buildShow({String? summary}) => testMediaItem(
       id: 'show_1',
       backend: MediaBackend.jellyfin,
@@ -903,6 +903,43 @@ void main() {
         },
       );
     }
+
+    testWidgets('shows directors when they are the only additional info', (tester) async {
+      final movie = testMediaItem(
+        id: 'director_only',
+        backend: MediaBackend.plex,
+        kind: MediaKind.movie,
+        title: 'Director-only metadata',
+        directors: ['Jane Director'],
+        serverId: 'server_1',
+        serverName: 'Server',
+      );
+      final client = _FakeMediaServerClient(show: movie, childrenByParent: const {});
+
+      await pumpPhoneDetail(tester, client, movie);
+
+      expect(find.text('Director'), findsOneWidget);
+      expect(find.text('Jane Director'), findsOneWidget);
+    });
+
+    testWidgets('omits the director row for an empty list', (tester) async {
+      final movie = testMediaItem(
+        id: 'no_directors',
+        backend: MediaBackend.plex,
+        kind: MediaKind.movie,
+        title: 'No directors',
+        studio: 'Example Studio',
+        directors: const [],
+        serverId: 'server_1',
+        serverName: 'Server',
+      );
+      final client = _FakeMediaServerClient(show: movie, childrenByParent: const {});
+
+      await pumpPhoneDetail(tester, client, movie);
+
+      expect(find.text('Example Studio'), findsOneWidget);
+      expect(find.text('Director'), findsNothing);
+    });
 
     FocusNode overviewFocusNode(WidgetTester tester) {
       final overviewFocus = find.byWidgetPredicate(

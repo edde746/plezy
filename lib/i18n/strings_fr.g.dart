@@ -940,6 +940,8 @@ class _Translations$discover$fr extends Translations$discover$en {
 	@override String get extras => 'Bandes-annonces et bonus';
 	@override String get studio => 'Studio';
 	@override String get rating => 'Évaluation';
+	@override String get director => 'Réalisateur';
+	@override String get directors => 'Réalisateurs';
 	@override String get movie => 'Film';
 	@override String get tvShow => 'Série TV';
 	@override String minutesLeft({required Object minutes}) => '${minutes} min restantes';
@@ -2832,6 +2834,8 @@ extension on TranslationsFr {
 			'discover.extras' => 'Bandes-annonces et bonus',
 			'discover.studio' => 'Studio',
 			'discover.rating' => 'Évaluation',
+			'discover.director' => 'Réalisateur',
+			'discover.directors' => 'Réalisateurs',
 			'discover.movie' => 'Film',
 			'discover.tvShow' => 'Série TV',
 			'discover.minutesLeft' => ({required Object minutes}) => '${minutes} min restantes',
@@ -3173,10 +3177,10 @@ extension on TranslationsFr {
 			'watchTogether.joinCurrentPlaybackDescription' => 'Reprendre le contenu que l’hôte regarde actuellement',
 			'watchTogether.failedToOpenCurrentPlayback' => 'Impossible d\'ouvrir la lecture en cours',
 			'watchTogether.participantJoined' => ({required Object name}) => '${name} a rejoint',
-			'watchTogether.participantLeft' => ({required Object name}) => '${name} est parti',
-			'watchTogether.participantPaused' => ({required Object name}) => '${name} a mis en pause',
 			_ => null,
 		} ?? switch (path) {
+			'watchTogether.participantLeft' => ({required Object name}) => '${name} est parti',
+			'watchTogether.participantPaused' => ({required Object name}) => '${name} a mis en pause',
 			'watchTogether.participantResumed' => ({required Object name}) => '${name} a repris',
 			'watchTogether.participantSeeked' => ({required Object name}) => '${name} a changé la position de lecture',
 			'watchTogether.participantBuffering' => ({required Object name}) => 'La lecture de ${name} est en cours de mise en mémoire tampon',

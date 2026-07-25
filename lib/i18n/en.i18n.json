@@ -734,6 +734,8 @@
     "extras": "Trailers & Extras",
     "studio": "Studio",
     "rating": "Rating",
+    "director": "Director",
+    "directors": "Directors",
     "movie": "Movie",
     "tvShow": "TV Show",
     "minutesLeft": "${minutes} min left",

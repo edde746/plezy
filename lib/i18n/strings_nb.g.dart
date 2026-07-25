@@ -940,6 +940,8 @@ class _Translations$discover$nb extends Translations$discover$en {
 	@override String get extras => 'Trailere og ekstramateriale';
 	@override String get studio => 'Studio';
 	@override String get rating => 'Vurdering';
+	@override String get director => 'Regissør';
+	@override String get directors => 'Regissører';
 	@override String get movie => 'Film';
 	@override String get tvShow => 'TV-serie';
 	@override String minutesLeft({required Object minutes}) => '${minutes} min igjen';
@@ -2832,6 +2834,8 @@ extension on TranslationsNb {
 			'discover.extras' => 'Trailere og ekstramateriale',
 			'discover.studio' => 'Studio',
 			'discover.rating' => 'Vurdering',
+			'discover.director' => 'Regissør',
+			'discover.directors' => 'Regissører',
 			'discover.movie' => 'Film',
 			'discover.tvShow' => 'TV-serie',
 			'discover.minutesLeft' => ({required Object minutes}) => '${minutes} min igjen',
@@ -3173,10 +3177,10 @@ extension on TranslationsNb {
 			'watchTogether.joinCurrentPlaybackDescription' => 'Hopp tilbake til det verten ser på nå',
 			'watchTogether.failedToOpenCurrentPlayback' => 'Kunne ikke åpne gjeldende avspilling',
 			'watchTogether.participantJoined' => ({required Object name}) => '${name} ble med',
-			'watchTogether.participantLeft' => ({required Object name}) => '${name} forlot',
-			'watchTogether.participantPaused' => ({required Object name}) => '${name} satte avspillingen på pause',
 			_ => null,
 		} ?? switch (path) {
+			'watchTogether.participantLeft' => ({required Object name}) => '${name} forlot',
+			'watchTogether.participantPaused' => ({required Object name}) => '${name} satte avspillingen på pause',
 			'watchTogether.participantResumed' => ({required Object name}) => '${name} startet avspillingen igjen',
 			'watchTogether.participantSeeked' => ({required Object name}) => '${name} endret avspillingsposisjonen',
 			'watchTogether.participantBuffering' => ({required Object name}) => '${name} buffrer',

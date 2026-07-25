@@ -940,6 +940,8 @@ class _Translations$discover$nl extends Translations$discover$en {
 	@override String get extras => 'Trailers en extra\'s';
 	@override String get studio => 'Studio';
 	@override String get rating => 'Beoordeling';
+	@override String get director => 'Regisseur';
+	@override String get directors => 'Regisseurs';
 	@override String get movie => 'Film';
 	@override String get tvShow => 'Tv-serie';
 	@override String minutesLeft({required Object minutes}) => 'nog ${minutes} min';
@@ -2832,6 +2834,8 @@ extension on TranslationsNl {
 			'discover.extras' => 'Trailers en extra\'s',
 			'discover.studio' => 'Studio',
 			'discover.rating' => 'Beoordeling',
+			'discover.director' => 'Regisseur',
+			'discover.directors' => 'Regisseurs',
 			'discover.movie' => 'Film',
 			'discover.tvShow' => 'Tv-serie',
 			'discover.minutesLeft' => ({required Object minutes}) => 'nog ${minutes} min',
@@ -3173,10 +3177,10 @@ extension on TranslationsNl {
 			'watchTogether.joinCurrentPlaybackDescription' => 'Ga terug naar wat de host nu kijkt',
 			'watchTogether.failedToOpenCurrentPlayback' => 'Wat nu wordt afgespeeld kon niet worden geopend',
 			'watchTogether.participantJoined' => ({required Object name}) => '${name} is toegetreden',
-			'watchTogether.participantLeft' => ({required Object name}) => '${name} heeft de sessie verlaten',
-			'watchTogether.participantPaused' => ({required Object name}) => '${name} heeft gepauzeerd',
 			_ => null,
 		} ?? switch (path) {
+			'watchTogether.participantLeft' => ({required Object name}) => '${name} heeft de sessie verlaten',
+			'watchTogether.participantPaused' => ({required Object name}) => '${name} heeft gepauzeerd',
 			'watchTogether.participantResumed' => ({required Object name}) => '${name} heeft hervat',
 			'watchTogether.participantSeeked' => ({required Object name}) => '${name} heeft de afspeelpositie gewijzigd',
 			'watchTogether.participantBuffering' => ({required Object name}) => '${name} is aan het bufferen',

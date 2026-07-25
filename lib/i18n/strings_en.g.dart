@@ -2251,6 +2251,12 @@ class Translations$discover$en {
 	/// en: 'Rating'
 	String get rating => 'Rating';
 
+	/// en: 'Director'
+	String get director => 'Director';
+
+	/// en: 'Directors'
+	String get directors => 'Directors';
+
 	/// en: 'Movie'
 	String get movie => 'Movie';
 
@@ -5733,6 +5739,8 @@ extension on Translations {
 			'discover.extras' => 'Trailers & Extras',
 			'discover.studio' => 'Studio',
 			'discover.rating' => 'Rating',
+			'discover.director' => 'Director',
+			'discover.directors' => 'Directors',
 			'discover.movie' => 'Movie',
 			'discover.tvShow' => 'TV Show',
 			'discover.minutesLeft' => ({required Object minutes}) => '${minutes} min left',
@@ -6071,10 +6079,10 @@ extension on Translations {
 			'watchTogether.reconnectingToHost' => 'Reconnecting to host...',
 			'watchTogether.currentPlayback' => 'Current Playback',
 			'watchTogether.joinCurrentPlayback' => 'Join Current Playback',
-			'watchTogether.joinCurrentPlaybackDescription' => 'Jump back into what the host is currently watching',
-			'watchTogether.failedToOpenCurrentPlayback' => 'Failed to open current playback',
 			_ => null,
 		} ?? switch (path) {
+			'watchTogether.joinCurrentPlaybackDescription' => 'Jump back into what the host is currently watching',
+			'watchTogether.failedToOpenCurrentPlayback' => 'Failed to open current playback',
 			'watchTogether.participantJoined' => ({required Object name}) => '${name} joined',
 			'watchTogether.participantLeft' => ({required Object name}) => '${name} left',
 			'watchTogether.participantPaused' => ({required Object name}) => '${name} paused',

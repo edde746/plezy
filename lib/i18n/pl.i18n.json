@@ -736,6 +736,8 @@
     "extras": "Zwiastuny i dodatki",
     "studio": "Studio",
     "rating": "Ocena",
+    "director": "Reżyser",
+    "directors": "Reżyserzy",
     "movie": "Film",
     "tvShow": "Serial TV",
     "minutesLeft": "Pozostało ${minutes} min",

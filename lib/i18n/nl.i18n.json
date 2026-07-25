@@ -734,6 +734,8 @@
     "extras": "Trailers en extra's",
     "studio": "Studio",
     "rating": "Beoordeling",
+    "director": "Regisseur",
+    "directors": "Regisseurs",
     "movie": "Film",
     "tvShow": "Tv-serie",
     "minutesLeft": "nog ${minutes} min",

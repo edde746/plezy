@@ -733,6 +733,8 @@
     "extras": "預告片與花絮",
     "studio": "製作商",
     "rating": "分級",
+    "director": "導演",
+    "directors": "導演",
     "movie": "電影",
     "tvShow": "影集",
     "minutesLeft": "剩餘 ${minutes} 分鐘",

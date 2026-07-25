@@ -939,6 +939,8 @@ class _Translations$discover$ko extends Translations$discover$en {
 	@override String get extras => '예고편 및 부가영상';
 	@override String get studio => '제작사';
 	@override String get rating => '연령 등급';
+	@override String get director => '감독';
+	@override String get directors => '감독';
 	@override String get movie => '영화';
 	@override String get tvShow => 'TV 시리즈';
 	@override String minutesLeft({required Object minutes}) => '${minutes}분 남음';
@@ -2829,6 +2831,8 @@ extension on TranslationsKo {
 			'discover.extras' => '예고편 및 부가영상',
 			'discover.studio' => '제작사',
 			'discover.rating' => '연령 등급',
+			'discover.director' => '감독',
+			'discover.directors' => '감독',
 			'discover.movie' => '영화',
 			'discover.tvShow' => 'TV 시리즈',
 			'discover.minutesLeft' => ({required Object minutes}) => '${minutes}분 남음',
@@ -3170,10 +3174,10 @@ extension on TranslationsKo {
 			'watchTogether.joinCurrentPlaybackDescription' => '호스트가 현재 시청 중인 콘텐츠로 이동합니다',
 			'watchTogether.failedToOpenCurrentPlayback' => '현재 재생을 열 수 없습니다',
 			'watchTogether.participantJoined' => ({required Object name}) => '${name}님이 참여했습니다',
-			'watchTogether.participantLeft' => ({required Object name}) => '${name}님이 나갔습니다',
-			'watchTogether.participantPaused' => ({required Object name}) => '${name}님이 일시정지했습니다',
 			_ => null,
 		} ?? switch (path) {
+			'watchTogether.participantLeft' => ({required Object name}) => '${name}님이 나갔습니다',
+			'watchTogether.participantPaused' => ({required Object name}) => '${name}님이 일시정지했습니다',
 			'watchTogether.participantResumed' => ({required Object name}) => '${name}님이 재생했습니다',
 			'watchTogether.participantSeeked' => ({required Object name}) => '${name}님이 재생 위치를 변경했습니다',
 			'watchTogether.participantBuffering' => ({required Object name}) => '${name}님이 버퍼링 중입니다',

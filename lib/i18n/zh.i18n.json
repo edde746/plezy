@@ -733,6 +733,8 @@
     "extras": "预告片与花絮",
     "studio": "制作公司",
     "rating": "年龄分级",
+    "director": "导演",
+    "directors": "导演",
     "movie": "电影",
     "tvShow": "电视剧",
     "minutesLeft": "剩余 ${minutes} 分钟",

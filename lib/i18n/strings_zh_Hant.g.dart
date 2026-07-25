@@ -940,6 +940,8 @@ class _Translations$discover$zh_Hant extends Translations$discover$zh {
 	@override String get extras => '預告片與花絮';
 	@override String get studio => '製作商';
 	@override String get rating => '分級';
+	@override String get director => '導演';
+	@override String get directors => '導演';
 	@override String get movie => '電影';
 	@override String get tvShow => '影集';
 	@override String minutesLeft({required Object minutes}) => '剩餘 ${minutes} 分鐘';
@@ -2830,6 +2832,8 @@ extension on TranslationsZhHant {
 			'discover.extras' => '預告片與花絮',
 			'discover.studio' => '製作商',
 			'discover.rating' => '分級',
+			'discover.director' => '導演',
+			'discover.directors' => '導演',
 			'discover.movie' => '電影',
 			'discover.tvShow' => '影集',
 			'discover.minutesLeft' => ({required Object minutes}) => '剩餘 ${minutes} 分鐘',
@@ -3171,10 +3175,10 @@ extension on TranslationsZhHant {
 			'watchTogether.joinCurrentPlaybackDescription' => '同步至主持人目前的觀看進度',
 			'watchTogether.failedToOpenCurrentPlayback' => '無法開啟目前播放點',
 			'watchTogether.participantJoined' => ({required Object name}) => '${name} 已加入',
-			'watchTogether.participantLeft' => ({required Object name}) => '${name} 已離開',
-			'watchTogether.participantPaused' => ({required Object name}) => '${name} 暫停了播放',
 			_ => null,
 		} ?? switch (path) {
+			'watchTogether.participantLeft' => ({required Object name}) => '${name} 已離開',
+			'watchTogether.participantPaused' => ({required Object name}) => '${name} 暫停了播放',
 			'watchTogether.participantResumed' => ({required Object name}) => '${name} 恢復了播放',
 			'watchTogether.participantSeeked' => ({required Object name}) => '${name} 變更了播放位置',
 			'watchTogether.participantBuffering' => ({required Object name}) => '${name} 正在緩衝',

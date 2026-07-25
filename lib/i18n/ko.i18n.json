@@ -733,6 +733,8 @@
     "extras": "예고편 및 부가영상",
     "studio": "제작사",
     "rating": "연령 등급",
+    "director": "감독",
+    "directors": "감독",
     "movie": "영화",
     "tvShow": "TV 시리즈",
     "minutesLeft": "${minutes}분 남음",

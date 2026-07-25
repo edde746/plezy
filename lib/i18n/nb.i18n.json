@@ -734,6 +734,8 @@
     "extras": "Trailere og ekstramateriale",
     "studio": "Studio",
     "rating": "Vurdering",
+    "director": "Regissør",
+    "directors": "Regissører",
     "movie": "Film",
     "tvShow": "TV-serie",
     "minutesLeft": "${minutes} min igjen",

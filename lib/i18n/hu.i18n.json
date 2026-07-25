@@ -734,6 +734,8 @@
     "extras": "Előzetesek és extrák",
     "studio": "Stúdió",
     "rating": "Értékelés",
+    "director": "Rendező",
+    "directors": "Rendezők",
     "movie": "Film",
     "tvShow": "TV-sorozat",
     "minutesLeft": "${minutes} perc van hátra",

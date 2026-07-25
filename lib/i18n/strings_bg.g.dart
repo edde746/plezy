@@ -940,6 +940,8 @@ class _Translations$discover$bg extends Translations$discover$en {
 	@override String get extras => 'Трейлъри и екстри';
 	@override String get studio => 'Студио';
 	@override String get rating => 'Рейтинг';
+	@override String get director => 'Режисьор';
+	@override String get directors => 'Режисьори';
 	@override String get movie => 'Филм';
 	@override String get tvShow => 'ТВ сериал';
 	@override String minutesLeft({required Object minutes}) => 'Остават ${minutes} мин';
@@ -2832,6 +2834,8 @@ extension on TranslationsBg {
 			'discover.extras' => 'Трейлъри и екстри',
 			'discover.studio' => 'Студио',
 			'discover.rating' => 'Рейтинг',
+			'discover.director' => 'Режисьор',
+			'discover.directors' => 'Режисьори',
 			'discover.movie' => 'Филм',
 			'discover.tvShow' => 'ТВ сериал',
 			'discover.minutesLeft' => ({required Object minutes}) => 'Остават ${minutes} мин',
@@ -3173,10 +3177,10 @@ extension on TranslationsBg {
 			'watchTogether.joinCurrentPlaybackDescription' => 'Върнете се към това, което организаторът гледа в момента',
 			'watchTogether.failedToOpenCurrentPlayback' => 'Неуспешно отваряне на текущото възпроизвеждане',
 			'watchTogether.participantJoined' => ({required Object name}) => '${name} се присъедини',
-			'watchTogether.participantLeft' => ({required Object name}) => '${name} напусна',
-			'watchTogether.participantPaused' => ({required Object name}) => '${name} постави на пауза',
 			_ => null,
 		} ?? switch (path) {
+			'watchTogether.participantLeft' => ({required Object name}) => '${name} напусна',
+			'watchTogether.participantPaused' => ({required Object name}) => '${name} постави на пауза',
 			'watchTogether.participantResumed' => ({required Object name}) => '${name} продължи',
 			'watchTogether.participantSeeked' => ({required Object name}) => '${name} промени позицията на възпроизвеждане',
 			'watchTogether.participantBuffering' => ({required Object name}) => '${name} буферира',

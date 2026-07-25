@@ -940,6 +940,8 @@ class _Translations$discover$hu extends Translations$discover$en {
 	@override String get extras => 'Előzetesek és extrák';
 	@override String get studio => 'Stúdió';
 	@override String get rating => 'Értékelés';
+	@override String get director => 'Rendező';
+	@override String get directors => 'Rendezők';
 	@override String get movie => 'Film';
 	@override String get tvShow => 'TV-sorozat';
 	@override String minutesLeft({required Object minutes}) => '${minutes} perc van hátra';
@@ -2832,6 +2834,8 @@ extension on TranslationsHu {
 			'discover.extras' => 'Előzetesek és extrák',
 			'discover.studio' => 'Stúdió',
 			'discover.rating' => 'Értékelés',
+			'discover.director' => 'Rendező',
+			'discover.directors' => 'Rendezők',
 			'discover.movie' => 'Film',
 			'discover.tvShow' => 'TV-sorozat',
 			'discover.minutesLeft' => ({required Object minutes}) => '${minutes} perc van hátra',
@@ -3173,10 +3177,10 @@ extension on TranslationsHu {
 			'watchTogether.joinCurrentPlaybackDescription' => 'Visszatérés ahhoz, amit a házigazda éppen néz',
 			'watchTogether.failedToOpenCurrentPlayback' => 'Nem sikerült megnyitni a jelenlegi lejátszást',
 			'watchTogether.participantJoined' => ({required Object name}) => '${name} csatlakozott',
-			'watchTogether.participantLeft' => ({required Object name}) => '${name} kilépett',
-			'watchTogether.participantPaused' => ({required Object name}) => '${name} szüneteltette a lejátszást',
 			_ => null,
 		} ?? switch (path) {
+			'watchTogether.participantLeft' => ({required Object name}) => '${name} kilépett',
+			'watchTogether.participantPaused' => ({required Object name}) => '${name} szüneteltette a lejátszást',
 			'watchTogether.participantResumed' => ({required Object name}) => '${name} folytatta a lejátszást',
 			'watchTogether.participantSeeked' => ({required Object name}) => '${name} módosította a lejátszási pozíciót',
 			'watchTogether.participantBuffering' => ({required Object name}) => '${name} pufferel',

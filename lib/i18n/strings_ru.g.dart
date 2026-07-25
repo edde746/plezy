@@ -942,6 +942,8 @@ class _Translations$discover$ru extends Translations$discover$en {
 	@override String get extras => 'Трейлеры и доп. материалы';
 	@override String get studio => 'Студия';
 	@override String get rating => 'Рейтинг';
+	@override String get director => 'Режиссёр';
+	@override String get directors => 'Режиссёры';
 	@override String get movie => 'Фильм';
 	@override String get tvShow => 'Сериал';
 	@override String minutesLeft({required Object minutes}) => 'Осталось ${minutes} мин';
@@ -2838,6 +2840,8 @@ extension on TranslationsRu {
 			'discover.extras' => 'Трейлеры и доп. материалы',
 			'discover.studio' => 'Студия',
 			'discover.rating' => 'Рейтинг',
+			'discover.director' => 'Режиссёр',
+			'discover.directors' => 'Режиссёры',
 			'discover.movie' => 'Фильм',
 			'discover.tvShow' => 'Сериал',
 			'discover.minutesLeft' => ({required Object minutes}) => 'Осталось ${minutes} мин',
@@ -3179,10 +3183,10 @@ extension on TranslationsRu {
 			'watchTogether.joinCurrentPlaybackDescription' => 'Вернуться к материалу, который сейчас смотрит организатор',
 			'watchTogether.failedToOpenCurrentPlayback' => 'Не удалось открыть текущее воспроизведение',
 			'watchTogether.participantJoined' => ({required Object name}) => '${name} присоединился',
-			'watchTogether.participantLeft' => ({required Object name}) => '${name} вышел',
-			'watchTogether.participantPaused' => ({required Object name}) => '${name} поставил на паузу',
 			_ => null,
 		} ?? switch (path) {
+			'watchTogether.participantLeft' => ({required Object name}) => '${name} вышел',
+			'watchTogether.participantPaused' => ({required Object name}) => '${name} поставил на паузу',
 			'watchTogether.participantResumed' => ({required Object name}) => '${name} возобновил',
 			'watchTogether.participantSeeked' => ({required Object name}) => '${name} перемотал',
 			'watchTogether.participantBuffering' => ({required Object name}) => 'У ${name} идёт буферизация',

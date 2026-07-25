@@ -2008,10 +2008,10 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
 
   bool get _hasInfoRows {
     final metadata = _fullMetadata ?? _metadata;
-    return metadata.studio != null || metadata.contentRating != null;
+    return metadata.studio != null || metadata.directors?.isNotEmpty == true || metadata.contentRating != null;
   }
 
-  /// Focus the trailing info rows (studio / contentRating) and scroll them into view.
+  /// Focus the trailing info rows (studio / directors / contentRating) and scroll them into view.
   void _focusInfoRows() {
     _infoRowsFocusNode.requestFocus();
     _scrollSectionIntoView(_infoRowsSectionKey);
@@ -3246,6 +3246,13 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
                                     children: [
                                       if (metadata.studio != null) ...[
                                         _buildInfoRow(t.discover.studio, metadata.studio!),
+                                        const SizedBox(height: 12),
+                                      ],
+                                      if (metadata.directors?.isNotEmpty == true) ...[
+                                        _buildInfoRow(
+                                          metadata.directors!.length > 1 ? t.discover.directors : t.discover.director,
+                                          metadata.directors!.join(', '),
+                                        ),
                                         const SizedBox(height: 12),
                                       ],
                                       if (metadata.contentRating != null) ...[
