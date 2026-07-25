@@ -20,6 +20,11 @@ class FlutterRendererPolicyTest {
   }
 
   @Test
+  fun ordinary32BitAndroidTvUsesSkia() {
+    assertEquals(FlutterRenderer.SKIA, select(manufacturer = "SEI Robotics", is64Bit = false))
+  }
+
+  @Test
   fun unsupportedTvsStayOnSkia() {
     assertEquals(FlutterRenderer.SKIA, select(sdkInt = 30))
     assertEquals(FlutterRenderer.SKIA, select(supportsVulkan11 = false))
@@ -38,7 +43,7 @@ class FlutterRendererPolicyTest {
   fun ordinaryAndroidDevicesKeepAutomaticImpellerBackend() {
     assertEquals(
       FlutterRenderer.IMPELLER,
-      select(manufacturer = "Samsung", isAndroidTv = false, sdkInt = 28, supportsVulkan11 = false)
+      select(manufacturer = "Samsung", isAndroidTv = false, sdkInt = 28, supportsVulkan11 = false, is64Bit = false)
     )
   }
 

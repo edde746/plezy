@@ -32,12 +32,9 @@ internal object FlutterRendererPolicy {
       return FlutterRenderer.SKIA
     }
 
-    // Impeller's Vulkan and OpenGLES backends both leave stale frames on the
-    // affected 32-bit TCL TV when Plezy uses its transparent TextureView
-    // composition (#1658). Restore the pre-2.9.0 Skia path for this hardware.
-    if (!is64Bit && manufacturer.equals("TCL", ignoreCase = true)) {
-      return FlutterRenderer.SKIA
-    }
+    // 32-bit Android TV SoCs are the low-memory / low-throughput class. Skia avoids
+    // Impeller/Vulkan's substantially higher raster cost on these devices.
+    if (!is64Bit) return FlutterRenderer.SKIA
 
     return FlutterRenderer.IMPELLER
   }
