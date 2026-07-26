@@ -10,13 +10,15 @@ from workflow_yaml import iter_uses_references, job_block
 
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_WORKFLOW = ROOT / ".github/workflows/build.yml"
-# The shared bootstrap both windows-arm jobs call, and the pins it must keep.
-SETUP_FLUTTER_GIT = ROOT / ".github/actions/setup-flutter-git/action.yml"
 FLUTTER_VERSION = "3.44.0"
 FLUTTER_COMMIT = "559ffa3f75e7402d65a8def9c28389a9b2e6fe42"
 if len(sys.argv) > 2:
     raise SystemExit(f"Usage: {Path(sys.argv[0]).name} [workflow-path]")
 WORKFLOW = Path(sys.argv[1]).resolve() if len(sys.argv) == 2 else DEFAULT_WORKFLOW
+# The shared bootstrap both windows-arm jobs call, and the pins it must keep.
+# Resolved beside the workflow rather than from ROOT so that checking a fixture
+# tree exercises this rule instead of silently re-reading the real action.
+SETUP_FLUTTER_GIT = WORKFLOW.parents[1] / "actions/setup-flutter-git/action.yml"
 text = WORKFLOW.read_text(encoding="utf-8")
 errors: list[str] = []
 

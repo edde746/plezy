@@ -7,6 +7,7 @@ from contextlib import redirect_stderr, redirect_stdout
 from dataclasses import replace
 import io
 from pathlib import Path
+import re
 import shlex
 import subprocess
 import sys
@@ -23,10 +24,14 @@ ROOT_DIR = Path(__file__).resolve().parent.parent
 SCRIPTS_DIR = ROOT_DIR / "scripts"
 LOCAL_SCRIPT_TEST_DISPATCHER = SCRIPTS_DIR / "ci_checks.sh"
 CI_SCRIPT_TEST_DISPATCHER = ROOT_DIR / ".github/workflows/ci.yml"
+# The guard roster both dispatchers above delegate to. It discovers the script
+# tests by glob, so a new scripts/test_*.py is picked up without being listed.
+GUARD_SCRIPT_TEST_DISPATCHER = SCRIPTS_DIR / "ci_guard_checks.sh"
 E2E_WORKFLOW = ROOT_DIR / ".github/workflows/e2e.yml"
 SCRIPT_TEST_DISPATCHERS = (
     LOCAL_SCRIPT_TEST_DISPATCHER,
     CI_SCRIPT_TEST_DISPATCHER,
+    GUARD_SCRIPT_TEST_DISPATCHER,
     SCRIPTS_DIR / "ci_website_checks.sh",
 )
 REGRESSION_FLOWS_DIR = ROOT_DIR / ".maestro/regression_flows"
@@ -67,8 +72,14 @@ def _executable_script_tests() -> set[str]:
 def _dispatched_script_tests(path: Path) -> list[str]:
     dispatched = []
     for line in path.read_text(encoding="utf-8").splitlines():
+        stripped = line.strip()
+        # `for guard_test in scripts/test_*.py; do` dispatches the whole roster.
+        loop = re.match(r"for\s+\w+\s+in\s+(scripts/test_[^;\s]*\.py)\s*;?\s*(?:do)?$", stripped)
+        if loop:
+            dispatched.extend(sorted(match.name for match in ROOT_DIR.glob(loop.group(1))))
+            continue
         try:
-            command = shlex.split(line.strip(), comments=True)
+            command = shlex.split(stripped, comments=True)
         except ValueError:
             continue
         if len(command) < 2 or Path(command[0]).name not in {"python", "python3"}:
@@ -115,14 +126,19 @@ class ScriptTestDispatchTests(unittest.TestCase):
         self.assertSetEqual(dispatched, _executable_script_tests())
 
     def test_real_jellyfin_fixture_test_is_in_local_and_ci_guards(self) -> None:
+        # Both aggregates reach the roster through the shared guard script, so
+        # the fixture test is covered exactly when the glob picks it up.
         for dispatcher in (LOCAL_SCRIPT_TEST_DISPATCHER, CI_SCRIPT_TEST_DISPATCHER):
             with self.subTest(dispatcher=dispatcher):
-                self.assertEqual(
-                    _dispatched_script_tests(dispatcher).count(
-                        "test_maestro_real_jellyfin.py"
-                    ),
-                    1,
+                self.assertIn(
+                    f"bash {GUARD_SCRIPT_TEST_DISPATCHER.relative_to(ROOT_DIR).as_posix()}",
+                    dispatcher.read_text(encoding="utf-8"),
                 )
+
+        self.assertEqual(
+            _dispatched_script_tests(GUARD_SCRIPT_TEST_DISPATCHER).count("test_maestro_real_jellyfin.py"),
+            1,
+        )
 
 
 class ParseConfigTests(unittest.TestCase):

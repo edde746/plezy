@@ -11,13 +11,21 @@ import unittest
 ROOT = Path(__file__).resolve().parents[1]
 CHECKER = ROOT / "scripts/check_build_workflow.py"
 WORKFLOW = ROOT / ".github/workflows/build.yml"
+SETUP_FLUTTER_GIT = ROOT / ".github/actions/setup-flutter-git/action.yml"
 
 
 class BuildWorkflowGuardTest(unittest.TestCase):
-    def _run(self, workflow: str) -> subprocess.CompletedProcess[str]:
+    def _run(self, workflow: str, action: str | None = None) -> subprocess.CompletedProcess[str]:
         with tempfile.TemporaryDirectory(prefix="plezy-build-workflow-test-") as directory:
-            fixture = Path(directory) / "build.yml"
+            # The checker resolves the shared bootstrap beside the workflow, so
+            # the fixture has to mirror the real `.github` layout.
+            github = Path(directory) / ".github"
+            fixture = github / "workflows/build.yml"
+            fixture.parent.mkdir(parents=True)
             fixture.write_text(workflow, encoding="utf-8")
+            bootstrap = github / "actions/setup-flutter-git/action.yml"
+            bootstrap.parent.mkdir(parents=True)
+            bootstrap.write_text(action if action is not None else self._action(), encoding="utf-8")
             return subprocess.run(
                 [sys.executable, str(CHECKER), str(fixture)],
                 cwd=ROOT,
@@ -29,6 +37,9 @@ class BuildWorkflowGuardTest(unittest.TestCase):
     def _workflow(self) -> str:
         return WORKFLOW.read_text(encoding="utf-8")
 
+    def _action(self) -> str:
+        return SETUP_FLUTTER_GIT.read_text(encoding="utf-8")
+
     def test_locked_root_signer_passes(self) -> None:
         result = self._run(self._workflow())
 
@@ -36,16 +47,17 @@ class BuildWorkflowGuardTest(unittest.TestCase):
         self.assertIn("architecture matrix checks passed", result.stdout)
 
     def test_windows_arm_flutter_without_release_tag_is_rejected(self) -> None:
-        workflow = self._workflow().replace(
-            "git -C $root fetch --depth 1 origin refs/tags/3.44.0:refs/tags/3.44.0",
+        action = self._action().replace(
+            'git -C $root fetch --depth 1 origin "refs/tags/${version}:refs/tags/${version}"',
             "git -C $root fetch --depth 1 origin 559ffa3f75e7402d65a8def9c28389a9b2e6fe42",
             1,
         )
+        self.assertNotEqual(action, self._action(), "fixture mutation no longer matches the action")
 
-        result = self._run(workflow)
+        result = self._run(self._workflow(), action)
 
         self.assertNotEqual(result.returncode, 0)
-        self.assertIn("refs/tags/3.44.0", result.stderr)
+        self.assertIn("refs/tags/${version}", result.stderr)
 
     def test_mutable_download_in_signing_step_is_rejected(self) -> None:
         workflow = self._workflow().replace(
