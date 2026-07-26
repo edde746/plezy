@@ -1135,53 +1135,29 @@ class MediaContextMenuState extends State<MediaContextMenu> {
 
       if (result == null || !context.mounted) return;
 
-      if (result == '_create_new') {
-        final playlistName = await showTextInputDialog(
-          context,
+      await _addItemToContainer<MediaPlaylist>(
+        context,
+        kind: 'playlist',
+        item: item,
+        client: client,
+        result: result,
+        createPrompt: (
           title: t.playlists.create,
-          labelText: t.playlists.playlistName,
-          hintText: t.playlists.enterPlaylistName,
-        );
-
-        if (playlistName == null || playlistName.isEmpty || !context.mounted) {
-          return;
-        }
-
-        appLogger.d('Creating playlist "$playlistName" seeded with item ${item.id}');
-        final newPlaylist = await client.createPlaylist(title: playlistName, items: [item]);
-
-        if (!context.mounted) return;
-
-        if (context.mounted) {
-          if (newPlaylist != null) {
-            appLogger.d('Successfully created playlist: ${newPlaylist.title}');
-            showSuccessSnackBar(context, t.playlists.created);
-            // Trigger refresh of playlists tab
-            LibraryRefreshNotifier().notifyPlaylistsChanged();
-          } else {
-            appLogger.e('Failed to create playlist - API returned null');
-            showErrorSnackBar(context, t.playlists.errorCreating);
-          }
-        }
-      } else {
-        appLogger.d('Adding item ${item.id} to playlist $result');
-        final success = await client.addToPlaylist(playlistId: result, items: [item]);
-
-        if (!context.mounted) return;
-
-        if (context.mounted) {
-          if (success) {
-            appLogger.d('Successfully added item(s) to playlist $result');
-            showSuccessSnackBar(context, t.playlists.itemAdded);
-            // Trigger refresh of playlists tab
-            LibraryRefreshNotifier().notifyPlaylistsChanged();
-            _triggerEagerSyncIfRuleExists(context, client.serverId, result);
-          } else {
-            appLogger.e('Failed to add item(s) to playlist $result - API returned false');
-            showErrorSnackBar(context, t.playlists.errorAdding);
-          }
-        }
-      }
+          label: t.playlists.playlistName,
+          hint: t.playlists.enterPlaylistName,
+        ),
+        create: (name) => client.createPlaylist(title: name, items: [item]),
+        createdLog: (playlist) => 'Successfully created playlist: ${playlist.title}',
+        eagerSyncId: (_) => null,
+        add: () => client.addToPlaylist(playlistId: result, items: [item]),
+        messages: (
+          created: t.playlists.created,
+          createError: t.playlists.errorCreating,
+          added: t.playlists.itemAdded,
+          addError: t.playlists.errorAdding,
+        ),
+        notifyChanged: () => LibraryRefreshNotifier().notifyPlaylistsChanged(),
+      );
     } catch (e, stackTrace) {
       appLogger.e('Error in add to playlist flow', error: e, stackTrace: stackTrace);
       if (context.mounted) {
@@ -1239,63 +1215,102 @@ class MediaContextMenuState extends State<MediaContextMenu> {
 
       if (result == null || !context.mounted) return;
 
-      if (result == '_create_new') {
-        final collectionName = await showTextInputDialog(
-          context,
+      await _addItemToContainer<String>(
+        context,
+        kind: 'collection',
+        item: item,
+        client: client,
+        result: result,
+        createPrompt: (
           title: t.common.createNew,
-          labelText: t.collections.collectionName,
-          hintText: t.collections.enterCollectionName,
-        );
-
-        if (collectionName == null || collectionName.isEmpty || !context.mounted) {
-          return;
-        }
-
-        appLogger.d('Creating collection "$collectionName" seeded with item ${item.id}');
-        final newCollectionId = await client.createCollection(
+          label: t.collections.collectionName,
+          hint: t.collections.enterCollectionName,
+        ),
+        create: (name) => client.createCollection(
           libraryId: resolvedLibraryId,
-          title: collectionName,
+          title: name,
           items: [item],
           itemKind: itemKind,
-        );
-
-        if (!context.mounted) return;
-
-        if (context.mounted) {
-          if (newCollectionId != null) {
-            appLogger.d('Successfully created collection with ID: $newCollectionId');
-            showSuccessSnackBar(context, t.collections.created);
-            // Trigger refresh of collections tab
-            LibraryRefreshNotifier().notifyCollectionsChanged();
-            _triggerEagerSyncIfRuleExists(context, client.serverId, newCollectionId);
-          } else {
-            appLogger.e('Failed to create collection - API returned null');
-            showErrorSnackBar(context, t.collections.errorAddingToCollection);
-          }
-        }
-      } else {
-        appLogger.d('Adding item ${item.id} to collection $result');
-        final success = await client.addToCollection(collectionId: result, items: [item]);
-
-        if (!context.mounted) return;
-
-        if (context.mounted) {
-          if (success) {
-            appLogger.d('Successfully added item(s) to collection $result');
-            showSuccessSnackBar(context, t.collections.addedToCollection);
-            // Trigger refresh of collections tab
-            LibraryRefreshNotifier().notifyCollectionsChanged();
-            _triggerEagerSyncIfRuleExists(context, client.serverId, result);
-          } else {
-            appLogger.e('Failed to add item(s) to collection $result - API returned false');
-            showErrorSnackBar(context, t.collections.errorAddingToCollection);
-          }
-        }
-      }
+        ),
+        createdLog: (id) => 'Successfully created collection with ID: $id',
+        eagerSyncId: (id) => id,
+        add: () => client.addToCollection(collectionId: result, items: [item]),
+        messages: (
+          created: t.collections.created,
+          createError: t.collections.errorAddingToCollection,
+          added: t.collections.addedToCollection,
+          addError: t.collections.errorAddingToCollection,
+        ),
+        notifyChanged: () => LibraryRefreshNotifier().notifyCollectionsChanged(),
+      );
     } catch (e, stackTrace) {
       appLogger.e('Error in add to collection flow', error: e, stackTrace: stackTrace);
       if (context.mounted) {
         showErrorSnackBar(context, '${t.collections.errorAddingToCollection}: ${e.toString()}');
+      }
+    }
+  }
+
+  /// Create-or-add tail shared by the "Add to playlist" and "Add to collection"
+  /// flows. [result] is the picker selection: an existing container id, or the
+  /// `_create_new` sentinel to prompt for a name and create one via [create].
+  /// [eagerSyncId] maps a freshly created container to the id to eager-sync, or
+  /// `null` to skip it.
+  Future<void> _addItemToContainer<T extends Object>(
+    BuildContext context, {
+    required String kind,
+    required MediaItem item,
+    required MediaServerClient client,
+    required String result,
+    required ({String title, String label, String hint}) createPrompt,
+    required Future<T?> Function(String name) create,
+    required String Function(T created) createdLog,
+    required String? Function(T created) eagerSyncId,
+    required Future<bool> Function() add,
+    required ({String created, String createError, String added, String addError}) messages,
+    required VoidCallback notifyChanged,
+  }) async {
+    if (result == '_create_new') {
+      final name = await showTextInputDialog(
+        context,
+        title: createPrompt.title,
+        labelText: createPrompt.label,
+        hintText: createPrompt.hint,
+      );
+
+      if (name == null || name.isEmpty || !context.mounted) return;
+
+      appLogger.d('Creating $kind "$name" seeded with item ${item.id}');
+      final created = await create(name);
+
+      if (!context.mounted) return;
+
+      if (created != null) {
+        appLogger.d(createdLog(created));
+        showSuccessSnackBar(context, messages.created);
+        notifyChanged();
+        final syncId = eagerSyncId(created);
+        if (syncId != null) {
+          _triggerEagerSyncIfRuleExists(context, client.serverId, syncId);
+        }
+      } else {
+        appLogger.e('Failed to create $kind - API returned null');
+        showErrorSnackBar(context, messages.createError);
+      }
+    } else {
+      appLogger.d('Adding item ${item.id} to $kind $result');
+      final success = await add();
+
+      if (!context.mounted) return;
+
+      if (success) {
+        appLogger.d('Successfully added item(s) to $kind $result');
+        showSuccessSnackBar(context, messages.added);
+        notifyChanged();
+        _triggerEagerSyncIfRuleExists(context, client.serverId, result);
+      } else {
+        appLogger.e('Failed to add item(s) to $kind $result - API returned false');
+        showErrorSnackBar(context, messages.addError);
       }
     }
   }

@@ -182,85 +182,32 @@ class ShaderAssetLoader {
   /// Get the shader file paths for an Anime4K preset.
   /// Returns a list of shader paths in the correct order for MPV.
   static Future<List<String>> getAnime4KShaders(Anime4KConfig config) async {
+    final (restoreVariant, upscaleVariant) = switch (config.quality) {
+      Anime4KQuality.fast => ('restore_m', 'upscale_m'),
+      Anime4KQuality.hq => ('restore_vl', 'upscale_vl'),
+    };
+
+    // All modes start with Clamp, then apply their own ordered chain.
+    final chain = <String>[
+      'clamp',
+      ...switch (config.mode) {
+        Anime4KMode.modeA => [restoreVariant],
+        Anime4KMode.modeB => [restoreVariant, upscaleVariant, 'downscale'],
+        Anime4KMode.modeC => [upscaleVariant, 'downscale'],
+        Anime4KMode.modeAA => [restoreVariant, restoreVariant],
+        Anime4KMode.modeBB => [restoreVariant, restoreVariant, upscaleVariant, 'downscale'],
+        Anime4KMode.modeCA => [upscaleVariant, restoreVariant, 'downscale'],
+      },
+    ];
+
     final shaders = <String>[];
-    final quality = config.quality;
-    final mode = config.mode;
-
-    String restoreVariant;
-    String upscaleVariant;
-
-    switch (quality) {
-      case Anime4KQuality.fast:
-        restoreVariant = 'restore_m';
-        upscaleVariant = 'upscale_m';
-        break;
-      case Anime4KQuality.hq:
-        restoreVariant = 'restore_vl';
-        upscaleVariant = 'upscale_vl';
-        break;
-    }
-
-    // Build shader chain based on mode
-    // All modes start with Clamp
-    final clampPath = await _extractShader(_anime4kShaders['clamp']!);
-    if (clampPath != null) shaders.add(clampPath);
-
-    switch (mode) {
-      case Anime4KMode.modeA:
-        // A: Clamp + Restore
-        final restorePath = await _extractShader(_anime4kShaders[restoreVariant]!);
-        if (restorePath != null) shaders.add(restorePath);
-        break;
-
-      case Anime4KMode.modeB:
-        // B: Clamp + Restore + Upscale + Downscale
-        final restorePath = await _extractShader(_anime4kShaders[restoreVariant]!);
-        if (restorePath != null) shaders.add(restorePath);
-        final upscalePath = await _extractShader(_anime4kShaders[upscaleVariant]!);
-        if (upscalePath != null) shaders.add(upscalePath);
-        final downscalePath = await _extractShader(_anime4kShaders['downscale']!);
-        if (downscalePath != null) shaders.add(downscalePath);
-        break;
-
-      case Anime4KMode.modeC:
-        // C: Clamp + Upscale + Downscale
-        final upscalePath = await _extractShader(_anime4kShaders[upscaleVariant]!);
-        if (upscalePath != null) shaders.add(upscalePath);
-        final downscalePath = await _extractShader(_anime4kShaders['downscale']!);
-        if (downscalePath != null) shaders.add(downscalePath);
-        break;
-
-      case Anime4KMode.modeAA:
-        // A+A: Clamp + Restore + Restore
-        final restorePath = await _extractShader(_anime4kShaders[restoreVariant]!);
-        if (restorePath != null) {
-          shaders.add(restorePath);
-          shaders.add(restorePath); // Second restore pass
-        }
-        break;
-
-      case Anime4KMode.modeBB:
-        // B+B: Clamp + Restore + Restore + Upscale + Downscale
-        final restorePath = await _extractShader(_anime4kShaders[restoreVariant]!);
-        if (restorePath != null) {
-          shaders.add(restorePath);
-          shaders.add(restorePath); // Second restore pass
-        }
-        final upscalePath = await _extractShader(_anime4kShaders[upscaleVariant]!);
-        if (upscalePath != null) shaders.add(upscalePath);
-        final downscalePath = await _extractShader(_anime4kShaders['downscale']!);
-        if (downscalePath != null) shaders.add(downscalePath);
-        break;
-
-      case Anime4KMode.modeCA:
-        // C+A: Clamp + Upscale + Restore + Downscale
-        final upscalePath = await _extractShader(_anime4kShaders[upscaleVariant]!);
-        if (upscalePath != null) shaders.add(upscalePath);
-        final restorePath = await _extractShader(_anime4kShaders[restoreVariant]!);
-        if (restorePath != null) shaders.add(restorePath);
-        final downscalePath = await _extractShader(_anime4kShaders['downscale']!);
-        if (downscalePath != null) shaders.add(downscalePath);
-        break;
+    final extracted = <String, String?>{};
+    for (final key in chain) {
+      if (!extracted.containsKey(key)) {
+        extracted[key] = await _extractShader(_anime4kShaders[key]!);
+      }
+      final shaderPath = extracted[key];
+      if (shaderPath != null) shaders.add(shaderPath);
     }
 
     return shaders;

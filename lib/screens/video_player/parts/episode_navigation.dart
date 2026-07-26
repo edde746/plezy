@@ -817,7 +817,7 @@ extension _VideoPlayerEpisodeNavigationMethods on VideoPlayerScreenState {
         if (!isCurrentReload()) return _MediaReloadOutcome.superseded;
 
         if (_autoPipEnabled) {
-          unawaited(_videoPIPManager?.updateAutoPipState(isPlaying: currentPlayer.state.playing));
+          unawaited(_updateAutoPipState(isPlaying: currentPlayer.state.playing));
         }
         return _MediaReloadOutcome.opened;
       } catch (e) {

@@ -65,7 +65,6 @@ import '../services/track_manager.dart';
 import '../services/track_selection_service.dart';
 import '../services/ambient_lighting_service.dart';
 import '../services/video_filter_manager.dart';
-import '../services/video_pip_manager.dart';
 import '../services/video_volume_controller.dart';
 import '../services/pip_service.dart';
 import '../models/shader_preset.dart';
@@ -525,7 +524,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   ({bool canControlPlayback, bool canNavigateMediaItems})? _lastMediaControlAuthority;
   PlaybackProgressTracker? _progressTracker;
   VideoFilterManager? _videoFilterManager;
-  VideoPIPManager? _videoPIPManager;
+  bool _pipInitialized = false;
   ShaderService? _shaderService;
   AmbientLightingService? _ambientLightingService;
   bool _fullscreenListenerAttached = false;
@@ -1517,11 +1516,10 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     _stopLiveTimelineUpdates();
 
     _detachPipStateListener();
-    _videoPIPManager?.onBeforeEnterPip = null;
-    unawaited(_videoPIPManager?.disableAutoPip());
+    if (_pipInitialized) unawaited(PipService.setAutoPipReady(ready: false));
     _clearAutoPipEnteringCallback();
     _videoFilterManager?.dispose();
-    _videoPIPManager = null;
+    _pipInitialized = false;
     _videoFilterManager = null;
 
     _scrubPreviewSource?.dispose();

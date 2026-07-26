@@ -305,9 +305,8 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
 
             _autoPipEnteringCallback = autoPipEnteringCallback;
             PipService.onAutoPipEntering = autoPipEnteringCallback;
-            final pipManager = _videoPIPManager;
-            if (currentPlayer.state.playing && pipManager != null) {
-              unawaited(pipManager.updateAutoPipState(isPlaying: true));
+            if (currentPlayer.state.playing) {
+              unawaited(_updateAutoPipState(isPlaying: true));
             }
           }
 

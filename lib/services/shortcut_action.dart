@@ -9,8 +9,9 @@ import 'shader_service.dart';
 /// One row per action carries everything about it except the behaviour: the
 /// persisted [id], the [defaultHotKey] shipped with the app, the localized
 /// [label], and the capability flags that gate dispatch. Adding a shortcut is
-/// one entry here plus a case in `KeyboardShortcutsService._executeAction`,
-/// which the analyzer demands because that switch is exhaustive over this enum.
+/// one entry here plus a case in
+/// `KeyboardShortcutsService.handleVideoPlayerKeyEvent`, which the analyzer
+/// demands because that switch is exhaustive over this enum.
 ///
 /// Declaration order is the order shortcuts are listed in settings, and [id] is
 /// persisted in preferences — do not reorder or rename existing entries.

@@ -267,12 +267,11 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
     _stopLiveTimelineUpdates();
     _detachPipStateListener();
     _clearAutoPipEnteringCallback();
-    final videoPipManager = _videoPIPManager;
-    _videoPIPManager = null;
-    if (videoPipManager != null) {
-      videoPipManager.onBeforeEnterPip = null;
+    final pipInitialized = _pipInitialized;
+    _pipInitialized = false;
+    if (pipInitialized) {
       try {
-        await videoPipManager.disableAutoPip();
+        await PipService.setAutoPipReady(ready: false);
       } catch (e, st) {
         appLogger.w('Failed to disable auto-PiP during initialization rollback', error: e, stackTrace: st);
       }
@@ -632,7 +631,7 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
 
     // Update auto-PiP readiness
     if (_autoPipEnabled) {
-      _videoPIPManager?.updateAutoPipState(isPlaying: isPlaying);
+      unawaited(_updateAutoPipState(isPlaying: isPlaying));
     }
   }
 

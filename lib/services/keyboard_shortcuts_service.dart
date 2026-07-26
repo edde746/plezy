@@ -202,8 +202,6 @@ class KeyboardShortcutsService extends ChangeNotifier {
     VoidCallback? onVolumeUp,
     VoidCallback? onVolumeDown,
     VoidCallback? onToggleMute,
-    int? currentPositionEpoch,
-    ValueChanged<int>? onLiveSeek,
     ValueChanged<int>? onLiveSeekBy,
     Future<void> Function(Duration position)? onSeekRequested,
   }) {
@@ -277,137 +275,83 @@ class KeyboardShortcutsService extends ChangeNotifier {
           return KeyEventResult.handled;
         }
 
-        _executeAction(
-          action,
-          player,
-          onToggleFullscreen,
-          onToggleSubtitles,
-          onNextAudioTrack,
-          onNextSubtitleTrack,
-          onNextChapter,
-          onPreviousChapter,
-          onPlayPause: onPlayPause,
-          onToggleShader: onToggleShader,
-          onSkipMarker: onSkipMarker,
-          onNextEpisode: onNextEpisode,
-          onPreviousEpisode: onPreviousEpisode,
-          onScreenshot: onScreenshot,
-          onZoomIn: onZoomIn,
-          onZoomOut: onZoomOut,
-          onZoomReset: onZoomReset,
-          onVolumeUp: onVolumeUp,
-          onVolumeDown: onVolumeDown,
-          onToggleMute: onToggleMute,
-          currentPositionEpoch: currentPositionEpoch,
-          onLiveSeek: onLiveSeek,
-          onLiveSeekBy: onLiveSeekBy,
-          onSeekRequested: onSeekRequested,
-        );
+        void performSeek(int offsetSeconds) {
+          // Relative live-TV skip: route through the parent accumulator, which
+          // coalesces a rapid burst into one transcode re-open (#1253).
+          if (onLiveSeekBy != null) {
+            onLiveSeekBy(offsetSeconds);
+          } else {
+            final target = clampSeekPosition(player, player.state.position + Duration(seconds: offsetSeconds));
+            unawaited((onSeekRequested ?? player.seek)(target));
+          }
+        }
+
+        switch (action) {
+          case ShortcutAction.playPause:
+            (onPlayPause ?? player.playOrPause).call();
+          case ShortcutAction.volumeUp:
+            onVolumeUp?.call();
+          case ShortcutAction.volumeDown:
+            onVolumeDown?.call();
+          case ShortcutAction.seekForward:
+            performSeek(_seekTimeSmall);
+          case ShortcutAction.seekBackward:
+            performSeek(-_seekTimeSmall);
+          case ShortcutAction.seekForwardLarge:
+            performSeek(_seekTimeLarge);
+          case ShortcutAction.seekBackwardLarge:
+            performSeek(-_seekTimeLarge);
+          case ShortcutAction.fullscreenToggle:
+            onToggleFullscreen?.call();
+          case ShortcutAction.muteToggle:
+            onToggleMute?.call();
+          case ShortcutAction.subtitleToggle:
+            onToggleSubtitles?.call();
+          case ShortcutAction.audioTrackNext:
+            onNextAudioTrack?.call();
+          case ShortcutAction.subtitleTrackNext:
+            onNextSubtitleTrack?.call();
+          case ShortcutAction.chapterNext:
+            onNextChapter?.call();
+          case ShortcutAction.chapterPrevious:
+            onPreviousChapter?.call();
+          case ShortcutAction.episodeNext:
+            onNextEpisode?.call();
+          case ShortcutAction.episodePrevious:
+            onPreviousEpisode?.call();
+          case ShortcutAction.speedIncrease:
+            final newRateUp = (player.state.rate + 0.25).clamp(0.25, 3.0);
+            player.setRate(newRateUp);
+            _settingsService.write(SettingsService.defaultPlaybackSpeed, newRateUp);
+          case ShortcutAction.speedDecrease:
+            final newRateDown = (player.state.rate - 0.25).clamp(0.25, 3.0);
+            player.setRate(newRateDown);
+            _settingsService.write(SettingsService.defaultPlaybackSpeed, newRateDown);
+          case ShortcutAction.speedReset:
+            player.setRate(1.0);
+            _settingsService.write(SettingsService.defaultPlaybackSpeed, 1.0);
+          case ShortcutAction.subSeekNext:
+            player.command(['sub-seek', '1']);
+          case ShortcutAction.subSeekPrev:
+            player.command(['sub-seek', '-1']);
+          case ShortcutAction.shaderToggle:
+            onToggleShader?.call();
+          case ShortcutAction.skipMarker:
+            onSkipMarker?.call();
+          case ShortcutAction.screenshot:
+            unawaited(player.command(['screenshot', 'subtitles']).then((_) => onScreenshot?.call()));
+          case ShortcutAction.zoomIn:
+            onZoomIn?.call();
+          case ShortcutAction.zoomOut:
+            onZoomOut?.call();
+          case ShortcutAction.zoomReset:
+            onZoomReset?.call();
+        }
         return KeyEventResult.handled;
       }
     }
 
     return KeyEventResult.ignored;
-  }
-
-  void _executeAction(
-    ShortcutAction action,
-    Player player,
-    VoidCallback? onToggleFullscreen,
-    VoidCallback? onToggleSubtitles,
-    VoidCallback? onNextAudioTrack,
-    VoidCallback? onNextSubtitleTrack,
-    VoidCallback? onNextChapter,
-    VoidCallback? onPreviousChapter, {
-    VoidCallback? onPlayPause,
-    VoidCallback? onToggleShader,
-    VoidCallback? onSkipMarker,
-    VoidCallback? onNextEpisode,
-    VoidCallback? onPreviousEpisode,
-    VoidCallback? onScreenshot,
-    VoidCallback? onZoomIn,
-    VoidCallback? onZoomOut,
-    VoidCallback? onZoomReset,
-    VoidCallback? onVolumeUp,
-    VoidCallback? onVolumeDown,
-    VoidCallback? onToggleMute,
-    int? currentPositionEpoch,
-    ValueChanged<int>? onLiveSeek,
-    ValueChanged<int>? onLiveSeekBy,
-    Future<void> Function(Duration position)? onSeekRequested,
-  }) {
-    void performSeek(int offsetSeconds) {
-      // Relative live-TV skip: route through the parent accumulator, which
-      // coalesces a rapid burst into one transcode re-open (#1253).
-      if (onLiveSeekBy != null) {
-        onLiveSeekBy(offsetSeconds);
-      } else {
-        final target = clampSeekPosition(player, player.state.position + Duration(seconds: offsetSeconds));
-        unawaited((onSeekRequested ?? player.seek)(target));
-      }
-    }
-
-    switch (action) {
-      case ShortcutAction.playPause:
-        (onPlayPause ?? player.playOrPause).call();
-      case ShortcutAction.volumeUp:
-        onVolumeUp?.call();
-      case ShortcutAction.volumeDown:
-        onVolumeDown?.call();
-      case ShortcutAction.seekForward:
-        performSeek(_seekTimeSmall);
-      case ShortcutAction.seekBackward:
-        performSeek(-_seekTimeSmall);
-      case ShortcutAction.seekForwardLarge:
-        performSeek(_seekTimeLarge);
-      case ShortcutAction.seekBackwardLarge:
-        performSeek(-_seekTimeLarge);
-      case ShortcutAction.fullscreenToggle:
-        onToggleFullscreen?.call();
-      case ShortcutAction.muteToggle:
-        onToggleMute?.call();
-      case ShortcutAction.subtitleToggle:
-        onToggleSubtitles?.call();
-      case ShortcutAction.audioTrackNext:
-        onNextAudioTrack?.call();
-      case ShortcutAction.subtitleTrackNext:
-        onNextSubtitleTrack?.call();
-      case ShortcutAction.chapterNext:
-        onNextChapter?.call();
-      case ShortcutAction.chapterPrevious:
-        onPreviousChapter?.call();
-      case ShortcutAction.episodeNext:
-        onNextEpisode?.call();
-      case ShortcutAction.episodePrevious:
-        onPreviousEpisode?.call();
-      case ShortcutAction.speedIncrease:
-        final newRateUp = (player.state.rate + 0.25).clamp(0.25, 3.0);
-        player.setRate(newRateUp);
-        _settingsService.write(SettingsService.defaultPlaybackSpeed, newRateUp);
-      case ShortcutAction.speedDecrease:
-        final newRateDown = (player.state.rate - 0.25).clamp(0.25, 3.0);
-        player.setRate(newRateDown);
-        _settingsService.write(SettingsService.defaultPlaybackSpeed, newRateDown);
-      case ShortcutAction.speedReset:
-        player.setRate(1.0);
-        _settingsService.write(SettingsService.defaultPlaybackSpeed, 1.0);
-      case ShortcutAction.subSeekNext:
-        player.command(['sub-seek', '1']);
-      case ShortcutAction.subSeekPrev:
-        player.command(['sub-seek', '-1']);
-      case ShortcutAction.shaderToggle:
-        onToggleShader?.call();
-      case ShortcutAction.skipMarker:
-        onSkipMarker?.call();
-      case ShortcutAction.screenshot:
-        unawaited(player.command(['screenshot', 'subtitles']).then((_) => onScreenshot?.call()));
-      case ShortcutAction.zoomIn:
-        onZoomIn?.call();
-      case ShortcutAction.zoomOut:
-        onZoomOut?.call();
-      case ShortcutAction.zoomReset:
-        onZoomReset?.call();
-    }
   }
 
   String getActionDisplayName(String action) {
