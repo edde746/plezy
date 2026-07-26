@@ -13,7 +13,8 @@ void main() {
       expect(sanitizeHeaderValue('电视'), isNull);
     });
 
-    test('strips CR/LF', () {
+    test('strips HTTP control characters', () {
+      expect(sanitizeHeaderValue('\u0000Living\u001f Room\u007f TV'), 'Living Room TV');
       expect(sanitizeHeaderValue('evil\r\nX-Injected: 1'), 'evilX-Injected: 1');
     });
 

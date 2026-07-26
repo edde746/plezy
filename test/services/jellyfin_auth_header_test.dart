@@ -40,5 +40,36 @@ void main() {
       );
       expect(header, contains('Device="My cool TV"'));
     });
+
+    test('uses non-empty fallbacks for required session identity fields', () {
+      final header = buildJellyfinAuthHeader(
+        clientName: '',
+        clientVersion: '   ',
+        deviceName: '\u0000\u007f',
+        deviceId: 'dev-1',
+      );
+
+      expect(header, 'MediaBrowser Client="Plezy", Device="Plezy", DeviceId="dev-1", Version="1.0"');
+    });
+
+    test('omits an empty device ID instead of emitting a malformed field', () {
+      final header = buildJellyfinAuthHeader(
+        clientName: 'Plezy',
+        clientVersion: '1.2.3',
+        deviceName: 'Living Room',
+        deviceId: '',
+        accessToken: 'tok',
+      );
+
+      expect(header, isNot(contains('DeviceId=')));
+      expect(header, contains('Token="tok"'));
+    });
+
+    test('rejects an empty or unsafe unauthenticated device ID', () {
+      for (final deviceId in ['', ' dev-1 ', 'dev\u0000-1', '"dev-1"']) {
+        expect(() => requireJellyfinDeviceId(deviceId), throwsArgumentError);
+      }
+      expect(requireJellyfinDeviceId('dev-1'), 'dev-1');
+    });
   });
 }

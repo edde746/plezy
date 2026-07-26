@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:plezy/connection/connection.dart';
 import 'package:plezy/connection/connection_registry.dart';
 import 'package:plezy/database/app_database.dart';
@@ -312,6 +313,38 @@ class _RouteHarness {
 Future<List<DiscoveredJellyfinServer>> _noLocalServers() async => const [];
 
 void main() {
+  group('resolveJellyfinClientVersion', () {
+    PackageInfo packageInfo(String version) => PackageInfo(
+      appName: 'Plezy',
+      packageName: 'com.example.plezy',
+      version: version,
+      buildNumber: '1',
+    );
+
+    test('uses a non-empty package version', () async {
+      final version = await resolveJellyfinClientVersion(
+        packageInfoLoader: () async => packageInfo(' 2.9.1 '),
+      );
+      expect(version, '2.9.1');
+    });
+
+    test('falls back when the package version is empty', () async {
+      for (final packageVersion in ['', '   ']) {
+        final version = await resolveJellyfinClientVersion(
+          packageInfoLoader: () async => packageInfo(packageVersion),
+        );
+        expect(version, '1.0');
+      }
+    });
+
+    test('falls back when package metadata lookup throws', () async {
+      final version = await resolveJellyfinClientVersion(
+        packageInfoLoader: () async => throw StateError('version metadata unavailable'),
+      );
+      expect(version, '1.0');
+    });
+  });
+
   tearDown(() {
     TvDetectionService.debugSetAppleTVOverride(null);
     TvDetectionService.setForceTVSync(false);

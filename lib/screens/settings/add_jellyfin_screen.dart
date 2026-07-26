@@ -34,6 +34,24 @@ import 'connection_persistence.dart';
 import '../../widgets/loading_indicator_box.dart';
 
 @visibleForTesting
+Future<String> resolveJellyfinClientVersion({Future<PackageInfo> Function()? packageInfoLoader}) async {
+  const fallbackVersion = '1.0';
+  try {
+    final packageInfo = await (packageInfoLoader == null ? PackageInfo.fromPlatform() : packageInfoLoader());
+    final version = packageInfo.version.trim();
+    if (version.isNotEmpty) return version;
+    appLogger.w('Package version is empty; using Jellyfin client version $fallbackVersion');
+  } catch (error, stackTrace) {
+    appLogger.w(
+      'Failed to resolve package version; using Jellyfin client version $fallbackVersion',
+      error: error,
+      stackTrace: stackTrace,
+    );
+  }
+  return fallbackVersion;
+}
+
+@visibleForTesting
 bool shouldCreateLocalJellyfinProfile({
   required Profile? targetProfile,
   required Profile? activeProfile,
@@ -426,9 +444,9 @@ class _AddJellyfinScreenState extends State<AddJellyfinScreen> with AsyncFormSta
   Future<JellyfinConnectionAuthService> _buildAuthService() async {
     final authServiceFactory = widget._authServiceFactory;
     if (authServiceFactory != null) return await authServiceFactory();
-    final pkg = await PackageInfo.fromPlatform();
+    final clientVersion = await resolveJellyfinClientVersion();
     final deviceName = await _resolveDeviceName();
-    return JellyfinConnectionAuthService(clientName: 'Plezy', clientVersion: pkg.version, deviceName: deviceName);
+    return JellyfinConnectionAuthService(clientName: 'Plezy', clientVersion: clientVersion, deviceName: deviceName);
   }
 
   Future<String> _resolveDeviceName() async {

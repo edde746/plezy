@@ -114,6 +114,7 @@ class JellyfinConnectionAuthService implements ConnectionAuthService {
     required String deviceId,
     JellyfinServerInfo? serverInfo,
   }) async {
+    final validDeviceId = requireJellyfinDeviceId(deviceId);
     final normalised = _normaliseBaseUrl(baseUrl);
     final info = serverInfo ?? await probe(normalised);
 
@@ -121,7 +122,7 @@ class JellyfinConnectionAuthService implements ConnectionAuthService {
       clientName: clientName,
       clientVersion: clientVersion,
       deviceName: deviceName,
-      deviceId: deviceId,
+      deviceId: validDeviceId,
     );
     final client = _buildHttpClient(
       baseUrl: normalised,
@@ -147,7 +148,7 @@ class JellyfinConnectionAuthService implements ConnectionAuthService {
         userId: auth.userId,
         userName: auth.userName,
         accessToken: auth.accessToken,
-        deviceId: deviceId,
+        deviceId: validDeviceId,
         isAdministrator: auth.isAdministrator,
       );
     } finally {
@@ -181,12 +182,13 @@ class JellyfinConnectionAuthService implements ConnectionAuthService {
     required String baseUrl,
     required String deviceId,
   }) async {
+    final validDeviceId = requireJellyfinDeviceId(deviceId);
     final normalised = _normaliseBaseUrl(baseUrl);
     final authHeader = buildJellyfinAuthHeader(
       clientName: clientName,
       clientVersion: clientVersion,
       deviceName: deviceName,
-      deviceId: deviceId,
+      deviceId: validDeviceId,
     );
     final client = _buildHttpClient(baseUrl: normalised, headers: {'Authorization': authHeader});
     try {
@@ -234,6 +236,7 @@ class JellyfinConnectionAuthService implements ConnectionAuthService {
     Duration timeout = const Duration(minutes: 5),
     bool Function()? shouldCancel,
   }) async {
+    final validDeviceId = requireJellyfinDeviceId(deviceId);
     final normalised = _normaliseBaseUrl(baseUrl);
     final info = serverInfo ?? await probe(normalised);
     LogRedactionManager.registerCustomValue(secret);
@@ -242,7 +245,7 @@ class JellyfinConnectionAuthService implements ConnectionAuthService {
       clientName: clientName,
       clientVersion: clientVersion,
       deviceName: deviceName,
-      deviceId: deviceId,
+      deviceId: validDeviceId,
     );
     // Reuse a single client across the polling loop — opening one per tick
     // would churn TCP connections needlessly on a 5-minute window.
@@ -312,7 +315,7 @@ class JellyfinConnectionAuthService implements ConnectionAuthService {
         userId: auth.userId,
         userName: auth.userName,
         accessToken: auth.accessToken,
-        deviceId: deviceId,
+        deviceId: validDeviceId,
         isAdministrator: auth.isAdministrator,
       );
     } finally {

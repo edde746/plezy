@@ -99,13 +99,14 @@ class DeviceIdentityService {
 }
 
 /// Makes a free-form device name safe to send as an HTTP header value:
-/// drops CR/LF and any code unit above 0xFF (dart:io's HttpHeaders throws a
-/// FormatException on non-latin-1 — an emoji in an iPhone name would
-/// otherwise kill every request), trims, and returns null when nothing
-/// usable remains.
+/// drops HTTP control characters and code units above 0xFF (dart:io's
+/// HttpHeaders rejects them), trims, and returns null when nothing usable
+/// remains.
 String? sanitizeHeaderValue(String? value) {
   if (value == null) return null;
-  final filtered = String.fromCharCodes(value.codeUnits.where((unit) => unit != 0x0D && unit != 0x0A && unit <= 0xFF));
+  final filtered = String.fromCharCodes(
+    value.codeUnits.where((unit) => unit >= 0x20 && unit != 0x7F && unit <= 0xFF),
+  );
   final trimmed = filtered.trim();
   return trimmed.isEmpty ? null : trimmed;
 }

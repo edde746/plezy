@@ -673,4 +673,74 @@ void main() {
       expect(fired, isFalse);
     });
   });
+
+  group('Jellyfin authentication request identity', () {
+    test('password login sends the complete MediaBrowser header', () async {
+      late http.BaseRequest request;
+      final svc = _service(
+        handler: (captured) {
+          request = captured;
+          return _ok({
+            'AccessToken': 'tok-new',
+            'User': {'Id': 'user-7', 'Name': 'edde'},
+          });
+        },
+      );
+
+      await svc.authenticateByName(
+        baseUrl: 'https://jf.example.com',
+        username: 'edde',
+        password: 'pw',
+        deviceId: 'dev-xyz',
+        serverInfo: _serverInfo,
+      );
+
+      expect(request.method, 'POST');
+      expect(
+        request.headers['authorization'],
+        'MediaBrowser Client="Plezy", Device="TestDevice", DeviceId="dev-xyz", Version="test"',
+      );
+      expect(request.headers['content-type'], 'application/json');
+    });
+
+    test('Quick Connect sends the same complete MediaBrowser header', () async {
+      late http.BaseRequest request;
+      final svc = _service(
+        handler: (captured) {
+          request = captured;
+          return _ok({'Code': 'ABCDE', 'Secret': 'sec-xyz'});
+        },
+      );
+
+      await svc.initiateQuickConnect(baseUrl: 'https://jf.example.com', deviceId: 'dev-xyz');
+
+      expect(request.method, 'GET');
+      expect(
+        request.headers['authorization'],
+        'MediaBrowser Client="Plezy", Device="TestDevice", DeviceId="dev-xyz", Version="test"',
+      );
+    });
+
+    test('rejects an empty device ID before sending a request', () async {
+      var requests = 0;
+      final svc = _service(
+        handler: (_) {
+          requests++;
+          return _status(500);
+        },
+      );
+
+      await expectLater(
+        svc.authenticateByName(
+          baseUrl: 'https://jf.example.com',
+          username: 'edde',
+          password: 'pw',
+          deviceId: '',
+          serverInfo: _serverInfo,
+        ),
+        throwsArgumentError,
+      );
+      expect(requests, 0);
+    });
+  });
 }
