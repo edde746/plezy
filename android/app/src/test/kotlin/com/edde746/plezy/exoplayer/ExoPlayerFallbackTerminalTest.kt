@@ -1,8 +1,15 @@
 package com.edde746.plezy.exoplayer
 
 import android.app.Activity
+import android.os.Looper
+import android.widget.FrameLayout
+import androidx.media3.common.C
+import androidx.media3.common.Format
 import androidx.media3.common.MediaItem
+import androidx.media3.common.MimeTypes
+import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
+import androidx.media3.exoplayer.ExoPlaybackException
 import androidx.media3.exoplayer.analytics.AnalyticsListener
 import androidx.media3.exoplayer.source.SinglePeriodTimeline
 import org.junit.Assert.assertEquals
@@ -12,6 +19,8 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.Robolectric
 import org.robolectric.RobolectricTestRunner
+import org.robolectric.Shadows.shadowOf
+import org.robolectric.annotation.Config
 
 @RunWith(RobolectricTestRunner::class)
 class ExoPlayerFallbackTerminalTest {
@@ -184,6 +193,101 @@ class ExoPlayerFallbackTerminalTest {
     }
   }
 
+  @Test
+  @Config(sdk = [28])
+  fun warmVideoDecoderErrorRetriesOnceBeforeFallback() {
+    val activity = Robolectric.buildActivity(Activity::class.java).setup().get()
+    activity.setContentView(FrameLayout(activity))
+    val core = ExoPlayerCore(activity)
+    val delegate = RecordingDelegate(handlesFallback = true)
+    core.delegate = delegate
+
+    try {
+      assertTrue(core.initialize())
+      setField(core, "currentMediaGeneration", 7)
+      setField(core, "currentMediaUri", "file:///missing-video.mkv")
+      emitRenderedFirstFrame(core, mediaGeneration = 7)
+
+      invokePlayerError(core, videoDecoderError(), mediaGeneration = 7)
+
+      assertEquals(0, delegate.fallbackRequests)
+      assertEquals(1, getField(core, "videoDecoderRecoveryConsecutiveAttempts"))
+      assertEquals(1, getField(core, "videoDecoderRecoveryTotalAttempts"))
+
+      invokePlayerError(core, videoDecoderError(), mediaGeneration = 7)
+
+      assertEquals(1, delegate.fallbackRequests)
+    } finally {
+      core.dispose()
+      shadowOf(Looper.getMainLooper()).idle()
+    }
+  }
+
+  @Test
+  @Config(sdk = [28])
+  fun coldVideoDecoderErrorFallsBackImmediately() {
+    val activity = Robolectric.buildActivity(Activity::class.java).setup().get()
+    activity.setContentView(FrameLayout(activity))
+    val core = ExoPlayerCore(activity)
+    val delegate = RecordingDelegate(handlesFallback = true)
+    core.delegate = delegate
+
+    try {
+      assertTrue(core.initialize())
+      setField(core, "currentMediaGeneration", 7)
+      setField(core, "currentMediaUri", "file:///missing-video.mkv")
+
+      invokePlayerError(core, videoDecoderError(), mediaGeneration = 7)
+
+      assertEquals(1, delegate.fallbackRequests)
+      assertEquals(0, getField(core, "videoDecoderRecoveryConsecutiveAttempts"))
+      assertEquals(0, getField(core, "videoDecoderRecoveryTotalAttempts"))
+    } finally {
+      core.dispose()
+      shadowOf(Looper.getMainLooper()).idle()
+    }
+  }
+
+  @Test
+  @Config(sdk = [28])
+  fun sustainedPlaybackRearmsDecoderRecovery() {
+    val activity = Robolectric.buildActivity(Activity::class.java).setup().get()
+    activity.setContentView(FrameLayout(activity))
+    val core = ExoPlayerCore(activity)
+    val delegate = RecordingDelegate(handlesFallback = true)
+    core.delegate = delegate
+
+    try {
+      assertTrue(core.initialize())
+      setField(core, "currentMediaGeneration", 7)
+      setField(core, "currentMediaUri", "file:///missing-video.mkv")
+      emitRenderedFirstFrame(core, mediaGeneration = 7)
+
+      invokePlayerError(core, videoDecoderError(), mediaGeneration = 7)
+      emitRenderedFirstFrame(core, mediaGeneration = 7)
+      invokeVideoDecoderRecoveryHealth(
+        core,
+        currentPositionMs = VideoDecoderRecoveryPolicy.HEALTHY_PLAYBACK_PROGRESS_MS,
+        isPlaying = true
+      )
+
+      assertEquals(0, getField(core, "videoDecoderRecoveryConsecutiveAttempts"))
+      assertEquals(1, getField(core, "videoDecoderRecoveryTotalAttempts"))
+
+      invokePlayerError(core, videoDecoderError(), mediaGeneration = 7)
+
+      assertEquals(0, delegate.fallbackRequests)
+      assertEquals(2, getField(core, "videoDecoderRecoveryTotalAttempts"))
+
+      invokePlayerError(core, videoDecoderError(), mediaGeneration = 7)
+
+      assertEquals(1, delegate.fallbackRequests)
+    } finally {
+      core.dispose()
+      shadowOf(Looper.getMainLooper()).idle()
+    }
+  }
+
   private fun setField(target: Any, name: String, value: Any?) {
     target.javaClass.getDeclaredField(name).apply {
       isAccessible = true
@@ -230,6 +334,75 @@ class ExoPlayerFallbackTerminalTest {
     ).apply {
       isAccessible = true
       invoke(core, isPlaying)
+    }
+  }
+
+  private fun emitRenderedFirstFrame(core: ExoPlayerCore, mediaGeneration: Int) {
+    val mediaItem = MediaItem.Builder()
+      .setMediaId(mediaGeneration.toString())
+      .setUri("file:///video.mkv")
+      .build()
+    val timeline = SinglePeriodTimeline(
+      1_000_000L,
+      true,
+      false,
+      false,
+      null,
+      mediaItem
+    )
+    val eventTime = AnalyticsListener.EventTime(
+      0L,
+      timeline,
+      0,
+      null,
+      0L,
+      timeline,
+      0,
+      null,
+      0L,
+      0L
+    )
+    val analytics = getField(core, "decoderHangListener") as AnalyticsListener
+    analytics.onRenderedFirstFrame(eventTime, Any(), 0L)
+  }
+
+  private fun videoDecoderError(): ExoPlaybackException = ExoPlaybackException.createForRenderer(
+    IllegalStateException("codec reclaimed"),
+    "MediaCodecVideoRenderer",
+    0,
+    Format.Builder().setSampleMimeType(MimeTypes.VIDEO_H264).build(),
+    C.FORMAT_HANDLED,
+    false,
+    PlaybackException.ERROR_CODE_DECODING_FAILED
+  )
+
+  private fun invokePlayerError(
+    core: ExoPlayerCore,
+    error: PlaybackException,
+    mediaGeneration: Int
+  ) {
+    ExoPlayerCore::class.java.getDeclaredMethod(
+      "handlePlayerError",
+      PlaybackException::class.java,
+      Int::class.javaPrimitiveType
+    ).apply {
+      isAccessible = true
+      invoke(core, error, mediaGeneration)
+    }
+  }
+
+  private fun invokeVideoDecoderRecoveryHealth(
+    core: ExoPlayerCore,
+    currentPositionMs: Long,
+    isPlaying: Boolean
+  ) {
+    ExoPlayerCore::class.java.getDeclaredMethod(
+      "updateVideoDecoderRecoveryHealth",
+      Long::class.javaPrimitiveType,
+      Boolean::class.javaPrimitiveType
+    ).apply {
+      isAccessible = true
+      invoke(core, currentPositionMs, isPlaying)
     }
   }
 

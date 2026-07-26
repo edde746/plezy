@@ -281,6 +281,10 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
   private var loggedEwasteEac3Workaround: Boolean = false
   private var lastTrueHdDirectOutputLogKey: String? = null
   private var loggedDecodedPcmTunnelingGuard: Boolean = false
+  private var hasRenderedVideoFrameForMedia: Boolean = false
+  private var videoDecoderRecoveryConsecutiveAttempts: Int = 0
+  private var videoDecoderRecoveryTotalAttempts: Int = 0
+  private var videoDecoderRecoveryPositionMs: Long? = null
   private var firstFrameRendered: Boolean = false
   var delegate: ExoPlayerDelegate? = null
   var debugLoggingEnabled: Boolean = false
@@ -325,7 +329,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
   private var selectedSubtitleTrackId: String? = null
   private val audioTrackGroupMap = mutableMapOf<String, TrackGroup>()
   private val subtitleTrackGroupMap = mutableMapOf<String, TrackGroup>()
-  private var pendingDvTrackRestore: PendingTrackRestore? = null
+  private var pendingTrackRestore: PendingTrackRestore? = null
 
   private data class PendingTrackRestore(
     val audio: TrackRestoreIdentity?,
@@ -893,6 +897,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
           val currentPosition = player.currentPosition
           val duration = player.duration
           val bufferedPosition = player.bufferedPosition
+          updateVideoDecoderRecoveryHealth(currentPosition, player.isPlaying)
 
           // Emit position changes (every 250ms update)
           if (currentPosition != lastPosition) {
@@ -1063,7 +1068,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
       return // skip processing the intermediate no-audio track list
     }
 
-    if (restorePendingDvTrackSelection(tracks)) return
+    if (restorePendingTrackSelection(tracks)) return
 
     // Log selected video and audio track details
     val videoGroup = tracks.groups.firstOrNull { it.type == C.TRACK_TYPE_VIDEO && it.isSelected }
@@ -1148,6 +1153,15 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
 
     if (retryAfterAudioTrackError(error, causeChain)) return
 
+    val rendererFormat = (error as? ExoPlaybackException)?.rendererFormat
+    val isVideoRenderer = rendererFormat?.sampleMimeType?.startsWith("video/") == true
+    if (
+      VideoDecoderRecoveryPolicy.isTransientVideoDecoderError(error.errorCode, isVideoRenderer) &&
+      retryVideoDecoderInPlace(PlaybackException.getErrorCodeName(error.errorCode))
+    ) {
+      return
+    }
+
     val uri = currentMediaUri
     if (uri != null) {
       Log.w(TAG, "ExoPlayer error (code ${error.errorCode}) - attempting fallback to MPV")
@@ -1162,6 +1176,83 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
     }
 
     emitPlaybackErrorOnce(mediaGeneration, error.message ?: "Unknown error")
+  }
+
+  private fun retryVideoDecoderInPlace(reason: String): Boolean {
+    if (!VideoDecoderRecoveryPolicy.canRetryRuntimeFailure(
+        hasRenderedVideoFrameForMedia,
+        videoDecoderRecoveryConsecutiveAttempts,
+        videoDecoderRecoveryTotalAttempts
+      )
+    ) {
+      return false
+    }
+
+    val player = exoPlayer ?: return false
+    val uri = currentMediaUri ?: return false
+    val savedPosition = maxOf(player.currentPosition, lastPosition, pendingStartPositionMs)
+    val savedPlayWhenReady = player.playWhenReady
+    val previousDecoder = decoderInitName
+    pendingTrackRestore = pendingTrackRestore ?: captureTrackRestore()?.also { restore ->
+      emitLog(
+        "info",
+        "track-restore",
+        "Saved selection before decoder recovery: audio=${restore.audio?.describe() ?: "none"}, " +
+          "subtitle=${restore.subtitle?.describe() ?: if (restore.subtitleDisabled) "off" else "none"}"
+      )
+    }
+
+    videoDecoderRecoveryConsecutiveAttempts++
+    videoDecoderRecoveryTotalAttempts++
+    videoDecoderRecoveryPositionMs = savedPosition
+    pendingStartPositionMs = savedPosition
+    pendingPlayWhenReady = savedPlayWhenReady
+    decoderInitName = null
+    firstFrameRendered = false
+    stopFrameWatchdog()
+    cancelDecoderHangCheck()
+    cancelResumeStallWatchdog()
+    applyTrackSelectorPolicy(
+      reason = "video decoder recovery",
+      forceSelector = true,
+      clearAudioOverrides = true,
+      clearTextOverrides = true
+    )
+
+    emitLog(
+      "warn",
+      "video-recovery",
+      "Retrying warm decoder in ExoPlayer " +
+        "(consecutive=$videoDecoderRecoveryConsecutiveAttempts/${VideoDecoderRecoveryPolicy.MAX_CONSECUTIVE_ATTEMPTS}, " +
+        "total=$videoDecoderRecoveryTotalAttempts/${VideoDecoderRecoveryPolicy.MAX_ATTEMPTS_PER_MEDIA}) at ${savedPosition}ms; " +
+        "reason=$reason, decoder=${previousDecoder ?: "unknown"}"
+    )
+
+    setCurrentMediaSource(player, uri, savedPosition)
+    player.prepare()
+    player.playWhenReady = savedPlayWhenReady
+    return true
+  }
+
+  private fun updateVideoDecoderRecoveryHealth(currentPositionMs: Long, isPlaying: Boolean) {
+    val recoveryPositionMs = videoDecoderRecoveryPositionMs ?: return
+    if (!VideoDecoderRecoveryPolicy.hasSustainedPlayback(
+        hasRenderedFrame = firstFrameRendered,
+        isPlaying = isPlaying,
+        recoveryPositionMs = recoveryPositionMs,
+        currentPositionMs = currentPositionMs
+      )
+    ) {
+      return
+    }
+
+    videoDecoderRecoveryConsecutiveAttempts = 0
+    videoDecoderRecoveryPositionMs = null
+    emitLog(
+      "info",
+      "video-recovery",
+      "Decoder recovery confirmed after ${currentPositionMs - recoveryPositionMs}ms of playback"
+    )
   }
 
   private fun retryAfterAudioTrackError(error: PlaybackException, causeChain: String): Boolean {
@@ -1694,7 +1785,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
     delegate?.onPropertyChange("track-list", trackList)
   }
 
-  private fun captureDvTrackRestore(): PendingTrackRestore? {
+  private fun captureTrackRestore(): PendingTrackRestore? {
     val tracks = exoPlayer?.currentTracks ?: return null
     val audio = captureSelectedTrackIdentity(tracks, C.TRACK_TYPE_AUDIO)
       ?: captureMappedTrackIdentity(selectedAudioTrackId, audioTrackGroupMap, C.TRACK_TYPE_AUDIO)
@@ -1760,11 +1851,11 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
 
   private fun hasSelectedTextTrack(tracks: Tracks): Boolean = tracks.groups.any { it.type == C.TRACK_TYPE_TEXT && it.isSelected }
 
-  private fun restorePendingDvTrackSelection(tracks: Tracks): Boolean {
-    val pending = pendingDvTrackRestore ?: return false
+  private fun restorePendingTrackSelection(tracks: Tracks): Boolean {
+    val pending = pendingTrackRestore ?: return false
     if (trackSelector == null) return false
-    if (shouldWaitForDvRestoreTracks(pending, tracks)) return true
-    pendingDvTrackRestore = null
+    if (shouldWaitForRestoreTracks(pending, tracks)) return true
+    pendingTrackRestore = null
 
     val audioMatch = pending.audio?.let { findTrackRestoreMatch(tracks, it) }
     val subtitleMatch = pending.subtitle?.let { findTrackRestoreMatch(tracks, it) }
@@ -1781,9 +1872,9 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
         audioOverride = TrackSelectionOverride(audioMatch.trackGroup, audioMatch.trackIndex)
         selectionWillChange = selectionWillChange || !audioMatch.isSelected()
         appliedRestore = true
-        emitLog("info", "track-restore", "Restoring audio after DV reload: ${pending.audio.describe()} -> ${audioMatch.format.describeTrackFormat()} score=${audioMatch.score}")
+        emitLog("info", "track-restore", "Restoring audio after media reload: ${pending.audio.describe()} -> ${audioMatch.format.describeTrackFormat()} score=${audioMatch.score}")
       } else {
-        emitLog("warn", "track-restore", "Could not restore audio after DV reload: ${pending.audio.describe()}")
+        emitLog("warn", "track-restore", "Could not restore audio after media reload: ${pending.audio.describe()}")
       }
     }
 
@@ -1792,16 +1883,16 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
       textDisabled = true
       selectionWillChange = selectionWillChange || hasSelectedText
       appliedRestore = true
-      emitLog("info", "track-restore", "Restoring subtitles off after DV reload")
+      emitLog("info", "track-restore", "Restoring subtitles off after media reload")
     } else if (pending.subtitle != null) {
       if (subtitleMatch != null) {
         textOverride = TrackSelectionOverride(subtitleMatch.trackGroup, subtitleMatch.trackIndex)
         textDisabled = false
         selectionWillChange = selectionWillChange || !subtitleMatch.isSelected()
         appliedRestore = true
-        emitLog("info", "track-restore", "Restoring subtitle after DV reload: ${pending.subtitle.describe()} -> ${subtitleMatch.format.describeTrackFormat()} score=${subtitleMatch.score}")
+        emitLog("info", "track-restore", "Restoring subtitle after media reload: ${pending.subtitle.describe()} -> ${subtitleMatch.format.describeTrackFormat()} score=${subtitleMatch.score}")
       } else {
-        emitLog("warn", "track-restore", "Could not restore subtitle after DV reload: ${pending.subtitle.describe()}")
+        emitLog("warn", "track-restore", "Could not restore subtitle after media reload: ${pending.subtitle.describe()}")
       }
     }
 
@@ -1809,7 +1900,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
       audioMatch?.let { updateAudioCodecForTunneling(it.format) }
       evaluateVideoCodecForTunneling()
       applyTrackSelectorPolicy(
-        reason = "DV track restore",
+        reason = "track restore",
         forceSelector = true,
         audioOverride = audioOverride,
         audioDisabled = if (audioOverride != null) false else null,
@@ -1821,7 +1912,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
     return selectionWillChange
   }
 
-  private fun shouldWaitForDvRestoreTracks(pending: PendingTrackRestore, tracks: Tracks): Boolean {
+  private fun shouldWaitForRestoreTracks(pending: PendingTrackRestore, tracks: Tracks): Boolean {
     val hasAudioGroups = tracks.groups.any { it.type == C.TRACK_TYPE_AUDIO }
     val hasTextGroups = tracks.groups.any { it.type == C.TRACK_TYPE_TEXT }
     return (pending.audio != null && !hasAudioGroups) ||
@@ -2612,7 +2703,9 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
       renderTimeMs: Long
     ) {
       val mediaGeneration = mediaGenerationAt(eventTime) ?: return
-      if (mediaGeneration != currentMediaGeneration || !claimPlaybackOutputReady()) return
+      if (mediaGeneration != currentMediaGeneration) return
+      hasRenderedVideoFrameForMedia = true
+      if (!claimPlaybackOutputReady()) return
       emitLog("debug", "decoder-hang", "First frame rendered — decoder OK")
       logNativeDvFirstFrameIfNeeded()
       logDolbyVisionPlaybackPathIfNeeded()
@@ -2646,6 +2739,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
         stopFrameWatchdog()
         cancelDecoderHangCheck()
         if (retryWithDvConversion("decoder hang: $decoderName")) return@Runnable
+        if (retryVideoDecoderInPlace("decoder hang: $decoderName")) return@Runnable
         requestFormatFallback(
           mediaGeneration = mediaGeneration,
           uri = uri,
@@ -2725,6 +2819,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
           emitLog("warn", "watchdog", "0 frames rendered after ${elapsed}ms — triggering fallback")
           stopFrameWatchdog()
           if (retryWithDvConversion("watchdog: black screen after ${elapsed}ms")) return
+          if (retryVideoDecoderInPlace("black screen after ${elapsed}ms")) return
           // Trigger fallback via the same delegate path as player errors
           val uri = currentMediaUri ?: return
           requestFormatFallback(
@@ -2906,6 +3001,10 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
     loggedDirectAudioRecoveryBlocks.clear()
     currentVideoFormat = null
     firstFrameRendered = false
+    hasRenderedVideoFrameForMedia = false
+    videoDecoderRecoveryConsecutiveAttempts = 0
+    videoDecoderRecoveryTotalAttempts = 0
+    videoDecoderRecoveryPositionMs = null
     loggedNativeDvSelectionKey = null
     loggedNativeDvFirstFrame = false
     loggedDvPlaybackPathKey = null
@@ -2933,7 +3032,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
     subtitleTrackGroupMap.clear()
     selectedAudioTrackId = null
     selectedSubtitleTrackId = null
-    pendingDvTrackRestore = null
+    pendingTrackRestore = null
 
     // Build external subtitle sources before prepare. Container sidecars are
     // filtered to text tracks and merged with the primary source; standalone
@@ -3189,7 +3288,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
 
     val savedPosition = maxOf(player.currentPosition, lastPosition, pendingStartPositionMs)
     val savedPlayWhenReady = player.playWhenReady
-    pendingDvTrackRestore = captureDvTrackRestore()?.also { restore ->
+    pendingTrackRestore = captureTrackRestore()?.also { restore ->
       emitLog(
         "info",
         "track-restore",
@@ -3763,6 +3862,10 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
     pendingAudioRendererBounce = false
 
     decoderInitName = null
+    hasRenderedVideoFrameForMedia = false
+    videoDecoderRecoveryConsecutiveAttempts = 0
+    videoDecoderRecoveryTotalAttempts = 0
+    videoDecoderRecoveryPositionMs = null
     audioDecoderInitName = null
     lastAudioTrackConfig = null
     lastAudioSinkError = null
@@ -3784,7 +3887,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
     emitSeekable(false, force = true)
     selectedAudioTrackId = null
     selectedSubtitleTrackId = null
-    pendingDvTrackRestore = null
+    pendingTrackRestore = null
     audioTrackGroupMap.clear()
     subtitleTrackGroupMap.clear()
     exoPlayer?.clearVideoSurface()
