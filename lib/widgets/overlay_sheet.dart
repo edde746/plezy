@@ -540,14 +540,22 @@ class _OverlaySheetHostState extends State<OverlaySheetHost> with SingleTickerPr
           // Barrier + sheet only when open
           if (_isOpen) ...[
             Positioned.fill(
-              child: AnimatedBuilder(
-                animation: _barrierAnimation,
-                builder: (context, child) {
-                  return GestureDetector(
-                    onTap: _barrierDismissible ? () => _close() : null,
-                    child: ColoredBox(color: Colors.black.withValues(alpha: _barrierAnimation.value)),
-                  );
-                },
+              // The barrier swallows every pointer event behind it, so the
+              // screen underneath must leave the semantics tree too. Without
+              // this, assistive tech (and UI automation) still reads rows that
+              // cannot be activated — including through the ~250ms close, where
+              // a tap on a "visible" row lands on the barrier instead. Flutter's
+              // own ModalBarrier blocks semantics for the same reason.
+              child: BlockSemantics(
+                child: AnimatedBuilder(
+                  animation: _barrierAnimation,
+                  builder: (context, child) {
+                    return GestureDetector(
+                      onTap: _barrierDismissible ? () => _close() : null,
+                      child: ColoredBox(color: Colors.black.withValues(alpha: _barrierAnimation.value)),
+                    );
+                  },
+                ),
               ),
             ),
             _buildSheet(context),
@@ -569,7 +577,14 @@ class _OverlaySheetHostState extends State<OverlaySheetHost> with SingleTickerPr
         onPopInvokedWithResult: (didPop, result) {
           if (didPop) return;
           if (_isOpen && !_isClosing) {
-            if (BackKeyCoordinator.consumeIfHandled()) return;
+            // Only TV routes one Back through both the focused key path and
+            // the platform pop, so only TV needs to dedup them. Touch
+            // platforms never deliver Back to [_handleKeyEvent], so consulting
+            // the global marker here could only ever consume some unrelated
+            // widget's mark and swallow the one signal that closes the sheet.
+            // The marker is global and one-shot, so anything left set by
+            // another handler would strand the sheet open with no way out.
+            if (PlatformDetector.isTV() && BackKeyCoordinator.consumeIfHandled()) return;
             _handleBack();
             return;
           }
