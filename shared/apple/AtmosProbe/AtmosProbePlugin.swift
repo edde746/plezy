@@ -1,9 +1,14 @@
 import AVFoundation
 import Flutter
 import Foundation
+#if os(iOS) || os(tvOS)
+  import AVKit
+  import UIKit
+#endif
 
 /// Diagnostics harness for #1300: plays known assets through a bare AVPlayer
-/// so a tester can read the receiver's format display per test.
+/// or through a bare AVSampleBufferAudioRenderer so a tester can read the
+/// receiver's format display per test.
 ///
 /// Modes:
 ///  - hlsAtmos:    Apple's public fMP4 Atmos example stream (device+AVR+MAT baseline)
@@ -13,6 +18,19 @@ import Foundation
 ///                 AVPlayer audio sink's feeding model
 ///  - rawEc3Finite: same loader but passing through the real content length,
 ///                 isolating "loader trick" failures from "raw ES" failures
+///  - asbarNative: the decisive arm. Reads the asset with AVAssetReader at
+///                 `outputSettings: nil` and hands the resulting *native*
+///                 compressed CMSampleBuffers and *native* CMFormatDescription
+///                 straight to AVSampleBufferAudioRenderer, following Apple's
+///                 flexible enhanced buffering sequence. No mpv, no FFmpeg
+///                 spdif muxer, no generated ASBD, no hand-built dec3. If this
+///                 reaches Atmos, the production sink has a construction bug;
+///                 if it does not, AVSampleBufferAudioRenderer cannot carry
+///                 JOC on this route and the architecture must change.
+///  - asbarGenerated: same feed, but the format description is rebuilt the way
+///                 the mpv AO builds it (generated ASBD + dec3 magic cookie +
+///                 MPEG_5_1_C layout). A/B against asbarNative isolates
+///                 descriptor construction from everything else.
 public class AtmosProbePlugin: NSObject, FlutterPlugin {
   private static let hlsAtmosUrl =
     "https://devstreaming-cdn.apple.com/videos/streaming/examples/adv_dv_atmos/main.m3u8"
@@ -21,6 +39,10 @@ public class AtmosProbePlugin: NSObject, FlutterPlugin {
 
   private var player: AVPlayer?
   private var loader: RawEc3Loader?
+  private var asbar: AsbarProbe?
+  #if os(iOS) || os(tvOS)
+    private var routePicker: AVRoutePickerView?
+  #endif
 
   public static func register(with registrar: FlutterPluginRegistrar) {
     let channel = FlutterMethodChannel(
@@ -38,10 +60,16 @@ public class AtmosProbePlugin: NSObject, FlutterPlugin {
         result(FlutterError(code: "bad_args", message: "mode required", details: nil))
         return
       }
-      start(mode: mode, url: args["url"] as? String, result: result)
+      start(
+        mode: mode, url: args["url"] as? String,
+        sessionMode: args["sessionMode"] as? String, result: result)
     case "stop":
       stopPlayback()
       result(nil)
+    case "showRoutePicker":
+      result(setRoutePickerVisible(true))
+    case "hideRoutePicker":
+      result(setRoutePickerVisible(false))
     case "getStatus":
       result(status())
     default:
@@ -49,7 +77,10 @@ public class AtmosProbePlugin: NSObject, FlutterPlugin {
     }
   }
 
-  private func start(mode: String, url: String?, result: @escaping FlutterResult) {
+  private func start(
+    mode: String, url: String?, sessionMode: String?,
+    result: @escaping FlutterResult
+  ) {
     stopPlayback()
 
     let item: AVPlayerItem
@@ -71,6 +102,27 @@ public class AtmosProbePlugin: NSObject, FlutterPlugin {
       item = AVPlayerItem(asset: loader.asset)
       item.preferredForwardBufferDuration = 1.0
       loader.begin()
+    case "asbarNative", "asbarGenerated":
+      guard let source = url.flatMap(URL.init(string:)) else {
+        result(
+          FlutterError(code: "bad_url", message: "\(mode) needs a source url", details: nil))
+        return
+      }
+      let probe = AsbarProbe(
+        source: source,
+        regenerateFormatDescription: mode == "asbarGenerated",
+        // Dolby's Figure 1 prescribes mode .default; .moviePlayback is what
+        // the shipping AO used. Selectable so the tester can A/B it.
+        sessionMode: sessionMode == "moviePlayback" ? .moviePlayback : .default)
+      asbar = probe
+      probe.start { error in
+        if let error {
+          result(FlutterError(code: "asbar_failed", message: error, details: nil))
+        } else {
+          result(nil)
+        }
+      }
+      return
     default:
       result(FlutterError(code: "bad_mode", message: mode, details: nil))
       return
@@ -78,11 +130,63 @@ public class AtmosProbePlugin: NSObject, FlutterPlugin {
 
     let player = AVPlayer(playerItem: item)
     player.automaticallyWaitsToMinimizeStalling = false
-    player.allowsExternalPlayback = false
+    // Must stay true: the route picker exists so these arms can be compared
+    // against the sample-buffer arms on an AirPlay destination, and AirPlay is
+    // the only route where the system resolves renderingMode and
+    // supportedOutputChannelLayouts. Pinning playback local would leave the
+    // AVPlayer controls on HDMI while the picker moved everything else.
+    player.allowsExternalPlayback = true
     self.player = player
     player.play()
     result(nil)
   }
+
+  /// Dolby's flow opens with an AVRoutePickerView so the tester can move
+  /// playback to an AirPlay destination. That matters here beyond conformance:
+  /// AVRoutePickerView.h states media from an AVSampleBufferAudioRenderer can
+  /// be routed to AirPlay on tvOS, and AirPlay is the only route where
+  /// `renderingMode` and `supportedOutputChannelLayouts` actually resolve — so
+  /// this is what makes the AirPlay arm of the test matrix reachable from the
+  /// device.
+  private func setRoutePickerVisible(_ visible: Bool) -> Bool {
+    #if os(iOS) || os(tvOS)
+      guard visible else {
+        routePicker?.removeFromSuperview()
+        routePicker = nil
+        return true
+      }
+      if routePicker != nil { return true }
+      guard let window = Self.keyWindow() else { return false }
+      let picker = AVRoutePickerView()
+      picker.translatesAutoresizingMaskIntoConstraints = false
+      window.addSubview(picker)
+      NSLayoutConstraint.activate([
+        picker.centerXAnchor.constraint(equalTo: window.centerXAnchor),
+        picker.bottomAnchor.constraint(equalTo: window.centerYAnchor, constant: -40),
+        picker.widthAnchor.constraint(equalToConstant: 120),
+        picker.heightAnchor.constraint(equalToConstant: 80),
+      ])
+      routePicker = picker
+      window.setNeedsFocusUpdate()
+      window.updateFocusIfNeeded()
+      return true
+    #else
+      return false
+    #endif
+  }
+
+  #if os(iOS) || os(tvOS)
+    private static func keyWindow() -> UIWindow? {
+      UIApplication.shared.connectedScenes
+        .compactMap { $0 as? UIWindowScene }
+        .flatMap(\.windows)
+        .first { $0.isKeyWindow }
+        ?? UIApplication.shared.connectedScenes
+        .compactMap { $0 as? UIWindowScene }
+        .flatMap(\.windows)
+        .first
+    }
+  #endif
 
   private func stopPlayback() {
     player?.pause()
@@ -90,6 +194,13 @@ public class AtmosProbePlugin: NSObject, FlutterPlugin {
     player = nil
     loader?.cancel()
     loader = nil
+    asbar?.cancel()
+    asbar = nil
+    _ = setRoutePickerVisible(false)
+    // Run isolation: never let a failed compressed route leak into the next
+    // variant or into other apps.
+    try? AVAudioSession.sharedInstance().setActive(
+      false, options: .notifyOthersOnDeactivation)
   }
 
   private func status() -> [String: Any] {
@@ -101,9 +212,23 @@ public class AtmosProbePlugin: NSObject, FlutterPlugin {
     out["route"] = session.currentRoute.outputs.map { port in
       "\(port.portType.rawValue)/\(port.portName)/\(port.channels?.count ?? 0)ch"
     }.joined(separator: ", ")
+    out["sessionCategory"] = session.category.rawValue
+    out["sessionMode"] = session.mode.rawValue
+    out["routeSharingPolicy"] = session.routeSharingPolicy.rawValue
+    out["categoryOptions"] = session.categoryOptions.rawValue
     if #available(iOS 17.2, tvOS 17.2, *) {
       out["renderingMode"] = String(describing: session.renderingMode)
       out["renderingModeRawValue"] = session.renderingMode.rawValue
+      // Empty on HDMI by design (CarPlay/AirPlay only). Reported so a tester
+      // can tell "empty because HDMI" from "empty because inactive".
+      out["supportedOutputChannelLayouts"] = session.supportedOutputChannelLayouts.map {
+        String(format: "0x%08x/%uch", $0.layoutTag, $0.channelCount)
+      }.joined(separator: ", ")
+    }
+
+    if let asbar {
+      out.merge(asbar.statusSnapshot()) { _, new in new }
+      return out
     }
 
     guard let player = player else {
@@ -488,5 +613,453 @@ final class RawEc3Loader: NSObject, AVAssetResourceLoaderDelegate, URLSessionDat
       }
       index += 1
     }
+  }
+}
+
+/// Feeds compressed E-AC-3 access units to a bare `AVSampleBufferAudioRenderer`
+/// using Apple's flexible enhanced buffering sequence.
+///
+/// This is deliberately the shortest possible path from file bytes to the
+/// system decoder: `AVAssetReader` at `outputSettings: nil` yields the native
+/// compressed sample buffers and the native `CMFormatDescription` that
+/// AVFoundation itself would use. Nothing else touches the data, so a failure
+/// here is a property of the renderer, not of our packetization.
+final class AsbarProbe: NSObject {
+  private static var statusContext = 0
+
+  private let source: URL
+  private let regenerateFormatDescription: Bool
+  private let sessionMode: AVAudioSession.Mode
+  private let queue = DispatchQueue(
+    label: "plezy.atmos.probe.asbar", qos: .userInitiated)
+  private let lock = NSLock()
+
+  private var renderer: AVSampleBufferAudioRenderer?
+  private var synchronizer: AVSampleBufferRenderSynchronizer?
+  private var reader: AVAssetReader?
+  private var output: AVAssetReaderTrackOutput?
+  private var temporaryFile: URL?
+  private var download: URLSessionDownloadTask?
+  private var statusObserved = false
+  private var cancelled = false
+
+  // Guarded by `lock`; read from the method-channel thread.
+  private var enqueuedSamples = 0
+  private var nativeDescription = "unknown"
+  private var usedDescription = "unknown"
+  private var magicCookieHex = "none"
+  private var layoutTagText = "none"
+  private var phase = "starting"
+  private var failure: String?
+
+  init(
+    source: URL, regenerateFormatDescription: Bool, sessionMode: AVAudioSession.Mode
+  ) {
+    self.source = source
+    self.regenerateFormatDescription = regenerateFormatDescription
+    self.sessionMode = sessionMode
+    super.init()
+  }
+
+  /// `completion` reports only whether the run could be started.
+  func start(completion: @escaping (String?) -> Void) {
+    if source.isFileURL {
+      queue.async { [weak self] in
+        guard let self else { return }
+        let error = self.beginReading(from: self.source)
+        DispatchQueue.main.async { completion(error) }
+      }
+      return
+    }
+
+    // AVAssetReader needs a seekable local asset; stage the source first.
+    setPhase("downloading")
+    let task = URLSession.shared.downloadTask(with: source) { [weak self] url, _, error in
+      guard let self else { return }
+      guard let url else {
+        let message = error?.localizedDescription ?? "download failed"
+        self.fail(message)
+        DispatchQueue.main.async { completion(message) }
+        return
+      }
+      // The temporary file is removed as soon as this handler returns.
+      let staged = FileManager.default.temporaryDirectory
+        .appendingPathComponent("plezy-asbar-\(UUID().uuidString)")
+        .appendingPathExtension(self.source.pathExtension.isEmpty ? "eac3" : self.source.pathExtension)
+      do {
+        try FileManager.default.moveItem(at: url, to: staged)
+      } catch {
+        let message = "failed to stage asset: \(error.localizedDescription)"
+        self.fail(message)
+        DispatchQueue.main.async { completion(message) }
+        return
+      }
+      self.lock.lock()
+      self.temporaryFile = staged
+      let aborted = self.cancelled
+      self.lock.unlock()
+      if aborted {
+        try? FileManager.default.removeItem(at: staged)
+        return
+      }
+      self.queue.async {
+        let failureMessage = self.beginReading(from: staged)
+        DispatchQueue.main.async { completion(failureMessage) }
+      }
+    }
+    lock.lock()
+    download = task
+    lock.unlock()
+    task.resume()
+  }
+
+  func cancel() {
+    lock.lock()
+    cancelled = true
+    let task = download
+    let staged = temporaryFile
+    download = nil
+    temporaryFile = nil
+    lock.unlock()
+    task?.cancel()
+
+    queue.sync {
+      if statusObserved, let renderer {
+        renderer.removeObserver(
+          self, forKeyPath: "status", context: &AsbarProbe.statusContext)
+        statusObserved = false
+      }
+      renderer?.stopRequestingMediaData()
+      renderer?.flush()
+      synchronizer?.rate = 0
+      if let renderer, let synchronizer {
+        synchronizer.removeRenderer(renderer, at: .zero, completionHandler: nil)
+      }
+      reader?.cancelReading()
+      reader = nil
+      output = nil
+      renderer = nil
+      synchronizer = nil
+    }
+    if let staged { try? FileManager.default.removeItem(at: staged) }
+    setPhase("cancelled")
+  }
+
+  /// Runs on `queue`. Returns a message on failure.
+  private func beginReading(from url: URL) -> String? {
+    lock.lock()
+    let aborted = cancelled
+    lock.unlock()
+    if aborted { return nil }
+
+    let asset = AVURLAsset(url: url)
+    guard let track = asset.tracks(withMediaType: .audio).first else {
+      let message = "no audio track in \(url.lastPathComponent)"
+      fail(message)
+      return message
+    }
+    guard
+      let nativeFormat = (track.formatDescriptions as? [CMFormatDescription])?.first
+    else {
+      let message = "audio track has no format description"
+      fail(message)
+      return message
+    }
+    describe(nativeFormat)
+
+    let assetReader: AVAssetReader
+    do {
+      assetReader = try AVAssetReader(asset: asset)
+    } catch {
+      let message = "AVAssetReader init failed: \(error.localizedDescription)"
+      fail(message)
+      return message
+    }
+    // `nil` output settings is what keeps the samples compressed.
+    let trackOutput = AVAssetReaderTrackOutput(track: track, outputSettings: nil)
+    trackOutput.alwaysCopiesSampleData = false
+    guard assetReader.canAdd(trackOutput) else {
+      let message = "AVAssetReader rejected a compressed output"
+      fail(message)
+      return message
+    }
+    assetReader.add(trackOutput)
+    guard assetReader.startReading() else {
+      let message =
+        "AVAssetReader.startReading failed: \(assetReader.error?.localizedDescription ?? "unknown")"
+      fail(message)
+      return message
+    }
+
+    var substituteFormat: CMFormatDescription?
+    if regenerateFormatDescription {
+      let rebuilt = Self.regenerate(from: nativeFormat)
+      guard let format = rebuilt.format else {
+        let message = rebuilt.error ?? "format regeneration failed"
+        fail(message)
+        return message
+      }
+      substituteFormat = format
+      describeUsed(format)
+    } else {
+      describeUsed(nativeFormat)
+    }
+
+    if let message = configureSession() { return message }
+
+    let renderer = AVSampleBufferAudioRenderer()
+    let synchronizer = AVSampleBufferRenderSynchronizer()
+    synchronizer.addRenderer(renderer)
+    // Deliberately NOT disabling delaysRateChangeUntilHasSufficientMediaData:
+    // the reliable-start preroll is part of the sequence under test.
+    renderer.addObserver(
+      self, forKeyPath: "status", options: [.new], context: &AsbarProbe.statusContext)
+
+    self.renderer = renderer
+    self.synchronizer = synchronizer
+    self.reader = assetReader
+    self.output = trackOutput
+    statusObserved = true
+
+    setPhase("feeding")
+    // Apple's order: request media first, start the clock after.
+    renderer.requestMediaDataWhenReady(on: queue) { [weak self] in
+      self?.pump(substituteFormat: substituteFormat)
+    }
+    synchronizer.rate = 1
+    return nil
+  }
+
+  /// Runs on `queue`.
+  private func pump(substituteFormat: CMFormatDescription?) {
+    guard let renderer, let output, let reader else { return }
+    while renderer.isReadyForMoreMediaData {
+      guard reader.status == .reading, let sample = output.copyNextSampleBuffer() else {
+        renderer.stopRequestingMediaData()
+        setPhase(reader.status == .completed ? "finished" : "stopped(\(reader.status.rawValue))")
+        return
+      }
+      let enqueued: CMSampleBuffer
+      if let substituteFormat {
+        guard let rewrapped = Self.rewrap(sample, with: substituteFormat) else {
+          fail("failed to rewrap a sample with the generated description")
+          renderer.stopRequestingMediaData()
+          return
+        }
+        enqueued = rewrapped
+      } else {
+        enqueued = sample
+      }
+      renderer.enqueue(enqueued)
+      lock.lock()
+      enqueuedSamples += 1
+      lock.unlock()
+    }
+  }
+
+  private func configureSession() -> String? {
+    #if os(iOS) || os(tvOS)
+      let session = AVAudioSession.sharedInstance()
+      do {
+        try session.setCategory(
+          .playback, mode: sessionMode, policy: .longFormAudio, options: [])
+      } catch {
+        let message = "long-form session profile rejected: \(error.localizedDescription)"
+        fail(message)
+        return message
+      }
+      if #available(iOS 15.0, tvOS 15.0, *) {
+        try? session.setSupportsMultichannelContent(true)
+      }
+      do {
+        try session.setActive(true)
+      } catch {
+        let message = "session activation failed: \(error.localizedDescription)"
+        fail(message)
+        return message
+      }
+    #endif
+    return nil
+  }
+
+  override func observeValue(
+    forKeyPath keyPath: String?, of object: Any?,
+    change: [NSKeyValueChangeKey: Any]?, context: UnsafeMutableRawPointer?
+  ) {
+    guard context == &AsbarProbe.statusContext else {
+      super.observeValue(forKeyPath: keyPath, of: object, change: change, context: context)
+      return
+    }
+    guard let renderer = object as? AVSampleBufferAudioRenderer,
+      renderer.status == .failed
+    else { return }
+    let error = renderer.error as NSError?
+    fail(
+      "renderer failed: \(error?.domain ?? "-"):\(error?.code ?? 0) "
+        + (error?.localizedDescription ?? "unknown"))
+  }
+
+  func statusSnapshot() -> [String: Any] {
+    lock.lock()
+    defer { lock.unlock() }
+    var out: [String: Any] = [
+      "state": phase,
+      "asbarEnqueuedSamples": enqueuedSamples,
+      "asbarNativeFormat": nativeDescription,
+      "asbarUsedFormat": usedDescription,
+      "asbarMagicCookie": magicCookieHex,
+      "asbarChannelLayout": layoutTagText,
+    ]
+    if let failure { out["error"] = failure }
+    if let renderer {
+      out["asbarRendererStatus"] =
+        switch renderer.status {
+        case .unknown: "unknown"
+        case .rendering: "rendering"
+        case .failed: "failed"
+        @unknown default: "unrecognized"
+        }
+    }
+    if let synchronizer {
+      out["currentTime"] = CMTimeGetSeconds(synchronizer.currentTime())
+    }
+    return out
+  }
+
+  // MARK: - Format description helpers
+
+  private func describe(_ format: CMFormatDescription) {
+    let text = Self.summarize(format)
+    lock.lock()
+    nativeDescription = text.summary
+    magicCookieHex = text.cookie
+    layoutTagText = text.layout
+    lock.unlock()
+  }
+
+  private func describeUsed(_ format: CMFormatDescription) {
+    let text = Self.summarize(format)
+    lock.lock()
+    usedDescription = text.summary
+    lock.unlock()
+  }
+
+  private static func summarize(
+    _ format: CMFormatDescription
+  ) -> (summary: String, cookie: String, layout: String) {
+    var summary = "subType=\(fourCCText(CMFormatDescriptionGetMediaSubType(format)))"
+    if let asbd = CMAudioFormatDescriptionGetStreamBasicDescription(format)?.pointee {
+      summary +=
+        String(
+          format: " rate=%.0f ch=%u framesPerPacket=%u", asbd.mSampleRate,
+          asbd.mChannelsPerFrame, asbd.mFramesPerPacket)
+    }
+    var cookieSize = 0
+    var cookie = "none"
+    if let bytes = CMAudioFormatDescriptionGetMagicCookie(format, sizeOut: &cookieSize),
+      cookieSize > 0
+    {
+      cookie = Data(bytes: bytes, count: cookieSize).map { String(format: "%02x", $0) }
+        .joined()
+    }
+    var layoutSize = 0
+    var layout = "none"
+    if let acl = CMAudioFormatDescriptionGetChannelLayout(format, sizeOut: &layoutSize) {
+      layout = String(format: "0x%08x", acl.pointee.mChannelLayoutTag)
+    }
+    return (summary, cookie, layout)
+  }
+
+  private static func fourCCText(_ code: FourCharCode) -> String {
+    let bytes = [
+      UInt8((code >> 24) & 0xFF), UInt8((code >> 16) & 0xFF),
+      UInt8((code >> 8) & 0xFF), UInt8(code & 0xFF),
+    ]
+    return String(bytes: bytes, encoding: .ascii) ?? String(code)
+  }
+
+  /// Rebuild the description the way the mpv AO does: same ASBD and magic
+  /// cookie, but constructed by us rather than parsed out of the container,
+  /// with the Dolby-order 5.1 layout attached.
+  private static func regenerate(
+    from native: CMFormatDescription
+  ) -> (format: CMFormatDescription?, error: String?) {
+    guard var asbd = CMAudioFormatDescriptionGetStreamBasicDescription(native)?.pointee else {
+      return (nil, "native description has no ASBD")
+    }
+    var cookieSize = 0
+    var cookieBytes: [UInt8] = []
+    if let bytes = CMAudioFormatDescriptionGetMagicCookie(native, sizeOut: &cookieSize),
+      cookieSize > 0
+    {
+      cookieBytes = Array(UnsafeRawBufferPointer(start: bytes, count: cookieSize))
+    }
+    var layout = AudioChannelLayout()
+    layout.mChannelLayoutTag =
+      asbd.mChannelsPerFrame == 8
+      ? kAudioChannelLayoutTag_MPEG_7_1_C : kAudioChannelLayoutTag_MPEG_5_1_C
+
+    var rebuilt: CMFormatDescription?
+    let status = cookieBytes.withUnsafeBytes { cookie -> OSStatus in
+      CMAudioFormatDescriptionCreate(
+        allocator: kCFAllocatorDefault,
+        asbd: &asbd,
+        layoutSize: MemoryLayout<AudioChannelLayout>.size,
+        layout: &layout,
+        magicCookieSize: cookie.count,
+        magicCookie: cookie.baseAddress,
+        extensions: nil,
+        formatDescriptionOut: &rebuilt)
+    }
+    guard status == noErr, let rebuilt else {
+      return (nil, "CMAudioFormatDescriptionCreate failed (\(status))")
+    }
+    return (rebuilt, nil)
+  }
+
+  private static func rewrap(
+    _ sample: CMSampleBuffer, with format: CMFormatDescription
+  ) -> CMSampleBuffer? {
+    guard let blockBuffer = CMSampleBufferGetDataBuffer(sample) else { return nil }
+    var timing = CMSampleTimingInfo()
+    guard CMSampleBufferGetSampleTimingInfo(sample, at: 0, timingInfoOut: &timing) == noErr
+    else { return nil }
+    var sizeOut = 0
+    let sizeStatus = CMSampleBufferGetSampleSizeArray(
+      sample, entryCount: 0, arrayToFill: nil, entriesNeededOut: &sizeOut)
+    var sizes = [Int](repeating: 0, count: max(sizeOut, 1))
+    if sizeStatus == noErr, sizeOut > 0 {
+      _ = CMSampleBufferGetSampleSizeArray(
+        sample, entryCount: sizeOut, arrayToFill: &sizes, entriesNeededOut: nil)
+    } else {
+      sizes[0] = CMBlockBufferGetDataLength(blockBuffer)
+    }
+    var rewrapped: CMSampleBuffer?
+    let status = CMSampleBufferCreateReady(
+      allocator: kCFAllocatorDefault,
+      dataBuffer: blockBuffer,
+      formatDescription: format,
+      sampleCount: CMSampleBufferGetNumSamples(sample),
+      sampleTimingEntryCount: 1,
+      sampleTimingArray: &timing,
+      sampleSizeEntryCount: sizes.count,
+      sampleSizeArray: &sizes,
+      sampleBufferOut: &rewrapped)
+    return status == noErr ? rewrapped : nil
+  }
+
+  // MARK: - State
+
+  private func setPhase(_ value: String) {
+    lock.lock()
+    phase = value
+    lock.unlock()
+  }
+
+  private func fail(_ message: String) {
+    lock.lock()
+    if failure == nil { failure = message }
+    phase = "failed"
+    lock.unlock()
   }
 }

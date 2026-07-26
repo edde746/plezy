@@ -3,6 +3,7 @@ import 'dart:io' show Platform;
 import '../../media/media_display_criteria.dart';
 import '../../media/playback_rate.dart';
 import '../models.dart';
+import 'audio_rendering_mode.dart';
 import 'platform/player_android.dart';
 import 'player_native.dart';
 import 'player_state.dart';
@@ -218,6 +219,9 @@ abstract class Player {
   /// When enabled, supported audio codecs (AC3, DTS, etc.) will be
   /// passed through to the audio device without decoding.
   Future<void> setAudioPassthrough(bool enabled);
+
+  /// The system's resolved audio rendering mode (Apple only); null elsewhere.
+  Future<AudioRenderingMode?> getAudioRenderingMode();
 
   /// Enable or disable loudness normalization.
   ///

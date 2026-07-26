@@ -418,6 +418,15 @@ class _Translations$settings$fr extends Translations$settings$en {
 	@override String get atmosTestRawStreamDescription => 'Diffuse le fichier de test exactement comme la lecture Atmos du lecteur. Nécessite l\'URL du fichier de test.';
 	@override String get atmosTestRawFile => 'Fichier EAC3 brut';
 	@override String get atmosTestRawFileDescription => 'Lit le fichier de test avec une longueur connue. Nécessite l\'URL du fichier de test.';
+	@override String get atmosTestAsbarNative => 'Moteur de rendu à tampon d\'échantillons (natif)';
+	@override String get atmosTestAsbarNativeDescription => 'Transmet l\'audio compressé intact du fichier directement au moteur de rendu du système. Nécessite l\'URL du fichier de test.';
+	@override String get atmosTestAsbarGenerated => 'Moteur de rendu à tampon d\'échantillons (reconstruit)';
+	@override String get atmosTestAsbarGeneratedDescription => 'Identique, mais avec la description audio reconstruite comme à la lecture. Nécessite l\'URL du fichier de test.';
+	@override String get atmosTestSessionMode => 'Utiliser le mode lecture de films';
+	@override String get atmosTestSessionModeDescription => 'Désactivé utilise le mode documenté par Dolby. Activé utilise le mode précédent.';
+	@override String get atmosTestShowRoutePicker => 'Choisir la sortie AirPlay';
+	@override String get atmosTestHideRoutePicker => 'Masquer le sélecteur AirPlay';
+	@override String get atmosTestRoutePickerDescription => 'Envoie le test vers un récepteur AirPlay. Seul AirPlay indique le mode audio retenu.';
 	@override String get atmosTestStop => 'Arrêter le test';
 	@override String get atmosTestUrl => 'URL du fichier de test';
 	@override String get atmosTestUrlDescription => 'URL HTTP d\'un fichier .ec3 Dolby Atmos brut (extrait par ex. avec ffmpeg)';
@@ -1514,6 +1523,11 @@ class _Translations$videoSettings$fr extends Translations$videoSettings$en {
 	@override String get audioOutput => 'Sortie audio';
 	@override String get performanceOverlay => 'Données de performance';
 	@override String get audioPassthrough => 'Transmission audio directe';
+	@override String get audioOutputDolbyAtmos => 'Dolby Atmos';
+	@override String get audioOutputDolbyAudio => 'Dolby Audio';
+	@override String get audioOutputSurround => 'Surround';
+	@override String get audioOutputSpatial => 'Audio spatial';
+	@override String get audioOutputStereo => 'Stéréo';
 	@override String get audioNormalization => 'Normaliser le volume';
 	@override String get audioDownmix => 'Conversion en stéréo';
 }
@@ -2463,6 +2477,15 @@ extension on TranslationsFr {
 			'settings.atmosTestRawStreamDescription' => 'Diffuse le fichier de test exactement comme la lecture Atmos du lecteur. Nécessite l\'URL du fichier de test.',
 			'settings.atmosTestRawFile' => 'Fichier EAC3 brut',
 			'settings.atmosTestRawFileDescription' => 'Lit le fichier de test avec une longueur connue. Nécessite l\'URL du fichier de test.',
+			'settings.atmosTestAsbarNative' => 'Moteur de rendu à tampon d\'échantillons (natif)',
+			'settings.atmosTestAsbarNativeDescription' => 'Transmet l\'audio compressé intact du fichier directement au moteur de rendu du système. Nécessite l\'URL du fichier de test.',
+			'settings.atmosTestAsbarGenerated' => 'Moteur de rendu à tampon d\'échantillons (reconstruit)',
+			'settings.atmosTestAsbarGeneratedDescription' => 'Identique, mais avec la description audio reconstruite comme à la lecture. Nécessite l\'URL du fichier de test.',
+			'settings.atmosTestSessionMode' => 'Utiliser le mode lecture de films',
+			'settings.atmosTestSessionModeDescription' => 'Désactivé utilise le mode documenté par Dolby. Activé utilise le mode précédent.',
+			'settings.atmosTestShowRoutePicker' => 'Choisir la sortie AirPlay',
+			'settings.atmosTestHideRoutePicker' => 'Masquer le sélecteur AirPlay',
+			'settings.atmosTestRoutePickerDescription' => 'Envoie le test vers un récepteur AirPlay. Seul AirPlay indique le mode audio retenu.',
 			'settings.atmosTestStop' => 'Arrêter le test',
 			'settings.atmosTestUrl' => 'URL du fichier de test',
 			'settings.atmosTestUrlDescription' => 'URL HTTP d\'un fichier .ec3 Dolby Atmos brut (extrait par ex. avec ffmpeg)',
@@ -2690,6 +2713,8 @@ extension on TranslationsFr {
 			'videoControls.language' => 'Langue',
 			'videoControls.noSubtitlesFound' => 'Aucun sous-titre trouvé',
 			'videoControls.noSubtitlesAvailable' => 'Aucun sous-titre disponible',
+			_ => null,
+		} ?? switch (path) {
 			'videoControls.noAudioTracksAvailable' => 'Aucune piste audio disponible',
 			'videoControls.noTracksAvailable' => 'Aucune piste disponible',
 			'videoControls.subtitleDownloaded' => 'Sous-titre téléchargé',
@@ -2699,8 +2724,6 @@ extension on TranslationsFr {
 			'messages.markedAsWatched' => 'Marqué comme vu',
 			'messages.markedAsUnwatched' => 'Marqué comme non vu',
 			'messages.markedAsWatchedOffline' => 'Marqué comme vu (se synchronisera lorsque vous serez en ligne)',
-			_ => null,
-		} ?? switch (path) {
 			'messages.markedAsUnwatchedOffline' => 'Marqué comme non vu (sera synchronisé lorsque vous serez en ligne)',
 			'messages.autoRemovedWatchedDownload' => ({required Object title}) => 'Supprimé automatiquement : ${title}',
 			'messages.autoRemovedWatchedDownloads' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('fr'))(n, one: '${n} téléchargement vu supprimé automatiquement', other: '${n} téléchargements vus supprimés automatiquement', ), 
@@ -3204,6 +3227,8 @@ extension on TranslationsFr {
 			'watchTogether.codeMustBe5Chars' => 'Le code de session doit comporter 5 caractères',
 			'watchTogether.joinInstructions' => 'Saisissez le code de session de l\'hôte pour rejoindre.',
 			'watchTogether.failedToCreate' => 'Échec de la création de la session',
+			_ => null,
+		} ?? switch (path) {
 			'watchTogether.failedToJoin' => 'Échec de la connexion à la session',
 			'watchTogether.sessionCodeCopied' => 'Code de session copié dans le presse-papiers',
 			'watchTogether.relayUnreachable' => 'Serveur relais inaccessible. Un blocage par le fournisseur d’accès peut empêcher le fonctionnement de Regarder ensemble.',
@@ -3213,8 +3238,6 @@ extension on TranslationsFr {
 			'watchTogether.joinCurrentPlaybackDescription' => 'Reprendre le contenu que l’hôte regarde actuellement',
 			'watchTogether.failedToOpenCurrentPlayback' => 'Impossible d\'ouvrir la lecture en cours',
 			'watchTogether.participantJoined' => ({required Object name}) => '${name} a rejoint',
-			_ => null,
-		} ?? switch (path) {
 			'watchTogether.participantLeft' => ({required Object name}) => '${name} est parti',
 			'watchTogether.participantPaused' => ({required Object name}) => '${name} a mis en pause',
 			'watchTogether.participantResumed' => ({required Object name}) => '${name} a repris',
@@ -3413,6 +3436,11 @@ extension on TranslationsFr {
 			'videoSettings.audioOutput' => 'Sortie audio',
 			'videoSettings.performanceOverlay' => 'Données de performance',
 			'videoSettings.audioPassthrough' => 'Transmission audio directe',
+			'videoSettings.audioOutputDolbyAtmos' => 'Dolby Atmos',
+			'videoSettings.audioOutputDolbyAudio' => 'Dolby Audio',
+			'videoSettings.audioOutputSurround' => 'Surround',
+			'videoSettings.audioOutputSpatial' => 'Audio spatial',
+			'videoSettings.audioOutputStereo' => 'Stéréo',
 			'videoSettings.audioNormalization' => 'Normaliser le volume',
 			'videoSettings.audioDownmix' => 'Conversion en stéréo',
 			'performanceOverlay.color' => 'Couleur',

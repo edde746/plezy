@@ -418,6 +418,15 @@ class _Translations$settings$bg extends Translations$settings$en {
 	@override String get atmosTestRawStreamDescription => 'Стриймва тестовия файл точно както Atmos възпроизвеждането в плейъра. Изисква URL на тестовия файл.';
 	@override String get atmosTestRawFile => 'Суров EAC3 файл';
 	@override String get atmosTestRawFileDescription => 'Възпроизвежда тестовия файл с известна дължина. Изисква URL на тестовия файл.';
+	@override String get atmosTestAsbarNative => 'Рендер със семпъл буфер (native)';
+	@override String get atmosTestAsbarNativeDescription => 'Подава несменения компресиран звук от файла директно към системния рендер. Изисква URL на тестовия файл.';
+	@override String get atmosTestAsbarGenerated => 'Рендер със семпъл буфер (възстановен)';
+	@override String get atmosTestAsbarGeneratedDescription => 'Същото, но с аудиоописание, изградено както при възпроизвеждане. Изисква URL на тестовия файл.';
+	@override String get atmosTestSessionMode => 'Използвай режим за възпроизвеждане на филми';
+	@override String get atmosTestSessionModeDescription => 'Изключено използва режима, документиран от Dolby. Включено използва предишния режим.';
+	@override String get atmosTestShowRoutePicker => 'Избери AirPlay изход';
+	@override String get atmosTestHideRoutePicker => 'Скрий избора на AirPlay изход';
+	@override String get atmosTestRoutePickerDescription => 'Изпраща теста към AirPlay приемник. Само AirPlay съобщава разрешения аудиорежим.';
 	@override String get atmosTestStop => 'Спри теста';
 	@override String get atmosTestUrl => 'URL на тестовия файл';
 	@override String get atmosTestUrlDescription => 'HTTP URL на суров .ec3 Dolby Atmos файл (напр. извлечен с ffmpeg)';
@@ -1514,6 +1523,11 @@ class _Translations$videoSettings$bg extends Translations$videoSettings$en {
 	@override String get audioOutput => 'Аудио изход';
 	@override String get performanceOverlay => 'Оверлей за производителност';
 	@override String get audioPassthrough => 'Директно предаване на аудио';
+	@override String get audioOutputDolbyAtmos => 'Dolby Atmos';
+	@override String get audioOutputDolbyAudio => 'Dolby Audio';
+	@override String get audioOutputSurround => 'Съраунд';
+	@override String get audioOutputSpatial => 'Пространствено аудио';
+	@override String get audioOutputStereo => 'Стерео';
 	@override String get audioNormalization => 'Нормализиране на силата на звука';
 	@override String get audioDownmix => 'Смесване до стерео';
 }
@@ -2463,6 +2477,15 @@ extension on TranslationsBg {
 			'settings.atmosTestRawStreamDescription' => 'Стриймва тестовия файл точно както Atmos възпроизвеждането в плейъра. Изисква URL на тестовия файл.',
 			'settings.atmosTestRawFile' => 'Суров EAC3 файл',
 			'settings.atmosTestRawFileDescription' => 'Възпроизвежда тестовия файл с известна дължина. Изисква URL на тестовия файл.',
+			'settings.atmosTestAsbarNative' => 'Рендер със семпъл буфер (native)',
+			'settings.atmosTestAsbarNativeDescription' => 'Подава несменения компресиран звук от файла директно към системния рендер. Изисква URL на тестовия файл.',
+			'settings.atmosTestAsbarGenerated' => 'Рендер със семпъл буфер (възстановен)',
+			'settings.atmosTestAsbarGeneratedDescription' => 'Същото, но с аудиоописание, изградено както при възпроизвеждане. Изисква URL на тестовия файл.',
+			'settings.atmosTestSessionMode' => 'Използвай режим за възпроизвеждане на филми',
+			'settings.atmosTestSessionModeDescription' => 'Изключено използва режима, документиран от Dolby. Включено използва предишния режим.',
+			'settings.atmosTestShowRoutePicker' => 'Избери AirPlay изход',
+			'settings.atmosTestHideRoutePicker' => 'Скрий избора на AirPlay изход',
+			'settings.atmosTestRoutePickerDescription' => 'Изпраща теста към AirPlay приемник. Само AirPlay съобщава разрешения аудиорежим.',
 			'settings.atmosTestStop' => 'Спри теста',
 			'settings.atmosTestUrl' => 'URL на тестовия файл',
 			'settings.atmosTestUrlDescription' => 'HTTP URL на суров .ec3 Dolby Atmos файл (напр. извлечен с ffmpeg)',
@@ -2690,6 +2713,8 @@ extension on TranslationsBg {
 			'videoControls.language' => 'Език',
 			'videoControls.noSubtitlesFound' => 'Не са намерени субтитри',
 			'videoControls.noSubtitlesAvailable' => 'Няма налични субтитри',
+			_ => null,
+		} ?? switch (path) {
 			'videoControls.noAudioTracksAvailable' => 'Няма налични аудиопътечки',
 			'videoControls.noTracksAvailable' => 'Няма налични пътечки',
 			'videoControls.subtitleDownloaded' => 'Субтитърът е изтеглен',
@@ -2699,8 +2724,6 @@ extension on TranslationsBg {
 			'messages.markedAsWatched' => 'Маркирано като гледано',
 			'messages.markedAsUnwatched' => 'Маркирано като негледано',
 			'messages.markedAsWatchedOffline' => 'Маркирано като гледано (ще се синхронизира, когато сте онлайн)',
-			_ => null,
-		} ?? switch (path) {
 			'messages.markedAsUnwatchedOffline' => 'Маркирано като негледано (ще се синхронизира, когато сте онлайн)',
 			'messages.autoRemovedWatchedDownload' => ({required Object title}) => 'Автоматично премахнато: ${title}',
 			'messages.autoRemovedWatchedDownloads' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('bg'))(n, one: 'Автоматично премахнато ${n} гледано изтегляне', other: 'Автоматично премахнати ${n} гледани изтегляния', ), 
@@ -3204,6 +3227,8 @@ extension on TranslationsBg {
 			'watchTogether.codeMustBe5Chars' => 'Кодът на сесията трябва да е 5 символа',
 			'watchTogether.joinInstructions' => 'Въведете кода на сесията от организатора, за да се присъедините.',
 			'watchTogether.failedToCreate' => 'Неуспешно създаване на сесия',
+			_ => null,
+		} ?? switch (path) {
 			'watchTogether.failedToJoin' => 'Неуспешно присъединяване към сесия',
 			'watchTogether.sessionCodeCopied' => 'Кодът на сесията е копиран в клипборда',
 			'watchTogether.relayUnreachable' => 'Релейният сървър е недостъпен. Възможно е интернет доставчикът да блокира гледането заедно.',
@@ -3213,8 +3238,6 @@ extension on TranslationsBg {
 			'watchTogether.joinCurrentPlaybackDescription' => 'Върнете се към това, което организаторът гледа в момента',
 			'watchTogether.failedToOpenCurrentPlayback' => 'Неуспешно отваряне на текущото възпроизвеждане',
 			'watchTogether.participantJoined' => ({required Object name}) => '${name} се присъедини',
-			_ => null,
-		} ?? switch (path) {
 			'watchTogether.participantLeft' => ({required Object name}) => '${name} напусна',
 			'watchTogether.participantPaused' => ({required Object name}) => '${name} постави на пауза',
 			'watchTogether.participantResumed' => ({required Object name}) => '${name} продължи',
@@ -3413,6 +3436,11 @@ extension on TranslationsBg {
 			'videoSettings.audioOutput' => 'Аудио изход',
 			'videoSettings.performanceOverlay' => 'Оверлей за производителност',
 			'videoSettings.audioPassthrough' => 'Директно предаване на аудио',
+			'videoSettings.audioOutputDolbyAtmos' => 'Dolby Atmos',
+			'videoSettings.audioOutputDolbyAudio' => 'Dolby Audio',
+			'videoSettings.audioOutputSurround' => 'Съраунд',
+			'videoSettings.audioOutputSpatial' => 'Пространствено аудио',
+			'videoSettings.audioOutputStereo' => 'Стерео',
 			'videoSettings.audioNormalization' => 'Нормализиране на силата на звука',
 			'videoSettings.audioDownmix' => 'Смесване до стерео',
 			'performanceOverlay.color' => 'Цвят',

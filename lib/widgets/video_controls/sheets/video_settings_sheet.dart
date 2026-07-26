@@ -180,6 +180,67 @@ class _SettingsToggleItemState extends State<_SettingsToggleItem> {
   }
 }
 
+/// Reflects the system's resolved audio rendering mode, as the Dolby
+/// application guide requires. Renders nothing until the system reports a
+/// conclusive value: Apple only resolves `renderingMode` for CarPlay and
+/// AirPlay routes, and showing "Stereo" for an inconclusive HDMI route would
+/// be worse than showing nothing.
+class _AudioRenderingModeItem extends StatefulWidget {
+  const _AudioRenderingModeItem({required this.player});
+
+  final Player player;
+
+  @override
+  State<_AudioRenderingModeItem> createState() => _AudioRenderingModeItemState();
+}
+
+class _AudioRenderingModeItemState extends State<_AudioRenderingModeItem> {
+  AudioRenderingMode? _mode;
+  Timer? _poll;
+
+  @override
+  void initState() {
+    super.initState();
+    unawaited(_refresh());
+    _poll = Timer.periodic(const Duration(seconds: 2), (_) => unawaited(_refresh()));
+  }
+
+  @override
+  void dispose() {
+    _poll?.cancel();
+    super.dispose();
+  }
+
+  Future<void> _refresh() async {
+    final mode = await widget.player.getAudioRenderingMode();
+    if (!mounted) return;
+    setState(() => _mode = mode);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final mode = _mode;
+    if (mode == null || !mode.isConclusive) return const SizedBox.shrink();
+    final label = switch (mode.rawValue) {
+      AudioRenderingMode.dolbyAtmos => t.videoSettings.audioOutputDolbyAtmos,
+      AudioRenderingMode.dolbyAudio => t.videoSettings.audioOutputDolbyAudio,
+      AudioRenderingMode.surround => t.videoSettings.audioOutputSurround,
+      AudioRenderingMode.spatialAudio => t.videoSettings.audioOutputSpatial,
+      _ => t.videoSettings.audioOutputStereo,
+    };
+    final highlighted = mode.isDolbyAtmos || mode.isDolbyAudio;
+    return FocusableListTile(
+      leading: AppIcon(
+        Symbols.spatial_audio_rounded,
+        fill: 1,
+        color: highlighted ? Colors.amber : tokens(context).textMuted,
+      ),
+      title: Text(t.videoSettings.audioOutput),
+      trailing: Text(label, style: TextStyle(color: tokens(context).textMuted)),
+    );
+  }
+}
+
 /// Unified settings sheet for playback adjustments with in-sheet navigation
 class VideoSettingsSheet extends StatefulWidget {
   final Player player;
@@ -579,6 +640,12 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
             title: t.videoSettings.audioPassthrough,
             onAfterWrite: widget.player.setAudioPassthrough,
           ),
+
+        // Dolby playback badge. The Dolby application guide requires the app
+        // to reflect AVAudioSession.renderingMode; Apple only resolves that
+        // for CarPlay/AirPlay routes, so it is hidden rather than shown as
+        // "not Dolby" when the system reports notApplicable.
+        if (PlatformDetector.isAppleTV()) _AudioRenderingModeItem(player: widget.player),
 
         // Audio Normalization
         _SettingsToggleItem(

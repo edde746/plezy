@@ -418,6 +418,15 @@ class _Translations$settings$ja extends Translations$settings$en {
 	@override String get atmosTestRawStreamDescription => 'プレイヤー内のAtmos再生と同じ方式でテストファイルをストリーミングします。テストファイルのURLが必要です。';
 	@override String get atmosTestRawFile => '生EAC3ファイル';
 	@override String get atmosTestRawFileDescription => '長さが既知のテストファイルを再生します。テストファイルのURLが必要です。';
+	@override String get atmosTestAsbarNative => 'サンプルバッファレンダラー（ネイティブ）';
+	@override String get atmosTestAsbarNativeDescription => 'ファイルの圧縮音声をそのままシステムのレンダラーに渡します。テストファイルのURLが必要です。';
+	@override String get atmosTestAsbarGenerated => 'サンプルバッファレンダラー（再構築）';
+	@override String get atmosTestAsbarGeneratedDescription => '同じですが、再生時と同じ方法で音声記述を再構築します。テストファイルのURLが必要です。';
+	@override String get atmosTestSessionMode => 'ムービー再生モードを使用';
+	@override String get atmosTestSessionModeDescription => 'オフはDolbyが文書化したモードを使用します。オンは以前のモードを使用します。';
+	@override String get atmosTestShowRoutePicker => 'AirPlay出力を選択';
+	@override String get atmosTestHideRoutePicker => 'AirPlay出力の選択を隠す';
+	@override String get atmosTestRoutePickerDescription => 'テストをAirPlayレシーバーに送信します。解決された音声モードを報告するのはAirPlayのみです。';
 	@override String get atmosTestStop => 'テストを停止';
 	@override String get atmosTestUrl => 'テストファイルのURL';
 	@override String get atmosTestUrlDescription => '生の.ec3 Dolby AtmosファイルのHTTP URL（例: ffmpegで抽出）';
@@ -1511,6 +1520,11 @@ class _Translations$videoSettings$ja extends Translations$videoSettings$en {
 	@override String get audioOutput => '音声出力';
 	@override String get performanceOverlay => 'パフォーマンスオーバーレイ';
 	@override String get audioPassthrough => 'オーディオパススルー';
+	@override String get audioOutputDolbyAtmos => 'Dolby Atmos';
+	@override String get audioOutputDolbyAudio => 'Dolby Audio';
+	@override String get audioOutputSurround => 'サラウンド';
+	@override String get audioOutputSpatial => '空間オーディオ';
+	@override String get audioOutputStereo => 'ステレオ';
 	@override String get audioNormalization => 'ラウドネス正規化';
 	@override String get audioDownmix => 'ステレオにダウンミックス';
 }
@@ -2460,6 +2474,15 @@ extension on TranslationsJa {
 			'settings.atmosTestRawStreamDescription' => 'プレイヤー内のAtmos再生と同じ方式でテストファイルをストリーミングします。テストファイルのURLが必要です。',
 			'settings.atmosTestRawFile' => '生EAC3ファイル',
 			'settings.atmosTestRawFileDescription' => '長さが既知のテストファイルを再生します。テストファイルのURLが必要です。',
+			'settings.atmosTestAsbarNative' => 'サンプルバッファレンダラー（ネイティブ）',
+			'settings.atmosTestAsbarNativeDescription' => 'ファイルの圧縮音声をそのままシステムのレンダラーに渡します。テストファイルのURLが必要です。',
+			'settings.atmosTestAsbarGenerated' => 'サンプルバッファレンダラー（再構築）',
+			'settings.atmosTestAsbarGeneratedDescription' => '同じですが、再生時と同じ方法で音声記述を再構築します。テストファイルのURLが必要です。',
+			'settings.atmosTestSessionMode' => 'ムービー再生モードを使用',
+			'settings.atmosTestSessionModeDescription' => 'オフはDolbyが文書化したモードを使用します。オンは以前のモードを使用します。',
+			'settings.atmosTestShowRoutePicker' => 'AirPlay出力を選択',
+			'settings.atmosTestHideRoutePicker' => 'AirPlay出力の選択を隠す',
+			'settings.atmosTestRoutePickerDescription' => 'テストをAirPlayレシーバーに送信します。解決された音声モードを報告するのはAirPlayのみです。',
 			'settings.atmosTestStop' => 'テストを停止',
 			'settings.atmosTestUrl' => 'テストファイルのURL',
 			'settings.atmosTestUrlDescription' => '生の.ec3 Dolby AtmosファイルのHTTP URL（例: ffmpegで抽出）',
@@ -2687,6 +2710,8 @@ extension on TranslationsJa {
 			'videoControls.language' => '言語',
 			'videoControls.noSubtitlesFound' => '字幕が見つかりません',
 			'videoControls.noSubtitlesAvailable' => '利用可能な字幕はありません',
+			_ => null,
+		} ?? switch (path) {
 			'videoControls.noAudioTracksAvailable' => '利用可能な音声トラックはありません',
 			'videoControls.noTracksAvailable' => '利用可能なトラックはありません',
 			'videoControls.subtitleDownloaded' => '字幕をダウンロードしました',
@@ -2696,8 +2721,6 @@ extension on TranslationsJa {
 			'messages.markedAsWatched' => '視聴済みにしました',
 			'messages.markedAsUnwatched' => '未視聴にしました',
 			'messages.markedAsWatchedOffline' => '視聴済みにしました（オンライン時に同期）',
-			_ => null,
-		} ?? switch (path) {
 			'messages.markedAsUnwatchedOffline' => '未視聴にしました（オンライン時に同期）',
 			'messages.autoRemovedWatchedDownload' => ({required Object title}) => '自動削除: ${title}',
 			'messages.autoRemovedWatchedDownloads' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('ja'))(n, other: '視聴済みダウンロードを${n}件自動削除しました', ), 
@@ -3201,6 +3224,8 @@ extension on TranslationsJa {
 			'watchTogether.codeMustBe5Chars' => 'セッションコードは5文字である必要があります',
 			'watchTogether.joinInstructions' => '参加するにはホストのセッションコードを入力してください。',
 			'watchTogether.failedToCreate' => 'セッションの作成に失敗しました',
+			_ => null,
+		} ?? switch (path) {
 			'watchTogether.failedToJoin' => 'セッションへの参加に失敗しました',
 			'watchTogether.sessionCodeCopied' => 'セッションコードをクリップボードにコピーしました',
 			'watchTogether.relayUnreachable' => 'リレーサーバーに接続できません。ISPによるブロックのため「一緒に見る」を利用できない可能性があります。',
@@ -3210,8 +3235,6 @@ extension on TranslationsJa {
 			'watchTogether.joinCurrentPlaybackDescription' => 'ホストが現在視聴中のコンテンツに戻る',
 			'watchTogether.failedToOpenCurrentPlayback' => '現在の再生を開けませんでした',
 			'watchTogether.participantJoined' => ({required Object name}) => '${name}が参加しました',
-			_ => null,
-		} ?? switch (path) {
 			'watchTogether.participantLeft' => ({required Object name}) => '${name}が退出しました',
 			'watchTogether.participantPaused' => ({required Object name}) => '${name}が一時停止しました',
 			'watchTogether.participantResumed' => ({required Object name}) => '${name}が再開しました',
@@ -3410,6 +3433,11 @@ extension on TranslationsJa {
 			'videoSettings.audioOutput' => '音声出力',
 			'videoSettings.performanceOverlay' => 'パフォーマンスオーバーレイ',
 			'videoSettings.audioPassthrough' => 'オーディオパススルー',
+			'videoSettings.audioOutputDolbyAtmos' => 'Dolby Atmos',
+			'videoSettings.audioOutputDolbyAudio' => 'Dolby Audio',
+			'videoSettings.audioOutputSurround' => 'サラウンド',
+			'videoSettings.audioOutputSpatial' => '空間オーディオ',
+			'videoSettings.audioOutputStereo' => 'ステレオ',
 			'videoSettings.audioNormalization' => 'ラウドネス正規化',
 			'videoSettings.audioDownmix' => 'ステレオにダウンミックス',
 			'performanceOverlay.color' => '色',

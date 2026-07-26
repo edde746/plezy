@@ -306,6 +306,10 @@ class SettingsService extends BaseSharedPreferencesService {
   // Source URL for the Apple TV Atmos diagnostics screen; deliberately not
   // resettable so a tester keeps it across "Reset All Settings".
   static const atmosProbeUrl = StringPref('atmos_probe_url', defaultValue: '');
+  // Session-mode A/B for the Atmos diagnostics screen. Off = the mode Dolby's
+  // application guide prescribes; on = the mode the audio output used before.
+  // Not resettable, for the same reason as the URL above.
+  static const atmosProbeMoviePlaybackMode = BoolPref('atmos_probe_movie_playback_mode');
   static const crashReporting = BoolPref('crash_reporting', defaultValue: true);
   static const enableHardwareDecoding = BoolPref('enable_hardware_decoding', defaultValue: true);
   static const enableHDR = BoolPref('enable_hdr', defaultValue: true);

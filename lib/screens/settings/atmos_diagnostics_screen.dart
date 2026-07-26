@@ -30,6 +30,7 @@ class _AtmosDiagnosticsScreenState extends State<AtmosDiagnosticsScreen> {
   Map<Object?, Object?> _status = const {};
   String? _activeMode;
   bool _stopping = false;
+  bool _routePickerVisible = false;
 
   @override
   void initState() {
@@ -54,15 +55,36 @@ class _AtmosDiagnosticsScreenState extends State<AtmosDiagnosticsScreen> {
     }
   }
 
+  /// AirPlay is the only route where the system resolves `renderingMode` and
+  /// `supportedOutputChannelLayouts`, so the picker is what makes those arms of
+  /// the matrix testable.
+  Future<void> _toggleRoutePicker() async {
+    final next = !_routePickerVisible;
+    try {
+      await _channel.invokeMethod(next ? 'showRoutePicker' : 'hideRoutePicker');
+      if (!mounted) return;
+      setState(() => _routePickerVisible = next);
+    } on PlatformException catch (e) {
+      if (mounted) showErrorSnackBar(context, e.message ?? e.code);
+    }
+  }
+
   Future<void> _start(String mode) async {
-    final needsUrl = mode == 'rawEc3' || mode == 'rawEc3Finite';
+    const urlModes = {'rawEc3', 'rawEc3Finite', 'asbarNative', 'asbarGenerated'};
+    final needsUrl = urlModes.contains(mode);
     final url = SettingsService.instance.read(SettingsService.atmosProbeUrl);
     if (needsUrl && url.isEmpty) {
       showAppSnackBar(context, t.settings.atmosTestUrlMissing);
       return;
     }
     try {
-      await _channel.invokeMethod('start', {'mode': mode, if (needsUrl) 'url': url});
+      await _channel.invokeMethod('start', {
+        'mode': mode,
+        if (needsUrl) 'url': url,
+        'sessionMode': SettingsService.instance.read(SettingsService.atmosProbeMoviePlaybackMode)
+            ? 'moviePlayback'
+            : 'default',
+      });
       if (!mounted) return;
       setState(() => _activeMode = mode);
     } on PlatformException catch (e) {
@@ -129,6 +151,30 @@ class _AtmosDiagnosticsScreenState extends State<AtmosDiagnosticsScreen> {
               icon: Symbols.audio_file_rounded,
               title: t.settings.atmosTestRawFile,
               subtitle: t.settings.atmosTestRawFileDescription,
+            ),
+            _testTile(
+              mode: 'asbarNative',
+              icon: Symbols.graphic_eq_rounded,
+              title: t.settings.atmosTestAsbarNative,
+              subtitle: t.settings.atmosTestAsbarNativeDescription,
+            ),
+            _testTile(
+              mode: 'asbarGenerated',
+              icon: Symbols.tune_rounded,
+              title: t.settings.atmosTestAsbarGenerated,
+              subtitle: t.settings.atmosTestAsbarGeneratedDescription,
+            ),
+            SettingNavigationTile(
+              icon: Symbols.airplay_rounded,
+              title: _routePickerVisible ? t.settings.atmosTestHideRoutePicker : t.settings.atmosTestShowRoutePicker,
+              subtitle: t.settings.atmosTestRoutePickerDescription,
+              onTap: _toggleRoutePicker,
+            ),
+            SettingSwitchTile(
+              pref: SettingsService.atmosProbeMoviePlaybackMode,
+              icon: Symbols.tv_options_input_settings_rounded,
+              title: t.settings.atmosTestSessionMode,
+              subtitle: t.settings.atmosTestSessionModeDescription,
             ),
             SettingNavigationTile(
               icon: Symbols.stop_circle_rounded,

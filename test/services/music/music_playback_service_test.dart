@@ -9,6 +9,7 @@ import 'package:plezy/media/media_item.dart';
 import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/media/media_server_client.dart';
 import 'package:plezy/mpv/models.dart';
+import 'package:plezy/mpv/player/audio_rendering_mode.dart';
 import 'package:plezy/mpv/player/player.dart';
 import 'package:plezy/mpv/player/player_state.dart';
 import 'package:plezy/mpv/player/player_streams.dart';
@@ -319,6 +320,9 @@ class FakePlayer implements Player {
 
   @override
   Future<void> setAudioPassthrough(bool enabled) async {}
+
+  @override
+  Future<AudioRenderingMode?> getAudioRenderingMode() async => null;
 
   @override
   Future<void> setAudioNormalization(bool enabled) async {}

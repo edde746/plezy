@@ -418,6 +418,15 @@ class _Translations$settings$hu extends Translations$settings$en {
 	@override String get atmosTestRawStreamDescription => 'A tesztfájlt pontosan úgy közvetíti, mint a lejátszón belüli Atmos lejátszás. Szükséges a tesztfájl URL-je.';
 	@override String get atmosTestRawFile => 'Nyers EAC3 fájl';
 	@override String get atmosTestRawFileDescription => 'Ismert hosszúságú tesztfájlt játszik le. Szükséges a tesztfájl URL-je.';
+	@override String get atmosTestAsbarNative => 'Mintapuffer-megjelenítő (natív)';
+	@override String get atmosTestAsbarNativeDescription => 'A fájl érintetlen tömörített hangját közvetlenül a rendszer megjelenítőjének adja. Szükséges a tesztfájl URL-je.';
+	@override String get atmosTestAsbarGenerated => 'Mintapuffer-megjelenítő (újraépített)';
+	@override String get atmosTestAsbarGeneratedDescription => 'Ugyanaz, de a lejátszás módján felépített hangleírással. Szükséges a tesztfájl URL-je.';
+	@override String get atmosTestSessionMode => 'Filmlejátszási mód használata';
+	@override String get atmosTestSessionModeDescription => 'Kikapcsolva a Dolby által dokumentált módot használja. Bekapcsolva a korábbi módot.';
+	@override String get atmosTestShowRoutePicker => 'AirPlay kimenet választása';
+	@override String get atmosTestHideRoutePicker => 'AirPlay kimenetválasztó elrejtése';
+	@override String get atmosTestRoutePickerDescription => 'Elküldi a tesztet egy AirPlay vevőnek. Csak az AirPlay jelzi a feloldott hangmódot.';
 	@override String get atmosTestStop => 'Teszt leállítása';
 	@override String get atmosTestUrl => 'Tesztfájl URL-je';
 	@override String get atmosTestUrlDescription => 'Nyers .ec3 Dolby Atmos fájl HTTP URL-je (pl. ffmpeg-gel kinyerve)';
@@ -1514,6 +1523,11 @@ class _Translations$videoSettings$hu extends Translations$videoSettings$en {
 	@override String get audioOutput => 'Hangkimenet';
 	@override String get performanceOverlay => 'Teljesítményadatok';
 	@override String get audioPassthrough => 'Hangtovábbítás (passthrough)';
+	@override String get audioOutputDolbyAtmos => 'Dolby Atmos';
+	@override String get audioOutputDolbyAudio => 'Dolby Audio';
+	@override String get audioOutputSurround => 'Térhatású';
+	@override String get audioOutputSpatial => 'Térbeli hang';
+	@override String get audioOutputStereo => 'Sztereó';
 	@override String get audioNormalization => 'Hangerő normalizálása';
 	@override String get audioDownmix => 'Lekeverés sztereóra';
 }
@@ -2463,6 +2477,15 @@ extension on TranslationsHu {
 			'settings.atmosTestRawStreamDescription' => 'A tesztfájlt pontosan úgy közvetíti, mint a lejátszón belüli Atmos lejátszás. Szükséges a tesztfájl URL-je.',
 			'settings.atmosTestRawFile' => 'Nyers EAC3 fájl',
 			'settings.atmosTestRawFileDescription' => 'Ismert hosszúságú tesztfájlt játszik le. Szükséges a tesztfájl URL-je.',
+			'settings.atmosTestAsbarNative' => 'Mintapuffer-megjelenítő (natív)',
+			'settings.atmosTestAsbarNativeDescription' => 'A fájl érintetlen tömörített hangját közvetlenül a rendszer megjelenítőjének adja. Szükséges a tesztfájl URL-je.',
+			'settings.atmosTestAsbarGenerated' => 'Mintapuffer-megjelenítő (újraépített)',
+			'settings.atmosTestAsbarGeneratedDescription' => 'Ugyanaz, de a lejátszás módján felépített hangleírással. Szükséges a tesztfájl URL-je.',
+			'settings.atmosTestSessionMode' => 'Filmlejátszási mód használata',
+			'settings.atmosTestSessionModeDescription' => 'Kikapcsolva a Dolby által dokumentált módot használja. Bekapcsolva a korábbi módot.',
+			'settings.atmosTestShowRoutePicker' => 'AirPlay kimenet választása',
+			'settings.atmosTestHideRoutePicker' => 'AirPlay kimenetválasztó elrejtése',
+			'settings.atmosTestRoutePickerDescription' => 'Elküldi a tesztet egy AirPlay vevőnek. Csak az AirPlay jelzi a feloldott hangmódot.',
 			'settings.atmosTestStop' => 'Teszt leállítása',
 			'settings.atmosTestUrl' => 'Tesztfájl URL-je',
 			'settings.atmosTestUrlDescription' => 'Nyers .ec3 Dolby Atmos fájl HTTP URL-je (pl. ffmpeg-gel kinyerve)',
@@ -2690,6 +2713,8 @@ extension on TranslationsHu {
 			'videoControls.language' => 'Nyelv',
 			'videoControls.noSubtitlesFound' => 'Nem találhatók feliratok',
 			'videoControls.noSubtitlesAvailable' => 'Nincsenek elérhető feliratok',
+			_ => null,
+		} ?? switch (path) {
 			'videoControls.noAudioTracksAvailable' => 'Nincsenek elérhető hangsávok',
 			'videoControls.noTracksAvailable' => 'Nincsenek elérhető sávok',
 			'videoControls.subtitleDownloaded' => 'Felirat letöltve',
@@ -2699,8 +2724,6 @@ extension on TranslationsHu {
 			'messages.markedAsWatched' => 'Megjelölve megtekintettként',
 			'messages.markedAsUnwatched' => 'Megjelölve nem megtekintettként',
 			'messages.markedAsWatchedOffline' => 'Megjelölve megtekintettként (szinkronizálás online állapotban)',
-			_ => null,
-		} ?? switch (path) {
 			'messages.markedAsUnwatchedOffline' => 'Megjelölve nem megtekintettként (szinkronizálás online állapotban)',
 			'messages.autoRemovedWatchedDownload' => ({required Object title}) => 'Automatikusan eltávolítva: ${title}',
 			'messages.autoRemovedWatchedDownloads' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('hu'))(n, one: '${n} megtekintett letöltés automatikusan eltávolítva', other: '${n} megtekintett letöltés automatikusan eltávolítva', ), 
@@ -3204,6 +3227,8 @@ extension on TranslationsHu {
 			'watchTogether.codeMustBe5Chars' => 'A munkamenetkódnak 5 karakterből kell állnia',
 			'watchTogether.joinInstructions' => 'Add meg a házigazda kódját a csatlakozáshoz.',
 			'watchTogether.failedToCreate' => 'Nem sikerült a munkamenet létrehozása',
+			_ => null,
+		} ?? switch (path) {
 			'watchTogether.failedToJoin' => 'Nem sikerült csatlakozni a munkamenethez',
 			'watchTogether.sessionCodeCopied' => 'A munkamenetkód a vágólapra másolva',
 			'watchTogether.relayUnreachable' => 'A relészerver nem érhető el. Az internetszolgáltató blokkolása megakadályozhatja a közös nézést.',
@@ -3213,8 +3238,6 @@ extension on TranslationsHu {
 			'watchTogether.joinCurrentPlaybackDescription' => 'Visszatérés ahhoz, amit a házigazda éppen néz',
 			'watchTogether.failedToOpenCurrentPlayback' => 'Nem sikerült megnyitni a jelenlegi lejátszást',
 			'watchTogether.participantJoined' => ({required Object name}) => '${name} csatlakozott',
-			_ => null,
-		} ?? switch (path) {
 			'watchTogether.participantLeft' => ({required Object name}) => '${name} kilépett',
 			'watchTogether.participantPaused' => ({required Object name}) => '${name} szüneteltette a lejátszást',
 			'watchTogether.participantResumed' => ({required Object name}) => '${name} folytatta a lejátszást',
@@ -3413,6 +3436,11 @@ extension on TranslationsHu {
 			'videoSettings.audioOutput' => 'Hangkimenet',
 			'videoSettings.performanceOverlay' => 'Teljesítményadatok',
 			'videoSettings.audioPassthrough' => 'Hangtovábbítás (passthrough)',
+			'videoSettings.audioOutputDolbyAtmos' => 'Dolby Atmos',
+			'videoSettings.audioOutputDolbyAudio' => 'Dolby Audio',
+			'videoSettings.audioOutputSurround' => 'Térhatású',
+			'videoSettings.audioOutputSpatial' => 'Térbeli hang',
+			'videoSettings.audioOutputStereo' => 'Sztereó',
 			'videoSettings.audioNormalization' => 'Hangerő normalizálása',
 			'videoSettings.audioDownmix' => 'Lekeverés sztereóra',
 			'performanceOverlay.color' => 'Szín',

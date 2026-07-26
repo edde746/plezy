@@ -97,9 +97,42 @@ class MpvPlayerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler, MpvPluginS
       handleUpdateFrame(result: result)
     case "setLogLevel":
       handleSetLogLevel(call: call, result: result)
+    case "getAudioRenderingMode":
+      result(Self.audioRenderingMode())
     default:
       result(FlutterMethodNotImplemented)
     }
+  }
+
+  /// The system's resolved audio rendering mode, for the Dolby-prescribed
+  /// playback badge. `AVAudioSession.renderingMode` is tvOS/iOS 17.2+ and is
+  /// documented as populated for CarPlay and AirPlay routes, so an HDMI route
+  /// is expected to report `notApplicable`; callers must treat that as
+  /// "unknown", never as "not Dolby".
+  private static func audioRenderingMode() -> [String: Any] {
+    var out: [String: Any] = [:]
+    let session = AVAudioSession.sharedInstance()
+    out["maxOutputChannels"] = session.maximumOutputNumberOfChannels
+    out["outputChannels"] = session.outputNumberOfChannels
+    out["route"] = session.currentRoute.outputs.first?.portType.rawValue ?? "none"
+    if #available(tvOS 17.2, iOS 17.2, *) {
+      let mode = session.renderingMode
+      out["rawValue"] = mode.rawValue
+      out["name"] =
+        switch mode {
+        case .notApplicable: "notApplicable"
+        case .monoStereo: "monoStereo"
+        case .surround: "surround"
+        case .spatialAudio: "spatialAudio"
+        case .dolbyAudio: "dolbyAudio"
+        case .dolbyAtmos: "dolbyAtmos"
+        @unknown default: "unknown"
+        }
+    } else {
+      out["rawValue"] = 0
+      out["name"] = "unavailable"
+    }
+    return out
   }
 
   // MARK: - PiP

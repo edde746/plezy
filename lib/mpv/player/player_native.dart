@@ -8,6 +8,7 @@ import 'package:flutter/services.dart';
 import '../../media/media_display_criteria.dart';
 import '../../utils/app_logger.dart';
 import '../models.dart';
+import 'audio_rendering_mode.dart';
 import 'player_base.dart';
 
 typedef _AudioStateRequest = ({
@@ -643,6 +644,31 @@ class PlayerNative extends PlayerBase {
   Future<void> setAudioDevice(AudioDevice device) async {
     if (_nativeCoreUnavailable) return;
     await setProperty('audio-device', device.name);
+  }
+
+  /// The system's resolved audio rendering mode, used for the Dolby playback
+  /// badge. Apple populates `AVAudioSession.renderingMode` for CarPlay and
+  /// AirPlay routes, so an Apple TV on HDMI is expected to report
+  /// `notApplicable` — treat that as unknown, never as "not Dolby".
+  /// Returns null on platforms without the native method.
+  @override
+  Future<AudioRenderingMode?> getAudioRenderingMode() async {
+    if (!Platform.isIOS || _nativeCoreUnavailable) return null;
+    try {
+      final raw = await invoke<Map<Object?, Object?>>('getAudioRenderingMode', const {});
+      if (raw == null) return null;
+      return AudioRenderingMode(
+        name: raw['name'] as String? ?? 'unknown',
+        rawValue: (raw['rawValue'] as num?)?.toInt() ?? 0,
+        route: raw['route'] as String? ?? 'none',
+        outputChannels: (raw['outputChannels'] as num?)?.toInt() ?? 0,
+        maxOutputChannels: (raw['maxOutputChannels'] as num?)?.toInt() ?? 0,
+      );
+    } on PlatformException {
+      return null;
+    } on MissingPluginException {
+      return null;
+    }
   }
 
   @override

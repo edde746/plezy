@@ -30,7 +30,10 @@ void main() {
   Future<void> pumpScreen(WidgetTester tester) async {
     await tester.pumpWidget(MaterialApp(theme: monoTheme(dark: true), home: const AtmosDiagnosticsScreen()));
     await tester.pump();
+    // The screen is taller than the test viewport, so the scroll has to settle
+    // before the stop tile is hit-testable.
     await tester.ensureVisible(find.text(t.settings.atmosTestStop));
+    await tester.pumpAndSettle();
   }
 
   testWidgets('unmounting during stop does not set state or stop twice', (tester) async {

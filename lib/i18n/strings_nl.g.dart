@@ -418,6 +418,15 @@ class _Translations$settings$nl extends Translations$settings$en {
 	@override String get atmosTestRawStreamDescription => 'Streamt het testbestand precies zoals Atmos-weergave in de speler. Vereist de URL van het testbestand.';
 	@override String get atmosTestRawFile => 'Ruw EAC3-bestand';
 	@override String get atmosTestRawFileDescription => 'Speelt het testbestand met bekende lengte af. Vereist de URL van het testbestand.';
+	@override String get atmosTestAsbarNative => 'Sample-bufferrenderer (native)';
+	@override String get atmosTestAsbarNativeDescription => 'Stuurt de ongewijzigde gecomprimeerde audio van het bestand rechtstreeks naar de systeemrenderer. Vereist de URL van het testbestand.';
+	@override String get atmosTestAsbarGenerated => 'Sample-bufferrenderer (opnieuw opgebouwd)';
+	@override String get atmosTestAsbarGeneratedDescription => 'Hetzelfde, maar met de audiobeschrijving opgebouwd zoals bij afspelen. Vereist de URL van het testbestand.';
+	@override String get atmosTestSessionMode => 'Filmafspeelmodus gebruiken';
+	@override String get atmosTestSessionModeDescription => 'Uit gebruikt de modus die Dolby documenteert. Aan gebruikt de vorige modus.';
+	@override String get atmosTestShowRoutePicker => 'AirPlay-uitvoer kiezen';
+	@override String get atmosTestHideRoutePicker => 'AirPlay-uitvoerkiezer verbergen';
+	@override String get atmosTestRoutePickerDescription => 'Stuurt de test naar een AirPlay-ontvanger. Alleen AirPlay meldt de bepaalde audiomodus.';
 	@override String get atmosTestStop => 'Test stoppen';
 	@override String get atmosTestUrl => 'URL van testbestand';
 	@override String get atmosTestUrlDescription => 'HTTP-URL van een ruw .ec3 Dolby Atmos-bestand (bijv. uitgepakt met ffmpeg)';
@@ -1514,6 +1523,11 @@ class _Translations$videoSettings$nl extends Translations$videoSettings$en {
 	@override String get audioOutput => 'Audio-uitvoer';
 	@override String get performanceOverlay => 'Prestatie-overlay';
 	@override String get audioPassthrough => 'Audio-doorvoer';
+	@override String get audioOutputDolbyAtmos => 'Dolby Atmos';
+	@override String get audioOutputDolbyAudio => 'Dolby Audio';
+	@override String get audioOutputSurround => 'Surround';
+	@override String get audioOutputSpatial => 'Ruimtelijke audio';
+	@override String get audioOutputStereo => 'Stereo';
 	@override String get audioNormalization => 'Volume normaliseren';
 	@override String get audioDownmix => 'Downmixen naar stereo';
 }
@@ -2463,6 +2477,15 @@ extension on TranslationsNl {
 			'settings.atmosTestRawStreamDescription' => 'Streamt het testbestand precies zoals Atmos-weergave in de speler. Vereist de URL van het testbestand.',
 			'settings.atmosTestRawFile' => 'Ruw EAC3-bestand',
 			'settings.atmosTestRawFileDescription' => 'Speelt het testbestand met bekende lengte af. Vereist de URL van het testbestand.',
+			'settings.atmosTestAsbarNative' => 'Sample-bufferrenderer (native)',
+			'settings.atmosTestAsbarNativeDescription' => 'Stuurt de ongewijzigde gecomprimeerde audio van het bestand rechtstreeks naar de systeemrenderer. Vereist de URL van het testbestand.',
+			'settings.atmosTestAsbarGenerated' => 'Sample-bufferrenderer (opnieuw opgebouwd)',
+			'settings.atmosTestAsbarGeneratedDescription' => 'Hetzelfde, maar met de audiobeschrijving opgebouwd zoals bij afspelen. Vereist de URL van het testbestand.',
+			'settings.atmosTestSessionMode' => 'Filmafspeelmodus gebruiken',
+			'settings.atmosTestSessionModeDescription' => 'Uit gebruikt de modus die Dolby documenteert. Aan gebruikt de vorige modus.',
+			'settings.atmosTestShowRoutePicker' => 'AirPlay-uitvoer kiezen',
+			'settings.atmosTestHideRoutePicker' => 'AirPlay-uitvoerkiezer verbergen',
+			'settings.atmosTestRoutePickerDescription' => 'Stuurt de test naar een AirPlay-ontvanger. Alleen AirPlay meldt de bepaalde audiomodus.',
 			'settings.atmosTestStop' => 'Test stoppen',
 			'settings.atmosTestUrl' => 'URL van testbestand',
 			'settings.atmosTestUrlDescription' => 'HTTP-URL van een ruw .ec3 Dolby Atmos-bestand (bijv. uitgepakt met ffmpeg)',
@@ -2690,6 +2713,8 @@ extension on TranslationsNl {
 			'videoControls.language' => 'Taal',
 			'videoControls.noSubtitlesFound' => 'Geen ondertitels gevonden',
 			'videoControls.noSubtitlesAvailable' => 'Geen ondertitels beschikbaar',
+			_ => null,
+		} ?? switch (path) {
 			'videoControls.noAudioTracksAvailable' => 'Geen audiotracks beschikbaar',
 			'videoControls.noTracksAvailable' => 'Geen tracks beschikbaar',
 			'videoControls.subtitleDownloaded' => 'Ondertitel gedownload',
@@ -2699,8 +2724,6 @@ extension on TranslationsNl {
 			'messages.markedAsWatched' => 'Gemarkeerd als gekeken',
 			'messages.markedAsUnwatched' => 'Gemarkeerd als ongekeken',
 			'messages.markedAsWatchedOffline' => 'Gemarkeerd als bekeken (wordt gesynchroniseerd zodra je online bent)',
-			_ => null,
-		} ?? switch (path) {
 			'messages.markedAsUnwatchedOffline' => 'Gemarkeerd als ongekeken (wordt gesynchroniseerd zodra je online bent)',
 			'messages.autoRemovedWatchedDownload' => ({required Object title}) => 'Automatisch verwijderd: ${title}',
 			'messages.autoRemovedWatchedDownloads' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('nl'))(n, one: 'Automatisch ${n} bekeken download verwijderd', other: 'Automatisch ${n} bekeken downloads verwijderd', ), 
@@ -3204,6 +3227,8 @@ extension on TranslationsNl {
 			'watchTogether.codeMustBe5Chars' => 'De sessiecode moet 5 tekens lang zijn',
 			'watchTogether.joinInstructions' => 'Voer de sessiecode van de host in om deel te nemen.',
 			'watchTogether.failedToCreate' => 'Sessie maken mislukt',
+			_ => null,
+		} ?? switch (path) {
 			'watchTogether.failedToJoin' => 'Deelnemen aan sessie mislukt',
 			'watchTogether.sessionCodeCopied' => 'Sessiecode naar het klembord gekopieerd',
 			'watchTogether.relayUnreachable' => 'De relayserver is onbereikbaar. Een blokkering door je internetprovider kan Samen kijken verhinderen.',
@@ -3213,8 +3238,6 @@ extension on TranslationsNl {
 			'watchTogether.joinCurrentPlaybackDescription' => 'Ga terug naar wat de host nu kijkt',
 			'watchTogether.failedToOpenCurrentPlayback' => 'Wat nu wordt afgespeeld kon niet worden geopend',
 			'watchTogether.participantJoined' => ({required Object name}) => '${name} is toegetreden',
-			_ => null,
-		} ?? switch (path) {
 			'watchTogether.participantLeft' => ({required Object name}) => '${name} heeft de sessie verlaten',
 			'watchTogether.participantPaused' => ({required Object name}) => '${name} heeft gepauzeerd',
 			'watchTogether.participantResumed' => ({required Object name}) => '${name} heeft hervat',
@@ -3413,6 +3436,11 @@ extension on TranslationsNl {
 			'videoSettings.audioOutput' => 'Audio-uitvoer',
 			'videoSettings.performanceOverlay' => 'Prestatie-overlay',
 			'videoSettings.audioPassthrough' => 'Audio-doorvoer',
+			'videoSettings.audioOutputDolbyAtmos' => 'Dolby Atmos',
+			'videoSettings.audioOutputDolbyAudio' => 'Dolby Audio',
+			'videoSettings.audioOutputSurround' => 'Surround',
+			'videoSettings.audioOutputSpatial' => 'Ruimtelijke audio',
+			'videoSettings.audioOutputStereo' => 'Stereo',
 			'videoSettings.audioNormalization' => 'Volume normaliseren',
 			'videoSettings.audioDownmix' => 'Downmixen naar stereo',
 			'performanceOverlay.color' => 'Kleur',

@@ -11,6 +11,7 @@ import '../../utils/track_label_builder.dart';
 import '../font_loader.dart';
 import '../models.dart';
 import 'mpv_node_decoder.dart';
+import 'audio_rendering_mode.dart';
 import 'player.dart';
 import 'player_state.dart';
 import 'player_stream_controllers.dart';
@@ -834,6 +835,9 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
   @override
   // ignore: no-empty-block - base no-op, overridden by platform subclasses
   Future<void> setAudioPassthrough(bool enabled) async {}
+
+  @override
+  Future<AudioRenderingMode?> getAudioRenderingMode() async => null;
 
   /// mpv loudnorm targeting streaming-style loudness; mirrored by the
   /// Android ExoPlayer effect parameters in AudioNormalizationEffect.kt.

@@ -419,6 +419,15 @@ class _Translations$settings$zh_Hant extends Translations$settings$zh {
 	@override String get atmosTestRawStreamDescription => '以與播放器播放 Atmos 完全相同的方式串流測試檔案。需要測試檔案的 URL。';
 	@override String get atmosTestRawFile => '原始 EAC3 檔案';
 	@override String get atmosTestRawFileDescription => '以已知長度播放測試檔案。需要測試檔案的 URL。';
+	@override String get atmosTestAsbarNative => '取樣緩衝渲染器（原生）';
+	@override String get atmosTestAsbarNativeDescription => '將檔案未經更動的壓縮音訊直接交給系統渲染器。需要測試檔案 URL。';
+	@override String get atmosTestAsbarGenerated => '取樣緩衝渲染器（重建）';
+	@override String get atmosTestAsbarGeneratedDescription => '相同，但音訊描述以播放時的方式重建。需要測試檔案 URL。';
+	@override String get atmosTestSessionMode => '使用影片播放工作階段模式';
+	@override String get atmosTestSessionModeDescription => '關閉時使用 Dolby 文件所述的模式。開啟時使用先前的模式。';
+	@override String get atmosTestShowRoutePicker => '選擇 AirPlay 輸出';
+	@override String get atmosTestHideRoutePicker => '隱藏 AirPlay 輸出選擇器';
+	@override String get atmosTestRoutePickerDescription => '將測試傳送到 AirPlay 接收器。只有 AirPlay 會回報已確定的音訊模式。';
 	@override String get atmosTestStop => '停止測試';
 	@override String get atmosTestUrl => '測試檔案 URL';
 	@override String get atmosTestUrlDescription => '原始 .ec3 Dolby Atmos 檔案的 HTTP URL（例如使用 ffmpeg 提取的檔案）';
@@ -1512,6 +1521,11 @@ class _Translations$videoSettings$zh_Hant extends Translations$videoSettings$zh 
 	@override String get audioOutput => '音訊輸出';
 	@override String get performanceOverlay => '效能監控';
 	@override String get audioPassthrough => '音訊直通';
+	@override String get audioOutputDolbyAtmos => 'Dolby Atmos';
+	@override String get audioOutputDolbyAudio => 'Dolby Audio';
+	@override String get audioOutputSurround => '環繞聲';
+	@override String get audioOutputSpatial => '空間音訊';
+	@override String get audioOutputStereo => '立體聲';
 	@override String get audioNormalization => '音量標準化';
 	@override String get audioDownmix => '下混為立體聲';
 }
@@ -2461,6 +2475,15 @@ extension on TranslationsZhHant {
 			'settings.atmosTestRawStreamDescription' => '以與播放器播放 Atmos 完全相同的方式串流測試檔案。需要測試檔案的 URL。',
 			'settings.atmosTestRawFile' => '原始 EAC3 檔案',
 			'settings.atmosTestRawFileDescription' => '以已知長度播放測試檔案。需要測試檔案的 URL。',
+			'settings.atmosTestAsbarNative' => '取樣緩衝渲染器（原生）',
+			'settings.atmosTestAsbarNativeDescription' => '將檔案未經更動的壓縮音訊直接交給系統渲染器。需要測試檔案 URL。',
+			'settings.atmosTestAsbarGenerated' => '取樣緩衝渲染器（重建）',
+			'settings.atmosTestAsbarGeneratedDescription' => '相同，但音訊描述以播放時的方式重建。需要測試檔案 URL。',
+			'settings.atmosTestSessionMode' => '使用影片播放工作階段模式',
+			'settings.atmosTestSessionModeDescription' => '關閉時使用 Dolby 文件所述的模式。開啟時使用先前的模式。',
+			'settings.atmosTestShowRoutePicker' => '選擇 AirPlay 輸出',
+			'settings.atmosTestHideRoutePicker' => '隱藏 AirPlay 輸出選擇器',
+			'settings.atmosTestRoutePickerDescription' => '將測試傳送到 AirPlay 接收器。只有 AirPlay 會回報已確定的音訊模式。',
 			'settings.atmosTestStop' => '停止測試',
 			'settings.atmosTestUrl' => '測試檔案 URL',
 			'settings.atmosTestUrlDescription' => '原始 .ec3 Dolby Atmos 檔案的 HTTP URL（例如使用 ffmpeg 提取的檔案）',
@@ -2688,6 +2711,8 @@ extension on TranslationsZhHant {
 			'videoControls.language' => '語言',
 			'videoControls.noSubtitlesFound' => '找不到字幕',
 			'videoControls.noSubtitlesAvailable' => '沒有可用的字幕',
+			_ => null,
+		} ?? switch (path) {
 			'videoControls.noAudioTracksAvailable' => '沒有可用的音軌',
 			'videoControls.noTracksAvailable' => '沒有可用的音訊或字幕',
 			'videoControls.subtitleDownloaded' => '字幕下載成功',
@@ -2697,8 +2722,6 @@ extension on TranslationsZhHant {
 			'messages.markedAsWatched' => '已標記為已觀看',
 			'messages.markedAsUnwatched' => '已標記為未觀看',
 			'messages.markedAsWatchedOffline' => '已標記為已觀看（將在連線時同步）',
-			_ => null,
-		} ?? switch (path) {
 			'messages.markedAsUnwatchedOffline' => '已標記為未觀看（將在連線時同步）',
 			'messages.autoRemovedWatchedDownload' => ({required Object title}) => '已自動移除：${title}',
 			'messages.autoRemovedWatchedDownloads' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('zh'))(n, other: '已自動移除 ${n} 個已觀看的下載內容', ), 
@@ -3202,6 +3225,8 @@ extension on TranslationsZhHant {
 			'watchTogether.codeMustBe5Chars' => '工作階段代碼必須為 5 個字元',
 			'watchTogether.joinInstructions' => '輸入主持人的工作階段代碼以加入「一起看」。',
 			'watchTogether.failedToCreate' => '建立工作階段失敗',
+			_ => null,
+		} ?? switch (path) {
 			'watchTogether.failedToJoin' => '加入工作階段失敗',
 			'watchTogether.sessionCodeCopied' => '工作階段代碼已複製到剪貼簿',
 			'watchTogether.relayUnreachable' => '無法連線至中繼伺服器。ISP 封鎖可能會導致「一起看」無法使用。',
@@ -3211,8 +3236,6 @@ extension on TranslationsZhHant {
 			'watchTogether.joinCurrentPlaybackDescription' => '同步至主持人目前的觀看進度',
 			'watchTogether.failedToOpenCurrentPlayback' => '無法開啟目前播放點',
 			'watchTogether.participantJoined' => ({required Object name}) => '${name} 已加入',
-			_ => null,
-		} ?? switch (path) {
 			'watchTogether.participantLeft' => ({required Object name}) => '${name} 已離開',
 			'watchTogether.participantPaused' => ({required Object name}) => '${name} 暫停了播放',
 			'watchTogether.participantResumed' => ({required Object name}) => '${name} 恢復了播放',
@@ -3411,6 +3434,11 @@ extension on TranslationsZhHant {
 			'videoSettings.audioOutput' => '音訊輸出',
 			'videoSettings.performanceOverlay' => '效能監控',
 			'videoSettings.audioPassthrough' => '音訊直通',
+			'videoSettings.audioOutputDolbyAtmos' => 'Dolby Atmos',
+			'videoSettings.audioOutputDolbyAudio' => 'Dolby Audio',
+			'videoSettings.audioOutputSurround' => '環繞聲',
+			'videoSettings.audioOutputSpatial' => '空間音訊',
+			'videoSettings.audioOutputStereo' => '立體聲',
 			'videoSettings.audioNormalization' => '音量標準化',
 			'videoSettings.audioDownmix' => '下混為立體聲',
 			'performanceOverlay.color' => '色彩',

@@ -981,6 +981,33 @@ class Translations$settings$en {
 	/// en: 'Plays the test file with a known length. Needs the test file URL.'
 	String get atmosTestRawFileDescription => 'Plays the test file with a known length. Needs the test file URL.';
 
+	/// en: 'Sample-buffer renderer (native)'
+	String get atmosTestAsbarNative => 'Sample-buffer renderer (native)';
+
+	/// en: 'Feeds the file's untouched compressed audio straight to the system renderer. Needs the test file URL.'
+	String get atmosTestAsbarNativeDescription => 'Feeds the file\'s untouched compressed audio straight to the system renderer. Needs the test file URL.';
+
+	/// en: 'Sample-buffer renderer (rebuilt)'
+	String get atmosTestAsbarGenerated => 'Sample-buffer renderer (rebuilt)';
+
+	/// en: 'Same, but with the audio description rebuilt the way playback builds it. Needs the test file URL.'
+	String get atmosTestAsbarGeneratedDescription => 'Same, but with the audio description rebuilt the way playback builds it. Needs the test file URL.';
+
+	/// en: 'Use movie playback session mode'
+	String get atmosTestSessionMode => 'Use movie playback session mode';
+
+	/// en: 'Off uses the mode Dolby documents. On uses the mode playback used previously.'
+	String get atmosTestSessionModeDescription => 'Off uses the mode Dolby documents. On uses the mode playback used previously.';
+
+	/// en: 'Choose AirPlay output'
+	String get atmosTestShowRoutePicker => 'Choose AirPlay output';
+
+	/// en: 'Hide AirPlay output picker'
+	String get atmosTestHideRoutePicker => 'Hide AirPlay output picker';
+
+	/// en: 'Send the test to an AirPlay receiver. Only AirPlay reports the resolved audio mode.'
+	String get atmosTestRoutePickerDescription => 'Send the test to an AirPlay receiver. Only AirPlay reports the resolved audio mode.';
+
 	/// en: 'Stop test'
 	String get atmosTestStop => 'Stop test';
 
@@ -3643,6 +3670,21 @@ class Translations$videoSettings$en {
 	/// en: 'Audio Passthrough'
 	String get audioPassthrough => 'Audio Passthrough';
 
+	/// en: 'Dolby Atmos'
+	String get audioOutputDolbyAtmos => 'Dolby Atmos';
+
+	/// en: 'Dolby Audio'
+	String get audioOutputDolbyAudio => 'Dolby Audio';
+
+	/// en: 'Surround'
+	String get audioOutputSurround => 'Surround';
+
+	/// en: 'Spatial Audio'
+	String get audioOutputSpatial => 'Spatial Audio';
+
+	/// en: 'Stereo'
+	String get audioOutputStereo => 'Stereo';
+
 	/// en: 'Normalize Loudness'
 	String get audioNormalization => 'Normalize Loudness';
 
@@ -5445,6 +5487,15 @@ extension on Translations {
 			'settings.atmosTestRawStreamDescription' => 'Streams the test file exactly like in-player Atmos playback. Needs the test file URL.',
 			'settings.atmosTestRawFile' => 'Raw EAC3 file',
 			'settings.atmosTestRawFileDescription' => 'Plays the test file with a known length. Needs the test file URL.',
+			'settings.atmosTestAsbarNative' => 'Sample-buffer renderer (native)',
+			'settings.atmosTestAsbarNativeDescription' => 'Feeds the file\'s untouched compressed audio straight to the system renderer. Needs the test file URL.',
+			'settings.atmosTestAsbarGenerated' => 'Sample-buffer renderer (rebuilt)',
+			'settings.atmosTestAsbarGeneratedDescription' => 'Same, but with the audio description rebuilt the way playback builds it. Needs the test file URL.',
+			'settings.atmosTestSessionMode' => 'Use movie playback session mode',
+			'settings.atmosTestSessionModeDescription' => 'Off uses the mode Dolby documents. On uses the mode playback used previously.',
+			'settings.atmosTestShowRoutePicker' => 'Choose AirPlay output',
+			'settings.atmosTestHideRoutePicker' => 'Hide AirPlay output picker',
+			'settings.atmosTestRoutePickerDescription' => 'Send the test to an AirPlay receiver. Only AirPlay reports the resolved audio mode.',
 			'settings.atmosTestStop' => 'Stop test',
 			'settings.atmosTestUrl' => 'Test file URL',
 			'settings.atmosTestUrlDescription' => 'HTTP URL of a raw .ec3 Dolby Atmos file (e.g. extracted with ffmpeg)',
@@ -5669,6 +5720,8 @@ extension on Translations {
 			'videoControls.queue' => 'Queue',
 			'videoControls.noQueueItems' => 'No items in queue',
 			'videoControls.searchSubtitles' => 'Search Subtitles',
+			_ => null,
+		} ?? switch (path) {
 			'videoControls.language' => 'Language',
 			'videoControls.noSubtitlesFound' => 'No subtitles found',
 			'videoControls.noSubtitlesAvailable' => 'No subtitles available',
@@ -5678,8 +5731,6 @@ extension on Translations {
 			'videoControls.subtitleDownloadedNotApplied' => 'Subtitle downloaded, but it could not be selected',
 			'videoControls.subtitleDownloadFailed' => 'Failed to download subtitle',
 			'videoControls.searchLanguages' => 'Search languages...',
-			_ => null,
-		} ?? switch (path) {
 			'messages.markedAsWatched' => 'Marked as watched',
 			'messages.markedAsUnwatched' => 'Marked as unwatched',
 			'messages.markedAsWatchedOffline' => 'Marked as watched (will sync when online)',
@@ -6183,6 +6234,8 @@ extension on Translations {
 			'watchTogether.syncing' => 'Syncing...',
 			'watchTogether.joinWatchSession' => 'Join Watch Session',
 			'watchTogether.enterCodeHint' => 'Enter 5-character code',
+			_ => null,
+		} ?? switch (path) {
 			'watchTogether.pasteFromClipboard' => 'Paste from clipboard',
 			'watchTogether.pleaseEnterCode' => 'Please enter a session code',
 			'watchTogether.codeMustBe5Chars' => 'Session code must be 5 characters',
@@ -6192,8 +6245,6 @@ extension on Translations {
 			'watchTogether.sessionCodeCopied' => 'Session code copied to clipboard',
 			'watchTogether.relayUnreachable' => 'Relay server unreachable. ISP blocking may prevent Watch Together.',
 			'watchTogether.reconnectingToHost' => 'Reconnecting to host...',
-			_ => null,
-		} ?? switch (path) {
 			'watchTogether.currentPlayback' => 'Current Playback',
 			'watchTogether.joinCurrentPlayback' => 'Join Current Playback',
 			'watchTogether.joinCurrentPlaybackDescription' => 'Jump back into what the host is currently watching',
@@ -6403,6 +6454,11 @@ extension on Translations {
 			'videoSettings.audioOutput' => 'Audio Output',
 			'videoSettings.performanceOverlay' => 'Performance Overlay',
 			'videoSettings.audioPassthrough' => 'Audio Passthrough',
+			'videoSettings.audioOutputDolbyAtmos' => 'Dolby Atmos',
+			'videoSettings.audioOutputDolbyAudio' => 'Dolby Audio',
+			'videoSettings.audioOutputSurround' => 'Surround',
+			'videoSettings.audioOutputSpatial' => 'Spatial Audio',
+			'videoSettings.audioOutputStereo' => 'Stereo',
 			'videoSettings.audioNormalization' => 'Normalize Loudness',
 			'videoSettings.audioDownmix' => 'Downmix to Stereo',
 			'performanceOverlay.color' => 'Color',

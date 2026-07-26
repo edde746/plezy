@@ -418,6 +418,15 @@ class _Translations$settings$nb extends Translations$settings$en {
 	@override String get atmosTestRawStreamDescription => 'Strømmer testfilen akkurat som Atmos-avspilling i spilleren. Krever testfilens URL.';
 	@override String get atmosTestRawFile => 'Rå EAC3-fil';
 	@override String get atmosTestRawFileDescription => 'Spiller av testfilen med kjent lengde. Krever testfilens URL.';
+	@override String get atmosTestAsbarNative => 'Sample-buffer-renderer (nativ)';
+	@override String get atmosTestAsbarNativeDescription => 'Sender filens urørte komprimerte lyd rett til systemets renderer. Krever URL til testfilen.';
+	@override String get atmosTestAsbarGenerated => 'Sample-buffer-renderer (gjenoppbygd)';
+	@override String get atmosTestAsbarGeneratedDescription => 'Det samme, men med lydbeskrivelsen bygd slik avspilling bygger den. Krever URL til testfilen.';
+	@override String get atmosTestSessionMode => 'Bruk filmavspillingsmodus';
+	@override String get atmosTestSessionModeDescription => 'Av bruker modusen Dolby dokumenterer. På bruker den tidligere modusen.';
+	@override String get atmosTestShowRoutePicker => 'Velg AirPlay-utgang';
+	@override String get atmosTestHideRoutePicker => 'Skjul AirPlay-utgangsvelger';
+	@override String get atmosTestRoutePickerDescription => 'Sender testen til en AirPlay-mottaker. Bare AirPlay rapporterer den valgte lydmodusen.';
 	@override String get atmosTestStop => 'Stopp test';
 	@override String get atmosTestUrl => 'Testfilens URL';
 	@override String get atmosTestUrlDescription => 'HTTP-URL til en rå .ec3 Dolby Atmos-fil (f.eks. hentet ut med ffmpeg)';
@@ -1514,6 +1523,11 @@ class _Translations$videoSettings$nb extends Translations$videoSettings$en {
 	@override String get audioOutput => 'Lydutgang';
 	@override String get performanceOverlay => 'Ytelsesoverlegg';
 	@override String get audioPassthrough => 'Direkte lydutgang';
+	@override String get audioOutputDolbyAtmos => 'Dolby Atmos';
+	@override String get audioOutputDolbyAudio => 'Dolby Audio';
+	@override String get audioOutputSurround => 'Surround';
+	@override String get audioOutputSpatial => 'Romlig lyd';
+	@override String get audioOutputStereo => 'Stereo';
 	@override String get audioNormalization => 'Normaliser lydstyrke';
 	@override String get audioDownmix => 'Nedmiks til stereo';
 }
@@ -2463,6 +2477,15 @@ extension on TranslationsNb {
 			'settings.atmosTestRawStreamDescription' => 'Strømmer testfilen akkurat som Atmos-avspilling i spilleren. Krever testfilens URL.',
 			'settings.atmosTestRawFile' => 'Rå EAC3-fil',
 			'settings.atmosTestRawFileDescription' => 'Spiller av testfilen med kjent lengde. Krever testfilens URL.',
+			'settings.atmosTestAsbarNative' => 'Sample-buffer-renderer (nativ)',
+			'settings.atmosTestAsbarNativeDescription' => 'Sender filens urørte komprimerte lyd rett til systemets renderer. Krever URL til testfilen.',
+			'settings.atmosTestAsbarGenerated' => 'Sample-buffer-renderer (gjenoppbygd)',
+			'settings.atmosTestAsbarGeneratedDescription' => 'Det samme, men med lydbeskrivelsen bygd slik avspilling bygger den. Krever URL til testfilen.',
+			'settings.atmosTestSessionMode' => 'Bruk filmavspillingsmodus',
+			'settings.atmosTestSessionModeDescription' => 'Av bruker modusen Dolby dokumenterer. På bruker den tidligere modusen.',
+			'settings.atmosTestShowRoutePicker' => 'Velg AirPlay-utgang',
+			'settings.atmosTestHideRoutePicker' => 'Skjul AirPlay-utgangsvelger',
+			'settings.atmosTestRoutePickerDescription' => 'Sender testen til en AirPlay-mottaker. Bare AirPlay rapporterer den valgte lydmodusen.',
 			'settings.atmosTestStop' => 'Stopp test',
 			'settings.atmosTestUrl' => 'Testfilens URL',
 			'settings.atmosTestUrlDescription' => 'HTTP-URL til en rå .ec3 Dolby Atmos-fil (f.eks. hentet ut med ffmpeg)',
@@ -2690,6 +2713,8 @@ extension on TranslationsNb {
 			'videoControls.language' => 'Språk',
 			'videoControls.noSubtitlesFound' => 'Ingen undertekster funnet',
 			'videoControls.noSubtitlesAvailable' => 'Ingen undertekster tilgjengelig',
+			_ => null,
+		} ?? switch (path) {
 			'videoControls.noAudioTracksAvailable' => 'Ingen lydspor tilgjengelig',
 			'videoControls.noTracksAvailable' => 'Ingen spor tilgjengelig',
 			'videoControls.subtitleDownloaded' => 'Undertekst lastet ned',
@@ -2699,8 +2724,6 @@ extension on TranslationsNb {
 			'messages.markedAsWatched' => 'Merket som sett',
 			'messages.markedAsUnwatched' => 'Merket som usett',
 			'messages.markedAsWatchedOffline' => 'Merket som sett (synkroniseres når tilkoblet)',
-			_ => null,
-		} ?? switch (path) {
 			'messages.markedAsUnwatchedOffline' => 'Merket som usett (synkroniseres når tilkoblet)',
 			'messages.autoRemovedWatchedDownload' => ({required Object title}) => 'Automatisk fjernet: ${title}',
 			'messages.autoRemovedWatchedDownloads' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('nb'))(n, one: 'Fjernet automatisk ${n} avspilt nedlasting', other: 'Fjernet automatisk ${n} avspilte nedlastinger', ), 
@@ -3204,6 +3227,8 @@ extension on TranslationsNb {
 			'watchTogether.codeMustBe5Chars' => 'Øktkoden må være 5 tegn',
 			'watchTogether.joinInstructions' => 'Skriv inn vertens øktkode for å bli med.',
 			'watchTogether.failedToCreate' => 'Kunne ikke opprette økt',
+			_ => null,
+		} ?? switch (path) {
 			'watchTogether.failedToJoin' => 'Kunne ikke bli med i økt',
 			'watchTogether.sessionCodeCopied' => 'Øktkode kopiert til utklippstavle',
 			'watchTogether.relayUnreachable' => 'Reléserveren kan ikke nås. Blokkering hos internettleverandøren kan hindre Se sammen.',
@@ -3213,8 +3238,6 @@ extension on TranslationsNb {
 			'watchTogether.joinCurrentPlaybackDescription' => 'Hopp tilbake til det verten ser på nå',
 			'watchTogether.failedToOpenCurrentPlayback' => 'Kunne ikke åpne gjeldende avspilling',
 			'watchTogether.participantJoined' => ({required Object name}) => '${name} ble med',
-			_ => null,
-		} ?? switch (path) {
 			'watchTogether.participantLeft' => ({required Object name}) => '${name} forlot',
 			'watchTogether.participantPaused' => ({required Object name}) => '${name} satte avspillingen på pause',
 			'watchTogether.participantResumed' => ({required Object name}) => '${name} startet avspillingen igjen',
@@ -3413,6 +3436,11 @@ extension on TranslationsNb {
 			'videoSettings.audioOutput' => 'Lydutgang',
 			'videoSettings.performanceOverlay' => 'Ytelsesoverlegg',
 			'videoSettings.audioPassthrough' => 'Direkte lydutgang',
+			'videoSettings.audioOutputDolbyAtmos' => 'Dolby Atmos',
+			'videoSettings.audioOutputDolbyAudio' => 'Dolby Audio',
+			'videoSettings.audioOutputSurround' => 'Surround',
+			'videoSettings.audioOutputSpatial' => 'Romlig lyd',
+			'videoSettings.audioOutputStereo' => 'Stereo',
 			'videoSettings.audioNormalization' => 'Normaliser lydstyrke',
 			'videoSettings.audioDownmix' => 'Nedmiks til stereo',
 			'performanceOverlay.color' => 'Farge',

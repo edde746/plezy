@@ -418,6 +418,15 @@ class _Translations$settings$ko extends Translations$settings$en {
 	@override String get atmosTestRawStreamDescription => '플레이어 내 Atmos 재생과 동일한 방식으로 테스트 파일을 스트리밍합니다. 테스트 파일 URL이 필요합니다.';
 	@override String get atmosTestRawFile => '원시 EAC3 파일';
 	@override String get atmosTestRawFileDescription => '길이가 알려진 테스트 파일을 재생합니다. 테스트 파일 URL이 필요합니다.';
+	@override String get atmosTestAsbarNative => '샘플 버퍼 렌더러(네이티브)';
+	@override String get atmosTestAsbarNativeDescription => '파일의 압축 오디오를 그대로 시스템 렌더러에 전달합니다. 테스트 파일 URL이 필요합니다.';
+	@override String get atmosTestAsbarGenerated => '샘플 버퍼 렌더러(재구성)';
+	@override String get atmosTestAsbarGeneratedDescription => '동일하지만 오디오 설명을 재생과 같은 방식으로 재구성합니다. 테스트 파일 URL이 필요합니다.';
+	@override String get atmosTestSessionMode => '동영상 재생 세션 모드 사용';
+	@override String get atmosTestSessionModeDescription => '끄면 Dolby가 문서화한 모드를 사용합니다. 켜면 이전 모드를 사용합니다.';
+	@override String get atmosTestShowRoutePicker => 'AirPlay 출력 선택';
+	@override String get atmosTestHideRoutePicker => 'AirPlay 출력 선택기 숨기기';
+	@override String get atmosTestRoutePickerDescription => '테스트를 AirPlay 수신기로 보냅니다. 확인된 오디오 모드는 AirPlay에서만 보고됩니다.';
 	@override String get atmosTestStop => '테스트 중지';
 	@override String get atmosTestUrl => '테스트 파일 URL';
 	@override String get atmosTestUrlDescription => '원시 .ec3 Dolby Atmos 파일의 HTTP URL(예: ffmpeg로 추출)';
@@ -1511,6 +1520,11 @@ class _Translations$videoSettings$ko extends Translations$videoSettings$en {
 	@override String get audioOutput => '오디오 출력';
 	@override String get performanceOverlay => '성능 오버레이';
 	@override String get audioPassthrough => '오디오 패스스루';
+	@override String get audioOutputDolbyAtmos => 'Dolby Atmos';
+	@override String get audioOutputDolbyAudio => 'Dolby Audio';
+	@override String get audioOutputSurround => '서라운드';
+	@override String get audioOutputSpatial => '공간 음향';
+	@override String get audioOutputStereo => '스테레오';
 	@override String get audioNormalization => '음량 정규화';
 	@override String get audioDownmix => '스테레오로 다운믹스';
 }
@@ -2460,6 +2474,15 @@ extension on TranslationsKo {
 			'settings.atmosTestRawStreamDescription' => '플레이어 내 Atmos 재생과 동일한 방식으로 테스트 파일을 스트리밍합니다. 테스트 파일 URL이 필요합니다.',
 			'settings.atmosTestRawFile' => '원시 EAC3 파일',
 			'settings.atmosTestRawFileDescription' => '길이가 알려진 테스트 파일을 재생합니다. 테스트 파일 URL이 필요합니다.',
+			'settings.atmosTestAsbarNative' => '샘플 버퍼 렌더러(네이티브)',
+			'settings.atmosTestAsbarNativeDescription' => '파일의 압축 오디오를 그대로 시스템 렌더러에 전달합니다. 테스트 파일 URL이 필요합니다.',
+			'settings.atmosTestAsbarGenerated' => '샘플 버퍼 렌더러(재구성)',
+			'settings.atmosTestAsbarGeneratedDescription' => '동일하지만 오디오 설명을 재생과 같은 방식으로 재구성합니다. 테스트 파일 URL이 필요합니다.',
+			'settings.atmosTestSessionMode' => '동영상 재생 세션 모드 사용',
+			'settings.atmosTestSessionModeDescription' => '끄면 Dolby가 문서화한 모드를 사용합니다. 켜면 이전 모드를 사용합니다.',
+			'settings.atmosTestShowRoutePicker' => 'AirPlay 출력 선택',
+			'settings.atmosTestHideRoutePicker' => 'AirPlay 출력 선택기 숨기기',
+			'settings.atmosTestRoutePickerDescription' => '테스트를 AirPlay 수신기로 보냅니다. 확인된 오디오 모드는 AirPlay에서만 보고됩니다.',
 			'settings.atmosTestStop' => '테스트 중지',
 			'settings.atmosTestUrl' => '테스트 파일 URL',
 			'settings.atmosTestUrlDescription' => '원시 .ec3 Dolby Atmos 파일의 HTTP URL(예: ffmpeg로 추출)',
@@ -2687,6 +2710,8 @@ extension on TranslationsKo {
 			'videoControls.language' => '언어',
 			'videoControls.noSubtitlesFound' => '자막을 찾을 수 없습니다',
 			'videoControls.noSubtitlesAvailable' => '사용 가능한 자막 없음',
+			_ => null,
+		} ?? switch (path) {
 			'videoControls.noAudioTracksAvailable' => '사용 가능한 오디오 트랙 없음',
 			'videoControls.noTracksAvailable' => '사용 가능한 트랙 없음',
 			'videoControls.subtitleDownloaded' => '자막이 다운로드되었습니다',
@@ -2696,8 +2721,6 @@ extension on TranslationsKo {
 			'messages.markedAsWatched' => '시청 완료로 표시됨',
 			'messages.markedAsUnwatched' => '미시청으로 표시됨',
 			'messages.markedAsWatchedOffline' => '시청 완료로 표시됨 (연결 시 동기화됨)',
-			_ => null,
-		} ?? switch (path) {
 			'messages.markedAsUnwatchedOffline' => '미시청으로 표시됨 (연결 시 동기화됨)',
 			'messages.autoRemovedWatchedDownload' => ({required Object title}) => '자동 삭제됨: ${title}',
 			'messages.autoRemovedWatchedDownloads' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('ko'))(n, other: '시청한 다운로드 ${n}개를 자동 삭제했습니다', ), 
@@ -3201,6 +3224,8 @@ extension on TranslationsKo {
 			'watchTogether.codeMustBe5Chars' => '세션 코드는 반드시 5자리여야 합니다',
 			'watchTogether.joinInstructions' => '참여하려면 호스트의 세션 코드를 입력하세요.',
 			'watchTogether.failedToCreate' => '세션 생성 실패',
+			_ => null,
+		} ?? switch (path) {
 			'watchTogether.failedToJoin' => '세션 참여 실패',
 			'watchTogether.sessionCodeCopied' => '세션 코드가 클립보드에 복사되었습니다',
 			'watchTogether.relayUnreachable' => '릴레이 서버에 연결할 수 없습니다. ISP 차단으로 함께 보기를 사용하지 못할 수 있습니다.',
@@ -3210,8 +3235,6 @@ extension on TranslationsKo {
 			'watchTogether.joinCurrentPlaybackDescription' => '호스트가 현재 시청 중인 콘텐츠로 이동합니다',
 			'watchTogether.failedToOpenCurrentPlayback' => '현재 재생을 열 수 없습니다',
 			'watchTogether.participantJoined' => ({required Object name}) => '${name}님이 참여했습니다',
-			_ => null,
-		} ?? switch (path) {
 			'watchTogether.participantLeft' => ({required Object name}) => '${name}님이 나갔습니다',
 			'watchTogether.participantPaused' => ({required Object name}) => '${name}님이 일시정지했습니다',
 			'watchTogether.participantResumed' => ({required Object name}) => '${name}님이 재생했습니다',
@@ -3410,6 +3433,11 @@ extension on TranslationsKo {
 			'videoSettings.audioOutput' => '오디오 출력',
 			'videoSettings.performanceOverlay' => '성능 오버레이',
 			'videoSettings.audioPassthrough' => '오디오 패스스루',
+			'videoSettings.audioOutputDolbyAtmos' => 'Dolby Atmos',
+			'videoSettings.audioOutputDolbyAudio' => 'Dolby Audio',
+			'videoSettings.audioOutputSurround' => '서라운드',
+			'videoSettings.audioOutputSpatial' => '공간 음향',
+			'videoSettings.audioOutputStereo' => '스테레오',
 			'videoSettings.audioNormalization' => '음량 정규화',
 			'videoSettings.audioDownmix' => '스테레오로 다운믹스',
 			'performanceOverlay.color' => '색상',
