@@ -3652,8 +3652,21 @@ class PlexClient
     }
   }
 
+  /// `minSize`/`upscale` are how Plex's photo transcoder picks the scale
+  /// factor. `minSize=1` scales until the *smaller* axis reaches the request
+  /// (cover) and `upscale=1` lets it enlarge past the original; both return
+  /// the whole image — Plex never crops or distorts. `minSize=0&upscale=0`
+  /// scales the *larger* axis to fit inside the box instead, which is what
+  /// `BoxFit.contain` artwork wants: the covering overshoot is decoded and
+  /// then thrown away by the fit-policy decode bounds.
+  List<String> _transcodeSizeParams({int? width, int? height, required bool cover}) => [
+    if (width != null) 'width=$width',
+    if (height != null) 'height=$height',
+    if (cover) ...['minSize=1', 'upscale=1'] else ...['minSize=0', 'upscale=0'],
+  ];
+
   @override
-  String thumbnailUrl(String? path, {int? width, int? height}) {
+  String thumbnailUrl(String? path, {int? width, int? height, bool cover = true}) {
     if (path == null || path.isEmpty) return '';
     // No sizing requested, or already-processed/external URL — passthrough.
     if (width == null && height == null) return getThumbnailUrl(path);
@@ -3666,10 +3679,7 @@ class PlexClient
     if (token == null) return getThumbnailUrl(path);
     final encoded = Uri.encodeComponent(path.withPlexToken(token));
     final parts = <String>[
-      if (width != null) 'width=$width',
-      if (height != null) 'height=$height',
-      'minSize=1',
-      'upscale=1',
+      ..._transcodeSizeParams(width: width, height: height, cover: cover),
       'url=$encoded',
       'X-Plex-Token=$token',
     ];
@@ -3677,15 +3687,12 @@ class PlexClient
   }
 
   @override
-  String externalImageUrl(String url, {int? width, int? height}) {
+  String externalImageUrl(String url, {int? width, int? height, bool cover = true}) {
     final token = config.token;
     if (token == null || (width == null && height == null)) return url;
     final encoded = Uri.encodeComponent(url);
     final parts = <String>[
-      if (width != null) 'width=$width',
-      if (height != null) 'height=$height',
-      'minSize=1',
-      'upscale=1',
+      ..._transcodeSizeParams(width: width, height: height, cover: cover),
       'url=$encoded',
       'X-Plex-Token=$token',
     ];

@@ -473,13 +473,23 @@ abstract class MediaServerClient {
   /// When [width]/[height] are provided, the implementation should request
   /// a server-side resize: Plex builds a `/photo/:/transcode` URL; Jellyfin
   /// appends `MaxWidth`/`MaxHeight` to the image endpoint.
-  String thumbnailUrl(String? path, {int? width, int? height});
+  ///
+  /// [cover] picks how the requested box is interpreted. The default sizes the
+  /// image to *cover* the box — every pixel of a poster/backdrop slot is
+  /// filled, at the cost of overshooting on the long axis. Pass `false` for
+  /// artwork drawn with [BoxFit.contain] (clear logos), where the overshoot is
+  /// decoded and thrown away: a 4313×1035 logo asked for at 1200×360 comes back
+  /// 1500×360 covering versus 1200×288 fitting, for ~20-30% more bytes and no
+  /// extra rendered detail. Neither mode crops or changes the aspect ratio.
+  String thumbnailUrl(String? path, {int? width, int? height, bool cover = true});
 
   /// Proxy an absolute external image URL through the server's transcoder
   /// (Plex `/photo/:/transcode?url=...`). Backends without a proxy endpoint
   /// (Jellyfin) should return the URL unchanged. Used for EPG provider art
   /// and other off-server images that benefit from re-encoding.
-  String externalImageUrl(String url, {int? width, int? height});
+  ///
+  /// [cover] carries the same meaning as in [thumbnailUrl].
+  String externalImageUrl(String url, {int? width, int? height, bool cover = true});
 
   /// Headers that must be attached when the player fetches a direct-play
   /// URL from this server. Plex requires `X-Plex-Token` (and identity

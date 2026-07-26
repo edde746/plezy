@@ -28,7 +28,7 @@ class _ShelfClient implements MediaServerClient {
   ServerCapabilities get capabilities => ServerCapabilities.plex;
 
   @override
-  String thumbnailUrl(String? path, {int? width, int? height}) {
+  String thumbnailUrl(String? path, {int? width, int? height, bool cover = true}) {
     if (throwOnThumbnail) throw StateError('conversion failed');
     expect(width, 640);
     expect(height, 360);

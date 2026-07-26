@@ -12,9 +12,7 @@ import '../focus/hub_vertical_navigation.dart';
 import '../focus/locked_hub_controller.dart';
 import '../focus/input_mode_tracker.dart';
 import '../focus/key_event_utils.dart';
-import 'package:cached_network_image_ce/cached_network_image.dart';
 
-import '../services/image_cache_service.dart';
 import '../media/media_item.dart';
 import '../media/media_item_types.dart';
 import '../media/media_server_client.dart';
@@ -22,7 +20,7 @@ import '../media/media_hub.dart';
 import '../utils/media_image_helper.dart';
 import '../utils/content_utils.dart';
 import '../widgets/cycling_media_backdrop.dart';
-import '../widgets/optimized_media_image.dart' show blurArtwork;
+import '../widgets/optimized_media_image.dart' show ClearLogoImage, blurArtwork;
 import '../widgets/rasterized_gradient.dart';
 import '../providers/discover_provider.dart';
 import '../providers/multi_server_provider.dart';
@@ -1481,67 +1479,20 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                         crossAxisAlignment: alignLeft ? CrossAxisAlignment.start : CrossAxisAlignment.center,
                         mainAxisSize: .min,
                         children: [
-                          // Show logo or name/title
-                          if (heroItem.clearLogoPath != null)
-                            SizedBox(
-                              height: heroLogoHeight,
-                              width: heroLogoWidth,
-                              child: Builder(
-                                builder: (context) {
-                                  final dpr = MediaImageHelper.effectiveDevicePixelRatio(context);
-                                  final targetWidth = (heroLogoWidth * dpr).round();
-                                  final targetHeight = (heroLogoHeight * dpr).round();
-                                  final (memCacheWidth, memCacheHeight) = MediaImageHelper.getMemCacheDimensions(
-                                    displayWidth: targetWidth,
-                                    displayHeight: targetHeight,
-                                    imageType: ImageType.heroLogo,
-                                  );
-                                  final logoUrl = MediaImageHelper.getOptimizedImageUrl(
-                                    client: heroClient,
-                                    thumbPath: heroItem.clearLogoPath,
-                                    maxWidth: heroLogoWidth,
-                                    maxHeight: heroLogoHeight,
-                                    devicePixelRatio: dpr,
-                                    imageType: ImageType.heroLogo,
-                                  );
-
-                                  return blurArtwork(
-                                    CachedNetworkImage(
-                                      imageUrl: logoUrl,
-                                      cacheManager: PlexImageCacheManager.instance,
-                                      filterQuality: FilterQuality.medium,
-                                      fit: BoxFit.contain,
-                                      memCacheWidth: memCacheWidth,
-                                      memCacheHeight: memCacheHeight,
-                                      alignment: alignLeft ? Alignment.bottomLeft : Alignment.bottomCenter,
-                                      placeholder: (context, url) => const SizedBox.shrink(),
-                                      errorBuilder: (context, error, stackTrace) {
-                                        // Fallback to text if logo fails to load
-                                        return FittingTitleText(
-                                          showName,
-                                          style: heroTitleStyle,
-                                          textAlign: alignLeft ? TextAlign.left : TextAlign.center,
-                                          alignment: alignLeft ? Alignment.centerLeft : Alignment.center,
-                                        );
-                                      },
-                                    ),
-                                    sigma: 10,
-                                    clip: false,
-                                  );
-                                },
-                              ),
-                            )
-                          else
-                            SizedBox(
-                              height: heroLogoHeight,
-                              width: heroLogoWidth,
-                              child: FittingTitleText(
-                                showName,
-                                style: heroTitleStyle,
-                                textAlign: alignLeft ? TextAlign.left : TextAlign.center,
-                                alignment: alignLeft ? Alignment.centerLeft : Alignment.center,
-                              ),
+                          // Show logo, falling back to the name/title
+                          ClearLogoImage(
+                            client: heroClient,
+                            logoPath: heroItem.clearLogoPath,
+                            width: heroLogoWidth,
+                            height: heroLogoHeight,
+                            alignment: alignLeft ? Alignment.bottomLeft : Alignment.bottomCenter,
+                            fallbackBuilder: (context) => FittingTitleText(
+                              showName,
+                              style: heroTitleStyle,
+                              textAlign: alignLeft ? TextAlign.left : TextAlign.center,
+                              alignment: alignLeft ? Alignment.centerLeft : Alignment.center,
                             ),
+                          ),
 
                           // Metadata as dot-separated text with content type
                           if (heroItem.year != null || heroItem.contentRating != null || heroItem.rating != null) ...[

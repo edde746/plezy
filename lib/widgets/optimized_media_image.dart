@@ -304,6 +304,12 @@ class OptimizedMediaImage extends StatelessWidget {
     );
 
     if (imageUrl.isEmpty) {
+      // An unresolvable URL (no client, offline, suppressed transcode) is a
+      // load failure from the caller's point of view, so honour its own
+      // failure UI rather than the generic broken-image tile.
+      if (errorWidget != null) {
+        return errorWidget!(context, imagePath ?? '', StateError('No image URL could be built for $imagePath'));
+      }
       return _buildFallback(context);
     }
 
@@ -395,6 +401,69 @@ class OptimizedMediaImage extends StatelessWidget {
 
   Widget _buildFallback(BuildContext context) =>
       _surfacePlaceholder(context, icon: fallbackIcon ?? Symbols.image_not_supported_rounded);
+}
+
+/// Clear-logo artwork for hero and detail headers.
+///
+/// Logos are the one artwork type whose source aspect never matches its slot,
+/// so the decode has to preserve the source ratio: [OptimizedMediaImage] goes
+/// through [MediaImageHelper.boundedDecode], which bounds both axes under
+/// `ResizeImagePolicy.fit`. Handing both mem-cache dimensions to a raw
+/// `CachedNetworkImage` instead decodes under `ResizeImagePolicy.exact`, which
+/// pins the logo to whatever ratio those two bounds happen to have.
+///
+/// Plex serves logos with `minSize=1&upscale=1`, so the transcode covers the
+/// requested box on both axes (a 4313×1035 logo asked for at 1200×360 comes
+/// back 1500×360, aspect intact). `exact` then clamps neither axis down to the
+/// source and squashes the logo to the bound ratio: on a phone at DPR 3 the
+/// 400×120 hero slot decodes to exactly 1000×360 — the width capped by
+/// [MediaImageHelper.getMemCacheDimensions] — turning a 4.17∶1 logo into
+/// 2.78∶1.
+///
+/// [fallbackBuilder] renders the title in place of the logo when the path is
+/// missing, the URL can't be built, or the image fails to load.
+class ClearLogoImage extends StatelessWidget {
+  const ClearLogoImage({
+    super.key,
+    required this.client,
+    required this.logoPath,
+    required this.width,
+    required this.height,
+    required this.fallbackBuilder,
+    this.alignment = Alignment.centerLeft,
+    this.fadeInDuration = const Duration(milliseconds: 300),
+  });
+
+  final MediaServerClient? client;
+  final String? logoPath;
+  final double width;
+  final double height;
+  final WidgetBuilder fallbackBuilder;
+  final Alignment alignment;
+  final Duration fadeInDuration;
+
+  @override
+  Widget build(BuildContext context) {
+    final path = logoPath;
+    return SizedBox(
+      width: width,
+      height: height,
+      child: path == null || path.isEmpty
+          ? fallbackBuilder(context)
+          : OptimizedMediaImage(
+              client: client,
+              imagePath: path,
+              width: width,
+              height: height,
+              fit: BoxFit.contain,
+              alignment: alignment,
+              imageType: ImageType.heroLogo,
+              fadeInDuration: fadeInDuration,
+              placeholder: (context, _) => const SizedBox.shrink(),
+              errorWidget: (context, _, _) => fallbackBuilder(context),
+            ),
+    );
+  }
 }
 
 /// Fades a network image in by animating the image paint's alpha

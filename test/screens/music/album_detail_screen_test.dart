@@ -163,7 +163,7 @@ class _FakeMusicClient implements MediaServerClient {
   }
 
   @override
-  String thumbnailUrl(String? path, {int? width, int? height}) => '';
+  String thumbnailUrl(String? path, {int? width, int? height, bool cover = true}) => '';
 
   @override
   void close() {}

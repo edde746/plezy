@@ -1,6 +1,5 @@
 import 'dart:io';
 
-import 'package:cached_network_image_ce/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
@@ -10,7 +9,6 @@ import '../media/media_item_types.dart';
 import '../media/media_server_client.dart';
 import '../providers/watch_state_store.dart';
 import '../services/device_performance.dart';
-import '../services/image_cache_service.dart';
 import '../utils/content_utils.dart';
 import '../utils/formatters.dart';
 import '../utils/layout_constants.dart';
@@ -21,7 +19,7 @@ import 'cycling_media_backdrop.dart';
 import 'fitting_title_text.dart';
 import 'settings_builder.dart';
 import 'media_rating_badge.dart';
-import 'optimized_media_image.dart' show blurArtwork;
+import 'optimized_media_image.dart' show ClearLogoImage, blurArtwork;
 import 'rasterized_gradient.dart';
 
 class TvSpotlightBackground extends StatelessWidget {
@@ -270,35 +268,13 @@ class TvSpotlightBackground extends StatelessWidget {
       );
     }
 
-    final imageUrl = MediaImageHelper.getOptimizedImageUrl(
+    return ClearLogoImage(
       client: client,
-      thumbPath: logoPath,
-      maxWidth: logoWidth,
-      maxHeight: logoHeight,
-      devicePixelRatio: dpr,
-      imageType: ImageType.heroLogo,
-    );
-    if (imageUrl.isEmpty) return _buildTitle(context, title);
-
-    return SizedBox(
+      logoPath: logoPath,
       width: logoWidth,
       height: logoHeight,
-      child: blurArtwork(
-        CachedNetworkImage(
-          imageUrl: imageUrl,
-          cacheManager: PlexImageCacheManager.instance,
-          fit: BoxFit.contain,
-          alignment: .centerLeft,
-          memCacheWidth: logoMemWidth,
-          memCacheHeight: logoMemHeight,
-          fadeInDuration: DevicePerformance.reducedDuration(const Duration(milliseconds: 200)),
-          fadeOutDuration: DevicePerformance.reducedDuration(const Duration(milliseconds: 200)),
-          placeholder: (context, url) => const SizedBox.shrink(),
-          errorBuilder: (context, error, stackTrace) => _buildTitle(context, title),
-        ),
-        sigma: 10,
-        clip: false,
-      ),
+      fadeInDuration: DevicePerformance.reducedDuration(const Duration(milliseconds: 200)),
+      fallbackBuilder: (context) => _buildTitle(context, title),
     );
   }
 

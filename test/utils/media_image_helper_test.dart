@@ -13,8 +13,8 @@ import '../test_helpers/media_items.dart';
 /// Only [thumbnailUrl] is exercised; everything else throws via noSuchMethod.
 class _SizedUrlFakeClient implements MediaServerClient {
   @override
-  String thumbnailUrl(String? path, {int? width, int? height}) =>
-      (width == null && height == null) ? 'unsized:$path' : 'sized:$path?w=$width&h=$height';
+  String thumbnailUrl(String? path, {int? width, int? height, bool cover = true}) =>
+      (width == null && height == null) ? 'unsized:$path' : 'sized:$path?w=$width&h=$height&cover=$cover';
 
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
@@ -110,7 +110,39 @@ void main() {
         devicePixelRatio: 2,
       );
 
-      expect(url, 'sized:/library/metadata/1/thumb/2?w=400&h=600');
+      expect(url, 'sized:/library/metadata/1/thumb/2?w=400&h=600&cover=true');
+    });
+
+    test('logos ask the server to fit inside the slot, not cover it', () {
+      // Logos paint with BoxFit.contain, so a covering transcode overshoots
+      // the long axis and the fit-policy decode bounds discard the extra.
+      for (final type in [ImageType.logo, ImageType.heroLogo]) {
+        final url = MediaImageHelper.getOptimizedImageUrl(
+          client: client,
+          thumbPath: '/library/metadata/1/clearLogo',
+          maxWidth: 400,
+          maxHeight: 120,
+          devicePixelRatio: 3,
+          imageType: type,
+        );
+
+        expect(url, contains('cover=false'), reason: '$type should fit inside its slot');
+      }
+    });
+
+    test('slot-filling artwork keeps covering the requested box', () {
+      for (final type in [ImageType.poster, ImageType.art, ImageType.thumb, ImageType.square, ImageType.avatar]) {
+        final url = MediaImageHelper.getOptimizedImageUrl(
+          client: client,
+          thumbPath: '/library/metadata/1/thumb/2',
+          maxWidth: 200,
+          maxHeight: 300,
+          devicePixelRatio: 2,
+          imageType: type,
+        );
+
+        expect(url, contains('cover=true'), reason: '$type should fill its slot');
+      }
     });
   });
 

@@ -35,8 +35,11 @@ mixin _JellyfinImageDownloadMethods on MediaServerCacheMixin {
   });
   String _withApiKey(String urlOrPath);
 
+  /// [cover] is accepted for interface parity and ignored: `maxWidth`/
+  /// `maxHeight` already scale the long axis to fit inside the box, so
+  /// Jellyfin never overshoots the way Plex's `minSize=1` transcode does.
   @override
-  String thumbnailUrl(String? path, {int? width, int? height}) {
+  String thumbnailUrl(String? path, {int? width, int? height, bool cover = true}) {
     if (path == null || path.isEmpty) return '';
     final uri = JellyfinImageAbsolutizer.joinUri(baseUrl: connection.baseUrl, urlOrPath: path);
     final params = Map<String, String>.from(uri.queryParameters);
@@ -53,7 +56,7 @@ mixin _JellyfinImageDownloadMethods on MediaServerCacheMixin {
   /// Jellyfin doesn't expose an external-URL proxy endpoint comparable to
   /// Plex's `/photo/:/transcode?url=...`. External URLs pass through.
   @override
-  String externalImageUrl(String url, {int? width, int? height}) => url;
+  String externalImageUrl(String url, {int? width, int? height, bool cover = true}) => url;
 
   @override
   Future<String?> resolveExternalPlaybackUrl(MediaItem item, {int mediaIndex = 0, String? mediaSourceId}) async {

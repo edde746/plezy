@@ -3668,40 +3668,12 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
           );
           if (localArtwork != null) return localArtwork;
 
-          final client = _getArtworkMediaClient(context);
-          final dpr = MediaImageHelper.effectiveDevicePixelRatio(context);
-          final targetWidth = (width * dpr).round();
-          final targetHeight = (height * dpr).round();
-          final (memCacheWidth, memCacheHeight) = MediaImageHelper.getMemCacheDimensions(
-            displayWidth: targetWidth,
-            displayHeight: targetHeight,
-            imageType: ImageType.heroLogo,
-          );
-          final logoUrl = MediaImageHelper.getOptimizedImageUrl(
-            client: client,
-            thumbPath: metadata.clearLogoPath,
-            maxWidth: width,
-            maxHeight: height,
-            devicePixelRatio: dpr,
-            imageType: ImageType.heroLogo,
-          );
-
-          if (logoUrl.isEmpty) return titleFallback(context);
-
-          return blurArtwork(
-            CachedNetworkImage(
-              imageUrl: logoUrl,
-              cacheManager: PlexImageCacheManager.instance,
-              filterQuality: FilterQuality.medium,
-              fit: BoxFit.contain,
-              alignment: .centerLeft,
-              memCacheWidth: memCacheWidth,
-              memCacheHeight: memCacheHeight,
-              placeholder: (context, url) => const SizedBox.shrink(),
-              errorBuilder: (context, error, stackTrace) => titleFallback(context),
-            ),
-            sigma: 10,
-            clip: false,
+          return ClearLogoImage(
+            client: _getArtworkMediaClient(context),
+            logoPath: metadata.clearLogoPath,
+            width: width,
+            height: height,
+            fallbackBuilder: titleFallback,
           );
         },
       ),
