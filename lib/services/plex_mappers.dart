@@ -1006,7 +1006,7 @@ class PlexMappers {
       viewCount: dto.viewCount,
       lastViewedAt: dto.lastViewedAt,
       leafCount: dto.leafCount,
-      viewedLeafCount: dto.viewedLeafCount,
+      viewedLeafCount: kind.usesLeafWatchCounts ? dto.viewedLeafCount : null,
       childCount: dto.childCount,
       addedAt: dto.addedAt,
       updatedAt: dto.updatedAt,

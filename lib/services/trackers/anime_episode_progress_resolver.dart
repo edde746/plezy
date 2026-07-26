@@ -147,7 +147,7 @@ class AnimeEpisodeProgressResolver implements AnimeEpisodeProgressLookup {
         if (season == null || season < 0) continue;
         final watched = item.viewedLeafCount;
         if (watched == null || watched < 0) continue;
-        final total = item.leafCount ?? item.childCount;
+        final total = item.leafWatchTotal;
         if (progress.containsKey(season)) return null;
         progress[season] = _SeasonProgress(total: total, watched: watched);
       }

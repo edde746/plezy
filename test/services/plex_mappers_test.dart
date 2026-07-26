@@ -289,6 +289,21 @@ void main() {
       expect(item.serverId, _serverId);
       expect(item.serverName, _serverName);
     });
+
+    test('normalizes aggregate watch counts off leaf items', () {
+      final item = PlexMappers.mediaItemFromJson({
+        'ratingKey': 'leaf-with-counts',
+        'type': 'movie',
+        'viewCount': 0,
+        'leafCount': 1,
+        'viewedLeafCount': 1,
+      }, serverId: ServerId(_serverId));
+
+      expect(item.leafCount, 1);
+      expect(item.viewedLeafCount, isNull);
+      expect(item.isWatched, isFalse);
+      expect(item.unwatchedCount, isNull);
+    });
   });
 
   group('PlexMappers.mediaItem (show + season + episode)', () {

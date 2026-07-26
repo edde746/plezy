@@ -459,16 +459,37 @@ sealed class MediaItem with _$MediaItem {
   /// rules, the unwatched-episode lookups in episode_collection.dart).
   bool get isUnwatchedOrInProgress => !isWatched || hasActiveProgress;
 
-  /// Whether this container (show/season) has some but not all leaves watched.
-  bool get isPartiallyWatched =>
-      viewedLeafCount != null && leafCount != null && viewedLeafCount! > 0 && viewedLeafCount! < leafCount!;
+  /// Positive leaf total used for aggregate watch state, or null when this
+  /// item is a leaf or has no authoritative total. A season's direct children
+  /// are episodes, so [childCount] is a valid fallback there; it is not valid
+  /// for shows, whose direct children are seasons.
+  int? get leafWatchTotal {
+    if (!kind.usesLeafWatchCounts) return null;
+    final total = leafCount ?? (kind == MediaKind.season ? childCount : null);
+    return total != null && total > 0 ? total : null;
+  }
 
-  /// Whether the item is fully watched. Series/seasons consult leaf counts;
-  /// individual movies/episodes use [viewCount].
+  /// Normalized aggregate completion in the inclusive range 0–1.
+  double? get leafWatchFraction {
+    final total = leafWatchTotal;
+    final viewed = viewedLeafCount;
+    if (total == null || viewed == null) return null;
+    if (viewed <= 0) return 0;
+    if (viewed >= total) return 1;
+    return viewed / total;
+  }
+
+  /// Whether this container has some but not all leaves watched.
+  bool get isPartiallyWatched {
+    final fraction = leafWatchFraction;
+    return fraction != null && fraction > 0 && fraction < 1;
+  }
+
+  /// Whether the item is fully watched. Container kinds use positive
+  /// aggregate leaf totals; leaf kinds use their own [viewCount].
   bool get isWatched {
-    if (leafCount != null && viewedLeafCount != null) {
-      return viewedLeafCount! >= leafCount!;
-    }
+    final fraction = leafWatchFraction;
+    if (fraction != null) return fraction >= 1;
     return viewCount != null && viewCount! > 0;
   }
 
@@ -476,17 +497,30 @@ sealed class MediaItem with _$MediaItem {
   /// `UserData.UnplayedItemCount` when leaf totals weren't requested
   /// (e.g. the folder tree's slim field set).
   int? get unwatchedCount {
-    if (leafCount != null && viewedLeafCount != null) return leafCount! - viewedLeafCount!;
+    if (!kind.usesLeafWatchCounts) return null;
+
+    final total = leafWatchTotal;
+    final viewed = viewedLeafCount;
+    if (total != null && viewed != null) {
+      if (viewed <= 0) return total;
+      if (viewed >= total) return 0;
+      return total - viewed;
+    }
+
     final userData = raw?['UserData'];
-    return userData is Map<String, dynamic> ? userData['UnplayedItemCount'] as int? : null;
+    final unwatched = userData is Map<String, dynamic> ? flexibleInt(userData['UnplayedItemCount']) : null;
+    return unwatched != null && unwatched >= 0 ? unwatched : null;
   }
 
   /// Copy with the watched flag applied so [isWatched] reflects it for every
-  /// kind: containers need their leaf counts patched, not just [viewCount].
+  /// kind. This is the single mutation seam used by watch-state overlays.
   MediaItem withWatchedFlag(bool isWatched) {
     var updated = copyWith(viewCount: isWatched ? 1 : 0);
-    if (leafCount != null || viewedLeafCount != null) {
-      updated = updated.copyWith(viewedLeafCount: isWatched ? (leafCount ?? viewedLeafCount ?? 1) : 0);
+    final total = leafWatchTotal;
+    if (total != null) {
+      updated = updated.copyWith(viewedLeafCount: isWatched ? total : 0);
+    } else if (!kind.usesLeafWatchCounts && viewedLeafCount != null) {
+      updated = updated.copyWith(viewedLeafCount: null);
     }
     return updated;
   }

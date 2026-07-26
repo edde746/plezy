@@ -76,6 +76,7 @@ void main() {
         serverId: 's1',
       );
       expect(show.isWatched, isTrue);
+      expect(show.unwatchedCount, 0);
     });
 
     test('show with no leaf info falls back to viewCount', () {
@@ -84,6 +85,66 @@ void main() {
         backend: MediaBackend.plex,
         kind: MediaKind.show,
         viewCount: 1,
+        serverId: 's1',
+      );
+      expect(show.isWatched, isTrue);
+    });
+
+    test('leaf media ignores aggregate leaf counts', () {
+      expect(_movie(viewCount: 0, leafCount: 1, viewedLeafCount: 1).isWatched, isFalse);
+      expect(_movie(viewCount: 1, leafCount: 1, viewedLeafCount: 0).isWatched, isTrue);
+    });
+
+    test('container media uses aggregate leaf counts', () {
+      final album = testMediaItem(
+        id: 'a',
+        backend: MediaBackend.plex,
+        kind: MediaKind.album,
+        viewCount: 0,
+        leafCount: 8,
+        viewedLeafCount: 8,
+        serverId: 's1',
+      );
+      expect(album.isWatched, isTrue);
+    });
+
+    test('every media kind has explicit leaf or container watch semantics', () {
+      const containerKinds = [
+        MediaKind.show,
+        MediaKind.season,
+        MediaKind.artist,
+        MediaKind.album,
+        MediaKind.collection,
+        MediaKind.playlist,
+        MediaKind.folder,
+      ];
+      expect(MediaKind.values.where((kind) => kind.usesLeafWatchCounts), containerKinds);
+
+      for (final kind in MediaKind.values) {
+        final item = testMediaItem(
+          id: kind.id,
+          backend: MediaBackend.plex,
+          kind: kind,
+          viewCount: 0,
+          leafCount: 2,
+          viewedLeafCount: 2,
+          serverId: 's1',
+        );
+        final usesLeaves = containerKinds.contains(kind);
+        expect(item.isWatched, usesLeaves, reason: '${kind.id} watched semantics');
+        expect(item.isPartiallyWatched, isFalse, reason: '${kind.id} partial semantics');
+        expect(item.unwatchedCount, usesLeaves ? 0 : null, reason: '${kind.id} unwatched count semantics');
+      }
+    });
+
+    test('zero container leaf total falls back to viewCount', () {
+      final show = testMediaItem(
+        id: 's',
+        backend: MediaBackend.plex,
+        kind: MediaKind.show,
+        viewCount: 1,
+        leafCount: 0,
+        viewedLeafCount: 0,
         serverId: 's1',
       );
       expect(show.isWatched, isTrue);
@@ -184,6 +245,20 @@ void main() {
       expect(show.isPartiallyWatched, isTrue);
     });
 
+    test('season progress uses direct episode count only when the leaf total is absent', () {
+      final season = testMediaItem(
+        id: 'season',
+        backend: MediaBackend.jellyfin,
+        kind: MediaKind.season,
+        childCount: 8,
+        viewedLeafCount: 3,
+      );
+
+      expect(season.leafWatchTotal, 8);
+      expect(season.leafWatchFraction, 3 / 8);
+      expect(season.isPartiallyWatched, isTrue);
+    });
+
     test('show with zero leaves watched is NOT partially watched', () {
       final show = testMediaItem(
         id: 's',
@@ -208,9 +283,87 @@ void main() {
       expect(show.isPartiallyWatched, isFalse);
     });
 
+    test('aggregate progress clamps contradictory counts', () {
+      final overReported = testMediaItem(
+        id: 'show',
+        backend: MediaBackend.plex,
+        kind: MediaKind.show,
+        leafCount: 10,
+        viewedLeafCount: 11,
+      );
+      final negative = overReported.copyWith(viewedLeafCount: -1);
+
+      expect(overReported.leafWatchFraction, 1);
+      expect(negative.leafWatchFraction, 0);
+    });
+
     test('movie without leaf info is NOT partially watched (concept doesn\'t apply)', () {
       expect(_movie(viewCount: 0).isPartiallyWatched, isFalse);
       expect(_movie(viewCount: 1).isPartiallyWatched, isFalse);
+    });
+  });
+
+  group('MediaItem watch-state normalization', () {
+    test('leaf state ignores and clears stale aggregate fields', () {
+      final movie = testMediaItem(
+        id: 'm',
+        backend: MediaBackend.jellyfin,
+        kind: MediaKind.movie,
+        viewCount: 0,
+        leafCount: 3,
+        viewedLeafCount: 3,
+        raw: {
+          'UserData': {'UnplayedItemCount': '0'},
+        },
+      );
+
+      expect(movie.isWatched, isFalse);
+      expect(movie.isPartiallyWatched, isFalse);
+      expect(movie.unwatchedCount, isNull);
+      expect(movie.withWatchedFlag(false).viewedLeafCount, isNull);
+      expect(movie.withWatchedFlag(true).isWatched, isTrue);
+    });
+
+    test('container mutations update the aggregate and item flags together', () {
+      final album = testMediaItem(
+        id: 'a',
+        backend: MediaBackend.plex,
+        kind: MediaKind.album,
+        viewCount: 0,
+        leafCount: 8,
+        viewedLeafCount: 3,
+      );
+
+      final watched = album.withWatchedFlag(true);
+      expect(watched.viewCount, 1);
+      expect(watched.viewedLeafCount, 8);
+      expect(watched.isWatched, isTrue);
+
+      final unwatched = watched.withWatchedFlag(false);
+      expect(unwatched.viewCount, 0);
+      expect(unwatched.viewedLeafCount, 0);
+      expect(unwatched.isWatched, isFalse);
+    });
+
+    test('container unwatched counts are clamped and tolerate string API values', () {
+      final overReported = testMediaItem(
+        id: 's1',
+        backend: MediaBackend.plex,
+        kind: MediaKind.show,
+        leafCount: 10,
+        viewedLeafCount: 11,
+      );
+      final slimJellyfin = testMediaItem(
+        id: 's2',
+        backend: MediaBackend.jellyfin,
+        kind: MediaKind.show,
+        raw: {
+          'UserData': {'UnplayedItemCount': '4'},
+        },
+      );
+
+      expect(overReported.unwatchedCount, 0);
+      expect(slimJellyfin.unwatchedCount, 4);
     });
   });
 
@@ -397,6 +550,26 @@ void main() {
       expect(decoded.backdropPaths, ['/episode-0', '/episode-1']);
       expect(decoded.grandparentBackdropPaths, ['/show-0', '/show-1']);
       expect(decoded.heroBackdropPaths, ['/show-0', '/show-1']);
+    });
+
+    test('cached leaf items ignore stale aggregate watch fields', () {
+      const original = JellyfinMediaItem(
+        id: 'cached-music-video',
+        kind: MediaKind.clip,
+        viewCount: 0,
+        leafCount: 1,
+        viewedLeafCount: 1,
+        raw: {
+          'UserData': {'UnplayedItemCount': 0},
+        },
+      );
+
+      final decoded = MediaItem.fromJson(original.toJson());
+
+      expect(decoded.viewedLeafCount, 1);
+      expect(decoded.isWatched, isFalse);
+      expect(decoded.isPartiallyWatched, isFalse);
+      expect(decoded.unwatchedCount, isNull);
     });
 
     test('missing backend keeps legacy Plex fallback', () {

@@ -32,6 +32,12 @@ enum MediaKind {
 
   bool get isPlayable => isVideo || this == track;
 
+  /// Whether this container kind derives watched state from aggregate leaves.
+  bool get usesLeafWatchCounts => switch (this) {
+    show || season || artist || album || collection || playlist || folder => true,
+    movie || episode || track || clip || photo || unknown => false,
+  };
+
   /// Lowercase string id used when persisting or comparing legacy code paths
   /// that still hold raw type strings.
   String get id => switch (this) {

@@ -130,7 +130,7 @@ class WatchedIndicator extends StatelessWidget {
               ),
             ),
           ),
-        // Progress bar for seasons (viewedLeafCount / leafCount)
+        // Progress bar for seasons (viewed leaves / total leaves).
         if (item.isSeason && item.isPartiallyWatched)
           Positioned(
             bottom: 0,
@@ -139,7 +139,7 @@ class WatchedIndicator extends StatelessWidget {
             child: ClipRRect(
               borderRadius: barRadius,
               child: LinearProgressIndicator(
-                value: item.viewedLeafCount! / item.leafCount!,
+                value: item.leafWatchFraction,
                 backgroundColor: tokens(context).outline,
                 valueColor: AlwaysStoppedAnimation<Color>(Theme.of(context).colorScheme.primary),
                 minHeight: size.barMinHeight,

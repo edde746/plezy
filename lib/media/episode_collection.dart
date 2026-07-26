@@ -72,17 +72,16 @@ MediaItem? defaultPlaybackSeason(List<MediaItem> seasons) {
 }
 
 /// Index of the first season that still has unwatched episodes, preferring
-/// regular seasons over specials (mirrors [defaultPlaybackSeasonIndex]). Uses
-/// leafCount/viewedLeafCount, so no episodes need to be fetched. Returns null
-/// when every season is fully watched (or counts are unavailable).
+/// regular seasons over specials (mirrors [defaultPlaybackSeasonIndex]).
+/// Uses normalized aggregate state, so no episodes need to be fetched.
+/// Returns null when every season is fully watched or counts are unavailable.
 int? firstUnwatchedSeasonIndex(List<MediaItem> seasons) {
   int? firstSpecial;
   for (var i = 0; i < seasons.length; i++) {
     final season = seasons[i];
     if (season.kind != MediaKind.season) continue;
-    final leaf = season.leafCount;
-    if (leaf == null || leaf <= 0) continue;
-    if ((season.viewedLeafCount ?? 0) >= leaf) continue; // fully watched
+    if (season.leafWatchTotal == null) continue;
+    if (season.isWatched) continue;
     if (!isSpecialSeasonNumber(season.index)) return i; // first regular season with unwatched
     firstSpecial ??= i; // specials only count as a last resort
   }
