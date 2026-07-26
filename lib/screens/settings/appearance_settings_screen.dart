@@ -421,6 +421,12 @@ class AppearanceSettingsScreen extends StatelessWidget {
         return 'Български';
       case AppLocale.tr:
         return 'Türkçe';
+      case AppLocale.az:
+        return 'Azərbaycanca';
+      case AppLocale.kk:
+        return 'Қазақша';
+      case AppLocale.uz:
+        return 'Oʻzbekcha';
     }
   }
 
