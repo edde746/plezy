@@ -33,7 +33,7 @@ struct EncodableNodeBuilder {
   using MapBuilder = flutter::EncodableMap;
 
   static Value Null() { return flutter::EncodableValue(); }
-  static Value Bool(bool value) { return flutter::EncodableValue(value); }
+  static Value Boolean(bool value) { return flutter::EncodableValue(value); }
   static Value Int(int64_t value) { return flutter::EncodableValue(value); }
   static Value Double(double value) { return flutter::EncodableValue(value); }
   static Value String(const char* value, size_t length) { return flutter::EncodableValue(SanitizeUtf8(value, length)); }

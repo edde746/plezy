@@ -353,7 +353,7 @@ struct TextNodeBuilder {
   using MapBuilder = std::string;
 
   static Value Null() { return "null"; }
-  static Value Bool(bool value) { return value ? "true" : "false"; }
+  static Value Boolean(bool value) { return value ? "true" : "false"; }
   static Value Int(int64_t value) { return std::to_string(value); }
   static Value Double(double value) { return std::to_string(value); }
   static Value String(const char* value, size_t length) { return "'" + std::string(value, length) + "'"; }

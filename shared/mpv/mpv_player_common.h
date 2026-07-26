@@ -252,11 +252,13 @@ inline bool ClaimNodeString(const char* input, NodeConversionBudget* budget, siz
 
 // `Builder` adapts the walk to a platform value type and keeps that platform's
 // UTF-8 sanitizer out of this header. It supplies the types `Value`,
-// `ListBuilder` and `MapBuilder`, the leaves `Null`, `Bool`, `Int`, `Double`
-// and `String(data, length)`, and the containers `NewList`/`Append`/
+// `ListBuilder` and `MapBuilder`, the leaves `Null`, `Boolean`, `Int`,
+// `Double` and `String(data, length)`, and the containers `NewList`/`Append`/
 // `FinishList` plus `NewMap`/`Insert`/`FinishMap`. A value passed to
 // `Append`/`Insert` belongs to the builder from then on, and `AbandonMap`
-// releases a partially built map whose key was rejected.
+// releases a partially built map whose key was rejected. The boolean leaf is
+// deliberately not named `Bool`: X11's `Xlib.h`, reached through `epoxy/egl.h`
+// on Linux, defines `Bool` as a macro and would rewrite the declaration.
 template <typename Builder>
 typename Builder::Value ConvertNode(const mpv_node* node, size_t depth, NodeConversionBudget* budget) {
   if (!node || !budget || depth >= kMaxNodeDepth || budget->remaining_entries == 0) {
@@ -271,7 +273,7 @@ typename Builder::Value ConvertNode(const mpv_node* node, size_t depth, NodeConv
       return Builder::String(node->u.string, length);
     }
     case MPV_FORMAT_FLAG:
-      return Builder::Bool(node->u.flag != 0);
+      return Builder::Boolean(node->u.flag != 0);
     case MPV_FORMAT_INT64:
       return Builder::Int(node->u.int64);
     case MPV_FORMAT_DOUBLE:

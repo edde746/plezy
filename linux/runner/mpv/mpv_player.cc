@@ -969,7 +969,7 @@ struct FlValueNodeBuilder {
   using MapBuilder = FlValue*;
 
   static Value Null() { return fl_value_new_null(); }
-  static Value Bool(bool value) { return fl_value_new_bool(value); }
+  static Value Boolean(bool value) { return fl_value_new_bool(value); }
   static Value Int(int64_t value) { return fl_value_new_int(value); }
   static Value Double(double value) { return fl_value_new_float(value); }
   static Value String(const char* value, size_t length) {
