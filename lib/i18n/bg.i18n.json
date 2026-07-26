@@ -558,6 +558,7 @@
     },
     "removedFromContinueWatching": "Премахнато от продължаване на гледането",
     "errorLoading": "Грешка: ${error}",
+    "searchPartialResults": "",
     "streamInterrupted": "Потокът прекъсна. Натиснете „Пусни“ или превъртете, за да опитате отново.",
     "liveStreamInterrupted": "Потокът на живо прекъсна. Натиснете „Пусни“, за да опитате отново.",
     "fileInfoNotAvailable": "Информацията за файла не е налична",
@@ -743,6 +744,7 @@
   },
   "errors": {
     "searchFailed": "Търсенето е неуспешно: ${error}",
+    "searchUnavailable": "",
     "connectionTimeout": "Изтече времето за връзка при зареждане на ${context}",
     "connectionFailed": "Не може да се осъществи връзка с медиен сървър",
     "unableToLoad": "Не може да се зареди ${context}. Опитайте отново.",

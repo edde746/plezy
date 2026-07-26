@@ -11,6 +11,7 @@ import '../utils/app_logger.dart';
 import '../utils/external_ids.dart';
 import '../utils/global_key_utils.dart';
 import '../utils/search_relevance.dart';
+import '../utils/media_server_http_client.dart';
 import 'local_playback_history.dart';
 import 'multi_server_manager.dart';
 
@@ -25,12 +26,26 @@ typedef LibraryAggregationResult = ({
   Set<String> succeededServerIds,
   Set<String> cancelledServerIds,
 });
+typedef SearchAggregationResult = ({
+  List<MediaItem> items,
+  Set<String> succeededServerIds,
+  Set<String> cancelledServerIds,
+  Set<String> failedServerIds,
+});
 
 /// Whether [error] is a client-side abort (client teardown mid-request)
 /// rather than a genuine server failure. Aggregation reports these servers
 /// in `cancelledServerIds` so callers can tell a *disrupted* pass — whose
 /// results say nothing about actual content — from a settled failure.
 bool _isCancellation(Object error) => error is MediaServerHttpException && error.isCancellation;
+
+Map<String, int> _searchKindCounts(Iterable<MediaItem> items) {
+  final counts = <String, int>{};
+  for (final item in items) {
+    counts.update(item.kind.name, (count) => count + 1, ifAbsent: () => 1);
+  }
+  return counts;
+}
 
 /// Cross-server aggregation: fans calls out to every online client and
 /// merges the results. Single-server operations now go through the
@@ -506,35 +521,73 @@ class DataAggregationService {
     return filtered;
   }
 
-  /// Search across all online servers (Plex + Jellyfin). Returns neutral
-  /// [MediaItem]s.
-  Future<List<MediaItem>> searchAcrossServers(String query, {int? limit}) async {
+  /// Search across all online servers (Plex + Jellyfin). Per-server outcomes
+  /// distinguish authoritative empty results from failed or cancelled legs.
+  Future<SearchAggregationResult> searchAcrossServers(String query, {int? limit, AbortController? abort}) async {
     if (query.trim().isEmpty) {
-      return [];
+      return (
+        items: const <MediaItem>[],
+        succeededServerIds: const <String>{},
+        cancelledServerIds: const <String>{},
+        failedServerIds: const <String>{},
+      );
     }
 
+    abort?.throwIfAborted();
     final clients = _serverManager.onlineClients;
-    if (clients.isEmpty) return [];
+    if (clients.isEmpty) {
+      return (
+        items: const <MediaItem>[],
+        succeededServerIds: const <String>{},
+        cancelledServerIds: const <String>{},
+        failedServerIds: const <String>{},
+      );
+    }
 
     final resultLimit = limit ?? defaultMediaSearchLimit;
     final fetchLimit = resultLimit < defaultMediaSearchLimit ? defaultMediaSearchLimit : resultLimit;
+    final succeededServerIds = <String>{};
+    final cancelledServerIds = <String>{};
+    final failedServerIds = <String>{};
 
     final futures = clients.entries.map((entry) async {
-      final client = entry.value;
+      final stopwatch = Stopwatch()..start();
       try {
-        return await client.searchItems(query, limit: fetchLimit);
+        final items = await entry.value.searchItems(query, limit: fetchLimit, abort: abort);
+        succeededServerIds.add(entry.key);
+        appLogger.i(
+          'Search completed on ${entry.key} in ${stopwatch.elapsedMilliseconds}ms: '
+          '${items.length} results ${_searchKindCounts(items)}',
+        );
+        return items;
       } catch (e, st) {
-        appLogger.e('Search failed on ${entry.key}', error: e, stackTrace: st);
+        if (_isCancellation(e)) {
+          cancelledServerIds.add(entry.key);
+          appLogger.d('Search cancelled on ${entry.key} after ${stopwatch.elapsedMilliseconds}ms');
+        } else {
+          failedServerIds.add(entry.key);
+          appLogger.e('Search failed on ${entry.key}', error: e, stackTrace: st);
+        }
         return <MediaItem>[];
       }
     });
 
-    final allResults = (await Future.wait(futures)).expand((l) => l).toList();
-    final result = rankMediaSearchResults(allResults, query, limit: resultLimit);
+    final allResults = (await Future.wait(futures)).expand((items) => items).toList();
+    abort?.throwIfAborted();
+    final items = rankMediaSearchResults(allResults, query, limit: resultLimit);
 
-    appLogger.i('Found ${result.length} search results across all servers');
+    appLogger.i(
+      'Search aggregation completed: ${items.length} results '
+      '(${succeededServerIds.length} succeeded, ${cancelledServerIds.length} cancelled, '
+      '${failedServerIds.length} failed) ${_searchKindCounts(items)}',
+    );
 
-    return result;
+    return (
+      items: items,
+      succeededServerIds: succeededServerIds,
+      cancelledServerIds: cancelledServerIds,
+      failedServerIds: failedServerIds,
+    );
   }
 
   /// Reverse external-id lookup fanned out to every online server (see

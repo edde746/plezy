@@ -558,6 +558,7 @@
     },
     "removedFromContinueWatching": "Aus „Weiterschauen“ entfernt",
     "errorLoading": "Fehler: ${error}",
+    "searchPartialResults": "",
     "streamInterrupted": "Der Stream wurde unterbrochen. Drücke auf Wiedergabe oder spule, um es erneut zu versuchen.",
     "liveStreamInterrupted": "Der Livestream wurde unterbrochen. Drücke auf Wiedergabe, um es erneut zu versuchen.",
     "fileInfoNotAvailable": "Dateiinfo nicht verfügbar",
@@ -743,6 +744,7 @@
   },
   "errors": {
     "searchFailed": "Suche fehlgeschlagen: ${error}",
+    "searchUnavailable": "",
     "connectionTimeout": "Zeitüberschreitung beim Laden von ${context}",
     "connectionFailed": "Keine Verbindung zum Medienserver möglich",
     "unableToLoad": "${context} konnte nicht geladen werden. Bitte erneut versuchen.",

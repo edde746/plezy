@@ -558,6 +558,7 @@
     },
     "removedFromContinueWatching": "Eliminado de Seguir Viendo",
     "errorLoading": "Error: ${error}",
+    "searchPartialResults": "",
     "streamInterrupted": "La reproducción se interrumpió. Pulsa reproducir o avanza para volver a intentarlo.",
     "liveStreamInterrupted": "La transmisión en vivo se interrumpió. Pulsa reproducir para volver a intentarlo.",
     "fileInfoNotAvailable": "Información de archivo no disponible",
@@ -743,6 +744,7 @@
   },
   "errors": {
     "searchFailed": "Error en la búsqueda: ${error}",
+    "searchUnavailable": "",
     "connectionTimeout": "Tiempo de conexión agotado al cargar ${context}",
     "connectionFailed": "No se puede conectar al servidor multimedia",
     "unableToLoad": "No se pudo cargar ${context}. Inténtalo de nuevo.",

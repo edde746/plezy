@@ -557,6 +557,7 @@
     },
     "removedFromContinueWatching": "視聴中から削除しました",
     "errorLoading": "エラー: ${error}",
+    "searchPartialResults": "",
     "streamInterrupted": "ストリームが中断されました。再生を押すかシークして再試行してください。",
     "liveStreamInterrupted": "ライブストリームが中断されました。再生を押して再試行してください。",
     "fileInfoNotAvailable": "ファイル情報が利用できません",
@@ -742,6 +743,7 @@
   },
   "errors": {
     "searchFailed": "検索に失敗しました: ${error}",
+    "searchUnavailable": "",
     "connectionTimeout": "${context}の読み込み中に接続がタイムアウトしました",
     "connectionFailed": "メディアサーバーに接続できません",
     "unableToLoad": "${context}を読み込めませんでした。もう一度お試しください。",

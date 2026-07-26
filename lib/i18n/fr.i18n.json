@@ -558,6 +558,7 @@
     },
     "removedFromContinueWatching": "Supprimé de « Continuer à regarder »",
     "errorLoading": "Erreur : ${error}",
+    "searchPartialResults": "",
     "streamInterrupted": "La lecture a été interrompue. Appuyez sur Lecture ou avancez pour réessayer.",
     "liveStreamInterrupted": "Le direct a été interrompu. Appuyez sur Lecture pour réessayer.",
     "fileInfoNotAvailable": "Informations sur le fichier non disponibles",
@@ -743,6 +744,7 @@
   },
   "errors": {
     "searchFailed": "Échec de la recherche : ${error}",
+    "searchUnavailable": "",
     "connectionTimeout": "Délai d'attente de connexion dépassé pendant le chargement ${context}",
     "connectionFailed": "Impossible de se connecter au serveur multimédia",
     "unableToLoad": "Impossible de charger ${context}. Réessayez.",

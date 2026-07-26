@@ -3,6 +3,7 @@ import 'package:plezy/widgets/app_icon.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 
+import '../exceptions/media_server_exceptions.dart';
 import '../focus/focusable_text_field.dart';
 import '../focus/focusable_button.dart';
 import '../i18n/strings.g.dart';
@@ -12,9 +13,11 @@ import '../mixins/debounced_media_search.dart';
 import '../mixins/mounted_set_state_mixin.dart';
 import '../mixins/refreshable.dart';
 import '../providers/multi_server_provider.dart';
+import '../services/data_aggregation_service.dart';
 import '../utils/app_logger.dart';
 import '../utils/platform_detector.dart';
 import '../utils/snackbar_helper.dart';
+import '../utils/media_server_http_client.dart';
 import '../widgets/desktop_app_bar.dart';
 import '../widgets/loading_indicator_box.dart';
 import '../widgets/pill_input_decoration.dart';
@@ -35,6 +38,8 @@ class _SearchScreenState extends State<SearchScreen>
   String? _focusResultsForQuery;
   final _tvTextInputController = TvTextInputController();
   final _clearFocusNode = FocusNode(debugLabel: 'Search.clear');
+  AbortController? _activeSearchAbort;
+  ({String query, SearchAggregationResult result})? _pendingSearchOutcome;
 
   @override
   void initState() {
@@ -60,24 +65,61 @@ class _SearchScreenState extends State<SearchScreen>
   Future<List<MediaItem>> performSearchQuery(String query) async {
     final multiServerProvider = Provider.of<MultiServerProvider>(context, listen: false);
     if (!multiServerProvider.hasConnectedServers) {
-      throw Exception('No servers available');
+      throw const _SearchUnavailableException();
     }
-    return multiServerProvider.aggregationService.searchAcrossServers(query);
+
+    final abort = AbortController();
+    _activeSearchAbort = abort;
+    try {
+      final result = await multiServerProvider.aggregationService.searchAcrossServers(query, abort: abort);
+      abort.throwIfAborted();
+      if (result.succeededServerIds.isEmpty && result.failedServerIds.isNotEmpty) {
+        throw const _SearchUnavailableException();
+      }
+      if (result.succeededServerIds.isEmpty && result.cancelledServerIds.isNotEmpty) {
+        throw MediaServerHttpException(
+          type: MediaServerHttpErrorType.cancelled,
+          message: 'Search was cancelled before any server completed',
+        );
+      }
+      _pendingSearchOutcome = (query: query, result: result);
+      return result.items;
+    } finally {
+      if (identical(_activeSearchAbort, abort)) _activeSearchAbort = null;
+    }
+  }
+
+  @override
+  void onSearchInvalidated() {
+    _activeSearchAbort?.abort();
+    _activeSearchAbort = null;
+    _pendingSearchOutcome = null;
   }
 
   @override
   void onSearchError(Object error) {
     _focusResultsForQuery = null;
-    showErrorSnackBar(context, t.errors.searchFailed(error: error));
+    _pendingSearchOutcome = null;
+    final message = error is _SearchUnavailableException
+        ? t.errors.searchUnavailable
+        : t.errors.searchFailed(error: error);
+    showErrorSnackBar(context, message);
   }
 
   @override
   void onSearchCleared() {
     _focusResultsForQuery = null;
+    _pendingSearchOutcome = null;
   }
 
   @override
   void onSearchCompleted(String query, List<MediaItem> results) {
+    final outcome = _pendingSearchOutcome;
+    _pendingSearchOutcome = null;
+    if (outcome?.query == query && outcome!.result.failedServerIds.isNotEmpty) {
+      showAppSnackBar(context, t.messages.searchPartialResults);
+    }
+
     if (_focusResultsForQuery == null || _focusResultsForQuery != query) return;
     _focusResultsForQuery = null;
     if (results.isEmpty) return;
@@ -293,4 +335,8 @@ class _SearchScreenState extends State<SearchScreen>
       ),
     );
   }
+}
+
+final class _SearchUnavailableException implements Exception {
+  const _SearchUnavailableException();
 }

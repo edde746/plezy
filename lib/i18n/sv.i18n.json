@@ -558,6 +558,7 @@
     },
     "removedFromContinueWatching": "Borttagen från Fortsätt titta",
     "errorLoading": "Fel: ${error}",
+    "searchPartialResults": "",
     "streamInterrupted": "Strömmen avbröts. Tryck på uppspelning eller spola för att försöka igen.",
     "liveStreamInterrupted": "Liveströmmen avbröts. Tryck på uppspelning för att försöka igen.",
     "fileInfoNotAvailable": "Filinformation är inte tillgänglig",
@@ -743,6 +744,7 @@
   },
   "errors": {
     "searchFailed": "Sökningen misslyckades: ${error}",
+    "searchUnavailable": "",
     "connectionTimeout": "Anslutningen tog för lång tid när ${context} lästes in",
     "connectionFailed": "Det gick inte att ansluta till medieservern",
     "unableToLoad": "Det gick inte att läsa in ${context}. Försök igen.",

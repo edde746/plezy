@@ -558,6 +558,7 @@
     },
     "removedFromContinueWatching": "Fjernet fra Fortsæt med at se",
     "errorLoading": "Fejl: ${error}",
+    "searchPartialResults": "",
     "streamInterrupted": "Streamen blev afbrudt. Tryk på afspil, eller spol for at prøve igen.",
     "liveStreamInterrupted": "Livestreamen blev afbrudt. Tryk på afspil for at prøve igen.",
     "fileInfoNotAvailable": "Filinfo ikke tilgængelig",
@@ -743,6 +744,7 @@
   },
   "errors": {
     "searchFailed": "Søgning mislykkedes: ${error}",
+    "searchUnavailable": "",
     "connectionTimeout": "Forbindelsen fik timeout under indlæsning af ${context}",
     "connectionFailed": "Kan ikke oprette forbindelse til medieserver",
     "unableToLoad": "Kunne ikke indlæse ${context}. Prøv igen.",

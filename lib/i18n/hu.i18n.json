@@ -558,6 +558,7 @@
     },
     "removedFromContinueWatching": "Eltávolítva a folytatásból",
     "errorLoading": "Hiba: ${error}",
+    "searchPartialResults": "",
     "streamInterrupted": "Az adatfolyam megszakadt. Az újrapróbálkozáshoz indítsd el a lejátszást, vagy tekerj másik pozícióra.",
     "liveStreamInterrupted": "Az élő adás megszakadt. Nyomd meg a lejátszást az újrapróbálkozáshoz.",
     "fileInfoNotAvailable": "A fájlinformáció nem érhető el",
@@ -743,6 +744,7 @@
   },
   "errors": {
     "searchFailed": "Keresés sikertelen: ${error}",
+    "searchUnavailable": "",
     "connectionTimeout": "Hálózati időtúllépés a következő betöltésekor: ${context}",
     "connectionFailed": "Nem sikerült csatlakozni a médiaszerverhez",
     "unableToLoad": "Nem sikerült betölteni a következőt: ${context}. Próbáld újra.",

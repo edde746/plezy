@@ -268,8 +268,11 @@ abstract class MediaServerClient {
   /// [Lyrics.synced]; gated by [ServerCapabilities.lyrics].
   Future<Lyrics?> fetchLyrics(MediaItem track);
 
-  /// Free-text search across the user's libraries.
-  Future<List<MediaItem>> searchItems(String query, {int limit = 100});
+  /// Free-text search across the user's libraries. [limit] is a per-request
+  /// candidate budget; a backend may supplement omitted media categories and
+  /// return more candidates for cross-server ranking. [abort] cancels every
+  /// backend request owned by this search pass.
+  Future<List<MediaItem>> searchItems(String query, {int limit = 100, AbortController? abort});
 
   /// Recently-added items across all libraries.
   Future<List<MediaItem>> fetchRecentlyAdded({int limit = 50});

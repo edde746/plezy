@@ -560,6 +560,7 @@
     },
     "removedFromContinueWatching": "Удалено из «Продолжить просмотр»",
     "errorLoading": "Ошибка: ${error}",
+    "searchPartialResults": "",
     "streamInterrupted": "Поток прервался. Нажмите «Воспроизвести» или перемотайте, чтобы повторить попытку.",
     "liveStreamInterrupted": "Прямая трансляция прервалась. Нажмите «Воспроизвести», чтобы повторить попытку.",
     "fileInfoNotAvailable": "Информация о файле недоступна",
@@ -745,6 +746,7 @@
   },
   "errors": {
     "searchFailed": "Ошибка поиска: ${error}",
+    "searchUnavailable": "",
     "connectionTimeout": "Таймаут подключения при загрузке ${context}",
     "connectionFailed": "Не удалось подключиться к медиасерверу",
     "unableToLoad": "Не удалось загрузить ${context}. Повторите попытку.",

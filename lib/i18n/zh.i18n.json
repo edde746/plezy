@@ -557,6 +557,7 @@
     },
     "removedFromContinueWatching": "已从继续观看中移除",
     "errorLoading": "出错：${error}",
+    "searchPartialResults": "",
     "streamInterrupted": "视频流已中断。按播放键或拖动进度条重试。",
     "liveStreamInterrupted": "直播流已中断。按播放键重试。",
     "fileInfoNotAvailable": "文件信息不可用",
@@ -742,6 +743,7 @@
   },
   "errors": {
     "searchFailed": "搜索失败：${error}",
+    "searchUnavailable": "",
     "connectionTimeout": "加载 ${context} 时连接超时",
     "connectionFailed": "无法连接到媒体服务器",
     "unableToLoad": "无法加载${context}。请重试。",

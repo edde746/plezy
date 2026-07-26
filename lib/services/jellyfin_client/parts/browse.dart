@@ -1053,7 +1053,7 @@ mixin _JellyfinBrowseMethods on MediaServerCacheMixin {
   }
 
   @override
-  Future<List<MediaItem>> searchItems(String query, {int limit = 100}) async {
+  Future<List<MediaItem>> searchItems(String query, {int limit = 100, AbortController? abort}) async {
     // Artists come from the dedicated /Artists endpoint: `/Items?SearchTerm=`
     // only matches folder-derived MusicArtist rows (under folder names), so
     // tag-only artists would never appear in search. The artists leg is
@@ -1067,14 +1067,15 @@ mixin _JellyfinBrowseMethods on MediaServerCacheMixin {
         'IncludeItemTypes': 'Movie,Series,Episode,MusicAlbum,Audio',
         'Fields': _browseFields,
         ...jellyfinImageQueryParameters,
-      }),
+      }, abort: abort),
       _safeFetchItemsArray('/Artists', {
         'userId': connection.userId,
         'searchTerm': query,
         'Limit': limit.toString(),
         ...jellyfinImageQueryParameters,
-      }),
+      }, abort: abort),
     ]);
+    abort?.throwIfAborted();
     return _mapItems([...results.first, ...results[1]]);
   }
 
@@ -1848,17 +1849,21 @@ mixin _JellyfinBrowseMethods on MediaServerCacheMixin {
   Future<MediaServerResponse> _getItemsResponse(
     String path,
     Map<String, dynamic> queryParameters,
-    _HubRetryPolicy? retry,
-  ) {
-    if (retry == null) return _http.get(path, queryParameters: queryParameters);
+    _HubRetryPolicy? retry, {
+    AbortController? abort,
+  }) {
+    if (retry == null) {
+      return _http.get(path, queryParameters: queryParameters, abort: abort);
+    }
+    abort?.throwIfAborted();
     return retryTransientMediaServerCall(
       operation: retry.operation,
       attemptTimeouts: retry.attemptTimeouts,
-      call: (timeout, abort) => _http.get(
+      call: (timeout, attemptAbort) => _http.get(
         path,
         queryParameters: queryParameters,
         timeout: timeout,
-        abort: abort,
+        abort: attemptAbort,
         allowEndpointFailover: false,
       ),
     );
@@ -1868,8 +1873,10 @@ mixin _JellyfinBrowseMethods on MediaServerCacheMixin {
     String path,
     Map<String, dynamic> queryParameters, {
     _HubRetryPolicy? retry,
+    AbortController? abort,
   }) async {
-    final response = await _getItemsResponse(path, queryParameters, retry);
+    final response = await _getItemsResponse(path, queryParameters, retry, abort: abort);
+    abort?.throwIfAborted();
     throwIfHttpError(response);
     return _itemsArray(response.data);
   }
@@ -1878,9 +1885,11 @@ mixin _JellyfinBrowseMethods on MediaServerCacheMixin {
     String path,
     Map<String, dynamic> queryParameters, {
     _HubRetryPolicy? retry,
+    AbortController? abort,
   }) async {
     try {
-      final response = await _getItemsResponse(path, queryParameters, retry);
+      final response = await _getItemsResponse(path, queryParameters, retry, abort: abort);
+      abort?.throwIfAborted();
       throwIfHttpError(response);
       final data = response.data;
       if (data is List) {

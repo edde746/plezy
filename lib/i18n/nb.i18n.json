@@ -558,6 +558,7 @@
     },
     "removedFromContinueWatching": "Fjernet fra Fortsett å se",
     "errorLoading": "Feil: ${error}",
+    "searchPartialResults": "",
     "streamInterrupted": "Avspillingen ble avbrutt. Trykk på Spill av eller spol for å prøve på nytt.",
     "liveStreamInterrupted": "Direktesendingen ble avbrutt. Trykk på Spill av for å prøve på nytt.",
     "fileInfoNotAvailable": "Filinformasjon ikke tilgjengelig",
@@ -743,6 +744,7 @@
   },
   "errors": {
     "searchFailed": "Søk mislyktes: ${error}",
+    "searchUnavailable": "",
     "connectionTimeout": "Tidsavbrudd ved lasting av ${context}",
     "connectionFailed": "Kan ikke koble til medieserver",
     "unableToLoad": "Kunne ikke laste ${context}. Prøv igjen.",

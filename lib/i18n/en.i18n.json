@@ -558,6 +558,7 @@
     },
     "removedFromContinueWatching": "Removed from Continue Watching",
     "errorLoading": "Error: ${error}",
+    "searchPartialResults": "Some media servers could not be searched. Showing available results.",
     "streamInterrupted": "The stream was interrupted. Press play or seek to retry.",
     "liveStreamInterrupted": "The live stream was interrupted. Press play to retry.",
     "fileInfoNotAvailable": "File information not available",
@@ -743,6 +744,7 @@
   },
   "errors": {
     "searchFailed": "Search failed: ${error}",
+    "searchUnavailable": "Search could not reach any media server.",
     "connectionTimeout": "Connection timeout while loading ${context}",
     "connectionFailed": "Unable to connect to media server",
     "unableToLoad": "Unable to load ${context}. Please try again.",

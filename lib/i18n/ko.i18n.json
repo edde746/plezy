@@ -557,6 +557,7 @@
     },
     "removedFromContinueWatching": "계속 시청 목록에서 제거됨",
     "errorLoading": "오류: ${error}",
+    "searchPartialResults": "",
     "streamInterrupted": "스트림이 중단되었습니다. 재생을 누르거나 탐색하여 다시 시도하세요.",
     "liveStreamInterrupted": "라이브 스트림이 중단되었습니다. 재생을 눌러 다시 시도하세요.",
     "fileInfoNotAvailable": "파일 정보가 없습니다",
@@ -742,6 +743,7 @@
   },
   "errors": {
     "searchFailed": "검색 실패: ${error}",
+    "searchUnavailable": "",
     "connectionTimeout": "${context} 로드 중 연결 시간 초과",
     "connectionFailed": "미디어 서버에 연결할 수 없습니다",
     "unableToLoad": "${context}을(를) 불러올 수 없습니다. 다시 시도하세요.",

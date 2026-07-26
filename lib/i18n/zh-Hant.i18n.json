@@ -557,6 +557,7 @@
     },
     "removedFromContinueWatching": "已從「繼續觀看」中移除",
     "errorLoading": "錯誤：${error}",
+    "searchPartialResults": "",
     "streamInterrupted": "影片串流中斷。請按播放鍵或拖動進度條重試。",
     "liveStreamInterrupted": "直播串流中斷。請按播放鍵重試。",
     "fileInfoNotAvailable": "無法取得檔案資訊",
@@ -742,6 +743,7 @@
   },
   "errors": {
     "searchFailed": "搜尋失敗：${error}",
+    "searchUnavailable": "",
     "connectionTimeout": "載入 ${context} 時連線逾時",
     "connectionFailed": "無法連線至媒體伺服器",
     "unableToLoad": "無法載入 ${context}。請重試。",

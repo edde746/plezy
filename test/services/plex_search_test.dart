@@ -56,4 +56,87 @@ void main() {
     expect(captured.single.queryParameters['X-Plex-Container-Size'], '100');
     expect(captured.single.queryParameters['searchTypes'], 'movies,tv,music');
   });
+
+  test('saturated mixed search supplements omitted media categories and deduplicates results', () async {
+    final captured = <Uri>[];
+    final primaryResults = <Map<String, Object>>[
+      for (var index = 0; index < 99; index++)
+        {
+          'score': 90,
+          'Metadata': {'ratingKey': 'movie-$index', 'type': 'movie', 'title': 'Target Movie $index'},
+        },
+      {
+        'score': 10,
+        'Metadata': {'ratingKey': 'collection-1', 'type': 'collection', 'title': 'Target Collection'},
+      },
+    ];
+    final client = makeClient((request) async {
+      captured.add(request.url);
+      final searchTypes = request.url.queryParameters['searchTypes'];
+      final searchResults = switch (searchTypes) {
+        'movies,tv,music' => primaryResults,
+        'tv' => [
+          {
+            'score': 100,
+            'Metadata': {'ratingKey': 'show-1', 'type': 'show', 'title': 'Target'},
+          },
+          {
+            'score': 90,
+            'Metadata': {'ratingKey': 'movie-0', 'type': 'movie', 'title': 'Target Movie 0'},
+          },
+        ],
+        'music' => [
+          {
+            'score': 100,
+            'Metadata': {'ratingKey': 'artist-1', 'type': 'artist', 'title': 'Target'},
+          },
+        ],
+        _ => <Map<String, Object>>[],
+      };
+      return _json({
+        'MediaContainer': {'SearchResult': searchResults},
+      });
+    });
+    addTearDown(client.close);
+
+    final results = await client.searchItems('Target');
+    final ids = results.map((item) => item.id).toList();
+
+    expect(captured.map((uri) => uri.queryParameters['searchTypes']).toSet(), {'movies,tv,music', 'tv', 'music'});
+    expect(ids.where((id) => id == 'movie-0'), hasLength(1));
+    expect(ids, containsAll(['show-1', 'artist-1']));
+    expect(ids, hasLength(101));
+  });
+
+  test('supplemental category failure keeps saturated primary results', () async {
+    final capturedSearchTypes = <String?>[];
+    final primaryResults = <Map<String, Object>>[
+      for (var index = 0; index < 99; index++)
+        {
+          'score': 90,
+          'Metadata': {'ratingKey': 'movie-$index', 'type': 'movie', 'title': 'Target Movie $index'},
+        },
+      {
+        'score': 80,
+        'Metadata': {'ratingKey': 'artist-1', 'type': 'artist', 'title': 'Target Artist'},
+      },
+    ];
+    final client = makeClient((request) async {
+      final searchTypes = request.url.queryParameters['searchTypes'];
+      capturedSearchTypes.add(searchTypes);
+      if (searchTypes == 'movies,tv,music') {
+        return _json({
+          'MediaContainer': {'SearchResult': primaryResults},
+        });
+      }
+      return http.Response('temporary failure', 500);
+    });
+    addTearDown(client.close);
+
+    final results = await client.searchItems('Target');
+
+    expect(capturedSearchTypes, ['movies,tv,music', 'tv']);
+    expect(results, hasLength(100));
+    expect(results.map((item) => item.id), containsAll(['movie-0', 'artist-1']));
+  });
 }

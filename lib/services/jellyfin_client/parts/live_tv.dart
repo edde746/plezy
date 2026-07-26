@@ -9,6 +9,8 @@ mixin _JellyfinLiveTvMethods on MediaServerCacheMixin {
     Map<String, dynamic> queryParameters, {
     // ignore: unused_element_parameter
     _HubRetryPolicy? retry,
+    // ignore: unused_element_parameter
+    AbortController? abort,
   });
 
   /// Returns `true` when this server has Live TV configured (channels

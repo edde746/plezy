@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_symbols_icons/symbols.dart';
+import 'package:plezy/exceptions/media_server_exceptions.dart';
 import 'package:plezy/focus/dpad_navigator.dart';
 import 'package:plezy/focus/focusable_text_field.dart';
 import 'package:plezy/focus/key_event_utils.dart';
@@ -22,6 +23,7 @@ import 'package:plezy/services/multi_server_manager.dart';
 import 'package:plezy/services/settings_service.dart';
 import 'package:plezy/theme/mono_theme.dart';
 import 'package:plezy/utils/platform_detector.dart';
+import 'package:plezy/utils/media_server_http_client.dart';
 import 'package:plezy/widgets/focusable_media_card.dart';
 import 'package:plezy/widgets/loading_indicator_box.dart';
 import 'package:provider/provider.dart';
@@ -192,6 +194,89 @@ void main() {
     await tester.pumpWidget(const SizedBox.shrink());
   });
 
+  testWidgets('partial server failure shows available results and a warning', (tester) async {
+    final failedClient = _FakeMediaServerClient(
+      serverIdValue: 'server_2',
+      serverNameValue: 'Offline Server',
+      items: const [],
+      searchError: MediaServerHttpException(type: MediaServerHttpErrorType.connectionError, message: 'refused'),
+    );
+    final (client, key) = await _pumpTvSearchScreen(tester, additionalClients: [failedClient]);
+    await tester.pumpAndSettle();
+
+    (key.currentState! as SearchInputFocusable).submitSearchQuery('movie');
+    await tester.pumpAndSettle();
+
+    expect(client.queries, ['movie']);
+    expect(failedClient.queries, ['movie']);
+    expect(find.text('Movie 1'), findsOneWidget);
+    expect(find.text(t.messages.searchPartialResults), findsOneWidget);
+  });
+
+  testWidgets('all server failures render the failed state instead of empty results', (tester) async {
+    final (client, key) = await _pumpTvSearchScreen(
+      tester,
+      searchError: MediaServerHttpException(type: MediaServerHttpErrorType.connectionError, message: 'refused'),
+    );
+    await tester.pumpAndSettle();
+
+    (key.currentState! as SearchInputFocusable).submitSearchQuery('movie');
+    await tester.pumpAndSettle();
+
+    expect(client.queries, ['movie']);
+    expect(find.text(t.explore.searchFailed), findsOneWidget);
+    expect(find.text(t.errors.searchUnavailable), findsOneWidget);
+    expect(find.text(t.messages.noResultsFound), findsNothing);
+  });
+
+  testWidgets('editing cancels the stale server request before the next debounce', (tester) async {
+    final (client, _) = await _pumpTvSearchScreen(tester);
+    await tester.pumpAndSettle();
+    final gate = Completer<void>();
+    client.searchGate = gate;
+
+    _searchController(tester).text = 'first';
+    await tester.pump(const Duration(milliseconds: 500));
+    await tester.pump();
+    expect(client.queries, ['first']);
+    final staleAbort = client.lastSearchAbort;
+    expect(staleAbort, isNotNull);
+    expect(staleAbort!.isAborted, isFalse);
+
+    _searchController(tester).text = 'second';
+    await tester.pump();
+
+    expect(staleAbort.isAborted, isTrue);
+    expect(client.queries, ['first']);
+
+    gate.complete();
+    await tester.pump(const Duration(milliseconds: 500));
+    await tester.pumpAndSettle();
+    expect(client.queries, ['first', 'second']);
+    expect(find.text(t.explore.searchFailed), findsNothing);
+  });
+
+  testWidgets('all-server cancellation preserves prior results without an error', (tester) async {
+    final (client, key) = await _pumpTvSearchScreen(tester);
+    await tester.pumpAndSettle();
+
+    (key.currentState! as SearchInputFocusable).submitSearchQuery('movie');
+    await tester.pumpAndSettle();
+    expect(find.text('Movie 1'), findsOneWidget);
+
+    client.searchError = MediaServerHttpException(
+      type: MediaServerHttpErrorType.cancelled,
+      message: 'connection replaced',
+    );
+    (key.currentState! as SearchInputFocusable).submitSearchQuery('second');
+    await tester.pumpAndSettle();
+
+    expect(client.queries, ['movie', 'second']);
+    expect(find.text('Movie 1'), findsOneWidget);
+    expect(find.text(t.explore.searchFailed), findsNothing);
+    expect(find.text(t.errors.searchUnavailable), findsNothing);
+  });
+
   testWidgets('card refresh stays server-qualified without restarting search', (tester) async {
     final serverOneItem = testMediaItem(
       id: 'shared-id',
@@ -279,6 +364,7 @@ Future<(_FakeMediaServerClient, GlobalKey<State<SearchScreen>>)> _pumpTvSearchSc
   // When false, no server is registered, so performSearchQuery throws — the
   // path a companion-remote submit hits when the search fails outright.
   bool registerClient = true,
+  Object? searchError,
   List<_FakeMediaServerClient> additionalClients = const [],
 }) async {
   TvDetectionService.debugSetAppleTVOverride(true);
@@ -302,6 +388,7 @@ Future<(_FakeMediaServerClient, GlobalKey<State<SearchScreen>>)> _pumpTvSearchSc
             serverName: 'Server',
           ),
         ],
+    searchError: searchError,
   );
   final manager = MultiServerManager();
   if (registerClient) manager.debugRegisterClientForTesting(client);
@@ -351,12 +438,20 @@ class _FakeMediaServerClient implements MediaServerClient {
   final String serverIdValue;
   final String serverNameValue;
   final List<MediaItem> items;
+  Object? searchError;
   final List<String> queries = [];
   final List<String> fetchedItemIds = [];
   MediaItem? itemResult;
   Completer<void>? fetchGate;
+  Completer<void>? searchGate;
+  AbortController? lastSearchAbort;
 
-  _FakeMediaServerClient({required this.items, this.serverIdValue = 'server_1', this.serverNameValue = 'Server'});
+  _FakeMediaServerClient({
+    required this.items,
+    this.serverIdValue = 'server_1',
+    this.serverNameValue = 'Server',
+    this.searchError,
+  });
 
   @override
   ServerId get serverId => ServerId(serverIdValue);
@@ -371,8 +466,14 @@ class _FakeMediaServerClient implements MediaServerClient {
   ServerCapabilities get capabilities => ServerCapabilities.plex;
 
   @override
-  Future<List<MediaItem>> searchItems(String query, {int limit = 100}) async {
+  Future<List<MediaItem>> searchItems(String query, {int limit = 100, AbortController? abort}) async {
     queries.add(query);
+    lastSearchAbort = abort;
+    abort?.throwIfAborted();
+    if (searchError != null) throw searchError!;
+    final gate = searchGate;
+    if (gate != null) await gate.future;
+    abort?.throwIfAborted();
     return items;
   }
 

@@ -1388,28 +1388,84 @@ class PlexClient
 
   /// Search across all libraries including individually shared items.
   /// Uses /library/search (same endpoint as Plex Web) which finds shared content.
-  /// Only returns movies, shows, and music (artists/albums/tracks), filtering
-  /// out other types.
-  Future<List<PlexMetadataDto>> _search(String query, {int limit = 100}) async {
+  /// A saturated mixed-type response is supplemented with concurrent requests
+  /// for categories Plex omitted so one large library cannot starve another.
+  Future<List<PlexMetadataDto>> _search(String query, {int limit = 100, AbortController? abort}) async {
+    const allSearchTypes = 'movies,tv,music';
+    final primary = await _searchByTypes(query, searchTypes: allSearchTypes, limit: limit, abort: abort);
+    final results = primary.items;
+    if (limit <= 0 || primary.rawCount < limit) return results;
+
+    final presentTypes = {for (final item in results) item.type};
+    final missingSearchTypes = <String>[
+      if (!presentTypes.contains('movie')) 'movies',
+      if (!presentTypes.contains('show')) 'tv',
+      if (!presentTypes.any(const {'artist', 'album', 'track'}.contains)) 'music',
+    ];
+    if (missingSearchTypes.isEmpty) return results;
+
+    appLogger.i(
+      'Plex search response saturated; fetching omitted media categories '
+      '(${missingSearchTypes.join(',')}; ${results.length} usable results)',
+    );
+    final supplemental = await Future.wait([
+      for (final searchTypes in missingSearchTypes)
+        _searchSupplementalByTypes(query, searchTypes: searchTypes, limit: limit, abort: abort),
+    ]);
+    abort?.throwIfAborted();
+
+    final deduplicated = <String, PlexMetadataDto>{};
+    for (final item in [...results, ...supplemental.expand((items) => items)]) {
+      final identity = item.ratingKey.isNotEmpty
+          ? item.ratingKey
+          : '${item.type ?? ''}:${item.guid ?? ''}:${item.title ?? ''}';
+      deduplicated.putIfAbsent(identity, () => item);
+    }
+    return deduplicated.values.toList();
+  }
+
+  Future<List<PlexMetadataDto>> _searchSupplementalByTypes(
+    String query, {
+    required String searchTypes,
+    required int limit,
+    AbortController? abort,
+  }) async {
+    try {
+      final result = await _searchByTypes(query, searchTypes: searchTypes, limit: limit, abort: abort);
+      return result.items;
+    } catch (e, st) {
+      abort?.throwIfAborted();
+      if (e is MediaServerHttpException && e.isCancellation) rethrow;
+      appLogger.w('Plex supplemental $searchTypes search failed; keeping primary results', error: e, stackTrace: st);
+      return const [];
+    }
+  }
+
+  Future<({List<PlexMetadataDto> items, int rawCount})> _searchByTypes(
+    String query, {
+    required String searchTypes,
+    required int limit,
+    AbortController? abort,
+  }) async {
     final response = await _getWithFailover(
       '/library/search',
       queryParameters: {
         'query': query,
         'limit': limit,
-        'searchTypes': 'movies,tv,music',
+        'searchTypes': searchTypes,
         'includeCollections': 1,
         'includeExternalMedia': 1,
         'X-Plex-Container-Size': limit,
       },
+      abort: abort,
     );
 
     final results = <PlexMetadataDto>[];
-
     final container = _getMediaContainer(response);
-    if (container == null) return results;
+    if (container == null) return (items: results, rawCount: 0);
 
     final searchResults = container['SearchResult'] as List?;
-    if (searchResults == null) return results;
+    if (searchResults == null) return (items: results, rawCount: 0);
 
     for (final result in searchResults) {
       try {
@@ -1427,7 +1483,7 @@ class PlexClient
       }
     }
 
-    return results;
+    return (items: results, rawCount: searchResults.length);
   }
 
   /// Get recently added media (filtered to video content only)
@@ -3473,8 +3529,8 @@ class PlexClient
   }
 
   @override
-  Future<List<MediaItem>> searchItems(String query, {int limit = 100}) async {
-    final results = await _search(query, limit: limit);
+  Future<List<MediaItem>> searchItems(String query, {int limit = 100, AbortController? abort}) async {
+    final results = await _search(query, limit: limit, abort: abort);
     return results.map((m) => PlexMappers.mediaItem(m)).toList();
   }
 

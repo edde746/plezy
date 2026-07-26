@@ -1705,6 +1705,9 @@ class Translations$messages$en {
 	/// en: 'Error: ${error}'
 	String errorLoading({required Object error}) => 'Error: ${error}';
 
+	/// en: 'Some media servers could not be searched. Showing available results.'
+	String get searchPartialResults => 'Some media servers could not be searched. Showing available results.';
+
 	/// en: 'The stream was interrupted. Press play or seek to retry.'
 	String get streamInterrupted => 'The stream was interrupted. Press play or seek to retry.';
 
@@ -2280,6 +2283,9 @@ class Translations$errors$en {
 
 	/// en: 'Search failed: ${error}'
 	String searchFailed({required Object error}) => 'Search failed: ${error}';
+
+	/// en: 'Search could not reach any media server.'
+	String get searchUnavailable => 'Search could not reach any media server.';
 
 	/// en: 'Connection timeout while loading ${context}'
 	String connectionTimeout({required Object context}) => 'Connection timeout while loading ${context}';
@@ -5664,6 +5670,7 @@ extension on Translations {
 			'messages.autoRemovedWatchedDownloads' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(n, one: 'Auto-removed ${n} watched download', other: 'Auto-removed ${n} watched downloads', ), 
 			'messages.removedFromContinueWatching' => 'Removed from Continue Watching',
 			'messages.errorLoading' => ({required Object error}) => 'Error: ${error}',
+			'messages.searchPartialResults' => 'Some media servers could not be searched. Showing available results.',
 			'messages.streamInterrupted' => 'The stream was interrupted. Press play or seek to retry.',
 			'messages.liveStreamInterrupted' => 'The live stream was interrupted. Press play to retry.',
 			'messages.fileInfoNotAvailable' => 'File information not available',
@@ -5835,6 +5842,7 @@ extension on Translations {
 			'discover.minutesLeft' => ({required Object minutes}) => '${minutes} min left',
 			'discover.moreLikeThis' => 'More Like This',
 			'errors.searchFailed' => ({required Object error}) => 'Search failed: ${error}',
+			'errors.searchUnavailable' => 'Search could not reach any media server.',
 			'errors.connectionTimeout' => ({required Object context}) => 'Connection timeout while loading ${context}',
 			'errors.connectionFailed' => 'Unable to connect to media server',
 			'errors.unableToLoad' => ({required Object context}) => 'Unable to load ${context}. Please try again.',
@@ -6166,10 +6174,10 @@ extension on Translations {
 			'watchTogether.sessionCodeCopied' => 'Session code copied to clipboard',
 			'watchTogether.relayUnreachable' => 'Relay server unreachable. ISP blocking may prevent Watch Together.',
 			'watchTogether.reconnectingToHost' => 'Reconnecting to host...',
-			'watchTogether.currentPlayback' => 'Current Playback',
-			'watchTogether.joinCurrentPlayback' => 'Join Current Playback',
 			_ => null,
 		} ?? switch (path) {
+			'watchTogether.currentPlayback' => 'Current Playback',
+			'watchTogether.joinCurrentPlayback' => 'Join Current Playback',
 			'watchTogether.joinCurrentPlaybackDescription' => 'Jump back into what the host is currently watching',
 			'watchTogether.failedToOpenCurrentPlayback' => 'Failed to open current playback',
 			'watchTogether.participantJoined' => ({required Object name}) => '${name} joined',

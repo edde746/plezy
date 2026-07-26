@@ -558,6 +558,7 @@
     },
     "removedFromContinueWatching": "Verwijderd uit 'Doorgaan met kijken'",
     "errorLoading": "Fout: ${error}",
+    "searchPartialResults": "",
     "streamInterrupted": "De stream is onderbroken. Druk op afspelen of spoel om het opnieuw te proberen.",
     "liveStreamInterrupted": "De livestream is onderbroken. Druk op afspelen om het opnieuw te proberen.",
     "fileInfoNotAvailable": "Bestandsinformatie niet beschikbaar",
@@ -743,6 +744,7 @@
   },
   "errors": {
     "searchFailed": "Zoeken mislukt: ${error}",
+    "searchUnavailable": "",
     "connectionTimeout": "Time-out van verbinding tijdens het laden van ${context}",
     "connectionFailed": "Kan geen verbinding maken met mediaserver",
     "unableToLoad": "Kan ${context} niet laden. Probeer het opnieuw.",
