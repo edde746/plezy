@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
 import '../../models/seerr/seerr_details.dart';
@@ -65,6 +66,7 @@ class SeerrClient {
 
   // ---------- Auth ----------
 
+  @visibleForTesting
   Future<SeerrUser> getMe() async {
     final data = await _request('GET', '/auth/me');
     return SeerrUser.fromJson(data as Map<String, dynamic>);

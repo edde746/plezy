@@ -123,26 +123,15 @@ void main() {
       expect(m.serverIds, isEmpty);
       expect(m.onlineServerIds, isEmpty);
       expect(m.offlineServerIds, isEmpty);
-      expect(m.plexServers, isEmpty);
       expect(m.onlineClients, isEmpty);
     });
 
-    test('getClient/getPlexServer return null for unknown ids', () {
+    test('getClient returns null for unknown ids', () {
       final m = MultiServerManager();
       addTearDown(m.dispose);
 
       expect(m.getClient(ServerId('nope')), isNull);
-      expect(m.getPlexServer(ServerId('nope')), isNull);
       expect(m.isServerOnline(ServerId('nope')), isFalse);
-    });
-
-    test('plexServers map is unmodifiable', () {
-      final m = MultiServerManager();
-      addTearDown(m.dispose);
-
-      // Map.unmodifiable rejects every mutating operation — clear() is the
-      // simplest no-arg one to exercise the wrapper.
-      expect(() => m.plexServers.clear(), throwsUnsupportedError);
     });
   });
 

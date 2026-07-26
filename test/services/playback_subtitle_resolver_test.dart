@@ -113,15 +113,15 @@ void main() {
       final tracks = [_sourceSubtitle(0), _sourceSubtitle(2)];
 
       expect(
-        PlaybackSubtitleResolver.nextSourceChoice(tracks, const PlaybackSourceSubtitleChoice.off()),
+        PlaybackSubtitleResolver.advanceSourceChoice(tracks, const PlaybackSourceSubtitleChoice.off(), 1),
         const PlaybackSourceSubtitleChoice.source(0),
       );
       expect(
-        PlaybackSubtitleResolver.nextSourceChoice(tracks, const PlaybackSourceSubtitleChoice.source(0)),
+        PlaybackSubtitleResolver.advanceSourceChoice(tracks, const PlaybackSourceSubtitleChoice.source(0), 1),
         const PlaybackSourceSubtitleChoice.source(2),
       );
       expect(
-        PlaybackSubtitleResolver.nextSourceChoice(tracks, const PlaybackSourceSubtitleChoice.source(2)),
+        PlaybackSubtitleResolver.advanceSourceChoice(tracks, const PlaybackSourceSubtitleChoice.source(2), 1),
         const PlaybackSourceSubtitleChoice.off(),
       );
       expect(

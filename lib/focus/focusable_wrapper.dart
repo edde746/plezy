@@ -4,10 +4,9 @@ import 'package:flutter/rendering.dart';
 
 import '../widgets/clickable_cursor.dart';
 import '../utils/text_input_diagnostics.dart';
-import 'card_focus_scope.dart';
 import 'dpad_navigator.dart';
 import 'dpad_select_long_press_controller.dart';
-import 'focus_glow_overlay.dart';
+import 'focus_chrome.dart';
 import 'focus_theme.dart';
 import 'input_mode_tracker.dart';
 import 'owned_focus_node_binding.dart';
@@ -541,41 +540,20 @@ class _FocusableWrapperState extends State<FocusableWrapper> with SingleTickerPr
       // Keep the card subtree outside the scale builder. Rebuilding media-card
       // semantics on every animation tick is substantially more expensive than
       // changing the paint transform alone on dense TV grids.
-      Widget card;
-      if (widget.delegateFocusBorder) {
-        card = CardFocusScope(showFocus: showFocus, child: widget.child);
-      } else {
-        final focusDecoration = widget.useBackgroundFocus
-            ? FocusTheme.focusBackgroundDecoration(
-                isFocused: showFocus,
-                borderRadius: widget.borderRadius,
-                radii: widget.borderRadii,
-              )
-            : FocusTheme.focusDecoration(
-                context,
-                isFocused: showFocus,
-                borderRadius: widget.borderRadius,
-                radii: widget.borderRadii,
-                color: widget.focusColor,
-              );
-        card = AnimatedContainer(
-          duration: duration,
-          curve: Curves.easeOutCubic,
-          decoration: focusDecoration,
-          child: widget.child,
-        );
-      }
-      if (widget.useFocusGlow) {
-        card = FocusGlowOverlay(
-          isFocused: showFocus,
-          borderRadius: widget.borderRadius,
-          color: widget.focusColor ?? FocusTheme.getFocusBorderColor(context),
-          child: card,
-        );
-      }
       inner = AnimatedBuilder(
         animation: _scaleAnimation!,
-        child: card,
+        child: buildFocusChrome(
+          context,
+          showFocus: showFocus,
+          duration: duration,
+          borderRadius: widget.borderRadius,
+          borderRadii: widget.borderRadii,
+          focusColor: widget.focusColor,
+          useBackgroundFocus: widget.useBackgroundFocus,
+          useFocusGlow: widget.useFocusGlow,
+          delegateFocusBorder: widget.delegateFocusBorder,
+          child: widget.child,
+        ),
         builder: (context, child) => _PaintScale(scale: shouldScale ? _scaleAnimation!.value : 1.0, child: child!),
       );
     }

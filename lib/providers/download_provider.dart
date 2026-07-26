@@ -889,6 +889,7 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
 
   /// Check if an item is in the queue
   /// For shows/seasons, checks if any episodes are queued
+  @visibleForTesting
   bool isQueued(String globalKey) {
     final progress = getProgress(globalKey);
     return progress?.status == DownloadStatus.queued;

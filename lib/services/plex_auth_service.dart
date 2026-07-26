@@ -262,8 +262,9 @@ class PlexAuthService {
     return PlexHome.fromJson(response.data as Map<String, dynamic>);
   }
 
-  /// Switch to a different user in the home
-  Future<UserSwitchResponse> switchToUser(String userUUID, String currentToken, {String? pin}) async {
+  /// Switch to a different user in the home, returning the freshly minted
+  /// user-level token
+  Future<String> switchToUser(String userUUID, String currentToken, {String? pin}) async {
     final queryParams = {
       'includeSubscriptions': '1',
       'includeProviders': '1',
@@ -286,7 +287,7 @@ class PlexAuthService {
     );
 
     _checkStatus(response);
-    return UserSwitchResponse.fromJson(response.data as Map<String, dynamic>);
+    return parsePlexSwitchAuthToken(response.data as Map<String, dynamic>);
   }
 }
 

@@ -97,6 +97,7 @@ class WatchStateStore extends ChangeNotifier with DisposableChangeNotifierMixin 
     return _exactEntryFor(globalKey);
   }
 
+  @visibleForTesting
   WatchStateSnapshot? patchForGlobalKey(String globalKey) => _entryFor(globalKey)?.patch;
 
   WatchStateSnapshot? patchForItem(MediaItem item) {

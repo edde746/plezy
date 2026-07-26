@@ -18,11 +18,7 @@ class ScreenBreakpoints {
 
   static bool isTablet(double width) => width >= mobile && width < desktop;
 
-  static bool isWideTablet(double width) => width >= wideTablet && width < desktop;
-
   static bool isDesktop(double width) => width >= desktop && width < largeDesktop;
-
-  static bool isLargeDesktop(double width) => width >= largeDesktop;
 
   static bool isDesktopOrLarger(double width) => width >= desktop;
 

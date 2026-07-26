@@ -26,17 +26,6 @@ class ContentTypeHelper {
 
   static bool isVideoContent(String type) => ContentTypes.videoTypes.contains(type.toLowerCase());
 
-  static bool isMusicLibrary(dynamic lib) {
-    if (lib == null) return false;
-    try {
-      // ignore: avoid_dynamic_calls — duck-typed across library shapes
-      final type = (lib as dynamic).kind?.id as String?;
-      return type?.toLowerCase() == ContentTypes.artist;
-    } catch (e) {
-      return false;
-    }
-  }
-
   static IconData getLibraryIcon(String type) {
     switch (type.toLowerCase()) {
       case ContentTypes.movie:

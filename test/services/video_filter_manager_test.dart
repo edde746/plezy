@@ -13,7 +13,7 @@ void main() {
     expect(manager.setZoomScale(1.234), 1.23);
     expect(manager.zoomScale, 1.23);
 
-    expect(manager.adjustZoom(VideoFilterManager.zoomStep), 1.24);
+    expect(manager.setZoomScale(manager.zoomScale + VideoFilterManager.zoomStep), 1.24);
     expect(manager.zoomScale, 1.24);
   });
 
@@ -26,7 +26,7 @@ void main() {
 
     expect(manager.setZoomScale(1.00008), 1.0);
     expect(manager.zoomScale, 1.0);
-    expect(manager.resetZoom(), 1.0);
+    expect(manager.setZoomScale(1.0), 1.0);
   });
 
   test('video zoom property is exact zero at normalized default', () async {

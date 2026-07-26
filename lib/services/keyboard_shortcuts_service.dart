@@ -103,6 +103,7 @@ class KeyboardShortcutsService extends ChangeNotifier {
 
   Map<String, HotKey?> get hotkeys => Map.from(_hotkeys);
 
+  @visibleForTesting
   HotKey? getHotkey(String action) {
     return _hotkeys[action];
   }

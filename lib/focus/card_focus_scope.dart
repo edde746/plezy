@@ -5,8 +5,8 @@ import 'focus_theme.dart';
 /// Exposes the focus state of an enclosing focus wrapper to a descendant
 /// [CardFocusBorder] that draws the focus border itself.
 ///
-/// Wrappers ([FocusableWrapper]/[FocusBuilders.buildFocusableCard]) insert this
-/// instead of painting a border when `delegateFocusBorder` is set, so cards can
+/// The shared focus chrome ([buildFocusChrome]) inserts this instead of painting
+/// a border when `delegateFocusBorder` is set, so cards can
 /// put the border on the exact rect the design highlights (the poster image,
 /// not the card-plus-captions rect — issue #1278). Only the [CardFocusBorder]
 /// element registers a dependency, so a focus flip rebuilds just that border

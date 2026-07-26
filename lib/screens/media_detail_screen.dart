@@ -3562,6 +3562,42 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     );
   }
 
+  /// The ordered metadata fields the TV detail line renders and its announcement reads,
+  /// built through [text] for plain fields and [rating] for the rating slot.
+  List<T> _tvDetailMetadataParts<T extends Object>(
+    MediaItem metadata, {
+    required T Function(String value) text,
+    required T? Function(MediaItem item) rating,
+  }) {
+    final lineMetadata = _tvDetailFocusedEpisode.value ?? metadata;
+    final parts = <T>[];
+
+    void add(T? part) {
+      if (part != null) parts.add(part);
+    }
+
+    final episodeLabel = formatSeasonEpisodeLabel(lineMetadata.parentIndex, lineMetadata.index);
+    if (lineMetadata.isEpisode && episodeLabel != null) add(text(episodeLabel));
+    if (lineMetadata.isMovie) {
+      add(text(t.discover.movie));
+    } else if (lineMetadata.isShow) {
+      add(text(t.discover.tvShow));
+    }
+    add(rating(lineMetadata));
+    if (lineMetadata.contentRating != null) add(text(formatContentRating(lineMetadata.contentRating!)));
+    if (lineMetadata.durationMs != null) add(text(formatDurationTextual(lineMetadata.durationMs!)));
+    if (lineMetadata.isEpisode && lineMetadata.originallyAvailableAt != null) {
+      add(text(formatAbbreviatedDate(lineMetadata.originallyAvailableAt!)));
+    } else if (lineMetadata.year != null) {
+      add(text(lineMetadata.year.toString()));
+    }
+    for (final label in buildMediaQualityLabels(lineMetadata)) {
+      add(text(label));
+    }
+
+    return parts;
+  }
+
   String _tvDetailInformationSemanticLabel(
     MediaItem metadata, {
     required String? description,
@@ -3578,23 +3614,13 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     add(metadata.displayTitle);
     if (!identical(lineMetadata, metadata)) add(lineMetadata.displayTitle);
 
-    final episodeLabel = formatSeasonEpisodeLabel(lineMetadata.parentIndex, lineMetadata.index);
-    if (lineMetadata.isEpisode) add(episodeLabel);
-    if (lineMetadata.isMovie) {
-      add(t.discover.movie);
-    } else if (lineMetadata.isShow) {
-      add(t.discover.tvShow);
-    }
-    add(MediaRatingBadge.semanticLabelForMedia(lineMetadata, fallbackItem: metadata));
-    if (lineMetadata.contentRating != null) add(formatContentRating(lineMetadata.contentRating!));
-    if (lineMetadata.durationMs != null) add(formatDurationTextual(lineMetadata.durationMs!));
-    if (lineMetadata.isEpisode && lineMetadata.originallyAvailableAt != null) {
-      add(formatAbbreviatedDate(lineMetadata.originallyAvailableAt!));
-    } else if (lineMetadata.year != null) {
-      add(lineMetadata.year.toString());
-    }
-    for (final label in buildMediaQualityLabels(lineMetadata)) {
-      add(label);
+    final fields = _tvDetailMetadataParts<String>(
+      metadata,
+      text: (value) => value,
+      rating: (item) => MediaRatingBadge.semanticLabelForMedia(item, fallbackItem: metadata),
+    );
+    for (final field in fields) {
+      add(field);
     }
     if (genres.isNotEmpty) add(genres.join(', '));
     add(description);
@@ -3679,60 +3705,32 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   }
 
   Widget _buildTvDetailMetadataLine(BuildContext context, MediaItem metadata, double scale) {
-    final lineMetadata = _tvDetailFocusedEpisode.value ?? metadata;
-    final episodeLabel = formatSeasonEpisodeLabel(lineMetadata.parentIndex, lineMetadata.index);
-    final qualityLabels = buildMediaQualityLabels(lineMetadata);
     final textStyle = TextStyle(
       color: _tvDetailForegroundColor(context),
       fontSize: 18 * scale,
       fontWeight: .w700,
       letterSpacing: 0.1,
     );
-    final children = <Widget>[];
-
-    void addSeparator() {
-      if (children.isNotEmpty) children.add(Text('  •  ', maxLines: 1, style: textStyle));
-    }
-
-    void addTextPart(String text) {
-      addSeparator();
-      children.add(Text(text, maxLines: 1, style: textStyle));
-    }
-
-    void addWidgetPart(Widget widget) {
-      addSeparator();
-      children.add(widget);
-    }
-
-    if (lineMetadata.isEpisode && episodeLabel != null) addTextPart(episodeLabel);
-    if (lineMetadata.isMovie) {
-      addTextPart(t.discover.movie);
-    } else if (lineMetadata.isShow) {
-      addTextPart(t.discover.tvShow);
-    }
-    final ratingBadge = MediaRatingBadge.inlineForMedia(
-      item: lineMetadata,
-      fallbackItem: metadata,
-      foregroundColor: textStyle.color,
-      iconSize: textStyle.fontSize,
-      spacing: 4 * scale,
-      textStyle: textStyle,
+    final fields = _tvDetailMetadataParts<Widget>(
+      metadata,
+      text: (value) => Text(value, maxLines: 1, style: textStyle),
+      rating: (item) => MediaRatingBadge.inlineForMedia(
+        item: item,
+        fallbackItem: metadata,
+        foregroundColor: textStyle.color,
+        iconSize: textStyle.fontSize,
+        spacing: 4 * scale,
+        textStyle: textStyle,
+      ),
     );
-    if (ratingBadge != null) {
-      addWidgetPart(ratingBadge);
-    }
-    if (lineMetadata.contentRating != null) addTextPart(formatContentRating(lineMetadata.contentRating!));
-    if (lineMetadata.durationMs != null) addTextPart(formatDurationTextual(lineMetadata.durationMs!));
-    if (lineMetadata.isEpisode && lineMetadata.originallyAvailableAt != null) {
-      addTextPart(formatAbbreviatedDate(lineMetadata.originallyAvailableAt!));
-    } else if (lineMetadata.year != null) {
-      addTextPart(lineMetadata.year.toString());
-    }
-    for (final label in qualityLabels) {
-      addTextPart(label);
-    }
 
-    if (children.isEmpty) return const SizedBox.shrink();
+    if (fields.isEmpty) return const SizedBox.shrink();
+
+    final children = <Widget>[];
+    for (final field in fields) {
+      if (children.isNotEmpty) children.add(Text('  •  ', maxLines: 1, style: textStyle));
+      children.add(field);
+    }
 
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,

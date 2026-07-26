@@ -95,10 +95,6 @@ void main() {
       expect(ContentTypeHelper.isVideoContent('artist'), isFalse);
     });
 
-    test('isMusicLibrary returns false for null and non-matching types', () {
-      expect(ContentTypeHelper.isMusicLibrary(null), isFalse);
-    });
-
     test('getLibraryIcon normalizes type and falls back to folder', () {
       expect(ContentTypeHelper.getLibraryIcon('MOVIE'), Symbols.movie_rounded);
       expect(ContentTypeHelper.getLibraryIcon('show'), Symbols.tv_rounded);

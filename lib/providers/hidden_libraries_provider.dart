@@ -76,6 +76,7 @@ class HiddenLibrariesProvider extends ChangeNotifier with DisposableChangeNotifi
   }
 
   /// Check if a specific library is hidden
+  @visibleForTesting
   bool isLibraryHidden(String libraryKey) => _hiddenLibraryKeys.contains(libraryKey);
 
   /// Refresh hidden libraries from storage

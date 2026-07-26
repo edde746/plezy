@@ -1223,82 +1223,17 @@ mixin _JellyfinBrowseMethods on _JellyfinClientInternals {
     // Jellyfin doesn't expose a single "hubs" endpoint, so we synthesise the
     // home rows from Latest plus optional playback rows. The richer Plex Discover surface
     // is intentionally left untranslated — see ServerCapabilities.richHubs.
-    final latestFuture = _safeFetchItemsArray('/Users/${_segment(connection.userId)}/Items/Latest', {
-      'Limit': limit.toString(),
-      'Fields': _browseFields,
-      'IncludeItemTypes': 'Movie,Series,Episode',
-      ...jellyfinImageQueryParameters,
-    }, retry: _homeHubRetry);
-
-    if (!includePlaybackHubs) {
-      final latest = await latestFuture;
-      return [
-        JellyfinMappers.syntheticHub(
-          mapItem: _mapItem,
-          identifier: 'home.recent',
-          title: t.discover.recentlyAdded,
-          type: 'mixed',
-          items: latest,
-          previewLimit: limit,
-          serverId: serverId,
-          serverName: serverName,
-        ),
-      ].where((h) => h.items.isNotEmpty).toList();
-    }
-
-    final results = await Future.wait([
-      latestFuture,
-      _safeFetchItemsArray('/UserItems/Resume', {
-        'userId': connection.userId,
-        'Limit': limit.toString(),
-        'Fields': _browseFields,
-        'MediaTypes': 'Video',
-        'Recursive': 'true',
-        'EnableTotalRecordCount': 'false',
-        ...jellyfinImageQueryParameters,
-      }, retry: _homeHubRetry),
-      _safeFetchItemsArray('/Shows/NextUp', {
-        'userId': connection.userId,
-        'Limit': limit.toString(),
-        'Fields': _browseFields,
-        'EnableResumable': 'false',
-        'EnableTotalRecordCount': 'false',
-        ...jellyfinImageQueryParameters,
-      }, retry: _homeHubRetry),
-    ]);
-
-    return [
-      JellyfinMappers.syntheticHub(
-        mapItem: _mapItem,
-        identifier: 'home.continue',
-        title: t.discover.continueWatching,
-        type: 'mixed',
-        items: results[1],
-        previewLimit: limit,
-        serverId: serverId,
-        serverName: serverName,
-      ),
-      JellyfinMappers.syntheticHub(
-        mapItem: _mapItem,
-        identifier: 'home.nextup',
-        title: t.discover.nextUp,
-        type: 'episode',
-        items: results[2],
-        previewLimit: limit,
-        serverId: serverId,
-        serverName: serverName,
-      ),
-      JellyfinMappers.syntheticHub(
-        mapItem: _mapItem,
-        identifier: 'home.recent',
-        title: t.discover.recentlyAdded,
-        type: 'mixed',
-        items: results.first,
-        previewLimit: limit,
-        serverId: serverId,
-        serverName: serverName,
-      ),
-    ].where((h) => h.items.isNotEmpty).toList();
+    return _playbackHubSet(
+      idPrefix: 'home',
+      limit: limit,
+      includePlaybackHubs: includePlaybackHubs,
+      includeNextUp: true,
+      retry: _homeHubRetry,
+      latestItemTypes: 'Movie,Series,Episode',
+      continueTitle: t.discover.continueWatching,
+      nextUpTitle: t.discover.nextUp,
+      recentTitle: t.discover.recentlyAdded,
+    );
   }
 
   @override
@@ -1330,86 +1265,92 @@ mixin _JellyfinBrowseMethods on _JellyfinClientInternals {
     // Issued in parallel so the recommended tab loads in one round-trip.
     // When the caller knows the library kind, skip NextUp for movie libraries;
     // Jellyfin can otherwise spend time scanning TV state only to return [].
+    return _playbackHubSet(
+      parentId: libraryId,
+      idPrefix: 'library.$libraryId',
+      limit: limit,
+      includePlaybackHubs: includePlaybackHubs,
+      includeNextUp: libraryKind == null || libraryKind == MediaKind.show,
+      retry: _libraryHubRetry,
+      continueTitle: t.discover.continueWatchingIn(library: libraryName),
+      nextUpTitle: t.discover.nextUpIn(library: libraryName),
+      recentTitle: t.discover.recentlyAddedIn(library: libraryName),
+    );
+  }
+
+  /// Latest + Continue Watching + Next Up row set shared by the home and
+  /// per-library surfaces. Both scopes issue the same three requests in the
+  /// same order and synthesise the same three rows; they differ only in
+  /// [parentId], the row identifier prefix, the titles, and the transport
+  /// policy. The Latest request fires before the [includePlaybackHubs]
+  /// short-circuit so callers that only want Recently Added still get it in
+  /// one round-trip.
+  Future<List<MediaHub>> _playbackHubSet({
+    required String idPrefix,
+    required int limit,
+    required bool includePlaybackHubs,
+    required bool includeNextUp,
+    required _HubRetryPolicy retry,
+    required String continueTitle,
+    required String nextUpTitle,
+    required String recentTitle,
+    String? parentId,
+    String? latestItemTypes,
+  }) async {
     final latestFuture = _safeFetchItemsArray('/Users/${_segment(connection.userId)}/Items/Latest', {
       'Limit': limit.toString(),
-      'ParentId': libraryId,
+      'ParentId': ?parentId,
       'Fields': _browseFields,
+      'IncludeItemTypes': ?latestItemTypes,
       ...jellyfinImageQueryParameters,
-    }, retry: _libraryHubRetry);
+    }, retry: retry);
 
-    if (!includePlaybackHubs) {
-      final latest = await latestFuture;
-      return [
+    MediaHub hub(String suffix, String title, String type, List<Map<String, dynamic>> items) =>
         JellyfinMappers.syntheticHub(
           mapItem: _mapItem,
-          identifier: 'library.$libraryId.recent',
-          title: t.discover.recentlyAddedIn(library: libraryName),
-          type: 'mixed',
-          items: latest,
+          identifier: '$idPrefix.$suffix',
+          title: title,
+          type: type,
+          items: items,
           previewLimit: limit,
           serverId: serverId,
           serverName: serverName,
-        ),
-      ].where((h) => h.items.isNotEmpty).toList();
+        );
+
+    if (!includePlaybackHubs) {
+      final latest = await latestFuture;
+      return [hub('recent', recentTitle, 'mixed', latest)].where((h) => h.items.isNotEmpty).toList();
     }
 
-    final includeNextUp = libraryKind == null || libraryKind == MediaKind.show;
     final results = await Future.wait([
       latestFuture,
       _safeFetchItemsArray('/UserItems/Resume', {
         'userId': connection.userId,
-        'ParentId': libraryId,
+        'ParentId': ?parentId,
         'Limit': limit.toString(),
         'Fields': _browseFields,
         'MediaTypes': 'Video',
         'Recursive': 'true',
         'EnableTotalRecordCount': 'false',
         ...jellyfinImageQueryParameters,
-      }, retry: _libraryHubRetry),
+      }, retry: retry),
       includeNextUp
           ? _safeFetchItemsArray('/Shows/NextUp', {
               'userId': connection.userId,
-              'ParentId': libraryId,
+              'ParentId': ?parentId,
               'Limit': limit.toString(),
               'Fields': _browseFields,
               'EnableResumable': 'false',
               'EnableTotalRecordCount': 'false',
               ...jellyfinImageQueryParameters,
-            }, retry: _libraryHubRetry)
+            }, retry: retry)
           : Future.value(const <Map<String, dynamic>>[]),
     ]);
 
     return [
-      JellyfinMappers.syntheticHub(
-        mapItem: _mapItem,
-        identifier: 'library.$libraryId.continue',
-        title: t.discover.continueWatchingIn(library: libraryName),
-        type: 'mixed',
-        items: results[1],
-        previewLimit: limit,
-        serverId: serverId,
-        serverName: serverName,
-      ),
-      JellyfinMappers.syntheticHub(
-        mapItem: _mapItem,
-        identifier: 'library.$libraryId.nextup',
-        title: t.discover.nextUpIn(library: libraryName),
-        type: 'episode',
-        items: results[2],
-        previewLimit: limit,
-        serverId: serverId,
-        serverName: serverName,
-      ),
-      JellyfinMappers.syntheticHub(
-        mapItem: _mapItem,
-        identifier: 'library.$libraryId.recent',
-        title: t.discover.recentlyAddedIn(library: libraryName),
-        type: 'mixed',
-        items: results.first,
-        previewLimit: limit,
-        serverId: serverId,
-        serverName: serverName,
-      ),
+      hub('continue', continueTitle, 'mixed', results[1]),
+      hub('nextup', nextUpTitle, 'episode', results[2]),
+      hub('recent', recentTitle, 'mixed', results.first),
     ].where((h) => h.items.isNotEmpty).toList();
   }
 

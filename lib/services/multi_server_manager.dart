@@ -271,12 +271,6 @@ class MultiServerManager {
     _emitStatus();
   }
 
-  /// Plex-specific server config (name, machineId, connection candidates,
-  /// `owned` flag). Returns `null` for Jellyfin server ids — Jellyfin has no
-  /// `PlexServer` analogue. For "is this server registered?" use
-  /// [getClient] (works for both backends).
-  PlexServer? getPlexServer(ServerId serverId) => _plexServers[serverId];
-
   String serverDisplayName(ServerId serverId) =>
       _clients[serverId]?.serverName ?? _plexServers[serverId]?.name ?? serverId;
 
@@ -310,12 +304,6 @@ class MultiServerManager {
     }
     return result;
   }
-
-  /// Plex servers known to the manager. Jellyfin servers are NOT included
-  /// here — they have no `PlexServer` analogue (single-URL connections,
-  /// not connection-raced multi-endpoint structs). For an all-backends
-  /// view of online servers use [serverIds] or [onlineClients].
-  Map<String, PlexServer> get plexServers => Map.unmodifiable(_plexServers);
 
   /// Check if a server is online
   bool isServerOnline(ServerId serverId) => _serverStatus[serverId] ?? false;

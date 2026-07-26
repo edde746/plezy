@@ -915,6 +915,7 @@ class PlexClient
     );
   }
 
+  @visibleForTesting
   Future<Map<String, dynamic>> getServerIdentity() async {
     final response = await _getWithFailover('/identity');
     return response.data;

@@ -65,9 +65,11 @@ class LibrariesProvider extends ChangeNotifier with DisposableChangeNotifierMixi
   bool get isLoading => _loadState == LibrariesLoadState.loading;
 
   /// Whether libraries have been loaded at least once
+  @visibleForTesting
   bool get hasLoaded => _loadState == LibrariesLoadState.loaded;
 
   /// Current load state
+  @visibleForTesting
   LibrariesLoadState get loadState => _loadState;
 
   /// Error message if loading failed

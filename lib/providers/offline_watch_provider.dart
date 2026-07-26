@@ -71,6 +71,7 @@ class OfflineWatchProvider extends ChangeNotifier with DisposableChangeNotifierM
   /// 2. Metadata from download provider
   ///
   /// Returns null if no position is available.
+  @visibleForTesting
   Future<int?> getViewOffset(String globalKey) async {
     // First check local offline progress
     final localOffset = await _syncService.getLocalViewOffset(globalKey);

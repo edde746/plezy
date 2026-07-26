@@ -49,34 +49,17 @@ Map<String, dynamic> driftedSwitchJson() => {
 };
 
 void main() {
-  group('UserSwitchResponse.fromJson', () {
-    test('parses a realistic drifted 201 body, preserving the token', () {
-      final response = UserSwitchResponse.fromJson(driftedSwitchJson());
-
-      expect(response.authToken, 'minted-user-token');
-      expect(response.uuid, 'e443d57860076fc3');
-      expect(response.protected, isTrue);
-      expect(response.homeAdmin, isTrue);
-      expect(response.profile.defaultAudioLanguages, ['en', 'sv']);
-      expect(response.profile.defaultSubtitleLanguages, ['en', 'sv']);
+  group('parsePlexSwitchAuthToken', () {
+    test('takes the token out of a realistic drifted 201 body', () {
+      expect(parsePlexSwitchAuthToken(driftedSwitchJson()), 'minted-user-token');
     });
 
-    test('parses a token-only body with defaults everywhere else', () {
-      final response = UserSwitchResponse.fromJson({'authToken': 'tok'});
-
-      expect(response.authToken, 'tok');
-      expect(response.id, 0);
-      expect(response.uuid, '');
-      expect(response.title, '');
-      expect(response.confirmed, isFalse);
-      expect(response.homeSize, 1);
-      expect(response.maxHomeSize, 1);
-      expect(response.profile.autoSelectAudio, isTrue);
-      expect(response.profile.defaultAudioLanguages, isNull);
+    test('takes the token out of a token-only body', () {
+      expect(parsePlexSwitchAuthToken({'authToken': 'tok'}), 'tok');
     });
 
     test('never loses the token to wrong-typed decorative fields', () {
-      final response = UserSwitchResponse.fromJson({
+      final token = parsePlexSwitchAuthToken({
         'authToken': 'tok',
         'id': {},
         'uuid': 42,
@@ -92,20 +75,13 @@ void main() {
         'twoFactorEnabled': {},
       });
 
-      expect(response.authToken, 'tok');
-      expect(response.id, 0);
-      expect(response.uuid, '42');
-      expect(response.title, '7');
-      expect(response.confirmed, isFalse);
-      expect(response.homeSize, 1);
-      expect(response.profile.autoSelectAudio, isTrue);
-      expect(response.profile.defaultAudioLanguages, isNull);
+      expect(token, 'tok');
     });
 
     test('throws when authToken is missing, empty, or not a string', () {
-      expect(() => UserSwitchResponse.fromJson(const {}), throwsFormatException);
-      expect(() => UserSwitchResponse.fromJson({'authToken': ''}), throwsFormatException);
-      expect(() => UserSwitchResponse.fromJson({'authToken': 12345}), throwsFormatException);
+      expect(() => parsePlexSwitchAuthToken(const {}), throwsFormatException);
+      expect(() => parsePlexSwitchAuthToken({'authToken': ''}), throwsFormatException);
+      expect(() => parsePlexSwitchAuthToken({'authToken': 12345}), throwsFormatException);
     });
   });
 }

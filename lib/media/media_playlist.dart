@@ -61,11 +61,6 @@ class MediaPlaylist {
   /// Display-friendly title (alias of [title] for parity with [MediaItem]).
   String get displayTitle => title;
 
-  /// Whether this playlist's contents can be reordered/edited by the client.
-  /// Plex smart playlists are read-only; manual playlists and Jellyfin
-  /// playlists are editable.
-  bool get isEditable => !smart;
-
   String get globalKey => serverId != null ? buildGlobalKey(ServerId(serverId!), id) : id;
 
   MediaPlaylist copyWith({
