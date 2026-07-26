@@ -42,20 +42,25 @@ void main() {
       onSave: (value) async => saved.add(value),
     );
     await tester.pumpAndSettle();
+    final fieldFinder = find.byType(TextField);
 
     expect(find.byType(AlertDialog), findsOneWidget);
-    expect(find.byKey(const Key('tv_virtual_keyboard_dialog')), findsOneWidget);
+    expect(find.byKey(const Key('tv_virtual_keyboard_dialog')), findsNothing);
+    expect(tester.widget<TextField>(fieldFinder).readOnly, isFalse);
+    await tester.showKeyboard(fieldFinder);
 
     await tester.sendKeyDownEvent(LogicalKeyboardKey.escape);
     await tester.pump();
 
-    expect(find.byKey(const Key('tv_virtual_keyboard_dialog')), findsOneWidget);
+    expect(find.byType(AlertDialog), findsOneWidget);
+    expect(tester.widget<TextField>(fieldFinder).readOnly, isTrue);
 
     await tester.sendKeyUpEvent(LogicalKeyboardKey.escape);
     await tester.pumpAndSettle();
 
     expect(find.byKey(const Key('tv_virtual_keyboard_dialog')), findsNothing);
     expect(find.byType(AlertDialog), findsOneWidget);
+    expect(tester.widget<TextField>(fieldFinder).readOnly, isTrue);
     expect(tester.takeException(), isNull);
 
     await tester.sendKeyEvent(LogicalKeyboardKey.escape);

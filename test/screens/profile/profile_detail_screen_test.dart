@@ -88,13 +88,17 @@ void main() {
     await tester.tap(find.text('Open profile'));
     await tester.pumpAndSettle();
     expect(find.text(t.profiles.connectionsLabel), findsOneWidget);
-    expect(find.byKey(const Key('tv_virtual_keyboard_panel')), findsOneWidget);
+    final fieldFinder = find.byType(TextField);
+    expect(find.byKey(const Key('tv_virtual_keyboard_panel')), findsNothing);
+    expect(tester.widget<TextField>(fieldFinder).readOnly, isFalse);
+    await tester.showKeyboard(fieldFinder);
 
     await tester.sendKeyEvent(LogicalKeyboardKey.gameButtonB);
     await tester.pumpAndSettle();
 
     expect(find.text(t.profiles.connectionsLabel), findsOneWidget);
     expect(find.byKey(const Key('tv_virtual_keyboard_panel')), findsNothing);
+    expect(tester.widget<TextField>(fieldFinder).readOnly, isTrue);
 
     await tester.sendKeyEvent(LogicalKeyboardKey.gameButtonB);
     await tester.pumpAndSettle();

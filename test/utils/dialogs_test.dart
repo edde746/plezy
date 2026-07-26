@@ -88,18 +88,23 @@ void main() {
     final result = showTextInputDialog(hostContext, title: 'Name', labelText: 'Name', initialValue: 'TV value');
 
     await tester.pumpAndSettle();
-    final field = tester.widget<TextField>(find.byType(TextField, skipOffstage: false));
-    expect(find.byKey(const Key('tv_virtual_keyboard_dialog')), findsOneWidget);
+    final fieldFinder = find.byType(TextField, skipOffstage: false);
+    final field = tester.widget<TextField>(fieldFinder);
+    expect(find.byKey(const Key('tv_virtual_keyboard_dialog')), findsNothing);
+    expect(field.readOnly, isFalse);
+    await tester.showKeyboard(fieldFinder);
 
     await tester.sendKeyDownEvent(LogicalKeyboardKey.escape);
     await tester.pump();
-    expect(find.byKey(const Key('tv_virtual_keyboard_dialog')), findsOneWidget);
+    expect(find.byType(AlertDialog), findsOneWidget);
+    expect(tester.widget<TextField>(fieldFinder).readOnly, isTrue);
 
     await tester.sendKeyUpEvent(LogicalKeyboardKey.escape);
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('tv_virtual_keyboard_dialog')), findsNothing);
     expect(find.byType(AlertDialog), findsOneWidget);
     expect(field.focusNode?.hasPrimaryFocus, isTrue);
+    expect(tester.widget<TextField>(fieldFinder).readOnly, isTrue);
 
     await tester.sendKeyEvent(LogicalKeyboardKey.escape);
     await tester.pumpAndSettle();
