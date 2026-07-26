@@ -72,6 +72,7 @@ class _CatalogSearchScreenState extends State<CatalogSearchScreen> with Debounce
                 FocusableTextField(
                   controller: searchController,
                   focusNode: searchFocusNode,
+                  tvTextInputPresentation: TvTextInputPresentation.flutterOverlay,
                   textInputAction: TextInputAction.search,
                   onNavigateDown: searchResults.isNotEmpty && !isSearching ? firstResultFocusNode.requestFocus : null,
                   onNavigateRight: searchController.text.isNotEmpty ? _clearFocusNode.requestFocus : null,

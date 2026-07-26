@@ -99,6 +99,7 @@ class _EditJellyfinConnectionScreenState extends State<EditJellyfinConnectionScr
                   FocusableTextFormField(
                     controller: _urlsController,
                     focusNode: _urlsFocus,
+                    tvTextInputPresentation: TvTextInputPresentation.flutterOverlay,
                     autofocus: true,
                     keyboardType: TextInputType.url,
                     minLines: 1,

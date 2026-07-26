@@ -1905,7 +1905,8 @@ class _PickerDialogScaffoldState<T> extends State<_PickerDialogScaffold<T>> {
                 FocusableTextField(
                   controller: _filterController,
                   focusNode: _filterFocusNode,
-                  tvKeyboardAutoOpenBehavior: TvKeyboardAutoOpenBehavior.afterFirstFocus,
+                  tvTextInputPresentation: TvTextInputPresentation.flutterOverlay,
+                  tvTextInputAutoOpenBehavior: TvTextInputAutoOpenBehavior.afterFirstFocus,
                   onNavigateDown: _firstItemFocusNode.requestFocus,
                   decoration: pillInputDecoration(
                     context,

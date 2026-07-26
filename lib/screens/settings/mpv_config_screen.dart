@@ -312,6 +312,7 @@ class _MpvConfigScreenState extends State<MpvConfigScreen> with SettingsEffectMi
         controller: _textController,
         focusNode: _textFieldFocusNode,
         keyboardType: TextInputType.multiline,
+        tvTextInputPresentation: TvTextInputPresentation.flutterOverlay,
         maxLines: null,
         minLines: 12,
         decoration: InputDecoration(

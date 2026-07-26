@@ -257,6 +257,9 @@ class _TextInputDialogState extends State<_TextInputDialog> with ControllerDispo
       controller: _controller,
       focusNode: _fieldFocusNode,
       autofocus: true,
+      tvTextInputPresentation: widget.multiline
+          ? TvTextInputPresentation.flutterOverlay
+          : TvTextInputPresentation.automatic,
       decoration: InputDecoration(labelText: widget.labelText, hintText: widget.hintText, errorText: _errorText),
       keyboardType: widget.keyboardType ?? (widget.multiline ? TextInputType.multiline : null),
       inputFormatters: widget.inputFormatters,

@@ -33,7 +33,7 @@ class SearchScreen extends StatefulWidget {
 class _SearchScreenState extends State<SearchScreen>
     with Refreshable, FullRefreshable, SearchInputFocusable, FocusableTab, MountedSetStateMixin, DebouncedMediaSearch {
   String? _focusResultsForQuery;
-  final _tvKeyboardController = TvKeyboardController();
+  final _tvTextInputController = TvTextInputController();
   final _clearFocusNode = FocusNode(debugLabel: 'Search.clear');
 
   @override
@@ -130,13 +130,13 @@ class _SearchScreenState extends State<SearchScreen>
     // Focusing the field normally auto-opens the OSK; a remote search must not
     // show it, and must dismiss one the TV user already had open (the phone's
     // Search chip sends tabSearch before the query arrives).
-    _tvKeyboardController.closeKeyboard();
+    _tvTextInputController.closeTextInput();
     if (trimmed.isEmpty) return;
 
     // Land focus on the (visible) input immediately so the D-pad remote is
     // never stranded on the hidden previous tab — while the search is in
     // flight, when it fails, and when it returns nothing.
-    _tvKeyboardController.focusInputWithoutKeyboard();
+    _tvTextInputController.focusInputWithoutOpening();
 
     // Same path as the OSK Search key: jumps straight to already-matching
     // results, or cancels the debounce and runs now; the screen override arms
@@ -225,7 +225,8 @@ class _SearchScreenState extends State<SearchScreen>
                     FocusableTextField(
                       controller: searchController,
                       focusNode: searchFocusNode,
-                      tvKeyboardController: _tvKeyboardController,
+                      tvTextInputController: _tvTextInputController,
+                      tvTextInputPresentation: TvTextInputPresentation.flutterOverlay,
                       textInputAction: TextInputAction.search,
                       onNavigateLeft: _navigateToSidebar,
                       onNavigateRight: searchController.text.isNotEmpty ? _clearFocusNode.requestFocus : null,

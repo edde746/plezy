@@ -14,6 +14,7 @@
 		35DB0C8FEF635A3BCA0B722A /* PackageInfoPlusPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = F9426EFA282CDA8E0E98EEE9 /* PackageInfoPlusPlugin.swift */; };
 		3B3967161E833CAA004F5970 /* AppFrameworkInfo.plist in Resources */ = {isa = PBXBuildFile; fileRef = 3B3967151E833CAA004F5970 /* AppFrameworkInfo.plist */; };
 		5C71F5F7B33075F2B007825B /* MpvPlayerPluginShared.swift in Sources */ = {isa = PBXBuildFile; fileRef = 73645904F226A24585A092CE /* MpvPlayerPluginShared.swift */; };
+		4F1000024F1000024F100002 /* FlutterNativeTextInputTests.mm in Sources */ = {isa = PBXBuildFile; fileRef = 4F1000014F1000014F100001 /* FlutterNativeTextInputTests.mm */; };
 		65AC2C222043B3E6723E2076 /* ConnectivityPlusPluginTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 934BC4E316D2AC788C954766 /* ConnectivityPlusPluginTests.swift */; };
 		691577F0EB3F4EB1A5160280 /* MpvPlayerCoreBase.swift in Sources */ = {isa = PBXBuildFile; fileRef = D52A3BDA46E79969EA1DF3AC /* MpvPlayerCoreBase.swift */; };
 		6F3C0DD6F2F8DA14E7E2F386 /* MpvPlayerCore.swift in Sources */ = {isa = PBXBuildFile; fileRef = A12B8610AE5D580077264851 /* MpvPlayerCore.swift */; };
@@ -96,6 +97,7 @@
 		3CCA7E80F3A99D8759F2E59F /* ConnectivityProvider.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ConnectivityProvider.swift; sourceTree = "<group>"; };
 		41369A2B262AECB35079F6CC /* Pods-RunnerTests.profile.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-RunnerTests.profile.xcconfig"; path = "Target Support Files/Pods-RunnerTests/Pods-RunnerTests.profile.xcconfig"; sourceTree = "<group>"; };
 		420881FB6A648A2AFD39FFF2 /* Pods-Runner.profile.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Runner.profile.xcconfig"; path = "Target Support Files/Pods-Runner/Pods-Runner.profile.xcconfig"; sourceTree = "<group>"; };
+		4F1000014F1000014F100001 /* FlutterNativeTextInputTests.mm */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.cpp.objcpp; path = FlutterNativeTextInputTests.mm; sourceTree = "<group>"; };
 		5E1F41676FEF1AB57076F8B9 /* DeviceInfoPlusPlugin.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DeviceInfoPlusPlugin.swift; sourceTree = "<group>"; };
 		66F56950138FF220CA079EB3 /* TvosEventDeliveryCoordinator.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TvosEventDeliveryCoordinator.swift; sourceTree = "<group>"; };
 		67C3193A50DFDECE2B92D075 /* ConnectivityPlusPlugin.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ConnectivityPlusPlugin.swift; sourceTree = "<group>"; };
@@ -337,6 +339,7 @@
 		F9BDF6E09E3B9347861D2A50 /* RunnerTests */ = {
 			isa = PBXGroup;
 			children = (
+				4F1000014F1000014F100001 /* FlutterNativeTextInputTests.mm */,
 				2A7C0B1D9E5F4A6381027C11 /* MpvPlayerContractTests.swift */,
 				FE6C8125B201A8BC3261AE2B /* TvosEventDeliveryCoordinatorTests.swift */,
 				934BC4E316D2AC788C954766 /* ConnectivityPlusPluginTests.swift */,
@@ -590,6 +593,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				4F1000024F1000024F100002 /* FlutterNativeTextInputTests.mm in Sources */,
 				2A7C0B1D9E5F4A6381027C12 /* MpvPlayerContractTests.swift in Sources */,
 				D2004D7BB4A40340AB7A01E0 /* TvosEventDeliveryCoordinatorTests.swift in Sources */,
 				65AC2C222043B3E6723E2076 /* ConnectivityPlusPluginTests.swift in Sources */,
