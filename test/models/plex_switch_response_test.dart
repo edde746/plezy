@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:plezy/models/user_switch_response.dart';
+import 'package:plezy/models/plex/plex_switch_response.dart';
 
 /// A realistic `/api/v2/home/users/{uuid}/switch` 201 body using the
 /// July 2026 wire shape where profile language lists are CSV strings (#1488).

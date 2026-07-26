@@ -8,7 +8,7 @@ import '../exceptions/media_server_exceptions.dart';
 import '../models/plex/plex_user_profile.dart';
 import '../models/plex/plex_home.dart';
 import '../models/plex/plex_home_user.dart';
-import '../models/user_switch_response.dart';
+import '../models/plex/plex_switch_response.dart';
 import '../utils/app_logger.dart';
 import '../utils/device_identity.dart';
 import '../utils/endpoint_race.dart';
