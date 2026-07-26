@@ -16,6 +16,7 @@ import 'package:plezy/models/download_models.dart';
 import 'package:plezy/providers/download_provider.dart';
 import 'package:plezy/services/download_manager_service.dart';
 import 'package:plezy/services/api_cache.dart';
+import 'package:plezy/services/multi_server_manager.dart';
 import 'package:plezy/services/download_storage_service.dart';
 import 'package:plezy/services/jellyfin_api_cache.dart';
 import 'package:plezy/services/plex_api_cache.dart';
@@ -587,6 +588,30 @@ void main() {
       p.dispose();
     });
 
+    test('deleteSyncRule keeps downloads previously associated with the rule', () async {
+      final p = DownloadProvider.forTesting(downloadManager: downloadManager, database: db);
+      addTearDown(p.dispose);
+      await p.ensureInitialized();
+      await p.createSyncRule(serverId: ServerId('srv'), ratingKey: 'playlist', targetType: 'playlist', episodeCount: 0);
+      final ruleKey = p.syncRuleKeyFor(ServerId('srv'), 'playlist');
+      final rule = (await db.getSyncRule(ruleKey))!;
+      await db.insertDownload(
+        serverId: ServerId('srv'),
+        ratingKey: 'episode',
+        globalKey: 'srv:episode',
+        type: 'episode',
+        status: DownloadStatus.completed.index,
+      );
+      await db.addDownloadOwner(profileId: 'test-profile', globalKey: 'srv:episode');
+      await db.associateSyncRuleDownload(rule, 'srv:episode');
+
+      await p.deleteSyncRule(ruleKey);
+
+      expect(await db.getSyncRule(ruleKey), isNull);
+      expect(await db.getDownloadedMedia('srv:episode'), isNotNull);
+      expect(await db.getDownloadOwner(profileId: 'test-profile', globalKey: 'srv:episode'), isNotNull);
+    });
+
     test('deleteSyncRule releases targetMetadata when no download holds it', () async {
       final p = DownloadProvider.forTesting(downloadManager: downloadManager, database: db);
       await p.ensureInitialized();
@@ -644,6 +669,116 @@ void main() {
       expect(p.getMetadata('srv:30'), isNotNull, reason: 'metadata is still in use by the download');
 
       p.dispose();
+    });
+
+    test('deleteSyncRuleAndDownloads removes only downloads exclusive to the rule and active profile', () async {
+      final p = DownloadProvider.forTesting(downloadManager: downloadManager, database: db);
+      addTearDown(p.dispose);
+      await p.ensureInitialized();
+      final serverManager = MultiServerManager();
+      addTearDown(serverManager.dispose);
+
+      await p.createSyncRule(
+        serverId: ServerId('srv'),
+        ratingKey: 'playlist-a',
+        targetType: 'playlist',
+        episodeCount: 0,
+      );
+      await p.createSyncRule(
+        serverId: ServerId('srv'),
+        ratingKey: 'playlist-b',
+        targetType: 'playlist',
+        episodeCount: 0,
+      );
+      final targetKey = p.syncRuleKeyFor(ServerId('srv'), 'playlist-a');
+      final siblingKey = p.syncRuleKeyFor(ServerId('srv'), 'playlist-b');
+      final targetRule = (await db.getSyncRule(targetKey))!;
+      final siblingRule = (await db.getSyncRule(siblingKey))!;
+      await db.markSyncRuleDownloadLinksInitialized(targetKey);
+      await db.markSyncRuleDownloadLinksInitialized(siblingKey);
+
+      final items = <String, MediaItem>{
+        'srv:exclusive': testMediaItem(
+          id: 'exclusive',
+          backend: MediaBackend.plex,
+          kind: MediaKind.episode,
+          title: 'Exclusive',
+          serverId: ServerId('srv'),
+        ),
+        'srv:rule-shared': testMediaItem(
+          id: 'rule-shared',
+          backend: MediaBackend.plex,
+          kind: MediaKind.episode,
+          title: 'Rule shared',
+          serverId: ServerId('srv'),
+        ),
+        'srv:profile-shared': testMediaItem(
+          id: 'profile-shared',
+          backend: MediaBackend.plex,
+          kind: MediaKind.episode,
+          title: 'Profile shared',
+          serverId: ServerId('srv'),
+        ),
+      };
+      for (final entry in items.entries) {
+        await db.insertDownload(
+          serverId: ServerId('srv'),
+          ratingKey: entry.value.id,
+          globalKey: entry.key,
+          type: 'episode',
+          status: DownloadStatus.completed.index,
+        );
+        await db.addDownloadOwner(profileId: 'test-profile', globalKey: entry.key);
+        await db.associateSyncRuleDownload(targetRule, entry.key);
+      }
+      await db.associateSyncRuleDownload(siblingRule, 'srv:rule-shared');
+      await db.addDownloadOwner(profileId: 'profile-b', globalKey: 'srv:profile-shared');
+
+      p.debugSeedState(
+        downloads: {
+          for (final key in items.keys) key: DownloadProgress(globalKey: key, status: DownloadStatus.completed),
+        },
+        metadata: items,
+        ownedDownloadKeys: items.keys.toSet(),
+      );
+
+      await p.deleteSyncRuleAndDownloads(targetKey, serverManager);
+
+      expect(await db.getSyncRule(targetKey), isNull);
+      expect(await db.getSyncRule(siblingKey), isNotNull);
+      expect(await db.getDownloadedMedia('srv:exclusive'), isNull);
+      expect(await db.getDownloadedMedia('srv:rule-shared'), isNotNull);
+      expect(await db.getDownloadOwner(profileId: 'test-profile', globalKey: 'srv:rule-shared'), isNotNull);
+      expect(await db.getDownloadedMedia('srv:profile-shared'), isNotNull);
+      expect(await db.getDownloadOwner(profileId: 'test-profile', globalKey: 'srv:profile-shared'), isNull);
+      expect(await db.getDownloadOwner(profileId: 'profile-b', globalKey: 'srv:profile-shared'), isNotNull);
+    });
+
+    test('deleteSyncRuleAndDownloads keeps an unresolvable legacy list rule intact', () async {
+      final p = DownloadProvider.forTesting(downloadManager: downloadManager, database: db);
+      addTearDown(p.dispose);
+      await p.ensureInitialized();
+      final serverManager = MultiServerManager();
+      addTearDown(serverManager.dispose);
+
+      await p.createSyncRule(
+        serverId: ServerId('missing-server'),
+        ratingKey: 'deleted-playlist',
+        targetType: 'playlist',
+        episodeCount: 0,
+      );
+      final ruleKey = p.syncRuleKeyFor(ServerId('missing-server'), 'deleted-playlist');
+
+      await expectLater(
+        p.deleteSyncRuleAndDownloads(ruleKey, serverManager),
+        throwsA(
+          isA<SyncRuleCleanupUnavailableException>().having((error) => error.ruleGlobalKey, 'ruleGlobalKey', ruleKey),
+        ),
+      );
+
+      expect(await db.getSyncRule(ruleKey), isNotNull);
+      expect((await db.getSyncRule(ruleKey))!.enabled, isTrue);
+      expect(p.hasSyncRule(ruleKey), isTrue);
     });
 
     test('watch events target active-profile parent sync rules', () async {

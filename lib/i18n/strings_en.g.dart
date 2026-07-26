@@ -3450,6 +3450,15 @@ class Translations$downloads$en {
 	/// en: 'Stop syncing "${title}"? Downloaded episodes will be kept.'
 	String removeSyncRuleConfirm({required Object title}) => 'Stop syncing "${title}"? Downloaded episodes will be kept.';
 
+	/// en: 'Stop syncing "${title}"?'
+	String removeListSyncRuleConfirm({required Object title}) => 'Stop syncing "${title}"?';
+
+	/// en: 'Also delete associated downloads'
+	String get deleteSyncRuleDownloads => 'Also delete associated downloads';
+
+	/// en: 'Downloads used by another sync rule or profile will be kept.'
+	String get deleteSyncRuleDownloadsDescription => 'Downloads used by another sync rule or profile will be kept.';
+
 	/// en: 'Sync rule created — keeping ${count} unwatched episodes'
 	String syncRuleCreated({required Object count}) => 'Sync rule created — keeping ${count} unwatched episodes';
 
@@ -3458,6 +3467,15 @@ class Translations$downloads$en {
 
 	/// en: 'Sync rule removed'
 	String get syncRuleRemoved => 'Sync rule removed';
+
+	/// en: 'Sync rule and associated downloads removed'
+	String get syncRuleAndDownloadsRemoved => 'Sync rule and associated downloads removed';
+
+	/// en: 'Sync rules are currently updating. Try again in a moment.'
+	String get syncRuleCleanupBusy => 'Sync rules are currently updating. Try again in a moment.';
+
+	/// en: 'Associated downloads could not be identified safely. Reconnect the server and try again, or remove the rule without deleting downloads.'
+	String get syncRuleCleanupUnavailable => 'Associated downloads could not be identified safely. Reconnect the server and try again, or remove the rule without deleting downloads.';
 
 	/// en: 'Synced ${count} new episodes for ${title}'
 	String syncedNewEpisodes({required Object count, required Object title}) => 'Synced ${count} new episodes for ${title}';
@@ -6245,9 +6263,15 @@ extension on Translations {
 			'downloads.editSyncRule' => 'Edit sync rule',
 			'downloads.removeSyncRule' => 'Remove sync rule',
 			'downloads.removeSyncRuleConfirm' => ({required Object title}) => 'Stop syncing "${title}"? Downloaded episodes will be kept.',
+			'downloads.removeListSyncRuleConfirm' => ({required Object title}) => 'Stop syncing "${title}"?',
+			'downloads.deleteSyncRuleDownloads' => 'Also delete associated downloads',
+			'downloads.deleteSyncRuleDownloadsDescription' => 'Downloads used by another sync rule or profile will be kept.',
 			'downloads.syncRuleCreated' => ({required Object count}) => 'Sync rule created — keeping ${count} unwatched episodes',
 			'downloads.syncRuleUpdated' => 'Sync rule updated',
 			'downloads.syncRuleRemoved' => 'Sync rule removed',
+			'downloads.syncRuleAndDownloadsRemoved' => 'Sync rule and associated downloads removed',
+			'downloads.syncRuleCleanupBusy' => 'Sync rules are currently updating. Try again in a moment.',
+			'downloads.syncRuleCleanupUnavailable' => 'Associated downloads could not be identified safely. Reconnect the server and try again, or remove the rule without deleting downloads.',
 			'downloads.syncedNewEpisodes' => ({required Object count, required Object title}) => 'Synced ${count} new episodes for ${title}',
 			'downloads.activeSyncRules' => 'Sync rules',
 			'downloads.noSyncRules' => 'No sync rules',

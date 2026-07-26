@@ -2,15 +2,20 @@ import 'package:flutter/material.dart';
 import '../media/ids.dart';
 import 'package:flutter/services.dart';
 import 'package:material_symbols_icons/symbols.dart';
+import 'package:provider/provider.dart';
 import '../i18n/strings.g.dart';
 import '../media/media_item.dart';
 import '../media/media_kind.dart';
 import '../media/media_server_client.dart';
 import '../database/app_database.dart';
 import '../providers/download_provider.dart';
+import '../providers/multi_server_provider.dart';
 import '../services/settings_service.dart';
 import '../services/sync_rule_executor.dart';
 import '../widgets/background_download_warning_banner.dart';
+import '../widgets/dialog_action_button.dart';
+import '../widgets/focusable_list_tile.dart';
+import 'app_logger.dart';
 import 'content_utils.dart';
 import 'dialogs.dart';
 import 'download_version_utils.dart';
@@ -30,6 +35,12 @@ enum _DownloadChoice { all, unwatched, next5, next10, custom, delete }
 
 /// Whether the user chose a one-time download or a persistent sync rule.
 enum _SyncChoice { downloadOnce, keepSynced }
+
+enum SyncRuleRemovalResult { ruleOnly, ruleAndDownloads }
+
+String syncRuleRemovalMessage(SyncRuleRemovalResult result) => result == SyncRuleRemovalResult.ruleAndDownloads
+    ? t.downloads.syncRuleAndDownloadsRemoved
+    : t.downloads.syncRuleRemoved;
 
 /// Result of the download dialog + queue operation.
 class DownloadResult {
@@ -251,6 +262,7 @@ Future<DownloadResult?> showListDownloadOptionsAndQueue(
 
   bool syncRuleCreated = false;
   bool syncRuleUpdated = false;
+  SyncRuleItem? syncRule;
 
   if (syncChoice == _SyncChoice.keepSynced) {
     final ruleKey = downloadProvider.syncRuleKeyFor(ServerId(serverId), rootMetadata.id);
@@ -269,9 +281,10 @@ Future<DownloadResult?> showListDownloadOptionsAndQueue(
       );
       syncRuleCreated = true;
     }
+    syncRule = downloadProvider.getSyncRule(ruleKey);
   }
 
-  final count = await downloadProvider.queueListDownload(items, client, filter: selectedFilter);
+  final count = await downloadProvider.queueListDownload(items, client, filter: selectedFilter, syncRule: syncRule);
 
   return DownloadResult(
     count: count,
@@ -356,8 +369,8 @@ Future<bool> editSyncRuleCount(
       globalKey: globalKey,
       displayTitle: displayTitle ?? globalKey,
     );
-    if (removed && context.mounted) {
-      showSuccessSnackBar(context, t.downloads.syncRuleRemoved);
+    if (removed != null && context.mounted) {
+      showSuccessSnackBar(context, syncRuleRemovalMessage(removed));
     }
     return false;
   }
@@ -388,23 +401,101 @@ Future<bool> editSyncRuleFilter(
   return true;
 }
 
-/// Shows a confirmation dialog to remove a sync rule. Returns true if removed.
-Future<bool> confirmAndRemoveSyncRule(
+/// Shows a confirmation dialog to remove a sync rule.
+Future<SyncRuleRemovalResult?> confirmAndRemoveSyncRule(
   BuildContext context, {
   required DownloadProvider downloadProvider,
   required String globalKey,
   required String displayTitle,
 }) async {
-  final confirmed = await showConfirmDialog(
-    context,
-    title: t.downloads.removeSyncRule,
-    message: t.downloads.removeSyncRuleConfirm(title: displayTitle),
-    confirmText: t.downloads.removeSyncRule,
-  );
-  if (!confirmed || !context.mounted) return false;
+  final rule = downloadProvider.getSyncRule(globalKey);
+  if (rule == null) return null;
 
-  await downloadProvider.deleteSyncRule(globalKey);
-  return true;
+  final bool deleteDownloads;
+  if (rule.isListRule) {
+    final choice = await _showListSyncRuleRemovalDialog(context, displayTitle);
+    if (choice == null || !context.mounted) return null;
+    deleteDownloads = choice;
+  } else {
+    final confirmed = await showConfirmDialog(
+      context,
+      title: t.downloads.removeSyncRule,
+      message: t.downloads.removeSyncRuleConfirm(title: displayTitle),
+      confirmText: t.downloads.removeSyncRule,
+    );
+    if (!confirmed || !context.mounted) return null;
+    deleteDownloads = false;
+  }
+
+  try {
+    if (deleteDownloads) {
+      final serverManager = context.read<MultiServerProvider>().serverManager;
+      await downloadProvider.deleteSyncRuleAndDownloads(globalKey, serverManager);
+      return SyncRuleRemovalResult.ruleAndDownloads;
+    }
+    await downloadProvider.deleteSyncRule(globalKey);
+    return SyncRuleRemovalResult.ruleOnly;
+  } on SyncRuleCleanupBusyException {
+    if (context.mounted) showErrorSnackBar(context, t.downloads.syncRuleCleanupBusy);
+    return null;
+  } on SyncRuleCleanupUnavailableException {
+    if (context.mounted) showErrorSnackBar(context, t.downloads.syncRuleCleanupUnavailable);
+    return null;
+  } catch (error, stackTrace) {
+    appLogger.e('Failed to remove sync rule', error: error, stackTrace: stackTrace);
+    if (context.mounted) {
+      showErrorSnackBar(context, t.messages.errorLoading(error: error.toString()));
+    }
+    return null;
+  }
+}
+
+Future<bool?> _showListSyncRuleRemovalDialog(BuildContext context, String displayTitle) {
+  var deleteDownloads = false;
+  return showScopedDialog<bool>(
+    context: context,
+    builder: (dialogContext) {
+      return StatefulBuilder(
+        builder: (context, setState) {
+          final colorScheme = Theme.of(context).colorScheme;
+          return AlertDialog(
+            title: Text(t.downloads.removeSyncRule),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text(t.downloads.removeListSyncRuleConfirm(title: displayTitle)),
+                const SizedBox(height: 12),
+                FocusableSwitchListTile(
+                  key: const ValueKey('delete_sync_rule_downloads'),
+                  value: deleteDownloads,
+                  onChanged: (value) => setState(() => deleteDownloads = value),
+                  title: Text(t.downloads.deleteSyncRuleDownloads),
+                  subtitle: Text(t.downloads.deleteSyncRuleDownloadsDescription),
+                  contentPadding: EdgeInsets.zero,
+                ),
+              ],
+            ),
+            actions: [
+              DialogActionButton(
+                autofocus: true,
+                onPressed: () => Navigator.pop(dialogContext),
+                label: t.common.cancel,
+              ),
+              DialogActionButton(
+                onPressed: () => Navigator.pop(dialogContext, deleteDownloads),
+                label: t.downloads.removeSyncRule,
+                isPrimary: true,
+                style: deleteDownloads
+                    ? FilledButton.styleFrom(backgroundColor: colorScheme.error, foregroundColor: colorScheme.onError)
+                    : null,
+              ),
+            ],
+          );
+        },
+      );
+    },
+  );
 }
 
 /// Whether this rule targets a collection or playlist (as opposed to a
@@ -462,7 +553,7 @@ Future<void> removeSyncRuleAndSnack(
     globalKey: globalKey,
     displayTitle: displayTitle,
   );
-  if (removed && context.mounted) {
-    showSuccessSnackBar(context, t.downloads.syncRuleRemoved);
+  if (removed != null && context.mounted) {
+    showSuccessSnackBar(context, syncRuleRemovalMessage(removed));
   }
 }

@@ -781,6 +781,55 @@ class _AppDatabaseTestSuite {
           db = AppDatabase.forTesting(NativeDatabase.memory());
         }
       });
+      test('v20 migration creates sync download associations without claiming legacy rules', () async {
+        await db.close();
+        final tempDir = await Directory.systemTemp.createTemp('plezy_db_v20_migration_test_');
+        final file = File('${tempDir.path}/plezy_downloads.db');
+        AppDatabase? seeded;
+        AppDatabase? reopened;
+
+        try {
+          seeded = AppDatabase.forTesting(NativeDatabase(file));
+          await seeded.select(seeded.syncRuleDownloads).get();
+          await seeded.insertSyncRule(
+            profileId: 'profile-a',
+            serverId: ServerId('server'),
+            ratingKey: 'playlist',
+            globalKey: 'profile-a|server:playlist',
+            targetType: 'playlist',
+            episodeCount: 0,
+          );
+          await seeded.customStatement('DROP TABLE sync_rule_downloads');
+          await seeded.customStatement('ALTER TABLE sync_rules DROP COLUMN download_links_initialized');
+          await seeded.customStatement('PRAGMA user_version = 19');
+          await seeded.close();
+          seeded = null;
+
+          reopened = AppDatabase.forTesting(NativeDatabase(file));
+          final legacyRule = await reopened.getSyncRule('profile-a|server:playlist');
+          expect(legacyRule, isNotNull);
+          expect(legacyRule!.downloadLinksInitialized, isFalse);
+          expect(await reopened.select(reopened.syncRuleDownloads).get(), isEmpty);
+
+          await reopened.insertDownload(
+            serverId: ServerId('server'),
+            ratingKey: 'episode',
+            globalKey: 'server:episode',
+            type: 'episode',
+            status: DownloadStatus.completed.index,
+          );
+          await reopened.associateSyncRuleDownload(legacyRule, 'server:episode');
+          expect(await reopened.getSyncRuleDownloadLinks(legacyRule.id), hasLength(1));
+
+          await reopened.deleteSyncRule(legacyRule.globalKey);
+          expect(await reopened.getSyncRuleDownloadLinks(legacyRule.id), isEmpty);
+        } finally {
+          await reopened?.close();
+          await seeded?.close();
+          await tempDir.delete(recursive: true);
+          db = AppDatabase.forTesting(NativeDatabase.memory());
+        }
+      });
     });
 
     _registerLegacyDesktopMigrationTests();
@@ -2132,6 +2181,55 @@ class _AppDatabaseTestSuite {
         final remaining = await db.getSyncRules();
         expect(remaining, hasLength(1));
         expect(remaining.first.globalKey, 'srv:11');
+      });
+      test('exclusive sync download keys preserve downloads covered by another rule', () async {
+        Future<SyncRuleItem> insertRule(String profileId, String id) async {
+          final globalKey = '$profileId|srv:$id';
+          await db.insertSyncRule(
+            profileId: profileId,
+            serverId: ServerId('srv'),
+            ratingKey: id,
+            globalKey: globalKey,
+            targetType: 'playlist',
+            episodeCount: 0,
+          );
+          return (await db.getSyncRule(globalKey))!;
+        }
+
+        Future<void> insertOwnedDownload(String id, List<String> profileIds) async {
+          final globalKey = 'srv:$id';
+          await db.insertDownload(
+            serverId: ServerId('srv'),
+            ratingKey: id,
+            globalKey: globalKey,
+            type: 'episode',
+            status: DownloadStatus.completed.index,
+          );
+          for (final profileId in profileIds) {
+            await db.addDownloadOwner(profileId: profileId, globalKey: globalKey);
+          }
+        }
+
+        final target = await insertRule('profile-a', 'playlist-a');
+        final sibling = await insertRule('profile-a', 'playlist-b');
+        final otherProfile = await insertRule('profile-b', 'playlist-c');
+        await insertOwnedDownload('exclusive', ['profile-a']);
+        await insertOwnedDownload('sibling-shared', ['profile-a']);
+        await insertOwnedDownload('profile-shared', ['profile-a', 'profile-b']);
+
+        await db.associateSyncRuleDownload(target, 'srv:exclusive');
+        await db.associateSyncRuleDownload(target, 'srv:sibling-shared');
+        await db.associateSyncRuleDownload(target, 'srv:profile-shared');
+        await db.associateSyncRuleDownload(sibling, 'srv:sibling-shared');
+        await db.associateSyncRuleDownload(otherProfile, 'srv:profile-shared');
+
+        expect(
+          await db.getExclusiveSyncRuleDownloadKeys(target),
+          unorderedEquals(['srv:exclusive', 'srv:profile-shared']),
+        );
+
+        await db.removeDownloadOwner(profileId: 'profile-a', globalKey: 'srv:profile-shared');
+        expect(await db.getSyncRuleDownloadLinks(otherProfile.id), hasLength(1));
       });
     });
   }

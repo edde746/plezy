@@ -106,6 +106,7 @@ void main() {
       serverManager: manager,
       downloads: const {},
       metadata: const {},
+      associateDownload: (_, _) async {},
       queueSingleDownload: (item, client, {int mediaIndex = 0}) async {
         queued.add((item: item, client: client));
         return true;
@@ -177,6 +178,7 @@ void main() {
       serverManager: manager,
       downloads: const {},
       metadata: const {},
+      associateDownload: (_, _) async {},
       queueSingleDownload: (item, client, {int mediaIndex = 0}) async {
         queued.add(item);
         return true;
@@ -225,6 +227,7 @@ void main() {
       serverManager: manager,
       downloads: const {},
       metadata: const {},
+      associateDownload: (_, _) async {},
       queueSingleDownload: (item, client, {int mediaIndex = 0}) async => true,
       isOffline: false,
       force: true,
@@ -278,6 +281,7 @@ void main() {
     );
 
     final queued = <MediaItem>[];
+    final associated = <String>[];
     final executor = SyncRuleExecutor(database: db);
     final results = await executor.executeSyncRules(
       profileId: 'profile-b',
@@ -286,6 +290,7 @@ void main() {
         'jf-machine:ep-1': DownloadProgress(globalKey: 'jf-machine:ep-1', status: DownloadStatus.completed),
       },
       metadata: const {},
+      associateDownload: (_, globalKey) async => associated.add(globalKey),
       queueSingleDownload: (item, client, {int mediaIndex = 0}) async {
         queued.add(item);
         return true;
@@ -297,6 +302,8 @@ void main() {
     expect(results, isEmpty);
     expect(queued, isEmpty);
     expect(paths.where((p) => p.startsWith('GET /Items?')), isNotEmpty);
+    expect(associated, ['jf-machine:ep-1']);
+    expect((await db.getSyncRule('profile-b|jf-machine:show-1'))!.downloadLinksInitialized, isTrue);
   });
 
   test('show sync rule respects includeSpecials=false when expanding episodes', () async {
@@ -333,6 +340,7 @@ void main() {
       serverManager: manager,
       downloads: const {},
       metadata: {ruleKey: show},
+      associateDownload: (_, _) async {},
       queueSingleDownload: (item, client, {int mediaIndex = 0}) async {
         queued.add(item);
         return true;
@@ -344,6 +352,49 @@ void main() {
     expect(results.single.queuedCount, 2);
     expect(queued.map((item) => item.id), ['s1e1', 's1e2']);
     expect(client.fetchPlayableDescendantsCalls, ['show-1']);
+  });
+
+  test('Jellyfin playlist sync associates an already-downloaded member', () async {
+    final db = AppDatabase.forTesting(NativeDatabase.memory());
+    final manager = MultiServerManager();
+    addTearDown(() async {
+      manager.dispose();
+      await db.close();
+    });
+
+    final client = _PlaylistPagingClient();
+    manager.debugRegisterClientForTesting(client);
+    const ruleKey = 'profile-a|jf-machine:playlist-1';
+    await db.insertSyncRule(
+      profileId: 'profile-a',
+      serverId: ServerId('jf-machine'),
+      ratingKey: 'playlist-1',
+      globalKey: ruleKey,
+      targetType: 'playlist',
+      episodeCount: 0,
+      downloadFilter: SyncRuleFilter.all,
+    );
+    final associated = <String>[];
+
+    final results = await SyncRuleExecutor(database: db).executeSyncRules(
+      profileId: 'profile-a',
+      serverManager: manager,
+      downloads: const {
+        'jf-machine:episode-1': DownloadProgress(globalKey: 'jf-machine:episode-1', status: DownloadStatus.completed),
+      },
+      metadata: const {},
+      associateDownload: (_, globalKey) async => associated.add(globalKey),
+      queueSingleDownload: (_, _, {int mediaIndex = 0}) async {
+        fail('an already-downloaded playlist member must not be queued');
+      },
+      isOffline: false,
+      force: true,
+    );
+
+    expect(results, isEmpty);
+    expect(associated, ['jf-machine:episode-1']);
+    expect(client.playlistPageCalls, [(start: 0, size: 200)]);
+    expect((await db.getSyncRule(ruleKey))!.downloadLinksInitialized, isTrue);
   });
 
   test('collection sync rule pages through collection API instead of metadata children', () async {
@@ -377,12 +428,14 @@ void main() {
     );
 
     final queued = <MediaItem>[];
+    final associated = <String>[];
     final executor = SyncRuleExecutor(database: db);
     final results = await executor.executeSyncRules(
       profileId: 'profile-a',
       serverManager: manager,
       downloads: const {},
       metadata: {ruleKey: collection},
+      associateDownload: (_, globalKey) async => associated.add(globalKey),
       queueSingleDownload: (item, client, {int mediaIndex = 0}) async {
         queued.add(item);
         return true;
@@ -393,8 +446,55 @@ void main() {
 
     expect(results.single.queuedCount, 1);
     expect(queued.single.id, 'movie-1');
+    expect(associated, ['plex-machine:movie-1']);
+    expect((await db.getSyncRule(ruleKey))!.downloadLinksInitialized, isTrue);
     expect(client.collectionPageCalls, [(start: 0, size: 100)]);
     expect(client.fetchChildrenCalled, isFalse);
+  });
+
+  test('legacy list backfill associates active members without queueing', () async {
+    final db = AppDatabase.forTesting(NativeDatabase.memory());
+    final manager = MultiServerManager();
+    addTearDown(() async {
+      manager.dispose();
+      await db.close();
+    });
+
+    final client = _CollectionPagingClient();
+    manager.debugRegisterClientForTesting(client);
+    const ruleKey = 'profile-a|plex-machine:collection-1';
+    final collection = testMediaItem(
+      id: 'collection-1',
+      backend: MediaBackend.plex,
+      kind: MediaKind.collection,
+      title: 'Collection',
+      serverId: 'plex-machine',
+    );
+    await db.insertSyncRule(
+      profileId: 'profile-a',
+      serverId: ServerId('plex-machine'),
+      ratingKey: 'collection-1',
+      globalKey: ruleKey,
+      targetType: 'collection',
+      episodeCount: 0,
+      downloadFilter: SyncRuleFilter.all,
+    );
+    final rule = (await db.getSyncRule(ruleKey))!;
+    final associated = <String>[];
+
+    final backfilled = await SyncRuleExecutor(database: db).backfillListRuleDownloadLinks(
+      rule: rule,
+      serverManager: manager,
+      downloads: const {
+        'plex-machine:movie-1': DownloadProgress(globalKey: 'plex-machine:movie-1', status: DownloadStatus.completed),
+      },
+      metadata: {ruleKey: collection},
+      associateDownload: (_, globalKey) async => associated.add(globalKey),
+    );
+
+    expect(backfilled, isTrue);
+    expect(associated, ['plex-machine:movie-1']);
+    expect((await db.getSyncRule(ruleKey))!.downloadLinksInitialized, isTrue);
   });
 
   test('collectItemsForList accepts tracks and expands albums/artists', () async {
@@ -478,6 +578,47 @@ class _PlayableDescendantsClient implements MediaServerClient {
   Future<List<MediaItem>> fetchPlayableDescendants(String parentId) async {
     fetchPlayableDescendantsCalls.add(parentId);
     return leaves;
+  }
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
+class _PlaylistPagingClient implements MediaServerClient {
+  final playlistPageCalls = <({int? start, int? size})>[];
+
+  @override
+  ServerId get serverId => ServerId('jf-machine');
+
+  @override
+  String? get serverName => 'Jellyfin';
+
+  @override
+  MediaBackend get backend => MediaBackend.jellyfin;
+
+  @override
+  ServerCapabilities get capabilities => ServerCapabilities.jellyfin;
+
+  @override
+  bool get isOfflineMode => false;
+
+  @override
+  void close() {}
+
+  @override
+  Future<MediaItem?> fetchItem(String id) async => null;
+
+  @override
+  Future<LibraryPage<MediaItem>> fetchPlaylistPage(String id, {int? start, int? size, abort}) async {
+    playlistPageCalls.add((start: start, size: size));
+    expect(id, 'playlist-1');
+    return LibraryPage(
+      items: [
+        testMediaItem(id: 'episode-1', backend: MediaBackend.jellyfin, kind: MediaKind.episode, title: 'Episode'),
+      ],
+      totalCount: 1,
+      offset: start ?? 0,
+    );
   }
 
   @override

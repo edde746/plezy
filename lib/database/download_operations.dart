@@ -51,8 +51,13 @@ extension DownloadDatabaseOperations on AppDatabase {
     );
   }
 
-  Future<void> removeDownloadOwner({required String profileId, required String globalKey}) async {
-    await (delete(downloadOwners)..where((t) => t.profileId.equals(profileId) & t.globalKey.equals(globalKey))).go();
+  Future<void> removeDownloadOwner({required String profileId, required String globalKey}) {
+    return transaction(() async {
+      await (delete(
+        syncRuleDownloads,
+      )..where((t) => t.profileId.equals(profileId) & t.downloadGlobalKey.equals(globalKey))).go();
+      await (delete(downloadOwners)..where((t) => t.profileId.equals(profileId) & t.globalKey.equals(globalKey))).go();
+    });
   }
 
   /// Removes one owner from a shared download while keeping an incomplete
@@ -102,8 +107,12 @@ extension DownloadDatabaseOperations on AppDatabase {
     )..where((t) => t.profileId.equals(profileId) & t.globalKey.equals(globalKey))).getSingleOrNull();
   }
 
-  Future<void> clearAllDownloadOwners() async {
-    await delete(downloadOwners).go();
+  Future<void> clearAllDownloadOwners() {
+    return transaction(() async {
+      await delete(syncRuleDownloads).go();
+      await update(syncRules).write(const SyncRulesCompanion(downloadLinksInitialized: Value(false)));
+      await delete(downloadOwners).go();
+    });
   }
 
   Future<Set<String>> getDownloadOwnerKeysForProfile(String profileId) async {
@@ -620,6 +629,7 @@ extension DownloadDatabaseOperations on AppDatabase {
     late String? safRootUri;
     await transaction(() async {
       safRootUri = (await getDownloadedMedia(globalKey))?.safRootUri;
+      await (delete(syncRuleDownloads)..where((t) => t.downloadGlobalKey.equals(globalKey))).go();
       await (delete(downloadOwners)..where((t) => t.globalKey.equals(globalKey))).go();
       await (delete(downloadedMedia)..where((t) => t.globalKey.equals(globalKey))).go();
       await (delete(downloadQueue)..where((t) => t.mediaGlobalKey.equals(globalKey))).go();

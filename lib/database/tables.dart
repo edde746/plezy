@@ -105,6 +105,27 @@ class SyncRules extends Table {
   IntColumn get mediaIndex => integer().withDefault(const Constant(0))();
   TextColumn get downloadFilter => text().withDefault(const Constant('unwatched'))();
   BoolColumn get includeSpecials => boolean().withDefault(const Constant(true))();
+
+  /// Whether every currently-owned candidate has been associated in
+  /// [SyncRuleDownloads]. Existing rules start false and are backfilled before
+  /// destructive cleanup.
+  BoolColumn get downloadLinksInitialized => boolean().withDefault(const Constant(false))();
+}
+
+/// Downloads covered by a sync rule for one profile.
+///
+/// Links are retained when list membership changes so removing a rule can
+/// clean up items it previously synced without re-fetching the list. A
+/// download may be linked to multiple rules.
+@DataClassName('SyncRuleDownloadItem')
+@TableIndex(name: 'idx_sync_rule_downloads_profile_key', columns: {#profileId, #downloadGlobalKey})
+class SyncRuleDownloads extends Table {
+  IntColumn get syncRuleId => integer().references(SyncRules, #id, onDelete: KeyAction.cascade)();
+  TextColumn get profileId => text()();
+  TextColumn get downloadGlobalKey => text()();
+
+  @override
+  Set<Column> get primaryKey => {syncRuleId, downloadGlobalKey};
 }
 
 /// Persisted media-server connections.

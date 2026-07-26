@@ -3327,6 +3327,21 @@ class $SyncRulesTable extends SyncRules
     ),
     defaultValue: const Constant(true),
   );
+  static const VerificationMeta _downloadLinksInitializedMeta =
+      const VerificationMeta('downloadLinksInitialized');
+  @override
+  late final GeneratedColumn<bool> downloadLinksInitialized =
+      GeneratedColumn<bool>(
+        'download_links_initialized',
+        aliasedName,
+        false,
+        type: DriftSqlType.bool,
+        requiredDuringInsert: false,
+        defaultConstraints: GeneratedColumn.constraintIsAlways(
+          'CHECK ("download_links_initialized" IN (0, 1))',
+        ),
+        defaultValue: const Constant(false),
+      );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -3342,6 +3357,7 @@ class $SyncRulesTable extends SyncRules
     mediaIndex,
     downloadFilter,
     includeSpecials,
+    downloadLinksInitialized,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -3454,6 +3470,15 @@ class $SyncRulesTable extends SyncRules
         ),
       );
     }
+    if (data.containsKey('download_links_initialized')) {
+      context.handle(
+        _downloadLinksInitializedMeta,
+        downloadLinksInitialized.isAcceptableOrUnknown(
+          data['download_links_initialized']!,
+          _downloadLinksInitializedMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -3515,6 +3540,10 @@ class $SyncRulesTable extends SyncRules
         DriftSqlType.bool,
         data['${effectivePrefix}include_specials'],
       )!,
+      downloadLinksInitialized: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}download_links_initialized'],
+      )!,
     );
   }
 
@@ -3538,6 +3567,11 @@ class SyncRuleItem extends DataClass implements Insertable<SyncRuleItem> {
   final int mediaIndex;
   final String downloadFilter;
   final bool includeSpecials;
+
+  /// Whether every currently-owned candidate has been associated in
+  /// [SyncRuleDownloads]. Existing rules start false and are backfilled before
+  /// destructive cleanup.
+  final bool downloadLinksInitialized;
   const SyncRuleItem({
     required this.id,
     required this.profileId,
@@ -3552,6 +3586,7 @@ class SyncRuleItem extends DataClass implements Insertable<SyncRuleItem> {
     required this.mediaIndex,
     required this.downloadFilter,
     required this.includeSpecials,
+    required this.downloadLinksInitialized,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -3571,6 +3606,9 @@ class SyncRuleItem extends DataClass implements Insertable<SyncRuleItem> {
     map['media_index'] = Variable<int>(mediaIndex);
     map['download_filter'] = Variable<String>(downloadFilter);
     map['include_specials'] = Variable<bool>(includeSpecials);
+    map['download_links_initialized'] = Variable<bool>(
+      downloadLinksInitialized,
+    );
     return map;
   }
 
@@ -3591,6 +3629,7 @@ class SyncRuleItem extends DataClass implements Insertable<SyncRuleItem> {
       mediaIndex: Value(mediaIndex),
       downloadFilter: Value(downloadFilter),
       includeSpecials: Value(includeSpecials),
+      downloadLinksInitialized: Value(downloadLinksInitialized),
     );
   }
 
@@ -3613,6 +3652,9 @@ class SyncRuleItem extends DataClass implements Insertable<SyncRuleItem> {
       mediaIndex: serializer.fromJson<int>(json['mediaIndex']),
       downloadFilter: serializer.fromJson<String>(json['downloadFilter']),
       includeSpecials: serializer.fromJson<bool>(json['includeSpecials']),
+      downloadLinksInitialized: serializer.fromJson<bool>(
+        json['downloadLinksInitialized'],
+      ),
     );
   }
   @override
@@ -3632,6 +3674,9 @@ class SyncRuleItem extends DataClass implements Insertable<SyncRuleItem> {
       'mediaIndex': serializer.toJson<int>(mediaIndex),
       'downloadFilter': serializer.toJson<String>(downloadFilter),
       'includeSpecials': serializer.toJson<bool>(includeSpecials),
+      'downloadLinksInitialized': serializer.toJson<bool>(
+        downloadLinksInitialized,
+      ),
     };
   }
 
@@ -3649,6 +3694,7 @@ class SyncRuleItem extends DataClass implements Insertable<SyncRuleItem> {
     int? mediaIndex,
     String? downloadFilter,
     bool? includeSpecials,
+    bool? downloadLinksInitialized,
   }) => SyncRuleItem(
     id: id ?? this.id,
     profileId: profileId ?? this.profileId,
@@ -3665,6 +3711,8 @@ class SyncRuleItem extends DataClass implements Insertable<SyncRuleItem> {
     mediaIndex: mediaIndex ?? this.mediaIndex,
     downloadFilter: downloadFilter ?? this.downloadFilter,
     includeSpecials: includeSpecials ?? this.includeSpecials,
+    downloadLinksInitialized:
+        downloadLinksInitialized ?? this.downloadLinksInitialized,
   );
   SyncRuleItem copyWithCompanion(SyncRulesCompanion data) {
     return SyncRuleItem(
@@ -3693,6 +3741,9 @@ class SyncRuleItem extends DataClass implements Insertable<SyncRuleItem> {
       includeSpecials: data.includeSpecials.present
           ? data.includeSpecials.value
           : this.includeSpecials,
+      downloadLinksInitialized: data.downloadLinksInitialized.present
+          ? data.downloadLinksInitialized.value
+          : this.downloadLinksInitialized,
     );
   }
 
@@ -3711,7 +3762,8 @@ class SyncRuleItem extends DataClass implements Insertable<SyncRuleItem> {
           ..write('lastExecutedAt: $lastExecutedAt, ')
           ..write('mediaIndex: $mediaIndex, ')
           ..write('downloadFilter: $downloadFilter, ')
-          ..write('includeSpecials: $includeSpecials')
+          ..write('includeSpecials: $includeSpecials, ')
+          ..write('downloadLinksInitialized: $downloadLinksInitialized')
           ..write(')'))
         .toString();
   }
@@ -3731,6 +3783,7 @@ class SyncRuleItem extends DataClass implements Insertable<SyncRuleItem> {
     mediaIndex,
     downloadFilter,
     includeSpecials,
+    downloadLinksInitialized,
   );
   @override
   bool operator ==(Object other) =>
@@ -3748,7 +3801,8 @@ class SyncRuleItem extends DataClass implements Insertable<SyncRuleItem> {
           other.lastExecutedAt == this.lastExecutedAt &&
           other.mediaIndex == this.mediaIndex &&
           other.downloadFilter == this.downloadFilter &&
-          other.includeSpecials == this.includeSpecials);
+          other.includeSpecials == this.includeSpecials &&
+          other.downloadLinksInitialized == this.downloadLinksInitialized);
 }
 
 class SyncRulesCompanion extends UpdateCompanion<SyncRuleItem> {
@@ -3765,6 +3819,7 @@ class SyncRulesCompanion extends UpdateCompanion<SyncRuleItem> {
   final Value<int> mediaIndex;
   final Value<String> downloadFilter;
   final Value<bool> includeSpecials;
+  final Value<bool> downloadLinksInitialized;
   const SyncRulesCompanion({
     this.id = const Value.absent(),
     this.profileId = const Value.absent(),
@@ -3779,6 +3834,7 @@ class SyncRulesCompanion extends UpdateCompanion<SyncRuleItem> {
     this.mediaIndex = const Value.absent(),
     this.downloadFilter = const Value.absent(),
     this.includeSpecials = const Value.absent(),
+    this.downloadLinksInitialized = const Value.absent(),
   });
   SyncRulesCompanion.insert({
     this.id = const Value.absent(),
@@ -3794,6 +3850,7 @@ class SyncRulesCompanion extends UpdateCompanion<SyncRuleItem> {
     this.mediaIndex = const Value.absent(),
     this.downloadFilter = const Value.absent(),
     this.includeSpecials = const Value.absent(),
+    this.downloadLinksInitialized = const Value.absent(),
   }) : serverId = Value(serverId),
        ratingKey = Value(ratingKey),
        globalKey = Value(globalKey),
@@ -3814,6 +3871,7 @@ class SyncRulesCompanion extends UpdateCompanion<SyncRuleItem> {
     Expression<int>? mediaIndex,
     Expression<String>? downloadFilter,
     Expression<bool>? includeSpecials,
+    Expression<bool>? downloadLinksInitialized,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -3829,6 +3887,8 @@ class SyncRulesCompanion extends UpdateCompanion<SyncRuleItem> {
       if (mediaIndex != null) 'media_index': mediaIndex,
       if (downloadFilter != null) 'download_filter': downloadFilter,
       if (includeSpecials != null) 'include_specials': includeSpecials,
+      if (downloadLinksInitialized != null)
+        'download_links_initialized': downloadLinksInitialized,
     });
   }
 
@@ -3846,6 +3906,7 @@ class SyncRulesCompanion extends UpdateCompanion<SyncRuleItem> {
     Value<int>? mediaIndex,
     Value<String>? downloadFilter,
     Value<bool>? includeSpecials,
+    Value<bool>? downloadLinksInitialized,
   }) {
     return SyncRulesCompanion(
       id: id ?? this.id,
@@ -3861,6 +3922,8 @@ class SyncRulesCompanion extends UpdateCompanion<SyncRuleItem> {
       mediaIndex: mediaIndex ?? this.mediaIndex,
       downloadFilter: downloadFilter ?? this.downloadFilter,
       includeSpecials: includeSpecials ?? this.includeSpecials,
+      downloadLinksInitialized:
+          downloadLinksInitialized ?? this.downloadLinksInitialized,
     );
   }
 
@@ -3906,6 +3969,11 @@ class SyncRulesCompanion extends UpdateCompanion<SyncRuleItem> {
     if (includeSpecials.present) {
       map['include_specials'] = Variable<bool>(includeSpecials.value);
     }
+    if (downloadLinksInitialized.present) {
+      map['download_links_initialized'] = Variable<bool>(
+        downloadLinksInitialized.value,
+      );
+    }
     return map;
   }
 
@@ -3924,7 +3992,296 @@ class SyncRulesCompanion extends UpdateCompanion<SyncRuleItem> {
           ..write('lastExecutedAt: $lastExecutedAt, ')
           ..write('mediaIndex: $mediaIndex, ')
           ..write('downloadFilter: $downloadFilter, ')
-          ..write('includeSpecials: $includeSpecials')
+          ..write('includeSpecials: $includeSpecials, ')
+          ..write('downloadLinksInitialized: $downloadLinksInitialized')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $SyncRuleDownloadsTable extends SyncRuleDownloads
+    with TableInfo<$SyncRuleDownloadsTable, SyncRuleDownloadItem> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $SyncRuleDownloadsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _syncRuleIdMeta = const VerificationMeta(
+    'syncRuleId',
+  );
+  @override
+  late final GeneratedColumn<int> syncRuleId = GeneratedColumn<int>(
+    'sync_rule_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES sync_rules (id) ON DELETE CASCADE',
+    ),
+  );
+  static const VerificationMeta _profileIdMeta = const VerificationMeta(
+    'profileId',
+  );
+  @override
+  late final GeneratedColumn<String> profileId = GeneratedColumn<String>(
+    'profile_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _downloadGlobalKeyMeta = const VerificationMeta(
+    'downloadGlobalKey',
+  );
+  @override
+  late final GeneratedColumn<String> downloadGlobalKey =
+      GeneratedColumn<String>(
+        'download_global_key',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: true,
+      );
+  @override
+  List<GeneratedColumn> get $columns => [
+    syncRuleId,
+    profileId,
+    downloadGlobalKey,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'sync_rule_downloads';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<SyncRuleDownloadItem> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('sync_rule_id')) {
+      context.handle(
+        _syncRuleIdMeta,
+        syncRuleId.isAcceptableOrUnknown(
+          data['sync_rule_id']!,
+          _syncRuleIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_syncRuleIdMeta);
+    }
+    if (data.containsKey('profile_id')) {
+      context.handle(
+        _profileIdMeta,
+        profileId.isAcceptableOrUnknown(data['profile_id']!, _profileIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_profileIdMeta);
+    }
+    if (data.containsKey('download_global_key')) {
+      context.handle(
+        _downloadGlobalKeyMeta,
+        downloadGlobalKey.isAcceptableOrUnknown(
+          data['download_global_key']!,
+          _downloadGlobalKeyMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_downloadGlobalKeyMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {syncRuleId, downloadGlobalKey};
+  @override
+  SyncRuleDownloadItem map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return SyncRuleDownloadItem(
+      syncRuleId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}sync_rule_id'],
+      )!,
+      profileId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}profile_id'],
+      )!,
+      downloadGlobalKey: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}download_global_key'],
+      )!,
+    );
+  }
+
+  @override
+  $SyncRuleDownloadsTable createAlias(String alias) {
+    return $SyncRuleDownloadsTable(attachedDatabase, alias);
+  }
+}
+
+class SyncRuleDownloadItem extends DataClass
+    implements Insertable<SyncRuleDownloadItem> {
+  final int syncRuleId;
+  final String profileId;
+  final String downloadGlobalKey;
+  const SyncRuleDownloadItem({
+    required this.syncRuleId,
+    required this.profileId,
+    required this.downloadGlobalKey,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['sync_rule_id'] = Variable<int>(syncRuleId);
+    map['profile_id'] = Variable<String>(profileId);
+    map['download_global_key'] = Variable<String>(downloadGlobalKey);
+    return map;
+  }
+
+  SyncRuleDownloadsCompanion toCompanion(bool nullToAbsent) {
+    return SyncRuleDownloadsCompanion(
+      syncRuleId: Value(syncRuleId),
+      profileId: Value(profileId),
+      downloadGlobalKey: Value(downloadGlobalKey),
+    );
+  }
+
+  factory SyncRuleDownloadItem.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return SyncRuleDownloadItem(
+      syncRuleId: serializer.fromJson<int>(json['syncRuleId']),
+      profileId: serializer.fromJson<String>(json['profileId']),
+      downloadGlobalKey: serializer.fromJson<String>(json['downloadGlobalKey']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'syncRuleId': serializer.toJson<int>(syncRuleId),
+      'profileId': serializer.toJson<String>(profileId),
+      'downloadGlobalKey': serializer.toJson<String>(downloadGlobalKey),
+    };
+  }
+
+  SyncRuleDownloadItem copyWith({
+    int? syncRuleId,
+    String? profileId,
+    String? downloadGlobalKey,
+  }) => SyncRuleDownloadItem(
+    syncRuleId: syncRuleId ?? this.syncRuleId,
+    profileId: profileId ?? this.profileId,
+    downloadGlobalKey: downloadGlobalKey ?? this.downloadGlobalKey,
+  );
+  SyncRuleDownloadItem copyWithCompanion(SyncRuleDownloadsCompanion data) {
+    return SyncRuleDownloadItem(
+      syncRuleId: data.syncRuleId.present
+          ? data.syncRuleId.value
+          : this.syncRuleId,
+      profileId: data.profileId.present ? data.profileId.value : this.profileId,
+      downloadGlobalKey: data.downloadGlobalKey.present
+          ? data.downloadGlobalKey.value
+          : this.downloadGlobalKey,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('SyncRuleDownloadItem(')
+          ..write('syncRuleId: $syncRuleId, ')
+          ..write('profileId: $profileId, ')
+          ..write('downloadGlobalKey: $downloadGlobalKey')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(syncRuleId, profileId, downloadGlobalKey);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is SyncRuleDownloadItem &&
+          other.syncRuleId == this.syncRuleId &&
+          other.profileId == this.profileId &&
+          other.downloadGlobalKey == this.downloadGlobalKey);
+}
+
+class SyncRuleDownloadsCompanion extends UpdateCompanion<SyncRuleDownloadItem> {
+  final Value<int> syncRuleId;
+  final Value<String> profileId;
+  final Value<String> downloadGlobalKey;
+  final Value<int> rowid;
+  const SyncRuleDownloadsCompanion({
+    this.syncRuleId = const Value.absent(),
+    this.profileId = const Value.absent(),
+    this.downloadGlobalKey = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  SyncRuleDownloadsCompanion.insert({
+    required int syncRuleId,
+    required String profileId,
+    required String downloadGlobalKey,
+    this.rowid = const Value.absent(),
+  }) : syncRuleId = Value(syncRuleId),
+       profileId = Value(profileId),
+       downloadGlobalKey = Value(downloadGlobalKey);
+  static Insertable<SyncRuleDownloadItem> custom({
+    Expression<int>? syncRuleId,
+    Expression<String>? profileId,
+    Expression<String>? downloadGlobalKey,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (syncRuleId != null) 'sync_rule_id': syncRuleId,
+      if (profileId != null) 'profile_id': profileId,
+      if (downloadGlobalKey != null) 'download_global_key': downloadGlobalKey,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  SyncRuleDownloadsCompanion copyWith({
+    Value<int>? syncRuleId,
+    Value<String>? profileId,
+    Value<String>? downloadGlobalKey,
+    Value<int>? rowid,
+  }) {
+    return SyncRuleDownloadsCompanion(
+      syncRuleId: syncRuleId ?? this.syncRuleId,
+      profileId: profileId ?? this.profileId,
+      downloadGlobalKey: downloadGlobalKey ?? this.downloadGlobalKey,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (syncRuleId.present) {
+      map['sync_rule_id'] = Variable<int>(syncRuleId.value);
+    }
+    if (profileId.present) {
+      map['profile_id'] = Variable<String>(profileId.value);
+    }
+    if (downloadGlobalKey.present) {
+      map['download_global_key'] = Variable<String>(downloadGlobalKey.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('SyncRuleDownloadsCompanion(')
+          ..write('syncRuleId: $syncRuleId, ')
+          ..write('profileId: $profileId, ')
+          ..write('downloadGlobalKey: $downloadGlobalKey, ')
+          ..write('rowid: $rowid')
           ..write(')'))
         .toString();
   }
@@ -5474,6 +5831,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $OfflineWatchProgressTable offlineWatchProgress =
       $OfflineWatchProgressTable(this);
   late final $SyncRulesTable syncRules = $SyncRulesTable(this);
+  late final $SyncRuleDownloadsTable syncRuleDownloads =
+      $SyncRuleDownloadsTable(this);
   late final $ConnectionsTable connections = $ConnectionsTable(this);
   late final $ProfilesTable profiles = $ProfilesTable(this);
   late final $ProfileConnectionsTable profileConnections =
@@ -5514,6 +5873,10 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     'idx_sync_rules_profile',
     'CREATE INDEX idx_sync_rules_profile ON sync_rules (profile_id)',
   );
+  late final Index idxSyncRuleDownloadsProfileKey = Index(
+    'idx_sync_rule_downloads_profile_key',
+    'CREATE INDEX idx_sync_rule_downloads_profile_key ON sync_rule_downloads (profile_id, download_global_key)',
+  );
   late final Index idxConnectionsKind = Index(
     'idx_connections_kind',
     'CREATE INDEX idx_connections_kind ON connections (kind)',
@@ -5541,6 +5904,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     apiCache,
     offlineWatchProgress,
     syncRules,
+    syncRuleDownloads,
     connections,
     profiles,
     profileConnections,
@@ -5553,6 +5917,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     idxOfflineWatchProgressServer,
     idxOfflineWatchProgressProfile,
     idxSyncRulesProfile,
+    idxSyncRuleDownloadsProfileKey,
     idxConnectionsKind,
     idxProfilesKind,
     idxProfileConnectionsConnectionId,
@@ -5560,6 +5925,13 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   ];
   @override
   StreamQueryUpdateRules get streamUpdateRules => const StreamQueryUpdateRules([
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'sync_rules',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [TableUpdate('sync_rule_downloads', kind: UpdateKind.delete)],
+    ),
     WritePropagation(
       on: TableUpdateQuery.onTableName(
         'connections',
@@ -7120,6 +7492,7 @@ typedef $$SyncRulesTableCreateCompanionBuilder =
       Value<int> mediaIndex,
       Value<String> downloadFilter,
       Value<bool> includeSpecials,
+      Value<bool> downloadLinksInitialized,
     });
 typedef $$SyncRulesTableUpdateCompanionBuilder =
     SyncRulesCompanion Function({
@@ -7136,7 +7509,37 @@ typedef $$SyncRulesTableUpdateCompanionBuilder =
       Value<int> mediaIndex,
       Value<String> downloadFilter,
       Value<bool> includeSpecials,
+      Value<bool> downloadLinksInitialized,
     });
+
+final class $$SyncRulesTableReferences
+    extends BaseReferences<_$AppDatabase, $SyncRulesTable, SyncRuleItem> {
+  $$SyncRulesTableReferences(super.$_db, super.$_table, super.$_typedResult);
+
+  static MultiTypedResultKey<
+    $SyncRuleDownloadsTable,
+    List<SyncRuleDownloadItem>
+  >
+  _syncRuleDownloadsRefsTable(_$AppDatabase db) =>
+      MultiTypedResultKey.fromTable(
+        db.syncRuleDownloads,
+        aliasName: 'sync_rules__id__sync_rule_downloads__sync_rule_id',
+      );
+
+  $$SyncRuleDownloadsTableProcessedTableManager get syncRuleDownloadsRefs {
+    final manager = $$SyncRuleDownloadsTableTableManager(
+      $_db,
+      $_db.syncRuleDownloads,
+    ).filter((f) => f.syncRuleId.id.sqlEquals($_itemColumn<int>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _syncRuleDownloadsRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+}
 
 class $$SyncRulesTableFilterComposer
     extends Composer<_$AppDatabase, $SyncRulesTable> {
@@ -7211,6 +7614,36 @@ class $$SyncRulesTableFilterComposer
     column: $table.includeSpecials,
     builder: (column) => ColumnFilters(column),
   );
+
+  ColumnFilters<bool> get downloadLinksInitialized => $composableBuilder(
+    column: $table.downloadLinksInitialized,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  Expression<bool> syncRuleDownloadsRefs(
+    Expression<bool> Function($$SyncRuleDownloadsTableFilterComposer f) f,
+  ) {
+    final $$SyncRuleDownloadsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.syncRuleDownloads,
+      getReferencedColumn: (t) => t.syncRuleId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$SyncRuleDownloadsTableFilterComposer(
+            $db: $db,
+            $table: $db.syncRuleDownloads,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
 }
 
 class $$SyncRulesTableOrderingComposer
@@ -7286,6 +7719,11 @@ class $$SyncRulesTableOrderingComposer
     column: $table.includeSpecials,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<bool> get downloadLinksInitialized => $composableBuilder(
+    column: $table.downloadLinksInitialized,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$SyncRulesTableAnnotationComposer
@@ -7347,6 +7785,37 @@ class $$SyncRulesTableAnnotationComposer
     column: $table.includeSpecials,
     builder: (column) => column,
   );
+
+  GeneratedColumn<bool> get downloadLinksInitialized => $composableBuilder(
+    column: $table.downloadLinksInitialized,
+    builder: (column) => column,
+  );
+
+  Expression<T> syncRuleDownloadsRefs<T extends Object>(
+    Expression<T> Function($$SyncRuleDownloadsTableAnnotationComposer a) f,
+  ) {
+    final $$SyncRuleDownloadsTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.syncRuleDownloads,
+          getReferencedColumn: (t) => t.syncRuleId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$SyncRuleDownloadsTableAnnotationComposer(
+                $db: $db,
+                $table: $db.syncRuleDownloads,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
 }
 
 class $$SyncRulesTableTableManager
@@ -7360,12 +7829,9 @@ class $$SyncRulesTableTableManager
           $$SyncRulesTableAnnotationComposer,
           $$SyncRulesTableCreateCompanionBuilder,
           $$SyncRulesTableUpdateCompanionBuilder,
-          (
-            SyncRuleItem,
-            BaseReferences<_$AppDatabase, $SyncRulesTable, SyncRuleItem>,
-          ),
+          (SyncRuleItem, $$SyncRulesTableReferences),
           SyncRuleItem,
-          PrefetchHooks Function()
+          PrefetchHooks Function({bool syncRuleDownloadsRefs})
         > {
   $$SyncRulesTableTableManager(_$AppDatabase db, $SyncRulesTable table)
     : super(
@@ -7393,6 +7859,7 @@ class $$SyncRulesTableTableManager
                 Value<int> mediaIndex = const Value.absent(),
                 Value<String> downloadFilter = const Value.absent(),
                 Value<bool> includeSpecials = const Value.absent(),
+                Value<bool> downloadLinksInitialized = const Value.absent(),
               }) => SyncRulesCompanion(
                 id: id,
                 profileId: profileId,
@@ -7407,6 +7874,7 @@ class $$SyncRulesTableTableManager
                 mediaIndex: mediaIndex,
                 downloadFilter: downloadFilter,
                 includeSpecials: includeSpecials,
+                downloadLinksInitialized: downloadLinksInitialized,
               ),
           createCompanionCallback:
               ({
@@ -7423,6 +7891,7 @@ class $$SyncRulesTableTableManager
                 Value<int> mediaIndex = const Value.absent(),
                 Value<String> downloadFilter = const Value.absent(),
                 Value<bool> includeSpecials = const Value.absent(),
+                Value<bool> downloadLinksInitialized = const Value.absent(),
               }) => SyncRulesCompanion.insert(
                 id: id,
                 profileId: profileId,
@@ -7437,11 +7906,48 @@ class $$SyncRulesTableTableManager
                 mediaIndex: mediaIndex,
                 downloadFilter: downloadFilter,
                 includeSpecials: includeSpecials,
+                downloadLinksInitialized: downloadLinksInitialized,
               ),
           withReferenceMapper: (p0) => p0
-              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$SyncRulesTableReferences(db, table, e),
+                ),
+              )
               .toList(),
-          prefetchHooksCallback: null,
+          prefetchHooksCallback: ({syncRuleDownloadsRefs = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [
+                if (syncRuleDownloadsRefs) db.syncRuleDownloads,
+              ],
+              addJoins: null,
+              getPrefetchedDataCallback: (items) async {
+                return [
+                  if (syncRuleDownloadsRefs)
+                    await $_getPrefetchedData<
+                      SyncRuleItem,
+                      $SyncRulesTable,
+                      SyncRuleDownloadItem
+                    >(
+                      currentTable: table,
+                      referencedTable: $$SyncRulesTableReferences
+                          ._syncRuleDownloadsRefsTable(db),
+                      managerFromTypedResult: (p0) =>
+                          $$SyncRulesTableReferences(
+                            db,
+                            table,
+                            p0,
+                          ).syncRuleDownloadsRefs,
+                      referencedItemsForCurrentItem: (item, referencedItems) =>
+                          referencedItems.where((e) => e.syncRuleId == item.id),
+                      typedResults: items,
+                    ),
+                ];
+              },
+            );
+          },
         ),
       );
 }
@@ -7456,12 +7962,306 @@ typedef $$SyncRulesTableProcessedTableManager =
       $$SyncRulesTableAnnotationComposer,
       $$SyncRulesTableCreateCompanionBuilder,
       $$SyncRulesTableUpdateCompanionBuilder,
-      (
-        SyncRuleItem,
-        BaseReferences<_$AppDatabase, $SyncRulesTable, SyncRuleItem>,
-      ),
+      (SyncRuleItem, $$SyncRulesTableReferences),
       SyncRuleItem,
-      PrefetchHooks Function()
+      PrefetchHooks Function({bool syncRuleDownloadsRefs})
+    >;
+typedef $$SyncRuleDownloadsTableCreateCompanionBuilder =
+    SyncRuleDownloadsCompanion Function({
+      required int syncRuleId,
+      required String profileId,
+      required String downloadGlobalKey,
+      Value<int> rowid,
+    });
+typedef $$SyncRuleDownloadsTableUpdateCompanionBuilder =
+    SyncRuleDownloadsCompanion Function({
+      Value<int> syncRuleId,
+      Value<String> profileId,
+      Value<String> downloadGlobalKey,
+      Value<int> rowid,
+    });
+
+final class $$SyncRuleDownloadsTableReferences
+    extends
+        BaseReferences<
+          _$AppDatabase,
+          $SyncRuleDownloadsTable,
+          SyncRuleDownloadItem
+        > {
+  $$SyncRuleDownloadsTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $SyncRulesTable _syncRuleIdTable(_$AppDatabase db) => db.syncRules
+      .createAlias('sync_rule_downloads__sync_rule_id__sync_rules__id');
+
+  $$SyncRulesTableProcessedTableManager get syncRuleId {
+    final $_column = $_itemColumn<int>('sync_rule_id')!;
+
+    final manager = $$SyncRulesTableTableManager(
+      $_db,
+      $_db.syncRules,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_syncRuleIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$SyncRuleDownloadsTableFilterComposer
+    extends Composer<_$AppDatabase, $SyncRuleDownloadsTable> {
+  $$SyncRuleDownloadsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get profileId => $composableBuilder(
+    column: $table.profileId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get downloadGlobalKey => $composableBuilder(
+    column: $table.downloadGlobalKey,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$SyncRulesTableFilterComposer get syncRuleId {
+    final $$SyncRulesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.syncRuleId,
+      referencedTable: $db.syncRules,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$SyncRulesTableFilterComposer(
+            $db: $db,
+            $table: $db.syncRules,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$SyncRuleDownloadsTableOrderingComposer
+    extends Composer<_$AppDatabase, $SyncRuleDownloadsTable> {
+  $$SyncRuleDownloadsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get profileId => $composableBuilder(
+    column: $table.profileId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get downloadGlobalKey => $composableBuilder(
+    column: $table.downloadGlobalKey,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$SyncRulesTableOrderingComposer get syncRuleId {
+    final $$SyncRulesTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.syncRuleId,
+      referencedTable: $db.syncRules,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$SyncRulesTableOrderingComposer(
+            $db: $db,
+            $table: $db.syncRules,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$SyncRuleDownloadsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $SyncRuleDownloadsTable> {
+  $$SyncRuleDownloadsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get profileId =>
+      $composableBuilder(column: $table.profileId, builder: (column) => column);
+
+  GeneratedColumn<String> get downloadGlobalKey => $composableBuilder(
+    column: $table.downloadGlobalKey,
+    builder: (column) => column,
+  );
+
+  $$SyncRulesTableAnnotationComposer get syncRuleId {
+    final $$SyncRulesTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.syncRuleId,
+      referencedTable: $db.syncRules,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$SyncRulesTableAnnotationComposer(
+            $db: $db,
+            $table: $db.syncRules,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$SyncRuleDownloadsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $SyncRuleDownloadsTable,
+          SyncRuleDownloadItem,
+          $$SyncRuleDownloadsTableFilterComposer,
+          $$SyncRuleDownloadsTableOrderingComposer,
+          $$SyncRuleDownloadsTableAnnotationComposer,
+          $$SyncRuleDownloadsTableCreateCompanionBuilder,
+          $$SyncRuleDownloadsTableUpdateCompanionBuilder,
+          (SyncRuleDownloadItem, $$SyncRuleDownloadsTableReferences),
+          SyncRuleDownloadItem,
+          PrefetchHooks Function({bool syncRuleId})
+        > {
+  $$SyncRuleDownloadsTableTableManager(
+    _$AppDatabase db,
+    $SyncRuleDownloadsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$SyncRuleDownloadsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$SyncRuleDownloadsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$SyncRuleDownloadsTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<int> syncRuleId = const Value.absent(),
+                Value<String> profileId = const Value.absent(),
+                Value<String> downloadGlobalKey = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => SyncRuleDownloadsCompanion(
+                syncRuleId: syncRuleId,
+                profileId: profileId,
+                downloadGlobalKey: downloadGlobalKey,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required int syncRuleId,
+                required String profileId,
+                required String downloadGlobalKey,
+                Value<int> rowid = const Value.absent(),
+              }) => SyncRuleDownloadsCompanion.insert(
+                syncRuleId: syncRuleId,
+                profileId: profileId,
+                downloadGlobalKey: downloadGlobalKey,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$SyncRuleDownloadsTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({syncRuleId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (syncRuleId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.syncRuleId,
+                                referencedTable:
+                                    $$SyncRuleDownloadsTableReferences
+                                        ._syncRuleIdTable(db),
+                                referencedColumn:
+                                    $$SyncRuleDownloadsTableReferences
+                                        ._syncRuleIdTable(db)
+                                        .id,
+                              )
+                              as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$SyncRuleDownloadsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $SyncRuleDownloadsTable,
+      SyncRuleDownloadItem,
+      $$SyncRuleDownloadsTableFilterComposer,
+      $$SyncRuleDownloadsTableOrderingComposer,
+      $$SyncRuleDownloadsTableAnnotationComposer,
+      $$SyncRuleDownloadsTableCreateCompanionBuilder,
+      $$SyncRuleDownloadsTableUpdateCompanionBuilder,
+      (SyncRuleDownloadItem, $$SyncRuleDownloadsTableReferences),
+      SyncRuleDownloadItem,
+      PrefetchHooks Function({bool syncRuleId})
     >;
 typedef $$ConnectionsTableCreateCompanionBuilder =
     ConnectionsCompanion Function({
@@ -8475,6 +9275,8 @@ class $AppDatabaseManager {
       $$OfflineWatchProgressTableTableManager(_db, _db.offlineWatchProgress);
   $$SyncRulesTableTableManager get syncRules =>
       $$SyncRulesTableTableManager(_db, _db.syncRules);
+  $$SyncRuleDownloadsTableTableManager get syncRuleDownloads =>
+      $$SyncRuleDownloadsTableTableManager(_db, _db.syncRuleDownloads);
   $$ConnectionsTableTableManager get connections =>
       $$ConnectionsTableTableManager(_db, _db.connections);
   $$ProfilesTableTableManager get profiles =>

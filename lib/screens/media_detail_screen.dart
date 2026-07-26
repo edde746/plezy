@@ -1304,8 +1304,8 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
           globalKey: ruleKey,
           displayTitle: metadata.displayTitle,
         );
-        if (removed && context.mounted) {
-          showSuccessSnackBar(context, t.downloads.syncRuleRemoved);
+        if (removed != null && context.mounted) {
+          showSuccessSnackBar(context, syncRuleRemovalMessage(removed));
         }
 
       case _SyncRuleAction.delete:

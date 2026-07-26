@@ -62,6 +62,7 @@ final class AppDatabaseBootstrap {
     ApiCache,
     OfflineWatchProgress,
     SyncRules,
+    SyncRuleDownloads,
     Connections,
     Profiles,
     ProfileConnections,
@@ -495,7 +496,7 @@ class AppDatabase extends _$AppDatabase {
   }
 
   @override
-  int get schemaVersion => 19;
+  int get schemaVersion => 20;
 
   @override
   MigrationStrategy get migration {
@@ -911,6 +912,18 @@ class AppDatabase extends _$AppDatabase {
             WHERE backend IS NULL
           ''');
         }
+        if (from < 20) {
+          appLogger.i('Adding sync rule download associations (v20 migration)');
+          await _ignoreAlreadyExists(
+            'SyncRules.downloadLinksInitialized column',
+            () => m.addColumn(syncRules, syncRules.downloadLinksInitialized),
+          );
+          await _ignoreAlreadyExists('SyncRuleDownloads table', () => m.createTable(syncRuleDownloads));
+          await _ignoreAlreadyExists(
+            'Index idx_sync_rule_downloads_profile_key',
+            () => m.create(idxSyncRuleDownloadsProfileKey),
+          );
+        }
       },
     );
   }
@@ -1230,6 +1243,81 @@ class AppDatabase extends _$AppDatabase {
     return (select(syncRules)..where((t) => t.globalKey.equals(globalKey))).getSingleOrNull();
   }
 
+  Future<void> associateSyncRuleDownload(SyncRuleItem rule, String downloadGlobalKey) {
+    return into(syncRuleDownloads).insertOnConflictUpdate(
+      SyncRuleDownloadsCompanion.insert(
+        syncRuleId: rule.id,
+        profileId: rule.profileId,
+        downloadGlobalKey: downloadGlobalKey,
+      ),
+    );
+  }
+
+  Future<void> markSyncRuleDownloadLinksInitialized(String globalKey) {
+    return (update(syncRules)..where((t) => t.globalKey.equals(globalKey))).write(
+      const SyncRulesCompanion(downloadLinksInitialized: Value(true)),
+    );
+  }
+
+  Future<List<SyncRuleItem>> getUninitializedSyncRulesForServer({
+    required String profileId,
+    required ServerId serverId,
+  }) {
+    return (select(syncRules)..where(
+          (t) => t.profileId.equals(profileId) & t.serverId.equals(serverId) & t.downloadLinksInitialized.equals(false),
+        ))
+        .get();
+  }
+
+  Future<List<SyncRuleDownloadItem>> getSyncRuleDownloadLinks(int syncRuleId) {
+    return (select(syncRuleDownloads)..where((t) => t.syncRuleId.equals(syncRuleId))).get();
+  }
+
+  Future<List<String>> getOwnedDownloadKeysForAncestorRule({
+    required String profileId,
+    required ServerId serverId,
+    required String ratingKey,
+    required bool matchGrandparent,
+  }) async {
+    final query = select(
+      downloadedMedia,
+    ).join([innerJoin(downloadOwners, downloadOwners.globalKey.equalsExp(downloadedMedia.globalKey))]);
+    final ancestorMatches = matchGrandparent
+        ? downloadedMedia.grandparentRatingKey.equals(ratingKey) | downloadedMedia.parentRatingKey.equals(ratingKey)
+        : downloadedMedia.parentRatingKey.equals(ratingKey);
+    query.where(
+      downloadOwners.profileId.equals(profileId) &
+          downloadedMedia.serverId.equals(serverId) &
+          downloadedMedia.status.isIn([
+            DownloadStatus.queued.index,
+            DownloadStatus.downloading.index,
+            DownloadStatus.completed.index,
+            DownloadStatus.paused.index,
+          ]) &
+          ancestorMatches,
+    );
+    final rows = await query.get();
+    return rows.map((row) => row.readTable(downloadedMedia).globalKey).toList(growable: false);
+  }
+
+  Future<List<String>> getExclusiveSyncRuleDownloadKeys(SyncRuleItem rule) async {
+    final links = await getSyncRuleDownloadLinks(rule.id);
+    if (links.isEmpty) return const [];
+
+    final keys = links.map((link) => link.downloadGlobalKey).toSet();
+    final allLinks = await (select(
+      syncRuleDownloads,
+    )..where((t) => t.profileId.equals(rule.profileId) & t.downloadGlobalKey.isIn(keys))).get();
+    final linkedRuleCounts = <String, int>{};
+    for (final link in allLinks) {
+      linkedRuleCounts.update(link.downloadGlobalKey, (count) => count + 1, ifAbsent: () => 1);
+    }
+    return [
+      for (final key in keys)
+        if (linkedRuleCounts[key] == 1) key,
+    ];
+  }
+
   Future<void> insertSyncRule({
     String profileId = '',
     required ServerId serverId,
@@ -1290,6 +1378,9 @@ class AppDatabase extends _$AppDatabase {
       await (update(syncRules)..where((t) => t.id.equals(rule.id))).write(
         SyncRulesCompanion(profileId: Value(profileId), globalKey: Value(scopedKey)),
       );
+      await (update(
+        syncRuleDownloads,
+      )..where((t) => t.syncRuleId.equals(rule.id))).write(SyncRuleDownloadsCompanion(profileId: Value(profileId)));
     }
   }
 
@@ -1314,6 +1405,15 @@ class AppDatabase extends _$AppDatabase {
   Future<void> updateSyncRuleLastExecuted(String globalKey) async {
     await (update(syncRules)..where((t) => t.globalKey.equals(globalKey))).write(
       SyncRulesCompanion(lastExecutedAt: Value(DateTime.now().millisecondsSinceEpoch)),
+    );
+  }
+
+  Future<void> completeSyncRuleExecution(String globalKey) {
+    return (update(syncRules)..where((t) => t.globalKey.equals(globalKey))).write(
+      SyncRulesCompanion(
+        lastExecutedAt: Value(DateTime.now().millisecondsSinceEpoch),
+        downloadLinksInitialized: const Value(true),
+      ),
     );
   }
 
