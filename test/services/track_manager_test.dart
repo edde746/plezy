@@ -808,6 +808,105 @@ void main() {
     });
   });
 
+  // ============================================================
+  // Explicit user selection vs. the pending automatic pass
+  // ============================================================
+
+  group('explicit user selection', () {
+    test('user audio choice survives the advertised-subtitle deadline', () async {
+      await SettingsService.getInstance();
+
+      fakeAsync((async) {
+        const userPick = AudioTrack(id: 'hin', language: 'hin');
+        final player = _FakePlayer(
+          tracks: const Tracks(
+            audio: [
+              AudioTrack(id: 'eng', language: 'eng'),
+              userPick,
+            ],
+          ),
+        );
+        final mgr = _make(player: player, mediaInfo: _mediaInfoWithSubtitles(selected: true));
+
+        // The advertised subtitle never materializes, so the five-second
+        // fallback applies the ready audio and keeps the 30-second pass armed.
+        mgr.applyTrackSelectionWhenReady();
+        async.elapse(const Duration(seconds: 5));
+        async.flushMicrotasks();
+        expect(player.selectedAudio.map((track) => track.id), ['eng']);
+
+        // The user picks a different audio track from the sheet.
+        player.selectAudioTrack(userPick);
+        unawaited(mgr.onAudioTrackSelectedByUser(userPick));
+        async.flushMicrotasks();
+        expect(player.selectedAudio.map((track) => track.id), ['eng', 'hin']);
+
+        // The deadline must not re-run selection and reset that choice.
+        async.elapse(const Duration(seconds: 25));
+        async.flushMicrotasks();
+        expect(player.selectedAudio.map((track) => track.id), ['eng', 'hin']);
+
+        mgr.dispose();
+      });
+    });
+
+    test('user subtitle choice survives a late native track-list update', () async {
+      await SettingsService.getInstance();
+
+      fakeAsync((async) {
+        const userPick = SubtitleTrack(id: '10', language: 'eng');
+        final mediaInfo = MediaSourceInfo(
+          videoUrl: 'https://example.com/transcode.m3u8',
+          audioTracks: [MediaAudioTrack(id: 1, languageCode: 'eng', selected: true)],
+          subtitleTracks: [
+            MediaSubtitleTrack(id: 10, languageCode: 'eng', selected: false, forced: false),
+            MediaSubtitleTrack(id: 11, languageCode: 'fre', selected: true, forced: false),
+          ],
+          chapters: const [],
+        );
+        final player = _FakePlayer(
+          tracks: const Tracks(
+            audio: [AudioTrack(id: '1', language: 'eng')],
+            subtitle: [userPick],
+          ),
+        );
+        final mgr = _make(
+          player: player,
+          mediaInfo: mediaInfo,
+          preferredSubtitleTrack: const SubtitleTrack(id: 'source:11', language: 'fre'),
+        );
+
+        // Still waiting for the French subtitle the catalog advertises.
+        mgr.applyTrackSelectionWhenReady();
+        async.elapse(const Duration(seconds: 5));
+        async.flushMicrotasks();
+        expect(player.selectedSubtitle, isEmpty);
+
+        // The user settles on the English subtitle that is already present.
+        player.selectSubtitleTrack(userPick);
+        unawaited(mgr.onSubtitleTrackSelectedByUser(userPick, sourceStreamId: 10));
+        async.flushMicrotasks();
+        expect(player.selectedSubtitle.map((track) => track.id), ['10']);
+
+        // The late native list must not swap the user onto the French track.
+        player.emitTracks(
+          const Tracks(
+            audio: [AudioTrack(id: '1', language: 'eng')],
+            subtitle: [
+              userPick,
+              SubtitleTrack(id: '11', language: 'fre'),
+            ],
+          ),
+        );
+        async.elapse(const Duration(seconds: 25));
+        async.flushMicrotasks();
+        expect(player.selectedSubtitle.map((track) => track.id), ['10']);
+
+        mgr.dispose();
+      });
+    });
+  });
+
   group('applyTrackSelection ownership', () {
     const audioTracks = [AudioTrack(id: 'audio-en', language: 'eng'), AudioTrack(id: 'audio-ja', language: 'jpn')];
     const subtitleTracks = [SubtitleTrack(id: 'sub-en', language: 'eng'), SubtitleTrack(id: 'sub-es', language: 'spa')];

@@ -1763,11 +1763,11 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     }
   }
 
-  Future<void> _onAudioTrackChanged(AudioTrack track) async => _trackManager?.onAudioTrackChanged(track);
+  Future<void> _onAudioTrackChanged(AudioTrack track) async => _trackManager?.onAudioTrackSelectedByUser(track);
 
   Future<void> _onSubtitleTrackChanged(SubtitleTrack track, {int? sourceStreamId}) async {
     _rememberNativeSubtitleSelection(track, sourceStreamId: sourceStreamId);
-    await _trackManager?.onSubtitleTrackChanged(track, sourceStreamId: sourceStreamId);
+    await _trackManager?.onSubtitleTrackSelectedByUser(track, sourceStreamId: sourceStreamId);
   }
 
   void _rememberNativeSubtitleSelection(SubtitleTrack track, {int? sourceStreamId}) {

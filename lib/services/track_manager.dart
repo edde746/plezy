@@ -380,7 +380,7 @@ class TrackManager {
     final nextIndex = (currentIndex + 1) % tracks.length;
     final next = tracks[nextIndex];
     player.selectSubtitleTrack(next);
-    onSubtitleTrackChanged(next);
+    unawaited(onSubtitleTrackSelectedByUser(next));
 
     if (isActive()) {
       final label = next.id == 'no'
@@ -400,13 +400,41 @@ class TrackManager {
     final nextIndex = (currentIndex + 1) % tracks.length;
     final next = tracks[nextIndex];
     player.selectAudioTrack(next);
-    onAudioTrackChanged(next);
+    unawaited(onAudioTrackSelectedByUser(next));
 
     if (isActive()) {
       final label =
           'Audio: ${TrackLabelBuilder.audioLabel(title: next.title, language: next.language, codec: next.codec, channels: next.channelsCount, index: nextIndex).joined}';
       showMessage?.call(label, duration: const Duration(seconds: 1));
     }
+  }
+
+  // ── Explicit user selection ────────────────────────────────────────
+
+  /// Records an explicit user audio choice.
+  ///
+  /// A source that advertises subtitles keeps an automatic selection pending
+  /// for up to 30 seconds (see [applyTrackSelectionWhenReady]). That late pass
+  /// re-runs [TrackSelectionService] against the preferences, so it would
+  /// overwrite whatever the user picked in the meantime. Retiring the pending
+  /// selection first makes the explicit choice win.
+  ///
+  /// The caller has already told the player which track to use, and this does
+  /// not re-issue that command: the generation bump closes the whole window.
+  /// `TrackSelectionService` re-checks the generation in the statement right
+  /// before each `select*Track` call, so no later automatic mutation can be
+  /// dispatched, and one already in flight was dispatched earlier and so lands
+  /// before the user's.
+  Future<void> onAudioTrackSelectedByUser(AudioTrack track) async {
+    await invalidatePendingSelection();
+    await onAudioTrackChanged(track);
+  }
+
+  /// Records an explicit user subtitle choice, retiring any pending automatic
+  /// selection for the same reason as [onAudioTrackSelectedByUser].
+  Future<void> onSubtitleTrackSelectedByUser(SubtitleTrack track, {int? sourceStreamId}) async {
+    await invalidatePendingSelection();
+    await onSubtitleTrackChanged(track, sourceStreamId: sourceStreamId);
   }
 
   // ── Server preference sync ─────────────────────────────────────────
