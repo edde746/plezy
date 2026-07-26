@@ -419,6 +419,8 @@ class AppearanceSettingsScreen extends StatelessWidget {
         return 'Norsk bokmål';
       case AppLocale.bg:
         return 'Български';
+      case AppLocale.tr:
+        return 'Türkçe';
     }
   }
 
