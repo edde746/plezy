@@ -101,12 +101,10 @@ class _ServiceHubRow extends StatelessWidget {
   Widget build(BuildContext context) {
     return FocusableListTile(
       leading: leading,
-      title: Text(title, style: settingsOptionTitleStyle(context)),
+      title: Text(title),
       subtitle: Text(username != null ? t.services.connectedAs(username: username!) : t.services.notConnected),
       trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
       onTap: onTap,
-      dense: settingsRowDense(context),
-      visualDensity: settingsRowVisualDensity(context),
     );
   }
 }

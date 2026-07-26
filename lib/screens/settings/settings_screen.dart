@@ -355,15 +355,10 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
               return FocusableListTile(
                 focusNode: _focusTracker.get(_kDownloadLocation),
                 leading: const AppIcon(Symbols.folder_rounded, fill: 1),
-                title: Text(
-                  isCustom ? t.settings.downloadLocationCustom : t.settings.downloadLocationDefault,
-                  style: settingsOptionTitleStyle(context),
-                ),
+                title: Text(isCustom ? t.settings.downloadLocationCustom : t.settings.downloadLocationDefault),
                 subtitle: Text(currentPath, maxLines: 2, overflow: .ellipsis),
                 trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
                 onTap: () => _showDownloadLocationDialog(),
-                dense: false,
-                visualDensity: VisualDensity.standard,
               );
             },
           ),
@@ -412,7 +407,7 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
         return FocusableListTile(
           focusNode: _focusTracker.get(_kBackgroundDownloads),
           leading: AppIcon(icon, fill: 1, color: color),
-          title: Text(t.downloads.backgroundWarning.statusTile, style: settingsOptionTitleStyle(context)),
+          title: Text(t.downloads.backgroundWarning.statusTile),
           subtitle: Text(summary),
           trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
           onTap: () async {
@@ -424,8 +419,6 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
             }
             await showBackgroundDownloadWarningDialog(context, service: diagnostics);
           },
-          dense: false,
-          visualDensity: VisualDensity.standard,
         );
       },
     );
@@ -588,10 +581,7 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
             fill: 1,
             color: hasUpdate ? Colors.orange : null,
           ),
-          title: Text(
-            hasUpdate ? t.settings.updateAvailable : t.settings.checkForUpdates,
-            style: settingsOptionTitleStyle(context),
-          ),
+          title: Text(hasUpdate ? t.settings.updateAvailable : t.settings.checkForUpdates),
           subtitle: hasUpdate ? Text(t.update.versionAvailable(version: _updateInfo!['latestVersion'])) : null,
           trailing: _isCheckingForUpdate
               ? const LoadingIndicatorBox(size: 24)
@@ -605,8 +595,6 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
                     _checkForUpdates();
                   }
                 },
-          dense: false,
-          visualDensity: VisualDensity.standard,
         ),
         _buildAutoCheckUpdatesOnStartupTile(),
       ],

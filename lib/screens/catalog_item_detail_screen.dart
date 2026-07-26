@@ -308,8 +308,6 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
   Widget _buildLibraryMatchTile(MediaItem match, int index) {
     return FocusableListTile(
       focusNode: _libraryMatchFocusNodes[index],
-      dense: false,
-      visualDensity: VisualDensity.standard,
       leading: BackendBadge(backend: match.backend, size: 24),
       // Plex matches carry their library title; Jellyfin's search-based
       // lookup doesn't, so fall back to the server name alone.

@@ -45,12 +45,10 @@ class _SettingRow extends StatelessWidget {
     return FocusableListTile(
       focusNode: focusNode,
       leading: AppIcon(icon, fill: 1),
-      title: Text(title, style: settingsOptionTitleStyle(context)),
+      title: Text(title),
       subtitle: subtitle,
       trailing: trailing ?? const AppIcon(Symbols.chevron_right_rounded, fill: 1),
       onTap: onTap,
-      dense: settingsRowDense(context),
-      visualDensity: settingsRowVisualDensity(context),
     );
   }
 }
@@ -83,11 +81,9 @@ class SettingSwitchTile extends StatelessWidget {
       builder: (_, value, _) => FocusableSwitchListTile(
         focusNode: focusNode,
         secondary: AppIcon(icon, fill: 1),
-        title: Text(title, style: settingsOptionTitleStyle(context)),
+        title: Text(title),
         subtitle: subtitle != null ? Text(subtitle!) : null,
         value: value,
-        dense: settingsRowDense(context),
-        visualDensity: settingsRowVisualDensity(context),
         onChanged: enabled ? (v) => _writeAndNotify(pref, v, onAfterWrite) : null,
       ),
     );

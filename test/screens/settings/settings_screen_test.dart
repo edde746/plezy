@@ -78,7 +78,7 @@ void main() {
     }
   });
 
-  testWidgets('migrated rows retain compact mobile navigation geometry and activation', (tester) async {
+  testWidgets('migrated rows retain the shared compact row geometry and activation', (tester) async {
     final harness = await _pumpSettingsScreen(tester);
     addTearDown(() => harness.dispose(tester));
 
@@ -119,7 +119,7 @@ void main() {
         find.descendant(of: focusableFinder, matching: find.byType(ListTile)),
       );
 
-      expect(focusable.dense, isTrue, reason: '${row.title} must use the shared compact mobile density');
+      expect(focusable.dense, isTrue, reason: '${row.title} must use the shared compact row density');
       expect(focusable.visualDensity, const VisualDensity(vertical: -3));
       expect(materialTile.dense, isTrue);
       expect(materialTile.visualDensity, const VisualDensity(vertical: -3));
@@ -167,7 +167,7 @@ void main() {
     expect(find.text(t.settings.clearImageCache), findsWidgets);
   });
 
-  testWidgets('special download and generic update rows retain rich content at standard density', (tester) async {
+  testWidgets('special download and generic update rows keep rich content on the shared compact row', (tester) async {
     final harness = await _pumpSettingsScreen(tester);
     addTearDown(() => harness.dispose(tester));
 
@@ -182,10 +182,10 @@ void main() {
       final subtitle = downloadTile.subtitle! as Text;
 
       expect(_navigationTileFor(t.settings.downloadLocationDefault), findsNothing);
-      expect(materialDownloadTile.dense, isFalse);
-      expect(materialDownloadTile.visualDensity, VisualDensity.standard);
-      expect(downloadTile.dense, isFalse);
-      expect(downloadTile.visualDensity, VisualDensity.standard);
+      expect(materialDownloadTile.dense, isTrue);
+      expect(materialDownloadTile.visualDensity, const VisualDensity(vertical: -3));
+      expect(downloadTile.dense, isTrue);
+      expect(downloadTile.visualDensity, const VisualDensity(vertical: -3));
       expect(downloadTile.leading, isA<AppIcon>());
       expect(downloadTile.trailing, isA<AppIcon>());
       expect(subtitle.maxLines, 2);
@@ -217,10 +217,10 @@ void main() {
     final updateTile = tester.widget<FocusableListTile>(updateTileFinder);
 
     expect(_navigationTileFor(t.settings.checkForUpdates), findsNothing);
-    expect(updateTile.dense, isFalse);
-    expect(materialUpdateTile.dense, isFalse);
-    expect(materialUpdateTile.visualDensity, VisualDensity.standard);
-    expect(updateTile.visualDensity, VisualDensity.standard);
+    expect(updateTile.dense, isTrue);
+    expect(materialUpdateTile.dense, isTrue);
+    expect(materialUpdateTile.visualDensity, const VisualDensity(vertical: -3));
+    expect(updateTile.visualDensity, const VisualDensity(vertical: -3));
     expect(updateTile.trailing, isA<AppIcon>());
     expect(updateTile.onTap, isNotNull);
     expect(find.descendant(of: updateTileFinder, matching: find.byType(LoadingIndicatorBox)), findsNothing);
