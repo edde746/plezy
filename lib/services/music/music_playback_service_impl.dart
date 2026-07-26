@@ -14,6 +14,7 @@ import '../../mpv/player/player.dart';
 import '../../utils/app_logger.dart';
 import '../../utils/notification_permission.dart';
 import '../../utils/platform_detector.dart';
+import '../media_control_router.dart';
 import '../media_controls_manager.dart';
 import '../multi_server_manager.dart';
 import '../offline_watch_sync_service.dart';
@@ -783,27 +784,32 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingO
     );
   }
 
+  /// OS transport commands. Music has no authorization gate: the session only
+  /// exists while a track is loaded, and that is checked in [_onControlEvent].
+  late final _mediaControlRouter = MediaControlRouter(
+    canControlPlayback: () => true,
+    canNavigateMediaItems: () => true,
+    onPlay: () => unawaited(play()),
+    onPause: () => unawaited(pause()),
+    onTogglePlayPause: () => unawaited(togglePlayPause()),
+    onSeek: (position) => unawaited(seek(position)),
+    onNext: () => unawaited(next()),
+    onPrevious: () => unawaited(previous()),
+    onStop: () => unawaited(stop()),
+    onSkipForward: (interval) => unawaited(_seekRelative(interval ?? _defaultSkipInterval)),
+    onSkipBackward: (interval) => unawaited(_seekRelative(-(interval ?? _defaultSkipInterval))),
+    // Speed is deliberately ignored: music always plays at 1.0 and the control
+    // is not advertised — but Linux MPRIS exposes an always-writable Rate
+    // property, so the event can still arrive. The periodic playback-state
+    // update reasserts speed 1.0.
+    onSetSpeed: (_) {},
+  );
+
   void _onControlEvent(MediaControlEvent event) {
     if (_disposed || _currentTrack == null) return;
-    if (event is PlayEvent) {
-      unawaited(play());
-    } else if (event is PauseEvent) {
-      unawaited(pause());
-    } else if (event is TogglePlayPauseEvent) {
-      unawaited(togglePlayPause());
-    } else if (event is NextTrackEvent) {
-      unawaited(next());
-    } else if (event is PreviousTrackEvent) {
-      unawaited(previous());
-    } else if (event is SeekEvent) {
-      unawaited(seek(event.position));
-    } else if (event is StopEvent) {
-      unawaited(stop());
-    } else if (event is SkipForwardEvent) {
-      unawaited(_seekRelative(event.interval ?? _defaultSkipInterval));
-    } else if (event is SkipBackwardEvent) {
-      unawaited(_seekRelative(-(event.interval ?? _defaultSkipInterval)));
-    } else if (event is AudioInterruptionBeganEvent || event is AudioRouteOldDeviceUnavailableEvent) {
+    if (_mediaControlRouter.route(event)) return;
+
+    if (event is AudioInterruptionBeganEvent || event is AudioRouteOldDeviceUnavailableEvent) {
       // Remember whether we were playing so interruption-end/route-return
       // can resume. Unlike video, music resumes even while backgrounded —
       // background audio is the product.
@@ -822,10 +828,6 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingO
         unawaited(play());
       }
     }
-    // SetSpeedEvent is deliberately unhandled: music always plays at 1.0 and
-    // the control is not advertised — but Linux MPRIS exposes an always-
-    // writable Rate property, so the event can still arrive. The periodic
-    // playback-state update reasserts speed 1.0.
   }
 
   static const _defaultSkipInterval = Duration(seconds: 15);
@@ -1148,10 +1150,7 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingO
     _queueSessionRevision++;
     _generation++;
     _invalidateArmRequests();
-    _completedConfirmTimer?.cancel();
-    _completedConfirmTimer = null;
-    _cancelSleepTimer();
-    _finalizeCurrentTrack();
+    _cancelTimersAndFinalizeTrack();
     _queue.clear();
     _currentTrack = null;
     _currentSource = null;
@@ -1161,27 +1160,56 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingO
     _resumeAfterInterruption = false;
     _setStatus(endStatus, forceNotify: true);
 
-    final player = _player;
-    _player = null;
+    await _teardownPlayerAndControls(awaitStop: true);
+  }
+
+  /// Kills the completion/sleep timers and flushes the track's final progress
+  /// report — done before [_setStatus] so listeners never see a live timer.
+  void _cancelTimersAndFinalizeTrack() {
+    _completedConfirmTimer?.cancel();
+    _completedConfirmTimer = null;
+    _cancelSleepTimer();
+    _finalizeCurrentTrack();
+  }
+
+  /// Detaches the player streams, shuts the player down and drops the OS media
+  /// session — the teardown shared by [_stopSession] and [dispose].
+  ///
+  /// [awaitStop] stops the player and awaits every step, so callers know the
+  /// audio core is gone once the future resolves. The `false` path must never
+  /// suspend: [dispose] is a synchronous override and needs the whole teardown
+  /// to run in the caller's turn, before `super.dispose()`.
+  Future<void> _teardownPlayerAndControls({required bool awaitStop}) async {
     for (final sub in _playerSubs) {
       unawaited(sub.cancel());
     }
     _playerSubs.clear();
+    final player = _player;
+    _player = null;
     if (player != null && !player.disposed) {
-      try {
-        await player.stop();
-      } catch (e) {
-        appLogger.d('Audio player stop failed during session teardown', error: e);
-      }
-      try {
-        await player.abandonAudioFocus();
-      } catch (e) {
-        appLogger.d('Audio focus abandon failed during session teardown', error: e);
-      }
-      try {
-        await player.dispose();
-      } catch (e) {
-        appLogger.w('Audio player dispose failed during session teardown', error: e);
+      if (awaitStop) {
+        try {
+          await player.stop();
+        } catch (e) {
+          appLogger.d('Audio player stop failed during session teardown', error: e);
+        }
+        try {
+          await player.abandonAudioFocus();
+        } catch (e) {
+          appLogger.d('Audio focus abandon failed during session teardown', error: e);
+        }
+        try {
+          await player.dispose();
+        } catch (e) {
+          appLogger.w('Audio player dispose failed during session teardown', error: e);
+        }
+      } else {
+        unawaited(
+          player.abandonAudioFocus().catchError((Object e) {
+            appLogger.d('Audio focus abandon failed during dispose', error: e);
+          }),
+        );
+        unawaited(player.dispose());
       }
     }
 
@@ -1229,33 +1257,9 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingO
       _observesLifecycle = false;
     }
     _coordinator.unregisterMusicSession(_stopForVideoClaim);
-    _completedConfirmTimer?.cancel();
-    _completedConfirmTimer = null;
-    _cancelSleepTimer();
-    _finalizeCurrentTrack();
-    for (final sub in _playerSubs) {
-      unawaited(sub.cancel());
-    }
-    _playerSubs.clear();
-    unawaited(_controlEventsSub?.cancel());
-    _controlEventsSub = null;
-    final player = _player;
-    _player = null;
-    if (player != null && !player.disposed) {
-      unawaited(
-        player.abandonAudioFocus().catchError((Object e) {
-          appLogger.d('Audio focus abandon failed during dispose', error: e);
-        }),
-      );
-      unawaited(player.dispose());
-    }
-    final controls = _mediaControls;
-    _mediaControls = null;
-    if (controls != null) {
-      unawaited(controls.setBackgroundMode(false));
-      unawaited(controls.clear());
-      controls.dispose();
-    }
+    _cancelTimersAndFinalizeTrack();
+    // Runs to completion synchronously — see the awaitStop: false contract.
+    unawaited(_teardownPlayerAndControls(awaitStop: false));
     unawaited(_positionController.close());
     unawaited(_errorsController.close());
     _volumeNotifier.dispose();

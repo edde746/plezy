@@ -13,8 +13,46 @@ import 'settings_section.dart';
 /// Eliminates the field-mirror + setState + manual reload pattern that used to
 /// surround every settings row.
 
-class _TileBase {
-  static SettingsService get _svc => SettingsService.instance;
+/// Shared commit path for every tile: persist [value] under [pref], then hand
+/// it to the tile's optional [onAfterWrite] callback.
+Future<void> _writeAndNotify<T>(Pref<T> pref, T value, FutureOr<void> Function(T)? onAfterWrite) async {
+  await SettingsService.instance.write(pref, value);
+  if (onAfterWrite != null) await onAfterWrite(value);
+}
+
+/// Shared scaffold for the tiles that render a tappable settings row: same
+/// leading icon, title style and row density everywhere. [trailing] defaults
+/// to the chevron used by every row that opens a dialog.
+class _SettingRow extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final Widget? subtitle;
+  final Widget? trailing;
+  final VoidCallback onTap;
+  final FocusNode? focusNode;
+
+  const _SettingRow({
+    required this.icon,
+    required this.title,
+    required this.onTap,
+    this.subtitle,
+    this.trailing,
+    this.focusNode,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return FocusableListTile(
+      focusNode: focusNode,
+      leading: AppIcon(icon, fill: 1),
+      title: Text(title, style: settingsOptionTitleStyle(context)),
+      subtitle: subtitle,
+      trailing: trailing ?? const AppIcon(Symbols.chevron_right_rounded, fill: 1),
+      onTap: onTap,
+      dense: settingsRowDense(context),
+      visualDensity: settingsRowVisualDensity(context),
+    );
+  }
 }
 
 /// SwitchListTile bound to a [Pref<bool>].
@@ -40,9 +78,8 @@ class SettingSwitchTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final svc = _TileBase._svc;
     return ValueListenableBuilder<bool>(
-      valueListenable: svc.listenable(pref),
+      valueListenable: SettingsService.instance.listenable(pref),
       builder: (_, value, _) => FocusableSwitchListTile(
         focusNode: focusNode,
         secondary: AppIcon(icon, fill: 1),
@@ -51,13 +88,7 @@ class SettingSwitchTile extends StatelessWidget {
         value: value,
         dense: settingsRowDense(context),
         visualDensity: settingsRowVisualDensity(context),
-        onChanged: enabled
-            ? (v) async {
-                await svc.write(pref, v);
-                final callback = onAfterWrite;
-                if (callback != null) await callback(v);
-              }
-            : null,
+        onChanged: enabled ? (v) => _writeAndNotify(pref, v, onAfterWrite) : null,
       ),
     );
   }
@@ -86,15 +117,13 @@ class SettingNavigationTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return FocusableListTile(
+    return _SettingRow(
       focusNode: focusNode,
-      leading: AppIcon(icon, fill: 1),
-      title: Text(title, style: settingsOptionTitleStyle(context)),
+      icon: icon,
+      title: title,
       subtitle: subtitle != null ? Text(subtitle!) : null,
       trailing: AppIcon(trailingIcon, fill: 1),
       onTap: onTap ?? () => Navigator.push(context, MaterialPageRoute(builder: destinationBuilder!)),
-      dense: settingsRowDense(context),
-      visualDensity: settingsRowVisualDensity(context),
     );
   }
 }
@@ -126,16 +155,12 @@ class SettingNumberTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final svc = _TileBase._svc;
     return ValueListenableBuilder<int>(
-      valueListenable: svc.listenable(pref),
-      builder: (_, value, _) => FocusableListTile(
-        leading: AppIcon(icon, fill: 1),
-        title: Text(title, style: settingsOptionTitleStyle(context)),
+      valueListenable: SettingsService.instance.listenable(pref),
+      builder: (_, value, _) => _SettingRow(
+        icon: icon,
+        title: title,
         subtitle: Text(subtitleBuilder(value)),
-        trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
-        dense: settingsRowDense(context),
-        visualDensity: settingsRowVisualDensity(context),
         onTap: () => showNumericInputDialog(
           context: context,
           title: title,
@@ -144,11 +169,7 @@ class SettingNumberTile extends StatelessWidget {
           min: min,
           max: max,
           currentValue: value,
-          onSave: (v) async {
-            await svc.write(pref, v);
-            final callback = onAfterWrite;
-            if (callback != null) await callback(v);
-          },
+          onSave: (v) => _writeAndNotify(pref, v, onAfterWrite),
         ),
       ),
     );
@@ -156,16 +177,12 @@ class SettingNumberTile extends StatelessWidget {
 }
 
 /// ListTile that opens [showSelectionDialog] and writes the chosen value.
-/// [encode]/[decode] map between the [Pref<S>] storage type and the option
-/// type [T] (e.g. enum-stored-as-string preset → [TranscodeQualityPreset]).
-class SettingSelectionTile<T, S> extends StatelessWidget {
-  final Pref<S> pref;
+class SettingSelectionTile<T> extends StatelessWidget {
+  final Pref<T> pref;
   final IconData icon;
   final String title;
   final String Function(T) subtitleBuilder;
   final List<DialogOption<T>> options;
-  final T Function(S) decode;
-  final S Function(T) encode;
   final FutureOr<void> Function(T)? onAfterWrite;
 
   const SettingSelectionTile({
@@ -175,39 +192,28 @@ class SettingSelectionTile<T, S> extends StatelessWidget {
     required this.title,
     required this.subtitleBuilder,
     required this.options,
-    required this.decode,
-    required this.encode,
     this.onAfterWrite,
   });
 
   @override
   Widget build(BuildContext context) {
-    final svc = _TileBase._svc;
-    return ValueListenableBuilder<S>(
-      valueListenable: svc.listenable(pref),
-      builder: (_, raw, _) {
-        final value = decode(raw);
-        return FocusableListTile(
-          leading: AppIcon(icon, fill: 1),
-          title: Text(title, style: settingsOptionTitleStyle(context)),
-          subtitle: Text(subtitleBuilder(value)),
-          trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
-          dense: settingsRowDense(context),
-          visualDensity: settingsRowVisualDensity(context),
-          onTap: () async {
-            final picked = await showSelectionDialog<T>(
-              context: context,
-              title: title,
-              options: options,
-              currentValue: value,
-            );
-            if (picked == null) return;
-            await svc.write(pref, encode(picked));
-            final callback = onAfterWrite;
-            if (callback != null) await callback(picked);
-          },
-        );
-      },
+    return ValueListenableBuilder<T>(
+      valueListenable: SettingsService.instance.listenable(pref),
+      builder: (_, value, _) => _SettingRow(
+        icon: icon,
+        title: title,
+        subtitle: Text(subtitleBuilder(value)),
+        onTap: () async {
+          final picked = await showSelectionDialog<T>(
+            context: context,
+            title: title,
+            options: options,
+            currentValue: value,
+          );
+          if (picked == null) return;
+          await _writeAndNotify(pref, picked, onAfterWrite);
+        },
+      ),
     );
   }
 }
@@ -233,42 +239,30 @@ class SettingRegexTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final svc = _TileBase._svc;
     return ValueListenableBuilder<String>(
-      valueListenable: svc.listenable(pref),
-      builder: (_, value, _) => FocusableListTile(
-        leading: AppIcon(icon, fill: 1),
-        title: Text(title, style: settingsOptionTitleStyle(context)),
+      valueListenable: SettingsService.instance.listenable(pref),
+      builder: (_, value, _) => _SettingRow(
+        icon: icon,
+        title: title,
         subtitle: Text(subtitle),
-        trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
-        dense: settingsRowDense(context),
-        visualDensity: settingsRowVisualDensity(context),
         onTap: () => showRegexInputDialog(
           context: context,
           title: title,
           currentValue: value,
           defaultValue: defaultValue,
-          onSave: (v) async {
-            await svc.write(pref, v);
-            final callback = onAfterWrite;
-            if (callback != null) await callback(v);
-          },
+          onSave: (v) => _writeAndNotify(pref, v, onAfterWrite),
         ),
       ),
     );
   }
 }
 
-/// SegmentedSetting bound to a [Pref<T>]. Use [encode]/[decode] when the
-/// stored type differs from the segment type (e.g. bool stored, segments
-/// over enum).
-class SettingSegmentedTile<T, S> extends StatelessWidget {
-  final Pref<S> pref;
+/// SegmentedSetting bound to a [Pref<T>].
+class SettingSegmentedTile<T> extends StatelessWidget {
+  final Pref<T> pref;
   final IconData icon;
   final String title;
   final List<ButtonSegment<T>> segments;
-  final T Function(S) decode;
-  final S Function(T) encode;
   final FutureOr<void> Function(T)? onAfterWrite;
 
   const SettingSegmentedTile({
@@ -277,30 +271,20 @@ class SettingSegmentedTile<T, S> extends StatelessWidget {
     required this.icon,
     required this.title,
     required this.segments,
-    required this.decode,
-    required this.encode,
     this.onAfterWrite,
   });
 
   @override
   Widget build(BuildContext context) {
-    final svc = _TileBase._svc;
-    return ValueListenableBuilder<S>(
-      valueListenable: svc.listenable(pref),
-      builder: (_, raw, _) {
-        final value = decode(raw);
-        return SegmentedSetting<T>(
-          icon: icon,
-          title: title,
-          segments: segments,
-          selected: value,
-          onChanged: (v) async {
-            await svc.write(pref, encode(v));
-            final callback = onAfterWrite;
-            if (callback != null) await callback(v);
-          },
-        );
-      },
+    return ValueListenableBuilder<T>(
+      valueListenable: SettingsService.instance.listenable(pref),
+      builder: (_, value, _) => SegmentedSetting<T>(
+        icon: icon,
+        title: title,
+        segments: segments,
+        selected: value,
+        onChanged: (v) => _writeAndNotify(pref, v, onAfterWrite),
+      ),
     );
   }
 }
@@ -325,12 +309,11 @@ class SettingColorTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final svc = _TileBase._svc;
     return ValueListenableBuilder<String>(
-      valueListenable: svc.listenable(pref),
-      builder: (_, hex, _) => FocusableListTile(
-        leading: AppIcon(icon, fill: 1),
-        title: Text(title, style: settingsOptionTitleStyle(context)),
+      valueListenable: SettingsService.instance.listenable(pref),
+      builder: (_, hex, _) => _SettingRow(
+        icon: icon,
+        title: title,
         subtitle: subtitle != null ? Text(subtitle!) : null,
         trailing: Container(
           width: 28,
@@ -341,17 +324,11 @@ class SettingColorTile extends StatelessWidget {
             border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
           ),
         ),
-        dense: settingsRowDense(context),
-        visualDensity: settingsRowVisualDensity(context),
         onTap: () => showColorInputDialog(
           context: context,
           title: title,
           currentHex: hex,
-          onSave: (v) async {
-            await svc.write(pref, v);
-            final callback = onAfterWrite;
-            if (callback != null) await callback(v);
-          },
+          onSave: (v) => _writeAndNotify(pref, v, onAfterWrite),
         ),
       ),
     );

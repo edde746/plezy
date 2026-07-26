@@ -10,6 +10,7 @@ import 'future_extensions.dart';
 import 'isolate_helper.dart';
 import 'log_redaction_manager.dart';
 import 'managed_http_client.dart';
+import 'url_utils.dart';
 import '../exceptions/media_server_exceptions.dart';
 
 // Platform-specific imports are conditional
@@ -412,37 +413,11 @@ class MediaServerHttpClient {
   /// Append query parameters to an already-parsed URI.
   Uri _appendQuery(Uri uri, Map<String, dynamic>? queryParameters) {
     if (queryParameters == null || queryParameters.isEmpty) return uri;
-    final query = MediaServerHttpClient.encodeQueryParameters(queryParameters);
+    final query = encodeQueryParameters(queryParameters);
     if (query.isEmpty) return uri;
     final existing = uri.query;
     final combined = existing.isEmpty ? query : '$existing&$query';
     return uri.replace(query: combined);
-  }
-
-  /// Encode query params with `%20` for spaces (not `+`).
-  /// Null values are omitted and iterable values are emitted as repeated keys.
-  static String encodeQueryParameters(Map<String, Object?>? params) {
-    if (params == null || params.isEmpty) return '';
-    final parts = <String>[];
-
-    void add(String key, Object? value) {
-      if (value == null) return;
-      if (value is Iterable) {
-        for (final item in value) {
-          add(key, item);
-        }
-        return;
-      }
-      parts.add(
-        '${Uri.encodeComponent(key)}='
-        '${Uri.encodeComponent(value.toString())}',
-      );
-    }
-
-    for (final entry in params.entries) {
-      add(entry.key, entry.value);
-    }
-    return parts.join('&');
   }
 
   static bool _isAbsoluteUrl(String url) => url.startsWith('http://') || url.startsWith('https://');
@@ -461,14 +436,11 @@ class MediaServerHttpClient {
       return;
     }
 
+    // Content type comes from the caller's headers (Jellyfin/Plex put
+    // `application/json` in their defaults); `request.body` falls back to
+    // text/plain. Don't add one here — `request.headers` is case-insensitive,
+    // and the setter above has already filled the key in either way.
     request.body = jsonEncode(body);
-    // http.BaseRequest's headers map is case-sensitive; Jellyfin returns 415
-    // if both `Content-Type` (from defaults) and `content-type` (added below)
-    // end up coexisting, so check both casings before adding.
-    final hasContentType = request.headers.keys.any((k) => k.toLowerCase() == 'content-type');
-    if (!hasContentType) {
-      request.headers['content-type'] = 'application/json';
-    }
   }
 
   /// Decode the response body: lenient UTF-8, then JSON parse if applicable.

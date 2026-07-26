@@ -197,7 +197,7 @@ class ProfileConnections extends Table {
   // Profile.virtualPlexHome from PlexHomeService's live cache, never
   // persisted in `profiles`), so an FK here would reject every join row
   // they need. Profile deletion instead cleans up join rows explicitly
-  // (removeAllProfileConnectionsAndCleanup in profile_connection_cleanup)
+  // (ProfileConnectionCleanup.removeAllProfileConnections)
   // before calling ProfileRegistry.remove.
   TextColumn get profileId => text()();
   TextColumn get connectionId => text().references(Connections, #id, onDelete: KeyAction.cascade)();

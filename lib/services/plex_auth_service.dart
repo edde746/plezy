@@ -7,6 +7,7 @@ import 'plex_client.dart';
 import '../exceptions/media_server_exceptions.dart';
 import '../models/plex/plex_user_profile.dart';
 import '../models/plex/plex_home.dart';
+import '../models/plex/plex_home_user.dart';
 import '../models/user_switch_response.dart';
 import '../utils/app_logger.dart';
 import '../utils/device_identity.dart';
@@ -15,6 +16,7 @@ import '../utils/json_utils.dart';
 import '../utils/media_server_timeouts.dart';
 import '../utils/media_server_http_client.dart';
 import '../utils/poll_with_backoff.dart';
+import '../utils/url_utils.dart';
 
 /// Redacts the middle of an IP address or hostname for safe logging.
 /// E.g. `192.168.1.50` → `192.***.***.50`, `my.server.example.com` → `my.***.***. com`.
@@ -162,11 +164,7 @@ class PlexAuthService {
   String getAuthUrl(String pinCode) {
     final params = {'clientID': _clientIdentifier, 'code': pinCode, 'context[device][product]': _appName};
 
-    final queryString = params.entries
-        .map((e) => '${Uri.encodeComponent(e.key)}=${Uri.encodeComponent(e.value)}')
-        .join('&');
-
-    return 'https://app.plex.tv/auth#?$queryString';
+    return 'https://app.plex.tv/auth#?${encodeQueryParameters(params)}';
   }
 
   /// Poll the PIN to check if it has been claimed
@@ -1013,6 +1011,19 @@ class PlexConnection {
       relay: relay,
       ipv6: ipv6,
     );
+  }
+}
+
+/// Default implementation of the `Future<List<PlexHomeUser>> Function(String)`
+/// fetcher seam injected into `PlexHomeService` and `ConnectionBootstrap`:
+/// spins up a throwaway [PlexAuthService] for a single `/home/users` call.
+Future<List<PlexHomeUser>> fetchPlexHomeUsers(String accountToken) async {
+  final auth = await PlexAuthService.create();
+  try {
+    final home = await auth.getHomeUsers(accountToken);
+    return home.users;
+  } finally {
+    auth.dispose();
   }
 }
 

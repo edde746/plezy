@@ -468,7 +468,7 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
     final mediaControlsManager = MediaControlsManager();
     _mediaControlsManager = mediaControlsManager;
 
-    final mediaControlRouter = VideoPlayerMediaControlRouter(
+    final mediaControlRouter = MediaControlRouter(
       canControlPlayback: _canControlPlayback,
       canNavigateMediaItems: _canNavigateMediaItems,
       onPlay: () {

@@ -1,6 +1,5 @@
 import 'dart:async';
 import '../media/ids.dart';
-import 'dart:io';
 import 'package:flutter/foundation.dart';
 import '../i18n/strings.g.dart';
 import '../media/media_backend.dart';
@@ -17,6 +16,7 @@ import '../services/download_manager_service.dart';
 import '../services/api_cache.dart';
 import '../services/download_artwork_service.dart';
 import '../services/download_storage_service.dart';
+import '../services/downloaded_video_source.dart';
 import '../services/multi_server_manager.dart';
 import '../services/offline_mode_source.dart';
 import '../services/watch_state_resolver.dart';
@@ -25,7 +25,6 @@ import '../media/media_server_client.dart';
 import '../services/sync_rule_executor.dart';
 import '../utils/app_logger.dart';
 import '../utils/deletion_notifier.dart';
-import '../utils/downloaded_version_match.dart';
 import '../media/episode_collection.dart';
 import '../utils/global_key_utils.dart';
 import '../utils/watch_state_notifier.dart';
@@ -925,46 +924,13 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
       appLogger.w('No downloaded item found for globalKey: $globalKey');
       return null;
     }
-    if (downloadedItem.status != DownloadStatus.completed.index) {
-      appLogger.w('Download not complete. Status: ${downloadedItem.status}');
-      return null;
-    }
-    if (!downloadedVersionMatches(
+
+    final source = await resolveDownloadedVideoSource(
       downloadedItem,
       requestedMediaIndex: mediaIndex,
       requestedMediaSourceId: mediaSourceId,
-    )) {
-      appLogger.w(
-        'Downloaded version mismatch for $globalKey: have index ${downloadedItem.mediaIndex} '
-        '(source ${downloadedItem.mediaSourceId}), expected index $mediaIndex '
-        '(source ${mediaSourceId?.trim()})',
-      );
-      return null;
-    }
-    if (downloadedItem.videoFilePath == null) {
-      appLogger.w('Video file path is null for globalKey: $globalKey');
-      return null;
-    }
-
-    final storedPath = downloadedItem.videoFilePath!;
-    final storageService = DownloadStorageService.instance;
-
-    // SAF URIs (content://) are already valid - don't transform them
-    if (storageService.isSafUri(storedPath)) {
-      appLogger.d('Found SAF video path: $storedPath');
-      return storedPath;
-    }
-
-    // Convert stored path (may be relative) to absolute path
-    final absolutePath = await storageService.ensureAbsolutePath(storedPath);
-
-    // Verify file exists
-    final file = File(absolutePath);
-    if (!await file.exists()) {
-      appLogger.w('Offline video file not found: $absolutePath');
-      return null;
-    }
-    return absolutePath;
+    );
+    return source?.path;
   }
 
   /// Queue a download for a media item.

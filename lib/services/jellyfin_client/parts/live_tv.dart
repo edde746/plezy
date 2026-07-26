@@ -1,9 +1,6 @@
 part of '../../jellyfin_client.dart';
 
-mixin _JellyfinLiveTvMethods on MediaServerCacheMixin {
-  JellyfinConnection get connection;
-  FailoverHttpClient get _http;
-  String? _absolutizeImagePath(String? path);
+mixin _JellyfinLiveTvMethods on _JellyfinClientInternals {
   Future<List<Map<String, dynamic>>> _safeFetchItemsArray(
     String path,
     Map<String, dynamic> queryParameters, {

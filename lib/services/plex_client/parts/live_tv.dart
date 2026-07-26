@@ -3,38 +3,12 @@ part of '../../plex_client.dart';
 const _favoriteChannelsUrl = 'https://epg.provider.plex.tv/settings/favoriteChannels';
 const _providerVersionHeader = {'X-Plex-Provider-Version': '5.1'};
 
-mixin _PlexLiveTvClientMethods on MediaServerCacheMixin implements LiveTvSupport, LiveTvDvrSupport {
+mixin _PlexLiveTvClientMethods on _PlexClientInternals implements LiveTvSupport, LiveTvDvrSupport {
   PlexConfig get config;
-  MediaServerHttpClient get _http;
-
-  @override
-  ServerId get serverId;
-
-  @override
-  String? get serverName;
 
   List<({String identifier, String gridEndpoint})> get _providerEpg;
 
-  Future<MediaServerResponse> _getWithFailover(
-    String path, {
-    Map<String, dynamic>? queryParameters,
-    // ignore: unused_element_parameter
-    Map<String, String>? headers,
-    // ignore: unused_element_parameter
-    Duration? timeout,
-    // ignore: unused_element_parameter
-    AbortController? abort,
-    bool allowEndpointFailover = true,
-  });
-
-  Map<String, dynamic>? _getMediaContainer(MediaServerResponse response);
   PlexMetadataDto _createTaggedMetadata(Map<String, dynamic> json);
-
-  Future<List<T>> _wrapListApiCall<T>(
-    Future<MediaServerResponse> Function() apiCall,
-    List<T> Function(MediaServerResponse response) parseResponse,
-    String errorMessage,
-  );
 
   /// POST the tune endpoint with one retry on transient HTTP failure.
   Future<MediaServerResponse> _postTuneWithRetry(String path, String sessionIdentifier) async {
@@ -97,7 +71,7 @@ mixin _PlexLiveTvClientMethods on MediaServerCacheMixin implements LiveTvSupport
       for (final entry in request.prefs.entries) 'prefs[${entry.key}]': entry.value,
       for (final entry in request.params.entries) 'params[${entry.key}]': entry.value,
     };
-    final encoded = MediaServerHttpClient.encodeQueryParameters(flat);
+    final encoded = encodeQueryParameters(flat);
     if (encoded.isNotEmpty) parts.add(encoded);
     return parts.join('&');
   }
@@ -750,10 +724,9 @@ mixin _PlexLiveTvClientMethods on MediaServerCacheMixin implements LiveTvSupport
         if (config.token != null) 'X-Plex-Token': config.token!,
       };
 
-      // Manual query encoding — use '%20' for spaces as Plex requires.
-      final queryString = allParams.entries
-          .map((e) => '${Uri.encodeComponent(e.key)}=${Uri.encodeComponent(e.value)}')
-          .join('&');
+      // '%20' for spaces as Plex requires — not `Uri.queryParameters`, which
+      // emits `+`.
+      final queryString = encodeQueryParameters(allParams);
 
       // Decision — wrapper around the same transport so no default X-Plex-*
       // HTTP headers leak through (everything travels in the query string).
@@ -783,9 +756,7 @@ mixin _PlexLiveTvClientMethods on MediaServerCacheMixin implements LiveTvSupport
 
       // Token is added by the caller via .withPlexToken()
       final startParams = Map<String, String>.from(allParams)..remove('X-Plex-Token');
-      final startQuery = startParams.entries
-          .map((e) => '${Uri.encodeComponent(e.key)}=${Uri.encodeComponent(e.value)}')
-          .join('&');
+      final startQuery = encodeQueryParameters(startParams);
 
       return '$_plexVideoHlsStartEndpoint?$startQuery';
     } catch (e, st) {

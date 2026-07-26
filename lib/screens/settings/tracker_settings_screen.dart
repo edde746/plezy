@@ -67,7 +67,6 @@ class TrackerConfig {
   final String displayName;
   final bool Function(TrackersProvider) isConnected;
   final String? Function(TrackersProvider) username;
-  final Pref<bool> scrobblePref;
   final Future<void> Function(bool) onScrobbleChanged;
   final Future<void> Function(TrackersProvider) disconnect;
 
@@ -76,17 +75,17 @@ class TrackerConfig {
     required this.displayName,
     required this.isConnected,
     required this.username,
-    required this.scrobblePref,
     required this.onScrobbleChanged,
     required this.disconnect,
   });
+
+  Pref<bool> get scrobblePref => SettingsService.scrobblePref(service);
 
   static TrackerConfig mal() => TrackerConfig(
     service: TrackerService.mal,
     displayName: t.services.names.mal,
     isConnected: (a) => a.isMalConnected,
     username: (a) => a.malUsername,
-    scrobblePref: SettingsService.enableMalScrobble,
     onScrobbleChanged: MalTracker.instance.setEnabled,
     disconnect: (a) => a.disconnectMal(),
   );
@@ -96,7 +95,6 @@ class TrackerConfig {
     displayName: t.services.names.anilist,
     isConnected: (a) => a.isAnilistConnected,
     username: (a) => a.anilistUsername,
-    scrobblePref: SettingsService.enableAnilistScrobble,
     onScrobbleChanged: AnilistTracker.instance.setEnabled,
     disconnect: (a) => a.disconnectAnilist(),
   );
@@ -106,7 +104,6 @@ class TrackerConfig {
     displayName: t.services.names.simkl,
     isConnected: (a) => a.isSimklConnected,
     username: (a) => a.simklUsername,
-    scrobblePref: SettingsService.enableSimklScrobble,
     onScrobbleChanged: SimklTracker.instance.setEnabled,
     disconnect: (a) => a.disconnectSimkl(),
   );

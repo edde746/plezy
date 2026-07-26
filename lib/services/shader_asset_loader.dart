@@ -174,12 +174,7 @@ class ShaderAssetLoader {
   /// Get the shader file path for an ArtCNN preset.
   /// Returns a list containing exactly one ArtCNN shader path.
   static Future<List<String>> getArtCNNShaders(ArtCNNConfig config) async {
-    final variantId = switch (config.variant) {
-      ArtCNNVariant.neutral => 'neutral',
-      ArtCNNVariant.denoise => 'dn',
-      ArtCNNVariant.denoiseSharpen => 'ds',
-    };
-    final shaderPath = await _extractShader(_artcnnShaders['${config.model.name}_$variantId']!);
+    final shaderPath = await _extractShader(_artcnnShaders['${config.model.name}_${config.variant.slug}']!);
     if (shaderPath == null) return [];
     return [shaderPath];
   }

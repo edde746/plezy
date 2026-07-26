@@ -54,15 +54,13 @@ class TrackerRatingUnavailableException implements Exception {
   String toString() => 'TrackerRatingUnavailableException($trackerName)';
 }
 
-/// Shared enabled-state bookkeeping. Subclasses override [hasActiveClient],
-/// [readEnabledSetting], and [markWatched].
+/// Shared enabled-state bookkeeping. Subclasses override [hasActiveClient]
+/// and [markWatched].
 abstract class TrackerBase implements Tracker {
   bool _isInitialized = false;
   bool _isEnabled = false;
 
   bool get hasActiveClient;
-
-  bool readEnabledSetting(SettingsService settings);
 
   @override
   bool get canScrobble => _isEnabled && hasActiveClient;
@@ -71,7 +69,8 @@ abstract class TrackerBase implements Tracker {
   Future<void> initialize() async {
     if (_isInitialized) return;
     _isInitialized = true;
-    _isEnabled = readEnabledSetting(await SettingsService.getInstance());
+    final settings = await SettingsService.getInstance();
+    _isEnabled = settings.read(SettingsService.scrobblePref(service));
   }
 
   @override

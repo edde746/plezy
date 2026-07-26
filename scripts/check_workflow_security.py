@@ -5,46 +5,19 @@ from pathlib import Path
 import re
 import sys
 
+from workflow_yaml import iter_uses_references, iter_workflow_files, scalar
+
 
 ROOT = Path(__file__).resolve().parents[1]
 WORKFLOWS = ROOT / ".github" / "workflows"
 CI_WORKFLOW = Path(".github/workflows/ci.yml")
 FULL_SHA = re.compile(r"[0-9a-f]{40}")
-USES_LINE = re.compile(r"^\s*(?:-\s+)?(?:uses|'uses'|\"uses\")\s*:\s*(.*?)\s*$")
 
 
 def _active_text(text: str) -> str:
     return "\n".join(
         "" if line.lstrip().startswith("#") else line for line in text.splitlines()
     )
-
-
-def _scalar(value: str) -> str:
-    """Remove an inline YAML comment and matching scalar quotes."""
-    quote: str | None = None
-    escaped = False
-    end = len(value)
-    for index, character in enumerate(value):
-        if escaped:
-            escaped = False
-            continue
-        if quote == '"' and character == "\\":
-            escaped = True
-            continue
-        if character in ("'", '"'):
-            if quote is None:
-                quote = character
-            elif quote == character:
-                quote = None
-        elif character == "#" and quote is None and (
-            index == 0 or value[index - 1].isspace()
-        ):
-            end = index
-            break
-    result = value[:end].strip()
-    if len(result) >= 2 and result[0] == result[-1] and result[0] in ("'", '"'):
-        return result[1:-1]
-    return result
 
 
 def _has_trigger(text: str, event: str) -> bool:
@@ -61,7 +34,7 @@ def _has_trigger(text: str, event: str) -> bool:
         match = re.fullmatch(rf"{on_key}:\s*(.+?)\s*", line)
         if match is not None and re.search(
             rf"""(?:^|[\[{{,\s])['"]?{re.escape(event)}['"]?(?:$|[\]}},\s:])""",
-            _scalar(match.group(1)),
+            scalar(match.group(1)),
         ):
             return True
     return False
@@ -104,7 +77,7 @@ def _check_fail_open(path: Path, text: str) -> list[str]:
             r"""^\s*(?:-\s+)?(?:continue-on-error|'continue-on-error'|"continue-on-error")\s*:\s*(.*?)\s*$""",
             line,
         )
-        if match is not None and _scalar(match.group(1)).lower() != "false":
+        if match is not None and scalar(match.group(1)).lower() != "false":
             errors.append(f"{path}:{line_number}: continue-on-error must remain false")
         if re.search(r"\|\|\s*true(?:\s|$)", line):
             errors.append(f"{path}:{line_number}: command must not suppress failure with || true")
@@ -121,26 +94,22 @@ def check_workflow(path: Path, text: str) -> list[str]:
 
     pull_request = _has_trigger(active, "pull_request")
     lines = active.splitlines()
-    for line_index, line in enumerate(lines):
-        match = USES_LINE.match(line)
-        if match is None:
-            continue
-        reference = _scalar(match.group(1))
+    for line_number, reference in iter_uses_references(active):
         if reference.startswith("./"):
             continue
         action, separator, ref = reference.rpartition("@")
         if not separator or not action or FULL_SHA.fullmatch(ref) is None:
             errors.append(
-                f"{path}:{line_index + 1}: external action must use a full commit SHA: {reference}"
+                f"{path}:{line_number}: external action must use a full commit SHA: {reference}"
             )
         if pull_request and action == "actions/checkout":
-            step = _step_block(lines, line_index)
+            step = _step_block(lines, line_number - 1)
             if re.search(
                 r"""(?mi)^\s+(?:persist-credentials|'persist-credentials'|"persist-credentials")\s*:\s*['"]?false['"]?\s*(?:#.*)?$""",
                 step,
             ) is None:
                 errors.append(
-                    f"{path}:{line_index + 1}: pull-request checkout must discard GitHub credentials"
+                    f"{path}:{line_number}: pull-request checkout must discard GitHub credentials"
                 )
 
     if re.search(
@@ -163,7 +132,7 @@ def check_workflow(path: Path, text: str) -> list[str]:
 
 def main() -> int:
     errors: list[str] = []
-    for path in sorted((*WORKFLOWS.glob("*.yml"), *WORKFLOWS.glob("*.yaml"))):
+    for path in iter_workflow_files(WORKFLOWS):
         errors.extend(check_workflow(path.relative_to(ROOT), path.read_text(encoding="utf-8")))
 
     if errors:

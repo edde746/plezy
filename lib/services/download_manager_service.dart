@@ -1323,46 +1323,23 @@ class DownloadManagerService {
           );
         }
 
-        var artworkSettled = !queueItem.downloadArtwork;
-        if (queueItem.downloadArtwork) {
-          final itemArtworkSettled = await _downloadArtwork(globalKey, metadata, client);
-          final chapterArtworkSettled = metadata.serverId == null
-              ? false
-              : await _downloadChapterThumbnails(ServerId(metadata.serverId!), metadata.id, client);
-          artworkSettled = itemArtworkSettled && chapterArtworkSettled;
-        }
-
-        var subtitlesSettled = !queueItem.downloadSubtitles;
-        if (queueItem.downloadSubtitles) {
-          try {
-            final resolution = await client.resolveDownload(
-              metadata,
-              mediaIndex: record?.mediaIndex ?? 0,
-              mediaSourceId: record?.mediaSourceId,
-            );
-            if (resolution.externalSubtitlesResolved) {
-              subtitlesSettled = await _downloadSubtitles(
-                globalKey,
-                metadata,
-                resolution.externalSubtitles,
-                client,
-                showYear: showYear,
-              );
-            } else {
-              appLogger.d('Subtitle enrichment remains deferred for $globalKey');
-            }
-          } catch (e, st) {
-            appLogger.w('Could not resolve subtitles for deferred download: $globalKey', error: e, stackTrace: st);
-          }
-        }
-        if (artworkSettled && subtitlesSettled) {
+        final settled = await _runSupplementaryDownloads(
+          globalKey,
+          metadata,
+          client,
+          downloadArtwork: queueItem.downloadArtwork,
+          downloadSubtitles: queueItem.downloadSubtitles,
+          record: record,
+          showYear: showYear,
+        );
+        if (settled.artwork && settled.subtitles) {
           await _database.removeFromQueue(globalKey);
           appLogger.i('Deferred supplementary downloads completed for $globalKey');
         } else {
           await _database.updateSupplementaryQueueIntent(
             globalKey,
-            downloadSubtitles: !subtitlesSettled,
-            downloadArtwork: !artworkSettled,
+            downloadSubtitles: !settled.subtitles,
+            downloadArtwork: !settled.artwork,
           );
         }
       } catch (e, st) {
@@ -1591,17 +1568,8 @@ class DownloadManagerService {
     if (client != null) unawaited(_processQueue(client));
   }
 
-  Future<void> _cancelNativeTask(String globalKey, String taskId, {required String reason}) async {
-    if (!downloadsSupported || taskId.isEmpty) return;
-    try {
-      final cancelled = await FileDownloader().cancelTaskWithId(taskId);
-      if (cancelled) {
-        appLogger.d('Cancelled native task $taskId for $globalKey ($reason)');
-      }
-    } catch (e) {
-      appLogger.w('Failed to cancel native task $taskId for $globalKey ($reason)', error: e);
-    }
-  }
+  Future<void> _cancelNativeTask(String globalKey, String taskId, {required String reason}) =>
+      _cancelNativeTaskIds(globalKey, [taskId], reason: reason);
 
   Future<void> _cancelNativeTasksForGlobalKey(
     String globalKey, {
@@ -1624,16 +1592,7 @@ class DownloadManagerService {
       appLogger.w('Failed to enumerate native tasks for $globalKey ($reason)', error: e);
     }
 
-    if (taskIds.isEmpty) return;
-
-    try {
-      final cancelled = await FileDownloader().cancelTasksWithIds(taskIds);
-      if (cancelled) {
-        appLogger.d('Cancelled ${taskIds.length} native task(s) for $globalKey ($reason): ${taskIds.join(', ')}');
-      }
-    } catch (e) {
-      appLogger.w('Failed to cancel native tasks for $globalKey ($reason): ${taskIds.join(', ')}', error: e);
-    }
+    await _cancelNativeTaskIds(globalKey, taskIds, reason: reason);
   }
 
   Future<DownloadedMediaItem?> _downloadForCurrentTaskSession(
@@ -2390,36 +2349,20 @@ class DownloadManagerService {
       try {
         final metadata = ctx?.metadata ?? await _resolveMetadata(globalKey);
         final client = ctx?.client ?? await _getClientForDownloadKey(globalKey);
-        final showYear = ctx?.showYear;
 
         if (metadata != null && client != null) {
-          if (downloadArtwork) {
-            final itemArtworkSettled = await _downloadArtwork(globalKey, metadata, client);
-            final chapterArtworkSettled = metadata.serverId == null
-                ? false
-                : await _downloadChapterThumbnails(ServerId(metadata.serverId!), metadata.id, client);
-            artworkSettled = itemArtworkSettled && chapterArtworkSettled;
-          }
-          if (downloadSubtitles) {
-            var subtitles = ctx?.subtitles;
-            if (subtitles == null) {
-              try {
-                final resolution = await client.resolveDownload(
-                  metadata,
-                  mediaIndex: existingCheck.mediaIndex,
-                  mediaSourceId: existingCheck.mediaSourceId,
-                );
-                if (resolution.externalSubtitlesResolved) {
-                  subtitles = resolution.externalSubtitles;
-                }
-              } catch (e, st) {
-                appLogger.w('Could not re-resolve subtitles for $globalKey', error: e, stackTrace: st);
-              }
-            }
-            if (subtitles != null) {
-              subtitlesSettled = await _downloadSubtitles(globalKey, metadata, subtitles, client, showYear: showYear);
-            }
-          }
+          final settled = await _runSupplementaryDownloads(
+            globalKey,
+            metadata,
+            client,
+            downloadArtwork: downloadArtwork,
+            downloadSubtitles: downloadSubtitles,
+            record: existingCheck,
+            showYear: ctx?.showYear,
+            preresolvedSubtitles: ctx?.subtitles,
+          );
+          artworkSettled = settled.artwork;
+          subtitlesSettled = settled.subtitles;
         }
       } catch (e, st) {
         appLogger.w('Supplementary downloads failed for $globalKey (video is saved)', error: e, stackTrace: st);
@@ -2514,6 +2457,58 @@ class DownloadManagerService {
     final serverId = metadata.serverId;
     if (!metadata.isEpisode || serverId == null) return Future.value();
     return _fetchShowYear(ServerId(serverId), metadata.grandparentId, clientScopeId: clientScopeId);
+  }
+
+  /// Best-effort supplementary work for an already-stored video (artwork,
+  /// chapter thumbnails, external subtitles); reports which half settled so the
+  /// caller can do its own queue-row bookkeeping. Shared by the completion path
+  /// and the deferred-repair path: [record] carries the media-source
+  /// coordinates for re-resolving subtitles, [preresolvedSubtitles] skips that
+  /// re-resolve, and [showYear] is caller-supplied because the paths differ.
+  Future<({bool artwork, bool subtitles})> _runSupplementaryDownloads(
+    String globalKey,
+    MediaItem metadata,
+    MediaServerClient client, {
+    required bool downloadArtwork,
+    required bool downloadSubtitles,
+    required DownloadedMediaItem? record,
+    required int? showYear,
+    List<DownloadSubtitleSpec>? preresolvedSubtitles,
+  }) async {
+    var artworkSettled = !downloadArtwork;
+    if (downloadArtwork) {
+      final itemArtworkSettled = await _downloadArtwork(globalKey, metadata, client);
+      final chapterArtworkSettled = metadata.serverId == null
+          ? false
+          : await _downloadChapterThumbnails(ServerId(metadata.serverId!), metadata.id, client);
+      artworkSettled = itemArtworkSettled && chapterArtworkSettled;
+    }
+
+    var subtitlesSettled = !downloadSubtitles;
+    if (downloadSubtitles) {
+      try {
+        var subtitles = preresolvedSubtitles;
+        if (subtitles == null) {
+          final resolution = await client.resolveDownload(
+            metadata,
+            mediaIndex: record?.mediaIndex ?? 0,
+            mediaSourceId: record?.mediaSourceId,
+          );
+          if (resolution.externalSubtitlesResolved) {
+            subtitles = resolution.externalSubtitles;
+          } else {
+            appLogger.d('Subtitle enrichment remains deferred for $globalKey');
+          }
+        }
+        if (subtitles != null) {
+          subtitlesSettled = await _downloadSubtitles(globalKey, metadata, subtitles, client, showYear: showYear);
+        }
+      } catch (e, st) {
+        appLogger.w('Could not resolve subtitles for $globalKey', error: e, stackTrace: st);
+      }
+    }
+
+    return (artwork: artworkSettled, subtitles: subtitlesSettled);
   }
 
   Future<bool> _downloadArtwork(String globalKey, MediaItem metadata, MediaServerClient client) async {
@@ -3266,22 +3261,37 @@ class DownloadManagerService {
     }
   }
 
-  Future<void> _deleteMovieStorageDirectory(MediaItem movie) async {
+  /// Delete one media directory and everything under it, on either storage backend.
+  /// [safComponents] and [fileDirectory] are thunks so only the branch that runs
+  /// resolves its path — the file-mode getters create the directory as a side effect.
+  Future<void> _deleteStorageDirectory({
+    required List<String> Function() safComponents,
+    required Future<Directory> Function() fileDirectory,
+    required String label,
+  }) async {
     if (_storageService.isUsingSaf) {
       final safBaseUri = _storageService.safBaseUri;
       if (safBaseUri == null) return;
-      final movieDir = await _safStorage.getChild(safBaseUri, _storageService.getMovieSafPathComponents(movie));
-      if (movieDir != null) {
-        await _deleteSafDirRecursive(movieDir.uri, description: 'movie directory');
+      final dir = await _safStorage.getChild(safBaseUri, safComponents());
+      if (dir != null) {
+        await _deleteSafDirRecursive(dir.uri, description: '$label directory');
       }
       return;
     }
 
-    final movieDir = await _storageService.getMovieDirectory(movie);
-    if (await movieDir.exists()) {
-      await movieDir.delete(recursive: true);
-      appLogger.i('Deleted movie directory: ${movieDir.path}');
+    final dir = await fileDirectory();
+    if (await dir.exists()) {
+      await dir.delete(recursive: true);
+      appLogger.i('Deleted $label directory: ${dir.path}');
     }
+  }
+
+  Future<void> _deleteMovieStorageDirectory(MediaItem movie) {
+    return _deleteStorageDirectory(
+      safComponents: () => _storageService.getMovieSafPathComponents(movie),
+      fileDirectory: () => _storageService.getMovieDirectory(movie),
+      label: 'movie',
+    );
   }
 
   Future<_EpisodeStorageDeletion> _deleteEpisodeStorageVideo(
@@ -3330,50 +3340,32 @@ class DownloadManagerService {
   }
 
   Future<void> _deleteSeasonStorageDirectory(MediaItem season, int? showYear) async {
+    await _deleteStorageDirectory(
+      safComponents: () => _storageService.getSeasonSafPathComponents(season, showYear: showYear),
+      fileDirectory: () => _storageService.getSeasonDirectory(season, showYear: showYear),
+      label: 'season',
+    );
+
+    // Drop the parent show directory too if the deleted season left it empty.
     if (_storageService.isUsingSaf) {
       final safBaseUri = _storageService.safBaseUri;
       if (safBaseUri == null) return;
-      final seasonDir = await _safStorage.getChild(
-        safBaseUri,
-        _storageService.getSeasonSafPathComponents(season, showYear: showYear),
-      );
-      if (seasonDir != null) {
-        await _deleteSafDirRecursive(seasonDir.uri, description: 'season directory');
-      }
       final showDir = await _safStorage.getChild(
         safBaseUri,
         _storageService.getShowSafPathComponents(season, showYear: showYear),
       );
-      if (showDir != null) {
-        await _deleteEmptySafDirsInOrder([showDir.uri]);
-      }
+      await _deleteEmptySafDirsInOrder([showDir?.uri]);
       return;
-    }
-
-    final seasonDir = await _storageService.getSeasonDirectory(season, showYear: showYear);
-    if (await seasonDir.exists()) {
-      await seasonDir.delete(recursive: true);
-      appLogger.i('Deleted season directory: ${seasonDir.path}');
     }
     await _cleanupShowDirectory(season, showYear);
   }
 
-  Future<void> _deleteShowStorageDirectory(MediaItem show) async {
-    if (_storageService.isUsingSaf) {
-      final safBaseUri = _storageService.safBaseUri;
-      if (safBaseUri == null) return;
-      final showDir = await _safStorage.getChild(safBaseUri, _storageService.getShowSafPathComponents(show));
-      if (showDir != null) {
-        await _deleteSafDirRecursive(showDir.uri, description: 'show directory');
-      }
-      return;
-    }
-
-    final showDir = await _storageService.getShowDirectory(show);
-    if (await showDir.exists()) {
-      await showDir.delete(recursive: true);
-      appLogger.i('Deleted show directory: ${showDir.path}');
-    }
+  Future<void> _deleteShowStorageDirectory(MediaItem show) {
+    return _deleteStorageDirectory(
+      safComponents: () => _storageService.getShowSafPathComponents(show),
+      fileDirectory: () => _storageService.getShowDirectory(show),
+      label: 'show',
+    );
   }
 
   /// Safety net: after metadata-based deletion, verify the actual DB-recorded

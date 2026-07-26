@@ -2,7 +2,6 @@ import 'package:http/http.dart' as http;
 
 import '../../../models/trackers/anime_ids.dart';
 import '../../../utils/app_logger.dart';
-import '../../settings_service.dart';
 import '../anime_list_tracker_base.dart';
 import '../tracker.dart';
 import '../tracker_constants.dart';
@@ -29,16 +28,7 @@ class MalTracker extends TrackerBase with ClientBackedTracker<MalClient>, AnimeL
   TrackerService get service => TrackerService.mal;
 
   @override
-  bool readEnabledSetting(SettingsService settings) => settings.read(SettingsService.enableMalScrobble);
-
-  @override
   String get logLabel => 'MAL';
-
-  @override
-  String get idLogName => 'mal';
-
-  @override
-  String get ratingUnavailableName => 'MAL';
 
   void rebindSession(
     TrackerSession? session, {

@@ -137,6 +137,7 @@ class JellyfinSequentialLauncher extends MediaListPlaybackLauncher {
   /// Launch playback from a Jellyfin folder row. Jellyfin has no server-side
   /// queue resource, so folders use the same local queue path as collections.
   /// The client query is video-only; music-only folders return [PlayQueueEmpty].
+  @override
   Future<PlayQueueResult> launchFromFolder({
     required MediaItem folder,
     required bool shuffle,

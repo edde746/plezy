@@ -29,6 +29,7 @@ import 'settings_service.dart';
 import 'library_query_translator.dart';
 import 'scrub_preview_source.dart';
 import '../utils/media_server_http_client.dart';
+import '../utils/url_utils.dart';
 import '../exceptions/media_server_exceptions.dart';
 import '../models/livetv_capture_buffer.dart';
 import '../models/livetv_channel.dart';
@@ -164,6 +165,20 @@ List<PlexHubDto> _processHubResponse(
   return hubs;
 }
 
+/// Library-hub item filter. Music-section hubs carry artist/album/track items —
+/// the default video-only filter would empty them out.
+bool _videoOrMusicHubItem(PlexMetadataDto item) {
+  final type = item.type?.toLowerCase();
+  return ContentTypes.videoTypes.contains(type) || ContentTypes.musicTypes.contains(type);
+}
+
+/// Related-hub item filter: related rows include collection entries alongside
+/// the usual video items.
+bool _videoOrCollectionHubItem(PlexMetadataDto item) {
+  final type = item.type?.toLowerCase();
+  return ContentTypes.videoTypes.contains(type) || type == ContentTypes.collection;
+}
+
 int? _librarySectionIdFromJson(Map<String, dynamic>? json) => plexLibrarySectionIdFromJson(json);
 
 int? _librarySectionIdFromString(String? sectionId) => plexLibrarySectionIdFromString(sectionId);
@@ -252,9 +267,54 @@ class _PlexMediaProviderState {
   final String? continueWatchingHubKey;
 }
 
+/// Canonical declarations of the [PlexClient] internals that the `part`
+/// mixins below call into.
+///
+/// Every part mixin is `on _PlexClientInternals`, so each shared member is
+/// declared exactly once here instead of being re-declared (and drifting)
+/// per file. Members used by a single part stay declared in that part.
+mixin _PlexClientInternals on MediaServerCacheMixin {
+  FailoverHttpClient get _http;
+
+  Future<MediaServerResponse> _getWithFailover(
+    String path, {
+    Map<String, dynamic>? queryParameters,
+    // ignore: unused_element_parameter
+    Map<String, String>? headers,
+    // ignore: unused_element_parameter
+    Duration? timeout,
+    AbortController? abort,
+    bool allowEndpointFailover = true,
+  });
+
+  Map<String, dynamic>? _getMediaContainer(MediaServerResponse response);
+
+  Map<String, dynamic> _buildPaginationParams(int? start, int? size);
+
+  Future<_LibraryContentResult> _fetchPaginatedList(
+    String path, {
+    int? start,
+    int? size,
+    AbortController? abort,
+    int? librarySectionID,
+    String? librarySectionTitle,
+  });
+
+  Future<bool> _wrapBoolApiCall(Future<MediaServerResponse> Function() apiCall, String errorMessage);
+
+  Future<List<T>> _wrapListApiCall<T>(
+    Future<MediaServerResponse> Function() apiCall,
+    List<T> Function(MediaServerResponse response) parseResponse,
+    String errorMessage,
+  );
+
+  Future<String> buildMetadataUri(String ratingKey);
+}
+
 class PlexClient
     with
         MediaServerCacheMixin,
+        _PlexClientInternals,
         _PlexLiveTvClientMethods,
         _PlexPlaylistMethods,
         _PlexCollectionMethods,
@@ -1220,23 +1280,18 @@ class PlexClient
   static const int _fetchAllPageSize = 200;
 
   /// Iterate every page of a paginated endpoint and concatenate the results.
-  /// Stops as soon as [_LibraryContentResult.totalSize] is reached or a page
-  /// returns no items. Errors propagate.
+  /// Adapts Plex's [_LibraryContentResult] onto the shared [drainPages] drain,
+  /// so it stops as soon as [_LibraryContentResult.totalSize] is reached or a
+  /// page returns no items. Errors propagate.
   @override
   Future<List<PlexMetadataDto>> _fetchAllPages(
     Future<_LibraryContentResult> Function(int start, int size, AbortController? abort) fetchPage, {
     AbortController? abort,
-  }) async {
-    final all = <PlexMetadataDto>[];
-    var start = 0;
-    while (true) {
-      final page = await fetchPage(start, _fetchAllPageSize, abort);
-      all.addAll(page.items);
-      start += page.items.length;
-      if (page.items.isEmpty) break;
-      if (start >= page.totalSize) break;
-    }
-    return all;
+  }) {
+    return drainPages<PlexMetadataDto>((start, size) async {
+      final page = await fetchPage(start, size, abort);
+      return LibraryPage(items: page.items, totalCount: page.totalSize, offset: start);
+    }, pageSize: _fetchAllPageSize);
   }
 
   /// Walk every page of [path] and return a single synthesized response whose
@@ -2027,109 +2082,90 @@ class PlexClient
     return fallbackSorts;
   }
 
+  /// Shared transport for the hub endpoints: bounded transient retry with no
+  /// endpoint failover (a hub row is not worth flipping the active endpoint),
+  /// isolate-offloaded parsing, and log-and-empty on failure so one dead hub
+  /// row never takes down the screen around it.
+  ///
+  /// [failureLabel] names the hub set in the failure log line.
+  Future<List<PlexHubDto>> _fetchHubs({
+    required String path,
+    required Map<String, dynamic> queryParameters,
+    required String operation,
+    required List<Duration> attemptTimeouts,
+    required String failureLabel,
+    int? librarySectionID,
+    String? librarySectionTitle,
+    bool Function(PlexMetadataDto)? filter,
+  }) async {
+    try {
+      final response = await retryTransientMediaServerCall(
+        operation: operation,
+        attemptTimeouts: attemptTimeouts,
+        call: (timeout, abort) => _getWithFailover(
+          path,
+          queryParameters: queryParameters,
+          timeout: timeout,
+          abort: abort,
+          allowEndpointFailover: false,
+        ),
+      );
+      final sid = serverId;
+      final sname = serverName;
+      final data = response.data as Map<String, dynamic>;
+      return await tryIsolateRun(
+        () => _processHubResponse(
+          data,
+          sid,
+          sname,
+          librarySectionID: librarySectionID,
+          librarySectionTitle: librarySectionTitle,
+          filter: filter,
+        ),
+      );
+    } catch (e) {
+      appLogger.e('Failed to get $failureLabel: $e');
+    }
+    return [];
+  }
+
   /// Get library hubs (recommendations for a specific library section)
   /// Returns a list of recommendation hubs like "Trending Movies", "Top in Genre", etc.
   Future<List<PlexHubDto>> _getLibraryHubs(
     String sectionId, {
     int limit = defaultHubPreviewLimit,
     String? libraryName,
-  }) async {
-    try {
-      final response = await retryTransientMediaServerCall(
-        operation: 'Plex library hubs',
-        attemptTimeouts: MediaServerTimeouts.libraryHubAttemptTimeouts,
-        call: (timeout, abort) => _getWithFailover(
-          '/hubs/sections/$sectionId',
-          queryParameters: {'count': limit, 'includeGuids': 1},
-          timeout: timeout,
-          abort: abort,
-          allowEndpointFailover: false,
-        ),
-      );
-      final sid = serverId;
-      final sname = serverName;
-      final data = response.data as Map<String, dynamic>;
-      return await tryIsolateRun(
-        () => _processHubResponse(
-          data,
-          sid,
-          sname,
-          librarySectionID: _librarySectionIdFromString(sectionId),
-          librarySectionTitle: libraryName,
-          // Music-section hubs carry artist/album/track items — the default
-          // video-only filter would empty them out.
-          filter: (item) {
-            final type = item.type?.toLowerCase();
-            return ContentTypes.videoTypes.contains(type) || ContentTypes.musicTypes.contains(type);
-          },
-        ),
-      );
-    } catch (e) {
-      appLogger.e('Failed to get library hubs: $e');
-    }
-    return [];
-  }
+  }) => _fetchHubs(
+    path: '/hubs/sections/$sectionId',
+    queryParameters: {'count': limit, 'includeGuids': 1},
+    operation: 'Plex library hubs',
+    attemptTimeouts: MediaServerTimeouts.libraryHubAttemptTimeouts,
+    failureLabel: 'library hubs',
+    librarySectionID: _librarySectionIdFromString(sectionId),
+    librarySectionTitle: libraryName,
+    filter: _videoOrMusicHubItem,
+  );
 
   /// Get global hubs (home page recommendations)
   /// Returns actual home page hubs like "Recently Added Movies", "Recently Added TV", etc.
   /// This matches the official Plex client's home page layout.
-  Future<List<PlexHubDto>> _getGlobalHubs({int limit = defaultHubPreviewLimit}) async {
-    try {
-      final hubKey = _providerPromotedHubKey ?? _providerHomeHubKey ?? '/hubs';
-      final response = await retryTransientMediaServerCall(
-        operation: 'Plex global hubs',
-        attemptTimeouts: MediaServerTimeouts.homeHubAttemptTimeouts,
-        call: (timeout, abort) => _getWithFailover(
-          hubKey,
-          queryParameters: {'count': limit, 'includeGuids': 1},
-          timeout: timeout,
-          abort: abort,
-          allowEndpointFailover: false,
-        ),
-      );
-      final sid = serverId;
-      final sname = serverName;
-      final data = response.data as Map<String, dynamic>;
-      return await tryIsolateRun(() => _processHubResponse(data, sid, sname));
-    } catch (e) {
-      appLogger.e('Failed to get global hubs: $e');
-    }
-    return [];
-  }
+  Future<List<PlexHubDto>> _getGlobalHubs({int limit = defaultHubPreviewLimit}) => _fetchHubs(
+    path: _providerPromotedHubKey ?? _providerHomeHubKey ?? '/hubs',
+    queryParameters: {'count': limit, 'includeGuids': 1},
+    operation: 'Plex global hubs',
+    attemptTimeouts: MediaServerTimeouts.homeHubAttemptTimeouts,
+    failureLabel: 'global hubs',
+  );
 
   /// Get related hubs for a specific metadata item (collections, similar, "more from" director/actor)
-  Future<List<PlexHubDto>> _getRelatedHubs(String ratingKey, {int count = 10}) async {
-    try {
-      final response = await retryTransientMediaServerCall(
-        operation: 'Plex related hubs',
-        attemptTimeouts: MediaServerTimeouts.libraryHubAttemptTimeouts,
-        call: (timeout, abort) => _getWithFailover(
-          '/hubs/metadata/$ratingKey/related',
-          queryParameters: {'count': count},
-          timeout: timeout,
-          abort: abort,
-          allowEndpointFailover: false,
-        ),
-      );
-      final sid = serverId;
-      final sname = serverName;
-      final data = response.data as Map<String, dynamic>;
-      return await tryIsolateRun(
-        () => _processHubResponse(
-          data,
-          sid,
-          sname,
-          filter: (item) {
-            final type = item.type?.toLowerCase();
-            return ContentTypes.videoTypes.contains(type) || type == ContentTypes.collection;
-          },
-        ),
-      );
-    } catch (e) {
-      appLogger.e('Failed to get related hubs: $e');
-    }
-    return [];
-  }
+  Future<List<PlexHubDto>> _getRelatedHubs(String ratingKey, {int count = 10}) => _fetchHubs(
+    path: '/hubs/metadata/$ratingKey/related',
+    queryParameters: {'count': count},
+    operation: 'Plex related hubs',
+    attemptTimeouts: MediaServerTimeouts.libraryHubAttemptTimeouts,
+    failureLabel: 'related hubs',
+    filter: _videoOrCollectionHubItem,
+  );
 
   /// Get full content from a hub using its hub key
   /// Returns the complete list of metadata items in the hub
@@ -3136,34 +3172,8 @@ class PlexClient
       );
     } catch (error, stackTrace) {
       if (error is PlaybackException) rethrow;
-      Error.throwWithStackTrace(_classifyPlaybackFailure(error), stackTrace);
+      Error.throwWithStackTrace(classifyPlaybackFailure(error), stackTrace);
     }
-  }
-
-  PlaybackException _classifyPlaybackFailure(Object error) {
-    if (error is MediaServerAuthException ||
-        error is MediaServerHttpException && (error.statusCode == 401 || error.statusCode == 403)) {
-      return PlaybackException(
-        t.messages.playbackAuthenticationRequired,
-        reason: PlaybackFailureReason.authenticationRequired,
-      );
-    }
-    if (error is MediaServerHttpException) {
-      if (error.isCancellation) {
-        return PlaybackException(t.messages.playbackCancelled, reason: PlaybackFailureReason.cancelled);
-      }
-      final status = error.statusCode;
-      if (error.isTransient || status != null && status >= 500) {
-        return PlaybackException(t.messages.playbackServerUnavailable, reason: PlaybackFailureReason.serverUnavailable);
-      }
-      if (error.type == MediaServerHttpErrorType.unknown && status != null && status < 400) {
-        return PlaybackException(t.messages.playbackDataInvalid, reason: PlaybackFailureReason.invalidPlaybackData);
-      }
-    }
-    if (error is FormatException || error is TypeError) {
-      return PlaybackException(t.messages.playbackDataInvalid, reason: PlaybackFailureReason.invalidPlaybackData);
-    }
-    return PlaybackException(t.messages.playbackFailed);
   }
 
   /// Direct-play result for a transcode decision that fell back (failed or

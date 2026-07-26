@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../media/media_item.dart';
 import '../media/media_playlist.dart';
 import '../media/media_server_client.dart';
+import '../providers/download_provider.dart';
 import '../providers/multi_server_provider.dart';
 import '../utils/provider_extensions.dart';
 import '../services/media_list_playback_launcher.dart';
@@ -41,19 +42,34 @@ abstract class BaseMediaListDetailScreen<T extends StatefulWidget> extends State
   /// Optional icon to show when list is empty
   IconData? get emptyIcon => null;
 
+  /// Server the displayed item was tagged with, if any.
+  String? get _mediaItemServerId => switch (mediaItem) {
+    MediaItem(:final serverId) => serverId,
+    MediaPlaylist(:final serverId) => serverId,
+    _ => null,
+  };
+
+  /// Sync-rule global key for the displayed collection/playlist, keyed to the
+  /// item's own server when it has one and to the resolved client's otherwise.
+  String get syncRuleKey {
+    final client = mediaClient;
+    final id = switch (mediaItem) {
+      MediaItem(:final id) => id,
+      MediaPlaylist(:final id) => id,
+      _ => '',
+    };
+    return context.read<DownloadProvider>().syncRuleKeyForClient(
+      client,
+      id,
+      serverId: ServerId(_mediaItemServerId ?? client.serverId),
+    );
+  }
+
   String? _resolveMediaItemServerId() {
-    final item = mediaItem;
-    String? serverId;
-    if (item is MediaItem) {
-      serverId = item.serverId;
-    } else if (item is MediaPlaylist) {
-      serverId = item.serverId;
-    }
-    if (serverId == null) {
-      final multiServerProvider = Provider.of<MultiServerProvider>(context, listen: false);
-      serverId = multiServerProvider.onlineServerIds.firstOrNull;
-    }
-    return serverId;
+    final serverId = _mediaItemServerId;
+    if (serverId != null) return serverId;
+    final multiServerProvider = Provider.of<MultiServerProvider>(context, listen: false);
+    return multiServerProvider.onlineServerIds.firstOrNull;
   }
 
   MediaServerClient _getMediaClientForMediaItem() {

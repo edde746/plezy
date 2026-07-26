@@ -1,0 +1,33 @@
+name: Set up Flutter from git
+description: >-
+  Clone the pinned Flutter SDK from its release tag and put it on PATH, for
+  runners without a published archive. Flutter ships no windows-arm64 SDK, so
+  subosito/flutter-action cannot resolve the release for arm64 (no arm64 entry
+  in the stable manifest) and `channel: master` would clone master HEAD, whose
+  engine is not the patched revision install-patched-engine.ps1 asserts
+  (4c525dac). This file is the only place that pin lives: the tag is fetched so
+  the SDK reports its own version, then verified against the immutable commit,
+  so a moved tag fails the job instead of quietly changing SDKs.
+
+runs:
+  using: composite
+  steps:
+    - name: Clone Flutter from its immutable commit
+      shell: pwsh
+      run: |
+        $version = "3.44.0"
+        $expectedCommit = "559ffa3f75e7402d65a8def9c28389a9b2e6fe42"
+        $root = "$env:RUNNER_TEMP\flutter"
+        git init $root
+        git -C $root remote add origin https://github.com/flutter/flutter.git
+        git -C $root fetch --depth 1 origin "refs/tags/${version}:refs/tags/${version}"
+        git -C $root checkout --detach "refs/tags/$version"
+        $actualCommit = git -C $root rev-parse HEAD
+        if ($LASTEXITCODE -ne 0 -or $actualCommit -ne $expectedCommit) {
+          throw "Flutter $version resolved to $actualCommit, expected $expectedCommit"
+        }
+        "$root\bin" | Out-File -FilePath $env:GITHUB_PATH -Append -Encoding utf8
+        & "$root\bin\flutter.bat" --version
+        if ($LASTEXITCODE -ne 0) {
+          throw "Unable to bootstrap the Flutter SDK"
+        }

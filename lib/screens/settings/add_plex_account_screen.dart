@@ -86,12 +86,11 @@ class _AddPlexAccountScreenState extends State<AddPlexAccountScreen> with AsyncF
             // to the profile, remove it again so a cancelled attach doesn't
             // leave a global account behind.
             if (!registration.existedBefore) {
-              await removePlexAccountConnectionAndCleanup(
-                account: connection,
+              await ProfileConnectionCleanup(
                 profileConnections: pcRegistry,
                 connections: connRegistry,
                 storage: storage,
-              );
+              ).removePlexAccountConnection(connection);
             }
             if (mounted) Navigator.of(context).pop(false);
             return true;

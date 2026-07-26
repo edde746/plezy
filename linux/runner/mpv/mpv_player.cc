@@ -617,20 +617,7 @@ void MpvPlayer::CommandAsync(const std::vector<std::string>& args, CommandCallba
     return;
   }
 
-  std::vector<const char*> c_args;
-  c_args.reserve(args.size() + 1);
-  for (const auto& arg : args) {
-    c_args.push_back(arg.c_str());
-  }
-  c_args.push_back(nullptr);
-
-  uint64_t request_id = callback ? pending_requests_.RegisterStatus(std::move(callback)) : 0;
-
-  int result = mpv_command_async(mpv_, request_id, c_args.data());
-  if (result < 0) {
-    auto cb = pending_requests_.TakeStatus(request_id);
-    if (cb) cb(result);
-  }
+  plezy::mpv_common::SubmitCommandAsync(mpv_, pending_requests_, args, std::move(callback));
 }
 
 void MpvPlayer::SetProperty(const std::string& name, const std::string& value) {
@@ -658,14 +645,7 @@ void MpvPlayer::SetPropertyAsync(const std::string& name, const std::string& val
       if (completion) completion(error);
     };
   }
-  uint64_t request_id = callback ? pending_requests_.RegisterStatus(std::move(callback)) : 0;
-
-  char* property_value = const_cast<char*>(value.c_str());
-  int result = mpv_set_property_async(mpv_, request_id, name.c_str(), MPV_FORMAT_STRING, &property_value);
-  if (result < 0) {
-    auto cb = pending_requests_.TakeStatus(request_id);
-    if (cb) cb(result);
-  }
+  plezy::mpv_common::SubmitSetPropertyAsync(mpv_, pending_requests_, name, value, std::move(callback));
 }
 
 void MpvPlayer::GetPropertyAsync(const std::string& name, GetPropertyCallback callback) {
@@ -674,13 +654,7 @@ void MpvPlayer::GetPropertyAsync(const std::string& name, GetPropertyCallback ca
     return;
   }
 
-  uint64_t request_id = pending_requests_.RegisterProperty(std::move(callback));
-
-  int result = mpv_get_property_async(mpv_, request_id, name.c_str(), MPV_FORMAT_STRING);
-  if (result < 0) {
-    auto cb = pending_requests_.TakeProperty(request_id);
-    if (cb) cb(result, "");
-  }
+  plezy::mpv_common::SubmitGetPropertyAsync(mpv_, pending_requests_, name, std::move(callback));
 }
 
 void MpvPlayer::ObserveProperty(const std::string& name, const std::string& format, int id) {
@@ -920,33 +894,12 @@ void MpvPlayer::EnsureAudioRecoveryTimer() {
 }
 
 void MpvPlayer::HandleMpvEvent(mpv_event* event) {
+  if (plezy::mpv_common::DispatchReplyEvent(
+          pending_requests_, event, [](const char* value) { return SanitizeUtf8(value); })) {
+    return;
+  }
+
   switch (event->event_id) {
-    case MPV_EVENT_COMMAND_REPLY:
-    case MPV_EVENT_SET_PROPERTY_REPLY: {
-      uint64_t request_id = event->reply_userdata;
-      StatusCallback callback = pending_requests_.TakeStatus(request_id);
-      if (callback) {
-        callback(event->error);
-      }
-      break;
-    }
-    case MPV_EVENT_GET_PROPERTY_REPLY: {
-      uint64_t request_id = event->reply_userdata;
-      GetPropertyCallback callback = pending_requests_.TakeProperty(request_id);
-      if (callback) {
-        int error = event->error;
-        std::string value;
-        if (error >= 0) {
-          auto* prop = static_cast<mpv_event_property*>(event->data);
-          if (prop && prop->format == MPV_FORMAT_STRING && prop->data) {
-            auto c_value = *static_cast<char**>(prop->data);
-            if (c_value) value = SanitizeUtf8(c_value);
-          }
-        }
-        callback(error, value);
-      }
-      break;
-    }
     case MPV_EVENT_LOG_MESSAGE: {
       auto* msg = static_cast<mpv_event_log_message*>(event->data);
       if (!msg) break;
@@ -963,54 +916,12 @@ void MpvPlayer::HandleMpvEvent(mpv_event* event) {
     case MPV_EVENT_PROPERTY_CHANGE: {
       auto* prop = static_cast<mpv_event_property*>(event->data);
       if (!prop || !prop->name) break;
-      mpv_node node;
-      node.format = prop->format;
+      mpv_node node = plezy::mpv_common::ExtractPropertyNode(prop);
 
-      switch (prop->format) {
-        case MPV_FORMAT_STRING:
-          node.u.string = prop->data ? *static_cast<char**>(prop->data) : nullptr;
-          break;
-        case MPV_FORMAT_FLAG:
-          node.u.flag = prop->data ? *static_cast<int*>(prop->data) : 0;
-          break;
-        case MPV_FORMAT_INT64:
-          node.u.int64 = prop->data ? *static_cast<int64_t*>(prop->data) : 0;
-          break;
-        case MPV_FORMAT_DOUBLE:
-          node.u.double_ = prop->data ? *static_cast<double*>(prop->data) : 0.0;
-          break;
-        case MPV_FORMAT_NODE:
-          if (prop->data) {
-            node = *static_cast<mpv_node*>(prop->data);
-          } else {
-            node.format = MPV_FORMAT_NONE;
-          }
-          break;
-        default:
-          node.format = MPV_FORMAT_NONE;
-          break;
-      }
-
-      if (strcmp(prop->name, "current-ao") == 0) {
-        const char* current_ao = nullptr;
-        if (prop->format == MPV_FORMAT_STRING && prop->data) {
-          current_ao = *static_cast<char**>(prop->data);
-        }
-        const bool is_null = current_ao && strcmp(current_ao, "null") == 0;
-        const auto transition =
-            audio_recovery_.SetCurrentAudioOutputNull(is_null, plezy::mpv_common::AudioRecoveryState::Clock::now());
-        if (transition == plezy::mpv_common::AudioOutputTransition::kFellBackToNull) {
-          LogRecovery("current-ao fell back to null; starting recovery");
-          EnsureAudioRecoveryTimer();
-        } else if (transition == plezy::mpv_common::AudioOutputTransition::kRecovered) {
-          LogRecovery("audio recovered (current-ao no longer null)");
-        }
-      }
-      if (strcmp(prop->name, "audio-device-list") == 0 && event->reply_userdata == 0 &&
-          audio_recovery_.OnAudioDeviceListChanged(plezy::mpv_common::AudioRecoveryState::Clock::now())) {
-        LogRecovery("audio-device-list changed while ao=null; rescheduling ao-reload");
-        EnsureAudioRecoveryTimer();
-      }
+      const auto notice = plezy::mpv_common::ObserveAudioRecoveryProperty(audio_recovery_, event, prop);
+      if (notice.message) LogRecovery(notice.message);
+      // Recovery runs off a GLib timer here, so newly queued work has to arm it.
+      if (notice.scheduled_work) EnsureAudioRecoveryTimer();
 
       SendPropertyChange(prop->name, &node);
       break;
@@ -1048,77 +959,41 @@ void MpvPlayer::HandleMpvEvent(mpv_event* event) {
       break;
   }
 }
-FlValue* MpvPlayer::NodeToFlValue(mpv_node* node) {
-  NodeConversionBudget budget{
-      /*remaining_entries=*/16384,
-      /*remaining_bytes=*/16 * 1024 * 1024,
-  };
-  return NodeToFlValue(node, 0, &budget);
-}
 
-bool MpvPlayer::ConvertNodeString(const char* input, NodeConversionBudget* budget, std::string* result) {
-  if (!input || !budget || !result) return false;
-  const size_t length = strnlen(input, budget->remaining_bytes + 1);
-  if (length > budget->remaining_bytes) return false;
-  budget->remaining_bytes -= length;
-  *result = SanitizeUtf8(input, length);
-  return true;
-}
+namespace {
 
-FlValue* MpvPlayer::NodeToFlValue(mpv_node* node, size_t depth, NodeConversionBudget* budget) {
-  constexpr size_t kMaxNodeDepth = 32;
-  constexpr int kMaxNodeEntries = 16384;
-  if (!node || !budget || depth >= kMaxNodeDepth || budget->remaining_entries == 0) {
-    return fl_value_new_null();
+// Adapts the shared, bounded mpv_node walk onto GLib-owned FlValues.
+struct FlValueNodeBuilder {
+  using Value = FlValue*;
+  using ListBuilder = FlValue*;
+  using MapBuilder = FlValue*;
+
+  static Value Null() { return fl_value_new_null(); }
+  static Value Bool(bool value) { return fl_value_new_bool(value); }
+  static Value Int(int64_t value) { return fl_value_new_int(value); }
+  static Value Double(double value) { return fl_value_new_float(value); }
+  static Value String(const char* value, size_t length) {
+    return fl_value_new_string(SanitizeUtf8(value, length).c_str());
   }
-  --budget->remaining_entries;
 
-  switch (node->format) {
-    case MPV_FORMAT_STRING: {
-      std::string value;
-      if (!ConvertNodeString(node->u.string, budget, &value)) return fl_value_new_null();
-      return fl_value_new_string(value.c_str());
-    }
-    case MPV_FORMAT_FLAG:
-      return fl_value_new_bool(node->u.flag != 0);
-    case MPV_FORMAT_INT64:
-      return fl_value_new_int(node->u.int64);
-    case MPV_FORMAT_DOUBLE:
-      return fl_value_new_float(node->u.double_);
-    case MPV_FORMAT_NODE_ARRAY: {
-      const mpv_node_list* list = node->u.list;
-      if (!list || list->num < 0 || list->num > kMaxNodeEntries || (list->num > 0 && !list->values)) {
-        return fl_value_new_null();
-      }
-      FlValue* result = fl_value_new_list();
-      for (int i = 0; i < list->num; i++) {
-        fl_value_append_take(result, NodeToFlValue(&list->values[i], depth + 1, budget));
-      }
-      return result;
-    }
-    case MPV_FORMAT_NODE_MAP: {
-      const mpv_node_list* map = node->u.list;
-      if (!map || map->num < 0 || map->num > kMaxNodeEntries || (map->num > 0 && (!map->keys || !map->values))) {
-        return fl_value_new_null();
-      }
-      FlValue* result = fl_value_new_map();
-      for (int i = 0; i < map->num; i++) {
-        if (!map->keys[i]) {
-          fl_value_unref(result);
-          return fl_value_new_null();
-        }
-        std::string key;
-        if (!ConvertNodeString(map->keys[i], budget, &key)) {
-          fl_value_unref(result);
-          return fl_value_new_null();
-        }
-        fl_value_set_string_take(result, key.c_str(), NodeToFlValue(&map->values[i], depth + 1, budget));
-      }
-      return result;
-    }
-    default:
-      return fl_value_new_null();
+  static ListBuilder NewList() { return fl_value_new_list(); }
+  static void Append(ListBuilder& list, Value value) { fl_value_append_take(list, value); }
+  static Value FinishList(ListBuilder list) { return list; }
+
+  static MapBuilder NewMap() { return fl_value_new_map(); }
+  static void Insert(MapBuilder& map, const char* key, size_t key_length, Value value) {
+    fl_value_set_string_take(map, SanitizeUtf8(key, key_length).c_str(), value);
   }
+  static Value FinishMap(MapBuilder map) { return map; }
+  static void AbandonMap(MapBuilder& map) { fl_value_unref(map); }
+};
+
+}  // namespace
+
+FlValue* MpvPlayer::NodeToFlValue(mpv_node* node) { return plezy::mpv_common::ConvertNode<FlValueNodeBuilder>(node); }
+
+FlValue* MpvPlayer::NodeToFlValue(mpv_node* node, plezy::mpv_common::NodeConversionBudget* budget) {
+  return plezy::mpv_common::ConvertNode<FlValueNodeBuilder>(node, 0, budget);
 }
 
 void MpvPlayer::SendPropertyChange(const char* name, mpv_node* data) {

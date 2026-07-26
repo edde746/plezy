@@ -1,5 +1,6 @@
 <script lang="ts">
   import ScrollReveal from "./ScrollReveal.svelte";
+  import SectionHeader from "./SectionHeader.svelte";
   import AppleIcon from "~icons/simple-icons/apple";
   import GooglePlayIcon from "~icons/simple-icons/googleplay";
   import RedditIcon from "~icons/fa6-brands/reddit-alien";
@@ -177,15 +178,14 @@
   });
 </script>
 
-<section id="reviews" class="reviews-section">
+<section id="reviews" class="bleed-section">
   <div class="reviews-header">
-    <ScrollReveal>
-      <p class="section-label">Reviews</p>
-      <h2 class="section-heading">Loved by users</h2>
-      <p class="section-description">
-        See what people are saying about their experience with Plezy.
-      </p>
-    </ScrollReveal>
+    <SectionHeader
+      label="Reviews"
+      heading="Loved by users"
+      description="See what people are saying about their experience with Plezy."
+      descriptionGap="0"
+    />
   </div>
 
   <div class="featured-wrap">
@@ -284,11 +284,6 @@
 </section>
 
 <style>
-  .reviews-section {
-    overflow: hidden;
-    padding-block: clamp(4rem, 9vw, 8rem);
-  }
-
   .reviews-header,
   .featured-wrap {
     width: min(100%, var(--page-width));
@@ -298,36 +293,6 @@
 
   .reviews-header {
     margin-bottom: clamp(2rem, 5vw, 3.5rem);
-  }
-
-  .section-label {
-    width: fit-content;
-    margin-bottom: 1rem;
-    border-radius: var(--radius-full);
-    padding: 0.5rem 0.875rem;
-    color: var(--color-text-muted);
-    background: var(--color-surface);
-    font-size: 0.75rem;
-    font-weight: 700;
-    letter-spacing: 0.03em;
-  }
-
-  .section-heading {
-    max-width: 12ch;
-    margin-bottom: 1rem;
-    font-family: var(--font-display);
-    font-size: clamp(2.5rem, 7vw, 4.75rem);
-    font-weight: 700;
-    letter-spacing: -0.045em;
-    line-height: 1;
-    text-wrap: balance;
-  }
-
-  .section-description {
-    max-width: 34rem;
-    color: var(--color-text-muted);
-    font-size: clamp(1rem, 2vw, 1.125rem);
-    line-height: 1.7;
   }
 
   .featured-review {

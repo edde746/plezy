@@ -1,3 +1,5 @@
+import { AMAZON_URL, storeOptions } from './downloads';
+
 export type StorePrices = {
   appStorePrice: string | null;
   playStorePrice: string | null;
@@ -23,7 +25,7 @@ export function buildSoftwareApplicationOffers({
   return [
     {
       '@type': 'Offer',
-      url: 'https://apps.apple.com/us/app/id6754315964',
+      url: storeOptions.ios.url,
       category: 'App Store',
       ...(appStorePrice === null
         ? {}
@@ -34,7 +36,7 @@ export function buildSoftwareApplicationOffers({
     },
     {
       '@type': 'Offer',
-      url: 'https://play.google.com/store/apps/details?id=com.edde746.plezy',
+      url: storeOptions.android.url,
       category: 'Google Play',
       ...(playStorePrice === null
         ? {}
@@ -45,7 +47,7 @@ export function buildSoftwareApplicationOffers({
     },
     {
       '@type': 'Offer',
-      url: 'https://www.amazon.com/gp/product/B0GK65CVS1',
+      url: AMAZON_URL,
       category: 'Amazon Appstore',
     },
     {

@@ -118,9 +118,54 @@ Future<void> playTracks(
   if (context.mounted) _autoOpenNowPlayingOnTv(context);
 }
 
+/// Fetch a track list with [fetch], then play it — the shape every music
+/// entry point that needs a server round-trip before playback repeats:
+/// availability gate → [MusicPlaybackService.beginPlayIntent] → fetch →
+/// mounted/intent re-check → [playTracks]. Guarding the round-trip with the
+/// intent keeps a slow fetch from replacing a queue the user started later.
+///
+/// [onError] reports a failed fetch and runs only while the intent is still
+/// current and [context] mounted; passing null instead lets the failure
+/// propagate to the caller's own error boundary. [onEmpty] handles a
+/// successful but empty fetch; passing null hands the empty list to
+/// [playTracks] unchanged.
+Future<void> playFetchedTracks(
+  BuildContext context, {
+  required Future<List<MediaItem>> Function() fetch,
+  required MusicPlayContext playContext,
+  void Function(Object error, StackTrace stackTrace)? onError,
+  VoidCallback? onEmpty,
+  MediaItem? startTrack,
+  bool shuffle = false,
+}) async {
+  if (!ensureMusicPlaybackAvailable(context)) return;
+  final service = context.read<MusicPlaybackService>();
+  final intent = service.beginPlayIntent();
+  final List<MediaItem> tracks;
+  try {
+    tracks = await fetch();
+  } catch (error, stackTrace) {
+    if (!service.isPlayIntentCurrent(intent)) return;
+    if (onError == null) rethrow;
+    if (!context.mounted) return;
+    onError(error, stackTrace);
+    return;
+  }
+  if (!context.mounted || !service.isPlayIntentCurrent(intent)) return;
+  if (tracks.isEmpty && onEmpty != null) {
+    onEmpty();
+    return;
+  }
+  await playTracks(context, tracks: tracks, startTrack: startTrack, playContext: playContext, shuffle: shuffle);
+}
+
 /// Play [track] within its album queue: fetch the album's tracks and start
 /// at [track]. Falls back to single-track playback when the track has no
 /// album, isn't found in it, or the album fetch fails.
+///
+/// Hand-written rather than routed through [playFetchedTracks]: the fallback
+/// must play under the *same* intent as the album fetch, so a stale fallback
+/// can never supersede a newer request.
 Future<void> playTrackWithAlbumContext(BuildContext context, MediaItem track) async {
   if (!ensureMusicPlaybackAvailable(context)) return;
   final service = context.read<MusicPlaybackService>();

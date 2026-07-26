@@ -12,35 +12,9 @@ import '../utils/global_key_utils.dart';
 import '../utils/watch_state_notifier.dart';
 
 @immutable
-class WatchStatePatch {
-  final bool? isWatched;
-  final bool hasViewOffsetMs;
-  final int? viewOffsetMs;
-
-  const WatchStatePatch({this.isWatched, this.hasViewOffsetMs = false, this.viewOffsetMs});
-
-  factory WatchStatePatch.fromSnapshot(WatchStateSnapshot snapshot) => WatchStatePatch(
-    isWatched: snapshot.isWatched,
-    hasViewOffsetMs: snapshot.hasViewOffsetMs,
-    viewOffsetMs: snapshot.viewOffsetMs,
-  );
-
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      other is WatchStatePatch &&
-          other.isWatched == isWatched &&
-          other.hasViewOffsetMs == hasViewOffsetMs &&
-          other.viewOffsetMs == viewOffsetMs;
-
-  @override
-  int get hashCode => Object.hash(isWatched, hasViewOffsetMs, viewOffsetMs);
-}
-
-@immutable
 class HydratedWatchStatePatch {
   final String globalKey;
-  final WatchStatePatch patch;
+  final WatchStateSnapshot patch;
   final int updatedAt;
   final int order;
 
@@ -53,7 +27,7 @@ class HydratedWatchStatePatch {
 }
 
 class _WatchStatePatchEntry {
-  final WatchStatePatch patch;
+  final WatchStateSnapshot patch;
   final int updatedAt;
   final int sequence;
   final bool isSessionEvent;
@@ -123,9 +97,9 @@ class WatchStateStore extends ChangeNotifier with DisposableChangeNotifierMixin 
     return _exactEntryFor(globalKey);
   }
 
-  WatchStatePatch? patchForGlobalKey(String globalKey) => _entryFor(globalKey)?.patch;
+  WatchStateSnapshot? patchForGlobalKey(String globalKey) => _entryFor(globalKey)?.patch;
 
-  WatchStatePatch? patchForItem(MediaItem item) {
+  WatchStateSnapshot? patchForItem(MediaItem item) {
     var best = _entryFor(item.globalKey);
     if (item.parentChain.isNotEmpty) {
       final serverId = serverIdOrNull(item.serverId);
@@ -147,14 +121,7 @@ class WatchStateStore extends ChangeNotifier with DisposableChangeNotifierMixin 
     return [for (final item in items) apply(item)];
   }
 
-  static MediaItem applyPatch(MediaItem item, WatchStatePatch? patch) {
-    if (patch == null) return item;
-    return WatchStateSnapshot(
-      isWatched: patch.isWatched,
-      hasViewOffsetMs: patch.hasViewOffsetMs,
-      viewOffsetMs: patch.viewOffsetMs,
-    ).apply(item);
-  }
+  static MediaItem applyPatch(MediaItem item, WatchStateSnapshot? patch) => patch == null ? item : patch.apply(item);
 
   void setActiveProfileId(String? profileId) {
     if (_activeProfileId == profileId) return;
@@ -216,7 +183,7 @@ class WatchStateStore extends ChangeNotifier with DisposableChangeNotifierMixin 
         ? buildGlobalKey(ServerId(resolvedScope), event.itemId)
         : event.globalKey;
     _patches[key] = _WatchStatePatchEntry(
-      WatchStatePatch.fromSnapshot(snapshot),
+      snapshot,
       updatedAt: DateTime.now().millisecondsSinceEpoch,
       sequence: ++_sequence,
       isSessionEvent: true,
@@ -240,7 +207,7 @@ extension WatchStateResolution on BuildContext {
   /// ancestor). Use in `build`.
   MediaItem withFreshWatchState(MediaItem item) {
     try {
-      final patch = select<WatchStateStore, WatchStatePatch?>((store) => store.patchForItem(item));
+      final patch = select<WatchStateStore, WatchStateSnapshot?>((store) => store.patchForItem(item));
       return WatchStateStore.applyPatch(item, patch);
     } on ProviderNotFoundException {
       return item;

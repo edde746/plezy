@@ -62,13 +62,6 @@ class SettingsGroup extends StatelessWidget {
     this.margin = const EdgeInsets.symmetric(horizontal: 16),
   });
 
-  BorderRadius _radiusFor(int i, MonoTokens t) {
-    return BorderRadius.vertical(
-      top: Radius.circular(i == 0 ? t.radiusLg : t.radiusXs),
-      bottom: Radius.circular(i == children.length - 1 ? t.radiusLg : t.radiusXs),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final t = tokens(context);
@@ -85,7 +78,7 @@ class SettingsGroup extends StatelessWidget {
                 Material(
                   color: t.surface,
                   clipBehavior: Clip.antiAlias,
-                  shape: RoundedRectangleBorder(borderRadius: _radiusFor(i, t)),
+                  shape: RoundedRectangleBorder(borderRadius: groupItemRadii(context, i, children.length)),
                   child: children[i],
                 ),
               ],

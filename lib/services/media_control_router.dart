@@ -1,12 +1,14 @@
 import 'package:os_media_controls/os_media_controls.dart';
 
-/// Screen-owned authorization boundary for user-originated OS media commands.
+/// Authorization boundary for user-originated OS media commands, owned by
+/// whoever holds the transport (the video screen, the music session).
 ///
-/// Lifecycle/audio-route events are handled before this router. Recognized
-/// commands are consumed even when denied so they cannot reach a background
-/// route or stale player owner.
-final class VideoPlayerMediaControlRouter {
-  const VideoPlayerMediaControlRouter({
+/// Lifecycle/audio-route events are handled before this router: [route]
+/// reports `false` for what it does not recognize. Recognized commands are
+/// consumed even when denied so they cannot reach a background route or stale
+/// player owner. Both gates stay required — every owner states its policy.
+final class MediaControlRouter {
+  const MediaControlRouter({
     required this.canControlPlayback,
     required this.canNavigateMediaItems,
     required this.onPlay,

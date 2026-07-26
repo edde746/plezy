@@ -1,11 +1,9 @@
 import 'dart:async';
-import '../../media/ids.dart';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import '../../focus/focusable_action_bar.dart';
-import '../../focus/focusable_button.dart';
 import '../../media/library_query.dart';
 import '../../media/media_item.dart';
 import '../../media/media_kind.dart';
@@ -34,6 +32,7 @@ import '../../widgets/ios_status_bar_tap_scroll_to_top.dart';
 import '../../widgets/listenable_selector.dart';
 import '../base_media_list_detail_screen.dart';
 import '../focusable_detail_screen_mixin.dart';
+import '../libraries/content_state_builder.dart';
 import '../../mixins/grid_focus_node_mixin.dart';
 import '../../widgets/overlay_sheet.dart';
 
@@ -92,24 +91,15 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
       showAppSnackBar(context, emptyMessage);
       return;
     }
-    if (!ensureMusicPlaybackAvailable(context)) return;
-    final service = context.read<MusicPlaybackService>();
-    final intent = service.beginPlayIntent();
-    List<MediaItem> tracks;
-    if (_isPlaylistFullyLoaded) {
-      tracks = items;
-    } else {
-      try {
-        tracks = await fetchAllPlaylistItems(mediaClient, widget.playlist.id);
-      } catch (e, stackTrace) {
-        if (!mounted || !service.isPlayIntentCurrent(intent)) return;
-        final message = localizedLoadErrorMessage(e, stackTrace, context: widget.playlist.title);
-        showErrorSnackBar(context, message);
-        return;
-      }
-    }
-    if (!mounted || !service.isPlayIntentCurrent(intent)) return;
-    await playTracks(context, tracks: tracks, startTrack: startTrack, playContext: _musicPlayContext, shuffle: shuffle);
+    await playFetchedTracks(
+      context,
+      fetch: () async => _isPlaylistFullyLoaded ? items : await fetchAllPlaylistItems(mediaClient, widget.playlist.id),
+      playContext: _musicPlayContext,
+      onError: (e, stackTrace) =>
+          showErrorSnackBar(context, localizedLoadErrorMessage(e, stackTrace, context: widget.playlist.title)),
+      startTrack: startTrack,
+      shuffle: shuffle,
+    );
   }
 
   @override
@@ -117,7 +107,7 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
     // Video AND audio playlists download (tracks queue through the same list
     // pipeline); photo/mixed playlists keep the affordance hidden.
     final isDownloadablePlaylist = widget.playlist.playlistType == 'video' || _isAudioPlaylist;
-    final ruleKey = _playlistSyncRuleKey();
+    final ruleKey = syncRuleKey;
     // Select the specific bool we care about so unrelated DownloadProvider
     // ticks (e.g. active download progress) don't rebuild the app bar.
     final hasRule = isDownloadablePlaylist && context.select<DownloadProvider, bool>((p) => p.hasSyncRule(ruleKey));
@@ -127,19 +117,14 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
         FocusableAction(icon: Symbols.play_arrow_rounded, tooltip: t.common.play, onPressed: playItems),
         FocusableAction(icon: Symbols.shuffle_rounded, tooltip: t.common.shuffle, onPressed: shufflePlayItems),
       ],
-      if (!PlatformDetector.isAppleTV() && isDownloadablePlaylist && (items.isNotEmpty || hasRule))
-        FocusableAction(
-          icon: hasRule ? Symbols.sync_rounded : Symbols.download_rounded,
-          tooltip: hasRule ? t.downloads.manageSyncRule : t.downloads.downloadNow,
-          onPressed: hasRule ? _managePlaylistSyncRule : _downloadPlaylist,
-          iconColor: hasRule ? Colors.teal : null,
-        ),
-      if (!PlatformDetector.isAppleTV() && hasRule)
-        FocusableAction(
-          icon: Symbols.sync_disabled_rounded,
-          tooltip: t.downloads.removeSyncRule,
-          onPressed: _removePlaylistSyncRule,
-        ),
+      ...buildSyncRuleActions(
+        context,
+        ruleKey: ruleKey,
+        displayTitle: widget.playlist.title,
+        hasRule: hasRule,
+        showDownload: isDownloadablePlaylist && (items.isNotEmpty || hasRule),
+        onDownload: _downloadPlaylist,
+      ),
       // Delete works on both backends now (Jellyfin uses /Items/{id} DELETE,
       // wrapped in the neutral [MediaServerClient.deletePlaylist]). Smart
       // playlists are still skipped — they're a Plex concept and are
@@ -164,25 +149,6 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
     thumbPath: widget.playlist.thumbPath,
     serverId: widget.playlist.serverId ?? mediaClient.serverId,
     serverName: widget.playlist.serverName,
-  );
-
-  String _playlistSyncRuleKey() {
-    final serverId = widget.playlist.serverId ?? mediaClient.serverId;
-    return context.read<DownloadProvider>().syncRuleKeyForClient(
-      mediaClient,
-      widget.playlist.id,
-      serverId: ServerId(serverId),
-    );
-  }
-
-  Future<void> _managePlaylistSyncRule() =>
-      manageSyncRule(context, downloadProvider: context.read<DownloadProvider>(), globalKey: _playlistSyncRuleKey());
-
-  Future<void> _removePlaylistSyncRule() => removeSyncRuleAndSnack(
-    context,
-    downloadProvider: context.read<DownloadProvider>(),
-    globalKey: _playlistSyncRuleKey(),
-    displayTitle: widget.playlist.title,
   );
 
   // Focus management for regular (non-smart) reorderable lists
@@ -780,7 +746,14 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
           else
             // Plex regular playlists: sliver reorderable list
             _buildReorderableList(isKeyboardMode),
-          if (_continuation.isLoading || _continuation.error != null) _buildPlaylistContinuationStatusSliver(),
+          if (_continuation.isLoading || _continuation.error != null)
+            ContinuationStatusSliver(
+              error: _continuation.error,
+              onRetry: _retryPlaylistContinuation,
+              retryFocusNode: _continuationRetryFocusNode,
+              onNavigateUp: _isReadOnly ? navigateToGrid : _listFocusNode.requestFocus,
+              onBack: handleBackFromContent,
+            ),
         ],
       ],
     );
@@ -858,34 +831,6 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
           },
         );
       },
-    );
-  }
-
-  Widget _buildPlaylistContinuationStatusSliver() {
-    final exception = _continuation.error;
-    final error = exception == null ? null : t.messages.errorLoading(error: exception.toString());
-    return SliverToBoxAdapter(
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Center(
-          child: error == null
-              ? const CircularProgressIndicator()
-              : Column(
-                  mainAxisSize: .min,
-                  children: [
-                    Text(error, textAlign: TextAlign.center),
-                    const SizedBox(height: 8),
-                    FocusableButton(
-                      focusNode: _continuationRetryFocusNode,
-                      onPressed: _retryPlaylistContinuation,
-                      onNavigateUp: _isReadOnly ? navigateToGrid : _listFocusNode.requestFocus,
-                      onBack: handleBackFromContent,
-                      child: TextButton(onPressed: _retryPlaylistContinuation, child: Text(t.common.retry)),
-                    ),
-                  ],
-                ),
-        ),
-      ),
     );
   }
 }

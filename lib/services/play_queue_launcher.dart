@@ -27,9 +27,8 @@ export 'media_list_playback_launcher.dart'
 /// 3. Navigating to the video player
 /// 4. Handling errors with appropriate feedback
 ///
-/// Implements [MediaListPlaybackLauncher.launchFromCollectionOrPlaylist] for
-/// the backend-neutral entry point. Flows outside that abstraction, such as
-/// [launchFromFolder], live directly on this class.
+/// Implements the backend-neutral [MediaListPlaybackLauncher] entry points
+/// on top of that resource.
 class PlexPlayQueueLauncher extends MediaListPlaybackLauncher {
   final BuildContext context;
   final PlexClient client;
@@ -219,14 +218,22 @@ class PlexPlayQueueLauncher extends MediaListPlaybackLauncher {
     );
   }
 
-  /// Launch playback from a folder's contents.
+  /// Launch playback from a folder's contents. The `/folder` key and the
+  /// owning library are both stamped onto the folder row by the listing
+  /// fetch, so the neutral [MediaItem] carries everything Plex needs.
+  @override
   Future<PlayQueueResult> launchFromFolder({
-    required String folderKey,
+    required MediaItem folder,
     required bool shuffle,
-    String? libraryId,
-    String? libraryTitle,
     bool showLoadingIndicator = true,
   }) async {
+    final folderKey = folder.backendFolderKey;
+    if (folderKey == null) {
+      return PlayQueueError(Exception('Folder is missing its backend folder key'));
+    }
+    final libraryId = folder.libraryId;
+    final libraryTitle = folder.libraryTitle;
+
     return executeWithLoading(
       context: context,
       showLoading: showLoadingIndicator,

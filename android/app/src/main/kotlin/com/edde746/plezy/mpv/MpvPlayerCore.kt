@@ -19,6 +19,7 @@ import com.edde746.plezy.shared.AudioFocusManager
 import com.edde746.plezy.shared.FrameRateManager
 import com.edde746.plezy.shared.PlayerDelegate
 import com.edde746.plezy.shared.PlayerSurfaceHost
+import com.edde746.plezy.shared.SurfacePlayerCore
 import dev.jdtech.mpv.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.sync.Mutex
@@ -40,7 +41,7 @@ class MpvPlayerCore private constructor(
   private val audioOnly: Boolean,
   private val propertyWriterOverride: (suspend (String, String) -> Unit)?,
   initializedForTesting: Boolean
-) : SurfaceHolder.Callback {
+) : SurfaceHolder.Callback, SurfacePlayerCore {
   constructor(context: Context, audioOnly: Boolean = false) : this(context, audioOnly, null, false)
 
   internal constructor(
@@ -405,7 +406,7 @@ class MpvPlayerCore private constructor(
 
   // Audio Focus
 
-  fun requestAudioFocus(): Boolean {
+  override fun requestAudioFocus(): Boolean {
     val granted = audioFocusManager?.requestAudioFocus() ?: false
     if (granted && pausedForAudioFocusLoss) {
       resumeAfterAudioFocusGain("audio focus request granted")
@@ -413,7 +414,7 @@ class MpvPlayerCore private constructor(
     return granted
   }
 
-  fun abandonAudioFocus() {
+  override fun abandonAudioFocus() {
     audioFocusManager?.abandonAudioFocus()
   }
 
@@ -1042,7 +1043,7 @@ class MpvPlayerCore private constructor(
     }
   }
 
-  fun setVisible(visible: Boolean) {
+  override fun setVisible(visible: Boolean) {
     // Audio-only: no render layer to show or hide — tolerated no-op.
     if (audioOnly || disposing) return
     runOnMain {
@@ -1067,11 +1068,11 @@ class MpvPlayerCore private constructor(
     }
   }
 
-  fun onPipModeChanged(isInPipMode: Boolean) {
+  override fun onPipModeChanged(isInPipMode: Boolean) {
     // MPV handles aspect ratio internally via its own surface management
   }
 
-  fun updateFrame() {
+  override fun updateFrame() {
     // Audio-only: no surface to refresh — tolerated no-op.
     if (audioOnly || disposing) return
     runOnMain {
@@ -1106,7 +1107,7 @@ class MpvPlayerCore private constructor(
 
   // Frame Rate Matching
 
-  fun setVideoFrameRate(
+  override fun setVideoFrameRate(
     fps: Float,
     videoDurationMs: Long,
     extraDelayMs: Long,
@@ -1128,7 +1129,7 @@ class MpvPlayerCore private constructor(
     }
   }
 
-  fun clearVideoFrameRate() {
+  override fun clearVideoFrameRate() {
     frameRateManager?.clearVideoFrameRate()
   }
 

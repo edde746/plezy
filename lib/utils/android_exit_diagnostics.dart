@@ -1,10 +1,10 @@
 import 'dart:async';
 import 'dart:io';
 
-import 'package:flutter/services.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 
 import 'app_logger.dart';
+import 'device_channel.dart';
 
 enum AndroidStartupPhase {
   nativeOnCreate('native_on_create'),
@@ -34,7 +34,6 @@ enum AndroidUiState {
 
 /// Best-effort bridge for the newest Android 11+ historical process exit.
 abstract final class AndroidExitDiagnostics {
-  static const _channel = MethodChannel('com.plezy/device');
   static const _allowedReasons = {'crash', 'native_crash', 'anr', 'low_memory', 'user_requested', 'other'};
   static const _allowedAbis = {'arm64-v8a', 'armeabi-v7a', 'x86_64', 'x86', 'unknown'};
   static const _allowedCodecContexts = {
@@ -132,7 +131,7 @@ abstract final class AndroidExitDiagnostics {
 
   static Future<void> _persistStartupPhase(String phase) async {
     try {
-      await _channel.invokeMethod<bool>('setStartupPhase', phase);
+      await deviceChannel.invokeMethod<bool>('setStartupPhase', phase);
     } catch (_) {
       // Native phase persistence is best-effort.
     }
@@ -141,7 +140,7 @@ abstract final class AndroidExitDiagnostics {
   static Future<void> markUiState(AndroidUiState state) async {
     if (!Platform.isAndroid) return;
     try {
-      await _channel.invokeMethod<bool>('setRuntimeUiState', state.id);
+      await deviceChannel.invokeMethod<bool>('setRuntimeUiState', state.id);
     } catch (_) {
       // Runtime diagnostics are best-effort and must never affect navigation.
     }
@@ -155,7 +154,7 @@ abstract final class AndroidExitDiagnostics {
   static Future<void> logPreviousExit() async {
     if (!Platform.isAndroid) return;
     try {
-      final raw = await _channel.invokeMapMethod<String, Object?>('getPreviousExit');
+      final raw = await deviceChannel.invokeMapMethod<String, Object?>('getPreviousExit');
       final report = _validate(raw);
       if (report == null) return;
 

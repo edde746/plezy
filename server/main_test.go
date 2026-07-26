@@ -4316,7 +4316,7 @@ func snapshotPosterStore(t *testing.T, store *posterStore) (int, int64, []string
 	t.Helper()
 	store.mu.RLock()
 	entryCount := len(store.entries)
-	totalBytes := store.totalBytes
+	totalBytes := store.used
 	store.mu.RUnlock()
 	files, err := os.ReadDir(store.dir)
 	if err != nil {
@@ -4701,7 +4701,7 @@ func TestPosterStoreEvictsOldestOverQuota(t *testing.T) {
 	ps.mu.RLock()
 	_, hasFirst := ps.entries[id1]
 	_, hasSecond := ps.entries[id2]
-	total := ps.totalBytes
+	total := ps.used
 	ps.mu.RUnlock()
 
 	if hasFirst {
@@ -4711,7 +4711,7 @@ func TestPosterStoreEvictsOldestOverQuota(t *testing.T) {
 		t.Fatal("newest poster should remain")
 	}
 	if total != int64(len(payload)) {
-		t.Fatalf("totalBytes=%d want %d", total, len(payload))
+		t.Fatalf("stored bytes=%d want %d", total, len(payload))
 	}
 	if _, err := os.Stat(ps.filePath(entry1.Filename)); !os.IsNotExist(err) {
 		t.Fatalf("oldest file still exists or stat failed unexpectedly: %v", err)
@@ -4735,13 +4735,13 @@ func TestPosterStoreCleanupExpiresOldPosters(t *testing.T) {
 
 	ps.mu.RLock()
 	_, exists := ps.entries[id]
-	total := ps.totalBytes
+	total := ps.used
 	ps.mu.RUnlock()
 	if exists {
 		t.Fatal("expired poster should have been removed")
 	}
 	if total != 0 {
-		t.Fatalf("totalBytes=%d want 0", total)
+		t.Fatalf("stored bytes=%d want 0", total)
 	}
 	if _, err := os.Stat(ps.filePath(entry.Filename)); !os.IsNotExist(err) {
 		t.Fatalf("expired file still exists or stat failed unexpectedly: %v", err)
@@ -4790,7 +4790,7 @@ func TestLogStoreRemovalFailureRetainsEntryUntilRetry(t *testing.T) {
 	}
 	ls.mu.RLock()
 	_, indexed := ls.entries[id]
-	artifacts := ls.artifactCountLocked()
+	artifacts := ls.accountedLocked()
 	ls.mu.RUnlock()
 	if !indexed || artifacts != 1 {
 		t.Fatalf("failed removal changed metadata: indexed=%v artifacts=%d", indexed, artifacts)
@@ -4927,7 +4927,7 @@ func TestLogStoreTracksFailedTempCleanup(t *testing.T) {
 	}
 	ls.mu.RLock()
 	_, pending := ls.pendingRemovals[filepath.Base(tmpPath)]
-	artifacts := ls.artifactCountLocked()
+	artifacts := ls.accountedLocked()
 	ls.mu.RUnlock()
 	if !pending || artifacts != 1 {
 		t.Fatalf("temp cleanup not tracked: pending=%v artifacts=%d", pending, artifacts)
@@ -4974,7 +4974,7 @@ func TestLogStoreStartupReconcilesLiveAndPendingRemovals(t *testing.T) {
 	ls.mu.RLock()
 	_, live := ls.entries[expiredID]
 	pending := len(ls.pendingRemovals)
-	artifacts := ls.artifactCountLocked()
+	artifacts := ls.accountedLocked()
 	ls.mu.RUnlock()
 	if !live || pending != 2 || artifacts != 3 {
 		t.Fatalf("startup accounting: live=%v pending=%d artifacts=%d", live, pending, artifacts)
@@ -4992,7 +4992,7 @@ func TestLogStoreStartupReconcilesLiveAndPendingRemovals(t *testing.T) {
 	}
 	restarted := newLogStore(dir)
 	restarted.mu.RLock()
-	restartedArtifacts := restarted.artifactCountLocked()
+	restartedArtifacts := restarted.accountedLocked()
 	_, newLogRestored := restarted.entries[newID]
 	restarted.mu.RUnlock()
 	if restartedArtifacts != 1 || !newLogRestored {
@@ -5084,14 +5084,14 @@ func TestPosterQuotaRemovalFailureDoesNotReclaimAccounting(t *testing.T) {
 	if !errors.Is(err, fs.ErrPermission) {
 		t.Fatalf("quota store error=%v want permission error", err)
 	}
-	if newID != "" || newEntry != (posterEntry{}) {
+	if newID != "" || newEntry != (artifactEntry{}) {
 		t.Fatalf("failed store returned success values: id=%q entry=%+v", newID, newEntry)
 	}
 	ps.mu.RLock()
 	_, retained := ps.entries[oldID]
-	total := ps.totalBytes
-	pending := ps.pendingBytes
-	accounted := ps.accountedBytesLocked()
+	total := ps.used
+	pending := ps.pendingDebt
+	accounted := ps.accountedLocked()
 	ps.mu.RUnlock()
 	if !retained || total != int64(len(payload)) || pending != 0 {
 		t.Fatalf("failed eviction accounting: retained=%v total=%d pending=%d", retained, total, pending)
@@ -5112,8 +5112,8 @@ func TestPosterQuotaRemovalFailureDoesNotReclaimAccounting(t *testing.T) {
 		t.Fatalf("old poster remove calls=%d want 2", remover.callCount(oldPath))
 	}
 	ps.mu.RLock()
-	accounted = ps.accountedBytesLocked()
-	total = ps.totalBytes
+	accounted = ps.accountedLocked()
+	total = ps.used
 	ps.mu.RUnlock()
 	if total != int64(len(payload)) || regularFileBytes(t, dir) != accounted {
 		t.Fatalf("retry accounting: total=%d accounted=%d physical=%d", total, accounted, regularFileBytes(t, dir))
@@ -5142,7 +5142,7 @@ func TestPosterExpiredRemovalFailureAndErrNotExistAreExactOnce(t *testing.T) {
 		}
 		ps.mu.RLock()
 		_, retained := ps.entries[id]
-		total := ps.totalBytes
+		total := ps.used
 		ps.mu.RUnlock()
 		if !retained || total != entry.Size {
 			t.Fatalf("failed expiry accounting: retained=%v total=%d", retained, total)
@@ -5159,10 +5159,10 @@ func TestPosterExpiredRemovalFailureAndErrNotExistAreExactOnce(t *testing.T) {
 			t.Fatalf("remove calls=%d want 2", remover.callCount(path))
 		}
 		ps.mu.RLock()
-		total = ps.totalBytes
+		total = ps.used
 		ps.mu.RUnlock()
 		if total != 0 {
-			t.Fatalf("totalBytes=%d want 0", total)
+			t.Fatalf("stored bytes=%d want 0", total)
 		}
 	})
 
@@ -5194,10 +5194,10 @@ func TestPosterExpiredRemovalFailureAndErrNotExistAreExactOnce(t *testing.T) {
 			t.Fatalf("remove calls=%d want 1", remover.callCount(path))
 		}
 		ps.mu.RLock()
-		total := ps.totalBytes
+		total := ps.used
 		ps.mu.RUnlock()
 		if total != 0 {
-			t.Fatalf("totalBytes=%d want 0", total)
+			t.Fatalf("stored bytes=%d want 0", total)
 		}
 	})
 }
@@ -5219,8 +5219,8 @@ func TestPosterStoreKnownCleanupDebtConsumesCapacityAndRetries(t *testing.T) {
 		t.Fatal("upload exceeded capacity after known stale bytes were accounted")
 	}
 	ps.mu.RLock()
-	pendingBytes := ps.pendingBytes
-	accountedBytes := ps.accountedBytesLocked()
+	pendingBytes := ps.pendingDebt
+	accountedBytes := ps.accountedLocked()
 	ps.mu.RUnlock()
 	if pendingBytes != 4 || accountedBytes != 4 {
 		t.Fatalf("known debt accounting: pending=%d accounted=%d, want 4", pendingBytes, accountedBytes)
@@ -5236,7 +5236,7 @@ func TestPosterStoreKnownCleanupDebtConsumesCapacityAndRetries(t *testing.T) {
 		t.Fatalf("stored entry size=%d, want 2", entry.Size)
 	}
 	ps.mu.RLock()
-	pendingBytes = ps.pendingBytes
+	pendingBytes = ps.pendingDebt
 	ps.mu.RUnlock()
 	if pendingBytes != 0 {
 		t.Fatalf("known debt remained after successful retry: %d bytes", pendingBytes)
@@ -5389,7 +5389,7 @@ func TestPosterHandlerRejectsUploadWhenQuotaRemovalFails(t *testing.T) {
 	}
 	posters.mu.RLock()
 	_, retained := posters.entries[oldID]
-	total := posters.totalBytes
+	total := posters.used
 	posters.mu.RUnlock()
 	if !retained || total != int64(len(payload)) {
 		t.Fatalf("failed upload changed old poster: retained=%v total=%d", retained, total)

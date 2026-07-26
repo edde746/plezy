@@ -14,6 +14,7 @@ import '../models/mpv_config_models.dart';
 import '../models/external_player_models.dart';
 import 'base_shared_preferences_service.dart';
 import 'device_performance.dart';
+import 'shortcut_action.dart';
 export 'base_shared_preferences_service.dart'
     show Pref, BoolPref, IntPref, DoublePref, StringPref, NullableStringPref, StringListPref, EnumPref, JsonPref;
 import '../models/audio_quality_preset.dart';
@@ -278,33 +279,7 @@ List<MpvPreset> _decodeMpvPresets(dynamic raw) {
 }
 
 Map<String, HotKey> _defaultKeyboardHotkeys() => {
-  'play_pause': const HotKey(key: PhysicalKeyboardKey.space),
-  'volume_up': const HotKey(key: PhysicalKeyboardKey.arrowUp),
-  'volume_down': const HotKey(key: PhysicalKeyboardKey.arrowDown),
-  'seek_forward': const HotKey(key: PhysicalKeyboardKey.arrowRight),
-  'seek_backward': const HotKey(key: PhysicalKeyboardKey.arrowLeft),
-  'seek_forward_large': const HotKey(key: PhysicalKeyboardKey.arrowRight, modifiers: [HotKeyModifier.shift]),
-  'seek_backward_large': const HotKey(key: PhysicalKeyboardKey.arrowLeft, modifiers: [HotKeyModifier.shift]),
-  'fullscreen_toggle': const HotKey(key: PhysicalKeyboardKey.keyF),
-  'mute_toggle': const HotKey(key: PhysicalKeyboardKey.keyM),
-  'subtitle_toggle': const HotKey(key: PhysicalKeyboardKey.keyS),
-  'audio_track_next': const HotKey(key: PhysicalKeyboardKey.keyA),
-  'subtitle_track_next': const HotKey(key: PhysicalKeyboardKey.keyS, modifiers: [HotKeyModifier.shift]),
-  'chapter_next': const HotKey(key: PhysicalKeyboardKey.keyN),
-  'chapter_previous': const HotKey(key: PhysicalKeyboardKey.keyP),
-  'episode_next': const HotKey(key: PhysicalKeyboardKey.keyN, modifiers: [HotKeyModifier.shift]),
-  'episode_previous': const HotKey(key: PhysicalKeyboardKey.keyP, modifiers: [HotKeyModifier.shift]),
-  'speed_increase': const HotKey(key: PhysicalKeyboardKey.equal),
-  'speed_decrease': const HotKey(key: PhysicalKeyboardKey.minus),
-  'speed_reset': const HotKey(key: PhysicalKeyboardKey.keyR),
-  'zoom_in': const HotKey(key: PhysicalKeyboardKey.equal, modifiers: [HotKeyModifier.alt]),
-  'zoom_out': const HotKey(key: PhysicalKeyboardKey.minus, modifiers: [HotKeyModifier.alt]),
-  'zoom_reset': const HotKey(key: PhysicalKeyboardKey.backspace, modifiers: [HotKeyModifier.alt]),
-  'sub_seek_next': const HotKey(key: PhysicalKeyboardKey.arrowRight, modifiers: [HotKeyModifier.control]),
-  'sub_seek_prev': const HotKey(key: PhysicalKeyboardKey.arrowLeft, modifiers: [HotKeyModifier.control]),
-  'shader_toggle': const HotKey(key: PhysicalKeyboardKey.keyG),
-  'skip_marker': const HotKey(key: PhysicalKeyboardKey.enter),
-  'screenshot': const HotKey(key: PhysicalKeyboardKey.keyS, modifiers: [HotKeyModifier.control]),
+  for (final action in ShortcutAction.values) action.id: action.defaultHotKey,
 };
 
 Map<String, HotKey?> _decodeKeyboardHotkeys(dynamic raw) {
@@ -391,11 +366,7 @@ class SettingsService extends BaseSharedPreferencesService {
   static const showPerformanceOverlay = BoolPref('show_performance_overlay');
   static const autoHidePerformanceOverlay = BoolPref('auto_hide_performance_overlay', defaultValue: true);
   static const enableDiscordRPC = BoolPref('enable_discord_rpc');
-  static const enableTraktScrobble = BoolPref('enable_trakt_scrobble', defaultValue: true);
   static const enableTraktWatchedSync = BoolPref('enable_trakt_watched_sync', defaultValue: true);
-  static const enableMalScrobble = BoolPref('enable_mal_scrobble', defaultValue: true);
-  static const enableAnilistScrobble = BoolPref('enable_anilist_scrobble', defaultValue: true);
-  static const enableSimklScrobble = BoolPref('enable_simkl_scrobble', defaultValue: true);
   static const matchContentFrameRate = BoolPref('match_content_frame_rate');
   static const tunneledPlayback = BoolPref('tunneled_playback', defaultValue: true);
   static const dvConversionMode = EnumPref<DvConversionModePreference>(
@@ -566,6 +537,11 @@ class SettingsService extends BaseSharedPreferencesService {
   /// 0 = unset (only explicit picks are written; the server template default
   /// keeps applying until the user chooses).
   static IntPref dvrTargetSectionPref(ServerId serverId, int type) => IntPref('dvr_target_section_${type}_$serverId');
+
+  /// Per-service "scrobble to this tracker" toggle. Trakt's second toggle
+  /// ([enableTraktWatchedSync]) has no counterpart on the other services and
+  /// stays a standalone constant.
+  static BoolPref scrobblePref(TrackerService s) => BoolPref('enable_${s.name}_scrobble', defaultValue: true);
 
   static EnumPref<TrackerLibraryFilterMode> trackerFilterModePref(TrackerService s) => EnumPref(
     'tracker_library_filter_mode_${s.name}',
@@ -825,55 +801,47 @@ class SettingsService extends BaseSharedPreferencesService {
     return null;
   }
 
-  /// Settings that "Reset All Settings" actually resets. Mirrors the original
-  /// reset surface — notably excludes user-customized data (intro/credits regex
-  /// patterns) and opt-in toggles prior versions didn't reset, so behavior
-  /// stays identical for users.
-  static List<Pref<Object?>> _resettablePrefs() => [
+  /// Preference registry behind "Reset All Settings" and settings export.
+  /// Every participating preference is named exactly once, in the group that
+  /// states its policy; anything absent from all three groups takes part in
+  /// neither surface (credentials, runtime state, migration sentinels).
+  ///
+  /// Group one: reset *and* exported — the ordinary case.
+  static final List<Pref<Object?>> _resetAndPortablePrefs = [
     enableDebugLogging,
-    bufferSize,
     enableHardwareDecoding,
     enableHDR,
     preferredVideoCodec,
     preferredAudioCodec,
     viewMode,
-    showHeroSection,
-    continueWatchingAction,
-    episodeAction,
     seekTimeSmall,
     seekTimeLarge,
+    showHeroSection,
     sleepTimerDuration,
     audioSyncOffset,
     subtitleSyncOffset,
     subtitleSearchLanguage,
     volume,
-    maxVolume,
     subtitleFontSize,
     subtitleTextColor,
     subtitleBorderSize,
     subtitleBorderColor,
     subtitleBackgroundColor,
     subtitleBackgroundOpacity,
-    subtitlePosition,
     rememberTrackSelections,
-    customDownloadPathType,
     downloadOnWifiOnly,
     downloadIncludeSpecials,
     autoCheckUpdatesOnStartup,
     showPerformanceOverlay,
     autoHidePerformanceOverlay,
     enableDiscordRPC,
-    enableTraktScrobble,
     enableTraktWatchedSync,
-    enableMalScrobble,
-    enableAnilistScrobble,
-    enableSimklScrobble,
+    // Scrobble toggle, one per tracker service.
+    for (final s in TrackerService.values) scrobblePref(s),
     matchContentFrameRate,
     tunneledPlayback,
     dvConversionMode,
     musicVolume,
-    defaultPlaybackSpeed,
-    defaultBoxFitMode,
     autoPlayNextEpisode,
     useExoPlayer,
     startupSection,
@@ -893,20 +861,71 @@ class SettingsService extends BaseSharedPreferencesService {
     audioNormalization,
     audioDownmix,
     audioDownmixNormalize,
+    appLocale,
+    autoPip,
+    maxVolume,
     downmixCenterBoost,
+    subtitlePosition,
+    defaultPlaybackSpeed,
+    defaultBoxFitMode,
     themeMode,
-    keyboardHotkeys,
+    videoPlayerNavigationEnabled,
+    bufferSize,
     libraryDensity,
     tvCornerSpotlightBackdrop,
     episodePosterMode,
+    continueWatchingAction,
+    episodeAction,
+    keyboardHotkeys,
+    // Library filters, one pair per tracker service.
+    for (final s in TrackerService.values) ...[trackerFilterModePref(s), trackerFilterIdsPref(s)],
+  ];
+
+  /// Group two: exported but *not* reset. Mirrors the original reset surface —
+  /// user-customized data (intro/credits regex patterns) and opt-in toggles
+  /// prior versions didn't reset, so behavior stays identical for users.
+  static final List<Pref<Object?>> _portableOnlyPrefs = [
+    rewindOnResume,
+    tvFullCardLayout,
+    focusGlow,
+    useGlobalHubs,
+    showServerNameOnHubs,
+    groupLibrariesByServer,
+    rotationLocked,
+    subAssOverride,
+    subtitleRenderResolution,
+    subtitleBold,
+    subtitleItalic,
+    showChapterMarkersOnTimeline,
+    clickVideoTogglesPlayback,
+    autoSkipIntro,
+    autoSkipCredits,
+    forceSkipMarkerFallback,
+    autoSkipDelay,
+    introPattern,
+    creditsPattern,
+    autoRemoveWatchedDownloads,
+    defaultQualityPreset,
+    musicQualityPreset,
+    liveTvDefaultFavorites,
+    matchRefreshRate,
+    matchDynamicRange,
+    displaySwitchDelay,
+    enableCompanionRemoteServer,
+    startInFullscreen,
+    exitFullscreenOnPlayerClose,
+  ];
+
+  /// Group three: reset but *not* exported — device-local paths, endpoints and
+  /// per-device state plus user-authored player configuration, none of which
+  /// should travel between installations.
+  static final List<Pref<Object?>> _resetOnlyPrefs = [
+    customDownloadPathType,
     mediaVersionPreferences,
     localLastPlayedAt,
-    appLocale,
     customDownloadPath,
-    videoPlayerNavigationEnabled,
     mpvConfigText,
     mpvPresets,
-    autoPip,
     customShaderPresets,
     selectedExternalPlayer,
     customExternalPlayers,
@@ -914,17 +933,19 @@ class SettingsService extends BaseSharedPreferencesService {
     companionRemoteLastHostAddress,
   ];
 
+  /// Settings that "Reset All Settings" actually resets.
+  static List<Pref<Object?>> get _resettablePrefs => [..._resetAndPortablePrefs, ..._resetOnlyPrefs];
+
+  /// Settings carried by settings export/import files.
+  static List<Pref<Object?>> get portablePrefs => [..._resetAndPortablePrefs, ..._portableOnlyPrefs];
+
   Future<void> resetAllSettings() async {
-    final resettable = _resettablePrefs();
     await Future.wait([
-      ...resettable.map((p) => prefs.remove(p.key)),
+      ..._resettablePrefs.map((p) => prefs.remove(p.key)),
       // Legacy migration sentinels — removed alongside the keys they guarded.
       prefs.remove(_legacyUseSeasonPosterKey),
       prefs.remove(_legacyMpvConfigEntriesKey),
       prefs.remove(_bufferSizeMigratedKey),
-      ...TrackerService.values.expand(
-        (s) => [prefs.remove(trackerFilterModePref(s).key), prefs.remove(trackerFilterIdsPref(s).key)],
-      ),
     ]);
     refreshListenables();
   }

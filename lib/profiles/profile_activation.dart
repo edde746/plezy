@@ -234,6 +234,8 @@ Future<PlexHomeSwitchStatus> _preVerifyPlexHomePin(BuildContext context, Profile
   final connections = context.read<ConnectionRegistry>();
   final pcRegistry = context.read<ProfileConnectionRegistry>();
   final binder = context.read<ActiveProfileBinder>();
+  // Built before the await: capturing the prompt needs a live context.
+  final promptForPin = dialogPinPrompt(context, profile.displayName);
   final all = await connections.list();
   PlexAccountConnection? account;
   for (final c in all) {
@@ -248,10 +250,7 @@ Future<PlexHomeSwitchStatus> _preVerifyPlexHomePin(BuildContext context, Profile
     account: account,
     homeUserUuid: homeUuid,
     requiresPin: true,
-    promptForPin: ({String? errorMessage}) async {
-      if (!context.mounted) return null;
-      return showPinEntryDialog(context, profile.displayName, errorMessage: errorMessage);
-    },
+    promptForPin: promptForPin,
     persistTo: pcRegistry,
     persistProfileId: profile.id,
     logLabel: profile.displayName,

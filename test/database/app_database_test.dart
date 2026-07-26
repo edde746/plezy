@@ -20,6 +20,7 @@ import 'package:plezy/utils/active_client_scope.dart';
 import 'package:plezy/utils/media_server_http_client.dart';
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 
+import '../test_helpers/download_fixtures.dart';
 import '../test_helpers/prefs.dart';
 
 void main() {
@@ -68,8 +69,8 @@ class _AppDatabaseTestSuite {
         // v20 dropped the profile_id FK so virtual Plex Home profiles can
         // persist join rows without a parent `profiles` row. Profile deletion
         // instead cleans up join rows explicitly (via the teardown flow's
-        // removeAllProfileConnectionsAndCleanup) before deleting the profile,
-        // so the cascade isn't needed.
+        // ProfileConnectionCleanup.removeAllProfileConnections) before deleting
+        // the profile, so the cascade isn't needed.
         final now = DateTime.now().millisecondsSinceEpoch;
         await db
             .into(db.connections)

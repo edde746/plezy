@@ -110,19 +110,13 @@ class SystemShelfService {
     await _enqueueMutation<void>(() async {
       final channel = _channel;
       if (channel == null) return;
-      try {
-        await channel.invokeMethod<bool>('clear', {
-          'schemaVersion': schemaVersion,
-          'ownerId': profileId,
-          'generation': generation,
-        });
-      } on MissingPluginException catch (e) {
-        appLogger.e('Failed to clear system shelf: native channel missing', error: e);
-      } on PlatformException catch (e) {
-        appLogger.e('Failed to clear system shelf: native platform error', error: e);
-      } catch (e) {
-        appLogger.e('Failed to clear system shelf', error: e);
-      }
+      await _invokeGuarded<bool>(
+        channel,
+        'clear',
+        arguments: _envelope(profileId, generation),
+        label: 'Failed to clear system shelf',
+        severe: true,
+      );
     });
   }
 
@@ -146,19 +140,45 @@ class SystemShelfService {
     return completer.future;
   }
 
+  /// Owner-scoped envelope every mutating native call carries.
+  static Map<String, dynamic> _envelope(String profileId, int generation, [Map<String, dynamic>? extra]) {
+    return {'schemaVersion': schemaVersion, 'ownerId': profileId, 'generation': generation, ...?extra};
+  }
+
+  /// Invokes [method] on [channel], logging channel failures under [label] (at
+  /// error level when [severe]) and returning null instead of throwing.
+  /// Errors that are not channel failures log [failureLabel] when given.
+  Future<T?> _invokeGuarded<T>(
+    MethodChannel channel,
+    String method, {
+    Map<String, dynamic>? arguments,
+    required String label,
+    String? failureLabel,
+    bool severe = false,
+  }) async {
+    final log = severe ? appLogger.e : appLogger.w;
+    try {
+      return await channel.invokeMethod<T>(method, arguments);
+    } on MissingPluginException catch (e) {
+      log('$label: native channel missing', error: e);
+    } on PlatformException catch (e) {
+      log('$label: native platform error', error: e);
+    } catch (e) {
+      log(failureLabel ?? label, error: e);
+    }
+    return null;
+  }
+
   /// Get a pending deep link from cold start (consumed on first call).
   Future<String?> getInitialDeepLink() async {
     final channel = _channel;
     if (channel == null) return null;
-    try {
-      return await channel.invokeMethod<String>('getInitialDeepLink');
-    } on MissingPluginException catch (e) {
-      appLogger.w('System shelf initial deep link failed: native channel missing', error: e);
-      return null;
-    } catch (e) {
-      appLogger.w('Failed to get system shelf initial deep link', error: e);
-      return null;
-    }
+    return _invokeGuarded<String>(
+      channel,
+      'getInitialDeepLink',
+      label: 'System shelf initial deep link failed',
+      failureLabel: 'Failed to get system shelf initial deep link',
+    );
   }
 
   /// Check whether the current platform has a launcher shelf integration.
@@ -167,18 +187,13 @@ class SystemShelfService {
     if (override != null) return override();
     final channel = _channel;
     if (channel == null) return false;
-    try {
-      return await channel.invokeMethod<bool>('isSupported') ?? false;
-    } on MissingPluginException catch (e) {
-      appLogger.w('System shelf unsupported: native channel missing', error: e);
-      return false;
-    } on PlatformException catch (e) {
-      appLogger.w('System shelf unsupported: native platform error', error: e);
-      return false;
-    } catch (e) {
-      appLogger.w('System shelf unsupported: native support check failed', error: e);
-      return false;
-    }
+    return await _invokeGuarded<bool>(
+          channel,
+          'isSupported',
+          label: 'System shelf unsupported',
+          failureLabel: 'System shelf unsupported: native support check failed',
+        ) ??
+        false;
   }
 
   /// Sync Continue Watching items for the currently active [profileId].
@@ -204,24 +219,14 @@ class SystemShelfService {
 
     final result = await _enqueueMutation<bool>(() async {
       if (!_owns(profileId, generation)) return false;
-      try {
-        return await channel.invokeMethod<bool>('sync', {
-              'schemaVersion': schemaVersion,
-              'ownerId': profileId,
-              'generation': generation,
-              'items': items,
-            }) ??
-            false;
-      } on MissingPluginException catch (e) {
-        appLogger.e('Failed to sync system shelf: native channel missing', error: e);
-        return false;
-      } on PlatformException catch (e) {
-        appLogger.e('Failed to sync system shelf: native platform error', error: e);
-        return false;
-      } catch (e) {
-        appLogger.e('Failed to sync system shelf', error: e);
-        return false;
-      }
+      return await _invokeGuarded<bool>(
+            channel,
+            'sync',
+            arguments: _envelope(profileId, generation, {'items': items}),
+            label: 'Failed to sync system shelf',
+            severe: true,
+          ) ??
+          false;
     });
     return result ?? false;
   }
@@ -233,24 +238,14 @@ class SystemShelfService {
     final generation = _generation;
     final result = await _enqueueMutation<bool>(() async {
       if (!_owns(profileId, generation)) return false;
-      try {
-        return await channel.invokeMethod<bool>('remove', {
-              'schemaVersion': schemaVersion,
-              'ownerId': profileId,
-              'generation': generation,
-              'contentId': _buildContentId(serverId, ratingKey),
-            }) ??
-            false;
-      } on MissingPluginException catch (e) {
-        appLogger.e('Failed to remove system shelf item: native channel missing', error: e);
-        return false;
-      } on PlatformException catch (e) {
-        appLogger.e('Failed to remove system shelf item: native platform error', error: e);
-        return false;
-      } catch (e) {
-        appLogger.e('Failed to remove system shelf item', error: e);
-        return false;
-      }
+      return await _invokeGuarded<bool>(
+            channel,
+            'remove',
+            arguments: _envelope(profileId, generation, {'contentId': _buildContentId(serverId, ratingKey)}),
+            label: 'Failed to remove system shelf item',
+            severe: true,
+          ) ??
+          false;
     });
     return result ?? false;
   }

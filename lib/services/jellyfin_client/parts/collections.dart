@@ -1,27 +1,15 @@
 part of '../../jellyfin_client.dart';
 
-mixin _JellyfinCollectionMethods on MediaServerCacheMixin {
-  JellyfinConnection get connection;
-  FailoverHttpClient get _http;
-  List<MediaItem> _mapItems(Iterable<Map<String, dynamic>> items);
-
+mixin _JellyfinCollectionMethods on _JellyfinClientInternals {
   static const int _collectionsPageSize = 36;
 
   String? _boxSetsViewId;
 
   @override
-  Future<List<MediaItem>> fetchCollections(String libraryId) async {
-    final all = <MediaItem>[];
-    var start = 0;
-    while (true) {
-      final page = await fetchCollectionsPage(libraryId, start: start, size: _collectionsPageSize);
-      all.addAll(page.items);
-      if (page.items.isEmpty) break;
-      start += page.items.length;
-      if (start >= page.totalCount) break;
-    }
-    return all;
-  }
+  Future<List<MediaItem>> fetchCollections(String libraryId) => drainPages<MediaItem>(
+    (start, size) => fetchCollectionsPage(libraryId, start: start, size: size),
+    pageSize: _collectionsPageSize,
+  );
 
   @override
   Future<LibraryPage<MediaItem>> fetchCollectionsPage(
@@ -54,7 +42,7 @@ mixin _JellyfinCollectionMethods on MediaServerCacheMixin {
       abort: abort,
     );
     throwIfHttpError(response);
-    return _itemsPage(response.data, offset: s, requestedSize: pageSize);
+    return _pagedItems(response.data, offset: s, requestedSize: pageSize, map: _mapItems);
   }
 
   Future<String?> _fetchBoxSetsViewId({AbortController? abort}) async {
@@ -71,14 +59,6 @@ mixin _JellyfinCollectionMethods on MediaServerCacheMixin {
       }
     }
     return null;
-  }
-
-  LibraryPage<MediaItem> _itemsPage(Object? data, {required int offset, int? requestedSize}) {
-    final rawItems = _itemsArray(data);
-    final rawTotal = data is Map<String, dynamic> ? data['TotalRecordCount'] : null;
-    final fallbackTotal = fallbackPageTotal(offset: offset, itemCount: rawItems.length, requestedSize: requestedSize);
-    final total = rawTotal is int ? rawTotal : fallbackTotal;
-    return LibraryPage<MediaItem>(items: _mapItems(rawItems), totalCount: total, offset: offset);
   }
 
   @override
@@ -104,7 +84,7 @@ mixin _JellyfinCollectionMethods on MediaServerCacheMixin {
       abort: abort,
     );
     throwIfHttpError(response);
-    return _itemsPage(response.data, offset: s, requestedSize: size);
+    return _pagedItems(response.data, offset: s, requestedSize: size, map: _mapItems);
   }
 
   @override

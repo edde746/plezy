@@ -32,22 +32,18 @@ class ChipKeyCallbacks {
 /// This mixin handles:
 /// - Internal/external FocusNode pattern
 /// - `_isFocused` state tracking
-/// - Listener setup in `initState`
-/// - Listener handoff in `didUpdateWidget`
-/// - Cleanup in `dispose`
+/// - Listener setup, handoff and cleanup across the State lifecycle
 ///
 /// To use this mixin:
 /// 1. Add `with FocusableChipStateMixin<YourWidget>` to your State class
 /// 2. Implement [widgetFocusNode] to return the widget's optional focusNode
 /// 3. Implement [debugLabel] to return a debug label for the internal node
-/// 4. Call [initFocusNode] in your `initState`
-/// 5. Call [updateFocusNode] in your `didUpdateWidget`
-/// 6. Call [disposeFocusNode] in your `dispose`
-/// 7. Use [focusNode] and [isFocused] in your build method
+/// 4. Use [focusNode] and [isFocused] in your build method
 mixin FocusableChipStateMixin<T extends StatefulWidget> on State<T> {
   final _focusNodeBinding = OwnedFocusNodeBinding();
   bool _isFocused = false;
   final _selectLongPress = DpadSelectLongPressController();
+  FocusNode? _boundExternalNode;
 
   /// Override to return the widget's optional external focus node.
   FocusNode? get widgetFocusNode;
@@ -61,22 +57,30 @@ mixin FocusableChipStateMixin<T extends StatefulWidget> on State<T> {
   /// Whether this widget is currently focused.
   bool get isFocused => _isFocused;
 
-  /// Call this in your `initState` to set up the focus listener.
-  void initFocusNode() {
-    _focusNodeBinding.bind(externalNode: widgetFocusNode, listener: _onFocusChange, debugLabel: debugLabel);
+  @override
+  void initState() {
+    super.initState();
+    _bindFocusNode();
   }
 
-  /// Call this in your `didUpdateWidget` with the old widget's focusNode.
-  void updateFocusNode(FocusNode? oldFocusNode) {
-    if (oldFocusNode != widgetFocusNode) {
-      _focusNodeBinding.bind(externalNode: widgetFocusNode, listener: _onFocusChange, debugLabel: debugLabel);
+  @override
+  void didUpdateWidget(T oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (_boundExternalNode != widgetFocusNode) {
+      _bindFocusNode();
     }
   }
 
-  /// Call this in your `dispose` to clean up the focus listener.
-  void disposeFocusNode() {
+  @override
+  void dispose() {
     _focusNodeBinding.dispose();
     _selectLongPress.dispose();
+    super.dispose();
+  }
+
+  void _bindFocusNode() {
+    _boundExternalNode = widgetFocusNode;
+    _focusNodeBinding.bind(externalNode: widgetFocusNode, listener: _onFocusChange, debugLabel: debugLabel);
   }
 
   void _onFocusChange() {

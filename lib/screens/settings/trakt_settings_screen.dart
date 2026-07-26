@@ -71,7 +71,7 @@ class TraktSettingsScreen extends StatelessWidget {
           service: TrackerService.trakt,
           toggles: [
             TrackerSettingsToggle(
-              pref: SettingsService.enableTraktScrobble,
+              pref: SettingsService.scrobblePref(TrackerService.trakt),
               icon: Symbols.auto_timer_rounded,
               title: t.trakt.scrobble,
               subtitle: t.trakt.scrobbleDescription,

@@ -301,16 +301,7 @@ class WatchTogetherPeerService with KeepaliveMixin {
     final rejectedSetup = _setupCompleter;
     if (rejectedSetup == null || rejectedSetup.isCompleted) return;
 
-    final leaveCompleter = Completer<void>();
-    _setupCompleter = leaveCompleter;
-    _setupRequestType = RelayProtocol.leave;
-    _sendRaw({
-      'type': RelayProtocol.leave,
-      'sessionId': _sessionId,
-      'peerId': _myPeerId,
-      'reconnectToken': _reconnectToken,
-      'protocolVersion': _relayProtocolVersion,
-    });
+    final leaveCompleter = _announce(RelayProtocol.leave);
     unawaited(() async {
       try {
         await leaveCompleter.future.namedTimeout(
@@ -803,16 +794,7 @@ class WatchTogetherPeerService with KeepaliveMixin {
             );
           }
 
-          final releaseCompleter = Completer<void>();
-          _setupCompleter = releaseCompleter;
-          _setupRequestType = _isHost ? RelayProtocol.endSession : RelayProtocol.leave;
-          _sendRaw({
-            'type': _isHost ? RelayProtocol.endSession : RelayProtocol.leave,
-            'sessionId': _sessionId,
-            'peerId': _myPeerId,
-            'reconnectToken': _reconnectToken,
-            'protocolVersion': _relayProtocolVersion,
-          });
+          final releaseCompleter = _announce(_isHost ? RelayProtocol.endSession : RelayProtocol.leave);
           await releaseCompleter.future.namedTimeout(
             const Duration(seconds: 10),
             operation: _isHost ? 'WatchTogether end session' : 'WatchTogether leave session',

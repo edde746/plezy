@@ -12,6 +12,7 @@ import '../profiles/active_profile_provider.dart';
 import '../profiles/plex_home_service.dart';
 import '../profiles/profile.dart';
 import '../profiles/profile_connection_registry.dart';
+import '../profiles/profile_selection_policy.dart';
 import '../services/plex_auth_service.dart';
 import '../services/settings_service.dart';
 import '../services/storage_service.dart';
@@ -196,8 +197,7 @@ class _AuthScreenState extends State<AuthScreen> {
         activeProfile: activeProfiles.active,
         hasProfiles: activeProfiles.profiles.isNotEmpty,
         accountHasHomeUsers: plexHome.current[accountConnection.id]?.isNotEmpty == true,
-        requireProfileSelectionOnOpen:
-            settings.read(SettingsService.requireProfileSelectionOnOpen) && activeProfiles.hasMultipleProfiles,
+        requireProfileSelectionOnOpen: activeProfiles.requiresSelectionOnOpen(settings),
       );
       if (promptHandled) {
         final selected = await Navigator.of(

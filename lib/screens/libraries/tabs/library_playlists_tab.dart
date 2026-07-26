@@ -7,6 +7,7 @@ import '../../../media/media_kind.dart';
 import '../../../media/media_playlist.dart';
 import '../../../mixins/library_tab_focus_mixin.dart';
 import '../../../mixins/paginated_item_loader.dart';
+import '../../../mixins/standard_paginated_view.dart';
 import '../../../services/settings_service.dart';
 import '../../../utils/error_message_utils.dart';
 import '../../../utils/layout_constants.dart';
@@ -45,6 +46,7 @@ class _LibraryPlaylistsTabState extends BaseLibraryTabState<MediaPlaylist, Libra
     with
         LibraryTabFocusMixin<LibraryPlaylistsTab>,
         PaginatedItemLoader<MediaPlaylist, LibraryPlaylistsTab>,
+        StandardPaginatedView<MediaPlaylist, LibraryPlaylistsTab>,
         SkeletonUpgradeScheduler {
   static const int _pageSize = 200;
 
@@ -84,35 +86,11 @@ class _LibraryPlaylistsTabState extends BaseLibraryTabState<MediaPlaylist, Libra
   }
 
   @override
-  Future<void> loadItems() async {
-    String? loadErrorMessage;
-    await loadInitialPaginatedItems(
+  Future<void> loadItems() {
+    return loadStandardPaginatedItems(
       pageSize: _pageSize,
-      resetViewState: () {
-        isLoading = true;
-        errorMessage = null;
-        items = [];
-      },
-      applyLoadedItems: (loaded) {
-        items = loaded;
-        isLoading = false;
-      },
-      applyError: (error, stackTrace) {
-        errorMessage = loadErrorMessage ?? t.errors.unableToLoad(context: errorContext);
-        isLoading = false;
-      },
-      onLoaded: (_, _) {
-        hasLoadedData = true;
-        tryFocus();
-        if (widget.onDataLoaded != null) {
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            if (mounted) widget.onDataLoaded!();
-          });
-        }
-      },
-      onError: (error, stackTrace) {
-        loadErrorMessage = localizedLoadErrorMessage(error, stackTrace, context: errorContext);
-      },
+      errorMessageFor: (error, stackTrace) => localizedLoadErrorMessage(error, stackTrace, context: errorContext),
+      onLoaded: (_, _) => markItemsLoaded(),
     );
   }
 

@@ -7,6 +7,7 @@
 #include <atomic>
 #include <chrono>
 #include <cstdint>
+#include <cstring>
 #include <functional>
 #include <map>
 #include <mutex>
@@ -104,6 +105,210 @@ class AsyncRequestRegistry {
   std::map<uint64_t, GetPropertyCallback> properties_;
   std::mutex mutex_;
 };
+
+// Every libmpv async submission follows the same shape: register the callback,
+// hand the request to mpv, and roll back when the submission fails. A negative
+// result means the request never reached mpv, so nothing will ever complete it
+// and the callback has to be taken back and failed inline. The uninitialized
+// handle guard stays with the callers: they own the lifecycle flags and the
+// error code they report when the handle is gone.
+inline void SubmitCommandAsync(
+    mpv_handle* mpv, AsyncRequestRegistry& requests, const std::vector<std::string>& args, StatusCallback callback) {
+  std::vector<const char*> c_args;
+  c_args.reserve(args.size() + 1);
+  for (const auto& arg : args) {
+    c_args.push_back(arg.c_str());
+  }
+  c_args.push_back(nullptr);
+
+  const uint64_t request_id = callback ? requests.RegisterStatus(std::move(callback)) : 0;
+  // mpv_command_async returns immediately.
+  const int result = mpv_command_async(mpv, request_id, c_args.data());
+  if (result < 0) {
+    auto pending = requests.TakeStatus(request_id);
+    if (pending) pending(result);
+  }
+}
+
+inline void SubmitSetPropertyAsync(
+    mpv_handle* mpv, AsyncRequestRegistry& requests, const std::string& name, const std::string& value,
+    StatusCallback callback) {
+  const uint64_t request_id = callback ? requests.RegisterStatus(std::move(callback)) : 0;
+  char* property_value = const_cast<char*>(value.c_str());
+  const int result = mpv_set_property_async(mpv, request_id, name.c_str(), MPV_FORMAT_STRING, &property_value);
+  if (result < 0) {
+    auto pending = requests.TakeStatus(request_id);
+    if (pending) pending(result);
+  }
+}
+
+inline void SubmitGetPropertyAsync(
+    mpv_handle* mpv, AsyncRequestRegistry& requests, const std::string& name, GetPropertyCallback callback) {
+  const uint64_t request_id = requests.RegisterProperty(std::move(callback));
+  const int result = mpv_get_property_async(mpv, request_id, name.c_str(), MPV_FORMAT_STRING);
+  if (result < 0) {
+    auto pending = requests.TakeProperty(request_id);
+    if (pending) pending(result, "");
+  }
+}
+
+// Completes a COMMAND_REPLY / SET_PROPERTY_REPLY / GET_PROPERTY_REPLY against
+// the pending-request registry. `sanitize` converts mpv's payload (not
+// guaranteed to be valid UTF-8) into the string handed to the callback.
+// Returns true when the event was a reply event and has been fully handled.
+template <typename Sanitizer>
+inline bool DispatchReplyEvent(AsyncRequestRegistry& requests, const mpv_event* event, const Sanitizer& sanitize) {
+  switch (event->event_id) {
+    case MPV_EVENT_COMMAND_REPLY:
+    case MPV_EVENT_SET_PROPERTY_REPLY: {
+      StatusCallback callback = requests.TakeStatus(event->reply_userdata);
+      if (callback) {
+        callback(event->error);
+      }
+      return true;
+    }
+    case MPV_EVENT_GET_PROPERTY_REPLY: {
+      GetPropertyCallback callback = requests.TakeProperty(event->reply_userdata);
+      if (callback) {
+        std::string value;
+        if (event->error >= 0) {
+          auto* prop = static_cast<mpv_event_property*>(event->data);
+          if (prop && prop->format == MPV_FORMAT_STRING && prop->data) {
+            auto c_value = *static_cast<char**>(prop->data);
+            if (c_value) value = sanitize(c_value);
+          }
+        }
+        callback(event->error, value);
+      }
+      return true;
+    }
+    default:
+      return false;
+  }
+}
+
+// Copies a PROPERTY_CHANGE payload into a node the platform marshallers can
+// convert. mpv owns the storage, so the node only borrows it for the lifetime
+// of the event.
+inline mpv_node ExtractPropertyNode(const mpv_event_property* prop) {
+  mpv_node node{};
+  node.format = prop ? prop->format : MPV_FORMAT_NONE;
+  if (!prop) return node;
+
+  switch (prop->format) {
+    case MPV_FORMAT_STRING:
+      node.u.string = prop->data ? *static_cast<char**>(prop->data) : nullptr;
+      break;
+    case MPV_FORMAT_FLAG:
+      node.u.flag = prop->data ? *static_cast<int*>(prop->data) : 0;
+      break;
+    case MPV_FORMAT_INT64:
+      node.u.int64 = prop->data ? *static_cast<int64_t*>(prop->data) : 0;
+      break;
+    case MPV_FORMAT_DOUBLE:
+      node.u.double_ = prop->data ? *static_cast<double*>(prop->data) : 0.0;
+      break;
+    case MPV_FORMAT_NODE:
+      if (prop->data) {
+        node = *static_cast<mpv_node*>(prop->data);
+      } else {
+        node.format = MPV_FORMAT_NONE;
+      }
+      break;
+    default:
+      node.format = MPV_FORMAT_NONE;
+      break;
+  }
+  return node;
+}
+
+// mpv node payloads are untrusted input: a property can nest arbitrarily
+// deeply, carry a list as long as mpv claims, and hold strings that are
+// neither length-bounded nor valid UTF-8. Every runner walks the same trees
+// into its own Flutter value type, so the walk and its bounds live here once.
+static constexpr size_t kMaxNodeDepth = 32;
+static constexpr int kMaxNodeEntries = 16384;
+
+struct NodeConversionBudget {
+  size_t remaining_entries = static_cast<size_t>(kMaxNodeEntries);
+  size_t remaining_bytes = 16 * 1024 * 1024;
+};
+
+// Measures an mpv string without ever reading past the remaining byte budget,
+// and charges it to that budget. Returns false for a missing string or one
+// that would exceed what is left, which is how the walk rejects a payload.
+inline bool ClaimNodeString(const char* input, NodeConversionBudget* budget, size_t* length) {
+  if (!input || !budget || !length) return false;
+  const size_t measured = strnlen(input, budget->remaining_bytes + 1);
+  if (measured > budget->remaining_bytes) return false;
+  budget->remaining_bytes -= measured;
+  *length = measured;
+  return true;
+}
+
+// `Builder` adapts the walk to a platform value type and keeps that platform's
+// UTF-8 sanitizer out of this header. It supplies the types `Value`,
+// `ListBuilder` and `MapBuilder`, the leaves `Null`, `Bool`, `Int`, `Double`
+// and `String(data, length)`, and the containers `NewList`/`Append`/
+// `FinishList` plus `NewMap`/`Insert`/`FinishMap`. A value passed to
+// `Append`/`Insert` belongs to the builder from then on, and `AbandonMap`
+// releases a partially built map whose key was rejected.
+template <typename Builder>
+typename Builder::Value ConvertNode(const mpv_node* node, size_t depth, NodeConversionBudget* budget) {
+  if (!node || !budget || depth >= kMaxNodeDepth || budget->remaining_entries == 0) {
+    return Builder::Null();
+  }
+  --budget->remaining_entries;
+
+  switch (node->format) {
+    case MPV_FORMAT_STRING: {
+      size_t length = 0;
+      if (!ClaimNodeString(node->u.string, budget, &length)) return Builder::Null();
+      return Builder::String(node->u.string, length);
+    }
+    case MPV_FORMAT_FLAG:
+      return Builder::Bool(node->u.flag != 0);
+    case MPV_FORMAT_INT64:
+      return Builder::Int(node->u.int64);
+    case MPV_FORMAT_DOUBLE:
+      return Builder::Double(node->u.double_);
+    case MPV_FORMAT_NODE_ARRAY: {
+      const mpv_node_list* list = node->u.list;
+      if (!list || list->num < 0 || list->num > kMaxNodeEntries || (list->num > 0 && !list->values)) {
+        return Builder::Null();
+      }
+      typename Builder::ListBuilder result = Builder::NewList();
+      for (int i = 0; i < list->num; i++) {
+        Builder::Append(result, ConvertNode<Builder>(&list->values[i], depth + 1, budget));
+      }
+      return Builder::FinishList(std::move(result));
+    }
+    case MPV_FORMAT_NODE_MAP: {
+      const mpv_node_list* map = node->u.list;
+      if (!map || map->num < 0 || map->num > kMaxNodeEntries || (map->num > 0 && (!map->keys || !map->values))) {
+        return Builder::Null();
+      }
+      typename Builder::MapBuilder result = Builder::NewMap();
+      for (int i = 0; i < map->num; i++) {
+        size_t key_length = 0;
+        if (!ClaimNodeString(map->keys[i], budget, &key_length)) {
+          Builder::AbandonMap(result);
+          return Builder::Null();
+        }
+        Builder::Insert(result, map->keys[i], key_length, ConvertNode<Builder>(&map->values[i], depth + 1, budget));
+      }
+      return Builder::FinishMap(std::move(result));
+    }
+    default:
+      return Builder::Null();
+  }
+}
+
+template <typename Builder>
+typename Builder::Value ConvertNode(const mpv_node* node) {
+  NodeConversionBudget budget;
+  return ConvertNode<Builder>(node, 0, &budget);
+}
 
 inline mpv_format ParsePropertyFormat(const std::string& format) {
   if (format == "string") return MPV_FORMAT_STRING;
@@ -304,6 +509,42 @@ class AudioRecoveryState {
   std::chrono::milliseconds null_backoff_{0};
   mutable std::mutex mutex_;
 };
+
+struct AudioRecoveryNotice {
+  // What to log, or nullptr when the property changed nothing of interest.
+  const char* message = nullptr;
+  // True when the state machine now has a reload queued, which platforms that
+  // drive recovery from a timer rather than an event-loop tick must wake for.
+  bool scheduled_work = false;
+};
+
+// Feeds the audio-related properties of a PROPERTY_CHANGE event into the
+// recovery state machine, leaving the caller only the platform reporting.
+inline AudioRecoveryNotice ObserveAudioRecoveryProperty(
+    AudioRecoveryState& state, const mpv_event* event, const mpv_event_property* prop) {
+  if (!event || !prop || !prop->name) return {};
+
+  if (std::strcmp(prop->name, "current-ao") == 0) {
+    const char* current_ao = nullptr;
+    if (prop->format == MPV_FORMAT_STRING && prop->data) {
+      current_ao = *static_cast<char**>(prop->data);
+    }
+    const bool is_null = current_ao && std::strcmp(current_ao, "null") == 0;
+    const auto transition = state.SetCurrentAudioOutputNull(is_null, AudioRecoveryState::Clock::now());
+    if (transition == AudioOutputTransition::kFellBackToNull) {
+      return {"current-ao fell back to null; starting recovery", true};
+    }
+    if (transition == AudioOutputTransition::kRecovered) {
+      return {"audio recovered (current-ao no longer null)", false};
+    }
+    return {};
+  }
+  if (std::strcmp(prop->name, "audio-device-list") == 0 && event->reply_userdata == 0 &&
+      state.OnAudioDeviceListChanged(AudioRecoveryState::Clock::now())) {
+    return {"audio-device-list changed while ao=null; rescheduling ao-reload", true};
+  }
+  return {};
+}
 
 }  // namespace mpv_common
 }  // namespace plezy

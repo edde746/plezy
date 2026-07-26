@@ -11,6 +11,8 @@ import 'package:plezy/main.dart';
 import 'package:plezy/media/ids.dart';
 import 'package:plezy/models/download_models.dart';
 
+import 'test_helpers/download_fixtures.dart';
+
 void main() {
   testWidgets('renders a Flutter frame before starting the initialization gate', (tester) async {
     final completion = Completer<int>();

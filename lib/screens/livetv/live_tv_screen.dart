@@ -166,59 +166,54 @@ class _LiveTvScreenState extends State<LiveTvScreen>
       await _recordingsTabKey.currentState?.reload();
       return;
     }
-    await _serverReloadGuide();
+    await _broadcastToDvrs(
+      actionLabel: 'Reload guide',
+      successMessage: t.liveTv.guideReloadRequested,
+      action: (dvr, serverInfo) => dvr.reloadGuide(serverInfo.dvrKey),
+    );
     await _loadChannels();
   }
 
-  Future<void> _serverReloadGuide() async {
+  /// Runs [action] on every DVR-capable Live TV server in parallel, then reports
+  /// [successMessage]. Per-DVR failures are non-fatal — 403 (admin only) and
+  /// transient errors are logged under [actionLabel] and swallowed, since
+  /// callers re-fetch their own client-side state regardless. Returns `true`
+  /// once at least one DVR was reached and this widget is still mounted.
+  Future<bool> _broadcastToDvrs({
+    required String actionLabel,
+    required String successMessage,
+    required Future<void> Function(LiveTvDvrSupport dvr, LiveTvServerInfo serverInfo) action,
+  }) async {
     final multiServer = context.read<MultiServerProvider>();
+    Future<void> runSafely(LiveTvDvrSupport dvr, LiveTvServerInfo serverInfo) async {
+      try {
+        await action(dvr, serverInfo);
+      } catch (e) {
+        appLogger.d('$actionLabel failed for DVR ${serverInfo.dvrKey}: $e');
+      }
+    }
+
     final futures = <Future<void>>[];
     for (final serverInfo in multiServer.liveTvServers) {
-      final client = multiServer.getClientForServer(ServerId(serverInfo.serverId));
-      if (client == null || client.liveTvDvr == null) continue;
-      futures.add(_reloadGuideSafe(client, serverInfo.dvrKey));
+      final dvr = multiServer.getClientForServer(ServerId(serverInfo.serverId))?.liveTvDvr;
+      if (dvr == null) continue;
+      futures.add(runSafely(dvr, serverInfo));
     }
-    if (futures.isEmpty) return;
+    if (futures.isEmpty) return false;
     await Future.wait(futures);
-    if (!mounted) return;
-    showSnackBar(context, t.liveTv.guideReloadRequested);
-  }
-
-  Future<void> _reloadGuideSafe(MediaServerClient client, String dvrId) async {
-    try {
-      final dvr = client.liveTvDvr;
-      if (dvr == null) return;
-      await dvr.reloadGuide(dvrId);
-    } catch (e) {
-      // 403 (admin only) and transient errors are non-fatal — caller still
-      // re-fetches client-side channels.
-      appLogger.d('Reload guide failed for DVR $dvrId: $e');
-    }
+    if (!mounted) return false;
+    showSnackBar(context, successMessage);
+    return true;
   }
 
   Future<void> _processRecordingRules() async {
-    final multiServer = context.read<MultiServerProvider>();
-    final futures = <Future<void>>[];
-    for (final serverInfo in multiServer.liveTvServers) {
-      final client = multiServer.getClientForServer(ServerId(serverInfo.serverId));
-      if (client == null || client.liveTvDvr == null) continue;
-      futures.add(_processRulesSafe(client));
-    }
-    if (futures.isEmpty) return;
-    await Future.wait(futures);
-    if (!mounted) return;
-    showSnackBar(context, t.liveTv.rulesProcessRequested);
+    final reached = await _broadcastToDvrs(
+      actionLabel: 'processRecordingRules',
+      successMessage: t.liveTv.rulesProcessRequested,
+      action: (dvr, _) => dvr.processRecordingRules(),
+    );
+    if (!reached) return;
     await _recordingsTabKey.currentState?.reload();
-  }
-
-  Future<void> _processRulesSafe(MediaServerClient client) async {
-    try {
-      final dvr = client.liveTvDvr;
-      if (dvr == null) return;
-      await dvr.processRecordingRules();
-    } catch (e) {
-      appLogger.d('processRecordingRules failed: $e');
-    }
   }
 
   /// Recompute visible tabs from the current MultiServerProvider state.

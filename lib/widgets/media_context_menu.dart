@@ -1060,22 +1060,11 @@ class MediaContextMenuState extends State<MediaContextMenu> {
       await playTrackWithAlbumContext(context, item);
       return;
     }
-    // Availability gate before the container fetch so the stub costs no
-    // server round-trip.
-    if (!ensureMusicPlaybackAvailable(context)) return;
-    final service = context.read<MusicPlaybackService>();
-    final intent = service.beginPlayIntent();
-    List<MediaItem> tracks;
-    try {
-      tracks = await _musicTracksForItem(item);
-    } catch (_) {
-      if (!service.isPlayIntentCurrent(intent)) return;
-      rethrow;
-    }
-    if (!context.mounted || !service.isPlayIntentCurrent(intent)) return;
-    await playTracks(
+    // No onError: a failed container fetch falls through to this menu's own
+    // error boundary, which logs it and shows the snackbar.
+    await playFetchedTracks(
       context,
-      tracks: tracks,
+      fetch: () => _musicTracksForItem(item),
       playContext: MusicPlayContext(
         id: item.id,
         title: item.displayTitle,
@@ -1402,29 +1391,15 @@ class MediaContextMenuState extends State<MediaContextMenu> {
   Future<void> _launchAudioPlaylist(BuildContext context, MediaPlaylist playlist, {required bool shuffle}) async {
     // Match PlaylistDetailScreen: fail the availability gate before paying
     // for a full playlist fetch, then hand the tracks to the music session.
-    if (!ensureMusicPlaybackAvailable(context)) return;
-    final service = context.read<MusicPlaybackService>();
-    final intent = service.beginPlayIntent();
-
-    List<MediaItem> tracks;
-    try {
-      tracks = await fetchAllPlaylistItems(_getMediaClientForItem(), playlist.id);
-    } catch (e, st) {
-      if (!context.mounted || !service.isPlayIntentCurrent(intent)) return;
-      appLogger.w('Failed to fetch audio playlist ${playlist.id}', error: e, stackTrace: st);
-      showErrorSnackBar(context, t.messages.errorLoading(error: e.toString()));
-      return;
-    }
-    if (!context.mounted || !service.isPlayIntentCurrent(intent)) return;
-    if (tracks.isEmpty) {
-      showErrorSnackBar(context, t.messages.failedToCreatePlayQueueNoItems);
-      return;
-    }
-
-    await playTracks(
+    await playFetchedTracks(
       context,
-      tracks: tracks,
+      fetch: () => fetchAllPlaylistItems(_getMediaClientForItem(), playlist.id),
       playContext: MusicPlayContext(id: playlist.id, title: playlist.title, kind: MusicPlayContextKind.playlist),
+      onError: (e, st) {
+        appLogger.w('Failed to fetch audio playlist ${playlist.id}', error: e, stackTrace: st);
+        showErrorSnackBar(context, t.messages.errorLoading(error: e.toString()));
+      },
+      onEmpty: () => showErrorSnackBar(context, t.messages.failedToCreatePlayQueueNoItems),
       shuffle: shuffle,
     );
   }

@@ -7,21 +7,14 @@ import '../utils/app_logger.dart';
 
 class VideoPIPManager {
   final Player player;
-  Size? _playerSize;
 
-  VideoPIPManager({required this.player, Size? initialPlayerSize}) : _playerSize = initialPlayerSize;
+  /// Current viewport size, used as the PiP aspect ratio fallback.
+  final Size? Function() playerSize;
 
-  Size? get playerSize => _playerSize;
+  VideoPIPManager({required this.player, required this.playerSize});
 
   /// Callback to prepare video filter before entering PiP
   VoidCallback? onBeforeEnterPip;
-
-  /// Update player size for PiP aspect ratio calculation
-  void updatePlayerSize(Size size) {
-    _playerSize = size;
-  }
-
-  ValueNotifier<bool> get isPipActive => PipService().isPipActive;
 
   /// Get current video dimensions (display or storage or fallback to viewport)
   Future<(int? width, int? height)> _getVideoDimensions() async {
@@ -52,8 +45,9 @@ class VideoPIPManager {
       }
     }
 
-    width ??= _playerSize?.width.toInt();
-    height ??= _playerSize?.height.toInt();
+    final viewport = playerSize();
+    width ??= viewport?.width.toInt();
+    height ??= viewport?.height.toInt();
 
     return (width, height);
   }
@@ -63,7 +57,7 @@ class VideoPIPManager {
     if (!supported) return (false, 'PiP not supported on this device');
 
     // If PiP is already active, exit it
-    if (isPipActive.value) {
+    if (PipService().isPipActive.value) {
       await PipService.exit();
       return (true, null);
     }

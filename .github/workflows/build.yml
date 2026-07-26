@@ -25,10 +25,10 @@ on:
         type: boolean
 
 env:
-  SENTRY_DART_DEFINE: ${{ github.repository == 'edde746/plezy' && '--dart-define=ENABLE_SENTRY=true' || '' }}
-  GIT_COMMIT_DART_DEFINE: --dart-define=GIT_COMMIT=${{ github.sha }}
-  SENTRY_ENV_DART_DEFINE: --dart-define=SENTRY_ENVIRONMENT=github
-  DONATIONS_DART_DEFINE: --dart-define=ENABLE_DONATIONS=true
+  # Only place this workflow names the SDK; .github/actions/setup-flutter-git pins the same release.
+  FLUTTER_VERSION: "3.44.0"
+  # Shared by every release build command; SENTRY_DIST stays per-platform.
+  RELEASE_DART_DEFINES: --dart-define=ENABLE_UPDATE_CHECK=true ${{ github.repository == 'edde746/plezy' && '--dart-define=ENABLE_SENTRY=true' || '' }} --dart-define=GIT_COMMIT=${{ github.sha }} --dart-define=SENTRY_ENVIRONMENT=github --dart-define=ENABLE_DONATIONS=true
   TRUSTED_BUILD_CACHE_VERSION: trusted-build-v1
   LINUX_APT_PACKAGES: >
     clang cmake meson ninja-build pkg-config nasm libgtk-3-dev libevdev-dev liblzma-dev
@@ -76,7 +76,7 @@ jobs:
         uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
         with:
           channel: "stable"
-          flutter-version: "3.44.0"
+          flutter-version: ${{ env.FLUTTER_VERSION }}
           cache: true
           cache-key: "${{ env.TRUSTED_BUILD_CACHE_VERSION }}-flutter-:os:-:channel:-:version:-:arch:-:hash:"
           pub-cache: false
@@ -110,7 +110,7 @@ jobs:
           EOF
 
       - name: Build APKs
-        run: flutter build apk --release --split-per-abi --dart-define=ENABLE_UPDATE_CHECK=true ${{ env.SENTRY_DART_DEFINE }} ${{ env.GIT_COMMIT_DART_DEFINE }} ${{ env.SENTRY_ENV_DART_DEFINE }} --dart-define=SENTRY_DIST=github-android-apk ${{ env.DONATIONS_DART_DEFINE }} --obfuscate --split-debug-info=debug-info/android-apk --extra-gen-snapshot-options=--save-obfuscation-map=debug-info/android-apk/obfuscation.map.json
+        run: flutter build apk --release --split-per-abi ${{ env.RELEASE_DART_DEFINES }} --dart-define=SENTRY_DIST=github-android-apk --obfuscate --split-debug-info=debug-info/android-apk --extra-gen-snapshot-options=--save-obfuscation-map=debug-info/android-apk/obfuscation.map.json
 
       - name: Upload symbols to bugs.plezy.app
         if: github.repository == 'edde746/plezy'
@@ -163,7 +163,7 @@ jobs:
         uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
         with:
           channel: "stable"
-          flutter-version: "3.44.0"
+          flutter-version: ${{ env.FLUTTER_VERSION }}
           cache: true
           cache-key: "${{ env.TRUSTED_BUILD_CACHE_VERSION }}-flutter-:os:-:channel:-:version:-:arch:-:hash:"
           pub-cache: false
@@ -188,7 +188,7 @@ jobs:
         run: flutter pub get --enforce-lockfile --no-example
 
       - name: Build iOS (no codesign)
-        run: flutter build ios --release --no-codesign --dart-define=ENABLE_UPDATE_CHECK=true ${{ env.SENTRY_DART_DEFINE }} ${{ env.GIT_COMMIT_DART_DEFINE }} ${{ env.SENTRY_ENV_DART_DEFINE }} --dart-define=SENTRY_DIST=github-ios ${{ env.DONATIONS_DART_DEFINE }} --split-debug-info=debug-info/ios
+        run: flutter build ios --release --no-codesign ${{ env.RELEASE_DART_DEFINES }} --dart-define=SENTRY_DIST=github-ios --split-debug-info=debug-info/ios
 
       - name: Upload symbols to bugs.plezy.app
         if: github.repository == 'edde746/plezy'
@@ -231,7 +231,7 @@ jobs:
         uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
         with:
           channel: "stable"
-          flutter-version: "3.44.0"
+          flutter-version: ${{ env.FLUTTER_VERSION }}
           cache: true
           cache-key: "${{ env.TRUSTED_BUILD_CACHE_VERSION }}-flutter-:os:-:channel:-:version:-:arch:-:hash:"
           pub-cache: false
@@ -256,7 +256,7 @@ jobs:
         run: flutter pub get --enforce-lockfile --no-example
 
       - name: Build macOS
-        run: flutter build macos --release --dart-define=ENABLE_UPDATE_CHECK=true ${{ env.SENTRY_DART_DEFINE }} ${{ env.GIT_COMMIT_DART_DEFINE }} ${{ env.SENTRY_ENV_DART_DEFINE }} --dart-define=SENTRY_DIST=github-macos ${{ env.DONATIONS_DART_DEFINE }} --split-debug-info=debug-info/macos
+        run: flutter build macos --release ${{ env.RELEASE_DART_DEFINES }} --dart-define=SENTRY_DIST=github-macos --split-debug-info=debug-info/macos
 
       - name: Upload symbols to bugs.plezy.app
         if: github.repository == 'edde746/plezy'
@@ -436,27 +436,14 @@ jobs:
         uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
         with:
           channel: "stable"
-          flutter-version: "3.44.0"
+          flutter-version: ${{ env.FLUTTER_VERSION }}
           cache: true
           cache-key: "${{ env.TRUSTED_BUILD_CACHE_VERSION }}-flutter-:os:-:channel:-:version:-:arch:-:hash:"
           pub-cache: false
 
-      - name: Set up Flutter 3.44.0 (git tag)
+      - name: Set up Flutter from its pinned commit
         if: matrix.flutter_setup == 'git'
-        # Flutter publishes no windows-arm64 SDK archive, so subosito can't
-        # resolve 3.44.0 for arm64: the stable manifest has no arm64 entry, and
-        # `channel: master` would git-clone master HEAD (whose engine != our
-        # patched 3.44.0). Clone the 3.44.0 tag directly to get engine rev
-        # 4c525dac, which install-patched-engine.ps1 asserts before swapping.
-        shell: pwsh
-        run: |
-          $root = "$env:RUNNER_TEMP\flutter"
-          git init $root
-          git -C $root remote add origin https://github.com/flutter/flutter.git
-          git -C $root fetch --depth 1 origin 559ffa3f75e7402d65a8def9c28389a9b2e6fe42
-          git -C $root checkout --detach FETCH_HEAD
-          "$root\bin" | Out-File -FilePath $env:GITHUB_PATH -Append -Encoding utf8
-          & "$root\bin\flutter.bat" --version
+        uses: ./.github/actions/setup-flutter-git
 
       - name: Cache Pub dependencies
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
@@ -477,7 +464,7 @@ jobs:
 
       - name: Build Windows ${{ matrix.arch }}
         shell: pwsh
-        run: flutter build windows --release --dart-define=ENABLE_UPDATE_CHECK=true ${{ env.SENTRY_DART_DEFINE }} ${{ env.GIT_COMMIT_DART_DEFINE }} ${{ env.SENTRY_ENV_DART_DEFINE }} --dart-define=SENTRY_DIST=github-windows-${{ matrix.arch }} ${{ env.DONATIONS_DART_DEFINE }} --split-debug-info=debug-info/windows-${{ matrix.arch }}
+        run: flutter build windows --release ${{ env.RELEASE_DART_DEFINES }} --dart-define=SENTRY_DIST=github-windows-${{ matrix.arch }} --split-debug-info=debug-info/windows-${{ matrix.arch }}
 
       - name: Upload symbols to bugs.plezy.app
         if: github.repository == 'edde746/plezy'
@@ -510,7 +497,7 @@ jobs:
         uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
         with:
           channel: "stable"
-          flutter-version: "3.44.0"
+          flutter-version: ${{ env.FLUTTER_VERSION }}
           cache: true
           cache-key: "${{ env.TRUSTED_BUILD_CACHE_VERSION }}-flutter-:os:-:channel:-:version:-:arch:-:hash:"
           pub-cache: false
@@ -623,7 +610,7 @@ jobs:
         uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
         with:
           channel: ${{ matrix.flutter_channel }}
-          flutter-version: "3.44.0"
+          flutter-version: ${{ env.FLUTTER_VERSION }}
           cache: true
           cache-key: "${{ env.TRUSTED_BUILD_CACHE_VERSION }}-flutter-:os:-:channel:-:version:-:arch:-:hash:"
           pub-cache: false
@@ -680,7 +667,7 @@ jobs:
 
       - name: Build Linux ${{ matrix.arch }}
         shell: bash
-        run: flutter build linux --release --dart-define=ENABLE_UPDATE_CHECK=true ${{ env.SENTRY_DART_DEFINE }} ${{ env.GIT_COMMIT_DART_DEFINE }} ${{ env.SENTRY_ENV_DART_DEFINE }} --dart-define=SENTRY_DIST=github-linux-${{ matrix.arch }} ${{ env.DONATIONS_DART_DEFINE }} --split-debug-info=debug-info/linux-${{ matrix.arch }}
+        run: flutter build linux --release ${{ env.RELEASE_DART_DEFINES }} --dart-define=SENTRY_DIST=github-linux-${{ matrix.arch }} --split-debug-info=debug-info/linux-${{ matrix.arch }}
         env:
           PKG_CONFIG_PATH: ${{ github.workspace }}/libmpv-prefix/lib/pkgconfig:${{ github.workspace }}/libmpv-prefix/lib/${{ matrix.pkg_config_arch }}/pkgconfig
 

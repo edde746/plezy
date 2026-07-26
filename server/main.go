@@ -13,7 +13,6 @@ import (
 	"io"
 	"io/fs"
 	"log"
-	"math/big"
 	"net"
 	"net/http"
 	"os"
@@ -383,100 +382,17 @@ func (r *Room) sendFrom(senderID string, sender *Client, targetID string, msg se
 }
 
 // --- Log store ---
-type artifactRemovalError struct {
-	err error
-}
 
-func (e *artifactRemovalError) Error() string {
-	return "artifact removal failed"
-}
-
-func (e *artifactRemovalError) Unwrap() error {
-	return e.err
-}
-
-var errArtifactOutsideStore = errors.New("artifact path outside store")
-
-func classifyRemovalError(err error) error {
-	if err == nil || errors.Is(err, fs.ErrNotExist) {
-		return nil
-	}
-	return err
-}
-
-func removeArtifact(removeFile func(string) error, root, path string) error {
-	err := classifyRemovalError(removeFile(path))
-	if err == nil {
-		return nil
-	}
-	if !errors.Is(err, syscall.ENOTEMPTY) && !errors.Is(err, syscall.EEXIST) {
-		return &artifactRemovalError{err: err}
-	}
-	if err := removeConfinedDirectory(root, path); err != nil {
-		return &artifactRemovalError{err: err}
-	}
-	return nil
-}
-
-func removeConfinedDirectory(root, path string) error {
-	info, err := os.Lstat(path)
-	if err != nil {
-		return classifyRemovalError(err)
-	}
-	if !info.IsDir() {
-		return syscall.ENOTDIR
-	}
-
-	rootPath, err := filepath.Abs(root)
-	if err != nil {
-		return errArtifactOutsideStore
-	}
-	rootPath, err = filepath.EvalSymlinks(rootPath)
-	if err != nil {
-		return errArtifactOutsideStore
-	}
-	artifactPath, err := filepath.Abs(path)
-	if err != nil {
-		return errArtifactOutsideStore
-	}
-	artifactPath, err = filepath.EvalSymlinks(artifactPath)
-	if err != nil {
-		return errArtifactOutsideStore
-	}
-	relative, err := filepath.Rel(rootPath, artifactPath)
-	if err != nil ||
-		relative == "." ||
-		relative == ".." ||
-		filepath.IsAbs(relative) ||
-		strings.HasPrefix(relative, ".."+string(filepath.Separator)) {
-		return errArtifactOutsideStore
-	}
-	return os.RemoveAll(artifactPath)
-}
-
-type pendingRemoval struct {
-	size      int64
-	sizeKnown bool
-}
-
-type logEntry struct {
-	Size      int
-	CreatedAt time.Time
-	ExpiresAt time.Time
-}
+const logFileExt = ".log"
 
 var errLogStoreFull = errors.New("log store full")
 
+// logStore keeps diagnostic uploads capped by artifact count; a full store
+// rejects new uploads rather than evicting logs someone may still be reading.
 type logStore struct {
-	entries          map[string]logEntry
-	pendingRemovals  map[string]pendingRemoval
+	artifactStore
 	rateLimit        map[string]time.Time // IP -> last upload time
 	failedLookupRate map[string]*rateLimiter
-	dir              string
-	generateID       func() string
-	removeFile       func(string) error
-	startupErr       error
-	mu               sync.RWMutex
 }
 
 func newLogStore(dir string) *logStore {
@@ -488,31 +404,32 @@ func newLogStoreWithRemover(dir string, removeFile func(string) error) *logStore
 		log.Fatalf("failed to create log dir %s: %v", dir, err)
 	}
 	ls := &logStore{
-		entries:          make(map[string]logEntry),
-		pendingRemovals:  make(map[string]pendingRemoval),
+		artifactStore: artifactStore{
+			entries:         make(map[string]artifactEntry),
+			pendingRemovals: make(map[string]pendingRemoval),
+			dir:             dir,
+			name:            "logs",
+			maxAge:          logMaxAge,
+			removeFile:      removeFile,
+			generateID:      generateLogID,
+			idFromFilename:  logIDFromFilename,
+			acceptLoaded: func(_ string, size int64) (string, bool) {
+				return "", size > 0 && size <= maxLogSize
+			},
+			limit:       maxLogEntries,
+			cost:        func(int64) int64 { return 1 },
+			pendingCost: func(pendingRemoval) int64 { return 1 },
+			errFull:     errLogStoreFull,
+		},
 		rateLimit:        make(map[string]time.Time),
 		failedLookupRate: make(map[string]*rateLimiter),
-		dir:              dir,
-		generateID:       generateLogID,
-		removeFile:       removeFile,
 	}
 	ls.startupErr = ls.loadExisting(time.Now())
 	return ls
 }
 
 func (ls *logStore) filePath(id string) string {
-	return filepath.Join(ls.dir, id+".log")
-}
-
-const idChars = "abcdefghijklmnopqrstuvwxyz0123456789"
-
-func generateID(length int) string {
-	b := make([]byte, length)
-	for i := range b {
-		n, _ := rand.Int(rand.Reader, big.NewInt(int64(len(idChars))))
-		b[i] = idChars[n.Int64()]
-	}
-	return string(b)
+	return ls.artifactStore.filePath(id + logFileExt)
 }
 
 func generateLogID() string {
@@ -520,149 +437,28 @@ func generateLogID() string {
 }
 
 func logIDFromFilename(filename string) (string, bool) {
-	if filepath.Ext(filename) != ".log" {
+	if filepath.Ext(filename) != logFileExt {
 		return "", false
 	}
-	id := strings.TrimSuffix(filename, ".log")
+	id := strings.TrimSuffix(filename, logFileExt)
 	return id, validID(id, logIDLength)
 }
 
-func (ls *logStore) loadExisting(now time.Time) error {
-	ls.mu.Lock()
-	defer ls.mu.Unlock()
-
-	files, err := os.ReadDir(ls.dir)
-	if err != nil {
-		log.Printf("logs: failed to read dir %s: %v", ls.dir, err)
-		return nil
-	}
-	var removalErr error
-	for _, file := range files {
-		filename := file.Name()
-		if file.IsDir() || strings.HasSuffix(filename, ".tmp") {
-			removalErr = errors.Join(removalErr, ls.removeUntrackedLocked(filename))
-			continue
-		}
-		id, ok := logIDFromFilename(filename)
-		if !ok {
-			removalErr = errors.Join(removalErr, ls.removeUntrackedLocked(filename))
-			continue
-		}
-		info, infoErr := file.Info()
-		if infoErr != nil || !info.Mode().IsRegular() || info.Size() <= 0 || info.Size() > maxLogSize {
-			removalErr = errors.Join(removalErr, ls.removeUntrackedLocked(filename))
-			continue
-		}
-		createdAt := info.ModTime()
-		ls.entries[id] = logEntry{
-			Size:      int(info.Size()),
-			CreatedAt: createdAt,
-			ExpiresAt: createdAt.Add(logMaxAge),
-		}
-	}
-	removalErr = errors.Join(removalErr, ls.cleanupExpiredLocked(now))
-	removalErr = errors.Join(removalErr, ls.evictOldestLocked(maxLogEntries))
-	return removalErr
-}
-
-func (ls *logStore) removeUntrackedLocked(filename string) error {
-	if err := removeArtifact(ls.removeFile, ls.dir, filepath.Join(ls.dir, filename)); err != nil {
-		if _, exists := ls.pendingRemovals[filename]; !exists {
-			ls.pendingRemovals[filename] = pendingRemoval{}
-		}
-		return err
-	}
-	delete(ls.pendingRemovals, filename)
-	return nil
-}
-
-func (ls *logStore) retryPendingLocked() error {
-	var removalErr error
-	for filename := range ls.pendingRemovals {
-		if err := removeArtifact(ls.removeFile, ls.dir, filepath.Join(ls.dir, filename)); err != nil {
-			removalErr = errors.Join(removalErr, err)
-			continue
-		}
-		delete(ls.pendingRemovals, filename)
-	}
-	return removalErr
-}
-
-func (ls *logStore) cleanupFailedTempLocked(tmpPath string) {
-	_ = ls.removeUntrackedLocked(filepath.Base(tmpPath))
-}
-
-func (ls *logStore) artifactCountLocked() int {
-	return len(ls.entries) + len(ls.pendingRemovals)
-}
-
-func (ls *logStore) store(data []byte, now time.Time) (string, logEntry, error) {
+func (ls *logStore) store(data []byte, now time.Time) (string, artifactEntry, error) {
 	if len(data) == 0 {
-		return "", logEntry{}, errors.New("empty log")
+		return "", artifactEntry{}, errors.New("empty log")
 	}
 	if len(data) > maxLogSize {
-		return "", logEntry{}, errors.New("log too large")
+		return "", artifactEntry{}, errors.New("log too large")
 	}
-
-	ls.mu.Lock()
-	defer ls.mu.Unlock()
-	_ = ls.retryPendingLocked()
-	_ = ls.cleanupExpiredLocked(now)
-	if err := ls.evictOldestLocked(maxLogEntries); err != nil {
-		return "", logEntry{}, err
-	}
-	if ls.artifactCountLocked() >= maxLogEntries {
-		return "", logEntry{}, errLogStoreFull
-	}
-
-	id := ls.generateID()
-	for {
-		if _, exists := ls.entries[id]; !exists {
-			if _, err := os.Stat(ls.filePath(id)); errors.Is(err, fs.ErrNotExist) {
-				break
-			}
-		}
-		id = ls.generateID()
-	}
-
-	path := ls.filePath(id)
-	tmpPath := path + ".tmp"
-	if err := os.WriteFile(tmpPath, data, 0644); err != nil {
-		ls.cleanupFailedTempLocked(tmpPath)
-		return "", logEntry{}, err
-	}
-	if err := os.Rename(tmpPath, path); err != nil {
-		ls.cleanupFailedTempLocked(tmpPath)
-		return "", logEntry{}, err
-	}
-	_ = os.Chtimes(path, now, now)
-
-	entry := logEntry{
-		Size:      len(data),
-		CreatedAt: now,
-		ExpiresAt: now.Add(logMaxAge),
-	}
-	ls.entries[id] = entry
-	return id, entry, nil
+	return ls.put(data, logFileExt, "", now)
 }
 
-func (ls *logStore) lookup(id string, now time.Time) (logEntry, bool, error) {
+func (ls *logStore) lookup(id string, now time.Time) (artifactEntry, bool, error) {
 	if !validID(id, logIDLength) {
-		return logEntry{}, false, nil
+		return artifactEntry{}, false, nil
 	}
-	ls.mu.Lock()
-	defer ls.mu.Unlock()
-	entry, ok := ls.entries[id]
-	if !ok {
-		return logEntry{}, false, nil
-	}
-	if !now.Before(entry.ExpiresAt) {
-		if err := ls.deleteEntryLocked(id); err != nil {
-			return logEntry{}, false, err
-		}
-		return logEntry{}, false, nil
-	}
-	return entry, true, nil
+	return ls.lookupEntry(id, now, nil)
 }
 
 func (ls *logStore) allowFailedLookup(source string, now time.Time) bool {
@@ -680,53 +476,10 @@ func (ls *logStore) allowFailedLookup(source string, now time.Time) bool {
 	return limiter.allowAt(now)
 }
 
-func (ls *logStore) cleanupExpiredLocked(now time.Time) error {
-	var removalErr error
-	for id, entry := range ls.entries {
-		if !now.Before(entry.ExpiresAt) {
-			removalErr = errors.Join(removalErr, ls.deleteEntryLocked(id))
-		}
-	}
-	return removalErr
-}
-
-func (ls *logStore) evictOldestLocked(limit int) error {
-	for ls.artifactCountLocked() > limit {
-		var oldestID string
-		var oldest logEntry
-		for id, entry := range ls.entries {
-			if oldestID == "" || entry.CreatedAt.Before(oldest.CreatedAt) {
-				oldestID = id
-				oldest = entry
-			}
-		}
-		if oldestID == "" {
-			return nil
-		}
-		if err := ls.deleteEntryLocked(oldestID); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func (ls *logStore) deleteEntryLocked(id string) error {
-	if _, ok := ls.entries[id]; !ok {
-		return nil
-	}
-	if err := removeArtifact(ls.removeFile, ls.dir, ls.filePath(id)); err != nil {
-		return err
-	}
-	delete(ls.entries, id)
-	return nil
-}
-
 func (ls *logStore) cleanup(now time.Time) error {
 	ls.mu.Lock()
 	defer ls.mu.Unlock()
-	removalErr := ls.retryPendingLocked()
-	removalErr = errors.Join(removalErr, ls.cleanupExpiredLocked(now))
-	removalErr = errors.Join(removalErr, ls.evictOldestLocked(maxLogEntries))
+	removalErr := ls.cleanupLocked(now)
 	cleanupRateWindows(ls.rateLimit, now, logRateInterval)
 	cleanupRateLimiters(ls.failedLookupRate, now, nil)
 	return removalErr
@@ -734,26 +487,12 @@ func (ls *logStore) cleanup(now time.Time) error {
 
 // --- Poster store ---
 
-type posterEntry struct {
-	Filename    string
-	Size        int64
-	ContentType string
-	CreatedAt   time.Time
-	ExpiresAt   time.Time
-}
+var errPosterStoreFull = errors.New("poster store full")
 
+// posterStore caps shared posters by accounted bytes and evicts the oldest to
+// admit a new upload.
 type posterStore struct {
-	entries         map[string]posterEntry
-	pendingRemovals map[string]pendingRemoval
-	dir             string
-	maxBytes        int64
-	maxAge          time.Duration
-	totalBytes      int64
-	pendingBytes    int64
-	unknownPending  int
-	removeFile      func(string) error
-	startupErr      error
-	mu              sync.RWMutex
+	artifactStore
 }
 
 func newPosterStore(dir string, maxBytes int64, maxAge time.Duration) *posterStore {
@@ -769,20 +508,35 @@ func newPosterStoreWithRemover(
 	if err := os.MkdirAll(dir, 0755); err != nil {
 		log.Fatalf("failed to create poster dir %s: %v", dir, err)
 	}
-	ps := &posterStore{
-		entries:         make(map[string]posterEntry),
+	ps := &posterStore{artifactStore{
+		entries:         make(map[string]artifactEntry),
 		pendingRemovals: make(map[string]pendingRemoval),
 		dir:             dir,
-		maxBytes:        maxBytes,
+		name:            "posters",
 		maxAge:          maxAge,
 		removeFile:      removeFile,
-	}
+		generateID:      generatePosterID,
+		idFromFilename:  posterIDFromFilename,
+		acceptLoaded: func(filename string, _ int64) (string, bool) {
+			return posterContentTypeForExt(filepath.Ext(filename))
+		},
+		limit: maxBytes,
+		cost:  func(size int64) int64 { return size },
+		pendingCost: func(pending pendingRemoval) int64 {
+			// Unknown debt cannot be sized safely, so it is kept out of the
+			// quota: a permanent directory or stat failure must not deny
+			// otherwise capacity-safe uploads.
+			if !pending.sizeKnown {
+				return 0
+			}
+			return pending.size
+		},
+		evictToFit:          true,
+		retryKnownDebtOnPut: true,
+		errFull:             errPosterStoreFull,
+	}}
 	ps.startupErr = ps.loadExisting(time.Now())
 	return ps
-}
-
-func (ps *posterStore) filePath(filename string) string {
-	return filepath.Join(ps.dir, filename)
 }
 
 func generatePosterID() string {
@@ -819,18 +573,6 @@ func posterContentTypeForExt(ext string) (string, bool) {
 	}
 }
 
-func validID(id string, length int) bool {
-	if len(id) != length {
-		return false
-	}
-	for _, ch := range id {
-		if !strings.ContainsRune(idChars, ch) {
-			return false
-		}
-	}
-	return true
-}
-
 func posterIDFromFilename(filename string) (string, bool) {
 	if filename == "" || strings.ContainsAny(filename, `/\\`) {
 		return "", false
@@ -846,269 +588,29 @@ func posterIDFromFilename(filename string) (string, bool) {
 	return id, true
 }
 
-func (ps *posterStore) loadExisting(now time.Time) error {
-	ps.mu.Lock()
-	defer ps.mu.Unlock()
-
-	files, err := os.ReadDir(ps.dir)
-	if err != nil {
-		log.Printf("posters: failed to read dir %s: %v", ps.dir, err)
-		return nil
-	}
-	var removalErr error
-	for _, file := range files {
-		filename := file.Name()
-		if file.IsDir() || strings.HasSuffix(filename, ".tmp") {
-			size, known := posterArtifactSize(file)
-			removalErr = errors.Join(
-				removalErr,
-				ps.removeUntrackedLocked(filename, size, known),
-			)
-			continue
-		}
-		id, ok := posterIDFromFilename(filename)
-		if !ok {
-			size, known := posterArtifactSize(file)
-			removalErr = errors.Join(
-				removalErr,
-				ps.removeUntrackedLocked(filename, size, known),
-			)
-			continue
-		}
-		info, infoErr := file.Info()
-		if infoErr != nil || !info.Mode().IsRegular() {
-			removalErr = errors.Join(
-				removalErr,
-				ps.removeUntrackedLocked(filename, 0, false),
-			)
-			continue
-		}
-		if _, duplicate := ps.entries[id]; duplicate {
-			removalErr = errors.Join(
-				removalErr,
-				ps.removeUntrackedLocked(filename, info.Size(), true),
-			)
-			continue
-		}
-		createdAt := info.ModTime()
-		contentType, _ := posterContentTypeForExt(filepath.Ext(filename))
-		entry := posterEntry{
-			Filename:    filename,
-			Size:        info.Size(),
-			ContentType: contentType,
-			CreatedAt:   createdAt,
-			ExpiresAt:   createdAt.Add(ps.maxAge),
-		}
-		ps.entries[id] = entry
-		ps.totalBytes += entry.Size
-	}
-	removalErr = errors.Join(removalErr, ps.cleanupExpiredLocked(now))
-	removalErr = errors.Join(removalErr, ps.evictOldestLocked(0))
-	return removalErr
-}
-
-func posterArtifactSize(file fs.DirEntry) (int64, bool) {
-	info, err := file.Info()
-	if err != nil || !info.Mode().IsRegular() {
-		return 0, false
-	}
-	return info.Size(), true
-}
-
-func (ps *posterStore) addPendingLocked(filename string, size int64, known bool) {
-	if _, exists := ps.pendingRemovals[filename]; exists {
-		return
-	}
-	ps.pendingRemovals[filename] = pendingRemoval{size: size, sizeKnown: known}
-	if known {
-		ps.pendingBytes += size
-	} else {
-		ps.unknownPending++
-	}
-}
-
-func (ps *posterStore) removeUntrackedLocked(filename string, size int64, known bool) error {
-	if err := removeArtifact(ps.removeFile, ps.dir, ps.filePath(filename)); err != nil {
-		ps.addPendingLocked(filename, size, known)
-		return err
-	}
-	return nil
-}
-
-func (ps *posterStore) retryPendingLocked(knownOnly bool) error {
-	var removalErr error
-	for filename, pending := range ps.pendingRemovals {
-		if knownOnly && !pending.sizeKnown {
-			continue
-		}
-		if err := removeArtifact(ps.removeFile, ps.dir, ps.filePath(filename)); err != nil {
-			removalErr = errors.Join(removalErr, err)
-			continue
-		}
-		delete(ps.pendingRemovals, filename)
-		if pending.sizeKnown {
-			ps.pendingBytes -= pending.size
-		} else {
-			ps.unknownPending--
-		}
-	}
-	return removalErr
-}
-
-func (ps *posterStore) cleanupFailedTempLocked(tmpPath string) {
-	if err := removeArtifact(ps.removeFile, ps.dir, tmpPath); err == nil {
-		return
-	}
-	info, statErr := os.Stat(tmpPath)
-	known := statErr == nil && info.Mode().IsRegular()
-	var size int64
-	if known {
-		size = info.Size()
-	}
-	ps.addPendingLocked(filepath.Base(tmpPath), size, known)
-}
-
-func (ps *posterStore) accountedBytesLocked() int64 {
-	return ps.totalBytes + ps.pendingBytes
-}
-
-func (ps *posterStore) store(data []byte, contentType string, now time.Time) (string, posterEntry, error) {
+func (ps *posterStore) store(data []byte, contentType string, now time.Time) (string, artifactEntry, error) {
 	entrySize := int64(len(data))
 	if entrySize <= 0 {
-		return "", posterEntry{}, errors.New("empty poster")
+		return "", artifactEntry{}, errors.New("empty poster")
 	}
-	if entrySize > ps.maxBytes {
-		return "", posterEntry{}, errors.New("poster exceeds store size")
+	if entrySize > ps.limit {
+		return "", artifactEntry{}, errors.New("poster exceeds store size")
 	}
 	ext, ok := posterExtForContentType(contentType)
 	if !ok {
-		return "", posterEntry{}, errors.New("unsupported poster type")
+		return "", artifactEntry{}, errors.New("unsupported poster type")
 	}
-
-	ps.mu.Lock()
-	defer ps.mu.Unlock()
-
-	// Known regular-file debt counts against quota and is retried on demand.
-	// Unknown artifacts are left to periodic cleanup: their size cannot be
-	// accounted safely, and a permanent directory or stat failure must not
-	// deny otherwise capacity-safe uploads.
-	_ = ps.retryPendingLocked(true)
-	_ = ps.cleanupExpiredLocked(now)
-	if err := ps.evictOldestLocked(entrySize); err != nil {
-		return "", posterEntry{}, err
-	}
-	if ps.accountedBytesLocked()+entrySize > ps.maxBytes {
-		return "", posterEntry{}, errors.New("poster store full")
-	}
-
-	id := generatePosterID()
-	for {
-		if _, exists := ps.entries[id]; !exists {
-			if _, err := os.Stat(ps.filePath(id + ext)); errors.Is(err, fs.ErrNotExist) {
-				break
-			}
-		}
-		id = generatePosterID()
-	}
-
-	filename := id + ext
-	path := ps.filePath(filename)
-	tmpPath := path + ".tmp"
-	if err := os.WriteFile(tmpPath, data, 0644); err != nil {
-		ps.cleanupFailedTempLocked(tmpPath)
-		return "", posterEntry{}, err
-	}
-	if err := os.Rename(tmpPath, path); err != nil {
-		ps.cleanupFailedTempLocked(tmpPath)
-		return "", posterEntry{}, err
-	}
-	_ = os.Chtimes(path, now, now)
-
-	entry := posterEntry{
-		Filename:    filename,
-		Size:        entrySize,
-		ContentType: strings.ToLower(strings.SplitN(contentType, ";", 2)[0]),
-		CreatedAt:   now,
-		ExpiresAt:   now.Add(ps.maxAge),
-	}
-	ps.entries[id] = entry
-	ps.totalBytes += entry.Size
-	return id, entry, nil
+	return ps.put(data, ext, strings.ToLower(strings.SplitN(contentType, ";", 2)[0]), now)
 }
 
-func (ps *posterStore) lookup(filename string, now time.Time) (posterEntry, bool, error) {
+func (ps *posterStore) lookup(filename string, now time.Time) (artifactEntry, bool, error) {
 	id, ok := posterIDFromFilename(filename)
 	if !ok {
-		return posterEntry{}, false, nil
+		return artifactEntry{}, false, nil
 	}
-
-	ps.mu.Lock()
-	defer ps.mu.Unlock()
-	entry, ok := ps.entries[id]
-	if !ok || entry.Filename != filename {
-		return posterEntry{}, false, nil
-	}
-	if !now.Before(entry.ExpiresAt) {
-		if err := ps.deleteEntryLocked(id); err != nil {
-			return posterEntry{}, false, err
-		}
-		return posterEntry{}, false, nil
-	}
-	return entry, true, nil
-}
-
-func (ps *posterStore) cleanup(now time.Time) error {
-	ps.mu.Lock()
-	defer ps.mu.Unlock()
-	removalErr := ps.retryPendingLocked(false)
-	removalErr = errors.Join(removalErr, ps.cleanupExpiredLocked(now))
-	removalErr = errors.Join(removalErr, ps.evictOldestLocked(0))
-	return removalErr
-}
-
-func (ps *posterStore) cleanupExpiredLocked(now time.Time) error {
-	var removalErr error
-	for id, entry := range ps.entries {
-		if !now.Before(entry.ExpiresAt) {
-			removalErr = errors.Join(removalErr, ps.deleteEntryLocked(id))
-		}
-	}
-	return removalErr
-}
-
-func (ps *posterStore) evictOldestLocked(extraBytes int64) error {
-	for ps.accountedBytesLocked()+extraBytes > ps.maxBytes && len(ps.entries) > 0 {
-		var oldestID string
-		var oldest posterEntry
-		first := true
-		for id, entry := range ps.entries {
-			if first || entry.CreatedAt.Before(oldest.CreatedAt) {
-				oldestID = id
-				oldest = entry
-				first = false
-			}
-		}
-		if oldestID == "" {
-			return nil
-		}
-		if err := ps.deleteEntryLocked(oldestID); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func (ps *posterStore) deleteEntryLocked(id string) error {
-	entry, ok := ps.entries[id]
-	if !ok {
-		return nil
-	}
-	if err := removeArtifact(ps.removeFile, ps.dir, ps.filePath(entry.Filename)); err != nil {
-		return err
-	}
-	delete(ps.entries, id)
-	ps.totalBytes -= entry.Size
-	return nil
+	return ps.lookupEntry(id, now, func(entry artifactEntry) bool {
+		return entry.Filename == filename
+	})
 }
 
 // --- Snapshotter (single-writer, debounced, atomic disk persistence) ---
@@ -1626,7 +1128,7 @@ func (s *Server) handleGetLogs(w http.ResponseWriter, r *http.Request) {
 	}
 
 	type lookupResult struct {
-		entry   logEntry
+		entry   artifactEntry
 		data    []byte
 		status  int
 		message string
@@ -1688,7 +1190,7 @@ func (s *Server) handleGetLogs(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
-	w.Header().Set("Content-Length", strconv.Itoa(lookup.entry.Size))
+	w.Header().Set("Content-Length", strconv.FormatInt(lookup.entry.Size, 10))
 	if written, err := w.Write(lookup.data); err != nil || written != len(lookup.data) {
 		log.Printf("logs: response write failed")
 	}

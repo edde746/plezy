@@ -10,6 +10,10 @@ on:
       - main
   workflow_dispatch:
 
+env:
+  # Only place this workflow names the SDK; .github/actions/setup-flutter-git pins the same release.
+  FLUTTER_VERSION: "3.44.0"
+
 jobs:
   analyze:
     name: Code Analysis
@@ -26,7 +30,7 @@ jobs:
         uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
         with:
           channel: "stable"
-          flutter-version: "3.44.0"
+          flutter-version: ${{ env.FLUTTER_VERSION }}
           cache: true
           pub-cache: false
 
@@ -53,30 +57,7 @@ jobs:
         run: python3 scripts/clean_translations.py --check --strict
 
       - name: Verify workflow and script guards
-        run: |
-          python3 scripts/check_build_workflow.py
-          python3 scripts/test_check_build_workflow.py
-          python3 scripts/check_apple_spm_locks.py
-          python3 scripts/test_check_apple_spm_locks.py
-          python3 scripts/verify_runtime_inputs.py
-          python3 scripts/test_verify_runtime_inputs.py
-          python3 scripts/check_workflow_security.py
-          python3 scripts/test_check_workflow_security.py
-          python3 scripts/check_workflow_action_pins.py
-          python3 scripts/test_check_workflow_action_pins.py
-          python3 scripts/check_container_image_pins.py
-          python3 scripts/test_check_container_image_pins.py
-          python3 scripts/test_fetch_tvos_engine.py
-          python3 scripts/test_check_codegen.py
-          python3 scripts/test_generate_relay_protocol.py
-          python3 scripts/test_format_native.py
-          python3 scripts/test_run_maestro.py
-          python3 scripts/test_maestro_flow_contracts.py
-          python3 scripts/test_maestro_jellyfin_proxy.py
-          python3 scripts/check_update_packages_workflow.py
-          python3 scripts/test_pubspec_version.py
-          python3 scripts/test_clean_translations.py
-          python3 scripts/test_check_icon_consistency.py
+        run: bash scripts/ci_guard_checks.sh
 
       - name: Verify formatting
         run: |
@@ -130,7 +111,7 @@ jobs:
         uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
         with:
           channel: "stable"
-          flutter-version: "3.44.0"
+          flutter-version: ${{ env.FLUTTER_VERSION }}
           cache: true
           pub-cache: false
 
@@ -187,7 +168,7 @@ jobs:
         uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
         with:
           channel: "stable"
-          flutter-version: "3.44.0"
+          flutter-version: ${{ env.FLUTTER_VERSION }}
           cache: true
           pub-cache: false
 
@@ -281,7 +262,7 @@ jobs:
         uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
         with:
           channel: "stable"
-          flutter-version: "3.44.0"
+          flutter-version: ${{ env.FLUTTER_VERSION }}
           cache: true
           pub-cache: false
 
@@ -355,7 +336,7 @@ jobs:
         uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
         with:
           channel: "stable"
-          flutter-version: "3.44.0"
+          flutter-version: ${{ env.FLUTTER_VERSION }}
           cache: true
           pub-cache: false
 
@@ -478,41 +459,13 @@ jobs:
         uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
         with:
           channel: "stable"
-          flutter-version: "3.44.0"
+          flutter-version: ${{ env.FLUTTER_VERSION }}
           cache: true
           pub-cache: false
 
-      - name: Setup Flutter 3.44.0 from its immutable commit
+      - name: Set up Flutter from its pinned commit
         if: matrix.flutter_setup == 'git'
-        shell: pwsh
-        run: |
-          $root = "$env:RUNNER_TEMP\flutter"
-          $expectedCommit = "559ffa3f75e7402d65a8def9c28389a9b2e6fe42"
-          git init $root
-          git -C $root remote add origin https://github.com/flutter/flutter.git
-          git -C $root fetch --depth 1 origin refs/tags/3.44.0:refs/tags/3.44.0
-          git -C $root checkout --detach refs/tags/3.44.0
-          $actualCommit = git -C $root rev-parse HEAD
-          if ($LASTEXITCODE -ne 0 -or $actualCommit -ne $expectedCommit) {
-            throw "Flutter 3.44.0 resolved to $actualCommit, expected $expectedCommit"
-          }
-          "$root\bin" | Out-File -FilePath $env:GITHUB_PATH -Append -Encoding utf8
-          & "$root\bin\flutter.bat" --version
-          if ($LASTEXITCODE -ne 0) {
-            throw "Unable to bootstrap the Flutter SDK"
-          }
-          $versionOutput = & "$root\bin\flutter.bat" --version --machine
-          if ($LASTEXITCODE -ne 0) {
-            throw "Unable to resolve the Flutter SDK version"
-          }
-          $versionJson = $versionOutput -join "`n"
-          if ([string]::IsNullOrWhiteSpace($versionJson)) {
-            throw "Flutter did not report machine-readable version JSON"
-          }
-          $version = $versionJson | ConvertFrom-Json
-          if ($version.frameworkVersion -ne "3.44.0") {
-            throw "Flutter reported version $($version.frameworkVersion), expected 3.44.0"
-          }
+        uses: ./.github/actions/setup-flutter-git
 
       - name: Install locked Dart dependencies
         shell: pwsh
@@ -566,7 +519,7 @@ jobs:
         uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
         with:
           channel: "stable"
-          flutter-version: "3.44.0"
+          flutter-version: ${{ env.FLUTTER_VERSION }}
           cache: true
           pub-cache: false
 

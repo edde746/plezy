@@ -122,23 +122,14 @@ class _MetadataEditScreenState extends State<MetadataEditScreen> {
     final draft = _draft;
     if (draft == null || _isCommitting) return;
     final currentValue = draft.value<String>(field.id) ?? '';
-    final result = multiline
-        ? await showTextInputDialog(
-            context,
-            title: field.label,
-            labelText: field.label,
-            initialValue: currentValue,
-            allowEmpty: true,
-            multiline: true,
-          )
-        : await showTextInputDialog(
-            context,
-            title: field.label,
-            labelText: field.label,
-            hintText: '',
-            initialValue: currentValue,
-            allowEmpty: true,
-          );
+    final result = await showTextInputDialog(
+      context,
+      title: field.label,
+      labelText: field.label,
+      initialValue: currentValue,
+      allowEmpty: true,
+      multiline: multiline,
+    );
 
     if (result != null && mounted && !_isCommitting && identical(_draft, draft)) {
       setState(() => draft.setValue(field.id, result));

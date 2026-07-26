@@ -12,6 +12,7 @@ import com.edde746.plezy.shared.MpvContentUriResolver
 import com.edde746.plezy.shared.PlayerChannelBinding
 import com.edde746.plezy.shared.PlayerDelegate
 import com.edde746.plezy.shared.ResolvedMpvUri
+import com.edde746.plezy.shared.SurfacePlayerCore
 import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.embedding.engine.plugins.activity.ActivityAware
 import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding
@@ -44,6 +45,10 @@ class ExoPlayerPlugin :
   private var backendSwitchPending: Boolean = false
   private var activity: Activity? = null
   private var activityBinding: ActivityPluginBinding? = null
+
+  /** Whichever core currently owns the surface; both expose [SurfacePlayerCore] identically. */
+  private val activeSurfaceCore: SurfacePlayerCore?
+    get() = if (usingMpvFallback) mpvCore else playerCore
 
   // Every Dart observeProperty registration, kept so an ExoPlayer→MPV
   // fallback can re-observe exactly what Dart asked for instead of
@@ -949,20 +954,12 @@ class ExoPlayerPlugin :
       return
     }
 
-    if (usingMpvFallback) {
-      mpvCore?.setVisible(visible)
-    } else {
-      playerCore?.setVisible(visible)
-    }
+    activeSurfaceCore?.setVisible(visible)
     result.success(null)
   }
 
   private fun handleUpdateFrame(result: MethodChannel.Result) {
-    if (usingMpvFallback) {
-      mpvCore?.updateFrame()
-    } else {
-      playerCore?.updateFrame()
-    }
+    activeSurfaceCore?.updateFrame()
     result.success(null)
   }
 
@@ -974,51 +971,31 @@ class ExoPlayerPlugin :
     val videoHeight = call.argument<Number>("videoHeight")?.toInt() ?: 0
 
     Log.d(TAG, "setVideoFrameRate: fps=$fps, duration=$duration, extraDelayMs=$extraDelayMs, video=${videoWidth}x$videoHeight")
-    val onComplete: (Boolean) -> Unit = { switched -> result.success(switched) }
-    if (usingMpvFallback) {
-      val core = mpvCore
-      if (core == null) {
-        result.success(false)
-      } else {
-        core.setVideoFrameRate(fps, duration, extraDelayMs, videoWidth, videoHeight, onComplete)
-      }
-    } else {
-      val core = playerCore
-      if (core == null) {
-        result.success(false)
-      } else {
-        core.setVideoFrameRate(fps, duration, extraDelayMs, videoWidth, videoHeight, onComplete)
-      }
+    val core = activeSurfaceCore
+    if (core == null) {
+      result.success(false)
+      return
+    }
+    core.setVideoFrameRate(fps, duration, extraDelayMs, videoWidth, videoHeight) { switched ->
+      result.success(switched)
     }
   }
 
   private fun handleClearVideoFrameRate(result: MethodChannel.Result) {
     Log.d(TAG, "clearVideoFrameRate")
-    if (usingMpvFallback) {
-      mpvCore?.clearVideoFrameRate()
-    } else {
-      playerCore?.clearVideoFrameRate()
-    }
+    activeSurfaceCore?.clearVideoFrameRate()
     result.success(null)
   }
 
   private fun handleRequestAudioFocus(result: MethodChannel.Result) {
     Log.d(TAG, "requestAudioFocus")
-    val granted = if (usingMpvFallback) {
-      mpvCore?.requestAudioFocus() ?: false
-    } else {
-      playerCore?.requestAudioFocus() ?: false
-    }
+    val granted = activeSurfaceCore?.requestAudioFocus() ?: false
     result.success(granted)
   }
 
   private fun handleAbandonAudioFocus(result: MethodChannel.Result) {
     Log.d(TAG, "abandonAudioFocus")
-    if (usingMpvFallback) {
-      mpvCore?.abandonAudioFocus()
-    } else {
-      playerCore?.abandonAudioFocus()
-    }
+    activeSurfaceCore?.abandonAudioFocus()
     result.success(null)
   }
 
@@ -1228,11 +1205,7 @@ class ExoPlayerPlugin :
 
   fun onPipModeChanged(isInPipMode: Boolean) {
     activity?.runOnUiThread {
-      if (usingMpvFallback) {
-        mpvCore?.onPipModeChanged(isInPipMode)
-      } else {
-        playerCore?.onPipModeChanged(isInPipMode)
-      }
+      activeSurfaceCore?.onPipModeChanged(isInPipMode)
     }
   }
 

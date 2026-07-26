@@ -1,9 +1,6 @@
 part of '../../jellyfin_client.dart';
 
-mixin _JellyfinMetadataEditMethods on MediaServerCacheMixin {
-  JellyfinConnection get connection;
-  FailoverHttpClient get _http;
-
+mixin _JellyfinMetadataEditMethods on _JellyfinClientInternals {
   Future<Map<String, dynamic>?> fetchEditableMetadataItem(String itemId) async {
     if (isOfflineMode) return null;
     final response = await _http.get('/Users/${_segment(connection.userId)}/Items/${_segment(itemId)}');

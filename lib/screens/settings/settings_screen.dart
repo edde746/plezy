@@ -26,12 +26,9 @@ import '../../services/saf_storage_service.dart';
 import '../../services/settings_export_service.dart';
 import '../../providers/theme_provider.dart';
 import '../../providers/seerr_account_provider.dart';
-import '../../providers/trackers_provider.dart';
-import '../../providers/trakt_account_provider.dart';
 import '../../services/keyboard_shortcuts_service.dart';
 import '../../services/settings_service.dart' as settings;
 import '../../services/update_service.dart';
-import '../../utils/app_logger.dart';
 import '../../utils/dialogs.dart';
 import '../../utils/snackbar_helper.dart';
 import '../../utils/platform_detector.dart';
@@ -55,6 +52,7 @@ import 'playback_settings_screen.dart';
 import '../profile/profile_switch_screen.dart';
 import 'services_settings_screen.dart';
 import 'settings_utils.dart';
+import 'tracker_service_info.dart';
 import '../../widgets/loading_indicator_box.dart';
 
 class SettingsScreen extends StatefulWidget {
@@ -263,13 +261,12 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
   }
 
   Widget _buildServicesTile() {
-    return Consumer3<TraktAccountProvider, TrackersProvider, SeerrAccountProvider>(
-      builder: (context, trakt, trackers, seerr, _) {
+    // The tracker account providers are watched through [TrackerServiceInfo].
+    return Consumer<SeerrAccountProvider>(
+      builder: (context, seerr, _) {
         final connectedNames = <String>[
-          if (trakt.isConnected) t.trakt.title,
-          if (trackers.isMalConnected) t.services.names.mal,
-          if (trackers.isAnilistConnected) t.services.names.anilist,
-          if (trackers.isSimklConnected) t.services.names.simkl,
+          for (final info in TrackerServiceInfo.all)
+            if (info.isConnected(context)) info.displayName,
           if (seerr.isConnected) t.services.names.seerr,
         ];
         final subtitle = connectedNames.isEmpty ? t.settings.servicesDescription : connectedNames.join(' · ');
@@ -614,65 +611,50 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
   }
 
   Future<bool> _selectDownloadLocation() async {
-    try {
-      String? selectedPath;
-      String pathType = 'file';
+    final changed = await guardSettingsOperation<bool, DownloadStorageException>(
+      context,
+      operation: 'Download directory selection',
+      body: () async {
+        String? selectedPath;
+        String pathType = 'file';
 
-      if (Platform.isAndroid) {
-        final safStorage = SafStorageService.instance;
-        if (!safStorage.supportsDirectoryPicker) {
-          showErrorSnackBar(context, t.settings.downloadLocationPickerUnavailable);
-          return false;
+        if (Platform.isAndroid) {
+          final safStorage = SafStorageService.instance;
+          if (!safStorage.supportsDirectoryPicker) {
+            showErrorSnackBar(context, t.settings.downloadLocationPickerUnavailable);
+            return false;
+          }
+          selectedPath = await safStorage.pickDirectory();
+          if (!mounted) return false;
+          if (selectedPath != null) pathType = 'saf';
+        } else {
+          selectedPath = await FilePickerService.instance.getDirectoryPath(dialogTitle: t.settings.selectFolder);
+          if (!mounted) return false;
         }
-        selectedPath = await safStorage.pickDirectory();
-        if (!mounted) return false;
-        if (selectedPath != null) pathType = 'saf';
-      } else {
-        selectedPath = await FilePickerService.instance.getDirectoryPath(dialogTitle: t.settings.selectFolder);
-        if (!mounted) return false;
-      }
-      if (selectedPath == null) return false;
+        if (selectedPath == null) return false;
 
-      if (pathType == 'file') {
-        final dir = Directory(selectedPath);
-        final isWritable =
-            await (widget.downloadDirectoryWritableChecker ?? DownloadStorageService.instance.isDirectoryWritable)(dir);
-        if (!mounted) return false;
-        if (!isWritable) {
-          showErrorSnackBar(context, t.settings.downloadLocationInvalid);
-          return false;
+        if (pathType == 'file') {
+          final dir = Directory(selectedPath);
+          final writableChecker =
+              widget.downloadDirectoryWritableChecker ?? DownloadStorageService.instance.isDirectoryWritable;
+          final isWritable = await writableChecker(dir);
+          if (!mounted) return false;
+          if (!isWritable) {
+            showErrorSnackBar(context, t.settings.downloadLocationInvalid);
+            return false;
+          }
         }
-      }
 
-      await context.read<DownloadProvider>().setDownloadLocation(path: selectedPath, pathType: pathType);
-      if (!mounted) return false;
+        await context.read<DownloadProvider>().setDownloadLocation(path: selectedPath, pathType: pathType);
+        if (!mounted) return false;
 
-      // ignore: no-empty-block - setState triggers rebuild to reflect new download path
-      setState(() {});
-      showSuccessSnackBar(context, t.settings.downloadLocationChanged);
-      return true;
-    } on DownloadStorageException catch (error, stackTrace) {
-      if (!mounted) {
-        appLogger.e('Download directory selection failed', error: error, stackTrace: stackTrace);
-        return false;
-      }
-      showSettingsFailure(context, operation: 'Download directory selection', error: error, stackTrace: stackTrace);
-      return false;
-    } on PlatformException catch (error, stackTrace) {
-      if (!mounted) {
-        appLogger.e('Download directory selection failed', error: error, stackTrace: stackTrace);
-        return false;
-      }
-      showSettingsFailure(context, operation: 'Download directory selection', error: error, stackTrace: stackTrace);
-      return false;
-    } on FileSystemException catch (error, stackTrace) {
-      if (!mounted) {
-        appLogger.e('Download directory selection failed', error: error, stackTrace: stackTrace);
-        return false;
-      }
-      showSettingsFailure(context, operation: 'Download directory selection', error: error, stackTrace: stackTrace);
-      return false;
-    }
+        // ignore: no-empty-block - setState triggers rebuild to reflect new download path
+        setState(() {});
+        showSuccessSnackBar(context, t.settings.downloadLocationChanged);
+        return true;
+      },
+    );
+    return changed ?? false;
   }
 
   Future<void> _resetDownloadLocation() async {
@@ -720,29 +702,15 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
   }
 
   Future<void> _handleExportSettings() async {
-    try {
-      final path = await (widget.settingsExporter ?? SettingsExportService.exportToFile)();
-      if (!mounted || path == null) return;
-      showSuccessSnackBar(context, t.settings.exportSettingsSuccess);
-    } on SettingsExportException catch (error, stackTrace) {
-      if (!mounted) {
-        appLogger.e('Settings export failed', error: error, stackTrace: stackTrace);
-        return;
-      }
-      showSettingsFailure(context, operation: 'Settings export', error: error, stackTrace: stackTrace);
-    } on PlatformException catch (error, stackTrace) {
-      if (!mounted) {
-        appLogger.e('Settings export failed', error: error, stackTrace: stackTrace);
-        return;
-      }
-      showSettingsFailure(context, operation: 'Settings export', error: error, stackTrace: stackTrace);
-    } on FileSystemException catch (error, stackTrace) {
-      if (!mounted) {
-        appLogger.e('Settings export failed', error: error, stackTrace: stackTrace);
-        return;
-      }
-      showSettingsFailure(context, operation: 'Settings export', error: error, stackTrace: stackTrace);
-    }
+    await guardSettingsOperation<void, SettingsExportException>(
+      context,
+      operation: 'Settings export',
+      body: () async {
+        final path = await (widget.settingsExporter ?? SettingsExportService.exportToFile)();
+        if (!mounted || path == null) return;
+        showSuccessSnackBar(context, t.settings.exportSettingsSuccess);
+      },
+    );
   }
 
   Future<void> _showImportSettingsDialog() async {
@@ -757,51 +725,41 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
   }
 
   Future<void> _handleImportSettings() async {
-    try {
-      final result = await (widget.settingsImporter ?? SettingsExportService.importFromFile)();
-      if (!mounted) return;
-      if (result == null) return; // user cancelled file picker
+    await guardSettingsOperation<void, SettingsExportException>(
+      context,
+      operation: 'Settings import',
+      body: () async {
+        // The two typed import failures carry their own message, so they are
+        // handled here instead of falling through to the generic guard.
+        try {
+          final result = await (widget.settingsImporter ?? SettingsExportService.importFromFile)();
+          if (!mounted) return;
+          if (result == null) return; // user cancelled file picker
 
-      final themeProvider = context.read<ThemeProvider>();
-      final hiddenLibrariesProvider = context.read<HiddenLibrariesProvider>();
-      final librariesProvider = context.read<LibrariesProvider>();
+          final themeProvider = context.read<ThemeProvider>();
+          final hiddenLibrariesProvider = context.read<HiddenLibrariesProvider>();
+          final librariesProvider = context.read<LibrariesProvider>();
 
-      // Import wrote directly to SharedPreferences, bypassing `write`. Push
-      // fresh values into active listenables before providers re-read settings.
-      _settingsService.refreshListenables();
-      unawaited(LocaleSettings.setLocale(_settingsService.read(settings.SettingsService.appLocale)));
-      await Future.wait([
-        themeProvider.reload(),
-        hiddenLibrariesProvider.refresh(),
-        if (_keyboardService != null) _keyboardService!.refreshFromStorage(),
-      ]);
-      unawaited(librariesProvider.refresh());
+          // Import wrote directly to SharedPreferences, bypassing `write`. Push
+          // fresh values into active listenables before providers re-read settings.
+          _settingsService.refreshListenables();
+          unawaited(LocaleSettings.setLocale(_settingsService.read(settings.SettingsService.appLocale)));
+          await Future.wait([
+            themeProvider.reload(),
+            hiddenLibrariesProvider.refresh(),
+            if (_keyboardService != null) _keyboardService!.refreshFromStorage(),
+          ]);
+          unawaited(librariesProvider.refresh());
 
-      if (!mounted) return;
-      showSuccessSnackBar(context, t.settings.importSettingsSuccess);
-    } on NoUserSignedInException {
-      if (mounted) showErrorSnackBar(context, t.settings.importSettingsNoUser);
-    } on InvalidExportFileException {
-      if (mounted) showErrorSnackBar(context, t.settings.importSettingsInvalidFile);
-    } on SettingsExportException catch (error, stackTrace) {
-      if (!mounted) {
-        appLogger.e('Settings import failed', error: error, stackTrace: stackTrace);
-        return;
-      }
-      showSettingsFailure(context, operation: 'Settings import', error: error, stackTrace: stackTrace);
-    } on PlatformException catch (error, stackTrace) {
-      if (!mounted) {
-        appLogger.e('Settings import failed', error: error, stackTrace: stackTrace);
-        return;
-      }
-      showSettingsFailure(context, operation: 'Settings import', error: error, stackTrace: stackTrace);
-    } on FileSystemException catch (error, stackTrace) {
-      if (!mounted) {
-        appLogger.e('Settings import failed', error: error, stackTrace: stackTrace);
-        return;
-      }
-      showSettingsFailure(context, operation: 'Settings import', error: error, stackTrace: stackTrace);
-    }
+          if (!mounted) return;
+          showSuccessSnackBar(context, t.settings.importSettingsSuccess);
+        } on NoUserSignedInException {
+          if (mounted) showErrorSnackBar(context, t.settings.importSettingsNoUser);
+        } on InvalidExportFileException {
+          if (mounted) showErrorSnackBar(context, t.settings.importSettingsInvalidFile);
+        }
+      },
+    );
   }
 
   Future<void> _checkForUpdates() async {

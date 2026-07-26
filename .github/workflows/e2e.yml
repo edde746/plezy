@@ -243,7 +243,7 @@ jobs:
         uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
         with:
           path: ~/.pub-cache
-          key: ${{ runner.os }}-pub-v3-${{ hashFiles('**/pubspec.yaml', '**/pubspec.lock') }}
+          key: ${{ steps.pub-cache.outputs.cache-primary-key }}
 
       - name: Save Gradle cache
         if: github.event_name != 'pull_request' && steps.gradle-cache.outputs.cache-hit != 'true'
@@ -252,7 +252,7 @@ jobs:
           path: |
             ~/.gradle/caches
             ~/.gradle/wrapper
-          key: ${{ runner.os }}-gradle-e2e-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          key: ${{ steps.gradle-cache.outputs.cache-primary-key }}
 
       - name: Save Maestro CLI cache
         if: github.event_name != 'pull_request' && steps.maestro-cache.outputs.cache-hit != 'true'
@@ -261,7 +261,7 @@ jobs:
           path: |
             ~/.maestro/bin
             ~/.maestro/lib
-          key: ${{ runner.os }}-maestro-${{ env.MAESTRO_VERSION }}
+          key: ${{ steps.maestro-cache.outputs.cache-primary-key }}
 
       - name: Save Android 15 AVD cache
         if: github.event_name != 'pull_request' && steps.api35-avd-cache.outputs.cache-hit != 'true'
@@ -270,7 +270,7 @@ jobs:
           path: |
             ~/.android/avd/maestro-api35.avd
             ~/.android/avd/maestro-api35.ini
-          key: ${{ runner.os }}-avd-v1-api35-x86_64-pixel_6
+          key: ${{ steps.api35-avd-cache.outputs.cache-primary-key }}
 
       - name: Save Android 9 AVD cache
         if: github.event_name != 'pull_request' && steps.api28-avd-cache.outputs.cache-hit != 'true'
@@ -279,7 +279,7 @@ jobs:
           path: |
             ~/.android/avd/maestro-api28.avd
             ~/.android/avd/maestro-api28.ini
-          key: ${{ runner.os }}-avd-v1-api28-x86-pixel_2-playstore
+          key: ${{ steps.api28-avd-cache.outputs.cache-primary-key }}
 
       - name: Upload Maestro diagnostics
         if: always()

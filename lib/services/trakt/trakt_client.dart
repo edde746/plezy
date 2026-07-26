@@ -70,10 +70,10 @@ class TraktClient implements DisposableTrackerClient {
       _request('POST', '/scrobble/stop', body: body.toJson(), allowStatuses: _scrobbleAllowedStatuses);
 
   Future<void> addToHistory(TraktScrobbleRequest item, {String? watchedAt}) =>
-      _request('POST', '/sync/history', body: item.toHistoryAddBody(watchedAt: watchedAt));
+      _request('POST', '/sync/history', body: item.toHistoryBody(watchedAt: watchedAt));
 
   Future<void> removeFromHistory(TraktScrobbleRequest item) =>
-      _request('POST', '/sync/history/remove', body: item.toHistoryRemoveBody());
+      _request('POST', '/sync/history/remove', body: item.toHistoryBody());
 
   Future<void> addRatings(Map<String, dynamic> body) =>
       _request('POST', '/sync/ratings', body: body, allowStatuses: const {200, 201});

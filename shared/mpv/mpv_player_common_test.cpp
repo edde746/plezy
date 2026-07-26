@@ -332,6 +332,96 @@ void TestStaleReloadCompletionCannotClearCurrentRequest() {
   assert(state.CompleteReload(current_request.request_generation));
 }
 
+// Renders the shared node walk into text so its bounds can be asserted on
+// every platform, without a platform value type in the way.
+struct TextNodeBuilder {
+  using Value = std::string;
+  using ListBuilder = std::string;
+  using MapBuilder = std::string;
+
+  static Value Null() { return "null"; }
+  static Value Bool(bool value) { return value ? "true" : "false"; }
+  static Value Int(int64_t value) { return std::to_string(value); }
+  static Value Double(double value) { return std::to_string(value); }
+  static Value String(const char* value, size_t length) { return "'" + std::string(value, length) + "'"; }
+
+  static ListBuilder NewList() { return std::string("["); }
+  static void Append(ListBuilder& list, Value value) { list += value + ","; }
+  static Value FinishList(ListBuilder list) { return list + "]"; }
+
+  static MapBuilder NewMap() { return std::string("{"); }
+  static void Insert(MapBuilder& map, const char* key, size_t key_length, Value value) {
+    map += std::string(key, key_length) + ":" + value + ",";
+  }
+  static Value FinishMap(MapBuilder map) { return map + "}"; }
+  static void AbandonMap(MapBuilder& map) { map += "<abandoned>"; }
+};
+
+void TestNodeConversionBounds() {
+  using plezy::mpv_common::ConvertNode;
+  using plezy::mpv_common::NodeConversionBudget;
+
+  char value[] = "hello";
+  mpv_node text{};
+  text.format = MPV_FORMAT_STRING;
+  text.u.string = value;
+  assert(ConvertNode<TextNodeBuilder>(&text) == "'hello'");
+
+  // Missing storage is never trusted: no node, no string, no list.
+  assert(ConvertNode<TextNodeBuilder>(nullptr) == "null");
+  text.u.string = nullptr;
+  assert(ConvertNode<TextNodeBuilder>(&text) == "null");
+
+  mpv_node array{};
+  array.format = MPV_FORMAT_NODE_ARRAY;
+  array.u.list = nullptr;
+  assert(ConvertNode<TextNodeBuilder>(&array) == "null");
+
+  // Neither a negative nor an implausible length reaches the builder.
+  mpv_node entry{};
+  entry.format = MPV_FORMAT_INT64;
+  entry.u.int64 = 7;
+  mpv_node_list negative{-1, &entry, nullptr};
+  array.u.list = &negative;
+  assert(ConvertNode<TextNodeBuilder>(&array) == "null");
+  mpv_node_list oversized{plezy::mpv_common::kMaxNodeEntries + 1, &entry, nullptr};
+  array.u.list = &oversized;
+  assert(ConvertNode<TextNodeBuilder>(&array) == "null");
+
+  mpv_node_list single{1, &entry, nullptr};
+  array.u.list = &single;
+  assert(ConvertNode<TextNodeBuilder>(&array) == "[7,]");
+
+  // A map with a null key is voided rather than half-converted.
+  char* missing_key[] = {nullptr};
+  mpv_node_list keyless{1, &entry, missing_key};
+  mpv_node map{};
+  map.format = MPV_FORMAT_NODE_MAP;
+  map.u.list = &keyless;
+  assert(ConvertNode<TextNodeBuilder>(&map) == "null");
+
+  // Depth, entry, and byte budgets each stop the walk.
+  std::vector<mpv_node> chain(plezy::mpv_common::kMaxNodeDepth + 1);
+  std::vector<mpv_node_list> links(chain.size());
+  chain.back() = entry;
+  for (size_t i = chain.size() - 1; i > 0; --i) {
+    links[i - 1] = mpv_node_list{1, &chain[i], nullptr};
+    chain[i - 1].format = MPV_FORMAT_NODE_ARRAY;
+    chain[i - 1].u.list = &links[i - 1];
+  }
+  assert(ConvertNode<TextNodeBuilder>(&chain[0]).find('7') == std::string::npos);
+
+  NodeConversionBudget entries{2, 1024};
+  assert(ConvertNode<TextNodeBuilder>(&array, 0, &entries) == "[7,]");
+  assert(entries.remaining_entries == 0);
+  assert(ConvertNode<TextNodeBuilder>(&array, 0, &entries) == "null");
+
+  NodeConversionBudget bytes{8, 4};
+  text.u.string = value;
+  assert(ConvertNode<TextNodeBuilder>(&text, 0, &bytes) == "null");
+  assert(bytes.remaining_bytes == 4);
+}
+
 void TestHdrHelpers() {
   assert(plezy::mpv_common::ParseEnabledFlag("yes"));
   assert(plezy::mpv_common::ParseEnabledFlag("true"));
@@ -355,6 +445,7 @@ int main() {
   TestFileBoundaryRestartsNullRecoveryOnlyAfterLoad();
   TestUnloadedResumeIsConsumed();
   TestStaleReloadCompletionCannotClearCurrentRequest();
+  TestNodeConversionBounds();
   TestHdrHelpers();
   return 0;
 }

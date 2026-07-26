@@ -22,6 +22,7 @@ import 'package:plezy/utils/active_client_scope.dart';
 import 'package:plezy/utils/watch_state_notifier.dart';
 
 import '../test_helpers/backend_client_fixtures.dart';
+import '../test_helpers/download_fixtures.dart';
 import '../test_helpers/playback_report_fakes.dart';
 import '../test_helpers/prefs.dart';
 import '../test_helpers/media_items.dart';

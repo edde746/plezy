@@ -55,12 +55,6 @@ class AddConnectionScreen extends StatelessWidget {
         ),
     ];
     final tokensRef = tokens(context);
-    // M3E connected-group geometry: large outer corners, small inner corners,
-    // hairline gaps.
-    BorderRadius radiiFor(int i) => BorderRadius.vertical(
-      top: Radius.circular(i == 0 ? tokensRef.radiusLg : tokensRef.radiusXs),
-      bottom: Radius.circular(i == options.length - 1 ? tokensRef.radiusLg : tokensRef.radiusXs),
-    );
     return FocusedScrollScaffold(
       title: Text(
         scoped
@@ -75,7 +69,7 @@ class AddConnectionScreen extends StatelessWidget {
               for (var i = 0; i < options.length; i++) ...[
                 if (i > 0) SizedBox(height: tokensRef.groupGap),
                 _BackendCard(
-                  borderRadius: radiiFor(i),
+                  borderRadius: groupItemRadii(context, i, options.length),
                   leading: options[i].backend != null
                       ? BackendBadge(backend: options[i].backend!, size: 28)
                       : const AppIcon(Symbols.share_rounded, fill: 1, size: 28),

@@ -237,196 +237,55 @@ class AppDatabase extends _$AppDatabase {
     final joinRows = await (select(
       profileConnections,
     )..orderBy([(t) => OrderingTerm.asc(t.profileId), (t) => OrderingTerm.asc(t.connectionId)])).get();
+    // Drift's generated serializer is the recovery image's column schema:
+    // `toJson`/`fromJson` use these camelCase keys, so the read and restore
+    // sides can never drift apart when a column is added or renamed.
     return {
-      'connections': [
-        for (final row in connectionRows)
-          {
-            'id': row.id,
-            'kind': row.kind,
-            'displayName': row.displayName,
-            'configJson': row.configJson,
-            'isDefault': row.isDefault,
-            'createdAt': row.createdAt,
-            'lastAuthenticatedAt': row.lastAuthenticatedAt,
-          },
-      ],
-      'profiles': [
-        for (final row in profileRows)
-          {
-            'id': row.id,
-            'kind': row.kind,
-            'displayName': row.displayName,
-            'avatarThumbUrl': row.avatarThumbUrl,
-            'configJson': row.configJson,
-            'sortOrder': row.sortOrder,
-            'createdAt': row.createdAt,
-            'lastUsedAt': row.lastUsedAt,
-          },
-      ],
-      'profileConnections': [
-        for (final row in joinRows)
-          {
-            'profileId': row.profileId,
-            'connectionId': row.connectionId,
-            'userToken': row.userToken,
-            'userIdentifier': row.userIdentifier,
-            'isDefault': row.isDefault,
-            'tokenAcquiredAt': row.tokenAcquiredAt,
-            'lastUsedAt': row.lastUsedAt,
-          },
-      ],
+      'connections': [for (final row in connectionRows) row.toJson()],
+      'profiles': [for (final row in profileRows) row.toJson()],
+      'profileConnections': [for (final row in joinRows) row.toJson()],
     };
   }
 
   Future<Map<String, Object?>> _readPendingRecoveryRows() async {
     final rows = await (select(offlineWatchProgress)..orderBy([(t) => OrderingTerm.asc(t.id)])).get();
     return {
-      'offlineWatchProgress': [
-        for (final row in rows)
-          {
-            'id': row.id,
-            'profileId': row.profileId,
-            'serverId': row.serverId,
-            'clientScopeId': row.clientScopeId,
-            'ratingKey': row.ratingKey,
-            'globalKey': row.globalKey,
-            'actionType': row.actionType,
-            'viewOffset': row.viewOffset,
-            'duration': row.duration,
-            'shouldMarkWatched': row.shouldMarkWatched,
-            'createdAt': row.createdAt,
-            'updatedAt': row.updatedAt,
-            'syncAttempts': row.syncAttempts,
-            'lastError': row.lastError,
-          },
-      ],
+      'offlineWatchProgress': [for (final row in rows) row.toJson()],
     };
   }
 
   Future<void> _restoreRecoverySnapshot(TvosDatabaseRecoverySnapshot snapshot) async {
-    final connectionRows = _decodeRecoveryRows(snapshot.identity, 'connections', const {
-      'id',
-      'kind',
-      'displayName',
-      'configJson',
-      'isDefault',
-      'createdAt',
-      'lastAuthenticatedAt',
-    });
-    final profileRows = _decodeRecoveryRows(snapshot.identity, 'profiles', const {
-      'id',
-      'kind',
-      'displayName',
-      'avatarThumbUrl',
-      'configJson',
-      'sortOrder',
-      'createdAt',
-      'lastUsedAt',
-    });
-    final joinRows = _decodeRecoveryRows(snapshot.identity, 'profileConnections', const {
-      'profileId',
-      'connectionId',
-      'userToken',
-      'userIdentifier',
-      'isDefault',
-      'tokenAcquiredAt',
-      'lastUsedAt',
-    });
-    final pendingRows = _decodeRecoveryRows(snapshot.pending, 'offlineWatchProgress', const {
-      'id',
-      'profileId',
-      'serverId',
-      'clientScopeId',
-      'ratingKey',
-      'globalKey',
-      'actionType',
-      'viewOffset',
-      'duration',
-      'shouldMarkWatched',
-      'createdAt',
-      'updatedAt',
-      'syncAttempts',
-      'lastError',
-    });
+    final connectionRows = _decodeRecoveryRows(snapshot.identity, 'connections', ConnectionRow.fromJson);
+    final profileRows = _decodeRecoveryRows(snapshot.identity, 'profiles', ProfileRow.fromJson);
+    final joinRows = _decodeRecoveryRows(snapshot.identity, 'profileConnections', ProfileConnectionRow.fromJson);
+    final pendingRows = _decodeRecoveryRows(
+      snapshot.pending,
+      'offlineWatchProgress',
+      OfflineWatchProgressItem.fromJson,
+    );
 
     // Recovery images from releases before the credential vault may contain
     // plaintext secrets. Protect them before they cross into Drift; already
     // protected values remain byte-identical because vault protection is
     // idempotent.
-    for (final row in connectionRows) {
-      final kind = _requiredRecoveryValue<String>(row, 'kind');
-      final configJson = _requiredRecoveryValue<String>(row, 'configJson');
-      final decoded = jsonDecode(configJson);
+    for (var index = 0; index < connectionRows.length; index++) {
+      final row = connectionRows[index];
+      final decoded = jsonDecode(row.configJson);
       if (decoded is! Map<String, dynamic>) {
         throw const FormatException('Invalid connection configuration');
       }
-      if (_containsPlaintextConnectionCredential(kind, decoded)) {
-        row['configJson'] = jsonEncode(await CredentialVault.protectConnectionConfig(kind, decoded));
+      if (_containsPlaintextConnectionCredential(row.kind, decoded)) {
+        connectionRows[index] = row.copyWith(
+          configJson: jsonEncode(await CredentialVault.protectConnectionConfig(row.kind, decoded)),
+        );
       }
     }
-    for (final row in joinRows) {
-      final token = _requiredRecoveryValue<String>(row, 'userToken');
-      if (token.isNotEmpty && !CredentialVault.isProtected(token)) {
-        row['userToken'] = await CredentialVault.protect(token);
+    for (var index = 0; index < joinRows.length; index++) {
+      final row = joinRows[index];
+      if (row.userToken.isNotEmpty && !CredentialVault.isProtected(row.userToken)) {
+        joinRows[index] = row.copyWith(userToken: await CredentialVault.protect(row.userToken));
       }
     }
-
-    final connectionCompanions = [
-      for (final row in connectionRows)
-        ConnectionsCompanion(
-          id: Value(_requiredRecoveryValue<String>(row, 'id')),
-          kind: Value(_requiredRecoveryValue<String>(row, 'kind')),
-          displayName: Value(_requiredRecoveryValue<String>(row, 'displayName')),
-          configJson: Value(_requiredRecoveryValue<String>(row, 'configJson')),
-          isDefault: Value(_requiredRecoveryValue<bool>(row, 'isDefault')),
-          createdAt: Value(_requiredRecoveryValue<int>(row, 'createdAt')),
-          lastAuthenticatedAt: Value(_nullableRecoveryValue<int>(row, 'lastAuthenticatedAt')),
-        ),
-    ];
-    final profileCompanions = [
-      for (final row in profileRows)
-        ProfilesCompanion(
-          id: Value(_requiredRecoveryValue<String>(row, 'id')),
-          kind: Value(_requiredRecoveryValue<String>(row, 'kind')),
-          displayName: Value(_requiredRecoveryValue<String>(row, 'displayName')),
-          avatarThumbUrl: Value(_nullableRecoveryValue<String>(row, 'avatarThumbUrl')),
-          configJson: Value(_requiredRecoveryValue<String>(row, 'configJson')),
-          sortOrder: Value(_requiredRecoveryValue<int>(row, 'sortOrder')),
-          createdAt: Value(_requiredRecoveryValue<int>(row, 'createdAt')),
-          lastUsedAt: Value(_nullableRecoveryValue<int>(row, 'lastUsedAt')),
-        ),
-    ];
-    final joinCompanions = [
-      for (final row in joinRows)
-        ProfileConnectionsCompanion(
-          profileId: Value(_requiredRecoveryValue<String>(row, 'profileId')),
-          connectionId: Value(_requiredRecoveryValue<String>(row, 'connectionId')),
-          userToken: Value(_requiredRecoveryValue<String>(row, 'userToken')),
-          userIdentifier: Value(_requiredRecoveryValue<String>(row, 'userIdentifier')),
-          isDefault: Value(_requiredRecoveryValue<bool>(row, 'isDefault')),
-          tokenAcquiredAt: Value(_nullableRecoveryValue<int>(row, 'tokenAcquiredAt')),
-          lastUsedAt: Value(_nullableRecoveryValue<int>(row, 'lastUsedAt')),
-        ),
-    ];
-    final pendingCompanions = [
-      for (final row in pendingRows)
-        OfflineWatchProgressCompanion(
-          id: Value(_requiredRecoveryValue<int>(row, 'id')),
-          profileId: Value(_nullableRecoveryValue<String>(row, 'profileId')),
-          serverId: Value(_requiredRecoveryValue<String>(row, 'serverId')),
-          clientScopeId: Value(_nullableRecoveryValue<String>(row, 'clientScopeId')),
-          ratingKey: Value(_requiredRecoveryValue<String>(row, 'ratingKey')),
-          globalKey: Value(_requiredRecoveryValue<String>(row, 'globalKey')),
-          actionType: Value(_requiredRecoveryValue<String>(row, 'actionType')),
-          viewOffset: Value(_nullableRecoveryValue<int>(row, 'viewOffset')),
-          duration: Value(_nullableRecoveryValue<int>(row, 'duration')),
-          shouldMarkWatched: Value(_requiredRecoveryValue<bool>(row, 'shouldMarkWatched')),
-          createdAt: Value(_requiredRecoveryValue<int>(row, 'createdAt')),
-          updatedAt: Value(_requiredRecoveryValue<int>(row, 'updatedAt')),
-          syncAttempts: Value(_requiredRecoveryValue<int>(row, 'syncAttempts')),
-          lastError: Value(_nullableRecoveryValue<String>(row, 'lastError')),
-        ),
-    ];
 
     await transaction(() async {
       // Recovery completion (the durable marker removal) is deliberately
@@ -437,54 +296,57 @@ class AppDatabase extends _$AppDatabase {
       await delete(profiles).go();
       await delete(connections).go();
       await delete(offlineWatchProgress).go();
-      for (final row in connectionCompanions) {
-        await into(connections).insert(row);
+      // `toCompanion(false)` writes every column explicitly, including the
+      // nulls, so a restored row is byte-identical to the captured one rather
+      // than picking up column defaults.
+      for (final row in connectionRows) {
+        await into(connections).insert(row.toCompanion(false));
       }
-      for (final row in profileCompanions) {
-        await into(profiles).insert(row);
+      for (final row in profileRows) {
+        await into(profiles).insert(row.toCompanion(false));
       }
-      for (final row in joinCompanions) {
-        await into(profileConnections).insert(row);
+      for (final row in joinRows) {
+        await into(profileConnections).insert(row.toCompanion(false));
       }
-      for (final row in pendingCompanions) {
-        await into(offlineWatchProgress).insert(row);
+      for (final row in pendingRows) {
+        await into(offlineWatchProgress).insert(row.toCompanion(false));
       }
     });
   }
 
-  static List<Map<String, Object?>> _decodeRecoveryRows(
+  static List<T> _decodeRecoveryRows<T extends DataClass>(
     Map<String, Object?> group,
     String key,
-    Set<String> expectedKeys,
+    T Function(Map<String, dynamic> json) fromJson,
   ) {
     final value = group[key];
-    if (value is! List) throw const FormatException('Invalid tvOS database recovery image');
+    if (value is! List) throw _invalidRecoveryImage;
     return [
-      for (final value in value)
-        if (value is Map<String, Object?> &&
-            value.keys.toSet().containsAll(expectedKeys) &&
-            value.length == expectedKeys.length)
-          value
-        else
-          throw const FormatException('Invalid tvOS database recovery image'),
+      for (final row in value)
+        if (row is Map<String, dynamic>) _decodeRecoveryRow(row, fromJson) else throw _invalidRecoveryImage,
     ];
   }
 
-  static T _requiredRecoveryValue<T>(Map<String, Object?> row, String key) {
-    final value = row[key];
-    if (!row.containsKey(key) || value is! T) {
-      throw const FormatException('Invalid tvOS database recovery image');
+  /// Reads one row through drift's generated deserializer and rejects anything
+  /// that does not round-trip back to the exact same map. Drift already throws
+  /// on a missing or mistyped required column; the round-trip additionally
+  /// rejects unknown and missing-but-nullable columns, which the serializer
+  /// would otherwise accept silently.
+  static T _decodeRecoveryRow<T extends DataClass>(
+    Map<String, dynamic> row,
+    T Function(Map<String, dynamic> json) fromJson,
+  ) {
+    final T decoded;
+    try {
+      decoded = fromJson(row);
+    } catch (_) {
+      throw _invalidRecoveryImage;
     }
-    return value;
+    if (!mapEquals(decoded.toJson(), row)) throw _invalidRecoveryImage;
+    return decoded;
   }
 
-  static T? _nullableRecoveryValue<T>(Map<String, Object?> row, String key) {
-    if (!row.containsKey(key)) throw const FormatException('Invalid tvOS database recovery image');
-    final value = row[key];
-    if (value == null) return null;
-    if (value is! T) throw const FormatException('Invalid tvOS database recovery image');
-    return value as T;
-  }
+  static const FormatException _invalidRecoveryImage = FormatException('Invalid tvOS database recovery image');
 
   @override
   int get schemaVersion => 19;
@@ -649,89 +511,27 @@ class AppDatabase extends _$AppDatabase {
         }
         if (from < 17) {
           appLogger.i('Scoping pinned legacy Plex metadata before removing bare cache rows (v17 migration)');
-          await customStatement('''
-            WITH download_metadata_ids AS (
-              SELECT global_key, server_id, rating_key AS metadata_id
-              FROM downloaded_media
-              UNION
-              SELECT global_key, server_id, parent_rating_key AS metadata_id
-              FROM downloaded_media
-              WHERE parent_rating_key IS NOT NULL
-                AND parent_rating_key != ''
-              UNION
-              SELECT global_key, server_id, grandparent_rating_key AS metadata_id
-              FROM downloaded_media
-              WHERE grandparent_rating_key IS NOT NULL
-                AND grandparent_rating_key != ''
-            )
-            INSERT INTO api_cache (cache_key, data, pinned, cached_at)
-            SELECT DISTINCT
-              metadata.server_id
-                || '/~plex-profile/'
-                || owner.profile_id
-                || ':'
-                || substr(source.cache_key, length(metadata.server_id) + 2),
-              source.data,
-              source.pinned,
-              source.cached_at
-            FROM download_metadata_ids AS metadata
-            JOIN download_owners AS owner
-              ON owner.global_key = metadata.global_key
-            JOIN api_cache AS source
-              ON source.cache_key =
-                  metadata.server_id || ':/library/metadata/' || metadata.metadata_id
-                OR source.cache_key =
-                  metadata.server_id || ':/library/metadata/' || metadata.metadata_id || '/children'
-            WHERE source.pinned = 1
-            ON CONFLICT(cache_key) DO UPDATE SET
-              data = excluded.data,
-              pinned = excluded.pinned,
-              cached_at = excluded.cached_at
-          ''');
+          await customStatement(
+            _rescopePinnedPlexMetadataStatement(
+              namespaceExpression: "'/~plex-profile/' || owner.profile_id || ':'",
+              ownerJoin: '''JOIN download_owners AS owner
+                ON owner.global_key = metadata.global_key''',
+            ),
+          );
           // A direct pre-v14 upgrade has no owners yet: profiles and owner
           // adoption are bootstrapped only after the database opens. Preserve
           // those downloads in the neutral Plex transfer namespace so the
           // first profile can adopt them without inheriting legacy watch data.
-          await customStatement('''
-            WITH download_metadata_ids AS (
-              SELECT global_key, server_id, rating_key AS metadata_id
-              FROM downloaded_media
-              UNION
-              SELECT global_key, server_id, parent_rating_key AS metadata_id
-              FROM downloaded_media
-              WHERE parent_rating_key IS NOT NULL
-                AND parent_rating_key != ''
-              UNION
-              SELECT global_key, server_id, grandparent_rating_key AS metadata_id
-              FROM downloaded_media
-              WHERE grandparent_rating_key IS NOT NULL
-                AND grandparent_rating_key != ''
-            )
-            INSERT INTO api_cache (cache_key, data, pinned, cached_at)
-            SELECT DISTINCT
-              metadata.server_id
-                || '/~plex-transfer:'
-                || substr(source.cache_key, length(metadata.server_id) + 2),
-              source.data,
-              source.pinned,
-              source.cached_at
-            FROM download_metadata_ids AS metadata
-            JOIN api_cache AS source
-              ON source.cache_key =
-                  metadata.server_id || ':/library/metadata/' || metadata.metadata_id
-                OR source.cache_key =
-                  metadata.server_id || ':/library/metadata/' || metadata.metadata_id || '/children'
-            WHERE source.pinned = 1
-              AND NOT EXISTS (
-                SELECT 1
-                FROM download_owners AS owner
-                WHERE owner.global_key = metadata.global_key
-              )
-            ON CONFLICT(cache_key) DO UPDATE SET
-              data = excluded.data,
-              pinned = excluded.pinned,
-              cached_at = excluded.cached_at
-          ''');
+          await customStatement(
+            _rescopePinnedPlexMetadataStatement(
+              namespaceExpression: "'/~plex-transfer:'",
+              ownerFilter: '''AND NOT EXISTS (
+                  SELECT 1
+                  FROM download_owners AS owner
+                  WHERE owner.global_key = metadata.global_key
+                )''',
+            ),
+          );
 
           final transferRows = await customSelect('''
             SELECT cache_key, data
@@ -920,10 +720,6 @@ class AppDatabase extends _$AppDatabase {
     }
   }
 
-  Expression<bool> _clientScopePredicate(GeneratedColumn<String> column, String? clientScopeId) {
-    return clientScopeId == null ? column.isNull() : column.equals(clientScopeId);
-  }
-
   Expression<bool> _nullableTextPredicate(GeneratedColumn<String> column, String? value) {
     return value == null ? column.isNull() : column.equals(value);
   }
@@ -974,7 +770,7 @@ class AppDatabase extends _$AppDatabase {
         (t) =>
             matchesKey(t) &
             (filterProfile ? _nullableTextPredicate(t.profileId, profileId) : const Constant(true)) &
-            (filterClientScope ? _clientScopePredicate(t.clientScopeId, clientScopeId) : const Constant(true)),
+            (filterClientScope ? _nullableTextPredicate(t.clientScopeId, clientScopeId) : const Constant(true)),
       )
       ..orderBy([(t) => OrderingTerm.desc(t.updatedAt), (t) => OrderingTerm.desc(t.id)]);
   }
@@ -1083,7 +879,7 @@ class AppDatabase extends _$AppDatabase {
                     (t) =>
                         t.globalKey.equals(globalKey) &
                         _nullableTextPredicate(t.profileId, profileId) &
-                        _clientScopePredicate(t.clientScopeId, clientScopeId) &
+                        _nullableTextPredicate(t.clientScopeId, clientScopeId) &
                         t.actionType.equals(OfflineActionType.progress.id),
                   )
                   ..orderBy([(t) => OrderingTerm.asc(t.id)]))
@@ -1145,7 +941,7 @@ class AppDatabase extends _$AppDatabase {
               (t) =>
                   t.globalKey.equals(globalKey) &
                   _nullableTextPredicate(t.profileId, profileId) &
-                  _clientScopePredicate(t.clientScopeId, clientScopeId),
+                  _nullableTextPredicate(t.clientScopeId, clientScopeId),
             ))
             .go();
 
@@ -1287,29 +1083,21 @@ class AppDatabase extends _$AppDatabase {
     }
   }
 
-  Future<void> updateSyncRuleCount(String globalKey, int episodeCount) async {
-    await (update(
-      syncRules,
-    )..where((t) => t.globalKey.equals(globalKey))).write(SyncRulesCompanion(episodeCount: Value(episodeCount)));
+  Future<void> _writeSyncRule(String globalKey, SyncRulesCompanion values) async {
+    await (update(syncRules)..where((t) => t.globalKey.equals(globalKey))).write(values);
   }
 
-  Future<void> updateSyncRuleFilter(String globalKey, String downloadFilter) async {
-    await (update(
-      syncRules,
-    )..where((t) => t.globalKey.equals(globalKey))).write(SyncRulesCompanion(downloadFilter: Value(downloadFilter)));
-  }
+  Future<void> updateSyncRuleCount(String globalKey, int episodeCount) =>
+      _writeSyncRule(globalKey, SyncRulesCompanion(episodeCount: Value(episodeCount)));
 
-  Future<void> updateSyncRuleEnabled(String globalKey, bool enabled) async {
-    await (update(
-      syncRules,
-    )..where((t) => t.globalKey.equals(globalKey))).write(SyncRulesCompanion(enabled: Value(enabled)));
-  }
+  Future<void> updateSyncRuleFilter(String globalKey, String downloadFilter) =>
+      _writeSyncRule(globalKey, SyncRulesCompanion(downloadFilter: Value(downloadFilter)));
 
-  Future<void> updateSyncRuleLastExecuted(String globalKey) async {
-    await (update(syncRules)..where((t) => t.globalKey.equals(globalKey))).write(
-      SyncRulesCompanion(lastExecutedAt: Value(DateTime.now().millisecondsSinceEpoch)),
-    );
-  }
+  Future<void> updateSyncRuleEnabled(String globalKey, bool enabled) =>
+      _writeSyncRule(globalKey, SyncRulesCompanion(enabled: Value(enabled)));
+
+  Future<void> updateSyncRuleLastExecuted(String globalKey) =>
+      _writeSyncRule(globalKey, SyncRulesCompanion(lastExecutedAt: Value(DateTime.now().millisecondsSinceEpoch)));
 
   Future<void> deleteSyncRule(String globalKey) async {
     await (delete(syncRules)..where((t) => t.globalKey.equals(globalKey))).go();
@@ -1330,6 +1118,57 @@ class AppDatabase extends _$AppDatabase {
     return (select(downloadedMedia)..where((t) => t.status.equals(DownloadStatus.completed.index))).get();
   }
 }
+
+/// Builds the v17 statement that re-keys pinned legacy Plex metadata rows into
+/// a scoped cache namespace.
+///
+/// The owned and the ownerless branch run the same operation over the same
+/// `download_metadata_ids` set and differ only in three spots: the expression
+/// spliced into the new `cache_key` ([namespaceExpression]), an optional join
+/// that exposes the owning profile ([ownerJoin]), and an optional extra
+/// predicate that keeps each branch to its own rows ([ownerFilter]).
+String _rescopePinnedPlexMetadataStatement({
+  required String namespaceExpression,
+  String ownerJoin = '',
+  String ownerFilter = '',
+}) =>
+    '''
+  WITH download_metadata_ids AS (
+    SELECT global_key, server_id, rating_key AS metadata_id
+    FROM downloaded_media
+    UNION
+    SELECT global_key, server_id, parent_rating_key AS metadata_id
+    FROM downloaded_media
+    WHERE parent_rating_key IS NOT NULL
+      AND parent_rating_key != ''
+    UNION
+    SELECT global_key, server_id, grandparent_rating_key AS metadata_id
+    FROM downloaded_media
+    WHERE grandparent_rating_key IS NOT NULL
+      AND grandparent_rating_key != ''
+  )
+  INSERT INTO api_cache (cache_key, data, pinned, cached_at)
+  SELECT DISTINCT
+    metadata.server_id
+      || $namespaceExpression
+      || substr(source.cache_key, length(metadata.server_id) + 2),
+    source.data,
+    source.pinned,
+    source.cached_at
+  FROM download_metadata_ids AS metadata
+  $ownerJoin
+  JOIN api_cache AS source
+    ON source.cache_key =
+        metadata.server_id || ':/library/metadata/' || metadata.metadata_id
+      OR source.cache_key =
+        metadata.server_id || ':/library/metadata/' || metadata.metadata_id || '/children'
+  WHERE source.pinned = 1
+    $ownerFilter
+  ON CONFLICT(cache_key) DO UPDATE SET
+    data = excluded.data,
+    pinned = excluded.pinned,
+    cached_at = excluded.cached_at
+''';
 
 Future<File> _resolveProductionDatabaseFile() async {
   final dbFolder = (Platform.isAndroid || Platform.isIOS)

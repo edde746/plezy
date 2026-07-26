@@ -267,7 +267,13 @@ PageRoute<bool> mediaDetailRoute({
 }
 
 class _MediaDetailScreenState extends State<MediaDetailScreen>
-    with WatchStateAware, DeletionAware, MountedSetStateMixin, ServerBoundMediaMixin, RouteAware {
+    with
+        WatchStateAware,
+        DeletionAware,
+        DeletionMirrorsWatchState,
+        MountedSetStateMixin,
+        ServerBoundMediaMixin,
+        RouteAware {
   /// Public input alias — used as the live source of truth until the detail
   /// fetch returns. Holds backend-neutral [MediaItem] data.
   MediaItem get _metadata => _fullMetadata ?? widget.metadata;
@@ -393,7 +399,9 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   @override
   bool get isServerBoundOffline => widget.isOffline;
 
-  // WatchStateAware: watch the show/movie and all season/episode ratingKeys
+  // WatchStateAware: watch the show/movie and all season/episode ratingKeys.
+  // DeletionMirrorsWatchState reuses these three getters for deletion events —
+  // the same items are on screen either way.
   @override
   Set<String>? get watchedIds {
     final keys = <String>{_metadata.id};
@@ -531,36 +539,6 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     } catch (e) {
       appLogger.d('Item refresh failed for ${source.globalKey}', error: e);
     }
-  }
-
-  @override
-  Set<String>? get deletionIds {
-    final keys = <String>{_metadata.id};
-    for (final season in _seasons) {
-      keys.add(season.id);
-    }
-    for (final ep in _episodes) {
-      keys.add(ep.id);
-    }
-    return keys;
-  }
-
-  @override
-  String? get deletionServerId => serverBoundServerId;
-
-  @override
-  Set<String>? get deletionGlobalKeys {
-    final serverId = serverBoundServerId;
-    if (serverId == null) return null;
-
-    final keys = <String>{toServerBoundGlobalKey(_metadata.id, serverId: ServerId(serverId))};
-    for (final season in _seasons) {
-      keys.add(toServerBoundGlobalKey(season.id, serverId: ServerId(season.serverId ?? serverId)));
-    }
-    for (final ep in _episodes) {
-      keys.add(toServerBoundGlobalKey(ep.id, serverId: ServerId(ep.serverId ?? serverId)));
-    }
-    return keys;
   }
 
   @override

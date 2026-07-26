@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import '../media/ids.dart';
 import 'package:flutter/services.dart';
 import 'package:material_symbols_icons/symbols.dart';
+import 'package:provider/provider.dart';
+import '../focus/focusable_action_bar.dart';
 import '../i18n/strings.g.dart';
 import '../media/media_item.dart';
 import '../media/media_kind.dart';
@@ -13,6 +15,7 @@ import '../services/sync_rule_executor.dart';
 import 'content_utils.dart';
 import 'dialogs.dart';
 import 'download_version_utils.dart';
+import 'platform_detector.dart';
 import 'snackbar_helper.dart';
 
 @visibleForTesting
@@ -460,4 +463,45 @@ Future<void> removeSyncRuleAndSnack(
   if (removed && context.mounted) {
     showSuccessSnackBar(context, t.downloads.syncRuleRemoved);
   }
+}
+
+/// The download / manage-sync-rule app-bar pair shared by the collection and
+/// playlist detail screens: one entry that downloads (or edits the existing
+/// rule) and, when a rule exists, one that removes it. Both are hidden on
+/// Apple TV, which has no downloads UI.
+///
+/// [hasRule] stays caller-computed so each screen keeps its own
+/// `context.select` short-circuit, and [showDownload] carries the screen's
+/// own visibility predicate for the first entry.
+List<FocusableAction> buildSyncRuleActions(
+  BuildContext context, {
+  required String ruleKey,
+  required String displayTitle,
+  required bool hasRule,
+  required bool showDownload,
+  required VoidCallback onDownload,
+}) {
+  if (PlatformDetector.isAppleTV()) return const [];
+  return [
+    if (showDownload)
+      FocusableAction(
+        icon: hasRule ? Symbols.sync_rounded : Symbols.download_rounded,
+        tooltip: hasRule ? t.downloads.manageSyncRule : t.downloads.downloadNow,
+        onPressed: hasRule
+            ? () => manageSyncRule(context, downloadProvider: context.read<DownloadProvider>(), globalKey: ruleKey)
+            : onDownload,
+        iconColor: hasRule ? Colors.teal : null,
+      ),
+    if (hasRule)
+      FocusableAction(
+        icon: Symbols.sync_disabled_rounded,
+        tooltip: t.downloads.removeSyncRule,
+        onPressed: () => removeSyncRuleAndSnack(
+          context,
+          downloadProvider: context.read<DownloadProvider>(),
+          globalKey: ruleKey,
+          displayTitle: displayTitle,
+        ),
+      ),
+  ];
 }

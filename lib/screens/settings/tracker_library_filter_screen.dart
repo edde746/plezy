@@ -86,7 +86,7 @@ class TrackerLibraryFilterScreen extends StatelessWidget {
               ),
               SettingsGroup(
                 children: [
-                  SettingSegmentedTile<TrackerLibraryFilterMode, TrackerLibraryFilterMode>(
+                  SettingSegmentedTile<TrackerLibraryFilterMode>(
                     pref: modePref,
                     icon: Symbols.filter_list_rounded,
                     title: t.services.libraryFilter.mode,
@@ -100,8 +100,6 @@ class TrackerLibraryFilterScreen extends StatelessWidget {
                         label: Text(t.services.libraryFilter.modeWhitelist),
                       ),
                     ],
-                    decode: (v) => v,
-                    encode: (v) => v,
                   ),
                 ],
               ),

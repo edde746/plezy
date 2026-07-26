@@ -76,6 +76,20 @@ part 'jellyfin_client/parts/live_tv.dart';
 part 'jellyfin_client/parts/images_downloads.dart';
 part 'jellyfin_client/parts/metadata_edit.dart';
 
+/// Canonical declarations of the [JellyfinClient] internals that the `part`
+/// mixins call into.
+///
+/// Every part mixin is `on _JellyfinClientInternals`, so each shared member is
+/// declared exactly once here instead of being re-declared per file. Members
+/// used by a single part stay declared in that part.
+mixin _JellyfinClientInternals on MediaServerCacheMixin {
+  JellyfinConnection get connection;
+  FailoverHttpClient get _http;
+  MediaItem? _mapItem(Map<String, dynamic> json);
+  List<MediaItem> _mapItems(Iterable<Map<String, dynamic>> items);
+  String? _absolutizeImagePath(String? path);
+}
+
 /// [MediaServerClient] over a Jellyfin server.
 ///
 /// Constructs from a [JellyfinConnection] and a [MediaServerHttpClient] (the
@@ -85,6 +99,7 @@ part 'jellyfin_client/parts/metadata_edit.dart';
 class JellyfinClient
     with
         MediaServerCacheMixin,
+        _JellyfinClientInternals,
         _JellyfinBrowseMethods,
         _JellyfinMusicMethods,
         _JellyfinPlaybackMethods,

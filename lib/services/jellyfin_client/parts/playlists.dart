@@ -1,31 +1,13 @@
 part of '../../jellyfin_client.dart';
 
-mixin _JellyfinPlaylistMethods on MediaServerCacheMixin {
-  JellyfinConnection get connection;
-  FailoverHttpClient get _http;
-  String? _absolutizeImagePath(String? path);
-  List<MediaItem> _mapItems(Iterable<Map<String, dynamic>> items);
-
+mixin _JellyfinPlaylistMethods on _JellyfinClientInternals {
   static const int _playlistsPageSize = 200;
 
   @override
-  Future<List<MediaPlaylist>> fetchPlaylists({String playlistType = 'video', bool? smart}) async {
-    final all = <MediaPlaylist>[];
-    var start = 0;
-    while (true) {
-      final page = await fetchPlaylistsPage(
-        playlistType: playlistType,
-        smart: smart,
-        start: start,
-        size: _playlistsPageSize,
-      );
-      if (page.items.isEmpty) break;
-      all.addAll(page.items);
-      start += page.items.length;
-      if (start >= page.totalCount) break;
-    }
-    return all;
-  }
+  Future<List<MediaPlaylist>> fetchPlaylists({String playlistType = 'video', bool? smart}) => drainPages<MediaPlaylist>(
+    (start, size) => fetchPlaylistsPage(playlistType: playlistType, smart: smart, start: start, size: size),
+    pageSize: _playlistsPageSize,
+  );
 
   @override
   Future<LibraryPage<MediaPlaylist>> fetchPlaylistsPage({
@@ -70,15 +52,11 @@ mixin _JellyfinPlaylistMethods on MediaServerCacheMixin {
       abort: abort,
     );
     throwIfHttpError(response);
-    final items = _itemsArray(response.data).map(_playlistFromJson).toList();
-    final rawTotal = response.data is Map<String, dynamic>
-        ? (response.data as Map<String, dynamic>)['TotalRecordCount']
-        : null;
-    final fallbackTotal = fallbackPageTotal(offset: offset, itemCount: items.length, requestedSize: pageSize);
-    return LibraryPage<MediaPlaylist>(
-      items: items,
-      totalCount: rawTotal is int ? rawTotal : fallbackTotal,
+    return _pagedItems(
+      response.data,
       offset: offset,
+      requestedSize: pageSize,
+      map: (raw) => raw.map(_playlistFromJson).toList(),
     );
   }
 
@@ -125,16 +103,7 @@ mixin _JellyfinPlaylistMethods on MediaServerCacheMixin {
       abort: abort,
     );
     throwIfHttpError(response);
-    final items = _itemsArray(response.data);
-    final rawTotal = response.data is Map<String, dynamic>
-        ? (response.data as Map<String, dynamic>)['TotalRecordCount']
-        : null;
-    final fallbackTotal = fallbackPageTotal(offset: offset, itemCount: items.length, requestedSize: pageSize);
-    return LibraryPage<MediaItem>(
-      items: _mapItems(items),
-      totalCount: rawTotal is int ? rawTotal : fallbackTotal,
-      offset: offset,
-    );
+    return _pagedItems(response.data, offset: offset, requestedSize: pageSize, map: _mapItems);
   }
 
   @override

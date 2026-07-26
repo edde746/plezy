@@ -3,7 +3,7 @@ import 'tracker_constants.dart';
 import 'tracker_exceptions.dart';
 import 'tracker_session_utils.dart';
 
-class TrackerSession with EncodedTrackerSession {
+class TrackerSession {
   final String accessToken;
   final String? refreshToken;
   final int? expiresAt;
@@ -43,7 +43,6 @@ class TrackerSession with EncodedTrackerSession {
     );
   }
 
-  @override
   Map<String, dynamic> toJson() => {
     'access_token': accessToken,
     'refresh_token': refreshToken,
@@ -52,6 +51,8 @@ class TrackerSession with EncodedTrackerSession {
     'scope': scope,
     'created_at': createdAt,
   };
+
+  String encode() => encodeTrackerSessionJson(toJson());
 
   factory TrackerSession.fromJson(Map<String, dynamic> json, {TrackerService? service}) {
     final session = TrackerSession(

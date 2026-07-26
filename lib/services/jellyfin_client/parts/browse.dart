@@ -30,6 +30,27 @@ List<Map<String, dynamic>> _itemsArray(Object? data) {
   return const [];
 }
 
+/// Builds a [LibraryPage] from an `/Items`-shaped response: the `Items` array
+/// run through [map], plus the server's `TotalRecordCount` when it reports one.
+/// Responses that omit it (or return a non-int) fall back to
+/// [fallbackPageTotal], whose full-page sentinel keeps pagination enabled;
+/// [singlePage] endpoints return everything at once, so a full page there means
+/// the end of the list, not "there may be more".
+LibraryPage<T> _pagedItems<T>(
+  Object? data, {
+  required int offset,
+  required List<T> Function(List<Map<String, dynamic>>) map,
+  int? requestedSize,
+  bool singlePage = false,
+}) {
+  final rawItems = _itemsArray(data);
+  final rawTotal = data is Map<String, dynamic> ? data['TotalRecordCount'] : null;
+  final fallbackTotal = singlePage
+      ? offset + rawItems.length
+      : fallbackPageTotal(offset: offset, itemCount: rawItems.length, requestedSize: requestedSize);
+  return LibraryPage<T>(items: map(rawItems), totalCount: rawTotal is int ? rawTotal : fallbackTotal, offset: offset);
+}
+
 /// Slim field set for grid/list browsing — what the card UI actually
 /// renders (title, year, watched badge, episode count for series).
 ///
@@ -145,12 +166,7 @@ const _detailFields =
     // any extra round-trip.
     'ProviderIds';
 
-mixin _JellyfinBrowseMethods on MediaServerCacheMixin {
-  JellyfinConnection get connection;
-  FailoverHttpClient get _http;
-  MediaItem? _mapItem(Map<String, dynamic> json);
-  List<MediaItem> _mapItems(Iterable<Map<String, dynamic>> items);
-
+mixin _JellyfinBrowseMethods on _JellyfinClientInternals {
   // Endpoint conventions follow what the official Jellyfin Kotlin SDK
   // generates (cross-checked against the Findroid client). The SDK mixes
   // `/Users/{userId}/...` for "user library" / "views" / "latest" / "single
@@ -700,7 +716,7 @@ mixin _JellyfinBrowseMethods on MediaServerCacheMixin {
         final items = _itemsArray(data);
         final rawTotal = data is Map<String, dynamic> ? data['TotalRecordCount'] : null;
         if (items.isNotEmpty || (rawTotal is int && rawTotal > 0)) {
-          return _pagedMediaItems(data, offset: offset, requestedSize: pageSize);
+          return _pagedItems(data, offset: offset, requestedSize: pageSize, map: _mapItems);
         }
       }
     } on MediaServerHttpException {
@@ -722,7 +738,7 @@ mixin _JellyfinBrowseMethods on MediaServerCacheMixin {
       abort: abort,
     );
     throwIfHttpError(response);
-    return _pagedMediaItems(response.data, offset: offset, requestedSize: pageSize);
+    return _pagedItems(response.data, offset: offset, requestedSize: pageSize, map: _mapItems);
   }
 
   Future<LibraryPage<MediaItem>> fetchSeasonEpisodesPage(
@@ -754,7 +770,7 @@ mixin _JellyfinBrowseMethods on MediaServerCacheMixin {
       abort: abort,
     );
     throwIfHttpError(response);
-    return _pagedMediaItems(response.data, offset: offset, requestedSize: pageSize);
+    return _pagedItems(response.data, offset: offset, requestedSize: pageSize, map: _mapItems);
   }
 
   /// Jellyfin folder browsing mirrors Jellyfin Web/Findroid/Swiftfin: query
@@ -925,27 +941,19 @@ mixin _JellyfinBrowseMethods on MediaServerCacheMixin {
     required String includeItemTypes,
     bool byAlbumArtist = false,
     AbortController? abort,
-  }) async {
-    final all = <MediaItem>[];
-    var start = 0;
-    while (true) {
-      abort?.throwIfAborted();
-      final page = await _fetchPlayableDescendantsPage(
+  }) {
+    return drainPages<MediaItem>(
+      (start, size) => _fetchPlayableDescendantsPage(
         parentId,
         start: start,
-        size: _pagedListPageSize,
+        size: size,
         abort: abort,
         includeItemTypes: includeItemTypes,
         byAlbumArtist: byAlbumArtist,
-      );
-      abort?.throwIfAborted();
-      if (page.items.isEmpty) break;
-      all.addAll(page.items);
-      start += page.items.length;
-      if (start >= page.totalCount) break;
-    }
-    abort?.throwIfAborted();
-    return all;
+      ),
+      pageSize: _pagedListPageSize,
+      abort: abort,
+    );
   }
 
   @override
@@ -991,7 +999,7 @@ mixin _JellyfinBrowseMethods on MediaServerCacheMixin {
       abort: abort,
     );
     throwIfHttpError(response);
-    return _pagedMediaItems(response.data, offset: offset, requestedSize: pageSize);
+    return _pagedItems(response.data, offset: offset, requestedSize: pageSize, map: _mapItems);
   }
 
   /// All episodes of a series in the app's **aired watch order** — primarily by
@@ -1146,18 +1154,10 @@ mixin _JellyfinBrowseMethods on MediaServerCacheMixin {
   }
 
   @override
-  Future<List<MediaItem>> fetchPersonMedia(String personId) async {
-    final all = <MediaItem>[];
-    var start = 0;
-    while (true) {
-      final page = await fetchPersonMediaPage(personId, start: start, size: _pagedListPageSize);
-      if (page.items.isEmpty) break;
-      all.addAll(page.items);
-      start += page.items.length;
-      if (start >= page.totalCount) break;
-    }
-    return all;
-  }
+  Future<List<MediaItem>> fetchPersonMedia(String personId) => drainPages<MediaItem>(
+    (start, size) => fetchPersonMediaPage(personId, start: start, size: size),
+    pageSize: _pagedListPageSize,
+  );
 
   @override
   Future<LibraryPage<MediaItem>> fetchPersonMediaPage(
@@ -1186,7 +1186,7 @@ mixin _JellyfinBrowseMethods on MediaServerCacheMixin {
       abort: abort,
     );
     throwIfHttpError(response);
-    return _pagedMediaItems(response.data, offset: offset, requestedSize: pageSize);
+    return _pagedItems(response.data, offset: offset, requestedSize: pageSize, map: _mapItems);
   }
 
   @override
@@ -1637,32 +1637,17 @@ mixin _JellyfinBrowseMethods on MediaServerCacheMixin {
     try {
       final response = await _http.get(path, queryParameters: queryParameters, abort: abort);
       throwIfHttpError(response);
-      final data = response.data;
-      final rawItems = data is List ? data.whereType<Map<String, dynamic>>().toList() : _itemsArray(data);
-      final rawTotal = data is Map<String, dynamic> ? data['TotalRecordCount'] : null;
-      final fallbackTotal = singlePage
-          ? offset + rawItems.length
-          : fallbackPageTotal(offset: offset, itemCount: rawItems.length, requestedSize: requestedSize);
-      return LibraryPage<MediaItem>(
-        items: _mapItems(rawItems),
-        totalCount: rawTotal is int ? rawTotal : fallbackTotal,
+      return _pagedItems(
+        response.data,
         offset: offset,
+        requestedSize: requestedSize,
+        singlePage: singlePage,
+        map: _mapItems,
       );
     } catch (e, st) {
       appLogger.w('JellyfinClient: $path failed', error: e, stackTrace: st);
       rethrow;
     }
-  }
-
-  LibraryPage<MediaItem> _pagedMediaItems(Object? data, {required int offset, required int requestedSize}) {
-    final rawItems = _itemsArray(data);
-    final rawTotal = data is Map<String, dynamic> ? data['TotalRecordCount'] : null;
-    final fallbackTotal = fallbackPageTotal(offset: offset, itemCount: rawItems.length, requestedSize: requestedSize);
-    return LibraryPage<MediaItem>(
-      items: _mapItems(rawItems),
-      totalCount: rawTotal is int ? rawTotal : fallbackTotal,
-      offset: offset,
-    );
   }
 
   @override

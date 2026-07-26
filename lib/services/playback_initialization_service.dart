@@ -9,14 +9,13 @@ import '../media/media_item_types.dart';
 import '../media/media_server_client.dart';
 import '../media/media_source_info.dart';
 import '../models/audio_quality_preset.dart';
-import '../models/download_models.dart';
 import '../models/transcode_quality_preset.dart';
 import '../mpv/models.dart';
 import '../utils/app_logger.dart';
-import '../utils/downloaded_version_match.dart';
 import '../utils/global_key_utils.dart';
 import 'cached_playback_metadata_service.dart';
 import 'download_storage_service.dart';
+import 'downloaded_video_source.dart';
 import 'playback_initialization_types.dart';
 
 // Re-export so existing callers (video_player_screen) can keep importing
@@ -70,7 +69,7 @@ class PlaybackInitializationService {
   /// streaming an explicitly requested non-downloaded version. With
   /// [allowAnyDownloadedVersion] the single downloaded version is returned on
   /// mismatch instead — for offline flows where the alternative is failing.
-  Future<({String path, int mediaIndex, String? mediaSourceId})?> _resolveOfflineVideoSource(
+  Future<DownloadedVideoSource?> _resolveOfflineVideoSource(
     ServerId serverId,
     String ratingKey, {
     required int mediaIndex,
@@ -89,55 +88,16 @@ class PlaybackInitializationService {
         ..where((tbl) => tbl.globalKey.equals(buildGlobalKey(ServerId(serverId), ratingKey)));
 
       final downloadedItem = await query.getSingleOrNull();
-
-      // Return null if not found or not completed
-      if (downloadedItem == null || downloadedItem.status != DownloadStatus.completed.index) {
+      if (downloadedItem == null) {
         return null;
       }
 
-      final matches = downloadedVersionMatches(
+      return await resolveDownloadedVideoSource(
         downloadedItem,
         requestedMediaIndex: mediaIndex,
         requestedMediaSourceId: selectedMediaSourceId,
+        allowAnyDownloadedVersion: allowAnyDownloadedVersion,
       );
-      if (!matches) {
-        if (!allowAnyDownloadedVersion) {
-          appLogger.d(
-            '[VersionTrace] Offline video is version ${downloadedItem.mediaIndex} '
-            '(source ${downloadedItem.mediaSourceId}), but requested version '
-            '$mediaIndex (source ${selectedMediaSourceId?.trim()}) — skipping offline',
-          );
-          return null;
-        }
-        appLogger.d(
-          '[VersionTrace] Requested version $mediaIndex (source ${selectedMediaSourceId?.trim()}) '
-          'is not downloaded — falling back to downloaded version '
-          '${downloadedItem.mediaIndex} (source ${downloadedItem.mediaSourceId})',
-        );
-      }
-
-      // Return null if no video file path
-      if (downloadedItem.videoFilePath == null) {
-        return null;
-      }
-
-      final storageService = DownloadStorageService.instance;
-      final storedPath = downloadedItem.videoFilePath!;
-
-      // Get readable path (handles both SAF URIs and file paths)
-      final readablePath = await storageService.getReadablePath(storedPath);
-
-      // For file paths (not SAF), verify the file exists
-      if (!storageService.isSafUri(storedPath)) {
-        final file = File(readablePath);
-        if (!await file.exists()) {
-          appLogger.w('Offline video file not found: $readablePath (stored as: $storedPath)');
-          return null;
-        }
-      }
-
-      appLogger.d('Found offline video: $readablePath');
-      return (path: readablePath, mediaIndex: downloadedItem.mediaIndex, mediaSourceId: downloadedItem.mediaSourceId);
     } catch (e) {
       appLogger.w('Error checking offline video path', error: e);
       return null;
@@ -165,7 +125,7 @@ class PlaybackInitializationService {
   }) async {
     final serverId = metadata.serverId ?? client?.serverId;
 
-    ({String path, int mediaIndex, String? mediaSourceId})? offlineSource;
+    DownloadedVideoSource? offlineSource;
     if (serverId != null && (preferOffline || client == null) && database != null) {
       offlineSource = await _resolveOfflineVideoSource(
         ServerId(serverId),

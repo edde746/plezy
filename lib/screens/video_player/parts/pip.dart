@@ -44,7 +44,10 @@ extension _VideoPlayerPipMethods on VideoPlayerScreenState {
       unawaited(_videoFilterManager!.updateVideoFilter());
     }
 
-    _videoPIPManager ??= VideoPIPManager(player: currentPlayer, initialPlayerSize: initialPlayerSize);
+    _videoPIPManager ??= VideoPIPManager(
+      player: currentPlayer,
+      playerSize: () => _lastVideoLayoutPlayer == currentPlayer ? _lastVideoLayoutSize : null,
+    );
     _videoPIPManager!.onBeforeEnterPip = _preparePipFiltersForEntry;
     _attachPipStateListener();
   }
@@ -92,7 +95,7 @@ extension _VideoPlayerPipMethods on VideoPlayerScreenState {
       return;
     }
 
-    final isInPip = _videoPIPManager?.isPipActive.value ?? PipService().isPipActive.value;
+    final isInPip = PipService().isPipActive.value;
     _setAndroidAutoPipTransitionInFlight(false, reason: 'pip_state_changed');
     _recordLifecycleState('pip_state_changed', action: isInPip ? 'entered' : 'exited');
 

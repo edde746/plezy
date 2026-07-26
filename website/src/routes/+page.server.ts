@@ -1,4 +1,5 @@
 import type { PageServerLoad } from './$types';
+import { ANDROID_PACKAGE, APP_STORE_ID } from '$lib/content/downloads';
 import { normalizeUsdStorePrice } from '$lib/content/software_app_offers';
 
 export const load: PageServerLoad = async ({ fetch }) => {
@@ -8,7 +9,7 @@ export const load: PageServerLoad = async ({ fetch }) => {
 	let playStorePrice: string | null = null;
 
 	try {
-		const res = await fetch('https://itunes.apple.com/lookup?id=6754315964');
+		const res = await fetch(`https://itunes.apple.com/lookup?id=${APP_STORE_ID}`);
 		if (!res.ok) throw new Error(`App Store lookup failed: HTTP ${res.status}`);
 		const data = await res.json();
 		const app = data.results?.[0];
@@ -27,7 +28,7 @@ export const load: PageServerLoad = async ({ fetch }) => {
 		// Module initialization is optional external data and must stay inside this failure boundary.
 		const { default: gplay } = await import('google-play-scraper');
 		const app = await gplay.app({
-			appId: 'com.edde746.plezy',
+			appId: ANDROID_PACKAGE,
 			country: 'us',
 			lang: 'en'
 		});

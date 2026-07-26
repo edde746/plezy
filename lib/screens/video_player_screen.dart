@@ -58,6 +58,7 @@ import '../services/playback_source_resolver.dart';
 import '../services/multi_server_manager.dart';
 import '../services/offline_watch_sync_service.dart';
 import '../services/display_mode_service.dart';
+import '../services/media_control_router.dart';
 import '../services/settings_service.dart';
 import '../services/sleep_timer_service.dart';
 import '../services/track_manager.dart';
@@ -87,7 +88,6 @@ import 'video_player/completion_latch.dart';
 import 'video_player/frame_rate_matcher.dart';
 import 'video_player/live_stream_retry.dart';
 import 'video_player/live_timeline_report.dart';
-import 'video_player/media_control_router.dart';
 import 'video_player/wakelock_controller.dart';
 import 'video_player/live_tv_session_args.dart';
 import 'video_player/live_tv_session_state.dart';
@@ -1368,6 +1368,22 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     return exitPosition;
   }
 
+  /// Pause/hide the player, flush stopped progress, restore system UI and
+  /// orientation, then leave the player route. No-op when the route cannot pop.
+  Future<void> _exitPlayerRoute({required bool navigateHome}) async {
+    final navigator = Navigator.of(context);
+    if (!navigator.canPop()) return;
+
+    _isExiting.value = true;
+    final exitPosition = await _pauseAndHidePlayerForRouteExit();
+    if (!mounted) return;
+    await _sendStoppedProgressOnce(positionOverride: exitPosition);
+    if (!mounted) return;
+    await _restoreSystemUiAndOrientation();
+    if (!mounted) return;
+    _finishPlayerNavigation(navigator, navigateHome: navigateHome);
+  }
+
   /// Handle back button press
   /// For non-host participants in Watch Together, shows leave session confirmation
   Future<void> _handleBackButton({bool navigateHome = false}) async {
@@ -1390,36 +1406,14 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
 
         if (confirmed && mounted) {
           await _watchTogetherProvider!.leaveSession();
-          if (mounted) {
-            final navigator = Navigator.of(context);
-            if (navigator.canPop()) {
-              _isExiting.value = true;
-              final exitPosition = await _pauseAndHidePlayerForRouteExit();
-              if (!mounted) return;
-              await _sendStoppedProgressOnce(positionOverride: exitPosition);
-              if (!mounted) return;
-              await _restoreSystemUiAndOrientation();
-              if (!mounted) return;
-              _finishPlayerNavigation(navigator, navigateHome: navigateHome);
-            }
-          }
+          if (mounted) await _exitPlayerRoute(navigateHome: navigateHome);
         }
         return;
       }
 
       // Default behavior for hosts or non-session users
       if (!mounted) return;
-      final navigator = Navigator.of(context);
-      if (navigator.canPop()) {
-        _isExiting.value = true;
-        final exitPosition = await _pauseAndHidePlayerForRouteExit();
-        if (!mounted) return;
-        await _sendStoppedProgressOnce(positionOverride: exitPosition);
-        if (!mounted) return;
-        await _restoreSystemUiAndOrientation();
-        if (!mounted) return;
-        _finishPlayerNavigation(navigator, navigateHome: navigateHome);
-      }
+      await _exitPlayerRoute(navigateHome: navigateHome);
     } finally {
       _isHandlingBack = false;
     }

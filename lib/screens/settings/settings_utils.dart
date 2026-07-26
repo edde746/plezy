@@ -56,6 +56,32 @@ void showSettingsFailure(
   if (context.mounted) showErrorSnackBar(context, t.settings.saveFailed);
 }
 
+/// Runs [body] and reports the recoverable failures that every settings
+/// file/platform operation shares — [PlatformException], [FileSystemException]
+/// and the site-specific domain exception [E] — through [showSettingsFailure].
+/// Any other exception type is rethrown so programming errors are not swallowed.
+///
+/// [context] is resolved before [body] starts, so a failure that lands after the
+/// caller was disposed is still logged; only the snackbar is skipped. Returns
+/// `null` when the operation failed.
+Future<T?> guardSettingsOperation<T, E extends Object>(
+  BuildContext context, {
+  required String operation,
+  required Future<T> Function() body,
+}) async {
+  try {
+    return await body();
+  } on Object catch (error, stackTrace) {
+    if (error is! E && error is! PlatformException && error is! FileSystemException) rethrow;
+    if (context.mounted) {
+      showSettingsFailure(context, operation: operation, error: error, stackTrace: stackTrace);
+    } else {
+      appLogger.e('$operation failed', error: error, stackTrace: stackTrace);
+    }
+    return null;
+  }
+}
+
 void _showSettingsInputDialog({
   required BuildContext context,
   required String title,

@@ -12,8 +12,6 @@ mixin AnimeListTrackerBase<TClient extends DisposableTrackerClient> on TrackerBa
   bool get needsFribb => true;
 
   String get logLabel;
-  String get idLogName;
-  String get ratingUnavailableName;
 
   int? animeId(AnimeIds? anime);
   Future<int?> loadAnimeEpisodeCount(TClient client, int animeId);
@@ -81,7 +79,7 @@ mixin AnimeListTrackerBase<TClient extends DisposableTrackerClient> on TrackerBa
   (TClient, int) _ratingTarget(TrackerRatingContext ctx) {
     final activeClient = client;
     final id = animeId(ctx.ids.anime);
-    if (activeClient == null || id == null) throw TrackerRatingUnavailableException(ratingUnavailableName);
+    if (activeClient == null || id == null) throw TrackerRatingUnavailableException(logLabel);
     return (activeClient, id);
   }
 
@@ -94,7 +92,7 @@ mixin AnimeListTrackerBase<TClient extends DisposableTrackerClient> on TrackerBa
       if (identical(_episodeCountLoads[id], loading)) {
         final _ = _episodeCountLoads.remove(id);
       }
-      appLogger.d('$logLabel: failed to fetch anime episode count ($idLogName=$id)', error: e);
+      appLogger.d('$logLabel: failed to fetch anime episode count ($name=$id)', error: e);
       return null;
     });
     _episodeCountLoads[id] = loading;

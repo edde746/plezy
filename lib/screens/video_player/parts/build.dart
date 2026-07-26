@@ -42,7 +42,6 @@ extension _VideoPlayerBuildMethods on VideoPlayerScreenState {
       _lastVideoLayoutSize = pendingSize;
       _lastVideoLayoutPlayer = currentPlayer;
       _videoFilterManager?.updatePlayerSize(pendingSize);
-      _videoPIPManager?.updatePlayerSize(pendingSize);
       _updateAmbientLightingOnResize(pendingSize);
       unawaited(currentPlayer.updateFrame());
     });

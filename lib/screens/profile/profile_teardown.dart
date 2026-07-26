@@ -49,6 +49,13 @@ class SessionTeardownScope {
 
   MultiServerManager get serverManager => multiServer.serverManager;
 
+  ProfileConnectionCleanup get cleanup => ProfileConnectionCleanup(
+    profileConnections: profileConnections,
+    connections: connections,
+    storage: storage,
+    serverManager: serverManager,
+  );
+
   SessionTeardownScope.of(BuildContext context)
     : active = context.read<ActiveProfileProvider>(),
       binder = context.read<ActiveProfileBinder>(),
@@ -80,13 +87,9 @@ Future<bool> settleSessionAfterRemoval(
   bool rebindIfActiveKept = false,
   String? endedShelfOwner,
 }) async {
-  final result = await resolvePostRemovalState(
+  final result = await scope.cleanup.resolvePostRemovalState(
     profileRegistry: scope.profileRegistry,
-    profileConnections: scope.profileConnections,
-    connections: scope.connections,
     plexHomeUsers: scope.plexHome.current,
-    storage: scope.storage,
-    serverManager: scope.serverManager,
   );
 
   if (result.route == PostRemovalRoute.signedOut) {
@@ -199,13 +202,7 @@ Future<void> deleteProfile(BuildContext context, Profile profile) async {
     await scope.downloads.deleteDownloadsForProfile(profile.id);
     await scope.database.deleteSyncRulesForProfile(profile.id);
     await scope.database.deleteWatchActionsForProfile(profile.id);
-    await removeAllProfileConnectionsAndCleanup(
-      profileId: profile.id,
-      profileConnections: scope.profileConnections,
-      connections: scope.connections,
-      storage: scope.storage,
-      serverManager: scope.serverManager,
-    );
+    await scope.cleanup.removeAllProfileConnections(profile.id);
     await scope.profileRegistry.remove(profile.id);
     await scope.storage.clearProfileLastUsed(profile.id);
     await scope.storage.clearUserScopedPreferencesForProfile(profile.id);
@@ -263,14 +260,7 @@ Future<bool> confirmAndSignOutPlexAccount(BuildContext context, {required String
       await scope.downloads.releaseDownloadsForProfileServers(profileId, accountServerIds);
     }
 
-    await removePlexAccountConnectionAndCleanup(
-      account: account,
-      profileConnections: scope.profileConnections,
-      connections: scope.connections,
-      storage: scope.storage,
-      serverManager: scope.serverManager,
-      plannedRemoval: removal,
-    );
+    await scope.cleanup.removePlexAccountConnection(account, plannedRemoval: removal);
     for (final profileId in removal.removedVirtualProfileIds) {
       await scope.database.deleteSyncRulesForProfile(profileId);
       await scope.database.deleteWatchActionsForProfile(profileId);

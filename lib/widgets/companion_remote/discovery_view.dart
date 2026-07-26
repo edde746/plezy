@@ -4,20 +4,15 @@ import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 
-import '../../connection/connection_registry.dart';
 import '../../focus/focusable_button.dart';
 import '../../focus/focusable_text_field.dart';
 import '../../focus/focusable_wrapper.dart';
 import '../../i18n/strings.g.dart';
 import '../../mixins/controller_disposer_mixin.dart';
 import '../../mixins/mounted_set_state_mixin.dart';
-import '../../models/plex/plex_home.dart';
-import '../../profiles/active_plex_identity.dart';
-import '../../profiles/active_profile_provider.dart';
-import '../../profiles/plex_home_service.dart';
-import '../../profiles/profile_connection_registry.dart';
 import '../../providers/companion_remote_provider.dart';
 import '../../services/base_peer_service.dart';
+import '../../services/companion_remote/companion_remote_host_controller.dart';
 import '../../services/settings_service.dart';
 import '../../theme/mono_tokens.dart';
 import '../../utils/app_logger.dart';
@@ -93,26 +88,7 @@ class _DiscoveryViewState extends State<DiscoveryView> with ControllerDisposerMi
 
   Future<void> _initCryptoAndDiscover() async {
     try {
-      final connections = context.read<ConnectionRegistry>();
-      final activeProfile = context.read<ActiveProfileProvider>();
-      final profileConnections = context.read<ProfileConnectionRegistry>();
-      final plexHome = context.read<PlexHomeService>();
-      final identity = await resolveActivePlexIdentity(
-        activeProfile: activeProfile,
-        connections: connections,
-        profileConnections: profileConnections,
-      );
-      if (!mounted) return;
-      final home = await _resolveHome(identity?.account.id);
-      if (!mounted) return;
-      await _provider.ensureCryptoReady(
-        home,
-        connections: connections,
-        activeProfile: activeProfile,
-        profileConnections: profileConnections,
-        identity: identity,
-        plexHomeForConnection: plexHome.materializePlexHomeForConnection,
-      );
+      await ensureCompanionRemoteCryptoFromContext(context);
     } catch (e) {
       appLogger.e('CompanionRemote: crypto init failed', error: e);
     }
@@ -135,11 +111,6 @@ class _DiscoveryViewState extends State<DiscoveryView> with ControllerDisposerMi
         _isSearching = false;
       });
     }
-  }
-
-  Future<PlexHome?> _resolveHome(String? connectionId) {
-    if (connectionId == null) return Future<PlexHome?>.value();
-    return context.read<PlexHomeService>().materializePlexHomeForConnection(connectionId);
   }
 
   void _startDiscovery() {

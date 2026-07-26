@@ -73,6 +73,17 @@ abstract class MediaListPlaybackLauncher {
   /// queue from `EpisodeNavigationService`).
   Future<PlayQueueResult> launchShuffledShow({required MediaItem metadata, bool showLoadingIndicator = true});
 
+  /// Launch playback from a folder row of the library tree. Everything each
+  /// backend needs is stamped onto [folder]: Plex builds a server-side
+  /// `/playQueues` from [MediaItem.backendFolderKey] (returning a
+  /// [PlayQueueError] when the row carries none), Jellyfin fetches the
+  /// folder's playable descendants and publishes a local queue.
+  Future<PlayQueueResult> launchFromFolder({
+    required MediaItem folder,
+    required bool shuffle,
+    bool showLoadingIndicator = true,
+  });
+
   /// Pick the right implementation for [item]. Reads
   /// [MediaItem.backend] / [MediaPlaylist.backend].
   static MediaListPlaybackLauncher forItem(BuildContext context, Object item) {

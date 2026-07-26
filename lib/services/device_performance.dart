@@ -4,6 +4,8 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/painting.dart';
 import 'package:flutter/services.dart';
 
+import '../utils/async_singleton.dart';
+import '../utils/device_channel.dart';
 import '../utils/platform_detector.dart';
 
 /// User override for the visual-effects tier (stored by SettingsService).
@@ -19,11 +21,9 @@ enum VisualEffectsSetting { auto, full, reduced }
 class DevicePerformance {
   DevicePerformance._();
 
-  static DevicePerformance? _instance;
-  static Future<void>? _initialization;
+  static final AsyncSingleton<DevicePerformance> _singleton = AsyncSingleton();
   @visibleForTesting
-  static Future<void>? debugDetectionGate;
-  static const MethodChannel _deviceChannel = MethodChannel('com.plezy/device');
+  static set debugDetectionGate(Future<void>? value) => _singleton.debugGate = value;
 
   /// ~2.2 GiB: above what 2 GB boxes report (≤ ~1.95 GiB after kernel
   /// reservations), below 3 GB Shield-class devices (~2.8 GiB).
@@ -39,35 +39,13 @@ class DevicePerformance {
 
   /// Get the singleton, detecting hardware signals on first call.
   /// [override] is the persisted SettingsService.visualEffects value.
-  static Future<DevicePerformance> getInstance({VisualEffectsSetting override = VisualEffectsSetting.auto}) async {
-    final existing = _instance;
-    if (existing != null) {
-      final initialization = _initialization;
-      if (initialization != null) await initialization;
-      return existing;
-    }
-
-    final instance = DevicePerformance._().._override = override;
-    _instance = instance;
-    final initialization = instance._detect();
-    _initialization = initialization;
-    try {
-      await initialization;
-    } catch (_) {
-      if (identical(_instance, instance)) _instance = null;
-      rethrow;
-    } finally {
-      if (identical(_initialization, initialization)) _initialization = null;
-    }
-    return instance;
-  }
+  static Future<DevicePerformance> getInstance({VisualEffectsSetting override = VisualEffectsSetting.auto}) =>
+      _singleton.getInstance(() => DevicePerformance._().._override = override, (instance) => instance._detect());
 
   Future<void> _detect() async {
-    final gate = debugDetectionGate;
-    if (gate != null) await gate;
     if (!Platform.isAndroid) return; // tvOS/iOS/desktop: always full tier
     try {
-      final result = await _deviceChannel.invokeMapMethod<dynamic, dynamic>('getPerformanceSignals');
+      final result = await deviceChannel.invokeMapMethod<dynamic, dynamic>('getPerformanceSignals');
       if (result == null) return;
       _is64Bit = result['is64Bit'] == true;
       _isLowRam = result['isLowRamDevice'] == true;
@@ -85,7 +63,7 @@ class DevicePerformance {
 
   /// Total device RAM as reported by the platform, or null off-Android /
   /// before init. Used to scale memory-watchdog thresholds to the device.
-  static int? get totalMemBytes => _instance?._totalMemBytes;
+  static int? get totalMemBytes => _singleton.instance?._totalMemBytes;
 
   /// Auto-detected low-end hardware (32-bit process / low-RAM / ≤2.2 GiB),
   /// independent of the visual-effects override. Use this for decisions tied to
@@ -93,11 +71,11 @@ class DevicePerformance {
   /// boxes lagging a GL subtitle overlay — where a user's effects preference is
   /// irrelevant. Safe before init (returns false). See [isReduced] for the
   /// effects-tier gate that the override can force.
-  static bool get isLowEndHardware => _instance?._autoReduced ?? false;
+  static bool get isLowEndHardware => _singleton.instance?._autoReduced ?? false;
 
   /// Primary gate for effect chokepoints. Safe before init (full tier).
   static bool get isReduced {
-    final instance = _instance;
+    final instance = _singleton.instance;
     if (instance == null) return false;
     return switch (instance._override) {
       VisualEffectsSetting.auto => instance._autoReduced,
@@ -112,7 +90,7 @@ class DevicePerformance {
   /// Update the user override from the settings screen and re-apply the
   /// budgets that were computed at boot.
   static void setOverrideSync(VisualEffectsSetting value) {
-    _instance?._override = value;
+    _singleton.instance?._override = value;
     applyImageCacheBudget();
   }
 
@@ -142,7 +120,7 @@ class DevicePerformance {
   /// Raw signals are always included (even when the tier is forced) so an
   /// uploaded log answers "did the reduced tier engage, and why / why not".
   static String describeSync() {
-    final instance = _instance;
+    final instance = _singleton.instance;
     if (instance == null) return 'unknown';
     final tier = isReduced ? 'reduced' : 'full';
     final signals = <String>[
@@ -158,14 +136,13 @@ class DevicePerformance {
 
   @visibleForTesting
   static void debugReset({bool? autoReduced, VisualEffectsSetting? override}) {
-    _initialization = null;
-    debugDetectionGate = null;
     if (autoReduced == null && override == null) {
-      _instance = null;
+      _singleton.debugReset();
       return;
     }
-    _instance ??= DevicePerformance._();
-    if (autoReduced != null) _instance!._autoReduced = autoReduced;
-    if (override != null) _instance!._override = override;
+    final instance = _singleton.instance ?? DevicePerformance._();
+    _singleton.debugReset(instance: instance);
+    if (autoReduced != null) instance._autoReduced = autoReduced;
+    if (override != null) instance._override = override;
   }
 }

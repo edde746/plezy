@@ -1,6 +1,6 @@
 part of '../../jellyfin_client.dart';
 
-mixin _JellyfinFileInfoMethods on MediaServerCacheMixin {
+mixin _JellyfinFileInfoMethods on _JellyfinClientInternals {
   @override
   Future<MediaFileInfo?> getFileInfo(MediaItem item) async {
     // Lightweight browse responses omit `MediaSources`; detail and some cached

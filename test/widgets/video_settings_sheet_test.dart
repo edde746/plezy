@@ -10,6 +10,7 @@ import 'package:plezy/mpv/player/player_streams.dart';
 import 'package:plezy/screens/settings/subtitle_styling_screen.dart';
 import 'package:plezy/services/sleep_timer_service.dart';
 import 'package:plezy/services/settings_service.dart';
+import 'package:plezy/widgets/video_controls/models/track_controls_state.dart';
 import 'package:plezy/widgets/video_controls/sheets/video_settings_sheet.dart';
 
 import '../test_helpers/prefs.dart';
@@ -147,10 +148,8 @@ Future<void> _pumpSheet(
           height: 700,
           child: VideoSettingsSheet(
             player: player ?? _FakeSettingsPlayer(),
-            audioSyncOffset: 0,
-            subtitleSyncOffset: 0,
-            canControl: canControl,
             supportsHdrControl: supportsHdrControl,
+            trackControlsState: TrackControlsState(canControl: canControl),
           ),
         ),
       ),

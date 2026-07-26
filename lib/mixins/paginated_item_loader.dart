@@ -104,43 +104,6 @@ mixin PaginatedItemLoader<T, W extends StatefulWidget> on State<W> {
     return (page: result, applied: true);
   }
 
-  /// Shared initial-load transaction for paginated consumers.
-  ///
-  /// Owns reset, stale-result rejection, mounted checks, and error-state
-  /// application. Callers supply only their view fields, logging, and
-  /// post-success behavior.
-  Future<bool> loadInitialPaginatedItems({
-    required int pageSize,
-    required VoidCallback resetViewState,
-    required void Function(List<T> items) applyLoadedItems,
-    required void Function(Object error, StackTrace stackTrace) applyError,
-    void Function(int loadedCount, int totalCount)? onLoaded,
-    void Function(Object error, StackTrace stackTrace)? onError,
-  }) async {
-    setState(() {
-      resetViewState();
-      resetPaginationState();
-    });
-
-    try {
-      final initialPage = await loadInitialPageWithStatus(pageSize);
-      if (!initialPage.applied || !mounted) return false;
-
-      setState(() {
-        applyLoadedItems(loadedItems.values.toList());
-      });
-      onLoaded?.call(loadedItems.length, totalSize);
-      return true;
-    } catch (error, stackTrace) {
-      onError?.call(error, stackTrace);
-      if (!mounted) return false;
-      setState(() {
-        applyError(error, stackTrace);
-      });
-      return false;
-    }
-  }
-
   /// Fetch any unloaded items inside [firstIndex, firstIndex + visibleCount)
   /// with [buffer] extra indices on each side. Serialized — only one
   /// range-fetch runs at a time — and re-checks after each success so a
