@@ -441,22 +441,40 @@ jobs:
           cache-key: "${{ env.TRUSTED_BUILD_CACHE_VERSION }}-flutter-:os:-:channel:-:version:-:arch:-:hash:"
           pub-cache: false
 
-      - name: Set up Flutter 3.44.0 (git tag)
+      - name: Set up Flutter 3.44.0 from its immutable commit
         if: matrix.flutter_setup == 'git'
-        # Flutter publishes no windows-arm64 SDK archive, so subosito can't
-        # resolve 3.44.0 for arm64: the stable manifest has no arm64 entry, and
-        # `channel: master` would git-clone master HEAD (whose engine != our
-        # patched 3.44.0). Clone the 3.44.0 tag directly to get engine rev
-        # 4c525dac, which install-patched-engine.ps1 asserts before swapping.
+        # Flutter publishes no windows-arm64 SDK archive, so fetch the release tag for
+        # version discovery and verify it resolves to the pinned commit. That tag uses
+        # engine revision 4c525dac, which install-patched-engine.ps1 asserts before swapping.
         shell: pwsh
         run: |
           $root = "$env:RUNNER_TEMP\flutter"
+          $expectedCommit = "559ffa3f75e7402d65a8def9c28389a9b2e6fe42"
           git init $root
           git -C $root remote add origin https://github.com/flutter/flutter.git
-          git -C $root fetch --depth 1 origin 559ffa3f75e7402d65a8def9c28389a9b2e6fe42
-          git -C $root checkout --detach FETCH_HEAD
+          git -C $root fetch --depth 1 origin refs/tags/3.44.0:refs/tags/3.44.0
+          git -C $root checkout --detach refs/tags/3.44.0
+          $actualCommit = git -C $root rev-parse HEAD
+          if ($LASTEXITCODE -ne 0 -or $actualCommit -ne $expectedCommit) {
+            throw "Flutter 3.44.0 resolved to $actualCommit, expected $expectedCommit"
+          }
           "$root\bin" | Out-File -FilePath $env:GITHUB_PATH -Append -Encoding utf8
           & "$root\bin\flutter.bat" --version
+          if ($LASTEXITCODE -ne 0) {
+            throw "Unable to bootstrap the Flutter SDK"
+          }
+          $versionOutput = & "$root\bin\flutter.bat" --version --machine
+          if ($LASTEXITCODE -ne 0) {
+            throw "Unable to resolve the Flutter SDK version"
+          }
+          $versionJson = $versionOutput -join "`n"
+          if ([string]::IsNullOrWhiteSpace($versionJson)) {
+            throw "Flutter did not report machine-readable version JSON"
+          }
+          $version = $versionJson | ConvertFrom-Json
+          if ($version.frameworkVersion -ne "3.44.0") {
+            throw "Flutter reported version $($version.frameworkVersion), expected 3.44.0"
+          }
 
       - name: Cache Pub dependencies
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6

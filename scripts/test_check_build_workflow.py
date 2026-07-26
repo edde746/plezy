@@ -35,6 +35,18 @@ class BuildWorkflowGuardTest(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn("architecture matrix checks passed", result.stdout)
 
+    def test_windows_arm_flutter_without_release_tag_is_rejected(self) -> None:
+        workflow = self._workflow().replace(
+            "git -C $root fetch --depth 1 origin refs/tags/3.44.0:refs/tags/3.44.0",
+            "git -C $root fetch --depth 1 origin 559ffa3f75e7402d65a8def9c28389a9b2e6fe42",
+            1,
+        )
+
+        result = self._run(workflow)
+
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("refs/tags/3.44.0", result.stderr)
+
     def test_mutable_download_in_signing_step_is_rejected(self) -> None:
         workflow = self._workflow().replace(
             "          try {\n",

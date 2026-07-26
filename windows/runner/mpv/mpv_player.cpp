@@ -201,8 +201,8 @@ LRESULT CALLBACK MpvInnerSubclassProc(
 
   if (message == WM_NCDESTROY) {
     state->active.store(false, std::memory_order_release);
-    const HWND view = state->forward_target.exchange(nullptr, std::memory_order_acq_rel);
-    ReleaseForwardedPointer(*state, view);
+    const HWND forward_target = state->forward_target.exchange(nullptr, std::memory_order_acq_rel);
+    ReleaseForwardedPointer(*state, forward_target);
     ::RemoveWindowSubclass(hwnd, MpvInnerSubclassProc, subclass_id);
     std::lock_guard<std::mutex> lock(g_inner_subclasses_mutex);
     const auto it = g_inner_subclasses.find(hwnd);
