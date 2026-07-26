@@ -13,6 +13,9 @@ struct InnerWindowSubclassState {
   HWND hwnd = nullptr;
   std::atomic<HWND> forward_target{nullptr};
   std::atomic<bool> active{false};
+  std::atomic<uint64_t> forwarded_pointer_token{0};
+  std::atomic<LPARAM> forwarded_pointer_position{0};
+  std::mutex forwarded_pointer_mutex;
   UINT_PTR subclass_id = 0;
   // Guarded by g_inner_subclasses_mutex.
   bool installed = false;
@@ -67,27 +70,93 @@ flutter::EncodableValue NodeToEncodableValue(const mpv_node* node) {
 // and consumes input over the video (WS_EX_TRANSPARENT hit-test skipping is
 // same-thread-only, and disabling the subtree makes the system drop the input
 // entirely instead of routing it to a sibling). Use the common-controls
-// subclass chain with per-window reference data, and forward mouse/pointer
-// input to the Flutter view. Pointer messages must be sent synchronously:
-// Flutter calls GetPointerInfo while handling them, and Windows only retains
-// that data for the current or forwarded message.
-constexpr bool IsFlutterPointerMessage(UINT message) {
+// subclass chain with per-window reference data. Mouse messages can be posted
+// directly, but WM_POINTER metadata remains associated with the receiving
+// window thread, so translate the primary contact to mouse input before
+// forwarding it to Flutter.
+constexpr bool IsForwardedPointerMessage(UINT message) {
   switch (message) {
     case WM_POINTERDOWN:
     case WM_POINTERUPDATE:
     case WM_POINTERUP:
     case WM_POINTERLEAVE:
+    case WM_POINTERCAPTURECHANGED:
       return true;
     default:
       return false;
   }
 }
 
-static_assert(IsFlutterPointerMessage(WM_POINTERDOWN));
-static_assert(IsFlutterPointerMessage(WM_POINTERUPDATE));
-static_assert(IsFlutterPointerMessage(WM_POINTERUP));
-static_assert(IsFlutterPointerMessage(WM_POINTERLEAVE));
-static_assert(!IsFlutterPointerMessage(WM_MOUSEMOVE));
+static_assert(IsForwardedPointerMessage(WM_POINTERDOWN));
+static_assert(IsForwardedPointerMessage(WM_POINTERUPDATE));
+static_assert(IsForwardedPointerMessage(WM_POINTERUP));
+static_assert(IsForwardedPointerMessage(WM_POINTERLEAVE));
+static_assert(IsForwardedPointerMessage(WM_POINTERCAPTURECHANGED));
+static_assert(!IsForwardedPointerMessage(WM_MOUSEMOVE));
+
+uint64_t PointerToken(WPARAM wparam) { return static_cast<uint64_t>(GET_POINTERID_WPARAM(wparam)) + 1; }
+
+LPARAM PointerPositionInView(HWND view, LPARAM lparam) {
+  POINT point = {GET_X_LPARAM(lparam), GET_Y_LPARAM(lparam)};
+  ::ScreenToClient(view, &point);
+  return MAKELPARAM(point.x, point.y);
+}
+void ReleaseForwardedPointer(InnerWindowSubclassState& state, HWND view) {
+  std::lock_guard<std::mutex> lock(state.forwarded_pointer_mutex);
+  if (state.forwarded_pointer_token.exchange(0, std::memory_order_acq_rel) == 0 || !view) {
+    return;
+  }
+  const LPARAM position = state.forwarded_pointer_position.load(std::memory_order_acquire);
+  ::PostMessageW(view, WM_LBUTTONUP, 0, position);
+}
+
+bool ForwardPointerAsMouse(InnerWindowSubclassState& state, HWND view, UINT message, WPARAM wparam, LPARAM lparam) {
+  if (!IsForwardedPointerMessage(message)) return false;
+
+  std::lock_guard<std::mutex> lock(state.forwarded_pointer_mutex);
+  if (!state.active.load(std::memory_order_acquire) || state.forward_target.load(std::memory_order_acquire) != view) {
+    return true;
+  }
+  const uint64_t pointer_token = PointerToken(wparam);
+  if (message == WM_POINTERDOWN) {
+    if (!IS_POINTER_PRIMARY_WPARAM(wparam) || !IS_POINTER_FIRSTBUTTON_WPARAM(wparam)) {
+      return true;
+    }
+
+    uint64_t expected = 0;
+    if (!state.forwarded_pointer_token.compare_exchange_strong(expected, pointer_token)) {
+      return true;
+    }
+
+    const LPARAM position = PointerPositionInView(view, lparam);
+    state.forwarded_pointer_position.store(position, std::memory_order_release);
+    ::PostMessageW(view, WM_LBUTTONDOWN, MK_LBUTTON, position);
+    return true;
+  }
+
+  if (state.forwarded_pointer_token.load(std::memory_order_acquire) != pointer_token) {
+    return true;
+  }
+
+  if (message == WM_POINTERUPDATE) {
+    const LPARAM position = PointerPositionInView(view, lparam);
+    state.forwarded_pointer_position.store(position, std::memory_order_release);
+    ::PostMessageW(view, WM_MOUSEMOVE, MK_LBUTTON, position);
+    return true;
+  }
+
+  uint64_t expected = pointer_token;
+  if (!state.forwarded_pointer_token.compare_exchange_strong(expected, 0)) {
+    return true;
+  }
+
+  const LPARAM position = message == WM_POINTERCAPTURECHANGED
+                              ? state.forwarded_pointer_position.load(std::memory_order_acquire)
+                              : PointerPositionInView(view, lparam);
+  state.forwarded_pointer_position.store(position, std::memory_order_release);
+  ::PostMessageW(view, WM_LBUTTONUP, 0, position);
+  return true;
+}
 
 std::mutex g_inner_subclasses_mutex;
 std::unordered_map<HWND, std::shared_ptr<InnerWindowSubclassState>> g_inner_subclasses;
@@ -111,11 +180,7 @@ LRESULT CALLBACK MpvInnerSubclassProc(
 
   const bool active = state->active.load(std::memory_order_acquire);
   HWND view = active ? state->forward_target.load(std::memory_order_acquire) : nullptr;
-  if (active && view && IsFlutterPointerMessage(message)) {
-    // WM_POINTER coordinates are already in screen space. SendMessage also
-    // preserves the message association required by GetPointerInfo in the
-    // Flutter view's window procedure.
-    ::SendMessageW(view, message, wparam, lparam);
+  if (active && view && ForwardPointerAsMouse(*state, view, message, wparam, lparam)) {
     return 0;
   }
 
@@ -136,7 +201,8 @@ LRESULT CALLBACK MpvInnerSubclassProc(
 
   if (message == WM_NCDESTROY) {
     state->active.store(false, std::memory_order_release);
-    state->forward_target.store(nullptr, std::memory_order_release);
+    const HWND view = state->forward_target.exchange(nullptr, std::memory_order_acq_rel);
+    ReleaseForwardedPointer(*state, view);
     ::RemoveWindowSubclass(hwnd, MpvInnerSubclassProc, subclass_id);
     std::lock_guard<std::mutex> lock(g_inner_subclasses_mutex);
     const auto it = g_inner_subclasses.find(hwnd);
@@ -325,6 +391,7 @@ std::shared_ptr<InnerWindowSubclassState> InstallMpvInnerSubclass(HWND inner, HW
       // A timed-out detach that never reached the window thread leaves the
       // helper-chain entry installed. Adopt that exact generation rather than
       // stacking a duplicate subclass or retaining a permanently inert entry.
+      retained->forwarded_pointer_token.store(0, std::memory_order_release);
       retained->forward_target.store(forward_target, std::memory_order_release);
       retained->active.store(true, std::memory_order_release);
       return retained;
@@ -373,6 +440,7 @@ void DetachMpvInnerSubclassState(const std::shared_ptr<InnerWindowSubclassState>
   // already holding this generation can still call DefSubclassProc, but can
   // no longer target a replacement Flutter/player generation.
 
+  HWND forward_target = nullptr;
   {
     std::lock_guard<std::mutex> lock(g_inner_subclasses_mutex);
     const auto it = g_inner_subclasses.find(state->hwnd);
@@ -380,9 +448,10 @@ void DetachMpvInnerSubclassState(const std::shared_ptr<InnerWindowSubclassState>
       return;
     }
     state->active.store(false, std::memory_order_release);
-    state->forward_target.store(nullptr, std::memory_order_release);
+    forward_target = state->forward_target.exchange(nullptr, std::memory_order_acq_rel);
     state->removal_pending = true;
   }
+  ReleaseForwardedPointer(*state, forward_target);
 
   auto action = std::make_shared<SubclassOwnershipAction>();
   action->state = state;

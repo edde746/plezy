@@ -1,3 +1,5 @@
+#include <windowsx.h>
+
 #include <atomic>
 #include <cstdlib>
 #include <future>
@@ -45,6 +47,14 @@ void Check(bool condition, const char* message) {
 }
 
 std::atomic<int> g_forwarded_mouse_messages{0};
+std::atomic<int> g_forwarded_touch_moves{0};
+std::atomic<int> g_forwarded_mouse_down_messages{0};
+std::atomic<int> g_forwarded_mouse_up_messages{0};
+std::atomic<int> g_forwarded_pointer_messages{0};
+std::atomic<LPARAM> g_forwarded_mouse_down_position{0};
+std::atomic<LPARAM> g_forwarded_mouse_up_position{0};
+std::atomic<WPARAM> g_forwarded_mouse_down_flags{0};
+std::atomic<WPARAM> g_forwarded_mouse_up_flags{0};
 constexpr UINT kBlockWindowThreadMessage = WM_APP + 0x0505;
 std::atomic<HANDLE> g_block_entered{nullptr};
 std::atomic<HANDLE> g_block_release{nullptr};
@@ -63,7 +73,27 @@ LRESULT CALLBACK CountingWindowProc(HWND hwnd, UINT message, WPARAM wparam, LPAR
     return 0;
   }
   if (message == WM_MOUSEMOVE) {
-    g_forwarded_mouse_messages.fetch_add(1, std::memory_order_relaxed);
+    if ((wparam & MK_LBUTTON) != 0) {
+      g_forwarded_touch_moves.fetch_add(1, std::memory_order_relaxed);
+    } else {
+      g_forwarded_mouse_messages.fetch_add(1, std::memory_order_relaxed);
+    }
+    return 0;
+  }
+  if (message == WM_LBUTTONDOWN) {
+    g_forwarded_mouse_down_position.store(lparam, std::memory_order_relaxed);
+    g_forwarded_mouse_down_flags.store(wparam, std::memory_order_relaxed);
+    g_forwarded_mouse_down_messages.fetch_add(1, std::memory_order_relaxed);
+    return 0;
+  }
+  if (message == WM_LBUTTONUP) {
+    g_forwarded_mouse_up_position.store(lparam, std::memory_order_relaxed);
+    g_forwarded_mouse_up_flags.store(wparam, std::memory_order_relaxed);
+    g_forwarded_mouse_up_messages.fetch_add(1, std::memory_order_relaxed);
+    return 0;
+  }
+  if (message >= WM_POINTERUPDATE && message <= WM_POINTERCAPTURECHANGED) {
+    g_forwarded_pointer_messages.fetch_add(1, std::memory_order_relaxed);
     return 0;
   }
   return ::DefWindowProcW(hwnd, message, wparam, lparam);
@@ -174,10 +204,111 @@ void TestInnerSubclassOwnershipIsSerializedAndDetached() {
   }
   Check(g_forwarded_mouse_messages.load(std::memory_order_relaxed) == 1, "active generation must forward mouse input");
 
+  constexpr UINT32 kPrimaryPointerId = 7;
+  constexpr UINT32 kSecondaryPointerId = 8;
+  constexpr UINT32 kCancelledPointerId = 9;
+  constexpr UINT32 kDetachedPointerId = 10;
+  constexpr UINT32 kDestroyedPointerId = 11;
+  constexpr UINT32 kPointerDownFlags = POINTER_MESSAGE_FLAG_NEW | POINTER_MESSAGE_FLAG_INRANGE |
+                                       POINTER_MESSAGE_FLAG_INCONTACT | POINTER_MESSAGE_FLAG_FIRSTBUTTON |
+                                       POINTER_MESSAGE_FLAG_PRIMARY;
+  constexpr UINT32 kPointerMoveFlags = POINTER_MESSAGE_FLAG_INRANGE | POINTER_MESSAGE_FLAG_INCONTACT |
+                                       POINTER_MESSAGE_FLAG_FIRSTBUTTON | POINTER_MESSAGE_FLAG_PRIMARY;
+  constexpr UINT32 kPointerUpFlags = POINTER_MESSAGE_FLAG_INRANGE | POINTER_MESSAGE_FLAG_PRIMARY;
+
+  POINT down_position = {14, 18};
+  ::ClientToScreen(windows.inner, &down_position);
+  POINT expected_down_position = down_position;
+  ::ScreenToClient(windows.target, &expected_down_position);
+  POINT up_position = {30, 36};
+  ::ClientToScreen(windows.inner, &up_position);
+  POINT expected_up_position = up_position;
+  ::ScreenToClient(windows.target, &expected_up_position);
+
+  ::SendMessageW(
+      windows.inner, WM_POINTERDOWN, MAKEWPARAM(kPrimaryPointerId, kPointerDownFlags),
+      MAKELPARAM(down_position.x, down_position.y));
+  ::SendMessageW(
+      windows.inner, WM_POINTERUPDATE, MAKEWPARAM(kPrimaryPointerId, kPointerMoveFlags),
+      MAKELPARAM(up_position.x, up_position.y));
+  ::SendMessageW(
+      windows.inner, WM_POINTERUP, MAKEWPARAM(kPrimaryPointerId, kPointerUpFlags),
+      MAKELPARAM(up_position.x, up_position.y));
+  for (int attempt = 0; attempt < 100 && g_forwarded_mouse_up_messages.load(std::memory_order_relaxed) < 1; ++attempt) {
+    ::Sleep(10);
+  }
+
+  Check(g_forwarded_mouse_down_messages.load(std::memory_order_relaxed) == 1, "primary touch must press once");
+  Check(g_forwarded_touch_moves.load(std::memory_order_relaxed) == 1, "primary touch movement must drag once");
+  Check(g_forwarded_mouse_up_messages.load(std::memory_order_relaxed) == 1, "primary touch must release once");
+  Check(
+      g_forwarded_pointer_messages.load(std::memory_order_relaxed) == 0, "raw pointer messages must not reach Flutter");
+  Check(
+      g_forwarded_mouse_down_flags.load(std::memory_order_relaxed) == MK_LBUTTON,
+      "touch down must hold the mouse button");
+  Check(g_forwarded_mouse_up_flags.load(std::memory_order_relaxed) == 0, "touch up must release the mouse button");
+  const LPARAM forwarded_down_position = g_forwarded_mouse_down_position.load(std::memory_order_relaxed);
+  Check(
+      GET_X_LPARAM(forwarded_down_position) == expected_down_position.x &&
+          GET_Y_LPARAM(forwarded_down_position) == expected_down_position.y,
+      "touch down must use Flutter-view client coordinates");
+  const LPARAM forwarded_up_position = g_forwarded_mouse_up_position.load(std::memory_order_relaxed);
+  Check(
+      GET_X_LPARAM(forwarded_up_position) == expected_up_position.x &&
+          GET_Y_LPARAM(forwarded_up_position) == expected_up_position.y,
+      "touch up must use Flutter-view client coordinates");
+
+  const WPARAM secondary_down = MAKEWPARAM(kSecondaryPointerId, kPointerDownFlags & ~POINTER_MESSAGE_FLAG_PRIMARY);
+  const WPARAM secondary_up = MAKEWPARAM(kSecondaryPointerId, kPointerUpFlags & ~POINTER_MESSAGE_FLAG_PRIMARY);
+  ::SendMessageW(windows.inner, WM_POINTERDOWN, secondary_down, MAKELPARAM(down_position.x, down_position.y));
+  ::SendMessageW(windows.inner, WM_POINTERUP, secondary_up, MAKELPARAM(up_position.x, up_position.y));
+  ::Sleep(30);
+  Check(
+      g_forwarded_mouse_down_messages.load(std::memory_order_relaxed) == 1 &&
+          g_forwarded_mouse_up_messages.load(std::memory_order_relaxed) == 1,
+      "secondary touch must not synthesize another click");
+
+  ::SendMessageW(
+      windows.inner, WM_POINTERDOWN, MAKEWPARAM(kCancelledPointerId, kPointerDownFlags),
+      MAKELPARAM(down_position.x, down_position.y));
+  ::SendMessageW(
+      windows.inner, WM_POINTERCAPTURECHANGED, MAKEWPARAM(kCancelledPointerId, kPointerUpFlags),
+      reinterpret_cast<LPARAM>(windows.host));
+  for (int attempt = 0; attempt < 100 && g_forwarded_mouse_up_messages.load(std::memory_order_relaxed) < 2; ++attempt) {
+    ::Sleep(10);
+  }
+  Check(
+      g_forwarded_mouse_down_messages.load(std::memory_order_relaxed) == 2 &&
+          g_forwarded_mouse_up_messages.load(std::memory_order_relaxed) == 2,
+      "capture loss must release an active synthetic mouse press");
+
+  ::SendMessageW(
+      windows.inner, WM_POINTERDOWN, MAKEWPARAM(kDetachedPointerId, kPointerDownFlags),
+      MAKELPARAM(down_position.x, down_position.y));
+  for (int attempt = 0; attempt < 100 && g_forwarded_mouse_down_messages.load(std::memory_order_relaxed) < 3;
+       ++attempt) {
+    ::Sleep(10);
+  }
+
   MpvPlayerPropertyContractTestPeer::DetachInnerSubclass(player);
   Check(
       reinterpret_cast<WNDPROC>(::GetWindowLongPtrW(windows.inner, GWLP_WNDPROC)) == windows.inner_original,
       "detach must restore the original procedure before window destruction");
+  for (int attempt = 0; attempt < 100 && g_forwarded_mouse_up_messages.load(std::memory_order_relaxed) < 3; ++attempt) {
+    ::Sleep(10);
+  }
+  Check(
+      g_forwarded_mouse_down_messages.load(std::memory_order_relaxed) == 3 &&
+          g_forwarded_mouse_up_messages.load(std::memory_order_relaxed) == 3,
+      "detach must release an active synthetic mouse press");
+
+  ::SendMessageW(
+      windows.inner, WM_POINTERUP, MAKEWPARAM(kDetachedPointerId, kPointerUpFlags),
+      MAKELPARAM(up_position.x, up_position.y));
+  ::Sleep(30);
+  Check(
+      g_forwarded_mouse_up_messages.load(std::memory_order_relaxed) == 3,
+      "a late pointer up after detach must not release twice");
 
   ::SendMessageW(windows.inner, WM_MOUSEMOVE, 0, MAKELPARAM(8, 9));
   ::Sleep(30);
@@ -201,9 +332,34 @@ void TestInnerSubclassOwnershipIsSerializedAndDetached() {
       reinterpret_cast<WNDPROC>(::GetWindowLongPtrW(windows.inner, GWLP_WNDPROC)) == windows.inner_original,
       "replacement detach must restore the original procedure");
 
+  MpvPlayerPropertyContractTestPeer::ConfigureInnerSubclass(player, windows.host, windows.target);
+  MpvPlayerPropertyContractTestPeer::EnsureInnerSubclass(player);
+  const auto destroy_generation = reinterpret_cast<WNDPROC>(::GetWindowLongPtrW(windows.inner, GWLP_WNDPROC));
+  Check(
+      destroy_generation && destroy_generation != windows.inner_original,
+      "destroy test must install a fresh subclass generation");
+
+  ::SendMessageW(
+      windows.inner, WM_POINTERDOWN, MAKEWPARAM(kDestroyedPointerId, kPointerDownFlags),
+      MAKELPARAM(down_position.x, down_position.y));
+  ::SendMessageW(windows.inner, WM_CLOSE, 0, 0);
+  for (int attempt = 0; attempt < 100 && g_forwarded_mouse_up_messages.load(std::memory_order_relaxed) < 4; ++attempt) {
+    ::Sleep(10);
+  }
+  Check(!::IsWindow(windows.inner), "destroy test must close the inner window");
+  Check(
+      g_forwarded_mouse_down_messages.load(std::memory_order_relaxed) == 4 &&
+          g_forwarded_mouse_up_messages.load(std::memory_order_relaxed) == 4,
+      "window destruction must release an active synthetic mouse press");
+  MpvPlayerPropertyContractTestPeer::ReleaseTestWindows(player);
+
   ::PostThreadMessageW(windows.owner_thread, WM_QUIT, 0, 0);
   window_owner.join();
   g_forwarded_mouse_messages.store(0, std::memory_order_relaxed);
+  g_forwarded_touch_moves.store(0, std::memory_order_relaxed);
+  g_forwarded_mouse_down_messages.store(0, std::memory_order_relaxed);
+  g_forwarded_mouse_up_messages.store(0, std::memory_order_relaxed);
+  g_forwarded_pointer_messages.store(0, std::memory_order_relaxed);
 }
 
 void TestTimedOutSubclassDetachCanBeAdopted() {
