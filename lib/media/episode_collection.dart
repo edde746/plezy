@@ -29,6 +29,46 @@ Future<void> collectEpisodes(
   );
 }
 
+/// Walks [items] and collects playable movie/episode/track entries into [out].
+/// Shows and seasons are expanded into their episodes; albums and artists are
+/// expanded into their tracks (audio playlists/collections). Clips, nested
+/// collections/playlists, and unknown types are skipped. [unwatchedOnly] applies
+/// the same played-state filter to every kind — for tracks that means
+/// Plex/Jellyfin play counts.
+///
+/// Shared by the one-shot "download this list" queue and the sync rule that
+/// keeps the same list downloaded, so both expand a list to the same items.
+Future<void> collectListLeaves(
+  MediaServerClient client,
+  List<MediaItem> items, {
+  required bool unwatchedOnly,
+  required List<MediaItem> out,
+}) async {
+  for (final item in items) {
+    switch (item.kind) {
+      case MediaKind.movie:
+      case MediaKind.episode:
+      case MediaKind.track:
+        if (unwatchedOnly && !item.isUnwatchedOrInProgress) break;
+        out.add(item);
+      case MediaKind.show:
+      case MediaKind.season:
+        await collectEpisodes(client, item.id, unwatchedOnly: unwatchedOnly, out: out, fallback: item);
+      case MediaKind.album:
+      case MediaKind.artist:
+        // One recursive-leaves call per container on both backends
+        // (Jellyfin retries tag-only artists by album-artist credit).
+        for (final track in await client.fetchPlayableDescendants(item.id)) {
+          if (unwatchedOnly && !track.isUnwatchedOrInProgress) continue;
+          out.add(track);
+        }
+      default:
+        // Skip clips, nested collections/playlists, unknown types.
+        break;
+    }
+  }
+}
+
 /// Fetch just the first episode of a season without walking the entire season.
 /// Use this for representative lookups and immediate "play first" actions.
 Future<MediaItem?> fetchFirstEpisodeForSeason(

@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:plezy/widgets/app_icon.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 
 import '../focus/focusable_text_field.dart';
-import '../focus/focusable_button.dart';
 import '../i18n/strings.g.dart';
 import '../media/ids.dart';
 import '../media/media_item.dart';
@@ -17,7 +15,7 @@ import '../utils/platform_detector.dart';
 import '../utils/snackbar_helper.dart';
 import '../widgets/desktop_app_bar.dart';
 import '../widgets/loading_indicator_box.dart';
-import '../widgets/pill_input_decoration.dart';
+import '../widgets/search_input_field.dart';
 import '../widgets/focusable_media_card.dart';
 import '../utils/focus_utils.dart';
 import 'libraries/state_messages.dart';
@@ -34,23 +32,11 @@ class _SearchScreenState extends State<SearchScreen>
     with Refreshable, FullRefreshable, SearchInputFocusable, FocusableTab, MountedSetStateMixin, DebouncedMediaSearch {
   String? _focusResultsForQuery;
   final _tvKeyboardController = TvKeyboardController();
-  final _clearFocusNode = FocusNode(debugLabel: 'Search.clear');
 
   @override
   void initState() {
     super.initState();
     FocusUtils.requestFocusAfterBuild(this, searchFocusNode);
-  }
-
-  @override
-  void dispose() {
-    _clearFocusNode.dispose();
-    super.dispose();
-  }
-
-  void _clearSearch() {
-    searchController.clear();
-    searchFocusNode.requestFocus();
   }
 
   @override
@@ -181,31 +167,21 @@ class _SearchScreenState extends State<SearchScreen>
   Widget _buildResultsList(BuildContext context) {
     final multiServer = context.watch<MultiServerProvider>();
     final showServerName = multiServer.totalServerCount > 1;
-    return SliverPadding(
-      padding: const EdgeInsets.all(16),
-      sliver: SliverList(
-        delegate: SliverChildBuilderDelegate(
-          (context, index) {
-            final item = searchResults[index];
-            return FocusableMediaCard(
-              key: Key(item.globalKey),
-              item: item,
-              forceListMode: true,
-              disableScale: true,
-              focusNode: index == 0 ? firstResultFocusNode : null,
-              onRefresh: updateItem,
-              onListRefresh: refresh,
-              onNavigateLeft: _navigateToSidebar,
-              onNavigateUp: index == 0 ? focusSearchInput : null,
-              showServerName: showServerName,
-            );
-          },
-          childCount: searchResults.length,
-          addAutomaticKeepAlives: false,
-          addSemanticIndexes: false,
-        ),
-      ),
-    );
+    return buildResultsSliver((context, index) {
+      final item = searchResults[index];
+      return FocusableMediaCard(
+        key: Key(item.globalKey),
+        item: item,
+        forceListMode: true,
+        disableScale: true,
+        focusNode: index == 0 ? firstResultFocusNode : null,
+        onRefresh: updateItem,
+        onListRefresh: refresh,
+        onNavigateLeft: _navigateToSidebar,
+        onNavigateUp: index == 0 ? focusSearchInput : null,
+        showServerName: showServerName,
+      );
+    });
   }
 
   @override
@@ -217,49 +193,22 @@ class _SearchScreenState extends State<SearchScreen>
           slivers: [
             DesktopSliverAppBar(title: Text(t.common.search), floating: true),
             SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.only(left: 16, right: 16, bottom: 16),
-                child: Stack(
-                  alignment: Alignment.centerRight,
-                  children: [
-                    FocusableTextField(
-                      controller: searchController,
-                      focusNode: searchFocusNode,
-                      tvKeyboardController: _tvKeyboardController,
-                      textInputAction: TextInputAction.search,
-                      onNavigateLeft: _navigateToSidebar,
-                      onNavigateRight: searchController.text.isNotEmpty ? _clearFocusNode.requestFocus : null,
-                      onNavigateDown: searchResults.isNotEmpty && !isSearching
-                          ? firstResultFocusNode.requestFocus
-                          : null,
-                      onEditingComplete: PlatformDetector.isTV() ? handleSearchSubmit : null,
-                      onBack: () {
-                        if (searchController.text.isNotEmpty) {
-                          searchController.clear();
-                        } else {
-                          _navigateToSidebar();
-                        }
-                      },
-                      decoration: pillInputDecoration(
-                        context,
-                        hintText: t.search.hint,
-                        prefixIcon: const AppIcon(Symbols.search_rounded, fill: 1),
-                        suffixIcon: searchController.text.isNotEmpty ? const SizedBox(width: 48) : null,
-                      ),
-                    ),
-                    if (searchController.text.isNotEmpty)
-                      FocusableButton(
-                        focusNode: _clearFocusNode,
-                        onPressed: _clearSearch,
-                        onNavigateLeft: searchFocusNode.requestFocus,
-                        onNavigateDown: searchResults.isNotEmpty && !isSearching
-                            ? firstResultFocusNode.requestFocus
-                            : null,
-                        autoScroll: false,
-                        child: IconButton(icon: const AppIcon(Symbols.clear_rounded, fill: 1), onPressed: _clearSearch),
-                      ),
-                  ],
-                ),
+              child: SearchInputField(
+                controller: searchController,
+                focusNode: searchFocusNode,
+                debugLabel: searchDebugLabel,
+                hintText: t.search.hint,
+                tvKeyboardController: _tvKeyboardController,
+                onNavigateLeft: _navigateToSidebar,
+                onNavigateDown: searchResults.isNotEmpty && !isSearching ? firstResultFocusNode.requestFocus : null,
+                onEditingComplete: PlatformDetector.isTV() ? handleSearchSubmit : null,
+                onBack: () {
+                  if (searchController.text.isNotEmpty) {
+                    searchController.clear();
+                  } else {
+                    _navigateToSidebar();
+                  }
+                },
               ),
             ),
             if (isSearching)

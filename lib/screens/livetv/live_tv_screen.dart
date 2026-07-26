@@ -20,6 +20,7 @@ import '../../widgets/settings_builder.dart';
 import '../../utils/app_logger.dart';
 import '../../utils/error_message_utils.dart';
 import '../../utils/desktop_window_padding.dart';
+import '../../utils/live_tv_matching.dart';
 import '../../utils/platform_detector.dart';
 import '../../utils/serial_future_queue.dart';
 import '../../utils/snackbar_helper.dart';
@@ -269,15 +270,10 @@ class _LiveTvScreenState extends State<LiveTvScreen>
   String? _sourceTitleForServerInfo(LiveTvServerInfo serverInfo) {
     for (final dvr in serverInfo.dvrs) {
       if (dvr.key == serverInfo.dvrKey) {
-        return _nonEmpty(dvr.lineupTitle) ?? _nonEmpty(dvr.lineupURL) ?? _nonEmpty(dvr.lineup);
+        return liveTvNonEmpty(dvr.lineupTitle) ?? liveTvNonEmpty(dvr.lineupURL) ?? liveTvNonEmpty(dvr.lineup);
       }
     }
-    return _nonEmpty(serverInfo.lineup);
-  }
-
-  String? _nonEmpty(String? value) {
-    final trimmed = value?.trim();
-    return trimmed == null || trimmed.isEmpty ? null : trimmed;
+    return liveTvNonEmpty(serverInfo.lineup);
   }
 
   Future<void> _loadChannels() {

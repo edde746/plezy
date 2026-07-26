@@ -23,6 +23,7 @@ import '../services/offline_watch_sync_service.dart';
 import '../services/playlist_items_loader.dart';
 import '../services/watch_actions.dart';
 import '../models/transcode_quality_preset.dart';
+import '../utils/content_utils.dart';
 import '../utils/download_version_utils.dart';
 import '../utils/download_utils.dart';
 import '../utils/quality_preset_labels.dart';
@@ -1502,7 +1503,7 @@ class MediaContextMenuState extends State<MediaContextMenu> {
   }
 
   /// Handle download collection action — opens the same sync/one-time dialog
-  /// as playlists, wired to [showCollectionDownloadOptionsAndQueue].
+  /// as playlists, wired to [showListDownloadOptionsAndQueue].
   Future<void> _handleDownloadCollection(BuildContext context) async {
     final collection = _mediaItem!;
     final downloadProvider = Provider.of<DownloadProvider>(context, listen: false);
@@ -1517,9 +1518,10 @@ class MediaContextMenuState extends State<MediaContextMenu> {
       );
       if (!context.mounted) return;
 
-      final result = await showCollectionDownloadOptionsAndQueue(
+      final result = await showListDownloadOptionsAndQueue(
         context,
-        collectionMetadata: collection,
+        rootMetadata: collection,
+        targetType: ContentTypes.collection,
         items: items,
         client: client,
         downloadProvider: downloadProvider,
@@ -1561,9 +1563,10 @@ class MediaContextMenuState extends State<MediaContextMenu> {
         serverName: playlist.serverName,
       );
 
-      final result = await showPlaylistDownloadOptionsAndQueue(
+      final result = await showListDownloadOptionsAndQueue(
         context,
-        playlistMetadata: playlistMetadata,
+        rootMetadata: playlistMetadata,
+        targetType: ContentTypes.playlist,
         items: items,
         client: client,
         downloadProvider: downloadProvider,

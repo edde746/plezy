@@ -8,6 +8,7 @@ import '../mixins/paginated_item_loader.dart';
 import '../mixins/standard_paginated_view.dart';
 import '../providers/download_provider.dart';
 import '../utils/app_logger.dart';
+import '../utils/content_utils.dart';
 import '../utils/dialogs.dart';
 import '../utils/error_message_utils.dart';
 import '../utils/download_utils.dart';
@@ -134,9 +135,10 @@ class _CollectionDetailScreenState extends BaseMediaListDetailScreen<CollectionD
         libraryTitle: widget.collection.libraryTitle,
       );
       if (!mounted) return;
-      final result = await showCollectionDownloadOptionsAndQueue(
+      final result = await showListDownloadOptionsAndQueue(
         context,
-        collectionMetadata: widget.collection,
+        rootMetadata: widget.collection,
+        targetType: ContentTypes.collection,
         items: allItems,
         client: mediaClient,
         downloadProvider: downloadProvider,

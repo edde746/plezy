@@ -148,14 +148,7 @@ Future<DownloadResult?> showDownloadOptionsAndQueue(
     }
 
     if (filter == DownloadFilter.unwatched && kind == MediaKind.show && context.mounted) {
-      final syncChoice = await showOptionPickerDialog<_SyncChoice>(
-        context,
-        title: t.downloads.downloadNow,
-        options: [
-          (icon: Symbols.download_rounded, label: t.downloads.downloadOnce, value: _SyncChoice.downloadOnce),
-          (icon: Symbols.sync_rounded, label: t.downloads.keepSynced, value: _SyncChoice.keepSynced),
-        ],
-      );
+      final syncChoice = await _showSyncChoiceDialog(context);
       if (syncChoice == null || !context.mounted) return null;
       keepSynced = syncChoice == _SyncChoice.keepSynced;
     }
@@ -226,22 +219,12 @@ Future<DownloadResult?> showListDownloadOptionsAndQueue(
   final selectedFilter = await showOptionPickerDialog<DownloadFilter>(
     context,
     title: t.downloads.downloadNow,
-    options: [
-      (icon: Symbols.download_rounded, label: t.downloads.allEpisodes, value: DownloadFilter.all),
-      (icon: Symbols.visibility_off_rounded, label: t.downloads.unwatchedOnly, value: DownloadFilter.unwatched),
-    ],
+    options: _filterOptions(DownloadFilter.all, DownloadFilter.unwatched),
   );
 
   if (selectedFilter == null || !context.mounted) return null;
 
-  final syncChoice = await showOptionPickerDialog<_SyncChoice>(
-    context,
-    title: t.downloads.downloadNow,
-    options: [
-      (icon: Symbols.download_rounded, label: t.downloads.downloadOnce, value: _SyncChoice.downloadOnce),
-      (icon: Symbols.sync_rounded, label: t.downloads.keepSynced, value: _SyncChoice.keepSynced),
-    ],
-  );
+  final syncChoice = await _showSyncChoiceDialog(context);
   if (syncChoice == null || !context.mounted) return null;
 
   final serverId = rootMetadata.serverId ?? client.serverId;
@@ -279,36 +262,21 @@ Future<DownloadResult?> showListDownloadOptionsAndQueue(
   );
 }
 
-/// Shows the shared list-download dialog for a playlist.
-Future<DownloadResult?> showPlaylistDownloadOptionsAndQueue(
-  BuildContext context, {
-  required MediaItem playlistMetadata,
-  required List<MediaItem> items,
-  required MediaServerClient client,
-  required DownloadProvider downloadProvider,
-}) => showListDownloadOptionsAndQueue(
-  context,
-  rootMetadata: playlistMetadata,
-  targetType: ContentTypes.playlist,
-  items: items,
-  client: client,
-  downloadProvider: downloadProvider,
-);
+/// The all/unwatched option rows, shared by the pickers that differ only in
+/// how they spell those two values.
+List<({IconData? icon, String label, T value})> _filterOptions<T>(T all, T unwatched) => [
+  (icon: Symbols.download_rounded, label: t.downloads.allEpisodes, value: all),
+  (icon: Symbols.visibility_off_rounded, label: t.downloads.unwatchedOnly, value: unwatched),
+];
 
-/// Shows the shared list-download dialog for a collection.
-Future<DownloadResult?> showCollectionDownloadOptionsAndQueue(
-  BuildContext context, {
-  required MediaItem collectionMetadata,
-  required List<MediaItem> items,
-  required MediaServerClient client,
-  required DownloadProvider downloadProvider,
-}) => showListDownloadOptionsAndQueue(
+/// Asks whether to download once or keep the target synced.
+Future<_SyncChoice?> _showSyncChoiceDialog(BuildContext context) => showOptionPickerDialog<_SyncChoice>(
   context,
-  rootMetadata: collectionMetadata,
-  targetType: ContentTypes.collection,
-  items: items,
-  client: client,
-  downloadProvider: downloadProvider,
+  title: t.downloads.downloadNow,
+  options: [
+    (icon: Symbols.download_rounded, label: t.downloads.downloadOnce, value: _SyncChoice.downloadOnce),
+    (icon: Symbols.sync_rounded, label: t.downloads.keepSynced, value: _SyncChoice.keepSynced),
+  ],
 );
 
 Future<int?> _showEpisodeCountDialog(
@@ -375,10 +343,7 @@ Future<bool> editSyncRuleFilter(
   final selected = await showOptionPickerDialog<String>(
     context,
     title: t.downloads.editSyncFilter,
-    options: [
-      (icon: Symbols.download_rounded, label: t.downloads.allEpisodes, value: SyncRuleFilter.all),
-      (icon: Symbols.visibility_off_rounded, label: t.downloads.unwatchedOnly, value: SyncRuleFilter.unwatched),
-    ],
+    options: _filterOptions(SyncRuleFilter.all, SyncRuleFilter.unwatched),
   );
   if (selected == null || selected == currentFilter || !context.mounted) return false;
 

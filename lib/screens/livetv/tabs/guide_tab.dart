@@ -22,19 +22,17 @@ import '../../../providers/multi_server_provider.dart';
 import '../../../media/media_server_client.dart';
 import '../../../theme/mono_tokens.dart';
 import '../../../utils/app_logger.dart';
+import '../live_tv_actions_mixin.dart';
 import '../live_tv_refresh_lifecycle.dart';
 import '../../../utils/formatters.dart';
 import '../../../utils/live_tv_grouping.dart';
 import '../../../utils/live_tv_matching.dart';
-import '../../../utils/media_image_helper.dart';
-import '../../../utils/live_tv_player_navigation.dart';
 import '../../../utils/platform_detector.dart';
 import '../../../widgets/app_icon.dart';
 import '../../../widgets/app_menu.dart';
 import '../../../widgets/clickable_cursor.dart';
 import '../../../widgets/optimized_media_image.dart';
 import '../livetv_styles.dart';
-import '../program_details_sheet.dart';
 
 class GuideTab extends StatefulWidget {
   final List<LiveTvChannel> channels;
@@ -99,7 +97,8 @@ final class _GuideChannelRow extends _GuideRow {
   const _GuideChannelRow({required this.channel, required this.channelIndex});
 }
 
-class GuideTabState extends State<GuideTab> with MountedSetStateMixin, WidgetsBindingObserver {
+class GuideTabState extends State<GuideTab>
+    with LiveTvActionsMixin<GuideTab>, MountedSetStateMixin, WidgetsBindingObserver {
   static const _slotWidth = 180.0;
   static const _channelColumnWidth = 132.0;
   static const _rowHeight = 64.0;
@@ -146,6 +145,9 @@ class GuideTabState extends State<GuideTab> with MountedSetStateMixin, WidgetsBi
   final ValueNotifier<bool> _hasFocusNotifier = ValueNotifier(false);
   LiveTvProgram? _focusedProgram;
   bool _pendingFocus = false;
+
+  @override
+  List<LiveTvChannel> get liveTvChannels => widget.channels;
 
   /// Focus into the guide content (called from tab bar navigation or initial load).
   void focusContent() {
@@ -494,12 +496,12 @@ class GuideTabState extends State<GuideTab> with MountedSetStateMixin, WidgetsBi
   }
 
   Set<String> _recordingKeysForProgram(LiveTvProgram program, {String? fallbackServerId}) {
-    final serverId = _nonEmpty(program.serverId) ?? _nonEmpty(fallbackServerId);
+    final serverId = liveTvNonEmpty(program.serverId) ?? liveTvNonEmpty(fallbackServerId);
     if (serverId == null) return const <String>{};
 
     final keys = <String>{};
     void addMediaId(String? value) {
-      final normalized = _nonEmpty(value);
+      final normalized = liveTvNonEmpty(value);
       if (normalized != null) keys.add(_recordingKey(ServerId(serverId), 'media', normalized));
     }
 
@@ -507,7 +509,7 @@ class GuideTabState extends State<GuideTab> with MountedSetStateMixin, WidgetsBi
     addMediaId(program.guid);
     addMediaId(program.key);
 
-    final channelIdentifier = _nonEmpty(program.channelIdentifier);
+    final channelIdentifier = liveTvNonEmpty(program.channelIdentifier);
     final beginsAt = program.beginsAt;
     if (channelIdentifier != null && beginsAt != null) {
       keys.add(_recordingKey(ServerId(serverId), 'slot', '$channelIdentifier|$beginsAt|${program.endsAt ?? ''}'));
@@ -517,11 +519,6 @@ class GuideTabState extends State<GuideTab> with MountedSetStateMixin, WidgetsBi
   }
 
   String _recordingKey(ServerId serverId, String type, String value) => '$serverId\u0000$type\u0000$value';
-
-  String? _nonEmpty(String? value) {
-    final trimmed = value?.trim();
-    return trimmed == null || trimmed.isEmpty ? null : trimmed;
-  }
 
   List<_GuideRow> get _guideRows {
     final groups = groupLiveTvChannelsBySource(widget.channels);
@@ -593,14 +590,9 @@ class GuideTabState extends State<GuideTab> with MountedSetStateMixin, WidgetsBi
     return (totalMinutes / _minutesPerSlot) * _slotWidth;
   }
 
-  Future<void> _tuneChannel(LiveTvChannel channel) async {
-    final multiServer = context.read<MultiServerProvider>();
-    await navigateToLiveTv(context, multiServer: multiServer, channel: channel, channels: widget.channels);
-  }
-
   void _activateProgram(LiveTvChannel channel, LiveTvProgram program) {
     if (PlatformDetector.isTV() && program.isCurrentlyAiring) {
-      _tuneChannel(channel);
+      tuneChannel(channel);
       return;
     }
 
@@ -793,7 +785,7 @@ class GuideTabState extends State<GuideTab> with MountedSetStateMixin, WidgetsBi
       if (_gridChannelIndex >= 0 && _gridChannelIndex < widget.channels.length) {
         final channel = widget.channels[_gridChannelIndex];
         if (_gridColumn == 0) {
-          _tuneChannel(channel);
+          tuneChannel(channel);
         } else if (_focusedProgram != null) {
           _activateProgram(channel, _focusedProgram!);
         }
@@ -1301,7 +1293,7 @@ class GuideTabState extends State<GuideTab> with MountedSetStateMixin, WidgetsBi
       client: client,
       channel: channel,
       theme: theme,
-      onTap: () => _tuneChannel(channel),
+      onTap: () => tuneChannel(channel),
       onLongPress: widget.onToggleFavorite != null ? () => widget.onToggleFavorite!(channel) : null,
       isFocused: isFocused,
       isFavorite: widget.isFavoriteChannel?.call(channel) ?? false,
@@ -1503,28 +1495,11 @@ class GuideTabState extends State<GuideTab> with MountedSetStateMixin, WidgetsBi
   }
 
   void _showProgramDetails(LiveTvChannel channel, LiveTvProgram program) {
-    final multiServer = context.read<MultiServerProvider>();
-    final serverId = serverIdOrNull(channel.serverId);
-    final client = serverId == null ? null : multiServer.getClientForServer(serverId);
-    String? posterUrl;
-    if (program.thumb != null && client != null) {
-      posterUrl = MediaImageHelper.getOptimizedImageUrl(
-        client: client,
-        thumbPath: program.thumb,
-        maxWidth: 80,
-        maxHeight: 120,
-        devicePixelRatio: MediaImageHelper.effectiveDevicePixelRatio(context),
-        imageType: ImageType.poster,
-      );
-    }
-
-    showProgramDetailsSheet(
-      context,
+    showProgramDetails(
       program: program,
       channel: channel,
-      posterUrl: posterUrl,
-      onTuneChannel: () => _tuneChannel(channel),
-      client: client,
+      posterThumb: program.thumb,
+      posterServerId: channel.serverId,
       onRecordingStateChanged: (isScheduled) => _handleRecordingStateChanged(program, isScheduled),
     );
   }

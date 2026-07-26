@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:plezy/connection/connection.dart';
 import 'package:plezy/database/app_database.dart';
+import 'package:plezy/media/episode_collection.dart';
 import 'package:plezy/media/library_query.dart';
 import 'package:plezy/media/media_backend.dart';
 import 'package:plezy/media/media_item.dart';
@@ -397,11 +398,7 @@ void main() {
     expect(client.fetchChildrenCalled, isFalse);
   });
 
-  test('collectItemsForList accepts tracks and expands albums/artists', () async {
-    final db = AppDatabase.forTesting(NativeDatabase.memory());
-    addTearDown(db.close);
-    final executor = SyncRuleExecutor(database: db);
-
+  test('collectListLeaves accepts tracks and expands albums/artists', () async {
     final albumTracks = [_track('album-track-1'), _track('album-track-2', played: true)];
     final client = _PlayableDescendantsClient(albumTracks);
 
@@ -414,14 +411,14 @@ void main() {
     ];
 
     final out = <MediaItem>[];
-    await executor.collectItemsForList(client, items, unwatchedOnly: false, out: out);
+    await collectListLeaves(client, items, unwatchedOnly: false, out: out);
 
     expect(client.fetchPlayableDescendantsCalls, ['album-1', 'artist-1']);
     expect(out.map((i) => i.id), ['loose-track', 'album-track-1', 'album-track-2', 'album-track-1', 'album-track-2']);
 
     // unwatchedOnly applies the play-count filter to tracks too.
     final unwatched = <MediaItem>[];
-    await executor.collectItemsForList(
+    await collectListLeaves(
       client,
       [_track('played-track', played: true), items[1]],
       unwatchedOnly: true,

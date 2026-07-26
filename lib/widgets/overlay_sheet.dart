@@ -99,7 +99,15 @@ class OverlaySheetController {
   /// Re-focus the first focusable descendant within the sheet.
   /// Useful after internal page changes via setState.
   void refocus() {
-    _state._refocus();
+    _state._autoFocus(clearSelectSuppression: false);
+  }
+
+  /// Sizing applied when a caller supplies no explicit constraints: capped
+  /// width on desktop, three quarters of the screen height everywhere.
+  static BoxConstraints _defaultSheetConstraints(BuildContext context) {
+    final size = MediaQuery.sizeOf(context);
+    final isDesktop = size.width > 600;
+    return BoxConstraints(maxWidth: isDesktop ? 700 : double.infinity, maxHeight: size.height * 0.75);
   }
 
   /// Show a sheet using the overlay system if available, otherwise fall back
@@ -129,13 +137,7 @@ class OverlaySheetController {
     }
     // Apply the same default constraints the overlay system uses so sheets
     // shown without an OverlaySheetHost still have sensible sizing on desktop.
-    final effectiveConstraints =
-        constraints ??
-        () {
-          final size = MediaQuery.sizeOf(context);
-          final isDesktop = size.width > 600;
-          return BoxConstraints(maxWidth: isDesktop ? 700 : double.infinity, maxHeight: size.height * 0.75);
-        }();
+    final effectiveConstraints = constraints ?? _defaultSheetConstraints(context);
     openSheetCount.value++;
     try {
       return await showModalBottomSheet<T>(
@@ -146,6 +148,7 @@ class OverlaySheetController {
         constraints: effectiveConstraints,
         backgroundColor: backgroundColor ?? Theme.of(context).colorScheme.surface,
         barrierColor: Colors.black54,
+        isDismissible: barrierDismissible,
         isScrollControlled: isScrollControlled,
         showDragHandle: showDragHandle,
       );
@@ -188,28 +191,16 @@ class OverlaySheetController {
         showDragHandle: showDragHandle,
       );
     }
-    final effectiveConstraints =
-        constraints ??
-        () {
-          final size = MediaQuery.sizeOf(context);
-          final isDesktop = size.width > 600;
-          return BoxConstraints(maxWidth: isDesktop ? 700 : double.infinity, maxHeight: size.height * 0.75);
-        }();
     BackKeyCoordinator.clear();
-    openSheetCount.value++;
-    try {
-      return await showModalBottomSheet<T>(
-        context: context,
-        builder: (context) => SafeArea(top: false, child: builder(context)),
-        constraints: effectiveConstraints,
-        backgroundColor: backgroundColor ?? Theme.of(context).colorScheme.surface,
-        isDismissible: barrierDismissible,
-        isScrollControlled: isScrollControlled,
-        showDragHandle: showDragHandle,
-      );
-    } finally {
-      openSheetCount.value--;
-    }
+    return showAdaptive<T>(
+      context,
+      builder: builder,
+      constraints: constraints,
+      backgroundColor: backgroundColor,
+      barrierDismissible: barrierDismissible,
+      isScrollControlled: isScrollControlled,
+      showDragHandle: showDragHandle,
+    );
   }
 
   /// Close the sheet entirely. Uses overlay controller if available,
@@ -457,7 +448,7 @@ class _OverlaySheetHostState extends State<OverlaySheetHost> with SingleTickerPr
     return _lastPointerPosition?.dx;
   }
 
-  void _autoFocus() {
+  void _autoFocus({bool clearSelectSuppression = true}) {
     final focusDescendant = InputModeTracker.isKeyboardMode(context, listen: false);
 
     // First post-frame: the FocusScope is now built and the node is attached.
@@ -486,28 +477,8 @@ class _OverlaySheetHostState extends State<OverlaySheetHost> with SingleTickerPr
         //   select inside the sheet from being eaten).
         // - Long press: key still held → keep flag so KeyRepeat/KeyUp events
         //   from the long press are correctly suppressed.
-        if (!HardwareKeyboard.instance.logicalKeysPressed.any((k) => k.isSelectKey)) {
+        if (clearSelectSuppression && !HardwareKeyboard.instance.logicalKeysPressed.any((k) => k.isSelectKey)) {
           SelectKeyUpSuppressor.clearSuppression();
-        }
-      });
-    });
-  }
-
-  void _refocus() {
-    final focusDescendant = InputModeTracker.isKeyboardMode(context, listen: false);
-
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted || !_isOpen) return;
-      _sheetFocusScopeNode.requestFocus();
-      if (!focusDescendant) return;
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!mounted || !_isOpen) return;
-        final topEntry = _pageStack.isNotEmpty ? _pageStack.last : null;
-        final initialNode = topEntry?.initialFocusNode;
-        if (initialNode != null && initialNode.context != null) {
-          initialNode.requestFocus();
-        } else {
-          _focusFirstDescendant();
         }
       });
     });
@@ -634,8 +605,7 @@ class _OverlaySheetHostState extends State<OverlaySheetHost> with SingleTickerPr
     final isTV = PlatformDetector.isTV();
     final showHandle = _showDragHandle && !isTV && !isTop;
 
-    final effectiveConstraints =
-        _constraints ?? BoxConstraints(maxWidth: isDesktop ? 700 : double.infinity, maxHeight: size.height * 0.75);
+    final effectiveConstraints = _constraints ?? OverlaySheetController._defaultSheetConstraints(context);
 
     // Slide direction depends on alignment: bottom sheets slide up, top sheets slide down.
     // Use a pixel transform instead of FractionalTranslation so mouse-tracker

@@ -12,6 +12,7 @@ import '../../services/media_list_playback_launcher.dart';
 import '../../services/music/music_playback_service.dart';
 import '../../services/playlist_items_loader.dart';
 import '../../utils/app_logger.dart';
+import '../../utils/content_utils.dart';
 import '../../utils/error_message_utils.dart';
 import '../../utils/continuation_pagination_coordinator.dart';
 import '../../utils/music_navigation.dart';
@@ -302,9 +303,10 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
     try {
       final allItems = await fetchAllPlaylistItems(mediaClient, widget.playlist.id);
       if (!mounted) return;
-      final result = await showPlaylistDownloadOptionsAndQueue(
+      final result = await showListDownloadOptionsAndQueue(
         context,
-        playlistMetadata: _playlistAsMetadata(),
+        rootMetadata: _playlistAsMetadata(),
+        targetType: ContentTypes.playlist,
         items: allItems,
         client: mediaClient,
         downloadProvider: downloadProvider,

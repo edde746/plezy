@@ -1031,15 +1031,12 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
 
   /// Queue every playable item from a collection/playlist for download.
   ///
-  /// Movies, episodes, and tracks are queued directly. Shows and seasons are
-  /// expanded into their episodes and albums/artists into their tracks (when
-  /// [expandShows] is true). Nested collections/playlists and unknown types
-  /// are skipped.
+  /// Expansion follows [collectListLeaves] so a one-shot list download queues
+  /// exactly what a sync rule on the same list would.
   Future<int> queueListDownload(
     List<MediaItem> items,
     MediaServerClient client, {
     DownloadFilter filter = DownloadFilter.all,
-    bool expandShows = true,
   }) async {
     if (!_downloadManager.downloadsSupported) return 0;
 
@@ -1053,39 +1050,22 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     final relatedContext = _RelatedMetadataDownloadContext();
     int count = 0;
 
-    Future<void> queueItem(MediaItem item) async {
-      if (unwatchedOnly && !item.isUnwatchedOrInProgress) return;
-      final queued = await _queueSingleDownload(item, client, ownership: ownership, relatedContext: relatedContext);
-      if (queued) count++;
-    }
-
     for (final item in items) {
       if (!_isQueueOwnershipCurrent(ownership)) return count;
-      if (item.isMovie || item.isEpisode || item.kind == MediaKind.track) {
-        await queueItem(item);
-      } else if (item.isShow || item.isSeason) {
-        if (!expandShows) continue;
-        // One-shot recursive expansion for both shows and seasons.
-        final episodes = <MediaItem>[];
-        await collectEpisodes(client, item.id, unwatchedOnly: unwatchedOnly, out: episodes, fallback: item);
+      // Expand one list entry at a time so a cancelled queue stops before the
+      // next container is fetched.
+      final leaves = <MediaItem>[];
+      await collectListLeaves(client, [item], unwatchedOnly: unwatchedOnly, out: leaves);
+      if (!_isQueueOwnershipCurrent(ownership)) return count;
+      for (final leaf in leaves) {
+        final queued = await _queueSingleDownload(
+          _ensureServerId(leaf, item.serverId),
+          client,
+          ownership: ownership,
+          relatedContext: relatedContext,
+        );
+        if (queued) count++;
         if (!_isQueueOwnershipCurrent(ownership)) return count;
-        for (final ep in episodes) {
-          await queueItem(ep);
-          if (!_isQueueOwnershipCurrent(ownership)) return count;
-        }
-      } else if (item.kind == MediaKind.album || item.kind == MediaKind.artist) {
-        if (!expandShows) continue;
-        // Same one-shot expansion for music containers (album/artist →
-        // tracks) via the shared recursive-leaves call.
-        final tracks = await client.fetchPlayableDescendants(item.id);
-        if (!_isQueueOwnershipCurrent(ownership)) return count;
-        for (final track in tracks) {
-          await queueItem(_ensureServerId(track, item.serverId));
-          if (!_isQueueOwnershipCurrent(ownership)) return count;
-        }
-      } else {
-        // Skip clips, nested collections/playlists, unknown types.
-        continue;
       }
     }
     return count;
