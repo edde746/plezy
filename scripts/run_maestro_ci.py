@@ -94,6 +94,10 @@ GROUPS: dict[str, tuple[tuple[str, ...], ...]] = {
     "android-9": (
         (
             "basic",
+            # API 28's emulator routing to the 10.0.2.2 host alias is unreliable
+            # on this image, so reach Jellyfin over an adb reverse mapping the
+            # way the media suite already does.
+            "--adb-reverse",
             "--flow",
             ".maestro/flows/05_playback.yaml",
             "--jellyfin-log",
