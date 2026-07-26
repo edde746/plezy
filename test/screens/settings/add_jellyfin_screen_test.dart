@@ -314,25 +314,17 @@ Future<List<DiscoveredJellyfinServer>> _noLocalServers() async => const [];
 
 void main() {
   group('resolveJellyfinClientVersion', () {
-    PackageInfo packageInfo(String version) => PackageInfo(
-      appName: 'Plezy',
-      packageName: 'com.example.plezy',
-      version: version,
-      buildNumber: '1',
-    );
+    PackageInfo packageInfo(String version) =>
+        PackageInfo(appName: 'Plezy', packageName: 'com.example.plezy', version: version, buildNumber: '1');
 
     test('uses a non-empty package version', () async {
-      final version = await resolveJellyfinClientVersion(
-        packageInfoLoader: () async => packageInfo(' 2.9.1 '),
-      );
+      final version = await resolveJellyfinClientVersion(packageInfoLoader: () async => packageInfo(' 2.9.1 '));
       expect(version, '2.9.1');
     });
 
     test('falls back when the package version is empty', () async {
       for (final packageVersion in ['', '   ']) {
-        final version = await resolveJellyfinClientVersion(
-          packageInfoLoader: () async => packageInfo(packageVersion),
-        );
+        final version = await resolveJellyfinClientVersion(packageInfoLoader: () async => packageInfo(packageVersion));
         expect(version, '1.0');
       }
     });

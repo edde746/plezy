@@ -26,11 +26,7 @@ import 'base_library_tab.dart';
 /// [BaseLibraryTabState].
 abstract class PaginatedCardGridTabState<T extends Object, W extends BaseLibraryTab<T>>
     extends BaseLibraryTabState<T, W>
-    with
-        LibraryTabFocusMixin<W>,
-        PaginatedItemLoader<T, W>,
-        StandardPaginatedView<T, W>,
-        SkeletonUpgradeScheduler<W> {
+    with LibraryTabFocusMixin<W>, PaginatedItemLoader<T, W>, StandardPaginatedView<T, W>, SkeletonUpgradeScheduler<W> {
   static const double _focusDecorationPadding = 3.0;
 
   /// Reuses card widgets across delegate swaps so tab-level setStates

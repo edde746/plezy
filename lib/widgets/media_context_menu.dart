@@ -1140,11 +1140,7 @@ class MediaContextMenuState extends State<MediaContextMenu> {
         item: item,
         client: client,
         result: result,
-        createPrompt: (
-          title: t.playlists.create,
-          label: t.playlists.playlistName,
-          hint: t.playlists.enterPlaylistName,
-        ),
+        createPrompt: (title: t.playlists.create, label: t.playlists.playlistName, hint: t.playlists.enterPlaylistName),
         create: (name) => client.createPlaylist(title: name, items: [item]),
         createdLog: (playlist) => 'Successfully created playlist: ${playlist.title}',
         eagerSyncId: (_) => null,
@@ -1225,12 +1221,8 @@ class MediaContextMenuState extends State<MediaContextMenu> {
           label: t.collections.collectionName,
           hint: t.collections.enterCollectionName,
         ),
-        create: (name) => client.createCollection(
-          libraryId: resolvedLibraryId,
-          title: name,
-          items: [item],
-          itemKind: itemKind,
-        ),
+        create: (name) =>
+            client.createCollection(libraryId: resolvedLibraryId, title: name, items: [item], itemKind: itemKind),
         createdLog: (id) => 'Successfully created collection with ID: $id',
         eagerSyncId: (id) => id,
         add: () => client.addToCollection(collectionId: result, items: [item]),

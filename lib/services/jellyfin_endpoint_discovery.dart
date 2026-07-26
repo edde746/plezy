@@ -458,11 +458,7 @@ class JellyfinEndpointDiscovery {
   /// Splits a raw add/edit form field into the individual URLs the user typed.
   /// Entries are separated by newlines and/or commas; blanks are dropped.
   static List<String> parseUserEnteredUrls(String raw) {
-    return raw
-        .split(RegExp(r'[\n,]+'))
-        .map((url) => url.trim())
-        .where((url) => url.isNotEmpty)
-        .toList(growable: false);
+    return raw.split(RegExp(r'[\n,]+')).map((url) => url.trim()).where((url) => url.isNotEmpty).toList(growable: false);
   }
 
   static JellyfinEndpointUserInputCandidates buildUserInputCandidates(Iterable<String> input) {

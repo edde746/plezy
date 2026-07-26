@@ -169,9 +169,7 @@ class JellyfinSequentialLauncher extends MediaListPlaybackLauncher {
             : await client.fetchClientSideEpisodeQueue(seriesId);
         abort.throwIfAborted();
         if (raw == null) return const <MediaItem>[];
-        return raw
-            .map((e) => e.copyWith(serverId: serverId, serverName: metadata.serverName ?? e.serverName))
-            .toList();
+        return raw.map((e) => e.copyWith(serverId: serverId, serverName: metadata.serverName ?? e.serverName)).toList();
       },
     );
   }

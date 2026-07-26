@@ -116,8 +116,7 @@ class MultiServerProvider extends ChangeNotifier with DisposableChangeNotifierMi
   }
 
   /// Keep only ids the manager considers visible under the active filter.
-  List<String> _visible(List<String> ids) =>
-      ids.where((id) => _serverManager.isServerVisible(ServerId(id))).toList();
+  List<String> _visible(List<String> ids) => ids.where((id) => _serverManager.isServerVisible(ServerId(id))).toList();
 
   void _pruneLiveTvServersForVisibility() {
     if (_visibleServerIds == null) return;
