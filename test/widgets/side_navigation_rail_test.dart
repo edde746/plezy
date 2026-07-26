@@ -14,7 +14,6 @@ import 'package:plezy/navigation/navigation_tabs.dart';
 import 'package:plezy/providers/hidden_libraries_provider.dart';
 import 'package:plezy/providers/libraries_provider.dart';
 import 'package:plezy/providers/multi_server_provider.dart';
-import 'package:plezy/services/data_aggregation_service.dart';
 import 'package:plezy/services/multi_server_manager.dart';
 import 'package:plezy/services/settings_service.dart';
 import 'package:plezy/utils/platform_detector.dart';
@@ -22,6 +21,7 @@ import 'package:plezy/widgets/app_icon.dart';
 import 'package:plezy/widgets/side_navigation_rail.dart';
 import 'package:provider/provider.dart';
 
+import '../test_helpers/multi_server_fixtures.dart';
 import '../test_helpers/prefs.dart';
 import '../test_helpers/theme.dart';
 
@@ -82,8 +82,7 @@ Future<void> _pumpBasicRail(
   addTearDown(hiddenLibrariesProvider.dispose);
 
   final manager = MultiServerManager();
-  final aggregation = DataAggregationService(manager);
-  final multiServerProvider = MultiServerProvider(manager, aggregation);
+  final multiServerProvider = testMultiServerProvider(manager);
   addTearDown(multiServerProvider.dispose);
 
   final rail = SideNavigationRail(
@@ -140,8 +139,7 @@ void main() {
     addTearDown(hiddenLibrariesProvider.dispose);
 
     final manager = MultiServerManager();
-    final aggregation = DataAggregationService(manager);
-    final multiServerProvider = MultiServerProvider(manager, aggregation);
+    final multiServerProvider = testMultiServerProvider(manager);
     addTearDown(multiServerProvider.dispose);
 
     await tester.pumpWidget(
@@ -205,8 +203,7 @@ void main() {
     addTearDown(hiddenLibrariesProvider.dispose);
 
     final manager = MultiServerManager();
-    final aggregation = DataAggregationService(manager);
-    final multiServerProvider = MultiServerProvider(manager, aggregation);
+    final multiServerProvider = testMultiServerProvider(manager);
     addTearDown(multiServerProvider.dispose);
 
     await tester.pumpWidget(
@@ -309,8 +306,7 @@ void main() {
     addTearDown(hiddenLibrariesProvider.dispose);
 
     final manager = MultiServerManager();
-    final aggregation = DataAggregationService(manager);
-    final multiServerProvider = MultiServerProvider(manager, aggregation);
+    final multiServerProvider = testMultiServerProvider(manager);
     addTearDown(multiServerProvider.dispose);
 
     final reports = <bool>[];
@@ -373,8 +369,7 @@ void main() {
     addTearDown(hiddenLibrariesProvider.dispose);
 
     final manager = MultiServerManager();
-    final aggregation = DataAggregationService(manager);
-    final multiServerProvider = MultiServerProvider(manager, aggregation);
+    final multiServerProvider = testMultiServerProvider(manager);
     addTearDown(multiServerProvider.dispose);
 
     final sideNavKey = GlobalKey<SideNavigationRailState>();
@@ -450,8 +445,7 @@ void main() {
     addTearDown(hiddenLibrariesProvider.dispose);
 
     final manager = MultiServerManager();
-    final aggregation = DataAggregationService(manager);
-    final multiServerProvider = MultiServerProvider(manager, aggregation);
+    final multiServerProvider = testMultiServerProvider(manager);
     addTearDown(multiServerProvider.dispose);
 
     final sideNavKey = GlobalKey<SideNavigationRailState>();

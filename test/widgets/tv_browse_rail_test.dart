@@ -10,7 +10,6 @@ import 'package:plezy/media/media_hub.dart';
 import 'package:plezy/media/media_item.dart';
 import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/providers/multi_server_provider.dart';
-import 'package:plezy/services/data_aggregation_service.dart';
 import 'package:plezy/services/device_performance.dart';
 import 'package:plezy/services/multi_server_manager.dart';
 import 'package:plezy/services/settings_service.dart';
@@ -25,6 +24,7 @@ import 'package:provider/provider.dart';
 
 import '../test_helpers/prefs.dart';
 import '../test_helpers/media_items.dart';
+import '../test_helpers/multi_server_fixtures.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -346,7 +346,7 @@ void main() {
 
     await tester.pumpWidget(
       ChangeNotifierProvider<MultiServerProvider>(
-        create: (_) => MultiServerProvider(serverManager, DataAggregationService(serverManager)),
+        create: (_) => testMultiServerProvider(serverManager),
         child: InputModeTracker(
           child: MaterialApp(
             theme: monoTheme(dark: true),
@@ -418,7 +418,7 @@ void main() {
 
     await tester.pumpWidget(
       ChangeNotifierProvider<MultiServerProvider>(
-        create: (_) => MultiServerProvider(serverManager, DataAggregationService(serverManager)),
+        create: (_) => testMultiServerProvider(serverManager),
         child: InputModeTracker(
           child: MaterialApp(
             theme: monoTheme(dark: true),
@@ -473,7 +473,7 @@ void main() {
 
     await tester.pumpWidget(
       ChangeNotifierProvider<MultiServerProvider>(
-        create: (_) => MultiServerProvider(serverManager, DataAggregationService(serverManager)),
+        create: (_) => testMultiServerProvider(serverManager),
         child: MaterialApp(
           theme: theme,
           home: Scaffold(
@@ -513,7 +513,7 @@ void main() {
 
     await tester.pumpWidget(
       ChangeNotifierProvider<MultiServerProvider>(
-        create: (_) => MultiServerProvider(serverManager, DataAggregationService(serverManager)),
+        create: (_) => testMultiServerProvider(serverManager),
         child: MaterialApp(
           theme: monoTheme(dark: true),
           home: Scaffold(
@@ -557,7 +557,7 @@ void main() {
 
     Widget rail(MediaHub hub) {
       return ChangeNotifierProvider<MultiServerProvider>(
-        create: (_) => MultiServerProvider(serverManager, DataAggregationService(serverManager)),
+        create: (_) => testMultiServerProvider(serverManager),
         child: MaterialApp(
           theme: monoTheme(dark: true),
           home: Scaffold(
@@ -599,7 +599,7 @@ void main() {
 
     await tester.pumpWidget(
       ChangeNotifierProvider<MultiServerProvider>(
-        create: (_) => MultiServerProvider(serverManager, DataAggregationService(serverManager)),
+        create: (_) => testMultiServerProvider(serverManager),
         child: InputModeTracker(
           child: MaterialApp(
             theme: monoTheme(dark: true),
@@ -689,7 +689,7 @@ void main() {
 
     await tester.pumpWidget(
       ChangeNotifierProvider<MultiServerProvider>(
-        create: (_) => MultiServerProvider(serverManager, DataAggregationService(serverManager)),
+        create: (_) => testMultiServerProvider(serverManager),
         child: InputModeTracker(
           child: MaterialApp(
             theme: monoTheme(dark: true),
@@ -762,7 +762,7 @@ void main() {
 
     await tester.pumpWidget(
       ChangeNotifierProvider<MultiServerProvider>(
-        create: (_) => MultiServerProvider(serverManager, DataAggregationService(serverManager)),
+        create: (_) => testMultiServerProvider(serverManager),
         child: InputModeTracker(
           child: MaterialApp(
             theme: monoTheme(dark: true),
@@ -822,7 +822,7 @@ void main() {
 
     await tester.pumpWidget(
       ChangeNotifierProvider<MultiServerProvider>(
-        create: (_) => MultiServerProvider(serverManager, DataAggregationService(serverManager)),
+        create: (_) => testMultiServerProvider(serverManager),
         child: InputModeTracker(
           child: MaterialApp(
             theme: monoTheme(dark: true),
@@ -884,7 +884,7 @@ void main() {
 
     await tester.pumpWidget(
       ChangeNotifierProvider<MultiServerProvider>(
-        create: (_) => MultiServerProvider(serverManager, DataAggregationService(serverManager)),
+        create: (_) => testMultiServerProvider(serverManager),
         child: MaterialApp(
           theme: monoTheme(dark: true),
           home: Scaffold(
@@ -939,7 +939,7 @@ void main() {
 
     await tester.pumpWidget(
       ChangeNotifierProvider<MultiServerProvider>(
-        create: (_) => MultiServerProvider(serverManager, DataAggregationService(serverManager)),
+        create: (_) => testMultiServerProvider(serverManager),
         child: MaterialApp(
           theme: monoTheme(dark: true),
           home: Scaffold(
@@ -1001,7 +1001,7 @@ void main() {
 
     await tester.pumpWidget(
       ChangeNotifierProvider<MultiServerProvider>(
-        create: (_) => MultiServerProvider(serverManager, DataAggregationService(serverManager)),
+        create: (_) => testMultiServerProvider(serverManager),
         child: MaterialApp(
           theme: monoTheme(dark: true),
           home: Scaffold(
@@ -1039,7 +1039,7 @@ void main() {
     Widget buildRail(List<MediaHub> hubs, {String? initialHubId, String? initialItemId, bool autofocus = false}) {
       final serverManager = MultiServerManager();
       return ChangeNotifierProvider<MultiServerProvider>(
-        create: (_) => MultiServerProvider(serverManager, DataAggregationService(serverManager)),
+        create: (_) => testMultiServerProvider(serverManager),
         child: MaterialApp(
           theme: monoTheme(dark: true),
           home: Scaffold(
@@ -1081,7 +1081,7 @@ void main() {
     Widget buildRail(List<MediaHub> hubs, {String? initialHubId}) {
       final serverManager = MultiServerManager();
       return ChangeNotifierProvider<MultiServerProvider>(
-        create: (_) => MultiServerProvider(serverManager, DataAggregationService(serverManager)),
+        create: (_) => testMultiServerProvider(serverManager),
         child: MaterialApp(
           theme: monoTheme(dark: true),
           home: Scaffold(
@@ -1124,7 +1124,7 @@ void main() {
     Widget buildRail(List<MediaHub> hubs, {String? initialItemId}) {
       final serverManager = MultiServerManager();
       return ChangeNotifierProvider<MultiServerProvider>(
-        create: (_) => MultiServerProvider(serverManager, DataAggregationService(serverManager)),
+        create: (_) => testMultiServerProvider(serverManager),
         child: MaterialApp(
           theme: monoTheme(dark: true),
           home: Scaffold(
@@ -1204,7 +1204,7 @@ void main() {
 
     await tester.pumpWidget(
       ChangeNotifierProvider<MultiServerProvider>(
-        create: (_) => MultiServerProvider(serverManager, DataAggregationService(serverManager)),
+        create: (_) => testMultiServerProvider(serverManager),
         child: MaterialApp(
           theme: monoTheme(dark: true),
           home: Scaffold(
@@ -1318,7 +1318,7 @@ void main() {
 
     Widget buildRail(List<MediaHub> hubs) {
       return ChangeNotifierProvider<MultiServerProvider>(
-        create: (_) => MultiServerProvider(serverManager, DataAggregationService(serverManager)),
+        create: (_) => testMultiServerProvider(serverManager),
         child: MaterialApp(
           theme: monoTheme(dark: true),
           home: Scaffold(
@@ -1401,7 +1401,7 @@ void main() {
 
     Widget buildRail({required bool backgroundLoaded}) {
       return ChangeNotifierProvider<MultiServerProvider>(
-        create: (_) => MultiServerProvider(serverManager, DataAggregationService(serverManager)),
+        create: (_) => testMultiServerProvider(serverManager),
         child: MaterialApp(
           theme: monoTheme(dark: true),
           home: Scaffold(
@@ -1477,7 +1477,7 @@ void main() {
 
     await tester.pumpWidget(
       ChangeNotifierProvider<MultiServerProvider>(
-        create: (_) => MultiServerProvider(serverManager, DataAggregationService(serverManager)),
+        create: (_) => testMultiServerProvider(serverManager),
         child: MaterialApp(
           theme: monoTheme(dark: true),
           home: Scaffold(
@@ -1579,7 +1579,7 @@ void main() {
 
     await tester.pumpWidget(
       ChangeNotifierProvider<MultiServerProvider>(
-        create: (_) => MultiServerProvider(serverManager, DataAggregationService(serverManager)),
+        create: (_) => testMultiServerProvider(serverManager),
         child: MaterialApp(
           theme: monoTheme(dark: true),
           home: Scaffold(
@@ -1655,7 +1655,7 @@ void main() {
       final serverManager = MultiServerManager();
       await tester.pumpWidget(
         ChangeNotifierProvider<MultiServerProvider>(
-          create: (_) => MultiServerProvider(serverManager, DataAggregationService(serverManager)),
+          create: (_) => testMultiServerProvider(serverManager),
           child: MaterialApp(
             theme: monoTheme(dark: true),
             home: Scaffold(
@@ -1744,7 +1744,7 @@ void main() {
 
     await tester.pumpWidget(
       ChangeNotifierProvider<MultiServerProvider>(
-        create: (_) => MultiServerProvider(serverManager, DataAggregationService(serverManager)),
+        create: (_) => testMultiServerProvider(serverManager),
         child: MaterialApp(
           theme: monoTheme(dark: true),
           home: Scaffold(
@@ -1835,7 +1835,7 @@ void main() {
 
     await tester.pumpWidget(
       ChangeNotifierProvider<MultiServerProvider>(
-        create: (_) => MultiServerProvider(serverManager, DataAggregationService(serverManager)),
+        create: (_) => testMultiServerProvider(serverManager),
         child: MaterialApp(
           theme: monoTheme(dark: true),
           home: Scaffold(
@@ -1907,7 +1907,7 @@ void main() {
 
     await tester.pumpWidget(
       ChangeNotifierProvider<MultiServerProvider>(
-        create: (_) => MultiServerProvider(serverManager, DataAggregationService(serverManager)),
+        create: (_) => testMultiServerProvider(serverManager),
         child: MaterialApp(
           theme: monoTheme(dark: true),
           home: Scaffold(
@@ -1972,7 +1972,7 @@ void main() {
 
     await tester.pumpWidget(
       ChangeNotifierProvider<MultiServerProvider>(
-        create: (_) => MultiServerProvider(serverManager, DataAggregationService(serverManager)),
+        create: (_) => testMultiServerProvider(serverManager),
         child: MaterialApp(
           theme: monoTheme(dark: true),
           home: Scaffold(
@@ -2023,7 +2023,7 @@ void main() {
 
     await tester.pumpWidget(
       ChangeNotifierProvider<MultiServerProvider>(
-        create: (_) => MultiServerProvider(serverManager, DataAggregationService(serverManager)),
+        create: (_) => testMultiServerProvider(serverManager),
         child: MaterialApp(
           theme: monoTheme(dark: true),
           home: Scaffold(
@@ -2071,7 +2071,7 @@ void main() {
 
     await tester.pumpWidget(
       ChangeNotifierProvider<MultiServerProvider>(
-        create: (_) => MultiServerProvider(serverManager, DataAggregationService(serverManager)),
+        create: (_) => testMultiServerProvider(serverManager),
         child: MaterialApp(
           theme: monoTheme(dark: true),
           home: Scaffold(
@@ -2127,7 +2127,7 @@ void main() {
 
     await tester.pumpWidget(
       ChangeNotifierProvider<MultiServerProvider>(
-        create: (_) => MultiServerProvider(serverManager, DataAggregationService(serverManager)),
+        create: (_) => testMultiServerProvider(serverManager),
         child: MaterialApp(
           theme: monoTheme(dark: true),
           home: Scaffold(
@@ -2178,7 +2178,7 @@ void main() {
       final item = testMediaItem(id: 'item_1', backend: MediaBackend.plex, kind: MediaKind.movie, title: 'Movie');
       final hub = MediaHub(id: 'hub_1', title: 'Hub', type: 'movie', items: [item], size: 1);
       return ChangeNotifierProvider<MultiServerProvider>(
-        create: (_) => MultiServerProvider(serverManager, DataAggregationService(serverManager)),
+        create: (_) => testMultiServerProvider(serverManager),
         child: MaterialApp(
           theme: monoTheme(dark: true),
           home: Scaffold(
@@ -2213,7 +2213,7 @@ void main() {
 
     await tester.pumpWidget(
       ChangeNotifierProvider<MultiServerProvider>(
-        create: (_) => MultiServerProvider(serverManager, DataAggregationService(serverManager)),
+        create: (_) => testMultiServerProvider(serverManager),
         child: MaterialApp(
           theme: monoTheme(dark: true),
           home: Scaffold(
@@ -2258,7 +2258,7 @@ void main() {
 
     await tester.pumpWidget(
       ChangeNotifierProvider<MultiServerProvider>(
-        create: (_) => MultiServerProvider(serverManager, DataAggregationService(serverManager)),
+        create: (_) => testMultiServerProvider(serverManager),
         child: MaterialApp(
           theme: monoTheme(dark: true),
           home: Scaffold(
@@ -2289,7 +2289,7 @@ void main() {
 
   testWidgets('background bleed updates do not renotify rail focus', (tester) async {
     final serverManager = MultiServerManager();
-    final multiServerProvider = MultiServerProvider(serverManager, DataAggregationService(serverManager));
+    final multiServerProvider = testMultiServerProvider(serverManager);
     addTearDown(multiServerProvider.dispose);
 
     final focusedItemIds = <String>[];

@@ -8,11 +8,11 @@ import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/media/media_library.dart';
 import 'package:plezy/media/media_server_client.dart';
 import 'package:plezy/providers/libraries_provider.dart';
-import 'package:plezy/providers/multi_server_provider.dart';
 import 'package:plezy/services/data_aggregation_service.dart';
 import 'package:plezy/services/multi_server_manager.dart';
 import 'package:plezy/services/storage_service.dart';
 
+import '../test_helpers/multi_server_fixtures.dart';
 import '../test_helpers/prefs.dart';
 
 MediaLibrary _lib(String key, {String type = 'movie', ServerId? serverId, String title = 'L'}) => MediaLibrary(
@@ -563,7 +563,7 @@ void main() {
 
     test('online-servers listener is removed on dispose', () {
       final manager = MultiServerManager();
-      final multiServer = MultiServerProvider(manager, DataAggregationService(manager));
+      final multiServer = testMultiServerProvider(manager);
 
       final before = multiServer.onlineServersListenerCount;
       final scoped = LibrariesProvider(multiServer: multiServer);

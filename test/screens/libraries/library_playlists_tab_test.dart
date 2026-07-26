@@ -16,7 +16,6 @@ import 'package:plezy/media/media_playlist.dart';
 import 'package:plezy/models/plex/plex_config.dart';
 import 'package:plezy/providers/multi_server_provider.dart';
 import 'package:plezy/screens/libraries/tabs/library_playlists_tab.dart';
-import 'package:plezy/services/data_aggregation_service.dart';
 import 'package:plezy/services/multi_server_manager.dart';
 import 'package:plezy/services/plex_client.dart';
 import 'package:plezy/services/plex_api_cache.dart';
@@ -28,6 +27,7 @@ import 'package:plezy/widgets/media_card_sliver_layout.dart';
 
 import '../../test_helpers/backend_client_fixtures.dart';
 import '../../test_helpers/library_tab_scaffold.dart';
+import '../../test_helpers/multi_server_fixtures.dart';
 import '../../test_helpers/prefs.dart';
 
 final _serverId = ServerId('playlist-server');
@@ -246,7 +246,7 @@ class _PlaylistHarness {
       }),
     );
     manager = MultiServerManager()..debugRegisterClientForTesting(client);
-    provider = MultiServerProvider(manager, DataAggregationService(manager));
+    provider = testMultiServerProvider(manager);
   }
 
   Future<void> dispose() async {

@@ -14,8 +14,6 @@ import 'package:plezy/models/download_models.dart';
 import 'package:plezy/profiles/active_profile_provider.dart';
 import 'package:plezy/providers/download_provider.dart';
 import 'package:plezy/providers/multi_server_provider.dart';
-import 'package:plezy/services/data_aggregation_service.dart';
-import 'package:plezy/services/multi_server_manager.dart';
 import 'package:plezy/services/music/music_playback_service.dart';
 import 'package:plezy/services/settings_service.dart';
 import 'package:plezy/theme/mono_theme.dart';
@@ -26,6 +24,7 @@ import 'package:plezy/widgets/music/mini_player.dart';
 import 'package:provider/provider.dart';
 
 import '../../test_helpers/media_items.dart';
+import '../../test_helpers/multi_server_fixtures.dart';
 import '../../test_helpers/prefs.dart';
 import '../../test_helpers/profile_stack.dart';
 
@@ -159,14 +158,9 @@ void main() {
     ActiveProfileProvider? activeProfileProvider,
     DownloadProvider? downloadProvider,
   }) {
-    final manager = MultiServerManager();
-    final multiServerProvider = MultiServerProvider(manager, DataAggregationService(manager));
     addTearDown(service.dispose);
     addTearDown(observer.suppress.dispose);
-    addTearDown(() {
-      multiServerProvider.dispose();
-      manager.dispose();
-    });
+    final multiServerProvider = testMultiServer().provider;
 
     return TranslationProvider(
       child: MultiProvider(

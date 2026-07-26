@@ -390,16 +390,15 @@ class _AppMenuItemTileState<T> extends State<AppMenuItemTile<T>> with FocusableT
   @override
   void initState() {
     super.initState();
-    initFocusNode();
     effectiveFocusNode.addListener(_updateFocusedState);
   }
 
   @override
   void didUpdateWidget(AppMenuItemTile<T> oldWidget) {
+    final rebinds = oldWidget.focusNode != widget.focusNode;
+    if (rebinds) effectiveFocusNode.removeListener(_updateFocusedState);
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.focusNode != widget.focusNode) {
-      effectiveFocusNode.removeListener(_updateFocusedState);
-      updateFocusNode(oldWidget.focusNode);
+    if (rebinds) {
       effectiveFocusNode.addListener(_updateFocusedState);
       _isFocused = effectiveFocusNode.hasFocus;
     }
@@ -408,7 +407,6 @@ class _AppMenuItemTileState<T> extends State<AppMenuItemTile<T>> with FocusableT
   @override
   void dispose() {
     effectiveFocusNode.removeListener(_updateFocusedState);
-    disposeFocusNode();
     super.dispose();
   }
 

@@ -123,24 +123,6 @@ class _TrackRowState extends State<TrackRow> with ContextMenuTapMixin<TrackRow>,
   @override
   FocusNode? get widgetFocusNode => widget.focusNode;
 
-  @override
-  void initState() {
-    super.initState();
-    initFocusNode();
-  }
-
-  @override
-  void didUpdateWidget(TrackRow oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    updateFocusNode(oldWidget.focusNode);
-  }
-
-  @override
-  void dispose() {
-    disposeFocusNode();
-    super.dispose();
-  }
-
   void _handleFocusChange(bool hasFocus) {
     setState(() {
       _hasFocus = hasFocus;

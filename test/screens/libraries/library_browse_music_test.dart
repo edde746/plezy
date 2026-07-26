@@ -13,7 +13,6 @@ import 'package:plezy/media/media_library.dart';
 import 'package:plezy/providers/multi_server_provider.dart';
 import 'package:plezy/screens/libraries/state_messages.dart';
 import 'package:plezy/screens/libraries/tabs/library_browse_tab.dart';
-import 'package:plezy/services/data_aggregation_service.dart';
 import 'package:plezy/services/jellyfin_client.dart';
 import 'package:plezy/services/storage_service.dart';
 import 'package:plezy/services/multi_server_manager.dart';
@@ -24,6 +23,7 @@ import 'package:plezy/widgets/media_card.dart';
 
 import '../../test_helpers/backend_client_fixtures.dart';
 import '../../test_helpers/library_tab_scaffold.dart';
+import '../../test_helpers/multi_server_fixtures.dart';
 import '../../test_helpers/prefs.dart';
 
 final _musicLibrary = MediaLibrary(
@@ -165,7 +165,7 @@ class _MusicBrowseHarness {
       }),
     );
     manager = MultiServerManager()..debugRegisterClientForTesting(client);
-    provider = MultiServerProvider(manager, DataAggregationService(manager));
+    provider = testMultiServerProvider(manager);
   }
 
   void dispose() {

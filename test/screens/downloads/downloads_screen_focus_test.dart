@@ -18,7 +18,6 @@ import 'package:plezy/navigation/main_screen_scope.dart';
 import 'package:plezy/providers/download_provider.dart';
 import 'package:plezy/providers/multi_server_provider.dart';
 import 'package:plezy/screens/downloads/downloads_screen.dart';
-import 'package:plezy/services/data_aggregation_service.dart';
 import 'package:plezy/services/download_manager_service.dart';
 import 'package:plezy/services/download_storage_service.dart';
 import 'package:plezy/services/jellyfin_api_cache.dart';
@@ -33,6 +32,7 @@ import 'package:provider/provider.dart';
 import '../../test_helpers/prefs.dart';
 import '../../test_helpers/media_items.dart';
 import '../../test_helpers/io_fakes.dart';
+import '../../test_helpers/multi_server_fixtures.dart';
 
 class _FakeConnectionRegistry extends ConnectionRegistry {
   _FakeConnectionRegistry(super.db);
@@ -77,7 +77,7 @@ void main() {
     await downloadProvider.ensureInitialized();
 
     serverManager = MultiServerManager();
-    multiServerProvider = MultiServerProvider(serverManager, DataAggregationService(serverManager));
+    multiServerProvider = testMultiServerProvider(serverManager);
   });
 
   tearDown(() async {

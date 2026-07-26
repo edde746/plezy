@@ -8,14 +8,13 @@ import 'package:http/testing.dart';
 import 'package:plezy/database/app_database.dart';
 import 'package:plezy/media/ids.dart';
 import 'package:plezy/media/media_server_client.dart';
-import 'package:plezy/providers/multi_server_provider.dart';
-import 'package:plezy/services/data_aggregation_service.dart';
 import 'package:plezy/services/jellyfin_client.dart';
 import 'package:plezy/services/multi_server_manager.dart';
 import 'package:plezy/services/plex_api_cache.dart';
 import 'package:plezy/services/plex_client.dart';
 
 import '../test_helpers/backend_client_fixtures.dart';
+import '../test_helpers/multi_server_fixtures.dart';
 
 void main() {
   late AppDatabase db;
@@ -107,7 +106,7 @@ void main() {
     final manager = MultiServerManager();
     manager.debugRegisterClientForTesting(plex);
     manager.debugRegisterJellyfinClientForTesting(jellyfin);
-    final provider = MultiServerProvider(manager, DataAggregationService(manager));
+    final provider = testMultiServerProvider(manager);
     addTearDown(() {
       provider.dispose();
       manager.dispose();

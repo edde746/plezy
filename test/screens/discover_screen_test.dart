@@ -31,7 +31,6 @@ import 'package:plezy/providers/libraries_provider.dart';
 import 'package:plezy/providers/multi_server_provider.dart';
 import 'package:plezy/screens/discover_screen.dart';
 import 'package:plezy/screens/main_screen.dart';
-import 'package:plezy/services/data_aggregation_service.dart';
 import 'package:plezy/services/multi_server_manager.dart';
 import 'package:plezy/services/settings_service.dart';
 import 'package:plezy/services/storage_service.dart';
@@ -46,6 +45,7 @@ import 'package:provider/provider.dart';
 
 import '../test_helpers/prefs.dart';
 import '../test_helpers/media_items.dart';
+import '../test_helpers/multi_server_fixtures.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -82,7 +82,7 @@ void main() {
     final hub = MediaHub(id: 'hub_1', title: 'Recommended', type: 'movie', items: [item], size: 1);
     final client = _FakeMediaServerClient(hubs: [hub]);
     final manager = MultiServerManager()..debugRegisterClientForTesting(client);
-    final multiServerProvider = MultiServerProvider(manager, DataAggregationService(manager));
+    final multiServerProvider = testMultiServerProvider(manager);
     final hiddenLibrariesProvider = HiddenLibrariesProvider();
     final librariesProvider = LibrariesProvider();
     final watchTogetherProvider = WatchTogetherProvider();
@@ -262,7 +262,7 @@ void main() {
     ];
     final client = _FakeMediaServerClient(hubs: const [], continueWatching: onDeck);
     final manager = MultiServerManager()..debugRegisterClientForTesting(client);
-    final multiServerProvider = MultiServerProvider(manager, DataAggregationService(manager));
+    final multiServerProvider = testMultiServerProvider(manager);
     final hiddenLibrariesProvider = HiddenLibrariesProvider();
     final librariesProvider = LibrariesProvider();
     final watchTogetherProvider = WatchTogetherProvider();

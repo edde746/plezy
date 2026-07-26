@@ -11,7 +11,6 @@ import 'package:plezy/providers/hidden_libraries_provider.dart';
 import 'package:plezy/providers/libraries_provider.dart';
 import 'package:plezy/providers/multi_server_provider.dart';
 import 'package:plezy/screens/libraries/libraries_screen.dart';
-import 'package:plezy/services/data_aggregation_service.dart';
 import 'package:plezy/services/multi_server_manager.dart';
 import 'package:plezy/services/settings_service.dart';
 import 'package:plezy/services/storage_service.dart';
@@ -22,6 +21,7 @@ import 'package:shared_preferences_platform_interface/in_memory_shared_preferenc
 import 'package:shared_preferences_platform_interface/shared_preferences_async_platform_interface.dart';
 import 'package:shared_preferences_platform_interface/types.dart';
 
+import '../../test_helpers/multi_server_fixtures.dart';
 import '../../test_helpers/prefs.dart';
 
 const _libraryA = MediaLibrary(
@@ -135,7 +135,7 @@ final class _Harness {
     final hiddenLibraries = HiddenLibrariesProvider();
     await hiddenLibraries.ensureInitialized();
     final manager = MultiServerManager();
-    final multiServer = MultiServerProvider(manager, DataAggregationService(manager));
+    final multiServer = testMultiServerProvider(manager);
     return _Harness(libraries: libraries, hiddenLibraries: hiddenLibraries, multiServer: multiServer);
   }
 

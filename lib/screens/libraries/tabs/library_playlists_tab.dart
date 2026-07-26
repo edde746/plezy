@@ -1,28 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
-import '../../../focus/input_mode_tracker.dart';
 import '../../../media/library_query.dart';
-import '../../../media/media_item.dart';
 import '../../../media/media_kind.dart';
 import '../../../media/media_playlist.dart';
-import '../../../mixins/library_tab_focus_mixin.dart';
-import '../../../mixins/paginated_item_loader.dart';
-import '../../../mixins/standard_paginated_view.dart';
-import '../../../services/settings_service.dart';
-import '../../../utils/error_message_utils.dart';
-import '../../../utils/layout_constants.dart';
 import '../../../utils/library_refresh_notifier.dart';
 import '../../../utils/media_server_http_client.dart';
-import '../../../utils/platform_detector.dart';
-import '../../../widgets/card_inflation_budget.dart';
-import '../../../widgets/focusable_media_card.dart';
-import '../../../widgets/media_card_sliver_layout.dart';
-import '../../../widgets/settings_builder.dart';
-import '../../../widgets/skeleton_media_card.dart';
-import '../../../widgets/sliver_child_memo.dart';
 import '../../../i18n/strings.g.dart';
-import '../../main_screen.dart';
 import 'base_library_tab.dart';
+import 'paginated_card_grid_tab.dart';
 
 /// Playlists tab for library screen
 /// Shows playlists that contain items from the current library
@@ -42,23 +27,12 @@ class LibraryPlaylistsTab extends BaseLibraryTab<MediaPlaylist> {
   State<LibraryPlaylistsTab> createState() => _LibraryPlaylistsTabState();
 }
 
-class _LibraryPlaylistsTabState extends BaseLibraryTabState<MediaPlaylist, LibraryPlaylistsTab>
-    with
-        LibraryTabFocusMixin<LibraryPlaylistsTab>,
-        PaginatedItemLoader<MediaPlaylist, LibraryPlaylistsTab>,
-        StandardPaginatedView<MediaPlaylist, LibraryPlaylistsTab>,
-        SkeletonUpgradeScheduler {
-  static const int _pageSize = 200;
-
-  /// Reuses card widgets across delegate swaps so tab-level setStates
-  /// (pagination, refreshes) don't rebuild every realized card inside layout.
-  final SliverChildMemo<MediaPlaylist> _cardMemo = SliverChildMemo<MediaPlaylist>();
+class _LibraryPlaylistsTabState extends PaginatedCardGridTabState<MediaPlaylist, LibraryPlaylistsTab> {
+  @override
+  int get pageSize => 200;
 
   @override
   String get focusNodeDebugLabel => 'playlists_first_item';
-
-  @override
-  int get itemCount => totalSize;
 
   @override
   IconData get emptyIcon => Symbols.playlist_play_rounded;
@@ -73,7 +47,7 @@ class _LibraryPlaylistsTabState extends BaseLibraryTabState<MediaPlaylist, Libra
   Stream<void>? getRefreshStream() => LibraryRefreshNotifier().playlistsStream;
 
   @override
-  Future<List<MediaPlaylist>> loadData() async => const [];
+  String idOf(MediaPlaylist playlist) => playlist.id;
 
   @override
   Future<LibraryPage<MediaPlaylist>> fetchPage(int start, int size, AbortController? abort) {
@@ -86,130 +60,5 @@ class _LibraryPlaylistsTabState extends BaseLibraryTabState<MediaPlaylist, Libra
   }
 
   @override
-  Future<void> loadItems() {
-    return loadStandardPaginatedItems(
-      pageSize: _pageSize,
-      errorMessageFor: (error, stackTrace) => localizedLoadErrorMessage(error, stackTrace, context: errorContext),
-      onLoaded: (_, _) => markItemsLoaded(),
-    );
-  }
-
-  @override
-  Widget buildContent(List<MediaPlaylist> items) {
-    return SettingsBuilder(
-      prefs: const [SettingsService.viewMode, SettingsService.libraryDensity, SettingsService.tvFullCardLayout],
-      builder: (context) {
-        final settings = SettingsService.instance;
-        final viewMode = settings.read(SettingsService.viewMode);
-        final density = settings.read(SettingsService.libraryDensity);
-        final fullCardLayout = PlatformDetector.isTV() && settings.read(SettingsService.tvFullCardLayout);
-        return CustomScrollView(
-          clipBehavior: Clip.none,
-          slivers: [
-            SliverOverlapInjector(handle: NestedScrollView.sliverOverlapAbsorberHandleFor(context)),
-            _buildItemsSliver(viewMode, density, fullCardLayout: fullCardLayout),
-          ],
-        );
-      },
-    );
-  }
-
-  static const double _focusDecorationPadding = 3.0;
-
-  EdgeInsets get _effectivePadding {
-    final base = GridLayoutConstants.gridPadding;
-    return base.copyWith(top: base.top + _focusDecorationPadding);
-  }
-
-  bool get _usesSquareCards => widget.library.kind.isMusic;
-
-  Widget _buildItemsSliver(ViewMode viewMode, int density, {required bool fullCardLayout}) {
-    final shape = _usesSquareCards ? CardShape.square : null;
-    final useFullCardLayout = fullCardLayout && shape != CardShape.square;
-    return MediaCardSliverLayout(
-      viewMode: viewMode,
-      itemCount: totalSize,
-      density: density,
-      padding: _effectivePadding,
-      fullBleedImage: useFullCardLayout,
-      shape: shape,
-      listEpoch: (ViewMode.list, totalSize, density, shape),
-      gridEpochBuilder: (geometry) =>
-          (ViewMode.grid, geometry.columnCount, totalSize, useFullCardLayout, density, shape),
-      itemBuilder: (context, position) {
-        final index = position.index;
-        final playlist = loadedItems[index];
-        if (playlist == null) {
-          ensureIndexLoaded(index, pageSize: _pageSize);
-          return const SkeletonMediaCard();
-        }
-        if (!position.isGrid) {
-          return _cardMemo.widgetFor(
-            index,
-            playlist,
-            epoch: position.layoutEpoch!,
-            build: () =>
-                _buildPlaylistCard(index, isFirstRow: position.isFirstRow, isFirstColumn: true, disableScale: true),
-          );
-        }
-
-        final cached = _cardMemo.tryGet(index, playlist, epoch: position.layoutEpoch!);
-        if (cached != null) return cached;
-        if (CardInflationBudget.isScrollingContext(context) &&
-            !InputModeTracker.isKeyboardMode(context) &&
-            !CardInflationBudget.tryTake()) {
-          scheduleSkeletonUpgrade();
-          return const SkeletonMediaCard();
-        }
-        return _cardMemo.widgetFor(
-          index,
-          playlist,
-          epoch: position.layoutEpoch!,
-          build: () => _buildPlaylistCard(
-            index,
-            isFirstRow: position.isFirstRow,
-            isFirstColumn: position.isFirstColumn,
-            fullBleedImage: useFullCardLayout,
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _buildPlaylistCard(
-    int index, {
-    required bool isFirstRow,
-    required bool isFirstColumn,
-    bool disableScale = false,
-    bool fullBleedImage = false,
-  }) {
-    final playlist = loadedItems[index];
-    if (playlist == null) {
-      ensureIndexLoaded(index, pageSize: _pageSize);
-      return const SkeletonMediaCard();
-    }
-
-    return FocusableMediaCard(
-      key: Key(playlist.id),
-      item: playlist,
-      focusNode: index == 0 ? firstItemFocusNode : null,
-      disableScale: disableScale,
-      fullBleedImage: fullBleedImage,
-      cardShapeOverride: _usesSquareCards ? CardShape.square : null,
-      onListRefresh: loadItems,
-      onNavigateUp: isFirstRow ? widget.onBack : null,
-      onBack: widget.onBack,
-      onNavigateLeft: isFirstColumn ? _navigateToSidebar : null,
-    );
-  }
-
-  void _navigateToSidebar() {
-    MainScreenFocusScope.focusSidebarOf(context);
-  }
-
-  @override
-  void dispose() {
-    disposePagination();
-    super.dispose();
-  }
+  bool get usesSquareCards => widget.library.kind.isMusic;
 }

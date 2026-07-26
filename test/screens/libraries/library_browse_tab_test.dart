@@ -17,7 +17,6 @@ import 'package:plezy/media/server_capabilities.dart';
 import 'package:plezy/providers/multi_server_provider.dart';
 import 'package:plezy/screens/libraries/state_messages.dart';
 import 'package:plezy/screens/libraries/tabs/library_browse_tab.dart';
-import 'package:plezy/services/data_aggregation_service.dart';
 import 'package:plezy/services/multi_server_manager.dart';
 import 'package:plezy/services/settings_service.dart';
 import 'package:plezy/services/storage_service.dart';
@@ -27,6 +26,7 @@ import 'package:plezy/widgets/focusable_filter_chip.dart';
 
 import '../../test_helpers/library_tab_scaffold.dart';
 import '../../test_helpers/media_items.dart';
+import '../../test_helpers/multi_server_fixtures.dart';
 import '../../test_helpers/prefs.dart';
 
 void main() {
@@ -191,7 +191,7 @@ class _BrowseHarness {
     manager = MultiServerManager()
       ..debugRegisterClientForTesting(clientA)
       ..debugRegisterClientForTesting(clientB);
-    provider = MultiServerProvider(manager, DataAggregationService(manager));
+    provider = testMultiServerProvider(manager);
   }
 
   MediaLibrary _libraryFor(_BrowseClient client) {

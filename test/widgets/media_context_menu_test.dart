@@ -30,7 +30,6 @@ import 'package:plezy/providers/multi_server_provider.dart';
 import 'package:plezy/providers/playback_state_provider.dart';
 import 'package:plezy/screens/music/album_detail_screen.dart';
 import 'package:plezy/screens/music/artist_detail_screen.dart';
-import 'package:plezy/services/data_aggregation_service.dart';
 import 'package:plezy/services/download_manager_service.dart';
 import 'package:plezy/services/download_storage_service.dart';
 import 'package:plezy/services/jellyfin_client.dart';
@@ -46,6 +45,7 @@ import 'package:plezy/widgets/media_context_menu.dart';
 import 'package:provider/provider.dart';
 import '../test_helpers/backend_client_fixtures.dart';
 import '../test_helpers/media_items.dart';
+import '../test_helpers/multi_server_fixtures.dart';
 import '../test_helpers/prefs.dart';
 import '../test_helpers/profile_stack.dart';
 
@@ -124,7 +124,7 @@ void main() {
       final client = _AudioPlaylistClient(tracks);
       final music = _RecordingMusicPlaybackService();
       final manager = MultiServerManager()..debugRegisterClientForTesting(client);
-      final multiServerProvider = MultiServerProvider(manager, DataAggregationService(manager));
+      final multiServerProvider = testMultiServerProvider(manager);
       final stack = await ProfileStack.create(withStorage: false);
       addTearDown(() async {
         await stack.dispose();
@@ -228,7 +228,7 @@ void main() {
       ])..blockWithAbort = true;
       final playback = PlaybackStateProvider();
       final manager = MultiServerManager()..debugRegisterClientForTesting(client);
-      final multiServerProvider = MultiServerProvider(manager, DataAggregationService(manager));
+      final multiServerProvider = testMultiServerProvider(manager);
       final stack = await ProfileStack.create(withStorage: false);
       addTearDown(() async {
         playback.dispose();
@@ -293,7 +293,7 @@ void main() {
       addTearDown(() => TvDetectionService.debugSetAppleTVOverride(null));
 
       final manager = MultiServerManager();
-      final multiServerProvider = MultiServerProvider(manager, DataAggregationService(manager));
+      final multiServerProvider = testMultiServerProvider(manager);
       final stack = await ProfileStack.create(withStorage: false);
       addTearDown(() async {
         await stack.dispose();
@@ -569,7 +569,7 @@ Future<GlobalKey<MediaContextMenuState>> _pumpPlexMovieMenu(
     }),
   );
   final manager = MultiServerManager()..debugRegisterClientForTesting(client);
-  final multiServerProvider = MultiServerProvider(manager, DataAggregationService(manager));
+  final multiServerProvider = testMultiServerProvider(manager);
   final stack = await ProfileStack.create(db: db, withStorage: false);
   addTearDown(() async {
     await stack.dispose();
@@ -771,7 +771,7 @@ Future<_SiblingMusicMenuHarness> _pumpSiblingMusicMenu(
   await downloadProvider.ensureInitialized();
   final client = _RelatedMusicClient(relatedItems);
   final manager = MultiServerManager()..debugRegisterClientForTesting(client);
-  final multiServerProvider = MultiServerProvider(manager, DataAggregationService(manager));
+  final multiServerProvider = testMultiServerProvider(manager);
   final stack = await ProfileStack.create(db: db, withStorage: false);
   final music = _RecordingMusicPlaybackService();
   final rootNavigatorKey = GlobalKey<NavigatorState>();

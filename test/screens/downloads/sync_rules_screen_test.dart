@@ -15,7 +15,6 @@ import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/providers/download_provider.dart';
 import 'package:plezy/providers/multi_server_provider.dart';
 import 'package:plezy/screens/downloads/sync_rules_screen.dart';
-import 'package:plezy/services/data_aggregation_service.dart';
 import 'package:plezy/services/download_manager_service.dart';
 import 'package:plezy/services/download_storage_service.dart';
 import 'package:plezy/services/jellyfin_api_cache.dart';
@@ -27,6 +26,7 @@ import 'package:provider/provider.dart';
 
 import '../../test_helpers/prefs.dart';
 import '../../test_helpers/media_items.dart';
+import '../../test_helpers/multi_server_fixtures.dart';
 
 PlexConnection _plexConnection() {
   return PlexConnection(
@@ -213,7 +213,7 @@ void main() {
     addTearDown(authClient.close);
     serverManager.debugRegisterJellyfinClientForTesting(authClient, online: false);
     serverManager.debugMarkAuthErrorForTesting(ServerId('auth-jf'));
-    multiServerProvider = MultiServerProvider(serverManager, DataAggregationService(serverManager));
+    multiServerProvider = testMultiServerProvider(serverManager);
 
     await insertRule(ServerId('plex-srv'), 'show-1');
     await insertRule(ServerId('jf-machine'), 'show-2');
@@ -233,7 +233,7 @@ void main() {
   });
 
   testWidgets('removes orphaned sync rules from the sync rules screen', (tester) async {
-    multiServerProvider = MultiServerProvider(serverManager, DataAggregationService(serverManager));
+    multiServerProvider = testMultiServerProvider(serverManager);
     await insertRule(ServerId('orphan-srv'), '76672');
 
     await pumpScreen(tester);
@@ -256,7 +256,7 @@ void main() {
   });
 
   testWidgets('provider rebuilds reuse the connection stream subscription', (tester) async {
-    multiServerProvider = MultiServerProvider(serverManager, DataAggregationService(serverManager));
+    multiServerProvider = testMultiServerProvider(serverManager);
     await insertRule(ServerId('orphan-srv'), '76672');
     await pumpScreen(tester);
 
@@ -268,7 +268,7 @@ void main() {
   });
 
   testWidgets('does not autofocus the first sync rule in pointer mode', (tester) async {
-    multiServerProvider = MultiServerProvider(serverManager, DataAggregationService(serverManager));
+    multiServerProvider = testMultiServerProvider(serverManager);
     await insertRule(ServerId('orphan-srv'), '76672');
     FocusManager.instance.primaryFocus?.unfocus();
 
@@ -279,7 +279,7 @@ void main() {
   });
 
   testWidgets('keyboard navigation reaches and toggles the sync rule switch', (tester) async {
-    multiServerProvider = MultiServerProvider(serverManager, DataAggregationService(serverManager));
+    multiServerProvider = testMultiServerProvider(serverManager);
     await insertRule(ServerId('orphan-srv'), '76672');
 
     await pumpScreen(tester, keyboardMode: true);
@@ -297,7 +297,7 @@ void main() {
   });
 
   testWidgets('setting sync rule count to zero removes the rule', (tester) async {
-    multiServerProvider = MultiServerProvider(serverManager, DataAggregationService(serverManager));
+    multiServerProvider = testMultiServerProvider(serverManager);
     await insertRule(ServerId('orphan-srv'), '76672');
 
     await pumpScreen(tester, keyboardMode: true);

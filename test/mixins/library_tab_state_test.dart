@@ -7,8 +7,9 @@ import 'package:plezy/media/media_library.dart';
 import 'package:plezy/mixins/library_tab_state.dart';
 import 'package:provider/provider.dart';
 import 'package:plezy/providers/multi_server_provider.dart';
-import 'package:plezy/services/data_aggregation_service.dart';
 import 'package:plezy/services/multi_server_manager.dart';
+
+import '../test_helpers/multi_server_fixtures.dart';
 
 class _Probe extends StatefulWidget {
   const _Probe({required this.library, required this.onState});
@@ -45,8 +46,7 @@ void main() {
       late _ProbeState state;
 
       final manager = MultiServerManager();
-      final aggregation = DataAggregationService(manager);
-      final provider = MultiServerProvider(manager, aggregation);
+      final provider = testMultiServerProvider(manager);
       // provider.dispose() cascades to manager.dispose() — only register
       // the outer teardown to avoid a double-close on the manager's stream.
       addTearDown(provider.dispose);

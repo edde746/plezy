@@ -260,7 +260,7 @@ abstract class MediaServerClient {
   /// `/Audio/{id}/Lyrics` (per-line tick offsets when synced); Plex: a
   /// sidecar-lyrics track stream (`streamType 4`) fetched from
   /// `/library/streams/{id}` and parsed from LRC. Synced-ness is per
-  /// [Lyrics.synced]; gated by [ServerCapabilities.lyrics].
+  /// [Lyrics.synced]; per-track absence is the runtime gate.
   Future<Lyrics?> fetchLyrics(MediaItem track);
 
   /// Free-text search across the user's libraries.

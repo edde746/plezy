@@ -22,7 +22,6 @@ import 'package:plezy/providers/download_provider.dart';
 import 'package:plezy/providers/multi_server_provider.dart';
 import 'package:plezy/providers/watch_state_store.dart';
 import 'package:plezy/screens/media_detail_screen.dart';
-import 'package:plezy/services/data_aggregation_service.dart';
 
 import '../test_helpers/paged_fakes.dart';
 import 'package:plezy/services/download_manager_service.dart';
@@ -46,6 +45,7 @@ import 'package:provider/provider.dart';
 import '../test_helpers/prefs.dart';
 import '../test_helpers/profile_navigation.dart';
 import '../test_helpers/media_items.dart';
+import '../test_helpers/multi_server_fixtures.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -308,7 +308,7 @@ void main() {
       pendingPlayableDescendants: descendantsCompleter.future,
     );
     final manager = MultiServerManager()..debugRegisterClientForTesting(client);
-    final provider = MultiServerProvider(manager, DataAggregationService(manager));
+    final provider = testMultiServerProvider(manager);
     addTearDown(provider.dispose);
 
     await tester.pumpWidget(
@@ -434,7 +434,7 @@ void main() {
       },
     );
     final manager = MultiServerManager()..debugRegisterClientForTesting(client);
-    final provider = MultiServerProvider(manager, DataAggregationService(manager));
+    final provider = testMultiServerProvider(manager);
     addTearDown(provider.dispose);
 
     await tester.pumpWidget(
@@ -531,7 +531,7 @@ void main() {
       childrenPageErrors: {season1.id: Exception('season cache failed')},
     );
     final manager = MultiServerManager()..debugRegisterClientForTesting(client);
-    final provider = MultiServerProvider(manager, DataAggregationService(manager));
+    final provider = testMultiServerProvider(manager);
     addTearDown(provider.dispose);
 
     await tester.pumpWidget(
@@ -622,7 +622,7 @@ void main() {
       childrenPageFutures: {season2.id: season2Completer.future},
     );
     final manager = MultiServerManager()..debugRegisterClientForTesting(client);
-    final provider = MultiServerProvider(manager, DataAggregationService(manager));
+    final provider = testMultiServerProvider(manager);
     addTearDown(provider.dispose);
 
     await tester.pumpWidget(
@@ -708,7 +708,7 @@ void main() {
     PlexApiCache.initialize(database);
     JellyfinApiCache.initialize(database);
     final manager = MultiServerManager()..debugRegisterClientForTesting(client);
-    final multiServerProvider = MultiServerProvider(manager, DataAggregationService(manager));
+    final multiServerProvider = testMultiServerProvider(manager);
     final offlineWatch = OfflineWatchSyncService(database: database, serverManager: manager);
     final downloadManager = DownloadManagerService(
       database: database,
@@ -832,7 +832,7 @@ void main() {
       await downloadProvider.ensureInitialized();
 
       final manager = MultiServerManager()..debugRegisterClientForTesting(client);
-      final multiServerProvider = MultiServerProvider(manager, DataAggregationService(manager));
+      final multiServerProvider = testMultiServerProvider(manager);
       final watchStateOverlay = WatchStateStore();
 
       addTearDown(() async {

@@ -13,10 +13,11 @@ import 'package:plezy/models/media_grab_operation.dart';
 import 'package:plezy/models/media_subscription.dart';
 import 'package:plezy/providers/multi_server_provider.dart';
 import 'package:plezy/screens/livetv/tabs/recordings_tab.dart';
-import 'package:plezy/services/data_aggregation_service.dart';
 import 'package:plezy/services/multi_server_manager.dart';
 import 'package:plezy/theme/mono_theme.dart';
 import 'package:provider/provider.dart';
+
+import '../../test_helpers/multi_server_fixtures.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -27,7 +28,7 @@ void main() {
     final dvr = _ControllableDvr();
     final client = _FakeMediaServerClient(dvr);
     final manager = MultiServerManager()..debugRegisterClientForTesting(client);
-    final provider = MultiServerProvider(manager, DataAggregationService(manager))
+    final provider = testMultiServerProvider(manager)
       ..debugSetLiveTvServersForTesting([LiveTvServerInfo(serverId: client.serverId.value, dvrKey: 'dvr')]);
     addTearDown(provider.dispose);
     final tabKey = GlobalKey<RecordingsTabState>();
