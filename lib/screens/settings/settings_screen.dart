@@ -39,6 +39,7 @@ import '../../widgets/desktop_app_bar.dart';
 import '../../widgets/dialog_action_button.dart';
 import '../../widgets/focusable_list_tile.dart';
 import '../../widgets/library_management_sheet.dart';
+import '../../widgets/overlay_sheet.dart';
 import '../../widgets/setting_tile.dart';
 import '../../widgets/settings_builder.dart';
 import '../../widgets/settings_section.dart';
@@ -159,6 +160,21 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
   Widget build(BuildContext context) {
     final hasLibraries = context.select<LibrariesProvider, bool>((p) => p.libraries.isNotEmpty);
 
+    if (OverlaySheetController.maybeOf(context) != null) {
+      return _buildContent(context, hasLibraries: hasLibraries);
+    }
+
+    // Settings is hosted by MainScreen on side-navigation layouts, but it is a
+    // separate pushed route on phones. Add a route-local host only for the
+    // latter, and build its content from below the host so adaptive sheets do
+    // not fall back to modal routes with a competing Android back path.
+    return OverlaySheetHost(
+      canPop: true,
+      child: Builder(builder: (hostContext) => _buildContent(hostContext, hasLibraries: hasLibraries)),
+    );
+  }
+
+  Widget _buildContent(BuildContext sheetContext, {required bool hasLibraries}) {
     return Scaffold(
       body: Focus(
         onKeyEvent: _handleKeyEvent,
@@ -174,12 +190,12 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
                     if (DonationService.isEnabled) _buildDonateTile(),
                     _buildAppearanceTile(),
                     _buildPlaybackTile(),
-                    if (hasLibraries) _buildManageLibrariesTile(),
+                    if (hasLibraries) _buildManageLibrariesTile(sheetContext),
                     _buildServicesTile(),
                   ],
                 ),
 
-                _buildConnectionsSection(),
+                _buildConnectionsSection(sheetContext),
 
                 if (!PlatformDetector.isAppleTV()) _buildDownloadsSection(),
 
@@ -258,7 +274,7 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
     );
   }
 
-  Widget _buildManageLibrariesTile() {
+  Widget _buildManageLibrariesTile(BuildContext context) {
     return SettingNavigationTile(
       focusNode: _focusTracker.get(_kManageLibraries),
       icon: Symbols.video_library_rounded,
@@ -289,7 +305,7 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
     );
   }
 
-  Widget _buildConnectionsSection() {
+  Widget _buildConnectionsSection(BuildContext context) {
     final active = context.select<ActiveProfileProvider, Profile?>((p) => p.active);
     final subtitle = active == null
         ? t.connections.addConnectionSubtitleNoProfile
@@ -311,12 +327,12 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
             Navigator.push(context, MaterialPageRoute(builder: (_) => AddConnectionScreen(targetProfile: active)));
           },
         ),
-        _buildProfilesTile(),
+        _buildProfilesTile(context),
       ],
     );
   }
 
-  Widget _buildProfilesTile() {
+  Widget _buildProfilesTile(BuildContext context) {
     // ActiveProfileProvider already merges local rows with virtual Plex
     // Home profiles — counting only the local DB rows made every Plex Home
     // household read as a single profile here. `context.select` keeps

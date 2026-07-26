@@ -87,10 +87,9 @@ Future<void> showLibraryManagementSheet(
   if (PlatformDetector.isTV()) {
     return showScopedDialog<void>(context: context, builder: (context) => buildSheet(isDialog: true));
   }
-  // showAdaptive rather than of(context).show: on mobile, settings is a pushed
-  // route outside the OverlaySheetHost subtree, so only the fallback path is
-  // available there. isScrollControlled keeps the fallback modal from capping
-  // the sheet at ~9/16 of the screen.
+  // Use the host supplied by the calling screen when available while keeping
+  // this reusable entry point safe for routes without one. isScrollControlled
+  // keeps that modal fallback from capping the sheet at ~9/16 of the screen.
   return OverlaySheetController.showAdaptive<void>(
     context,
     showDragHandle: true,

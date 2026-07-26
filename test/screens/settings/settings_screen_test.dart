@@ -10,10 +10,14 @@ import 'package:path_provider_platform_interface/path_provider_platform_interfac
 import 'package:plezy/connection/connection_registry.dart';
 import 'package:plezy/database/app_database.dart';
 import 'package:plezy/i18n/strings.g.dart';
+import 'package:plezy/media/media_backend.dart';
+import 'package:plezy/media/media_kind.dart';
+import 'package:plezy/media/media_library.dart';
 import 'package:plezy/profiles/active_profile_provider.dart';
 import 'package:plezy/profiles/plex_home_service.dart';
 import 'package:plezy/profiles/profile_connection_registry.dart';
 import 'package:plezy/profiles/profile_registry.dart';
+import 'package:plezy/providers/hidden_libraries_provider.dart';
 import 'package:plezy/providers/libraries_provider.dart';
 import 'package:plezy/providers/download_provider.dart';
 import 'package:plezy/providers/seerr_account_provider.dart';
@@ -28,6 +32,7 @@ import 'package:plezy/services/download_manager_service.dart';
 import 'package:plezy/services/file_picker_service.dart';
 import 'package:plezy/services/settings_export_service.dart';
 import 'package:plezy/services/settings_service.dart';
+import 'package:plezy/services/storage_service.dart';
 import 'package:plezy/services/update_service.dart';
 import 'package:plezy/theme/mono_theme.dart';
 import 'package:plezy/utils/platform_detector.dart';
@@ -76,6 +81,39 @@ void main() {
     if (temporaryDirectory.existsSync()) {
       await temporaryDirectory.delete(recursive: true);
     }
+  });
+
+  testWidgets('system back closes Manage Libraries without popping pushed settings', (tester) async {
+    final harness = await _pumpSettingsScreen(tester, pushSettingsRoute: true);
+    addTearDown(() => harness.dispose(tester));
+    unawaited(
+      harness.libraries.updateLibraryOrder([
+        const MediaLibrary(
+          id: 'maestro-movies',
+          backend: MediaBackend.jellyfin,
+          title: 'Maestro Movies',
+          kind: MediaKind.movie,
+        ),
+      ]),
+    );
+    await _pumpUi(tester);
+
+    await tester.tap(find.text(t.libraries.manageLibraries));
+    await _pumpUi(tester);
+    expect(find.text('Maestro Movies'), findsOneWidget);
+
+    // Android can dispatch one physical Back through both the focused key
+    // path and Navigator.popRoute. The old modal fallback consumed one path
+    // and let the other pop Settings itself.
+    await tester.sendKeyDownEvent(LogicalKeyboardKey.escape);
+    await tester.binding.handlePopRoute();
+    await tester.pump();
+    await tester.sendKeyUpEvent(LogicalKeyboardKey.escape);
+    await _pumpUi(tester);
+
+    expect(find.text('Maestro Movies'), findsNothing, reason: 'system back dismisses the sheet');
+    expect(find.text(t.settings.services), findsOneWidget, reason: 'the settings route remains current');
+    expect(find.text('Settings launcher'), findsNothing, reason: 'system back must not pop the settings route');
   });
 
   testWidgets('migrated rows retain the shared compact row geometry and activation', (tester) async {
@@ -539,6 +577,7 @@ class _SettingsHarness {
     required this.plexHome,
     required this.activeProfile,
     required this.libraries,
+    required this.hiddenLibraries,
     required this.theme,
     required this.trakt,
     required this.trackers,
@@ -553,6 +592,7 @@ class _SettingsHarness {
   final PlexHomeService plexHome;
   final ActiveProfileProvider activeProfile;
   final LibrariesProvider libraries;
+  final HiddenLibrariesProvider hiddenLibraries;
   final ThemeProvider theme;
   final TraktAccountProvider trakt;
   final TrackersProvider trackers;
@@ -567,6 +607,7 @@ class _SettingsHarness {
     await tester.pump();
     downloadProvider.dispose();
     downloadManager.dispose();
+    hiddenLibraries.dispose();
     libraries.dispose();
     theme.dispose();
     trakt.dispose();
@@ -589,6 +630,7 @@ Future<_SettingsHarness> _pumpSettingsScreen(
   Future<String?> Function()? settingsExporter,
   Future<ImportResult?> Function()? settingsImporter,
   BackgroundWorkDiagnosticsService? backgroundWorkDiagnosticsService,
+  bool pushSettingsRoute = false,
 }) async {
   tester.view.physicalSize = const Size(1800, 3200);
   tester.view.devicePixelRatio = 1;
@@ -606,6 +648,8 @@ Future<_SettingsHarness> _pumpSettingsScreen(
   );
   final activeProfile = ActiveProfileProvider(registry: profiles, plexHome: plexHome, connections: connections);
   final libraries = LibrariesProvider();
+  final hiddenLibraries = HiddenLibrariesProvider(storageService: _FakeHiddenLibrariesStorage());
+  await hiddenLibraries.ensureInitialized();
   final theme = ThemeProvider();
   final trackerHttpClients = <FakeHttpClient>[];
   FakeHttpClient trackerHttpClientFactory() {
@@ -648,6 +692,7 @@ Future<_SettingsHarness> _pumpSettingsScreen(
     plexHome: plexHome,
     activeProfile: activeProfile,
     libraries: libraries,
+    hiddenLibraries: hiddenLibraries,
     theme: theme,
     trakt: trakt,
     trackers: trackers,
@@ -664,6 +709,7 @@ Future<_SettingsHarness> _pumpSettingsScreen(
         providers: [
           ChangeNotifierProvider<ActiveProfileProvider>.value(value: activeProfile),
           ChangeNotifierProvider<LibrariesProvider>.value(value: libraries),
+          ChangeNotifierProvider<HiddenLibrariesProvider>.value(value: hiddenLibraries),
           ChangeNotifierProvider<ThemeProvider>.value(value: theme),
           ChangeNotifierProvider<TraktAccountProvider>.value(value: trakt),
           ChangeNotifierProvider<TrackersProvider>.value(value: trackers),
@@ -672,19 +718,51 @@ Future<_SettingsHarness> _pumpSettingsScreen(
         ],
         child: MaterialApp(
           theme: monoTheme(dark: true).copyWith(platform: TargetPlatform.android),
-          home: SettingsScreen(
-            downloadDirectoryWritableChecker: writableChecker ?? (_) async => true,
-            settingsExporter: settingsExporter,
-            settingsImporter: settingsImporter,
-            backgroundWorkDiagnosticsService: backgroundWorkDiagnosticsService,
-          ),
+          home: pushSettingsRoute
+              ? Builder(
+                  builder: (context) => Scaffold(
+                    body: Center(
+                      child: ElevatedButton(
+                        onPressed: () => Navigator.of(context).push(
+                          MaterialPageRoute<void>(
+                            builder: (_) => SettingsScreen(
+                              downloadDirectoryWritableChecker: writableChecker ?? (_) async => true,
+                              settingsExporter: settingsExporter,
+                              settingsImporter: settingsImporter,
+                              backgroundWorkDiagnosticsService: backgroundWorkDiagnosticsService,
+                            ),
+                          ),
+                        ),
+                        child: const Text('Settings launcher'),
+                      ),
+                    ),
+                  ),
+                )
+              : SettingsScreen(
+                  downloadDirectoryWritableChecker: writableChecker ?? (_) async => true,
+                  settingsExporter: settingsExporter,
+                  settingsImporter: settingsImporter,
+                  backgroundWorkDiagnosticsService: backgroundWorkDiagnosticsService,
+                ),
         ),
       ),
     ),
   );
   await tester.pump();
   await tester.pump(const Duration(milliseconds: 300));
+  if (pushSettingsRoute) {
+    await tester.tap(find.text('Settings launcher'));
+    await _pumpUi(tester);
+  }
   return harness;
+}
+
+class _FakeHiddenLibrariesStorage implements StorageService {
+  @override
+  Set<String> getHiddenLibraries() => {};
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
 class _FakeDirectoryPicker implements FilePickerDelegate {
