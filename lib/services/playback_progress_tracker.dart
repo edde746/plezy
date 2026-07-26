@@ -255,27 +255,14 @@ class PlaybackProgressTracker {
                 }
               })
               .catchError((Object e) {
-                _consecutiveFailures++;
-                // Exponential backoff: skip 1, 2, 4, 8... ticks (capped at 6 ≈ 60s)
-                _ticksToSkip = (1 << (_consecutiveFailures - 1)).clamp(1, 6);
-                appLogger.d(
-                  'Progress update failed ($_consecutiveFailures consecutive), '
-                  'skipping next $_ticksToSkip tick(s)',
-                  error: e,
-                );
+                _recordProgressFailure(e);
                 unawaited(_queueOnlineFailureProgress(position, duration));
               }),
         );
       }
     } catch (e) {
       if (!isOffline) {
-        _consecutiveFailures++;
-        _ticksToSkip = (1 << (_consecutiveFailures - 1)).clamp(1, 6);
-        appLogger.d(
-          'Progress update failed ($_consecutiveFailures consecutive), '
-          'skipping next $_ticksToSkip tick(s)',
-          error: e,
-        );
+        _recordProgressFailure(e);
         await _queueOnlineFailureProgress(
           attemptedPosition ?? player.state.position,
           attemptedDuration ?? player.state.duration,
@@ -301,6 +288,17 @@ class PlaybackProgressTracker {
     } catch (e) {
       appLogger.d('Failed to queue fallback progress after online report failure', error: e);
     }
+  }
+
+  void _recordProgressFailure(Object e) {
+    _consecutiveFailures++;
+    // Exponential backoff: skip 1, 2, 4, 8... ticks (capped at 6 ≈ 60s)
+    _ticksToSkip = (1 << (_consecutiveFailures - 1)).clamp(1, 6);
+    appLogger.d(
+      'Progress update failed ($_consecutiveFailures consecutive), '
+      'skipping next $_ticksToSkip tick(s)',
+      error: e,
+    );
   }
 
   void _resetBackoff() {

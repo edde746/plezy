@@ -10,7 +10,6 @@ import '../../../focus/input_mode_tracker.dart';
 import '../../../i18n/strings.g.dart';
 import '../../../mixins/controller_disposer_mixin.dart';
 import '../../../models/plex/plex_subtitle_search_result.dart';
-import '../../../services/plex_client.dart';
 import '../../../services/settings_service.dart';
 import '../../../utils/language_codes.dart';
 import '../../../utils/provider_extensions.dart';
@@ -103,8 +102,7 @@ class _SubtitleSearchSheetState extends State<SubtitleSearchSheet> with Controll
     });
 
     try {
-      final neutral = context.tryGetMediaClientForServer(ServerId(widget.serverId));
-      final client = neutral is PlexClient ? neutral : null;
+      final client = context.tryGetPlexClientForServer(ServerId(widget.serverId));
       if (client == null) {
         if (!mounted || generation != _searchGeneration) return;
         setState(() => _isSearching = false);
@@ -185,10 +183,7 @@ class _SubtitleSearchSheetState extends State<SubtitleSearchSheet> with Controll
     setState(() => _downloadingKey = result.key);
 
     try {
-      // Same Plex-only guard as in [_search]. Don't throw if a Jellyfin
-      // server somehow reaches the download path.
-      final neutral = context.tryGetMediaClientForServer(ServerId(widget.serverId));
-      final client = neutral is PlexClient ? neutral : null;
+      final client = context.tryGetPlexClientForServer(ServerId(widget.serverId));
       if (client == null) {
         if (!mounted) return;
         setState(() => _downloadingKey = null);

@@ -74,8 +74,7 @@ class _ArtistDetailScreenState extends BaseMediaListDetailScreen<ArtistDetailScr
   }
 
   /// Plays the artist's full track list. The tracks aren't part of the album
-  /// listing this screen loads, so this costs one extra server round-trip —
-  /// gated on playback availability first so the stub never fetches.
+  /// listing this screen loads, so this costs one extra server round-trip.
   Future<void> _playAll({bool shuffle = false}) async {
     await playFetchedTracks(
       context,

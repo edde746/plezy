@@ -1,12 +1,13 @@
 import '../../models/trackers/anime_ids.dart';
 import '../../models/trackers/tracker_context.dart';
 import '../../utils/app_logger.dart';
+import 'future_coalescer.dart';
 import 'tracker.dart';
 import 'tracker_id_resolver.dart';
 
 mixin AnimeListTrackerBase<TClient extends DisposableTrackerClient> on TrackerBase, ClientBackedTracker<TClient>
     implements TrackerRatingSource {
-  final Map<int, Future<int?>> _episodeCountLoads = {};
+  final KeyedFutureCache<int, int?> _episodeCountLoads = KeyedFutureCache();
 
   @override
   bool get needsFribb => true;
@@ -83,19 +84,11 @@ mixin AnimeListTrackerBase<TClient extends DisposableTrackerClient> on TrackerBa
     return (activeClient, id);
   }
 
-  Future<int?> _episodeCount(TClient activeClient, int id) {
-    final existing = _episodeCountLoads[id];
-    if (existing != null) return existing;
-
-    late final Future<int?> loading;
-    loading = loadAnimeEpisodeCount(activeClient, id).catchError((Object e) {
-      if (identical(_episodeCountLoads[id], loading)) {
-        final _ = _episodeCountLoads.remove(id);
-      }
-      appLogger.d('$logLabel: failed to fetch anime episode count ($name=$id)', error: e);
-      return null;
-    });
-    _episodeCountLoads[id] = loading;
-    return loading;
-  }
+  Future<int?> _episodeCount(TClient activeClient, int id) => _episodeCountLoads
+      .run(
+        id,
+        () => loadAnimeEpisodeCount(activeClient, id),
+        onError: (e) => appLogger.d('$logLabel: failed to fetch anime episode count ($name=$id)', error: e),
+      )
+      .catchError((Object _) => null);
 }

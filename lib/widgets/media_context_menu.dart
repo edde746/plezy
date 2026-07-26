@@ -296,15 +296,13 @@ class MediaContextMenuState extends State<MediaContextMenu> {
         _MenuAction(value: 'delete', icon: Symbols.delete_rounded, label: t.common.delete, destructive: true),
       );
     } else {
-      // Music (artist/album/track) playback + navigation actions. Play is
-      // always offered — the shared music_navigation helpers surface the
-      // "not supported yet" notice while the stub service is bound. Queue
-      // insertion only exists once a real playback engine is available.
+      // Music (artist/album/track) playback + navigation actions. Queue
+      // insertion only exists where a playback session is bound.
       final isMusicKind = mediaKind != null && mediaKind.isMusic;
       if (isMusicKind) {
         menuActions.add(_MenuAction(value: 'music_play', icon: Symbols.play_arrow_rounded, label: t.common.play));
 
-        final musicAvailable = context.read<MusicPlaybackService?>()?.isAvailable ?? false;
+        final musicAvailable = context.read<MusicPlaybackService?>() != null;
         if (musicAvailable) {
           menuActions.add(
             _MenuAction(value: 'music_play_next', icon: Symbols.playlist_play_rounded, label: t.music.playNext),
@@ -1076,8 +1074,8 @@ class MediaContextMenuState extends State<MediaContextMenu> {
 
   Future<void> _handleMusicEnqueue(BuildContext context, {required bool playNext}) async {
     final service = context.read<MusicPlaybackService?>();
-    // Menu entries are hidden on the stub; defensive re-check.
-    if (service == null || !service.isAvailable) return;
+    // Menu entries are hidden without a session; defensive re-check.
+    if (service == null) return;
     final queueSessionRevision = service.queueSessionRevision;
     List<MediaItem> tracks;
     try {

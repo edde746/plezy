@@ -170,9 +170,6 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingO
   // ---------------------------------------------------------------------
 
   @override
-  bool get isAvailable => true;
-
-  @override
   MediaItem? get currentTrack => _currentTrack;
 
   @override

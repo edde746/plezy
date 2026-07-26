@@ -1,5 +1,6 @@
 import '../media/ids.dart';
 import '../media/media_item.dart';
+import 'app_logger.dart';
 import 'global_key_utils.dart';
 
 /// Builds the id filter for a screen showing [items].
@@ -33,4 +34,15 @@ Set<String>? hierarchicalEventGlobalKeys(Iterable<MediaItem> items, {String? fal
     if (item.grandparentId != null) keys.add(buildGlobalKey(serverId, item.grandparentId!));
   }
   return keys;
+}
+
+/// The [ServerId] an event emitted for [item] should carry, or `null` — after
+/// warning as `<notifier>: … skipping <event> event` — when the item carries
+/// none, since an event without a server id cannot be routed to subscribers.
+ServerId? serverIdForEvent(MediaItem item, {required String notifier, required String event}) {
+  final serverId = serverIdOrNull(item.serverId);
+  if (serverId == null) {
+    appLogger.w('$notifier: missing serverId for ${item.id}, skipping $event event');
+  }
+  return serverId;
 }

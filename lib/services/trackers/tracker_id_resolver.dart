@@ -8,6 +8,7 @@ import '../../utils/external_ids.dart';
 import 'anime_episode_progress_resolver.dart';
 import 'anime_lists_mapping_store.dart';
 import 'fribb_mapping_store.dart';
+import 'future_coalescer.dart';
 
 /// Paired ID output: always-present Plex external IDs (tvdb/imdb/tmdb) plus
 /// optional Fribb-sourced anime IDs (mal/anilist/simkl). Simkl uses [external]
@@ -77,7 +78,7 @@ class TrackerIdResolver {
   /// Null entries mean "the server had no IDs" — cached so scrubbing on an
   /// un-matched item doesn't re-hit the server every position update.
   final Map<String, TrackerIds?> _cache = {};
-  final Map<String, Future<ExternalIds>> _externalIdLoads = {};
+  final KeyedFutureCache<String, ExternalIds> _externalIdLoads = KeyedFutureCache();
 
   TrackerIdResolver(
     MediaServerClient client, {
@@ -97,19 +98,8 @@ class TrackerIdResolver {
   /// [MediaServerClient.fetchExternalIds] surface — Plex hits
   /// `/library/metadata/{id}?includeGuids=1`, Jellyfin reads the inline
   /// `ProviderIds` map.
-  Future<ExternalIds> _fetchExternalIds(String itemId) {
-    final existing = _externalIdLoads[itemId];
-    if (existing != null) return existing;
-    late final Future<ExternalIds> loading;
-    loading = _client.fetchExternalIds(itemId).catchError((Object e) {
-      if (identical(_externalIdLoads[itemId], loading)) {
-        final _ = _externalIdLoads.remove(itemId);
-      }
-      throw e;
-    });
-    _externalIdLoads[itemId] = loading;
-    return loading;
-  }
+  Future<ExternalIds> _fetchExternalIds(String itemId) =>
+      _externalIdLoads.run(itemId, () => _client.fetchExternalIds(itemId));
 
   /// Resolve IDs for a movie.
   Future<TrackerIds?> resolveForMovie(String itemId) async {

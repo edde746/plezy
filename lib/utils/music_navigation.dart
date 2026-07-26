@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../i18n/strings.g.dart';
 import '../media/media_item.dart';
 import '../navigation/profile_navigation_scope.dart';
 import '../screens/music/album_detail_screen.dart';
@@ -14,7 +13,6 @@ import '../theme/mono_tokens.dart';
 import 'app_logger.dart';
 import 'platform_detector.dart';
 import 'provider_extensions.dart';
-import 'snackbar_helper.dart';
 
 /// Route name of the now-playing screen — the mini-player's route observer
 /// suppresses itself while this (or the video player) is in the stack.
@@ -90,17 +88,7 @@ void _autoOpenNowPlayingOnTv(BuildContext context) {
   });
 }
 
-/// True when a real music playback engine is bound. On the stub this shows
-/// the standard "not supported yet" notice and returns false — check it
-/// BEFORE fetching tracks so the stub never costs a server round-trip.
-bool ensureMusicPlaybackAvailable(BuildContext context) {
-  if (context.read<MusicPlaybackService>().isAvailable) return true;
-  showAppSnackBar(context, t.messages.musicNotSupported);
-  return false;
-}
-
-/// Start playback of [tracks] via the session [MusicPlaybackService],
-/// surfacing the "not supported yet" notice while the stub is bound.
+/// Start playback of [tracks] via the session [MusicPlaybackService].
 Future<void> playTracks(
   BuildContext context, {
   required List<MediaItem> tracks,
@@ -108,7 +96,6 @@ Future<void> playTracks(
   required MusicPlayContext playContext,
   bool shuffle = false,
 }) async {
-  if (!ensureMusicPlaybackAvailable(context)) return;
   await context.read<MusicPlaybackService>().playFromList(
     tracks: tracks,
     startTrack: startTrack,
@@ -120,9 +107,9 @@ Future<void> playTracks(
 
 /// Fetch a track list with [fetch], then play it — the shape every music
 /// entry point that needs a server round-trip before playback repeats:
-/// availability gate → [MusicPlaybackService.beginPlayIntent] → fetch →
-/// mounted/intent re-check → [playTracks]. Guarding the round-trip with the
-/// intent keeps a slow fetch from replacing a queue the user started later.
+/// [MusicPlaybackService.beginPlayIntent] → fetch → mounted/intent re-check →
+/// [playTracks]. Guarding the round-trip with the intent keeps a slow fetch
+/// from replacing a queue the user started later.
 ///
 /// [onError] reports a failed fetch and runs only while the intent is still
 /// current and [context] mounted; passing null instead lets the failure
@@ -138,7 +125,6 @@ Future<void> playFetchedTracks(
   MediaItem? startTrack,
   bool shuffle = false,
 }) async {
-  if (!ensureMusicPlaybackAvailable(context)) return;
   final service = context.read<MusicPlaybackService>();
   final intent = service.beginPlayIntent();
   final List<MediaItem> tracks;
@@ -167,7 +153,6 @@ Future<void> playFetchedTracks(
 /// must play under the *same* intent as the album fetch, so a stale fallback
 /// can never supersede a newer request.
 Future<void> playTrackWithAlbumContext(BuildContext context, MediaItem track) async {
-  if (!ensureMusicPlaybackAvailable(context)) return;
   final service = context.read<MusicPlaybackService>();
   final intent = service.beginPlayIntent();
 
@@ -206,7 +191,6 @@ Future<void> playTrackWithAlbumContext(BuildContext context, MediaItem track) as
 /// Only call when the seed's server advertises
 /// `ServerCapabilities.instantMix`.
 Future<void> playInstantMix(BuildContext context, MediaItem seed) async {
-  if (!ensureMusicPlaybackAvailable(context)) return;
   await context.read<MusicPlaybackService>().playInstantMix(seed);
   if (context.mounted) _autoOpenNowPlayingOnTv(context);
 }

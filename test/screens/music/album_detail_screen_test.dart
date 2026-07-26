@@ -52,19 +52,6 @@ void main() {
     // Track numbers restart per disc.
     expect(find.text('1'), findsNWidgets(2));
   });
-
-  testWidgets('tapping a track on the stub service shows the not-supported notice', (tester) async {
-    final harness = await _createHarness(_multiDiscTracks());
-
-    await tester.pumpWidget(harness.wrap(const AlbumDetailScreen(album: _album)));
-    await tester.pumpAndSettle();
-
-    await tester.tap(find.text('Track One'));
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 300));
-
-    expect(find.text(t.messages.musicNotSupported), findsOneWidget);
-  });
 }
 
 const _album = MediaItem.plex(

@@ -41,7 +41,6 @@ import '../../../widgets/media_card_list_layout.dart';
 import '../../../widgets/bottom_sheet_page_scaffold.dart';
 import '../../../widgets/overlay_sheet.dart';
 import '../../../mixins/library_tab_focus_mixin.dart';
-import '../../../services/plex_client.dart';
 import '../folder_tree_view.dart';
 import '../filters_bottom_sheet.dart';
 import '../sort_bottom_sheet.dart';
@@ -1030,8 +1029,8 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
   Future<List<MediaFilterValue>> _loadFilterValues(MediaFilter filter) async {
     if (!mounted) return const [];
 
-    final client = context.tryGetMediaClientForServer(serverIdOrNull(widget.library.serverId));
-    if (client is PlexClient) return client.getFilterValues(filter.key);
+    final client = context.tryGetPlexClientForServer(serverIdOrNull(widget.library.serverId));
+    if (client != null) return client.getFilterValues(filter.key);
 
     // Jellyfin's canonical filter values come from the cached `/Items/Filters`
     // payload. If that payload missed a category, there is no neutral endpoint

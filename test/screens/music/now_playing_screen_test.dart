@@ -55,9 +55,6 @@ class _FakeMusicService extends StubMusicPlaybackService {
   }
 
   @override
-  bool get isAvailable => true;
-
-  @override
   MediaItem get currentTrack => track;
 
   @override

@@ -41,9 +41,6 @@ class _FakeQueueService extends StubMusicPlaybackService {
   _FakeQueueService(this.tracks);
 
   @override
-  bool get isAvailable => true;
-
-  @override
   MediaItem? get currentTrack => tracks[1];
 
   @override

@@ -671,9 +671,6 @@ class _RecordingMusicPlaybackService extends StubMusicPlaybackService {
   int callCount = 0;
 
   @override
-  bool get isAvailable => true;
-
-  @override
   Future<void> playFromList({
     required List<MediaItem> tracks,
     MediaItem? startTrack,
