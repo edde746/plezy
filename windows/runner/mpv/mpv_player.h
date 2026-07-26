@@ -19,6 +19,11 @@
 namespace mpv {
 struct InnerWindowSubclassState;
 
+// Style of the window mpv renders into. WS_DISABLED takes the host, and every
+// window mpv creates inside it, out of input targeting so mouse, touch, and pen
+// over the video reach the parent Flutter view instead of mpv's thread.
+inline constexpr DWORD kVideoHostWindowStyle = WS_CHILD | WS_CLIPSIBLINGS | WS_DISABLED;
+
 // Wrapper for libmpv that handles initialization, commands, properties,
 // and event dispatching.
 class MpvPlayer {

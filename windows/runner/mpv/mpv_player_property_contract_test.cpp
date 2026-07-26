@@ -2,6 +2,7 @@
 
 #include <atomic>
 #include <cstdlib>
+#include <functional>
 #include <future>
 #include <iostream>
 #include <thread>
@@ -60,6 +61,23 @@ std::atomic<HANDLE> g_block_entered{nullptr};
 std::atomic<HANDLE> g_block_release{nullptr};
 std::atomic<HANDLE> g_block_exited{nullptr};
 
+// A WM_POINTER message cannot be handed to a window owned by another thread:
+// the system drops a cross-thread send and refuses the post outright with
+// ERROR_MESSAGE_SYNC_ONLY, because pointer data belongs to the queue of the
+// thread that retrieved it. Driving mpv's window from the test thread therefore
+// delivers nothing at all. This relays the send through the window's own thread,
+// which is also where the real messages arrive in production.
+constexpr UINT kDispatchOnOwnerThreadMessage = WM_APP + 0x0506;
+struct OwnerThreadDispatch {
+  HWND target;
+  UINT message;
+  WPARAM wparam;
+  LPARAM lparam;
+};
+std::atomic<HWND> g_routing_view{nullptr};
+std::atomic<int> g_routing_view_presses{0};
+std::atomic<int> g_routing_child_presses{0};
+
 LRESULT CALLBACK CountingWindowProc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam) {
   if (message == kBlockWindowThreadMessage) {
     const HANDLE entered = g_block_entered.load(std::memory_order_acquire);
@@ -71,6 +89,10 @@ LRESULT CALLBACK CountingWindowProc(HWND hwnd, UINT message, WPARAM wparam, LPAR
       ::SetEvent(exited);
     }
     return 0;
+  }
+  if (message == kDispatchOnOwnerThreadMessage) {
+    const auto* dispatch = reinterpret_cast<const OwnerThreadDispatch*>(lparam);
+    return ::SendMessageW(dispatch->target, dispatch->message, dispatch->wparam, dispatch->lparam);
   }
   if (message == WM_MOUSEMOVE) {
     if ((wparam & MK_LBUTTON) != 0) {
@@ -97,6 +119,96 @@ LRESULT CALLBACK CountingWindowProc(HWND hwnd, UINT message, WPARAM wparam, LPAR
     return 0;
   }
   return ::DefWindowProcW(hwnd, message, wparam, lparam);
+}
+
+// Sends |message| to |target| from the thread that owns |owner_window|, so a
+// WM_POINTER message reaches the window procedure instead of being discarded as
+// a cross-thread send. |owner_window| must be handled by CountingWindowProc and
+// live on the same thread as |target|.
+LRESULT SendFromOwnerThread(HWND owner_window, HWND target, UINT message, WPARAM wparam, LPARAM lparam) {
+  OwnerThreadDispatch dispatch{target, message, wparam, lparam};
+  return ::SendMessageW(owner_window, kDispatchOnOwnerThreadMessage, 0, reinterpret_cast<LPARAM>(&dispatch));
+}
+
+// Attributes a real button press to the window that received it. Installed on
+// the stand-in view and on every window of the video subtree below it. The
+// STATIC class answers WM_NCHITTEST with HTTRANSPARENT, which would take these
+// windows out of the hit test for a reason other than the one under test, so
+// every one of them claims its client area here.
+LRESULT CALLBACK RoutingWindowProc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam) {
+  if (message == WM_NCHITTEST) {
+    return HTCLIENT;
+  }
+  if (message == WM_LBUTTONDOWN || message == WM_LBUTTONDBLCLK) {
+    if (hwnd == g_routing_view.load(std::memory_order_acquire)) {
+      g_routing_view_presses.fetch_add(1, std::memory_order_relaxed);
+    } else {
+      g_routing_child_presses.fetch_add(1, std::memory_order_relaxed);
+    }
+    return 0;
+  }
+  return ::DefWindowProcW(hwnd, message, wparam, lparam);
+}
+
+// Pumps this thread's queue until |predicate| holds or the budget runs out.
+bool PumpUntil(const std::function<bool()>& predicate, DWORD timeout_ms) {
+  const ULONGLONG deadline = ::GetTickCount64() + timeout_ms;
+  for (;;) {
+    MSG message;
+    while (::PeekMessageW(&message, nullptr, 0, 0, PM_REMOVE)) {
+      ::TranslateMessage(&message);
+      ::DispatchMessageW(&message);
+    }
+    if (predicate()) return true;
+    if (::GetTickCount64() >= deadline) return false;
+    ::Sleep(5);
+  }
+}
+
+bool SendAbsoluteMouse(POINT screen_point, DWORD flags) {
+  const LONG width = ::GetSystemMetrics(SM_CXSCREEN);
+  const LONG height = ::GetSystemMetrics(SM_CYSCREEN);
+  if (width < 2 || height < 2) return false;
+  INPUT input = {};
+  input.type = INPUT_MOUSE;
+  input.mi.dx = static_cast<LONG>((static_cast<LONG64>(screen_point.x) * 65535) / (width - 1));
+  input.mi.dy = static_cast<LONG>((static_cast<LONG64>(screen_point.y) * 65535) / (height - 1));
+  input.mi.dwFlags = MOUSEEVENTF_ABSOLUTE | flags;
+  return ::SendInput(1, &input, sizeof(input)) == 1;
+}
+
+bool InjectClick(POINT screen_point) {
+  return SendAbsoluteMouse(screen_point, MOUSEEVENTF_MOVE) && SendAbsoluteMouse(screen_point, MOUSEEVENTF_LEFTDOWN) &&
+         SendAbsoluteMouse(screen_point, MOUSEEVENTF_LEFTUP);
+}
+
+// A real touch contact at |screen_point|, for the touch half of the routing
+// test. The contact is held across a few frames rather than sent as a bare
+// down/up pair, because a contact that lifts in the same frame it landed is
+// short enough for a consumer to discard as noise.
+bool InjectTap(POINT screen_point) {
+  POINTER_TOUCH_INFO contact = {};
+  contact.pointerInfo.pointerType = PT_TOUCH;
+  contact.pointerInfo.pointerId = 0;
+  contact.pointerInfo.ptPixelLocation = screen_point;
+  contact.touchFlags = TOUCH_FLAG_NONE;
+  contact.touchMask = TOUCH_MASK_CONTACTAREA | TOUCH_MASK_ORIENTATION | TOUCH_MASK_PRESSURE;
+  contact.rcContact.left = screen_point.x - 2;
+  contact.rcContact.top = screen_point.y - 2;
+  contact.rcContact.right = screen_point.x + 2;
+  contact.rcContact.bottom = screen_point.y + 2;
+  contact.orientation = 90;
+  contact.pressure = 32000;
+
+  contact.pointerInfo.pointerFlags = POINTER_FLAG_DOWN | POINTER_FLAG_INRANGE | POINTER_FLAG_INCONTACT;
+  if (!::InjectTouchInput(1, &contact)) return false;
+  contact.pointerInfo.pointerFlags = POINTER_FLAG_UPDATE | POINTER_FLAG_INRANGE | POINTER_FLAG_INCONTACT;
+  for (int frame = 0; frame < 5; ++frame) {
+    ::Sleep(20);
+    if (!::InjectTouchInput(1, &contact)) return false;
+  }
+  contact.pointerInfo.pointerFlags = POINTER_FLAG_UP;
+  return ::InjectTouchInput(1, &contact) != FALSE;
 }
 
 void TestUnavailablePropertyWriteFails() {
@@ -225,14 +337,14 @@ void TestInnerSubclassOwnershipIsSerializedAndDetached() {
   POINT expected_up_position = up_position;
   ::ScreenToClient(windows.target, &expected_up_position);
 
-  ::SendMessageW(
-      windows.inner, WM_POINTERDOWN, MAKEWPARAM(kPrimaryPointerId, kPointerDownFlags),
+  SendFromOwnerThread(
+      windows.target, windows.inner, WM_POINTERDOWN, MAKEWPARAM(kPrimaryPointerId, kPointerDownFlags),
       MAKELPARAM(down_position.x, down_position.y));
-  ::SendMessageW(
-      windows.inner, WM_POINTERUPDATE, MAKEWPARAM(kPrimaryPointerId, kPointerMoveFlags),
+  SendFromOwnerThread(
+      windows.target, windows.inner, WM_POINTERUPDATE, MAKEWPARAM(kPrimaryPointerId, kPointerMoveFlags),
       MAKELPARAM(up_position.x, up_position.y));
-  ::SendMessageW(
-      windows.inner, WM_POINTERUP, MAKEWPARAM(kPrimaryPointerId, kPointerUpFlags),
+  SendFromOwnerThread(
+      windows.target, windows.inner, WM_POINTERUP, MAKEWPARAM(kPrimaryPointerId, kPointerUpFlags),
       MAKELPARAM(up_position.x, up_position.y));
   for (int attempt = 0; attempt < 100 && g_forwarded_mouse_up_messages.load(std::memory_order_relaxed) < 1; ++attempt) {
     ::Sleep(10);
@@ -260,19 +372,21 @@ void TestInnerSubclassOwnershipIsSerializedAndDetached() {
 
   const WPARAM secondary_down = MAKEWPARAM(kSecondaryPointerId, kPointerDownFlags & ~POINTER_MESSAGE_FLAG_PRIMARY);
   const WPARAM secondary_up = MAKEWPARAM(kSecondaryPointerId, kPointerUpFlags & ~POINTER_MESSAGE_FLAG_PRIMARY);
-  ::SendMessageW(windows.inner, WM_POINTERDOWN, secondary_down, MAKELPARAM(down_position.x, down_position.y));
-  ::SendMessageW(windows.inner, WM_POINTERUP, secondary_up, MAKELPARAM(up_position.x, up_position.y));
+  SendFromOwnerThread(
+      windows.target, windows.inner, WM_POINTERDOWN, secondary_down, MAKELPARAM(down_position.x, down_position.y));
+  SendFromOwnerThread(
+      windows.target, windows.inner, WM_POINTERUP, secondary_up, MAKELPARAM(up_position.x, up_position.y));
   ::Sleep(30);
   Check(
       g_forwarded_mouse_down_messages.load(std::memory_order_relaxed) == 1 &&
           g_forwarded_mouse_up_messages.load(std::memory_order_relaxed) == 1,
       "secondary touch must not synthesize another click");
 
-  ::SendMessageW(
-      windows.inner, WM_POINTERDOWN, MAKEWPARAM(kCancelledPointerId, kPointerDownFlags),
+  SendFromOwnerThread(
+      windows.target, windows.inner, WM_POINTERDOWN, MAKEWPARAM(kCancelledPointerId, kPointerDownFlags),
       MAKELPARAM(down_position.x, down_position.y));
-  ::SendMessageW(
-      windows.inner, WM_POINTERCAPTURECHANGED, MAKEWPARAM(kCancelledPointerId, kPointerUpFlags),
+  SendFromOwnerThread(
+      windows.target, windows.inner, WM_POINTERCAPTURECHANGED, MAKEWPARAM(kCancelledPointerId, kPointerUpFlags),
       reinterpret_cast<LPARAM>(windows.host));
   for (int attempt = 0; attempt < 100 && g_forwarded_mouse_up_messages.load(std::memory_order_relaxed) < 2; ++attempt) {
     ::Sleep(10);
@@ -282,8 +396,8 @@ void TestInnerSubclassOwnershipIsSerializedAndDetached() {
           g_forwarded_mouse_up_messages.load(std::memory_order_relaxed) == 2,
       "capture loss must release an active synthetic mouse press");
 
-  ::SendMessageW(
-      windows.inner, WM_POINTERDOWN, MAKEWPARAM(kDetachedPointerId, kPointerDownFlags),
+  SendFromOwnerThread(
+      windows.target, windows.inner, WM_POINTERDOWN, MAKEWPARAM(kDetachedPointerId, kPointerDownFlags),
       MAKELPARAM(down_position.x, down_position.y));
   for (int attempt = 0; attempt < 100 && g_forwarded_mouse_down_messages.load(std::memory_order_relaxed) < 3;
        ++attempt) {
@@ -302,8 +416,8 @@ void TestInnerSubclassOwnershipIsSerializedAndDetached() {
           g_forwarded_mouse_up_messages.load(std::memory_order_relaxed) == 3,
       "detach must release an active synthetic mouse press");
 
-  ::SendMessageW(
-      windows.inner, WM_POINTERUP, MAKEWPARAM(kDetachedPointerId, kPointerUpFlags),
+  SendFromOwnerThread(
+      windows.target, windows.inner, WM_POINTERUP, MAKEWPARAM(kDetachedPointerId, kPointerUpFlags),
       MAKELPARAM(up_position.x, up_position.y));
   ::Sleep(30);
   Check(
@@ -339,8 +453,8 @@ void TestInnerSubclassOwnershipIsSerializedAndDetached() {
       destroy_generation && destroy_generation != windows.inner_original,
       "destroy test must install a fresh subclass generation");
 
-  ::SendMessageW(
-      windows.inner, WM_POINTERDOWN, MAKEWPARAM(kDestroyedPointerId, kPointerDownFlags),
+  SendFromOwnerThread(
+      windows.target, windows.inner, WM_POINTERDOWN, MAKEWPARAM(kDestroyedPointerId, kPointerDownFlags),
       MAKELPARAM(down_position.x, down_position.y));
   ::SendMessageW(windows.inner, WM_CLOSE, 0, 0);
   for (int attempt = 0; attempt < 100 && g_forwarded_mouse_up_messages.load(std::memory_order_relaxed) < 4; ++attempt) {
@@ -522,6 +636,169 @@ void TestTimedOutSubclassInstallCannotOutliveItsState() {
   window_owner.join();
 }
 
+// The video child must never own a contact: mpv's window lives on mpv's own
+// thread, where the cross-thread hit-test opt-outs (WS_EX_TRANSPARENT, an
+// HTTRANSPARENT WM_NCHITTEST reply) do not apply. Disabling the host is what
+// keeps mouse, touch, and pen on the Flutter view. The window mpv creates
+// inside the host afterwards needs no state of its own — targeting skips the
+// host without descending into it — so only the host's own state is asserted
+// here (a disabled parent never clears its children's WS_DISABLED bit).
+void TestDisabledVideoHostKeepsInputOnTheFlutterView() {
+  HWND view = ::CreateWindowExW(0, L"STATIC", L"", WS_OVERLAPPED, 0, 0, 400, 400, nullptr, nullptr, nullptr, nullptr);
+  Check(view != nullptr, "video host test needs a stand-in Flutter view window");
+  RECT client = {};
+  Check(::GetClientRect(view, &client) != FALSE, "the stand-in view must report a client area");
+  Check(client.right > 2 && client.bottom > 2, "the stand-in view must have a usable client area");
+
+  HWND host = ::CreateWindowExW(
+      WS_EX_NOPARENTNOTIFY, L"STATIC", L"", kVideoHostWindowStyle, 0, 0, client.right, client.bottom, view, nullptr,
+      nullptr, nullptr);
+  Check(host != nullptr, "the video host window must be created");
+  Check(!::IsWindowEnabled(host), "the video host must be created disabled");
+
+  const POINT contact = {client.right / 2, client.bottom / 2};
+  Check(
+      ::ChildWindowFromPointEx(view, contact, CWP_SKIPDISABLED) == view,
+      "input over the disabled video host must target the Flutter view");
+
+  ::EnableWindow(host, TRUE);
+  Check(
+      ::ChildWindowFromPointEx(view, contact, CWP_SKIPDISABLED) == host,
+      "the same contact must reach an enabled host, so the skip is the disabled state and not the geometry");
+
+  ::DestroyWindow(host);
+  ::DestroyWindow(view);
+}
+
+// The assertions above only prove that USER32's own child lookup honors
+// CWP_SKIPDISABLED. What the video child actually depends on is the input hit
+// test: a press over the disabled host has to reach the parent view, and must
+// not be swallowed — swallowing is what the previous implementation reported
+// when it tried disabling this subtree, and no relay can recover from it
+// because mpv's window never sees the message either.
+//
+// A control press with the video subtree hidden runs first. If that one does
+// not arrive, injection is unavailable here and the test skips. Once it has
+// landed, silence from the press over the disabled host is a failure, not an
+// environment problem.
+void TestDisabledVideoHostRoutesRealPressesToParentView() {
+  HWND view = ::CreateWindowExW(
+      0, L"STATIC", L"", WS_OVERLAPPEDWINDOW | WS_VISIBLE, 100, 100, 400, 400, nullptr, nullptr, nullptr, nullptr);
+  Check(view != nullptr, "input routing test needs a stand-in Flutter view window");
+  RECT client = {};
+  Check(::GetClientRect(view, &client) != FALSE, "the stand-in view must report a client area");
+  Check(client.right > 2 && client.bottom > 2, "the stand-in view must have a usable client area");
+
+  HWND host = ::CreateWindowExW(
+      WS_EX_NOPARENTNOTIFY, L"STATIC", L"", kVideoHostWindowStyle | WS_VISIBLE, 0, 0, client.right, client.bottom, view,
+      nullptr, nullptr, nullptr);
+  Check(host != nullptr, "the video host window must be created");
+  HWND inner = ::CreateWindowExW(
+      0, L"STATIC", L"", WS_CHILD | WS_VISIBLE, 0, 0, client.right, client.bottom, host, nullptr, nullptr, nullptr);
+  Check(inner != nullptr, "the mpv inner window stand-in must be created");
+
+  g_routing_view.store(view, std::memory_order_release);
+  g_routing_view_presses.store(0, std::memory_order_relaxed);
+  g_routing_child_presses.store(0, std::memory_order_relaxed);
+  const auto view_original =
+      reinterpret_cast<WNDPROC>(::SetWindowLongPtrW(view, GWLP_WNDPROC, reinterpret_cast<LONG_PTR>(RoutingWindowProc)));
+  const auto host_original =
+      reinterpret_cast<WNDPROC>(::SetWindowLongPtrW(host, GWLP_WNDPROC, reinterpret_cast<LONG_PTR>(RoutingWindowProc)));
+  const auto inner_original = reinterpret_cast<WNDPROC>(
+      ::SetWindowLongPtrW(inner, GWLP_WNDPROC, reinterpret_cast<LONG_PTR>(RoutingWindowProc)));
+
+  ::SetForegroundWindow(view);
+  PumpUntil([]() { return false; }, 100);
+
+  POINT contact = {client.right / 2, client.bottom / 2};
+  ::ClientToScreen(view, &contact);
+  POINT restore_cursor = {};
+  const bool cursor_known = ::GetCursorPos(&restore_cursor) != FALSE;
+
+  // Control: with the video subtree hidden, this press can only land on the
+  // view. It establishes that injection reaches this process at all.
+  ::ShowWindow(host, SW_HIDE);
+  PumpUntil([]() { return false; }, 50);
+  bool control_landed = false;
+  if (::WindowFromPoint(contact) == view && InjectClick(contact)) {
+    control_landed = PumpUntil([]() { return g_routing_view_presses.load(std::memory_order_relaxed) > 0; }, 2000);
+  }
+
+  if (!control_landed) {
+    std::cout << "mpv_player_property_contract_test: skipped injected input routing (no usable desktop)\n";
+  } else {
+    g_routing_view_presses.store(0, std::memory_order_relaxed);
+    g_routing_child_presses.store(0, std::memory_order_relaxed);
+    ::ShowWindow(host, SW_SHOWNA);
+    PumpUntil([]() { return false; }, 50);
+
+    Check(
+        ::WindowFromPoint(contact) == view,
+        "the input hit test must skip the disabled video subtree and resolve to the Flutter view");
+    Check(InjectClick(contact), "the control press injected, so the press over the video host must inject too");
+    PumpUntil([]() { return g_routing_view_presses.load(std::memory_order_relaxed) > 0; }, 2000);
+
+    Check(
+        g_routing_child_presses.load(std::memory_order_relaxed) == 0,
+        "a disabled video subtree must not receive the press itself");
+    Check(
+        g_routing_view_presses.load(std::memory_order_relaxed) == 1,
+        "a press over the disabled video host must reach the parent Flutter view instead of being swallowed");
+
+    // Touch is the contact kind issue #1556 was reported for, and it takes a
+    // different path into the system than the mouse press above: the injection
+    // below produces a real touch contact, so the system's own hit test picks
+    // the target and promotes it to the legacy mouse stream the counters watch.
+    // A machine without a digitizer can still inject, so this is not gated on
+    // SM_DIGITIZER - only on the injection API being usable at all.
+    if (!::InitializeTouchInjection(1, TOUCH_FEEDBACK_NONE)) {
+      std::cout << "mpv_player_property_contract_test: skipped injected touch routing (injection unavailable)\n";
+    } else {
+      g_routing_view_presses.store(0, std::memory_order_relaxed);
+      g_routing_child_presses.store(0, std::memory_order_relaxed);
+      ::ShowWindow(host, SW_HIDE);
+      PumpUntil([]() { return false; }, 50);
+
+      // Same control as the mouse pass: with the video subtree hidden the tap
+      // can only land on the view, which proves touch injection works here
+      // before silence over the disabled host is treated as a failure.
+      bool touch_control_landed = false;
+      if (InjectTap(contact)) {
+        touch_control_landed =
+            PumpUntil([]() { return g_routing_view_presses.load(std::memory_order_relaxed) > 0; }, 2000);
+      }
+
+      if (!touch_control_landed) {
+        std::cout << "mpv_player_property_contract_test: skipped injected touch routing (no usable desktop)\n";
+      } else {
+        g_routing_view_presses.store(0, std::memory_order_relaxed);
+        g_routing_child_presses.store(0, std::memory_order_relaxed);
+        ::ShowWindow(host, SW_SHOWNA);
+        PumpUntil([]() { return false; }, 50);
+
+        Check(InjectTap(contact), "the control tap injected, so the tap over the video host must inject too");
+        PumpUntil([]() { return g_routing_view_presses.load(std::memory_order_relaxed) > 0; }, 2000);
+
+        Check(
+            g_routing_child_presses.load(std::memory_order_relaxed) == 0,
+            "a disabled video subtree must not receive the touch itself");
+        Check(
+            g_routing_view_presses.load(std::memory_order_relaxed) == 1,
+            "a touch over the disabled video host must reach the parent Flutter view instead of being swallowed");
+      }
+    }
+  }
+
+  if (cursor_known) ::SetCursorPos(restore_cursor.x, restore_cursor.y);
+  ::SetWindowLongPtrW(inner, GWLP_WNDPROC, reinterpret_cast<LONG_PTR>(inner_original));
+  ::SetWindowLongPtrW(host, GWLP_WNDPROC, reinterpret_cast<LONG_PTR>(host_original));
+  ::SetWindowLongPtrW(view, GWLP_WNDPROC, reinterpret_cast<LONG_PTR>(view_original));
+  g_routing_view.store(nullptr, std::memory_order_release);
+  ::DestroyWindow(inner);
+  ::DestroyWindow(host);
+  ::DestroyWindow(view);
+}
+
 }  // namespace
 }  // namespace mpv
 
@@ -532,6 +809,8 @@ int main() {
   mpv::TestInnerSubclassOwnershipIsSerializedAndDetached();
   mpv::TestTimedOutSubclassDetachCanBeAdopted();
   mpv::TestTimedOutSubclassInstallCannotOutliveItsState();
+  mpv::TestDisabledVideoHostKeepsInputOnTheFlutterView();
+  mpv::TestDisabledVideoHostRoutesRealPressesToParentView();
   std::cout << "mpv_player_property_contract_test: PASS\n";
   return 0;
 }

@@ -66,14 +66,24 @@ flutter::EncodableValue NodeToEncodableValue(const mpv_node* node) {
   }
 }
 
-// DComp-mode input forwarding. mpv's inner window lives on mpv's own thread
-// and consumes input over the video (WS_EX_TRANSPARENT hit-test skipping is
-// same-thread-only, and disabling the subtree makes the system drop the input
-// entirely instead of routing it to a sibling). Use the common-controls
-// subclass chain with per-window reference data. Mouse messages can be posted
-// directly, but WM_POINTER metadata remains associated with the receiving
-// window thread, so translate the primary contact to mouse input before
-// forwarding it to Flutter.
+// Input ownership for the DComp video child.
+//
+// The video host window is created disabled (WS_DISABLED). A disabled window
+// and — implicitly — its children are skipped when the system picks the window
+// that owns a contact, and the input is handed to the parent instead, so mouse,
+// touch, and pen over the video land on the Flutter view itself, on the
+// platform thread, with their real device kind. That is the only hit-test
+// opt-out that works across threads: WS_EX_TRANSPARENT and an HTTRANSPARENT
+// WM_NCHITTEST reply are both documented as same-thread-only, and mpv's inner
+// window lives on mpv's own thread.
+//
+// The subclass below is the fallback for input that still reaches mpv's window.
+// It uses the common-controls subclass chain with per-window reference data.
+// Mouse messages can be posted straight through, but a WM_POINTER message
+// cannot be forwarded as-is: Flutter resolves it with GetPointerInfo, which
+// only answers for a pointer message the calling thread retrieved itself, and
+// silently drops the event when that lookup fails. The primary contact is
+// therefore translated into mouse input.
 constexpr bool IsForwardedPointerMessage(UINT message) {
   switch (message) {
     case WM_POINTERDOWN:
@@ -101,6 +111,7 @@ LPARAM PointerPositionInView(HWND view, LPARAM lparam) {
   ::ScreenToClient(view, &point);
   return MAKELPARAM(point.x, point.y);
 }
+
 void ReleaseForwardedPointer(InnerWindowSubclassState& state, HWND view) {
   std::lock_guard<std::mutex> lock(state.forwarded_pointer_mutex);
   if (state.forwarded_pointer_token.exchange(0, std::memory_order_acq_rel) == 0 || !view) {
@@ -536,12 +547,15 @@ bool MpvPlayer::Initialize(HWND view) {
     // |view|. The video child then sits in the view's own per-window layer
     // stack, above the view's (never-painted) layer-1 content and below the
     // engine's topmost DComp visual carrying the UI. WS_CLIPSIBLINGS keeps it
-    // from painting over neighboring view children. Mouse, touch, and stylus
-    // input over the video is delivered to mpv's own inner window (on mpv's
-    // thread); the subclass installed in EnsureMpvInnerSubclassed forwards it
-    // back to the Flutter view.
+    // from painting over neighboring view children.
+    //
+    // WS_DISABLED takes the host — and the inner window mpv creates inside it,
+    // which a disabled parent disables implicitly — out of input targeting, so
+    // mouse, touch, and pen over the video are delivered to the parent Flutter
+    // view instead of to mpv's thread. mpv never consumes input here anyway
+    // (input-vo-keyboard=no, and the forwarding subclass swallows the rest).
     hwnd_ = ::CreateWindowExW(
-        WS_EX_NOPARENTNOTIFY, L"STATIC", L"", WS_CHILD | WS_CLIPSIBLINGS, 0, 0, 100, 100, view, nullptr,
+        WS_EX_NOPARENTNOTIFY, L"STATIC", L"", kVideoHostWindowStyle, 0, 0, 100, 100, view, nullptr,
         GetModuleHandle(nullptr), nullptr);
     if (!hwnd_) {
       mpv_destroy(mpv_);
