@@ -704,9 +704,6 @@ class _Translations$videoControls$pl extends Translations$videoControls$en {
 	@override String get searchSubtitles => 'Szukaj napisów';
 	@override String get language => 'Język';
 	@override String get noSubtitlesFound => 'Nie znaleziono napisów';
-	@override String get noSubtitlesAvailable => 'Brak dostępnych napisów';
-	@override String get noAudioTracksAvailable => 'Brak dostępnych ścieżek audio';
-	@override String get noTracksAvailable => 'Brak dostępnych ścieżek';
 	@override String get subtitleDownloaded => 'Napisy pobrane';
 	@override String get subtitleDownloadedNotApplied => 'Napisy zostały pobrane, ale nie można ich było wybrać';
 	@override String get subtitleDownloadFailed => 'Nie udało się pobrać napisów';
@@ -2718,12 +2715,9 @@ extension on TranslationsPl {
 			'videoControls.searchSubtitles' => 'Szukaj napisów',
 			'videoControls.language' => 'Język',
 			'videoControls.noSubtitlesFound' => 'Nie znaleziono napisów',
-			'videoControls.noSubtitlesAvailable' => 'Brak dostępnych napisów',
+			'videoControls.subtitleDownloaded' => 'Napisy pobrane',
 			_ => null,
 		} ?? switch (path) {
-			'videoControls.noAudioTracksAvailable' => 'Brak dostępnych ścieżek audio',
-			'videoControls.noTracksAvailable' => 'Brak dostępnych ścieżek',
-			'videoControls.subtitleDownloaded' => 'Napisy pobrane',
 			'videoControls.subtitleDownloadedNotApplied' => 'Napisy zostały pobrane, ale nie można ich było wybrać',
 			'videoControls.subtitleDownloadFailed' => 'Nie udało się pobrać napisów',
 			'videoControls.searchLanguages' => 'Szukaj języków...',
@@ -3233,11 +3227,11 @@ extension on TranslationsPl {
 			'watchTogether.codeMustBe5Chars' => 'Kod sesji musi mieć 5 znaków',
 			'watchTogether.joinInstructions' => 'Wpisz kod sesji hosta, aby dołączyć.',
 			'watchTogether.failedToCreate' => 'Nie udało się utworzyć sesji',
-			_ => null,
-		} ?? switch (path) {
 			'watchTogether.failedToJoin' => 'Nie udało się dołączyć do sesji',
 			'watchTogether.sessionCodeCopied' => 'Kod sesji skopiowany do schowka',
 			'watchTogether.relayUnreachable' => 'Serwer pośredniczący jest nieosiągalny. Blokada operatora internetowego może uniemożliwiać korzystanie z funkcji „Oglądaj razem”.',
+			_ => null,
+		} ?? switch (path) {
 			'watchTogether.reconnectingToHost' => 'Ponowne łączenie z gospodarzem...',
 			'watchTogether.currentPlayback' => 'Bieżące odtwarzanie',
 			'watchTogether.joinCurrentPlayback' => 'Dołącz do bieżącego odtwarzania',

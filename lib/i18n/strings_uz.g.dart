@@ -707,9 +707,6 @@ class _Translations$videoControls$uz extends Translations$videoControls$en {
 	@override String get searchSubtitles => 'Subtitr qidirish';
 	@override String get language => 'Til';
 	@override String get noSubtitlesFound => 'Subtitr topilmadi';
-	@override String get noSubtitlesAvailable => 'Subtitrlar yoʻq';
-	@override String get noAudioTracksAvailable => 'Audio yoʻlaklar yoʻq';
-	@override String get noTracksAvailable => 'Yoʻlaklar yoʻq';
 	@override String get subtitleDownloaded => 'Subtitr yuklab olindi';
 	@override String get subtitleDownloadedNotApplied => 'Subtitr yuklab olindi, lekin qoʻllanilmadi';
 	@override String get subtitleDownloadFailed => 'Subtitrni yuklab boʻlmadi';
@@ -2728,9 +2725,6 @@ extension on TranslationsUz {
 		} ?? switch (path) {
 			'videoControls.language' => 'Til',
 			'videoControls.noSubtitlesFound' => 'Subtitr topilmadi',
-			'videoControls.noSubtitlesAvailable' => 'Subtitrlar yoʻq',
-			'videoControls.noAudioTracksAvailable' => 'Audio yoʻlaklar yoʻq',
-			'videoControls.noTracksAvailable' => 'Yoʻlaklar yoʻq',
 			'videoControls.subtitleDownloaded' => 'Subtitr yuklab olindi',
 			'videoControls.subtitleDownloadedNotApplied' => 'Subtitr yuklab olindi, lekin qoʻllanilmadi',
 			'videoControls.subtitleDownloadFailed' => 'Subtitrni yuklab boʻlmadi',
@@ -3238,11 +3232,11 @@ extension on TranslationsUz {
 			'watchTogether.syncing' => 'Sinxronlanmoqda...',
 			'watchTogether.joinWatchSession' => 'Tomosha seansiga qoʻshilish',
 			'watchTogether.enterCodeHint' => '5 xonali kodni kiriting',
-			_ => null,
-		} ?? switch (path) {
 			'watchTogether.pasteFromClipboard' => 'Xotiradan joylash',
 			'watchTogether.pleaseEnterCode' => 'Seans kodini kiriting',
 			'watchTogether.codeMustBe5Chars' => 'Seans kodi 5 ta belgidan iborat boʻlishi kerak',
+			_ => null,
+		} ?? switch (path) {
 			'watchTogether.joinInstructions' => 'Tashkilotchining seans kodini kiriting.',
 			'watchTogether.failedToCreate' => 'Seansni yaratib boʻlmadi',
 			'watchTogether.failedToJoin' => 'Seansga qoʻshilib boʻlmadi',

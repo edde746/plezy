@@ -704,9 +704,6 @@ class _Translations$videoControls$es extends Translations$videoControls$en {
 	@override String get searchSubtitles => 'Buscar subtítulos';
 	@override String get language => 'Idioma';
 	@override String get noSubtitlesFound => 'No se encontraron subtítulos';
-	@override String get noSubtitlesAvailable => 'No hay subtítulos disponibles';
-	@override String get noAudioTracksAvailable => 'No hay pistas de audio disponibles';
-	@override String get noTracksAvailable => 'No hay pistas disponibles';
 	@override String get subtitleDownloaded => 'Subtítulo descargado';
 	@override String get subtitleDownloadedNotApplied => 'El subtítulo se descargó, pero no se pudo seleccionar';
 	@override String get subtitleDownloadFailed => 'Error al descargar subtítulo';
@@ -2712,12 +2709,9 @@ extension on TranslationsEs {
 			'videoControls.searchSubtitles' => 'Buscar subtítulos',
 			'videoControls.language' => 'Idioma',
 			'videoControls.noSubtitlesFound' => 'No se encontraron subtítulos',
-			'videoControls.noSubtitlesAvailable' => 'No hay subtítulos disponibles',
+			'videoControls.subtitleDownloaded' => 'Subtítulo descargado',
 			_ => null,
 		} ?? switch (path) {
-			'videoControls.noAudioTracksAvailable' => 'No hay pistas de audio disponibles',
-			'videoControls.noTracksAvailable' => 'No hay pistas disponibles',
-			'videoControls.subtitleDownloaded' => 'Subtítulo descargado',
 			'videoControls.subtitleDownloadedNotApplied' => 'El subtítulo se descargó, pero no se pudo seleccionar',
 			'videoControls.subtitleDownloadFailed' => 'Error al descargar subtítulo',
 			'videoControls.searchLanguages' => 'Buscar idiomas...',
@@ -3227,11 +3221,11 @@ extension on TranslationsEs {
 			'watchTogether.codeMustBe5Chars' => 'El código de sesión debe tener 5 caracteres',
 			'watchTogether.joinInstructions' => 'Introduce el código de sesión del anfitrión para unirte.',
 			'watchTogether.failedToCreate' => 'Error al crear la sesión',
-			_ => null,
-		} ?? switch (path) {
 			'watchTogether.failedToJoin' => 'Error al unirse a la sesión',
 			'watchTogether.sessionCodeCopied' => 'Código de sesión copiado al portapapeles',
 			'watchTogether.relayUnreachable' => 'No se puede acceder al servidor de retransmisión. Es posible que tu proveedor de internet esté bloqueando Ver juntos.',
+			_ => null,
+		} ?? switch (path) {
 			'watchTogether.reconnectingToHost' => 'Reconectando con el anfitrión...',
 			'watchTogether.currentPlayback' => 'Reproducción actual',
 			'watchTogether.joinCurrentPlayback' => 'Unirse a la reproducción actual',

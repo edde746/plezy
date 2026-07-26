@@ -704,9 +704,6 @@ class _Translations$videoControls$hu extends Translations$videoControls$en {
 	@override String get searchSubtitles => 'Feliratok keresése';
 	@override String get language => 'Nyelv';
 	@override String get noSubtitlesFound => 'Nem találhatók feliratok';
-	@override String get noSubtitlesAvailable => 'Nincsenek elérhető feliratok';
-	@override String get noAudioTracksAvailable => 'Nincsenek elérhető hangsávok';
-	@override String get noTracksAvailable => 'Nincsenek elérhető sávok';
 	@override String get subtitleDownloaded => 'Felirat letöltve';
 	@override String get subtitleDownloadedNotApplied => 'Felirat letöltve, de nem sikerült kiválasztani';
 	@override String get subtitleDownloadFailed => 'Nem sikerült a felirat letöltése';
@@ -2712,12 +2709,9 @@ extension on TranslationsHu {
 			'videoControls.searchSubtitles' => 'Feliratok keresése',
 			'videoControls.language' => 'Nyelv',
 			'videoControls.noSubtitlesFound' => 'Nem találhatók feliratok',
-			'videoControls.noSubtitlesAvailable' => 'Nincsenek elérhető feliratok',
+			'videoControls.subtitleDownloaded' => 'Felirat letöltve',
 			_ => null,
 		} ?? switch (path) {
-			'videoControls.noAudioTracksAvailable' => 'Nincsenek elérhető hangsávok',
-			'videoControls.noTracksAvailable' => 'Nincsenek elérhető sávok',
-			'videoControls.subtitleDownloaded' => 'Felirat letöltve',
 			'videoControls.subtitleDownloadedNotApplied' => 'Felirat letöltve, de nem sikerült kiválasztani',
 			'videoControls.subtitleDownloadFailed' => 'Nem sikerült a felirat letöltése',
 			'videoControls.searchLanguages' => 'Nyelvek keresése...',
@@ -3227,11 +3221,11 @@ extension on TranslationsHu {
 			'watchTogether.codeMustBe5Chars' => 'A munkamenetkódnak 5 karakterből kell állnia',
 			'watchTogether.joinInstructions' => 'Add meg a házigazda kódját a csatlakozáshoz.',
 			'watchTogether.failedToCreate' => 'Nem sikerült a munkamenet létrehozása',
-			_ => null,
-		} ?? switch (path) {
 			'watchTogether.failedToJoin' => 'Nem sikerült csatlakozni a munkamenethez',
 			'watchTogether.sessionCodeCopied' => 'A munkamenetkód a vágólapra másolva',
 			'watchTogether.relayUnreachable' => 'A relészerver nem érhető el. Az internetszolgáltató blokkolása megakadályozhatja a közös nézést.',
+			_ => null,
+		} ?? switch (path) {
 			'watchTogether.reconnectingToHost' => 'Újracsatlakozás a házigazdához...',
 			'watchTogether.currentPlayback' => 'Jelenlegi lejátszás',
 			'watchTogether.joinCurrentPlayback' => 'Csatlakozás a jelenlegi lejátszáshoz',

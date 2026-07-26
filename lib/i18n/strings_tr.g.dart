@@ -707,9 +707,6 @@ class _Translations$videoControls$tr extends Translations$videoControls$en {
 	@override String get searchSubtitles => 'Altyazı Ara';
 	@override String get language => 'Dil';
 	@override String get noSubtitlesFound => 'Altyazı bulunamadı';
-	@override String get noSubtitlesAvailable => 'Altyazı yok';
-	@override String get noAudioTracksAvailable => 'Ses parçası yok';
-	@override String get noTracksAvailable => 'Parça yok';
 	@override String get subtitleDownloaded => 'Altyazı indirildi';
 	@override String get subtitleDownloadedNotApplied => 'Altyazı indirildi ancak seçilemedi';
 	@override String get subtitleDownloadFailed => 'Altyazı indirilemedi';
@@ -2728,9 +2725,6 @@ extension on TranslationsTr {
 		} ?? switch (path) {
 			'videoControls.language' => 'Dil',
 			'videoControls.noSubtitlesFound' => 'Altyazı bulunamadı',
-			'videoControls.noSubtitlesAvailable' => 'Altyazı yok',
-			'videoControls.noAudioTracksAvailable' => 'Ses parçası yok',
-			'videoControls.noTracksAvailable' => 'Parça yok',
 			'videoControls.subtitleDownloaded' => 'Altyazı indirildi',
 			'videoControls.subtitleDownloadedNotApplied' => 'Altyazı indirildi ancak seçilemedi',
 			'videoControls.subtitleDownloadFailed' => 'Altyazı indirilemedi',
@@ -3238,11 +3232,11 @@ extension on TranslationsTr {
 			'watchTogether.syncing' => 'Eşitleniyor...',
 			'watchTogether.joinWatchSession' => 'İzleme Oturumuna Katıl',
 			'watchTogether.enterCodeHint' => '5 karakterlik kodu girin',
-			_ => null,
-		} ?? switch (path) {
 			'watchTogether.pasteFromClipboard' => 'Panodan yapıştır',
 			'watchTogether.pleaseEnterCode' => 'Lütfen bir oturum kodu girin',
 			'watchTogether.codeMustBe5Chars' => 'Oturum kodu 5 karakter olmalıdır',
+			_ => null,
+		} ?? switch (path) {
 			'watchTogether.joinInstructions' => 'Katılmak için kurucunun oturum kodunu girin.',
 			'watchTogether.failedToCreate' => 'Oturum oluşturulamadı',
 			'watchTogether.failedToJoin' => 'Oturuma katılınamadı',

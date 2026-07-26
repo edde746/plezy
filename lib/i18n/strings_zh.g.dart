@@ -704,9 +704,6 @@ class Translations$videoControls$zh extends Translations$videoControls$en {
 	@override String get searchSubtitles => '搜索字幕';
 	@override String get language => '语言';
 	@override String get noSubtitlesFound => '未找到字幕';
-	@override String get noSubtitlesAvailable => '没有可用字幕';
-	@override String get noAudioTracksAvailable => '没有可用音轨';
-	@override String get noTracksAvailable => '没有可用音轨';
 	@override String get subtitleDownloaded => '字幕已下载';
 	@override String get subtitleDownloadedNotApplied => '字幕已下载，但无法选择';
 	@override String get subtitleDownloadFailed => '字幕下载失败';
@@ -2709,12 +2706,9 @@ extension on TranslationsZh {
 			'videoControls.searchSubtitles' => '搜索字幕',
 			'videoControls.language' => '语言',
 			'videoControls.noSubtitlesFound' => '未找到字幕',
-			'videoControls.noSubtitlesAvailable' => '没有可用字幕',
+			'videoControls.subtitleDownloaded' => '字幕已下载',
 			_ => null,
 		} ?? switch (path) {
-			'videoControls.noAudioTracksAvailable' => '没有可用音轨',
-			'videoControls.noTracksAvailable' => '没有可用音轨',
-			'videoControls.subtitleDownloaded' => '字幕已下载',
 			'videoControls.subtitleDownloadedNotApplied' => '字幕已下载，但无法选择',
 			'videoControls.subtitleDownloadFailed' => '字幕下载失败',
 			'videoControls.searchLanguages' => '搜索语言…',
@@ -3224,11 +3218,11 @@ extension on TranslationsZh {
 			'watchTogether.codeMustBe5Chars' => '会话代码必须是 5 个字符',
 			'watchTogether.joinInstructions' => '输入主持人的会话代码以加入。',
 			'watchTogether.failedToCreate' => '创建会话失败',
-			_ => null,
-		} ?? switch (path) {
 			'watchTogether.failedToJoin' => '加入会话失败',
 			'watchTogether.sessionCodeCopied' => '会话代码已复制到剪贴板',
 			'watchTogether.relayUnreachable' => '无法访问中继服务器。网络运营商的屏蔽可能导致“一起看”不可用。',
+			_ => null,
+		} ?? switch (path) {
 			'watchTogether.reconnectingToHost' => '正在重新连接到主持人…',
 			'watchTogether.currentPlayback' => '当前播放',
 			'watchTogether.joinCurrentPlayback' => '加入当前播放',

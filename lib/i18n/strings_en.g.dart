@@ -1675,15 +1675,6 @@ class Translations$videoControls$en {
 	/// en: 'No subtitles found'
 	String get noSubtitlesFound => 'No subtitles found';
 
-	/// en: 'No subtitles available'
-	String get noSubtitlesAvailable => 'No subtitles available';
-
-	/// en: 'No audio tracks available'
-	String get noAudioTracksAvailable => 'No audio tracks available';
-
-	/// en: 'No tracks available'
-	String get noTracksAvailable => 'No tracks available';
-
 	/// en: 'Subtitle downloaded'
 	String get subtitleDownloaded => 'Subtitle downloaded';
 
@@ -5724,9 +5715,6 @@ extension on Translations {
 		} ?? switch (path) {
 			'videoControls.language' => 'Language',
 			'videoControls.noSubtitlesFound' => 'No subtitles found',
-			'videoControls.noSubtitlesAvailable' => 'No subtitles available',
-			'videoControls.noAudioTracksAvailable' => 'No audio tracks available',
-			'videoControls.noTracksAvailable' => 'No tracks available',
 			'videoControls.subtitleDownloaded' => 'Subtitle downloaded',
 			'videoControls.subtitleDownloadedNotApplied' => 'Subtitle downloaded, but it could not be selected',
 			'videoControls.subtitleDownloadFailed' => 'Failed to download subtitle',
@@ -6234,11 +6222,11 @@ extension on Translations {
 			'watchTogether.syncing' => 'Syncing...',
 			'watchTogether.joinWatchSession' => 'Join Watch Session',
 			'watchTogether.enterCodeHint' => 'Enter 5-character code',
-			_ => null,
-		} ?? switch (path) {
 			'watchTogether.pasteFromClipboard' => 'Paste from clipboard',
 			'watchTogether.pleaseEnterCode' => 'Please enter a session code',
 			'watchTogether.codeMustBe5Chars' => 'Session code must be 5 characters',
+			_ => null,
+		} ?? switch (path) {
 			'watchTogether.joinInstructions' => 'Enter the host\'s session code to join.',
 			'watchTogether.failedToCreate' => 'Failed to create session',
 			'watchTogether.failedToJoin' => 'Failed to join session',

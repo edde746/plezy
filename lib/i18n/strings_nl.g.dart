@@ -704,9 +704,6 @@ class _Translations$videoControls$nl extends Translations$videoControls$en {
 	@override String get searchSubtitles => 'Ondertitels zoeken';
 	@override String get language => 'Taal';
 	@override String get noSubtitlesFound => 'Geen ondertitels gevonden';
-	@override String get noSubtitlesAvailable => 'Geen ondertitels beschikbaar';
-	@override String get noAudioTracksAvailable => 'Geen audiotracks beschikbaar';
-	@override String get noTracksAvailable => 'Geen tracks beschikbaar';
 	@override String get subtitleDownloaded => 'Ondertitel gedownload';
 	@override String get subtitleDownloadedNotApplied => 'De ondertiteling is gedownload, maar kon niet worden geselecteerd';
 	@override String get subtitleDownloadFailed => 'Ondertitel downloaden mislukt';
@@ -2712,12 +2709,9 @@ extension on TranslationsNl {
 			'videoControls.searchSubtitles' => 'Ondertitels zoeken',
 			'videoControls.language' => 'Taal',
 			'videoControls.noSubtitlesFound' => 'Geen ondertitels gevonden',
-			'videoControls.noSubtitlesAvailable' => 'Geen ondertitels beschikbaar',
+			'videoControls.subtitleDownloaded' => 'Ondertitel gedownload',
 			_ => null,
 		} ?? switch (path) {
-			'videoControls.noAudioTracksAvailable' => 'Geen audiotracks beschikbaar',
-			'videoControls.noTracksAvailable' => 'Geen tracks beschikbaar',
-			'videoControls.subtitleDownloaded' => 'Ondertitel gedownload',
 			'videoControls.subtitleDownloadedNotApplied' => 'De ondertiteling is gedownload, maar kon niet worden geselecteerd',
 			'videoControls.subtitleDownloadFailed' => 'Ondertitel downloaden mislukt',
 			'videoControls.searchLanguages' => 'Talen zoeken...',
@@ -3227,11 +3221,11 @@ extension on TranslationsNl {
 			'watchTogether.codeMustBe5Chars' => 'De sessiecode moet 5 tekens lang zijn',
 			'watchTogether.joinInstructions' => 'Voer de sessiecode van de host in om deel te nemen.',
 			'watchTogether.failedToCreate' => 'Sessie maken mislukt',
-			_ => null,
-		} ?? switch (path) {
 			'watchTogether.failedToJoin' => 'Deelnemen aan sessie mislukt',
 			'watchTogether.sessionCodeCopied' => 'Sessiecode naar het klembord gekopieerd',
 			'watchTogether.relayUnreachable' => 'De relayserver is onbereikbaar. Een blokkering door je internetprovider kan Samen kijken verhinderen.',
+			_ => null,
+		} ?? switch (path) {
 			'watchTogether.reconnectingToHost' => 'Opnieuw verbinden met host...',
 			'watchTogether.currentPlayback' => 'Wat nu wordt afgespeeld',
 			'watchTogether.joinCurrentPlayback' => 'Deelnemen aan huidige weergave',

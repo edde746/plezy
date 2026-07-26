@@ -704,9 +704,6 @@ class _Translations$videoControls$ko extends Translations$videoControls$en {
 	@override String get searchSubtitles => '자막 검색';
 	@override String get language => '언어';
 	@override String get noSubtitlesFound => '자막을 찾을 수 없습니다';
-	@override String get noSubtitlesAvailable => '사용 가능한 자막 없음';
-	@override String get noAudioTracksAvailable => '사용 가능한 오디오 트랙 없음';
-	@override String get noTracksAvailable => '사용 가능한 트랙 없음';
 	@override String get subtitleDownloaded => '자막이 다운로드되었습니다';
 	@override String get subtitleDownloadedNotApplied => '자막을 다운로드했지만 선택할 수 없습니다';
 	@override String get subtitleDownloadFailed => '자막 다운로드에 실패했습니다';
@@ -2709,12 +2706,9 @@ extension on TranslationsKo {
 			'videoControls.searchSubtitles' => '자막 검색',
 			'videoControls.language' => '언어',
 			'videoControls.noSubtitlesFound' => '자막을 찾을 수 없습니다',
-			'videoControls.noSubtitlesAvailable' => '사용 가능한 자막 없음',
+			'videoControls.subtitleDownloaded' => '자막이 다운로드되었습니다',
 			_ => null,
 		} ?? switch (path) {
-			'videoControls.noAudioTracksAvailable' => '사용 가능한 오디오 트랙 없음',
-			'videoControls.noTracksAvailable' => '사용 가능한 트랙 없음',
-			'videoControls.subtitleDownloaded' => '자막이 다운로드되었습니다',
 			'videoControls.subtitleDownloadedNotApplied' => '자막을 다운로드했지만 선택할 수 없습니다',
 			'videoControls.subtitleDownloadFailed' => '자막 다운로드에 실패했습니다',
 			'videoControls.searchLanguages' => '언어 검색...',
@@ -3224,11 +3218,11 @@ extension on TranslationsKo {
 			'watchTogether.codeMustBe5Chars' => '세션 코드는 반드시 5자리여야 합니다',
 			'watchTogether.joinInstructions' => '참여하려면 호스트의 세션 코드를 입력하세요.',
 			'watchTogether.failedToCreate' => '세션 생성 실패',
-			_ => null,
-		} ?? switch (path) {
 			'watchTogether.failedToJoin' => '세션 참여 실패',
 			'watchTogether.sessionCodeCopied' => '세션 코드가 클립보드에 복사되었습니다',
 			'watchTogether.relayUnreachable' => '릴레이 서버에 연결할 수 없습니다. ISP 차단으로 함께 보기를 사용하지 못할 수 있습니다.',
+			_ => null,
+		} ?? switch (path) {
 			'watchTogether.reconnectingToHost' => '호스트에 재연결 중...',
 			'watchTogether.currentPlayback' => '현재 재생',
 			'watchTogether.joinCurrentPlayback' => '현재 재생 참여',

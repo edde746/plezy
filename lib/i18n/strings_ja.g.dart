@@ -704,9 +704,6 @@ class _Translations$videoControls$ja extends Translations$videoControls$en {
 	@override String get searchSubtitles => '字幕を検索';
 	@override String get language => '言語';
 	@override String get noSubtitlesFound => '字幕が見つかりません';
-	@override String get noSubtitlesAvailable => '利用可能な字幕はありません';
-	@override String get noAudioTracksAvailable => '利用可能な音声トラックはありません';
-	@override String get noTracksAvailable => '利用可能なトラックはありません';
 	@override String get subtitleDownloaded => '字幕をダウンロードしました';
 	@override String get subtitleDownloadedNotApplied => '字幕はダウンロードされましたが、選択できませんでした';
 	@override String get subtitleDownloadFailed => '字幕のダウンロードに失敗しました';
@@ -2709,12 +2706,9 @@ extension on TranslationsJa {
 			'videoControls.searchSubtitles' => '字幕を検索',
 			'videoControls.language' => '言語',
 			'videoControls.noSubtitlesFound' => '字幕が見つかりません',
-			'videoControls.noSubtitlesAvailable' => '利用可能な字幕はありません',
+			'videoControls.subtitleDownloaded' => '字幕をダウンロードしました',
 			_ => null,
 		} ?? switch (path) {
-			'videoControls.noAudioTracksAvailable' => '利用可能な音声トラックはありません',
-			'videoControls.noTracksAvailable' => '利用可能なトラックはありません',
-			'videoControls.subtitleDownloaded' => '字幕をダウンロードしました',
 			'videoControls.subtitleDownloadedNotApplied' => '字幕はダウンロードされましたが、選択できませんでした',
 			'videoControls.subtitleDownloadFailed' => '字幕のダウンロードに失敗しました',
 			'videoControls.searchLanguages' => '言語を検索…',
@@ -3224,11 +3218,11 @@ extension on TranslationsJa {
 			'watchTogether.codeMustBe5Chars' => 'セッションコードは5文字である必要があります',
 			'watchTogether.joinInstructions' => '参加するにはホストのセッションコードを入力してください。',
 			'watchTogether.failedToCreate' => 'セッションの作成に失敗しました',
-			_ => null,
-		} ?? switch (path) {
 			'watchTogether.failedToJoin' => 'セッションへの参加に失敗しました',
 			'watchTogether.sessionCodeCopied' => 'セッションコードをクリップボードにコピーしました',
 			'watchTogether.relayUnreachable' => 'リレーサーバーに接続できません。ISPによるブロックのため「一緒に見る」を利用できない可能性があります。',
+			_ => null,
+		} ?? switch (path) {
 			'watchTogether.reconnectingToHost' => 'ホストに再接続中…',
 			'watchTogether.currentPlayback' => '現在の再生',
 			'watchTogether.joinCurrentPlayback' => '現在の再生に参加',

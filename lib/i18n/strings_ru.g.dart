@@ -704,9 +704,6 @@ class _Translations$videoControls$ru extends Translations$videoControls$en {
 	@override String get searchSubtitles => 'Поиск субтитров';
 	@override String get language => 'Язык';
 	@override String get noSubtitlesFound => 'Субтитры не найдены';
-	@override String get noSubtitlesAvailable => 'Нет доступных субтитров';
-	@override String get noAudioTracksAvailable => 'Нет доступных аудиодорожек';
-	@override String get noTracksAvailable => 'Нет доступных дорожек';
 	@override String get subtitleDownloaded => 'Субтитры загружены';
 	@override String get subtitleDownloadedNotApplied => 'Субтитры загружены, но их не удалось выбрать';
 	@override String get subtitleDownloadFailed => 'Не удалось загрузить субтитры';
@@ -2718,12 +2715,9 @@ extension on TranslationsRu {
 			'videoControls.searchSubtitles' => 'Поиск субтитров',
 			'videoControls.language' => 'Язык',
 			'videoControls.noSubtitlesFound' => 'Субтитры не найдены',
-			'videoControls.noSubtitlesAvailable' => 'Нет доступных субтитров',
+			'videoControls.subtitleDownloaded' => 'Субтитры загружены',
 			_ => null,
 		} ?? switch (path) {
-			'videoControls.noAudioTracksAvailable' => 'Нет доступных аудиодорожек',
-			'videoControls.noTracksAvailable' => 'Нет доступных дорожек',
-			'videoControls.subtitleDownloaded' => 'Субтитры загружены',
 			'videoControls.subtitleDownloadedNotApplied' => 'Субтитры загружены, но их не удалось выбрать',
 			'videoControls.subtitleDownloadFailed' => 'Не удалось загрузить субтитры',
 			'videoControls.searchLanguages' => 'Поиск языков...',
@@ -3233,11 +3227,11 @@ extension on TranslationsRu {
 			'watchTogether.codeMustBe5Chars' => 'Код сессии должен содержать 5 символов',
 			'watchTogether.joinInstructions' => 'Введите код сессии организатора, чтобы присоединиться.',
 			'watchTogether.failedToCreate' => 'Не удалось создать сессию',
-			_ => null,
-		} ?? switch (path) {
 			'watchTogether.failedToJoin' => 'Не удалось присоединиться к сессии',
 			'watchTogether.sessionCodeCopied' => 'Код сессии скопирован в буфер обмена',
 			'watchTogether.relayUnreachable' => 'Сервер ретрансляции недоступен. Блокировка интернет-провайдером может помешать совместному просмотру.',
+			_ => null,
+		} ?? switch (path) {
 			'watchTogether.reconnectingToHost' => 'Повторное подключение к организатору...',
 			'watchTogether.currentPlayback' => 'Текущее воспроизведение',
 			'watchTogether.joinCurrentPlayback' => 'Присоединиться к текущему воспроизведению',

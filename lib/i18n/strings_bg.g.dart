@@ -704,9 +704,6 @@ class _Translations$videoControls$bg extends Translations$videoControls$en {
 	@override String get searchSubtitles => 'Търсене на субтитри';
 	@override String get language => 'Език';
 	@override String get noSubtitlesFound => 'Не са намерени субтитри';
-	@override String get noSubtitlesAvailable => 'Няма налични субтитри';
-	@override String get noAudioTracksAvailable => 'Няма налични аудиопътечки';
-	@override String get noTracksAvailable => 'Няма налични пътечки';
 	@override String get subtitleDownloaded => 'Субтитърът е изтеглен';
 	@override String get subtitleDownloadedNotApplied => 'Субтитрите са изтеглени, но не можаха да бъдат избрани';
 	@override String get subtitleDownloadFailed => 'Неуспешно изтегляне на субтитър';
@@ -2712,12 +2709,9 @@ extension on TranslationsBg {
 			'videoControls.searchSubtitles' => 'Търсене на субтитри',
 			'videoControls.language' => 'Език',
 			'videoControls.noSubtitlesFound' => 'Не са намерени субтитри',
-			'videoControls.noSubtitlesAvailable' => 'Няма налични субтитри',
+			'videoControls.subtitleDownloaded' => 'Субтитърът е изтеглен',
 			_ => null,
 		} ?? switch (path) {
-			'videoControls.noAudioTracksAvailable' => 'Няма налични аудиопътечки',
-			'videoControls.noTracksAvailable' => 'Няма налични пътечки',
-			'videoControls.subtitleDownloaded' => 'Субтитърът е изтеглен',
 			'videoControls.subtitleDownloadedNotApplied' => 'Субтитрите са изтеглени, но не можаха да бъдат избрани',
 			'videoControls.subtitleDownloadFailed' => 'Неуспешно изтегляне на субтитър',
 			'videoControls.searchLanguages' => 'Търсене на езици...',
@@ -3227,11 +3221,11 @@ extension on TranslationsBg {
 			'watchTogether.codeMustBe5Chars' => 'Кодът на сесията трябва да е 5 символа',
 			'watchTogether.joinInstructions' => 'Въведете кода на сесията от организатора, за да се присъедините.',
 			'watchTogether.failedToCreate' => 'Неуспешно създаване на сесия',
-			_ => null,
-		} ?? switch (path) {
 			'watchTogether.failedToJoin' => 'Неуспешно присъединяване към сесия',
 			'watchTogether.sessionCodeCopied' => 'Кодът на сесията е копиран в клипборда',
 			'watchTogether.relayUnreachable' => 'Релейният сървър е недостъпен. Възможно е интернет доставчикът да блокира гледането заедно.',
+			_ => null,
+		} ?? switch (path) {
 			'watchTogether.reconnectingToHost' => 'Повторно свързване с организатора...',
 			'watchTogether.currentPlayback' => 'Текущо възпроизвеждане',
 			'watchTogether.joinCurrentPlayback' => 'Присъедини се към текущото възпроизвеждане',

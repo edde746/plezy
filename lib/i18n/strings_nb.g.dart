@@ -704,9 +704,6 @@ class _Translations$videoControls$nb extends Translations$videoControls$en {
 	@override String get searchSubtitles => 'Søk etter undertekster';
 	@override String get language => 'Språk';
 	@override String get noSubtitlesFound => 'Ingen undertekster funnet';
-	@override String get noSubtitlesAvailable => 'Ingen undertekster tilgjengelig';
-	@override String get noAudioTracksAvailable => 'Ingen lydspor tilgjengelig';
-	@override String get noTracksAvailable => 'Ingen spor tilgjengelig';
 	@override String get subtitleDownloaded => 'Undertekst lastet ned';
 	@override String get subtitleDownloadedNotApplied => 'Underteksten ble lastet ned, men kunne ikke velges';
 	@override String get subtitleDownloadFailed => 'Kunne ikke laste ned undertekst';
@@ -2712,12 +2709,9 @@ extension on TranslationsNb {
 			'videoControls.searchSubtitles' => 'Søk etter undertekster',
 			'videoControls.language' => 'Språk',
 			'videoControls.noSubtitlesFound' => 'Ingen undertekster funnet',
-			'videoControls.noSubtitlesAvailable' => 'Ingen undertekster tilgjengelig',
+			'videoControls.subtitleDownloaded' => 'Undertekst lastet ned',
 			_ => null,
 		} ?? switch (path) {
-			'videoControls.noAudioTracksAvailable' => 'Ingen lydspor tilgjengelig',
-			'videoControls.noTracksAvailable' => 'Ingen spor tilgjengelig',
-			'videoControls.subtitleDownloaded' => 'Undertekst lastet ned',
 			'videoControls.subtitleDownloadedNotApplied' => 'Underteksten ble lastet ned, men kunne ikke velges',
 			'videoControls.subtitleDownloadFailed' => 'Kunne ikke laste ned undertekst',
 			'videoControls.searchLanguages' => 'Søk etter språk...',
@@ -3227,11 +3221,11 @@ extension on TranslationsNb {
 			'watchTogether.codeMustBe5Chars' => 'Øktkoden må være 5 tegn',
 			'watchTogether.joinInstructions' => 'Skriv inn vertens øktkode for å bli med.',
 			'watchTogether.failedToCreate' => 'Kunne ikke opprette økt',
-			_ => null,
-		} ?? switch (path) {
 			'watchTogether.failedToJoin' => 'Kunne ikke bli med i økt',
 			'watchTogether.sessionCodeCopied' => 'Øktkode kopiert til utklippstavle',
 			'watchTogether.relayUnreachable' => 'Reléserveren kan ikke nås. Blokkering hos internettleverandøren kan hindre Se sammen.',
+			_ => null,
+		} ?? switch (path) {
 			'watchTogether.reconnectingToHost' => 'Kobler til verten på nytt...',
 			'watchTogether.currentPlayback' => 'Gjeldende avspilling',
 			'watchTogether.joinCurrentPlayback' => 'Bli med i gjeldende avspilling',

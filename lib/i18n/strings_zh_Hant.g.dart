@@ -705,9 +705,6 @@ class _Translations$videoControls$zh_Hant extends Translations$videoControls$zh 
 	@override String get searchSubtitles => '搜尋字幕';
 	@override String get language => '語言';
 	@override String get noSubtitlesFound => '找不到字幕';
-	@override String get noSubtitlesAvailable => '沒有可用的字幕';
-	@override String get noAudioTracksAvailable => '沒有可用的音軌';
-	@override String get noTracksAvailable => '沒有可用的音訊或字幕';
 	@override String get subtitleDownloaded => '字幕下載成功';
 	@override String get subtitleDownloadedNotApplied => '字幕已下載，但無法套用';
 	@override String get subtitleDownloadFailed => '字幕下載失敗';
@@ -2710,12 +2707,9 @@ extension on TranslationsZhHant {
 			'videoControls.searchSubtitles' => '搜尋字幕',
 			'videoControls.language' => '語言',
 			'videoControls.noSubtitlesFound' => '找不到字幕',
-			'videoControls.noSubtitlesAvailable' => '沒有可用的字幕',
+			'videoControls.subtitleDownloaded' => '字幕下載成功',
 			_ => null,
 		} ?? switch (path) {
-			'videoControls.noAudioTracksAvailable' => '沒有可用的音軌',
-			'videoControls.noTracksAvailable' => '沒有可用的音訊或字幕',
-			'videoControls.subtitleDownloaded' => '字幕下載成功',
 			'videoControls.subtitleDownloadedNotApplied' => '字幕已下載，但無法套用',
 			'videoControls.subtitleDownloadFailed' => '字幕下載失敗',
 			'videoControls.searchLanguages' => '搜尋語言…',
@@ -3225,11 +3219,11 @@ extension on TranslationsZhHant {
 			'watchTogether.codeMustBe5Chars' => '工作階段代碼必須為 5 個字元',
 			'watchTogether.joinInstructions' => '輸入主持人的工作階段代碼以加入「一起看」。',
 			'watchTogether.failedToCreate' => '建立工作階段失敗',
-			_ => null,
-		} ?? switch (path) {
 			'watchTogether.failedToJoin' => '加入工作階段失敗',
 			'watchTogether.sessionCodeCopied' => '工作階段代碼已複製到剪貼簿',
 			'watchTogether.relayUnreachable' => '無法連線至中繼伺服器。ISP 封鎖可能會導致「一起看」無法使用。',
+			_ => null,
+		} ?? switch (path) {
 			'watchTogether.reconnectingToHost' => '正在重新連線至主持人…',
 			'watchTogether.currentPlayback' => '目前播放內容',
 			'watchTogether.joinCurrentPlayback' => '加入目前播放點',

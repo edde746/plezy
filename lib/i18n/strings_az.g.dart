@@ -707,9 +707,6 @@ class _Translations$videoControls$az extends Translations$videoControls$en {
 	@override String get searchSubtitles => 'Altyazı axtar';
 	@override String get language => 'Dil';
 	@override String get noSubtitlesFound => 'Altyazı tapılmadı';
-	@override String get noSubtitlesAvailable => 'Altyazı yoxdur';
-	@override String get noAudioTracksAvailable => 'Səs zolağı yoxdur';
-	@override String get noTracksAvailable => 'Zolaq yoxdur';
 	@override String get subtitleDownloaded => 'Altyazı yükləndi';
 	@override String get subtitleDownloadedNotApplied => 'Altyazı yükləndi, lakin seçilə bilmədi';
 	@override String get subtitleDownloadFailed => 'Altyazı yüklənə bilmədi';
@@ -2728,9 +2725,6 @@ extension on TranslationsAz {
 		} ?? switch (path) {
 			'videoControls.language' => 'Dil',
 			'videoControls.noSubtitlesFound' => 'Altyazı tapılmadı',
-			'videoControls.noSubtitlesAvailable' => 'Altyazı yoxdur',
-			'videoControls.noAudioTracksAvailable' => 'Səs zolağı yoxdur',
-			'videoControls.noTracksAvailable' => 'Zolaq yoxdur',
 			'videoControls.subtitleDownloaded' => 'Altyazı yükləndi',
 			'videoControls.subtitleDownloadedNotApplied' => 'Altyazı yükləndi, lakin seçilə bilmədi',
 			'videoControls.subtitleDownloadFailed' => 'Altyazı yüklənə bilmədi',
@@ -3238,11 +3232,11 @@ extension on TranslationsAz {
 			'watchTogether.syncing' => 'Eyniləşdirilir...',
 			'watchTogether.joinWatchSession' => 'İzləmə seansına qoşul',
 			'watchTogether.enterCodeHint' => '5 rəqəmli/hərfli kodu daxil edin',
-			_ => null,
-		} ?? switch (path) {
 			'watchTogether.pasteFromClipboard' => 'Buferdən yapışdır',
 			'watchTogether.pleaseEnterCode' => 'Lütfən seans kodunu daxil edin',
 			'watchTogether.codeMustBe5Chars' => 'Seans kodu 5 simvol olmalıdır',
+			_ => null,
+		} ?? switch (path) {
 			'watchTogether.joinInstructions' => 'Qoşulmaq üçün təşkilatçının seans kodunu daxil edin.',
 			'watchTogether.failedToCreate' => 'Seans yaradıla bilmədi',
 			'watchTogether.failedToJoin' => 'Seansa qoşuluna bilmədi',

@@ -704,9 +704,6 @@ class _Translations$videoControls$sv extends Translations$videoControls$en {
 	@override String get searchSubtitles => 'Sök undertexter';
 	@override String get language => 'Språk';
 	@override String get noSubtitlesFound => 'Inga undertexter hittades';
-	@override String get noSubtitlesAvailable => 'Inga undertexter tillgängliga';
-	@override String get noAudioTracksAvailable => 'Inga ljudspår tillgängliga';
-	@override String get noTracksAvailable => 'Inga spår tillgängliga';
 	@override String get subtitleDownloaded => 'Undertexten har laddats ned';
 	@override String get subtitleDownloadedNotApplied => 'Undertexten laddades ned men kunde inte väljas';
 	@override String get subtitleDownloadFailed => 'Det gick inte att ladda ned undertexten';
@@ -2712,12 +2709,9 @@ extension on TranslationsSv {
 			'videoControls.searchSubtitles' => 'Sök undertexter',
 			'videoControls.language' => 'Språk',
 			'videoControls.noSubtitlesFound' => 'Inga undertexter hittades',
-			'videoControls.noSubtitlesAvailable' => 'Inga undertexter tillgängliga',
+			'videoControls.subtitleDownloaded' => 'Undertexten har laddats ned',
 			_ => null,
 		} ?? switch (path) {
-			'videoControls.noAudioTracksAvailable' => 'Inga ljudspår tillgängliga',
-			'videoControls.noTracksAvailable' => 'Inga spår tillgängliga',
-			'videoControls.subtitleDownloaded' => 'Undertexten har laddats ned',
 			'videoControls.subtitleDownloadedNotApplied' => 'Undertexten laddades ned men kunde inte väljas',
 			'videoControls.subtitleDownloadFailed' => 'Det gick inte att ladda ned undertexten',
 			'videoControls.searchLanguages' => 'Sök språk...',
@@ -3227,11 +3221,11 @@ extension on TranslationsSv {
 			'watchTogether.codeMustBe5Chars' => 'Sessionskoden måste bestå av 5 tecken',
 			'watchTogether.joinInstructions' => 'Ange värdens sessionskod för att gå med.',
 			'watchTogether.failedToCreate' => 'Det gick inte att skapa sessionen',
-			_ => null,
-		} ?? switch (path) {
 			'watchTogether.failedToJoin' => 'Det gick inte att gå med i sessionen',
 			'watchTogether.sessionCodeCopied' => 'Sessionskoden har kopierats till urklipp',
 			'watchTogether.relayUnreachable' => 'Reläservern kan inte nås. Din internetleverantör kan blockera Titta tillsammans.',
+			_ => null,
+		} ?? switch (path) {
 			'watchTogether.reconnectingToHost' => 'Återansluter till värden...',
 			'watchTogether.currentPlayback' => 'Aktuell uppspelning',
 			'watchTogether.joinCurrentPlayback' => 'Gå med i aktuell uppspelning',

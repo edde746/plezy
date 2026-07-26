@@ -707,9 +707,6 @@ class _Translations$videoControls$kk extends Translations$videoControls$en {
 	@override String get searchSubtitles => 'Субтитр іздеу';
 	@override String get language => 'Тіл';
 	@override String get noSubtitlesFound => 'Субтитр табылмады';
-	@override String get noSubtitlesAvailable => 'Субтитрлер жоқ';
-	@override String get noAudioTracksAvailable => 'Аудиожолдар жоқ';
-	@override String get noTracksAvailable => 'Жолдар жоқ';
 	@override String get subtitleDownloaded => 'Субтитр жүктелді';
 	@override String get subtitleDownloadedNotApplied => 'Субтитр жүктелді, бірақ қолданылмады';
 	@override String get subtitleDownloadFailed => 'Субтитрді жүктеу мүмкін болмады';
@@ -2728,9 +2725,6 @@ extension on TranslationsKk {
 		} ?? switch (path) {
 			'videoControls.language' => 'Тіл',
 			'videoControls.noSubtitlesFound' => 'Субтитр табылмады',
-			'videoControls.noSubtitlesAvailable' => 'Субтитрлер жоқ',
-			'videoControls.noAudioTracksAvailable' => 'Аудиожолдар жоқ',
-			'videoControls.noTracksAvailable' => 'Жолдар жоқ',
 			'videoControls.subtitleDownloaded' => 'Субтитр жүктелді',
 			'videoControls.subtitleDownloadedNotApplied' => 'Субтитр жүктелді, бірақ қолданылмады',
 			'videoControls.subtitleDownloadFailed' => 'Субтитрді жүктеу мүмкін болмады',
@@ -3238,11 +3232,11 @@ extension on TranslationsKk {
 			'watchTogether.syncing' => 'Синхрондалуда...',
 			'watchTogether.joinWatchSession' => 'Көру сеансына қосылу',
 			'watchTogether.enterCodeHint' => '5 таңбалы кодты енгізіңіз',
-			_ => null,
-		} ?? switch (path) {
 			'watchTogether.pasteFromClipboard' => 'Алмасу буферінен қою',
 			'watchTogether.pleaseEnterCode' => 'Сеанс кодын енгізіңіз',
 			'watchTogether.codeMustBe5Chars' => 'Сеанс коды 5 таңбадан тұруы керек',
+			_ => null,
+		} ?? switch (path) {
 			'watchTogether.joinInstructions' => 'Ұйымдастырушының сеанс кодын енгізіңіз.',
 			'watchTogether.failedToCreate' => 'Сеансты жасау мүмкін болмады',
 			'watchTogether.failedToJoin' => 'Сеансқа қосылу мүмкін болмады',

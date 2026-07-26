@@ -704,9 +704,6 @@ class _Translations$videoControls$de extends Translations$videoControls$en {
 	@override String get searchSubtitles => 'Untertitel suchen';
 	@override String get language => 'Sprache';
 	@override String get noSubtitlesFound => 'Keine Untertitel gefunden';
-	@override String get noSubtitlesAvailable => 'Keine Untertitel verfügbar';
-	@override String get noAudioTracksAvailable => 'Keine Audiospuren verfügbar';
-	@override String get noTracksAvailable => 'Keine Spuren verfügbar';
 	@override String get subtitleDownloaded => 'Untertitel heruntergeladen';
 	@override String get subtitleDownloadedNotApplied => 'Der Untertitel wurde heruntergeladen, konnte aber nicht ausgewählt werden';
 	@override String get subtitleDownloadFailed => 'Untertitel konnte nicht heruntergeladen werden';
@@ -2712,12 +2709,9 @@ extension on TranslationsDe {
 			'videoControls.searchSubtitles' => 'Untertitel suchen',
 			'videoControls.language' => 'Sprache',
 			'videoControls.noSubtitlesFound' => 'Keine Untertitel gefunden',
-			'videoControls.noSubtitlesAvailable' => 'Keine Untertitel verfügbar',
+			'videoControls.subtitleDownloaded' => 'Untertitel heruntergeladen',
 			_ => null,
 		} ?? switch (path) {
-			'videoControls.noAudioTracksAvailable' => 'Keine Audiospuren verfügbar',
-			'videoControls.noTracksAvailable' => 'Keine Spuren verfügbar',
-			'videoControls.subtitleDownloaded' => 'Untertitel heruntergeladen',
 			'videoControls.subtitleDownloadedNotApplied' => 'Der Untertitel wurde heruntergeladen, konnte aber nicht ausgewählt werden',
 			'videoControls.subtitleDownloadFailed' => 'Untertitel konnte nicht heruntergeladen werden',
 			'videoControls.searchLanguages' => 'Sprachen suchen...',
@@ -3227,11 +3221,11 @@ extension on TranslationsDe {
 			'watchTogether.codeMustBe5Chars' => 'Sitzungscode muss 5 Zeichen haben',
 			'watchTogether.joinInstructions' => 'Gib den Sitzungscode des Hosts ein, um beizutreten.',
 			'watchTogether.failedToCreate' => 'Sitzung konnte nicht erstellt werden',
-			_ => null,
-		} ?? switch (path) {
 			'watchTogether.failedToJoin' => 'Beitritt zur Sitzung fehlgeschlagen',
 			'watchTogether.sessionCodeCopied' => 'Sitzungscode in Zwischenablage kopiert',
 			'watchTogether.relayUnreachable' => 'Relay-Server nicht erreichbar. Eine Sperre durch den Internetanbieter kann gemeinsames Schauen verhindern.',
+			_ => null,
+		} ?? switch (path) {
 			'watchTogether.reconnectingToHost' => 'Verbindung zum Host wird wiederhergestellt …',
 			'watchTogether.currentPlayback' => 'Aktuelle Wiedergabe',
 			'watchTogether.joinCurrentPlayback' => 'Aktueller Wiedergabe beitreten',

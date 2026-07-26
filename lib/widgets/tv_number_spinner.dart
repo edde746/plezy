@@ -172,7 +172,13 @@ class _TvNumberSpinnerState extends State<TvNumberSpinner> with KeyRepeatHelper<
     final gap = isCompact ? const SizedBox(width: 8) : const SizedBox(width: 16);
     final label = widget.label;
     final semanticLabel = widget.semanticLabel;
-    final a11y = Translations.of(context).accessibility;
+    final t = Translations.of(context);
+    final decrementLabel = semanticLabel != null
+        ? t.accessibility.decreaseValue(label: semanticLabel)
+        : t.accessibility.decrease;
+    final incrementLabel = semanticLabel != null
+        ? t.accessibility.increaseValue(label: semanticLabel)
+        : t.accessibility.increase;
 
     return Focus(
       focusNode: _focusNode,
@@ -211,7 +217,7 @@ class _TvNumberSpinnerState extends State<TvNumberSpinner> with KeyRepeatHelper<
               onPressed: canDecrement ? _decrement : null,
               onLongPressStart: !isCompact && canDecrement ? () => startRepeat(_decrement) : null,
               onLongPressEnd: isCompact ? null : stopRepeat,
-              semanticLabel: semanticLabel != null ? a11y.decreaseValue(label: semanticLabel) : a11y.decrease,
+              semanticLabel: decrementLabel,
               compact: isCompact,
             ),
             gap,
@@ -231,7 +237,7 @@ class _TvNumberSpinnerState extends State<TvNumberSpinner> with KeyRepeatHelper<
               onPressed: canIncrement ? _increment : null,
               onLongPressStart: !isCompact && canIncrement ? () => startRepeat(_increment) : null,
               onLongPressEnd: isCompact ? null : stopRepeat,
-              semanticLabel: semanticLabel != null ? a11y.increaseValue(label: semanticLabel) : a11y.increase,
+              semanticLabel: incrementLabel,
               compact: isCompact,
             ),
           ],

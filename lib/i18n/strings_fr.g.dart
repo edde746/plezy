@@ -704,9 +704,6 @@ class _Translations$videoControls$fr extends Translations$videoControls$en {
 	@override String get searchSubtitles => 'Rechercher des sous-titres';
 	@override String get language => 'Langue';
 	@override String get noSubtitlesFound => 'Aucun sous-titre trouvé';
-	@override String get noSubtitlesAvailable => 'Aucun sous-titre disponible';
-	@override String get noAudioTracksAvailable => 'Aucune piste audio disponible';
-	@override String get noTracksAvailable => 'Aucune piste disponible';
 	@override String get subtitleDownloaded => 'Sous-titre téléchargé';
 	@override String get subtitleDownloadedNotApplied => 'Le sous-titre a été téléchargé, mais n’a pas pu être sélectionné';
 	@override String get subtitleDownloadFailed => 'Échec du téléchargement du sous-titre';
@@ -2712,12 +2709,9 @@ extension on TranslationsFr {
 			'videoControls.searchSubtitles' => 'Rechercher des sous-titres',
 			'videoControls.language' => 'Langue',
 			'videoControls.noSubtitlesFound' => 'Aucun sous-titre trouvé',
-			'videoControls.noSubtitlesAvailable' => 'Aucun sous-titre disponible',
+			'videoControls.subtitleDownloaded' => 'Sous-titre téléchargé',
 			_ => null,
 		} ?? switch (path) {
-			'videoControls.noAudioTracksAvailable' => 'Aucune piste audio disponible',
-			'videoControls.noTracksAvailable' => 'Aucune piste disponible',
-			'videoControls.subtitleDownloaded' => 'Sous-titre téléchargé',
 			'videoControls.subtitleDownloadedNotApplied' => 'Le sous-titre a été téléchargé, mais n’a pas pu être sélectionné',
 			'videoControls.subtitleDownloadFailed' => 'Échec du téléchargement du sous-titre',
 			'videoControls.searchLanguages' => 'Rechercher des langues...',
@@ -3227,11 +3221,11 @@ extension on TranslationsFr {
 			'watchTogether.codeMustBe5Chars' => 'Le code de session doit comporter 5 caractères',
 			'watchTogether.joinInstructions' => 'Saisissez le code de session de l\'hôte pour rejoindre.',
 			'watchTogether.failedToCreate' => 'Échec de la création de la session',
-			_ => null,
-		} ?? switch (path) {
 			'watchTogether.failedToJoin' => 'Échec de la connexion à la session',
 			'watchTogether.sessionCodeCopied' => 'Code de session copié dans le presse-papiers',
 			'watchTogether.relayUnreachable' => 'Serveur relais inaccessible. Un blocage par le fournisseur d’accès peut empêcher le fonctionnement de Regarder ensemble.',
+			_ => null,
+		} ?? switch (path) {
 			'watchTogether.reconnectingToHost' => 'Reconnexion à l\'hôte...',
 			'watchTogether.currentPlayback' => 'Lecture en cours',
 			'watchTogether.joinCurrentPlayback' => 'Rejoindre la lecture en cours',
