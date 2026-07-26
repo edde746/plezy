@@ -216,6 +216,20 @@ abstract class BaseLibraryTabState<T, W extends BaseLibraryTab<T>> extends State
     }
   }
 
+  /// Post-load bookkeeping for tabs that replace [loadItems] with their own
+  /// (paginated) fetch: mark the tab loaded, take focus if it's due, and let
+  /// the parent know once the frame carrying the items is in.
+  @protected
+  void markItemsLoaded() {
+    _hasLoadedData = true;
+    tryFocus();
+    if (widget.onDataLoaded != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) widget.onDataLoaded!();
+      });
+    }
+  }
+
   /// Whether [focusFirstItem] has a real content target to focus.
   @protected
   bool get hasFocusableContent => _items.isNotEmpty;

@@ -3,7 +3,6 @@ import '../media/ids.dart';
 
 import '../database/app_database.dart';
 import '../media/media_item.dart';
-import '../media/media_kind.dart';
 import '../media/media_server_client.dart';
 import '../models/download_models.dart';
 import '../utils/app_logger.dart';
@@ -462,12 +461,12 @@ class SyncRuleExecutor {
     // unwatched filter applies only to queueing; watched downloads still
     // belong to the list and must be removable with it.
     final membership = <MediaItem>[];
-    await collectItemsForList(client, rootItems, unwatchedOnly: false, out: membership);
+    await collectListLeaves(client, rootItems, unwatchedOnly: false, out: membership);
     if (rule.downloadFilter != SyncRuleFilter.unwatched) {
       return (membership: membership, candidates: membership);
     }
     final serverUnwatched = <MediaItem>[];
-    await collectItemsForList(client, rootItems, unwatchedOnly: true, out: serverUnwatched);
+    await collectListLeaves(client, rootItems, unwatchedOnly: true, out: serverUnwatched);
     final candidates = await _excludeLocallyWatched(
       episodes: serverUnwatched,
       serverId: ServerId(rule.serverId),
@@ -495,43 +494,6 @@ class SyncRuleExecutor {
     libraryId: source?.libraryId,
     libraryTitle: source?.libraryTitle,
   );
-
-  /// Walks [items] and collects playable movie/episode/track entries into
-  /// [out]. Shows and seasons are expanded into their episodes; albums and
-  /// artists are expanded into their tracks (audio playlists/collections in
-  /// sync rules). Clips, nested collections/playlists, and unknown types are
-  /// skipped. [unwatchedOnly] applies the same played-state filter to every
-  /// kind — for tracks that means Plex/Jellyfin play counts.
-  Future<void> collectItemsForList(
-    MediaServerClient client,
-    List<MediaItem> items, {
-    required bool unwatchedOnly,
-    required List<MediaItem> out,
-  }) async {
-    for (final item in items) {
-      switch (item.kind) {
-        case MediaKind.movie:
-        case MediaKind.episode:
-        case MediaKind.track:
-          if (unwatchedOnly && !item.isUnwatchedOrInProgress) break;
-          out.add(item);
-        case MediaKind.show:
-        case MediaKind.season:
-          await collectEpisodes(client, item.id, unwatchedOnly: unwatchedOnly, out: out, fallback: item);
-        case MediaKind.album:
-        case MediaKind.artist:
-          // One recursive-leaves call per container on both backends
-          // (Jellyfin retries tag-only artists by album-artist credit).
-          for (final track in await client.fetchPlayableDescendants(item.id)) {
-            if (unwatchedOnly && !track.isUnwatchedOrInProgress) continue;
-            out.add(track);
-          }
-        default:
-          // Skip clips, nested collections/playlists, unknown types.
-          break;
-      }
-    }
-  }
 
   /// Drop items the user already marked watched locally — the server response
   /// still shows them as unwatched until the next bidirectional-sync push

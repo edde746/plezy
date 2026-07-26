@@ -25,6 +25,7 @@ import 'package:plezy/utils/deletion_notifier.dart';
 import 'package:plezy/utils/notification_permission.dart';
 import 'package:plezy/utils/watch_state_notifier.dart';
 import 'package:plezy/utils/active_client_scope.dart';
+import '../test_helpers/download_fixtures.dart';
 import '../test_helpers/media_items.dart';
 
 /// Implements only [fetchPlayableDescendants], the surface [collectEpisodes]

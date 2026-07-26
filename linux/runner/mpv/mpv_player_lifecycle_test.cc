@@ -102,8 +102,8 @@ class MpvPlayerLifecycleTestPeer {
   static FlValue* ConvertNode(MpvPlayer& player, mpv_node* node) { return player.NodeToFlValue(node); }
   static FlValue* ConvertNodeWithBudget(
       MpvPlayer& player, mpv_node* node, size_t remaining_entries, size_t remaining_bytes) {
-    MpvPlayer::NodeConversionBudget budget{remaining_entries, remaining_bytes};
-    return player.NodeToFlValue(node, 0, &budget);
+    plezy::mpv_common::NodeConversionBudget budget{remaining_entries, remaining_bytes};
+    return player.NodeToFlValue(node, &budget);
   }
   static void RegisterObservedNode(MpvPlayer& player, const std::string& name, int id) {
     player.observed_properties_.Register(name, "node", id);

@@ -23,6 +23,7 @@ import '../../models/livetv_capture_buffer.dart';
 import 'models/track_controls_state.dart';
 import 'player_chrome_controller.dart';
 import 'widgets/content_strip.dart';
+import 'widgets/content_strip_panel.dart';
 import 'widgets/live_timeline_bar.dart';
 import 'widgets/first_frame_guard.dart';
 import 'widgets/play_pause_stream_builder.dart';
@@ -614,51 +615,28 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
                       _buildBottomControlsContent(context, hasFrame: true),
                       // Down arrow hint when strip content is available
                       if (widget.useDpadNavigation && _hasStripContent)
-                        const Positioned(
-                          left: 0,
-                          right: 0,
-                          bottom: 12,
-                          child: AppIcon(Symbols.keyboard_arrow_down_rounded, color: Colors.white24, size: 24),
-                        ),
+                        const ContentStripHint(Symbols.keyboard_arrow_down_rounded),
                     ],
                   ),
                 // Content strip (TV/dpad only) — replaces normal controls
                 if (_contentStripVisible && widget.useDpadNavigation)
-                  Container(
+                  ContentStripPanel(
                     padding: const EdgeInsets.only(left: 8, right: 8, bottom: 8, top: 32),
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: [
-                          Colors.transparent,
-                          Colors.black.withValues(alpha: 0.65),
-                          Colors.black.withValues(alpha: 0.7),
-                        ],
-                        stops: const [0.0, 0.42, 1.0],
-                      ),
-                    ),
-                    child: Column(
-                      mainAxisSize: .min,
-                      children: [
-                        const AppIcon(Symbols.keyboard_arrow_up_rounded, color: Colors.white38, size: 20),
-                        const SizedBox(height: 4),
-                        ContentStrip(
-                          key: _contentStripKey,
-                          player: widget.player,
-                          chapters: widget.chapters,
-                          chaptersLoaded: widget.chaptersLoaded,
-                          serverId: widget.serverId,
-                          canControl: _canControl,
-                          showQueueTab: widget.showQueueTab,
-                          onQueueItemSelected: widget.onQueueItemSelected,
-                          onSeekRequested: widget.onSeekRequested,
-                          onSeekCompleted: widget.onSeekCompleted,
-                          useFocusNavigation: true,
-                          onNavigateUp: _onContentStripNavigateUp,
-                          onFocusActivity: widget.onFocusActivity,
-                        ),
-                      ],
+                    chevron: Symbols.keyboard_arrow_up_rounded,
+                    child: ContentStrip(
+                      key: _contentStripKey,
+                      player: widget.player,
+                      chapters: widget.chapters,
+                      chaptersLoaded: widget.chaptersLoaded,
+                      serverId: widget.serverId,
+                      canControl: _canControl,
+                      showQueueTab: widget.showQueueTab,
+                      onQueueItemSelected: widget.onQueueItemSelected,
+                      onSeekRequested: widget.onSeekRequested,
+                      onSeekCompleted: widget.onSeekCompleted,
+                      useFocusNavigation: true,
+                      onNavigateUp: _onContentStripNavigateUp,
+                      onFocusActivity: widget.onFocusActivity,
                     ),
                   ),
               ],

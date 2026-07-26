@@ -1,5 +1,6 @@
 <script lang="ts">
   import ScrollReveal from "./ScrollReveal.svelte";
+  import SectionHeader from "./SectionHeader.svelte";
   import AppleIcon from "~icons/simple-icons/apple";
   import GooglePlayIcon from "~icons/simple-icons/googleplay";
   import LinuxIcon from "~icons/devicon-plain/linux";
@@ -13,14 +14,13 @@
   import UserIcon from "~icons/heroicons/user-solid";
 </script>
 
-<section id="features" class="features-section">
-  <ScrollReveal>
-    <p class="section-label">Features</p>
-    <h2 class="section-heading">Everything you need to stream</h2>
-    <p class="section-description">
-      Built for people who care about quality as much as convenience.
-    </p>
-  </ScrollReveal>
+<section id="features" class="page-section">
+  <SectionHeader
+    label="Features"
+    heading="Everything you need to stream"
+    description="Built for people who care about quality as much as convenience."
+    headingWidth="13ch"
+  />
 
   <div class="bento-grid">
     <!-- HERO: Wide Codec Support — 2col × 2row -->
@@ -208,43 +208,6 @@
 </section>
 
 <style>
-  .features-section {
-    width: min(100%, var(--page-width));
-    margin-inline: auto;
-    padding: clamp(4rem, 9vw, 8rem) var(--page-gutter);
-  }
-
-  .section-label {
-    width: fit-content;
-    margin-bottom: 1rem;
-    border-radius: var(--radius-full);
-    padding: 0.5rem 0.875rem;
-    color: var(--color-text-muted);
-    background: var(--color-surface);
-    font-size: 0.75rem;
-    font-weight: 700;
-    letter-spacing: 0.03em;
-  }
-
-  .section-heading {
-    max-width: 13ch;
-    margin-bottom: 1rem;
-    font-family: var(--font-display);
-    font-size: clamp(2.5rem, 7vw, 4.75rem);
-    font-weight: 700;
-    letter-spacing: -0.045em;
-    line-height: 1;
-    text-wrap: balance;
-  }
-
-  .section-description {
-    max-width: 34rem;
-    margin-bottom: clamp(2.5rem, 6vw, 4.5rem);
-    color: var(--color-text-muted);
-    font-size: clamp(1rem, 2vw, 1.125rem);
-    line-height: 1.7;
-  }
-
   .bento-grid {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));

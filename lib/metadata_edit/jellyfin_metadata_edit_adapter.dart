@@ -5,7 +5,6 @@ import '../media/media_kind.dart';
 import '../media/media_server_client.dart';
 import '../services/jellyfin_client.dart';
 import '../utils/jellyfin_time.dart';
-import '../utils/media_image_helper.dart';
 import 'metadata_edit_models.dart';
 
 class JellyfinMetadataEditAdapter extends MetadataEditAdapter {
@@ -39,7 +38,11 @@ class JellyfinMetadataEditAdapter extends MetadataEditAdapter {
   List<MetadataEditSection> buildSchema(MetadataEditDraft draft) {
     final kind = draft.sourceItem.kind;
     return [
-      MetadataEditSection(id: 'basic', title: t.metadataEdit.basicInfo, fields: _basicFields(kind)),
+      MetadataEditSection(
+        id: 'basic',
+        title: t.metadataEdit.basicInfo,
+        fields: metadataBasicFields(kind, studioType: MetadataEditFieldType.stringList),
+      ),
       if (_tagFields(kind).isNotEmpty)
         MetadataEditSection(id: 'tags', title: t.metadataEdit.tags, fields: _tagFields(kind)),
       MetadataEditSection(id: 'artwork', title: t.metadataEdit.artwork, fields: _artworkFields(kind)),
@@ -53,11 +56,11 @@ class JellyfinMetadataEditAdapter extends MetadataEditAdapter {
     final dto = Map<String, dynamic>.from(raw);
 
     dto['ProviderIds'] = _stringMap(dto['ProviderIds']);
-    dto['Tags'] = _stringList(dto['Tags']);
-    dto['Genres'] = _stringList(dto['Genres']);
+    dto['Tags'] = metadataStringList(dto['Tags']);
+    dto['Genres'] = metadataStringList(dto['Genres']);
     dto['People'] = _mapList(dto['People']);
     dto['Studios'] = _mapList(dto['Studios']);
-    dto['LockedFields'] = _stringList(dto['LockedFields']);
+    dto['LockedFields'] = metadataStringList(dto['LockedFields']);
     dto['LockData'] = dto['LockData'] == true;
     dto.remove('Trickplay');
 
@@ -71,29 +74,29 @@ class JellyfinMetadataEditAdapter extends MetadataEditAdapter {
       final value = draft.value<String>('originallyAvailableAt') ?? '';
       dto['PremiereDate'] = _jellyfinDate(value, raw['PremiereDate']);
     }
-    if (_fieldChanged(draft, 'studio')) {
+    if (_listFieldChanged(draft, 'studio')) {
       dto['Studios'] = _replaceNamePairs(_mapList(dto['Studios']), metadataStringList(draft.values['studio']));
     }
     if (draft.fieldChanged('tagline')) {
       final tagline = metadataEmptyToNull(draft.value<String>('tagline'));
-      final existing = _stringList(dto['Taglines']);
+      final existing = metadataStringList(dto['Taglines']);
       dto['Taglines'] = tagline == null ? <String>[] : <String>[tagline, ...existing.skip(1)];
     }
-    if (_fieldChanged(draft, 'genre')) dto['Genres'] = metadataStringList(draft.values['genre']);
-    if (_fieldChanged(draft, 'country')) dto['ProductionLocations'] = metadataStringList(draft.values['country']);
-    if (_fieldChanged(draft, 'label')) dto['Tags'] = metadataStringList(draft.values['label']);
+    if (_listFieldChanged(draft, 'genre')) dto['Genres'] = metadataStringList(draft.values['genre']);
+    if (_listFieldChanged(draft, 'country')) dto['ProductionLocations'] = metadataStringList(draft.values['country']);
+    if (_listFieldChanged(draft, 'label')) dto['Tags'] = metadataStringList(draft.values['label']);
 
     var peopleChanged = false;
     var people = _mapList(dto['People']);
-    if (_fieldChanged(draft, 'director')) {
+    if (_listFieldChanged(draft, 'director')) {
       people = _replacePeopleByType(people, 'Director', metadataStringList(draft.values['director']));
       peopleChanged = true;
     }
-    if (_fieldChanged(draft, 'writer')) {
+    if (_listFieldChanged(draft, 'writer')) {
       people = _replacePeopleByType(people, 'Writer', metadataStringList(draft.values['writer']));
       peopleChanged = true;
     }
-    if (_fieldChanged(draft, 'producer')) {
+    if (_listFieldChanged(draft, 'producer')) {
       people = _replacePeopleByType(people, 'Producer', metadataStringList(draft.values['producer']));
       peopleChanged = true;
     }
@@ -130,11 +133,6 @@ class JellyfinMetadataEditAdapter extends MetadataEditAdapter {
         })
         .where((image) => image.sourceUrl.isNotEmpty)
         .toList();
-  }
-
-  @override
-  Future<bool> applyArtworkOption(MetadataEditDraft draft, MetadataEditField field, MetadataArtworkOption option) {
-    return applyArtworkFromUrl(draft, field, option.sourceUrl);
   }
 
   @override
@@ -180,41 +178,18 @@ class JellyfinMetadataEditAdapter extends MetadataEditAdapter {
         ? metadataFirstString(raw['Taglines'])
         : item.tagline ?? '';
     values['summary'] = raw['Overview'] as String? ?? item.summary ?? '';
-    values['genre'] = _stringList(raw['Genres']);
+    values['genre'] = metadataStringList(raw['Genres']);
     values['director'] = _peopleByType(raw['People'], 'Director');
     values['writer'] = _peopleByType(raw['People'], 'Writer');
     values['producer'] = _peopleByType(raw['People'], 'Producer');
-    values['country'] = _stringList(raw['ProductionLocations']);
-    values['label'] = _stringList(raw['Tags']);
+    values['country'] = metadataStringList(raw['ProductionLocations']);
+    values['label'] = metadataStringList(raw['Tags']);
   }
 
   void _writeArtworkValues(Map<String, Object?> values, MediaItem item) {
     values['artwork:Primary'] = item.thumbPath;
     values['artwork:Backdrop'] = item.artPath;
     values['artwork:Logo'] = item.clearLogoPath;
-  }
-
-  List<MetadataEditField> _basicFields(MediaKind kind) {
-    return [
-      MetadataEditField(id: 'title', label: t.metadataEdit.title, type: MetadataEditFieldType.text),
-      if (kind != MediaKind.season)
-        MetadataEditField(id: 'titleSort', label: t.metadataEdit.sortTitle, type: MetadataEditFieldType.text),
-      if (kind == MediaKind.movie || kind == MediaKind.show)
-        MetadataEditField(id: 'originalTitle', label: t.metadataEdit.originalTitle, type: MetadataEditFieldType.text),
-      if (kind != MediaKind.season)
-        MetadataEditField(
-          id: 'originallyAvailableAt',
-          label: t.metadataEdit.releaseDate,
-          type: MetadataEditFieldType.date,
-        ),
-      if (kind != MediaKind.season)
-        MetadataEditField(id: 'contentRating', label: t.metadataEdit.contentRating, type: MetadataEditFieldType.text),
-      if (kind == MediaKind.movie || kind == MediaKind.show)
-        MetadataEditField(id: 'studio', label: t.metadataEdit.studio, type: MetadataEditFieldType.stringList),
-      if (kind == MediaKind.movie || kind == MediaKind.show)
-        MetadataEditField(id: 'tagline', label: t.metadataEdit.tagline, type: MetadataEditFieldType.text),
-      MetadataEditField(id: 'summary', label: t.metadataEdit.summary, type: MetadataEditFieldType.multilineText),
-    ];
   }
 
   List<MetadataEditField> _tagFields(MediaKind kind) {
@@ -234,99 +209,19 @@ class JellyfinMetadataEditAdapter extends MetadataEditAdapter {
     };
   }
 
-  List<MetadataEditField> _artworkFields(MediaKind kind) {
-    final fields = <MetadataEditField>[
-      // Episode "posters" are 16:9 thumbnails, not 2:3 poster art.
-      kind == MediaKind.episode
-          ? _artworkField(
-              'Primary',
-              t.metadataEdit.poster,
-              t.metadataEdit.selectPoster,
-              80,
-              45,
-              2,
-              16 / 9,
-              imageType: ImageType.thumb,
-            )
-          : _artworkField('Primary', t.metadataEdit.poster, t.metadataEdit.selectPoster, 40, 60, 3, 2 / 3),
-    ];
-    if (kind == MediaKind.movie || kind == MediaKind.show || kind == MediaKind.episode) {
-      fields.add(
-        _artworkField(
-          'Backdrop',
-          t.metadataEdit.background,
-          t.metadataEdit.selectBackground,
-          80,
-          45,
-          2,
-          16 / 9,
-          imageType: ImageType.art,
-        ),
-      );
-    }
-    if (kind == MediaKind.movie || kind == MediaKind.show) {
-      fields.add(
-        _artworkField(
-          'Logo',
-          t.metadataEdit.logo,
-          t.metadataEdit.selectLogo,
-          80,
-          32,
-          2,
-          2.5,
-          fit: MetadataArtworkFit.contain,
-          imageType: ImageType.logo,
-        ),
-      );
-    }
-    return fields;
-  }
-
-  MetadataEditField _artworkField(
-    String key,
-    String label,
-    String title,
-    double width,
-    double height,
-    int columns,
-    double aspectRatio, {
-    MetadataArtworkFit fit = MetadataArtworkFit.cover,
-    ImageType imageType = ImageType.poster,
-  }) {
-    return MetadataEditField(
-      id: 'artwork:$key',
-      label: label,
-      type: MetadataEditFieldType.artwork,
-      saveMode: MetadataEditSaveMode.immediate,
-      artwork: MetadataArtworkConfig(
-        key: key,
-        selectTitle: title,
-        previewWidth: width,
-        previewHeight: height,
-        gridColumns: columns,
-        gridAspectRatio: aspectRatio,
-        fit: fit,
-        imageType: imageType,
-      ),
-    );
-  }
+  List<MetadataEditField> _artworkFields(MediaKind kind) =>
+      metadataArtworkFields(kind, posterKey: 'Primary', backdropKey: 'Backdrop', logoKey: 'Logo');
 
   void _setChangedString(Map<String, dynamic> dto, MetadataEditDraft draft, String fieldId, String dtoKey) {
     if (!draft.fieldChanged(fieldId)) return;
     dto[dtoKey] = metadataEmptyToNull(draft.value<String>(fieldId));
   }
 
-  bool _fieldChanged(MetadataEditDraft draft, String fieldId) {
-    for (final section in schemaFor(draft)) {
-      for (final field in section.fields) {
-        if (field.id == fieldId) return metadataEditFieldChanged(draft, field);
-      }
-    }
-    return draft.fieldChanged(fieldId);
-  }
+  /// Every id passed here names a `stringList` field, so the comparison is
+  /// order-insensitive regardless of which kind's schema is in play.
+  bool _listFieldChanged(MetadataEditDraft draft, String fieldId) =>
+      !metadataEditStringListEquals(draft.values[fieldId], draft.originalValues[fieldId]);
 }
-
-List<String> _stringList(Object? value) => metadataStringList(value);
 
 Map<String, String> _stringMap(Object? value) {
   if (value is! Map) return <String, String>{};

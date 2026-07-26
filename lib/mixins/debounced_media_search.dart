@@ -171,6 +171,22 @@ mixin DebouncedMediaSearch<T extends StatefulWidget> on State<T> {
     }
   }
 
+  /// The results list both screens render: padded, without keep-alives or
+  /// semantic indexes, one child per entry of [searchResults].
+  Widget buildResultsSliver(NullableIndexedWidgetBuilder itemBuilder) {
+    return SliverPadding(
+      padding: const EdgeInsets.all(16),
+      sliver: SliverList(
+        delegate: SliverChildBuilderDelegate(
+          itemBuilder,
+          childCount: searchResults.length,
+          addAutomaticKeepAlives: false,
+          addSemanticIndexes: false,
+        ),
+      ),
+    );
+  }
+
   /// OSK "Search" / hardware Enter on TV: jump to results, or force the
   /// pending search to run now.
   void handleSearchSubmit() {

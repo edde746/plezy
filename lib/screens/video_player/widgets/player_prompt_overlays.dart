@@ -188,85 +188,31 @@ class VideoPlayerPlayNextOverlay extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ValueListenableBuilder<bool>(
-      valueListenable: PipService().isPipActive,
-      builder: (context, isInPip, child) {
-        final episode = nextEpisode;
-        if (isInPip || !visible || episode == null) {
-          return const SizedBox.shrink();
-        }
-        return _VideoPlayerPromptPosition(
-          chromeController: chromeController,
-          child: _VideoPlayerPromptInteractionHold(
-            chromeController: chromeController,
-            focusNodes: [cancelFocusNode, confirmFocusNode],
-            child: _VideoPlayerPromptCard(
-              child: Column(
-                mainAxisSize: .min,
-                crossAxisAlignment: .start,
-                children: [
-                  _PlayNextEpisodeHeader(episode: episode),
-                  const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: FocusableButton(
-                          focusNode: cancelFocusNode,
-                          onPressed: onCancel,
-                          autoScroll: false,
-                          onNavigateRight: () => confirmFocusNode.requestFocus(),
-                          onNavigateUp: () {},
-                          onNavigateDown: () {},
-                          child: OutlinedButton(
-                            onPressed: onCancel,
-                            style: OutlinedButton.styleFrom(
-                              foregroundColor: Colors.white,
-                              side: BorderSide(color: Colors.white.withValues(alpha: 0.5)),
-                              padding: const EdgeInsets.symmetric(vertical: 12),
-                            ),
-                            child: Text(t.common.cancel),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: FocusableButton(
-                          focusNode: confirmFocusNode,
-                          onPressed: onPlayNext,
-                          autoScroll: false,
-                          onNavigateLeft: () => cancelFocusNode.requestFocus(),
-                          onNavigateUp: () {},
-                          onNavigateDown: () {},
-                          useBackgroundFocus: true,
-                          child: FilledButton(
-                            onPressed: onPlayNext,
-                            style: FilledButton.styleFrom(
-                              backgroundColor: Colors.white,
-                              foregroundColor: Colors.black,
-                              padding: const EdgeInsets.symmetric(vertical: 12),
-                            ),
-                            child: Row(
-                              mainAxisAlignment: .center,
-                              children: [
-                                if (autoPlayCountdown > 0) ...[
-                                  Text('$autoPlayCountdown'),
-                                  const SizedBox(width: 4),
-                                  const AppIcon(Symbols.play_arrow_rounded, fill: 1, size: 18),
-                                ] else
-                                  Text(t.videoControls.playNext),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ),
-        );
-      },
+    final episode = nextEpisode;
+    if (episode == null) return const SizedBox.shrink();
+    return _VideoPlayerPromptShell(
+      visible: visible,
+      chromeController: chromeController,
+      focusNodes: [cancelFocusNode, confirmFocusNode],
+      children: [
+        _PlayNextEpisodeHeader(episode: episode),
+        const SizedBox(height: 12),
+        _VideoPlayerPromptActions(
+          cancelLabel: t.common.cancel,
+          cancelFocusNode: cancelFocusNode,
+          onCancel: onCancel,
+          confirmFocusNode: confirmFocusNode,
+          onConfirm: onPlayNext,
+          confirmChildren: [
+            if (autoPlayCountdown > 0) ...[
+              Text('$autoPlayCountdown'),
+              const SizedBox(width: 4),
+              const AppIcon(Symbols.play_arrow_rounded, fill: 1, size: 18),
+            ] else
+              Text(t.videoControls.playNext),
+          ],
+        ),
+      ],
     );
   }
 }
@@ -346,6 +292,49 @@ class VideoPlayerStillWatchingOverlay extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    return _VideoPlayerPromptShell(
+      visible: visible,
+      chromeController: chromeController,
+      focusNodes: [pauseFocusNode, continueFocusNode],
+      children: [
+        Text(
+          t.videoControls.stillWatching,
+          style: TextStyle(color: Colors.white.withValues(alpha: 0.7), fontSize: 12, fontWeight: .w500),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          t.videoControls.pausingIn(seconds: '$countdown'),
+          style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: .w600),
+        ),
+        const SizedBox(height: 12),
+        _VideoPlayerPromptActions(
+          cancelLabel: t.videoControls.pauseButton,
+          cancelFocusNode: pauseFocusNode,
+          onCancel: onPause,
+          confirmFocusNode: continueFocusNode,
+          onConfirm: onContinue,
+          confirmChildren: [Text('$countdown'), const SizedBox(width: 4), Text(t.videoControls.continueWatching)],
+        ),
+      ],
+    );
+  }
+}
+
+class _VideoPlayerPromptShell extends StatelessWidget {
+  final bool visible;
+  final PlayerChromeController chromeController;
+  final List<FocusNode> focusNodes;
+  final List<Widget> children;
+
+  const _VideoPlayerPromptShell({
+    required this.visible,
+    required this.chromeController,
+    required this.focusNodes,
+    required this.children,
+  });
+
+  @override
+  Widget build(BuildContext context) {
     return ValueListenableBuilder<bool>(
       valueListenable: PipService().isPipActive,
       builder: (context, isInPip, child) {
@@ -356,79 +345,79 @@ class VideoPlayerStillWatchingOverlay extends StatelessWidget {
           chromeController: chromeController,
           child: _VideoPlayerPromptInteractionHold(
             chromeController: chromeController,
-            focusNodes: [pauseFocusNode, continueFocusNode],
+            focusNodes: focusNodes,
             child: _VideoPlayerPromptCard(
-              child: Column(
-                mainAxisSize: .min,
-                crossAxisAlignment: .start,
-                children: [
-                  Text(
-                    t.videoControls.stillWatching,
-                    style: TextStyle(color: Colors.white.withValues(alpha: 0.7), fontSize: 12, fontWeight: .w500),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    t.videoControls.pausingIn(seconds: '$countdown'),
-                    style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: .w600),
-                  ),
-                  const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: FocusableButton(
-                          focusNode: pauseFocusNode,
-                          onPressed: onPause,
-                          autoScroll: false,
-                          onNavigateRight: () => continueFocusNode.requestFocus(),
-                          onNavigateUp: () {},
-                          onNavigateDown: () {},
-                          child: OutlinedButton(
-                            onPressed: onPause,
-                            style: OutlinedButton.styleFrom(
-                              foregroundColor: Colors.white,
-                              side: BorderSide(color: Colors.white.withValues(alpha: 0.5)),
-                              padding: const EdgeInsets.symmetric(vertical: 12),
-                            ),
-                            child: Text(t.videoControls.pauseButton),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: FocusableButton(
-                          focusNode: continueFocusNode,
-                          onPressed: onContinue,
-                          autoScroll: false,
-                          onNavigateLeft: () => pauseFocusNode.requestFocus(),
-                          onNavigateUp: () {},
-                          onNavigateDown: () {},
-                          useBackgroundFocus: true,
-                          child: FilledButton(
-                            onPressed: onContinue,
-                            style: FilledButton.styleFrom(
-                              backgroundColor: Colors.white,
-                              foregroundColor: Colors.black,
-                              padding: const EdgeInsets.symmetric(vertical: 12),
-                            ),
-                            child: Row(
-                              mainAxisAlignment: .center,
-                              children: [
-                                Text('$countdown'),
-                                const SizedBox(width: 4),
-                                Text(t.videoControls.continueWatching),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
+              child: Column(mainAxisSize: .min, crossAxisAlignment: .start, children: children),
             ),
           ),
         );
       },
+    );
+  }
+}
+
+class _VideoPlayerPromptActions extends StatelessWidget {
+  final String cancelLabel;
+  final FocusNode cancelFocusNode;
+  final VoidCallback onCancel;
+  final FocusNode confirmFocusNode;
+  final VoidCallback onConfirm;
+  final List<Widget> confirmChildren;
+
+  const _VideoPlayerPromptActions({
+    required this.cancelLabel,
+    required this.cancelFocusNode,
+    required this.onCancel,
+    required this.confirmFocusNode,
+    required this.onConfirm,
+    required this.confirmChildren,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Expanded(
+          child: FocusableButton(
+            focusNode: cancelFocusNode,
+            onPressed: onCancel,
+            autoScroll: false,
+            onNavigateRight: () => confirmFocusNode.requestFocus(),
+            onNavigateUp: () {},
+            onNavigateDown: () {},
+            child: OutlinedButton(
+              onPressed: onCancel,
+              style: OutlinedButton.styleFrom(
+                foregroundColor: Colors.white,
+                side: BorderSide(color: Colors.white.withValues(alpha: 0.5)),
+                padding: const EdgeInsets.symmetric(vertical: 12),
+              ),
+              child: Text(cancelLabel),
+            ),
+          ),
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: FocusableButton(
+            focusNode: confirmFocusNode,
+            onPressed: onConfirm,
+            autoScroll: false,
+            onNavigateLeft: () => cancelFocusNode.requestFocus(),
+            onNavigateUp: () {},
+            onNavigateDown: () {},
+            useBackgroundFocus: true,
+            child: FilledButton(
+              onPressed: onConfirm,
+              style: FilledButton.styleFrom(
+                backgroundColor: Colors.white,
+                foregroundColor: Colors.black,
+                padding: const EdgeInsets.symmetric(vertical: 12),
+              ),
+              child: Row(mainAxisAlignment: .center, children: confirmChildren),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

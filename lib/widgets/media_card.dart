@@ -654,8 +654,7 @@ class _MediaCardList extends StatelessWidget {
       if (mi.kind == MediaKind.track) return mi.trackArtistTitle;
 
       if (mi.parentIndex != null && mi.index != null) {
-        final showEp = SettingsService.instance.read(SettingsService.showEpisodeNumberOnCards);
-        return showEp ? 'S${mi.parentIndex} E${mi.index}' : 'S${mi.parentIndex}';
+        return 'S${mi.parentIndex}${_episodeNumberSuffix(mi)}';
       }
 
       if (mi.displaySubtitle != null) {
@@ -683,33 +682,10 @@ class _MediaCardList extends StatelessWidget {
     return '';
   }
 
-  Widget _buildEpisodeSubtitle(BuildContext context, MediaItem mi) {
-    final style = Theme.of(context).textTheme.bodySmall?.copyWith(
-      color: tokens(context).textMuted.withValues(alpha: 0.85),
-      fontSize: _subtitleFontSize,
-    );
-    final episodeTitle = mi.displaySubtitle ?? mi.displayTitle;
-    final showEp = SettingsService.instance.read(SettingsService.showEpisodeNumberOnCards);
-    final episodeNum = (showEp && mi.index != null) ? ' E${mi.index}' : '';
-    return Row(
-      children: [
-        if (enableDetailLinks)
-          _ClickableText(
-            text: 'S${mi.parentIndex}',
-            style: style,
-            onTap: () => _navigateToFocusedDetail(context, mi, isOffline: isOffline),
-          )
-        else
-          ExcludeSemantics(child: Text('S${mi.parentIndex}', style: style)),
-        ExcludeSemantics(child: Text('$episodeNum · ', style: style)),
-        Expanded(
-          child: ExcludeSemantics(
-            child: Text(episodeTitle, maxLines: 1, overflow: .ellipsis, style: style),
-          ),
-        ),
-      ],
-    );
-  }
+  TextStyle? _subtitleStyle(BuildContext context) => Theme.of(context).textTheme.bodySmall?.copyWith(
+    color: tokens(context).textMuted.withValues(alpha: 0.85),
+    fontSize: _subtitleFontSize,
+  );
 
   @override
   Widget build(BuildContext context) {
@@ -798,19 +774,17 @@ class _MediaCardList extends StatelessWidget {
                         (item as MediaItem).isEpisode &&
                         (item as MediaItem).parentIndex != null &&
                         (item as MediaItem).parentId != null) ...[
-                      _buildEpisodeSubtitle(context, item as MediaItem),
+                      _buildEpisodeSubtitleRow(
+                        context,
+                        item as MediaItem,
+                        style: _subtitleStyle(context),
+                        enableDetailLinks: enableDetailLinks,
+                        isOffline: isOffline,
+                      ),
                       const SizedBox(height: 4),
                     ] else if (subtitle != null) ...[
                       ExcludeSemantics(
-                        child: Text(
-                          subtitle,
-                          maxLines: 1,
-                          overflow: .ellipsis,
-                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: tokens(context).textMuted.withValues(alpha: 0.85),
-                            fontSize: _subtitleFontSize,
-                          ),
-                        ),
+                        child: Text(subtitle, maxLines: 1, overflow: .ellipsis, style: _subtitleStyle(context)),
                       ),
                       const SizedBox(height: 4),
                     ],
@@ -916,33 +890,16 @@ Widget _buildPosterImage(
   double? knownHeight,
   Animation<double>? artworkDim,
 }) {
-  String? posterUrl;
-
   if (item is MediaPlaylist) {
-    posterUrl = item.displayImagePath;
-
-    if (cardShapeOverride == CardShape.square) {
-      return OptimizedMediaImage(
-        client: isOffline ? null : context.tryGetMediaClientWithFallback(serverIdOrNull(item.serverId)),
-        imagePath: posterUrl,
-        width: knownWidth ?? double.infinity,
-        height: knownHeight ?? double.infinity,
-        fit: BoxFit.cover,
-        placeholder: _buildPosterLoadingPlaceholder,
-        fallbackIcon: Symbols.playlist_play_rounded,
-        imageType: ImageType.square,
-        localFilePath: localPosterPath,
-        artworkDim: artworkDim,
-      );
-    }
-
-    return OptimizedMediaImage.playlist(
+    return OptimizedMediaImage(
       client: isOffline ? null : context.tryGetMediaClientWithFallback(serverIdOrNull(item.serverId)),
-      imagePath: posterUrl,
+      imagePath: item.displayImagePath,
       width: knownWidth ?? double.infinity,
       height: knownHeight ?? double.infinity,
       fit: BoxFit.cover,
       placeholder: _buildPosterLoadingPlaceholder,
+      fallbackIcon: Symbols.playlist_play_rounded,
+      imageType: cardShapeOverride == CardShape.square ? ImageType.square : ImageType.poster,
       localFilePath: localPosterPath,
       artworkDim: artworkDim,
     );
@@ -955,7 +912,7 @@ Widget _buildPosterImage(
     final primaryPosterUrl = item.posterThumb(mode: episodePosterMode, mixedHubContext: mixedHubContext);
     final posterFallbackUrl = item.posterThumbFallback(mode: episodePosterMode, mixedHubContext: mixedHubContext);
     final useRememberedFallback = posterFallbackUrl != null && _hasFailedPosterUrl(primaryPosterUrl);
-    posterUrl = useRememberedFallback ? posterFallbackUrl : primaryPosterUrl;
+    final posterUrl = useRememberedFallback ? posterFallbackUrl : primaryPosterUrl;
     final mediaClient = isOffline ? null : context.tryGetMediaClientWithFallback(serverIdOrNull(item.serverId));
     final fallbackIcon = _mediaPosterFallbackIcon(item);
     final imageType = switch (cardShapeOverride) {
@@ -965,77 +922,53 @@ Widget _buildPosterImage(
       null => MediaImageHelper.cardImageType(item, episodePosterMode, mixedHubContext: mixedHubContext),
     };
 
+    OptimizedMediaImage buildImage(
+      String? path,
+      ImageType type, {
+      String? localFilePath,
+      Widget Function(BuildContext, String, dynamic)? errorWidget,
+    }) => OptimizedMediaImage(
+      client: mediaClient,
+      imagePath: path,
+      width: knownWidth ?? double.infinity,
+      height: knownHeight ?? double.infinity,
+      fit: BoxFit.cover,
+      placeholder: _buildPosterLoadingPlaceholder,
+      fallbackIcon: fallbackIcon,
+      errorWidget: errorWidget,
+      imageType: type,
+      localFilePath: localFilePath,
+      artworkDim: artworkDim,
+    );
+
+    // Remember the dead primary URL so later builds go straight to the fallback.
+    Widget Function(BuildContext, String, dynamic)? retryWithFallback(ImageType type) {
+      if (posterFallbackUrl == null || useRememberedFallback) return null;
+      return (_, _, _) {
+        _rememberFailedPosterUrl(primaryPosterUrl);
+        return buildImage(posterFallbackUrl, type);
+      };
+    }
+
     Widget image;
 
     // Square 1:1 artwork for music (artists/albums/tracks)
     if (imageType == ImageType.square) {
-      image = OptimizedMediaImage(
-        client: mediaClient,
-        imagePath: posterUrl,
-        width: knownWidth ?? double.infinity,
-        height: knownHeight ?? double.infinity,
-        fit: BoxFit.cover,
-        placeholder: _buildPosterLoadingPlaceholder,
-        fallbackIcon: fallbackIcon,
-        errorWidget: posterFallbackUrl == null || useRememberedFallback
-            ? null
-            : (_, _, _) {
-                _rememberFailedPosterUrl(primaryPosterUrl);
-                return OptimizedMediaImage(
-                  client: mediaClient,
-                  imagePath: posterFallbackUrl,
-                  width: knownWidth ?? double.infinity,
-                  height: knownHeight ?? double.infinity,
-                  fit: BoxFit.cover,
-                  placeholder: _buildPosterLoadingPlaceholder,
-                  fallbackIcon: fallbackIcon,
-                  imageType: ImageType.square,
-                  artworkDim: artworkDim,
-                );
-              },
-        imageType: ImageType.square,
+      image = buildImage(
+        posterUrl,
+        ImageType.square,
         localFilePath: localPosterPath,
-        artworkDim: artworkDim,
+        errorWidget: retryWithFallback(ImageType.square),
       );
     } else if (imageType == ImageType.thumb) {
       // Use thumb image type for 16:9 content (episodes, or movies in mixed hubs)
-      image = OptimizedMediaImage.thumb(
-        client: mediaClient,
-        imagePath: posterUrl,
-        width: knownWidth ?? double.infinity,
-        height: knownHeight ?? double.infinity,
-        fit: BoxFit.cover,
-        placeholder: _buildPosterLoadingPlaceholder,
-        fallbackIcon: fallbackIcon,
-        localFilePath: localPosterPath,
-        artworkDim: artworkDim,
-      );
+      image = buildImage(posterUrl, ImageType.thumb, localFilePath: localPosterPath);
     } else {
-      image = OptimizedMediaImage.poster(
-        client: mediaClient,
-        imagePath: posterUrl,
-        width: knownWidth ?? double.infinity,
-        height: knownHeight ?? double.infinity,
-        fit: BoxFit.cover,
-        placeholder: _buildPosterLoadingPlaceholder,
-        fallbackIcon: fallbackIcon,
-        errorWidget: posterFallbackUrl == null || useRememberedFallback
-            ? null
-            : (_, _, _) {
-                _rememberFailedPosterUrl(primaryPosterUrl);
-                return OptimizedMediaImage.poster(
-                  client: mediaClient,
-                  imagePath: posterFallbackUrl,
-                  width: knownWidth ?? double.infinity,
-                  height: knownHeight ?? double.infinity,
-                  fit: BoxFit.cover,
-                  placeholder: _buildPosterLoadingPlaceholder,
-                  fallbackIcon: fallbackIcon,
-                  artworkDim: artworkDim,
-                );
-              },
+      image = buildImage(
+        posterUrl,
+        ImageType.poster,
         localFilePath: localPosterPath,
-        artworkDim: artworkDim,
+        errorWidget: retryWithFallback(ImageType.poster),
       );
     }
 
@@ -1114,29 +1047,19 @@ class _MediaCardHelpers {
 
     // For episodes, show "S# · Episode Title" with clickable season link
     if (mi.isEpisode && mi.parentIndex != null) {
-      final episodeTitle = mi.displaySubtitle ?? mi.displayTitle;
-      final showEp = SettingsService.instance.read(SettingsService.showEpisodeNumberOnCards);
-      final episodeSuffix = (showEp && mi.index != null) ? ' E${mi.index}' : '';
       if (enableDetailLinks && mi.parentId != null) {
-        return Row(
-          children: [
-            _ClickableText(
-              text: 'S${mi.parentIndex}',
-              style: subtitleStyle,
-              onTap: () => _navigateToFocusedDetail(context, mi, isOffline: isOffline),
-            ),
-            ExcludeSemantics(child: Text('$episodeSuffix · ', style: subtitleStyle)),
-            Expanded(
-              child: ExcludeSemantics(
-                child: Text(episodeTitle, maxLines: 1, overflow: .ellipsis, style: subtitleStyle),
-              ),
-            ),
-          ],
+        return _buildEpisodeSubtitleRow(
+          context,
+          mi,
+          style: subtitleStyle,
+          enableDetailLinks: true,
+          isOffline: isOffline,
         );
       }
+      final episodeTitle = mi.displaySubtitle ?? mi.displayTitle;
       return ExcludeSemantics(
         child: Text(
-          'S${mi.parentIndex}$episodeSuffix · $episodeTitle',
+          'S${mi.parentIndex}${_episodeNumberSuffix(mi)} · $episodeTitle',
           maxLines: 1,
           overflow: .ellipsis,
           style: subtitleStyle,
@@ -1167,6 +1090,41 @@ class _MediaCardHelpers {
 
     return const SizedBox.shrink();
   }
+}
+
+/// "S# E# · Episode title" with the season number linking to the season.
+Widget _buildEpisodeSubtitleRow(
+  BuildContext context,
+  MediaItem mi, {
+  required TextStyle? style,
+  required bool enableDetailLinks,
+  required bool isOffline,
+}) {
+  final seasonLabel = 'S${mi.parentIndex}';
+  return Row(
+    children: [
+      if (enableDetailLinks)
+        _ClickableText(
+          text: seasonLabel,
+          style: style,
+          onTap: () => _navigateToFocusedDetail(context, mi, isOffline: isOffline),
+        )
+      else
+        ExcludeSemantics(child: Text(seasonLabel, style: style)),
+      ExcludeSemantics(child: Text('${_episodeNumberSuffix(mi)} · ', style: style)),
+      Expanded(
+        child: ExcludeSemantics(
+          child: Text(mi.displaySubtitle ?? mi.displayTitle, maxLines: 1, overflow: .ellipsis, style: style),
+        ),
+      ),
+    ],
+  );
+}
+
+/// Empty unless [SettingsService.showEpisodeNumberOnCards] is on.
+String _episodeNumberSuffix(MediaItem mi) {
+  final showEp = SettingsService.instance.read(SettingsService.showEpisodeNumberOnCards);
+  return (showEp && mi.index != null) ? ' E${mi.index}' : '';
 }
 
 /// Whether the card renders any pointer detail link for this item.

@@ -3,6 +3,7 @@ import '../../media/media_kind.dart';
 import '../../media/media_server_client.dart';
 import '../../models/trackers/anime_lists_mapping.dart';
 import '../../utils/app_logger.dart';
+import 'future_coalescer.dart';
 
 enum AnimeProgressScope { show, season, mapped }
 
@@ -30,7 +31,7 @@ abstract interface class AnimeEpisodeProgressLookup {
 
 class AnimeEpisodeProgressResolver implements AnimeEpisodeProgressLookup {
   final MediaServerClient _client;
-  final Map<String, Future<Map<int, _SeasonProgress>?>> _seasonProgressLoads = {};
+  final KeyedFutureCoalescer<String, Map<int, _SeasonProgress>?> _seasonProgressLoads = KeyedFutureCoalescer();
 
   AnimeEpisodeProgressResolver(this._client);
 
@@ -61,7 +62,7 @@ class AnimeEpisodeProgressResolver implements AnimeEpisodeProgressLookup {
       return includeCurrentEpisode ? ResolvedAnimeProgress(progress: animeMatch.anidbEpisode) : null;
     }
 
-    final progressBySeason = await _seasonProgressFor(showId);
+    final progressBySeason = await _seasonProgressLoads.run(showId, () => _loadSeasonProgress(showId));
     if (progressBySeason == null) return null;
 
     final currentAlreadyWatched = (episode.viewCount ?? 0) > 0 || !includeCurrentEpisode;
@@ -95,20 +96,6 @@ class AnimeEpisodeProgressResolver implements AnimeEpisodeProgressLookup {
       appLogger.d('Anime progress: failed to load mapped episode watched state for $showId', error: e);
       return null;
     }
-  }
-
-  Future<Map<int, _SeasonProgress>?> _seasonProgressFor(String showId) async {
-    final existing = _seasonProgressLoads[showId];
-    if (existing != null) return existing;
-
-    late final Future<Map<int, _SeasonProgress>?> loading;
-    loading = _loadSeasonProgress(showId).whenComplete(() {
-      if (identical(_seasonProgressLoads[showId], loading)) {
-        final _ = _seasonProgressLoads.remove(showId);
-      }
-    });
-    _seasonProgressLoads[showId] = loading;
-    return loading;
   }
 
   ResolvedAnimeProgress? _showProgress(Map<int, _SeasonProgress> seasons, bool currentAlreadyWatched) {

@@ -12,16 +12,23 @@ export type StoreOption = {
   url: string;
 };
 
+export const APP_STORE_ID = '6754315964';
+export const ANDROID_PACKAGE = 'com.edde746.plezy';
+export const AMAZON_URL = 'https://www.amazon.com/gp/product/B0GK65CVS1';
+
+export const releaseAsset = (name: string) =>
+  `https://github.com/edde746/plezy/releases/latest/download/${name}`;
+
 export const storeOptions = {
   ios: {
     id: 'app-store',
     label: 'App Store',
-    url: 'https://apps.apple.com/us/app/id6754315964',
+    url: `https://apps.apple.com/us/app/id${APP_STORE_ID}`,
   },
   android: {
     id: 'play-store',
     label: 'Google Play',
-    url: 'https://play.google.com/store/apps/details?id=com.edde746.plezy',
+    url: `https://play.google.com/store/apps/details?id=${ANDROID_PACKAGE}`,
   },
 } as const satisfies Record<'ios' | 'android', StoreOption>;
 
@@ -45,23 +52,21 @@ export function storeOptionsForPlatform(platform: MobileStorePlatform): readonly
   return [storeOptions.ios, storeOptions.android];
 }
 
+// Every architecture ships the same formats, so the menu is their cross product.
+const LINUX_FORMATS = [
+  { label: '.deb (Debian/Ubuntu)', extension: 'deb' },
+  { label: '.rpm (Fedora/RHEL)', extension: 'rpm' },
+  { label: '.pkg.tar.zst (Arch)', extension: 'pkg.tar.zst' },
+  { label: '.tar.gz (Portable)', extension: 'tar.gz' },
+];
+
 export const linuxArchitectures = [
-  {
-    label: 'x64 (Intel/AMD)',
-    formats: [
-      { label: '.deb (Debian/Ubuntu)', url: 'https://github.com/edde746/plezy/releases/latest/download/plezy-linux-x64.deb' },
-      { label: '.rpm (Fedora/RHEL)', url: 'https://github.com/edde746/plezy/releases/latest/download/plezy-linux-x64.rpm' },
-      { label: '.pkg.tar.zst (Arch)', url: 'https://github.com/edde746/plezy/releases/latest/download/plezy-linux-x64.pkg.tar.zst' },
-      { label: '.tar.gz (Portable)', url: 'https://github.com/edde746/plezy/releases/latest/download/plezy-linux-x64.tar.gz' },
-    ],
-  },
-  {
-    label: 'ARM64',
-    formats: [
-      { label: '.deb (Debian/Ubuntu)', url: 'https://github.com/edde746/plezy/releases/latest/download/plezy-linux-arm64.deb' },
-      { label: '.rpm (Fedora/RHEL)', url: 'https://github.com/edde746/plezy/releases/latest/download/plezy-linux-arm64.rpm' },
-      { label: '.pkg.tar.zst (Arch)', url: 'https://github.com/edde746/plezy/releases/latest/download/plezy-linux-arm64.pkg.tar.zst' },
-      { label: '.tar.gz (Portable)', url: 'https://github.com/edde746/plezy/releases/latest/download/plezy-linux-arm64.tar.gz' },
-    ],
-  },
-] as const;
+  { slug: 'x64', label: 'x64 (Intel/AMD)' },
+  { slug: 'arm64', label: 'ARM64' },
+].map(({ slug, label }) => ({
+  label,
+  formats: LINUX_FORMATS.map((format) => ({
+    label: format.label,
+    url: releaseAsset(`plezy-linux-${slug}.${format.extension}`),
+  })),
+}));

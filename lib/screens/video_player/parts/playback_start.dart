@@ -110,15 +110,17 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
           database: context.read<AppDatabase>(),
         );
         playbackContext = await playbackResolver.resolve(
-          metadata: _currentMetadata,
-          selectedMediaIndex: _effectiveSelectedMediaIndex,
-          selectedMediaSourceId: _requestedMediaSourceId,
+          PlaybackInitializationOptions(
+            metadata: _currentMetadata,
+            selectedMediaIndex: _effectiveSelectedMediaIndex,
+            selectedMediaSourceId: _requestedMediaSourceId,
+            qualityPreset: _selectedQualityPreset,
+            selectedAudioStreamId: _selectedAudioStreamId,
+            preferredSubtitleTrack: _preferredSubtitleTrack,
+            sessionIdentifier: _playbackSessionIdentifier,
+            transcodeSessionId: _playbackTranscodeSessionId,
+          ),
           offlineLibraryMode: true,
-          qualityPreset: _selectedQualityPreset,
-          selectedAudioStreamId: _selectedAudioStreamId,
-          preferredSubtitleTrack: _preferredSubtitleTrack,
-          sessionIdentifier: _playbackSessionIdentifier,
-          transcodeSessionId: _playbackTranscodeSessionId,
         );
         if (playbackContext.result.videoUrl == null) {
           throw PlaybackException(t.messages.fileInfoNotAvailable);
@@ -305,9 +307,8 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
 
             _autoPipEnteringCallback = autoPipEnteringCallback;
             PipService.onAutoPipEntering = autoPipEnteringCallback;
-            final pipManager = _videoPIPManager;
-            if (currentPlayer.state.playing && pipManager != null) {
-              unawaited(pipManager.updateAutoPipState(isPlaying: true));
+            if (currentPlayer.state.playing) {
+              unawaited(_updateAutoPipState(isPlaying: true));
             }
           }
 

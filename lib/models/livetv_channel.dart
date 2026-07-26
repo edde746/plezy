@@ -2,7 +2,6 @@ import 'package:json_annotation/json_annotation.dart';
 
 import '../i18n/strings.g.dart';
 import '../utils/json_utils.dart';
-import 'mixins/multi_server_fields.dart';
 
 part 'livetv_channel.g.dart';
 
@@ -49,7 +48,7 @@ List<LiveTvChannel> filterLiveTvChannelsForFavorites({
 }
 
 @JsonSerializable(createToJson: false)
-class LiveTvChannel with MultiServerFields {
+class LiveTvChannel {
   @JsonKey(readValue: _readChannelKey)
   final String key;
   @JsonKey(readValue: _readChannelIdentifier)
@@ -68,10 +67,8 @@ class LiveTvChannel with MultiServerFields {
   @JsonKey(fromJson: flexibleBool)
   final bool? drm;
 
-  @override
   @JsonKey(includeFromJson: false, includeToJson: false)
   final String? serverId;
-  @override
   @JsonKey(includeFromJson: false, includeToJson: false)
   final String? serverName;
   @JsonKey(includeFromJson: false, includeToJson: false)

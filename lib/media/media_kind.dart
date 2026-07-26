@@ -26,8 +26,6 @@ enum MediaKind {
 
   bool get isVideo => this == movie || this == episode || this == clip;
 
-  bool get isShowRelated => this == show || this == season || this == episode;
-
   bool get isMusic => this == artist || this == album || this == track;
 
   bool get isPlayable => isVideo || this == track;

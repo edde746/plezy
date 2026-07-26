@@ -5,8 +5,15 @@ from pathlib import Path
 import re
 import sys
 
+from workflow_yaml import iter_uses_references, job_block
 
-DEFAULT_WORKFLOW = Path(__file__).resolve().parents[1] / ".github/workflows/build.yml"
+
+ROOT = Path(__file__).resolve().parents[1]
+DEFAULT_WORKFLOW = ROOT / ".github/workflows/build.yml"
+# The shared bootstrap both windows-arm jobs call, and the pins it must keep.
+SETUP_FLUTTER_GIT = ROOT / ".github/actions/setup-flutter-git/action.yml"
+FLUTTER_VERSION = "3.44.0"
+FLUTTER_COMMIT = "559ffa3f75e7402d65a8def9c28389a9b2e6fe42"
 if len(sys.argv) > 2:
     raise SystemExit(f"Usage: {Path(sys.argv[0]).name} [workflow-path]")
 WORKFLOW = Path(sys.argv[1]).resolve() if len(sys.argv) == 2 else DEFAULT_WORKFLOW
@@ -20,11 +27,9 @@ def require(condition: bool, message: str) -> None:
 
 
 def job(name: str) -> str:
-    match = re.search(
-        rf"(?ms)^  {re.escape(name)}:\n(.*?)(?=^  [a-zA-Z0-9_-]+:\n|\Z)", text
-    )
-    require(match is not None, f"missing {name} job")
-    return match.group(0) if match else ""
+    block = job_block(text, name)
+    require(bool(block), f"missing {name} job")
+    return block
 
 
 def named_step(block: str, name: str) -> str:
@@ -132,13 +137,7 @@ require(
 for expected in (
     "if: matrix.flutter_setup == 'action'",
     "if: matrix.flutter_setup == 'git'",
-    '$expectedCommit = "559ffa3f75e7402d65a8def9c28389a9b2e6fe42"',
-    "git -C $root fetch --depth 1 origin refs/tags/3.44.0:refs/tags/3.44.0",
-    "git -C $root checkout --detach refs/tags/3.44.0",
-    "$actualCommit = git -C $root rev-parse HEAD",
-    "$actualCommit -ne $expectedCommit",
-    r'$versionOutput = & "$root\bin\flutter.bat" --version --machine',
-    '$version.frameworkVersion -ne "3.44.0"',
+    "uses: ./.github/actions/setup-flutter-git",
     "flutter pub get --enforce-lockfile --no-example",
     "--dart-define=SENTRY_DIST=github-windows-${{ matrix.arch }}",
     "--split-debug-info=debug-info/windows-${{ matrix.arch }}",
@@ -159,6 +158,28 @@ require(
     "Windows build permissions must remain contents: read",
 )
 require_explicit_shells("build-windows", windows, "pwsh")
+
+setup_flutter_git = (
+    SETUP_FLUTTER_GIT.read_text(encoding="utf-8") if SETUP_FLUTTER_GIT.is_file() else ""
+)
+require(bool(setup_flutter_git), "missing .github/actions/setup-flutter-git/action.yml")
+for expected in (
+    f'$version = "{FLUTTER_VERSION}"',
+    f'$expectedCommit = "{FLUTTER_COMMIT}"',
+    # Fetch the release tag rather than the bare commit: the commit is only
+    # reachable through the tag, and the tag is what makes the SDK report its
+    # own version. Both halves are then verified, so a moved tag fails the job.
+    'git -C $root fetch --depth 1 origin "refs/tags/${version}:refs/tags/${version}"',
+    'git -C $root checkout --detach "refs/tags/$version"',
+    "$actualCommit = git -C $root rev-parse HEAD",
+    "$actualCommit -ne $expectedCommit",
+    r'$versionOutput = & "$root\bin\flutter.bat" --version --machine',
+    "$reportedVersion -ne $version",
+):
+    require(
+        expected in setup_flutter_git,
+        f"shared Flutter bootstrap must keep its verified pin: {expected}",
+    )
 
 linux = job("build-linux")
 require("runs-on: ${{ matrix.runner }}" in linux, "Linux must use its matrix runner")
@@ -187,7 +208,7 @@ require(
 )
 for expected in (
     "channel: ${{ matrix.flutter_channel }}",
-    'flutter-version: "3.44.0"',
+    "flutter-version: ${{ env.FLUTTER_VERSION }}",
     "flutter pub get --enforce-lockfile --no-example",
     "lib/${{ matrix.pkg_config_arch }}/pkgconfig",
     "--dart-define=SENTRY_DIST=github-linux-${{ matrix.arch }}",
@@ -293,6 +314,10 @@ for protected_job in (
     )
 
 require(
+    text.count(FLUTTER_VERSION) == 1 and f'FLUTTER_VERSION: "{FLUTTER_VERSION}"' in text,
+    "the Flutter SDK version must be written once, as the workflow FLUTTER_VERSION env",
+)
+require(
     "TRUSTED_BUILD_CACHE_VERSION: trusted-build-v1" in text,
     "build caches must use a dedicated trusted namespace",
 )
@@ -309,17 +334,18 @@ require(
     "every Flutter SDK cache must define its trusted cache key",
 )
 
-action_refs = re.findall(r"(?m)^\s*(?:-\s+)?uses:\s+([^\s@]+)@([^\s#]+)", text)
-require(bool(action_refs), "build workflow must use pinned actions")
-for action, ref in action_refs:
-    require(
-        re.fullmatch(r"[0-9a-f]{40}", ref) is not None,
-        f"action {action} must be pinned to a full commit SHA",
-    )
-
-checkout_count = sum(action == "actions/checkout" for action, _ in action_refs)
+# check_workflow_action_pins.py owns the SHA-pin rule for every workflow, this
+# one included; build.yml only adds the credential invariant on top, because it
+# is workflow_dispatch-only and so escapes the pull-request rule in
+# check_workflow_security.py.
+remote_actions = [
+    reference.rpartition("@")[0]
+    for _, reference in iter_uses_references(text)
+    if not reference.startswith("./")
+]
+require(bool(remote_actions), "build workflow must use pinned actions")
 require(
-    text.count("persist-credentials: false") == checkout_count,
+    text.count("persist-credentials: false") == remote_actions.count("actions/checkout"),
     "every build checkout must discard GitHub credentials",
 )
 

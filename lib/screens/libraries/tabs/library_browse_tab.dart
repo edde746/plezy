@@ -41,7 +41,6 @@ import '../../../widgets/media_card_list_layout.dart';
 import '../../../widgets/bottom_sheet_page_scaffold.dart';
 import '../../../widgets/overlay_sheet.dart';
 import '../../../mixins/library_tab_focus_mixin.dart';
-import '../../../services/plex_client.dart';
 import '../folder_tree_view.dart';
 import '../filters_bottom_sheet.dart';
 import '../sort_bottom_sheet.dart';
@@ -55,6 +54,7 @@ import '../../../mixins/item_updatable.dart';
 import '../../../mixins/watch_state_aware.dart';
 import '../../../mixins/deletion_aware.dart';
 import '../../../mixins/paginated_item_loader.dart';
+import '../../../mixins/standard_paginated_view.dart';
 import '../../../widgets/card_inflation_budget.dart';
 import '../../../widgets/skeleton_media_card.dart';
 import '../../../widgets/sliver_child_memo.dart';
@@ -104,13 +104,14 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
         GridFocusNodeMixin,
         WatchStateAware,
         DeletionAware,
+        DeletionMirrorsWatchState,
         PaginatedItemLoader<MediaItem, LibraryBrowseTab>,
+        PaginatedItemUpdatable<LibraryBrowseTab>,
         SkeletonUpgradeScheduler {
   String _toGlobalKey(String ratingKey, {required ServerId serverId}) => buildGlobalKey(serverId, ratingKey);
 
-  @override
-  String? get deletionServerId => widget.library.serverId;
-
+  // DeletionMirrorsWatchState points the deletion filters at these three: the
+  // grid shows the same loaded items for both event families.
   @override
   String? get watchStateServerId => widget.library.serverId;
 
@@ -119,22 +120,6 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
 
   @override
   Set<String>? get watchedGlobalKeys {
-    if (loadedItems.isEmpty) return <String>{};
-
-    final keys = <String>{};
-    for (final item in loadedItems.values) {
-      final serverId = serverIdOrNull(item.serverId ?? widget.library.serverId);
-      if (serverId == null) return null;
-      keys.add(_toGlobalKey(item.id, serverId: serverId));
-    }
-    return keys;
-  }
-
-  @override
-  Set<String>? get deletionIds => loadedItems.values.map((e) => e.id).toSet();
-
-  @override
-  Set<String>? get deletionGlobalKeys {
     if (loadedItems.isEmpty) return <String>{};
 
     final keys = <String>{};
@@ -212,16 +197,6 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
 
   @override
   int get itemCount => totalSize;
-
-  @override
-  void updateItemInLists(String sourceGlobalKey, MediaItem updatedMetadata) {
-    for (final entry in loadedItems.entries) {
-      if (entry.value.globalKey == sourceGlobalKey) {
-        loadedItems[entry.key] = updatedMetadata;
-        break;
-      }
-    }
-  }
 
   // Browse-specific state (not in base class)
   List<MediaFilter> _filters = [];
@@ -1061,8 +1036,8 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
   Future<List<MediaFilterValue>> _loadFilterValues(MediaFilter filter) async {
     if (!mounted) return const [];
 
-    final client = context.tryGetMediaClientForServer(serverIdOrNull(widget.library.serverId));
-    if (client is PlexClient) return client.getFilterValues(filter.key);
+    final client = context.tryGetPlexClientForServer(serverIdOrNull(widget.library.serverId));
+    if (client != null) return client.getFilterValues(filter.key);
 
     // Jellyfin's canonical filter values come from the cached `/Items/Filters`
     // payload. If that payload missed a category, there is no neutral endpoint

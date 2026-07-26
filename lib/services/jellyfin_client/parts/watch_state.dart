@@ -1,9 +1,6 @@
 part of '../../jellyfin_client.dart';
 
-mixin _JellyfinWatchStateMethods on MediaServerCacheMixin {
-  JellyfinConnection get connection;
-  FailoverHttpClient get _http;
-
+mixin _JellyfinWatchStateMethods on _JellyfinClientInternals {
   @override
   Future<void> markWatched(MediaItem item) async {
     final response = await _http.post(

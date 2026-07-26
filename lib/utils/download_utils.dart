@@ -3,6 +3,7 @@ import '../media/ids.dart';
 import 'package:flutter/services.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
+import '../focus/focusable_action_bar.dart';
 import '../i18n/strings.g.dart';
 import '../media/media_item.dart';
 import '../media/media_kind.dart';
@@ -19,6 +20,7 @@ import 'app_logger.dart';
 import 'content_utils.dart';
 import 'dialogs.dart';
 import 'download_version_utils.dart';
+import 'platform_detector.dart';
 import 'snackbar_helper.dart';
 
 @visibleForTesting
@@ -159,14 +161,7 @@ Future<DownloadResult?> showDownloadOptionsAndQueue(
     }
 
     if (filter == DownloadFilter.unwatched && kind == MediaKind.show && context.mounted) {
-      final syncChoice = await showOptionPickerDialog<_SyncChoice>(
-        context,
-        title: t.downloads.downloadNow,
-        options: [
-          (icon: Symbols.download_rounded, label: t.downloads.downloadOnce, value: _SyncChoice.downloadOnce),
-          (icon: Symbols.sync_rounded, label: t.downloads.keepSynced, value: _SyncChoice.keepSynced),
-        ],
-      );
+      final syncChoice = await _showSyncChoiceDialog(context);
       if (syncChoice == null || !context.mounted) return null;
       keepSynced = syncChoice == _SyncChoice.keepSynced;
     }
@@ -239,22 +234,12 @@ Future<DownloadResult?> showListDownloadOptionsAndQueue(
   final selectedFilter = await showOptionPickerDialog<DownloadFilter>(
     context,
     title: t.downloads.downloadNow,
-    options: [
-      (icon: Symbols.download_rounded, label: t.downloads.allEpisodes, value: DownloadFilter.all),
-      (icon: Symbols.visibility_off_rounded, label: t.downloads.unwatchedOnly, value: DownloadFilter.unwatched),
-    ],
+    options: _filterOptions(DownloadFilter.all, DownloadFilter.unwatched),
   );
 
   if (selectedFilter == null || !context.mounted) return null;
 
-  final syncChoice = await showOptionPickerDialog<_SyncChoice>(
-    context,
-    title: t.downloads.downloadNow,
-    options: [
-      (icon: Symbols.download_rounded, label: t.downloads.downloadOnce, value: _SyncChoice.downloadOnce),
-      (icon: Symbols.sync_rounded, label: t.downloads.keepSynced, value: _SyncChoice.keepSynced),
-    ],
-  );
+  final syncChoice = await _showSyncChoiceDialog(context);
   if (syncChoice == null || !context.mounted) return null;
 
   final serverId = rootMetadata.serverId ?? client.serverId;
@@ -294,36 +279,21 @@ Future<DownloadResult?> showListDownloadOptionsAndQueue(
   );
 }
 
-/// Shows the shared list-download dialog for a playlist.
-Future<DownloadResult?> showPlaylistDownloadOptionsAndQueue(
-  BuildContext context, {
-  required MediaItem playlistMetadata,
-  required List<MediaItem> items,
-  required MediaServerClient client,
-  required DownloadProvider downloadProvider,
-}) => showListDownloadOptionsAndQueue(
-  context,
-  rootMetadata: playlistMetadata,
-  targetType: ContentTypes.playlist,
-  items: items,
-  client: client,
-  downloadProvider: downloadProvider,
-);
+/// The all/unwatched option rows, shared by the pickers that differ only in
+/// how they spell those two values.
+List<({IconData? icon, String label, T value})> _filterOptions<T>(T all, T unwatched) => [
+  (icon: Symbols.download_rounded, label: t.downloads.allEpisodes, value: all),
+  (icon: Symbols.visibility_off_rounded, label: t.downloads.unwatchedOnly, value: unwatched),
+];
 
-/// Shows the shared list-download dialog for a collection.
-Future<DownloadResult?> showCollectionDownloadOptionsAndQueue(
-  BuildContext context, {
-  required MediaItem collectionMetadata,
-  required List<MediaItem> items,
-  required MediaServerClient client,
-  required DownloadProvider downloadProvider,
-}) => showListDownloadOptionsAndQueue(
+/// Asks whether to download once or keep the target synced.
+Future<_SyncChoice?> _showSyncChoiceDialog(BuildContext context) => showOptionPickerDialog<_SyncChoice>(
   context,
-  rootMetadata: collectionMetadata,
-  targetType: ContentTypes.collection,
-  items: items,
-  client: client,
-  downloadProvider: downloadProvider,
+  title: t.downloads.downloadNow,
+  options: [
+    (icon: Symbols.download_rounded, label: t.downloads.downloadOnce, value: _SyncChoice.downloadOnce),
+    (icon: Symbols.sync_rounded, label: t.downloads.keepSynced, value: _SyncChoice.keepSynced),
+  ],
 );
 
 Future<int?> _showEpisodeCountDialog(
@@ -390,10 +360,7 @@ Future<bool> editSyncRuleFilter(
   final selected = await showOptionPickerDialog<String>(
     context,
     title: t.downloads.editSyncFilter,
-    options: [
-      (icon: Symbols.download_rounded, label: t.downloads.allEpisodes, value: SyncRuleFilter.all),
-      (icon: Symbols.visibility_off_rounded, label: t.downloads.unwatchedOnly, value: SyncRuleFilter.unwatched),
-    ],
+    options: _filterOptions(SyncRuleFilter.all, SyncRuleFilter.unwatched),
   );
   if (selected == null || selected == currentFilter || !context.mounted) return false;
 
@@ -556,4 +523,45 @@ Future<void> removeSyncRuleAndSnack(
   if (removed != null && context.mounted) {
     showSuccessSnackBar(context, syncRuleRemovalMessage(removed));
   }
+}
+
+/// The download / manage-sync-rule app-bar pair shared by the collection and
+/// playlist detail screens: one entry that downloads (or edits the existing
+/// rule) and, when a rule exists, one that removes it. Both are hidden on
+/// Apple TV, which has no downloads UI.
+///
+/// [hasRule] stays caller-computed so each screen keeps its own
+/// `context.select` short-circuit, and [showDownload] carries the screen's
+/// own visibility predicate for the first entry.
+List<FocusableAction> buildSyncRuleActions(
+  BuildContext context, {
+  required String ruleKey,
+  required String displayTitle,
+  required bool hasRule,
+  required bool showDownload,
+  required VoidCallback onDownload,
+}) {
+  if (PlatformDetector.isAppleTV()) return const [];
+  return [
+    if (showDownload)
+      FocusableAction(
+        icon: hasRule ? Symbols.sync_rounded : Symbols.download_rounded,
+        tooltip: hasRule ? t.downloads.manageSyncRule : t.downloads.downloadNow,
+        onPressed: hasRule
+            ? () => manageSyncRule(context, downloadProvider: context.read<DownloadProvider>(), globalKey: ruleKey)
+            : onDownload,
+        iconColor: hasRule ? Colors.teal : null,
+      ),
+    if (hasRule)
+      FocusableAction(
+        icon: Symbols.sync_disabled_rounded,
+        tooltip: t.downloads.removeSyncRule,
+        onPressed: () => removeSyncRuleAndSnack(
+          context,
+          downloadProvider: context.read<DownloadProvider>(),
+          globalKey: ruleKey,
+          displayTitle: displayTitle,
+        ),
+      ),
+  ];
 }

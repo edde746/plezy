@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:collection';
-import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:drift/native.dart';
@@ -20,7 +19,6 @@ import 'package:plezy/media/server_capabilities.dart';
 import 'package:plezy/metadata_edit/metadata_edit_models.dart';
 import 'package:plezy/providers/multi_server_provider.dart';
 import 'package:plezy/screens/metadata_edit_screen.dart';
-import 'package:plezy/services/data_aggregation_service.dart';
 import 'package:plezy/services/file_picker_service.dart';
 import 'package:plezy/services/multi_server_manager.dart';
 import 'package:plezy/services/plex_api_cache.dart';
@@ -31,7 +29,9 @@ import 'package:plezy/widgets/loading_indicator_box.dart';
 import 'package:provider/provider.dart';
 
 import '../test_helpers/backend_client_fixtures.dart';
+import '../test_helpers/http_fixtures.dart';
 import '../test_helpers/media_items.dart';
+import '../test_helpers/multi_server_fixtures.dart';
 
 void main() {
   setUp(() {
@@ -327,7 +327,7 @@ Future<_EditorHarness> _pumpEditor(WidgetTester tester, _PlexMetadataRequests re
   PlexApiCache.initialize(database);
   final client = testPlexClient(serverId: ServerId('server-1'), handler: requests.handle);
   final manager = MultiServerManager()..debugRegisterClientForTesting(client);
-  final provider = MultiServerProvider(manager, DataAggregationService(manager));
+  final provider = testMultiServerProvider(manager);
   final metadata = ValueNotifier<MediaItem>(_show());
 
   await tester.pumpWidget(
@@ -448,7 +448,7 @@ class _PlexMetadataRequests {
         path.startsWith('/library/metadata/') &&
         request.url.queryParameters['includePreferences'] == '1') {
       final id = path.split('/').last;
-      return _jsonResponse({
+      return jsonResponse({
         'MediaContainer': {
           'Metadata': [
             {
@@ -642,10 +642,6 @@ class _FakeFilePicker implements FilePickerDelegate {
   }) {
     return _results.removeFirst();
   }
-}
-
-http.Response _jsonResponse(Object body) {
-  return http.Response(jsonEncode(body), 200, headers: const {'content-type': 'application/json'});
 }
 
 http.Response _ok() => _response(200);

@@ -20,7 +20,6 @@ import 'package:plezy/providers/multi_server_provider.dart';
 import 'package:plezy/providers/playback_state_provider.dart';
 import 'package:plezy/screens/playlist/playlist_detail_screen.dart';
 import 'package:plezy/screens/playlist/playlist_item_card.dart';
-import 'package:plezy/services/data_aggregation_service.dart';
 import 'package:plezy/services/download_manager_service.dart';
 import 'package:plezy/services/download_storage_service.dart';
 import 'package:plezy/services/jellyfin_api_cache.dart';
@@ -41,6 +40,7 @@ import 'package:plezy/utils/media_image_helper.dart';
 import 'package:provider/provider.dart';
 
 import '../test_helpers/media_items.dart';
+import '../test_helpers/multi_server_fixtures.dart';
 import '../test_helpers/paged_fakes.dart';
 import '../test_helpers/prefs.dart';
 
@@ -671,7 +671,7 @@ Future<_PlaylistHarness> _createHarness(
 
   final client = _PagedPlaylistClient(items, failOnceAt: failOnceAt, deleteResult: deleteResult, backend: backend);
   final manager = MultiServerManager()..debugRegisterClientForTesting(client);
-  final multiServerProvider = MultiServerProvider(manager, DataAggregationService(manager));
+  final multiServerProvider = testMultiServerProvider(manager);
   final playbackState = PlaybackStateProvider();
 
   addTearDown(() async {

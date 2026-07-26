@@ -16,12 +16,12 @@ import 'package:plezy/models/livetv_program.dart';
 import 'package:plezy/providers/multi_server_provider.dart';
 import 'package:plezy/screens/livetv/live_tv_screen.dart';
 import 'package:plezy/screens/livetv/tabs/guide_tab.dart';
-import 'package:plezy/services/data_aggregation_service.dart';
 import 'package:plezy/services/multi_server_manager.dart';
 import 'package:plezy/services/settings_service.dart';
 import 'package:plezy/theme/mono_theme.dart';
 import 'package:provider/provider.dart';
 
+import '../../test_helpers/multi_server_fixtures.dart';
 import '../../test_helpers/prefs.dart';
 
 void main() {
@@ -75,7 +75,7 @@ void main() {
     final manager = MultiServerManager()
       ..debugRegisterClientForTesting(failedClient)
       ..debugRegisterClientForTesting(healthyClient);
-    final provider = MultiServerProvider(manager, DataAggregationService(manager));
+    final provider = testMultiServerProvider(manager);
     provider.debugSetLiveTvServersForTesting([
       LiveTvServerInfo(serverId: 'server-a', dvrKey: 'dvr-a', lineup: 'provider-a'),
       LiveTvServerInfo(serverId: 'server-b', dvrKey: 'dvr-b', lineup: 'provider-b'),
@@ -148,7 +148,7 @@ Future<_LiveTvHarness> _pumpLiveTvScreen(WidgetTester tester) async {
   final liveTv = _FakeLiveTvSupport();
   final client = _FakeMediaServerClient(liveTv);
   final manager = MultiServerManager()..debugRegisterClientForTesting(client);
-  final provider = MultiServerProvider(manager, DataAggregationService(manager));
+  final provider = testMultiServerProvider(manager);
   provider.debugSetLiveTvServersForTesting([
     LiveTvServerInfo(serverId: client.serverId.value, dvrKey: 'dvr-a', lineup: 'provider-a'),
   ]);

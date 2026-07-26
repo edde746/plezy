@@ -9,36 +9,7 @@ bool _canUseJellyfinStaticStreamFallback(Object error) {
   return true;
 }
 
-PlaybackException _classifyJellyfinPlaybackFailure(Object error) {
-  if (error is MediaServerAuthException ||
-      error is MediaServerHttpException && (error.statusCode == 401 || error.statusCode == 403)) {
-    return PlaybackException(
-      t.messages.playbackAuthenticationRequired,
-      reason: PlaybackFailureReason.authenticationRequired,
-    );
-  }
-  if (error is MediaServerHttpException) {
-    if (error.isCancellation) {
-      return PlaybackException(t.messages.playbackCancelled, reason: PlaybackFailureReason.cancelled);
-    }
-    final status = error.statusCode;
-    if (error.isTransient || status != null && status >= 500) {
-      return PlaybackException(t.messages.playbackServerUnavailable, reason: PlaybackFailureReason.serverUnavailable);
-    }
-    if (error.type == MediaServerHttpErrorType.unknown && status != null && status < 400) {
-      return PlaybackException(t.messages.playbackDataInvalid, reason: PlaybackFailureReason.invalidPlaybackData);
-    }
-  }
-  if (error is FormatException || error is TypeError) {
-    return PlaybackException(t.messages.playbackDataInvalid, reason: PlaybackFailureReason.invalidPlaybackData);
-  }
-  return PlaybackException(t.messages.playbackFailed);
-}
-
-mixin _JellyfinPlaybackMethods on MediaServerCacheMixin {
-  JellyfinConnection get connection;
-  FailoverHttpClient get _http;
-
+mixin _JellyfinPlaybackMethods on _JellyfinClientInternals {
   /// Backend-neutral [PlaybackExtras] for [itemId]. Jellyfin exposes chapters
   /// at the item level (`raw['Chapters']`) and native skip segments through a
   /// separate `/MediaSegments/{itemId}` endpoint. Segment loading is best-effort
@@ -230,7 +201,7 @@ mixin _JellyfinPlaybackMethods on MediaServerCacheMixin {
       chosenSource = _selectNegotiatedMediaSource(negotiation['MediaSources'], bundle.selectedSourceId);
     } catch (error, stackTrace) {
       if (!_canUseJellyfinStaticStreamFallback(error)) {
-        Error.throwWithStackTrace(_classifyJellyfinPlaybackFailure(error), stackTrace);
+        Error.throwWithStackTrace(classifyPlaybackFailure(error), stackTrace);
       }
       appLogger.w(
         'Jellyfin playback negotiation unavailable; using the static stream',
@@ -750,20 +721,16 @@ mixin _JellyfinPlaybackMethods on MediaServerCacheMixin {
   @override
   Map<String, String> get streamHeaders => const {};
 
-  /// Tell the server the user has started playing [itemId]. Body shape
-  /// mirrors the Jellyfin SDK's [PlaybackStartInfo] — Findroid sends the
-  /// same fields, and Jellyfin's session tracker drops events that omit
-  /// `PlayMethod` because it has no way to associate progress with an
-  /// active session row.
-  ///
-  /// [duration] is accepted for interface symmetry with Plex but ignored —
-  /// Jellyfin's `/Sessions/Playing` body has no slot for it. Stream indexes
-  /// are still sent so the active session reflects the chosen tracks.
-  @override
-  Future<void> reportPlaybackStarted({
+  /// Shared body for the `/Sessions/Playing[/Progress]` pair — only [path] and
+  /// [isPaused] differ between start and progress. Shape mirrors the Jellyfin
+  /// SDK's `PlaybackStartInfo`/`PlaybackProgressInfo`: Findroid sends the same
+  /// fields, and Jellyfin's session tracker drops events that omit `PlayMethod`
+  /// because it has no way to associate progress with an active session row.
+  Future<void> _postPlayingState(
+    String path, {
     required String itemId,
     required Duration position,
-    Duration? duration,
+    required bool isPaused,
     String? playSessionId,
     String? playMethod,
     String? liveStreamId,
@@ -772,44 +739,7 @@ mixin _JellyfinPlaybackMethods on MediaServerCacheMixin {
     int? subtitleStreamIndex,
   }) async {
     final response = await _http.post(
-      '/Sessions/Playing',
-      body: {
-        'ItemId': itemId,
-        'MediaSourceId': ?mediaSourceId,
-        'AudioStreamIndex': ?audioStreamIndex,
-        'SubtitleStreamIndex': ?subtitleStreamIndex,
-        'PositionTicks': msToJellyfinTicks(position.inMilliseconds),
-        'CanSeek': true,
-        'IsPaused': false,
-        'IsMuted': false,
-        'PlayMethod': playMethod ?? 'DirectPlay',
-        'RepeatMode': 'RepeatNone',
-        'PlaybackOrder': 'Default',
-        'PlaySessionId': ?playSessionId,
-        'LiveStreamId': ?liveStreamId,
-      },
-    );
-    throwIfHttpError(response);
-  }
-
-  /// Periodic progress ping (5–10s cadence is typical). Server uses this to
-  /// drive the resume position, detect idle sessions, and save remembered
-  /// audio/subtitle stream indexes when enabled in Jellyfin user settings.
-  @override
-  Future<void> reportPlaybackProgress({
-    required String itemId,
-    required Duration position,
-    required Duration duration,
-    bool isPaused = false,
-    String? playSessionId,
-    String? playMethod,
-    String? liveStreamId,
-    String? mediaSourceId,
-    int? audioStreamIndex,
-    int? subtitleStreamIndex,
-  }) async {
-    final response = await _http.post(
-      '/Sessions/Playing/Progress',
+      path,
       body: {
         'ItemId': itemId,
         'MediaSourceId': ?mediaSourceId,
@@ -828,6 +758,63 @@ mixin _JellyfinPlaybackMethods on MediaServerCacheMixin {
     );
     throwIfHttpError(response);
   }
+
+  /// Tell the server the user has started playing [itemId].
+  ///
+  /// [duration] is accepted for interface symmetry with Plex but ignored —
+  /// Jellyfin's `/Sessions/Playing` body has no slot for it. Stream indexes
+  /// are still sent so the active session reflects the chosen tracks.
+  @override
+  Future<void> reportPlaybackStarted({
+    required String itemId,
+    required Duration position,
+    Duration? duration,
+    String? playSessionId,
+    String? playMethod,
+    String? liveStreamId,
+    String? mediaSourceId,
+    int? audioStreamIndex,
+    int? subtitleStreamIndex,
+  }) => _postPlayingState(
+    '/Sessions/Playing',
+    itemId: itemId,
+    position: position,
+    isPaused: false,
+    playSessionId: playSessionId,
+    playMethod: playMethod,
+    liveStreamId: liveStreamId,
+    mediaSourceId: mediaSourceId,
+    audioStreamIndex: audioStreamIndex,
+    subtitleStreamIndex: subtitleStreamIndex,
+  );
+
+  /// Periodic progress ping (5–10s cadence is typical). Server uses this to
+  /// drive the resume position, detect idle sessions, and save remembered
+  /// audio/subtitle stream indexes when enabled in Jellyfin user settings.
+  @override
+  Future<void> reportPlaybackProgress({
+    required String itemId,
+    required Duration position,
+    required Duration duration,
+    bool isPaused = false,
+    String? playSessionId,
+    String? playMethod,
+    String? liveStreamId,
+    String? mediaSourceId,
+    int? audioStreamIndex,
+    int? subtitleStreamIndex,
+  }) => _postPlayingState(
+    '/Sessions/Playing/Progress',
+    itemId: itemId,
+    position: position,
+    isPaused: isPaused,
+    playSessionId: playSessionId,
+    playMethod: playMethod,
+    liveStreamId: liveStreamId,
+    mediaSourceId: mediaSourceId,
+    audioStreamIndex: audioStreamIndex,
+    subtitleStreamIndex: subtitleStreamIndex,
+  );
 
   /// End-of-playback signal. Final position becomes the resume bookmark.
   /// [duration] is accepted for interface symmetry with Plex but ignored.

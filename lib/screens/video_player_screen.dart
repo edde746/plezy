@@ -58,13 +58,13 @@ import '../services/playback_source_resolver.dart';
 import '../services/multi_server_manager.dart';
 import '../services/offline_watch_sync_service.dart';
 import '../services/display_mode_service.dart';
+import '../services/media_control_router.dart';
 import '../services/settings_service.dart';
 import '../services/sleep_timer_service.dart';
 import '../services/track_manager.dart';
 import '../services/track_selection_service.dart';
 import '../services/ambient_lighting_service.dart';
 import '../services/video_filter_manager.dart';
-import '../services/video_pip_manager.dart';
 import '../services/video_volume_controller.dart';
 import '../services/pip_service.dart';
 import '../models/shader_preset.dart';
@@ -87,7 +87,6 @@ import 'video_player/completion_latch.dart';
 import 'video_player/frame_rate_matcher.dart';
 import 'video_player/live_stream_retry.dart';
 import 'video_player/live_timeline_report.dart';
-import 'video_player/media_control_router.dart';
 import 'video_player/wakelock_controller.dart';
 import 'video_player/live_tv_session_args.dart';
 import 'video_player/live_tv_session_state.dart';
@@ -527,7 +526,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   ({bool canControlPlayback, bool canNavigateMediaItems})? _lastMediaControlAuthority;
   PlaybackProgressTracker? _progressTracker;
   VideoFilterManager? _videoFilterManager;
-  VideoPIPManager? _videoPIPManager;
+  bool _pipInitialized = false;
   ShaderService? _shaderService;
   AmbientLightingService? _ambientLightingService;
   bool _fullscreenListenerAttached = false;
@@ -1063,16 +1062,18 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
           database: context.read<AppDatabase>(),
         );
         _playbackDataFuture = playbackResolver.resolve(
-          metadata: _currentMetadata,
-          selectedMediaIndex: _effectiveSelectedMediaIndex,
-          selectedMediaSourceId: _requestedMediaSourceId,
-          preferredVersionSignature: widget.preferredVersionSignature,
+          PlaybackInitializationOptions(
+            metadata: _currentMetadata,
+            selectedMediaIndex: _effectiveSelectedMediaIndex,
+            selectedMediaSourceId: _requestedMediaSourceId,
+            preferredVersionSignature: widget.preferredVersionSignature,
+            qualityPreset: _selectedQualityPreset,
+            selectedAudioStreamId: _selectedAudioStreamId,
+            preferredSubtitleTrack: _preferredSubtitleTrack,
+            sessionIdentifier: _playbackSessionIdentifier,
+            transcodeSessionId: _playbackTranscodeSessionId,
+          ),
           offlineLibraryMode: false,
-          qualityPreset: _selectedQualityPreset,
-          selectedAudioStreamId: _selectedAudioStreamId,
-          preferredSubtitleTrack: _preferredSubtitleTrack,
-          sessionIdentifier: _playbackSessionIdentifier,
-          transcodeSessionId: _playbackTranscodeSessionId,
         );
         // If MPV setup below throws before `_startPlayback` awaits this,
         // tell Dart we've "handled" the future so it's not reported as an
@@ -1370,6 +1371,22 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     return exitPosition;
   }
 
+  /// Pause/hide the player, flush stopped progress, restore system UI and
+  /// orientation, then leave the player route. No-op when the route cannot pop.
+  Future<void> _exitPlayerRoute({required bool navigateHome}) async {
+    final navigator = Navigator.of(context);
+    if (!navigator.canPop()) return;
+
+    _isExiting.value = true;
+    final exitPosition = await _pauseAndHidePlayerForRouteExit();
+    if (!mounted) return;
+    await _sendStoppedProgressOnce(positionOverride: exitPosition);
+    if (!mounted) return;
+    await _restoreSystemUiAndOrientation();
+    if (!mounted) return;
+    _finishPlayerNavigation(navigator, navigateHome: navigateHome);
+  }
+
   /// Handle back button press
   /// For non-host participants in Watch Together, shows leave session confirmation
   Future<void> _handleBackButton({bool navigateHome = false}) async {
@@ -1392,36 +1409,14 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
 
         if (confirmed && mounted) {
           await _watchTogetherProvider!.leaveSession();
-          if (mounted) {
-            final navigator = Navigator.of(context);
-            if (navigator.canPop()) {
-              _isExiting.value = true;
-              final exitPosition = await _pauseAndHidePlayerForRouteExit();
-              if (!mounted) return;
-              await _sendStoppedProgressOnce(positionOverride: exitPosition);
-              if (!mounted) return;
-              await _restoreSystemUiAndOrientation();
-              if (!mounted) return;
-              _finishPlayerNavigation(navigator, navigateHome: navigateHome);
-            }
-          }
+          if (mounted) await _exitPlayerRoute(navigateHome: navigateHome);
         }
         return;
       }
 
       // Default behavior for hosts or non-session users
       if (!mounted) return;
-      final navigator = Navigator.of(context);
-      if (navigator.canPop()) {
-        _isExiting.value = true;
-        final exitPosition = await _pauseAndHidePlayerForRouteExit();
-        if (!mounted) return;
-        await _sendStoppedProgressOnce(positionOverride: exitPosition);
-        if (!mounted) return;
-        await _restoreSystemUiAndOrientation();
-        if (!mounted) return;
-        _finishPlayerNavigation(navigator, navigateHome: navigateHome);
-      }
+      await _exitPlayerRoute(navigateHome: navigateHome);
     } finally {
       _isHandlingBack = false;
     }
@@ -1511,6 +1506,11 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     _chromeController.dispose();
     _toastController.dispose();
 
+    // The release sequence below mirrors _tearDownFailedPlayerAttempt but is
+    // deliberately separate: dispose() cannot await, and it destroys the
+    // notifiers, focus nodes and player that the rollback path keeps alive
+    // for a retry on a still-mounted screen.
+    //
     // Stop progress tracking and send final state. Normal back navigation
     // awaits this before popping; dispose keeps a fallback for externally
     // removed routes where dispose() cannot await.
@@ -1520,11 +1520,10 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     _stopLiveTimelineUpdates();
 
     _detachPipStateListener();
-    _videoPIPManager?.onBeforeEnterPip = null;
-    unawaited(_videoPIPManager?.disableAutoPip());
+    if (_pipInitialized) unawaited(PipService.setAutoPipReady(ready: false));
     _clearAutoPipEnteringCallback();
     _videoFilterManager?.dispose();
-    _videoPIPManager = null;
+    _pipInitialized = false;
     _videoFilterManager = null;
 
     _scrubPreviewSource?.dispose();
@@ -1533,6 +1532,9 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       SleepTimerService().markNeedsRestart();
     }
 
+    // Teardown scope: every subscription the screen ever owns, including the
+    // initState-owned sleep-timer and Apple TV ones that the rollback path
+    // must leave alive.
     _playingSubscription?.cancel();
     _completedSubscription?.cancel();
     _errorSubscription?.cancel();
@@ -1579,6 +1581,9 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       FullscreenStateManager().removeListener(_onFullscreenChanged);
       _fullscreenListenerAttached = false;
     }
+    // Not _restoreWindowsDisplayMode(): that helper waits 200ms after clearing
+    // the HDR hint before restoring, which dispose() cannot do. Fire the hint
+    // clear at the still-live player and restore immediately.
     if (!isReplacingWithVideo &&
         Platform.isWindows &&
         _displayModeService != null &&

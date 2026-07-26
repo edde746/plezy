@@ -1,3 +1,5 @@
+import '../exceptions/media_server_exceptions.dart';
+import '../i18n/strings.g.dart';
 import '../media/media_item.dart';
 import '../media/media_source_info.dart';
 import '../media/media_version.dart';
@@ -179,4 +181,35 @@ class PlaybackException implements Exception {
 
   @override
   String toString() => message;
+}
+
+/// Maps a transport-level failure raised while initializing playback onto a
+/// display-safe [PlaybackException].
+///
+/// Backend-neutral on purpose: Plex and Jellyfin both throw the same
+/// [MediaServerException] hierarchy, so both clients classify identically.
+PlaybackException classifyPlaybackFailure(Object error) {
+  if (error is MediaServerAuthException ||
+      error is MediaServerHttpException && (error.statusCode == 401 || error.statusCode == 403)) {
+    return PlaybackException(
+      t.messages.playbackAuthenticationRequired,
+      reason: PlaybackFailureReason.authenticationRequired,
+    );
+  }
+  if (error is MediaServerHttpException) {
+    if (error.isCancellation) {
+      return PlaybackException(t.messages.playbackCancelled, reason: PlaybackFailureReason.cancelled);
+    }
+    final status = error.statusCode;
+    if (error.isTransient || status != null && status >= 500) {
+      return PlaybackException(t.messages.playbackServerUnavailable, reason: PlaybackFailureReason.serverUnavailable);
+    }
+    if (error.type == MediaServerHttpErrorType.unknown && status != null && status < 400) {
+      return PlaybackException(t.messages.playbackDataInvalid, reason: PlaybackFailureReason.invalidPlaybackData);
+    }
+  }
+  if (error is FormatException || error is TypeError) {
+    return PlaybackException(t.messages.playbackDataInvalid, reason: PlaybackFailureReason.invalidPlaybackData);
+  }
+  return PlaybackException(t.messages.playbackFailed);
 }

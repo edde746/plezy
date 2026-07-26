@@ -18,11 +18,7 @@ class ScreenBreakpoints {
 
   static bool isTablet(double width) => width >= mobile && width < desktop;
 
-  static bool isWideTablet(double width) => width >= wideTablet && width < desktop;
-
   static bool isDesktop(double width) => width >= desktop && width < largeDesktop;
-
-  static bool isLargeDesktop(double width) => width >= largeDesktop;
 
   static bool isDesktopOrLarger(double width) => width >= desktop;
 
@@ -31,7 +27,6 @@ class ScreenBreakpoints {
 
 /// Animation and notification durations.
 class AppDurations {
-  static const Duration animFast = Duration(milliseconds: 200);
   static const Duration animMedium = Duration(milliseconds: 300);
   static const Duration animSlow = Duration(milliseconds: 500);
   static const Duration snackBarDefault = Duration(seconds: 3);

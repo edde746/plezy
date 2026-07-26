@@ -14,6 +14,36 @@ String stripTrailingSlash(String input) {
   return trimmed;
 }
 
+/// Encode query params with `%20` for spaces (not `+`).
+/// Null values are omitted and iterable values are emitted as repeated keys.
+///
+/// Used instead of `Uri.queryParameters` (which emits `+` for spaces) wherever
+/// the server rejects `+` — Plex's transcode endpoints and Seerr's TMDB-backed
+/// `/search` proxy both do.
+String encodeQueryParameters(Map<String, Object?>? params) {
+  if (params == null || params.isEmpty) return '';
+  final parts = <String>[];
+
+  void add(String key, Object? value) {
+    if (value == null) return;
+    if (value is Iterable) {
+      for (final item in value) {
+        add(key, item);
+      }
+      return;
+    }
+    parts.add(
+      '${Uri.encodeComponent(key)}='
+      '${Uri.encodeComponent(value.toString())}',
+    );
+  }
+
+  for (final entry in params.entries) {
+    add(entry.key, entry.value);
+  }
+  return parts.join('&');
+}
+
 final RegExp _schemePattern = RegExp(r'^[A-Za-z][A-Za-z\d+.-]*://');
 
 /// Canonicalizes a server base URL: trims, strips one trailing `/`, and

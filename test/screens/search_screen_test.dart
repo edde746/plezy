@@ -18,7 +18,6 @@ import 'package:plezy/media/server_capabilities.dart';
 import 'package:plezy/mixins/refreshable.dart';
 import 'package:plezy/providers/multi_server_provider.dart';
 import 'package:plezy/screens/search_screen.dart';
-import 'package:plezy/services/data_aggregation_service.dart';
 import 'package:plezy/services/multi_server_manager.dart';
 import 'package:plezy/services/settings_service.dart';
 import 'package:plezy/theme/mono_theme.dart';
@@ -30,6 +29,7 @@ import 'package:provider/provider.dart';
 
 import '../test_helpers/prefs.dart';
 import '../test_helpers/media_items.dart';
+import '../test_helpers/multi_server_fixtures.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -395,7 +395,7 @@ Future<(_FakeMediaServerClient, GlobalKey<State<SearchScreen>>)> _pumpTvSearchSc
   for (final additionalClient in additionalClients) {
     manager.debugRegisterClientForTesting(additionalClient);
   }
-  final provider = MultiServerProvider(manager, DataAggregationService(manager));
+  final provider = testMultiServerProvider(manager);
   addTearDown(provider.dispose);
 
   final key = GlobalKey<State<SearchScreen>>();

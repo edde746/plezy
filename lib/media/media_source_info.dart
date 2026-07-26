@@ -275,7 +275,6 @@ class MediaMarker {
   Duration get startTime => Duration(milliseconds: startTimeOffset);
   Duration get endTime => Duration(milliseconds: endTimeOffset);
 
-  bool get isIntro => type == 'intro';
   bool get isCredits => type == 'credits';
 
   bool containsPosition(Duration position) {

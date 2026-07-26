@@ -9,14 +9,13 @@ import 'package:plezy/database/app_database.dart';
 import 'package:plezy/i18n/strings.g.dart';
 import 'package:plezy/media/ids.dart';
 import 'package:plezy/providers/multi_server_provider.dart';
-import 'package:plezy/services/data_aggregation_service.dart';
-import 'package:plezy/services/multi_server_manager.dart';
 import 'package:plezy/services/plex_api_cache.dart';
 import 'package:plezy/theme/mono_theme.dart';
 import 'package:plezy/widgets/server_activities_button.dart';
 import 'package:provider/provider.dart';
 
 import '../test_helpers/backend_client_fixtures.dart';
+import '../test_helpers/multi_server_fixtures.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -31,14 +30,8 @@ void main() {
   tearDown(() => database.close());
 
   testWidgets('togglePanel opens and closes the server activities overlay', (tester) async {
-    final manager = MultiServerManager();
-    final multiServerProvider = MultiServerProvider(manager, DataAggregationService(manager));
+    final multiServerProvider = testMultiServer().provider;
     final buttonKey = GlobalKey<ServerActivitiesButtonState>();
-
-    addTearDown(() {
-      multiServerProvider.dispose();
-      manager.dispose();
-    });
 
     await tester.pumpWidget(
       TranslationProvider(
@@ -178,14 +171,8 @@ class _ActivitiesHarness {
 Future<_ActivitiesHarness> _pumpActivitiesHarness(WidgetTester tester, _ControlledActivitiesClient transport) async {
   final serverId = ServerId('plex-server');
   final client = testPlexClient(serverId: serverId, serverName: 'Test server', httpClient: transport);
-  final manager = MultiServerManager()..debugRegisterClientForTesting(client);
-  final multiServerProvider = MultiServerProvider(manager, DataAggregationService(manager));
+  final multiServerProvider = testMultiServer(clients: [client]).provider;
   final buttonKey = GlobalKey<ServerActivitiesButtonState>();
-
-  addTearDown(() {
-    multiServerProvider.dispose();
-    manager.dispose();
-  });
 
   await tester.pumpWidget(
     TranslationProvider(

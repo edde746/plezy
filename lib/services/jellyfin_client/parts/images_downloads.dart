@@ -1,7 +1,6 @@
 part of '../../jellyfin_client.dart';
 
-mixin _JellyfinImageDownloadMethods on MediaServerCacheMixin {
-  JellyfinConnection get connection;
+mixin _JellyfinImageDownloadMethods on _JellyfinClientInternals {
   Future<JellyfinPlaybackBundle?> fetchPlaybackBundle(
     String itemId, {
     int sourceIndex = 0,

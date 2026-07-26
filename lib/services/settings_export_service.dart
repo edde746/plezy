@@ -17,7 +17,6 @@ import '../utils/platform_detector.dart';
 import 'file_picker_service.dart';
 import 'settings_service.dart';
 import 'storage_service.dart';
-import 'trackers/tracker_constants.dart';
 
 class ImportResult {
   final int keysImported;
@@ -87,120 +86,13 @@ class SettingsExportService {
   static const Set<String> _nonPortableDeviceStorageKeys = {'custom_download_path', 'custom_download_path_type'};
   static const String _tvosDatabaseRecoveryPrefix = 'tvos_db_recovery_';
 
-  /// Closed registry of portable, user-facing settings. The [Pref] declarations
-  /// are the source of truth for both keys and stored types; credentials,
-  /// runtime state, device paths, history, endpoints, and user-authored player
+  /// Closed registry of portable, user-facing settings, keyed by preference
+  /// key. [SettingsService.portablePrefs] is the source of truth for membership
+  /// and the [Pref] declarations for the stored types; credentials, runtime
+  /// state, device paths, history, endpoints, and user-authored player
   /// configuration are intentionally absent.
   static final Map<String, _PreferencePolicy> _portablePreferences = {
-    for (final pref in <Pref<Object?>>[
-      SettingsService.enableDebugLogging,
-      SettingsService.enableHardwareDecoding,
-      SettingsService.enableHDR,
-      SettingsService.preferredVideoCodec,
-      SettingsService.preferredAudioCodec,
-      SettingsService.viewMode,
-      SettingsService.seekTimeSmall,
-      SettingsService.seekTimeLarge,
-      SettingsService.rewindOnResume,
-      SettingsService.showHeroSection,
-      SettingsService.tvFullCardLayout,
-      SettingsService.focusGlow,
-      SettingsService.useGlobalHubs,
-      SettingsService.showServerNameOnHubs,
-      SettingsService.groupLibrariesByServer,
-      SettingsService.sleepTimerDuration,
-      SettingsService.audioSyncOffset,
-      SettingsService.subtitleSyncOffset,
-      SettingsService.subtitleSearchLanguage,
-      SettingsService.volume,
-      SettingsService.rotationLocked,
-      SettingsService.subtitleFontSize,
-      SettingsService.subtitleTextColor,
-      SettingsService.subtitleBorderSize,
-      SettingsService.subtitleBorderColor,
-      SettingsService.subtitleBackgroundColor,
-      SettingsService.subtitleBackgroundOpacity,
-      SettingsService.subAssOverride,
-      SettingsService.subtitleRenderResolution,
-      SettingsService.subtitleBold,
-      SettingsService.subtitleItalic,
-      SettingsService.rememberTrackSelections,
-      SettingsService.showChapterMarkersOnTimeline,
-      SettingsService.clickVideoTogglesPlayback,
-      SettingsService.autoSkipIntro,
-      SettingsService.autoSkipCredits,
-      SettingsService.forceSkipMarkerFallback,
-      SettingsService.autoSkipDelay,
-      SettingsService.introPattern,
-      SettingsService.creditsPattern,
-      SettingsService.downloadOnWifiOnly,
-      SettingsService.autoRemoveWatchedDownloads,
-      SettingsService.downloadIncludeSpecials,
-      SettingsService.autoCheckUpdatesOnStartup,
-      SettingsService.showPerformanceOverlay,
-      SettingsService.autoHidePerformanceOverlay,
-      SettingsService.enableDiscordRPC,
-      SettingsService.enableTraktScrobble,
-      SettingsService.enableTraktWatchedSync,
-      SettingsService.enableMalScrobble,
-      SettingsService.enableAnilistScrobble,
-      SettingsService.enableSimklScrobble,
-      SettingsService.matchContentFrameRate,
-      SettingsService.tunneledPlayback,
-      SettingsService.dvConversionMode,
-      SettingsService.defaultQualityPreset,
-      SettingsService.musicQualityPreset,
-      SettingsService.musicVolume,
-      SettingsService.autoPlayNextEpisode,
-      SettingsService.useExoPlayer,
-      SettingsService.startupSection,
-      SettingsService.alwaysKeepSidebarOpen,
-      SettingsService.showUnwatchedCount,
-      SettingsService.showEpisodeNumberOnCards,
-      SettingsService.showSeasonPostersOnTabs,
-      SettingsService.hideSpoilers,
-      SettingsService.showNavBarLabels,
-      SettingsService.globalShaderPreset,
-      SettingsService.requireProfileSelectionOnOpen,
-      SettingsService.useExternalPlayer,
-      SettingsService.forceTvMode,
-      SettingsService.visualEffects,
-      SettingsService.ambientLighting,
-      SettingsService.audioPassthrough,
-      SettingsService.audioNormalization,
-      SettingsService.audioDownmix,
-      SettingsService.audioDownmixNormalize,
-      SettingsService.liveTvDefaultFavorites,
-      SettingsService.matchRefreshRate,
-      SettingsService.matchDynamicRange,
-      SettingsService.appLocale,
-      SettingsService.autoPip,
-      SettingsService.maxVolume,
-      SettingsService.downmixCenterBoost,
-      SettingsService.subtitlePosition,
-      SettingsService.defaultPlaybackSpeed,
-      SettingsService.defaultBoxFitMode,
-      SettingsService.displaySwitchDelay,
-      SettingsService.themeMode,
-      SettingsService.videoPlayerNavigationEnabled,
-      SettingsService.enableCompanionRemoteServer,
-      SettingsService.startInFullscreen,
-      SettingsService.exitFullscreenOnPlayerClose,
-      SettingsService.bufferSize,
-      SettingsService.libraryDensity,
-      SettingsService.tvCornerSpotlightBackdrop,
-      SettingsService.episodePosterMode,
-      SettingsService.continueWatchingAction,
-      SettingsService.episodeAction,
-      SettingsService.keyboardHotkeys,
-    ])
-      pref.key: _PreferencePolicy(_storageTypeFor(pref)),
-    for (final service in TrackerService.values)
-      for (final pref in <Pref<Object?>>[
-        SettingsService.trackerFilterModePref(service),
-        SettingsService.trackerFilterIdsPref(service),
-      ])
-        pref.key: _PreferencePolicy(_storageTypeFor(pref)),
+    for (final pref in SettingsService.portablePrefs) pref.key: _PreferencePolicy(_storageTypeFor(pref)),
   };
 
   static const Set<String> _jsonStringListPreferenceKeys = {'hidden_libraries', 'library_order'};

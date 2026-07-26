@@ -26,44 +26,32 @@ struct InnerWindowSubclassState {
 
 namespace {
 
-flutter::EncodableValue NodeToEncodableValue(const mpv_node* node) {
-  if (!node) return flutter::EncodableValue();
+// Adapts the shared, bounded mpv_node walk onto Flutter's encodable values.
+struct EncodableNodeBuilder {
+  using Value = flutter::EncodableValue;
+  using ListBuilder = flutter::EncodableList;
+  using MapBuilder = flutter::EncodableMap;
 
-  switch (node->format) {
-    case MPV_FORMAT_STRING:
-      return flutter::EncodableValue(SanitizeUtf8(node->u.string));
-    case MPV_FORMAT_FLAG:
-      return flutter::EncodableValue(node->u.flag != 0);
-    case MPV_FORMAT_INT64:
-      return flutter::EncodableValue(node->u.int64);
-    case MPV_FORMAT_DOUBLE:
-      return flutter::EncodableValue(node->u.double_);
-    case MPV_FORMAT_NODE_ARRAY: {
-      const mpv_node_list* node_list = node->u.list;
-      if (!node_list || node_list->num < 0 || (node_list->num > 0 && !node_list->values)) {
-        return flutter::EncodableValue();
-      }
-      flutter::EncodableList list;
-      list.reserve(static_cast<size_t>(node_list->num));
-      for (int i = 0; i < node_list->num; ++i) {
-        list.push_back(NodeToEncodableValue(&node_list->values[i]));
-      }
-      return flutter::EncodableValue(list);
-    }
-    case MPV_FORMAT_NODE_MAP: {
-      const mpv_node_list* node_list = node->u.list;
-      if (!node_list || node_list->num < 0 || (node_list->num > 0 && (!node_list->values || !node_list->keys))) {
-        return flutter::EncodableValue();
-      }
-      flutter::EncodableMap map;
-      for (int i = 0; i < node_list->num; ++i) {
-        map[flutter::EncodableValue(SanitizeUtf8(node_list->keys[i]))] = NodeToEncodableValue(&node_list->values[i]);
-      }
-      return flutter::EncodableValue(map);
-    }
-    default:
-      return flutter::EncodableValue();
+  static Value Null() { return flutter::EncodableValue(); }
+  static Value Bool(bool value) { return flutter::EncodableValue(value); }
+  static Value Int(int64_t value) { return flutter::EncodableValue(value); }
+  static Value Double(double value) { return flutter::EncodableValue(value); }
+  static Value String(const char* value, size_t length) { return flutter::EncodableValue(SanitizeUtf8(value, length)); }
+
+  static ListBuilder NewList() { return flutter::EncodableList(); }
+  static void Append(ListBuilder& list, Value value) { list.push_back(std::move(value)); }
+  static Value FinishList(ListBuilder list) { return flutter::EncodableValue(std::move(list)); }
+
+  static MapBuilder NewMap() { return flutter::EncodableMap(); }
+  static void Insert(MapBuilder& map, const char* key, size_t key_length, Value value) {
+    map[flutter::EncodableValue(SanitizeUtf8(key, key_length))] = std::move(value);
   }
+  static Value FinishMap(MapBuilder map) { return flutter::EncodableValue(std::move(map)); }
+  static void AbandonMap(MapBuilder&) {}
+};
+
+flutter::EncodableValue NodeToEncodableValue(const mpv_node* node) {
+  return plezy::mpv_common::ConvertNode<EncodableNodeBuilder>(node);
 }
 
 // Input ownership for the DComp video child.
@@ -668,21 +656,7 @@ void MpvPlayer::CommandAsync(const std::vector<std::string>& args, CommandCallba
     return;
   }
 
-  std::vector<const char*> c_args;
-  c_args.reserve(args.size() + 1);
-  for (const auto& arg : args) {
-    c_args.push_back(arg.c_str());
-  }
-  c_args.push_back(nullptr);
-
-  uint64_t request_id = callback ? pending_requests_.RegisterStatus(std::move(callback)) : 0;
-
-  // mpv_command_async returns immediately
-  int result = mpv_command_async(mpv_, request_id, c_args.data());
-  if (result < 0) {
-    auto cb = pending_requests_.TakeStatus(request_id);
-    if (cb) cb(result);
-  }
+  plezy::mpv_common::SubmitCommandAsync(mpv_, pending_requests_, args, std::move(callback));
 }
 
 void MpvPlayer::SetProperty(const std::string& name, const std::string& value) {
@@ -701,14 +675,7 @@ void MpvPlayer::SetPropertyAsync(const std::string& name, const std::string& val
     return;
   }
 
-  uint64_t request_id = callback ? pending_requests_.RegisterStatus(std::move(callback)) : 0;
-
-  char* property_value = const_cast<char*>(value.c_str());
-  int result = mpv_set_property_async(mpv_, request_id, name.c_str(), MPV_FORMAT_STRING, &property_value);
-  if (result < 0) {
-    auto cb = pending_requests_.TakeStatus(request_id);
-    if (cb) cb(result);
-  }
+  plezy::mpv_common::SubmitSetPropertyAsync(mpv_, pending_requests_, name, value, std::move(callback));
 }
 
 void MpvPlayer::GetPropertyAsync(const std::string& name, GetPropertyCallback callback) {
@@ -717,13 +684,7 @@ void MpvPlayer::GetPropertyAsync(const std::string& name, GetPropertyCallback ca
     return;
   }
 
-  uint64_t request_id = pending_requests_.RegisterProperty(std::move(callback));
-
-  int result = mpv_get_property_async(mpv_, request_id, name.c_str(), MPV_FORMAT_STRING);
-  if (result < 0) {
-    auto cb = pending_requests_.TakeProperty(request_id);
-    if (cb) cb(result, "");
-  }
+  plezy::mpv_common::SubmitGetPropertyAsync(mpv_, pending_requests_, name, std::move(callback));
 }
 
 void MpvPlayer::ObserveProperty(const std::string& name, const std::string& format, int id) {
@@ -839,32 +800,12 @@ void MpvPlayer::EventLoop() {
 }
 
 void MpvPlayer::HandleMpvEvent(mpv_event* event) {
+  if (plezy::mpv_common::DispatchReplyEvent(
+          pending_requests_, event, [](const char* value) { return SanitizeUtf8(value); })) {
+    return;
+  }
+
   switch (event->event_id) {
-    case MPV_EVENT_COMMAND_REPLY:
-    case MPV_EVENT_SET_PROPERTY_REPLY: {
-      uint64_t request_id = event->reply_userdata;
-      StatusCallback callback = pending_requests_.TakeStatus(request_id);
-      if (callback) {
-        callback(event->error);
-      }
-      break;
-    }
-    case MPV_EVENT_GET_PROPERTY_REPLY: {
-      uint64_t request_id = event->reply_userdata;
-      GetPropertyCallback callback = pending_requests_.TakeProperty(request_id);
-      if (callback) {
-        std::string value;
-        if (event->error >= 0) {
-          auto* prop = static_cast<mpv_event_property*>(event->data);
-          if (prop && prop->format == MPV_FORMAT_STRING && prop->data) {
-            auto c_value = *static_cast<char**>(prop->data);
-            if (c_value) value = SanitizeUtf8(c_value);
-          }
-        }
-        callback(event->error, value);
-      }
-      break;
-    }
     case MPV_EVENT_LOG_MESSAGE: {
       auto* msg = static_cast<mpv_event_log_message*>(event->data);
       char log_msg[512];
@@ -880,50 +821,11 @@ void MpvPlayer::HandleMpvEvent(mpv_event* event) {
     }
     case MPV_EVENT_PROPERTY_CHANGE: {
       auto* prop = static_cast<mpv_event_property*>(event->data);
-      mpv_node node{};
-      node.format = prop->format;
+      mpv_node node = plezy::mpv_common::ExtractPropertyNode(prop);
 
-      switch (prop->format) {
-        case MPV_FORMAT_STRING:
-          node.u.string = prop->data ? *static_cast<char**>(prop->data) : nullptr;
-          break;
-        case MPV_FORMAT_FLAG:
-          node.u.flag = prop->data ? *static_cast<int*>(prop->data) : 0;
-          break;
-        case MPV_FORMAT_INT64:
-          node.u.int64 = prop->data ? *static_cast<int64_t*>(prop->data) : 0;
-          break;
-        case MPV_FORMAT_DOUBLE:
-          node.u.double_ = prop->data ? *static_cast<double*>(prop->data) : 0.0;
-          break;
-        case MPV_FORMAT_NODE:
-          if (prop->data) {
-            node = *static_cast<mpv_node*>(prop->data);
-          }
-          break;
-        default:
-          node.format = MPV_FORMAT_NONE;
-          break;
-      }
-
-      if (strcmp(prop->name, "current-ao") == 0) {
-        const char* current_ao = nullptr;
-        if (prop->format == MPV_FORMAT_STRING && prop->data) {
-          current_ao = *static_cast<char**>(prop->data);
-        }
-        const bool is_null = current_ao && strcmp(current_ao, "null") == 0;
-        const auto transition =
-            audio_recovery_.SetCurrentAudioOutputNull(is_null, plezy::mpv_common::AudioRecoveryState::Clock::now());
-        if (transition == plezy::mpv_common::AudioOutputTransition::kFellBackToNull) {
-          LogRecovery("current-ao fell back to null; starting recovery");
-        } else if (transition == plezy::mpv_common::AudioOutputTransition::kRecovered) {
-          LogRecovery("audio recovered (current-ao no longer null)");
-        }
-      }
-      if (strcmp(prop->name, "audio-device-list") == 0 && event->reply_userdata == 0 &&
-          audio_recovery_.OnAudioDeviceListChanged(plezy::mpv_common::AudioRecoveryState::Clock::now())) {
-        LogRecovery("audio-device-list changed while ao=null; rescheduling ao-reload");
-      }
+      // The 100ms mpv_wait_event tick already polls for scheduled reloads.
+      const auto notice = plezy::mpv_common::ObserveAudioRecoveryProperty(audio_recovery_, event, prop);
+      if (notice.message) LogRecovery(notice.message);
 
       SendPropertyChange(prop->name, &node);
       break;

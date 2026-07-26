@@ -77,6 +77,7 @@ import com.edde746.plezy.shared.FlutterOverlayHelper
 import com.edde746.plezy.shared.FrameRateManager
 import com.edde746.plezy.shared.MediaCodecQuery
 import com.edde746.plezy.shared.PlayerSurfaceHost
+import com.edde746.plezy.shared.SurfacePlayerCore
 import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicLong
 import org.chromium.net.CronetEngine
@@ -102,7 +103,7 @@ interface ExoPlayerDelegate : com.edde746.plezy.shared.PlayerDelegate {
 internal fun playbackMimeType(isLive: Boolean): String? = if (isLive) MimeTypes.APPLICATION_M3U8 else null
 
 @OptIn(UnstableApi::class)
-class ExoPlayerCore(private val activity: Activity) : Player.Listener {
+class ExoPlayerCore(private val activity: Activity) : Player.Listener, SurfacePlayerCore {
 
   companion object {
     private const val TAG = "ExoPlayerCore"
@@ -3501,7 +3502,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
     else -> null
   }
 
-  fun setVisible(visible: Boolean) {
+  override fun setVisible(visible: Boolean) {
     if (disposing) return
     currentVisible = visible
     activity.runOnUiThread {
@@ -3594,7 +3595,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
     }
   }
 
-  fun onPipModeChanged(isInPipMode: Boolean) {
+  override fun onPipModeChanged(isInPipMode: Boolean) {
     if (disposing) return
     activity.runOnUiThread {
       if (disposing) return@runOnUiThread
@@ -3610,7 +3611,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
     }
   }
 
-  fun updateFrame() {
+  override fun updateFrame() {
     if (disposing) return
     activity.runOnUiThread {
       if (disposing) return@runOnUiThread
@@ -3625,15 +3626,15 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
 
   // Audio Focus
 
-  fun requestAudioFocus(): Boolean = audioFocusManager?.requestAudioFocus() ?: false
+  override fun requestAudioFocus(): Boolean = audioFocusManager?.requestAudioFocus() ?: false
 
-  fun abandonAudioFocus() {
+  override fun abandonAudioFocus() {
     audioFocusManager?.abandonAudioFocus()
   }
 
   // Frame Rate Matching
 
-  fun setVideoFrameRate(
+  override fun setVideoFrameRate(
     fps: Float,
     videoDurationMs: Long,
     extraDelayMs: Long,
@@ -3649,7 +3650,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
     mgr.setVideoFrameRate(fps, videoDurationMs, extraDelayMs, videoWidth, videoHeight, onComplete)
   }
 
-  fun clearVideoFrameRate() {
+  override fun clearVideoFrameRate() {
     frameRateManager?.clearVideoFrameRate()
   }
 

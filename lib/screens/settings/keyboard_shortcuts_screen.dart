@@ -5,7 +5,7 @@ import '../../i18n/strings.g.dart';
 import '../../models/hotkey_model.dart';
 import '../../services/keyboard_shortcuts_service.dart';
 import '../../utils/app_logger.dart';
-import '../../services/shader_service.dart';
+import '../../services/shortcut_action.dart';
 import '../../utils/dialogs.dart';
 import '../../utils/snackbar_helper.dart';
 import '../../focus/focusable_button.dart';
@@ -26,9 +26,7 @@ class KeyboardShortcutsScreen extends StatelessWidget {
       listenable: keyboardService,
       builder: (context, _) {
         final hotkeys = keyboardService.hotkeys;
-        final actions = hotkeys.keys
-            .where((action) => action != 'shader_toggle' || ShaderService.isPlatformSupported)
-            .toList();
+        final actions = hotkeys.keys.where((action) => ShortcutAction.fromId(action)?.isSupported ?? true).toList();
         return FocusedScrollScaffold(
           title: Text(t.settings.keyboardShortcuts),
           slivers: [

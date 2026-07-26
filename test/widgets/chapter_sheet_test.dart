@@ -4,28 +4,10 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/i18n/strings.g.dart';
 import 'package:plezy/media/media_source_info.dart';
 import 'package:plezy/mpv/mpv.dart';
-import 'package:plezy/theme/mono_tokens.dart';
 import 'package:plezy/widgets/overlay_sheet.dart';
 import 'package:plezy/widgets/video_controls/sheets/chapter_sheet.dart';
 
-const _tokens = MonoTokens(
-  radiusSm: 8,
-  radiusMd: 12,
-  radiusLg: 20,
-  radiusXs: 5,
-  groupGap: 2,
-  space: 8,
-  fast: Duration(milliseconds: 1),
-  normal: Duration(milliseconds: 1),
-  slow: Duration(milliseconds: 1),
-  expressive: Duration(milliseconds: 1),
-  bg: Colors.black,
-  surface: Colors.black,
-  outline: Colors.white24,
-  text: Colors.white,
-  textMuted: Colors.white70,
-  splashFactory: NoSplash.splashFactory,
-);
+import '../test_helpers/theme.dart';
 
 void main() {
   setUp(() => LocaleSettings.setLocaleSync(AppLocale.en));
@@ -64,7 +46,7 @@ Future<void> _pumpSheet(
 }) async {
   await tester.pumpWidget(
     MaterialApp(
-      theme: ThemeData(extensions: const [_tokens]),
+      theme: ThemeData(extensions: const [testMonoTokens]),
       home: OverlaySheetHost(
         child: Scaffold(
           body: Builder(

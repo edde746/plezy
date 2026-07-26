@@ -24,7 +24,7 @@ extension _VideoPlayerPlaybackPromptMethods on VideoPlayerScreenState {
     unawaited(DiscordRPCService.instance.pausePlayback());
     unawaited(TraktScrobbleService.instance.pausePlayback());
     if (_autoPipEnabled) {
-      unawaited(_videoPIPManager?.updateAutoPipState(isPlaying: false));
+      unawaited(_updateAutoPipState(isPlaying: false));
     }
 
     // End-of-video sleep timer takes precedence over autoplay / next-episode

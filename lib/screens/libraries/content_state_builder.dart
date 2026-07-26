@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
+import '../../focus/focusable_button.dart';
 import '../../i18n/strings.g.dart';
 import 'state_messages.dart';
 
@@ -10,9 +11,7 @@ class SliverErrorState extends StatelessWidget {
   final String? retryLabel;
   final FocusNode? actionFocusNode;
   final VoidCallback? onActionNavigateUp;
-  final VoidCallback? onActionNavigateDown;
   final VoidCallback? onActionNavigateLeft;
-  final VoidCallback? onActionNavigateRight;
   final VoidCallback? onActionBack;
   final bool actionAutofocus;
   final bool actionUseBackgroundFocus;
@@ -24,9 +23,7 @@ class SliverErrorState extends StatelessWidget {
     this.retryLabel,
     this.actionFocusNode,
     this.onActionNavigateUp,
-    this.onActionNavigateDown,
     this.onActionNavigateLeft,
-    this.onActionNavigateRight,
     this.onActionBack,
     this.actionAutofocus = false,
     this.actionUseBackgroundFocus = false,
@@ -41,9 +38,7 @@ class SliverErrorState extends StatelessWidget {
       retryLabel: retryLabel,
       actionFocusNode: actionFocusNode,
       onActionNavigateUp: onActionNavigateUp,
-      onActionNavigateDown: onActionNavigateDown,
       onActionNavigateLeft: onActionNavigateLeft,
-      onActionNavigateRight: onActionNavigateRight,
       onActionBack: onActionBack,
       actionAutofocus: actionAutofocus,
       actionUseBackgroundFocus: actionUseBackgroundFocus,
@@ -61,9 +56,7 @@ class SliverEmptyState extends StatelessWidget {
   final IconData? actionIcon;
   final FocusNode? actionFocusNode;
   final VoidCallback? onActionNavigateUp;
-  final VoidCallback? onActionNavigateDown;
   final VoidCallback? onActionNavigateLeft;
-  final VoidCallback? onActionNavigateRight;
   final VoidCallback? onActionBack;
 
   const SliverEmptyState({
@@ -76,9 +69,7 @@ class SliverEmptyState extends StatelessWidget {
     this.actionIcon,
     this.actionFocusNode,
     this.onActionNavigateUp,
-    this.onActionNavigateDown,
     this.onActionNavigateLeft,
-    this.onActionNavigateRight,
     this.onActionBack,
   });
 
@@ -93,12 +84,59 @@ class SliverEmptyState extends StatelessWidget {
       actionIcon: actionIcon,
       actionFocusNode: actionFocusNode,
       onActionNavigateUp: onActionNavigateUp,
-      onActionNavigateDown: onActionNavigateDown,
       onActionNavigateLeft: onActionNavigateLeft,
-      onActionNavigateRight: onActionNavigateRight,
       onActionBack: onActionBack,
     ),
   );
+}
+
+/// Footer sliver for continuation (append-to-list) pagination: a spinner while
+/// the next page loads, or the error message with a focusable retry button.
+class ContinuationStatusSliver extends StatelessWidget {
+  /// Failure from the last page load; null while the page is still loading.
+  final Object? error;
+  final VoidCallback onRetry;
+  final FocusNode retryFocusNode;
+  final VoidCallback? onNavigateUp;
+  final VoidCallback? onBack;
+
+  const ContinuationStatusSliver({
+    super.key,
+    required this.error,
+    required this.onRetry,
+    required this.retryFocusNode,
+    this.onNavigateUp,
+    this.onBack,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final exception = error;
+    final message = exception == null ? null : t.messages.errorLoading(error: exception.toString());
+    return SliverToBoxAdapter(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Center(
+          child: message == null
+              ? const CircularProgressIndicator()
+              : Column(
+                  mainAxisSize: .min,
+                  children: [
+                    Text(message, textAlign: TextAlign.center),
+                    const SizedBox(height: 8),
+                    FocusableButton(
+                      focusNode: retryFocusNode,
+                      onPressed: onRetry,
+                      onNavigateUp: onNavigateUp,
+                      onBack: onBack,
+                      child: TextButton(onPressed: onRetry, child: Text(t.common.retry)),
+                    ),
+                  ],
+                ),
+        ),
+      ),
+    );
+  }
 }
 
 /// A widget that handles loading, error, empty, and content states

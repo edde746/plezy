@@ -408,6 +408,8 @@ class AnilistClient implements DisposableTrackerClient {
 
     final res = await send();
 
+    // Rate limits are typed here and in Trakt only; MAL and Simkl surface a 429
+    // as a plain TrackerApiException.
     if (res.statusCode == 429) {
       throw TrackerRateLimitException(
         service: TrackerService.anilist,

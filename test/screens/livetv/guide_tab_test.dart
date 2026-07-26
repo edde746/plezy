@@ -19,12 +19,13 @@ import 'package:plezy/models/livetv_channel.dart';
 import 'package:plezy/models/livetv_program.dart';
 import 'package:plezy/screens/livetv/tabs/guide_tab.dart';
 import 'package:plezy/providers/multi_server_provider.dart';
-import 'package:plezy/services/data_aggregation_service.dart';
 import 'package:plezy/services/multi_server_manager.dart';
 import 'package:plezy/theme/mono_theme.dart';
 import 'package:plezy/utils/platform_detector.dart';
 import 'package:plezy/widgets/app_icon.dart';
 import 'package:provider/provider.dart';
+
+import '../../test_helpers/multi_server_fixtures.dart';
 
 const _selectDown = KeyDownEvent(
   physicalKey: PhysicalKeyboardKey.enter,
@@ -233,7 +234,7 @@ final class _GuideHarness {
     final serverB = includeServerB ? _FakeMediaServerClient(serverId: 'server-b', stationId: 'station-b') : null;
     final manager = MultiServerManager()..debugRegisterClientForTesting(serverA);
     if (serverB != null) manager.debugRegisterClientForTesting(serverB);
-    final provider = MultiServerProvider(manager, DataAggregationService(manager))
+    final provider = testMultiServerProvider(manager)
       ..debugSetLiveTvServersForTesting([
         LiveTvServerInfo(serverId: 'server-a', dvrKey: 'dvr-a'),
         if (serverB != null) LiveTvServerInfo(serverId: 'server-b', dvrKey: 'dvr-b'),

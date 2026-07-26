@@ -100,6 +100,35 @@ extension _PlexVideoControlsKeyEventMethods on _PlexVideoControlsState {
     return KeyEventResult.ignored;
   }
 
+  KeyEventResult _dispatchShortcut(KeyEvent event, {VoidCallback? onSkipMarker}) {
+    return _keyboardService!.handleVideoPlayerKeyEvent(
+      event,
+      widget.player,
+      _toggleFullscreen,
+      _toggleSubtitles,
+      _nextAudioTrack,
+      _nextSubtitleTrack,
+      _nextChapter,
+      _previousChapter,
+      canControlPlayback: widget.canControl,
+      canNavigateMediaItems: widget.canNavigateMediaItems,
+      onPlayPause: () => unawaited(_playOrPause()),
+      onToggleShader: _toggleShader,
+      onSkipMarker: onSkipMarker,
+      onNextEpisode: widget.onNext,
+      onPreviousEpisode: widget.onPrevious,
+      onScreenshot: _showScreenshotToast,
+      onZoomIn: widget.onZoomIn,
+      onZoomOut: widget.onZoomOut,
+      onZoomReset: widget.onResetVideoZoom,
+      onVolumeUp: () => widget.volumeController.adjust(10),
+      onVolumeDown: () => widget.volumeController.adjust(-10),
+      onToggleMute: widget.volumeController.toggleMute,
+      onLiveSeekBy: widget.onLiveSeekBy,
+      onSeekRequested: widget.onSeekRequested,
+    );
+  }
+
   /// Global key event handler for focus-independent shortcuts (desktop only)
   bool _handleGlobalKeyEvent(KeyEvent event) {
     if (!mounted) return false;
@@ -140,33 +169,7 @@ extension _PlexVideoControlsKeyEventMethods on _PlexVideoControlsState {
     // (e.g. after controls auto-hide). The !hasFocus guard prevents
     // double-handling when the Focus onKeyEvent already processes the event.
     if (!_focusNode.hasFocus && _keyboardService != null) {
-      final result = _keyboardService!.handleVideoPlayerKeyEvent(
-        event,
-        widget.player,
-        _toggleFullscreen,
-        _toggleSubtitles,
-        _nextAudioTrack,
-        _nextSubtitleTrack,
-        _nextChapter,
-        _previousChapter,
-        canControlPlayback: widget.canControl,
-        canNavigateMediaItems: widget.canNavigateMediaItems,
-        onPlayPause: () => unawaited(_playOrPause()),
-        onToggleShader: _toggleShader,
-        onNextEpisode: widget.onNext,
-        onPreviousEpisode: widget.onPrevious,
-        onScreenshot: _showScreenshotToast,
-        onZoomIn: widget.onZoomIn,
-        onZoomOut: widget.onZoomOut,
-        onZoomReset: widget.onResetVideoZoom,
-        onVolumeUp: () => widget.volumeController.adjust(10),
-        onVolumeDown: () => widget.volumeController.adjust(-10),
-        onToggleMute: widget.volumeController.toggleMute,
-        currentPositionEpoch: widget.currentPositionEpoch,
-        onLiveSeek: widget.onLiveSeek,
-        onLiveSeekBy: widget.onLiveSeekBy,
-        onSeekRequested: widget.onSeekRequested,
-      );
+      final result = _dispatchShortcut(event);
       if (result == KeyEventResult.handled) {
         _focusNode.requestFocus(); // self-heal focus
         return true;
@@ -270,34 +273,7 @@ extension _PlexVideoControlsKeyEventMethods on _PlexVideoControlsState {
       return event.logicalKey.isNavigationKey ? KeyEventResult.handled : KeyEventResult.ignored;
     }
 
-    final result = _keyboardService!.handleVideoPlayerKeyEvent(
-      event,
-      widget.player,
-      _toggleFullscreen,
-      _toggleSubtitles,
-      _nextAudioTrack,
-      _nextSubtitleTrack,
-      _nextChapter,
-      _previousChapter,
-      canControlPlayback: widget.canControl,
-      canNavigateMediaItems: widget.canNavigateMediaItems,
-      onPlayPause: () => unawaited(_playOrPause()),
-      onToggleShader: _toggleShader,
-      onSkipMarker: _performAutoSkip,
-      onNextEpisode: widget.onNext,
-      onPreviousEpisode: widget.onPrevious,
-      onScreenshot: _showScreenshotToast,
-      onZoomIn: widget.onZoomIn,
-      onZoomOut: widget.onZoomOut,
-      onZoomReset: widget.onResetVideoZoom,
-      onVolumeUp: () => widget.volumeController.adjust(10),
-      onVolumeDown: () => widget.volumeController.adjust(-10),
-      onToggleMute: widget.volumeController.toggleMute,
-      currentPositionEpoch: widget.currentPositionEpoch,
-      onLiveSeek: widget.onLiveSeek,
-      onLiveSeekBy: widget.onLiveSeekBy,
-      onSeekRequested: widget.onSeekRequested,
-    );
+    final result = _dispatchShortcut(event, onSkipMarker: _performAutoSkip);
     if (!event.logicalKey.isNavigationKey) return result;
     // Never return .ignored for navigation keys — prevent leaking to previous routes.
     return result == KeyEventResult.ignored ? KeyEventResult.handled : result;

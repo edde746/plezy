@@ -37,18 +37,4 @@ class PlexHome {
   Map<String, dynamic> toJson() => _$PlexHomeToJson(this);
 
   PlexHomeUser? get adminUser => users.where((user) => user.admin).firstOrNull;
-
-  List<PlexHomeUser> get managedUsers => users.where((user) => !user.admin).toList();
-
-  List<PlexHomeUser> get restrictedUsers => users.where((user) => user.restricted).toList();
-
-  PlexHomeUser? getUserByUUID(String uuid) {
-    try {
-      return users.firstWhere((user) => user.uuid == uuid);
-    } catch (e) {
-      return null;
-    }
-  }
-
-  bool get hasMultipleUsers => users.length > 1;
 }

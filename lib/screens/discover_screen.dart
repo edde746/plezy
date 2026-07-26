@@ -21,7 +21,7 @@ import '../utils/media_image_helper.dart';
 import '../utils/content_utils.dart';
 import '../widgets/cycling_media_backdrop.dart';
 import '../widgets/optimized_media_image.dart' show ClearLogoImage, blurArtwork;
-import '../widgets/rasterized_gradient.dart';
+import '../widgets/toolbar_scrim.dart';
 import '../providers/discover_provider.dart';
 import '../providers/multi_server_provider.dart';
 import '../providers/watch_state_store.dart';
@@ -47,6 +47,7 @@ import '../i18n/strings.g.dart';
 import '../utils/app_logger.dart';
 import '../utils/dialogs.dart';
 import '../utils/formatters.dart';
+import '../utils/hub_icons.dart';
 import '../utils/media_navigation_helper.dart';
 import '../utils/provider_extensions.dart';
 import '../utils/video_player_navigation.dart';
@@ -176,23 +177,25 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     if (_tvBrowseHubsCache != null && key == _tvBrowseHubsCacheKey) return _tvBrowseHubsCache!;
     final hubs = <MediaHub>[];
     if (_onDeck.isNotEmpty) {
-      hubs.add(
-        MediaHub(
-          id: 'continue_watching',
-          title: t.discover.continueWatching,
-          type: 'mixed',
-          identifier: '_continue_watching_',
-          size: _onDeck.length + (_hasMoreContinueWatching ? 1 : 0),
-          more: _hasMoreContinueWatching,
-          items: _onDeck,
-        ),
-      );
+      hubs.add(_continueWatchingHub);
     }
     hubs.addAll(_hubs.where((hub) => hub.items.isNotEmpty));
     _tvBrowseHubsCache = hubs;
     _tvBrowseHubsCacheKey = key;
     return hubs;
   }
+
+  /// The synthesized Continue Watching row, rendered ahead of the backend hubs
+  /// on both the mobile list and the TV rail.
+  MediaHub get _continueWatchingHub => MediaHub(
+    id: 'continue_watching',
+    title: t.discover.continueWatching,
+    type: 'mixed',
+    identifier: '_continue_watching_',
+    size: _onDeck.length + (_hasMoreContinueWatching ? 1 : 0),
+    more: _hasMoreContinueWatching,
+    items: _onDeck,
+  );
 
   void _setSpotlightItem(MediaItem item) => _spotlight.select(item);
 
@@ -597,101 +600,6 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     unawaited(_discover.load());
   }
 
-  /// Get icon for hub based on its title
-  IconData _getHubIcon(String title) {
-    final lowerTitle = title.toLowerCase();
-
-    // Trending/Popular content
-    if (lowerTitle.contains('trending')) {
-      return Symbols.trending_up_rounded;
-    }
-    if (lowerTitle.contains('popular') || lowerTitle.contains('imdb')) {
-      return Symbols.whatshot_rounded;
-    }
-
-    // Seasonal/Time-based
-    if (lowerTitle.contains('seasonal')) {
-      return Symbols.calendar_month_rounded;
-    }
-    if (lowerTitle.contains('newly') || lowerTitle.contains('new release')) {
-      return Symbols.new_releases_rounded;
-    }
-    if (lowerTitle.contains('recently released') || lowerTitle.contains('recent')) {
-      return Symbols.schedule_rounded;
-    }
-
-    // Top/Rated content
-    if (lowerTitle.contains('top rated') || lowerTitle.contains('highest rated')) {
-      return Symbols.star_rounded;
-    }
-    if (lowerTitle.contains('top ')) {
-      return Symbols.military_tech_rounded;
-    }
-
-    // Genre-specific
-    if (lowerTitle.contains('thriller')) {
-      return Symbols.warning_amber_rounded;
-    }
-    if (lowerTitle.contains('comedy') || lowerTitle.contains('comedier')) {
-      return Symbols.mood_rounded;
-    }
-    if (lowerTitle.contains('action')) {
-      return Symbols.flash_on_rounded;
-    }
-    if (lowerTitle.contains('drama')) {
-      return Symbols.theater_comedy_rounded;
-    }
-    if (lowerTitle.contains('fantasy')) {
-      return Symbols.auto_fix_high_rounded;
-    }
-    if (lowerTitle.contains('science') || lowerTitle.contains('sci-fi')) {
-      return Symbols.rocket_launch_rounded;
-    }
-    if (lowerTitle.contains('horror') || lowerTitle.contains('skräck')) {
-      return Symbols.nights_stay_rounded;
-    }
-    if (lowerTitle.contains('romance') || lowerTitle.contains('romantic')) {
-      return Symbols.favorite_border_rounded;
-    }
-    if (lowerTitle.contains('adventure') || lowerTitle.contains('äventyr')) {
-      return Symbols.explore_rounded;
-    }
-
-    // Watchlist/Playlists
-    if (lowerTitle.contains('playlist') || lowerTitle.contains('watchlist')) {
-      return Symbols.playlist_play_rounded;
-    }
-    if (lowerTitle.contains('unwatched') || lowerTitle.contains('unplayed')) {
-      return Symbols.visibility_off_rounded;
-    }
-    if (lowerTitle.contains('watched') || lowerTitle.contains('played')) {
-      return Symbols.visibility_rounded;
-    }
-
-    // Network/Studio
-    if (lowerTitle.contains('network') || lowerTitle.contains('more from')) {
-      return Symbols.tv_rounded;
-    }
-
-    // Actor/Director
-    if (lowerTitle.contains('actor') || lowerTitle.contains('director')) {
-      return Symbols.person_rounded;
-    }
-
-    // Year-based (80s, 90s, etc.)
-    if (lowerTitle.contains('80') || lowerTitle.contains('90') || lowerTitle.contains('00')) {
-      return Symbols.history_rounded;
-    }
-
-    // Rediscover/Start Watching
-    if (lowerTitle.contains('rediscover') || lowerTitle.contains('start watching')) {
-      return Symbols.play_arrow_rounded;
-    }
-
-    // Default icon for other hubs
-    return Symbols.auto_awesome_rounded;
-  }
-
   /// Whether the loaded hubs span more than one connected server.
   bool _hubsSpanMultipleServers() {
     final serverIds = _hubs.where((hub) => hub.serverId != null).map((hub) => hub.serverId).toSet();
@@ -815,153 +723,125 @@ class _DiscoverScreenState extends State<DiscoverScreen>
   }
 
   Widget _buildOverlaidAppBar() {
-    final statusBarHeight = MediaQuery.paddingOf(context).top;
     final colorScheme = Theme.of(context).colorScheme;
-    final overlayColor = colorScheme.brightness == Brightness.dark ? Colors.black : colorScheme.surface;
     final foregroundColor = colorScheme.onSurface;
-    return RasterizedGradient(
-      gradient: LinearGradient(
-        begin: Alignment.topCenter,
-        end: Alignment.bottomCenter,
-        colors: [
-          overlayColor.withValues(alpha: 0.7),
-          overlayColor.withValues(alpha: 0.5),
-          overlayColor.withValues(alpha: 0.3),
-          Colors.transparent,
-        ],
-        stops: const [0.0, 0.3, 0.6, 1.0],
-      ),
-      child: Padding(
-        padding: .only(top: statusBarHeight, left: 16, right: 16, bottom: 8),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 8),
-          child: Row(
-            children: [
-              if (!PlatformDetector.isTV())
-                Text(
-                  t.discover.title,
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(color: foregroundColor, fontWeight: .bold),
-                ),
-              const Spacer(),
-              Consumer2<WatchTogetherProvider, CompanionRemoteProvider>(
-                builder: (context, watchTogether, companionRemote, _) {
-                  final isDesktop = PlatformDetector.shouldActAsRemoteHost(context);
+    return ToolbarScrim(
+      child: Row(
+        children: [
+          if (!PlatformDetector.isTV())
+            Text(
+              t.discover.title,
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(color: foregroundColor, fontWeight: .bold),
+            ),
+          const Spacer(),
+          Consumer2<WatchTogetherProvider, CompanionRemoteProvider>(
+            builder: (context, watchTogether, companionRemote, _) {
+              final isDesktop = PlatformDetector.shouldActAsRemoteHost(context);
 
-                  return FocusableActionBar(
-                    key: _actionBarKey,
-                    onNavigateLeft: _navigateToSidebar,
-                    onNavigateDown: _focusContentFromAppBar,
-                    actions: [
-                      FocusableAction(
-                        icon: Symbols.refresh_rounded,
-                        iconColor: foregroundColor,
-                        onPressed: _discover.load,
-                      ),
-                      // Watch Together
-                      FocusableAction(
-                        onPressed: () =>
-                            Navigator.push(context, MaterialPageRoute(builder: (_) => const WatchTogetherScreen())),
-                        child: Stack(
-                          children: [
-                            IconButton(
-                              icon: AppIcon(
-                                Symbols.group_rounded,
-                                fill: watchTogether.isInSession ? 1 : 0,
-                                color: watchTogether.isInSession ? colorScheme.primary : foregroundColor,
+              return FocusableActionBar(
+                key: _actionBarKey,
+                onNavigateLeft: _navigateToSidebar,
+                onNavigateDown: _focusContentFromAppBar,
+                actions: [
+                  FocusableAction(icon: Symbols.refresh_rounded, iconColor: foregroundColor, onPressed: _discover.load),
+                  // Watch Together
+                  FocusableAction(
+                    onPressed: () =>
+                        Navigator.push(context, MaterialPageRoute(builder: (_) => const WatchTogetherScreen())),
+                    child: Stack(
+                      children: [
+                        IconButton(
+                          icon: AppIcon(
+                            Symbols.group_rounded,
+                            fill: watchTogether.isInSession ? 1 : 0,
+                            color: watchTogether.isInSession ? colorScheme.primary : foregroundColor,
+                          ),
+                          onPressed: () =>
+                              Navigator.push(context, MaterialPageRoute(builder: (_) => const WatchTogetherScreen())),
+                          tooltip: t.watchTogether.title,
+                        ),
+                        if (watchTogether.isInSession && watchTogether.participantCount > 1)
+                          Positioned(
+                            top: 6,
+                            right: 6,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                              decoration: BoxDecoration(
+                                color: colorScheme.primary,
+                                borderRadius: const BorderRadius.all(Radius.circular(8)),
                               ),
-                              onPressed: () => Navigator.push(
+                              child: Text(
+                                '${watchTogether.participantCount}',
+                                style: TextStyle(color: colorScheme.onPrimary, fontSize: 10, fontWeight: .bold),
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                  // Companion Remote
+                  FocusableAction(
+                    onPressed: () {
+                      if (isDesktop) {
+                        RemoteSessionDialog.show(context);
+                      } else {
+                        Navigator.push(context, MaterialPageRoute(builder: (context) => const MobileRemoteScreen()));
+                      }
+                    },
+                    child: Stack(
+                      children: [
+                        IconButton(
+                          icon: AppIcon(
+                            Symbols.phone_android_rounded,
+                            fill: companionRemote.isConnected ? 1 : 0,
+                            color: companionRemote.isConnected ? colorScheme.primary : foregroundColor,
+                          ),
+                          onPressed: () {
+                            if (isDesktop) {
+                              RemoteSessionDialog.show(context);
+                            } else {
+                              Navigator.push(
                                 context,
-                                MaterialPageRoute(builder: (_) => const WatchTogetherScreen()),
+                                MaterialPageRoute(builder: (context) => const MobileRemoteScreen()),
+                              );
+                            }
+                          },
+                          tooltip: t.companionRemote.title,
+                        ),
+                        if (companionRemote.isConnected)
+                          Positioned(
+                            top: 6,
+                            right: 6,
+                            child: Container(
+                              width: 8,
+                              height: 8,
+                              decoration: BoxDecoration(
+                                color: Colors.green,
+                                shape: BoxShape.circle,
+                                border: Border.fromBorderSide(BorderSide(color: foregroundColor, width: 1)),
                               ),
-                              tooltip: t.watchTogether.title,
                             ),
-                            if (watchTogether.isInSession && watchTogether.participantCount > 1)
-                              Positioned(
-                                top: 6,
-                                right: 6,
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
-                                  decoration: BoxDecoration(
-                                    color: colorScheme.primary,
-                                    borderRadius: const BorderRadius.all(Radius.circular(8)),
-                                  ),
-                                  child: Text(
-                                    '${watchTogether.participantCount}',
-                                    style: TextStyle(color: colorScheme.onPrimary, fontSize: 10, fontWeight: .bold),
-                                  ),
-                                ),
-                              ),
-                          ],
-                        ),
-                      ),
-                      // Companion Remote
-                      FocusableAction(
-                        onPressed: () {
-                          if (isDesktop) {
-                            RemoteSessionDialog.show(context);
-                          } else {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(builder: (context) => const MobileRemoteScreen()),
-                            );
-                          }
-                        },
-                        child: Stack(
-                          children: [
-                            IconButton(
-                              icon: AppIcon(
-                                Symbols.phone_android_rounded,
-                                fill: companionRemote.isConnected ? 1 : 0,
-                                color: companionRemote.isConnected ? colorScheme.primary : foregroundColor,
-                              ),
-                              onPressed: () {
-                                if (isDesktop) {
-                                  RemoteSessionDialog.show(context);
-                                } else {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(builder: (context) => const MobileRemoteScreen()),
-                                  );
-                                }
-                              },
-                              tooltip: t.companionRemote.title,
-                            ),
-                            if (companionRemote.isConnected)
-                              Positioned(
-                                top: 6,
-                                right: 6,
-                                child: Container(
-                                  width: 8,
-                                  height: 8,
-                                  decoration: BoxDecoration(
-                                    color: Colors.green,
-                                    shape: BoxShape.circle,
-                                    border: Border.fromBorderSide(BorderSide(color: foregroundColor, width: 1)),
-                                  ),
-                                ),
-                              ),
-                          ],
-                        ),
-                      ),
-                      // Server Tasks — Plex-only (`/activities` API has no
-                      // Jellyfin equivalent), hide the button entirely on
-                      // Jellyfin-only profiles so the chrome doesn't show
-                      // a permanently empty popover.
-                      if (PlatformDetector.isDesktop(context) &&
-                          context.select<MultiServerProvider, bool>((p) => p.hasOnlinePlexServers))
-                        FocusableAction(
-                          onPressed: () => _serverActivitiesButtonKey.currentState?.togglePanel(),
-                          child: ServerActivitiesButton(key: _serverActivitiesButtonKey),
-                        ),
-                      // User menu — profiles + sign out
-                      _buildUserMenuAction(context),
-                    ],
-                  );
-                },
-              ),
-            ],
+                          ),
+                      ],
+                    ),
+                  ),
+                  // Server Tasks — Plex-only (`/activities` API has no
+                  // Jellyfin equivalent), hide the button entirely on
+                  // Jellyfin-only profiles so the chrome doesn't show
+                  // a permanently empty popover.
+                  if (PlatformDetector.isDesktop(context) &&
+                      context.select<MultiServerProvider, bool>((p) => p.hasOnlinePlexServers))
+                    FocusableAction(
+                      onPressed: () => _serverActivitiesButtonKey.currentState?.togglePanel(),
+                      child: ServerActivitiesButton(key: _serverActivitiesButtonKey),
+                    ),
+                  // User menu — profiles + sign out
+                  _buildUserMenuAction(context),
+                ],
+              );
+            },
           ),
-        ),
+        ],
       ),
     );
   }
@@ -993,6 +873,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
 
     final bottomPadding = MediaQuery.paddingOf(context).bottom;
     final theme = Theme.of(context);
+    final continueWatchingHub = _onDeck.isEmpty ? null : _continueWatchingHub;
     return Material(
       color: theme.scaffoldBackgroundColor,
       child: Stack(
@@ -1016,21 +897,13 @@ class _DiscoverScreenState extends State<DiscoverScreen>
               if (_errorMessage != null) SliverErrorState(message: _errorMessage!, onRetry: _discover.load),
               if (!_isLoading && _errorMessage == null) ...[
                 // On Deck / Continue Watching
-                if (_onDeck.isNotEmpty)
+                if (continueWatchingHub != null)
                   SliverToBoxAdapter(
                     child: HubSection(
                       key: _continueWatchingHubKey,
-                      hub: MediaHub(
-                        id: 'continue_watching',
-                        title: t.discover.continueWatching,
-                        type: 'mixed',
-                        identifier: '_continue_watching_',
-                        size: _onDeck.length + (_hasMoreContinueWatching ? 1 : 0),
-                        more: _hasMoreContinueWatching,
-                        items: _onDeck,
-                      ),
+                      hub: continueWatchingHub,
                       focusMemory: _hubFocusMemory,
-                      icon: Symbols.play_circle_rounded,
+                      icon: hubIconFor(continueWatchingHub),
                       onRefresh: _discover.updateItem,
                       onRemoveFromContinueWatching: _discover.refreshContinueWatching,
                       isInContinueWatching: true,
@@ -1048,7 +921,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                       key: i < _orderedHubKeys.length ? _orderedHubKeys[i] : null,
                       hub: _hubs[i],
                       focusMemory: _hubFocusMemory,
-                      icon: _getHubIcon(_hubs[i].title),
+                      icon: hubIconFor(_hubs[i]),
                       showServerName: showServerNameOnHubs || hubsSpanMultipleServers,
                       onRefresh: _discover.updateItem,
                       // Hub index is i + 1 if continue watching exists, otherwise i
@@ -1135,7 +1008,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
       initialHubId: 'continue_watching',
       focusMemory: _hubFocusMemory,
       showServerName: showServerName,
-      iconForHub: (hub, _) => hub.id == 'continue_watching' ? Symbols.play_circle_rounded : _getHubIcon(hub.title),
+      iconForHub: (hub, _) => hubIconFor(hub),
       onFocusedItemChanged: _setSpotlightItem,
       onRefresh: _discover.updateItem,
       onRemoveFromContinueWatching: _discover.refreshContinueWatching,
@@ -1155,7 +1028,6 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     final showServerNameOnHubs = svc.read(SettingsService.showServerNameOnHubs);
     final hubsSpanMultipleServers = _hubsSpanMultipleServers();
     final browseHubs = _tvBrowseHubs;
-    final fullBleedWidth = MainScreenFocusScope.fullBleedWidthOf(context);
 
     return TvSpotlightScaffold(
       hubs: browseHubs,
@@ -1189,14 +1061,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
               bottom: 0,
               child: _cachedTvBrowseRail(browseHubs, showServerName: showServerNameOnHubs || hubsSpanMultipleServers),
             ),
-          Builder(
-            builder: (context) => SideNavigationBleedBuilder(
-              targetBleed: MainScreenFocusScope.sideNavigationBleedOf(context),
-              child: ExcludeFocusTraversal(child: _buildOverlaidAppBar()),
-              builder: (context, animatedBleed, child) =>
-                  Positioned(top: 0, left: -animatedBleed, width: fullBleedWidth, child: child!),
-            ),
-          ),
+          TvToolbarOverlay(child: _buildOverlaidAppBar()),
           if (_switchingProfile) const ProfileSwitchingOverlay(),
         ],
       ),

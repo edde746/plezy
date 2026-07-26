@@ -1,28 +1,11 @@
 part of '../../plex_client.dart';
 
-mixin _PlexPlayQueueMethods on MediaServerCacheMixin {
-  FailoverHttpClient get _http;
-
-  Future<MediaServerResponse> _getWithFailover(
-    String path, {
-    Map<String, dynamic>? queryParameters,
-    // ignore: unused_element_parameter
-    Map<String, String>? headers,
-    // ignore: unused_element_parameter
-    Duration? timeout,
-    // ignore: unused_element_parameter
-    AbortController? abort,
-    // ignore: unused_element_parameter
-    bool allowEndpointFailover = true,
-  });
-
+mixin _PlexPlayQueueMethods on _PlexClientInternals {
   PlexMetadataDto _createTaggedMetadataWithLibrary(
     Map<String, dynamic> json, {
     int? librarySectionID,
     String? librarySectionTitle,
   });
-
-  Future<String> buildMetadataUri(String ratingKey);
 
   PlayQueueResponse _parsePlayQueueResponse(dynamic data, {int? librarySectionID, String? librarySectionTitle}) {
     final container = data is Map && data['MediaContainer'] is Map

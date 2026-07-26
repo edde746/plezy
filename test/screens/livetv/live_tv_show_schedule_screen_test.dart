@@ -14,11 +14,12 @@ import 'package:plezy/models/livetv_program.dart';
 import 'package:plezy/models/media_subscription.dart';
 import 'package:plezy/providers/multi_server_provider.dart';
 import 'package:plezy/screens/livetv/live_tv_show_schedule_screen.dart';
-import 'package:plezy/services/data_aggregation_service.dart';
 import 'package:plezy/services/multi_server_manager.dart';
 import 'package:plezy/theme/mono_theme.dart';
 import 'package:plezy/utils/platform_detector.dart';
 import 'package:provider/provider.dart';
+
+import '../../test_helpers/multi_server_fixtures.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -113,7 +114,7 @@ LiveTvProgram _program({String? guid}) => LiveTvProgram(
 
 MultiServerProvider _providerFor(MediaServerClient client) {
   final manager = MultiServerManager()..debugRegisterClientForTesting(client);
-  return MultiServerProvider(manager, DataAggregationService(manager));
+  return testMultiServerProvider(manager);
 }
 
 Future<void> _pumpScreen(WidgetTester tester, MultiServerProvider provider) async {

@@ -64,24 +64,18 @@ class JellyfinSequentialLauncher extends MediaListPlaybackLauncher {
       return PlayQueueError(Exception('Item is missing serverId'));
     }
 
-    final abort = AbortController();
-
-    return executeWithLoading(
-      context: context,
-      showLoading: showLoadingIndicator,
-      actionLabel: shuffle ? t.common.shuffle : t.common.play,
-      abort: abort,
-      execute: (dismissLoading) async {
-        final client = clientForTesting ?? _resolveClient(ServerId(serverId));
-        if (client == null) {
-          return _missingClientError(serverId, dismissLoading);
-        }
-
+    return _launchLocalQueue(
+      serverId: serverId,
+      queueId: 'jellyfin:${facts.id}',
+      contextKey: facts.id,
+      shuffle: shuffle,
+      showLoadingIndicator: showLoadingIndicator,
+      fetchItems: (client, abort) async {
         // Playlists go through the dedicated `/Playlists/{id}/Items` endpoint
         // so playlist-defined order is preserved; collections fall back to
         // recursive descendant expansion (which skips unplayable Series
         // containers and surfaces Movies + Episodes flat).
-        List<MediaItem> items;
+        final List<MediaItem> items;
         if (facts.isPlaylist) {
           items = await fetchAllPlaylistItems(client, facts.id, abort: abort);
         } else if (client is JellyfinClient) {
@@ -92,44 +86,15 @@ class JellyfinSequentialLauncher extends MediaListPlaybackLauncher {
           items = await client.fetchPlayableDescendants(facts.id);
         }
         abort.throwIfAborted();
-
-        if (items.isEmpty) return const PlayQueueEmpty();
-
-        abort.throwIfAborted();
-        if (shuffle) {
-          items = List.of(items)..shuffle(Random());
-        }
-
-        abort.throwIfAborted();
-        // When a startItem is given (and we're not shuffling), keep the full
-        // original order and move the local queue cursor to that item.
-        var startIndex = 0;
-        if (!shuffle && startItem != null) {
-          startIndex = items.indexWhere((it) => it.id == startItem.id);
-          if (startIndex < 0) startIndex = 0;
-        }
-
-        await dismissLoading();
-        abort.throwIfAborted();
-        if (!context.mounted && navigateForTesting == null) {
-          return const PlayQueueError('Context not mounted');
-        }
-
-        abort.throwIfAborted();
-        final playbackState = playbackStateForTesting ?? context.read<PlaybackStateProvider>();
-        return launchLocalQueuePlayback(
-          context: context,
-          playbackState: playbackState,
-          queue: LocalPlayQueue(
-            id: 'jellyfin:${facts.id}',
-            items: items,
-            currentIndex: startIndex,
-            shuffled: shuffle,
-            backendId: client.backend.id,
-          ),
-          contextKey: facts.id,
-          navigateForTesting: navigateForTesting,
-        );
+        return items;
+      },
+      // When a startItem is given (and we're not shuffling), keep the full
+      // original order and move the local queue cursor to that item.
+      resolveStartIndex: (items) {
+        final start = startItem;
+        if (shuffle || start == null) return 0;
+        final index = items.indexWhere((it) => it.id == start.id);
+        return index < 0 ? 0 : index;
       },
     );
   }
@@ -137,6 +102,7 @@ class JellyfinSequentialLauncher extends MediaListPlaybackLauncher {
   /// Launch playback from a Jellyfin folder row. Jellyfin has no server-side
   /// queue resource, so folders use the same local queue path as collections.
   /// The client query is video-only; music-only folders return [PlayQueueEmpty].
+  @override
   Future<PlayQueueResult> launchFromFolder({
     required MediaItem folder,
     required bool shuffle,
@@ -147,24 +113,18 @@ class JellyfinSequentialLauncher extends MediaListPlaybackLauncher {
       return PlayQueueError(Exception('Item is missing serverId'));
     }
 
-    final abort = AbortController();
-
-    return executeWithLoading(
-      context: context,
-      showLoading: showLoadingIndicator,
-      actionLabel: shuffle ? t.common.shuffle : t.common.play,
-      abort: abort,
-      execute: (dismissLoading) async {
-        final client = clientForTesting ?? _resolveClient(ServerId(serverId));
-        if (client == null) {
-          return _missingClientError(serverId, dismissLoading);
-        }
-
+    return _launchLocalQueue(
+      serverId: serverId,
+      queueId: 'jellyfin:folder:${folder.id}',
+      contextKey: folder.id,
+      shuffle: shuffle,
+      showLoadingIndicator: showLoadingIndicator,
+      fetchItems: (client, abort) async {
         final fetched = client is JellyfinClient
             ? await client.fetchPlayableFolderDescendants(folder.id, abort: abort)
             : await client.fetchPlayableDescendants(folder.id);
         abort.throwIfAborted();
-        var items = fetched.where((item) => item.kind.isVideo).map((item) {
+        return fetched.where((item) => item.kind.isVideo).map((item) {
           return item.copyWith(
             serverId: item.serverId ?? serverId,
             serverName: item.serverName ?? folder.serverName,
@@ -172,35 +132,6 @@ class JellyfinSequentialLauncher extends MediaListPlaybackLauncher {
             libraryTitle: item.libraryTitle ?? folder.libraryTitle,
           );
         }).toList();
-
-        if (items.isEmpty) return const PlayQueueEmpty();
-
-        abort.throwIfAborted();
-        if (shuffle) {
-          items = List.of(items)..shuffle(Random());
-        }
-
-        await dismissLoading();
-        abort.throwIfAborted();
-        if (!context.mounted && navigateForTesting == null) {
-          return const PlayQueueError('Context not mounted');
-        }
-
-        abort.throwIfAborted();
-        final playbackState = playbackStateForTesting ?? context.read<PlaybackStateProvider>();
-        return launchLocalQueuePlayback(
-          context: context,
-          playbackState: playbackState,
-          queue: LocalPlayQueue(
-            id: 'jellyfin:folder:${folder.id}',
-            items: items,
-            currentIndex: 0,
-            shuffled: shuffle,
-            backendId: client.backend.id,
-          ),
-          contextKey: folder.id,
-          navigateForTesting: navigateForTesting,
-        );
       },
     );
   }
@@ -226,12 +157,43 @@ class JellyfinSequentialLauncher extends MediaListPlaybackLauncher {
       seriesId = parent;
     }
 
+    return _launchLocalQueue(
+      serverId: serverId,
+      queueId: 'jellyfin:$seriesId',
+      contextKey: seriesId,
+      shuffle: true,
+      showLoadingIndicator: showLoadingIndicator,
+      fetchItems: (client, abort) async {
+        final raw = client is JellyfinClient
+            ? await client.fetchClientSideEpisodeQueue(seriesId, abort: abort)
+            : await client.fetchClientSideEpisodeQueue(seriesId);
+        abort.throwIfAborted();
+        if (raw == null) return const <MediaItem>[];
+        return raw
+            .map((e) => e.copyWith(serverId: serverId, serverName: metadata.serverName ?? e.serverName))
+            .toList();
+      },
+    );
+  }
+
+  /// Fetch, shuffle, and publish a local queue behind the cancellable loading
+  /// dialog. [fetchItems] carries the only per-entry-point difference: which
+  /// client call produces the items and how they're normalized.
+  Future<PlayQueueResult> _launchLocalQueue({
+    required String serverId,
+    required String queueId,
+    required String contextKey,
+    required bool shuffle,
+    required bool showLoadingIndicator,
+    required Future<List<MediaItem>> Function(MediaServerClient client, AbortController abort) fetchItems,
+    int Function(List<MediaItem> items)? resolveStartIndex,
+  }) async {
     final abort = AbortController();
 
     return executeWithLoading(
       context: context,
       showLoading: showLoadingIndicator,
-      actionLabel: t.common.shuffle,
+      actionLabel: shuffle ? t.common.shuffle : t.common.play,
       abort: abort,
       execute: (dismissLoading) async {
         final client = clientForTesting ?? _resolveClient(ServerId(serverId));
@@ -239,18 +201,16 @@ class JellyfinSequentialLauncher extends MediaListPlaybackLauncher {
           return _missingClientError(serverId, dismissLoading);
         }
 
-        final raw = client is JellyfinClient
-            ? await client.fetchClientSideEpisodeQueue(seriesId, abort: abort)
-            : await client.fetchClientSideEpisodeQueue(seriesId);
-        abort.throwIfAborted();
-        if (raw == null || raw.isEmpty) return const PlayQueueEmpty();
+        var items = await fetchItems(client, abort);
+        if (items.isEmpty) return const PlayQueueEmpty();
 
         abort.throwIfAborted();
-        final shuffled = List.of(raw)..shuffle(Random());
+        if (shuffle) {
+          items = List.of(items)..shuffle(Random());
+        }
+
         abort.throwIfAborted();
-        final items = shuffled
-            .map((e) => e.copyWith(serverId: serverId, serverName: metadata.serverName ?? e.serverName))
-            .toList();
+        final startIndex = resolveStartIndex?.call(items) ?? 0;
 
         await dismissLoading();
         abort.throwIfAborted();
@@ -264,13 +224,13 @@ class JellyfinSequentialLauncher extends MediaListPlaybackLauncher {
           context: context,
           playbackState: playbackState,
           queue: LocalPlayQueue(
-            id: 'jellyfin:$seriesId',
+            id: queueId,
             items: items,
-            currentIndex: 0,
-            shuffled: true,
+            currentIndex: startIndex,
+            shuffled: shuffle,
             backendId: client.backend.id,
           ),
-          contextKey: seriesId,
+          contextKey: contextKey,
           navigateForTesting: navigateForTesting,
         );
       },

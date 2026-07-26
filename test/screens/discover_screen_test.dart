@@ -46,6 +46,7 @@ import 'package:provider/provider.dart';
 
 import '../test_helpers/prefs.dart';
 import '../test_helpers/media_items.dart';
+import '../test_helpers/multi_server_fixtures.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -82,7 +83,7 @@ void main() {
     final hub = MediaHub(id: 'hub_1', title: 'Recommended', type: 'movie', items: [item], size: 1);
     final client = _FakeMediaServerClient(hubs: [hub]);
     final manager = MultiServerManager()..debugRegisterClientForTesting(client);
-    final multiServerProvider = MultiServerProvider(manager, DataAggregationService(manager));
+    final multiServerProvider = testMultiServerProvider(manager);
     final hiddenLibrariesProvider = HiddenLibrariesProvider();
     final librariesProvider = LibrariesProvider();
     final watchTogetherProvider = WatchTogetherProvider();
@@ -384,7 +385,7 @@ void main() {
     ];
     final client = _FakeMediaServerClient(hubs: const [], continueWatching: onDeck);
     final manager = MultiServerManager()..debugRegisterClientForTesting(client);
-    final multiServerProvider = MultiServerProvider(manager, DataAggregationService(manager));
+    final multiServerProvider = testMultiServerProvider(manager);
     final hiddenLibrariesProvider = HiddenLibrariesProvider();
     final librariesProvider = LibrariesProvider();
     final watchTogetherProvider = WatchTogetherProvider();

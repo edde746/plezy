@@ -1,21 +1,18 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 
-import '../focus/dpad_navigator.dart';
+import '../focus/dpad_reorder_mixin.dart';
 import '../focus/focus_theme.dart';
 import '../focus/input_mode_tracker.dart';
-import '../focus/key_event_utils.dart';
 import '../i18n/strings.g.dart';
 import '../media/media_backend.dart';
 import '../media/media_library.dart';
 import '../media/media_server_client.dart';
 import '../providers/hidden_libraries_provider.dart';
 import '../providers/libraries_provider.dart';
-import '../services/plex_client.dart';
 import '../utils/app_logger.dart';
 import '../utils/content_utils.dart';
 import '../utils/dialogs.dart';
@@ -182,48 +179,24 @@ Future<void> _handleLibraryMenuAction(BuildContext context, String action, Media
   }
 }
 
-Future<void> _performLibraryAction(
+/// Runs a library admin action, wrapping it in progress/success/failure
+/// snackbars.
+///
+/// [resolveClient] picks the client flavour: `getPlexClientForLibrary` for the
+/// Plex-only endpoints (scan / analyze / empty trash), `getMediaClientForLibrary`
+/// for ops that exist on the backend-neutral [MediaServerClient] interface
+/// (currently just refresh metadata). Both resolvers require the library's exact
+/// owning server and throw the same error when it isn't available.
+Future<void> _performLibraryAction<T extends MediaServerClient>(
   BuildContext context, {
-  required MediaLibrary library,
-  required Future<void> Function(PlexClient client) action,
+  required T Function(BuildContext context) resolveClient,
+  required Future<void> Function(T client) action,
   required String progressMessage,
   required String successMessage,
   required String Function(Object error) failureMessage,
 }) async {
   try {
-    final client = context.getPlexClientForLibrary(library);
-
-    if (context.mounted) {
-      showAppSnackBar(context, progressMessage, duration: const Duration(seconds: 2));
-    }
-
-    await action(client);
-
-    if (context.mounted) {
-      showSuccessSnackBar(context, successMessage);
-    }
-  } catch (e) {
-    appLogger.e('Library action failed', error: e);
-    if (context.mounted) {
-      showErrorSnackBar(context, failureMessage(e));
-    }
-  }
-}
-
-/// Backend-neutral counterpart to [_performLibraryAction] for ops that exist
-/// on the [MediaServerClient] interface (currently just refresh metadata).
-/// Resolves the client through `getMediaClientForLibrary` so the action requires
-/// the library's exact owning server.
-Future<void> _performMediaLibraryAction(
-  BuildContext context, {
-  required MediaLibrary library,
-  required Future<void> Function(MediaServerClient client) action,
-  required String progressMessage,
-  required String successMessage,
-  required String Function(Object error) failureMessage,
-}) async {
-  try {
-    final client = context.getMediaClientForLibrary(library);
+    final client = resolveClient(context);
 
     if (context.mounted) {
       showAppSnackBar(context, progressMessage, duration: const Duration(seconds: 2));
@@ -245,7 +218,7 @@ Future<void> _performMediaLibraryAction(
 Future<void> _scanLibrary(BuildContext context, MediaLibrary library) {
   return _performLibraryAction(
     context,
-    library: library,
+    resolveClient: (ctx) => ctx.getPlexClientForLibrary(library),
     action: (client) => client.scanLibrary(library.id),
     progressMessage: t.messages.libraryScanning(title: library.title),
     successMessage: t.messages.libraryScanStarted(title: library.title),
@@ -254,9 +227,9 @@ Future<void> _scanLibrary(BuildContext context, MediaLibrary library) {
 }
 
 Future<void> _refreshLibraryMetadata(BuildContext context, MediaLibrary library) {
-  return _performMediaLibraryAction(
+  return _performLibraryAction(
     context,
-    library: library,
+    resolveClient: (ctx) => ctx.getMediaClientForLibrary(library),
     action: (client) => client.refreshLibraryMetadata(library.id),
     progressMessage: t.messages.metadataRefreshing(title: library.title),
     successMessage: t.messages.metadataRefreshStarted(title: library.title),
@@ -267,7 +240,7 @@ Future<void> _refreshLibraryMetadata(BuildContext context, MediaLibrary library)
 Future<void> _emptyLibraryTrash(BuildContext context, MediaLibrary library) {
   return _performLibraryAction(
     context,
-    library: library,
+    resolveClient: (ctx) => ctx.getPlexClientForLibrary(library),
     action: (client) => client.emptyLibraryTrash(library.id),
     progressMessage: t.libraries.emptyingTrash(title: library.title),
     successMessage: t.libraries.trashEmptied(title: library.title),
@@ -278,7 +251,7 @@ Future<void> _emptyLibraryTrash(BuildContext context, MediaLibrary library) {
 Future<void> _analyzeLibrary(BuildContext context, MediaLibrary library) {
   return _performLibraryAction(
     context,
-    library: library,
+    resolveClient: (ctx) => ctx.getPlexClientForLibrary(library),
     action: (client) => client.analyzeLibrary(library.id),
     progressMessage: t.libraries.analyzing(title: library.title),
     successMessage: t.libraries.analysisStarted(title: library.title),
@@ -309,19 +282,41 @@ class _LibraryManagementSheet extends StatefulWidget {
   State<_LibraryManagementSheet> createState() => _LibraryManagementSheetState();
 }
 
-class _LibraryManagementSheetState extends State<_LibraryManagementSheet> {
+class _LibraryManagementSheetState extends State<_LibraryManagementSheet>
+    with DpadReorderListMixin<MediaLibrary, _LibraryManagementSheet> {
   late List<MediaLibrary> _tempLibraries;
 
-  // Keyboard navigation state
-  int _focusedIndex = 0;
-  int _focusedColumn = 0; // 0 = row, 1 = visibility button, 2 = options button
-  int? _movingIndex; // Non-null when in move mode
-  int? _originalIndex; // Original position before move (for cancel)
-  List<MediaLibrary>? _originalOrder; // Original order before move (for cancel)
   final FocusNode _listFocusNode = FocusNode();
   final ScrollController _dialogScrollController = ScrollController();
   final ScrollController _sheetScrollController = ScrollController();
-  bool _backKeyDownSeen = false;
+
+  // Keyboard navigation: column 0 = row, 1 = visibility button, 2 = options button.
+  @override
+  List<MediaLibrary> get reorderItems => _tempLibraries;
+
+  @override
+  set reorderItems(List<MediaLibrary> value) => _tempLibraries = value;
+
+  @override
+  int get lastReorderColumn => 2;
+
+  /// Only the TV dialog scrolls the focused row into view; the bottom sheet
+  /// list is not keyboard-driven.
+  @override
+  ScrollController? get reorderScrollController => widget.isDialog ? _dialogScrollController : null;
+
+  @override
+  void onReorderMoveConfirmed() => widget.onReorder(_tempLibraries);
+
+  @override
+  void onReorderColumnActivated(int column, int index) {
+    final library = _tempLibraries[index];
+    if (column == 1) {
+      widget.onToggleVisibility(library);
+    } else if (column == 2) {
+      _showLibraryMenuBottomSheet(context, library);
+    }
+  }
 
   @override
   void initState() {
@@ -335,157 +330,6 @@ class _LibraryManagementSheetState extends State<_LibraryManagementSheet> {
     _dialogScrollController.dispose();
     _sheetScrollController.dispose();
     super.dispose();
-  }
-
-  void _ensureFocusedVisible() {
-    if (!widget.isDialog) return;
-    if (!_dialogScrollController.hasClients) return;
-
-    const double itemHeight = 72.0; // Material ListTile with subtitle
-    const double listTopPadding = 8.0;
-    final double targetTop = listTopPadding + (_focusedIndex * itemHeight);
-    final double targetBottom = targetTop + itemHeight;
-
-    final double viewportTop = _dialogScrollController.offset;
-    final double viewportHeight = _dialogScrollController.position.viewportDimension;
-    final double viewportBottom = viewportTop + viewportHeight;
-
-    // Already fully visible — skip
-    if (targetTop >= viewportTop && targetBottom <= viewportBottom) return;
-
-    // Place item at ~25% from top of viewport
-    final double destination = (targetTop - viewportHeight * 0.25).clamp(
-      0.0,
-      _dialogScrollController.position.maxScrollExtent,
-    );
-
-    _dialogScrollController.animateTo(destination, duration: const Duration(milliseconds: 150), curve: Curves.easeOut);
-  }
-
-  KeyEventResult _handleKeyEvent(FocusNode _, KeyEvent event) {
-    final key = event.logicalKey;
-
-    // Track back key down/up pairing. If focus was elsewhere during KeyDown
-    // (e.g., on a bottom sheet) and returns here before KeyUp, we get a stray
-    // KeyUp that would incorrectly pop the dialog. Consume it instead.
-    if (key.isBackKey) {
-      if (event is KeyDownEvent) {
-        _backKeyDownSeen = true;
-      } else if (event is KeyUpEvent && !_backKeyDownSeen) {
-        return KeyEventResult.handled;
-      }
-      if (event is KeyUpEvent) {
-        _backKeyDownSeen = false;
-      }
-    }
-
-    final backResult = handleBackKeyAction(event, () {
-      if (_movingIndex != null) {
-        // Cancel move - restore original position
-        setState(() {
-          if (_originalOrder != null) {
-            _tempLibraries = List.from(_originalOrder!);
-          }
-          _focusedIndex = _originalIndex ?? 0;
-          _movingIndex = null;
-          _originalIndex = null;
-          _originalOrder = null;
-        });
-      } else {
-        OverlaySheetController.popAdaptive(context);
-      }
-    });
-    if (backResult != KeyEventResult.ignored) {
-      return backResult;
-    }
-
-    if (!event.isActionable) return KeyEventResult.ignored;
-
-    if (_movingIndex != null) {
-      // Move mode - arrows reorder the item
-      if (key.isUpKey && _movingIndex! > 0) {
-        setState(() {
-          final item = _tempLibraries.removeAt(_movingIndex!);
-          _tempLibraries.insert(_movingIndex! - 1, item);
-          _movingIndex = _movingIndex! - 1;
-          _focusedIndex = _movingIndex!;
-        });
-        _ensureFocusedVisible();
-        return KeyEventResult.handled;
-      }
-      if (key.isDownKey && _movingIndex! < _tempLibraries.length - 1) {
-        setState(() {
-          final item = _tempLibraries.removeAt(_movingIndex!);
-          _tempLibraries.insert(_movingIndex! + 1, item);
-          _movingIndex = _movingIndex! + 1;
-          _focusedIndex = _movingIndex!;
-        });
-        _ensureFocusedVisible();
-        return KeyEventResult.handled;
-      }
-      if (key.isSelectKey) {
-        // Confirm move - apply the reorder
-        widget.onReorder(_tempLibraries);
-        setState(() {
-          _movingIndex = null;
-          _originalIndex = null;
-          _originalOrder = null;
-        });
-        return KeyEventResult.handled;
-      }
-    } else {
-      // Navigation mode
-      if (key.isUpKey && _focusedIndex > 0) {
-        setState(() {
-          _focusedIndex--;
-          _focusedColumn = 0; // Reset to row when changing rows
-        });
-        _ensureFocusedVisible();
-        return KeyEventResult.handled;
-      }
-      if (key.isDownKey && _focusedIndex < _tempLibraries.length - 1) {
-        setState(() {
-          _focusedIndex++;
-          _focusedColumn = 0; // Reset to row when changing rows
-        });
-        _ensureFocusedVisible();
-        return KeyEventResult.handled;
-      }
-      if (key.isLeftKey && _focusedColumn > 0) {
-        setState(() => _focusedColumn--);
-        return KeyEventResult.handled;
-      }
-      if (key.isRightKey && _focusedColumn < 2) {
-        setState(() => _focusedColumn++);
-        return KeyEventResult.handled;
-      }
-      if (key.isSelectKey) {
-        if (_focusedColumn == 0) {
-          // Enter move mode
-          setState(() {
-            _movingIndex = _focusedIndex;
-            _originalIndex = _focusedIndex;
-            _originalOrder = List.from(_tempLibraries);
-          });
-        } else if (_focusedColumn == 1) {
-          // Toggle visibility
-          final library = _tempLibraries[_focusedIndex];
-          widget.onToggleVisibility(library);
-        } else if (_focusedColumn == 2) {
-          // Show options menu
-          final library = _tempLibraries[_focusedIndex];
-          _showLibraryMenuBottomSheet(context, library);
-        }
-        return KeyEventResult.handled;
-      }
-    }
-
-    // Block d-pad keys at boundaries so focus doesn't escape the dialog
-    if (key.isDpadDirection) {
-      return KeyEventResult.handled;
-    }
-
-    return KeyEventResult.ignored;
   }
 
   void _reorderLibraries(int oldIndex, int newIndex) {
@@ -527,7 +371,7 @@ class _LibraryManagementSheetState extends State<_LibraryManagementSheet> {
     if (widget.isDialog) {
       return Dialog(
         child: PopScope(
-          canPop: false, // Prevent system back from double-popping; handled by _handleKeyEvent
+          canPop: false, // Prevent system back from double-popping; handled by handleReorderKeyEvent
           // ignore: no-empty-block - required callback, blocks system back on Android TV
           onPopInvokedWithResult: (didPop, result) {},
           child: Scaffold(
@@ -551,8 +395,8 @@ class _LibraryManagementSheetState extends State<_LibraryManagementSheet> {
               focusNode: _listFocusNode,
               descendantsAreFocusable: false,
               autofocus: InputModeTracker.isKeyboardMode(context),
-              onKeyEvent: _handleKeyEvent,
-              child: _buildFlatLibraryListDialog(hiddenLibraryKeys),
+              onKeyEvent: handleReorderKeyEvent,
+              child: _buildFlatLibraryList(_dialogScrollController, hiddenLibraryKeys),
             ),
           ),
         ),
@@ -567,7 +411,7 @@ class _LibraryManagementSheetState extends State<_LibraryManagementSheet> {
             focusNode: _listFocusNode,
             descendantsAreFocusable: false,
             autofocus: InputModeTracker.isKeyboardMode(context),
-            onKeyEvent: _handleKeyEvent,
+            onKeyEvent: handleReorderKeyEvent,
             child: _buildFlatLibraryList(_sheetScrollController, hiddenLibraryKeys),
           ),
         ),
@@ -575,37 +419,9 @@ class _LibraryManagementSheetState extends State<_LibraryManagementSheet> {
     );
   }
 
-  /// Build library list for dialog (TV) using ListView with scroll-into-view support
-  Widget _buildFlatLibraryListDialog(Set<String> hiddenLibraryKeys) {
-    final showServerNames = _hasMultipleServers();
-    final isKeyboardMode = InputModeTracker.isKeyboardMode(context);
-
-    return ReorderableListView.builder(
-      scrollController: _dialogScrollController,
-      onReorderItem: _reorderLibraries,
-      itemCount: _tempLibraries.length,
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      buildDefaultDragHandles: false,
-      itemBuilder: (context, index) {
-        final library = _tempLibraries[index];
-        final showServerName = showServerNames && library.serverName != null;
-        final isFocused = isKeyboardMode && index == _focusedIndex;
-        final isMoving = index == _movingIndex;
-
-        return _buildLibraryTile(
-          library,
-          index,
-          hiddenLibraryKeys,
-          showServerName: showServerName,
-          isFocused: isFocused,
-          isMoving: isMoving,
-          focusedColumn: isFocused ? _focusedColumn : null,
-        );
-      },
-    );
-  }
-
-  /// Build flat library list with a server subtitle when multiple servers are connected
+  /// Build flat library list with a server subtitle when multiple servers are
+  /// connected. The TV dialog passes [_dialogScrollController] so focused rows
+  /// can be scrolled into view; the bottom sheet passes its own controller.
   Widget _buildFlatLibraryList(ScrollController scrollController, Set<String> hiddenLibraryKeys) {
     final showServerNames = _hasMultipleServers();
     final isKeyboardMode = InputModeTracker.isKeyboardMode(context);
@@ -619,8 +435,8 @@ class _LibraryManagementSheetState extends State<_LibraryManagementSheet> {
       itemBuilder: (context, index) {
         final library = _tempLibraries[index];
         final showServerName = showServerNames && library.serverName != null;
-        final isFocused = isKeyboardMode && index == _focusedIndex;
-        final isMoving = index == _movingIndex;
+        final isFocused = isKeyboardMode && index == focusedIndex;
+        final isMoving = index == movingIndex;
         return _buildLibraryTile(
           library,
           index,
@@ -628,7 +444,7 @@ class _LibraryManagementSheetState extends State<_LibraryManagementSheet> {
           showServerName: showServerName,
           isFocused: isFocused,
           isMoving: isMoving,
-          focusedColumn: isFocused ? _focusedColumn : null,
+          focusedColumn: isFocused ? focusedColumn : null,
         );
       },
     );

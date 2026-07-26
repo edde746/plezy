@@ -35,7 +35,6 @@ class TrackControlsState {
   final int audioSyncOffset;
   final int subtitleSyncOffset;
   final bool isRotationLocked;
-  final bool isScreenLocked;
   final bool isFullscreen;
   final bool isAlwaysOnTop;
   final VoidCallback? onTogglePIPMode;
@@ -97,7 +96,6 @@ class TrackControlsState {
     this.audioSyncOffset = 0,
     this.subtitleSyncOffset = 0,
     this.isRotationLocked = false,
-    this.isScreenLocked = false,
     this.isFullscreen = false,
     this.isAlwaysOnTop = false,
     this.onTogglePIPMode,

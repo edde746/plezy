@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:os_media_controls/os_media_controls.dart';
-import 'package:plezy/screens/video_player/media_control_router.dart';
+import 'package:plezy/services/media_control_router.dart';
 
 void main() {
   test('denied playback and media-item commands are consumed without mutation', () {
@@ -47,12 +47,12 @@ void main() {
   });
 }
 
-VideoPlayerMediaControlRouter _router({
+MediaControlRouter _router({
   required bool Function() canControl,
   required bool Function() canNavigate,
   required List<String> calls,
 }) {
-  return VideoPlayerMediaControlRouter(
+  return MediaControlRouter(
     canControlPlayback: canControl,
     canNavigateMediaItems: canNavigate,
     onPlay: () => calls.add('play'),

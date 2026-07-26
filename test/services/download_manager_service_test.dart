@@ -33,6 +33,7 @@ import 'package:plezy/utils/media_server_http_client.dart';
 import 'package:plezy/utils/active_client_scope.dart';
 import 'package:saf_util/saf_util_platform_interface.dart';
 
+import '../test_helpers/download_fixtures.dart';
 import '../test_helpers/io_fakes.dart';
 import '../test_helpers/prefs.dart';
 import '../test_helpers/media_items.dart';

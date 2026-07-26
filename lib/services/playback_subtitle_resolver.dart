@@ -275,13 +275,6 @@ class PlaybackSubtitleResolver {
     return findMpvTrackForPlexSubtitle(sourceTrack, nativeTracks, allPlexTracks: allSourceTracks);
   }
 
-  static PlaybackSourceSubtitleChoice nextSourceChoice(
-    List<MediaSubtitleTrack> tracks,
-    PlaybackSourceSubtitleChoice currentChoice,
-  ) {
-    return advanceSourceChoice(tracks, currentChoice, 1);
-  }
-
   static PlaybackSourceSubtitleChoice advanceSourceChoice(
     List<MediaSubtitleTrack> tracks,
     PlaybackSourceSubtitleChoice currentChoice,

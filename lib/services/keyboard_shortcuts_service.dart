@@ -9,12 +9,11 @@ import '../i18n/strings.g.dart';
 import '../mpv/mpv.dart';
 import 'settings_binding_owner.dart';
 import 'settings_service.dart';
+import 'shortcut_action.dart';
 import '../utils/platform_detector.dart';
 import '../utils/player_utils.dart';
 
 class KeyboardShortcutsService extends ChangeNotifier {
-  static const Set<String> _repeatableVideoActions = {'zoom_in', 'zoom_out'};
-
   static KeyboardShortcutsService? _instance;
   static Future<void>? _initialization;
   late final SettingsBindingOwner _settingsBinding;
@@ -105,6 +104,7 @@ class KeyboardShortcutsService extends ChangeNotifier {
 
   Map<String, HotKey?> get hotkeys => Map.from(_hotkeys);
 
+  @visibleForTesting
   HotKey? getHotkey(String action) {
     return _hotkeys[action];
   }
@@ -204,8 +204,6 @@ class KeyboardShortcutsService extends ChangeNotifier {
     VoidCallback? onVolumeUp,
     VoidCallback? onVolumeDown,
     VoidCallback? onToggleMute,
-    int? currentPositionEpoch,
-    ValueChanged<int>? onLiveSeek,
     ValueChanged<int>? onLiveSeekBy,
     Future<void> Function(Duration position)? onSeekRequested,
   }) {
@@ -219,11 +217,14 @@ class KeyboardShortcutsService extends ChangeNotifier {
     final isMetaPressed = HardwareKeyboard.instance.isMetaPressed;
 
     for (final entry in _hotkeys.entries) {
-      final action = entry.key;
       final hotkey = entry.value;
       if (hotkey == null) continue;
 
       if (physicalKey != hotkey.key) continue;
+
+      // Null for an id this build does not know: the event is still consumed so
+      // a stale binding never leaks through to another handler.
+      final action = ShortcutAction.fromId(entry.key);
 
       final requiredModifiers = hotkey.modifiers ?? [];
       bool modifiersMatch = true;
@@ -266,59 +267,88 @@ class KeyboardShortcutsService extends ChangeNotifier {
           continue;
         }
 
-        if (isRepeat && !_repeatableVideoActions.contains(action)) {
+        if (isRepeat && !(action?.repeatable ?? false)) {
           return KeyEventResult.handled;
         }
 
-        const playbackControlledActions = <String>{
-          'play_pause',
-          'seek_forward',
-          'seek_backward',
-          'seek_forward_large',
-          'seek_backward_large',
-          'audio_track_next',
-          'subtitle_track_next',
-          'chapter_next',
-          'chapter_previous',
-          'speed_increase',
-          'speed_decrease',
-          'speed_reset',
-          'sub_seek_next',
-          'sub_seek_prev',
-          'skip_marker',
-        };
-        const mediaItemActions = <String>{'episode_next', 'episode_previous'};
-        if ((playbackControlledActions.contains(action) && !canControlPlayback) ||
-            (mediaItemActions.contains(action) && !canNavigateMediaItems)) {
+        if (action == null ||
+            (action.requiresPlayback && !canControlPlayback) ||
+            (action.requiresMediaNavigation && !canNavigateMediaItems)) {
           return KeyEventResult.handled;
         }
 
-        _executeAction(
-          action,
-          player,
-          onToggleFullscreen,
-          onToggleSubtitles,
-          onNextAudioTrack,
-          onNextSubtitleTrack,
-          onNextChapter,
-          onPreviousChapter,
-          onPlayPause: onPlayPause,
-          onToggleShader: onToggleShader,
-          onSkipMarker: onSkipMarker,
-          onNextEpisode: onNextEpisode,
-          onPreviousEpisode: onPreviousEpisode,
-          onScreenshot: onScreenshot,
-          onZoomIn: onZoomIn,
-          onZoomOut: onZoomOut,
-          onZoomReset: onZoomReset,
-          onVolumeUp: onVolumeUp,
-          onVolumeDown: onVolumeDown,
-          onToggleMute: onToggleMute,
-          currentPositionEpoch: currentPositionEpoch,
-          onLiveSeek: onLiveSeek,
-          onLiveSeekBy: onLiveSeekBy,
-          onSeekRequested: onSeekRequested,
-        );
+        void performSeek(int offsetSeconds) {
+          // Relative live-TV skip: route through the parent accumulator, which
+          // coalesces a rapid burst into one transcode re-open (#1253).
+          if (onLiveSeekBy != null) {
+            onLiveSeekBy(offsetSeconds);
+          } else {
+            final target = clampSeekPosition(player, player.state.position + Duration(seconds: offsetSeconds));
+            unawaited((onSeekRequested ?? player.seek)(target));
+          }
+        }
+
+        switch (action) {
+          case ShortcutAction.playPause:
+            (onPlayPause ?? player.playOrPause).call();
+          case ShortcutAction.volumeUp:
+            onVolumeUp?.call();
+          case ShortcutAction.volumeDown:
+            onVolumeDown?.call();
+          case ShortcutAction.seekForward:
+            performSeek(_seekTimeSmall);
+          case ShortcutAction.seekBackward:
+            performSeek(-_seekTimeSmall);
+          case ShortcutAction.seekForwardLarge:
+            performSeek(_seekTimeLarge);
+          case ShortcutAction.seekBackwardLarge:
+            performSeek(-_seekTimeLarge);
+          case ShortcutAction.fullscreenToggle:
+            onToggleFullscreen?.call();
+          case ShortcutAction.muteToggle:
+            onToggleMute?.call();
+          case ShortcutAction.subtitleToggle:
+            onToggleSubtitles?.call();
+          case ShortcutAction.audioTrackNext:
+            onNextAudioTrack?.call();
+          case ShortcutAction.subtitleTrackNext:
+            onNextSubtitleTrack?.call();
+          case ShortcutAction.chapterNext:
+            onNextChapter?.call();
+          case ShortcutAction.chapterPrevious:
+            onPreviousChapter?.call();
+          case ShortcutAction.episodeNext:
+            onNextEpisode?.call();
+          case ShortcutAction.episodePrevious:
+            onPreviousEpisode?.call();
+          case ShortcutAction.speedIncrease:
+            final newRateUp = (player.state.rate + 0.25).clamp(minimumPlaybackRate, maximumPlaybackRate);
+            player.setRate(newRateUp);
+            _settingsService.write(SettingsService.defaultPlaybackSpeed, newRateUp);
+          case ShortcutAction.speedDecrease:
+            final newRateDown = (player.state.rate - 0.25).clamp(minimumPlaybackRate, maximumPlaybackRate);
+            player.setRate(newRateDown);
+            _settingsService.write(SettingsService.defaultPlaybackSpeed, newRateDown);
+          case ShortcutAction.speedReset:
+            player.setRate(1.0);
+            _settingsService.write(SettingsService.defaultPlaybackSpeed, 1.0);
+          case ShortcutAction.subSeekNext:
+            player.command(['sub-seek', '1']);
+          case ShortcutAction.subSeekPrev:
+            player.command(['sub-seek', '-1']);
+          case ShortcutAction.shaderToggle:
+            onToggleShader?.call();
+          case ShortcutAction.skipMarker:
+            onSkipMarker?.call();
+          case ShortcutAction.screenshot:
+            unawaited(player.command(['screenshot', 'subtitles']).then((_) => onScreenshot?.call()));
+          case ShortcutAction.zoomIn:
+            onZoomIn?.call();
+          case ShortcutAction.zoomOut:
+            onZoomOut?.call();
+          case ShortcutAction.zoomReset:
+            onZoomReset?.call();
+        }
         return KeyEventResult.handled;
       }
     }
@@ -326,192 +356,10 @@ class KeyboardShortcutsService extends ChangeNotifier {
     return KeyEventResult.ignored;
   }
 
-  void _executeAction(
-    String action,
-    Player player,
-    VoidCallback? onToggleFullscreen,
-    VoidCallback? onToggleSubtitles,
-    VoidCallback? onNextAudioTrack,
-    VoidCallback? onNextSubtitleTrack,
-    VoidCallback? onNextChapter,
-    VoidCallback? onPreviousChapter, {
-    VoidCallback? onPlayPause,
-    VoidCallback? onToggleShader,
-    VoidCallback? onSkipMarker,
-    VoidCallback? onNextEpisode,
-    VoidCallback? onPreviousEpisode,
-    VoidCallback? onScreenshot,
-    VoidCallback? onZoomIn,
-    VoidCallback? onZoomOut,
-    VoidCallback? onZoomReset,
-    VoidCallback? onVolumeUp,
-    VoidCallback? onVolumeDown,
-    VoidCallback? onToggleMute,
-    int? currentPositionEpoch,
-    ValueChanged<int>? onLiveSeek,
-    ValueChanged<int>? onLiveSeekBy,
-    Future<void> Function(Duration position)? onSeekRequested,
-  }) {
-    void performSeek(int offsetSeconds) {
-      // Relative live-TV skip: route through the parent accumulator, which
-      // coalesces a rapid burst into one transcode re-open (#1253).
-      if (onLiveSeekBy != null) {
-        onLiveSeekBy(offsetSeconds);
-      } else {
-        final target = clampSeekPosition(player, player.state.position + Duration(seconds: offsetSeconds));
-        unawaited((onSeekRequested ?? player.seek)(target));
-      }
-    }
-
-    switch (action) {
-      case 'play_pause':
-        (onPlayPause ?? player.playOrPause).call();
-        break;
-      case 'volume_up':
-        onVolumeUp?.call();
-        break;
-      case 'volume_down':
-        onVolumeDown?.call();
-        break;
-      case 'seek_forward':
-        performSeek(_seekTimeSmall);
-        break;
-      case 'seek_backward':
-        performSeek(-_seekTimeSmall);
-        break;
-      case 'seek_forward_large':
-        performSeek(_seekTimeLarge);
-        break;
-      case 'seek_backward_large':
-        performSeek(-_seekTimeLarge);
-        break;
-      case 'fullscreen_toggle':
-        onToggleFullscreen?.call();
-        break;
-      case 'mute_toggle':
-        onToggleMute?.call();
-        break;
-      case 'subtitle_toggle':
-        onToggleSubtitles?.call();
-        break;
-      case 'audio_track_next':
-        onNextAudioTrack?.call();
-        break;
-      case 'subtitle_track_next':
-        onNextSubtitleTrack?.call();
-        break;
-      case 'chapter_next':
-        onNextChapter?.call();
-        break;
-      case 'chapter_previous':
-        onPreviousChapter?.call();
-        break;
-      case 'episode_next':
-        onNextEpisode?.call();
-        break;
-      case 'episode_previous':
-        onPreviousEpisode?.call();
-        break;
-      case 'speed_increase':
-        final newRateUp = (player.state.rate + 0.25).clamp(minimumPlaybackRate, maximumPlaybackRate);
-        player.setRate(newRateUp);
-        _settingsService.write(SettingsService.defaultPlaybackSpeed, newRateUp);
-        break;
-      case 'speed_decrease':
-        final newRateDown = (player.state.rate - 0.25).clamp(minimumPlaybackRate, maximumPlaybackRate);
-        player.setRate(newRateDown);
-        _settingsService.write(SettingsService.defaultPlaybackSpeed, newRateDown);
-        break;
-      case 'speed_reset':
-        player.setRate(1.0);
-        _settingsService.write(SettingsService.defaultPlaybackSpeed, 1.0);
-        break;
-      case 'sub_seek_next':
-        player.command(['sub-seek', '1']);
-        break;
-      case 'sub_seek_prev':
-        player.command(['sub-seek', '-1']);
-        break;
-      case 'shader_toggle':
-        onToggleShader?.call();
-        break;
-      case 'skip_marker':
-        onSkipMarker?.call();
-        break;
-      case 'screenshot':
-        unawaited(player.command(['screenshot', 'subtitles']).then((_) => onScreenshot?.call()));
-        break;
-      case 'zoom_in':
-        onZoomIn?.call();
-        break;
-      case 'zoom_out':
-        onZoomOut?.call();
-        break;
-      case 'zoom_reset':
-        onZoomReset?.call();
-        break;
-    }
-  }
-
   String getActionDisplayName(String action) {
-    switch (action) {
-      case 'play_pause':
-        return t.hotkeys.actions.playPause;
-      case 'volume_up':
-        return t.hotkeys.actions.volumeUp;
-      case 'volume_down':
-        return t.hotkeys.actions.volumeDown;
-      case 'seek_forward':
-        return t.hotkeys.actions.seekForward(seconds: _seekTimeSmall);
-      case 'seek_backward':
-        return t.hotkeys.actions.seekBackward(seconds: _seekTimeSmall);
-      case 'seek_forward_large':
-        return t.hotkeys.actions.seekForward(seconds: _seekTimeLarge);
-      case 'seek_backward_large':
-        return t.hotkeys.actions.seekBackward(seconds: _seekTimeLarge);
-      case 'fullscreen_toggle':
-        return t.hotkeys.actions.fullscreenToggle;
-      case 'mute_toggle':
-        return t.hotkeys.actions.muteToggle;
-      case 'subtitle_toggle':
-        return t.hotkeys.actions.subtitleToggle;
-      case 'audio_track_next':
-        return t.hotkeys.actions.audioTrackNext;
-      case 'subtitle_track_next':
-        return t.hotkeys.actions.subtitleTrackNext;
-      case 'chapter_next':
-        return t.hotkeys.actions.chapterNext;
-      case 'chapter_previous':
-        return t.hotkeys.actions.chapterPrevious;
-      case 'episode_next':
-        return t.hotkeys.actions.episodeNext;
-      case 'episode_previous':
-        return t.hotkeys.actions.episodePrevious;
-      case 'speed_increase':
-        return t.hotkeys.actions.speedIncrease;
-      case 'speed_decrease':
-        return t.hotkeys.actions.speedDecrease;
-      case 'speed_reset':
-        return t.hotkeys.actions.speedReset;
-      case 'sub_seek_next':
-        return t.hotkeys.actions.subSeekNext;
-      case 'sub_seek_prev':
-        return t.hotkeys.actions.subSeekPrev;
-      case 'shader_toggle':
-        return t.hotkeys.actions.shaderToggle;
-      case 'skip_marker':
-        return t.hotkeys.actions.skipMarker;
-      case 'screenshot':
-        return t.hotkeys.actions.screenshot;
-      case 'zoom_in':
-        return t.hotkeys.actions.zoomIn;
-      case 'zoom_out':
-        return t.hotkeys.actions.zoomOut;
-      case 'zoom_reset':
-        return t.hotkeys.actions.zoomReset;
-      default:
-        return action;
-    }
+    final shortcut = ShortcutAction.fromId(action);
+    if (shortcut == null) return action;
+    return shortcut.label(seekTimeSmall: _seekTimeSmall, seekTimeLarge: _seekTimeLarge);
   }
 
   // Check if a hotkey is already assigned to another action

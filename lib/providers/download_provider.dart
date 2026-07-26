@@ -1,6 +1,5 @@
 import 'dart:async';
 import '../media/ids.dart';
-import 'dart:io';
 import 'package:flutter/foundation.dart';
 import '../i18n/strings.g.dart';
 import '../media/media_backend.dart';
@@ -18,6 +17,7 @@ import '../services/download_manager_service.dart';
 import '../services/api_cache.dart';
 import '../services/download_artwork_service.dart';
 import '../services/download_storage_service.dart';
+import '../services/downloaded_video_source.dart';
 import '../services/multi_server_manager.dart';
 import '../services/offline_mode_source.dart';
 import '../services/watch_state_resolver.dart';
@@ -26,7 +26,6 @@ import '../media/media_server_client.dart';
 import '../services/sync_rule_executor.dart';
 import '../utils/app_logger.dart';
 import '../utils/deletion_notifier.dart';
-import '../utils/downloaded_version_match.dart';
 import '../media/episode_collection.dart';
 import '../utils/global_key_utils.dart';
 import '../utils/content_utils.dart';
@@ -972,6 +971,7 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
 
   /// Check if an item is in the queue
   /// For shows/seasons, checks if any episodes are queued
+  @visibleForTesting
   bool isQueued(String globalKey) {
     final progress = getProgress(globalKey);
     return progress?.status == DownloadStatus.queued;
@@ -1007,46 +1007,13 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
       appLogger.w('No downloaded item found for globalKey: $globalKey');
       return null;
     }
-    if (downloadedItem.status != DownloadStatus.completed.index) {
-      appLogger.w('Download not complete. Status: ${downloadedItem.status}');
-      return null;
-    }
-    if (!downloadedVersionMatches(
+
+    final source = await resolveDownloadedVideoSource(
       downloadedItem,
       requestedMediaIndex: mediaIndex,
       requestedMediaSourceId: mediaSourceId,
-    )) {
-      appLogger.w(
-        'Downloaded version mismatch for $globalKey: have index ${downloadedItem.mediaIndex} '
-        '(source ${downloadedItem.mediaSourceId}), expected index $mediaIndex '
-        '(source ${mediaSourceId?.trim()})',
-      );
-      return null;
-    }
-    if (downloadedItem.videoFilePath == null) {
-      appLogger.w('Video file path is null for globalKey: $globalKey');
-      return null;
-    }
-
-    final storedPath = downloadedItem.videoFilePath!;
-    final storageService = DownloadStorageService.instance;
-
-    // SAF URIs (content://) are already valid - don't transform them
-    if (storageService.isSafUri(storedPath)) {
-      appLogger.d('Found SAF video path: $storedPath');
-      return storedPath;
-    }
-
-    // Convert stored path (may be relative) to absolute path
-    final absolutePath = await storageService.ensureAbsolutePath(storedPath);
-
-    // Verify file exists
-    final file = File(absolutePath);
-    if (!await file.exists()) {
-      appLogger.w('Offline video file not found: $absolutePath');
-      return null;
-    }
-    return absolutePath;
+    );
+    return source?.path;
   }
 
   /// Queue a download for a media item.
@@ -1150,14 +1117,16 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
 
   /// Queue every playable item from a collection/playlist for download.
   ///
-  /// Movies, episodes, and tracks are queued directly. Shows and seasons are
-  /// expanded into their episodes and albums/artists into their tracks (when
-  /// [expandShows] is true). Nested collections/playlists and unknown types
+  /// Expansion follows [collectListLeaves] so a one-shot list download queues
+  /// exactly what a sync rule on the same list would.
+  ///
+  /// When [syncRule] is given, the rule's membership — the unfiltered leaves of
+  /// the list, not just the ones this pass queues — is linked to the rule so a
+  /// later "delete rule and its downloads" pass can find every associated row.
   Future<int> queueListDownload(
     List<MediaItem> items,
     MediaServerClient client, {
     DownloadFilter filter = DownloadFilter.all,
-    bool expandShows = true,
     SyncRuleItem? syncRule,
   }) async {
     if (!_downloadManager.downloadsSupported) return 0;
@@ -1168,30 +1137,24 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     }
     if (!_isQueueOwnershipCurrent(ownership)) return 0;
 
+    final unwatchedOnly = filter == DownloadFilter.unwatched;
     final membership = <MediaItem>[];
     final candidates = <MediaItem>[];
-    if (expandShows) {
+    // Expand one list entry at a time so a cancelled queue stops before the
+    // next container is fetched.
+    for (final item in items) {
+      if (!_isQueueOwnershipCurrent(ownership)) return 0;
+      final leaves = <MediaItem>[];
+      await collectListLeaves(client, [item], unwatchedOnly: unwatchedOnly, out: leaves);
+      candidates.addAll(leaves);
       if (syncRule != null) {
-        await _syncRuleExecutor.collectItemsForList(client, items, unwatchedOnly: false, out: membership);
+        if (unwatchedOnly) {
+          // Rule membership spans the whole list; only the queue is filtered.
+          await collectListLeaves(client, [item], unwatchedOnly: false, out: membership);
+        } else {
+          membership.addAll(leaves);
+        }
       }
-      if (filter == DownloadFilter.all && syncRule != null) {
-        candidates.addAll(membership);
-      } else {
-        await _syncRuleExecutor.collectItemsForList(
-          client,
-          items,
-          unwatchedOnly: filter == DownloadFilter.unwatched,
-          out: candidates,
-        );
-      }
-    } else {
-      final playableItems = items.where((item) => item.isMovie || item.isEpisode || item.kind == MediaKind.track);
-      if (syncRule != null) membership.addAll(playableItems);
-      candidates.addAll(
-        filter == DownloadFilter.unwatched
-            ? playableItems.where((item) => item.isUnwatchedOrInProgress)
-            : playableItems,
-      );
     }
     if (!_isQueueOwnershipCurrent(ownership)) return 0;
 

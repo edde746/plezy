@@ -3,6 +3,17 @@ import 'package:flutter/material.dart';
 
 MonoTokens tokens(BuildContext context) => Theme.of(context).extension<MonoTokens>()!;
 
+/// M3E connected-group geometry for item [index] of a [count]-item group:
+/// large radii on the group's outer corners, small radii between adjacent
+/// items. Pair with `MonoTokens.groupGap` spacing for the hairline gaps.
+BorderRadius groupItemRadii(BuildContext context, int index, int count) {
+  final t = tokens(context);
+  return BorderRadius.vertical(
+    top: Radius.circular(index == 0 ? t.radiusLg : t.radiusXs),
+    bottom: Radius.circular(index == count - 1 ? t.radiusLg : t.radiusXs),
+  );
+}
+
 @immutable
 class MonoTokens extends ThemeExtension<MonoTokens> {
   /// Effectively-stadium radius for pill shapes; the renderer proportionally

@@ -6,6 +6,7 @@ import '../../media/media_item.dart';
 import '../../media/media_kind.dart';
 import '../../media/media_server_client.dart';
 import '../../services/jellyfin_sequential_launcher.dart';
+import '../../services/media_list_playback_launcher.dart';
 import '../../services/play_queue_launcher.dart';
 import '../../utils/app_logger.dart';
 import '../../utils/error_message_utils.dart';
@@ -243,42 +244,19 @@ class FolderTreeViewState extends State<FolderTreeView> {
     }
   }
 
-  Future<void> _handleFolderPlay(MediaItem folder) async {
+  /// Play (or shuffle) a folder row through the backend's launcher. Built
+  /// here rather than via [MediaListPlaybackLauncher.forItem] because this
+  /// tree is pinned to one server: the Plex client must be the one backing
+  /// [widget.serverId], not `forItem`'s fall-back-to-any-online resolution.
+  Future<void> _launchFolder(MediaItem folder, {required bool shuffle}) async {
+    final MediaListPlaybackLauncher launcher;
     if (folder.backend == MediaBackend.jellyfin) {
-      final launcher = JellyfinSequentialLauncher(context: context);
-      await launcher.launchFromFolder(folder: folder, shuffle: false);
-      return;
+      launcher = JellyfinSequentialLauncher(context: context);
+    } else {
+      final client = context.getPlexClientForServer(ServerId(widget.serverId!));
+      launcher = PlexPlayQueueLauncher(context: context, client: client, serverId: widget.serverId);
     }
-
-    final folderKey = folder.backendFolderKey;
-    if (folderKey == null) return;
-    final client = context.getPlexClientForServer(ServerId(widget.serverId!));
-    final launcher = PlexPlayQueueLauncher(context: context, client: client, serverId: widget.serverId);
-    await launcher.launchFromFolder(
-      folderKey: folderKey,
-      shuffle: false,
-      libraryId: folder.libraryId,
-      libraryTitle: folder.libraryTitle,
-    );
-  }
-
-  Future<void> _handleFolderShuffle(MediaItem folder) async {
-    if (folder.backend == MediaBackend.jellyfin) {
-      final launcher = JellyfinSequentialLauncher(context: context);
-      await launcher.launchFromFolder(folder: folder, shuffle: true);
-      return;
-    }
-
-    final folderKey = folder.backendFolderKey;
-    if (folderKey == null) return;
-    final client = context.getPlexClientForServer(ServerId(widget.serverId!));
-    final launcher = PlexPlayQueueLauncher(context: context, client: client, serverId: widget.serverId);
-    await launcher.launchFromFolder(
-      folderKey: folderKey,
-      shuffle: true,
-      libraryId: folder.libraryId,
-      libraryTitle: folder.libraryTitle,
-    );
+    await launcher.launchFromFolder(folder: folder, shuffle: shuffle);
   }
 
   /// Expandable rows: directory rows plus Jellyfin media containers whose
@@ -400,8 +378,8 @@ class FolderTreeViewState extends State<FolderTreeView> {
             serverId: widget.serverId,
             onExpand: isExpandable ? () => _toggleFolder(item) : null,
             onTap: !isExpandable ? () => _handleItemTap(item, entry.parent) : null,
-            onPlayAll: canPlayFolder ? () => _handleFolderPlay(item) : null,
-            onShuffle: canPlayFolder ? () => _handleFolderShuffle(item) : null,
+            onPlayAll: canPlayFolder ? () => _launchFolder(item, shuffle: false) : null,
+            onShuffle: canPlayFolder ? () => _launchFolder(item, shuffle: true) : null,
             focusNode: isFirstRootItem ? widget.firstItemFocusNode : null,
             onNavigateUp: isFirstRootItem ? widget.onNavigateUp : null,
             onNavigateLeft: widget.onNavigateLeft,

@@ -30,6 +30,27 @@ List<Map<String, dynamic>> _itemsArray(Object? data) {
   return const [];
 }
 
+/// Builds a [LibraryPage] from an `/Items`-shaped response: the `Items` array
+/// run through [map], plus the server's `TotalRecordCount` when it reports one.
+/// Responses that omit it (or return a non-int) fall back to
+/// [fallbackPageTotal], whose full-page sentinel keeps pagination enabled;
+/// [singlePage] endpoints return everything at once, so a full page there means
+/// the end of the list, not "there may be more".
+LibraryPage<T> _pagedItems<T>(
+  Object? data, {
+  required int offset,
+  required List<T> Function(List<Map<String, dynamic>>) map,
+  int? requestedSize,
+  bool singlePage = false,
+}) {
+  final rawItems = _itemsArray(data);
+  final rawTotal = data is Map<String, dynamic> ? data['TotalRecordCount'] : null;
+  final fallbackTotal = singlePage
+      ? offset + rawItems.length
+      : fallbackPageTotal(offset: offset, itemCount: rawItems.length, requestedSize: requestedSize);
+  return LibraryPage<T>(items: map(rawItems), totalCount: rawTotal is int ? rawTotal : fallbackTotal, offset: offset);
+}
+
 /// Slim field set for grid/list browsing — what the card UI actually
 /// renders (title, year, watched badge, episode count for series).
 ///
@@ -145,12 +166,7 @@ const _detailFields =
     // any extra round-trip.
     'ProviderIds';
 
-mixin _JellyfinBrowseMethods on MediaServerCacheMixin {
-  JellyfinConnection get connection;
-  FailoverHttpClient get _http;
-  MediaItem? _mapItem(Map<String, dynamic> json);
-  List<MediaItem> _mapItems(Iterable<Map<String, dynamic>> items);
-
+mixin _JellyfinBrowseMethods on _JellyfinClientInternals {
   // Endpoint conventions follow what the official Jellyfin Kotlin SDK
   // generates (cross-checked against the Findroid client). The SDK mixes
   // `/Users/{userId}/...` for "user library" / "views" / "latest" / "single
@@ -701,7 +717,7 @@ mixin _JellyfinBrowseMethods on MediaServerCacheMixin {
         final items = _itemsArray(data);
         final rawTotal = data is Map<String, dynamic> ? data['TotalRecordCount'] : null;
         if (items.isNotEmpty || (rawTotal is int && rawTotal > 0)) {
-          return _pagedMediaItems(data, offset: offset, requestedSize: pageSize);
+          return _pagedItems(data, offset: offset, requestedSize: pageSize, map: _mapItems);
         }
       }
     } on MediaServerHttpException {
@@ -723,7 +739,7 @@ mixin _JellyfinBrowseMethods on MediaServerCacheMixin {
       abort: abort,
     );
     throwIfHttpError(response);
-    return _pagedMediaItems(response.data, offset: offset, requestedSize: pageSize);
+    return _pagedItems(response.data, offset: offset, requestedSize: pageSize, map: _mapItems);
   }
 
   Future<LibraryPage<MediaItem>> fetchSeasonEpisodesPage(
@@ -755,7 +771,7 @@ mixin _JellyfinBrowseMethods on MediaServerCacheMixin {
       abort: abort,
     );
     throwIfHttpError(response);
-    return _pagedMediaItems(response.data, offset: offset, requestedSize: pageSize);
+    return _pagedItems(response.data, offset: offset, requestedSize: pageSize, map: _mapItems);
   }
 
   /// Jellyfin folder browsing mirrors Jellyfin Web/Findroid/Swiftfin: query
@@ -926,27 +942,19 @@ mixin _JellyfinBrowseMethods on MediaServerCacheMixin {
     required String includeItemTypes,
     bool byAlbumArtist = false,
     AbortController? abort,
-  }) async {
-    final all = <MediaItem>[];
-    var start = 0;
-    while (true) {
-      abort?.throwIfAborted();
-      final page = await _fetchPlayableDescendantsPage(
+  }) {
+    return drainPages<MediaItem>(
+      (start, size) => _fetchPlayableDescendantsPage(
         parentId,
         start: start,
-        size: _pagedListPageSize,
+        size: size,
         abort: abort,
         includeItemTypes: includeItemTypes,
         byAlbumArtist: byAlbumArtist,
-      );
-      abort?.throwIfAborted();
-      if (page.items.isEmpty) break;
-      all.addAll(page.items);
-      start += page.items.length;
-      if (start >= page.totalCount) break;
-    }
-    abort?.throwIfAborted();
-    return all;
+      ),
+      pageSize: _pagedListPageSize,
+      abort: abort,
+    );
   }
 
   @override
@@ -992,7 +1000,7 @@ mixin _JellyfinBrowseMethods on MediaServerCacheMixin {
       abort: abort,
     );
     throwIfHttpError(response);
-    return _pagedMediaItems(response.data, offset: offset, requestedSize: pageSize);
+    return _pagedItems(response.data, offset: offset, requestedSize: pageSize, map: _mapItems);
   }
 
   /// All episodes of a series in the app's **aired watch order** — primarily by
@@ -1148,18 +1156,10 @@ mixin _JellyfinBrowseMethods on MediaServerCacheMixin {
   }
 
   @override
-  Future<List<MediaItem>> fetchPersonMedia(String personId) async {
-    final all = <MediaItem>[];
-    var start = 0;
-    while (true) {
-      final page = await fetchPersonMediaPage(personId, start: start, size: _pagedListPageSize);
-      if (page.items.isEmpty) break;
-      all.addAll(page.items);
-      start += page.items.length;
-      if (start >= page.totalCount) break;
-    }
-    return all;
-  }
+  Future<List<MediaItem>> fetchPersonMedia(String personId) => drainPages<MediaItem>(
+    (start, size) => fetchPersonMediaPage(personId, start: start, size: size),
+    pageSize: _pagedListPageSize,
+  );
 
   @override
   Future<LibraryPage<MediaItem>> fetchPersonMediaPage(
@@ -1188,28 +1188,7 @@ mixin _JellyfinBrowseMethods on MediaServerCacheMixin {
       abort: abort,
     );
     throwIfHttpError(response);
-    return _pagedMediaItems(response.data, offset: offset, requestedSize: pageSize);
-  }
-
-  @override
-  Future<List<MediaItem>> fetchRecentlyAdded({int limit = 50}) async {
-    // Matches userLibraryApi.getLatestMedia in the Jellyfin SDK.
-    final response = await _http.get(
-      '/Users/${_segment(connection.userId)}/Items/Latest',
-      queryParameters: {
-        'Limit': limit.toString(),
-        'Fields': _browseFields,
-        'IncludeItemTypes': 'Movie,Series,Episode',
-        ...jellyfinImageQueryParameters,
-      },
-    );
-    throwIfHttpError(response);
-    final data = response.data;
-    // Latest returns a bare array, not an Items wrapper.
-    if (data is List) {
-      return _mapItems(data.whereType<Map<String, dynamic>>());
-    }
-    return _mapItems(_itemsArray(data));
+    return _pagedItems(response.data, offset: offset, requestedSize: pageSize, map: _mapItems);
   }
 
   @override
@@ -1246,82 +1225,17 @@ mixin _JellyfinBrowseMethods on MediaServerCacheMixin {
     // Jellyfin doesn't expose a single "hubs" endpoint, so we synthesise the
     // home rows from Latest plus optional playback rows. The richer Plex Discover surface
     // is intentionally left untranslated — see ServerCapabilities.richHubs.
-    final latestFuture = _safeFetchItemsArray('/Users/${_segment(connection.userId)}/Items/Latest', {
-      'Limit': limit.toString(),
-      'Fields': _browseFields,
-      'IncludeItemTypes': 'Movie,Series,Episode',
-      ...jellyfinImageQueryParameters,
-    }, retry: _homeHubRetry);
-
-    if (!includePlaybackHubs) {
-      final latest = await latestFuture;
-      return [
-        JellyfinMappers.syntheticHub(
-          mapItem: _mapItem,
-          identifier: 'home.recent',
-          title: t.discover.recentlyAdded,
-          type: 'mixed',
-          items: latest,
-          previewLimit: limit,
-          serverId: serverId,
-          serverName: serverName,
-        ),
-      ].where((h) => h.items.isNotEmpty).toList();
-    }
-
-    final results = await Future.wait([
-      latestFuture,
-      _safeFetchItemsArray('/UserItems/Resume', {
-        'userId': connection.userId,
-        'Limit': limit.toString(),
-        'Fields': _browseFields,
-        'MediaTypes': 'Video',
-        'Recursive': 'true',
-        'EnableTotalRecordCount': 'false',
-        ...jellyfinImageQueryParameters,
-      }, retry: _homeHubRetry),
-      _safeFetchItemsArray('/Shows/NextUp', {
-        'userId': connection.userId,
-        'Limit': limit.toString(),
-        'Fields': _browseFields,
-        'EnableResumable': 'false',
-        'EnableTotalRecordCount': 'false',
-        ...jellyfinImageQueryParameters,
-      }, retry: _homeHubRetry),
-    ]);
-
-    return [
-      JellyfinMappers.syntheticHub(
-        mapItem: _mapItem,
-        identifier: 'home.continue',
-        title: t.discover.continueWatching,
-        type: 'mixed',
-        items: results[1],
-        previewLimit: limit,
-        serverId: serverId,
-        serverName: serverName,
-      ),
-      JellyfinMappers.syntheticHub(
-        mapItem: _mapItem,
-        identifier: 'home.nextup',
-        title: t.discover.nextUp,
-        type: 'episode',
-        items: results[2],
-        previewLimit: limit,
-        serverId: serverId,
-        serverName: serverName,
-      ),
-      JellyfinMappers.syntheticHub(
-        mapItem: _mapItem,
-        identifier: 'home.recent',
-        title: t.discover.recentlyAdded,
-        type: 'mixed',
-        items: results.first,
-        previewLimit: limit,
-        serverId: serverId,
-        serverName: serverName,
-      ),
-    ].where((h) => h.items.isNotEmpty).toList();
+    return _playbackHubSet(
+      idPrefix: 'home',
+      limit: limit,
+      includePlaybackHubs: includePlaybackHubs,
+      includeNextUp: true,
+      retry: _homeHubRetry,
+      latestItemTypes: 'Movie,Series,Episode',
+      continueTitle: t.discover.continueWatching,
+      nextUpTitle: t.discover.nextUp,
+      recentTitle: t.discover.recentlyAdded,
+    );
   }
 
   @override
@@ -1353,86 +1267,92 @@ mixin _JellyfinBrowseMethods on MediaServerCacheMixin {
     // Issued in parallel so the recommended tab loads in one round-trip.
     // When the caller knows the library kind, skip NextUp for movie libraries;
     // Jellyfin can otherwise spend time scanning TV state only to return [].
+    return _playbackHubSet(
+      parentId: libraryId,
+      idPrefix: 'library.$libraryId',
+      limit: limit,
+      includePlaybackHubs: includePlaybackHubs,
+      includeNextUp: libraryKind == null || libraryKind == MediaKind.show,
+      retry: _libraryHubRetry,
+      continueTitle: t.discover.continueWatchingIn(library: libraryName),
+      nextUpTitle: t.discover.nextUpIn(library: libraryName),
+      recentTitle: t.discover.recentlyAddedIn(library: libraryName),
+    );
+  }
+
+  /// Latest + Continue Watching + Next Up row set shared by the home and
+  /// per-library surfaces. Both scopes issue the same three requests in the
+  /// same order and synthesise the same three rows; they differ only in
+  /// [parentId], the row identifier prefix, the titles, and the transport
+  /// policy. The Latest request fires before the [includePlaybackHubs]
+  /// short-circuit so callers that only want Recently Added still get it in
+  /// one round-trip.
+  Future<List<MediaHub>> _playbackHubSet({
+    required String idPrefix,
+    required int limit,
+    required bool includePlaybackHubs,
+    required bool includeNextUp,
+    required _HubRetryPolicy retry,
+    required String continueTitle,
+    required String nextUpTitle,
+    required String recentTitle,
+    String? parentId,
+    String? latestItemTypes,
+  }) async {
     final latestFuture = _safeFetchItemsArray('/Users/${_segment(connection.userId)}/Items/Latest', {
       'Limit': limit.toString(),
-      'ParentId': libraryId,
+      'ParentId': ?parentId,
       'Fields': _browseFields,
+      'IncludeItemTypes': ?latestItemTypes,
       ...jellyfinImageQueryParameters,
-    }, retry: _libraryHubRetry);
+    }, retry: retry);
 
-    if (!includePlaybackHubs) {
-      final latest = await latestFuture;
-      return [
+    MediaHub hub(String suffix, String title, String type, List<Map<String, dynamic>> items) =>
         JellyfinMappers.syntheticHub(
           mapItem: _mapItem,
-          identifier: 'library.$libraryId.recent',
-          title: t.discover.recentlyAddedIn(library: libraryName),
-          type: 'mixed',
-          items: latest,
+          identifier: '$idPrefix.$suffix',
+          title: title,
+          type: type,
+          items: items,
           previewLimit: limit,
           serverId: serverId,
           serverName: serverName,
-        ),
-      ].where((h) => h.items.isNotEmpty).toList();
+        );
+
+    if (!includePlaybackHubs) {
+      final latest = await latestFuture;
+      return [hub('recent', recentTitle, 'mixed', latest)].where((h) => h.items.isNotEmpty).toList();
     }
 
-    final includeNextUp = libraryKind == null || libraryKind == MediaKind.show;
     final results = await Future.wait([
       latestFuture,
       _safeFetchItemsArray('/UserItems/Resume', {
         'userId': connection.userId,
-        'ParentId': libraryId,
+        'ParentId': ?parentId,
         'Limit': limit.toString(),
         'Fields': _browseFields,
         'MediaTypes': 'Video',
         'Recursive': 'true',
         'EnableTotalRecordCount': 'false',
         ...jellyfinImageQueryParameters,
-      }, retry: _libraryHubRetry),
+      }, retry: retry),
       includeNextUp
           ? _safeFetchItemsArray('/Shows/NextUp', {
               'userId': connection.userId,
-              'ParentId': libraryId,
+              'ParentId': ?parentId,
               'Limit': limit.toString(),
               'Fields': _browseFields,
               'EnableResumable': 'false',
               'EnableTotalRecordCount': 'false',
               ...jellyfinImageQueryParameters,
-            }, retry: _libraryHubRetry)
+            }, retry: retry)
           : Future.value(const <Map<String, dynamic>>[]),
     ]);
 
     return [
-      JellyfinMappers.syntheticHub(
-        mapItem: _mapItem,
-        identifier: 'library.$libraryId.continue',
-        title: t.discover.continueWatchingIn(library: libraryName),
-        type: 'mixed',
-        items: results[1],
-        previewLimit: limit,
-        serverId: serverId,
-        serverName: serverName,
-      ),
-      JellyfinMappers.syntheticHub(
-        mapItem: _mapItem,
-        identifier: 'library.$libraryId.nextup',
-        title: t.discover.nextUpIn(library: libraryName),
-        type: 'episode',
-        items: results[2],
-        previewLimit: limit,
-        serverId: serverId,
-        serverName: serverName,
-      ),
-      JellyfinMappers.syntheticHub(
-        mapItem: _mapItem,
-        identifier: 'library.$libraryId.recent',
-        title: t.discover.recentlyAddedIn(library: libraryName),
-        type: 'mixed',
-        items: results.first,
-        previewLimit: limit,
-        serverId: serverId,
-        serverName: serverName,
-      ),
+      hub('continue', continueTitle, 'mixed', results[1]),
+      hub('nextup', nextUpTitle, 'episode', results[2]),
+      hub('recent', recentTitle, 'mixed', results.first),
     ].where((h) => h.items.isNotEmpty).toList();
   }
 
@@ -1660,32 +1580,17 @@ mixin _JellyfinBrowseMethods on MediaServerCacheMixin {
     try {
       final response = await _http.get(path, queryParameters: queryParameters, abort: abort);
       throwIfHttpError(response);
-      final data = response.data;
-      final rawItems = data is List ? data.whereType<Map<String, dynamic>>().toList() : _itemsArray(data);
-      final rawTotal = data is Map<String, dynamic> ? data['TotalRecordCount'] : null;
-      final fallbackTotal = singlePage
-          ? offset + rawItems.length
-          : fallbackPageTotal(offset: offset, itemCount: rawItems.length, requestedSize: requestedSize);
-      return LibraryPage<MediaItem>(
-        items: _mapItems(rawItems),
-        totalCount: rawTotal is int ? rawTotal : fallbackTotal,
+      return _pagedItems(
+        response.data,
         offset: offset,
+        requestedSize: requestedSize,
+        singlePage: singlePage,
+        map: _mapItems,
       );
     } catch (e, st) {
       appLogger.w('JellyfinClient: $path failed', error: e, stackTrace: st);
       rethrow;
     }
-  }
-
-  LibraryPage<MediaItem> _pagedMediaItems(Object? data, {required int offset, required int requestedSize}) {
-    final rawItems = _itemsArray(data);
-    final rawTotal = data is Map<String, dynamic> ? data['TotalRecordCount'] : null;
-    final fallbackTotal = fallbackPageTotal(offset: offset, itemCount: rawItems.length, requestedSize: requestedSize);
-    return LibraryPage<MediaItem>(
-      items: _mapItems(rawItems),
-      totalCount: rawTotal is int ? rawTotal : fallbackTotal,
-      offset: offset,
-    );
   }
 
   @override

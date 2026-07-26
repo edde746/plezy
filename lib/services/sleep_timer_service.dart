@@ -127,6 +127,7 @@ class SleepTimerService extends ChangeNotifier {
   }
 
   /// Execute the completion callback directly (fallback path)
+  @visibleForTesting
   void executeCompletion() {
     _executeCallback();
   }

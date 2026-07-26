@@ -13,7 +13,6 @@ import 'package:plezy/media/server_capabilities.dart';
 import 'package:plezy/providers/download_provider.dart';
 import 'package:plezy/providers/multi_server_provider.dart';
 import 'package:plezy/screens/collection_detail_screen.dart';
-import 'package:plezy/services/data_aggregation_service.dart';
 import 'package:plezy/services/download_manager_service.dart';
 import 'package:plezy/services/download_storage_service.dart';
 import 'package:plezy/services/jellyfin_api_cache.dart';
@@ -29,6 +28,7 @@ import 'package:plezy/widgets/media_card_sliver_layout.dart';
 import 'package:provider/provider.dart';
 
 import '../test_helpers/media_items.dart';
+import '../test_helpers/multi_server_fixtures.dart';
 import '../test_helpers/paged_fakes.dart';
 import '../test_helpers/prefs.dart';
 
@@ -133,7 +133,7 @@ Future<_CollectionHarness> _createHarness(List<MediaItem> items) async {
 
   final client = _CollectionClient(items);
   final manager = MultiServerManager()..debugRegisterClientForTesting(client);
-  final multiServerProvider = MultiServerProvider(manager, DataAggregationService(manager));
+  final multiServerProvider = testMultiServerProvider(manager);
 
   addTearDown(() async {
     downloadProvider.dispose();

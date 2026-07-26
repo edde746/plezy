@@ -1,23 +1,6 @@
 part of '../../plex_client.dart';
 
-mixin _PlexCollectionMethods on MediaServerCacheMixin {
-  FailoverHttpClient get _http;
-
-  Future<MediaServerResponse> _getWithFailover(
-    String path, {
-    Map<String, dynamic>? queryParameters,
-    // ignore: unused_element_parameter
-    Map<String, String>? headers,
-    // ignore: unused_element_parameter
-    Duration? timeout,
-    AbortController? abort,
-    // ignore: unused_element_parameter
-    bool allowEndpointFailover = true,
-  });
-
-  Map<String, dynamic>? _getMediaContainer(MediaServerResponse response);
-  Map<String, dynamic> _buildPaginationParams(int? start, int? size);
-
+mixin _PlexCollectionMethods on _PlexClientInternals {
   _LibraryContentResult _extractLibraryContentResult(
     MediaServerResponse response, {
     int? librarySectionID,
@@ -27,24 +10,11 @@ mixin _PlexCollectionMethods on MediaServerCacheMixin {
     int? requestedSize,
   });
 
-  Future<_LibraryContentResult> _fetchPaginatedList(
-    String path, {
-    int? start,
-    int? size,
-    AbortController? abort,
-    int? librarySectionID,
-    String? librarySectionTitle,
-  });
-
   Future<List<PlexMetadataDto>> _fetchAllPages(
     Future<_LibraryContentResult> Function(int start, int size, AbortController? abort) fetchPage, {
     // ignore: unused_element_parameter
     AbortController? abort,
   });
-
-  Future<bool> _wrapBoolApiCall(Future<MediaServerResponse> Function() apiCall, String errorMessage);
-
-  Future<String> buildMetadataUri(String ratingKey);
 
   Future<_LibraryContentResult> _getLibraryCollectionsPage(
     String sectionId, {

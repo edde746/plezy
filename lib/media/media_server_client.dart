@@ -265,7 +265,7 @@ abstract class MediaServerClient {
   /// `/Audio/{id}/Lyrics` (per-line tick offsets when synced); Plex: a
   /// sidecar-lyrics track stream (`streamType 4`) fetched from
   /// `/library/streams/{id}` and parsed from LRC. Synced-ness is per
-  /// [Lyrics.synced]; gated by [ServerCapabilities.lyrics].
+  /// [Lyrics.synced]; per-track absence is the runtime gate.
   Future<Lyrics?> fetchLyrics(MediaItem track);
 
   /// Free-text search across the user's libraries. [limit] is a per-request
@@ -273,9 +273,6 @@ abstract class MediaServerClient {
   /// return more candidates for cross-server ranking. [abort] cancels every
   /// backend request owned by this search pass.
   Future<List<MediaItem>> searchItems(String query, {int limit = 100, AbortController? abort});
-
-  /// Recently-added items across all libraries.
-  Future<List<MediaItem>> fetchRecentlyAdded({int limit = 50});
 
   /// Items the user has started but not finished. Plex calls this "On Deck"
   /// internally; the neutral name matches the Continue Watching UI surface.

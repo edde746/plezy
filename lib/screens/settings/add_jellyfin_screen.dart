@@ -360,13 +360,7 @@ class _AddJellyfinScreenState extends State<AddJellyfinScreen> with AsyncFormSta
     _discoveredServerFocusNodes[_localServers.last.id]?.requestFocus();
   }
 
-  List<String> _enteredUrls() {
-    return _urlController.text
-        .split(RegExp(r'[\n,]+'))
-        .map((url) => url.trim())
-        .where((url) => url.isNotEmpty)
-        .toList(growable: false);
-  }
+  List<String> _enteredUrls() => JellyfinEndpointDiscovery.parseUserEnteredUrls(_urlController.text);
 
   /// Shared persistence path for both username/password and Quick Connect:
   /// atomically provision the optional first-run profile, connection, and
@@ -663,12 +657,6 @@ class _AddJellyfinScreenState extends State<AddJellyfinScreen> with AsyncFormSta
 
     if (_localServers.isEmpty) return const [];
     final tokensRef = tokens(context);
-    // M3E connected-group geometry: large outer corners, small inner corners,
-    // hairline gaps between tiles.
-    BorderRadius radiiFor(int i) => BorderRadius.vertical(
-      top: Radius.circular(i == 0 ? tokensRef.radiusLg : tokensRef.radiusXs),
-      bottom: Radius.circular(i == _localServers.length - 1 ? tokensRef.radiusLg : tokensRef.radiusXs),
-    );
     return [
       const SizedBox(height: 16),
       Text(t.addServer.localServers, style: theme.textTheme.titleSmall),
@@ -677,7 +665,7 @@ class _AddJellyfinScreenState extends State<AddJellyfinScreen> with AsyncFormSta
         if (i > 0) SizedBox(height: tokensRef.groupGap),
         _DiscoveredJellyfinServerTile(
           server: server,
-          borderRadius: radiiFor(i),
+          borderRadius: groupItemRadii(context, i, _localServers.length),
           focusNode: _discoveredServerFocusNodes[server.id],
           onNavigateUp: () {
             final index = _localServers.indexOf(server);

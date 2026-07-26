@@ -1,6 +1,7 @@
 import '../media/ids.dart';
 
 import 'package:drift/drift.dart';
+import 'package:flutter/foundation.dart';
 
 import '../database/app_database.dart';
 import '../database/plex_metadata_recovery.dart';
@@ -73,6 +74,7 @@ class PlexApiCache extends ApiCache {
   // Rating keys can be alphanumeric, not just numeric.
   static final RegExp _metadataKeyPattern = RegExp(r'/library/metadata/([^/]+)$');
 
+  @visibleForTesting
   Future<Set<String>> getPinnedKeys(ServerId serverId) => extractPinnedIds(serverId, _metadataKeyPattern);
 
   /// Copy one pinned item between cache namespaces.

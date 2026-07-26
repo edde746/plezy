@@ -8,9 +8,10 @@ import 'package:plezy/media/media_server_client.dart';
 import 'package:plezy/media/server_capabilities.dart';
 import 'package:plezy/providers/multi_server_provider.dart';
 import 'package:plezy/screens/video_player_screen.dart';
-import 'package:plezy/services/data_aggregation_service.dart';
 import 'package:plezy/services/multi_server_manager.dart';
 import 'package:plezy/utils/live_tv_player_navigation.dart';
+
+import '../test_helpers/multi_server_fixtures.dart';
 
 void main() {
   late MultiServerManager manager;
@@ -19,7 +20,7 @@ void main() {
   setUp(() async {
     await LocaleSettings.setLocale(AppLocale.bg);
     manager = MultiServerManager();
-    multiServer = MultiServerProvider(manager, DataAggregationService(manager));
+    multiServer = testMultiServerProvider(manager);
   });
 
   tearDown(() {

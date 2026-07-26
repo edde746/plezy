@@ -5,7 +5,7 @@
   import AmazonIcon from "~icons/cib/amazon";
   import ChevronDownIcon from "~icons/heroicons/chevron-down-solid";
   import WindowsIcon from "./WindowsIcon.svelte";
-  import { linuxArchitectures } from "$lib/content/downloads";
+  import { AMAZON_URL, linuxArchitectures, releaseAsset, storeOptions } from "$lib/content/downloads";
 
   const componentId = $props.id();
   const linuxPanelId = `${componentId}-linux-downloads`;
@@ -34,7 +34,7 @@
   <!-- Primary row -->
   <div class="store-buttons">
     <a
-      href="https://apps.apple.com/us/app/id6754315964"
+      href={storeOptions.ios.url}
       target="_blank"
       rel="noopener noreferrer"
       class="store-button"
@@ -44,7 +44,7 @@
     </a>
 
     <a
-      href="https://play.google.com/store/apps/details?id=com.edde746.plezy"
+      href={storeOptions.android.url}
       target="_blank"
       rel="noopener noreferrer"
       class="store-button"
@@ -54,7 +54,7 @@
     </a>
 
     <a
-      href="https://www.amazon.com/gp/product/B0GK65CVS1"
+      href={AMAZON_URL}
       target="_blank"
       rel="noopener noreferrer"
       class="store-button"
@@ -67,7 +67,7 @@
   <!-- Desktop row -->
   <div class="desktop-buttons">
     <a
-      href="https://github.com/edde746/plezy/releases/latest/download/plezy-windows-installer.exe"
+      href={releaseAsset("plezy-windows-installer.exe")}
       class="desktop-button"
     >
       <WindowsIcon />
@@ -75,7 +75,7 @@
     </a>
 
     <a
-      href="https://github.com/edde746/plezy/releases/latest/download/plezy-macos.dmg"
+      href={releaseAsset("plezy-macos.dmg")}
       class="desktop-button"
     >
       <AppleIcon />

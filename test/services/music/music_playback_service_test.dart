@@ -8,7 +8,6 @@ import 'package:plezy/media/media_display_criteria.dart';
 import 'package:plezy/media/media_item.dart';
 import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/media/media_server_client.dart';
-import 'package:plezy/media/playback_report_metadata.dart';
 import 'package:plezy/mpv/models.dart';
 import 'package:plezy/mpv/player/player.dart';
 import 'package:plezy/mpv/player/player_state.dart';
@@ -20,6 +19,7 @@ import 'package:plezy/services/music/music_playback_service_impl.dart';
 import 'package:plezy/services/music/music_source_resolver.dart';
 import 'package:plezy/services/playback_coordinator.dart';
 import '../../test_helpers/media_items.dart';
+import '../../test_helpers/playback_report_fakes.dart';
 
 const _trackDuration = Duration(minutes: 3);
 
@@ -389,7 +389,7 @@ class RecordedReport {
 
 /// Records the progress-report surface; everything else is unimplemented
 /// (the engine and tracker never touch it in these tests).
-class FakeMediaServerClient extends Fake implements MediaServerClient {
+class FakeMediaServerClient extends Fake with PlaybackReportRecorder implements MediaServerClient {
   final List<RecordedReport> reports = [];
   final List<String> markedWatched = [];
   Completer<List<MediaItem>>? instantMixGate;
@@ -419,47 +419,13 @@ class FakeMediaServerClient extends Fake implements MediaServerClient {
   }
 
   @override
-  Future<void> reportPlaybackStarted({
-    required String itemId,
-    required Duration position,
-    Duration? duration,
-    String? playSessionId,
-    String? playMethod,
-    String? liveStreamId,
-    String? mediaSourceId,
-    int? audioStreamIndex,
-    int? subtitleStreamIndex,
-  }) async {
-    reports.add(RecordedReport('started', itemId, position));
-  }
-
-  @override
-  Future<void> reportPlaybackProgress({
-    required String itemId,
-    required Duration position,
-    required Duration duration,
-    bool isPaused = false,
-    String? playSessionId,
-    String? playMethod,
-    String? liveStreamId,
-    String? mediaSourceId,
-    int? audioStreamIndex,
-    int? subtitleStreamIndex,
-  }) async {
-    reports.add(RecordedReport(isPaused ? 'paused' : 'progress', itemId, position));
-  }
-
-  @override
-  Future<void> reportPlaybackStopped({
-    required String itemId,
-    required Duration position,
-    Duration? duration,
-    String? playSessionId,
-    String? liveStreamId,
-    String? mediaSourceId,
-    PlaybackReportMetadata report = const PlaybackReportMetadata.live(),
-  }) async {
-    reports.add(RecordedReport('stopped', itemId, position));
+  Future<void> onPlaybackReport(PlaybackReportCall call) async {
+    final state = switch (call.kind) {
+      PlaybackReportKind.started => 'started',
+      PlaybackReportKind.progress => call.isPaused ? 'paused' : 'progress',
+      PlaybackReportKind.stopped => 'stopped',
+    };
+    reports.add(RecordedReport(state, call.itemId, call.position));
   }
 }
 

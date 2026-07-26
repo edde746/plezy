@@ -136,6 +136,21 @@ void main() {
     }
   });
 
+  test('repeats the restore pass in place for doubled Anime4K modes', () async {
+    final shaders = await ShaderAssetLoader.getAnime4KShaders(
+      const Anime4KConfig(quality: Anime4KQuality.fast, mode: Anime4KMode.modeBB),
+    );
+
+    expect(shaders.map(path.basename).toList(), [
+      'Anime4K_Clamp_Highlights.glsl',
+      'Anime4K_Restore_CNN_M.glsl',
+      'Anime4K_Restore_CNN_M.glsl',
+      'Anime4K_Upscale_CNN_x2_M.glsl',
+      'Anime4K_AutoDownscalePre_x2.glsl',
+    ]);
+    expect(shaders[1], shaders[2]);
+  });
+
   test('nested and non-GLSL names are rejected without touching matching files', () async {
     final customDirectory = Directory(path.join(supportDirectory.path, 'custom_shaders'))..createSync(recursive: true);
     final nested = File(path.join(customDirectory.path, 'subdir', 'name.glsl'))

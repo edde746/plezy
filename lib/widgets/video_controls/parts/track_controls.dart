@@ -144,7 +144,6 @@ extension _PlexVideoControlsTrackMethods on _PlexVideoControlsState {
       audioSyncOffset: _audioSyncOffset,
       subtitleSyncOffset: _subtitleSyncOffset,
       isRotationLocked: _isRotationLocked,
-      isScreenLocked: _isScreenLocked,
       isFullscreen: _isFullscreen,
       isAlwaysOnTop: _isAlwaysOnTop,
       onTogglePIPMode: (_isPipSupported && !PlatformDetector.isTV()) ? widget.onTogglePIPMode : null,

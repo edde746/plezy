@@ -5,7 +5,6 @@ import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 
 import '../../focus/focusable_action_bar.dart';
-import '../../focus/key_event_utils.dart';
 import '../../i18n/strings.g.dart';
 import '../../media/ids.dart';
 import '../../media/media_item.dart';
@@ -16,17 +15,14 @@ import '../../utils/formatters.dart';
 import '../../utils/error_message_utils.dart';
 import '../../utils/media_image_helper.dart';
 import '../../utils/music_navigation.dart';
-import '../../utils/platform_detector.dart';
 import '../../utils/provider_extensions.dart';
 import '../../utils/snackbar_helper.dart';
 import '../../widgets/collapsible_text.dart';
 import '../../widgets/desktop_app_bar.dart';
-import '../../widgets/ios_status_bar_tap_scroll_to_top.dart';
 import '../../widgets/music/mini_player.dart';
 import '../../widgets/music/music_detail_header.dart';
 import '../../widgets/music/music_actions.dart';
 import '../../widgets/optimized_media_image.dart';
-import '../../widgets/overlay_sheet.dart';
 import '../base_media_list_detail_screen.dart';
 import '../focusable_detail_screen_mixin.dart';
 
@@ -78,34 +74,19 @@ class _ArtistDetailScreenState extends BaseMediaListDetailScreen<ArtistDetailScr
   }
 
   /// Plays the artist's full track list. The tracks aren't part of the album
-  /// listing this screen loads, so this costs one extra server round-trip —
-  /// gated on playback availability first so the stub never fetches.
+  /// listing this screen loads, so this costs one extra server round-trip.
   Future<void> _playAll({bool shuffle = false}) async {
-    if (!ensureMusicPlaybackAvailable(context)) return;
-    final service = context.read<MusicPlaybackService>();
-    final intent = service.beginPlayIntent();
-    List<MediaItem> tracks;
-    try {
-      tracks = await mediaClient.fetchPlayableDescendants(widget.artist.id);
-    } catch (e, stackTrace) {
-      if (!mounted || !service.isPlayIntentCurrent(intent)) return;
-      final message = localizedLoadErrorMessage(e, stackTrace, context: widget.artist.displayTitle);
-      showErrorSnackBar(context, message);
-      return;
-    }
-    if (!mounted || !service.isPlayIntentCurrent(intent)) return;
-    if (tracks.isEmpty) {
-      showAppSnackBar(context, emptyMessage);
-      return;
-    }
-    await playTracks(
+    await playFetchedTracks(
       context,
-      tracks: tracks,
+      fetch: () => mediaClient.fetchPlayableDescendants(widget.artist.id),
       playContext: MusicPlayContext(
         id: widget.artist.id,
         title: widget.artist.displayTitle,
         kind: MusicPlayContextKind.artist,
       ),
+      onError: (e, stackTrace) =>
+          showErrorSnackBar(context, localizedLoadErrorMessage(e, stackTrace, context: widget.artist.displayTitle)),
+      onEmpty: () => showAppSnackBar(context, emptyMessage),
       shuffle: shuffle,
     );
   }
@@ -193,36 +174,16 @@ class _ArtistDetailScreenState extends BaseMediaListDetailScreen<ArtistDetailScr
 
   @override
   Widget build(BuildContext context) {
-    return PrimaryScrollController(
-      controller: scrollController,
-      child: IosStatusBarTapScrollToTop(
-        controller: scrollController,
-        child: OverlaySheetHost(
-          // Host owns sheet + system back: a back with a sheet open closes it;
-          // otherwise focus the action row first, then pop.
-          canPop: PlatformDetector.isHandheldIOS(context),
-          onSystemBack: () {
-            if (BackKeyCoordinator.consumeIfHandled()) return;
-            if (handleBackNavigation() && mounted) Navigator.pop(context);
-          },
-          child: Scaffold(
-            body: CustomScrollView(
-              primary: true,
-              slivers: [
-                CustomAppBar(title: Text(widget.artist.displayTitle)),
-                SliverToBoxAdapter(child: _buildHeader()),
-                ...buildStateSlivers(),
-                // Albums arrive newest-first from both backends — no client-side sort.
-                if (hasItems) buildFocusableGrid(items: items, onRefresh: updateItem, shape: CardShape.square),
-                // Keep the last rows reachable above the floating mini-player.
-                SliverToBoxAdapter(
-                  child: SizedBox(height: context.watch<MiniPlayerInsetController?>()?.overlayHeight ?? 0),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
+    return buildDetailScaffold(
+      slivers: [
+        CustomAppBar(title: Text(widget.artist.displayTitle)),
+        SliverToBoxAdapter(child: _buildHeader()),
+        ...buildStateSlivers(),
+        // Albums arrive newest-first from both backends — no client-side sort.
+        if (hasItems) buildFocusableGrid(items: items, onRefresh: updateItem, shape: CardShape.square),
+        // Keep the last rows reachable above the floating mini-player.
+        SliverToBoxAdapter(child: SizedBox(height: context.watch<MiniPlayerInsetController?>()?.overlayHeight ?? 0)),
+      ],
     );
   }
 }

@@ -7,6 +7,7 @@ import '../../utils/app_logger.dart';
 import '../../utils/platform_http_client_stub.dart'
     if (dart.library.io) '../../utils/platform_http_client_io.dart'
     as platform;
+import '../../utils/url_utils.dart';
 import '../trackers/tracker_http_client.dart';
 import 'seerr_constants.dart';
 import 'seerr_exceptions.dart';
@@ -26,9 +27,8 @@ class SeerrResponse {
 /// Adds the two things the tracker HTTP layer doesn't cover:
 ///   1. `connect.sid` cookie capture from `Set-Cookie` on login, replayed as
 ///      `Cookie:` on every subsequent request — Express session auth.
-///   2. Query encoding with `%20` for spaces: Seerr proxies `/search` to
-///      TMDB, which rejects `+` in the query value, so `Uri.queryParameters`
-///      (which emits `+`) cannot be used.
+///   2. Query encoding via [encodeQueryParameters] (`%20` for spaces): Seerr
+///      proxies `/search` to TMDB, which rejects `+` in the query value.
 class SeerrHttpClient {
   final String baseUrl;
   final http.Client _http;
@@ -110,12 +110,8 @@ class SeerrHttpClient {
 
   Uri _uri(String path, Map<String, Object?>? query) {
     final base = Uri.parse('$baseUrl${SeerrConstants.apiPath}$path');
-    if (query == null || query.isEmpty) return base;
-    final parts = <String>[
-      for (final entry in query.entries)
-        if (entry.value != null) '${Uri.encodeComponent(entry.key)}=${Uri.encodeComponent(entry.value.toString())}',
-    ];
-    return parts.isEmpty ? base : base.replace(query: parts.join('&'));
+    final encoded = encodeQueryParameters(query);
+    return encoded.isEmpty ? base : base.replace(query: encoded);
   }
 
   /// Throw the mapped exception for a 4xx/5xx response; no-op on success.

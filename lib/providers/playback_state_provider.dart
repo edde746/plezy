@@ -306,7 +306,7 @@ class PlaybackStateProvider with ChangeNotifier, DisposableChangeNotifierMixin {
     var anchor = current;
     // Bounded so a pathological all-same-file queue cannot spin.
     for (var steps = 0; steps <= _playQueueTotalCount; steps++) {
-      final result = await _itemAfter(anchor);
+      final result = await _itemAtOffset(anchor, 1);
       final candidate = result.item;
       if (result.status != QueueNavigationStatus.found || candidate == null) {
         return result;
@@ -337,7 +337,7 @@ class PlaybackStateProvider with ChangeNotifier, DisposableChangeNotifierMixin {
     final current = _loadedItems[indexResult.index!];
     MediaItem candidate = current;
     for (var steps = 0; steps <= _playQueueTotalCount; steps++) {
-      final result = await _itemBefore(candidate);
+      final result = await _itemAtOffset(candidate, -1);
       final before = result.item;
       if (result.status != QueueNavigationStatus.found || before == null) {
         return result;
@@ -348,7 +348,7 @@ class PlaybackStateProvider with ChangeNotifier, DisposableChangeNotifierMixin {
 
     // Collapse to the first episode of the candidate's same-file group.
     for (var steps = 0; steps <= _playQueueTotalCount; steps++) {
-      final result = await _itemBefore(candidate);
+      final result = await _itemAtOffset(candidate, -1);
       final before = result.item;
       if (result.status == QueueNavigationStatus.failed) return result;
       if (result.status != QueueNavigationStatus.found || before == null || !candidate.sharesFileWith(before)) {
@@ -359,18 +359,19 @@ class PlaybackStateProvider with ChangeNotifier, DisposableChangeNotifierMixin {
     return QueueNavigationResult.found(candidate);
   }
 
-  /// The queue item immediately after [anchor], extending a server-backed
+  /// The queue item [delta] steps from [anchor], extending a server-backed
   /// window when needed. The centered response proves whether [anchor] is at
   /// the global boundary; a window-local index is never compared with the
   /// queue's global item count.
-  Future<QueueNavigationResult> _itemAfter(MediaItem anchor) async {
+  Future<QueueNavigationResult> _itemAtOffset(MediaItem anchor, int delta) async {
     final anchorId = playQueueItemIdFor(anchor);
     if (anchorId == null) return const QueueNavigationResult.unavailable();
     var anchorIndex = _findLoadedIndex(anchorId);
     if (anchorIndex == -1) return const QueueNavigationResult.unavailable();
 
-    if (anchorIndex + 1 < _loadedItems.length) {
-      return QueueNavigationResult.found(_loadedItems[anchorIndex + 1]);
+    var target = anchorIndex + delta;
+    if (target >= 0 && target < _loadedItems.length) {
+      return QueueNavigationResult.found(_loadedItems[target]);
     }
 
     // Local queues are fully resident, so their window edge is the queue edge.
@@ -382,43 +383,15 @@ class PlaybackStateProvider with ChangeNotifier, DisposableChangeNotifierMixin {
     }
 
     // Refresh around the actual anchor. Queue ids are opaque and need not be
-    // consecutive, so never guess `anchorId + 1`.
+    // consecutive, so never guess the neighbour's id.
     if (!await _loadServerWindow(anchorId)) {
       return const QueueNavigationResult.failed();
     }
     anchorIndex = _findLoadedIndex(anchorId);
     if (anchorIndex == -1) return const QueueNavigationResult.failed();
-    return anchorIndex + 1 < _loadedItems.length
-        ? QueueNavigationResult.found(_loadedItems[anchorIndex + 1])
-        : const QueueNavigationResult.boundary();
-  }
-
-  /// The queue item immediately before [anchor], extending a server-backed
-  /// window when needed.
-  Future<QueueNavigationResult> _itemBefore(MediaItem anchor) async {
-    final anchorId = playQueueItemIdFor(anchor);
-    if (anchorId == null) return const QueueNavigationResult.unavailable();
-    var anchorIndex = _findLoadedIndex(anchorId);
-    if (anchorIndex == -1) return const QueueNavigationResult.unavailable();
-
-    if (anchorIndex > 0) {
-      return QueueNavigationResult.found(_loadedItems[anchorIndex - 1]);
-    }
-
-    if (_windowFetcher == null || _playQueueId == null) {
-      return const QueueNavigationResult.boundary();
-    }
-    if (_playQueueTotalCount > 0 && _loadedItems.length >= _playQueueTotalCount) {
-      return const QueueNavigationResult.boundary();
-    }
-
-    if (!await _loadServerWindow(anchorId)) {
-      return const QueueNavigationResult.failed();
-    }
-    anchorIndex = _findLoadedIndex(anchorId);
-    if (anchorIndex == -1) return const QueueNavigationResult.failed();
-    return anchorIndex > 0
-        ? QueueNavigationResult.found(_loadedItems[anchorIndex - 1])
+    target = anchorIndex + delta;
+    return target >= 0 && target < _loadedItems.length
+        ? QueueNavigationResult.found(_loadedItems[target])
         : const QueueNavigationResult.boundary();
   }
 

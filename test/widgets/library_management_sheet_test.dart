@@ -15,7 +15,6 @@ import 'package:plezy/providers/hidden_libraries_provider.dart';
 import 'package:plezy/providers/libraries_provider.dart';
 import 'package:plezy/providers/multi_server_provider.dart';
 import 'package:plezy/theme/mono_theme.dart';
-import 'package:plezy/services/data_aggregation_service.dart';
 import 'package:plezy/services/multi_server_manager.dart';
 import 'package:plezy/services/plex_api_cache.dart';
 import 'package:plezy/utils/platform_detector.dart';
@@ -24,6 +23,7 @@ import 'package:plezy/widgets/overlay_sheet.dart';
 import 'package:provider/provider.dart';
 
 import '../test_helpers/backend_client_fixtures.dart';
+import '../test_helpers/multi_server_fixtures.dart';
 
 import '../test_helpers/prefs.dart';
 
@@ -49,8 +49,7 @@ Future<({int Function() selects, int Function() backs})> _pumpLibraryManagementL
   addTearDown(hiddenLibrariesProvider.dispose);
 
   final fallbackManager = multiServerProvider == null ? MultiServerManager() : null;
-  final effectiveMultiServerProvider =
-      multiServerProvider ?? MultiServerProvider(fallbackManager!, DataAggregationService(fallbackManager));
+  final effectiveMultiServerProvider = multiServerProvider ?? testMultiServerProvider(fallbackManager!);
   if (fallbackManager != null) {
     addTearDown(() {
       effectiveMultiServerProvider.dispose();
@@ -268,7 +267,7 @@ class _LibraryActionHarness {
       );
       manager.debugRegisterClientForTesting(owner);
     }
-    provider = MultiServerProvider(manager, DataAggregationService(manager));
+    provider = testMultiServerProvider(manager);
   }
 
   void dispose() {

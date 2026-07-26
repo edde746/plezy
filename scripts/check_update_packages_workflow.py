@@ -5,6 +5,8 @@ from pathlib import Path
 import re
 import sys
 
+from workflow_yaml import job_block
+
 
 WORKFLOW = Path(__file__).resolve().parents[1] / ".github/workflows/update-packages.yml"
 text = WORKFLOW.read_text(encoding="utf-8")
@@ -17,11 +19,9 @@ def require(condition: bool, message: str) -> None:
 
 
 def job(name: str) -> str:
-    match = re.search(
-        rf"(?ms)^  {re.escape(name)}:\n(.*?)(?=^  [a-zA-Z0-9_-]+:\n|\Z)", text
-    )
-    require(match is not None, f"missing {name} job")
-    return match.group(0) if match else ""
+    block = job_block(text, name)
+    require(bool(block), f"missing {name} job")
+    return block
 
 
 require(

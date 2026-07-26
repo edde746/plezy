@@ -1328,46 +1328,23 @@ class DownloadManagerService {
           );
         }
 
-        var artworkSettled = !queueItem.downloadArtwork;
-        if (queueItem.downloadArtwork) {
-          final itemArtworkSettled = await _downloadArtwork(globalKey, metadata, client);
-          final chapterArtworkSettled = metadata.serverId == null
-              ? false
-              : await _downloadChapterThumbnails(ServerId(metadata.serverId!), metadata.id, client);
-          artworkSettled = itemArtworkSettled && chapterArtworkSettled;
-        }
-
-        var subtitlesSettled = !queueItem.downloadSubtitles;
-        if (queueItem.downloadSubtitles) {
-          try {
-            final resolution = await client.resolveDownload(
-              metadata,
-              mediaIndex: record?.mediaIndex ?? 0,
-              mediaSourceId: record?.mediaSourceId,
-            );
-            if (resolution.externalSubtitlesResolved) {
-              subtitlesSettled = await _downloadSubtitles(
-                globalKey,
-                metadata,
-                resolution.externalSubtitles,
-                client,
-                showYear: showYear,
-              );
-            } else {
-              appLogger.d('Subtitle enrichment remains deferred for $globalKey');
-            }
-          } catch (e, st) {
-            appLogger.w('Could not resolve subtitles for deferred download: $globalKey', error: e, stackTrace: st);
-          }
-        }
-        if (artworkSettled && subtitlesSettled) {
+        final settled = await _runSupplementaryDownloads(
+          globalKey,
+          metadata,
+          client,
+          downloadArtwork: queueItem.downloadArtwork,
+          downloadSubtitles: queueItem.downloadSubtitles,
+          record: record,
+          showYear: showYear,
+        );
+        if (settled.artwork && settled.subtitles) {
           await _database.removeFromQueue(globalKey);
           appLogger.i('Deferred supplementary downloads completed for $globalKey');
         } else {
           await _database.updateSupplementaryQueueIntent(
             globalKey,
-            downloadSubtitles: !subtitlesSettled,
-            downloadArtwork: !artworkSettled,
+            downloadSubtitles: !settled.subtitles,
+            downloadArtwork: !settled.artwork,
           );
         }
       } catch (e, st) {
@@ -1596,17 +1573,8 @@ class DownloadManagerService {
     if (client != null) unawaited(_processQueue(client));
   }
 
-  Future<void> _cancelNativeTask(String globalKey, String taskId, {required String reason}) async {
-    if (!downloadsSupported || taskId.isEmpty) return;
-    try {
-      final cancelled = await FileDownloader().cancelTaskWithId(taskId);
-      if (cancelled) {
-        appLogger.d('Cancelled native task $taskId for $globalKey ($reason)');
-      }
-    } catch (e) {
-      appLogger.w('Failed to cancel native task $taskId for $globalKey ($reason)', error: e);
-    }
-  }
+  Future<void> _cancelNativeTask(String globalKey, String taskId, {required String reason}) =>
+      _cancelNativeTaskIds(globalKey, [taskId], reason: reason);
 
   Future<void> _cancelNativeTasksForGlobalKey(
     String globalKey, {
@@ -1629,16 +1597,7 @@ class DownloadManagerService {
       appLogger.w('Failed to enumerate native tasks for $globalKey ($reason)', error: e);
     }
 
-    if (taskIds.isEmpty) return;
-
-    try {
-      final cancelled = await FileDownloader().cancelTasksWithIds(taskIds);
-      if (cancelled) {
-        appLogger.d('Cancelled ${taskIds.length} native task(s) for $globalKey ($reason): ${taskIds.join(', ')}');
-      }
-    } catch (e) {
-      appLogger.w('Failed to cancel native tasks for $globalKey ($reason): ${taskIds.join(', ')}', error: e);
-    }
+    await _cancelNativeTaskIds(globalKey, taskIds, reason: reason);
   }
 
   Future<DownloadedMediaItem?> _downloadForCurrentTaskSession(
@@ -1690,6 +1649,20 @@ class DownloadManagerService {
     await _database.removeFromQueue(globalKey);
     _pendingDownloadContext.remove(globalKey);
     return true;
+  }
+
+  /// Hand a prepared task to the native downloader, recording its id first so a
+  /// concurrent cancel can find it. Returns true if the download went inactive
+  /// while enqueueing and the task was dropped again.
+  Future<bool> _enqueuePreparedTask(String globalKey, Task task, String kind) async {
+    await _database.updateBgTaskId(globalKey, task.taskId);
+    final success = await FileDownloader().enqueue(task);
+    if (!success) throw Exception('Failed to enqueue $kind task');
+    if (await _cancelEnqueuedTaskIfInactive(globalKey, task.taskId)) {
+      return true;
+    }
+    appLogger.i('Enqueued $kind task ${task.taskId} for $globalKey');
+    return false;
   }
 
   /// Resolve metadata, video URL, and file path, then enqueue a background download task.
@@ -1799,38 +1772,30 @@ class DownloadManagerService {
         if (_queueBlockedByStorageFailure) return true;
         final metadata = resolvedMetadata;
         final safBaseUri = _storageService.safBaseUri;
+        final DownloadTask task;
+        final String filePath;
+        final String? safRootUri;
         if (_storageService.isUsingSaf && safBaseUri != null) {
-          final safRootUri = await _safStorage.resolvePersistedPermissionUri(safBaseUri);
-          if (safRootUri == null) {
+          final rootUri = await _safStorage.resolvePersistedPermissionUri(safBaseUri);
+          if (rootUri == null) {
             throw StateError('Selected SAF root has no persisted permission');
           }
-          await _replaceDownloadSafRootClaim(globalKey, safRootUri);
+          await _replaceDownloadSafRootClaim(globalKey, rootUri);
 
           // SAF mode: use UriDownloadTask (writes directly to content:// URI,
           // with no pause/resume support).
-          final List<String> pathComponents;
-          final String safFileName;
-          if (metadata.isMovie) {
-            pathComponents = _storageService.getMovieSafPathComponents(metadata);
-            safFileName = _storageService.getMovieSafFileName(metadata, ext);
-          } else if (metadata.isEpisode) {
-            pathComponents = _storageService.getEpisodeSafPathComponents(metadata, showYear: showYear);
-            safFileName = _storageService.getEpisodeSafFileName(metadata, ext);
-          } else {
-            pathComponents = [serverId, metadata.id];
-            safFileName = 'video.$ext';
-          }
+          final target = _storageService.safTarget(metadata, ext, showYear: showYear, serverId: serverId);
 
-          final safDirUri = await _safStorage.createNestedDirectories(safRootUri, pathComponents);
+          final safDirUri = await _safStorage.createNestedDirectories(rootUri, target.components);
           if (safDirUri == null) {
             throw Exception('Failed to create SAF directory');
           }
 
-          await _cleanupSafTargetFile(safDirUri, safFileName);
+          await _cleanupSafTargetFile(safDirUri, target.fileName);
 
-          final task = UriDownloadTask(
+          task = UriDownloadTask(
             url: resolution.videoUrl!,
-            filename: safFileName,
+            filename: target.fileName,
             directoryUri: Uri.parse(safDirUri),
             group: _downloadGroup,
             updates: Updates.statusAndProgress,
@@ -1840,82 +1805,60 @@ class DownloadManagerService {
             metaData: globalKey,
             displayName: displayName,
           );
-
-          _pendingDownloadContext[globalKey] = _DownloadContext(
-            metadata: metadata,
-            queueItem: queueItem,
-            filePath: safDirUri,
-            extension: ext,
-            client: client,
-            showYear: showYear,
-            isSafMode: true,
-            safRootUri: safRootUri,
-            subtitles: resolution.externalSubtitlesResolved ? resolution.externalSubtitles : null,
-          );
-
-          await _database.updateBgTaskId(globalKey, task.taskId);
-          final success = await FileDownloader().enqueue(task);
-          if (!success) throw Exception('Failed to enqueue SAF download task');
-          if (await _cancelEnqueuedTaskIfInactive(globalKey, task.taskId)) {
-            return true;
-          }
-          appLogger.i('Enqueued SAF download task ${task.taskId} for $globalKey');
-          return false;
-        }
-
-        await _replaceDownloadSafRootClaim(globalKey, null);
-
-        // Normal mode: use DownloadTask with pause/resume support.
-        String downloadFilePath;
-        if (metadata.isMovie) {
-          downloadFilePath = await _storageService.getMovieVideoPath(metadata, ext);
-        } else if (metadata.isEpisode) {
-          downloadFilePath = await _storageService.getEpisodeVideoPath(metadata, ext, showYear: showYear);
+          filePath = safDirUri;
+          safRootUri = rootUri;
         } else {
-          downloadFilePath = await _storageService.getVideoFilePath(serverId, metadata.id, ext);
+          await _replaceDownloadSafRootClaim(globalKey, null);
+
+          // Normal mode: use DownloadTask with pause/resume support.
+          final String downloadFilePath;
+          if (metadata.isMovie) {
+            downloadFilePath = await _storageService.getMovieVideoPath(metadata, ext);
+          } else if (metadata.isEpisode) {
+            downloadFilePath = await _storageService.getEpisodeVideoPath(metadata, ext, showYear: showYear);
+          } else {
+            downloadFilePath = await _storageService.getVideoFilePath(serverId, metadata.id, ext);
+          }
+
+          // Clean up partial files from previous attempts to prevent
+          // background_downloader from creating numbered copies (File (1).mp4).
+          await Future.wait([
+            _deleteFileIfExists(File(downloadFilePath), 'stale video before re-download'),
+            _deleteFileIfExists(File('$downloadFilePath.part'), 'stale .part before re-download'),
+          ]);
+
+          await File(downloadFilePath).parent.create(recursive: true);
+
+          task = DownloadTask(
+            url: resolution.videoUrl!,
+            filename: path.basename(downloadFilePath),
+            directory: path.dirname(downloadFilePath),
+            baseDirectory: BaseDirectory.root,
+            group: _downloadGroup,
+            updates: Updates.statusAndProgress,
+            requiresWiFi: requiresWiFi,
+            retries: _nativeRetries,
+            allowPause: true,
+            metaData: globalKey,
+            displayName: displayName,
+          );
+          filePath = downloadFilePath;
+          safRootUri = null;
         }
-
-        // Clean up partial files from previous attempts to prevent
-        // background_downloader from creating numbered copies (File (1).mp4).
-        await Future.wait([
-          _deleteFileIfExists(File(downloadFilePath), 'stale video before re-download'),
-          _deleteFileIfExists(File('$downloadFilePath.part'), 'stale .part before re-download'),
-        ]);
-
-        await File(downloadFilePath).parent.create(recursive: true);
-
-        final task = DownloadTask(
-          url: resolution.videoUrl!,
-          filename: path.basename(downloadFilePath),
-          directory: path.dirname(downloadFilePath),
-          baseDirectory: BaseDirectory.root,
-          group: _downloadGroup,
-          updates: Updates.statusAndProgress,
-          requiresWiFi: requiresWiFi,
-          retries: _nativeRetries,
-          allowPause: true,
-          metaData: globalKey,
-          displayName: displayName,
-        );
 
         _pendingDownloadContext[globalKey] = _DownloadContext(
           metadata: metadata,
           queueItem: queueItem,
-          filePath: downloadFilePath,
+          filePath: filePath,
           extension: ext,
           client: client,
           showYear: showYear,
+          isSafMode: safRootUri != null,
+          safRootUri: safRootUri,
           subtitles: resolution.externalSubtitlesResolved ? resolution.externalSubtitles : null,
         );
 
-        await _database.updateBgTaskId(globalKey, task.taskId);
-        final success = await FileDownloader().enqueue(task);
-        if (!success) throw Exception('Failed to enqueue download task');
-        if (await _cancelEnqueuedTaskIfInactive(globalKey, task.taskId)) {
-          return true;
-        }
-        appLogger.i('Enqueued download task ${task.taskId} for $globalKey');
-        return false;
+        return _enqueuePreparedTask(globalKey, task, safRootUri != null ? 'SAF download' : 'download');
       });
       if (becameInactive) return true;
       return true;
@@ -2395,36 +2338,20 @@ class DownloadManagerService {
       try {
         final metadata = ctx?.metadata ?? await _resolveMetadata(globalKey);
         final client = ctx?.client ?? await _getClientForDownloadKey(globalKey);
-        final showYear = ctx?.showYear;
 
         if (metadata != null && client != null) {
-          if (downloadArtwork) {
-            final itemArtworkSettled = await _downloadArtwork(globalKey, metadata, client);
-            final chapterArtworkSettled = metadata.serverId == null
-                ? false
-                : await _downloadChapterThumbnails(ServerId(metadata.serverId!), metadata.id, client);
-            artworkSettled = itemArtworkSettled && chapterArtworkSettled;
-          }
-          if (downloadSubtitles) {
-            var subtitles = ctx?.subtitles;
-            if (subtitles == null) {
-              try {
-                final resolution = await client.resolveDownload(
-                  metadata,
-                  mediaIndex: existingCheck.mediaIndex,
-                  mediaSourceId: existingCheck.mediaSourceId,
-                );
-                if (resolution.externalSubtitlesResolved) {
-                  subtitles = resolution.externalSubtitles;
-                }
-              } catch (e, st) {
-                appLogger.w('Could not re-resolve subtitles for $globalKey', error: e, stackTrace: st);
-              }
-            }
-            if (subtitles != null) {
-              subtitlesSettled = await _downloadSubtitles(globalKey, metadata, subtitles, client, showYear: showYear);
-            }
-          }
+          final settled = await _runSupplementaryDownloads(
+            globalKey,
+            metadata,
+            client,
+            downloadArtwork: downloadArtwork,
+            downloadSubtitles: downloadSubtitles,
+            record: existingCheck,
+            showYear: ctx?.showYear,
+            preresolvedSubtitles: ctx?.subtitles,
+          );
+          artworkSettled = settled.artwork;
+          subtitlesSettled = settled.subtitles;
         }
       } catch (e, st) {
         appLogger.w('Supplementary downloads failed for $globalKey (video is saved)', error: e, stackTrace: st);
@@ -2479,23 +2406,12 @@ class DownloadManagerService {
   }
 
   Future<String?> _resolveSafStoredPath(MediaItem metadata, String ext, int? showYear, String safRootUri) async {
-    final List<String> pathComponents;
-    final String safFileName;
-    if (metadata.isMovie) {
-      pathComponents = _storageService.getMovieSafPathComponents(metadata);
-      safFileName = _storageService.getMovieSafFileName(metadata, ext);
-    } else if (metadata.isEpisode) {
-      pathComponents = _storageService.getEpisodeSafPathComponents(metadata, showYear: showYear);
-      safFileName = _storageService.getEpisodeSafFileName(metadata, ext);
-    } else {
-      pathComponents = [metadata.serverId!, metadata.id];
-      safFileName = 'video.$ext';
-    }
+    final target = _storageService.safTarget(metadata, ext, showYear: showYear, serverId: metadata.serverId);
 
-    final dirUri = await _safStorage.createNestedDirectories(safRootUri, pathComponents);
+    final dirUri = await _safStorage.createNestedDirectories(safRootUri, target.components);
     if (dirUri == null) return null;
 
-    final child = await _safStorage.getChild(dirUri, [safFileName]);
+    final child = await _safStorage.getChild(dirUri, [target.fileName]);
     return child?.uri;
   }
 
@@ -2519,6 +2435,58 @@ class DownloadManagerService {
     final serverId = metadata.serverId;
     if (!metadata.isEpisode || serverId == null) return Future.value();
     return _fetchShowYear(ServerId(serverId), metadata.grandparentId, clientScopeId: clientScopeId);
+  }
+
+  /// Best-effort supplementary work for an already-stored video (artwork,
+  /// chapter thumbnails, external subtitles); reports which half settled so the
+  /// caller can do its own queue-row bookkeeping. Shared by the completion path
+  /// and the deferred-repair path: [record] carries the media-source
+  /// coordinates for re-resolving subtitles, [preresolvedSubtitles] skips that
+  /// re-resolve, and [showYear] is caller-supplied because the paths differ.
+  Future<({bool artwork, bool subtitles})> _runSupplementaryDownloads(
+    String globalKey,
+    MediaItem metadata,
+    MediaServerClient client, {
+    required bool downloadArtwork,
+    required bool downloadSubtitles,
+    required DownloadedMediaItem? record,
+    required int? showYear,
+    List<DownloadSubtitleSpec>? preresolvedSubtitles,
+  }) async {
+    var artworkSettled = !downloadArtwork;
+    if (downloadArtwork) {
+      final itemArtworkSettled = await _downloadArtwork(globalKey, metadata, client);
+      final chapterArtworkSettled = metadata.serverId == null
+          ? false
+          : await _downloadChapterThumbnails(ServerId(metadata.serverId!), metadata.id, client);
+      artworkSettled = itemArtworkSettled && chapterArtworkSettled;
+    }
+
+    var subtitlesSettled = !downloadSubtitles;
+    if (downloadSubtitles) {
+      try {
+        var subtitles = preresolvedSubtitles;
+        if (subtitles == null) {
+          final resolution = await client.resolveDownload(
+            metadata,
+            mediaIndex: record?.mediaIndex ?? 0,
+            mediaSourceId: record?.mediaSourceId,
+          );
+          if (resolution.externalSubtitlesResolved) {
+            subtitles = resolution.externalSubtitles;
+          } else {
+            appLogger.d('Subtitle enrichment remains deferred for $globalKey');
+          }
+        }
+        if (subtitles != null) {
+          subtitlesSettled = await _downloadSubtitles(globalKey, metadata, subtitles, client, showYear: showYear);
+        }
+      } catch (e, st) {
+        appLogger.w('Could not resolve subtitles for $globalKey', error: e, stackTrace: st);
+      }
+    }
+
+    return (artwork: artworkSettled, subtitles: subtitlesSettled);
   }
 
   Future<bool> _downloadArtwork(String globalKey, MediaItem metadata, MediaServerClient client) async {
@@ -3271,22 +3239,37 @@ class DownloadManagerService {
     }
   }
 
-  Future<void> _deleteMovieStorageDirectory(MediaItem movie) async {
+  /// Delete one media directory and everything under it, on either storage backend.
+  /// [safComponents] and [fileDirectory] are thunks so only the branch that runs
+  /// resolves its path — the file-mode getters create the directory as a side effect.
+  Future<void> _deleteStorageDirectory({
+    required List<String> Function() safComponents,
+    required Future<Directory> Function() fileDirectory,
+    required String label,
+  }) async {
     if (_storageService.isUsingSaf) {
       final safBaseUri = _storageService.safBaseUri;
       if (safBaseUri == null) return;
-      final movieDir = await _safStorage.getChild(safBaseUri, _storageService.getMovieSafPathComponents(movie));
-      if (movieDir != null) {
-        await _deleteSafDirRecursive(movieDir.uri, description: 'movie directory');
+      final dir = await _safStorage.getChild(safBaseUri, safComponents());
+      if (dir != null) {
+        await _deleteSafDirRecursive(dir.uri, description: '$label directory');
       }
       return;
     }
 
-    final movieDir = await _storageService.getMovieDirectory(movie);
-    if (await movieDir.exists()) {
-      await movieDir.delete(recursive: true);
-      appLogger.i('Deleted movie directory: ${movieDir.path}');
+    final dir = await fileDirectory();
+    if (await dir.exists()) {
+      await dir.delete(recursive: true);
+      appLogger.i('Deleted $label directory: ${dir.path}');
     }
+  }
+
+  Future<void> _deleteMovieStorageDirectory(MediaItem movie) {
+    return _deleteStorageDirectory(
+      safComponents: () => _storageService.getMovieSafPathComponents(movie),
+      fileDirectory: () => _storageService.getMovieDirectory(movie),
+      label: 'movie',
+    );
   }
 
   Future<_EpisodeStorageDeletion> _deleteEpisodeStorageVideo(
@@ -3335,50 +3318,32 @@ class DownloadManagerService {
   }
 
   Future<void> _deleteSeasonStorageDirectory(MediaItem season, int? showYear) async {
+    await _deleteStorageDirectory(
+      safComponents: () => _storageService.getSeasonSafPathComponents(season, showYear: showYear),
+      fileDirectory: () => _storageService.getSeasonDirectory(season, showYear: showYear),
+      label: 'season',
+    );
+
+    // Drop the parent show directory too if the deleted season left it empty.
     if (_storageService.isUsingSaf) {
       final safBaseUri = _storageService.safBaseUri;
       if (safBaseUri == null) return;
-      final seasonDir = await _safStorage.getChild(
-        safBaseUri,
-        _storageService.getSeasonSafPathComponents(season, showYear: showYear),
-      );
-      if (seasonDir != null) {
-        await _deleteSafDirRecursive(seasonDir.uri, description: 'season directory');
-      }
       final showDir = await _safStorage.getChild(
         safBaseUri,
         _storageService.getShowSafPathComponents(season, showYear: showYear),
       );
-      if (showDir != null) {
-        await _deleteEmptySafDirsInOrder([showDir.uri]);
-      }
+      await _deleteEmptySafDirsInOrder([showDir?.uri]);
       return;
-    }
-
-    final seasonDir = await _storageService.getSeasonDirectory(season, showYear: showYear);
-    if (await seasonDir.exists()) {
-      await seasonDir.delete(recursive: true);
-      appLogger.i('Deleted season directory: ${seasonDir.path}');
     }
     await _cleanupShowDirectory(season, showYear);
   }
 
-  Future<void> _deleteShowStorageDirectory(MediaItem show) async {
-    if (_storageService.isUsingSaf) {
-      final safBaseUri = _storageService.safBaseUri;
-      if (safBaseUri == null) return;
-      final showDir = await _safStorage.getChild(safBaseUri, _storageService.getShowSafPathComponents(show));
-      if (showDir != null) {
-        await _deleteSafDirRecursive(showDir.uri, description: 'show directory');
-      }
-      return;
-    }
-
-    final showDir = await _storageService.getShowDirectory(show);
-    if (await showDir.exists()) {
-      await showDir.delete(recursive: true);
-      appLogger.i('Deleted show directory: ${showDir.path}');
-    }
+  Future<void> _deleteShowStorageDirectory(MediaItem show) {
+    return _deleteStorageDirectory(
+      safComponents: () => _storageService.getShowSafPathComponents(show),
+      fileDirectory: () => _storageService.getShowDirectory(show),
+      label: 'show',
+    );
   }
 
   /// Safety net: after metadata-based deletion, verify the actual DB-recorded

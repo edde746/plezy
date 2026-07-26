@@ -14,6 +14,7 @@ import 'package:plezy/services/episode_navigation_service.dart';
 import 'package:plezy/services/multi_server_manager.dart';
 import 'package:provider/provider.dart';
 import '../test_helpers/media_items.dart';
+import '../test_helpers/multi_server_fixtures.dart';
 
 MediaItem _meta(String id, {String? title}) =>
     testMediaItem(id: id, backend: MediaBackend.plex, kind: MediaKind.episode, title: title ?? 'Episode $id');
@@ -118,7 +119,7 @@ void main() {
       final playback = PlaybackStateProvider();
       addTearDown(playback.dispose);
       final manager = _StubManager(null);
-      final serverProvider = MultiServerProvider(manager, DataAggregationService(manager));
+      final serverProvider = testMultiServerProvider(manager);
       addTearDown(serverProvider.dispose);
 
       AdjacentEpisodes? result;
@@ -395,8 +396,7 @@ void main() {
         ],
       );
       final manager = _StubManager(client);
-      final aggregation = DataAggregationService(manager);
-      final serverProvider = MultiServerProvider(manager, aggregation);
+      final serverProvider = testMultiServerProvider(manager);
       addTearDown(serverProvider.dispose);
 
       AdjacentEpisodes? result;
@@ -430,7 +430,7 @@ void main() {
       addTearDown(playback.dispose);
       final client = _RecordingClient(seriesEpisodes: [ep1, ep2, ep3], clientBackend: MediaBackend.plex);
       final manager = _StubManager(client);
-      final serverProvider = MultiServerProvider(manager, DataAggregationService(manager));
+      final serverProvider = testMultiServerProvider(manager);
       addTearDown(serverProvider.dispose);
 
       AdjacentEpisodes? result;
@@ -463,7 +463,7 @@ void main() {
         fetchError: StateError('network unavailable'),
       );
       final manager = _StubManager(client);
-      final serverProvider = MultiServerProvider(manager, DataAggregationService(manager));
+      final serverProvider = testMultiServerProvider(manager);
       addTearDown(serverProvider.dispose);
 
       AdjacentEpisodes? result;
@@ -491,7 +491,7 @@ void main() {
       addTearDown(playback.dispose);
       final client = _RecordingClient(seriesEpisodes: [ep1, ep2], clientBackend: MediaBackend.plex);
       final manager = _StubManager(client);
-      final serverProvider = MultiServerProvider(manager, DataAggregationService(manager));
+      final serverProvider = testMultiServerProvider(manager);
       addTearDown(serverProvider.dispose);
 
       AdjacentEpisodes? result;
@@ -549,7 +549,7 @@ void main() {
       );
       final client = _RecordingClient(seriesEpisodes: [ep1, ep2, ep3, ep4, ep5]);
       final manager = _StubManager(client);
-      final serverProvider = MultiServerProvider(manager, DataAggregationService(manager));
+      final serverProvider = testMultiServerProvider(manager);
       addTearDown(serverProvider.dispose);
       return (playback, client, serverProvider);
     }
@@ -622,7 +622,7 @@ void main() {
       addTearDown(playback.dispose);
       final client = _RecordingClient(seriesEpisodes: [ep1, ep2, ep3, ep4, ep5]);
       final manager = _StubManager(client);
-      final serverProvider = MultiServerProvider(manager, DataAggregationService(manager));
+      final serverProvider = testMultiServerProvider(manager);
       addTearDown(serverProvider.dispose);
 
       final result = await probe(tester, playback, serverProvider, ep3);

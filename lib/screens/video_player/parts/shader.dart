@@ -22,6 +22,36 @@ extension _VideoPlayerShaderMethods on VideoPlayerScreenState {
     }
   }
 
+  /// Enable ambient lighting for the current video/player geometry.
+  /// Returns false when the aspect ratios cannot be determined yet.
+  Future<bool> _enableAmbientLighting(AmbientLightingService ambientLighting, ShaderProvider shaderProvider) async {
+    // Get video display aspect ratio
+    final dwidth = await player?.getProperty('dwidth');
+    final dheight = await player?.getProperty('dheight');
+    if (dwidth == null || dheight == null) return false;
+    final w = double.tryParse(dwidth);
+    final h = double.tryParse(dheight);
+    if (w == null || h == null || h == 0) return false;
+    final videoAspect = w / h;
+
+    // Get player widget aspect ratio
+    final playerSize = _videoFilterManager?.playerSize;
+    if (playerSize == null || playerSize.height == 0) return false;
+    final outputAspect = playerSize.width / playerSize.height;
+
+    // Clear shaders — ambient lighting and shaders are mutually exclusive
+    if (shaderProvider.isShaderEnabled) {
+      await _shaderService!.applyPreset(ShaderPreset.none);
+      shaderProvider.setCurrentPreset(ShaderPreset.none);
+    }
+
+    // Force contain mode when enabling ambient lighting
+    _videoFilterManager?.resetToContain();
+
+    await ambientLighting.enable(videoAspect, outputAspect);
+    return true;
+  }
+
   /// Restore ambient lighting from persisted setting
   Future<void> _restoreAmbientLighting() async {
     if (!mounted) return;
@@ -34,27 +64,7 @@ extension _VideoPlayerShaderMethods on VideoPlayerScreenState {
     final ambientLighting = _ambientLightingService;
     if (ambientLighting == null || !ambientLighting.isSupported) return;
 
-    // Same enable logic as _toggleAmbientLighting
-    final dwidth = await player?.getProperty('dwidth');
-    final dheight = await player?.getProperty('dheight');
-    if (dwidth == null || dheight == null) return;
-    final w = double.tryParse(dwidth);
-    final h = double.tryParse(dheight);
-    if (w == null || h == null || h == 0) return;
-    final videoAspect = w / h;
-
-    final playerSize = _videoFilterManager?.playerSize;
-    if (playerSize == null || playerSize.height == 0) return;
-    final outputAspect = playerSize.width / playerSize.height;
-
-    // Clear shaders — ambient lighting and shaders are mutually exclusive
-    if (shaderProvider.isShaderEnabled) {
-      await _shaderService!.applyPreset(ShaderPreset.none);
-      shaderProvider.setCurrentPreset(ShaderPreset.none);
-    }
-
-    _videoFilterManager?.resetToContain();
-    await ambientLighting.enable(videoAspect, outputAspect);
+    if (!await _enableAmbientLighting(ambientLighting, shaderProvider)) return;
     if (mounted) _setPlayerState(() {});
   }
 
@@ -117,30 +127,7 @@ extension _VideoPlayerShaderMethods on VideoPlayerScreenState {
       await ambientLighting.disable();
       unawaited(_videoFilterManager?.updateVideoFilter());
     } else {
-      // Get video display aspect ratio
-      final dwidth = await player?.getProperty('dwidth');
-      final dheight = await player?.getProperty('dheight');
-      if (dwidth == null || dheight == null) return;
-      final w = double.tryParse(dwidth);
-      final h = double.tryParse(dheight);
-      if (w == null || h == null || h == 0) return;
-      final videoAspect = w / h;
-
-      // Get player widget aspect ratio
-      final playerSize = _videoFilterManager?.playerSize;
-      if (playerSize == null || playerSize.height == 0) return;
-      final outputAspect = playerSize.width / playerSize.height;
-
-      // Clear shaders — ambient lighting and shaders are mutually exclusive
-      if (shaderProvider.isShaderEnabled) {
-        await _shaderService!.applyPreset(ShaderPreset.none);
-        shaderProvider.setCurrentPreset(ShaderPreset.none);
-      }
-
-      // Force contain mode when enabling ambient lighting
-      _videoFilterManager?.resetToContain();
-
-      await ambientLighting.enable(videoAspect, outputAspect);
+      if (!await _enableAmbientLighting(ambientLighting, shaderProvider)) return;
     }
 
     // Persist ambient lighting state

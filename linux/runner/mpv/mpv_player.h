@@ -242,15 +242,9 @@ class MpvPlayer {
   void LogRecovery(const std::string& text);
   void SetHDREnabled(bool enabled, StatusCallback callback = nullptr);
 
-  struct NodeConversionBudget {
-    size_t remaining_entries;
-    size_t remaining_bytes;
-  };
-
-  /// Helper to convert mpv_node to FlValue.
+  /// Helper to convert mpv_node to FlValue, bounded by the shared node budget.
   ::_FlValue* NodeToFlValue(mpv_node* node);
-  ::_FlValue* NodeToFlValue(mpv_node* node, size_t depth, NodeConversionBudget* budget);
-  bool ConvertNodeString(const char* input, NodeConversionBudget* budget, std::string* result);
+  ::_FlValue* NodeToFlValue(mpv_node* node, plezy::mpv_common::NodeConversionBudget* budget);
 
   const bool audio_only_;
   mpv_handle* mpv_ = nullptr;

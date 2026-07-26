@@ -26,7 +26,7 @@ class PlexHomeService {
     this._storage,
     Future<List<PlexHomeUser>> Function(String accountToken)? plexHomeUserFetcher,
     this._refreshInterval = const Duration(hours: 1),
-  }) : _fetchHomeUsers = plexHomeUserFetcher ?? _defaultHomeUserFetcher;
+  }) : _fetchHomeUsers = plexHomeUserFetcher ?? fetchPlexHomeUsers;
 
   final ConnectionRegistry _connections;
   final ProfileConnectionRegistry _profileConnections;
@@ -496,15 +496,5 @@ class PlexHomeService {
     _startFuture = null;
     if (!_controller.isClosed) await _controller.close();
     _started = false;
-  }
-}
-
-Future<List<PlexHomeUser>> _defaultHomeUserFetcher(String accountToken) async {
-  final auth = await PlexAuthService.create();
-  try {
-    final home = await auth.getHomeUsers(accountToken);
-    return home.users;
-  } finally {
-    auth.dispose();
   }
 }

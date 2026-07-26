@@ -227,38 +227,60 @@ class _NotInSessionViewState extends State<_NotInSessionView> with MountedSetSta
     );
   }
 
+  /// Persists [code] as a recent room for the active profile and refreshes the
+  /// list. A null [controlMode] leaves any stored mode untouched.
+  Future<void> _recordRecentRoom(String code, {ControlMode? controlMode}) async {
+    final profileId = _profileId;
+    if (profileId == null || profileId.isEmpty) return;
+    await RecentRoomsService.addOrUpdateRoom(
+      code,
+      profileId: profileId,
+      endpoint: _relayEndpoint,
+      controlMode: controlMode,
+    );
+    setStateIfMounted(() => _recentRooms = _loadRecentRooms());
+  }
+
+  /// Runs [action] behind a busy flag, logging [logMessage] and showing
+  /// [failureMessage] in a snackbar when it throws.
+  Future<void> _runSessionAction({
+    required void Function(bool busy) setBusy,
+    required String logMessage,
+    required String failureMessage,
+    required Future<void> Function() action,
+  }) async {
+    setState(() => setBusy(true));
+    try {
+      await action();
+    } catch (e) {
+      appLogger.e(logMessage, error: e);
+      if (mounted) {
+        showErrorSnackBar(context, '$failureMessage: $e');
+      }
+    } finally {
+      if (mounted) {
+        setState(() => setBusy(false));
+      }
+    }
+  }
+
   Future<void> _createSession() async {
     final controlMode = await _showControlModeDialog();
     if (controlMode == null || !mounted) return;
 
-    setState(() => _isCreating = true);
-
-    try {
-      final sessionId = await widget.watchTogether.createSession(
-        controlMode: controlMode,
-        relayEndpoint: _relayEndpoint,
-        displayName: _plexDisplayName,
-      );
-      final profileId = _profileId;
-      if (profileId != null && profileId.isNotEmpty) {
-        await RecentRoomsService.addOrUpdateRoom(
-          sessionId,
-          profileId: profileId,
-          endpoint: _relayEndpoint,
+    await _runSessionAction(
+      setBusy: (busy) => _isCreating = busy,
+      logMessage: 'Failed to create session',
+      failureMessage: t.watchTogether.failedToCreate,
+      action: () async {
+        final sessionId = await widget.watchTogether.createSession(
           controlMode: controlMode,
+          relayEndpoint: _relayEndpoint,
+          displayName: _plexDisplayName,
         );
-        setStateIfMounted(() => _recentRooms = _loadRecentRooms());
-      }
-    } catch (e) {
-      appLogger.e('Failed to create session', error: e);
-      if (mounted) {
-        showErrorSnackBar(context, '${t.watchTogether.failedToCreate}: $e');
-      }
-    } finally {
-      if (mounted) {
-        setState(() => _isCreating = false);
-      }
-    }
+        await _recordRecentRoom(sessionId, controlMode: controlMode);
+      },
+    );
   }
 
   Future<ControlMode?> _showControlModeDialog() {
@@ -287,52 +309,32 @@ class _NotInSessionViewState extends State<_NotInSessionView> with MountedSetSta
     final sessionId = await showJoinSessionDialog(context);
     if (sessionId == null || !mounted) return;
 
-    setState(() => _isJoining = true);
-
-    try {
-      await widget.watchTogether.joinSession(sessionId, relayEndpoint: _relayEndpoint, displayName: _plexDisplayName);
-      final profileId = _profileId;
-      if (profileId != null && profileId.isNotEmpty) {
-        await RecentRoomsService.addOrUpdateRoom(sessionId, profileId: profileId, endpoint: _relayEndpoint);
-        setStateIfMounted(() => _recentRooms = _loadRecentRooms());
-      }
-    } catch (e) {
-      appLogger.e('Failed to join session', error: e);
-      if (mounted) {
-        showErrorSnackBar(context, '${t.watchTogether.failedToJoin}: $e');
-      }
-    } finally {
-      if (mounted) {
-        setState(() => _isJoining = false);
-      }
-    }
+    await _runSessionAction(
+      setBusy: (busy) => _isJoining = busy,
+      logMessage: 'Failed to join session',
+      failureMessage: t.watchTogether.failedToJoin,
+      action: () async {
+        await widget.watchTogether.joinSession(sessionId, relayEndpoint: _relayEndpoint, displayName: _plexDisplayName);
+        await _recordRecentRoom(sessionId);
+      },
+    );
   }
 
   Future<void> _enterRoom(RecentRoom room) async {
-    setState(() => _enteringRoomCode = room.code);
-
-    try {
-      await widget.watchTogether.enterRoom(
-        room.code,
-        relayEndpoint: _relayEndpoint,
-        controlMode: room.controlMode ?? ControlMode.anyone,
-        displayName: _plexDisplayName,
-      );
-      final profileId = _profileId;
-      if (profileId != null && profileId.isNotEmpty) {
-        await RecentRoomsService.addOrUpdateRoom(room.code, profileId: profileId, endpoint: _relayEndpoint);
-        setStateIfMounted(() => _recentRooms = _loadRecentRooms());
-      }
-    } catch (e) {
-      appLogger.e('Failed to enter room', error: e);
-      if (mounted) {
-        showErrorSnackBar(context, '${t.watchTogether.failedToJoin}: $e');
-      }
-    } finally {
-      if (mounted) {
-        setState(() => _enteringRoomCode = null);
-      }
-    }
+    await _runSessionAction(
+      setBusy: (busy) => _enteringRoomCode = busy ? room.code : null,
+      logMessage: 'Failed to enter room',
+      failureMessage: t.watchTogether.failedToJoin,
+      action: () async {
+        await widget.watchTogether.enterRoom(
+          room.code,
+          relayEndpoint: _relayEndpoint,
+          controlMode: room.controlMode ?? ControlMode.anyone,
+          displayName: _plexDisplayName,
+        );
+        await _recordRecentRoom(room.code);
+      },
+    );
   }
 
   Future<void> _renameRoom(RecentRoom room) async {

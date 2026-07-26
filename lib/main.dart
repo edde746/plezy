@@ -24,6 +24,7 @@ import 'profiles/profile.dart';
 import 'profiles/profile_connection_cleanup.dart';
 import 'profiles/profile_connection_registry.dart';
 import 'profiles/profile_registry.dart';
+import 'profiles/profile_selection_policy.dart';
 import 'mixins/mounted_set_state_mixin.dart';
 import 'theme/mono_theme.dart';
 import 'profiles/plex_home_service.dart';
@@ -1043,7 +1044,7 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
             return provider;
           },
           update: (_, multiServerProvider, previous) {
-            final provider = previous ?? OfflineModeProvider(_serverManager, multiServerProvider: multiServerProvider);
+            final provider = previous!;
             provider.updateMultiServerProvider(multiServerProvider);
             provider.initialize(); // Idempotent - safe to call again
             return provider;
@@ -1069,8 +1070,7 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
               pinPrompt: _rootPinPrompt,
               shouldDeferInitialBind: (_) async {
                 final settings = await SettingsService.getInstance();
-                return settings.read(SettingsService.requireProfileSelectionOnOpen) &&
-                    activeProfile.hasMultipleProfiles;
+                return activeProfile.requiresSelectionOnOpen(settings);
               },
             );
           },
@@ -1081,7 +1081,7 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
         ChangeNotifierProxyProvider<ActiveProfileProvider, DownloadProvider>(
           create: (context) => DownloadProvider(downloadManager: _downloadManager, database: _appDatabase),
           update: (context, activeProfile, previous) {
-            final provider = previous ?? DownloadProvider(downloadManager: _downloadManager, database: _appDatabase);
+            final provider = previous!;
             provider.setActiveProfileId(activeProfile.activeId);
             return provider;
           },
@@ -1134,7 +1134,7 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
             return _offlineWatchSyncService;
           },
           update: (_, activeProfile, previous) {
-            final provider = previous ?? _offlineWatchSyncService;
+            final provider = previous!;
             provider.setActiveProfileId(
               activeProfile.activeId,
               availableProfileCount: activeProfile.isInitialized ? activeProfile.profiles.length : null,
@@ -1147,14 +1147,12 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
             syncService: context.read<OfflineWatchSyncService>(),
             downloadProvider: context.read<DownloadProvider>(),
           ),
-          update: (_, syncService, downloadProvider, previous) {
-            return previous ?? OfflineWatchProvider(syncService: syncService, downloadProvider: downloadProvider);
-          },
+          update: (_, syncService, downloadProvider, previous) => previous!,
         ),
         ChangeNotifierProxyProvider2<ActiveProfileProvider, ConnectionRegistry, UserProfileProvider>(
           create: (context) => UserProfileProvider(storageService: context.read<StorageService>()),
           update: (context, activeProfile, connections, previous) {
-            final provider = previous ?? UserProfileProvider(storageService: context.read<StorageService>());
+            final provider = previous!;
             provider.attach(
               connections: connections,
               activeProfile: activeProfile,
@@ -1213,7 +1211,7 @@ class _AppShell extends StatelessWidget {
                     themeMode: themeProvider.materialThemeMode,
                     navigatorKey: rootNavigatorKey,
                     navigatorObservers: [BackKeySuppressorObserver()],
-                    home: OrientationAwareSetup(databaseRecoveryOutcome: databaseRecoveryOutcome),
+                    home: SetupScreen(databaseRecoveryOutcome: databaseRecoveryOutcome),
                     // Siri Remote select + gamepad A report as
                     // LogicalKeyboardKey.{select,gameButtonA} which aren't
                     // in Flutter's default shortcut set — Material-level
@@ -1300,32 +1298,6 @@ bool shouldBypassSetupForDatabaseRecovery(TvosDatabaseRecoveryOutcome outcome) {
   return outcome == TvosDatabaseRecoveryOutcome.recoveryRequired;
 }
 
-class OrientationAwareSetup extends StatefulWidget {
-  const OrientationAwareSetup({super.key, required this.databaseRecoveryOutcome});
-
-  final TvosDatabaseRecoveryOutcome databaseRecoveryOutcome;
-
-  @override
-  State<OrientationAwareSetup> createState() => _OrientationAwareSetupState();
-}
-
-class _OrientationAwareSetupState extends State<OrientationAwareSetup> {
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    _setOrientationPreferences();
-  }
-
-  void _setOrientationPreferences() {
-    OrientationHelper.restoreDefaultOrientations(context);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return SetupScreen(databaseRecoveryOutcome: widget.databaseRecoveryOutcome);
-  }
-}
-
 class SetupScreen extends StatefulWidget {
   const SetupScreen({
     super.key,
@@ -1354,6 +1326,15 @@ class _SetupScreenState extends State<SetupScreen> with MountedSetStateMixin {
   void initState() {
     super.initState();
     _loadSavedCredentials();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // The app's first screen: undo any orientation lock a previous run's
+    // full-screen player left behind, and re-apply it whenever the form
+    // factor signals (Theme.platform / MediaQuery size) change.
+    OrientationHelper.restoreDefaultOrientations(context);
   }
 
   void _setStatus(String message) {
@@ -1418,12 +1399,12 @@ class _SetupScreenState extends State<SetupScreen> with MountedSetStateMixin {
           profileRegistry: profileRegistry,
         );
         await bootstrap.run();
-        final pruned = await pruneUnreferencedJellyfinConnections(
+        final pruned = await ProfileConnectionCleanup(
           profileConnections: profileConnections,
           connections: connRegistry,
           storage: storage,
           serverManager: serverManager,
-        );
+        ).pruneUnreferencedJellyfinConnections();
         if (pruned > 0) {
           appLogger.i('Setup: pruned $pruned unreferenced Jellyfin connection${pruned == 1 ? '' : 's'}');
         }
@@ -1561,9 +1542,7 @@ class _SetupScreenState extends State<SetupScreen> with MountedSetStateMixin {
     final settings = await SettingsService.getInstance();
     if (!mounted) return;
     final hasNoActive = activeProfile.active == null && activeProfile.profiles.isNotEmpty;
-    final requireOnOpen =
-        settings.read(SettingsService.requireProfileSelectionOnOpen) && activeProfile.hasMultipleProfiles;
-    final shouldPrompt = hasNoActive || requireOnOpen;
+    final shouldPrompt = hasNoActive || activeProfile.requiresSelectionOnOpen(settings);
 
     var bindingSucceeded = activeProfile.lastBindingSucceeded;
     if (shouldPrompt) {

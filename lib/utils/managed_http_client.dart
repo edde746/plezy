@@ -240,6 +240,9 @@ class _ManagedStreamedResponseWithUrl extends http.StreamedResponse implements h
   final Uri url;
 }
 
+/// Deliberately not `AbortController`: this layer stays a plain [http.Client]
+/// with no media-server dependency, and it needs two independent latches
+/// (aborted vs. drained) plus the response canceller.
 class _TrackedRequest {
   _TrackedRequest(this.url);
 

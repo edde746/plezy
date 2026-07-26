@@ -8,6 +8,7 @@ import '../../focus/key_event_utils.dart';
 import '../../focus/focusable_button.dart';
 import '../../i18n/strings.g.dart';
 import '../../mixins/controller_disposer_mixin.dart';
+import '../../profiles/plex_home_switch.dart';
 import '../../utils/platform_detector.dart';
 import '../../widgets/app_icon.dart';
 import '../../widgets/clickable_cursor.dart';
@@ -697,6 +698,14 @@ Future<String?> showPinEntryDialog(BuildContext context, String userName, {Strin
     builder: (context) => PinEntryDialog(userName: userName, errorMessage: errorMessage),
   );
 }
+
+/// The [PlexHomeSwitchPinPrompt] every UI-side `mintPlexHomeUserToken` caller
+/// needs: show [showPinEntryDialog] for [displayName], or cancel the switch
+/// once [context] is gone. Only the *use* is guarded — build it before the
+/// caller's first await, while [context] is still live.
+PlexHomeSwitchPinPrompt dialogPinPrompt(BuildContext context, String displayName) =>
+    ({String? errorMessage}) async =>
+        context.mounted ? showPinEntryDialog(context, displayName, errorMessage: errorMessage) : null;
 
 /// Two-step "set + confirm" PIN entry. Returns the matching PIN, or null
 /// when the user cancels. On mismatch, surfaces a snackbar via [onMismatch]

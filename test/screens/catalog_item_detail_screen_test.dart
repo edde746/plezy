@@ -10,11 +10,9 @@ import 'package:plezy/media/media_item.dart';
 import 'package:plezy/models/catalog/catalog_cast_member.dart';
 import 'package:plezy/models/catalog/catalog_item.dart';
 import 'package:plezy/providers/catalog_sources_provider.dart';
-import 'package:plezy/providers/multi_server_provider.dart';
 import 'package:plezy/screens/catalog_item_detail_screen.dart';
 import 'package:plezy/services/catalog/catalog_source.dart';
 import 'package:plezy/services/catalog/catalog_library_matcher.dart';
-import 'package:plezy/services/data_aggregation_service.dart';
 import 'package:plezy/services/multi_server_manager.dart';
 import 'package:plezy/services/settings_service.dart';
 import 'package:plezy/theme/mono_theme.dart';
@@ -24,6 +22,7 @@ import 'package:plezy/widgets/media_card.dart';
 import 'package:provider/provider.dart';
 
 import '../test_helpers/media_items.dart';
+import '../test_helpers/multi_server_fixtures.dart';
 import '../test_helpers/prefs.dart';
 
 class _FakeCatalogSource implements CatalogSource {
@@ -127,7 +126,7 @@ Future<void> _pumpDetail(
 }) async {
   final sources = _FakeCatalogSourcesProvider(source);
   final serverManager = MultiServerManager();
-  final multiServer = MultiServerProvider(serverManager, DataAggregationService(serverManager));
+  final multiServer = testMultiServerProvider(serverManager);
   final matcher = _FakeCatalogLibraryMatcher(multiServer, matches);
   addTearDown(sources.dispose);
   addTearDown(source.dispose);

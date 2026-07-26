@@ -26,7 +26,6 @@ import '../widgets/desktop_app_bar.dart';
 import '../widgets/loading_indicator_box.dart';
 import '../widgets/overlay_sheet.dart';
 import '../focus/focusable_action_bar.dart';
-import '../focus/focusable_button.dart';
 import '../focus/key_event_utils.dart';
 import '../mixins/grid_focus_node_mixin.dart';
 import '../mixins/paginated_item_loader.dart';
@@ -493,34 +492,6 @@ class _HubDetailScreenState extends State<HubDetailScreen>
   Object? get _pageLoadError => _usesPaginatedLoader ? paginationError : _continuation.error;
   bool get _isLoadingPage => _usesPaginatedLoader ? isPaginationLoading : _continuation.isLoading;
 
-  Widget _buildContinuationStatusSliver() {
-    final exception = _pageLoadError;
-    final error = exception == null ? null : t.messages.errorLoading(error: exception.toString());
-    return SliverToBoxAdapter(
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Center(
-          child: error == null
-              ? const CircularProgressIndicator()
-              : Column(
-                  mainAxisSize: .min,
-                  children: [
-                    Text(error, textAlign: TextAlign.center),
-                    const SizedBox(height: 8),
-                    FocusableButton(
-                      focusNode: _continuationRetryFocusNode,
-                      onPressed: _retryHubContinuation,
-                      onNavigateUp: () => _focusNodeForIndex(_filteredItems.length - 1).requestFocus(),
-                      onBack: handleBackFromContent,
-                      child: TextButton(onPressed: _retryHubContinuation, child: Text(t.common.retry)),
-                    ),
-                  ],
-                ),
-        ),
-      ),
-    );
-  }
-
   @override
   void refresh() {
     _loadMoreItems();
@@ -633,7 +604,13 @@ class _HubDetailScreenState extends State<HubDetailScreen>
                     },
                   ),
                 if (_filteredItems.isNotEmpty && (_isLoadingPage || _pageLoadError != null))
-                  _buildContinuationStatusSliver(),
+                  ContinuationStatusSliver(
+                    error: _pageLoadError,
+                    onRetry: _retryHubContinuation,
+                    retryFocusNode: _continuationRetryFocusNode,
+                    onNavigateUp: () => _focusNodeForIndex(_filteredItems.length - 1).requestFocus(),
+                    onBack: handleBackFromContent,
+                  ),
               ],
             ),
           ),

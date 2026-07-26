@@ -1,5 +1,7 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
+
 import '../mpv/mpv.dart';
 
 import '../media/media_item.dart';
@@ -82,6 +84,7 @@ class TrackManager {
   }
 
   /// Cached external subtitles for re-use after backend fallback.
+  @visibleForTesting
   List<SubtitleTrack> get lastExternalSubtitles => _lastExternalSubtitles;
 
   TrackManager({

@@ -149,6 +149,86 @@ ul {
   background: var(--color-surface);
 }
 
+/* Standalone page holding a single centered card (/scan, +error). */
+.centered-page {
+  display: flex;
+  min-height: 100dvh;
+  align-items: center;
+  justify-content: center;
+  padding: var(--page-gutter);
+}
+
+.centered-card {
+  display: flex;
+  width: min(100%, 32rem);
+  flex-direction: column;
+  align-items: center;
+  border-radius: var(--radius-xl);
+  padding: clamp(2rem, 8vw, 4rem);
+  background: var(--color-surface);
+  text-align: center;
+}
+
+.card-logo {
+  display: flex;
+  width: 5rem;
+  height: 5rem;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 2rem;
+  border-radius: var(--radius-lg);
+  background: var(--color-surface-highest);
+}
+
+.card-logo img {
+  width: 2.5rem;
+  height: 2.5rem;
+}
+
+/* Filled pill action; add .btn-pill--icon when it leads with an icon. */
+.btn-pill {
+  display: inline-flex;
+  min-height: 3rem;
+  align-items: center;
+  border-radius: var(--radius-pill);
+  padding-inline: 1.25rem;
+  color: var(--color-on-primary);
+  background: var(--color-text);
+  font-size: 0.8125rem;
+  font-weight: 700;
+  transition:
+    border-radius var(--motion-expressive) var(--ease-standard),
+    background-color var(--motion-fast) var(--ease-standard);
+}
+
+.btn-pill:hover,
+.btn-pill:focus-visible {
+  border-radius: var(--radius-md);
+  background: #fff;
+}
+
+.btn-pill--icon {
+  gap: 0.625rem;
+}
+
+.btn-pill--icon svg {
+  width: 1.125rem;
+  height: 1.125rem;
+}
+
+/* Landing section that stays inside the page grid. */
+.page-section {
+  width: min(100%, var(--page-width));
+  margin-inline: auto;
+  padding: clamp(4rem, 9vw, 8rem) var(--page-gutter);
+}
+
+/* Landing section whose content bleeds past the page grid. */
+.bleed-section {
+  overflow: hidden;
+  padding-block: clamp(4rem, 9vw, 8rem);
+}
+
 @keyframes fade-in-up {
   from {
     opacity: 0;

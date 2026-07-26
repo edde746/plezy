@@ -70,23 +70,5 @@ void main() {
       expect(profile.watchedIndicator, 2);
       expect(profile.defaultSubtitleForced, 1);
     });
-
-    test('defaults() matches parsing an empty map', () {
-      final parsed = PlexUserProfile.fromJson(const {});
-      final defaults = PlexUserProfile.defaults();
-
-      expect(defaults.autoSelectAudio, parsed.autoSelectAudio);
-      expect(defaults.defaultAudioAccessibility, parsed.defaultAudioAccessibility);
-      expect(defaults.defaultAudioLanguage, parsed.defaultAudioLanguage);
-      expect(defaults.defaultAudioLanguages, parsed.defaultAudioLanguages);
-      expect(defaults.defaultSubtitleLanguage, parsed.defaultSubtitleLanguage);
-      expect(defaults.defaultSubtitleLanguages, parsed.defaultSubtitleLanguages);
-      expect(defaults.autoSelectSubtitle, parsed.autoSelectSubtitle);
-      expect(defaults.defaultSubtitleAccessibility, parsed.defaultSubtitleAccessibility);
-      expect(defaults.defaultSubtitleForced, parsed.defaultSubtitleForced);
-      expect(defaults.watchedIndicator, parsed.watchedIndicator);
-      expect(defaults.mediaReviewsVisibility, parsed.mediaReviewsVisibility);
-      expect(defaults.mediaReviewsLanguages, parsed.mediaReviewsLanguages);
-    });
   });
 }

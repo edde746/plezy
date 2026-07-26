@@ -676,13 +676,6 @@ sealed class MediaItem with _$MediaItem {
     return resolvedBackdropPaths;
   }
 
-  /// Returns the best hero art path based on the container's aspect ratio.
-  String? heroArt({required double containerAspectRatio}) {
-    final candidates = heroArtCandidates(containerAspectRatio: containerAspectRatio);
-    if (candidates.isEmpty) return null;
-    return candidates.first;
-  }
-
   /// Returns hero art candidates in display-preference order.
   List<String> heroArtCandidates({required double containerAspectRatio}) {
     final own = resolvedBackdropPaths;

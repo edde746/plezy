@@ -10,21 +10,13 @@ import '../../i18n/strings.g.dart';
 import '../../mixins/controller_disposer_mixin.dart';
 import '../../models/plex/plex_home_user.dart';
 import '../../profiles/active_profile_binder.dart';
-import '../../profiles/active_profile_provider.dart';
 import '../../profiles/plex_home_service.dart';
 import '../../profiles/profile.dart';
 import '../../profiles/profile_avatar.dart';
-import '../../profiles/profile_connection_cleanup.dart';
 import '../../profiles/profile_connection.dart';
 import '../../profiles/profile_connection_registry.dart';
 import '../../profiles/profile_registry.dart';
 import '../../profiles/profiles_view.dart';
-import '../../providers/download_provider.dart';
-import '../../providers/discover_provider.dart';
-import '../../providers/hidden_libraries_provider.dart';
-import '../../providers/multi_server_provider.dart';
-import '../../services/storage_service.dart';
-import '../../services/system_shelf_service.dart';
 import '../../utils/snackbar_helper.dart';
 import '../../focus/focusable_button.dart';
 import '../../widgets/app_icon.dart';
@@ -167,20 +159,11 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> with Controll
       isDestructive: true,
     );
     if (!confirmed || !mounted) return;
-    final downloads = context.read<DownloadProvider>();
-    final pcRegistry = context.read<ProfileConnectionRegistry>();
-    final connRegistry = context.read<ConnectionRegistry>();
-    final storage = context.read<StorageService>();
-    final multiServer = context.read<MultiServerProvider>();
-    final hiddenLibraries = context.read<HiddenLibrariesProvider?>();
-    final discover = context.read<DiscoverProvider?>();
-    final binder = context.read<ActiveProfileBinder>();
-    final active = context.read<ActiveProfileProvider>();
-    final shelf = SystemShelfService();
-    final endedOwner = active.activeId == _profile.id ? _profile.id : null;
+    final scope = SessionTeardownScope.of(context);
+    final endedOwner = scope.active.activeId == _profile.id ? _profile.id : null;
 
     if (endedOwner != null) {
-      await shelf.endProfileSession(endedOwner);
+      await scope.shelf.endProfileSession(endedOwner);
     }
 
     try {
@@ -189,38 +172,26 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> with Controll
       // Plex account sharing the server, another Jellyfin user).
       final retainedServerIds = await _retainedServerIds(
         excludingConnectionId: conn.id,
-        profileConnections: pcRegistry,
-        connections: connRegistry,
+        profileConnections: scope.profileConnections,
+        connections: scope.connections,
       );
-      await downloads.releaseDownloadsForProfileServers(
+      await scope.downloads.releaseDownloadsForProfileServers(
         _profile.id,
         _serverIdsForConnection(conn).difference(retainedServerIds),
       );
-      await removeProfileConnectionAndCleanup(
-        profileId: _profile.id,
-        connection: conn,
-        profileConnections: pcRegistry,
-        connections: connRegistry,
-        storage: storage,
-        serverManager: multiServer.serverManager,
-      );
-      await hiddenLibraries?.refresh();
-      await binder.rebindIfActive(_profile.id);
-      if (endedOwner != null && active.activeId == endedOwner) {
-        shelf.beginProfileSession(endedOwner);
-        if (multiServer.hasConnectedServers) await discover?.load();
+      await scope.cleanup.removeProfileConnection(profileId: _profile.id, connection: conn);
+      await scope.hiddenLibraries?.refresh();
+      // Deliberately not `resumeFreshSystemShelf`: a rebind failure on the
+      // success path must reach the catch below so the recovery attempt —
+      // and the rethrow — still run.
+      await scope.binder.rebindIfActive(_profile.id);
+      if (endedOwner != null && scope.active.activeId == endedOwner) {
+        scope.shelf.beginProfileSession(endedOwner);
+        if (scope.multiServer.hasConnectedServers) await scope.discover?.load();
       }
     } catch (_) {
-      if (endedOwner != null && active.activeId == endedOwner) {
-        try {
-          await binder.rebindIfActive(endedOwner);
-          if (active.activeId == endedOwner) {
-            shelf.beginProfileSession(endedOwner);
-            if (multiServer.hasConnectedServers) await discover?.load();
-          }
-        } catch (_) {
-          // Keep the shelf empty when the surviving profile cannot be rebound.
-        }
+      if (endedOwner != null) {
+        await resumeFreshSystemShelf(scope, endedOwner);
       }
       rethrow;
     }
@@ -228,7 +199,10 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> with Controll
 
   /// Server ids the profile keeps after removing [excludingConnectionId]:
   /// its other join rows plus, for Plex Home profiles, the implicit parent
-  /// account.
+  /// account. Raw ids, matching the download keys this is differenced
+  /// against; `_serverIdsForProfile` in profile_connection_cleanup.dart is
+  /// ServerId-typed and ignores the parent, so the two are not the same
+  /// projection.
   Future<Set<String>> _retainedServerIds({
     required String excludingConnectionId,
     required ProfileConnectionRegistry profileConnections,
@@ -260,6 +234,9 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> with Controll
     unawaited(context.read<ActiveProfileBinder>().rebindIfActive(_profile.id));
   }
 
+  // Raw machine ids rather than the ServerId-typed twin in
+  // profile_connection_cleanup.dart: these are differenced against retained
+  // ids and matched to download global keys, which carry the unparsed id.
   Set<String> _serverIdsForConnection(Connection conn) {
     return switch (conn) {
       PlexAccountConnection(:final servers) => servers.map((s) => s.clientIdentifier).toSet(),

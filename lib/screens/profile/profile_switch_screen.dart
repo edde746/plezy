@@ -224,13 +224,8 @@ class _ProfileSwitchScreenState extends State<ProfileSwitchScreen> with MountedS
       delegate: SliverChildBuilderDelegate((context, index) {
         final profile = profiles[index];
         final isActive = profile.id == activeId;
-        // M3E connected-group geometry: large outer corners, small inner
-        // corners, hairline gaps between tiles.
         final tokensRef = tokens(context);
-        final tileRadii = BorderRadius.vertical(
-          top: Radius.circular(index == 0 ? tokensRef.radiusLg : tokensRef.radiusXs),
-          bottom: Radius.circular(index == profiles.length - 1 ? tokensRef.radiusLg : tokensRef.radiusXs),
-        );
+        final tileRadii = groupItemRadii(context, index, profiles.length);
         final isFirstSelectable = autofocusFirst && index == 0;
         final profileFocusNode = _profileFocusNode(profile);
         final menuFocusNode = _profileMenuFocusNode(profile);

@@ -13,6 +13,7 @@ import 'package:plezy/media/ids.dart';
 import 'package:plezy/models/download_models.dart';
 import 'package:plezy/services/base_shared_preferences_service.dart';
 
+import 'test_helpers/download_fixtures.dart';
 import 'test_helpers/prefs.dart';
 
 final class _OpenTrackingInterceptor extends QueryInterceptor {

@@ -20,12 +20,12 @@ import 'package:plezy/providers/playback_state_provider.dart';
 import 'package:plezy/providers/user_profile_provider.dart';
 import 'package:plezy/screens/profile/profile_teardown.dart';
 import 'package:plezy/services/plex_auth_service.dart';
-import 'package:plezy/services/data_aggregation_service.dart';
 import 'package:plezy/services/multi_server_manager.dart';
 import 'package:plezy/services/storage_service.dart';
 import 'package:plezy/services/system_shelf_service.dart';
 import 'package:provider/provider.dart';
 
+import '../../test_helpers/multi_server_fixtures.dart';
 import '../../test_helpers/prefs.dart';
 
 class _PlexHome extends PlexHomeService {
@@ -275,7 +275,7 @@ Future<_Harness> _pumpHarness(
   await storage.setActiveProfileId(profile.id);
   await active.initialize();
   final manager = MultiServerManager();
-  final multiServer = MultiServerProvider(manager, DataAggregationService(manager));
+  final multiServer = testMultiServerProvider(manager);
   final shelf = SystemShelfService.forTesting(channel: channel, isSupported: () async => true);
   shelf.beginProfileSession(profile.id);
   SystemShelfService.debugOverrideInstance(shelf);

@@ -91,24 +91,6 @@ class _FocusableTabChipState extends State<FocusableTabChip> with FocusableChipS
   @override
   String get debugLabel => 'tab_chip_${widget.label}';
 
-  @override
-  void initState() {
-    super.initState();
-    initFocusNode();
-  }
-
-  @override
-  void didUpdateWidget(FocusableTabChip oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    updateFocusNode(oldWidget.focusNode);
-  }
-
-  @override
-  void dispose() {
-    disposeFocusNode();
-    super.dispose();
-  }
-
   KeyEventResult _handleKeyEvent(FocusNode node, KeyEvent event) {
     return handleChipKeyEvent(
       node,

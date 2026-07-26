@@ -75,9 +75,11 @@ class OfflineModeProvider extends ChangeNotifier with DisposableChangeNotifierMi
   }
 
   /// Whether there is network connectivity (WiFi, mobile data, etc.)
+  @visibleForTesting
   bool get hasNetworkConnection => _hasNetworkConnection;
 
   /// Whether at least one media server (Plex or Jellyfin) is reachable
+  @visibleForTesting
   bool get hasServerConnection => _hasServerConnection;
 
   bool get _hasKnownVisibleServers =>

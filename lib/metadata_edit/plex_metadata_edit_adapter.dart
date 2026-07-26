@@ -7,7 +7,6 @@ import '../media/media_server_client.dart';
 import '../services/plex_client.dart';
 import '../utils/app_logger.dart';
 import '../utils/language_codes.dart';
-import '../utils/media_image_helper.dart';
 import 'metadata_edit_models.dart';
 
 class PlexMetadataEditAdapter extends MetadataEditAdapter {
@@ -60,7 +59,7 @@ class PlexMetadataEditAdapter extends MetadataEditAdapter {
   List<MetadataEditSection> buildSchema(MetadataEditDraft draft) {
     final kind = draft.sourceItem.kind;
     return [
-      MetadataEditSection(id: 'basic', title: t.metadataEdit.basicInfo, fields: _basicFields(kind)),
+      MetadataEditSection(id: 'basic', title: t.metadataEdit.basicInfo, fields: metadataBasicFields(kind)),
       if (_tagFields(kind).isNotEmpty)
         MetadataEditSection(id: 'tags', title: t.metadataEdit.tags, fields: _tagFields(kind)),
       MetadataEditSection(id: 'artwork', title: t.metadataEdit.artwork, fields: _artworkFields(kind)),
@@ -131,11 +130,6 @@ class PlexMetadataEditAdapter extends MetadataEditAdapter {
         })
         .where((item) => item.sourceUrl.isNotEmpty)
         .toList();
-  }
-
-  @override
-  Future<bool> applyArtworkOption(MetadataEditDraft draft, MetadataEditField field, MetadataArtworkOption option) {
-    return applyArtworkFromUrl(draft, field, option.sourceUrl);
   }
 
   @override
@@ -213,29 +207,6 @@ class PlexMetadataEditAdapter extends MetadataEditAdapter {
     }
   }
 
-  List<MetadataEditField> _basicFields(MediaKind kind) {
-    return [
-      MetadataEditField(id: 'title', label: t.metadataEdit.title, type: MetadataEditFieldType.text),
-      if (kind != MediaKind.season)
-        MetadataEditField(id: 'titleSort', label: t.metadataEdit.sortTitle, type: MetadataEditFieldType.text),
-      if (kind == MediaKind.movie || kind == MediaKind.show)
-        MetadataEditField(id: 'originalTitle', label: t.metadataEdit.originalTitle, type: MetadataEditFieldType.text),
-      if (kind != MediaKind.season)
-        MetadataEditField(
-          id: 'originallyAvailableAt',
-          label: t.metadataEdit.releaseDate,
-          type: MetadataEditFieldType.date,
-        ),
-      if (kind != MediaKind.season)
-        MetadataEditField(id: 'contentRating', label: t.metadataEdit.contentRating, type: MetadataEditFieldType.text),
-      if (kind == MediaKind.movie || kind == MediaKind.show)
-        MetadataEditField(id: 'studio', label: t.metadataEdit.studio, type: MetadataEditFieldType.text),
-      if (kind == MediaKind.movie || kind == MediaKind.show)
-        MetadataEditField(id: 'tagline', label: t.metadataEdit.tagline, type: MetadataEditFieldType.text),
-      MetadataEditField(id: 'summary', label: t.metadataEdit.summary, type: MetadataEditFieldType.multilineText),
-    ];
-  }
-
   List<MetadataEditField> _tagFields(MediaKind kind) {
     MetadataEditField tag(String id, String label) =>
         MetadataEditField(id: id, label: label, type: MetadataEditFieldType.stringList);
@@ -267,94 +238,14 @@ class PlexMetadataEditAdapter extends MetadataEditAdapter {
     };
   }
 
-  List<MetadataEditField> _artworkFields(MediaKind kind) {
-    final fields = <MetadataEditField>[
-      // Episode "posters" are 16:9 thumbnails, not 2:3 poster art.
-      kind == MediaKind.episode
-          ? _artworkField(
-              'posters',
-              t.metadataEdit.poster,
-              t.metadataEdit.selectPoster,
-              80,
-              45,
-              2,
-              16 / 9,
-              imageType: ImageType.thumb,
-            )
-          : _artworkField('posters', t.metadataEdit.poster, t.metadataEdit.selectPoster, 40, 60, 3, 2 / 3),
-    ];
-    if (kind == MediaKind.movie || kind == MediaKind.show || kind == MediaKind.episode) {
-      fields.add(
-        _artworkField(
-          'arts',
-          t.metadataEdit.background,
-          t.metadataEdit.selectBackground,
-          80,
-          45,
-          2,
-          16 / 9,
-          imageType: ImageType.art,
-        ),
-      );
-    }
-    if (kind == MediaKind.movie || kind == MediaKind.show || kind == MediaKind.collection) {
-      fields.add(
-        _artworkField(
-          'clearLogos',
-          t.metadataEdit.logo,
-          t.metadataEdit.selectLogo,
-          80,
-          32,
-          2,
-          2.5,
-          fit: MetadataArtworkFit.contain,
-          imageType: ImageType.logo,
-        ),
-      );
-      fields.add(
-        _artworkField(
-          'squareArts',
-          t.metadataEdit.squareArt,
-          t.metadataEdit.selectSquareArt,
-          50,
-          50,
-          3,
-          1,
-          imageType: ImageType.avatar,
-        ),
-      );
-    }
-    return fields;
-  }
-
-  MetadataEditField _artworkField(
-    String key,
-    String label,
-    String title,
-    double width,
-    double height,
-    int columns,
-    double aspectRatio, {
-    MetadataArtworkFit fit = MetadataArtworkFit.cover,
-    ImageType imageType = ImageType.poster,
-  }) {
-    return MetadataEditField(
-      id: 'artwork:$key',
-      label: label,
-      type: MetadataEditFieldType.artwork,
-      saveMode: MetadataEditSaveMode.immediate,
-      artwork: MetadataArtworkConfig(
-        key: key,
-        selectTitle: title,
-        previewWidth: width,
-        previewHeight: height,
-        gridColumns: columns,
-        gridAspectRatio: aspectRatio,
-        fit: fit,
-        imageType: imageType,
-      ),
-    );
-  }
+  List<MetadataEditField> _artworkFields(MediaKind kind) => metadataArtworkFields(
+    kind,
+    posterKey: 'posters',
+    backdropKey: 'arts',
+    logoKey: 'clearLogos',
+    squareKey: 'squareArts',
+    logoKinds: const {MediaKind.movie, MediaKind.show, MediaKind.collection},
+  );
 
   List<MetadataEditField> _advancedFields(MediaKind kind) {
     final fields = <MetadataEditField>[];

@@ -37,14 +37,7 @@ class MusicPlayContext {
 /// profile switch tears the session down. [notifyListeners] fires only on
 /// discrete changes (track, status, queue shape, modes) — progress bars
 /// subscribe to [positionStream] instead.
-///
-/// [StubMusicPlaybackService] is registered until the playback engine lands;
-/// UI gates transport affordances on [isAvailable].
 abstract class MusicPlaybackService extends ChangeNotifier {
-  /// False on the stub — playback affordances should render disabled or
-  /// fall back to a "not supported yet" notice.
-  bool get isAvailable;
-
   MediaItem? get currentTrack;
   MusicPlaybackStatus get status;
   bool get isPlaying => status == MusicPlaybackStatus.playing;
@@ -155,15 +148,12 @@ abstract class MusicPlaybackService extends ChangeNotifier {
   Future<Lyrics?> fetchLyrics(MediaItem track);
 }
 
-/// No-op placeholder bound while the playback engine is not wired yet (or
-/// on platforms where it failed to initialize). Keeps every UI consumer
-/// null-safe without per-call-site feature checks.
+/// No-op base for test doubles, which override only the members under test.
+/// Production always binds `MusicPlaybackServiceImpl`.
 class StubMusicPlaybackService extends MusicPlaybackService {
   final ValueNotifier<double> _volumeNotifier = ValueNotifier<double>(100);
   int _playIntentGeneration = 0;
   int _queueSessionRevision = 0;
-  @override
-  bool get isAvailable => false;
 
   @override
   MediaItem? get currentTrack => null;

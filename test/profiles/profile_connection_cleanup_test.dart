@@ -83,6 +83,7 @@ void main() {
   late ConnectionRegistry connections;
   late ProfileConnectionRegistry profileConnections;
   late StorageService storage;
+  late ProfileConnectionCleanup cleanup;
 
   setUp(() async {
     resetSharedPreferencesForTest();
@@ -90,6 +91,11 @@ void main() {
     connections = ConnectionRegistry(db);
     profileConnections = ProfileConnectionRegistry(db);
     storage = await StorageService.getInstance();
+    cleanup = ProfileConnectionCleanup(
+      profileConnections: profileConnections,
+      connections: connections,
+      storage: storage,
+    );
   });
 
   tearDown(() async {
@@ -112,13 +118,7 @@ void main() {
       await storage.saveHiddenLibraries({'jf-machine:movies'});
       await storage.saveLibraryOrder(['jf-machine:movies']);
 
-      await removeProfileConnectionAndCleanup(
-        profileId: 'p1',
-        connection: conn,
-        profileConnections: profileConnections,
-        connections: connections,
-        storage: storage,
-      );
+      await cleanup.removeProfileConnection(profileId: 'p1', connection: conn);
 
       expect(await profileConnections.listForConnection(conn.id), isEmpty);
       expect(await connections.get(conn.id), isNull);
@@ -151,13 +151,7 @@ void main() {
       await storage.setActiveProfileId('p2');
       await storage.saveHiddenLibraries({'jf-machine:movies'});
 
-      await removeProfileConnectionAndCleanup(
-        profileId: 'p1',
-        connection: conn,
-        profileConnections: profileConnections,
-        connections: connections,
-        storage: storage,
-      );
+      await cleanup.removeProfileConnection(profileId: 'p1', connection: conn);
 
       expect(await connections.get(conn.id), isNotNull);
       final remaining = await profileConnections.listForConnection(conn.id);
@@ -177,11 +171,7 @@ void main() {
       await storage.saveHiddenLibraries({'jf-machine:movies'});
       await storage.saveLibrarySort('jf-machine:movies', 'titleSort');
 
-      final removed = await pruneUnreferencedJellyfinConnections(
-        profileConnections: profileConnections,
-        connections: connections,
-        storage: storage,
-      );
+      final removed = await cleanup.pruneUnreferencedJellyfinConnections();
 
       expect(removed, 1);
       expect(await connections.get(conn.id), isNull);
@@ -205,11 +195,7 @@ void main() {
       await storage.setActiveProfileId('p2');
       await storage.saveHiddenLibraries({'jf-machine:movies'});
 
-      final removed = await pruneUnreferencedJellyfinConnections(
-        profileConnections: profileConnections,
-        connections: connections,
-        storage: storage,
-      );
+      final removed = await cleanup.pruneUnreferencedJellyfinConnections();
 
       expect(removed, 1);
       expect(await connections.get(orphan.id), isNull);
@@ -241,13 +227,7 @@ void main() {
         expect(await connections.get(acct.id), isNotNull);
         expect(await profileConnections.listAll(), hasLength(2));
 
-        final removal = await removePlexAccountConnectionAndCleanup(
-          account: acct,
-          profileConnections: profileConnections,
-          connections: connections,
-          storage: storage,
-          plannedRemoval: plannedRemoval,
-        );
+        final removal = await cleanup.removePlexAccountConnection(acct, plannedRemoval: plannedRemoval);
 
         expect(removal.removedVirtualProfileIds, {vProfile});
         expect(removal.borrowerProfileIds, isEmpty);
@@ -270,12 +250,7 @@ void main() {
       await profileConnections.upsert(_row(vProfile, jf));
       await profileConnections.upsert(_row('local-1', jf));
 
-      await removePlexAccountConnectionAndCleanup(
-        account: acct,
-        profileConnections: profileConnections,
-        connections: connections,
-        storage: storage,
-      );
+      await cleanup.removePlexAccountConnection(acct);
 
       expect(await connections.get(jf.id), isNotNull);
       final remaining = await profileConnections.listAll();
@@ -293,12 +268,7 @@ void main() {
         await profileConnections.upsert(_row('local-1', acct));
         await profileConnections.upsert(_row('local-1', jf));
 
-        final removal = await removePlexAccountConnectionAndCleanup(
-          account: acct,
-          profileConnections: profileConnections,
-          connections: connections,
-          storage: storage,
-        );
+        final removal = await cleanup.removePlexAccountConnection(acct);
 
         expect(removal.removedVirtualProfileIds, isEmpty);
         expect(removal.borrowerProfileIds, {'local-1'});
@@ -323,12 +293,7 @@ void main() {
       await profileConnections.upsert(_row(v2, acct2, userIdentifier: uuid2));
       await storage.savePlexHomeUsersCache(acct2.id, [_homeUser(uuid2).toJson()]);
 
-      final removal = await removePlexAccountConnectionAndCleanup(
-        account: acct1,
-        profileConnections: profileConnections,
-        connections: connections,
-        storage: storage,
-      );
+      final removal = await cleanup.removePlexAccountConnection(acct1);
 
       expect(removal.removedVirtualProfileIds, {v1});
       expect(await connections.get(acct2.id), isNotNull);
@@ -348,12 +313,7 @@ void main() {
       await profileConnections.upsert(_row(vProfile, acct, userIdentifier: uuid));
       await profileConnections.upsert(_row(vProfile, jf));
 
-      Future<PlexAccountRemoval> run() => removePlexAccountConnectionAndCleanup(
-        account: acct,
-        profileConnections: profileConnections,
-        connections: connections,
-        storage: storage,
-      );
+      Future<PlexAccountRemoval> run() => cleanup.removePlexAccountConnection(acct);
 
       await run();
       final second = await run();
@@ -375,13 +335,7 @@ void main() {
       await storage.setActiveProfileId('p2');
       await storage.saveHiddenLibraries({'plex-machine:movies'});
 
-      await removeProfileConnectionAndCleanup(
-        profileId: 'p1',
-        connection: conn,
-        profileConnections: profileConnections,
-        connections: connections,
-        storage: storage,
-      );
+      await cleanup.removeProfileConnection(profileId: 'p1', connection: conn);
 
       expect(await connections.get(conn.id), isNotNull);
       expect(await profileConnections.listForConnection(conn.id), isEmpty);
@@ -402,13 +356,7 @@ void main() {
     Future<({PostRemovalRoute route, List<Profile> profiles})> resolve({
       Map<String, List<PlexHomeUser>> plexHomeUsers = const {},
     }) {
-      return resolvePostRemovalState(
-        profileRegistry: profileRegistry,
-        profileConnections: profileConnections,
-        connections: connections,
-        plexHomeUsers: plexHomeUsers,
-        storage: storage,
-      );
+      return cleanup.resolvePostRemovalState(profileRegistry: profileRegistry, plexHomeUsers: plexHomeUsers);
     }
 
     Profile local(String id) =>

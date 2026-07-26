@@ -684,57 +684,32 @@ class CompanionRemoteProvider with ChangeNotifier, DisposableChangeNotifierMixin
 
     appLogger.d('CompanionRemote: Connecting to ${host.name} at ${host.addresses}');
 
-    final candidate = _peerServiceFactory();
-    _pendingRemotePeer = candidate;
-    _session = RemoteSession(
-      role: RemoteSessionRole.remote,
-      status: RemoteSessionStatus.connecting,
-      createdAt: DateTime.now(),
+    String? winner;
+    final connected = await _runRemoteConnect(
+      generation: generation,
+      seedConnectingSession: true,
+      rethrowOnFailure: true,
+      join: (peer) async {
+        winner = await peer.joinSessionRacingWithContexts(
+          _deviceName,
+          _platform,
+          host.addresses,
+          _authContexts,
+          authContextId: authContext.id,
+          expectedHostClientId: host.clientId,
+        );
+      },
+      onConnected: (peer) {
+        _lastHostAddresses = [winner!];
+        _lastAuthContextId = peer.selectedAuthContextId ?? authContext.id;
+        _lastHostClientId = peer.selectedHostClientId ?? host.clientId;
+        _session = _session?.copyWith(status: RemoteSessionStatus.connected);
+      },
+      failureLog: 'CompanionRemote: Failed to connect to host',
+      onFailure: _failRemoteConnectSession,
     );
-    _setupPeerServiceListeners(candidate, generation);
-    safeNotifyListeners();
-
-    try {
-      final winner = await candidate.joinSessionRacingWithContexts(
-        _deviceName,
-        _platform,
-        host.addresses,
-        _authContexts,
-        authContextId: authContext.id,
-        expectedHostClientId: host.clientId,
-      );
-      if (!_ownsPeer(candidate, generation)) {
-        await _disposePeerOnce(candidate);
-        return;
-      }
-
-      _pendingRemotePeer = null;
-      _peerService = candidate;
-      _lastHostAddresses = [winner];
-      _lastAuthContextId = candidate.selectedAuthContextId ?? authContext.id;
-      _lastHostClientId = candidate.selectedHostClientId ?? host.clientId;
-      _session = _session?.copyWith(status: RemoteSessionStatus.connected);
-      safeNotifyListeners();
+    if (connected) {
       appLogger.d('CompanionRemote: Connected to ${host.name} via $winner');
-    } catch (error, stackTrace) {
-      if (!_ownsPeer(candidate, generation)) {
-        await _disposePeerOnce(candidate);
-        return;
-      }
-
-      _pendingRemotePeer = null;
-      _cleanupSubscriptions();
-      await _disposePeerOnce(candidate);
-      appLogger.e('CompanionRemote: Failed to connect to host', error: error, stackTrace: stackTrace);
-      _session = _session?.copyWith(
-        status: RemoteSessionStatus.error,
-        errorMessage: _localizedRemoteError(
-          error,
-          (details) => t.companionRemote.pairing.failedToConnect(error: details),
-        ),
-      );
-      safeNotifyListeners();
-      rethrow;
     }
   }
 
@@ -754,48 +729,84 @@ class CompanionRemoteProvider with ChangeNotifier, DisposableChangeNotifierMixin
 
     appLogger.d('CompanionRemote: Connecting to manual host $hostAddress');
 
+    await _runRemoteConnect(
+      generation: generation,
+      seedConnectingSession: true,
+      rethrowOnFailure: true,
+      join: (peer) => peer.joinSessionWithContexts(_deviceName, _platform, hostAddress, _authContexts),
+      onConnected: (peer) {
+        _lastAuthContextId = peer.selectedAuthContextId;
+        _lastHostClientId = peer.selectedHostClientId ?? '';
+        _session = _session?.copyWith(status: RemoteSessionStatus.connected);
+      },
+      failureLog: 'CompanionRemote: Failed to connect to manual host',
+      onFailure: _failRemoteConnectSession,
+    );
+  }
+
+  void _failRemoteConnectSession(Object error) {
+    _session = _session?.copyWith(
+      status: RemoteSessionStatus.error,
+      errorMessage: _localizedRemoteError(
+        error,
+        (details) => t.companionRemote.pairing.failedToConnect(error: details),
+      ),
+    );
+    safeNotifyListeners();
+  }
+
+  /// Runs the candidate-peer connect lifecycle shared by the discovered/manual
+  /// connect paths and by reconnect attempts: create a candidate, wire its
+  /// listeners, then promote it to [_peerService] or dispose it. The generation
+  /// guards live here so a candidate that lost ownership while joining is
+  /// disposed rather than promoted, in exactly one place. Returns true only
+  /// when the candidate was promoted.
+  Future<bool> _runRemoteConnect({
+    required int generation,
+    required Future<void> Function(CompanionRemotePeerService peer) join,
+    required void Function(CompanionRemotePeerService peer) onConnected,
+    required String failureLog,
+    required void Function(Object error) onFailure,
+    bool seedConnectingSession = false,
+    bool rethrowOnFailure = false,
+  }) async {
     final candidate = _peerServiceFactory();
     _pendingRemotePeer = candidate;
-    _session = RemoteSession(
-      role: RemoteSessionRole.remote,
-      status: RemoteSessionStatus.connecting,
-      createdAt: DateTime.now(),
-    );
+    if (seedConnectingSession) {
+      _session = RemoteSession(
+        role: RemoteSessionRole.remote,
+        status: RemoteSessionStatus.connecting,
+        createdAt: DateTime.now(),
+      );
+    }
     _setupPeerServiceListeners(candidate, generation);
-    safeNotifyListeners();
+    if (seedConnectingSession) safeNotifyListeners();
 
     try {
-      await candidate.joinSessionWithContexts(_deviceName, _platform, hostAddress, _authContexts);
+      await join(candidate);
       if (!_ownsPeer(candidate, generation)) {
         await _disposePeerOnce(candidate);
-        return;
+        return false;
       }
 
       _pendingRemotePeer = null;
       _peerService = candidate;
-      _lastAuthContextId = candidate.selectedAuthContextId;
-      _lastHostClientId = candidate.selectedHostClientId ?? '';
-      _session = _session?.copyWith(status: RemoteSessionStatus.connected);
+      onConnected(candidate);
       safeNotifyListeners();
+      return true;
     } catch (error, stackTrace) {
       if (!_ownsPeer(candidate, generation)) {
         await _disposePeerOnce(candidate);
-        return;
+        return false;
       }
 
       _pendingRemotePeer = null;
       _cleanupSubscriptions();
       await _disposePeerOnce(candidate);
-      appLogger.e('CompanionRemote: Failed to connect to manual host', error: error, stackTrace: stackTrace);
-      _session = _session?.copyWith(
-        status: RemoteSessionStatus.error,
-        errorMessage: _localizedRemoteError(
-          error,
-          (details) => t.companionRemote.pairing.failedToConnect(error: details),
-        ),
-      );
-      safeNotifyListeners();
-      rethrow;
+      appLogger.e(failureLog, error: error, stackTrace: stackTrace);
+      onFailure(error);
+      if (rethrowOnFailure) rethrow;
+      return false;
     }
   }
 
@@ -981,47 +992,34 @@ class CompanionRemoteProvider with ChangeNotifier, DisposableChangeNotifierMixin
     }
     if (generation != _remoteGeneration || isDisposed) return;
 
-    final candidate = _peerServiceFactory();
-    _pendingRemotePeer = candidate;
-    _setupPeerServiceListeners(candidate, generation);
     final authContextId = _authContextForId(_lastAuthContextId)?.id;
     final expectedHostClientId = _lastHostClientId ?? '';
 
-    try {
-      await candidate.joinSessionWithContexts(
+    final reconnected = await _runRemoteConnect(
+      generation: generation,
+      join: (peer) => peer.joinSessionWithContexts(
         _deviceName,
         _platform,
         hostAddresses.first,
         _authContexts,
         authContextId: authContextId,
         expectedHostClientId: expectedHostClientId,
-      );
-      if (!_ownsPeer(candidate, generation)) {
-        await _disposePeerOnce(candidate);
-        return;
-      }
-
-      _pendingRemotePeer = null;
-      _peerService = candidate;
-      _lastAuthContextId = candidate.selectedAuthContextId ?? authContextId;
-      _lastHostClientId = candidate.selectedHostClientId ?? _lastHostClientId;
-      _session = _session?.copyWith(status: RemoteSessionStatus.connected, errorMessage: null);
-      _reconnectAttempts = 0;
-      safeNotifyListeners();
+      ),
+      onConnected: (peer) {
+        _lastAuthContextId = peer.selectedAuthContextId ?? authContextId;
+        _lastHostClientId = peer.selectedHostClientId ?? _lastHostClientId;
+        _session = _session?.copyWith(status: RemoteSessionStatus.connected, errorMessage: null);
+        _reconnectAttempts = 0;
+      },
+      failureLog: 'CompanionRemote: Reconnect failed',
+      onFailure: (_) {
+        if (generation == _remoteGeneration && _session?.status == RemoteSessionStatus.reconnecting) {
+          _scheduleReconnect(generation);
+        }
+      },
+    );
+    if (reconnected) {
       appLogger.d('CompanionRemote: Reconnected successfully');
-    } catch (error, stackTrace) {
-      if (!_ownsPeer(candidate, generation)) {
-        await _disposePeerOnce(candidate);
-        return;
-      }
-
-      _pendingRemotePeer = null;
-      _cleanupSubscriptions();
-      await _disposePeerOnce(candidate);
-      appLogger.e('CompanionRemote: Reconnect failed', error: error, stackTrace: stackTrace);
-      if (generation == _remoteGeneration && _session?.status == RemoteSessionStatus.reconnecting) {
-        _scheduleReconnect(generation);
-      }
     }
   }
 

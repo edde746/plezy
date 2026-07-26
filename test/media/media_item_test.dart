@@ -156,21 +156,18 @@ void main() {
       final movie = _movie(artPath: '/art', backgroundSquarePath: '/square');
 
       expect(movie.heroArtCandidates(containerAspectRatio: 1.0), ['/square', '/art']);
-      expect(movie.heroArt(containerAspectRatio: 1.0), '/square');
     });
 
     test('near-square containers fall back to wide cover art when square art is missing', () {
       final movie = _movie(artPath: '/art');
 
       expect(movie.heroArtCandidates(containerAspectRatio: 1.0), ['/art']);
-      expect(movie.heroArt(containerAspectRatio: 1.0), '/art');
     });
 
     test('wide containers prefer wide cover art before square art', () {
       final movie = _movie(artPath: '/art', backgroundSquarePath: '/square');
 
       expect(movie.heroArtCandidates(containerAspectRatio: 16 / 9), ['/art', '/square']);
-      expect(movie.heroArt(containerAspectRatio: 16 / 9), '/art');
     });
 
     test('episodes prefer show art before episode art for wide hero containers', () {
@@ -187,7 +184,6 @@ void main() {
       );
 
       expect(episode.heroArtCandidates(containerAspectRatio: 16 / 9), ['/show-art', '/episode-art', '/square']);
-      expect(episode.heroArt(containerAspectRatio: 16 / 9), '/show-art');
       expect(episode.heroArtCandidates(containerAspectRatio: 1.0), ['/square', '/show-art', '/episode-art']);
     });
 

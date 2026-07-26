@@ -145,6 +145,21 @@ class PlayerAndroid extends PlayerBase {
     }
   }
 
+  // A setting requested before the core is up is applied by _doInitialize from
+  // the stored fields; one requested while an init is in flight has to be
+  // replayed afterwards, but only if no newer request superseded it.
+  Future<void> _applyWhenInitialized(Future<void> Function() apply, bool Function() stillRequested) async {
+    final initFuture = _initFuture;
+    if (initialized) {
+      await apply();
+    } else if (initFuture != null) {
+      await initFuture;
+      if (!disposed && initialized && stillRequested()) {
+        await apply();
+      }
+    }
+  }
+
   @override
   Future<void> open(
     Media media, {
@@ -279,15 +294,10 @@ class PlayerAndroid extends PlayerBase {
         break;
       case 'dv-conversion-mode':
         _dvConversionMode = value;
-        final initFuture = _initFuture;
-        if (initialized) {
-          await invoke('setDvConversionMode', {'mode': value});
-        } else if (initFuture != null) {
-          await initFuture;
-          if (!disposed && initialized && _dvConversionMode == value) {
-            await invoke('setDvConversionMode', {'mode': value});
-          }
-        }
+        await _applyWhenInitialized(
+          () => invoke('setDvConversionMode', {'mode': value}),
+          () => _dvConversionMode == value,
+        );
         break;
       case 'sub-visibility':
         if (value == 'no') {
@@ -316,15 +326,10 @@ class PlayerAndroid extends PlayerBase {
   Future<void> setAudioNormalization(bool enabled) async {
     if (disposed) return;
     _audioNormalizationEnabled = enabled;
-    final initFuture = _initFuture;
-    if (initialized) {
-      await invoke('setAudioNormalization', {'enabled': enabled});
-    } else if (initFuture != null) {
-      await initFuture;
-      if (!disposed && initialized && _audioNormalizationEnabled == enabled) {
-        await invoke('setAudioNormalization', {'enabled': enabled});
-      }
-    }
+    await _applyWhenInitialized(
+      () => invoke('setAudioNormalization', {'enabled': enabled}),
+      () => _audioNormalizationEnabled == enabled,
+    );
     // Keep the mpv af property flowing through setMpvProperty so the plugin's
     // pendingMpvProperties replay applies loudnorm if exo falls back to mpv.
     await super.setAudioNormalization(enabled);
@@ -336,21 +341,10 @@ class PlayerAndroid extends PlayerBase {
     _downmixEnabled = enabled;
     _downmixCenterBoostDb = centerBoostDb;
     _downmixNormalize = normalize;
-    Future<void> invokeNative() =>
-        invoke('setAudioDownmix', {'enabled': enabled, 'centerBoostDb': centerBoostDb, 'normalize': normalize});
-    final initFuture = _initFuture;
-    if (initialized) {
-      await invokeNative();
-    } else if (initFuture != null) {
-      await initFuture;
-      if (!disposed &&
-          initialized &&
-          _downmixEnabled == enabled &&
-          _downmixCenterBoostDb == centerBoostDb &&
-          _downmixNormalize == normalize) {
-        await invokeNative();
-      }
-    }
+    await _applyWhenInitialized(
+      () => invoke('setAudioDownmix', {'enabled': enabled, 'centerBoostDb': centerBoostDb, 'normalize': normalize}),
+      () => _downmixEnabled == enabled && _downmixCenterBoostDb == centerBoostDb && _downmixNormalize == normalize,
+    );
     // Keep the mpv properties flowing through setMpvProperty so the plugin's
     // pendingMpvProperties replay applies downmix if exo falls back to mpv.
     await super.setAudioDownmix(enabled: enabled, centerBoostDb: centerBoostDb, normalize: normalize);
@@ -360,15 +354,10 @@ class PlayerAndroid extends PlayerBase {
   Future<void> setAudioPassthrough(bool enabled) async {
     if (disposed) return;
     _audioPassthroughEnabled = enabled;
-    final initFuture = _initFuture;
-    if (initialized) {
-      await invoke('setAudioPassthrough', {'enabled': enabled});
-    } else if (initFuture != null) {
-      await initFuture;
-      if (!disposed && initialized && _audioPassthroughEnabled == enabled) {
-        await invoke('setAudioPassthrough', {'enabled': enabled});
-      }
-    }
+    await _applyWhenInitialized(
+      () => invoke('setAudioPassthrough', {'enabled': enabled}),
+      () => _audioPassthroughEnabled == enabled,
+    );
     await setProperty('audio-spdif', enabled ? _passthroughCodecs : '');
   }
 

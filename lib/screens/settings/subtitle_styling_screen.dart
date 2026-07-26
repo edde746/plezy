@@ -48,18 +48,16 @@ class SubtitleStylingScreen extends StatelessWidget {
         SettingsGroup(
           title: t.subtitlingStyling.text,
           children: [
-            SettingSelectionTile<SubAssOverride, SubAssOverride>(
+            SettingSelectionTile<SubAssOverride>(
               pref: SettingsService.subAssOverride,
               icon: Symbols.subtitles_rounded,
               title: t.subtitlingStyling.assOverride,
               subtitleBuilder: _assOverrideLabel,
               options: SubAssOverride.values.map((v) => DialogOption(value: v, title: _assOverrideLabel(v))).toList(),
-              decode: (v) => v,
-              encode: (v) => v,
             ),
             // iOS/tvOS avfoundation VO: screen vs video-resolution basis.
             if (Platform.isIOS)
-              SettingSelectionTile<SubtitleRenderResolution, SubtitleRenderResolution>(
+              SettingSelectionTile<SubtitleRenderResolution>(
                 pref: SettingsService.subtitleRenderResolution,
                 icon: Symbols.aspect_ratio_rounded,
                 title: t.subtitlingStyling.renderResolution,
@@ -68,13 +66,11 @@ class SubtitleStylingScreen extends StatelessWidget {
                   SubtitleRenderResolution.screen,
                   SubtitleRenderResolution.video,
                 ].map((v) => DialogOption(value: v, title: _renderResolutionLabel(v))).toList(),
-                decode: (v) => v,
-                encode: (v) => v,
               ),
             // Android libass overlay: full or a fractional render scale (perf knob for
             // render-bound low-end TVs; heavy/animated signs raster faster at < 1).
             if (Platform.isAndroid)
-              SettingSelectionTile<SubtitleRenderResolution, SubtitleRenderResolution>(
+              SettingSelectionTile<SubtitleRenderResolution>(
                 pref: SettingsService.subtitleRenderResolution,
                 icon: Symbols.aspect_ratio_rounded,
                 title: t.subtitlingStyling.renderResolution,
@@ -86,8 +82,6 @@ class SubtitleStylingScreen extends StatelessWidget {
                   SubtitleRenderResolution.third,
                   SubtitleRenderResolution.quarter,
                 ].map((v) => DialogOption(value: v, title: _renderResolutionLabel(v))).toList(),
-                decode: (v) => v,
-                encode: (v) => v,
               ),
             SettingNumberTile(
               pref: SettingsService.subtitleFontSize,

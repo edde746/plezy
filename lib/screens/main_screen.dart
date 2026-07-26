@@ -1,5 +1,6 @@
 import 'dart:async';
 import '../media/ids.dart';
+import '../media/media_server_client.dart';
 import '../navigation/main_screen_scope.dart';
 import 'dart:io' show Platform, exit;
 
@@ -34,6 +35,7 @@ import '../profiles/active_profile_binder.dart';
 import '../connection/connection_registry.dart';
 import '../profiles/active_profile_provider.dart';
 import '../profiles/plex_home_service.dart';
+import '../profiles/profile_selection_policy.dart';
 import '../providers/catalog_sources_provider.dart';
 import '../providers/download_provider.dart';
 import '../providers/multi_server_provider.dart';
@@ -260,13 +262,12 @@ class _MainScreenState extends State<MainScreen>
   bool _isShowingProfileSelection = false;
 
   late List<Widget> _screens;
-  final GlobalKey<State<DiscoverScreen>> _discoverKey = GlobalKey();
-  final GlobalKey<State<ExploreScreen>> _exploreKey = GlobalKey();
-  final GlobalKey<State<LibrariesScreen>> _librariesKey = GlobalKey();
-  final GlobalKey<State<LiveTvScreen>> _liveTvKey = GlobalKey();
-  final GlobalKey<State<SearchScreen>> _searchKey = GlobalKey();
-  final GlobalKey<State<DownloadsScreen>> _downloadsKey = GlobalKey();
-  final GlobalKey<State<SettingsScreen>> _settingsKey = GlobalKey();
+
+  /// One [GlobalKey] per tab, so a tab's live [State] can be reached from
+  /// anywhere in this class via [_onScreen]. Deliberately untyped: every
+  /// consumer discards the concrete `State<X>` type and pattern-matches on a
+  /// capability mixin (Refreshable, FocusableTab, …) instead.
+  final Map<NavigationTabId, GlobalKey> _screenKeys = {for (final id in NavigationTabId.values) id: GlobalKey()};
   final GlobalKey<SideNavigationRailState> _sideNavKey = GlobalKey();
 
   /// Measures the mobile bottom navigation area for the music mini-player.
@@ -470,23 +471,11 @@ class _MainScreenState extends State<MainScreen>
     }
 
     void tryDownloadResume() {
-      if (_downloadResumeFired || !mounted) return;
       // Wait for any online client before firing the resume — the download
       // pipeline is backend-neutral (resumeQueuedDownloads accepts a
       // MediaServerClient and per-item resolution picks up the right
       // backend), so a Jellyfin-only setup can resume too.
-      final onlineClient = manager.onlineClients.values.firstOrNull;
-      if (onlineClient == null) return;
-      _downloadResumeFired = true;
-      _serverStatusSub?.cancel();
-      _serverStatusSub = null;
-      final downloadProvider = context.read<DownloadProvider>();
-      unawaited(
-        downloadProvider.ensureInitialized().then((_) {
-          if (!mounted) return;
-          downloadProvider.resumeQueuedDownloads(onlineClient);
-        }),
-      );
+      _resumeQueuedDownloadsOnce(manager.onlineClients.values.firstOrNull);
     }
 
     // Listen for binding-settle so the once-only priming runs after both
@@ -524,36 +513,35 @@ class _MainScreenState extends State<MainScreen>
         if (!mounted) return;
         context.read<OfflineWatchSyncService>().onServersConnected();
         unawaited(context.read<DownloadProvider>().refreshMetadataFromCache());
-        _resumeQueuedDownloadsIfPossible(mp);
+        _resumeQueuedDownloadsOnce(
+          mp.onlineServerIds.map((id) => mp.getClientForServer(ServerId(id))).nonNulls.firstOrNull,
+        );
       }
     }
 
     if (!mounted) return;
-    if (_discoverKey.currentState case final FullRefreshable refreshable) {
-      refreshable.fullRefresh();
-    }
-    if (_librariesKey.currentState case final FullRefreshable refreshable) {
-      refreshable.fullRefresh();
-    }
-    if (_searchKey.currentState case final FullRefreshable refreshable) {
-      refreshable.fullRefresh();
-    }
+    _fullRefreshContentTabs();
   }
 
-  void _resumeQueuedDownloadsIfPossible(MultiServerProvider mp) {
+  /// Single-shot "resume queued downloads once any client is online" rule,
+  /// shared by the startup status-stream path and [_primeOnlineServices] —
+  /// each caller resolves its own candidate client (unfiltered manager view
+  /// vs the visibility-filtered provider) and hands it here. No-op once the
+  /// resume has fired, or while no client is online yet.
+  void _resumeQueuedDownloadsOnce(MediaServerClient? onlineClient) {
     if (_downloadResumeFired || !mounted) return;
-    for (final serverId in mp.onlineServerIds) {
-      final onlineClient = mp.getClientForServer(ServerId(serverId));
-      if (onlineClient == null) continue;
-      _downloadResumeFired = true;
-      unawaited(
-        context.read<DownloadProvider>().ensureInitialized().then((_) {
-          if (!mounted) return;
-          context.read<DownloadProvider>().resumeQueuedDownloads(onlineClient);
-        }),
-      );
-      return;
-    }
+    if (onlineClient == null) return;
+    _downloadResumeFired = true;
+    // The status subscription exists only to drive this one-shot.
+    _serverStatusSub?.cancel();
+    _serverStatusSub = null;
+    final downloadProvider = context.read<DownloadProvider>();
+    unawaited(
+      downloadProvider.ensureInitialized().then((_) {
+        if (!mounted) return;
+        downloadProvider.resumeQueuedDownloads(onlineClient);
+      }),
+    );
   }
 
   void _onActiveProfileChanged() {
@@ -623,11 +611,15 @@ class _MainScreenState extends State<MainScreen>
     // has no profile to bind, and the user lands on an empty screen with
     // no way back to the picker.
     final hasNoActive = activeProfile.active == null && activeProfile.profiles.isNotEmpty;
-    final requireOnOpen =
-        settingsService.read(SettingsService.requireProfileSelectionOnOpen) && activeProfile.hasMultipleProfiles;
 
-    if (!hasNoActive && !requireOnOpen) return;
+    if (!hasNoActive && !activeProfile.requiresSelectionOnOpen(settingsService)) return;
 
+    await _pushProfileSelection();
+  }
+
+  /// Push the picker in "must choose" mode, suppressing the tvOS menu-button
+  /// passthrough for as long as it is up.
+  Future<void> _pushProfileSelection() async {
     _isShowingProfileSelection = true;
     _setTvosMenuPassthrough(false);
     await Navigator.of(
@@ -867,9 +859,7 @@ class _MainScreenState extends State<MainScreen>
       _selectTab(NavigationTabId.search, focusSearchInput: !hasQuery);
       if (hasQuery) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (_searchKey.currentState case final SearchInputFocusable searchable) {
-            searchable.submitSearchQuery(trimmed);
-          }
+          _onScreen<SearchInputFocusable>(NavigationTabId.search, (screen) => screen.submitSearchQuery(trimmed));
         });
       }
     };
@@ -954,21 +944,11 @@ class _MainScreenState extends State<MainScreen>
 
   Future<void> _showProfileSelectionOnResume() async {
     final settingsService = await SettingsService.getInstance();
-    if (!settingsService.read(SettingsService.requireProfileSelectionOnOpen)) return;
     if (!mounted) return;
 
-    final activeProfile = context.read<ActiveProfileProvider>();
-    if (!activeProfile.hasMultipleProfiles) return;
+    if (!context.read<ActiveProfileProvider>().requiresSelectionOnOpen(settingsService)) return;
 
-    _isShowingProfileSelection = true;
-    _setTvosMenuPassthrough(false);
-    await Navigator.of(
-      context,
-      rootNavigator: true,
-    ).push(MaterialPageRoute(builder: (context) => const ProfileSwitchScreen(requireSelection: true)));
-    if (!mounted) return;
-    _isShowingProfileSelection = false;
-    _updateTvosMenuPassthrough();
+    await _pushProfileSelection();
   }
 
   /// IndexedStack that disables tickers for offscreen children to prevent
@@ -994,17 +974,17 @@ class _MainScreenState extends State<MainScreen>
     return [
       for (final tab in _getVisibleTabs(offline))
         switch (tab.id) {
-          NavigationTabId.discover => DiscoverScreen(key: _discoverKey),
-          NavigationTabId.explore => ExploreScreen(key: _exploreKey),
+          NavigationTabId.discover => DiscoverScreen(key: _screenKeys[tab.id]),
+          NavigationTabId.explore => ExploreScreen(key: _screenKeys[tab.id]),
           NavigationTabId.libraries => LibrariesScreen(
-            key: _librariesKey,
+            key: _screenKeys[tab.id],
             onLibraryOrderChanged: _onLibraryOrderChanged,
             onLibrarySelected: _handleLibrariesScreenSelected,
           ),
-          NavigationTabId.liveTv => LiveTvScreen(key: _liveTvKey),
-          NavigationTabId.search => SearchScreen(key: _searchKey),
-          NavigationTabId.downloads => DownloadsScreen(key: _downloadsKey),
-          NavigationTabId.settings => SettingsScreen(key: _settingsKey),
+          NavigationTabId.liveTv => LiveTvScreen(key: _screenKeys[tab.id]),
+          NavigationTabId.search => SearchScreen(key: _screenKeys[tab.id]),
+          NavigationTabId.downloads => DownloadsScreen(key: _screenKeys[tab.id]),
+          NavigationTabId.settings => SettingsScreen(key: _screenKeys[tab.id]),
         },
     ];
   }
@@ -1059,16 +1039,22 @@ class _MainScreenState extends State<MainScreen>
     }());
   }
 
-  void _handleLiveTvChanged() {
-    final hasLiveTv = _multiServerProvider?.hasLiveTv ?? false;
-    if (hasLiveTv == _lastHasLiveTv) return;
-    _lastHasLiveTv = hasLiveTv;
-
+  /// Rebuilds navigation after a tab's availability flipped: _currentTab may
+  /// need normalizing, and passthrough depends on it being the first tab.
+  void _handleTabAvailabilityChanged() {
     setState(() {
       _screens = _buildScreens(_isOffline);
       _currentTab = _normalizeTabForMode(_currentTab, _isOffline);
     });
     _updateTvosMenuPassthrough();
+  }
+
+  void _handleLiveTvChanged() {
+    final hasLiveTv = _multiServerProvider?.hasLiveTv ?? false;
+    if (hasLiveTv == _lastHasLiveTv) return;
+    _lastHasLiveTv = hasLiveTv;
+
+    _handleTabAvailabilityChanged();
 
     // A preferred startup section (only Live TV can be deferred) just became
     // available — switch to it via _selectTab so it gets the usual visibility
@@ -1084,13 +1070,7 @@ class _MainScreenState extends State<MainScreen>
     if (hasExplore == _lastHasExplore) return;
     _lastHasExplore = hasExplore;
 
-    setState(() {
-      _screens = _buildScreens(_isOffline);
-      _currentTab = _normalizeTabForMode(_currentTab, _isOffline);
-    });
-    // Same as the live-TV handler: the passthrough flag depends on whether
-    // _currentTab is the first tab, which the normalize above can change.
-    _updateTvosMenuPassthrough();
+    _handleTabAvailabilityChanged();
   }
 
   void _handleOfflineStatusChanged() {
@@ -1183,17 +1163,8 @@ class _MainScreenState extends State<MainScreen>
     // This preserves the user's focus position when returning from sidebar.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      if (restorePreviousFocus) {
-        if (_contentFocusScope.focusedChild == null) {
-          if (_screenKeyFor(_currentTab)?.currentState case final FocusableTab focusable) {
-            focusable.focusActiveTabIfReady();
-          }
-        }
-      } else {
-        if (_screenKeyFor(_currentTab)?.currentState case final FocusableTab focusable) {
-          focusable.focusActiveTabIfReady();
-        }
-      }
+      if (restorePreviousFocus && _contentFocusScope.focusedChild != null) return;
+      _onScreen<FocusableTab>(_currentTab, (screen) => screen.focusActiveTabIfReady());
     });
   }
 
@@ -1396,9 +1367,7 @@ class _MainScreenState extends State<MainScreen>
     if (_isSidebarFocused) _focusContent();
     // Schedule focus after the frame so the search screen is visible in the IndexedStack
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (_searchKey.currentState case final SearchInputFocusable searchable) {
-        searchable.focusSearchInput();
-      }
+      _onScreen<SearchInputFocusable>(NavigationTabId.search, (screen) => screen.focusSearchInput());
     });
     return KeyEventResult.handled;
   }
@@ -1419,9 +1388,7 @@ class _MainScreenState extends State<MainScreen>
     _miniPlayerInsets?.setNavBarSuspended(true);
     // Called when a child route is pushed on top (e.g., video player)
     if (_currentTab == NavigationTabId.discover) {
-      if (_discoverKey.currentState case final TabVisibilityAware aware) {
-        aware.onTabHidden();
-      }
+      _onScreen<TabVisibilityAware>(NavigationTabId.discover, (screen) => screen.onTabHidden());
     }
   }
 
@@ -1440,9 +1407,7 @@ class _MainScreenState extends State<MainScreen>
     _updateTvosMenuPassthrough();
     _miniPlayerInsets?.setNavBarSuspended(false);
     if (_currentTab == NavigationTabId.discover) {
-      if (_discoverKey.currentState case final TabVisibilityAware aware) {
-        aware.onTabShown();
-      }
+      _onScreen<TabVisibilityAware>(NavigationTabId.discover, (screen) => screen.onTabShown());
       _onDiscoverBecameVisible();
     }
   }
@@ -1450,9 +1415,7 @@ class _MainScreenState extends State<MainScreen>
   void _onDiscoverBecameVisible() {
     appLogger.d('Navigated to home');
     // Refresh content when returning to discover page
-    if (_discoverKey.currentState case final Refreshable refreshable) {
-      refreshable.refresh();
-    }
+    _onScreen<Refreshable>(NavigationTabId.discover, (screen) => screen.refresh());
   }
 
   void _onLibraryOrderChanged() {
@@ -1497,15 +1460,7 @@ class _MainScreenState extends State<MainScreen>
 
     playbackStateProvider.clearShuffle();
 
-    if (_discoverKey.currentState case final FullRefreshable refreshable) {
-      refreshable.fullRefresh();
-    }
-    if (_librariesKey.currentState case final FullRefreshable refreshable) {
-      refreshable.fullRefresh();
-    }
-    if (_searchKey.currentState case final FullRefreshable refreshable) {
-      refreshable.fullRefresh();
-    }
+    _fullRefreshContentTabs();
 
     // Refresh user-level settings (audio/sub defaults) for the new identity.
     if (mounted) {
@@ -1533,14 +1488,9 @@ class _MainScreenState extends State<MainScreen>
 
     if (previousTab != tab) {
       // Notify previous screen it's being hidden
-      if (_screenKeyFor(previousTab)?.currentState case final TabVisibilityAware aware) {
-        aware.onTabHidden();
-      }
+      _onScreen<TabVisibilityAware>(previousTab, (screen) => screen.onTabHidden());
       // Notify and focus new screen
-      final newState = _screenKeyFor(tab)?.currentState;
-      if (newState case final TabVisibilityAware aware) {
-        aware.onTabShown();
-      }
+      _onScreen<TabVisibilityAware>(tab, (screen) => screen.onTabShown());
       // Back-to-home keeps the sidebar focused (chain: content → sidebar →
       // home → exit); stealing focus here left _isSidebarFocused stuck true
       // while real focus sat on a content card (#1411).
@@ -1548,9 +1498,7 @@ class _MainScreenState extends State<MainScreen>
       // search input, since focusing it auto-opens the on-screen keyboard; the
       // query submit focuses results instead.
       if (!_isSidebarFocused && (tab != NavigationTabId.search || focusSearchInput)) {
-        if (newState case final FocusableTab focusable) {
-          focusable.focusActiveTabIfReady();
-        }
+        _onScreen<FocusableTab>(tab, (screen) => screen.focusActiveTabIfReady());
       }
     }
 
@@ -1564,9 +1512,7 @@ class _MainScreenState extends State<MainScreen>
     // submit runs the search and focuses results without opening the keyboard.
     if (tab == NavigationTabId.search && focusSearchInput) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (_searchKey.currentState case final SearchInputFocusable searchable) {
-          searchable.focusSearchInput();
-        }
+        _onScreen<SearchInputFocusable>(NavigationTabId.search, (screen) => screen.focusSearchInput());
       });
     }
   }
@@ -1576,12 +1522,8 @@ class _MainScreenState extends State<MainScreen>
     _selectedLibraryGlobalKey = libraryGlobalKey;
     _selectTab(NavigationTabId.libraries);
     // Tell LibrariesScreen to load this library after tab switch
-    if (_librariesKey.currentState case final LibraryLoadable loadable) {
-      loadable.loadLibraryByKey(libraryGlobalKey);
-    }
-    if (_librariesKey.currentState case final FocusableTab focusable) {
-      focusable.focusActiveTabIfReady();
-    }
+    _onScreen<LibraryLoadable>(NavigationTabId.libraries, (screen) => screen.loadLibraryByKey(libraryGlobalKey));
+    _onScreen<FocusableTab>(NavigationTabId.libraries, (screen) => screen.focusActiveTabIfReady());
   }
 
   void _openSettings() {
@@ -1672,17 +1614,20 @@ class _MainScreenState extends State<MainScreen>
     );
   }
 
-  /// Get the GlobalKey for a given tab.
-  GlobalKey? _screenKeyFor(NavigationTabId tab) {
-    return switch (tab) {
-      NavigationTabId.discover => _discoverKey,
-      NavigationTabId.explore => _exploreKey,
-      NavigationTabId.libraries => _librariesKey,
-      NavigationTabId.liveTv => _liveTvKey,
-      NavigationTabId.search => _searchKey,
-      NavigationTabId.downloads => _downloadsKey,
-      NavigationTabId.settings => _settingsKey,
-    };
+  /// Invoke [fn] on the tab's current [State] when it exists and implements
+  /// the capability [T]. Screens are only built for visible tabs and mount a
+  /// frame later, so a missing key or a non-matching state is a no-op.
+  void _onScreen<T>(NavigationTabId tab, void Function(T state) fn) {
+    if (_screenKeys[tab]?.currentState case final T state) fn(state);
+  }
+
+  /// Full-refresh the primary content tabs. Shared by the online-entry hook
+  /// ([_primeOnlineServices]) and the profile-switch invalidation
+  /// ([_invalidateAllScreens]), which refresh the same set.
+  void _fullRefreshContentTabs() {
+    for (final tab in const [NavigationTabId.discover, NavigationTabId.libraries, NavigationTabId.search]) {
+      _onScreen<FullRefreshable>(tab, (screen) => screen.fullRefresh());
+    }
   }
 
   Widget _buildBottomNavigationBar(BuildContext context, {required bool hideLabels}) {

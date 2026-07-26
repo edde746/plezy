@@ -1,8 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/models/livetv_dvr.dart';
-import 'package:plezy/models/livetv_lineup.dart';
-import 'package:plezy/models/media_grabber_device.dart';
-import 'package:plezy/models/media_provider_info.dart';
 import 'package:plezy/models/media_subscription.dart';
 
 void main() {
@@ -26,48 +23,6 @@ void main() {
     expect(dvr.settings.map((entry) => entry.id), ['setting-1']);
     expect(dvr.devices, [
       {'uuid': 'device-1'},
-    ]);
-
-    final grabber = MediaGrabberDevice.fromJson({
-      'key': 'device-1',
-      'uuid': 'device-1',
-      'ChannelMapping': [
-        {'channelKey': 7},
-        {'channelKey': 'channel-1'},
-      ],
-      'Setting': [
-        {'id': 7},
-        {'id': 'setting-1'},
-      ],
-    });
-    expect(grabber.channelMappings.map((entry) => entry.channelKey), ['channel-1']);
-    expect(grabber.settings.map((entry) => entry.id), ['setting-1']);
-
-    final lineup = LiveTvLineup.fromJson({
-      'uuid': 'lineup-1',
-      'Channel': [
-        {'callSign': 7},
-        {'key': 'channel-1', 'callSign': 'ONE'},
-      ],
-    });
-    expect(lineup.channels.map((entry) => entry.callSign), ['ONE']);
-
-    final provider = MediaProviderInfo.fromJson({
-      'identifier': 'provider-1',
-      'Feature': [
-        {'type': 7},
-        {
-          'type': 'livetv',
-          'Directory': [
-            'invalid',
-            {'key': 'guide'},
-          ],
-        },
-      ],
-    });
-    expect(provider.features.map((entry) => entry.type), ['livetv']);
-    expect(provider.features.single.directories, [
-      {'key': 'guide'},
     ]);
 
     final template = SubscriptionTemplate.fromJson({

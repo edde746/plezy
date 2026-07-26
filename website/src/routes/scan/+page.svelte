@@ -40,9 +40,9 @@
   <meta name="twitter:image" content="https://plezy.app/og/plezy-social.png" />
 </svelte:head>
 
-<div class="scan-page">
-  <div class="scan-card">
-    <span class="scan-logo"><Logo /></span>
+<div class="centered-page">
+  <div class="centered-card">
+    <span class="card-logo"><Logo /></span>
 
     <h1 class="scan-heading">Scan in Plezy</h1>
     <p class="scan-description">To use this feature, scan this QR code with the Plezy app.</p>
@@ -53,7 +53,7 @@
           href={store.url}
           target="_blank"
           rel="noopener noreferrer"
-          class="store-button"
+          class="btn-pill btn-pill--icon"
         >
           {#if store.id === "app-store"}
             <AppleIcon />
@@ -68,41 +68,6 @@
 </div>
 
 <style>
-  .scan-page {
-    display: flex;
-    min-height: 100dvh;
-    align-items: center;
-    justify-content: center;
-    padding: var(--page-gutter);
-  }
-
-  .scan-card {
-    display: flex;
-    width: min(100%, 32rem);
-    flex-direction: column;
-    align-items: center;
-    border-radius: var(--radius-xl);
-    padding: clamp(2rem, 8vw, 4rem);
-    background: var(--color-surface);
-    text-align: center;
-  }
-
-  .scan-logo {
-    display: flex;
-    width: 5rem;
-    height: 5rem;
-    align-items: center;
-    justify-content: center;
-    margin-bottom: 2rem;
-    border-radius: var(--radius-lg);
-    background: var(--color-surface-highest);
-  }
-
-  .scan-logo :global(img) {
-    width: 2.5rem;
-    height: 2.5rem;
-  }
-
   .scan-heading {
     margin-bottom: 0.75rem;
     font-family: var(--font-display);
@@ -124,32 +89,5 @@
     flex-wrap: wrap;
     justify-content: center;
     gap: 0.5rem;
-  }
-
-  .store-button {
-    display: inline-flex;
-    min-height: 3rem;
-    align-items: center;
-    gap: 0.625rem;
-    border-radius: var(--radius-pill);
-    padding-inline: 1.25rem;
-    color: var(--color-on-primary);
-    background: var(--color-text);
-    font-size: 0.8125rem;
-    font-weight: 700;
-    transition:
-      border-radius var(--motion-expressive) var(--ease-standard),
-      background-color var(--motion-fast) var(--ease-standard);
-  }
-
-  .store-button:hover,
-  .store-button:focus-visible {
-    border-radius: var(--radius-md);
-    background: #fff;
-  }
-
-  .store-button :global(svg) {
-    width: 1.125rem;
-    height: 1.125rem;
   }
 </style>

@@ -14,7 +14,7 @@ import '../services/settings_service.dart';
 import '../utils/global_key_utils.dart';
 import 'catalog_navigation_helper.dart';
 import 'music_navigation.dart';
-import 'plex_library_section_helpers.dart';
+import 'plex_library_section_utils.dart';
 import 'video_player_navigation.dart';
 
 /// Result of media navigation indicating what action was taken
@@ -192,11 +192,13 @@ Future<MediaNavigationResult> navigateToMediaItem(
   );
 
   // Handle library section items (shared whole-library entries) — Plex-only;
-  // [PlexLibrarySection.isLibrarySection] reads the stashed `key` from `raw`.
-  if (mi.isLibrarySection) {
-    final sectionKey = mi.librarySectionKey;
-    if (sectionKey != null && mi.serverId != null) {
-      final libraryGlobalKey = buildGlobalKey(ServerId(mi.serverId!), sectionKey);
+  // `PlexMappers` stashes the section path in `raw['key']`. Jellyfin "views"
+  // never appear inside a [MediaItem], so the gate never fires for them.
+  final rawKey = mi.raw?['key'];
+  if (rawKey is String && rawKey.startsWith('/library/sections/')) {
+    final sectionId = plexLibrarySectionIdFromString(rawKey);
+    if (sectionId != null && mi.serverId != null) {
+      final libraryGlobalKey = buildGlobalKey(ServerId(mi.serverId!), '$sectionId');
       MainScreenFocusScope.of(context, listen: false)?.selectLibrary?.call(libraryGlobalKey);
       return MediaNavigationResult.librarySelected;
     }

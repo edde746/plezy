@@ -10,14 +10,13 @@ import 'package:plezy/media/media_item.dart';
 import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/providers/multi_server_provider.dart';
 import 'package:plezy/screens/music/now_playing_screen.dart';
-import 'package:plezy/services/data_aggregation_service.dart';
-import 'package:plezy/services/multi_server_manager.dart';
 import 'package:plezy/services/music/music_playback_service.dart';
 import 'package:plezy/theme/mono_theme.dart';
 import 'package:plezy/utils/platform_detector.dart';
 import 'package:provider/provider.dart';
 
 import '../../test_helpers/media_items.dart';
+import '../../test_helpers/multi_server_fixtures.dart';
 
 MediaItem _track({required String id, required String title, required String album, required int year}) {
   return testMediaItem(
@@ -54,9 +53,6 @@ class _FakeMusicService extends StubMusicPlaybackService {
     _position = position;
     _positionController.add(position);
   }
-
-  @override
-  bool get isAvailable => true;
 
   @override
   MediaItem get currentTrack => track;
@@ -118,13 +114,8 @@ void main() {
     TvDetectionService.debugSetAppleTVOverride(isTv);
     PlatformDetector.debugSetIsDesktopOSOverride(!isTv);
 
-    final manager = MultiServerManager();
-    final multiServerProvider = MultiServerProvider(manager, DataAggregationService(manager));
     addTearDown(service.dispose);
-    addTearDown(() {
-      multiServerProvider.dispose();
-      manager.dispose();
-    });
+    final multiServerProvider = testMultiServer().provider;
 
     await tester.pumpWidget(
       InputModeTracker(

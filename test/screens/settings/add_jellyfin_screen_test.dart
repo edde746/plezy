@@ -23,7 +23,6 @@ import 'package:plezy/providers/multi_server_provider.dart';
 import 'package:plezy/screens/settings/add_jellyfin_screen.dart';
 import 'package:plezy/services/jellyfin_auth_service.dart';
 import 'package:plezy/services/credential_vault.dart';
-import 'package:plezy/services/data_aggregation_service.dart';
 import 'package:plezy/services/jellyfin_lan_discovery_service.dart';
 import 'package:plezy/services/multi_server_manager.dart';
 import 'package:plezy/services/storage_service.dart';
@@ -31,6 +30,7 @@ import 'package:plezy/theme/mono_theme.dart';
 import 'package:plezy/utils/platform_detector.dart';
 import 'package:provider/provider.dart';
 
+import '../../test_helpers/multi_server_fixtures.dart';
 import '../../test_helpers/prefs.dart';
 
 Profile _profile(String id) =>
@@ -245,7 +245,7 @@ class _RouteHarness {
       storage: storage,
     );
     final manager = _CountingJellyfinManager();
-    final multiServerProvider = MultiServerProvider(manager, DataAggregationService(manager));
+    final multiServerProvider = testMultiServerProvider(manager);
     final binder = _CountingActiveProfileBinder(
       activeProfile: activeProfiles,
       connections: connections,

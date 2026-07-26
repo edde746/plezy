@@ -14,35 +14,16 @@ import 'package:plezy/navigation/navigation_tabs.dart';
 import 'package:plezy/providers/hidden_libraries_provider.dart';
 import 'package:plezy/providers/libraries_provider.dart';
 import 'package:plezy/providers/multi_server_provider.dart';
-import 'package:plezy/services/data_aggregation_service.dart';
 import 'package:plezy/services/multi_server_manager.dart';
 import 'package:plezy/services/settings_service.dart';
-import 'package:plezy/theme/mono_tokens.dart';
 import 'package:plezy/utils/platform_detector.dart';
 import 'package:plezy/widgets/app_icon.dart';
 import 'package:plezy/widgets/side_navigation_rail.dart';
 import 'package:provider/provider.dart';
 
+import '../test_helpers/multi_server_fixtures.dart';
 import '../test_helpers/prefs.dart';
-
-const _testTokens = MonoTokens(
-  radiusSm: 8,
-  radiusMd: 12,
-  radiusLg: 20,
-  radiusXs: 5,
-  groupGap: 2,
-  space: 8,
-  fast: Duration(milliseconds: 1),
-  normal: Duration(milliseconds: 1),
-  slow: Duration(milliseconds: 1),
-  expressive: Duration(milliseconds: 1),
-  bg: Colors.black,
-  surface: Colors.black,
-  outline: Colors.white24,
-  text: Colors.white,
-  textMuted: Colors.white70,
-  splashFactory: NoSplash.splashFactory,
-);
+import '../test_helpers/theme.dart';
 
 MediaLibrary _library({
   required String id,
@@ -101,8 +82,7 @@ Future<void> _pumpBasicRail(
   addTearDown(hiddenLibrariesProvider.dispose);
 
   final manager = MultiServerManager();
-  final aggregation = DataAggregationService(manager);
-  final multiServerProvider = MultiServerProvider(manager, aggregation);
+  final multiServerProvider = testMultiServerProvider(manager);
   addTearDown(multiServerProvider.dispose);
 
   final rail = SideNavigationRail(
@@ -124,7 +104,7 @@ Future<void> _pumpBasicRail(
           ChangeNotifierProvider<MultiServerProvider>.value(value: multiServerProvider),
         ],
         child: MaterialApp(
-          theme: ThemeData(extensions: const [_testTokens]),
+          theme: ThemeData(extensions: const [testMonoTokens]),
           home: Scaffold(
             body: height == null ? rail : SizedBox(height: height, child: rail),
           ),
@@ -159,8 +139,7 @@ void main() {
     addTearDown(hiddenLibrariesProvider.dispose);
 
     final manager = MultiServerManager();
-    final aggregation = DataAggregationService(manager);
-    final multiServerProvider = MultiServerProvider(manager, aggregation);
+    final multiServerProvider = testMultiServerProvider(manager);
     addTearDown(multiServerProvider.dispose);
 
     await tester.pumpWidget(
@@ -172,7 +151,7 @@ void main() {
             ChangeNotifierProvider<MultiServerProvider>.value(value: multiServerProvider),
           ],
           child: MaterialApp(
-            theme: ThemeData(extensions: const [_testTokens]),
+            theme: ThemeData(extensions: const [testMonoTokens]),
             home: Scaffold(
               body: SideNavigationRail(
                 selectedTab: NavigationTabId.discover,
@@ -224,8 +203,7 @@ void main() {
     addTearDown(hiddenLibrariesProvider.dispose);
 
     final manager = MultiServerManager();
-    final aggregation = DataAggregationService(manager);
-    final multiServerProvider = MultiServerProvider(manager, aggregation);
+    final multiServerProvider = testMultiServerProvider(manager);
     addTearDown(multiServerProvider.dispose);
 
     await tester.pumpWidget(
@@ -237,7 +215,7 @@ void main() {
             ChangeNotifierProvider<MultiServerProvider>.value(value: multiServerProvider),
           ],
           child: MaterialApp(
-            theme: ThemeData(extensions: const [_testTokens]),
+            theme: ThemeData(extensions: const [testMonoTokens]),
             home: Scaffold(
               body: SideNavigationRail(
                 selectedTab: NavigationTabId.discover,
@@ -263,7 +241,7 @@ void main() {
     await _pumpBasicRail(tester, alwaysExpanded: true);
 
     final selectedItem = find.byType(NavigationRailItem).first;
-    expect(_railItemDecoration(tester, selectedItem)?.color, _testTokens.text.withValues(alpha: 0.1));
+    expect(_railItemDecoration(tester, selectedItem)?.color, testMonoTokens.text.withValues(alpha: 0.1));
   });
 
   testWidgets('D-pad sidebar focus hides selected item background after focus moves', (tester) async {
@@ -328,8 +306,7 @@ void main() {
     addTearDown(hiddenLibrariesProvider.dispose);
 
     final manager = MultiServerManager();
-    final aggregation = DataAggregationService(manager);
-    final multiServerProvider = MultiServerProvider(manager, aggregation);
+    final multiServerProvider = testMultiServerProvider(manager);
     addTearDown(multiServerProvider.dispose);
 
     final reports = <bool>[];
@@ -343,7 +320,7 @@ void main() {
             ChangeNotifierProvider<MultiServerProvider>.value(value: multiServerProvider),
           ],
           child: MaterialApp(
-            theme: ThemeData(extensions: const [_testTokens]),
+            theme: ThemeData(extensions: const [testMonoTokens]),
             home: Scaffold(
               body: SideNavigationRail(
                 selectedTab: NavigationTabId.discover,
@@ -392,8 +369,7 @@ void main() {
     addTearDown(hiddenLibrariesProvider.dispose);
 
     final manager = MultiServerManager();
-    final aggregation = DataAggregationService(manager);
-    final multiServerProvider = MultiServerProvider(manager, aggregation);
+    final multiServerProvider = testMultiServerProvider(manager);
     addTearDown(multiServerProvider.dispose);
 
     final sideNavKey = GlobalKey<SideNavigationRailState>();
@@ -408,7 +384,7 @@ void main() {
             ChangeNotifierProvider<MultiServerProvider>.value(value: multiServerProvider),
           ],
           child: MaterialApp(
-            theme: ThemeData(extensions: const [_testTokens]),
+            theme: ThemeData(extensions: const [testMonoTokens]),
             home: Scaffold(
               body: SideNavigationRail(
                 key: sideNavKey,
@@ -469,8 +445,7 @@ void main() {
     addTearDown(hiddenLibrariesProvider.dispose);
 
     final manager = MultiServerManager();
-    final aggregation = DataAggregationService(manager);
-    final multiServerProvider = MultiServerProvider(manager, aggregation);
+    final multiServerProvider = testMultiServerProvider(manager);
     addTearDown(multiServerProvider.dispose);
 
     final sideNavKey = GlobalKey<SideNavigationRailState>();
@@ -485,7 +460,7 @@ void main() {
             ChangeNotifierProvider<MultiServerProvider>.value(value: multiServerProvider),
           ],
           child: MaterialApp(
-            theme: ThemeData(extensions: const [_testTokens]),
+            theme: ThemeData(extensions: const [testMonoTokens]),
             home: Scaffold(
               body: SideNavigationRail(
                 key: sideNavKey,
@@ -527,7 +502,7 @@ void main() {
     await tester.pumpWidget(
       InputModeTracker(
         child: MaterialApp(
-          theme: ThemeData(extensions: const [_testTokens]),
+          theme: ThemeData(extensions: const [testMonoTokens]),
           home: Scaffold(
             body: Builder(
               builder: (context) {

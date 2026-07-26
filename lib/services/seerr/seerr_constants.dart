@@ -23,9 +23,7 @@ abstract final class SeerrMediaServerType {
 /// app checks are named; the full mask is stored on the session untouched.
 abstract final class SeerrPermission {
   static const int admin = 2;
-  static const int manageRequests = 16;
   static const int request = 32;
-  static const int autoApprove = 128;
   static const int request4k = 1024;
   static const int request4kMovie = 2048;
   static const int request4kTv = 4096;

@@ -139,7 +139,7 @@ class _DownloadMetadataStore extends ChangeNotifier {
         hydrated.add(
           HydratedWatchStatePatch(
             globalKey: scopedKey,
-            patch: WatchStatePatch.fromSnapshot(snapshot),
+            patch: snapshot,
             updatedAt: latest.updatedAt,
             order: latest.id,
           ),

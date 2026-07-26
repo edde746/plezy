@@ -1,3 +1,4 @@
+import { APP_STORE_ID } from '../content/downloads';
 import { normalizeUsdStorePrice } from '../content/software_app_offers';
 
 export type HomepageAggregateRating = {
@@ -42,7 +43,7 @@ type AppStoreLookupResponse = {
 	results?: AppStoreLookupResult[];
 };
 
-const APP_STORE_LOOKUP_URL = 'https://itunes.apple.com/lookup?id=6754315964';
+const APP_STORE_LOOKUP_URL = `https://itunes.apple.com/lookup?id=${APP_STORE_ID}`;
 
 export async function loadHomepageStoreMetadata({
 	fetch,

@@ -230,9 +230,6 @@ class HubSectionState extends State<HubSection> with MountedSetStateMixin, Skele
     });
   }
 
-  /// Check if this hub currently has focus
-  bool get hasFocusedItem => _hubFocusNode.hasFocus;
-
   /// Get the number of items in this hub
   int get itemCount => _totalItemCount;
 

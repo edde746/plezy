@@ -3,7 +3,6 @@ import 'package:http/http.dart' as http;
 import '../../../models/trackers/anime_ids.dart';
 import '../../../models/trackers/tracker_context.dart';
 import '../../../utils/app_logger.dart';
-import '../../settings_service.dart';
 import '../anime_list_tracker_base.dart';
 import '../tracker.dart';
 import '../tracker_constants.dart';
@@ -26,16 +25,7 @@ class AnilistTracker extends TrackerBase with ClientBackedTracker<AnilistClient>
   TrackerService get service => TrackerService.anilist;
 
   @override
-  bool readEnabledSetting(SettingsService settings) => settings.read(SettingsService.enableAnilistScrobble);
-
-  @override
   String get logLabel => 'AniList';
-
-  @override
-  String get idLogName => 'anilist';
-
-  @override
-  String get ratingUnavailableName => 'AniList';
 
   void rebindSession(
     TrackerSession? session, {

@@ -7,7 +7,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:plezy/database/app_database.dart';
-import 'package:plezy/focus/input_mode_tracker.dart';
 import 'package:plezy/media/ids.dart';
 import 'package:plezy/media/media_backend.dart';
 import 'package:plezy/media/media_item.dart';
@@ -15,22 +14,20 @@ import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/media/media_library.dart';
 import 'package:plezy/media/media_playlist.dart';
 import 'package:plezy/models/plex/plex_config.dart';
-import 'package:plezy/navigation/main_screen_scope.dart';
 import 'package:plezy/providers/multi_server_provider.dart';
 import 'package:plezy/screens/libraries/tabs/library_playlists_tab.dart';
-import 'package:plezy/services/data_aggregation_service.dart';
 import 'package:plezy/services/multi_server_manager.dart';
 import 'package:plezy/services/plex_client.dart';
 import 'package:plezy/services/plex_api_cache.dart';
 import 'package:plezy/services/settings_service.dart';
-import 'package:plezy/theme/mono_theme.dart';
 import 'package:plezy/utils/platform_detector.dart';
 import 'package:plezy/widgets/card_inflation_budget.dart';
 import 'package:plezy/widgets/focusable_media_card.dart';
 import 'package:plezy/widgets/media_card_sliver_layout.dart';
-import 'package:provider/provider.dart';
 
 import '../../test_helpers/backend_client_fixtures.dart';
+import '../../test_helpers/library_tab_scaffold.dart';
+import '../../test_helpers/multi_server_fixtures.dart';
 import '../../test_helpers/prefs.dart';
 
 final _serverId = ServerId('playlist-server');
@@ -187,43 +184,15 @@ Future<void> _pumpTab(
   required VoidCallback onBack,
   required VoidCallback onSidebar,
 }) async {
-  tester.view.devicePixelRatio = 1;
-  tester.view.physicalSize = const Size(800, 600);
-  addTearDown(() {
-    tester.view.resetDevicePixelRatio();
-    tester.view.resetPhysicalSize();
-  });
-
-  await tester.pumpWidget(
-    ChangeNotifierProvider<MultiServerProvider>.value(
-      value: harness.provider,
-      child: InputModeTracker(
-        child: MaterialApp(
-          theme: monoTheme(dark: true),
-          home: MainScreenFocusScope(
-            focusSidebar: onSidebar,
-            focusContent: () {},
-            isSidebarFocused: false,
-            sideNavigationWidth: 0,
-            child: Scaffold(
-              body: NestedScrollView(
-                headerSliverBuilder: (context, _) => [
-                  SliverOverlapAbsorber(
-                    handle: NestedScrollView.sliverOverlapAbsorberHandleFor(context),
-                    sliver: const SliverToBoxAdapter(child: SizedBox(height: 1)),
-                  ),
-                ],
-                body: ValueListenableBuilder<int>(
-                  valueListenable: harness.rebuild,
-                  builder: (context, _, _) =>
-                      LibraryPlaylistsTab(library: library, suppressAutoFocus: true, onBack: onBack),
-                ),
-              ),
-            ),
-          ),
-        ),
-      ),
+  await pumpLibraryTab(
+    tester,
+    provider: harness.provider,
+    tab: ValueListenableBuilder<int>(
+      valueListenable: harness.rebuild,
+      builder: (context, _, _) => LibraryPlaylistsTab(library: library, suppressAutoFocus: true, onBack: onBack),
     ),
+    size: const Size(800, 600),
+    focusSidebar: onSidebar,
   );
   await tester.pumpAndSettle();
 }
@@ -277,7 +246,7 @@ class _PlaylistHarness {
       }),
     );
     manager = MultiServerManager()..debugRegisterClientForTesting(client);
-    provider = MultiServerProvider(manager, DataAggregationService(manager));
+    provider = testMultiServerProvider(manager);
   }
 
   Future<void> dispose() async {

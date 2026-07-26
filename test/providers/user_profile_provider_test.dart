@@ -1,26 +1,19 @@
 import 'dart:convert';
 
-import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:plezy/connection/connection.dart';
-import 'package:plezy/connection/connection_registry.dart';
-import 'package:plezy/database/app_database.dart';
 import 'package:plezy/models/plex/plex_home_user.dart';
-import 'package:plezy/profiles/active_profile_provider.dart';
-import 'package:plezy/profiles/plex_home_service.dart';
 import 'package:plezy/profiles/profile.dart';
 import 'package:plezy/profiles/profile_connection.dart';
-import 'package:plezy/profiles/profile_connection_registry.dart';
-import 'package:plezy/profiles/profile_registry.dart';
 import 'package:plezy/providers/user_profile_provider.dart';
 import 'package:plezy/services/multi_server_manager.dart';
 import 'package:plezy/services/plex_auth_service.dart';
-import 'package:plezy/services/storage_service.dart';
 import 'package:plezy/utils/media_server_http_client.dart';
 
 import '../test_helpers/prefs.dart';
+import '../test_helpers/profile_stack.dart';
 
 void main() {
   setUp(resetSharedPreferencesForTest);
@@ -57,30 +50,11 @@ void main() {
     });
 
     test('settings connection follows the profile default row', () async {
-      final db = AppDatabase.forTesting(NativeDatabase.memory());
-      final connections = ConnectionRegistry(db);
-      final profileConnections = ProfileConnectionRegistry(db);
-      final profiles = ProfileRegistry(db);
-      final storage = await StorageService.getInstance();
-      final plexHome = PlexHomeService(
-        connections: connections,
-        profileConnections: profileConnections,
-        storage: storage,
-        plexHomeUserFetcher: (_) async => const [],
-      );
-      final active = ActiveProfileProvider(
-        registry: profiles,
-        plexHome: plexHome,
-        connections: connections,
-        storage: storage,
-      );
+      final stack = await ProfileStack.create();
       final manager = MultiServerManager();
       addTearDown(() async {
         manager.dispose();
-        await active.resetForTesting();
-        active.dispose();
-        await plexHome.dispose();
-        await db.close();
+        await stack.dispose();
       });
 
       final profile = Profile.local(id: 'local-owner', displayName: 'Owner', createdAt: DateTime(2026, 1, 1));
@@ -102,10 +76,10 @@ void main() {
         deviceId: 'device-a',
         createdAt: DateTime(2026, 1, 1),
       );
-      await profiles.upsert(profile);
-      await connections.upsert(plex);
-      await connections.upsert(jellyfin);
-      await profileConnections.upsert(
+      await stack.profiles.upsert(profile);
+      await stack.connections.upsert(plex);
+      await stack.connections.upsert(jellyfin);
+      await stack.profileConnections.upsert(
         ProfileConnection(
           profileId: profile.id,
           connectionId: plex.id,
@@ -115,53 +89,36 @@ void main() {
         ),
         makeDefault: true,
       );
-      await profileConnections.upsert(
+      await stack.profileConnections.upsert(
         ProfileConnection(profileId: profile.id, connectionId: jellyfin.id, userIdentifier: jellyfin.userId),
       );
-      await storage.setActiveProfileId(profile.id);
-      await active.initialize();
+      await stack.storage.setActiveProfileId(profile.id);
+      await stack.active.initialize();
 
       final p = UserProfileProvider()
         ..attach(
-          connections: connections,
-          activeProfile: active,
-          profileConnections: profileConnections,
+          connections: stack.connections,
+          activeProfile: stack.active,
+          profileConnections: stack.profileConnections,
           serverManager: manager,
         );
       addTearDown(p.dispose);
 
       expect(await p.debugResolveActiveSettingsConnectionForTesting(), isA<PlexAccountConnection>());
 
-      await profileConnections.setDefault(profile.id, jellyfin.id);
+      await stack.profileConnections.setDefault(profile.id, jellyfin.id);
 
       expect(await p.debugResolveActiveSettingsConnectionForTesting(), isA<JellyfinConnection>());
     });
 
     test('watches Plex Home profile connection rows', () async {
-      final db = AppDatabase.forTesting(NativeDatabase.memory());
-      final connections = ConnectionRegistry(db);
-      final profileConnections = ProfileConnectionRegistry(db);
-      final profiles = ProfileRegistry(db);
-      final storage = await StorageService.getInstance();
-      final plexHome = PlexHomeService(
-        connections: connections,
-        profileConnections: profileConnections,
-        storage: storage,
-        plexHomeUserFetcher: (_) async => [_homeUser(uuid: 'home-user-a', title: 'Home User')],
-      );
-      final active = ActiveProfileProvider(
-        registry: profiles,
-        plexHome: plexHome,
-        connections: connections,
-        storage: storage,
+      final stack = await ProfileStack.create(
+        homeUsers: [_homeUser(uuid: 'home-user-a', title: 'Home User')],
       );
       final manager = MultiServerManager();
       addTearDown(() async {
         manager.dispose();
-        await active.resetForTesting();
-        active.dispose();
-        await plexHome.dispose();
-        await db.close();
+        await stack.dispose();
       });
 
       final account = PlexAccountConnection(
@@ -171,21 +128,23 @@ void main() {
         accountLabel: 'Plex A',
         createdAt: DateTime(2026, 1, 1),
       );
-      await connections.upsert(account);
-      await plexHome.refresh(account);
-      await storage.setActiveProfileId(plexHomeProfileId(accountConnectionId: account.id, homeUserUuid: 'home-user-a'));
-      await active.initialize();
+      await stack.connections.upsert(account);
+      await stack.plexHome.refresh(account);
+      await stack.storage.setActiveProfileId(
+        plexHomeProfileId(accountConnectionId: account.id, homeUserUuid: 'home-user-a'),
+      );
+      await stack.active.initialize();
 
       final p = UserProfileProvider()
         ..attach(
-          connections: connections,
-          activeProfile: active,
-          profileConnections: profileConnections,
+          connections: stack.connections,
+          activeProfile: stack.active,
+          profileConnections: stack.profileConnections,
           serverManager: manager,
         );
       addTearDown(p.dispose);
 
-      expect(p.debugWatchedProfileConnectionProfileId, active.activeId);
+      expect(p.debugWatchedProfileConnectionProfileId, stack.active.activeId);
     });
 
     test('Plex Home profile without a switched token makes no user request', () async {
@@ -231,30 +190,11 @@ void main() {
     });
 
     test('Plex token fallback uses the selected local profile account', () async {
-      final db = AppDatabase.forTesting(NativeDatabase.memory());
-      final connections = ConnectionRegistry(db);
-      final profileConnections = ProfileConnectionRegistry(db);
-      final profiles = ProfileRegistry(db);
-      final storage = await StorageService.getInstance();
-      final plexHome = PlexHomeService(
-        connections: connections,
-        profileConnections: profileConnections,
-        storage: storage,
-        plexHomeUserFetcher: (_) async => const [],
-      );
-      final active = ActiveProfileProvider(
-        registry: profiles,
-        plexHome: plexHome,
-        connections: connections,
-        storage: storage,
-      );
+      final stack = await ProfileStack.create();
       final manager = MultiServerManager();
       addTearDown(() async {
         manager.dispose();
-        await active.resetForTesting();
-        active.dispose();
-        await plexHome.dispose();
-        await db.close();
+        await stack.dispose();
       });
 
       final profile = Profile.local(id: 'local-owner', displayName: 'Owner', createdAt: DateTime(2026, 1, 1));
@@ -272,10 +212,10 @@ void main() {
         accountLabel: 'Plex B',
         createdAt: DateTime(2026, 1, 1),
       );
-      await profiles.upsert(profile);
-      await connections.upsert(accountA);
-      await connections.upsert(accountB);
-      await profileConnections.upsert(
+      await stack.profiles.upsert(profile);
+      await stack.connections.upsert(accountA);
+      await stack.connections.upsert(accountB);
+      await stack.profileConnections.upsert(
         ProfileConnection(
           profileId: profile.id,
           connectionId: accountB.id,
@@ -284,8 +224,8 @@ void main() {
         ),
         makeDefault: true,
       );
-      await storage.setActiveProfileId(profile.id);
-      await active.initialize();
+      await stack.storage.setActiveProfileId(profile.id);
+      await stack.active.initialize();
 
       final requests = <http.Request>[];
       final auth = _recordingAuth(requests, audioLanguage: 'fra');
@@ -293,9 +233,9 @@ void main() {
 
       final p = UserProfileProvider(authService: auth)
         ..attach(
-          connections: connections,
-          activeProfile: active,
-          profileConnections: profileConnections,
+          connections: stack.connections,
+          activeProfile: stack.active,
+          profileConnections: stack.profileConnections,
           serverManager: manager,
         );
       addTearDown(p.dispose);
@@ -356,39 +296,16 @@ PlexAuthService _recordingAuth(List<http.Request> requests, {required String aud
 }
 
 class _HomeProfileFixture {
-  _HomeProfileFixture({
-    required this.db,
-    required this.active,
-    required this.plexHome,
-    required this.auth,
-    required this.provider,
-    required this.requests,
-  });
+  _HomeProfileFixture({required this.stack, required this.auth, required this.provider, required this.requests});
 
-  final AppDatabase db;
-  final ActiveProfileProvider active;
-  final PlexHomeService plexHome;
+  final ProfileStack stack;
   final PlexAuthService auth;
   final UserProfileProvider provider;
   final List<http.Request> requests;
 
   static Future<_HomeProfileFixture> create({String? switchedToken}) async {
-    final db = AppDatabase.forTesting(NativeDatabase.memory());
-    final connections = ConnectionRegistry(db);
-    final profileConnections = ProfileConnectionRegistry(db);
-    final profiles = ProfileRegistry(db);
-    final storage = await StorageService.getInstance();
-    final plexHome = PlexHomeService(
-      connections: connections,
-      profileConnections: profileConnections,
-      storage: storage,
-      plexHomeUserFetcher: (_) async => [_homeUser(uuid: 'home-user-a', title: 'Home User')],
-    );
-    final active = ActiveProfileProvider(
-      registry: profiles,
-      plexHome: plexHome,
-      connections: connections,
-      storage: storage,
+    final stack = await ProfileStack.create(
+      homeUsers: [_homeUser(uuid: 'home-user-a', title: 'Home User')],
     );
     final account = PlexAccountConnection(
       id: 'plex-parent',
@@ -397,12 +314,12 @@ class _HomeProfileFixture {
       accountLabel: 'Plex Parent',
       createdAt: DateTime(2026, 1, 1),
     );
-    await connections.upsert(account);
-    await plexHome.refresh(account);
+    await stack.connections.upsert(account);
+    await stack.plexHome.refresh(account);
 
     final activeId = plexHomeProfileId(accountConnectionId: account.id, homeUserUuid: 'home-user-a');
     if (switchedToken != null) {
-      await profileConnections.upsert(
+      await stack.profileConnections.upsert(
         ProfileConnection(
           profileId: activeId,
           connectionId: account.id,
@@ -413,29 +330,23 @@ class _HomeProfileFixture {
         makeDefault: true,
       );
     }
-    await storage.setActiveProfileId(activeId);
-    await active.initialize();
+    await stack.storage.setActiveProfileId(activeId);
+    await stack.active.initialize();
 
     final requests = <http.Request>[];
     final auth = _recordingAuth(requests, audioLanguage: 'jpn');
     final provider = UserProfileProvider(authService: auth)
-      ..attach(connections: connections, activeProfile: active, profileConnections: profileConnections);
-    return _HomeProfileFixture(
-      db: db,
-      active: active,
-      plexHome: plexHome,
-      auth: auth,
-      provider: provider,
-      requests: requests,
-    );
+      ..attach(
+        connections: stack.connections,
+        activeProfile: stack.active,
+        profileConnections: stack.profileConnections,
+      );
+    return _HomeProfileFixture(stack: stack, auth: auth, provider: provider, requests: requests);
   }
 
   Future<void> dispose() async {
     provider.dispose();
     auth.dispose();
-    await active.resetForTesting();
-    active.dispose();
-    await plexHome.dispose();
-    await db.close();
+    await stack.dispose();
   }
 }

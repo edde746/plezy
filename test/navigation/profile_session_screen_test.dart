@@ -16,7 +16,6 @@ import 'package:plezy/providers/discover_provider.dart';
 import 'package:plezy/providers/hidden_libraries_provider.dart';
 import 'package:plezy/providers/multi_server_provider.dart';
 import 'package:plezy/providers/trackers_provider.dart';
-import 'package:plezy/services/data_aggregation_service.dart';
 import 'package:plezy/services/multi_server_manager.dart';
 import 'package:plezy/services/offline_watch_sync_service.dart';
 import 'package:plezy/services/storage_service.dart';
@@ -24,6 +23,7 @@ import 'package:plezy/services/system_shelf_service.dart';
 import 'package:provider/provider.dart';
 
 import '../test_helpers/io_fakes.dart';
+import '../test_helpers/multi_server_fixtures.dart';
 import '../test_helpers/prefs.dart';
 
 void main() {
@@ -52,7 +52,7 @@ void main() {
       storage: storage,
     );
     final serverManager = MultiServerManager();
-    final multiServer = MultiServerProvider(serverManager, DataAggregationService(serverManager));
+    final multiServer = testMultiServerProvider(serverManager);
     // The session tree instantiates MusicPlaybackServiceImpl (the mini-player
     // overlay watches it), which needs the database + offline watch service.
     final offlineWatch = OfflineWatchSyncService(database: db, serverManager: serverManager);

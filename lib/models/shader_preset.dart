@@ -9,22 +9,35 @@ enum ShaderPresetType { none, nvscaler, artcnn, anime4k, custom }
 /// ArtCNN real-time model sizes.
 enum ArtCNNModel {
   /// Lightweight real-time model
-  c4f16,
+  c4f16('C4F16'),
 
   /// Higher-quality real-time model
-  c4f32,
+  c4f32('C4F32');
+
+  const ArtCNNModel(this.label);
+
+  /// Display label for the model.
+  final String label;
 }
 
 /// ArtCNN luma doubler variants.
 enum ArtCNNVariant {
   /// Neutral luma doubler
-  neutral,
+  neutral('Neutral', 'neutral'),
 
   /// Denoise and soften
-  denoise,
+  denoise('Denoise', 'dn'),
 
   /// Denoise and sharpen
-  denoiseSharpen,
+  denoiseSharpen('Denoise + Sharpen', 'ds');
+
+  const ArtCNNVariant(this.label, this.slug);
+
+  /// Display label for the variant.
+  final String label;
+
+  /// Stable slug used in built-in preset ids and shader asset keys.
+  final String slug;
 }
 
 /// Quality tiers for Anime4K presets
@@ -39,22 +52,27 @@ enum Anime4KQuality {
 /// Anime4K modes that define shader combinations
 enum Anime4KMode {
   /// Mode A: Clamp + Restore
-  modeA,
+  modeA('A'),
 
   /// Mode B: Clamp + Restore + Upscale + Downscale
-  modeB,
+  modeB('B'),
 
   /// Mode C: Clamp + Upscale + Downscale
-  modeC,
+  modeC('C'),
 
   /// Mode A+A: Clamp + Restore + Restore
-  modeAA,
+  modeAA('A+A'),
 
   /// Mode B+B: Clamp + Restore + Restore + Upscale + Downscale
-  modeBB,
+  modeBB('B+B'),
 
   /// Mode C+A: Clamp + Upscale + Restore + Downscale
-  modeCA,
+  modeCA('C+A');
+
+  const Anime4KMode(this.label);
+
+  /// Display label for the mode.
+  final String label;
 }
 
 @freezed
@@ -120,93 +138,28 @@ class ShaderPreset {
   );
 
   /// Create an ArtCNN preset with the specified model and variant
-  static ShaderPreset artcnnPreset(ArtCNNModel model, ArtCNNVariant variant) {
-    final modelName = _getArtCNNModelName(model);
-    final variantName = _getArtCNNVariantName(variant);
-    final variantId = _getArtCNNVariantId(variant);
-
-    return ShaderPreset(
-      id: 'artcnn_${model.name}_$variantId',
-      name: variant == ArtCNNVariant.neutral ? 'ArtCNN $modelName' : 'ArtCNN $modelName $variantName',
-      type: ShaderPresetType.artcnn,
-      artcnnConfig: ArtCNNConfig(model: model, variant: variant),
-    );
-  }
+  static ShaderPreset artcnnPreset(ArtCNNModel model, ArtCNNVariant variant) => ShaderPreset(
+    id: 'artcnn_${model.name}_${variant.slug}',
+    name: variant == ArtCNNVariant.neutral ? 'ArtCNN ${model.label}' : 'ArtCNN ${model.label} ${variant.label}',
+    type: ShaderPresetType.artcnn,
+    artcnnConfig: ArtCNNConfig(model: model, variant: variant),
+  );
 
   /// Create an Anime4K preset with the specified quality and mode
   static ShaderPreset anime4kPreset(Anime4KQuality quality, Anime4KMode mode) {
     final qualityName = quality == Anime4KQuality.fast ? 'Fast' : 'HQ';
-    final modeName = _getModeName(mode);
 
     return ShaderPreset(
       id: 'anime4k_${quality.name}_${mode.name}',
-      name: 'Anime4K $qualityName $modeName',
+      name: 'Anime4K $qualityName ${mode.label}',
       type: ShaderPresetType.anime4k,
       anime4kConfig: Anime4KConfig(quality: quality, mode: mode),
     );
   }
 
-  static String _getModeName(Anime4KMode mode) {
-    switch (mode) {
-      case Anime4KMode.modeA:
-        return 'A';
-      case Anime4KMode.modeB:
-        return 'B';
-      case Anime4KMode.modeC:
-        return 'C';
-      case Anime4KMode.modeAA:
-        return 'A+A';
-      case Anime4KMode.modeBB:
-        return 'B+B';
-      case Anime4KMode.modeCA:
-        return 'C+A';
-    }
-  }
+  String get modeDisplayName => anime4kConfig?.mode.label ?? '';
 
-  static String _getArtCNNModelName(ArtCNNModel model) {
-    switch (model) {
-      case ArtCNNModel.c4f16:
-        return 'C4F16';
-      case ArtCNNModel.c4f32:
-        return 'C4F32';
-    }
-  }
-
-  static String _getArtCNNVariantName(ArtCNNVariant variant) {
-    switch (variant) {
-      case ArtCNNVariant.neutral:
-        return 'Neutral';
-      case ArtCNNVariant.denoise:
-        return 'Denoise';
-      case ArtCNNVariant.denoiseSharpen:
-        return 'Denoise + Sharpen';
-    }
-  }
-
-  static String _getArtCNNVariantId(ArtCNNVariant variant) {
-    switch (variant) {
-      case ArtCNNVariant.neutral:
-        return 'neutral';
-      case ArtCNNVariant.denoise:
-        return 'dn';
-      case ArtCNNVariant.denoiseSharpen:
-        return 'ds';
-    }
-  }
-
-  String get modeDisplayName {
-    if (anime4kConfig != null) {
-      return _getModeName(anime4kConfig!.mode);
-    }
-    return '';
-  }
-
-  String get artcnnModelDisplayName {
-    if (artcnnConfig != null) {
-      return _getArtCNNModelName(artcnnConfig!.model);
-    }
-    return '';
-  }
+  String get artcnnModelDisplayName => artcnnConfig?.model.label ?? '';
 
   static final List<ShaderPreset> _builtInPresets = List.unmodifiable([
     none,

@@ -6,7 +6,6 @@ import 'package:plezy/media/media_backend.dart';
 import 'package:plezy/media/media_item.dart';
 import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/media/media_server_client.dart';
-import 'package:plezy/media/playback_report_metadata.dart';
 import 'package:plezy/models/external_player_models.dart';
 import 'package:plezy/services/external_player_service.dart';
 import 'package:plezy/services/jellyfin_api_cache.dart';
@@ -15,8 +14,9 @@ import 'package:plezy/services/offline_watch_sync_service.dart';
 import 'package:plezy/utils/active_client_scope.dart';
 import 'package:plezy/utils/watch_state_notifier.dart';
 import '../test_helpers/media_items.dart';
+import '../test_helpers/playback_report_fakes.dart';
 
-class _RecordingClient implements MediaServerClient, ScopedMediaServerClient {
+class _RecordingClient with PlaybackReportRecorder implements MediaServerClient, ScopedMediaServerClient {
   _RecordingClient({this.backend = MediaBackend.plex, String? scopedServerId})
     : scopedServerId =
           scopedServerId ??
@@ -48,33 +48,18 @@ class _RecordingClient implements MediaServerClient, ScopedMediaServerClient {
   bool get marksWatchedOnPlaybackStopped => backend == MediaBackend.jellyfin;
 
   @override
-  Future<void> reportPlaybackStarted({
-    required String itemId,
-    required Duration position,
-    Duration? duration,
-    String? playSessionId,
-    String? playMethod,
-    String? liveStreamId,
-    String? mediaSourceId,
-    int? audioStreamIndex,
-    int? subtitleStreamIndex,
-  }) async {
-    started.add((positionMs: position.inMilliseconds, durationMs: duration?.inMilliseconds));
-    if (failStart) throw StateError('start failed');
-  }
-
-  @override
-  Future<void> reportPlaybackStopped({
-    required String itemId,
-    required Duration position,
-    Duration? duration,
-    String? playSessionId,
-    String? liveStreamId,
-    String? mediaSourceId,
-    PlaybackReportMetadata report = const PlaybackReportMetadata.live(),
-  }) async {
-    stopped.add((positionMs: position.inMilliseconds, durationMs: duration?.inMilliseconds));
-    if (failStop) throw StateError('stop failed');
+  Future<void> onPlaybackReport(PlaybackReportCall call) async {
+    final entry = (positionMs: call.position.inMilliseconds, durationMs: call.duration?.inMilliseconds);
+    switch (call.kind) {
+      case PlaybackReportKind.started:
+        started.add(entry);
+        if (failStart) throw StateError('start failed');
+      case PlaybackReportKind.progress:
+        throw UnimplementedError();
+      case PlaybackReportKind.stopped:
+        stopped.add(entry);
+        if (failStop) throw StateError('stop failed');
+    }
   }
 
   @override
