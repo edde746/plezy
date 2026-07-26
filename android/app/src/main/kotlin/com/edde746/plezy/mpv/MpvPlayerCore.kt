@@ -41,7 +41,8 @@ class MpvPlayerCore private constructor(
   private val audioOnly: Boolean,
   private val propertyWriterOverride: (suspend (String, String) -> Unit)?,
   initializedForTesting: Boolean
-) : SurfaceHolder.Callback, SurfacePlayerCore {
+) : SurfaceHolder.Callback,
+  SurfacePlayerCore {
   constructor(context: Context, audioOnly: Boolean = false) : this(context, audioOnly, null, false)
 
   internal constructor(

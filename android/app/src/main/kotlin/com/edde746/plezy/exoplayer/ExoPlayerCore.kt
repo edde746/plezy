@@ -103,7 +103,9 @@ interface ExoPlayerDelegate : com.edde746.plezy.shared.PlayerDelegate {
 internal fun playbackMimeType(isLive: Boolean): String? = if (isLive) MimeTypes.APPLICATION_M3U8 else null
 
 @OptIn(UnstableApi::class)
-class ExoPlayerCore(private val activity: Activity) : Player.Listener, SurfacePlayerCore {
+class ExoPlayerCore(private val activity: Activity) :
+  Player.Listener,
+  SurfacePlayerCore {
 
   companion object {
     private const val TAG = "ExoPlayerCore"
