@@ -1646,6 +1646,20 @@ class DownloadManagerService {
     return true;
   }
 
+  /// Hand a prepared task to the native downloader, recording its id first so a
+  /// concurrent cancel can find it. Returns true if the download went inactive
+  /// while enqueueing and the task was dropped again.
+  Future<bool> _enqueuePreparedTask(String globalKey, Task task, String kind) async {
+    await _database.updateBgTaskId(globalKey, task.taskId);
+    final success = await FileDownloader().enqueue(task);
+    if (!success) throw Exception('Failed to enqueue $kind task');
+    if (await _cancelEnqueuedTaskIfInactive(globalKey, task.taskId)) {
+      return true;
+    }
+    appLogger.i('Enqueued $kind task ${task.taskId} for $globalKey');
+    return false;
+  }
+
   /// Resolve metadata, video URL, and file path, then enqueue a background download task.
   /// Returns true if successfully enqueued, false if it failed immediately.
   Future<bool> _prepareAndEnqueueDownload(
@@ -1753,38 +1767,30 @@ class DownloadManagerService {
         if (_queueBlockedByStorageFailure) return true;
         final metadata = resolvedMetadata;
         final safBaseUri = _storageService.safBaseUri;
+        final DownloadTask task;
+        final String filePath;
+        final String? safRootUri;
         if (_storageService.isUsingSaf && safBaseUri != null) {
-          final safRootUri = await _safStorage.resolvePersistedPermissionUri(safBaseUri);
-          if (safRootUri == null) {
+          final rootUri = await _safStorage.resolvePersistedPermissionUri(safBaseUri);
+          if (rootUri == null) {
             throw StateError('Selected SAF root has no persisted permission');
           }
-          await _replaceDownloadSafRootClaim(globalKey, safRootUri);
+          await _replaceDownloadSafRootClaim(globalKey, rootUri);
 
           // SAF mode: use UriDownloadTask (writes directly to content:// URI,
           // with no pause/resume support).
-          final List<String> pathComponents;
-          final String safFileName;
-          if (metadata.isMovie) {
-            pathComponents = _storageService.getMovieSafPathComponents(metadata);
-            safFileName = _storageService.getMovieSafFileName(metadata, ext);
-          } else if (metadata.isEpisode) {
-            pathComponents = _storageService.getEpisodeSafPathComponents(metadata, showYear: showYear);
-            safFileName = _storageService.getEpisodeSafFileName(metadata, ext);
-          } else {
-            pathComponents = [serverId, metadata.id];
-            safFileName = 'video.$ext';
-          }
+          final target = _storageService.safTarget(metadata, ext, showYear: showYear, serverId: serverId);
 
-          final safDirUri = await _safStorage.createNestedDirectories(safRootUri, pathComponents);
+          final safDirUri = await _safStorage.createNestedDirectories(rootUri, target.components);
           if (safDirUri == null) {
             throw Exception('Failed to create SAF directory');
           }
 
-          await _cleanupSafTargetFile(safDirUri, safFileName);
+          await _cleanupSafTargetFile(safDirUri, target.fileName);
 
-          final task = UriDownloadTask(
+          task = UriDownloadTask(
             url: resolution.videoUrl!,
-            filename: safFileName,
+            filename: target.fileName,
             directoryUri: Uri.parse(safDirUri),
             group: _downloadGroup,
             updates: Updates.statusAndProgress,
@@ -1794,82 +1800,60 @@ class DownloadManagerService {
             metaData: globalKey,
             displayName: displayName,
           );
-
-          _pendingDownloadContext[globalKey] = _DownloadContext(
-            metadata: metadata,
-            queueItem: queueItem,
-            filePath: safDirUri,
-            extension: ext,
-            client: client,
-            showYear: showYear,
-            isSafMode: true,
-            safRootUri: safRootUri,
-            subtitles: resolution.externalSubtitlesResolved ? resolution.externalSubtitles : null,
-          );
-
-          await _database.updateBgTaskId(globalKey, task.taskId);
-          final success = await FileDownloader().enqueue(task);
-          if (!success) throw Exception('Failed to enqueue SAF download task');
-          if (await _cancelEnqueuedTaskIfInactive(globalKey, task.taskId)) {
-            return true;
-          }
-          appLogger.i('Enqueued SAF download task ${task.taskId} for $globalKey');
-          return false;
-        }
-
-        await _replaceDownloadSafRootClaim(globalKey, null);
-
-        // Normal mode: use DownloadTask with pause/resume support.
-        String downloadFilePath;
-        if (metadata.isMovie) {
-          downloadFilePath = await _storageService.getMovieVideoPath(metadata, ext);
-        } else if (metadata.isEpisode) {
-          downloadFilePath = await _storageService.getEpisodeVideoPath(metadata, ext, showYear: showYear);
+          filePath = safDirUri;
+          safRootUri = rootUri;
         } else {
-          downloadFilePath = await _storageService.getVideoFilePath(serverId, metadata.id, ext);
+          await _replaceDownloadSafRootClaim(globalKey, null);
+
+          // Normal mode: use DownloadTask with pause/resume support.
+          final String downloadFilePath;
+          if (metadata.isMovie) {
+            downloadFilePath = await _storageService.getMovieVideoPath(metadata, ext);
+          } else if (metadata.isEpisode) {
+            downloadFilePath = await _storageService.getEpisodeVideoPath(metadata, ext, showYear: showYear);
+          } else {
+            downloadFilePath = await _storageService.getVideoFilePath(serverId, metadata.id, ext);
+          }
+
+          // Clean up partial files from previous attempts to prevent
+          // background_downloader from creating numbered copies (File (1).mp4).
+          await Future.wait([
+            _deleteFileIfExists(File(downloadFilePath), 'stale video before re-download'),
+            _deleteFileIfExists(File('$downloadFilePath.part'), 'stale .part before re-download'),
+          ]);
+
+          await File(downloadFilePath).parent.create(recursive: true);
+
+          task = DownloadTask(
+            url: resolution.videoUrl!,
+            filename: path.basename(downloadFilePath),
+            directory: path.dirname(downloadFilePath),
+            baseDirectory: BaseDirectory.root,
+            group: _downloadGroup,
+            updates: Updates.statusAndProgress,
+            requiresWiFi: requiresWiFi,
+            retries: _nativeRetries,
+            allowPause: true,
+            metaData: globalKey,
+            displayName: displayName,
+          );
+          filePath = downloadFilePath;
+          safRootUri = null;
         }
-
-        // Clean up partial files from previous attempts to prevent
-        // background_downloader from creating numbered copies (File (1).mp4).
-        await Future.wait([
-          _deleteFileIfExists(File(downloadFilePath), 'stale video before re-download'),
-          _deleteFileIfExists(File('$downloadFilePath.part'), 'stale .part before re-download'),
-        ]);
-
-        await File(downloadFilePath).parent.create(recursive: true);
-
-        final task = DownloadTask(
-          url: resolution.videoUrl!,
-          filename: path.basename(downloadFilePath),
-          directory: path.dirname(downloadFilePath),
-          baseDirectory: BaseDirectory.root,
-          group: _downloadGroup,
-          updates: Updates.statusAndProgress,
-          requiresWiFi: requiresWiFi,
-          retries: _nativeRetries,
-          allowPause: true,
-          metaData: globalKey,
-          displayName: displayName,
-        );
 
         _pendingDownloadContext[globalKey] = _DownloadContext(
           metadata: metadata,
           queueItem: queueItem,
-          filePath: downloadFilePath,
+          filePath: filePath,
           extension: ext,
           client: client,
           showYear: showYear,
+          isSafMode: safRootUri != null,
+          safRootUri: safRootUri,
           subtitles: resolution.externalSubtitlesResolved ? resolution.externalSubtitles : null,
         );
 
-        await _database.updateBgTaskId(globalKey, task.taskId);
-        final success = await FileDownloader().enqueue(task);
-        if (!success) throw Exception('Failed to enqueue download task');
-        if (await _cancelEnqueuedTaskIfInactive(globalKey, task.taskId)) {
-          return true;
-        }
-        appLogger.i('Enqueued download task ${task.taskId} for $globalKey');
-        return false;
+        return _enqueuePreparedTask(globalKey, task, safRootUri != null ? 'SAF download' : 'download');
       });
       if (becameInactive) return true;
       return true;
@@ -2417,23 +2401,12 @@ class DownloadManagerService {
   }
 
   Future<String?> _resolveSafStoredPath(MediaItem metadata, String ext, int? showYear, String safRootUri) async {
-    final List<String> pathComponents;
-    final String safFileName;
-    if (metadata.isMovie) {
-      pathComponents = _storageService.getMovieSafPathComponents(metadata);
-      safFileName = _storageService.getMovieSafFileName(metadata, ext);
-    } else if (metadata.isEpisode) {
-      pathComponents = _storageService.getEpisodeSafPathComponents(metadata, showYear: showYear);
-      safFileName = _storageService.getEpisodeSafFileName(metadata, ext);
-    } else {
-      pathComponents = [metadata.serverId!, metadata.id];
-      safFileName = 'video.$ext';
-    }
+    final target = _storageService.safTarget(metadata, ext, showYear: showYear, serverId: metadata.serverId);
 
-    final dirUri = await _safStorage.createNestedDirectories(safRootUri, pathComponents);
+    final dirUri = await _safStorage.createNestedDirectories(safRootUri, target.components);
     if (dirUri == null) return null;
 
-    final child = await _safStorage.getChild(dirUri, [safFileName]);
+    final child = await _safStorage.getChild(dirUri, [target.fileName]);
     return child?.uri;
   }
 

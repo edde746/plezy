@@ -7,7 +7,7 @@ import '../../../utils/track_label_builder.dart';
 import '../../../widgets/focusable_list_tile.dart';
 
 class TrackSelectionHelper {
-  static Widget buildOffTile<T>({
+  static Widget buildOffTile({
     required BuildContext context,
     required bool isSelected,
     required VoidCallback onTap,
@@ -30,7 +30,7 @@ class TrackSelectionHelper {
     );
   }
 
-  static Widget buildTrackTile<T>({
+  static Widget buildTrackTile({
     required BuildContext context,
     required TrackLabel label,
     required bool isSelected,

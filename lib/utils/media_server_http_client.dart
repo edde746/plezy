@@ -162,48 +162,19 @@ class MediaServerHttpClient {
   }) => _send('DELETE', path, queryParameters: queryParameters, headers: headers, timeout: timeout, abort: abort);
 
   /// Fetch raw bytes (e.g. images, BIF files, subtitles).
-  Future<Uint8List> getBytes(
-    String url, {
-    Map<String, String>? headers,
-    Duration? timeout,
-    AbortController? abort,
-  }) async {
-    if (_closing) {
-      throw MediaServerHttpException(type: MediaServerHttpErrorType.cancelled, message: 'HTTP client is closing');
-    }
-
-    final uri = _isAbsoluteUrl(url) ? Uri.parse(url) : _buildUri(url, null);
-    final requestAbort = AbortController();
-    _activeAborts.add(requestAbort);
-    final request = http.AbortableRequest('GET', uri, abortTrigger: _abortTrigger(requestAbort, abort));
-    request.headers.addAll({...defaultHeaders, ...?headers});
-
-    final sw = Stopwatch()..start();
-    try {
-      final streamed = await _withAbortOnTimeout(
-        _client.send(request),
-        timeout ?? connectTimeout,
-        operation: 'GET ${uri.path} connect',
-        abort: requestAbort,
-      );
-
-      final bytes = await _withAbortOnTimeout(
-        streamed.stream.toBytes(),
-        timeout ?? receiveTimeout,
-        operation: 'GET ${uri.path} receive',
-        abort: requestAbort,
-      );
-
-      sw.stop();
-      _logResponse('GET', uri, streamed.statusCode, sw.elapsedMilliseconds);
-      return bytes;
-    } catch (e) {
-      requestAbort.abort();
-      sw.stop();
-      throw MediaServerHttpException.from(e, uri: uri);
-    } finally {
-      _activeAborts.remove(requestAbort);
-    }
+  Future<Uint8List> getBytes(String url, {Map<String, String>? headers, Duration? timeout, AbortController? abort}) {
+    return _perform<Uint8List>(
+      'GET',
+      url,
+      headers: headers,
+      timeout: timeout,
+      abort: abort,
+      consume: (streamed, scope) async {
+        final bytes = await scope.receive(streamed.stream.toBytes());
+        scope.logResponse(streamed.statusCode);
+        return bytes;
+      },
+    );
   }
 
   /// Stream-download a URL directly into a file.
@@ -213,64 +184,48 @@ class MediaServerHttpClient {
     Map<String, String>? headers,
     Duration? timeout,
     AbortController? abort,
-  }) async {
-    if (_closing) {
-      throw MediaServerHttpException(type: MediaServerHttpErrorType.cancelled, message: 'HTTP client is closing');
-    }
+  }) {
+    final tempFile = File('$filePath.download');
+    return _perform<void>(
+      'GET',
+      url,
+      label: 'download',
+      headers: headers,
+      timeout: timeout,
+      abort: abort,
+      // Also clears a temp file left by an earlier attempt when this one never
+      // got past connect.
+      onError: () async {
+        if (await tempFile.exists()) {
+          try {
+            await tempFile.delete();
+          } catch (_) {}
+        }
+      },
+      consume: (streamed, scope) async {
+        if (streamed.statusCode < 200 || streamed.statusCode >= 300) {
+          await streamed.stream.drain<void>();
+          throw MediaServerHttpException(
+            type: MediaServerHttpErrorType.unknown,
+            statusCode: streamed.statusCode,
+            requestUri: scope.uri,
+            message: 'HTTP ${streamed.statusCode}',
+          );
+        }
 
-    final uri = _isAbsoluteUrl(url) ? Uri.parse(url) : _buildUri(url, null);
-    final requestAbort = AbortController();
-    _activeAborts.add(requestAbort);
-    final request = http.AbortableRequest('GET', uri, abortTrigger: _abortTrigger(requestAbort, abort));
-    request.headers.addAll({...defaultHeaders, ...?headers});
-
-    try {
-      final streamed = await _withAbortOnTimeout(
-        _client.send(request),
-        timeout ?? connectTimeout,
-        operation: 'download ${uri.path} connect',
-        abort: requestAbort,
-      );
-
-      if (streamed.statusCode < 200 || streamed.statusCode >= 300) {
-        await streamed.stream.drain<void>();
-        throw MediaServerHttpException(
-          type: MediaServerHttpErrorType.unknown,
-          statusCode: streamed.statusCode,
-          requestUri: uri,
-          message: 'HTTP ${streamed.statusCode}',
-        );
-      }
-
-      final file = File(filePath);
-      await file.parent.create(recursive: true);
-      final tempFile = File('$filePath.download');
-      if (await tempFile.exists()) await tempFile.delete();
-      final sink = tempFile.openWrite();
-      try {
-        await _withAbortOnTimeout(
-          streamed.stream.pipe(sink),
-          timeout ?? receiveTimeout,
-          operation: 'download ${uri.path} receive',
-          abort: requestAbort,
-        );
-      } finally {
-        await sink.close();
-      }
-      if (await file.exists()) await file.delete();
-      await tempFile.rename(filePath);
-    } catch (e) {
-      requestAbort.abort();
-      final tempFile = File('$filePath.download');
-      if (await tempFile.exists()) {
+        final file = File(filePath);
+        await file.parent.create(recursive: true);
+        if (await tempFile.exists()) await tempFile.delete();
+        final sink = tempFile.openWrite();
         try {
-          await tempFile.delete();
-        } catch (_) {}
-      }
-      throw MediaServerHttpException.from(e, uri: uri);
-    } finally {
-      _activeAborts.remove(requestAbort);
-    }
+          await scope.receive(streamed.stream.pipe(sink));
+        } finally {
+          await sink.close();
+        }
+        if (await file.exists()) await file.delete();
+        await tempFile.rename(filePath);
+      },
+    );
   }
 
   void close() {
@@ -297,69 +252,90 @@ class MediaServerHttpClient {
     Object? body,
     Duration? timeout,
     AbortController? abort,
+  }) {
+    return _perform<MediaServerResponse>(
+      method,
+      path,
+      queryParameters: queryParameters,
+      headers: headers,
+      body: body,
+      timeout: timeout,
+      abort: abort,
+      consume: (streamed, scope) async {
+        final effectiveUri = switch (streamed) {
+          http.BaseResponseWithUrl(:final url) => url,
+          _ => scope.uri,
+        };
+
+        final bytes = await scope.receive(streamed.stream.toBytes());
+        scope.logResponse(streamed.statusCode);
+
+        dynamic data;
+        try {
+          data = await _decodeBody(bytes, streamed.headers);
+        } catch (e) {
+          final body = await _decodeTextBody(bytes);
+          throw MediaServerHttpException(
+            type: MediaServerHttpErrorType.unknown,
+            statusCode: streamed.statusCode,
+            responseData: body,
+            requestUri: scope.uri,
+            message: 'Failed to decode response body: $e',
+          );
+        }
+        return MediaServerResponse(
+          statusCode: streamed.statusCode,
+          data: data,
+          headers: streamed.headers,
+          requestUri: scope.uri,
+          effectiveUri: effectiveUri,
+        );
+      },
+    );
+  }
+
+  /// Run one request: closing guard, abort registration, connect phase and
+  /// failure wrapping. [consume] reads the body through its scope, which
+  /// carries the same timeout and abort wiring into the receive phase;
+  /// [onError] runs after the abort and before the failure is wrapped. Every
+  /// exit path deregisters the request from [_activeAborts].
+  Future<T> _perform<T>(
+    String method,
+    String url, {
+    String? label,
+    Map<String, dynamic>? queryParameters,
+    Map<String, String>? headers,
+    Object? body,
+    Duration? timeout,
+    AbortController? abort,
+    Future<void> Function()? onError,
+    required Future<T> Function(http.StreamedResponse streamed, _RequestScope scope) consume,
   }) async {
     if (_closing) {
       throw MediaServerHttpException(type: MediaServerHttpErrorType.cancelled, message: 'HTTP client is closing');
     }
 
-    final uri = _isAbsoluteUrl(path)
-        ? _appendQuery(Uri.parse(path), queryParameters)
-        : _buildUri(path, queryParameters);
-
-    final mergedHeaders = <String, String>{...defaultHeaders, ...?headers};
+    final uri = _resolveUri(url, queryParameters);
+    final operation = label ?? method;
 
     final requestAbort = AbortController();
     _activeAborts.add(requestAbort);
     final request = http.AbortableRequest(method, uri, abortTrigger: _abortTrigger(requestAbort, abort));
-    request.headers.addAll(mergedHeaders);
+    request.headers.addAll({...defaultHeaders, ...?headers});
     _setBody(request, body);
 
-    final sw = Stopwatch()..start();
+    final scope = _RequestScope(this, uri, operation, requestAbort, timeout ?? receiveTimeout);
     try {
       final streamed = await _withAbortOnTimeout(
         _client.send(request),
         timeout ?? connectTimeout,
-        operation: '$method ${uri.path} connect',
+        operation: '$operation ${uri.path} connect',
         abort: requestAbort,
       );
-      final effectiveUri = switch (streamed) {
-        http.BaseResponseWithUrl(:final url) => url,
-        _ => uri,
-      };
-
-      final bytes = await _withAbortOnTimeout(
-        streamed.stream.toBytes(),
-        timeout ?? receiveTimeout,
-        operation: '$method ${uri.path} receive',
-        abort: requestAbort,
-      );
-
-      sw.stop();
-      _logResponse(method, uri, streamed.statusCode, sw.elapsedMilliseconds);
-
-      dynamic data;
-      try {
-        data = await _decodeBody(bytes, streamed.headers);
-      } catch (e) {
-        final body = await _decodeTextBody(bytes);
-        throw MediaServerHttpException(
-          type: MediaServerHttpErrorType.unknown,
-          statusCode: streamed.statusCode,
-          responseData: body,
-          requestUri: uri,
-          message: 'Failed to decode response body: $e',
-        );
-      }
-      return MediaServerResponse(
-        statusCode: streamed.statusCode,
-        data: data,
-        headers: streamed.headers,
-        requestUri: uri,
-        effectiveUri: effectiveUri,
-      );
+      return await consume(streamed, scope);
     } catch (e) {
       requestAbort.abort();
-      sw.stop();
+      await onError?.call();
       throw MediaServerHttpException.from(e, uri: uri);
     } finally {
       _activeAborts.remove(requestAbort);
@@ -409,6 +385,11 @@ class MediaServerHttpClient {
     // existing params (e.g. sectionID).
     return _appendQuery(Uri.parse('$base$cleanPath'), queryParameters);
   }
+
+  /// Resolve a request target: absolute URLs keep their own host and query,
+  /// relative paths go through [baseUrl].
+  Uri _resolveUri(String url, Map<String, dynamic>? queryParameters) =>
+      _isAbsoluteUrl(url) ? _appendQuery(Uri.parse(url), queryParameters) : _buildUri(url, queryParameters);
 
   /// Append query parameters to an already-parsed URI.
   Uri _appendQuery(Uri uri, Map<String, dynamic>? queryParameters) {
@@ -478,6 +459,28 @@ class MediaServerHttpClient {
 
   void _logResponse(String method, Uri uri, int statusCode, int ms) {
     appLogger.d('$method ${LogRedactionManager.redact(uri.toString())} → $statusCode (${ms}ms)');
+  }
+}
+
+/// The live request handed to a [MediaServerHttpClient._perform] body handler.
+/// Its stopwatch starts with the connect phase, so [logResponse] reports the
+/// full round trip regardless of how the body was read.
+class _RequestScope {
+  _RequestScope(this._owner, this.uri, this._operation, this._abort, this._receiveTimeout);
+
+  final MediaServerHttpClient _owner;
+  final Uri uri;
+  final String _operation;
+  final AbortController _abort;
+  final Duration _receiveTimeout;
+  final Stopwatch _sw = Stopwatch()..start();
+
+  Future<T> receive<T>(Future<T> future) =>
+      _owner._withAbortOnTimeout(future, _receiveTimeout, operation: '$_operation ${uri.path} receive', abort: _abort);
+
+  void logResponse(int statusCode) {
+    _sw.stop();
+    _owner._logResponse(_operation, uri, statusCode, _sw.elapsedMilliseconds);
   }
 }
 

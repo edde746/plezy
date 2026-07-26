@@ -568,16 +568,18 @@ extension _VideoPlayerEpisodeNavigationMethods on VideoPlayerScreenState {
 
         final playbackResolver = PlaybackSourceResolver(serverManager: serverManager, database: database);
         final playbackContext = await playbackResolver.resolve(
-          metadata: metadata,
-          selectedMediaIndex: targetMediaIndex,
-          selectedMediaSourceId: selectedMediaSourceId,
-          preferredVersionSignature: preferredVersionSignature,
+          PlaybackInitializationOptions(
+            metadata: metadata,
+            selectedMediaIndex: targetMediaIndex,
+            selectedMediaSourceId: selectedMediaSourceId,
+            preferredVersionSignature: preferredVersionSignature,
+            qualityPreset: targetQualityPreset,
+            selectedAudioStreamId: targetAudioStreamId,
+            preferredSubtitleTrack: initializationSubtitleTrack,
+            sessionIdentifier: _playbackSessionIdentifier,
+            transcodeSessionId: _playbackTranscodeSessionId,
+          ),
           offlineLibraryMode: _offlineLibraryMode,
-          qualityPreset: targetQualityPreset,
-          selectedAudioStreamId: targetAudioStreamId,
-          preferredSubtitleTrack: initializationSubtitleTrack,
-          sessionIdentifier: _playbackSessionIdentifier,
-          transcodeSessionId: _playbackTranscodeSessionId,
         );
         if (!isCurrentReload()) return _MediaReloadOutcome.superseded;
         final result = playbackContext.result;

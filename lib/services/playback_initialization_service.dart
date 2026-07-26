@@ -8,8 +8,6 @@ import '../media/media_item.dart';
 import '../media/media_item_types.dart';
 import '../media/media_server_client.dart';
 import '../media/media_source_info.dart';
-import '../models/audio_quality_preset.dart';
-import '../models/transcode_quality_preset.dart';
 import '../mpv/models.dart';
 import '../utils/app_logger.dart';
 import '../utils/global_key_utils.dart';
@@ -110,19 +108,11 @@ class PlaybackInitializationService {
   ///
   /// Downloaded/offline path: when [preferOffline] finds a downloaded copy,
   /// builds from cached [MediaSourceInfo] and local sidecars immediately.
-  Future<PlaybackInitializationResult> getPlaybackData({
-    required MediaItem metadata,
-    required int selectedMediaIndex,
-    String? selectedMediaSourceId,
-    String? preferredVersionSignature,
+  Future<PlaybackInitializationResult> getPlaybackData(
+    PlaybackInitializationOptions options, {
     bool preferOffline = false,
-    TranscodeQualityPreset qualityPreset = TranscodeQualityPreset.original,
-    AudioQualityPreset? audioQualityPreset,
-    int? selectedAudioStreamId,
-    SubtitleTrack? preferredSubtitleTrack,
-    String? sessionIdentifier,
-    String? transcodeSessionId,
   }) async {
+    final metadata = options.metadata;
     final serverId = metadata.serverId ?? client?.serverId;
 
     DownloadedVideoSource? offlineSource;
@@ -130,8 +120,8 @@ class PlaybackInitializationService {
       offlineSource = await _resolveOfflineVideoSource(
         ServerId(serverId),
         metadata.id,
-        mediaIndex: selectedMediaIndex,
-        selectedMediaSourceId: selectedMediaSourceId,
+        mediaIndex: options.selectedMediaIndex,
+        selectedMediaSourceId: options.selectedMediaSourceId,
         // With no client there is nothing to stream from, so any downloaded
         // version beats failing. With a client the strict match must stand:
         // an explicitly requested non-downloaded version streams from the
@@ -156,20 +146,7 @@ class PlaybackInitializationService {
 
     PlaybackInitializationResult result;
     try {
-      result = await client!.getPlaybackInitialization(
-        PlaybackInitializationOptions(
-          metadata: metadata,
-          selectedMediaIndex: selectedMediaIndex,
-          selectedMediaSourceId: selectedMediaSourceId,
-          preferredVersionSignature: preferredVersionSignature,
-          qualityPreset: qualityPreset,
-          audioQualityPreset: audioQualityPreset,
-          selectedAudioStreamId: selectedAudioStreamId,
-          preferredSubtitleTrack: preferredSubtitleTrack,
-          sessionIdentifier: sessionIdentifier,
-          transcodeSessionId: transcodeSessionId,
-        ),
-      );
+      result = await client!.getPlaybackInitialization(options);
     } catch (e) {
       rethrow;
     }

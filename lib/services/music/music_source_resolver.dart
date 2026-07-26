@@ -64,17 +64,19 @@ class ServerMusicSourceResolver implements MusicSourceResolver {
   Future<MusicSource> resolve(MediaItem track) async {
     final settings = await SettingsService.getInstance();
     final context = await PlaybackSourceResolver(serverManager: serverManager, database: database).resolve(
-      metadata: track,
-      selectedMediaIndex: 0,
+      PlaybackInitializationOptions(
+        metadata: track,
+        selectedMediaIndex: 0,
+        // Video-shaped preset is ignored for tracks; `original` also keeps the
+        // resolver's downloaded-copy preference on.
+        qualityPreset: TranscodeQualityPreset.original,
+        audioQualityPreset: settings.read(SettingsService.musicQualityPreset),
+        // Plex music transcode requires both session ids; fresh per track so
+        // concurrent gapless arming never reuses a live transcode session.
+        sessionIdentifier: generateSessionIdentifier(),
+        transcodeSessionId: generateSessionIdentifier(),
+      ),
       offlineLibraryMode: false,
-      // Video-shaped preset is ignored for tracks; `original` also keeps the
-      // resolver's downloaded-copy preference on.
-      qualityPreset: TranscodeQualityPreset.original,
-      audioQualityPreset: settings.read(SettingsService.musicQualityPreset),
-      // Plex music transcode requires both session ids; fresh per track so
-      // concurrent gapless arming never reuses a live transcode session.
-      sessionIdentifier: generateSessionIdentifier(),
-      transcodeSessionId: generateSessionIdentifier(),
     );
 
     final result = context.result;

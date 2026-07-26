@@ -1060,16 +1060,18 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
           database: context.read<AppDatabase>(),
         );
         _playbackDataFuture = playbackResolver.resolve(
-          metadata: _currentMetadata,
-          selectedMediaIndex: _effectiveSelectedMediaIndex,
-          selectedMediaSourceId: _requestedMediaSourceId,
-          preferredVersionSignature: widget.preferredVersionSignature,
+          PlaybackInitializationOptions(
+            metadata: _currentMetadata,
+            selectedMediaIndex: _effectiveSelectedMediaIndex,
+            selectedMediaSourceId: _requestedMediaSourceId,
+            preferredVersionSignature: widget.preferredVersionSignature,
+            qualityPreset: _selectedQualityPreset,
+            selectedAudioStreamId: _selectedAudioStreamId,
+            preferredSubtitleTrack: _preferredSubtitleTrack,
+            sessionIdentifier: _playbackSessionIdentifier,
+            transcodeSessionId: _playbackTranscodeSessionId,
+          ),
           offlineLibraryMode: false,
-          qualityPreset: _selectedQualityPreset,
-          selectedAudioStreamId: _selectedAudioStreamId,
-          preferredSubtitleTrack: _preferredSubtitleTrack,
-          sessionIdentifier: _playbackSessionIdentifier,
-          transcodeSessionId: _playbackTranscodeSessionId,
         );
         // If MPV setup below throws before `_startPlayback` awaits this,
         // tell Dart we've "handled" the future so it's not reported as an

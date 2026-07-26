@@ -155,7 +155,7 @@ class _SourceAudioColumn extends StatelessWidget {
       initialIndex: selectedIndex,
       itemBuilder: (context, index, scope) {
         final track = tracks[index];
-        return TrackSelectionHelper.buildTrackTile<AudioTrack>(
+        return TrackSelectionHelper.buildTrackTile(
           context: context,
           key: scope.keyFor(index),
           label: track.label,
@@ -196,7 +196,7 @@ class _SourceSubtitleColumn extends StatelessWidget {
       footer: _buildSubtitleSearchFooter(context, trackControlsState),
       itemBuilder: (context, index, scope) {
         if (index == 0) {
-          return TrackSelectionHelper.buildOffTile<SubtitleTrack>(
+          return TrackSelectionHelper.buildOffTile(
             context: context,
             key: scope.keyFor(index),
             isSelected: selectedChoice.isOff,
@@ -207,7 +207,7 @@ class _SourceSubtitleColumn extends StatelessWidget {
         }
 
         final track = tracks[index - 1];
-        return TrackSelectionHelper.buildTrackTile<SubtitleTrack>(
+        return TrackSelectionHelper.buildTrackTile(
           context: context,
           label: track.labelForIndex(index - 1),
           isSelected: track.id == selectedId,
@@ -264,7 +264,7 @@ class _AudioColumn extends StatelessWidget {
           channels: track.channelsCount,
           index: index,
         );
-        return TrackSelectionHelper.buildTrackTile<AudioTrack>(
+        return TrackSelectionHelper.buildTrackTile(
           context: context,
           key: scope.keyFor(index),
           label: label,
@@ -324,7 +324,7 @@ class _SubtitleColumn extends StatelessWidget {
       footer: _buildSubtitleSearchFooter(context, trackControlsState),
       itemBuilder: (context, index, scope) {
         if (index == 0) {
-          return TrackSelectionHelper.buildOffTile<SubtitleTrack>(
+          return TrackSelectionHelper.buildOffTile(
             context: context,
             key: scope.keyFor(index),
             isSelected: isOffSelected,
@@ -357,7 +357,7 @@ class _SubtitleColumn extends StatelessWidget {
         if (trackIndex >= tracks.length) {
           final sourceIndex = trackIndex - tracks.length;
           final sourceTrack = unloadedSourceSidecars[sourceIndex];
-          return TrackSelectionHelper.buildTrackTile<SubtitleTrack>(
+          return TrackSelectionHelper.buildTrackTile(
             context: context,
             label: sourceTrack.labelForIndex(trackIndex),
             isSelected: false,
@@ -387,7 +387,7 @@ class _SubtitleColumn extends StatelessWidget {
           }
         }
 
-        return TrackSelectionHelper.buildTrackTile<SubtitleTrack>(
+        return TrackSelectionHelper.buildTrackTile(
           context: context,
           label: label,
           isSelected: isPrimary,

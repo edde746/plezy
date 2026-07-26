@@ -183,31 +183,19 @@ mixin _PlexLiveTvClientMethods on _PlexClientInternals implements LiveTvSupport,
   Future<List<LiveTvChannel>> getEpgChannels({String? lineup}) async {
     List<LiveTvChannel> parseChannels(MediaServerResponse response) {
       final container = _getMediaContainer(response);
-      if (container != null && container['Channel'] is List && (container['Channel'] as List).isNotEmpty) {
-        appLogger.d('EPG channel sample: ${(container['Channel'] as List).first}');
+      if (container == null || (container['Channel'] == null && container['Metadata'] == null)) {
+        appLogger.d('EPG channels: container keys=${container?.keys.toList()}, size=${container?['size']}');
+        return [];
       }
-      if (container != null && container['Channel'] != null) {
-        return (container['Channel'] as List)
-            .map(
-              (json) => LiveTvChannel.fromJson(
-                json as Map<String, dynamic>,
-              ).copyWith(serverId: serverId, serverName: serverName),
-            )
-            .where((ch) => ch.key.isNotEmpty)
-            .toList();
+      final rawChannels = container['Channel'];
+      if (rawChannels is List && rawChannels.isNotEmpty) {
+        appLogger.d('EPG channel sample: ${rawChannels.first}');
       }
-      if (container != null && container['Metadata'] != null) {
-        return (container['Metadata'] as List)
-            .map(
-              (json) => LiveTvChannel.fromJson(
-                json as Map<String, dynamic>,
-              ).copyWith(serverId: serverId, serverName: serverName),
-            )
-            .where((ch) => ch.key.isNotEmpty)
-            .toList();
-      }
-      appLogger.d('EPG channels: container keys=${container?.keys.toList()}, size=${container?['size']}');
-      return [];
+      return _extractContainerList(
+        response,
+        const ['Channel', 'Metadata'],
+        (json) => LiveTvChannel.fromJson(json).copyWith(serverId: serverId, serverName: serverName),
+      ).where((ch) => ch.key.isNotEmpty).toList();
     }
 
     final allChannels = <LiveTvChannel>[];
@@ -545,11 +533,7 @@ mixin _PlexLiveTvClientMethods on _PlexClientInternals implements LiveTvSupport,
       if (container == null) return null;
 
       final containerStatus = container['status'];
-      final statusInt = containerStatus is num
-          ? containerStatus.toInt()
-          : containerStatus is String
-          ? int.tryParse(containerStatus)
-          : null;
+      final statusInt = flexibleInt(containerStatus);
       if (statusInt != null && statusInt != 0 && statusInt != 200) {
         final msg = container['message'] ?? t.liveTv.unknownError;
         appLogger.w('Tune channel error: $msg (status: $containerStatus)');
@@ -579,14 +563,7 @@ mixin _PlexLiveTvClientMethods on _PlexClientInternals implements LiveTvSupport,
         if (op is Map) {
           if (op['Metadata'] case [final Map firstMetadata, ...]) {
             if (firstMetadata['Media'] case [final Map firstMedia, ...]) {
-              final rawBeginsAt = firstMedia['beginsAt'];
-
-              beginsAt = switch (rawBeginsAt) {
-                final num n => n.toInt(),
-                final String s => int.tryParse(s),
-                _ => null,
-              };
-
+              beginsAt = flexibleInt(firstMedia['beginsAt']);
               appLogger.d('beginsAt=$beginsAt');
             }
           }
@@ -652,12 +629,7 @@ mixin _PlexLiveTvClientMethods on _PlexClientInternals implements LiveTvSupport,
         if (media is List && media.isNotEmpty) {
           final firstMedia = media.first;
           if (firstMedia is Map<String, dynamic>) {
-            final rawBeginsAt = firstMedia['beginsAt'];
-            beginsAt = switch (rawBeginsAt) {
-              final num n => n.toInt(),
-              final String s => int.tryParse(s),
-              _ => null,
-            };
+            beginsAt = flexibleInt(firstMedia['beginsAt']);
           }
         }
       }

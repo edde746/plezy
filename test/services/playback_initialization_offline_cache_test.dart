@@ -65,13 +65,15 @@ void main() {
     await PlexApiCache.instance.put(ServerId('srv-1'), '/library/metadata/movie-1', _plexMetadataEnvelope());
 
     final result = await PlaybackInitializationService(database: db).getPlaybackData(
-      metadata: testMediaItem(
-        id: 'movie-1',
-        backend: MediaBackend.plex,
-        kind: MediaKind.movie,
-        serverId: ServerId('srv-1'),
+      PlaybackInitializationOptions(
+        metadata: testMediaItem(
+          id: 'movie-1',
+          backend: MediaBackend.plex,
+          kind: MediaKind.movie,
+          serverId: ServerId('srv-1'),
+        ),
+        selectedMediaIndex: 0,
       ),
-      selectedMediaIndex: 0,
       preferOffline: true,
     );
 
@@ -94,13 +96,15 @@ void main() {
     final client = _FailingPlaybackClient(serverId: ServerId('srv-1'));
 
     final result = await PlaybackInitializationService(client: client, database: db).getPlaybackData(
-      metadata: testMediaItem(
-        id: 'track-1',
-        backend: MediaBackend.plex,
-        kind: MediaKind.track,
-        serverId: ServerId('srv-1'),
+      PlaybackInitializationOptions(
+        metadata: testMediaItem(
+          id: 'track-1',
+          backend: MediaBackend.plex,
+          kind: MediaKind.track,
+          serverId: ServerId('srv-1'),
+        ),
+        selectedMediaIndex: 0,
       ),
-      selectedMediaIndex: 0,
       preferOffline: true,
     );
 
@@ -121,13 +125,15 @@ void main() {
     final client = _FailingPlaybackClient(serverId: ServerId('srv-1'));
 
     final result = await PlaybackInitializationService(client: client, database: db).getPlaybackData(
-      metadata: testMediaItem(
-        id: 'movie-1',
-        backend: MediaBackend.plex,
-        kind: MediaKind.movie,
-        serverId: ServerId('srv-1'),
+      PlaybackInitializationOptions(
+        metadata: testMediaItem(
+          id: 'movie-1',
+          backend: MediaBackend.plex,
+          kind: MediaKind.movie,
+          serverId: ServerId('srv-1'),
+        ),
+        selectedMediaIndex: 0,
       ),
-      selectedMediaIndex: 0,
       preferOffline: true,
     );
 
@@ -153,13 +159,15 @@ void main() {
     );
 
     final result = await PlaybackInitializationService(database: db).getPlaybackData(
-      metadata: testMediaItem(
-        id: 'movie-1',
-        backend: MediaBackend.plex,
-        kind: MediaKind.movie,
-        serverId: ServerId('srv-1'),
+      PlaybackInitializationOptions(
+        metadata: testMediaItem(
+          id: 'movie-1',
+          backend: MediaBackend.plex,
+          kind: MediaKind.movie,
+          serverId: ServerId('srv-1'),
+        ),
+        selectedMediaIndex: 1,
       ),
-      selectedMediaIndex: 1,
       preferOffline: true,
     );
 
@@ -186,13 +194,15 @@ void main() {
     );
 
     final result = await PlaybackInitializationService(database: db).getPlaybackData(
-      metadata: testMediaItem(
-        id: 'movie-1',
-        backend: MediaBackend.plex,
-        kind: MediaKind.movie,
-        serverId: ServerId('srv-1'),
+      PlaybackInitializationOptions(
+        metadata: testMediaItem(
+          id: 'movie-1',
+          backend: MediaBackend.plex,
+          kind: MediaKind.movie,
+          serverId: ServerId('srv-1'),
+        ),
+        selectedMediaIndex: 0,
       ),
-      selectedMediaIndex: 0,
     );
 
     expect(result.isOffline, isTrue);
@@ -213,14 +223,16 @@ void main() {
     );
 
     final result = await PlaybackInitializationService(database: db).getPlaybackData(
-      metadata: testMediaItem(
-        id: 'movie-1',
-        backend: MediaBackend.plex,
-        kind: MediaKind.movie,
-        serverId: ServerId('srv-1'),
+      PlaybackInitializationOptions(
+        metadata: testMediaItem(
+          id: 'movie-1',
+          backend: MediaBackend.plex,
+          kind: MediaKind.movie,
+          serverId: ServerId('srv-1'),
+        ),
+        selectedMediaIndex: 0,
+        selectedMediaSourceId: 'source-a',
       ),
-      selectedMediaIndex: 0,
-      selectedMediaSourceId: 'source-a',
     );
 
     expect(result.isOffline, isTrue);
@@ -243,14 +255,16 @@ void main() {
     final client = _StreamingPlaybackClient(serverId: ServerId('srv-1'));
 
     final result = await PlaybackInitializationService(client: client, database: db).getPlaybackData(
-      metadata: testMediaItem(
-        id: 'movie-1',
-        backend: MediaBackend.plex,
-        kind: MediaKind.movie,
-        serverId: ServerId('srv-1'),
+      PlaybackInitializationOptions(
+        metadata: testMediaItem(
+          id: 'movie-1',
+          backend: MediaBackend.plex,
+          kind: MediaKind.movie,
+          serverId: ServerId('srv-1'),
+        ),
+        selectedMediaIndex: 0,
+        selectedMediaSourceId: 'source-a',
       ),
-      selectedMediaIndex: 0,
-      selectedMediaSourceId: 'source-a',
       preferOffline: true,
     );
 
@@ -297,13 +311,15 @@ void main() {
         );
 
     final result = await PlaybackInitializationService(database: db).getPlaybackData(
-      metadata: testMediaItem(
-        id: 'item-1',
-        backend: MediaBackend.jellyfin,
-        kind: MediaKind.movie,
-        serverId: ServerId('jf-machine'),
+      PlaybackInitializationOptions(
+        metadata: testMediaItem(
+          id: 'item-1',
+          backend: MediaBackend.jellyfin,
+          kind: MediaKind.movie,
+          serverId: ServerId('jf-machine'),
+        ),
+        selectedMediaIndex: 0,
       ),
-      selectedMediaIndex: 0,
       preferOffline: true,
     );
 
@@ -325,13 +341,15 @@ void main() {
     await subtitleFile.writeAsString('1\n00:00:00,000 --> 00:00:01,000\nHello');
 
     final result = await PlaybackInitializationService(database: db).getPlaybackData(
-      metadata: testMediaItem(
-        id: 'movie-1',
-        backend: MediaBackend.plex,
-        kind: MediaKind.movie,
-        serverId: ServerId('srv-1'),
+      PlaybackInitializationOptions(
+        metadata: testMediaItem(
+          id: 'movie-1',
+          backend: MediaBackend.plex,
+          kind: MediaKind.movie,
+          serverId: ServerId('srv-1'),
+        ),
+        selectedMediaIndex: 0,
       ),
-      selectedMediaIndex: 0,
       preferOffline: true,
     );
 

@@ -25,7 +25,7 @@ import '../utils/media_image_helper.dart';
 import '../utils/content_utils.dart';
 import '../widgets/cycling_media_backdrop.dart';
 import '../widgets/optimized_media_image.dart' show blurArtwork;
-import '../widgets/rasterized_gradient.dart';
+import '../widgets/toolbar_scrim.dart';
 import '../providers/discover_provider.dart';
 import '../providers/multi_server_provider.dart';
 import '../providers/watch_state_store.dart';
@@ -741,153 +741,125 @@ class _DiscoverScreenState extends State<DiscoverScreen>
   }
 
   Widget _buildOverlaidAppBar() {
-    final statusBarHeight = MediaQuery.paddingOf(context).top;
     final colorScheme = Theme.of(context).colorScheme;
-    final overlayColor = colorScheme.brightness == Brightness.dark ? Colors.black : colorScheme.surface;
     final foregroundColor = colorScheme.onSurface;
-    return RasterizedGradient(
-      gradient: LinearGradient(
-        begin: Alignment.topCenter,
-        end: Alignment.bottomCenter,
-        colors: [
-          overlayColor.withValues(alpha: 0.7),
-          overlayColor.withValues(alpha: 0.5),
-          overlayColor.withValues(alpha: 0.3),
-          Colors.transparent,
-        ],
-        stops: const [0.0, 0.3, 0.6, 1.0],
-      ),
-      child: Padding(
-        padding: .only(top: statusBarHeight, left: 16, right: 16, bottom: 8),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 8),
-          child: Row(
-            children: [
-              if (!PlatformDetector.isTV())
-                Text(
-                  t.discover.title,
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(color: foregroundColor, fontWeight: .bold),
-                ),
-              const Spacer(),
-              Consumer2<WatchTogetherProvider, CompanionRemoteProvider>(
-                builder: (context, watchTogether, companionRemote, _) {
-                  final isDesktop = PlatformDetector.shouldActAsRemoteHost(context);
+    return ToolbarScrim(
+      child: Row(
+        children: [
+          if (!PlatformDetector.isTV())
+            Text(
+              t.discover.title,
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(color: foregroundColor, fontWeight: .bold),
+            ),
+          const Spacer(),
+          Consumer2<WatchTogetherProvider, CompanionRemoteProvider>(
+            builder: (context, watchTogether, companionRemote, _) {
+              final isDesktop = PlatformDetector.shouldActAsRemoteHost(context);
 
-                  return FocusableActionBar(
-                    key: _actionBarKey,
-                    onNavigateLeft: _navigateToSidebar,
-                    onNavigateDown: _focusContentFromAppBar,
-                    actions: [
-                      FocusableAction(
-                        icon: Symbols.refresh_rounded,
-                        iconColor: foregroundColor,
-                        onPressed: _discover.load,
-                      ),
-                      // Watch Together
-                      FocusableAction(
-                        onPressed: () =>
-                            Navigator.push(context, MaterialPageRoute(builder: (_) => const WatchTogetherScreen())),
-                        child: Stack(
-                          children: [
-                            IconButton(
-                              icon: AppIcon(
-                                Symbols.group_rounded,
-                                fill: watchTogether.isInSession ? 1 : 0,
-                                color: watchTogether.isInSession ? colorScheme.primary : foregroundColor,
+              return FocusableActionBar(
+                key: _actionBarKey,
+                onNavigateLeft: _navigateToSidebar,
+                onNavigateDown: _focusContentFromAppBar,
+                actions: [
+                  FocusableAction(icon: Symbols.refresh_rounded, iconColor: foregroundColor, onPressed: _discover.load),
+                  // Watch Together
+                  FocusableAction(
+                    onPressed: () =>
+                        Navigator.push(context, MaterialPageRoute(builder: (_) => const WatchTogetherScreen())),
+                    child: Stack(
+                      children: [
+                        IconButton(
+                          icon: AppIcon(
+                            Symbols.group_rounded,
+                            fill: watchTogether.isInSession ? 1 : 0,
+                            color: watchTogether.isInSession ? colorScheme.primary : foregroundColor,
+                          ),
+                          onPressed: () =>
+                              Navigator.push(context, MaterialPageRoute(builder: (_) => const WatchTogetherScreen())),
+                          tooltip: t.watchTogether.title,
+                        ),
+                        if (watchTogether.isInSession && watchTogether.participantCount > 1)
+                          Positioned(
+                            top: 6,
+                            right: 6,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                              decoration: BoxDecoration(
+                                color: colorScheme.primary,
+                                borderRadius: const BorderRadius.all(Radius.circular(8)),
                               ),
-                              onPressed: () => Navigator.push(
+                              child: Text(
+                                '${watchTogether.participantCount}',
+                                style: TextStyle(color: colorScheme.onPrimary, fontSize: 10, fontWeight: .bold),
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                  // Companion Remote
+                  FocusableAction(
+                    onPressed: () {
+                      if (isDesktop) {
+                        RemoteSessionDialog.show(context);
+                      } else {
+                        Navigator.push(context, MaterialPageRoute(builder: (context) => const MobileRemoteScreen()));
+                      }
+                    },
+                    child: Stack(
+                      children: [
+                        IconButton(
+                          icon: AppIcon(
+                            Symbols.phone_android_rounded,
+                            fill: companionRemote.isConnected ? 1 : 0,
+                            color: companionRemote.isConnected ? colorScheme.primary : foregroundColor,
+                          ),
+                          onPressed: () {
+                            if (isDesktop) {
+                              RemoteSessionDialog.show(context);
+                            } else {
+                              Navigator.push(
                                 context,
-                                MaterialPageRoute(builder: (_) => const WatchTogetherScreen()),
+                                MaterialPageRoute(builder: (context) => const MobileRemoteScreen()),
+                              );
+                            }
+                          },
+                          tooltip: t.companionRemote.title,
+                        ),
+                        if (companionRemote.isConnected)
+                          Positioned(
+                            top: 6,
+                            right: 6,
+                            child: Container(
+                              width: 8,
+                              height: 8,
+                              decoration: BoxDecoration(
+                                color: Colors.green,
+                                shape: BoxShape.circle,
+                                border: Border.fromBorderSide(BorderSide(color: foregroundColor, width: 1)),
                               ),
-                              tooltip: t.watchTogether.title,
                             ),
-                            if (watchTogether.isInSession && watchTogether.participantCount > 1)
-                              Positioned(
-                                top: 6,
-                                right: 6,
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
-                                  decoration: BoxDecoration(
-                                    color: colorScheme.primary,
-                                    borderRadius: const BorderRadius.all(Radius.circular(8)),
-                                  ),
-                                  child: Text(
-                                    '${watchTogether.participantCount}',
-                                    style: TextStyle(color: colorScheme.onPrimary, fontSize: 10, fontWeight: .bold),
-                                  ),
-                                ),
-                              ),
-                          ],
-                        ),
-                      ),
-                      // Companion Remote
-                      FocusableAction(
-                        onPressed: () {
-                          if (isDesktop) {
-                            RemoteSessionDialog.show(context);
-                          } else {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(builder: (context) => const MobileRemoteScreen()),
-                            );
-                          }
-                        },
-                        child: Stack(
-                          children: [
-                            IconButton(
-                              icon: AppIcon(
-                                Symbols.phone_android_rounded,
-                                fill: companionRemote.isConnected ? 1 : 0,
-                                color: companionRemote.isConnected ? colorScheme.primary : foregroundColor,
-                              ),
-                              onPressed: () {
-                                if (isDesktop) {
-                                  RemoteSessionDialog.show(context);
-                                } else {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(builder: (context) => const MobileRemoteScreen()),
-                                  );
-                                }
-                              },
-                              tooltip: t.companionRemote.title,
-                            ),
-                            if (companionRemote.isConnected)
-                              Positioned(
-                                top: 6,
-                                right: 6,
-                                child: Container(
-                                  width: 8,
-                                  height: 8,
-                                  decoration: BoxDecoration(
-                                    color: Colors.green,
-                                    shape: BoxShape.circle,
-                                    border: Border.fromBorderSide(BorderSide(color: foregroundColor, width: 1)),
-                                  ),
-                                ),
-                              ),
-                          ],
-                        ),
-                      ),
-                      // Server Tasks — Plex-only (`/activities` API has no
-                      // Jellyfin equivalent), hide the button entirely on
-                      // Jellyfin-only profiles so the chrome doesn't show
-                      // a permanently empty popover.
-                      if (PlatformDetector.isDesktop(context) &&
-                          context.select<MultiServerProvider, bool>((p) => p.hasOnlinePlexServers))
-                        FocusableAction(
-                          onPressed: () => _serverActivitiesButtonKey.currentState?.togglePanel(),
-                          child: ServerActivitiesButton(key: _serverActivitiesButtonKey),
-                        ),
-                      // User menu — profiles + sign out
-                      _buildUserMenuAction(context),
-                    ],
-                  );
-                },
-              ),
-            ],
+                          ),
+                      ],
+                    ),
+                  ),
+                  // Server Tasks — Plex-only (`/activities` API has no
+                  // Jellyfin equivalent), hide the button entirely on
+                  // Jellyfin-only profiles so the chrome doesn't show
+                  // a permanently empty popover.
+                  if (PlatformDetector.isDesktop(context) &&
+                      context.select<MultiServerProvider, bool>((p) => p.hasOnlinePlexServers))
+                    FocusableAction(
+                      onPressed: () => _serverActivitiesButtonKey.currentState?.togglePanel(),
+                      child: ServerActivitiesButton(key: _serverActivitiesButtonKey),
+                    ),
+                  // User menu — profiles + sign out
+                  _buildUserMenuAction(context),
+                ],
+              );
+            },
           ),
-        ),
+        ],
       ),
     );
   }
@@ -1076,7 +1048,6 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     final showServerNameOnHubs = svc.read(SettingsService.showServerNameOnHubs);
     final hubsSpanMultipleServers = _hubsSpanMultipleServers();
     final browseHubs = _tvBrowseHubs;
-    final fullBleedWidth = MainScreenFocusScope.fullBleedWidthOf(context);
 
     return TvSpotlightScaffold(
       hubs: browseHubs,
@@ -1110,14 +1081,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
               bottom: 0,
               child: _cachedTvBrowseRail(browseHubs, showServerName: showServerNameOnHubs || hubsSpanMultipleServers),
             ),
-          Builder(
-            builder: (context) => SideNavigationBleedBuilder(
-              targetBleed: MainScreenFocusScope.sideNavigationBleedOf(context),
-              child: ExcludeFocusTraversal(child: _buildOverlaidAppBar()),
-              builder: (context, animatedBleed, child) =>
-                  Positioned(top: 0, left: -animatedBleed, width: fullBleedWidth, child: child!),
-            ),
-          ),
+          TvToolbarOverlay(child: _buildOverlaidAppBar()),
           if (_switchingProfile) const ProfileSwitchingOverlay(),
         ],
       ),

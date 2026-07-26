@@ -28,7 +28,7 @@ import '../widgets/desktop_app_bar.dart';
 import '../widgets/hub_section.dart';
 import '../widgets/focusable_popup_menu_button.dart';
 import '../widgets/settings_builder.dart';
-import '../widgets/rasterized_gradient.dart';
+import '../widgets/toolbar_scrim.dart';
 import '../widgets/tv_browse_rail.dart';
 import '../widgets/tv_spotlight_scaffold.dart';
 import 'catalog_search_screen.dart';
@@ -331,75 +331,57 @@ class ExploreScreenState extends State<ExploreScreen>
 
   Widget _buildTvToolbar(CatalogSourcesProvider sources) {
     final active = sources.activeSource;
-    final statusBarHeight = MediaQuery.paddingOf(context).top;
-    final colorScheme = Theme.of(context).colorScheme;
-    final overlayColor = colorScheme.brightness == Brightness.dark ? Colors.black : colorScheme.surface;
-    final foregroundColor = colorScheme.onSurface;
+    final foregroundColor = Theme.of(context).colorScheme.onSurface;
 
-    return RasterizedGradient(
-      gradient: LinearGradient(
-        begin: Alignment.topCenter,
-        end: Alignment.bottomCenter,
-        colors: [
-          overlayColor.withValues(alpha: 0.7),
-          overlayColor.withValues(alpha: 0.5),
-          overlayColor.withValues(alpha: 0.3),
-          Colors.transparent,
-        ],
-        stops: const [0.0, 0.3, 0.6, 1.0],
-      ),
-      child: Padding(
-        padding: EdgeInsets.only(top: statusBarHeight + 8, left: 16, right: 16, bottom: 16),
-        child: Row(
-          children: [
-            const Spacer(),
-            FocusableActionBar(
-              key: _actionBarKey,
-              onNavigateLeft: _navigateToSidebar,
-              onNavigateDown: _tvBrowseRailKey.currentState?.requestFocus,
-              onBack: _navigateToSidebar,
-              spacing: 4,
-              actions: [
-                if (active != null && sources.connectedSources.length > 1)
-                  FocusableAction(
-                    debugLabel: 'ExploreSourceSwitcher',
-                    onPressed: () => _sourceMenuKey.currentState?.showButtonMenu(focusFirstItem: true),
-                    child: _buildSourceSwitcher(
-                      sources,
-                      active,
-                      textStyle: Theme.of(
-                        context,
-                      ).textTheme.titleMedium?.copyWith(color: foregroundColor, fontWeight: .w600),
-                      anchorAlignment: AppMenuAnchorAlignment.end,
-                      parentOwnsFocus: true,
-                    ),
-                  ),
-                if (active != null)
-                  FocusableAction(
-                    icon: Symbols.search_rounded,
-                    iconColor: foregroundColor,
-                    tooltip: t.common.search,
-                    onPressed: () => Navigator.of(
-                      context,
-                    ).push(MaterialPageRoute<void>(builder: (_) => CatalogSearchScreen(source: active))),
-                  ),
+    return ToolbarScrim(
+      child: Row(
+        children: [
+          const Spacer(),
+          FocusableActionBar(
+            key: _actionBarKey,
+            onNavigateLeft: _navigateToSidebar,
+            onNavigateDown: _tvBrowseRailKey.currentState?.requestFocus,
+            onBack: _navigateToSidebar,
+            spacing: 4,
+            actions: [
+              if (active != null && sources.connectedSources.length > 1)
                 FocusableAction(
-                  icon: Symbols.refresh_rounded,
-                  iconColor: foregroundColor,
-                  tooltip: t.common.refresh,
-                  onPressed: () => unawaited(_explore.load()),
+                  debugLabel: 'ExploreSourceSwitcher',
+                  onPressed: () => _sourceMenuKey.currentState?.showButtonMenu(focusFirstItem: true),
+                  child: _buildSourceSwitcher(
+                    sources,
+                    active,
+                    textStyle: Theme.of(
+                      context,
+                    ).textTheme.titleMedium?.copyWith(color: foregroundColor, fontWeight: .w600),
+                    anchorAlignment: AppMenuAnchorAlignment.end,
+                    parentOwnsFocus: true,
+                  ),
                 ),
-              ],
-            ),
-          ],
-        ),
+              if (active != null)
+                FocusableAction(
+                  icon: Symbols.search_rounded,
+                  iconColor: foregroundColor,
+                  tooltip: t.common.search,
+                  onPressed: () => Navigator.of(
+                    context,
+                  ).push(MaterialPageRoute<void>(builder: (_) => CatalogSearchScreen(source: active))),
+                ),
+              FocusableAction(
+                icon: Symbols.refresh_rounded,
+                iconColor: foregroundColor,
+                tooltip: t.common.refresh,
+                onPressed: () => unawaited(_explore.load()),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
 
   Widget _buildTvContent(List<ExploreRowHub> rowHubs, CatalogSourcesProvider sources) {
     final tvHubs = [for (final rowHub in rowHubs) rowHub.hub];
-    final fullBleedWidth = MainScreenFocusScope.fullBleedWidthOf(context);
     return TvSpotlightScaffold(
       hubs: tvHubs,
       spotlightListenable: _spotlight,
@@ -447,14 +429,7 @@ class ExploreScreenState extends State<ExploreScreen>
                 tallPosterScale: TvBrowseRailLayout.compactTallPosterScale,
               ),
             ),
-          Builder(
-            builder: (context) => SideNavigationBleedBuilder(
-              targetBleed: MainScreenFocusScope.sideNavigationBleedOf(context),
-              child: ExcludeFocusTraversal(child: _buildTvToolbar(sources)),
-              builder: (context, animatedBleed, child) =>
-                  Positioned(top: 0, left: -animatedBleed, width: fullBleedWidth, child: child!),
-            ),
-          ),
+          TvToolbarOverlay(child: _buildTvToolbar(sources)),
         ],
       ),
     );
