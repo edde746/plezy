@@ -33,6 +33,7 @@ import '../../test_helpers/prefs.dart';
 import '../../test_helpers/media_items.dart';
 import '../../test_helpers/io_fakes.dart';
 import '../../test_helpers/multi_server_fixtures.dart';
+import '../../test_helpers/stub_music_playback_service.dart';
 
 class _FakeConnectionRegistry extends ConnectionRegistry {
   _FakeConnectionRegistry(super.db);

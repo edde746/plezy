@@ -48,6 +48,7 @@ import '../test_helpers/media_items.dart';
 import '../test_helpers/multi_server_fixtures.dart';
 import '../test_helpers/prefs.dart';
 import '../test_helpers/profile_stack.dart';
+import '../test_helpers/stub_music_playback_service.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();

@@ -17,6 +17,7 @@ import 'package:provider/provider.dart';
 
 import '../../test_helpers/media_items.dart';
 import '../../test_helpers/multi_server_fixtures.dart';
+import '../../test_helpers/stub_music_playback_service.dart';
 
 MediaItem _track({required String id, required String title, required String album, required int year}) {
   return testMediaItem(
