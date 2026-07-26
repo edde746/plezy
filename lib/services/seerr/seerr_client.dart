@@ -128,14 +128,13 @@ class SeerrClient {
 
   // ---------- Details ----------
 
-  Future<SeerrMovieDetails> getMovie(int tmdbId) async {
-    final data = await _request('GET', '/movie/$tmdbId');
-    return SeerrMovieDetails.fromJson(data as Map<String, dynamic>);
-  }
+  Future<SeerrDetails> getMovie(int tmdbId) => _details('/movie/$tmdbId');
 
-  Future<SeerrTvDetails> getTv(int tmdbId) async {
-    final data = await _request('GET', '/tv/$tmdbId');
-    return SeerrTvDetails.fromJson(data as Map<String, dynamic>);
+  Future<SeerrDetails> getTv(int tmdbId) => _details('/tv/$tmdbId');
+
+  Future<SeerrDetails> _details(String path) async {
+    final data = await _request('GET', path);
+    return SeerrDetails.fromJson(data as Map<String, dynamic>);
   }
 
   // ---------- Requests ----------

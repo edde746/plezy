@@ -4,28 +4,18 @@ import 'seerr_media.dart';
 
 part 'seerr_details.g.dart';
 
-/// Full movie detail from `GET /movie/{tmdbId}` — the subset the catalog
-/// surfaces need (credits, availability).
+/// Full detail from `GET /movie/{tmdbId}` and `GET /tv/{tmdbId}` — the subset
+/// the catalog surfaces need (credits, availability, seasons). `seasons` is
+/// absent on movies.
 @JsonSerializable(createToJson: false)
-class SeerrMovieDetails {
-  final SeerrCredits? credits;
-  final SeerrMediaInfo? mediaInfo;
-
-  const SeerrMovieDetails({this.credits, this.mediaInfo});
-
-  factory SeerrMovieDetails.fromJson(Map<String, dynamic> json) => _$SeerrMovieDetailsFromJson(json);
-}
-
-/// Full TV detail from `GET /tv/{tmdbId}`.
-@JsonSerializable(createToJson: false)
-class SeerrTvDetails {
+class SeerrDetails {
   final List<SeerrSeason>? seasons;
   final SeerrCredits? credits;
   final SeerrMediaInfo? mediaInfo;
 
-  const SeerrTvDetails({this.seasons, this.credits, this.mediaInfo});
+  const SeerrDetails({this.seasons, this.credits, this.mediaInfo});
 
-  factory SeerrTvDetails.fromJson(Map<String, dynamic> json) => _$SeerrTvDetailsFromJson(json);
+  factory SeerrDetails.fromJson(Map<String, dynamic> json) => _$SeerrDetailsFromJson(json);
 }
 
 /// One TMDB season entry (`TvDetails.seasons[]`). Season 0 is specials.
