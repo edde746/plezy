@@ -2,7 +2,6 @@ import 'dart:async';
 import '../media/ids.dart';
 import 'dart:math' as math;
 
-import 'package:flutter/foundation.dart' show ValueListenable;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:material_symbols_icons/symbols.dart';
@@ -346,13 +345,6 @@ class TvBrowseRail extends StatefulWidget {
   /// itself, so sidebar flips never rebuild the rail — only the bleed layer.
   final double? backgroundBleedLeft;
 
-  /// Optional signal that is `true` while an input gesture (e.g. a Siri-remote
-  /// touch) is in progress. When select-suppression is armed during an active
-  /// gesture, it is held until the gesture ends (finger lift) rather than the
-  /// short no-touch timeout — one activation per touch. Generic by design: no
-  /// platform/service coupling here.
-  final ValueListenable<bool>? selectSuppressionGestureSignal;
-
   const TvBrowseRail({
     super.key,
     required this.hubs,
@@ -381,7 +373,6 @@ class TvBrowseRail extends StatefulWidget {
     this.episodePosterModeForHub,
     this.widePosterScaleForHub,
     this.backgroundBleedLeft,
-    this.selectSuppressionGestureSignal,
   });
 
   @override
@@ -389,14 +380,6 @@ class TvBrowseRail extends StatefulWidget {
 }
 
 class TvBrowseRailState extends State<TvBrowseRail> {
-  // No-touch fallback only: clear suppression even if no select key-up is seen
-  // (e.g. a held-key carry-over on a non-touch remote). Touch-driven clicks use
-  // the gesture path instead, which is bounded by the physical touch.
-  static const _selectSuppressionTimeout = Duration(milliseconds: 220);
-  // Touch path safety net only. The deterministic clear is the touch ending
-  // (finger lift); this guards solely against a dropped touch-end event and is
-  // generous enough never to fire mid-gesture in practice.
-  static const _selectSuppressionGestureBackstop = Duration(seconds: 3);
   static const _navigationScrollDuration = Duration(milliseconds: 130);
   static const _repeatNavigationScrollDuration = Duration(milliseconds: 65);
   static const _scrollCatchUpViewportDistance = 2.5;
@@ -426,10 +409,6 @@ class TvBrowseRailState extends State<TvBrowseRail> {
   List<double> _sectionOffsets = const [];
   double _sectionMaxScrollExtent = 0;
   final _selectLongPress = DpadSelectLongPressController();
-  Timer? _selectSuppressionTimer;
-  Timer? _selectSuppressionMaxTimer;
-  VoidCallback? _gestureSignalListener;
-  bool _suppressSelectUntilKeyUp = false;
   bool _hasUserInteracted = false;
   bool _hasUserChangedHub = false;
   int _verticalScrollGeneration = 0;
@@ -440,35 +419,6 @@ class TvBrowseRailState extends State<TvBrowseRail> {
   void requestFocus() {
     _notifyFocusedItem();
     _focusNode.requestFocus();
-  }
-
-  void suppressSelectUntilKeyUp() {
-    _resetLongPressState();
-    _suppressSelectUntilKeyUp = true;
-    _selectSuppressionTimer?.cancel();
-    _selectSuppressionMaxTimer?.cancel();
-    _detachGestureSignalListener();
-
-    final gesture = widget.selectSuppressionGestureSignal;
-    if (gesture != null && gesture.value) {
-      // A Siri-remote touch is in progress. The stray select that would auto-play
-      // a Continue Watching item is delivered within this same uninterrupted
-      // touch: one physical press navigates Home, then bounces a second select
-      // mid-drag (#1281). Hold suppression until the finger lifts — one
-      // activation per touch, no time heuristic. The next observed select key-up
-      // also clears it; the backstop only guards against a dropped touch-end.
-      _gestureSignalListener = () {
-        if (!(widget.selectSuppressionGestureSignal?.value ?? false)) {
-          _clearSelectSuppression();
-        }
-      };
-      gesture.addListener(_gestureSignalListener!);
-      _selectSuppressionMaxTimer = Timer(_selectSuppressionGestureBackstop, _clearSelectSuppression);
-    } else {
-      // No touch in progress (held-key carry-over on a non-touch remote): clear
-      // on the next select key-up, with the short legacy safety timeout.
-      _selectSuppressionTimer = Timer(_selectSuppressionTimeout, _clearSelectSuppression);
-    }
   }
 
   @override
@@ -604,9 +554,6 @@ class TvBrowseRailState extends State<TvBrowseRail> {
   @override
   void dispose() {
     _selectLongPress.dispose();
-    _selectSuppressionTimer?.cancel();
-    _selectSuppressionMaxTimer?.cancel();
-    _detachGestureSignalListener();
     _focusNode.removeListener(_handleFocusChange);
     _focusNode.dispose();
     _focusModel.dispose();
@@ -630,23 +577,6 @@ class TvBrowseRailState extends State<TvBrowseRail> {
 
   void _resetLongPressState() {
     _selectLongPress.reset();
-  }
-
-  void _clearSelectSuppression() {
-    _selectSuppressionTimer?.cancel();
-    _selectSuppressionTimer = null;
-    _selectSuppressionMaxTimer?.cancel();
-    _selectSuppressionMaxTimer = null;
-    _suppressSelectUntilKeyUp = false;
-    _detachGestureSignalListener();
-  }
-
-  void _detachGestureSignalListener() {
-    final listener = _gestureSignalListener;
-    if (listener != null) {
-      widget.selectSuppressionGestureSignal?.removeListener(listener);
-      _gestureSignalListener = null;
-    }
   }
 
   bool _hasTrailingFor(MediaHub hub) => _trailingFor(hub) != TvRailTrailing.none;
@@ -705,10 +635,6 @@ class TvBrowseRailState extends State<TvBrowseRail> {
     final key = event.logicalKey;
 
     if (key.isSelectKey) {
-      if (_suppressSelectUntilKeyUp) {
-        if (event is KeyUpEvent) _clearSelectSuppression();
-        return KeyEventResult.handled;
-      }
       _hasUserInteracted = true;
 
       return _selectLongPress.handleKeyEvent(

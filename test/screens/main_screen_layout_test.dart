@@ -71,6 +71,30 @@ void main() {
     expect(shouldPass(isAppleTV: false), isFalse);
   });
 
+  test('tvOS Menu policy transaction publishes only the settled navigation state', () {
+    var desired = false;
+    final published = <bool>[];
+    final publisher = TvosMenuPolicyPublisher(() => desired, published.add);
+
+    publisher.run(() {
+      desired = true;
+      publisher.update();
+      desired = false;
+    });
+
+    expect(published, [false]);
+  });
+
+  test('tvOS Menu policy publishes retained sidebar Home state immediately', () {
+    final desired = true;
+    final published = <bool>[];
+    final publisher = TvosMenuPolicyPublisher(() => desired, published.add);
+
+    publisher.update();
+
+    expect(published, [true]);
+  });
+
   test('macOS physical Escape is reserved for native fullscreen only at root Home', () {
     bool shouldHandle({
       bool isMacOS = true,

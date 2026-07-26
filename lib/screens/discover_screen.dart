@@ -3,7 +3,6 @@ import '../media/ids.dart';
 import 'dart:io' show Platform;
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart' show HardwareKeyboard, LogicalKeyboardKey;
 import 'package:plezy/widgets/app_icon.dart';
 import '../widgets/server_activities_button.dart';
 import 'package:material_symbols_icons/symbols.dart';
@@ -15,7 +14,6 @@ import '../focus/input_mode_tracker.dart';
 import '../focus/key_event_utils.dart';
 import 'package:cached_network_image_ce/cached_network_image.dart';
 
-import '../services/apple_tv_remote_touch_service.dart';
 import '../services/image_cache_service.dart';
 import '../media/media_item.dart';
 import '../media/media_item_types.dart';
@@ -250,7 +248,6 @@ class _DiscoverScreenState extends State<DiscoverScreen>
 
   void _focusTvBrowseRailWhenReady({bool immediate = false}) {
     if (!PlatformDetector.isTV()) return;
-    final suppressSelectUntilKeyUp = _isSelectKeyPressed;
     if (!_isTabVisible || !(ModalRoute.of(context)?.isCurrent ?? false)) {
       _pendingTvBrowseRailFocus = false;
       return;
@@ -262,7 +259,6 @@ class _DiscoverScreenState extends State<DiscoverScreen>
       if (rail != null) {
         _pendingTvBrowseRailFocus = false;
         rail.requestFocus();
-        if (suppressSelectUntilKeyUp) rail.suppressSelectUntilKeyUp();
         return;
       }
     }
@@ -278,19 +274,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
       if (rail == null) return;
       _pendingTvBrowseRailFocus = false;
       rail.requestFocus();
-      if (suppressSelectUntilKeyUp) rail.suppressSelectUntilKeyUp();
     });
-  }
-
-  bool get _isSelectKeyPressed {
-    return HardwareKeyboard.instance.logicalKeysPressed.any(
-      (key) =>
-          key == LogicalKeyboardKey.enter ||
-          key.keyId == 0x0d ||
-          key == LogicalKeyboardKey.numpadEnter ||
-          key == LogicalKeyboardKey.select ||
-          key == LogicalKeyboardKey.gameButtonA,
-    );
   }
 
   void _applyPendingTvBrowseRailFocus() {
@@ -1164,9 +1148,6 @@ class _DiscoverScreenState extends State<DiscoverScreen>
       onNavigateUp: _focusTopActions,
       onNavigateToSidebar: _navigateToSidebar,
       tallPosterScale: TvBrowseRailLayout.compactTallPosterScale,
-      selectSuppressionGestureSignal: PlatformDetector.isAppleTV()
-          ? AppleTvRemoteTouchService.instance.touchActiveListenable
-          : null,
     );
   }
 
