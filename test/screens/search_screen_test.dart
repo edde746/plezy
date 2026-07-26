@@ -78,38 +78,38 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('TV OSK search key moves focus to the first result', (tester) async {
+  testWidgets('TV native Search action moves focus to the first result', (tester) async {
     final (client, _) = await _pumpTvSearchScreen(tester);
     await tester.pumpAndSettle();
-    expect(find.byKey(const Key('tv_virtual_keyboard_panel')), findsOneWidget);
+    expect(find.byKey(const Key('tv_virtual_keyboard_panel')), findsNothing);
+    expect(tester.widget<TextField>(find.byType(TextField)).readOnly, isFalse);
 
     _searchController(tester).text = 'movie';
-    // Let the normal debounce populate results while the OSK remains open.
-    // DebouncedMediaSearch now uses a fake-clock-aware Timer.
+    // Let the normal debounce populate results while native input remains active.
     await tester.pump(const Duration(milliseconds: 500));
     await tester.pump();
     expect(client.queries, ['movie']);
     expect(find.text('Movie 1'), findsOneWidget);
 
-    await tester.tap(_keyboardDoneKey());
+    await tester.showKeyboard(find.byType(TextField));
+    await tester.testTextInput.receiveAction(TextInputAction.search);
     await tester.pumpAndSettle();
 
-    expect(find.byKey(const Key('tv_virtual_keyboard_panel')), findsNothing);
     expect(FocusManager.instance.primaryFocus?.debugLabel, 'SearchFirstResult');
     expect(find.text('Movie 1'), findsOneWidget);
     expect(client.queries, ['movie']);
   });
 
-  testWidgets('TV OSK search key before the debounce fires searches immediately', (tester) async {
-    final (client, key) = await _pumpTvSearchScreen(tester);
+  testWidgets('TV native Search action before debounce searches immediately', (tester) async {
+    final (client, _) = await _pumpTvSearchScreen(tester);
     await tester.pumpAndSettle();
-    expect(find.byKey(const Key('tv_virtual_keyboard_panel')), findsOneWidget);
 
     _searchController(tester).text = 'movie';
     await tester.pump(const Duration(milliseconds: 100));
     expect(client.queries, isEmpty);
 
-    await tester.tap(_keyboardDoneKey());
+    await tester.showKeyboard(find.byType(TextField));
+    await tester.testTextInput.receiveAction(TextInputAction.search);
     await tester.pumpAndSettle();
 
     expect(client.queries, ['movie']);
@@ -117,88 +117,77 @@ void main() {
     expect(FocusManager.instance.primaryFocus?.debugLabel, 'SearchFirstResult');
   });
 
-  testWidgets('companion-remote submitSearchQuery dismisses an open OSK and focuses results', (tester) async {
+  testWidgets('companion-remote submitSearchQuery closes native input and focuses results', (tester) async {
     final (client, key) = await _pumpTvSearchScreen(tester);
     await tester.pumpAndSettle();
-    // The search screen autofocuses its input on TV, so the OSK is already up —
-    // exactly the "keyboard already open when the remote search arrives" flow
-    // (the phone's Search chip sends tabSearch before the query).
-    expect(find.byKey(const Key('tv_virtual_keyboard_panel')), findsOneWidget);
+    expect(tester.widget<TextField>(find.byType(TextField)).readOnly, isFalse);
 
     (key.currentState! as SearchInputFocusable).submitSearchQuery('movie');
     await tester.pumpAndSettle();
 
     expect(client.queries, ['movie']);
     expect(find.text('Movie 1'), findsOneWidget);
-    // The OSK is dismissed (and does not auto-reopen), focus lands on results.
     expect(find.byKey(const Key('tv_virtual_keyboard_panel')), findsNothing);
     expect(FocusManager.instance.primaryFocus?.debugLabel, 'SearchFirstResult');
 
-    // Stays closed on subsequent frames, and the selection write from the
-    // focus change must not re-arm the debounce into a second identical fetch.
+    // Selection updates must not re-arm the debounce into a second fetch.
     await tester.pump(const Duration(milliseconds: 600));
     await tester.pumpAndSettle();
-    expect(find.byKey(const Key('tv_virtual_keyboard_panel')), findsNothing);
     expect(client.queries, ['movie']);
 
-    // Re-submitting already-displayed results requests the input and then the
-    // existing first result in the same turn. That superseded input request
-    // must not leave its one-focus-entry keyboard suppression stuck.
+    // Re-submitting already-displayed results leaves result focus stable.
     final searchInput = key.currentState! as SearchInputFocusable;
     searchInput.submitSearchQuery('movie');
     await tester.pumpAndSettle();
     expect(FocusManager.instance.primaryFocus?.debugLabel, 'SearchFirstResult');
     expect(client.queries, ['movie']);
 
+    // A deliberate return to the input starts a fresh native session.
     searchInput.focusSearchInput();
     await tester.pumpAndSettle();
-    expect(find.byKey(const Key('tv_virtual_keyboard_panel')), findsOneWidget);
+    expect(tester.widget<TextField>(find.byType(TextField)).readOnly, isFalse);
+    expect(find.byKey(const Key('tv_virtual_keyboard_panel')), findsNothing);
 
     await tester.pumpWidget(const SizedBox.shrink());
   });
 
-  testWidgets('companion-remote submitSearchQuery with no results focuses the input without the OSK', (tester) async {
+  testWidgets('companion-remote query with no results keeps native input closed', (tester) async {
     final (client, key) = await _pumpTvSearchScreen(tester, items: []);
     await tester.pumpAndSettle();
-    expect(find.byKey(const Key('tv_virtual_keyboard_panel')), findsOneWidget);
+    expect(tester.widget<TextField>(find.byType(TextField)).readOnly, isFalse);
 
     (key.currentState! as SearchInputFocusable).submitSearchQuery('zzz');
     await tester.pumpAndSettle();
 
     expect(client.queries, ['zzz']);
-    // No results: the OSK is dismissed and the input keeps focus WITHOUT the
-    // keyboard reopening, so the remote isn't stranded.
     expect(find.byKey(const Key('tv_virtual_keyboard_panel')), findsNothing);
     expect(FocusManager.instance.primaryFocus?.debugLabel, 'SearchInput');
+    expect(tester.widget<TextField>(find.byType(TextField)).readOnly, isTrue);
 
-    // Does not auto-reopen while the input keeps focus.
     await tester.pump(const Duration(milliseconds: 200));
     await tester.pumpAndSettle();
-    expect(find.byKey(const Key('tv_virtual_keyboard_panel')), findsNothing);
+    expect(tester.widget<TextField>(find.byType(TextField)).readOnly, isTrue);
 
     await tester.pumpWidget(const SizedBox.shrink());
   });
 
-  testWidgets('companion-remote submitSearchQuery whose search fails keeps focus on the input without the OSK', (
-    tester,
-  ) async {
+  testWidgets('failed companion-remote query keeps native input closed', (tester) async {
     final (client, key) = await _pumpTvSearchScreen(tester, registerClient: false);
     await tester.pumpAndSettle();
-    expect(find.byKey(const Key('tv_virtual_keyboard_panel')), findsOneWidget);
+    expect(tester.widget<TextField>(find.byType(TextField)).readOnly, isFalse);
 
     (key.currentState! as SearchInputFocusable).submitSearchQuery('movie');
     await tester.pumpAndSettle();
 
-    // performSearchQuery threw (no servers): the failed state renders, the OSK
-    // is dismissed, and the input keeps focus so the remote isn't stranded.
     expect(client.queries, isEmpty);
     expect(find.byIcon(Symbols.error_rounded), findsOneWidget);
     expect(find.byKey(const Key('tv_virtual_keyboard_panel')), findsNothing);
     expect(FocusManager.instance.primaryFocus?.debugLabel, 'SearchInput');
+    expect(tester.widget<TextField>(find.byType(TextField)).readOnly, isTrue);
 
     await tester.pump(const Duration(milliseconds: 200));
     await tester.pumpAndSettle();
-    expect(find.byKey(const Key('tv_virtual_keyboard_panel')), findsNothing);
+    expect(tester.widget<TextField>(find.byType(TextField)).readOnly, isTrue);
 
     await tester.pumpWidget(const SizedBox.shrink());
   });
@@ -292,9 +281,7 @@ Future<(_FakeMediaServerClient, GlobalKey<State<SearchScreen>>)> _pumpTvSearchSc
   bool registerClient = true,
   List<_FakeMediaServerClient> additionalClients = const [],
 }) async {
-  TvDetectionService.debugSetAppleTVOverride(null);
-  await TvDetectionService.getInstance(forceTv: true);
-  TvDetectionService.setForceTVSync(true);
+  TvDetectionService.debugSetAppleTVOverride(true);
   tester.view.devicePixelRatio = 1.0;
   tester.view.physicalSize = const Size(1280, 720);
   addTearDown(() {
@@ -343,13 +330,6 @@ Future<(_FakeMediaServerClient, GlobalKey<State<SearchScreen>>)> _pumpTvSearchSc
     await tester.pumpAndSettle();
   });
   return (client, key);
-}
-
-Finder _keyboardDoneKey() {
-  return find.descendant(
-    of: find.byKey(const Key('tv_virtual_keyboard_panel')),
-    matching: find.byIcon(Symbols.search_rounded),
-  );
 }
 
 TextEditingController _searchController(WidgetTester tester) {

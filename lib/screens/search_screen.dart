@@ -226,7 +226,6 @@ class _SearchScreenState extends State<SearchScreen>
                       controller: searchController,
                       focusNode: searchFocusNode,
                       tvTextInputController: _tvTextInputController,
-                      tvTextInputPresentation: TvTextInputPresentation.flutterOverlay,
                       textInputAction: TextInputAction.search,
                       onNavigateLeft: _navigateToSidebar,
                       onNavigateRight: searchController.text.isNotEmpty ? _clearFocusNode.requestFocus : null,

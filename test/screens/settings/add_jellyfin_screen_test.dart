@@ -370,6 +370,7 @@ void main() {
 
     expect(FocusManager.instance.primaryFocus?.debugLabel, 'AddJellyfin:Url');
     expect(find.byKey(const Key('tv_virtual_keyboard_panel')), findsNothing);
+    expect(tester.widget<TextField>(find.byType(TextField)).keyboardType, TextInputType.url);
   });
 
   testWidgets('Android TV D-pad can leave initial URL focus before keyboard opens', (tester) async {
@@ -425,8 +426,9 @@ void main() {
     await tester.sendKeyEvent(LogicalKeyboardKey.arrowUp);
     await tester.pumpAndSettle();
 
-    expect(FocusManager.instance.primaryFocus?.debugLabel, 'TvVirtualKeyboard');
-    expect(find.byKey(const Key('tv_virtual_keyboard_panel')), findsOneWidget);
+    expect(FocusManager.instance.primaryFocus?.debugLabel, 'AddJellyfin:Url');
+    expect(find.byKey(const Key('tv_virtual_keyboard_panel')), findsNothing);
+    expect(tester.widget<TextField>(find.byType(TextField)).readOnly, isFalse);
   });
 
   testWidgets('D-pad moves from URL through Change to credentials after server is found', (tester) async {

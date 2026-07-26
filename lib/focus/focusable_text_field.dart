@@ -62,7 +62,7 @@ class TvTextInputController {
     if (identical(_host, host)) _host = null;
   }
 
-  /// Dismiss the Flutter overlay if it is open and prevent it from reopening
+  /// Dismiss active native or Flutter text input and prevent it from reopening
   /// while the field keeps focus.
   void closeTextInput() => _host?._dismissTvKeyboard();
 
@@ -730,6 +730,7 @@ typedef _FocusableTextInputBuilder =
       required FocusNode focusNode,
       required VoidCallback openKeyboard,
       required VoidCallback activateNativeTextInput,
+      required VoidCallback? onEditingComplete,
     });
 
 class _FocusableTextInputHost extends StatefulWidget {
@@ -759,6 +760,7 @@ class _FocusableTextInputHostState extends State<_FocusableTextInputHost> {
   bool _nativeTextInputActivated = false;
   bool _hasSeenNativeTextInputFocus = false;
   bool _suppressNativeTextInputForCurrentFocus = false;
+  bool _nativeTextInputCompletionHandled = false;
 
   FocusNode get _effectiveFocusNode => _focusNodeBinding.node;
 
@@ -849,6 +851,7 @@ class _FocusableTextInputHostState extends State<_FocusableTextInputHost> {
 
   void _setNativeTextInputActivated(bool activated) {
     if (_nativeTextInputActivated == activated) return;
+    if (activated) _nativeTextInputCompletionHandled = false;
     if (!mounted) {
       _nativeTextInputActivated = activated;
       return;
@@ -861,6 +864,31 @@ class _FocusableTextInputHostState extends State<_FocusableTextInputHost> {
     _hasSeenNativeTextInputFocus = true;
     _suppressNativeTextInputForCurrentFocus = false;
     _setNativeTextInputActivated(true);
+  }
+
+  VoidCallback? get _effectiveOnEditingComplete {
+    final input = widget.input;
+    if (!input._usesNativeTvKeyboard) return input._effectiveOnEditingComplete;
+    return _handleNativeEditingComplete;
+  }
+
+  void _handleNativeEditingComplete() {
+    if (_nativeTextInputCompletionHandled) return;
+    _nativeTextInputCompletionHandled = true;
+    _suppressNativeTextInputForCurrentFocus = true;
+    _setNativeTextInputActivated(false);
+
+    final input = widget.input;
+    final callback = input._effectiveOnEditingComplete;
+    if (callback != null) {
+      callback();
+    } else if (input.onSubmitted == null) {
+      // Supplying this wrapper replaces EditableText's default completion.
+      // Preserve it when there is no submit callback; submitted TV fields keep
+      // focus until their callback chooses the next target so D-pad navigation
+      // cannot dead-end while asynchronous work runs.
+      _defaultEditingComplete(input.textInputAction);
+    }
   }
 
   void _syncNativeTextInputFocus() {
@@ -993,13 +1021,18 @@ class _FocusableTextInputHostState extends State<_FocusableTextInputHost> {
     );
   }
 
-  /// Dismiss an open OSK imperatively (e.g. a companion-remote search that must
-  /// show results instead of the keyboard). Suppresses auto-reopen so a field
-  /// that regains focus when the dialog route pops does not relaunch it.
+  /// Dismiss active text input imperatively (e.g. a companion-remote search
+  /// that must show results instead of the keyboard). Suppresses auto-reopen
+  /// so a field that keeps or regains focus does not relaunch it.
   void _dismissTvKeyboard() {
-    // No-op when nothing is up: setting the suppress flag here (with no
-    // compensating unfocus to clear it) would block a later legitimate
-    // auto-open when the user deliberately focuses the field.
+    if (widget.input._usesNativeTvKeyboard && _nativeTextInputActivated) {
+      _suppressNativeTextInputForCurrentFocus = true;
+      _setNativeTextInputActivated(false);
+    }
+
+    // No-op for the Flutter presentation when no overlay is up: setting its
+    // suppress flag without a compensating unfocus would block a later
+    // legitimate auto-open.
     if (!_tvKeyboardOpen && !_tvKeyboardOpenScheduled) return;
     _tvKeyboardOpenScheduled = false;
     _suppressTvKeyboardAutoOpen = true;
@@ -1132,6 +1165,7 @@ class _FocusableTextInputHostState extends State<_FocusableTextInputHost> {
       focusNode: focusNode,
       openKeyboard: _openTvKeyboard,
       activateNativeTextInput: _activateNativeTextInput,
+      onEditingComplete: _effectiveOnEditingComplete,
     );
   }
 }
@@ -1186,6 +1220,7 @@ class FocusableTextField extends _FocusableTextInputBase {
       required FocusNode focusNode,
       required VoidCallback openKeyboard,
       required VoidCallback activateNativeTextInput,
+      required VoidCallback? onEditingComplete,
     }) {
       final tvInput = _tvInputConfiguration(
         usesTvKeyboard: usesTvKeyboard,
@@ -1203,7 +1238,7 @@ class FocusableTextField extends _FocusableTextInputBase {
         inputFormatters: inputFormatters,
         onChanged: onChanged,
         onSubmitted: onSubmitted,
-        onEditingComplete: _effectiveOnEditingComplete,
+        onEditingComplete: onEditingComplete,
         autofocus: autofocus,
         autocorrect: autocorrect,
         enableSuggestions: enableSuggestions,
@@ -1274,6 +1309,7 @@ class FocusableTextFormField extends _FocusableTextInputBase {
       required FocusNode focusNode,
       required VoidCallback openKeyboard,
       required VoidCallback activateNativeTextInput,
+      required VoidCallback? onEditingComplete,
     }) {
       final tvInput = _tvInputConfiguration(
         usesTvKeyboard: usesTvKeyboard,
@@ -1291,7 +1327,7 @@ class FocusableTextFormField extends _FocusableTextInputBase {
         inputFormatters: inputFormatters,
         onChanged: onChanged,
         onFieldSubmitted: onFieldSubmitted,
-        onEditingComplete: _effectiveOnEditingComplete,
+        onEditingComplete: onEditingComplete,
         validator: validator,
         autovalidateMode: autovalidateMode,
         onSaved: onSaved,

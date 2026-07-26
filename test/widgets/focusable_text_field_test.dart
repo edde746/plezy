@@ -261,6 +261,120 @@ void main() {
     expect(find.byKey(const Key('tv_virtual_keyboard_panel')), findsNothing);
   });
 
+  testWidgets('Apple TV native Done deactivates input before D-pad navigation', (tester) async {
+    TvDetectionService.debugSetAppleTVOverride(true);
+    final controller = TextEditingController();
+    final fieldFocusNode = FocusNode(debugLabel: 'native_url_field');
+    final nextFocusNode = FocusNode(debugLabel: 'save_button');
+    var completed = 0;
+    addTearDown(controller.dispose);
+    addTearDown(fieldFocusNode.dispose);
+    addTearDown(nextFocusNode.dispose);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: Column(
+            children: [
+              FocusableTextField(
+                controller: controller,
+                focusNode: fieldFocusNode,
+                textInputAction: TextInputAction.done,
+                onEditingComplete: () => completed++,
+                onNavigateDown: nextFocusNode.requestFocus,
+              ),
+              FilledButton(focusNode: nextFocusNode, onPressed: () {}, child: const Text('Save')),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    fieldFocusNode.requestFocus();
+    await tester.pumpAndSettle();
+    await tester.showKeyboard(find.byType(TextField));
+    await tester.testTextInput.receiveAction(TextInputAction.done);
+    await tester.pump();
+
+    expect(completed, 1);
+    expect(fieldFocusNode.hasPrimaryFocus, isTrue);
+    expect(tester.widget<TextField>(find.byType(TextField)).readOnly, isTrue);
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+    await tester.pump();
+
+    expect(nextFocusNode.hasPrimaryFocus, isTrue);
+    expect(find.byKey(const Key('tv_virtual_keyboard_panel')), findsNothing);
+  });
+
+  testWidgets('Apple TV native Go submits once and deactivates input', (tester) async {
+    TvDetectionService.debugSetAppleTVOverride(true);
+    final controller = TextEditingController(text: 'https://jellyfin.example.com');
+    final fieldFocusNode = FocusNode(debugLabel: 'native_url_field');
+    final submissions = <String>[];
+    addTearDown(controller.dispose);
+    addTearDown(fieldFocusNode.dispose);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: FocusableTextFormField(
+            controller: controller,
+            focusNode: fieldFocusNode,
+            tvTextInputPresentation: TvTextInputPresentation.platform,
+            textInputAction: TextInputAction.go,
+            onFieldSubmitted: submissions.add,
+          ),
+        ),
+      ),
+    );
+
+    fieldFocusNode.requestFocus();
+    await tester.pumpAndSettle();
+    await tester.showKeyboard(find.byType(TextField));
+    await tester.testTextInput.receiveAction(TextInputAction.go);
+    await tester.pump();
+
+    expect(submissions, ['https://jellyfin.example.com']);
+    expect(tester.widget<TextField>(find.byType(TextField)).readOnly, isTrue);
+    expect(fieldFocusNode.hasPrimaryFocus, isTrue);
+
+    tester.testTextInput.closeConnection();
+    await tester.pump();
+    expect(submissions, ['https://jellyfin.example.com']);
+  });
+
+  testWidgets('Apple TV controller closes native input without losing field focus', (tester) async {
+    TvDetectionService.debugSetAppleTVOverride(true);
+    final controller = TextEditingController();
+    final textInputController = TvTextInputController();
+    final fieldFocusNode = FocusNode(debugLabel: 'native_search_field');
+    addTearDown(controller.dispose);
+    addTearDown(fieldFocusNode.dispose);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: FocusableTextField(
+            controller: controller,
+            focusNode: fieldFocusNode,
+            tvTextInputController: textInputController,
+          ),
+        ),
+      ),
+    );
+
+    fieldFocusNode.requestFocus();
+    await tester.pumpAndSettle();
+    expect(tester.widget<TextField>(find.byType(TextField)).readOnly, isFalse);
+
+    textInputController.closeTextInput();
+    await tester.pump();
+
+    expect(fieldFocusNode.hasPrimaryFocus, isTrue);
+    expect(tester.widget<TextField>(find.byType(TextField)).readOnly, isTrue);
+  });
+
   testWidgets('Apple TV navigation resumes after native keyboard dismissal', (tester) async {
     TvDetectionService.debugSetAppleTVOverride(true);
     final controller = TextEditingController();

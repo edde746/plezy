@@ -962,6 +962,7 @@ class _RelayUrlDialogState extends State<_RelayUrlDialog> {
           }
         },
         onEditingComplete: () => _saveFocusNode.requestFocus(),
+        onNavigateDown: _saveFocusNode.requestFocus,
       ),
       actions: [
         DialogActionButton(onPressed: _reset, label: t.settings.resetToDefault),
