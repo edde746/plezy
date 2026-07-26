@@ -27,6 +27,17 @@ Widget blurArtwork(Widget child, {double sigma = 30, bool clip = true}) {
   return clip ? ClipRect(child: filtered) : filtered;
 }
 
+Widget _withArtworkDim(Animation<double>? dim, Widget Function(Color? tint) builder) {
+  if (dim == null) return builder(null);
+  return AnimatedBuilder(
+    animation: dim,
+    builder: (context, _) {
+      final amount = dim.value.clamp(0.0, 1.0);
+      return builder(amount == 0 ? null : Colors.black.withValues(alpha: amount));
+    },
+  );
+}
+
 class OptimizedMediaImage extends StatelessWidget {
   final MediaServerClient? client;
   final String? imagePath;
@@ -45,6 +56,9 @@ class OptimizedMediaImage extends StatelessWidget {
   final String? localFilePath;
   final bool cacheMissingLocalFile;
 
+  /// Black tint applied at image paint time without an opacity save layer.
+  final Animation<double>? artworkDim;
+
   const OptimizedMediaImage._({
     super.key,
     this.client,
@@ -62,6 +76,7 @@ class OptimizedMediaImage extends StatelessWidget {
     this.fallbackIcon,
     this.imageType = ImageType.poster,
     this.localFilePath,
+    this.artworkDim,
     this.cacheMissingLocalFile = false,
   });
 
@@ -83,6 +98,7 @@ class OptimizedMediaImage extends StatelessWidget {
     IconData? fallbackIcon,
     ImageType imageType,
     String? localFilePath,
+    Animation<double>? artworkDim,
     bool cacheMissingLocalFile,
   }) = OptimizedMediaImage._;
 
@@ -103,6 +119,7 @@ class OptimizedMediaImage extends StatelessWidget {
     Alignment alignment = Alignment.center,
     IconData? fallbackIcon,
     String? localFilePath,
+    Animation<double>? artworkDim,
   }) : this._(
          key: key,
          client: client,
@@ -120,6 +137,7 @@ class OptimizedMediaImage extends StatelessWidget {
          fallbackIcon: fallbackIcon ?? Symbols.movie_rounded,
          imageType: ImageType.poster,
          localFilePath: localFilePath,
+         artworkDim: artworkDim,
        );
 
   /// Named constructor for episode thumbnails.
@@ -139,6 +157,7 @@ class OptimizedMediaImage extends StatelessWidget {
     Alignment alignment = Alignment.center,
     IconData? fallbackIcon,
     String? localFilePath,
+    Animation<double>? artworkDim,
   }) : this._(
          key: key,
          client: client,
@@ -156,6 +175,7 @@ class OptimizedMediaImage extends StatelessWidget {
          fallbackIcon: fallbackIcon ?? Symbols.video_library_rounded,
          imageType: ImageType.thumb,
          localFilePath: localFilePath,
+         artworkDim: artworkDim,
        );
 
   /// Named constructor for playlist images.
@@ -174,6 +194,7 @@ class OptimizedMediaImage extends StatelessWidget {
     String? cacheKey,
     Alignment alignment = Alignment.center,
     String? localFilePath,
+    Animation<double>? artworkDim,
   }) : this._(
          key: key,
          client: client,
@@ -191,6 +212,7 @@ class OptimizedMediaImage extends StatelessWidget {
          fallbackIcon: Symbols.playlist_play_rounded,
          imageType: ImageType.poster,
          localFilePath: localFilePath,
+         artworkDim: artworkDim,
        );
 
   /// Whether both width and height are explicitly set to finite positive values,
@@ -257,23 +279,28 @@ class OptimizedMediaImage extends StatelessWidget {
       imageType: imageType,
     );
 
-    return Image(
-      image: MediaImageHelper.boundedDecode(FileImage(file), memWidth: memWidth, memHeight: memHeight),
-      width: width,
-      height: height,
-      // Artwork is decorative: the enclosing card exposes one merged node
-      // with the title, and a per-image node just grows the semantics tree
-      // the TV a11y services make Flutter rebuild every frame.
-      excludeFromSemantics: true,
-      fit: fit,
-      filterQuality: filterQuality,
-      alignment: alignment,
-      errorBuilder: (context, error, stackTrace) {
-        if (errorWidget != null) {
-          return errorWidget!(context, file.path, error);
-        }
-        return _buildErrorWidget(context, error);
-      },
+    return _withArtworkDim(
+      artworkDim,
+      (tint) => Image(
+        image: MediaImageHelper.boundedDecode(FileImage(file), memWidth: memWidth, memHeight: memHeight),
+        width: width,
+        height: height,
+        // Artwork is decorative: the enclosing card exposes one merged node
+        // with the title, and a per-image node just grows the semantics tree
+        // the TV a11y services make Flutter rebuild every frame.
+        excludeFromSemantics: true,
+        fit: fit,
+        filterQuality: filterQuality,
+        alignment: alignment,
+        color: tint,
+        colorBlendMode: tint == null ? null : BlendMode.srcATop,
+        errorBuilder: (context, error, stackTrace) {
+          if (errorWidget != null) {
+            return errorWidget!(context, file.path, error);
+          }
+          return _buildErrorWidget(context, error);
+        },
+      ),
     );
   }
 
@@ -330,20 +357,25 @@ class OptimizedMediaImage extends StatelessWidget {
 
     // Reduced tier: swap in directly, no fade machinery at all.
     if (DevicePerformance.isReduced) {
-      return Image(
-        image: resizedProvider,
-        width: width,
-        height: height,
-        // Decorative — see the Image.file branch.
-        excludeFromSemantics: true,
-        fit: fit,
-        filterQuality: filterQuality,
-        alignment: alignment,
-        errorBuilder: _networkErrorBuilder(imageUrl),
-        frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
-          if (wasSynchronouslyLoaded || frame != null) return child;
-          return _buildPlaceholder(context, imageUrl);
-        },
+      return _withArtworkDim(
+        artworkDim,
+        (tint) => Image(
+          image: resizedProvider,
+          width: width,
+          height: height,
+          // Decorative — see the Image.file branch.
+          excludeFromSemantics: true,
+          fit: fit,
+          filterQuality: filterQuality,
+          alignment: alignment,
+          color: tint,
+          colorBlendMode: tint == null ? null : BlendMode.srcATop,
+          errorBuilder: _networkErrorBuilder(imageUrl),
+          frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
+            if (wasSynchronouslyLoaded || frame != null) return child;
+            return _buildPlaceholder(context, imageUrl);
+          },
+        ),
       );
     }
 
@@ -357,6 +389,7 @@ class OptimizedMediaImage extends StatelessWidget {
       duration: fadeInDuration,
       placeholderBuilder: (context) => _buildPlaceholder(context, imageUrl),
       errorBuilder: _networkErrorBuilder(imageUrl),
+      artworkDim: artworkDim,
     );
   }
 
@@ -378,19 +411,47 @@ class OptimizedMediaImage extends StatelessWidget {
 
   Widget _surfacePlaceholder(BuildContext context, {IconData? icon, Color? iconColor, bool fillParent = false}) {
     final theme = Theme.of(context).colorScheme;
-    return Container(
-      width: fillParent ? null : width,
-      height: fillParent ? null : height,
-      color: theme.surfaceContainerHighest,
-      child: icon == null
-          ? null
-          : Center(child: AppIcon(icon, fill: 1, size: 40, color: iconColor ?? theme.onSurfaceVariant)),
+    final baseSurfaceColor = theme.surfaceContainerHighest;
+    final baseIconColor = iconColor ?? theme.onSurfaceVariant;
+    return _withArtworkDim(
+      artworkDim,
+      (tint) => Container(
+        width: fillParent ? null : width,
+        height: fillParent ? null : height,
+        color: tint == null ? baseSurfaceColor : Color.alphaBlend(tint, baseSurfaceColor),
+        child: icon == null
+            ? null
+            : Center(
+                child: AppIcon(
+                  icon,
+                  fill: 1,
+                  size: 40,
+                  color: tint == null ? baseIconColor : Color.alphaBlend(tint, baseIconColor),
+                ),
+              ),
+      ),
     );
   }
 
   Widget _buildPlaceholder(BuildContext context, String imageUrl) {
-    if (placeholder != null) return placeholder!(context, imageUrl);
-    return _surfacePlaceholder(context, icon: fallbackIcon, iconColor: Colors.white54);
+    final customPlaceholder = placeholder?.call(context, imageUrl);
+    if (customPlaceholder == null) {
+      return _surfacePlaceholder(context, icon: fallbackIcon, iconColor: Colors.white54);
+    }
+    if (artworkDim == null) return customPlaceholder;
+    return _withArtworkDim(
+      artworkDim,
+      (tint) => Stack(
+        fit: StackFit.passthrough,
+        children: [
+          customPlaceholder,
+          if (tint != null)
+            Positioned.fill(
+              child: IgnorePointer(child: ColoredBox(color: tint)),
+            ),
+        ],
+      ),
+    );
   }
 
   Widget _buildErrorWidget(BuildContext context, dynamic _) => _surfacePlaceholder(
@@ -484,6 +545,7 @@ class _FadeInNetworkImage extends StatefulWidget {
     required this.duration,
     required this.placeholderBuilder,
     required this.errorBuilder,
+    required this.artworkDim,
   });
 
   final ImageProvider image;
@@ -495,6 +557,7 @@ class _FadeInNetworkImage extends StatefulWidget {
   final Duration duration;
   final WidgetBuilder placeholderBuilder;
   final ImageErrorWidgetBuilder errorBuilder;
+  final Animation<double>? artworkDim;
 
   @override
   State<_FadeInNetworkImage> createState() => _FadeInNetworkImageState();
@@ -534,35 +597,40 @@ class _FadeInNetworkImageState extends State<_FadeInNetworkImage> with SingleTic
 
   @override
   Widget build(BuildContext context) {
-    return Image(
-      image: widget.image,
-      width: widget.width,
-      height: widget.height,
-      // Decorative — see OptimizedMediaImage.
-      excludeFromSemantics: true,
-      fit: widget.fit,
-      filterQuality: widget.filterQuality,
-      alignment: widget.alignment,
-      opacity: _opacity,
-      errorBuilder: widget.errorBuilder,
-      frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
-        if (wasSynchronouslyLoaded) return child;
-        if (frame == null && !_sawFirstFrame) {
-          // Async load in progress: hide the image and show the placeholder
-          // beneath until the first frame arrives. Mutating outside setState
-          // is fine here — we're inside build.
-          _opacity.value = 0;
-          _placeholderVisible = true;
-        } else if (frame != null && !_sawFirstFrame) {
-          _startFade();
-        }
-        if (!_placeholderVisible) return child;
-        return Stack(
-          alignment: Alignment.center,
-          fit: StackFit.passthrough,
-          children: [widget.placeholderBuilder(context), child],
-        );
-      },
+    return _withArtworkDim(
+      widget.artworkDim,
+      (tint) => Image(
+        image: widget.image,
+        width: widget.width,
+        height: widget.height,
+        // Decorative — see OptimizedMediaImage.
+        excludeFromSemantics: true,
+        fit: widget.fit,
+        filterQuality: widget.filterQuality,
+        alignment: widget.alignment,
+        color: tint,
+        colorBlendMode: tint == null ? null : BlendMode.srcATop,
+        opacity: _opacity,
+        errorBuilder: widget.errorBuilder,
+        frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
+          if (wasSynchronouslyLoaded) return child;
+          if (frame == null && !_sawFirstFrame) {
+            // Async load in progress: hide the image and show the placeholder
+            // beneath until the first frame arrives. Mutating outside setState
+            // is fine here — we're inside build.
+            _opacity.value = 0;
+            _placeholderVisible = true;
+          } else if (frame != null && !_sawFirstFrame) {
+            _startFade();
+          }
+          if (!_placeholderVisible) return child;
+          return Stack(
+            fit: StackFit.passthrough,
+            alignment: Alignment.center,
+            children: [widget.placeholderBuilder(context), child],
+          );
+        },
+      ),
     );
   }
 }

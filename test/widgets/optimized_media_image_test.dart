@@ -55,6 +55,62 @@ void main() {
     expect(widgetCached.maxHeight, isNull);
   });
 
+  testWidgets('artwork dim tints image and fallback paint', (tester) async {
+    final artworkDim = AnimationController(vsync: tester);
+    addTearDown(artworkDim.dispose);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: SizedBox(
+          width: 160,
+          height: 90,
+          child: OptimizedMediaImage.thumb(
+            imagePath: 'https://example.invalid/dimmed-thumb.jpg',
+            width: 160,
+            height: 90,
+            artworkDim: artworkDim,
+          ),
+        ),
+      ),
+    );
+
+    expect(tester.widget<Image>(find.byType(Image)).color, isNull);
+
+    artworkDim.value = 0.3;
+    await tester.pump();
+
+    final dimmedImage = tester.widget<Image>(find.byType(Image));
+    expect(dimmedImage.color, Colors.black.withValues(alpha: 0.3));
+    expect(dimmedImage.colorBlendMode, BlendMode.srcATop);
+
+    artworkDim.value = 0;
+    await tester.pump();
+
+    final restoredImage = tester.widget<Image>(find.byType(Image));
+    expect(restoredImage.color, isNull);
+    expect(restoredImage.colorBlendMode, isNull);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: SizedBox(
+          width: 160,
+          height: 90,
+          child: OptimizedMediaImage.thumb(imagePath: null, width: 160, height: 90, artworkDim: artworkDim),
+        ),
+      ),
+    );
+    final placeholderFinder = find.descendant(of: find.byType(OptimizedMediaImage), matching: find.byType(Container));
+    final baseColor = tester.widget<Container>(placeholderFinder).color!;
+
+    artworkDim.value = 0.3;
+    await tester.pump();
+
+    expect(
+      tester.widget<Container>(placeholderFinder).color,
+      Color.alphaBlend(Colors.black.withValues(alpha: 0.3), baseColor),
+    );
+  });
+
   testWidgets('failed image placeholders keep explicit dimensions in loose layouts', (tester) async {
     await tester.pumpWidget(
       MaterialApp(

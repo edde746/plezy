@@ -143,6 +143,9 @@ class MediaCard extends StatefulWidget {
   final EpisodePosterMode? episodePosterModeOverride;
   final bool fullBleedImage;
 
+  /// Paint-time black tint amount for the artwork, from 0 (clear) to 1 (black).
+  final Animation<double>? artworkDim;
+
   /// Overrides the silhouette inferred from the item itself. Collection and
   /// playlist records do not encode the media-library shape, so their owning
   /// surface supplies this for music libraries.
@@ -169,6 +172,7 @@ class MediaCard extends StatefulWidget {
     this.showServerName = false,
     this.episodePosterModeOverride,
     this.fullBleedImage = false,
+    this.artworkDim,
     this.cardShapeOverride,
   }) : usesContinueWatchingAction = usesContinueWatchingAction ?? isInContinueWatching;
 
@@ -424,6 +428,7 @@ class MediaCardState extends State<MediaCard> with ContextMenuTapMixin<MediaCard
                     cardShapeOverride: widget.cardShapeOverride,
                     knownWidth: width,
                     knownHeight: height,
+                    artworkDim: widget.artworkDim,
                   ),
                   if (item is MediaItem && _showsWatchedIndicator(item)) WatchedIndicator(item: item),
                 ],
@@ -460,6 +465,7 @@ class MediaCardState extends State<MediaCard> with ContextMenuTapMixin<MediaCard
                 cardShapeOverride: widget.cardShapeOverride,
                 knownWidth: posterHeight != null ? posterWidth : null,
                 knownHeight: posterHeight,
+                artworkDim: widget.artworkDim,
               ),
             ),
             if (item is MediaItem && _showsWatchedIndicator(item)) WatchedIndicator(item: item),
@@ -908,6 +914,7 @@ Widget _buildPosterImage(
   CardShape? cardShapeOverride,
   double? knownWidth,
   double? knownHeight,
+  Animation<double>? artworkDim,
 }) {
   String? posterUrl;
 
@@ -925,6 +932,7 @@ Widget _buildPosterImage(
         fallbackIcon: Symbols.playlist_play_rounded,
         imageType: ImageType.square,
         localFilePath: localPosterPath,
+        artworkDim: artworkDim,
       );
     }
 
@@ -936,6 +944,7 @@ Widget _buildPosterImage(
       fit: BoxFit.cover,
       placeholder: _buildPosterLoadingPlaceholder,
       localFilePath: localPosterPath,
+      artworkDim: artworkDim,
     );
   } else if (item is MediaItem) {
     final EpisodePosterMode episodePosterMode =
@@ -981,10 +990,12 @@ Widget _buildPosterImage(
                   placeholder: _buildPosterLoadingPlaceholder,
                   fallbackIcon: fallbackIcon,
                   imageType: ImageType.square,
+                  artworkDim: artworkDim,
                 );
               },
         imageType: ImageType.square,
         localFilePath: localPosterPath,
+        artworkDim: artworkDim,
       );
     } else if (imageType == ImageType.thumb) {
       // Use thumb image type for 16:9 content (episodes, or movies in mixed hubs)
@@ -997,6 +1008,7 @@ Widget _buildPosterImage(
         placeholder: _buildPosterLoadingPlaceholder,
         fallbackIcon: fallbackIcon,
         localFilePath: localPosterPath,
+        artworkDim: artworkDim,
       );
     } else {
       image = OptimizedMediaImage.poster(
@@ -1019,9 +1031,11 @@ Widget _buildPosterImage(
                   fit: BoxFit.cover,
                   placeholder: _buildPosterLoadingPlaceholder,
                   fallbackIcon: fallbackIcon,
+                  artworkDim: artworkDim,
                 );
               },
         localFilePath: localPosterPath,
+        artworkDim: artworkDim,
       );
     }
 

@@ -987,7 +987,7 @@ void main() {
     expect(activations, 1);
   });
 
-  testWidgets('inactive hub contents render at reduced opacity', (tester) async {
+  testWidgets('focused rail dims only inactive hub artwork', (tester) async {
     final serverManager = MultiServerManager();
     final firstItem = testMediaItem(id: 'movie_1', backend: MediaBackend.plex, kind: MediaKind.movie, title: 'Movie 1');
     final secondItem = testMediaItem(
@@ -1026,11 +1026,25 @@ void main() {
 
     expect(FocusManager.instance.primaryFocus?.debugLabel, 'tv_browse_rail');
 
-    final scrims = tester.widgetList<AnimatedDimScrim>(find.byType(AnimatedDimScrim));
-    expect(
-      scrims,
-      contains(predicate<AnimatedDimScrim>((scrim) => scrim.dimmed && scrim.alpha == 0.3, 'inactive hub dim scrim')),
-    );
+    final scrims = tester.widgetList<AnimatedDimScrim>(find.byType(AnimatedDimScrim)).toList();
+    expect(scrims, hasLength(1));
+    expect(scrims.single.alpha, 0.4);
+    expect(scrims.single.dimmed, isFalse);
+
+    List<MediaCard> cards() => tester.widgetList<MediaCard>(find.byType(MediaCard)).toList();
+    MediaCard cardFor(MediaItem item) => cards().singleWhere((card) => card.item == item);
+
+    final firstArtworkDim = cardFor(firstItem).artworkDim!;
+    final secondArtworkDim = cardFor(secondItem).artworkDim!;
+    expect(firstArtworkDim.value, 0);
+    expect(secondArtworkDim.value, closeTo(0.3, 0.001));
+
+    await tester.sendKeyDownEvent(LogicalKeyboardKey.arrowDown);
+    await tester.pumpAndSettle();
+    await tester.sendKeyUpEvent(LogicalKeyboardKey.arrowDown);
+
+    expect(firstArtworkDim.value, closeTo(0.3, 0.001));
+    expect(secondArtworkDim.value, 0);
   });
 
   testWidgets('selects preferred hub when hubs are inserted asynchronously', (tester) async {
