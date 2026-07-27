@@ -178,6 +178,25 @@ void main() {
       expect(exported.keys.where((key) => key.startsWith('tvos_db_recovery_')), isEmpty);
       expect(encoded, isNot(contains(canary)));
     });
+    test('exports cold-start string lists while rejecting lists with non-string elements', () async {
+      resetSharedPreferencesForTest(
+        initialAsync: {
+          'tracker_library_filter_mode_trakt': 'blacklist',
+          'tracker_library_filter_ids_trakt': <Object?>['srv-1:lib-a', 'srv-1:lib-b'],
+          'tracker_library_filter_ids_simkl': <Object?>['ok', 7],
+        },
+      );
+      final prefs = await BaseSharedPreferencesService.sharedCache();
+
+      final exported =
+          SettingsExportService.buildExportMap(prefs, currentUserUuid: 'alice')['prefs'] as Map<String, dynamic>;
+
+      expect(exported['tracker_library_filter_ids_trakt'], {
+        'type': 'stringList',
+        'value': ['srv-1:lib-a', 'srv-1:lib-b'],
+      });
+      expect(exported, isNot(contains('tracker_library_filter_ids_simkl')));
+    });
   });
 
   group('transactional import', () {

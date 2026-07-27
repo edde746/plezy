@@ -195,7 +195,10 @@ class SettingsExportService {
       _typeInt when value is int => {'type': _typeInt, 'value': value},
       _typeDouble when value is double => {'type': _typeDouble, 'value': value},
       _typeString when value is String => {'type': _typeString, 'value': value},
-      _typeStringList when value is List<String> => {'type': _typeStringList, 'value': value},
+      _typeStringList when _isValidValue(_typeStringList, value) => {
+        'type': _typeStringList,
+        'value': (value! as List).cast<String>().toList(),
+      },
       _ => null,
     };
   }
