@@ -15,8 +15,11 @@ Future<bool> deferTranscodeSubtitleSelection({
 }) async {
   final deferredTrack = PlaybackSubtitleResolver.subtitleTrackForSource(sourceTrack, sidecar: sourceSidecar);
   trackManager.preferredSubtitleTrack = deferredTrack;
-  trackManager.applyTrackSelectionWhenReady();
+  // Persist first: the screen callback routes to onSubtitleTrackSelectedByUser,
+  // which invalidates the pending selection. Arming before that would retire the
+  // deferred pass we depend on to apply this choice once mpv discovers the sidecar.
   await onSubtitleTrackChanged(deferredTrack, sourceStreamId: sourceStreamId);
+  trackManager.applyTrackSelectionWhenReady();
   return shouldContinue();
 }
 

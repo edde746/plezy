@@ -654,6 +654,7 @@ void main() {
         onSubtitleTrackChanged: (track, {sourceStreamId}) async {
           persistedTrack = track;
           persistedSourceStreamId = sourceStreamId;
+          await mgr.onSubtitleTrackSelectedByUser(track, sourceStreamId: sourceStreamId);
         },
         shouldContinue: () => true,
       );
@@ -683,6 +684,78 @@ void main() {
       await _drainAsync();
 
       expect(player.selectedSubtitle.map((track) => track.id), ['native-0']);
+    });
+
+    test('persisting a deferred transcode choice keeps the late-track pass armed', () async {
+      await SettingsService.getInstance();
+      final sourceTrack = MediaSubtitleTrack(
+        id: 32,
+        index: 0,
+        languageCode: 'spa',
+        title: 'Spanish',
+        codec: 'srt',
+        selected: false,
+        forced: false,
+      );
+      final player = _FakePlayer(
+        tracks: const Tracks(
+          audio: [AudioTrack(id: 'audio', language: 'eng')],
+        ),
+      );
+      final mgr = _make(
+        player: player,
+        mediaInfo: MediaSourceInfo(
+          videoUrl: 'https://example.com/transcode.m3u8',
+          partId: 100,
+          audioTracks: [MediaAudioTrack(id: 1, languageCode: 'eng', selected: true)],
+          subtitleTracks: [sourceTrack],
+          chapters: const [],
+        ),
+      );
+      addTearDown(mgr.dispose);
+
+      await deferTranscodeSubtitleSelection(
+        trackManager: mgr,
+        sourceTrack: sourceTrack,
+        sourceSidecar: const PlaybackSubtitleSidecar(
+          sourceStreamId: 32,
+          preload: true,
+          track: SubtitleTrack(
+            id: 'container:32',
+            language: 'spa',
+            title: 'Spanish',
+            codec: 'srt',
+            isExternal: true,
+            isContainer: true,
+            uri: 'https://example.com/video.mkv',
+          ),
+        ),
+        sourceStreamId: 32,
+        onSubtitleTrackChanged: (track, {sourceStreamId}) =>
+            mgr.onSubtitleTrackSelectedByUser(track, sourceStreamId: sourceStreamId),
+        shouldContinue: () => true,
+      );
+      expect(player.selectedSubtitle, isEmpty);
+
+      player.emitTracks(
+        const Tracks(
+          audio: [AudioTrack(id: 'audio', language: 'eng')],
+          subtitle: [
+            SubtitleTrack(
+              id: 'native-late',
+              language: 'spa',
+              title: 'Spanish',
+              codec: 'srt',
+              isExternal: true,
+              isContainer: true,
+              uri: 'https://example.com/video.mkv',
+            ),
+          ],
+        ),
+      );
+      await _drainAsync();
+
+      expect(player.selectedSubtitle.map((track) => track.id), ['native-late']);
     });
 
     test('five-second fallback keeps listening and applies a late advertised subtitle', () async {
