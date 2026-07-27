@@ -148,6 +148,52 @@ class ExoPlayerFallbackTerminalTest {
   }
 
   @Test
+  fun videoPlaybackRestartRepeatsAfterSeekWithoutDecoderReinit() {
+    val core = ExoPlayerCore(Robolectric.buildActivity(Activity::class.java).setup().get())
+    val delegate = RecordingDelegate(handlesFallback = false)
+    core.delegate = delegate
+    setField(core, "currentMediaGeneration", 7)
+    val mediaItem = MediaItem.Builder()
+      .setMediaId("7")
+      .setUri("https://example.test/video.mkv")
+      .build()
+    val timeline = SinglePeriodTimeline(
+      1_000_000L,
+      true,
+      false,
+      false,
+      null,
+      mediaItem
+    )
+    val eventTime = AnalyticsListener.EventTime(
+      0L,
+      timeline,
+      0,
+      null,
+      0L,
+      timeline,
+      0,
+      null,
+      0L,
+      0L
+    )
+    val analytics = getField(core, "decoderHangListener") as AnalyticsListener
+
+    try {
+      analytics.onRenderedFirstFrame(eventTime, Any(), 0L)
+      analytics.onRenderedFirstFrame(eventTime, Any(), 0L)
+
+      assertEquals(
+        listOf("playback-restart", "playback-restart"),
+        delegate.events.map { it.first }
+      )
+      assertEquals(true, getField(core, "firstFrameRendered"))
+    } finally {
+      core.dispose()
+    }
+  }
+
+  @Test
   fun audioOnlyReadyEmitsPlaybackRestartWithoutAFrameCallback() {
     val core = ExoPlayerCore(Robolectric.buildActivity(Activity::class.java).setup().get())
     val delegate = RecordingDelegate(handlesFallback = false)
@@ -157,6 +203,27 @@ class ExoPlayerFallbackTerminalTest {
       invokePlaybackState(core, Player.STATE_READY)
 
       assertEquals(listOf("playback-restart"), delegate.events.map { it.first })
+      assertEquals(true, getField(core, "firstFrameRendered"))
+    } finally {
+      core.dispose()
+    }
+  }
+
+  @Test
+  fun audioOnlyPlaybackRestartRepeatsOnReentryToReady() {
+    val core = ExoPlayerCore(Robolectric.buildActivity(Activity::class.java).setup().get())
+    val delegate = RecordingDelegate(handlesFallback = false)
+    core.delegate = delegate
+
+    try {
+      invokePlaybackState(core, Player.STATE_READY)
+      invokePlaybackState(core, Player.STATE_BUFFERING)
+      invokePlaybackState(core, Player.STATE_READY)
+
+      assertEquals(
+        listOf("playback-restart", "playback-restart"),
+        delegate.events.map { it.first }
+      )
       assertEquals(true, getField(core, "firstFrameRendered"))
     } finally {
       core.dispose()

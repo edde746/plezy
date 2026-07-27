@@ -1035,12 +1035,15 @@ class ExoPlayerCore(private val activity: Activity) :
         emitTrackList()
 
         // Video becomes ready only when a frame renders. Audio-only media has
-        // no video callback, so STATE_READY is its renderer-ready boundary.
+        // no video callback, so re-entering STATE_READY (load, and the
+        // re-buffer that follows a seek) is its renderer-ready boundary.
         val hasVideoGroup = exoPlayer?.currentTracks?.groups?.any { it.type == C.TRACK_TYPE_VIDEO } == true
         if (hasVideoGroup) {
           startFrameWatchdog()
-        } else if (claimPlaybackOutputReady()) {
-          emitLog("debug", "audio", "Audio-only playback ready")
+        } else {
+          if (claimPlaybackOutputReady()) {
+            emitLog("debug", "audio", "Audio-only playback ready")
+          }
           stopFrameWatchdog()
           delegate?.onEvent("playback-restart", null)
         }
@@ -2708,15 +2711,21 @@ class ExoPlayerCore(private val activity: Activity) :
       val mediaGeneration = mediaGenerationAt(eventTime) ?: return
       if (mediaGeneration != currentMediaGeneration) return
       hasRenderedVideoFrameForMedia = true
-      if (!claimPlaybackOutputReady()) return
-      emitLog("debug", "decoder-hang", "First frame rendered — decoder OK")
-      logNativeDvFirstFrameIfNeeded()
-      logDolbyVisionPlaybackPathIfNeeded()
+      if (claimPlaybackOutputReady()) {
+        emitLog("debug", "decoder-hang", "First frame rendered — decoder OK")
+        logNativeDvFirstFrameIfNeeded()
+        logDolbyVisionPlaybackPathIfNeeded()
+      }
       // STATE_READY fires when the player has enough buffered to start, but
       // the first frame may not be on screen yet (decoder init + keyframe
       // decode). The MPV-parity `playback-restart` event consumers (Dart
       // first-frame detection, frame-rate matching) want the moment the
       // pixel actually hits the screen, which is here.
+      // The claim above is a one-shot decoder-hang latch and must not gate the
+      // event: ExoPlayer re-arms its first-frame state on every position reset,
+      // so this callback also fires after each seek. That is exactly MPV's
+      // MPV_EVENT_PLAYBACK_RESTART contract — first frame after load *and*
+      // after every seek — which the Dart consumers rely on.
       delegate?.onEvent("playback-restart", null)
     }
   }
