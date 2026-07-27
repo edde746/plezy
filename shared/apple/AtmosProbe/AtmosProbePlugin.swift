@@ -642,6 +642,9 @@ final class AsbarProbe: NSObject {
   private var download: URLSessionDownloadTask?
   private var statusObserved = false
   private var cancelled = false
+  // Guarded by `lock`. Consumed exactly once — by the start path that reaches a
+  // verdict, by `cancel()`, or by `deinit`, whichever happens first.
+  private var startCompletion: ((String?) -> Void)?
 
   // Guarded by `lock`; read from the method-channel thread.
   private var enqueuedSamples = 0
@@ -663,11 +666,19 @@ final class AsbarProbe: NSObject {
 
   /// `completion` reports only whether the run could be started.
   func start(completion: @escaping (String?) -> Void) {
+    lock.lock()
+    startCompletion = completion
+    let aborted = cancelled
+    lock.unlock()
+    if aborted {
+      finishStart("cancelled")
+      return
+    }
+
     if source.isFileURL {
       queue.async { [weak self] in
         guard let self else { return }
-        let error = self.beginReading(from: self.source)
-        DispatchQueue.main.async { completion(error) }
+        self.finishStart(self.beginReading(from: self.source))
       }
       return
     }
@@ -675,11 +686,11 @@ final class AsbarProbe: NSObject {
     // AVAssetReader needs a seekable local asset; stage the source first.
     setPhase("downloading")
     let task = URLSession.shared.downloadTask(with: source) { [weak self] url, _, error in
-      guard let self else { return }
+      guard let self else { return }  // covered by `deinit`
       guard let url else {
         let message = error?.localizedDescription ?? "download failed"
         self.fail(message)
-        DispatchQueue.main.async { completion(message) }
+        self.finishStart(message)
         return
       }
       // The temporary file is removed as soon as this handler returns.
@@ -691,7 +702,7 @@ final class AsbarProbe: NSObject {
       } catch {
         let message = "failed to stage asset: \(error.localizedDescription)"
         self.fail(message)
-        DispatchQueue.main.async { completion(message) }
+        self.finishStart(message)
         return
       }
       self.lock.lock()
@@ -700,11 +711,11 @@ final class AsbarProbe: NSObject {
       self.lock.unlock()
       if aborted {
         try? FileManager.default.removeItem(at: staged)
+        self.finishStart("cancelled")  // no-op if `cancel()` already fired
         return
       }
       self.queue.async {
-        let failureMessage = self.beginReading(from: staged)
-        DispatchQueue.main.async { completion(failureMessage) }
+        self.finishStart(self.beginReading(from: staged))
       }
     }
     lock.lock()
@@ -722,6 +733,7 @@ final class AsbarProbe: NSObject {
     temporaryFile = nil
     lock.unlock()
     task?.cancel()
+    finishStart("cancelled")
 
     queue.sync {
       if statusObserved, let renderer {
@@ -743,6 +755,13 @@ final class AsbarProbe: NSObject {
     }
     if let staged { try? FileManager.default.removeItem(at: staged) }
     setPhase("cancelled")
+  }
+
+  deinit {
+    // `stopPlayback()` drops the only strong reference (`asbar = nil`), so the
+    // probe can die with a download still in flight; the handler's
+    // `guard let self` would then swallow the verdict for good.
+    finishStart("cancelled")
   }
 
   /// Runs on `queue`. Returns a message on failure.
@@ -1049,6 +1068,19 @@ final class AsbarProbe: NSObject {
   }
 
   // MARK: - State
+
+  /// Delivers the start verdict at most once, always on the main queue.
+  /// Never call while holding `lock` (NSLock is not recursive).
+  private func finishStart(_ message: String?) {
+    lock.lock()
+    let completion = startCompletion
+    startCompletion = nil
+    lock.unlock()
+    guard let completion else { return }
+    // Captures only `completion` and `message` — never `self`, so this is safe
+    // to call from `deinit`.
+    DispatchQueue.main.async { completion(message) }
+  }
 
   private func setPhase(_ value: String) {
     lock.lock()
