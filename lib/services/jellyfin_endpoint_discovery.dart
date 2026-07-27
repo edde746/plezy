@@ -25,8 +25,9 @@ class JellyfinServerInfo {
 class JellyfinEndpointRaceResult {
   final String activeBaseUrl;
 
-  /// Trusted, active-first endpoints. Every fallback completed an
-  /// unauthenticated public probe and reported [serverInfo]'s exact machine ID.
+  /// Active-first endpoints selected for persistence. Candidates that reported
+  /// another machine ID are excluded; candidates that returned no trustworthy
+  /// identity are retained for a later retry.
   final List<String> baseUrls;
   final JellyfinServerInfo serverInfo;
   final Map<String, String> _verifiedEffectiveBaseUrls;
@@ -159,11 +160,11 @@ class JellyfinEndpointDiscovery {
     }
   }
 
-  /// Races public Jellyfin probes and returns only identity-verified endpoints.
+  /// Races public Jellyfin probes and returns persistence-safe endpoints.
   ///
-  /// [baseUrlsToPersist] contains caller-selected persistence candidates, not
-  /// pre-trusted URLs. Unreachable candidates and candidates for another
-  /// machine are never included in the returned [JellyfinEndpointRaceResult].
+  /// [baseUrlsToPersist] contains caller-selected persistence candidates.
+  /// Candidates that reported another machine are excluded; candidates that
+  /// returned no trustworthy identity are retained for a later retry.
   Future<JellyfinEndpointRaceResult> raceEndpoints(
     Iterable<String> baseUrls, {
     String? preferredUrl,
@@ -288,14 +289,12 @@ class JellyfinEndpointDiscovery {
     }
 
     final effectiveUrls = <String, String>{};
-    final matchingBaseUrls = <String>{};
     final machineMismatchBaseUrls = <String>{};
     for (final entry in identityResults.entries) {
       if (entry.value.serverInfo?.machineId != expected) {
         machineMismatchBaseUrls.add(entry.key.url);
         continue;
       }
-      matchingBaseUrls.add(entry.key.url);
       final effectiveBaseUrl = entry.value.effectiveBaseUrl;
       if (effectiveBaseUrl != null) {
         effectiveUrls[entry.key.url] = effectiveBaseUrl;
@@ -305,7 +304,7 @@ class JellyfinEndpointDiscovery {
     effectiveUrls[selectedCandidate.url] = activeBaseUrl;
     final persistedUrls = [
       for (final url in persistUrls)
-        if (matchingBaseUrls.contains(url)) effectiveUrls[url] ?? url,
+        if (!machineMismatchBaseUrls.contains(url)) effectiveUrls[url] ?? url,
     ];
 
     return JellyfinEndpointRaceResult._(

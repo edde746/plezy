@@ -157,7 +157,7 @@ void main() {
       );
     });
 
-    test('persists only explicit URLs that proved the selected machine identity', () async {
+    test('persists explicit URLs while probing without authentication', () async {
       final probeRequests = <http.Request>[];
       final discovery = JellyfinEndpointDiscovery(
         testHttpClientFactory: () => MockClient((req) async {
@@ -180,7 +180,7 @@ void main() {
       );
 
       expect(result.activeBaseUrl, 'https://jf.example.com');
-      expect(result.baseUrls, ['https://jf.example.com']);
+      expect(result.baseUrls, ['https://jf.example.com', 'https://offline.example.com']);
       expect(probeRequests, isNotEmpty);
       for (final request in probeRequests) {
         final headerNames = request.headers.keys.map((name) => name.toLowerCase());
@@ -209,20 +209,42 @@ void main() {
       expect(result.serverInfo.machineId, 'srv-1');
     });
 
-    test('excludes unreachable URLs from the trusted failover list', () async {
+    test('an unreachable persisted endpoint survives a save', () async {
+      const offlineUrl = 'https://offline.example.com';
+      const activeUrl = 'https://jf.example.com';
       final discovery = JellyfinEndpointDiscovery(
-        testHttpClientFactory: () => MockClient((req) async {
-          if (req.url.host == 'offline.example.com') {
+        testHttpClientFactory: () => MockClient((request) async {
+          if (request.url.host == 'offline.example.com') {
             throw TimeoutException('offline');
           }
           return _info(id: 'srv-1');
         }),
       );
 
-      final result = await discovery.raceEndpoints(['https://offline.example.com', 'https://jf.example.com']);
+      final result = await discovery.raceEndpoints([offlineUrl, activeUrl], baseUrlsToPersist: [offlineUrl, activeUrl]);
 
-      expect(result.activeBaseUrl, 'https://jf.example.com');
-      expect(result.baseUrls, ['https://jf.example.com']);
+      expect(result.activeBaseUrl, activeUrl);
+      expect(result.baseUrls, [activeUrl, offlineUrl]);
+    });
+
+    test('a different-machine persisted endpoint remains excluded', () async {
+      const activeUrl = 'https://jf.example.com';
+      const differentMachineUrl = 'https://other.example.com';
+      final discovery = JellyfinEndpointDiscovery(
+        testHttpClientFactory: () =>
+            MockClient((request) async => _info(id: request.url.host == 'other.example.com' ? 'srv-2' : 'srv-1')),
+      );
+
+      final result = await discovery.raceEndpoints(
+        [activeUrl, differentMachineUrl],
+        expectedMachineId: 'srv-1',
+        baseUrlsToPersist: [activeUrl, differentMachineUrl],
+        baseUrlsToValidate: const [],
+      );
+
+      expect(result.activeBaseUrl, activeUrl);
+      expect(result.baseUrls, [activeUrl]);
+      expect(result.reconcilePreviouslyStoredBaseUrls([activeUrl, differentMachineUrl]), [activeUrl]);
     });
 
     test('rejects reachable URLs that point to different Jellyfin servers', () async {
@@ -249,7 +271,7 @@ void main() {
       );
     });
 
-    test('expected machine ID keeps only reachable matching candidates', () async {
+    test('expected machine ID retains candidates that returned no identity', () async {
       final discovery = JellyfinEndpointDiscovery(
         testHttpClientFactory: () => MockClient((request) async {
           if (request.url.host == 'offline.example.com') {
@@ -265,7 +287,7 @@ void main() {
       ], expectedMachineId: 'srv-1');
 
       expect(result.activeBaseUrl, 'https://matching.example.com');
-      expect(result.baseUrls, ['https://matching.example.com']);
+      expect(result.baseUrls, ['https://matching.example.com', 'https://offline.example.com']);
     });
 
     test('reconciles stored endpoints without pruning candidates that returned no identity', () async {
@@ -285,7 +307,7 @@ void main() {
         baseUrlsToValidate: const [],
       );
 
-      expect(result.baseUrls, ['https://active.example.com']);
+      expect(result.baseUrls, ['https://active.example.com', 'https://offline.example.com']);
       expect(result.reconcilePreviouslyStoredBaseUrls(storedBaseUrls), [
         'https://active.example.com',
         'https://offline.example.com',
