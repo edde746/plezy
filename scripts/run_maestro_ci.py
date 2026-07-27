@@ -51,6 +51,33 @@ GROUPS: dict[str, tuple[tuple[str, ...], ...]] = {
         ),
         (
             "basic",
+            "--flow",
+            ".maestro/regression_flows/07_sheet_back_dismiss.yaml",
+            "--jellyfin-log",
+            "build/maestro-sheets/back-dismiss.log",
+            "--diagnostics-dir",
+            "build/maestro-sheets/back-dismiss-diagnostics",
+        ),
+        (
+            "basic",
+            "--flow",
+            ".maestro/regression_flows/08_track_choice_survives_pending_pass.yaml",
+            "--jellyfin-log",
+            "build/maestro-tracks/pending-pass.log",
+            "--diagnostics-dir",
+            "build/maestro-tracks/pending-pass-diagnostics",
+        ),
+        (
+            "basic",
+            "--flow",
+            ".maestro/regression_flows/09_language_picker_locales.yaml",
+            "--jellyfin-log",
+            "build/maestro-i18n/language-picker.log",
+            "--diagnostics-dir",
+            "build/maestro-i18n/language-picker-diagnostics",
+        ),
+        (
+            "basic",
             "--fault",
             "music-failure",
             "--flow",
@@ -104,6 +131,25 @@ GROUPS: dict[str, tuple[tuple[str, ...], ...]] = {
             "build/maestro-legacy/jellyfin.log",
             "--diagnostics-dir",
             "build/maestro-legacy/diagnostics",
+        ),
+    ),
+    # Real Android TV hardware only, so no workflow dispatches it. The three
+    # `tv` regressions above run on a phone emulator that `onboard_jellyfin_tv`
+    # forces into TV mode; this drives the rail layout a device reports on its
+    # own. The D-pad-only path is also the only way to reach the TV number
+    # spinner, which InputModeTracker hides as soon as a tap arrives. Run as
+    # `python3 scripts/run_maestro_ci.py android-tv-device` with
+    # MAESTRO_DEVICE_ID set to the box.
+    "android-tv-device": (
+        (
+            "basic",
+            "--adb-reverse",
+            "--flow",
+            ".maestro/regression_flows/10_tv_settings_navigation.yaml",
+            "--jellyfin-log",
+            "build/maestro-tv-device/settings-navigation.log",
+            "--diagnostics-dir",
+            "build/maestro-tv-device/settings-navigation-diagnostics",
         ),
     ),
 }

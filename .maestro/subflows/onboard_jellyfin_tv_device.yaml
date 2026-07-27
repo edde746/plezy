@@ -1,0 +1,57 @@
+appId: com.edde746.plezy
+---
+# Onboarding for a device that already reports itself as a TV.
+#
+# `onboard_jellyfin_tv.yaml` exists for the phone emulator CI runs on: it
+# onboards through the handheld layout and then walks Settings to flip
+# "Force TV mode". A real Android TV box takes the TV layout from the first
+# frame, so that walk has no handheld chrome to tap and the toggle would only
+# re-assert what PlatformDetector already reports.
+- retry:
+    maxRetries: 1
+    commands:
+      - launchApp:
+          clearState: true
+          permissions:
+            all: allow
+      - extendedWaitUntil:
+          visible: "(?s)^(?:Connect to Jellyfin|Wait).*"
+          timeout: 30000
+      - runFlow:
+          when:
+            visible: "Wait"
+          commands:
+            - tapOn: "Wait"
+      - extendedWaitUntil:
+          visible: "Connect to Jellyfin"
+          timeout: 30000
+- tapOn: "Connect to Jellyfin"
+- extendedWaitUntil:
+    visible: "Add Jellyfin server"
+    timeout: 15000
+- tapOn: "(?s)Server URLs.*"
+- inputText: ${JELLYFIN_URL}
+- tapOn: "Find server"
+# A TV-sized layout offers Quick Connect first because typing on a remote is
+# slow. The code path needs a second device to approve, so fall back to the
+# username form the phone flow already uses.
+- extendedWaitUntil:
+    visible: "(?s)^(?:Username|Cancel)$"
+    timeout: 30000
+- runFlow:
+    when:
+      notVisible: "Username"
+    commands:
+      - tapOn: "Cancel"
+- extendedWaitUntil:
+    visible: "Username"
+    timeout: 20000
+- tapOn: "Username"
+- inputText: "maestro"
+- tapOn: "Password"
+- inputText: "maestro"
+- tapOn: "Sign in"
+- extendedWaitUntil:
+    visible:
+      id: "tv_browse_rail_selection"
+    timeout: 45000
