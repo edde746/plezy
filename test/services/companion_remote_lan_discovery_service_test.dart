@@ -14,11 +14,17 @@ void main() {
       final listener = await _DiscoveryListener.start([context]);
 
       try {
-        await listener.sendBeacon(context: context, ips: const ['192.0.2.10']);
-        await _waitFor(() => listener.emissions.length == 1);
+        await listener.sendBeaconUntil(
+          condition: () => listener.emissions.length == 1,
+          context: context,
+          ips: const ['192.0.2.10'],
+        );
 
-        await listener.sendBeacon(context: context, ips: const ['192.0.2.30', '10.0.0.30']);
-        await _waitFor(() => listener.emissions.length == 2);
+        await listener.sendBeaconUntil(
+          condition: () => listener.emissions.length == 2,
+          context: context,
+          ips: const ['192.0.2.30', '10.0.0.30'],
+        );
 
         final hosts = listener.emissions.last;
         expect(hosts, hasLength(1));
@@ -38,12 +44,21 @@ void main() {
       final listener = await _DiscoveryListener.start([context]);
 
       try {
-        await listener.sendBeacon(context: context, platform: 'macOS', ips: const ['192.0.2.40', '10.0.0.40']);
-        await _waitFor(() => listener.emissions.length == 1);
+        await listener.sendBeaconUntil(
+          condition: () => listener.emissions.length == 1,
+          context: context,
+          platform: 'macOS',
+          ips: const ['192.0.2.40', '10.0.0.40'],
+        );
 
+        // Reordered IPs only: must be absorbed without publishing an emission.
         await listener.sendBeacon(context: context, platform: 'macOS', ips: const ['10.0.0.40', '192.0.2.40']);
-        await listener.sendBeacon(context: context, platform: 'Android', ips: const ['192.0.2.40', '10.0.0.40']);
-        await _waitFor(() => listener.emissions.any((hosts) => hosts.single.platform == 'Android'));
+        await listener.sendBeaconUntil(
+          condition: () => listener.emissions.any((hosts) => hosts.single.platform == 'Android'),
+          context: context,
+          platform: 'Android',
+          ips: const ['192.0.2.40', '10.0.0.40'],
+        );
 
         expect(listener.emissions, hasLength(2));
         final hosts = listener.emissions.last;
@@ -63,12 +78,21 @@ void main() {
       final listener = await _DiscoveryListener.start([firstContext, secondContext]);
 
       try {
-        await listener.sendBeacon(context: firstContext, name: 'Living Room', ips: const ['192.0.2.50']);
-        await _waitFor(() => listener.emissions.length == 1);
+        await listener.sendBeaconUntil(
+          condition: () => listener.emissions.length == 1,
+          context: firstContext,
+          name: 'Living Room',
+          ips: const ['192.0.2.50'],
+        );
 
+        // Context churn only: must be absorbed without publishing an emission.
         await listener.sendBeacon(context: secondContext, name: 'Living Room', ips: const ['192.0.2.50']);
-        await listener.sendBeacon(context: secondContext, name: 'Living Room TV', ips: const ['192.0.2.50']);
-        await _waitFor(() => listener.emissions.any((hosts) => hosts.single.name == 'Living Room TV'));
+        await listener.sendBeaconUntil(
+          condition: () => listener.emissions.any((hosts) => hosts.single.name == 'Living Room TV'),
+          context: secondContext,
+          name: 'Living Room TV',
+          ips: const ['192.0.2.50'],
+        );
 
         expect(listener.emissions, hasLength(2));
         final hosts = listener.emissions.last;
@@ -95,6 +119,14 @@ RemoteAuthContext _authContext({required String id, required List<int> discovery
     allowedUserUuids: ['user-$id'],
   );
 }
+
+// Loopback UDP needs a real poll: there is no seam to drive the socket's
+// receive path from fake time. Keep the interval short so a wait costs about
+// what the round trip costs, and bound every wait by a deadline rather than an
+// attempt count so the budget stays fixed if the interval changes.
+const _pollInterval = Duration(milliseconds: 2);
+const _resendInterval = Duration(milliseconds: 250);
+const _waitBudget = Duration(seconds: 5);
 
 class _DiscoveryListener {
   _DiscoveryListener._({
@@ -129,13 +161,13 @@ class _DiscoveryListener {
     }
   }
 
-  Future<void> sendBeacon({
+  List<int> _encodeBeacon({
     required RemoteAuthContext context,
     required List<String> ips,
-    String name = 'Living Room',
-    String platform = 'macOS',
-    int port = 52100,
-  }) async {
+    required String name,
+    required String platform,
+    required int port,
+  }) {
     const version = 1;
     final auth = RemoteAuthService.instance;
     final homeHash = auth.computeDiscoveryTag(context.discoveryKey);
@@ -149,7 +181,7 @@ class _DiscoveryListener {
       port: port,
       ips: ips,
     );
-    final packet = utf8.encode(
+    return utf8.encode(
       jsonEncode({
         'app': 'plezy',
         'v': version,
@@ -162,12 +194,53 @@ class _DiscoveryListener {
         'hmac': hmac,
       }),
     );
+  }
 
-    for (var attempt = 0; attempt < 100; attempt++) {
+  Future<void> _transmit(List<int> packet) async {
+    final deadline = DateTime.now().add(_waitBudget);
+    while (DateTime.now().isBefore(deadline)) {
       if (sender.send(packet, InternetAddress.loopbackIPv4, service.discoveryPort) == packet.length) return;
-      await Future<void>.delayed(const Duration(milliseconds: 20));
+      await Future<void>.delayed(_pollInterval);
     }
     fail('Timed out sending LAN discovery beacon');
+  }
+
+  Future<void> sendBeacon({
+    required RemoteAuthContext context,
+    required List<String> ips,
+    String name = 'Living Room',
+    String platform = 'macOS',
+    int port = 52100,
+  }) {
+    return _transmit(_encodeBeacon(context: context, ips: ips, name: name, platform: platform, port: port));
+  }
+
+  /// Sends a beacon repeatedly until [condition] holds.
+  ///
+  /// Loopback UDP drops datagrams when the host is loaded, and a lost beacon
+  /// leaves a plain [_waitFor] polling for an emission that can never arrive —
+  /// the observed flake in this suite. Re-sending is safe because the payload
+  /// is byte-identical and the service suppresses beacons that carry no
+  /// change, so only the first datagram to land can publish an emission.
+  Future<void> sendBeaconUntil({
+    required bool Function() condition,
+    required RemoteAuthContext context,
+    required List<String> ips,
+    String name = 'Living Room',
+    String platform = 'macOS',
+    int port = 52100,
+  }) async {
+    final packet = _encodeBeacon(context: context, ips: ips, name: name, platform: platform, port: port);
+    final deadline = DateTime.now().add(_waitBudget);
+    while (DateTime.now().isBefore(deadline)) {
+      await _transmit(packet);
+      final resendAt = DateTime.now().add(_resendInterval);
+      while (DateTime.now().isBefore(resendAt)) {
+        if (condition()) return;
+        await Future<void>.delayed(_pollInterval);
+      }
+    }
+    fail('Timed out waiting for LAN discovery behavior');
   }
 
   Future<void> close() async {
@@ -178,9 +251,10 @@ class _DiscoveryListener {
 }
 
 Future<void> _waitFor(bool Function() condition) async {
-  for (var attempt = 0; attempt < 100; attempt++) {
+  final deadline = DateTime.now().add(_waitBudget);
+  while (DateTime.now().isBefore(deadline)) {
     if (condition()) return;
-    await Future<void>.delayed(const Duration(milliseconds: 20));
+    await Future<void>.delayed(_pollInterval);
   }
   fail('Timed out waiting for LAN discovery behavior');
 }

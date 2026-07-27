@@ -21,6 +21,11 @@ import urllib.request
 ROOT_DIR = Path(__file__).resolve().parent.parent
 APP_ID = "com.edde746.plezy"
 FAULTS = ("music-failure", "offline", "recovery")
+ANIMATION_SCALES = (
+    "window_animation_scale",
+    "transition_animation_scale",
+    "animator_duration_scale",
+)
 
 
 class RunnerError(RuntimeError):
@@ -547,6 +552,7 @@ class MaestroRunner:
             ("global", "stay_on_while_plugged_in"),
             ("secure", "immersive_mode_confirmations"),
             ("global", "hide_error_dialogs"),
+            *((("global", key) for key in ANIMATION_SCALES)),
         ):
             value = self._adb_capture("shell", "settings", "get", namespace, key)
             if value is not None:
@@ -572,6 +578,14 @@ class MaestroRunner:
             check=False,
             quiet=True,
         )
+        # Maestro waits for the view hierarchy to settle after every tap, input,
+        # and key press. With animations at their default 1.0 scale each of
+        # those waits pays for a real transition, which dominates a flow: taps
+        # measured 3-5s apiece on a physical Pixel 7. CI's emulator gets this
+        # from the runner's disable-animations flag; nothing was setting it for
+        # a real device. cleanup() restores the captured values.
+        for key in ANIMATION_SCALES:
+            self._adb_run("shell", "settings", "put", "global", key, "0", check=False, quiet=True)
         self._adb_run("shell", "input", "keyevent", "KEYCODE_BACK", check=False, quiet=True)
         _run_checked((*self.adb_prefix, "shell", "svc", "power", "stayon", "true"))
         _run_checked((*self.adb_prefix, "shell", "input", "keyevent", "KEYCODE_WAKEUP"))

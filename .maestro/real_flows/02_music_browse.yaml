@@ -7,7 +7,7 @@ tags:
   - music
   - regression
 ---
-- runFlow: ../subflows/onboard_jellyfin.yaml
+- runFlow: ../subflows/ensure_onboarded.yaml
 - assertVisible: "(?s)^Latest Albums in Maestro Music.*"
 - assertVisible: "(?s)^Regression Album.*"
 - tapOn: "(?s)^Libraries.*"

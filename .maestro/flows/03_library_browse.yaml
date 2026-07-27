@@ -4,7 +4,7 @@ tags:
   - e2e
   - library
 ---
-- runFlow: ../subflows/onboard_jellyfin.yaml
+- runFlow: ../subflows/ensure_onboarded.yaml
 - tapOn: "(?s)^Libraries.*"
 - tapOn: "Browse"
 - extendedWaitUntil:

@@ -1,6 +1,6 @@
 appId: com.edde746.plezy
 ---
-- runFlow: onboard_jellyfin.yaml
+- runFlow: ensure_onboarded.yaml
 - tapOn: "(?s)^Search.*"
 - extendedWaitUntil:
     visible: "Search movies, shows, music..."

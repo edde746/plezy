@@ -30,7 +30,7 @@ Future<T> _withShortenedTimer<T>({
 Future<T> _withSetupTimersShortened<T>(Future<T> Function() body) {
   return _withShortenedTimer(
     original: const Duration(seconds: 10),
-    replacement: const Duration(milliseconds: 500),
+    replacement: const Duration(milliseconds: 10),
     body: () => _withShortenedTimer(
       original: const Duration(milliseconds: 250),
       replacement: const Duration(milliseconds: 1),
@@ -531,11 +531,7 @@ void main() {
     final timeoutService = serviceFor(timeoutRelay);
 
     await expectLater(
-      _withShortenedTimer(
-        original: const Duration(seconds: 10),
-        replacement: const Duration(milliseconds: 10),
-        body: () => timeoutService.createSession(sessionId: 'slow1'),
-      ),
+      _withSetupTimersShortened(() => timeoutService.createSession(sessionId: 'slow1')),
       throwsA(
         isA<PeerError>()
             .having((error) => error.type, 'type', PeerErrorType.timeout)

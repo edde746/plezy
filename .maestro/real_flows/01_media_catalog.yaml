@@ -5,7 +5,7 @@ tags:
   - real-jellyfin
   - media
 ---
-- runFlow: ../subflows/onboard_jellyfin.yaml
+- runFlow: ../subflows/ensure_onboarded.yaml
 - tapOn: "(?s)^Search.*"
 - extendedWaitUntil:
     visible: "Search movies, shows, music..."

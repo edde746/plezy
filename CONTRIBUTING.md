@@ -13,7 +13,7 @@
 - Run `dart format .` to format Dart code (note: generated files like `*.g.dart` are excluded from CI checks)
 - Run `scripts/format_native.sh --fix` to format Kotlin, Swift, C++, C, Objective-C, and native headers
 - Run `flutter analyze` before submitting to check for issues
-- Run `flutter test` if tests are available
+- Run `scripts/run_tests.sh` to run the test suite (same as `flutter test`, but scaled to your core count)
 - Test your changes thoroughly
 
 ### Code Quality Checks
@@ -34,7 +34,10 @@ The project includes automated CI checks that run on all pull requests:
    - Run locally: `scripts/codegen.sh --check`
 
 4. **Tests**: Runs unit and widget tests (when available)
-   - Run locally: `flutter test`
+   - Run locally: `scripts/run_tests.sh`
+   - This is `flutter test` with `-j` set to the core count. The default is half your cores, which
+     leaves most of the machine idle because the suite is dominated by per-file compilation.
+     Arguments are forwarded, so `scripts/run_tests.sh test/widgets/some_test.dart` works.
 
 All these checks must pass before your changes can be merged.
 

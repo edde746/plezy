@@ -5,7 +5,7 @@ tags:
   - profiles
   - settings
 ---
-- runFlow: ../subflows/onboard_jellyfin.yaml
+- runFlow: ../subflows/ensure_onboarded.yaml
 - tapOn: "(?s)^M(?:.*Profiles.*)?$"
 - tapOn:
     text: "Profiles"

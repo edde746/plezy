@@ -130,7 +130,7 @@ jobs:
       - name: Run tests
         run: |
           if [ -d "test" ] && [ "$(find test -name '*_test.dart' | wc -l)" -gt 0 ]; then
-            flutter test
+            scripts/run_tests.sh
           else
             echo "No tests found, skipping test execution"
           fi

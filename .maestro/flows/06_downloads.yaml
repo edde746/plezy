@@ -4,7 +4,7 @@ tags:
   - e2e
   - downloads
 ---
-- runFlow: ../subflows/onboard_jellyfin.yaml
+- runFlow: ../subflows/ensure_onboarded.yaml
 - tapOn: "(?s)^Downloads.*"
 - extendedWaitUntil:
     visible: "No downloads"
