@@ -33,6 +33,7 @@
 		6AD8B1612ED7B50000E9E1B4 /* MpvPlayerCore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6AD8B1632ED7B50000E9E1B4 /* MpvPlayerCore.swift */; };
 		6AD8B1622ED7B50000E9E1B4 /* MpvPlayerPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6AD8B1642ED7B50000E9E1B4 /* MpvPlayerPlugin.swift */; };
 		6AD8B1662ED7B50000E9E1B5 /* WindowUtilsPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6AD8B1682ED7B50000E9E1B5 /* WindowUtilsPlugin.swift */; };
+		6AD8B1702ED7B50000E9E1C1 /* AppLookupPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6AD8B1712ED7B50000E9E1C1 /* AppLookupPlugin.swift */; };
 		6AD8B1672ED7B50000E9E1B5 /* WindowDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6AD8B1692ED7B50000E9E1B5 /* WindowDelegate.swift */; };
 		6AD8B16A2ED7B50000E9E1B6 /* MpvPipController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6AD8B16B2ED7B50000E9E1B6 /* MpvPipController.swift */; };
 		B1D51A6A2F00110000000003 /* MpvPlayerCoreBase.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1D51A6A2F00110000000004 /* MpvPlayerCoreBase.swift */; };
@@ -94,6 +95,7 @@
 		6AD8B1632ED7B50000E9E1B4 /* MpvPlayerCore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MpvPlayerCore.swift; sourceTree = "<group>"; };
 		6AD8B1642ED7B50000E9E1B4 /* MpvPlayerPlugin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MpvPlayerPlugin.swift; sourceTree = "<group>"; };
 		6AD8B1682ED7B50000E9E1B5 /* WindowUtilsPlugin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindowUtilsPlugin.swift; sourceTree = "<group>"; };
+		6AD8B1712ED7B50000E9E1C1 /* AppLookupPlugin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppLookupPlugin.swift; sourceTree = "<group>"; };
 		6AD8B1692ED7B50000E9E1B5 /* WindowDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindowDelegate.swift; sourceTree = "<group>"; };
 		6AD8B16B2ED7B50000E9E1B6 /* MpvPipController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MpvPipController.swift; sourceTree = "<group>"; };
 		6AD8B16C2ED7B50000E9E1B7 /* Runner-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "Runner-Bridging-Header.h"; sourceTree = "<group>"; };
@@ -216,6 +218,7 @@
 				33CC10F02044A3C60003C045 /* AppDelegate.swift */,
 				33CC11122044BFA00003C045 /* MainFlutterWindow.swift */,
 				6AD8B1682ED7B50000E9E1B5 /* WindowUtilsPlugin.swift */,
+				6AD8B1712ED7B50000E9E1C1 /* AppLookupPlugin.swift */,
 				6AD8B1692ED7B50000E9E1B5 /* WindowDelegate.swift */,
 				6AD8B1652ED7B50000E9E1B4 /* MpvPlayer */,
 				6AD8B16C2ED7B50000E9E1B7 /* Runner-Bridging-Header.h */,
@@ -496,6 +499,7 @@
 				6AD8B1612ED7B50000E9E1B4 /* MpvPlayerCore.swift in Sources */,
 				6AD8B1622ED7B50000E9E1B4 /* MpvPlayerPlugin.swift in Sources */,
 				6AD8B1662ED7B50000E9E1B5 /* WindowUtilsPlugin.swift in Sources */,
+				6AD8B1702ED7B50000E9E1C1 /* AppLookupPlugin.swift in Sources */,
 				6AD8B1672ED7B50000E9E1B5 /* WindowDelegate.swift in Sources */,
 				6AD8B16A2ED7B50000E9E1B6 /* MpvPipController.swift in Sources */,
 			);

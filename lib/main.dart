@@ -25,6 +25,7 @@ import 'profiles/profile_connection_cleanup.dart';
 import 'profiles/profile_connection_registry.dart';
 import 'profiles/profile_registry.dart';
 import 'profiles/profile_selection_policy.dart';
+import 'models/external_player_models.dart';
 import 'mixins/mounted_set_state_mixin.dart';
 import 'theme/mono_theme.dart';
 import 'profiles/plex_home_service.dart';
@@ -487,6 +488,9 @@ void _startNonessentialInitialization(SettingsService settings) {
 
   if (PlatformDetector.isDesktopOS()) {
     bestEffort('Discord RPC', DiscordRPCService.instance.initialize);
+    // Detection forks helper processes; resolve it here so the External Player
+    // settings page never has to wait on a cold probe.
+    bestEffort('External player detection', KnownPlayers.getForCurrentPlatform);
   }
 
   if (settings.read(SettingsService.crashReporting)) {

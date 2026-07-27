@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/focus/focusable_button.dart';
@@ -16,12 +18,15 @@ void main() {
   setUp(() async {
     resetSharedPreferencesForTest();
     SettingsService.resetForTesting();
+    KnownPlayers.resetForTesting();
+    KnownPlayers.probe = const _AllPlayersInstalled();
     settings = await SettingsService.getInstance();
     LocaleSettings.setLocaleSync(AppLocale.en);
   });
 
   tearDown(() {
     SettingsService.resetForTesting();
+    KnownPlayers.resetForTesting();
   });
 
   testWidgets('only custom players expose a focusable delete action', (tester) async {
@@ -43,7 +48,7 @@ void main() {
     await tester.pumpWidget(MaterialApp(theme: monoTheme(dark: true), home: const ExternalPlayerScreen()));
     await tester.pumpAndSettle();
 
-    for (final player in KnownPlayers.getForCurrentPlatform()) {
+    for (final player in await KnownPlayers.getForCurrentPlatform()) {
       final title = player.id == KnownPlayers.systemDefault.id ? 'System Default' : player.name;
       final row = find.widgetWithText(FocusableListTile, title);
       expect(row, findsOneWidget);
@@ -66,4 +71,63 @@ void main() {
     expect(settings.read(SettingsService.selectedExternalPlayer), KnownPlayers.systemDefault);
     expect(find.text(customPlayer.name), findsNothing);
   });
+
+  testWidgets('a selected known player stays listed when detection misses it', (tester) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(1000, 1400);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.view.resetPhysicalSize);
+
+    // VLC is supported on every platform Plezy ships, so with detection
+    // reporting nothing installed it is always one of the filtered-out ids.
+    KnownPlayers.resetForTesting();
+    KnownPlayers.probe = const _NoPlayersInstalled();
+    final selected = KnownPlayers.findById('vlc')!;
+    expect(selected.isAvailable, isTrue);
+    expect((await KnownPlayers.getForCurrentPlatform()).map((p) => p.id), isNot(contains('vlc')));
+
+    await settings.write(SettingsService.useExternalPlayer, true);
+    await settings.write(SettingsService.selectedExternalPlayer, selected);
+
+    await tester.pumpWidget(MaterialApp(theme: monoTheme(dark: true), home: const ExternalPlayerScreen()));
+    await tester.pumpAndSettle();
+
+    expect(find.widgetWithText(FocusableListTile, selected.name), findsOneWidget);
+    expect(find.widgetWithText(FocusableListTile, 'System Default'), findsOneWidget);
+  });
+}
+
+/// Reports every player as installed so the screen renders the full platform
+/// list regardless of what the host running the suite happens to have.
+class _AllPlayersInstalled extends PlayerInstallProbe {
+  const _AllPlayersInstalled();
+
+  @override
+  Future<ProcessResult> run(String executable, List<String> arguments) async => ProcessResult(0, 0, '', '');
+
+  @override
+  Future<bool> applicationInstalled(String bundleId) async => true;
+
+  @override
+  Future<bool> fileExists(String path) async => true;
+
+  @override
+  Future<bool> schemeHasHandler(String scheme) async => true;
+}
+
+/// Reports nothing as installed, so only players without a detector survive.
+class _NoPlayersInstalled extends PlayerInstallProbe {
+  const _NoPlayersInstalled();
+
+  @override
+  Future<ProcessResult> run(String executable, List<String> arguments) async => ProcessResult(0, 1, '', '');
+
+  @override
+  Future<bool> applicationInstalled(String bundleId) async => false;
+
+  @override
+  Future<bool> fileExists(String path) async => false;
+
+  @override
+  Future<bool> schemeHasHandler(String scheme) async => false;
 }
