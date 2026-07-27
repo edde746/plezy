@@ -106,9 +106,9 @@ class SyncRules extends Table {
   TextColumn get downloadFilter => text().withDefault(const Constant('unwatched'))();
   BoolColumn get includeSpecials => boolean().withDefault(const Constant(true))();
 
-  /// Whether every currently-owned candidate has been associated in
-  /// [SyncRuleDownloads]. Existing rules start false and are backfilled before
-  /// destructive cleanup.
+  /// Gates collection/playlist backfill into [SyncRuleDownloads] before
+  /// destructive cleanup. Show/season coverage is re-derived from
+  /// [DownloadedMedia] ancestry at cleanup time regardless of this value.
   BoolColumn get downloadLinksInitialized => boolean().withDefault(const Constant(false))();
 }
 

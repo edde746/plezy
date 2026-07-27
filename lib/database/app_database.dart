@@ -18,6 +18,7 @@ import '../services/credential_vault.dart';
 import '../utils/app_logger.dart';
 import '../utils/serial_future_queue.dart';
 import '../utils/global_key_utils.dart';
+import '../utils/content_utils.dart';
 
 part 'app_database.g.dart';
 
@@ -1057,12 +1058,18 @@ class AppDatabase extends _$AppDatabase {
     );
   }
 
+  /// Returns uninitialized collection/playlist rules and every show/season
+  /// rule whose local ancestry-derived links must be refreshed before cleanup.
   Future<List<SyncRuleItem>> getUninitializedSyncRulesForServer({
     required String profileId,
     required ServerId serverId,
   }) {
     return (select(syncRules)..where(
-          (t) => t.profileId.equals(profileId) & t.serverId.equals(serverId) & t.downloadLinksInitialized.equals(false),
+          (t) =>
+              t.profileId.equals(profileId) &
+              t.serverId.equals(serverId) &
+              (t.downloadLinksInitialized.equals(false) |
+                  t.targetType.isIn(const [ContentTypes.show, ContentTypes.season])),
         ))
         .get();
   }

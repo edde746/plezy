@@ -755,6 +755,53 @@ void main() {
       expect(await db.getDownloadOwner(profileId: 'profile-b', globalKey: 'srv:profile-shared'), isNotNull);
     });
 
+    test('deleteSyncRuleAndDownloads keeps episodes an initialized show rule covers', () async {
+      final p = DownloadProvider.forTesting(downloadManager: downloadManager, database: db);
+      addTearDown(p.dispose);
+      await p.ensureInitialized();
+      final serverManager = MultiServerManager();
+      addTearDown(serverManager.dispose);
+
+      await p.createSyncRule(serverId: ServerId('srv'), ratingKey: 'playlist', targetType: 'playlist', episodeCount: 0);
+      await p.createSyncRule(serverId: ServerId('srv'), ratingKey: 'show-1', targetType: 'show', episodeCount: 1);
+      final targetKey = p.syncRuleKeyFor(ServerId('srv'), 'playlist');
+      final showKey = p.syncRuleKeyFor(ServerId('srv'), 'show-1');
+      final targetRule = (await db.getSyncRule(targetKey))!;
+      final showRule = (await db.getSyncRule(showKey))!;
+      await db.markSyncRuleDownloadLinksInitialized(targetKey);
+      await db.markSyncRuleDownloadLinksInitialized(showKey);
+
+      const downloadKey = 'srv:ep-watched';
+      final episode = testMediaItem(
+        id: 'ep-watched',
+        backend: MediaBackend.plex,
+        kind: MediaKind.episode,
+        title: 'Watched episode',
+        serverId: ServerId('srv'),
+      );
+      await db.insertDownload(
+        serverId: ServerId('srv'),
+        ratingKey: 'ep-watched',
+        globalKey: downloadKey,
+        type: 'episode',
+        grandparentRatingKey: 'show-1',
+        status: DownloadStatus.completed.index,
+      );
+      await db.addDownloadOwner(profileId: 'test-profile', globalKey: downloadKey);
+      await db.associateSyncRuleDownload(targetRule, downloadKey);
+
+      p.debugSeedState(
+        downloads: {downloadKey: const DownloadProgress(globalKey: downloadKey, status: DownloadStatus.completed)},
+        metadata: {downloadKey: episode},
+        ownedDownloadKeys: {downloadKey},
+      );
+
+      await p.deleteSyncRuleAndDownloads(targetKey, serverManager);
+
+      expect(await db.getDownloadedMedia(downloadKey), isNotNull);
+      expect(await db.getSyncRuleDownloadLinks(showRule.id), hasLength(1));
+    });
+
     test('deleteSyncRuleAndDownloads keeps an unresolvable legacy list rule intact', () async {
       final p = DownloadProvider.forTesting(downloadManager: downloadManager, database: db);
       addTearDown(p.dispose);

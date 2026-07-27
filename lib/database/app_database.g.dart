@@ -3568,9 +3568,9 @@ class SyncRuleItem extends DataClass implements Insertable<SyncRuleItem> {
   final String downloadFilter;
   final bool includeSpecials;
 
-  /// Whether every currently-owned candidate has been associated in
-  /// [SyncRuleDownloads]. Existing rules start false and are backfilled before
-  /// destructive cleanup.
+  /// Gates collection/playlist backfill into [SyncRuleDownloads] before
+  /// destructive cleanup. Show/season coverage is re-derived from
+  /// [DownloadedMedia] ancestry at cleanup time regardless of this value.
   final bool downloadLinksInitialized;
   const SyncRuleItem({
     required this.id,
