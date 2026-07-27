@@ -47,7 +47,7 @@
     <h1 class="scan-heading">Scan in Plezy</h1>
     <p class="scan-description">To use this feature, scan this QR code with the Plezy app.</p>
 
-    <div class="store-buttons" aria-label="Download Plezy">
+    <div class="store-buttons" role="group" aria-label="Download Plezy">
       {#each availableStores as store}
         <a
           href={store.url}

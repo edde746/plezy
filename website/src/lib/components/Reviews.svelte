@@ -206,7 +206,7 @@
               <span>{featuredReview.upvotes}</span>
             </div>
           {:else}
-            <div class="stars" aria-label="5 out of 5 stars">
+            <div class="stars" role="img" aria-label="5 out of 5 stars">
               {#each Array(5) as _}
                 <StarIcon aria-hidden="true" />
               {/each}
@@ -264,7 +264,7 @@
             <span>{review.upvotes}</span>
           </div>
         {:else}
-          <div class="stars" aria-label="5 out of 5 stars">
+          <div class="stars" role="img" aria-label="5 out of 5 stars">
             {#each Array(5) as _}
               <StarIcon aria-hidden="true" />
             {/each}
@@ -509,5 +509,6 @@
   .content-pad {
     padding-left: max(var(--page-gutter), calc((100vw - var(--page-width)) / 2 + var(--page-gutter)));
     padding-right: var(--page-gutter);
+    scroll-padding-left: max(var(--page-gutter), calc((100vw - var(--page-width)) / 2 + var(--page-gutter)));
   }
 </style>
