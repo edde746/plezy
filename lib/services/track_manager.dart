@@ -206,7 +206,13 @@ class TrackManager {
   /// source that advertises subtitles keeps listening for their late native
   /// track-list update. The listener has a separate hard deadline and every
   /// callback is scoped to the current media generation.
+  ///
+  /// Callers may arm this after an `await`, so a manager disposed or
+  /// deactivated in the meantime must not subscribe or start a timer: nothing
+  /// would ever cancel them. The generation checks inside each callback only
+  /// stop the work, not the allocation.
   void applyTrackSelectionWhenReady() {
+    if (!_managerIsActive) return;
     final selectionGeneration = _selectionGeneration;
     bool selectionIsCurrent() => _isSelectionCurrent(selectionGeneration);
     final currentTracks = player.state.tracks;
