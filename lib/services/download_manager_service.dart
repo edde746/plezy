@@ -1332,6 +1332,7 @@ class DownloadManagerService {
           globalKey,
           metadata,
           client,
+          isRepair: true,
           downloadArtwork: queueItem.downloadArtwork,
           downloadSubtitles: queueItem.downloadSubtitles,
           record: record,
@@ -2074,9 +2075,13 @@ class DownloadManagerService {
     }
 
     final errorMessage = t.downloads.storageFull;
-    final failedCount = await _database.failActiveDownloadsForStorageFull(errorMessage);
-    _emitProgress(globalKey, DownloadStatus.failed, 0, errorMessage: errorMessage);
-    appLogger.e('Device storage exhausted; stopped $failedCount active download(s)');
+    final failedKeys = await _database.failActiveDownloadsForStorageFull(errorMessage);
+    for (final key in failedKeys) {
+      _cancelDownloadTimers(key);
+      _pendingDownloadContext.remove(key);
+      _emitProgress(key, DownloadStatus.failed, 0, errorMessage: errorMessage);
+    }
+    appLogger.e('Device storage exhausted; stopped ${failedKeys.length} active download(s)');
   }
 
   bool _isRetryablePrepareFailure(Object error) {
@@ -2344,6 +2349,7 @@ class DownloadManagerService {
             globalKey,
             metadata,
             client,
+            isRepair: false,
             downloadArtwork: downloadArtwork,
             downloadSubtitles: downloadSubtitles,
             record: existingCheck,
@@ -2447,6 +2453,7 @@ class DownloadManagerService {
     String globalKey,
     MediaItem metadata,
     MediaServerClient client, {
+    required bool isRepair,
     required bool downloadArtwork,
     required bool downloadSubtitles,
     required DownloadedMediaItem? record,
@@ -2455,7 +2462,7 @@ class DownloadManagerService {
   }) async {
     var artworkSettled = !downloadArtwork;
     if (downloadArtwork) {
-      final itemArtworkSettled = await _downloadArtwork(globalKey, metadata, client);
+      final itemArtworkSettled = await _downloadArtwork(globalKey, metadata, client, isRepair: isRepair);
       final chapterArtworkSettled = metadata.serverId == null
           ? false
           : await _downloadChapterThumbnails(ServerId(metadata.serverId!), metadata.id, client);
@@ -2479,7 +2486,14 @@ class DownloadManagerService {
           }
         }
         if (subtitles != null) {
-          subtitlesSettled = await _downloadSubtitles(globalKey, metadata, subtitles, client, showYear: showYear);
+          subtitlesSettled = await _downloadSubtitles(
+            globalKey,
+            metadata,
+            subtitles,
+            client,
+            isRepair: isRepair,
+            showYear: showYear,
+          );
         }
       } catch (e, st) {
         appLogger.w('Could not resolve subtitles for $globalKey', error: e, stackTrace: st);
@@ -2489,11 +2503,18 @@ class DownloadManagerService {
     return (artwork: artworkSettled, subtitles: subtitlesSettled);
   }
 
-  Future<bool> _downloadArtwork(String globalKey, MediaItem metadata, MediaServerClient client) async {
+  Future<bool> _downloadArtwork(
+    String globalKey,
+    MediaItem metadata,
+    MediaServerClient client, {
+    required bool isRepair,
+  }) async {
     if (metadata.serverId == null) return false;
 
     try {
-      _emitProgress(globalKey, DownloadStatus.downloading, 0, currentFile: 'artwork');
+      if (!isRepair) {
+        _emitProgress(globalKey, DownloadStatus.downloading, 0, currentFile: 'artwork');
+      }
 
       final serverId = metadata.serverId!;
       final specs = client.resolveDownloadArtwork(metadata);
@@ -2502,7 +2523,7 @@ class DownloadManagerService {
       final storedThumbPath = metadata.thumbPath == null ? null : artworkStorageKey(metadata.thumbPath!);
       await _database.updateArtworkPaths(globalKey: globalKey, thumbPath: storedThumbPath);
 
-      _emitProgressWithArtwork(globalKey, thumbPath: storedThumbPath);
+      _emitProgressWithArtwork(globalKey, isRepair: isRepair, thumbPath: storedThumbPath);
       appLogger.d(artworkSettled ? 'Artwork downloaded for $globalKey' : 'Artwork remains incomplete for $globalKey');
       return artworkSettled;
     } catch (e, st) {
@@ -2565,9 +2586,12 @@ class DownloadManagerService {
     MediaItem metadata,
     List<DownloadSubtitleSpec> subtitles,
     MediaServerClient client, {
+    required bool isRepair,
     int? showYear,
   }) async {
-    _emitProgress(globalKey, DownloadStatus.downloading, 0, currentFile: 'subtitles');
+    if (!isRepair) {
+      _emitProgress(globalKey, DownloadStatus.downloading, 0, currentFile: 'subtitles');
+    }
     var allSettled = true;
 
     for (final subtitle in subtitles) {
@@ -2656,15 +2680,13 @@ class DownloadManagerService {
   }
 
   /// Emit progress update with artwork paths so DownloadProvider can sync
-  void _emitProgressWithArtwork(String globalKey, {String? thumbPath}) {
+  void _emitProgressWithArtwork(String globalKey, {required bool isRepair, String? thumbPath}) {
     if (_disposed) return;
-    // Emit a progress update containing artwork path
-    // The status is preserved as downloading since artwork is just one step
     _progressController.add(
       DownloadProgress(
         globalKey: globalKey,
-        status: DownloadStatus.downloading,
-        progress: 0,
+        status: isRepair ? DownloadStatus.completed : DownloadStatus.downloading,
+        progress: isRepair ? 100 : 0,
         currentFile: 'artwork',
         thumbPath: thumbPath,
       ),

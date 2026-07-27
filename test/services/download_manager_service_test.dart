@@ -19,6 +19,7 @@ import 'package:plezy/media/download_resolution.dart';
 import 'package:plezy/media/media_backend.dart';
 import 'package:plezy/media/media_item.dart';
 import 'package:plezy/media/media_kind.dart';
+import 'package:plezy/media/media_source_info.dart';
 import 'package:plezy/media/media_server_client.dart';
 import 'package:plezy/models/download_models.dart';
 import 'package:plezy/services/download_artwork_helpers.dart';
@@ -1188,6 +1189,84 @@ void main() {
     });
   });
 
+  group('deferred supplementary repair', () {
+    test('completed repair persists artwork without announcing downloading', () async {
+      final fixture = await _createSupplementaryFixture(thumbPath: '/repair-thumb');
+      final client = _SupplementaryClient(
+        metadata: fixture.metadata,
+        resolution: () => const DownloadResolution(videoUrl: 'https://example.test/video'),
+      );
+      await _seedCompletedPendingDownload(fixture, downloadSubtitles: false, downloadArtwork: true);
+      final manager = DownloadManagerService(
+        database: fixture.db,
+        storageService: fixture.storage,
+        clientResolver: (serverId, {clientScopeId}) => client,
+        http: MediaServerHttpClient(client: FakeHttpClient(200, utf8.encode('image bytes'))),
+        downloadsSupportedOverride: false,
+      );
+      final events = <DownloadProgress>[];
+      final progressSubscription = manager.progressStream.listen(events.add);
+      addTearDown(progressSubscription.cancel);
+      addTearDown(manager.dispose);
+
+      await manager.repairPendingSupplementaryDownloads();
+      await Future<void>.delayed(Duration.zero);
+
+      expect(
+        events,
+        isNot(contains(predicate<DownloadProgress>((event) => event.status == DownloadStatus.downloading))),
+      );
+      expect(
+        events,
+        contains(
+          predicate<DownloadProgress>(
+            (event) =>
+                event.status == DownloadStatus.completed && event.thumbPath == artworkStorageKey('/repair-thumb'),
+          ),
+        ),
+      );
+      expect(
+        (await fixture.db.getDownloadedMedia(fixture.metadata.globalKey))?.thumbPath,
+        artworkStorageKey('/repair-thumb'),
+      );
+      expect(await fixture.db.getPendingSupplementaryQueueItems(), isEmpty);
+    });
+
+    test('normal completion still announces artwork and subtitle steps', () async {
+      final fixture = await _createSupplementaryFixture(thumbPath: '/normal-thumb');
+      final client = _SupplementaryClient(
+        metadata: fixture.metadata,
+        resolution: () => const DownloadResolution(
+          videoUrl: 'https://example.test/video',
+          externalSubtitles: [DownloadSubtitleSpec(id: 1, url: 'https://example.test/subtitle/1', codec: 'srt')],
+        ),
+      );
+      await _seedCompletingDownload(fixture, downloadSubtitles: true, downloadArtwork: true);
+      final manager = DownloadManagerService(
+        database: fixture.db,
+        storageService: fixture.storage,
+        clientResolver: (serverId, {clientScopeId}) => client,
+        http: MediaServerHttpClient(client: FakeHttpClient(200, utf8.encode('supplementary bytes'))),
+        downloadsSupportedOverride: false,
+      );
+      final events = <DownloadProgress>[];
+      final progressSubscription = manager.progressStream.listen(events.add);
+      addTearDown(progressSubscription.cancel);
+      addTearDown(manager.dispose);
+
+      await manager.debugHandleTaskStatus(
+        TaskStatusUpdate(_downloadTask('current-task', fixture.metadata.globalKey), TaskStatus.complete),
+      );
+      await Future<void>.delayed(Duration.zero);
+
+      final downloadingFiles = events
+          .where((event) => event.status == DownloadStatus.downloading)
+          .map((event) => event.currentFile);
+      expect(downloadingFiles, containsAll(<String?>['artwork', 'subtitles']));
+      expect(await fixture.db.getPendingSupplementaryQueueItems(), isEmpty);
+    });
+  });
+
   group('deletion cleanup', () {
     test('missing video still removes partial and subtitle sidecars', () async {
       resetSharedPreferencesForTest();
@@ -1323,6 +1402,9 @@ void main() {
         downloadsSupportedOverride: false,
       );
       addTearDown(manager.dispose);
+      final events = <DownloadProgress>[];
+      final sub = manager.progressStream.listen(events.add);
+      addTearDown(sub.cancel);
 
       await manager.debugHandleTaskStatus(
         TaskStatusUpdate(
@@ -1330,6 +1412,14 @@ void main() {
           TaskStatus.failed,
           TaskFileSystemException('write failed: ENOSPC (No space left on device)'),
         ),
+      );
+      await Future<void>.delayed(Duration.zero);
+      expect(
+        events
+            .where((event) => event.status == DownloadStatus.failed && event.errorMessage == t.downloads.storageFull)
+            .map((event) => event.globalKey)
+            .toSet(),
+        {currentKey, queuedKey},
       );
 
       final current = await db.getDownloadedMedia(currentKey);
@@ -1847,7 +1937,7 @@ void main() {
   });
 }
 
-Future<_SupplementaryFixture> _createSupplementaryFixture() async {
+Future<_SupplementaryFixture> _createSupplementaryFixture({String? thumbPath}) async {
   resetSharedPreferencesForTest();
   SettingsService.resetForTesting();
   DownloadStorageService.resetForTesting();
@@ -1869,13 +1959,14 @@ Future<_SupplementaryFixture> _createSupplementaryFixture() async {
       kind: MediaKind.movie,
       serverId: ServerId('srv'),
       title: 'Movie',
+      thumbPath: thumbPath,
     ),
   );
   fixture.initializeCaches();
   await PlexApiCache.instance.put(ServerId('srv'), '/library/metadata/item-1', {
     'MediaContainer': {
       'Metadata': [
-        {'ratingKey': 'item-1', 'type': 'movie', 'title': 'Movie'},
+        {'ratingKey': 'item-1', 'type': 'movie', 'title': 'Movie', 'thumb': ?thumbPath},
       ],
     },
   });
@@ -1883,7 +1974,11 @@ Future<_SupplementaryFixture> _createSupplementaryFixture() async {
   return fixture;
 }
 
-Future<void> _seedCompletingDownload(_SupplementaryFixture fixture, {required bool downloadSubtitles}) async {
+Future<void> _seedCompletingDownload(
+  _SupplementaryFixture fixture, {
+  required bool downloadSubtitles,
+  bool downloadArtwork = false,
+}) async {
   await fixture.db.insertDownload(
     serverId: ServerId('srv'),
     ratingKey: fixture.metadata.id,
@@ -1895,11 +1990,15 @@ Future<void> _seedCompletingDownload(_SupplementaryFixture fixture, {required bo
   await fixture.db.addToQueue(
     mediaGlobalKey: fixture.metadata.globalKey,
     downloadSubtitles: downloadSubtitles,
-    downloadArtwork: false,
+    downloadArtwork: downloadArtwork,
   );
 }
 
-Future<void> _seedCompletedPendingDownload(_SupplementaryFixture fixture, {required bool downloadSubtitles}) async {
+Future<void> _seedCompletedPendingDownload(
+  _SupplementaryFixture fixture, {
+  required bool downloadSubtitles,
+  bool downloadArtwork = false,
+}) async {
   await fixture.db.insertDownload(
     serverId: ServerId('srv'),
     ratingKey: fixture.metadata.id,
@@ -1911,7 +2010,7 @@ Future<void> _seedCompletedPendingDownload(_SupplementaryFixture fixture, {requi
   await fixture.db.addToQueue(
     mediaGlobalKey: fixture.metadata.globalKey,
     downloadSubtitles: downloadSubtitles,
-    downloadArtwork: false,
+    downloadArtwork: downloadArtwork,
   );
 }
 
@@ -1979,7 +2078,20 @@ class _SupplementaryClient implements MediaServerClient {
   }
 
   @override
-  List<DownloadArtworkSpec> resolveDownloadArtwork(MediaItem item) => const [];
+  List<DownloadArtworkSpec> resolveDownloadArtwork(MediaItem item) {
+    return buildArtworkSpecs(item, (path) => 'https://example.test$path');
+  }
+
+  @override
+  Future<PlaybackExtras> fetchPlaybackExtras(
+    String itemId, {
+    String? introPattern,
+    String? creditsPattern,
+    bool forceChapterFallback = false,
+    bool forceRefresh = false,
+  }) async {
+    return PlaybackExtras(chapters: const [], markers: const []);
+  }
 
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);

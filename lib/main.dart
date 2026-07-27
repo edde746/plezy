@@ -371,9 +371,16 @@ Future<AppDatabaseBootstrap> openAppDatabaseWithDownloadRecovery({
 
   await recoverNativeDownloads();
   final bootstrap = await openDatabase();
-  final failedCount = await bootstrap.database.failActiveDownloadsForStorageFull(storageFullMessage);
-  appLogger.w('Recovered startup after storage exhaustion; stopped $failedCount active download(s)');
-  return bootstrap;
+  try {
+    final failedKeys = await bootstrap.database.failActiveDownloadsForStorageFull(storageFullMessage);
+    appLogger.w('Recovered startup after storage exhaustion; stopped ${failedKeys.length} active download(s)');
+    return bootstrap;
+  } catch (_) {
+    // The caller only takes ownership once this helper returns, so the freshly
+    // opened background isolate has to be released here.
+    await bootstrap.database.close();
+    rethrow;
+  }
 }
 
 Future<_StartupDependencies> _initializeStartup(SettingsService settings) async {

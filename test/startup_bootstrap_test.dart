@@ -17,9 +17,10 @@ import 'test_helpers/download_fixtures.dart';
 import 'test_helpers/prefs.dart';
 
 final class _OpenTrackingInterceptor extends QueryInterceptor {
-  _OpenTrackingInterceptor({this.failure});
+  _OpenTrackingInterceptor({this.failure, this.updateFailure});
 
   final Object? failure;
+  final Object? updateFailure;
   var ensureOpenCalls = 0;
   var ensureOpenCompleted = false;
   var closed = false;
@@ -33,6 +34,13 @@ final class _OpenTrackingInterceptor extends QueryInterceptor {
     final result = await executor.ensureOpen(user);
     ensureOpenCompleted = true;
     return result;
+  }
+
+  @override
+  Future<int> runUpdate(QueryExecutor executor, String statement, List<Object?> args) {
+    final updateFailure = this.updateFailure;
+    if (updateFailure != null) throw updateFailure;
+    return executor.runUpdate(statement, args);
   }
 
   @override
@@ -219,6 +227,58 @@ void main() {
       await tempDir.delete(recursive: true);
     }
   });
+
+  test('post-recovery download failure closes the reopened database before rethrowing', () async {
+    resetSharedPreferencesForTest();
+    final tempDir = await Directory.systemTemp.createTemp('plezy_startup_recovery_update_failure_');
+    final file = File('${tempDir.path}/plezy_downloads.db');
+    final prefs = await BaseSharedPreferencesService.sharedCache();
+    final failedOpen = _OpenTrackingInterceptor(
+      failure: const FileSystemException('write failed: No space left on device'),
+    );
+    final updateError = StateError('injected post-recovery update failure');
+    final reopened = _OpenTrackingInterceptor(updateFailure: updateError);
+    AppDatabase? seeded;
+
+    try {
+      seeded = AppDatabase.forTesting(NativeDatabase(file));
+      await seeded.insertDownload(
+        serverId: ServerId('srv'),
+        ratingKey: 'active',
+        globalKey: 'srv:active',
+        type: 'movie',
+        status: DownloadStatus.downloading.index,
+      );
+      await seeded.close();
+      seeded = null;
+
+      var openAttempts = 0;
+      final open = openAppDatabaseWithDownloadRecovery(
+        openDatabase: () {
+          return AppDatabase.open(
+            isTvos: false,
+            databaseFile: file,
+            preferences: prefs,
+            executorFactory: (databaseFile) {
+              openAttempts++;
+              final interceptor = openAttempts == 1 ? failedOpen : reopened;
+              return NativeDatabase(databaseFile).interceptWith(interceptor);
+            },
+          );
+        },
+        recoverNativeDownloads: () async {},
+        storageFullMessage: 'Storage full',
+      );
+
+      await expectLater(open, throwsA(same(updateError)));
+      expect(openAttempts, 2);
+      expect(reopened.closed, isTrue);
+    } finally {
+      await seeded?.close();
+      await tempDir.delete(recursive: true);
+    }
+  });
+
   test('non-storage lazy database-open errors bypass download recovery', () async {
     resetSharedPreferencesForTest();
     final tempDir = await Directory.systemTemp.createTemp('plezy_startup_open_error_');

@@ -461,12 +461,12 @@ extension DownloadDatabaseOperations on AppDatabase {
   ///
   /// Clearing native task ids and queue rows prevents startup recovery from
   /// immediately re-enqueueing work after partial files have been discarded.
-  Future<int> failActiveDownloadsForStorageFull(String errorMessage) {
+  Future<List<String>> failActiveDownloadsForStorageFull(String errorMessage) {
     return transaction(() async {
       final active = await (select(
         downloadedMedia,
       )..where((row) => row.status.isIn([DownloadStatus.queued.index, DownloadStatus.downloading.index]))).get();
-      if (active.isEmpty) return 0;
+      if (active.isEmpty) return const <String>[];
 
       final globalKeys = active.map((item) => item.globalKey).toList(growable: false);
       await (update(downloadedMedia)..where((row) => row.globalKey.isIn(globalKeys))).write(
@@ -477,7 +477,7 @@ extension DownloadDatabaseOperations on AppDatabase {
         ),
       );
       await (delete(downloadQueue)..where((row) => row.mediaGlobalKey.isIn(globalKeys))).go();
-      return globalKeys.length;
+      return globalKeys;
     });
   }
 
