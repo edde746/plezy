@@ -1408,7 +1408,11 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
         );
 
         if (confirmed && mounted) {
-          await _watchTogetherProvider!.leaveSession();
+          try {
+            await _watchTogetherProvider!.leaveSession();
+          } catch (error, stackTrace) {
+            appLogger.e('WatchTogether: Session leave failed', error: error, stackTrace: stackTrace);
+          }
           if (mounted) await _exitPlayerRoute(navigateHome: navigateHome);
         }
         return;
