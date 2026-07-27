@@ -944,8 +944,12 @@ Widget _buildPosterImage(
     // Remember the dead primary URL so later builds go straight to the fallback.
     Widget Function(BuildContext, String, dynamic)? retryWithFallback(ImageType type) {
       if (posterFallbackUrl == null || useRememberedFallback) return null;
-      return (_, _, _) {
-        _rememberFailedPosterUrl(primaryPosterUrl);
+      return (_, _, error) {
+        // Only an attempted-and-failed load proves the primary artwork is dead.
+        // An unresolvable URL just means there is no client right now (offline,
+        // profile switch, reconnect); memoizing it would pin this item to
+        // fallback artwork for the process lifetime.
+        if (error is! UnresolvedImageUrl) _rememberFailedPosterUrl(primaryPosterUrl);
         return buildImage(posterFallbackUrl, type);
       };
     }

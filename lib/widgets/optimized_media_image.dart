@@ -18,6 +18,20 @@ int _imageFailureCount = 0;
 DateTime _lastFailureLog = DateTime.now();
 const _logInterval = Duration(seconds: 10);
 
+/// Passed to [OptimizedMediaImage.errorWidget] when no URL could be built for
+/// the image *at this build*, as opposed to a load that was attempted and
+/// failed. Reaching [OptimizedMediaImage._buildCachedImage] already implies a
+/// non-empty [OptimizedMediaImage.imagePath], and the only remaining way
+/// [MediaImageHelper.getOptimizedImageUrl] returns '' for one is a null
+/// [MediaServerClient] (offline mode, profile switch, server reconnect), so the
+/// path is not known-bad and callers that memoize failures MUST NOT record it.
+class UnresolvedImageUrl implements Exception {
+  const UnresolvedImageUrl(this.imagePath);
+  final String imagePath;
+  @override
+  String toString() => 'No image URL could be built for $imagePath';
+}
+
 Widget blurArtwork(Widget child, {double sigma = 30, bool clip = true}) {
   if (!kBlurArtwork) return child;
   final filtered = ImageFiltered(
@@ -239,11 +253,7 @@ class OptimizedMediaImage extends StatelessWidget {
 
     if (!hasLocal && (imagePath == null || imagePath!.isEmpty)) {
       if (errorWidget != null) {
-        return errorWidget!(
-          context,
-          localFilePath ?? '',
-          FileSystemException('Local image file is unavailable', localFilePath),
-        );
+        return errorWidget!(context, localFilePath ?? '', UnresolvedImageUrl(localFilePath ?? imagePath ?? ''));
       }
       return _buildFallback(context);
     }
@@ -335,7 +345,7 @@ class OptimizedMediaImage extends StatelessWidget {
       // load failure from the caller's point of view, so honour its own
       // failure UI rather than the generic broken-image tile.
       if (errorWidget != null) {
-        return errorWidget!(context, imagePath ?? '', StateError('No image URL could be built for $imagePath'));
+        return errorWidget!(context, imagePath ?? '', UnresolvedImageUrl(imagePath ?? ''));
       }
       return _buildFallback(context);
     }
