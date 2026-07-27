@@ -24,6 +24,12 @@ const _fixedEndpointSourcePaths = <String>[
   'lib/services/trackers/mal/mal_constants.dart',
   'lib/services/trackers/anilist/anilist_constants.dart',
   'lib/services/trackers/simkl/simkl_constants.dart',
+  'lib/services/trackers/oauth_proxy_client.dart',
+  'lib/services/trackers/anime_lists_mapping_store.dart',
+  'lib/services/trackers/fribb_mapping_store.dart',
+  'lib/services/catalog/seerr_catalog_source.dart',
+  'lib/services/discord_rpc_service.dart',
+  'lib/services/update_service.dart',
   'lib/watch_together/services/watch_together_relay_endpoint.dart',
   'lib/main.dart',
 ];
@@ -91,5 +97,19 @@ void main() {
     }
 
     expect(discoveredHosts, isNotEmpty, reason: 'The fixed-endpoint source scan must discover HTTPS literals');
+
+    // The other direction: a listed domain that no scanned source produces means
+    // the scan lost sight of the file that owns it, and a host change there would
+    // silently fall through to base-config and its user certificate authorities.
+    final unobservedDomains = _expectedDomains
+        .where((domain) => !discoveredHosts.any((host) => host == domain || host.endsWith('.$domain')))
+        .toList();
+    expect(
+      unobservedDomains,
+      isEmpty,
+      reason:
+          'No scanned source in _fixedEndpointSourcePaths references these domains, so drift in them '
+          'cannot be detected. Add the owning file to the scan or drop the domain from $_configPath.',
+    );
   });
 }
