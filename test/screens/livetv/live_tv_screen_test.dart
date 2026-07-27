@@ -52,6 +52,30 @@ void main() {
     expect(_guideChannels(tester), isEmpty);
   });
 
+  testWidgets('refresh keeps the favorites filter narrow while favorites reload', (tester) async {
+    final harness = await _pumpLiveTvScreen(tester, channelKeys: const ['channel-a', 'channel-b']);
+    addTearDown(() async {
+      await tester.pumpWidget(const SizedBox.shrink());
+      harness.dispose();
+    });
+
+    final favorite = FavoriteChannel(id: 'channel-a', source: 'server://server-a/provider-a');
+    harness.liveTv.favorites.complete([favorite]);
+    await tester.pumpAndSettle();
+
+    expect(_guideChannels(tester).map((channel) => channel.key), ['channel-a']);
+
+    await tester.tap(find.byIcon(Symbols.refresh_rounded));
+    await tester.pumpAndSettle();
+
+    expect(_guideChannels(tester).map((channel) => channel.key), ['channel-a']);
+
+    harness.liveTv.favorites.complete([favorite]);
+    await tester.pumpAndSettle();
+
+    expect(_guideChannels(tester).map((channel) => channel.key), ['channel-a']);
+  });
+
   testWidgets('favorite read failure preserves raw Guide channels', (tester) async {
     final harness = await _pumpLiveTvScreen(tester);
     addTearDown(() async {
@@ -144,8 +168,8 @@ void main() {
 
 List<LiveTvChannel> _guideChannels(WidgetTester tester) => tester.widget<GuideTab>(find.byType(GuideTab)).channels;
 
-Future<_LiveTvHarness> _pumpLiveTvScreen(WidgetTester tester) async {
-  final liveTv = _FakeLiveTvSupport();
+Future<_LiveTvHarness> _pumpLiveTvScreen(WidgetTester tester, {List<String>? channelKeys}) async {
+  final liveTv = _FakeLiveTvSupport(channelKeys: channelKeys);
   final client = _FakeMediaServerClient(liveTv);
   final manager = MultiServerManager()..debugRegisterClientForTesting(client);
   final provider = testMultiServerProvider(manager);
@@ -207,11 +231,26 @@ class _FakeMediaServerClient implements MediaServerClient {
 }
 
 class _FakeLiveTvSupport implements LiveTvSupport {
-  _FakeLiveTvSupport({this.serverId = 'server-a', this.storeKey = 'test-store'});
+  _FakeLiveTvSupport({this.serverId = 'server-a', this.storeKey = 'test-store', List<String>? channelKeys})
+    : channelKeys = channelKeys ?? [serverId == 'server-a' ? 'channel-a' : 'channel-$serverId'];
 
   final String serverId;
   final String storeKey;
-  final Completer<List<FavoriteChannel>> favorites = Completer<List<FavoriteChannel>>();
+  final List<String> channelKeys;
+  final List<Completer<List<FavoriteChannel>>> _favoriteRequests = [];
+  int _servedFavoriteRequests = 0;
+
+  Completer<List<FavoriteChannel>> get favorites {
+    if (_favoriteRequests.length > _servedFavoriteRequests) {
+      return _favoriteRequests[_servedFavoriteRequests];
+    }
+    if (_servedFavoriteRequests > 0 && !_favoriteRequests[_servedFavoriteRequests - 1].isCompleted) {
+      return _favoriteRequests[_servedFavoriteRequests - 1];
+    }
+    final request = Completer<List<FavoriteChannel>>();
+    _favoriteRequests.add(request);
+    return request;
+  }
 
   @override
   LiveTvDvrSupport? get dvr => null;
@@ -227,18 +266,24 @@ class _FakeLiveTvSupport implements LiveTvSupport {
 
   @override
   Future<List<LiveTvChannel>> fetchChannels({String? lineup}) async => [
-    LiveTvChannel(
-      key: serverId == 'server-a' ? 'channel-a' : 'channel-$serverId',
-      title: serverId == 'server-a' ? 'Unique Channel A' : 'Unique Channel $serverId',
-      serverId: serverId,
-    ),
+    for (final key in channelKeys)
+      LiveTvChannel(
+        key: key,
+        title: key == 'channel-a' ? 'Unique Channel A' : 'Unique Channel $key',
+        serverId: serverId,
+      ),
   ];
 
   @override
   Future<List<LiveTvProgram>> fetchSchedule({DateTime? from, DateTime? to}) async => const [];
 
   @override
-  Future<List<FavoriteChannel>> fetchFavoriteChannels() => favorites.future;
+  Future<List<FavoriteChannel>> fetchFavoriteChannels() {
+    if (_favoriteRequests.length == _servedFavoriteRequests) {
+      _favoriteRequests.add(Completer<List<FavoriteChannel>>());
+    }
+    return _favoriteRequests[_servedFavoriteRequests++].future;
+  }
 
   final List<Object> writeFailures = [];
   final List<List<FavoriteChannel>> writes = [];

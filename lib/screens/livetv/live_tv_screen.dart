@@ -82,6 +82,9 @@ class _LiveTvScreenState extends State<LiveTvScreen>
   int _favoritesLoadGeneration = 0;
   Future<void>? _favoritesLoadFuture;
   final SerialFutureQueue _favoritesMutationQueue = SerialFutureQueue();
+
+  /// True while [_favoriteChannels] holds an authoritative set. A refresh keeps the previous set live until the new
+  /// one commits, so the favorites filter never widens mid-load.
   bool _favoritesLoaded = false;
   bool _favoritesWritable = false;
 
@@ -423,7 +426,6 @@ class _LiveTvScreenState extends State<LiveTvScreen>
 
   Future<void> _loadFavorites(MultiServerProvider multiServer) async {
     final loadGeneration = ++_favoritesLoadGeneration;
-    _favoritesLoaded = false;
     _favoritesWritable = false;
     final previousStoreBySource = Map<String, String>.of(_favoriteStoreBySource);
     final scopeByLiveServer = Map<String, _FavoriteScope>.of(_favoriteScopeByLiveServer);
