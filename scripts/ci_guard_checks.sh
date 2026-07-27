@@ -17,6 +17,7 @@ cd "$ROOT_DIR"
 for checker in \
   scripts/check_build_workflow.py \
   scripts/check_apple_spm_locks.py \
+  scripts/check_tvos_test_wiring.py \
   scripts/verify_runtime_inputs.py \
   scripts/check_workflow_security.py \
   scripts/check_workflow_action_pins.py \

@@ -82,17 +82,16 @@ project.files.select { |file| file.display_name == 'Foundation.framework' }.each
   end
   file_ref.remove_from_project unless still_used
 end
-runner_test_sources = %w[
-  MpvPlayerContractTests.swift
-  TvosEventDeliveryCoordinatorTests.swift
-  ConnectivityPlusPluginTests.swift
-  SystemShelfPluginTests.swift
-]
+RUNNER_TESTS_DIR = File.expand_path('../RunnerTests', __dir__)
+COMPILED_TEST_EXTENSIONS = %w[.swift .m .mm].freeze
+runner_test_files = Dir.children(RUNNER_TESTS_DIR).reject { |name| name.start_with?('.') }.sort
+runner_test_sources = runner_test_files.select { |name| COMPILED_TEST_EXTENSIONS.include?(File.extname(name)) }
+raise "No RunnerTests sources found in #{RUNNER_TESTS_DIR}" if runner_test_sources.empty?
 test_target.source_build_phase.files.delete_if do |build_file|
   file_ref = build_file.file_ref
   file_ref && !runner_test_sources.include?(file_ref.display_name)
 end
-tests_group.files.reject { |file_ref| runner_test_sources.include?(file_ref.display_name) }.each do |file_ref|
+tests_group.files.reject { |file_ref| runner_test_files.include?(file_ref.display_name) }.each do |file_ref|
   file_ref.remove_from_project
 end
 runner_test_sources.each do |filename|
