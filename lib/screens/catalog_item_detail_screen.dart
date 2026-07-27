@@ -289,8 +289,15 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
 
   Future<void> _toggleWatchlist() async {
     final source = _watchlistSource;
+    if (source == null || _mutatingWatchlist) return;
     final current = _isOnWatchlist;
-    if (source == null || current == null || _mutatingWatchlist) return;
+    // Parity with lib/screens/media_detail/action_buttons.dart: the action
+    // stays focusable while membership is unknown, and a press kicks the
+    // snapshot load rather than toggling a state we haven't read yet.
+    if (current == null) {
+      unawaited(source.ensureWatchlistLoaded());
+      return;
+    }
     _mutatingWatchlist = true;
     try {
       if (current) {
@@ -564,9 +571,7 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
                                                 tooltip: onWatchlist ?? false
                                                     ? t.explore.removeFromWatchlist
                                                     : t.explore.addToWatchlist,
-                                                onPressed: onWatchlist == null
-                                                    ? null
-                                                    : () => unawaited(_toggleWatchlist()),
+                                                onPressed: () => unawaited(_toggleWatchlist()),
                                               ),
                                             if (_requestSource case final SeerrCatalogSource seerr)
                                               FocusableAction(

@@ -243,30 +243,23 @@ void main() {
     expect(FocusManager.instance.primaryFocus?.debugLabel, 'catalog_library_match_1');
   });
 
-  testWidgets('loading watchlist action cannot receive focus or activate', (tester) async {
+  testWidgets('pending watchlist action keeps initial focus and its press retries the snapshot', (tester) async {
     final source = _FakeCatalogSource(watchlistLoading: true);
     await _pumpDetail(tester, source);
 
-    final actionBar = tester.widget<FocusableActionBar>(find.byType(FocusableActionBar));
-    expect(actionBar.actions.single.onPressed, isNull);
+    expect(FocusManager.instance.primaryFocus?.debugLabel, 'ActionBar[0]');
     final actionNode = tester
         .widgetList<Focus>(find.descendant(of: find.byType(FocusableActionBar), matching: find.byType(Focus)))
         .map((widget) => widget.focusNode)
         .whereType<FocusNode>()
         .singleWhere((node) => node.debugLabel == 'ActionBar[0]');
-    expect(actionNode.canRequestFocus, isFalse);
+    expect(actionNode.canRequestFocus, isTrue);
 
-    actionNode.requestFocus();
-    await tester.pump();
     await tester.sendKeyEvent(LogicalKeyboardKey.select);
-    expect(actionNode.hasFocus, isFalse);
+    await tester.pump();
     expect(source.addToWatchlistCalls, 0);
 
     source.completeWatchlistLoad();
-    await tester.pump();
-    final loadedActionBar = tester.widget<FocusableActionBar>(find.byType(FocusableActionBar));
-    expect(loadedActionBar.actions.single.onPressed, isNotNull);
-    actionNode.requestFocus();
     await tester.pump();
     await tester.sendKeyEvent(LogicalKeyboardKey.select);
     await tester.pump();
