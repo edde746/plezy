@@ -38,6 +38,7 @@ import androidx.media3.common.VideoSize
 import androidx.media3.common.audio.ChannelMixingMatrix
 import androidx.media3.common.text.Cue
 import androidx.media3.common.text.CueGroup
+import androidx.media3.common.util.StuckPlayerException
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.common.util.Util
 import androidx.media3.datasource.DefaultDataSource
@@ -285,6 +286,13 @@ class ExoPlayerCore(private val activity: Activity) :
   private var lastTrueHdDirectOutputLogKey: String? = null
   private var loggedDecodedPcmTunnelingGuard: Boolean = false
   private var hasRenderedVideoFrameForMedia: Boolean = false
+
+  // Rendered-frame progress, sampled by the position loop. handlePlayerError
+  // reads it to tell "the renderer is done and the player will not end" (#1673)
+  // apart from a container that under-declares its duration and is still
+  // painting frames past it.
+  private var lastRenderedFrameCount: Int = -1
+  private var lastRenderedFrameChangeMs: Long = 0L
   private var videoDecoderRecoveryConsecutiveAttempts: Int = 0
   private var videoDecoderRecoveryTotalAttempts: Int = 0
   private var videoDecoderRecoveryPositionMs: Long? = null
@@ -401,6 +409,31 @@ class ExoPlayerCore(private val activity: Activity) :
     delegate?.onEvent("end-file", data)
   }
 
+  /**
+   * Terminal end-of-file for media the player will not end on its own (#1673).
+   *
+   * Shaped exactly like the [Player.STATE_ENDED] branch so the Dart completion
+   * flow (stop report, Play Next / auto-play) cannot tell a synthesized end from
+   * a real one, and sharing [terminalErrorGeneration] so one media generation
+   * never emits both an error and an EOF.
+   *
+   * The timeline is pinned to [positionMs] first: Dart classifies an EOF by
+   * position against duration — a stream that dies mid-file reports the same
+   * event — and media3 has already stopped the player by the time we get here.
+   */
+  private fun emitPlaybackEofOnce(mediaGeneration: Int, positionMs: Long) {
+    if (mediaGeneration != currentMediaGeneration || terminalErrorGeneration == mediaGeneration) return
+    terminalErrorGeneration = mediaGeneration
+    exoPlayer?.playWhenReady = false
+    pendingPlayWhenReady = null
+    lastPosition = positionMs
+    delegate?.onPropertyChange("time-pos", positionMs / 1000.0)
+    delegate?.onPropertyChange("paused-for-cache", false)
+    delegate?.onPropertyChange("pause", true)
+    delegate?.onPropertyChange("eof-reached", true)
+    delegate?.onEvent("end-file", mapOf("reason" to "eof"))
+  }
+
   private fun requestFormatFallback(
     mediaGeneration: Int,
     uri: String,
@@ -413,13 +446,24 @@ class ExoPlayerCore(private val activity: Activity) :
       mediaGeneration = mediaGeneration,
       uri = uri,
       headers = currentHeaders,
-      positionMs = positionMs,
+      positionMs = fallbackStartPositionMs(positionMs),
       playWhenReady = playWhenReady,
       errorMessage = errorMessage
     ) ?: false
     if (!handled) emitPlaybackErrorOnce(mediaGeneration, errorMessage)
     return handled
   }
+
+  /**
+   * Keeps a backend hand-off inside the media — see [EndOfStreamPolicy] (#1673).
+   * Uses the last published duration, not the player's: an error fallback runs
+   * after media3 has stopped the player, when its timeline may already be gone.
+   */
+  private fun fallbackStartPositionMs(positionMs: Long): Long = EndOfStreamPolicy.fallbackStartPositionMs(
+    positionMs = positionMs,
+    durationMs = lastDuration,
+    isLive = currentMediaIsLive
+  )
 
   private fun redactUri(uri: String): String {
     return try {
@@ -719,6 +763,9 @@ class ExoPlayerCore(private val activity: Activity) :
         .setAudioAttributes(audioAttributes, false) // We handle audio focus manually
         .setMediaSourceFactory(mediaSourceFactory)
         .setRenderersFactory(wrappedRenderersFactory)
+        // Cut the wait before media3 reports a player that runs past its duration
+        // without ending (#1673) — see EndOfStreamPolicy.STALL_TIMEOUT_MS.
+        .setStuckPlayingNotEndingTimeoutMs(EndOfStreamPolicy.STALL_TIMEOUT_MS)
         .build()
 
       // Add ASS overlay view to the full-screen surfaceContainer (NOT the zoom-scaled
@@ -901,9 +948,13 @@ class ExoPlayerCore(private val activity: Activity) :
           val duration = player.duration
           val bufferedPosition = player.bufferedPosition
           updateVideoDecoderRecoveryHealth(currentPosition, player.isPlaying)
+          updateRenderedFrameProgress(player)
 
-          // Emit position changes (every 250ms update)
-          if (currentPosition != lastPosition) {
+          // Emit position changes (every 250ms update). A media generation that
+          // already reported its terminal event keeps the position it ended on:
+          // media3 can still be running a clock nobody can see (#1673), and Dart
+          // classifies an EOF by position against duration.
+          if (currentPosition != lastPosition && terminalErrorGeneration != currentMediaGeneration) {
             lastPosition = currentPosition
             delegate?.onPropertyChange("time-pos", currentPosition / 1000.0)
           }
@@ -930,6 +981,18 @@ class ExoPlayerCore(private val activity: Activity) :
   private fun stopPositionUpdates() {
     positionUpdateRunnable?.let { handler.removeCallbacks(it) }
     positionUpdateRunnable = null
+  }
+
+  /**
+   * Sample the video renderer's output counter. Any change — including the reset
+   * that comes with a re-created decoder — counts as progress; the timestamp is
+   * what [handleEndOfStreamStall] reads.
+   */
+  private fun updateRenderedFrameProgress(player: ExoPlayer) {
+    val renderedFrames = player.videoDecoderCounters?.renderedOutputBufferCount ?: return
+    if (renderedFrames == lastRenderedFrameCount) return
+    lastRenderedFrameCount = renderedFrames
+    lastRenderedFrameChangeMs = System.currentTimeMillis()
   }
 
   private fun resetPlaybackProgress(startPositionMs: Long) {
@@ -1157,6 +1220,8 @@ class ExoPlayerCore(private val activity: Activity) :
       return
     }
 
+    if (handleEndOfStreamStall(error, mediaGeneration)) return
+
     if (retryAfterAudioTrackError(error, causeChain)) return
 
     val rendererFormat = (error as? ExoPlaybackException)?.rendererFormat
@@ -1182,6 +1247,62 @@ class ExoPlayerCore(private val activity: Activity) :
     }
 
     emitPlaybackErrorOnce(mediaGeneration, error.message ?: "Unknown error")
+  }
+
+  /**
+   * media3 reports [StuckPlayerException.STUCK_PLAYING_NOT_ENDING] when the
+   * player sits in STATE_READY past the declared duration without any renderer
+   * ending (#1673). When the picture is gone as well, that is the end of the
+   * file: report it as one so the normal completion flow runs, instead of
+   * leaving a black screen behind a clock that keeps ticking. A player that is
+   * still painting frames past an under-declared duration keeps the existing
+   * recovery ladder, which hands the tail to MPV. See [EndOfStreamPolicy].
+   *
+   * media3 stops the player before reporting, so the last duration and position
+   * this core published are used rather than re-reading a cleared timeline.
+   */
+  private fun handleEndOfStreamStall(error: PlaybackException, mediaGeneration: Int): Boolean {
+    if (!isStuckPlayingNotEnding(error)) return false
+    val durationMs = lastDuration
+    val positionMs = maxOf(exoPlayer?.currentPosition ?: 0L, lastPosition)
+    val frameStallMs = System.currentTimeMillis() - lastRenderedFrameChangeMs
+    val finished = EndOfStreamPolicy.isFinishedFile(
+      hasPlaybackOutput = firstFrameRendered,
+      hasVideoOutput = hasRenderedVideoFrameForMedia,
+      isLive = currentMediaIsLive,
+      durationMs = durationMs,
+      positionMs = positionMs,
+      frameStallMs = frameStallMs
+    )
+    if (!finished) {
+      emitLog(
+        "warn",
+        "eos",
+        "Player stuck at ${positionMs}ms of ${durationMs}ms but the file is not finished " +
+          "(last rendered frame ${frameStallMs}ms ago) — keeping the normal recovery"
+      )
+      return false
+    }
+
+    emitLog(
+      "warn",
+      "eos",
+      "Player never ended ${positionMs - durationMs}ms past the ${durationMs}ms duration " +
+        "(no rendered frame for ${frameStallMs}ms) — reporting end of file"
+    )
+    emitPlaybackEofOnce(mediaGeneration, durationMs)
+    return true
+  }
+
+  private fun isStuckPlayingNotEnding(error: PlaybackException): Boolean {
+    var cause: Throwable? = error.cause
+    while (cause != null) {
+      if (cause is StuckPlayerException && cause.stuckType == StuckPlayerException.STUCK_PLAYING_NOT_ENDING) {
+        return true
+      }
+      cause = cause.cause
+    }
+    return false
   }
 
   private fun retryVideoDecoderInPlace(reason: String): Boolean {
@@ -3014,6 +3135,8 @@ class ExoPlayerCore(private val activity: Activity) :
     currentVideoFormat = null
     firstFrameRendered = false
     hasRenderedVideoFrameForMedia = false
+    lastRenderedFrameCount = -1
+    lastRenderedFrameChangeMs = System.currentTimeMillis()
     videoDecoderRecoveryConsecutiveAttempts = 0
     videoDecoderRecoveryTotalAttempts = 0
     videoDecoderRecoveryPositionMs = null

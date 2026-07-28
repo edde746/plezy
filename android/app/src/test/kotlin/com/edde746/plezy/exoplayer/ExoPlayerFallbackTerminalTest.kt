@@ -9,6 +9,7 @@ import androidx.media3.common.MediaItem
 import androidx.media3.common.MimeTypes
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
+import androidx.media3.common.util.StuckPlayerException
 import androidx.media3.exoplayer.ExoPlaybackException
 import androidx.media3.exoplayer.analytics.AnalyticsListener
 import androidx.media3.exoplayer.source.SinglePeriodTimeline
@@ -355,6 +356,129 @@ class ExoPlayerFallbackTerminalTest {
     }
   }
 
+  @Test
+  @Config(sdk = [28])
+  fun playerStuckPastItsDurationWithoutAPictureReportsEndOfFile() {
+    val activity = Robolectric.buildActivity(Activity::class.java).setup().get()
+    activity.setContentView(FrameLayout(activity))
+    val core = ExoPlayerCore(activity)
+    val delegate = RecordingDelegate(handlesFallback = true)
+    core.delegate = delegate
+
+    try {
+      assertTrue(core.initialize())
+      arrangeStalledEndOfStream(core, frameStallMs = 60_000L)
+
+      invokePlayerError(core, stuckError(StuckPlayerException.STUCK_PLAYING_NOT_ENDING), mediaGeneration = 7)
+
+      assertEquals(0, delegate.fallbackRequests)
+      val endFiles = delegate.events.filter { it.first == "end-file" }
+      assertEquals(1, endFiles.size)
+      assertEquals("eof", endFiles.single().second?.get("reason"))
+      assertTrue(delegate.properties.contains("eof-reached" to true))
+      assertTrue(delegate.properties.contains("pause" to true))
+      // The timeline is pinned at the end: Dart classifies an EOF by position
+      // against duration, so an overrun would read as a mid-file stream death.
+      assertEquals(2623.668, delegate.properties.last { it.first == "time-pos" }.second)
+      assertEquals(2_623_668L, getField(core, "lastPosition"))
+
+      // A repeat report for the same media stays silent.
+      invokePlayerError(core, stuckError(StuckPlayerException.STUCK_PLAYING_NOT_ENDING), mediaGeneration = 7)
+
+      assertEquals(1, delegate.events.count { it.first == "end-file" })
+      assertEquals(0, delegate.fallbackRequests)
+    } finally {
+      core.dispose()
+      shadowOf(Looper.getMainLooper()).idle()
+    }
+  }
+
+  @Test
+  @Config(sdk = [28])
+  fun playerStuckPastAnUnderDeclaredDurationKeepsTheNormalRecovery() {
+    val activity = Robolectric.buildActivity(Activity::class.java).setup().get()
+    activity.setContentView(FrameLayout(activity))
+    val core = ExoPlayerCore(activity)
+    val delegate = RecordingDelegate(handlesFallback = true)
+    core.delegate = delegate
+
+    try {
+      assertTrue(core.initialize())
+      // Frames are still reaching the screen, so the file is not over — the
+      // container simply understates its length. MPV gets the tail.
+      arrangeStalledEndOfStream(core, frameStallMs = 0L)
+
+      invokePlayerError(core, stuckError(StuckPlayerException.STUCK_PLAYING_NOT_ENDING), mediaGeneration = 7)
+
+      assertEquals(1, delegate.fallbackRequests)
+      assertTrue(delegate.events.none { it.first == "end-file" })
+    } finally {
+      core.dispose()
+      shadowOf(Looper.getMainLooper()).idle()
+    }
+  }
+
+  @Test
+  @Config(sdk = [28])
+  fun otherStuckReportsAreNotTreatedAsEndOfFile() {
+    val activity = Robolectric.buildActivity(Activity::class.java).setup().get()
+    activity.setContentView(FrameLayout(activity))
+    val core = ExoPlayerCore(activity)
+    val delegate = RecordingDelegate(handlesFallback = true)
+    core.delegate = delegate
+
+    try {
+      assertTrue(core.initialize())
+      // A frozen clock at the same position is a stalled stream, not a finished
+      // file: it keeps the fallback so the other backend can rebuild it.
+      arrangeStalledEndOfStream(core, frameStallMs = 60_000L)
+
+      invokePlayerError(core, stuckError(StuckPlayerException.STUCK_PLAYING_NO_PROGRESS), mediaGeneration = 7)
+
+      assertEquals(1, delegate.fallbackRequests)
+      assertTrue(delegate.events.none { it.first == "end-file" })
+    } finally {
+      core.dispose()
+      shadowOf(Looper.getMainLooper()).idle()
+    }
+  }
+
+  @Test
+  fun fallbackNeverResumesTheOtherBackendAtOrPastTheEnd() {
+    val core = ExoPlayerCore(Robolectric.buildActivity(Activity::class.java).setup().get())
+    val delegate = RecordingDelegate(handlesFallback = true)
+    core.delegate = delegate
+    setField(core, "lastDuration", 2_623_668L)
+
+    try {
+      // The observed hand-off asked MPV to start a minute past the last frame,
+      // which opens straight into EOF and parks there.
+      assertTrue(requestFallback(core, mediaGeneration = 0, positionMs = 2_683_484L))
+      assertEquals(2_622_668L, delegate.lastFallbackPositionMs)
+
+      assertTrue(requestFallback(core, mediaGeneration = 0, positionMs = 30_000L))
+      assertEquals(30_000L, delegate.lastFallbackPositionMs)
+    } finally {
+      core.dispose()
+    }
+  }
+
+  /** Media that rendered, reached its declared end, and stopped painting. */
+  private fun arrangeStalledEndOfStream(core: ExoPlayerCore, frameStallMs: Long) {
+    setField(core, "currentMediaGeneration", 7)
+    setField(core, "currentMediaUri", "https://example.test/episode.mkv")
+    setField(core, "firstFrameRendered", true)
+    setField(core, "hasRenderedVideoFrameForMedia", true)
+    setField(core, "lastDuration", 2_623_668L)
+    setField(core, "lastPosition", 2_683_484L)
+    setField(core, "lastRenderedFrameChangeMs", System.currentTimeMillis() - frameStallMs)
+  }
+
+  private fun stuckError(stuckType: Int): ExoPlaybackException = ExoPlaybackException.createForUnexpected(
+    StuckPlayerException(stuckType, EndOfStreamPolicy.STALL_TIMEOUT_MS),
+    PlaybackException.ERROR_CODE_TIMEOUT
+  )
+
   private fun setField(target: Any, name: String, value: Any?) {
     target.javaClass.getDeclaredField(name).apply {
       isAccessible = true
@@ -364,7 +488,7 @@ class ExoPlayerFallbackTerminalTest {
 
   private fun getField(target: Any, name: String): Any? = target.javaClass.getDeclaredField(name).apply { isAccessible = true }.get(target)
 
-  private fun requestFallback(core: ExoPlayerCore, mediaGeneration: Int): Boolean {
+  private fun requestFallback(core: ExoPlayerCore, mediaGeneration: Int, positionMs: Long = 0L): Boolean {
     val method = ExoPlayerCore::class.java.getDeclaredMethod(
       "requestFormatFallback",
       Int::class.javaPrimitiveType,
@@ -378,7 +502,7 @@ class ExoPlayerFallbackTerminalTest {
       core,
       mediaGeneration,
       "https://example.test/video.mkv",
-      0L,
+      positionMs,
       true,
       "unsupported video"
     ) as Boolean
@@ -494,6 +618,7 @@ class ExoPlayerFallbackTerminalTest {
     private val handlesFallback: Boolean
   ) : ExoPlayerDelegate {
     var fallbackRequests = 0
+    var lastFallbackPositionMs = -1L
     val properties = mutableListOf<Pair<String, Any?>>()
     val events = mutableListOf<Pair<String, Map<String, Any>?>>()
 
@@ -506,6 +631,7 @@ class ExoPlayerFallbackTerminalTest {
       errorMessage: String
     ): Boolean {
       fallbackRequests++
+      lastFallbackPositionMs = positionMs
       return handlesFallback
     }
 
