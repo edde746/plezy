@@ -230,6 +230,90 @@ void main() {
   });
 
   // ============================================================
+  // tvOS system user → profile mapping (Apple TV auto profile switch)
+  // ============================================================
+
+  group('Tvos user profile map', () {
+    test('default is empty map and null lookups', () async {
+      final s = await StorageService.getInstance();
+      expect(s.getTvosUserProfileMap(), isEmpty);
+      expect(s.getProfileIdForTvosUser('tv-user-1'), isNull);
+    });
+
+    test('set + read round-trip for multiple users', () async {
+      final s = await StorageService.getInstance();
+      await s.setProfileIdForTvosUser('tv-user-1', 'profile-a');
+      await s.setProfileIdForTvosUser('tv-user-2', 'profile-b');
+      expect(s.getProfileIdForTvosUser('tv-user-1'), 'profile-a');
+      expect(s.getProfileIdForTvosUser('tv-user-2'), 'profile-b');
+    });
+
+    test('remapping a user overwrites the previous profile', () async {
+      final s = await StorageService.getInstance();
+      await s.setProfileIdForTvosUser('tv-user-1', 'profile-a');
+      await s.setProfileIdForTvosUser('tv-user-1', 'profile-b');
+      expect(s.getProfileIdForTvosUser('tv-user-1'), 'profile-b');
+    });
+
+    test('clear removes only the given user', () async {
+      final s = await StorageService.getInstance();
+      await s.setProfileIdForTvosUser('tv-user-1', 'profile-a');
+      await s.setProfileIdForTvosUser('tv-user-2', 'profile-b');
+      await s.clearProfileIdForTvosUser('tv-user-1');
+      expect(s.getProfileIdForTvosUser('tv-user-1'), isNull);
+      expect(s.getProfileIdForTvosUser('tv-user-2'), 'profile-b');
+    });
+
+    test('clearing the last mapping removes the stored key', () async {
+      final s = await StorageService.getInstance();
+      await s.setProfileIdForTvosUser('tv-user-1', 'profile-a');
+      await s.clearProfileIdForTvosUser('tv-user-1');
+      expect(s.prefs.getString('tvos_user_profile_map'), isNull);
+    });
+
+    test('clear of an unknown user is a no-op', () async {
+      final s = await StorageService.getInstance();
+      await s.setProfileIdForTvosUser('tv-user-1', 'profile-a');
+      await s.clearProfileIdForTvosUser('tv-user-2');
+      expect(s.getProfileIdForTvosUser('tv-user-1'), 'profile-a');
+    });
+
+    test('survives garbage JSON by returning empty map', () async {
+      final s = await StorageService.getInstance();
+      await s.prefs.setString('tvos_user_profile_map', 'not-json');
+      expect(s.getTvosUserProfileMap(), isEmpty);
+      expect(s.getProfileIdForTvosUser('tv-user-1'), isNull);
+    });
+  });
+
+  group('Tvos user prompted flag', () {
+    test('defaults to not prompted', () async {
+      final s = await StorageService.getInstance();
+      expect(s.wasTvosUserPromptedForMapping('tv-user-1'), isFalse);
+    });
+
+    test('mark + read round-trip is per user', () async {
+      final s = await StorageService.getInstance();
+      await s.markTvosUserPromptedForMapping('tv-user-1');
+      expect(s.wasTvosUserPromptedForMapping('tv-user-1'), isTrue);
+      expect(s.wasTvosUserPromptedForMapping('tv-user-2'), isFalse);
+    });
+
+    test('marking twice keeps a single entry', () async {
+      final s = await StorageService.getInstance();
+      await s.markTvosUserPromptedForMapping('tv-user-1');
+      await s.markTvosUserPromptedForMapping('tv-user-1');
+      expect(json.decode(s.prefs.getString('tvos_user_prompted')!), ['tv-user-1']);
+    });
+
+    test('survives garbage JSON by reporting not prompted', () async {
+      final s = await StorageService.getInstance();
+      await s.prefs.setString('tvos_user_prompted', 'not-json');
+      expect(s.wasTvosUserPromptedForMapping('tv-user-1'), isFalse);
+    });
+  });
+
+  // ============================================================
   // Library order (List<String>) — scoped to active profile
   // ============================================================
 

@@ -18,6 +18,8 @@ class StorageService extends BaseSharedPreferencesService {
   static const String _keyServersList = 'servers_list';
   static const String _keyServerOrder = 'server_order';
   static const String _keyActiveProfileId = 'active_app_profile_id';
+  static const String _keyTvosUserProfileMap = 'tvos_user_profile_map';
+  static const String _keyTvosUserPrompted = 'tvos_user_prompted';
 
   // Key prefixes for per-id storage
   static const String _prefixServerEndpoint = 'server_endpoint_';
@@ -442,6 +444,49 @@ class StorageService extends BaseSharedPreferencesService {
 
   Future<void> clearActiveProfileId() async {
     await prefs.remove(_keyActiveProfileId);
+  }
+
+  // Apple TV (tvOS) system user → Plezy profile id mapping, so the app can
+  // auto-activate the matching profile when the Apple TV system user
+  // changes. Stored as a JSON object { "<tvosUserId>": "<profileId>" }.
+
+  Map<String, String> getTvosUserProfileMap() {
+    final jsonString = prefs.getString(_keyTvosUserProfileMap);
+    if (jsonString == null) return const {};
+    final decoded = decodeJsonStringToMap(jsonString);
+    return decoded.map((key, value) => MapEntry(key, value.toString()));
+  }
+
+  String? getProfileIdForTvosUser(String tvosUserId) => getTvosUserProfileMap()[tvosUserId];
+
+  Future<void> setProfileIdForTvosUser(String tvosUserId, String profileId) async {
+    final map = Map<String, String>.from(getTvosUserProfileMap());
+    map[tvosUserId] = profileId;
+    await _setJsonMap(_keyTvosUserProfileMap, map);
+  }
+
+  Future<void> clearProfileIdForTvosUser(String tvosUserId) async {
+    final map = Map<String, String>.from(getTvosUserProfileMap());
+    if (map.remove(tvosUserId) == null) return;
+    if (map.isEmpty) {
+      await prefs.remove(_keyTvosUserProfileMap);
+    } else {
+      await _setJsonMap(_keyTvosUserProfileMap, map);
+    }
+  }
+
+  // tvOS user ids that were already offered the map-this-profile prompt
+  // shown after a manual switch (or opted out of it). Stored as a JSON
+  // list of user ids; a saved mapping silences the prompt on its own.
+
+  bool wasTvosUserPromptedForMapping(String tvosUserId) {
+    return _getStringList(_keyTvosUserPrompted)?.contains(tvosUserId) ?? false;
+  }
+
+  Future<void> markTvosUserPromptedForMapping(String tvosUserId) async {
+    final prompted = _getStringList(_keyTvosUserPrompted) ?? const [];
+    if (prompted.contains(tvosUserId)) return;
+    await _setStringList(_keyTvosUserPrompted, [...prompted, tvosUserId]);
   }
 
   // Per-connection Plex Home users cache. Plex Home profiles are not

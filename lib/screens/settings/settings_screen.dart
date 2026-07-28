@@ -56,6 +56,7 @@ import '../profile/profile_switch_screen.dart';
 import 'services_settings_screen.dart';
 import 'settings_utils.dart';
 import 'tracker_service_info.dart';
+import 'tvos_profile_mapping_screen.dart';
 import '../../widgets/loading_indicator_box.dart';
 
 class SettingsScreen extends StatefulWidget {
@@ -328,6 +329,13 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
           },
         ),
         _buildProfilesTile(context),
+        if (PlatformDetector.isAppleTV())
+          SettingNavigationTile(
+            icon: Symbols.tv_gen_rounded,
+            title: t.profiles.appleTvSync,
+            subtitle: t.profiles.appleTvSyncSettingsSubtitle,
+            destinationBuilder: (_) => const TvosProfileMappingScreen(),
+          ),
       ],
     );
   }

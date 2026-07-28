@@ -34,6 +34,7 @@ import '../navigation/profile_navigation_scope.dart';
 import '../profiles/active_profile_binder.dart';
 import '../connection/connection_registry.dart';
 import '../profiles/active_profile_provider.dart';
+import '../profiles/profile_activation.dart';
 import '../profiles/plex_home_service.dart';
 import '../profiles/profile_selection_policy.dart';
 import '../providers/catalog_sources_provider.dart';
@@ -69,6 +70,7 @@ import 'settings/settings_screen.dart';
 import 'profile/profile_switch_screen.dart';
 import 'profile/profile_teardown.dart';
 import '../services/system_shelf_service.dart';
+import '../services/tvos_user_profile_service.dart';
 import '../watch_together/watch_together.dart';
 
 /// Provides access to the main screen's focus control.
@@ -377,6 +379,7 @@ class _MainScreenState extends State<MainScreen>
     if (!_isOffline) {
       _setupWatchTogetherCallback();
       _setupSystemShelfDeepLink();
+      _setupTvosUserAutoSwitch();
     }
 
     // Wire profile binder + tracker bootstrap (skip in offline mode)
@@ -715,6 +718,26 @@ class _MainScreenState extends State<MainScreen>
     });
   }
 
+  /// Auto-switch the active profile when the Apple TV system user changes
+  /// while the app stays alive. Most tvOS user switches relaunch the app and
+  /// go through SetupScreen's startup mapping instead; this covers the
+  /// foreground-resume case (see [TvosUserProfileService.onUserChanged]).
+  void _setupTvosUserAutoSwitch() {
+    if (!PlatformDetector.isAppleTV()) return;
+
+    final tvosUser = TvosUserProfileService();
+    tvosUser.onUserChanged = (tvosUserId) async {
+      if (!mounted || tvosUserId == null) return;
+      await activateTvosMappedProfile(
+        activeProfile: context.read<ActiveProfileProvider>(),
+        binder: context.read<ActiveProfileBinder>(),
+        tvosUserId: tvosUserId,
+        context: context,
+      );
+    };
+    _tvosUserChangedCallback = tvosUser.onUserChanged;
+  }
+
   /// Handle a launcher shelf content ID by fetching metadata and starting playback.
   Future<void> _handleShelfContentId(String contentId) async {
     if (!mounted) return;
@@ -762,6 +785,7 @@ class _MainScreenState extends State<MainScreen>
 
   bool _companionRemoteSetup = false;
   ValueChanged<String>? _systemShelfTapCallback;
+  ValueChanged<String?>? _tvosUserChangedCallback;
 
   @override
   void didChangeDependencies() {
@@ -920,6 +944,11 @@ class _MainScreenState extends State<MainScreen>
     final systemShelf = SystemShelfService();
     if (shelfCallback != null && identical(systemShelf.onShelfItemTap, shelfCallback)) {
       systemShelf.onShelfItemTap = null;
+    }
+    final tvosUserCallback = _tvosUserChangedCallback;
+    final tvosUser = TvosUserProfileService();
+    if (tvosUserCallback != null && identical(tvosUser.onUserChanged, tvosUserCallback)) {
+      tvosUser.onUserChanged = null;
     }
 
     super.dispose();

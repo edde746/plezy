@@ -2172,6 +2172,39 @@ class Translations$profiles$en {
 
 	/// en: 'PINs don't match'
 	String get pinsDontMatch => 'PINs don\'t match';
+
+	/// en: 'Apple TV profile sync'
+	String get appleTvSync => 'Apple TV profile sync';
+
+	/// en: 'Switch profiles automatically with the Apple TV user'
+	String get appleTvSyncSettingsSubtitle => 'Switch profiles automatically with the Apple TV user';
+
+	/// en: 'Map this Apple TV user to a profile and Plezy will activate it automatically after a user switch. Each household member should open this screen while their own Apple TV user is active and pick their profile. PIN-protected profiles ask for their PIN before switching.'
+	String get appleTvSyncExplain => 'Map this Apple TV user to a profile and Plezy will activate it automatically after a user switch. Each household member should open this screen while their own Apple TV user is active and pick their profile. PIN-protected profiles ask for their PIN before switching.';
+
+	/// en: 'Apple TV user unavailable'
+	String get appleTvSyncUnavailable => 'Apple TV user unavailable';
+
+	/// en: 'Turn on multiple users in the Apple TV settings to map profiles. The default user can't be mapped.'
+	String get appleTvSyncUnavailableMessage => 'Turn on multiple users in the Apple TV settings to map profiles. The default user can\'t be mapped.';
+
+	/// en: 'Profile for this Apple TV user'
+	String get appleTvSyncChooseProfile => 'Profile for this Apple TV user';
+
+	/// en: 'Don't switch automatically'
+	String get appleTvSyncNoAutoSwitch => 'Don\'t switch automatically';
+
+	/// en: 'Asks for the PIN when switching'
+	String get appleTvSyncAsksForPin => 'Asks for the PIN when switching';
+
+	/// en: 'Open ${displayName} automatically when you're on this Apple TV user?'
+	String appleTvSyncPromptMessage({required Object displayName}) => 'Open ${displayName} automatically when you\'re on this Apple TV user?';
+
+	/// en: 'Not now'
+	String get appleTvSyncPromptNotNow => 'Not now';
+
+	/// en: 'Don't ask again'
+	String get appleTvSyncPromptDontAskAgain => 'Don\'t ask again';
 }
 
 // Path: connections
@@ -5865,6 +5898,17 @@ extension on Translations {
 			'profiles.pinExplain' => '4-digit PIN required to switch profiles.',
 			'profiles.continueButton' => 'Continue',
 			'profiles.pinsDontMatch' => 'PINs don\'t match',
+			'profiles.appleTvSync' => 'Apple TV profile sync',
+			'profiles.appleTvSyncSettingsSubtitle' => 'Switch profiles automatically with the Apple TV user',
+			'profiles.appleTvSyncExplain' => 'Map this Apple TV user to a profile and Plezy will activate it automatically after a user switch. Each household member should open this screen while their own Apple TV user is active and pick their profile. PIN-protected profiles ask for their PIN before switching.',
+			'profiles.appleTvSyncUnavailable' => 'Apple TV user unavailable',
+			'profiles.appleTvSyncUnavailableMessage' => 'Turn on multiple users in the Apple TV settings to map profiles. The default user can\'t be mapped.',
+			'profiles.appleTvSyncChooseProfile' => 'Profile for this Apple TV user',
+			'profiles.appleTvSyncNoAutoSwitch' => 'Don\'t switch automatically',
+			'profiles.appleTvSyncAsksForPin' => 'Asks for the PIN when switching',
+			'profiles.appleTvSyncPromptMessage' => ({required Object displayName}) => 'Open ${displayName} automatically when you\'re on this Apple TV user?',
+			'profiles.appleTvSyncPromptNotNow' => 'Not now',
+			'profiles.appleTvSyncPromptDontAskAgain' => 'Don\'t ask again',
 			'connections.sectionTitle' => 'Connections',
 			'connections.addConnection' => 'Add connection',
 			'connections.addConnectionSubtitleNoProfile' => 'Sign in with Plex or connect a Jellyfin server',
@@ -6214,6 +6258,8 @@ extension on Translations {
 			'watchTogether.endSessionQuestion' => 'End Session?',
 			'watchTogether.leaveSessionQuestion' => 'Leave Session?',
 			'watchTogether.endSessionConfirm' => 'This will end the session for all participants.',
+			_ => null,
+		} ?? switch (path) {
 			'watchTogether.leaveSessionConfirm' => 'You will be removed from the session.',
 			'watchTogether.endSessionConfirmOverlay' => 'This will end the watch session for all participants.',
 			'watchTogether.leaveSessionConfirmOverlay' => 'You will be disconnected from the watch session.',
@@ -6225,8 +6271,6 @@ extension on Translations {
 			'watchTogether.pasteFromClipboard' => 'Paste from clipboard',
 			'watchTogether.pleaseEnterCode' => 'Please enter a session code',
 			'watchTogether.codeMustBe5Chars' => 'Session code must be 5 characters',
-			_ => null,
-		} ?? switch (path) {
 			'watchTogether.joinInstructions' => 'Enter the host\'s session code to join.',
 			'watchTogether.failedToCreate' => 'Failed to create session',
 			'watchTogether.failedToJoin' => 'Failed to join session',
