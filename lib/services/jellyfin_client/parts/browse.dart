@@ -121,11 +121,31 @@ const _queueFields = 'UserData,PremiereDate';
 /// bounded while still returning the full series queue.
 const _episodeQueuePageSize = 200;
 
-/// How many recently played episodes to scan when stamping `/Shows/NextUp`
-/// rows with their series' last-watched date (see [_attachSeriesLastPlayed]).
-/// Mirrors [_episodeQueuePageSize]; covers far more distinct series than the
-/// Next Up list ever returns, while keeping the response bounded.
-const _continueWatchingSeriesLookback = 200;
+/// How many pending series [_attachSeriesLastPlayed] resolves at once. Each
+/// lookup returns a single row, so the batch exists only to keep a long Next Up
+/// shelf from opening one request per series at the same instant; measured
+/// against a 12.0-rc3 server, 4 is where the wall time for 21 series stops
+/// improving (0.65s at 3, 0.56s at both 4 and 6).
+const _seriesLastPlayedConcurrency = 4;
+
+/// Ceiling on how many series [_attachSeriesLastPlayed] dates in one call. Sits
+/// just above `DiscoverProvider`'s 21-row continue-watching probe so the home
+/// shelf is always fully dated, and caps the uncapped `count: null` shelf, whose
+/// Next Up half is limited only by how many series the user has started.
+const _seriesLastPlayedLookupLimit = 24;
+
+/// Per-lookup budget for [_fetchSeriesLastPlayed]. A `ParentId`-scoped
+/// `Limit=1` row answered in tens of milliseconds even on the pathological
+/// 12.0-rc3 sort, so anything near this means the endpoint is in trouble and
+/// the shelf is better off unstamped than waiting on the shared default.
+const _seriesLastPlayedRequestTimeout = Duration(seconds: 3);
+
+/// Wall-clock ceiling on [_attachSeriesLastPlayed]'s sequential batches, checked
+/// before each one. Bounds the whole pass at this plus one
+/// [_seriesLastPlayedRequestTimeout] — still under the single default-budget
+/// request this enrichment replaced, so a stalled endpoint cannot make the
+/// scoped form slower than the unscoped one it fixes.
+const _seriesLastPlayedBudget = Duration(seconds: 4);
 
 const _childrenPageSize = 500;
 const _pagedListPageSize = 200;
@@ -1658,7 +1678,36 @@ mixin _JellyfinBrowseMethods on _JellyfinClientInternals {
   /// interleave Next Up with resume items by recency, stamp each Next Up episode
   /// with its series' last-watched date, read from the most recently played
   /// episode of that series.
+  ///
+  /// One `ParentId`-scoped lookup per pending series, not a single server-wide
+  /// DatePlayed scan. Jellyfin 12.0-rc3 builds that sort key by OR-ing an item's
+  /// own progress with its alternate versions' (`ItemId == e.Id ||
+  /// Item.PrimaryVersionId == e.Id`, jellyfin/jellyfin#17044), which no index can
+  /// serve, so the user's entire UserData table is scanned per sorted row: an
+  /// unscoped episode sort measured 5.8s on a 6k-episode rc3 library against
+  /// 25ms on 10.10.7, pegging a core for its whole duration. That blew this
+  /// call's request budget and starved every other client of the server (#1699).
+  /// `ParentId` bounds the sort input to one series' episodes — 21 series resolve
+  /// in ~0.6s against the same rc3 server. Upstream fixed the order mapper after
+  /// rc3 (jellyfin/jellyfin#17422); scoping keeps the cost flat on servers that
+  /// still carry the regression.
+  ///
+  /// At most [_seriesLastPlayedLookupLimit] series are enriched. `/Shows/NextUp`
+  /// already returns series in last-played-descending order, so the cap keeps the
+  /// rows whose dates decide the top of the shelf while bounding total work for
+  /// an uncapped `count: null` shelf, which can carry far more series than the
+  /// home preview. Rows past the cap keep a null date and degrade to their
+  /// `addedAt` in the sort — the same degradation the previous 200-row lookback
+  /// window applied to a series whose last play fell outside it.
+  ///
+  /// The batches are sequential, so they also share a wall-clock budget: a stalled
+  /// endpoint must not let a best-effort enrichment serialise
+  /// [_seriesLastPlayedRequestTimeout] six times over. Checking
+  /// [_seriesLastPlayedBudget] before each batch caps the whole pass at budget +
+  /// one request timeout, below the single default-budget request it replaced.
   Future<List<MediaItem>> _attachSeriesLastPlayed(List<MediaItem> nextUp) async {
+    // Set literal over `nextUp` order: insertion-ordered, so `take` below keeps
+    // the most recently played series.
     final pendingSeriesIds = <String>{
       for (final item in nextUp)
         if (item.kind == MediaKind.episode && item.lastViewedAt == null && item.grandparentId != null)
@@ -1666,35 +1715,22 @@ mixin _JellyfinBrowseMethods on _JellyfinClientInternals {
     };
     if (pendingSeriesIds.isEmpty) return nextUp;
 
-    // One lightweight pass over the most recently played episodes server-wide,
-    // ordered DatePlayed-descending so the first time we see a series is its
-    // newest play. We deliberately do NOT filter on the Played flag: Jellyfin's
-    // own NextUp ranks series by MAX(LastPlayedDate) across every episode, and an
-    // episode can carry a LastPlayedDate while Played==false (started but not
-    // finished, or later marked unwatched). Filtering to IsPlayed would miss
-    // those and leave such series un-dated. Null dates sort last, so the limit
-    // still captures the genuinely-recent episodes; a series whose last play
-    // falls beyond the window keeps a null date and degrades to its addedAt in
-    // the sort — it would rank near the bottom anyway, being least-recent.
-    final rawPlayed = await _safeFetchItemsArray('/Items', {
-      'userId': connection.userId,
-      'IncludeItemTypes': 'Episode',
-      'Recursive': 'true',
-      'SortBy': 'DatePlayed',
-      'SortOrder': 'Descending',
-      'Fields': _queueFields,
-      'Limit': _continueWatchingSeriesLookback.toString(),
-      'EnableImages': 'false',
-      'EnableTotalRecordCount': 'false',
-    });
-
+    final seriesIds = pendingSeriesIds.take(_seriesLastPlayedLookupLimit).toList(growable: false);
     final lastPlayedBySeries = <String, int>{};
-    for (final episode in _mapItems(rawPlayed)) {
-      final seriesId = episode.grandparentId;
-      final playedAt = episode.lastViewedAt;
-      if (seriesId == null || playedAt == null) continue;
-      if (!pendingSeriesIds.contains(seriesId)) continue;
-      lastPlayedBySeries.putIfAbsent(seriesId, () => playedAt);
+    // A Timer, not a Stopwatch: the batches are the only thing that has to stop,
+    // and a timer is the deadline primitive the test harness can virtualise.
+    var withinBudget = true;
+    final deadline = Timer(_seriesLastPlayedBudget, () => withinBudget = false);
+    try {
+      for (var start = 0; start < seriesIds.length; start += _seriesLastPlayedConcurrency) {
+        if (!withinBudget) break;
+        final batch = seriesIds.skip(start).take(_seriesLastPlayedConcurrency);
+        for (final (seriesId, playedAt) in await Future.wait(batch.map(_fetchSeriesLastPlayed))) {
+          if (playedAt != null) lastPlayedBySeries[seriesId] = playedAt;
+        }
+      }
+    } finally {
+      deadline.cancel();
     }
     if (lastPlayedBySeries.isEmpty) return nextUp;
 
@@ -1705,6 +1741,39 @@ mixin _JellyfinBrowseMethods on _JellyfinClientInternals {
         else
           item,
     ];
+  }
+
+  /// Newest `LastPlayedDate` across [seriesId]'s episodes, or null when the
+  /// series has never been played — or when the lookup failed, in which case the
+  /// row keeps a null date and degrades to its `addedAt` in the shelf sort.
+  ///
+  /// Deliberately no `Filters=IsPlayed`: Jellyfin's own NextUp ranks series by
+  /// MAX(LastPlayedDate) across every episode, and an episode can carry a
+  /// LastPlayedDate while Played==false (started but not finished, or later
+  /// marked unwatched). Filtering to IsPlayed would leave those series un-dated.
+  /// Null dates sort last under `Descending`, so the single row returned is the
+  /// series' newest play whenever it has one. Endpoint failover stays off: a slow
+  /// enrichment row must not move the whole client off a working endpoint.
+  Future<(String, int?)> _fetchSeriesLastPlayed(String seriesId) async {
+    final raw = await _safeFetchItemsArray(
+      '/Items',
+      {
+        'userId': connection.userId,
+        'ParentId': seriesId,
+        'IncludeItemTypes': 'Episode',
+        'Recursive': 'true',
+        'SortBy': 'DatePlayed',
+        'SortOrder': 'Descending',
+        // Only `UserData.LastPlayedDate` is read off the row.
+        'Fields': 'UserData',
+        'Limit': '1',
+        'EnableImages': 'false',
+        'EnableTotalRecordCount': 'false',
+      },
+      timeout: _seriesLastPlayedRequestTimeout,
+      allowEndpointFailover: false,
+    );
+    return (seriesId, _mapItems(raw).firstOrNull?.lastViewedAt);
   }
 
   /// Merge Jellyfin's two continue-watching sources into one recency-ordered
@@ -1751,14 +1820,26 @@ mixin _JellyfinBrowseMethods on _JellyfinClientInternals {
   /// failover** — a slow hub row must not move the whole client off an
   /// otherwise working endpoint (same policy as Plex's three hub fetches;
   /// see [retryTransientMediaServerCall] / [FailoverHttpClient]).
+  ///
+  /// [timeout] and [allowEndpointFailover] configure the un-retried path only; a
+  /// [retry] policy carries its own per-attempt timeouts and always disables
+  /// failover.
   Future<MediaServerResponse> _getItemsResponse(
     String path,
     Map<String, dynamic> queryParameters,
     _HubRetryPolicy? retry, {
     AbortController? abort,
+    Duration? timeout,
+    bool allowEndpointFailover = true,
   }) {
     if (retry == null) {
-      return _http.get(path, queryParameters: queryParameters, abort: abort);
+      return _http.get(
+        path,
+        queryParameters: queryParameters,
+        abort: abort,
+        timeout: timeout,
+        allowEndpointFailover: allowEndpointFailover,
+      );
     }
     abort?.throwIfAborted();
     return retryTransientMediaServerCall(
@@ -1791,9 +1872,18 @@ mixin _JellyfinBrowseMethods on _JellyfinClientInternals {
     Map<String, dynamic> queryParameters, {
     _HubRetryPolicy? retry,
     AbortController? abort,
+    Duration? timeout,
+    bool allowEndpointFailover = true,
   }) async {
     try {
-      final response = await _getItemsResponse(path, queryParameters, retry, abort: abort);
+      final response = await _getItemsResponse(
+        path,
+        queryParameters,
+        retry,
+        abort: abort,
+        timeout: timeout,
+        allowEndpointFailover: allowEndpointFailover,
+      );
       abort?.throwIfAborted();
       throwIfHttpError(response);
       final data = response.data;

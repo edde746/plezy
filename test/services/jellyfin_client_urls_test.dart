@@ -1,5 +1,7 @@
+import 'dart:async';
 import 'dart:convert';
 
+import 'package:fake_async/fake_async.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
@@ -2661,14 +2663,220 @@ void main() {
 
       final lookup = requests.singleWhere((uri) => uri.path == '/Items');
       expect(lookup.queryParameters['userId'], 'user-1');
+      // Scoped to the one series that needs a date, not a server-wide episode
+      // sort: the unscoped form pegs Jellyfin 12.0-rc3 for seconds (#1699).
+      expect(lookup.queryParameters['ParentId'], 'show-recent');
       expect(lookup.queryParameters['IncludeItemTypes'], 'Episode');
       expect(lookup.queryParameters['Recursive'], 'true');
       expect(lookup.queryParameters['SortBy'], 'DatePlayed');
       expect(lookup.queryParameters['SortOrder'], 'Descending');
-      expect(lookup.queryParameters['Limit'], '200');
+      expect(lookup.queryParameters['Limit'], '1');
+      expect(lookup.queryParameters['Fields'], 'UserData');
       // No Filters=IsPlayed: a series' newest engagement can sit on an episode
       // with a LastPlayedDate but Played==false (see _attachSeriesLastPlayed).
       expect(lookup.queryParameters.containsKey('Filters'), isFalse);
+    });
+
+    test('fetchContinueWatching issues one last-played lookup per pending series', () async {
+      final requests = <Uri>[];
+      final scoped = JellyfinClient.forTesting(
+        connection: _conn(),
+        httpClient: MockClient((req) async {
+          requests.add(req.url);
+          if (req.url.path == '/UserItems/Resume') return jsonResponse({'Items': []});
+          if (req.url.path == '/Shows/NextUp') {
+            return jsonResponse({
+              'Items': [
+                for (var i = 1; i <= 6; i++)
+                  {'Id': 'next-$i', 'Type': 'Episode', 'Name': 'Next $i', 'SeriesId': 'show-$i'},
+                // Second row for an already-pending series: still one lookup.
+                {'Id': 'next-1b', 'Type': 'Episode', 'Name': 'Next 1b', 'SeriesId': 'show-1'},
+              ],
+            });
+          }
+          if (req.url.path == '/Items') {
+            final seriesId = req.url.queryParameters['ParentId']!;
+            return jsonResponse({
+              'Items': [
+                {
+                  'Id': 'played-$seriesId',
+                  'Type': 'Episode',
+                  'SeriesId': seriesId,
+                  'UserData': {'LastPlayedDate': '2026-06-0${seriesId.split('-').last}T00:00:00.0000000Z'},
+                },
+              ],
+            });
+          }
+          return http.Response('not found', 404);
+        }),
+      );
+      addTearDown(scoped.close);
+
+      final items = await scoped.fetchContinueWatching(count: 10);
+
+      final lookups = requests.where((uri) => uri.path == '/Items').toList();
+      expect(
+        lookups.map((uri) => uri.queryParameters['ParentId']).toList(),
+        unorderedEquals(['show-1', 'show-2', 'show-3', 'show-4', 'show-5', 'show-6']),
+        reason: 'a series pending on two Next Up rows must not be looked up twice',
+      );
+      // Series 6 played most recently, series 1 least; the shelf follows the
+      // stamped dates rather than Next Up's own row order.
+      expect(items.map((item) => item.id).take(2), ['next-6', 'next-5']);
+    });
+
+    test('fetchContinueWatching caps last-played lookups on an uncapped shelf', () async {
+      final requests = <Uri>[];
+      final scoped = JellyfinClient.forTesting(
+        connection: _conn(),
+        httpClient: MockClient((req) async {
+          requests.add(req.url);
+          if (req.url.path == '/UserItems/Resume') return jsonResponse({'Items': []});
+          if (req.url.path == '/Shows/NextUp') {
+            return jsonResponse({
+              'Items': [
+                for (var i = 0; i < 60; i++)
+                  {'Id': 'next-$i', 'Type': 'Episode', 'Name': 'Next $i', 'SeriesId': 'show-$i'},
+              ],
+            });
+          }
+          if (req.url.path == '/Items') {
+            return jsonResponse({
+              'Items': [
+                {
+                  'Id': 'played-${req.url.queryParameters['ParentId']}',
+                  'Type': 'Episode',
+                  'SeriesId': req.url.queryParameters['ParentId'],
+                  'UserData': {'LastPlayedDate': '2026-06-01T00:00:00.0000000Z'},
+                },
+              ],
+            });
+          }
+          return http.Response('not found', 404);
+        }),
+      );
+      addTearDown(scoped.close);
+
+      final items = await scoped.fetchContinueWatching(count: null);
+
+      final lookups = requests.where((uri) => uri.path == '/Items').toList();
+      // 60 series on the shelf, but the enrichment stays bounded — an unbounded
+      // fan-out here is what the #1699 fix exists to prevent.
+      expect(lookups, hasLength(24));
+      // Next Up order decides which series get dated: the newest ones.
+      expect(
+        lookups.map((uri) => uri.queryParameters['ParentId']).toList(),
+        unorderedEquals([for (var i = 0; i < 24; i++) 'show-$i']),
+      );
+      // Every row is still returned; the undated tail just sorts by addedAt.
+      expect(items, hasLength(60));
+    });
+
+    test('fetchContinueWatching abandons last-played lookups against a stalled endpoint', () {
+      fakeAsync((async) {
+        final requests = <Uri>[];
+        final stalled = Completer<http.Response>();
+        final scoped = JellyfinClient.forTesting(
+          connection: _conn(),
+          httpClient: MockClient((req) {
+            requests.add(req.url);
+            if (req.url.path == '/UserItems/Resume') return Future.value(jsonResponse({'Items': []}));
+            if (req.url.path == '/Shows/NextUp') {
+              return Future.value(
+                jsonResponse({
+                  'Items': [
+                    for (var i = 0; i < 24; i++)
+                      {'Id': 'next-$i', 'Type': 'Episode', 'Name': 'Next $i', 'SeriesId': 'show-$i'},
+                  ],
+                }),
+              );
+            }
+            // Never answers: the endpoint accepted the request and went quiet,
+            // which is exactly how the #1699 server behaved.
+            if (req.url.path == '/Items') return stalled.future;
+            return Future.value(http.Response('not found', 404));
+          }),
+        );
+
+        List<MediaItem>? items;
+        unawaited(scoped.fetchContinueWatching(count: null).then((result) => items = result));
+        async.flushMicrotasks();
+
+        // Only one batch is ever open at a time, and it is exactly
+        // _seriesLastPlayedConcurrency wide — a wider burst is the failure mode
+        // this whole change exists to remove.
+        expect(
+          requests.where((uri) => uri.path == '/Items').length,
+          4,
+          reason: 'the first batch must be four lookups, not the whole shelf',
+        );
+
+        // Six batches at the shared 10s default would serialise into a minute of
+        // blocking. The documented bound is the shared budget plus the one
+        // in-flight request timeout.
+        async.elapse(const Duration(seconds: 7));
+        async.flushMicrotasks();
+
+        expect(items, isNotNull, reason: 'the enrichment must give up, not hang on a silent endpoint');
+        expect(items!.map((item) => item.id), [for (var i = 0; i < 24; i++) 'next-$i']);
+        expect(
+          requests.where((uri) => uri.path == '/Items').length,
+          8,
+          reason: 'the 4s budget expires during the second batch, so the last four series go unstamped',
+        );
+        scoped.close();
+      });
+    });
+
+    test('fetchContinueWatching keeps other series dated when one lookup fails', () async {
+      final scoped = JellyfinClient.forTesting(
+        connection: _conn(),
+        httpClient: MockClient((req) async {
+          if (req.url.path == '/UserItems/Resume') {
+            return jsonResponse({
+              'Items': [
+                {
+                  'Id': 'resume-mid',
+                  'Type': 'Movie',
+                  'Name': 'Mid Movie',
+                  'UserData': {'LastPlayedDate': '2026-05-01T00:00:00.0000000Z'},
+                },
+              ],
+            });
+          }
+          if (req.url.path == '/Shows/NextUp') {
+            return jsonResponse({
+              'Items': [
+                {'Id': 'next-ok', 'Type': 'Episode', 'Name': 'Next Ok', 'SeriesId': 'show-ok'},
+                {'Id': 'next-broken', 'Type': 'Episode', 'Name': 'Next Broken', 'SeriesId': 'show-broken'},
+              ],
+            });
+          }
+          if (req.url.path == '/Items') {
+            if (req.url.queryParameters['ParentId'] == 'show-broken') {
+              return http.Response('Internal error', 500);
+            }
+            return jsonResponse({
+              'Items': [
+                {
+                  'Id': 'played-ok',
+                  'Type': 'Episode',
+                  'SeriesId': 'show-ok',
+                  'UserData': {'LastPlayedDate': '2026-06-01T00:00:00.0000000Z'},
+                },
+              ],
+            });
+          }
+          return http.Response('not found', 404);
+        }),
+      );
+      addTearDown(scoped.close);
+
+      final items = await scoped.fetchContinueWatching(count: 10);
+
+      // The dated series still outranks the resume item; the failed one keeps a
+      // null date and falls to the bottom instead of sinking the whole shelf.
+      expect(items.map((item) => item.id), ['next-ok', 'resume-mid', 'next-broken']);
     });
 
     test('fetchContinueWatching does not let resume items starve Next Up under the limit', () async {

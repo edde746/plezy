@@ -8,6 +8,10 @@ mixin _JellyfinLiveTvMethods on _JellyfinClientInternals {
     _HubRetryPolicy? retry,
     // ignore: unused_element_parameter
     AbortController? abort,
+    // ignore: unused_element_parameter
+    Duration? timeout,
+    // ignore: unused_element_parameter
+    bool allowEndpointFailover,
   });
 
   /// Returns `true` when this server has Live TV configured (channels
