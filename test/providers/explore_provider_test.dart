@@ -109,8 +109,8 @@ class _FakeHubSource extends _FakeSource implements CatalogHubSource {
     if (returnEmptyHubs) return const [];
     return [
       CatalogHub(
-        id: 'because-watchlisted',
-        title: 'Because You Watchlisted Inception',
+        id: 'trending-plex',
+        title: 'Trending on Plex',
         page: CatalogPage(items: [_hubItem('Initial Recommendation')], hasMore: true),
       ),
     ];
@@ -197,8 +197,8 @@ void main() {
       expect(explore.rowHubs, hasLength(2));
       final providerHub = explore.rowHubs.last;
       expect(providerHub.row, isNull);
-      expect(providerHub.providerHubId, 'because-watchlisted');
-      expect(providerHub.hub.title, 'Because You Watchlisted Inception');
+      expect(providerHub.providerHubId, 'trending-plex');
+      expect(providerHub.hub.title, 'Trending on Plex');
       expect(providerHub.hub.items.single.title, 'Initial Recommendation');
       expect(providerHub.hub.more, isTrue);
 
@@ -243,7 +243,7 @@ void main() {
       expect(explore.rowHubs, isEmpty);
     });
 
-    test('mutation retries watchlist-derived hubs after a partial refresh failure', () async {
+    test('mutation retries provider hubs after a partial refresh failure', () async {
       final source = _FakeHubSource(CatalogSourceId.plex);
       addTearDown(source.dispose);
       sources.setActive(source);

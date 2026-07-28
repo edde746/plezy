@@ -126,12 +126,7 @@ Future<_FakeCatalogSourcesProvider> _pumpExplore(
   final mal = _FakeCatalogSource(CatalogSourceId.mal, 'MyAnimeList', malItemId);
   final anilist = _FakeCatalogSource(CatalogSourceId.anilist, 'AniList', 3);
   final simkl = _FakeCatalogSource(CatalogSourceId.simkl, 'Simkl', 4);
-  final plex = _FakeCatalogSource(
-    CatalogSourceId.plex,
-    'Plex',
-    5,
-    providerHubTitle: 'Because You Watchlisted Inception',
-  );
+  final plex = _FakeCatalogSource(CatalogSourceId.plex, 'Plex', 5, providerHubTitle: 'Trending on Plex');
   final seerr = _FakeCatalogSource(CatalogSourceId.seerr, 'Seerr', 6);
   final sources = _FakeCatalogSourcesProvider([trakt, mal, anilist, simkl, plex, seerr]);
   final explore = ExploreProvider(sources);
@@ -251,14 +246,14 @@ void main() {
     expect(find.text('AniList Movie'), findsAtLeast(1));
   });
 
-  testWidgets('Plex provider-defined recommendation hub renders as an Explore shelf', (tester) async {
+  testWidgets('Plex provider-defined hub renders as an Explore shelf', (tester) async {
     final sources = await _pumpExplore(tester);
 
     await sources.setActiveSource(CatalogSourceId.plex);
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 100));
 
-    expect(find.text('Because You Watchlisted Inception'), findsOneWidget);
+    expect(find.text('Trending on Plex'), findsOneWidget);
     expect(find.text('Plex Recommendation'), findsAtLeast(1));
   });
 

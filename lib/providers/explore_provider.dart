@@ -207,8 +207,8 @@ class ExploreProvider extends ChangeNotifier with DisposableChangeNotifierMixin 
     if (isDisposed || generation != _generation) return;
 
     // A debounced watchlist refresh that landed while this load was in
-    // flight covered later mutations than both the watchlist page and Plex's
-    // watchlist-derived hubs — keep the fresher versions.
+    // flight covered later mutations than both the watchlist page and the
+    // provider hubs that track it — keep the fresher versions.
     if (_watchlistRowFetchedEpoch > mutationEpochAtStart) {
       fetched.remove(CatalogRowId.watchlist);
       fetchedProviderHubs = null;

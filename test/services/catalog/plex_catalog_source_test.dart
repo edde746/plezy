@@ -18,6 +18,8 @@ Map<String, Object?> _metadata({
   String ratingKey = 'plex-movie-1',
   String type = 'movie',
   String title = 'Inception',
+  String imdb = 'tt1375666',
+  int tmdb = 27205,
 }) => {
   'ratingKey': ratingKey,
   'guid': 'plex://$type/$ratingKey',
@@ -34,9 +36,21 @@ Map<String, Object?> _metadata({
     {'tag': 'Science Fiction'},
   ],
   'Guid': [
-    {'id': 'imdb://tt1375666'},
-    {'id': 'tmdb://27205'},
+    {'id': 'imdb://$imdb'},
+    {'id': 'tmdb://$tmdb'},
   ],
+};
+
+/// Discover answers `/hubs/sections/<section>` with placeholders only — the
+/// shelf identity, never its items.
+Map<String, Object?> _placeholderHub(String id, String title, {String type = 'mixed'}) => {
+  'hubIdentifier': id,
+  'key': '/hubs/sections/home/${id.split('.').last}?source=home',
+  'title': title,
+  'type': type,
+  'placeholder': true,
+  'size': 0,
+  'more': true,
 };
 
 void main() {
@@ -83,49 +97,52 @@ void main() {
       expect(item.genres, ['Science Fiction']);
     });
 
-    test('recommendation hubs retain Plex titles and support View All paging', () async {
+    test('home shelves are hydrated from their placeholder keys', () async {
       final requests = <http.Request>[];
       final source = PlexCatalogSource(
         PlexDiscoverClient(
           _session,
           httpClient: MockClient((request) async {
             requests.add(request);
-            if (request.url.path == '/hubs/sections/watchlist') {
-              return jsonResponse({
-                'MediaContainer': {
-                  'Hub': [
-                    {
-                      'hubIdentifier': 'because-watchlisted',
-                      'key': '/hubs/sections/watchlist/because-watchlisted?source=watchlist',
-                      'title': 'Because You Watchlisted Inception',
-                      'totalSize': 4,
-                      'more': 1,
-                      'Metadata': [
-                        _metadata(),
-                        _metadata(ratingKey: 'plex-show-1', type: 'show', title: 'Severance'),
-                        {'ratingKey': 'person-1', 'type': 'person', 'title': 'A Person'},
-                      ],
-                    },
-                    {
-                      'hubIdentifier': 'people-only',
-                      'key': '/hubs/sections/watchlist/people-only',
-                      'title': 'People',
-                      'Metadata': [
-                        {'ratingKey': 'person-2', 'type': 'person', 'title': 'Another Person'},
-                      ],
-                    },
-                  ],
-                },
-              });
-            }
-            if (request.url.path == '/hubs/sections/watchlist/because-watchlisted') {
-              return jsonResponse({
-                'MediaContainer': {
-                  'offset': 2,
-                  'totalSize': 3,
-                  'Metadata': [_metadata(ratingKey: 'plex-movie-2', title: 'Interstellar')],
-                },
-              });
+            switch (request.url.path) {
+              case '/hubs/sections/home':
+                // Discover answers the section listing with placeholders: no
+                // hub carries Metadata, so each shelf needs its own request.
+                return jsonResponse({
+                  'MediaContainer': {
+                    'Hub': [
+                      _placeholderHub('home.trending-plex', 'Trending on Plex'),
+                      _placeholderHub('home.genres', 'Browse by Genre', type: 'directory'),
+                      _placeholderHub('home.new-trailers', 'New Trailers', type: 'clip'),
+                      _placeholderHub('home.people', 'People'),
+                      _placeholderHub('home.chris-nolan', 'The Films of Sir Christopher Nolan'),
+                    ],
+                  },
+                });
+              case '/hubs/sections/home/trending-plex':
+                return jsonResponse({
+                  'MediaContainer': {
+                    'Metadata': [
+                      _metadata(),
+                      _metadata(ratingKey: 'plex-show-1', type: 'show', title: 'Severance'),
+                      _metadata(ratingKey: 'plex-movie-2', title: 'Interstellar'),
+                    ],
+                  },
+                });
+              case '/hubs/sections/home/people':
+                return jsonResponse({
+                  'MediaContainer': {
+                    'Metadata': [
+                      {'ratingKey': 'person-1', 'type': 'person', 'title': 'A Person'},
+                    ],
+                  },
+                });
+              case '/hubs/sections/home/chris-nolan':
+                return jsonResponse({
+                  'MediaContainer': {
+                    'Metadata': [_metadata(ratingKey: 'plex-movie-3', title: 'The Prestige')],
+                  },
+                });
             }
             return jsonResponse({'error': 'unexpected'}, status: 500);
           }),
@@ -135,24 +152,109 @@ void main() {
 
       final hubs = await source.fetchHubs(limit: 2);
 
-      expect(requests.first.url.queryParameters, containsPair('count', '3'));
-      expect(requests.first.url.queryParameters, containsPair('includeMeta', '1'));
-      expect(hubs, hasLength(1));
-      expect(hubs.single.id, 'because-watchlisted');
-      expect(hubs.single.title, 'Because You Watchlisted Inception');
-      expect(hubs.single.page.items.map((item) => item.title), ['Inception', 'Severance']);
-      expect(hubs.single.page.hasMore, isTrue);
+      // Browse-category and trailer shelves cannot produce a catalog item, so
+      // they never cost a hydration request.
+      expect(requests.map((request) => request.url.path), [
+        '/hubs/sections/home',
+        '/hubs/sections/home/trending-plex',
+        '/hubs/sections/home/people',
+        '/hubs/sections/home/chris-nolan',
+      ]);
+      expect(requests[1].url.queryParameters, containsPair('limit', '3'));
+      expect(requests[1].url.queryParameters, containsPair('includeMeta', '1'));
+      expect(requests[1].url.queryParameters, containsPair('source', 'home'));
 
-      final page = await source.fetchHub(hubs.single.id, page: 2, limit: 2);
-
-      expect(requests.last.url.queryParameters, containsPair('source', 'watchlist'));
-      expect(requests.last.url.queryParameters, containsPair('X-Plex-Container-Start', '2'));
-      expect(requests.last.url.queryParameters, containsPair('X-Plex-Container-Size', '2'));
-      expect(page.items.single.title, 'Interstellar');
-      expect(page.hasMore, isFalse);
+      // The people-only shelf maps to nothing and drops out; provider order
+      // and titles survive for the rest.
+      expect(hubs.map((hub) => hub.id), ['home.trending-plex', 'home.chris-nolan']);
+      expect(hubs.first.title, 'Trending on Plex');
+      expect(hubs.first.page.items.map((item) => item.title), ['Inception', 'Severance']);
+      expect(hubs.first.page.hasMore, isTrue);
+      expect(hubs.last.page.items.single.title, 'The Prestige');
+      expect(hubs.last.page.hasMore, isFalse);
     });
 
-    test('a vanished recommendation hub degrades to an empty page', () async {
+    test('View All takes a shelf in one request because Discover ignores offsets', () async {
+      final requests = <http.Request>[];
+      final source = PlexCatalogSource(
+        PlexDiscoverClient(
+          _session,
+          httpClient: MockClient((request) async {
+            requests.add(request);
+            if (request.url.path == '/hubs/sections/home') {
+              return jsonResponse({
+                'MediaContainer': {
+                  'Hub': [_placeholderHub('home.trending-plex', 'Trending on Plex')],
+                },
+              });
+            }
+            return jsonResponse({
+              'MediaContainer': {
+                'Metadata': [
+                  _metadata(),
+                  _metadata(ratingKey: 'plex-movie-2', title: 'Interstellar', imdb: 'tt0816692', tmdb: 157336),
+                ],
+              },
+            });
+          }),
+        ),
+      );
+      addTearDown(source.dispose);
+
+      await source.fetchHubs(limit: 1);
+      requests.clear();
+
+      final page = await source.fetchHub('home.trending-plex', limit: 100);
+
+      expect(requests.single.url.queryParameters, containsPair('limit', '100'));
+      expect(requests.single.url.queryParameters.containsKey('X-Plex-Container-Start'), isFalse);
+      expect(page.items.map((item) => item.title), ['Inception', 'Interstellar']);
+      expect(page.hasMore, isFalse);
+
+      // A second page would replay the same items, so it is never requested.
+      requests.clear();
+      final beyond = await source.fetchHub('home.trending-plex', page: 2, limit: 100);
+      expect(beyond.items, isEmpty);
+      expect(requests, isEmpty);
+    });
+
+    test('one failing shelf degrades, an entirely failing listing surfaces the error', () async {
+      var failEverything = false;
+      final source = PlexCatalogSource(
+        PlexDiscoverClient(
+          _session,
+          httpClient: MockClient((request) async {
+            if (request.url.path == '/hubs/sections/home') {
+              return jsonResponse({
+                'MediaContainer': {
+                  'Hub': [
+                    _placeholderHub('home.trending-plex', 'Trending on Plex'),
+                    _placeholderHub('home.retired', 'Retired'),
+                  ],
+                },
+              });
+            }
+            if (failEverything || request.url.path == '/hubs/sections/home/retired') {
+              return jsonResponse({'error': 'gone'}, status: 500);
+            }
+            return jsonResponse({
+              'MediaContainer': {
+                'Metadata': [_metadata()],
+              },
+            });
+          }),
+        ),
+      );
+      addTearDown(source.dispose);
+
+      final hubs = await source.fetchHubs(limit: 25);
+      expect(hubs.map((hub) => hub.id), ['home.trending-plex']);
+
+      failEverything = true;
+      await expectLater(source.fetchHubs(limit: 25), throwsA(isA<PlexDiscoverException>()));
+    });
+
+    test('a vanished home shelf degrades to an empty page', () async {
       final requests = <http.Request>[];
       final source = PlexCatalogSource(
         PlexDiscoverClient(
@@ -171,6 +273,7 @@ void main() {
       expect(page.hasMore, isFalse);
       expect(requests, isEmpty);
     });
+
     test('search sends Plex universal-search values and deduplicates media', () async {
       late http.Request captured;
       final source = PlexCatalogSource(

@@ -8,7 +8,8 @@ import 'catalog_source.dart';
 import 'catalog_watchlist_machinery.dart';
 
 /// [CatalogSource] backed by the active Plex profile's universal watchlist
-/// and its provider-defined recommendation hubs.
+/// and Discover's Home shelves (what Plex's own web client shows on its
+/// Home ▸ Trending tab).
 class PlexCatalogSource with CatalogWatchlistMachinery implements CatalogSource, CatalogHubSource {
   final PlexDiscoverClient _client;
   final Map<String, String> _hubKeys = {};
@@ -45,7 +46,7 @@ class PlexCatalogSource with CatalogWatchlistMachinery implements CatalogSource,
 
   @override
   Future<List<CatalogHub>> fetchHubs({int limit = 25}) async {
-    final fetched = await _client.getRecommendedHubs(limit: limit);
+    final fetched = await _client.getHomeHubs(limit: limit);
     final keys = <String, String>{};
     final result = <CatalogHub>[];
     for (final hub in fetched) {
@@ -66,12 +67,14 @@ class PlexCatalogSource with CatalogWatchlistMachinery implements CatalogSource,
     return result;
   }
 
+  /// Discover serves a hub in one shot — it ignores container offsets — so
+  /// View All has nothing to page into beyond the first request.
   @override
   Future<CatalogPage> fetchHub(String id, {int page = 1, int limit = 25}) async {
     final key = _hubKeys[id];
-    if (key == null) return const CatalogPage(items: []);
-    final response = await _client.getHub(key, page: page, limit: limit);
-    return CatalogPage(items: _fromMetadata(response.items), hasMore: response.hasMore);
+    if (key == null || page > 1) return const CatalogPage(items: []);
+    final response = await _client.getHub(key, limit: limit);
+    return CatalogPage(items: _fromMetadata(response.items), hasMore: false);
   }
 
   @override
